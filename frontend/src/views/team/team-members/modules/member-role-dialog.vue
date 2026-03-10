@@ -1,0 +1,113 @@
+<template>
+  <ElDialog
+    v-model="visible"
+    :title="`分配角色 - ${member?.userName || ''}`"
+    width="460px"
+    destroy-on-close
+  >
+    <div v-loading="loading" class="role-dialog-content">
+      <div class="mb-4 text-gray-500 text-sm">
+        请选择该成员在本团队内拥有的功能角色（支持多选）：
+      </div>
+      
+      <ElCheckboxGroup v-model="selectedRoleIds" class="flex flex-col gap-2">
+        <div v-for="role in allRoles" :key="role.roleId" class="role-item">
+          <ElCheckbox :label="role.roleId">
+            <div class="flex items-center gap-2">
+              <span class="font-medium">{{ role.roleName }}</span>
+              <ElTag type="info" size="small">团队角色</ElTag>
+            </div>
+            <div v-if="role.description" class="text-xs text-gray-400 mt-1 pl-6">
+              {{ role.description }}
+            </div>
+          </ElCheckbox>
+        </div>
+      </ElCheckboxGroup>
+    </div>
+
+    <template #footer>
+      <ElButton @click="visible = false">取消</ElButton>
+      <ElButton type="primary" :loading="submitting" @click="handleSubmit">
+        保存更改
+      </ElButton>
+    </template>
+  </ElDialog>
+</template>
+
+<script setup lang="ts">
+  import { fetchGetMyTeamMemberRoles, fetchSetMyTeamMemberRoles, fetchGetMyTeamRoles } from '@/api/team'
+  import { ElMessage } from 'element-plus'
+
+  interface Props {
+    member: Api.SystemManage.TeamMemberItem | null
+  }
+
+  const props = defineProps<Props>()
+  const emit = defineEmits(['success'])
+
+  const visible = ref(false)
+  const loading = ref(false)
+  const submitting = ref(false)
+  const allRoles = ref<any[]>([])
+  const selectedRoleIds = ref<string[]>([])
+
+  async function open() {
+    if (!props.member) return
+    visible.value = true
+    loading.value = true
+    try {
+      // 1. 获取所有可选角色（全局+本团队）
+      const rolesRes = await fetchGetMyTeamRoles()
+      allRoles.value = rolesRes.records || []
+
+      // 2. 获取该成员当前已有的角色
+      const memberRolesRes = await fetchGetMyTeamMemberRoles(props.member.userId)
+      selectedRoleIds.value = memberRolesRes.role_ids || []
+    } catch (e: any) {
+      ElMessage.error(e?.message || '获取角色信息失败')
+      visible.value = false
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function handleSubmit() {
+    if (!props.member) return
+    submitting.value = true
+    try {
+      await fetchSetMyTeamMemberRoles(props.member.userId, selectedRoleIds.value)
+      ElMessage.success('分配成功')
+      emit('success')
+      visible.value = false
+    } catch (e: any) {
+      ElMessage.error(e?.message || '分配失败')
+    } finally {
+      submitting.value = false
+    }
+  }
+
+  defineExpose({ open })
+</script>
+
+<style scoped>
+  .role-dialog-content {
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  .role-item {
+    padding: 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+  }
+  .role-item:hover {
+    background-color: var(--el-fill-color-light);
+  }
+  :deep(.el-checkbox) {
+    height: auto;
+    display: flex;
+    align-items: flex-start;
+  }
+  :deep(.el-checkbox__label) {
+    padding-top: 2px;
+  }
+</style>
