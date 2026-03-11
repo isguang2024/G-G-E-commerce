@@ -8,6 +8,10 @@
       ref="elTableRef"
       v-loading="!!loading"
       v-bind="{ ...$attrs, ...props, height, stripe, border, size, headerCellStyle }"
+      @drag-end="emit('drag-end', $event)"
+      @drag-start="emit('drag-start', $event)"
+      @allow-drop="(draggingNode, dropNode, type) => emit('allow-drop', draggingNode, dropNode, type)"
+      @allow-drag="(node) => emit('allow-drag', node)"
     >
       <template v-for="col in columns" :key="col.prop || col.type">
         <!-- 渲染全局序号列 -->
@@ -294,6 +298,10 @@
   const emit = defineEmits<{
     (e: 'pagination:size-change', val: number): void
     (e: 'pagination:current-change', val: number): void
+    (e: 'drag-end', event: any): void
+    (e: 'drag-start', event: any): void
+    (e: 'allow-drop', draggingNode: any, dropNode: any, type: string): void
+    (e: 'allow-drag', node: any): void
   }>()
 
   // 查找并绑定表格头部元素 - 使用 VueUse 优化

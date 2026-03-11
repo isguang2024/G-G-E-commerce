@@ -220,3 +220,22 @@ export function fetchDeleteMenu(id: string) {
   })
 }
 
+/** 更新菜单排序（全量重排） */
+export function fetchUpdateMenuSort(data: { id: string; sort_order: number }[]) {
+  return request.put<void>({
+    url: `${MENU_BASE}/sort`,
+    data
+  })
+}
+
+/** 根据父级ID更新子节点排序（全量重排） */
+export function fetchUpdateMenuSortByParent(parentId: string | null, menuIds: string[]) {
+  return request.put<void>({
+    url: `${MENU_BASE}/sort-by-parent`,
+    data: {
+      parent_id: parentId,
+      menu_ids: menuIds
+    }
+  })
+}
+

@@ -208,8 +208,7 @@
               list.push({
                 key: 'delete',
                 label: '删除角色',
-                icon: 'ri:delete-bin-4-line',
-                color: '#f56c6c'
+                icon: 'ri:delete-bin-4-line'
               })
             }
             return h('div', [

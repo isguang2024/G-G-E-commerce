@@ -45,7 +45,7 @@ export class RouteTransformer {
       if ((!hasValidComponent || !componentPath?.trim()) && resolved && this.componentLoader.exists(resolved)) {
         if (componentPath?.trim() && componentPath !== resolved) {
           console.warn(
-            `[RouteTransformer] 路由 "${route.name}" 的组件路径 "${componentPath}" 无效，已回退为 "${resolved}"`
+            `[RouteTransformer] 路由 "${String(route.name)}" 的组件路径 "${componentPath}" 无效，已回退为 "${resolved}"`
           )
         }
         componentPath = resolved
@@ -56,7 +56,7 @@ export class RouteTransformer {
     let uniqueName = route.name
     if (uniqueName && ancestorNames.has(String(uniqueName))) {
       const pathSeg = (route.path || '').replace(/^\//, '').replace(/\//g, '_') || 'child'
-      uniqueName = `${uniqueName}_${pathSeg}`
+      uniqueName = `${String(uniqueName)}_${pathSeg}`
     }
     const nextAncestor = new Set(ancestorNames)
     if (uniqueName) nextAncestor.add(String(uniqueName))

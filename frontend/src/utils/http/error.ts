@@ -32,6 +32,8 @@ export interface ErrorResponse {
   code: number
   /** 错误消息 */
   msg: string
+  /** 兼容后端 message 字段 */
+  message?: string
   /** 错误附加数据 */
   data?: unknown
 }

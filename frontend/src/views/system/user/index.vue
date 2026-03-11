@@ -81,12 +81,12 @@
   } from '@/api/system-manage'
   import UserSearch from './modules/user-search.vue'
   import UserDialog from './modules/user-dialog.vue'
-  import { ElTag, ElMessageBox, ElImage, ElDrawer, ElTree, ElIcon } from 'element-plus'
-  import { DialogType } from '@/types'
-  import { ElMessage } from 'element-plus'
+  import { ElTag, ElMessageBox, ElImage, ElDrawer, ElTree, ElIcon, ElMessage } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
 
   defineOptions({ name: 'User' })
+
+  type DialogType = 'add' | 'edit'
 
   type UserListItem = Api.SystemManage.UserListItem
   const userStore = useUserStore()
@@ -223,7 +223,8 @@
               self: { type: 'success', text: '自注册' },
               invite: { type: 'warning', text: '邀请注册' }
             }
-            const config = sourceMap[row.registerSource] || { type: 'info', text: row.registerSource || '-' }
+            const sourceKey = row.registerSource || ''
+            const config = sourceMap[sourceKey] || { type: 'info', text: row.registerSource || '-' }
             return h(ElTag, { type: config.type, size: 'small' }, () => config.text)
           }
         },

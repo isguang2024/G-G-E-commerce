@@ -213,6 +213,40 @@ declare namespace Api {
       status?: string
     }
 
+    /** 作用域列表 */
+    type ScopeList = Api.Common.PaginatedResponse<ScopeListItem>
+
+    /** 作用域列表项 */
+    interface ScopeListItem {
+      scopeId: string
+      scopeCode: string
+      scopeName: string
+      description?: string
+      sortOrder?: number
+      createTime?: string
+    }
+
+    /** 作用域搜索参数 */
+    type ScopeSearchParams = Partial<
+      Pick<ScopeListItem, 'scopeCode' | 'scopeName'> & Api.Common.CommonSearchParams
+    >
+
+    /** 创建作用域参数 */
+    interface ScopeCreateParams {
+      code: string
+      name: string
+      description?: string
+      sort_order?: number
+    }
+
+    /** 更新作用域参数 */
+    interface ScopeUpdateParams {
+      code?: string
+      name?: string
+      description?: string
+      sort_order?: number
+    }
+
     /** 团队列表 */
     type TeamList = Api.Common.PaginatedResponse<TeamListItem>
 

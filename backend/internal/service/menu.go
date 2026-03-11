@@ -22,6 +22,8 @@ type MenuService interface {
 	Create(req *dto.MenuCreateRequest) (*model.Menu, error)
 	Update(id uuid.UUID, req *dto.MenuUpdateRequest) error
 	Delete(id uuid.UUID) error
+	UpdateSort(items []dto.MenuSortItem) error
+	UpdateSortByParentID(parentID *string, menuIDs []string) error
 }
 
 type menuService struct {
@@ -209,4 +211,22 @@ func (s *menuService) Delete(id uuid.UUID) error {
 		return ErrMenuSystemProtected
 	}
 	return s.menuRepo.Delete(id)
+}
+
+// UpdateSort 批量更新菜单排序
+func (s *menuService) UpdateSort(items []dto.MenuSortItem) error {
+	return s.menuRepo.BatchUpdateSort(items)
+}
+
+// UpdateSortByParentID 根据父级ID更新子节点排序（全量重排）
+func (s *menuService) UpdateSortByParentID(parentID *string, menuIDs []string) error {
+	var pid *uuid.UUID
+	if parentID != nil && *parentID != "" {
+		id, err := uuid.Parse(*parentID)
+		if err != nil {
+			return err
+		}
+		pid = &id
+	}
+	return s.menuRepo.UpdateSortByParentID(pid, menuIDs)
 }

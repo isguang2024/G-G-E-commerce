@@ -14,7 +14,7 @@ import (
 
 func main() {
 	fmt.Println("🔍 G&G E-commerce 后端诊断工具")
-	fmt.Println("=====================================\n")
+	fmt.Println("=====================================")
 
 	// 1. 检查配置文件
 	fmt.Println("1. 检查配置文件...")

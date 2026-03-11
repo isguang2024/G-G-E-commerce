@@ -107,7 +107,7 @@
     editingMenuId?: string
     /** 新增时默认上级（如从某行点「新增」则为该行 id） */
     initialParentId?: string
-    type?: 'menu' | 'button'
+    type?: 'menu' | 'inner' | 'button'
     lockType?: boolean
   }
 

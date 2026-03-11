@@ -41,10 +41,11 @@
         :rowKey="rowKey"
         :loading="loading"
         :columns="columns"
-        :data="filteredTableData"
+        :data="draggableData"
         :stripe="false"
         :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
         :default-expand-all="false"
+        @expand-change="handleExpandChange"
       />
 
       <!-- 菜单弹窗 -->
@@ -54,7 +55,7 @@
         :editData="editData"
         :menuTree="tableData"
         :editingMenuId="editData?.id"
-        :initialParentId="parentRowForAdd?.id ?? ''"
+        :initialParentId="String(parentRowForAdd?.id ?? '')"
         :lockType="lockMenuType"
         @submit="handleSubmit"
       />
@@ -75,9 +76,11 @@
     fetchGetMenuTreeAll,
     fetchCreateMenu,
     fetchUpdateMenu,
-    fetchDeleteMenu
+    fetchDeleteMenu,
+    fetchUpdateMenuSortByParent
   } from '@/api/system-manage'
   import { ElTag, ElMessageBox, ElMessage, ElTooltip, ElButton, ElSwitch } from 'element-plus'
+  import { VueDraggable } from 'vue-draggable-plus'
 
   defineOptions({ name: 'Menus' })
 
@@ -87,6 +90,7 @@
   /** 是否在列表中显示内页（默认不显示，减少杂乱） */
   const showInnerPages = ref(false)
   const tableRef = ref()
+  const expandedRowKeys = ref<string[]>([])
 
   // 弹窗相关
   const dialogVisible = ref(false)
@@ -133,11 +137,15 @@
     try {
       const list = await fetchGetMenuTreeAll()
       tableData.value = Array.isArray(list) ? list : []
+      draggableData.value = JSON.parse(JSON.stringify(tableData.value))
       dataFromBackend.value = tableData.value.length > 0
+      expandedRowKeys.value = []
     } catch {
       const list = JSON.parse(JSON.stringify(asyncRoutes)) as (AppRouteRecord & { id?: string })[]
       ensureId(list)
       tableData.value = list
+      draggableData.value = JSON.parse(JSON.stringify(list))
+      expandedRowKeys.value = []
     } finally {
       loading.value = false
     }
@@ -184,6 +192,15 @@
       formatter: (row: AppRouteRecord) => formatMenuTitle(row.meta?.title)
     },
     {
+      prop: 'sort_order',
+      label: '排序序号',
+      minWidth: 80,
+      formatter: (row: AppRouteRecord) => {
+        // 优先展示后端返回的 sort_order，若没有则回退为 0
+        return typeof (row as any).sort_order === 'number' ? (row as any).sort_order : 0
+      }
+    },
+    {
       prop: 'type',
       label: '菜单类型',
       formatter: (row: AppRouteRecord) => {
@@ -226,7 +243,7 @@
       align: 'right',
       formatter: (row: AppRouteRecord) => {
         const isSystem = (row as any).is_system === true
-        const list = [
+        const list: ButtonMoreItem[] = [
           { key: 'add', label: '新增子菜单', icon: 'ri:add-fill' },
           { key: 'edit', label: '编辑菜单', icon: 'ri:edit-2-line' }
         ]
@@ -252,19 +269,23 @@
 
   // 数据相关
   const tableData = ref<AppRouteRecord[]>([])
+  const draggableData = ref<AppRouteRecord[]>([])
   /** 当前列表是否来自后端（用于判断是否可增删改） */
   const dataFromBackend = ref(false)
 
   /** 表格行 key：后端有 id 用 id，否则用 path */
-  const rowKey = (row: AppRouteRecord & { id?: string }) => row.id ?? row.path
+  const rowKey = (row: Record<string, any>) => {
+    const appRouteRecord = row as unknown as AppRouteRecord & { id?: string | number }
+    return String(appRouteRecord.id ?? appRouteRecord.path ?? '')
+  }
 
   /**
    * 为前端路由树递归补充 id（用于 rowKey）
    */
-  const ensureId = (items: (AppRouteRecord & { id?: string })[]): void => {
+  const ensureId = (items: (AppRouteRecord & { id?: string | number })[]): void => {
     items.forEach((item) => {
-      if (item.id == null) (item as Record<string, unknown>).id = item.path
-      if (item.children?.length) ensureId(item.children as (AppRouteRecord & { id?: string })[])
+      if (item.id == null) (item as unknown as Record<string, unknown>).id = item.path
+      if (item.children?.length) ensureId(item.children as (AppRouteRecord & { id?: string | number })[])
     })
   }
 
@@ -290,6 +311,178 @@
    */
   const handleRefresh = (): void => {
     getMenuList()
+  }
+
+  /**
+   * 处理拖拽结束
+   */
+  const handleDragEnd = async () => {
+    if (!dataFromBackend.value) {
+      ElMessage.info('当前为前端路由预览，拖拽排序仅预览效果')
+      getMenuList()
+      return
+    }
+
+    try {
+      const sortRequests = buildSortByParentData(draggableData.value)
+      console.log('拖拽排序数据:', sortRequests)
+
+      for (const req of sortRequests) {
+        await fetchUpdateMenuSortByParent(req.parentId, req.menuIds)
+      }
+
+      ElMessage.success('排序更新成功')
+      tableData.value = JSON.parse(JSON.stringify(draggableData.value))
+      await getMenuList()
+    } catch (e: any) {
+      ElMessage.error(e?.message || '排序更新失败')
+      await getMenuList()
+    }
+  }
+
+  interface VisibleMenuRow {
+    id: string
+    parentId: string | null
+  }
+
+  interface MenuNodeMeta {
+    id: string
+    parentId: string | null
+  }
+
+  const syncTableData = (nextData?: AppRouteRecord[]): void => {
+    if (nextData) {
+      draggableData.value = JSON.parse(JSON.stringify(nextData))
+      return
+    }
+    draggableData.value = JSON.parse(JSON.stringify(draggableData.value))
+  }
+
+  const flattenVisibleRows = (
+    items: Array<AppRouteRecord & { id?: string | number }>,
+    parentId: string | null = null
+  ): VisibleMenuRow[] => {
+    const result: VisibleMenuRow[] = []
+
+    items.forEach((item) => {
+      const id = item.id != null ? String(item.id) : ''
+      if (!id) return
+      result.push({ id, parentId })
+
+      if (item.children?.length && expandedRowKeys.value.includes(id)) {
+        result.push(...flattenVisibleRows(item.children as Array<AppRouteRecord & { id?: string | number }>, id))
+      }
+    })
+
+    return result
+  }
+
+  const buildNodeMap = (
+    items: Array<AppRouteRecord & { id?: string | number }>,
+    parentId: string | null = null,
+    map = new Map<string, MenuNodeMeta>()
+  ) => {
+    items.forEach((item) => {
+      const id = item.id != null ? String(item.id) : ''
+      if (!id) return
+
+      map.set(id, { id, parentId })
+      if (item.children?.length) {
+        buildNodeMap(item.children as Array<AppRouteRecord & { id?: string | number }>, id, map)
+      }
+    })
+
+    return map
+  }
+
+  const findDirectChildUnderParent = (
+    nodeId: string,
+    parentId: string | null,
+    nodeMap: Map<string, MenuNodeMeta>
+  ): string | null => {
+    let currentId: string | null = nodeId
+
+    while (currentId) {
+      const currentNode = nodeMap.get(currentId)
+      if (!currentNode) return null
+      if (currentNode.parentId === parentId) {
+        return currentId
+      }
+      currentId = currentNode.parentId
+    }
+
+    return null
+  }
+
+  const findNodeById = (
+    items: Array<AppRouteRecord & { id?: string | number }>,
+    targetId: string
+  ): (AppRouteRecord & { id?: string | number }) | null => {
+    for (const item of items) {
+      if (item.id != null && String(item.id) === targetId) {
+        return item
+      }
+      if (item.children?.length) {
+        const found = findNodeById(item.children as Array<AppRouteRecord & { id?: string | number }>, targetId)
+        if (found) return found
+      }
+    }
+    return null
+  }
+
+  const moveNodeWithinParent = (
+    items: Array<AppRouteRecord & { id?: string | number }>,
+    parentId: string | null,
+    movedId: string,
+    targetId: string,
+    insertAfter: boolean
+  ): boolean => {
+    const siblings =
+      parentId === null
+        ? items
+        : ((findNodeById(items, parentId)?.children as Array<AppRouteRecord & { id?: string | number }>) ?? [])
+
+    const movedIndex = siblings.findIndex((item) => item.id != null && String(item.id) === movedId)
+    const targetIndex = siblings.findIndex((item) => item.id != null && String(item.id) === targetId)
+
+    if (movedIndex < 0 || targetIndex < 0 || movedId === targetId) {
+      return false
+    }
+
+    const [movedNode] = siblings.splice(movedIndex, 1)
+    const nextTargetIndex = siblings.findIndex((item) => item.id != null && String(item.id) === targetId)
+    const insertIndex = insertAfter ? nextTargetIndex + 1 : nextTargetIndex
+    siblings.splice(insertIndex, 0, movedNode)
+    return true
+  }
+
+  /**
+   * 构建按父级分组的排序数据：每个父级一组，包含其「直接子节点」的 ID 顺序
+   */
+  const buildSortByParentData = (data: any[]): { parentId: string | null; menuIds: string[] }[] => {
+    const result: { parentId: string | null; menuIds: string[] }[] = []
+
+    const collectByParent = (items: any[], parentId: string | null) => {
+      if (!items || !Array.isArray(items)) return
+      const menuIds: string[] = []
+      items.forEach((item) => {
+        if (!item) return
+        if (item.id) {
+          menuIds.push(String(item.id))
+        }
+      })
+      if (menuIds.length > 0) {
+        result.push({ parentId, menuIds })
+      }
+      // 递归处理子节点，每个父级单独一组，只包含「自己的直接 children」
+      items.forEach((item) => {
+        if (!item || !item.children || !Array.isArray(item.children) || item.children.length === 0) return
+        collectByParent(item.children, item.id ? String(item.id) : null)
+      })
+    }
+
+    collectByParent(data, null)
+    return result
   }
 
   /**
@@ -418,7 +611,7 @@
   /**
    * 在当前行下新增（弹窗内可选「菜单」添加子菜单，或「按钮」添加权限）
    */
-  const handleAddUnderRow = (parentRow: AppRouteRecord & { id?: string }): void => {
+  const handleAddUnderRow = (parentRow: AppRouteRecord & { id?: string | number }): void => {
     dialogType.value = 'menu'
     editData.value = null
     parentRowForAdd.value = parentRow as AppRouteRecord
@@ -534,7 +727,7 @@
           parentId = formData.parentId.trim()
         } else if (!formData.parentId && parentRowForAdd.value?.id) {
           // 通过"新增"按钮点击，自动设置为当前行的子菜单
-          parentId = parentRowForAdd.value.id
+          parentId = String(parentRowForAdd.value.id)
         }
         // 总是发送 parent_id 字段：有值或 null
         await fetchCreateMenu({ ...payload, parent_id: parentId })
@@ -542,7 +735,7 @@
         ElMessage.success('新增成功')
       }
       await getMenuList()
-    } catch (e) {
+    } catch (e: any) {
       ElMessage.error(e?.message || '保存失败')
     }
   }
@@ -550,12 +743,12 @@
   /**
    * 删除菜单（仅在后端数据模式下调用接口）
    */
-  const handleDeleteMenu = async (row: AppRouteRecord & { id?: string; is_system?: boolean }): Promise<void> => {
+  const handleDeleteMenu = async (row: AppRouteRecord & { id?: string | number; is_system?: boolean }): Promise<void> => {
     if (!dataFromBackend.value || !row.id) {
       ElMessage.info('当前为前端路由预览，无法删除')
       return
     }
-    if (row.is_system) {
+    if ((row as any).is_system) {
       ElMessage.warning('系统默认菜单不可删除')
       return
     }
@@ -568,7 +761,7 @@
       await fetchDeleteMenu(String(row.id))
       ElMessage.success('删除成功')
       await getMenuList()
-    } catch (e) {
+    } catch (e: any) {
       if (e !== 'cancel') {
         ElMessage.error(e?.message || '删除失败')
       }
@@ -618,6 +811,16 @@
           rows.forEach((row) => {
             if (row.children?.length) {
               tableRef.value.elTableRef.toggleRowExpansion(row, isExpanded.value)
+              const id = (row as any).id != null ? String((row as any).id) : ''
+              if (id) {
+                if (isExpanded.value) {
+                  if (!expandedRowKeys.value.includes(id)) {
+                    expandedRowKeys.value = [...expandedRowKeys.value, id]
+                  }
+                } else {
+                  expandedRowKeys.value = expandedRowKeys.value.filter((key) => key !== id)
+                }
+              }
               processRows(row.children)
             }
           })
@@ -626,4 +829,39 @@
       }
     })
   }
+
+  const handleExpandChange = (row: AppRouteRecord & { id?: string | number }, expanded: unknown): void => {
+    const id = row.id != null ? String(row.id) : ''
+    if (!id) return
+
+    const isExpandedNow =
+      typeof expanded === 'boolean'
+        ? expanded
+        : Array.isArray(expanded)
+          ? expanded.some((item) => rowKey(item as Record<string, any>) === id)
+          : false
+
+    if (isExpandedNow) {
+      if (!expandedRowKeys.value.includes(id)) {
+        expandedRowKeys.value = [...expandedRowKeys.value, id]
+      }
+    } else {
+      expandedRowKeys.value = expandedRowKeys.value.filter((key) => key !== id)
+    }
+  }
 </script>
+
+<style lang="scss" scoped>
+.dragging-ghost {
+  opacity: 0.5;
+  background-color: #ecf5ff;
+}
+
+:deep(.el-table__row) {
+  cursor: move;
+}
+
+:deep(.el-table__row.is-dragging) {
+  cursor: grabbing;
+}
+</style>

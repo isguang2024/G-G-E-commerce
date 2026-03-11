@@ -375,9 +375,9 @@ async function handleDynamicRoutes(
 /**
  * 将后端角色 code 映射为前端菜单权限标识
  */
-function mapBackendRolesToFrontend(data: { roles?: Array<{ code?: string }>; is_super_admin?: boolean }): string[] {
+function mapBackendRolesToFrontend(data: { roles?: Array<{ code?: string }> | string[]; is_super_admin?: boolean }): string[] {
   if (data.is_super_admin) return ['R_SUPER']
-  const codes = (data.roles || []).map((r) => r.code)
+  const codes = (data.roles || []).map((r) => (typeof r === 'string' ? r : r.code))
   const frontend: string[] = []
   if (codes.includes('admin')) frontend.push('R_SUPER')
   if (codes.includes('team_admin')) frontend.push('R_ADMIN')

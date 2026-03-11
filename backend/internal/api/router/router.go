@@ -165,6 +165,8 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 				menus.POST("", menuHandler.Create)
 				menus.PUT("/:id", menuHandler.Update)
 				menus.DELETE("/:id", menuHandler.Delete)
+				menus.PUT("/sort", menuHandler.UpdateSort)
+				menus.PUT("/sort-by-parent", menuHandler.UpdateSortByParentID)
 			}
 
 			// 系统管理（隐藏页面文件保存、视图枚举等；仅视图枚举使用 Redis 缓存）
