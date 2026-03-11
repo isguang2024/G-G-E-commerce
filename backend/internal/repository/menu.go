@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"fmt"
 	"sort"
 
 	"github.com/google/uuid"
@@ -115,17 +116,50 @@ func (r *menuRepository) UpdateSortByParentID(parentID *uuid.UUID, menuIDs []str
 		return nil
 	}
 	return r.db.Transaction(func(tx *gorm.DB) error {
+		var siblings []model.Menu
+		query := tx.Model(&model.Menu{})
+		if parentID == nil {
+			query = query.Where("parent_id IS NULL")
+		} else {
+			query = query.Where("parent_id = ?", *parentID)
+		}
+		if err := query.Find(&siblings).Error; err != nil {
+			return err
+		}
+
+		if len(siblings) == 0 {
+			return nil
+		}
+
+		siblingSet := make(map[string]struct{}, len(siblings))
+		for _, sibling := range siblings {
+			siblingSet[sibling.ID.String()] = struct{}{}
+		}
+
+		seen := make(map[string]struct{}, len(menuIDs))
 		for i, menuID := range menuIDs {
+			if _, ok := siblingSet[menuID]; !ok {
+				return fmt.Errorf("菜单 %s 不属于当前父级", menuID)
+			}
+			if _, ok := seen[menuID]; ok {
+				return fmt.Errorf("菜单 %s 在排序请求中重复", menuID)
+			}
+			seen[menuID] = struct{}{}
+
 			id, err := uuid.Parse(menuID)
 			if err != nil {
 				return err
 			}
-			// Start from 1 for readability (UI displays sort_order directly).
 			result := tx.Model(&model.Menu{}).Where("id = ?", id).Update("sort_order", i+1)
 			if result.Error != nil {
 				return result.Error
 			}
 		}
+
+		if len(seen) != len(siblingSet) {
+			return fmt.Errorf("排序请求缺少父级下的部分菜单")
+		}
+
 		return nil
 	})
 }

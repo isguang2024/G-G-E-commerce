@@ -188,7 +188,7 @@ func (h *MenuHandler) UpdateSortByParentID(c *gin.Context) {
 	h.logger.Info("Menu sort update by parent", zap.Any("parent_id", req.ParentID), zap.Any("menu_ids", req.MenuIDs))
 	if err := h.menuService.UpdateSortByParentID(req.ParentID, req.MenuIDs); err != nil {
 		h.logger.Error("Menu sort update failed", zap.Error(err))
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "更新菜单排序失败")
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "更新菜单排序失败: "+err.Error())
 		c.JSON(status, resp)
 		return
 	}
