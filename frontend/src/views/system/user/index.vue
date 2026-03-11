@@ -70,6 +70,7 @@
 <script setup lang="ts">
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
+  import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { useTable } from '@/hooks/core/useTable'
   import {
     fetchGetUserList,
@@ -312,6 +313,22 @@
       .catch((e) => {
         if (e !== 'cancel') ElMessage.error(e?.message || '注销失败')
       })
+  }
+
+  /**
+   * 处理用户操作
+   */
+  const handleUserOperation = (item: ButtonMoreItem, row: UserListItem) => {
+    if (item.key === 'copy') {
+      navigator.clipboard.writeText(row.id)
+      ElMessage.success('用户ID已复制')
+    } else if (item.key === 'permission') {
+      showPermissionDrawer(row)
+    } else if (item.key === 'edit') {
+      showDialog('edit', row)
+    } else if (item.key === 'delete') {
+      deleteUser(row)
+    }
   }
 
   /**

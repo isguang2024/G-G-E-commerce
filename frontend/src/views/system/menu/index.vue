@@ -65,6 +65,8 @@
 <script setup lang="ts">
   import { formatMenuTitle } from '@/utils/router'
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
+  import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
   import type { AppRouteRecord } from '@/types/router'
   import MenuDialog from './modules/menu-dialog.vue'
@@ -220,44 +222,29 @@
     {
       prop: 'operation',
       label: '操作',
-      width: 180,
+      width: 60,
       align: 'right',
       formatter: (row: AppRouteRecord) => {
-        const buttonStyle = { style: 'text-align: right' }
-
-        if (row.meta?.isAuthButton) {
-          return h('div', buttonStyle, [
-            h(ArtButtonTable, {
-              type: 'edit',
-              onClick: () => handleEditAuth(row)
-            }),
-            h(ArtButtonTable, {
-              type: 'delete',
-              onClick: () => handleDeleteAuth()
-            })
-          ])
-        }
-
         const isSystem = (row as any).is_system === true
-        return h('div', { class: 'flex items-center gap-1', style: buttonStyle.style }, [
-          h(ElTooltip, { content: '可在此菜单下新增子菜单或权限按钮', placement: 'top' }, {
-            default: () =>
-              h(ArtButtonTable, { type: 'add', onClick: () => handleAddUnderRow(row) })
-          }),
-          h(ArtButtonTable, {
-            type: 'edit',
-            onClick: () => handleEditMenu(row)
-          }),
-          isSystem
-            ? h(
-                ElTooltip,
-                { content: '系统默认菜单不可删除', placement: 'top' },
-                { default: () => h(ElButton, { type: 'danger', link: true, disabled: true, size: 'small' }, () => '删除') }
-              )
-            : h(ArtButtonTable, {
-                type: 'delete',
-                onClick: () => handleDeleteMenu(row)
-              })
+        const list = [
+          { key: 'add', label: '新增子菜单', icon: 'ri:add-fill' },
+          { key: 'edit', label: '编辑菜单', icon: 'ri:edit-2-line' }
+        ]
+        
+        if (!isSystem) {
+          list.push({
+            key: 'delete', 
+            label: '删除菜单', 
+            icon: 'ri:delete-bin-4-line', 
+            color: '#f56c6c'
+          })
+        }
+        
+        return h('div', [
+          h(ArtButtonMore, {
+            list,
+            onClick: (item: ButtonMoreItem) => handleMenuOperation(item, row)
+          })
         ])
       }
     }
@@ -585,6 +572,19 @@
       if (e !== 'cancel') {
         ElMessage.error(e?.message || '删除失败')
       }
+    }
+  }
+
+  /**
+   * 处理菜单操作
+   */
+  const handleMenuOperation = (item: ButtonMoreItem, row: AppRouteRecord) => {
+    if (item.key === 'add') {
+      handleAddUnderRow(row)
+    } else if (item.key === 'edit') {
+      handleEditMenu(row)
+    } else if (item.key === 'delete') {
+      handleDeleteMenu(row)
     }
   }
 
