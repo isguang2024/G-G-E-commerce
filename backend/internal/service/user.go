@@ -15,6 +15,7 @@ import (
 type UserService interface {
 	List(req *dto.UserListRequest) ([]model.User, int64, error)
 	Get(id uuid.UUID) (*model.User, error)
+	GetByIDs(ids []uuid.UUID) ([]model.User, error)
 	Create(req *dto.UserCreateRequest) (*model.User, error)
 	Update(id uuid.UUID, req *dto.UserUpdateRequest) error
 	Delete(id uuid.UUID) error
@@ -40,11 +41,15 @@ func (s *userService) List(req *dto.UserListRequest) ([]model.User, int64, error
 		req.Size = 20
 	}
 	offset := (req.Current - 1) * req.Size
-	return s.userRepo.List(offset, req.Size, req.UserName, req.UserPhone, req.UserEmail, req.Status, req.RoleID)
+	return s.userRepo.List(offset, req.Size, req.UserName, req.UserPhone, req.UserEmail, req.Status, req.RoleID, req.ID, req.RegisterSource, req.InvitedBy)
 }
 
 func (s *userService) Get(id uuid.UUID) (*model.User, error) {
 	return s.userRepo.GetByID(id)
+}
+
+func (s *userService) GetByIDs(ids []uuid.UUID) ([]model.User, error) {
+	return s.userRepo.GetByIDs(ids)
 }
 
 func (s *userService) Create(req *dto.UserCreateRequest) (*model.User, error) {

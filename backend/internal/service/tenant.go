@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -17,17 +18,16 @@ var ErrTenantNotFound = errors.New("tenant not found")
 var ErrTenantMemberExists = errors.New("user already in team")
 var ErrTenantMemberNotFound = errors.New("member not in team")
 
-
 type TenantService interface {
 	List(req *dto.TenantListRequest) ([]model.Tenant, int64, error)
 	Get(id uuid.UUID) (*model.Tenant, error)
 	Create(req *dto.TenantCreateRequest, ownerID *uuid.UUID) (*model.Tenant, error)
 	Update(id uuid.UUID, req *dto.TenantUpdateRequest) error
 	Delete(id uuid.UUID) error
-	ListMembers(tenantID uuid.UUID) ([]model.TenantMember, error)
+	ListMembers(tenantID uuid.UUID, searchParams *repository.MemberSearchParams) ([]model.TenantMember, error)
 	AddMember(tenantID uuid.UUID, req *dto.TenantAddMemberRequest, invitedBy *uuid.UUID) error
 	RemoveMember(tenantID, userID uuid.UUID) error
-	UpdateMemberRole(tenantID, userID uuid.UUID, role string) error
+	UpdateMemberRole(tenantID, userID uuid.UUID, roleCode string) error
 }
 
 // 团队内身份使用的默认角色编码（全局 scope=team 角色，通过 user_roles 关联）
@@ -83,32 +83,24 @@ func (s *tenantService) Create(req *dto.TenantCreateRequest, ownerID *uuid.UUID)
 		maxMembers = 5
 	}
 	t := &model.Tenant{
-		Name:        req.Name,
-		Remark:      req.Remark,
-		LogoURL:     req.LogoURL,
-		Plan:        plan,
-		OwnerID:     ownerID,
-		MaxMembers:  maxMembers,
-		Status:      status,
+		Name:       req.Name,
+		Remark:     req.Remark,
+		LogoURL:    req.LogoURL,
+		Plan:       plan,
+		OwnerID:    ownerID,
+		MaxMembers: maxMembers,
+		Status:     status,
 	}
 	if err := s.tenantRepo.Create(t); err != nil {
 		return nil, err
 	}
-	adminRole, _ := s.roleRepo.GetByCode(defaultTeamRoleAdminCode)
-	if ownerID != nil {
-		now := t.CreatedAt
-		_ = s.tenantMemberRepo.Add(&model.TenantMember{
-			TenantID:  t.ID,
-			UserID:    *ownerID,
-			Status:    "active",
-			JoinedAt:  &now,
-		})
-		if adminRole != nil {
-			_ = s.userRoleRepo.ReplaceRolesForTenant(*ownerID, t.ID, []uuid.UUID{adminRole.ID})
-		}
-	}
+
+	// 注意：不再自动将创建者添加为团队成员
+	// 团队创建者只是 owner（拥有者），需要手动在团队中添加成员
+	// 如果需要指定管理员，通过 req.AdminUserIDs 添加
 
 	// 添加指定的管理员
+	adminRole, _ := s.roleRepo.GetByCode(defaultTeamRoleAdminCode)
 	if len(req.AdminUserIDs) > 0 && adminRole != nil {
 		for _, adminUserIDStr := range req.AdminUserIDs {
 			adminUID, err := uuid.Parse(adminUserIDStr)
@@ -119,13 +111,13 @@ func (s *tenantService) Create(req *dto.TenantCreateRequest, ownerID *uuid.UUID)
 				continue // Owner is already added as admin
 			}
 			now := t.CreatedAt
-			_ = s.tenantMemberRepo.Add(&model.TenantMember{
-				TenantID:  t.ID,
-				UserID:    adminUID,
-				Status:    "active",
-				JoinedAt:  &now,
+			_ = s.tenantMemberRepo.Upsert(&model.TenantMember{
+				TenantID: t.ID,
+				UserID:   adminUID,
+				RoleID:   &adminRole.ID,
+				Status:   "active",
+				JoinedAt: &now,
 			})
-			_ = s.userRoleRepo.ReplaceRolesForTenant(adminUID, t.ID, []uuid.UUID{adminRole.ID})
 		}
 	}
 	return s.tenantRepo.GetByID(t.ID)
@@ -155,7 +147,7 @@ func (s *tenantService) Update(id uuid.UUID, req *dto.TenantUpdateRequest) error
 	if req.Status != "" {
 		t.Status = req.Status
 	}
-	
+
 	if err := s.tenantRepo.Update(t); err != nil {
 		return err
 	}
@@ -168,14 +160,14 @@ func (s *tenantService) Update(id uuid.UUID, req *dto.TenantUpdateRequest) error
 				if err != nil {
 					continue
 				}
-				now := t.CreatedAt
-				_ = s.tenantMemberRepo.Add(&model.TenantMember{
-					TenantID:  t.ID,
-					UserID:    adminUID,
-					Status:    "active",
-					JoinedAt:  &now,
+				now := time.Now()
+				_ = s.tenantMemberRepo.Upsert(&model.TenantMember{
+					TenantID: t.ID,
+					UserID:   adminUID,
+					RoleID:   &adminRole.ID,
+					Status:   "active",
+					JoinedAt: &now,
 				})
-				_ = s.userRoleRepo.ReplaceRolesForTenant(adminUID, t.ID, []uuid.UUID{adminRole.ID})
 			}
 		}
 	}
@@ -193,7 +185,7 @@ func (s *tenantService) Delete(id uuid.UUID) error {
 	return s.tenantRepo.Delete(id)
 }
 
-func (s *tenantService) ListMembers(tenantID uuid.UUID) ([]model.TenantMember, error) {
+func (s *tenantService) ListMembers(tenantID uuid.UUID, searchParams *repository.MemberSearchParams) ([]model.TenantMember, error) {
 	_, err := s.tenantRepo.GetByID(tenantID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -201,6 +193,13 @@ func (s *tenantService) ListMembers(tenantID uuid.UUID) ([]model.TenantMember, e
 		}
 		return nil, err
 	}
+
+	// 如果有搜索参数，使用搜索查询
+	if searchParams != nil && (searchParams.UserID != "" || searchParams.UserName != "" || searchParams.Role != "") {
+		searchParams.TenantID = tenantID
+		return s.tenantMemberRepo.ListByTenantIDWithSearch(*searchParams)
+	}
+
 	return s.tenantMemberRepo.ListByTenantID(tenantID)
 }
 
@@ -227,19 +226,17 @@ func (s *tenantService) AddMember(tenantID uuid.UUID, req *dto.TenantAddMemberRe
 	if roleCode == "" {
 		roleCode = defaultTeamRoleMemberCode
 	}
-	if err := s.tenantMemberRepo.Add(&model.TenantMember{
-		TenantID:  tenantID,
-		UserID:    userID,
-		Status:    "active",
-		InvitedBy: invitedBy,
-	}); err != nil {
-		return err
-	}
 	role, err := s.roleRepo.GetByCode(roleCode)
 	if err != nil || role == nil {
-		return nil
+		return fmt.Errorf("role not found: %s", roleCode)
 	}
-	return s.userRoleRepo.ReplaceRolesForTenant(userID, tenantID, []uuid.UUID{role.ID})
+	return s.tenantMemberRepo.Add(&model.TenantMember{
+		TenantID:  tenantID,
+		UserID:    userID,
+		RoleID:    &role.ID,
+		Status:    "active",
+		InvitedBy: invitedBy,
+	})
 }
 
 func (s *tenantService) RemoveMember(tenantID, userID uuid.UUID) error {
@@ -250,7 +247,6 @@ func (s *tenantService) RemoveMember(tenantID, userID uuid.UUID) error {
 		}
 		return err
 	}
-	_ = s.userRoleRepo.ReplaceRolesForTenant(userID, tenantID, nil)
 	return s.tenantMemberRepo.Remove(tenantID, userID)
 }
 
@@ -266,8 +262,5 @@ func (s *tenantService) UpdateMemberRole(tenantID, userID uuid.UUID, roleCode st
 	if err != nil || role == nil {
 		return fmt.Errorf("role not found: %s", roleCode)
 	}
-	if roleCode != defaultTeamRoleAdminCode && roleCode != defaultTeamRoleMemberCode {
-		return fmt.Errorf("invalid role code: %s", roleCode)
-	}
-	return s.userRoleRepo.ReplaceRolesForTenant(userID, tenantID, []uuid.UUID{role.ID})
+	return s.tenantMemberRepo.UpdateRole(tenantID, userID, &role.ID)
 }

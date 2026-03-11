@@ -43,8 +43,13 @@ func (r *roleRepository) List(offset, limit int, code, name, description, startT
 	if description != "" {
 		query = query.Where("description LIKE ?", "%"+description+"%")
 	}
+	// 兼容旧的 enabled 参数，转换为 status 查询
 	if enabled != nil {
-		query = query.Where("enabled = ?", *enabled)
+		if *enabled {
+			query = query.Where("status = ?", "normal")
+		} else {
+			query = query.Where("status = ?", "suspended")
+		}
 	}
 	// 创建时间范围过滤：startTime、endTime 格式为 YYYY-MM-DD
 	if startTime != "" {
@@ -86,8 +91,13 @@ func (r *roleRepository) ListByScope(scope string, offset, limit int, code, name
 	if description != "" {
 		query = query.Where("description LIKE ?", "%"+description+"%")
 	}
+	// 兼容旧的 enabled 参数，转换为 status 查询
 	if enabled != nil {
-		query = query.Where("enabled = ?", *enabled)
+		if *enabled {
+			query = query.Where("status = ?", "normal")
+		} else {
+			query = query.Where("status = ?", "suspended")
+		}
 	}
 	// 创建时间范围过滤
 	if startTime != "" {

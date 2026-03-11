@@ -2,7 +2,7 @@
 <template>
   <div>
     <ElDropdown v-if="hasAnyAuthItem">
-      <ArtIconButton icon="ri:more-2-fill" class="!size-8 bg-g-200 dark:bg-g-300/45 text-sm" />
+      <ElButton :icon="MoreFilled" circle size="small" />
       <template #dropdown>
         <ElDropdownMenu>
           <template v-for="item in list" :key="item.key">
@@ -25,6 +25,7 @@
 
 <script setup lang="ts">
   import { useAuth } from '@/hooks/core/useAuth'
+  import { MoreFilled } from '@element-plus/icons-vue'
 
   defineOptions({ name: 'ArtButtonMore' })
 

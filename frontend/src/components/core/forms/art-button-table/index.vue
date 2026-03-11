@@ -6,6 +6,7 @@
       buttonClass
     ]"
     :style="{ backgroundColor: buttonBgColor, color: iconColor }"
+    :title="title"
     @click="handleClick"
   >
     <ArtSvgIcon :icon="iconContent" />
@@ -17,7 +18,7 @@
 
   interface Props {
     /** 按钮类型 */
-    type?: 'add' | 'edit' | 'delete' | 'more' | 'view'
+    type?: 'add' | 'edit' | 'delete' | 'more' | 'view' | 'copy'
     /** 按钮图标 */
     icon?: string
     /** 按钮样式类 */
@@ -26,6 +27,8 @@
     iconColor?: string
     /** 按钮背景色 */
     buttonBgColor?: string
+    /** 提示文字 */
+    title?: string
   }
 
   const props = withDefaults(defineProps<Props>(), {})
@@ -40,6 +43,7 @@
     edit: { icon: 'ri:pencil-line', class: 'bg-secondary/12 text-secondary' },
     delete: { icon: 'ri:delete-bin-5-line', class: 'bg-error/12 text-error' },
     view: { icon: 'ri:eye-line', class: 'bg-info/12 text-info' },
+    copy: { icon: 'ri:file-copy-line', class: 'bg-primary/12 text-primary' },
     more: { icon: 'ri:more-2-fill', class: '' }
   } as const
 

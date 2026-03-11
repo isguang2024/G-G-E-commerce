@@ -11,10 +11,12 @@ import (
 
 // UserRepository 用户仓储接口
 type UserRepository interface {
-	// List 分页列表（可选按用户名、手机号、邮箱、状态、角色ID筛选）
-	List(offset, limit int, username, userPhone, userEmail, status, roleID string) ([]model.User, int64, error)
+	// List 分页列表（可选按用户名、手机号、邮箱、状态、角色ID、用户ID、注册来源、邀请人筛选）
+	List(offset, limit int, username, userPhone, userEmail, status, roleID, id, registerSource, invitedBy string) ([]model.User, int64, error)
 	// GetByID 根据ID获取用户
 	GetByID(id uuid.UUID) (*model.User, error)
+	// GetByIDs 批量获取用户
+	GetByIDs(ids []uuid.UUID) ([]model.User, error)
 	// GetByEmail 根据邮箱获取用户
 	GetByEmail(email string) (*model.User, error)
 	// GetByUsername 根据用户名获取用户
@@ -56,6 +58,13 @@ func (r *userRepository) GetByID(id uuid.UUID) (*model.User, error) {
 		return nil, err
 	}
 	return &user, nil
+}
+
+// GetByIDs 批量获取用户（用于查询邀请人信息）
+func (r *userRepository) GetByIDs(ids []uuid.UUID) ([]model.User, error) {
+	var users []model.User
+	err := r.db.Where("id IN ?", ids).Find(&users).Error
+	return users, err
 }
 
 // GetByEmail 根据邮箱获取用户（包含角色信息）
@@ -132,8 +141,11 @@ func (r *userRepository) UpdateLastLogin(id uuid.UUID, ip string) error {
 }
 
 // List 分页列表，预加载角色
-func (r *userRepository) List(offset, limit int, username, userPhone, userEmail, status, roleID string) ([]model.User, int64, error) {
+func (r *userRepository) List(offset, limit int, username, userPhone, userEmail, status, roleID, id, registerSource, invitedBy string) ([]model.User, int64, error) {
 	baseQuery := r.db.Model(&model.User{})
+	if id != "" {
+		baseQuery = baseQuery.Where("id = ?", id)
+	}
 	if username != "" {
 		baseQuery = baseQuery.Where("username LIKE ?", "%"+username+"%")
 	}
@@ -145,6 +157,12 @@ func (r *userRepository) List(offset, limit int, username, userPhone, userEmail,
 	}
 	if status != "" {
 		baseQuery = baseQuery.Where("status = ?", status)
+	}
+	if registerSource != "" {
+		baseQuery = baseQuery.Where("register_source = ?", registerSource)
+	}
+	if invitedBy != "" {
+		baseQuery = baseQuery.Where("invited_by = ?", invitedBy)
 	}
 	
 	// 调试：输出查询条件
@@ -192,14 +210,15 @@ func (r *userRepository) List(offset, limit int, username, userPhone, userEmail,
 	return list, total, err
 }
 
-// ReplaceRoles 替换用户全局角色（仅 tenant_id IS NULL，不影响团队内角色）
+// ReplaceRoles 替换用户全局角色
 func (r *userRepository) ReplaceRoles(userID uuid.UUID, roleIDs []uuid.UUID) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("user_id = ? AND tenant_id IS NULL", userID).Delete(&model.UserRole{}).Error; err != nil {
+		// 先真正删除软删除的记录，避免唯一键冲突
+		if err := tx.Unscoped().Where("user_id = ?", userID).Delete(&model.UserRole{}).Error; err != nil {
 			return err
 		}
 		for _, roleID := range roleIDs {
-			if err := tx.Create(&model.UserRole{UserID: userID, RoleID: roleID, TenantID: nil}).Error; err != nil {
+			if err := tx.Create(&model.UserRole{UserID: userID, RoleID: roleID}).Error; err != nil {
 				return err
 			}
 		}

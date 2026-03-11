@@ -95,27 +95,33 @@ func AutoMigrate() error {
 		&model.Tenant{},
 		&model.TenantMember{},
 		&model.APIKey{},
-		
-		// 分类和标签
-		&model.Category{},
-		&model.TagGroup{},
-		&model.Tag{},
-		
-		// 分组
-		&model.Group{},
-		
-		// 商品
-		&model.Product{},
-		&model.ProductTag{},
-		&model.ProductGroup{},
-		
+
 		// 媒体
 		&model.MediaAsset{},
-		&model.ProductMedia{},
 	)
 
 	if err != nil {
 		return fmt.Errorf("failed to migrate database: %w", err)
+	}
+
+	// 创建唯一索引（AutoMigrate 不会自动创建唯一索引）
+	if err := createUniqueIndexes(); err != nil {
+		return fmt.Errorf("failed to create unique indexes: %w", err)
+	}
+
+	return nil
+}
+
+// createUniqueIndexes 创建唯一索引
+func createUniqueIndexes() error {
+	// tenant_members 表的 (tenant_id, user_id) 唯一索引
+	indexName := "idx_tenant_members_tenant_user_unique"
+	var count int64
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", indexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + indexName + " ON tenant_members (tenant_id, user_id)").Error; err != nil {
+			return err
+		}
 	}
 
 	return nil

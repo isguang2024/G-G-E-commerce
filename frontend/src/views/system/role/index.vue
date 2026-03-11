@@ -167,19 +167,25 @@
           }
         },
         {
-          prop: 'enabled',
+          prop: 'status',
           label: '角色状态',
           width: 100,
-          formatter: (row) => {
-            const statusConfig = row.enabled
-              ? { type: 'success', text: '启用' }
-              : { type: 'warning', text: '禁用' }
+          formatter: (row: RoleListItem) => {
+            const statusConfig = row.status === 'normal'
+              ? { type: 'success', text: '正常' }
+              : { type: 'warning', text: '停用' }
             return h(
               ElTag,
               { type: statusConfig.type as 'success' | 'warning' },
               () => statusConfig.text
             )
           }
+        },
+        {
+          prop: 'priority',
+          label: '优先级',
+          width: 80,
+          formatter: (row: RoleListItem) => row.priority || 0
         },
         {
           prop: 'createTime',

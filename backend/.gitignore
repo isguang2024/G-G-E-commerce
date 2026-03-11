@@ -35,7 +35,7 @@ logs/
 *.db
 *.sqlite
 
-# Air
+# Temp / build cache
 tmp/
 
 # Build

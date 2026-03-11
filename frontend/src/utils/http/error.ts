@@ -22,6 +22,7 @@
  * @author Art Design Pro Team
  */
 import { AxiosError } from 'axios'
+import { ElMessage } from 'element-plus'
 import { ApiStatus } from './status'
 import { $t } from '@/locales'
 
@@ -158,11 +159,78 @@ export function handleError(error: AxiosError<ErrorResponse>): never {
  * @param showMessage 是否显示错误消息
  */
 export function showError(error: HttpError, showMessage: boolean = true): void {
-  if (showMessage) {
-    ElMessage.error(error.message)
+  if (!showMessage) return
+
+  // 根据错误码决定是否显示全局消息
+  const code = error.code
+  if (!shouldShowErrorMessage(code)) {
+    return
   }
+
+  ElMessage.error(error.message)
   // 记录错误日志
   console.error('[HTTP Error]', error.toLogData())
+}
+
+/**
+ * 根据错误码判断是否显示全局消息提示
+ * @param code 错误码
+ * @returns 是否显示消息
+ */
+function shouldShowErrorMessage(code: number): boolean {
+  // 错误码规则：0=成功；1xxxx=参数/请求；2xxxx=认证/授权；3xxxx=业务/资源；5xxxx=服务端
+
+  // 需要显示全局提示的错误码
+  const showCodes = [
+    // 1xxxx 参数/请求错误 - 全部显示
+    1001, // 参数错误
+    1002, // 参数缺失
+    1003, // 参数格式错误
+    1004, // 无效的 ID
+
+    // 2xxxx 认证/授权错误 - 全部显示
+    2001, // 未登录或 token 无效
+    2002, // token 已过期
+    2003, // 无权限
+    2004, // 缺少 API Key
+    2005, // Token 格式错误
+
+    // 3xxxx 业务/资源错误 - 选择性显示
+    3006, // 您暂无管理的团队
+    3007, // 角色编码已存在
+    3008, // 该用户已在团队中
+    3011, // 系统默认菜单不可删除
+    3012, // 无效的上级
+    3013, // 业务冲突
+    3014, // 用户名已存在
+    3015, // 系统角色不可删除
+
+    // 5xxxx 服务端错误 - 全部显示
+    5001, // 内部错误
+    5002, // 数据库错误
+    5003  // 外部服务错误
+  ]
+
+  // 不需要显示全局提示的错误码（静默处理，由业务代码自行处理）
+  const hideCodes = [
+    3001, // 资源不存在（通常业务代码会自行处理）
+    3002, // 用户不存在
+    3003, // 团队不存在
+    3004, // 菜单不存在
+    3005, // 角色不存在
+    3009, // 成员不在团队中
+    3010  // 团队角色不存在或无权操作
+  ]
+
+  if (showCodes.includes(code)) {
+    return true
+  }
+  if (hideCodes.includes(code)) {
+    return false
+  }
+
+  // 未定义的错误码，默认显示（安全起见）
+  return code >= 5000
 }
 
 /**

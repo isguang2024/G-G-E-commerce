@@ -123,6 +123,10 @@ declare namespace Api {
       lastLoginTime?: string
       lastLoginIP?: string
       userRoles: string[]
+      roleDetails?: Array<{ code: string; name: string }>
+      registerSource?: string
+      invitedBy?: string
+      invitedByName?: string
       createBy?: string
       createTime: string
       updateBy?: string
@@ -131,8 +135,9 @@ declare namespace Api {
 
     /** 用户搜索参数 */
     type UserSearchParams = Partial<
-      Pick<UserListItem, 'userName' | 'userPhone' | 'userEmail' | 'status'> &
+      Pick<UserListItem, 'userName' | 'userPhone' | 'userEmail' | 'status' | 'registerSource' | 'invitedBy'> &
         Api.Common.CommonSearchParams & {
+          id?: string // 用户ID
           roleId?: string // 角色ID
         }
     >
@@ -168,7 +173,8 @@ declare namespace Api {
       roleName: string
       roleCode: string
       description: string
-      enabled: boolean
+      status?: string // normal/suspended
+      priority?: number // 优先级
       createTime: string
       tenantId?: string | null
       isGlobal?: boolean
@@ -190,9 +196,10 @@ declare namespace Api {
       code: string
       name: string
       description?: string
-      enabled?: boolean
       sort_order?: number
       scope_id: string
+      priority?: number
+      status?: string
     }
 
     /** 更新角色参数 */
@@ -200,9 +207,10 @@ declare namespace Api {
       code?: string
       name?: string
       description?: string
-      enabled?: boolean
       scope_id?: string
       sort_order?: number
+      priority?: number
+      status?: string
     }
 
     /** 团队列表 */
@@ -221,6 +229,7 @@ declare namespace Api {
       createTime: string
       updateTime: string
       ownerId?: string
+      adminUserIds?: string[]
     }
 
     /** 团队搜索参数（与后端 TenantListRequest 一致） */
@@ -255,7 +264,8 @@ declare namespace Api {
     interface TeamMemberItem {
       id: string
       userId: string
-      role: string
+      role: string        // 角色名称（如"团队管理员"、"团队成员"）
+      roleCode?: string   // 角色编码（如"team_admin"、"team_member"）
       status: string
       joinedAt: string | null
       userName: string

@@ -15,6 +15,13 @@ export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
   })
 }
 
+/** 获取用户权限（计算后的菜单权限） */
+export function fetchGetUserPermissions(userId: string) {
+  return request.get<any[]>({
+    url: `${USER_BASE}/${userId}/permissions`
+  })
+}
+
 // 获取用户详情
 export function fetchGetUser(id: string) {
   return request.get<Api.SystemManage.UserListItem>({

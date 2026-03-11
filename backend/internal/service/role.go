@@ -102,17 +102,18 @@ func (s *roleService) Create(req *dto.RoleCreateRequest) (*model.Role, error) {
 		}
 		return nil, err
 	}
-	enabled := true
-	if req.Enabled != nil {
-		enabled = *req.Enabled
+		status := "normal"
+	if req.Status != "" {
+		status = req.Status
 	}
 	role := &model.Role{
 		Code:        req.Code,
 		Name:        req.Name,
 		Description: req.Description,
 		ScopeID:     scopeID,
-		Enabled:     enabled,
 		SortOrder:   req.SortOrder,
+		Priority:    req.Priority,
+		Status:      status,
 	}
 	if err := s.roleRepo.Create(role); err != nil {
 		return nil, err
@@ -147,12 +148,13 @@ func (s *roleService) Update(id uuid.UUID, req *dto.RoleUpdateRequest) error {
 	if req.Description != "" {
 		updates["description"] = req.Description
 	}
-	// 如果提供了 enabled，更新它
-	if req.Enabled != nil {
-		updates["enabled"] = *req.Enabled
+	// 更新优先级
+	if req.Priority > 0 {
+		updates["priority"] = req.Priority
 	}
-	if req.SortOrder > 0 {
-		updates["sort_order"] = req.SortOrder
+	// 更新状态
+	if req.Status != "" {
+		updates["status"] = req.Status
 	}
 	if req.ScopeID != "" {
 		scopeID, err := uuid.Parse(req.ScopeID)

@@ -128,15 +128,14 @@ func assignAdminRole(userID uuid.UUID, logger *zap.Logger) error {
 		return err
 	}
 
-	// 检查是否已分配（全局角色 tenant_id IS NULL）
+	// 检查是否已分配（全局角色）
 	var userRole model.UserRole
-	result := database.DB.Where("user_id = ? AND role_id = ? AND tenant_id IS NULL", userID, adminRole.ID).First(&userRole)
+	result := database.DB.Where("user_id = ? AND role_id = ?", userID, adminRole.ID).First(&userRole)
 	if result.Error != nil {
-		// 分配角色（全局）
+		// 分配全局角色
 		userRole = model.UserRole{
-			UserID:   userID,
-			RoleID:   adminRole.ID,
-			TenantID: nil,
+			UserID: userID,
+			RoleID: adminRole.ID,
 		}
 		if err := database.DB.Create(&userRole).Error; err != nil {
 			logger.Error("Failed to assign admin role", zap.Error(err))

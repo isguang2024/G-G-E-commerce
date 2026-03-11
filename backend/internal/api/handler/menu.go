@@ -16,20 +16,21 @@ import (
 
 // MenuHandler 菜单管理处理器
 type MenuHandler struct {
-	menuService  service.MenuService
-	userRepo     repository.UserRepository
-	roleMenuRepo repository.RoleMenuRepository
-	userRoleRepo repository.UserRoleRepository
-	logger       *zap.Logger
+	menuService      service.MenuService
+	userRepo         repository.UserRepository
+	roleMenuRepo     repository.RoleMenuRepository
+	userRoleRepo     repository.UserRoleRepository
+	tenantMemberRepo repository.TenantMemberRepository
+	logger           *zap.Logger
 }
 
 // NewMenuHandler 创建菜单处理器
-func NewMenuHandler(menuService service.MenuService, userRepo repository.UserRepository, roleMenuRepo repository.RoleMenuRepository, userRoleRepo repository.UserRoleRepository, logger *zap.Logger) *MenuHandler {
-	return &MenuHandler{menuService: menuService, userRepo: userRepo, roleMenuRepo: roleMenuRepo, userRoleRepo: userRoleRepo, logger: logger}
+func NewMenuHandler(menuService service.MenuService, userRepo repository.UserRepository, roleMenuRepo repository.RoleMenuRepository, userRoleRepo repository.UserRoleRepository, tenantMemberRepo repository.TenantMemberRepository, logger *zap.Logger) *MenuHandler {
+	return &MenuHandler{menuService: menuService, userRepo: userRepo, roleMenuRepo: roleMenuRepo, userRoleRepo: userRoleRepo, tenantMemberRepo: tenantMemberRepo, logger: logger}
 }
 
 // GetTree 获取菜单树。query all=1 时返回全部；否则按角色权限过滤。
-// query tenant_id=xxx 时在团队上下文中仅使用用户在该团队内的全局角色 + role_menus。
+// query tenant_id=xxx 时在团队上下文中使用用户在该团队的团队角色 + 全局角色
 func (h *MenuHandler) GetTree(c *gin.Context) {
 	all := c.Query("all") == "1" || c.Query("all") == "true"
 
@@ -39,15 +40,16 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 		if ok {
 			if idStr, ok := userIDStr.(string); ok {
 				if userID, err := uuid.Parse(idStr); err == nil {
+					// 优先使用团队上下文中的团队角色
 					tenantIDStr := c.Query("tenant_id")
-					if tenantIDStr != "" && h.userRoleRepo != nil && h.roleMenuRepo != nil {
-						var tenantID uuid.UUID
+					if tenantIDStr != "" && h.tenantMemberRepo != nil && h.roleMenuRepo != nil {
 						if tid, err := uuid.Parse(tenantIDStr); err == nil {
-							tenantID = tid
-							globalRoleIDs, _ := h.userRoleRepo.GetRoleIDsByUserAndTenant(userID, &tenantID)
-							allowedMenuIDs, _ = h.roleMenuRepo.GetMenuIDsByRoleIDs(globalRoleIDs)
+							// 获取用户在团队中的角色（全局角色 + 团队角色）
+							roleIDs, _ := h.userRoleRepo.GetRoleIDsByUserAndTenant(userID, &tid, h.tenantMemberRepo)
+							allowedMenuIDs, _ = h.roleMenuRepo.GetMenuIDsByRoleIDs(roleIDs)
 						}
 					}
+					// 如果没有团队上下文，使用全局角色
 					if len(allowedMenuIDs) == 0 && h.userRepo != nil {
 						user, err := h.userRepo.GetByID(userID)
 						if err == nil && user.Roles != nil && len(user.Roles) > 0 {

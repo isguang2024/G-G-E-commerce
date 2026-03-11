@@ -1,3 +1,4 @@
+
 ## 项目概述
 商品内容分发管理系统。
 - 后端：Go + Gin + GORM + PostgreSQL + Redis + Elasticsearch

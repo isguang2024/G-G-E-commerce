@@ -49,7 +49,8 @@
   import TeamSearch from './modules/team-search.vue'
   import TeamDialog from './modules/team-dialog.vue'
   import TeamMembersDrawer from './modules/team-members-drawer.vue'
-  import { ElTag, ElMessageBox, ElMessage } from 'element-plus'
+  import { ElTag, ElMessageBox, ElMessage, ElDropdown, ElDropdownMenu, ElDropdownItem, ElIcon } from 'element-plus'
+  import { MoreFilled, Edit, Delete, UserFilled } from '@element-plus/icons-vue'
   import { DialogType } from '@/types'
 
   defineOptions({ name: 'Team' })
@@ -76,18 +77,18 @@
     return map[status] || { type: 'info', text: status || '未知' }
   }
 
-  const {
-    columns,
-    columnChecks,
-    data,
-    loading,
-    pagination,
-    getData,
-    searchParams,
-    resetSearchParams,
-    handleSizeChange,
-    handleCurrentChange,
-    refreshData
+  const { 
+    columns, 
+    columnChecks, 
+    data, 
+    loading, 
+    pagination, 
+    getData, 
+    searchParams, 
+    resetSearchParams, 
+    handleSizeChange, 
+    handleCurrentChange, 
+    refreshData 
   } = useTable({
     core: {
       apiFn: fetchGetTeamList,
@@ -100,6 +101,23 @@
         { type: 'index', width: 60, label: '序号' },
         { prop: 'name', label: '团队名称', minWidth: 140 },
         { prop: 'remark', label: '团队备注', width: 140 },
+        {
+          prop: 'adminUsers',
+          label: '管理员',
+          width: 200,
+          formatter: (row: TeamListItem) => {
+            const admins = (row as any).adminUsers || []
+            if (!admins.length) return '-'
+            return h('div', { class: 'flex flex-wrap gap-1' }, [
+              ...admins.slice(0, 2).map((admin: any) =>
+                h(ElTag, { size: 'small', type: 'info' }, () => {
+                  return admin.nickname || admin.username || admin.email || admin.user_id.substring(0, 8) + '...'
+                })
+              ),
+              admins.length > 2 ? h(ElTag, { size: 'small' }, () => `+${admins.length - 2}`) : null
+            ])
+          }
+        },
         { prop: 'plan', label: '套餐', width: 100 },
         { prop: 'maxMembers', label: '最大成员数', width: 100 },
         {
@@ -115,28 +133,22 @@
         {
           prop: 'operation',
           label: '操作',
-          width: 180,
+          width: 60,
           fixed: 'right',
-          formatter: (row) =>
-            h('div', { class: 'flex gap-1' }, [
-              h(ArtButtonTable, {
-                type: 'edit',
-                onClick: () => showDialog('edit', row)
-              }),
-              h(ArtButtonTable, {
-                type: 'delete',
-                onClick: () => deleteTeam(row)
-              }),
-              h(
-                ElButton,
-                {
-                  type: 'primary',
-                  link: true,
-                  onClick: () => showMembers(row)
-                },
-                () => '查看人员'
-              )
-            ])
+          formatter: (row) => {
+            const dropdown = h(ElDropdown, {
+              trigger: 'click',
+              onCommand: (cmd: string) => handleOperationCommand(cmd, row)
+            }, {
+              default: () => h(ElButton, { icon: MoreFilled, circle: true, size: 'small' }),
+              dropdown: () => h(ElDropdownMenu, {}, [
+                h(ElDropdownItem, { command: 'edit' }, () => [h(ElIcon, {}, () => h(Edit)), '编辑']),
+                h(ElDropdownItem, { command: 'view' }, () => [h(ElIcon, {}, () => h(UserFilled)), '查看人员']),
+                h(ElDropdownItem, { command: 'delete' }, () => [h(ElIcon, {}, () => h(Delete)), '删除'])
+              ])
+            })
+            return dropdown
+          }
         }
       ]
     },
@@ -156,6 +168,16 @@
     nextTick(() => {
       dialogVisible.value = true
     })
+  }
+
+  const handleOperationCommand = (command: string, row: TeamListItem) => {
+    if (command === 'edit') {
+      showDialog('edit', row)
+    } else if (command === 'view') {
+      showMembers(row)
+    } else if (command === 'delete') {
+      deleteTeam(row)
+    }
   }
 
   const showMembers = (row: TeamListItem) => {

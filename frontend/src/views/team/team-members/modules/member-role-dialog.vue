@@ -2,7 +2,7 @@
   <ElDialog
     v-model="visible"
     :title="`分配角色 - ${member?.userName || ''}`"
-    width="460px"
+    width="600px"
     destroy-on-close
   >
     <div v-loading="loading" class="role-dialog-content">
@@ -12,7 +12,10 @@
       
       <ElCheckboxGroup v-model="selectedRoleIds" class="flex flex-col gap-2">
         <div v-for="role in allRoles" :key="role.roleId" class="role-item">
-          <ElCheckbox :label="role.roleId">
+          <ElCheckbox 
+            :label="role.roleId" 
+            :disabled="isTeamAdminRole(role.roleCode)"
+          >
             <div class="flex items-center gap-2">
               <span class="font-medium">{{ role.roleName }}</span>
               <ElTag type="info" size="small">团队角色</ElTag>
@@ -50,6 +53,13 @@
   const submitting = ref(false)
   const allRoles = ref<any[]>([])
   const selectedRoleIds = ref<string[]>([])
+  const memberRoleCodes = ref<string[]>([])
+
+  function isTeamAdminRole(roleCode: string): boolean {
+    // 如果成员已经是团队管理员，则禁用 team_admin 角色的选择
+    // 团队管理员角色不能被移除
+    return memberRoleCodes.value.includes('team_admin') && roleCode === 'team_admin'
+  }
 
   async function open() {
     if (!props.member) return
@@ -63,6 +73,9 @@
       // 2. 获取该成员当前已有的角色
       const memberRolesRes = await fetchGetMyTeamMemberRoles(props.member.userId)
       selectedRoleIds.value = memberRolesRes.role_ids || []
+      
+      // 3. 获取成员的角色编码，用于判断是否为管理员
+      memberRoleCodes.value = (props.member as any).roleCodes || []
     } catch (e: any) {
       ElMessage.error(e?.message || '获取角色信息失败')
       visible.value = false

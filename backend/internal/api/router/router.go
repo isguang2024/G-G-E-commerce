@@ -51,55 +51,6 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		authenticated := v1.Group("")
 		authenticated.Use(middleware.JWTAuth(cfg.JWT.Secret))
 		{
-			// 初始化 Repository
-			productRepo := repository.NewProductRepository(db)
-
-			// 初始化 Service
-			productService := service.NewProductService(productRepo)
-
-			// 商品相关
-			products := authenticated.Group("/products")
-			{
-				productHandler := handler.NewProductHandler(productService)
-				products.GET("", productHandler.List)
-				products.GET("/:id", productHandler.Get)
-				products.POST("", productHandler.Create)
-				products.PUT("/:id", productHandler.Update)
-				products.DELETE("/:id", productHandler.Delete)
-			}
-
-			// 分类相关
-			categories := authenticated.Group("/categories")
-			{
-				categoryHandler := handler.NewCategoryHandler()
-				categories.GET("/tree", categoryHandler.GetTree)
-				categories.GET("", categoryHandler.List)
-				categories.GET("/:id", categoryHandler.Get)
-				categories.POST("", categoryHandler.Create)
-				categories.PUT("/:id", categoryHandler.Update)
-				categories.DELETE("/:id", categoryHandler.Delete)
-			}
-
-			// 标签相关
-			tags := authenticated.Group("/tags")
-			{
-				tagHandler := handler.NewTagHandler()
-				tags.GET("", tagHandler.List)
-				tags.POST("", tagHandler.Create)
-				tags.PUT("/:id", tagHandler.Update)
-				tags.DELETE("/:id", tagHandler.Delete)
-			}
-
-			// 分组相关
-			groups := authenticated.Group("/groups")
-			{
-				groupHandler := handler.NewGroupHandler()
-				groups.GET("", groupHandler.List)
-				groups.POST("", groupHandler.Create)
-				groups.PUT("/:id", groupHandler.Update)
-				groups.DELETE("/:id", groupHandler.Delete)
-			}
-
 			// 媒体相关
 			media := authenticated.Group("/media")
 			{
@@ -117,12 +68,16 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 
 			// 用户管理（后台）
 			roleRepo := repository.NewRoleRepository(db)
+			roleMenuRepo := repository.NewRoleMenuRepository(db)
+			menuRepo := repository.NewMenuRepository(db)
+			permissionService := service.NewPermissionService(userRepo, roleMenuRepo, db)
 			userService := service.NewUserService(userRepo, roleRepo, logger)
-			userHandler := handler.NewUserHandler(userService, logger)
+			userHandler := handler.NewUserHandler(userService, permissionService, menuRepo, logger)
 			users := authenticated.Group("/users")
 			{
 				users.GET("", userHandler.List)
 				users.GET("/:id", userHandler.Get)
+				users.GET("/:id/permissions", userHandler.GetPermissions)
 				users.POST("", userHandler.Create)
 				users.PUT("/:id", userHandler.Update)
 				users.DELETE("/:id", userHandler.Delete)
@@ -130,7 +85,6 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			}
 
 			// 角色、角色菜单、用户角色
-			roleMenuRepo := repository.NewRoleMenuRepository(db)
 			userRoleRepo := repository.NewUserRoleRepository(db)
 			scopeRepo := repository.NewScopeRepository(db)
 			roleService := service.NewRoleService(roleRepo, roleMenuRepo, userRoleRepo, scopeRepo, logger)
@@ -202,9 +156,9 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			}
 
 			// 菜单（树形 + CRUD）
-			menuRepo := repository.NewMenuRepository(db)
+			menuRepo = repository.NewMenuRepository(db)
 			menuService := service.NewMenuService(menuRepo, logger)
-			menuHandler := handler.NewMenuHandler(menuService, userRepo, roleMenuRepo, userRoleRepo, logger)
+			menuHandler := handler.NewMenuHandler(menuService, userRepo, roleMenuRepo, userRoleRepo, tenantMemberRepo, logger)
 			menus := authenticated.Group("/menus")
 			{
 				menus.GET("/tree", menuHandler.GetTree)
@@ -227,16 +181,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		open := r.Group("/open/v1")
 		open.Use(middleware.APIKeyAuth())
 		{
-			// 复用相同的 Repository 和 Service
-			productRepo := repository.NewProductRepository(db)
-			productService := service.NewProductService(productRepo)
-
-			openProducts := open.Group("/products")
-			{
-				productHandler := handler.NewProductHandler(productService)
-				openProducts.GET("", productHandler.List)
-				openProducts.GET("/:id", productHandler.Get)
-			}
+			// TODO: 可以在这里添加其他对外开放的 API
 		}
 	}
 

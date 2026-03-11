@@ -4,9 +4,9 @@ help: ## 显示帮助信息
 	@echo "可用命令:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
 
-dev: ## 启动开发环境（需要先启动 docker-compose）
+dev: ## 启动开发环境（直接运行，不使用 Air 热重载）
 	@echo "启动开发服务器..."
-	@air
+	@go run cmd/server/main.go
 
 run: ## 直接运行（不使用热重载）
 	@go run cmd/server/main.go

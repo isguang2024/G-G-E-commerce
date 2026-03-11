@@ -21,9 +21,10 @@ type RoleCreateRequest struct {
 	Code        string `json:"code" binding:"required,max=50"`
 	Name        string `json:"name" binding:"required,max=100"`
 	Description string `json:"description"`
-	Enabled     *bool  `json:"enabled"` // 是否启用，nil 时默认为 true
 	SortOrder   int    `json:"sort_order"`
 	ScopeID     string `json:"scope_id" binding:"required"` // 作用域ID
+	Priority    int    `json:"priority"`                    // 优先级
+	Status      string `json:"status"`                    // normal/suspended
 }
 
 // RoleUpdateRequest 更新角色请求
@@ -31,9 +32,10 @@ type RoleUpdateRequest struct {
 	Code        string `json:"code" binding:"max=50"` // 角色编码（可选，修改时需要检查唯一性）
 	Name        string `json:"name" binding:"max=100"`
 	Description string `json:"description"`
-	Enabled     *bool  `json:"enabled"` // 是否启用，nil 时不更新
 	SortOrder   int    `json:"sort_order"`
 	ScopeID     string `json:"scope_id"` // 作用域ID
+	Priority    int    `json:"priority"` // 优先级
+	Status      string `json:"status"`  // normal/suspended
 }
 
 // RoleMenusRequest 角色菜单权限请求（保存时传菜单 ID 列表）

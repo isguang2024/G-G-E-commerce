@@ -42,6 +42,13 @@
     { label: '禁用', value: 'inactive' }
   ]
 
+  // 注册来源选项
+  const registerSourceOptions = [
+    { label: '管理员添加', value: 'admin' },
+    { label: '自注册', value: 'self' },
+    { label: '邀请注册', value: 'invite' }
+  ]
+
   // 角色列表选项
   const roleOptions = ref<Array<{ label: string; value: string }>>([])
   const roleLoading = ref(false)
@@ -71,6 +78,13 @@
 
   // 表单配置（后端列表接口支持 userName、status、roleCode 筛选）
   const formItems = computed(() => [
+    {
+      label: '用户ID',
+      key: 'id',
+      type: 'input',
+      placeholder: '请输入用户ID',
+      clearable: true
+    },
     {
       label: '用户名',
       key: 'userName',
@@ -113,6 +127,23 @@
         clearable: true,
         filterable: true
       }
+    },
+    {
+      label: '注册来源',
+      key: 'registerSource',
+      type: 'select',
+      props: {
+        placeholder: '请选择注册来源',
+        options: registerSourceOptions,
+        clearable: true
+      }
+    },
+    {
+      label: '邀请人',
+      key: 'invitedBy',
+      type: 'input',
+      placeholder: '请输入邀请人ID',
+      clearable: true
     }
   ])
 

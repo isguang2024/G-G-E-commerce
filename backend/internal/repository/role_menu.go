@@ -15,6 +15,8 @@ type RoleMenuRepository interface {
 	GetMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error)
 	// GetMenuIDsByRoleIDs 获取多个角色可访问的菜单 ID 并集（去重）
 	GetMenuIDsByRoleIDs(roleIDs []uuid.UUID) ([]uuid.UUID, error)
+	// GetMenusByRoleIDs 批量获取角色菜单关联（含角色信息，用于权限计算优化）
+	GetMenusByRoleIDs(roleIDs []uuid.UUID) ([]model.RoleMenu, error)
 	// SetRoleMenus 设置角色菜单（先删后插）
 	SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error
 	// DeleteByRoleID 删除指定角色的所有菜单关联
@@ -103,4 +105,14 @@ func (r *roleMenuRepository) SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID)
 // DeleteByRoleID 删除指定角色的所有菜单关联（软删除）
 func (r *roleMenuRepository) DeleteByRoleID(roleID uuid.UUID) error {
 	return r.db.Where("role_id = ?", roleID).Delete(&model.RoleMenu{}).Error
+}
+
+// GetMenusByRoleIDs 批量获取角色菜单关联（含角色信息，用于权限计算优化）
+func (r *roleMenuRepository) GetMenusByRoleIDs(roleIDs []uuid.UUID) ([]model.RoleMenu, error) {
+	if len(roleIDs) == 0 {
+		return []model.RoleMenu{}, nil
+	}
+	var roleMenus []model.RoleMenu
+	err := r.db.Where("role_id IN ?", roleIDs).Find(&roleMenus).Error
+	return roleMenus, err
 }

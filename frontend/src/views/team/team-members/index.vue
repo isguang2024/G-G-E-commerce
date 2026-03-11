@@ -22,7 +22,6 @@
           <div class="flex items-center justify-between">
             <span>
               <span class="font-medium">当前团队：{{ team.name }}</span>
-              <span class="text-gray-500 text-sm ml-2">（{{ team.remark }}）</span>
             </span>
           </div>
         </template>
@@ -44,7 +43,7 @@
                 />
               </ElFormItem>
               <ElFormItem label="团队内角色" class="mb-0">
-                <ElSelect v-model="addForm.role" placeholder="选择角色" style="width: 120px">
+                <ElSelect v-model="addForm.role" placeholder="选择角色" style="width: 140px">
                   <ElOption label="团队管理员" value="team_admin" />
                   <ElOption label="团队成员" value="team_member" />
                 </ElSelect>
@@ -64,59 +63,38 @@
               <ElTableColumn prop="userName" label="用户名" min-width="100" />
               <ElTableColumn prop="nickName" label="昵称" width="100" />
               <ElTableColumn prop="userEmail" label="邮箱" min-width="140" show-overflow-tooltip />
-              <ElTableColumn prop="role" label="团队身份" width="120">
+              <ElTableColumn label="团队身份" min-width="200">
                 <template #default="{ row }">
-                  <span v-if="row.role === 'team_admin'" class="text-gray-500">团队管理员</span>
-                  <ElSelect
-                    v-else
-                    v-model="row.role"
-                    size="small"
-                    style="width: 100px"
-                    @change="(val: string) => updateMemberRole(row.userId, val)"
-                  >
-                    <ElOption label="团队管理员" value="team_admin" />
-                    <ElOption label="团队成员" value="team_member" />
-                  </ElSelect>
-                </template>
-              </ElTableColumn>
-              <ElTableColumn label="功能角色" min-width="200">
-                <template #default="{ row }">
-                  <div class="flex flex-wrap gap-1 items-center">
-                    <template v-if="memberRoleNames[row.userId]?.length">
-                      <ElTag
-                        v-for="name in memberRoleNames[row.userId]"
-                        :key="name"
-                        size="small"
-                        type="info"
-                        effect="plain"
-                      >
-                        {{ name }}
-                      </ElTag>
-                    </template>
-                    <span v-else class="text-gray-400 text-xs">暂无功能角色</span>
-                    <ElButton
-                      type="primary"
-                      link
+                  <div class="flex flex-wrap gap-1">
+                    <ElTag 
+                      v-for="(role, index) in (row.roles || [row.role])" 
+                      :key="index"
+                      :type="role === '团队管理员' ? 'success' : 'info'"
                       size="small"
-                      class="ml-1"
-                      @click="handleAssignRoles(row)"
                     >
-                      分配
-                    </ElButton>
+                      {{ role }}
+                    </ElTag>
                   </div>
                 </template>
               </ElTableColumn>
               <ElTableColumn prop="joinedAt" label="加入时间" width="170" />
-              <ElTableColumn label="操作" width="100" fixed="right">
+              <ElTableColumn label="操作" width="60" fixed="right">
                 <template #default="{ row }">
-                  <ElButton
-                    type="danger"
-                    link
-                    size="small"
-                    @click="removeMember(row)"
-                  >
-                    删除
-                  </ElButton>
+                  <ElDropdown trigger="click" @command="(cmd: string) => handleCommand(cmd, row)">
+                    <ElButton :icon="MoreFilled" circle size="small" />
+                    <template #dropdown>
+                      <ElDropdownMenu>
+                        <ElDropdownItem command="assign">
+                          <ElIcon><UserFilled /></ElIcon>
+                          分配角色
+                        </ElDropdownItem>
+                        <ElDropdownItem command="delete" :disabled="isAdmin(row)" divided>
+                          <ElIcon><Delete /></ElIcon>
+                          删除
+                        </ElDropdownItem>
+                      </ElDropdownMenu>
+                    </template>
+                  </ElDropdown>
                 </template>
               </ElTableColumn>
             </ElTable>
@@ -129,11 +107,10 @@
 </template>
 
 <script setup lang="ts">
-  import { Loading } from '@element-plus/icons-vue'
+  import { Loading, MoreFilled, UserFilled, Delete } from '@element-plus/icons-vue'
   import {
     fetchGetMyTeam,
     fetchGetMyTeamMembers,
-    fetchGetMyTeamMemberRoles,
     fetchAddMyTeamMember,
     fetchRemoveMyTeamMember,
     fetchUpdateMyTeamMemberRole
@@ -151,12 +128,17 @@
   const members = ref<Api.SystemManage.TeamMemberItem[]>([])
   const loading = ref(false)
   const addLoading = ref(false)
-  const memberRoleNames = ref<Record<string, string[]>>({})
 
   const addForm = reactive({
     user_id: '',
     role: 'team_member'
   })
+
+  // 判断是否为管理员（团队管理员角色编码为 team_admin）
+  function isAdmin(row: Api.SystemManage.TeamMemberItem): boolean {
+    const roleCodes = (row as any).roleCodes || []
+    return roleCodes.includes('team_admin')
+  }
 
   async function loadMyTeam() {
     teamLoadDone.value = false
@@ -182,22 +164,6 @@
     try {
       const res = await fetchGetMyTeamMembers()
       members.value = res?.records ?? []
-      memberRoleNames.value = {}
-      
-      // 获取每个成员的角色信息（用于展示名称）
-      await Promise.all(
-        members.value.map(async (m) => {
-          try {
-            const r = await fetchGetMyTeamMemberRoles(m.userId)
-            // 这里我们需要 role_names，但后端目前只返回了 role_ids
-            // 为了优化，我们暂且显示 ID 的缩写或等待后端完善
-            // 建议：后续后端接口直接返回 Role 对象数组
-            memberRoleNames.value[m.userId] = r?.role_ids?.map(id => id.split('-')[0]) ?? []
-          } catch {
-            memberRoleNames.value[m.userId] = []
-          }
-        })
-      )
     } catch (e: any) {
       ElMessage.error(e?.message || '获取成员列表失败')
       members.value = []
@@ -211,6 +177,34 @@
     nextTick(() => {
       roleDialogRef.value?.open()
     })
+  }
+
+  function handleCommand(command: string, member: Api.SystemManage.TeamMemberItem) {
+    if (command === 'assign') {
+      handleAssignRoles(member)
+    } else if (command === 'delete') {
+      removeMember(member)
+    }
+  }
+
+  function removeMember(row: Api.SystemManage.TeamMemberItem) {
+    if (isAdmin(row)) {
+      ElMessage.warning('团队管理员不能被移除')
+      return
+    }
+    ElMessageBox.confirm(`确定将「${row.userName}」移出团队吗？`, '移除成员', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+      .then(() => fetchRemoveMyTeamMember(row.userId))
+      .then(() => {
+        ElMessage.success('已移除')
+        loadMembers()
+      })
+      .catch((e) => {
+        if (e !== 'cancel') ElMessage.error(e?.message || '移除失败')
+      })
   }
 
   async function handleAddMember() {
@@ -229,33 +223,6 @@
       ElMessage.error(e?.message || '添加失败')
     } finally {
       addLoading.value = false
-    }
-  }
-
-  function removeMember(row: Api.SystemManage.TeamMemberItem) {
-    ElMessageBox.confirm(`确定将「${row.userName}」移出团队吗？`, '移除成员', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
-      .then(() => fetchRemoveMyTeamMember(row.userId))
-      .then(() => {
-        ElMessage.success('已移除')
-        loadMembers()
-      })
-      .catch((e) => {
-        if (e !== 'cancel') ElMessage.error(e?.message || '移除失败')
-      })
-  }
-
-  async function updateMemberRole(userId: string, role: string) {
-    try {
-      await fetchUpdateMyTeamMemberRole(userId, role)
-      ElMessage.success('角色已更新')
-      await loadMembers()
-    } catch (e: any) {
-      ElMessage.error(e?.message || '更新角色失败')
-      await loadMembers()
     }
   }
 

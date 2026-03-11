@@ -1,0 +1,22 @@
+# Art Design Pro 文档获取命令
+# 在 Claude Code 中逐个执行这些命令
+
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/must-read.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/in-depth/script.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/essentials/settings.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/introduce.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/components/art-search-bar.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/essentials/route.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/in-depth/locale.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/hooks/use-table.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/essentials/project-introduce.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/in-depth/permission.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/update.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/essentials/element-plus.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/essentials/build.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/lite-version.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/essentials/icon.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/quick-start.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/essentials/env-variables.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/project/standard.html")
+mcp__web-reader__webReader(url="https://www.artd.pro/docs/zh/guide/essentials/theme.html")

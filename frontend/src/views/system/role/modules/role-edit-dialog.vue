@@ -40,8 +40,14 @@
           </ElOption>
         </ElSelect>
       </ElFormItem>
-      <ElFormItem label="启用">
-        <ElSwitch v-model="form.enabled" />
+      <ElFormItem label="状态">
+        <ElSelect v-model="form.status" placeholder="请选择状态" style="width: 100%">
+          <ElOption label="正常" value="normal" />
+          <ElOption label="停用" value="suspended" />
+        </ElSelect>
+      </ElFormItem>
+      <ElFormItem label="优先级">
+        <ElInputNumber v-model="form.priority" :min="0" :max="999" placeholder="优先级" style="width: 100%" />
       </ElFormItem>
     </ElForm>
     <template #footer>
@@ -112,14 +118,15 @@
   /**
    * 表单数据
    */
-  const form = reactive<RoleListItem & { scopeId?: string }>({
+  const form = reactive<RoleListItem & { scopeId?: string; priority?: number; status?: string }>({
     roleId: 0,
     roleName: '',
     roleCode: '',
     description: '',
     createTime: '',
-    enabled: true,
-    scopeId: ''
+    scopeId: '',
+    priority: 0,
+    status: 'normal'
   })
 
   /**
@@ -194,8 +201,9 @@
         roleCode: props.roleData.roleCode,
         description: props.roleData.description || '',
         createTime: props.roleData.createTime || '',
-        enabled: props.roleData.enabled !== undefined ? props.roleData.enabled : true,
-        scopeId: scopeId
+        scopeId: scopeId,
+        priority: props.roleData.priority || 0,
+        status: props.roleData.status || 'normal'
       })
     } else {
       // 新增模式：重置表单，默认选择第一个作用域
@@ -205,8 +213,9 @@
         roleCode: '',
         description: '',
         createTime: '',
-        enabled: true,
-        scopeId: scopeList.value.length > 0 ? scopeList.value[0].scopeId : ''
+        scopeId: scopeList.value.length > 0 ? scopeList.value[0].scopeId : '',
+        priority: 0,
+        status: 'normal'
       })
     }
   }
@@ -237,8 +246,9 @@
           code: form.roleCode,
           name: form.roleName,
           description: form.description || '',
-          enabled: form.enabled,
-          scope_id: form.scopeId
+          scope_id: form.scopeId,
+          priority: form.priority || 0,
+          status: form.status || 'normal'
         })
       } else {
         const roleId = typeof form.roleId === 'string' ? form.roleId : (form.roleId as any)?.toString?.() || ''
@@ -256,8 +266,9 @@
           code: form.roleCode,
           name: form.roleName,
           description: form.description || '',
-          enabled: form.enabled,
-          scope_id: scopeId
+          scope_id: scopeId,
+          priority: form.priority || 0,
+          status: form.status || 'normal'
         }
         await fetchUpdateRole(roleId, updateData)
       }

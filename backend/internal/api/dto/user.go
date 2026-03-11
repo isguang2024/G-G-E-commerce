@@ -2,13 +2,16 @@ package dto
 
 // UserListRequest 用户列表请求（分页与筛选）
 type UserListRequest struct {
-	Current  int    `form:"current"`  // 页码，与前端一致
-	Size     int    `form:"size"`     // 每页条数
-	UserName string `form:"userName"`
-	UserPhone string `form:"userPhone"` // 手机号
-	UserEmail string `form:"userEmail"` // 邮箱
-	Status   string `form:"status"`
-	RoleID   string `form:"roleId"`   // 角色ID（UUID字符串，查询拥有该角色的用户）
+	Current       int    `form:"current"`  // 页码，与前端一致
+	Size          int    `form:"size"`     // 每页条数
+	ID            string `form:"id"`        // 用户ID
+	UserName      string `form:"userName"`
+	UserPhone     string `form:"userPhone"` // 手机号
+	UserEmail     string `form:"userEmail"` // 邮箱
+	Status        string `form:"status"`
+	RoleID        string `form:"roleId"`   // 角色ID（UUID字符串，查询拥有该角色的用户）
+	RegisterSource string `form:"registerSource"` // 注册来源
+	InvitedBy     string `form:"invitedBy"` // 邀请人ID
 }
 
 // UserCreateRequest 创建用户请求

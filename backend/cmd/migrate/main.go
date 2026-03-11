@@ -148,6 +148,13 @@ func main() {
 	} else {
 		logger.Info("Role enabled column added (if needed)")
 	}
+
+	// 8. 移除 tenant_members 表的 role 列（已使用 role_id 关联 roles 表）
+	if err := removeTenantMemberRoleColumn(logger); err != nil {
+		logger.Warn("removeTenantMemberRoleColumn failed", zap.Error(err))
+	} else {
+		logger.Info("Tenant member role column removed (if existed)")
+	}
 }
 
 // dropTeamCustomRoleTables 删除团队自建角色相关表，角色统一为全局 scope=team
@@ -187,6 +194,31 @@ func addRoleEnabledColumn(logger *zap.Logger) error {
 	return nil
 }
 
+// removeTenantMemberRoleColumn 移除 tenant_members 表的 role 列（已使用 role_id 关联 roles 表）
+func removeTenantMemberRoleColumn(logger *zap.Logger) error {
+	var exists bool
+	err := database.DB.Raw(`
+		SELECT EXISTS (
+			SELECT 1 
+			FROM information_schema.columns 
+			WHERE table_name = 'tenant_members' AND column_name = 'role'
+		)
+	`).Scan(&exists).Error
+	if err != nil {
+		return err
+	}
+	if !exists {
+		logger.Info("role column already removed from tenant_members table")
+		return nil
+	}
+	// 删除 role 列
+	if err := database.DB.Exec("ALTER TABLE tenant_members DROP COLUMN role").Error; err != nil {
+		return err
+	}
+	logger.Info("Removed role column from tenant_members table")
+	return nil
+}
+
 func renameTenantSlugToRemark(logger *zap.Logger) error {
 	var exists bool
 	err := database.DB.Raw(`
@@ -220,6 +252,37 @@ func renameTenantSlugToRemark(logger *zap.Logger) error {
 
 // ensureTenantMemberRoleCodes 将 tenant_members.role 从旧值 owner/admin/editor 统一为角色编码 team_admin/team_member
 func ensureTenantMemberRoleCodes(logger *zap.Logger) error {
+	// 首先检查 role 列是否存在，如果不存在则添加
+	var columnExists bool
+	err := database.DB.Raw(`
+		SELECT EXISTS (
+			SELECT FROM information_schema.columns 
+			WHERE table_name = 'tenant_members' AND column_name = 'role'
+		)
+	`).Scan(&columnExists).Error
+	if err != nil {
+		return err
+	}
+	if !columnExists {
+		// 添加 role 列
+		if err := database.DB.Exec("ALTER TABLE tenant_members ADD COLUMN role varchar(50)").Error; err != nil {
+			return err
+		}
+		logger.Info("Added 'role' column to tenant_members table")
+	}
+
+	// 从 role_id 迁移数据到 role（如果 role 为空且 role_id 有值）
+	database.DB.Exec(`
+		UPDATE tenant_members 
+		SET role = CASE 
+			WHEN rm.code IN ('team_admin', 'team_member') THEN rm.code
+			ELSE 'team_member'
+		END
+		FROM roles rm
+		WHERE tenant_members.role_id = rm.id AND (tenant_members.role IS NULL OR tenant_members.role = '')
+	`)
+
+	// 更新旧的角色编码
 	res := database.DB.Exec("UPDATE tenant_members SET role = ? WHERE role IN (?, ?)", "team_admin", "owner", "admin")
 	if res.Error != nil {
 		return res.Error
@@ -398,14 +461,13 @@ func assignAdminRole(userID uuid.UUID, logger *zap.Logger) error {
 
 	// 检查是否已分配（全局角色 tenant_id IS NULL）
 	var userRole model.UserRole
-	result := database.DB.Where("user_id = ? AND role_id = ? AND tenant_id IS NULL", userID, adminRole.ID).First(&userRole)
+	result := database.DB.Where("user_id = ? AND role_id = ?", userID, adminRole.ID).First(&userRole)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			// 分配角色（全局，tenant_id = nil）
+			// 分配全局角色
 			userRole = model.UserRole{
-				UserID:   userID,
-				RoleID:   adminRole.ID,
-				TenantID: nil,
+				UserID: userID,
+				RoleID: adminRole.ID,
 			}
 			if err := database.DB.Create(&userRole).Error; err != nil {
 				logger.Error("Failed to assign admin role", zap.Error(err))
