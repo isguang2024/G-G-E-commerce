@@ -270,7 +270,7 @@
           label: '菜单排序',
           key: 'sort',
           type: 'number',
-          props: { min: 1, controlsPosition: 'right', style: { width: '100%' } }
+          props: { controlsPosition: 'right', style: { width: '100%' } }
         },
         {
           label: '外部链接',
@@ -327,7 +327,7 @@
           label: '权限排序',
           key: 'authSort',
           type: 'number',
-          props: { min: 1, controlsPosition: 'right', style: { width: '100%' } }
+          props: { controlsPosition: 'right', style: { width: '100%' } }
         }
       ]
     }
@@ -409,7 +409,7 @@
       form.label = row.name || ''
       form.component = row.component || ''
       form.icon = row.meta?.icon || ''
-      form.sort = row.meta?.sort || 1
+      form.sort = row.sort_order ?? 1
       form.isMenu = row.meta?.isMenu ?? true
       form.keepAlive = row.meta?.keepAlive ?? false
       form.isHide = row.meta?.isInnerPage ? true : (row.meta?.isHide ?? false)
@@ -428,7 +428,7 @@
       form.authName = row.title || ''
       form.authLabel = row.authMark || ''
       form.authIcon = row.icon || ''
-      form.authSort = row.sort || 1
+      form.authSort = row.sort_order ?? 1
     }
   }
 

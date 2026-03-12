@@ -2,13 +2,11 @@ package repository
 
 import (
 	"errors"
-	"fmt"
 	"sort"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/model"
 )
 
@@ -19,8 +17,6 @@ type MenuRepository interface {
 	Create(m *model.Menu) error
 	Update(m *model.Menu, updateParent bool) error
 	Delete(id uuid.UUID) error
-	BatchUpdateSort(items []dto.MenuSortItem) error
-	UpdateSortByParentID(parentID *uuid.UUID, menuIDs []string) error
 }
 
 type menuRepository struct {
@@ -87,81 +83,6 @@ func (r *menuRepository) Update(m *model.Menu, updateParent bool) error {
 // Delete 删除（软删除）
 func (r *menuRepository) Delete(id uuid.UUID) error {
 	return r.db.Delete(&model.Menu{}, id).Error
-}
-
-// BatchUpdateSort 批量更新菜单排序
-func (r *menuRepository) BatchUpdateSort(items []dto.MenuSortItem) error {
-	if len(items) == 0 {
-		return nil
-	}
-	// 使用事务确保原子性
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		for _, item := range items {
-			id, err := uuid.Parse(item.ID)
-			if err != nil {
-				return err
-			}
-			result := tx.Model(&model.Menu{}).Where("id = ?", id).Update("sort_order", item.SortOrder)
-			if result.Error != nil {
-				return result.Error
-			}
-		}
-		return nil
-	})
-}
-
-// UpdateSortByParentID 根据父级ID更新子节点排序（全量重排）
-func (r *menuRepository) UpdateSortByParentID(parentID *uuid.UUID, menuIDs []string) error {
-	if len(menuIDs) == 0 {
-		return nil
-	}
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		var siblings []model.Menu
-		query := tx.Model(&model.Menu{})
-		if parentID == nil {
-			query = query.Where("parent_id IS NULL")
-		} else {
-			query = query.Where("parent_id = ?", *parentID)
-		}
-		if err := query.Find(&siblings).Error; err != nil {
-			return err
-		}
-
-		if len(siblings) == 0 {
-			return nil
-		}
-
-		siblingSet := make(map[string]struct{}, len(siblings))
-		for _, sibling := range siblings {
-			siblingSet[sibling.ID.String()] = struct{}{}
-		}
-
-		seen := make(map[string]struct{}, len(menuIDs))
-		for i, menuID := range menuIDs {
-			if _, ok := siblingSet[menuID]; !ok {
-				return fmt.Errorf("菜单 %s 不属于当前父级", menuID)
-			}
-			if _, ok := seen[menuID]; ok {
-				return fmt.Errorf("菜单 %s 在排序请求中重复", menuID)
-			}
-			seen[menuID] = struct{}{}
-
-			id, err := uuid.Parse(menuID)
-			if err != nil {
-				return err
-			}
-			result := tx.Model(&model.Menu{}).Where("id = ?", id).Update("sort_order", i+1)
-			if result.Error != nil {
-				return result.Error
-			}
-		}
-
-		if len(seen) != len(siblingSet) {
-			return fmt.Errorf("排序请求缺少父级下的部分菜单")
-		}
-
-		return nil
-	})
 }
 
 // BuildTree 将扁平列表转为树（parentID 为 nil 表示取顶级），保持 sort_order 顺序

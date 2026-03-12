@@ -159,42 +159,6 @@ func (h *MenuHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
-// UpdateSort 批量更新菜单排序
-func (h *MenuHandler) UpdateSort(c *gin.Context) {
-	var items []dto.MenuSortItem
-	if err := c.ShouldBindJSON(&items); err != nil {
-		status, resp := errcode.Response(errcode.ErrParamInvalid)
-		c.JSON(status, resp)
-		return
-	}
-	h.logger.Info("Menu sort update received", zap.Any("items", items))
-	if err := h.menuService.UpdateSort(items); err != nil {
-		h.logger.Error("Menu sort update failed", zap.Error(err))
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "更新菜单排序失败")
-		c.JSON(status, resp)
-		return
-	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
-}
-
-// UpdateSortByParentID 根据父级ID更新子节点排序（全量重排）
-func (h *MenuHandler) UpdateSortByParentID(c *gin.Context) {
-	var req dto.MenuSortRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		status, resp := errcode.Response(errcode.ErrParamInvalid)
-		c.JSON(status, resp)
-		return
-	}
-	h.logger.Info("Menu sort update by parent", zap.Any("parent_id", req.ParentID), zap.Any("menu_ids", req.MenuIDs))
-	if err := h.menuService.UpdateSortByParentID(req.ParentID, req.MenuIDs); err != nil {
-		h.logger.Error("Menu sort update failed", zap.Error(err))
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "更新菜单排序失败: "+err.Error())
-		c.JSON(status, resp)
-		return
-	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
-}
-
 func menuToMap(m *model.Menu) gin.H {
 	meta := gin.H{"title": m.Title}
 	if m.Icon != "" {

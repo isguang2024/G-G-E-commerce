@@ -41,7 +41,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			userRepo := repository.NewUserRepository(db)
 			authService := service.NewAuthService(userRepo, &cfg.JWT, logger)
 			authHandler := handler.NewAuthHandler(authService, logger)
-			
+
 			auth.POST("/login", authHandler.Login)
 			auth.POST("/register", authHandler.Register)
 			auth.POST("/refresh", authHandler.RefreshToken)
@@ -165,16 +165,12 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 				menus.POST("", menuHandler.Create)
 				menus.PUT("/:id", menuHandler.Update)
 				menus.DELETE("/:id", menuHandler.Delete)
-				menus.PUT("/sort", menuHandler.UpdateSort)
-				menus.PUT("/sort-by-parent", menuHandler.UpdateSortByParentID)
 			}
 
-			// 系统管理（隐藏页面文件保存、视图枚举等；仅视图枚举使用 Redis 缓存）
+			// 系统管理（视图枚举等；仅视图枚举使用 Redis 缓存）
 			systemHandler := handler.NewSystemHandler(logger, systemCache)
 			system := authenticated.Group("/system")
 			{
-				system.POST("/save-page-association-file", systemHandler.SavePageAssociationFile)
-				system.GET("/get-hidden-index-file", systemHandler.GetHiddenIndexFile)
 				system.GET("/view-pages", systemHandler.GetViewPages)
 			}
 		}

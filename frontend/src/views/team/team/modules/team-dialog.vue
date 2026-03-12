@@ -1,7 +1,7 @@
 <template>
   <ElDialog
     v-model="dialogVisible"
-    :title="dialogType === 'add' ? '新增团队' : '编辑团队'"
+    :title="type === 'add' ? '新增团队' : '编辑团队'"
     width="500px"
     align-center
   >

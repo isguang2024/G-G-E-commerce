@@ -25,15 +25,3 @@ type MenuUpdateRequest struct {
 	Meta      map[string]interface{} `json:"meta"`
 	Hidden    bool                   `json:"hidden"`
 }
-
-// MenuSortItem 菜单排序项
-type MenuSortItem struct {
-	ID        string `json:"id" binding:"required"`
-	SortOrder int    `json:"sort_order"`
-}
-
-// MenuSortRequest 菜单排序请求
-type MenuSortRequest struct {
-	ParentID *string  `json:"parent_id"` // nil 表示顶级
-	MenuIDs  []string `json:"menu_ids" binding:"required"`
-}

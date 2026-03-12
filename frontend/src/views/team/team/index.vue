@@ -141,7 +141,7 @@
               onCommand: (cmd: string) => handleOperationCommand(cmd, row)
             }, {
               default: () => h(ElButton, { icon: MoreFilled, circle: true, size: 'small' }),
-              dropdown: () => h(ElDropdownMenu, {}, [
+              dropdown: () => h(ElDropdownMenu, {}, () => [
                 h(ElDropdownItem, { command: 'edit' }, () => [h(ElIcon, {}, () => h(Edit)), '编辑']),
                 h(ElDropdownItem, { command: 'view' }, () => [h(ElIcon, {}, () => h(UserFilled)), '查看人员']),
                 h(ElDropdownItem, { command: 'delete' }, () => [h(ElIcon, {}, () => h(Delete)), '删除'])

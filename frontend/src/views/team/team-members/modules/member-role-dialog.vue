@@ -13,7 +13,7 @@
       <ElCheckboxGroup v-model="selectedRoleIds" class="flex flex-col gap-2">
         <div v-for="role in allRoles" :key="role.roleId" class="role-item">
           <ElCheckbox 
-            :label="role.roleId" 
+            :value="role.roleId" 
             :disabled="isTeamAdminRole(role.roleCode)"
           >
             <div class="flex items-center gap-2">
