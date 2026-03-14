@@ -306,45 +306,8 @@ async function handleDynamicRoutes(
     // 7. 验证工作标签页
     useWorktabStore().validateWorktabs(router)
 
-    // 8. 验证目标路径权限 - 先检查是否是静态错误页面（403、404、500）
+    // 8. 验证目标路径权限
     const { homePath } = useCommon()
-    
-    // 检查是否是静态错误页面，如果是则直接放行
-    const isErrorPage = ['/403', '/404', '/500'].includes(to.path)
-    if (isErrorPage) {
-      console.log(`[RouteGuard] 路径 ${to.path} 是错误页面，直接放行`)
-      routeInitInProgress = false
-      closeLoading()
-      next({ path: to.path, query: to.query, hash: to.hash, replace: true })
-      return
-    }
-
-    // 检查是否有有效的路由匹配（排除通配符路由）
-    const allRoutes = router.getRoutes()
-    const hasValidMatchedRoute = allRoutes.some((route) => {
-      // 排除通配符路由和错误页面路由
-      if (route.path === '/:pathMatch(.*)*' || ['/403', '/404', '/500'].includes(route.path)) {
-        return false
-      }
-      // 检查路由是否匹配目标路径
-      if (route.path === to.path) return true
-      // 检查动态路由参数匹配
-      if (route.path.includes(':')) {
-        const regex = new RegExp(`^${route.path.replace(/:[^/]+/g, '[^/]+')}$`)
-        if (regex.test(to.path)) return true
-      }
-      return false
-    })
-
-    // 如果没有找到任何有效的路由匹配，直接跳转到404
-    if (!hasValidMatchedRoute) {
-      console.log(`[RouteGuard] 路径 ${to.path} 未找到，跳转到404页面`)
-      routeInitInProgress = false
-      closeLoading()
-      next({ path: '/404', replace: true })
-      return
-    }
-
     const { path: validatedPath, hasPermission } = RoutePermissionValidator.validatePath(
       to.path,
       menuList,
@@ -354,12 +317,11 @@ async function handleDynamicRoutes(
     // 初始化成功，重置进行中标记
     routeInitInProgress = false
 
-    // 关闭 loading
-    closeLoading()
-
     // 9. 重新导航到目标路由
     if (!hasPermission) {
       // 无权限访问，跳转到首页
+      closeLoading()
+
       // 输出警告信息
       console.warn(`[RouteGuard] 用户无权限访问路径: ${to.path}，已跳转到首页`)
 
@@ -369,11 +331,7 @@ async function handleDynamicRoutes(
         replace: true
       })
     } else {
-      // 有权限，路由注册后必须重新导航以确保路由正确匹配
-      // 路由注册后，Vue Router 需要重新匹配路由
-      // 使用 replace: true 重新导航，确保路由正确匹配
-      // 注意：虽然使用 replace，但这是必要的，因为路由刚注册，必须重新导航才能正确匹配
-      // 刷新页面时，这是唯一能确保路由正确匹配的方式
+      // 有权限，正常导航
       next({
         path: to.path,
         query: to.query,
