@@ -6,66 +6,107 @@
 
 
 
-### 架构
-- 三层：Handler → Service → Repository
-- Handler：参数绑定(ShouldBindJSON/ShouldBindQuery)、校验、调 Service、返回统一响应；可记录错误或关键日志
-- Service：业务逻辑，不直接操作 DB
-- Repository：仅做数据库读写，返回 model 或 error
+### 架构 - 模块化
+- **模块化架构**：每个业务模块独立目录 `internal/modules/system/[模块名]/`
+- **模块结构**：
+  - `model.go` - 数据模型定义
+  - `repository.go` - 数据库操作
+  - `service.go` - 业务逻辑
+  - `handler.go` - API 处理
+  - `module.go` - 模块入口（实现 module.Module 接口）
+- **依赖注入**：在 module.go 的 RegisterRoutes 中实例化 repository → service → handler
+- **DTO 引用**：外部 DTO 统一在 `internal/api/dto/` 定义
 
-### 命名
-- 接口：XxxService、XxxRepository（如 RoleService、TeamRoleRepository）
-- 实现：xxxService、xxxRepository（首字母小写）
-- Handler：XxxHandler（如 TenantHandler）
-- Model：单数名词（Tenant、Product）；DTO：CreateXxxRequest、XxxResponse、XxxListRequest
+### 目录结构
+```
+backend/
+├── cmd/                           # 入口
+│   ├── server/main.go
+│   ├── migrate/main.go
+│   ├── init-admin/main.go
+│   └── diagnose/main.go
+│
+├── internal/
+│   ├── api/                      # API 层
+│   │   ├── dto/                  # 请求/响应结构
+│   │   ├── errcode/              # 错误码
+│   │   ├── middleware/            # 中间件
+│   │   └── router/               # 路由
+│   │
+│   ├── modules/                    # 业务模块
+│   │   ├── system/                # 系统模块（当前实现）
+│   │   │   ├── models/            # 共享模型
+│   │   │   ├── user/
+│   │   │   ├── auth/
+│   │   │   ├── menu/
+│   │   │   ├── role/
+│   │   │   ├── scope/
+│   │   │   ├── tenant/
+│   │   │   ├── media/
+│   │   │   └── system/
+│   │   │
+│   │   ├── product/               # 商品模块（未来扩展示例）
+│   │   │   ├── repository.go
+│   │   │   ├── service.go
+│   │   │   ├── handler.go
+│   │   │   └── module.go
+│   │   │
+│   │   └── order/                # 订单模块（未来扩展示例）
+│   │       ├── repository.go
+│   │       ├── service.go
+│   │       ├── handler.go
+│   │       └── module.go
+│   │
+│   ├── pkg/                      # 工具包
+│   └── config/                   # 配置
+```
+
+### 命名规范
+- **模块内**：
+  - Repository: `NewXxxRepository(db)` (如 `NewUserRepository`)
+  - Service: `NewXxxService(...)` (如 `NewUserService`)
+  - Handler: `NewXxxHandler(...)` (如 `NewUserHandler`)
+- **Model**: 单数名词（User、Role、Menu）
+- **DTO**: `CreateXxxRequest`、`XxxResponse`、`XxxListRequest`
 
 ### 响应格式（dto.Response）
-- code：0 成功，非 0 为业务错误码（与 HTTP 状态码分离，见下方错误码约定）
-- message：提示信息（成功一般为 "ok"，失败为错误说明）
+- code：0 成功，非 0 为业务错误码（与 HTTP 状态码分离）
+- message：提示信息
 - data：业务数据
-- meta：列表接口时分页信息（total、page、page_size、total_pages）
+- meta：列表分页信息
 
-### 错误码约定（全局接口统一）
-- **定义位置**：`internal/api/errcode/codes.go`（常量 + 默认说明 + 建议 HTTP 状态码）；返回体构造在 `errcode/response.go`。
-- **规则**：0=成功；1xxxx=参数/请求；2xxxx=认证/授权；3xxxx=业务/资源；5xxxx=服务端。新增错误码在该区间内取未用编号，并在 `defaultMessages`、`defaultHTTPStatus` 中补全。
-- **Handler 用法**：错误时使用 `status, resp := errcode.Response(errcode.ErrXxx)` 或 `errcode.ResponseWithMsg(errcode.ErrXxx, "自定义说明")`，然后 `c.JSON(status, resp)`。成功仍用 `dto.SuccessResponse(data)`，HTTP 200。
-- **与 HTTP 关系**：HTTP 状态码由 errcode 的 `HTTPStatus(code)` 决定（如 400/401/403/404/409/500），响应 body 中 `code` 为业务错误码、`message` 为错误说明，便于前端统一根据 `body.code` 做分支或 i18n。
+### 错误码约定
+- **定义位置**：`internal/api/errcode/codes.go`
+- **规则**：0=成功；1xxxx=参数；2xxxx=认证；3xxxx=业务；5xxxx=服务端
+- **用法**：`status, resp := errcode.Response(errcode.ErrXxx)` 或 `errcode.ResponseWithMsg(errcode.ErrXxx, "自定义")`
 
 ### 租户与多租户
-- 需要按租户隔离的业务表含 tenant_id（如 product、tenant_members、tenant_roles）；tenants 表本身、全局配置表等可不含
-- 业务接口从 JWT/上下文获取当前 tenant_id，在查询与写入时做租户过滤
-- 缓存 key 建议带租户：{tenant_id}:{resource}:{id}；Redis 通过 pkg/cache 封装使用，不在 service 直接拿 redis client
+- 需要按租户隔离的业务表含 tenant_id
+- 业务接口从 JWT/上下文获取当前 tenant_id
+- 缓存 key 建议带租户：{tenant_id}:{resource}:{id}
 
 ## 前端规范
 - API 请求放在 src/api/，类型定义在 src/types/
-- 全局状态：Pinia（用户信息、当前租户等）
-- UI：Element Plus；表单 el-form + el-form-item
-- 路由鉴权：路由守卫（如 beforeEach）做登录与权限校验
-- 基于 Art Design Pro 模板，沿用其布局与组件约定
-
+- 全局状态：Pinia
+- UI：Element Plus
+- 基于 Art Design Pro 模板
 
 ## 数据库约定
--简单数量少的表主键:自增数字
+- 简单数量少的表主键：自增数字
 - 复杂表主键：UUID，PostgreSQL gen_random_uuid()
-- 通用字段：created_at、updated_at；软删除用 deleted_at（GORM Soft Delete）
-- **软删除查询**：所有列表与按 ID 查询必须显式排除已删除记录（如 `WHERE deleted_at IS NULL`），不依赖 GORM 默认 scope，避免已删数据被返回。
-- 租户相关表：tenant_id 索引；关联表命名与 tenants 一致用 tenant_ 前缀（如 tenant_roles、tenant_user_roles、tenant_members）
+- 通用字段：created_at、updated_at
+- 软删除：deleted_at（GORM Soft Delete）
+- **模型位置**：`internal/modules/system/models/model.go`（共享模型）
+- **模型管理**：建议所有模块共享同一个 models 包，新模块直接复用；如需独立模型，可在模块内创建 `models.go` 重导出
 
-### 模型按业务分类（逻辑分类，单包）
-- **采用逻辑分类、保持单包**：所有 model 仍在 `internal/model` 下同一 package，按业务域做**逻辑归属**，便于维护与文档；不强制拆成子包，避免循环依赖与 import 路径大改。
-- **业务域与模型归属**：
-  - **系统/权限**：User、Role、Menu、APIKey；关联表 UserRole、RoleMenu、TeamRole、TeamRolePermission、UserTeamRole（与 role 同目录即可）。
-  - **租户/团队**：Tenant、TenantMember。
-  - **商品与目录**：Product、Category、Group；TagGroup、Tag；ProductTag、ProductGroup。
-  - **媒体**：MediaAsset、ProductMedia。
-- **新增模型**：新增表时先归入上述某一域（或新增域），文件名保持 `小写_下划线.go`，在 `md/database/` 与业务 md 中说明归属与职责。
-- **何时考虑物理拆包**：若模型数量显著增多或需按域独立演进/复用，再考虑拆为 `model/system`、`model/tenant`、`model/product` 等子包，并注意避免跨包循环引用。
+### 模块扩展规范
+- 新增业务模块（如 product、order）在 `internal/modules/` 下创建目录
+- 每个模块包含：repository.go、service.go、handler.go、module.go
+- 模型优先复用 `system/models`，如需独立模型在模块内定义
 
-## 迁移与初始数据约定
-- **唯一迁移入口**：`backend/cmd/migrate/main.go`；表结构由 `internal/pkg/database/database.go` 的 AutoMigrate 创建/更新。
-- **执行顺序**：表重命名(兼容旧库) → AutoMigrate → 角色 scope/团队权限同步 → 默认角色 → 默认管理员 → 默认菜单 → 团队菜单补全(ensure) → 系统菜单标记 → 角色-菜单。详见 `backend/cmd/migrate/main.go` 顶部注释与 `backend/cmd/migrate/MIGRATION_INDEX.md`。
-- **菜单补全逻辑**：对「团队管理」相关菜单（team、team-members、team-roles、team-roles-permissions）的 ensure 按**全局 path** 判断是否存在；若任意菜单已存在该 path（含用户自建在「团队管理」目录下），则不再插入，避免重复。
-- **新增初始数据**：若需在迁移中增加新的默认角色、菜单或配置行，在 `cmd/migrate/main.go` 中新增或扩展对应 init/ensure 步骤，并同步更新 `cmd/migrate/MIGRATION_INDEX.md` 的步骤与数据枚举。
-- **仅落库数据需迁移**：以文件形式存在的配置（如页面关联的 hidden 路由 TS 文件）随代码部署即存在，不写入迁移。
+## 迁移
+- **入口**：`backend/cmd/migrate/main.go`
+- **AutoMigrate**：`internal/pkg/database/database.go`
 
 ## 参考
 - 前端组件与布局可参考 frontend-copy 目录

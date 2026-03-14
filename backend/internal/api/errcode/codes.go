@@ -34,6 +34,9 @@ const (
 	ErrSystemRoleProtected = 3016 // 系统角色不可删除
 	ErrProductNotFound = 3017 // 商品不存在
 	ErrGlobalRolePermissionReadOnly = 3018 // 全局角色权限不可在此修改
+	ErrTenantMemberExists   = 3019 // 该用户已在团队中
+	ErrTenantMemberNotFound = 3020 // 成员不在团队中
+	ErrNoTeam               = 3021 // 您暂无团队
 
 	// --- 5xxxx 服务端 ---
 	ErrInternal        = 5001 // 内部错误（通用）
@@ -69,6 +72,9 @@ var defaultMessages = map[int]string{
 	ErrSystemRoleProtected: "系统角色不可删除",
 	ErrProductNotFound:   "商品不存在",
 	ErrGlobalRolePermissionReadOnly: "全局角色权限不可在此修改",
+	ErrTenantMemberExists:   "该用户已在团队中",
+	ErrTenantMemberNotFound: "成员不在团队中",
+	ErrNoTeam:               "您暂无团队",
 	ErrInternal:          "服务器内部错误，请稍后重试",
 	ErrDatabase:          "数据库错误",
 	ErrExternal:          "外部服务错误",
@@ -102,6 +108,9 @@ var defaultHTTPStatus = map[int]int{
 	ErrSystemRoleProtected: 403,
 	ErrProductNotFound: 404,
 	ErrGlobalRolePermissionReadOnly: 403,
+	ErrTenantMemberExists:   409,
+	ErrTenantMemberNotFound: 404,
+	ErrNoTeam:               404,
 	ErrInternal:      500,
 	ErrDatabase:      500,
 	ErrExternal:      500,

@@ -1,0 +1,792 @@
+package tenant
+
+import (
+	"net/http"
+	"strings"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"go.uber.org/zap"
+	"gorm.io/gorm"
+
+	"github.com/gg-ecommerce/backend/internal/api/dto"
+	"github.com/gg-ecommerce/backend/internal/api/errcode"
+	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+)
+
+type TenantHandler struct {
+	tenantService    TenantService
+	tenantMemberRepo user.TenantMemberRepository
+	userRepo         user.UserRepository
+	roleRepo         user.RoleRepository
+	userRoleRepo     user.UserRoleRepository
+	logger           *zap.Logger
+}
+
+func NewTenantHandler(tenantService TenantService, tenantMemberRepo user.TenantMemberRepository, userRepo user.UserRepository, roleRepo user.RoleRepository, userRoleRepo user.UserRoleRepository, logger *zap.Logger) *TenantHandler {
+	return &TenantHandler{
+		tenantService:    tenantService,
+		tenantMemberRepo: tenantMemberRepo,
+		userRepo:         userRepo,
+		roleRepo:         roleRepo,
+		userRoleRepo:     userRoleRepo,
+		logger:           logger,
+	}
+}
+
+func (h *TenantHandler) List(c *gin.Context) {
+	var req dto.TenantListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	list, total, err := h.tenantService.List(&req)
+	if err != nil {
+		h.logger.Error("Tenant list failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队列表失败")
+		c.JSON(status, resp)
+		return
+	}
+	records := make([]gin.H, 0, len(list))
+	for _, t := range list {
+		adminUsers, _ := h.tenantMemberRepo.GetAdminUsersByTenantID(t.ID)
+		records = append(records, tenantToMap(&t, adminUsers))
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"records": records,
+		"total":   total,
+		"current": req.Current,
+		"size":    req.Size,
+	}))
+}
+
+func (h *TenantHandler) Get(c *gin.Context) {
+	idStr := c.Param("id")
+	if strings.TrimSpace(strings.ToLower(idStr)) == "my-team" {
+		h.GetMyTeam(c)
+		return
+	}
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		c.JSON(status, resp)
+		return
+	}
+	t, err := h.tenantService.Get(id)
+	if err != nil {
+		if err == ErrTenantNotFound {
+			status, resp := errcode.Response(errcode.ErrTenantNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队失败")
+		c.JSON(status, resp)
+		return
+	}
+	adminUsers, _ := h.tenantMemberRepo.GetAdminUsersByTenantID(id)
+	c.JSON(http.StatusOK, dto.SuccessResponse(tenantToMap(t, adminUsers)))
+}
+
+func (h *TenantHandler) Create(c *gin.Context) {
+	var req dto.TenantCreateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	var ownerID *uuid.UUID
+	if uid, ok := c.Get("user_id"); ok {
+		if s, ok := uid.(string); ok {
+			if parsed, err := uuid.Parse(s); err == nil {
+				ownerID = &parsed
+			}
+		}
+	}
+	t, err := h.tenantService.Create(&req, ownerID)
+	if err != nil {
+		h.logger.Error("Tenant create failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, err.Error())
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"id": t.ID.String()}))
+}
+
+func (h *TenantHandler) Update(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		c.JSON(status, resp)
+		return
+	}
+	var req dto.TenantUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	if err := h.tenantService.Update(id, &req); err != nil {
+		if err == ErrTenantNotFound {
+			status, resp := errcode.Response(errcode.ErrTenantNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "更新团队失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *TenantHandler) Delete(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		c.JSON(status, resp)
+		return
+	}
+	if err := h.tenantService.Delete(id); err != nil {
+		if err == ErrTenantNotFound {
+			status, resp := errcode.Response(errcode.ErrTenantNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Tenant delete failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "删除团队失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *TenantHandler) ListMembers(c *gin.Context) {
+	tenantIDStr := c.Param("id")
+	tenantID, err := uuid.Parse(tenantIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		c.JSON(status, resp)
+		return
+	}
+	searchParams := &user.MemberSearchParams{}
+	if v := c.Query("user_name"); v != "" {
+		searchParams.UserName = v
+	}
+	if v := c.Query("role_code"); v != "" {
+		searchParams.RoleCode = v
+	}
+	members, err := h.tenantService.ListMembers(tenantID, searchParams)
+	if err != nil {
+		h.logger.Error("List members failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取成员列表失败")
+		c.JSON(status, resp)
+		return
+	}
+	records := make([]gin.H, 0, len(members))
+	for _, m := range members {
+		userInfo, _ := h.userRepo.GetByID(m.UserID)
+		records = append(records, memberToMap(&m, userInfo))
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(records))
+}
+
+func (h *TenantHandler) AddMember(c *gin.Context) {
+	tenantIDStr := c.Param("id")
+	tenantID, err := uuid.Parse(tenantIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		c.JSON(status, resp)
+		return
+	}
+	var req dto.TenantAddMemberRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	var invitedBy *uuid.UUID
+	if inviterID, ok := c.Get("user_id"); ok {
+		if s, ok := inviterID.(string); ok {
+			if parsed, err := uuid.Parse(s); err == nil {
+				invitedBy = &parsed
+			}
+		}
+	}
+	if err := h.tenantService.AddMember(tenantID, &req, invitedBy); err != nil {
+		if err == ErrTenantMemberExists {
+			status, resp := errcode.Response(errcode.ErrTenantMemberExists)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Add member failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, err.Error())
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *TenantHandler) RemoveMember(c *gin.Context) {
+	tenantIDStr := c.Param("id")
+	tenantID, err := uuid.Parse(tenantIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		c.JSON(status, resp)
+		return
+	}
+	userIDStr := c.Param("userId")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+	if err := h.tenantService.RemoveMember(tenantID, userID); err != nil {
+		if err == ErrTenantMemberNotFound {
+			status, resp := errcode.Response(errcode.ErrTenantMemberNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Remove member failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "移除成员失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *TenantHandler) UpdateMemberRole(c *gin.Context) {
+	tenantIDStr := c.Param("id")
+	tenantID, err := uuid.Parse(tenantIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		c.JSON(status, resp)
+		return
+	}
+	userIDStr := c.Param("userId")
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+	var req dto.TenantUpdateMemberRoleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	if err := h.tenantService.UpdateMemberRole(tenantID, userID, req.RoleCode); err != nil {
+		if err == ErrTenantMemberNotFound {
+			status, resp := errcode.Response(errcode.ErrTenantMemberNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Update member role failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, err.Error())
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *TenantHandler) GetMyTeam(c *gin.Context) {
+	userID, ok := c.Get("user_id")
+	if !ok {
+		status, resp := errcode.Response(errcode.ErrUnauthorized)
+		c.JSON(status, resp)
+		return
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		status, resp := errcode.Response(errcode.ErrUnauthorized)
+		c.JSON(status, resp)
+		return
+	}
+	uid, err := uuid.Parse(userIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	member, err := h.tenantMemberRepo.GetByUserID(uid)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			status, resp := errcode.Response(errcode.ErrNoTeam)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get my team failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的团队失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	tenant, err := h.tenantService.Get(member.TenantID)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队信息失败")
+		c.JSON(status, resp)
+		return
+	}
+	adminUsers, _ := h.tenantMemberRepo.GetAdminUsersByTenantID(tenant.ID)
+	c.JSON(http.StatusOK, dto.SuccessResponse(tenantToMap(tenant, adminUsers)))
+}
+
+func (h *TenantHandler) ListMyMembers(c *gin.Context) {
+	userID, ok := c.Get("user_id")
+	if !ok {
+		status, resp := errcode.Response(errcode.ErrUnauthorized)
+		c.JSON(status, resp)
+		return
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		status, resp := errcode.Response(errcode.ErrUnauthorized)
+		c.JSON(status, resp)
+		return
+	}
+	uid, err := uuid.Parse(userIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	member, err := h.tenantMemberRepo.GetByUserID(uid)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			status, resp := errcode.Response(errcode.ErrNoTeam)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get my team member failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的团队成员失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	searchParams := &user.MemberSearchParams{}
+	if v := c.Query("user_name"); v != "" {
+		searchParams.UserName = v
+	}
+	members, err := h.tenantService.ListMembers(member.TenantID, searchParams)
+	if err != nil {
+		h.logger.Error("List my members failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队成员列表失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	records := make([]gin.H, 0, len(members))
+	for _, m := range members {
+		userInfo, _ := h.userRepo.GetByID(m.UserID)
+		records = append(records, memberToMap(&m, userInfo))
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(records))
+}
+
+func (h *TenantHandler) AddMyMember(c *gin.Context) {
+	userID, ok := c.Get("user_id")
+	if !ok {
+		status, resp := errcode.Response(errcode.ErrUnauthorized)
+		c.JSON(status, resp)
+		return
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		status, resp := errcode.Response(errcode.ErrUnauthorized)
+		c.JSON(status, resp)
+		return
+	}
+	uid, err := uuid.Parse(userIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	member, err := h.tenantMemberRepo.GetByUserID(uid)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			status, resp := errcode.Response(errcode.ErrNoTeam)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get my team member failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的团队失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	var req dto.TenantAddMemberRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	invitedBy := &uid
+	if err := h.tenantService.AddMember(member.TenantID, &req, invitedBy); err != nil {
+		if err == ErrTenantMemberExists {
+			status, resp := errcode.Response(errcode.ErrTenantMemberExists)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Add my member failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, err.Error())
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *TenantHandler) RemoveMyMember(c *gin.Context) {
+	userID, ok := c.Get("user_id")
+	if !ok {
+		status, resp := errcode.Response(errcode.ErrUnauthorized)
+		c.JSON(status, resp)
+		return
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		status, resp := errcode.Response(errcode.ErrUnauthorized)
+		c.JSON(status, resp)
+		return
+	}
+	uid, err := uuid.Parse(userIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	member, err := h.tenantMemberRepo.GetByUserID(uid)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			status, resp := errcode.Response(errcode.ErrNoTeam)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get my team member failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的团队失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	userIDStr = c.Param("userId")
+	targetUserID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	if err := h.tenantService.RemoveMember(member.TenantID, targetUserID); err != nil {
+		if err == ErrTenantMemberNotFound {
+			status, resp := errcode.Response(errcode.ErrTenantMemberNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Remove my member failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "移除成员失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *TenantHandler) UpdateMyMemberRole(c *gin.Context) {
+	userID, ok := c.Get("user_id")
+	if !ok {
+		status, resp := errcode.Response(errcode.ErrUnauthorized)
+		c.JSON(status, resp)
+		return
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		status, resp := errcode.Response(errcode.ErrUnauthorized)
+		c.JSON(status, resp)
+		return
+	}
+	uid, err := uuid.Parse(userIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	member, err := h.tenantMemberRepo.GetByUserID(uid)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			status, resp := errcode.Response(errcode.ErrNoTeam)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get my team member failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的团队失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	targetUserIDStr := c.Param("userId")
+	targetUserID, err := uuid.Parse(targetUserIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	var req dto.TenantUpdateMemberRoleRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+
+	if err := h.tenantService.UpdateMemberRole(member.TenantID, targetUserID, req.RoleCode); err != nil {
+		if err == ErrTenantMemberNotFound {
+			status, resp := errcode.Response(errcode.ErrTenantMemberNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Update my member role failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, err.Error())
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *TenantHandler) GetMyTeamMemberRoles(c *gin.Context) {
+	userID, ok := c.Get("user_id")
+	if !ok {
+		status, resp := errcode.Response(errcode.ErrUnauthorized)
+		c.JSON(status, resp)
+		return
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		status, resp := errcode.Response(errcode.ErrUnauthorized)
+		c.JSON(status, resp)
+		return
+	}
+	uid, err := uuid.Parse(userIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	member, err := h.tenantMemberRepo.GetByUserID(uid)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			status, resp := errcode.Response(errcode.ErrNoTeam)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get my team member failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的团队失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	targetUserIDStr := c.Param("userId")
+	targetUserID, err := uuid.Parse(targetUserIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	roleIDs, err := h.userRoleRepo.GetRoleIDsByUserAndTenant(targetUserID, &member.TenantID, h.tenantMemberRepo)
+	if err != nil {
+		h.logger.Error("Get user role ids failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户角色失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	roles, err := h.roleRepo.GetByIDs(roleIDs)
+	if err != nil {
+		h.logger.Error("Get roles failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取角色失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	roleList := make([]gin.H, 0, len(roles))
+	for _, r := range roles {
+		roleList = append(roleList, gin.H{"id": r.ID.String(), "code": r.Code, "name": r.Name})
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(roleList))
+}
+
+func (h *TenantHandler) SetMyTeamMemberRoles(c *gin.Context) {
+	userID, ok := c.Get("user_id")
+	if !ok {
+		status, resp := errcode.Response(errcode.ErrUnauthorized)
+		c.JSON(status, resp)
+		return
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		status, resp := errcode.Response(errcode.ErrUnauthorized)
+		c.JSON(status, resp)
+		return
+	}
+	uid, err := uuid.Parse(userIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	member, err := h.tenantMemberRepo.GetByUserID(uid)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			status, resp := errcode.Response(errcode.ErrNoTeam)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get my team member failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的团队失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	targetUserIDStr := c.Param("userId")
+	targetUserID, err := uuid.Parse(targetUserIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	var req dto.TenantSetMemberRolesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+
+	roleIDs := make([]uuid.UUID, 0, len(req.RoleIDs))
+	for _, rid := range req.RoleIDs {
+		if parsed, err := uuid.Parse(rid); err == nil {
+			roleIDs = append(roleIDs, parsed)
+		}
+	}
+
+	if err := h.userRoleRepo.SetUserRoles(targetUserID, roleIDs, &member.TenantID); err != nil {
+		h.logger.Error("Set user roles failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "设置角色失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *TenantHandler) ListMyTeamRoles(c *gin.Context) {
+	userID, ok := c.Get("user_id")
+	if !ok {
+		status, resp := errcode.Response(errcode.ErrUnauthorized)
+		c.JSON(status, resp)
+		return
+	}
+	userIDStr, ok := userID.(string)
+	if !ok {
+		status, resp := errcode.Response(errcode.ErrUnauthorized)
+		c.JSON(status, resp)
+		return
+	}
+	uid, err := uuid.Parse(userIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	member, err := h.tenantMemberRepo.GetByUserID(uid)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			status, resp := errcode.Response(errcode.ErrNoTeam)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get my team member failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的团队失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	_ = member.TenantID
+	allRoles, err := h.roleRepo.List()
+	if err != nil {
+		h.logger.Error("List roles failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取角色列表失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	roleList := make([]gin.H, 0, len(allRoles))
+	for _, r := range allRoles {
+		roleList = append(roleList, gin.H{
+			"id":        r.ID.String(),
+			"code":      r.Code,
+			"name":      r.Name,
+			"scope":     r.Scope,
+			"is_system": r.IsSystem,
+		})
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(roleList))
+}
+
+func tenantToMap(t *user.Tenant, ownerUsers []user.User) gin.H {
+	m := gin.H{
+		"id":          t.ID.String(),
+		"name":        t.Name,
+		"remark":      t.Remark,
+		"logo_url":    t.LogoURL,
+		"plan":        t.Plan,
+		"max_members": t.MaxMembers,
+		"owner_id":    t.OwnerID.String(),
+		"status":      t.Status,
+		"created_at":  t.CreatedAt.Format("2006-01-02 15:04:05"),
+		"updated_at":  t.UpdatedAt.Format("2006-01-02 15:04:05"),
+	}
+	if len(ownerUsers) > 0 {
+		admins := make([]gin.H, 0, len(ownerUsers))
+		for _, u := range ownerUsers {
+			admins = append(admins, gin.H{
+				"user_id":   u.ID.String(),
+				"user_name": u.Username,
+				"nick_name": u.Nickname,
+			})
+		}
+		m["admin_users"] = admins
+	}
+	return m
+}
+
+func memberToMap(m *user.TenantMember, userInfo *user.User) gin.H {
+	result := gin.H{
+		"id":        m.ID.String(),
+		"tenant_id": m.TenantID.String(),
+		"user_id":   m.UserID.String(),
+		"role_code": m.RoleCode,
+		"joined_at": m.JoinedAt.Format("2006-01-02 15:04:05"),
+	}
+	if userInfo != nil {
+		result["user_name"] = userInfo.Username
+		result["nick_name"] = userInfo.Nickname
+		result["user_email"] = userInfo.Email
+		result["user_phone"] = userInfo.Phone
+		result["avatar"] = userInfo.AvatarURL
+	}
+	if m.InvitedBy != nil {
+		result["invited_by"] = m.InvitedBy.String()
+	}
+	return result
+}

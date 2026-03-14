@@ -6,17 +6,15 @@ import (
 	"os"
 
 	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/model"
+	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/logger"
-	"github.com/gg-ecommerce/backend/internal/repository"
 )
 
 func main() {
 	fmt.Println("🔍 G&G E-commerce 后端诊断工具")
 	fmt.Println("=====================================")
 
-	// 1. 检查配置文件
 	fmt.Println("1. 检查配置文件...")
 	cfg, err := config.Load()
 	if err != nil {
@@ -26,15 +24,13 @@ func main() {
 	}
 	fmt.Println("✅ 配置文件加载成功")
 
-	// 2. 初始化日志
-	logger, err := logger.New(cfg.Log.Level, cfg.Log.Output)
+	fmt.Println("\n2. 检查日志...")
+	_, err = logger.New(cfg.Log.Level, cfg.Log.Output)
 	if err != nil {
 		log.Fatalf("Failed to initialize logger: %v", err)
 	}
-	defer logger.Sync()
 
-	// 3. 检查数据库连接
-	fmt.Println("\n2. 检查数据库连接...")
+	fmt.Println("\n3. 检查数据库连接...")
 	db, err := database.Init(&cfg.DB)
 	if err != nil {
 		fmt.Printf("❌ 数据库连接失败: %v\n", err)
@@ -48,10 +44,9 @@ func main() {
 	defer database.Close()
 	fmt.Println("✅ 数据库连接成功")
 
-	// 4. 检查数据库表
-	fmt.Println("\n3. 检查数据库表...")
+	fmt.Println("\n4. 检查数据库表...")
 	var count int64
-	if err := db.Model(&model.User{}).Count(&count).Error; err != nil {
+	if err := db.Model(&user.User{}).Count(&count).Error; err != nil {
 		fmt.Printf("❌ 用户表不存在或无法访问: %v\n", err)
 		fmt.Println("\n💡 提示: 请运行数据库迁移命令:")
 		fmt.Println("   go run cmd/migrate/main.go")
@@ -59,18 +54,16 @@ func main() {
 	}
 	fmt.Printf("✅ 用户表存在，当前有 %d 条记录\n", count)
 
-	// 5. 检查默认角色
-	fmt.Println("\n4. 检查默认角色...")
+	fmt.Println("\n5. 检查默认角色...")
 	var roleCount int64
-	if err := db.Model(&model.Role{}).Count(&roleCount).Error; err != nil {
+	if err := db.Model(&user.Role{}).Count(&roleCount).Error; err != nil {
 		fmt.Printf("❌ 角色表不存在或无法访问: %v\n", err)
 	} else {
 		fmt.Printf("✅ 角色表存在，当前有 %d 个角色\n", roleCount)
-		
-		// 检查三个默认角色
+
 		defaultRoles := []string{"admin", "team_admin", "team_member"}
 		for _, roleCode := range defaultRoles {
-			var role model.Role
+			var role user.Role
 			if err := db.Where("code = ?", roleCode).First(&role).Error; err != nil {
 				fmt.Printf("   ⚠️  角色 %s 不存在\n", roleCode)
 			} else {
@@ -79,9 +72,8 @@ func main() {
 		}
 	}
 
-	// 6. 检查默认管理员
-	fmt.Println("\n5. 检查默认管理员账号...")
-	userRepo := repository.NewUserRepository(db)
+	fmt.Println("\n6. 检查默认管理员账号...")
+	userRepo := user.NewUserRepository(db)
 	adminUsername := "admin"
 	exists, err := userRepo.ExistsByUsername(adminUsername)
 	if err != nil {
@@ -106,8 +98,7 @@ func main() {
 			fmt.Printf("   - 昵称: %s\n", user.Nickname)
 			fmt.Printf("   - 状态: %s\n", user.Status)
 			fmt.Printf("   - 超级管理员: %v\n", user.IsSuperAdmin)
-			
-			// 显示角色信息
+
 			if len(user.Roles) > 0 {
 				fmt.Printf("   - 角色: ")
 				for i, role := range user.Roles {
@@ -123,8 +114,7 @@ func main() {
 		}
 	}
 
-	// 7. 检查 JWT 配置
-	fmt.Println("\n6. 检查 JWT 配置...")
+	fmt.Println("\n7. 检查 JWT 配置...")
 	if cfg.JWT.Secret == "" || cfg.JWT.Secret == "your-secret-key-change-in-production" {
 		fmt.Println("⚠️  JWT Secret 使用默认值，建议在生产环境中修改")
 	} else {

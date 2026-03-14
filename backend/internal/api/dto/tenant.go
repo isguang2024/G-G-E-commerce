@@ -32,8 +32,9 @@ type TenantUpdateRequest struct {
 
 // TenantAddMemberRequest 添加团队成员请求
 type TenantAddMemberRequest struct {
-	UserID string `json:"user_id" binding:"required"`
-	Role   string `json:"role"`
+	UserID   string `json:"user_id" binding:"required"`
+	Role     string `json:"role"`
+	RoleCode string `json:"role_code"`
 }
 
 // TenantMemberRoleRequest 更新成员角色请求（角色编码：如 team_admin、team_member）
@@ -45,4 +46,14 @@ type TenantMemberRoleRequest struct {
 type TenantMemberRolesRequest struct {
 	RoleIDs   []string `json:"role_ids"`
 	RoleCode  string   `json:"role_code"` // 角色编码，如 team_admin, team_member
+}
+
+// TenantUpdateMemberRoleRequest 更新成员角色请求
+type TenantUpdateMemberRoleRequest struct {
+	RoleCode string `json:"role_code" binding:"required"`
+}
+
+// TenantSetMemberRolesRequest 设置成员角色请求
+type TenantSetMemberRolesRequest struct {
+	RoleIDs []string `json:"role_ids" binding:"required"`
 }

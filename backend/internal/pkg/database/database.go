@@ -9,7 +9,7 @@ import (
 	"gorm.io/gorm/logger"
 
 	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/model"
+	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 )
 
 // DB 数据库实例
@@ -84,20 +84,18 @@ func AutoMigrate() error {
 	}
 
 	// 执行数据库迁移
-		err := DB.AutoMigrate(
-		// 基础表
-		&model.User{},
-		&model.Scope{},
-		&model.Role{},
-		&model.UserRole{},
-		&model.RoleMenu{},
-		&model.Menu{},
-		&model.Tenant{},
-		&model.TenantMember{},
-		&model.APIKey{},
-
-		// 媒体
-		&model.MediaAsset{},
+	err := DB.AutoMigrate(
+		// 用户和角色相关
+		&models.User{},
+		&models.Scope{},
+		&models.Role{},
+		&models.UserRole{},
+		&models.RoleMenu{},
+		&models.Menu{},
+		&models.Tenant{},
+		&models.TenantMember{},
+		&models.APIKey{},
+		&models.MediaAsset{},
 	)
 
 	if err != nil {

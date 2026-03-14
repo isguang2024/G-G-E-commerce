@@ -8,17 +8,16 @@ import (
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/model"
+	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/logger"
 	"github.com/gg-ecommerce/backend/internal/pkg/password"
-	"github.com/gg-ecommerce/backend/internal/repository"
 )
 
 func main() {
-	// 命令行参数
 	var (
 		email        = flag.String("email", "admin@gg.com", "管理员邮箱")
 		username     = flag.String("username", "admin", "管理员用户名")
@@ -27,13 +26,11 @@ func main() {
 	)
 	flag.Parse()
 
-	// 加载配置
 	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	// 初始化日志
 	logger, err := logger.New(cfg.Log.Level, cfg.Log.Output)
 	if err != nil {
 		log.Fatalf("Failed to initialize logger: %v", err)
@@ -42,7 +39,6 @@ func main() {
 
 	logger.Info("Starting admin initialization...")
 
-	// 初始化数据库
 	_, err = database.Init(&cfg.DB)
 	if err != nil {
 		logger.Fatal("Failed to initialize database", zap.Error(err))
@@ -51,10 +47,8 @@ func main() {
 
 	logger.Info("Database connected successfully")
 
-	// 创建用户仓库
-	userRepo := repository.NewUserRepository(database.DB)
+	userRepo := user.NewUserRepository(database.DB)
 
-	// 检查用户名是否已存在（优先检查用户名）
 	exists, err := userRepo.ExistsByUsername(*username)
 	if err != nil {
 		logger.Fatal("Failed to check username existence", zap.Error(err))
@@ -76,14 +70,12 @@ func main() {
 		os.Exit(0)
 	}
 
-	// 加密密码
 	passwordHash, err := password.Hash(*passwordFlag)
 	if err != nil {
 		logger.Fatal("Failed to hash password", zap.Error(err))
 	}
 
-	// 创建管理员用户
-	admin := &model.User{
+	admin := &user.User{
 		Email:        *email,
 		Username:     *username,
 		PasswordHash: passwordHash,
@@ -96,7 +88,6 @@ func main() {
 		logger.Fatal("Failed to create admin", zap.Error(err))
 	}
 
-	// 分配管理员角色
 	if err := assignAdminRole(admin.ID, logger); err != nil {
 		logger.Warn("Failed to assign admin role", zap.Error(err))
 	}
@@ -120,20 +111,17 @@ func main() {
 	fmt.Printf("⚠️  请妥善保管密码，首次登录后建议修改密码!\n\n")
 }
 
-// assignAdminRole 分配管理员角色
 func assignAdminRole(userID uuid.UUID, logger *zap.Logger) error {
-	var adminRole model.Role
+	var adminRole user.Role
 	if err := database.DB.Where("code = ?", "admin").First(&adminRole).Error; err != nil {
 		logger.Error("Failed to find admin role", zap.Error(err))
 		return err
 	}
 
-	// 检查是否已分配（全局角色）
-	var userRole model.UserRole
-	result := database.DB.Where("user_id = ? AND role_id = ?", userID, adminRole.ID).First(&userRole)
-	if result.Error != nil {
-		// 分配全局角色
-		userRole = model.UserRole{
+	var userRole user.UserRole
+	result := database.DB.Where("user_id = ? AND role_id =? AND scope IS NULL", userID, adminRole.ID).First(&userRole)
+	if result.Error == gorm.ErrRecordNotFound {
+		userRole = user.UserRole{
 			UserID: userID,
 			RoleID: adminRole.ID,
 		}
