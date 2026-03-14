@@ -306,8 +306,45 @@ async function handleDynamicRoutes(
     // 7. 验证工作标签页
     useWorktabStore().validateWorktabs(router)
 
-    // 8. 验证目标路径权限
+    // 8. 验证目标路径权限 - 先检查是否是静态错误页面（403、404、500）
     const { homePath } = useCommon()
+    
+    // 检查是否是静态错误页面，如果是则直接放行
+    const isErrorPage = ['/403', '/404', '/500'].includes(to.path)
+    if (isErrorPage) {
+      console.log(`[RouteGuard] 路径 ${to.path} 是错误页面，直接放行`)
+      routeInitInProgress = false
+      closeLoading()
+      next({ path: to.path, query: to.query, hash: to.hash, replace: true })
+      return
+    }
+
+    // 检查是否有有效的路由匹配（排除通配符路由）
+    const allRoutes = router.getRoutes()
+    const hasValidMatchedRoute = allRoutes.some((route) => {
+      // 排除通配符路由和错误页面路由
+      if (route.path === '/:pathMatch(.*)*' || ['/403', '/404', '/500'].includes(route.path)) {
+        return false
+      }
+      // 检查路由是否匹配目标路径
+      if (route.path === to.path) return true
+      // 检查动态路由参数匹配
+      if (route.path.includes(':')) {
+        const regex = new RegExp(`^${route.path.replace(/:[^/]+/g, '[^/]+')}$`)
+        if (regex.test(to.path)) return true
+      }
+      return false
+    })
+
+    // 如果没有找到任何有效的路由匹配，直接跳转到404
+    if (!hasValidMatchedRoute) {
+      console.log(`[RouteGuard] 路径 ${to.path} 未找到，跳转到404页面`)
+      routeInitInProgress = false
+      closeLoading()
+      next({ path: '/404', replace: true })
+      return
+    }
+
     const { path: validatedPath, hasPermission } = RoutePermissionValidator.validatePath(
       to.path,
       menuList,

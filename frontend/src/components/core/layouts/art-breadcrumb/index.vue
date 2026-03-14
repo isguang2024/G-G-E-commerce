@@ -36,7 +36,9 @@
   import { computed } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
   import type { RouteLocationMatched, RouteRecordRaw } from 'vue-router'
+  import type { AppRouteRecord } from '@/types/router'
   import { formatMenuTitle } from '@/utils/router'
+  import { useMenuStore } from '@/store/modules/menu'
 
   defineOptions({ name: 'ArtBreadcrumb' })
 
@@ -58,49 +60,58 @@
       return []
     }
 
-    // 处理一级菜单和普通路由
-    const firstRoute = matched[0]
-    const isFirstLevel = firstRoute.meta?.isFirstLevel
+    // 获取当前路由（最后一个匹配项）
     const lastIndex = matchedLength - 1
     const currentRoute = matched[lastIndex]
     const currentRouteMeta = currentRoute.meta
 
-    let items = isFirstLevel
-      ? [createBreadcrumbItem(currentRoute)]
-      : matched.map(createBreadcrumbItem)
+    // 检查是否有自定义上级
+    if (
+      typeof currentRouteMeta?.customParent === 'string' &&
+      currentRouteMeta.customParent.trim() !== ''
+    ) {
+      const customParentPath = normalizePath(String(currentRouteMeta.customParent))
+
+      // 从菜单 store 中查找对应的菜单标题
+      const menuStore = useMenuStore()
+      const findMenuTitle = (menus: AppRouteRecord[], path: string): string | undefined => {
+        for (const menu of menus) {
+          if (menu.path === path) {
+            return menu.meta?.title
+          }
+          if (menu.children?.length) {
+            const found = findMenuTitle(menu.children, path)
+            if (found) return found
+          }
+        }
+        return undefined
+      }
+      const parentTitle = findMenuTitle(menuStore.menuList, customParentPath)
+
+      // 直接创建一个自定义的面包屑项
+      const customParentItem: BreadcrumbItem = {
+        path: customParentPath,
+        meta: {
+          title: parentTitle || customParentPath.split('/').pop()
+        }
+      }
+
+      const currentItem = createBreadcrumbItem(currentRoute)
+      return [customParentItem, currentItem]
+    }
+
+    // 处理顶级菜单（现在所有顶级菜单都有 isFirstLevel 标志）
+    if (currentRouteMeta?.isFirstLevel) {
+      // 对于顶级菜单，只显示当前菜单
+      return [createBreadcrumbItem(currentRoute)]
+    }
+
+    // 对于非顶级菜单，显示完整路径
+    let items = matched.map(createBreadcrumbItem)
 
     // 过滤包裹容器：如果有多个项目且第一个是容器路由（如 /outside），则移除它
     if (items.length > 1 && isWrapperContainer(items[0])) {
       items = items.slice(1)
-    }
-
-    // IFrame 页面特殊处理：如果过滤后只剩一个 iframe 页面，或者所有项都是包裹容器，则仅展示当前页
-    if (currentRouteMeta?.isIframe && (items.length === 1 || items.every(isWrapperContainer))) {
-      return [createBreadcrumbItem(currentRoute)]
-    }
-
-    // 隐藏页面补充中间面包屑：
-    // 扁平注册隐藏路由后，matched 可能缺少绑定父级（如“团队成员”），
-    // 这里根据 meta.activePath 还原中间层级，形成完整多级面包屑。
-    if (currentRouteMeta?.isHide && typeof currentRouteMeta?.activePath === 'string') {
-      const activePath = normalizePath(String(currentRouteMeta.activePath))
-      const hasActiveInItems = items.some((item) => normalizePath(item.path) === activePath)
-
-      if (!hasActiveInItems) {
-        const activeRoute = router
-          .getRoutes()
-          .find((r) => normalizePath(r.path) === activePath && !!r.meta?.title)
-
-        if (activeRoute?.meta?.title) {
-          const currentItem = items[items.length - 1]
-          const headItems = items.length > 1 ? items.slice(0, items.length - 1) : items
-          const activeItem: BreadcrumbItem = {
-            path: activeRoute.path,
-            meta: activeRoute.meta
-          }
-          items = [...headItems, activeItem, currentItem]
-        }
-      }
     }
 
     return items

@@ -3,10 +3,11 @@
     :title="dialogTitle"
     :model-value="visible"
     @update:model-value="handleCancel"
-    width="860px"
+    width="1200px"
     align-center
     class="menu-dialog"
     @closed="handleClosed"
+    :before-close="handleCancel"
   >
     <ArtForm
       ref="formRef"
@@ -20,13 +21,154 @@
       :show-submit="false"
     >
       <template #menuType>
-        <ElRadioGroup v-model="form.menuType" :disabled="disableMenuType">
-          <ElRadioButton value="menu" label="menu">菜单</ElRadioButton>
-          <ElRadioButton value="inner" label="inner">内页</ElRadioButton>
-          <ElRadioButton value="button" label="button">按钮</ElRadioButton>
-        </ElRadioGroup>
+        <div class="menu-type-container">
+          <ElRadioGroup v-model="form.menuType" :disabled="disableMenuType" class="mb-3">
+            <ElRadioButton value="menu" label="menu">菜单</ElRadioButton>
+            <ElRadioButton value="inner" label="inner">内页</ElRadioButton>
+          </ElRadioGroup>
+          
+          <div class="template-buttons">
+            <ElButton size="small" @click="applyTemplate('outer')" class="mr-2">
+              外链模板
+            </ElButton>
+            <ElButton size="small" @click="applyTemplate('top')" class="mr-2">
+              顶层模板菜单
+            </ElButton>
+            <ElButton size="small" @click="applyTemplate('sub')" class="mr-2">
+              子菜单模板
+            </ElButton>
+            <ElButton size="small" @click="applyTemplate('inner')">
+              内页模板
+            </ElButton>
+          </div>
+        </div>
+      </template>
+      
+      <!-- 自定义 authList 配置区域 -->
+      <template #authList>
+        <div v-if="form.menuType === 'menu' || form.menuType === 'inner'" class="auth-list-container w-full">
+          <ElCollapse v-model="activeCollapse" class="w-full">
+            <ElCollapseItem title="高级配置" name="2" class="w-full">
+              <div class="grid grid-cols-2 gap-4">
+                <div class="flex items-center">
+                  <span class="w-24">是否启用</span>
+                  <ElSwitch v-model="form.isEnable" />
+                </div>
+                <div class="flex items-center">
+                  <span class="w-24">页面缓存</span>
+                  <ElSwitch v-model="form.keepAlive" />
+                </div>
+                <div class="flex items-center">
+                  <span class="w-24">隐藏菜单</span>
+                  <ElSwitch v-model="form.isHide" :disabled="form.menuType === 'inner'" />
+                </div>
+                <div class="flex items-center">
+                  <span class="w-24">是否内嵌</span>
+                  <ElSwitch v-model="form.isIframe" />
+                </div>
+                <div class="flex items-center">
+                  <span class="w-24">显示徽章</span>
+                  <ElSwitch v-model="form.showBadge" />
+                </div>
+                <div class="flex items-center">
+                  <span class="w-24">固定标签</span>
+                  <ElSwitch v-model="form.fixedTab" />
+                </div>
+                <div class="flex items-center">
+                  <span class="w-24">标签隐藏</span>
+                  <ElSwitch v-model="form.isHideTab" />
+                </div>
+                <div class="flex items-center">
+                  <span class="w-24">全屏页面</span>
+                  <ElSwitch v-model="form.isFullPage" />
+                </div>
+              </div>
+            </ElCollapseItem>
+            <ElCollapseItem title="按钮权限" name="1" class="w-full">
+              <div class="flex justify-end mb-2">
+                <ElButton type="primary" size="small" @click="addAuthItem">
+                  <ElIcon><Plus /></ElIcon>
+                  新增按钮
+                </ElButton>
+              </div>
+              
+              <div class="auth-list-wrapper max-h-64 overflow-y-auto">
+                <div v-if="form.authList && form.authList.length > 0" class="auth-list w-full">
+                  <div
+                    v-for="(item, index) in form.authList"
+                    :key="index"
+                    class="auth-item flex items-center justify-between p-2 border-b border-gray-200 hover:bg-gray-50 transition-colors w-full"
+                  >
+                    <div class="flex items-center flex-1">
+                      <div class="w-32 font-medium">{{ item.title }}</div>
+                      <div class="w-32 text-gray-600">{{ item.authMark }}</div>
+                      <div class="w-24 text-gray-600">{{ item.icon || '-' }}</div>
+                      <div class="w-12 text-gray-600">{{ item.sort }}</div>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <ElButton
+                        type="primary"
+                        size="small"
+                        @click="editAuthItem(index)"
+                      >
+                        编辑
+                      </ElButton>
+                      <ElButton
+                        type="danger"
+                        size="small"
+                        @click="deleteAuthItem(index)"
+                      >
+                        删除
+                      </ElButton>
+                    </div>
+                  </div>
+                </div>
+                
+                <div v-else class="py-4 text-center text-gray-500">
+                  <ElEmpty description="暂无按钮权限" />
+                  <ElButton type="primary" size="small" @click="addAuthItem" class="mt-2">
+                    <ElIcon><Plus /></ElIcon>
+                    新增按钮
+                  </ElButton>
+                </div>
+              </div>
+            </ElCollapseItem>
+          </ElCollapse>
+        </div>
       </template>
     </ArtForm>
+
+    <!-- 按钮权限编辑弹窗 -->
+    <ElDialog
+      v-model="authDialogVisible"
+      :title="authDialogTitle"
+      width="400px"
+      align-center
+    >
+      <ElForm
+        ref="authFormRef"
+        :model="authForm"
+        :rules="authRules"
+        label-width="80px"
+      >
+        <ElFormItem label="按钮名称" prop="title">
+          <ElInput v-model="authForm.title" placeholder="请输入按钮名称" />
+        </ElFormItem>
+        <ElFormItem label="权限标识" prop="authMark">
+          <ElInput v-model="authForm.authMark" placeholder="请输入权限标识" />
+        </ElFormItem>
+        <ElFormItem label="图标">
+          <ElInput v-model="authForm.icon" placeholder="请输入图标名称" />
+        </ElFormItem>
+        <ElFormItem label="排序">
+          <ElInputNumber v-model="authForm.sort" :min="1" controls-position="right" />
+        </ElFormItem>
+      </ElForm>
+      <template #footer>
+        <ElButton @click="authDialogVisible = false">取消</ElButton>
+        <ElButton type="primary" @click="saveAuthItem">保存</ElButton>
+      </template>
+    </ElDialog>
 
     <template #footer>
       <span class="dialog-footer">
@@ -38,9 +180,10 @@
 </template>
 
 <script setup lang="ts">
+  import { h, ref, computed, watch, nextTick } from 'vue'
   import type { FormRules } from 'element-plus'
-  import { ElIcon, ElTooltip } from 'element-plus'
-  import { QuestionFilled } from '@element-plus/icons-vue'
+  import { ElIcon, ElTooltip, ElMessage, ElEmpty, ElCollapse, ElCollapseItem, ElSwitch } from 'element-plus'
+  import { QuestionFilled, Plus } from '@element-plus/icons-vue'
   import { formatMenuTitle } from '@/utils/router'
   import type { AppRouteRecord } from '@/types/router'
   import type { FormItem } from '@/components/core/forms/art-form/index.vue'
@@ -70,6 +213,13 @@
       ])
   }
 
+  interface AuthItem {
+    title: string
+    authMark: string
+    icon: string
+    sort: number
+  }
+
   interface MenuFormData {
     id: number
     name: string
@@ -90,12 +240,10 @@
     showTextBadge: string
     fixedTab: boolean
     activePath: string
+    customParent: string
     roles: string[]
     isFullPage: boolean
-    authName: string
-    authLabel: string
-    authIcon: string
-    authSort: number
+    authList: AuthItem[]
   }
 
   interface Props {
@@ -107,7 +255,7 @@
     editingMenuId?: string
     /** 新增时默认上级（如从某行点「新增」则为该行 id） */
     initialParentId?: string
-    type?: 'menu' | 'inner' | 'button'
+    type?: 'menu' | 'inner'
     lockType?: boolean
   }
 
@@ -171,9 +319,13 @@
   const emit = defineEmits<Emits>()
 
   const formRef = ref()
+  const authFormRef = ref()
   const isEdit = ref(false)
+  const authDialogVisible = ref(false)
+  const currentAuthIndex = ref(-1)
+  const activeCollapse = ref(['2'])
 
-  const form = reactive<MenuFormData & { menuType: 'menu' | 'inner' | 'button' }>({
+  const form = reactive<MenuFormData & { menuType: 'menu' | 'inner' }>({
     menuType: 'menu',
     id: 0,
     name: '',
@@ -194,12 +346,17 @@
     showTextBadge: '',
     fixedTab: false,
     activePath: '',
+    customParent: '',
     roles: [],
     isFullPage: false,
-    authName: '',
-    authLabel: '',
-    authIcon: '',
-    authSort: 1
+    authList: []
+  })
+
+  const authForm = reactive<AuthItem>({
+    title: '',
+    authMark: '',
+    icon: '',
+    sort: 1
   })
 
   const rules = reactive<FormRules>({
@@ -207,10 +364,22 @@
       { required: true, message: '请输入菜单名称', trigger: 'blur' },
       { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
     ],
-    path: [{ required: true, message: '请输入路由地址', trigger: 'blur' }],
-    label: [{ required: true, message: '输入权限标识', trigger: 'blur' }],
-    authName: [{ required: true, message: '请输入权限名称', trigger: 'blur' }],
-    authLabel: [{ required: true, message: '请输入权限标识', trigger: 'blur' }]
+    path: [{
+      validator: (rule, value, callback) => {
+        if (!value && !form.link) {
+          callback(new Error('请输入路由地址'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }],
+    label: [{ required: true, message: '输入权限标识', trigger: 'blur' }]
+  })
+
+  const authRules = reactive<FormRules>({
+    title: [{ required: true, message: '请输入按钮名称', trigger: 'blur' }],
+    authMark: [{ required: true, message: '请输入权限标识', trigger: 'blur' }]
   })
 
   /**
@@ -240,7 +409,7 @@
         {
           label: createLabelTooltip(
             '路由地址',
-            '一级菜单：以 / 开头的绝对路径（如 /dashboard）\n二级及以下：相对路径（如 console、user）'
+            '一级菜单：以 / 开头的绝对路径（如 /dashboard）\n二级及以下：相对路径（如 console、user）\n外部链接有值时可留空'
           ),
           key: 'path',
           type: 'input',
@@ -293,59 +462,42 @@
           type: 'input',
           props: { placeholder: '如：/system/user' }
         },
-        { label: '是否启用', key: 'isEnable', type: 'switch', span: switchSpan },
-        { label: '页面缓存', key: 'keepAlive', type: 'switch', span: switchSpan },
         {
-          label: '隐藏菜单',
-          key: 'isHide',
-          type: 'switch',
-          span: switchSpan,
-          props: form.menuType === 'inner' ? { disabled: true } : undefined
-        },
-        { label: '是否内嵌', key: 'isIframe', type: 'switch', span: switchSpan },
-        { label: '显示徽章', key: 'showBadge', type: 'switch', span: switchSpan },
-        { label: '固定标签', key: 'fixedTab', type: 'switch', span: switchSpan },
-        { label: '标签隐藏', key: 'isHideTab', type: 'switch', span: switchSpan },
-        { label: '全屏页面', key: 'isFullPage', type: 'switch', span: switchSpan }
-      ]
-    } else {
-      return [
-        ...baseItems,
-        {
-          label: '权限名称',
-          key: 'authName',
+          label: createLabelTooltip(
+            '自定义上级',
+            '用于顶级菜单，指定面包屑中显示的上级菜单路径\n例如：设置为/system/user，面包屑会显示"首页 > 用户管理 > 当前菜单"'
+          ),
+          key: 'customParent',
           type: 'input',
-          props: { placeholder: '如：新增、编辑、删除' }
+          props: { placeholder: '如：/system/user' }
         },
+
         {
-          label: '权限标识',
-          key: 'authLabel',
-          type: 'input',
-          props: { placeholder: '如：add、edit、delete' }
-        },
-        {
-          label: '权限排序',
-          key: 'authSort',
-          type: 'number',
-          props: { controlsPosition: 'right', style: { width: '100%' } }
+          label: '',
+          key: 'authList',
+          type: 'custom',
+          slotName: 'authList',
+          span: 24
         }
       ]
     }
+    return baseItems
   })
 
   const dialogTitle = computed(() => {
-    const typeMap = { menu: '菜单', inner: '内页', button: '按钮' }
+    const typeMap = { menu: '菜单', inner: '内页' }
     const type = typeMap[form.menuType] ?? '菜单'
     return isEdit.value ? `编辑${type}` : `新建${type}`
+  })
+
+  const authDialogTitle = computed(() => {
+    return currentAuthIndex.value >= 0 ? '编辑按钮' : '新增按钮'
   })
 
   /**
    * 是否禁用菜单类型切换
    */
   const disableMenuType = computed(() => {
-    if (isEdit.value) return true
-    if (!isEdit.value && (form.menuType === 'menu' || form.menuType === 'inner') && props.lockType)
-      return true
     return false
   })
 
@@ -355,6 +507,7 @@
   const resetForm = (): void => {
     formRef.value?.reset()
     form.menuType = 'menu'
+    form.authList = []
   }
 
   /**
@@ -383,53 +536,118 @@
 
     isEdit.value = true
 
-    if (form.menuType === 'menu' || form.menuType === 'inner') {
-      const row = props.editData
-      form.menuType = row.meta?.isInnerPage ? 'inner' : 'menu'
-      form.id = row.id || 0
+    const row = props.editData
+    form.menuType = row.meta?.isInnerPage ? 'inner' : 'menu'
+    form.id = row.id || 0
 
-      // 获取父级ID的逻辑：
-      // 1. 优先使用 row.parent_id（如果存在且不为null/undefined）
-      // 2. 如果没有，从菜单树中查找
-      // 3. 如果都找不到，说明是顶级菜单
-      let parentId = ''
-      if (row.parent_id != null && row.parent_id !== undefined && row.parent_id !== '') {
-        // 后端返回的 parent_id 有效
-        parentId = String(row.parent_id)
-      } else if (row.parentId != null && row.parentId !== undefined && row.parentId !== '') {
-        // 兼容旧字段名
-        parentId = String(row.parentId)
-      } else {
-        // 从菜单树中查找父级ID
-        parentId = findParentIdInTree(props.menuTree || [], String(row.id))
-      }
-      form.parentId = parentId
-
-      form.name = formatMenuTitle(row.meta?.title || '')
-      form.path = row.path || ''
-      form.label = row.name || ''
-      form.component = row.component || ''
-      form.icon = row.meta?.icon || ''
-      form.sort = row.sort_order ?? 1
-      form.isMenu = row.meta?.isMenu ?? true
-      form.keepAlive = row.meta?.keepAlive ?? false
-      form.isHide = row.meta?.isInnerPage ? true : (row.meta?.isHide ?? false)
-      form.isHideTab = row.meta?.isHideTab ?? false
-      form.isEnable = row.meta?.isEnable ?? true
-      form.link = row.meta?.link || ''
-      form.isIframe = row.meta?.isIframe ?? false
-      form.showBadge = row.meta?.showBadge ?? false
-      form.showTextBadge = row.meta?.showTextBadge || ''
-      form.fixedTab = row.meta?.fixedTab ?? false
-      form.activePath = row.meta?.activePath || ''
-      form.roles = row.meta?.roles || []
-      form.isFullPage = row.meta?.isFullPage ?? false
+    // 获取父级ID的逻辑：
+    // 1. 优先使用 row.parent_id（如果存在且不为null/undefined）
+    // 2. 如果没有，从菜单树中查找
+    // 3. 如果都找不到，说明是顶级菜单
+    let parentId = ''
+    if (row.parent_id != null && row.parent_id !== undefined && row.parent_id !== '') {
+      // 后端返回的 parent_id 有效
+      parentId = String(row.parent_id)
+    } else if (row.parentId != null && row.parentId !== undefined && row.parentId !== '') {
+      // 兼容旧字段名
+      parentId = String(row.parentId)
     } else {
-      const row = props.editData
-      form.authName = row.title || ''
-      form.authLabel = row.authMark || ''
-      form.authIcon = row.icon || ''
-      form.authSort = row.sort_order ?? 1
+      // 从菜单树中查找父级ID
+      parentId = findParentIdInTree(props.menuTree || [], String(row.id))
+    }
+    form.parentId = parentId
+
+    form.name = formatMenuTitle(row.meta?.title || '')
+    form.path = row.path || ''
+    form.label = row.name || ''
+    form.component = row.component || ''
+    form.icon = row.meta?.icon || ''
+    form.sort = row.sort_order ?? 1
+    form.isMenu = row.meta?.isMenu ?? true
+    form.keepAlive = row.meta?.keepAlive ?? false
+    form.isHide = row.meta?.isInnerPage ? true : (row.meta?.isHide ?? false)
+    form.isHideTab = row.meta?.isHideTab ?? false
+    form.isEnable = row.meta?.isEnable ?? true
+    form.link = row.meta?.link || ''
+    form.isIframe = row.meta?.isIframe ?? false
+    form.showBadge = row.meta?.showBadge ?? false
+    form.showTextBadge = row.meta?.showTextBadge || ''
+    form.fixedTab = row.meta?.fixedTab ?? false
+    form.activePath = row.meta?.activePath || ''
+    form.customParent = row.meta?.customParent || ''
+    form.roles = row.meta?.roles || []
+    form.isFullPage = row.meta?.isFullPage ?? false
+    
+    // 加载 authList
+    if (row.meta?.authList && Array.isArray(row.meta.authList)) {
+      form.authList = row.meta.authList.map((auth: any) => ({
+        title: auth.title || '',
+        authMark: auth.authMark || '',
+        icon: auth.icon || '',
+        sort: auth.sort || 1
+      }))
+    } else {
+      form.authList = []
+    }
+  }
+
+  /**
+   * 添加按钮权限
+   */
+  const addAuthItem = () => {
+    currentAuthIndex.value = -1
+    Object.assign(authForm, {
+      title: '',
+      authMark: '',
+      icon: '',
+      sort: 1
+    })
+    authDialogVisible.value = true
+  }
+
+  /**
+   * 编辑按钮权限
+   */
+  const editAuthItem = (index: number) => {
+    currentAuthIndex.value = index
+    const item = form.authList[index]
+    Object.assign(authForm, {
+      title: item.title,
+      authMark: item.authMark,
+      icon: item.icon,
+      sort: item.sort
+    })
+    authDialogVisible.value = true
+  }
+
+  /**
+   * 删除按钮权限
+   */
+  const deleteAuthItem = (index: number) => {
+    form.authList.splice(index, 1)
+  }
+
+  /**
+   * 保存按钮权限
+   */
+  const saveAuthItem = async () => {
+    if (!authFormRef.value) return
+
+    try {
+      await authFormRef.value.validate()
+      
+      if (currentAuthIndex.value >= 0) {
+        // 编辑现有项
+        form.authList[currentAuthIndex.value] = { ...authForm }
+      } else {
+        // 添加新项
+        form.authList.push({ ...authForm })
+      }
+      
+      authDialogVisible.value = false
+      ElMessage.success('保存成功')
+    } catch {
+      ElMessage.error('表单校验失败，请检查输入')
     }
   }
 
@@ -485,6 +703,49 @@
   )
 
   /**
+   * 应用模板
+   */
+  const applyTemplate = (templateType: string) => {
+    switch (templateType) {
+      case 'outer':
+        // 外链模板
+        form.menuType = 'menu'
+        form.isIframe = true
+        form.link = 'https://www.example.com'
+        form.path = '/external-link'
+        form.component = ''
+        break
+      case 'top':
+        // 顶层模板菜单
+        form.menuType = 'menu'
+        form.parentId = ''
+        form.path = '/top-menu'
+        form.component = '/index/index'
+        form.isIframe = false
+        form.link = ''
+        break
+      case 'sub':
+        // 子菜单模板
+        form.menuType = 'menu'
+        form.path = 'sub-menu'
+        form.component = '/system/sub-menu'
+        form.isIframe = false
+        form.link = ''
+        form.isHide = false
+        break
+      case 'inner':
+        // 内页模板
+        form.menuType = 'inner'
+        form.isHide = true
+        form.path = 'inner-page'
+        form.component = '/system/inner-page'
+        form.isIframe = false
+        form.link = ''
+        break
+    }
+  }
+
+  /**
    * 监听菜单类型变化
    */
   watch(
@@ -495,4 +756,59 @@
       }
     }
   )
+
+
 </script>
+
+<style lang="scss" scoped>
+  .auth-list-container {
+    margin-top: 20px;
+  }
+  
+  .auth-list-wrapper {
+    max-height: 320px; /* 约5个项的高度 */
+    overflow-y: auto;
+    padding-right: 8px;
+    
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 3px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 3px;
+    }
+    
+    &::-webkit-scrollbar-thumb:hover {
+      background: #a8a8a8;
+    }
+  }
+  
+  .auth-list {
+    .auth-item {
+      border-bottom: 1px solid #e4e7ed;
+      transition: all 0.3s ease;
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      &:hover {
+        background-color: #f5f7fa;
+      }
+    }
+  }
+  
+  .menu-type-container {
+    .template-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+  }
+</style>

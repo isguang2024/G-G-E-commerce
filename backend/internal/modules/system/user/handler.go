@@ -373,6 +373,7 @@ func buildMenuTree(allMenus []Menu, allowedIDs map[uuid.UUID]bool) []gin.H {
 					node := gin.H{
 						"id":        menu.ID.String(),
 						"name":      menu.Name,
+						"title":     menu.Title,
 						"path":      menu.Path,
 						"component": menu.Component,
 						"hidden":    menu.Hidden,

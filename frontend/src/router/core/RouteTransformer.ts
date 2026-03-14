@@ -110,8 +110,9 @@ export class RouteTransformer {
     if (depth === 0) {
       // 顶级 iframe：用 Layout 包裹
       targetRoute.component = this.componentLoader.loadLayout()
-      targetRoute.path = this.extractFirstSegment(sourceRoute.path || '')
+      targetRoute.path = sourceRoute.path || '/'
       targetRoute.name = ''
+      sourceRoute.meta.isFirstLevel = true
 
       targetRoute.children = [
         {

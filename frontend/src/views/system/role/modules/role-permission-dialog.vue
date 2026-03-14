@@ -16,7 +16,6 @@
         node-key="id"
         :default-expand-all="isExpandAll"
         :props="defaultProps"
-        :check-strictly="true"
         @check="handleTreeCheck"
       >
         <template #default="{ data }">
@@ -207,10 +206,12 @@
     const tree = treeRef.value
     if (!tree) return
     const checked = (tree.getCheckedKeys() || []) as string[]
+    const halfChecked = (tree.getHalfCheckedKeys() || []) as string[]
     const allIds = getAllNodeIds(processedMenuList.value)
     const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     const menuIds = allIds.filter((id) => uuidRe.test(id))
-    isSelectAll.value = menuIds.length > 0 && checked.length >= menuIds.length
+    const totalChecked = new Set([...checked, ...halfChecked])
+    isSelectAll.value = menuIds.length > 0 && totalChecked.size >= menuIds.length
   }
 
   const toggleSelectAll = () => {

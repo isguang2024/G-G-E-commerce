@@ -3,7 +3,7 @@ package dto
 // MenuCreateRequest 创建菜单
 type MenuCreateRequest struct {
 	ParentID  *string                `json:"parent_id"`
-	Path      string                 `json:"path" binding:"required,max=255"`
+	Path      string                 `json:"path" binding:"max=255"`
 	Name      string                 `json:"name" binding:"required,max=100"`
 	Component string                 `json:"component"`
 	Title     string                 `json:"title" binding:"required,max=100"`

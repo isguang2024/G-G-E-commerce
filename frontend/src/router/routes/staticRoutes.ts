@@ -43,10 +43,14 @@ export const staticRoutes: AppRouteRecordRaw[] = [
     meta: { title: '403', isHideTab: true }
   },
   {
-    path: '/:pathMatch(.*)*',
+    path: '/404',
     name: 'Exception404',
     component: () => import('@views/exception/404/index.vue'),
     meta: { title: '404', isHideTab: true }
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/404'
   },
   {
     path: '/500',

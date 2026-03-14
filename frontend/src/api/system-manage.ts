@@ -198,18 +198,20 @@ export function fetchGetViewPages(force = false) {
 }
 
 /** 创建菜单 */
-export function fetchCreateMenu(data: Api.SystemManage.MenuCreateParams) {
+export function fetchCreateMenu(data: Api.SystemManage.MenuCreateParams, config?: any) {
   return request.post<{ id: string }>({
     url: MENU_BASE,
-    data
+    data,
+    ...config
   })
 }
 
 /** 更新菜单 */
-export function fetchUpdateMenu(id: string, data: Api.SystemManage.MenuUpdateParams) {
+export function fetchUpdateMenu(id: string, data: Api.SystemManage.MenuUpdateParams, config?: any) {
   return request.put<void>({
     url: `${MENU_BASE}/${id}`,
-    data
+    data,
+    ...config
   })
 }
 

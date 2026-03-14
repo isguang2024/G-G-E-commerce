@@ -19,28 +19,28 @@
         @refresh="handleRefresh"
       >
         <template #left>
-          <ElTooltip content="添加菜单" placement="top">
-            <div v-auth="'add'" class="inline-block cursor-pointer" @click="handleAddMenu">
-              <ArtButtonTable type="add" />
-            </div>
-          </ElTooltip>
-          <ElButton @click="toggleExpand" v-ripple>
-            {{ isExpanded ? '收起' : '展开' }}
-          </ElButton>
           <ElTooltip
             content="内页默认不显示在侧栏，仅通过按钮跳转；开启后可在列表中查看内页项"
             placement="top"
           >
-            <span class="inline-flex items-center gap-2 ml-2">
+            <span class="inline-flex items-center gap-2">
               <span class="text-sm text-gray-600">显示内页</span>
               <ElSwitch v-model="showInnerPages" />
             </span>
           </ElTooltip>
+          <ElTooltip content="创建菜单" placement="top">
+            <ElButton type="primary" @click="handleAddMenu" v-ripple class="ml-2">
+              创建菜单
+            </ElButton>
+          </ElTooltip>
+          <ElButton @click="toggleExpand" v-ripple class="ml-2">
+            {{ isExpanded ? '收起' : '展开' }}
+          </ElButton>
           <ElTooltip content="备份菜单" placement="top">
-            <ElButton @click="handleBackupMenu" v-ripple> 备份 </ElButton>
+            <ElButton @click="handleBackupMenu" v-ripple class="ml-2"> 备份 </ElButton>
           </ElTooltip>
           <ElTooltip content="管理备份" placement="top">
-            <ElButton @click="handleManageBackups" v-ripple> 管理备份 </ElButton>
+            <ElButton @click="handleManageBackups" v-ripple class="ml-2"> 管理备份 </ElButton>
           </ElTooltip>
         </template>
       </ArtTableHeader>
@@ -57,7 +57,7 @@
       >
         <!-- 菜单名称列 -->
         <template #title="{ row }">
-          <ArtSvgIcon :icon="row.meta?.icon || 'ri:menu-line'" class="mr-2 text-g-500" />
+          <ArtSvgIcon v-if="row.meta?.icon" :icon="row.meta.icon" class="mr-2 text-g-500" />
           <span>{{ formatMenuTitle(row.meta?.title) }}</span>
         </template>
 
@@ -71,9 +71,40 @@
           <span>{{ row.meta?.isAuthButton ? '' : row.meta?.link || row.path || '' }}</span>
         </template>
 
+        <!-- 组件路径列 -->
+        <template #component="{ row }">
+          <span class="text-gray-600">{{ row.component || '-' }}</span>
+        </template>
+
+        <!-- 高级配置列 -->
+        <template #advanced="{ row }">
+          <div class="advanced-configs">
+            <ElTag v-if="!row.meta?.isAuthButton && row.meta.keepAlive" size="small" effect="light" type="primary" class="mr-2">
+              缓存
+            </ElTag>
+            <ElTag v-if="!row.meta?.isAuthButton && !row.meta?.isInnerPage && row.meta.isHide" size="small" effect="light" type="warning" class="mr-2">
+              隐藏
+            </ElTag>
+            <ElTag v-if="!row.meta?.isAuthButton && row.meta.isIframe" size="small" effect="light" type="info" class="mr-2">
+              内嵌
+            </ElTag>
+            <ElTag v-if="!row.meta?.isAuthButton && row.meta.showBadge" size="small" effect="light" type="success" class="mr-2">
+              徽章
+            </ElTag>
+            <ElTag v-if="!row.meta?.isAuthButton && row.meta.fixedTab" size="small" effect="light" type="danger" class="mr-2">
+              固定
+            </ElTag>
+            <ElTag v-if="!row.meta?.isAuthButton && row.meta.isFullPage" size="small" effect="light" type="primary" class="mr-2">
+              全屏
+            </ElTag>
+          </div>
+        </template>
+
         <!-- 状态列 -->
-        <template #status>
-          <ElTag type="success">启用</ElTag>
+        <template #status="{ row }">
+          <ElTag :type="row.meta?.isEnable !== false ? 'success' : 'info'">
+            {{ row.meta?.isEnable !== false ? '启用' : '未启用' }}
+          </ElTag>
         </template>
 
         <!-- 操作列 -->
@@ -110,7 +141,7 @@
               v-model="backupDescription"
               type="textarea"
               placeholder="请输入备份描述"
-              rows="3"
+              :rows="3"
             />
           </ElFormItem>
         </ElForm>
@@ -125,28 +156,46 @@
       </ElDialog>
 
       <!-- 管理备份弹窗 -->
-      <ElDialog v-model="backupListDialogVisible" title="管理备份" width="800px">
-        <ElTable v-loading="backupLoading" :data="backupList" style="width: 100%" border>
-          <ElTableColumn prop="name" label="备份名称" width="200" />
-          <ElTableColumn prop="description" label="备份描述" />
-          <ElTableColumn prop="created_at" label="创建时间" width="200" />
-          <ElTableColumn prop="created_by" label="创建人" width="150" />
-          <ElTableColumn label="操作" width="200" fixed="right">
-            <template #default="{ row }">
-              <ElButton
-                type="primary"
-                size="small"
-                @click="handleRestoreBackup(row.id)"
-                style="margin-right: 10px"
-              >
-                恢复
-              </ElButton>
-              <ElButton type="danger" size="small" @click="handleDeleteBackup(row.id)">
-                删除
-              </ElButton>
-            </template>
-          </ElTableColumn>
-        </ElTable>
+      <ElDialog v-model="backupListDialogVisible" title="管理备份" width="800px" class="backup-dialog">
+        <div class="backup-list-container">
+          <ElTable v-loading="backupLoading" :data="backupList" style="width: 100%" border stripe>
+            <ElTableColumn prop="name" label="备份名称" width="200">
+              <template #default="{ row }">
+                <span class="font-medium">{{ row.name }}</span>
+              </template>
+            </ElTableColumn>
+            <ElTableColumn prop="description" label="备份描述">
+              <template #default="{ row }">
+                <span class="text-gray-600">{{ row.description || '-' }}</span>
+              </template>
+            </ElTableColumn>
+            <ElTableColumn prop="created_at" label="创建时间" width="200" />
+            <ElTableColumn prop="created_by" label="创建人" width="150">
+              <template #default="{ row }">
+                <span class="text-gray-600">{{ row.created_by || '系统' }}</span>
+              </template>
+            </ElTableColumn>
+            <ElTableColumn label="操作" width="200" fixed="right">
+              <template #default="{ row }">
+                <div class="flex gap-2">
+                  <ElButton
+                    type="primary"
+                    size="small"
+                    @click="handleRestoreBackup(row.id)"
+                  >
+                    恢复
+                  </ElButton>
+                  <ElButton type="danger" size="small" @click="handleDeleteBackup(row.id)">
+                    删除
+                  </ElButton>
+                </div>
+              </template>
+            </ElTableColumn>
+          </ElTable>
+          <div v-if="backupList.length === 0" class="empty-backup">
+            <ElEmpty description="暂无备份数据" />
+          </div>
+        </div>
       </ElDialog>
     </ElCard>
   </div>
@@ -173,8 +222,12 @@
     fetchRestoreMenuBackup
   } from '@/api/system-manage'
   import { ElTag, ElMessageBox, ElMessage, ElTooltip, ElButton, ElSwitch } from 'element-plus'
+  import { useAuth } from '@/hooks/core/useAuth'
 
   defineOptions({ name: 'Menus' })
+
+  // --- 权限管理 ---
+  const { hasAuth } = useAuth()
 
   // --- 状态管理 ---
   const loading = ref(false)
@@ -203,7 +256,7 @@
 
   // --- 弹窗相关 ---
   const dialogVisible = ref(false)
-  const dialogType = ref<'menu' | 'button'>('menu')
+  const dialogType = ref<'menu' | 'inner'>('menu')
   const editData = ref<any>(null)
   const parentRowForAdd = ref<AppRouteRecord | null>(null)
   const lockMenuType = ref(false)
@@ -243,9 +296,11 @@
       .filter((item) => showInnerPages.value || !item.meta?.isInnerPage)
       .map((item) => {
         const cloned = JSON.parse(JSON.stringify(item))
+
         if (cloned.children?.length) {
           cloned.children = filterAndSearch(cloned.children)
         }
+
         return cloned
       })
       .filter((item) => {
@@ -258,12 +313,21 @@
       })
   }
 
-  // --- 表格列配置 ---
+  // --- 表格列配置 ---  
   const { columnChecks, columns: displayColumns } = useTableColumns(() => [
     { prop: 'title', label: '菜单名称', minWidth: 200, useSlot: true, slotName: 'title' },
     { prop: 'sort_order', label: '排序', width: 80, align: 'center' },
     { prop: 'type', label: '类型', width: 100, align: 'center', useSlot: true, slotName: 'type' },
     { prop: 'path', label: '路由', minWidth: 150, useSlot: true, slotName: 'path' },
+    { prop: 'component', label: '组件路径', minWidth: 200, useSlot: true, slotName: 'component' },
+    {
+      prop: 'advanced',
+      label: '高级配置',
+      minWidth: 200,
+      align: 'center',
+      useSlot: true,
+      slotName: 'advanced'
+    },
     {
       prop: 'status',
       label: '状态',
@@ -390,35 +454,47 @@
     if (!dataFromBackend.value) return getMenuList()
     try {
       const isInner = formData.menuType === 'inner'
+      // 构建meta对象
+      const meta: any = {
+        roles: formData.roles,
+        isEnable: formData.isEnable,
+        keepAlive: formData.keepAlive,
+        isHide: isInner ? true : !!formData.isHide,
+        isHideTab: formData.isHideTab,
+        isIframe: formData.isIframe,
+        showBadge: formData.showBadge,
+        showTextBadge: formData.showTextBadge || '',
+        link: formData.link || '',
+        activePath: formData.activePath || '',
+        fixedTab: formData.fixedTab,
+        isFullPage: formData.isFullPage,
+        isInnerPage: isInner
+      }
+      
+      // 只有当customParent有值时才添加到meta中
+      if (formData.customParent && formData.customParent.trim() !== '') {
+        meta.customParent = formData.customParent
+      }
+      
       const payload = {
         path: formData.path || '/',
         name: formData.label || '',
         component: formData.component || '',
         title: formData.name || '',
         icon: formData.icon || '',
-        sort_order: formData.sort ?? 0,
-        meta: {
-          roles: formData.roles,
-          isEnable: formData.isEnable,
-          keepAlive: formData.keepAlive,
-          isHide: isInner ? true : !!formData.isHide,
-          isHideTab: formData.isHideTab,
-          isIframe: formData.isIframe,
-          showBadge: formData.showBadge,
-          fixedTab: formData.fixedTab,
-          isFullPage: formData.isFullPage,
-          isInnerPage: isInner
-        }
+        sort_order: Number(formData.sort ?? 0),
+        meta: meta
       }
       if (editData.value?.id) {
         const parentId = formData.parentId?.trim() || null
-        await fetchUpdateMenu(String(editData.value.id), { ...payload, parent_id: parentId })
+        await fetchUpdateMenu(String(editData.value.id), { ...payload, parent_id: parentId }, { showErrorMessage: false })
       } else {
         const parentId =
           formData.parentId?.trim() ||
           (parentRowForAdd.value?.id ? String(parentRowForAdd.value.id) : null)
-        await fetchCreateMenu({ ...payload, parent_id: parentId })
+        await fetchCreateMenu({ ...payload, parent_id: parentId }, { showErrorMessage: false })
       }
+      // 只有成功时才显示成功消息
       ElMessage.success('保存成功')
       getMenuList()
     } catch (e: any) {
@@ -514,4 +590,61 @@
   })
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+  .backup-dialog {
+    .backup-list-container {
+      padding: 10px 0;
+      
+      .empty-backup {
+        padding: 40px 0;
+        text-align: center;
+      }
+    }
+    
+    :deep(.el-table) {
+      .el-table__row {
+        transition: all 0.3s ease;
+        
+        &:hover {
+          background-color: #f5f7fa !important;
+        }
+      }
+      
+      .el-table__header-wrapper th {
+        background-color: #fafafa;
+        font-weight: 600;
+      }
+    }
+  }
+  
+  .inline-flex {
+    align-items: center;
+  }
+  
+  .advanced-configs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  
+  :deep(.el-table) {
+    .el-table__row {
+      transition: all 0.3s ease;
+      
+      &:hover {
+        background-color: #f5f7fa !important;
+      }
+    }
+    
+    .el-table__header-wrapper th {
+      background-color: #fafafa;
+      font-weight: 600;
+    }
+    
+    .el-table__body-wrapper {
+      .el-table__row {
+        height: 48px;
+      }
+    }
+  }
+</style>

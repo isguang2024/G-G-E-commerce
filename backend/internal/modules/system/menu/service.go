@@ -91,6 +91,12 @@ func (s *menuService) filterTreeByMenuIDs(nodes []*user.Menu, visible map[uuid.U
 		if _, ok := visible[n.ID]; !ok {
 			continue
 		}
+		// 检查菜单是否启用
+		if n.Meta != nil {
+			if isEnable, ok := n.Meta["isEnable"].(bool); ok && !isEnable {
+				continue
+			}
+		}
 		clone := *n
 		clone.Children = s.filterTreeByMenuIDs(n.Children, visible)
 		out = append(out, &clone)

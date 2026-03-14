@@ -54,8 +54,8 @@ export class RoutePermissionValidator {
     }
 
     for (const menuItem of menuList) {
-      // 跳过隐藏的菜单项
-      if (menuItem.meta?.isHide || !menuItem.path) {
+      // 跳过隐藏的菜单项，但允许内页路由
+      if ((menuItem.meta?.isHide && !menuItem.meta?.isInnerPage) || !menuItem.path) {
         continue
       }
 
