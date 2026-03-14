@@ -112,7 +112,7 @@ type Menu struct {
 	SortOrder int            `gorm:"default:0" json:"sort_order"`
 	Visible   string         `gorm:"type:varchar(20)" json:"visible"`
 	Hidden    bool           `gorm:"default:false" json:"hidden"`
-	IsSystem  bool           `gorm:"default:false" json:"is_system"`
+
 	Meta      MetaJSON       `gorm:"type:jsonb" json:"meta"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
@@ -219,4 +219,19 @@ type MediaAsset struct {
 
 func (MediaAsset) TableName() string {
 	return "media_assets"
+}
+
+type MenuBackup struct {
+	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Name        string         `gorm:"type:varchar(100);not null" json:"name"`
+	Description string         `gorm:"type:varchar(255)" json:"description"`
+	MenuData    string         `gorm:"type:text;not null" json:"menu_data"` // JSON 格式的菜单数据
+	CreatedBy   *uuid.UUID     `gorm:"type:uuid" json:"created_by"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (MenuBackup) TableName() string {
+	return "menu_backups"
 }

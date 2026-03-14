@@ -10,7 +10,9 @@
       v-bind="{ ...$attrs, ...props, height, stripe, border, size, headerCellStyle }"
       @drag-end="emit('drag-end', $event)"
       @drag-start="emit('drag-start', $event)"
-      @allow-drop="(draggingNode, dropNode, type) => emit('allow-drop', draggingNode, dropNode, type)"
+      @allow-drop="
+        (draggingNode, dropNode, type) => emit('allow-drop', draggingNode, dropNode, type)
+      "
       @allow-drag="(node) => emit('allow-drag', node)"
     >
       <template v-for="col in columns" :key="col.prop || col.type">

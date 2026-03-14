@@ -50,4 +50,3 @@ store.use(
 export function initStore(app: App<Element>): void {
   app.use(store)
 }
-

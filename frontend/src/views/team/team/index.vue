@@ -40,16 +40,19 @@
 <script setup lang="ts">
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import { useTable } from '@/hooks/core/useTable'
-  import {
-    fetchGetTeamList,
-    fetchDeleteTeam,
-    fetchCreateTeam,
-    fetchUpdateTeam
-  } from '@/api/team'
+  import { fetchGetTeamList, fetchDeleteTeam, fetchCreateTeam, fetchUpdateTeam } from '@/api/team'
   import TeamSearch from './modules/team-search.vue'
   import TeamDialog from './modules/team-dialog.vue'
   import TeamMembersDrawer from './modules/team-members-drawer.vue'
-  import { ElTag, ElMessageBox, ElMessage, ElDropdown, ElDropdownMenu, ElDropdownItem, ElIcon } from 'element-plus'
+  import {
+    ElTag,
+    ElMessageBox,
+    ElMessage,
+    ElDropdown,
+    ElDropdownMenu,
+    ElDropdownItem,
+    ElIcon
+  } from 'element-plus'
   import { MoreFilled, Edit, Delete, UserFilled } from '@element-plus/icons-vue'
   import { DialogType } from '@/types'
 
@@ -77,18 +80,18 @@
     return map[status] || { type: 'info', text: status || '未知' }
   }
 
-  const { 
-    columns, 
-    columnChecks, 
-    data, 
-    loading, 
-    pagination, 
-    getData, 
-    searchParams, 
-    resetSearchParams, 
-    handleSizeChange, 
-    handleCurrentChange, 
-    refreshData 
+  const {
+    columns,
+    columnChecks,
+    data,
+    loading,
+    pagination,
+    getData,
+    searchParams,
+    resetSearchParams,
+    handleSizeChange,
+    handleCurrentChange,
+    refreshData
   } = useTable({
     core: {
       apiFn: fetchGetTeamList,
@@ -111,7 +114,12 @@
             return h('div', { class: 'flex flex-wrap gap-1' }, [
               ...admins.slice(0, 2).map((admin: any) =>
                 h(ElTag, { size: 'small', type: 'info' }, () => {
-                  return admin.nickname || admin.username || admin.email || admin.user_id.substring(0, 8) + '...'
+                  return (
+                    admin.nickname ||
+                    admin.username ||
+                    admin.email ||
+                    admin.user_id.substring(0, 8) + '...'
+                  )
                 })
               ),
               admins.length > 2 ? h(ElTag, { size: 'small' }, () => `+${admins.length - 2}`) : null
@@ -136,17 +144,31 @@
           width: 60,
           fixed: 'right',
           formatter: (row) => {
-            const dropdown = h(ElDropdown, {
-              trigger: 'click',
-              onCommand: (cmd: string) => handleOperationCommand(cmd, row)
-            }, {
-              default: () => h(ElButton, { icon: MoreFilled, circle: true, size: 'small' }),
-              dropdown: () => h(ElDropdownMenu, {}, () => [
-                h(ElDropdownItem, { command: 'edit' }, () => [h(ElIcon, {}, () => h(Edit)), '编辑']),
-                h(ElDropdownItem, { command: 'view' }, () => [h(ElIcon, {}, () => h(UserFilled)), '查看人员']),
-                h(ElDropdownItem, { command: 'delete' }, () => [h(ElIcon, {}, () => h(Delete)), '删除'])
-              ])
-            })
+            const dropdown = h(
+              ElDropdown,
+              {
+                trigger: 'click',
+                onCommand: (cmd: string) => handleOperationCommand(cmd, row)
+              },
+              {
+                default: () => h(ElButton, { icon: MoreFilled, circle: true, size: 'small' }),
+                dropdown: () =>
+                  h(ElDropdownMenu, {}, () => [
+                    h(ElDropdownItem, { command: 'edit' }, () => [
+                      h(ElIcon, {}, () => h(Edit)),
+                      '编辑'
+                    ]),
+                    h(ElDropdownItem, { command: 'view' }, () => [
+                      h(ElIcon, {}, () => h(UserFilled)),
+                      '查看人员'
+                    ]),
+                    h(ElDropdownItem, { command: 'delete' }, () => [
+                      h(ElIcon, {}, () => h(Delete)),
+                      '删除'
+                    ])
+                  ])
+              }
+            )
             return dropdown
           }
         }

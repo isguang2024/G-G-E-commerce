@@ -136,13 +136,9 @@
             { required: true, message: '请输入密码', trigger: 'blur' },
             { min: 6, message: '密码至少 6 位', trigger: 'blur' }
           ]
-        : [
-            { min: 6, message: '密码至少 6 位', trigger: 'blur' }
-          ],
+        : [{ min: 6, message: '密码至少 6 位', trigger: 'blur' }],
     status: [{ required: true, message: '请选择状态', trigger: 'change' }],
-    phone: [
-      { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }
-    ],
+    phone: [{ pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }],
     roleIds: [{ required: true, message: '请选择角色', trigger: 'change', type: 'array', min: 1 }]
   }))
 

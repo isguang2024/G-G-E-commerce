@@ -375,7 +375,10 @@ async function handleDynamicRoutes(
 /**
  * 将后端角色 code 映射为前端菜单权限标识
  */
-function mapBackendRolesToFrontend(data: { roles?: Array<{ code?: string }> | string[]; is_super_admin?: boolean }): string[] {
+function mapBackendRolesToFrontend(data: {
+  roles?: Array<{ code?: string }> | string[]
+  is_super_admin?: boolean
+}): string[] {
   if (data.is_super_admin) return ['R_SUPER']
   const codes = (data.roles || []).map((r) => (typeof r === 'string' ? r : r.code))
   const frontend: string[] = []
@@ -391,9 +394,9 @@ function mapBackendRolesToFrontend(data: { roles?: Array<{ code?: string }> | st
 async function fetchUserInfo(): Promise<void> {
   const userStore = useUserStore()
   const data = await fetchGetUserInfo()
-  
+
   const roles = mapBackendRolesToFrontend(data)
-  
+
   const userInfo: Api.Auth.UserInfo = {
     ...data,
     userId: data.id,
@@ -402,7 +405,7 @@ async function fetchUserInfo(): Promise<void> {
     roles,
     buttons: []
   }
-  
+
   userStore.setUserInfo(userInfo)
   userStore.checkAndClearWorktabs()
 }

@@ -16,3 +16,4 @@ type TenantMember = models.TenantMember
 type MemberSearchParams = models.MemberSearchParams
 type APIKey = models.APIKey
 type MediaAsset = models.MediaAsset
+type MenuBackup = models.MenuBackup

@@ -12,50 +12,50 @@
       ></RoleSearch>
 
       <ElCard
-      class="art-table-card"
-      shadow="never"
-      :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
-    >
-      <ArtTableHeader
-        v-model:columns="columnChecks"
-        v-model:showSearchBar="showSearchBar"
-        :loading="loading"
-        @refresh="refreshData"
+        class="art-table-card"
+        shadow="never"
+        :style="{ 'margin-top': showSearchBar ? '12px' : '0' }"
       >
-        <template #left>
-          <ElSpace wrap>
-            <ElButton @click="showDialog('add')" v-ripple>新增角色</ElButton>
-            <ElButton @click="showScopeDialog" v-ripple>作用域管理</ElButton>
-          </ElSpace>
-        </template>
-      </ArtTableHeader>
+        <ArtTableHeader
+          v-model:columns="columnChecks"
+          v-model:showSearchBar="showSearchBar"
+          :loading="loading"
+          @refresh="refreshData"
+        >
+          <template #left>
+            <ElSpace wrap>
+              <ElButton @click="showDialog('add')" v-ripple>新增角色</ElButton>
+              <ElButton @click="showScopeDialog" v-ripple>作用域管理</ElButton>
+            </ElSpace>
+          </template>
+        </ArtTableHeader>
 
-      <!-- 表格 -->
-      <ArtTable
-        :loading="loading"
-        :data="data"
-        :columns="columns"
-        :pagination="pagination"
-        @pagination:size-change="handleSizeChange"
-        @pagination:current-change="handleCurrentChange"
-      >
-      </ArtTable>
-    </ElCard>
+        <!-- 表格 -->
+        <ArtTable
+          :loading="loading"
+          :data="data"
+          :columns="columns"
+          :pagination="pagination"
+          @pagination:size-change="handleSizeChange"
+          @pagination:current-change="handleCurrentChange"
+        >
+        </ArtTable>
+      </ElCard>
 
-    <!-- 角色编辑弹窗 -->
-    <RoleEditDialog
-      v-model="dialogVisible"
-      :dialog-type="dialogType"
-      :role-data="currentRoleData"
-      @success="refreshData"
-    />
+      <!-- 角色编辑弹窗 -->
+      <RoleEditDialog
+        v-model="dialogVisible"
+        :dialog-type="dialogType"
+        :role-data="currentRoleData"
+        @success="refreshData"
+      />
 
-    <!-- 菜单权限弹窗 -->
-    <RolePermissionDialog
-      v-model="permissionDialog"
-      :role-data="currentRoleData"
-      @success="onPermissionSuccess"
-    />
+      <!-- 菜单权限弹窗 -->
+      <RolePermissionDialog
+        v-model="permissionDialog"
+        :role-data="currentRoleData"
+        @success="onPermissionSuccess"
+      />
 
       <!-- 作用域管理弹窗 -->
       <ScopeManageDialog v-model="scopeDialogVisible" />
@@ -152,13 +152,16 @@
           label: '作用域',
           width: 100,
           formatter: (row) => {
-            const scopeName = row.scopeName || (row.scope === 'global' ? '全局' : row.scope === 'team' ? '团队' : '')
+            const scopeName =
+              row.scopeName ||
+              (row.scope === 'global' ? '全局' : row.scope === 'team' ? '团队' : '')
             const scopeCode = row.scopeCode || row.scope || ''
-            const scopeConfig = scopeCode === 'global'
-              ? { type: 'primary', text: scopeName || '全局' }
-              : scopeCode === 'team'
-              ? { type: 'success', text: scopeName || '团队' }
-              : { type: 'info', text: scopeName || '未知' }
+            const scopeConfig =
+              scopeCode === 'global'
+                ? { type: 'primary', text: scopeName || '全局' }
+                : scopeCode === 'team'
+                  ? { type: 'success', text: scopeName || '团队' }
+                  : { type: 'info', text: scopeName || '未知' }
             return h(
               ElTag,
               { type: scopeConfig.type as 'primary' | 'success' | 'info' },
@@ -171,9 +174,10 @@
           label: '角色状态',
           width: 100,
           formatter: (row: RoleListItem) => {
-            const statusConfig = row.status === 'normal'
-              ? { type: 'success', text: '正常' }
-              : { type: 'warning', text: '停用' }
+            const statusConfig =
+              row.status === 'normal'
+                ? { type: 'success', text: '正常' }
+                : { type: 'warning', text: '停用' }
             return h(
               ElTag,
               { type: statusConfig.type as 'success' | 'warning' },

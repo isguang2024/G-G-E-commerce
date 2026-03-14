@@ -1,0 +1,115 @@
+
+## 项目概述
+商品内容分发管理系统。
+- 后端：Go + Gin + GORM + PostgreSQL + Redis + Elasticsearch
+- 前端：Vue 3 + TypeScript + Art Design Pro（Element Plus）
+
+
+
+### 架构 - 模块化
+- **模块化架构**：每个业务模块独立目录 `internal/modules/system/[模块名]/`
+- **模块结构**：
+  - `model.go` - 数据模型定义
+  - `repository.go` - 数据库操作
+  - `service.go` - 业务逻辑
+  - `handler.go` - API 处理
+  - `module.go` - 模块入口（实现 module.Module 接口）
+- **依赖注入**：在 module.go 的 RegisterRoutes 中实例化 repository → service → handler
+- **DTO 引用**：外部 DTO 统一在 `internal/api/dto/` 定义
+
+### 目录结构
+```
+backend/
+├── cmd/                           # 入口
+│   ├── server/main.go
+│   ├── migrate/main.go
+│   ├── init-admin/main.go
+│   └── diagnose/main.go
+│
+├── internal/
+│   ├── api/                      # API 层
+│   │   ├── dto/                  # 请求/响应结构
+│   │   ├── errcode/              # 错误码
+│   │   ├── middleware/            # 中间件
+│   │   └── router/               # 路由
+│   │
+│   ├── modules/                    # 业务模块
+│   │   ├── system/                # 系统模块（当前实现）
+│   │   │   ├── models/            # 共享模型
+│   │   │   ├── user/
+│   │   │   ├── auth/
+│   │   │   ├── menu/
+│   │   │   ├── role/
+│   │   │   ├── scope/
+│   │   │   ├── tenant/
+│   │   │   ├── media/
+│   │   │   └── system/
+│   │   │
+│   │   ├── product/               # 商品模块（未来扩展示例）
+│   │   │   ├── repository.go
+│   │   │   ├── service.go
+│   │   │   ├── handler.go
+│   │   │   └── module.go
+│   │   │
+│   │   └── order/                # 订单模块（未来扩展示例）
+│   │       ├── repository.go
+│   │       ├── service.go
+│   │       ├── handler.go
+│   │       └── module.go
+│   │
+│   ├── pkg/                      # 工具包
+│   └── config/                   # 配置
+```
+
+### 命名规范
+- **模块内**：
+  - Repository: `NewXxxRepository(db)` (如 `NewUserRepository`)
+  - Service: `NewXxxService(...)` (如 `NewUserService`)
+  - Handler: `NewXxxHandler(...)` (如 `NewUserHandler`)
+- **Model**: 单数名词（User、Role、Menu）
+- **DTO**: `CreateXxxRequest`、`XxxResponse`、`XxxListRequest`
+
+### 响应格式（dto.Response）
+- code：0 成功，非 0 为业务错误码（与 HTTP 状态码分离）
+- message：提示信息
+- data：业务数据
+- meta：列表分页信息
+
+### 错误码约定
+- **定义位置**：`internal/api/errcode/codes.go`
+- **规则**：0=成功；1xxxx=参数；2xxxx=认证；3xxxx=业务；5xxxx=服务端
+- **用法**：`status, resp := errcode.Response(errcode.ErrXxx)` 或 `errcode.ResponseWithMsg(errcode.ErrXxx, "自定义")`
+
+### 租户与多租户
+- 需要按租户隔离的业务表含 tenant_id
+- 业务接口从 JWT/上下文获取当前 tenant_id
+- 缓存 key 建议带租户：{tenant_id}:{resource}:{id}
+
+## 前端规范
+- API 请求放在 src/api/，类型定义在 src/types/
+- 全局状态：Pinia
+- UI：Element Plus
+- 基于 Art Design Pro 模板
+
+## 数据库约定
+- 简单数量少的表主键：自增数字
+- 复杂表主键：UUID，PostgreSQL gen_random_uuid()
+- 通用字段：created_at、updated_at
+- 软删除：deleted_at（GORM Soft Delete）
+- **模型位置**：`internal/modules/system/models/model.go`（共享模型）
+- **模型管理**：建议所有模块共享同一个 models 包，新模块直接复用；如需独立模型，可在模块内创建 `models.go` 重导出
+
+### 模块扩展规范
+- 新增业务模块（如 product、order）在 `internal/modules/` 下创建目录
+- 每个模块包含：repository.go、service.go、handler.go、module.go
+- 模型优先复用 `system/models`，如需独立模型在模块内定义
+
+## 迁移
+- **入口**：`backend/cmd/migrate/main.go`
+- **AutoMigrate**：`internal/pkg/database/database.go`
+- **新表处理**：未来创建新的表时，必须将表模型添加到 `database.AutoMigrate` 函数中，确保迁移时自动创建表结构
+- **旧表处理**：如果不再需要某个表，必须从 `database.AutoMigrate` 函数中移除对应的表模型，确保迁移时不再创建该表
+
+## 参考
+- 前端组件与布局可参考 frontend-copy 目录
+- Art Design Pro 文档：https://www.artd.pro/docs/zh/guide/introduce.html

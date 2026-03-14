@@ -135,9 +135,7 @@
       })
       .map((item) => ({
         ...item,
-        children: item.children?.length
-          ? filterRoutes(item.children)
-          : undefined
+        children: item.children?.length ? filterRoutes(item.children) : undefined
       }))
   }
 

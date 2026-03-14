@@ -9,13 +9,10 @@
       <div class="mb-4 text-gray-500 text-sm">
         请选择该成员在本团队内拥有的功能角色（支持多选）：
       </div>
-      
+
       <ElCheckboxGroup v-model="selectedRoleIds" class="flex flex-col gap-2">
         <div v-for="role in allRoles" :key="role.roleId" class="role-item">
-          <ElCheckbox 
-            :value="role.roleId" 
-            :disabled="isTeamAdminRole(role.roleCode)"
-          >
+          <ElCheckbox :value="role.roleId" :disabled="isTeamAdminRole(role.roleCode)">
             <div class="flex items-center gap-2">
               <span class="font-medium">{{ role.roleName }}</span>
               <ElTag type="info" size="small">团队角色</ElTag>
@@ -30,15 +27,17 @@
 
     <template #footer>
       <ElButton @click="visible = false">取消</ElButton>
-      <ElButton type="primary" :loading="submitting" @click="handleSubmit">
-        保存更改
-      </ElButton>
+      <ElButton type="primary" :loading="submitting" @click="handleSubmit"> 保存更改 </ElButton>
     </template>
   </ElDialog>
 </template>
 
 <script setup lang="ts">
-  import { fetchGetMyTeamMemberRoles, fetchSetMyTeamMemberRoles, fetchGetMyTeamRoles } from '@/api/team'
+  import {
+    fetchGetMyTeamMemberRoles,
+    fetchSetMyTeamMemberRoles,
+    fetchGetMyTeamRoles
+  } from '@/api/team'
   import { ElMessage } from 'element-plus'
 
   interface Props {
@@ -73,7 +72,7 @@
       // 2. 获取该成员当前已有的角色
       const memberRolesRes = await fetchGetMyTeamMemberRoles(props.member.userId)
       selectedRoleIds.value = memberRolesRes.role_ids || []
-      
+
       // 3. 获取成员的角色编码，用于判断是否为管理员
       memberRoleCodes.value = (props.member as any).roleCodes || []
     } catch (e: any) {

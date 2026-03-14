@@ -39,11 +39,7 @@
       />
 
       <!-- 用户权限查看抽屉 -->
-      <ElDrawer
-        v-model="permissionDrawerVisible"
-        :title="permissionDrawerTitle"
-        size="450px"
-      >
+      <ElDrawer v-model="permissionDrawerVisible" :title="permissionDrawerTitle" size="450px">
         <div v-loading="permissionLoading">
           <ElEmpty v-if="permissionList.length === 0" description="该用户暂无权限" />
           <ElTree
@@ -164,10 +160,18 @@
                     previewSrcList: [avatar],
                     previewTeleported: true
                   })
-                : h('div', { class: 'size-9.5 rounded-md bg-gray-200 flex items-center justify-center' }, '头'),
+                : h(
+                    'div',
+                    { class: 'size-9.5 rounded-md bg-gray-200 flex items-center justify-center' },
+                    '头'
+                  ),
               h('div', { class: 'ml-2' }, [
                 h('p', { class: 'user-name' }, row.nickName || row.userName || '-'),
-                h('p', { class: 'email' }, `${row.userName || '-'}${row.userEmail ? ` · ${row.userEmail}` : ''}`)
+                h(
+                  'p',
+                  { class: 'email' },
+                  `${row.userName || '-'}${row.userEmail ? ` · ${row.userEmail}` : ''}`
+                )
               ])
             ])
           }
@@ -189,14 +193,20 @@
             if (!details || details.length === 0) {
               return h('span', { class: 'text-gray-400' }, '暂无角色')
             }
-            return h('div', { class: 'flex flex-wrap gap-1' }, 
-              details.map((role: { code: string; name: string }) => 
-                h(ElTag, { 
-                  size: 'small', 
-                  type: 'info', 
-                  effect: 'plain',
-                  title: role.name || role.code
-                }, () => role.code)
+            return h(
+              'div',
+              { class: 'flex flex-wrap gap-1' },
+              details.map((role: { code: string; name: string }) =>
+                h(
+                  ElTag,
+                  {
+                    size: 'small',
+                    type: 'info',
+                    effect: 'plain',
+                    title: role.name || role.code
+                  },
+                  () => role.code
+                )
               )
             )
           }
@@ -218,7 +228,10 @@
           label: '注册来源',
           width: 100,
           formatter: (row: UserListItem) => {
-            const sourceMap: Record<string, { type: 'primary' | 'success' | 'warning' | 'info'; text: string }> = {
+            const sourceMap: Record<
+              string,
+              { type: 'primary' | 'success' | 'warning' | 'info'; text: string }
+            > = {
               admin: { type: 'primary', text: '管理员添加' },
               self: { type: 'success', text: '自注册' },
               invite: { type: 'warning', text: '邀请注册' }
@@ -422,22 +435,22 @@
 </script>
 
 <style scoped>
-.permission-tree {
-  background: transparent;
-}
-.permission-tree :deep(.el-tree-node__content) {
-  height: 32px;
-}
-.tree-node {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.tree-node-icon {
-  font-size: 16px;
-  color: #909399;
-}
-.tree-node-label {
-  font-size: 13px;
-}
+  .permission-tree {
+    background: transparent;
+  }
+  .permission-tree :deep(.el-tree-node__content) {
+    height: 32px;
+  }
+  .tree-node {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .tree-node-icon {
+    font-size: 16px;
+    color: #909399;
+  }
+  .tree-node-label {
+    font-size: 13px;
+  }
 </style>

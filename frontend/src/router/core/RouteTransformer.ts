@@ -33,7 +33,11 @@ export class RouteTransformer {
    * 当菜单项有 name 但无 component 时，按前端路由表用 name 解析组件路径，避免多级下误用父级组件
    * @param ancestorNames 祖先路由的 name 集合，用于避免子路由与祖先重名（Vue Router 要求 name 全局唯一）
    */
-  transform(route: AppRouteRecord, depth = 0, ancestorNames: Set<string> = new Set()): ConvertedRoute {
+  transform(
+    route: AppRouteRecord,
+    depth = 0,
+    ancestorNames: Set<string> = new Set()
+  ): ConvertedRoute {
     const { component, children, ...routeConfig } = route
 
     let componentPath = typeof component === 'string' ? component : ''
@@ -42,7 +46,11 @@ export class RouteTransformer {
       const hasValidComponent = componentPath?.trim() && this.componentLoader.exists(componentPath)
 
       // 组件为空或后端给了错误路径时，按前端路由名映射回退到正确组件
-      if ((!hasValidComponent || !componentPath?.trim()) && resolved && this.componentLoader.exists(resolved)) {
+      if (
+        (!hasValidComponent || !componentPath?.trim()) &&
+        resolved &&
+        this.componentLoader.exists(resolved)
+      ) {
         if (componentPath?.trim() && componentPath !== resolved) {
           console.warn(
             `[RouteTransformer] 路由 "${String(route.name)}" 的组件路径 "${componentPath}" 无效，已回退为 "${resolved}"`

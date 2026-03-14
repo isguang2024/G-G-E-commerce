@@ -407,6 +407,12 @@ type MenuRepository interface {
 	Delete(id uuid.UUID) error
 	ListAll() ([]Menu, error)
 	GetByIDs(ids []uuid.UUID) ([]Menu, error)
+	// 菜单备份相关方法
+	CreateBackup(backup *MenuBackup) error
+	GetBackupByID(id uuid.UUID) (*MenuBackup, error)
+	ListBackups() ([]MenuBackup, error)
+	DeleteBackup(id uuid.UUID) error
+	DeleteAllMenus() error
 }
 
 type menuRepository struct {
@@ -479,6 +485,39 @@ func (r *menuRepository) GetByIDs(ids []uuid.UUID) ([]Menu, error) {
 	var menus []Menu
 	err := r.db.Where("id IN ?", ids).Find(&menus).Error
 	return menus, err
+}
+
+// 菜单备份相关方法
+func (r *menuRepository) CreateBackup(backup *MenuBackup) error {
+	return r.db.Create(backup).Error
+}
+
+func (r *menuRepository) GetBackupByID(id uuid.UUID) (*MenuBackup, error) {
+	var backup MenuBackup
+	err := r.db.Where("id = ?", id).First(&backup).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &backup, nil
+}
+
+func (r *menuRepository) ListBackups() ([]MenuBackup, error) {
+	var backups []MenuBackup
+	err := r.db.Order("created_at DESC").Find(&backups).Error
+	return backups, err
+}
+
+func (r *menuRepository) DeleteBackup(id uuid.UUID) error {
+	return r.db.Delete(&MenuBackup{}, id).Error
+}
+
+func (r *menuRepository) DeleteAllMenus() error {
+	// 只删除所有菜单，不删除角色菜单关联
+	// 角色菜单关联会在 cleanupInvalidRoleMenus 中清理无效关联
+	return r.db.Exec("DELETE FROM menus").Error
 }
 
 func BuildTree(menus []Menu, parentID *uuid.UUID) []*Menu {

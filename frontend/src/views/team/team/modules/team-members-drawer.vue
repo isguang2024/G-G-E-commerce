@@ -26,18 +26,8 @@
           />
         </ElCol>
         <ElCol :span="8">
-          <ElSelect
-            v-model="searchForm.role"
-            placeholder="团队身份"
-            clearable
-            filterable
-          >
-            <ElOption
-              v-for="role in teamRoles"
-              :key="role"
-              :label="role"
-              :value="role"
-            />
+          <ElSelect v-model="searchForm.role" placeholder="团队身份" clearable filterable>
+            <ElOption v-for="role in teamRoles" :key="role" :label="role" :value="role" />
           </ElSelect>
         </ElCol>
         <ElCol :span="4">
@@ -45,7 +35,7 @@
         </ElCol>
       </ElRow>
     </div>
-    
+
     <!-- 成员列表 -->
     <ElCard shadow="never">
       <template #header>
@@ -58,8 +48,8 @@
         <ElTableColumn label="团队身份" min-width="200">
           <template #default="{ row }">
             <div class="flex flex-wrap gap-1">
-              <ElTag 
-                v-for="(role, index) in (row.roles || [row.role])" 
+              <ElTag
+                v-for="(role, index) in row.roles || [row.role]"
                 :key="index"
                 :type="role === '团队管理员' ? 'success' : 'info'"
                 size="small"
@@ -103,7 +93,7 @@
   const members = ref<Api.SystemManage.TeamMemberItem[]>([])
   const loading = ref(false)
   const teamRoles = ref<string[]>([])
-  
+
   const searchForm = reactive({
     userId: '',
     userName: '',

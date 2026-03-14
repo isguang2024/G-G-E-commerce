@@ -44,6 +44,15 @@ func (m *MenuModule) RegisterRoutes(rg *gin.RouterGroup) {
 		menus.POST("", menuHandler.Create)
 		menus.PUT("/:id", menuHandler.Update)
 		menus.DELETE("/:id", menuHandler.Delete)
+
+		// 菜单备份相关路由
+		backups := menus.Group("/backups")
+		{
+			backups.POST("", menuHandler.CreateBackup)
+			backups.GET("", menuHandler.ListBackups)
+			backups.DELETE("/:id", menuHandler.DeleteBackup)
+			backups.POST("/:id/restore", menuHandler.RestoreBackup)
+		}
 	}
 }
 

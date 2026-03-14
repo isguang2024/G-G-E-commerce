@@ -32,19 +32,13 @@
       <ElButton @click="toggleSelectAll" style="margin-left: 8px">{{
         isSelectAll ? '取消全选' : '全部选择'
       }}</ElButton>
-      <ElButton type="primary" :loading="saving" @click="savePermission">
-        保存
-      </ElButton>
+      <ElButton type="primary" :loading="saving" @click="savePermission"> 保存 </ElButton>
     </template>
   </ElDialog>
 </template>
 
 <script setup lang="ts">
-  import {
-    fetchGetMenuTreeAll,
-    fetchGetRoleMenus,
-    fetchSetRoleMenus
-  } from '@/api/system-manage'
+  import { fetchGetMenuTreeAll, fetchGetRoleMenus, fetchSetRoleMenus } from '@/api/system-manage'
   import { formatMenuTitle } from '@/utils/router'
 
   type RoleListItem = Api.SystemManage.RoleListItem
@@ -128,7 +122,9 @@
       } catch (e: any) {
         menuTreeRaw.value = []
         const msg = e?.message || e?.msg || ''
-        menuLoadError.value = msg ? `加载菜单树失败：${msg}` : '加载菜单树失败，请稍后重试（请确认后端已启动且已执行数据库迁移）'
+        menuLoadError.value = msg
+          ? `加载菜单树失败：${msg}`
+          : '加载菜单树失败，请稍后重试（请确认后端已启动且已执行数据库迁移）'
         return
       }
       if (!role?.roleId) return

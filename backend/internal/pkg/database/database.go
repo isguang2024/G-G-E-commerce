@@ -96,6 +96,7 @@ func AutoMigrate() error {
 		&models.TenantMember{},
 		&models.APIKey{},
 		&models.MediaAsset{},
+		&models.MenuBackup{},
 	)
 
 	if err != nil {

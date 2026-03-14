@@ -344,7 +344,8 @@
    */
   const disableMenuType = computed(() => {
     if (isEdit.value) return true
-    if (!isEdit.value && (form.menuType === 'menu' || form.menuType === 'inner') && props.lockType) return true
+    if (!isEdit.value && (form.menuType === 'menu' || form.menuType === 'inner') && props.lockType)
+      return true
     return false
   })
 

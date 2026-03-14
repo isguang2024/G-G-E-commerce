@@ -81,11 +81,14 @@
           label: '作用域',
           width: 100,
           formatter: (row: RoleListItem) => {
-            const scopeConfig = row.scope === 'global'
-              ? { type: 'primary', text: '全局' }
-              : { type: 'success', text: '团队' }
-            return h(ElTag, { type: scopeConfig.type as 'primary' | 'success', size: 'small' }, () =>
-              scopeConfig.text
+            const scopeConfig =
+              row.scope === 'global'
+                ? { type: 'primary', text: '全局' }
+                : { type: 'success', text: '团队' }
+            return h(
+              ElTag,
+              { type: scopeConfig.type as 'primary' | 'success', size: 'small' },
+              () => scopeConfig.text
             )
           }
         },
@@ -96,9 +99,7 @@
           width: 100,
           fixed: 'right',
           formatter: (row: RoleListItem) => {
-            const list = [
-              { key: 'permission', label: '菜单权限', icon: 'ri:user-3-line' }
-            ]
+            const list = [{ key: 'permission', label: '菜单权限', icon: 'ri:user-3-line' }]
             return h('div', [
               h(ArtButtonMore, {
                 list,

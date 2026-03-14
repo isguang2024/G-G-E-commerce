@@ -22,10 +22,10 @@
         />
       </ElFormItem>
       <ElFormItem label="作用域" prop="scopeId">
-        <ElSelect 
-          v-model="form.scopeId" 
-          placeholder="请选择作用域" 
-          style="width: 100%" 
+        <ElSelect
+          v-model="form.scopeId"
+          placeholder="请选择作用域"
+          style="width: 100%"
           :loading="scopeLoading"
           clearable
         >
@@ -36,7 +36,9 @@
             :value="scope.scopeId"
           >
             <span>{{ scope.scopeName }}</span>
-            <span style="color: #8492a6; font-size: 13px; margin-left: 8px">({{ scope.scopeCode }})</span>
+            <span style="color: #8492a6; font-size: 13px; margin-left: 8px"
+              >({{ scope.scopeCode }})</span
+            >
           </ElOption>
         </ElSelect>
       </ElFormItem>
@@ -47,7 +49,13 @@
         </ElSelect>
       </ElFormItem>
       <ElFormItem label="优先级">
-        <ElInputNumber v-model="form.priority" :min="0" :max="999" placeholder="优先级" style="width: 100%" />
+        <ElInputNumber
+          v-model="form.priority"
+          :min="0"
+          :max="999"
+          placeholder="优先级"
+          style="width: 100%"
+        />
       </ElFormItem>
     </ElForm>
     <template #footer>
@@ -191,10 +199,17 @@
       let scopeId = props.roleData.scopeId || ''
       // 如果没有scopeId，尝试从scopeCode查找
       if (!scopeId && props.roleData.scopeCode && scopeList.value.length > 0) {
-        const found = scopeList.value.find(s => s.scopeCode === props.roleData.scopeCode)
+        const found = scopeList.value.find((s) => s.scopeCode === props.roleData.scopeCode)
         scopeId = found ? found.scopeId : ''
       }
-      console.log('初始化表单 - scopeId:', scopeId, 'roleData.scopeId:', props.roleData.scopeId, 'roleData.scopeCode:', props.roleData.scopeCode)
+      console.log(
+        '初始化表单 - scopeId:',
+        scopeId,
+        'roleData.scopeId:',
+        props.roleData.scopeId,
+        'roleData.scopeCode:',
+        props.roleData.scopeCode
+      )
       Object.assign(form, {
         roleId: props.roleData.roleId,
         roleName: props.roleData.roleName,
@@ -251,7 +266,8 @@
           status: form.status || 'normal'
         })
       } else {
-        const roleId = typeof form.roleId === 'string' ? form.roleId : (form.roleId as any)?.toString?.() || ''
+        const roleId =
+          typeof form.roleId === 'string' ? form.roleId : (form.roleId as any)?.toString?.() || ''
         if (!roleId) {
           ElMessage.error('缺少角色ID')
           return

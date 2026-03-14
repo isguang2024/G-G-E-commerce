@@ -90,7 +90,10 @@ export class ComponentLoader {
   /**
    * 构建组件候选路径
    */
-  private buildCandidatePaths(componentPath: string): { fullPath: string; fullPathWithIndex: string } {
+  private buildCandidatePaths(componentPath: string): {
+    fullPath: string
+    fullPathWithIndex: string
+  } {
     const normalizedPath = componentPath.startsWith('/') ? componentPath : `/${componentPath}`
     return {
       fullPath: `../../views${normalizedPath}.vue`,

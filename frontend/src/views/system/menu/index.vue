@@ -1,4 +1,4 @@
-﻿<!-- 菜单管理页面 -->
+<!-- 菜单管理页面 -->
 <template>
   <div class="menu-page art-full-height">
     <!-- 搜索栏 -->
@@ -27,11 +27,20 @@
           <ElButton @click="toggleExpand" v-ripple>
             {{ isExpanded ? '收起' : '展开' }}
           </ElButton>
-          <ElTooltip content="内页默认不显示在侧栏，仅通过按钮跳转；开启后可在列表中查看内页项" placement="top">
+          <ElTooltip
+            content="内页默认不显示在侧栏，仅通过按钮跳转；开启后可在列表中查看内页项"
+            placement="top"
+          >
             <span class="inline-flex items-center gap-2 ml-2">
               <span class="text-sm text-gray-600">显示内页</span>
               <ElSwitch v-model="showInnerPages" />
             </span>
+          </ElTooltip>
+          <ElTooltip content="备份菜单" placement="top">
+            <ElButton @click="handleBackupMenu" v-ripple> 备份 </ElButton>
+          </ElTooltip>
+          <ElTooltip content="管理备份" placement="top">
+            <ElButton @click="handleManageBackups" v-ripple> 管理备份 </ElButton>
           </ElTooltip>
         </template>
       </ArtTableHeader>
@@ -59,7 +68,7 @@
 
         <!-- 路由列 -->
         <template #path="{ row }">
-          <span>{{ row.meta?.isAuthButton ? '' : (row.meta?.link || row.path || '') }}</span>
+          <span>{{ row.meta?.isAuthButton ? '' : row.meta?.link || row.path || '' }}</span>
         </template>
 
         <!-- 状态列 -->
@@ -70,9 +79,9 @@
         <!-- 操作列 -->
         <template #operation="{ row }">
           <div class="flex items-center justify-center gap-2">
-            <ArtButtonMore 
-              :list="getOperationList(row)" 
-              @click="(item) => handleMenuOperation(item, row)" 
+            <ArtButtonMore
+              :list="getOperationList(row)"
+              @click="(item) => handleMenuOperation(item, row)"
             />
           </div>
         </template>
@@ -89,6 +98,56 @@
         :lockType="lockMenuType"
         @submit="handleSubmit"
       />
+
+      <!-- 备份菜单弹窗 -->
+      <ElDialog v-model="backupDialogVisible" title="备份菜单" width="500px">
+        <ElForm :model="{ name: backupName, description: backupDescription }" label-width="80px">
+          <ElFormItem label="备份名称" required>
+            <ElInput v-model="backupName" placeholder="请输入备份名称" />
+          </ElFormItem>
+          <ElFormItem label="备份描述">
+            <ElInput
+              v-model="backupDescription"
+              type="textarea"
+              placeholder="请输入备份描述"
+              rows="3"
+            />
+          </ElFormItem>
+        </ElForm>
+        <template #footer>
+          <span class="dialog-footer">
+            <ElButton @click="backupDialogVisible = false">取消</ElButton>
+            <ElButton type="primary" @click="handleCreateBackup" :loading="backupLoading">
+              确认备份
+            </ElButton>
+          </span>
+        </template>
+      </ElDialog>
+
+      <!-- 管理备份弹窗 -->
+      <ElDialog v-model="backupListDialogVisible" title="管理备份" width="800px">
+        <ElTable v-loading="backupLoading" :data="backupList" style="width: 100%" border>
+          <ElTableColumn prop="name" label="备份名称" width="200" />
+          <ElTableColumn prop="description" label="备份描述" />
+          <ElTableColumn prop="created_at" label="创建时间" width="200" />
+          <ElTableColumn prop="created_by" label="创建人" width="150" />
+          <ElTableColumn label="操作" width="200" fixed="right">
+            <template #default="{ row }">
+              <ElButton
+                type="primary"
+                size="small"
+                @click="handleRestoreBackup(row.id)"
+                style="margin-right: 10px"
+              >
+                恢复
+              </ElButton>
+              <ElButton type="danger" size="small" @click="handleDeleteBackup(row.id)">
+                删除
+              </ElButton>
+            </template>
+          </ElTableColumn>
+        </ElTable>
+      </ElDialog>
     </ElCard>
   </div>
 </template>
@@ -107,7 +166,11 @@
     fetchGetMenuTreeAll,
     fetchCreateMenu,
     fetchUpdateMenu,
-    fetchDeleteMenu
+    fetchDeleteMenu,
+    fetchCreateMenuBackup,
+    fetchGetMenuBackupList,
+    fetchDeleteMenuBackup,
+    fetchRestoreMenuBackup
   } from '@/api/system-manage'
   import { ElTag, ElMessageBox, ElMessage, ElTooltip, ElButton, ElSwitch } from 'element-plus'
 
@@ -120,6 +183,14 @@
   const tableRef = ref()
   const tableData = ref<AppRouteRecord[]>([])
   const dataFromBackend = ref(false)
+
+  // --- 菜单备份相关状态 ---
+  const backupLoading = ref(false)
+  const backupDialogVisible = ref(false)
+  const backupListDialogVisible = ref(false)
+  const backupName = ref('')
+  const backupDescription = ref('')
+  const backupList = ref<any[]>([])
 
   // --- 搜索相关 ---
   const initialSearchState = { name: '', route: '' }
@@ -161,58 +232,29 @@
   }
 
   const ensureId = (items: any[]) => {
-    items.forEach(item => {
+    items.forEach((item) => {
       if (item.id == null) item.id = item.path
       if (item.children?.length) ensureId(item.children)
     })
   }
 
-  const findMenuNodeById = (items: any[], targetId: string): any | null => {
-    for (const item of items) {
-      if (String(item.id || item.path) === targetId) return item
-      if (item.children?.length) {
-        const child = findMenuNodeById(item.children, targetId)
-        if (child) return child
-      }
-    }
-    return null
-  }
-
-  const convertAuthListToChildren = (items: AppRouteRecord[]): AppRouteRecord[] => {
-    return items.map(item => {
-      const cloned = JSON.parse(JSON.stringify(item))
-      if (cloned.children?.length) {
-        cloned.children = convertAuthListToChildren(cloned.children)
-      }
-      if (item.meta?.authList?.length) {
-        const authChildren = item.meta.authList.map((auth: any) => ({
-          id: `${item.id}_auth_${auth.authMark}`,
-          path: `${item.path}_auth_${auth.authMark}`,
-          name: `${String(item.name)}_auth_${auth.authMark}`,
-          meta: { title: auth.title, authMark: auth.authMark, isAuthButton: true, parentPath: item.path }
-        }))
-        cloned.children = cloned.children ? [...cloned.children, ...authChildren] : authChildren
-      }
-      return cloned
-    })
-  }
-
   const filterAndSearch = (items: AppRouteRecord[]): AppRouteRecord[] => {
     return items
-      .filter(item => showInnerPages.value || !item.meta?.isInnerPage)
-      .map(item => {
+      .filter((item) => showInnerPages.value || !item.meta?.isInnerPage)
+      .map((item) => {
         const cloned = JSON.parse(JSON.stringify(item))
         if (cloned.children?.length) {
           cloned.children = filterAndSearch(cloned.children)
         }
         return cloned
       })
-      .filter(item => {
+      .filter((item) => {
         const searchName = appliedFilters.name?.toLowerCase().trim() || ''
         const searchRoute = appliedFilters.route?.toLowerCase().trim() || ''
-        const titleMatch = !searchName || formatMenuTitle(item.meta?.title).toLowerCase().includes(searchName)
+        const titleMatch =
+          !searchName || formatMenuTitle(item.meta?.title).toLowerCase().includes(searchName)
         const routeMatch = !searchRoute || (item.path || '').toLowerCase().includes(searchRoute)
-        return titleMatch && routeMatch || (item.children && item.children.length > 0)
+        return (titleMatch && routeMatch) || (item.children && item.children.length > 0)
       })
   }
 
@@ -222,8 +264,22 @@
     { prop: 'sort_order', label: '排序', width: 80, align: 'center' },
     { prop: 'type', label: '类型', width: 100, align: 'center', useSlot: true, slotName: 'type' },
     { prop: 'path', label: '路由', minWidth: 150, useSlot: true, slotName: 'path' },
-    { prop: 'status', label: '状态', width: 100, align: 'center', useSlot: true, slotName: 'status' },
-    { prop: 'operation', label: '操作', width: 120, align: 'center', useSlot: true, slotName: 'operation' }
+    {
+      prop: 'status',
+      label: '状态',
+      width: 100,
+      align: 'center',
+      useSlot: true,
+      slotName: 'status'
+    },
+    {
+      prop: 'operation',
+      label: '操作',
+      width: 120,
+      align: 'center',
+      useSlot: true,
+      slotName: 'operation'
+    }
   ])
 
   // --- 辅助方法 ---
@@ -247,14 +303,26 @@
       { key: 'edit', label: '编辑菜单', icon: 'ri:edit-2-line' }
     ]
     if (!row.is_system) {
-      list.push({ key: 'delete', label: '删除菜单', icon: 'ri:delete-bin-4-line', color: '#f56c6c' })
+      list.push({
+        key: 'delete',
+        label: '删除菜单',
+        icon: 'ri:delete-bin-4-line',
+        color: '#f56c6c'
+      })
     }
     return list
   }
 
   // --- 事件处理 ---
-  const handleReset = () => { Object.assign(formFilters, initialSearchState); Object.assign(appliedFilters, initialSearchState); getMenuList() }
-  const handleSearch = () => { Object.assign(appliedFilters, formFilters); getMenuList() }
+  const handleReset = () => {
+    Object.assign(formFilters, initialSearchState)
+    Object.assign(appliedFilters, initialSearchState)
+    getMenuList()
+  }
+  const handleSearch = () => {
+    Object.assign(appliedFilters, formFilters)
+    getMenuList()
+  }
   const handleRefresh = () => getMenuList()
   const rowKey = (row: any) => String(row.id || row.path)
 
@@ -276,9 +344,27 @@
   }
 
   // --- CRUD 操作 ---
-  const handleAddMenu = () => { dialogType.value = 'menu'; editData.value = null; parentRowForAdd.value = null; lockMenuType.value = true; dialogVisible.value = true }
-  const handleAddUnderRow = (row: any) => { dialogType.value = 'menu'; editData.value = null; parentRowForAdd.value = row; lockMenuType.value = false; dialogVisible.value = true }
-  const handleEditMenu = (row: any) => { dialogType.value = 'menu'; editData.value = row; parentRowForAdd.value = null; lockMenuType.value = true; dialogVisible.value = true }
+  const handleAddMenu = () => {
+    dialogType.value = 'menu'
+    editData.value = null
+    parentRowForAdd.value = null
+    lockMenuType.value = true
+    dialogVisible.value = true
+  }
+  const handleAddUnderRow = (row: any) => {
+    dialogType.value = 'menu'
+    editData.value = null
+    parentRowForAdd.value = row
+    lockMenuType.value = false
+    dialogVisible.value = true
+  }
+  const handleEditMenu = (row: any) => {
+    dialogType.value = 'menu'
+    editData.value = row
+    parentRowForAdd.value = null
+    lockMenuType.value = true
+    dialogVisible.value = true
+  }
   const handleMenuOperation = (item: ButtonMoreItem, row: any) => {
     if (item.key === 'add') handleAddUnderRow(row)
     else if (item.key === 'edit') handleEditMenu(row)
@@ -293,7 +379,11 @@
       await fetchDeleteMenu(String(row.id))
       ElMessage.success('删除成功')
       getMenuList()
-    } catch {}
+    } catch (e: any) {
+      if (e !== 'cancel') {
+        ElMessage.error(e?.message || '删除失败')
+      }
+    }
   }
 
   const handleSubmit = async (formData: any) => {
@@ -308,22 +398,112 @@
         icon: formData.icon || '',
         sort_order: formData.sort ?? 0,
         meta: {
-          roles: formData.roles, isEnable: formData.isEnable, keepAlive: formData.keepAlive,
-          isHide: isInner ? true : !!formData.isHide, isHideTab: formData.isHideTab,
-          isIframe: formData.isIframe, showBadge: formData.showBadge, fixedTab: formData.fixedTab,
-          isFullPage: formData.isFullPage, isInnerPage: isInner
+          roles: formData.roles,
+          isEnable: formData.isEnable,
+          keepAlive: formData.keepAlive,
+          isHide: isInner ? true : !!formData.isHide,
+          isHideTab: formData.isHideTab,
+          isIframe: formData.isIframe,
+          showBadge: formData.showBadge,
+          fixedTab: formData.fixedTab,
+          isFullPage: formData.isFullPage,
+          isInnerPage: isInner
         }
       }
       if (editData.value?.id) {
         const parentId = formData.parentId?.trim() || null
         await fetchUpdateMenu(String(editData.value.id), { ...payload, parent_id: parentId })
       } else {
-        const parentId = formData.parentId?.trim() || (parentRowForAdd.value?.id ? String(parentRowForAdd.value.id) : null)
+        const parentId =
+          formData.parentId?.trim() ||
+          (parentRowForAdd.value?.id ? String(parentRowForAdd.value.id) : null)
         await fetchCreateMenu({ ...payload, parent_id: parentId })
       }
       ElMessage.success('保存成功')
       getMenuList()
-    } catch (e: any) { ElMessage.error(e?.message || '保存失败') }
+    } catch (e: any) {
+      ElMessage.error(e?.message || '保存失败')
+    }
+  }
+
+  // --- 菜单备份相关方法 ---
+  const handleBackupMenu = () => {
+    backupName.value = ''
+    backupDescription.value = ''
+    backupDialogVisible.value = true
+  }
+
+  const handleCreateBackup = async () => {
+    if (!backupName.value.trim()) {
+      return ElMessage.warning('请输入备份名称')
+    }
+    backupLoading.value = true
+    try {
+      await fetchCreateMenuBackup({
+        name: backupName.value.trim(),
+        description: backupDescription.value.trim()
+      })
+      ElMessage.success('备份成功')
+      backupDialogVisible.value = false
+    } catch (e: any) {
+      ElMessage.error(e?.message || '备份失败')
+    } finally {
+      backupLoading.value = false
+    }
+  }
+
+  const handleManageBackups = async () => {
+    backupLoading.value = true
+    try {
+      const list = await fetchGetMenuBackupList()
+      backupList.value = list || []
+      backupListDialogVisible.value = true
+    } catch (e: any) {
+      ElMessage.error(e?.message || '获取备份列表失败')
+    } finally {
+      backupLoading.value = false
+    }
+  }
+
+  const handleRestoreBackup = async (id: string) => {
+    try {
+      await ElMessageBox.confirm('确定要恢复该备份吗？恢复后会覆盖当前菜单配置。', '提示', {
+        type: 'warning',
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      })
+      backupLoading.value = true
+      await fetchRestoreMenuBackup(id)
+      ElMessage.success('恢复成功')
+      backupListDialogVisible.value = false
+      getMenuList()
+    } catch (e: any) {
+      if (e !== 'cancel') {
+        ElMessage.error(e?.message || '恢复失败')
+      }
+    } finally {
+      backupLoading.value = false
+    }
+  }
+
+  const handleDeleteBackup = async (id: string) => {
+    try {
+      await ElMessageBox.confirm('确定要删除该备份吗？', '提示', {
+        type: 'warning',
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      })
+      backupLoading.value = true
+      await fetchDeleteMenuBackup(id)
+      ElMessage.success('删除成功')
+      handleManageBackups()
+    } catch (e: any) {
+      if (e !== 'cancel') {
+        ElMessage.error(e?.message || '删除失败')
+      }
+    } finally {
+      backupLoading.value = false
+    }
   }
 
   // --- 生命周期 & 监听 ---
@@ -334,6 +514,4 @@
   })
 </script>
 
-<style lang="scss" scoped>
-</style>
-
+<style lang="scss" scoped></style>

@@ -37,7 +37,10 @@ export function fetchDeleteTeam(id: string) {
   })
 }
 
-export function fetchGetTeamMembers(teamId: string, params?: { user_id?: string; user_name?: string; role?: string }) {
+export function fetchGetTeamMembers(
+  teamId: string,
+  params?: { user_id?: string; user_name?: string; role?: string }
+) {
   return request.get<{ records: Api.SystemManage.TeamMemberItem[] }>({
     url: `${TENANT_BASE}/${teamId}/members`,
     params

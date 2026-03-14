@@ -7,14 +7,15 @@
   >
     <ElForm ref="formRef" :model="formData" :rules="rules" label-width="100px">
       <ElFormItem label="团队名称" prop="name">
-        <ElInput v-model="formData.name" placeholder="请输入团队名称" maxlength="200" show-word-limit />
+        <ElInput
+          v-model="formData.name"
+          placeholder="请输入团队名称"
+          maxlength="200"
+          show-word-limit
+        />
       </ElFormItem>
       <ElFormItem label="团队备注" prop="remark">
-        <ElInput
-          v-model="formData.remark"
-          placeholder="请输入团队备注"
-          maxlength="500"
-        />
+        <ElInput v-model="formData.remark" placeholder="请输入团队备注" maxlength="500" />
       </ElFormItem>
       <ElFormItem label="管理员配置" prop="admin_user_ids">
         <div class="admin-tags-container">
@@ -37,9 +38,7 @@
           @keyup.enter="handleInputConfirm"
           @blur="handleInputConfirm"
         />
-        <ElButton v-else class="button-new-tag" @click="showInput">
-          + 添加管理员
-        </ElButton>
+        <ElButton v-else class="button-new-tag" @click="showInput"> + 添加管理员 </ElButton>
         <div class="text-gray-400 text-xs mt-1">输入用户ID后回车确认，添加后将被设为团队管理员</div>
       </ElFormItem>
       <ElFormItem label="Logo URL" prop="logo_url">
@@ -89,7 +88,10 @@
 
   interface Emits {
     (e: 'update:visible', value: boolean): void
-    (e: 'submit', payload?: Api.SystemManage.TeamCreateParams | Api.SystemManage.TeamUpdateParams): void
+    (
+      e: 'submit',
+      payload?: Api.SystemManage.TeamCreateParams | Api.SystemManage.TeamUpdateParams
+    ): void
   }
 
   const props = defineProps<Props>()
@@ -143,8 +145,8 @@
   }
 
   const removeAdmin = (id: string) => {
-    adminList.value = adminList.value.filter(a => a.id !== id)
-    formData.admin_user_ids = adminList.value.map(a => a.id)
+    adminList.value = adminList.value.filter((a) => a.id !== id)
+    formData.admin_user_ids = adminList.value.map((a) => a.id)
   }
 
   const handleInputConfirm = async () => {
@@ -156,7 +158,7 @@
     }
 
     // 检查重复
-    if (adminList.value.some(a => a.id === value)) {
+    if (adminList.value.some((a) => a.id === value)) {
       ElMessage.warning('该用户ID已添加')
       inputVisible.value = false
       inputValue.value = ''
@@ -168,7 +170,7 @@
       const user = await fetchGetUser(value)
       const name = user.nickName || user.userName || user.email || '未知用户'
       adminList.value.push({ id: value, name })
-      formData.admin_user_ids = adminList.value.map(a => a.id)
+      formData.admin_user_ids = adminList.value.map((a) => a.id)
       ElMessage.success(`已成功添加用户 [${name}] 为团队管理员`)
     } catch {
       ElMessage.error('用户不存在，请检查用户ID')
@@ -216,9 +218,7 @@
   async function handleSubmit() {
     await formRef.value?.validate()
     // 过滤掉不存在的用户
-    const validAdminIds = adminList.value
-      .filter(a => a.name !== '用户不存在')
-      .map(a => a.id)
+    const validAdminIds = adminList.value.filter((a) => a.name !== '用户不存在').map((a) => a.id)
 
     if (props.type === 'add') {
       emit('submit', {
@@ -245,22 +245,22 @@
 </script>
 
 <style scoped>
-.admin-tags-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-.admin-tag {
-  max-width: 300px;
-}
-.input-new-tag {
-  width: 120px;
-}
-.button-new-tag {
-  height: 32px;
-  line-height: 30px;
-  padding-top: 0;
-  padding-bottom: 0;
-}
+  .admin-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .admin-tag {
+    max-width: 300px;
+  }
+  .input-new-tag {
+    width: 120px;
+  }
+  .button-new-tag {
+    height: 32px;
+    line-height: 30px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
 </style>

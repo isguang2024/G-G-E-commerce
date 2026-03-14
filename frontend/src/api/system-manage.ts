@@ -239,3 +239,42 @@ export function fetchUpdateMenuSortByParent(parentId: string | null, menuIds: st
   })
 }
 
+// 菜单备份相关API
+const MENU_BACKUP_BASE = '/api/v1/menus/backups'
+
+/** 创建菜单备份 */
+export function fetchCreateMenuBackup(data: { name: string; description?: string }) {
+  return request.post<void>({
+    url: MENU_BACKUP_BASE,
+    data
+  })
+}
+
+/** 获取菜单备份列表 */
+export function fetchGetMenuBackupList() {
+  return request.get<
+    {
+      id: string
+      name: string
+      description: string
+      created_at: string
+      created_by: string
+    }[]
+  >({
+    url: MENU_BACKUP_BASE
+  })
+}
+
+/** 删除菜单备份 */
+export function fetchDeleteMenuBackup(id: string) {
+  return request.del<void>({
+    url: `${MENU_BACKUP_BASE}/${id}`
+  })
+}
+
+/** 恢复菜单备份 */
+export function fetchRestoreMenuBackup(id: string) {
+  return request.post<void>({
+    url: `${MENU_BACKUP_BASE}/${id}/restore`
+  })
+}

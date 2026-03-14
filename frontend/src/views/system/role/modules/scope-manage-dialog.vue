@@ -1,11 +1,5 @@
 <template>
-  <ElDialog
-    v-model="visible"
-    title="作用域管理"
-    width="60%"
-    align-center
-    @close="handleClose"
-  >
+  <ElDialog v-model="visible" title="作用域管理" width="60%" align-center @close="handleClose">
     <ElCard shadow="never">
       <div class="mb-4 flex justify-end">
         <ElButton type="primary" @click="showDialog('add')">新增作用域</ElButton>
@@ -118,9 +112,7 @@
           fixed: 'right',
           formatter: (row) => {
             const isDefaultScope = ['global', 'team'].includes(row.scopeCode)
-            const list = [
-              { key: 'edit', label: '编辑', icon: 'ri:edit-2-line' }
-            ]
+            const list = [{ key: 'edit', label: '编辑', icon: 'ri:edit-2-line' }]
             if (!isDefaultScope) {
               list.push({
                 key: 'delete',
@@ -172,17 +164,22 @@
       .catch((e) => {
         if (e !== 'cancel') {
           const error = e as any
-          
+
           // 检查是否有角色关联信息
           // 当 HTTP 状态码是 500 时，error.data 包含整个响应体 { code, message, data }
           // 当 HTTP 状态码是 200 但 code !== 0 时，error.data 直接是后端返回的 data
           let errorData = error?.data
-          
+
           // 如果 error.data 有嵌套的 data 字段（HTTP 500 的情况）
-          if (errorData && typeof errorData === 'object' && errorData.data && typeof errorData.data === 'object') {
+          if (
+            errorData &&
+            typeof errorData === 'object' &&
+            errorData.data &&
+            typeof errorData.data === 'object'
+          ) {
             errorData = errorData.data
           }
-          
+
           // 检查是否有角色关联信息
           if (errorData && typeof errorData === 'object' && Array.isArray(errorData.roles)) {
             const roles = errorData.roles as string[]

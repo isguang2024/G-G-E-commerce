@@ -135,7 +135,10 @@ declare namespace Api {
 
     /** 用户搜索参数 */
     type UserSearchParams = Partial<
-      Pick<UserListItem, 'userName' | 'userPhone' | 'userEmail' | 'status' | 'registerSource' | 'invitedBy'> &
+      Pick<
+        UserListItem,
+        'userName' | 'userPhone' | 'userEmail' | 'status' | 'registerSource' | 'invitedBy'
+      > &
         Api.Common.CommonSearchParams & {
           id?: string // 用户ID
           roleId?: string // 角色ID
@@ -298,8 +301,8 @@ declare namespace Api {
     interface TeamMemberItem {
       id: string
       userId: string
-      role: string        // 角色名称（如"团队管理员"、"团队成员"）
-      roleCode?: string   // 角色编码（如"team_admin"、"team_member"）
+      role: string // 角色名称（如"团队管理员"、"团队成员"）
+      roleCode?: string // 角色编码（如"team_admin"、"team_member"）
       status: string
       joinedAt: string | null
       userName: string

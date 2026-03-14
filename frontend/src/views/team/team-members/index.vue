@@ -32,7 +32,12 @@
             <template #header>
               <span>添加成员</span>
             </template>
-            <ElForm :model="addForm" label-width="80px" label-position="top" class="flex flex-wrap items-end gap-4">
+            <ElForm
+              :model="addForm"
+              label-width="80px"
+              label-position="top"
+              class="flex flex-wrap items-end gap-4"
+            >
               <ElFormItem label="用户 ID" class="mb-0">
                 <ElInput
                   v-model="addForm.user_id"
@@ -49,7 +54,9 @@
                 </ElSelect>
               </ElFormItem>
               <ElFormItem class="mb-0">
-                <ElButton type="primary" :loading="addLoading" @click="handleAddMember">添加</ElButton>
+                <ElButton type="primary" :loading="addLoading" @click="handleAddMember"
+                  >添加</ElButton
+                >
               </ElFormItem>
             </ElForm>
           </ElCard>
@@ -66,8 +73,8 @@
               <ElTableColumn label="团队身份" min-width="200">
                 <template #default="{ row }">
                   <div class="flex flex-wrap gap-1">
-                    <ElTag 
-                      v-for="(role, index) in (row.roles || [row.role])" 
+                    <ElTag
+                      v-for="(role, index) in row.roles || [row.role]"
                       :key="index"
                       :type="role === '团队管理员' ? 'success' : 'info'"
                       size="small"

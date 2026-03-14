@@ -8,7 +8,11 @@
   >
     <ElForm ref="formRef" :model="form" :rules="rules" label-width="120px">
       <ElFormItem label="作用域编码" prop="scopeCode">
-        <ElInput v-model="form.scopeCode" placeholder="请输入作用域编码" :disabled="dialogType === 'edit'" />
+        <ElInput
+          v-model="form.scopeCode"
+          placeholder="请输入作用域编码"
+          :disabled="dialogType === 'edit'"
+        />
       </ElFormItem>
       <ElFormItem label="作用域名称" prop="scopeName">
         <ElInput v-model="form.scopeName" placeholder="请输入作用域名称" />
@@ -22,7 +26,12 @@
         />
       </ElFormItem>
       <ElFormItem label="排序" prop="sortOrder">
-        <ElInputNumber v-model="form.sortOrder" :min="0" placeholder="请输入排序值" style="width: 100%" />
+        <ElInputNumber
+          v-model="form.sortOrder"
+          :min="0"
+          placeholder="请输入排序值"
+          style="width: 100%"
+        />
       </ElFormItem>
     </ElForm>
     <template #footer>
@@ -155,7 +164,10 @@
           sort_order: form.sortOrder || 0
         })
       } else {
-        const scopeId = typeof form.scopeId === 'string' ? form.scopeId : (form.scopeId as any)?.toString?.() || ''
+        const scopeId =
+          typeof form.scopeId === 'string'
+            ? form.scopeId
+            : (form.scopeId as any)?.toString?.() || ''
         if (!scopeId) {
           ElMessage.error('缺少作用域ID')
           return

@@ -143,8 +143,10 @@ export function handleError(error: AxiosError<ErrorResponse>): never {
   // 处理 HTTP 状态码错误
   // 优先使用后端返回的错误消息（message 或 msg），如果没有则使用通用错误消息
   const backendMessage = error.response?.data?.message || error.response?.data?.msg
-  const message = backendMessage || (statusCode ? getErrorMessage(statusCode) : errorMessage || $t('httpMsg.requestFailed'))
-  
+  const message =
+    backendMessage ||
+    (statusCode ? getErrorMessage(statusCode) : errorMessage || $t('httpMsg.requestFailed'))
+
   // 提取响应数据：如果响应体有 data 字段，则传递 data；否则传递整个响应体
   // 这样可以在业务代码中通过 error.data.data 访问嵌套的数据（如 roles, roleCount）
   const responseData = error.response.data
@@ -210,7 +212,7 @@ function shouldShowErrorMessage(code: number): boolean {
     // 5xxxx 服务端错误 - 全部显示
     5001, // 内部错误
     5002, // 数据库错误
-    5003  // 外部服务错误
+    5003 // 外部服务错误
   ]
 
   // 不需要显示全局提示的错误码（静默处理，由业务代码自行处理）
@@ -221,7 +223,7 @@ function shouldShowErrorMessage(code: number): boolean {
     3004, // 菜单不存在
     3005, // 角色不存在
     3009, // 成员不在团队中
-    3010  // 团队角色不存在或无权操作
+    3010 // 团队角色不存在或无权操作
   ]
 
   if (showCodes.includes(code)) {

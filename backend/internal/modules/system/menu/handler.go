@@ -52,10 +52,18 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 						user, err := h.userRepo.GetByID(userID)
 						if err == nil && user.Roles != nil && len(user.Roles) > 0 {
 							roleIDs := make([]uuid.UUID, 0, len(user.Roles))
+							isAdmin := false
 							for _, r := range user.Roles {
 								roleIDs = append(roleIDs, r.ID)
+								if r.Code == "admin" {
+									isAdmin = true
+								}
 							}
 							allowedMenuIDs, _ = h.roleMenuRepo.GetMenuIDsByRoleIDs(roleIDs)
+							// 如果是admin角色且没有菜单关联，返回所有菜单
+							if len(allowedMenuIDs) == 0 && isAdmin {
+								all = true
+							}
 						}
 					}
 				}
@@ -147,10 +155,103 @@ func (h *MenuHandler) Delete(c *gin.Context) {
 			return
 		}
 		h.logger.Error("Menu delete failed", zap.Error(err))
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "删除菜单失败")
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "删除菜单失败: "+err.Error())
 		c.JSON(status, resp)
 		return
 	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+// 菜单备份相关接口
+func (h *MenuHandler) CreateBackup(c *gin.Context) {
+	var req struct {
+		Name        string `json:"name" binding:"required"`
+		Description string `json:"description"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+
+	// 获取当前用户ID
+	var createdBy *uuid.UUID
+	if userIDStr, ok := c.Get("user_id"); ok {
+		if idStr, ok := userIDStr.(string); ok {
+			if userID, err := uuid.Parse(idStr); err == nil {
+				createdBy = &userID
+			}
+		}
+	}
+
+	if err := h.menuService.CreateBackup(req.Name, req.Description, createdBy); err != nil {
+		h.logger.Error("Create backup failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "创建备份失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *MenuHandler) ListBackups(c *gin.Context) {
+	backups, err := h.menuService.ListBackups()
+	if err != nil {
+		h.logger.Error("List backups failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取备份列表失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	out := make([]gin.H, 0, len(backups))
+	for _, backup := range backups {
+		out = append(out, gin.H{
+			"id":          backup.ID.String(),
+			"name":        backup.Name,
+			"description": backup.Description,
+			"created_at":  backup.CreatedAt,
+			"created_by":  backup.CreatedBy,
+		})
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse(out))
+}
+
+func (h *MenuHandler) DeleteBackup(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的备份ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	if err := h.menuService.DeleteBackup(id); err != nil {
+		h.logger.Error("Delete backup failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "删除备份失败: "+err.Error())
+		c.JSON(status, resp)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *MenuHandler) RestoreBackup(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的备份ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	if err := h.menuService.RestoreBackup(id); err != nil {
+		h.logger.Error("Restore backup failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "恢复备份失败: "+err.Error())
+		c.JSON(status, resp)
+		return
+	}
+
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
@@ -170,7 +271,6 @@ func menuToMap(m *user.Menu) gin.H {
 		"name":        m.Name,
 		"component":   m.Component,
 		"meta":        meta,
-		"is_system":   m.IsSystem,
 		"sort_order":  m.SortOrder,
 	}
 	if m.ParentID != nil {

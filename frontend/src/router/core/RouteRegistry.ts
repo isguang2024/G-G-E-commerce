@@ -87,5 +87,4 @@ export class RouteRegistry {
   markAsRegistered(): void {
     this.registered = true
   }
-
 }
