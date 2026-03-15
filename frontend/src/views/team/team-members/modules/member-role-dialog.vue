@@ -67,14 +67,14 @@
     try {
       // 1. 获取所有可选角色（全局+本团队）
       const rolesRes = await fetchGetMyTeamRoles()
-      allRoles.value = rolesRes.records || []
+      allRoles.value = rolesRes || []
 
       // 2. 获取该成员当前已有的角色
       const memberRolesRes = await fetchGetMyTeamMemberRoles(props.member.userId)
       selectedRoleIds.value = memberRolesRes.role_ids || []
 
       // 3. 获取成员的角色编码，用于判断是否为管理员
-      memberRoleCodes.value = (props.member as any).roleCodes || []
+      memberRoleCodes.value = props.member.roleCode ? [props.member.roleCode] : []
     } catch (e: any) {
       ElMessage.error(e?.message || '获取角色信息失败')
       visible.value = false

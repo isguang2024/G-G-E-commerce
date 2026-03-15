@@ -267,6 +267,13 @@ declare namespace Api {
       updateTime: string
       ownerId?: string
       adminUserIds?: string[]
+      adminUsers?: Array<{
+        user_id: string
+        user_name?: string
+        nick_name?: string
+      }>
+      currentRoleCode?: string
+      memberStatus?: string
     }
 
     /** 团队搜索参数（与后端 TenantListRequest 一致） */
@@ -300,6 +307,7 @@ declare namespace Api {
     /** 团队成员项（与后端 ListMembers 返回一致） */
     interface TeamMemberItem {
       id: string
+      tenantId?: string
       userId: string
       role: string // 角色名称（如"团队管理员"、"团队成员"）
       roleCode?: string // 角色编码（如"team_admin"、"team_member"）
@@ -308,6 +316,7 @@ declare namespace Api {
       userName: string
       nickName: string
       userEmail: string
+      avatar?: string
     }
 
     /** 创建菜单参数（与后端 MenuCreateRequest 一致） */
@@ -319,7 +328,7 @@ declare namespace Api {
       title: string
       icon?: string
       sort_order?: number
-      meta?: { roles?: string[]; [k: string]: unknown }
+      meta?: { roles?: string[]; requiresTenantContext?: boolean; [k: string]: unknown }
       hidden?: boolean
     }
 
@@ -332,7 +341,7 @@ declare namespace Api {
       title?: string
       icon?: string
       sort_order?: number
-      meta?: { roles?: string[]; [k: string]: unknown }
+      meta?: { roles?: string[]; requiresTenantContext?: boolean; [k: string]: unknown }
       hidden?: boolean
     }
   }

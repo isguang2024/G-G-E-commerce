@@ -79,7 +79,7 @@
 
   interface Emits {
     (e: 'update:visible', value: boolean): void
-    (e: 'submit'): void
+    (e: 'submit', payload: Api.SystemManage.UserCreateParams | Api.SystemManage.UserUpdateParams): void
   }
 
   const props = defineProps<Props>()

@@ -12,6 +12,8 @@ import { fetchGetMenuList } from '@/api/system-manage'
 import { RoutesAlias } from '../routesAlias'
 import { formatMenuTitle } from '@/utils'
 import { getComponentPathByRouteName } from './routeNameComponentMap'
+import { useTenantStore } from '@/store/modules/tenant'
+import { useUserStore } from '@/store/modules/user'
 
 export class MenuProcessor {
   /**
@@ -19,12 +21,13 @@ export class MenuProcessor {
    */
   async getMenuList(): Promise<AppRouteRecord[]> {
     const menuList = await fetchGetMenuList()
+    const filteredByTenant = this.filterTenantContextMenus(menuList)
 
     // 在规范化路径之前，验证原始路径配置
-    this.validateMenuPaths(menuList)
+    this.validateMenuPaths(filteredByTenant)
 
     // 规范化路径（将相对路径转换为完整路径）
-    return this.normalizeMenuPaths(this.filterEmptyMenus(menuList))
+    return this.normalizeMenuPaths(this.filterEmptyMenus(filteredByTenant))
   }
 
   /**
@@ -44,8 +47,8 @@ export class MenuProcessor {
         return item
       })
       .filter((item) => {
-        // 如果定义了 children 属性（即使是空数组），说明这是一个目录菜单，应该保留
-        if ('children' in item) {
+        // 有有效子菜单的目录菜单，保留
+        if (item.children && item.children.length > 0) {
           return true
         }
 
@@ -73,7 +76,33 @@ export class MenuProcessor {
    * 验证菜单列表是否有效
    */
   validateMenuList(menuList: AppRouteRecord[]): boolean {
-    return Array.isArray(menuList) && menuList.length > 0
+    return Array.isArray(menuList)
+  }
+
+  /**
+   * 过滤依赖团队上下文的菜单
+   * 普通用户无团队时隐藏该类菜单，系统管理员不受限制
+   */
+  private filterTenantContextMenus(menuList: AppRouteRecord[]): AppRouteRecord[] {
+    const userStore = useUserStore()
+    const tenantStore = useTenantStore()
+
+    if (userStore.getUserInfo?.is_super_admin || tenantStore.hasTeams) {
+      return menuList
+    }
+
+    return menuList
+      .map((item) => {
+        const children = item.children?.length
+          ? this.filterTenantContextMenus(item.children)
+          : item.children
+
+        return {
+          ...item,
+          children
+        }
+      })
+      .filter((item) => !item.meta?.requiresTenantContext)
   }
 
   /**

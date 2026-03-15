@@ -2,6 +2,7 @@ package user
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -12,10 +13,12 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 )
 
+const tenantContextHeader = "X-Tenant-ID"
+
 type UserHandler struct {
 	userService       UserService
 	permissionService interface {
-		GetUserMenuIDs(userID uuid.UUID) ([]uuid.UUID, error)
+		GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
 	}
 	menuRepo interface {
 		ListAll() ([]Menu, error)
@@ -24,7 +27,7 @@ type UserHandler struct {
 }
 
 func NewUserHandler(userService UserService, permissionService interface {
-	GetUserMenuIDs(userID uuid.UUID) ([]uuid.UUID, error)
+	GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
 }, menuRepo interface {
 	ListAll() ([]Menu, error)
 }, logger *zap.Logger) *UserHandler {
@@ -297,7 +300,18 @@ func (h *UserHandler) GetPermissions(c *gin.Context) {
 		return
 	}
 
-	menuIDs, err := h.permissionService.GetUserMenuIDs(id)
+	var tenantID *uuid.UUID
+	tenantIDStr := strings.TrimSpace(c.Query("tenant_id"))
+	if tenantIDStr == "" {
+		tenantIDStr = strings.TrimSpace(c.GetHeader(tenantContextHeader))
+	}
+	if tenantIDStr != "" {
+		if parsed, parseErr := uuid.Parse(tenantIDStr); parseErr == nil {
+			tenantID = &parsed
+		}
+	}
+
+	menuIDs, err := h.permissionService.GetUserMenuIDs(id, tenantID)
 	if err != nil {
 		h.logger.Error("Get user permissions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户权限失败")

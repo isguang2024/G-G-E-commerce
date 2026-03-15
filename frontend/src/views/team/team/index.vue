@@ -109,7 +109,8 @@
           label: '管理员',
           width: 200,
           formatter: (row: TeamListItem) => {
-            const admins = (row as any).adminUsers || []
+            // 兼容 adminUsers 和 admin_users 两种字段名
+            const admins = (row as any).adminUsers || (row as any).admin_users || []
             if (!admins.length) return '-'
             return h('div', { class: 'flex flex-wrap gap-1' }, [
               ...admins.slice(0, 2).map((admin: any) =>

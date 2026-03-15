@@ -107,18 +107,11 @@
     role: searchForm.role || undefined
   }))
 
-  // 判断是否为管理员（团队管理员角色编码为 team_admin）
-  function isAdmin(row: Api.SystemManage.TeamMemberItem): boolean {
-    const roleCodes = (row as any).roleCodes || []
-    return roleCodes.includes('team_admin')
-  }
-
   // 获取团队角色
   async function loadTeamRoles() {
     try {
       const res = await fetchGetMyTeamRoles()
-      const roles = res?.records || []
-      teamRoles.value = roles.map((r: any) => r.roleName)
+      teamRoles.value = (res || []).map((r: any) => r.roleCode || r.roleName).filter(Boolean)
     } catch (e) {
       console.error('获取团队角色失败:', e)
     }
@@ -132,7 +125,7 @@
     loading.value = true
     try {
       const res = await fetchGetTeamMembers(props.teamId, searchParams.value)
-      members.value = res?.records ?? []
+      members.value = res ?? []
     } catch (e: any) {
       ElMessage.error(e?.message || '获取成员列表失败')
       members.value = []

@@ -33,8 +33,9 @@ func (m *UserModule) RegisterRoutes(rg *gin.RouterGroup) {
 	roleRepo := NewRoleRepository(m.db)
 	menuRepo := NewMenuRepository(m.db)
 	roleMenuRepo := NewRoleMenuRepository(m.db)
+	userRoleRepo := NewUserRoleRepository(m.db)
 	userService := NewUserService(userRepo, roleRepo, m.logger)
-	permissionService := NewPermissionService(userRepo, roleMenuRepo, m.db)
+	permissionService := NewPermissionService(userRepo, userRoleRepo, roleMenuRepo)
 	userHandler := NewUserHandler(userService, permissionService, menuRepo, m.logger)
 
 	users := rg.Group("/users")

@@ -127,7 +127,7 @@
    * 表单数据
    */
   const form = reactive<RoleListItem & { scopeId?: string; priority?: number; status?: string }>({
-    roleId: 0,
+    roleId: '',
     roleName: '',
     roleCode: '',
     description: '',
@@ -196,34 +196,37 @@
   const initForm = () => {
     if (props.dialogType === 'edit' && props.roleData) {
       // 编辑模式：使用角色数据填充表单
-      let scopeId = props.roleData.scopeId || ''
+      const roleData = props.roleData
+      if (!roleData) return
+
+      let scopeId = roleData.scopeId || ''
       // 如果没有scopeId，尝试从scopeCode查找
-      if (!scopeId && props.roleData.scopeCode && scopeList.value.length > 0) {
-        const found = scopeList.value.find((s) => s.scopeCode === props.roleData.scopeCode)
+      if (!scopeId && roleData.scopeCode && scopeList.value.length > 0) {
+        const found = scopeList.value.find((s) => s.scopeCode === roleData.scopeCode)
         scopeId = found ? found.scopeId : ''
       }
       console.log(
         '初始化表单 - scopeId:',
         scopeId,
         'roleData.scopeId:',
-        props.roleData.scopeId,
+        roleData.scopeId,
         'roleData.scopeCode:',
-        props.roleData.scopeCode
+        roleData.scopeCode
       )
       Object.assign(form, {
-        roleId: props.roleData.roleId,
-        roleName: props.roleData.roleName,
-        roleCode: props.roleData.roleCode,
-        description: props.roleData.description || '',
-        createTime: props.roleData.createTime || '',
+        roleId: roleData.roleId,
+        roleName: roleData.roleName,
+        roleCode: roleData.roleCode,
+        description: roleData.description || '',
+        createTime: roleData.createTime || '',
         scopeId: scopeId,
-        priority: props.roleData.priority || 0,
-        status: props.roleData.status || 'normal'
+        priority: roleData.priority || 0,
+        status: roleData.status || 'normal'
       })
     } else {
       // 新增模式：重置表单，默认选择第一个作用域
       Object.assign(form, {
-        roleId: 0,
+        roleId: '',
         roleName: '',
         roleCode: '',
         description: '',

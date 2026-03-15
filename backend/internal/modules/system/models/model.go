@@ -126,8 +126,9 @@ func (Menu) TableName() string {
 }
 
 type UserRole struct {
-	UserID uuid.UUID `gorm:"type:uuid;primaryKey" json:"user_id"`
-	RoleID uuid.UUID `gorm:"type:uuid;primaryKey" json:"role_id"`
+	UserID   uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
+	RoleID   uuid.UUID  `gorm:"type:uuid;not null;index" json:"role_id"`
+	TenantID *uuid.UUID `gorm:"type:uuid;index" json:"tenant_id"`
 }
 
 func (UserRole) TableName() string {
@@ -149,8 +150,8 @@ type Tenant struct {
 	Remark     string         `gorm:"type:text" json:"remark"`
 	LogoURL    string         `gorm:"type:varchar(500)" json:"logo_url"`
 	Plan       string         `gorm:"type:varchar(50);default:'free'" json:"plan"`
-	MaxMembers int            `gorm:"default:10" json:"max_members"`
 	OwnerID    uuid.UUID      `gorm:"type:uuid;not null" json:"owner_id"`
+	MaxMembers int            `gorm:"default:10" json:"max_members"`
 	Status     string         `gorm:"type:varchar(20);default:'active'" json:"status"`
 	CreatedAt  time.Time      `json:"created_at"`
 	UpdatedAt  time.Time      `json:"updated_at"`
@@ -180,6 +181,7 @@ func (TenantMember) TableName() string {
 }
 
 type MemberSearchParams struct {
+	UserID   string
 	UserName string
 	RoleCode string
 }

@@ -129,7 +129,7 @@
       try {
         const res = await fetchGetUser(id)
         const user = (res as any).data || res
-        const name = user.nickName || user.userName || user.email || '未知用户'
+        const name = user.nickName || user.userName || user.userEmail || user.email || '未知用户'
         adminList.value.push({ id, name })
       } catch {
         adminList.value.push({ id, name: '用户不存在' })
@@ -167,8 +167,8 @@
 
     // 验证用户是否存在
     try {
-      const user = await fetchGetUser(value)
-      const name = user.nickName || user.userName || user.email || '未知用户'
+      const user: any = await fetchGetUser(value)
+      const name = user.nickName || user.userName || user.userEmail || user.email || '未知用户'
       adminList.value.push({ id: value, name })
       formData.admin_user_ids = adminList.value.map((a) => a.id)
       ElMessage.success(`已成功添加用户 [${name}] 为团队管理员`)
@@ -182,35 +182,37 @@
   }
 
   watch(
-    () => [props.visible, props.teamData],
-    async ([visible, teamData]) => {
+    () => props.visible,
+    async (visible) => {
       if (!visible) return
+
+      const teamData = props.teamData
       if (props.type === 'edit' && teamData) {
         formData.name = teamData.name ?? ''
         formData.remark = teamData.remark ?? ''
-        // 从 adminUsers 数组中提取用户ID
-        const adminUsers = (teamData as any).adminUsers || []
+        const adminUsers = (teamData as any).adminUsers || (teamData as any).admin_users || []
         formData.admin_user_ids = adminUsers.map((admin: any) => admin.user_id || admin.id || '')
         formData.logo_url = teamData.logoUrl ?? ''
         formData.plan = teamData.plan ?? 'free'
         formData.max_members = teamData.maxMembers ?? 10
         formData.status = teamData.status ?? 'active'
-        // 加载管理员信息
+
         if (formData.admin_user_ids.length > 0) {
           await loadAdminUsers(formData.admin_user_ids)
         } else {
           adminList.value = []
         }
-      } else {
-        formData.name = ''
-        formData.remark = ''
-        formData.admin_user_ids = []
-        adminList.value = []
-        formData.logo_url = ''
-        formData.plan = 'free'
-        formData.max_members = 10
-        formData.status = 'active'
+        return
       }
+
+      formData.name = ''
+      formData.remark = ''
+      formData.admin_user_ids = []
+      adminList.value = []
+      formData.logo_url = ''
+      formData.plan = 'free'
+      formData.max_members = 10
+      formData.status = 'active'
     },
     { immediate: true }
   )

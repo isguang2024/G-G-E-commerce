@@ -2,6 +2,7 @@ package menu
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -11,6 +12,8 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 )
+
+const tenantContextHeader = "X-Tenant-ID"
 
 type MenuHandler struct {
 	menuService      MenuService
@@ -41,10 +44,13 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 		if ok {
 			if idStr, ok := userIDStr.(string); ok {
 				if userID, err := uuid.Parse(idStr); err == nil {
-					tenantIDStr := c.Query("tenant_id")
+					tenantIDStr := strings.TrimSpace(c.Query("tenant_id"))
+					if tenantIDStr == "" {
+						tenantIDStr = strings.TrimSpace(c.GetHeader(tenantContextHeader))
+					}
 					if tenantIDStr != "" && h.tenantMemberRepo != nil && h.roleMenuRepo != nil {
 						if tid, err := uuid.Parse(tenantIDStr); err == nil {
-							roleIDs, _ := h.userRoleRepo.GetRoleIDsByUserAndTenant(userID, &tid, h.tenantMemberRepo)
+							roleIDs, _ := h.userRoleRepo.GetEffectiveRoleIDsByUserAndTenant(userID, &tid)
 							allowedMenuIDs, _ = h.roleMenuRepo.GetMenuIDsByRoleIDs(roleIDs)
 						}
 					}

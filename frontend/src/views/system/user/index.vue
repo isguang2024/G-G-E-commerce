@@ -348,16 +348,9 @@
   /**
    * 处理弹窗提交事件
    */
-  const handleDialogSubmit = async (payload?: {
-    username: string
-    nickname?: string
-    email?: string
-    password?: string
-    status?: string
-    phone?: string
-    systemRemark?: string
-    roleIds?: string[]
-  }) => {
+  type UserDialogPayload = Api.SystemManage.UserCreateParams | Api.SystemManage.UserUpdateParams
+
+  const handleDialogSubmit = async (payload?: UserDialogPayload) => {
     if (!payload) {
       dialogVisible.value = false
       refreshData()
@@ -366,27 +359,29 @@
     const isAdd = dialogType.value === 'add'
     try {
       if (isAdd) {
+        const createPayload = payload as Api.SystemManage.UserCreateParams
         await fetchCreateUser({
-          username: payload.username,
-          nickname: payload.nickname,
-          email: payload.email,
-          password: payload.password || '123456',
-          status: payload.status || 'active',
-          phone: payload.phone,
-          systemRemark: payload.systemRemark,
-          roleIds: payload.roleIds
+          username: createPayload.username,
+          nickname: createPayload.nickname,
+          email: createPayload.email,
+          password: createPayload.password || '123456',
+          status: createPayload.status || 'active',
+          phone: createPayload.phone,
+          systemRemark: createPayload.systemRemark,
+          roleIds: createPayload.roleIds
         })
         ElMessage.success('添加成功')
       } else {
+        const updatePayload = payload as Api.SystemManage.UserUpdateParams
         const id = (currentUserData.value as UserListItem).id
         if (!id) return
         await fetchUpdateUser(id, {
-          email: payload.email,
-          nickname: payload.nickname,
-          status: payload.status,
-          phone: payload.phone,
-          systemRemark: payload.systemRemark,
-          roleIds: payload.roleIds
+          email: updatePayload.email,
+          nickname: updatePayload.nickname,
+          status: updatePayload.status,
+          phone: updatePayload.phone,
+          systemRemark: updatePayload.systemRemark,
+          roleIds: updatePayload.roleIds
         })
         ElMessage.success('更新成功')
       }

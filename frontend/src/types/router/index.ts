@@ -70,6 +70,8 @@ export interface RouteMeta extends Record<string | number | symbol, unknown> {
   parentPath?: string
   /** 是否启用 */
   isEnable?: boolean
+  /** 是否依赖当前团队上下文 */
+  requiresTenantContext?: boolean
   /** 自定义上级菜单路径（用于面包屑显示） */
   customParent?: string
 }

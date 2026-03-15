@@ -1,14 +1,7 @@
 <template>
   <div class="team-members-page art-full-height">
     <template v-if="!team">
-      <ElCard v-if="teamLoadDone" shadow="never" class="empty-card">
-        <ElEmpty description="您暂无管理的团队">
-          <template #description>
-            <p>您当前没有作为管理员或负责人的团队，无法在此管理成员。</p>
-            <p class="text-gray-500 text-sm mt-2">请联系系统管理员将您加入团队并设置为管理员。</p>
-          </template>
-        </ElEmpty>
-      </ElCard>
+      <NoTeamState v-if="teamLoadDone" />
       <ElCard v-else shadow="never" class="empty-card">
         <div class="flex justify-center py-8">
           <ElIcon class="is-loading" :size="32"><Loading /></ElIcon>
@@ -20,14 +13,11 @@
       <ElCard shadow="never" class="art-table-card">
         <template #header>
           <div class="flex items-center justify-between">
-            <span>
-              <span class="font-medium">当前团队：{{ team.name }}</span>
-            </span>
+            <span class="font-medium">当前团队：{{ team.name }}</span>
           </div>
         </template>
 
         <div class="flex flex-col gap-4">
-          <!-- 添加成员 -->
           <ElCard shadow="never" class="add-member-card">
             <template #header>
               <span>添加成员</span>
@@ -47,21 +37,20 @@
                   @keyup.enter="handleAddMember"
                 />
               </ElFormItem>
-              <ElFormItem label="团队内角色" class="mb-0">
-                <ElSelect v-model="addForm.role" placeholder="选择角色" style="width: 140px">
+              <ElFormItem label="团队角色" class="mb-0">
+                <ElSelect v-model="addForm.role" placeholder="请选择角色" style="width: 140px">
                   <ElOption label="团队管理员" value="team_admin" />
                   <ElOption label="团队成员" value="team_member" />
                 </ElSelect>
               </ElFormItem>
               <ElFormItem class="mb-0">
-                <ElButton type="primary" :loading="addLoading" @click="handleAddMember"
-                  >添加</ElButton
-                >
+                <ElButton type="primary" :loading="addLoading" @click="handleAddMember">
+                  添加
+                </ElButton>
               </ElFormItem>
             </ElForm>
           </ElCard>
 
-          <!-- 成员列表 -->
           <ElCard shadow="never">
             <template #header>
               <span>成员列表（{{ members.length }}）</span>
@@ -74,7 +63,7 @@
                 <template #default="{ row }">
                   <div class="flex flex-wrap gap-1">
                     <ElTag
-                      v-for="(role, index) in row.roles || [row.role]"
+                      v-for="(role, index) in row.roles || [formatRoleLabel(row.roleCode || row.role)]"
                       :key="index"
                       :type="role === '团队管理员' ? 'success' : 'info'"
                       size="small"
@@ -109,26 +98,31 @@
         </div>
       </ElCard>
     </template>
+
     <MemberRoleDialog ref="roleDialogRef" :member="currentMember" @success="loadMembers" />
   </div>
 </template>
 
 <script setup lang="ts">
   import { Loading, MoreFilled, UserFilled, Delete } from '@element-plus/icons-vue'
+  import { storeToRefs } from 'pinia'
   import {
     fetchGetMyTeam,
     fetchGetMyTeamMembers,
     fetchAddMyTeamMember,
-    fetchRemoveMyTeamMember,
-    fetchUpdateMyTeamMemberRole
+    fetchRemoveMyTeamMember
   } from '@/api/team'
   import { ElMessage, ElMessageBox } from 'element-plus'
+  import { useTenantStore } from '@/store/modules/tenant'
+  import NoTeamState from '@/components/business/team/NoTeamState.vue'
   import MemberRoleDialog from './modules/member-role-dialog.vue'
 
   defineOptions({ name: 'TeamMembers' })
 
   const roleDialogRef = ref()
   const currentMember = ref<Api.SystemManage.TeamMemberItem | null>(null)
+  const tenantStore = useTenantStore()
+  const { currentTenantId, hasTeams } = storeToRefs(tenantStore)
 
   const team = ref<Api.SystemManage.TeamListItem | null>(null)
   const teamLoadDone = ref(false)
@@ -141,21 +135,29 @@
     role: 'team_member'
   })
 
-  // 判断是否为管理员（团队管理员角色编码为 team_admin）
   function isAdmin(row: Api.SystemManage.TeamMemberItem): boolean {
-    const roleCodes = (row as any).roleCodes || []
-    return roleCodes.includes('team_admin')
+    return row.roleCode === 'team_admin' || row.role === 'team_admin'
+  }
+
+  function formatRoleLabel(roleCode?: string) {
+    return roleCode === 'team_admin' ? '团队管理员' : '团队成员'
   }
 
   async function loadMyTeam() {
     teamLoadDone.value = false
     team.value = null
+    members.value = []
+
+    if (!hasTeams.value) {
+      teamLoadDone.value = true
+      return
+    }
+
     try {
-      const res = await fetchGetMyTeam()
-      team.value = res as Api.SystemManage.TeamListItem
+      team.value = await fetchGetMyTeam()
       await loadMembers()
     } catch (e: any) {
-      if (e?.response?.status === 404 || e?.code === 404) {
+      if ([400, 404, 3006].includes(e?.response?.status) || [400, 404, 3006].includes(e?.code)) {
         team.value = null
       } else {
         ElMessage.error(e?.message || '获取团队信息失败')
@@ -169,8 +171,7 @@
     if (!team.value) return
     loading.value = true
     try {
-      const res = await fetchGetMyTeamMembers()
-      members.value = res?.records ?? []
+      members.value = await fetchGetMyTeamMembers()
     } catch (e: any) {
       ElMessage.error(e?.message || '获取成员列表失败')
       members.value = []
@@ -199,7 +200,8 @@
       ElMessage.warning('团队管理员不能被移除')
       return
     }
-    ElMessageBox.confirm(`确定将「${row.userName}」移出团队吗？`, '移除成员', {
+
+    ElMessageBox.confirm(`确定将“${row.userName}”移出团队吗？`, '移除成员', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
@@ -215,11 +217,12 @@
   }
 
   async function handleAddMember() {
-    const uid = addForm.user_id?.trim()
+    const uid = addForm.user_id.trim()
     if (!uid) {
       ElMessage.warning('请输入用户 ID')
       return
     }
+
     addLoading.value = true
     try {
       await fetchAddMyTeamMember({ user_id: uid, role: addForm.role })
@@ -236,15 +239,21 @@
   onMounted(() => {
     loadMyTeam()
   })
+
+  watch(currentTenantId, (tenantId, oldTenantId) => {
+    if (tenantId === oldTenantId) return
+    loadMyTeam()
+  })
 </script>
 
 <style scoped>
-  .team-members-page .empty-card {
+  .empty-card {
     min-height: 320px;
     display: flex;
     align-items: center;
     justify-content: center;
   }
+
   .add-member-card :deep(.el-card__body) {
     padding-bottom: 8px;
   }

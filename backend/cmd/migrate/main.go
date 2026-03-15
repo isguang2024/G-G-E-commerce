@@ -38,17 +38,17 @@ func main() {
 
 	logger.Info("Database connected successfully")
 
-	// 初始化默认作用域
-	if err := initDefaultScopes(logger); err != nil {
-		logger.Warn("initDefaultScopes failed", zap.Error(err))
-	}
-
 	// 自动迁移数据库表结构
 	if err := database.AutoMigrate(); err != nil {
 		logger.Fatal("Migration failed", zap.Error(err))
 	}
 
 	logger.Info("Database migration completed successfully!")
+
+	// 初始化默认作用域
+	if err := initDefaultScopes(logger); err != nil {
+		logger.Warn("initDefaultScopes failed", zap.Error(err))
+	}
 
 	// 初始化默认角色
 	if err := initDefaultRoles(logger); err != nil {
@@ -70,8 +70,6 @@ func main() {
 	} else {
 		logger.Info("Default menus initialized successfully")
 	}
-
-
 
 	// 初始化默认角色菜单关联
 	if err := initDefaultRoleMenus(logger); err != nil {
@@ -155,12 +153,8 @@ func initDefaultAdmin(logger *zap.Logger) error {
 			return err
 		}
 
-		var roleCount int64
-		database.DB.Model(&usermodel.UserRole{}).Where("user_id = ?", adminUser.ID).Count(&roleCount)
-		if roleCount == 0 {
-			if err := assignAdminRole(adminUser.ID, logger); err != nil {
-				return err
-			}
+		if err := assignAdminRole(adminUser.ID, logger); err != nil {
+			return err
 		}
 
 		logger.Info("Default admin already exists", zap.String("username", defaultUsername))
@@ -206,12 +200,13 @@ func assignAdminRole(userID uuid.UUID, logger *zap.Logger) error {
 	}
 
 	var userRole usermodel.UserRole
-	result := database.DB.Where("user_id = ? AND role_id = ?", userID, adminRole.ID).First(&userRole)
+	result := database.DB.Where("user_id = ? AND role_id = ? AND tenant_id IS NULL", userID, adminRole.ID).First(&userRole)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			userRole = usermodel.UserRole{
-				UserID: userID,
-				RoleID: adminRole.ID,
+				UserID:   userID,
+				RoleID:   adminRole.ID,
+				TenantID: nil,
 			}
 			if err := database.DB.Create(&userRole).Error; err != nil {
 				logger.Error("Failed to assign admin role", zap.Error(err))
@@ -401,8 +396,6 @@ func initDefaultMenus(logger *zap.Logger) error {
 	logger.Info("Default menus seeded")
 	return nil
 }
-
-
 
 func initDefaultRoleMenus(logger *zap.Logger) error {
 	// 先清空所有角色菜单关联

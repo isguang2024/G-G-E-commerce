@@ -51,6 +51,7 @@ type TenantMemberRolesRequest struct {
 // TenantUpdateMemberRoleRequest 更新成员角色请求
 type TenantUpdateMemberRoleRequest struct {
 	RoleCode string `json:"role_code" binding:"required"`
+	Role     string `json:"role"`
 }
 
 // TenantSetMemberRolesRequest 设置成员角色请求

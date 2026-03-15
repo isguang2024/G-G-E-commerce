@@ -99,6 +99,7 @@
 <script setup lang="ts">
   import AppConfig from '@/config'
   import { useUserStore } from '@/store/modules/user'
+  import { useTenantStore } from '@/store/modules/tenant'
   import { useI18n } from 'vue-i18n'
   import { HttpError } from '@/utils/http/error'
   import { fetchLogin } from '@/api/auth'
@@ -120,6 +121,7 @@
   const dragVerify = ref()
 
   const userStore = useUserStore()
+  const tenantStore = useTenantStore()
   const router = useRouter()
   const route = useRoute()
   const isPassing = ref(false)
@@ -223,6 +225,8 @@
         }
         userStore.setUserInfo(userInfo)
       }
+
+      await tenantStore.loadMyTeams()
 
       // 登录成功处理
       persistRememberedCredentials()

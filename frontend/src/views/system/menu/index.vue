@@ -97,6 +97,15 @@
             <ElTag v-if="!row.meta?.isAuthButton && row.meta.isFullPage" size="small" effect="light" type="primary" class="mr-2">
               全屏
             </ElTag>
+            <ElTag
+              v-if="!row.meta?.isAuthButton && row.meta.requiresTenantContext"
+              size="small"
+              effect="light"
+              type="warning"
+              class="mr-2"
+            >
+              团队上下文
+            </ElTag>
           </div>
         </template>
 
@@ -468,6 +477,7 @@
         activePath: formData.activePath || '',
         fixedTab: formData.fixedTab,
         isFullPage: formData.isFullPage,
+        requiresTenantContext: !!formData.requiresTenantContext,
         isInnerPage: isInner
       }
       

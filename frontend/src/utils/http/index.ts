@@ -16,6 +16,7 @@
 
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { useUserStore } from '@/store/modules/user'
+import { useTenantStore } from '@/store/modules/tenant'
 import { ApiStatus } from './status'
 import { HttpError, handleError, showError, showSuccess } from './error'
 import { $t } from '@/locales'
@@ -36,6 +37,7 @@ let unauthorizedTimer: NodeJS.Timeout | null = null
 interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
   showErrorMessage?: boolean
   showSuccessMessage?: boolean
+  skipTenantHeader?: boolean
 }
 
 const { VITE_API_URL, VITE_WITH_CREDENTIALS } = import.meta.env
@@ -63,12 +65,17 @@ const axiosInstance = axios.create({
 
 /** 请求拦截器 */
 axiosInstance.interceptors.request.use(
-  (request: InternalAxiosRequestConfig) => {
+  (request: InternalAxiosRequestConfig & { skipTenantHeader?: boolean }) => {
     const { accessToken } = useUserStore()
+    const { currentTenantId } = useTenantStore()
     if (accessToken) {
       // 添加 Bearer 前缀（如果还没有）
       const token = accessToken.startsWith('Bearer ') ? accessToken : `Bearer ${accessToken}`
       request.headers.set('Authorization', token)
+    }
+
+    if (!request.skipTenantHeader && currentTenantId) {
+      request.headers.set('X-Tenant-ID', currentTenantId)
     }
 
     if (request.data && !(request.data instanceof FormData) && !request.headers['Content-Type']) {

@@ -10,10 +10,8 @@
       v-bind="{ ...$attrs, ...props, height, stripe, border, size, headerCellStyle }"
       @drag-end="emit('drag-end', $event)"
       @drag-start="emit('drag-start', $event)"
-      @allow-drop="
-        (draggingNode, dropNode, type) => emit('allow-drop', draggingNode, dropNode, type)
-      "
-      @allow-drag="(node) => emit('allow-drag', node)"
+      @allow-drop="handleAllowDrop"
+      @allow-drag="handleAllowDrag"
     >
       <template v-for="col in columns" :key="col.prop || col.type">
         <!-- 渲染全局序号列 -->
@@ -83,6 +81,7 @@
 <script setup lang="ts">
   import { ref, computed, nextTick, watchEffect } from 'vue'
   import type { ElTable, TableProps } from 'element-plus'
+  import type { NodeDropType } from 'element-plus/es/components/tree/src/tree.type'
   import { storeToRefs } from 'pinia'
   import { ColumnOption } from '@/types'
   import { useTableStore } from '@/store/modules/table'
@@ -302,9 +301,17 @@
     (e: 'pagination:current-change', val: number): void
     (e: 'drag-end', event: any): void
     (e: 'drag-start', event: any): void
-    (e: 'allow-drop', draggingNode: any, dropNode: any, type: string): void
+    (e: 'allow-drop', draggingNode: unknown, dropNode: unknown, type: NodeDropType): void
     (e: 'allow-drag', node: any): void
   }>()
+
+  const handleAllowDrop = (draggingNode: unknown, dropNode: unknown, type: NodeDropType) => {
+    emit('allow-drop', draggingNode, dropNode, type)
+  }
+
+  const handleAllowDrag = (node: unknown) => {
+    emit('allow-drag', node)
+  }
 
   // 查找并绑定表格头部元素 - 使用 VueUse 优化
   const findTableHeader = () => {

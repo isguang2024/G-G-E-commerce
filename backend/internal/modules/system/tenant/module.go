@@ -36,11 +36,12 @@ func (m *TenantModule) RegisterRoutes(rg *gin.RouterGroup) {
 	roleRepo := user.NewRoleRepository(m.db)
 	userRoleRepo := user.NewUserRoleRepository(m.db)
 
-	tenantService := NewTenantService(tenantRepo, tenantMemberRepo, userRepo, roleRepo, userRoleRepo, m.logger)
+	tenantService := NewTenantService(m.db, tenantRepo, tenantMemberRepo, userRepo, roleRepo, userRoleRepo, m.logger)
 	tenantHandler := NewTenantHandler(tenantService, tenantMemberRepo, userRepo, roleRepo, userRoleRepo, m.logger)
 
 	tenants := rg.Group("/tenants")
 	{
+		tenants.GET("/my-teams", tenantHandler.ListMyTeams)
 		tenants.GET("/my-team", tenantHandler.GetMyTeam)
 		tenants.GET("/my-team/members", tenantHandler.ListMyMembers)
 		tenants.POST("/my-team/members", tenantHandler.AddMyMember)

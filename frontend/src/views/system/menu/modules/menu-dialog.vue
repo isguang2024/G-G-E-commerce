@@ -82,6 +82,10 @@
                   <span class="w-24">全屏页面</span>
                   <ElSwitch v-model="form.isFullPage" />
                 </div>
+                <div class="flex items-center">
+                  <span class="w-24">团队上下文</span>
+                  <ElSwitch v-model="form.requiresTenantContext" />
+                </div>
               </div>
             </ElCollapseItem>
             <ElCollapseItem title="按钮权限" name="1" class="w-full">
@@ -243,6 +247,7 @@
     customParent: string
     roles: string[]
     isFullPage: boolean
+    requiresTenantContext: boolean
     authList: AuthItem[]
   }
 
@@ -349,6 +354,7 @@
     customParent: '',
     roles: [],
     isFullPage: false,
+    requiresTenantContext: false,
     authList: []
   })
 
@@ -577,6 +583,7 @@
     form.customParent = row.meta?.customParent || ''
     form.roles = row.meta?.roles || []
     form.isFullPage = row.meta?.isFullPage ?? false
+    form.requiresTenantContext = row.meta?.requiresTenantContext ?? false
     
     // 加载 authList
     if (row.meta?.authList && Array.isArray(row.meta.authList)) {
@@ -732,6 +739,7 @@
         form.isIframe = false
         form.link = ''
         form.isHide = false
+        form.requiresTenantContext = false
         break
       case 'inner':
         // 内页模板
@@ -741,6 +749,7 @@
         form.component = '/system/inner-page'
         form.isIframe = false
         form.link = ''
+        form.requiresTenantContext = false
         break
     }
   }

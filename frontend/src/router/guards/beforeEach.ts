@@ -48,6 +48,7 @@ import { staticRoutes } from '../routes/staticRoutes'
 import { loadingService } from '@/utils/ui'
 import { useCommon } from '@/hooks/core/useCommon'
 import { useWorktabStore } from '@/store/modules/worktab'
+import { useTenantStore } from '@/store/modules/tenant'
 import { fetchGetUserInfo } from '@/api/auth'
 import { ApiStatus } from '@/utils/http/status'
 import { isHttpError } from '@/utils/http/error'
@@ -205,7 +206,12 @@ async function handleRouteGuard(
     return
   }
 
-  // 5. 处理已匹配的路由
+  // 5. 处理团队上下文页面访问
+  if (handleTenantContextRedirect(to, next)) {
+    return
+  }
+
+  // 6. 处理已匹配的路由
   if (to.matched.length > 0) {
     setWorktab(to)
     setPageTitle(to)
@@ -213,7 +219,7 @@ async function handleRouteGuard(
     return
   }
 
-  // 6. 未匹配到路由，跳转到 404
+  // 7. 未匹配到路由，跳转到 404
   next({ name: 'Exception404' })
 }
 
@@ -288,10 +294,6 @@ async function handleDynamicRoutes(
     const menuList = await menuProcessor.getMenuList()
 
     // 3. 验证菜单数据
-    if (!menuProcessor.validateMenuList(menuList)) {
-      throw new Error('获取菜单列表失败，请重新登录')
-    }
-
     // 4. 注册动态路由
     routeRegistry?.register(menuList)
 
@@ -311,7 +313,7 @@ async function handleDynamicRoutes(
     const { path: validatedPath, hasPermission } = RoutePermissionValidator.validatePath(
       to.path,
       menuList,
-      homePath.value || '/'
+      homePath.value || '/403'
     )
 
     // 初始化成功，重置进行中标记
@@ -388,6 +390,7 @@ function mapBackendRolesToFrontend(data: {
  */
 async function fetchUserInfo(): Promise<void> {
   const userStore = useUserStore()
+  const tenantStore = useTenantStore()
   const data = await fetchGetUserInfo()
 
   const roles = mapBackendRolesToFrontend(data)
@@ -403,6 +406,7 @@ async function fetchUserInfo(): Promise<void> {
 
   userStore.setUserInfo(userInfo)
   userStore.checkAndClearWorktabs()
+  await tenantStore.loadMyTeams()
 }
 
 /**
@@ -438,6 +442,30 @@ function handleRootPathRedirect(to: RouteLocationNormalized, next: NavigationGua
   }
 
   return false
+}
+
+/**
+ * 处理依赖团队上下文的页面访问
+ */
+function handleTenantContextRedirect(
+  to: RouteLocationNormalized,
+  next: NavigationGuardNext
+): boolean {
+  const userStore = useUserStore()
+  const tenantStore = useTenantStore()
+
+  const requiresTenantContext = to.matched.some((record) => record.meta?.requiresTenantContext)
+  if (!requiresTenantContext) {
+    return false
+  }
+
+  if (userStore.getUserInfo?.is_super_admin || tenantStore.hasTeams) {
+    return false
+  }
+
+  const fallbackPath = useMenuStore().getHomePath() || '/403'
+  next({ path: fallbackPath, replace: true })
+  return true
 }
 
 /**

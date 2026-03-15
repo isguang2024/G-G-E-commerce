@@ -32,6 +32,9 @@
             <span class="block mt-0.5 text-xs text-g-500 truncate">{{ userInfo.email }}</span>
           </div>
         </div>
+        <div v-if="teamList.length" class="team-switcher-wrap">
+          <ArtTenantSwitcher compact />
+        </div>
         <ul class="py-4 mt-3 border-t border-g-300/80">
           <li class="btn-item" @click="goPage('/user-center')">
             <ArtSvgIcon icon="ri:user-3-line" />
@@ -64,16 +67,20 @@
   import { useRouter } from 'vue-router'
   import { ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
+  import { useTenantStore } from '@/store/modules/tenant'
   import { WEB_LINKS } from '@/utils/constants'
   import { mittBus } from '@/utils/sys'
+  import ArtTenantSwitcher from './ArtTenantSwitcher.vue'
 
   defineOptions({ name: 'ArtUserMenu' })
 
   const router = useRouter()
   const { t } = useI18n()
   const userStore = useUserStore()
+  const tenantStore = useTenantStore()
 
   const { getUserInfo: userInfo } = storeToRefs(userStore)
+  const { teamList } = storeToRefs(tenantStore)
   const userMenuPopover = ref()
 
   /**
@@ -163,5 +170,11 @@
     transition-all
     duration-200
     hover:shadow-xl;
+  }
+
+  .team-switcher-wrap {
+    padding-top: 14px;
+    margin-top: 12px;
+    border-top: 1px solid rgb(209 213 219 / 0.8);
   }
 </style>

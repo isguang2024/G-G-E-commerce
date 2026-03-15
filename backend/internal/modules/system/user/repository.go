@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -32,11 +33,14 @@ func NewUserRepository(db *gorm.DB) UserRepository {
 
 func (r *userRepository) GetByID(id uuid.UUID) (*User, error) {
 	var user User
-	err := r.db.Preload("Roles").Where("id = ?", id).First(&user).Error
+	err := r.db.Where("id = ?", id).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
 		}
+		return nil, err
+	}
+	if err := r.loadGlobalRoles([]*User{&user}); err != nil {
 		return nil, err
 	}
 	return &user, nil
@@ -45,16 +49,25 @@ func (r *userRepository) GetByID(id uuid.UUID) (*User, error) {
 func (r *userRepository) GetByIDs(ids []uuid.UUID) ([]User, error) {
 	var users []User
 	err := r.db.Where("id IN ?", ids).Find(&users).Error
+	if err != nil {
+		return nil, err
+	}
+	if err := r.loadGlobalRoles(userSlicePointers(users)); err != nil {
+		return nil, err
+	}
 	return users, err
 }
 
 func (r *userRepository) GetByEmail(email string) (*User, error) {
 	var user User
-	err := r.db.Preload("Roles").Where("email = ?", email).First(&user).Error
+	err := r.db.Where("email = ?", email).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
 		}
+		return nil, err
+	}
+	if err := r.loadGlobalRoles([]*User{&user}); err != nil {
 		return nil, err
 	}
 	return &user, nil
@@ -62,11 +75,14 @@ func (r *userRepository) GetByEmail(email string) (*User, error) {
 
 func (r *userRepository) GetByUsername(username string) (*User, error) {
 	var user User
-	err := r.db.Preload("Roles").Where("username = ?", username).First(&user).Error
+	err := r.db.Where("username = ?", username).First(&user).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
 		}
+		return nil, err
+	}
+	if err := r.loadGlobalRoles([]*User{&user}); err != nil {
 		return nil, err
 	}
 	return &user, nil
@@ -145,8 +161,14 @@ func (r *userRepository) List(offset, limit int, username, userPhone, userEmail,
 	}
 
 	var users []User
-	err := baseQuery.Preload("Roles").Offset(offset).Limit(limit).Order("created_at DESC").Find(&users).Error
-	return users, total, err
+	err := baseQuery.Offset(offset).Limit(limit).Order("created_at DESC").Find(&users).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	if err := r.loadGlobalRoles(userSlicePointers(users)); err != nil {
+		return nil, 0, err
+	}
+	return users, total, nil
 }
 
 func (r *userRepository) ReplaceRoles(userID uuid.UUID, roleIDs []uuid.UUID) error {
@@ -639,7 +661,7 @@ func (r *tenantMemberRepository) GetTenantsByUserID(userID uuid.UUID) ([]Tenant,
 func (r *tenantMemberRepository) GetAdminUsersByTenantID(tenantID uuid.UUID) ([]User, error) {
 	var users []User
 	err := r.db.Joins("JOIN tenant_members ON users.id = tenant_members.user_id").
-		Where("tenant_members.tenant_id = ? AND tenant_members.role_code = ?", tenantID, "owner").
+		Where("tenant_members.tenant_id = ? AND tenant_members.role_code = ?", tenantID, "team_admin").
 		Find(&users).Error
 	return users, err
 }
@@ -659,11 +681,18 @@ func (r *tenantMemberRepository) GetByUserID(userID uuid.UUID) (*TenantMember, e
 func (r *tenantMemberRepository) List(tenantID uuid.UUID, params *MemberSearchParams) ([]TenantMember, error) {
 	query := r.db.Where("tenant_id = ?", tenantID)
 	if params != nil {
+		if params.UserID != "" {
+			query = query.Where("user_id = ?", params.UserID)
+		}
 		if params.UserName != "" {
 			var userIDs []uuid.UUID
-			r.db.Model(&User{}).Where("username LIKE ?", "%"+params.UserName+"%").Pluck("id", &userIDs)
+			r.db.Model(&User{}).
+				Where("username LIKE ? OR nickname LIKE ?", "%"+params.UserName+"%", "%"+params.UserName+"%").
+				Pluck("id", &userIDs)
 			if len(userIDs) > 0 {
 				query = query.Where("user_id IN ?", userIDs)
+			} else {
+				query = query.Where("1 = 0")
 			}
 		}
 		if params.RoleCode != "" {
@@ -694,10 +723,13 @@ func (r *tenantMemberRepository) UpdateRole(id uuid.UUID, roleCode string) error
 type UserRoleRepository interface {
 	GetRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID, tenantMemberRepo TenantMemberRepository) ([]uuid.UUID, error)
 	GetRoleCodesByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
+	GetEffectiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
+	GetEffectiveRoleCodesByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
 	ReplaceUserRoles(userID uuid.UUID, tenantID *uuid.UUID, roleIDs []uuid.UUID) error
 	AssignRole(userID, roleID uuid.UUID, tenantID *uuid.UUID) error
 	SetUserRoles(userID uuid.UUID, roleIDs []uuid.UUID, tenantID *uuid.UUID) error
 	RemoveUserRole(userID uuid.UUID, tenantID *uuid.UUID) error
+	RemoveRolesByCodes(userID uuid.UUID, tenantID *uuid.UUID, roleCodes []string) error
 }
 
 type userRoleRepository struct {
@@ -710,28 +742,74 @@ func NewUserRoleRepository(db *gorm.DB) UserRoleRepository {
 
 func (r *userRoleRepository) GetRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID, tenantMemberRepo TenantMemberRepository) ([]uuid.UUID, error) {
 	var roleIDs []uuid.UUID
-	err := r.db.Model(&UserRole{}).Where("user_id = ?", userID).Pluck("role_id", &roleIDs).Error
+	query := r.db.Model(&UserRole{}).Where("user_id = ?", userID)
+	if tenantID == nil {
+		query = query.Where("tenant_id IS NULL")
+	} else {
+		query = query.Where("tenant_id = ?", *tenantID)
+	}
+	err := query.Pluck("role_id", &roleIDs).Error
 	return roleIDs, err
 }
 
 func (r *userRoleRepository) GetRoleCodesByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error) {
 	var codes []string
-	err := r.db.Model(&UserRole{}).
+	query := r.db.Model(&UserRole{}).
 		Joins("JOIN roles ON user_roles.role_id = roles.id").
-		Where("user_roles.user_id = ?", userID).
-		Pluck("roles.code", &codes).Error
+		Where("user_roles.user_id = ?", userID)
+	if tenantID == nil {
+		query = query.Where("user_roles.tenant_id IS NULL")
+	} else {
+		query = query.Where("user_roles.tenant_id = ?", *tenantID)
+	}
+	err := query.Pluck("roles.code", &codes).Error
+	return codes, err
+}
+
+func (r *userRoleRepository) GetEffectiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {
+	var roleIDs []uuid.UUID
+	query := r.db.Model(&UserRole{}).Where("user_id = ?", userID)
+	if tenantID == nil {
+		query = query.Where("tenant_id IS NULL")
+	} else {
+		query = query.Where("tenant_id IS NULL OR tenant_id = ?", *tenantID)
+	}
+	err := query.Pluck("role_id", &roleIDs).Error
+	return roleIDs, err
+}
+
+func (r *userRoleRepository) GetEffectiveRoleCodesByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error) {
+	var codes []string
+	query := r.db.Model(&UserRole{}).
+		Joins("JOIN roles ON user_roles.role_id = roles.id").
+		Where("user_roles.user_id = ?", userID)
+	if tenantID == nil {
+		query = query.Where("user_roles.tenant_id IS NULL")
+	} else {
+		query = query.Where("user_roles.tenant_id IS NULL OR user_roles.tenant_id = ?", *tenantID)
+	}
+	err := query.Pluck("roles.code", &codes).Error
 	return codes, err
 }
 
 func (r *userRoleRepository) ReplaceUserRoles(userID uuid.UUID, tenantID *uuid.UUID, roleIDs []uuid.UUID) error {
 	tx := r.db.Begin()
-	if err := tx.Where("user_id = ?", userID).Delete(&UserRole{}).Error; err != nil {
+	deleteQuery := tx.Where("user_id = ?", userID)
+	if tenantID == nil {
+		deleteQuery = deleteQuery.Where("tenant_id IS NULL")
+	} else {
+		deleteQuery = deleteQuery.Where("tenant_id = ?", *tenantID)
+	}
+	if err := deleteQuery.Delete(&UserRole{}).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
 	userRoles := make([]UserRole, 0, len(roleIDs))
 	for _, roleID := range roleIDs {
-		userRoles = append(userRoles, UserRole{UserID: userID, RoleID: roleID})
+		userRoles = append(userRoles, UserRole{UserID: userID, RoleID: roleID, TenantID: tenantID})
+	}
+	if len(userRoles) == 0 {
+		return tx.Commit().Error
 	}
 	if err := tx.Create(&userRoles).Error; err != nil {
 		tx.Rollback()
@@ -741,7 +819,20 @@ func (r *userRoleRepository) ReplaceUserRoles(userID uuid.UUID, tenantID *uuid.U
 }
 
 func (r *userRoleRepository) AssignRole(userID, roleID uuid.UUID, tenantID *uuid.UUID) error {
-	userRole := UserRole{UserID: userID, RoleID: roleID}
+	query := r.db.Model(&UserRole{}).Where("user_id = ? AND role_id = ?", userID, roleID)
+	if tenantID == nil {
+		query = query.Where("tenant_id IS NULL")
+	} else {
+		query = query.Where("tenant_id = ?", *tenantID)
+	}
+	var count int64
+	if err := query.Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return nil
+	}
+	userRole := UserRole{UserID: userID, RoleID: roleID, TenantID: tenantID}
 	return r.db.Create(&userRole).Error
 }
 
@@ -750,7 +841,101 @@ func (r *userRoleRepository) SetUserRoles(userID uuid.UUID, roleIDs []uuid.UUID,
 }
 
 func (r *userRoleRepository) RemoveUserRole(userID uuid.UUID, tenantID *uuid.UUID) error {
-	return r.db.Where("user_id = ?", userID).Delete(&UserRole{}).Error
+	query := r.db.Where("user_id = ?", userID)
+	if tenantID == nil {
+		query = query.Where("tenant_id IS NULL")
+	} else {
+		query = query.Where("tenant_id = ?", *tenantID)
+	}
+	return query.Delete(&UserRole{}).Error
+}
+
+func (r *userRoleRepository) RemoveRolesByCodes(userID uuid.UUID, tenantID *uuid.UUID, roleCodes []string) error {
+	if len(roleCodes) == 0 {
+		return nil
+	}
+	query := r.db.Where("user_id = ?", userID).
+		Where("role_id IN (?)",
+			r.db.Model(&Role{}).Select("id").Where("code IN ?", roleCodes),
+		)
+	if tenantID == nil {
+		query = query.Where("tenant_id IS NULL")
+	} else {
+		query = query.Where("tenant_id = ?", *tenantID)
+	}
+	return query.Delete(&UserRole{}).Error
+}
+
+func (r *userRepository) loadGlobalRoles(users []*User) error {
+	if len(users) == 0 {
+		return nil
+	}
+
+	userIDs := make([]uuid.UUID, 0, len(users))
+	userIndex := make(map[uuid.UUID]*User, len(users))
+	for _, user := range users {
+		if user == nil {
+			continue
+		}
+		user.Roles = nil
+		userIDs = append(userIDs, user.ID)
+		userIndex[user.ID] = user
+	}
+
+	type userRoleRow struct {
+		UserID      uuid.UUID `gorm:"column:user_id"`
+		ID          uuid.UUID `gorm:"column:id"`
+		Code        string    `gorm:"column:code"`
+		Name        string    `gorm:"column:name"`
+		Description string    `gorm:"column:description"`
+		Status      string    `gorm:"column:status"`
+		Priority    int       `gorm:"column:priority"`
+		ScopeID     uuid.UUID `gorm:"column:scope_id"`
+		SortOrder   int       `gorm:"column:sort_order"`
+		IsSystem    bool      `gorm:"column:is_system"`
+		CreatedAt   time.Time `gorm:"column:created_at"`
+		UpdatedAt   time.Time `gorm:"column:updated_at"`
+	}
+
+	var rows []userRoleRow
+	if err := r.db.Table("user_roles").
+		Select("user_roles.user_id, roles.id, roles.code, roles.name, roles.description, roles.status, roles.priority, roles.scope_id, roles.sort_order, roles.is_system, roles.created_at, roles.updated_at").
+		Joins("JOIN roles ON roles.id = user_roles.role_id").
+		Where("user_roles.user_id IN ?", userIDs).
+		Where("user_roles.tenant_id IS NULL").
+		Scan(&rows).Error; err != nil {
+		return err
+	}
+
+	for _, row := range rows {
+		target, ok := userIndex[row.UserID]
+		if !ok {
+			continue
+		}
+		target.Roles = append(target.Roles, Role{
+			ID:          row.ID,
+			Code:        row.Code,
+			Name:        row.Name,
+			Description: row.Description,
+			Status:      row.Status,
+			Priority:    row.Priority,
+			ScopeID:     row.ScopeID,
+			SortOrder:   row.SortOrder,
+			IsSystem:    row.IsSystem,
+			CreatedAt:   row.CreatedAt,
+			UpdatedAt:   row.UpdatedAt,
+		})
+	}
+
+	return nil
+}
+
+func userSlicePointers(users []User) []*User {
+	result := make([]*User, 0, len(users))
+	for i := range users {
+		result = append(result, &users[i])
+	}
+	return result
 }
 
 type RoleMenuRepository interface {

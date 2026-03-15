@@ -161,26 +161,25 @@ func parseUUIDs(ids []string) ([]uuid.UUID, error) {
 }
 
 type PermissionService interface {
-	GetUserMenuIDs(userID uuid.UUID) ([]uuid.UUID, error)
+	GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
 }
 
 type permissionService struct {
 	userRepo     UserRepository
+	userRoleRepo UserRoleRepository
 	roleMenuRepo RoleMenuRepository
-	db           *gorm.DB
 }
 
-func NewPermissionService(userRepo UserRepository, roleMenuRepo RoleMenuRepository, db *gorm.DB) PermissionService {
+func NewPermissionService(userRepo UserRepository, userRoleRepo UserRoleRepository, roleMenuRepo RoleMenuRepository) PermissionService {
 	return &permissionService{
 		userRepo:     userRepo,
+		userRoleRepo: userRoleRepo,
 		roleMenuRepo: roleMenuRepo,
-		db:           db,
 	}
 }
 
-func (s *permissionService) GetUserMenuIDs(userID uuid.UUID) ([]uuid.UUID, error) {
-	var user User
-	err := s.db.Preload("Roles").First(&user, "id = ?", userID).Error
+func (s *permissionService) GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {
+	user, err := s.userRepo.GetByID(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -189,12 +188,25 @@ func (s *permissionService) GetUserMenuIDs(userID uuid.UUID) ([]uuid.UUID, error
 		return []uuid.UUID{}, nil
 	}
 
+	roleIDs := make([]uuid.UUID, 0, len(user.Roles))
 	allMenuIDs := make(map[uuid.UUID]struct{})
 	for _, r := range user.Roles {
 		if r.Status != "normal" {
 			continue
 		}
-		menuIDs, err := s.roleMenuRepo.GetMenuIDsByRoleID(r.ID)
+		roleIDs = append(roleIDs, r.ID)
+	}
+
+	if tenantID != nil {
+		tenantRoleIDs, err := s.userRoleRepo.GetRoleIDsByUserAndTenant(userID, tenantID, nil)
+		if err != nil {
+			return nil, err
+		}
+		roleIDs = append(roleIDs, tenantRoleIDs...)
+	}
+
+	for _, roleID := range roleIDs {
+		menuIDs, err := s.roleMenuRepo.GetMenuIDsByRoleID(roleID)
 		if err != nil {
 			continue
 		}

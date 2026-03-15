@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -32,6 +33,7 @@ const defaultTeamRoleAdminCode = "team_admin"
 const defaultTeamRoleMemberCode = "team_member"
 
 type tenantService struct {
+	db               *gorm.DB
 	tenantRepo       user.TenantRepository
 	tenantMemberRepo user.TenantMemberRepository
 	userRepo         user.UserRepository
@@ -40,8 +42,9 @@ type tenantService struct {
 	logger           *zap.Logger
 }
 
-func NewTenantService(tenantRepo user.TenantRepository, tenantMemberRepo user.TenantMemberRepository, userRepo user.UserRepository, roleRepo user.RoleRepository, userRoleRepo user.UserRoleRepository, logger *zap.Logger) TenantService {
+func NewTenantService(db *gorm.DB, tenantRepo user.TenantRepository, tenantMemberRepo user.TenantMemberRepository, userRepo user.UserRepository, roleRepo user.RoleRepository, userRoleRepo user.UserRoleRepository, logger *zap.Logger) TenantService {
 	return &tenantService{
+		db:               db,
 		tenantRepo:       tenantRepo,
 		tenantMemberRepo: tenantMemberRepo,
 		userRepo:         userRepo,
@@ -74,6 +77,10 @@ func (s *tenantService) Get(id uuid.UUID) (*user.Tenant, error) {
 }
 
 func (s *tenantService) Create(req *dto.TenantCreateRequest, ownerID *uuid.UUID) (*user.Tenant, error) {
+	if ownerID == nil || *ownerID == uuid.Nil {
+		return nil, errors.New("invalid owner id")
+	}
+
 	plan := req.Plan
 	if plan == "" {
 		plan = "free"
@@ -99,6 +106,14 @@ func (s *tenantService) Create(req *dto.TenantCreateRequest, ownerID *uuid.UUID)
 		return nil, err
 	}
 
+	adminIDs, err := parseAdminUserIDs(req.AdminUserIDs)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.syncTenantAdmins(t.ID, adminIDs, ownerID); err != nil {
+		return nil, err
+	}
+
 	return t, nil
 }
 
@@ -112,6 +127,9 @@ func (s *tenantService) Update(id uuid.UUID, req *dto.TenantUpdateRequest) error
 	}
 	if req.LogoURL != "" {
 		updates["logo_url"] = req.LogoURL
+	}
+	if req.Plan != "" {
+		updates["plan"] = req.Plan
 	}
 	if req.Status != "" {
 		updates["status"] = req.Status
@@ -128,17 +146,50 @@ func (s *tenantService) Update(id uuid.UUID, req *dto.TenantUpdateRequest) error
 		}
 		return err
 	}
+
+	if req.AdminUserIDs != nil {
+		adminIDs, err := parseAdminUserIDs(req.AdminUserIDs)
+		if err != nil {
+			return err
+		}
+		if err := s.syncTenantAdmins(id, adminIDs, nil); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func (s *tenantService) Delete(id uuid.UUID) error {
-	if err := s.tenantRepo.Delete(id); err != nil {
+	if _, err := s.tenantRepo.GetByID(id); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrTenantNotFound
 		}
 		return err
 	}
-	return nil
+
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("tenant_id = ?", id).Delete(&user.APIKey{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("tenant_id = ?", id).Delete(&user.MediaAsset{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("tenant_id = ?", id).Delete(&user.UserRole{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("tenant_id = ?", id).Delete(&user.TenantMember{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Delete(&user.Tenant{}, "id = ?", id).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 
 func (s *tenantService) ListMembers(tenantID uuid.UUID, searchParams *user.MemberSearchParams) ([]user.TenantMember, error) {
@@ -156,10 +207,12 @@ func (s *tenantService) AddMember(tenantID uuid.UUID, req *dto.TenantAddMemberRe
 		return ErrTenantMemberExists
 	}
 
+	roleCode := normalizeTenantRoleCode(req.RoleCode, req.Role)
+
 	member := &user.TenantMember{
 		TenantID: tenantID,
 		UserID:   userID,
-		RoleCode: req.RoleCode,
+		RoleCode: roleCode,
 		JoinedAt: time.Now(),
 	}
 	if invitedBy != nil {
@@ -170,10 +223,8 @@ func (s *tenantService) AddMember(tenantID uuid.UUID, req *dto.TenantAddMemberRe
 		return err
 	}
 
-	if req.RoleCode != "" {
-		if err := s.assignTeamRole(userID, tenantID, req.RoleCode); err != nil {
-			s.logger.Error("failed to assign team role", zap.Error(err))
-		}
+	if err := s.syncTenantIdentityRole(userID, tenantID, roleCode); err != nil {
+		return err
 	}
 
 	return nil
@@ -193,7 +244,7 @@ func (s *tenantService) RemoveMember(tenantID, userID uuid.UUID) error {
 	}
 
 	if err := s.userRoleRepo.RemoveUserRole(userID, &tenantID); err != nil {
-		s.logger.Error("failed to remove user team role", zap.Error(err))
+		return err
 	}
 
 	return nil
@@ -212,21 +263,137 @@ func (s *tenantService) UpdateMemberRole(tenantID, userID uuid.UUID, roleCode st
 		return err
 	}
 
-	if err := s.assignTeamRole(userID, tenantID, roleCode); err != nil {
+	if err := s.syncTenantIdentityRole(userID, tenantID, roleCode); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *tenantService) assignTeamRole(userID, tenantID uuid.UUID, roleCode string) error {
+func (s *tenantService) syncTenantAdmins(tenantID uuid.UUID, adminIDs []uuid.UUID, invitedBy *uuid.UUID) error {
+	currentMembers, err := s.tenantMemberRepo.List(tenantID, nil)
+	if err != nil {
+		return err
+	}
+
+	existingByUser := make(map[uuid.UUID]*user.TenantMember, len(currentMembers))
+	for i := range currentMembers {
+		member := currentMembers[i]
+		existingByUser[member.UserID] = &member
+	}
+
+	adminSet := make(map[uuid.UUID]struct{}, len(adminIDs))
+	for _, adminID := range adminIDs {
+		adminSet[adminID] = struct{}{}
+	}
+
+	for _, adminID := range adminIDs {
+		member, exists := existingByUser[adminID]
+		if exists {
+			if member.RoleCode != defaultTeamRoleAdminCode {
+				if err := s.tenantMemberRepo.UpdateRole(member.ID, defaultTeamRoleAdminCode); err != nil {
+					return err
+				}
+				if err := s.syncTenantIdentityRole(adminID, tenantID, defaultTeamRoleAdminCode); err != nil {
+					return err
+				}
+			}
+			continue
+		}
+
+		if _, err := s.userRepo.GetByID(adminID); err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return errors.New("admin user not found")
+			}
+			return err
+		}
+
+		member = &user.TenantMember{
+			TenantID: tenantID,
+			UserID:   adminID,
+			RoleCode: defaultTeamRoleAdminCode,
+			JoinedAt: time.Now(),
+		}
+		if invitedBy != nil {
+			member.InvitedBy = invitedBy
+		}
+		if err := s.tenantMemberRepo.Create(member); err != nil {
+			return err
+		}
+		if err := s.syncTenantIdentityRole(adminID, tenantID, defaultTeamRoleAdminCode); err != nil {
+			return err
+		}
+	}
+
+	for _, member := range currentMembers {
+		if member.RoleCode != defaultTeamRoleAdminCode {
+			continue
+		}
+		if _, keep := adminSet[member.UserID]; !keep {
+			if err := s.tenantMemberRepo.UpdateRole(member.ID, defaultTeamRoleMemberCode); err != nil {
+				return err
+			}
+			if err := s.syncTenantIdentityRole(member.UserID, tenantID, defaultTeamRoleMemberCode); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func parseAdminUserIDs(rawIDs []string) ([]uuid.UUID, error) {
+	adminIDs := make([]uuid.UUID, 0, len(rawIDs))
+	for _, rawID := range rawIDs {
+		rawID = strings.TrimSpace(rawID)
+		if rawID == "" {
+			continue
+		}
+		id, err := uuid.Parse(rawID)
+		if err != nil {
+			return nil, errors.New("invalid admin user id")
+		}
+		adminIDs = appendIfMissingUUID(adminIDs, id)
+	}
+	return adminIDs, nil
+}
+
+func appendIfMissingUUID(items []uuid.UUID, id uuid.UUID) []uuid.UUID {
+	for _, item := range items {
+		if item == id {
+			return items
+		}
+	}
+	return append(items, id)
+}
+
+func normalizeTenantRoleCode(roleCode string, role string) string {
+	if strings.TrimSpace(roleCode) != "" {
+		return roleCode
+	}
+	if strings.TrimSpace(role) != "" {
+		return role
+	}
+	return defaultTeamRoleMemberCode
+}
+
+func (s *tenantService) syncTenantIdentityRole(userID, tenantID uuid.UUID, roleCode string) error {
+	roleCode = normalizeTenantRoleCode(roleCode, "")
+	if err := s.userRoleRepo.RemoveRolesByCodes(
+		userID,
+		&tenantID,
+		[]string{defaultTeamRoleAdminCode, defaultTeamRoleMemberCode},
+	); err != nil {
+		return err
+	}
+
 	roles, err := s.roleRepo.FindByCode(roleCode)
 	if err != nil {
 		return err
 	}
 	if len(roles) == 0 {
-		return errors.New("role not found")
+		return nil
 	}
-	roleID := roles[0].ID
-	return s.userRoleRepo.AssignRole(userID, roleID, &tenantID)
+
+	return s.userRoleRepo.AssignRole(userID, roles[0].ID, &tenantID)
 }
