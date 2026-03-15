@@ -151,6 +151,7 @@ func (s *roleService) Update(id uuid.UUID, req *dto.RoleUpdateRequest) error {
 	if req.Description != "" {
 		updates["description"] = req.Description
 	}
+	updates["sort_order"] = req.SortOrder
 	if req.Priority > 0 {
 		updates["priority"] = req.Priority
 	}

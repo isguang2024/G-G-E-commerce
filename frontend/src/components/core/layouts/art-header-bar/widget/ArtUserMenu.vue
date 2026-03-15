@@ -6,7 +6,7 @@
     :width="240"
     :hide-after="0"
     :offset="10"
-    trigger="hover"
+    trigger="click"
     :show-arrow="false"
     popper-class="user-menu-popover"
     popper-style="padding: 5px 16px;"

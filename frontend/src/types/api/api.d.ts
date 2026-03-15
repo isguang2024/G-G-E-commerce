@@ -176,6 +176,7 @@ declare namespace Api {
       roleName: string
       roleCode: string
       description: string
+      sortOrder?: number
       status?: string // normal/suspended
       priority?: number // 优先级
       createTime: string

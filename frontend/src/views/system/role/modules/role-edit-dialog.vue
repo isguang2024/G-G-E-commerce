@@ -48,6 +48,15 @@
           <ElOption label="停用" value="suspended" />
         </ElSelect>
       </ElFormItem>
+      <ElFormItem label="排序">
+        <ElInputNumber
+          v-model="form.sortOrder"
+          :min="0"
+          :max="9999"
+          placeholder="排序"
+          style="width: 100%"
+        />
+      </ElFormItem>
       <ElFormItem label="优先级">
         <ElInputNumber
           v-model="form.priority"
@@ -126,13 +135,16 @@
   /**
    * 表单数据
    */
-  const form = reactive<RoleListItem & { scopeId?: string; priority?: number; status?: string }>({
+  const form = reactive<
+    RoleListItem & { scopeId?: string; priority?: number; status?: string; sortOrder?: number }
+  >({
     roleId: '',
     roleName: '',
     roleCode: '',
     description: '',
     createTime: '',
     scopeId: '',
+    sortOrder: 0,
     priority: 0,
     status: 'normal'
   })
@@ -220,6 +232,7 @@
         description: roleData.description || '',
         createTime: roleData.createTime || '',
         scopeId: scopeId,
+        sortOrder: roleData.sortOrder ?? 0,
         priority: roleData.priority || 0,
         status: roleData.status || 'normal'
       })
@@ -232,6 +245,7 @@
         description: '',
         createTime: '',
         scopeId: scopeList.value.length > 0 ? scopeList.value[0].scopeId : '',
+        sortOrder: 0,
         priority: 0,
         status: 'normal'
       })
@@ -265,6 +279,7 @@
           name: form.roleName,
           description: form.description || '',
           scope_id: form.scopeId,
+          sort_order: form.sortOrder ?? 0,
           priority: form.priority || 0,
           status: form.status || 'normal'
         })
@@ -286,6 +301,7 @@
           name: form.roleName,
           description: form.description || '',
           scope_id: scopeId,
+          sort_order: form.sortOrder ?? 0,
           priority: form.priority || 0,
           status: form.status || 'normal'
         }

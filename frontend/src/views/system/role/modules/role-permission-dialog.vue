@@ -104,6 +104,44 @@
     return (menuTreeRaw.value as MenuNode[]).map(processNode)
   })
 
+  const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+  const collectDescendantMenuIds = (node: MenuNode): string[] => {
+    const ids: string[] = []
+    const traverse = (children?: MenuNode[]) => {
+      children?.forEach((child) => {
+        if (child.id && uuidRe.test(child.id)) ids.push(child.id)
+        traverse(child.children)
+      })
+    }
+    traverse(node.children)
+    return ids
+  }
+
+  const normalizeMenuIds = (menuIds: string[]): string[] => {
+    const rawSet = new Set(menuIds.filter((id) => typeof id === 'string' && uuidRe.test(id)))
+    const normalized = new Set(rawSet)
+
+    const visit = (nodes: MenuNode[]) => {
+      nodes.forEach((node) => {
+        if (!node.id || !rawSet.has(node.id)) {
+          if (node.children?.length) visit(node.children)
+          return
+        }
+
+        const descendantIds = collectDescendantMenuIds(node)
+        if (descendantIds.some((id) => rawSet.has(id))) {
+          normalized.delete(node.id)
+        }
+
+        if (node.children?.length) visit(node.children)
+      })
+    }
+
+    visit(processedMenuList.value)
+    return Array.from(normalized)
+  }
+
   const defaultProps = {
     children: 'children',
     label: (data: any) => formatMenuTitle(data.meta?.title) || data.label || data.name || ''
@@ -129,7 +167,7 @@
       if (!role?.roleId) return
       try {
         const res = await fetchGetRoleMenus(role.roleId)
-        const ids = res?.menu_ids ?? []
+        const ids = normalizeMenuIds(res?.menu_ids ?? [])
         // 等树渲染完成（含新增菜单节点）后再设置勾选，避免新节点未参与导致保存时漏传
         await nextTick()
         await nextTick()
@@ -152,17 +190,7 @@
     const tree = treeRef.value
     if (!tree) return []
     const checked = (tree.getCheckedKeys() || []) as string[]
-    const halfChecked = (tree.getHalfCheckedKeys() || []) as string[]
-    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    const add = (acc: Set<string>, keys: string[]) => {
-      keys.forEach((k) => {
-        if (typeof k === 'string' && uuidRe.test(k)) acc.add(k)
-      })
-    }
-    const set = new Set<string>()
-    add(set, checked)
-    add(set, halfChecked)
-    return Array.from(set)
+    return normalizeMenuIds(checked)
   }
 
   const savePermission = async () => {
@@ -208,7 +236,6 @@
     const checked = (tree.getCheckedKeys() || []) as string[]
     const halfChecked = (tree.getHalfCheckedKeys() || []) as string[]
     const allIds = getAllNodeIds(processedMenuList.value)
-    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
     const menuIds = allIds.filter((id) => uuidRe.test(id))
     const totalChecked = new Set([...checked, ...halfChecked])
     isSelectAll.value = menuIds.length > 0 && totalChecked.size >= menuIds.length

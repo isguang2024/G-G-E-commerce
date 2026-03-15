@@ -334,7 +334,7 @@ func (r *roleRepository) listWithScope(offset, limit int, roleCode, roleName, de
 	}
 
 	var roles []Role
-	err := baseQuery.Offset(offset).Limit(limit).Order("created_at DESC").Find(&roles).Error
+	err := baseQuery.Offset(offset).Limit(limit).Order("sort_order ASC, created_at DESC").Find(&roles).Error
 	return roles, total, err
 }
 

@@ -148,6 +148,12 @@
           showOverflowTooltip: true
         },
         {
+          prop: 'sortOrder',
+          label: '排序',
+          width: 80,
+          formatter: (row: RoleListItem) => row.sortOrder ?? 0
+        },
+        {
           prop: 'scope',
           label: '作用域',
           width: 100,
