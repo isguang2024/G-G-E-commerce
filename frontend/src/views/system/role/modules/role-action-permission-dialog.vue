@@ -35,9 +35,15 @@
           </div>
 
           <div class="option-switches">
-            <label class="option-item">
-              <span>仅已配置</span>
-              <ElSwitch v-model="filters.onlyConfigured" />
+            <label class="option-item option-item--select">
+              <span>配置状态</span>
+              <ElSelect v-model="filters.effectState" size="small" class="filter-select" placeholder="全部">
+                <ElOption label="全部" value="" />
+                <ElOption label="未配置" value="empty" />
+                <ElOption label="已配置" value="configured" />
+                <ElOption label="允许" value="allow" />
+                <ElOption label="拒绝" value="deny" />
+              </ElSelect>
             </label>
             <label class="option-item">
               <span>查看备注</span>
@@ -69,7 +75,7 @@
           node-key="key"
           :props="treeProps"
           :default-expanded-keys="expandedKeys"
-          :expand-on-click-node="false"
+          :expand-on-click-node="true"
           :highlight-current="false"
           class="permission-tree"
         >
@@ -137,10 +143,18 @@
 
 <script setup lang="ts">
   import {
+    buildAllExpandedKeys,
+    buildDefaultExpandedKeys,
+    buildPermissionGroups,
+    buildPermissionTree,
+    type FeatureGroup
+  } from '@/components/business/permission/permission-tree'
+  import {
     fetchGetPermissionActionList,
     fetchGetRoleActions,
     fetchSetRoleActions
   } from '@/api/system-manage'
+  import { formatScopeLabel } from '@/utils/permission/scope'
   import { ElMessage } from 'element-plus'
 
   interface Props {
@@ -150,29 +164,10 @@
 
   type EffectValue = 'allow' | 'deny' | ''
   type PermissionActionItem = Api.SystemManage.PermissionActionItem
-  type TreeNodeType = 'feature' | 'module' | 'action'
-
-  interface ModuleGroup {
-    key: string
-    label: string
-    category: string
-    count: number
-    actionIds: string[]
-    actions: PermissionActionItem[]
-  }
-
-  interface FeatureGroup {
-    key: string
-    label: string
-    count: number
-    actionIds: string[]
-    modules: ModuleGroup[]
-  }
-
   interface PermissionTreeNode {
     key: string
     label: string
-    nodeType: TreeNodeType
+    nodeType: 'feature' | 'module' | 'action'
     meta: string
     children?: PermissionTreeNode[]
     actionIds: string[]
@@ -202,7 +197,7 @@
     keyword: '',
     source: '',
     featureKind: '',
-    onlyConfigured: false,
+    effectState: '',
     showRemark: true,
     compact: false
   })
@@ -226,8 +221,20 @@
       if (filters.featureKind && item.featureKind !== filters.featureKind) {
         return false
       }
-      if (filters.onlyConfigured && !effectMap[item.id]) {
-        return false
+      const effect = effectMap[item.id] || ''
+      switch (filters.effectState) {
+        case 'configured':
+          if (!effect) return false
+          break
+        case 'empty':
+          if (effect) return false
+          break
+        case 'allow':
+          if (effect !== 'allow') return false
+          break
+        case 'deny':
+          if (effect !== 'deny') return false
+          break
       }
       if (!keyword) {
         return true
@@ -253,93 +260,18 @@
   const allowedCount = computed(() => Object.values(effectMap).filter((item) => item === 'allow').length)
   const deniedCount = computed(() => Object.values(effectMap).filter((item) => item === 'deny').length)
 
-  const filteredGroups = computed<FeatureGroup[]>(() => {
-    const featureMap = new Map<string, FeatureGroup>()
-    filteredActions.value.forEach((action) => {
-      const featureKey = action.featureKind === 'business' ? 'business' : 'system'
-      let featureGroup = featureMap.get(featureKey)
-      if (!featureGroup) {
-        featureGroup = {
-          key: featureKey,
-          label: featureKey === 'business' ? '业务功能' : '系统功能',
-          count: 0,
-          actionIds: [],
-          modules: []
-        }
-        featureMap.set(featureKey, featureGroup)
-      }
-
-      const moduleCode = action.moduleCode || action.resourceCode || 'common'
-      const moduleKey = `${featureKey}:${moduleCode}`
-      let moduleGroup = featureGroup.modules.find((item) => item.key === moduleKey)
-      if (!moduleGroup) {
-        moduleGroup = {
-          key: moduleKey,
-          label: moduleCode,
-          category: action.category || '',
-          count: 0,
-          actionIds: [],
-          actions: []
-        }
-        featureGroup.modules.push(moduleGroup)
-      }
-
-      moduleGroup.actions.push(action)
-      moduleGroup.actionIds.push(action.id)
-      moduleGroup.count += 1
-      featureGroup.actionIds.push(action.id)
-      featureGroup.count += 1
-    })
-
-    return [...featureMap.values()]
-      .map((featureGroup) => ({
-        ...featureGroup,
-        modules: featureGroup.modules
-          .map((moduleGroup) => ({
-            ...moduleGroup,
-            actions: [...moduleGroup.actions].sort(
-              (a, b) =>
-                (a.sortOrder ?? 0) - (b.sortOrder ?? 0) ||
-                (a.name || '').localeCompare(b.name || '', 'zh-CN')
-            )
-          }))
-          .sort((a, b) => a.label.localeCompare(b.label, 'zh-CN'))
-      }))
-      .sort((a, b) => a.key.localeCompare(b.key, 'zh-CN'))
-  })
+  const filteredGroups = computed<FeatureGroup[]>(() => buildPermissionGroups(filteredActions.value))
 
   const treeData = computed<PermissionTreeNode[]>(() =>
-    filteredGroups.value.map((featureGroup) => ({
-      key: featureGroup.key,
-      label: featureGroup.label,
-      nodeType: 'feature',
-      meta: `${featureGroup.modules.length} 个模块，${featureGroup.count} 条权限`,
-      actionIds: featureGroup.actionIds,
-      children: featureGroup.modules.map((moduleGroup) => ({
-        key: moduleGroup.key,
-        label: moduleGroup.label,
-        nodeType: 'module',
-        meta: `${moduleGroup.count} 条权限${moduleGroup.category ? `，分类 ${moduleGroup.category}` : ''}`,
-        actionIds: moduleGroup.actionIds,
-        children: moduleGroup.actions.map((action) => ({
-          key: action.id,
-          label: action.name,
-          nodeType: 'action',
-          meta: buildActionMeta(action),
-          actionIds: [action.id],
-          actionId: action.id,
-          scopeText: action.scopeName || (action.scopeCode === 'team' ? '团队' : '平台'),
-          sourceText: sourceTextMap[action.source || 'business'] || '业务定义'
-        }))
-      }))
-    }))
+    buildPermissionTree(filteredGroups.value, (action) => ({
+      meta: buildActionMeta(action),
+      scopeText: formatScopeLabel(action.scopeCode, action.scopeName),
+      sourceText: sourceTextMap[action.source || 'business'] || '业务定义'
+    })) as PermissionTreeNode[]
   )
 
   function syncExpandedKeys() {
-    const nextKeys = treeData.value.flatMap((featureGroup, index) => {
-      if (index > 0) return []
-      return [featureGroup.key, ...(featureGroup.children || []).map((moduleGroup) => moduleGroup.key)]
-    })
+    const nextKeys = buildDefaultExpandedKeys(treeData.value)
     expandedKeys.value = nextKeys
     nextTick(() => {
       if (!treeRef.value) return
@@ -356,10 +288,7 @@
   }
 
   function expandAll() {
-    const nextKeys = treeData.value.flatMap((featureGroup) => [
-      featureGroup.key,
-      ...((featureGroup.children || []).map((moduleGroup) => moduleGroup.key))
-    ])
+    const nextKeys = buildAllExpandedKeys(treeData.value)
     expandedKeys.value = nextKeys
     treeRef.value?.setExpandedKeys(nextKeys)
   }
@@ -393,7 +322,7 @@
         keyword: '',
         source: '',
         featureKind: '',
-        onlyConfigured: false,
+        effectState: '',
         showRemark: true,
         compact: false
       })
@@ -539,6 +468,15 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
   }
 
+  .option-item--select {
+    gap: 10px;
+    padding-right: 8px;
+  }
+
+  .filter-select {
+    width: 104px;
+  }
+
   .batch-label {
     font-size: 12px;
     color: #69778a;
@@ -657,7 +595,7 @@
   }
 
   .effect-select {
-    width: 100px;
+    width: 78px;
   }
 
   :deep(.effect-select .el-input__wrapper) {

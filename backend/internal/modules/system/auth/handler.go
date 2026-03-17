@@ -16,12 +16,14 @@ type AuthHandler struct {
 	authService  AuthService
 	authzService interface {
 		GetUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
+		GetUserScopedActionKeys(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
 	}
 	logger *zap.Logger
 }
 
 func NewAuthHandler(authService AuthService, authzService interface {
 	GetUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
+	GetUserScopedActionKeys(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
 }, logger *zap.Logger) *AuthHandler {
 	return &AuthHandler{
 		authService:  authService,
@@ -173,11 +175,17 @@ func (h *AuthHandler) GetUserInfo(c *gin.Context) {
 	}
 
 	actionKeys := make([]string, 0)
+	scopedActionKeys := make([]string, 0)
 	if h.authzService != nil {
 		if keys, keyErr := h.authzService.GetUserActionKeys(userID, tenantID); keyErr != nil {
 			h.logger.Warn("Failed to resolve user actions", zap.Error(keyErr), zap.String("user_id", userID.String()))
 		} else {
 			actionKeys = keys
+		}
+		if scopedKeys, scopedKeyErr := h.authzService.GetUserScopedActionKeys(userID, tenantID); scopedKeyErr != nil {
+			h.logger.Warn("Failed to resolve user scoped actions", zap.Error(scopedKeyErr), zap.String("user_id", userID.String()))
+		} else {
+			scopedActionKeys = scopedKeys
 		}
 	}
 
@@ -192,6 +200,7 @@ func (h *AuthHandler) GetUserInfo(c *gin.Context) {
 		"is_super_admin": user.IsSuperAdmin,
 		"roles":          roles,
 		"actions":        actionKeys,
+		"scoped_actions": scopedActionKeys,
 		"created_at":     user.CreatedAt,
 		"updated_at":     user.UpdatedAt,
 	}

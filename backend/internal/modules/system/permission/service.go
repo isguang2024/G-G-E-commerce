@@ -94,20 +94,20 @@ func (s *permissionService) Create(req *dto.PermissionActionCreateRequest) (*use
 	if resourceCode == "" || actionCode == "" {
 		return nil, errors.New("resource_code 和 action_code 不能为空")
 	}
-	if _, err := s.actionRepo.GetByResourceAndAction(resourceCode, actionCode); err == nil {
-		return nil, ErrPermissionActionExists
-	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, err
-	}
-
 	scopeID, err := uuid.Parse(strings.TrimSpace(req.ScopeID))
 	if err != nil {
 		return nil, errors.New("invalid scope_id")
 	}
-	if _, err := s.scopeRepo.GetByID(scopeID); err != nil {
+	scope, err := s.scopeRepo.GetByID(scopeID)
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("scope not found")
 		}
+		return nil, err
+	}
+	if _, err := s.actionRepo.GetByResourceAndAction(resourceCode, actionCode, scope.Code); err == nil {
+		return nil, ErrPermissionActionExists
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
 	status := strings.TrimSpace(req.Status)
@@ -166,13 +166,15 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionActionUpdate
 		if parseErr != nil {
 			return errors.New("invalid scope_id")
 		}
-		if _, getErr := s.scopeRepo.GetByID(scopeID); getErr != nil {
+		scope, getErr := s.scopeRepo.GetByID(scopeID)
+		if getErr != nil {
 			if errors.Is(getErr, gorm.ErrRecordNotFound) {
 				return errors.New("scope not found")
 			}
 			return getErr
 		}
 		updates["scope_id"] = scopeID
+		current.Scope = *scope
 	}
 	if req.RequiresTenantContext != nil {
 		updates["requires_tenant_context"] = *req.RequiresTenantContext
@@ -199,8 +201,16 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionActionUpdate
 	if req.ModuleCode == "" && (resourceCode != "" || current.ModuleCode == "") {
 		updates["module_code"] = normalizeModuleCode(current.ModuleCode, targetResourceCode)
 	}
-	if targetResourceCode != current.ResourceCode || targetActionCode != current.ActionCode {
-		existing, getErr := s.actionRepo.GetByResourceAndAction(targetResourceCode, targetActionCode)
+	targetScopeCode := strings.TrimSpace(current.Scope.Code)
+	if targetScopeCode == "" {
+		if scope, getErr := s.scopeRepo.GetByID(current.ScopeID); getErr == nil {
+			targetScopeCode = scope.Code
+		} else if !errors.Is(getErr, gorm.ErrRecordNotFound) {
+			return getErr
+		}
+	}
+	if targetResourceCode != current.ResourceCode || targetActionCode != current.ActionCode || updates["scope_id"] != nil {
+		existing, getErr := s.actionRepo.GetByResourceAndAction(targetResourceCode, targetActionCode, targetScopeCode)
 		if getErr == nil && existing != nil && existing.ID != id {
 			return ErrPermissionActionExists
 		}

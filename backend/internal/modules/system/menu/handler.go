@@ -24,13 +24,13 @@ type MenuHandler struct {
 	userRoleRepo     user.UserRoleRepository
 	tenantMemberRepo user.TenantMemberRepository
 	authzService     interface {
-		Authorize(userID uuid.UUID, tenantID *uuid.UUID, resourceCode, actionCode string) (bool, *models.PermissionAction, error)
+		Authorize(userID uuid.UUID, tenantID *uuid.UUID, resourceCode, actionCode string, scopeCodes ...string) (bool, *models.PermissionAction, error)
 	}
 	logger *zap.Logger
 }
 
 func NewMenuHandler(menuService MenuService, userRepo user.UserRepository, roleMenuRepo user.RoleMenuRepository, userRoleRepo user.UserRoleRepository, tenantMemberRepo user.TenantMemberRepository, authzService interface {
-	Authorize(userID uuid.UUID, tenantID *uuid.UUID, resourceCode, actionCode string) (bool, *models.PermissionAction, error)
+	Authorize(userID uuid.UUID, tenantID *uuid.UUID, resourceCode, actionCode string, scopeCodes ...string) (bool, *models.PermissionAction, error)
 }, logger *zap.Logger) *MenuHandler {
 	return &MenuHandler{
 		menuService:      menuService,
@@ -58,7 +58,7 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
-		allowed, _, authErr := h.authzService.Authorize(userID, tenantID, "menu", "list")
+		allowed, _, authErr := h.authzService.Authorize(userID, tenantID, "menu", "list", "global")
 		if authErr != nil || !allowed {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "无权限查看全部菜单")
 			c.JSON(status, resp)

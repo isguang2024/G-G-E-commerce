@@ -46,15 +46,15 @@ func (m *UserModule) RegisterRoutes(rg *gin.RouterGroup) {
 	users := rg.Group("/users")
 	reg := apiregistry.NewRegistrar(users, "user")
 	{
-		reg.GET("", &apiregistry.RouteMeta{Summary: "获取用户列表", ResourceCode: "user", ActionCode: "list", ScopeCode: "global"}, authzService.RequireAction("user", "list"), userHandler.List)
-		reg.GET("/:id", &apiregistry.RouteMeta{Summary: "获取用户详情", ResourceCode: "user", ActionCode: "get", ScopeCode: "global"}, authzService.RequireAction("user", "get"), userHandler.Get)
-		reg.GET("/:id/permissions", &apiregistry.RouteMeta{Summary: "获取用户菜单权限", ResourceCode: "user", ActionCode: "get", ScopeCode: "global"}, authzService.RequireAction("user", "get"), userHandler.GetPermissions)
-		reg.GET("/:id/actions", &apiregistry.RouteMeta{Summary: "获取用户功能权限", ResourceCode: "user", ActionCode: "assign_action", ScopeCode: "global"}, authzService.RequireAction("user", "assign_action"), userHandler.GetActions)
-		reg.PUT("/:id/actions", &apiregistry.RouteMeta{Summary: "配置用户功能权限", ResourceCode: "user", ActionCode: "assign_action", ScopeCode: "global"}, authzService.RequireAction("user", "assign_action"), userHandler.SetActions)
-		reg.POST("", &apiregistry.RouteMeta{Summary: "创建用户", ResourceCode: "user", ActionCode: "create", ScopeCode: "global"}, authzService.RequireAction("user", "create"), userHandler.Create)
-		reg.PUT("/:id", &apiregistry.RouteMeta{Summary: "更新用户", ResourceCode: "user", ActionCode: "update", ScopeCode: "global"}, authzService.RequireAction("user", "update"), userHandler.Update)
-		reg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除用户", ResourceCode: "user", ActionCode: "delete", ScopeCode: "global"}, authzService.RequireAction("user", "delete"), userHandler.Delete)
-		reg.POST("/:id/roles", &apiregistry.RouteMeta{Summary: "分配用户角色", ResourceCode: "user", ActionCode: "assign_role", ScopeCode: "global"}, authzService.RequireAction("user", "assign_role"), userHandler.AssignRoles)
+	reg.GET("", &apiregistry.RouteMeta{Summary: "获取用户列表", ResourceCode: "user", ActionCode: "list", ScopeCode: "global"}, authzService.RequireAction("user", "list", "global"), userHandler.List)
+	reg.GET("/:id", &apiregistry.RouteMeta{Summary: "获取用户详情", ResourceCode: "user", ActionCode: "get", ScopeCode: "global"}, authzService.RequireAction("user", "get", "global"), userHandler.Get)
+	reg.GET("/:id/permissions", &apiregistry.RouteMeta{Summary: "获取用户菜单权限", ResourceCode: "user", ActionCode: "get", ScopeCode: "global"}, authzService.RequireAction("user", "get", "global"), userHandler.GetPermissions)
+	reg.GET("/:id/actions", &apiregistry.RouteMeta{Summary: "获取用户功能权限", ResourceCode: "user", ActionCode: "assign_action", ScopeCode: "global"}, authzService.RequireAction("user", "assign_action", "global"), userHandler.GetActions)
+	reg.PUT("/:id/actions", &apiregistry.RouteMeta{Summary: "配置用户功能权限", ResourceCode: "user", ActionCode: "assign_action", ScopeCode: "global"}, authzService.RequireAction("user", "assign_action", "global"), userHandler.SetActions)
+	reg.POST("", &apiregistry.RouteMeta{Summary: "创建用户", ResourceCode: "user", ActionCode: "create", ScopeCode: "global"}, authzService.RequireAction("user", "create", "global"), userHandler.Create)
+	reg.PUT("/:id", &apiregistry.RouteMeta{Summary: "更新用户", ResourceCode: "user", ActionCode: "update", ScopeCode: "global"}, authzService.RequireAction("user", "update", "global"), userHandler.Update)
+	reg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除用户", ResourceCode: "user", ActionCode: "delete", ScopeCode: "global"}, authzService.RequireAction("user", "delete", "global"), userHandler.Delete)
+	reg.POST("/:id/roles", &apiregistry.RouteMeta{Summary: "分配用户角色", ResourceCode: "user", ActionCode: "assign_role", ScopeCode: "global"}, authzService.RequireAction("user", "assign_role", "global"), userHandler.AssignRoles)
 	}
 }
 

@@ -208,6 +208,12 @@ export async function fetchGetMyTeamRoles() {
   }))
 }
 
+export function fetchGetMyTeamRoleActions(roleId: string) {
+  return request.get<{ actions: Array<{ action_id: string; effect: 'allow' | 'deny' }> }>({
+    url: `${TENANT_BASE}/my-team/roles/${roleId}/actions`
+  })
+}
+
 export async function fetchGetTeamActions(teamId: string) {
   const res = await request.get<{ action_ids: string[]; actions: any[] }>({
     url: `${TENANT_BASE}/${teamId}/actions`

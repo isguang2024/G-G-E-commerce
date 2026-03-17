@@ -131,10 +131,11 @@
 <script setup lang="ts">
   import type { FormItem } from '@/components/core/forms/art-form/index.vue'
   import { useTable } from '@/hooks/core/useTable'
-  import {
-    fetchDeletePermissionAction,
-    fetchGetPermissionActionList
-  } from '@/api/system-manage'
+    import {
+      fetchDeletePermissionAction,
+      fetchGetPermissionActionList
+    } from '@/api/system-manage'
+    import { formatScopeLabel, getScopeTagType } from '@/utils/permission/scope'
   import ActionPermissionDialog from './modules/action-permission-dialog.vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
@@ -342,8 +343,8 @@
           label: '作用域',
           width: 100,
           formatter: (row: PermissionActionItem) =>
-            h(ElTag, { type: row.scopeCode === 'team' ? 'success' : 'primary' }, () =>
-              row.scopeName || (row.scopeCode === 'team' ? '团队' : '平台')
+            h(ElTag, { type: getScopeTagType(row.scopeCode) }, () =>
+              formatScopeLabel(row.scopeCode, row.scopeName)
             )
         },
         {

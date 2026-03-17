@@ -24,6 +24,7 @@
 <script setup lang="ts">
   import { useTable } from '@/hooks/core/useTable'
   import { fetchGetApiEndpointList, fetchSyncApiEndpoints } from '@/api/system-manage'
+  import { formatScopeLabel, getScopeTagType } from '@/utils/permission/scope'
   import { ElMessage, ElTag } from 'element-plus'
 
   defineOptions({ name: 'ApiEndpoint' })
@@ -69,8 +70,8 @@
           label: '作用域',
           width: 90,
           formatter: (row: APIEndpointItem) =>
-            h(ElTag, { type: row.scopeCode === 'team' ? 'success' : 'primary' }, () =>
-              row.scopeName || (row.scopeCode === 'team' ? '团队' : '平台')
+            h(ElTag, { type: getScopeTagType(row.scopeCode) }, () =>
+              formatScopeLabel(row.scopeCode, row.scopeName)
             )
         },
         {

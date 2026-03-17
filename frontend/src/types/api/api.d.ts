@@ -96,6 +96,7 @@ declare namespace Api {
       is_super_admin: boolean
       current_tenant_id?: string
       actions?: string[]
+      scoped_actions?: string[]
       created_at: string
       updated_at?: string
       // 兼容字段
@@ -104,6 +105,7 @@ declare namespace Api {
       avatar?: string
       roles?: string[]
       buttons?: string[]
+      scopedActions?: string[]
     }
   }
 

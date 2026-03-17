@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -1015,7 +1016,7 @@ type PermissionActionRepository interface {
 	List(offset, limit int, params *PermissionActionListParams) ([]PermissionAction, int64, error)
 	GetByID(id uuid.UUID) (*PermissionAction, error)
 	GetByIDs(ids []uuid.UUID) ([]PermissionAction, error)
-	GetByResourceAndAction(resourceCode, actionCode string) (*PermissionAction, error)
+	GetByResourceAndAction(resourceCode, actionCode, scopeCode string) (*PermissionAction, error)
 	GetAllEnabled() ([]PermissionAction, error)
 	ListDistinctResourceCodesByScope(scopeCode string) ([]string, error)
 	Create(action *PermissionAction) error
@@ -1120,9 +1121,13 @@ func (r *permissionActionRepository) GetByIDs(ids []uuid.UUID) ([]PermissionActi
 	return actions, err
 }
 
-func (r *permissionActionRepository) GetByResourceAndAction(resourceCode, actionCode string) (*PermissionAction, error) {
+func (r *permissionActionRepository) GetByResourceAndAction(resourceCode, actionCode, scopeCode string) (*PermissionAction, error) {
 	var action PermissionAction
-	err := r.db.Preload("Scope").Where("resource_code = ? AND action_code = ?", resourceCode, actionCode).First(&action).Error
+	query := r.db.Preload("Scope").Where("permission_actions.resource_code = ? AND permission_actions.action_code = ?", resourceCode, actionCode)
+	if trimmedScopeCode := strings.TrimSpace(scopeCode); trimmedScopeCode != "" {
+		query = query.Joins("JOIN scopes ON permission_actions.scope_id = scopes.id").Where("scopes.code = ?", trimmedScopeCode)
+	}
+	err := query.First(&action).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound

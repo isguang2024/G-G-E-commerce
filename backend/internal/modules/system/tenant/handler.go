@@ -22,6 +22,7 @@ type TenantHandler struct {
 	tenantMemberRepo user.TenantMemberRepository
 	userRepo         user.UserRepository
 	roleRepo         user.RoleRepository
+	roleActionRepo   user.RoleActionPermissionRepository
 	userRoleRepo     user.UserRoleRepository
 	actionRepo       user.PermissionActionRepository
 	tenantActionRepo user.TenantActionPermissionRepository
@@ -29,12 +30,13 @@ type TenantHandler struct {
 	logger           *zap.Logger
 }
 
-func NewTenantHandler(tenantService TenantService, tenantMemberRepo user.TenantMemberRepository, userRepo user.UserRepository, roleRepo user.RoleRepository, userRoleRepo user.UserRoleRepository, actionRepo user.PermissionActionRepository, tenantActionRepo user.TenantActionPermissionRepository, userActionRepo user.UserActionPermissionRepository, logger *zap.Logger) *TenantHandler {
+func NewTenantHandler(tenantService TenantService, tenantMemberRepo user.TenantMemberRepository, userRepo user.UserRepository, roleRepo user.RoleRepository, roleActionRepo user.RoleActionPermissionRepository, userRoleRepo user.UserRoleRepository, actionRepo user.PermissionActionRepository, tenantActionRepo user.TenantActionPermissionRepository, userActionRepo user.UserActionPermissionRepository, logger *zap.Logger) *TenantHandler {
 	return &TenantHandler{
 		tenantService:    tenantService,
 		tenantMemberRepo: tenantMemberRepo,
 		userRepo:         userRepo,
 		roleRepo:         roleRepo,
+		roleActionRepo:   roleActionRepo,
 		userRoleRepo:     userRoleRepo,
 		actionRepo:       actionRepo,
 		tenantActionRepo: tenantActionRepo,
@@ -697,6 +699,64 @@ func (h *TenantHandler) ListMyTeamRoles(c *gin.Context) {
 		})
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(roleList))
+}
+
+func (h *TenantHandler) GetMyTeamRoleActions(c *gin.Context) {
+	member, err := h.resolveTenantMember(c)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound || err == ErrTenantMemberNotFound {
+			status, resp := errcode.Response(errcode.ErrNoTeam)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get my team member failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的团队失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	roleID, err := uuid.Parse(c.Param("roleId"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	role, err := h.roleRepo.GetByID(roleID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			status, resp := errcode.Response(errcode.ErrRoleNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get team role failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取角色失败")
+		c.JSON(status, resp)
+		return
+	}
+	if role.Scope.Code != "team" {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "仅支持查看团队角色功能权限")
+		c.JSON(status, resp)
+		return
+	}
+
+	_ = member.TenantID
+	records, err := h.roleActionRepo.GetByRoleID(roleID)
+	if err != nil {
+		h.logger.Error("Get team role actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队角色功能权限失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	items := make([]gin.H, 0, len(records))
+	for _, record := range records {
+		items = append(items, gin.H{
+			"action_id": record.ActionID.String(),
+			"effect":    record.Effect,
+		})
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"actions": items}))
 }
 
 func (h *TenantHandler) GetTenantActions(c *gin.Context) {

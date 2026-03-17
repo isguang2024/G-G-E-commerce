@@ -1,6 +1,7 @@
 import { watchEffect } from 'vue'
 import { useUserStore } from '@/store/modules/user'
 import { App, Directive, DirectiveBinding } from 'vue'
+import { hasScopedActionPermission } from '@/utils/permission/action'
 
 interface ActionBinding extends DirectiveBinding {
   value: string
@@ -13,9 +14,7 @@ interface ActionHTMLElement extends HTMLElement {
 function updateActionPermission(el: HTMLElement, binding: ActionBinding): void {
   const userStore = useUserStore()
   const userInfo = userStore.getUserInfo
-  const isSuperAdmin = Boolean(userInfo?.is_super_admin)
-  const actionList = userInfo?.actions || []
-  toggleElement(el, isSuperAdmin || actionList.includes(binding.value))
+  toggleElement(el, hasScopedActionPermission(userInfo, binding.value))
 }
 
 function mountWatcher(el: ActionHTMLElement, binding: ActionBinding): void {

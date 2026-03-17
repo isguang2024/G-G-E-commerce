@@ -201,6 +201,22 @@ func runNamedMigrations(logger *zap.Logger) error {
 			},
 		},
 		{
+			Name: "20260317_permission_actions_expand_unique_scope",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`DROP INDEX IF EXISTS idx_permission_actions_resource_action_unique`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_permission_actions_resource_action_unique ON permission_actions (resource_code, action_code, scope_id)`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260317_permission_actions_expand_unique_scope"))
+				return nil
+			},
+		},
+		{
 			Name: "20260317_menus_remove_legacy_button_meta",
 			Run: func(logger *zap.Logger) error {
 				if err := database.DB.Exec(`
@@ -226,6 +242,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 					 FROM api_endpoints ae
 					 WHERE pa.resource_code = ae.resource_code
 					   AND pa.action_code = ae.action_code
+					   AND pa.scope_id = ae.scope_id
 					   AND COALESCE(ae.resource_code, '') <> ''
 					   AND COALESCE(ae.action_code, '') <> ''`,
 				}
@@ -283,6 +300,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 					 WHERE COALESCE(pa.module_code, '') = ''
 					   AND pa.resource_code = ae.resource_code
 					   AND pa.action_code = ae.action_code
+					   AND pa.scope_id = ae.scope_id
 					   AND COALESCE(ae.resource_code, '') <> ''
 					   AND COALESCE(ae.action_code, '') <> ''`,
 					`UPDATE permission_actions
@@ -764,7 +782,7 @@ func initDefaultPermissionActions(logger *zap.Logger) error {
 			SortOrder:             index + 1,
 		}
 		var action usermodel.PermissionAction
-		result := database.DB.Where("resource_code = ? AND action_code = ?", actionData.ResourceCode, actionData.ActionCode).First(&action)
+		result := database.DB.Where("resource_code = ? AND action_code = ? AND scope_id = ?", actionData.ResourceCode, actionData.ActionCode, actionData.ScopeID).First(&action)
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				if err := database.DB.Create(&actionData).Error; err != nil {

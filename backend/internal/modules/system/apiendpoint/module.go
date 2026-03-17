@@ -37,8 +37,8 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	endpoints := rg.Group("/api-endpoints")
 	reg := apiregistry.NewRegistrar(endpoints, "api_endpoint")
 	{
-		reg.GET("", &apiregistry.RouteMeta{Summary: "获取 API 注册表", ResourceCode: "api_endpoint", ActionCode: "list", ScopeCode: "global"}, authzService.RequireAction("api_endpoint", "list"), handler.List)
-		reg.POST("/sync", &apiregistry.RouteMeta{Summary: "同步 API 注册表", ResourceCode: "api_endpoint", ActionCode: "sync", ScopeCode: "global"}, authzService.RequireAction("api_endpoint", "sync"), handler.Sync)
+	reg.GET("", &apiregistry.RouteMeta{Summary: "获取 API 注册表", ResourceCode: "api_endpoint", ActionCode: "list", ScopeCode: "global"}, authzService.RequireAction("api_endpoint", "list", "global"), handler.List)
+	reg.POST("/sync", &apiregistry.RouteMeta{Summary: "同步 API 注册表", ResourceCode: "api_endpoint", ActionCode: "sync", ScopeCode: "global"}, authzService.RequireAction("api_endpoint", "sync", "global"), handler.Sync)
 	}
 }
 

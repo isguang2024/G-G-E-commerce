@@ -41,12 +41,12 @@ func (m *ScopeModule) RegisterRoutes(rg *gin.RouterGroup) {
 	scopes := rg.Group("/scopes")
 	reg := apiregistry.NewRegistrar(scopes, "scope")
 	{
-		reg.GET("", &apiregistry.RouteMeta{Summary: "获取作用域列表", ResourceCode: "scope", ActionCode: "list", ScopeCode: "global"}, authzService.RequireAction("scope", "list"), scopeHandler.List)
-		reg.GET("/all", &apiregistry.RouteMeta{Summary: "获取全部作用域", ResourceCode: "scope", ActionCode: "list", ScopeCode: "global"}, authzService.RequireAction("scope", "list"), scopeHandler.GetAll)
-		reg.GET("/:id", &apiregistry.RouteMeta{Summary: "获取作用域详情", ResourceCode: "scope", ActionCode: "get", ScopeCode: "global"}, authzService.RequireAction("scope", "get"), scopeHandler.Get)
-		reg.POST("", &apiregistry.RouteMeta{Summary: "创建作用域", ResourceCode: "scope", ActionCode: "create", ScopeCode: "global"}, authzService.RequireAction("scope", "create"), scopeHandler.Create)
-		reg.PUT("/:id", &apiregistry.RouteMeta{Summary: "更新作用域", ResourceCode: "scope", ActionCode: "update", ScopeCode: "global"}, authzService.RequireAction("scope", "update"), scopeHandler.Update)
-		reg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除作用域", ResourceCode: "scope", ActionCode: "delete", ScopeCode: "global"}, authzService.RequireAction("scope", "delete"), scopeHandler.Delete)
+	reg.GET("", &apiregistry.RouteMeta{Summary: "获取作用域列表", ResourceCode: "scope", ActionCode: "list", ScopeCode: "global"}, authzService.RequireAction("scope", "list", "global"), scopeHandler.List)
+	reg.GET("/all", &apiregistry.RouteMeta{Summary: "获取全部作用域", ResourceCode: "scope", ActionCode: "list", ScopeCode: "global"}, authzService.RequireAction("scope", "list", "global"), scopeHandler.GetAll)
+	reg.GET("/:id", &apiregistry.RouteMeta{Summary: "获取作用域详情", ResourceCode: "scope", ActionCode: "get", ScopeCode: "global"}, authzService.RequireAction("scope", "get", "global"), scopeHandler.Get)
+	reg.POST("", &apiregistry.RouteMeta{Summary: "创建作用域", ResourceCode: "scope", ActionCode: "create", ScopeCode: "global"}, authzService.RequireAction("scope", "create", "global"), scopeHandler.Create)
+	reg.PUT("/:id", &apiregistry.RouteMeta{Summary: "更新作用域", ResourceCode: "scope", ActionCode: "update", ScopeCode: "global"}, authzService.RequireAction("scope", "update", "global"), scopeHandler.Update)
+	reg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除作用域", ResourceCode: "scope", ActionCode: "delete", ScopeCode: "global"}, authzService.RequireAction("scope", "delete", "global"), scopeHandler.Delete)
 	}
 }
 

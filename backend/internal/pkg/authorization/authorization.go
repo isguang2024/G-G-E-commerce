@@ -34,7 +34,7 @@ func NewService(db *gorm.DB, logger *zap.Logger) *Service {
 	return &Service{db: db, logger: logger}
 }
 
-func (s *Service) RequireAction(resourceCode, actionCode string) gin.HandlerFunc {
+func (s *Service) RequireAction(resourceCode, actionCode string, scopeCodes ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, err := userIDFromContext(c)
 		if err != nil {
@@ -52,7 +52,7 @@ func (s *Service) RequireAction(resourceCode, actionCode string) gin.HandlerFunc
 			return
 		}
 
-		allowed, actionDef, authErr := s.Authorize(userID, tenantID, resourceCode, actionCode)
+		allowed, actionDef, authErr := s.Authorize(userID, tenantID, resourceCode, actionCode, scopeCodes...)
 		if authErr != nil {
 			s.respondAuthError(c, authErr, resourceCode, actionCode)
 			return
@@ -70,7 +70,7 @@ func (s *Service) RequireAction(resourceCode, actionCode string) gin.HandlerFunc
 	}
 }
 
-func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, resourceCode, actionCode string) (bool, *models.PermissionAction, error) {
+func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, resourceCode, actionCode string, scopeCodes ...string) (bool, *models.PermissionAction, error) {
 	var currentUser models.User
 	err := s.db.Where("id = ?", userID).First(&currentUser).Error
 	if err != nil {
@@ -82,12 +82,12 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, resourceCode,
 	if currentUser.Status != "active" {
 		return false, nil, ErrUserInactive
 	}
-	if currentUser.IsSuperAdmin {
-		return true, nil, nil
-	}
-
 	var actionDef models.PermissionAction
-	err = s.db.Preload("Scope").Where("resource_code = ? AND action_code = ?", resourceCode, actionCode).First(&actionDef).Error
+	query := s.db.Preload("Scope").Joins("JOIN scopes ON permission_actions.scope_id = scopes.id").Where("permission_actions.resource_code = ? AND permission_actions.action_code = ?", resourceCode, actionCode)
+	if scopeCode := resolveActionScopeCode(scopeCodes, tenantID); scopeCode != "" {
+		query = query.Where("scopes.code = ?", scopeCode)
+	}
+	err = query.First(&actionDef).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil, ErrPermissionActionMissing
@@ -96,6 +96,9 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, resourceCode,
 	}
 	if actionDef.Status != "normal" {
 		return false, &actionDef, ErrPermissionDenied
+	}
+	if currentUser.IsSuperAdmin {
+		return true, &actionDef, nil
 	}
 
 	requiresTenant := actionDef.RequiresTenantContext || strings.EqualFold(actionDef.Scope.Code, "team")
@@ -150,47 +153,91 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, resourceCode,
 	return false, &actionDef, nil
 }
 
+func resolveActionScopeCode(scopeCodes []string, tenantID *uuid.UUID) string {
+	for _, scopeCode := range scopeCodes {
+		trimmed := strings.TrimSpace(scopeCode)
+		if trimmed != "" {
+			return trimmed
+		}
+	}
+	if tenantID != nil {
+		return "team"
+	}
+	return "global"
+}
+
 func (s *Service) GetUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error) {
-	var currentUser models.User
-	if err := s.db.Where("id = ?", userID).First(&currentUser).Error; err != nil {
+	keys, _, err := s.collectUserActionKeys(userID, tenantID)
+	if err != nil {
 		return nil, err
 	}
+	return keys, nil
+}
+
+func (s *Service) GetUserScopedActionKeys(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error) {
+	_, scopedKeys, err := s.collectUserActionKeys(userID, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	return scopedKeys, nil
+}
+
+func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) ([]string, []string, error) {
+	var currentUser models.User
+	if err := s.db.Where("id = ?", userID).First(&currentUser).Error; err != nil {
+		return nil, nil, err
+	}
 	if currentUser.Status != "active" {
-		return []string{}, nil
+		return []string{}, []string{}, nil
 	}
 
 	var actions []models.PermissionAction
 	if err := s.db.Preload("Scope").Where("status = ?", "normal").Order("sort_order ASC, created_at DESC").Find(&actions).Error; err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if currentUser.IsSuperAdmin {
 		keys := make([]string, 0, len(actions))
+		scopedKeys := make([]string, 0, len(actions))
+		keySet := make(map[string]struct{}, len(actions))
+		scopedKeySet := make(map[string]struct{}, len(actions))
 		for _, action := range actions {
-			keys = append(keys, action.ResourceCode+":"+action.ActionCode)
+			key := action.ResourceCode + ":" + action.ActionCode
+			scopedKey := key + "@" + normalizeActionScopeCode(action.Scope.Code)
+			if _, exists := keySet[key]; !exists {
+				keys = append(keys, key)
+				keySet[key] = struct{}{}
+			}
+			if _, exists := scopedKeySet[scopedKey]; !exists {
+				scopedKeys = append(scopedKeys, scopedKey)
+				scopedKeySet[scopedKey] = struct{}{}
+			}
 		}
-		return keys, nil
+		return keys, scopedKeys, nil
 	}
 
 	memberActive, boundaryAllOpen, boundaryActionSet, err := s.resolveTenantActionContext(userID, tenantID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	roleIDs, err := s.getEffectiveActiveRoleIDs(userID, tenantID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	roleEffectMap, err := s.buildRoleEffectMap(roleIDs)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	globalOverrideMap, tenantOverrideMap, err := s.buildUserOverrideMaps(userID, tenantID)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	keys := make([]string, 0, len(actions))
+	scopedKeys := make([]string, 0, len(actions))
+	keySet := make(map[string]struct{}, len(actions))
+	scopedKeySet := make(map[string]struct{}, len(actions))
 	for _, action := range actions {
 		requiresTenant := action.RequiresTenantContext || strings.EqualFold(action.Scope.Code, "team")
 		if requiresTenant {
@@ -202,34 +249,58 @@ func (s *Service) GetUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) ([]st
 			}
 			if effect, ok := tenantOverrideMap[action.ID]; ok {
 				if effect == "allow" {
-					keys = append(keys, action.ResourceCode+":"+action.ActionCode)
+					appendActionKeys(&keys, &scopedKeys, keySet, scopedKeySet, action)
 				}
 				continue
 			}
 			if effect, ok := globalOverrideMap[action.ID]; ok {
 				if effect == "allow" {
-					keys = append(keys, action.ResourceCode+":"+action.ActionCode)
+					appendActionKeys(&keys, &scopedKeys, keySet, scopedKeySet, action)
 				}
 				continue
 			}
 			if roleEffectMap[action.ID] == "allow" {
-				keys = append(keys, action.ResourceCode+":"+action.ActionCode)
+				appendActionKeys(&keys, &scopedKeys, keySet, scopedKeySet, action)
 			}
 			continue
 		}
 
 		if effect, ok := globalOverrideMap[action.ID]; ok {
 			if effect == "allow" {
-				keys = append(keys, action.ResourceCode+":"+action.ActionCode)
+				appendActionKeys(&keys, &scopedKeys, keySet, scopedKeySet, action)
 			}
 			continue
 		}
 		if roleEffectMap[action.ID] == "allow" {
-			keys = append(keys, action.ResourceCode+":"+action.ActionCode)
+			appendActionKeys(&keys, &scopedKeys, keySet, scopedKeySet, action)
 		}
 	}
 
-	return keys, nil
+	return keys, scopedKeys, nil
+}
+
+func appendActionKeys(keys, scopedKeys *[]string, keySet, scopedKeySet map[string]struct{}, action models.PermissionAction) {
+	key := action.ResourceCode + ":" + action.ActionCode
+	scopedKey := key + "@" + normalizeActionScopeCode(action.Scope.Code)
+	if _, exists := keySet[key]; !exists {
+		*keys = append(*keys, key)
+		keySet[key] = struct{}{}
+	}
+	if _, exists := scopedKeySet[scopedKey]; !exists {
+		*scopedKeys = append(*scopedKeys, scopedKey)
+		scopedKeySet[scopedKey] = struct{}{}
+	}
+}
+
+func normalizeActionScopeCode(scopeCode string) string {
+	switch strings.TrimSpace(scopeCode) {
+	case "tenant":
+		return "team"
+	case "":
+		return "global"
+	default:
+		return strings.TrimSpace(scopeCode)
+	}
 }
 
 func (s *Service) respondAuthError(c *gin.Context, authErr error, resourceCode, actionCode string) {
@@ -271,7 +342,7 @@ func (s *Service) isActionWithinTenantBoundary(tenantID, actionID uuid.UUID) (bo
 		return false, err
 	}
 	if count == 0 {
-		return true, nil
+		return false, nil
 	}
 	var enabledCount int64
 	err = s.db.Model(&models.TenantActionPermission{}).
@@ -420,7 +491,7 @@ func (s *Service) resolveTenantActionContext(userID uuid.UUID, tenantID *uuid.UU
 		return false, false, nil, err
 	}
 	if count == 0 {
-		return true, true, boundaryActionSet, nil
+		return true, false, boundaryActionSet, nil
 	}
 
 	var tenantRecords []models.TenantActionPermission

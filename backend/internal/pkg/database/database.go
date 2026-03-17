@@ -160,7 +160,7 @@ func createUniqueIndexes() error {
 	actionUniqueIndexName := "idx_permission_actions_resource_action_unique"
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", actionUniqueIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + actionUniqueIndexName + " ON permission_actions (resource_code, action_code)").Error; err != nil {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + actionUniqueIndexName + " ON permission_actions (resource_code, action_code, scope_id)").Error; err != nil {
 			return err
 		}
 	}

@@ -45,18 +45,18 @@ func (m *MenuModule) RegisterRoutes(rg *gin.RouterGroup) {
 	reg := apiregistry.NewRegistrar(menus, "menu")
 	{
 		reg.GET("/tree", &apiregistry.RouteMeta{Summary: "获取菜单树", ResourceCode: "menu", ActionCode: "list", ScopeCode: "global"}, menuHandler.GetTree)
-		reg.POST("", &apiregistry.RouteMeta{Summary: "创建菜单", ResourceCode: "menu", ActionCode: "create", ScopeCode: "global"}, authzService.RequireAction("menu", "create"), menuHandler.Create)
-		reg.PUT("/:id", &apiregistry.RouteMeta{Summary: "更新菜单", ResourceCode: "menu", ActionCode: "update", ScopeCode: "global"}, authzService.RequireAction("menu", "update"), menuHandler.Update)
-		reg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除菜单", ResourceCode: "menu", ActionCode: "delete", ScopeCode: "global"}, authzService.RequireAction("menu", "delete"), menuHandler.Delete)
+	reg.POST("", &apiregistry.RouteMeta{Summary: "创建菜单", ResourceCode: "menu", ActionCode: "create", ScopeCode: "global"}, authzService.RequireAction("menu", "create", "global"), menuHandler.Create)
+	reg.PUT("/:id", &apiregistry.RouteMeta{Summary: "更新菜单", ResourceCode: "menu", ActionCode: "update", ScopeCode: "global"}, authzService.RequireAction("menu", "update", "global"), menuHandler.Update)
+	reg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除菜单", ResourceCode: "menu", ActionCode: "delete", ScopeCode: "global"}, authzService.RequireAction("menu", "delete", "global"), menuHandler.Delete)
 
 		// 菜单备份相关路由
 		backups := menus.Group("/backups")
 		backupReg := apiregistry.NewRegistrar(backups, "menu_backup")
 		{
-			backupReg.POST("", &apiregistry.RouteMeta{Summary: "创建菜单备份", ResourceCode: "menu_backup", ActionCode: "create", ScopeCode: "global"}, authzService.RequireAction("menu_backup", "create"), menuHandler.CreateBackup)
-			backupReg.GET("", &apiregistry.RouteMeta{Summary: "获取菜单备份列表", ResourceCode: "menu_backup", ActionCode: "list", ScopeCode: "global"}, authzService.RequireAction("menu_backup", "list"), menuHandler.ListBackups)
-			backupReg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除菜单备份", ResourceCode: "menu_backup", ActionCode: "delete", ScopeCode: "global"}, authzService.RequireAction("menu_backup", "delete"), menuHandler.DeleteBackup)
-			backupReg.POST("/:id/restore", &apiregistry.RouteMeta{Summary: "恢复菜单备份", ResourceCode: "menu_backup", ActionCode: "restore", ScopeCode: "global"}, authzService.RequireAction("menu_backup", "restore"), menuHandler.RestoreBackup)
+	backupReg.POST("", &apiregistry.RouteMeta{Summary: "创建菜单备份", ResourceCode: "menu_backup", ActionCode: "create", ScopeCode: "global"}, authzService.RequireAction("menu_backup", "create", "global"), menuHandler.CreateBackup)
+	backupReg.GET("", &apiregistry.RouteMeta{Summary: "获取菜单备份列表", ResourceCode: "menu_backup", ActionCode: "list", ScopeCode: "global"}, authzService.RequireAction("menu_backup", "list", "global"), menuHandler.ListBackups)
+	backupReg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除菜单备份", ResourceCode: "menu_backup", ActionCode: "delete", ScopeCode: "global"}, authzService.RequireAction("menu_backup", "delete", "global"), menuHandler.DeleteBackup)
+	backupReg.POST("/:id/restore", &apiregistry.RouteMeta{Summary: "恢复菜单备份", ResourceCode: "menu_backup", ActionCode: "restore", ScopeCode: "global"}, authzService.RequireAction("menu_backup", "restore", "global"), menuHandler.RestoreBackup)
 		}
 	}
 }

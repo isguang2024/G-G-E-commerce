@@ -40,11 +40,11 @@ func (m *PermissionModule) RegisterRoutes(rg *gin.RouterGroup) {
 	actions := rg.Group("/permission-actions")
 	reg := apiregistry.NewRegistrar(actions, "permission_action")
 	{
-		reg.GET("", &apiregistry.RouteMeta{Summary: "获取功能权限列表", ResourceCode: "permission_action", ActionCode: "list", ScopeCode: "global"}, authzService.RequireAction("permission_action", "list"), handler.List)
-		reg.GET("/:id", &apiregistry.RouteMeta{Summary: "获取功能权限详情", ResourceCode: "permission_action", ActionCode: "get", ScopeCode: "global"}, authzService.RequireAction("permission_action", "get"), handler.Get)
-		reg.POST("", &apiregistry.RouteMeta{Summary: "创建功能权限", ResourceCode: "permission_action", ActionCode: "create", ScopeCode: "global"}, authzService.RequireAction("permission_action", "create"), handler.Create)
-		reg.PUT("/:id", &apiregistry.RouteMeta{Summary: "更新功能权限", ResourceCode: "permission_action", ActionCode: "update", ScopeCode: "global"}, authzService.RequireAction("permission_action", "update"), handler.Update)
-		reg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除功能权限", ResourceCode: "permission_action", ActionCode: "delete", ScopeCode: "global"}, authzService.RequireAction("permission_action", "delete"), handler.Delete)
+	reg.GET("", &apiregistry.RouteMeta{Summary: "获取功能权限列表", ResourceCode: "permission_action", ActionCode: "list", ScopeCode: "global"}, authzService.RequireAction("permission_action", "list", "global"), handler.List)
+	reg.GET("/:id", &apiregistry.RouteMeta{Summary: "获取功能权限详情", ResourceCode: "permission_action", ActionCode: "get", ScopeCode: "global"}, authzService.RequireAction("permission_action", "get", "global"), handler.Get)
+	reg.POST("", &apiregistry.RouteMeta{Summary: "创建功能权限", ResourceCode: "permission_action", ActionCode: "create", ScopeCode: "global"}, authzService.RequireAction("permission_action", "create", "global"), handler.Create)
+	reg.PUT("/:id", &apiregistry.RouteMeta{Summary: "更新功能权限", ResourceCode: "permission_action", ActionCode: "update", ScopeCode: "global"}, authzService.RequireAction("permission_action", "update", "global"), handler.Update)
+	reg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除功能权限", ResourceCode: "permission_action", ActionCode: "delete", ScopeCode: "global"}, authzService.RequireAction("permission_action", "delete", "global"), handler.Delete)
 	}
 }
 

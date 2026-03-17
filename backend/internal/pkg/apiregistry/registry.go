@@ -156,7 +156,7 @@ func ensurePermissionAction(db *gorm.DB, endpoint *models.APIEndpoint, logger *z
 	}
 
 	var existing models.PermissionAction
-	err := db.Where("resource_code = ? AND action_code = ?", endpoint.ResourceCode, endpoint.ActionCode).First(&existing).Error
+	err := db.Where("resource_code = ? AND action_code = ? AND scope_id = ?", endpoint.ResourceCode, endpoint.ActionCode, *endpoint.ScopeID).First(&existing).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
 	}
@@ -182,9 +182,6 @@ func ensurePermissionAction(db *gorm.DB, endpoint *models.APIEndpoint, logger *z
 	}
 
 	updates := map[string]interface{}{}
-	if existing.ScopeID != *endpoint.ScopeID {
-		updates["scope_id"] = *endpoint.ScopeID
-	}
 	if existing.Source != "api" {
 		updates["source"] = "api"
 	}
