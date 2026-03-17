@@ -50,7 +50,7 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 					}
 					if tenantIDStr != "" && h.tenantMemberRepo != nil && h.roleMenuRepo != nil {
 						if tid, err := uuid.Parse(tenantIDStr); err == nil {
-							roleIDs, _ := h.userRoleRepo.GetEffectiveRoleIDsByUserAndTenant(userID, &tid)
+							roleIDs, _ := h.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndTenant(userID, &tid)
 							allowedMenuIDs, _ = h.roleMenuRepo.GetMenuIDsByRoleIDs(roleIDs)
 						}
 					}

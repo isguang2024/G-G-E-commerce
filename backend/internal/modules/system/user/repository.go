@@ -724,6 +724,7 @@ type UserRoleRepository interface {
 	GetRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID, tenantMemberRepo TenantMemberRepository) ([]uuid.UUID, error)
 	GetRoleCodesByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
 	GetEffectiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
+	GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
 	GetEffectiveRoleCodesByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
 	ReplaceUserRoles(userID uuid.UUID, tenantID *uuid.UUID, roleIDs []uuid.UUID) error
 	AssignRole(userID, roleID uuid.UUID, tenantID *uuid.UUID) error
@@ -775,6 +776,21 @@ func (r *userRoleRepository) GetEffectiveRoleIDsByUserAndTenant(userID uuid.UUID
 		query = query.Where("tenant_id IS NULL OR tenant_id = ?", *tenantID)
 	}
 	err := query.Pluck("role_id", &roleIDs).Error
+	return roleIDs, err
+}
+
+func (r *userRoleRepository) GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {
+	var roleIDs []uuid.UUID
+	query := r.db.Model(&UserRole{}).
+		Joins("JOIN roles ON roles.id = user_roles.role_id").
+		Where("user_roles.user_id = ?", userID).
+		Where("roles.status = ?", "normal")
+	if tenantID == nil {
+		query = query.Where("user_roles.tenant_id IS NULL")
+	} else {
+		query = query.Where("user_roles.tenant_id IS NULL OR user_roles.tenant_id = ?", *tenantID)
+	}
+	err := query.Distinct("user_roles.role_id").Pluck("user_roles.role_id", &roleIDs).Error
 	return roleIDs, err
 }
 
@@ -960,7 +976,10 @@ func (r *roleMenuRepository) GetMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, 
 
 func (r *roleMenuRepository) GetMenuIDsByRoleIDs(roleIDs []uuid.UUID) ([]uuid.UUID, error) {
 	var menuIDs []uuid.UUID
-	err := r.db.Model(&RoleMenu{}).Where("role_id IN ?", roleIDs).Pluck("menu_id", &menuIDs).Error
+	if len(roleIDs) == 0 {
+		return menuIDs, nil
+	}
+	err := r.db.Model(&RoleMenu{}).Distinct("menu_id").Where("role_id IN ?", roleIDs).Pluck("menu_id", &menuIDs).Error
 	return menuIDs, err
 }
 

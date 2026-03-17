@@ -188,36 +188,10 @@ func (s *permissionService) GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID
 		return []uuid.UUID{}, nil
 	}
 
-	roleIDs := make([]uuid.UUID, 0, len(user.Roles))
-	allMenuIDs := make(map[uuid.UUID]struct{})
-	for _, r := range user.Roles {
-		if r.Status != "normal" {
-			continue
-		}
-		roleIDs = append(roleIDs, r.ID)
+	roleIDs, err := s.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndTenant(userID, tenantID)
+	if err != nil {
+		return nil, err
 	}
 
-	if tenantID != nil {
-		tenantRoleIDs, err := s.userRoleRepo.GetRoleIDsByUserAndTenant(userID, tenantID, nil)
-		if err != nil {
-			return nil, err
-		}
-		roleIDs = append(roleIDs, tenantRoleIDs...)
-	}
-
-	for _, roleID := range roleIDs {
-		menuIDs, err := s.roleMenuRepo.GetMenuIDsByRoleID(roleID)
-		if err != nil {
-			continue
-		}
-		for _, mid := range menuIDs {
-			allMenuIDs[mid] = struct{}{}
-		}
-	}
-
-	result := make([]uuid.UUID, 0, len(allMenuIDs))
-	for id := range allMenuIDs {
-		result = append(result, id)
-	}
-	return result, nil
+	return s.roleMenuRepo.GetMenuIDsByRoleIDs(roleIDs)
 }

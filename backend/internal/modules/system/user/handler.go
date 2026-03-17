@@ -354,51 +354,55 @@ func roleInfos(roles []Role) []gin.H {
 }
 
 func buildMenuTree(allMenus []Menu, allowedIDs map[uuid.UUID]bool) []gin.H {
-	allowedMenuIDs := make(map[uuid.UUID]bool)
+	parentMap := make(map[uuid.UUID]*uuid.UUID, len(allMenus))
+	childrenMap := make(map[uuid.UUID][]Menu, len(allMenus))
+	rootMenus := make([]Menu, 0)
 	for _, menu := range allMenus {
-		if allowedIDs[menu.ID] {
-			allowedMenuIDs[menu.ID] = true
-			parentID := menu.ParentID
-			for parentID != nil && *parentID != (uuid.UUID{}) {
-				allowedMenuIDs[*parentID] = true
-				found := false
-				for _, p := range allMenus {
-					if p.ID == *parentID {
-						parentID = p.ParentID
-						found = true
-						break
-					}
-				}
-				if !found {
-					break
-				}
-			}
+		parentMap[menu.ID] = menu.ParentID
+		if menu.ParentID == nil {
+			rootMenus = append(rootMenus, menu)
+			continue
+		}
+		childrenMap[*menu.ParentID] = append(childrenMap[*menu.ParentID], menu)
+	}
+
+	allowedMenuIDs := make(map[uuid.UUID]bool, len(allowedIDs))
+	for menuID := range allowedIDs {
+		allowedMenuIDs[menuID] = true
+		parentID := parentMap[menuID]
+		for parentID != nil && *parentID != (uuid.UUID{}) {
+			allowedMenuIDs[*parentID] = true
+			parentID = parentMap[*parentID]
 		}
 	}
 
 	var build func(parentID *uuid.UUID) []gin.H
 	build = func(parentID *uuid.UUID) []gin.H {
 		var result []gin.H
-		for _, menu := range allMenus {
-			if (parentID == nil && menu.ParentID == nil) ||
-				(parentID != nil && menu.ParentID != nil && *menu.ParentID == *parentID) {
-				if allowedMenuIDs[menu.ID] {
-					children := build(&menu.ID)
-					node := gin.H{
-						"id":        menu.ID.String(),
-						"name":      menu.Name,
-						"title":     menu.Title,
-						"path":      menu.Path,
-						"component": menu.Component,
-						"hidden":    menu.Hidden,
-						"sort":      menu.SortOrder,
-					}
-					if len(children) > 0 {
-						node["children"] = children
-					}
-					result = append(result, node)
-				}
+		var menus []Menu
+		if parentID == nil {
+			menus = rootMenus
+		} else {
+			menus = childrenMap[*parentID]
+		}
+		for _, menu := range menus {
+			if !allowedMenuIDs[menu.ID] {
+				continue
 			}
+			children := build(&menu.ID)
+			node := gin.H{
+				"id":        menu.ID.String(),
+				"name":      menu.Name,
+				"title":     menu.Title,
+				"path":      menu.Path,
+				"component": menu.Component,
+				"hidden":    menu.Hidden,
+				"sort":      menu.SortOrder,
+			}
+			if len(children) > 0 {
+				node["children"] = children
+			}
+			result = append(result, node)
 		}
 		return result
 	}
