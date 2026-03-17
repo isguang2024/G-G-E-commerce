@@ -302,6 +302,76 @@ func runNamedMigrations(logger *zap.Logger) error {
 				return nil
 			},
 		},
+		{
+			Name: "20260318_restore_permission_scope_schema",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`UPDATE user_roles
+					  SET tenant_id = COALESCE(tenant_id, scope_target_id)
+					  WHERE tenant_id IS NULL AND scope_target_id IS NOT NULL`,
+					`UPDATE user_action_permissions
+					  SET tenant_id = COALESCE(tenant_id, scope_target_id)
+					  WHERE tenant_id IS NULL AND scope_target_id IS NOT NULL`,
+					`UPDATE roles r
+					  SET scope_id = rsb.scope_id
+					  FROM role_scope_bindings rsb
+					  WHERE r.id = rsb.role_id AND r.scope_id IS NULL`,
+					`ALTER TABLE user_action_permissions DROP CONSTRAINT IF EXISTS user_action_permissions_pkey`,
+					`ALTER TABLE user_action_permissions ALTER COLUMN tenant_id DROP NOT NULL`,
+					`DROP INDEX IF EXISTS idx_user_action_permissions_global_unique`,
+					`DROP INDEX IF EXISTS idx_user_action_permissions_tenant_unique`,
+					`DROP INDEX IF EXISTS idx_user_action_permissions_scope_global_unique`,
+					`DROP INDEX IF EXISTS idx_user_action_permissions_scope_tenant_unique`,
+					`DROP INDEX IF EXISTS idx_user_action_permissions_scope_id`,
+					`DROP INDEX IF EXISTS idx_user_action_permissions_scope_target_id`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_action_permissions_global_unique ON user_action_permissions (user_id, action_id) WHERE tenant_id IS NULL`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_action_permissions_tenant_unique ON user_action_permissions (user_id, action_id, tenant_id) WHERE tenant_id IS NOT NULL`,
+					`DROP INDEX IF EXISTS idx_user_roles_scope_global_unique`,
+					`DROP INDEX IF EXISTS idx_user_roles_scope_target_unique`,
+					`DROP INDEX IF EXISTS idx_user_roles_scope_id`,
+					`DROP INDEX IF EXISTS idx_user_roles_scope_target_id`,
+					`DROP INDEX IF EXISTS idx_user_roles_deleted_at`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_roles_global_unique ON user_roles (user_id, role_id) WHERE tenant_id IS NULL`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_roles_tenant_unique ON user_roles (user_id, role_id, tenant_id) WHERE tenant_id IS NOT NULL`,
+					`ALTER TABLE user_roles DROP COLUMN IF EXISTS scope_id`,
+					`ALTER TABLE user_roles DROP COLUMN IF EXISTS scope_target_id`,
+					`ALTER TABLE user_roles DROP COLUMN IF EXISTS created_at`,
+					`ALTER TABLE user_roles DROP COLUMN IF EXISTS deleted_at`,
+					`ALTER TABLE user_action_permissions DROP COLUMN IF EXISTS scope_id`,
+					`ALTER TABLE user_action_permissions DROP COLUMN IF EXISTS scope_target_id`,
+					`ALTER TABLE roles DROP COLUMN IF EXISTS enabled`,
+					`DROP TABLE IF EXISTS permissions`,
+					`DROP TABLE IF EXISTS role_permissions`,
+					`DROP TABLE IF EXISTS role_scope_bindings`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260318_restore_permission_scope_schema"))
+				return nil
+			},
+		},
+		{
+			Name: "20260318_drop_unused_core_columns",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`ALTER TABLE users DROP COLUMN IF EXISTS email_verified_at`,
+					`ALTER TABLE menus DROP COLUMN IF EXISTS redirect`,
+					`ALTER TABLE menus DROP COLUMN IF EXISTS visible`,
+					`ALTER TABLE api_keys DROP COLUMN IF EXISTS key_prefix`,
+					`ALTER TABLE api_keys DROP COLUMN IF EXISTS permissions`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260318_drop_unused_core_columns"))
+				return nil
+			},
+		},
 	}
 
 	for _, task := range tasks {

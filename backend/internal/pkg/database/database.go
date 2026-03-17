@@ -189,6 +189,14 @@ func createUniqueIndexes() error {
 		}
 	}
 
+	permissionActionHotIndexName := "idx_permission_actions_status_sort_created"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", permissionActionHotIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + permissionActionHotIndexName + " ON permission_actions (status, sort_order, created_at DESC)").Error; err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

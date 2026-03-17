@@ -168,6 +168,14 @@ func (s *tenantService) Delete(id uuid.UUID) error {
 	}
 
 	return s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("tenant_id = ?", id).Delete(&user.UserActionPermission{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("tenant_id = ?", id).Delete(&user.TenantActionPermission{}).Error; err != nil {
+			return err
+		}
+
 		if err := tx.Where("tenant_id = ?", id).Delete(&user.APIKey{}).Error; err != nil {
 			return err
 		}
@@ -239,15 +247,21 @@ func (s *tenantService) RemoveMember(tenantID, userID uuid.UUID) error {
 		return err
 	}
 
-	if err := s.tenantMemberRepo.Delete(member.ID); err != nil {
-		return err
-	}
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("user_id = ? AND tenant_id = ?", userID, tenantID).Delete(&user.UserActionPermission{}).Error; err != nil {
+			return err
+		}
 
-	if err := s.userRoleRepo.RemoveUserRole(userID, &tenantID); err != nil {
-		return err
-	}
+		if err := tx.Where("user_id = ? AND tenant_id = ?", userID, tenantID).Delete(&user.UserRole{}).Error; err != nil {
+			return err
+		}
 
-	return nil
+		if err := tx.Delete(&user.TenantMember{}, "id = ?", member.ID).Error; err != nil {
+			return err
+		}
+
+		return nil
+	})
 }
 
 func (s *tenantService) UpdateMemberRole(tenantID, userID uuid.UUID, roleCode string) error {

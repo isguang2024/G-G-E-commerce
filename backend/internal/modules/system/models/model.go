@@ -39,24 +39,23 @@ func (m MetaJSON) String() string {
 }
 
 type User struct {
-	ID              uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	Email           string         `gorm:"type:varchar(255);uniqueIndex" json:"email"`
-	Username        string         `gorm:"type:varchar(100);not null;uniqueIndex" json:"username"`
-	PasswordHash    string         `gorm:"type:varchar(255);not null" json:"-"`
-	Nickname        string         `gorm:"type:varchar(100)" json:"nickname"`
-	AvatarURL       string         `gorm:"type:varchar(500)" json:"avatar_url"`
-	Phone           string         `gorm:"type:varchar(20)" json:"phone"`
-	SystemRemark    string         `gorm:"type:text" json:"system_remark"`
-	Status          string         `gorm:"type:varchar(20);not null;default:'active'" json:"status"`
-	IsSuperAdmin    bool           `gorm:"default:false" json:"is_super_admin"`
-	LastLoginAt     *time.Time     `json:"last_login_at"`
-	LastLoginIP     string         `gorm:"type:varchar(45)" json:"last_login_ip"`
-	EmailVerifiedAt *time.Time     `json:"email_verified_at"`
-	RegisterSource  string         `gorm:"type:varchar(20);default:'self'" json:"register_source"`
-	InvitedBy       *uuid.UUID     `gorm:"type:uuid" json:"invited_by"`
-	CreatedAt       time.Time      `json:"created_at"`
-	UpdatedAt       time.Time      `json:"updated_at"`
-	DeletedAt       gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID             uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Email          string         `gorm:"type:varchar(255);uniqueIndex" json:"email"`
+	Username       string         `gorm:"type:varchar(100);not null;uniqueIndex" json:"username"`
+	PasswordHash   string         `gorm:"type:varchar(255);not null" json:"-"`
+	Nickname       string         `gorm:"type:varchar(100)" json:"nickname"`
+	AvatarURL      string         `gorm:"type:varchar(500)" json:"avatar_url"`
+	Phone          string         `gorm:"type:varchar(20)" json:"phone"`
+	SystemRemark   string         `gorm:"type:text" json:"system_remark"`
+	Status         string         `gorm:"type:varchar(20);not null;default:'active'" json:"status"`
+	IsSuperAdmin   bool           `gorm:"default:false" json:"is_super_admin"`
+	LastLoginAt    *time.Time     `json:"last_login_at"`
+	LastLoginIP    string         `gorm:"type:varchar(45)" json:"last_login_ip"`
+	RegisterSource string         `gorm:"type:varchar(20);default:'self'" json:"register_source"`
+	InvitedBy      *uuid.UUID     `gorm:"type:uuid" json:"invited_by"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
+	DeletedAt      gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 
 	Roles []Role `gorm:"many2many:user_roles;" json:"roles,omitempty"`
 }
@@ -106,11 +105,9 @@ type Menu struct {
 	Path      string     `gorm:"type:varchar(255)" json:"path"`
 	Name      string     `gorm:"type:varchar(100)" json:"name"`
 	Component string     `gorm:"type:varchar(255)" json:"component"`
-	Redirect  string     `gorm:"type:varchar(255)" json:"redirect"`
 	Title     string     `gorm:"type:varchar(100)" json:"title"`
 	Icon      string     `gorm:"type:varchar(100)" json:"icon"`
 	SortOrder int        `gorm:"default:0" json:"sort_order"`
-	Visible   string     `gorm:"type:varchar(20)" json:"visible"`
 	Hidden    bool       `gorm:"default:false" json:"hidden"`
 
 	Meta      MetaJSON       `gorm:"type:jsonb" json:"meta"`
@@ -279,16 +276,14 @@ type MemberSearchParams struct {
 }
 
 type APIKey struct {
-	ID          uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	TenantID    uuid.UUID  `gorm:"type:uuid;not null;index" json:"tenant_id"`
-	CreatedBy   *uuid.UUID `gorm:"type:uuid" json:"created_by"`
-	Name        string     `gorm:"type:varchar(200);not null" json:"name"`
-	KeyHash     string     `gorm:"type:varchar(255);uniqueIndex;not null" json:"-"`
-	KeyPrefix   string     `gorm:"type:varchar(10)" json:"key_prefix"`
-	Permissions string     `gorm:"type:jsonb;default:'[\"products:read\"]'" json:"permissions"`
-	LastUsedAt  *time.Time `json:"last_used_at"`
-	ExpiresAt   *time.Time `json:"expires_at"`
-	CreatedAt   time.Time  `json:"created_at"`
+	ID         uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	TenantID   uuid.UUID  `gorm:"type:uuid;not null;index" json:"tenant_id"`
+	CreatedBy  *uuid.UUID `gorm:"type:uuid" json:"created_by"`
+	Name       string     `gorm:"type:varchar(200);not null" json:"name"`
+	KeyHash    string     `gorm:"type:varchar(255);uniqueIndex;not null" json:"-"`
+	LastUsedAt *time.Time `json:"last_used_at"`
+	ExpiresAt  *time.Time `json:"expires_at"`
+	CreatedAt  time.Time  `json:"created_at"`
 }
 
 func (APIKey) TableName() string {

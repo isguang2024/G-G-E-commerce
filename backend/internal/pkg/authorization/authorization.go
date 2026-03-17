@@ -182,6 +182,10 @@ func (s *Service) GetUserScopedActionKeys(userID uuid.UUID, tenantID *uuid.UUID)
 	return scopedKeys, nil
 }
 
+func (s *Service) GetUserActionSnapshot(userID uuid.UUID, tenantID *uuid.UUID) ([]string, []string, error) {
+	return s.collectUserActionKeys(userID, tenantID)
+}
+
 func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) ([]string, []string, error) {
 	var currentUser models.User
 	if err := s.db.Where("id = ?", userID).First(&currentUser).Error; err != nil {
