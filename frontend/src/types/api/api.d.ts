@@ -111,6 +111,16 @@ declare namespace Api {
 
   /** 系统管理类型 */
   namespace SystemManage {
+    interface MenuMetaConfig {
+      roles?: string[]
+      requiresTenantContext?: boolean
+      requiredAction?: string
+      requiredActions?: string[]
+      actionMatchMode?: 'any' | 'all'
+      actionVisibilityMode?: 'hide' | 'show'
+      [k: string]: unknown
+    }
+
     /** 用户列表 */
     type UserList = Api.Common.PaginatedResponse<UserListItem>
 
@@ -463,7 +473,7 @@ declare namespace Api {
       title: string
       icon?: string
       sort_order?: number
-      meta?: { roles?: string[]; requiresTenantContext?: boolean; [k: string]: unknown }
+      meta?: MenuMetaConfig
       hidden?: boolean
     }
 
@@ -476,7 +486,7 @@ declare namespace Api {
       title?: string
       icon?: string
       sort_order?: number
-      meta?: { roles?: string[]; requiresTenantContext?: boolean; [k: string]: unknown }
+      meta?: MenuMetaConfig
       hidden?: boolean
     }
   }

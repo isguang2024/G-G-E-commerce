@@ -63,6 +63,14 @@ export interface RouteMeta extends Record<string | number | symbol, unknown> {
   isEnable?: boolean
   /** 是否依赖当前团队上下文 */
   requiresTenantContext?: boolean
+  /** 进入页面所需的基础功能权限 */
+  requiredAction?: string
+  /** 进入页面所需的基础功能权限列表 */
+  requiredActions?: string[]
+  /** 多个功能权限的匹配方式 */
+  actionMatchMode?: 'any' | 'all'
+  /** 功能权限不满足时的菜单可见策略 */
+  actionVisibilityMode?: 'hide' | 'show'
   /** 自定义上级菜单路径（用于面包屑显示） */
   customParent?: string
 }

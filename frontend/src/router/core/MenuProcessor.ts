@@ -13,6 +13,7 @@ import { RoutesAlias } from '../routesAlias'
 import { formatMenuTitle } from '@/utils'
 import { useTenantStore } from '@/store/modules/tenant'
 import { useUserStore } from '@/store/modules/user'
+import { hasMenuActionAccess, shouldHideMenuWhenActionDenied } from '@/utils/permission/menu'
 
 export class MenuProcessor {
   /**
@@ -21,12 +22,13 @@ export class MenuProcessor {
   async getMenuList(): Promise<AppRouteRecord[]> {
     const menuList = await fetchGetMenuList()
     const filteredByTenant = this.filterTenantContextMenus(menuList)
+    const filteredByAction = this.filterActionRequirementMenus(filteredByTenant)
 
     // 在规范化路径之前，验证原始路径配置
-    this.validateMenuPaths(filteredByTenant)
+    this.validateMenuPaths(filteredByAction)
 
     // 规范化路径（将相对路径转换为完整路径）
-    return this.normalizeMenuPaths(this.filterEmptyMenus(filteredByTenant))
+    return this.normalizeMenuPaths(this.filterEmptyMenus(filteredByAction))
   }
 
   /**
@@ -97,6 +99,36 @@ export class MenuProcessor {
         }
       })
       .filter((item) => !item.meta?.requiresTenantContext)
+  }
+
+  /**
+   * 过滤绑定了基础功能门槛但当前用户不满足的菜单
+   */
+  private filterActionRequirementMenus(menuList: AppRouteRecord[]): AppRouteRecord[] {
+    const userStore = useUserStore()
+    const userInfo = userStore.getUserInfo as Api.Auth.UserInfo | undefined
+
+    if (userInfo?.is_super_admin) {
+      return menuList
+    }
+
+    return menuList.reduce<AppRouteRecord[]>((result, item) => {
+        const children = item.children?.length
+          ? this.filterActionRequirementMenus(item.children)
+          : item.children
+        const hasActionAccess = hasMenuActionAccess(userInfo, item.meta)
+        const shouldHide = shouldHideMenuWhenActionDenied(item.meta)
+
+        if (!hasActionAccess && shouldHide && !children?.length) {
+          return result
+        }
+
+        result.push({
+          ...item,
+          children
+        })
+        return result
+      }, [])
   }
 
   /**

@@ -1,115 +1,129 @@
 
-## 项目概述
-商品内容分发管理系统。
-- 后端：Go + Gin + GORM + PostgreSQL + Redis + Elasticsearch
-- 前端：Vue 3 + TypeScript + Art Design Pro（Element Plus）
+# Project Rules
 
+## 1. 项目定位
 
+这不是只服务单一后台的项目，而是一套可复用的业务脚手架。
 
-### 架构 - 模块化
-- **模块化架构**：每个业务模块独立目录 `internal/modules/system/[模块名]/`
-- **模块结构**：
-  - `model.go` - 数据模型定义
-  - `repository.go` - 数据库操作
-  - `service.go` - 业务逻辑
-  - `handler.go` - API 处理
-  - `module.go` - 模块入口（实现 module.Module 接口）
-- **依赖注入**：在 module.go 的 RegisterRoutes 中实例化 repository → service → handler
-- **DTO 引用**：外部 DTO 统一在 `internal/api/dto/` 定义
+当前 `system` 模块提供未来业务模块共用的基础能力：
 
-### 目录结构
-```
-backend/
-├── cmd/                           # 入口
-│   ├── server/main.go
-│   ├── migrate/main.go
-│   ├── init-admin/main.go
-│   └── diagnose/main.go
-│
-├── internal/
-│   ├── api/                      # API 层
-│   │   ├── dto/                  # 请求/响应结构
-│   │   ├── errcode/              # 错误码
-│   │   ├── middleware/            # 中间件
-│   │   └── router/               # 路由
-│   │
-│   ├── modules/                    # 业务模块
-│   │   ├── system/                # 系统模块（当前实现）
-│   │   │   ├── models/            # 共享模型
-│   │   │   ├── user/
-│   │   │   ├── auth/
-│   │   │   ├── menu/
-│   │   │   ├── role/
-│   │   │   ├── scope/
-│   │   │   ├── tenant/
-│   │   │   ├── media/
-│   │   │   └── system/
-│   │   │
-│   │   ├── product/               # 商品模块（未来扩展示例）
-│   │   │   ├── repository.go
-│   │   │   ├── service.go
-│   │   │   ├── handler.go
-│   │   │   └── module.go
-│   │   │
-│   │   └── order/                # 订单模块（未来扩展示例）
-│   │       ├── repository.go
-│   │       ├── service.go
-│   │       ├── handler.go
-│   │       └── module.go
-│   │
-│   ├── pkg/                      # 工具包
-│   └── config/                   # 配置
-```
+- 认证
+- 用户与角色
+- 菜单
+- 功能权限
+- API 注册
+- 团队与租户上下文
 
-### 命名规范
-- **模块内**：
-  - Repository: `NewXxxRepository(db)` (如 `NewUserRepository`)
-  - Service: `NewXxxService(...)` (如 `NewUserService`)
-  - Handler: `NewXxxHandler(...)` (如 `NewUserHandler`)
-- **Model**: 单数名词（User、Role、Menu）
-- **DTO**: `CreateXxxRequest`、`XxxResponse`、`XxxListRequest`
+以后新增业务时，优先复用这套基础层，不重新造一套权限和上下文体系。
 
-### 响应格式（dto.Response）
-- code：0 成功，非 0 为业务错误码（与 HTTP 状态码分离）
-- message：提示信息
-- data：业务数据
-- meta：列表分页信息
+## 2. 核心文档入口
 
-### 错误码约定
-- **定义位置**：`internal/api/errcode/codes.go`
-- **规则**：0=成功；1xxxx=参数；2xxxx=认证；3xxxx=业务；5xxxx=服务端
-- **用法**：`status, resp := errcode.Response(errcode.ErrXxx)` 或 `errcode.ResponseWithMsg(errcode.ErrXxx, "自定义")`
+业务说明不再堆在根目录，统一放在业务模块下。
 
-### 租户与多租户
-- 需要按租户隔离的业务表含 tenant_id
-- 业务接口从 JWT/上下文获取当前 tenant_id
-- 缓存 key 建议带租户：{tenant_id}:{resource}:{id}
+先看这里：
 
-## 前端规范
-- API 请求放在 src/api/，类型定义在 src/types/
-- 全局状态：Pinia
-- UI：Element Plus
-- 基于 Art Design Pro 模板
+- `backend/internal/modules/README.md`
+- `backend/internal/modules/system/README.md`
+- `backend/internal/modules/system/permission/README.md`
+- `backend/internal/modules/system/tenant/README.md`
 
-## 数据库约定
-- 简单数量少的表主键：自增数字
-- 复杂表主键：UUID，PostgreSQL gen_random_uuid()
-- 通用字段：created_at、updated_at
-- 软删除：deleted_at（GORM Soft Delete）
-- **模型位置**：`internal/modules/system/models/model.go`（共享模型）
-- **模型管理**：建议所有模块共享同一个 models 包，新模块直接复用；如需独立模型，可在模块内创建 `models.go` 重导出
+本文件只保留核心约束和入口索引。
 
-### 模块扩展规范
-- 新增业务模块（如 product、order）在 `internal/modules/` 下创建目录
-- 每个模块包含：repository.go、service.go、handler.go、module.go
-- 模型优先复用 `system/models`，如需独立模型在模块内定义
+## 3. 模块开发约束
 
-## 迁移
-- **入口**：`backend/cmd/migrate/main.go`
-- **AutoMigrate**：`internal/pkg/database/database.go`
-- **新表处理**：未来创建新的表时，必须将表模型添加到 `database.AutoMigrate` 函数中，确保迁移时自动创建表结构
-- **旧表处理**：如果不再需要某个表，必须从 `database.AutoMigrate` 函数中移除对应的表模型，确保迁移时不再创建该表
+### 后端
 
-## 参考
-- 前端组件与布局可参考 frontend-copy 目录
-- Art Design Pro 文档：https://www.artd.pro/docs/zh/guide/introduce.html
+- 每个模块按统一结构组织：
+  - `module.go`
+  - `handler.go`
+  - `service.go`
+  - `repository.go`
+- 依赖注入在 `module.go` 内完成
+- DTO 放在 `backend/internal/api/dto/`
+- 共享模型优先放在 `backend/internal/modules/system/models/model.go`
+
+### 前端
+
+- API 放在 `frontend/src/api/`
+- 类型放在 `frontend/src/types/`
+- 菜单只来自后端，不由前端静态补路由
+- 按钮权限统一走 `v-action`
+
+## 4. 权限体系核心规则
+
+### 菜单权限
+
+- 只控制页面入口和导航显示
+- 默认由角色控制
+- 用户层不单独维护一套菜单权限表
+- 菜单如需跟功能权限联动，优先通过菜单元数据绑定基础功能门槛
+
+### 功能权限
+
+- 控制按钮和接口
+- 唯一标识是：
+  - `resource_code`
+  - `action_code`
+  - `scope_id`
+- 前端可使用：
+  - `resource:action`
+  - `resource:action@scope`
+- 后端统一使用 `RequireAction(...)`
+
+### 数据权限
+
+- 当前仅保留配置基础
+- 默认不作为新增业务接入的第一优先级
+
+## 5. 多租户与团队规则
+
+- `global` 表示平台上下文
+- `team` 表示当前团队上下文
+- 团队业务表默认带 `tenant_id`
+- 平台侧接口和 `my-team` 接口语义必须分开
+- 不要让一个接口同时混跑多个作用域
+
+如果一个业务动作同时支持平台和团队：
+
+1. 权限定义拆成两条
+2. 路由入口可以拆成两套薄入口
+3. 业务实现尽量共用同一套 service
+
+## 6. API 注册规则
+
+所有要进入权限体系的接口，注册时都应明确：
+
+- `resource_code`
+- `action_code`
+- `scope`
+- `feature_kind`
+- `module`
+
+接口元数据用于：
+
+1. API 注册表同步
+2. 功能权限自动补齐
+
+## 7. 迁移规则
+
+- 表结构变更走 `database.AutoMigrate`
+- 数据修复、历史回填、索引整理走 `backend/cmd/migrate/main.go` 的命名迁移
+- 命名迁移必须幂等
+- 被后续迁移完全覆盖的过渡迁移应及时清理，避免长期堆积
+
+## 8. 新业务接入清单
+
+新增业务模块时，至少补齐：
+
+1. 模块目录与标准文件
+2. 数据表和 `AutoMigrate`
+3. 菜单入口
+4. 功能权限定义
+5. API 注册元数据
+6. 团队数据隔离
+
+## 9. 文档维护规则
+
+- 根目录不再持续堆放阶段性设计说明
+- 说明文档写在对应业务模块下
+- 只保留长期稳定、能指导后续开发的重点内容

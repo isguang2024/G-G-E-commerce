@@ -256,21 +256,6 @@ func runNamedMigrations(logger *zap.Logger) error {
 			},
 		},
 		{
-			Name: "20260317_system_permission_manual_source",
-			Run: func(logger *zap.Logger) error {
-				if err := database.DB.Exec(`
-					UPDATE permission_actions
-					   SET source = 'manual',
-					       category = 'system_permission'
-					 WHERE resource_code = 'system_permission'
-				`).Error; err != nil {
-					return err
-				}
-				logger.Info("Named migration applied", zap.String("name", "20260317_system_permission_manual_source"))
-				return nil
-			},
-		},
-		{
 			Name: "20260317_permission_actions_normalize_source_and_feature_kind",
 			Run: func(logger *zap.Logger) error {
 				statements := []string{

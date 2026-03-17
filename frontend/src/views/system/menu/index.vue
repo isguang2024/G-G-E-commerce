@@ -106,6 +106,15 @@
             >
               团队上下文
             </ElTag>
+            <ElTag
+              v-if="getMenuActionRequirement(row.meta).actions.length"
+              size="small"
+              effect="light"
+              type="danger"
+              class="mr-2"
+            >
+              {{ getMenuActionRequirementLabel(row) }}
+            </ElTag>
           </div>
         </template>
 
@@ -137,6 +146,12 @@
         :initialParentId="String(parentRowForAdd?.id ?? '')"
         :lockType="lockMenuType"
         @submit="handleSubmit"
+      />
+
+      <MenuActionRequirementDialog
+        v-model="actionRequirementVisible"
+        :menuData="actionRequirementData"
+        @submit="handleActionRequirementSubmit"
       />
 
       <!-- 备份菜单弹窗 -->
@@ -219,6 +234,7 @@
   import { useTableColumns } from '@/hooks/core/useTableColumns'
   import type { AppRouteRecord } from '@/types/router'
   import MenuDialog from './modules/menu-dialog.vue'
+  import MenuActionRequirementDialog from './modules/menu-action-requirement-dialog.vue'
   import {
     fetchGetMenuTreeAll,
     fetchCreateMenu,
@@ -230,6 +246,7 @@
     fetchRestoreMenuBackup
   } from '@/api/system-manage'
   import { ElTag, ElMessageBox, ElMessage, ElTooltip, ElButton, ElSwitch } from 'element-plus'
+  import { getMenuActionRequirement } from '@/utils/permission/menu'
 
   defineOptions({ name: 'Menus' })
 
@@ -264,6 +281,8 @@
   const editData = ref<any>(null)
   const parentRowForAdd = ref<AppRouteRecord | null>(null)
   const lockMenuType = ref(false)
+  const actionRequirementVisible = ref(false)
+  const actionRequirementData = ref<any>(null)
 
   // --- 菜单列表处理 ---
   const getMenuList = async () => {
@@ -351,10 +370,21 @@
     return '菜单'
   }
 
+  const getMenuActionRequirementLabel = (row: any) => {
+    const requirement = getMenuActionRequirement(row.meta)
+    if (!requirement.actions.length) return ''
+    const visibilityText = requirement.visibilityMode === 'show' ? '显示' : '隐藏'
+    if (requirement.actions.length === 1) {
+      return `功能门槛: ${requirement.actions[0]} · 不满足${visibilityText}`
+    }
+    return `功能门槛 ${requirement.matchMode === 'all' ? '全部' : '任一'} ${requirement.actions.length} 项 · 不满足${visibilityText}`
+  }
+
   const getOperationList = (row: any): ButtonMoreItem[] => {
     const list: ButtonMoreItem[] = [
       { key: 'add', label: '新增子菜单', icon: 'ri:add-fill', auth: 'menu:create' },
-      { key: 'edit', label: '编辑菜单', icon: 'ri:edit-2-line', auth: 'menu:update' }
+      { key: 'edit', label: '编辑菜单', icon: 'ri:edit-2-line', auth: 'menu:update' },
+      { key: 'action_requirement', label: '功能门槛', icon: 'ri:shield-keyhole-line', auth: 'menu:update' }
     ]
     if (!row.is_system) {
       list.push({
@@ -420,9 +450,14 @@
     lockMenuType.value = true
     dialogVisible.value = true
   }
+  const handleEditActionRequirement = (row: any) => {
+    actionRequirementData.value = row
+    actionRequirementVisible.value = true
+  }
   const handleMenuOperation = (item: ButtonMoreItem, row: any) => {
     if (item.key === 'add') handleAddUnderRow(row)
     else if (item.key === 'edit') handleEditMenu(row)
+    else if (item.key === 'action_requirement') handleEditActionRequirement(row)
     else if (item.key === 'delete') handleDeleteMenu(row)
   }
 
@@ -462,6 +497,23 @@
         requiresTenantContext: !!formData.requiresTenantContext,
         isInnerPage: isInner
       }
+      const requiredActions = Array.from(
+        new Set(
+          (formData.requiredActions || [])
+            .map((item: string) => `${item || ''}`.trim())
+            .filter(Boolean)
+        )
+      )
+      if (requiredActions.length === 1) {
+        meta.requiredAction = requiredActions[0]
+      }
+      if (requiredActions.length > 0) {
+        meta.actionVisibilityMode = formData.actionVisibilityMode === 'show' ? 'show' : 'hide'
+      }
+      if (requiredActions.length > 1) {
+        meta.requiredActions = requiredActions
+        meta.actionMatchMode = formData.actionMatchMode === 'all' ? 'all' : 'any'
+      }
       
       // 只有当customParent有值时才添加到meta中
       if (formData.customParent && formData.customParent.trim() !== '') {
@@ -491,6 +543,61 @@
       getMenuList()
     } catch (e: any) {
       ElMessage.error(e?.message || '保存失败')
+    }
+  }
+
+  const buildMenuMetaForUpdate = (row: any) => {
+    const meta = { ...(row?.meta || {}) }
+    delete meta.title
+    return meta
+  }
+
+  const handleActionRequirementSubmit = async (formData: {
+    requiredActions: string[]
+    actionMatchMode: 'any' | 'all'
+    actionVisibilityMode: 'hide' | 'show'
+  }) => {
+    if (!dataFromBackend.value || !actionRequirementData.value?.id) return
+    try {
+      const row = actionRequirementData.value
+      const meta = buildMenuMetaForUpdate(row)
+      const requiredActions = Array.from(
+        new Set((formData.requiredActions || []).map((item: string) => `${item || ''}`.trim()).filter(Boolean))
+      )
+      delete meta.requiredAction
+      delete meta.requiredActions
+      delete meta.actionMatchMode
+      delete meta.actionVisibilityMode
+      if (requiredActions.length === 1) {
+        meta.requiredAction = requiredActions[0]
+      }
+      if (requiredActions.length > 1) {
+        meta.requiredActions = requiredActions
+        meta.actionMatchMode = formData.actionMatchMode === 'all' ? 'all' : 'any'
+      }
+      if (requiredActions.length > 0) {
+        meta.actionVisibilityMode = formData.actionVisibilityMode === 'show' ? 'show' : 'hide'
+      }
+      await fetchUpdateMenu(
+        String(row.id),
+        {
+          parent_id: row.parent_id ? String(row.parent_id) : null,
+          path: row.path || '',
+          name: row.name || '',
+          component: typeof row.component === 'string' ? row.component : '',
+          title: row.meta?.title || '',
+          icon: row.meta?.icon || '',
+          sort_order: Number(row.sort_order ?? 0),
+          meta
+        },
+        { showErrorMessage: false }
+      )
+      ElMessage.success('功能门槛已保存')
+      actionRequirementVisible.value = false
+      actionRequirementData.value = null
+      getMenuList()
+    } catch (e: any) {
+      ElMessage.error(e?.message || '功能门槛保存失败')
     }
   }
 

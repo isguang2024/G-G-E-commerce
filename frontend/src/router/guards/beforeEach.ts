@@ -53,6 +53,7 @@ import { fetchGetUserInfo } from '@/api/auth'
 import { ApiStatus } from '@/utils/http/status'
 import { isHttpError } from '@/utils/http/error'
 import { RouteRegistry, MenuProcessor, IframeRouteManager, RoutePermissionValidator } from '../core'
+import { hasMenuActionAccess, shouldHideMenuWhenActionDenied } from '@/utils/permission/menu'
 
 // 路由注册器实例
 let routeRegistry: RouteRegistry | null = null
@@ -236,7 +237,12 @@ async function handleRouteGuard(
     return
   }
 
-  // 6. 处理已匹配的路由
+  // 6. 处理菜单绑定的基础功能门槛
+  if (handleMenuActionRedirect(to, next)) {
+    return
+  }
+
+  // 7. 处理已匹配的路由
   if (to.matched.length > 0) {
     setWorktab(to)
     setPageTitle(to)
@@ -244,7 +250,7 @@ async function handleRouteGuard(
     return
   }
 
-  // 7. 未匹配到路由，跳转到 404
+  // 8. 未匹配到路由，跳转到 404
   next({ name: 'Exception404' })
 }
 
@@ -483,6 +489,37 @@ function handleTenantContextRedirect(
   }
 
   const fallbackPath = useMenuStore().getHomePath() || '/403'
+  next({ path: fallbackPath, replace: true })
+  return true
+}
+
+/**
+ * 处理菜单绑定的基础功能门槛访问
+ */
+function handleMenuActionRedirect(
+  to: RouteLocationNormalized,
+  next: NavigationGuardNext
+): boolean {
+  const userStore = useUserStore()
+  const menuStore = useMenuStore()
+  const guardedRecord = [...to.matched].reverse().find((record) => {
+    const requiredActions = record.meta?.requiredActions
+    return Boolean(record.meta?.requiredAction || (Array.isArray(requiredActions) && requiredActions.length))
+  })
+
+  if (!guardedRecord) {
+    return false
+  }
+
+  if (!shouldHideMenuWhenActionDenied(guardedRecord.meta)) {
+    return false
+  }
+
+  if (hasMenuActionAccess(userStore.getUserInfo as Api.Auth.UserInfo, guardedRecord.meta)) {
+    return false
+  }
+
+  const fallbackPath = menuStore.getHomePath() || '/403'
   next({ path: fallbackPath, replace: true })
   return true
 }

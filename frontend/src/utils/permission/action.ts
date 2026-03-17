@@ -2,6 +2,12 @@ type ActionRequirement = string
 
 type UserActionInfo = Partial<Api.Auth.UserInfo> | null | undefined
 
+export function buildScopedActionKey(action: string, scopeCode?: string): string {
+  const { key, scope } = resolveActionKey(action)
+  const normalizedScope = normalizeScopeCode(scopeCode || scope)
+  return normalizedScope ? `${key}@${normalizedScope}` : key
+}
+
 export function resolveActionKey(action: ActionRequirement): { key: string; scope?: string } {
   const raw = `${action || ''}`.trim()
   const atIndex = raw.lastIndexOf('@')
@@ -27,9 +33,13 @@ export function hasScopedActionPermission(
   const normalizedScope = normalizeScopeCode(scopeCode || requirement.scope)
   const scopedActions = new Set(userInfo?.scoped_actions || userInfo?.scopedActions || [])
   const actions = new Set(userInfo?.actions || [])
+  const hasScopedActionData = scopedActions.size > 0
 
-  if (normalizedScope && scopedActions.has(`${requirement.key}@${normalizedScope}`)) {
-    return true
+  if (normalizedScope) {
+    if (hasScopedActionData) {
+      return scopedActions.has(`${requirement.key}@${normalizedScope}`)
+    }
+    return actions.has(requirement.key)
   }
   return actions.has(requirement.key)
 }
