@@ -18,7 +18,7 @@
         </template>
 
         <div class="flex flex-col gap-4">
-          <ElCard shadow="never" class="add-member-card">
+          <ElCard v-if="hasAction('team_member:create')" shadow="never" class="add-member-card">
             <template #header>
               <span>添加成员</span>
             </template>
@@ -76,15 +76,28 @@
               <ElTableColumn prop="joinedAt" label="加入时间" width="170" />
               <ElTableColumn label="操作" width="60" fixed="right">
                 <template #default="{ row }">
-                  <ElDropdown trigger="click" @command="(cmd: string) => handleCommand(cmd, row)">
+                  <ElDropdown
+                    v-if="hasMemberOperationPermission"
+                    trigger="click"
+                    @command="(cmd: string) => handleCommand(cmd, row)"
+                  >
                     <ElButton :icon="MoreFilled" circle size="small" />
                     <template #dropdown>
                       <ElDropdownMenu>
-                        <ElDropdownItem command="assign">
+                        <ElDropdownItem v-if="hasAction('team_member:assign_role')" command="assign">
                           <ElIcon><UserFilled /></ElIcon>
                           分配角色
                         </ElDropdownItem>
-                        <ElDropdownItem command="delete" :disabled="isAdmin(row)" divided>
+                        <ElDropdownItem v-if="hasAction('team_member:assign_action')" command="action">
+                          <ElIcon><UserFilled /></ElIcon>
+                          功能权限
+                        </ElDropdownItem>
+                        <ElDropdownItem
+                          v-if="hasAction('team_member:delete')"
+                          command="delete"
+                          :disabled="isAdmin(row)"
+                          divided
+                        >
                           <ElIcon><Delete /></ElIcon>
                           删除
                         </ElDropdownItem>
@@ -100,12 +113,14 @@
     </template>
 
     <MemberRoleDialog ref="roleDialogRef" :member="currentMember" @success="loadMembers" />
+    <MemberActionDialog ref="actionDialogRef" :member="currentMember" @success="loadMembers" />
   </div>
 </template>
 
 <script setup lang="ts">
   import { Loading, MoreFilled, UserFilled, Delete } from '@element-plus/icons-vue'
   import { storeToRefs } from 'pinia'
+  import { useAuth } from '@/hooks/core/useAuth'
   import {
     fetchGetMyTeam,
     fetchGetMyTeamMembers,
@@ -116,17 +131,26 @@
   import { useTenantStore } from '@/store/modules/tenant'
   import NoTeamState from '@/components/business/team/NoTeamState.vue'
   import MemberRoleDialog from './modules/member-role-dialog.vue'
+  import MemberActionDialog from './modules/member-action-dialog.vue'
 
   defineOptions({ name: 'TeamMembers' })
 
   const roleDialogRef = ref()
+  const actionDialogRef = ref()
   const currentMember = ref<Api.SystemManage.TeamMemberItem | null>(null)
   const tenantStore = useTenantStore()
+  const { hasAction } = useAuth()
   const { currentTenantId, hasTeams } = storeToRefs(tenantStore)
 
   const team = ref<Api.SystemManage.TeamListItem | null>(null)
   const teamLoadDone = ref(false)
   const members = ref<Api.SystemManage.TeamMemberItem[]>([])
+  const hasMemberOperationPermission = computed(
+    () =>
+      hasAction('team_member:assign_role') ||
+      hasAction('team_member:assign_action') ||
+      hasAction('team_member:delete')
+  )
   const loading = ref(false)
   const addLoading = ref(false)
 
@@ -187,9 +211,18 @@
     })
   }
 
+  function handleAssignActions(member: Api.SystemManage.TeamMemberItem) {
+    currentMember.value = member
+    nextTick(() => {
+      actionDialogRef.value?.open()
+    })
+  }
+
   function handleCommand(command: string, member: Api.SystemManage.TeamMemberItem) {
     if (command === 'assign') {
       handleAssignRoles(member)
+    } else if (command === 'action') {
+      handleAssignActions(member)
     } else if (command === 'delete') {
       removeMember(member)
     }

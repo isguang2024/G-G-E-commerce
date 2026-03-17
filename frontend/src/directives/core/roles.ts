@@ -38,7 +38,7 @@
  *
  * - 该指令会直接移除 DOM 元素，而不是使用 v-if 隐藏
  * - 适用于基于角色的粗粒度权限控制
- * - 如需基于具体操作的细粒度权限控制，请使用 v-auth 指令
+ * - 如需基于具体操作的细粒度权限控制，请使用 v-action 指令
  *
  * @module directives/roles
  * @author Art Design Pro Team

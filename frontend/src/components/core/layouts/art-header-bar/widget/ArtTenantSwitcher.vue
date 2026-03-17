@@ -27,7 +27,7 @@
   import { ElMessage } from 'element-plus'
   import { useRouter } from 'vue-router'
   import { useTenantStore } from '@/store/modules/tenant'
-  import { refreshUserMenus } from '@/router'
+  import { refreshCurrentUserInfoContext, refreshUserMenus } from '@/router'
 
   defineOptions({ name: 'ArtTenantSwitcher' })
   withDefaults(defineProps<{ compact?: boolean }>(), {
@@ -48,6 +48,7 @@
 
     try {
       tenantStore.setCurrentTenantId(tenantId)
+      await refreshCurrentUserInfoContext()
       await refreshUserMenus()
       await router.push('/')
       ElMessage.success('已切换团队')

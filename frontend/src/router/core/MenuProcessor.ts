@@ -11,7 +11,6 @@ import type { AppRouteRecord } from '@/types/router'
 import { fetchGetMenuList } from '@/api/system-manage'
 import { RoutesAlias } from '../routesAlias'
 import { formatMenuTitle } from '@/utils'
-import { getComponentPathByRouteName } from './routeNameComponentMap'
 import { useTenantStore } from '@/store/modules/tenant'
 import { useUserStore } from '@/store/modules/user'
 
@@ -59,11 +58,6 @@ export class MenuProcessor {
 
         // 如果有有效的 component，保留
         if (item.component && item.component !== '' && item.component !== RoutesAlias.Layout) {
-          return true
-        }
-
-        // 若有 name 且能按前端路由表解析到组件路径，保留（后端未配置 component 时仍可正确打开页面，如角色管理）
-        if (item.name && getComponentPathByRouteName(String(item.name))) {
           return true
         }
 
@@ -127,10 +121,6 @@ export class MenuProcessor {
     })
   }
 
-  /**
-   * 验证菜单路径配置
-   * 检测非一级菜单是否错误使用了 / 开头的路径
-   */
   /**
    * 验证菜单路径配置
    * 检测非一级菜单是否错误使用了 / 开头的路径

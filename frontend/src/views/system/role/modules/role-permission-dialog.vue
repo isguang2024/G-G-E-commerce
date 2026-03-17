@@ -20,8 +20,7 @@
       >
         <template #default="{ data }">
           <div style="display: flex; align-items: center">
-            <span v-if="data.isAuth">{{ data.label }}</span>
-            <span v-else>{{ defaultProps.label(data) }}</span>
+            <span>{{ defaultProps.label(data) }}</span>
           </div>
         </template>
       </ElTree>
@@ -74,33 +73,17 @@
   interface MenuNode {
     id?: string
     name?: string
-    label?: string
-    meta?: { title?: string; authList?: Array<{ authMark: string; title: string }> }
+    meta?: { title?: string }
     children?: MenuNode[]
-    isAuth?: boolean
     [key: string]: any
   }
 
-  /** 后端菜单树 + 将 authList 展开为展示用子节点（保存时只提交菜单 id） */
   const processedMenuList = computed(() => {
-    const processNode = (node: MenuNode): MenuNode => {
-      const processed = { ...node }
-      if (!processed.id && node.path) processed.id = node.path
-
-      if (node.meta?.authList?.length) {
-        const authNodes = node.meta.authList.map((auth) => ({
-          id: `${node.id}_auth_${auth.authMark}`,
-          name: `${node.name}_auth_${auth.authMark}`,
-          label: auth.title,
-          isAuth: true
-        }))
-        processed.children = processed.children ? [...processed.children, ...authNodes] : authNodes
-      }
-      if (processed.children) {
-        processed.children = processed.children.map(processNode)
-      }
-      return processed
-    }
+    const processNode = (node: MenuNode): MenuNode => ({
+      ...node,
+      id: node.id || node.path,
+      children: node.children?.map(processNode)
+    })
     return (menuTreeRaw.value as MenuNode[]).map(processNode)
   })
 

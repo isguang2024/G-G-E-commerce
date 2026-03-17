@@ -23,16 +23,22 @@ type TenantHandler struct {
 	userRepo         user.UserRepository
 	roleRepo         user.RoleRepository
 	userRoleRepo     user.UserRoleRepository
+	actionRepo       user.PermissionActionRepository
+	tenantActionRepo user.TenantActionPermissionRepository
+	userActionRepo   user.UserActionPermissionRepository
 	logger           *zap.Logger
 }
 
-func NewTenantHandler(tenantService TenantService, tenantMemberRepo user.TenantMemberRepository, userRepo user.UserRepository, roleRepo user.RoleRepository, userRoleRepo user.UserRoleRepository, logger *zap.Logger) *TenantHandler {
+func NewTenantHandler(tenantService TenantService, tenantMemberRepo user.TenantMemberRepository, userRepo user.UserRepository, roleRepo user.RoleRepository, userRoleRepo user.UserRoleRepository, actionRepo user.PermissionActionRepository, tenantActionRepo user.TenantActionPermissionRepository, userActionRepo user.UserActionPermissionRepository, logger *zap.Logger) *TenantHandler {
 	return &TenantHandler{
 		tenantService:    tenantService,
 		tenantMemberRepo: tenantMemberRepo,
 		userRepo:         userRepo,
 		roleRepo:         roleRepo,
 		userRoleRepo:     userRoleRepo,
+		actionRepo:       actionRepo,
+		tenantActionRepo: tenantActionRepo,
+		userActionRepo:   userActionRepo,
 		logger:           logger,
 	}
 }
@@ -521,6 +527,17 @@ func (h *TenantHandler) GetMyTeamMemberRoles(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	if _, err := h.tenantMemberRepo.GetByUserAndTenant(targetUserID, member.TenantID); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			status, resp := errcode.Response(errcode.ErrTenantMemberNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get tenant member failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取成员失败")
+		c.JSON(status, resp)
+		return
+	}
 
 	roleIDs, err := h.userRoleRepo.GetRoleIDsByUserAndTenant(targetUserID, &member.TenantID, h.tenantMemberRepo)
 	if err != nil {
@@ -682,6 +699,264 @@ func (h *TenantHandler) ListMyTeamRoles(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(roleList))
 }
 
+func (h *TenantHandler) GetTenantActions(c *gin.Context) {
+	tenantID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		c.JSON(status, resp)
+		return
+	}
+	actionIDs, err := h.tenantActionRepo.GetEnabledActionIDsByTenantID(tenantID)
+	if err != nil {
+		h.logger.Error("Get tenant actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队功能权限失败")
+		c.JSON(status, resp)
+		return
+	}
+	actions, err := h.actionRepo.GetByIDs(actionIDs)
+	if err != nil {
+		h.logger.Error("Get permission actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能权限失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"action_ids": actionIDsToStrings(actionIDs),
+		"actions":    actionListToMaps(actions),
+	}))
+}
+
+func (h *TenantHandler) SetTenantActions(c *gin.Context) {
+	tenantID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		c.JSON(status, resp)
+		return
+	}
+	var req dto.TenantActionPermissionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	actionIDs, parseErr := parseUUIDSlice(req.ActionIDs)
+	if parseErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能权限ID")
+		c.JSON(status, resp)
+		return
+	}
+	if len(actionIDs) > 0 {
+		actions, actionErr := h.actionRepo.GetByIDs(actionIDs)
+		if actionErr != nil {
+			h.logger.Error("Get tenant action detail failed", zap.Error(actionErr))
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能权限失败")
+			c.JSON(status, resp)
+			return
+		}
+		if len(actions) != len(actionIDs) {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "存在无效的功能权限")
+			c.JSON(status, resp)
+			return
+		}
+		for _, action := range actions {
+			if action.Scope.Code != "team" {
+				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "团队仅可配置团队作用域功能权限")
+				c.JSON(status, resp)
+				return
+			}
+		}
+	}
+	if err := h.tenantActionRepo.ReplaceTenantActions(tenantID, actionIDs); err != nil {
+		h.logger.Error("Set tenant actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存团队功能权限失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *TenantHandler) GetMyTeamActions(c *gin.Context) {
+	member, err := h.resolveTenantMember(c)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound || err == ErrTenantMemberNotFound {
+			status, resp := errcode.Response(errcode.ErrNoTeam)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Resolve my team failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的团队失败")
+		c.JSON(status, resp)
+		return
+	}
+	actionIDs, err := h.tenantActionRepo.GetEnabledActionIDsByTenantID(member.TenantID)
+	if err != nil {
+		h.logger.Error("Get my team actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队功能权限失败")
+		c.JSON(status, resp)
+		return
+	}
+	actions, err := h.actionRepo.GetByIDs(actionIDs)
+	if err != nil {
+		h.logger.Error("Get my team permission actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能权限失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"action_ids": actionIDsToStrings(actionIDs),
+		"actions":    actionListToMaps(actions),
+	}))
+}
+
+func (h *TenantHandler) GetMyTeamMemberActionPermissions(c *gin.Context) {
+	member, err := h.resolveTenantMember(c)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound || err == ErrTenantMemberNotFound {
+			status, resp := errcode.Response(errcode.ErrNoTeam)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Resolve my team failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的团队失败")
+		c.JSON(status, resp)
+		return
+	}
+	targetUserID, err := uuid.Parse(c.Param("userId"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+	if _, err := h.tenantMemberRepo.GetByUserAndTenant(targetUserID, member.TenantID); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			status, resp := errcode.Response(errcode.ErrTenantMemberNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get tenant member failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取成员失败")
+		c.JSON(status, resp)
+		return
+	}
+	records, err := h.userActionRepo.GetByUserAndTenant(targetUserID, &member.TenantID)
+	if err != nil {
+		h.logger.Error("Get member action overrides failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取成员功能权限失败")
+		c.JSON(status, resp)
+		return
+	}
+	actionIDs := make([]uuid.UUID, 0, len(records))
+	for _, record := range records {
+		actionIDs = append(actionIDs, record.ActionID)
+	}
+	actions, err := h.actionRepo.GetByIDs(actionIDs)
+	if err != nil {
+		h.logger.Error("Get action detail failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能权限失败")
+		c.JSON(status, resp)
+		return
+	}
+	actionMap := make(map[uuid.UUID]user.PermissionAction, len(actions))
+	for _, action := range actions {
+		actionMap[action.ID] = action
+	}
+	items := make([]gin.H, 0, len(records))
+	for _, record := range records {
+		item := gin.H{
+			"action_id": record.ActionID.String(),
+			"effect":    record.Effect,
+		}
+		if action, ok := actionMap[record.ActionID]; ok {
+			item["action"] = actionMapToMap(&action)
+		}
+		items = append(items, item)
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"actions": items}))
+}
+
+func (h *TenantHandler) SetMyTeamMemberActionPermissions(c *gin.Context) {
+	member, err := h.resolveTenantMember(c)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound || err == ErrTenantMemberNotFound {
+			status, resp := errcode.Response(errcode.ErrNoTeam)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Resolve my team failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的团队失败")
+		c.JSON(status, resp)
+		return
+	}
+	targetUserID, err := uuid.Parse(c.Param("userId"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+	if _, err := h.tenantMemberRepo.GetByUserAndTenant(targetUserID, member.TenantID); err != nil {
+		if err == gorm.ErrRecordNotFound {
+			status, resp := errcode.Response(errcode.ErrTenantMemberNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get tenant member failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取成员失败")
+		c.JSON(status, resp)
+		return
+	}
+	var req dto.UserActionPermissionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	actions := make([]user.UserActionPermission, 0, len(req.Actions))
+	actionIDs := make([]uuid.UUID, 0, len(req.Actions))
+	for _, item := range req.Actions {
+		actionID, parseErr := uuid.Parse(item.ActionID)
+		if parseErr != nil {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能权限ID")
+			c.JSON(status, resp)
+			return
+		}
+		actionIDs = append(actionIDs, actionID)
+		actions = append(actions, user.UserActionPermission{
+			UserID:   targetUserID,
+			ActionID: actionID,
+			TenantID: &member.TenantID,
+			Effect:   item.Effect,
+		})
+	}
+	if len(actionIDs) > 0 {
+		actionList, actionErr := h.actionRepo.GetByIDs(actionIDs)
+		if actionErr != nil {
+			h.logger.Error("Get member action detail failed", zap.Error(actionErr))
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能权限失败")
+			c.JSON(status, resp)
+			return
+		}
+		if len(actionList) != len(actionIDs) {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "存在无效的功能权限")
+			c.JSON(status, resp)
+			return
+		}
+		for _, action := range actionList {
+			if action.Scope.Code != "team" {
+				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "成员仅可配置团队作用域功能权限")
+				c.JSON(status, resp)
+				return
+			}
+		}
+	}
+	if err := h.userActionRepo.ReplaceUserActions(targetUserID, &member.TenantID, actions); err != nil {
+		h.logger.Error("Set member action overrides failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存成员功能权限失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
 func (h *TenantHandler) ListMyTeams(c *gin.Context) {
 	userID, err := h.mustUserID(c)
 	if err != nil {
@@ -808,4 +1083,67 @@ func memberToMap(m *user.TenantMember, userInfo *user.User) gin.H {
 		result["invited_by"] = m.InvitedBy.String()
 	}
 	return result
+}
+
+func actionMapToMap(action *user.PermissionAction) gin.H {
+	scopeID := ""
+	scopeCode := ""
+	scopeName := ""
+	if action.Scope.ID != (uuid.UUID{}) {
+		scopeID = action.Scope.ID.String()
+		scopeCode = action.Scope.Code
+		scopeName = action.Scope.Name
+	}
+	return gin.H{
+		"id":                      action.ID.String(),
+		"resource_code":           action.ResourceCode,
+		"action_code":             action.ActionCode,
+		"name":                    action.Name,
+		"description":             action.Description,
+		"scope_id":                scopeID,
+		"scope_code":              scopeCode,
+		"scope_name":              scopeName,
+		"scope":                   scopeCode,
+		"requires_tenant_context": action.RequiresTenantContext,
+		"status":                  action.Status,
+		"sort_order":              action.SortOrder,
+		"created_at":              action.CreatedAt.Format("2006-01-02 15:04:05"),
+		"updated_at":              action.UpdatedAt.Format("2006-01-02 15:04:05"),
+	}
+}
+
+func actionListToMaps(actions []user.PermissionAction) []gin.H {
+	items := make([]gin.H, 0, len(actions))
+	for _, action := range actions {
+		items = append(items, actionMapToMap(&action))
+	}
+	return items
+}
+
+func actionIDsToStrings(ids []uuid.UUID) []string {
+	items := make([]string, 0, len(ids))
+	for _, id := range ids {
+		items = append(items, id.String())
+	}
+	return items
+}
+
+func parseUUIDSlice(items []string) ([]uuid.UUID, error) {
+	result := make([]uuid.UUID, 0, len(items))
+	seen := make(map[uuid.UUID]struct{}, len(items))
+	for _, item := range items {
+		if strings.TrimSpace(item) == "" {
+			continue
+		}
+		parsed, err := uuid.Parse(item)
+		if err != nil {
+			return nil, err
+		}
+		if _, ok := seen[parsed]; ok {
+			continue
+		}
+		seen[parsed] = struct{}{}
+		result = append(result, parsed)
+	}
+	return result, nil
 }

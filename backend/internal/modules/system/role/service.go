@@ -2,6 +2,7 @@ package role
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -15,7 +16,7 @@ import (
 
 var (
 	ErrRoleNotFound           = errors.New("role not found")
-	ErrRoleCodeExists        = errors.New("role code already exists")
+	ErrRoleCodeExists         = errors.New("role code already exists")
 	ErrSystemRoleCannotDelete = errors.New("system role cannot be deleted")
 )
 
@@ -27,23 +28,38 @@ type RoleService interface {
 	Delete(id uuid.UUID) error
 	GetRoleMenuIDs(roleID uuid.UUID) ([]uuid.UUID, error)
 	SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error
+	GetRoleActions(roleID uuid.UUID) ([]user.RoleActionPermission, error)
+	SetRoleActions(roleID uuid.UUID, actions []user.RoleActionPermission) error
+	GetRoleDataPermissions(roleID uuid.UUID) ([]user.RoleDataPermission, []string, []DataPermissionScopeOption, string, error)
+	SetRoleDataPermissions(roleID uuid.UUID, permissions []user.RoleDataPermission) error
+}
+
+type DataPermissionScopeOption struct {
+	Code string
+	Name string
 }
 
 type roleService struct {
-	roleRepo     user.RoleRepository
-	roleMenuRepo user.RoleMenuRepository
-	userRoleRepo user.UserRoleRepository
-	scopeRepo    user.ScopeRepository
-	logger       *zap.Logger
+	roleRepo       user.RoleRepository
+	roleMenuRepo   user.RoleMenuRepository
+	roleActionRepo user.RoleActionPermissionRepository
+	roleDataRepo   user.RoleDataPermissionRepository
+	actionRepo     user.PermissionActionRepository
+	userRoleRepo   user.UserRoleRepository
+	scopeRepo      user.ScopeRepository
+	logger         *zap.Logger
 }
 
-func NewRoleService(roleRepo user.RoleRepository, roleMenuRepo user.RoleMenuRepository, userRoleRepo user.UserRoleRepository, scopeRepo user.ScopeRepository, logger *zap.Logger) RoleService {
+func NewRoleService(roleRepo user.RoleRepository, roleMenuRepo user.RoleMenuRepository, roleActionRepo user.RoleActionPermissionRepository, roleDataRepo user.RoleDataPermissionRepository, actionRepo user.PermissionActionRepository, userRoleRepo user.UserRoleRepository, scopeRepo user.ScopeRepository, logger *zap.Logger) RoleService {
 	return &roleService{
-		roleRepo:     roleRepo,
-		roleMenuRepo: roleMenuRepo,
-		userRoleRepo: userRoleRepo,
-		scopeRepo:    scopeRepo,
-		logger:       logger,
+		roleRepo:       roleRepo,
+		roleMenuRepo:   roleMenuRepo,
+		roleActionRepo: roleActionRepo,
+		roleDataRepo:   roleDataRepo,
+		actionRepo:     actionRepo,
+		userRoleRepo:   userRoleRepo,
+		scopeRepo:      scopeRepo,
+		logger:         logger,
 	}
 }
 
@@ -152,9 +168,7 @@ func (s *roleService) Update(id uuid.UUID, req *dto.RoleUpdateRequest) error {
 		updates["description"] = req.Description
 	}
 	updates["sort_order"] = req.SortOrder
-	if req.Priority > 0 {
-		updates["priority"] = req.Priority
-	}
+	updates["priority"] = req.Priority
 	if req.Status != "" {
 		updates["status"] = req.Status
 	}
@@ -208,6 +222,14 @@ func (s *roleService) Delete(id uuid.UUID) error {
 			return err
 		}
 
+		if err := tx.Where("role_id = ?", id).Delete(&user.RoleActionPermission{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("role_id = ?", id).Delete(&user.RoleDataPermission{}).Error; err != nil {
+			return err
+		}
+
 		return tx.Delete(&user.Role{}, id).Error
 	})
 }
@@ -232,4 +254,128 @@ func (s *roleService) SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error 
 		return err
 	}
 	return s.roleMenuRepo.SetRoleMenus(roleID, menuIDs)
+}
+
+func (s *roleService) GetRoleActions(roleID uuid.UUID) ([]user.RoleActionPermission, error) {
+	_, err := s.roleRepo.GetByID(roleID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrRoleNotFound
+		}
+		return nil, err
+	}
+	return s.roleActionRepo.GetByRoleID(roleID)
+}
+
+func (s *roleService) SetRoleActions(roleID uuid.UUID, actions []user.RoleActionPermission) error {
+	role, err := s.roleRepo.GetByID(roleID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return ErrRoleNotFound
+		}
+		return err
+	}
+	actionIDs := make([]uuid.UUID, 0, len(actions))
+	for _, item := range actions {
+		actionIDs = append(actionIDs, item.ActionID)
+	}
+	permissionActions, err := s.actionRepo.GetByIDs(actionIDs)
+	if err != nil {
+		return err
+	}
+	actionScopeByID := make(map[uuid.UUID]string, len(permissionActions))
+	for _, action := range permissionActions {
+		actionScopeByID[action.ID] = action.Scope.Code
+	}
+	for _, item := range actions {
+		scopeCode, ok := actionScopeByID[item.ActionID]
+		if !ok {
+			return errors.New("功能权限不存在")
+		}
+		if role.Scope.Code != scopeCode {
+			return errors.New("功能权限作用域与角色作用域不匹配")
+		}
+	}
+	return s.roleActionRepo.SetRoleActions(roleID, actions)
+}
+
+func (s *roleService) GetRoleDataPermissions(roleID uuid.UUID) ([]user.RoleDataPermission, []string, []DataPermissionScopeOption, string, error) {
+	role, err := s.roleRepo.GetByID(roleID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil, nil, "", ErrRoleNotFound
+		}
+		return nil, nil, nil, "", err
+	}
+	records, err := s.roleDataRepo.GetByRoleID(roleID)
+	if err != nil {
+		return nil, nil, nil, "", err
+	}
+	resourceCodes, err := s.actionRepo.ListDistinctResourceCodesByScope(role.Scope.Code)
+	if err != nil {
+		return nil, nil, nil, "", err
+	}
+	scopeOptions := buildAvailableDataScopes(role.Scope.Code)
+	return records, resourceCodes, scopeOptions, role.Scope.Code, nil
+}
+
+func (s *roleService) SetRoleDataPermissions(roleID uuid.UUID, permissions []user.RoleDataPermission) error {
+	role, err := s.roleRepo.GetByID(roleID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return ErrRoleNotFound
+		}
+		return err
+	}
+
+	resourceCodes, err := s.actionRepo.ListDistinctResourceCodesByScope(role.Scope.Code)
+	if err != nil {
+		return err
+	}
+	allowedResources := make(map[string]struct{}, len(resourceCodes))
+	for _, resourceCode := range resourceCodes {
+		allowedResources[resourceCode] = struct{}{}
+	}
+	allowedScopes := make(map[string]struct{})
+	for _, option := range buildAvailableDataScopes(role.Scope.Code) {
+		allowedScopes[option.Code] = struct{}{}
+	}
+
+	normalized := make([]user.RoleDataPermission, 0, len(permissions))
+	seenResources := make(map[string]struct{}, len(permissions))
+	for _, item := range permissions {
+		resourceCode := strings.TrimSpace(item.ResourceCode)
+		scopeCode := strings.TrimSpace(item.ScopeCode)
+		if resourceCode == "" || scopeCode == "" {
+			return errors.New("资源编码和数据范围不能为空")
+		}
+		if _, ok := allowedResources[resourceCode]; !ok {
+			return errors.New("存在未注册的数据权限资源")
+		}
+		if _, ok := allowedScopes[scopeCode]; !ok {
+			return errors.New("存在无效的数据权限范围")
+		}
+		if _, ok := seenResources[resourceCode]; ok {
+			return errors.New("同一资源只能配置一条数据权限")
+		}
+		seenResources[resourceCode] = struct{}{}
+		normalized = append(normalized, user.RoleDataPermission{
+			RoleID:       roleID,
+			ResourceCode: resourceCode,
+			ScopeCode:    scopeCode,
+		})
+	}
+
+	return s.roleDataRepo.ReplaceRoleDataPermissions(roleID, normalized)
+}
+
+func buildAvailableDataScopes(roleScopeCode string) []DataPermissionScopeOption {
+	options := []DataPermissionScopeOption{
+		{Code: "self", Name: "仅本人"},
+	}
+	if roleScopeCode == "team" {
+		options = append(options, DataPermissionScopeOption{Code: "team", Name: "当前团队"})
+	}
+	options = append(options, DataPermissionScopeOption{Code: "all", Name: "全部数据"})
+	return options
 }

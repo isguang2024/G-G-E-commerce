@@ -7,6 +7,8 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/config"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
+	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
 )
 
@@ -32,21 +34,30 @@ func (m *RoleModule) Init() error {
 func (m *RoleModule) RegisterRoutes(rg *gin.RouterGroup) {
 	roleRepo := user.NewRoleRepository(m.db)
 	roleMenuRepo := user.NewRoleMenuRepository(m.db)
+	roleActionRepo := user.NewRoleActionPermissionRepository(m.db)
+	roleDataRepo := user.NewRoleDataPermissionRepository(m.db)
 	userRoleRepo := user.NewUserRoleRepository(m.db)
 	scopeRepo := user.NewScopeRepository(m.db)
-	roleService := NewRoleService(roleRepo, roleMenuRepo, userRoleRepo, scopeRepo, m.logger)
+	actionRepo := user.NewPermissionActionRepository(m.db)
+	roleService := NewRoleService(roleRepo, roleMenuRepo, roleActionRepo, roleDataRepo, actionRepo, userRoleRepo, scopeRepo, m.logger)
 	userRepo := user.NewUserRepository(m.db)
 	roleHandler := NewRoleHandler(roleService, userRepo, m.logger)
+	authzService := authorization.NewService(m.db, m.logger)
 
 	roles := rg.Group("/roles")
+	reg := apiregistry.NewRegistrar(roles, "role")
 	{
-		roles.GET("", roleHandler.List)
-		roles.GET("/:id", roleHandler.Get)
-		roles.GET("/:id/menus", roleHandler.GetRoleMenus)
-		roles.PUT("/:id/menus", roleHandler.SetRoleMenus)
-		roles.POST("", roleHandler.Create)
-		roles.PUT("/:id", roleHandler.Update)
-		roles.DELETE("/:id", roleHandler.Delete)
+		reg.GET("", &apiregistry.RouteMeta{Summary: "获取角色列表", ResourceCode: "role", ActionCode: "list", ScopeCode: "global"}, authzService.RequireAction("role", "list"), roleHandler.List)
+		reg.GET("/:id", &apiregistry.RouteMeta{Summary: "获取角色详情", ResourceCode: "role", ActionCode: "get", ScopeCode: "global"}, authzService.RequireAction("role", "get"), roleHandler.Get)
+		reg.GET("/:id/menus", &apiregistry.RouteMeta{Summary: "获取角色菜单权限", ResourceCode: "role", ActionCode: "assign_menu", ScopeCode: "global"}, authzService.RequireAction("role", "assign_menu"), roleHandler.GetRoleMenus)
+		reg.PUT("/:id/menus", &apiregistry.RouteMeta{Summary: "配置角色菜单权限", ResourceCode: "role", ActionCode: "assign_menu", ScopeCode: "global"}, authzService.RequireAction("role", "assign_menu"), roleHandler.SetRoleMenus)
+		reg.GET("/:id/actions", &apiregistry.RouteMeta{Summary: "获取角色功能权限", ResourceCode: "role", ActionCode: "assign_action", ScopeCode: "global"}, authzService.RequireAction("role", "assign_action"), roleHandler.GetRoleActions)
+		reg.PUT("/:id/actions", &apiregistry.RouteMeta{Summary: "配置角色功能权限", ResourceCode: "role", ActionCode: "assign_action", ScopeCode: "global"}, authzService.RequireAction("role", "assign_action"), roleHandler.SetRoleActions)
+		reg.GET("/:id/data-permissions", &apiregistry.RouteMeta{Summary: "获取角色数据权限", ResourceCode: "role", ActionCode: "assign_data", ScopeCode: "global"}, authzService.RequireAction("role", "assign_data"), roleHandler.GetRoleDataPermissions)
+		reg.PUT("/:id/data-permissions", &apiregistry.RouteMeta{Summary: "配置角色数据权限", ResourceCode: "role", ActionCode: "assign_data", ScopeCode: "global"}, authzService.RequireAction("role", "assign_data"), roleHandler.SetRoleDataPermissions)
+		reg.POST("", &apiregistry.RouteMeta{Summary: "创建角色", ResourceCode: "role", ActionCode: "create", ScopeCode: "global"}, authzService.RequireAction("role", "create"), roleHandler.Create)
+		reg.PUT("/:id", &apiregistry.RouteMeta{Summary: "更新角色", ResourceCode: "role", ActionCode: "update", ScopeCode: "global"}, authzService.RequireAction("role", "update"), roleHandler.Update)
+		reg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除角色", ResourceCode: "role", ActionCode: "delete", ScopeCode: "global"}, authzService.RequireAction("role", "delete"), roleHandler.Delete)
 	}
 }
 

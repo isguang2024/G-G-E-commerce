@@ -6,7 +6,7 @@
       <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
         <template #left>
           <ElSpace wrap>
-            <ElButton @click="showDialog('add')" v-ripple>新增团队</ElButton>
+            <ElButton v-action="'tenant:create'" @click="showDialog('add')" v-ripple>新增团队</ElButton>
           </ElSpace>
         </template>
       </ArtTableHeader>
@@ -33,17 +33,26 @@
         :team-name="currentTeamName"
         @refresh="refreshData"
       />
+
+      <TeamActionPermissionDialog
+        v-model="actionDialogVisible"
+        :team-id="currentTeamId"
+        :team-name="currentTeamName"
+        @success="refreshData"
+      />
     </ElCard>
   </div>
 </template>
 
 <script setup lang="ts">
   import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import { useAuth } from '@/hooks/core/useAuth'
   import { useTable } from '@/hooks/core/useTable'
   import { fetchGetTeamList, fetchDeleteTeam, fetchCreateTeam, fetchUpdateTeam } from '@/api/team'
   import TeamSearch from './modules/team-search.vue'
   import TeamDialog from './modules/team-dialog.vue'
   import TeamMembersDrawer from './modules/team-members-drawer.vue'
+  import TeamActionPermissionDialog from './modules/team-action-permission-dialog.vue'
   import {
     ElTag,
     ElMessageBox,
@@ -59,11 +68,13 @@
   defineOptions({ name: 'Team' })
 
   type TeamListItem = Api.SystemManage.TeamListItem
+  const { hasAction } = useAuth()
 
   const dialogType = ref<DialogType>('add')
   const dialogVisible = ref(false)
   const currentTeamData = ref<Partial<TeamListItem>>({})
   const membersDrawerVisible = ref(false)
+  const actionDialogVisible = ref(false)
   const currentTeamId = ref('')
   const currentTeamName = ref('')
 
@@ -155,18 +166,30 @@
                 default: () => h(ElButton, { icon: MoreFilled, circle: true, size: 'small' }),
                 dropdown: () =>
                   h(ElDropdownMenu, {}, () => [
-                    h(ElDropdownItem, { command: 'edit' }, () => [
-                      h(ElIcon, {}, () => h(Edit)),
-                      '编辑'
-                    ]),
-                    h(ElDropdownItem, { command: 'view' }, () => [
-                      h(ElIcon, {}, () => h(UserFilled)),
-                      '查看人员'
-                    ]),
-                    h(ElDropdownItem, { command: 'delete' }, () => [
-                      h(ElIcon, {}, () => h(Delete)),
-                      '删除'
-                    ])
+                    hasAction('tenant:update')
+                      ? h(ElDropdownItem, { command: 'edit' }, () => [
+                          h(ElIcon, {}, () => h(Edit)),
+                          '编辑'
+                        ])
+                      : null,
+                    hasAction('tenant_member_admin:list')
+                      ? h(ElDropdownItem, { command: 'view' }, () => [
+                          h(ElIcon, {}, () => h(UserFilled)),
+                          '查看人员'
+                        ])
+                      : null,
+                    hasAction('tenant:configure_action_boundary')
+                      ? h(ElDropdownItem, { command: 'action' }, () => [
+                          h(ElIcon, {}, () => h(UserFilled)),
+                          '功能权限'
+                        ])
+                      : null,
+                    hasAction('tenant:delete')
+                      ? h(ElDropdownItem, { command: 'delete' }, () => [
+                          h(ElIcon, {}, () => h(Delete)),
+                          '删除'
+                        ])
+                      : null
                   ])
               }
             )
@@ -198,6 +221,8 @@
       showDialog('edit', row)
     } else if (command === 'view') {
       showMembers(row)
+    } else if (command === 'action') {
+      showActionPermissions(row)
     } else if (command === 'delete') {
       deleteTeam(row)
     }
@@ -207,6 +232,12 @@
     currentTeamId.value = row.id
     currentTeamName.value = row.name
     membersDrawerVisible.value = true
+  }
+
+  const showActionPermissions = (row: TeamListItem) => {
+    currentTeamId.value = row.id
+    currentTeamName.value = row.name
+    actionDialogVisible.value = true
   }
 
   const deleteTeam = (row: TeamListItem) => {

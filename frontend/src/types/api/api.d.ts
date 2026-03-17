@@ -94,6 +94,8 @@ declare namespace Api {
       phone?: string
       status: string
       is_super_admin: boolean
+      current_tenant_id?: string
+      actions?: string[]
       created_at: string
       updated_at?: string
       // 兼容字段
@@ -217,6 +219,114 @@ declare namespace Api {
       status?: string
     }
 
+    interface PermissionActionItem {
+      id: string
+      resourceCode: string
+      actionCode: string
+      name: string
+      description?: string
+      scopeId?: string
+      scopeCode?: string
+      scopeName?: string
+      scope?: string
+      requiresTenantContext: boolean
+      status: string
+      sortOrder?: number
+      createdAt?: string
+      updatedAt?: string
+    }
+
+    type PermissionActionList = Api.Common.PaginatedResponse<PermissionActionItem>
+
+    interface APIEndpointItem {
+      id: string
+      method: string
+      path: string
+      module: string
+      handler?: string
+      summary?: string
+      resourceCode?: string
+      actionCode?: string
+      scopeId?: string
+      scopeCode?: string
+      scopeName?: string
+      requiresTenantContext: boolean
+      status: string
+      createdAt?: string
+      updatedAt?: string
+    }
+
+    type APIEndpointList = Api.Common.PaginatedResponse<APIEndpointItem>
+
+    type APIEndpointSearchParams = Partial<
+      Pick<APIEndpointItem, 'method' | 'path' | 'module' | 'status'> &
+        Api.Common.CommonSearchParams & {
+          resourceCode?: string
+          actionCode?: string
+          scopeCode?: string
+          requiresTenantContext?: boolean
+        }
+    >
+
+    type PermissionActionSearchParams = Partial<
+      Pick<PermissionActionItem, 'name' | 'status'> &
+        Api.Common.CommonSearchParams & {
+          resourceCode?: string
+          actionCode?: string
+          scopeId?: string
+          scopeCode?: string
+          requiresTenantContext?: boolean
+        }
+    >
+
+    interface PermissionActionCreateParams {
+      resource_code: string
+      action_code: string
+      name: string
+      description?: string
+      scope_id: string
+      requires_tenant_context?: boolean
+      status?: string
+      sort_order?: number
+    }
+
+    interface PermissionActionUpdateParams {
+      resource_code?: string
+      action_code?: string
+      name?: string
+      description?: string
+      scope_id?: string
+      requires_tenant_context?: boolean
+      status?: string
+      sort_order?: number
+    }
+
+    interface RoleActionPermissionItem {
+      actionId: string
+      effect: 'allow' | 'deny'
+    }
+
+    interface RoleDataPermissionItem {
+      resourceCode: string
+      scopeCode: string
+    }
+
+    interface RoleDataPermissionResourceItem {
+      resourceCode: string
+      resourceName: string
+    }
+
+    interface RoleDataPermissionScopeOption {
+      scopeCode: string
+      scopeName: string
+    }
+
+    interface UserActionPermissionItem {
+      actionId: string
+      effect: 'allow' | 'deny'
+      action?: PermissionActionItem
+    }
+
     /** 作用域列表 */
     type ScopeList = Api.Common.PaginatedResponse<ScopeListItem>
 
@@ -318,6 +428,12 @@ declare namespace Api {
       nickName: string
       userEmail: string
       avatar?: string
+    }
+
+    interface TeamMemberActionPermissionItem {
+      actionId: string
+      effect: 'allow' | 'deny'
+      action?: PermissionActionItem
     }
 
     /** 创建菜单参数（与后端 MenuCreateRequest 一致） */

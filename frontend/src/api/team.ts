@@ -20,6 +20,27 @@ function normalizeTeam(item: any): Api.SystemManage.TeamListItem {
   }
 }
 
+function normalizeAction(item: any): Api.SystemManage.PermissionActionItem {
+  return {
+    id: item?.id || '',
+    resourceCode: item?.resource_code || item?.resourceCode || '',
+    actionCode: item?.action_code || item?.actionCode || '',
+    name: item?.name || '',
+    description: item?.description || '',
+    scopeId: item?.scope_id || item?.scopeId || '',
+    scopeCode: item?.scope_code || item?.scopeCode || item?.scope || '',
+    scopeName: item?.scope_name || item?.scopeName || '',
+    scope: item?.scope || item?.scope_code || item?.scopeCode || '',
+    requiresTenantContext: Boolean(
+      item?.requires_tenant_context ?? item?.requiresTenantContext ?? false
+    ),
+    status: item?.status || 'normal',
+    sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
+    createdAt: item?.created_at || item?.createdAt || '',
+    updatedAt: item?.updated_at || item?.updatedAt || ''
+  }
+}
+
 function normalizeRoleLabel(roleCode?: string) {
   return roleCode === 'team_admin' ? '团队管理员' : '团队成员'
 }
@@ -185,4 +206,52 @@ export async function fetchGetMyTeamRoles() {
     status: item?.status || 'normal',
     createTime: item?.created_at || ''
   }))
+}
+
+export async function fetchGetTeamActions(teamId: string) {
+  const res = await request.get<{ action_ids: string[]; actions: any[] }>({
+    url: `${TENANT_BASE}/${teamId}/actions`
+  })
+  return {
+    actionIds: res?.action_ids || [],
+    actions: (res?.actions || []).map(normalizeAction)
+  }
+}
+
+export function fetchSetTeamActions(teamId: string, actionIds: string[]) {
+  return request.put<void>({
+    url: `${TENANT_BASE}/${teamId}/actions`,
+    data: { action_ids: actionIds }
+  })
+}
+
+export async function fetchGetMyTeamActions() {
+  const res = await request.get<{ action_ids: string[]; actions: any[] }>({
+    url: `${TENANT_BASE}/my-team/actions`
+  })
+  return {
+    actionIds: res?.action_ids || [],
+    actions: (res?.actions || []).map(normalizeAction)
+  }
+}
+
+export async function fetchGetMyTeamMemberActions(userId: string) {
+  const res = await request.get<{ actions: any[] }>({
+    url: `${TENANT_BASE}/my-team/members/${userId}/actions`
+  })
+  return (res?.actions || []).map((item: any) => ({
+    actionId: item?.action_id || item?.actionId || '',
+    effect: item?.effect || 'allow',
+    action: item?.action ? normalizeAction(item.action) : undefined
+  })) as Api.SystemManage.TeamMemberActionPermissionItem[]
+}
+
+export function fetchSetMyTeamMemberActions(
+  userId: string,
+  actions: Array<{ action_id: string; effect: 'allow' | 'deny' }>
+) {
+  return request.put<void>({
+    url: `${TENANT_BASE}/my-team/members/${userId}/actions`,
+    data: { actions }
+  })
 }

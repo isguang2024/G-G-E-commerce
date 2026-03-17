@@ -52,7 +52,14 @@ func (s *userService) List(req *dto.UserListRequest) ([]User, int64, error) {
 }
 
 func (s *userService) Get(id uuid.UUID) (*User, error) {
-	return s.userRepo.GetByID(id)
+	user, err := s.userRepo.GetByID(id)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+	return user, nil
 }
 
 func (s *userService) GetByIDs(ids []uuid.UUID) ([]User, error) {

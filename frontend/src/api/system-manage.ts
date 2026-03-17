@@ -3,9 +3,54 @@ import { AppRouteRecord } from '@/types/router'
 
 const USER_BASE = '/api/v1/users'
 const ROLE_BASE = '/api/v1/roles'
+const ACTION_PERMISSION_BASE = '/api/v1/permission-actions'
 const SCOPE_BASE = '/api/v1/scopes'
 const TENANT_BASE = '/api/v1/tenants'
 const SYSTEM_BASE = '/api/v1/system'
+const API_ENDPOINT_BASE = '/api/v1/api-endpoints'
+
+function normalizePermissionAction(item: any): Api.SystemManage.PermissionActionItem {
+  return {
+    id: item?.id || '',
+    resourceCode: item?.resource_code || item?.resourceCode || '',
+    actionCode: item?.action_code || item?.actionCode || '',
+    name: item?.name || '',
+    description: item?.description || '',
+    scopeId: item?.scope_id || item?.scopeId || '',
+    scopeCode: item?.scope_code || item?.scopeCode || item?.scope || '',
+    scopeName: item?.scope_name || item?.scopeName || '',
+    scope: item?.scope || item?.scope_code || item?.scopeCode || '',
+    requiresTenantContext: Boolean(
+      item?.requires_tenant_context ?? item?.requiresTenantContext ?? false
+    ),
+    status: item?.status || 'normal',
+    sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
+    createdAt: item?.created_at || item?.createdAt || '',
+    updatedAt: item?.updated_at || item?.updatedAt || ''
+  }
+}
+
+function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
+  return {
+    id: item?.id || '',
+    method: item?.method || '',
+    path: item?.path || '',
+    module: item?.module || '',
+    handler: item?.handler || '',
+    summary: item?.summary || '',
+    resourceCode: item?.resource_code || item?.resourceCode || '',
+    actionCode: item?.action_code || item?.actionCode || '',
+    scopeId: item?.scope_id || item?.scopeId || '',
+    scopeCode: item?.scope_code || item?.scopeCode || '',
+    scopeName: item?.scope_name || item?.scopeName || '',
+    requiresTenantContext: Boolean(
+      item?.requires_tenant_context ?? item?.requiresTenantContext ?? false
+    ),
+    status: item?.status || 'normal',
+    createdAt: item?.created_at || item?.createdAt || '',
+    updatedAt: item?.updated_at || item?.updatedAt || ''
+  }
+}
 
 // 获取用户列表
 export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
@@ -54,9 +99,32 @@ export function fetchDeleteUser(id: string) {
 
 // 分配用户角色
 export function fetchAssignUserRoles(id: string, roleIds: string[]) {
-  return request.put<void>({
+  return request.post<void>({
     url: `${USER_BASE}/${id}/roles`,
     data: { roleIds }
+  })
+}
+
+/** 获取用户平台级功能权限 */
+export async function fetchGetUserActions(userId: string) {
+  const res = await request.get<{ actions: any[] }>({
+    url: `${USER_BASE}/${userId}/actions`
+  })
+  return (res?.actions || []).map((item: any) => ({
+    actionId: item?.action_id || item?.actionId || '',
+    effect: item?.effect || 'allow',
+    action: item?.action ? normalizePermissionAction(item.action) : undefined
+  })) as Api.SystemManage.UserActionPermissionItem[]
+}
+
+/** 设置用户平台级功能权限 */
+export function fetchSetUserActions(
+  userId: string,
+  actions: Array<{ action_id: string; effect: 'allow' | 'deny' }>
+) {
+  return request.put<void>({
+    url: `${USER_BASE}/${userId}/actions`,
+    data: { actions }
   })
 }
 
@@ -121,6 +189,115 @@ export function fetchSetRoleMenus(roleId: string, menuIds: string[]) {
   })
 }
 
+/** 获取角色功能权限 */
+export function fetchGetRoleActions(roleId: string) {
+  return request.get<{ actions: Array<{ action_id: string; effect: 'allow' | 'deny' }> }>({
+    url: `${ROLE_BASE}/${roleId}/actions`
+  })
+}
+
+/** 设置角色功能权限 */
+export function fetchSetRoleActions(
+  roleId: string,
+  actions: Array<{ action_id: string; effect: 'allow' | 'deny' }>
+) {
+  return request.put<void>({
+    url: `${ROLE_BASE}/${roleId}/actions`,
+    data: { actions }
+  })
+}
+
+/** 获取角色数据权限 */
+export async function fetchGetRoleDataPermissions(roleId: string) {
+  return request.get<{
+    permissions: Array<{ resource_code: string; scope_code: string }>
+    resources: Array<{ resource_code: string; resource_name: string }>
+    available_scopes: Array<{ scope_code: string; scope_name: string }>
+    role_scope_code: string
+  }>({
+    url: `${ROLE_BASE}/${roleId}/data-permissions`
+  })
+}
+
+/** 设置角色数据权限 */
+export function fetchSetRoleDataPermissions(
+  roleId: string,
+  permissions: Array<{ resource_code: string; scope_code: string }>
+) {
+  return request.put<void>({
+    url: `${ROLE_BASE}/${roleId}/data-permissions`,
+    data: { permissions }
+  })
+}
+
+/** 获取功能权限列表 */
+export function fetchGetPermissionActionList(params: Api.SystemManage.PermissionActionSearchParams) {
+  return request
+    .get<Api.SystemManage.PermissionActionList>({
+      url: ACTION_PERMISSION_BASE,
+      params
+    })
+    .then((res) => ({
+      ...res,
+      records: (res?.records || []).map(normalizePermissionAction)
+    }))
+}
+
+/** 获取功能权限详情 */
+export function fetchGetPermissionAction(id: string) {
+  return request
+    .get<Api.SystemManage.PermissionActionItem>({
+      url: `${ACTION_PERMISSION_BASE}/${id}`
+    })
+    .then((res) => normalizePermissionAction(res))
+}
+
+/** 创建功能权限 */
+export function fetchCreatePermissionAction(data: Api.SystemManage.PermissionActionCreateParams) {
+  return request.post<{ id: string }>({
+    url: ACTION_PERMISSION_BASE,
+    data
+  })
+}
+
+/** 更新功能权限 */
+export function fetchUpdatePermissionAction(
+  id: string,
+  data: Api.SystemManage.PermissionActionUpdateParams
+) {
+  return request.put<void>({
+    url: `${ACTION_PERMISSION_BASE}/${id}`,
+    data
+  })
+}
+
+/** 删除功能权限 */
+export function fetchDeletePermissionAction(id: string) {
+  return request.del<void>({
+    url: `${ACTION_PERMISSION_BASE}/${id}`
+  })
+}
+
+/** 获取 API 注册表 */
+export function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpointSearchParams) {
+  return request
+    .get<Api.SystemManage.APIEndpointList>({
+      url: API_ENDPOINT_BASE,
+      params
+    })
+    .then((res) => ({
+      ...res,
+      records: (res?.records || []).map(normalizeApiEndpoint)
+    }))
+}
+
+/** 同步 API 注册表 */
+export function fetchSyncApiEndpoints() {
+  return request.post<void>({
+    url: `${API_ENDPOINT_BASE}/sync`
+  })
+}
+
 // ========== 作用域管理 ==========
 /** 获取作用域列表 */
 export function fetchGetScopeList(params: Api.SystemManage.ScopeSearchParams) {
@@ -132,9 +309,14 @@ export function fetchGetScopeList(params: Api.SystemManage.ScopeSearchParams) {
 
 /** 获取所有作用域（用于下拉选择） */
 export function fetchGetAllScopes() {
-  return request.get<Api.SystemManage.ScopeListItem[]>({
-    url: `${SCOPE_BASE}/all`
-  })
+  return request
+    .get<Api.SystemManage.ScopeListItem[] | { records?: Api.SystemManage.ScopeListItem[] }>({
+      url: `${SCOPE_BASE}/all`
+    })
+    .then((res) => {
+      if (Array.isArray(res)) return res
+      return res?.records || []
+    })
 }
 
 /** 获取作用域详情 */

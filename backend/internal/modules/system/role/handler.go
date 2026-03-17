@@ -301,3 +301,186 @@ func (h *RoleHandler) SetRoleMenus(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
+
+func (h *RoleHandler) GetRoleActions(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
+		c.JSON(status, resp)
+		return
+	}
+	records, err := h.roleService.GetRoleActions(id)
+	if err != nil {
+		if err == ErrRoleNotFound {
+			status, resp := errcode.Response(errcode.ErrRoleNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get role actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取角色功能权限失败")
+		c.JSON(status, resp)
+		return
+	}
+	items := make([]gin.H, 0, len(records))
+	for _, record := range records {
+		items = append(items, gin.H{
+			"action_id": record.ActionID.String(),
+			"effect":    record.Effect,
+		})
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"actions": items}))
+}
+
+func (h *RoleHandler) SetRoleActions(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
+		c.JSON(status, resp)
+		return
+	}
+	var req dto.RoleActionPermissionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	actions := make([]user.RoleActionPermission, 0, len(req.Actions))
+	for _, item := range req.Actions {
+		actionID, parseErr := uuid.Parse(item.ActionID)
+		if parseErr != nil {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能权限ID")
+			c.JSON(status, resp)
+			return
+		}
+		actions = append(actions, user.RoleActionPermission{
+			RoleID:   id,
+			ActionID: actionID,
+			Effect:   item.Effect,
+		})
+	}
+	if err := h.roleService.SetRoleActions(id, actions); err != nil {
+		if err == ErrRoleNotFound {
+			status, resp := errcode.Response(errcode.ErrRoleNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Set role actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存角色功能权限失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *RoleHandler) GetRoleDataPermissions(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
+		c.JSON(status, resp)
+		return
+	}
+	records, resourceCodes, scopeOptions, roleScopeCode, err := h.roleService.GetRoleDataPermissions(id)
+	if err != nil {
+		if err == ErrRoleNotFound {
+			status, resp := errcode.Response(errcode.ErrRoleNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get role data permissions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取角色数据权限失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	permissions := make([]gin.H, 0, len(records))
+	for _, record := range records {
+		permissions = append(permissions, gin.H{
+			"resource_code": record.ResourceCode,
+			"scope_code":    record.ScopeCode,
+		})
+	}
+
+	resources := make([]gin.H, 0, len(resourceCodes))
+	for _, resourceCode := range resourceCodes {
+		resources = append(resources, gin.H{
+			"resource_code": resourceCode,
+			"resource_name": formatRoleDataResourceName(resourceCode),
+		})
+	}
+
+	scopes := make([]gin.H, 0, len(scopeOptions))
+	for _, option := range scopeOptions {
+		scopes = append(scopes, gin.H{
+			"scope_code": option.Code,
+			"scope_name": option.Name,
+		})
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"permissions":      permissions,
+		"resources":        resources,
+		"available_scopes": scopes,
+		"role_scope_code":  roleScopeCode,
+	}))
+}
+
+func (h *RoleHandler) SetRoleDataPermissions(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
+		c.JSON(status, resp)
+		return
+	}
+	var req dto.RoleDataPermissionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+
+	permissions := make([]user.RoleDataPermission, 0, len(req.Permissions))
+	for _, item := range req.Permissions {
+		permissions = append(permissions, user.RoleDataPermission{
+			RoleID:       id,
+			ResourceCode: item.ResourceCode,
+			ScopeCode:    item.ScopeCode,
+		})
+	}
+	if err := h.roleService.SetRoleDataPermissions(id, permissions); err != nil {
+		if err == ErrRoleNotFound {
+			status, resp := errcode.Response(errcode.ErrRoleNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Set role data permissions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存角色数据权限失败: "+err.Error())
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func formatRoleDataResourceName(resourceCode string) string {
+	names := map[string]string{
+		"user":                "用户",
+		"role":                "角色",
+		"scope":               "作用域",
+		"menu":                "菜单",
+		"menu_backup":         "菜单备份",
+		"permission_action":   "功能权限",
+		"tenant":              "团队",
+		"tenant_member_admin": "团队成员（系统）",
+		"team":                "当前团队",
+		"team_member":         "当前团队成员",
+		"api_endpoint":        "API 注册表",
+		"system":              "系统",
+	}
+	if name, ok := names[resourceCode]; ok {
+		return name
+	}
+	return resourceCode
+}

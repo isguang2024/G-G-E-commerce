@@ -155,19 +155,12 @@
   const loadScopes = async () => {
     try {
       scopeLoading.value = true
-      const res = await fetchGetAllScopes()
-      // 后端返回格式: { code: 0, data: { records: [...] } }
-      // HTTP工具返回 res.data.data，即 { records: [...] }
-      // 所以这里使用 res.records
-      const data = res as any
-      scopeList.value = data?.records || (Array.isArray(res) ? res : [])
-      console.log('作用域列表加载:', scopeList.value, '原始响应:', res)
+      scopeList.value = await fetchGetAllScopes()
       // 加载完成后初始化表单（确保作用域列表已加载）
       if (props.modelValue && props.roleData) {
         initForm()
       }
     } catch (error: any) {
-      console.error('加载作用域列表失败:', error)
       ElMessage.error(error?.message || '加载作用域列表失败')
     } finally {
       scopeLoading.value = false
@@ -217,14 +210,6 @@
         const found = scopeList.value.find((s) => s.scopeCode === roleData.scopeCode)
         scopeId = found ? found.scopeId : ''
       }
-      console.log(
-        '初始化表单 - scopeId:',
-        scopeId,
-        'roleData.scopeId:',
-        roleData.scopeId,
-        'roleData.scopeCode:',
-        roleData.scopeCode
-      )
       Object.assign(form, {
         roleId: roleData.roleId,
         roleName: roleData.roleName,

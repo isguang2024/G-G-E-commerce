@@ -20,6 +20,13 @@ type UserHandler struct {
 	permissionService interface {
 		GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
 	}
+	actionRepo interface {
+		GetByIDs(ids []uuid.UUID) ([]PermissionAction, error)
+	}
+	userActionRepo interface {
+		GetByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]UserActionPermission, error)
+		ReplaceUserActions(userID uuid.UUID, tenantID *uuid.UUID, actions []UserActionPermission) error
+	}
 	menuRepo interface {
 		ListAll() ([]Menu, error)
 	}
@@ -28,10 +35,22 @@ type UserHandler struct {
 
 func NewUserHandler(userService UserService, permissionService interface {
 	GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
+}, actionRepo interface {
+	GetByIDs(ids []uuid.UUID) ([]PermissionAction, error)
+}, userActionRepo interface {
+	GetByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]UserActionPermission, error)
+	ReplaceUserActions(userID uuid.UUID, tenantID *uuid.UUID, actions []UserActionPermission) error
 }, menuRepo interface {
 	ListAll() ([]Menu, error)
 }, logger *zap.Logger) *UserHandler {
-	return &UserHandler{userService: userService, permissionService: permissionService, menuRepo: menuRepo, logger: logger}
+	return &UserHandler{
+		userService:       userService,
+		permissionService: permissionService,
+		actionRepo:        actionRepo,
+		userActionRepo:    userActionRepo,
+		menuRepo:          menuRepo,
+		logger:            logger,
+	}
 }
 
 func (h *UserHandler) List(c *gin.Context) {
@@ -288,6 +307,154 @@ func (h *UserHandler) AssignRoles(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *UserHandler) GetActions(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+	if _, err := h.userService.Get(id); err != nil {
+		if err == ErrUserNotFound {
+			status, resp := errcode.Response(errcode.ErrUserNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get user before actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	records, err := h.userActionRepo.GetByUserAndTenant(id, nil)
+	if err != nil {
+		h.logger.Error("Get user action permissions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户功能权限失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	actionIDs := make([]uuid.UUID, 0, len(records))
+	for _, record := range records {
+		actionIDs = append(actionIDs, record.ActionID)
+	}
+	actionMap := make(map[uuid.UUID]PermissionAction)
+	if len(actionIDs) > 0 {
+		actions, actionErr := h.actionRepo.GetByIDs(actionIDs)
+		if actionErr != nil {
+			h.logger.Error("Get user actions metadata failed", zap.Error(actionErr))
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能权限详情失败")
+			c.JSON(status, resp)
+			return
+		}
+		for _, action := range actions {
+			actionMap[action.ID] = action
+		}
+	}
+
+	items := make([]gin.H, 0, len(records))
+	for _, record := range records {
+		item := gin.H{
+			"action_id": record.ActionID.String(),
+			"effect":    record.Effect,
+		}
+		if action, ok := actionMap[record.ActionID]; ok {
+			item["action"] = gin.H{
+				"id":                      action.ID.String(),
+				"resource_code":           action.ResourceCode,
+				"action_code":             action.ActionCode,
+				"name":                    action.Name,
+				"description":             action.Description,
+				"scope_id":                action.ScopeID.String(),
+				"scope_code":              action.Scope.Code,
+				"scope_name":              action.Scope.Name,
+				"requires_tenant_context": action.RequiresTenantContext,
+				"status":                  action.Status,
+				"sort_order":              action.SortOrder,
+			}
+		}
+		items = append(items, item)
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"actions": items}))
+}
+
+func (h *UserHandler) SetActions(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+	if _, err := h.userService.Get(id); err != nil {
+		if err == ErrUserNotFound {
+			status, resp := errcode.Response(errcode.ErrUserNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get user before setting actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	var req dto.UserActionPermissionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+
+	actionIDs := make([]uuid.UUID, 0, len(req.Actions))
+	records := make([]UserActionPermission, 0, len(req.Actions))
+	for _, item := range req.Actions {
+		actionID, parseErr := uuid.Parse(item.ActionID)
+		if parseErr != nil {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能权限ID")
+			c.JSON(status, resp)
+			return
+		}
+		actionIDs = append(actionIDs, actionID)
+		records = append(records, UserActionPermission{
+			UserID:   id,
+			ActionID: actionID,
+			TenantID: nil,
+			Effect:   item.Effect,
+		})
+	}
+
+	actions, err := h.actionRepo.GetByIDs(actionIDs)
+	if err != nil {
+		h.logger.Error("Get permission actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能权限失败")
+		c.JSON(status, resp)
+		return
+	}
+	if len(actions) != len(actionIDs) {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "包含不存在的功能权限")
+		c.JSON(status, resp)
+		return
+	}
+	for _, action := range actions {
+		if action.Scope.Code != "global" || action.RequiresTenantContext {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "单用户权限只能配置平台级功能权限")
+			c.JSON(status, resp)
+			return
+		}
+	}
+
+	if err := h.userActionRepo.ReplaceUserActions(id, nil, records); err != nil {
+		h.logger.Error("Set user action permissions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存用户功能权限失败")
+		c.JSON(status, resp)
+		return
+	}
+
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 

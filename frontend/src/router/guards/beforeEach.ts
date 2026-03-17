@@ -119,6 +119,29 @@ export async function refreshUserMenus(): Promise<void> {
   }
 }
 
+function buildFrontendUserInfo(data: Api.Auth.UserInfo): Api.Auth.UserInfo {
+  const roles = mapBackendRolesToFrontend(data)
+  return {
+    ...data,
+    userId: data.id,
+    userName: data.username || data.email,
+    avatar: data.avatar_url,
+    roles,
+    buttons: data.buttons || [],
+    actions: data.actions || []
+  }
+}
+
+export async function refreshCurrentUserInfoContext(): Promise<void> {
+  const userStore = useUserStore()
+  const data = await fetchGetUserInfo()
+  const mergedInfo: Api.Auth.UserInfo = {
+    ...(userStore.getUserInfo as Api.Auth.UserInfo),
+    ...buildFrontendUserInfo(data)
+  }
+  userStore.setUserInfo(mergedInfo)
+}
+
 /**
  * 设置路由全局前置守卫
  */
@@ -392,21 +415,15 @@ async function fetchUserInfo(): Promise<void> {
   const userStore = useUserStore()
   const tenantStore = useTenantStore()
   const data = await fetchGetUserInfo()
-
-  const roles = mapBackendRolesToFrontend(data)
-
-  const userInfo: Api.Auth.UserInfo = {
-    ...data,
-    userId: data.id,
-    userName: data.username || data.email,
-    avatar: data.avatar_url,
-    roles,
-    buttons: []
-  }
-
-  userStore.setUserInfo(userInfo)
+  userStore.setUserInfo(buildFrontendUserInfo(data))
   userStore.checkAndClearWorktabs()
   await tenantStore.loadMyTeams()
+  if (
+    tenantStore.currentTenantId &&
+    tenantStore.currentTenantId !== (data.current_tenant_id || '')
+  ) {
+    await refreshCurrentUserInfoContext()
+  }
 }
 
 /**

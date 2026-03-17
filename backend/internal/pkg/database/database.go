@@ -91,6 +91,12 @@ func AutoMigrate() error {
 		&models.Role{},
 		&models.UserRole{},
 		&models.RoleMenu{},
+		&models.PermissionAction{},
+		&models.RoleActionPermission{},
+		&models.RoleDataPermission{},
+		&models.TenantActionPermission{},
+		&models.UserActionPermission{},
+		&models.APIEndpoint{},
 		&models.Menu{},
 		&models.Tenant{},
 		&models.TenantMember{},
@@ -147,6 +153,38 @@ func createUniqueIndexes() error {
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", tenantIndexName).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE UNIQUE INDEX " + tenantIndexName + " ON user_roles (user_id, role_id, tenant_id) WHERE tenant_id IS NOT NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	actionUniqueIndexName := "idx_permission_actions_resource_action_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", actionUniqueIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + actionUniqueIndexName + " ON permission_actions (resource_code, action_code)").Error; err != nil {
+			return err
+		}
+	}
+
+	userActionGlobalIndexName := "idx_user_action_permissions_global_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", userActionGlobalIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + userActionGlobalIndexName + " ON user_action_permissions (user_id, action_id) WHERE tenant_id IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	userActionTenantIndexName := "idx_user_action_permissions_tenant_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", userActionTenantIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + userActionTenantIndexName + " ON user_action_permissions (user_id, action_id, tenant_id) WHERE tenant_id IS NOT NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	apiEndpointIndexName := "idx_api_endpoints_method_path_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", apiEndpointIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + apiEndpointIndexName + " ON api_endpoints (method, path)").Error; err != nil {
 			return err
 		}
 	}

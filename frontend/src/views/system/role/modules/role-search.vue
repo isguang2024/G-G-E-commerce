@@ -32,11 +32,9 @@
   onMounted(async () => {
     try {
       const scopes = await fetchGetAllScopes()
-      // 后端返回结构为 { records: [{ scopeId, scopeCode, scopeName }] }
-      const records = (scopes as any)?.records ?? scopes ?? []
-      scopeOptions.value = (records as any[]).map((item: any) => ({
-        label: item.scopeName || item.name || item.code,
-        value: item.scopeCode || item.code
+      scopeOptions.value = scopes.map((item) => ({
+        label: item.scopeName,
+        value: item.scopeCode
       }))
     } catch {
       scopeOptions.value = []

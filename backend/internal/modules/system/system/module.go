@@ -7,6 +7,8 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/config"
 	cachepkg "github.com/gg-ecommerce/backend/internal/pkg/cache"
+	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
+	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
 )
 
@@ -42,10 +44,12 @@ func (m *SystemModule) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 
 	systemHandler := NewSystemHandler(m.logger, systemCache)
+	authzService := authorization.NewService(m.db, m.logger)
 
 	system := rg.Group("/system")
+	reg := apiregistry.NewRegistrar(system, "system")
 	{
-		system.GET("/view-pages", systemHandler.GetViewPages)
+		reg.GET("/view-pages", &apiregistry.RouteMeta{Summary: "获取页面文件映射", ResourceCode: "system", ActionCode: "view_page_catalog", ScopeCode: "global"}, authzService.RequireAction("system", "view_page_catalog"), systemHandler.GetViewPages)
 	}
 }
 

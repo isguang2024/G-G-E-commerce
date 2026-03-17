@@ -29,7 +29,7 @@
             </span>
           </ElTooltip>
           <ElTooltip content="创建菜单" placement="top">
-            <ElButton type="primary" @click="handleAddMenu" v-ripple class="ml-2">
+            <ElButton v-action="'menu:create'" type="primary" @click="handleAddMenu" v-ripple class="ml-2">
               创建菜单
             </ElButton>
           </ElTooltip>
@@ -37,10 +37,10 @@
             {{ isExpanded ? '收起' : '展开' }}
           </ElButton>
           <ElTooltip content="备份菜单" placement="top">
-            <ElButton @click="handleBackupMenu" v-ripple class="ml-2"> 备份 </ElButton>
+            <ElButton v-action="'menu_backup:create'" @click="handleBackupMenu" v-ripple class="ml-2"> 备份 </ElButton>
           </ElTooltip>
           <ElTooltip content="管理备份" placement="top">
-            <ElButton @click="handleManageBackups" v-ripple class="ml-2"> 管理备份 </ElButton>
+            <ElButton v-action="'menu_backup:list'" @click="handleManageBackups" v-ripple class="ml-2"> 管理备份 </ElButton>
           </ElTooltip>
         </template>
       </ArtTableHeader>
@@ -68,7 +68,7 @@
 
         <!-- 路由列 -->
         <template #path="{ row }">
-          <span>{{ row.meta?.isAuthButton ? '' : row.meta?.link || row.path || '' }}</span>
+          <span>{{ row.meta?.link || row.path || '' }}</span>
         </template>
 
         <!-- 组件路径列 -->
@@ -79,26 +79,26 @@
         <!-- 高级配置列 -->
         <template #advanced="{ row }">
           <div class="advanced-configs">
-            <ElTag v-if="!row.meta?.isAuthButton && row.meta.keepAlive" size="small" effect="light" type="primary" class="mr-2">
+            <ElTag v-if="row.meta?.keepAlive" size="small" effect="light" type="primary" class="mr-2">
               缓存
             </ElTag>
-            <ElTag v-if="!row.meta?.isAuthButton && !row.meta?.isInnerPage && row.meta.isHide" size="small" effect="light" type="warning" class="mr-2">
+            <ElTag v-if="!row.meta?.isInnerPage && row.meta?.isHide" size="small" effect="light" type="warning" class="mr-2">
               隐藏
             </ElTag>
-            <ElTag v-if="!row.meta?.isAuthButton && row.meta.isIframe" size="small" effect="light" type="info" class="mr-2">
+            <ElTag v-if="row.meta?.isIframe" size="small" effect="light" type="info" class="mr-2">
               内嵌
             </ElTag>
-            <ElTag v-if="!row.meta?.isAuthButton && row.meta.showBadge" size="small" effect="light" type="success" class="mr-2">
+            <ElTag v-if="row.meta?.showBadge" size="small" effect="light" type="success" class="mr-2">
               徽章
             </ElTag>
-            <ElTag v-if="!row.meta?.isAuthButton && row.meta.fixedTab" size="small" effect="light" type="danger" class="mr-2">
+            <ElTag v-if="row.meta?.fixedTab" size="small" effect="light" type="danger" class="mr-2">
               固定
             </ElTag>
-            <ElTag v-if="!row.meta?.isAuthButton && row.meta.isFullPage" size="small" effect="light" type="primary" class="mr-2">
+            <ElTag v-if="row.meta?.isFullPage" size="small" effect="light" type="primary" class="mr-2">
               全屏
             </ElTag>
             <ElTag
-              v-if="!row.meta?.isAuthButton && row.meta.requiresTenantContext"
+              v-if="row.meta?.requiresTenantContext"
               size="small"
               effect="light"
               type="warning"
@@ -188,13 +188,14 @@
               <template #default="{ row }">
                 <div class="flex gap-2">
                   <ElButton
+                    v-action="'menu_backup:restore'"
                     type="primary"
                     size="small"
                     @click="handleRestoreBackup(row.id)"
                   >
                     恢复
                   </ElButton>
-                  <ElButton type="danger" size="small" @click="handleDeleteBackup(row.id)">
+                  <ElButton v-action="'menu_backup:delete'" type="danger" size="small" @click="handleDeleteBackup(row.id)">
                     删除
                   </ElButton>
                 </div>
@@ -213,13 +214,11 @@
 <script setup lang="ts">
   import { onMounted, ref, reactive, computed, watch, nextTick } from 'vue'
   import { formatMenuTitle } from '@/utils/router'
-  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
   import type { AppRouteRecord } from '@/types/router'
   import MenuDialog from './modules/menu-dialog.vue'
-  import { asyncRoutes } from '@/router/routes/asyncRoutes'
   import {
     fetchGetMenuTreeAll,
     fetchCreateMenu,
@@ -231,12 +230,8 @@
     fetchRestoreMenuBackup
   } from '@/api/system-manage'
   import { ElTag, ElMessageBox, ElMessage, ElTooltip, ElButton, ElSwitch } from 'element-plus'
-  import { useAuth } from '@/hooks/core/useAuth'
 
   defineOptions({ name: 'Menus' })
-
-  // --- 权限管理 ---
-  const { hasAuth } = useAuth()
 
   // --- 状态管理 ---
   const loading = ref(false)
@@ -272,32 +267,20 @@
 
   // --- 菜单列表处理 ---
   const getMenuList = async () => {
-    console.log('getMenuList called')
     loading.value = true
     dataFromBackend.value = false
     try {
       const list = await fetchGetMenuTreeAll()
-      console.log('Menu data from backend:', list)
       const rawData = Array.isArray(list) ? list : []
       tableData.value = filterAndSearch(rawData)
-      dataFromBackend.value = tableData.value.length > 0
+      dataFromBackend.value = true
     } catch (error) {
-      console.log('Error fetching menu data:', error)
-      const list = JSON.parse(JSON.stringify(asyncRoutes))
-      ensureId(list)
-      console.log('Menu data from asyncRoutes:', list)
-      tableData.value = filterAndSearch(list)
+      console.error('获取菜单数据失败:', error)
+      tableData.value = []
+      ElMessage.error('菜单数据加载失败，请检查后端菜单配置或服务状态')
     } finally {
       loading.value = false
-      console.log('Menu data after getMenuList:', tableData.value)
     }
-  }
-
-  const ensureId = (items: any[]) => {
-    items.forEach((item) => {
-      if (item.id == null) item.id = item.path
-      if (item.children?.length) ensureId(item.children)
-    })
   }
 
   const filterAndSearch = (items: AppRouteRecord[]): AppRouteRecord[] => {
@@ -357,14 +340,12 @@
 
   // --- 辅助方法 ---
   const getMenuTypeTag = (row: any) => {
-    if (row.meta?.isAuthButton) return 'danger'
     if (row.meta?.isInnerPage) return 'warning'
     if (row.children?.length) return 'info'
     return 'primary'
   }
 
   const getMenuTypeText = (row: any) => {
-    if (row.meta?.isAuthButton) return '按钮'
     if (row.meta?.isInnerPage) return '内页'
     if (row.children?.length) return '目录'
     return '菜单'
@@ -372,15 +353,16 @@
 
   const getOperationList = (row: any): ButtonMoreItem[] => {
     const list: ButtonMoreItem[] = [
-      { key: 'add', label: '新增子菜单', icon: 'ri:add-fill' },
-      { key: 'edit', label: '编辑菜单', icon: 'ri:edit-2-line' }
+      { key: 'add', label: '新增子菜单', icon: 'ri:add-fill', auth: 'menu:create' },
+      { key: 'edit', label: '编辑菜单', icon: 'ri:edit-2-line', auth: 'menu:update' }
     ]
     if (!row.is_system) {
       list.push({
         key: 'delete',
         label: '删除菜单',
         icon: 'ri:delete-bin-4-line',
-        color: '#f56c6c'
+        color: '#f56c6c',
+        auth: 'menu:delete'
       })
     }
     return list

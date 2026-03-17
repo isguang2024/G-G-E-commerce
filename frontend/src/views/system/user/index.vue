@@ -13,7 +13,7 @@
       <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
         <template #left>
           <ElSpace wrap>
-            <ElButton @click="showDialog('add')" v-ripple>新增用户</ElButton>
+            <ElButton v-action="'user:create'" @click="showDialog('add')" v-ripple>新增用户</ElButton>
           </ElSpace>
         </template>
       </ArtTableHeader>
@@ -36,6 +36,12 @@
         :type="dialogType"
         :user-data="currentUserData"
         @submit="handleDialogSubmit"
+      />
+
+      <UserActionDialog
+        v-model="actionDialogVisible"
+        :user-data="currentUserDataForAction"
+        @success="refreshData"
       />
 
       <!-- 用户权限查看抽屉 -->
@@ -77,6 +83,7 @@
   } from '@/api/system-manage'
   import UserSearch from './modules/user-search.vue'
   import UserDialog from './modules/user-dialog.vue'
+  import UserActionDialog from './modules/user-action-dialog.vue'
   import { ElTag, ElMessageBox, ElImage, ElDrawer, ElTree, ElIcon, ElMessage } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
 
@@ -95,6 +102,8 @@
   const dialogType = ref<DialogType>('add')
   const dialogVisible = ref(false)
   const currentUserData = ref<Partial<UserListItem>>({})
+  const actionDialogVisible = ref(false)
+  const currentUserDataForAction = ref<UserListItem | undefined>(undefined)
 
   // 选中行
   const selectedRows = ref<UserListItem[]>([])
@@ -265,9 +274,26 @@
           formatter: (row) => {
             const list = [
               { key: 'copy', label: '复制用户ID', icon: 'ri:file-copy-line' },
-              { key: 'permission', label: '查看权限', icon: 'ri:shield-check-line' },
-              { key: 'edit', label: '编辑用户', icon: 'ri:edit-2-line' },
-              { key: 'delete', label: '删除用户', icon: 'ri:delete-bin-4-line', color: '#f56c6c' }
+              {
+                key: 'permission',
+                label: '查看权限',
+                icon: 'ri:shield-check-line',
+                auth: 'user:get'
+              },
+              {
+                key: 'action',
+                label: '功能权限',
+                icon: 'ri:shield-keyhole-line',
+                auth: 'user:assign_action'
+              },
+              { key: 'edit', label: '编辑用户', icon: 'ri:edit-2-line', auth: 'user:update' },
+              {
+                key: 'delete',
+                label: '删除用户',
+                icon: 'ri:delete-bin-4-line',
+                color: '#f56c6c',
+                auth: 'user:delete'
+              }
             ]
             return h('div', [
               h(ArtButtonMore, {
@@ -338,11 +364,18 @@
       ElMessage.success('用户ID已复制')
     } else if (item.key === 'permission') {
       showPermissionDrawer(row)
+    } else if (item.key === 'action') {
+      showActionDialog(row)
     } else if (item.key === 'edit') {
       showDialog('edit', row)
     } else if (item.key === 'delete') {
       deleteUser(row)
     }
+  }
+
+  const showActionDialog = (row: UserListItem) => {
+    currentUserDataForAction.value = row
+    actionDialogVisible.value = true
   }
 
   /**

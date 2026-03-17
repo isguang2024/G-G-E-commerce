@@ -1,6 +1,7 @@
 package menu
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -10,6 +11,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
+	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 )
 
@@ -21,22 +23,48 @@ type MenuHandler struct {
 	roleMenuRepo     user.RoleMenuRepository
 	userRoleRepo     user.UserRoleRepository
 	tenantMemberRepo user.TenantMemberRepository
-	logger           *zap.Logger
+	authzService     interface {
+		Authorize(userID uuid.UUID, tenantID *uuid.UUID, resourceCode, actionCode string) (bool, *models.PermissionAction, error)
+	}
+	logger *zap.Logger
 }
 
-func NewMenuHandler(menuService MenuService, userRepo user.UserRepository, roleMenuRepo user.RoleMenuRepository, userRoleRepo user.UserRoleRepository, tenantMemberRepo user.TenantMemberRepository, logger *zap.Logger) *MenuHandler {
+func NewMenuHandler(menuService MenuService, userRepo user.UserRepository, roleMenuRepo user.RoleMenuRepository, userRoleRepo user.UserRoleRepository, tenantMemberRepo user.TenantMemberRepository, authzService interface {
+	Authorize(userID uuid.UUID, tenantID *uuid.UUID, resourceCode, actionCode string) (bool, *models.PermissionAction, error)
+}, logger *zap.Logger) *MenuHandler {
 	return &MenuHandler{
 		menuService:      menuService,
 		userRepo:         userRepo,
 		roleMenuRepo:     roleMenuRepo,
 		userRoleRepo:     userRoleRepo,
 		tenantMemberRepo: tenantMemberRepo,
+		authzService:     authzService,
 		logger:           logger,
 	}
 }
 
 func (h *MenuHandler) GetTree(c *gin.Context) {
 	all := c.Query("all") == "1" || c.Query("all") == "true"
+	if all && h.authzService != nil {
+		userID, err := currentUserID(c)
+		if err != nil {
+			status, resp := errcode.Response(errcode.ErrUnauthorized)
+			c.JSON(status, resp)
+			return
+		}
+		tenantID, err := currentTenantID(c)
+		if err != nil {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+			c.JSON(status, resp)
+			return
+		}
+		allowed, _, authErr := h.authzService.Authorize(userID, tenantID, "menu", "list")
+		if authErr != nil || !allowed {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "无权限查看全部菜单")
+			c.JSON(status, resp)
+			return
+		}
+	}
 
 	var allowedMenuIDs []uuid.UUID
 	if !all {
@@ -272,12 +300,12 @@ func menuToMap(m *user.Menu) gin.H {
 		}
 	}
 	node := gin.H{
-		"id":          m.ID.String(),
-		"path":        m.Path,
-		"name":        m.Name,
-		"component":   m.Component,
-		"meta":        meta,
-		"sort_order":  m.SortOrder,
+		"id":         m.ID.String(),
+		"path":       m.Path,
+		"name":       m.Name,
+		"component":  m.Component,
+		"meta":       meta,
+		"sort_order": m.SortOrder,
 	}
 	if m.ParentID != nil {
 		node["parent_id"] = m.ParentID.String()
@@ -290,4 +318,31 @@ func menuToMap(m *user.Menu) gin.H {
 		node["children"] = children
 	}
 	return node
+}
+
+func currentUserID(c *gin.Context) (uuid.UUID, error) {
+	value, ok := c.Get("user_id")
+	if !ok {
+		return uuid.Nil, errors.New("unauthorized")
+	}
+	userIDStr, ok := value.(string)
+	if !ok {
+		return uuid.Nil, errors.New("unauthorized")
+	}
+	return uuid.Parse(userIDStr)
+}
+
+func currentTenantID(c *gin.Context) (*uuid.UUID, error) {
+	tenantIDStr := strings.TrimSpace(c.Query("tenant_id"))
+	if tenantIDStr == "" {
+		tenantIDStr = strings.TrimSpace(c.GetHeader(tenantContextHeader))
+	}
+	if tenantIDStr == "" {
+		return nil, nil
+	}
+	tenantID, err := uuid.Parse(tenantIDStr)
+	if err != nil {
+		return nil, err
+	}
+	return &tenantID, nil
 }

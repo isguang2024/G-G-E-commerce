@@ -221,7 +221,8 @@
           userName: response.user.username || response.user.email,
           avatar: response.user.avatar_url,
           roles: response.user.is_super_admin ? ['R_SUPER'] : ['R_USER'],
-          buttons: []
+          buttons: [],
+          actions: response.user.actions || []
         }
         userStore.setUserInfo(userInfo)
       }

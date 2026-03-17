@@ -24,8 +24,10 @@
         >
           <template #left>
             <ElSpace wrap>
-              <ElButton @click="showDialog('add')" v-ripple>新增角色</ElButton>
-              <ElButton @click="showScopeDialog" v-ripple>作用域管理</ElButton>
+              <ElButton v-action="'role:create'" @click="showDialog('add')" v-ripple>
+                新增角色
+              </ElButton>
+              <ElButton v-action="'scope:list'" @click="showScopeDialog" v-ripple>作用域管理</ElButton>
             </ElSpace>
           </template>
         </ArtTableHeader>
@@ -57,6 +59,18 @@
         @success="onPermissionSuccess"
       />
 
+      <RoleActionPermissionDialog
+        v-model="actionPermissionDialog"
+        :role-data="currentRoleData"
+        @success="refreshData"
+      />
+
+      <RoleDataPermissionDialog
+        v-model="dataPermissionDialog"
+        :role-data="currentRoleData"
+        @success="refreshData"
+      />
+
       <!-- 作用域管理弹窗 -->
       <ScopeManageDialog v-model="scopeDialogVisible" />
     </template>
@@ -66,12 +80,15 @@
 <script setup lang="ts">
   import { useRoute } from 'vue-router'
   import { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
+  import { useAuth } from '@/hooks/core/useAuth'
   import { useTable } from '@/hooks/core/useTable'
   import { fetchGetRoleList } from '@/api/system-manage'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import RoleSearch from './modules/role-search.vue'
   import RoleEditDialog from './modules/role-edit-dialog.vue'
   import RolePermissionDialog from './modules/role-permission-dialog.vue'
+  import RoleActionPermissionDialog from './modules/role-action-permission-dialog.vue'
+  import RoleDataPermissionDialog from './modules/role-data-permission-dialog.vue'
   import ScopeManageDialog from './modules/scope-manage-dialog.vue'
   import { fetchDeleteRole } from '@/api/system-manage'
   import { ElTag, ElMessage, ElMessageBox } from 'element-plus'
@@ -84,6 +101,7 @@
   const hasNestedRoute = computed(() => route.matched.length > 2)
 
   type RoleListItem = Api.SystemManage.RoleListItem
+  const { hasAction } = useAuth()
 
   // 搜索表单
   const searchForm = ref({
@@ -99,6 +117,8 @@
 
   const dialogVisible = ref(false)
   const permissionDialog = ref(false)
+  const actionPermissionDialog = ref(false)
+  const dataPermissionDialog = ref(false)
   const scopeDialogVisible = ref(false)
   const currentRoleData = ref<RoleListItem | undefined>(undefined)
 
@@ -211,14 +231,32 @@
           formatter: (row) => {
             const isDefaultRole = ['admin', 'team_admin', 'team_member'].includes(row.roleCode)
             const list = [
-              { key: 'permission', label: '菜单权限', icon: 'ri:user-3-line' },
-              { key: 'edit', label: '编辑角色', icon: 'ri:edit-2-line' }
+              {
+                key: 'permission',
+                label: '菜单权限',
+                icon: 'ri:user-3-line',
+                auth: 'role:assign_menu'
+              },
+              {
+                key: 'actionPermission',
+                label: '功能权限',
+                icon: 'ri:shield-keyhole-line',
+                auth: 'role:assign_action'
+              },
+              {
+                key: 'dataPermission',
+                label: '数据权限',
+                icon: 'ri:database-2-line',
+                auth: 'role:assign_data'
+              },
+              { key: 'edit', label: '编辑角色', icon: 'ri:edit-2-line', auth: 'role:update' }
             ]
-            if (!isDefaultRole) {
+            if (!isDefaultRole && hasAction('role:delete')) {
               list.push({
                 key: 'delete',
                 label: '删除角色',
-                icon: 'ri:delete-bin-4-line'
+                icon: 'ri:delete-bin-4-line',
+                auth: 'role:delete'
               })
             }
             return h('div', [
@@ -272,6 +310,12 @@
       case 'edit':
         showDialog('edit', row)
         break
+      case 'actionPermission':
+        showActionPermissionDialog(row)
+        break
+      case 'dataPermission':
+        showDataPermissionDialog(row)
+        break
       case 'delete':
         deleteRole(row)
         break
@@ -286,6 +330,16 @@
 
   const showPermissionDialog = (row?: RoleListItem) => {
     permissionDialog.value = true
+    currentRoleData.value = row
+  }
+
+  const showActionPermissionDialog = (row?: RoleListItem) => {
+    actionPermissionDialog.value = true
+    currentRoleData.value = row
+  }
+
+  const showDataPermissionDialog = (row?: RoleListItem) => {
+    dataPermissionDialog.value = true
     currentRoleData.value = row
   }
 

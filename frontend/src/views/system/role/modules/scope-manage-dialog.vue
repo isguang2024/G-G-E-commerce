@@ -2,7 +2,7 @@
   <ElDialog v-model="visible" title="作用域管理" width="60%" align-center @close="handleClose">
     <ElCard shadow="never">
       <div class="mb-4 flex justify-end">
-        <ElButton type="primary" @click="showDialog('add')">新增作用域</ElButton>
+        <ElButton v-action="'scope:create'" type="primary" @click="showDialog('add')">新增作用域</ElButton>
       </div>
 
       <ArtTable
@@ -112,12 +112,13 @@
           fixed: 'right',
           formatter: (row) => {
             const isDefaultScope = ['global', 'team'].includes(row.scopeCode)
-            const list = [{ key: 'edit', label: '编辑', icon: 'ri:edit-2-line' }]
+            const list = [{ key: 'edit', label: '编辑', icon: 'ri:edit-2-line', auth: 'scope:update' }]
             if (!isDefaultScope) {
               list.push({
                 key: 'delete',
                 label: '删除',
-                icon: 'ri:delete-bin-4-line'
+                icon: 'ri:delete-bin-4-line',
+                auth: 'scope:delete'
               })
             }
             return h('div', [

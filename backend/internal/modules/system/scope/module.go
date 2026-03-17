@@ -7,6 +7,8 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/config"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
+	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
 )
 
@@ -34,15 +36,17 @@ func (m *ScopeModule) RegisterRoutes(rg *gin.RouterGroup) {
 	roleRepo := user.NewRoleRepository(m.db)
 	scopeService := NewScopeService(scopeRepo, roleRepo, m.logger)
 	scopeHandler := NewScopeHandler(scopeService, m.logger)
+	authzService := authorization.NewService(m.db, m.logger)
 
 	scopes := rg.Group("/scopes")
+	reg := apiregistry.NewRegistrar(scopes, "scope")
 	{
-		scopes.GET("", scopeHandler.List)
-		scopes.GET("/all", scopeHandler.GetAll)
-		scopes.GET("/:id", scopeHandler.Get)
-		scopes.POST("", scopeHandler.Create)
-		scopes.PUT("/:id", scopeHandler.Update)
-		scopes.DELETE("/:id", scopeHandler.Delete)
+		reg.GET("", &apiregistry.RouteMeta{Summary: "获取作用域列表", ResourceCode: "scope", ActionCode: "list", ScopeCode: "global"}, authzService.RequireAction("scope", "list"), scopeHandler.List)
+		reg.GET("/all", &apiregistry.RouteMeta{Summary: "获取全部作用域", ResourceCode: "scope", ActionCode: "list", ScopeCode: "global"}, authzService.RequireAction("scope", "list"), scopeHandler.GetAll)
+		reg.GET("/:id", &apiregistry.RouteMeta{Summary: "获取作用域详情", ResourceCode: "scope", ActionCode: "get", ScopeCode: "global"}, authzService.RequireAction("scope", "get"), scopeHandler.Get)
+		reg.POST("", &apiregistry.RouteMeta{Summary: "创建作用域", ResourceCode: "scope", ActionCode: "create", ScopeCode: "global"}, authzService.RequireAction("scope", "create"), scopeHandler.Create)
+		reg.PUT("/:id", &apiregistry.RouteMeta{Summary: "更新作用域", ResourceCode: "scope", ActionCode: "update", ScopeCode: "global"}, authzService.RequireAction("scope", "update"), scopeHandler.Update)
+		reg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除作用域", ResourceCode: "scope", ActionCode: "delete", ScopeCode: "global"}, authzService.RequireAction("scope", "delete"), scopeHandler.Delete)
 	}
 }
 
