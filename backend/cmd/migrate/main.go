@@ -214,6 +214,91 @@ func runNamedMigrations(logger *zap.Logger) error {
 				return nil
 			},
 		},
+		{
+			Name: "20260317_permission_actions_backfill_source_category",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`UPDATE permission_actions SET source = 'system' WHERE COALESCE(source, '') = ''`,
+					`UPDATE permission_actions SET category = resource_code WHERE COALESCE(category, '') = ''`,
+					`UPDATE permission_actions pa
+					 SET source = 'api',
+					     category = COALESCE(NULLIF(ae.module, ''), pa.category)
+					 FROM api_endpoints ae
+					 WHERE pa.resource_code = ae.resource_code
+					   AND pa.action_code = ae.action_code
+					   AND COALESCE(ae.resource_code, '') <> ''
+					   AND COALESCE(ae.action_code, '') <> ''`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260317_permission_actions_backfill_source_category"))
+				return nil
+			},
+		},
+		{
+			Name: "20260317_system_permission_manual_source",
+			Run: func(logger *zap.Logger) error {
+				if err := database.DB.Exec(`
+					UPDATE permission_actions
+					   SET source = 'manual',
+					       category = 'system_permission'
+					 WHERE resource_code = 'system_permission'
+				`).Error; err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260317_system_permission_manual_source"))
+				return nil
+			},
+		},
+		{
+			Name: "20260317_permission_actions_normalize_source_and_feature_kind",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`UPDATE permission_actions SET source = 'business' WHERE source = 'manual'`,
+					`UPDATE permission_actions SET feature_kind = 'system' WHERE COALESCE(feature_kind, '') = ''`,
+					`UPDATE permission_actions SET feature_kind = 'business' WHERE source = 'business'`,
+					`UPDATE permission_actions SET source = 'system', feature_kind = 'system', category = 'system_permission' WHERE resource_code = 'system_permission'`,
+					`UPDATE api_endpoints SET feature_kind = 'system' WHERE COALESCE(feature_kind, '') = ''`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260317_permission_actions_normalize_source_and_feature_kind"))
+				return nil
+			},
+		},
+		{
+			Name: "20260317_permission_actions_add_module_code",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`ALTER TABLE permission_actions ADD COLUMN IF NOT EXISTS module_code varchar(100)`,
+					`UPDATE permission_actions pa
+					   SET module_code = COALESCE(NULLIF(ae.module, ''), NULLIF(pa.category, ''), pa.resource_code)
+					  FROM api_endpoints ae
+					 WHERE COALESCE(pa.module_code, '') = ''
+					   AND pa.resource_code = ae.resource_code
+					   AND pa.action_code = ae.action_code
+					   AND COALESCE(ae.resource_code, '') <> ''
+					   AND COALESCE(ae.action_code, '') <> ''`,
+					`UPDATE permission_actions
+					    SET module_code = COALESCE(NULLIF(category, ''), resource_code)
+					  WHERE COALESCE(module_code, '') = ''`,
+					`ALTER TABLE permission_actions ALTER COLUMN module_code SET NOT NULL`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260317_permission_actions_add_module_code"))
+				return nil
+			},
+		},
 	}
 
 	for _, task := range tasks {
@@ -667,6 +752,10 @@ func initDefaultPermissionActions(logger *zap.Logger) error {
 		actionData := usermodel.PermissionAction{
 			ResourceCode:          actionSeed.ResourceCode,
 			ActionCode:            actionSeed.ActionCode,
+			ModuleCode:            actionSeed.ModuleCode,
+			Category:              actionSeed.Category,
+			Source:                actionSeed.Source,
+			FeatureKind:           actionSeed.FeatureKind,
 			Name:                  actionSeed.Name,
 			Description:           actionSeed.Description,
 			ScopeID:               scopeIDs[actionSeed.ScopeCode],
@@ -688,6 +777,10 @@ func initDefaultPermissionActions(logger *zap.Logger) error {
 		updates := map[string]interface{}{
 			"name":                    actionData.Name,
 			"description":             actionData.Description,
+			"module_code":             actionData.ModuleCode,
+			"category":                actionData.Category,
+			"source":                  actionData.Source,
+			"feature_kind":            actionData.FeatureKind,
 			"scope_id":                actionData.ScopeID,
 			"requires_tenant_context": actionData.RequiresTenantContext,
 			"status":                  actionData.Status,
@@ -758,6 +851,10 @@ func initDefaultRoleActionPermissions(logger *zap.Logger) error {
 type permissionActionSeed struct {
 	ResourceCode          string
 	ActionCode            string
+	ModuleCode            string
+	Category              string
+	Source                string
+	FeatureKind           string
 	Name                  string
 	Description           string
 	ScopeCode             string
@@ -766,68 +863,78 @@ type permissionActionSeed struct {
 
 func defaultPermissionActionSeeds() []permissionActionSeed {
 	return []permissionActionSeed{
-		{ResourceCode: "role", ActionCode: "list", Name: "查看角色列表", Description: "允许查看角色列表", ScopeCode: "global"},
-		{ResourceCode: "role", ActionCode: "get", Name: "查看角色详情", Description: "允许查看角色详情", ScopeCode: "global"},
-		{ResourceCode: "role", ActionCode: "create", Name: "创建角色", Description: "允许创建角色", ScopeCode: "global"},
-		{ResourceCode: "role", ActionCode: "update", Name: "更新角色", Description: "允许更新角色", ScopeCode: "global"},
-		{ResourceCode: "role", ActionCode: "delete", Name: "删除角色", Description: "允许删除角色", ScopeCode: "global"},
-		{ResourceCode: "role", ActionCode: "assign_menu", Name: "配置角色菜单权限", Description: "允许为角色配置菜单权限", ScopeCode: "global"},
-		{ResourceCode: "role", ActionCode: "assign_action", Name: "配置角色功能权限", Description: "允许为角色配置功能权限", ScopeCode: "global"},
-		{ResourceCode: "role", ActionCode: "assign_data", Name: "配置角色数据权限", Description: "允许为角色配置数据权限", ScopeCode: "global"},
+		newPermissionActionSeed("role", "list", "查看角色列表", "允许查看角色列表", "global", false),
+		newPermissionActionSeed("role", "get", "查看角色详情", "允许查看角色详情", "global", false),
+		newPermissionActionSeed("role", "create", "创建角色", "允许创建角色", "global", false),
+		newPermissionActionSeed("role", "update", "更新角色", "允许更新角色", "global", false),
+		newPermissionActionSeed("role", "delete", "删除角色", "允许删除角色", "global", false),
+		newPermissionActionSeed("role", "assign_menu", "配置角色菜单权限", "允许为角色配置菜单权限", "global", false),
+		newPermissionActionSeed("role", "assign_action", "配置角色功能权限", "允许为角色配置功能权限", "global", false),
+		newPermissionActionSeed("role", "assign_data", "配置角色数据权限", "允许为角色配置数据权限", "global", false),
+		newPermissionActionSeed("permission_action", "list", "查看功能权限列表", "允许查看功能权限列表", "global", false),
+		newPermissionActionSeed("permission_action", "get", "查看功能权限详情", "允许查看功能权限详情", "global", false),
+		newPermissionActionSeed("permission_action", "create", "创建功能权限", "允许创建功能权限", "global", false),
+		newPermissionActionSeed("permission_action", "update", "更新功能权限", "允许更新功能权限", "global", false),
+		newPermissionActionSeed("permission_action", "delete", "删除功能权限", "允许删除功能权限", "global", false),
+		newPermissionActionSeed("scope", "list", "查看作用域列表", "允许查看作用域列表", "global", false),
+		newPermissionActionSeed("scope", "get", "查看作用域详情", "允许查看作用域详情", "global", false),
+		newPermissionActionSeed("scope", "create", "创建作用域", "允许创建作用域", "global", false),
+		newPermissionActionSeed("scope", "update", "更新作用域", "允许更新作用域", "global", false),
+		newPermissionActionSeed("scope", "delete", "删除作用域", "允许删除作用域", "global", false),
+		newPermissionActionSeed("user", "list", "查看用户列表", "允许查看用户列表", "global", false),
+		newPermissionActionSeed("user", "get", "查看用户详情", "允许查看用户详情", "global", false),
+		newPermissionActionSeed("user", "create", "创建用户", "允许创建用户", "global", false),
+		newPermissionActionSeed("user", "update", "更新用户", "允许更新用户", "global", false),
+		newPermissionActionSeed("user", "delete", "删除用户", "允许删除用户", "global", false),
+		newPermissionActionSeed("user", "assign_role", "分配用户角色", "允许为用户分配角色", "global", false),
+		newPermissionActionSeed("user", "assign_action", "配置用户功能权限", "允许为用户配置平台级功能权限", "global", false),
+		newPermissionActionSeed("menu", "list", "查看菜单管理树", "允许查看全部菜单管理树", "global", false),
+		newPermissionActionSeed("menu", "create", "创建菜单", "允许创建菜单", "global", false),
+		newPermissionActionSeed("menu", "update", "更新菜单", "允许更新菜单", "global", false),
+		newPermissionActionSeed("menu", "delete", "删除菜单", "允许删除菜单", "global", false),
+		newPermissionActionSeed("menu_backup", "create", "创建菜单备份", "允许创建菜单备份", "global", false),
+		newPermissionActionSeed("menu_backup", "list", "查看菜单备份列表", "允许查看菜单备份列表", "global", false),
+		newPermissionActionSeed("menu_backup", "delete", "删除菜单备份", "允许删除菜单备份", "global", false),
+		newPermissionActionSeed("menu_backup", "restore", "恢复菜单备份", "允许恢复菜单备份", "global", false),
+		newPermissionActionSeed("system", "view_page_catalog", "查看页面文件映射", "允许查看页面文件映射", "global", false),
+		newPermissionActionSeed("tenant", "list", "查看团队列表", "允许查看团队列表", "global", false),
+		newPermissionActionSeed("tenant", "get", "查看团队详情", "允许查看团队详情", "global", false),
+		newPermissionActionSeed("tenant", "create", "创建团队", "允许创建团队", "global", false),
+		newPermissionActionSeed("tenant", "update", "更新团队", "允许更新团队", "global", false),
+		newPermissionActionSeed("tenant", "delete", "删除团队", "允许删除团队", "global", false),
+		newPermissionActionSeed("tenant", "configure_action_boundary", "配置团队功能权限边界", "允许配置团队功能权限边界", "global", false),
+		newPermissionActionSeed("tenant_member_admin", "list", "查看团队成员列表", "允许在系统管理中查看团队成员列表", "global", false),
+		newPermissionActionSeed("tenant_member_admin", "create", "添加团队成员", "允许在系统管理中添加团队成员", "global", false),
+		newPermissionActionSeed("tenant_member_admin", "delete", "移除团队成员", "允许在系统管理中移除团队成员", "global", false),
+		newPermissionActionSeed("tenant_member_admin", "update_role", "更新团队成员身份", "允许在系统管理中更新团队成员身份", "global", false),
+		newPermissionActionSeed("team_member", "create", "添加当前团队成员", "允许在当前团队中添加成员", "team", true),
+		newPermissionActionSeed("team_member", "delete", "移除当前团队成员", "允许在当前团队中移除成员", "team", true),
+		newPermissionActionSeed("team_member", "update_role", "更新当前团队成员身份", "允许在当前团队中更新成员身份", "team", true),
+		newPermissionActionSeed("team_member", "assign_role", "配置当前团队成员角色", "允许在当前团队中配置成员角色", "team", true),
+		newPermissionActionSeed("team_member", "assign_action", "配置当前团队成员功能权限", "允许在当前团队中配置成员功能权限", "team", true),
+		newPermissionActionSeed("team", "configure_action_boundary", "查看和配置当前团队功能权限边界", "允许查看和配置当前团队功能权限边界", "team", true),
+		newPermissionActionSeed("api_endpoint", "list", "查看 API 注册表", "允许查看 API 注册表", "global", false),
+		newPermissionActionSeed("api_endpoint", "sync", "同步 API 注册表", "允许同步 API 注册表", "global", false),
+		newPermissionActionSeed("system_permission", "manage_action_registry", "管理功能权限注册表", "允许维护功能权限注册信息", "global", false),
+		newPermissionActionSeed("system_permission", "assign_role_action", "配置角色功能权限", "允许为角色分配功能权限", "global", false),
+	}
+}
 
-		{ResourceCode: "permission_action", ActionCode: "list", Name: "查看功能权限列表", Description: "允许查看功能权限列表", ScopeCode: "global"},
-		{ResourceCode: "permission_action", ActionCode: "get", Name: "查看功能权限详情", Description: "允许查看功能权限详情", ScopeCode: "global"},
-		{ResourceCode: "permission_action", ActionCode: "create", Name: "创建功能权限", Description: "允许创建功能权限", ScopeCode: "global"},
-		{ResourceCode: "permission_action", ActionCode: "update", Name: "更新功能权限", Description: "允许更新功能权限", ScopeCode: "global"},
-		{ResourceCode: "permission_action", ActionCode: "delete", Name: "删除功能权限", Description: "允许删除功能权限", ScopeCode: "global"},
-
-		{ResourceCode: "scope", ActionCode: "list", Name: "查看作用域列表", Description: "允许查看作用域列表", ScopeCode: "global"},
-		{ResourceCode: "scope", ActionCode: "get", Name: "查看作用域详情", Description: "允许查看作用域详情", ScopeCode: "global"},
-		{ResourceCode: "scope", ActionCode: "create", Name: "创建作用域", Description: "允许创建作用域", ScopeCode: "global"},
-		{ResourceCode: "scope", ActionCode: "update", Name: "更新作用域", Description: "允许更新作用域", ScopeCode: "global"},
-		{ResourceCode: "scope", ActionCode: "delete", Name: "删除作用域", Description: "允许删除作用域", ScopeCode: "global"},
-
-		{ResourceCode: "user", ActionCode: "list", Name: "查看用户列表", Description: "允许查看用户列表", ScopeCode: "global"},
-		{ResourceCode: "user", ActionCode: "get", Name: "查看用户详情", Description: "允许查看用户详情", ScopeCode: "global"},
-		{ResourceCode: "user", ActionCode: "create", Name: "创建用户", Description: "允许创建用户", ScopeCode: "global"},
-		{ResourceCode: "user", ActionCode: "update", Name: "更新用户", Description: "允许更新用户", ScopeCode: "global"},
-		{ResourceCode: "user", ActionCode: "delete", Name: "删除用户", Description: "允许删除用户", ScopeCode: "global"},
-		{ResourceCode: "user", ActionCode: "assign_role", Name: "分配用户角色", Description: "允许为用户分配角色", ScopeCode: "global"},
-		{ResourceCode: "user", ActionCode: "assign_action", Name: "配置用户功能权限", Description: "允许为用户配置平台级功能权限", ScopeCode: "global"},
-
-		{ResourceCode: "menu", ActionCode: "list", Name: "查看菜单管理树", Description: "允许查看全部菜单管理树", ScopeCode: "global"},
-		{ResourceCode: "menu", ActionCode: "create", Name: "创建菜单", Description: "允许创建菜单", ScopeCode: "global"},
-		{ResourceCode: "menu", ActionCode: "update", Name: "更新菜单", Description: "允许更新菜单", ScopeCode: "global"},
-		{ResourceCode: "menu", ActionCode: "delete", Name: "删除菜单", Description: "允许删除菜单", ScopeCode: "global"},
-
-		{ResourceCode: "menu_backup", ActionCode: "create", Name: "创建菜单备份", Description: "允许创建菜单备份", ScopeCode: "global"},
-		{ResourceCode: "menu_backup", ActionCode: "list", Name: "查看菜单备份列表", Description: "允许查看菜单备份列表", ScopeCode: "global"},
-		{ResourceCode: "menu_backup", ActionCode: "delete", Name: "删除菜单备份", Description: "允许删除菜单备份", ScopeCode: "global"},
-		{ResourceCode: "menu_backup", ActionCode: "restore", Name: "恢复菜单备份", Description: "允许恢复菜单备份", ScopeCode: "global"},
-
-		{ResourceCode: "system", ActionCode: "view_page_catalog", Name: "查看页面文件映射", Description: "允许查看页面文件映射", ScopeCode: "global"},
-
-		{ResourceCode: "tenant", ActionCode: "list", Name: "查看团队列表", Description: "允许查看团队列表", ScopeCode: "global"},
-		{ResourceCode: "tenant", ActionCode: "get", Name: "查看团队详情", Description: "允许查看团队详情", ScopeCode: "global"},
-		{ResourceCode: "tenant", ActionCode: "create", Name: "创建团队", Description: "允许创建团队", ScopeCode: "global"},
-		{ResourceCode: "tenant", ActionCode: "update", Name: "更新团队", Description: "允许更新团队", ScopeCode: "global"},
-		{ResourceCode: "tenant", ActionCode: "delete", Name: "删除团队", Description: "允许删除团队", ScopeCode: "global"},
-		{ResourceCode: "tenant", ActionCode: "configure_action_boundary", Name: "配置团队功能权限边界", Description: "允许配置团队功能权限边界", ScopeCode: "global"},
-
-		{ResourceCode: "tenant_member_admin", ActionCode: "list", Name: "查看团队成员列表", Description: "允许在系统管理中查看团队成员列表", ScopeCode: "global"},
-		{ResourceCode: "tenant_member_admin", ActionCode: "create", Name: "添加团队成员", Description: "允许在系统管理中添加团队成员", ScopeCode: "global"},
-		{ResourceCode: "tenant_member_admin", ActionCode: "delete", Name: "移除团队成员", Description: "允许在系统管理中移除团队成员", ScopeCode: "global"},
-		{ResourceCode: "tenant_member_admin", ActionCode: "update_role", Name: "更新团队成员身份", Description: "允许在系统管理中更新团队成员身份", ScopeCode: "global"},
-
-		{ResourceCode: "team_member", ActionCode: "create", Name: "添加当前团队成员", Description: "允许在当前团队中添加成员", ScopeCode: "team", RequiresTenantContext: true},
-		{ResourceCode: "team_member", ActionCode: "delete", Name: "移除当前团队成员", Description: "允许在当前团队中移除成员", ScopeCode: "team", RequiresTenantContext: true},
-		{ResourceCode: "team_member", ActionCode: "update_role", Name: "更新当前团队成员身份", Description: "允许在当前团队中更新成员身份", ScopeCode: "team", RequiresTenantContext: true},
-		{ResourceCode: "team_member", ActionCode: "assign_role", Name: "配置当前团队成员角色", Description: "允许在当前团队中配置成员角色", ScopeCode: "team", RequiresTenantContext: true},
-		{ResourceCode: "team_member", ActionCode: "assign_action", Name: "配置当前团队成员功能权限", Description: "允许在当前团队中配置成员功能权限", ScopeCode: "team", RequiresTenantContext: true},
-		{ResourceCode: "team", ActionCode: "configure_action_boundary", Name: "查看和配置当前团队功能权限边界", Description: "允许查看和配置当前团队功能权限边界", ScopeCode: "team", RequiresTenantContext: true},
-
-		{ResourceCode: "api_endpoint", ActionCode: "list", Name: "查看 API 注册表", Description: "允许查看 API 注册表", ScopeCode: "global"},
-		{ResourceCode: "api_endpoint", ActionCode: "sync", Name: "同步 API 注册表", Description: "允许同步 API 注册表", ScopeCode: "global"},
+func newPermissionActionSeed(
+	resourceCode, actionCode, name, description, scopeCode string,
+	requiresTenantContext bool,
+) permissionActionSeed {
+	return permissionActionSeed{
+		ResourceCode:          resourceCode,
+		ActionCode:            actionCode,
+		ModuleCode:            resourceCode,
+		Category:              resourceCode,
+		Source:                "system",
+		FeatureKind:           "system",
+		Name:                  name,
+		Description:           description,
+		ScopeCode:             scopeCode,
+		RequiresTenantContext: requiresTenantContext,
 	}
 }
 

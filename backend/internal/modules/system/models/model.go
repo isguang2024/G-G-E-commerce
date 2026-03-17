@@ -148,6 +148,10 @@ type PermissionAction struct {
 	ID                    uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	ResourceCode          string         `gorm:"type:varchar(100);not null" json:"resource_code"`
 	ActionCode            string         `gorm:"type:varchar(100);not null" json:"action_code"`
+	ModuleCode            string         `gorm:"type:varchar(100);not null;default:''" json:"module_code"`
+	Category              string         `gorm:"type:varchar(100);default:''" json:"category"`
+	Source                string         `gorm:"type:varchar(20);not null;default:'business'" json:"source"`
+	FeatureKind           string         `gorm:"type:varchar(20);not null;default:'system'" json:"feature_kind"`
 	Name                  string         `gorm:"type:varchar(150);not null" json:"name"`
 	Description           string         `gorm:"type:varchar(255)" json:"description"`
 	ScopeID               uuid.UUID      `gorm:"type:uuid;index" json:"scope_id"`
@@ -214,6 +218,7 @@ type APIEndpoint struct {
 	Method                string         `gorm:"type:varchar(10);not null" json:"method"`
 	Path                  string         `gorm:"type:varchar(255);not null" json:"path"`
 	Module                string         `gorm:"type:varchar(100);not null" json:"module"`
+	FeatureKind           string         `gorm:"type:varchar(20);not null;default:'system'" json:"feature_kind"`
 	Handler               string         `gorm:"type:varchar(255)" json:"handler"`
 	Summary               string         `gorm:"type:varchar(255)" json:"summary"`
 	ResourceCode          string         `gorm:"type:varchar(100)" json:"resource_code"`

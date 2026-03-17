@@ -1024,9 +1024,14 @@ type PermissionActionRepository interface {
 }
 
 type PermissionActionListParams struct {
+	Keyword               string
 	Name                  string
 	ResourceCode          string
 	ActionCode            string
+	ModuleCode            string
+	Category              string
+	Source                string
+	FeatureKind           string
 	ScopeID               *uuid.UUID
 	ScopeCode             string
 	Status                string
@@ -1044,6 +1049,13 @@ func NewPermissionActionRepository(db *gorm.DB) PermissionActionRepository {
 func (r *permissionActionRepository) List(offset, limit int, params *PermissionActionListParams) ([]PermissionAction, int64, error) {
 	query := r.db.Model(&PermissionAction{}).Preload("Scope")
 	if params != nil {
+		if params.Keyword != "" {
+			keyword := "%" + params.Keyword + "%"
+			query = query.Where(
+				"(name LIKE ? OR description LIKE ? OR resource_code LIKE ? OR action_code LIKE ? OR module_code LIKE ? OR category LIKE ? OR feature_kind LIKE ?)",
+				keyword, keyword, keyword, keyword, keyword, keyword, keyword,
+			)
+		}
 		if params.Name != "" {
 			query = query.Where("name LIKE ?", "%"+params.Name+"%")
 		}
@@ -1052,6 +1064,18 @@ func (r *permissionActionRepository) List(offset, limit int, params *PermissionA
 		}
 		if params.ActionCode != "" {
 			query = query.Where("action_code LIKE ?", "%"+params.ActionCode+"%")
+		}
+		if params.ModuleCode != "" {
+			query = query.Where("module_code LIKE ?", "%"+params.ModuleCode+"%")
+		}
+		if params.Category != "" {
+			query = query.Where("category LIKE ?", "%"+params.Category+"%")
+		}
+		if params.Source != "" {
+			query = query.Where("source = ?", params.Source)
+		}
+		if params.FeatureKind != "" {
+			query = query.Where("feature_kind = ?", params.FeatureKind)
 		}
 		if params.ScopeID != nil {
 			query = query.Where("scope_id = ?", *params.ScopeID)
@@ -1370,6 +1394,7 @@ type APIEndpointListParams struct {
 	Method                string
 	Path                  string
 	Module                string
+	FeatureKind           string
 	ResourceCode          string
 	ActionCode            string
 	ScopeCode             string
@@ -1396,6 +1421,9 @@ func (r *apiEndpointRepository) List(offset, limit int, params *APIEndpointListP
 		}
 		if params.Module != "" {
 			query = query.Where("module LIKE ?", "%"+params.Module+"%")
+		}
+		if params.FeatureKind != "" {
+			query = query.Where("feature_kind = ?", params.FeatureKind)
 		}
 		if params.ResourceCode != "" {
 			query = query.Where("resource_code LIKE ?", "%"+params.ResourceCode+"%")
@@ -1440,6 +1468,7 @@ func (r *apiEndpointRepository) Upsert(endpoint *APIEndpoint) error {
 	}
 	updates := map[string]interface{}{
 		"module":                  endpoint.Module,
+		"feature_kind":            endpoint.FeatureKind,
 		"handler":                 endpoint.Handler,
 		"summary":                 endpoint.Summary,
 		"resource_code":           endpoint.ResourceCode,

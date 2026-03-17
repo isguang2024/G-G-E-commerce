@@ -20,6 +20,7 @@ type RouteMeta struct {
 	ResourceCode          string
 	ActionCode            string
 	ScopeCode             string
+	FeatureKind           string
 	RequiresTenantContext bool
 }
 
@@ -127,6 +128,7 @@ func syncRoutesInternal(
 			Method:                strings.ToUpper(route.Method),
 			Path:                  route.Path,
 			Module:                moduleName,
+			FeatureKind:           normalizeFeatureKind(meta.FeatureKind),
 			Handler:               route.Handler,
 			Summary:               strings.TrimSpace(meta.Summary),
 			ResourceCode:          strings.TrimSpace(meta.ResourceCode),
@@ -166,6 +168,10 @@ func ensurePermissionAction(db *gorm.DB, endpoint *models.APIEndpoint, logger *z
 		action := &models.PermissionAction{
 			ResourceCode:          endpoint.ResourceCode,
 			ActionCode:            endpoint.ActionCode,
+			ModuleCode:            normalizeModuleCode(endpoint.Module, endpoint.ResourceCode),
+			Category:              endpoint.Module,
+			Source:                "api",
+			FeatureKind:           normalizeFeatureKind(endpoint.FeatureKind),
 			Name:                  name,
 			Description:           description,
 			ScopeID:               *endpoint.ScopeID,
@@ -178,6 +184,18 @@ func ensurePermissionAction(db *gorm.DB, endpoint *models.APIEndpoint, logger *z
 	updates := map[string]interface{}{}
 	if existing.ScopeID != *endpoint.ScopeID {
 		updates["scope_id"] = *endpoint.ScopeID
+	}
+	if existing.Source != "api" {
+		updates["source"] = "api"
+	}
+	if normalizeFeatureKind(existing.FeatureKind) != normalizeFeatureKind(endpoint.FeatureKind) {
+		updates["feature_kind"] = normalizeFeatureKind(endpoint.FeatureKind)
+	}
+	if strings.TrimSpace(endpoint.Module) != "" && strings.TrimSpace(existing.Category) != endpoint.Module {
+		updates["category"] = endpoint.Module
+	}
+	if normalizedModuleCode := normalizeModuleCode(endpoint.Module, endpoint.ResourceCode); strings.TrimSpace(existing.ModuleCode) != normalizedModuleCode {
+		updates["module_code"] = normalizedModuleCode
 	}
 	if existing.RequiresTenantContext != endpoint.RequiresTenantContext {
 		updates["requires_tenant_context"] = endpoint.RequiresTenantContext
@@ -224,6 +242,22 @@ func deriveModuleName(routePath string) string {
 	return "unknown"
 }
 
+func normalizeFeatureKind(value string) string {
+	switch strings.TrimSpace(value) {
+	case "business":
+		return "business"
+	default:
+		return "system"
+	}
+}
+
+func normalizeModuleCode(moduleName, fallbackResource string) string {
+	if trimmed := strings.TrimSpace(moduleName); trimmed != "" {
+		return trimmed
+	}
+	return strings.TrimSpace(fallbackResource)
+}
+
 func buildActionName(endpoint *models.APIEndpoint) string {
 	if endpoint == nil {
 		return ""
@@ -266,6 +300,7 @@ func upsertEndpoint(db *gorm.DB, endpoint *models.APIEndpoint) error {
 	}
 	updates := map[string]interface{}{
 		"module":                  endpoint.Module,
+		"feature_kind":            normalizeFeatureKind(endpoint.FeatureKind),
 		"handler":                 endpoint.Handler,
 		"summary":                 endpoint.Summary,
 		"resource_code":           endpoint.ResourceCode,

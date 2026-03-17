@@ -2,31 +2,130 @@
   <ElDialog
     v-model="visible"
     :title="`功能权限 - ${roleData?.roleName || ''}`"
-    width="760px"
+    width="920px"
     destroy-on-close
   >
-    <div v-loading="loading">
-      <ElEmpty v-if="actions.length === 0" description="暂无已注册功能权限" />
-      <ElTable v-else :data="actions" border max-height="480">
-        <ElTableColumn prop="name" label="权限名称" min-width="180" />
-        <ElTableColumn prop="resourceCode" label="资源编码" min-width="140" />
-        <ElTableColumn prop="actionCode" label="动作编码" min-width="140" />
-        <ElTableColumn label="作用域" width="90">
-          <template #default="{ row }">
-            <ElTag :type="row.scopeCode === 'team' ? 'success' : 'primary'">
-              {{ row.scopeName || (row.scopeCode === 'team' ? '团队' : '平台') }}
-            </ElTag>
+    <div v-loading="loading" class="role-action-dialog">
+      <section class="control-panel">
+        <div class="toolbar">
+          <ElInput
+            v-model="filters.keyword"
+            clearable
+            placeholder="搜索权限名称/权限键/模块归属/分类"
+            class="toolbar-input"
+          />
+          <ElSelect v-model="filters.source" clearable placeholder="来源" class="toolbar-select">
+            <ElOption label="全部来源" value="" />
+            <ElOption label="接口自动" value="api" />
+            <ElOption label="系统内置" value="system" />
+            <ElOption label="业务定义" value="business" />
+          </ElSelect>
+          <ElSelect v-model="filters.featureKind" clearable placeholder="功能归属" class="toolbar-select">
+            <ElOption label="全部归属" value="" />
+            <ElOption label="系统功能" value="system" />
+            <ElOption label="业务功能" value="business" />
+          </ElSelect>
+        </div>
+
+        <div class="option-row">
+          <div class="summary">
+            <ElTag effect="plain" class="summary-tag">可见 {{ filteredActionCount }} / {{ actions.length }}</ElTag>
+            <ElTag effect="plain" class="summary-tag summary-tag--allow">允许 {{ allowedCount }}</ElTag>
+            <ElTag effect="plain" class="summary-tag summary-tag--deny">拒绝 {{ deniedCount }}</ElTag>
+          </div>
+
+          <div class="option-switches">
+            <label class="option-item">
+              <span>仅已配置</span>
+              <ElSwitch v-model="filters.onlyConfigured" />
+            </label>
+            <label class="option-item">
+              <span>查看备注</span>
+              <ElSwitch v-model="filters.showRemark" />
+            </label>
+            <label class="option-item">
+              <span>紧凑模式</span>
+              <ElSwitch v-model="filters.compact" />
+            </label>
+          </div>
+        </div>
+
+        <div class="batch-bar" v-if="filteredActionIds.length > 0">
+          <span class="batch-label">批量操作当前筛选结果</span>
+          <ElButton size="small" text @click="expandAll">全部展开</ElButton>
+          <ElButton size="small" text @click="collapseAll">全部收起</ElButton>
+          <ElButton size="small" text @click="applyEffects(filteredActionIds, 'allow')">全部允许</ElButton>
+          <ElButton size="small" text @click="applyEffects(filteredActionIds, 'deny')">全部拒绝</ElButton>
+          <ElButton size="small" text @click="applyEffects(filteredActionIds, '')">全部清空</ElButton>
+        </div>
+      </section>
+
+      <ElEmpty v-if="!loading && filteredGroups.length === 0" description="暂无匹配的功能权限" />
+
+      <div v-else class="tree-wrapper">
+        <ElTree
+          ref="treeRef"
+          :data="treeData"
+          node-key="key"
+          :props="treeProps"
+          :default-expanded-keys="expandedKeys"
+          :expand-on-click-node="false"
+          :highlight-current="false"
+          class="permission-tree"
+        >
+          <template #default="{ data }">
+            <div v-if="data.nodeType === 'feature'" class="tree-node tree-node--feature" :class="{ 'is-compact': filters.compact }">
+              <div class="node-main">
+                <div class="node-title">{{ data.label }}</div>
+                <div class="node-subtitle">{{ data.meta }}</div>
+              </div>
+              <div class="node-actions">
+                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, 'allow')">本组允许</ElButton>
+                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, 'deny')">本组拒绝</ElButton>
+                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, '')">本组清空</ElButton>
+              </div>
+            </div>
+
+            <div v-else-if="data.nodeType === 'module'" class="tree-node tree-node--module" :class="{ 'is-compact': filters.compact }">
+              <div class="node-main">
+                <div class="node-title">{{ data.label }}</div>
+                <div class="node-subtitle">{{ data.meta }}</div>
+              </div>
+              <div class="node-actions">
+                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, 'allow')">模块允许</ElButton>
+                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, 'deny')">模块拒绝</ElButton>
+                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, '')">模块清空</ElButton>
+              </div>
+            </div>
+
+            <div v-else class="tree-node tree-node--action" :class="{ 'is-compact': filters.compact }">
+              <div class="node-main">
+                <div class="node-title">{{ data.label }}</div>
+                <div v-if="data.meta" class="node-subtitle">{{ data.meta }}</div>
+              </div>
+              <div class="node-actions node-actions--leaf">
+                <ElTag size="small" effect="plain" class="muted-tag">{{ data.scopeText }}</ElTag>
+                <ElTag size="small" effect="plain" class="muted-tag">{{ data.sourceText }}</ElTag>
+                <ElSelect
+                  v-model="effectMap[data.actionId]"
+                  class="effect-select"
+                  :class="{
+                    'effect-select--allow': effectMap[data.actionId] === 'allow',
+                    'effect-select--deny': effectMap[data.actionId] === 'deny',
+                    'effect-select--empty': !effectMap[data.actionId]
+                  }"
+                  size="small"
+                  placeholder="未配置"
+                >
+                  <ElOption label="未配置" value="" />
+                  <ElOption label="允许" value="allow" />
+                  <ElOption label="拒绝" value="deny" />
+                </ElSelect>
+              </div>
+            </div>
           </template>
-        </ElTableColumn>
-        <ElTableColumn label="授权效果" width="200">
-          <template #default="{ row }">
-            <ElSelect v-model="effectMap[row.id]" style="width: 140px" clearable>
-              <ElOption label="允许" value="allow" />
-              <ElOption label="拒绝" value="deny" />
-            </ElSelect>
-          </template>
-        </ElTableColumn>
-      </ElTable>
+        </ElTree>
+      </div>
     </div>
 
     <template #footer>
@@ -49,6 +148,39 @@
     roleData?: Api.SystemManage.RoleListItem
   }
 
+  type EffectValue = 'allow' | 'deny' | ''
+  type PermissionActionItem = Api.SystemManage.PermissionActionItem
+  type TreeNodeType = 'feature' | 'module' | 'action'
+
+  interface ModuleGroup {
+    key: string
+    label: string
+    category: string
+    count: number
+    actionIds: string[]
+    actions: PermissionActionItem[]
+  }
+
+  interface FeatureGroup {
+    key: string
+    label: string
+    count: number
+    actionIds: string[]
+    modules: ModuleGroup[]
+  }
+
+  interface PermissionTreeNode {
+    key: string
+    label: string
+    nodeType: TreeNodeType
+    meta: string
+    children?: PermissionTreeNode[]
+    actionIds: string[]
+    actionId?: string
+    scopeText?: string
+    sourceText?: string
+  }
+
   const props = defineProps<Props>()
   const emit = defineEmits<{
     (e: 'update:modelValue', value: boolean): void
@@ -62,8 +194,180 @@
 
   const loading = ref(false)
   const submitting = ref(false)
-  const actions = ref<Api.SystemManage.PermissionActionItem[]>([])
-  const effectMap = reactive<Record<string, 'allow' | 'deny' | ''>>({})
+  const actions = ref<PermissionActionItem[]>([])
+  const treeRef = ref()
+  const expandedKeys = ref<string[]>([])
+  const effectMap = reactive<Record<string, EffectValue>>({})
+  const filters = reactive({
+    keyword: '',
+    source: '',
+    featureKind: '',
+    onlyConfigured: false,
+    showRemark: true,
+    compact: false
+  })
+
+  const sourceTextMap: Record<string, string> = {
+    api: '接口自动',
+    system: '系统内置',
+    business: '业务定义'
+  }
+  const treeProps = {
+    children: 'children',
+    label: 'label'
+  }
+
+  const filteredActions = computed(() => {
+    const keyword = filters.keyword.trim().toLowerCase()
+    return actions.value.filter((item) => {
+      if (filters.source && item.source !== filters.source) {
+        return false
+      }
+      if (filters.featureKind && item.featureKind !== filters.featureKind) {
+        return false
+      }
+      if (filters.onlyConfigured && !effectMap[item.id]) {
+        return false
+      }
+      if (!keyword) {
+        return true
+      }
+      const haystack = [
+        item.name,
+        item.permissionKey,
+        item.moduleCode,
+        item.category,
+        item.resourceCode,
+        item.actionCode,
+        item.description
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      return haystack.includes(keyword)
+    })
+  })
+
+  const filteredActionIds = computed(() => filteredActions.value.map((item) => item.id))
+  const filteredActionCount = computed(() => filteredActions.value.length)
+  const allowedCount = computed(() => Object.values(effectMap).filter((item) => item === 'allow').length)
+  const deniedCount = computed(() => Object.values(effectMap).filter((item) => item === 'deny').length)
+
+  const filteredGroups = computed<FeatureGroup[]>(() => {
+    const featureMap = new Map<string, FeatureGroup>()
+    filteredActions.value.forEach((action) => {
+      const featureKey = action.featureKind === 'business' ? 'business' : 'system'
+      let featureGroup = featureMap.get(featureKey)
+      if (!featureGroup) {
+        featureGroup = {
+          key: featureKey,
+          label: featureKey === 'business' ? '业务功能' : '系统功能',
+          count: 0,
+          actionIds: [],
+          modules: []
+        }
+        featureMap.set(featureKey, featureGroup)
+      }
+
+      const moduleCode = action.moduleCode || action.resourceCode || 'common'
+      const moduleKey = `${featureKey}:${moduleCode}`
+      let moduleGroup = featureGroup.modules.find((item) => item.key === moduleKey)
+      if (!moduleGroup) {
+        moduleGroup = {
+          key: moduleKey,
+          label: moduleCode,
+          category: action.category || '',
+          count: 0,
+          actionIds: [],
+          actions: []
+        }
+        featureGroup.modules.push(moduleGroup)
+      }
+
+      moduleGroup.actions.push(action)
+      moduleGroup.actionIds.push(action.id)
+      moduleGroup.count += 1
+      featureGroup.actionIds.push(action.id)
+      featureGroup.count += 1
+    })
+
+    return [...featureMap.values()]
+      .map((featureGroup) => ({
+        ...featureGroup,
+        modules: featureGroup.modules
+          .map((moduleGroup) => ({
+            ...moduleGroup,
+            actions: [...moduleGroup.actions].sort(
+              (a, b) =>
+                (a.sortOrder ?? 0) - (b.sortOrder ?? 0) ||
+                (a.name || '').localeCompare(b.name || '', 'zh-CN')
+            )
+          }))
+          .sort((a, b) => a.label.localeCompare(b.label, 'zh-CN'))
+      }))
+      .sort((a, b) => a.key.localeCompare(b.key, 'zh-CN'))
+  })
+
+  const treeData = computed<PermissionTreeNode[]>(() =>
+    filteredGroups.value.map((featureGroup) => ({
+      key: featureGroup.key,
+      label: featureGroup.label,
+      nodeType: 'feature',
+      meta: `${featureGroup.modules.length} 个模块，${featureGroup.count} 条权限`,
+      actionIds: featureGroup.actionIds,
+      children: featureGroup.modules.map((moduleGroup) => ({
+        key: moduleGroup.key,
+        label: moduleGroup.label,
+        nodeType: 'module',
+        meta: `${moduleGroup.count} 条权限${moduleGroup.category ? `，分类 ${moduleGroup.category}` : ''}`,
+        actionIds: moduleGroup.actionIds,
+        children: moduleGroup.actions.map((action) => ({
+          key: action.id,
+          label: action.name,
+          nodeType: 'action',
+          meta: buildActionMeta(action),
+          actionIds: [action.id],
+          actionId: action.id,
+          scopeText: action.scopeName || (action.scopeCode === 'team' ? '团队' : '平台'),
+          sourceText: sourceTextMap[action.source || 'business'] || '业务定义'
+        }))
+      }))
+    }))
+  )
+
+  function syncExpandedKeys() {
+    const nextKeys = treeData.value.flatMap((featureGroup, index) => {
+      if (index > 0) return []
+      return [featureGroup.key, ...(featureGroup.children || []).map((moduleGroup) => moduleGroup.key)]
+    })
+    expandedKeys.value = nextKeys
+    nextTick(() => {
+      if (!treeRef.value) return
+      treeRef.value.setExpandedKeys(nextKeys)
+    })
+  }
+
+  function buildActionMeta(action: PermissionActionItem) {
+    const parts = [action.permissionKey || `${action.resourceCode}:${action.actionCode}`]
+    if (filters.showRemark && action.description) {
+      parts.push(action.description)
+    }
+    return parts.filter(Boolean).join('  ')
+  }
+
+  function expandAll() {
+    const nextKeys = treeData.value.flatMap((featureGroup) => [
+      featureGroup.key,
+      ...((featureGroup.children || []).map((moduleGroup) => moduleGroup.key))
+    ])
+    expandedKeys.value = nextKeys
+    treeRef.value?.setExpandedKeys(nextKeys)
+  }
+
+  function collapseAll() {
+    expandedKeys.value = []
+    treeRef.value?.setExpandedKeys([])
+  }
 
   async function loadData() {
     if (!props.roleData?.roleId) return
@@ -72,16 +376,28 @@
       const [actionList, roleActionRes] = await Promise.all([
         fetchGetPermissionActionList({
           current: 1,
-          size: 500,
+          size: 1000,
           scopeCode: props.roleData.scopeCode || props.roleData.scope
         }),
         fetchGetRoleActions(props.roleData.roleId)
       ])
       actions.value = actionList.records || []
       Object.keys(effectMap).forEach((key) => delete effectMap[key])
+      for (const action of actions.value) {
+        effectMap[action.id] = ''
+      }
       for (const item of roleActionRes?.actions || []) {
         effectMap[item.action_id] = item.effect
       }
+      Object.assign(filters, {
+        keyword: '',
+        source: '',
+        featureKind: '',
+        onlyConfigured: false,
+        showRemark: true,
+        compact: false
+      })
+      syncExpandedKeys()
     } catch (e: any) {
       ElMessage.error(e?.message || '获取角色功能权限失败')
       visible.value = false
@@ -90,12 +406,22 @@
     }
   }
 
+  function applyEffects(actionIds: string[], effect: EffectValue) {
+    actionIds.forEach((id) => {
+      effectMap[id] = effect
+    })
+  }
+
   watch(
     () => visible.value,
     (opened) => {
       if (opened) loadData()
     }
   )
+
+  watch(filteredGroups, () => {
+    syncExpandedKeys()
+  })
 
   async function handleSubmit() {
     if (!props.roleData?.roleId) return
@@ -118,3 +444,289 @@
     }
   }
 </script>
+
+<style scoped>
+  .role-action-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .control-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid #e7edf5;
+    border-radius: 16px;
+    background:
+      linear-gradient(180deg, rgba(248, 251, 255, 0.92) 0%, rgba(255, 255, 255, 0.98) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      0 8px 24px rgba(15, 23, 42, 0.04);
+  }
+
+  .toolbar {
+    display: grid;
+    grid-template-columns: minmax(320px, 1fr) 150px 150px;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .toolbar-input,
+  .toolbar-select {
+    width: 100%;
+  }
+
+  .option-row,
+  .summary,
+  .batch-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .option-row {
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .summary,
+  .batch-bar {
+    gap: 8px;
+  }
+
+  .summary-tag {
+    height: 28px;
+    padding: 0 10px;
+    font-size: 12px;
+    color: #5f6b7a;
+    border-color: #d7dde6;
+    background: #f8fafc;
+    border-radius: 999px;
+  }
+
+  .summary-tag--allow {
+    color: #316b56;
+    border-color: #cde5d9;
+    background: #f2fbf6;
+  }
+
+  .summary-tag--deny {
+    color: #925f64;
+    border-color: #efd6da;
+    background: #fff6f7;
+  }
+
+  .option-switches {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .option-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.88);
+    color: #526075;
+    font-size: 12px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  }
+
+  .batch-label {
+    font-size: 12px;
+    color: #69778a;
+  }
+
+  .tree-wrapper {
+    border: 1px solid #e5ebf3;
+    border-radius: 18px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(249, 251, 254, 0.96) 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.8),
+      0 10px 28px rgba(15, 23, 42, 0.04);
+    padding: 10px;
+  }
+
+  .permission-tree {
+    max-height: 520px;
+    overflow: auto;
+    padding-right: 2px;
+  }
+
+  :deep(.permission-tree .el-tree-node__content) {
+    height: auto;
+    min-height: 34px;
+    margin: 2px 0;
+    padding: 0;
+    border-radius: 14px;
+  }
+
+  :deep(.permission-tree .el-tree-node__expand-icon) {
+    color: #8a94a6;
+    font-size: 12px;
+  }
+
+  :deep(.permission-tree .el-tree-node__expand-icon.expanded) {
+    color: #5d6c86;
+  }
+
+  .tree-node {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 14px;
+    transition:
+      background-color 0.18s ease,
+      box-shadow 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  .tree-node:hover {
+    background: rgba(244, 247, 252, 0.92);
+  }
+
+  .tree-node--feature {
+    padding: 10px 12px;
+    background:
+      linear-gradient(135deg, rgba(248, 251, 255, 0.96) 0%, rgba(242, 246, 252, 0.9) 100%);
+    border: 1px solid #e6edf6;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+
+  .tree-node--module {
+    padding: 8px 10px;
+    background: rgba(255, 255, 255, 0.84);
+    border: 1px solid #edf2f7;
+  }
+
+  .tree-node--action {
+    padding: 6px 8px;
+  }
+
+  .node-main {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .node-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: #243144;
+    letter-spacing: 0.01em;
+  }
+
+  .node-subtitle {
+    font-size: 11px;
+    line-height: 1.45;
+    color: #7b889c;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .node-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+
+  .node-actions--leaf {
+    gap: 4px;
+  }
+
+  .muted-tag {
+    font-size: 11px;
+    color: #6b7280;
+    border-color: #dde3ea;
+    background: #f8fafc;
+    border-radius: 999px;
+  }
+
+  .effect-select {
+    width: 100px;
+  }
+
+  :deep(.effect-select .el-input__wrapper) {
+    border-radius: 999px;
+    box-shadow: 0 0 0 1px #dde5ef inset;
+    background: #f8fafc;
+    transition:
+      box-shadow 0.18s ease,
+      background-color 0.18s ease;
+  }
+
+  :deep(.effect-select .el-input__inner) {
+    font-size: 12px;
+    color: #415064;
+  }
+
+  :deep(.effect-select--allow .el-input__wrapper) {
+    background: #eefaf3;
+    box-shadow: 0 0 0 1px #bfe6ce inset;
+  }
+
+  :deep(.effect-select--allow .el-input__inner) {
+    color: #1f6a4d;
+  }
+
+  :deep(.effect-select--deny .el-input__wrapper) {
+    background: #fff3f4;
+    box-shadow: 0 0 0 1px #efc8cf inset;
+  }
+
+  :deep(.effect-select--deny .el-input__inner) {
+    color: #9b4956;
+  }
+
+  :deep(.effect-select--empty .el-input__wrapper) {
+    background: #f8fafc;
+    box-shadow: 0 0 0 1px #dde5ef inset;
+  }
+
+  .is-compact {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .is-compact .node-subtitle {
+    display: none;
+  }
+
+  @media (max-width: 900px) {
+    .toolbar {
+      grid-template-columns: 1fr;
+    }
+
+    .option-row {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .option-switches {
+      justify-content: flex-start;
+    }
+
+    .tree-node {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .node-actions {
+      justify-content: flex-start;
+    }
+  }
+</style>

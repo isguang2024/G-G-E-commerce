@@ -7,6 +7,34 @@
     @close="handleClose"
   >
     <ElForm ref="formRef" :model="form" :rules="rules" label-width="110px">
+      <ElFormItem label="来源">
+        <ElTag :type="sourceTagType">{{ sourceLabel }}</ElTag>
+      </ElFormItem>
+      <ElFormItem label="权限键">
+        <ElInput :model-value="permissionKeyPreview" disabled />
+      </ElFormItem>
+      <ElFormItem label="分类" prop="category">
+        <ElAutocomplete
+          v-model="form.category"
+          :fetch-suggestions="queryCategorySuggestions"
+          clearable
+          placeholder="输入或选择历史分类"
+        />
+      </ElFormItem>
+      <ElFormItem label="模块归属" prop="moduleCode">
+        <ElAutocomplete
+          v-model="form.moduleCode"
+          :fetch-suggestions="queryModuleSuggestions"
+          clearable
+          placeholder="例如 order_center"
+        />
+      </ElFormItem>
+      <ElFormItem label="功能归属" prop="featureKind">
+        <ElSelect v-model="form.featureKind" style="width: 100%">
+          <ElOption label="系统功能" value="system" />
+          <ElOption label="业务功能" value="business" />
+        </ElSelect>
+      </ElFormItem>
       <ElFormItem label="资源编码" prop="resourceCode">
         <ElInput v-model="form.resourceCode" placeholder="例如 team_member" />
       </ElFormItem>
@@ -68,12 +96,16 @@
     modelValue: boolean
     dialogType: 'add' | 'edit'
     actionData?: Api.SystemManage.PermissionActionItem
+    categoryOptions?: string[]
+    moduleOptions?: string[]
   }
 
   const props = withDefaults(defineProps<Props>(), {
     modelValue: false,
     dialogType: 'add',
-    actionData: undefined
+    actionData: undefined,
+    categoryOptions: () => [],
+    moduleOptions: () => []
   })
 
   const emit = defineEmits<{
@@ -94,6 +126,10 @@
     id: '',
     resourceCode: '',
     actionCode: '',
+    moduleCode: '',
+    category: '',
+    source: 'business',
+    featureKind: 'business',
     name: '',
     description: '',
     scopeId: '',
@@ -103,12 +139,60 @@
   })
 
   const rules = reactive<FormRules>({
+    category: [{ max: 100, message: '分类长度不能超过 100 个字符', trigger: 'blur' }],
+    moduleCode: [{ required: true, message: '请输入模块归属', trigger: 'blur' }],
+    featureKind: [{ required: true, message: '请选择功能归属', trigger: 'change' }],
     resourceCode: [{ required: true, message: '请输入资源编码', trigger: 'blur' }],
     actionCode: [{ required: true, message: '请输入动作编码', trigger: 'blur' }],
     name: [{ required: true, message: '请输入权限名称', trigger: 'blur' }],
     scopeId: [{ required: true, message: '请选择作用域', trigger: 'change' }],
     status: [{ required: true, message: '请选择状态', trigger: 'change' }]
   })
+
+  const permissionKeyPreview = computed(() => {
+    const resourceCode = form.resourceCode.trim()
+    const actionCode = form.actionCode.trim()
+    if (!resourceCode && !actionCode) {
+      return ''
+    }
+    return `${resourceCode || 'resource'}:${actionCode || 'action'}`
+  })
+
+  const sourceLabel = computed(() => {
+    if (form.source === 'api') return '接口自动注册'
+    if (form.source === 'system') return '系统内置'
+    return '业务定义'
+  })
+
+  const sourceTagType = computed(() => {
+    if (form.source === 'api') return 'success'
+    if (form.source === 'system') return 'info'
+    return 'warning'
+  })
+
+  function queryCategorySuggestions(
+    queryString: string,
+    cb: (items: Array<{ value: string }>) => void
+  ) {
+    const keyword = queryString.trim().toLowerCase()
+    const suggestions = (props.categoryOptions || [])
+      .filter((item) => !keyword || item.toLowerCase().includes(keyword))
+      .slice(0, 12)
+      .map((value) => ({ value }))
+    cb(suggestions)
+  }
+
+  function queryModuleSuggestions(
+    queryString: string,
+    cb: (items: Array<{ value: string }>) => void
+  ) {
+    const keyword = queryString.trim().toLowerCase()
+    const suggestions = (props.moduleOptions || [])
+      .filter((item) => !keyword || item.toLowerCase().includes(keyword))
+      .slice(0, 12)
+      .map((value) => ({ value }))
+    cb(suggestions)
+  }
 
   async function loadScopes() {
     try {
@@ -132,6 +216,10 @@
         id: props.actionData.id,
         resourceCode: props.actionData.resourceCode,
         actionCode: props.actionData.actionCode,
+        moduleCode: props.actionData.moduleCode || props.actionData.resourceCode,
+        category: props.actionData.category || '',
+        source: props.actionData.source || 'business',
+        featureKind: props.actionData.featureKind || 'system',
         name: props.actionData.name,
         description: props.actionData.description || '',
         scopeId,
@@ -142,9 +230,13 @@
       return
     }
     Object.assign(form, {
-      id: '',
-      resourceCode: '',
-      actionCode: '',
+        id: '',
+        resourceCode: '',
+        actionCode: '',
+        moduleCode: '',
+        category: '',
+      source: 'business',
+      featureKind: 'business',
       name: '',
       description: '',
       scopeId: scopeList.value[0]?.scopeId || '',
@@ -179,6 +271,9 @@
       const payload = {
         resource_code: form.resourceCode.trim(),
         action_code: form.actionCode.trim(),
+        module_code: form.moduleCode.trim(),
+        category: form.category.trim(),
+        feature_kind: form.featureKind,
         name: form.name.trim(),
         description: form.description.trim(),
         scope_id: form.scopeId,

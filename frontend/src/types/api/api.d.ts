@@ -219,10 +219,15 @@ declare namespace Api {
       status?: string
     }
 
-    interface PermissionActionItem {
-      id: string
-      resourceCode: string
-      actionCode: string
+      interface PermissionActionItem {
+        id: string
+        resourceCode: string
+        actionCode: string
+        moduleCode?: string
+        permissionKey?: string
+        category?: string
+      source?: 'system' | 'api' | 'business' | string
+      featureKind?: 'system' | 'business' | string
       name: string
       description?: string
       scopeId?: string
@@ -243,6 +248,7 @@ declare namespace Api {
       method: string
       path: string
       module: string
+      featureKind?: 'system' | 'business' | string
       handler?: string
       summary?: string
       resourceCode?: string
@@ -261,6 +267,7 @@ declare namespace Api {
     type APIEndpointSearchParams = Partial<
       Pick<APIEndpointItem, 'method' | 'path' | 'module' | 'status'> &
         Api.Common.CommonSearchParams & {
+          featureKind?: string
           resourceCode?: string
           actionCode?: string
           scopeCode?: string
@@ -269,19 +276,25 @@ declare namespace Api {
     >
 
     type PermissionActionSearchParams = Partial<
-      Pick<PermissionActionItem, 'name' | 'status'> &
-        Api.Common.CommonSearchParams & {
-          resourceCode?: string
-          actionCode?: string
-          scopeId?: string
-          scopeCode?: string
+      Pick<PermissionActionItem, 'name' | 'status' | 'category' | 'source'> &
+          Api.Common.CommonSearchParams & {
+            keyword?: string
+            resourceCode?: string
+            actionCode?: string
+            moduleCode?: string
+            featureKind?: string
+            scopeId?: string
+            scopeCode?: string
           requiresTenantContext?: boolean
         }
     >
 
-    interface PermissionActionCreateParams {
-      resource_code: string
-      action_code: string
+      interface PermissionActionCreateParams {
+        resource_code: string
+        action_code: string
+        module_code?: string
+        category?: string
+        feature_kind?: 'system' | 'business' | string
       name: string
       description?: string
       scope_id: string
@@ -290,9 +303,12 @@ declare namespace Api {
       sort_order?: number
     }
 
-    interface PermissionActionUpdateParams {
-      resource_code?: string
-      action_code?: string
+      interface PermissionActionUpdateParams {
+        resource_code?: string
+        action_code?: string
+        module_code?: string
+        category?: string
+      feature_kind?: 'system' | 'business' | string
       name?: string
       description?: string
       scope_id?: string

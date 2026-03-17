@@ -28,6 +28,7 @@ func (h *Handler) List(c *gin.Context) {
 		Method                string `form:"method"`
 		Path                  string `form:"path"`
 		Module                string `form:"module"`
+		FeatureKind           string `form:"feature_kind"`
 		ResourceCode          string `form:"resource_code"`
 		ActionCode            string `form:"action_code"`
 		ScopeCode             string `form:"scope_code"`
@@ -45,6 +46,7 @@ func (h *Handler) List(c *gin.Context) {
 		Method:                req.Method,
 		Path:                  req.Path,
 		Module:                req.Module,
+		FeatureKind:           req.FeatureKind,
 		ResourceCode:          req.ResourceCode,
 		ActionCode:            req.ActionCode,
 		ScopeCode:             req.ScopeCode,
@@ -93,6 +95,7 @@ func endpointToMap(endpoint *user.APIEndpoint) gin.H {
 		"method":                  endpoint.Method,
 		"path":                    endpoint.Path,
 		"module":                  endpoint.Module,
+		"feature_kind":            endpoint.FeatureKind,
 		"handler":                 endpoint.Handler,
 		"summary":                 endpoint.Summary,
 		"resource_code":           endpoint.ResourceCode,

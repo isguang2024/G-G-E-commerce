@@ -57,9 +57,14 @@ func (s *permissionService) List(req *dto.PermissionActionListRequest) ([]user.P
 		req.Size = 20
 	}
 	params := &user.PermissionActionListParams{
+		Keyword:               strings.TrimSpace(req.Keyword),
 		Name:                  req.Name,
 		ResourceCode:          req.ResourceCode,
 		ActionCode:            req.ActionCode,
+		ModuleCode:            strings.TrimSpace(req.ModuleCode),
+		Category:              strings.TrimSpace(req.Category),
+		Source:                strings.TrimSpace(req.Source),
+		FeatureKind:           normalizeFeatureKind(req.FeatureKind, ""),
 		Status:                req.Status,
 		RequiresTenantContext: req.RequiresTenantContext,
 	}
@@ -109,9 +114,15 @@ func (s *permissionService) Create(req *dto.PermissionActionCreateRequest) (*use
 	if status == "" {
 		status = "normal"
 	}
+	featureKind := normalizeFeatureKind(req.FeatureKind, "business")
+	moduleCode := normalizeModuleCode(req.ModuleCode, req.ResourceCode)
 	action := &user.PermissionAction{
 		ResourceCode:          resourceCode,
 		ActionCode:            actionCode,
+		ModuleCode:            moduleCode,
+		Category:              strings.TrimSpace(req.Category),
+		Source:                "business",
+		FeatureKind:           featureKind,
 		Name:                  strings.TrimSpace(req.Name),
 		Description:           strings.TrimSpace(req.Description),
 		ScopeID:               scopeID,
@@ -140,6 +151,12 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionActionUpdate
 	}
 	if name := strings.TrimSpace(req.Name); name != "" {
 		updates["name"] = name
+	}
+	if req.Category != "" {
+		updates["category"] = strings.TrimSpace(req.Category)
+	}
+	if featureKind := normalizeFeatureKind(req.FeatureKind, ""); featureKind != "" {
+		updates["feature_kind"] = featureKind
 	}
 	if req.Description != "" {
 		updates["description"] = strings.TrimSpace(req.Description)
@@ -176,6 +193,12 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionActionUpdate
 		targetActionCode = actionCode
 		updates["action_code"] = actionCode
 	}
+	if req.ModuleCode != "" {
+		updates["module_code"] = normalizeModuleCode(req.ModuleCode, targetResourceCode)
+	}
+	if req.ModuleCode == "" && (resourceCode != "" || current.ModuleCode == "") {
+		updates["module_code"] = normalizeModuleCode(current.ModuleCode, targetResourceCode)
+	}
 	if targetResourceCode != current.ResourceCode || targetActionCode != current.ActionCode {
 		existing, getErr := s.actionRepo.GetByResourceAndAction(targetResourceCode, targetActionCode)
 		if getErr == nil && existing != nil && existing.ID != id {
@@ -187,6 +210,25 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionActionUpdate
 	}
 
 	return s.actionRepo.UpdateWithMap(id, updates)
+}
+
+func normalizeModuleCode(value, fallbackResource string) string {
+	moduleCode := strings.TrimSpace(value)
+	if moduleCode != "" {
+		return moduleCode
+	}
+	return strings.TrimSpace(fallbackResource)
+}
+
+func normalizeFeatureKind(value, fallback string) string {
+	switch strings.TrimSpace(value) {
+	case "system", "business":
+		return strings.TrimSpace(value)
+	case "":
+		return fallback
+	default:
+		return fallback
+	}
 }
 
 func (s *permissionService) Delete(id uuid.UUID) error {

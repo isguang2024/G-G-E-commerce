@@ -14,6 +14,14 @@ function normalizePermissionAction(item: any): Api.SystemManage.PermissionAction
     id: item?.id || '',
     resourceCode: item?.resource_code || item?.resourceCode || '',
     actionCode: item?.action_code || item?.actionCode || '',
+    moduleCode: item?.module_code || item?.moduleCode || item?.category || item?.resource_code || item?.resourceCode || '',
+    permissionKey:
+      item?.permission_key ||
+      item?.permissionKey ||
+      `${item?.resource_code || item?.resourceCode || ''}:${item?.action_code || item?.actionCode || ''}`,
+    category: item?.category || '',
+    source: item?.source || 'business',
+    featureKind: item?.feature_kind || item?.featureKind || 'system',
     name: item?.name || '',
     description: item?.description || '',
     scopeId: item?.scope_id || item?.scopeId || '',
@@ -36,6 +44,7 @@ function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
     method: item?.method || '',
     path: item?.path || '',
     module: item?.module || '',
+    featureKind: item?.feature_kind || item?.featureKind || 'system',
     handler: item?.handler || '',
     summary: item?.summary || '',
     resourceCode: item?.resource_code || item?.resourceCode || '',
@@ -232,10 +241,25 @@ export function fetchSetRoleDataPermissions(
 
 /** 获取功能权限列表 */
 export function fetchGetPermissionActionList(params: Api.SystemManage.PermissionActionSearchParams) {
+  const normalizedParams = {
+    ...params,
+    resource_code: params?.resourceCode,
+    action_code: params?.actionCode,
+    module_code: params?.moduleCode,
+    scope_id: params?.scopeId,
+    scope_code: params?.scopeCode,
+    feature_kind: params?.featureKind,
+    resourceCode: undefined,
+    actionCode: undefined,
+    moduleCode: undefined,
+    scopeId: undefined,
+    scopeCode: undefined,
+    featureKind: undefined
+  }
   return request
     .get<Api.SystemManage.PermissionActionList>({
       url: ACTION_PERMISSION_BASE,
-      params
+      params: normalizedParams
     })
     .then((res) => ({
       ...res,
@@ -280,10 +304,21 @@ export function fetchDeletePermissionAction(id: string) {
 
 /** 获取 API 注册表 */
 export function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpointSearchParams) {
+  const normalizedParams = {
+    ...params,
+    resource_code: params?.resourceCode,
+    action_code: params?.actionCode,
+    scope_code: params?.scopeCode,
+    feature_kind: params?.featureKind,
+    resourceCode: undefined,
+    actionCode: undefined,
+    scopeCode: undefined,
+    featureKind: undefined
+  }
   return request
     .get<Api.SystemManage.APIEndpointList>({
       url: API_ENDPOINT_BASE,
-      params
+      params: normalizedParams
     })
     .then((res) => ({
       ...res,

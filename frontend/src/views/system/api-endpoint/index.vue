@@ -52,6 +52,15 @@
         { prop: 'method', label: '方法', width: 90 },
         { prop: 'path', label: '路径', minWidth: 260, showOverflowTooltip: true },
         { prop: 'module', label: '模块', width: 120 },
+        {
+          prop: 'featureKind',
+          label: '功能归属',
+          width: 110,
+          formatter: (row: APIEndpointItem) =>
+            h(ElTag, { type: row.featureKind === 'business' ? 'success' : 'info' }, () =>
+              row.featureKind === 'business' ? '业务功能' : '系统功能'
+            )
+        },
         { prop: 'summary', label: '说明', minWidth: 180, showOverflowTooltip: true },
         { prop: 'resourceCode', label: '资源编码', minWidth: 140 },
         { prop: 'actionCode', label: '动作编码', minWidth: 160 },

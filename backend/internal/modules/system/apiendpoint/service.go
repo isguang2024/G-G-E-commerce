@@ -17,6 +17,7 @@ type ListRequest struct {
 	Method                string
 	Path                  string
 	Module                string
+	FeatureKind           string
 	ResourceCode          string
 	ActionCode            string
 	ScopeCode             string
@@ -51,6 +52,7 @@ func (s *service) List(req *ListRequest) ([]user.APIEndpoint, int64, error) {
 		Method:                strings.ToUpper(strings.TrimSpace(req.Method)),
 		Path:                  strings.TrimSpace(req.Path),
 		Module:                strings.TrimSpace(req.Module),
+		FeatureKind:           strings.TrimSpace(req.FeatureKind),
 		ResourceCode:          strings.TrimSpace(req.ResourceCode),
 		ActionCode:            strings.TrimSpace(req.ActionCode),
 		ScopeCode:             strings.TrimSpace(req.ScopeCode),
