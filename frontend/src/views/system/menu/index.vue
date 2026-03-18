@@ -148,7 +148,7 @@
         @submit="handleSubmit"
       />
 
-      <MenuActionRequirementDialog
+      <MenuPermissionDialog
         v-model="actionRequirementVisible"
         :menuData="actionRequirementData"
         @submit="handleActionRequirementSubmit"
@@ -234,7 +234,7 @@
   import { useTableColumns } from '@/hooks/core/useTableColumns'
   import type { AppRouteRecord } from '@/types/router'
   import MenuDialog from './modules/menu-dialog.vue'
-  import MenuActionRequirementDialog from './modules/menu-action-requirement-dialog.vue'
+  import MenuPermissionDialog from './modules/menu-permission-dialog.vue'
   import {
     fetchGetMenuTreeAll,
     fetchCreateMenu,

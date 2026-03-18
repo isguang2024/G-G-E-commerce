@@ -52,7 +52,7 @@
   import TeamSearch from './modules/team-search.vue'
   import TeamDialog from './modules/team-dialog.vue'
   import TeamMembersDrawer from './modules/team-members-drawer.vue'
-  import TeamActionPermissionDialog from './modules/team-action-permission-dialog.vue'
+  import TeamActionPermissionDialog from './modules/team-permission-dialog.vue'
   import {
     ElTag,
     ElMessageBox,

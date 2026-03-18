@@ -83,7 +83,7 @@
   } from '@/api/system-manage'
   import UserSearch from './modules/user-search.vue'
   import UserDialog from './modules/user-dialog.vue'
-  import UserActionDialog from './modules/user-action-dialog.vue'
+  import UserActionDialog from './modules/user-permission-selector-dialog.vue'
   import { ElTag, ElMessageBox, ElImage, ElDrawer, ElTree, ElIcon, ElMessage } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
 
