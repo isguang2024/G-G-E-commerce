@@ -168,7 +168,7 @@
                   ElTag,
                   {
                     key: scope.scopeId || scope.scopeCode,
-                    type: getScopeTagType(scope.scopeCode, scope.contextKind),
+                    type: getScopeTagType(scope.scopeCode),
                     effect: 'plain'
                   },
                   () => scope.scopeName || scope.scopeCode || '未命名'

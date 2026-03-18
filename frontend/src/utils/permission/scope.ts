@@ -1,8 +1,9 @@
-export function formatScopeLabel(scopeCode?: string, scopeName?: string, contextKind?: string) {
+export function formatScopeLabel(scopeCode?: string, scopeName?: string) {
   if (scopeName?.trim()) return scopeName.trim()
 
-  switch ((contextKind || scopeCode || '').trim()) {
+  switch ((scopeCode || '').trim()) {
     case 'tenant':
+    case 'team':
       return '团队'
     case 'global':
       return '全局'
@@ -11,9 +12,10 @@ export function formatScopeLabel(scopeCode?: string, scopeName?: string, context
   }
 }
 
-export function getScopeTagType(scopeCode?: string, contextKind?: string) {
-  switch ((contextKind || scopeCode || '').trim()) {
+export function getScopeTagType(scopeCode?: string) {
+  switch ((scopeCode || '').trim()) {
     case 'tenant':
+    case 'team':
       return 'success'
     case 'global':
       return 'primary'

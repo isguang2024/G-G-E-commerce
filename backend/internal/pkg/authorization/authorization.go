@@ -31,8 +31,7 @@ type Service struct {
 }
 
 type actionScopeSelector struct {
-	Code        string
-	ContextKind string
+	Code string
 }
 
 func NewService(db *gorm.DB, logger *zap.Logger) *Service {
@@ -91,10 +90,11 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, resourceCode,
 	query := s.db.Preload("Scope").Joins("JOIN scopes ON permission_actions.scope_id = scopes.id").Where("permission_actions.resource_code = ? AND permission_actions.action_code = ?", resourceCode, actionCode)
 	selector := resolveActionScopeSelector(scopeCodes, tenantID)
 	if selector.Code != "" {
-		query = query.Where("scopes.code = ?", selector.Code)
-	}
-	if selector.ContextKind != "" {
-		query = query.Where("scopes.context_kind = ?", selector.ContextKind)
+		if selector.Code == "team" {
+			query = query.Where("scopes.code IN ?", []string{"team", "tenant"})
+		} else {
+			query = query.Where("scopes.code = ?", selector.Code)
+		}
 	}
 	err = query.First(&actionDef).Error
 	if err != nil {
@@ -110,7 +110,7 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, resourceCode,
 		return true, &actionDef, nil
 	}
 
-	requiresTenant := actionDef.RequiresTenantContext || strings.EqualFold(actionDef.Scope.ContextKind, "tenant")
+	requiresTenant := actionDef.RequiresTenantContext || isTeamScopeCode(actionDef.Scope.Code)
 	var member models.TenantMember
 	if requiresTenant {
 		if tenantID == nil {
@@ -164,15 +164,15 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, resourceCode,
 
 func resolveActionScopeSelector(scopeCodes []string, tenantID *uuid.UUID) actionScopeSelector {
 	for _, scopeCode := range scopeCodes {
-		trimmed := strings.TrimSpace(scopeCode)
+		trimmed := normalizeActionScopeCode(scopeCode)
 		if trimmed != "" {
 			return actionScopeSelector{Code: trimmed}
 		}
 	}
 	if tenantID != nil {
-		return actionScopeSelector{ContextKind: "tenant"}
+		return actionScopeSelector{Code: "team"}
 	}
-	return actionScopeSelector{ContextKind: "global"}
+	return actionScopeSelector{Code: "global"}
 }
 
 func (s *Service) GetUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error) {
@@ -252,7 +252,7 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 	keySet := make(map[string]struct{}, len(actions))
 	scopedKeySet := make(map[string]struct{}, len(actions))
 	for _, action := range actions {
-		requiresTenant := action.RequiresTenantContext || strings.EqualFold(action.Scope.ContextKind, "tenant")
+		requiresTenant := action.RequiresTenantContext || isTeamScopeCode(action.Scope.Code)
 		if requiresTenant {
 			if tenantID == nil || !memberActive {
 				continue
@@ -306,14 +306,19 @@ func appendActionKeys(keys, scopedKeys *[]string, keySet, scopedKeySet map[strin
 }
 
 func normalizeActionScopeCode(scopeCode string) string {
-	switch strings.TrimSpace(scopeCode) {
-	case "tenant":
-		return "tenant"
+	switch strings.TrimSpace(strings.ToLower(scopeCode)) {
+	case "tenant", "team":
+		return "team"
 	case "":
 		return "global"
 	default:
-		return strings.TrimSpace(scopeCode)
+		return strings.TrimSpace(strings.ToLower(scopeCode))
 	}
+}
+
+func isTeamScopeCode(scopeCode string) bool {
+	normalized := normalizeActionScopeCode(scopeCode)
+	return normalized == "team"
 }
 
 func (s *Service) respondAuthError(c *gin.Context, authErr error, resourceCode, actionCode string) {

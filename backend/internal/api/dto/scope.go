@@ -13,7 +13,6 @@ type ScopeCreateRequest struct {
 	Code               string `json:"code" binding:"required,max=50"`
 	Name               string `json:"name" binding:"required,max=100"`
 	Description        string `json:"description"`
-	ContextKind        string `json:"context_kind" binding:"required,oneof=global tenant"`
 	DataPermissionCode string `json:"data_permission_code" binding:"max=50"`
 	DataPermissionName string `json:"data_permission_name" binding:"max=100"`
 	SortOrder          int    `json:"sort_order"`
@@ -23,7 +22,6 @@ type ScopeCreateRequest struct {
 type ScopeUpdateRequest struct {
 	Name               string `json:"name" binding:"max=100"`
 	Description        string `json:"description"`
-	ContextKind        string `json:"context_kind" binding:"omitempty,oneof=global tenant"`
 	DataPermissionCode string `json:"data_permission_code" binding:"max=50"`
 	DataPermissionName string `json:"data_permission_name" binding:"max=100"`
 	SortOrder          int    `json:"sort_order"`

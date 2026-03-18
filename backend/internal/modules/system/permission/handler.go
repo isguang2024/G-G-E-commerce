@@ -166,7 +166,6 @@ func actionToMap(action *user.PermissionAction) gin.H {
 		"scope_id":                scopeID,
 		"scope_code":              scopeCode,
 		"scope_name":              scopeName,
-		"scope_context_kind":      action.Scope.ContextKind,
 		"data_permission_code":    action.Scope.DataPermissionCode,
 		"data_permission_name":    action.Scope.DataPermissionName,
 		"scope":                   scopeCode,

@@ -633,7 +633,7 @@ func (h *TenantHandler) SetMyTeamMemberRoles(c *gin.Context) {
 	for _, role := range allRoles {
 		hasTenantScope := false
 		for _, scope := range role.Scopes {
-			if strings.EqualFold(scope.ContextKind, "tenant") {
+			if isTeamScopeCode(scope.Code) {
 				hasTenantScope = true
 				break
 			}
@@ -703,14 +703,13 @@ func (h *TenantHandler) ListMyTeamRoles(c *gin.Context) {
 		scopes := make([]gin.H, 0, len(r.Scopes))
 		hasTenantScope := false
 		for _, scope := range r.Scopes {
-			if strings.EqualFold(scope.ContextKind, "tenant") {
+			if isTeamScopeCode(scope.Code) {
 				hasTenantScope = true
 			}
 			scopes = append(scopes, gin.H{
 				"scopeId":            scope.ID.String(),
 				"scopeCode":          scope.Code,
 				"scopeName":          scope.Name,
-				"contextKind":        scope.ContextKind,
 				"dataPermissionCode": scope.DataPermissionCode,
 				"dataPermissionName": scope.DataPermissionName,
 			})
@@ -764,7 +763,7 @@ func (h *TenantHandler) GetMyTeamRoleActions(c *gin.Context) {
 	}
 	hasTeamScope := false
 	for _, scope := range role.Scopes {
-		if strings.EqualFold(scope.ContextKind, "tenant") {
+		if isTeamScopeCode(scope.Code) {
 			hasTeamScope = true
 			break
 		}
@@ -854,7 +853,7 @@ func (h *TenantHandler) SetTenantActions(c *gin.Context) {
 			return
 		}
 		for _, action := range actions {
-			if !strings.EqualFold(action.Scope.ContextKind, "tenant") {
+			if !isTeamScopeCode(action.Scope.Code) {
 				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "团队仅可配置团队作用域功能权限")
 				c.JSON(status, resp)
 				return
@@ -1036,7 +1035,7 @@ func (h *TenantHandler) SetMyTeamMemberActionPermissions(c *gin.Context) {
 			return
 		}
 		for _, action := range actionList {
-			if !strings.EqualFold(action.Scope.ContextKind, "tenant") {
+			if !isTeamScopeCode(action.Scope.Code) {
 				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "成员仅可配置团队作用域功能权限")
 				c.JSON(status, resp)
 				return
@@ -1198,7 +1197,6 @@ func actionMapToMap(action *user.PermissionAction) gin.H {
 		"scope_id":                scopeID,
 		"scope_code":              scopeCode,
 		"scope_name":              scopeName,
-		"scope_context_kind":      action.Scope.ContextKind,
 		"data_permission_code":    action.Scope.DataPermissionCode,
 		"data_permission_name":    action.Scope.DataPermissionName,
 		"scope":                   scopeCode,
@@ -1224,6 +1222,15 @@ func actionIDsToStrings(ids []uuid.UUID) []string {
 		items = append(items, id.String())
 	}
 	return items
+}
+
+func isTeamScopeCode(scopeCode string) bool {
+	switch strings.TrimSpace(strings.ToLower(scopeCode)) {
+	case "team", "tenant":
+		return true
+	default:
+		return false
+	}
 }
 
 func parseUUIDSlice(items []string) ([]uuid.UUID, error) {

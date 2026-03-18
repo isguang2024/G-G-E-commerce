@@ -26,8 +26,6 @@
           v-model="form.scopeIds"
           multiple
           filterable
-          collapse-tags
-          collapse-tags-tooltip
           placeholder="请选择作用域"
           style="width: 100%"
           :loading="scopeLoading"

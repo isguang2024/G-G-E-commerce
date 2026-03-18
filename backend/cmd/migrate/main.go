@@ -465,6 +465,52 @@ func runNamedMigrations(logger *zap.Logger) error {
 				return nil
 			},
 		},
+		{
+			Name: "20260318_scopes_drop_context_kind",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`UPDATE scopes SET code = 'team', name = '团队', is_system = TRUE WHERE code = 'tenant' AND NOT EXISTS (SELECT 1 FROM scopes existing WHERE existing.code = 'team')`,
+					`WITH team_scope AS (
+						SELECT id FROM scopes WHERE code = 'team' LIMIT 1
+					), tenant_scope AS (
+						SELECT id FROM scopes WHERE code = 'tenant' LIMIT 1
+					)
+					INSERT INTO role_scopes (role_id, scope_id)
+					SELECT rs.role_id, ts.id
+					FROM role_scopes rs, tenant_scope tns, team_scope ts
+					WHERE rs.scope_id = tns.id
+					ON CONFLICT DO NOTHING`,
+					`WITH team_scope AS (
+						SELECT id FROM scopes WHERE code = 'team' LIMIT 1
+					), tenant_scope AS (
+						SELECT id FROM scopes WHERE code = 'tenant' LIMIT 1
+					)
+					UPDATE permission_actions
+					SET scope_id = ts.id
+					FROM tenant_scope tns, team_scope ts
+					WHERE permission_actions.scope_id = tns.id`,
+					`WITH team_scope AS (
+						SELECT id FROM scopes WHERE code = 'team' LIMIT 1
+					), tenant_scope AS (
+						SELECT id FROM scopes WHERE code = 'tenant' LIMIT 1
+					)
+					UPDATE api_endpoints
+					SET scope_id = ts.id
+					FROM tenant_scope tns, team_scope ts
+					WHERE api_endpoints.scope_id = tns.id`,
+					`DELETE FROM role_scopes WHERE scope_id IN (SELECT id FROM scopes WHERE code = 'tenant')`,
+					`DELETE FROM scopes WHERE code = 'tenant'`,
+					`ALTER TABLE scopes DROP COLUMN IF EXISTS context_kind`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260318_scopes_drop_context_kind"))
+				return nil
+			},
+		},
 	}
 
 	for _, task := range tasks {
@@ -563,12 +609,10 @@ func initDefaultRoles(logger *zap.Logger) error {
 	}
 
 	_ = database.DB.Model(&usermodel.Scope{}).Where("code = ?", "global").Updates(map[string]interface{}{
-		"context_kind":         "global",
 		"data_permission_code": "",
 		"data_permission_name": "全局",
 	}).Error
 	_ = database.DB.Model(&usermodel.Scope{}).Where("code IN ?", []string{"team", "tenant"}).Updates(map[string]interface{}{
-		"context_kind":         "tenant",
 		"data_permission_code": "team",
 		"data_permission_name": "当前团队",
 	}).Error
@@ -732,14 +776,13 @@ func initDefaultScopes(logger *zap.Logger) error {
 		Code        string
 		Name        string
 		Description string
-		ContextKind string
 		DataCode    string
 		DataName    string
 		IsSystem    bool
 		SortOrder   int
 	}{
-		{"global", "全局", "跨应用全局作用域", "global", "", "全局", true, 1},
-		{"team", "团队", "仅团队功能使用的作用域", "tenant", "team", "当前团队", true, 2},
+		{"global", "全局", "跨应用全局作用域", "", "全局", true, 1},
+		{"team", "团队", "仅团队功能使用的作用域", "team", "当前团队", true, 2},
 	}
 
 	for _, scopeData := range scopes {
@@ -752,7 +795,6 @@ func initDefaultScopes(logger *zap.Logger) error {
 					Name:               scopeData.Name,
 					Description:        scopeData.Description,
 					IsSystem:           scopeData.IsSystem,
-					ContextKind:        scopeData.ContextKind,
 					DataPermissionCode: scopeData.DataCode,
 					DataPermissionName: scopeData.DataName,
 					SortOrder:          scopeData.SortOrder,
@@ -770,7 +812,6 @@ func initDefaultScopes(logger *zap.Logger) error {
 				"name":                 scopeData.Name,
 				"description":          scopeData.Description,
 				"is_system":            scopeData.IsSystem,
-				"context_kind":         scopeData.ContextKind,
 				"data_permission_code": scopeData.DataCode,
 				"data_permission_name": scopeData.DataName,
 				"sort_order":           scopeData.SortOrder,

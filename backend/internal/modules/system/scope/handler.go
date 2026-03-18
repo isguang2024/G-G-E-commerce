@@ -51,7 +51,6 @@ func (h *ScopeHandler) List(c *gin.Context) {
 			"scopeName":          s.Name,
 			"description":        s.Description,
 			"isSystem":           s.IsSystem,
-			"contextKind":        s.ContextKind,
 			"dataPermissionCode": s.DataPermissionCode,
 			"dataPermissionName": s.DataPermissionName,
 			"sortOrder":          s.SortOrder,
@@ -81,7 +80,6 @@ func (h *ScopeHandler) GetAll(c *gin.Context) {
 			"scopeCode":          s.Code,
 			"scopeName":          s.Name,
 			"isSystem":           s.IsSystem,
-			"contextKind":        s.ContextKind,
 			"dataPermissionCode": s.DataPermissionCode,
 			"dataPermissionName": s.DataPermissionName,
 		})
@@ -114,7 +112,6 @@ func (h *ScopeHandler) Get(c *gin.Context) {
 		"scopeName":          scope.Name,
 		"description":        scope.Description,
 		"isSystem":           scope.IsSystem,
-		"contextKind":        scope.ContextKind,
 		"dataPermissionCode": scope.DataPermissionCode,
 		"dataPermissionName": scope.DataPermissionName,
 		"sortOrder":          scope.SortOrder,

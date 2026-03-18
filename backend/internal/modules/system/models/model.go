@@ -98,7 +98,6 @@ type Scope struct {
 	Name               string         `gorm:"type:varchar(100);not null" json:"name"`
 	Description        string         `gorm:"type:varchar(255)" json:"description"`
 	IsSystem           bool           `gorm:"default:false" json:"is_system"`
-	ContextKind        string         `gorm:"type:varchar(20);not null;default:'global'" json:"context_kind"`
 	DataPermissionCode string         `gorm:"type:varchar(50);not null;default:''" json:"data_permission_code"`
 	DataPermissionName string         `gorm:"type:varchar(100);not null;default:''" json:"data_permission_name"`
 	SortOrder          int            `gorm:"default:0" json:"sort_order"`

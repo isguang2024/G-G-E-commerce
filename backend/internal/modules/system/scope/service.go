@@ -77,7 +77,6 @@ func (s *scopeService) Create(req *dto.ScopeCreateRequest) (*user.Scope, error) 
 		Name:               req.Name,
 		Description:        req.Description,
 		IsSystem:           false,
-		ContextKind:        normalizeScopeContextKind(req.ContextKind),
 		DataPermissionCode: normalizeDataPermissionCode(req.DataPermissionCode),
 		DataPermissionName: normalizeDataPermissionName(req.DataPermissionName, req.Name),
 		SortOrder:          req.SortOrder,
@@ -101,9 +100,6 @@ func (s *scopeService) Update(id uuid.UUID, req *dto.ScopeUpdateRequest) error {
 	}
 	if req.Description != "" {
 		scope.Description = req.Description
-	}
-	if req.ContextKind != "" {
-		scope.ContextKind = normalizeScopeContextKind(req.ContextKind)
 	}
 	scope.DataPermissionCode = normalizeDataPermissionCode(req.DataPermissionCode)
 	scope.DataPermissionName = normalizeDataPermissionName(req.DataPermissionName, scope.Name)
@@ -136,13 +132,6 @@ func (s *scopeService) Delete(id uuid.UUID) error {
 
 func (s *scopeService) GetAll() ([]user.Scope, error) {
 	return s.scopeRepo.GetAll()
-}
-
-func normalizeScopeContextKind(raw string) string {
-	if raw == "tenant" {
-		return "tenant"
-	}
-	return "global"
 }
 
 func normalizeDataPermissionCode(raw string) string {

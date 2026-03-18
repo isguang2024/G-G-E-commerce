@@ -30,7 +30,6 @@ function normalizeAction(item: any): Api.SystemManage.PermissionActionItem {
     scopeId: item?.scope_id || item?.scopeId || '',
     scopeCode: item?.scope_code || item?.scopeCode || item?.scope || '',
     scopeName: item?.scope_name || item?.scopeName || '',
-    scopeContextKind: item?.scope_context_kind || item?.scopeContextKind || '',
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
     dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
     scope: item?.scope || item?.scope_code || item?.scopeCode || '',
@@ -211,7 +210,6 @@ export async function fetchGetMyTeamRoles() {
           scopeId: scope?.scopeId || scope?.scope_id || '',
           scopeCode: scope?.scopeCode || scope?.scope_code || '',
           scopeName: scope?.scopeName || scope?.scope_name || '',
-          contextKind: scope?.contextKind || scope?.context_kind || 'global',
           dataPermissionCode:
             scope?.dataPermissionCode || scope?.data_permission_code || '',
           dataPermissionName:

@@ -46,7 +46,7 @@
               <ElSwitch v-model="filters.onlyEnabled" />
             </label>
             <label class="option-item">
-              <span>查看备注</span>
+              <span>显示 ID/说明</span>
               <ElSwitch v-model="filters.showRemark" />
             </label>
             <label class="option-item">
@@ -178,7 +178,7 @@
     featureKind: '',
     enabledState: '',
     onlyEnabled: false,
-    showRemark: true,
+    showRemark: false,
     compact: false
   })
 
@@ -238,11 +238,14 @@
   )
 
   function buildActionMeta(action: PermissionActionItem) {
+    if (!filters.showRemark) {
+      return ''
+    }
     const parts = [action.permissionKey || `${action.resourceCode}:${action.actionCode}`]
-    if (filters.showRemark && action.description) {
+    if (action.description) {
       parts.push(action.description)
     }
-    return parts.filter(Boolean).join('  ')
+    return parts.join('  ')
   }
 
   function applyEnabled(actionIds: string[], enabled: boolean) {
@@ -289,7 +292,7 @@
         featureKind: '',
         enabledState: '',
         onlyEnabled: false,
-        showRemark: true,
+        showRemark: false,
         compact: false
       })
       syncExpandedKeys()

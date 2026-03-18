@@ -103,7 +103,6 @@ func endpointToMap(endpoint *user.APIEndpoint) gin.H {
 		"scope_id":                scopeID,
 		"scope_code":              scopeCode,
 		"scope_name":              scopeName,
-		"scope_context_kind":      endpoint.Scope.ContextKind,
 		"data_permission_code":    endpoint.Scope.DataPermissionCode,
 		"data_permission_name":    endpoint.Scope.DataPermissionName,
 		"requires_tenant_context": endpoint.RequiresTenantContext,

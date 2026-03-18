@@ -131,11 +131,12 @@
 <script setup lang="ts">
   import type { FormItem } from '@/components/core/forms/art-form/index.vue'
   import { useTable } from '@/hooks/core/useTable'
-    import {
-      fetchDeletePermissionAction,
-      fetchGetPermissionActionList
-    } from '@/api/system-manage'
-    import { formatScopeLabel, getScopeTagType } from '@/utils/permission/scope'
+  import {
+    fetchDeletePermissionAction,
+    fetchGetAllScopes,
+    fetchGetPermissionActionList
+  } from '@/api/system-manage'
+  import { formatScopeLabel, getScopeTagType } from '@/utils/permission/scope'
   import ActionPermissionDialog from './modules/action-permission-dialog.vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
@@ -207,11 +208,7 @@
     { label: '业务功能', value: 'business' }
   ]
 
-  const scopeOptions = [
-    { label: '全部作用域', value: '' },
-    { label: '全局', value: 'global' },
-    { label: '团队', value: 'team' }
-  ]
+  const scopeOptions = ref([{ label: '全部作用域', value: '' }])
 
   const statusOptions = [
     { label: '全部状态', value: '' },
@@ -224,6 +221,21 @@
     { label: '依赖团队', value: 'true' },
     { label: '不依赖团队', value: 'false' }
   ]
+
+  onMounted(async () => {
+    try {
+      const scopes = await fetchGetAllScopes()
+      scopeOptions.value = [
+        { label: '全部作用域', value: '' },
+        ...scopes.map((scope) => ({
+          label: scope.scopeName || scope.scopeCode,
+          value: scope.scopeCode
+        }))
+      ]
+    } catch {
+      scopeOptions.value = [{ label: '全部作用域', value: '' }]
+    }
+  })
 
   const searchItems = computed<FormItem[]>(() => [
     {
@@ -260,7 +272,7 @@
       label: '作用域',
       key: 'scopeCode',
       type: 'select',
-      props: { options: scopeOptions, clearable: true }
+      props: { options: scopeOptions.value, clearable: true }
     },
     {
       label: '状态',

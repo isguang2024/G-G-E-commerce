@@ -79,10 +79,10 @@
                     ElTag,
                     {
                       key: scope.scopeId || scope.scopeCode,
-                      type: getScopeTagType(scope.scopeCode, scope.contextKind),
+                      type: getScopeTagType(scope.scopeCode),
                       size: 'small'
                     },
-                    () => formatScopeLabel(scope.scopeCode, scope.scopeName, scope.contextKind)
+                    () => formatScopeLabel(scope.scopeCode, scope.scopeName)
                   )
                 )
               )

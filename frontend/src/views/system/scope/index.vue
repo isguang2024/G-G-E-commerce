@@ -31,10 +31,9 @@
   import { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { useTable } from '@/hooks/core/useTable'
   import { fetchDeleteScope, fetchGetScopeList } from '@/api/system-manage'
-  import { formatScopeLabel, getScopeTagType } from '@/utils/permission/scope'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import ScopeEditDialog from '../role/modules/scope-edit-dialog.vue'
-  import { ElMessage, ElMessageBox, ElTag } from 'element-plus'
+  import { ElMessage, ElMessageBox } from 'element-plus'
 
   defineOptions({ name: 'ScopeManagePage' })
 
@@ -63,20 +62,6 @@
       columnsFactory: () => [
         { prop: 'scopeCode', label: '作用域编码', minWidth: 140 },
         { prop: 'scopeName', label: '作用域名称', minWidth: 140 },
-        {
-          prop: 'contextKind',
-          label: '上下文类型',
-          width: 140,
-          formatter: (row: ScopeListItem) =>
-            h(
-              ElTag,
-              {
-                type: getScopeTagType(row.scopeCode, row.contextKind),
-                effect: 'plain'
-              },
-              () => formatScopeLabel(row.scopeCode, row.scopeName, row.contextKind)
-            )
-        },
         {
           prop: 'dataPermissionName',
           label: '数据权限范围',

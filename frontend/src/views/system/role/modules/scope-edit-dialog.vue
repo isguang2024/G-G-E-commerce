@@ -13,12 +13,6 @@
       <ElFormItem label="作用域名称" prop="scopeName">
         <ElInput v-model="form.scopeName" placeholder="请输入作用域名称" />
       </ElFormItem>
-      <ElFormItem label="上下文类型" prop="contextKind">
-        <ElSelect v-model="form.contextKind" style="width: 100%">
-          <ElOption label="全局" value="global" />
-          <ElOption label="团队" value="tenant" />
-        </ElSelect>
-      </ElFormItem>
       <ElFormItem label="数据权限编码" prop="dataPermissionCode">
         <ElInput v-model="form.dataPermissionCode" placeholder="例如：team、department，不填则不参与数据权限" />
       </ElFormItem>
@@ -78,8 +72,7 @@
     scopeName: [
       { required: true, message: '请输入作用域名称', trigger: 'blur' },
       { min: 2, max: 100, message: '长度应为 2 到 100 个字符', trigger: 'blur' }
-    ],
-    contextKind: [{ required: true, message: '请选择上下文类型', trigger: 'change' }]
+    ]
   })
 
   const form = reactive({
@@ -87,7 +80,6 @@
     scopeCode: '',
     scopeName: '',
     description: '',
-    contextKind: 'global' as 'global' | 'tenant',
     dataPermissionCode: '',
     dataPermissionName: '',
     sortOrder: 0
@@ -100,7 +92,6 @@
         scopeCode: props.scopeData.scopeCode,
         scopeName: props.scopeData.scopeName,
         description: props.scopeData.description || '',
-        contextKind: (props.scopeData.contextKind || 'global') as 'global' | 'tenant',
         dataPermissionCode: props.scopeData.dataPermissionCode || '',
         dataPermissionName: props.scopeData.dataPermissionName || '',
         sortOrder: props.scopeData.sortOrder || 0
@@ -113,7 +104,6 @@
       scopeCode: '',
       scopeName: '',
       description: '',
-      contextKind: 'global',
       dataPermissionCode: '',
       dataPermissionName: '',
       sortOrder: 0
@@ -150,7 +140,6 @@
         code: form.scopeCode,
         name: form.scopeName,
         description: form.description || '',
-        context_kind: form.contextKind,
         data_permission_code: form.dataPermissionCode || '',
         data_permission_name: form.dataPermissionName || '',
         sort_order: form.sortOrder || 0

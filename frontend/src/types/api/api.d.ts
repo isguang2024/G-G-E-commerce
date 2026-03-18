@@ -235,7 +235,6 @@ declare namespace Api {
       scopeId: string
       scopeCode: string
       scopeName: string
-      contextKind?: string
       dataPermissionCode?: string
       dataPermissionName?: string
     }
@@ -259,7 +258,6 @@ declare namespace Api {
       scopeId?: string
       scopeCode?: string
       scopeName?: string
-      scopeContextKind?: string
       dataPermissionCode?: string
       dataPermissionName?: string
       scope?: string
@@ -285,7 +283,6 @@ declare namespace Api {
       scopeId?: string
       scopeCode?: string
       scopeName?: string
-      scopeContextKind?: string
       dataPermissionCode?: string
       dataPermissionName?: string
       requiresTenantContext: boolean
@@ -385,7 +382,6 @@ declare namespace Api {
       scopeName: string
       description?: string
       isSystem?: boolean
-      contextKind?: 'global' | 'tenant' | string
       dataPermissionCode?: string
       dataPermissionName?: string
       sortOrder?: number
@@ -402,7 +398,6 @@ declare namespace Api {
       code: string
       name: string
       description?: string
-      context_kind: 'global' | 'tenant'
       data_permission_code?: string
       data_permission_name?: string
       sort_order?: number
@@ -413,7 +408,6 @@ declare namespace Api {
       code?: string
       name?: string
       description?: string
-      context_kind?: 'global' | 'tenant'
       data_permission_code?: string
       data_permission_name?: string
       sort_order?: number

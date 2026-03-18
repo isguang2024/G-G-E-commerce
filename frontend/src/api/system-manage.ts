@@ -27,7 +27,6 @@ function normalizePermissionAction(item: any): Api.SystemManage.PermissionAction
     scopeId: item?.scope_id || item?.scopeId || '',
     scopeCode: item?.scope_code || item?.scopeCode || item?.scope || '',
     scopeName: item?.scope_name || item?.scopeName || '',
-    scopeContextKind: item?.scope_context_kind || item?.scopeContextKind || '',
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
     dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
     scope: item?.scope || item?.scope_code || item?.scopeCode || '',
@@ -55,7 +54,6 @@ function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
     scopeId: item?.scope_id || item?.scopeId || '',
     scopeCode: item?.scope_code || item?.scopeCode || '',
     scopeName: item?.scope_name || item?.scopeName || '',
-    scopeContextKind: item?.scope_context_kind || item?.scopeContextKind || '',
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
     dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
     requiresTenantContext: Boolean(
@@ -74,7 +72,6 @@ function normalizeScope(item: any): Api.SystemManage.ScopeListItem {
     scopeName: item?.scope_name || item?.scopeName || '',
     description: item?.description || '',
     isSystem: Boolean(item?.is_system ?? item?.isSystem ?? false),
-    contextKind: item?.context_kind || item?.contextKind || 'global',
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
     dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,

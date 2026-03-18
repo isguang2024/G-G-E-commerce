@@ -436,7 +436,7 @@ func mergeScopeFilters(scope string, scopes []string, globalOnly bool) []string 
 		appendScope(item)
 	}
 	if globalOnly && len(out) == 0 {
-		appendScope("tenant")
+		appendScope("team")
 	}
 	return out
 }
@@ -452,12 +452,12 @@ func (s *roleService) resolveScopesByFilters(filters []string) ([]user.Scope, er
 	seen := make(map[uuid.UUID]struct{})
 	result := make([]user.Scope, 0, len(filters))
 	for _, filter := range filters {
-		trimmed := strings.TrimSpace(filter)
+		trimmed := normalizeScopeFilter(strings.TrimSpace(filter))
 		if trimmed == "" {
 			continue
 		}
 		for _, scope := range allScopes {
-			if scope.Code != trimmed && scope.ContextKind != trimmed {
+			if normalizeScopeFilter(scope.Code) != trimmed {
 				continue
 			}
 			if _, ok := seen[scope.ID]; ok {
@@ -468,6 +468,15 @@ func (s *roleService) resolveScopesByFilters(filters []string) ([]user.Scope, er
 		}
 	}
 	return result, nil
+}
+
+func normalizeScopeFilter(raw string) string {
+	switch strings.TrimSpace(strings.ToLower(raw)) {
+	case "tenant":
+		return "team"
+	default:
+		return strings.TrimSpace(strings.ToLower(raw))
+	}
 }
 
 func (s *roleService) resolveScopeIDs(scopeIDs []string, required bool) ([]uuid.UUID, error) {

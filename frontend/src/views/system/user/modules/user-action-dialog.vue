@@ -6,12 +6,9 @@
     destroy-on-close
   >
     <div v-loading="loading" class="user-action-dialog">
-      <ElAlert
-        type="info"
-        :closable="false"
-        class="dialog-alert"
-        title="这里配置的是平台级个人功能权限覆盖。默认继承角色权限；单独允许或单独拒绝只用于少量例外场景。"
-      />
+      <p class="dialog-note">
+        配置个人功能权限。默认继承角色，仅在例外场景下使用单独配置。
+      </p>
 
       <section class="control-panel">
         <div class="toolbar">
@@ -20,7 +17,11 @@
             clearable
             placeholder="搜索权限名称/权限键/模块归属/分类"
             class="toolbar-input"
-          />
+          >
+            <template #prefix>
+              <ElIcon class="toolbar-icon"><Search /></ElIcon>
+            </template>
+          </ElInput>
           <ElSelect v-model="filters.featureKind" clearable placeholder="功能归属" class="toolbar-select">
             <ElOption label="全部归属" value="" />
             <ElOption label="系统功能" value="system" />
@@ -37,35 +38,44 @@
 
         <div class="option-row">
           <div class="summary">
-            <ElTag effect="plain" class="summary-tag">可见 {{ filteredActionCount }} / {{ actions.length }}</ElTag>
-            <ElTag effect="plain" class="summary-tag summary-tag--baseline">角色允许 {{ roleAllowCount }}</ElTag>
-            <ElTag effect="plain" class="summary-tag summary-tag--allow">单独允许 {{ overrideAllowCount }}</ElTag>
-            <ElTag effect="plain" class="summary-tag summary-tag--deny">单独拒绝 {{ overrideDenyCount }}</ElTag>
+            <span class="summary-pill">全部 <em>{{ actions.length }}</em></span>
+            <span class="summary-pill">继承 <em>{{ inheritCount }}</em></span>
+            <span class="summary-pill summary-pill--allow">单独允许 <em>{{ overrideAllowCount }}</em></span>
+            <span class="summary-pill summary-pill--deny">单独拒绝 <em>{{ overrideDenyCount }}</em></span>
           </div>
 
           <div class="option-switches">
             <label class="option-item">
               <span>仅看例外</span>
-              <ElSwitch v-model="filters.onlyOverrides" />
+              <ElSwitch v-model="filters.onlyOverrides" size="small" />
             </label>
             <label class="option-item">
-              <span>查看备注</span>
-              <ElSwitch v-model="filters.showRemark" />
+              <span>显示 ID/说明</span>
+              <ElSwitch v-model="filters.showRemark" size="small" />
             </label>
             <label class="option-item">
               <span>紧凑模式</span>
-              <ElSwitch v-model="filters.compact" />
+              <ElSwitch v-model="filters.compact" size="small" />
             </label>
           </div>
         </div>
 
         <div class="batch-bar" v-if="filteredActionIds.length > 0">
           <span class="batch-label">批量处理当前筛选结果</span>
-          <ElButton size="small" text @click="expandAll">全部展开</ElButton>
-          <ElButton size="small" text @click="collapseAll">全部收起</ElButton>
-          <ElButton size="small" text @click="applyEffects(filteredActionIds, 'allow')">批量单独允许</ElButton>
-          <ElButton size="small" text @click="applyEffects(filteredActionIds, 'deny')">批量单独拒绝</ElButton>
-          <ElButton size="small" text @click="applyEffects(filteredActionIds, '')">批量继承角色</ElButton>
+          <div class="batch-links">
+            <button type="button" class="text-link" @click="expandAll">全部展开</button>
+            <button type="button" class="text-link" @click="collapseAll">全部收起</button>
+            <ElDropdown trigger="click" @command="handleBatchCommand">
+              <button type="button" class="text-link">批量操作</button>
+              <template #dropdown>
+                <ElDropdownMenu>
+                  <ElDropdownItem command="">继承</ElDropdownItem>
+                  <ElDropdownItem command="allow">单独允许</ElDropdownItem>
+                  <ElDropdownItem command="deny">单独拒绝</ElDropdownItem>
+                </ElDropdownMenu>
+              </template>
+            </ElDropdown>
+          </div>
         </div>
       </section>
 
@@ -81,11 +91,6 @@
                 <div class="node-title">{{ data.label }}</div>
                 <div class="node-subtitle">{{ data.meta }}</div>
               </div>
-              <div class="node-actions">
-                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, 'allow')">本组单独允许</ElButton>
-                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, 'deny')">本组单独拒绝</ElButton>
-                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, '')">本组继承角色</ElButton>
-              </div>
             </div>
 
             <div v-else-if="data.nodeType === 'module'" class="tree-node tree-node--module" :class="{ 'is-compact': filters.compact }">
@@ -93,36 +98,30 @@
                 <div class="node-title">{{ data.label }}</div>
                 <div class="node-subtitle">{{ data.meta }}</div>
               </div>
-              <div class="node-actions">
-                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, 'allow')">模块单独允许</ElButton>
-                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, 'deny')">模块单独拒绝</ElButton>
-                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, '')">模块继承角色</ElButton>
-              </div>
             </div>
 
             <div v-else class="tree-node tree-node--action" :class="{ 'is-compact': filters.compact }">
+              <ElDropdown trigger="click" @command="(command) => setEffect(data.actionId, command as EffectValue)">
+                <button
+                  type="button"
+                  class="status-button"
+                  :class="statusButtonClass(effectMap[data.actionId])"
+                >
+                  <ElIcon>
+                    <component :is="statusIcon(effectMap[data.actionId])" />
+                  </ElIcon>
+                </button>
+                <template #dropdown>
+                  <ElDropdownMenu>
+                    <ElDropdownItem command="">继承</ElDropdownItem>
+                    <ElDropdownItem command="allow">单独允许</ElDropdownItem>
+                    <ElDropdownItem command="deny">单独拒绝</ElDropdownItem>
+                  </ElDropdownMenu>
+                </template>
+              </ElDropdown>
               <div class="node-main">
                 <div class="node-title">{{ data.label }}</div>
                 <div v-if="data.meta" class="node-subtitle">{{ data.meta }}</div>
-              </div>
-              <div class="node-actions node-actions--leaf">
-                <ElTag size="small" effect="plain" class="muted-tag">{{ data.scopeText }}</ElTag>
-                <ElTag size="small" effect="plain" class="muted-tag">{{ data.roleEffectText }}</ElTag>
-                <ElSelect
-                  v-model="effectMap[data.actionId]"
-                  class="effect-select"
-                  :class="{
-                    'effect-select--allow': effectMap[data.actionId] === 'allow',
-                    'effect-select--deny': effectMap[data.actionId] === 'deny',
-                    'effect-select--empty': !effectMap[data.actionId]
-                  }"
-                  size="small"
-                  placeholder="继承角色"
-                >
-                  <ElOption label="继承角色" value="" />
-                  <ElOption label="单独允许" value="allow" />
-                  <ElOption label="单独拒绝" value="deny" />
-                </ElSelect>
               </div>
             </div>
         </template>
@@ -147,13 +146,11 @@
   import ActionPermissionTreePanel from '@/components/business/permission/action-permission-tree-panel.vue'
   import {
     fetchGetPermissionActionList,
-    fetchGetRoleActions,
-    fetchGetRoleListSimple,
     fetchGetUserActions,
     fetchSetUserActions
   } from '@/api/system-manage'
-  import { formatScopeLabel } from '@/utils/permission/scope'
   import { ElMessage } from 'element-plus'
+  import { Check, Close, RefreshRight, Search } from '@element-plus/icons-vue'
 
   interface Props {
     modelValue: boolean
@@ -170,8 +167,6 @@
     children?: PermissionTreeNode[]
     actionIds: string[]
     actionId?: string
-    scopeText?: string
-    roleEffectText?: string
   }
 
   const props = defineProps<Props>()
@@ -191,13 +186,12 @@
   const treePanelRef = ref<InstanceType<typeof ActionPermissionTreePanel>>()
   const expandedKeys = ref<string[]>([])
   const effectMap = reactive<Record<string, EffectValue>>({})
-  const roleEffectMap = reactive<Record<string, EffectValue>>({})
   const filters = reactive({
     keyword: '',
     featureKind: '',
     overrideState: '',
     onlyOverrides: false,
-    showRemark: true,
+    showRemark: false,
     compact: false
   })
 
@@ -251,7 +245,7 @@
 
   const filteredActionIds = computed(() => filteredActions.value.map((item) => item.id))
   const filteredActionCount = computed(() => filteredActions.value.length)
-  const roleAllowCount = computed(() => Object.values(roleEffectMap).filter((item) => item === 'allow').length)
+  const inheritCount = computed(() => actions.value.length - overrideAllowCount.value - overrideDenyCount.value)
   const overrideAllowCount = computed(() => Object.values(effectMap).filter((item) => item === 'allow').length)
   const overrideDenyCount = computed(() => Object.values(effectMap).filter((item) => item === 'deny').length)
 
@@ -259,29 +253,41 @@
 
   const treeData = computed<PermissionTreeNode[]>(() =>
     buildPermissionTree(filteredGroups.value, (action) => ({
-      meta: buildActionMeta(action),
-      scopeText: formatScopeLabel(action.scopeCode, action.scopeName),
-      roleEffectText: buildRoleEffectText(action.id)
+      meta: buildActionMeta(action)
     })) as PermissionTreeNode[]
   )
 
   function buildActionMeta(action: PermissionActionItem) {
-    const parts = [action.permissionKey || `${action.resourceCode}:${action.actionCode}`]
-    if (filters.showRemark && action.description) {
-      parts.push(action.description)
-    }
-    return parts.filter(Boolean).join('  ')
-  }
-
-  function buildRoleEffectText(actionId: string) {
-    const effect = roleEffectMap[actionId] || ''
-    return effect === 'allow' ? '角色允许' : effect === 'deny' ? '角色拒绝' : '角色未配'
+    if (!filters.showRemark) return ''
+    return [action.permissionKey || `${action.resourceCode}:${action.actionCode}`, action.description]
+      .filter(Boolean)
+      .join('  ')
   }
 
   function applyEffects(actionIds: string[], effect: EffectValue) {
     actionIds.forEach((id) => {
       effectMap[id] = effect
     })
+  }
+
+  function setEffect(actionId: string, effect: EffectValue) {
+    effectMap[actionId] = effect
+  }
+
+  function handleBatchCommand(command: string | number | object) {
+    applyEffects(filteredActionIds.value, `${command || ''}` as EffectValue)
+  }
+
+  function statusIcon(effect: EffectValue) {
+    if (effect === 'allow') return Check
+    if (effect === 'deny') return Close
+    return RefreshRight
+  }
+
+  function statusButtonClass(effect: EffectValue) {
+    if (effect === 'allow') return 'status-button--allow'
+    if (effect === 'deny') return 'status-button--deny'
+    return 'status-button--inherit'
   }
 
   function syncExpandedKeys() {
@@ -303,36 +309,6 @@
     treePanelRef.value?.collapseAll()
   }
 
-  async function loadRoleBaseline() {
-    const roleCodes = props.userData?.roleDetails?.map((item) => item.code).filter(Boolean)
-      || props.userData?.userRoles?.filter(Boolean)
-      || []
-
-    Object.keys(roleEffectMap).forEach((key) => delete roleEffectMap[key])
-    if (roleCodes.length === 0) return
-
-    const roleList = await fetchGetRoleListSimple()
-    const roleIdList = (roleList.records || [])
-      .filter((role) => roleCodes.includes(role.roleCode))
-      .map((role) => role.roleId)
-      .filter(Boolean)
-
-    if (roleIdList.length === 0) return
-
-    const roleActionsList = await Promise.all(roleIdList.map((roleId) => fetchGetRoleActions(roleId)))
-    roleActionsList.forEach((result) => {
-      ;(result?.actions || []).forEach((item) => {
-        const current = roleEffectMap[item.action_id] || ''
-        if (current === 'deny') return
-        if (item.effect === 'deny') {
-          roleEffectMap[item.action_id] = 'deny'
-        } else if (item.effect === 'allow') {
-          roleEffectMap[item.action_id] = 'allow'
-        }
-      })
-    })
-  }
-
   async function loadData() {
     if (!props.userData?.id) return
     loading.value = true
@@ -352,14 +328,12 @@
         effectMap[item.actionId] = item.effect
       })
 
-      await loadRoleBaseline()
-
       Object.assign(filters, {
         keyword: '',
         featureKind: '',
         overrideState: '',
         onlyOverrides: false,
-        showRemark: true,
+        showRemark: false,
         compact: false
       })
       syncExpandedKeys()
@@ -408,25 +382,23 @@
   .user-action-dialog {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
   }
 
-  .dialog-alert {
-    margin-bottom: 0;
+  .dialog-note {
+    margin: 0;
+    padding: 0 4px;
+    color: #8a94a6;
+    font-size: 12px;
+    line-height: 1.6;
   }
 
   .control-panel {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    padding: 14px;
-    border: 1px solid #e7edf5;
-    border-radius: 16px;
-    background:
-      linear-gradient(180deg, rgba(248, 251, 255, 0.92) 0%, rgba(255, 255, 255, 0.98) 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      0 8px 24px rgba(15, 23, 42, 0.04);
+    gap: 14px;
+    padding: 10px 2px 2px;
+    background: transparent;
   }
 
   .toolbar {
@@ -439,6 +411,18 @@
   .toolbar-input,
   .toolbar-select {
     width: 100%;
+  }
+
+  .toolbar-icon {
+    color: #8fb2ff;
+  }
+
+  :deep(.toolbar-input .el-input__wrapper),
+  :deep(.toolbar-select .el-select__wrapper) {
+    min-height: 42px;
+    border-radius: 14px;
+    box-shadow: 0 0 0 1px #e6edf6 inset;
+    background: #fbfdff;
   }
 
   .option-row,
@@ -456,61 +440,81 @@
 
   .summary,
   .batch-bar {
-    gap: 8px;
+    gap: 10px;
   }
 
-  .summary-tag {
-    height: 28px;
+  .summary-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 28px;
     padding: 0 10px;
     font-size: 12px;
-    color: #5f6b7a;
-    border-color: #d7dde6;
-    background: #f8fafc;
+    color: #637289;
+    background: #f5f8fc;
     border-radius: 999px;
   }
 
-  .summary-tag--baseline {
-    color: #4d607e;
-    border-color: #d7e0ef;
-    background: #f4f7fc;
+  .summary-pill em {
+    color: #6d90ff;
+    font-style: normal;
+    font-weight: 600;
   }
 
-  .summary-tag--allow {
+  .summary-pill--allow {
     color: #316b56;
-    border-color: #cde5d9;
     background: #f2fbf6;
   }
 
-  .summary-tag--deny {
+  .summary-pill--allow em {
+    color: #3cad73;
+  }
+
+  .summary-pill--deny {
     color: #925f64;
-    border-color: #efd6da;
     background: #fff6f7;
+  }
+
+  .summary-pill--deny em {
+    color: #e36c78;
   }
 
   .option-switches {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 12px;
   }
 
   .option-item {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    min-height: 34px;
-    padding: 0 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.88);
-    color: #526075;
+    gap: 6px;
+    min-height: 24px;
+    padding: 0;
+    color: #7a8799;
     font-size: 12px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
   }
 
   .batch-label {
     font-size: 12px;
     color: #69778a;
+  }
+
+  .batch-links {
+    display: inline-flex;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .text-link {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #6c8fff;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
   }
 
   .tree-node {
@@ -550,7 +554,7 @@
     font-size: 11px;
     line-height: 1.45;
     color: #7b889c;
-    margin-top: 2px;
+    margin-top: 4px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -564,45 +568,38 @@
     justify-content: flex-end;
   }
 
-  .muted-tag {
-    font-size: 11px;
-    color: #6b7280;
-    border-color: #dde3ea;
-    background: #f8fafc;
+  .status-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 0;
     border-radius: 999px;
+    color: #fff;
+    cursor: pointer;
   }
 
-  .effect-select {
-    width: 110px;
+  .status-button--inherit {
+    background: #d8dee8;
+    color: #768398;
   }
 
-  :deep(.effect-select .el-input__wrapper) {
-    border-radius: 999px;
-    box-shadow: 0 0 0 1px #dde5ef inset;
-    background: #f8fafc;
+  .status-button--allow {
+    background: #55c78a;
   }
 
-  :deep(.effect-select .el-input__inner) {
-    font-size: 12px;
-    color: #415064;
+  .status-button--deny {
+    background: #ee7b86;
   }
 
-  :deep(.effect-select--allow .el-input__wrapper) {
-    background: #eefaf3;
-    box-shadow: 0 0 0 1px #bfe6ce inset;
+  .tree-node--action {
+    border-bottom: 1px solid rgba(229, 235, 243, 0.72);
   }
 
-  :deep(.effect-select--allow .el-input__inner) {
-    color: #1f6a4d;
-  }
-
-  :deep(.effect-select--deny .el-input__wrapper) {
-    background: #fff3f4;
-    box-shadow: 0 0 0 1px #efc8cf inset;
-  }
-
-  :deep(.effect-select--deny .el-input__inner) {
-    color: #9b4956;
+  .tree-node--action:last-child {
+    border-bottom: 0;
   }
 
   .is-compact {
