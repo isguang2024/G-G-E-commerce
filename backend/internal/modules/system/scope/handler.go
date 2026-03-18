@@ -46,12 +46,16 @@ func (h *ScopeHandler) List(c *gin.Context) {
 	records := make([]gin.H, 0, len(list))
 	for _, s := range list {
 		records = append(records, gin.H{
-			"scopeId":     s.ID.String(),
-			"scopeCode":   s.Code,
-			"scopeName":   s.Name,
-			"description": s.Description,
-			"sortOrder":   s.SortOrder,
-			"createTime": s.CreatedAt.Format("2006-01-02 15:04:05"),
+			"scopeId":            s.ID.String(),
+			"scopeCode":          s.Code,
+			"scopeName":          s.Name,
+			"description":        s.Description,
+			"isSystem":           s.IsSystem,
+			"contextKind":        s.ContextKind,
+			"dataPermissionCode": s.DataPermissionCode,
+			"dataPermissionName": s.DataPermissionName,
+			"sortOrder":          s.SortOrder,
+			"createTime":         s.CreatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
@@ -73,9 +77,13 @@ func (h *ScopeHandler) GetAll(c *gin.Context) {
 	records := make([]gin.H, 0, len(list))
 	for _, s := range list {
 		records = append(records, gin.H{
-			"scopeId":   s.ID.String(),
-			"scopeCode": s.Code,
-			"scopeName": s.Name,
+			"scopeId":            s.ID.String(),
+			"scopeCode":          s.Code,
+			"scopeName":          s.Name,
+			"isSystem":           s.IsSystem,
+			"contextKind":        s.ContextKind,
+			"dataPermissionCode": s.DataPermissionCode,
+			"dataPermissionName": s.DataPermissionName,
 		})
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"records": records}))
@@ -101,12 +109,16 @@ func (h *ScopeHandler) Get(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
-		"scopeId":     scope.ID.String(),
-		"scopeCode":   scope.Code,
-		"scopeName":   scope.Name,
-		"description": scope.Description,
-		"sortOrder":   scope.SortOrder,
-		"createTime":  scope.CreatedAt.Format("2006-01-02 15:04:05"),
+		"scopeId":            scope.ID.String(),
+		"scopeCode":          scope.Code,
+		"scopeName":          scope.Name,
+		"description":        scope.Description,
+		"isSystem":           scope.IsSystem,
+		"contextKind":        scope.ContextKind,
+		"dataPermissionCode": scope.DataPermissionCode,
+		"dataPermissionName": scope.DataPermissionName,
+		"sortOrder":          scope.SortOrder,
+		"createTime":         scope.CreatedAt.Format("2006-01-02 15:04:05"),
 	}))
 }
 
@@ -175,7 +187,7 @@ func (h *ScopeHandler) Delete(c *gin.Context) {
 			return
 		}
 		if err == ErrScopeInUse {
-			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "默认作用域无法删除")
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "系统内置作用域无法删除")
 			c.JSON(status, resp)
 			return
 		}

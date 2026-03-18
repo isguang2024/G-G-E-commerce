@@ -2,7 +2,7 @@
   <ElDialog
     v-model="visible"
     :title="dialogType === 'add' ? '新增角色' : '编辑角色'"
-    width="30%"
+    width="36%"
     align-center
     @close="handleClose"
   >
@@ -21,13 +21,16 @@
           placeholder="请输入角色描述"
         />
       </ElFormItem>
-      <ElFormItem label="作用域" prop="scopeId">
+      <ElFormItem label="作用域" prop="scopeIds">
         <ElSelect
-          v-model="form.scopeId"
+          v-model="form.scopeIds"
+          multiple
+          filterable
+          collapse-tags
+          collapse-tags-tooltip
           placeholder="请选择作用域"
           style="width: 100%"
           :loading="scopeLoading"
-          clearable
         >
           <ElOption
             v-for="scope in scopeList"
@@ -36,9 +39,7 @@
             :value="scope.scopeId"
           >
             <span>{{ scope.scopeName }}</span>
-            <span style="color: #8492a6; font-size: 13px; margin-left: 8px"
-              >({{ scope.scopeCode }})</span
-            >
+            <span style="color: #8492a6; font-size: 13px; margin-left: 8px">({{ scope.scopeCode }})</span>
           </ElOption>
         </ElSelect>
       </ElFormItem>
@@ -99,20 +100,13 @@
   })
 
   const emit = defineEmits<Emits>()
-
   const formRef = ref<FormInstance>()
 
-  /**
-   * 弹窗显示状态双向绑定
-   */
   const visible = computed({
     get: () => props.modelValue,
     set: (value) => emit('update:modelValue', value)
   })
 
-  /**
-   * 表单验证规则
-   */
   const rules = reactive<FormRules>({
     roleName: [
       { required: true, message: '请输入角色名称', trigger: 'blur' },
@@ -123,41 +117,69 @@
       { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
     ],
     description: [{ required: true, message: '请输入角色描述', trigger: 'blur' }],
-    scopeId: [{ required: true, message: '请选择作用域', trigger: 'change' }]
+    scopeIds: [{ required: true, type: 'array', min: 1, message: '请选择至少一个作用域', trigger: 'change' }]
   })
 
-  /**
-   * 作用域列表
-   */
   const scopeList = ref<Api.SystemManage.ScopeListItem[]>([])
   const scopeLoading = ref(false)
 
-  /**
-   * 表单数据
-   */
-  const form = reactive<
-    RoleListItem & { scopeId?: string; priority?: number; status?: string; sortOrder?: number }
-  >({
+  const form = reactive({
     roleId: '',
     roleName: '',
     roleCode: '',
     description: '',
     createTime: '',
-    scopeId: '',
+    scopeIds: [] as string[],
     sortOrder: 0,
     priority: 0,
     status: 'normal'
   })
 
-  /**
-   * 加载作用域列表
-   */
+  function getRoleScopeIds(roleData?: RoleListItem) {
+    if (!roleData) return [] as string[]
+    const scopes = Array.isArray((roleData as any).scopes) ? (roleData as any).scopes : []
+    const scopeIds = scopes.map((item: any) => item.scopeId).filter(Boolean)
+    if (scopeIds.length > 0) {
+      return Array.from(new Set(scopeIds))
+    }
+    return Array.isArray((roleData as any).scopeIds) ? Array.from(new Set((roleData as any).scopeIds)) : []
+  }
+
+  const initForm = () => {
+    if (props.dialogType === 'edit' && props.roleData) {
+      const roleData = props.roleData
+      Object.assign(form, {
+        roleId: roleData.roleId,
+        roleName: roleData.roleName,
+        roleCode: roleData.roleCode,
+        description: roleData.description || '',
+        createTime: roleData.createTime || '',
+        scopeIds: getRoleScopeIds(roleData),
+        sortOrder: roleData.sortOrder ?? 0,
+        priority: roleData.priority || 0,
+        status: roleData.status || 'normal'
+      })
+      return
+    }
+
+    Object.assign(form, {
+      roleId: '',
+      roleName: '',
+      roleCode: '',
+      description: '',
+      createTime: '',
+      scopeIds: [],
+      sortOrder: 0,
+      priority: 0,
+      status: 'normal'
+    })
+  }
+
   const loadScopes = async () => {
     try {
       scopeLoading.value = true
       scopeList.value = await fetchGetAllScopes()
-      // 加载完成后初始化表单（确保作用域列表已加载）
-      if (props.modelValue && props.roleData) {
+      if (props.modelValue) {
         initForm()
       }
     } catch (error: any) {
@@ -167,131 +189,57 @@
     }
   }
 
-  /**
-   * 监听弹窗打开，初始化表单数据
-   */
   watch(
     () => props.modelValue,
     (newVal) => {
       if (newVal) {
-        // 先加载作用域列表，然后在loadScopes中调用initForm
         loadScopes()
       }
     }
   )
 
-  /**
-   * 监听角色数据变化，更新表单
-   */
   watch(
     () => props.roleData,
     (newData) => {
       if (newData && props.modelValue && scopeList.value.length > 0) {
-        // 只有在作用域列表已加载时才初始化表单
         initForm()
       }
     },
     { deep: true }
   )
 
-  /**
-   * 初始化表单数据
-   * 根据弹窗类型填充表单或重置表单
-   */
-  const initForm = () => {
-    if (props.dialogType === 'edit' && props.roleData) {
-      // 编辑模式：使用角色数据填充表单
-      const roleData = props.roleData
-      if (!roleData) return
-
-      let scopeId = roleData.scopeId || ''
-      // 如果没有scopeId，尝试从scopeCode查找
-      if (!scopeId && roleData.scopeCode && scopeList.value.length > 0) {
-        const found = scopeList.value.find((s) => s.scopeCode === roleData.scopeCode)
-        scopeId = found ? found.scopeId : ''
-      }
-      Object.assign(form, {
-        roleId: roleData.roleId,
-        roleName: roleData.roleName,
-        roleCode: roleData.roleCode,
-        description: roleData.description || '',
-        createTime: roleData.createTime || '',
-        scopeId: scopeId,
-        sortOrder: roleData.sortOrder ?? 0,
-        priority: roleData.priority || 0,
-        status: roleData.status || 'normal'
-      })
-    } else {
-      // 新增模式：重置表单，默认选择第一个作用域
-      Object.assign(form, {
-        roleId: '',
-        roleName: '',
-        roleCode: '',
-        description: '',
-        createTime: '',
-        scopeId: scopeList.value.length > 0 ? scopeList.value[0].scopeId : '',
-        sortOrder: 0,
-        priority: 0,
-        status: 'normal'
-      })
-    }
-  }
-
-  /**
-   * 关闭弹窗并重置表单
-   */
   const handleClose = () => {
     visible.value = false
     formRef.value?.resetFields()
+    initForm()
   }
 
-  /**
-   * 提交表单
-   * 验证通过后调用接口保存数据
-   */
   const handleSubmit = async () => {
     if (!formRef.value) return
 
     try {
       await formRef.value.validate()
+      const payload = {
+        code: form.roleCode,
+        name: form.roleName,
+        description: form.description || '',
+        scope_ids: form.scopeIds,
+        sort_order: form.sortOrder ?? 0,
+        priority: form.priority || 0,
+        status: form.status || 'normal'
+      }
+
       if (props.dialogType === 'add') {
-        if (!form.scopeId) {
-          ElMessage.error('请选择作用域')
-          return
-        }
-        await fetchCreateRole({
-          code: form.roleCode,
-          name: form.roleName,
-          description: form.description || '',
-          scope_id: form.scopeId,
-          sort_order: form.sortOrder ?? 0,
-          priority: form.priority || 0,
-          status: form.status || 'normal'
-        })
+        await fetchCreateRole(payload as any)
       } else {
-        const roleId =
-          typeof form.roleId === 'string' ? form.roleId : (form.roleId as any)?.toString?.() || ''
+        const roleId = typeof form.roleId === 'string' ? form.roleId : (form.roleId as any)?.toString?.() || ''
         if (!roleId) {
           ElMessage.error('缺少角色ID')
           return
         }
-        // 编辑时，必须传递 scope_id（即使没有修改也要传递当前值）
-        const scopeId = form.scopeId || props.roleData?.scopeId || ''
-        if (!scopeId) {
-          ElMessage.error('缺少作用域ID')
-          return
-        }
-        const updateData: Api.SystemManage.RoleUpdateParams = {
-          code: form.roleCode,
-          name: form.roleName,
-          description: form.description || '',
-          scope_id: scopeId,
-          sort_order: form.sortOrder ?? 0,
-          priority: form.priority || 0,
-          status: form.status || 'normal'
-        }
-        await fetchUpdateRole(roleId, updateData)
+        await fetchUpdateRole(roleId, payload as any)
       }
+
       ElMessage.success(props.dialogType === 'add' ? '新增成功' : '修改成功')
       emit('success')
       handleClose()

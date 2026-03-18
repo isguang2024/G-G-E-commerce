@@ -27,6 +27,9 @@ function normalizePermissionAction(item: any): Api.SystemManage.PermissionAction
     scopeId: item?.scope_id || item?.scopeId || '',
     scopeCode: item?.scope_code || item?.scopeCode || item?.scope || '',
     scopeName: item?.scope_name || item?.scopeName || '',
+    scopeContextKind: item?.scope_context_kind || item?.scopeContextKind || '',
+    dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
+    dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
     scope: item?.scope || item?.scope_code || item?.scopeCode || '',
     requiresTenantContext: Boolean(
       item?.requires_tenant_context ?? item?.requiresTenantContext ?? false
@@ -52,12 +55,30 @@ function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
     scopeId: item?.scope_id || item?.scopeId || '',
     scopeCode: item?.scope_code || item?.scopeCode || '',
     scopeName: item?.scope_name || item?.scopeName || '',
+    scopeContextKind: item?.scope_context_kind || item?.scopeContextKind || '',
+    dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
+    dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
     requiresTenantContext: Boolean(
       item?.requires_tenant_context ?? item?.requiresTenantContext ?? false
     ),
     status: item?.status || 'normal',
     createdAt: item?.created_at || item?.createdAt || '',
     updatedAt: item?.updated_at || item?.updatedAt || ''
+  }
+}
+
+function normalizeScope(item: any): Api.SystemManage.ScopeListItem {
+  return {
+    scopeId: item?.scope_id || item?.scopeId || '',
+    scopeCode: item?.scope_code || item?.scopeCode || '',
+    scopeName: item?.scope_name || item?.scopeName || '',
+    description: item?.description || '',
+    isSystem: Boolean(item?.is_system ?? item?.isSystem ?? false),
+    contextKind: item?.context_kind || item?.contextKind || 'global',
+    dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
+    dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
+    sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
+    createTime: item?.create_time || item?.createTime || ''
   }
 }
 
@@ -222,7 +243,6 @@ export async function fetchGetRoleDataPermissions(roleId: string) {
     permissions: Array<{ resource_code: string; scope_code: string }>
     resources: Array<{ resource_code: string; resource_name: string }>
     available_scopes: Array<{ scope_code: string; scope_name: string }>
-    role_scope_code: string
   }>({
     url: `${ROLE_BASE}/${roleId}/data-permissions`
   })
@@ -336,10 +356,15 @@ export function fetchSyncApiEndpoints() {
 // ========== 作用域管理 ==========
 /** 获取作用域列表 */
 export function fetchGetScopeList(params: Api.SystemManage.ScopeSearchParams) {
-  return request.get<Api.SystemManage.ScopeList>({
-    url: SCOPE_BASE,
-    params
-  })
+  return request
+    .get<Api.SystemManage.ScopeList>({
+      url: SCOPE_BASE,
+      params
+    })
+    .then((res) => ({
+      ...res,
+      records: (res?.records || []).map(normalizeScope)
+    }))
 }
 
 /** 获取所有作用域（用于下拉选择） */
@@ -349,16 +374,18 @@ export function fetchGetAllScopes() {
       url: `${SCOPE_BASE}/all`
     })
     .then((res) => {
-      if (Array.isArray(res)) return res
-      return res?.records || []
+      if (Array.isArray(res)) return res.map(normalizeScope)
+      return (res?.records || []).map(normalizeScope)
     })
 }
 
 /** 获取作用域详情 */
 export function fetchGetScope(id: string) {
-  return request.get<Api.SystemManage.ScopeListItem>({
-    url: `${SCOPE_BASE}/${id}`
-  })
+  return request
+    .get<Api.SystemManage.ScopeListItem>({
+      url: `${SCOPE_BASE}/${id}`
+    })
+    .then((res) => normalizeScope(res))
 }
 
 /** 创建作用域 */

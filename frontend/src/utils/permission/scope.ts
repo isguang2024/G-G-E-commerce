@@ -1,20 +1,18 @@
-export function formatScopeLabel(scopeCode?: string, scopeName?: string) {
+export function formatScopeLabel(scopeCode?: string, scopeName?: string, contextKind?: string) {
   if (scopeName?.trim()) return scopeName.trim()
 
-  switch ((scopeCode || '').trim()) {
-    case 'team':
+  switch ((contextKind || scopeCode || '').trim()) {
     case 'tenant':
       return '团队'
     case 'global':
       return '全局'
     default:
-      return '未知'
+      return (scopeCode || '未知').trim()
   }
 }
 
-export function getScopeTagType(scopeCode?: string) {
-  switch ((scopeCode || '').trim()) {
-    case 'team':
+export function getScopeTagType(scopeCode?: string, contextKind?: string) {
+  switch ((contextKind || scopeCode || '').trim()) {
     case 'tenant':
       return 'success'
     case 'global':

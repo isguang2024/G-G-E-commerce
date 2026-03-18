@@ -2,6 +2,7 @@ package scope
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -12,9 +13,9 @@ import (
 )
 
 var (
-	ErrScopeNotFound  = errors.New("scope not found")
+	ErrScopeNotFound   = errors.New("scope not found")
 	ErrScopeCodeExists = errors.New("scope code already exists")
-	ErrScopeInUse     = errors.New("scope is in use and cannot be deleted")
+	ErrScopeInUse      = errors.New("scope is in use and cannot be deleted")
 )
 
 type ErrScopeInUseWithRoles struct {
@@ -72,10 +73,14 @@ func (s *scopeService) Create(req *dto.ScopeCreateRequest) (*user.Scope, error) 
 		return nil, err
 	}
 	scope := &user.Scope{
-		Code:        req.Code,
-		Name:        req.Name,
-		Description: req.Description,
-		SortOrder:   req.SortOrder,
+		Code:               req.Code,
+		Name:               req.Name,
+		Description:        req.Description,
+		IsSystem:           false,
+		ContextKind:        normalizeScopeContextKind(req.ContextKind),
+		DataPermissionCode: normalizeDataPermissionCode(req.DataPermissionCode),
+		DataPermissionName: normalizeDataPermissionName(req.DataPermissionName, req.Name),
+		SortOrder:          req.SortOrder,
 	}
 	if err := s.scopeRepo.Create(scope); err != nil {
 		return nil, err
@@ -97,6 +102,11 @@ func (s *scopeService) Update(id uuid.UUID, req *dto.ScopeUpdateRequest) error {
 	if req.Description != "" {
 		scope.Description = req.Description
 	}
+	if req.ContextKind != "" {
+		scope.ContextKind = normalizeScopeContextKind(req.ContextKind)
+	}
+	scope.DataPermissionCode = normalizeDataPermissionCode(req.DataPermissionCode)
+	scope.DataPermissionName = normalizeDataPermissionName(req.DataPermissionName, scope.Name)
 	if req.SortOrder > 0 {
 		scope.SortOrder = req.SortOrder
 	}
@@ -111,7 +121,7 @@ func (s *scopeService) Delete(id uuid.UUID) error {
 		}
 		return err
 	}
-	if scope.Code == "global" || scope.Code == "team" {
+	if scope.IsSystem {
 		return ErrScopeInUse
 	}
 	roles, err := s.roleRepo.GetByScopeID(id)
@@ -126,4 +136,23 @@ func (s *scopeService) Delete(id uuid.UUID) error {
 
 func (s *scopeService) GetAll() ([]user.Scope, error) {
 	return s.scopeRepo.GetAll()
+}
+
+func normalizeScopeContextKind(raw string) string {
+	if raw == "tenant" {
+		return "tenant"
+	}
+	return "global"
+}
+
+func normalizeDataPermissionCode(raw string) string {
+	return strings.TrimSpace(raw)
+}
+
+func normalizeDataPermissionName(raw string, fallback string) string {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed != "" {
+		return trimmed
+	}
+	return strings.TrimSpace(fallback)
 }

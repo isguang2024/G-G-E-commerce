@@ -11,6 +11,7 @@ type Scope = models.Scope
 type Menu = models.Menu
 type UserRole = models.UserRole
 type RoleMenu = models.RoleMenu
+type RoleScope = models.RoleScope
 type PermissionAction = models.PermissionAction
 type RoleActionPermission = models.RoleActionPermission
 type RoleDataPermission = models.RoleDataPermission

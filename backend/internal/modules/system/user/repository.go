@@ -213,14 +213,18 @@ type RoleRepository interface {
 	FindByCode(code string) ([]Role, error)
 	GetByIDs(ids []uuid.UUID) ([]Role, error)
 	GetByScopeID(scopeID uuid.UUID) ([]Role, error)
+	GetScopeIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error)
 	Create(role *Role) error
 	Update(role *Role) error
 	Delete(id uuid.UUID) error
 	GetAll() ([]Role, error)
 	GetByScope(scope string) ([]Role, error)
+	GetByScopeIDs(scopeIDs []uuid.UUID) ([]Role, error)
 	List() ([]Role, error)
 	ListByPage(offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error)
 	ListByScope(scope string, offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error)
+	ListByScopeIDs(scopeIDs []uuid.UUID, offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error)
+	ReplaceRoleScopes(roleID uuid.UUID, scopeIDs []uuid.UUID) error
 	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
 }
 
@@ -234,7 +238,7 @@ func NewRoleRepository(db *gorm.DB) RoleRepository {
 
 func (r *roleRepository) GetByID(id uuid.UUID) (*Role, error) {
 	var role Role
-	err := r.db.Preload("Scope").Where("id = ?", id).First(&role).Error
+	err := r.db.Preload("Scopes").Where("id = ?", id).First(&role).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
@@ -264,19 +268,43 @@ func (r *roleRepository) FindByCode(code string) ([]Role, error) {
 
 func (r *roleRepository) GetByIDs(ids []uuid.UUID) ([]Role, error) {
 	var roles []Role
-	err := r.db.Where("id IN ?", ids).Find(&roles).Error
+	err := r.db.Preload("Scopes").Where("id IN ?", ids).Find(&roles).Error
 	return roles, err
 }
 
 func (r *roleRepository) List() ([]Role, error) {
 	var roles []Role
-	err := r.db.Find(&roles).Error
+	err := r.db.Preload("Scopes").Find(&roles).Error
 	return roles, err
 }
 
 func (r *roleRepository) GetByScopeID(scopeID uuid.UUID) ([]Role, error) {
+	return r.GetByScopeIDs([]uuid.UUID{scopeID})
+}
+
+func (r *roleRepository) GetScopeIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error) {
+	var scopeIDs []uuid.UUID
+	err := r.db.Model(&RoleScope{}).Where("role_id = ?", roleID).Pluck("scope_id", &scopeIDs).Error
+	return scopeIDs, err
+}
+
+func (r *roleRepository) GetByScopeIDs(scopeIDs []uuid.UUID) ([]Role, error) {
+	if len(scopeIDs) == 0 {
+		return []Role{}, nil
+	}
+	var roleIDs []uuid.UUID
+	query := r.db.Table("roles").
+		Select("DISTINCT roles.id").
+		Joins("LEFT JOIN role_scopes ON role_scopes.role_id = roles.id").
+		Where("role_scopes.scope_id IN ?", scopeIDs)
+	if err := query.Pluck("roles.id", &roleIDs).Error; err != nil {
+		return nil, err
+	}
+	if len(roleIDs) == 0 {
+		return []Role{}, nil
+	}
 	var roles []Role
-	err := r.db.Where("scope_id = ?", scopeID).Find(&roles).Error
+	err := r.db.Preload("Scopes").Where("id IN ?", roleIDs).Find(&roles).Error
 	return roles, err
 }
 
@@ -294,14 +322,16 @@ func (r *roleRepository) Delete(id uuid.UUID) error {
 
 func (r *roleRepository) GetAll() ([]Role, error) {
 	var roles []Role
-	err := r.db.Find(&roles).Error
+	err := r.db.Preload("Scopes").Find(&roles).Error
 	return roles, err
 }
 
 func (r *roleRepository) GetByScope(scope string) ([]Role, error) {
-	var roles []Role
-	err := r.db.Joins("JOIN scopes ON roles.scope_id = scopes.id").Where("scopes.code = ?", scope).Find(&roles).Error
-	return roles, err
+	var scopeIDs []uuid.UUID
+	if err := r.db.Model(&Scope{}).Where("code = ?", scope).Pluck("id", &scopeIDs).Error; err != nil {
+		return nil, err
+	}
+	return r.GetByScopeIDs(scopeIDs)
 }
 
 func (r *roleRepository) ListByPage(offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error) {
@@ -309,11 +339,29 @@ func (r *roleRepository) ListByPage(offset, limit int, roleCode, roleName, descr
 }
 
 func (r *roleRepository) ListByScope(scope string, offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error) {
-	return r.listWithScope(offset, limit, roleCode, roleName, description, startTime, endTime, enabled, scope)
+	var scopeIDs []uuid.UUID
+	if err := r.db.Model(&Scope{}).Where("code = ?", scope).Pluck("id", &scopeIDs).Error; err != nil {
+		return nil, 0, err
+	}
+	return r.listWithScopeByScopeIDs(offset, limit, roleCode, roleName, description, startTime, endTime, enabled, scopeIDs)
+}
+
+func (r *roleRepository) ListByScopeIDs(scopeIDs []uuid.UUID, offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error) {
+	return r.listWithScopeByScopeIDs(offset, limit, roleCode, roleName, description, startTime, endTime, enabled, scopeIDs)
 }
 
 func (r *roleRepository) listWithScope(offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool, scope string) ([]Role, int64, error) {
-	baseQuery := r.db.Model(&Role{}).Preload("Scope")
+	var scopeIDs []uuid.UUID
+	if scope != "" {
+		if err := r.db.Model(&Scope{}).Where("code = ?", scope).Pluck("id", &scopeIDs).Error; err != nil {
+			return nil, 0, err
+		}
+	}
+	return r.listWithScopeByScopeIDs(offset, limit, roleCode, roleName, description, startTime, endTime, enabled, scopeIDs)
+}
+
+func (r *roleRepository) listWithScopeByScopeIDs(offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool, scopeIDs []uuid.UUID) ([]Role, int64, error) {
+	baseQuery := r.db.Model(&Role{}).Preload("Scopes")
 	if roleCode != "" {
 		baseQuery = baseQuery.Where("code LIKE ?", "%"+roleCode+"%")
 	}
@@ -336,8 +384,15 @@ func (r *roleRepository) listWithScope(offset, limit int, roleCode, roleName, de
 			baseQuery = baseQuery.Where("status = ?", "disabled")
 		}
 	}
-	if scope != "" {
-		baseQuery = baseQuery.Joins("JOIN scopes ON roles.scope_id = scopes.id").Where("scopes.code = ?", scope)
+	if len(scopeIDs) > 0 {
+		roleIDs, err := r.getRoleIDsByScopeIDs(scopeIDs)
+		if err != nil {
+			return nil, 0, err
+		}
+		if len(roleIDs) == 0 {
+			return []Role{}, 0, nil
+		}
+		baseQuery = baseQuery.Where("id IN ?", roleIDs)
 	}
 
 	var total int64
@@ -354,9 +409,39 @@ func (r *roleRepository) UpdateWithMap(id uuid.UUID, updates map[string]interfac
 	return r.db.Model(&Role{}).Where("id = ?", id).Updates(updates).Error
 }
 
+func (r *roleRepository) ReplaceRoleScopes(roleID uuid.UUID, scopeIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("role_id = ?", roleID).Delete(&RoleScope{}).Error; err != nil {
+			return err
+		}
+		if len(scopeIDs) == 0 {
+			return nil
+		}
+		records := make([]RoleScope, 0, len(scopeIDs))
+		for _, scopeID := range scopeIDs {
+			records = append(records, RoleScope{RoleID: roleID, ScopeID: scopeID})
+		}
+		return tx.Create(&records).Error
+	})
+}
+
+func (r *roleRepository) getRoleIDsByScopeIDs(scopeIDs []uuid.UUID) ([]uuid.UUID, error) {
+	var roleIDs []uuid.UUID
+	query := r.db.Table("roles").
+		Select("DISTINCT roles.id").
+		Joins("LEFT JOIN role_scopes ON role_scopes.role_id = roles.id").
+		Where("role_scopes.scope_id IN ?", scopeIDs)
+	if err := query.Pluck("roles.id", &roleIDs).Error; err != nil {
+		return nil, err
+	}
+	return roleIDs, nil
+}
+
 type ScopeRepository interface {
 	GetByID(id uuid.UUID) (*Scope, error)
 	GetByCode(code string) (*Scope, error)
+	GetByIDs(ids []uuid.UUID) ([]Scope, error)
+	GetByCodes(codes []string) ([]Scope, error)
 	Create(scope *Scope) error
 	Update(scope *Scope) error
 	Delete(id uuid.UUID) error
@@ -394,6 +479,24 @@ func (r *scopeRepository) GetByCode(code string) (*Scope, error) {
 		return nil, err
 	}
 	return &scope, nil
+}
+
+func (r *scopeRepository) GetByIDs(ids []uuid.UUID) ([]Scope, error) {
+	var scopes []Scope
+	if len(ids) == 0 {
+		return scopes, nil
+	}
+	err := r.db.Where("id IN ?", ids).Find(&scopes).Error
+	return scopes, err
+}
+
+func (r *scopeRepository) GetByCodes(codes []string) ([]Scope, error) {
+	var scopes []Scope
+	if len(codes) == 0 {
+		return scopes, nil
+	}
+	err := r.db.Where("code IN ?", codes).Find(&scopes).Error
+	return scopes, err
 }
 
 func (r *scopeRepository) Create(scope *Scope) error {
@@ -918,7 +1021,9 @@ func (r *userRepository) loadGlobalRoles(users []*User) error {
 		Description string    `gorm:"column:description"`
 		Status      string    `gorm:"column:status"`
 		Priority    int       `gorm:"column:priority"`
-		ScopeID     uuid.UUID `gorm:"column:scope_id"`
+		ScopeID     *uuid.UUID `gorm:"column:scope_id"`
+		ScopeCode   *string    `gorm:"column:scope_code"`
+		ScopeName   *string    `gorm:"column:scope_name"`
 		SortOrder   int       `gorm:"column:sort_order"`
 		IsSystem    bool      `gorm:"column:is_system"`
 		CreatedAt   time.Time `gorm:"column:created_at"`
@@ -927,32 +1032,73 @@ func (r *userRepository) loadGlobalRoles(users []*User) error {
 
 	var rows []userRoleRow
 	if err := r.db.Table("user_roles").
-		Select("user_roles.user_id, roles.id, roles.code, roles.name, roles.description, roles.status, roles.priority, roles.scope_id, roles.sort_order, roles.is_system, roles.created_at, roles.updated_at").
+		Select("user_roles.user_id, roles.id, roles.code, roles.name, roles.description, roles.status, roles.priority, scopes.id AS scope_id, scopes.code AS scope_code, scopes.name AS scope_name, roles.sort_order, roles.is_system, roles.created_at, roles.updated_at").
 		Joins("JOIN roles ON roles.id = user_roles.role_id").
+		Joins("LEFT JOIN role_scopes ON role_scopes.role_id = roles.id").
+		Joins("LEFT JOIN scopes ON scopes.id = role_scopes.scope_id").
 		Where("user_roles.user_id IN ?", userIDs).
 		Where("user_roles.tenant_id IS NULL").
 		Scan(&rows).Error; err != nil {
 		return err
 	}
 
+	roleCache := make(map[uuid.UUID]*Role)
+	userRoleIndex := make(map[uuid.UUID]map[uuid.UUID]int, len(users))
+
 	for _, row := range rows {
 		target, ok := userIndex[row.UserID]
 		if !ok {
 			continue
 		}
-		target.Roles = append(target.Roles, Role{
-			ID:          row.ID,
-			Code:        row.Code,
-			Name:        row.Name,
-			Description: row.Description,
-			Status:      row.Status,
-			Priority:    row.Priority,
-			ScopeID:     row.ScopeID,
-			SortOrder:   row.SortOrder,
-			IsSystem:    row.IsSystem,
-			CreatedAt:   row.CreatedAt,
-			UpdatedAt:   row.UpdatedAt,
-		})
+		role, exists := roleCache[row.ID]
+		if !exists {
+			role = &Role{
+				ID:          row.ID,
+				Code:        row.Code,
+				Name:        row.Name,
+				Description: row.Description,
+				Status:      row.Status,
+				Priority:    row.Priority,
+				SortOrder:   row.SortOrder,
+				IsSystem:    row.IsSystem,
+				CreatedAt:   row.CreatedAt,
+				UpdatedAt:   row.UpdatedAt,
+			}
+			roleCache[row.ID] = role
+		}
+		if row.ScopeID != nil {
+			alreadyAdded := false
+			for _, scope := range role.Scopes {
+				if scope.ID == *row.ScopeID {
+					alreadyAdded = true
+					break
+				}
+			}
+			if !alreadyAdded {
+				scopeCode := ""
+				if row.ScopeCode != nil {
+					scopeCode = *row.ScopeCode
+				}
+				scopeName := ""
+				if row.ScopeName != nil {
+					scopeName = *row.ScopeName
+				}
+				role.Scopes = append(role.Scopes, Scope{
+					ID:   *row.ScopeID,
+					Code: scopeCode,
+					Name: scopeName,
+				})
+			}
+		}
+		if _, exists := userRoleIndex[target.ID]; !exists {
+			userRoleIndex[target.ID] = make(map[uuid.UUID]int)
+		}
+		if roleIdx, exists := userRoleIndex[target.ID][role.ID]; exists {
+			target.Roles[roleIdx] = *role
+			continue
+		}
+		userRoleIndex[target.ID][role.ID] = len(target.Roles)
+		target.Roles = append(target.Roles, *role)
 	}
 
 	return nil

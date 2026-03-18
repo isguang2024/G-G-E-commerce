@@ -12,7 +12,8 @@ type RoleListRequest struct {
 	// 创建时间范围过滤，格式为 YYYY-MM-DD（含起始日，含结束日）
 	StartTime  string `form:"startTime"`
 	EndTime    string `form:"endTime"`
-	Scope      string `form:"scope"`      // 单一作用域过滤：global | team，空则不过滤
+	Scope      string   `form:"scope"`    // 单一作用域过滤：global | team，空则不过滤
+	Scopes     []string `form:"scopes"`   // 多作用域过滤
 	GlobalOnly bool   `form:"globalOnly"` // 兼容：true 时按 scope=team 过滤（团队角色及权限页）
 }
 
@@ -22,9 +23,9 @@ type RoleCreateRequest struct {
 	Name        string `json:"name" binding:"required,max=100"`
 	Description string `json:"description"`
 	SortOrder   int    `json:"sort_order"`
-	ScopeID     string `json:"scope_id" binding:"required"` // 作用域ID
-	Priority    int    `json:"priority"`                    // 优先级
-	Status      string `json:"status"`                      // normal/suspended
+	ScopeIDs    []string `json:"scope_ids" binding:"required,min=1"` // 多作用域ID
+	Priority    int      `json:"priority"`                            // 优先级
+	Status      string   `json:"status"`                              // normal/suspended
 }
 
 // RoleUpdateRequest 更新角色请求
@@ -33,9 +34,9 @@ type RoleUpdateRequest struct {
 	Name        string `json:"name" binding:"max=100"`
 	Description string `json:"description"`
 	SortOrder   int    `json:"sort_order"`
-	ScopeID     string `json:"scope_id"` // 作用域ID
-	Priority    int    `json:"priority"` // 优先级
-	Status      string `json:"status"`   // normal/suspended
+	ScopeIDs    []string `json:"scope_ids"` // 多作用域ID
+	Priority    int      `json:"priority"`  // 优先级
+	Status      string   `json:"status"`    // normal/suspended
 }
 
 // RoleMenusRequest 角色菜单权限请求（保存时传菜单 ID 列表）

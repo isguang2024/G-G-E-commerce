@@ -69,20 +69,13 @@
         </div>
       </section>
 
-      <ElEmpty v-if="!loading && filteredGroups.length === 0" description="当前团队未开通功能权限" />
-
-      <div v-else class="tree-wrapper">
-        <ElTree
-          ref="treeRef"
-          :data="treeData"
-          node-key="key"
-          :props="treeProps"
-          :default-expanded-keys="expandedKeys"
-          :expand-on-click-node="true"
-          :highlight-current="false"
-          class="permission-tree"
-        >
-          <template #default="{ data }">
+      <ActionPermissionTreePanel
+        ref="treePanelRef"
+        :loading="loading"
+        :tree-data="treeData"
+        empty-description="当前团队未开通功能权限"
+      >
+        <template #node="{ data }">
             <div v-if="data.nodeType === 'feature'" class="tree-node tree-node--feature" :class="{ 'is-compact': filters.compact }">
               <div class="node-main">
                 <div class="node-title">{{ data.label }}</div>
@@ -132,9 +125,8 @@
                 </ElSelect>
               </div>
             </div>
-          </template>
-        </ElTree>
-      </div>
+        </template>
+      </ActionPermissionTreePanel>
     </div>
 
     <template #footer>
@@ -152,6 +144,7 @@
     buildPermissionTree,
     type FeatureGroup
   } from '@/components/business/permission/permission-tree'
+  import ActionPermissionTreePanel from '@/components/business/permission/action-permission-tree-panel.vue'
   import {
     fetchGetMyTeamActions,
     fetchGetMyTeamMemberActions,
@@ -188,7 +181,7 @@
   const loading = ref(false)
   const submitting = ref(false)
   const actions = ref<PermissionActionItem[]>([])
-  const treeRef = ref()
+  const treePanelRef = ref<InstanceType<typeof ActionPermissionTreePanel>>()
   const expandedKeys = ref<string[]>([])
   const effectMap = reactive<Record<string, EffectValue>>({})
   const roleEffectMap = reactive<Record<string, EffectValue>>({})
@@ -200,11 +193,6 @@
     showRemark: true,
     compact: false
   })
-
-  const treeProps = {
-    children: 'children',
-    label: 'label'
-  }
 
   const filteredActions = computed(() => {
     const keyword = filters.keyword.trim().toLowerCase()
@@ -293,19 +281,19 @@
     const nextKeys = buildDefaultExpandedKeys(treeData.value)
     expandedKeys.value = nextKeys
     nextTick(() => {
-      treeRef.value?.setExpandedKeys(nextKeys)
+      treePanelRef.value?.setExpandedKeys(nextKeys)
     })
   }
 
   function expandAll() {
     const nextKeys = buildAllExpandedKeys(treeData.value)
     expandedKeys.value = nextKeys
-    treeRef.value?.setExpandedKeys(nextKeys)
+    treePanelRef.value?.expandAll()
   }
 
   function collapseAll() {
     expandedKeys.value = []
-    treeRef.value?.setExpandedKeys([])
+    treePanelRef.value?.collapseAll()
   }
 
   async function loadRoleBaseline() {
@@ -515,69 +503,25 @@
     color: #69778a;
   }
 
-  .tree-wrapper {
-    border: 1px solid #e5ebf3;
-    border-radius: 18px;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(249, 251, 254, 0.96) 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.8),
-      0 10px 28px rgba(15, 23, 42, 0.04);
-    padding: 10px;
-  }
-
-  .permission-tree {
-    max-height: 520px;
-    overflow: auto;
-    padding-right: 2px;
-  }
-
-  :deep(.permission-tree .el-tree-node__content) {
-    height: auto;
-    min-height: 34px;
-    margin: 2px 0;
-    padding: 0;
-    border-radius: 14px;
-  }
-
-  :deep(.permission-tree .el-tree-node__expand-icon) {
-    color: #8a94a6;
-    font-size: 12px;
-  }
-
   .tree-node {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
     width: 100%;
-    padding: 8px 10px;
-    border-radius: 14px;
-    transition:
-      background-color 0.18s ease,
-      box-shadow 0.18s ease;
-  }
-
-  .tree-node:hover {
-    background: rgba(244, 247, 252, 0.92);
+    min-height: 34px;
+    padding: 6px 8px;
+    border-radius: 12px;
   }
 
   .tree-node--feature {
-    padding: 10px 12px;
-    background:
-      linear-gradient(135deg, rgba(248, 251, 255, 0.96) 0%, rgba(242, 246, 252, 0.9) 100%);
-    border: 1px solid #e6edf6;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    background: rgba(246, 249, 253, 0.92);
+    border: 1px solid #e5ebf3;
   }
 
   .tree-node--module {
-    padding: 8px 10px;
-    background: rgba(255, 255, 255, 0.84);
+    background: rgba(255, 255, 255, 0.9);
     border: 1px solid #edf2f7;
-  }
-
-  .tree-node--action {
-    padding: 6px 8px;
   }
 
   .node-main {
@@ -610,10 +554,6 @@
     justify-content: flex-end;
   }
 
-  .node-actions--leaf {
-    gap: 4px;
-  }
-
   .muted-tag {
     font-size: 11px;
     color: #6b7280;
@@ -623,7 +563,7 @@
   }
 
   .effect-select {
-    width: 92px;
+    width: 110px;
   }
 
   :deep(.effect-select .el-input__wrapper) {

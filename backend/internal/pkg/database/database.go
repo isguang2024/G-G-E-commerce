@@ -89,6 +89,7 @@ func AutoMigrate() error {
 		&models.User{},
 		&models.Scope{},
 		&models.Role{},
+		&models.RoleScope{},
 		&models.UserRole{},
 		&models.RoleMenu{},
 		&models.PermissionAction{},
@@ -207,7 +208,8 @@ func migrateLegacyUserRoles() error {
 		SELECT tm.user_id, r.id, tm.tenant_id
 		FROM tenant_members tm
 		JOIN roles r ON r.code = tm.role_code
-		JOIN scopes s ON s.id = r.scope_id
+		JOIN role_scopes rs ON rs.role_id = r.id
+		JOIN scopes s ON s.id = rs.scope_id
 		WHERE s.code = 'team'
 		  AND tm.role_code IN ('team_admin', 'team_member')
 		  AND NOT EXISTS (
@@ -232,11 +234,12 @@ func migrateLegacyUserRoles() error {
 		  GROUP BY user_id
 		  HAVING COUNT(DISTINCT tenant_id) = 1
 		) tm,
-		roles r,
+		roles r
+		JOIN role_scopes rs ON rs.role_id = r.id,
 		scopes s
 		WHERE ur.user_id = tm.user_id
 		  AND r.id = ur.role_id
-		  AND s.id = r.scope_id
+		  AND s.id = rs.scope_id
 		  AND ur.tenant_id IS NULL
 		  AND s.code = 'team'
 		  AND NOT EXISTS (
@@ -255,7 +258,8 @@ func migrateLegacyUserRoles() error {
 	deleteLegacyDefaultGlobalTeamRoles := `
 		DELETE FROM user_roles ur
 		USING roles r
-		JOIN scopes s ON s.id = r.scope_id
+		JOIN role_scopes rs ON rs.role_id = r.id
+		JOIN scopes s ON s.id = rs.scope_id
 		WHERE ur.role_id = r.id
 		  AND ur.tenant_id IS NULL
 		  AND s.code = 'team'

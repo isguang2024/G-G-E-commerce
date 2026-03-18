@@ -70,8 +70,7 @@ type Role struct {
 	Name        string         `gorm:"type:varchar(100);not null" json:"name"`
 	Description string         `gorm:"type:varchar(255)" json:"description"`
 	Priority    int            `gorm:"default:0" json:"priority"`
-	ScopeID     uuid.UUID      `gorm:"type:uuid" json:"scope_id"`
-	Scope       Scope          `gorm:"foreignKey:ScopeID" json:"scope,omitempty"`
+	Scopes      []Scope        `gorm:"many2many:role_scopes;" json:"scopes,omitempty"`
 	SortOrder   int            `gorm:"default:0" json:"sort_order"`
 	Status      string         `gorm:"type:varchar(20);default:'normal'" json:"status"`
 	IsSystem    bool           `gorm:"default:false" json:"is_system"`
@@ -84,15 +83,28 @@ func (Role) TableName() string {
 	return "roles"
 }
 
+type RoleScope struct {
+	RoleID  uuid.UUID `gorm:"type:uuid;primaryKey" json:"role_id"`
+	ScopeID uuid.UUID `gorm:"type:uuid;primaryKey" json:"scope_id"`
+}
+
+func (RoleScope) TableName() string {
+	return "role_scopes"
+}
+
 type Scope struct {
-	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	Code        string         `gorm:"type:varchar(50);not null;uniqueIndex" json:"code"`
-	Name        string         `gorm:"type:varchar(100);not null" json:"name"`
-	Description string         `gorm:"type:varchar(255)" json:"description"`
-	SortOrder   int            `gorm:"default:0" json:"sort_order"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID                 uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Code               string         `gorm:"type:varchar(50);not null;uniqueIndex" json:"code"`
+	Name               string         `gorm:"type:varchar(100);not null" json:"name"`
+	Description        string         `gorm:"type:varchar(255)" json:"description"`
+	IsSystem           bool           `gorm:"default:false" json:"is_system"`
+	ContextKind        string         `gorm:"type:varchar(20);not null;default:'global'" json:"context_kind"`
+	DataPermissionCode string         `gorm:"type:varchar(50);not null;default:''" json:"data_permission_code"`
+	DataPermissionName string         `gorm:"type:varchar(100);not null;default:''" json:"data_permission_name"`
+	SortOrder          int            `gorm:"default:0" json:"sort_order"`
+	CreatedAt          time.Time      `json:"created_at"`
+	UpdatedAt          time.Time      `json:"updated_at"`
+	DeletedAt          gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (Scope) TableName() string {

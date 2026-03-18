@@ -1,4 +1,4 @@
-package role
+﻿package role
 
 import (
 	"fmt"
@@ -50,14 +50,7 @@ func (h *RoleHandler) List(c *gin.Context) {
 	records := make([]gin.H, 0, len(list))
 	for _, r := range list {
 		canEditPermission := true
-		scopeCode := ""
-		scopeName := ""
-		scopeId := ""
-		if r.Scope.ID != (uuid.UUID{}) {
-			scopeCode = r.Scope.Code
-			scopeName = r.Scope.Name
-			scopeId = r.Scope.ID.String()
-		}
+		scopeIDs, scopes := buildRoleScopePayload(r)
 		records = append(records, gin.H{
 			"roleId":            r.ID.String(),
 			"roleName":          r.Name,
@@ -67,10 +60,8 @@ func (h *RoleHandler) List(c *gin.Context) {
 			"sortOrder":         r.SortOrder,
 			"priority":          r.Priority,
 			"createTime":        r.CreatedAt.Format("2006-01-02 15:04:05"),
-			"scopeId":           scopeId,
-			"scopeCode":         scopeCode,
-			"scopeName":         scopeName,
-			"scope":             scopeCode,
+			"scopeIds":          scopeIDs,
+			"scopes":            scopes,
 			"canEditPermission": canEditPermission,
 		})
 	}
@@ -101,14 +92,7 @@ func (h *RoleHandler) Get(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	scopeCode := ""
-	scopeName := ""
-	scopeId := ""
-	if role.Scope.ID != (uuid.UUID{}) {
-		scopeCode = role.Scope.Code
-		scopeName = role.Scope.Name
-		scopeId = role.Scope.ID.String()
-	}
+	scopeIDs, scopes := buildRoleScopePayload(*role)
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
 		"roleId":      role.ID.String(),
 		"roleName":    role.Name,
@@ -118,10 +102,8 @@ func (h *RoleHandler) Get(c *gin.Context) {
 		"sortOrder":   role.SortOrder,
 		"priority":    role.Priority,
 		"createTime":  role.CreatedAt.Format("2006-01-02 15:04:05"),
-		"scopeId":     scopeId,
-		"scopeCode":   scopeCode,
-		"scopeName":   scopeName,
-		"scope":       scopeCode,
+		"scopeIds":    scopeIDs,
+		"scopes":      scopes,
 	}))
 }
 
@@ -161,7 +143,7 @@ func (h *RoleHandler) Update(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	h.logger.Info("更新角色请求", zap.String("roleId", idStr), zap.String("scopeId", req.ScopeID), zap.Any("req", req))
+	h.logger.Info("更新角色请求", zap.String("roleId", idStr), zap.Any("scopeIds", req.ScopeIDs), zap.Any("req", req))
 	if err := h.roleService.Update(id, &req); err != nil {
 		if err == ErrRoleNotFound {
 			status, resp := errcode.Response(errcode.ErrRoleNotFound)
@@ -172,10 +154,6 @@ func (h *RoleHandler) Update(c *gin.Context) {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "更新角色失败: "+err.Error())
 		c.JSON(status, resp)
 		return
-	}
-	updatedRole, _ := h.roleService.Get(id)
-	if updatedRole != nil {
-		h.logger.Info("角色更新后验证", zap.String("roleId", idStr), zap.String("scopeId", updatedRole.ScopeID.String()))
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
@@ -382,7 +360,7 @@ func (h *RoleHandler) GetRoleDataPermissions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	records, resourceCodes, scopeOptions, roleScopeCode, err := h.roleService.GetRoleDataPermissions(id)
+	records, resourceCodes, scopeOptions, err := h.roleService.GetRoleDataPermissions(id)
 	if err != nil {
 		if err == ErrRoleNotFound {
 			status, resp := errcode.Response(errcode.ErrRoleNotFound)
@@ -423,7 +401,6 @@ func (h *RoleHandler) GetRoleDataPermissions(c *gin.Context) {
 		"permissions":      permissions,
 		"resources":        resources,
 		"available_scopes": scopes,
-		"role_scope_code":  roleScopeCode,
 	}))
 }
 
@@ -462,6 +439,36 @@ func (h *RoleHandler) SetRoleDataPermissions(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func buildRoleScopePayload(role user.Role) ([]string, []gin.H) {
+	scopeMap := make(map[string]struct{})
+	scopeIDs := make([]string, 0, len(role.Scopes))
+	scopes := make([]gin.H, 0, len(role.Scopes))
+
+	for _, scope := range role.Scopes {
+		if scope.ID == (uuid.UUID{}) && scope.Code == "" {
+			continue
+		}
+		key := scope.ID.String()
+		if key == "" {
+			key = scope.Code
+		}
+		if _, ok := scopeMap[key]; ok {
+			continue
+		}
+		scopeMap[key] = struct{}{}
+		if scope.ID != (uuid.UUID{}) {
+			scopeIDs = append(scopeIDs, scope.ID.String())
+		}
+		scopes = append(scopes, gin.H{
+			"scopeId":   scope.ID.String(),
+			"scopeCode": scope.Code,
+			"scopeName": scope.Name,
+		})
+	}
+
+	return scopeIDs, scopes
 }
 
 func formatRoleDataResourceName(resourceCode string) string {

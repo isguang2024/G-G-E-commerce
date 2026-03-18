@@ -620,7 +620,7 @@ func (h *TenantHandler) SetMyTeamMemberRoles(c *gin.Context) {
 		return
 	}
 
-	teamRoles, err := h.roleRepo.GetByScope("team")
+	allRoles, err := h.roleRepo.GetAll()
 	if err != nil {
 		h.logger.Error("Get team roles failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队角色失败")
@@ -628,9 +628,19 @@ func (h *TenantHandler) SetMyTeamMemberRoles(c *gin.Context) {
 		return
 	}
 
-	allowedTeamRoleIDs := make(map[uuid.UUID]user.Role, len(teamRoles))
+	allowedTeamRoleIDs := make(map[uuid.UUID]user.Role)
 	protectedRoleID := uuid.Nil
-	for _, role := range teamRoles {
+	for _, role := range allRoles {
+		hasTenantScope := false
+		for _, scope := range role.Scopes {
+			if strings.EqualFold(scope.ContextKind, "tenant") {
+				hasTenantScope = true
+				break
+			}
+		}
+		if !hasTenantScope {
+			continue
+		}
 		allowedTeamRoleIDs[role.ID] = role
 		if role.Code == memberRecord.RoleCode {
 			protectedRoleID = role.ID
@@ -680,7 +690,7 @@ func (h *TenantHandler) ListMyTeamRoles(c *gin.Context) {
 	}
 
 	_ = member.TenantID
-	allRoles, err := h.roleRepo.GetByScope("team")
+	allRoles, err := h.roleRepo.GetAll()
 	if err != nil {
 		h.logger.Error("List roles failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取角色列表失败")
@@ -690,11 +700,29 @@ func (h *TenantHandler) ListMyTeamRoles(c *gin.Context) {
 
 	roleList := make([]gin.H, 0, len(allRoles))
 	for _, r := range allRoles {
+		scopes := make([]gin.H, 0, len(r.Scopes))
+		hasTenantScope := false
+		for _, scope := range r.Scopes {
+			if strings.EqualFold(scope.ContextKind, "tenant") {
+				hasTenantScope = true
+			}
+			scopes = append(scopes, gin.H{
+				"scopeId":            scope.ID.String(),
+				"scopeCode":          scope.Code,
+				"scopeName":          scope.Name,
+				"contextKind":        scope.ContextKind,
+				"dataPermissionCode": scope.DataPermissionCode,
+				"dataPermissionName": scope.DataPermissionName,
+			})
+		}
+		if !hasTenantScope {
+			continue
+		}
 		roleList = append(roleList, gin.H{
 			"id":        r.ID.String(),
 			"code":      r.Code,
 			"name":      r.Name,
-			"scope":     r.Scope,
+			"scopes":    scopes,
 			"is_system": r.IsSystem,
 		})
 	}
@@ -734,7 +762,14 @@ func (h *TenantHandler) GetMyTeamRoleActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	if role.Scope.Code != "team" {
+	hasTeamScope := false
+	for _, scope := range role.Scopes {
+		if strings.EqualFold(scope.ContextKind, "tenant") {
+			hasTeamScope = true
+			break
+		}
+	}
+	if !hasTeamScope {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "仅支持查看团队角色功能权限")
 		c.JSON(status, resp)
 		return
@@ -819,7 +854,7 @@ func (h *TenantHandler) SetTenantActions(c *gin.Context) {
 			return
 		}
 		for _, action := range actions {
-			if action.Scope.Code != "team" {
+			if !strings.EqualFold(action.Scope.ContextKind, "tenant") {
 				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "团队仅可配置团队作用域功能权限")
 				c.JSON(status, resp)
 				return
@@ -1001,7 +1036,7 @@ func (h *TenantHandler) SetMyTeamMemberActionPermissions(c *gin.Context) {
 			return
 		}
 		for _, action := range actionList {
-			if action.Scope.Code != "team" {
+			if !strings.EqualFold(action.Scope.ContextKind, "tenant") {
 				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "成员仅可配置团队作用域功能权限")
 				c.JSON(status, resp)
 				return
@@ -1163,6 +1198,9 @@ func actionMapToMap(action *user.PermissionAction) gin.H {
 		"scope_id":                scopeID,
 		"scope_code":              scopeCode,
 		"scope_name":              scopeName,
+		"scope_context_kind":      action.Scope.ContextKind,
+		"data_permission_code":    action.Scope.DataPermissionCode,
+		"data_permission_name":    action.Scope.DataPermissionName,
 		"scope":                   scopeCode,
 		"requires_tenant_context": action.RequiresTenantContext,
 		"status":                  action.Status,

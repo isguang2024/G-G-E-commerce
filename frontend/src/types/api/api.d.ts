@@ -215,7 +215,7 @@ declare namespace Api {
       name: string
       description?: string
       sort_order?: number
-      scope_id: string
+      scope_ids: string[]
       priority?: number
       status?: string
     }
@@ -225,10 +225,24 @@ declare namespace Api {
       code?: string
       name?: string
       description?: string
-      scope_id?: string
+      scope_ids?: string[]
       sort_order?: number
       priority?: number
       status?: string
+    }
+
+    interface RoleScopeItem {
+      scopeId: string
+      scopeCode: string
+      scopeName: string
+      contextKind?: string
+      dataPermissionCode?: string
+      dataPermissionName?: string
+    }
+
+    interface RoleListItem {
+      scopeIds?: string[]
+      scopes?: RoleScopeItem[]
     }
 
       interface PermissionActionItem {
@@ -245,6 +259,9 @@ declare namespace Api {
       scopeId?: string
       scopeCode?: string
       scopeName?: string
+      scopeContextKind?: string
+      dataPermissionCode?: string
+      dataPermissionName?: string
       scope?: string
       requiresTenantContext: boolean
       status: string
@@ -268,6 +285,9 @@ declare namespace Api {
       scopeId?: string
       scopeCode?: string
       scopeName?: string
+      scopeContextKind?: string
+      dataPermissionCode?: string
+      dataPermissionName?: string
       requiresTenantContext: boolean
       status: string
       createdAt?: string
@@ -364,6 +384,10 @@ declare namespace Api {
       scopeCode: string
       scopeName: string
       description?: string
+      isSystem?: boolean
+      contextKind?: 'global' | 'tenant' | string
+      dataPermissionCode?: string
+      dataPermissionName?: string
       sortOrder?: number
       createTime?: string
     }
@@ -378,6 +402,9 @@ declare namespace Api {
       code: string
       name: string
       description?: string
+      context_kind: 'global' | 'tenant'
+      data_permission_code?: string
+      data_permission_name?: string
       sort_order?: number
     }
 
@@ -386,6 +413,9 @@ declare namespace Api {
       code?: string
       name?: string
       description?: string
+      context_kind?: 'global' | 'tenant'
+      data_permission_code?: string
+      data_permission_name?: string
       sort_order?: number
     }
 

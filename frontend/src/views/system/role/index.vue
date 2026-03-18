@@ -1,7 +1,5 @@
-<!-- 角色管理页面：有子路由（如内页）时渲染 router-view，否则显示本页内容 -->
 <template>
   <div class="art-full-height">
-    <!-- 当前为子路由（如 /system/role/role1）时，只渲染子路由组件 -->
     <router-view v-if="hasNestedRoute" />
     <template v-else>
       <RoleSearch
@@ -9,7 +7,7 @@
         v-model="searchForm"
         @search="handleSearch"
         @reset="resetSearchParams"
-      ></RoleSearch>
+      />
 
       <ElCard
         class="art-table-card"
@@ -27,12 +25,10 @@
               <ElButton v-action="'role:create'" @click="showDialog('add')" v-ripple>
                 新增角色
               </ElButton>
-              <ElButton v-action="'scope:list'" @click="showScopeDialog" v-ripple>作用域管理</ElButton>
             </ElSpace>
           </template>
         </ArtTableHeader>
 
-        <!-- 表格 -->
         <ArtTable
           :loading="loading"
           :data="data"
@@ -40,11 +36,9 @@
           :pagination="pagination"
           @pagination:size-change="handleSizeChange"
           @pagination:current-change="handleCurrentChange"
-        >
-        </ArtTable>
+        />
       </ElCard>
 
-      <!-- 角色编辑弹窗 -->
       <RoleEditDialog
         v-model="dialogVisible"
         :dialog-type="dialogType"
@@ -52,7 +46,6 @@
         @success="refreshData"
       />
 
-      <!-- 菜单权限弹窗 -->
       <RolePermissionDialog
         v-model="permissionDialog"
         :role-data="currentRoleData"
@@ -70,9 +63,6 @@
         :role-data="currentRoleData"
         @success="refreshData"
       />
-
-      <!-- 作用域管理弹窗 -->
-      <ScopeManageDialog v-model="scopeDialogVisible" />
     </template>
   </div>
 </template>
@@ -82,28 +72,25 @@
   import { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { useAuth } from '@/hooks/core/useAuth'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchGetRoleList } from '@/api/system-manage'
+  import { fetchDeleteRole, fetchGetRoleList } from '@/api/system-manage'
+  import { getScopeTagType } from '@/utils/permission/scope'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import RoleSearch from './modules/role-search.vue'
   import RoleEditDialog from './modules/role-edit-dialog.vue'
   import RolePermissionDialog from './modules/role-permission-dialog.vue'
   import RoleActionPermissionDialog from './modules/role-action-permission-dialog.vue'
   import RoleDataPermissionDialog from './modules/role-data-permission-dialog.vue'
-  import ScopeManageDialog from './modules/scope-manage-dialog.vue'
-  import { fetchDeleteRole } from '@/api/system-manage'
   import { ElTag, ElMessage, ElMessageBox } from 'element-plus'
   import { refreshUserMenus } from '@/router'
 
   defineOptions({ name: 'Role' })
 
   const route = useRoute()
-  /** 当前匹配到的是本页下的子路由（如内页），应渲染 router-view 而非本页表格 */
   const hasNestedRoute = computed(() => route.matched.length > 2)
 
   type RoleListItem = Api.SystemManage.RoleListItem
   const { hasAction } = useAuth()
 
-  // 搜索表单
   const searchForm = ref({
     roleName: undefined,
     roleCode: undefined,
@@ -114,12 +101,10 @@
   })
 
   const showSearchBar = ref(false)
-
   const dialogVisible = ref(false)
   const permissionDialog = ref(false)
   const actionPermissionDialog = ref(false)
   const dataPermissionDialog = ref(false)
-  const scopeDialogVisible = ref(false)
   const currentRoleData = ref<RoleListItem | undefined>(undefined)
 
   const {
@@ -135,14 +120,12 @@
     handleCurrentChange,
     refreshData
   } = useTable({
-    // 核心配置
     core: {
       apiFn: fetchGetRoleList,
       apiParams: {
         current: 1,
         size: 20
       },
-      // 排除 apiParams 中的属性
       excludeParams: ['daterange'],
       columnsFactory: () => [
         {
@@ -168,30 +151,29 @@
           showOverflowTooltip: true
         },
         {
-          prop: 'sortOrder',
-          label: '排序',
-          width: 80,
-          formatter: (row: RoleListItem) => row.sortOrder ?? 0
-        },
-        {
           prop: 'scope',
           label: '作用域',
-          width: 100,
-          formatter: (row) => {
-            const scopeName =
-              row.scopeName ||
-              (row.scope === 'global' ? '全局' : row.scope === 'team' ? '团队' : '')
-            const scopeCode = row.scopeCode || row.scope || ''
-            const scopeConfig =
-              scopeCode === 'global'
-                ? { type: 'primary', text: scopeName || '全局' }
-                : scopeCode === 'team'
-                  ? { type: 'success', text: scopeName || '团队' }
-                  : { type: 'info', text: scopeName || '未知' }
+          minWidth: 220,
+          formatter: (row: RoleListItem) => {
+            const scopes = Array.isArray((row as any).scopes) ? (row as any).scopes : []
+            if (scopes.length === 0) {
+              const fallback = (row as any).scopeName || (row as any).scopeCode || '未配置'
+              return h(ElTag, { type: 'info', effect: 'plain' }, () => fallback)
+            }
             return h(
-              ElTag,
-              { type: scopeConfig.type as 'primary' | 'success' | 'info' },
-              () => scopeConfig.text
+              'div',
+              { class: 'flex flex-wrap gap-1' },
+              scopes.map((scope: any) =>
+                h(
+                  ElTag,
+                  {
+                    key: scope.scopeId || scope.scopeCode,
+                    type: getScopeTagType(scope.scopeCode, scope.contextKind),
+                    effect: 'plain'
+                  },
+                  () => scope.scopeName || scope.scopeCode || '未命名'
+                )
+              )
             )
           }
         },
@@ -204,11 +186,7 @@
               row.status === 'normal'
                 ? { type: 'success', text: '正常' }
                 : { type: 'warning', text: '停用' }
-            return h(
-              ElTag,
-              { type: statusConfig.type as 'success' | 'warning' },
-              () => statusConfig.text
-            )
+            return h(ElTag, { type: statusConfig.type as 'success' | 'warning' }, () => statusConfig.text)
           }
         },
         {
@@ -270,12 +248,17 @@
       ]
     },
     transform: {
-      // 前端按作用域多选过滤（按 scopeCode 匹配），不额外增加后端参数
       dataTransformer: (rows: RoleListItem[]) => {
         const scopes = (searchParams as any).scopes as string[] | undefined
         if (!Array.isArray(scopes) || scopes.length === 0) return rows
         const set = new Set(scopes)
-        return rows.filter((row) => row.scopeCode && set.has(row.scopeCode))
+        return rows.filter((row) => {
+          const rowScopes = Array.isArray((row as any).scopes) ? (row as any).scopes : []
+          if (rowScopes.some((item: any) => item.scopeCode && set.has(item.scopeCode))) {
+            return true
+          }
+          return Boolean((row as any).scopeCode && set.has((row as any).scopeCode))
+        })
       }
     }
   })
@@ -288,16 +271,9 @@
     currentRoleData.value = row
   }
 
-  /**
-   * 搜索处理
-   * @param params 搜索参数
-   */
   const handleSearch = (params: Record<string, any>) => {
-    // 处理日期区间参数，把 daterange 转换为 startTime 和 endTime
     const { daterange, ...filtersParams } = params
     const [startTime, endTime] = Array.isArray(daterange) ? daterange : [null, null]
-
-    // 搜索参数赋值
     Object.assign(searchParams, { ...filtersParams, startTime, endTime })
     getData()
   }
@@ -322,7 +298,6 @@
     }
   }
 
-  /** 菜单权限保存成功：刷新表格并刷新当前用户菜单/路由，使新勾选的菜单立即在侧栏生效 */
   const onPermissionSuccess = async () => {
     refreshData()
     await refreshUserMenus()
@@ -343,12 +318,8 @@
     currentRoleData.value = row
   }
 
-  const showScopeDialog = () => {
-    scopeDialogVisible.value = true
-  }
-
   const deleteRole = (row: RoleListItem) => {
-    ElMessageBox.confirm(`确定删除角色"${row.roleName}"吗？此操作不可恢复！`, '删除确认', {
+    ElMessageBox.confirm(`确定删除角色“${row.roleName}”吗？此操作不可恢复！`, '删除确认', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'

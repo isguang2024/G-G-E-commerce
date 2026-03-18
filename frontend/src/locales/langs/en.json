@@ -261,6 +261,7 @@
       "title": "System Settings",
       "user": "User Manage",
       "role": "Role Manage",
+      "scope": "Scope Manage",
       "teamRolesAndPermissions": "Team Roles & Permissions",
       "team": "Team Manage",
       "teamMembers": "Team Members",
@@ -271,7 +272,7 @@
       "menu": "Menu Manage",
       "hiddenPages": "Page Association",
       "pagesAssociation": "Page Association"
-    }
+  }
   },
   "table": {
     "form": {

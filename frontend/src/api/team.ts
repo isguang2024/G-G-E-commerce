@@ -30,6 +30,9 @@ function normalizeAction(item: any): Api.SystemManage.PermissionActionItem {
     scopeId: item?.scope_id || item?.scopeId || '',
     scopeCode: item?.scope_code || item?.scopeCode || item?.scope || '',
     scopeName: item?.scope_name || item?.scopeName || '',
+    scopeContextKind: item?.scope_context_kind || item?.scopeContextKind || '',
+    dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
+    dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
     scope: item?.scope || item?.scope_code || item?.scopeCode || '',
     requiresTenantContext: Boolean(
       item?.requires_tenant_context ?? item?.requiresTenantContext ?? false
@@ -203,7 +206,20 @@ export async function fetchGetMyTeamRoles() {
     roleName: item?.name || '',
     description: item?.description || '',
     scope: item?.scope || '',
+    scopes: Array.isArray(item?.scopes)
+      ? item.scopes.map((scope: any) => ({
+          scopeId: scope?.scopeId || scope?.scope_id || '',
+          scopeCode: scope?.scopeCode || scope?.scope_code || '',
+          scopeName: scope?.scopeName || scope?.scope_name || '',
+          contextKind: scope?.contextKind || scope?.context_kind || 'global',
+          dataPermissionCode:
+            scope?.dataPermissionCode || scope?.data_permission_code || '',
+          dataPermissionName:
+            scope?.dataPermissionName || scope?.data_permission_name || ''
+        }))
+      : [],
     status: item?.status || 'normal',
+    isSystem: Boolean(item?.is_system ?? item?.isSystem ?? false),
     createTime: item?.created_at || ''
   }))
 }

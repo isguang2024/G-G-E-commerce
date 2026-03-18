@@ -305,17 +305,34 @@ func runNamedMigrations(logger *zap.Logger) error {
 		{
 			Name: "20260318_restore_permission_scope_schema",
 			Run: func(logger *zap.Logger) error {
-				statements := []string{
-					`UPDATE user_roles
+				statements := []string{}
+				if hasScopeTargetID, err := hasColumn("user_roles", "scope_target_id"); err != nil {
+					return err
+				} else if hasScopeTargetID {
+					statements = append(statements, `UPDATE user_roles
 					  SET tenant_id = COALESCE(tenant_id, scope_target_id)
-					  WHERE tenant_id IS NULL AND scope_target_id IS NOT NULL`,
-					`UPDATE user_action_permissions
+					  WHERE tenant_id IS NULL AND scope_target_id IS NOT NULL`)
+				}
+				if hasScopeTargetID, err := hasColumn("user_action_permissions", "scope_target_id"); err != nil {
+					return err
+				} else if hasScopeTargetID {
+					statements = append(statements, `UPDATE user_action_permissions
 					  SET tenant_id = COALESCE(tenant_id, scope_target_id)
-					  WHERE tenant_id IS NULL AND scope_target_id IS NOT NULL`,
-					`UPDATE roles r
-					  SET scope_id = rsb.scope_id
-					  FROM role_scope_bindings rsb
-					  WHERE r.id = rsb.role_id AND r.scope_id IS NULL`,
+					  WHERE tenant_id IS NULL AND scope_target_id IS NOT NULL`)
+				}
+				if hasRoleScopeBindings, err := hasTable("role_scope_bindings"); err != nil {
+					return err
+				} else if hasRoleScopeBindings {
+					if hasRoleScopeID, columnErr := hasColumn("roles", "scope_id"); columnErr != nil {
+						return columnErr
+					} else if hasRoleScopeID {
+						statements = append(statements, `UPDATE roles r
+						  SET scope_id = rsb.scope_id
+						  FROM role_scope_bindings rsb
+						  WHERE r.id = rsb.role_id AND r.scope_id IS NULL`)
+					}
+				}
+				statements = append(statements,
 					`ALTER TABLE user_action_permissions DROP CONSTRAINT IF EXISTS user_action_permissions_pkey`,
 					`ALTER TABLE user_action_permissions ALTER COLUMN tenant_id DROP NOT NULL`,
 					`DROP INDEX IF EXISTS idx_user_action_permissions_global_unique`,
@@ -343,7 +360,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 					`DROP TABLE IF EXISTS permissions`,
 					`DROP TABLE IF EXISTS role_permissions`,
 					`DROP TABLE IF EXISTS role_scope_bindings`,
-				}
+				)
 				for _, statement := range statements {
 					if err := database.DB.Exec(statement).Error; err != nil {
 						return err
@@ -369,6 +386,82 @@ func runNamedMigrations(logger *zap.Logger) error {
 					}
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260318_drop_unused_core_columns"))
+				return nil
+			},
+		},
+		{
+			Name: "20260318_roles_use_role_scopes",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`CREATE TABLE IF NOT EXISTS role_scopes (
+						role_id uuid NOT NULL,
+						scope_id uuid NOT NULL,
+						PRIMARY KEY (role_id, scope_id)
+					)`,
+					`CREATE INDEX IF NOT EXISTS idx_role_scopes_role_id ON role_scopes (role_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_role_scopes_scope_id ON role_scopes (scope_id)`,
+				}
+				if hasRoleScopeID, err := hasColumn("roles", "scope_id"); err != nil {
+					return err
+				} else if hasRoleScopeID {
+					statements = append(statements,
+						`INSERT INTO role_scopes (role_id, scope_id)
+						 SELECT id, scope_id FROM roles WHERE scope_id IS NOT NULL
+						 ON CONFLICT DO NOTHING`,
+						`ALTER TABLE roles DROP COLUMN IF EXISTS scope_id`,
+					)
+				}
+				statements = append(statements, `DROP TABLE IF EXISTS role_scope_bindings`)
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260318_roles_use_role_scopes"))
+				return nil
+			},
+		},
+		{
+			Name: "20260318_scope_rule_fields",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`ALTER TABLE scopes ADD COLUMN IF NOT EXISTS context_kind varchar(20)`,
+					`ALTER TABLE scopes ADD COLUMN IF NOT EXISTS data_permission_code varchar(50)`,
+					`ALTER TABLE scopes ADD COLUMN IF NOT EXISTS data_permission_name varchar(100)`,
+					`UPDATE scopes SET context_kind = CASE WHEN code IN ('team', 'tenant') THEN 'tenant' ELSE 'global' END WHERE COALESCE(context_kind, '') = ''`,
+					`UPDATE scopes SET data_permission_code = CASE WHEN code IN ('team', 'tenant') THEN 'team' ELSE '' END WHERE COALESCE(data_permission_code, '') = ''`,
+					`UPDATE scopes SET data_permission_name = CASE WHEN code IN ('team', 'tenant') THEN name ELSE COALESCE(NULLIF(data_permission_name, ''), name) END WHERE COALESCE(data_permission_name, '') = ''`,
+					`ALTER TABLE scopes ALTER COLUMN context_kind SET DEFAULT 'global'`,
+					`ALTER TABLE scopes ALTER COLUMN data_permission_code SET DEFAULT ''`,
+					`ALTER TABLE scopes ALTER COLUMN data_permission_name SET DEFAULT ''`,
+					`ALTER TABLE scopes ALTER COLUMN context_kind SET NOT NULL`,
+					`ALTER TABLE scopes ALTER COLUMN data_permission_code SET NOT NULL`,
+					`ALTER TABLE scopes ALTER COLUMN data_permission_name SET NOT NULL`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260318_scope_rule_fields"))
+				return nil
+			},
+		},
+		{
+			Name: "20260318_scope_system_flag",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`ALTER TABLE scopes ADD COLUMN IF NOT EXISTS is_system boolean`,
+					`UPDATE scopes SET is_system = CASE WHEN code IN ('global', 'team') THEN TRUE ELSE FALSE END WHERE is_system IS NULL`,
+					`ALTER TABLE scopes ALTER COLUMN is_system SET DEFAULT FALSE`,
+					`ALTER TABLE scopes ALTER COLUMN is_system SET NOT NULL`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260318_scope_system_flag"))
 				return nil
 			},
 		},
@@ -431,12 +524,27 @@ func hasColumn(tableName, columnName string) (bool, error) {
 	return count > 0, nil
 }
 
+func hasTable(tableName string) (bool, error) {
+	var count int64
+	err := database.DB.Raw(`
+		SELECT COUNT(*)
+		FROM information_schema.tables
+		WHERE table_schema = CURRENT_SCHEMA()
+		  AND table_name = ?
+	`, tableName).Scan(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 func initDefaultRoles(logger *zap.Logger) error {
-	var globalScope, teamScope usermodel.Scope
+	var globalScope usermodel.Scope
 	if err := database.DB.Where("code = ?", "global").First(&globalScope).Error; err != nil {
 		logger.Error("Failed to find global scope", zap.Error(err))
 		return err
 	}
+	var teamScope usermodel.Scope
 	if err := database.DB.Where("code = ?", "team").First(&teamScope).Error; err != nil {
 		logger.Error("Failed to find team scope", zap.Error(err))
 		return err
@@ -446,13 +554,24 @@ func initDefaultRoles(logger *zap.Logger) error {
 		Code        string
 		Name        string
 		Description string
-		ScopeID     uuid.UUID
+		ScopeCodes  []string
 		SortOrder   int
 	}{
-		{"admin", "管理员", "系统管理员，拥有所有权限", globalScope.ID, 1},
-		{"team_admin", "团队管理员", "团队管理员，可以管理团队成员和团队内容", teamScope.ID, 2},
-		{"team_member", "团队成员", "团队成员，可以查看和编辑团队内容", teamScope.ID, 3},
+		{"admin", "管理员", "系统管理员，拥有所有权限", []string{"global"}, 1},
+		{"team_admin", "团队管理员", "团队管理员，可以管理团队成员和团队内容", []string{"team"}, 2},
+		{"team_member", "团队成员", "团队成员，可以查看和编辑团队内容", []string{"team"}, 3},
 	}
+
+	_ = database.DB.Model(&usermodel.Scope{}).Where("code = ?", "global").Updates(map[string]interface{}{
+		"context_kind":         "global",
+		"data_permission_code": "",
+		"data_permission_name": "全局",
+	}).Error
+	_ = database.DB.Model(&usermodel.Scope{}).Where("code IN ?", []string{"team", "tenant"}).Updates(map[string]interface{}{
+		"context_kind":         "tenant",
+		"data_permission_code": "team",
+		"data_permission_name": "当前团队",
+	}).Error
 
 	for _, roleData := range roles {
 		var role usermodel.Role
@@ -463,7 +582,6 @@ func initDefaultRoles(logger *zap.Logger) error {
 					Code:        roleData.Code,
 					Name:        roleData.Name,
 					Description: roleData.Description,
-					ScopeID:     roleData.ScopeID,
 					SortOrder:   roleData.SortOrder,
 					IsSystem:    true,
 				}
@@ -471,21 +589,40 @@ func initDefaultRoles(logger *zap.Logger) error {
 					logger.Error("Failed to create role", zap.String("code", roleData.Code), zap.Error(err))
 					return err
 				}
+				if err := ensureRoleScopeBindings(role.ID, roleData.ScopeCodes); err != nil {
+					logger.Error("Failed to create role-scope binding", zap.String("code", roleData.Code), zap.Error(err))
+					return err
+				}
 				logger.Info("Role created", zap.String("code", roleData.Code), zap.String("name", roleData.Name))
 			} else {
 				return result.Error
 			}
 		} else {
-			if role.ScopeID != roleData.ScopeID {
-				_ = database.DB.Model(&role).Update("scope_id", roleData.ScopeID)
-			}
 			_ = database.DB.Model(&role).Updates(map[string]interface{}{
 				"name":        roleData.Name,
 				"description": roleData.Description,
 				"sort_order":  roleData.SortOrder,
 				"is_system":   true,
 			}).Error
+			_ = ensureRoleScopeBindings(role.ID, roleData.ScopeCodes)
 			logger.Info("Role already exists", zap.String("code", roleData.Code))
+		}
+	}
+	return nil
+}
+
+func ensureRoleScopeBindings(roleID uuid.UUID, scopeCodes []string) error {
+	scopeIDs, err := getScopeIDsByCode(scopeCodes)
+	if err != nil {
+		return err
+	}
+	for _, scopeID := range scopeIDs {
+		if err := database.DB.Exec(
+			`INSERT INTO role_scopes (role_id, scope_id) VALUES (?, ?) ON CONFLICT DO NOTHING`,
+			roleID,
+			scopeID,
+		).Error; err != nil {
+			return err
 		}
 	}
 	return nil
@@ -595,10 +732,14 @@ func initDefaultScopes(logger *zap.Logger) error {
 		Code        string
 		Name        string
 		Description string
+		ContextKind string
+		DataCode    string
+		DataName    string
+		IsSystem    bool
 		SortOrder   int
 	}{
-		{"global", "全局", "跨应用全局作用域", 1},
-		{"team", "团队", "仅团队功能使用的作用域", 2},
+		{"global", "全局", "跨应用全局作用域", "global", "", "全局", true, 1},
+		{"team", "团队", "仅团队功能使用的作用域", "tenant", "team", "当前团队", true, 2},
 	}
 
 	for _, scopeData := range scopes {
@@ -607,10 +748,14 @@ func initDefaultScopes(logger *zap.Logger) error {
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				scope = usermodel.Scope{
-					Code:        scopeData.Code,
-					Name:        scopeData.Name,
-					Description: scopeData.Description,
-					SortOrder:   scopeData.SortOrder,
+					Code:               scopeData.Code,
+					Name:               scopeData.Name,
+					Description:        scopeData.Description,
+					IsSystem:           scopeData.IsSystem,
+					ContextKind:        scopeData.ContextKind,
+					DataPermissionCode: scopeData.DataCode,
+					DataPermissionName: scopeData.DataName,
+					SortOrder:          scopeData.SortOrder,
 				}
 				if err := database.DB.Create(&scope).Error; err != nil {
 					logger.Error("Failed to create scope", zap.String("code", scopeData.Code), zap.Error(err))
@@ -621,6 +766,18 @@ func initDefaultScopes(logger *zap.Logger) error {
 				return result.Error
 			}
 		} else {
+			updates := map[string]interface{}{
+				"name":                 scopeData.Name,
+				"description":          scopeData.Description,
+				"is_system":            scopeData.IsSystem,
+				"context_kind":         scopeData.ContextKind,
+				"data_permission_code": scopeData.DataCode,
+				"data_permission_name": scopeData.DataName,
+				"sort_order":           scopeData.SortOrder,
+			}
+			if err := database.DB.Model(&scope).Updates(updates).Error; err != nil {
+				return err
+			}
 			logger.Info("Scope already exists", zap.String("code", scopeData.Code))
 		}
 	}
@@ -651,14 +808,15 @@ func initDefaultMenus(logger *zap.Logger) error {
 		{Name: "UserCenter", ParentName: "Dashboard", Path: "user-center", Component: "/system/user-center", Title: "menus.system.userCenter", SortOrder: 2, Meta: usermodel.MetaJSON{"isHide": true, "keepAlive": true, "isHideTab": true}},
 
 		{Name: "Role", ParentName: "System", Path: "role", Component: "/system/role", Title: "menus.system.role", SortOrder: 1, Meta: metaSuperAdmin},
-		{Name: "User", ParentName: "System", Path: "user", Component: "/system/user", Title: "menus.system.user", SortOrder: 2, Meta: metaSuperAdminAndAdmin},
-		{Name: "TeamRolesAndPermissions", ParentName: "System", Path: "team-roles-permissions", Component: "/system/team-roles-permissions", Title: "menus.system.teamRolesAndPermissions", SortOrder: 3, Meta: metaSuperAdmin},
-		{Name: "Menus", ParentName: "System", Path: "menu", Component: "/system/menu", Title: "menus.system.menu", SortOrder: 4, Meta: usermodel.MetaJSON{
+		{Name: "Scope", ParentName: "System", Path: "scope", Component: "/system/scope", Title: "menus.system.scope", SortOrder: 2, Meta: metaSuperAdmin},
+		{Name: "User", ParentName: "System", Path: "user", Component: "/system/user", Title: "menus.system.user", SortOrder: 3, Meta: metaSuperAdminAndAdmin},
+		{Name: "TeamRolesAndPermissions", ParentName: "System", Path: "team-roles-permissions", Component: "/system/team-roles-permissions", Title: "menus.system.teamRolesAndPermissions", SortOrder: 4, Meta: metaSuperAdmin},
+		{Name: "Menus", ParentName: "System", Path: "menu", Component: "/system/menu", Title: "menus.system.menu", SortOrder: 5, Meta: usermodel.MetaJSON{
 			"roles":     []interface{}{"R_SUPER"},
 			"keepAlive": true,
 		}},
-		{Name: "ActionPermission", ParentName: "System", Path: "action-permission", Component: "/system/action-permission", Title: "功能权限", SortOrder: 5, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
-		{Name: "ApiEndpoint", ParentName: "System", Path: "api-endpoint", Component: "/system/api-endpoint", Title: "API管理", SortOrder: 6, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "ActionPermission", ParentName: "System", Path: "action-permission", Component: "/system/action-permission", Title: "功能权限", SortOrder: 6, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "ApiEndpoint", ParentName: "System", Path: "api-endpoint", Component: "/system/api-endpoint", Title: "API管理", SortOrder: 7, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 
 		{Name: "TeamManagement", ParentName: "TeamRoot", Path: "team", Component: "/team/team", Title: "团队管理", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "TeamMembers", ParentName: "TeamRoot", Path: "members", Component: "/team/team-members", Title: "menus.system.teamMembers", SortOrder: 2, Meta: metaTeamAdminOnly},
@@ -869,7 +1027,7 @@ func initDefaultPermissionActions(logger *zap.Logger) error {
 
 func initDefaultRoleActionPermissions(logger *zap.Logger) error {
 	var roles []usermodel.Role
-	if err := database.DB.Preload("Scope").Where("code IN ?", []string{"admin", "team_admin"}).Find(&roles).Error; err != nil {
+	if err := database.DB.Preload("Scopes").Where("code IN ?", []string{"admin", "team_admin"}).Find(&roles).Error; err != nil {
 		return err
 	}
 	roleByCode := make(map[string]usermodel.Role, len(roles))
@@ -888,7 +1046,11 @@ func initDefaultRoleActionPermissions(logger *zap.Logger) error {
 	}
 	for _, action := range actions {
 		key := action.ResourceCode + ":" + action.ActionCode
-		switch action.Scope.Code {
+		scopeCode := ""
+		if action.Scope.ID != uuid.Nil {
+			scopeCode = action.Scope.Code
+		}
+		switch scopeCode {
 		case "global":
 			defaultAssignments["admin"][key] = struct{}{}
 		case "team":

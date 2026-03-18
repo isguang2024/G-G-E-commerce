@@ -66,21 +66,18 @@
         </div>
       </section>
 
-      <ElEmpty v-if="!loading && filteredGroups.length === 0" description="暂无匹配的功能权限" />
-
-      <div v-else class="tree-wrapper">
-        <ElTree
-          ref="treeRef"
-          :data="treeData"
-          node-key="key"
-          :props="treeProps"
-          :default-expanded-keys="expandedKeys"
-          :expand-on-click-node="true"
-          :highlight-current="false"
-          class="permission-tree"
-        >
-          <template #default="{ data }">
-            <div v-if="data.nodeType === 'feature'" class="tree-node tree-node--feature" :class="{ 'is-compact': filters.compact }">
+      <ActionPermissionTreePanel
+        ref="treePanelRef"
+        :loading="loading"
+        :tree-data="treeData"
+        empty-description="暂无匹配的功能权限"
+      >
+        <template #node="{ data }">
+            <div
+              v-if="data.nodeType === 'feature'"
+              class="tree-node tree-node--feature"
+              :class="{ 'is-compact': filters.compact }"
+            >
               <div class="node-main">
                 <div class="node-title">{{ data.label }}</div>
                 <div class="node-subtitle">{{ data.meta }}</div>
@@ -92,7 +89,11 @@
               </div>
             </div>
 
-            <div v-else-if="data.nodeType === 'module'" class="tree-node tree-node--module" :class="{ 'is-compact': filters.compact }">
+            <div
+              v-else-if="data.nodeType === 'module'"
+              class="tree-node tree-node--module"
+              :class="{ 'is-compact': filters.compact }"
+            >
               <div class="node-main">
                 <div class="node-title">{{ data.label }}</div>
                 <div class="node-subtitle">{{ data.meta }}</div>
@@ -129,9 +130,8 @@
                 </ElSelect>
               </div>
             </div>
-          </template>
-        </ElTree>
-      </div>
+        </template>
+      </ActionPermissionTreePanel>
     </div>
 
     <template #footer>
@@ -149,6 +149,7 @@
     buildPermissionTree,
     type FeatureGroup
   } from '@/components/business/permission/permission-tree'
+  import ActionPermissionTreePanel from '@/components/business/permission/action-permission-tree-panel.vue'
   import {
     fetchGetPermissionActionList,
     fetchGetRoleActions,
@@ -190,7 +191,7 @@
   const loading = ref(false)
   const submitting = ref(false)
   const actions = ref<PermissionActionItem[]>([])
-  const treeRef = ref()
+  const treePanelRef = ref<InstanceType<typeof ActionPermissionTreePanel>>()
   const expandedKeys = ref<string[]>([])
   const effectMap = reactive<Record<string, EffectValue>>({})
   const filters = reactive({
@@ -207,9 +208,15 @@
     system: '系统内置',
     business: '业务定义'
   }
-  const treeProps = {
-    children: 'children',
-    label: 'label'
+  function getRoleScopeCodes(roleData?: Api.SystemManage.RoleListItem) {
+    if (!roleData) return [] as string[]
+    const scopes = Array.isArray((roleData as any).scopes) ? (roleData as any).scopes : []
+    const scopeCodes = scopes.map((item: any) => item.scopeCode).filter(Boolean)
+    if (scopeCodes.length > 0) {
+      return Array.from(new Set(scopeCodes))
+    }
+    const fallback = [((roleData as any).scopeCode || ''), ((roleData as any).scope || '')].filter(Boolean)
+    return Array.from(new Set(fallback))
   }
 
   const filteredActions = computed(() => {
@@ -273,10 +280,7 @@
   function syncExpandedKeys() {
     const nextKeys = buildDefaultExpandedKeys(treeData.value)
     expandedKeys.value = nextKeys
-    nextTick(() => {
-      if (!treeRef.value) return
-      treeRef.value.setExpandedKeys(nextKeys)
-    })
+    treePanelRef.value?.setExpandedKeys(nextKeys)
   }
 
   function buildActionMeta(action: PermissionActionItem) {
@@ -290,27 +294,30 @@
   function expandAll() {
     const nextKeys = buildAllExpandedKeys(treeData.value)
     expandedKeys.value = nextKeys
-    treeRef.value?.setExpandedKeys(nextKeys)
+    treePanelRef.value?.expandAll()
   }
 
   function collapseAll() {
     expandedKeys.value = []
-    treeRef.value?.setExpandedKeys([])
+    treePanelRef.value?.collapseAll()
   }
 
   async function loadData() {
     if (!props.roleData?.roleId) return
     loading.value = true
     try {
+      const scopeCodes = getRoleScopeCodes(props.roleData)
       const [actionList, roleActionRes] = await Promise.all([
         fetchGetPermissionActionList({
           current: 1,
-          size: 1000,
-          scopeCode: props.roleData.scopeCode || props.roleData.scope
+          size: 1000
         }),
         fetchGetRoleActions(props.roleData.roleId)
       ])
-      actions.value = actionList.records || []
+      const scopeSet = new Set(scopeCodes)
+      actions.value = scopeSet.size > 0
+        ? (actionList.records || []).filter((item) => !item.scopeCode || scopeSet.has(item.scopeCode))
+        : (actionList.records || [])
       Object.keys(effectMap).forEach((key) => delete effectMap[key])
       for (const action of actions.value) {
         effectMap[action.id] = ''
@@ -425,6 +432,31 @@
     gap: 8px;
   }
 
+  .option-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 0 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.88);
+    color: #526075;
+    font-size: 12px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  }
+
+  .option-item--select .filter-select {
+    width: 140px;
+  }
+
+  .option-switches {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
   .summary-tag {
     height: 28px;
     padding: 0 10px;
@@ -447,73 +479,9 @@
     background: #fff6f7;
   }
 
-  .option-switches {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: 10px;
-  }
-
-  .option-item {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    min-height: 34px;
-    padding: 0 12px;
-    border: 1px solid #e2e8f0;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.88);
-    color: #526075;
-    font-size: 12px;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
-  }
-
-  .option-item--select {
-    gap: 10px;
-    padding-right: 8px;
-  }
-
-  .filter-select {
-    width: 104px;
-  }
-
   .batch-label {
     font-size: 12px;
     color: #69778a;
-  }
-
-  .tree-wrapper {
-    border: 1px solid #e5ebf3;
-    border-radius: 18px;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(249, 251, 254, 0.96) 100%);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.8),
-      0 10px 28px rgba(15, 23, 42, 0.04);
-    padding: 10px;
-  }
-
-  .permission-tree {
-    max-height: 520px;
-    overflow: auto;
-    padding-right: 2px;
-  }
-
-  :deep(.permission-tree .el-tree-node__content) {
-    height: auto;
-    min-height: 34px;
-    margin: 2px 0;
-    padding: 0;
-    border-radius: 14px;
-  }
-
-  :deep(.permission-tree .el-tree-node__expand-icon) {
-    color: #8a94a6;
-    font-size: 12px;
-  }
-
-  :deep(.permission-tree .el-tree-node__expand-icon.expanded) {
-    color: #5d6c86;
   }
 
   .tree-node {
@@ -522,34 +490,24 @@
     justify-content: space-between;
     gap: 12px;
     width: 100%;
-    padding: 8px 10px;
-    border-radius: 14px;
-    transition:
-      background-color 0.18s ease,
-      box-shadow 0.18s ease,
-      transform 0.18s ease;
-  }
-
-  .tree-node:hover {
-    background: rgba(244, 247, 252, 0.92);
+    min-height: 34px;
+    padding: 6px 8px;
+    border-radius: 12px;
   }
 
   .tree-node--feature {
-    padding: 10px 12px;
-    background:
-      linear-gradient(135deg, rgba(248, 251, 255, 0.96) 0%, rgba(242, 246, 252, 0.9) 100%);
-    border: 1px solid #e6edf6;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    background: rgba(246, 249, 253, 0.92);
+    border: 1px solid #e5ebf3;
   }
 
   .tree-node--module {
-    padding: 8px 10px;
-    background: rgba(255, 255, 255, 0.84);
+    background: rgba(255, 255, 255, 0.9);
     border: 1px solid #edf2f7;
   }
 
-  .tree-node--action {
-    padding: 6px 8px;
+  .tree-node.is-compact {
+    padding-top: 4px;
+    padding-bottom: 4px;
   }
 
   .node-main {
@@ -582,10 +540,6 @@
     justify-content: flex-end;
   }
 
-  .node-actions--leaf {
-    gap: 4px;
-  }
-
   .muted-tag {
     font-size: 11px;
     color: #6b7280;
@@ -595,16 +549,13 @@
   }
 
   .effect-select {
-    width: 78px;
+    width: 110px;
   }
 
   :deep(.effect-select .el-input__wrapper) {
     border-radius: 999px;
     box-shadow: 0 0 0 1px #dde5ef inset;
     background: #f8fafc;
-    transition:
-      box-shadow 0.18s ease,
-      background-color 0.18s ease;
   }
 
   :deep(.effect-select .el-input__inner) {
@@ -628,16 +579,6 @@
 
   :deep(.effect-select--deny .el-input__inner) {
     color: #9b4956;
-  }
-
-  :deep(.effect-select--empty .el-input__wrapper) {
-    background: #f8fafc;
-    box-shadow: 0 0 0 1px #dde5ef inset;
-  }
-
-  .is-compact {
-    padding-top: 4px;
-    padding-bottom: 4px;
   }
 
   .is-compact .node-subtitle {
