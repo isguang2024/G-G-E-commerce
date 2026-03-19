@@ -218,19 +218,16 @@ export function fetchSetRoleMenus(roleId: string, menuIds: string[]) {
 
 /** 获取角色功能权限 */
 export function fetchGetRoleActions(roleId: string) {
-  return request.get<{ actions: Array<{ action_id: string; effect: 'allow' | 'deny' }> }>({
+  return request.get<{ action_ids: string[] }>({
     url: `${ROLE_BASE}/${roleId}/actions`
   })
 }
 
 /** 设置角色功能权限 */
-export function fetchSetRoleActions(
-  roleId: string,
-  actions: Array<{ action_id: string; effect: 'allow' | 'deny' }>
-) {
+export function fetchSetRoleActions(roleId: string, actionIds: string[]) {
   return request.put<void>({
     url: `${ROLE_BASE}/${roleId}/actions`,
-    data: { actions }
+    data: { action_ids: actionIds }
   })
 }
 

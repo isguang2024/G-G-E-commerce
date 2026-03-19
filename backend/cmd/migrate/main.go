@@ -120,9 +120,13 @@ func runNamedMigrations(logger *zap.Logger) error {
 			Run: func(logger *zap.Logger) error {
 				statements := []string{
 					`UPDATE permission_actions SET status = 'normal' WHERE COALESCE(status, '') = ''`,
-					`UPDATE role_action_permissions SET effect = 'allow' WHERE COALESCE(effect, '') = ''`,
 					`UPDATE user_action_permissions SET effect = 'allow' WHERE COALESCE(effect, '') = ''`,
 					`UPDATE tenant_action_permissions SET enabled = TRUE WHERE enabled IS NULL`,
+				}
+				if hasRoleActionEffect, err := hasColumn("role_action_permissions", "effect"); err != nil {
+					return err
+				} else if hasRoleActionEffect {
+					statements = append(statements, `UPDATE role_action_permissions SET effect = 'allow' WHERE COALESCE(effect, '') = ''`)
 				}
 				if hasLegacyScopeType, err := hasColumn("permission_actions", "scope_type"); err != nil {
 					return err
@@ -418,6 +422,30 @@ func runNamedMigrations(logger *zap.Logger) error {
 					}
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260318_roles_use_role_scopes"))
+				return nil
+			},
+		},
+		{
+			Name: "20260318_role_action_permissions_remove_effect",
+			Run: func(logger *zap.Logger) error {
+				if hasRoleActionEffect, err := hasColumn("role_action_permissions", "effect"); err != nil {
+					return err
+				} else if !hasRoleActionEffect {
+					logger.Info("Named migration applied", zap.String("name", "20260318_role_action_permissions_remove_effect"))
+					return nil
+				}
+
+				statements := []string{
+					`DELETE FROM role_action_permissions WHERE COALESCE(effect, '') = 'deny'`,
+					`UPDATE role_action_permissions SET effect = 'allow' WHERE COALESCE(effect, '') = ''`,
+					`ALTER TABLE role_action_permissions DROP COLUMN IF EXISTS effect`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260318_role_action_permissions_remove_effect"))
 				return nil
 			},
 		},
@@ -1112,7 +1140,6 @@ func initDefaultRoleActionPermissions(logger *zap.Logger) error {
 			record := usermodel.RoleActionPermission{
 				RoleID:   role.ID,
 				ActionID: action.ID,
-				Effect:   "allow",
 			}
 			if err := database.DB.Where("role_id = ? AND action_id = ?", role.ID, action.ID).FirstOrCreate(&record).Error; err != nil {
 				return err

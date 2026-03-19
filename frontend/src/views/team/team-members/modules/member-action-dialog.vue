@@ -320,14 +320,10 @@
 
     const roleActionsList = await Promise.all(roleIds.map((roleId) => fetchGetMyTeamRoleActions(roleId)))
     roleActionsList.forEach((result) => {
-      ;(result?.actions || []).forEach((item) => {
-        const current = roleEffectMap[item.action_id] || ''
+      ;(result?.action_ids || []).forEach((actionId) => {
+        const current = roleEffectMap[actionId] || ''
         if (current === 'deny') return
-        if (item.effect === 'deny') {
-          roleEffectMap[item.action_id] = 'deny'
-        } else if (item.effect === 'allow') {
-          roleEffectMap[item.action_id] = 'allow'
-        }
+        roleEffectMap[actionId] = 'allow'
       })
     })
   }

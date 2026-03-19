@@ -179,7 +179,6 @@ func (PermissionAction) TableName() string {
 type RoleActionPermission struct {
 	RoleID   uuid.UUID `gorm:"type:uuid;primaryKey" json:"role_id"`
 	ActionID uuid.UUID `gorm:"type:uuid;primaryKey" json:"action_id"`
-	Effect   string    `gorm:"type:varchar(20);not null;default:'allow'" json:"effect"`
 }
 
 func (RoleActionPermission) TableName() string {

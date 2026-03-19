@@ -2,27 +2,25 @@
   <ElDialog
     v-model="visible"
     :title="`团队功能权限 - ${teamName}`"
-    width="980px"
+    width="960px"
     destroy-on-close
     class="team-permission-dialog"
   >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        配置团队可使用的功能能力。关闭的功能不会对该团队成员开放，也不会出现在团队相关入口中。
+        配置团队可开通的功能权限。父级和子级都可以直接选择，保存时会自动换算成具体权限项。
       </div>
 
-      <div class="team-summary">
+      <div class="summary-card">
         <ElTag effect="plain" round>团队 {{ teamName }}</ElTag>
-        <ElTag type="success" effect="plain" round>已开通 {{ selectedIds.length }}</ElTag>
+        <ElTag type="success" effect="plain" round>已选 {{ selectedIds.length }}</ElTag>
         <ElTag type="info" effect="plain" round>总计 {{ permissionActions.length }}</ElTag>
       </div>
 
-      <PermissionActionWorkbench
-        mode="team"
+      <PermissionActionCascaderPanel
         :actions="permissionActions"
         :selected-ids="selectedIds"
-        :loading="loading"
-        search-placeholder="搜索团队可开通功能"
+        footer-text="团队功能权限只保留开通结果，提交前会自动展开父级选择。"
         @update:selected-ids="selectedIds = $event"
       />
     </div>
@@ -37,7 +35,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import PermissionActionWorkbench from '@/components/business/permission/PermissionActionWorkbench.vue'
+import PermissionActionCascaderPanel from '@/components/business/permission/PermissionActionCascaderPanel.vue'
 import { fetchGetTeamActions, fetchSetTeamActions } from '@/api/team'
 import { fetchGetPermissionActionList } from '@/api/system-manage'
 
@@ -87,7 +85,7 @@ async function loadData() {
     })
     selectedIds.value = [...(currentRes?.actionIds || [])]
   } catch (error: any) {
-    ElMessage.error(error?.message || '加载团队权限失败')
+    ElMessage.error(error?.message || '加载团队功能权限失败')
   } finally {
     loading.value = false
   }
@@ -101,15 +99,53 @@ async function handleSave() {
   if (!props.teamId) return
   saving.value = true
   try {
-    await fetchSetTeamActions(props.teamId, selectedIds.value)
+    await fetchSetTeamActions(props.teamId, expandSelectedValues(selectedIds.value, permissionActions.value))
     ElMessage.success('团队功能权限已保存')
     emit('success')
     visible.value = false
   } catch (error: any) {
-    ElMessage.error(error?.message || '保存团队权限失败')
+    ElMessage.error(error?.message || '保存团队功能权限失败')
   } finally {
     saving.value = false
   }
+}
+
+function expandSelectedValues(
+  values: string[],
+  actions: Api.SystemManage.PermissionActionItem[]
+) {
+  const result = new Set<string>()
+  const featureMap = new Map<string, Api.SystemManage.PermissionActionItem[]>()
+  const moduleMap = new Map<string, Api.SystemManage.PermissionActionItem[]>()
+
+  actions.forEach((action) => {
+    const featureKey = `${action.featureKind || 'business'}`
+    const moduleKey = `${action.moduleCode || action.resourceCode || 'default'}`
+    const featureValue = `feature:${featureKey}`
+    const moduleValue = `module:${featureKey}:${moduleKey}`
+
+    const featureItems = featureMap.get(featureValue) || []
+    featureItems.push(action)
+    featureMap.set(featureValue, featureItems)
+
+    const moduleItems = moduleMap.get(moduleValue) || []
+    moduleItems.push(action)
+    moduleMap.set(moduleValue, moduleItems)
+  })
+
+  values.forEach((value) => {
+    if (featureMap.has(value)) {
+      featureMap.get(value)!.forEach((item) => result.add(item.id))
+      return
+    }
+    if (moduleMap.has(value)) {
+      moduleMap.get(value)!.forEach((item) => result.add(item.id))
+      return
+    }
+    result.add(value)
+  })
+
+  return Array.from(result)
 }
 </script>
 
@@ -125,7 +161,7 @@ async function handleSave() {
   line-height: 1.6;
 }
 
-.team-summary {
+.summary-card {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;

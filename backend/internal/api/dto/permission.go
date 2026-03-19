@@ -45,13 +45,8 @@ type PermissionActionUpdateRequest struct {
 	SortOrder             int    `json:"sort_order"`
 }
 
-type RoleActionPermissionItem struct {
-	ActionID string `json:"action_id" binding:"required"`
-	Effect   string `json:"effect" binding:"required"`
-}
-
 type RoleActionPermissionsRequest struct {
-	Actions []RoleActionPermissionItem `json:"actions"`
+	ActionIDs []string `json:"action_ids"`
 }
 
 type TenantActionPermissionsRequest struct {

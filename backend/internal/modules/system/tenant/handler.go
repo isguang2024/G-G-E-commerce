@@ -783,14 +783,11 @@ func (h *TenantHandler) GetMyTeamRoleActions(c *gin.Context) {
 		return
 	}
 
-	items := make([]gin.H, 0, len(records))
+	actionIDs := make([]string, 0, len(records))
 	for _, record := range records {
-		items = append(items, gin.H{
-			"action_id": record.ActionID.String(),
-			"effect":    record.Effect,
-		})
+		actionIDs = append(actionIDs, record.ActionID.String())
 	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"actions": items}))
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"action_ids": actionIDs}))
 }
 
 func (h *TenantHandler) GetTenantActions(c *gin.Context) {

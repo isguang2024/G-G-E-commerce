@@ -346,10 +346,7 @@ declare namespace Api {
       sort_order?: number
     }
 
-    interface RoleActionPermissionItem {
-      actionId: string
-      effect: 'allow' | 'deny'
-    }
+    type RoleActionPermissionItem = string
 
     interface RoleDataPermissionItem {
       resourceCode: string

@@ -223,7 +223,7 @@ export async function fetchGetMyTeamRoles() {
 }
 
 export function fetchGetMyTeamRoleActions(roleId: string) {
-  return request.get<{ actions: Array<{ action_id: string; effect: 'allow' | 'deny' }> }>({
+  return request.get<{ action_ids: string[] }>({
     url: `${TENANT_BASE}/my-team/roles/${roleId}/actions`
   })
 }

@@ -153,9 +153,6 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, resourceCode,
 		}
 	}
 	effect := evaluateEffects(rolePermissions)
-	if effect == "deny" {
-		return false, &actionDef, nil
-	}
 	if effect == "allow" {
 		return true, &actionDef, nil
 	}
@@ -412,16 +409,7 @@ func pickOverrideEffect(records []models.UserActionPermission, tenantID *uuid.UU
 }
 
 func evaluateEffects(records []models.RoleActionPermission) string {
-	hasAllow := false
-	for _, record := range records {
-		if record.Effect == "deny" {
-			return "deny"
-		}
-		if record.Effect == "allow" {
-			hasAllow = true
-		}
-	}
-	if hasAllow {
+	if len(records) > 0 {
 		return "allow"
 	}
 	return ""
@@ -534,17 +522,7 @@ func (s *Service) buildRoleEffectMap(roleIDs []uuid.UUID) (map[uuid.UUID]string,
 	}
 
 	for _, record := range rolePermissions {
-		current := result[record.ActionID]
-		if current == "deny" {
-			continue
-		}
-		if record.Effect == "deny" {
-			result[record.ActionID] = "deny"
-			continue
-		}
-		if record.Effect == "allow" {
-			result[record.ActionID] = "allow"
-		}
+		result[record.ActionID] = "allow"
 	}
 	return result, nil
 }

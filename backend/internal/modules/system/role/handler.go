@@ -300,14 +300,11 @@ func (h *RoleHandler) GetRoleActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	items := make([]gin.H, 0, len(records))
+	actionIDs := make([]string, 0, len(records))
 	for _, record := range records {
-		items = append(items, gin.H{
-			"action_id": record.ActionID.String(),
-			"effect":    record.Effect,
-		})
+		actionIDs = append(actionIDs, record.ActionID.String())
 	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"actions": items}))
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"action_ids": actionIDs}))
 }
 
 func (h *RoleHandler) SetRoleActions(c *gin.Context) {
@@ -324,9 +321,9 @@ func (h *RoleHandler) SetRoleActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	actions := make([]user.RoleActionPermission, 0, len(req.Actions))
-	for _, item := range req.Actions {
-		actionID, parseErr := uuid.Parse(item.ActionID)
+	actions := make([]user.RoleActionPermission, 0, len(req.ActionIDs))
+	for _, item := range req.ActionIDs {
+		actionID, parseErr := uuid.Parse(item)
 		if parseErr != nil {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能权限ID")
 			c.JSON(status, resp)
@@ -335,7 +332,6 @@ func (h *RoleHandler) SetRoleActions(c *gin.Context) {
 		actions = append(actions, user.RoleActionPermission{
 			RoleID:   id,
 			ActionID: actionID,
-			Effect:   item.Effect,
 		})
 	}
 	if err := h.roleService.SetRoleActions(id, actions); err != nil {

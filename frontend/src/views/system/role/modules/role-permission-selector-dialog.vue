@@ -2,74 +2,196 @@
   <ElDialog
     v-model="visible"
     :title="`角色权限配置 - ${roleTitle}`"
-    width="1040px"
+    width="1120px"
     destroy-on-close
     class="role-permission-dialog"
   >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        统一配置角色菜单权限、功能权限和数据权限。菜单影响可见入口，功能权限决定动作能力，数据权限控制资源范围。
+        统一配置角色菜单权限、功能权限和数据权限。菜单权限控制入口可见，功能权限勾选后即允许，不勾选默认不允许，数据权限控制资源范围。
       </div>
 
       <ElTabs v-model="activeTab" class="permission-tabs">
         <ElTabPane label="菜单权限" name="menus">
-          <div class="menu-panel">
-            <div class="menu-toolbar">
-              <ElInput
-                v-model="menuKeyword"
-                placeholder="搜索菜单名称或路由"
-                clearable
-                class="menu-search"
-              >
-                <template #prefix>
-                  <ElIcon><Search /></ElIcon>
-                </template>
-              </ElInput>
-              <div class="menu-toolbar__actions">
-                <ElButton text @click="toggleMenuExpand(true)">全部展开</ElButton>
-                <ElButton text @click="toggleMenuExpand(false)">全部收起</ElButton>
-                <ElButton text @click="toggleAllMenus(true)">全选当前菜单</ElButton>
-                <ElButton text @click="toggleAllMenus(false)">清空当前菜单</ElButton>
+          <div class="cascader-pane">
+            <div class="cascader-toolbar">
+              <div class="cascader-tags">
+                <ElTag effect="plain" round>已选 {{ expandedSelectedMenuIds.length }}</ElTag>
+                <ElTag type="info" effect="plain" round>总计 {{ menuNodeCount }}</ElTag>
+              </div>
+
+              <div class="toolbar-filters">
+                <ElInput
+                  v-model="menuKeyword"
+                  clearable
+                  placeholder="搜索菜单标题或路由"
+                  :prefix-icon="Search"
+                  class="toolbar-search"
+                />
+                <span class="toolbar-switch">
+                  <span class="toolbar-switch__label">显示内页</span>
+                  <ElSwitch v-model="showInnerMenus" size="small" />
+                </span>
+                <span class="toolbar-switch">
+                  <span class="toolbar-switch__label">显示隐藏</span>
+                  <ElSwitch v-model="showHiddenMenus" size="small" />
+                </span>
+                <span class="toolbar-switch">
+                  <span class="toolbar-switch__label">显示内嵌</span>
+                  <ElSwitch v-model="showIframeMenus" size="small" />
+                </span>
+                <span class="toolbar-switch">
+                  <span class="toolbar-switch__label">显示启用</span>
+                  <ElSwitch v-model="showEnabledMenus" size="small" />
+                </span>
+                <span class="toolbar-switch">
+                  <span class="toolbar-switch__label">显示路径</span>
+                  <ElSwitch v-model="showMenuPath" size="small" />
+                </span>
               </div>
             </div>
 
-            <div class="menu-summary">
-              <ElTag effect="plain" round>已选菜单 {{ selectedMenuIds.length }}</ElTag>
-              <ElTag type="info" effect="plain" round>总计 {{ menuNodeCount }}</ElTag>
+            <div class="cascader-card">
+              <ElCascaderPanel
+                ref="menuPanelRef"
+                v-model="selectedMenuNodeValues"
+                :options="filteredMenuOptions"
+                :props="menuCascaderProps"
+                class="permission-cascader"
+              >
+                <template #default="{ node, data }">
+                  <div class="panel-node" :class="{ 'is-leaf': node.isLeaf }">
+                    <div class="panel-node__main">
+                      <span class="panel-node__label">{{ data.label }}</span>
+                      <span v-if="showMenuPath && data.path" class="panel-node__meta">{{ data.path }}</span>
+                    </div>
+
+                    <ElTag
+                      v-if="!node.isLeaf"
+                      size="small"
+                      effect="plain"
+                      round
+                      type="info"
+                      class="panel-node__count"
+                    >
+                      {{ `${data.selectedLeafCount || 0}/${data.totalLeafCount || 0}` }}
+                    </ElTag>
+                  </div>
+                </template>
+              </ElCascaderPanel>
             </div>
 
-            <div class="menu-tree-shell">
-              <ElScrollbar max-height="520px">
-                <ElTree
-                  ref="menuTreeRef"
-                  :data="menuTreeData"
-                  show-checkbox
-                  node-key="id"
-                  :props="{ label: 'label', children: 'children' }"
-                  :filter-node-method="filterMenuNode"
-                  @check="handleMenuCheck"
-                >
-                  <template #default="{ data }">
-                    <div class="menu-node">
-                      <span class="menu-node__title">{{ data.label }}</span>
-                      <span class="menu-node__path">{{ data.path || '/' }}</span>
-                    </div>
-                  </template>
-                </ElTree>
-              </ElScrollbar>
+            <div class="cascader-footer">
+              <span class="footer-note">角色菜单权限决定可见入口和导航结构。</span>
+              <ElButton text @click="clearMenuSelection">清空选择</ElButton>
             </div>
           </div>
         </ElTabPane>
 
         <ElTabPane label="功能权限" name="actions">
-          <PermissionActionWorkbench
-            mode="role"
-            :actions="permissionActions"
-            :decision-map="actionDecisionMap"
-            :loading="loading"
-            search-placeholder="搜索功能权限名称、权限 ID、模块归属"
-            @update:decision-map="actionDecisionMap = $event"
-          />
+          <div class="cascader-pane">
+            <div class="cascader-toolbar">
+              <div class="cascader-tags">
+                <ElTag
+                  v-for="item in topLevelActionTags"
+                  :key="item.label"
+                  effect="plain"
+                  round
+                >
+                  {{ item.label }} {{ item.count }}
+                </ElTag>
+                <ElTag effect="plain" round>已选 {{ expandedSelectedActionIds.length }}</ElTag>
+                <ElTag type="info" effect="plain" round>总计 {{ actionLeafCount }}</ElTag>
+              </div>
+
+              <div class="toolbar-filters">
+                <ElInput
+                  v-model="actionKeyword"
+                  clearable
+                  placeholder="搜索功能标题或资源动作"
+                  :prefix-icon="Search"
+                  class="toolbar-search"
+                />
+
+                <ElSelect
+                  v-model="actionScopeFilter"
+                  clearable
+                  placeholder="作用域"
+                  class="toolbar-scope"
+                >
+                  <ElOption label="全部作用域" value="" />
+                  <ElOption
+                    v-for="item in actionScopeOptions"
+                    :key="item"
+                    :label="item"
+                    :value="item"
+                  />
+                </ElSelect>
+              </div>
+            </div>
+
+            <div class="cascader-card">
+              <ElCascaderPanel
+                ref="actionPanelRef"
+                v-model="selectedActionNodeValues"
+                :options="filteredActionOptions"
+                :props="actionCascaderProps"
+                class="permission-cascader"
+              >
+                <template #default="{ node, data }">
+                  <div class="panel-node" :class="{ 'is-leaf': node.isLeaf }">
+                    <div class="panel-node__main">
+                      <span class="panel-node__label">{{ data.label }}</span>
+                      <template v-if="node.isLeaf">
+                        <span
+                          v-if="data.permissionText"
+                          class="panel-node__meta panel-node__meta--truncate"
+                          :title="data.permissionText"
+                        >
+                          {{ data.permissionText }}
+                        </span>
+                        <div class="panel-node__tags">
+                          <ElTag
+                            v-if="data.scopeText"
+                            size="small"
+                            effect="plain"
+                            round
+                          >
+                            {{ data.scopeText }}
+                          </ElTag>
+                          <ElTag
+                            v-if="data.sourceText"
+                            size="small"
+                            effect="plain"
+                            round
+                            type="info"
+                          >
+                            {{ data.sourceText }}
+                          </ElTag>
+                        </div>
+                      </template>
+                    </div>
+
+                    <ElTag
+                      v-if="!node.isLeaf"
+                      size="small"
+                      effect="plain"
+                      round
+                      type="info"
+                      class="panel-node__count"
+                    >
+                      {{ data.children?.length || 0 }}
+                    </ElTag>
+                  </div>
+                </template>
+              </ElCascaderPanel>
+            </div>
+
+            <div class="cascader-footer">
+              <span class="footer-note">角色功能权限按勾选保存，勾选即允许，不勾选默认不允许。</span>
+              <ElButton text @click="clearActionSelection">清空选择</ElButton>
+            </div>
+          </div>
         </ElTabPane>
 
         <ElTabPane label="数据权限" name="data">
@@ -115,8 +237,9 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import PermissionActionWorkbench from '@/components/business/permission/PermissionActionWorkbench.vue'
+import type { CascaderOption, CascaderProps } from 'element-plus'
 import {
+  fetchGetAllScopes,
   fetchGetMenuTreeAll,
   fetchGetPermissionActionList,
   fetchGetRoleActions,
@@ -131,7 +254,27 @@ interface RoleMenuNode {
   id: string
   label: string
   path?: string
+  isInnerPage?: boolean
+  isHide?: boolean
+  isIframe?: boolean
+  isEnable?: boolean
   children?: RoleMenuNode[]
+}
+
+interface MenuOption extends CascaderOption {
+  path?: string
+  isInnerPage?: boolean
+  isHide?: boolean
+  isIframe?: boolean
+  isEnable?: boolean
+  totalLeafCount?: number
+  selectedLeafCount?: number
+}
+
+interface ActionOption extends CascaderOption {
+  permissionText?: string
+  scopeText?: string
+  sourceText?: string
 }
 
 interface DataRow {
@@ -159,41 +302,242 @@ const visible = computed({
 
 const loading = ref(false)
 const saving = ref(false)
-const activeTab = ref('menus')
-const menuTreeRef = ref()
+const activeTab = ref<'menus' | 'actions' | 'data'>('menus')
+
+const menuPanelRef = ref<any>()
+const actionPanelRef = ref<any>()
+
 const menuKeyword = ref('')
+const showInnerMenus = ref(true)
+const showHiddenMenus = ref(true)
+const showIframeMenus = ref(true)
+const showEnabledMenus = ref(true)
+const showMenuPath = ref(false)
+const actionKeyword = ref('')
+const actionScopeFilter = ref('')
+
 const menuTreeData = ref<RoleMenuNode[]>([])
-const selectedMenuIds = ref<string[]>([])
+const selectedMenuNodeValues = ref<string[]>([])
+
 const permissionActions = ref<Api.SystemManage.PermissionActionItem[]>([])
-const actionDecisionMap = ref<Record<string, '' | 'allow' | 'deny'>>({})
+const scopeList = ref<Api.SystemManage.ScopeListItem[]>([])
+const selectedActionNodeValues = ref<string[]>([])
+
 const dataRows = ref<DataRow[]>([])
 const scopeOptions = ref<Api.SystemManage.RoleDataPermissionScopeOption[]>([])
 
 const roleTitle = computed(() => props.roleData?.roleName || '')
+const roleScopeCodeSet = computed(() => {
+  const codes = new Set<string>()
+  const scopes = Array.isArray((props.roleData as any)?.scopes) ? (props.roleData as any).scopes : []
+  scopes.forEach((scope: any) => {
+    const code = `${scope?.scopeCode || ''}`.trim()
+    if (code) codes.add(code)
+  })
+  return codes
+})
+
+const menuOptions = computed<MenuOption[]>(() => normalizeMenuOptions(menuTreeData.value))
 const menuNodeCount = computed(() => flattenMenuIds(menuTreeData.value).length)
+const selectedMenuIdSet = computed(() => new Set(expandedSelectedMenuIds.value))
+
+const menuBranchMap = computed(() => {
+  const map = new Map<string, string[]>()
+
+  const visit = (nodes: MenuOption[]): string[] => {
+    const collected: string[] = []
+    nodes.forEach((node) => {
+      const childIds = visit((node.children || []) as MenuOption[])
+      const current = [`${node.value}`]
+      const all = current.concat(childIds)
+      map.set(`${node.value}`, all)
+      collected.push(...all)
+    })
+    return collected
+  }
+
+  visit(menuOptions.value)
+  return map
+})
+
+const expandedSelectedMenuIds = computed(() => expandSelectedValues(selectedMenuNodeValues.value, menuBranchMap.value))
+
+const filteredPermissionActions = computed(() => {
+  if (roleScopeCodeSet.value.size === 0) return permissionActions.value
+  return permissionActions.value.filter((action) => {
+    const scopeCode = `${action.scopeCode || ''}`.trim()
+    return scopeCode ? roleScopeCodeSet.value.has(scopeCode) : false
+  })
+})
+
+const actionOptions = computed<ActionOption[]>(() => {
+  const featureMap = new Map<string, ActionOption>()
+
+  filteredPermissionActions.value.forEach((action) => {
+    const featureKey = `${action.featureKind || 'business'}`
+    const moduleKey = `${action.moduleCode || action.resourceCode || 'default'}`
+
+    if (!featureMap.has(featureKey)) {
+      featureMap.set(featureKey, {
+        value: `feature:${featureKey}`,
+        label: formatFeature(featureKey),
+        children: []
+      })
+    }
+
+    const feature = featureMap.get(featureKey)!
+    const modules = (feature.children || []) as ActionOption[]
+    const moduleValue = `module:${featureKey}:${moduleKey}`
+    let module = modules.find((item) => item.value === moduleValue)
+
+    if (!module) {
+      module = {
+        value: moduleValue,
+        label: action.moduleCode || action.resourceCode || '未分类模块',
+        children: []
+      }
+      modules.push(module)
+      feature.children = modules
+    }
+
+    const leaves = (module.children || []) as ActionOption[]
+    leaves.push({
+      value: action.id,
+      label: action.name,
+      leaf: true,
+      permissionText: action.permissionKey || `${action.resourceCode}:${action.actionCode}`,
+      scopeText: action.scopeName || action.scopeCode || '',
+      sourceText: formatSource(action.source)
+    })
+    module.children = leaves
+  })
+
+  return Array.from(featureMap.values())
+})
+
+const actionBranchMap = computed(() => {
+  const map = new Map<string, string[]>()
+  actionOptions.value.forEach((feature) => {
+    const featureLeaves: string[] = []
+    ;((feature.children || []) as ActionOption[]).forEach((module) => {
+      const moduleLeaves = ((module.children || []) as ActionOption[]).map((leaf) => `${leaf.value}`)
+      map.set(`${module.value}`, moduleLeaves)
+      featureLeaves.push(...moduleLeaves)
+    })
+    map.set(`${feature.value}`, featureLeaves)
+  })
+  return map
+})
+
+const expandedSelectedActionIds = computed(() =>
+  expandSelectedValues(selectedActionNodeValues.value, actionBranchMap.value)
+)
+
+const actionLeafCount = computed(() => filteredPermissionActions.value.length)
+
+const actionScopeOptions = computed(() =>
+  scopeList.value.map((item) => item.scopeName || item.scopeCode).filter(Boolean)
+)
+
+const topLevelActionTags = computed(() => {
+  const counter = new Map<string, number>()
+  expandedSelectedActionIds.value.forEach((actionId) => {
+    const action = filteredPermissionActions.value.find((item) => item.id === actionId)
+    const featureKey = `${action?.featureKind || 'business'}`
+    counter.set(featureKey, (counter.get(featureKey) || 0) + 1)
+  })
+  return Array.from(counter.entries()).map(([key, count]) => ({
+    label: formatFeature(key),
+    count
+  }))
+})
+
 const configuredDataCount = computed(() => dataRows.value.filter((item) => item.selectedScope).length)
+
+const menuCascaderProps: CascaderProps = {
+  multiple: true,
+  emitPath: false,
+  checkStrictly: false,
+  expandTrigger: 'click',
+  checkOnClickNode: false,
+  checkOnClickLeaf: false,
+  showPrefix: true
+}
+
+const actionCascaderProps: CascaderProps = {
+  multiple: true,
+  emitPath: false,
+  checkStrictly: false,
+  expandTrigger: 'click',
+  checkOnClickNode: false,
+  checkOnClickLeaf: false,
+  showPrefix: true
+}
+
+const filteredMenuOptions = computed(() => {
+  const keyword = menuKeyword.value.trim().toLowerCase()
+  return filterNestedOptions(menuOptions.value, (node) => {
+    if (!node.leaf) return !keyword
+    if (!showInnerMenus.value && node.isInnerPage) return false
+    if (!showHiddenMenus.value && !node.isInnerPage && node.isHide) return false
+    if (!showIframeMenus.value && node.isIframe) return false
+    if (!showEnabledMenus.value && node.isEnable !== false) return false
+    if (keyword && !`${node.label || ''} ${node.path || ''}`.toLowerCase().includes(keyword)) return false
+    return true
+  })
+})
+
+const filteredActionOptions = computed(() => {
+  const keyword = actionKeyword.value.trim().toLowerCase()
+  const scope = actionScopeFilter.value.trim()
+
+  return filterNestedOptions(actionOptions.value, (node) => {
+    if (!node.leaf) return !keyword && !scope
+    const text = [node.label, node.permissionText, node.scopeText, node.sourceText]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase()
+    if (scope && node.scopeText !== scope) return false
+    if (keyword && !text.includes(keyword)) return false
+    return true
+  })
+})
 
 watch(
   () => props.modelValue,
   (open) => {
-    if (open) {
-      loadData()
-    }
+    if (open) loadData()
   }
 )
 
-watch(menuKeyword, (value) => {
-  if (menuTreeRef.value) {
-    menuTreeRef.value.filter(value)
+watch(
+  [menuKeyword, showInnerMenus, showHiddenMenus, showIframeMenus, showEnabledMenus, menuTreeData],
+  async () => {
+    await nextTick()
+    ensureExpandedMenus(menuPanelRef.value, selectedMenuNodeValues.value)
   }
-})
+)
+
+watch(
+  () => filteredActionOptions.value,
+  async () => {
+    await nextTick()
+    ensureExpandedMenus(actionPanelRef.value, selectedActionNodeValues.value)
+  },
+  { deep: true }
+)
 
 async function loadData() {
   if (!props.roleData?.roleId) return
   loading.value = true
   activeTab.value = 'menus'
+  menuKeyword.value = ''
+  actionKeyword.value = ''
+  actionScopeFilter.value = ''
+
   try {
-    const [menuTree, roleMenus, actionList, roleActions, dataPermissionRes] = await Promise.all([
+    const [scopeRes, menuTree, roleMenus, actionList, roleActions, dataPermissionRes] = await Promise.all([
+      fetchGetAllScopes(),
       fetchGetMenuTreeAll(),
       fetchGetRoleMenus(props.roleData.roleId),
       fetchGetPermissionActionList({ current: 1, size: 1000, status: 'normal' }),
@@ -201,17 +545,15 @@ async function loadData() {
       fetchGetRoleDataPermissions(props.roleData.roleId)
     ])
 
-    menuTreeData.value = normalizeMenus(Array.isArray(menuTree) ? menuTree : [])
-    selectedMenuIds.value = (roleMenus?.menu_ids || []).map((item) => `${item}`)
-    permissionActions.value = actionList?.records || []
+    menuTreeData.value = Array.isArray(menuTree) ? normalizeMenus(menuTree) : []
+    selectedMenuNodeValues.value = (roleMenus?.menu_ids || []).map((item) => `${item}`)
 
-    const nextDecisionMap: Record<string, '' | 'allow' | 'deny'> = {}
-    ;(roleActions?.actions || []).forEach((item) => {
-      if (item.action_id && (item.effect === 'allow' || item.effect === 'deny')) {
-        nextDecisionMap[item.action_id] = item.effect
-      }
-    })
-    actionDecisionMap.value = nextDecisionMap
+    scopeList.value = scopeRes || []
+    permissionActions.value = actionList?.records || []
+    const availableActionIDSet = new Set(filteredPermissionActions.value.map((item) => item.id))
+    selectedActionNodeValues.value = (roleActions?.action_ids || []).filter(
+      (item) => item && availableActionIDSet.has(item)
+    )
 
     scopeOptions.value = (dataPermissionRes?.available_scopes || []).map((item) => ({
       scopeCode: item.scope_code,
@@ -228,7 +570,8 @@ async function loadData() {
     }))
 
     await nextTick()
-    menuTreeRef.value?.setCheckedKeys(selectedMenuIds.value)
+    ensureExpandedMenus(menuPanelRef.value, selectedMenuNodeValues.value)
+    ensureExpandedMenus(actionPanelRef.value, selectedActionNodeValues.value)
   } catch (error: any) {
     ElMessage.error(error?.message || '加载角色权限失败')
   } finally {
@@ -241,43 +584,123 @@ function normalizeMenus(items: any[]): RoleMenuNode[] {
     id: `${item.id}`,
     label: item.meta?.title || item.name || item.path || '未命名菜单',
     path: item.path || '',
+    isInnerPage: Boolean(item.meta?.isInnerPage),
+    isHide: Boolean(item.meta?.isHide),
+    isIframe: Boolean(item.meta?.isIframe),
+    isEnable: item.meta?.isEnable !== false,
     children: Array.isArray(item.children) ? normalizeMenus(item.children) : []
   }))
+}
+
+function normalizeMenuOptions(items: RoleMenuNode[]): MenuOption[] {
+  return items.map((item) => {
+    const children = normalizeMenuOptions(item.children || [])
+
+    return {
+      value: item.id,
+      label: item.label,
+      path: item.path || '',
+      isInnerPage: item.isInnerPage,
+      isHide: item.isHide,
+      isIframe: item.isIframe,
+      isEnable: item.isEnable,
+      leaf: !item.children?.length,
+      totalLeafCount: countMenuLeaves(item),
+      selectedLeafCount: countSelectedMenuLeaves(item, selectedMenuIdSet.value),
+      children
+    }
+  })
 }
 
 function flattenMenuIds(items: RoleMenuNode[]): string[] {
   return items.flatMap((item) => [item.id, ...flattenMenuIds(item.children || [])])
 }
 
-function filterMenuNode(value: string, data: any) {
-  if (!value) return true
-  const keyword = value.trim().toLowerCase()
-  return `${data?.label || ''} ${data?.path || ''}`.toLowerCase().includes(keyword)
+function countMenuLeaves(node: RoleMenuNode): number {
+  if (!node.children?.length) return 1
+  return node.children.reduce((sum, child) => sum + countMenuLeaves(child), 0)
 }
 
-function handleMenuCheck(_: any, payload: any) {
-  selectedMenuIds.value = (payload.checkedKeys || []).map((item: string | number) => `${item}`)
+function countSelectedMenuLeaves(node: RoleMenuNode, selectedSet: Set<string>): number {
+  if (!node.children?.length) return selectedSet.has(node.id) ? 1 : 0
+  return node.children.reduce((sum, child) => sum + countSelectedMenuLeaves(child, selectedSet), 0)
 }
 
-function toggleMenuExpand(expanded: boolean) {
-  const nodes = menuTreeRef.value?.store?.nodesMap || {}
-  Object.values(nodes).forEach((node: any) => {
-    node.expanded = expanded
-  })
+function filterNestedOptions<T extends CascaderOption>(
+  nodes: T[],
+  matcher: (node: T) => boolean
+): T[] {
+  return nodes
+    .map((node) => {
+      const children = Array.isArray(node.children)
+        ? filterNestedOptions(node.children as T[], matcher)
+        : []
+      const selfMatched = matcher(node)
+      if (selfMatched || children.length > 0) {
+        return {
+          ...node,
+          children
+        }
+      }
+      return null
+    })
+    .filter(Boolean) as T[]
 }
 
-function toggleAllMenus(selected: boolean) {
-  const ids = flattenMenuIds(menuTreeData.value)
-  const next = new Set(selectedMenuIds.value)
-  ids.forEach((id) => {
-    if (selected) {
-      next.add(id)
-    } else {
-      next.delete(id)
+function expandSelectedValues(values: string[], branchMap: Map<string, string[]>) {
+  const set = new Set<string>()
+  values.forEach((value) => {
+    const key = `${value || ''}`
+    const mapped = branchMap.get(key)
+    if (mapped?.length) {
+      mapped.forEach((item) => set.add(item))
+      return
     }
+    set.add(key)
   })
-  selectedMenuIds.value = Array.from(next)
-  menuTreeRef.value?.setCheckedKeys(selectedMenuIds.value)
+  return Array.from(set)
+}
+
+function ensureExpandedMenus(panel: any, selectedValues: string[]) {
+  const rootMenus = panel?.menus?.[0]
+  if (!panel || !rootMenus?.length) return
+
+  const firstValue = selectedValues[0]
+  let featureNode = rootMenus[0]
+  let moduleNode = featureNode?.children?.[0]
+
+  if (firstValue) {
+    const matchedNode = panel.getFlattedNodes?.(false)?.find((node: any) => `${node?.value}` === `${firstValue}`)
+    const pathNodes = matchedNode?.pathNodes || []
+    if (pathNodes[0]) featureNode = pathNodes[0]
+    if (pathNodes[1]) moduleNode = pathNodes[1]
+  }
+
+  const nextMenus = [rootMenus]
+  if (featureNode?.children?.length) nextMenus.push(featureNode.children)
+  if (moduleNode?.children?.length) nextMenus.push(moduleNode.children)
+  panel.menus = nextMenus
+}
+
+function clearMenuSelection() {
+  selectedMenuNodeValues.value = []
+}
+
+function clearActionSelection() {
+  selectedActionNodeValues.value = []
+}
+
+function formatFeature(value: string) {
+  if (value === 'system') return '系统功能'
+  if (value === 'business') return '业务功能'
+  return value
+}
+
+function formatSource(source?: string) {
+  if (source === 'api') return '接口自动'
+  if (source === 'system') return '系统内置'
+  if (source === 'business') return '业务定义'
+  return source || ''
 }
 
 function handleCancel() {
@@ -288,13 +711,6 @@ async function handleSave() {
   if (!props.roleData?.roleId) return
   saving.value = true
   try {
-    const actionPayload = Object.entries(actionDecisionMap.value)
-      .filter(([, effect]) => effect === 'allow' || effect === 'deny')
-      .map(([actionId, effect]) => ({
-        action_id: actionId,
-        effect: effect as 'allow' | 'deny'
-      }))
-
     const dataPayload = dataRows.value
       .filter((item) => item.selectedScope)
       .map((item) => ({
@@ -303,8 +719,8 @@ async function handleSave() {
       }))
 
     await Promise.all([
-      fetchSetRoleMenus(props.roleData.roleId, selectedMenuIds.value),
-      fetchSetRoleActions(props.roleData.roleId, actionPayload),
+      fetchSetRoleMenus(props.roleData.roleId, expandedSelectedMenuIds.value),
+      fetchSetRoleActions(props.roleData.roleId, expandedSelectedActionIds.value),
       fetchSetRoleDataPermissions(props.roleData.roleId, dataPayload)
     ])
 
@@ -335,41 +751,98 @@ async function handleSave() {
   padding-top: 12px;
 }
 
-.menu-panel,
+.cascader-pane,
 .data-panel {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.menu-toolbar {
+.cascader-toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.menu-search {
-  max-width: 360px;
-}
-
-.menu-toolbar__actions,
-.menu-summary,
+.cascader-tags,
+.toolbar-filters,
 .data-summary {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
-.menu-tree-shell {
+.toolbar-filters {
+  flex: 0 1 auto;
+}
+
+.toolbar-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.toolbar-switch__label {
+  color: inherit;
+}
+
+.toolbar-search {
+  width: 220px;
+}
+
+.toolbar-scope {
+  width: 140px;
+}
+
+.cascader-card {
   border: 1px solid var(--el-border-color-lighter);
   border-radius: 16px;
-  padding: 12px;
+  overflow: hidden;
   background: #fff;
 }
 
-.menu-node {
+.permission-cascader {
+  width: 100%;
+  height: 420px;
+}
+
+.permission-cascader :deep(.el-cascader-panel) {
+  height: 100%;
+  display: flex;
+  align-items: stretch;
+}
+
+.permission-cascader :deep(.el-cascader-menu) {
+  width: auto;
+  flex: 0 1 auto;
+  min-width: 320px;
+}
+
+.permission-cascader :deep(.el-cascader-menu:nth-child(2)) {
+  width: auto;
+  flex: 0 1 auto;
+  min-width: 240px;
+}
+
+.permission-cascader :deep(.el-cascader-menu:last-child) {
+  flex: 1 1 auto;
+  width: auto;
+}
+
+.permission-cascader :deep(.el-cascader-menu__wrap),
+.permission-cascader :deep(.el-scrollbar),
+.permission-cascader :deep(.el-scrollbar__wrap),
+.permission-cascader :deep(.el-scrollbar__view) {
+  height: 100%;
+}
+
+.panel-node {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -378,13 +851,58 @@ async function handleSave() {
   min-width: 0;
 }
 
-.menu-node__title {
-  color: #111827;
+.panel-node__main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
-.menu-node__path {
+.panel-node__label {
+  color: #111827;
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.panel-node__meta {
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.4;
+  flex: 0 1 auto;
+}
+
+.panel-node__meta--truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.panel-node__tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.panel-node__count {
+  flex: 0 0 auto;
+}
+
+.cascader-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.footer-note {
   color: #6b7280;
   font-size: 13px;
+  line-height: 1.5;
 }
 
 .data-table {
@@ -393,13 +911,32 @@ async function handleSave() {
 }
 
 @media (max-width: 960px) {
-  .menu-toolbar {
-    flex-direction: column;
+  .cascader-toolbar {
     align-items: stretch;
   }
 
-  .menu-search {
-    max-width: none;
+  .toolbar-search,
+  .toolbar-scope {
+    width: 100%;
+  }
+
+  .permission-cascader :deep(.el-cascader-panel) {
+    flex-direction: column;
+  }
+
+  .permission-cascader :deep(.el-cascader-menu),
+  .permission-cascader :deep(.el-cascader-menu:nth-child(2)),
+  .permission-cascader :deep(.el-cascader-menu:last-child) {
+    width: 100%;
+    flex: 1 1 auto;
+  }
+
+  .panel-node {
+    align-items: flex-start;
+  }
+
+  .panel-node__main {
+    flex-wrap: wrap;
   }
 }
 </style>

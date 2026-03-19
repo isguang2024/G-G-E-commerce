@@ -1,33 +1,27 @@
 <template>
   <ElDialog
     v-model="visible"
-    :title="`功能门槛 - ${menuTitle}`"
-    width="960px"
+    width="1120px"
     destroy-on-close
     class="menu-permission-dialog"
   >
+    <template #header>
+      <div class="dialog-title">
+        <span class="dialog-title-text">{{ dialogTitle }}</span>
+        <span v-if="dialogPath" class="dialog-title-path">{{ dialogPath }}</span>
+      </div>
+    </template>
+
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        配置访问当前菜单所需的功能权限。默认只在入口控制层生效，用于菜单展示与访问前置判断。
+        配置访问当前菜单所需的功能权限。父级和子级都可以直接选择，保存时会自动换算成具体权限项。
+        菜单功能权限只影响入口访问条件。用于控制个别页面不让某些权限不足或者含有权限的人进入。
       </div>
 
-      <div class="menu-summary">
-        <div class="summary-block">
-          <span class="summary-label">菜单</span>
-          <strong>{{ menuTitle }}</strong>
-        </div>
-        <div class="summary-block">
-          <span class="summary-label">路由</span>
-          <strong>{{ menuData?.path || '-' }}</strong>
-        </div>
-      </div>
-
-      <PermissionActionWorkbench
-        mode="menu"
+      <PermissionActionCascaderPanel
         :actions="permissionActions"
         :selected-ids="selectedPermissions"
-        :loading="loading"
-        search-placeholder="搜索权限名称、权限 ID、模块归属"
+        footer-text="用于控制个别页面不让某些权限不足或者含有权限的人进入。"
         @update:selected-ids="selectedPermissions = $event"
       />
 
@@ -35,17 +29,17 @@
         <div class="advanced-title">高级配置</div>
         <div class="advanced-grid">
           <div class="advanced-item">
-            <span class="item-label">匹配方式</span>
-            <ElRadioGroup v-model="matchMode">
-              <ElRadioButton label="any">任意满足</ElRadioButton>
-              <ElRadioButton label="all">全部满足</ElRadioButton>
+            <span class="advanced-label">权限满足方式</span>
+            <ElRadioGroup v-model="matchMode" size="small" class="compact-radio-group">
+              <ElRadio value="any" border>任意满足</ElRadio>
+              <ElRadio value="all" border>全部满足</ElRadio>
             </ElRadioGroup>
           </div>
           <div class="advanced-item">
-            <span class="item-label">权限不足时</span>
-            <ElRadioGroup v-model="visibilityMode">
-              <ElRadioButton label="hide">隐藏菜单</ElRadioButton>
-              <ElRadioButton label="show">显示菜单</ElRadioButton>
+            <span class="advanced-label">功能权限不满足时</span>
+            <ElRadioGroup v-model="visibilityMode" size="small" class="compact-radio-group">
+              <ElRadio value="hide" border>隐藏菜单</ElRadio>
+              <ElRadio value="show" border>显示菜单</ElRadio>
             </ElRadioGroup>
           </div>
         </div>
@@ -62,7 +56,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import PermissionActionWorkbench from '@/components/business/permission/PermissionActionWorkbench.vue'
+import PermissionActionCascaderPanel from '@/components/business/permission/PermissionActionCascaderPanel.vue'
 import { fetchGetPermissionActionList } from '@/api/system-manage'
 import { buildScopedActionKey, resolveActionKey } from '@/utils/permission/action'
 
@@ -96,13 +90,13 @@ const matchMode = ref<'any' | 'all'>('any')
 const visibilityMode = ref<'hide' | 'show'>('hide')
 
 const menuTitle = computed(() => props.menuData?.meta?.title || props.menuData?.name || '当前菜单')
+const dialogPath = computed(() => `${props.menuData?.path || ''}`.trim())
+const dialogTitle = computed(() => `功能权限 - ${menuTitle.value}`)
 
 watch(
   () => props.modelValue,
   (open) => {
-    if (open) {
-      loadData()
-    }
+    if (open) loadData()
   }
 )
 
@@ -126,7 +120,7 @@ async function loadData() {
     matchMode.value = meta.actionMatchMode === 'all' ? 'all' : 'any'
     visibilityMode.value = meta.actionVisibilityMode === 'show' ? 'show' : 'hide'
   } catch (error: any) {
-    ElMessage.error(error?.message || '加载菜单功能门槛失败')
+    ElMessage.error(error?.message || '加载菜单功能权限失败')
   } finally {
     loading.value = false
   }
@@ -154,22 +148,16 @@ function normalizeRequiredActions(
   return Array.from(
     new Set(
       actions.map((item) => {
-        if (scopedKeyMap.has(item)) {
-          return item
-        }
+        if (scopedKeyMap.has(item)) return item
 
         const raw = resolveActionKey(item)
         const candidates = unscopedKeyMap.get(raw.key) || []
-        if (!candidates.length) {
-          return item
-        }
+        if (!candidates.length) return item
 
         if (raw.scope) {
           const exactKey = buildScopedActionKey(raw.key, raw.scope)
           const exact = candidates.find((candidate) => candidate === exactKey)
-          if (exact) {
-            return exact
-          }
+          if (exact) return exact
         }
 
         return candidates.find((candidate) => candidate.endsWith('@global')) || candidates[0]
@@ -187,7 +175,7 @@ async function handleSave() {
   saving.value = true
   try {
     emit('submit', {
-      requiredActions: [...selectedPermissions.value],
+      requiredActions: expandSelectedValues(selectedPermissions.value, permissionActions.value),
       actionMatchMode: matchMode.value,
       actionVisibilityMode: visibilityMode.value
     })
@@ -196,70 +184,133 @@ async function handleSave() {
     saving.value = false
   }
 }
+
+function expandSelectedValues(
+  values: string[],
+  actions: Api.SystemManage.PermissionActionItem[]
+) {
+  const result = new Set<string>()
+  const featureMap = new Map<string, Api.SystemManage.PermissionActionItem[]>()
+  const moduleMap = new Map<string, Api.SystemManage.PermissionActionItem[]>()
+
+  actions.forEach((action) => {
+    const featureKey = `${action.featureKind || 'business'}`
+    const moduleKey = `${action.moduleCode || action.resourceCode || 'default'}`
+    const featureValue = `feature:${featureKey}`
+    const moduleValue = `module:${featureKey}:${moduleKey}`
+
+    const featureItems = featureMap.get(featureValue) || []
+    featureItems.push(action)
+    featureMap.set(featureValue, featureItems)
+
+    const moduleItems = moduleMap.get(moduleValue) || []
+    moduleItems.push(action)
+    moduleMap.set(moduleValue, moduleItems)
+  })
+
+  values.forEach((value) => {
+    if (featureMap.has(value)) {
+      featureMap.get(value)!.forEach((item) => result.add(item.id))
+      return
+    }
+    if (moduleMap.has(value)) {
+      moduleMap.get(value)!.forEach((item) => result.add(item.id))
+      return
+    }
+    result.add(value)
+  })
+
+  return Array.from(result)
+}
 </script>
 
 <style scoped lang="scss">
+.dialog-title {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.dialog-title-text {
+  color: var(--el-text-color-primary);
+  font-size: var(--el-dialog-title-font-size);
+  font-weight: 400;
+  line-height: var(--el-dialog-font-line-height);
+}
+
+.dialog-title-path {
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: var(--el-dialog-font-line-height);
+}
+
 .dialog-shell {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.dialog-note {
+.dialog-note,
+.summary-label,
+.advanced-label {
   color: #6b7280;
+}
+
+.dialog-note {
   line-height: 1.6;
 }
 
-.menu-summary,
 .advanced-card {
   border: 1px solid var(--el-border-color-lighter);
-  border-radius: 16px;
+  border-radius: 14px;
   background: #fbfcfe;
 }
-
-.menu-summary {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  padding: 16px;
-}
-
-.summary-block {
+.advanced-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.summary-label,
-.item-label {
-  color: #6b7280;
-  font-size: 13px;
 }
 
 .advanced-card {
-  padding: 16px;
+  padding: 12px 16px;
 }
 
 .advanced-title {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   color: #111827;
+  font-size: 14px;
   font-weight: 600;
+  line-height: 1.2;
 }
 
 .advanced-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
+  gap: 12px 16px;
 }
 
 .advanced-item {
+  gap: 6px;
+}
+
+.advanced-label {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.compact-radio-group {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.compact-radio-group :deep(.el-radio.is-bordered) {
+  height: 30px;
+  margin-right: 0;
+  padding: 0 12px;
 }
 
 @media (max-width: 900px) {
-  .menu-summary,
   .advanced-grid {
     grid-template-columns: 1fr;
   }

@@ -17,20 +17,34 @@
         :loading="loading"
         v-model:columns="columnChecks"
         @refresh="handleRefresh"
-      >
-        <template #left>
-          <ElTooltip
-            content="内页默认不显示在侧栏，仅通过按钮跳转；开启后可在列表中查看内页项"
-            placement="top"
-          >
-            <span class="inline-flex items-center gap-2">
-              <span class="text-sm text-gray-600">显示内页</span>
-              <ElSwitch v-model="showInnerPages" />
-            </span>
-          </ElTooltip>
-          <ElTooltip content="创建菜单" placement="top">
-            <ElButton v-action="'menu:create'" type="primary" @click="handleAddMenu" v-ripple class="ml-2">
-              创建菜单
+        >
+          <template #left>
+            <div class="menu-filter-switches">
+              <ElTooltip
+                content="内页默认不显示在侧栏，仅通过按钮跳转；开启后可在列表中查看内页项"
+                placement="top"
+              >
+                <span class="inline-flex items-center gap-2">
+                  <span class="text-sm text-gray-600">显示内页</span>
+                  <ElSwitch v-model="showInnerPages" />
+                </span>
+              </ElTooltip>
+              <span class="inline-flex items-center gap-2">
+                <span class="text-sm text-gray-600">显示隐藏</span>
+                <ElSwitch v-model="showHiddenMenus" />
+              </span>
+              <span class="inline-flex items-center gap-2">
+                <span class="text-sm text-gray-600">显示内嵌</span>
+                <ElSwitch v-model="showIframeMenus" />
+              </span>
+              <span class="inline-flex items-center gap-2">
+                <span class="text-sm text-gray-600">显示启用</span>
+                <ElSwitch v-model="showEnabledMenus" />
+              </span>
+            </div>
+            <ElTooltip content="创建菜单" placement="top">
+              <ElButton v-action="'menu:create'" type="primary" @click="handleAddMenu" v-ripple class="ml-2">
+                创建菜单
             </ElButton>
           </ElTooltip>
           <ElButton @click="toggleExpand" v-ripple class="ml-2">
@@ -110,7 +124,7 @@
               v-if="getMenuActionRequirement(row.meta).actions.length"
               size="small"
               effect="light"
-              type="danger"
+              type="info"
               class="mr-2"
             >
               {{ getMenuActionRequirementLabel(row) }}
@@ -254,6 +268,9 @@
   const loading = ref(false)
   const isExpanded = ref(false)
   const showInnerPages = ref(false)
+  const showHiddenMenus = ref(true)
+  const showIframeMenus = ref(true)
+  const showEnabledMenus = ref(true)
   const tableRef = ref()
   const tableData = ref<AppRouteRecord[]>([])
   const dataFromBackend = ref(false)
@@ -304,7 +321,13 @@
 
   const filterAndSearch = (items: AppRouteRecord[]): AppRouteRecord[] => {
     return items
-      .filter((item) => showInnerPages.value || !item.meta?.isInnerPage)
+      .filter((item) => {
+        if (!showInnerPages.value && item.meta?.isInnerPage) return false
+        if (!showHiddenMenus.value && !item.meta?.isInnerPage && item.meta?.isHide) return false
+        if (!showIframeMenus.value && item.meta?.isIframe) return false
+        if (!showEnabledMenus.value && item.meta?.isEnable !== false) return false
+        return true
+      })
       .map((item) => {
         const cloned = JSON.parse(JSON.stringify(item))
 
@@ -374,17 +397,14 @@
     const requirement = getMenuActionRequirement(row.meta)
     if (!requirement.actions.length) return ''
     const visibilityText = requirement.visibilityMode === 'show' ? '显示' : '隐藏'
-    if (requirement.actions.length === 1) {
-      return `功能门槛: ${requirement.actions[0]} · 不满足${visibilityText}`
-    }
-    return `功能门槛 ${requirement.matchMode === 'all' ? '全部' : '任一'} ${requirement.actions.length} 项 · 不满足${visibilityText}`
+    return `功能权限: 不满足${visibilityText}`
   }
 
   const getOperationList = (row: any): ButtonMoreItem[] => {
     const list: ButtonMoreItem[] = [
       { key: 'add', label: '新增子菜单', icon: 'ri:add-fill', auth: 'menu:create' },
       { key: 'edit', label: '编辑菜单', icon: 'ri:edit-2-line', auth: 'menu:update' },
-      { key: 'action_requirement', label: '功能门槛', icon: 'ri:shield-keyhole-line', auth: 'menu:update' }
+      { key: 'action_requirement', label: '功能权限', icon: 'ri:shield-keyhole-line', auth: 'menu:update' }
     ]
     if (!row.is_system) {
       list.push({
@@ -592,12 +612,12 @@
         },
         { showErrorMessage: false }
       )
-      ElMessage.success('功能门槛已保存')
+      ElMessage.success('功能权限已保存')
       actionRequirementVisible.value = false
       actionRequirementData.value = null
       getMenuList()
     } catch (e: any) {
-      ElMessage.error(e?.message || '功能门槛保存失败')
+      ElMessage.error(e?.message || '功能权限保存失败')
     }
   }
 
@@ -684,12 +704,19 @@
   // --- 生命周期 & 监听 ---
   onMounted(() => getMenuList())
 
-  watch(showInnerPages, () => {
+  watch([showInnerPages, showHiddenMenus, showIframeMenus, showEnabledMenus], () => {
     getMenuList()
   })
 </script>
 
 <style lang="scss" scoped>
+  .menu-filter-switches {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
   .backup-dialog {
     .backup-list-container {
       padding: 10px 0;
