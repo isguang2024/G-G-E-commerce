@@ -75,15 +75,6 @@
             )
         },
         {
-          prop: 'requiresTenantContext',
-          label: '依赖团队',
-          width: 100,
-          formatter: (row: APIEndpointItem) =>
-            h(ElTag, { type: row.requiresTenantContext ? 'warning' : 'info' }, () =>
-              row.requiresTenantContext ? '是' : '否'
-            )
-        },
-        {
           prop: 'status',
           label: '状态',
           width: 90,

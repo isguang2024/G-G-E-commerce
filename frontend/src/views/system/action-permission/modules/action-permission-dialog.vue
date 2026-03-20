@@ -71,9 +71,6 @@
       <ElFormItem label="排序">
         <ElInputNumber v-model="form.sortOrder" :min="0" :max="9999" style="width: 100%" />
       </ElFormItem>
-      <ElFormItem label="依赖团队">
-        <ElSwitch v-model="form.requiresTenantContext" />
-      </ElFormItem>
     </ElForm>
 
     <template #footer>
@@ -133,7 +130,6 @@
     name: '',
     description: '',
     scopeId: '',
-    requiresTenantContext: false,
     status: 'normal',
     sortOrder: 0
   })
@@ -223,7 +219,6 @@
         name: props.actionData.name,
         description: props.actionData.description || '',
         scopeId,
-        requiresTenantContext: props.actionData.requiresTenantContext,
         status: props.actionData.status || 'normal',
         sortOrder: props.actionData.sortOrder ?? 0
       })
@@ -240,7 +235,6 @@
       name: '',
       description: '',
       scopeId: scopeList.value[0]?.scopeId || '',
-      requiresTenantContext: false,
       status: 'normal',
       sortOrder: 0
     })
@@ -277,7 +271,6 @@
         name: form.name.trim(),
         description: form.description.trim(),
         scope_id: form.scopeId,
-        requires_tenant_context: form.requiresTenantContext,
         status: form.status,
         sort_order: form.sortOrder ?? 0
       }

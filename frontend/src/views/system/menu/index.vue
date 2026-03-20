@@ -112,15 +112,6 @@
               全屏
             </ElTag>
             <ElTag
-              v-if="row.meta?.requiresTenantContext"
-              size="small"
-              effect="light"
-              type="warning"
-              class="mr-2"
-            >
-              团队上下文
-            </ElTag>
-            <ElTag
               v-if="getMenuActionRequirement(row.meta).actions.length"
               size="small"
               effect="light"
@@ -514,7 +505,6 @@
         activePath: formData.activePath || '',
         fixedTab: formData.fixedTab,
         isFullPage: formData.isFullPage,
-        requiresTenantContext: !!formData.requiresTenantContext,
         isInnerPage: isInner
       }
       const requiredActions = Array.from(

@@ -30,9 +30,6 @@ function normalizePermissionAction(item: any): Api.SystemManage.PermissionAction
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
     dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
     scope: item?.scope || item?.scope_code || item?.scopeCode || '',
-    requiresTenantContext: Boolean(
-      item?.requires_tenant_context ?? item?.requiresTenantContext ?? false
-    ),
     status: item?.status || 'normal',
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
     createdAt: item?.created_at || item?.createdAt || '',
@@ -56,9 +53,6 @@ function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
     scopeName: item?.scope_name || item?.scopeName || '',
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
     dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
-    requiresTenantContext: Boolean(
-      item?.requires_tenant_context ?? item?.requiresTenantContext ?? false
-    ),
     status: item?.status || 'normal',
     createdAt: item?.created_at || item?.createdAt || '',
     updatedAt: item?.updated_at || item?.updatedAt || ''

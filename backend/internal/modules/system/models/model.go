@@ -164,7 +164,6 @@ type PermissionAction struct {
 	Description           string         `gorm:"type:varchar(255)" json:"description"`
 	ScopeID               uuid.UUID      `gorm:"type:uuid;index" json:"scope_id"`
 	Scope                 Scope          `gorm:"foreignKey:ScopeID" json:"scope,omitempty"`
-	RequiresTenantContext bool           `gorm:"default:false" json:"requires_tenant_context"`
 	Status                string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
 	SortOrder             int            `gorm:"default:0" json:"sort_order"`
 	CreatedAt             time.Time      `json:"created_at"`
@@ -232,7 +231,6 @@ type APIEndpoint struct {
 	ActionCode            string         `gorm:"type:varchar(100)" json:"action_code"`
 	ScopeID               *uuid.UUID     `gorm:"type:uuid;index" json:"scope_id"`
 	Scope                 Scope          `gorm:"foreignKey:ScopeID" json:"scope,omitempty"`
-	RequiresTenantContext bool           `gorm:"default:false" json:"requires_tenant_context"`
 	Status                string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
 	CreatedAt             time.Time      `json:"created_at"`
 	UpdatedAt             time.Time      `json:"updated_at"`

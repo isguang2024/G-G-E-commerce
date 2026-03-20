@@ -61,8 +61,6 @@ export interface RouteMeta extends Record<string | number | symbol, unknown> {
   parentPath?: string
   /** 是否启用 */
   isEnable?: boolean
-  /** 是否依赖当前团队上下文 */
-  requiresTenantContext?: boolean
   /** 进入页面所需的基础功能权限 */
   requiredAction?: string
   /** 进入页面所需的基础功能权限列表 */

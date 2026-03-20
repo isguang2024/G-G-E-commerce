@@ -1182,7 +1182,6 @@ type PermissionActionListParams struct {
 	ScopeID               *uuid.UUID
 	ScopeCode             string
 	Status                string
-	RequiresTenantContext *bool
 }
 
 type permissionActionRepository struct {
@@ -1232,9 +1231,6 @@ func (r *permissionActionRepository) List(offset, limit int, params *PermissionA
 		}
 		if params.Status != "" {
 			query = query.Where("status = ?", params.Status)
-		}
-		if params.RequiresTenantContext != nil {
-			query = query.Where("requires_tenant_context = ?", *params.RequiresTenantContext)
 		}
 	}
 	var total int64
@@ -1549,7 +1545,6 @@ type APIEndpointListParams struct {
 	ResourceCode          string
 	ActionCode            string
 	ScopeCode             string
-	RequiresTenantContext *bool
 	Status                string
 }
 
@@ -1584,9 +1579,6 @@ func (r *apiEndpointRepository) List(offset, limit int, params *APIEndpointListP
 		}
 		if params.ScopeCode != "" {
 			query = query.Joins("LEFT JOIN scopes ON api_endpoints.scope_id = scopes.id").Where("scopes.code = ?", params.ScopeCode)
-		}
-		if params.RequiresTenantContext != nil {
-			query = query.Where("requires_tenant_context = ?", *params.RequiresTenantContext)
 		}
 		if params.Status != "" {
 			query = query.Where("status = ?", params.Status)
@@ -1625,7 +1617,6 @@ func (r *apiEndpointRepository) Upsert(endpoint *APIEndpoint) error {
 		"resource_code":           endpoint.ResourceCode,
 		"action_code":             endpoint.ActionCode,
 		"scope_id":                endpoint.ScopeID,
-		"requires_tenant_context": endpoint.RequiresTenantContext,
 		"status":                  endpoint.Status,
 	}
 	return r.db.Transaction(func(tx *gorm.DB) error {

@@ -9,10 +9,9 @@
 
 import type { AppRouteRecord } from '@/types/router'
 import { fetchGetMenuList } from '@/api/system-manage'
+import { useUserStore } from '@/store/modules/user'
 import { RoutesAlias } from '../routesAlias'
 import { formatMenuTitle } from '@/utils'
-import { useTenantStore } from '@/store/modules/tenant'
-import { useUserStore } from '@/store/modules/user'
 import { hasMenuActionAccess, shouldHideMenuWhenActionDenied } from '@/utils/permission/menu'
 
 export class MenuProcessor {
@@ -21,8 +20,7 @@ export class MenuProcessor {
    */
   async getMenuList(): Promise<AppRouteRecord[]> {
     const menuList = await fetchGetMenuList()
-    const filteredByTenant = this.filterTenantContextMenus(menuList)
-    const filteredByAction = this.filterActionRequirementMenus(filteredByTenant)
+    const filteredByAction = this.filterActionRequirementMenus(menuList)
 
     // 在规范化路径之前，验证原始路径配置
     this.validateMenuPaths(filteredByAction)
@@ -73,32 +71,6 @@ export class MenuProcessor {
    */
   validateMenuList(menuList: AppRouteRecord[]): boolean {
     return Array.isArray(menuList)
-  }
-
-  /**
-   * 过滤依赖团队上下文的菜单
-   * 普通用户无团队时隐藏该类菜单，系统管理员不受限制
-   */
-  private filterTenantContextMenus(menuList: AppRouteRecord[]): AppRouteRecord[] {
-    const userStore = useUserStore()
-    const tenantStore = useTenantStore()
-
-    if (userStore.getUserInfo?.is_super_admin || tenantStore.hasTeams) {
-      return menuList
-    }
-
-    return menuList
-      .map((item) => {
-        const children = item.children?.length
-          ? this.filterTenantContextMenus(item.children)
-          : item.children
-
-        return {
-          ...item,
-          children
-        }
-      })
-      .filter((item) => !item.meta?.requiresTenantContext)
   }
 
   /**

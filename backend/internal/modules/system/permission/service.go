@@ -66,7 +66,6 @@ func (s *permissionService) List(req *dto.PermissionActionListRequest) ([]user.P
 		Source:                strings.TrimSpace(req.Source),
 		FeatureKind:           normalizeFeatureKind(req.FeatureKind, ""),
 		Status:                req.Status,
-		RequiresTenantContext: req.RequiresTenantContext,
 	}
 	if req.ScopeID != "" {
 		if parsed, err := uuid.Parse(strings.TrimSpace(req.ScopeID)); err == nil {
@@ -126,7 +125,6 @@ func (s *permissionService) Create(req *dto.PermissionActionCreateRequest) (*use
 		Name:                  strings.TrimSpace(req.Name),
 		Description:           strings.TrimSpace(req.Description),
 		ScopeID:               scopeID,
-		RequiresTenantContext: req.RequiresTenantContext,
 		Status:                status,
 		SortOrder:             req.SortOrder,
 	}
@@ -175,9 +173,6 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionActionUpdate
 		}
 		updates["scope_id"] = scopeID
 		current.Scope = *scope
-	}
-	if req.RequiresTenantContext != nil {
-		updates["requires_tenant_context"] = *req.RequiresTenantContext
 	}
 	if status := strings.TrimSpace(req.Status); status != "" {
 		updates["status"] = status

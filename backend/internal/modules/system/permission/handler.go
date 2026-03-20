@@ -169,7 +169,6 @@ func actionToMap(action *user.PermissionAction) gin.H {
 		"data_permission_code":    action.Scope.DataPermissionCode,
 		"data_permission_name":    action.Scope.DataPermissionName,
 		"scope":                   scopeCode,
-		"requires_tenant_context": action.RequiresTenantContext,
 		"status":                  action.Status,
 		"sort_order":              action.SortOrder,
 		"created_at":              action.CreatedAt.Format("2006-01-02 15:04:05"),

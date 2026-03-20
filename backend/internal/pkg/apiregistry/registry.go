@@ -15,13 +15,12 @@ import (
 )
 
 type RouteMeta struct {
-	Module                string
-	Summary               string
-	ResourceCode          string
-	ActionCode            string
-	ScopeCode             string
-	FeatureKind           string
-	RequiresTenantContext bool
+	Module       string
+	Summary      string
+	ResourceCode string
+	ActionCode   string
+	ScopeCode    string
+	FeatureKind  string
 }
 
 var routeMetaRegistry sync.Map
@@ -125,17 +124,16 @@ func syncRoutesInternal(
 		}
 
 		endpoint := &models.APIEndpoint{
-			Method:                strings.ToUpper(route.Method),
-			Path:                  route.Path,
-			Module:                moduleName,
-			FeatureKind:           normalizeFeatureKind(meta.FeatureKind),
-			Handler:               route.Handler,
-			Summary:               strings.TrimSpace(meta.Summary),
-			ResourceCode:          strings.TrimSpace(meta.ResourceCode),
-			ActionCode:            strings.TrimSpace(meta.ActionCode),
-			ScopeID:               scopeID,
-			RequiresTenantContext: meta.RequiresTenantContext,
-			Status:                "normal",
+			Method:       strings.ToUpper(route.Method),
+			Path:         route.Path,
+			Module:       moduleName,
+			FeatureKind:  normalizeFeatureKind(meta.FeatureKind),
+			Handler:      route.Handler,
+			Summary:      strings.TrimSpace(meta.Summary),
+			ResourceCode: strings.TrimSpace(meta.ResourceCode),
+			ActionCode:   strings.TrimSpace(meta.ActionCode),
+			ScopeID:      scopeID,
+			Status:       "normal",
 		}
 		if err := upsertEndpoint(db, endpoint); err != nil {
 			return err
@@ -166,17 +164,16 @@ func ensurePermissionAction(db *gorm.DB, endpoint *models.APIEndpoint, logger *z
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		action := &models.PermissionAction{
-			ResourceCode:          endpoint.ResourceCode,
-			ActionCode:            endpoint.ActionCode,
-			ModuleCode:            normalizeModuleCode(endpoint.Module, endpoint.ResourceCode),
-			Category:              endpoint.Module,
-			Source:                "api",
-			FeatureKind:           normalizeFeatureKind(endpoint.FeatureKind),
-			Name:                  name,
-			Description:           description,
-			ScopeID:               *endpoint.ScopeID,
-			RequiresTenantContext: endpoint.RequiresTenantContext,
-			Status:                "normal",
+			ResourceCode: endpoint.ResourceCode,
+			ActionCode:   endpoint.ActionCode,
+			ModuleCode:   normalizeModuleCode(endpoint.Module, endpoint.ResourceCode),
+			Category:     endpoint.Module,
+			Source:       "api",
+			FeatureKind:  normalizeFeatureKind(endpoint.FeatureKind),
+			Name:         name,
+			Description:  description,
+			ScopeID:      *endpoint.ScopeID,
+			Status:       "normal",
 		}
 		return db.Create(action).Error
 	}
@@ -193,9 +190,6 @@ func ensurePermissionAction(db *gorm.DB, endpoint *models.APIEndpoint, logger *z
 	}
 	if normalizedModuleCode := normalizeModuleCode(endpoint.Module, endpoint.ResourceCode); strings.TrimSpace(existing.ModuleCode) != normalizedModuleCode {
 		updates["module_code"] = normalizedModuleCode
-	}
-	if existing.RequiresTenantContext != endpoint.RequiresTenantContext {
-		updates["requires_tenant_context"] = endpoint.RequiresTenantContext
 	}
 	if strings.TrimSpace(existing.Status) == "" {
 		updates["status"] = "normal"
@@ -296,15 +290,14 @@ func upsertEndpoint(db *gorm.DB, endpoint *models.APIEndpoint) error {
 		return nil
 	}
 	updates := map[string]interface{}{
-		"module":                  endpoint.Module,
-		"feature_kind":            normalizeFeatureKind(endpoint.FeatureKind),
-		"handler":                 endpoint.Handler,
-		"summary":                 endpoint.Summary,
-		"resource_code":           endpoint.ResourceCode,
-		"action_code":             endpoint.ActionCode,
-		"scope_id":                endpoint.ScopeID,
-		"requires_tenant_context": endpoint.RequiresTenantContext,
-		"status":                  endpoint.Status,
+		"module":        endpoint.Module,
+		"feature_kind":  normalizeFeatureKind(endpoint.FeatureKind),
+		"handler":       endpoint.Handler,
+		"summary":       endpoint.Summary,
+		"resource_code": endpoint.ResourceCode,
+		"action_code":   endpoint.ActionCode,
+		"scope_id":      endpoint.ScopeID,
+		"status":        endpoint.Status,
 	}
 	return db.Transaction(func(tx *gorm.DB) error {
 		var existing models.APIEndpoint

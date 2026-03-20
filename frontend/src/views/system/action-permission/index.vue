@@ -145,7 +145,6 @@
   defineOptions({ name: 'ActionPermission' })
 
   type PermissionActionItem = Api.SystemManage.PermissionActionItem
-  type TenantContextFilter = '' | 'true' | 'false' | undefined
   type SuggestionItem = { value: string }
   type StatsTag = {
     label: string
@@ -183,7 +182,6 @@
     category: string
     scopeCode: string
     status: string
-    requiresTenantContext: TenantContextFilter
   }>({
     keyword: '',
     source: '',
@@ -191,8 +189,7 @@
     moduleCode: '',
     category: '',
     scopeCode: '',
-    status: '',
-    requiresTenantContext: undefined
+    status: ''
   })
 
   const sourceOptions = [
@@ -214,12 +211,6 @@
     { label: '全部状态', value: '' },
     { label: '正常', value: 'normal' },
     { label: '停用', value: 'suspended' }
-  ]
-
-  const tenantContextOptions = [
-    { label: '全部', value: '' },
-    { label: '依赖团队', value: 'true' },
-    { label: '不依赖团队', value: 'false' }
   ]
 
   onMounted(async () => {
@@ -280,12 +271,6 @@
       type: 'select',
       props: { options: statusOptions, clearable: true }
     },
-    {
-      label: '依赖团队',
-      key: 'requiresTenantContext',
-      type: 'select',
-      props: { options: tenantContextOptions, clearable: true }
-    }
   ])
 
   const {
@@ -360,15 +345,6 @@
             )
         },
         {
-          prop: 'requiresTenantContext',
-          label: '依赖团队',
-          width: 100,
-          formatter: (row: PermissionActionItem) =>
-            h(ElTag, { type: row.requiresTenantContext ? 'warning' : 'info' }, () =>
-              row.requiresTenantContext ? '是' : '否'
-            )
-        },
-        {
           prop: 'description',
           label: '描述',
           minWidth: 180,
@@ -426,13 +402,7 @@
       moduleCode: searchForm.moduleCode?.trim() || undefined,
       category: searchForm.category?.trim() || undefined,
       scopeCode: searchForm.scopeCode || undefined,
-      status: searchForm.status || undefined,
-      requiresTenantContext:
-        searchForm.requiresTenantContext === 'true'
-          ? true
-          : searchForm.requiresTenantContext === 'false'
-            ? false
-            : undefined
+      status: searchForm.status || undefined
     }
   }
 
@@ -527,8 +497,7 @@
       moduleCode: '',
       category: '',
       scopeCode: '',
-      status: '',
-      requiresTenantContext: undefined
+      status: ''
     })
     await resetSearchParams()
     await loadStats()

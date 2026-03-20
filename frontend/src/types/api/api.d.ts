@@ -113,7 +113,6 @@ declare namespace Api {
   namespace SystemManage {
     interface MenuMetaConfig {
       roles?: string[]
-      requiresTenantContext?: boolean
       requiredAction?: string
       requiredActions?: string[]
       actionMatchMode?: 'any' | 'all'
@@ -261,7 +260,6 @@ declare namespace Api {
       dataPermissionCode?: string
       dataPermissionName?: string
       scope?: string
-      requiresTenantContext: boolean
       status: string
       sortOrder?: number
       createdAt?: string
@@ -285,7 +283,6 @@ declare namespace Api {
       scopeName?: string
       dataPermissionCode?: string
       dataPermissionName?: string
-      requiresTenantContext: boolean
       status: string
       createdAt?: string
       updatedAt?: string
@@ -300,7 +297,6 @@ declare namespace Api {
           resourceCode?: string
           actionCode?: string
           scopeCode?: string
-          requiresTenantContext?: boolean
         }
     >
 
@@ -314,7 +310,6 @@ declare namespace Api {
             featureKind?: string
             scopeId?: string
             scopeCode?: string
-          requiresTenantContext?: boolean
         }
     >
 
@@ -327,7 +322,6 @@ declare namespace Api {
       name: string
       description?: string
       scope_id: string
-      requires_tenant_context?: boolean
       status?: string
       sort_order?: number
     }
@@ -341,7 +335,6 @@ declare namespace Api {
       name?: string
       description?: string
       scope_id?: string
-      requires_tenant_context?: boolean
       status?: string
       sort_order?: number
     }

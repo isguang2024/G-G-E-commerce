@@ -33,9 +33,6 @@ function normalizeAction(item: any): Api.SystemManage.PermissionActionItem {
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
     dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
     scope: item?.scope || item?.scope_code || item?.scopeCode || '',
-    requiresTenantContext: Boolean(
-      item?.requires_tenant_context ?? item?.requiresTenantContext ?? false
-    ),
     status: item?.status || 'normal',
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
     createdAt: item?.created_at || item?.createdAt || '',

@@ -374,7 +374,6 @@ func (h *UserHandler) GetActions(c *gin.Context) {
 				"scope_name":              action.Scope.Name,
 				"data_permission_code":    action.Scope.DataPermissionCode,
 				"data_permission_name":    action.Scope.DataPermissionName,
-				"requires_tenant_context": action.RequiresTenantContext,
 				"status":                  action.Status,
 				"sort_order":              action.SortOrder,
 			}
@@ -443,7 +442,7 @@ func (h *UserHandler) SetActions(c *gin.Context) {
 		return
 	}
 	for _, action := range actions {
-		if action.Scope.Code != "global" || action.RequiresTenantContext {
+		if action.Scope.Code != "global" {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "单用户权限只能配置平台级功能权限")
 			c.JSON(status, resp)
 			return

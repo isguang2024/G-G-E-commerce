@@ -110,7 +110,7 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, resourceCode,
 		return true, &actionDef, nil
 	}
 
-	requiresTenant := actionDef.RequiresTenantContext || isTeamScopeCode(actionDef.Scope.Code)
+	requiresTenant := isTeamScopeCode(actionDef.Scope.Code)
 	var member models.TenantMember
 	if requiresTenant {
 		if tenantID == nil {
@@ -249,7 +249,7 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 	keySet := make(map[string]struct{}, len(actions))
 	scopedKeySet := make(map[string]struct{}, len(actions))
 	for _, action := range actions {
-		requiresTenant := action.RequiresTenantContext || isTeamScopeCode(action.Scope.Code)
+		requiresTenant := isTeamScopeCode(action.Scope.Code)
 		if requiresTenant {
 			if tenantID == nil || !memberActive {
 				continue

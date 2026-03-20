@@ -12,17 +12,16 @@ import (
 )
 
 type ListRequest struct {
-	Current               int
-	Size                  int
-	Method                string
-	Path                  string
-	Module                string
-	FeatureKind           string
-	ResourceCode          string
-	ActionCode            string
-	ScopeCode             string
-	Status                string
-	RequiresTenantContext *bool
+	Current      int
+	Size         int
+	Method       string
+	Path         string
+	Module       string
+	FeatureKind  string
+	ResourceCode string
+	ActionCode   string
+	ScopeCode    string
+	Status       string
 }
 
 type Service interface {
@@ -49,15 +48,14 @@ func (s *service) List(req *ListRequest) ([]user.APIEndpoint, int64, error) {
 		req.Size = 20
 	}
 	return s.repo.List((req.Current-1)*req.Size, req.Size, &user.APIEndpointListParams{
-		Method:                strings.ToUpper(strings.TrimSpace(req.Method)),
-		Path:                  strings.TrimSpace(req.Path),
-		Module:                strings.TrimSpace(req.Module),
-		FeatureKind:           strings.TrimSpace(req.FeatureKind),
-		ResourceCode:          strings.TrimSpace(req.ResourceCode),
-		ActionCode:            strings.TrimSpace(req.ActionCode),
-		ScopeCode:             strings.TrimSpace(req.ScopeCode),
-		Status:                strings.TrimSpace(req.Status),
-		RequiresTenantContext: req.RequiresTenantContext,
+		Method:       strings.ToUpper(strings.TrimSpace(req.Method)),
+		Path:         strings.TrimSpace(req.Path),
+		Module:       strings.TrimSpace(req.Module),
+		FeatureKind:  strings.TrimSpace(req.FeatureKind),
+		ResourceCode: strings.TrimSpace(req.ResourceCode),
+		ActionCode:   strings.TrimSpace(req.ActionCode),
+		ScopeCode:    strings.TrimSpace(req.ScopeCode),
+		Status:       strings.TrimSpace(req.Status),
 	})
 }
 

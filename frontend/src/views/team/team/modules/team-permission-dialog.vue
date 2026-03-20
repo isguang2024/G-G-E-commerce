@@ -80,9 +80,7 @@ async function loadData() {
       fetchGetTeamActions(props.teamId)
     ])
 
-    permissionActions.value = (actionsRes?.records || []).filter((item) => {
-      return item.scopeCode === 'team' || item.requiresTenantContext
-    })
+    permissionActions.value = (actionsRes?.records || []).filter((item) => item.scopeCode === 'team')
     selectedIds.value = [...(currentRes?.actionIds || [])]
   } catch (error: any) {
     ElMessage.error(error?.message || '加载团队功能权限失败')

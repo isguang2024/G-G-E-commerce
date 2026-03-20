@@ -14,7 +14,6 @@ type PermissionActionListRequest struct {
 	ScopeID               string `form:"scope_id"`
 	ScopeCode             string `form:"scope_code"`
 	Status                string `form:"status"`
-	RequiresTenantContext *bool  `form:"requires_tenant_context"`
 }
 
 type PermissionActionCreateRequest struct {
@@ -26,7 +25,6 @@ type PermissionActionCreateRequest struct {
 	Name                  string `json:"name" binding:"required,max=150"`
 	Description           string `json:"description"`
 	ScopeID               string `json:"scope_id" binding:"required"`
-	RequiresTenantContext bool   `json:"requires_tenant_context"`
 	Status                string `json:"status"`
 	SortOrder             int    `json:"sort_order"`
 }
@@ -40,7 +38,6 @@ type PermissionActionUpdateRequest struct {
 	Name                  string `json:"name" binding:"max=150"`
 	Description           string `json:"description"`
 	ScopeID               string `json:"scope_id"`
-	RequiresTenantContext *bool  `json:"requires_tenant_context"`
 	Status                string `json:"status"`
 	SortOrder             int    `json:"sort_order"`
 }

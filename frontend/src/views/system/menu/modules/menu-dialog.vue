@@ -81,10 +81,6 @@
                   <span class="w-24">全屏页面</span>
                   <ElSwitch v-model="form.isFullPage" />
                 </div>
-                <div class="flex items-center">
-                  <span class="w-24">团队上下文</span>
-                  <ElSwitch v-model="form.requiresTenantContext" />
-                </div>
               </div>
             </ElCollapseItem>
           </ElCollapse>
@@ -152,7 +148,6 @@
     customParent: string
     roles: string[]
     isFullPage: boolean
-    requiresTenantContext: boolean
   }
 
   interface Props {
@@ -248,8 +243,7 @@
     activePath: '',
     customParent: '',
     roles: [],
-    isFullPage: false,
-    requiresTenantContext: false
+    isFullPage: false
   })
 
   const rules = reactive<FormRules>({
@@ -432,7 +426,6 @@
     form.customParent = row.meta?.customParent || ''
     form.roles = row.meta?.roles || []
     form.isFullPage = row.meta?.isFullPage ?? false
-    form.requiresTenantContext = row.meta?.requiresTenantContext ?? false
   }
 
   const handleSubmit = async (): Promise<void> => {
@@ -498,7 +491,6 @@
         form.isIframe = false
         form.link = ''
         form.isHide = false
-        form.requiresTenantContext = false
         break
       case 'inner':
         form.menuType = 'inner'
@@ -507,7 +499,6 @@
         form.component = '/system/inner-page'
         form.isIframe = false
         form.link = ''
-        form.requiresTenantContext = false
         break
     }
   }

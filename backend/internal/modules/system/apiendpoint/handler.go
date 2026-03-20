@@ -23,17 +23,16 @@ func NewHandler(service Service, logger *zap.Logger) *Handler {
 
 func (h *Handler) List(c *gin.Context) {
 	var req struct {
-		Current               int    `form:"current"`
-		Size                  int    `form:"size"`
-		Method                string `form:"method"`
-		Path                  string `form:"path"`
-		Module                string `form:"module"`
-		FeatureKind           string `form:"feature_kind"`
-		ResourceCode          string `form:"resource_code"`
-		ActionCode            string `form:"action_code"`
-		ScopeCode             string `form:"scope_code"`
-		Status                string `form:"status"`
-		RequiresTenantContext *bool  `form:"requires_tenant_context"`
+		Current      int    `form:"current"`
+		Size         int    `form:"size"`
+		Method       string `form:"method"`
+		Path         string `form:"path"`
+		Module       string `form:"module"`
+		FeatureKind  string `form:"feature_kind"`
+		ResourceCode string `form:"resource_code"`
+		ActionCode   string `form:"action_code"`
+		ScopeCode    string `form:"scope_code"`
+		Status       string `form:"status"`
 	}
 	if err := c.ShouldBindQuery(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
@@ -41,17 +40,16 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 	list, total, err := h.service.List(&ListRequest{
-		Current:               req.Current,
-		Size:                  req.Size,
-		Method:                req.Method,
-		Path:                  req.Path,
-		Module:                req.Module,
-		FeatureKind:           req.FeatureKind,
-		ResourceCode:          req.ResourceCode,
-		ActionCode:            req.ActionCode,
-		ScopeCode:             req.ScopeCode,
-		Status:                req.Status,
-		RequiresTenantContext: req.RequiresTenantContext,
+		Current:      req.Current,
+		Size:         req.Size,
+		Method:       req.Method,
+		Path:         req.Path,
+		Module:       req.Module,
+		FeatureKind:  req.FeatureKind,
+		ResourceCode: req.ResourceCode,
+		ActionCode:   req.ActionCode,
+		ScopeCode:    req.ScopeCode,
+		Status:       req.Status,
 	})
 	if err != nil {
 		h.logger.Error("List api endpoints failed", zap.Error(err))
@@ -103,12 +101,11 @@ func endpointToMap(endpoint *user.APIEndpoint) gin.H {
 		"scope_id":                scopeID,
 		"scope_code":              scopeCode,
 		"scope_name":              scopeName,
-		"data_permission_code":    endpoint.Scope.DataPermissionCode,
-		"data_permission_name":    endpoint.Scope.DataPermissionName,
-		"requires_tenant_context": endpoint.RequiresTenantContext,
-		"status":                  endpoint.Status,
-		"created_at":              endpoint.CreatedAt.Format("2006-01-02 15:04:05"),
-		"updated_at":              endpoint.UpdatedAt.Format("2006-01-02 15:04:05"),
+		"data_permission_code": endpoint.Scope.DataPermissionCode,
+		"data_permission_name": endpoint.Scope.DataPermissionName,
+		"status":               endpoint.Status,
+		"created_at":           endpoint.CreatedAt.Format("2006-01-02 15:04:05"),
+		"updated_at":           endpoint.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
 }
 

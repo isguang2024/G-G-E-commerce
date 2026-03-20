@@ -232,17 +232,12 @@ async function handleRouteGuard(
     return
   }
 
-  // 5. 处理团队上下文页面访问
-  if (handleTenantContextRedirect(to, next)) {
-    return
-  }
-
-  // 6. 处理菜单绑定的基础功能门槛
+  // 5. 处理菜单绑定的基础功能门槛
   if (handleMenuActionRedirect(to, next)) {
     return
   }
 
-  // 7. 处理已匹配的路由
+  // 6. 处理已匹配的路由
   if (to.matched.length > 0) {
     setWorktab(to)
     setPageTitle(to)
@@ -250,7 +245,7 @@ async function handleRouteGuard(
     return
   }
 
-  // 8. 未匹配到路由，跳转到 404
+  // 7. 未匹配到路由，跳转到 404
   next({ name: 'Exception404' })
 }
 
@@ -467,30 +462,6 @@ function handleRootPathRedirect(to: RouteLocationNormalized, next: NavigationGua
   }
 
   return false
-}
-
-/**
- * 处理依赖团队上下文的页面访问
- */
-function handleTenantContextRedirect(
-  to: RouteLocationNormalized,
-  next: NavigationGuardNext
-): boolean {
-  const userStore = useUserStore()
-  const tenantStore = useTenantStore()
-
-  const requiresTenantContext = to.matched.some((record) => record.meta?.requiresTenantContext)
-  if (!requiresTenantContext) {
-    return false
-  }
-
-  if (userStore.getUserInfo?.is_super_admin || tenantStore.hasTeams) {
-    return false
-  }
-
-  const fallbackPath = useMenuStore().getHomePath() || '/403'
-  next({ path: fallbackPath, replace: true })
-  return true
 }
 
 /**
