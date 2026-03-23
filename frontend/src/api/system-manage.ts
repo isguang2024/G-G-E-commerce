@@ -198,16 +198,16 @@ export function fetchAssignUserRoles(id: string, roleIds: string[]) {
   })
 }
 
-/** 获取平台用户例外权限覆盖（兼容入口） */
-export async function fetchGetUserActions(userId: string) {
+/** 获取平台用户权限例外审计 */
+export async function fetchGetUserActions(userId: string): Promise<Api.SystemManage.UserActionPermissionResponse> {
   const res = await request.get<Api.SystemManage.UserActionPermissionResponse>({
     url: `${USER_BASE}/${userId}/actions`
   })
   const actions = (res?.actions || []).map((item: any) => ({
-      action_id: item?.action_id || '',
-      effect: item?.effect || 'allow',
-      action: item?.action ? normalizePermissionAction(item.action) : undefined
-    })) as Api.SystemManage.UserActionPermissionItem[]
+    action_id: item?.action_id || '',
+    effect: item?.effect || 'allow',
+    action: item?.action ? normalizePermissionAction(item.action) : undefined
+  })) as Api.SystemManage.UserActionPermissionItem[]
   return {
     actions,
     available_action_ids: res?.available_action_ids || [],
@@ -220,8 +220,6 @@ export async function fetchGetUserActions(userId: string) {
     has_package_config: Boolean(res?.has_package_config)
   }
 }
-
-export const fetchGetUserActionOverrides = fetchGetUserActions
 
 /** 获取平台用户菜单裁剪 */
 export async function fetchGetUserMenus(userId: string) {
@@ -249,7 +247,7 @@ export function fetchSetUserMenus(userId: string, menuIds: string[]) {
   })
 }
 
-/** 设置平台用户例外权限覆盖（兼容入口） */
+/** 设置平台用户权限例外审计 */
 export function fetchSetUserActions(
   userId: string,
   actions: Array<{ action_id: string; effect: 'allow' | 'deny' }>
@@ -259,8 +257,6 @@ export function fetchSetUserActions(
     data: { actions }
   })
 }
-
-export const fetchSetUserActionOverrides = fetchSetUserActions
 
 // 获取角色列表
 export function fetchGetRoleList(params: Api.SystemManage.RoleSearchParams) {

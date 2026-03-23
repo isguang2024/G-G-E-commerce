@@ -89,7 +89,6 @@ func AutoMigrate() error {
 		&models.User{},
 		&models.Role{},
 		&models.UserRole{},
-		&models.RoleMenu{},
 		&models.PermissionAction{},
 		&models.FeaturePackage{},
 		&models.FeaturePackageBundle{},
@@ -99,11 +98,8 @@ func AutoMigrate() error {
 		&models.UserFeaturePackage{},
 		&models.RoleFeaturePackage{},
 		&models.RoleHiddenMenu{},
-		&models.RoleActionPermission{},
 		&models.RoleDisabledAction{},
 		&models.RoleDataPermission{},
-		&models.TenantActionPermission{},
-		&models.TeamManualActionPermission{},
 		&models.TeamBlockedMenu{},
 		&models.TeamBlockedAction{},
 		&models.UserActionPermission{},
@@ -244,14 +240,6 @@ func createUniqueIndexes() error {
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", featurePackageBundleIndexName).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE UNIQUE INDEX " + featurePackageBundleIndexName + " ON feature_package_bundles (package_id, child_package_id)").Error; err != nil {
-			return err
-		}
-	}
-
-	teamManualActionIndexName := "idx_team_manual_action_permissions_unique"
-	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", teamManualActionIndexName).Scan(&count)
-	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + teamManualActionIndexName + " ON team_manual_action_permissions (tenant_id, action_id)").Error; err != nil {
 			return err
 		}
 	}

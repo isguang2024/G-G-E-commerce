@@ -42,9 +42,7 @@ func (m *RoleModule) RegisterRoutes(rg *gin.RouterGroup) {
 	packageActionRepo := user.NewFeaturePackageActionRepository(m.db)
 	packageMenuRepo := user.NewFeaturePackageMenuRepository(m.db)
 	packageBundleRepo := user.NewFeaturePackageBundleRepository(m.db)
-	roleMenuRepo := user.NewRoleMenuRepository(m.db)
 	roleHiddenMenuRepo := user.NewRoleHiddenMenuRepository(m.db)
-	roleActionRepo := user.NewRoleActionPermissionRepository(m.db)
 	roleDisabledActionRepo := user.NewRoleDisabledActionRepository(m.db)
 	roleDataRepo := user.NewRoleDataPermissionRepository(m.db)
 	actionRepo := user.NewPermissionActionRepository(m.db)
@@ -59,9 +57,7 @@ func (m *RoleModule) RegisterRoutes(rg *gin.RouterGroup) {
 		packageActionRepo,
 		packageMenuRepo,
 		packageBundleRepo,
-		roleMenuRepo,
 		roleHiddenMenuRepo,
-		roleActionRepo,
 		roleDisabledActionRepo,
 		roleDataRepo,
 		actionRepo,

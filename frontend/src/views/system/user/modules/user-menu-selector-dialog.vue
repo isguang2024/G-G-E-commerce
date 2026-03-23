@@ -12,8 +12,8 @@
       </div>
 
       <div
-        class="compat-banner"
-        :class="hasPackageConfig ? 'compat-banner--success' : 'compat-banner--warning'"
+        class="audit-banner"
+        :class="hasPackageConfig ? 'audit-banner--success' : 'audit-banner--warning'"
       >
         <span>
           {{
@@ -126,8 +126,7 @@ const treeRef = ref()
 const menuTree = ref<AppRouteRecord[]>([])
 const selectedIds = ref<string[]>([])
 const featurePackages = ref<Api.SystemManage.FeaturePackageItem[]>([])
-const availableMenuIds = ref<string[]>([])
-const derivedMenuIds = ref<string[]>([])
+const candidateMenuIds = ref<string[]>([])
 const hiddenMenuIds = ref<string[]>([])
 const derivedSourceMap = ref<Record<string, string[]>>({})
 const menuSourceList = ref<Array<{ id: string; label: string }>>([])
@@ -138,9 +137,9 @@ const userTitle = computed(() => props.userData?.nickName || props.userData?.use
 const summaryItems = computed(() => [
   { label: '用户', value: userTitle.value || '-' },
   { label: '当前显示', value: selectedIds.value.length, type: 'success' as const },
-  { label: '候选', value: availableMenuIds.value.length, type: 'info' as const },
+  { label: '候选', value: candidateMenuIds.value.length, type: 'info' as const },
   { label: '功能包', value: featurePackages.value.length },
-  { label: '功能包展开', value: derivedMenuIds.value.length, type: 'warning' as const },
+  { label: '功能包展开', value: candidateMenuIds.value.length, type: 'warning' as const },
   { label: '已隐藏', value: hiddenMenuIds.value.length, type: 'primary' as const }
 ])
 const defaultProps = {
@@ -150,7 +149,7 @@ const defaultProps = {
 }
 
 const derivedMenus = computed(() => {
-  const idSet = new Set(derivedMenuIds.value)
+  const idSet = new Set(candidateMenuIds.value)
   return menuSourceList.value.filter((item) => idSet.has(item.id))
 })
 const blockedMenus = computed(() => {
@@ -178,10 +177,9 @@ async function loadData() {
     ])
 
     featurePackages.value = packageRes?.packages || []
-    availableMenuIds.value = menuRes?.available_menu_ids || []
-    derivedMenuIds.value = menuRes?.available_menu_ids || []
+    candidateMenuIds.value = menuRes?.available_menu_ids || []
     hiddenMenuIds.value = menuRes?.hidden_menu_ids || []
-    selectedIds.value = normalizeSelectedMenuIDs(menuRes?.menu_ids || [], derivedMenuIds.value)
+    selectedIds.value = normalizeSelectedMenuIDs(menuRes?.menu_ids || [], candidateMenuIds.value)
     derivedSourceMap.value = Object.fromEntries(
       (menuRes?.derived_sources || []).map((item: { menu_id: string; package_ids: string[] }) => [
         item.menu_id,
@@ -192,8 +190,8 @@ async function loadData() {
     selectedDerivedPackageId.value = ''
 
     const allMenuList = Array.isArray(allMenus) ? allMenus : []
-    menuSourceList.value = buildMenuSourceList(allMenuList, derivedMenuIds.value)
-    menuTree.value = filterMenuTreeByAllowedIDs(allMenuList, new Set(derivedMenuIds.value))
+    menuSourceList.value = buildMenuSourceList(allMenuList, candidateMenuIds.value)
+    menuTree.value = filterMenuTreeByAllowedIDs(allMenuList, new Set(candidateMenuIds.value))
     await nextTick()
     treeRef.value?.setCheckedKeys(selectedIds.value)
   } catch (error: any) {
@@ -205,7 +203,7 @@ async function loadData() {
 
 function handleCheck(_: any, checkedState: any) {
   const checkedKeys = (checkedState?.checkedKeys || []).map((key: string | number) => String(key))
-  selectedIds.value = normalizeSelectedMenuIDs(checkedKeys, derivedMenuIds.value)
+  selectedIds.value = normalizeSelectedMenuIDs(checkedKeys, candidateMenuIds.value)
 }
 
 function handleCancel() {
@@ -222,7 +220,7 @@ function toggleExpand() {
 }
 
 function checkAll() {
-  selectedIds.value = [...derivedMenuIds.value]
+  selectedIds.value = [...candidateMenuIds.value]
   treeRef.value?.setCheckedKeys(selectedIds.value)
 }
 
@@ -236,7 +234,7 @@ async function handleSave() {
   if (!userId || !hasPackageConfig.value) return
   saving.value = true
   try {
-    await fetchSetUserMenus(userId, normalizeSelectedMenuIDs(selectedIds.value, derivedMenuIds.value))
+    await fetchSetUserMenus(userId, normalizeSelectedMenuIDs(selectedIds.value, candidateMenuIds.value))
     ElMessage.success('用户菜单裁剪已保存')
     emit('success')
     visible.value = false
@@ -315,7 +313,7 @@ function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem) {
   line-height: 1.6;
 }
 
-.compat-banner {
+.audit-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -325,12 +323,12 @@ function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem) {
   font-size: 13px;
 }
 
-.compat-banner--success {
+.audit-banner--success {
   background: #ecfdf5;
   color: #047857;
 }
 
-.compat-banner--warning {
+.audit-banner--warning {
   background: #fff7ed;
   color: #c2410c;
 }

@@ -29,38 +29,35 @@ type PermissionService interface {
 }
 
 type permissionService struct {
-	actionRepo        user.PermissionActionRepository
-	roleActionRepo    user.RoleActionPermissionRepository
-	packageActionRepo user.FeaturePackageActionRepository
-	teamPackageRepo   user.TeamFeaturePackageRepository
-	tenantActionRepo  user.TenantActionPermissionRepository
-	manualActionRepo  user.TeamManualActionPermissionRepository
-	userActionRepo    user.UserActionPermissionRepository
-	boundaryService   teamboundary.Service
-	refresher         permissionrefresh.Service
+	actionRepo             user.PermissionActionRepository
+	packageActionRepo      user.FeaturePackageActionRepository
+	teamPackageRepo        user.TeamFeaturePackageRepository
+	roleDisabledActionRepo user.RoleDisabledActionRepository
+	teamBlockedActionRepo  user.TeamBlockedActionRepository
+	userActionRepo         user.UserActionPermissionRepository
+	boundaryService        teamboundary.Service
+	refresher              permissionrefresh.Service
 }
 
 func NewPermissionService(
 	actionRepo user.PermissionActionRepository,
-	roleActionRepo user.RoleActionPermissionRepository,
 	packageActionRepo user.FeaturePackageActionRepository,
 	teamPackageRepo user.TeamFeaturePackageRepository,
-	tenantActionRepo user.TenantActionPermissionRepository,
-	manualActionRepo user.TeamManualActionPermissionRepository,
+	roleDisabledActionRepo user.RoleDisabledActionRepository,
+	teamBlockedActionRepo user.TeamBlockedActionRepository,
 	userActionRepo user.UserActionPermissionRepository,
 	boundaryService teamboundary.Service,
 	refresher permissionrefresh.Service,
 ) PermissionService {
 	return &permissionService{
-		actionRepo:        actionRepo,
-		roleActionRepo:    roleActionRepo,
-		packageActionRepo: packageActionRepo,
-		teamPackageRepo:   teamPackageRepo,
-		tenantActionRepo:  tenantActionRepo,
-		manualActionRepo:  manualActionRepo,
-		userActionRepo:    userActionRepo,
-		boundaryService:   boundaryService,
-		refresher:         refresher,
+		actionRepo:             actionRepo,
+		packageActionRepo:      packageActionRepo,
+		teamPackageRepo:        teamPackageRepo,
+		roleDisabledActionRepo: roleDisabledActionRepo,
+		teamBlockedActionRepo:  teamBlockedActionRepo,
+		userActionRepo:         userActionRepo,
+		boundaryService:        boundaryService,
+		refresher:              refresher,
 	}
 }
 
@@ -299,16 +296,13 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 			affectedTeams[teamID] = struct{}{}
 		}
 	}
-	if err := s.roleActionRepo.DeleteByActionID(id); err != nil {
-		return err
-	}
 	if err := s.packageActionRepo.DeleteByActionID(id); err != nil {
 		return err
 	}
-	if err := s.tenantActionRepo.DeleteByActionID(id); err != nil {
+	if err := s.roleDisabledActionRepo.DeleteByActionID(id); err != nil {
 		return err
 	}
-	if err := s.manualActionRepo.DeleteByActionID(id); err != nil {
+	if err := s.teamBlockedActionRepo.DeleteByActionID(id); err != nil {
 		return err
 	}
 	if err := s.userActionRepo.DeleteByActionID(id); err != nil {
@@ -324,7 +318,7 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 		return nil
 	}
 	for teamID := range affectedTeams {
-		if _, err := s.boundaryService.RefreshCache(teamID); err != nil {
+		if _, err := s.boundaryService.RefreshSnapshot(teamID); err != nil {
 			return err
 		}
 	}

@@ -103,7 +103,7 @@ const treeRef = ref()
 const menuTree = ref<AppRouteRecord[]>([])
 const selectedIds = ref<string[]>([])
 const featurePackages = ref<Api.SystemManage.FeaturePackageItem[]>([])
-const derivedMenuIds = ref<string[]>([])
+const candidateMenuIds = ref<string[]>([])
 const blockedMenuIds = ref<string[]>([])
 const derivedSourceMap = ref<Record<string, string[]>>({})
 const menuSourceList = ref<Array<{ id: string; label: string }>>([])
@@ -119,13 +119,13 @@ const blockedMenuCount = computed(() => blockedMenuIds.value.length)
 const summaryItems = computed(() => [
   { label: '团队', value: props.teamName || '-' },
   { label: '边界结果', value: selectedIds.value.length, type: 'success' as const },
-  { label: '候选', value: derivedMenuIds.value.length, type: 'info' as const },
+  { label: '候选', value: candidateMenuIds.value.length, type: 'info' as const },
   { label: '功能包', value: featurePackages.value.length },
-  { label: '功能包展开', value: derivedMenuIds.value.length, type: 'warning' as const },
+  { label: '功能包展开', value: candidateMenuIds.value.length, type: 'warning' as const },
       { label: '边界已屏蔽', value: blockedMenuCount.value, type: 'primary' as const }
 ])
 const derivedMenus = computed(() => {
-  const idSet = new Set(derivedMenuIds.value)
+  const idSet = new Set(candidateMenuIds.value)
   return menuSourceList.value.filter((item) => idSet.has(item.id))
 })
 const blockedMenus = computed(() => {
@@ -153,17 +153,17 @@ async function loadData() {
     ])
 
     featurePackages.value = packageRes?.packages || []
-    derivedMenuIds.value = originRes?.derived_menu_ids || []
+    candidateMenuIds.value = originRes?.derived_menu_ids || []
     blockedMenuIds.value = originRes?.blocked_menu_ids || []
-    selectedIds.value = normalizeSelectedMenuIDs(currentRes?.menu_ids || [], derivedMenuIds.value)
+    selectedIds.value = normalizeSelectedMenuIDs(currentRes?.menu_ids || [], candidateMenuIds.value)
     derivedSourceMap.value = Object.fromEntries(
       (originRes?.derived_sources || []).map((item) => [item.menu_id, item.package_ids])
     )
     selectedDerivedPackageId.value = ''
 
     const allMenuList = Array.isArray(allMenus) ? allMenus : []
-    menuSourceList.value = buildMenuSourceList(allMenuList, derivedMenuIds.value)
-    menuTree.value = filterMenuTreeByAllowedIDs(allMenuList, new Set(derivedMenuIds.value))
+    menuSourceList.value = buildMenuSourceList(allMenuList, candidateMenuIds.value)
+    menuTree.value = filterMenuTreeByAllowedIDs(allMenuList, new Set(candidateMenuIds.value))
     await nextTick()
     treeRef.value?.setCheckedKeys(selectedIds.value)
   } catch (error: any) {
@@ -179,7 +179,7 @@ function handleCancel() {
 
 function handleCheck(_: any, checkedState: any) {
   const checkedKeys = (checkedState?.checkedKeys || []).map((key: string | number) => String(key))
-  selectedIds.value = normalizeSelectedMenuIDs(checkedKeys, derivedMenuIds.value)
+  selectedIds.value = normalizeSelectedMenuIDs(checkedKeys, candidateMenuIds.value)
 }
 
 function toggleExpand() {
@@ -192,7 +192,7 @@ function toggleExpand() {
 }
 
 function checkAll() {
-  selectedIds.value = [...derivedMenuIds.value]
+  selectedIds.value = [...candidateMenuIds.value]
   treeRef.value?.setCheckedKeys(selectedIds.value)
 }
 
@@ -205,7 +205,7 @@ async function handleSave() {
   if (!props.teamId) return
   saving.value = true
   try {
-    await fetchSetTeamMenus(props.teamId, normalizeSelectedMenuIDs(selectedIds.value, derivedMenuIds.value))
+    await fetchSetTeamMenus(props.teamId, normalizeSelectedMenuIDs(selectedIds.value, candidateMenuIds.value))
     ElMessage.success('团队菜单边界已保存')
     emit('success')
     visible.value = false

@@ -408,7 +408,7 @@ func (s *Service) resolveTenantActionContext(userID uuid.UUID, tenantID *uuid.UU
 	if err != nil {
 		return false, false, nil, err
 	}
-	configured := len(snapshot.PackageIDs) > 0 || len(snapshot.ExpandedPackageIDs) > 0 || len(snapshot.BlockedIDs) > 0 || len(snapshot.LegacyManualIDs) > 0
+	configured := len(snapshot.PackageIDs) > 0 || len(snapshot.ExpandedPackageIDs) > 0 || len(snapshot.BlockedIDs) > 0
 	if !configured && len(snapshot.EffectiveIDs) == 0 {
 		return true, false, boundaryActionSet, nil
 	}

@@ -10,7 +10,6 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 )
 
@@ -340,11 +339,5 @@ func (s *menuService) RestoreBackup(id uuid.UUID) error {
 
 // 清理无效的角色菜单关联（删除关联表中不存在于菜单表内的关联）
 func (s *menuService) cleanupInvalidRoleMenus() error {
-	// 删除角色菜单关联表中不存在于菜单表内的关联
-	if err := database.DB.Exec("DELETE FROM role_menus WHERE menu_id NOT IN (SELECT id FROM menus)").Error; err != nil {
-		s.logger.Error("Failed to cleanup invalid role-menus", zap.Error(err))
-		return err
-	}
-	s.logger.Info("Invalid role-menus cleaned up")
 	return nil
 }

@@ -606,3 +606,58 @@
 ### 下次方向
 - 继续检查 `backend/internal/modules/system/models/model.go` 与相关快照表字段，把仅剩的历史列和运行时实际消费语义再分层标注，降低后续误读成本。
 - 如果继续收尾权限改版，下一步优先看平台/团队快照刷新入口是否还能再并口，进一步压缩“缺失即现算”的残余分支。
+
+## 2026-03-24 快照模型降噪与刷新入口并口
+
+### 本次改动
+- 团队快照模型继续按迁移期语义降噪：`team_access_snapshots.manual_action_ids` 在 Go 模型层改名为 `LegacyManualActionIDs`，明确它只剩兼容/迁移职责；团队角色快照里的 `has_menu_boundary` 已从运行时模型移除，不再作为主链判断信号。
+- 团队快照服务对外刷新入口统一为 `RefreshSnapshot`，并把权限、功能包、团队动作保存等残留调用全部并到这一个入口，减少“RefreshCache/缺失即现算”双重语义继续扩散。
+- 共享权限来源面板的 blocked 卡片样式语义从 `manual` 收口为 `trimmed`，继续贴近“功能包展开 + 减法裁剪 + 快照读取”的单主链表达。
+- 已验证：`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build` 全部通过。
+
+### 下次方向
+- 继续检查共享权限组件与少量非主页面 API 是否还保留旧字段命名或旧语义别名，避免前端新页面再次把兼容字段带回主链。
+- 继续沿 `model.go` 和快照表字段梳理其余历史列，能降级成兼容/迁移语义的继续降级，不能删库的先在模型层与服务层彻底去主链化。
+
+## 2026-03-24 审计页与角色边界 API 语义收口
+
+### 本次改动
+- 平台用户与团队成员历史审计页继续去旧语义：用户权限/菜单弹窗里的 `compat-banner` 改成 `audit-banner`，成员权限例外页与入口文案改成“权限例外审计”，局部 `manual*` 状态和样式也统一收口到团队边界裁剪语义。
+- 平台角色、团队角色边界 API 包装层继续固定主字段：`expanded_package_ids` 现在优先作为主输出，必要时向下兼容 `package_ids`；类型定义中也把 `package_ids` 明确标成迁移兼容字段，减少新页面继续把它当主链字段消费。
+- 用户与团队成员动作审计接口的包装和后端命名同步降噪：前端 `fetchGetUserActions`/`fetchSetUserActions` 改成审计语义说明，`*Overrides` 仅保留兼容别名；后端用户动作接口摘要与 handler 内部变量也统一改成 audit/审计命名。
+- 已验证：`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build` 全部通过。
+
+### 下次方向
+- 继续清团队角色 action 弹窗和团队边界页里仍偏旧的本地变量名，把 `derived` 与“候选集”语义再彻底拆开，避免主页面心智继续混用。
+- 继续沿前后端快照模型与 API 返回清剩余 legacy 别名，优先处理还可能影响新页面开发的字段命名和注释，而不是只改文案。
+
+## 2026-03-24 旧现算分支与候选集命名全量收口
+
+### 本次改动
+- 团队动作快照运行时已彻底切到“功能包展开 - 团队屏蔽”单主链：`teamboundary` 不再把旧 `team_manual_action_permissions` 或旧 `tenant_action_permissions` 缓存结果并入 `effective_ids`，`from_cache` 也已从后端响应、前端 API 类型和页面提示里完全移除。
+- 鉴权侧同步去掉了旧 legacy 参与：`authorization` 不再把 `LegacyManualIDs` 视为团队边界已配置条件，团队动作来源接口只再暴露 `derived_* / blocked_*`，避免旧正向表继续影响平台/团队运行时判断。
+- 前端主页面继续一次性统一候选集命名：平台用户菜单裁剪、团队边界、团队菜单边界、团队角色能力裁剪、团队成员审计页里的 `derived*` 局部状态已经收口成 `candidate* / available*` 语义；平台用户动作页也直接改用 `fetchGetUserActions`，删除 `*Overrides` 兼容别名。
+- 已验证：`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build` 全部通过。
+
+### 下次方向
+- 如果继续往下收尾，下一步就不该再停留在命名层，而是直接清数据库迁移与 repository 里仅剩的旧 `team_manual_action_permissions` / `tenant_action_permissions` 兼容职责，准备彻底下线旧表。
+- 再扫一轮 `model.go`、`database.go` 和迁移脚本，把目前只剩清理职责的历史列、历史索引和历史仓库显式标成 legacy cleanup，最后为删库做准备。
+## 2026-03-24 快照缺失分支并口与历史字段继续降级
+
+### 本次改动
+- 团队边界快照、团队角色快照、平台角色快照读取全部改为严格走快照表；快照缺失时不再在读取链路上现算补链，团队 `manual_action_ids` 也彻底降级为仅落库兼容字段，不再参与运行时计算。
+- 平台角色/团队角色边界服务与前端 API 包装继续收口到 `expanded_package_ids + available_* + hidden/disabled_* + derived_sources` 主字段；团队成员与团队管理接口移除了 `role` 旧兼容入参，只保留 `role_code`。
+- README 与类型定义同步去掉旧主链暗示；本轮尚未执行校验，待统一跑 `backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build`。
+
+### 下次方向
+- 继续清 `model.go`、迁移脚本和 AutoMigrate 中仅剩的 legacy 列/旧表说明，把能降级为迁移清理职责的字段全部显式标成 legacy cleanup。
+- 继续扫共享权限组件和非主页面 API，避免 `package_ids`、旧审计别名或历史命名再次从前端包装层回流到新页面。
+
+## 2026-03-24 ???????????????
+### ????
+- ?????????????????AutoMigrate????????/??????????? `tenant_action_permissions`?`team_manual_action_permissions`?`role_menus`?`role_action_permissions` ? `team_access_snapshots.manual_action_ids` ???????
+- `backend/cmd/migrate/main.go` ?? `20260324_drop_legacy_permission_tables` ????????????????????? seed???? rebinding ?? scope ?????`main.go` ???????/???????? UTF-8 ???
+- ????`backend/go test ./...`?`frontend/pnpm exec vue-tsc --noEmit`?`frontend/pnpm build` ?????
+### ????
+- ??????????????????/????????????????????????????????
+- ??????????????????????? API???????????????????

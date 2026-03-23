@@ -67,13 +67,14 @@
 - `tenant_id IS NULL`：平台角色
 - `tenant_id = 当前团队`：团队角色
 
-### `tenant_action_permissions`
+### `team_access_snapshots`
 
 负责：
 
-- 某团队开通了哪些团队作用域功能
+- 某团队在“功能包展开 + 团队边界裁剪”之后的动作快照结果
+- `tenant_action_permissions` 与 `team_manual_action_permissions` 仅保留迁移兼容与清理职责
 
-这里是团队边界，不是团队成员的个人授权。
+这里是团队边界运行时主链，不是团队成员的个人授权。
 
 ## 4. 团队边界的判断规则
 
@@ -83,7 +84,7 @@
 
 - 当前 `tenant_id`
 - 当前 `action_id`
-- 是否存在于 `tenant_action_permissions`
+- 是否存在于 `team_access_snapshots.effective_action_ids`
 
 存在：
 
@@ -95,8 +96,8 @@
 
 当前约定已经收紧：
 
-- 如果某团队没有任何边界记录，不再视为全开
-- 而是视为“全部未开通”
+- 如果某团队还没有生成快照，不再由运行时现算补链
+- 而是应先走刷新入口生成快照，再按快照结果判定
 
 ## 5. 当前团队功能的判定顺序
 

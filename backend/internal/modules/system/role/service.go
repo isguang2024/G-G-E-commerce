@@ -74,9 +74,7 @@ type roleService struct {
 	packageActionRepo      user.FeaturePackageActionRepository
 	packageMenuRepo        user.FeaturePackageMenuRepository
 	packageBundleRepo      user.FeaturePackageBundleRepository
-	roleMenuRepo           user.RoleMenuRepository
 	roleHiddenMenuRepo     user.RoleHiddenMenuRepository
-	roleActionRepo         user.RoleActionPermissionRepository
 	roleDisabledActionRepo user.RoleDisabledActionRepository
 	roleDataRepo           user.RoleDataPermissionRepository
 	actionRepo             user.PermissionActionRepository
@@ -92,9 +90,7 @@ func NewRoleService(
 	packageActionRepo user.FeaturePackageActionRepository,
 	packageMenuRepo user.FeaturePackageMenuRepository,
 	packageBundleRepo user.FeaturePackageBundleRepository,
-	roleMenuRepo user.RoleMenuRepository,
 	roleHiddenMenuRepo user.RoleHiddenMenuRepository,
-	roleActionRepo user.RoleActionPermissionRepository,
 	roleDisabledActionRepo user.RoleDisabledActionRepository,
 	roleDataRepo user.RoleDataPermissionRepository,
 	actionRepo user.PermissionActionRepository,
@@ -109,9 +105,7 @@ func NewRoleService(
 		packageActionRepo:      packageActionRepo,
 		packageMenuRepo:        packageMenuRepo,
 		packageBundleRepo:      packageBundleRepo,
-		roleMenuRepo:           roleMenuRepo,
 		roleHiddenMenuRepo:     roleHiddenMenuRepo,
-		roleActionRepo:         roleActionRepo,
 		roleDisabledActionRepo: roleDisabledActionRepo,
 		roleDataRepo:           roleDataRepo,
 		actionRepo:             actionRepo,
@@ -242,13 +236,7 @@ func (s *roleService) Delete(id uuid.UUID) error {
 		if err := tx.Where("role_id = ?", id).Delete(&user.RoleHiddenMenu{}).Error; err != nil {
 			return err
 		}
-		if err := tx.Where("role_id = ?", id).Delete(&user.RoleMenu{}).Error; err != nil {
-			return err
-		}
 		if err := tx.Where("role_id = ?", id).Delete(&user.RoleDisabledAction{}).Error; err != nil {
-			return err
-		}
-		if err := tx.Where("role_id = ?", id).Delete(&user.RoleActionPermission{}).Error; err != nil {
 			return err
 		}
 		if err := tx.Where("role_id = ?", id).Delete(&user.RoleDataPermission{}).Error; err != nil {
@@ -345,9 +333,6 @@ func (s *roleService) SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error 
 	if err := s.roleHiddenMenuRepo.ReplaceRoleHiddenMenus(roleID, hiddenMenuIDs); err != nil {
 		return err
 	}
-	if err := s.roleMenuRepo.SetRoleMenus(roleID, []uuid.UUID{}); err != nil {
-		return err
-	}
 	if s.refresher != nil {
 		return s.refresher.RefreshPlatformRole(roleID)
 	}
@@ -403,9 +388,6 @@ func (s *roleService) SetRoleActions(roleID uuid.UUID, actions []user.RoleAction
 	}
 	disabledActionIDs := subtractUUIDs(boundary.AvailableActionIDs, selectedActionIDs)
 	if err := s.roleDisabledActionRepo.ReplaceRoleDisabledActions(roleID, disabledActionIDs); err != nil {
-		return err
-	}
-	if err := s.roleActionRepo.SetRoleActions(roleID, []user.RoleActionPermission{}); err != nil {
 		return err
 	}
 	if s.refresher != nil {
@@ -511,30 +493,17 @@ func (s *roleService) GetRoleMenuBoundary(roleID uuid.UUID) (*RoleMenuBoundary, 
 		if snapshotErr != nil {
 			return nil, snapshotErr
 		}
-		if snapshot != nil {
-			packageIDs, packageErr := s.rolePackageRepo.GetPackageIDsByRoleID(roleID)
-			if packageErr != nil {
-				return nil, packageErr
-			}
-			return &RoleMenuBoundary{
-				PackageIDs:         dedupeUUIDs(packageIDs),
-				ExpandedPackageIDs: dedupeUUIDs(snapshot.ExpandedPackageIDs),
-				AvailableMenuIDs:   dedupeUUIDs(snapshot.AvailableMenuIDs),
-				HiddenMenuIDs:      dedupeUUIDs(snapshot.HiddenMenuIDs),
-				EffectiveMenuIDs:   dedupeUUIDs(snapshot.EffectiveMenuIDs),
-				MenuSourceMap:      filterUUIDSourceMap(snapshot.MenuSourceMap, snapshot.AvailableMenuIDs),
-				HasPackageConfig:   snapshot.HasPackageConfig,
-			}, nil
-		}
+		return &RoleMenuBoundary{
+			PackageIDs:         dedupeUUIDs(snapshot.PackageIDs),
+			ExpandedPackageIDs: dedupeUUIDs(snapshot.ExpandedPackageIDs),
+			AvailableMenuIDs:   dedupeUUIDs(snapshot.AvailableMenuIDs),
+			HiddenMenuIDs:      dedupeUUIDs(snapshot.HiddenMenuIDs),
+			EffectiveMenuIDs:   dedupeUUIDs(snapshot.EffectiveMenuIDs),
+			MenuSourceMap:      filterUUIDSourceMap(snapshot.MenuSourceMap, snapshot.AvailableMenuIDs),
+			HasPackageConfig:   snapshot.HasPackageConfig,
+		}, nil
 	}
-	return &RoleMenuBoundary{
-		PackageIDs:       []uuid.UUID{},
-		AvailableMenuIDs: []uuid.UUID{},
-		HiddenMenuIDs:    []uuid.UUID{},
-		EffectiveMenuIDs: []uuid.UUID{},
-		MenuSourceMap:    map[uuid.UUID][]uuid.UUID{},
-		HasPackageConfig: false,
-	}, nil
+	return &RoleMenuBoundary{PackageIDs: []uuid.UUID{}, ExpandedPackageIDs: []uuid.UUID{}, AvailableMenuIDs: []uuid.UUID{}, HiddenMenuIDs: []uuid.UUID{}, EffectiveMenuIDs: []uuid.UUID{}, MenuSourceMap: map[uuid.UUID][]uuid.UUID{}, HasPackageConfig: false}, nil
 }
 
 func (s *roleService) GetRoleActionBoundary(roleID uuid.UUID) (*RoleActionBoundary, error) {
@@ -553,137 +522,17 @@ func (s *roleService) GetRoleActionBoundary(roleID uuid.UUID) (*RoleActionBounda
 		if snapshotErr != nil {
 			return nil, snapshotErr
 		}
-		if snapshot != nil {
-			packageIDs, packageErr := s.rolePackageRepo.GetPackageIDsByRoleID(roleID)
-			if packageErr != nil {
-				return nil, packageErr
-			}
-			return &RoleActionBoundary{
-				PackageIDs:         dedupeUUIDs(packageIDs),
-				ExpandedPackageIDs: dedupeUUIDs(snapshot.ExpandedPackageIDs),
-				AvailableActionIDs: dedupeUUIDs(snapshot.AvailableActionIDs),
-				DisabledActionIDs:  dedupeUUIDs(snapshot.DisabledActionIDs),
-				EffectiveActionIDs: dedupeUUIDs(snapshot.EffectiveActionIDs),
-				ActionSourceMap:    filterUUIDSourceMap(snapshot.ActionSourceMap, snapshot.AvailableActionIDs),
-				HasPackageConfig:   snapshot.HasPackageConfig,
-			}, nil
-		}
+		return &RoleActionBoundary{
+			PackageIDs:         dedupeUUIDs(snapshot.PackageIDs),
+			ExpandedPackageIDs: dedupeUUIDs(snapshot.ExpandedPackageIDs),
+			AvailableActionIDs: dedupeUUIDs(snapshot.AvailableActionIDs),
+			DisabledActionIDs:  dedupeUUIDs(snapshot.DisabledActionIDs),
+			EffectiveActionIDs: dedupeUUIDs(snapshot.EffectiveActionIDs),
+			ActionSourceMap:    filterUUIDSourceMap(snapshot.ActionSourceMap, snapshot.AvailableActionIDs),
+			HasPackageConfig:   snapshot.HasPackageConfig,
+		}, nil
 	}
-	return &RoleActionBoundary{
-		PackageIDs:         []uuid.UUID{},
-		AvailableActionIDs: []uuid.UUID{},
-		DisabledActionIDs:  []uuid.UUID{},
-		EffectiveActionIDs: []uuid.UUID{},
-		ActionSourceMap:    map[uuid.UUID][]uuid.UUID{},
-		HasPackageConfig:   false,
-	}, nil
-}
-
-func (s *roleService) getExpandedPlatformPackageIDs(roleID uuid.UUID) ([]uuid.UUID, error) {
-	packageIDs, err := s.rolePackageRepo.GetPackageIDsByRoleID(roleID)
-	if err != nil {
-		return nil, err
-	}
-	return s.expandPackageIDs(packageIDs, "platform")
-}
-
-func (s *roleService) getPackageActionBoundary(packageIDs []uuid.UUID) ([]uuid.UUID, map[uuid.UUID][]uuid.UUID, error) {
-	result := make([]uuid.UUID, 0)
-	seen := make(map[uuid.UUID]struct{})
-	sourceMap := make(map[uuid.UUID][]uuid.UUID)
-	for _, packageID := range packageIDs {
-		actionIDs, err := s.packageActionRepo.GetActionIDsByPackageID(packageID)
-		if err != nil {
-			return nil, nil, err
-		}
-		for _, actionID := range actionIDs {
-			sourceMap[actionID] = appendUUIDIfMissing(sourceMap[actionID], packageID)
-			if _, ok := seen[actionID]; ok {
-				continue
-			}
-			seen[actionID] = struct{}{}
-			result = append(result, actionID)
-		}
-	}
-	return result, sourceMap, nil
-}
-
-func (s *roleService) getPackageMenuBoundary(packageIDs []uuid.UUID) ([]uuid.UUID, map[uuid.UUID][]uuid.UUID, error) {
-	result := make([]uuid.UUID, 0)
-	seen := make(map[uuid.UUID]struct{})
-	sourceMap := make(map[uuid.UUID][]uuid.UUID)
-	for _, packageID := range packageIDs {
-		menuIDs, err := s.packageMenuRepo.GetMenuIDsByPackageIDs([]uuid.UUID{packageID})
-		if err != nil {
-			return nil, nil, err
-		}
-		for _, menuID := range menuIDs {
-			sourceMap[menuID] = appendUUIDIfMissing(sourceMap[menuID], packageID)
-			if _, ok := seen[menuID]; ok {
-				continue
-			}
-			seen[menuID] = struct{}{}
-			result = append(result, menuID)
-		}
-	}
-	return result, sourceMap, nil
-}
-
-func (s *roleService) expandPackageIDs(packageIDs []uuid.UUID, context string) ([]uuid.UUID, error) {
-	result := make([]uuid.UUID, 0, len(packageIDs))
-	visited := make(map[uuid.UUID]struct{}, len(packageIDs))
-	seen := make(map[uuid.UUID]struct{}, len(packageIDs))
-	for _, packageID := range packageIDs {
-		if err := s.expandPackageID(packageID, context, visited, seen, &result); err != nil {
-			return nil, err
-		}
-	}
-	return result, nil
-}
-
-func (s *roleService) expandPackageID(packageID uuid.UUID, context string, visited map[uuid.UUID]struct{}, seen map[uuid.UUID]struct{}, result *[]uuid.UUID) error {
-	if _, ok := visited[packageID]; ok {
-		return nil
-	}
-	visited[packageID] = struct{}{}
-	pkg, err := s.featurePkgRepo.GetByID(packageID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil
-		}
-		return err
-	}
-	if pkg.Status != "normal" || !supportsContext(pkg.ContextType, context) {
-		return nil
-	}
-	if pkg.PackageType == "bundle" {
-		childPackageIDs, err := s.packageBundleRepo.GetChildPackageIDs(packageID)
-		if err != nil {
-			return err
-		}
-		for _, childPackageID := range childPackageIDs {
-			if err := s.expandPackageID(childPackageID, context, visited, seen, result); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-	if _, ok := seen[packageID]; ok {
-		return nil
-	}
-	seen[packageID] = struct{}{}
-	*result = append(*result, packageID)
-	return nil
-}
-
-func supportsContext(packageContext, expectedContext string) bool {
-	if packageContext == "" {
-		return true
-	}
-	if packageContext == expectedContext {
-		return true
-	}
-	return packageContext == "platform,team"
+	return &RoleActionBoundary{PackageIDs: []uuid.UUID{}, ExpandedPackageIDs: []uuid.UUID{}, AvailableActionIDs: []uuid.UUID{}, DisabledActionIDs: []uuid.UUID{}, EffectiveActionIDs: []uuid.UUID{}, ActionSourceMap: map[uuid.UUID][]uuid.UUID{}, HasPackageConfig: false}, nil
 }
 
 func ensureSubsetUUIDs(selected []uuid.UUID, allowed []uuid.UUID, errMsg string) ([]uuid.UUID, error) {

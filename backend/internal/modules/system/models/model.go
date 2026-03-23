@@ -116,15 +116,6 @@ func (UserRole) TableName() string {
 	return "user_roles"
 }
 
-type RoleMenu struct {
-	RoleID uuid.UUID `gorm:"type:uuid;primaryKey" json:"role_id"`
-	MenuID uuid.UUID `gorm:"type:uuid;primaryKey" json:"menu_id"`
-}
-
-func (RoleMenu) TableName() string {
-	return "role_menus"
-}
-
 type RoleHiddenMenu struct {
 	RoleID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"role_id"`
 	MenuID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"menu_id"`
@@ -251,15 +242,6 @@ func (RoleFeaturePackage) TableName() string {
 	return "role_feature_packages"
 }
 
-type RoleActionPermission struct {
-	RoleID   uuid.UUID `gorm:"type:uuid;primaryKey" json:"role_id"`
-	ActionID uuid.UUID `gorm:"type:uuid;primaryKey" json:"action_id"`
-}
-
-func (RoleActionPermission) TableName() string {
-	return "role_action_permissions"
-}
-
 type RoleDisabledAction struct {
 	RoleID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"role_id"`
 	ActionID  uuid.UUID `gorm:"type:uuid;primaryKey" json:"action_id"`
@@ -280,28 +262,6 @@ type RoleDataPermission struct {
 
 func (RoleDataPermission) TableName() string {
 	return "role_data_permissions"
-}
-
-type TenantActionPermission struct {
-	TenantID uuid.UUID `gorm:"type:uuid;primaryKey" json:"tenant_id"`
-	ActionID uuid.UUID `gorm:"type:uuid;primaryKey" json:"action_id"`
-	Enabled  bool      `gorm:"not null;default:true" json:"enabled"`
-}
-
-func (TenantActionPermission) TableName() string {
-	return "tenant_action_permissions"
-}
-
-type TeamManualActionPermission struct {
-	TenantID  uuid.UUID `gorm:"type:uuid;primaryKey" json:"tenant_id"`
-	ActionID  uuid.UUID `gorm:"type:uuid;primaryKey" json:"action_id"`
-	Enabled   bool      `gorm:"not null;default:true" json:"enabled"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-func (TeamManualActionPermission) TableName() string {
-	return "team_manual_action_permissions"
 }
 
 type TeamBlockedMenu struct {
@@ -404,7 +364,6 @@ type TeamAccessSnapshot struct {
 	DerivedActionIDs   []string            `gorm:"type:jsonb;serializer:json" json:"derived_action_ids"`
 	DerivedActionMap   map[string][]string `gorm:"type:jsonb;serializer:json" json:"derived_action_map"`
 	BlockedActionIDs   []string            `gorm:"type:jsonb;serializer:json" json:"blocked_action_ids"`
-	ManualActionIDs    []string            `gorm:"type:jsonb;serializer:json" json:"manual_action_ids"`
 	EffectiveActionIDs []string            `gorm:"type:jsonb;serializer:json" json:"effective_action_ids"`
 	DerivedMenuIDs     []string            `gorm:"type:jsonb;serializer:json" json:"derived_menu_ids"`
 	DerivedMenuMap     map[string][]string `gorm:"type:jsonb;serializer:json" json:"derived_menu_map"`
@@ -432,7 +391,6 @@ type TeamRoleAccessSnapshot struct {
 	HiddenMenuIDs      []string            `gorm:"type:jsonb;serializer:json" json:"hidden_menu_ids"`
 	MenuIDs            []string            `gorm:"type:jsonb;serializer:json" json:"menu_ids"`
 	MenuSourceMap      map[string][]string `gorm:"type:jsonb;serializer:json" json:"menu_source_map"`
-	HasMenuBoundary    bool                `gorm:"not null;default:false" json:"has_menu_boundary"`
 	Inherited          bool                `gorm:"not null;default:false" json:"inherited"`
 	RefreshedAt        time.Time           `gorm:"not null;default:CURRENT_TIMESTAMP" json:"refreshed_at"`
 	CreatedAt          time.Time           `json:"created_at"`

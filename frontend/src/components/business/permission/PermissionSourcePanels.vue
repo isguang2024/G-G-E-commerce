@@ -151,7 +151,7 @@ const filteredBlockedItems = computed(() => {
 
 const blockedCardClass = computed(() => {
   if (props.blockedTagType === 'primary' || props.blockedTagType === 'info') {
-    return 'source-card--manual'
+    return 'source-card--trimmed'
   }
   return 'source-card--blocked'
 })
@@ -211,7 +211,7 @@ function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem) {
   background: #fff6f6;
 }
 
-.source-card--manual {
+.source-card--trimmed {
   border-color: #bfd3ff;
   background: #f5f9ff;
 }

@@ -326,7 +326,7 @@ declare namespace Api {
       action_ids: string[]
       available_action_ids: string[]
       actions?: PermissionActionItem[]
-      package_ids: string[]
+      package_ids?: string[] // 迁移兼容字段，主链请优先使用 expanded_package_ids
       expanded_package_ids?: string[]
       disabled_action_ids?: string[]
       derived_sources?: Array<{
@@ -338,7 +338,7 @@ declare namespace Api {
     interface RoleMenuBoundaryResponse {
       menu_ids: string[]
       available_menu_ids: string[]
-      package_ids: string[]
+      package_ids?: string[] // 迁移兼容字段，主链请优先使用 expanded_package_ids
       expanded_package_ids?: string[]
       hidden_menu_ids?: string[]
       derived_sources?: Array<{
@@ -354,7 +354,6 @@ declare namespace Api {
         package_ids: string[]
       }>
       blocked_action_ids?: string[]
-      from_cache?: boolean
     }
 
     interface TeamMenuOriginsResponse {
@@ -388,21 +387,6 @@ declare namespace Api {
 
     type APIEndpointList = Api.Common.PaginatedResponse<APIEndpointItem>
 
-    interface FeaturePackageItem {
-      id: string
-      packageKey: string
-      name: string
-      description?: string
-      contextType?: 'platform' | 'team' | string
-      menuCount?: number
-      status: string
-      sortOrder?: number
-      createdAt?: string
-      updatedAt?: string
-    }
-
-    type FeaturePackageList = Api.Common.PaginatedResponse<FeaturePackageItem>
-
     type APIEndpointSearchParams = Partial<
       Pick<APIEndpointItem, 'method' | 'path' | 'module' | 'status'> &
         Api.Common.CommonSearchParams & {
@@ -424,36 +408,26 @@ declare namespace Api {
             featureKind?: string
         }
     >
-
-    type FeaturePackageSearchParams = Partial<
-      Pick<FeaturePackageItem, 'name' | 'status'> &
-        Api.Common.CommonSearchParams & {
-          keyword?: string
-          packageKey?: string
-          contextType?: string
-        }
-    >
-
-      interface PermissionActionCreateParams {
-        permission_key: string
-        resource_code?: string
-        action_code?: string
-        module_code?: string
-        context_type?: 'platform' | 'team' | string
-        feature_kind?: 'system' | 'business' | string
+    interface PermissionActionCreateParams {
+      permission_key: string
+      resource_code?: string
+      action_code?: string
+      module_code?: string
+      context_type?: 'platform' | 'team' | string
+      feature_kind?: 'system' | 'business' | string
       name: string
       description?: string
       status?: string
       sort_order?: number
     }
 
-      interface PermissionActionUpdateParams {
-        permission_key?: string
-        resource_code?: string
-        action_code?: string
-        module_code?: string
-        context_type?: 'platform' | 'team' | string
-        feature_kind?: 'system' | 'business' | string
+    interface PermissionActionUpdateParams {
+      permission_key?: string
+      resource_code?: string
+      action_code?: string
+      module_code?: string
+      context_type?: 'platform' | 'team' | string
+      feature_kind?: 'system' | 'business' | string
       name?: string
       description?: string
       status?: string
@@ -461,24 +435,6 @@ declare namespace Api {
     }
 
     type RoleActionPermissionItem = string
-
-    interface FeaturePackageCreateParams {
-      package_key: string
-      name: string
-      description?: string
-      context_type?: 'platform' | 'team' | string
-      status?: string
-      sort_order?: number
-    }
-
-    interface FeaturePackageUpdateParams {
-      package_key?: string
-      name?: string
-      description?: string
-      context_type?: 'platform' | 'team' | string
-      status?: string
-      sort_order?: number
-    }
 
     interface RoleDataPermissionItem {
       resourceCode: string
@@ -502,7 +458,7 @@ declare namespace Api {
     }
 
     interface UserActionPermissionResponse {
-      actions: UserActionPermissionItem[]
+      actions: UserActionPermissionItem[] // 历史例外审计字段，主链候选集请优先使用 available_action_ids / available_actions
       available_action_ids?: string[]
       available_actions?: PermissionActionItem[]
       expanded_package_ids?: string[]
@@ -601,7 +557,7 @@ declare namespace Api {
     }
 
     interface TeamMemberActionPermissionResponse {
-      actions: TeamMemberActionPermissionItem[]
+      actions: TeamMemberActionPermissionItem[] // 历史成员例外审计字段，主链候选集请优先使用 available_action_ids / available_actions
       available_action_ids?: string[]
       available_actions?: PermissionActionItem[]
       derived_sources?: Array<{

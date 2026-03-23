@@ -33,17 +33,16 @@ func (m *PermissionModule) Init() error {
 
 func (m *PermissionModule) RegisterRoutes(rg *gin.RouterGroup) {
 	actionRepo := user.NewPermissionActionRepository(m.db)
-	roleActionRepo := user.NewRoleActionPermissionRepository(m.db)
 	packageActionRepo := user.NewFeaturePackageActionRepository(m.db)
 	teamPackageRepo := user.NewTeamFeaturePackageRepository(m.db)
-	tenantActionRepo := user.NewTenantActionPermissionRepository(m.db)
-	manualActionRepo := user.NewTeamManualActionPermissionRepository(m.db)
+	roleDisabledActionRepo := user.NewRoleDisabledActionRepository(m.db)
+	teamBlockedActionRepo := user.NewTeamBlockedActionRepository(m.db)
 	userActionRepo := user.NewUserActionPermissionRepository(m.db)
 	boundaryService := teamboundary.NewService(m.db)
 	platformService := platformaccess.NewService(m.db)
 	roleSnapshotService := platformroleaccess.NewService(m.db)
 	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
-	service := NewPermissionService(actionRepo, roleActionRepo, packageActionRepo, teamPackageRepo, tenantActionRepo, manualActionRepo, userActionRepo, boundaryService, refresher)
+	service := NewPermissionService(actionRepo, packageActionRepo, teamPackageRepo, roleDisabledActionRepo, teamBlockedActionRepo, userActionRepo, boundaryService, refresher)
 	handler := NewPermissionHandler(service, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 

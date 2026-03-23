@@ -8,17 +8,17 @@
   >
     <div class="dialog-shell" v-loading="loading">
         <div class="dialog-note">
-          平台用户请优先绑定功能包和菜单裁剪。这里保留的是历史兼容权限例外审计视图，用于查看既有 allow/deny 例外，不再作为主配置入口。
+          平台用户请优先绑定功能包和菜单裁剪。这里保留的是历史权限例外审计视图，用于查看既有 allow/deny 例外，不再作为主配置入口。
         </div>
         <div
-          class="compat-banner"
-          :class="hasPackageConfig ? 'compat-banner--success' : 'compat-banner--warning'"
+          class="audit-banner"
+          :class="hasPackageConfig ? 'audit-banner--success' : 'audit-banner--warning'"
         >
           <span>
             {{
               hasPackageConfig
               ? '当前用户已进入功能包约束模式：这里只能对已绑定功能包展开范围内的能力做个人例外。'
-              : '当前用户尚未绑定功能包，仍处于兼容回退模式：这里只展示历史兼容例外，建议先绑定功能包并使用菜单裁剪。'
+              : '当前用户尚未绑定功能包，仍处于历史审计回退模式：这里只展示历史例外记录，建议先绑定功能包并使用菜单裁剪。'
             }}
           </span>
           <ElButton v-if="!hasPackageConfig" type="warning" text @click="emit('open-packages')">
@@ -59,7 +59,7 @@
                 </ElTag>
               </div>
               <div v-else class="package-fallback-note">
-                当前未绑定功能包，权限例外页正在使用兼容候选范围。
+                当前未绑定功能包，权限例外页正在使用历史审计候选范围。
               </div>
 
               <div class="toolbar-filters">
@@ -164,7 +164,7 @@
             </div>
 
             <div class="cascader-footer">
-              <span class="footer-note">当前页仅用于审计历史兼容例外。平台用户正式主链为“功能包 + 菜单裁剪”。</span>
+              <span class="footer-note">当前页仅用于审计历史例外记录。平台用户正式主链为“功能包 + 菜单裁剪”。</span>
             </div>
           </div>
         </ElTabPane>
@@ -175,7 +175,7 @@
               <ElTag effect="plain" round>角色 {{ roleTags.length }}</ElTag>
               <ElTag type="success" effect="plain" round>功能包 {{ featurePackages.length }}</ElTag>
               <ElTag :type="hasPackageConfig ? 'success' : 'warning'" effect="plain" round>
-                {{ hasPackageConfig ? '功能包约束' : '兼容回退' }}
+                {{ hasPackageConfig ? '功能包约束' : '历史审计回退' }}
               </ElTag>
               <ElTag type="warning" effect="plain" round>例外 {{ configuredActionIds.length }}</ElTag>
             </div>
@@ -256,7 +256,7 @@ import { ElMessage } from 'element-plus'
 import type { CascaderOption, CascaderProps } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { fetchGetUserPackages, fetchGetUserActionOverrides } from '@/api/system-manage'
+import { fetchGetUserPackages, fetchGetUserActions } from '@/api/system-manage'
 
 interface Props {
   modelValue: boolean
@@ -492,7 +492,7 @@ async function loadData() {
 
   try {
     const [currentRes, packageRes] = await Promise.all([
-      fetchGetUserActionOverrides(props.userData.id),
+      fetchGetUserActions(props.userData.id),
       fetchGetUserPackages(props.userData.id)
     ])
 
@@ -507,22 +507,12 @@ async function loadData() {
         item.package_ids
       ])
     )
-    const compatActions = currentRes?.actions || []
-    const compatActionItems = compatActions
-      .map((item) => item.action)
-      .filter(Boolean) as Api.SystemManage.PermissionActionItem[]
-    permissionActions.value =
-      currentRes?.available_actions?.length
-        ? currentRes.available_actions
-        : compatActionItems
-    const availableActionIDSet = new Set(
-      availableActionIds.value.length
-        ? availableActionIds.value
-        : permissionActions.value.map((item) => item.id)
-    )
+    const auditOverrideEntries = currentRes?.actions || []
+    permissionActions.value = currentRes?.available_actions || []
+    const availableActionIDSet = new Set(availableActionIds.value)
 
     const nextMap: Record<string, 'allow' | 'deny'> = {}
-    compatActions.forEach((item) => {
+    auditOverrideEntries.forEach((item) => {
       if (
         item.action_id &&
         availableActionIDSet.has(item.action_id) &&
@@ -676,7 +666,7 @@ async function handleSave() {
   line-height: 1.6;
 }
 
-.compat-banner {
+.audit-banner {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -687,13 +677,13 @@ async function handleSave() {
   line-height: 1.6;
 }
 
-.compat-banner--success {
+.audit-banner--success {
   color: #166534;
   border: 1px solid #bbf7d0;
   background: #f0fdf4;
 }
 
-.compat-banner--warning {
+.audit-banner--warning {
   color: #92400e;
   border: 1px solid #fde68a;
   background: #fffbeb;

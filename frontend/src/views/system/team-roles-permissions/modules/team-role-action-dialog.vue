@@ -80,14 +80,14 @@
   const saving = ref(false)
   const actions = ref<Api.SystemManage.PermissionActionItem[]>([])
   const selectedIds = ref<string[]>([])
-  const derivedActionIds = ref<string[]>([])
+  const candidateActionIds = ref<string[]>([])
   const derivedSourceMap = ref<Record<string, string[]>>({})
   const featurePackages = ref<Api.SystemManage.FeaturePackageItem[]>([])
   const selectedDerivedPackageId = ref('')
-  const derivedActionCount = ref(0)
+  const candidateActionCount = ref(0)
   const inherited = ref(false)
   const derivedActions = computed(() => {
-    const idSet = new Set(derivedActionIds.value)
+    const idSet = new Set(candidateActionIds.value)
     return actions.value.filter((item) => idSet.has(item.id))
   })
   const blockedActions = computed(() => {
@@ -108,7 +108,7 @@
     { label: '类型', value: props.roleData?.isGlobal ? '基础角色' : '团队自定义', type: props.roleData?.isGlobal ? 'info' as const : 'success' as const },
     { label: '角色功能包', value: featurePackages.value.length, type: 'warning' as const },
     { label: '继承模式', value: inherited.value ? '继承团队功能包' : '角色独立功能包', type: 'primary' as const },
-    { label: '功能包展开', value: derivedActionCount.value, type: 'warning' as const },
+    { label: '功能包展开', value: candidateActionCount.value, type: 'warning' as const },
     { label: '可裁剪', value: actions.value.length, type: 'success' as const },
     { label: '已保留', value: selectedIds.value.length, type: 'success' as const },
       { label: '已关闭', value: blockedCount.value, type: 'danger' as const }
@@ -126,14 +126,14 @@
         ])
         actions.value = selected?.actions || []
         selectedIds.value = [...(selected?.action_ids || [])]
-        derivedActionIds.value = [...(selected?.available_action_ids || [])]
+        candidateActionIds.value = [...(selected?.available_action_ids || [])]
         derivedSourceMap.value = Object.fromEntries(
           (selected?.derived_sources || []).map((item) => [item.action_id, item.package_ids])
         )
         featurePackages.value = packagesRes?.packages || []
         selectedDerivedPackageId.value = ''
         inherited.value = Boolean(packagesRes?.inherited)
-        derivedActionCount.value = selected?.available_action_ids?.length || 0
+        candidateActionCount.value = selected?.available_action_ids?.length || 0
       } catch (error: any) {
         ElMessage.error(error?.message || '加载团队角色权限裁剪失败')
       } finally {

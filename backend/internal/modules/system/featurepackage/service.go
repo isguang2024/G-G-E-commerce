@@ -226,7 +226,7 @@ func (s *service) Delete(id uuid.UUID) error {
 		return s.refresher.RefreshTeams(teamIDs)
 	}
 	for _, teamID := range teamIDs {
-		if _, err := s.boundaryService.RefreshCache(teamID); err != nil {
+		if _, err := s.boundaryService.RefreshSnapshot(teamID); err != nil {
 			return err
 		}
 	}
@@ -429,7 +429,7 @@ func (s *service) SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *
 			}
 			continue
 		}
-		if _, err := s.boundaryService.RefreshCache(teamID); err != nil {
+		if _, err := s.boundaryService.RefreshSnapshot(teamID); err != nil {
 			return err
 		}
 	}
@@ -455,7 +455,7 @@ func (s *service) SetTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, gran
 	if s.refresher != nil {
 		return s.refresher.RefreshTeam(teamID)
 	}
-	_, err := s.boundaryService.RefreshCache(teamID)
+	_, err := s.boundaryService.RefreshSnapshot(teamID)
 	return err
 }
 

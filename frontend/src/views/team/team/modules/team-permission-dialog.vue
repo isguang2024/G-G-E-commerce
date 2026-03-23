@@ -33,13 +33,6 @@
         <span>黄色统计表示来自功能包展开的基础能力，蓝色统计表示当前团队边界已屏蔽的权限。</span>
       </div>
 
-      <ElAlert
-        v-if="fromCache"
-        type="warning"
-        :closable="false"
-        title="当前团队边界来源暂时从缓存回退读取，建议后续刷新团队边界快照。"
-      />
-
       <PermissionSourcePanels
         v-model="selectedDerivedPackageId"
         :packages="featurePackages"
@@ -101,13 +94,12 @@ const saving = ref(false)
 const permissionActions = ref<Api.SystemManage.PermissionActionItem[]>([])
 const selectedIds = ref<string[]>([])
 const featurePackages = ref<Api.SystemManage.FeaturePackageItem[]>([])
-const derivedActionIds = ref<string[]>([])
+const candidateActionIds = ref<string[]>([])
 const blockedActionIds = ref<string[]>([])
 const derivedSourceMap = ref<Record<string, string[]>>({})
 const selectedDerivedPackageId = ref('')
-const fromCache = ref(false)
 const derivedActions = computed(() => {
-  const idSet = new Set(derivedActionIds.value)
+  const idSet = new Set(candidateActionIds.value)
   return permissionActions.value.filter((item) => idSet.has(item.id))
 })
 const blockedActions = computed(() => {
@@ -118,9 +110,9 @@ const blockedActionCount = computed(() => blockedActions.value.length)
 const summaryItems = computed(() => [
   { label: '团队', value: props.teamName || '-' },
   { label: '边界结果', value: selectedIds.value.length, type: 'success' as const },
-  { label: '候选', value: permissionActions.value.length, type: 'info' as const },
+  { label: '候选', value: candidateActionIds.value.length, type: 'info' as const },
   { label: '功能包', value: featurePackages.value.length },
-  { label: '功能包展开', value: derivedActionIds.value.length, type: 'warning' as const },
+  { label: '功能包展开', value: candidateActionIds.value.length, type: 'warning' as const },
       { label: '边界已屏蔽', value: blockedActionCount.value, type: 'primary' as const }
 ])
 const derivedActionItems = computed(() => derivedActions.value.map((item) => ({ id: item.id, label: item.name })))
@@ -149,13 +141,12 @@ async function loadData() {
     permissionActions.value = actionsRes?.records || []
     selectedIds.value = [...(currentRes?.action_ids || [])]
     featurePackages.value = packageRes?.packages || []
-    derivedActionIds.value = [...(originsRes?.derived_action_ids || [])]
+    candidateActionIds.value = [...(originsRes?.derived_action_ids || [])]
     blockedActionIds.value = [...(originsRes?.blocked_action_ids || [])]
     derivedSourceMap.value = Object.fromEntries(
       (originsRes?.derived_sources || []).map((item) => [item.action_id, item.package_ids])
     )
     selectedDerivedPackageId.value = ''
-    fromCache.value = Boolean(originsRes?.from_cache)
   } catch (error: any) {
     ElMessage.error(error?.message || '加载团队边界失败')
   } finally {

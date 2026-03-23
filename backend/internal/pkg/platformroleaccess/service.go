@@ -43,7 +43,7 @@ func (s *service) GetSnapshot(roleID uuid.UUID) (*Snapshot, error) {
 	if snapshot != nil {
 		return snapshot, nil
 	}
-	return s.RefreshSnapshot(roleID)
+	return emptySnapshot(), nil
 }
 
 func (s *service) RefreshSnapshot(roleID uuid.UUID) (*Snapshot, error) {
@@ -448,4 +448,20 @@ func sourceMapUUIDsToStrings(source map[uuid.UUID][]uuid.UUID) map[string][]stri
 		result[key.String()] = idsToUUIDStrings(values)
 	}
 	return result
+}
+
+func emptySnapshot() *Snapshot {
+	return &Snapshot{
+		PackageIDs:         []uuid.UUID{},
+		ExpandedPackageIDs: []uuid.UUID{},
+		AvailableActionIDs: []uuid.UUID{},
+		ActionSourceMap:    map[uuid.UUID][]uuid.UUID{},
+		DisabledActionIDs:  []uuid.UUID{},
+		EffectiveActionIDs: []uuid.UUID{},
+		AvailableMenuIDs:   []uuid.UUID{},
+		MenuSourceMap:      map[uuid.UUID][]uuid.UUID{},
+		HiddenMenuIDs:      []uuid.UUID{},
+		EffectiveMenuIDs:   []uuid.UUID{},
+		HasPackageConfig:   false,
+	}
 }

@@ -42,7 +42,7 @@ func (s *service) RefreshTeam(teamID uuid.UUID) error {
 	if teamID == uuid.Nil || s.boundaryService == nil {
 		return nil
 	}
-	_, err := s.boundaryService.RefreshCache(teamID)
+	_, err := s.boundaryService.RefreshSnapshot(teamID)
 	return err
 }
 

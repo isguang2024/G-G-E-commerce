@@ -38,7 +38,7 @@
                 />
               </ElFormItem>
               <ElFormItem label="团队角色" class="mb-0">
-                <ElSelect v-model="addForm.role" placeholder="请选择角色" style="width: 140px">
+                <ElSelect v-model="addForm.role_code" placeholder="请选择角色" style="width: 140px">
                   <ElOption label="团队管理员" value="team_admin" />
                   <ElOption label="团队成员" value="team_member" />
                 </ElSelect>
@@ -90,7 +90,7 @@
                         </ElDropdownItem>
                         <ElDropdownItem v-if="hasAction('team.member.assign_action')" command="action">
                           <ElIcon><UserFilled /></ElIcon>
-                          权限例外（兼容）
+                          权限例外审计
                         </ElDropdownItem>
                         <ElDropdownItem
                           v-if="hasAction('team.member.manage')"
@@ -156,7 +156,7 @@
 
   const addForm = reactive({
     user_id: '',
-    role: 'team_member'
+    role_code: 'team_member'
   })
 
   function isAdmin(row: Api.SystemManage.TeamMemberItem): boolean {
@@ -258,7 +258,7 @@
 
     addLoading.value = true
     try {
-      await fetchAddMyTeamMember({ user_id: uid, role: addForm.role })
+      await fetchAddMyTeamMember({ user_id: uid, role_code: addForm.role_code })
       ElMessage.success('添加成功')
       addForm.user_id = ''
       await loadMembers()

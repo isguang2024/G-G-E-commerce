@@ -415,7 +415,7 @@ func (h *UserHandler) GetActions(c *gin.Context) {
 		}
 	}
 
-	compatItems := make([]gin.H, 0, len(records))
+	auditOverrideItems := make([]gin.H, 0, len(records))
 	for _, record := range records {
 		if snapshot.HasPackageConfig && !availableActionSet[record.ActionID] {
 			continue
@@ -435,7 +435,7 @@ func (h *UserHandler) GetActions(c *gin.Context) {
 				"sort_order":    action.SortOrder,
 			}
 		}
-		compatItems = append(compatItems, item)
+		auditOverrideItems = append(auditOverrideItems, item)
 	}
 
 	snapshotActions := []PermissionAction{}
@@ -450,7 +450,7 @@ func (h *UserHandler) GetActions(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
-		"actions":              compatItems,
+		"actions":              auditOverrideItems,
 		"available_action_ids": actionIDsToStrings(snapshot.ActionIDs),
 		"available_actions":    actionListToMaps(snapshotActions),
 		"expanded_package_ids": actionIDsToStrings(snapshot.ExpandedPackageIDs),

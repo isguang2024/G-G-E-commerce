@@ -1,6 +1,8 @@
 package user
 
 import (
+	"github.com/google/uuid"
+
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 )
 
@@ -9,7 +11,6 @@ type User = models.User
 type Role = models.Role
 type Menu = models.Menu
 type UserRole = models.UserRole
-type RoleMenu = models.RoleMenu
 type PermissionAction = models.PermissionAction
 type FeaturePackage = models.FeaturePackage
 type FeaturePackageBundle = models.FeaturePackageBundle
@@ -19,11 +20,8 @@ type TeamFeaturePackage = models.TeamFeaturePackage
 type UserFeaturePackage = models.UserFeaturePackage
 type RoleFeaturePackage = models.RoleFeaturePackage
 type RoleHiddenMenu = models.RoleHiddenMenu
-type RoleActionPermission = models.RoleActionPermission
 type RoleDisabledAction = models.RoleDisabledAction
 type RoleDataPermission = models.RoleDataPermission
-type TenantActionPermission = models.TenantActionPermission
-type TeamManualActionPermission = models.TeamManualActionPermission
 type TeamBlockedMenu = models.TeamBlockedMenu
 type TeamBlockedAction = models.TeamBlockedAction
 type UserActionPermission = models.UserActionPermission
@@ -35,3 +33,8 @@ type MemberSearchParams = models.MemberSearchParams
 type APIKey = models.APIKey
 type MediaAsset = models.MediaAsset
 type MenuBackup = models.MenuBackup
+
+type RoleActionPermission struct {
+	RoleID   uuid.UUID `json:"role_id"`
+	ActionID uuid.UUID `json:"action_id"`
+}

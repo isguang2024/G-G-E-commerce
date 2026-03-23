@@ -267,7 +267,6 @@ import PermissionSourcePanels from '@/components/business/permission/PermissionS
 import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
 import {
   fetchGetMenuTreeAll,
-  fetchGetPermissionActionList,
   fetchGetRoleActions,
   fetchGetRoleDataPermissions,
   fetchGetRolePackages,
@@ -589,11 +588,10 @@ async function loadData() {
   selectedActionSourcePackageId.value = ''
 
   try {
-    const [menuTree, roleMenus, rolePackages, actionList, roleActions, dataPermissionRes] = await Promise.all([
+    const [menuTree, roleMenus, rolePackages, roleActions, dataPermissionRes] = await Promise.all([
       fetchGetMenuTreeAll(),
       fetchGetRoleMenus(props.roleData.roleId),
       fetchGetRolePackages(props.roleData.roleId),
-      fetchGetPermissionActionList({ current: 1, size: 1000, status: 'normal' }),
       fetchGetRoleActions(props.roleData.roleId),
       fetchGetRoleDataPermissions(props.roleData.roleId)
     ])
@@ -603,7 +601,7 @@ async function loadData() {
     featurePackages.value = rolePackages?.packages || []
     selectedMenuNodeValues.value = (roleMenus?.menu_ids || []).map((item) => `${item}`)
 
-    permissionActions.value = actionList?.records || []
+    permissionActions.value = roleActions?.actions || []
     roleActionBoundary.value = roleActions || null
     const availableActionIDSet = availableActionIdSet.value
     selectedActionNodeValues.value = (roleActions?.action_ids || []).filter(

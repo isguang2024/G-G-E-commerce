@@ -169,7 +169,7 @@ export function fetchDeleteTeam(id: string) {
 
 export async function fetchGetTeamMembers(
   teamId: string,
-  params?: { user_id?: string; user_name?: string; role?: string }
+  params?: { user_id?: string; user_name?: string; role_code?: string }
 ) {
   const res = await request.get<any[]>({
     url: `${TENANT_BASE}/${teamId}/members`,
@@ -178,10 +178,10 @@ export async function fetchGetTeamMembers(
   return (res || []).map(normalizeTeamMember)
 }
 
-export function fetchAddTeamMember(teamId: string, data: { user_id: string; role?: string }) {
+export function fetchAddTeamMember(teamId: string, data: { user_id: string; role_code?: string }) {
   return request.post<void>({
     url: `${TENANT_BASE}/${teamId}/members`,
-    data: { user_id: data.user_id, role: data.role || 'team_member' }
+    data: { user_id: data.user_id, role_code: data.role_code || 'team_member' }
   })
 }
 
@@ -191,10 +191,10 @@ export function fetchRemoveTeamMember(teamId: string, userId: string) {
   })
 }
 
-export function fetchUpdateTeamMemberRole(teamId: string, userId: string, role: string) {
+export function fetchUpdateTeamMemberRole(teamId: string, userId: string, roleCode: string) {
   return request.put<void>({
     url: `${TENANT_BASE}/${teamId}/members/${userId}/role`,
-    data: { role }
+    data: { role_code: roleCode }
   })
 }
 
@@ -221,10 +221,10 @@ export async function fetchGetMyTeamMembers() {
   return (res || []).map(normalizeTeamMember)
 }
 
-export function fetchAddMyTeamMember(data: { user_id: string; role?: string }) {
+export function fetchAddMyTeamMember(data: { user_id: string; role_code?: string }) {
   return request.post<void>({
     url: `${TENANT_BASE}/my-team/members`,
-    data: { user_id: data.user_id, role_code: data.role || 'team_member' }
+    data: { user_id: data.user_id, role_code: data.role_code || 'team_member' }
   })
 }
 
@@ -234,10 +234,10 @@ export function fetchRemoveMyTeamMember(userId: string) {
   })
 }
 
-export function fetchUpdateMyTeamMemberRole(userId: string, role: string) {
+export function fetchUpdateMyTeamMemberRole(userId: string, roleCode: string) {
   return request.put<void>({
     url: `${TENANT_BASE}/my-team/members/${userId}/role`,
-    data: { role }
+    data: { role_code: roleCode }
   })
 }
 
@@ -387,12 +387,7 @@ export async function fetchGetTeamMenus(teamId: string) {
 
 export function fetchGetTeamActionOrigins(teamId: string) {
   return request
-    .get<{
-      derived_action_ids: string[]
-      derived_sources?: Array<{ action_id: string; package_ids: string[] }>
-      blocked_action_ids?: string[]
-      from_cache?: boolean
-    }>({
+    .get<Api.SystemManage.TeamActionOriginsResponse>({
       url: `${TENANT_BASE}/${teamId}/action-origins`
     })
     .then((res) => ({
@@ -401,8 +396,7 @@ export function fetchGetTeamActionOrigins(teamId: string) {
         action_id: item?.action_id || '',
         package_ids: item?.package_ids || []
       })),
-      blocked_action_ids: res?.blocked_action_ids || [],
-      from_cache: Boolean(res?.from_cache)
+      blocked_action_ids: res?.blocked_action_ids || []
     }))
 }
 
@@ -451,12 +445,7 @@ export async function fetchGetMyTeamActions() {
 
 export function fetchGetMyTeamActionOrigins() {
   return request
-    .get<{
-      derived_action_ids: string[]
-      derived_sources?: Array<{ action_id: string; package_ids: string[] }>
-      blocked_action_ids?: string[]
-      from_cache?: boolean
-    }>({
+    .get<Api.SystemManage.TeamActionOriginsResponse>({
       url: `${TENANT_BASE}/my-team/action-origins`
     })
     .then((res) => ({
@@ -465,18 +454,14 @@ export function fetchGetMyTeamActionOrigins() {
         action_id: item?.action_id || '',
         package_ids: item?.package_ids || []
       })),
-      blocked_action_ids: res?.blocked_action_ids || [],
-      from_cache: Boolean(res?.from_cache)
+      blocked_action_ids: res?.blocked_action_ids || []
     }))
 }
 
-export async function fetchGetMyTeamMemberActions(userId: string) {
-  const res = await request.get<{
-    actions: any[]
-    available_action_ids?: string[]
-    available_actions?: any[]
-    derived_sources?: Array<{ action_id: string; package_ids: string[] }>
-  }>({
+export async function fetchGetMyTeamMemberActions(
+  userId: string
+): Promise<Api.SystemManage.TeamMemberActionPermissionResponse> {
+  const res = await request.get<Api.SystemManage.TeamMemberActionPermissionResponse>({
     url: `${TENANT_BASE}/my-team/members/${userId}/actions`
   })
   return {

@@ -197,14 +197,6 @@ func (s *tenantService) Delete(id uuid.UUID) error {
 			return err
 		}
 
-		if err := tx.Where("tenant_id = ?", id).Delete(&user.TenantActionPermission{}).Error; err != nil {
-			return err
-		}
-
-		if err := tx.Where("tenant_id = ?", id).Delete(&user.TeamManualActionPermission{}).Error; err != nil {
-			return err
-		}
-
 		if err := tx.Where("team_id = ?", id).Delete(&user.TeamFeaturePackage{}).Error; err != nil {
 			return err
 		}
@@ -248,7 +240,7 @@ func (s *tenantService) AddMember(tenantID uuid.UUID, req *dto.TenantAddMemberRe
 		return ErrTenantMemberExists
 	}
 
-	roleCode := normalizeTenantRoleCode(req.RoleCode, req.Role)
+	roleCode := normalizeTenantRoleCode(req.RoleCode)
 
 	member := &user.TenantMember{
 		TenantID: tenantID,
@@ -432,18 +424,15 @@ func appendIfMissingUUID(items []uuid.UUID, id uuid.UUID) []uuid.UUID {
 	return append(items, id)
 }
 
-func normalizeTenantRoleCode(roleCode string, role string) string {
+func normalizeTenantRoleCode(roleCode string) string {
 	if strings.TrimSpace(roleCode) != "" {
 		return roleCode
-	}
-	if strings.TrimSpace(role) != "" {
-		return role
 	}
 	return defaultTeamRoleMemberCode
 }
 
 func (s *tenantService) syncTenantIdentityRole(userID, tenantID uuid.UUID, roleCode string) error {
-	roleCode = normalizeTenantRoleCode(roleCode, "")
+	roleCode = normalizeTenantRoleCode(roleCode)
 	if err := s.userRoleRepo.RemoveRolesByCodes(
 		userID,
 		&tenantID,

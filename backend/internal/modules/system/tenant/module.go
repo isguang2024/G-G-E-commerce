@@ -40,13 +40,10 @@ func (m *TenantModule) RegisterRoutes(rg *gin.RouterGroup) {
 	tenantMemberRepo := user.NewTenantMemberRepository(m.db)
 	userRepo := user.NewUserRepository(m.db)
 	roleRepo := user.NewRoleRepository(m.db)
-	legacyRoleMenuCleanupRepo := user.NewRoleMenuRepository(m.db)
-	legacyRoleActionCleanupRepo := user.NewRoleActionPermissionRepository(m.db)
 	roleHiddenMenuRepo := user.NewRoleHiddenMenuRepository(m.db)
 	roleDisabledActionRepo := user.NewRoleDisabledActionRepository(m.db)
 	userRoleRepo := user.NewUserRoleRepository(m.db)
 	actionRepo := user.NewPermissionActionRepository(m.db)
-	legacyManualActionCleanupRepo := user.NewTeamManualActionPermissionRepository(m.db)
 	blockedMenuRepo := user.NewTeamBlockedMenuRepository(m.db)
 	blockedActionRepo := user.NewTeamBlockedActionRepository(m.db)
 	userActionRepo := user.NewUserActionPermissionRepository(m.db)
@@ -61,7 +58,7 @@ func (m *TenantModule) RegisterRoutes(rg *gin.RouterGroup) {
 	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
 
 	tenantService := NewTenantService(m.db, tenantRepo, tenantMemberRepo, userRepo, roleRepo, userRoleRepo, refresher, m.logger)
-	tenantHandler := NewTenantHandler(tenantService, tenantMemberRepo, userRepo, roleRepo, legacyRoleMenuCleanupRepo, legacyRoleActionCleanupRepo, roleHiddenMenuRepo, roleDisabledActionRepo, userRoleRepo, actionRepo, legacyManualActionCleanupRepo, blockedMenuRepo, blockedActionRepo, userActionRepo, teamPackageRepo, rolePackageRepo, featurePkgRepo, packageActionRepo, packageMenuRepo, boundaryService, refresher, m.logger)
+	tenantHandler := NewTenantHandler(tenantService, tenantMemberRepo, userRepo, roleRepo, roleHiddenMenuRepo, roleDisabledActionRepo, userRoleRepo, actionRepo, blockedMenuRepo, blockedActionRepo, userActionRepo, teamPackageRepo, rolePackageRepo, featurePkgRepo, packageActionRepo, packageMenuRepo, boundaryService, refresher, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 
 	tenants := rg.Group("/tenants")

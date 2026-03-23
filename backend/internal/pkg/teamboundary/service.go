@@ -14,9 +14,7 @@ type Snapshot struct {
 	DerivedIDs         []uuid.UUID
 	DerivedMap         map[uuid.UUID][]uuid.UUID
 	BlockedIDs         []uuid.UUID
-	LegacyManualIDs    []uuid.UUID
 	EffectiveIDs       []uuid.UUID
-	FromCache          bool
 }
 
 type MenuSnapshot struct {
@@ -47,7 +45,7 @@ type Service interface {
 	GetMenuSnapshot(teamID uuid.UUID) (*MenuSnapshot, error)
 	GetEffectiveActionSet(teamID uuid.UUID) (map[uuid.UUID]bool, error)
 	GetRoleSnapshot(teamID, roleID uuid.UUID, inheritAll bool) (*RoleSnapshot, error)
-	RefreshCache(teamID uuid.UUID) (*Snapshot, error)
+	RefreshSnapshot(teamID uuid.UUID) (*Snapshot, error)
 }
 
 type service struct {
@@ -68,7 +66,7 @@ func (s *service) GetSnapshot(teamID uuid.UUID) (*Snapshot, error) {
 	if snapshot != nil {
 		return snapshot, nil
 	}
-	return s.RefreshCache(teamID)
+	return emptyActionSnapshot(), nil
 }
 
 func (s *service) calculateActionSnapshot(teamID uuid.UUID) (*Snapshot, error) {
@@ -88,31 +86,14 @@ func (s *service) calculateActionSnapshot(teamID uuid.UUID) (*Snapshot, error) {
 	if err != nil {
 		return nil, err
 	}
-	legacyManualIDs, err := s.getManualActionIDsByTeamID(teamID)
-	if err != nil {
-		return nil, err
-	}
-	effectiveIDs := subtractIDs(mergeActionIDs(derivedIDs, legacyManualIDs), blockedIDs)
-	fromCache := false
-	if len(packageIDs) == 0 && len(blockedIDs) == 0 && len(legacyManualIDs) == 0 && len(effectiveIDs) == 0 {
-		cacheIDs, cacheErr := s.getCachedActionIDsByTeamID(teamID)
-		if cacheErr != nil {
-			return nil, cacheErr
-		}
-		if len(cacheIDs) > 0 {
-			effectiveIDs = cacheIDs
-			fromCache = true
-		}
-	}
+	effectiveIDs := subtractIDs(derivedIDs, blockedIDs)
 	return &Snapshot{
 		PackageIDs:         packageIDs,
 		ExpandedPackageIDs: expandedPackageIDs,
 		DerivedIDs:         derivedIDs,
 		DerivedMap:         derivedMap,
 		BlockedIDs:         blockedIDs,
-		LegacyManualIDs:    legacyManualIDs,
 		EffectiveIDs:       effectiveIDs,
-		FromCache:          fromCache,
 	}, nil
 }
 
@@ -136,10 +117,7 @@ func (s *service) GetMenuSnapshot(teamID uuid.UUID) (*MenuSnapshot, error) {
 	if snapshot != nil {
 		return snapshot, nil
 	}
-	if _, err := s.RefreshCache(teamID); err != nil {
-		return nil, err
-	}
-	return s.loadMenuSnapshot(teamID)
+	return emptyMenuSnapshot(), nil
 }
 
 func (s *service) calculateMenuSnapshot(teamID uuid.UUID) (*MenuSnapshot, error) {
@@ -178,14 +156,7 @@ func (s *service) GetRoleSnapshot(teamID, roleID uuid.UUID, inheritAll bool) (*R
 	if snapshot != nil {
 		return snapshot, nil
 	}
-	snapshot, err = s.calculateRoleSnapshot(teamID, roleID, inheritAll)
-	if err != nil {
-		return nil, err
-	}
-	if err := s.saveRoleSnapshot(teamID, roleID, snapshot); err != nil {
-		return nil, err
-	}
-	return snapshot, nil
+	return emptyRoleSnapshot(inheritAll), nil
 }
 
 func (s *service) calculateRoleSnapshot(teamID, roleID uuid.UUID, inheritAll bool) (*RoleSnapshot, error) {
@@ -268,7 +239,7 @@ func (s *service) calculateRoleSnapshot(teamID, roleID uuid.UUID, inheritAll boo
 	}, nil
 }
 
-func (s *service) RefreshCache(teamID uuid.UUID) (*Snapshot, error) {
+func (s *service) RefreshSnapshot(teamID uuid.UUID) (*Snapshot, error) {
 	actionSnapshot, err := s.calculateActionSnapshot(teamID)
 	if err != nil {
 		return nil, err
@@ -277,16 +248,12 @@ func (s *service) RefreshCache(teamID uuid.UUID) (*Snapshot, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := s.replaceCachedActionIDs(teamID, actionSnapshot.EffectiveIDs); err != nil {
-		return nil, err
-	}
 	if err := s.saveSnapshot(teamID, actionSnapshot, menuSnapshot); err != nil {
 		return nil, err
 	}
 	if err := s.refreshRoleSnapshots(teamID); err != nil {
 		return nil, err
 	}
-	actionSnapshot.FromCache = false
 	return actionSnapshot, nil
 }
 
@@ -304,9 +271,7 @@ func (s *service) loadActionSnapshot(teamID uuid.UUID) (*Snapshot, error) {
 		DerivedIDs:         uuidStringsToIDs(record.DerivedActionIDs),
 		DerivedMap:         sourceMapStringsToUUIDs(record.DerivedActionMap),
 		BlockedIDs:         uuidStringsToIDs(record.BlockedActionIDs),
-		LegacyManualIDs:    uuidStringsToIDs(record.ManualActionIDs),
 		EffectiveIDs:       uuidStringsToIDs(record.EffectiveActionIDs),
-		FromCache:          false,
 	}, nil
 }
 
@@ -336,7 +301,6 @@ func (s *service) saveSnapshot(teamID uuid.UUID, actionSnapshot *Snapshot, menuS
 		DerivedActionIDs:   idsToUUIDStrings(actionSnapshot.DerivedIDs),
 		DerivedActionMap:   sourceMapUUIDsToStrings(actionSnapshot.DerivedMap),
 		BlockedActionIDs:   idsToUUIDStrings(actionSnapshot.BlockedIDs),
-		ManualActionIDs:    idsToUUIDStrings(actionSnapshot.LegacyManualIDs),
 		EffectiveActionIDs: idsToUUIDStrings(actionSnapshot.EffectiveIDs),
 		DerivedMenuIDs:     idsToUUIDStrings(menuSnapshot.DerivedIDs),
 		DerivedMenuMap:     sourceMapUUIDsToStrings(menuSnapshot.DerivedMap),
@@ -604,12 +568,42 @@ func (s *service) isInheritedRole(roleID uuid.UUID) (bool, error) {
 	return tenantID == nil, nil
 }
 
-func (s *service) getManualActionIDsByTeamID(teamID uuid.UUID) ([]uuid.UUID, error) {
-	var actionIDs []uuid.UUID
-	err := s.db.Model(&models.TeamManualActionPermission{}).
-		Where("tenant_id = ? AND enabled = ?", teamID, true).
-		Pluck("action_id", &actionIDs).Error
-	return actionIDs, err
+func emptyActionSnapshot() *Snapshot {
+	return &Snapshot{
+		PackageIDs:         []uuid.UUID{},
+		ExpandedPackageIDs: []uuid.UUID{},
+		DerivedIDs:         []uuid.UUID{},
+		DerivedMap:         map[uuid.UUID][]uuid.UUID{},
+		BlockedIDs:         []uuid.UUID{},
+		EffectiveIDs:       []uuid.UUID{},
+	}
+}
+
+func emptyMenuSnapshot() *MenuSnapshot {
+	return &MenuSnapshot{
+		PackageIDs:         []uuid.UUID{},
+		ExpandedPackageIDs: []uuid.UUID{},
+		DerivedIDs:         []uuid.UUID{},
+		DerivedMap:         map[uuid.UUID][]uuid.UUID{},
+		BlockedIDs:         []uuid.UUID{},
+		EffectiveIDs:       []uuid.UUID{},
+	}
+}
+
+func emptyRoleSnapshot(inherited bool) *RoleSnapshot {
+	return &RoleSnapshot{
+		PackageIDs:         []uuid.UUID{},
+		ExpandedPackageIDs: []uuid.UUID{},
+		AvailableActionIDs: []uuid.UUID{},
+		DisabledActionIDs:  []uuid.UUID{},
+		ActionIDs:          []uuid.UUID{},
+		ActionSourceMap:    map[uuid.UUID][]uuid.UUID{},
+		AvailableMenuIDs:   []uuid.UUID{},
+		HiddenMenuIDs:      []uuid.UUID{},
+		MenuIDs:            []uuid.UUID{},
+		MenuSourceMap:      map[uuid.UUID][]uuid.UUID{},
+		Inherited:          inherited,
+	}
 }
 
 func (s *service) getBlockedActionIDsByTeamID(teamID uuid.UUID) ([]uuid.UUID, error) {
@@ -642,42 +636,6 @@ func (s *service) getHiddenMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error
 		Where("role_id = ?", roleID).
 		Pluck("menu_id", &menuIDs).Error
 	return menuIDs, err
-}
-
-func (s *service) getCachedActionIDsByTeamID(teamID uuid.UUID) ([]uuid.UUID, error) {
-	var actionIDs []uuid.UUID
-	err := s.db.Model(&models.TenantActionPermission{}).
-		Where("tenant_id = ? AND enabled = ?", teamID, true).
-		Pluck("action_id", &actionIDs).Error
-	return actionIDs, err
-}
-
-func (s *service) replaceCachedActionIDs(teamID uuid.UUID, actionIDs []uuid.UUID) error {
-	return s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("tenant_id = ?", teamID).Delete(&models.TenantActionPermission{}).Error; err != nil {
-			return err
-		}
-		if len(actionIDs) == 0 {
-			return nil
-		}
-		records := make([]models.TenantActionPermission, 0, len(actionIDs))
-		seen := make(map[uuid.UUID]struct{}, len(actionIDs))
-		for _, actionID := range actionIDs {
-			if _, ok := seen[actionID]; ok {
-				continue
-			}
-			seen[actionID] = struct{}{}
-			records = append(records, models.TenantActionPermission{
-				TenantID: teamID,
-				ActionID: actionID,
-				Enabled:  true,
-			})
-		}
-		if len(records) == 0 {
-			return nil
-		}
-		return tx.Create(&records).Error
-	})
 }
 
 func mergeActionIDs(groups ...[]uuid.UUID) []uuid.UUID {

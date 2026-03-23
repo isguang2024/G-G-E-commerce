@@ -1,7 +1,7 @@
 <template>
   <ElDialog
     v-model="visible"
-    :title="`成员权限例外（兼容） - ${member?.userName || ''}`"
+    :title="`成员权限例外审计 - ${member?.userName || ''}`"
     width="920px"
     destroy-on-close
   >
@@ -10,7 +10,7 @@
         type="info"
         :closable="false"
         class="dialog-alert"
-        title="这里是团队成员个人权限例外的兼容审计视图。当前主模型已经切到“团队开包 + 团队边界 + 角色裁剪”；此处默认不再作为主配置入口。"
+        title="这里是团队成员个人权限例外的历史审计视图。当前主模型已经切到“团队开包 + 团队边界 + 角色裁剪”；此处默认不再作为主配置入口。"
       />
 
       <div class="summary-header">
@@ -18,11 +18,11 @@
         <ElTag type="warning" effect="plain" round>只读审计</ElTag>
         <ElTag type="info" effect="plain" round>基础角色 {{ assignedGlobalRoleCount }}</ElTag>
         <ElTag type="success" effect="plain" round>团队自定义 {{ assignedCustomRoleCount }}</ElTag>
-        <ElTag type="warning" effect="plain" round>功能包展开 {{ derivedActionCount }}</ElTag>
-        <ElTag type="primary" effect="plain" round>团队边界屏蔽 {{ manualActionCount }}</ElTag>
+        <ElTag type="warning" effect="plain" round>功能包展开 {{ candidateActionCount }}</ElTag>
+        <ElTag type="primary" effect="plain" round>团队边界裁剪 {{ boundaryTrimmedActionCount }}</ElTag>
       </div>
 
-      <div v-if="derivedActions.length || manualActions.length" class="source-detail-grid">
+      <div v-if="derivedActions.length || boundaryTrimmedActions.length" class="source-detail-grid">
         <div v-if="derivedActions.length" class="source-card source-card--derived">
           <div class="source-header">
             <div class="source-title">功能包展开能力</div>
@@ -71,11 +71,11 @@
           </div>
         </div>
 
-        <div v-if="manualActions.length" class="source-card source-card--manual">
-          <div class="source-title">团队边界屏蔽外的角色可用能力</div>
+        <div v-if="boundaryTrimmedActions.length" class="source-card source-card--trimmed">
+          <div class="source-title">被团队边界裁剪的角色可用能力</div>
           <div class="source-tags">
             <ElTag
-              v-for="item in manualActions"
+              v-for="item in boundaryTrimmedActions"
               :key="item.id"
               type="primary"
               effect="plain"
@@ -112,7 +112,7 @@
           <ElInput
             v-model="filters.keyword"
             clearable
-            placeholder="搜索权限名称/权限键/模块归属/兼容编码"
+            placeholder="搜索权限名称/权限键/模块归属/历史编码"
             class="toolbar-input"
           />
           <ElSelect v-model="filters.featureKind" clearable placeholder="功能归属" class="toolbar-select">
@@ -273,13 +273,13 @@
   const effectMap = reactive<Record<string, EffectValue>>({})
   const roleEffectMap = reactive<Record<string, EffectValue>>({})
   const assignedRoles = ref<Api.SystemManage.RoleListItem[]>([])
-  const derivedActionIds = ref<string[]>([])
-  const manualActionIds = ref<string[]>([])
+  const candidateActionIds = ref<string[]>([])
+  const boundaryTrimmedActionIds = ref<string[]>([])
   const derivedSourceMap = ref<Record<string, string[]>>({})
   const featurePackages = ref<Api.SystemManage.FeaturePackageItem[]>([])
   const selectedDerivedPackageId = ref('')
-  const derivedActionCount = ref(0)
-  const manualActionCount = ref(0)
+  const candidateActionCount = ref(0)
+  const boundaryTrimmedActionCount = ref(0)
   const filters = reactive({
     keyword: '',
     featureKind: '',
@@ -344,11 +344,11 @@
   const assignedGlobalRoleCount = computed(() => assignedRoles.value.filter((role) => role.isGlobal).length)
   const assignedCustomRoleCount = computed(() => assignedRoles.value.filter((role) => !role.isGlobal).length)
   const derivedActions = computed(() => {
-    const idSet = new Set(derivedActionIds.value)
+    const idSet = new Set(candidateActionIds.value)
     return actions.value.filter((item) => idSet.has(item.id))
   })
-  const manualActions = computed(() => {
-    const idSet = new Set(manualActionIds.value)
+  const boundaryTrimmedActions = computed(() => {
+    const idSet = new Set(boundaryTrimmedActionIds.value)
     return actions.value.filter((item) => idSet.has(item.id))
   })
   const derivedSourcePackages = computed(() => {
@@ -457,15 +457,15 @@
       ])
       const packageRes = team?.id ? await fetchGetTeamFeaturePackages(team.id) : { packages: [] }
       actions.value = memberActions.available_actions || []
-      derivedActionIds.value = [...(memberActions.available_action_ids || [])]
-      manualActionIds.value = []
+      candidateActionIds.value = [...(memberActions.available_action_ids || [])]
+      boundaryTrimmedActionIds.value = []
       derivedSourceMap.value = Object.fromEntries(
         (memberActions.derived_sources || []).map((item) => [item.action_id, item.package_ids])
       )
       featurePackages.value = packageRes?.packages || []
       selectedDerivedPackageId.value = ''
-      derivedActionCount.value = memberActions.available_action_ids?.length || 0
-      manualActionCount.value = 0
+      candidateActionCount.value = memberActions.available_action_ids?.length || 0
+      boundaryTrimmedActionCount.value = 0
       Object.keys(effectMap).forEach((key) => delete effectMap[key])
       actions.value.forEach((item) => {
         effectMap[item.id] = ''
@@ -576,7 +576,7 @@
     background: #fffaf0;
   }
 
-  .source-card--manual {
+  .source-card--trimmed {
     border-color: #bfd3ff;
     background: #f5f9ff;
   }
