@@ -291,10 +291,8 @@ func (h *RoleHandler) GetRoleMenus(c *gin.Context) {
 		"menu_ids":             packageIDsToStrings(boundary.EffectiveMenuIDs),
 		"available_menu_ids":   packageIDsToStrings(boundary.AvailableMenuIDs),
 		"hidden_menu_ids":      packageIDsToStrings(boundary.HiddenMenuIDs),
-		"package_ids":          packageIDsToStrings(boundary.PackageIDs),
 		"expanded_package_ids": packageIDsToStrings(boundary.ExpandedPackageIDs),
 		"derived_sources":      buildMenuSourceMaps(boundary.MenuSourceMap),
-		"has_menu_boundary":    boundary.HasPackageConfig,
 	}))
 }
 
@@ -422,10 +420,8 @@ func (h *RoleHandler) GetRoleActions(c *gin.Context) {
 		"action_ids":           packageIDsToStrings(boundary.EffectiveActionIDs),
 		"available_action_ids": packageIDsToStrings(boundary.AvailableActionIDs),
 		"disabled_action_ids":  packageIDsToStrings(boundary.DisabledActionIDs),
-		"package_ids":          packageIDsToStrings(boundary.PackageIDs),
 		"expanded_package_ids": packageIDsToStrings(boundary.ExpandedPackageIDs),
 		"derived_sources":      buildActionSourceMaps(boundary.ActionSourceMap),
-		"has_package_boundary": boundary.HasPackageConfig,
 	}))
 }
 

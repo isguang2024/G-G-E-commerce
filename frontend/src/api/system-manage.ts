@@ -112,9 +112,11 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
   return {
     id: item?.id || '',
     packageKey,
+    packageType: item?.package_type || item?.packageType || 'base',
     name: item?.name || '',
     description: item?.description || '',
     contextType,
+    isBuiltin: Boolean(item?.is_builtin ?? item?.isBuiltin ?? false),
     actionCount: item?.action_count ?? item?.actionCount ?? 0,
     menuCount: item?.menu_count ?? item?.menuCount ?? 0,
     teamCount: item?.team_count ?? item?.teamCount ?? 0,
@@ -314,7 +316,6 @@ export function fetchGetRoleMenus(roleId: string) {
       menu_ids: res?.menu_ids || [],
       available_menu_ids: res?.available_menu_ids || [],
       hidden_menu_ids: res?.hidden_menu_ids || [],
-      package_ids: res?.package_ids || [],
       expanded_package_ids: res?.expanded_package_ids || [],
       derived_sources: res?.derived_sources || []
     }))
@@ -359,7 +360,6 @@ export function fetchGetRoleActions(roleId: string) {
       available_action_ids: res?.available_action_ids || [],
       disabled_action_ids: res?.disabled_action_ids || [],
       actions: (res?.actions || []).map(normalizePermissionAction),
-      package_ids: res?.package_ids || [],
       expanded_package_ids: res?.expanded_package_ids || [],
       derived_sources: res?.derived_sources || []
     }))
@@ -465,8 +465,10 @@ export function fetchGetFeaturePackageList(params: Api.SystemManage.FeaturePacka
   const normalizedParams = {
     ...params,
     package_key: params?.packageKey,
+    package_type: params?.packageType,
     context_type: params?.contextType,
     packageKey: undefined,
+    packageType: undefined,
     contextType: undefined
   }
   return request
@@ -487,6 +489,32 @@ export function fetchGetFeaturePackage(id: string) {
       url: `${FEATURE_PACKAGE_BASE}/${id}`
     })
     .then((res) => normalizeFeaturePackage(res))
+}
+
+/** 获取组合包基础包 */
+export function fetchGetFeaturePackageChildren(id: string) {
+  return request
+    .get<Api.SystemManage.FeaturePackageBundleResponse>({
+      url: `${FEATURE_PACKAGE_BASE}/${id}/children`
+    })
+    .then((res) => ({
+      child_package_ids: res?.child_package_ids || [],
+      packages: (res?.packages || []).map(normalizeFeaturePackage)
+    }))
+}
+
+/** 设置组合包基础包 */
+export function fetchSetFeaturePackageChildren(
+  id: string,
+  childPackageIds: string[] | Api.SystemManage.FeaturePackageChildSetParams
+) {
+  const payload = Array.isArray(childPackageIds)
+    ? { child_package_ids: childPackageIds }
+    : childPackageIds
+  return request.put<void>({
+    url: `${FEATURE_PACKAGE_BASE}/${id}/children`,
+    data: payload
+  })
 }
 
 /** 创建功能包 */
@@ -541,9 +569,14 @@ export function fetchSetFeaturePackageActions(
 
 /** 获取功能包包含的菜单 */
 export function fetchGetFeaturePackageMenus(id: string) {
-  return request.get<Api.SystemManage.FeaturePackageMenuResponse>({
-    url: `${FEATURE_PACKAGE_BASE}/${id}/menus`
-  })
+  return request
+    .get<Api.SystemManage.FeaturePackageMenuResponse>({
+      url: `${FEATURE_PACKAGE_BASE}/${id}/menus`
+    })
+    .then((res) => ({
+      menu_ids: res?.menu_ids || [],
+      menus: res?.menus || []
+    }))
 }
 
 /** 设置功能包包含的菜单 */

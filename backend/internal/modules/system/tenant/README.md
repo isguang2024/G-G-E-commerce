@@ -72,9 +72,16 @@
 负责：
 
 - 某团队在“功能包展开 + 团队边界裁剪”之后的动作快照结果
-- `tenant_action_permissions` 与 `team_manual_action_permissions` 仅保留迁移兼容与清理职责
+- 运行时团队动作边界、来源映射与最终结果
 
 这里是团队边界运行时主链，不是团队成员的个人授权。
+
+补充：
+
+- `tenant_action_permissions`
+- `team_manual_action_permissions`
+
+以上旧表已物理删除，不再承担运行时、兼容输出或清理职责。
 
 ## 4. 团队边界的判断规则
 

@@ -49,7 +49,6 @@ type RoleMenuBoundary struct {
 	HiddenMenuIDs      []uuid.UUID
 	EffectiveMenuIDs   []uuid.UUID
 	MenuSourceMap      map[uuid.UUID][]uuid.UUID
-	HasPackageConfig   bool
 }
 
 type RoleActionBoundary struct {
@@ -59,7 +58,6 @@ type RoleActionBoundary struct {
 	DisabledActionIDs  []uuid.UUID
 	EffectiveActionIDs []uuid.UUID
 	ActionSourceMap    map[uuid.UUID][]uuid.UUID
-	HasPackageConfig   bool
 }
 
 type DataPermissionScopeOption struct {
@@ -500,10 +498,9 @@ func (s *roleService) GetRoleMenuBoundary(roleID uuid.UUID) (*RoleMenuBoundary, 
 			HiddenMenuIDs:      dedupeUUIDs(snapshot.HiddenMenuIDs),
 			EffectiveMenuIDs:   dedupeUUIDs(snapshot.EffectiveMenuIDs),
 			MenuSourceMap:      filterUUIDSourceMap(snapshot.MenuSourceMap, snapshot.AvailableMenuIDs),
-			HasPackageConfig:   snapshot.HasPackageConfig,
 		}, nil
 	}
-	return &RoleMenuBoundary{PackageIDs: []uuid.UUID{}, ExpandedPackageIDs: []uuid.UUID{}, AvailableMenuIDs: []uuid.UUID{}, HiddenMenuIDs: []uuid.UUID{}, EffectiveMenuIDs: []uuid.UUID{}, MenuSourceMap: map[uuid.UUID][]uuid.UUID{}, HasPackageConfig: false}, nil
+	return &RoleMenuBoundary{PackageIDs: []uuid.UUID{}, ExpandedPackageIDs: []uuid.UUID{}, AvailableMenuIDs: []uuid.UUID{}, HiddenMenuIDs: []uuid.UUID{}, EffectiveMenuIDs: []uuid.UUID{}, MenuSourceMap: map[uuid.UUID][]uuid.UUID{}}, nil
 }
 
 func (s *roleService) GetRoleActionBoundary(roleID uuid.UUID) (*RoleActionBoundary, error) {
@@ -529,10 +526,9 @@ func (s *roleService) GetRoleActionBoundary(roleID uuid.UUID) (*RoleActionBounda
 			DisabledActionIDs:  dedupeUUIDs(snapshot.DisabledActionIDs),
 			EffectiveActionIDs: dedupeUUIDs(snapshot.EffectiveActionIDs),
 			ActionSourceMap:    filterUUIDSourceMap(snapshot.ActionSourceMap, snapshot.AvailableActionIDs),
-			HasPackageConfig:   snapshot.HasPackageConfig,
 		}, nil
 	}
-	return &RoleActionBoundary{PackageIDs: []uuid.UUID{}, ExpandedPackageIDs: []uuid.UUID{}, AvailableActionIDs: []uuid.UUID{}, DisabledActionIDs: []uuid.UUID{}, EffectiveActionIDs: []uuid.UUID{}, ActionSourceMap: map[uuid.UUID][]uuid.UUID{}, HasPackageConfig: false}, nil
+	return &RoleActionBoundary{PackageIDs: []uuid.UUID{}, ExpandedPackageIDs: []uuid.UUID{}, AvailableActionIDs: []uuid.UUID{}, DisabledActionIDs: []uuid.UUID{}, EffectiveActionIDs: []uuid.UUID{}, ActionSourceMap: map[uuid.UUID][]uuid.UUID{}}, nil
 }
 
 func ensureSubsetUUIDs(selected []uuid.UUID, allowed []uuid.UUID, errMsg string) ([]uuid.UUID, error) {

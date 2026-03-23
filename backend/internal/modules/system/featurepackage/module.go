@@ -32,6 +32,7 @@ func (m *Module) Init() error {
 
 func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	packageRepo := user.NewFeaturePackageRepository(m.db)
+	packageBundleRepo := user.NewFeaturePackageBundleRepository(m.db)
 	packageActionRepo := user.NewFeaturePackageActionRepository(m.db)
 	packageMenuRepo := user.NewFeaturePackageMenuRepository(m.db)
 	teamPackageRepo := user.NewTeamFeaturePackageRepository(m.db)
@@ -43,7 +44,7 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	platformService := platformaccess.NewService(m.db)
 	roleSnapshotService := platformroleaccess.NewService(m.db)
 	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
-	service := NewService(packageRepo, packageActionRepo, packageMenuRepo, teamPackageRepo, rolePackageRepo, actionRepo, menuRepo, tenantRepo, boundaryService, refresher)
+	service := NewService(packageRepo, packageBundleRepo, packageActionRepo, packageMenuRepo, teamPackageRepo, rolePackageRepo, actionRepo, menuRepo, tenantRepo, boundaryService, refresher)
 	handler := NewHandler(service, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 
@@ -55,6 +56,8 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.POST("", &apiregistry.RouteMeta{Summary: "创建功能包", ResourceCode: "feature_package", ActionCode: "create"}, authzService.RequireAction("platform.package.manage"), handler.Create)
 		reg.PUT("/:id", &apiregistry.RouteMeta{Summary: "更新功能包", ResourceCode: "feature_package", ActionCode: "update"}, authzService.RequireAction("platform.package.manage"), handler.Update)
 		reg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除功能包", ResourceCode: "feature_package", ActionCode: "delete"}, authzService.RequireAction("platform.package.manage"), handler.Delete)
+		reg.GET("/:id/children", &apiregistry.RouteMeta{Summary: "获取组合包基础包", ResourceCode: "feature_package", ActionCode: "assign_bundle"}, authzService.RequireAction("platform.package.manage"), handler.GetPackageChildren)
+		reg.PUT("/:id/children", &apiregistry.RouteMeta{Summary: "配置组合包基础包", ResourceCode: "feature_package", ActionCode: "assign_bundle"}, authzService.RequireAction("platform.package.manage"), handler.SetPackageChildren)
 		reg.GET("/:id/actions", &apiregistry.RouteMeta{Summary: "获取功能包权限", ResourceCode: "feature_package", ActionCode: "assign_action"}, authzService.RequireAction("platform.package.manage"), handler.GetPackageActions)
 		reg.PUT("/:id/actions", &apiregistry.RouteMeta{Summary: "配置功能包权限", ResourceCode: "feature_package", ActionCode: "assign_action"}, authzService.RequireAction("platform.package.manage"), handler.SetPackageActions)
 		reg.GET("/:id/menus", &apiregistry.RouteMeta{Summary: "获取功能包菜单", ResourceCode: "feature_package", ActionCode: "assign_menu"}, authzService.RequireAction("platform.package.manage"), handler.GetPackageMenus)

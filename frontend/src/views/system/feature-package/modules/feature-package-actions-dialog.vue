@@ -72,10 +72,12 @@
   const selectedIds = ref<string[]>([])
 
   const filteredActions = computed(() =>
-    allActions.value.filter((item) => (item.contextType || 'team') === (props.contextType || 'team'))
+    allActions.value.filter((item) =>
+      supportsActionContext(props.contextType || 'team', item.contextType || 'team')
+    )
   )
 
-  const contextLabel = computed(() => (props.contextType === 'platform' ? '平台' : '团队'))
+  const contextLabel = computed(() => formatContextType(props.contextType))
 
   watch(
     () => props.modelValue,
@@ -93,7 +95,7 @@
           current: 1,
           size: 1000,
           status: 'normal',
-          contextType: props.contextType || 'team'
+          contextType: props.contextType === 'platform,team' ? undefined : props.contextType || 'team'
         }),
         fetchGetFeaturePackageActions(props.packageId)
       ])
@@ -154,6 +156,20 @@
     })
 
     return Array.from(result)
+  }
+
+  function supportsActionContext(packageContextType: string, actionContextType: string) {
+    if (packageContextType === 'platform,team') {
+      return actionContextType === 'platform' || actionContextType === 'team'
+    }
+    return packageContextType === actionContextType
+  }
+
+  function formatContextType(contextType?: string) {
+    if (contextType === 'platform') return '平台'
+    if (contextType === 'team') return '团队'
+    if (contextType === 'platform,team') return '平台/团队'
+    return contextType || '-'
   }
 </script>
 

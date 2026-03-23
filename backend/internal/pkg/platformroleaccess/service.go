@@ -19,7 +19,6 @@ type Snapshot struct {
 	MenuSourceMap      map[uuid.UUID][]uuid.UUID
 	HiddenMenuIDs      []uuid.UUID
 	EffectiveMenuIDs   []uuid.UUID
-	HasPackageConfig   bool
 }
 
 type Service interface {
@@ -103,7 +102,6 @@ func (s *service) calculateSnapshot(roleID uuid.UUID) (*Snapshot, error) {
 		MenuSourceMap:      filterSourceMap(menuSourceMap, availableMenuIDs),
 		HiddenMenuIDs:      hiddenMenuIDs,
 		EffectiveMenuIDs:   effectiveMenuIDs,
-		HasPackageConfig:   len(packageIDs) > 0,
 	}, nil
 }
 
@@ -126,7 +124,6 @@ func (s *service) loadSnapshot(roleID uuid.UUID) (*Snapshot, error) {
 		MenuSourceMap:      sourceMapStringsToUUIDs(record.MenuSourceMap),
 		HiddenMenuIDs:      uuidStringsToIDs(record.HiddenMenuIDs),
 		EffectiveMenuIDs:   uuidStringsToIDs(record.EffectiveMenuIDs),
-		HasPackageConfig:   record.HasPackageConfig,
 	}, nil
 }
 
@@ -143,7 +140,6 @@ func (s *service) saveSnapshot(roleID uuid.UUID, snapshot *Snapshot) error {
 		MenuSourceMap:      sourceMapUUIDsToStrings(snapshot.MenuSourceMap),
 		HiddenMenuIDs:      idsToUUIDStrings(snapshot.HiddenMenuIDs),
 		EffectiveMenuIDs:   idsToUUIDStrings(snapshot.EffectiveMenuIDs),
-		HasPackageConfig:   snapshot.HasPackageConfig,
 	}
 	return s.db.Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "role_id"}},
@@ -462,6 +458,5 @@ func emptySnapshot() *Snapshot {
 		MenuSourceMap:      map[uuid.UUID][]uuid.UUID{},
 		HiddenMenuIDs:      []uuid.UUID{},
 		EffectiveMenuIDs:   []uuid.UUID{},
-		HasPackageConfig:   false,
 	}
 }

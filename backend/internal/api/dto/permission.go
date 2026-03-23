@@ -112,3 +112,7 @@ type TeamFeaturePackageSetRequest struct {
 type FeaturePackageTeamSetRequest struct {
 	TeamIDs []string `json:"team_ids"`
 }
+
+type FeaturePackageChildSetRequest struct {
+	ChildPackageIDs []string `json:"child_package_ids"`
+}

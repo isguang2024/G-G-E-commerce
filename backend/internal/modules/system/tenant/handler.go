@@ -1013,7 +1013,6 @@ func (h *TenantHandler) GetMyTeamRoleMenus(c *gin.Context) {
 		"menu_ids":             actionIDsToStrings(snapshot.MenuIDs),
 		"available_menu_ids":   actionIDsToStrings(snapshot.AvailableMenuIDs),
 		"hidden_menu_ids":      actionIDsToStrings(snapshot.HiddenMenuIDs),
-		"package_ids":          actionIDsToStrings(snapshot.PackageIDs),
 		"expanded_package_ids": actionIDsToStrings(snapshot.ExpandedPackageIDs),
 		"derived_sources":      buildMenuSourceMaps(snapshot.MenuSourceMap),
 	}))
@@ -1101,7 +1100,6 @@ func (h *TenantHandler) GetMyTeamRoleActions(c *gin.Context) {
 		"available_action_ids": actionIDsToStrings(snapshot.AvailableActionIDs),
 		"disabled_action_ids":  actionIDsToStrings(snapshot.DisabledActionIDs),
 		"actions":              actionListToMaps(actions),
-		"package_ids":          actionIDsToStrings(snapshot.PackageIDs),
 		"expanded_package_ids": actionIDsToStrings(snapshot.ExpandedPackageIDs),
 		"derived_sources":      buildDerivedSourceMaps(snapshot.ActionSourceMap),
 	}))

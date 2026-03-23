@@ -178,6 +178,7 @@ function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem) {
     name: 'FeaturePackage',
     query: {
       packageKey: item.packageKey,
+      packageType: item.packageType || 'base',
       contextType: item.contextType || 'platform',
       open: props.open
     }

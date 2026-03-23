@@ -653,11 +653,62 @@
 - 继续清 `model.go`、迁移脚本和 AutoMigrate 中仅剩的 legacy 列/旧表说明，把能降级为迁移清理职责的字段全部显式标成 legacy cleanup。
 - 继续扫共享权限组件和非主页面 API，避免 `package_ids`、旧审计别名或历史命名再次从前端包装层回流到新页面。
 
-## 2026-03-24 ???????????????
-### ????
-- ?????????????????AutoMigrate????????/??????????? `tenant_action_permissions`?`team_manual_action_permissions`?`role_menus`?`role_action_permissions` ? `team_access_snapshots.manual_action_ids` ???????
-- `backend/cmd/migrate/main.go` ?? `20260324_drop_legacy_permission_tables` ????????????????????? seed???? rebinding ?? scope ?????`main.go` ???????/???????? UTF-8 ???
-- ????`backend/go test ./...`?`frontend/pnpm exec vue-tsc --noEmit`?`frontend/pnpm build` ?????
-### ????
-- ??????????????????/????????????????????????????????
-- ??????????????????????? API???????????????????
+## 2026-03-24 旧权限表物理删除与边界字段最终收口
+
+### 本次改动
+- 后端已正式删除旧权限表与历史快照列：`tenant_action_permissions`、`team_manual_action_permissions`、`role_menus`、`role_action_permissions` 与 `team_access_snapshots.manual_action_ids` 不再存在于运行时模型、AutoMigrate 与迁移主链中。
+- `backend/cmd/migrate/main.go` 已补齐 `20260324_drop_legacy_permission_tables`，并修复文件中文乱码问题；旧 seed、rebind、scope 清理逻辑也已同步收口，不再继续引用已删除旧表。
+- 前端角色边界 API 包装层与类型定义继续收口为 `expanded_package_ids + available_* + hidden/disabled_* + derived_sources` 单主链；README 与设计文档已改成“旧表已物理删除”的现势口径。
+- 已验证：`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build` 全部通过。
+
+### 下次方向
+- 继续扫一轮非主页面与低频接口，确认没有新的边界页再把 `package_ids` 或历史审计别名带回角色/团队边界主链。
+- 如继续做权限改版收尾，下一步优先把刷新入口、快照回填任务和迁移文档再并口，减少后续维护时对历史阶段的误读。
+
+## 2026-03-24 最后一轮旧数据拔除
+
+### 本次改动
+- 平台角色与团队角色边界接口已去掉旧兼容输出：后端不再返回 `package_ids`、`has_menu_boundary`、`has_package_boundary` 这类旧字段，前后端统一只按 `expanded_package_ids + available_* + hidden/disabled_* + derived_sources` 主链消费。
+- 平台角色快照服务已移除 `HasPackageConfig` 历史判断，`platform_role_access_snapshots` 运行时模型不再保留该列；迁移新增 `20260324_drop_legacy_snapshot_columns`，同步删除 `platform_role_access_snapshots.has_package_config` 与 `team_role_access_snapshots.has_menu_boundary`。
+- 这轮目标是给后续权限系统新增/改造功能清空历史负担，旧快照列、旧边界响应字段和残余兼容判断已继续做物理收口。
+- 待执行：`go run ./cmd/migrate`，随后统一跑后后端与前端校验。
+
+### 下次方向
+- 进入权限系统新功能开发前，只需再做一轮库结构与全仓校验确认；如果迁移已执行通过，后续可以默认按新快照主链直接开发，不再为旧边界别名兜底。
+- 新增接口或页面时继续坚持“功能包展开 + 减法裁剪 + 快照读取”，不要重新引入旧快照字段、旧正向表语义或边界兼容别名。
+
+## 2026-03-24 权限文档缺口整理
+
+### 本次改动
+- 重写了 `docs/permission-overall-summary.md` 和 `docs/permission-package-design.md` 里“当前实现状态”的表达，不再只写抽象原则，改为明确区分“已落地能力”和“仍缺功能”。
+- 已确认功能包集合不是完全未做：底层已有 `feature_package_bundles`、`package_type`、运行时递归展开和刷新联动；真正缺的是组合包关系管理 API、前端页面、约束校验、展开预览和初始化运营能力。
+- 两份文档都已补上下一阶段建议，明确后续权限系统扩展前应先补齐组合包产品能力，再进入常规新功能接入。
+- 本轮未执行测试；仅整理文档与缺口结论，无运行时代码变更。
+
+### 下次方向
+- 直接进入组合包能力补齐：先做后端子包关系读写接口与校验，再做功能包页面的组合包配置弹窗和展开预览。
+- 组合包补齐后，再开始新增权限模块、基础包与默认授予策略，避免新功能继续绕开组合包体系单独堆配置。
+
+## 2026-03-24 功能包组合闭环与管理员默认包切换
+
+### 本次改动
+- 后端补齐了组合包基础包读写接口，`featurepackage` 服务新增子包校验、上下文兼容判断、删除联动刷新和 `/feature-packages/:id/children` 路由，组合包正式可按“基础包集合”维护。
+- 迁移初始化补上了内置 `platform.admin_bundle` 组合包及其默认子包关系，平台管理员默认授予从三个基础包改为单个组合包，并清理 `admin` 角色上的旧基础包遗留绑定。
+- 前端功能包管理页改成“基础包 / 组合包”双页签；基础包继续管理功能范围和菜单，组合包改为独立“配置基础包”弹窗，避免旧的基础包直配心智回流。
+- 已验证：`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build` 全部通过。
+
+### 下次方向
+- 继续补组合包展开预览、组合来源展示和角色/团队授予页的组合包可视化，方便后续新增权限功能时直接围绕组合包开发。
+- 再扫 `permission-overall-summary` / `permission-package-design`，把“组合包已落地、仍缺预览/运营能力”的现状补齐，避免文档还停留在缺口阶段。
+
+## 2026-03-24 组合包展开预览与文档状态回填
+
+### 本次改动
+- 新增共享组件 `FeaturePackageGrantPreview`，平台角色、团队角色、团队开通三个授予弹窗现在都能直接预览“直绑包 -> 展开基础包 -> 展开权限/菜单”的结果，并附带来源提示。
+- 来源面板跳转到功能包管理时已带上 `packageType`，点击组合包来源不会再误落到基础包页签。
+- `permission-overall-summary` 与 `permission-package-design` 已回填为当前现状：组合包关系 API、管理页、双页签、默认管理员组合包、授予页展开预览都已落地，剩余缺口改成运营视图、循环校验和影响范围总览。
+- 已验证：`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build` 通过；本轮未改后端逻辑，未再执行 `go test`。
+
+### 下次方向
+- 继续做组合包详情级运营视图，把“组合包引用了哪些基础包、影响了哪些角色/团队、展开出哪些菜单/权限”整理成可筛选页面，而不只停留在弹窗预览。
+- 补循环依赖检测、停用影响提示和最小自动化测试，避免组合包正式进入运营后再把约束问题带回运行时。

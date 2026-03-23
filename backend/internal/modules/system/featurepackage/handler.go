@@ -185,6 +185,69 @@ func (h *Handler) GetPackageActions(c *gin.Context) {
 	}))
 }
 
+func (h *Handler) GetPackageChildren(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能包ID")
+		c.JSON(status, resp)
+		return
+	}
+	childPackageIDs, packages, err := h.service.GetPackageChildren(id)
+	if err != nil {
+		if err == ErrFeaturePackageNotFound {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get package children failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取组合包基础包失败")
+		c.JSON(status, resp)
+		return
+	}
+	items := make([]gin.H, 0, len(packages))
+	for _, item := range packages {
+		packageItem := item
+		items = append(items, packageToMap(&packageItem))
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"child_package_ids": uuidListToStrings(childPackageIDs),
+		"packages":          items,
+	}))
+}
+
+func (h *Handler) SetPackageChildren(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能包ID")
+		c.JSON(status, resp)
+		return
+	}
+	var req dto.FeaturePackageChildSetRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	childPackageIDs, err := parseUUIDSlice(req.ChildPackageIDs)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的基础包ID")
+		c.JSON(status, resp)
+		return
+	}
+	if err := h.service.SetPackageChildren(id, childPackageIDs); err != nil {
+		if err == ErrFeaturePackageNotFound {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Set package children failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存组合包基础包失败: "+err.Error())
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
 func (h *Handler) SetPackageActions(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

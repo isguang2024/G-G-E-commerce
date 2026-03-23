@@ -13,7 +13,7 @@
 
       <div class="summary-card">
         <ElTag effect="plain" round>功能包 {{ packageName }}</ElTag>
-        <ElTag type="warning" effect="plain" round>上下文 {{ contextType === 'platform' ? '平台' : '团队' }}</ElTag>
+        <ElTag type="warning" effect="plain" round>上下文 {{ formatContextType(contextType) }}</ElTag>
         <ElTag type="success" effect="plain" round>已选 {{ checkedCount }}</ElTag>
       </div>
 
@@ -131,6 +131,13 @@
     } finally {
       saving.value = false
     }
+  }
+
+  function formatContextType(contextType?: string) {
+    if (contextType === 'platform') return '平台'
+    if (contextType === 'team') return '团队'
+    if (contextType === 'platform,team') return '平台/团队'
+    return contextType || '-'
   }
 </script>
 

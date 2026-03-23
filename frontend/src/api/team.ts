@@ -94,9 +94,11 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
   return {
     id: item?.id || '',
     packageKey,
+    packageType: item?.package_type || item?.packageType || 'base',
     name: item?.name || '',
     description: item?.description || '',
     contextType,
+    isBuiltin: Boolean(item?.is_builtin ?? item?.isBuiltin ?? false),
     actionCount: item?.action_count ?? item?.actionCount ?? 0,
     menuCount: item?.menu_count ?? item?.menuCount ?? 0,
     teamCount: item?.team_count ?? item?.teamCount ?? 0,
@@ -305,7 +307,6 @@ export function fetchGetMyTeamRoleMenus(roleId: string) {
       menu_ids: res?.menu_ids || [],
       available_menu_ids: res?.available_menu_ids || [],
       hidden_menu_ids: res?.hidden_menu_ids || [],
-      package_ids: res?.package_ids || [],
       expanded_package_ids: res?.expanded_package_ids || [],
       derived_sources: (res?.derived_sources || []).map((item) => ({
         menu_id: item?.menu_id || '',
@@ -331,7 +332,6 @@ export function fetchGetMyTeamRoleActions(roleId: string) {
       available_action_ids: res?.available_action_ids || [],
       disabled_action_ids: res?.disabled_action_ids || [],
       actions: (res?.actions || []).map(normalizeAction),
-      package_ids: res?.package_ids || [],
       expanded_package_ids: res?.expanded_package_ids || [],
       derived_sources: (res?.derived_sources || []).map((item) => ({
         action_id: item?.action_id || '',

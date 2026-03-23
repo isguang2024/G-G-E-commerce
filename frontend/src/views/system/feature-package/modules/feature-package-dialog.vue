@@ -10,6 +10,15 @@
       <ElFormItem label="功能包编码" prop="packageKey">
         <ElInput v-model="form.packageKey" placeholder="例如 platform.system_admin" />
       </ElFormItem>
+      <ElFormItem label="功能包类型" prop="packageType">
+        <ElSelect v-model="form.packageType" placeholder="请选择功能包类型" style="width: 100%">
+          <ElOption label="基础包" value="base" />
+          <ElOption label="组合包" value="bundle" />
+        </ElSelect>
+      </ElFormItem>
+      <div v-if="form.packageType === 'bundle'" class="form-note">
+        组合包不直接配置功能范围和菜单，保存后请通过“配置基础包”维护组合集合。
+      </div>
       <ElFormItem label="功能包名称" prop="name">
         <ElInput v-model="form.name" placeholder="请输入功能包名称" />
       </ElFormItem>
@@ -50,6 +59,7 @@
     modelValue: boolean
     dialogType: 'add' | 'edit'
     packageData?: Partial<PackageItem>
+    defaultPackageType?: 'base' | 'bundle'
   }
 
   interface Emits {
@@ -60,7 +70,8 @@
   const props = withDefaults(defineProps<Props>(), {
     modelValue: false,
     dialogType: 'add',
-    packageData: undefined
+    packageData: undefined,
+    defaultPackageType: 'base'
   })
 
   const emit = defineEmits<Emits>()
@@ -74,6 +85,7 @@
   const form = reactive({
     id: '',
     packageKey: '',
+    packageType: 'base' as 'base' | 'bundle',
     name: '',
     description: '',
     contextType: 'team',
@@ -83,6 +95,7 @@
 
   const rules = reactive<FormRules>({
     packageKey: [{ required: true, message: '请输入功能包编码', trigger: 'blur' }],
+    packageType: [{ required: true, message: '请选择功能包类型', trigger: 'change' }],
     name: [{ required: true, message: '请输入功能包名称', trigger: 'blur' }],
     contextType: [{ required: true, message: '请选择上下文类型', trigger: 'change' }],
     status: [{ required: true, message: '请选择状态', trigger: 'change' }]
@@ -93,6 +106,7 @@
       Object.assign(form, {
         id: props.packageData.id || '',
         packageKey: props.packageData.packageKey || '',
+        packageType: (props.packageData.packageType as 'base' | 'bundle') || props.defaultPackageType,
         name: props.packageData.name || '',
         description: props.packageData.description || '',
         contextType: props.packageData.contextType || 'team',
@@ -104,6 +118,7 @@
     Object.assign(form, {
       id: '',
       packageKey: '',
+      packageType: props.defaultPackageType,
       name: '',
       description: '',
       contextType: 'team',
@@ -142,6 +157,7 @@
       if (!valid) return
       const payload = {
         package_key: form.packageKey.trim(),
+        package_type: form.packageType,
         name: form.name.trim(),
         description: form.description.trim(),
         context_type: form.contextType,
@@ -163,3 +179,11 @@
     })
   }
 </script>
+
+<style scoped lang="scss">
+  .form-note {
+    margin: -6px 0 12px 110px;
+    color: #6b7280;
+    line-height: 1.6;
+  }
+</style>

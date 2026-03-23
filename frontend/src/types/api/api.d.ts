@@ -247,9 +247,11 @@ declare namespace Api {
     interface FeaturePackageItem {
       id: string
       packageKey: string
+      packageType?: 'base' | 'bundle' | string
       name: string
       description?: string
       contextType?: 'platform' | 'team' | string
+      isBuiltin?: boolean
       actionCount?: number
       menuCount?: number
       teamCount?: number
@@ -270,12 +272,14 @@ declare namespace Api {
         Api.Common.CommonSearchParams & {
           keyword?: string
           packageKey?: string
+          packageType?: string
           contextType?: string
         }
     >
 
     interface FeaturePackageCreateParams {
       package_key: string
+      package_type?: 'base' | 'bundle' | string
       name: string
       description?: string
       context_type?: 'platform' | 'team' | string
@@ -285,6 +289,7 @@ declare namespace Api {
 
     interface FeaturePackageUpdateParams {
       package_key?: string
+      package_type?: 'base' | 'bundle' | string
       name?: string
       description?: string
       context_type?: 'platform' | 'team' | string
@@ -295,6 +300,11 @@ declare namespace Api {
     interface FeaturePackageActionResponse {
       action_ids: string[]
       actions: PermissionActionItem[]
+    }
+
+    interface FeaturePackageBundleResponse {
+      child_package_ids: string[]
+      packages: FeaturePackageItem[]
     }
 
     interface FeaturePackageMenuResponse {
@@ -326,7 +336,6 @@ declare namespace Api {
       action_ids: string[]
       available_action_ids: string[]
       actions?: PermissionActionItem[]
-      package_ids?: string[] // 迁移兼容字段，主链请优先使用 expanded_package_ids
       expanded_package_ids?: string[]
       disabled_action_ids?: string[]
       derived_sources?: Array<{
@@ -338,7 +347,6 @@ declare namespace Api {
     interface RoleMenuBoundaryResponse {
       menu_ids: string[]
       available_menu_ids: string[]
-      package_ids?: string[] // 迁移兼容字段，主链请优先使用 expanded_package_ids
       expanded_package_ids?: string[]
       hidden_menu_ids?: string[]
       derived_sources?: Array<{
@@ -458,7 +466,7 @@ declare namespace Api {
     }
 
     interface UserActionPermissionResponse {
-      actions: UserActionPermissionItem[] // 历史例外审计字段，主链候选集请优先使用 available_action_ids / available_actions
+      actions: UserActionPermissionItem[] // 历史例外审计字段，主链候选集优先使用 available_action_ids / available_actions
       available_action_ids?: string[]
       available_actions?: PermissionActionItem[]
       expanded_package_ids?: string[]
@@ -557,7 +565,7 @@ declare namespace Api {
     }
 
     interface TeamMemberActionPermissionResponse {
-      actions: TeamMemberActionPermissionItem[] // 历史成员例外审计字段，主链候选集请优先使用 available_action_ids / available_actions
+      actions: TeamMemberActionPermissionItem[] // 历史成员例外审计字段，主链候选集优先使用 available_action_ids / available_actions
       available_action_ids?: string[]
       available_actions?: PermissionActionItem[]
       derived_sources?: Array<{
@@ -568,6 +576,10 @@ declare namespace Api {
 
     interface FeaturePackageActionSetParams {
       action_ids: string[]
+    }
+
+    interface FeaturePackageChildSetParams {
+      child_package_ids: string[]
     }
 
     interface TeamFeaturePackageSetParams {

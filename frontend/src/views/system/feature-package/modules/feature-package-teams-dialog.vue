@@ -7,7 +7,7 @@
   >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        平台为团队开通功能包后，团队功能边界会自动同步；这里只处理团队级功能包。
+        平台为团队开通功能包后，团队功能边界会自动同步；这里支持团队包和平台/团队共享包。
       </div>
 
       <div class="summary-card">
@@ -132,8 +132,8 @@
 
   async function handleSave() {
     if (!props.packageId) return
-    if (props.contextType !== 'team') {
-      ElMessage.warning('仅团队功能包支持开通团队')
+    if (!supportsTeamContext(props.contextType)) {
+      ElMessage.warning('仅团队侧可生效的功能包支持开通团队')
       return
     }
     saving.value = true
@@ -147,6 +147,10 @@
     } finally {
       saving.value = false
     }
+  }
+
+  function supportsTeamContext(contextType?: string) {
+    return contextType === 'team' || contextType === 'platform,team'
   }
 </script>
 

@@ -86,6 +86,12 @@ func main() {
 		logger.Info("Feature packages initialized successfully")
 	}
 
+	if err := initDefaultFeaturePackageBundles(logger); err != nil {
+		logger.Warn("Failed to initialize feature package bundles", zap.Error(err))
+	} else {
+		logger.Info("Feature package bundles initialized successfully")
+	}
+
 	if err := initDefaultRoleFeaturePackages(logger); err != nil {
 		logger.Warn("Failed to initialize default role feature packages", zap.Error(err))
 	} else {
@@ -557,7 +563,6 @@ func runNamedMigrations(logger *zap.Logger) error {
 						hidden_menu_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
 						menu_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
 						menu_source_map jsonb NOT NULL DEFAULT '{}'::jsonb,
-						has_menu_boundary boolean NOT NULL DEFAULT FALSE,
 						inherited boolean NOT NULL DEFAULT FALSE,
 						refreshed_at timestamptz NOT NULL DEFAULT NOW(),
 						created_at timestamptz NOT NULL DEFAULT NOW(),
@@ -575,6 +580,22 @@ func runNamedMigrations(logger *zap.Logger) error {
 					}
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260324_team_role_access_snapshot_boundary_fields"))
+				return nil
+			},
+		},
+		{
+			Name: "20260324_drop_legacy_snapshot_columns",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`ALTER TABLE platform_role_access_snapshots DROP COLUMN IF EXISTS has_package_config`,
+					`ALTER TABLE team_role_access_snapshots DROP COLUMN IF EXISTS has_menu_boundary`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260324_drop_legacy_snapshot_columns"))
 				return nil
 			},
 		},
@@ -1390,6 +1411,26 @@ func defaultFeaturePackageSeeds() []featurePackageSeed {
 			MenuNames:      []string{"TeamRoot", "TeamManagement", "TeamMembers"},
 			PermissionKeys: []string{"team.member.manage", "team.member.assign_role", "team.member.assign_action", "team.boundary.manage"},
 		},
+		{
+			PackageKey:  "platform.admin_bundle",
+			PackageType: "bundle",
+			Name:        "平台管理员组合包",
+			Description: "统一聚合平台系统、菜单与接口管理基础包",
+			ContextType: "platform",
+			IsBuiltin:   true,
+			Status:      "normal",
+			SortOrder:   4,
+		},
+	}
+}
+
+func defaultFeaturePackageBundleSeeds() map[string][]string {
+	return map[string][]string{
+		"platform.admin_bundle": {
+			"platform.system_admin",
+			"platform.menu_admin",
+			"platform.api_admin",
+		},
 	}
 }
 
@@ -1495,9 +1536,71 @@ func initDefaultFeaturePackages(logger *zap.Logger) error {
 	return nil
 }
 
+func initDefaultFeaturePackageBundles(logger *zap.Logger) error {
+	seeds := defaultFeaturePackageBundleSeeds()
+	if len(seeds) == 0 {
+		return nil
+	}
+
+	var packages []usermodel.FeaturePackage
+	packageKeys := make([]string, 0, len(seeds)*4)
+	for parentKey, childKeys := range seeds {
+		packageKeys = append(packageKeys, parentKey)
+		packageKeys = append(packageKeys, childKeys...)
+	}
+	if err := database.DB.Where("package_key IN ?", packageKeys).Find(&packages).Error; err != nil {
+		return err
+	}
+	packageByKey := make(map[string]usermodel.FeaturePackage, len(packages))
+	for _, item := range packages {
+		packageByKey[item.PackageKey] = item
+	}
+
+	for parentKey, childKeys := range seeds {
+		parentPkg, ok := packageByKey[parentKey]
+		if !ok {
+			continue
+		}
+		if err := database.DB.Where("package_id = ?", parentPkg.ID).Delete(&usermodel.FeaturePackageBundle{}).Error; err != nil {
+			return err
+		}
+
+		seen := make(map[uuid.UUID]struct{}, len(childKeys))
+		records := make([]usermodel.FeaturePackageBundle, 0, len(childKeys))
+		for _, childKey := range childKeys {
+			childPkg, ok := packageByKey[childKey]
+			if !ok || childPkg.ID == parentPkg.ID {
+				continue
+			}
+			if _, exists := seen[childPkg.ID]; exists {
+				continue
+			}
+			seen[childPkg.ID] = struct{}{}
+			records = append(records, usermodel.FeaturePackageBundle{
+				PackageID:      parentPkg.ID,
+				ChildPackageID: childPkg.ID,
+			})
+		}
+		if len(records) > 0 {
+			if err := database.DB.Create(&records).Error; err != nil {
+				return err
+			}
+		}
+	}
+
+	logger.Info("Default feature package bundles seeded")
+	return nil
+}
+
 func initDefaultRoleFeaturePackages(logger *zap.Logger) error {
 	roleCodes := []string{"admin", "team_admin"}
-	packageKeys := []string{"platform.system_admin", "platform.menu_admin", "platform.api_admin", "team.member_admin"}
+	packageKeys := []string{
+		"platform.system_admin",
+		"platform.menu_admin",
+		"platform.api_admin",
+		"platform.admin_bundle",
+		"team.member_admin",
+	}
 
 	var roles []usermodel.Role
 	if err := database.DB.Where("tenant_id IS NULL AND code IN ?", roleCodes).Find(&roles).Error; err != nil {
@@ -1518,7 +1621,7 @@ func initDefaultRoleFeaturePackages(logger *zap.Logger) error {
 	}
 
 	assignments := map[string][]string{
-		"admin":      {"platform.system_admin", "platform.menu_admin", "platform.api_admin"},
+		"admin":      {"platform.admin_bundle"},
 		"team_admin": {"team.member_admin"},
 	}
 
@@ -1541,6 +1644,23 @@ func initDefaultRoleFeaturePackages(logger *zap.Logger) error {
 				return err
 			}
 			if err := database.DB.Model(&record).Update("enabled", true).Error; err != nil {
+				return err
+			}
+		}
+	}
+
+	adminRole, ok := roleByCode["admin"]
+	if ok {
+		legacyKeys := []string{"platform.system_admin", "platform.menu_admin", "platform.api_admin"}
+		legacyIDs := make([]uuid.UUID, 0, len(legacyKeys))
+		for _, packageKey := range legacyKeys {
+			if pkg, exists := packageByKey[packageKey]; exists {
+				legacyIDs = append(legacyIDs, pkg.ID)
+			}
+		}
+		if len(legacyIDs) > 0 {
+			if err := database.DB.Where("role_id = ? AND package_id IN ?", adminRole.ID, legacyIDs).
+				Delete(&usermodel.RoleFeaturePackage{}).Error; err != nil {
 				return err
 			}
 		}

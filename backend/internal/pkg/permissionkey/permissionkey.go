@@ -49,6 +49,7 @@ var mappings = map[string]Mapping{
 	"feature_package:update":                   {Key: "platform.package.manage", ResourceCode: "feature_package", ActionCode: "manage", Name: "平台功能包管理", Description: "允许查看和维护平台功能包", ContextType: "platform"},
 	"feature_package:delete":                   {Key: "platform.package.manage", ResourceCode: "feature_package", ActionCode: "manage", Name: "平台功能包管理", Description: "允许查看和维护平台功能包", ContextType: "platform"},
 	"feature_package:assign_action":            {Key: "platform.package.manage", ResourceCode: "feature_package", ActionCode: "manage", Name: "平台功能包管理", Description: "允许查看和维护平台功能包", ContextType: "platform"},
+	"feature_package:assign_bundle":            {Key: "platform.package.manage", ResourceCode: "feature_package", ActionCode: "manage", Name: "平台功能包管理", Description: "允许查看和维护平台功能包组合关系", ContextType: "platform"},
 	"feature_package:assign_team":              {Key: "platform.package.assign", ResourceCode: "feature_package", ActionCode: "assign_team", Name: "平台团队功能包开通", Description: "允许为团队开通和配置功能包", ContextType: "platform"},
 	"feature_package:assign_menu":              {Key: "platform.package.manage", ResourceCode: "feature_package", ActionCode: "assign_menu", Name: "平台功能包管理", Description: "允许查看和维护平台功能包菜单", ContextType: "platform"},
 	"system:view_page_catalog":                 {Key: "system.page_catalog.view", ResourceCode: "system", ActionCode: "view_page_catalog", Name: "查看页面文件映射", Description: "允许查看页面文件映射", ContextType: "platform"},

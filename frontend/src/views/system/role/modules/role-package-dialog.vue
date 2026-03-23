@@ -45,6 +45,11 @@
         </ElTableColumn>
         <ElTableColumn prop="description" label="说明" min-width="240" show-overflow-tooltip />
       </ElTable>
+
+      <FeaturePackageGrantPreview
+        :selected-package-ids="selectedPackageIds"
+        :packages="packages"
+      />
     </div>
 
     <template #footer>
@@ -57,6 +62,7 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
+  import FeaturePackageGrantPreview from '@/components/business/permission/FeaturePackageGrantPreview.vue'
   import {
     fetchGetFeaturePackageList,
     fetchGetRolePackages,

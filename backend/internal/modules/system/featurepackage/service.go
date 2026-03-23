@@ -27,6 +27,8 @@ type Service interface {
 	Create(req *dto.FeaturePackageCreateRequest) (*user.FeaturePackage, error)
 	Update(id uuid.UUID, req *dto.FeaturePackageUpdateRequest) error
 	Delete(id uuid.UUID) error
+	GetPackageChildren(id uuid.UUID) ([]uuid.UUID, []user.FeaturePackage, error)
+	SetPackageChildren(id uuid.UUID, childPackageIDs []uuid.UUID) error
 	GetPackageActions(id uuid.UUID) ([]uuid.UUID, []user.PermissionAction, error)
 	SetPackageActions(id uuid.UUID, actionIDs []uuid.UUID) error
 	GetPackageMenus(id uuid.UUID) ([]uuid.UUID, []user.Menu, error)
@@ -39,6 +41,7 @@ type Service interface {
 
 type service struct {
 	packageRepo       user.FeaturePackageRepository
+	packageBundleRepo user.FeaturePackageBundleRepository
 	packageActionRepo user.FeaturePackageActionRepository
 	packageMenuRepo   user.FeaturePackageMenuRepository
 	teamPackageRepo   user.TeamFeaturePackageRepository
@@ -52,6 +55,7 @@ type service struct {
 
 func NewService(
 	packageRepo user.FeaturePackageRepository,
+	packageBundleRepo user.FeaturePackageBundleRepository,
 	packageActionRepo user.FeaturePackageActionRepository,
 	packageMenuRepo user.FeaturePackageMenuRepository,
 	teamPackageRepo user.TeamFeaturePackageRepository,
@@ -64,6 +68,7 @@ func NewService(
 ) Service {
 	return &service{
 		packageRepo:       packageRepo,
+		packageBundleRepo: packageBundleRepo,
 		packageActionRepo: packageActionRepo,
 		packageMenuRepo:   packageMenuRepo,
 		teamPackageRepo:   teamPackageRepo,
@@ -175,6 +180,33 @@ func (s *service) Update(id uuid.UUID, req *dto.FeaturePackageUpdateRequest) err
 		updates["description"] = strings.TrimSpace(req.Description)
 	}
 	if packageType := normalizePackageType(req.PackageType); packageType != "" {
+		if packageType != current.PackageType {
+			if packageType == "bundle" {
+				actionIDs, getActionErr := s.packageActionRepo.GetActionIDsByPackageID(id)
+				if getActionErr != nil {
+					return getActionErr
+				}
+				if len(actionIDs) > 0 {
+					return errors.New("存在已绑定功能权限，请先清空后再改为组合包")
+				}
+				menuIDs, getMenuErr := s.packageMenuRepo.GetMenuIDsByPackageID(id)
+				if getMenuErr != nil {
+					return getMenuErr
+				}
+				if len(menuIDs) > 0 {
+					return errors.New("存在已绑定菜单，请先清空后再改为组合包")
+				}
+			}
+			if packageType == "base" {
+				childPackageIDs, childErr := s.packageBundleRepo.GetChildPackageIDs(id)
+				if childErr != nil {
+					return childErr
+				}
+				if len(childPackageIDs) > 0 {
+					return errors.New("组合包仍包含基础包，请先清空组合关系后再改为基础包")
+				}
+			}
+		}
 		updates["package_type"] = packageType
 	}
 	if contextType := normalizeContextType(req.ContextType); contextType != "" {
@@ -207,6 +239,10 @@ func (s *service) Delete(id uuid.UUID) error {
 	if err != nil {
 		return err
 	}
+	parentPackageIDs, err := s.packageBundleRepo.GetParentPackageIDs(id)
+	if err != nil {
+		return err
+	}
 	if err := s.packageActionRepo.DeleteByPackageID(id); err != nil {
 		return err
 	}
@@ -219,16 +255,87 @@ func (s *service) Delete(id uuid.UUID) error {
 	if err := s.rolePackageRepo.DeleteByPackageID(id); err != nil {
 		return err
 	}
+	if err := s.packageBundleRepo.DeleteByPackageID(id); err != nil {
+		return err
+	}
+	if err := s.packageBundleRepo.DeleteByChildPackageID(id); err != nil {
+		return err
+	}
 	if err := s.packageRepo.Delete(id); err != nil {
 		return err
 	}
 	if s.refresher != nil {
+		for _, packageID := range parentPackageIDs {
+			if refreshErr := s.refresher.RefreshByPackage(packageID); refreshErr != nil {
+				return refreshErr
+			}
+		}
 		return s.refresher.RefreshTeams(teamIDs)
 	}
 	for _, teamID := range teamIDs {
 		if _, err := s.boundaryService.RefreshSnapshot(teamID); err != nil {
 			return err
 		}
+	}
+	return nil
+}
+
+func (s *service) GetPackageChildren(id uuid.UUID) ([]uuid.UUID, []user.FeaturePackage, error) {
+	item, err := s.packageRepo.GetByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil, ErrFeaturePackageNotFound
+		}
+		return nil, nil, err
+	}
+	if item.PackageType != "bundle" {
+		return []uuid.UUID{}, []user.FeaturePackage{}, nil
+	}
+	childPackageIDs, err := s.packageBundleRepo.GetChildPackageIDs(id)
+	if err != nil {
+		return nil, nil, err
+	}
+	items, err := s.packageRepo.GetByIDs(childPackageIDs)
+	if err != nil {
+		return nil, nil, err
+	}
+	return childPackageIDs, items, nil
+}
+
+func (s *service) SetPackageChildren(id uuid.UUID, childPackageIDs []uuid.UUID) error {
+	item, err := s.packageRepo.GetByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrFeaturePackageNotFound
+		}
+		return err
+	}
+	if item.PackageType != "bundle" {
+		return errors.New("仅组合包允许配置基础包集合")
+	}
+	for _, childPackageID := range childPackageIDs {
+		if childPackageID == id {
+			return errors.New("组合包不能包含自己")
+		}
+		child, getErr := s.packageRepo.GetByID(childPackageID)
+		if getErr != nil {
+			if errors.Is(getErr, gorm.ErrRecordNotFound) {
+				return ErrFeaturePackageNotFound
+			}
+			return getErr
+		}
+		if child.PackageType != "base" {
+			return errors.New("组合包只能包含基础包")
+		}
+		if !contextSupportsChildPackage(item.ContextType, child.ContextType) {
+			return errors.New("组合包上下文与基础包上下文不兼容")
+		}
+	}
+	if err := s.packageBundleRepo.ReplaceChildPackages(id, childPackageIDs); err != nil {
+		return err
+	}
+	if s.refresher != nil {
+		return s.refresher.RefreshByPackage(id)
 	}
 	return nil
 }
@@ -509,4 +616,17 @@ func contextSupportsAction(packageContextType, actionContextType string) bool {
 		return actionContextType == "platform" || actionContextType == "team"
 	}
 	return packageContextType == actionContextType
+}
+
+func contextSupportsChildPackage(bundleContextType, childContextType string) bool {
+	switch bundleContextType {
+	case "platform":
+		return childContextType == "platform" || childContextType == "platform,team"
+	case "team":
+		return childContextType == "team" || childContextType == "platform,team"
+	case "platform,team":
+		return childContextType == "platform" || childContextType == "team" || childContextType == "platform,team"
+	default:
+		return false
+	}
 }

@@ -1570,6 +1570,7 @@ func (r *roleFeaturePackageRepository) DeleteByPackageID(packageID uuid.UUID) er
 
 type FeaturePackageBundleRepository interface {
 	GetChildPackageIDs(packageID uuid.UUID) ([]uuid.UUID, error)
+	GetParentPackageIDs(childPackageID uuid.UUID) ([]uuid.UUID, error)
 	ReplaceChildPackages(packageID uuid.UUID, childPackageIDs []uuid.UUID) error
 	DeleteByPackageID(packageID uuid.UUID) error
 	DeleteByChildPackageID(childPackageID uuid.UUID) error
@@ -1586,6 +1587,12 @@ func NewFeaturePackageBundleRepository(db *gorm.DB) FeaturePackageBundleReposito
 func (r *featurePackageBundleRepository) GetChildPackageIDs(packageID uuid.UUID) ([]uuid.UUID, error) {
 	var ids []uuid.UUID
 	err := r.db.Model(&FeaturePackageBundle{}).Where("package_id = ?", packageID).Pluck("child_package_id", &ids).Error
+	return ids, err
+}
+
+func (r *featurePackageBundleRepository) GetParentPackageIDs(childPackageID uuid.UUID) ([]uuid.UUID, error) {
+	var ids []uuid.UUID
+	err := r.db.Model(&FeaturePackageBundle{}).Where("child_package_id = ?", childPackageID).Pluck("package_id", &ids).Error
 	return ids, err
 }
 

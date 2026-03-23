@@ -1,5 +1,10 @@
 <template>
   <div class="feature-package-page art-full-height">
+    <ElTabs v-model="activePackageType" class="package-tabs" @tab-change="handleTabChange">
+      <ElTabPane label="基础包" name="base" />
+      <ElTabPane label="组合包" name="bundle" />
+    </ElTabs>
+
     <ArtSearchBar
       v-show="showSearchBar"
       v-model="searchForm"
@@ -11,7 +16,7 @@
 
     <div class="stats-row">
       <ElCard shadow="never" class="stats-card">
-        <div class="stats-label">当前功能包数</div>
+        <div class="stats-label">当前页功能包数</div>
         <div class="stats-value">{{ data.length }}</div>
       </ElCard>
       <ElCard shadow="never" class="stats-card">
@@ -27,16 +32,12 @@
         <div class="stats-value">{{ sharedPackageCount }}</div>
       </ElCard>
       <ElCard shadow="never" class="stats-card">
-        <div class="stats-label">已组合功能范围数</div>
-        <div class="stats-value">{{ totalActionCount }}</div>
+        <div class="stats-label">{{ activePackageType === 'base' ? '已组合功能范围数' : '组合包数量' }}</div>
+        <div class="stats-value">{{ activePackageType === 'base' ? totalActionCount : bundleCount }}</div>
       </ElCard>
       <ElCard shadow="never" class="stats-card">
-        <div class="stats-label">已绑定菜单数</div>
-        <div class="stats-value">{{ totalMenuCount }}</div>
-      </ElCard>
-      <ElCard shadow="never" class="stats-card">
-        <div class="stats-label">团队开通数</div>
-        <div class="stats-value">{{ totalTeamCount }}</div>
+        <div class="stats-label">{{ activePackageType === 'base' ? '已绑定菜单数' : '团队开通数' }}</div>
+        <div class="stats-value">{{ activePackageType === 'base' ? totalMenuCount : totalTeamCount }}</div>
       </ElCard>
       <ElCard shadow="never" class="stats-card">
         <div class="stats-label">停用功能包</div>
@@ -53,7 +54,7 @@
       >
         <template #left>
           <ElButton v-action="'platform.package.manage'" type="primary" @click="openDialog('add')" v-ripple>
-            新增功能包
+            新增{{ activePackageType === 'base' ? '基础包' : '组合包' }}
           </ElButton>
         </template>
       </ArtTableHeader>
@@ -72,6 +73,15 @@
       v-model="dialogVisible"
       :dialog-type="dialogType"
       :package-data="currentPackage"
+      :default-package-type="activePackageType"
+      @success="handleRefresh"
+    />
+
+    <FeaturePackageBundlesDialog
+      v-model="bundlesDialogVisible"
+      :package-id="currentPackage.id || ''"
+      :package-name="currentPackage.name || ''"
+      :context-type="currentPackage.contextType || 'team'"
       @success="handleRefresh"
     />
 
@@ -111,6 +121,7 @@
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import type { FormItem } from '@/components/core/forms/art-form/index.vue'
   import FeaturePackageDialog from './modules/feature-package-dialog.vue'
+  import FeaturePackageBundlesDialog from './modules/feature-package-bundles-dialog.vue'
   import FeaturePackageActionsDialog from './modules/feature-package-actions-dialog.vue'
   import FeaturePackageMenusDialog from './modules/feature-package-menus-dialog.vue'
   import FeaturePackageTeamsDialog from './modules/feature-package-teams-dialog.vue'
@@ -128,7 +139,9 @@
   }
   const showSearchBar = ref(true)
   const route = useRoute()
+  const activePackageType = ref<'base' | 'bundle'>('base')
   const dialogVisible = ref(false)
+  const bundlesDialogVisible = ref(false)
   const actionsDialogVisible = ref(false)
   const menusDialogVisible = ref(false)
   const teamsDialogVisible = ref(false)
@@ -138,6 +151,7 @@
   const platformPackageCount = computed(() => data.value.filter((item) => supportsPlatform(item.contextType)).length)
   const teamPackageCount = computed(() => data.value.filter((item) => supportsTeam(item.contextType)).length)
   const sharedPackageCount = computed(() => data.value.filter((item) => item.contextType === 'platform,team').length)
+  const bundleCount = computed(() => data.value.filter((item) => item.packageType === 'bundle').length)
   const totalActionCount = computed(() => data.value.reduce((sum, item) => sum + (item.actionCount || 0), 0))
   const totalMenuCount = computed(() => data.value.reduce((sum, item) => sum + (item.menuCount || 0), 0))
   const totalTeamCount = computed(() => data.value.reduce((sum, item) => sum + (item.teamCount || 0), 0))
@@ -185,7 +199,6 @@
     pagination,
     getData,
     searchParams,
-    resetSearchParams,
     handleSizeChange,
     handleCurrentChange,
     refreshData
@@ -199,6 +212,15 @@
       columnsFactory: () => [
         { prop: 'packageKey', label: '功能包编码', minWidth: 220, showOverflowTooltip: true },
         { prop: 'name', label: '功能包名称', minWidth: 180, showOverflowTooltip: true },
+        {
+          prop: 'packageType',
+          label: '类型',
+          width: 100,
+          formatter: (row: PackageItem) =>
+            h(ElTag, { type: row.packageType === 'bundle' ? 'warning' : 'success' }, () =>
+              row.packageType === 'bundle' ? '组合包' : '基础包'
+            )
+        },
         {
           prop: 'contextType',
           label: '上下文',
@@ -217,8 +239,18 @@
           showOverflowTooltip: true,
           formatter: (row: PackageItem) => row.description || '-'
         },
-        { prop: 'actionCount', label: '功能范围数', width: 100, formatter: (row: PackageItem) => row.actionCount ?? 0 },
-        { prop: 'menuCount', label: '绑定菜单数', width: 96, formatter: (row: PackageItem) => row.menuCount ?? 0 },
+        {
+          prop: 'actionCount',
+          label: '功能范围数',
+          width: 100,
+          formatter: (row: PackageItem) => (row.packageType === 'bundle' ? '-' : row.actionCount ?? 0)
+        },
+        {
+          prop: 'menuCount',
+          label: '绑定菜单数',
+          width: 96,
+          formatter: (row: PackageItem) => (row.packageType === 'bundle' ? '-' : row.menuCount ?? 0)
+        },
         { prop: 'teamCount', label: '团队数', width: 90, formatter: (row: PackageItem) => row.teamCount ?? 0 },
         { prop: 'sortOrder', label: '排序', width: 80, formatter: (row: PackageItem) => row.sortOrder ?? 0 },
         {
@@ -237,24 +269,48 @@
           width: 140,
           fixed: 'right',
           formatter: (row: PackageItem) => {
-            const list: ButtonMoreItem[] = [
-              { key: 'actions', label: '配置功能范围', icon: 'ri:key-2-line', auth: 'platform.package.manage' },
-              {
-                key: 'menus',
-                label: '绑定菜单',
-                icon: 'ri:menu-line',
-                auth: 'platform.package.manage'
-              },
-              {
-                key: 'teams',
-                label: '开通团队',
-                icon: 'ri:team-line',
-                auth: 'platform.package.assign',
-                disabled: !supportsTeam(row.contextType)
-              },
-              { key: 'edit', label: '编辑', icon: 'ri:edit-2-line', auth: 'platform.package.manage' },
-              { key: 'delete', label: '删除', icon: 'ri:delete-bin-4-line', auth: 'platform.package.manage' }
-            ]
+            const list: ButtonMoreItem[] =
+              row.packageType === 'bundle'
+                ? [
+                    {
+                      key: 'bundles',
+                      label: '配置基础包',
+                      icon: 'ri:stack-line',
+                      auth: 'platform.package.manage'
+                    },
+                    {
+                      key: 'teams',
+                      label: '开通团队',
+                      icon: 'ri:team-line',
+                      auth: 'platform.package.assign',
+                      disabled: !supportsTeam(row.contextType)
+                    },
+                    { key: 'edit', label: '编辑', icon: 'ri:edit-2-line', auth: 'platform.package.manage' },
+                    { key: 'delete', label: '删除', icon: 'ri:delete-bin-4-line', auth: 'platform.package.manage' }
+                  ]
+                : [
+                    {
+                      key: 'actions',
+                      label: '配置功能范围',
+                      icon: 'ri:key-2-line',
+                      auth: 'platform.package.manage'
+                    },
+                    {
+                      key: 'menus',
+                      label: '绑定菜单',
+                      icon: 'ri:menu-line',
+                      auth: 'platform.package.manage'
+                    },
+                    {
+                      key: 'teams',
+                      label: '开通团队',
+                      icon: 'ri:team-line',
+                      auth: 'platform.package.assign',
+                      disabled: !supportsTeam(row.contextType)
+                    },
+                    { key: 'edit', label: '编辑', icon: 'ri:edit-2-line', auth: 'platform.package.manage' },
+                    { key: 'delete', label: '删除', icon: 'ri:delete-bin-4-line', auth: 'platform.package.manage' }
+                  ]
             return h(ArtButtonMore, {
               list,
               onClick: (item: ButtonMoreItem) => handleAction(item.key as string, row)
@@ -268,9 +324,10 @@
   function normalizeSearchParams() {
     return {
       keyword: searchForm.keyword.trim() || undefined,
-      package_key: searchForm.packageKey.trim() || undefined,
+      packageKey: searchForm.packageKey.trim() || undefined,
       name: searchForm.name.trim() || undefined,
-      context_type: searchForm.contextType || undefined,
+      packageType: activePackageType.value,
+      contextType: searchForm.contextType || undefined,
       status: searchForm.status || undefined
     }
   }
@@ -288,7 +345,8 @@
       contextType: '',
       status: ''
     })
-    await resetSearchParams()
+    Object.assign(searchParams, normalizeSearchParams())
+    await getData()
   }
 
   async function handleRefresh() {
@@ -296,9 +354,12 @@
   }
 
   async function syncRouteFilters() {
+    activePackageType.value = normalizePackageType(String(route.query.tab || route.query.packageType || '')) || 'base'
     searchForm.keyword = String(route.query.keyword || '')
     searchForm.packageKey = String(route.query.packageKey || '')
+    searchForm.name = String(route.query.name || '')
     searchForm.contextType = String(route.query.contextType || '')
+    searchForm.status = String(route.query.status || '')
     Object.assign(searchParams, normalizeSearchParams())
     await getData()
     await openRouteTargetIfNeeded()
@@ -308,19 +369,27 @@
     const openMode = String(route.query.open || '')
     const packageKey = String(route.query.packageKey || '')
     const contextType = String(route.query.contextType || '')
+    const packageType = normalizePackageType(String(route.query.tab || route.query.packageType || ''))
     if (!openMode || !packageKey) return
 
-    const signature = `${openMode}|${packageKey}|${contextType}`
+    const signature = `${openMode}|${packageKey}|${contextType}|${packageType}`
     if (routeOpenSignature.value === signature) return
 
     const target = data.value.find(
-      (item) => item.packageKey === packageKey && (!contextType || item.contextType === contextType)
+      (item) =>
+        item.packageKey === packageKey &&
+        (!contextType || item.contextType === contextType) &&
+        (!packageType || item.packageType === packageType)
     )
     if (!target) return
 
     routeOpenSignature.value = signature
     currentPackage.value = { ...target }
 
+    if (openMode === 'bundles') {
+      bundlesDialogVisible.value = true
+      return
+    }
     if (openMode === 'actions') {
       actionsDialogVisible.value = true
       return
@@ -340,11 +409,22 @@
 
   function openDialog(type: 'add' | 'edit', row?: PackageItem) {
     dialogType.value = type
-    currentPackage.value = row ? { ...row } : {}
+    currentPackage.value = row ? { ...row } : { packageType: activePackageType.value }
     dialogVisible.value = true
   }
 
+  async function handleTabChange(name: string | number) {
+    activePackageType.value = normalizePackageType(String(name)) || 'base'
+    Object.assign(searchParams, normalizeSearchParams())
+    await getData()
+  }
+
   function handleAction(command: string, row: PackageItem) {
+    if (command === 'bundles') {
+      currentPackage.value = { ...row }
+      bundlesDialogVisible.value = true
+      return
+    }
     if (command === 'actions') {
       currentPackage.value = { ...row }
       actionsDialogVisible.value = true
@@ -406,14 +486,21 @@
     if (contextType === 'platform,team') return '平台/团队'
     return contextType || '-'
   }
+
+  function normalizePackageType(value?: string) {
+    return value === 'bundle' ? 'bundle' : value === 'base' ? 'base' : ''
+  }
 </script>
 
 <style scoped lang="scss">
+  .package-tabs {
+    margin-bottom: 12px;
+  }
+
   .stats-row {
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 12px;
-    margin-top: 12px;
   }
 
   .stats-card {
