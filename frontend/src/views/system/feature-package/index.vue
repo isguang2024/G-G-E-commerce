@@ -23,6 +23,10 @@
         <div class="stats-value">{{ teamPackageCount }}</div>
       </ElCard>
       <ElCard shadow="never" class="stats-card">
+        <div class="stats-label">双上下文功能包</div>
+        <div class="stats-value">{{ sharedPackageCount }}</div>
+      </ElCard>
+      <ElCard shadow="never" class="stats-card">
         <div class="stats-label">已组合功能范围数</div>
         <div class="stats-value">{{ totalActionCount }}</div>
       </ElCard>
@@ -131,8 +135,9 @@
   const dialogType = ref<'add' | 'edit'>('add')
   const currentPackage = ref<Partial<PackageItem>>({})
   const routeOpenSignature = ref('')
-  const platformPackageCount = computed(() => data.value.filter((item) => item.contextType === 'platform').length)
-  const teamPackageCount = computed(() => data.value.filter((item) => item.contextType !== 'platform').length)
+  const platformPackageCount = computed(() => data.value.filter((item) => supportsPlatform(item.contextType)).length)
+  const teamPackageCount = computed(() => data.value.filter((item) => supportsTeam(item.contextType)).length)
+  const sharedPackageCount = computed(() => data.value.filter((item) => item.contextType === 'platform,team').length)
   const totalActionCount = computed(() => data.value.reduce((sum, item) => sum + (item.actionCount || 0), 0))
   const totalMenuCount = computed(() => data.value.reduce((sum, item) => sum + (item.menuCount || 0), 0))
   const totalTeamCount = computed(() => data.value.reduce((sum, item) => sum + (item.teamCount || 0), 0))
@@ -149,7 +154,8 @@
   const contextTypeOptions = [
     { label: '全部上下文', value: '' },
     { label: '平台功能包', value: 'platform' },
-    { label: '团队功能包', value: 'team' }
+    { label: '团队功能包', value: 'team' },
+    { label: '双上下文功能包', value: 'platform,team' }
   ]
 
   const statusOptions = [
@@ -196,10 +202,12 @@
         {
           prop: 'contextType',
           label: '上下文',
-          width: 110,
+          width: 120,
           formatter: (row: PackageItem) =>
-            h(ElTag, { type: row.contextType === 'platform' ? 'success' : 'info' }, () =>
-              row.contextType === 'platform' ? '平台' : '团队'
+            h(
+              ElTag,
+              { type: row.contextType === 'platform' ? 'success' : row.contextType === 'team' ? 'info' : 'warning' },
+              () => formatContextType(row.contextType)
             )
         },
         {
@@ -235,15 +243,14 @@
                 key: 'menus',
                 label: '绑定菜单',
                 icon: 'ri:menu-line',
-                auth: 'platform.package.manage',
-                disabled: row.contextType !== 'team'
+                auth: 'platform.package.manage'
               },
               {
                 key: 'teams',
                 label: '开通团队',
                 icon: 'ri:team-line',
                 auth: 'platform.package.assign',
-                disabled: row.contextType !== 'team'
+                disabled: !supportsTeam(row.contextType)
               },
               { key: 'edit', label: '编辑', icon: 'ri:edit-2-line', auth: 'platform.package.manage' },
               { key: 'delete', label: '删除', icon: 'ri:delete-bin-4-line', auth: 'platform.package.manage' }
@@ -384,6 +391,21 @@
     },
     { immediate: true }
   )
+
+  function supportsPlatform(contextType?: string) {
+    return contextType === 'platform' || contextType === 'platform,team'
+  }
+
+  function supportsTeam(contextType?: string) {
+    return contextType === 'team' || contextType === 'platform,team'
+  }
+
+  function formatContextType(contextType?: string) {
+    if (contextType === 'platform') return '平台'
+    if (contextType === 'team') return '团队'
+    if (contextType === 'platform,team') return '平台/团队'
+    return contextType || '-'
+  }
 </script>
 
 <style scoped lang="scss">

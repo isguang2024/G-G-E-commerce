@@ -138,6 +138,10 @@ func ensurePermissionAction(db *gorm.DB, endpoint *models.APIEndpoint, logger *z
 	}
 
 	mapping := permissionkey.FromLegacy(endpoint.ResourceCode, endpoint.ActionCode)
+	contextType := strings.TrimSpace(mapping.ContextType)
+	if contextType == "" {
+		contextType = permissionkey.FromKey(mapping.Key).ContextType
+	}
 	var existing models.PermissionAction
 	err := db.Where("permission_key = ?", mapping.Key).First(&existing).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -153,6 +157,7 @@ func ensurePermissionAction(db *gorm.DB, endpoint *models.APIEndpoint, logger *z
 			ResourceCode:  mapping.ResourceCode,
 			ActionCode:    mapping.ActionCode,
 			ModuleCode:    normalizeModuleCode(endpoint.Module, mapping.ResourceCode),
+			ContextType:   contextType,
 			Source:        "api",
 			FeatureKind:   normalizeFeatureKind(endpoint.FeatureKind),
 			Name:          name,
@@ -183,6 +188,9 @@ func ensurePermissionAction(db *gorm.DB, endpoint *models.APIEndpoint, logger *z
 	}
 	if strings.TrimSpace(existing.Status) == "" {
 		updates["status"] = "normal"
+	}
+	if strings.TrimSpace(existing.ContextType) != contextType && contextType != "" {
+		updates["context_type"] = contextType
 	}
 	if strings.TrimSpace(existing.Name) == "" {
 		updates["name"] = name

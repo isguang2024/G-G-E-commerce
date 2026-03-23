@@ -13,23 +13,25 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
 const tenantContextHeader = "X-Tenant-ID"
 
 type MenuHandler struct {
-	menuService       MenuService
-	permissionService interface {
-		GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
-	}
+	menuService MenuService
 	userRepo         user.UserRepository
+	menuRepo         interface {
+		ListAll() ([]user.Menu, error)
+	}
 	roleRepo         user.RoleRepository
 	roleMenuRepo     user.RoleMenuRepository
 	userRoleRepo     user.UserRoleRepository
 	tenantMemberRepo user.TenantMemberRepository
 	teamPackageRepo  user.TeamFeaturePackageRepository
 	packageMenuRepo  user.FeaturePackageMenuRepository
+	platformService  platformaccess.Service
 	boundaryService  teamboundary.Service
 	authzService     interface {
 		Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionAction, error)
@@ -37,24 +39,25 @@ type MenuHandler struct {
 	logger *zap.Logger
 }
 
-func NewMenuHandler(menuService MenuService, permissionService interface {
-	GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
-}, userRepo user.UserRepository, roleRepo user.RoleRepository, roleMenuRepo user.RoleMenuRepository, userRoleRepo user.UserRoleRepository, tenantMemberRepo user.TenantMemberRepository, teamPackageRepo user.TeamFeaturePackageRepository, packageMenuRepo user.FeaturePackageMenuRepository, boundaryService teamboundary.Service, authzService interface {
+func NewMenuHandler(menuService MenuService, userRepo user.UserRepository, menuRepo interface {
+	ListAll() ([]user.Menu, error)
+}, roleRepo user.RoleRepository, roleMenuRepo user.RoleMenuRepository, userRoleRepo user.UserRoleRepository, tenantMemberRepo user.TenantMemberRepository, teamPackageRepo user.TeamFeaturePackageRepository, packageMenuRepo user.FeaturePackageMenuRepository, boundaryService teamboundary.Service, authzService interface {
 	Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionAction, error)
-}, logger *zap.Logger) *MenuHandler {
+}, platformService platformaccess.Service, logger *zap.Logger) *MenuHandler {
 	return &MenuHandler{
-		menuService:       menuService,
-		permissionService: permissionService,
-		userRepo:          userRepo,
-		roleRepo:          roleRepo,
-		roleMenuRepo:      roleMenuRepo,
-		userRoleRepo:      userRoleRepo,
-		tenantMemberRepo:  tenantMemberRepo,
-		teamPackageRepo:   teamPackageRepo,
-		packageMenuRepo:   packageMenuRepo,
-		boundaryService:   boundaryService,
-		authzService:      authzService,
-		logger:            logger,
+		menuService:      menuService,
+		userRepo:         userRepo,
+		menuRepo:         menuRepo,
+		roleRepo:         roleRepo,
+		roleMenuRepo:     roleMenuRepo,
+		userRoleRepo:     userRoleRepo,
+		tenantMemberRepo: tenantMemberRepo,
+		teamPackageRepo:  teamPackageRepo,
+		packageMenuRepo:  packageMenuRepo,
+		platformService:  platformService,
+		boundaryService:  boundaryService,
+		authzService:     authzService,
+		logger:           logger,
 	}
 }
 
@@ -84,10 +87,10 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 	var allowedMenuIDs []uuid.UUID
 	if !all {
 		userID, err := currentUserID(c)
-		if err == nil && h.permissionService != nil {
+		if err == nil {
 			tenantID, tenantErr := currentTenantID(c)
 			if tenantErr == nil {
-				allowedMenuIDs, _ = h.permissionService.GetUserMenuIDs(userID, tenantID)
+				allowedMenuIDs, _ = h.getAllowedMenuIDs(userID, tenantID)
 			}
 		}
 	}
@@ -103,6 +106,58 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 		out = append(out, menuToMap(node))
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(out))
+}
+
+func (h *MenuHandler) getAllowedMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {
+	if tenantID != nil && h.userRoleRepo != nil {
+		roleIDs, err := h.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndTenant(userID, tenantID)
+		if err != nil {
+			return nil, err
+		}
+		return h.getTeamContextAllowedMenuIDs(*tenantID, roleIDs)
+	}
+	if tenantID == nil && h.platformService != nil {
+		if h.userRepo != nil {
+			userEntity, err := h.userRepo.GetByID(userID)
+			if err == nil && userEntity.IsSuperAdmin {
+				return h.listEnabledMenuIDs()
+			}
+		}
+		snapshot, err := h.platformService.GetSnapshot(userID)
+		if err != nil {
+			return nil, err
+		}
+		return snapshot.MenuIDs, nil
+	}
+	return []uuid.UUID{}, nil
+}
+
+func (h *MenuHandler) listEnabledMenuIDs() ([]uuid.UUID, error) {
+	if h.menuRepo == nil {
+		return []uuid.UUID{}, nil
+	}
+	allMenus, err := h.menuRepo.ListAll()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]uuid.UUID, 0, len(allMenus))
+	for _, menu := range allMenus {
+		if !isMenuEnabled(menu) {
+			continue
+		}
+		result = append(result, menu.ID)
+	}
+	return result, nil
+}
+
+func isMenuEnabled(menu user.Menu) bool {
+	if menu.Meta == nil {
+		return true
+	}
+	if enabled, ok := menu.Meta["isEnable"].(bool); ok {
+		return enabled
+	}
+	return true
 }
 
 func (h *MenuHandler) getTeamContextAllowedMenuIDs(teamID uuid.UUID, roleIDs []uuid.UUID) ([]uuid.UUID, error) {

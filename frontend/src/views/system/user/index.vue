@@ -44,6 +44,20 @@
         @success="refreshData"
       />
 
+      <UserMenuSelectorDialog
+        v-model="menuDialogVisible"
+        :user-data="currentUserDataForAction"
+        @success="refreshData"
+        @open-packages="openCurrentUserPackagesFromMenu"
+      />
+
+      <UserPermissionSelectorDialog
+        v-model="permissionDialogVisible"
+        :user-data="currentUserDataForAction"
+        @success="refreshData"
+        @open-packages="openCurrentUserPackages"
+      />
+
       <!-- 用户权限查看抽屉 -->
       <ElDrawer v-model="permissionDrawerVisible" :title="permissionDrawerTitle" size="450px">
         <div v-loading="permissionLoading">
@@ -84,6 +98,8 @@
   import UserSearch from './modules/user-search.vue'
   import UserDialog from './modules/user-dialog.vue'
   import UserPackageDialog from './modules/user-package-dialog.vue'
+  import UserMenuSelectorDialog from './modules/user-menu-selector-dialog.vue'
+  import UserPermissionSelectorDialog from './modules/user-permission-selector-dialog.vue'
   import { ElTag, ElMessageBox, ElImage, ElDrawer, ElTree, ElIcon, ElMessage } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
 
@@ -103,6 +119,8 @@
   const dialogVisible = ref(false)
   const currentUserData = ref<Partial<UserListItem>>({})
   const packageDialogVisible = ref(false)
+  const menuDialogVisible = ref(false)
+  const permissionDialogVisible = ref(false)
   const currentUserDataForAction = ref<UserListItem | undefined>(undefined)
 
   // 选中行
@@ -282,9 +300,21 @@
               },
               {
                 key: 'permission',
-                label: '查看权限',
+                label: '查看最终菜单',
                 icon: 'ri:shield-check-line',
                 auth: 'system.user.manage'
+              },
+              {
+                key: 'menuBoundary',
+                label: '菜单裁剪',
+                icon: 'ri:menu-line',
+                auth: 'system.user.manage'
+              },
+              {
+                key: 'actionOverride',
+                label: '权限例外审计',
+                icon: 'ri:shield-user-line',
+                auth: 'system.user.assign_action'
               },
               { key: 'edit', label: '编辑用户', icon: 'ri:edit-2-line', auth: 'system.user.manage' },
               {
@@ -364,6 +394,10 @@
       ElMessage.success('用户ID已复制')
     } else if (item.key === 'packages') {
       showPackageDialog(row)
+    } else if (item.key === 'menuBoundary') {
+      showMenuDialog(row)
+    } else if (item.key === 'actionOverride') {
+      showPermissionDialog(row)
     } else if (item.key === 'permission') {
       showPermissionDrawer(row)
     } else if (item.key === 'edit') {
@@ -375,6 +409,28 @@
 
   const showPackageDialog = (row: UserListItem) => {
     currentUserDataForAction.value = row
+    packageDialogVisible.value = true
+  }
+
+  const showMenuDialog = (row: UserListItem) => {
+    currentUserDataForAction.value = row
+    menuDialogVisible.value = true
+  }
+
+  const showPermissionDialog = (row: UserListItem) => {
+    currentUserDataForAction.value = row
+    permissionDialogVisible.value = true
+  }
+
+  const openCurrentUserPackages = () => {
+    if (!currentUserDataForAction.value) return
+    permissionDialogVisible.value = false
+    packageDialogVisible.value = true
+  }
+
+  const openCurrentUserPackagesFromMenu = () => {
+    if (!currentUserDataForAction.value) return
+    menuDialogVisible.value = false
     packageDialogVisible.value = true
   }
 

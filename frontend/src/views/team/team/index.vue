@@ -41,6 +41,13 @@
         @success="refreshData"
       />
 
+      <TeamMenuPermissionDialog
+        v-model="menuDialogVisible"
+        :team-id="currentTeamId"
+        :team-name="currentTeamName"
+        @success="refreshData"
+      />
+
       <TeamFeaturePackageDialog
         v-model="packageDialogVisible"
         :team-id="currentTeamId"
@@ -60,6 +67,7 @@
   import TeamDialog from './modules/team-dialog.vue'
   import TeamMembersDrawer from './modules/team-members-drawer.vue'
   import TeamActionPermissionDialog from './modules/team-permission-dialog.vue'
+  import TeamMenuPermissionDialog from './modules/team-menu-permission-dialog.vue'
   import TeamFeaturePackageDialog from './modules/team-feature-package-dialog.vue'
   import {
     ElTag,
@@ -83,6 +91,7 @@
   const currentTeamData = ref<Partial<TeamListItem>>({})
   const membersDrawerVisible = ref(false)
   const actionDialogVisible = ref(false)
+  const menuDialogVisible = ref(false)
   const packageDialogVisible = ref(false)
   const currentTeamId = ref('')
   const currentTeamName = ref('')
@@ -188,9 +197,15 @@
                         ])
                       : null,
                     hasAction('tenant.boundary.manage')
+                      ? h(ElDropdownItem, { command: 'menu' }, () => [
+                          h(ElIcon, {}, () => h(UserFilled)),
+                          '菜单边界'
+                        ])
+                      : null,
+                    hasAction('tenant.boundary.manage')
                       ? h(ElDropdownItem, { command: 'action' }, () => [
                           h(ElIcon, {}, () => h(UserFilled)),
-                          '补充权限'
+                          '团队边界'
                         ])
                       : null,
                     hasAction('platform.package.assign')
@@ -236,6 +251,8 @@
       showDialog('edit', row)
     } else if (command === 'view') {
       showMembers(row)
+    } else if (command === 'menu') {
+      showMenuPermissions(row)
     } else if (command === 'action') {
       showActionPermissions(row)
     } else if (command === 'package') {
@@ -255,6 +272,12 @@
     currentTeamId.value = row.id
     currentTeamName.value = row.name
     actionDialogVisible.value = true
+  }
+
+  const showMenuPermissions = (row: TeamListItem) => {
+    currentTeamId.value = row.id
+    currentTeamName.value = row.name
+    menuDialogVisible.value = true
   }
 
   const showFeaturePackages = (row: TeamListItem) => {

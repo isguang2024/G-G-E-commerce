@@ -11,24 +11,38 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
+	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
 const tenantContextHeader = "X-Tenant-ID"
 
 type UserHandler struct {
 	userService       UserService
-	permissionService interface {
-		GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
-	}
 	actionRepo interface {
 		GetByIDs(ids []uuid.UUID) ([]PermissionAction, error)
 	}
 	featurePkgRepo interface {
 		GetByIDs(ids []uuid.UUID) ([]FeaturePackage, error)
 	}
+	platformService platformaccess.Service
+	boundaryService teamboundary.Service
+	roleRepo interface {
+		GetByIDs(ids []uuid.UUID) ([]Role, error)
+	}
+	roleMenuRepo interface {
+		GetMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error)
+	}
+	userRoleRepo interface {
+		GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
+	}
 	userPackageRepo interface {
 		GetPackageIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error)
 		ReplaceUserPackages(userID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error
+	}
+	userHiddenMenuRepo interface {
+		GetMenuIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error)
+		ReplaceUserHiddenMenus(userID uuid.UUID, menuIDs []uuid.UUID) error
 	}
 	userActionRepo interface {
 		GetByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]UserActionPermission, error)
@@ -43,15 +57,22 @@ type UserHandler struct {
 	logger *zap.Logger
 }
 
-func NewUserHandler(userService UserService, permissionService interface {
-	GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
-}, actionRepo interface {
+func NewUserHandler(userService UserService, actionRepo interface {
 	GetByIDs(ids []uuid.UUID) ([]PermissionAction, error)
 }, featurePkgRepo interface {
 	GetByIDs(ids []uuid.UUID) ([]FeaturePackage, error)
+}, platformService platformaccess.Service, boundaryService teamboundary.Service, roleRepo interface {
+	GetByIDs(ids []uuid.UUID) ([]Role, error)
+}, roleMenuRepo interface {
+	GetMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error)
+}, userRoleRepo interface {
+	GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
 }, userPackageRepo interface {
 	GetPackageIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error)
 	ReplaceUserPackages(userID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error
+}, userHiddenMenuRepo interface {
+	GetMenuIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceUserHiddenMenus(userID uuid.UUID, menuIDs []uuid.UUID) error
 }, userActionRepo interface {
 	GetByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]UserActionPermission, error)
 	ReplaceUserActions(userID uuid.UUID, tenantID *uuid.UUID, actions []UserActionPermission) error
@@ -61,15 +82,20 @@ func NewUserHandler(userService UserService, permissionService interface {
 	RefreshPlatformUser(userID uuid.UUID) error
 }, logger *zap.Logger) *UserHandler {
 	return &UserHandler{
-		userService:       userService,
-		permissionService: permissionService,
-		actionRepo:        actionRepo,
-		featurePkgRepo:    featurePkgRepo,
-		userPackageRepo:   userPackageRepo,
-		userActionRepo:    userActionRepo,
-		menuRepo:          menuRepo,
-		refresher:         refresher,
-		logger:            logger,
+		userService:        userService,
+		actionRepo:         actionRepo,
+		featurePkgRepo:     featurePkgRepo,
+		platformService:    platformService,
+		boundaryService:    boundaryService,
+		roleRepo:           roleRepo,
+		roleMenuRepo:       roleMenuRepo,
+		userRoleRepo:       userRoleRepo,
+		userPackageRepo:    userPackageRepo,
+		userHiddenMenuRepo: userHiddenMenuRepo,
+		userActionRepo:     userActionRepo,
+		menuRepo:           menuRepo,
+		refresher:          refresher,
+		logger:             logger,
 	}
 }
 
@@ -357,6 +383,13 @@ func (h *UserHandler) GetActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	snapshot, err := h.getPlatformSnapshot(id)
+	if err != nil {
+		h.logger.Error("Get user platform snapshot failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户功能包范围失败")
+		c.JSON(status, resp)
+		return
+	}
 
 	records, err := h.userActionRepo.GetByUserAndTenant(id, nil)
 	if err != nil {
@@ -366,8 +399,12 @@ func (h *UserHandler) GetActions(c *gin.Context) {
 		return
 	}
 
+	availableActionSet := uuidSliceToSet(snapshot.ActionIDs)
 	actionIDs := make([]uuid.UUID, 0, len(records))
 	for _, record := range records {
+		if snapshot.HasPackageConfig && !availableActionSet[record.ActionID] {
+			continue
+		}
 		actionIDs = append(actionIDs, record.ActionID)
 	}
 	actionMap := make(map[uuid.UUID]PermissionAction)
@@ -384,8 +421,11 @@ func (h *UserHandler) GetActions(c *gin.Context) {
 		}
 	}
 
-	items := make([]gin.H, 0, len(records))
+	compatItems := make([]gin.H, 0, len(records))
 	for _, record := range records {
+		if snapshot.HasPackageConfig && !availableActionSet[record.ActionID] {
+			continue
+		}
 		item := gin.H{
 			"action_id": record.ActionID.String(),
 			"effect":    record.Effect,
@@ -401,10 +441,157 @@ func (h *UserHandler) GetActions(c *gin.Context) {
 				"sort_order":    action.SortOrder,
 			}
 		}
-		items = append(items, item)
+		compatItems = append(compatItems, item)
 	}
 
-	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"actions": items}))
+	snapshotActions := []PermissionAction{}
+	if snapshot.HasPackageConfig && len(snapshot.ActionIDs) > 0 {
+		snapshotActions, err = h.actionRepo.GetByIDs(snapshot.ActionIDs)
+		if err != nil {
+			h.logger.Error("Get user available action metadata failed", zap.Error(err))
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能权限详情失败")
+			c.JSON(status, resp)
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"actions":              compatItems,
+		"compat_actions":       compatItems,
+		"snapshot_action_ids":  actionIDsToStrings(snapshot.ActionIDs),
+		"snapshot_actions":     actionListToMaps(snapshotActions),
+		"effective_action_ids": actionIDsToStrings(snapshot.ActionIDs),
+		"available_action_ids": actionIDsToStrings(snapshot.ActionIDs),
+		"available_actions":    actionListToMaps(snapshotActions),
+		"package_ids":          actionIDsToStrings(snapshot.DirectPackageIDs),
+		"expanded_package_ids": actionIDsToStrings(snapshot.ExpandedPackageIDs),
+		"derived_sources":      buildUserActionSourceMaps(snapshot.ActionSourceMap),
+		"has_package_config":   snapshot.HasPackageConfig,
+	}))
+}
+
+func (h *UserHandler) GetMenus(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+	if _, err := h.userService.Get(id); err != nil {
+		if err == ErrUserNotFound {
+			status, resp := errcode.Response(errcode.ErrUserNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get user before menus failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户失败")
+		c.JSON(status, resp)
+		return
+	}
+	snapshot, err := h.getPlatformSnapshot(id)
+	if err != nil {
+		h.logger.Error("Get user platform snapshot for menus failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户功能包范围失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	menuIDs := snapshot.MenuIDs
+	if snapshot.MenuIDs == nil {
+		menuIDs = []uuid.UUID{}
+	}
+	availableMenuIDs := snapshot.AvailableMenuIDs
+	if snapshot.AvailableMenuIDs == nil {
+		availableMenuIDs = []uuid.UUID{}
+	}
+	hiddenMenuIDs := snapshot.HiddenMenuIDs
+	if hiddenMenuIDs == nil {
+		hiddenMenuIDs = []uuid.UUID{}
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"menu_ids":             packageIDsToStrings(menuIDs),
+		"available_menu_ids":   packageIDsToStrings(availableMenuIDs),
+		"hidden_menu_ids":      packageIDsToStrings(hiddenMenuIDs),
+		"package_ids":          packageIDsToStrings(snapshot.DirectPackageIDs),
+		"expanded_package_ids": packageIDsToStrings(snapshot.ExpandedPackageIDs),
+		"derived_sources":      buildUserMenuSourceMaps(snapshot.AvailableMenuMap),
+		"has_package_config":   snapshot.HasPackageConfig,
+	}))
+}
+
+func (h *UserHandler) SetMenus(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+	if _, err := h.userService.Get(id); err != nil {
+		if err == ErrUserNotFound {
+			status, resp := errcode.Response(errcode.ErrUserNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get user before setting menus failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户失败")
+		c.JSON(status, resp)
+		return
+	}
+	snapshot, err := h.getPlatformSnapshot(id)
+	if err != nil {
+		h.logger.Error("Get user platform snapshot for setting menus failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户功能包范围失败")
+		c.JSON(status, resp)
+		return
+	}
+	if !snapshot.HasPackageConfig {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "当前用户尚未绑定功能包，不能配置菜单裁剪")
+		c.JSON(status, resp)
+		return
+	}
+
+	var req dto.TenantMenuPermissionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+
+	availableMenuSet := uuidSliceToSet(snapshot.AvailableMenuIDs)
+	menuIDs := make([]uuid.UUID, 0, len(req.MenuIDs))
+	for _, item := range req.MenuIDs {
+		menuID, parseErr := uuid.Parse(item)
+		if parseErr != nil {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的菜单ID")
+			c.JSON(status, resp)
+			return
+		}
+		if !availableMenuSet[menuID] {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "存在超出当前用户已生效功能包范围的菜单")
+			c.JSON(status, resp)
+			return
+		}
+		menuIDs = append(menuIDs, menuID)
+	}
+	blockedMenuIDs := excludeUUIDs(snapshot.AvailableMenuIDs, menuIDs)
+	if err := h.userHiddenMenuRepo.ReplaceUserHiddenMenus(id, blockedMenuIDs); err != nil {
+		h.logger.Error("Set user hidden menus failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存用户菜单裁剪失败")
+		c.JSON(status, resp)
+		return
+	}
+	if h.refresher != nil {
+		if err := h.refresher.RefreshPlatformUser(id); err != nil {
+			h.logger.Error("Refresh platform user after setting menus failed", zap.Error(err))
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新用户权限快照失败")
+			c.JSON(status, resp)
+			return
+		}
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
 func (h *UserHandler) SetActions(c *gin.Context) {
@@ -426,60 +613,91 @@ func (h *UserHandler) SetActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	h.logger.Warn("Set user action overrides is disabled", zap.String("user_id", id.String()))
+	status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "用户权限例外写入已停用，请改用功能包、角色与菜单裁剪主链")
+	c.JSON(status, resp)
+}
 
-	var req dto.UserActionPermissionsRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		status, resp := errcode.Response(errcode.ErrParamInvalid)
-		c.JSON(status, resp)
-		return
+func (h *UserHandler) getPlatformSnapshot(userID uuid.UUID) (*platformaccess.Snapshot, error) {
+	if h.platformService == nil {
+		return &platformaccess.Snapshot{
+			DirectPackageIDs:   []uuid.UUID{},
+			ExpandedPackageIDs: []uuid.UUID{},
+			ActionIDs:          []uuid.UUID{},
+			ActionSourceMap:    map[uuid.UUID][]uuid.UUID{},
+			AvailableMenuIDs:   []uuid.UUID{},
+			AvailableMenuMap:   map[uuid.UUID][]uuid.UUID{},
+			MenuIDs:            []uuid.UUID{},
+			MenuSourceMap:      map[uuid.UUID][]uuid.UUID{},
+			HasPackageConfig:   false,
+		}, nil
 	}
+	snapshot, err := h.platformService.GetSnapshot(userID)
+	if err != nil {
+		return nil, err
+	}
+	if snapshot == nil {
+		return &platformaccess.Snapshot{
+			DirectPackageIDs:   []uuid.UUID{},
+			ExpandedPackageIDs: []uuid.UUID{},
+			ActionIDs:          []uuid.UUID{},
+			ActionSourceMap:    map[uuid.UUID][]uuid.UUID{},
+			AvailableMenuIDs:   []uuid.UUID{},
+			AvailableMenuMap:   map[uuid.UUID][]uuid.UUID{},
+			MenuIDs:            []uuid.UUID{},
+			MenuSourceMap:      map[uuid.UUID][]uuid.UUID{},
+			HasPackageConfig:   false,
+		}, nil
+	}
+	return snapshot, nil
+}
 
-	actionIDs := make([]uuid.UUID, 0, len(req.Actions))
-	records := make([]UserActionPermission, 0, len(req.Actions))
-	for _, item := range req.Actions {
-		actionID, parseErr := uuid.Parse(item.ActionID)
-		if parseErr != nil {
-			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能权限ID")
-			c.JSON(status, resp)
-			return
-		}
-		actionIDs = append(actionIDs, actionID)
-		records = append(records, UserActionPermission{
-			UserID:   id,
-			ActionID: actionID,
-			TenantID: nil,
-			Effect:   item.Effect,
+func buildUserActionSourceMaps(sourceMap map[uuid.UUID][]uuid.UUID) []gin.H {
+	if len(sourceMap) == 0 {
+		return []gin.H{}
+	}
+	items := make([]gin.H, 0, len(sourceMap))
+	for actionID, packageIDs := range sourceMap {
+		items = append(items, gin.H{
+			"action_id":   actionID.String(),
+			"package_ids": packageIDsToStrings(packageIDs),
 		})
 	}
+	return items
+}
 
-	actions, err := h.actionRepo.GetByIDs(actionIDs)
-	if err != nil {
-		h.logger.Error("Get permission actions failed", zap.Error(err))
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能权限失败")
-		c.JSON(status, resp)
-		return
+func buildUserMenuSourceMaps(sourceMap map[uuid.UUID][]uuid.UUID) []gin.H {
+	if len(sourceMap) == 0 {
+		return []gin.H{}
 	}
-	if len(actions) != len(actionIDs) {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "包含不存在的功能权限")
-		c.JSON(status, resp)
-		return
+	items := make([]gin.H, 0, len(sourceMap))
+	for menuID, packageIDs := range sourceMap {
+		items = append(items, gin.H{
+			"menu_id":     menuID.String(),
+			"package_ids": packageIDsToStrings(packageIDs),
+		})
 	}
-	if err := h.userActionRepo.ReplaceUserActions(id, nil, records); err != nil {
-		h.logger.Error("Set user action permissions failed", zap.Error(err))
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存用户功能权限失败")
-		c.JSON(status, resp)
-		return
+	return items
+}
+
+func uuidSliceToSet(ids []uuid.UUID) map[uuid.UUID]bool {
+	result := make(map[uuid.UUID]bool, len(ids))
+	for _, id := range ids {
+		result[id] = true
 	}
-	if h.refresher != nil {
-		if err := h.refresher.RefreshPlatformUser(id); err != nil {
-			h.logger.Error("Refresh platform user after setting actions failed", zap.Error(err))
-			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新用户权限快照失败")
-			c.JSON(status, resp)
-			return
+	return result
+}
+
+func excludeUUIDs(source []uuid.UUID, selected []uuid.UUID) []uuid.UUID {
+	selectedSet := uuidSliceToSet(selected)
+	result := make([]uuid.UUID, 0, len(source))
+	for _, item := range source {
+		if selectedSet[item] {
+			continue
 		}
+		result = append(result, item)
 	}
-
-	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+	return result
 }
 
 func (h *UserHandler) GetPermissions(c *gin.Context) {
@@ -502,7 +720,7 @@ func (h *UserHandler) GetPermissions(c *gin.Context) {
 		}
 	}
 
-	menuIDs, err := h.permissionService.GetUserMenuIDs(id, tenantID)
+	menuIDs, err := h.getPermissionMenuIDs(id, tenantID)
 	if err != nil {
 		h.logger.Error("Get user permissions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户权限失败")
@@ -526,6 +744,141 @@ func (h *UserHandler) GetPermissions(c *gin.Context) {
 	menuTree := buildMenuTree(allMenus, menuIDSet)
 
 	c.JSON(http.StatusOK, dto.SuccessResponse(menuTree))
+}
+
+func (h *UserHandler) getPermissionMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {
+	userEntity, err := h.userService.Get(userID)
+	if err != nil {
+		return nil, err
+	}
+	if tenantID == nil {
+		if userEntity.IsSuperAdmin {
+			return h.listEnabledMenuIDs()
+		}
+		snapshot, err := h.getPlatformSnapshot(userID)
+		if err != nil {
+			return nil, err
+		}
+		return snapshot.MenuIDs, nil
+	}
+	return h.getTeamPermissionMenuIDs(userID, *tenantID)
+}
+
+func (h *UserHandler) getTeamPermissionMenuIDs(userID, teamID uuid.UUID) ([]uuid.UUID, error) {
+	if h.userRoleRepo == nil || h.roleRepo == nil || h.roleMenuRepo == nil || h.boundaryService == nil {
+		return h.finalizePermissionMenuIDs(nil)
+	}
+	roleIDs, err := h.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndTenant(userID, &teamID)
+	if err != nil {
+		return nil, err
+	}
+	if len(roleIDs) == 0 {
+		return h.finalizePermissionMenuIDs(nil)
+	}
+	roles, err := h.roleRepo.GetByIDs(roleIDs)
+	if err != nil {
+		return nil, err
+	}
+	roleMap := make(map[uuid.UUID]Role, len(roles))
+	for _, role := range roles {
+		roleMap[role.ID] = role
+	}
+	menuSet := make(map[uuid.UUID]struct{})
+	for _, roleID := range roleIDs {
+		role, ok := roleMap[roleID]
+		if !ok {
+			continue
+		}
+		roleMenuIDs, roleMenuErr := h.roleMenuRepo.GetMenuIDsByRoleID(roleID)
+		if roleMenuErr != nil {
+			return nil, roleMenuErr
+		}
+		snapshot, snapshotErr := h.boundaryService.GetRoleSnapshot(teamID, roleID, role.TenantID == nil)
+		if snapshotErr != nil {
+			return nil, snapshotErr
+		}
+		allowedMenuIDs := roleMenuIDs
+		if snapshot.HasMenuBoundary {
+			allowedMenuIDs = intersectUUIDSlices(roleMenuIDs, snapshot.MenuIDs)
+		}
+		for _, menuID := range allowedMenuIDs {
+			menuSet[menuID] = struct{}{}
+		}
+	}
+	menuIDs := make([]uuid.UUID, 0, len(menuSet))
+	for menuID := range menuSet {
+		menuIDs = append(menuIDs, menuID)
+	}
+	return h.finalizePermissionMenuIDs(menuIDs)
+}
+
+func (h *UserHandler) finalizePermissionMenuIDs(menuIDs []uuid.UUID) ([]uuid.UUID, error) {
+	allMenus, err := h.menuRepo.ListAll()
+	if err != nil {
+		return nil, err
+	}
+	enabledSet := make(map[uuid.UUID]struct{}, len(allMenus))
+	publicIDs := make([]uuid.UUID, 0)
+	for _, menu := range allMenus {
+		if !isMenuEnabled(menu) {
+			continue
+		}
+		enabledSet[menu.ID] = struct{}{}
+		if isPublicMenu(menu) {
+			publicIDs = append(publicIDs, menu.ID)
+		}
+	}
+	result := make([]uuid.UUID, 0, len(menuIDs)+len(publicIDs))
+	seen := make(map[uuid.UUID]struct{}, len(menuIDs)+len(publicIDs))
+	for _, menuID := range mergeUUIDLists(menuIDs, publicIDs) {
+		if _, ok := enabledSet[menuID]; !ok {
+			continue
+		}
+		if _, ok := seen[menuID]; ok {
+			continue
+		}
+		seen[menuID] = struct{}{}
+		result = append(result, menuID)
+	}
+	return result, nil
+}
+
+func (h *UserHandler) listEnabledMenuIDs() ([]uuid.UUID, error) {
+	allMenus, err := h.menuRepo.ListAll()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]uuid.UUID, 0, len(allMenus))
+	for _, menu := range allMenus {
+		if !isMenuEnabled(menu) {
+			continue
+		}
+		result = append(result, menu.ID)
+	}
+	return result, nil
+}
+
+func intersectUUIDSlices(left []uuid.UUID, right []uuid.UUID) []uuid.UUID {
+	if len(left) == 0 || len(right) == 0 {
+		return []uuid.UUID{}
+	}
+	rightSet := make(map[uuid.UUID]struct{}, len(right))
+	for _, id := range right {
+		rightSet[id] = struct{}{}
+	}
+	result := make([]uuid.UUID, 0, len(left))
+	seen := make(map[uuid.UUID]struct{}, len(left))
+	for _, id := range left {
+		if _, ok := rightSet[id]; !ok {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		result = append(result, id)
+	}
+	return result
 }
 
 func (h *UserHandler) GetPackages(c *gin.Context) {
@@ -659,6 +1012,31 @@ func packageIDsToStrings(ids []uuid.UUID) []string {
 	result := make([]string, 0, len(ids))
 	for _, id := range ids {
 		result = append(result, id.String())
+	}
+	return result
+}
+
+func actionIDsToStrings(ids []uuid.UUID) []string {
+	return packageIDsToStrings(ids)
+}
+
+func actionListToMaps(items []PermissionAction) []gin.H {
+	result := make([]gin.H, 0, len(items))
+	for _, item := range items {
+		result = append(result, gin.H{
+			"id":             item.ID.String(),
+			"permission_key": item.PermissionKey,
+			"resource_code":  item.ResourceCode,
+			"action_code":    item.ActionCode,
+			"name":           item.Name,
+			"description":    item.Description,
+			"module_code":    item.ModuleCode,
+			"context_type":   item.ContextType,
+			"feature_kind":   item.FeatureKind,
+			"source":         item.Source,
+			"status":         item.Status,
+			"sort_order":     item.SortOrder,
+		})
 	}
 	return result
 }

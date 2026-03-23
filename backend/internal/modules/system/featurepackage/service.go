@@ -314,8 +314,8 @@ func (s *service) SetPackageMenus(id uuid.UUID, menuIDs []uuid.UUID) error {
 	if item.PackageType == "bundle" {
 		return errors.New("组合包不允许直接绑定菜单")
 	}
-	if !supportsTeamContext(item.ContextType) {
-		return errors.New("仅团队功能包支持配置菜单集合")
+	if item.ContextType == "" {
+		return errors.New("功能包上下文无效")
 	}
 	if len(menuIDs) > 0 {
 		menus, getErr := s.menuRepo.GetByIDs(menuIDs)

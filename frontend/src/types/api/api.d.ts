@@ -353,14 +353,40 @@ declare namespace Api {
 
     interface TeamActionOriginsResponse {
       packageIds: string[]
+      expandedPackageIds?: string[]
       derivedActionIds: string[]
       derivedSources?: Array<{
         actionId: string
         packageIds: string[]
       }>
-      manualActionIds: string[]
+      blockedActionIds?: string[]
+      manualActionIds?: string[]
       effectiveActionIds: string[]
       fromCache?: boolean
+    }
+
+    interface TeamMenuOriginsResponse {
+      packageIds: string[]
+      expandedPackageIds?: string[]
+      derivedMenuIds: string[]
+      derivedSources?: Array<{
+        menuId: string
+        packageIds: string[]
+      }>
+      blockedMenuIds?: string[]
+      effectiveMenuIds: string[]
+    }
+
+    interface TeamMenuOriginsResponse {
+      packageIds: string[]
+      expandedPackageIds?: string[]
+      derivedMenuIds: string[]
+      derivedSources?: Array<{
+        menuId: string
+        packageIds: string[]
+      }>
+      blockedMenuIds: string[]
+      effectiveMenuIds: string[]
     }
 
     interface APIEndpointItem {
@@ -496,6 +522,36 @@ declare namespace Api {
       actionId: string
       effect: 'allow' | 'deny'
       action?: PermissionActionItem
+    }
+
+    interface UserActionPermissionResponse {
+      actions: UserActionPermissionItem[]
+      compatActions?: UserActionPermissionItem[]
+      snapshotActionIds?: string[]
+      snapshotActions?: PermissionActionItem[]
+      effectiveActionIds?: string[]
+      availableActionIds?: string[]
+      availableActions?: PermissionActionItem[]
+      packageIds?: string[]
+      expandedPackageIds?: string[]
+      derivedSources?: Array<{
+        actionId: string
+        packageIds: string[]
+      }>
+      hasPackageConfig?: boolean
+    }
+
+    interface UserMenuBoundaryResponse {
+      menuIds: string[]
+      availableMenuIds?: string[]
+      hiddenMenuIds?: string[]
+      packageIds?: string[]
+      expandedPackageIds?: string[]
+      derivedSources?: Array<{
+        menuId: string
+        packageIds: string[]
+      }>
+      hasPackageConfig?: boolean
     }
 
     /** 团队列表 */

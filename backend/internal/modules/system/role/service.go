@@ -13,6 +13,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
 )
 
 var (
@@ -79,6 +80,7 @@ type roleService struct {
 	roleDisabledActionRepo user.RoleDisabledActionRepository
 	roleDataRepo           user.RoleDataPermissionRepository
 	actionRepo             user.PermissionActionRepository
+	roleSnapshotService    platformroleaccess.Service
 	refresher              permissionrefresh.Service
 	logger                 *zap.Logger
 }
@@ -96,6 +98,7 @@ func NewRoleService(
 	roleDisabledActionRepo user.RoleDisabledActionRepository,
 	roleDataRepo user.RoleDataPermissionRepository,
 	actionRepo user.PermissionActionRepository,
+	roleSnapshotService platformroleaccess.Service,
 	refresher permissionrefresh.Service,
 	logger *zap.Logger,
 ) RoleService {
@@ -112,6 +115,7 @@ func NewRoleService(
 		roleDisabledActionRepo: roleDisabledActionRepo,
 		roleDataRepo:           roleDataRepo,
 		actionRepo:             actionRepo,
+		roleSnapshotService:    roleSnapshotService,
 		refresher:              refresher,
 		logger:                 logger,
 	}
@@ -333,18 +337,6 @@ func (s *roleService) SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error 
 	if err != nil {
 		return err
 	}
-	if !boundary.HasPackageConfig {
-		if err := s.roleHiddenMenuRepo.ReplaceRoleHiddenMenus(roleID, []uuid.UUID{}); err != nil {
-			return err
-		}
-		if err := s.roleMenuRepo.SetRoleMenus(roleID, menuIDs); err != nil {
-			return err
-		}
-		if s.refresher != nil {
-			return s.refresher.RefreshPlatformRole(roleID)
-		}
-		return nil
-	}
 	selectedMenuIDs, err := ensureSubsetUUIDs(menuIDs, boundary.AvailableMenuIDs, "role menus exceed bound feature packages")
 	if err != nil {
 		return err
@@ -366,9 +358,6 @@ func (s *roleService) GetRoleActions(roleID uuid.UUID) ([]user.RoleActionPermiss
 	boundary, err := s.GetRoleActionBoundary(roleID)
 	if err != nil {
 		return nil, err
-	}
-	if !boundary.HasPackageConfig {
-		return s.roleActionRepo.GetByRoleID(roleID)
 	}
 	return buildRoleActionPermissions(roleID, boundary.EffectiveActionIDs), nil
 }
@@ -407,18 +396,6 @@ func (s *roleService) SetRoleActions(roleID uuid.UUID, actions []user.RoleAction
 	boundary, err := s.GetRoleActionBoundary(roleID)
 	if err != nil {
 		return err
-	}
-	if !boundary.HasPackageConfig {
-		if err := s.roleDisabledActionRepo.ReplaceRoleDisabledActions(roleID, []uuid.UUID{}); err != nil {
-			return err
-		}
-		if err := s.roleActionRepo.SetRoleActions(roleID, actions); err != nil {
-			return err
-		}
-		if s.refresher != nil {
-			return s.refresher.RefreshPlatformRole(roleID)
-		}
-		return nil
 	}
 	selectedActionIDs, err := ensureSubsetUUIDs(actionIDs, boundary.AvailableActionIDs, "role actions exceed bound feature packages")
 	if err != nil {
@@ -529,45 +506,34 @@ func (s *roleService) GetRoleMenuBoundary(roleID uuid.UUID) (*RoleMenuBoundary, 
 	if role.TenantID != nil {
 		return nil, ErrTenantRoleManagedByTeam
 	}
-	packageIDs, err := s.rolePackageRepo.GetPackageIDsByRoleID(roleID)
-	if err != nil {
-		return nil, err
-	}
-	expandedPackageIDs, err := s.getExpandedPlatformPackageIDs(roleID)
-	if err != nil {
-		return nil, err
-	}
-	if len(expandedPackageIDs) == 0 {
-		menuIDs, err := s.roleMenuRepo.GetMenuIDsByRoleID(roleID)
-		if err != nil {
-			return nil, err
+	if s.roleSnapshotService != nil {
+		snapshot, snapshotErr := s.roleSnapshotService.GetSnapshot(roleID)
+		if snapshotErr != nil {
+			return nil, snapshotErr
 		}
-		menuIDs = dedupeUUIDs(menuIDs)
-		return &RoleMenuBoundary{
-			PackageIDs:       dedupeUUIDs(packageIDs),
-			AvailableMenuIDs: menuIDs,
-			EffectiveMenuIDs: menuIDs,
-			MenuSourceMap:    map[uuid.UUID][]uuid.UUID{},
-			HasPackageConfig: false,
-		}, nil
+		if snapshot != nil {
+			packageIDs, packageErr := s.rolePackageRepo.GetPackageIDsByRoleID(roleID)
+			if packageErr != nil {
+				return nil, packageErr
+			}
+			return &RoleMenuBoundary{
+				PackageIDs:         dedupeUUIDs(packageIDs),
+				ExpandedPackageIDs: dedupeUUIDs(snapshot.ExpandedPackageIDs),
+				AvailableMenuIDs:   dedupeUUIDs(snapshot.AvailableMenuIDs),
+				HiddenMenuIDs:      dedupeUUIDs(snapshot.HiddenMenuIDs),
+				EffectiveMenuIDs:   dedupeUUIDs(snapshot.EffectiveMenuIDs),
+				MenuSourceMap:      filterUUIDSourceMap(snapshot.MenuSourceMap, snapshot.AvailableMenuIDs),
+				HasPackageConfig:   snapshot.HasPackageConfig,
+			}, nil
+		}
 	}
-	availableMenuIDs, sourceMap, err := s.getPackageMenuBoundary(expandedPackageIDs)
-	if err != nil {
-		return nil, err
-	}
-	hiddenMenuIDs, err := s.roleHiddenMenuRepo.GetMenuIDsByRoleID(roleID)
-	if err != nil {
-		return nil, err
-	}
-	effectiveMenuIDs := subtractUUIDs(availableMenuIDs, hiddenMenuIDs)
 	return &RoleMenuBoundary{
-		PackageIDs:         dedupeUUIDs(packageIDs),
-		ExpandedPackageIDs: dedupeUUIDs(expandedPackageIDs),
-		AvailableMenuIDs:   availableMenuIDs,
-		HiddenMenuIDs:      dedupeUUIDs(hiddenMenuIDs),
-		EffectiveMenuIDs:   effectiveMenuIDs,
-		MenuSourceMap:      filterUUIDSourceMap(sourceMap, availableMenuIDs),
-		HasPackageConfig:   true,
+		PackageIDs:       []uuid.UUID{},
+		AvailableMenuIDs: []uuid.UUID{},
+		HiddenMenuIDs:    []uuid.UUID{},
+		EffectiveMenuIDs: []uuid.UUID{},
+		MenuSourceMap:    map[uuid.UUID][]uuid.UUID{},
+		HasPackageConfig: false,
 	}, nil
 }
 
@@ -582,49 +548,34 @@ func (s *roleService) GetRoleActionBoundary(roleID uuid.UUID) (*RoleActionBounda
 	if role.TenantID != nil {
 		return nil, ErrTenantRoleManagedByTeam
 	}
-	packageIDs, err := s.rolePackageRepo.GetPackageIDsByRoleID(roleID)
-	if err != nil {
-		return nil, err
-	}
-	expandedPackageIDs, err := s.getExpandedPlatformPackageIDs(roleID)
-	if err != nil {
-		return nil, err
-	}
-	if len(expandedPackageIDs) == 0 {
-		records, err := s.roleActionRepo.GetByRoleID(roleID)
-		if err != nil {
-			return nil, err
+	if s.roleSnapshotService != nil {
+		snapshot, snapshotErr := s.roleSnapshotService.GetSnapshot(roleID)
+		if snapshotErr != nil {
+			return nil, snapshotErr
 		}
-		effectiveActionIDs := make([]uuid.UUID, 0, len(records))
-		for _, record := range records {
-			effectiveActionIDs = append(effectiveActionIDs, record.ActionID)
+		if snapshot != nil {
+			packageIDs, packageErr := s.rolePackageRepo.GetPackageIDsByRoleID(roleID)
+			if packageErr != nil {
+				return nil, packageErr
+			}
+			return &RoleActionBoundary{
+				PackageIDs:         dedupeUUIDs(packageIDs),
+				ExpandedPackageIDs: dedupeUUIDs(snapshot.ExpandedPackageIDs),
+				AvailableActionIDs: dedupeUUIDs(snapshot.AvailableActionIDs),
+				DisabledActionIDs:  dedupeUUIDs(snapshot.DisabledActionIDs),
+				EffectiveActionIDs: dedupeUUIDs(snapshot.EffectiveActionIDs),
+				ActionSourceMap:    filterUUIDSourceMap(snapshot.ActionSourceMap, snapshot.AvailableActionIDs),
+				HasPackageConfig:   snapshot.HasPackageConfig,
+			}, nil
 		}
-		effectiveActionIDs = dedupeUUIDs(effectiveActionIDs)
-		return &RoleActionBoundary{
-			PackageIDs:         dedupeUUIDs(packageIDs),
-			AvailableActionIDs: effectiveActionIDs,
-			EffectiveActionIDs: effectiveActionIDs,
-			ActionSourceMap:    map[uuid.UUID][]uuid.UUID{},
-			HasPackageConfig:   false,
-		}, nil
 	}
-	availableActionIDs, sourceMap, err := s.getPackageActionBoundary(expandedPackageIDs)
-	if err != nil {
-		return nil, err
-	}
-	disabledActionIDs, err := s.roleDisabledActionRepo.GetActionIDsByRoleID(roleID)
-	if err != nil {
-		return nil, err
-	}
-	effectiveActionIDs := subtractUUIDs(availableActionIDs, disabledActionIDs)
 	return &RoleActionBoundary{
-		PackageIDs:         dedupeUUIDs(packageIDs),
-		ExpandedPackageIDs: dedupeUUIDs(expandedPackageIDs),
-		AvailableActionIDs: availableActionIDs,
-		DisabledActionIDs:  dedupeUUIDs(disabledActionIDs),
-		EffectiveActionIDs: effectiveActionIDs,
-		ActionSourceMap:    filterUUIDSourceMap(sourceMap, availableActionIDs),
-		HasPackageConfig:   true,
+		PackageIDs:         []uuid.UUID{},
+		AvailableActionIDs: []uuid.UUID{},
+		DisabledActionIDs:  []uuid.UUID{},
+		EffectiveActionIDs: []uuid.UUID{},
+		ActionSourceMap:    map[uuid.UUID][]uuid.UUID{},
+		HasPackageConfig:   false,
 	}, nil
 }
 

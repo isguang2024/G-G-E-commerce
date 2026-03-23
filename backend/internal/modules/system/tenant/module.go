@@ -12,6 +12,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
@@ -44,6 +45,7 @@ func (m *TenantModule) RegisterRoutes(rg *gin.RouterGroup) {
 	userRoleRepo := user.NewUserRoleRepository(m.db)
 	actionRepo := user.NewPermissionActionRepository(m.db)
 	manualActionRepo := user.NewTeamManualActionPermissionRepository(m.db)
+	blockedMenuRepo := user.NewTeamBlockedMenuRepository(m.db)
 	blockedActionRepo := user.NewTeamBlockedActionRepository(m.db)
 	userActionRepo := user.NewUserActionPermissionRepository(m.db)
 	teamPackageRepo := user.NewTeamFeaturePackageRepository(m.db)
@@ -53,10 +55,11 @@ func (m *TenantModule) RegisterRoutes(rg *gin.RouterGroup) {
 	packageMenuRepo := user.NewFeaturePackageMenuRepository(m.db)
 	boundaryService := teamboundary.NewService(m.db)
 	platformService := platformaccess.NewService(m.db)
-	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService)
+	roleSnapshotService := platformroleaccess.NewService(m.db)
+	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
 
 	tenantService := NewTenantService(m.db, tenantRepo, tenantMemberRepo, userRepo, roleRepo, userRoleRepo, refresher, m.logger)
-	tenantHandler := NewTenantHandler(tenantService, tenantMemberRepo, userRepo, roleRepo, roleMenuRepo, roleActionRepo, userRoleRepo, actionRepo, manualActionRepo, blockedActionRepo, userActionRepo, teamPackageRepo, rolePackageRepo, featurePkgRepo, packageActionRepo, packageMenuRepo, boundaryService, refresher, m.logger)
+	tenantHandler := NewTenantHandler(tenantService, tenantMemberRepo, userRepo, roleRepo, roleMenuRepo, roleActionRepo, userRoleRepo, actionRepo, manualActionRepo, blockedMenuRepo, blockedActionRepo, userActionRepo, teamPackageRepo, rolePackageRepo, featurePkgRepo, packageActionRepo, packageMenuRepo, boundaryService, refresher, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 
 	tenants := rg.Group("/tenants")
@@ -82,6 +85,8 @@ func (m *TenantModule) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.PUT("/my-team/roles/:roleId/menus", &apiregistry.RouteMeta{Summary: "配置当前团队角色菜单权限", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.SetMyTeamRoleMenus)
 		reg.GET("/my-team/roles/:roleId/actions", &apiregistry.RouteMeta{Summary: "获取当前团队角色功能权限", ResourceCode: "team_member", ActionCode: "assign_action"}, authzService.RequireAction("team.member.assign_action"), tenantHandler.GetMyTeamRoleActions)
 		reg.PUT("/my-team/roles/:roleId/actions", &apiregistry.RouteMeta{Summary: "配置当前团队角色功能权限", ResourceCode: "team_member", ActionCode: "assign_action"}, authzService.RequireAction("team.member.assign_action"), tenantHandler.SetMyTeamRoleActions)
+		reg.GET("/my-team/menus", &apiregistry.RouteMeta{Summary: "获取当前团队菜单边界", ResourceCode: "team", ActionCode: "configure_menu_boundary"}, authzService.RequireAction("team.boundary.manage"), tenantHandler.GetMyTeamMenus)
+		reg.GET("/my-team/menu-origins", &apiregistry.RouteMeta{Summary: "获取当前团队菜单来源", ResourceCode: "team", ActionCode: "configure_menu_boundary"}, authzService.RequireAction("team.boundary.manage"), tenantHandler.GetMyTeamMenuOrigins)
 		reg.GET("/my-team/actions", &apiregistry.RouteMeta{Summary: "获取当前团队功能权限边界", ResourceCode: "team", ActionCode: "configure_action_boundary"}, authzService.RequireAction("team.boundary.manage"), tenantHandler.GetMyTeamActions)
 		reg.GET("/my-team/action-origins", &apiregistry.RouteMeta{Summary: "获取当前团队功能权限来源", ResourceCode: "team", ActionCode: "configure_action_boundary"}, authzService.RequireAction("team.boundary.manage"), tenantHandler.GetMyTeamActionOrigins)
 
@@ -90,6 +95,9 @@ func (m *TenantModule) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.POST("", &apiregistry.RouteMeta{Summary: "创建团队", ResourceCode: "tenant", ActionCode: "create"}, authzService.RequireAction("tenant.manage"), tenantHandler.Create)
 		reg.PUT("/:id", &apiregistry.RouteMeta{Summary: "更新团队", ResourceCode: "tenant", ActionCode: "update"}, authzService.RequireAction("tenant.manage"), tenantHandler.Update)
 		reg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除团队", ResourceCode: "tenant", ActionCode: "delete"}, authzService.RequireAction("tenant.manage"), tenantHandler.Delete)
+		reg.GET("/:id/menus", &apiregistry.RouteMeta{Summary: "获取团队菜单边界", ResourceCode: "tenant", ActionCode: "configure_menu_boundary"}, authzService.RequireAction("tenant.boundary.manage"), tenantHandler.GetTenantMenus)
+		reg.GET("/:id/menu-origins", &apiregistry.RouteMeta{Summary: "获取团队菜单来源", ResourceCode: "tenant", ActionCode: "configure_menu_boundary"}, authzService.RequireAction("tenant.boundary.manage"), tenantHandler.GetTenantMenuOrigins)
+		reg.PUT("/:id/menus", &apiregistry.RouteMeta{Summary: "配置团队菜单边界", ResourceCode: "tenant", ActionCode: "configure_menu_boundary"}, authzService.RequireAction("tenant.boundary.manage"), tenantHandler.SetTenantMenus)
 		reg.GET("/:id/actions", &apiregistry.RouteMeta{Summary: "获取团队功能权限边界", ResourceCode: "tenant", ActionCode: "configure_action_boundary"}, authzService.RequireAction("tenant.boundary.manage"), tenantHandler.GetTenantActions)
 		reg.GET("/:id/action-origins", &apiregistry.RouteMeta{Summary: "获取团队功能权限来源", ResourceCode: "tenant", ActionCode: "configure_action_boundary"}, authzService.RequireAction("tenant.boundary.manage"), tenantHandler.GetTenantActionOrigins)
 		reg.PUT("/:id/actions", &apiregistry.RouteMeta{Summary: "配置团队功能权限边界", ResourceCode: "tenant", ActionCode: "configure_action_boundary"}, authzService.RequireAction("tenant.boundary.manage"), tenantHandler.SetTenantActions)

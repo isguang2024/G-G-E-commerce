@@ -93,6 +93,12 @@ func main() {
 		logger.Info("Feature packages initialized successfully")
 	}
 
+	if err := initDefaultRoleFeaturePackages(logger); err != nil {
+		logger.Warn("Failed to initialize default role feature packages", zap.Error(err))
+	} else {
+		logger.Info("Default role feature packages initialized successfully")
+	}
+
 	if err := initDefaultRoleActionPermissionsNoScope(logger); err != nil {
 		logger.Warn("Failed to initialize role action permissions", zap.Error(err))
 	} else {
@@ -179,7 +185,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 				}
 
 				finishStatements := []string{
-					`UPDATE permission_actions SET permission_key = CONCAT(resource_code, ':', action_code) WHERE COALESCE(permission_key, '') = ''`,
+					`UPDATE permission_actions SET permission_key = CONCAT(resource_code, '.', action_code) WHERE COALESCE(permission_key, '') = ''`,
 					`ALTER TABLE permission_actions ALTER COLUMN permission_key SET NOT NULL`,
 					`DROP INDEX IF EXISTS idx_permission_actions_permission_key`,
 					`CREATE UNIQUE INDEX IF NOT EXISTS idx_permission_actions_permission_key ON permission_actions (permission_key) WHERE deleted_at IS NULL`,
@@ -191,6 +197,114 @@ func runNamedMigrations(logger *zap.Logger) error {
 				}
 
 				logger.Info("Named migration applied", zap.String("name", "20260323_permission_key_consolidation"))
+				return nil
+			},
+		},
+		{
+			Name: "20260324_permission_key_dot_cleanup",
+			Run: func(logger *zap.Logger) error {
+				var actions []usermodel.PermissionAction
+				if err := database.DB.Where("permission_key LIKE ?", "%:%").Order("created_at ASC, id ASC").Find(&actions).Error; err != nil {
+					return err
+				}
+				if len(actions) == 0 {
+					logger.Info("Named migration applied", zap.String("name", "20260324_permission_key_dot_cleanup"), zap.Int("updated", 0))
+					return nil
+				}
+
+				canonicalByKey := map[string]uuid.UUID{}
+				var existing []usermodel.PermissionAction
+				if err := database.DB.Order("created_at ASC, id ASC").Find(&existing).Error; err != nil {
+					return err
+				}
+				for _, action := range existing {
+					key := permissionkey.Normalize(action.PermissionKey)
+					if key == "" {
+						continue
+					}
+					if _, exists := canonicalByKey[key]; !exists {
+						canonicalByKey[key] = action.ID
+					}
+				}
+
+				updatedCount := 0
+				for _, action := range actions {
+					mapping := permissionkey.FromLegacy(action.ResourceCode, action.ActionCode)
+					targetKey := permissionkey.Normalize(mapping.Key)
+					if targetKey == "" {
+						continue
+					}
+					targetResource := strings.TrimSpace(mapping.ResourceCode)
+					if targetResource == "" {
+						targetResource = strings.TrimSpace(action.ResourceCode)
+					}
+					targetAction := strings.TrimSpace(mapping.ActionCode)
+					if targetAction == "" {
+						targetAction = strings.TrimSpace(action.ActionCode)
+					}
+					if canonicalID, exists := canonicalByKey[targetKey]; exists && canonicalID != action.ID {
+						if err := rebindPermissionActionReferences(action.ID, canonicalID); err != nil {
+							return err
+						}
+						if err := database.DB.Delete(&usermodel.PermissionAction{}, action.ID).Error; err != nil {
+							return err
+						}
+						updatedCount++
+						continue
+					}
+					if err := database.DB.Model(&usermodel.PermissionAction{}).
+						Where("id = ?", action.ID).
+						Updates(map[string]interface{}{
+							"permission_key": targetKey,
+							"resource_code":  targetResource,
+							"action_code":    targetAction,
+						}).Error; err != nil {
+						return err
+					}
+					canonicalByKey[targetKey] = action.ID
+					updatedCount++
+				}
+
+				logger.Info("Named migration applied", zap.String("name", "20260324_permission_key_dot_cleanup"), zap.Int("updated", updatedCount))
+				return nil
+			},
+		},
+		{
+			Name: "20260324_permission_context_backfill",
+			Run: func(logger *zap.Logger) error {
+				for _, mapping := range permissionkey.ListMappings() {
+					contextType := strings.TrimSpace(mapping.ContextType)
+					if contextType == "" {
+						contextType = permissionkey.FromKey(mapping.Key).ContextType
+					}
+					if contextType == "" {
+						continue
+					}
+					if err := database.DB.Model(&usermodel.PermissionAction{}).
+						Where("permission_key = ?", mapping.Key).
+						Update("context_type", contextType).Error; err != nil {
+						return err
+					}
+				}
+
+				statements := []string{
+					`UPDATE permission_actions SET context_type = 'platform' WHERE permission_key LIKE 'system.%'`,
+					`UPDATE permission_actions SET context_type = 'platform' WHERE permission_key LIKE 'tenant.%'`,
+					`UPDATE permission_actions SET context_type = 'platform' WHERE permission_key LIKE 'platform.%'`,
+					`UPDATE permission_actions SET context_type = 'team' WHERE permission_key LIKE 'team.%'`,
+					`UPDATE permission_actions SET permission_key = 'system.permission.manage', context_type = 'platform' WHERE permission_key IN ('system_permission.manage_action_registry', 'permission_action.manage')`,
+					`UPDATE permission_actions SET permission_key = 'system.role.assign_action', context_type = 'platform' WHERE permission_key = 'system_permission.assign_role_action'`,
+					`UPDATE permission_actions SET context_type = 'platform' WHERE resource_code IN ('role', 'user', 'menu', 'menu_backup', 'permission_action', 'api_endpoint', 'feature_package')`,
+					`UPDATE permission_actions SET context_type = 'platform' WHERE permission_key IN ('feature_package.assign_action', 'feature_package.assign_menu', 'feature_package.assign_team')`,
+					`UPDATE permission_actions SET context_type = 'team' WHERE permission_key IN ('team.configure_action_boundary', 'team.configure_menu_boundary')`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+
+				logger.Info("Named migration applied", zap.String("name", "20260324_permission_context_backfill"))
 				return nil
 			},
 		},
@@ -394,6 +508,57 @@ func runNamedMigrations(logger *zap.Logger) error {
 					}
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260323_feature_package_v2_schema"))
+				return nil
+			},
+		},
+		{
+			Name: "20260324_access_snapshot_schema",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`CREATE TABLE IF NOT EXISTS platform_user_access_snapshots (
+						user_id uuid PRIMARY KEY,
+						role_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						role_package_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						user_package_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						direct_package_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						expanded_package_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						action_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						action_source_map jsonb NOT NULL DEFAULT '{}'::jsonb,
+						available_menu_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						available_menu_map jsonb NOT NULL DEFAULT '{}'::jsonb,
+						menu_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						menu_source_map jsonb NOT NULL DEFAULT '{}'::jsonb,
+						hidden_menu_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						disabled_action_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						has_package_config boolean NOT NULL DEFAULT FALSE,
+						refreshed_at timestamptz NOT NULL DEFAULT NOW(),
+						created_at timestamptz NOT NULL DEFAULT NOW(),
+						updated_at timestamptz NOT NULL DEFAULT NOW()
+					)`,
+					`CREATE TABLE IF NOT EXISTS team_access_snapshots (
+						team_id uuid PRIMARY KEY,
+						package_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						expanded_package_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						derived_action_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						derived_action_map jsonb NOT NULL DEFAULT '{}'::jsonb,
+						blocked_action_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						manual_action_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						effective_action_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						derived_menu_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						derived_menu_map jsonb NOT NULL DEFAULT '{}'::jsonb,
+						blocked_menu_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						effective_menu_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						refreshed_at timestamptz NOT NULL DEFAULT NOW(),
+						created_at timestamptz NOT NULL DEFAULT NOW(),
+						updated_at timestamptz NOT NULL DEFAULT NOW()
+					)`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260324_access_snapshot_schema"))
 				return nil
 			},
 		},
@@ -1025,7 +1190,44 @@ func cleanupDeprecatedMenus(logger *zap.Logger) error {
 		}
 		logger.Info("Deprecated default menu removed", zap.String("name", menu.Name))
 	}
+	var legacyTeamRoots []usermodel.Menu
+	if err := database.DB.Where("path = ? AND component = ? AND COALESCE(name, '') <> ?", "/team", "/index/index", "TeamRoot").Find(&legacyTeamRoots).Error; err != nil {
+		return err
+	}
+	for _, menu := range legacyTeamRoots {
+		if err := deleteMenuTree(menu.ID); err != nil {
+			return err
+		}
+		logger.Info("Legacy team menu tree removed", zap.String("name", menu.Name), zap.String("path", menu.Path))
+	}
 	return nil
+}
+
+func deleteMenuTree(rootID uuid.UUID) error {
+	queue := []uuid.UUID{rootID}
+	collected := make([]uuid.UUID, 0, 8)
+	for len(queue) > 0 {
+		currentID := queue[0]
+		queue = queue[1:]
+		collected = append(collected, currentID)
+		var children []usermodel.Menu
+		if err := database.DB.Select("id").Where("parent_id = ?", currentID).Find(&children).Error; err != nil {
+			return err
+		}
+		for _, child := range children {
+			queue = append(queue, child.ID)
+		}
+	}
+	if len(collected) == 0 {
+		return nil
+	}
+	if err := database.DB.Where("menu_id IN ?", collected).Delete(&usermodel.RoleMenu{}).Error; err != nil {
+		return err
+	}
+	if err := database.DB.Where("menu_id IN ?", collected).Delete(&usermodel.FeaturePackageMenu{}).Error; err != nil {
+		return err
+	}
+	return database.DB.Where("id IN ?", collected).Delete(&usermodel.Menu{}).Error
 }
 
 func initDefaultRoleMenus(logger *zap.Logger) error {
@@ -1227,6 +1429,7 @@ type featurePackageSeed struct {
 	IsBuiltin      bool
 	Status         string
 	SortOrder      int
+	MenuNames      []string
 	PermissionKeys []string
 }
 
@@ -1331,6 +1534,7 @@ func defaultFeaturePackageSeeds() []featurePackageSeed {
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      1,
+			MenuNames:      []string{"System", "Role", "User", "ActionPermission", "TeamRolesAndPermissions"},
 			PermissionKeys: []string{"system.user.manage", "system.role.manage", "system.permission.manage"},
 		},
 		{
@@ -1342,6 +1546,7 @@ func defaultFeaturePackageSeeds() []featurePackageSeed {
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      2,
+			MenuNames:      []string{"System", "Menus"},
 			PermissionKeys: []string{"system.menu.manage", "system.menu.backup"},
 		},
 		{
@@ -1353,6 +1558,7 @@ func defaultFeaturePackageSeeds() []featurePackageSeed {
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      3,
+			MenuNames:      []string{"System", "ApiEndpoint", "FeaturePackage"},
 			PermissionKeys: []string{"system.api_registry.view", "system.api_registry.sync", "platform.package.manage", "platform.package.assign"},
 		},
 		{
@@ -1364,6 +1570,7 @@ func defaultFeaturePackageSeeds() []featurePackageSeed {
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      10,
+			MenuNames:      []string{"TeamRoot", "TeamManagement", "TeamMembers"},
 			PermissionKeys: []string{"team.member.manage", "team.member.assign_role", "team.member.assign_action", "team.boundary.manage"},
 		},
 	}
@@ -1436,8 +1643,93 @@ func initDefaultFeaturePackages(logger *zap.Logger) error {
 				return err
 			}
 		}
+
+		menuIDs := make([]uuid.UUID, 0, len(seed.MenuNames))
+		for _, menuName := range seed.MenuNames {
+			var menu usermodel.Menu
+			if err := database.DB.Where("name = ?", menuName).First(&menu).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					continue
+				}
+				return err
+			}
+			menuIDs = append(menuIDs, menu.ID)
+		}
+
+		if err := database.DB.Where("package_id = ?", existing.ID).Delete(&usermodel.FeaturePackageMenu{}).Error; err != nil {
+			return err
+		}
+		menuSeen := make(map[uuid.UUID]struct{}, len(menuIDs))
+		menuRecords := make([]usermodel.FeaturePackageMenu, 0, len(menuIDs))
+		for _, menuID := range menuIDs {
+			if _, ok := menuSeen[menuID]; ok {
+				continue
+			}
+			menuSeen[menuID] = struct{}{}
+			menuRecords = append(menuRecords, usermodel.FeaturePackageMenu{PackageID: existing.ID, MenuID: menuID})
+		}
+		if len(menuRecords) > 0 {
+			if err := database.DB.Create(&menuRecords).Error; err != nil {
+				return err
+			}
+		}
 	}
 	logger.Info("Default feature packages seeded")
+	return nil
+}
+
+func initDefaultRoleFeaturePackages(logger *zap.Logger) error {
+	roleCodes := []string{"admin", "team_admin"}
+	packageKeys := []string{"platform.system_admin", "platform.menu_admin", "platform.api_admin", "team.member_admin"}
+
+	var roles []usermodel.Role
+	if err := database.DB.Where("tenant_id IS NULL AND code IN ?", roleCodes).Find(&roles).Error; err != nil {
+		return err
+	}
+	roleByCode := make(map[string]usermodel.Role, len(roles))
+	for _, role := range roles {
+		roleByCode[role.Code] = role
+	}
+
+	var packages []usermodel.FeaturePackage
+	if err := database.DB.Where("package_key IN ?", packageKeys).Find(&packages).Error; err != nil {
+		return err
+	}
+	packageByKey := make(map[string]usermodel.FeaturePackage, len(packages))
+	for _, item := range packages {
+		packageByKey[item.PackageKey] = item
+	}
+
+	assignments := map[string][]string{
+		"admin":      {"platform.system_admin", "platform.menu_admin", "platform.api_admin"},
+		"team_admin": {"team.member_admin"},
+	}
+
+	for roleCode, keys := range assignments {
+		role, ok := roleByCode[roleCode]
+		if !ok {
+			continue
+		}
+		for _, packageKey := range keys {
+			pkg, ok := packageByKey[packageKey]
+			if !ok {
+				continue
+			}
+			record := usermodel.RoleFeaturePackage{
+				RoleID:    role.ID,
+				PackageID: pkg.ID,
+				Enabled:   true,
+			}
+			if err := database.DB.Where("role_id = ? AND package_id = ?", role.ID, pkg.ID).FirstOrCreate(&record).Error; err != nil {
+				return err
+			}
+			if err := database.DB.Model(&record).Update("enabled", true).Error; err != nil {
+				return err
+			}
+		}
+	}
+
+	logger.Info("Default role feature packages ensured")
 	return nil
 }
 

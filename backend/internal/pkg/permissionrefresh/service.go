@@ -6,6 +6,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
@@ -25,13 +26,15 @@ type service struct {
 	db              *gorm.DB
 	boundaryService teamboundary.Service
 	platformService platformaccess.Service
+	roleService     platformroleaccess.Service
 }
 
-func NewService(db *gorm.DB, boundaryService teamboundary.Service, platformService platformaccess.Service) Service {
+func NewService(db *gorm.DB, boundaryService teamboundary.Service, platformService platformaccess.Service, roleService platformroleaccess.Service) Service {
 	return &service{
 		db:              db,
 		boundaryService: boundaryService,
 		platformService: platformService,
+		roleService:     roleService,
 	}
 }
 
@@ -56,7 +59,7 @@ func (s *service) RefreshPlatformUser(userID uuid.UUID) error {
 	if userID == uuid.Nil || s.platformService == nil {
 		return nil
 	}
-	_, err := s.platformService.GetSnapshot(userID)
+	_, err := s.platformService.RefreshSnapshot(userID)
 	return err
 }
 
@@ -70,6 +73,14 @@ func (s *service) RefreshPlatformUsers(userIDs []uuid.UUID) error {
 }
 
 func (s *service) RefreshPlatformRole(roleID uuid.UUID) error {
+	if roleID == uuid.Nil {
+		return nil
+	}
+	if s.roleService != nil {
+		if _, err := s.roleService.RefreshSnapshot(roleID); err != nil {
+			return err
+		}
+	}
 	return s.RefreshPlatformRoles([]uuid.UUID{roleID})
 }
 

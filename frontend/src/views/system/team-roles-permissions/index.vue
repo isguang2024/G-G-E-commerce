@@ -107,8 +107,8 @@
             formatter: (row: RoleListItem) => {
               const list = [
                 { key: 'packages', label: row.isGlobal ? '查看功能包' : '功能包', icon: 'ri:apps-2-line' },
-                { key: 'menus', label: row.isGlobal ? '查看菜单权限' : '菜单权限', icon: 'ri:menu-line' },
-                { key: 'actions', label: row.isGlobal ? '查看角色权限' : '角色权限', icon: 'ri:shield-keyhole-line' }
+                { key: 'menus', label: row.isGlobal ? '查看菜单裁剪' : '菜单裁剪', icon: 'ri:menu-line' },
+                { key: 'actions', label: row.isGlobal ? '查看权限裁剪' : '权限裁剪', icon: 'ri:shield-keyhole-line' }
               ]
               if (!row.isGlobal) {
                 list.unshift({ key: 'edit', label: '编辑角色', icon: 'ri:edit-line' })

@@ -99,7 +99,7 @@
 <script setup lang="ts">
   import AppConfig from '@/config'
   import { useUserStore } from '@/store/modules/user'
-  import { useTenantStore } from '@/store/modules/tenant'
+  import { hasPlatformAccessByUserInfo, useTenantStore } from '@/store/modules/tenant'
   import { useI18n } from 'vue-i18n'
   import { HttpError } from '@/utils/http/error'
   import { fetchLogin } from '@/api/auth'
@@ -225,9 +225,13 @@
           actions: response.user.actions || []
         }
         userStore.setUserInfo(userInfo)
+        tenantStore.setPlatformAccess(hasPlatformAccessByUserInfo(userInfo))
       }
 
-      await tenantStore.loadMyTeams()
+      await tenantStore.loadMyTeams({
+        preferredTenantId: response.user?.current_tenant_id || '',
+        preferPlatform: hasPlatformAccessByUserInfo(response.user || undefined)
+      })
 
       // 登录成功处理
       persistRememberedCredentials()

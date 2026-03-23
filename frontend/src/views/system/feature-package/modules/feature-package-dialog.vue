@@ -20,6 +20,7 @@
         <ElSelect v-model="form.contextType" placeholder="请选择上下文类型" style="width: 100%">
           <ElOption label="平台" value="platform" />
           <ElOption label="团队" value="team" />
+          <ElOption label="平台/团队" value="platform,team" />
         </ElSelect>
       </ElFormItem>
       <ElFormItem label="状态" prop="status">

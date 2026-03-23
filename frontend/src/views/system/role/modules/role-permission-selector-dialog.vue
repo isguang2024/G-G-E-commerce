@@ -10,14 +10,44 @@
         <div class="dialog-note">
           请先为角色绑定功能包，再在角色已绑定功能包范围内裁剪菜单权限、功能权限和数据权限。菜单权限控制入口可见，功能权限勾选后即允许，不勾选默认不允许，数据权限控制资源范围。
         </div>
+        <PermissionSummaryTags :items="summaryItems" />
+        <div v-if="featurePackages.length" class="package-tags">
+          <ElTag
+            v-for="item in featurePackages"
+            :key="item.id"
+            type="success"
+            effect="plain"
+            round
+            class="package-tag-link"
+            @click="goToFeaturePackagePage(item)"
+          >
+            {{ item.name }}
+          </ElTag>
+        </div>
 
       <ElTabs v-model="activeTab" class="permission-tabs">
         <ElTabPane label="菜单权限" name="menus">
           <div class="cascader-pane">
+            <PermissionSourcePanels
+              v-model="selectedMenuSourcePackageId"
+              :packages="featurePackages"
+              :source-map="menuSourceMapText"
+              :derived-items="menuSourceItems"
+              :blocked-items="hiddenMenuItems"
+              derived-title="功能包展开菜单"
+              blocked-title="当前角色已屏蔽菜单"
+              open="menus"
+              filtered-blocked-empty-text="当前筛选下暂无角色显式屏蔽菜单"
+              empty-title="当前暂无角色菜单来源"
+              empty-text="请先为角色绑定功能包，或检查平台角色快照是否已经刷新。"
+            />
+
             <div class="cascader-toolbar">
               <div class="cascader-tags">
-                <ElTag effect="plain" round>已选 {{ expandedSelectedMenuIds.length }}</ElTag>
-                <ElTag type="info" effect="plain" round>总计 {{ menuNodeCount }}</ElTag>
+                <ElTag effect="plain" round>功能包展开 {{ menuSourceList.length }}</ElTag>
+                <ElTag type="success" effect="plain" round>已保留 {{ expandedSelectedMenuIds.length }}</ElTag>
+                <ElTag type="danger" effect="plain" round>已屏蔽 {{ hiddenMenuCount }}</ElTag>
+                <ElTag type="info" effect="plain" round>树节点 {{ menuNodeCount }}</ElTag>
               </div>
 
               <div class="toolbar-filters">
@@ -90,6 +120,20 @@
 
         <ElTabPane label="功能权限" name="actions">
           <div class="cascader-pane">
+            <PermissionSourcePanels
+              v-model="selectedActionSourcePackageId"
+              :packages="featurePackages"
+              :source-map="actionSourceMapText"
+              :derived-items="derivedActionItems"
+              :blocked-items="disabledActionItems"
+              derived-title="功能包展开能力"
+              blocked-title="当前角色已关闭能力"
+              open="actions"
+              filtered-blocked-empty-text="当前筛选下暂无角色显式关闭能力"
+              empty-title="当前暂无角色能力来源"
+              empty-text="请先为角色绑定功能包，或检查平台角色快照是否已经刷新。"
+            />
+
             <div class="cascader-toolbar">
               <div class="cascader-tags">
                 <ElTag
@@ -100,7 +144,9 @@
                 >
                   {{ item.label }} {{ item.count }}
                 </ElTag>
-                <ElTag effect="plain" round>已选 {{ expandedSelectedActionIds.length }}</ElTag>
+                <ElTag effect="plain" round>功能包展开 {{ derivedActions.length }}</ElTag>
+                <ElTag type="success" effect="plain" round>已保留 {{ expandedSelectedActionIds.length }}</ElTag>
+                <ElTag type="danger" effect="plain" round>已关闭 {{ disabledActionCount }}</ElTag>
                 <ElTag type="info" effect="plain" round>总计 {{ actionLeafCount }}</ElTag>
               </div>
 
@@ -216,11 +262,15 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { CascaderOption, CascaderProps } from 'element-plus'
+import { useRouter } from 'vue-router'
+import PermissionSourcePanels from '@/components/business/permission/PermissionSourcePanels.vue'
+import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
 import {
   fetchGetMenuTreeAll,
   fetchGetPermissionActionList,
   fetchGetRoleActions,
   fetchGetRoleDataPermissions,
+  fetchGetRolePackages,
   fetchGetRoleMenus,
   fetchSetRoleActions,
   fetchSetRoleDataPermissions,
@@ -265,6 +315,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const router = useRouter()
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
@@ -294,25 +345,45 @@ const actionKeyword = ref('')
 const menuTreeData = ref<RoleMenuNode[]>([])
 const selectedMenuNodeValues = ref<string[]>([])
 const roleMenuBoundary = ref<Api.SystemManage.RoleMenuBoundaryResponse | null>(null)
+const featurePackages = ref<Api.SystemManage.FeaturePackageItem[]>([])
+const selectedMenuSourcePackageId = ref('')
 
 const permissionActions = ref<Api.SystemManage.PermissionActionItem[]>([])
 const selectedActionNodeValues = ref<string[]>([])
 const roleActionBoundary = ref<Api.SystemManage.RoleActionBoundaryResponse | null>(null)
+const selectedActionSourcePackageId = ref('')
 
 const dataRows = ref<DataRow[]>([])
 const dataScopeOptions = ref<Api.SystemManage.RoleDataPermissionScopeOption[]>([])
 
 const roleTitle = computed(() => props.roleData?.roleName || '')
+const summaryItems = computed(() => [
+  { label: '角色', value: roleTitle.value || '-' },
+  { label: '功能包', value: featurePackages.value.length, type: 'success' as const },
+  { label: '菜单已屏蔽', value: hiddenMenuCount.value, type: 'warning' as const },
+  { label: '能力已关闭', value: disabledActionCount.value, type: 'danger' as const }
+])
 
 const menuOptions = computed<MenuOption[]>(() => normalizeMenuOptions(menuTreeData.value))
 const menuNodeCount = computed(() => flattenMenuIds(menuTreeData.value).length)
 const selectedMenuIdSet = computed(() => new Set(expandedSelectedMenuIds.value))
-const hasRoleMenuBoundary = computed(
-  () => Boolean(roleMenuBoundary.value?.has_menu_boundary || roleMenuBoundary.value?.package_ids?.length)
-)
 const availableMenuIdSet = computed(
   () => new Set((roleMenuBoundary.value?.available_menu_ids || []).map((item) => `${item}`))
 )
+const hiddenMenuCount = computed(() => roleMenuBoundary.value?.hidden_menu_ids?.length || 0)
+const hiddenMenuIdSet = computed(
+  () => new Set((roleMenuBoundary.value?.hidden_menu_ids || []).map((item) => `${item}`))
+)
+const menuDerivedSourceMap = computed(() =>
+  Object.fromEntries((roleMenuBoundary.value?.derived_sources || []).map((item) => [item.menu_id, item.package_ids]))
+)
+const menuSourceList = computed(() => buildMenuSourceList(menuTreeData.value, roleMenuBoundary.value?.available_menu_ids || []))
+const menuSourceMapText = computed(() =>
+  Object.fromEntries(Object.entries(menuDerivedSourceMap.value).map(([key, value]) => [key, value.map((item) => `${item}`)]))
+)
+const hiddenMenus = computed(() => menuSourceList.value.filter((item) => hiddenMenuIdSet.value.has(item.id)))
+const menuSourceItems = computed(() => menuSourceList.value)
+const hiddenMenuItems = computed(() => hiddenMenus.value)
 
 const menuBranchMap = computed(() => {
   const map = new Map<string, string[]>()
@@ -335,17 +406,27 @@ const menuBranchMap = computed(() => {
 
 const expandedSelectedMenuIds = computed(() => expandSelectedValues(selectedMenuNodeValues.value, menuBranchMap.value))
 
-const hasRoleActionBoundary = computed(
-  () => Boolean(roleActionBoundary.value?.has_package_boundary || roleActionBoundary.value?.package_ids?.length)
-)
 const availableActionIdSet = computed(
   () => new Set((roleActionBoundary.value?.available_action_ids || []).map((item) => `${item}`))
 )
+const disabledActionCount = computed(() => roleActionBoundary.value?.disabled_action_ids?.length || 0)
+const disabledActionIdSet = computed(
+  () => new Set((roleActionBoundary.value?.disabled_action_ids || []).map((item) => `${item}`))
+)
+const actionDerivedSourceMap = computed(() =>
+  Object.fromEntries((roleActionBoundary.value?.derived_sources || []).map((item) => [item.action_id, item.package_ids]))
+)
+const actionSourceMapText = computed(() =>
+  Object.fromEntries(Object.entries(actionDerivedSourceMap.value).map(([key, value]) => [key, value.map((item) => `${item}`)]))
+)
 
 const filteredPermissionActions = computed(() => {
-  if (!hasRoleActionBoundary.value) return permissionActions.value
   return permissionActions.value.filter((item) => availableActionIdSet.value.has(item.id))
 })
+const derivedActions = computed(() => filteredPermissionActions.value)
+const disabledActions = computed(() => derivedActions.value.filter((item) => disabledActionIdSet.value.has(item.id)))
+const derivedActionItems = computed(() => derivedActions.value.map((item) => ({ id: item.id, label: item.name })))
+const disabledActionItems = computed(() => disabledActions.value.map((item) => ({ id: item.id, label: item.name })))
 
 const actionOptions = computed<ActionOption[]>(() => {
   const featureMap = new Map<string, ActionOption>()
@@ -449,7 +530,7 @@ const actionCascaderProps: CascaderProps = {
 const filteredMenuOptions = computed(() => {
   const keyword = menuKeyword.value.trim().toLowerCase()
   return filterNestedOptions(menuOptions.value, (node) => {
-    if (hasRoleMenuBoundary.value && !availableMenuIdSet.value.has(`${node.value}`)) return false
+    if (!availableMenuIdSet.value.has(`${node.value}`)) return false
     if (!node.leaf) return !keyword
     if (!showInnerMenus.value && node.isInnerPage) return false
     if (!showHiddenMenus.value && !node.isInnerPage && node.isHide) return false
@@ -504,11 +585,14 @@ async function loadData() {
   activeTab.value = 'menus'
   menuKeyword.value = ''
   actionKeyword.value = ''
+  selectedMenuSourcePackageId.value = ''
+  selectedActionSourcePackageId.value = ''
 
   try {
-    const [menuTree, roleMenus, actionList, roleActions, dataPermissionRes] = await Promise.all([
+    const [menuTree, roleMenus, rolePackages, actionList, roleActions, dataPermissionRes] = await Promise.all([
       fetchGetMenuTreeAll(),
       fetchGetRoleMenus(props.roleData.roleId),
+      fetchGetRolePackages(props.roleData.roleId),
       fetchGetPermissionActionList({ current: 1, size: 1000, status: 'normal' }),
       fetchGetRoleActions(props.roleData.roleId),
       fetchGetRoleDataPermissions(props.roleData.roleId)
@@ -516,13 +600,12 @@ async function loadData() {
 
     menuTreeData.value = Array.isArray(menuTree) ? normalizeMenus(menuTree) : []
     roleMenuBoundary.value = roleMenus || null
+    featurePackages.value = rolePackages?.packages || []
     selectedMenuNodeValues.value = (roleMenus?.menu_ids || []).map((item) => `${item}`)
 
     permissionActions.value = actionList?.records || []
     roleActionBoundary.value = roleActions || null
-    const availableActionIDSet = hasRoleActionBoundary.value
-      ? availableActionIdSet.value
-      : new Set(permissionActions.value.map((item) => item.id))
+    const availableActionIDSet = availableActionIdSet.value
     selectedActionNodeValues.value = (roleActions?.action_ids || []).filter(
       (item) => item && availableActionIDSet.has(item)
     )
@@ -679,6 +762,34 @@ function handleCancel() {
   visible.value = false
 }
 
+function buildMenuSourceList(items: RoleMenuNode[], availableIds: string[]) {
+  const indexMap = new Map<string, { id: string; label: string }>()
+
+  const visit = (nodes: RoleMenuNode[]) => {
+    nodes.forEach((node) => {
+      indexMap.set(node.id, {
+        id: node.id,
+        label: node.label
+      })
+      if (node.children?.length) visit(node.children)
+    })
+  }
+
+  visit(items)
+  return availableIds.map((id) => indexMap.get(`${id}`)).filter(Boolean) as Array<{ id: string; label: string }>
+}
+
+function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem, open?: 'menus' | 'actions') {
+  router.push({
+    name: 'FeaturePackage',
+    query: {
+      packageKey: item.packageKey,
+      contextType: item.contextType || 'platform',
+      ...(open ? { open } : {})
+    }
+  })
+}
+
 async function handleSave() {
   if (!props.roleData?.roleId) return
   saving.value = true
@@ -717,6 +828,13 @@ async function handleSave() {
 .dialog-note {
   color: #6b7280;
   line-height: 1.6;
+}
+
+.package-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .permission-tabs :deep(.el-tabs__content) {

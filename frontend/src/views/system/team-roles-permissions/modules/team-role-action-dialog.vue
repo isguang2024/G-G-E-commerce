@@ -1,7 +1,7 @@
 <template>
   <ElDialog
     v-model="visible"
-    :title="`团队角色功能权限 - ${roleTitle}`"
+    :title="`团队角色权限裁剪 - ${roleTitle}`"
     width="980px"
     destroy-on-close
   >
@@ -9,22 +9,12 @@
       <div class="dialog-note">
         {{
           props.roleData?.isGlobal
-            ? '基础团队角色默认继承当前团队已开通功能包，这里只读展示最终可用角色权限。'
-            : '请先为角色绑定功能包，再在角色功能包展开范围内配置角色权限。'
+            ? '基础团队角色默认继承当前团队已开通功能包，这里只读展示最终可用角色权限结果。'
+            : '请先为角色绑定功能包，再在角色功能包展开范围内配置权限裁剪。'
         }}
       </div>
 
-      <div class="summary-card">
-        <ElTag effect="plain" round>角色 {{ roleTitle }}</ElTag>
-        <ElTag :type="props.roleData?.isGlobal ? 'info' : 'success'" effect="plain" round>
-          {{ props.roleData?.isGlobal ? '基础角色' : '团队自定义' }}
-        </ElTag>
-        <ElTag type="warning" effect="plain" round>角色功能包 {{ featurePackages.length }}</ElTag>
-        <ElTag type="primary" effect="plain" round>{{ inherited ? '继承团队功能包' : '角色独立功能包' }}</ElTag>
-        <ElTag type="warning" effect="plain" round>功能包展开 {{ derivedActionCount }}</ElTag>
-        <ElTag type="success" effect="plain" round>可配 {{ actions.length }}</ElTag>
-        <ElTag effect="plain" round>已选 {{ selectedIds.length }}</ElTag>
-      </div>
+      <PermissionSummaryTags :items="summaryItems" />
 
       <div v-if="featurePackages.length" class="package-summary-card">
         <div class="source-title">当前角色功能包</div>
@@ -35,65 +25,31 @@
         </div>
       </div>
 
-      <div v-if="derivedActions.length" class="source-detail-grid">
-        <div v-if="derivedActions.length" class="source-card source-card--derived">
-          <div class="source-header">
-            <div class="source-title">功能包展开能力</div>
-            <ElButton
-              v-if="selectedDerivedPackage"
-              type="warning"
-              text
-              @click="goToFeaturePackagePage(selectedDerivedPackage)"
-            >
-              前往功能包页
-            </ElButton>
-          </div>
-          <div v-if="derivedSourcePackages.length" class="package-filter-row">
-            <ElTag
-              :type="selectedDerivedPackageId ? 'info' : 'warning'"
-              effect="plain"
-              round
-              class="package-filter-tag"
-              @click="selectedDerivedPackageId = ''"
-            >
-              全部功能包
-            </ElTag>
-            <ElTag
-              v-for="item in derivedSourcePackages"
-              :key="item.id"
-              :type="selectedDerivedPackageId === item.id ? 'warning' : 'info'"
-              effect="plain"
-              round
-              class="package-filter-tag"
-              @click="selectedDerivedPackageId = selectedDerivedPackageId === item.id ? '' : item.id"
-            >
-              {{ item.name }}
-            </ElTag>
-          </div>
-          <div class="source-tags">
-            <ElTag
-              v-for="item in filteredDerivedActions"
-              :key="item.id"
-              type="warning"
-              effect="plain"
-              round
-              :title="buildDerivedSourceText(item.id)"
-            >
-              {{ item.name }}
-            </ElTag>
-          </div>
-        </div>
-      </div>
+      <PermissionSourcePanels
+        v-model="selectedDerivedPackageId"
+        :packages="featurePackages"
+        :source-map="derivedSourceMap"
+        :derived-items="derivedActionItems"
+        :blocked-items="blockedActionItems"
+        derived-title="功能包展开能力"
+        blocked-title="当前角色已关闭能力"
+        open="actions"
+        filtered-blocked-empty-text="当前筛选下暂无角色显式关闭能力"
+        empty-title="当前暂无角色能力来源"
+        empty-text="请先为角色绑定功能包，或检查当前团队快照是否已经刷新。"
+      />
 
       <PermissionActionCascaderPanel
         :actions="actions"
         :selected-ids="selectedIds"
-        footer-text="保存后该团队角色只会在当前角色功能包展开范围内生效。"
+        footer-text="这里只保存角色在功能包范围内的保留结果；未保留项将视为被角色屏蔽。"
         @update:selected-ids="selectedIds = $event"
       />
     </div>
 
     <template #footer>
+      <ElButton v-if="!props.roleData?.isGlobal" @click="keepAll">全部保留</ElButton>
+      <ElButton v-if="!props.roleData?.isGlobal" @click="blockAll">全部屏蔽</ElButton>
       <ElButton @click="visible = false">取消</ElButton>
       <ElButton v-if="!props.roleData?.isGlobal" type="primary" :loading="saving" @click="handleSave">保存</ElButton>
     </template>
@@ -103,8 +59,9 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
-  import { useRouter } from 'vue-router'
+  import PermissionSourcePanels from '@/components/business/permission/PermissionSourcePanels.vue'
   import PermissionActionCascaderPanel from '@/components/business/permission/PermissionActionCascaderPanel.vue'
+  import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
   import {
     fetchGetMyTeamRoleActions,
     fetchGetMyTeamRolePackages,
@@ -117,7 +74,6 @@
   }
 
   const props = defineProps<Props>()
-  const router = useRouter()
   const emit = defineEmits<{ (e: 'update:modelValue', value: boolean): void; (e: 'success'): void }>()
 
   const loading = ref(false)
@@ -134,23 +90,29 @@
     const idSet = new Set(derivedActionIds.value)
     return actions.value.filter((item) => idSet.has(item.id))
   })
-  const derivedSourcePackages = computed(() => {
-    const packageIdSet = new Set(Object.values(derivedSourceMap.value).flat())
-    return featurePackages.value.filter((item) => packageIdSet.has(item.id))
+  const blockedActions = computed(() => {
+    const selectedIdSet = new Set(selectedIds.value)
+    return actions.value.filter((item) => !selectedIdSet.has(item.id))
   })
-  const filteredDerivedActions = computed(() => {
-    if (!selectedDerivedPackageId.value) return derivedActions.value
-    return derivedActions.value.filter((item) => (derivedSourceMap.value[item.id] || []).includes(selectedDerivedPackageId.value))
-  })
-  const selectedDerivedPackage = computed(
-    () => featurePackages.value.find((item) => item.id === selectedDerivedPackageId.value) || null
-  )
+  const derivedActionItems = computed(() => derivedActions.value.map((item) => ({ id: item.id, label: item.name })))
+  const blockedActionItems = computed(() => blockedActions.value.map((item) => ({ id: item.id, label: item.name })))
 
   const visible = computed({
     get: () => props.modelValue,
     set: (value) => emit('update:modelValue', value)
   })
   const roleTitle = computed(() => props.roleData?.roleName || '')
+  const blockedCount = computed(() => Math.max(actions.value.length - selectedIds.value.length, 0))
+  const summaryItems = computed(() => [
+    { label: '角色', value: roleTitle.value || '-' },
+    { label: '类型', value: props.roleData?.isGlobal ? '基础角色' : '团队自定义', type: props.roleData?.isGlobal ? 'info' as const : 'success' as const },
+    { label: '角色功能包', value: featurePackages.value.length, type: 'warning' as const },
+    { label: '继承模式', value: inherited.value ? '继承团队功能包' : '角色独立功能包', type: 'primary' as const },
+    { label: '功能包展开', value: derivedActionCount.value, type: 'warning' as const },
+    { label: '可裁剪', value: actions.value.length, type: 'success' as const },
+    { label: '已保留', value: selectedIds.value.length, type: 'success' as const },
+      { label: '已关闭', value: blockedCount.value, type: 'danger' as const }
+  ])
 
   watch(
     () => props.modelValue,
@@ -173,7 +135,7 @@
         inherited.value = Boolean(packagesRes?.inherited)
         derivedActionCount.value = selected?.available_action_ids?.length || 0
       } catch (error: any) {
-        ElMessage.error(error?.message || '加载团队角色功能权限失败')
+        ElMessage.error(error?.message || '加载团队角色权限裁剪失败')
       } finally {
         loading.value = false
       }
@@ -185,33 +147,23 @@
     saving.value = true
     try {
       await fetchSetMyTeamRoleActions(props.roleData.roleId, selectedIds.value)
-      ElMessage.success('团队角色功能权限已保存')
+      ElMessage.success('团队角色权限裁剪已保存')
       emit('success')
       visible.value = false
     } catch (error: any) {
-      ElMessage.error(error?.message || '保存团队角色功能权限失败')
+      ElMessage.error(error?.message || '保存团队角色权限裁剪失败')
     } finally {
       saving.value = false
     }
   }
 
-  function buildDerivedSourceText(actionId: string) {
-    const packageIdSet = new Set(derivedSourceMap.value[actionId] || [])
-    const names = featurePackages.value.filter((item) => packageIdSet.has(item.id)).map((item) => item.name)
-    return names.length ? `来源功能包：${names.join('、')}` : '来源功能包未命名'
+  function keepAll() {
+    selectedIds.value = actions.value.map((item) => item.id)
   }
 
-  function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem) {
-    router.push({
-      name: 'FeaturePackage',
-      query: {
-        packageKey: item.packageKey,
-        contextType: item.contextType || 'team',
-        open: 'actions'
-      }
-    })
+  function blockAll() {
+    selectedIds.value = []
   }
-
 </script>
 
 <style scoped lang="scss">
@@ -226,37 +178,6 @@
     line-height: 1.6;
   }
 
-  .summary-card {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .source-detail-grid {
-    display: grid;
-    gap: 12px;
-  }
-
-  .source-card {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 12px 14px;
-    border-radius: 12px;
-    border: 1px solid #e5e7eb;
-    background: #fff;
-  }
-
-  .source-card--derived {
-    border-color: #f3d38a;
-    background: #fffaf0;
-  }
-
-  .source-card--manual {
-    border-color: #bfd3ff;
-    background: #f5f9ff;
-  }
-
   .package-summary-card {
     display: flex;
     flex-direction: column;
@@ -267,31 +188,9 @@
     background: #f7fcf7;
   }
 
-  .source-title {
-    font-size: 13px;
-    color: #475569;
-  }
-
-  .source-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-
   .source-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-  }
-
-  .package-filter-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .package-filter-tag {
-    cursor: pointer;
   }
 </style>

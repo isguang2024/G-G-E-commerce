@@ -67,14 +67,14 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (request: InternalAxiosRequestConfig & { skipTenantHeader?: boolean }) => {
     const { accessToken } = useUserStore()
-    const { currentTenantId } = useTenantStore()
+    const { currentTenantId, currentContextMode } = useTenantStore()
     if (accessToken) {
       // 添加 Bearer 前缀（如果还没有）
       const token = accessToken.startsWith('Bearer ') ? accessToken : `Bearer ${accessToken}`
       request.headers.set('Authorization', token)
     }
 
-    if (!request.skipTenantHeader && currentTenantId) {
+    if (!request.skipTenantHeader && currentContextMode === 'team' && currentTenantId) {
       request.headers.set('X-Tenant-ID', currentTenantId)
     }
 

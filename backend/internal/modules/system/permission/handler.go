@@ -10,6 +10,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 )
 
 type PermissionHandler struct {
@@ -144,9 +145,13 @@ func (h *PermissionHandler) Delete(c *gin.Context) {
 }
 
 func actionToMap(action *user.PermissionAction) gin.H {
-	permissionKey := action.PermissionKey
+	permissionKey := permissionkey.Normalize(action.PermissionKey)
 	if permissionKey == "" {
-		permissionKey = action.ResourceCode + ":" + action.ActionCode
+		permissionKey = permissionkey.FromLegacy(action.ResourceCode, action.ActionCode).Key
+	}
+	contextType := action.ContextType
+	if contextType == "" {
+		contextType = permissionkey.FromKey(permissionKey).ContextType
 	}
 	return gin.H{
 		"id":             action.ID.String(),
@@ -154,7 +159,7 @@ func actionToMap(action *user.PermissionAction) gin.H {
 		"resource_code":  action.ResourceCode,
 		"action_code":    action.ActionCode,
 		"module_code":    action.ModuleCode,
-		"context_type":   action.ContextType,
+		"context_type":   contextType,
 		"source":         action.Source,
 		"feature_kind":   action.FeatureKind,
 		"name":           action.Name,

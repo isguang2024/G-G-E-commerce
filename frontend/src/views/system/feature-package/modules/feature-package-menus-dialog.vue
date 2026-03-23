@@ -8,7 +8,7 @@
   >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        这里不是编辑菜单定义，而是从全量菜单中选择并绑定到当前功能包。菜单定义仍在全量菜单管理页维护；功能包只负责决定团队是否拥有这些模块入口。
+        这里不是编辑菜单定义，而是从全量菜单中选择并绑定到当前功能包。菜单定义仍在全量菜单管理页维护；功能包只负责决定当前上下文是否拥有这些模块入口。
       </div>
 
       <div class="summary-card">
@@ -90,11 +90,6 @@
 
   async function loadData() {
     if (!props.packageId) return
-    if (props.contextType !== 'team') {
-      ElMessage.warning('仅团队功能包支持绑定菜单')
-      visible.value = false
-      return
-    }
     loading.value = true
     try {
       const [menus, assigned] = await Promise.all([

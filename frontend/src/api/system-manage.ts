@@ -9,17 +9,58 @@ const TENANT_BASE = '/api/v1/tenants'
 const SYSTEM_BASE = '/api/v1/system'
 const API_ENDPOINT_BASE = '/api/v1/api-endpoints'
 
+function normalizePermissionKey(value?: string, resourceCode?: string, actionCode?: string) {
+  const target = `${value || ''}`.trim()
+  if (target) {
+    if (target.includes(':')) {
+      const [resource, action] = target.split(':', 2)
+      return [resource, action].filter(Boolean).join('.')
+    }
+    return target
+  }
+  const fallbackResource = `${resourceCode || ''}`.trim()
+  const fallbackAction = `${actionCode || ''}`.trim()
+  return fallbackResource && fallbackAction ? `${fallbackResource}.${fallbackAction}` : ''
+}
+
+function deriveContextType(permissionKey?: string, moduleCode?: string) {
+  const key = `${permissionKey || ''}`.trim()
+  const module = `${moduleCode || ''}`.trim()
+  if (
+    key.startsWith('system.') ||
+    key.startsWith('tenant.') ||
+    key.startsWith('platform.') ||
+    key === 'tenant.manage' ||
+    module === 'role' ||
+    module === 'user' ||
+    module === 'menu' ||
+    module === 'menu_backup' ||
+    module === 'permission_action' ||
+    module === 'api_endpoint' ||
+    module === 'feature_package'
+  ) {
+    return 'platform'
+  }
+  return 'team'
+}
+
 function normalizePermissionAction(item: any): Api.SystemManage.PermissionActionItem {
   const resourceCode = item?.resource_code || item?.resourceCode || ''
   const actionCode = item?.action_code || item?.actionCode || ''
-  const fallbackPermissionKey = resourceCode && actionCode ? `${resourceCode}:${actionCode}` : ''
+  const permissionKey = normalizePermissionKey(
+    item?.permission_key || item?.permissionKey,
+    resourceCode,
+    actionCode
+  )
+  const moduleCode = item?.module_code || item?.moduleCode || resourceCode || ''
   return {
     id: item?.id || '',
     resourceCode,
     actionCode,
-    moduleCode: item?.module_code || item?.moduleCode || resourceCode || '',
-    contextType: item?.context_type || item?.contextType || 'team',
-    permissionKey: item?.permission_key || item?.permissionKey || fallbackPermissionKey,
+    moduleCode,
+    contextType:
+      item?.context_type || item?.contextType || deriveContextType(permissionKey, moduleCode),
+    permissionKey,
     source: item?.source || 'business',
     featureKind: item?.feature_kind || item?.featureKind || 'system',
     name: item?.name || '',
@@ -36,7 +77,11 @@ function normalizePermissionAction(item: any): Api.SystemManage.PermissionAction
 function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
   const resourceCode = item?.resource_code || item?.resourceCode || ''
   const actionCode = item?.action_code || item?.actionCode || ''
-  const fallbackPermissionKey = resourceCode && actionCode ? `${resourceCode}:${actionCode}` : ''
+  const permissionKey = normalizePermissionKey(
+    item?.permission_key || item?.permissionKey,
+    resourceCode,
+    actionCode
+  )
   return {
     id: item?.id || '',
     method: item?.method || '',
@@ -46,8 +91,8 @@ function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
     featureKind: item?.feature_kind || item?.featureKind || 'system',
     handler: item?.handler || '',
     summary: item?.summary || '',
-    permissionKey: item?.permission_key || item?.permissionKey || fallbackPermissionKey,
-    authMode: item?.auth_mode || item?.authMode || (fallbackPermissionKey ? 'permission' : 'jwt'),
+    permissionKey,
+    authMode: item?.auth_mode || item?.authMode || (permissionKey ? 'permission' : 'jwt'),
     resourceCode,
     actionCode,
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
@@ -59,12 +104,17 @@ function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
 }
 
 function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem {
+  const packageKey = item?.package_key || item?.packageKey || ''
+  const contextType =
+    item?.context_type ||
+    item?.contextType ||
+    (packageKey.startsWith('platform.') ? 'platform' : 'team')
   return {
     id: item?.id || '',
-    packageKey: item?.package_key || item?.packageKey || '',
+    packageKey,
     name: item?.name || '',
     description: item?.description || '',
-    contextType: item?.context_type || item?.contextType || 'team',
+    contextType,
     actionCount: item?.action_count ?? item?.actionCount ?? 0,
     menuCount: item?.menu_count ?? item?.menuCount ?? 0,
     teamCount: item?.team_count ?? item?.teamCount ?? 0,
@@ -150,14 +200,80 @@ export function fetchAssignUserRoles(id: string, roleIds: string[]) {
 
 /** 获取平台用户例外权限覆盖（兼容入口） */
 export async function fetchGetUserActions(userId: string) {
-  const res = await request.get<{ actions: any[] }>({
+  const res = await request.get<Api.SystemManage.UserActionPermissionResponse>({
     url: `${USER_BASE}/${userId}/actions`
   })
-  return (res?.actions || []).map((item: any) => ({
-    actionId: item?.action_id || item?.actionId || '',
-    effect: item?.effect || 'allow',
-    action: item?.action ? normalizePermissionAction(item.action) : undefined
-  })) as Api.SystemManage.UserActionPermissionItem[]
+  const raw = res as any
+  const compatActions = (raw?.compat_actions || raw?.compatActions || raw?.actions || []).map(
+    (item: any) => ({
+      actionId: item?.action_id || item?.actionId || '',
+      effect: item?.effect || 'allow',
+      action: item?.action ? normalizePermissionAction(item.action) : undefined
+    })
+  ) as Api.SystemManage.UserActionPermissionItem[]
+  const snapshotActions = (
+    raw?.snapshot_actions ||
+    raw?.snapshotActions ||
+    raw?.available_actions ||
+    raw?.availableActions ||
+    []
+  ).map((item: any) => normalizePermissionAction(item))
+  return {
+    actions: compatActions,
+    compatActions,
+    snapshotActionIds:
+      raw?.snapshot_action_ids ||
+      raw?.snapshotActionIds ||
+      raw?.effective_action_ids ||
+      raw?.effectiveActionIds ||
+      [],
+    snapshotActions,
+    effectiveActionIds:
+      raw?.effective_action_ids ||
+      raw?.effectiveActionIds ||
+      raw?.snapshot_action_ids ||
+      raw?.snapshotActionIds ||
+      [],
+    availableActionIds: raw?.available_action_ids || raw?.availableActionIds || [],
+    availableActions: snapshotActions,
+    packageIds: raw?.package_ids || raw?.packageIds || [],
+    expandedPackageIds: raw?.expanded_package_ids || raw?.expandedPackageIds || [],
+    derivedSources: (raw?.derived_sources || raw?.derivedSources || []).map((item: any) => ({
+      actionId: item?.action_id || item?.actionId || '',
+      packageIds: item?.package_ids || item?.packageIds || []
+    })),
+    hasPackageConfig: Boolean(raw?.has_package_config ?? raw?.hasPackageConfig)
+  }
+}
+
+export const fetchGetUserActionOverrides = fetchGetUserActions
+
+/** 获取平台用户菜单裁剪 */
+export async function fetchGetUserMenus(userId: string) {
+  const res = await request.get<Api.SystemManage.UserMenuBoundaryResponse>({
+    url: `${USER_BASE}/${userId}/menus`
+  })
+  const raw = res as any
+  return {
+    menuIds: raw?.menu_ids || raw?.menuIds || [],
+    availableMenuIds: raw?.available_menu_ids || raw?.availableMenuIds || [],
+    hiddenMenuIds: raw?.hidden_menu_ids || raw?.hiddenMenuIds || [],
+    packageIds: raw?.package_ids || raw?.packageIds || [],
+    expandedPackageIds: raw?.expanded_package_ids || raw?.expandedPackageIds || [],
+    derivedSources: (raw?.derived_sources || raw?.derivedSources || []).map((item: any) => ({
+      menuId: item?.menu_id || item?.menuId || '',
+      packageIds: item?.package_ids || item?.packageIds || []
+    })),
+    hasPackageConfig: Boolean(raw?.has_package_config ?? raw?.hasPackageConfig)
+  }
+}
+
+/** 设置平台用户菜单裁剪 */
+export function fetchSetUserMenus(userId: string, menuIds: string[]) {
+  return request.put<void>({
+    url: `${USER_BASE}/${userId}/menus`,
+    data: { menu_ids: menuIds }
+  })
 }
 
 /** 设置平台用户例外权限覆盖（兼容入口） */
@@ -170,6 +286,8 @@ export function fetchSetUserActions(
     data: { actions }
   })
 }
+
+export const fetchSetUserActionOverrides = fetchSetUserActions
 
 // 获取角色列表
 export function fetchGetRoleList(params: Api.SystemManage.RoleSearchParams) {
@@ -312,21 +430,23 @@ export function fetchSetRoleDataPermissions(
 }
 
 /** 获取功能权限列表 */
-export function fetchGetPermissionActionList(params: Api.SystemManage.PermissionActionSearchParams) {
+export function fetchGetPermissionActionList(
+  params: Api.SystemManage.PermissionActionSearchParams
+) {
   const normalizedParams = {
     ...params,
     permission_key: params?.permissionKey,
     resource_code: params?.resourceCode,
     action_code: params?.actionCode,
-      module_code: params?.moduleCode,
-      context_type: params?.contextType,
-      feature_kind: params?.featureKind,
+    module_code: params?.moduleCode,
+    context_type: params?.contextType,
+    feature_kind: params?.featureKind,
     permissionKey: undefined,
     resourceCode: undefined,
     actionCode: undefined,
-      moduleCode: undefined,
-      contextType: undefined,
-      featureKind: undefined
+    moduleCode: undefined,
+    contextType: undefined,
+    featureKind: undefined
   }
   return request
     .get<Api.SystemManage.PermissionActionList>({

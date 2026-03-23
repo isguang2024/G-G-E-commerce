@@ -1,21 +1,39 @@
 <template>
   <ElDialog
     v-model="visible"
-    :title="`用户权限例外 - ${userTitle}`"
+    :title="`用户权限例外审计 - ${userTitle}`"
     width="1120px"
     destroy-on-close
     class="user-permission-dialog"
   >
     <div class="dialog-shell" v-loading="loading">
         <div class="dialog-note">
-          平台用户请优先绑定功能包。这里是兼容性的个人例外权限入口，默认继承全局角色与用户已绑定功能包，仅在需要显式允许或拒绝时使用。
+          平台用户请优先绑定功能包和菜单裁剪。这里保留的是历史兼容权限例外审计视图，用于查看既有 allow/deny 例外，不再作为主配置入口。
+        </div>
+        <div
+          class="compat-banner"
+          :class="hasPackageConfig ? 'compat-banner--success' : 'compat-banner--warning'"
+        >
+          <span>
+            {{
+              hasPackageConfig
+              ? '当前用户已进入功能包约束模式：这里只能对已绑定功能包展开范围内的能力做个人例外。'
+              : '当前用户尚未绑定功能包，仍处于兼容回退模式：这里只展示历史兼容例外，建议先绑定功能包并使用菜单裁剪。'
+            }}
+          </span>
+          <ElButton v-if="!hasPackageConfig" type="warning" text @click="emit('open-packages')">
+            前往绑定功能包
+          </ElButton>
         </div>
 
       <ElTabs v-model="activeTab" class="permission-tabs">
-        <ElTabPane label="权限例外" name="custom">
+        <ElTabPane label="兼容例外审计" name="custom">
           <div class="cascader-pane">
             <div class="cascader-toolbar">
               <div class="cascader-tags">
+                <ElTag type="success" effect="plain" round>功能包 {{ featurePackages.length }}</ElTag>
+                <ElTag type="warning" effect="plain" round>直绑 {{ directPackageIds.length }}</ElTag>
+                <ElTag type="info" effect="plain" round>展开 {{ expandedPackageIds.length }}</ElTag>
                 <ElTag
                   v-for="item in topLevelActionTags"
                   :key="item.label"
@@ -26,6 +44,22 @@
                 </ElTag>
                 <ElTag effect="plain" round>已配置 {{ configuredActionIds.length }}</ElTag>
                 <ElTag type="info" effect="plain" round>总计 {{ actionLeafCount }}</ElTag>
+              </div>
+              <div v-if="featurePackages.length" class="package-tags">
+                <ElTag
+                  v-for="item in featurePackages"
+                  :key="item.id"
+                  type="success"
+                  effect="plain"
+                  round
+                  class="package-tag-link"
+                  @click="goToFeaturePackagePage(item)"
+                >
+                  {{ item.name }}
+                </ElTag>
+              </div>
+              <div v-else class="package-fallback-note">
+                当前未绑定功能包，权限例外页正在使用兼容候选范围。
               </div>
 
               <div class="toolbar-filters">
@@ -70,6 +104,18 @@
                           >
                             {{ data.sourceText }}
                           </ElTag>
+                          <ElTag
+                            v-if="data.packageText"
+                            size="small"
+                            effect="plain"
+                            round
+                            type="success"
+                            :title="data.packageText"
+                            class="panel-node__package-tag"
+                            @click.stop="goToActionPackagePage(data.value)"
+                          >
+                            {{ data.packageText }}
+                          </ElTag>
                         </div>
                       </template>
                     </div>
@@ -81,14 +127,14 @@
                         @click.stop
                         @mousedown.stop
                       >
-                        <ElRadioGroup
-                          v-model="decisionMap[data.value]"
+                        <ElTag
                           size="small"
-                          class="effect-radio-group"
+                          effect="plain"
+                          round
+                          :type="decisionMap[data.value] === 'allow' ? 'success' : 'warning'"
                         >
-                          <ElRadio value="allow" border>允许</ElRadio>
-                          <ElRadio value="deny" border>拒绝</ElRadio>
-                        </ElRadioGroup>
+                          {{ decisionMap[data.value] === 'allow' ? '允许' : '拒绝' }}
+                        </ElTag>
                       </div>
                       <ElTag
                         v-else
@@ -118,8 +164,7 @@
             </div>
 
             <div class="cascader-footer">
-              <span class="footer-note">仅对当前用户生效。未勾选项继续继承角色，勾选项可单独设为允许或拒绝。</span>
-              <ElButton text @click="clearActionSelection">清空选择</ElButton>
+              <span class="footer-note">当前页仅用于审计历史兼容例外。平台用户正式主链为“功能包 + 菜单裁剪”。</span>
             </div>
           </div>
         </ElTabPane>
@@ -128,6 +173,10 @@
           <div class="roles-panel">
             <div class="roles-summary">
               <ElTag effect="plain" round>角色 {{ roleTags.length }}</ElTag>
+              <ElTag type="success" effect="plain" round>功能包 {{ featurePackages.length }}</ElTag>
+              <ElTag :type="hasPackageConfig ? 'success' : 'warning'" effect="plain" round>
+                {{ hasPackageConfig ? '功能包约束' : '兼容回退' }}
+              </ElTag>
               <ElTag type="warning" effect="plain" round>例外 {{ configuredActionIds.length }}</ElTag>
             </div>
 
@@ -141,6 +190,19 @@
                   round
                 >
                   {{ role }}
+                </ElTag>
+              </div>
+              <div v-if="featurePackages.length" class="roles-package-list">
+                <ElTag
+                  v-for="item in featurePackages"
+                  :key="item.id"
+                  type="success"
+                  effect="plain"
+                  round
+                  class="package-tag-link"
+                  @click="goToFeaturePackagePage(item)"
+                >
+                  {{ item.name }}
                 </ElTag>
               </div>
             </div>
@@ -184,7 +246,6 @@
 
     <template #footer>
       <ElButton @click="handleCancel">取消</ElButton>
-      <ElButton type="primary" :loading="saving" @click="handleSave">保存</ElButton>
     </template>
   </ElDialog>
 </template>
@@ -194,11 +255,8 @@ import { computed, nextTick, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import type { CascaderOption, CascaderProps } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
-import {
-  fetchGetPermissionActionList,
-  fetchGetUserActions,
-  fetchSetUserActions
-} from '@/api/system-manage'
+import { useRouter } from 'vue-router'
+import { fetchGetUserPackages, fetchGetUserActionOverrides } from '@/api/system-manage'
 
 interface Props {
   modelValue: boolean
@@ -208,15 +266,18 @@ interface Props {
 interface ActionOption extends CascaderOption {
   permissionText?: string
   sourceText?: string
+  packageText?: string
   totalLeafCount?: number
   selectedLeafCount?: number
 }
 
 const props = defineProps<Props>()
+const router = useRouter()
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
   (e: 'success'): void
+  (e: 'open-packages'): void
 }>()
 
 const visible = computed({
@@ -225,10 +286,15 @@ const visible = computed({
 })
 
 const loading = ref(false)
-const saving = ref(false)
 const activeTab = ref('custom')
 const actionKeyword = ref('')
 const permissionActions = ref<Api.SystemManage.PermissionActionItem[]>([])
+const featurePackages = ref<Api.SystemManage.FeaturePackageItem[]>([])
+const availableActionIds = ref<string[]>([])
+const directPackageIds = ref<string[]>([])
+const expandedPackageIds = ref<string[]>([])
+const derivedSourceMap = ref<Record<string, string[]>>({})
+const hasPackageConfig = ref(false)
 const selectedActionNodeValues = ref<string[]>([])
 const decisionMap = ref<Record<string, 'allow' | 'deny'>>({})
 const actionPanelRef = ref()
@@ -287,7 +353,8 @@ const actionOptions = computed<ActionOption[]>(() => {
       label: action.name,
       leaf: true,
       permissionText: action.permissionKey || `${action.resourceCode}:${action.actionCode}`,
-      sourceText: formatSource(action.source)
+      sourceText: formatSource(action.source),
+      packageText: buildPackageText(action.id)
     })
     module.children = leaves
   })
@@ -424,16 +491,44 @@ async function loadData() {
   actionKeyword.value = ''
 
   try {
-    const [actionsRes, currentRes] = await Promise.all([
-      fetchGetPermissionActionList({ current: 1, size: 1000, status: 'normal' }),
-      fetchGetUserActions(props.userData.id)
+    const [currentRes, packageRes] = await Promise.all([
+      fetchGetUserActionOverrides(props.userData.id),
+      fetchGetUserPackages(props.userData.id)
     ])
 
-    permissionActions.value = actionsRes?.records || []
-    const availableActionIDSet = new Set(permissionActions.value.map((item) => item.id))
+    hasPackageConfig.value = Boolean(currentRes?.hasPackageConfig)
+    availableActionIds.value =
+      currentRes?.snapshotActionIds ||
+      currentRes?.effectiveActionIds ||
+      currentRes?.availableActionIds ||
+      []
+    directPackageIds.value = packageRes?.package_ids || []
+    expandedPackageIds.value = currentRes?.expandedPackageIds || []
+    featurePackages.value = packageRes?.packages || []
+    derivedSourceMap.value = Object.fromEntries(
+      (currentRes?.derivedSources || []).map((item: { actionId: string; packageIds: string[] }) => [
+        item.actionId,
+        item.packageIds
+      ])
+    )
+    const compatActions = currentRes?.compatActions || currentRes?.actions || []
+    const compatActionItems = compatActions
+      .map((item) => item.action)
+      .filter(Boolean) as Api.SystemManage.PermissionActionItem[]
+    permissionActions.value =
+      currentRes?.snapshotActions?.length
+        ? currentRes.snapshotActions
+        : currentRes?.availableActions?.length
+          ? currentRes.availableActions
+          : compatActionItems
+    const availableActionIDSet = new Set(
+      availableActionIds.value.length
+        ? availableActionIds.value
+        : permissionActions.value.map((item) => item.id)
+    )
 
     const nextMap: Record<string, 'allow' | 'deny'> = {}
-    currentRes.forEach((item) => {
+    compatActions.forEach((item) => {
       if (
         item.actionId &&
         availableActionIDSet.has(item.actionId) &&
@@ -448,7 +543,7 @@ async function loadData() {
     await nextTick()
     ensureExpandedMenus(actionPanelRef.value, selectedActionNodeValues.value)
   } catch (error: any) {
-    ElMessage.error(error?.message || '加载用户权限失败')
+    ElMessage.error(error?.message || '加载用户权限例外失败')
   } finally {
     loading.value = false
   }
@@ -537,27 +632,41 @@ function formatSource(source?: string) {
   return source || ''
 }
 
+function buildPackageText(actionId: string) {
+  const packageIdSet = new Set(derivedSourceMap.value[actionId] || [])
+  const names = featurePackages.value.filter((item) => packageIdSet.has(item.id)).map((item) => item.name)
+  if (!names.length) return ''
+  if (names.length === 1) return `来自 ${names[0]}`
+  return `来自 ${names[0]} 等${names.length}个包`
+}
+
+function getActionPackage(actionId: string) {
+  const packageIdSet = new Set(derivedSourceMap.value[actionId] || [])
+  return featurePackages.value.find((item) => packageIdSet.has(item.id)) || null
+}
+
+function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem) {
+  router.push({
+    name: 'FeaturePackage',
+    query: {
+      packageKey: item.packageKey,
+      contextType: item.contextType || 'platform'
+    }
+  })
+}
+
+function goToActionPackagePage(actionId: string | number | undefined) {
+  const target = getActionPackage(`${actionId || ''}`)
+  if (!target) return
+  goToFeaturePackagePage(target)
+}
+
 function handleCancel() {
   visible.value = false
 }
 
 async function handleSave() {
-  if (!props.userData?.id) return
-  saving.value = true
-  try {
-    const payload = Object.entries(decisionMap.value).map(([actionId, effect]) => ({
-      action_id: actionId,
-      effect
-    }))
-    await fetchSetUserActions(props.userData.id, payload)
-    ElMessage.success('用户权限例外已保存')
-    emit('success')
-    visible.value = false
-  } catch (error: any) {
-    ElMessage.error(error?.message || '保存用户权限失败')
-  } finally {
-    saving.value = false
-  }
+  return
 }
 </script>
 
@@ -571,6 +680,29 @@ async function handleSave() {
 .dialog-note {
   color: #6b7280;
   line-height: 1.6;
+}
+
+.compat-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.compat-banner--success {
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  background: #f0fdf4;
+}
+
+.compat-banner--warning {
+  color: #92400e;
+  border: 1px solid #fde68a;
+  background: #fffbeb;
 }
 
 .permission-tabs :deep(.el-tabs__content) {
@@ -704,6 +836,11 @@ async function handleSave() {
   flex: 0 0 auto;
 }
 
+.panel-node__package-tag,
+.package-tag-link {
+  cursor: pointer;
+}
+
 .panel-node__count,
 .panel-node__state {
   flex: 0 0 auto;
@@ -743,6 +880,25 @@ async function handleSave() {
 .roles-list {
   min-height: 220px;
   padding: 20px;
+}
+
+.package-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.package-fallback-note {
+  color: #92400e;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.role-tag-list,
+.roles-package-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .role-tag-list,

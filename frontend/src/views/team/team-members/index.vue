@@ -90,7 +90,7 @@
                         </ElDropdownItem>
                         <ElDropdownItem v-if="hasAction('team.member.assign_action')" command="action">
                           <ElIcon><UserFilled /></ElIcon>
-                          功能权限
+                          权限例外（兼容）
                         </ElDropdownItem>
                         <ElDropdownItem
                           v-if="hasAction('team.member.manage')"

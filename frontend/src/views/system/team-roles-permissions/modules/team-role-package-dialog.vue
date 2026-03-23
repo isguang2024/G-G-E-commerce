@@ -4,7 +4,7 @@
       <div class="dialog-note">
         {{
           props.roleData?.isGlobal
-            ? '基础团队角色默认继承当前团队已开通功能包，这里只读查看继承结果。'
+            ? '基础团队角色默认继承当前团队已开通功能包，这里只读展示当前团队可用功能包及继承结果。'
             : '角色功能包是当前团队角色的主配置入口。后续菜单权限和角色权限都只能在这里已绑定的功能包范围内配置。'
         }}
       </div>
@@ -16,6 +16,7 @@
         </ElTag>
         <ElTag type="primary" effect="plain" round>{{ inherited ? '继承团队功能包' : '角色独立功能包' }}</ElTag>
         <ElTag type="success" effect="plain" round>已选 {{ selectedPackageIds.length }}</ElTag>
+        <ElTag type="info" effect="plain" round>总计 {{ packages.length }}</ElTag>
       </div>
 
       <ElInput v-model="keyword" clearable placeholder="搜索功能包名称或编码" class="toolbar-search" />
@@ -34,8 +35,16 @@
         <ElTableColumn prop="name" label="功能包名称" min-width="160" show-overflow-tooltip />
         <ElTableColumn label="上下文" width="100">
           <template #default="{ row }">
-            <ElTag :type="row.contextType === 'platform' ? 'warning' : 'success'">
-              {{ row.contextType === 'platform' ? '平台' : '团队' }}
+            <ElTag
+              :type="
+                row.contextType === 'platform'
+                  ? 'warning'
+                  : row.contextType === 'platform,team'
+                    ? 'info'
+                    : 'success'
+              "
+            >
+              {{ formatContext(row.contextType) }}
             </ElTag>
           </template>
         </ElTableColumn>
@@ -109,8 +118,7 @@
         fetchGetFeaturePackageList({ current: 1, size: 1000, contextType: 'team', status: 'normal' }),
         fetchGetMyTeamRolePackages(props.roleData.roleId)
       ])
-      const allowedIds = new Set(roleRes?.packages?.map((item) => item.id) || [])
-      packages.value = (listRes?.records || []).filter((item) => allowedIds.has(item.id) || !props.roleData?.isGlobal)
+      packages.value = listRes?.records || []
       selectedPackageIds.value = [...(roleRes?.package_ids || [])]
       inherited.value = Boolean(roleRes?.inherited)
     } catch (error: any) {
@@ -128,6 +136,12 @@
       return
     }
     selectedPackageIds.value = selectedPackageIds.value.filter((item) => item !== packageId)
+  }
+
+  function formatContext(contextType?: string) {
+    if (contextType === 'platform,team') return '平台/团队'
+    if (contextType === 'platform') return '平台'
+    return '团队'
   }
 
   async function handleSave() {

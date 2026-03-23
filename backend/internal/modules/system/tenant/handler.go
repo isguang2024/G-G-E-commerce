@@ -31,6 +31,7 @@ type TenantHandler struct {
 	userRoleRepo      user.UserRoleRepository
 	actionRepo        user.PermissionActionRepository
 	manualActionRepo  user.TeamManualActionPermissionRepository
+	blockedMenuRepo   user.TeamBlockedMenuRepository
 	blockedActionRepo user.TeamBlockedActionRepository
 	userActionRepo    user.UserActionPermissionRepository
 	teamPackageRepo   user.TeamFeaturePackageRepository
@@ -45,7 +46,7 @@ type TenantHandler struct {
 	logger *zap.Logger
 }
 
-func NewTenantHandler(tenantService TenantService, tenantMemberRepo user.TenantMemberRepository, userRepo user.UserRepository, roleRepo user.RoleRepository, roleMenuRepo user.RoleMenuRepository, roleActionRepo user.RoleActionPermissionRepository, userRoleRepo user.UserRoleRepository, actionRepo user.PermissionActionRepository, manualActionRepo user.TeamManualActionPermissionRepository, blockedActionRepo user.TeamBlockedActionRepository, userActionRepo user.UserActionPermissionRepository, teamPackageRepo user.TeamFeaturePackageRepository, rolePackageRepo user.RoleFeaturePackageRepository, featurePkgRepo user.FeaturePackageRepository, packageActionRepo user.FeaturePackageActionRepository, packageMenuRepo user.FeaturePackageMenuRepository, boundaryService teamboundary.Service, refresher interface {
+func NewTenantHandler(tenantService TenantService, tenantMemberRepo user.TenantMemberRepository, userRepo user.UserRepository, roleRepo user.RoleRepository, roleMenuRepo user.RoleMenuRepository, roleActionRepo user.RoleActionPermissionRepository, userRoleRepo user.UserRoleRepository, actionRepo user.PermissionActionRepository, manualActionRepo user.TeamManualActionPermissionRepository, blockedMenuRepo user.TeamBlockedMenuRepository, blockedActionRepo user.TeamBlockedActionRepository, userActionRepo user.UserActionPermissionRepository, teamPackageRepo user.TeamFeaturePackageRepository, rolePackageRepo user.RoleFeaturePackageRepository, featurePkgRepo user.FeaturePackageRepository, packageActionRepo user.FeaturePackageActionRepository, packageMenuRepo user.FeaturePackageMenuRepository, boundaryService teamboundary.Service, refresher interface {
 	RefreshTeam(teamID uuid.UUID) error
 }, logger *zap.Logger) *TenantHandler {
 	return &TenantHandler{
@@ -58,6 +59,7 @@ func NewTenantHandler(tenantService TenantService, tenantMemberRepo user.TenantM
 		userRoleRepo:      userRoleRepo,
 		actionRepo:        actionRepo,
 		manualActionRepo:  manualActionRepo,
+		blockedMenuRepo:   blockedMenuRepo,
 		blockedActionRepo: blockedActionRepo,
 		userActionRepo:    userActionRepo,
 		teamPackageRepo:   teamPackageRepo,
@@ -976,8 +978,8 @@ func (h *TenantHandler) SetMyTeamRolePackages(c *gin.Context) {
 			return
 		}
 		for _, item := range packages {
-			if item.ContextType != "" && item.ContextType != "team" {
-				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "仅支持绑定团队功能包")
+			if item.ContextType != "" && item.ContextType != "team" && item.ContextType != "platform,team" {
+				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "仅支持绑定团队上下文可用的功能包")
 				c.JSON(status, resp)
 				return
 			}
@@ -1260,6 +1262,25 @@ func (h *TenantHandler) GetTenantActions(c *gin.Context) {
 	}))
 }
 
+func (h *TenantHandler) GetTenantMenus(c *gin.Context) {
+	tenantID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		c.JSON(status, resp)
+		return
+	}
+	snapshot, err := h.boundaryService.GetMenuSnapshot(tenantID)
+	if err != nil {
+		h.logger.Error("Get tenant menus failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队菜单边界失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"menu_ids": actionIDsToStrings(snapshot.EffectiveIDs),
+	}))
+}
+
 func (h *TenantHandler) GetTenantActionOrigins(c *gin.Context) {
 	tenantID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -1268,6 +1289,16 @@ func (h *TenantHandler) GetTenantActionOrigins(c *gin.Context) {
 		return
 	}
 	h.respondTenantActionOrigins(c, tenantID)
+}
+
+func (h *TenantHandler) GetTenantMenuOrigins(c *gin.Context) {
+	tenantID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		c.JSON(status, resp)
+		return
+	}
+	h.respondTenantMenuOrigins(c, tenantID)
 }
 
 func (h *TenantHandler) SetTenantActions(c *gin.Context) {
@@ -1339,6 +1370,50 @@ func (h *TenantHandler) SetTenantActions(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
+func (h *TenantHandler) SetTenantMenus(c *gin.Context) {
+	tenantID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		c.JSON(status, resp)
+		return
+	}
+	var req dto.TenantMenuPermissionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	menuIDs, parseErr := parseUUIDSlice(req.MenuIDs)
+	if parseErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的菜单ID")
+		c.JSON(status, resp)
+		return
+	}
+	snapshot, err := h.boundaryService.GetMenuSnapshot(tenantID)
+	if err != nil {
+		h.logger.Error("Get derived team menus failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包展开菜单失败")
+		c.JSON(status, resp)
+		return
+	}
+	blockedIDs := excludeActionIDs(snapshot.DerivedIDs, menuIDs)
+	if err := h.blockedMenuRepo.ReplaceTeamBlockedMenus(tenantID, blockedIDs); err != nil {
+		h.logger.Error("Set team blocked menus failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存团队菜单边界失败")
+		c.JSON(status, resp)
+		return
+	}
+	if h.refresher != nil {
+		if err := h.refresher.RefreshTeam(tenantID); err != nil {
+			h.logger.Error("Set tenant menus failed", zap.Error(err))
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存团队菜单边界失败")
+			c.JSON(status, resp)
+			return
+		}
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
 func (h *TenantHandler) GetMyTeamActions(c *gin.Context) {
 	member, err := h.resolveTenantMember(c)
 	if err != nil {
@@ -1372,6 +1447,31 @@ func (h *TenantHandler) GetMyTeamActions(c *gin.Context) {
 	}))
 }
 
+func (h *TenantHandler) GetMyTeamMenus(c *gin.Context) {
+	member, err := h.resolveTenantMember(c)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound || err == ErrTenantMemberNotFound {
+			status, resp := errcode.Response(errcode.ErrNoTeam)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Resolve my team failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的团队失败")
+		c.JSON(status, resp)
+		return
+	}
+	snapshot, err := h.boundaryService.GetMenuSnapshot(member.TenantID)
+	if err != nil {
+		h.logger.Error("Get my team menus failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队菜单边界失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"menu_ids": actionIDsToStrings(snapshot.EffectiveIDs),
+	}))
+}
+
 func (h *TenantHandler) GetMyTeamActionOrigins(c *gin.Context) {
 	member, err := h.resolveTenantMember(c)
 	if err != nil {
@@ -1386,6 +1486,22 @@ func (h *TenantHandler) GetMyTeamActionOrigins(c *gin.Context) {
 		return
 	}
 	h.respondTenantActionOrigins(c, member.TenantID)
+}
+
+func (h *TenantHandler) GetMyTeamMenuOrigins(c *gin.Context) {
+	member, err := h.resolveTenantMember(c)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound || err == ErrTenantMemberNotFound {
+			status, resp := errcode.Response(errcode.ErrNoTeam)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Resolve my team failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的团队失败")
+		c.JSON(status, resp)
+		return
+	}
+	h.respondTenantMenuOrigins(c, member.TenantID)
 }
 
 func (h *TenantHandler) respondTenantActionOrigins(c *gin.Context, tenantID uuid.UUID) {
@@ -1405,6 +1521,24 @@ func (h *TenantHandler) respondTenantActionOrigins(c *gin.Context, tenantID uuid
 		"manual_action_ids":    actionIDsToStrings(snapshot.ManualIDs),
 		"effective_action_ids": actionIDsToStrings(snapshot.EffectiveIDs),
 		"from_cache":           snapshot.FromCache,
+	}))
+}
+
+func (h *TenantHandler) respondTenantMenuOrigins(c *gin.Context, tenantID uuid.UUID) {
+	snapshot, err := h.boundaryService.GetMenuSnapshot(tenantID)
+	if err != nil {
+		h.logger.Error("Get tenant menu origins failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队菜单来源失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"package_ids":          actionIDsToStrings(snapshot.PackageIDs),
+		"expanded_package_ids": actionIDsToStrings(snapshot.ExpandedPackageIDs),
+		"derived_menu_ids":     actionIDsToStrings(snapshot.DerivedIDs),
+		"derived_sources":      buildMenuSourceMaps(snapshot.DerivedMap),
+		"blocked_menu_ids":     actionIDsToStrings(snapshot.BlockedIDs),
+		"effective_menu_ids":   actionIDsToStrings(snapshot.EffectiveIDs),
 	}))
 }
 
@@ -1456,19 +1590,15 @@ func (h *TenantHandler) getTenantEnabledActionSet(tenantID uuid.UUID) (map[uuid.
 }
 
 func (h *TenantHandler) getTenantEnabledMenuSet(tenantID uuid.UUID) (map[uuid.UUID]bool, bool, error) {
-	packageIDs, err := h.teamPackageRepo.GetPackageIDsByTeamID(tenantID)
+	snapshot, err := h.boundaryService.GetMenuSnapshot(tenantID)
 	if err != nil {
 		return nil, false, err
 	}
-	menuIDs, err := h.packageMenuRepo.GetMenuIDsByPackageIDs(packageIDs)
-	if err != nil {
-		return nil, false, err
-	}
-	if len(menuIDs) == 0 {
+	if len(snapshot.EffectiveIDs) == 0 {
 		return map[uuid.UUID]bool{}, false, nil
 	}
-	result := make(map[uuid.UUID]bool, len(menuIDs))
-	for _, menuID := range menuIDs {
+	result := make(map[uuid.UUID]bool, len(snapshot.EffectiveIDs))
+	for _, menuID := range snapshot.EffectiveIDs {
 		result[menuID] = true
 	}
 	return result, true, nil

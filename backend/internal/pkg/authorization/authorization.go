@@ -111,9 +111,7 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey
 		if err != nil {
 			return false, &actionDef, err
 		}
-		if snapshot.HasPackageConfig {
-			return containsUUID(snapshot.ActionIDs, actionDef.ID), &actionDef, nil
-		}
+		return containsUUID(snapshot.ActionIDs, actionDef.ID), &actionDef, nil
 	}
 
 	if tenantID != nil {
@@ -127,6 +125,18 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey
 		if boundaryConfigured && !boundaryActionSet[actionDef.ID] {
 			return false, &actionDef, ErrPermissionDenied
 		}
+		if boundaryConfigured {
+			roleActionSet, err := s.getTeamRoleSnapshotActionSet(userID, *tenantID)
+			if err != nil {
+				return false, &actionDef, err
+			}
+			return roleActionSet[actionDef.ID], &actionDef, nil
+		}
+		roleActionSet, err := s.getTeamRoleSnapshotActionSet(userID, *tenantID)
+		if err != nil {
+			return false, &actionDef, err
+		}
+		return roleActionSet[actionDef.ID], &actionDef, nil
 	}
 
 	overrideEffect, hasOverride, err := s.resolveUserOverride(userID, tenantID, actionDef.ID)
@@ -188,11 +198,7 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 		keys := make([]string, 0, len(actions))
 		keySet := make(map[string]struct{}, len(actions))
 		for _, action := range actions {
-			key := action.ResourceCode + ":" + action.ActionCode
-			if _, exists := keySet[key]; !exists {
-				keys = append(keys, key)
-				keySet[key] = struct{}{}
-			}
+			appendActionKeys(&keys, keySet, action)
 		}
 		return keys, []string{}, nil
 	}
@@ -201,17 +207,13 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 		if err != nil {
 			return nil, nil, err
 		}
-		if snapshot.HasPackageConfig {
-			return buildActionKeysFromIDs(actions, snapshot.ActionIDs), []string{}, nil
-		}
+		return buildActionKeysFromIDs(actions, snapshot.ActionIDs), []string{}, nil
 	}
 
 	memberActive := false
-	boundaryConfigured := false
-	boundaryActionSet := make(map[uuid.UUID]bool)
 	if tenantID != nil {
 		var ctxErr error
-		memberActive, boundaryConfigured, boundaryActionSet, ctxErr = s.resolveTenantActionContext(userID, tenantID)
+		memberActive, _, _, ctxErr = s.resolveTenantActionContext(userID, tenantID)
 		if ctxErr != nil {
 			if errors.Is(ctxErr, ErrTenantMemberInactive) {
 				return []string{}, []string{}, nil
@@ -221,6 +223,11 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 		if !memberActive {
 			return []string{}, []string{}, nil
 		}
+		roleActionIDs, roleErr := s.getTeamRoleSnapshotActionIDs(userID, *tenantID)
+		if roleErr != nil {
+			return nil, nil, roleErr
+		}
+		return buildActionKeysFromIDs(actions, roleActionIDs), []string{}, nil
 	}
 
 	roleIDs, err := s.getEffectiveActiveRoleIDs(userID, tenantID)
@@ -232,7 +239,7 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 		return nil, nil, err
 	}
 
-	globalOverrideMap, tenantOverrideMap, err := s.buildUserOverrideMaps(userID, tenantID)
+	globalOverrideMap, _, err := s.buildUserOverrideMaps(userID, tenantID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -240,28 +247,6 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 	keys := make([]string, 0, len(actions))
 	keySet := make(map[string]struct{}, len(actions))
 	for _, action := range actions {
-		if tenantID != nil {
-			if boundaryConfigured && !boundaryActionSet[action.ID] {
-				continue
-			}
-			if effect, ok := tenantOverrideMap[action.ID]; ok {
-				if effect == "allow" {
-					appendActionKeys(&keys, keySet, action)
-				}
-				continue
-			}
-			if effect, ok := globalOverrideMap[action.ID]; ok {
-				if effect == "allow" {
-					appendActionKeys(&keys, keySet, action)
-				}
-				continue
-			}
-			if roleEffectMap[action.ID] == "allow" {
-				appendActionKeys(&keys, keySet, action)
-			}
-			continue
-		}
-
 		if effect, ok := globalOverrideMap[action.ID]; ok {
 			if effect == "allow" {
 				appendActionKeys(&keys, keySet, action)
@@ -279,7 +264,9 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 func appendActionKeys(keys *[]string, keySet map[string]struct{}, action models.PermissionAction) {
 	key := strings.TrimSpace(action.PermissionKey)
 	if key == "" {
-		key = action.ResourceCode + ":" + action.ActionCode
+		key = permissionkey.FromLegacy(action.ResourceCode, action.ActionCode).Key
+	} else {
+		key = permissionkey.Normalize(key)
 	}
 	if _, exists := keySet[key]; !exists {
 		*keys = append(*keys, key)
@@ -310,6 +297,51 @@ func containsUUID(ids []uuid.UUID, target uuid.UUID) bool {
 		}
 	}
 	return false
+}
+
+func (s *Service) getTeamRoleSnapshotActionIDs(userID, teamID uuid.UUID) ([]uuid.UUID, error) {
+	actionSet, err := s.getTeamRoleSnapshotActionSet(userID, teamID)
+	if err != nil {
+		return nil, err
+	}
+	actionIDs := make([]uuid.UUID, 0, len(actionSet))
+	for actionID := range actionSet {
+		actionIDs = append(actionIDs, actionID)
+	}
+	return actionIDs, nil
+}
+
+func (s *Service) getTeamRoleSnapshotActionSet(userID, teamID uuid.UUID) (map[uuid.UUID]bool, error) {
+	roleIDs, err := s.getEffectiveActiveRoleIDs(userID, &teamID)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[uuid.UUID]bool)
+	if len(roleIDs) == 0 || s.boundaryService == nil {
+		return result, nil
+	}
+	var roles []models.Role
+	if err := s.db.Where("id IN ?", roleIDs).Find(&roles).Error; err != nil {
+		return nil, err
+	}
+	roleMap := make(map[uuid.UUID]models.Role, len(roles))
+	for _, role := range roles {
+		roleMap[role.ID] = role
+	}
+	for _, roleID := range roleIDs {
+		role, ok := roleMap[roleID]
+		if !ok {
+			continue
+		}
+		snapshot, err := s.boundaryService.GetRoleSnapshot(teamID, roleID, role.TenantID == nil)
+		if err != nil {
+			return nil, err
+		}
+		for _, actionID := range snapshot.ActionIDs {
+			result[actionID] = true
+		}
+	}
+	return result, nil
 }
 
 func (s *Service) respondAuthError(c *gin.Context, authErr error, permissionKey string) {
@@ -495,8 +527,12 @@ func (s *Service) resolveTenantActionContext(userID uuid.UUID, tenantID *uuid.UU
 	if err != nil {
 		return false, false, nil, err
 	}
-	if len(snapshot.EffectiveIDs) == 0 {
+	configured := len(snapshot.PackageIDs) > 0 || len(snapshot.ExpandedPackageIDs) > 0 || len(snapshot.BlockedIDs) > 0 || len(snapshot.ManualIDs) > 0
+	if !configured && len(snapshot.EffectiveIDs) == 0 {
 		return true, false, boundaryActionSet, nil
+	}
+	if len(snapshot.EffectiveIDs) == 0 {
+		return true, true, boundaryActionSet, nil
 	}
 	for _, actionID := range snapshot.EffectiveIDs {
 		boundaryActionSet[actionID] = true

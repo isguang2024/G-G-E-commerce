@@ -3,6 +3,7 @@ package platformaccess
 import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 )
@@ -15,6 +16,8 @@ type Snapshot struct {
 	ExpandedPackageIDs []uuid.UUID
 	ActionIDs          []uuid.UUID
 	ActionSourceMap    map[uuid.UUID][]uuid.UUID
+	AvailableMenuIDs   []uuid.UUID
+	AvailableMenuMap   map[uuid.UUID][]uuid.UUID
 	MenuIDs            []uuid.UUID
 	MenuSourceMap      map[uuid.UUID][]uuid.UUID
 	HiddenMenuIDs      []uuid.UUID
@@ -24,6 +27,7 @@ type Snapshot struct {
 
 type Service interface {
 	GetSnapshot(userID uuid.UUID) (*Snapshot, error)
+	RefreshSnapshot(userID uuid.UUID) (*Snapshot, error)
 }
 
 type service struct {
@@ -35,6 +39,28 @@ func NewService(db *gorm.DB) Service {
 }
 
 func (s *service) GetSnapshot(userID uuid.UUID) (*Snapshot, error) {
+	snapshot, err := s.loadSnapshot(userID)
+	if err != nil {
+		return nil, err
+	}
+	if snapshot != nil {
+		return snapshot, nil
+	}
+	return s.RefreshSnapshot(userID)
+}
+
+func (s *service) RefreshSnapshot(userID uuid.UUID) (*Snapshot, error) {
+	snapshot, err := s.calculateSnapshot(userID)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.saveSnapshot(userID, snapshot); err != nil {
+		return nil, err
+	}
+	return snapshot, nil
+}
+
+func (s *service) calculateSnapshot(userID uuid.UUID) (*Snapshot, error) {
 	roleIDs, err := s.getGlobalRoleIDsByUserID(userID)
 	if err != nil {
 		return nil, err
@@ -72,6 +98,8 @@ func (s *service) GetSnapshot(userID uuid.UUID) (*Snapshot, error) {
 		return nil, err
 	}
 	menuIDs = mergeUUIDs(menuIDs, publicMenuIDs)
+	availableMenuIDs := append([]uuid.UUID{}, menuIDs...)
+	availableMenuMap := filterSourceMap(menuSourceMap, availableMenuIDs)
 	hiddenMenuIDs, err := s.getHiddenMenuIDs(userID, roleIDs)
 	if err != nil {
 		return nil, err
@@ -87,12 +115,64 @@ func (s *service) GetSnapshot(userID uuid.UUID) (*Snapshot, error) {
 		ExpandedPackageIDs: expandedPackageIDs,
 		ActionIDs:          actionIDs,
 		ActionSourceMap:    actionSourceMap,
+		AvailableMenuIDs:   availableMenuIDs,
+		AvailableMenuMap:   availableMenuMap,
 		MenuIDs:            menuIDs,
 		MenuSourceMap:      menuSourceMap,
 		HiddenMenuIDs:      hiddenMenuIDs,
 		DisabledActionIDs:  disabledActionIDs,
 		HasPackageConfig:   len(directPackageIDs) > 0,
 	}, nil
+}
+
+func (s *service) loadSnapshot(userID uuid.UUID) (*Snapshot, error) {
+	var record models.PlatformUserAccessSnapshot
+	if err := s.db.Where("user_id = ?", userID).First(&record).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &Snapshot{
+		RoleIDs:            uuidStringsToIDs(record.RoleIDs),
+		RolePackageIDs:     uuidStringsToIDs(record.RolePackageIDs),
+		UserPackageIDs:     uuidStringsToIDs(record.UserPackageIDs),
+		DirectPackageIDs:   uuidStringsToIDs(record.DirectPackageIDs),
+		ExpandedPackageIDs: uuidStringsToIDs(record.ExpandedPackageIDs),
+		ActionIDs:          uuidStringsToIDs(record.ActionIDs),
+		ActionSourceMap:    sourceMapStringsToUUIDs(record.ActionSourceMap),
+		AvailableMenuIDs:   uuidStringsToIDs(record.AvailableMenuIDs),
+		AvailableMenuMap:   sourceMapStringsToUUIDs(record.AvailableMenuMap),
+		MenuIDs:            uuidStringsToIDs(record.MenuIDs),
+		MenuSourceMap:      sourceMapStringsToUUIDs(record.MenuSourceMap),
+		HiddenMenuIDs:      uuidStringsToIDs(record.HiddenMenuIDs),
+		DisabledActionIDs:  uuidStringsToIDs(record.DisabledActionIDs),
+		HasPackageConfig:   record.HasPackageConfig,
+	}, nil
+}
+
+func (s *service) saveSnapshot(userID uuid.UUID, snapshot *Snapshot) error {
+	record := models.PlatformUserAccessSnapshot{
+		UserID:             userID,
+		RoleIDs:            idsToUUIDStrings(snapshot.RoleIDs),
+		RolePackageIDs:     idsToUUIDStrings(snapshot.RolePackageIDs),
+		UserPackageIDs:     idsToUUIDStrings(snapshot.UserPackageIDs),
+		DirectPackageIDs:   idsToUUIDStrings(snapshot.DirectPackageIDs),
+		ExpandedPackageIDs: idsToUUIDStrings(snapshot.ExpandedPackageIDs),
+		ActionIDs:          idsToUUIDStrings(snapshot.ActionIDs),
+		ActionSourceMap:    sourceMapUUIDsToStrings(snapshot.ActionSourceMap),
+		AvailableMenuIDs:   idsToUUIDStrings(snapshot.AvailableMenuIDs),
+		AvailableMenuMap:   sourceMapUUIDsToStrings(snapshot.AvailableMenuMap),
+		MenuIDs:            idsToUUIDStrings(snapshot.MenuIDs),
+		MenuSourceMap:      sourceMapUUIDsToStrings(snapshot.MenuSourceMap),
+		HiddenMenuIDs:      idsToUUIDStrings(snapshot.HiddenMenuIDs),
+		DisabledActionIDs:  idsToUUIDStrings(snapshot.DisabledActionIDs),
+		HasPackageConfig:   snapshot.HasPackageConfig,
+	}
+	return s.db.Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "user_id"}},
+		UpdateAll: true,
+	}).Create(&record).Error
 }
 
 func (s *service) getGlobalRoleIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error) {
@@ -383,4 +463,72 @@ func contextAllowsPackage(targetContext, packageContext string) bool {
 	default:
 		return false
 	}
+}
+
+func idsToUUIDStrings(items []uuid.UUID) []string {
+	if len(items) == 0 {
+		return []string{}
+	}
+	result := make([]string, 0, len(items))
+	seen := make(map[uuid.UUID]struct{}, len(items))
+	for _, item := range items {
+		if item == uuid.Nil {
+			continue
+		}
+		if _, ok := seen[item]; ok {
+			continue
+		}
+		seen[item] = struct{}{}
+		result = append(result, item.String())
+	}
+	return result
+}
+
+func uuidStringsToIDs(items []string) []uuid.UUID {
+	if len(items) == 0 {
+		return []uuid.UUID{}
+	}
+	result := make([]uuid.UUID, 0, len(items))
+	seen := make(map[uuid.UUID]struct{}, len(items))
+	for _, item := range items {
+		id, err := uuid.Parse(item)
+		if err != nil || id == uuid.Nil {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		result = append(result, id)
+	}
+	return result
+}
+
+func sourceMapUUIDsToStrings(sourceMap map[uuid.UUID][]uuid.UUID) map[string][]string {
+	if len(sourceMap) == 0 {
+		return map[string][]string{}
+	}
+	result := make(map[string][]string, len(sourceMap))
+	for id, packageIDs := range sourceMap {
+		if id == uuid.Nil {
+			continue
+		}
+		result[id.String()] = idsToUUIDStrings(packageIDs)
+	}
+	return result
+}
+
+func sourceMapStringsToUUIDs(sourceMap map[string][]string) map[uuid.UUID][]uuid.UUID {
+	if len(sourceMap) == 0 {
+		return map[uuid.UUID][]uuid.UUID{}
+	}
+	result := make(map[uuid.UUID][]uuid.UUID, len(sourceMap))
+	for idText, packageIDs := range sourceMap {
+		id, err := uuid.Parse(idText)
+		if err != nil || id == uuid.Nil {
+			continue
+		}
+		result[id] = uuidStringsToIDs(packageIDs)
+	}
+	return result
 }

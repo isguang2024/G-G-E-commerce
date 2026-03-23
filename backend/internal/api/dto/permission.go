@@ -53,6 +53,10 @@ type TenantActionPermissionsRequest struct {
 	ActionIDs []string `json:"action_ids"`
 }
 
+type TenantMenuPermissionsRequest struct {
+	MenuIDs []string `json:"menu_ids"`
+}
+
 type UserActionPermissionItem struct {
 	ActionID string `json:"action_id" binding:"required"`
 	Effect   string `json:"effect" binding:"required"`

@@ -12,6 +12,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
@@ -49,7 +50,8 @@ func (m *RoleModule) RegisterRoutes(rg *gin.RouterGroup) {
 	actionRepo := user.NewPermissionActionRepository(m.db)
 	boundaryService := teamboundary.NewService(m.db)
 	platformService := platformaccess.NewService(m.db)
-	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService)
+	roleSnapshotService := platformroleaccess.NewService(m.db)
+	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
 	roleService := NewRoleService(
 		roleRepo,
 		rolePackageRepo,
@@ -63,6 +65,7 @@ func (m *RoleModule) RegisterRoutes(rg *gin.RouterGroup) {
 		roleDisabledActionRepo,
 		roleDataRepo,
 		actionRepo,
+		roleSnapshotService,
 		refresher,
 		m.logger,
 	)

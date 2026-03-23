@@ -2,6 +2,41 @@ import request from '@/utils/http'
 
 const TENANT_BASE = '/api/v1/tenants'
 
+function normalizePermissionKey(value?: string, resourceCode?: string, actionCode?: string) {
+  const target = `${value || ''}`.trim()
+  if (target) {
+    if (target.includes(':')) {
+      const [resource, action] = target.split(':', 2)
+      return [resource, action].filter(Boolean).join('.')
+    }
+    return target
+  }
+  const fallbackResource = `${resourceCode || ''}`.trim()
+  const fallbackAction = `${actionCode || ''}`.trim()
+  return fallbackResource && fallbackAction ? `${fallbackResource}.${fallbackAction}` : ''
+}
+
+function deriveContextType(permissionKey?: string, moduleCode?: string) {
+  const key = `${permissionKey || ''}`.trim()
+  const module = `${moduleCode || ''}`.trim()
+  if (
+    key.startsWith('system.') ||
+    key.startsWith('tenant.') ||
+    key.startsWith('platform.') ||
+    key === 'tenant.manage' ||
+    module === 'role' ||
+    module === 'user' ||
+    module === 'menu' ||
+    module === 'menu_backup' ||
+    module === 'permission_action' ||
+    module === 'api_endpoint' ||
+    module === 'feature_package'
+  ) {
+    return 'platform'
+  }
+  return 'team'
+}
+
 function normalizeTeam(item: any): Api.SystemManage.TeamListItem {
   return {
     id: item?.id || '',
@@ -21,13 +56,22 @@ function normalizeTeam(item: any): Api.SystemManage.TeamListItem {
 }
 
 function normalizeAction(item: any): Api.SystemManage.PermissionActionItem {
+  const resourceCode = item?.resource_code || item?.resourceCode || ''
+  const actionCode = item?.action_code || item?.actionCode || ''
+  const permissionKey = normalizePermissionKey(
+    item?.permission_key || item?.permissionKey,
+    resourceCode,
+    actionCode
+  )
+  const moduleCode = item?.module_code || item?.moduleCode || ''
   return {
     id: item?.id || '',
-    resourceCode: item?.resource_code || item?.resourceCode || '',
-    actionCode: item?.action_code || item?.actionCode || '',
-    moduleCode: item?.module_code || item?.moduleCode || '',
-    contextType: item?.context_type || item?.contextType || 'team',
-    permissionKey: item?.permission_key || item?.permissionKey || '',
+    resourceCode,
+    actionCode,
+    moduleCode,
+    contextType:
+      item?.context_type || item?.contextType || deriveContextType(permissionKey, moduleCode),
+    permissionKey,
     source: item?.source || 'business',
     featureKind: item?.feature_kind || item?.featureKind || 'business',
     name: item?.name || '',
@@ -42,12 +86,17 @@ function normalizeAction(item: any): Api.SystemManage.PermissionActionItem {
 }
 
 function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem {
+  const packageKey = item?.package_key || item?.packageKey || ''
+  const contextType =
+    item?.context_type ||
+    item?.contextType ||
+    (packageKey.startsWith('platform.') ? 'platform' : 'team')
   return {
     id: item?.id || '',
-    packageKey: item?.package_key || item?.packageKey || '',
+    packageKey,
     name: item?.name || '',
     description: item?.description || '',
-    contextType: item?.context_type || item?.contextType || 'team',
+    contextType,
     actionCount: item?.action_count ?? item?.actionCount ?? 0,
     menuCount: item?.menu_count ?? item?.menuCount ?? 0,
     teamCount: item?.team_count ?? item?.teamCount ?? 0,
@@ -248,19 +297,21 @@ export function fetchDeleteMyTeamRole(roleId: string) {
 }
 
 export function fetchGetMyTeamRoleMenus(roleId: string) {
-  return request.get<Api.SystemManage.RoleMenuBoundaryResponse>({
-    url: `${TENANT_BASE}/my-team/roles/${roleId}/menus`
-  }).then((res) => ({
-    menu_ids: res?.menu_ids || [],
-    available_menu_ids: res?.available_menu_ids || [],
-    package_ids: res?.package_ids || [],
-    inherited: Boolean(res?.inherited),
-    has_menu_boundary: Boolean(res?.has_menu_boundary),
-    derived_sources: (res?.derived_sources || []).map((item) => ({
-      menu_id: item?.menu_id || '',
-      package_ids: item?.package_ids || []
+  return request
+    .get<Api.SystemManage.RoleMenuBoundaryResponse>({
+      url: `${TENANT_BASE}/my-team/roles/${roleId}/menus`
+    })
+    .then((res) => ({
+      menu_ids: res?.menu_ids || [],
+      available_menu_ids: res?.available_menu_ids || [],
+      package_ids: res?.package_ids || [],
+      inherited: Boolean(res?.inherited),
+      has_menu_boundary: Boolean(res?.has_menu_boundary),
+      derived_sources: (res?.derived_sources || []).map((item) => ({
+        menu_id: item?.menu_id || '',
+        package_ids: item?.package_ids || []
+      }))
     }))
-  }))
 }
 
 export function fetchSetMyTeamRoleMenus(roleId: string, menuIds: string[]) {
@@ -271,19 +322,21 @@ export function fetchSetMyTeamRoleMenus(roleId: string, menuIds: string[]) {
 }
 
 export function fetchGetMyTeamRoleActions(roleId: string) {
-  return request.get<Api.SystemManage.RoleActionBoundaryResponse>({
-    url: `${TENANT_BASE}/my-team/roles/${roleId}/actions`
-  }).then((res) => ({
-    action_ids: res?.action_ids || [],
-    available_action_ids: res?.available_action_ids || [],
-    actions: (res?.actions || []).map(normalizeAction),
-    package_ids: res?.package_ids || [],
-    inherited: Boolean(res?.inherited),
-    derived_sources: (res?.derived_sources || []).map((item) => ({
-      action_id: item?.action_id || '',
-      package_ids: item?.package_ids || []
+  return request
+    .get<Api.SystemManage.RoleActionBoundaryResponse>({
+      url: `${TENANT_BASE}/my-team/roles/${roleId}/actions`
+    })
+    .then((res) => ({
+      action_ids: res?.action_ids || [],
+      available_action_ids: res?.available_action_ids || [],
+      actions: (res?.actions || []).map(normalizeAction),
+      package_ids: res?.package_ids || [],
+      inherited: Boolean(res?.inherited),
+      derived_sources: (res?.derived_sources || []).map((item) => ({
+        action_id: item?.action_id || '',
+        package_ids: item?.package_ids || []
+      }))
     }))
-  }))
 }
 
 export function fetchSetMyTeamRoleActions(roleId: string, actionIds: string[]) {
@@ -294,13 +347,15 @@ export function fetchSetMyTeamRoleActions(roleId: string, actionIds: string[]) {
 }
 
 export function fetchGetMyTeamRolePackages(roleId: string) {
-  return request.get<Api.SystemManage.RoleFeaturePackageResponse>({
-    url: `${TENANT_BASE}/my-team/roles/${roleId}/packages`
-  }).then((res) => ({
-    package_ids: res?.package_ids || [],
-    packages: (res?.packages || []).map(normalizeFeaturePackage),
-    inherited: Boolean(res?.inherited)
-  }))
+  return request
+    .get<Api.SystemManage.RoleFeaturePackageResponse>({
+      url: `${TENANT_BASE}/my-team/roles/${roleId}/packages`
+    })
+    .then((res) => ({
+      package_ids: res?.package_ids || [],
+      packages: (res?.packages || []).map(normalizeFeaturePackage),
+      inherited: Boolean(res?.inherited)
+    }))
 }
 
 export function fetchSetMyTeamRolePackages(roleId: string, packageIds: string[]) {
@@ -320,33 +375,80 @@ export async function fetchGetTeamActions(teamId: string) {
   }
 }
 
+export async function fetchGetTeamMenus(teamId: string) {
+  const res = await request.get<{ menu_ids: string[] }>({
+    url: `${TENANT_BASE}/${teamId}/menus`
+  })
+  return {
+    menuIds: res?.menu_ids || []
+  }
+}
+
 export function fetchGetTeamActionOrigins(teamId: string) {
-  return request.get<{
-    package_ids: string[]
-    derived_action_ids: string[]
-    derived_sources?: Array<{ action_id: string; package_ids: string[] }>
-    manual_action_ids: string[]
-    effective_action_ids: string[]
-    from_cache?: boolean
-  }>({
-    url: `${TENANT_BASE}/${teamId}/action-origins`
-  }).then((res) => ({
-    packageIds: res?.package_ids || [],
-    derivedActionIds: res?.derived_action_ids || [],
-    derivedSources: (res?.derived_sources || []).map((item) => ({
-      actionId: item?.action_id || '',
-      packageIds: item?.package_ids || []
-    })),
-    manualActionIds: res?.manual_action_ids || [],
-    effectiveActionIds: res?.effective_action_ids || [],
-    fromCache: Boolean(res?.from_cache)
-  }))
+  return request
+    .get<{
+      package_ids: string[]
+      expanded_package_ids?: string[]
+      derived_action_ids: string[]
+      derived_sources?: Array<{ action_id: string; package_ids: string[] }>
+      blocked_action_ids?: string[]
+      manual_action_ids?: string[]
+      effective_action_ids: string[]
+      from_cache?: boolean
+    }>({
+      url: `${TENANT_BASE}/${teamId}/action-origins`
+    })
+    .then((res) => ({
+      packageIds: res?.package_ids || [],
+      expandedPackageIds: res?.expanded_package_ids || [],
+      derivedActionIds: res?.derived_action_ids || [],
+      derivedSources: (res?.derived_sources || []).map((item) => ({
+        actionId: item?.action_id || '',
+        packageIds: item?.package_ids || []
+      })),
+      blockedActionIds: res?.blocked_action_ids || res?.manual_action_ids || [],
+      manualActionIds: res?.manual_action_ids || res?.blocked_action_ids || [],
+      effectiveActionIds: res?.effective_action_ids || [],
+      fromCache: Boolean(res?.from_cache)
+    }))
+}
+
+export function fetchGetTeamMenuOrigins(teamId: string) {
+  return request
+    .get<{
+      package_ids: string[]
+      expanded_package_ids?: string[]
+      derived_menu_ids: string[]
+      derived_sources?: Array<{ menu_id: string; package_ids: string[] }>
+      blocked_menu_ids: string[]
+      effective_menu_ids: string[]
+    }>({
+      url: `${TENANT_BASE}/${teamId}/menu-origins`
+    })
+    .then((res) => ({
+      packageIds: res?.package_ids || [],
+      expandedPackageIds: res?.expanded_package_ids || [],
+      derivedMenuIds: res?.derived_menu_ids || [],
+      derivedSources: (res?.derived_sources || []).map((item) => ({
+        menuId: item?.menu_id || '',
+        packageIds: item?.package_ids || []
+      })),
+      blockedMenuIds: res?.blocked_menu_ids || [],
+      effectiveMenuIds: res?.effective_menu_ids || []
+    }))
 }
 
 export function fetchSetTeamActions(teamId: string, actionIds: string[]) {
   return request.put<void>({
     url: `${TENANT_BASE}/${teamId}/actions`,
     data: { action_ids: actionIds }
+  })
+}
+
+export function fetchSetTeamMenus(teamId: string, menuIds: string[]) {
+  return request.put<void>({
+    url: `${TENANT_BASE}/${teamId}/menus`,
+    data: { menu_ids: menuIds }
   })
 }
 
@@ -361,26 +463,32 @@ export async function fetchGetMyTeamActions() {
 }
 
 export function fetchGetMyTeamActionOrigins() {
-  return request.get<{
-    package_ids: string[]
-    derived_action_ids: string[]
-    derived_sources?: Array<{ action_id: string; package_ids: string[] }>
-    manual_action_ids: string[]
-    effective_action_ids: string[]
-    from_cache?: boolean
-  }>({
-    url: `${TENANT_BASE}/my-team/action-origins`
-  }).then((res) => ({
-    packageIds: res?.package_ids || [],
-    derivedActionIds: res?.derived_action_ids || [],
-    derivedSources: (res?.derived_sources || []).map((item) => ({
-      actionId: item?.action_id || '',
-      packageIds: item?.package_ids || []
-    })),
-    manualActionIds: res?.manual_action_ids || [],
-    effectiveActionIds: res?.effective_action_ids || [],
-    fromCache: Boolean(res?.from_cache)
-  }))
+  return request
+    .get<{
+      package_ids: string[]
+      expanded_package_ids?: string[]
+      derived_action_ids: string[]
+      derived_sources?: Array<{ action_id: string; package_ids: string[] }>
+      blocked_action_ids?: string[]
+      manual_action_ids?: string[]
+      effective_action_ids: string[]
+      from_cache?: boolean
+    }>({
+      url: `${TENANT_BASE}/my-team/action-origins`
+    })
+    .then((res) => ({
+      packageIds: res?.package_ids || [],
+      expandedPackageIds: res?.expanded_package_ids || [],
+      derivedActionIds: res?.derived_action_ids || [],
+      derivedSources: (res?.derived_sources || []).map((item) => ({
+        actionId: item?.action_id || '',
+        packageIds: item?.package_ids || []
+      })),
+      blockedActionIds: res?.blocked_action_ids || res?.manual_action_ids || [],
+      manualActionIds: res?.manual_action_ids || res?.blocked_action_ids || [],
+      effectiveActionIds: res?.effective_action_ids || [],
+      fromCache: Boolean(res?.from_cache)
+    }))
 }
 
 export async function fetchGetMyTeamMemberActions(userId: string) {

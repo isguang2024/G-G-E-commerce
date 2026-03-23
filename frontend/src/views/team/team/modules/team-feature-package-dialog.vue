@@ -36,8 +36,16 @@
         <ElTableColumn prop="name" label="功能包名称" min-width="160" show-overflow-tooltip />
         <ElTableColumn label="上下文" width="100">
           <template #default="{ row }">
-            <ElTag :type="row.contextType === 'platform' ? 'warning' : 'success'">
-              {{ row.contextType === 'platform' ? '平台' : '团队' }}
+            <ElTag
+              :type="
+                row.contextType === 'platform'
+                  ? 'warning'
+                  : row.contextType === 'platform,team'
+                    ? 'info'
+                    : 'success'
+              "
+            >
+              {{ formatContext(row.contextType) }}
             </ElTag>
           </template>
         </ElTableColumn>
@@ -133,6 +141,12 @@
       return
     }
     selectedPackageIds.value = selectedPackageIds.value.filter((item) => item !== packageId)
+  }
+
+  function formatContext(contextType?: string) {
+    if (contextType === 'platform,team') return '平台/团队'
+    if (contextType === 'platform') return '平台'
+    return '团队'
   }
 
   async function handleSave() {

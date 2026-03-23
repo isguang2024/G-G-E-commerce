@@ -48,7 +48,7 @@ import { staticRoutes } from '../routes/staticRoutes'
 import { loadingService } from '@/utils/ui'
 import { useCommon } from '@/hooks/core/useCommon'
 import { useWorktabStore } from '@/store/modules/worktab'
-import { useTenantStore } from '@/store/modules/tenant'
+import { hasPlatformAccessByUserInfo, useTenantStore } from '@/store/modules/tenant'
 import { fetchGetUserInfo } from '@/api/auth'
 import { ApiStatus } from '@/utils/http/status'
 import { isHttpError } from '@/utils/http/error'
@@ -135,12 +135,14 @@ function buildFrontendUserInfo(data: Api.Auth.UserInfo): Api.Auth.UserInfo {
 
 export async function refreshCurrentUserInfoContext(): Promise<void> {
   const userStore = useUserStore()
+  const tenantStore = useTenantStore()
   const data = await fetchGetUserInfo()
   const mergedInfo: Api.Auth.UserInfo = {
     ...(userStore.getUserInfo as Api.Auth.UserInfo),
     ...buildFrontendUserInfo(data)
   }
   userStore.setUserInfo(mergedInfo)
+  tenantStore.setPlatformAccess(hasPlatformAccessByUserInfo(mergedInfo))
 }
 
 /**
@@ -416,13 +418,15 @@ async function fetchUserInfo(): Promise<void> {
   const userStore = useUserStore()
   const tenantStore = useTenantStore()
   const data = await fetchGetUserInfo()
-  userStore.setUserInfo(buildFrontendUserInfo(data))
+  const frontendUserInfo = buildFrontendUserInfo(data)
+  userStore.setUserInfo(frontendUserInfo)
   userStore.checkAndClearWorktabs()
-  await tenantStore.loadMyTeams()
-  if (
-    tenantStore.currentTenantId &&
-    tenantStore.currentTenantId !== (data.current_tenant_id || '')
-  ) {
+  tenantStore.setPlatformAccess(hasPlatformAccessByUserInfo(frontendUserInfo))
+  await tenantStore.loadMyTeams({
+    preferredTenantId: data.current_tenant_id || '',
+    preferPlatform: hasPlatformAccessByUserInfo(frontendUserInfo)
+  })
+  if (tenantStore.currentContextMode === 'team' && tenantStore.currentTenantId !== (data.current_tenant_id || '')) {
     await refreshCurrentUserInfoContext()
   }
 }

@@ -1,7 +1,7 @@
 <template>
   <ElDialog
     v-model="visible"
-    :title="`成员功能权限 - ${member?.userName || ''}`"
+    :title="`成员权限例外（兼容） - ${member?.userName || ''}`"
     width="920px"
     destroy-on-close
   >
@@ -10,15 +10,16 @@
         type="info"
         :closable="false"
         class="dialog-alert"
-        title="这里配置的是团队内个人功能权限覆盖。页面只展示该成员当前角色功能包展开后的可用能力；默认继承角色权限，单独允许或单独拒绝只用于少量例外场景。"
+        title="这里是团队成员个人权限例外的兼容审计视图。当前主模型已经切到“团队开包 + 团队边界 + 角色裁剪”；此处默认不再作为主配置入口。"
       />
 
       <div class="summary-header">
         <ElTag effect="plain" round>成员 {{ member?.userName || '-' }}</ElTag>
+        <ElTag type="warning" effect="plain" round>只读审计</ElTag>
         <ElTag type="info" effect="plain" round>基础角色 {{ assignedGlobalRoleCount }}</ElTag>
         <ElTag type="success" effect="plain" round>团队自定义 {{ assignedCustomRoleCount }}</ElTag>
         <ElTag type="warning" effect="plain" round>功能包展开 {{ derivedActionCount }}</ElTag>
-        <ElTag type="primary" effect="plain" round>团队补充 {{ manualActionCount }}</ElTag>
+        <ElTag type="primary" effect="plain" round>团队边界屏蔽 {{ manualActionCount }}</ElTag>
       </div>
 
       <div v-if="derivedActions.length || manualActions.length" class="source-detail-grid">
@@ -71,7 +72,7 @@
         </div>
 
         <div v-if="manualActions.length" class="source-card source-card--manual">
-          <div class="source-title">团队补充能力</div>
+          <div class="source-title">团队边界屏蔽外的角色可用能力</div>
           <div class="source-tags">
             <ElTag
               v-for="item in manualActions"
@@ -153,12 +154,9 @@
         </div>
 
         <div class="batch-bar" v-if="filteredActionIds.length > 0">
-          <span class="batch-label">批量处理当前筛选结果</span>
+          <span class="batch-label">当前仅支持筛选与审计，不再提供成员级批量覆盖</span>
           <ElButton size="small" text @click="expandAll">全部展开</ElButton>
           <ElButton size="small" text @click="collapseAll">全部收起</ElButton>
-          <ElButton size="small" text @click="applyEffects(filteredActionIds, 'allow')">批量单独允许</ElButton>
-          <ElButton size="small" text @click="applyEffects(filteredActionIds, 'deny')">批量单独拒绝</ElButton>
-          <ElButton size="small" text @click="applyEffects(filteredActionIds, '')">批量继承角色</ElButton>
         </div>
       </section>
 
@@ -166,7 +164,7 @@
         ref="treePanelRef"
         :loading="loading"
         :tree-data="treeData"
-        empty-description="当前团队未开通功能权限"
+        empty-description="当前团队未开通可用能力"
       >
         <template #node="{ data }">
             <div v-if="data.nodeType === 'feature'" class="tree-node tree-node--feature" :class="{ 'is-compact': filters.compact }">
@@ -175,9 +173,7 @@
                 <div class="node-subtitle">{{ data.meta }}</div>
               </div>
               <div class="node-actions">
-                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, 'allow')">本组单独允许</ElButton>
-                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, 'deny')">本组单独拒绝</ElButton>
-                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, '')">本组继承角色</ElButton>
+                <ElTag size="small" effect="plain" type="info">审计视图</ElTag>
               </div>
             </div>
 
@@ -187,9 +183,7 @@
                 <div class="node-subtitle">{{ data.meta }}</div>
               </div>
               <div class="node-actions">
-                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, 'allow')">模块单独允许</ElButton>
-                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, 'deny')">模块单独拒绝</ElButton>
-                <ElButton size="small" text @click.stop="applyEffects(data.actionIds, '')">模块继承角色</ElButton>
+                <ElTag size="small" effect="plain" type="info">审计视图</ElTag>
               </div>
             </div>
 
@@ -209,6 +203,7 @@
                     'effect-select--empty': !effectMap[data.actionId]
                   }"
                   size="small"
+                  disabled
                   placeholder="继承角色"
                 >
                   <ElOption label="继承角色" value="" />
@@ -222,8 +217,7 @@
     </div>
 
     <template #footer>
-      <ElButton @click="visible = false">取消</ElButton>
-      <ElButton type="primary" :loading="submitting" @click="handleSubmit">保存</ElButton>
+      <ElButton type="primary" @click="visible = false">关闭</ElButton>
     </template>
   </ElDialog>
 </template>
@@ -492,7 +486,7 @@
       })
       syncExpandedKeys()
     } catch (e: any) {
-      ElMessage.error(e?.message || '获取成员功能权限失败')
+      ElMessage.error(e?.message || '获取成员权限例外失败')
       visible.value = false
     } finally {
       loading.value = false
