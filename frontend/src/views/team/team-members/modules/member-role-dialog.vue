@@ -10,6 +10,13 @@
         请选择该成员在当前团队内拥有的角色（支持多选）。基础团队角色由系统提供，团队自定义角色仅在当前团队内生效。
       </div>
 
+      <div class="summary-row">
+        <ElTag effect="plain" round>总计 {{ allRoles.length }}</ElTag>
+        <ElTag type="info" effect="plain" round>基础角色 {{ globalRoleCount }}</ElTag>
+        <ElTag type="success" effect="plain" round>团队自定义 {{ customRoleCount }}</ElTag>
+        <ElTag type="warning" effect="plain" round>已选 {{ selectedRoleIds.length }}</ElTag>
+      </div>
+
       <ElCheckboxGroup v-model="selectedRoleIds" class="flex flex-col gap-2">
         <div v-for="role in allRoles" :key="role.roleId" class="role-item">
           <ElCheckbox :value="role.roleId" :disabled="isTeamAdminRole(role.roleCode)">
@@ -55,6 +62,8 @@
   const allRoles = ref<Api.SystemManage.RoleListItem[]>([])
   const selectedRoleIds = ref<string[]>([])
   const memberRoleCodes = ref<string[]>([])
+  const globalRoleCount = computed(() => allRoles.value.filter((role) => role.isGlobal).length)
+  const customRoleCount = computed(() => allRoles.value.filter((role) => !role.isGlobal).length)
 
   function isTeamAdminRole(roleCode: string): boolean {
     // 如果成员已经是团队管理员，则禁用 team_admin 角色的选择
@@ -115,6 +124,12 @@
     padding: 8px;
     border-radius: 4px;
     transition: background 0.2s;
+  }
+  .summary-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
   }
   .role-item:hover {
     background-color: var(--el-fill-color-light);

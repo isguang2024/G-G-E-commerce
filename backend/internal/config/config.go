@@ -9,7 +9,7 @@ import (
 
 // Config 应用配置结构
 type Config struct {
-	Env    string      `mapstructure:"env"`
+	Env    string       `mapstructure:"env"`
 	Server ServerConfig `mapstructure:"server"`
 	DB     DBConfig     `mapstructure:"db"`
 	Redis  RedisConfig  `mapstructure:"redis"`
@@ -64,7 +64,7 @@ type MinIOConfig struct {
 
 // JWTConfig JWT 配置
 type JWTConfig struct {
-	Secret         string `mapstructure:"secret"`
+	Secret        string `mapstructure:"secret"`
 	AccessExpire  int    `mapstructure:"access_expire"`  // 分钟
 	RefreshExpire int    `mapstructure:"refresh_expire"` // 分钟
 }

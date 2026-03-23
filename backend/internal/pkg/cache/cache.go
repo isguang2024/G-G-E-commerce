@@ -20,8 +20,8 @@ func NewCache(host string, port int, password string, db int) (*Cache, error) {
 		Addr:         fmt.Sprintf("%s:%d", host, port),
 		Password:     password,
 		DB:           db,
-		PoolSize:     20,     // 连接池最大连接数（默认 10*GOMAXPROCS，此处固定便于调优）
-		MinIdleConns: 5,      // 池内最少保留的空闲连接数
+		PoolSize:     20, // 连接池最大连接数（默认 10*GOMAXPROCS，此处固定便于调优）
+		MinIdleConns: 5,  // 池内最少保留的空闲连接数
 	})
 
 	// 测试连接

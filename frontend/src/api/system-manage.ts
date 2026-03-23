@@ -66,6 +66,7 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
     description: item?.description || '',
     contextType: item?.context_type || item?.contextType || 'team',
     actionCount: item?.action_count ?? item?.actionCount ?? 0,
+    menuCount: item?.menu_count ?? item?.menuCount ?? 0,
     teamCount: item?.team_count ?? item?.teamCount ?? 0,
     status: item?.status || 'normal',
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
@@ -86,6 +87,26 @@ export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
 export function fetchGetUserPermissions(userId: string) {
   return request.get<any[]>({
     url: `${USER_BASE}/${userId}/permissions`
+  })
+}
+
+/** 获取用户平台功能包 */
+export function fetchGetUserPackages(userId: string) {
+  return request
+    .get<Api.SystemManage.UserFeaturePackageResponse>({
+      url: `${USER_BASE}/${userId}/packages`
+    })
+    .then((res) => ({
+      package_ids: res?.package_ids || [],
+      packages: (res?.packages || []).map(normalizeFeaturePackage)
+    }))
+}
+
+/** 设置用户平台功能包 */
+export function fetchSetUserPackages(userId: string, packageIds: string[]) {
+  return request.put<void>({
+    url: `${USER_BASE}/${userId}/packages`,
+    data: { package_ids: packageIds }
   })
 }
 
@@ -127,7 +148,7 @@ export function fetchAssignUserRoles(id: string, roleIds: string[]) {
   })
 }
 
-/** 获取用户平台级功能权限 */
+/** 获取平台用户例外权限覆盖（兼容入口） */
 export async function fetchGetUserActions(userId: string) {
   const res = await request.get<{ actions: any[] }>({
     url: `${USER_BASE}/${userId}/actions`
@@ -139,7 +160,7 @@ export async function fetchGetUserActions(userId: string) {
   })) as Api.SystemManage.UserActionPermissionItem[]
 }
 
-/** 设置用户平台级功能权限 */
+/** 设置平台用户例外权限覆盖（兼容入口） */
 export function fetchSetUserActions(
   userId: string,
   actions: Array<{ action_id: string; effect: 'allow' | 'deny' }>
@@ -198,8 +219,39 @@ export function fetchDeleteRole(id: string) {
 
 /** 获取角色已分配的菜单 ID 列表（用于菜单权限配置） */
 export function fetchGetRoleMenus(roleId: string) {
-  return request.get<{ menu_ids: string[] }>({
-    url: `${ROLE_BASE}/${roleId}/menus`
+  return request
+    .get<Api.SystemManage.RoleMenuBoundaryResponse>({
+      url: `${ROLE_BASE}/${roleId}/menus`
+    })
+    .then((res) => ({
+      menu_ids: res?.menu_ids || [],
+      available_menu_ids: res?.available_menu_ids || [],
+      hidden_menu_ids: res?.hidden_menu_ids || [],
+      package_ids: res?.package_ids || [],
+      expanded_package_ids: res?.expanded_package_ids || [],
+      derived_sources: res?.derived_sources || [],
+      has_menu_boundary: Boolean(res?.has_menu_boundary)
+    }))
+}
+
+/** 获取角色功能包 */
+export function fetchGetRolePackages(roleId: string) {
+  return request
+    .get<Api.SystemManage.RoleFeaturePackageResponse>({
+      url: `${ROLE_BASE}/${roleId}/packages`
+    })
+    .then((res) => ({
+      package_ids: res?.package_ids || [],
+      packages: (res?.packages || []).map(normalizeFeaturePackage),
+      inherited: Boolean(res?.inherited)
+    }))
+}
+
+/** 设置角色功能包 */
+export function fetchSetRolePackages(roleId: string, packageIds: string[]) {
+  return request.put<void>({
+    url: `${ROLE_BASE}/${roleId}/packages`,
+    data: { package_ids: packageIds }
   })
 }
 
@@ -213,9 +265,20 @@ export function fetchSetRoleMenus(roleId: string, menuIds: string[]) {
 
 /** 获取角色功能权限 */
 export function fetchGetRoleActions(roleId: string) {
-  return request.get<{ action_ids: string[] }>({
-    url: `${ROLE_BASE}/${roleId}/actions`
-  })
+  return request
+    .get<Api.SystemManage.RoleActionBoundaryResponse>({
+      url: `${ROLE_BASE}/${roleId}/actions`
+    })
+    .then((res) => ({
+      action_ids: res?.action_ids || [],
+      available_action_ids: res?.available_action_ids || [],
+      disabled_action_ids: res?.disabled_action_ids || [],
+      actions: res?.actions || [],
+      package_ids: res?.package_ids || [],
+      expanded_package_ids: res?.expanded_package_ids || [],
+      derived_sources: res?.derived_sources || [],
+      has_package_boundary: Boolean(res?.has_package_boundary)
+    }))
 }
 
 /** 设置角色功能权限 */
@@ -387,6 +450,21 @@ export function fetchSetFeaturePackageActions(
   return request.put<void>({
     url: `${FEATURE_PACKAGE_BASE}/${id}/actions`,
     data: payload
+  })
+}
+
+/** 获取功能包包含的菜单 */
+export function fetchGetFeaturePackageMenus(id: string) {
+  return request.get<Api.SystemManage.FeaturePackageMenuResponse>({
+    url: `${FEATURE_PACKAGE_BASE}/${id}/menus`
+  })
+}
+
+/** 设置功能包包含的菜单 */
+export function fetchSetFeaturePackageMenus(id: string, menuIds: string[]) {
+  return request.put<void>({
+    url: `${FEATURE_PACKAGE_BASE}/${id}/menus`,
+    data: { menu_ids: menuIds }
   })
 }
 

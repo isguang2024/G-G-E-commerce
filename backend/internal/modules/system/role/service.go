@@ -12,13 +12,14 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 )
 
 var (
-	ErrRoleNotFound           = errors.New("role not found")
-	ErrRoleCodeExists         = errors.New("role code already exists")
-	ErrSystemRoleCannotDelete = errors.New("system role cannot be deleted")
-	ErrTeamRoleActionReadonly = errors.New("team role actions are managed by team boundary")
+	ErrRoleNotFound            = errors.New("role not found")
+	ErrRoleCodeExists          = errors.New("role code already exists")
+	ErrSystemRoleCannotDelete  = errors.New("system role cannot be deleted")
+	ErrTeamRoleActionReadonly  = errors.New("team role actions are managed by team boundary")
 	ErrTenantRoleManagedByTeam = errors.New("tenant role is managed in team context")
 )
 
@@ -28,12 +29,36 @@ type RoleService interface {
 	Create(req *dto.RoleCreateRequest) (*user.Role, error)
 	Update(id uuid.UUID, req *dto.RoleUpdateRequest) error
 	Delete(id uuid.UUID) error
+	GetRolePackages(roleID uuid.UUID) ([]uuid.UUID, []user.FeaturePackage, error)
+	SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error
+	GetRoleMenuBoundary(roleID uuid.UUID) (*RoleMenuBoundary, error)
 	GetRoleMenuIDs(roleID uuid.UUID) ([]uuid.UUID, error)
 	SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error
+	GetRoleActionBoundary(roleID uuid.UUID) (*RoleActionBoundary, error)
 	GetRoleActions(roleID uuid.UUID) ([]user.RoleActionPermission, error)
 	SetRoleActions(roleID uuid.UUID, actions []user.RoleActionPermission) error
 	GetRoleDataPermissions(roleID uuid.UUID) ([]user.RoleDataPermission, []string, []DataPermissionScopeOption, error)
 	SetRoleDataPermissions(roleID uuid.UUID, permissions []user.RoleDataPermission) error
+}
+
+type RoleMenuBoundary struct {
+	PackageIDs         []uuid.UUID
+	ExpandedPackageIDs []uuid.UUID
+	AvailableMenuIDs   []uuid.UUID
+	HiddenMenuIDs      []uuid.UUID
+	EffectiveMenuIDs   []uuid.UUID
+	MenuSourceMap      map[uuid.UUID][]uuid.UUID
+	HasPackageConfig   bool
+}
+
+type RoleActionBoundary struct {
+	PackageIDs         []uuid.UUID
+	ExpandedPackageIDs []uuid.UUID
+	AvailableActionIDs []uuid.UUID
+	DisabledActionIDs  []uuid.UUID
+	EffectiveActionIDs []uuid.UUID
+	ActionSourceMap    map[uuid.UUID][]uuid.UUID
+	HasPackageConfig   bool
 }
 
 type DataPermissionScopeOption struct {
@@ -42,22 +67,53 @@ type DataPermissionScopeOption struct {
 }
 
 type roleService struct {
-	roleRepo       user.RoleRepository
-	roleMenuRepo   user.RoleMenuRepository
-	roleActionRepo user.RoleActionPermissionRepository
-	roleDataRepo   user.RoleDataPermissionRepository
-	actionRepo     user.PermissionActionRepository
-	logger         *zap.Logger
+	roleRepo               user.RoleRepository
+	rolePackageRepo        user.RoleFeaturePackageRepository
+	featurePkgRepo         user.FeaturePackageRepository
+	packageActionRepo      user.FeaturePackageActionRepository
+	packageMenuRepo        user.FeaturePackageMenuRepository
+	packageBundleRepo      user.FeaturePackageBundleRepository
+	roleMenuRepo           user.RoleMenuRepository
+	roleHiddenMenuRepo     user.RoleHiddenMenuRepository
+	roleActionRepo         user.RoleActionPermissionRepository
+	roleDisabledActionRepo user.RoleDisabledActionRepository
+	roleDataRepo           user.RoleDataPermissionRepository
+	actionRepo             user.PermissionActionRepository
+	refresher              permissionrefresh.Service
+	logger                 *zap.Logger
 }
 
-func NewRoleService(roleRepo user.RoleRepository, roleMenuRepo user.RoleMenuRepository, roleActionRepo user.RoleActionPermissionRepository, roleDataRepo user.RoleDataPermissionRepository, actionRepo user.PermissionActionRepository, logger *zap.Logger) RoleService {
+func NewRoleService(
+	roleRepo user.RoleRepository,
+	rolePackageRepo user.RoleFeaturePackageRepository,
+	featurePkgRepo user.FeaturePackageRepository,
+	packageActionRepo user.FeaturePackageActionRepository,
+	packageMenuRepo user.FeaturePackageMenuRepository,
+	packageBundleRepo user.FeaturePackageBundleRepository,
+	roleMenuRepo user.RoleMenuRepository,
+	roleHiddenMenuRepo user.RoleHiddenMenuRepository,
+	roleActionRepo user.RoleActionPermissionRepository,
+	roleDisabledActionRepo user.RoleDisabledActionRepository,
+	roleDataRepo user.RoleDataPermissionRepository,
+	actionRepo user.PermissionActionRepository,
+	refresher permissionrefresh.Service,
+	logger *zap.Logger,
+) RoleService {
 	return &roleService{
-		roleRepo:       roleRepo,
-		roleMenuRepo:   roleMenuRepo,
-		roleActionRepo: roleActionRepo,
-		roleDataRepo:   roleDataRepo,
-		actionRepo:     actionRepo,
-		logger:         logger,
+		roleRepo:               roleRepo,
+		rolePackageRepo:        rolePackageRepo,
+		featurePkgRepo:         featurePkgRepo,
+		packageActionRepo:      packageActionRepo,
+		packageMenuRepo:        packageMenuRepo,
+		packageBundleRepo:      packageBundleRepo,
+		roleMenuRepo:           roleMenuRepo,
+		roleHiddenMenuRepo:     roleHiddenMenuRepo,
+		roleActionRepo:         roleActionRepo,
+		roleDisabledActionRepo: roleDisabledActionRepo,
+		roleDataRepo:           roleDataRepo,
+		actionRepo:             actionRepo,
+		refresher:              refresher,
+		logger:                 logger,
 	}
 }
 
@@ -149,7 +205,13 @@ func (s *roleService) Update(id uuid.UUID, req *dto.RoleUpdateRequest) error {
 	}
 	updates["updated_at"] = time.Now()
 	s.logger.Info("更新角色字段", zap.String("roleId", id.String()), zap.Any("updates", updates))
-	return s.roleRepo.UpdateWithMap(id, updates)
+	if err := s.roleRepo.UpdateWithMap(id, updates); err != nil {
+		return err
+	}
+	if s.refresher != nil {
+		return s.refresher.RefreshPlatformRole(id)
+	}
+	return nil
 }
 
 func (s *roleService) Delete(id uuid.UUID) error {
@@ -170,7 +232,16 @@ func (s *roleService) Delete(id uuid.UUID) error {
 		if err := tx.Where("role_id = ?", id).Delete(&user.UserRole{}).Error; err != nil {
 			return err
 		}
+		if err := tx.Where("role_id = ?", id).Delete(&user.RoleFeaturePackage{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("role_id = ?", id).Delete(&user.RoleHiddenMenu{}).Error; err != nil {
+			return err
+		}
 		if err := tx.Where("role_id = ?", id).Delete(&user.RoleMenu{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("role_id = ?", id).Delete(&user.RoleDisabledAction{}).Error; err != nil {
 			return err
 		}
 		if err := tx.Where("role_id = ?", id).Delete(&user.RoleActionPermission{}).Error; err != nil {
@@ -183,15 +254,68 @@ func (s *roleService) Delete(id uuid.UUID) error {
 	})
 }
 
-func (s *roleService) GetRoleMenuIDs(roleID uuid.UUID) ([]uuid.UUID, error) {
-	_, err := s.roleRepo.GetByID(roleID)
+func (s *roleService) GetRolePackages(roleID uuid.UUID) ([]uuid.UUID, []user.FeaturePackage, error) {
+	role, err := s.roleRepo.GetByID(roleID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			return nil, ErrRoleNotFound
+			return nil, nil, ErrRoleNotFound
 		}
+		return nil, nil, err
+	}
+	if role.TenantID != nil {
+		return nil, nil, ErrTenantRoleManagedByTeam
+	}
+	packageIDs, err := s.rolePackageRepo.GetPackageIDsByRoleID(roleID)
+	if err != nil {
+		return nil, nil, err
+	}
+	packages, err := s.featurePkgRepo.GetByIDs(packageIDs)
+	if err != nil {
+		return nil, nil, err
+	}
+	return packageIDs, packages, nil
+}
+
+func (s *roleService) SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error {
+	role, err := s.roleRepo.GetByID(roleID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return ErrRoleNotFound
+		}
+		return err
+	}
+	if role.TenantID != nil {
+		return ErrTenantRoleManagedByTeam
+	}
+	if len(packageIDs) > 0 {
+		packages, err := s.featurePkgRepo.GetByIDs(packageIDs)
+		if err != nil {
+			return err
+		}
+		if len(packages) != len(packageIDs) {
+			return errors.New("存在无效的功能包")
+		}
+		for _, item := range packages {
+			if !supportsPlatformPackage(item.ContextType) {
+				return errors.New("仅支持为平台角色绑定平台功能包")
+			}
+		}
+	}
+	if err := s.rolePackageRepo.ReplaceRolePackages(roleID, packageIDs, grantedBy); err != nil {
+		return err
+	}
+	if s.refresher != nil {
+		return s.refresher.RefreshPlatformRole(roleID)
+	}
+	return nil
+}
+
+func (s *roleService) GetRoleMenuIDs(roleID uuid.UUID) ([]uuid.UUID, error) {
+	boundary, err := s.GetRoleMenuBoundary(roleID)
+	if err != nil {
 		return nil, err
 	}
-	return s.roleMenuRepo.GetMenuIDsByRoleID(roleID)
+	return boundary.EffectiveMenuIDs, nil
 }
 
 func (s *roleService) SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error {
@@ -205,18 +329,48 @@ func (s *roleService) SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error 
 	if role.TenantID != nil {
 		return ErrTenantRoleManagedByTeam
 	}
-	return s.roleMenuRepo.SetRoleMenus(roleID, menuIDs)
+	boundary, err := s.GetRoleMenuBoundary(roleID)
+	if err != nil {
+		return err
+	}
+	if !boundary.HasPackageConfig {
+		if err := s.roleHiddenMenuRepo.ReplaceRoleHiddenMenus(roleID, []uuid.UUID{}); err != nil {
+			return err
+		}
+		if err := s.roleMenuRepo.SetRoleMenus(roleID, menuIDs); err != nil {
+			return err
+		}
+		if s.refresher != nil {
+			return s.refresher.RefreshPlatformRole(roleID)
+		}
+		return nil
+	}
+	selectedMenuIDs, err := ensureSubsetUUIDs(menuIDs, boundary.AvailableMenuIDs, "role menus exceed bound feature packages")
+	if err != nil {
+		return err
+	}
+	hiddenMenuIDs := subtractUUIDs(boundary.AvailableMenuIDs, selectedMenuIDs)
+	if err := s.roleHiddenMenuRepo.ReplaceRoleHiddenMenus(roleID, hiddenMenuIDs); err != nil {
+		return err
+	}
+	if err := s.roleMenuRepo.SetRoleMenus(roleID, []uuid.UUID{}); err != nil {
+		return err
+	}
+	if s.refresher != nil {
+		return s.refresher.RefreshPlatformRole(roleID)
+	}
+	return nil
 }
 
 func (s *roleService) GetRoleActions(roleID uuid.UUID) ([]user.RoleActionPermission, error) {
-	_, err := s.roleRepo.GetByID(roleID)
+	boundary, err := s.GetRoleActionBoundary(roleID)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, ErrRoleNotFound
-		}
 		return nil, err
 	}
-	return s.roleActionRepo.GetByRoleID(roleID)
+	if !boundary.HasPackageConfig {
+		return s.roleActionRepo.GetByRoleID(roleID)
+	}
+	return buildRoleActionPermissions(roleID, boundary.EffectiveActionIDs), nil
 }
 
 func (s *roleService) SetRoleActions(roleID uuid.UUID, actions []user.RoleActionPermission) error {
@@ -250,7 +404,37 @@ func (s *roleService) SetRoleActions(roleID uuid.UUID, actions []user.RoleAction
 			return errors.New("功能权限不存在")
 		}
 	}
-	return s.roleActionRepo.SetRoleActions(roleID, actions)
+	boundary, err := s.GetRoleActionBoundary(roleID)
+	if err != nil {
+		return err
+	}
+	if !boundary.HasPackageConfig {
+		if err := s.roleDisabledActionRepo.ReplaceRoleDisabledActions(roleID, []uuid.UUID{}); err != nil {
+			return err
+		}
+		if err := s.roleActionRepo.SetRoleActions(roleID, actions); err != nil {
+			return err
+		}
+		if s.refresher != nil {
+			return s.refresher.RefreshPlatformRole(roleID)
+		}
+		return nil
+	}
+	selectedActionIDs, err := ensureSubsetUUIDs(actionIDs, boundary.AvailableActionIDs, "role actions exceed bound feature packages")
+	if err != nil {
+		return err
+	}
+	disabledActionIDs := subtractUUIDs(boundary.AvailableActionIDs, selectedActionIDs)
+	if err := s.roleDisabledActionRepo.ReplaceRoleDisabledActions(roleID, disabledActionIDs); err != nil {
+		return err
+	}
+	if err := s.roleActionRepo.SetRoleActions(roleID, []user.RoleActionPermission{}); err != nil {
+		return err
+	}
+	if s.refresher != nil {
+		return s.refresher.RefreshPlatformRole(roleID)
+	}
+	return nil
 }
 
 func (s *roleService) GetRoleDataPermissions(roleID uuid.UUID) ([]user.RoleDataPermission, []string, []DataPermissionScopeOption, error) {
@@ -328,4 +512,325 @@ func buildAvailableDataScopeOptions() []DataPermissionScopeOption {
 		{Code: "team", Name: "当前团队"},
 		{Code: "all", Name: "全部数据"},
 	}
+}
+
+func supportsPlatformPackage(contextType string) bool {
+	return contextType == "" || contextType == "platform" || contextType == "platform,team"
+}
+
+func (s *roleService) GetRoleMenuBoundary(roleID uuid.UUID) (*RoleMenuBoundary, error) {
+	role, err := s.roleRepo.GetByID(roleID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrRoleNotFound
+		}
+		return nil, err
+	}
+	if role.TenantID != nil {
+		return nil, ErrTenantRoleManagedByTeam
+	}
+	packageIDs, err := s.rolePackageRepo.GetPackageIDsByRoleID(roleID)
+	if err != nil {
+		return nil, err
+	}
+	expandedPackageIDs, err := s.getExpandedPlatformPackageIDs(roleID)
+	if err != nil {
+		return nil, err
+	}
+	if len(expandedPackageIDs) == 0 {
+		menuIDs, err := s.roleMenuRepo.GetMenuIDsByRoleID(roleID)
+		if err != nil {
+			return nil, err
+		}
+		menuIDs = dedupeUUIDs(menuIDs)
+		return &RoleMenuBoundary{
+			PackageIDs:       dedupeUUIDs(packageIDs),
+			AvailableMenuIDs: menuIDs,
+			EffectiveMenuIDs: menuIDs,
+			MenuSourceMap:    map[uuid.UUID][]uuid.UUID{},
+			HasPackageConfig: false,
+		}, nil
+	}
+	availableMenuIDs, sourceMap, err := s.getPackageMenuBoundary(expandedPackageIDs)
+	if err != nil {
+		return nil, err
+	}
+	hiddenMenuIDs, err := s.roleHiddenMenuRepo.GetMenuIDsByRoleID(roleID)
+	if err != nil {
+		return nil, err
+	}
+	effectiveMenuIDs := subtractUUIDs(availableMenuIDs, hiddenMenuIDs)
+	return &RoleMenuBoundary{
+		PackageIDs:         dedupeUUIDs(packageIDs),
+		ExpandedPackageIDs: dedupeUUIDs(expandedPackageIDs),
+		AvailableMenuIDs:   availableMenuIDs,
+		HiddenMenuIDs:      dedupeUUIDs(hiddenMenuIDs),
+		EffectiveMenuIDs:   effectiveMenuIDs,
+		MenuSourceMap:      filterUUIDSourceMap(sourceMap, availableMenuIDs),
+		HasPackageConfig:   true,
+	}, nil
+}
+
+func (s *roleService) GetRoleActionBoundary(roleID uuid.UUID) (*RoleActionBoundary, error) {
+	role, err := s.roleRepo.GetByID(roleID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrRoleNotFound
+		}
+		return nil, err
+	}
+	if role.TenantID != nil {
+		return nil, ErrTenantRoleManagedByTeam
+	}
+	packageIDs, err := s.rolePackageRepo.GetPackageIDsByRoleID(roleID)
+	if err != nil {
+		return nil, err
+	}
+	expandedPackageIDs, err := s.getExpandedPlatformPackageIDs(roleID)
+	if err != nil {
+		return nil, err
+	}
+	if len(expandedPackageIDs) == 0 {
+		records, err := s.roleActionRepo.GetByRoleID(roleID)
+		if err != nil {
+			return nil, err
+		}
+		effectiveActionIDs := make([]uuid.UUID, 0, len(records))
+		for _, record := range records {
+			effectiveActionIDs = append(effectiveActionIDs, record.ActionID)
+		}
+		effectiveActionIDs = dedupeUUIDs(effectiveActionIDs)
+		return &RoleActionBoundary{
+			PackageIDs:         dedupeUUIDs(packageIDs),
+			AvailableActionIDs: effectiveActionIDs,
+			EffectiveActionIDs: effectiveActionIDs,
+			ActionSourceMap:    map[uuid.UUID][]uuid.UUID{},
+			HasPackageConfig:   false,
+		}, nil
+	}
+	availableActionIDs, sourceMap, err := s.getPackageActionBoundary(expandedPackageIDs)
+	if err != nil {
+		return nil, err
+	}
+	disabledActionIDs, err := s.roleDisabledActionRepo.GetActionIDsByRoleID(roleID)
+	if err != nil {
+		return nil, err
+	}
+	effectiveActionIDs := subtractUUIDs(availableActionIDs, disabledActionIDs)
+	return &RoleActionBoundary{
+		PackageIDs:         dedupeUUIDs(packageIDs),
+		ExpandedPackageIDs: dedupeUUIDs(expandedPackageIDs),
+		AvailableActionIDs: availableActionIDs,
+		DisabledActionIDs:  dedupeUUIDs(disabledActionIDs),
+		EffectiveActionIDs: effectiveActionIDs,
+		ActionSourceMap:    filterUUIDSourceMap(sourceMap, availableActionIDs),
+		HasPackageConfig:   true,
+	}, nil
+}
+
+func (s *roleService) getExpandedPlatformPackageIDs(roleID uuid.UUID) ([]uuid.UUID, error) {
+	packageIDs, err := s.rolePackageRepo.GetPackageIDsByRoleID(roleID)
+	if err != nil {
+		return nil, err
+	}
+	return s.expandPackageIDs(packageIDs, "platform")
+}
+
+func (s *roleService) getPackageActionBoundary(packageIDs []uuid.UUID) ([]uuid.UUID, map[uuid.UUID][]uuid.UUID, error) {
+	result := make([]uuid.UUID, 0)
+	seen := make(map[uuid.UUID]struct{})
+	sourceMap := make(map[uuid.UUID][]uuid.UUID)
+	for _, packageID := range packageIDs {
+		actionIDs, err := s.packageActionRepo.GetActionIDsByPackageID(packageID)
+		if err != nil {
+			return nil, nil, err
+		}
+		for _, actionID := range actionIDs {
+			sourceMap[actionID] = appendUUIDIfMissing(sourceMap[actionID], packageID)
+			if _, ok := seen[actionID]; ok {
+				continue
+			}
+			seen[actionID] = struct{}{}
+			result = append(result, actionID)
+		}
+	}
+	return result, sourceMap, nil
+}
+
+func (s *roleService) getPackageMenuBoundary(packageIDs []uuid.UUID) ([]uuid.UUID, map[uuid.UUID][]uuid.UUID, error) {
+	result := make([]uuid.UUID, 0)
+	seen := make(map[uuid.UUID]struct{})
+	sourceMap := make(map[uuid.UUID][]uuid.UUID)
+	for _, packageID := range packageIDs {
+		menuIDs, err := s.packageMenuRepo.GetMenuIDsByPackageIDs([]uuid.UUID{packageID})
+		if err != nil {
+			return nil, nil, err
+		}
+		for _, menuID := range menuIDs {
+			sourceMap[menuID] = appendUUIDIfMissing(sourceMap[menuID], packageID)
+			if _, ok := seen[menuID]; ok {
+				continue
+			}
+			seen[menuID] = struct{}{}
+			result = append(result, menuID)
+		}
+	}
+	return result, sourceMap, nil
+}
+
+func (s *roleService) expandPackageIDs(packageIDs []uuid.UUID, context string) ([]uuid.UUID, error) {
+	result := make([]uuid.UUID, 0, len(packageIDs))
+	visited := make(map[uuid.UUID]struct{}, len(packageIDs))
+	seen := make(map[uuid.UUID]struct{}, len(packageIDs))
+	for _, packageID := range packageIDs {
+		if err := s.expandPackageID(packageID, context, visited, seen, &result); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *roleService) expandPackageID(packageID uuid.UUID, context string, visited map[uuid.UUID]struct{}, seen map[uuid.UUID]struct{}, result *[]uuid.UUID) error {
+	if _, ok := visited[packageID]; ok {
+		return nil
+	}
+	visited[packageID] = struct{}{}
+	pkg, err := s.featurePkgRepo.GetByID(packageID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+	if pkg.Status != "normal" || !supportsContext(pkg.ContextType, context) {
+		return nil
+	}
+	if pkg.PackageType == "bundle" {
+		childPackageIDs, err := s.packageBundleRepo.GetChildPackageIDs(packageID)
+		if err != nil {
+			return err
+		}
+		for _, childPackageID := range childPackageIDs {
+			if err := s.expandPackageID(childPackageID, context, visited, seen, result); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if _, ok := seen[packageID]; ok {
+		return nil
+	}
+	seen[packageID] = struct{}{}
+	*result = append(*result, packageID)
+	return nil
+}
+
+func supportsContext(packageContext, expectedContext string) bool {
+	if packageContext == "" {
+		return true
+	}
+	if packageContext == expectedContext {
+		return true
+	}
+	return packageContext == "platform,team"
+}
+
+func ensureSubsetUUIDs(selected []uuid.UUID, allowed []uuid.UUID, errMsg string) ([]uuid.UUID, error) {
+	allowedSet := make(map[uuid.UUID]struct{}, len(allowed))
+	for _, id := range allowed {
+		allowedSet[id] = struct{}{}
+	}
+	result := make([]uuid.UUID, 0, len(selected))
+	seen := make(map[uuid.UUID]struct{}, len(selected))
+	for _, id := range selected {
+		if _, ok := allowedSet[id]; !ok {
+			return nil, errors.New(errMsg)
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		result = append(result, id)
+	}
+	return result, nil
+}
+
+func buildRoleActionPermissions(roleID uuid.UUID, actionIDs []uuid.UUID) []user.RoleActionPermission {
+	result := make([]user.RoleActionPermission, 0, len(actionIDs))
+	for _, actionID := range actionIDs {
+		result = append(result, user.RoleActionPermission{
+			RoleID:   roleID,
+			ActionID: actionID,
+		})
+	}
+	return result
+}
+
+func subtractUUIDs(source []uuid.UUID, blocked []uuid.UUID) []uuid.UUID {
+	if len(source) == 0 {
+		return []uuid.UUID{}
+	}
+	if len(blocked) == 0 {
+		return append([]uuid.UUID{}, source...)
+	}
+	blockedSet := make(map[uuid.UUID]struct{}, len(blocked))
+	for _, id := range blocked {
+		blockedSet[id] = struct{}{}
+	}
+	result := make([]uuid.UUID, 0, len(source))
+	seen := make(map[uuid.UUID]struct{}, len(source))
+	for _, id := range source {
+		if _, ok := blockedSet[id]; ok {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		result = append(result, id)
+	}
+	return result
+}
+
+func dedupeUUIDs(items []uuid.UUID) []uuid.UUID {
+	result := make([]uuid.UUID, 0, len(items))
+	seen := make(map[uuid.UUID]struct{}, len(items))
+	for _, id := range items {
+		if id == uuid.Nil {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		result = append(result, id)
+	}
+	return result
+}
+
+func appendUUIDIfMissing(items []uuid.UUID, value uuid.UUID) []uuid.UUID {
+	for _, item := range items {
+		if item == value {
+			return items
+		}
+	}
+	return append(items, value)
+}
+
+func filterUUIDSourceMap(sourceMap map[uuid.UUID][]uuid.UUID, allowed []uuid.UUID) map[uuid.UUID][]uuid.UUID {
+	if len(sourceMap) == 0 {
+		return map[uuid.UUID][]uuid.UUID{}
+	}
+	allowedSet := make(map[uuid.UUID]struct{}, len(allowed))
+	for _, id := range allowed {
+		allowedSet[id] = struct{}{}
+	}
+	result := make(map[uuid.UUID][]uuid.UUID)
+	for id, packageIDs := range sourceMap {
+		if _, ok := allowedSet[id]; !ok {
+			continue
+		}
+		result[id] = dedupeUUIDs(packageIDs)
+	}
+	return result
 }

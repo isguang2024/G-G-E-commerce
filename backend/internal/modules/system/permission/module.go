@@ -10,6 +10,9 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
+	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
 type PermissionModule struct {
@@ -30,10 +33,15 @@ func (m *PermissionModule) Init() error {
 func (m *PermissionModule) RegisterRoutes(rg *gin.RouterGroup) {
 	actionRepo := user.NewPermissionActionRepository(m.db)
 	roleActionRepo := user.NewRoleActionPermissionRepository(m.db)
+	packageActionRepo := user.NewFeaturePackageActionRepository(m.db)
+	teamPackageRepo := user.NewTeamFeaturePackageRepository(m.db)
 	tenantActionRepo := user.NewTenantActionPermissionRepository(m.db)
 	manualActionRepo := user.NewTeamManualActionPermissionRepository(m.db)
 	userActionRepo := user.NewUserActionPermissionRepository(m.db)
-	service := NewPermissionService(actionRepo, roleActionRepo, tenantActionRepo, manualActionRepo, userActionRepo)
+	boundaryService := teamboundary.NewService(m.db)
+	platformService := platformaccess.NewService(m.db)
+	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService)
+	service := NewPermissionService(actionRepo, roleActionRepo, packageActionRepo, teamPackageRepo, tenantActionRepo, manualActionRepo, userActionRepo, boundaryService, refresher)
 	handler := NewPermissionHandler(service, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 

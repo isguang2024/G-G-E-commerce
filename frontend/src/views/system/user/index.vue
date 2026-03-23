@@ -38,8 +38,8 @@
         @submit="handleDialogSubmit"
       />
 
-      <UserActionDialog
-        v-model="actionDialogVisible"
+      <UserPackageDialog
+        v-model="packageDialogVisible"
         :user-data="currentUserDataForAction"
         @success="refreshData"
       />
@@ -83,7 +83,7 @@
   } from '@/api/system-manage'
   import UserSearch from './modules/user-search.vue'
   import UserDialog from './modules/user-dialog.vue'
-  import UserActionDialog from './modules/user-permission-selector-dialog.vue'
+  import UserPackageDialog from './modules/user-package-dialog.vue'
   import { ElTag, ElMessageBox, ElImage, ElDrawer, ElTree, ElIcon, ElMessage } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
 
@@ -102,7 +102,7 @@
   const dialogType = ref<DialogType>('add')
   const dialogVisible = ref(false)
   const currentUserData = ref<Partial<UserListItem>>({})
-  const actionDialogVisible = ref(false)
+  const packageDialogVisible = ref(false)
   const currentUserDataForAction = ref<UserListItem | undefined>(undefined)
 
   // 选中行
@@ -275,16 +275,16 @@
             const list = [
               { key: 'copy', label: '复制用户ID', icon: 'ri:file-copy-line' },
               {
+                key: 'packages',
+                label: '功能包',
+                icon: 'ri:apps-2-line',
+                auth: 'platform.package.assign'
+              },
+              {
                 key: 'permission',
                 label: '查看权限',
                 icon: 'ri:shield-check-line',
                 auth: 'system.user.manage'
-              },
-              {
-                key: 'action',
-                label: '功能权限',
-                icon: 'ri:shield-keyhole-line',
-                auth: 'system.user.assign_action'
               },
               { key: 'edit', label: '编辑用户', icon: 'ri:edit-2-line', auth: 'system.user.manage' },
               {
@@ -362,10 +362,10 @@
     if (item.key === 'copy') {
       navigator.clipboard.writeText(row.id)
       ElMessage.success('用户ID已复制')
+    } else if (item.key === 'packages') {
+      showPackageDialog(row)
     } else if (item.key === 'permission') {
       showPermissionDrawer(row)
-    } else if (item.key === 'action') {
-      showActionDialog(row)
     } else if (item.key === 'edit') {
       showDialog('edit', row)
     } else if (item.key === 'delete') {
@@ -373,9 +373,9 @@
     }
   }
 
-  const showActionDialog = (row: UserListItem) => {
+  const showPackageDialog = (row: UserListItem) => {
     currentUserDataForAction.value = row
-    actionDialogVisible.value = true
+    packageDialogVisible.value = true
   }
 
   /**

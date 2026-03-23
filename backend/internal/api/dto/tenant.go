@@ -44,8 +44,8 @@ type TenantMemberRoleRequest struct {
 
 // TenantMemberRolesRequest 设置成员在本团队内的角色（Role 表角色 ID 列表，用于菜单权限）
 type TenantMemberRolesRequest struct {
-	RoleIDs   []string `json:"role_ids"`
-	RoleCode  string   `json:"role_code"` // 角色编码，如 team_admin, team_member
+	RoleIDs  []string `json:"role_ids"`
+	RoleCode string   `json:"role_code"` // 角色编码，如 team_admin, team_member
 }
 
 // TenantUpdateMemberRoleRequest 更新成员角色请求

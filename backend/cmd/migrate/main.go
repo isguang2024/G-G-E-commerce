@@ -254,6 +254,11 @@ func runNamedMigrations(logger *zap.Logger) error {
 						action_id uuid NOT NULL,
 						created_at timestamptz NOT NULL DEFAULT NOW()
 					)`,
+					`CREATE TABLE IF NOT EXISTS feature_package_menus (
+						package_id uuid NOT NULL,
+						menu_id uuid NOT NULL,
+						created_at timestamptz NOT NULL DEFAULT NOW()
+					)`,
 					`CREATE TABLE IF NOT EXISTS team_feature_packages (
 						id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 						team_id uuid NOT NULL,
@@ -266,6 +271,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 					)`,
 					`CREATE UNIQUE INDEX IF NOT EXISTS idx_feature_packages_key_unique ON feature_packages (package_key) WHERE deleted_at IS NULL`,
 					`CREATE UNIQUE INDEX IF NOT EXISTS idx_feature_package_actions_unique ON feature_package_actions (package_id, action_id)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_feature_package_menus_unique ON feature_package_menus (package_id, menu_id)`,
 					`CREATE UNIQUE INDEX IF NOT EXISTS idx_team_feature_packages_unique ON team_feature_packages (team_id, package_id)`,
 				}
 				for _, statement := range statements {
@@ -296,6 +302,98 @@ func runNamedMigrations(logger *zap.Logger) error {
 					}
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260323_team_manual_action_schema"))
+				return nil
+			},
+		},
+		{
+			Name: "20260323_role_feature_package_schema",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`CREATE TABLE IF NOT EXISTS role_feature_packages (
+						id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+						role_id uuid NOT NULL,
+						package_id uuid NOT NULL,
+						enabled boolean NOT NULL DEFAULT TRUE,
+						granted_by uuid,
+						granted_at timestamptz,
+						created_at timestamptz NOT NULL DEFAULT NOW(),
+						updated_at timestamptz NOT NULL DEFAULT NOW()
+					)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_role_feature_packages_unique ON role_feature_packages (role_id, package_id)`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260323_role_feature_package_schema"))
+				return nil
+			},
+		},
+		{
+			Name: "20260323_feature_package_v2_schema",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`ALTER TABLE feature_packages ADD COLUMN IF NOT EXISTS package_type varchar(20) NOT NULL DEFAULT 'base'`,
+					`ALTER TABLE feature_packages ADD COLUMN IF NOT EXISTS is_builtin boolean NOT NULL DEFAULT FALSE`,
+					`UPDATE feature_packages SET package_type = 'base' WHERE COALESCE(package_type, '') = ''`,
+					`CREATE TABLE IF NOT EXISTS feature_package_bundles (
+						package_id uuid NOT NULL,
+						child_package_id uuid NOT NULL,
+						created_at timestamptz NOT NULL DEFAULT NOW()
+					)`,
+					`CREATE TABLE IF NOT EXISTS user_feature_packages (
+						id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+						user_id uuid NOT NULL,
+						package_id uuid NOT NULL,
+						enabled boolean NOT NULL DEFAULT TRUE,
+						granted_by uuid,
+						granted_at timestamptz,
+						created_at timestamptz NOT NULL DEFAULT NOW(),
+						updated_at timestamptz NOT NULL DEFAULT NOW()
+					)`,
+					`CREATE TABLE IF NOT EXISTS role_hidden_menus (
+						role_id uuid NOT NULL,
+						menu_id uuid NOT NULL,
+						created_at timestamptz NOT NULL DEFAULT NOW()
+					)`,
+					`CREATE TABLE IF NOT EXISTS role_disabled_actions (
+						role_id uuid NOT NULL,
+						action_id uuid NOT NULL,
+						created_at timestamptz NOT NULL DEFAULT NOW()
+					)`,
+					`CREATE TABLE IF NOT EXISTS team_blocked_menus (
+						team_id uuid NOT NULL,
+						menu_id uuid NOT NULL,
+						created_at timestamptz NOT NULL DEFAULT NOW(),
+						updated_at timestamptz NOT NULL DEFAULT NOW()
+					)`,
+					`CREATE TABLE IF NOT EXISTS team_blocked_actions (
+						team_id uuid NOT NULL,
+						action_id uuid NOT NULL,
+						created_at timestamptz NOT NULL DEFAULT NOW(),
+						updated_at timestamptz NOT NULL DEFAULT NOW()
+					)`,
+					`CREATE TABLE IF NOT EXISTS user_hidden_menus (
+						user_id uuid NOT NULL,
+						menu_id uuid NOT NULL,
+						created_at timestamptz NOT NULL DEFAULT NOW(),
+						updated_at timestamptz NOT NULL DEFAULT NOW()
+					)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_feature_package_bundles_unique ON feature_package_bundles (package_id, child_package_id)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_feature_packages_unique ON user_feature_packages (user_id, package_id)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_role_hidden_menus_unique ON role_hidden_menus (role_id, menu_id)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_role_disabled_actions_unique ON role_disabled_actions (role_id, action_id)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_team_blocked_menus_unique ON team_blocked_menus (team_id, menu_id)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_team_blocked_actions_unique ON team_blocked_actions (team_id, action_id)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_hidden_menus_unique ON user_hidden_menus (user_id, menu_id)`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260323_feature_package_v2_schema"))
 				return nil
 			},
 		},
@@ -1122,9 +1220,11 @@ type permissionActionSeed struct {
 
 type featurePackageSeed struct {
 	PackageKey     string
+	PackageType    string
 	Name           string
 	Description    string
 	ContextType    string
+	IsBuiltin      bool
 	Status         string
 	SortOrder      int
 	PermissionKeys []string
@@ -1224,36 +1324,44 @@ func defaultFeaturePackageSeeds() []featurePackageSeed {
 	return []featurePackageSeed{
 		{
 			PackageKey:     "platform.system_admin",
+			PackageType:    "base",
 			Name:           "平台系统管理包",
 			Description:    "包含平台系统管理核心能力",
 			ContextType:    "platform",
+			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      1,
 			PermissionKeys: []string{"system.user.manage", "system.role.manage", "system.permission.manage"},
 		},
 		{
 			PackageKey:     "platform.menu_admin",
+			PackageType:    "base",
 			Name:           "平台菜单管理包",
 			Description:    "包含菜单管理与菜单备份能力",
 			ContextType:    "platform",
+			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      2,
 			PermissionKeys: []string{"system.menu.manage", "system.menu.backup"},
 		},
 		{
 			PackageKey:     "platform.api_admin",
+			PackageType:    "base",
 			Name:           "平台接口管理包",
 			Description:    "包含 API 注册表查看与同步能力",
 			ContextType:    "platform",
+			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      3,
 			PermissionKeys: []string{"system.api_registry.view", "system.api_registry.sync", "platform.package.manage", "platform.package.assign"},
 		},
 		{
 			PackageKey:     "team.member_admin",
+			PackageType:    "base",
 			Name:           "团队成员管理包",
 			Description:    "包含团队成员、角色和功能权限配置能力",
 			ContextType:    "team",
+			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      10,
 			PermissionKeys: []string{"team.member.manage", "team.member.assign_role", "team.member.assign_action", "team.boundary.manage"},
@@ -1265,9 +1373,11 @@ func initDefaultFeaturePackages(logger *zap.Logger) error {
 	for _, seed := range defaultFeaturePackageSeeds() {
 		item := usermodel.FeaturePackage{
 			PackageKey:  seed.PackageKey,
+			PackageType: seed.PackageType,
 			Name:        seed.Name,
 			Description: seed.Description,
 			ContextType: seed.ContextType,
+			IsBuiltin:   seed.IsBuiltin,
 			Status:      seed.Status,
 			SortOrder:   seed.SortOrder,
 		}
@@ -1287,7 +1397,9 @@ func initDefaultFeaturePackages(logger *zap.Logger) error {
 			if err := database.DB.Model(&existing).Updates(map[string]interface{}{
 				"name":         item.Name,
 				"description":  item.Description,
+				"package_type": item.PackageType,
 				"context_type": item.ContextType,
+				"is_builtin":   item.IsBuiltin,
 				"status":       item.Status,
 				"sort_order":   item.SortOrder,
 			}).Error; err != nil {

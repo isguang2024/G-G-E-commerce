@@ -51,6 +51,12 @@
         :role-data="currentRoleData"
         @success="handlePermissionSuccess"
       />
+
+      <RolePackageDialog
+        v-model="packageDialog"
+        :role-data="currentRoleData"
+        @success="handlePermissionSuccess"
+      />
     </template>
   </div>
 </template>
@@ -67,6 +73,7 @@ import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
 import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
 import RoleSearch from './modules/role-search.vue'
 import RoleEditDialog from './modules/role-edit-dialog.vue'
+import RolePackageDialog from './modules/role-package-dialog.vue'
 import RolePermissionDialog from './modules/role-permission-selector-dialog.vue'
 
 defineOptions({ name: 'Role' })
@@ -80,6 +87,7 @@ const hasNestedRoute = computed(() => route.matched.length > 2)
 const showSearchBar = ref(false)
 const dialogVisible = ref(false)
 const permissionDialog = ref(false)
+const packageDialog = ref(false)
 const dialogType = ref<'add' | 'edit'>('add')
 const currentRoleData = ref<RoleListItem | undefined>()
 
@@ -166,6 +174,12 @@ const {
           const isDefaultRole = ['admin', 'team_admin', 'team_member'].includes(row.roleCode)
           const list: ButtonMoreItem[] = [
             {
+              key: 'packages',
+              label: '功能包',
+              icon: 'ri:apps-2-line',
+              auth: 'platform.package.assign'
+            },
+            {
               key: 'permission',
               label: '权限配置',
               icon: 'ri:shield-keyhole-line',
@@ -208,6 +222,11 @@ function showPermissionDialog(row?: RoleListItem) {
   permissionDialog.value = true
 }
 
+function showPackageDialog(row?: RoleListItem) {
+  currentRoleData.value = row
+  packageDialog.value = true
+}
+
 function handleSearch(params: Record<string, any>) {
   const { daterange, ...rest } = params
   const [startTime, endTime] = Array.isArray(daterange) ? daterange : [null, null]
@@ -216,6 +235,11 @@ function handleSearch(params: Record<string, any>) {
 }
 
 function handleActionClick(item: ButtonMoreItem, row: RoleListItem) {
+  if (item.key === 'packages') {
+    showPackageDialog(row)
+    return
+  }
+
   if (item.key === 'permission') {
     showPermissionDialog(row)
     return

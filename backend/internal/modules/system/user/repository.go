@@ -688,7 +688,7 @@ func (r *userRoleRepository) GetEffectiveRoleIDsByUserAndTenant(userID uuid.UUID
 	if tenantID == nil {
 		query = query.Where("tenant_id IS NULL")
 	} else {
-		query = query.Where("tenant_id IS NULL OR tenant_id = ?", *tenantID)
+		query = query.Where("tenant_id = ?", *tenantID)
 	}
 	err := query.Pluck("role_id", &roleIDs).Error
 	return roleIDs, err
@@ -703,7 +703,7 @@ func (r *userRoleRepository) GetEffectiveActiveRoleIDsByUserAndTenant(userID uui
 	if tenantID == nil {
 		query = query.Where("user_roles.tenant_id IS NULL")
 	} else {
-		query = query.Where("user_roles.tenant_id IS NULL OR user_roles.tenant_id = ?", *tenantID)
+		query = query.Where("user_roles.tenant_id = ?", *tenantID)
 	}
 	err := query.Distinct("user_roles.role_id").Pluck("user_roles.role_id", &roleIDs).Error
 	return roleIDs, err
@@ -717,7 +717,7 @@ func (r *userRoleRepository) GetEffectiveRoleCodesByUserAndTenant(userID uuid.UU
 	if tenantID == nil {
 		query = query.Where("user_roles.tenant_id IS NULL")
 	} else {
-		query = query.Where("user_roles.tenant_id IS NULL OR user_roles.tenant_id = ?", *tenantID)
+		query = query.Where("user_roles.tenant_id = ?", *tenantID)
 	}
 	err := query.Pluck("roles.code", &codes).Error
 	return codes, err
@@ -1371,6 +1371,7 @@ type APIEndpointRepository interface {
 type FeaturePackageRepository interface {
 	List(offset, limit int, params *FeaturePackageListParams) ([]FeaturePackage, int64, error)
 	GetByID(id uuid.UUID) (*FeaturePackage, error)
+	GetByIDs(ids []uuid.UUID) ([]FeaturePackage, error)
 	GetByPackageKey(packageKey string) (*FeaturePackage, error)
 	Create(item *FeaturePackage) error
 	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
@@ -1380,6 +1381,7 @@ type FeaturePackageRepository interface {
 type FeaturePackageListParams struct {
 	Keyword     string
 	PackageKey  string
+	PackageType string
 	Name        string
 	ContextType string
 	Status      string
@@ -1403,11 +1405,19 @@ func (r *featurePackageRepository) List(offset, limit int, params *FeaturePackag
 		if params.PackageKey != "" {
 			query = query.Where("package_key LIKE ?", "%"+params.PackageKey+"%")
 		}
+		if params.PackageType != "" {
+			query = query.Where("package_type = ?", params.PackageType)
+		}
 		if params.Name != "" {
 			query = query.Where("name LIKE ?", "%"+params.Name+"%")
 		}
 		if params.ContextType != "" {
-			query = query.Where("context_type = ?", params.ContextType)
+			switch params.ContextType {
+			case "platform", "team":
+				query = query.Where("(context_type = ? OR context_type = ?)", params.ContextType, "platform,team")
+			default:
+				query = query.Where("context_type = ?", params.ContextType)
+			}
 		}
 		if params.Status != "" {
 			query = query.Where("status = ?", params.Status)
@@ -1432,6 +1442,15 @@ func (r *featurePackageRepository) GetByID(id uuid.UUID) (*FeaturePackage, error
 		return nil, err
 	}
 	return &item, nil
+}
+
+func (r *featurePackageRepository) GetByIDs(ids []uuid.UUID) ([]FeaturePackage, error) {
+	var items []FeaturePackage
+	if len(ids) == 0 {
+		return items, nil
+	}
+	err := r.db.Where("id IN ?", ids).Order("sort_order ASC, created_at DESC").Find(&items).Error
+	return items, err
 }
 
 func (r *featurePackageRepository) GetByPackageKey(packageKey string) (*FeaturePackage, error) {
@@ -1460,9 +1479,11 @@ func (r *featurePackageRepository) Delete(id uuid.UUID) error {
 
 type FeaturePackageActionRepository interface {
 	GetActionIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error)
+	GetPackageIDsByActionID(actionID uuid.UUID) ([]uuid.UUID, error)
 	CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error)
 	ReplacePackageActions(packageID uuid.UUID, actionIDs []uuid.UUID) error
 	DeleteByPackageID(packageID uuid.UUID) error
+	DeleteByActionID(actionID uuid.UUID) error
 }
 
 type featurePackageActionRepository struct {
@@ -1477,6 +1498,12 @@ func (r *featurePackageActionRepository) GetActionIDsByPackageID(packageID uuid.
 	var actionIDs []uuid.UUID
 	err := r.db.Model(&FeaturePackageAction{}).Where("package_id = ?", packageID).Pluck("action_id", &actionIDs).Error
 	return actionIDs, err
+}
+
+func (r *featurePackageActionRepository) GetPackageIDsByActionID(actionID uuid.UUID) ([]uuid.UUID, error) {
+	var packageIDs []uuid.UUID
+	err := r.db.Model(&FeaturePackageAction{}).Where("action_id = ?", actionID).Pluck("package_id", &packageIDs).Error
+	return packageIDs, err
 }
 
 func (r *featurePackageActionRepository) CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
@@ -1528,6 +1555,97 @@ func (r *featurePackageActionRepository) ReplacePackageActions(packageID uuid.UU
 
 func (r *featurePackageActionRepository) DeleteByPackageID(packageID uuid.UUID) error {
 	return r.db.Where("package_id = ?", packageID).Delete(&FeaturePackageAction{}).Error
+}
+
+func (r *featurePackageActionRepository) DeleteByActionID(actionID uuid.UUID) error {
+	return r.db.Where("action_id = ?", actionID).Delete(&FeaturePackageAction{}).Error
+}
+
+type FeaturePackageMenuRepository interface {
+	GetMenuIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error)
+	GetMenuIDsByPackageIDs(packageIDs []uuid.UUID) ([]uuid.UUID, error)
+	CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error)
+	ReplacePackageMenus(packageID uuid.UUID, menuIDs []uuid.UUID) error
+	DeleteByPackageID(packageID uuid.UUID) error
+	DeleteByMenuID(menuID uuid.UUID) error
+}
+
+type featurePackageMenuRepository struct {
+	db *gorm.DB
+}
+
+func NewFeaturePackageMenuRepository(db *gorm.DB) FeaturePackageMenuRepository {
+	return &featurePackageMenuRepository{db: db}
+}
+
+func (r *featurePackageMenuRepository) GetMenuIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error) {
+	var menuIDs []uuid.UUID
+	err := r.db.Model(&FeaturePackageMenu{}).Where("package_id = ?", packageID).Pluck("menu_id", &menuIDs).Error
+	return menuIDs, err
+}
+
+func (r *featurePackageMenuRepository) GetMenuIDsByPackageIDs(packageIDs []uuid.UUID) ([]uuid.UUID, error) {
+	var menuIDs []uuid.UUID
+	if len(packageIDs) == 0 {
+		return menuIDs, nil
+	}
+	err := r.db.Model(&FeaturePackageMenu{}).Distinct("menu_id").Where("package_id IN ?", packageIDs).Pluck("menu_id", &menuIDs).Error
+	return menuIDs, err
+}
+
+func (r *featurePackageMenuRepository) CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
+	result := make(map[uuid.UUID]int64, len(packageIDs))
+	if len(packageIDs) == 0 {
+		return result, nil
+	}
+	type row struct {
+		PackageID uuid.UUID
+		Total     int64
+	}
+	var rows []row
+	if err := r.db.Model(&FeaturePackageMenu{}).
+		Select("package_id, COUNT(*) AS total").
+		Where("package_id IN ?", packageIDs).
+		Group("package_id").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	for _, item := range rows {
+		result[item.PackageID] = item.Total
+	}
+	return result, nil
+}
+
+func (r *featurePackageMenuRepository) ReplacePackageMenus(packageID uuid.UUID, menuIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("package_id = ?", packageID).Delete(&FeaturePackageMenu{}).Error; err != nil {
+			return err
+		}
+		if len(menuIDs) == 0 {
+			return nil
+		}
+		items := make([]FeaturePackageMenu, 0, len(menuIDs))
+		seen := make(map[uuid.UUID]struct{}, len(menuIDs))
+		for _, menuID := range menuIDs {
+			if _, ok := seen[menuID]; ok {
+				continue
+			}
+			seen[menuID] = struct{}{}
+			items = append(items, FeaturePackageMenu{PackageID: packageID, MenuID: menuID})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *featurePackageMenuRepository) DeleteByPackageID(packageID uuid.UUID) error {
+	return r.db.Where("package_id = ?", packageID).Delete(&FeaturePackageMenu{}).Error
+}
+
+func (r *featurePackageMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
+	return r.db.Where("menu_id = ?", menuID).Delete(&FeaturePackageMenu{}).Error
 }
 
 type TeamFeaturePackageRepository interface {
@@ -1618,6 +1736,463 @@ func (r *teamFeaturePackageRepository) ReplaceTeamPackages(teamID uuid.UUID, pac
 
 func (r *teamFeaturePackageRepository) DeleteByPackageID(packageID uuid.UUID) error {
 	return r.db.Where("package_id = ?", packageID).Delete(&TeamFeaturePackage{}).Error
+}
+
+type RoleFeaturePackageRepository interface {
+	GetPackageIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error
+	DeleteByRoleID(roleID uuid.UUID) error
+	DeleteByPackageID(packageID uuid.UUID) error
+}
+
+type roleFeaturePackageRepository struct {
+	db *gorm.DB
+}
+
+func NewRoleFeaturePackageRepository(db *gorm.DB) RoleFeaturePackageRepository {
+	return &roleFeaturePackageRepository{db: db}
+}
+
+func (r *roleFeaturePackageRepository) GetPackageIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error) {
+	var packageIDs []uuid.UUID
+	err := r.db.Model(&RoleFeaturePackage{}).
+		Where("role_id = ? AND enabled = ?", roleID, true).
+		Pluck("package_id", &packageIDs).Error
+	return packageIDs, err
+}
+
+func (r *roleFeaturePackageRepository) ReplaceRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("role_id = ?", roleID).Delete(&RoleFeaturePackage{}).Error; err != nil {
+			return err
+		}
+		if len(packageIDs) == 0 {
+			return nil
+		}
+		items := make([]RoleFeaturePackage, 0, len(packageIDs))
+		seen := make(map[uuid.UUID]struct{}, len(packageIDs))
+		now := time.Now()
+		for _, packageID := range packageIDs {
+			if _, ok := seen[packageID]; ok {
+				continue
+			}
+			seen[packageID] = struct{}{}
+			items = append(items, RoleFeaturePackage{
+				RoleID:    roleID,
+				PackageID: packageID,
+				Enabled:   true,
+				GrantedBy: grantedBy,
+				GrantedAt: &now,
+			})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *roleFeaturePackageRepository) DeleteByRoleID(roleID uuid.UUID) error {
+	return r.db.Where("role_id = ?", roleID).Delete(&RoleFeaturePackage{}).Error
+}
+
+func (r *roleFeaturePackageRepository) DeleteByPackageID(packageID uuid.UUID) error {
+	return r.db.Where("package_id = ?", packageID).Delete(&RoleFeaturePackage{}).Error
+}
+
+type FeaturePackageBundleRepository interface {
+	GetChildPackageIDs(packageID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceChildPackages(packageID uuid.UUID, childPackageIDs []uuid.UUID) error
+	DeleteByPackageID(packageID uuid.UUID) error
+	DeleteByChildPackageID(childPackageID uuid.UUID) error
+}
+
+type featurePackageBundleRepository struct {
+	db *gorm.DB
+}
+
+func NewFeaturePackageBundleRepository(db *gorm.DB) FeaturePackageBundleRepository {
+	return &featurePackageBundleRepository{db: db}
+}
+
+func (r *featurePackageBundleRepository) GetChildPackageIDs(packageID uuid.UUID) ([]uuid.UUID, error) {
+	var ids []uuid.UUID
+	err := r.db.Model(&FeaturePackageBundle{}).Where("package_id = ?", packageID).Pluck("child_package_id", &ids).Error
+	return ids, err
+}
+
+func (r *featurePackageBundleRepository) ReplaceChildPackages(packageID uuid.UUID, childPackageIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("package_id = ?", packageID).Delete(&FeaturePackageBundle{}).Error; err != nil {
+			return err
+		}
+		if len(childPackageIDs) == 0 {
+			return nil
+		}
+		items := make([]FeaturePackageBundle, 0, len(childPackageIDs))
+		seen := make(map[uuid.UUID]struct{}, len(childPackageIDs))
+		for _, childPackageID := range childPackageIDs {
+			if _, ok := seen[childPackageID]; ok {
+				continue
+			}
+			seen[childPackageID] = struct{}{}
+			items = append(items, FeaturePackageBundle{PackageID: packageID, ChildPackageID: childPackageID})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *featurePackageBundleRepository) DeleteByPackageID(packageID uuid.UUID) error {
+	return r.db.Where("package_id = ?", packageID).Delete(&FeaturePackageBundle{}).Error
+}
+
+func (r *featurePackageBundleRepository) DeleteByChildPackageID(childPackageID uuid.UUID) error {
+	return r.db.Where("child_package_id = ?", childPackageID).Delete(&FeaturePackageBundle{}).Error
+}
+
+type UserFeaturePackageRepository interface {
+	GetPackageIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceUserPackages(userID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error
+	DeleteByUserID(userID uuid.UUID) error
+	DeleteByPackageID(packageID uuid.UUID) error
+}
+
+type userFeaturePackageRepository struct {
+	db *gorm.DB
+}
+
+func NewUserFeaturePackageRepository(db *gorm.DB) UserFeaturePackageRepository {
+	return &userFeaturePackageRepository{db: db}
+}
+
+func (r *userFeaturePackageRepository) GetPackageIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error) {
+	var packageIDs []uuid.UUID
+	err := r.db.Model(&UserFeaturePackage{}).
+		Where("user_id = ? AND enabled = ?", userID, true).
+		Pluck("package_id", &packageIDs).Error
+	return packageIDs, err
+}
+
+func (r *userFeaturePackageRepository) ReplaceUserPackages(userID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("user_id = ?", userID).Delete(&UserFeaturePackage{}).Error; err != nil {
+			return err
+		}
+		if len(packageIDs) == 0 {
+			return nil
+		}
+		now := time.Now()
+		items := make([]UserFeaturePackage, 0, len(packageIDs))
+		seen := make(map[uuid.UUID]struct{}, len(packageIDs))
+		for _, packageID := range packageIDs {
+			if _, ok := seen[packageID]; ok {
+				continue
+			}
+			seen[packageID] = struct{}{}
+			items = append(items, UserFeaturePackage{
+				UserID:    userID,
+				PackageID: packageID,
+				Enabled:   true,
+				GrantedBy: grantedBy,
+				GrantedAt: &now,
+			})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *userFeaturePackageRepository) DeleteByUserID(userID uuid.UUID) error {
+	return r.db.Where("user_id = ?", userID).Delete(&UserFeaturePackage{}).Error
+}
+
+func (r *userFeaturePackageRepository) DeleteByPackageID(packageID uuid.UUID) error {
+	return r.db.Where("package_id = ?", packageID).Delete(&UserFeaturePackage{}).Error
+}
+
+type RoleHiddenMenuRepository interface {
+	GetMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceRoleHiddenMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error
+	DeleteByRoleID(roleID uuid.UUID) error
+	DeleteByMenuID(menuID uuid.UUID) error
+}
+
+type roleHiddenMenuRepository struct {
+	db *gorm.DB
+}
+
+func NewRoleHiddenMenuRepository(db *gorm.DB) RoleHiddenMenuRepository {
+	return &roleHiddenMenuRepository{db: db}
+}
+
+func (r *roleHiddenMenuRepository) GetMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error) {
+	var menuIDs []uuid.UUID
+	err := r.db.Model(&RoleHiddenMenu{}).Where("role_id = ?", roleID).Pluck("menu_id", &menuIDs).Error
+	return menuIDs, err
+}
+
+func (r *roleHiddenMenuRepository) ReplaceRoleHiddenMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("role_id = ?", roleID).Delete(&RoleHiddenMenu{}).Error; err != nil {
+			return err
+		}
+		if len(menuIDs) == 0 {
+			return nil
+		}
+		items := make([]RoleHiddenMenu, 0, len(menuIDs))
+		seen := make(map[uuid.UUID]struct{}, len(menuIDs))
+		for _, menuID := range menuIDs {
+			if menuID == uuid.Nil {
+				continue
+			}
+			if _, ok := seen[menuID]; ok {
+				continue
+			}
+			seen[menuID] = struct{}{}
+			items = append(items, RoleHiddenMenu{RoleID: roleID, MenuID: menuID})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *roleHiddenMenuRepository) DeleteByRoleID(roleID uuid.UUID) error {
+	return r.db.Where("role_id = ?", roleID).Delete(&RoleHiddenMenu{}).Error
+}
+
+func (r *roleHiddenMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
+	return r.db.Where("menu_id = ?", menuID).Delete(&RoleHiddenMenu{}).Error
+}
+
+type RoleDisabledActionRepository interface {
+	GetActionIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceRoleDisabledActions(roleID uuid.UUID, actionIDs []uuid.UUID) error
+	DeleteByRoleID(roleID uuid.UUID) error
+	DeleteByActionID(actionID uuid.UUID) error
+}
+
+type roleDisabledActionRepository struct {
+	db *gorm.DB
+}
+
+func NewRoleDisabledActionRepository(db *gorm.DB) RoleDisabledActionRepository {
+	return &roleDisabledActionRepository{db: db}
+}
+
+func (r *roleDisabledActionRepository) GetActionIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error) {
+	var actionIDs []uuid.UUID
+	err := r.db.Model(&RoleDisabledAction{}).Where("role_id = ?", roleID).Pluck("action_id", &actionIDs).Error
+	return actionIDs, err
+}
+
+func (r *roleDisabledActionRepository) ReplaceRoleDisabledActions(roleID uuid.UUID, actionIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("role_id = ?", roleID).Delete(&RoleDisabledAction{}).Error; err != nil {
+			return err
+		}
+		if len(actionIDs) == 0 {
+			return nil
+		}
+		items := make([]RoleDisabledAction, 0, len(actionIDs))
+		seen := make(map[uuid.UUID]struct{}, len(actionIDs))
+		for _, actionID := range actionIDs {
+			if actionID == uuid.Nil {
+				continue
+			}
+			if _, ok := seen[actionID]; ok {
+				continue
+			}
+			seen[actionID] = struct{}{}
+			items = append(items, RoleDisabledAction{RoleID: roleID, ActionID: actionID})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *roleDisabledActionRepository) DeleteByRoleID(roleID uuid.UUID) error {
+	return r.db.Where("role_id = ?", roleID).Delete(&RoleDisabledAction{}).Error
+}
+
+func (r *roleDisabledActionRepository) DeleteByActionID(actionID uuid.UUID) error {
+	return r.db.Where("action_id = ?", actionID).Delete(&RoleDisabledAction{}).Error
+}
+
+type TeamBlockedMenuRepository interface {
+	GetMenuIDsByTeamID(teamID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceTeamBlockedMenus(teamID uuid.UUID, menuIDs []uuid.UUID) error
+	DeleteByTeamID(teamID uuid.UUID) error
+	DeleteByMenuID(menuID uuid.UUID) error
+}
+
+type teamBlockedMenuRepository struct {
+	db *gorm.DB
+}
+
+func NewTeamBlockedMenuRepository(db *gorm.DB) TeamBlockedMenuRepository {
+	return &teamBlockedMenuRepository{db: db}
+}
+
+func (r *teamBlockedMenuRepository) GetMenuIDsByTeamID(teamID uuid.UUID) ([]uuid.UUID, error) {
+	var menuIDs []uuid.UUID
+	err := r.db.Model(&TeamBlockedMenu{}).Where("team_id = ?", teamID).Pluck("menu_id", &menuIDs).Error
+	return menuIDs, err
+}
+
+func (r *teamBlockedMenuRepository) ReplaceTeamBlockedMenus(teamID uuid.UUID, menuIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("team_id = ?", teamID).Delete(&TeamBlockedMenu{}).Error; err != nil {
+			return err
+		}
+		if len(menuIDs) == 0 {
+			return nil
+		}
+		items := make([]TeamBlockedMenu, 0, len(menuIDs))
+		seen := make(map[uuid.UUID]struct{}, len(menuIDs))
+		for _, menuID := range menuIDs {
+			if menuID == uuid.Nil {
+				continue
+			}
+			if _, ok := seen[menuID]; ok {
+				continue
+			}
+			seen[menuID] = struct{}{}
+			items = append(items, TeamBlockedMenu{TeamID: teamID, MenuID: menuID})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *teamBlockedMenuRepository) DeleteByTeamID(teamID uuid.UUID) error {
+	return r.db.Where("team_id = ?", teamID).Delete(&TeamBlockedMenu{}).Error
+}
+
+func (r *teamBlockedMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
+	return r.db.Where("menu_id = ?", menuID).Delete(&TeamBlockedMenu{}).Error
+}
+
+type TeamBlockedActionRepository interface {
+	GetActionIDsByTeamID(teamID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceTeamBlockedActions(teamID uuid.UUID, actionIDs []uuid.UUID) error
+	DeleteByTeamID(teamID uuid.UUID) error
+	DeleteByActionID(actionID uuid.UUID) error
+}
+
+type teamBlockedActionRepository struct {
+	db *gorm.DB
+}
+
+func NewTeamBlockedActionRepository(db *gorm.DB) TeamBlockedActionRepository {
+	return &teamBlockedActionRepository{db: db}
+}
+
+func (r *teamBlockedActionRepository) GetActionIDsByTeamID(teamID uuid.UUID) ([]uuid.UUID, error) {
+	var actionIDs []uuid.UUID
+	err := r.db.Model(&TeamBlockedAction{}).Where("team_id = ?", teamID).Pluck("action_id", &actionIDs).Error
+	return actionIDs, err
+}
+
+func (r *teamBlockedActionRepository) ReplaceTeamBlockedActions(teamID uuid.UUID, actionIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("team_id = ?", teamID).Delete(&TeamBlockedAction{}).Error; err != nil {
+			return err
+		}
+		if len(actionIDs) == 0 {
+			return nil
+		}
+		items := make([]TeamBlockedAction, 0, len(actionIDs))
+		seen := make(map[uuid.UUID]struct{}, len(actionIDs))
+		for _, actionID := range actionIDs {
+			if actionID == uuid.Nil {
+				continue
+			}
+			if _, ok := seen[actionID]; ok {
+				continue
+			}
+			seen[actionID] = struct{}{}
+			items = append(items, TeamBlockedAction{TeamID: teamID, ActionID: actionID})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *teamBlockedActionRepository) DeleteByTeamID(teamID uuid.UUID) error {
+	return r.db.Where("team_id = ?", teamID).Delete(&TeamBlockedAction{}).Error
+}
+
+func (r *teamBlockedActionRepository) DeleteByActionID(actionID uuid.UUID) error {
+	return r.db.Where("action_id = ?", actionID).Delete(&TeamBlockedAction{}).Error
+}
+
+type UserHiddenMenuRepository interface {
+	GetMenuIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceUserHiddenMenus(userID uuid.UUID, menuIDs []uuid.UUID) error
+	DeleteByUserID(userID uuid.UUID) error
+	DeleteByMenuID(menuID uuid.UUID) error
+}
+
+type userHiddenMenuRepository struct {
+	db *gorm.DB
+}
+
+func NewUserHiddenMenuRepository(db *gorm.DB) UserHiddenMenuRepository {
+	return &userHiddenMenuRepository{db: db}
+}
+
+func (r *userHiddenMenuRepository) GetMenuIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error) {
+	var menuIDs []uuid.UUID
+	err := r.db.Model(&UserHiddenMenu{}).Where("user_id = ?", userID).Pluck("menu_id", &menuIDs).Error
+	return menuIDs, err
+}
+
+func (r *userHiddenMenuRepository) ReplaceUserHiddenMenus(userID uuid.UUID, menuIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("user_id = ?", userID).Delete(&UserHiddenMenu{}).Error; err != nil {
+			return err
+		}
+		if len(menuIDs) == 0 {
+			return nil
+		}
+		items := make([]UserHiddenMenu, 0, len(menuIDs))
+		seen := make(map[uuid.UUID]struct{}, len(menuIDs))
+		for _, menuID := range menuIDs {
+			if menuID == uuid.Nil {
+				continue
+			}
+			if _, ok := seen[menuID]; ok {
+				continue
+			}
+			seen[menuID] = struct{}{}
+			items = append(items, UserHiddenMenu{UserID: userID, MenuID: menuID})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *userHiddenMenuRepository) DeleteByUserID(userID uuid.UUID) error {
+	return r.db.Where("user_id = ?", userID).Delete(&UserHiddenMenu{}).Error
+}
+
+func (r *userHiddenMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
+	return r.db.Where("menu_id = ?", menuID).Delete(&UserHiddenMenu{}).Error
 }
 
 type APIEndpointListParams struct {

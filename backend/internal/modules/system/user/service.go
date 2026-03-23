@@ -9,6 +9,8 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/pkg/password"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
+	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
 var (
@@ -172,16 +174,53 @@ type PermissionService interface {
 }
 
 type permissionService struct {
-	userRepo     UserRepository
-	userRoleRepo UserRoleRepository
-	roleMenuRepo RoleMenuRepository
+	userRepo           UserRepository
+	roleRepo           RoleRepository
+	userRoleRepo       UserRoleRepository
+	roleMenuRepo       RoleMenuRepository
+	rolePackageRepo    RoleFeaturePackageRepository
+	userPackageRepo    UserFeaturePackageRepository
+	packageRepo        FeaturePackageRepository
+	packageMenuRepo    FeaturePackageMenuRepository
+	packageBundleRepo  FeaturePackageBundleRepository
+	roleHiddenMenuRepo RoleHiddenMenuRepository
+	userHiddenMenuRepo UserHiddenMenuRepository
+	menuRepo           MenuRepository
+	boundaryService    teamboundary.Service
+	platformService    platformaccess.Service
 }
 
-func NewPermissionService(userRepo UserRepository, userRoleRepo UserRoleRepository, roleMenuRepo RoleMenuRepository) PermissionService {
+func NewPermissionService(
+	userRepo UserRepository,
+	roleRepo RoleRepository,
+	userRoleRepo UserRoleRepository,
+	roleMenuRepo RoleMenuRepository,
+	rolePackageRepo RoleFeaturePackageRepository,
+	userPackageRepo UserFeaturePackageRepository,
+	packageRepo FeaturePackageRepository,
+	packageMenuRepo FeaturePackageMenuRepository,
+	packageBundleRepo FeaturePackageBundleRepository,
+	roleHiddenMenuRepo RoleHiddenMenuRepository,
+	userHiddenMenuRepo UserHiddenMenuRepository,
+	menuRepo MenuRepository,
+	boundaryService teamboundary.Service,
+	platformService platformaccess.Service,
+) PermissionService {
 	return &permissionService{
-		userRepo:     userRepo,
-		userRoleRepo: userRoleRepo,
-		roleMenuRepo: roleMenuRepo,
+		userRepo:           userRepo,
+		roleRepo:           roleRepo,
+		userRoleRepo:       userRoleRepo,
+		roleMenuRepo:       roleMenuRepo,
+		rolePackageRepo:    rolePackageRepo,
+		userPackageRepo:    userPackageRepo,
+		packageRepo:        packageRepo,
+		packageMenuRepo:    packageMenuRepo,
+		packageBundleRepo:  packageBundleRepo,
+		roleHiddenMenuRepo: roleHiddenMenuRepo,
+		userHiddenMenuRepo: userHiddenMenuRepo,
+		menuRepo:           menuRepo,
+		boundaryService:    boundaryService,
+		platformService:    platformService,
 	}
 }
 
@@ -194,11 +233,335 @@ func (s *permissionService) GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID
 	if user.Status != "active" {
 		return []uuid.UUID{}, nil
 	}
+	if user.IsSuperAdmin && tenantID == nil {
+		return s.listEnabledAndPublicMenuIDs()
+	}
+	if tenantID != nil {
+		return s.getTeamUserMenuIDs(userID, *tenantID)
+	}
+	return s.getPlatformUserMenuIDs(userID)
+}
 
-	roleIDs, err := s.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndTenant(userID, tenantID)
+func (s *permissionService) getPlatformUserMenuIDs(userID uuid.UUID) ([]uuid.UUID, error) {
+	if s.platformService != nil {
+		snapshot, err := s.platformService.GetSnapshot(userID)
+		if err != nil {
+			return nil, err
+		}
+		if snapshot.HasPackageConfig {
+			return s.finalizeMenuIDs(snapshot.MenuIDs)
+		}
+	}
+	roleIDs, err := s.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndTenant(userID, nil)
 	if err != nil {
 		return nil, err
 	}
+	roleMenuIDs, err := s.roleMenuRepo.GetMenuIDsByRoleIDs(roleIDs)
+	if err != nil {
+		return nil, err
+	}
+	rolePackageIDs, err := s.getRolePackageIDs(roleIDs)
+	if err != nil {
+		return nil, err
+	}
+	userPackageIDs, err := s.userPackageRepo.GetPackageIDsByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+	packageMenuIDs, err := s.getPlatformPackageMenuIDs(mergeUUIDLists(rolePackageIDs, userPackageIDs))
+	if err != nil {
+		return nil, err
+	}
+	if len(packageMenuIDs) > 0 && len(roleMenuIDs) > 0 {
+		packageMenuIDs = intersectUUIDs(packageMenuIDs, roleMenuIDs)
+	}
+	if len(packageMenuIDs) == 0 {
+		packageMenuIDs = roleMenuIDs
+	}
+	hiddenRoleMenuIDs, err := s.getHiddenRoleMenuIDs(roleIDs)
+	if err != nil {
+		return nil, err
+	}
+	hiddenUserMenuIDs, err := s.userHiddenMenuRepo.GetMenuIDsByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+	return s.finalizeMenuIDs(subtractUUIDs(packageMenuIDs, mergeUUIDLists(hiddenRoleMenuIDs, hiddenUserMenuIDs)))
+}
 
-	return s.roleMenuRepo.GetMenuIDsByRoleIDs(roleIDs)
+func (s *permissionService) getTeamUserMenuIDs(userID, teamID uuid.UUID) ([]uuid.UUID, error) {
+	roleIDs, err := s.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndTenant(userID, &teamID)
+	if err != nil {
+		return nil, err
+	}
+	if len(roleIDs) == 0 {
+		return s.finalizeMenuIDs(nil)
+	}
+	roles, err := s.roleRepo.GetByIDs(roleIDs)
+	if err != nil {
+		return nil, err
+	}
+	roleMap := make(map[uuid.UUID]Role, len(roles))
+	for _, role := range roles {
+		roleMap[role.ID] = role
+	}
+	menuSet := make(map[uuid.UUID]struct{})
+	for _, roleID := range roleIDs {
+		role, ok := roleMap[roleID]
+		if !ok {
+			continue
+		}
+		roleMenuIDs, roleMenuErr := s.roleMenuRepo.GetMenuIDsByRoleID(roleID)
+		if roleMenuErr != nil {
+			return nil, roleMenuErr
+		}
+		snapshot, snapshotErr := s.boundaryService.GetRoleSnapshot(teamID, roleID, role.TenantID == nil)
+		if snapshotErr != nil {
+			return nil, snapshotErr
+		}
+		allowedMenuIDs := roleMenuIDs
+		if snapshot.HasMenuBoundary {
+			allowedMenuIDs = intersectUUIDs(roleMenuIDs, snapshot.MenuIDs)
+		}
+		for _, menuID := range allowedMenuIDs {
+			menuSet[menuID] = struct{}{}
+		}
+	}
+	menuIDs := make([]uuid.UUID, 0, len(menuSet))
+	for menuID := range menuSet {
+		menuIDs = append(menuIDs, menuID)
+	}
+	return s.finalizeMenuIDs(menuIDs)
+}
+
+func (s *permissionService) getPlatformPackageMenuIDs(packageIDs []uuid.UUID) ([]uuid.UUID, error) {
+	expandedIDs, err := s.expandPackageIDs(packageIDs, "platform")
+	if err != nil {
+		return nil, err
+	}
+	return s.packageMenuRepo.GetMenuIDsByPackageIDs(expandedIDs)
+}
+
+func (s *permissionService) getRolePackageIDs(roleIDs []uuid.UUID) ([]uuid.UUID, error) {
+	result := make([]uuid.UUID, 0)
+	seen := make(map[uuid.UUID]struct{})
+	for _, roleID := range roleIDs {
+		packageIDs, err := s.rolePackageRepo.GetPackageIDsByRoleID(roleID)
+		if err != nil {
+			return nil, err
+		}
+		for _, packageID := range packageIDs {
+			if _, ok := seen[packageID]; ok {
+				continue
+			}
+			seen[packageID] = struct{}{}
+			result = append(result, packageID)
+		}
+	}
+	return result, nil
+}
+
+func (s *permissionService) getHiddenRoleMenuIDs(roleIDs []uuid.UUID) ([]uuid.UUID, error) {
+	result := make([]uuid.UUID, 0)
+	seen := make(map[uuid.UUID]struct{})
+	for _, roleID := range roleIDs {
+		menuIDs, err := s.roleHiddenMenuRepo.GetMenuIDsByRoleID(roleID)
+		if err != nil {
+			return nil, err
+		}
+		for _, menuID := range menuIDs {
+			if _, ok := seen[menuID]; ok {
+				continue
+			}
+			seen[menuID] = struct{}{}
+			result = append(result, menuID)
+		}
+	}
+	return result, nil
+}
+
+func (s *permissionService) expandPackageIDs(packageIDs []uuid.UUID, context string) ([]uuid.UUID, error) {
+	result := make([]uuid.UUID, 0, len(packageIDs))
+	seen := make(map[uuid.UUID]struct{}, len(packageIDs))
+	visited := make(map[uuid.UUID]struct{}, len(packageIDs))
+	for _, packageID := range packageIDs {
+		if err := s.expandPackageID(packageID, context, visited, seen, &result); err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *permissionService) expandPackageID(packageID uuid.UUID, context string, visited map[uuid.UUID]struct{}, seen map[uuid.UUID]struct{}, result *[]uuid.UUID) error {
+	if _, ok := visited[packageID]; ok {
+		return nil
+	}
+	visited[packageID] = struct{}{}
+	pkg, err := s.packageRepo.GetByID(packageID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+	if pkg.Status != "normal" || !packageMatchesContext(pkg.ContextType, context) {
+		return nil
+	}
+	if pkg.PackageType == "bundle" {
+		childPackageIDs, err := s.packageBundleRepo.GetChildPackageIDs(packageID)
+		if err != nil {
+			return err
+		}
+		for _, childPackageID := range childPackageIDs {
+			if err := s.expandPackageID(childPackageID, context, visited, seen, result); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	if _, ok := seen[packageID]; ok {
+		return nil
+	}
+	seen[packageID] = struct{}{}
+	*result = append(*result, packageID)
+	return nil
+}
+
+func (s *permissionService) finalizeMenuIDs(menuIDs []uuid.UUID) ([]uuid.UUID, error) {
+	allMenus, err := s.menuRepo.ListAll()
+	if err != nil {
+		return nil, err
+	}
+	enabledSet := make(map[uuid.UUID]struct{}, len(allMenus))
+	publicIDs := make([]uuid.UUID, 0)
+	for _, menu := range allMenus {
+		if !isMenuEnabled(menu) {
+			continue
+		}
+		enabledSet[menu.ID] = struct{}{}
+		if isPublicMenu(menu) {
+			publicIDs = append(publicIDs, menu.ID)
+		}
+	}
+	result := make([]uuid.UUID, 0, len(menuIDs)+len(publicIDs))
+	seen := make(map[uuid.UUID]struct{}, len(menuIDs)+len(publicIDs))
+	for _, menuID := range mergeUUIDLists(menuIDs, publicIDs) {
+		if _, ok := enabledSet[menuID]; !ok {
+			continue
+		}
+		if _, ok := seen[menuID]; ok {
+			continue
+		}
+		seen[menuID] = struct{}{}
+		result = append(result, menuID)
+	}
+	return result, nil
+}
+
+func (s *permissionService) listEnabledAndPublicMenuIDs() ([]uuid.UUID, error) {
+	allMenus, err := s.menuRepo.ListAll()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]uuid.UUID, 0, len(allMenus))
+	for _, menu := range allMenus {
+		if !isMenuEnabled(menu) {
+			continue
+		}
+		result = append(result, menu.ID)
+	}
+	return result, nil
+}
+
+func mergeUUIDLists(groups ...[]uuid.UUID) []uuid.UUID {
+	result := make([]uuid.UUID, 0)
+	seen := make(map[uuid.UUID]struct{})
+	for _, group := range groups {
+		for _, id := range group {
+			if _, ok := seen[id]; ok {
+				continue
+			}
+			seen[id] = struct{}{}
+			result = append(result, id)
+		}
+	}
+	return result
+}
+
+func subtractUUIDs(source []uuid.UUID, blocked []uuid.UUID) []uuid.UUID {
+	if len(source) == 0 {
+		return []uuid.UUID{}
+	}
+	if len(blocked) == 0 {
+		return append([]uuid.UUID{}, source...)
+	}
+	blockedSet := make(map[uuid.UUID]struct{}, len(blocked))
+	for _, id := range blocked {
+		blockedSet[id] = struct{}{}
+	}
+	result := make([]uuid.UUID, 0, len(source))
+	seen := make(map[uuid.UUID]struct{}, len(source))
+	for _, id := range source {
+		if _, ok := blockedSet[id]; ok {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		result = append(result, id)
+	}
+	return result
+}
+
+func intersectUUIDs(left []uuid.UUID, right []uuid.UUID) []uuid.UUID {
+	if len(left) == 0 || len(right) == 0 {
+		return []uuid.UUID{}
+	}
+	rightSet := make(map[uuid.UUID]struct{}, len(right))
+	for _, id := range right {
+		rightSet[id] = struct{}{}
+	}
+	result := make([]uuid.UUID, 0, len(left))
+	seen := make(map[uuid.UUID]struct{}, len(left))
+	for _, id := range left {
+		if _, ok := rightSet[id]; !ok {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		result = append(result, id)
+	}
+	return result
+}
+
+func packageMatchesContext(packageContext, currentContext string) bool {
+	if packageContext == "" || packageContext == currentContext {
+		return true
+	}
+	return packageContext == "platform,team"
+}
+
+func isMenuEnabled(menu Menu) bool {
+	if menu.Meta == nil {
+		return true
+	}
+	if enabled, ok := menu.Meta["isEnable"].(bool); ok {
+		return enabled
+	}
+	return true
+}
+
+func isPublicMenu(menu Menu) bool {
+	if menu.Meta == nil {
+		return false
+	}
+	for _, key := range []string{"isPublic", "publicMenu", "public_menu"} {
+		if value, ok := menu.Meta[key].(bool); ok && value {
+			return true
+		}
+	}
+	return false
 }

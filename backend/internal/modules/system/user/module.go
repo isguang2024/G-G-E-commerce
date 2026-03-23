@@ -9,6 +9,9 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
+	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
 type UserModule struct {
@@ -36,11 +39,21 @@ func (m *UserModule) RegisterRoutes(rg *gin.RouterGroup) {
 	menuRepo := NewMenuRepository(m.db)
 	roleMenuRepo := NewRoleMenuRepository(m.db)
 	userRoleRepo := NewUserRoleRepository(m.db)
+	rolePackageRepo := NewRoleFeaturePackageRepository(m.db)
+	userPackageRepo := NewUserFeaturePackageRepository(m.db)
+	packageRepo := NewFeaturePackageRepository(m.db)
+	packageMenuRepo := NewFeaturePackageMenuRepository(m.db)
+	packageBundleRepo := NewFeaturePackageBundleRepository(m.db)
+	roleHiddenMenuRepo := NewRoleHiddenMenuRepository(m.db)
+	userHiddenMenuRepo := NewUserHiddenMenuRepository(m.db)
 	actionRepo := NewPermissionActionRepository(m.db)
 	userActionRepo := NewUserActionPermissionRepository(m.db)
+	boundaryService := teamboundary.NewService(m.db)
+	platformService := platformaccess.NewService(m.db)
+	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService)
 	userService := NewUserService(userRepo, roleRepo, m.logger)
-	permissionService := NewPermissionService(userRepo, userRoleRepo, roleMenuRepo)
-	userHandler := NewUserHandler(userService, permissionService, actionRepo, userActionRepo, menuRepo, m.logger)
+	permissionService := NewPermissionService(userRepo, roleRepo, userRoleRepo, roleMenuRepo, rolePackageRepo, userPackageRepo, packageRepo, packageMenuRepo, packageBundleRepo, roleHiddenMenuRepo, userHiddenMenuRepo, menuRepo, boundaryService, platformService)
+	userHandler := NewUserHandler(userService, permissionService, actionRepo, packageRepo, userPackageRepo, userActionRepo, menuRepo, refresher, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 
 	users := rg.Group("/users")
@@ -48,6 +61,8 @@ func (m *UserModule) RegisterRoutes(rg *gin.RouterGroup) {
 	{
 		reg.GET("", &apiregistry.RouteMeta{Summary: "获取用户列表", ResourceCode: "user", ActionCode: "list"}, authzService.RequireAction("system.user.manage"), userHandler.List)
 		reg.GET("/:id", &apiregistry.RouteMeta{Summary: "获取用户详情", ResourceCode: "user", ActionCode: "get"}, authzService.RequireAction("system.user.manage"), userHandler.Get)
+		reg.GET("/:id/packages", &apiregistry.RouteMeta{Summary: "获取用户功能包"}, authzService.RequireAction("platform.package.assign"), userHandler.GetPackages)
+		reg.PUT("/:id/packages", &apiregistry.RouteMeta{Summary: "配置用户功能包"}, authzService.RequireAction("platform.package.assign"), userHandler.SetPackages)
 		reg.GET("/:id/permissions", &apiregistry.RouteMeta{Summary: "获取用户菜单权限", ResourceCode: "user", ActionCode: "get"}, authzService.RequireAction("system.user.manage"), userHandler.GetPermissions)
 		reg.GET("/:id/actions", &apiregistry.RouteMeta{Summary: "获取用户功能权限", ResourceCode: "user", ActionCode: "assign_action"}, authzService.RequireAction("system.user.assign_action"), userHandler.GetActions)
 		reg.PUT("/:id/actions", &apiregistry.RouteMeta{Summary: "配置用户功能权限", ResourceCode: "user", ActionCode: "assign_action"}, authzService.RequireAction("system.user.assign_action"), userHandler.SetActions)

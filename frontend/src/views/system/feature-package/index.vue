@@ -9,6 +9,37 @@
       @reset="handleReset"
     />
 
+    <div class="stats-row">
+      <ElCard shadow="never" class="stats-card">
+        <div class="stats-label">当前功能包数</div>
+        <div class="stats-value">{{ data.length }}</div>
+      </ElCard>
+      <ElCard shadow="never" class="stats-card">
+        <div class="stats-label">平台功能包</div>
+        <div class="stats-value">{{ platformPackageCount }}</div>
+      </ElCard>
+      <ElCard shadow="never" class="stats-card">
+        <div class="stats-label">团队功能包</div>
+        <div class="stats-value">{{ teamPackageCount }}</div>
+      </ElCard>
+      <ElCard shadow="never" class="stats-card">
+        <div class="stats-label">已组合功能范围数</div>
+        <div class="stats-value">{{ totalActionCount }}</div>
+      </ElCard>
+      <ElCard shadow="never" class="stats-card">
+        <div class="stats-label">已绑定菜单数</div>
+        <div class="stats-value">{{ totalMenuCount }}</div>
+      </ElCard>
+      <ElCard shadow="never" class="stats-card">
+        <div class="stats-label">团队开通数</div>
+        <div class="stats-value">{{ totalTeamCount }}</div>
+      </ElCard>
+      <ElCard shadow="never" class="stats-card">
+        <div class="stats-label">停用功能包</div>
+        <div class="stats-value">{{ disabledPackageCount }}</div>
+      </ElCard>
+    </div>
+
     <ElCard class="art-table-card" shadow="never" :style="{ marginTop: showSearchBar ? '12px' : '0' }">
       <ArtTableHeader
         v-model:columns="columnChecks"
@@ -48,6 +79,14 @@
       @success="handleRefresh"
     />
 
+    <FeaturePackageMenusDialog
+      v-model="menusDialogVisible"
+      :package-id="currentPackage.id || ''"
+      :package-name="currentPackage.name || ''"
+      :context-type="currentPackage.contextType || 'team'"
+      @success="handleRefresh"
+    />
+
     <FeaturePackageTeamsDialog
       v-model="teamsDialogVisible"
       :package-id="currentPackage.id || ''"
@@ -59,8 +98,9 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, h, reactive, ref } from 'vue'
+  import { computed, h, reactive, ref, watch } from 'vue'
   import { ElButton, ElCard, ElMessage, ElMessageBox, ElTag } from 'element-plus'
+  import { useRoute } from 'vue-router'
   import { useTable } from '@/hooks/core/useTable'
   import { fetchDeleteFeaturePackage, fetchGetFeaturePackageList } from '@/api/system-manage'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
@@ -68,6 +108,7 @@
   import type { FormItem } from '@/components/core/forms/art-form/index.vue'
   import FeaturePackageDialog from './modules/feature-package-dialog.vue'
   import FeaturePackageActionsDialog from './modules/feature-package-actions-dialog.vue'
+  import FeaturePackageMenusDialog from './modules/feature-package-menus-dialog.vue'
   import FeaturePackageTeamsDialog from './modules/feature-package-teams-dialog.vue'
 
   defineOptions({ name: 'FeaturePackage' })
@@ -82,11 +123,20 @@
     status: string
   }
   const showSearchBar = ref(true)
+  const route = useRoute()
   const dialogVisible = ref(false)
   const actionsDialogVisible = ref(false)
+  const menusDialogVisible = ref(false)
   const teamsDialogVisible = ref(false)
   const dialogType = ref<'add' | 'edit'>('add')
   const currentPackage = ref<Partial<PackageItem>>({})
+  const routeOpenSignature = ref('')
+  const platformPackageCount = computed(() => data.value.filter((item) => item.contextType === 'platform').length)
+  const teamPackageCount = computed(() => data.value.filter((item) => item.contextType !== 'platform').length)
+  const totalActionCount = computed(() => data.value.reduce((sum, item) => sum + (item.actionCount || 0), 0))
+  const totalMenuCount = computed(() => data.value.reduce((sum, item) => sum + (item.menuCount || 0), 0))
+  const totalTeamCount = computed(() => data.value.reduce((sum, item) => sum + (item.teamCount || 0), 0))
+  const disabledPackageCount = computed(() => data.value.filter((item) => item.status === 'disabled').length)
 
   const searchForm = reactive<SearchForm>({
     keyword: '',
@@ -159,7 +209,8 @@
           showOverflowTooltip: true,
           formatter: (row: PackageItem) => row.description || '-'
         },
-        { prop: 'actionCount', label: '权限数', width: 90, formatter: (row: PackageItem) => row.actionCount ?? 0 },
+        { prop: 'actionCount', label: '功能范围数', width: 100, formatter: (row: PackageItem) => row.actionCount ?? 0 },
+        { prop: 'menuCount', label: '绑定菜单数', width: 96, formatter: (row: PackageItem) => row.menuCount ?? 0 },
         { prop: 'teamCount', label: '团队数', width: 90, formatter: (row: PackageItem) => row.teamCount ?? 0 },
         { prop: 'sortOrder', label: '排序', width: 80, formatter: (row: PackageItem) => row.sortOrder ?? 0 },
         {
@@ -179,7 +230,14 @@
           fixed: 'right',
           formatter: (row: PackageItem) => {
             const list: ButtonMoreItem[] = [
-              { key: 'actions', label: '配置权限', icon: 'ri:key-2-line', auth: 'platform.package.manage' },
+              { key: 'actions', label: '配置功能范围', icon: 'ri:key-2-line', auth: 'platform.package.manage' },
+              {
+                key: 'menus',
+                label: '绑定菜单',
+                icon: 'ri:menu-line',
+                auth: 'platform.package.manage',
+                disabled: row.contextType !== 'team'
+              },
               {
                 key: 'teams',
                 label: '开通团队',
@@ -230,6 +288,49 @@
     await refreshData()
   }
 
+  async function syncRouteFilters() {
+    searchForm.keyword = String(route.query.keyword || '')
+    searchForm.packageKey = String(route.query.packageKey || '')
+    searchForm.contextType = String(route.query.contextType || '')
+    Object.assign(searchParams, normalizeSearchParams())
+    await getData()
+    await openRouteTargetIfNeeded()
+  }
+
+  async function openRouteTargetIfNeeded() {
+    const openMode = String(route.query.open || '')
+    const packageKey = String(route.query.packageKey || '')
+    const contextType = String(route.query.contextType || '')
+    if (!openMode || !packageKey) return
+
+    const signature = `${openMode}|${packageKey}|${contextType}`
+    if (routeOpenSignature.value === signature) return
+
+    const target = data.value.find(
+      (item) => item.packageKey === packageKey && (!contextType || item.contextType === contextType)
+    )
+    if (!target) return
+
+    routeOpenSignature.value = signature
+    currentPackage.value = { ...target }
+
+    if (openMode === 'actions') {
+      actionsDialogVisible.value = true
+      return
+    }
+    if (openMode === 'menus') {
+      menusDialogVisible.value = true
+      return
+    }
+    if (openMode === 'teams') {
+      teamsDialogVisible.value = true
+      return
+    }
+    if (openMode === 'edit') {
+      openDialog('edit', target)
+    }
+  }
+
   function openDialog(type: 'add' | 'edit', row?: PackageItem) {
     dialogType.value = type
     currentPackage.value = row ? { ...row } : {}
@@ -240,6 +341,11 @@
     if (command === 'actions') {
       currentPackage.value = { ...row }
       actionsDialogVisible.value = true
+      return
+    }
+    if (command === 'menus') {
+      currentPackage.value = { ...row }
+      menusDialogVisible.value = true
       return
     }
     if (command === 'teams') {
@@ -269,4 +375,51 @@
         })
     }
   }
+
+  watch(
+    () => route.query,
+    () => {
+      routeOpenSignature.value = ''
+      syncRouteFilters()
+    },
+    { immediate: true }
+  )
 </script>
+
+<style scoped lang="scss">
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .stats-card {
+    min-height: 112px;
+  }
+
+  .stats-label {
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .stats-value {
+    margin-top: 10px;
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--el-text-color-primary);
+  }
+
+  @media (max-width: 1200px) {
+    .stats-row {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 768px) {
+    .stats-row {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

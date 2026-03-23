@@ -10,22 +10,27 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
 var (
 	ErrFeaturePackageNotFound = errors.New("feature package not found")
 	ErrFeaturePackageExists   = errors.New("feature package already exists")
+	ErrFeaturePackageBuiltin  = errors.New("feature package is builtin")
 )
 
 type Service interface {
 	List(req *dto.FeaturePackageListRequest) ([]user.FeaturePackage, int64, error)
-	GetPackageStats(packageIDs []uuid.UUID) (map[uuid.UUID]int64, map[uuid.UUID]int64, error)
+	GetPackageStats(packageIDs []uuid.UUID) (map[uuid.UUID]int64, map[uuid.UUID]int64, map[uuid.UUID]int64, error)
 	Get(id uuid.UUID) (*user.FeaturePackage, error)
 	Create(req *dto.FeaturePackageCreateRequest) (*user.FeaturePackage, error)
 	Update(id uuid.UUID, req *dto.FeaturePackageUpdateRequest) error
 	Delete(id uuid.UUID) error
 	GetPackageActions(id uuid.UUID) ([]uuid.UUID, []user.PermissionAction, error)
 	SetPackageActions(id uuid.UUID, actionIDs []uuid.UUID) error
+	GetPackageMenus(id uuid.UUID) ([]uuid.UUID, []user.Menu, error)
+	SetPackageMenus(id uuid.UUID, menuIDs []uuid.UUID) error
 	GetPackageTeams(id uuid.UUID) ([]uuid.UUID, error)
 	SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *uuid.UUID) error
 	GetTeamPackages(teamID uuid.UUID) ([]uuid.UUID, []user.FeaturePackage, error)
@@ -35,30 +40,39 @@ type Service interface {
 type service struct {
 	packageRepo       user.FeaturePackageRepository
 	packageActionRepo user.FeaturePackageActionRepository
+	packageMenuRepo   user.FeaturePackageMenuRepository
 	teamPackageRepo   user.TeamFeaturePackageRepository
+	rolePackageRepo   user.RoleFeaturePackageRepository
 	actionRepo        user.PermissionActionRepository
-	tenantActionRepo  user.TenantActionPermissionRepository
-	manualActionRepo  user.TeamManualActionPermissionRepository
+	menuRepo          user.MenuRepository
 	tenantRepo        user.TenantRepository
+	boundaryService   teamboundary.Service
+	refresher         permissionrefresh.Service
 }
 
 func NewService(
 	packageRepo user.FeaturePackageRepository,
 	packageActionRepo user.FeaturePackageActionRepository,
+	packageMenuRepo user.FeaturePackageMenuRepository,
 	teamPackageRepo user.TeamFeaturePackageRepository,
+	rolePackageRepo user.RoleFeaturePackageRepository,
 	actionRepo user.PermissionActionRepository,
-	tenantActionRepo user.TenantActionPermissionRepository,
-	manualActionRepo user.TeamManualActionPermissionRepository,
+	menuRepo user.MenuRepository,
 	tenantRepo user.TenantRepository,
+	boundaryService teamboundary.Service,
+	refresher permissionrefresh.Service,
 ) Service {
 	return &service{
 		packageRepo:       packageRepo,
 		packageActionRepo: packageActionRepo,
+		packageMenuRepo:   packageMenuRepo,
 		teamPackageRepo:   teamPackageRepo,
+		rolePackageRepo:   rolePackageRepo,
 		actionRepo:        actionRepo,
-		tenantActionRepo:  tenantActionRepo,
-		manualActionRepo:  manualActionRepo,
+		menuRepo:          menuRepo,
 		tenantRepo:        tenantRepo,
+		boundaryService:   boundaryService,
+		refresher:         refresher,
 	}
 }
 
@@ -72,22 +86,27 @@ func (s *service) List(req *dto.FeaturePackageListRequest) ([]user.FeaturePackag
 	return s.packageRepo.List((req.Current-1)*req.Size, req.Size, &user.FeaturePackageListParams{
 		Keyword:     strings.TrimSpace(req.Keyword),
 		PackageKey:  strings.TrimSpace(req.PackageKey),
+		PackageType: normalizePackageType(req.PackageType),
 		Name:        strings.TrimSpace(req.Name),
 		ContextType: normalizeContextType(req.ContextType),
 		Status:      strings.TrimSpace(req.Status),
 	})
 }
 
-func (s *service) GetPackageStats(packageIDs []uuid.UUID) (map[uuid.UUID]int64, map[uuid.UUID]int64, error) {
+func (s *service) GetPackageStats(packageIDs []uuid.UUID) (map[uuid.UUID]int64, map[uuid.UUID]int64, map[uuid.UUID]int64, error) {
 	actionCounts, err := s.packageActionRepo.CountByPackageIDs(packageIDs)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
+	}
+	menuCounts, err := s.packageMenuRepo.CountByPackageIDs(packageIDs)
+	if err != nil {
+		return nil, nil, nil, err
 	}
 	teamCounts, err := s.teamPackageRepo.CountByPackageIDs(packageIDs)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return actionCounts, teamCounts, nil
+	return actionCounts, menuCounts, teamCounts, nil
 }
 
 func (s *service) Get(id uuid.UUID) (*user.FeaturePackage, error) {
@@ -114,6 +133,7 @@ func (s *service) Create(req *dto.FeaturePackageCreateRequest) (*user.FeaturePac
 
 	item := &user.FeaturePackage{
 		PackageKey:  packageKey,
+		PackageType: normalizePackageTypeDefault(req.PackageType, "base"),
 		Name:        strings.TrimSpace(req.Name),
 		Description: strings.TrimSpace(req.Description),
 		ContextType: normalizeContextTypeDefault(req.ContextType, "team"),
@@ -154,29 +174,63 @@ func (s *service) Update(id uuid.UUID, req *dto.FeaturePackageUpdateRequest) err
 	if req.Description != "" {
 		updates["description"] = strings.TrimSpace(req.Description)
 	}
+	if packageType := normalizePackageType(req.PackageType); packageType != "" {
+		updates["package_type"] = packageType
+	}
 	if contextType := normalizeContextType(req.ContextType); contextType != "" {
 		updates["context_type"] = contextType
 	}
 	if status := strings.TrimSpace(req.Status); status != "" {
 		updates["status"] = normalizeStatus(status)
 	}
-	return s.packageRepo.UpdateWithMap(id, updates)
+	if err := s.packageRepo.UpdateWithMap(id, updates); err != nil {
+		return err
+	}
+	if s.refresher != nil {
+		return s.refresher.RefreshByPackage(id)
+	}
+	return nil
 }
 
 func (s *service) Delete(id uuid.UUID) error {
-	if _, err := s.packageRepo.GetByID(id); err != nil {
+	item, err := s.packageRepo.GetByID(id)
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrFeaturePackageNotFound
 		}
 		return err
 	}
+	if item.IsBuiltin {
+		return ErrFeaturePackageBuiltin
+	}
+	teamIDs, err := s.teamPackageRepo.GetTeamIDsByPackageID(id)
+	if err != nil {
+		return err
+	}
 	if err := s.packageActionRepo.DeleteByPackageID(id); err != nil {
+		return err
+	}
+	if err := s.packageMenuRepo.DeleteByPackageID(id); err != nil {
 		return err
 	}
 	if err := s.teamPackageRepo.DeleteByPackageID(id); err != nil {
 		return err
 	}
-	return s.packageRepo.Delete(id)
+	if err := s.rolePackageRepo.DeleteByPackageID(id); err != nil {
+		return err
+	}
+	if err := s.packageRepo.Delete(id); err != nil {
+		return err
+	}
+	if s.refresher != nil {
+		return s.refresher.RefreshTeams(teamIDs)
+	}
+	for _, teamID := range teamIDs {
+		if _, err := s.boundaryService.RefreshCache(teamID); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *service) GetPackageActions(id uuid.UUID) ([]uuid.UUID, []user.PermissionAction, error) {
@@ -205,6 +259,9 @@ func (s *service) SetPackageActions(id uuid.UUID, actionIDs []uuid.UUID) error {
 		}
 		return err
 	}
+	if item.PackageType == "bundle" {
+		return errors.New("组合包不允许直接绑定功能权限")
+	}
 	if len(actionIDs) > 0 {
 		actions, getErr := s.actionRepo.GetByIDs(actionIDs)
 		if getErr != nil {
@@ -214,7 +271,7 @@ func (s *service) SetPackageActions(id uuid.UUID, actionIDs []uuid.UUID) error {
 			return errors.New("存在无效的功能权限")
 		}
 		for _, action := range actions {
-			if action.ContextType != "" && item.ContextType != "" && action.ContextType != item.ContextType {
+			if action.ContextType != "" && item.ContextType != "" && !contextSupportsAction(item.ContextType, action.ContextType) {
 				return errors.New("功能包上下文与功能权限上下文不一致")
 			}
 		}
@@ -222,14 +279,58 @@ func (s *service) SetPackageActions(id uuid.UUID, actionIDs []uuid.UUID) error {
 	if err := s.packageActionRepo.ReplacePackageActions(id, actionIDs); err != nil {
 		return err
 	}
-	teamIDs, err := s.teamPackageRepo.GetTeamIDsByPackageID(id)
+	if s.refresher != nil {
+		return s.refresher.RefreshByPackage(id)
+	}
+	return nil
+}
+
+func (s *service) GetPackageMenus(id uuid.UUID) ([]uuid.UUID, []user.Menu, error) {
+	if _, err := s.packageRepo.GetByID(id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil, ErrFeaturePackageNotFound
+		}
+		return nil, nil, err
+	}
+	menuIDs, err := s.packageMenuRepo.GetMenuIDsByPackageID(id)
 	if err != nil {
+		return nil, nil, err
+	}
+	menus, err := s.menuRepo.GetByIDs(menuIDs)
+	if err != nil {
+		return nil, nil, err
+	}
+	return menuIDs, menus, nil
+}
+
+func (s *service) SetPackageMenus(id uuid.UUID, menuIDs []uuid.UUID) error {
+	item, err := s.packageRepo.GetByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrFeaturePackageNotFound
+		}
 		return err
 	}
-	for _, teamID := range teamIDs {
-		if err := s.refreshTeamActions(teamID); err != nil {
-			return err
+	if item.PackageType == "bundle" {
+		return errors.New("组合包不允许直接绑定菜单")
+	}
+	if !supportsTeamContext(item.ContextType) {
+		return errors.New("仅团队功能包支持配置菜单集合")
+	}
+	if len(menuIDs) > 0 {
+		menus, getErr := s.menuRepo.GetByIDs(menuIDs)
+		if getErr != nil {
+			return getErr
 		}
+		if len(menus) != len(menuIDs) {
+			return errors.New("存在无效的菜单")
+		}
+	}
+	if err := s.packageMenuRepo.ReplacePackageMenus(id, menuIDs); err != nil {
+		return err
+	}
+	if s.refresher != nil {
+		return s.refresher.RefreshByPackage(id)
 	}
 	return nil
 }
@@ -261,7 +362,7 @@ func (s *service) GetPackageTeams(id uuid.UUID) ([]uuid.UUID, error) {
 		}
 		return nil, err
 	}
-	if item.ContextType != "team" {
+	if !supportsTeamContext(item.ContextType) {
 		return []uuid.UUID{}, nil
 	}
 	return s.teamPackageRepo.GetTeamIDsByPackageID(id)
@@ -275,7 +376,7 @@ func (s *service) SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *
 		}
 		return err
 	}
-	if item.ContextType != "team" {
+	if !supportsTeamContext(item.ContextType) {
 		return errors.New("仅支持为团队功能包配置团队")
 	}
 	currentTeamIDs, err := s.teamPackageRepo.GetTeamIDsByPackageID(id)
@@ -322,7 +423,13 @@ func (s *service) SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *
 		if err := s.teamPackageRepo.ReplaceTeamPackages(teamID, nextPackageIDs, grantedBy); err != nil {
 			return err
 		}
-		if err := s.refreshTeamActions(teamID); err != nil {
+		if s.refresher != nil {
+			if err := s.refresher.RefreshTeam(teamID); err != nil {
+				return err
+			}
+			continue
+		}
+		if _, err := s.boundaryService.RefreshCache(teamID); err != nil {
 			return err
 		}
 	}
@@ -338,54 +445,24 @@ func (s *service) SetTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, gran
 			}
 			return err
 		}
-		if item.ContextType != "team" {
+		if !supportsTeamContext(item.ContextType) {
 			return errors.New("仅支持为团队分配团队功能包")
 		}
 	}
 	if err := s.teamPackageRepo.ReplaceTeamPackages(teamID, packageIDs, grantedBy); err != nil {
 		return err
 	}
-	return s.refreshTeamActions(teamID)
-}
-
-func (s *service) refreshTeamActions(teamID uuid.UUID) error {
-	packageIDs, err := s.teamPackageRepo.GetPackageIDsByTeamID(teamID)
-	if err != nil {
-		return err
+	if s.refresher != nil {
+		return s.refresher.RefreshTeam(teamID)
 	}
-	allActionIDs := make([]uuid.UUID, 0)
-	seenActionIDs := make(map[uuid.UUID]struct{})
-	for _, packageID := range packageIDs {
-		actionIDs, err := s.packageActionRepo.GetActionIDsByPackageID(packageID)
-		if err != nil {
-			return err
-		}
-		for _, actionID := range actionIDs {
-			if _, ok := seenActionIDs[actionID]; ok {
-				continue
-			}
-			seenActionIDs[actionID] = struct{}{}
-			allActionIDs = append(allActionIDs, actionID)
-		}
-	}
-	manualActionIDs, err := s.manualActionRepo.GetEnabledActionIDsByTenantID(teamID)
-	if err != nil {
-		return err
-	}
-	for _, actionID := range manualActionIDs {
-		if _, ok := seenActionIDs[actionID]; ok {
-			continue
-		}
-		seenActionIDs[actionID] = struct{}{}
-		allActionIDs = append(allActionIDs, actionID)
-	}
-	return s.tenantActionRepo.ReplaceTenantActions(teamID, allActionIDs)
+	_, err := s.boundaryService.RefreshCache(teamID)
+	return err
 }
 
 func normalizeContextType(value string) string {
-	switch strings.TrimSpace(value) {
-	case "platform", "team":
-		return strings.TrimSpace(value)
+	switch strings.ReplaceAll(strings.TrimSpace(value), " ", "") {
+	case "platform", "team", "platform,team":
+		return strings.ReplaceAll(strings.TrimSpace(value), " ", "")
 	default:
 		return ""
 	}
@@ -405,4 +482,31 @@ func normalizeStatus(value string) string {
 	default:
 		return "normal"
 	}
+}
+
+func normalizePackageType(value string) string {
+	switch strings.TrimSpace(value) {
+	case "base", "bundle":
+		return strings.TrimSpace(value)
+	default:
+		return ""
+	}
+}
+
+func normalizePackageTypeDefault(value, fallback string) string {
+	if normalized := normalizePackageType(value); normalized != "" {
+		return normalized
+	}
+	return fallback
+}
+
+func supportsTeamContext(contextType string) bool {
+	return contextType == "team" || contextType == "platform,team"
+}
+
+func contextSupportsAction(packageContextType, actionContextType string) bool {
+	if packageContextType == "platform,team" {
+		return actionContextType == "platform" || actionContextType == "team"
+	}
+	return packageContextType == actionContextType
 }

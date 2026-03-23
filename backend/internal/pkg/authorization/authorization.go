@@ -12,6 +12,8 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
+	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
 const tenantContextHeader = "X-Tenant-ID"
@@ -27,12 +29,19 @@ var (
 )
 
 type Service struct {
-	db     *gorm.DB
-	logger *zap.Logger
+	db              *gorm.DB
+	logger          *zap.Logger
+	boundaryService teamboundary.Service
+	platformService platformaccess.Service
 }
 
 func NewService(db *gorm.DB, logger *zap.Logger) *Service {
-	return &Service{db: db, logger: logger}
+	return &Service{
+		db:              db,
+		logger:          logger,
+		boundaryService: teamboundary.NewService(db),
+		platformService: platformaccess.NewService(db),
+	}
 }
 
 func (s *Service) RequireAction(permissionKey string, legacy ...string) gin.HandlerFunc {
@@ -96,6 +105,15 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey
 	}
 	if currentUser.IsSuperAdmin {
 		return true, &actionDef, nil
+	}
+	if tenantID == nil && s.platformService != nil {
+		snapshot, err := s.platformService.GetSnapshot(userID)
+		if err != nil {
+			return false, &actionDef, err
+		}
+		if snapshot.HasPackageConfig {
+			return containsUUID(snapshot.ActionIDs, actionDef.ID), &actionDef, nil
+		}
 	}
 
 	if tenantID != nil {
@@ -177,6 +195,15 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 			}
 		}
 		return keys, []string{}, nil
+	}
+	if tenantID == nil && s.platformService != nil {
+		snapshot, err := s.platformService.GetSnapshot(userID)
+		if err != nil {
+			return nil, nil, err
+		}
+		if snapshot.HasPackageConfig {
+			return buildActionKeysFromIDs(actions, snapshot.ActionIDs), []string{}, nil
+		}
 	}
 
 	memberActive := false
@@ -260,6 +287,31 @@ func appendActionKeys(keys *[]string, keySet map[string]struct{}, action models.
 	}
 }
 
+func buildActionKeysFromIDs(actions []models.PermissionAction, allowedActionIDs []uuid.UUID) []string {
+	allowedSet := make(map[uuid.UUID]struct{}, len(allowedActionIDs))
+	for _, actionID := range allowedActionIDs {
+		allowedSet[actionID] = struct{}{}
+	}
+	keys := make([]string, 0, len(allowedSet))
+	keySet := make(map[string]struct{}, len(allowedSet))
+	for _, action := range actions {
+		if _, ok := allowedSet[action.ID]; !ok {
+			continue
+		}
+		appendActionKeys(&keys, keySet, action)
+	}
+	return keys
+}
+
+func containsUUID(ids []uuid.UUID, target uuid.UUID) bool {
+	for _, id := range ids {
+		if id == target {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *Service) respondAuthError(c *gin.Context, authErr error, permissionKey string) {
 	if authErr != nil {
 		s.logger.Warn("Permission denied",
@@ -311,22 +363,6 @@ func resolvePermissionKey(permissionKey string, legacy ...string) string {
 		return permissionkey.FromLegacy(parts[0], parts[1]).Key
 	}
 	return permissionkey.Normalize(permissionKey)
-}
-
-func (s *Service) isActionWithinTenantBoundary(tenantID, actionID uuid.UUID) (bool, error) {
-	var count int64
-	err := s.db.Model(&models.TenantActionPermission{}).Where("tenant_id = ?", tenantID).Count(&count).Error
-	if err != nil {
-		return false, err
-	}
-	if count == 0 {
-		return false, nil
-	}
-	var enabledCount int64
-	err = s.db.Model(&models.TenantActionPermission{}).
-		Where("tenant_id = ? AND action_id = ? AND enabled = ?", tenantID, actionID, true).
-		Count(&enabledCount).Error
-	return enabledCount > 0, err
 }
 
 func (s *Service) resolveUserOverride(userID uuid.UUID, tenantID *uuid.UUID, actionID uuid.UUID) (string, bool, error) {
@@ -431,7 +467,7 @@ func (s *Service) getEffectiveActiveRoleIDs(userID uuid.UUID, tenantID *uuid.UUI
 	if tenantID == nil {
 		query = query.Where("user_roles.tenant_id IS NULL")
 	} else {
-		query = query.Where("user_roles.tenant_id IS NULL OR user_roles.tenant_id = ?", *tenantID)
+		query = query.Where("user_roles.tenant_id = ?", *tenantID)
 	}
 	err := query.Distinct("user_roles.role_id").Pluck("user_roles.role_id", &roleIDs).Error
 	return roleIDs, err
@@ -455,20 +491,15 @@ func (s *Service) resolveTenantActionContext(userID uuid.UUID, tenantID *uuid.UU
 		return false, false, boundaryActionSet, ErrTenantMemberInactive
 	}
 
-	var count int64
-	if err := s.db.Model(&models.TenantActionPermission{}).Where("tenant_id = ?", *tenantID).Count(&count).Error; err != nil {
+	snapshot, err := s.boundaryService.GetSnapshot(*tenantID)
+	if err != nil {
 		return false, false, nil, err
 	}
-	if count == 0 {
+	if len(snapshot.EffectiveIDs) == 0 {
 		return true, false, boundaryActionSet, nil
 	}
-
-	var tenantRecords []models.TenantActionPermission
-	if err := s.db.Where("tenant_id = ? AND enabled = ?", *tenantID, true).Find(&tenantRecords).Error; err != nil {
-		return false, false, nil, err
-	}
-	for _, record := range tenantRecords {
-		boundaryActionSet[record.ActionID] = true
+	for _, actionID := range snapshot.EffectiveIDs {
+		boundaryActionSet[actionID] = true
 	}
 	return true, true, boundaryActionSet, nil
 }

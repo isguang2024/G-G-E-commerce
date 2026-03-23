@@ -125,6 +125,16 @@ func (RoleMenu) TableName() string {
 	return "role_menus"
 }
 
+type RoleHiddenMenu struct {
+	RoleID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"role_id"`
+	MenuID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"menu_id"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (RoleHiddenMenu) TableName() string {
+	return "role_hidden_menus"
+}
+
 type PermissionAction struct {
 	ID            uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	PermissionKey string         `gorm:"type:varchar(150);index:idx_permission_actions_permission_key" json:"permission_key"`
@@ -150,9 +160,11 @@ func (PermissionAction) TableName() string {
 type FeaturePackage struct {
 	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	PackageKey  string         `gorm:"type:varchar(100);not null" json:"package_key"`
+	PackageType string         `gorm:"type:varchar(20);not null;default:'base'" json:"package_type"`
 	Name        string         `gorm:"type:varchar(150);not null" json:"name"`
 	Description string         `gorm:"type:varchar(255)" json:"description"`
 	ContextType string         `gorm:"type:varchar(20);not null;default:'team'" json:"context_type"`
+	IsBuiltin   bool           `gorm:"not null;default:false" json:"is_builtin"`
 	Status      string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
 	SortOrder   int            `gorm:"default:0" json:"sort_order"`
 	CreatedAt   time.Time      `json:"created_at"`
@@ -164,6 +176,16 @@ func (FeaturePackage) TableName() string {
 	return "feature_packages"
 }
 
+type FeaturePackageBundle struct {
+	PackageID      uuid.UUID `gorm:"type:uuid;primaryKey" json:"package_id"`
+	ChildPackageID uuid.UUID `gorm:"type:uuid;primaryKey" json:"child_package_id"`
+	CreatedAt      time.Time `json:"created_at"`
+}
+
+func (FeaturePackageBundle) TableName() string {
+	return "feature_package_bundles"
+}
+
 type FeaturePackageAction struct {
 	PackageID uuid.UUID `gorm:"type:uuid;primaryKey" json:"package_id"`
 	ActionID  uuid.UUID `gorm:"type:uuid;primaryKey" json:"action_id"`
@@ -172,6 +194,16 @@ type FeaturePackageAction struct {
 
 func (FeaturePackageAction) TableName() string {
 	return "feature_package_actions"
+}
+
+type FeaturePackageMenu struct {
+	PackageID uuid.UUID `gorm:"type:uuid;primaryKey" json:"package_id"`
+	MenuID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"menu_id"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (FeaturePackageMenu) TableName() string {
+	return "feature_package_menus"
 }
 
 type TeamFeaturePackage struct {
@@ -189,6 +221,36 @@ func (TeamFeaturePackage) TableName() string {
 	return "team_feature_packages"
 }
 
+type UserFeaturePackage struct {
+	ID        uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	UserID    uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
+	PackageID uuid.UUID  `gorm:"type:uuid;not null;index" json:"package_id"`
+	Enabled   bool       `gorm:"not null;default:true" json:"enabled"`
+	GrantedBy *uuid.UUID `gorm:"type:uuid" json:"granted_by"`
+	GrantedAt *time.Time `json:"granted_at"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+}
+
+func (UserFeaturePackage) TableName() string {
+	return "user_feature_packages"
+}
+
+type RoleFeaturePackage struct {
+	ID        uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	RoleID    uuid.UUID  `gorm:"type:uuid;not null;index" json:"role_id"`
+	PackageID uuid.UUID  `gorm:"type:uuid;not null;index" json:"package_id"`
+	Enabled   bool       `gorm:"not null;default:true" json:"enabled"`
+	GrantedBy *uuid.UUID `gorm:"type:uuid" json:"granted_by"`
+	GrantedAt *time.Time `json:"granted_at"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
+}
+
+func (RoleFeaturePackage) TableName() string {
+	return "role_feature_packages"
+}
+
 type RoleActionPermission struct {
 	RoleID   uuid.UUID `gorm:"type:uuid;primaryKey" json:"role_id"`
 	ActionID uuid.UUID `gorm:"type:uuid;primaryKey" json:"action_id"`
@@ -196,6 +258,16 @@ type RoleActionPermission struct {
 
 func (RoleActionPermission) TableName() string {
 	return "role_action_permissions"
+}
+
+type RoleDisabledAction struct {
+	RoleID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"role_id"`
+	ActionID  uuid.UUID `gorm:"type:uuid;primaryKey" json:"action_id"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (RoleDisabledAction) TableName() string {
+	return "role_disabled_actions"
 }
 
 type RoleDataPermission struct {
@@ -232,6 +304,28 @@ func (TeamManualActionPermission) TableName() string {
 	return "team_manual_action_permissions"
 }
 
+type TeamBlockedMenu struct {
+	TeamID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"team_id"`
+	MenuID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"menu_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (TeamBlockedMenu) TableName() string {
+	return "team_blocked_menus"
+}
+
+type TeamBlockedAction struct {
+	TeamID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"team_id"`
+	ActionID  uuid.UUID `gorm:"type:uuid;primaryKey" json:"action_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (TeamBlockedAction) TableName() string {
+	return "team_blocked_actions"
+}
+
 type UserActionPermission struct {
 	UserID    uuid.UUID  `gorm:"type:uuid;primaryKey" json:"user_id"`
 	ActionID  uuid.UUID  `gorm:"type:uuid;primaryKey" json:"action_id"`
@@ -243,6 +337,17 @@ type UserActionPermission struct {
 
 func (UserActionPermission) TableName() string {
 	return "user_action_permissions"
+}
+
+type UserHiddenMenu struct {
+	UserID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"user_id"`
+	MenuID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"menu_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (UserHiddenMenu) TableName() string {
+	return "user_hidden_menus"
 }
 
 type APIEndpoint struct {

@@ -10,10 +10,103 @@
         type="info"
         :closable="false"
         class="dialog-alert"
-        title="这里配置的是团队内个人功能权限覆盖。默认继承团队角色权限；单独允许或单独拒绝只用于少量例外场景。"
+        title="这里配置的是团队内个人功能权限覆盖。页面只展示该成员当前角色功能包展开后的可用能力；默认继承角色权限，单独允许或单独拒绝只用于少量例外场景。"
       />
 
+      <div class="summary-header">
+        <ElTag effect="plain" round>成员 {{ member?.userName || '-' }}</ElTag>
+        <ElTag type="info" effect="plain" round>基础角色 {{ assignedGlobalRoleCount }}</ElTag>
+        <ElTag type="success" effect="plain" round>团队自定义 {{ assignedCustomRoleCount }}</ElTag>
+        <ElTag type="warning" effect="plain" round>功能包展开 {{ derivedActionCount }}</ElTag>
+        <ElTag type="primary" effect="plain" round>团队补充 {{ manualActionCount }}</ElTag>
+      </div>
+
+      <div v-if="derivedActions.length || manualActions.length" class="source-detail-grid">
+        <div v-if="derivedActions.length" class="source-card source-card--derived">
+          <div class="source-header">
+            <div class="source-title">功能包展开能力</div>
+            <ElButton
+              v-if="selectedDerivedPackage"
+              type="warning"
+              text
+              @click="goToFeaturePackagePage(selectedDerivedPackage)"
+            >
+              前往功能包页
+            </ElButton>
+          </div>
+          <div v-if="derivedSourcePackages.length" class="package-filter-row">
+            <ElTag
+              :type="selectedDerivedPackageId ? 'info' : 'warning'"
+              effect="plain"
+              round
+              class="package-filter-tag"
+              @click="selectedDerivedPackageId = ''"
+            >
+              全部功能包
+            </ElTag>
+            <ElTag
+              v-for="item in derivedSourcePackages"
+              :key="item.id"
+              :type="selectedDerivedPackageId === item.id ? 'warning' : 'info'"
+              effect="plain"
+              round
+              class="package-filter-tag"
+              @click="selectedDerivedPackageId = selectedDerivedPackageId === item.id ? '' : item.id"
+            >
+              {{ item.name }}
+            </ElTag>
+          </div>
+          <div class="source-tags">
+            <ElTag
+              v-for="item in filteredDerivedActions"
+              :key="item.id"
+              type="warning"
+              effect="plain"
+              round
+              :title="buildDerivedSourceText(item.id)"
+            >
+              {{ item.name }}
+            </ElTag>
+          </div>
+        </div>
+
+        <div v-if="manualActions.length" class="source-card source-card--manual">
+          <div class="source-title">团队补充能力</div>
+          <div class="source-tags">
+            <ElTag
+              v-for="item in manualActions"
+              :key="item.id"
+              type="primary"
+              effect="plain"
+              round
+            >
+              {{ item.name }}
+            </ElTag>
+          </div>
+        </div>
+      </div>
+
       <section class="control-panel">
+        <div class="summary">
+          <ElTag effect="plain" class="summary-tag">已开通 {{ actions.length }}</ElTag>
+          <ElTag effect="plain" class="summary-tag summary-tag--baseline">角色基线 {{ roleAllowCount }}</ElTag>
+          <ElTag effect="plain" class="summary-tag summary-tag--allow">单独允许 {{ overrideAllowCount }}</ElTag>
+          <ElTag effect="plain" class="summary-tag summary-tag--deny">单独拒绝 {{ overrideDenyCount }}</ElTag>
+        </div>
+
+        <div v-if="assignedRoles.length" class="role-chip-row">
+          <span class="role-chip-label">当前角色</span>
+          <ElTag
+            v-for="role in assignedRoles"
+            :key="role.roleId"
+            :type="role.isGlobal ? 'info' : 'success'"
+            effect="plain"
+            round
+          >
+            {{ role.roleName }}
+          </ElTag>
+        </div>
+
         <div class="toolbar">
           <ElInput
             v-model="filters.keyword"
@@ -145,14 +238,16 @@
   } from '@/components/business/permission/permission-tree'
   import ActionPermissionTreePanel from '@/components/business/permission/action-permission-tree-panel.vue'
   import {
-    fetchGetMyTeamActions,
+    fetchGetMyTeam,
     fetchGetMyTeamMemberActions,
     fetchGetMyTeamMemberRoles,
     fetchGetMyTeamRoleActions,
     fetchGetMyTeamRoles,
     fetchSetMyTeamMemberActions
   } from '@/api/team'
+  import { fetchGetTeamFeaturePackages } from '@/api/system-manage'
   import { ElMessage } from 'element-plus'
+  import { useRouter } from 'vue-router'
 
   interface Props {
     member: Api.SystemManage.TeamMemberItem | null
@@ -173,6 +268,7 @@
 
   const props = defineProps<Props>()
   const emit = defineEmits(['success'])
+  const router = useRouter()
 
   const visible = ref(false)
   const loading = ref(false)
@@ -182,6 +278,14 @@
   const expandedKeys = ref<string[]>([])
   const effectMap = reactive<Record<string, EffectValue>>({})
   const roleEffectMap = reactive<Record<string, EffectValue>>({})
+  const assignedRoles = ref<Api.SystemManage.RoleListItem[]>([])
+  const derivedActionIds = ref<string[]>([])
+  const manualActionIds = ref<string[]>([])
+  const derivedSourceMap = ref<Record<string, string[]>>({})
+  const featurePackages = ref<Api.SystemManage.FeaturePackageItem[]>([])
+  const selectedDerivedPackageId = ref('')
+  const derivedActionCount = ref(0)
+  const manualActionCount = ref(0)
   const filters = reactive({
     keyword: '',
     featureKind: '',
@@ -243,6 +347,27 @@
   const roleAllowCount = computed(() => Object.values(roleEffectMap).filter((item) => item === 'allow').length)
   const overrideAllowCount = computed(() => Object.values(effectMap).filter((item) => item === 'allow').length)
   const overrideDenyCount = computed(() => Object.values(effectMap).filter((item) => item === 'deny').length)
+  const assignedGlobalRoleCount = computed(() => assignedRoles.value.filter((role) => role.isGlobal).length)
+  const assignedCustomRoleCount = computed(() => assignedRoles.value.filter((role) => !role.isGlobal).length)
+  const derivedActions = computed(() => {
+    const idSet = new Set(derivedActionIds.value)
+    return actions.value.filter((item) => idSet.has(item.id))
+  })
+  const manualActions = computed(() => {
+    const idSet = new Set(manualActionIds.value)
+    return actions.value.filter((item) => idSet.has(item.id))
+  })
+  const derivedSourcePackages = computed(() => {
+    const packageIdSet = new Set(Object.values(derivedSourceMap.value).flat())
+    return featurePackages.value.filter((item) => packageIdSet.has(item.id))
+  })
+  const filteredDerivedActions = computed(() => {
+    if (!selectedDerivedPackageId.value) return derivedActions.value
+    return derivedActions.value.filter((item) => (derivedSourceMap.value[item.id] || []).includes(selectedDerivedPackageId.value))
+  })
+  const selectedDerivedPackage = computed(
+    () => featurePackages.value.find((item) => item.id === selectedDerivedPackageId.value) || null
+  )
 
   const filteredGroups = computed<FeatureGroup[]>(() => buildPermissionGroups(filteredActions.value))
 
@@ -307,9 +432,13 @@
       ...(memberRolesRes?.team_role_ids || []),
       ...(memberRolesRes?.role_ids || [])
     ])
-    const roleIds = availableRoles
+    assignedRoles.value = availableRoles
       .filter((role) => roleIdSet.has(role.roleId))
-      .map((role) => role.roleId)
+      .sort((left, right) => {
+        if (left.isGlobal === right.isGlobal) return left.roleName.localeCompare(right.roleName, 'zh-CN')
+        return left.isGlobal ? -1 : 1
+      })
+    const roleIds = assignedRoles.value.map((role) => role.roleId)
 
     if (roleIds.length === 0) return
 
@@ -328,16 +457,26 @@
     visible.value = true
     loading.value = true
     try {
-      const [teamActions, memberActions] = await Promise.all([
-        fetchGetMyTeamActions(),
-        fetchGetMyTeamMemberActions(props.member.userId)
+      const [memberActions, team] = await Promise.all([
+        fetchGetMyTeamMemberActions(props.member.userId),
+        fetchGetMyTeam()
       ])
-      actions.value = teamActions.actions || []
+      const packageRes = team?.id ? await fetchGetTeamFeaturePackages(team.id) : { packages: [] }
+      actions.value = memberActions.availableActions || []
+      derivedActionIds.value = [...(memberActions.availableActionIds || [])]
+      manualActionIds.value = []
+      derivedSourceMap.value = Object.fromEntries(
+        (memberActions.derivedSources || []).map((item) => [item.actionId, item.packageIds])
+      )
+      featurePackages.value = packageRes?.packages || []
+      selectedDerivedPackageId.value = ''
+      derivedActionCount.value = memberActions.availableActionIds?.length || 0
+      manualActionCount.value = 0
       Object.keys(effectMap).forEach((key) => delete effectMap[key])
       actions.value.forEach((item) => {
         effectMap[item.id] = ''
       })
-      memberActions.forEach((item) => {
+      ;(memberActions.actions || []).forEach((item) => {
         effectMap[item.actionId] = item.effect
       })
 
@@ -385,6 +524,23 @@
     }
   }
 
+  function buildDerivedSourceText(actionId: string) {
+    const packageIdSet = new Set(derivedSourceMap.value[actionId] || [])
+    const names = featurePackages.value.filter((item) => packageIdSet.has(item.id)).map((item) => item.name)
+    return names.length ? `来源功能包：${names.join('、')}` : '来源功能包未命名'
+  }
+
+  function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem) {
+    router.push({
+      name: 'FeaturePackage',
+      query: {
+        packageKey: item.packageKey,
+        contextType: item.contextType || 'team',
+        open: 'actions'
+      }
+    })
+  }
+
   defineExpose({ open })
 </script>
 
@@ -397,6 +553,66 @@
 
   .dialog-alert {
     margin-bottom: 0;
+  }
+
+  .summary-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .source-detail-grid {
+    display: grid;
+    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+
+  .source-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+  }
+
+  .source-card--derived {
+    border-color: #f3d38a;
+    background: #fffaf0;
+  }
+
+  .source-card--manual {
+    border-color: #bfd3ff;
+    background: #f5f9ff;
+  }
+
+  .source-title {
+    font-size: 13px;
+    color: #475569;
+  }
+
+  .source-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .source-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .package-filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .package-filter-tag {
+    cursor: pointer;
   }
 
   .control-panel {
@@ -418,6 +634,18 @@
     grid-template-columns: minmax(320px, 1fr) 150px 150px;
     gap: 12px;
     align-items: center;
+  }
+
+  .role-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .role-chip-label {
+    font-size: 12px;
+    color: #69778a;
   }
 
   .toolbar-input,

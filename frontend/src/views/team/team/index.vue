@@ -190,13 +190,13 @@
                     hasAction('tenant.boundary.manage')
                       ? h(ElDropdownItem, { command: 'action' }, () => [
                           h(ElIcon, {}, () => h(UserFilled)),
-                          '功能权限'
+                          '补充权限'
                         ])
                       : null,
                     hasAction('platform.package.assign')
                       ? h(ElDropdownItem, { command: 'package' }, () => [
                           h(ElIcon, {}, () => h(UserFilled)),
-                          '功能包'
+                          '开通功能包'
                         ])
                       : null,
                     hasAction('tenant.manage')

@@ -92,13 +92,22 @@ func AutoMigrate() error {
 		&models.RoleMenu{},
 		&models.PermissionAction{},
 		&models.FeaturePackage{},
+		&models.FeaturePackageBundle{},
 		&models.FeaturePackageAction{},
+		&models.FeaturePackageMenu{},
 		&models.TeamFeaturePackage{},
+		&models.UserFeaturePackage{},
+		&models.RoleFeaturePackage{},
+		&models.RoleHiddenMenu{},
 		&models.RoleActionPermission{},
+		&models.RoleDisabledAction{},
 		&models.RoleDataPermission{},
 		&models.TenantActionPermission{},
 		&models.TeamManualActionPermission{},
+		&models.TeamBlockedMenu{},
+		&models.TeamBlockedAction{},
 		&models.UserActionPermission{},
+		&models.UserHiddenMenu{},
 		&models.APIEndpoint{},
 		&models.Menu{},
 		&models.Tenant{},
@@ -219,6 +228,22 @@ func createUniqueIndexes() error {
 		}
 	}
 
+	featurePackageMenuIndexName := "idx_feature_package_menus_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", featurePackageMenuIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + featurePackageMenuIndexName + " ON feature_package_menus (package_id, menu_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	featurePackageBundleIndexName := "idx_feature_package_bundles_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", featurePackageBundleIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + featurePackageBundleIndexName + " ON feature_package_bundles (package_id, child_package_id)").Error; err != nil {
+			return err
+		}
+	}
+
 	teamManualActionIndexName := "idx_team_manual_action_permissions_unique"
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", teamManualActionIndexName).Scan(&count)
 	if count == 0 {
@@ -231,6 +256,62 @@ func createUniqueIndexes() error {
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", teamFeaturePackageIndexName).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE UNIQUE INDEX " + teamFeaturePackageIndexName + " ON team_feature_packages (team_id, package_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	userFeaturePackageIndexName := "idx_user_feature_packages_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", userFeaturePackageIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + userFeaturePackageIndexName + " ON user_feature_packages (user_id, package_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	roleFeaturePackageIndexName := "idx_role_feature_packages_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", roleFeaturePackageIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + roleFeaturePackageIndexName + " ON role_feature_packages (role_id, package_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	roleHiddenMenuIndexName := "idx_role_hidden_menus_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", roleHiddenMenuIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + roleHiddenMenuIndexName + " ON role_hidden_menus (role_id, menu_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	roleDisabledActionIndexName := "idx_role_disabled_actions_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", roleDisabledActionIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + roleDisabledActionIndexName + " ON role_disabled_actions (role_id, action_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	teamBlockedMenuIndexName := "idx_team_blocked_menus_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", teamBlockedMenuIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + teamBlockedMenuIndexName + " ON team_blocked_menus (team_id, menu_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	teamBlockedActionIndexName := "idx_team_blocked_actions_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", teamBlockedActionIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + teamBlockedActionIndexName + " ON team_blocked_actions (team_id, action_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	userHiddenMenuIndexName := "idx_user_hidden_menus_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", userHiddenMenuIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + userHiddenMenuIndexName + " ON user_hidden_menus (user_id, menu_id)").Error; err != nil {
 			return err
 		}
 	}

@@ -1,13 +1,13 @@
 <template>
   <ElDialog
     v-model="visible"
-    :title="`功能包权限配置 - ${packageName}`"
+    :title="`功能包功能范围配置 - ${packageName}`"
     width="980px"
     destroy-on-close
   >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        为功能包选择包含的功能权限。保存时会自动展开父级节点，并校验功能包与功能权限的上下文类型一致。
+        这里配置的是团队开通该功能包后可进入边界的功能范围，不是直接给角色或成员授予权限。团队角色和成员仍然只在这批已开通范围内继续细分授权。
       </div>
 
       <div class="summary-card">
@@ -20,7 +20,7 @@
       <PermissionActionCascaderPanel
         :actions="filteredActions"
         :selected-ids="selectedIds"
-        footer-text="功能包保存的是能力集合，提交前会自动展开父级选择。"
+        footer-text="这里保存的是团队可开放能力范围，角色和成员分配仍然基于基础功能权限。"
         @update:selected-ids="selectedIds = $event"
       />
     </div>
@@ -100,7 +100,7 @@
       allActions.value = actionsRes?.records || []
       selectedIds.value = [...(currentRes?.action_ids || [])]
     } catch (error: any) {
-      ElMessage.error(error?.message || '加载功能包权限失败')
+      ElMessage.error(error?.message || '加载功能包功能范围失败')
     } finally {
       loading.value = false
     }
@@ -111,11 +111,11 @@
     saving.value = true
     try {
       await fetchSetFeaturePackageActions(props.packageId, expandSelectedValues(selectedIds.value, filteredActions.value))
-      ElMessage.success('功能包权限已保存')
+      ElMessage.success('功能包功能范围已保存')
       emit('success')
       visible.value = false
     } catch (error: any) {
-      ElMessage.error(error?.message || '保存功能包权限失败')
+      ElMessage.error(error?.message || '保存功能包功能范围失败')
     } finally {
       saving.value = false
     }

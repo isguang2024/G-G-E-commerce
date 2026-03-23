@@ -251,6 +251,7 @@ declare namespace Api {
       description?: string
       contextType?: 'platform' | 'team' | string
       actionCount?: number
+      menuCount?: number
       teamCount?: number
       status: string
       sortOrder?: number
@@ -296,6 +297,11 @@ declare namespace Api {
       actions: PermissionActionItem[]
     }
 
+    interface FeaturePackageMenuResponse {
+      menu_ids: string[]
+      menus: AppRouteRecord[]
+    }
+
     interface FeaturePackageTeamSetParams {
       team_ids: string[]
     }
@@ -303,6 +309,58 @@ declare namespace Api {
     interface TeamFeaturePackageResponse {
       package_ids: string[]
       packages: FeaturePackageItem[]
+    }
+
+    interface RoleFeaturePackageResponse {
+      package_ids: string[]
+      packages: FeaturePackageItem[]
+      inherited?: boolean
+    }
+
+    interface UserFeaturePackageResponse {
+      package_ids: string[]
+      packages: FeaturePackageItem[]
+    }
+
+    interface RoleActionBoundaryResponse {
+      action_ids: string[]
+      available_action_ids: string[]
+      actions?: PermissionActionItem[]
+      package_ids: string[]
+      expanded_package_ids?: string[]
+      disabled_action_ids?: string[]
+      has_package_boundary?: boolean
+      inherited?: boolean
+      derived_sources?: Array<{
+        action_id: string
+        package_ids: string[]
+      }>
+    }
+
+    interface RoleMenuBoundaryResponse {
+      menu_ids: string[]
+      available_menu_ids: string[]
+      package_ids: string[]
+      expanded_package_ids?: string[]
+      hidden_menu_ids?: string[]
+      inherited?: boolean
+      has_menu_boundary?: boolean
+      derived_sources?: Array<{
+        menu_id: string
+        package_ids: string[]
+      }>
+    }
+
+    interface TeamActionOriginsResponse {
+      packageIds: string[]
+      derivedActionIds: string[]
+      derivedSources?: Array<{
+        actionId: string
+        packageIds: string[]
+      }>
+      manualActionIds: string[]
+      effectiveActionIds: string[]
+      fromCache?: boolean
     }
 
     interface APIEndpointItem {
@@ -333,6 +391,7 @@ declare namespace Api {
       name: string
       description?: string
       contextType?: 'platform' | 'team' | string
+      menuCount?: number
       status: string
       sortOrder?: number
       createdAt?: string
@@ -512,6 +571,16 @@ declare namespace Api {
       actionId: string
       effect: 'allow' | 'deny'
       action?: PermissionActionItem
+    }
+
+    interface TeamMemberActionPermissionResponse {
+      actions: TeamMemberActionPermissionItem[]
+      availableActionIds?: string[]
+      availableActions?: PermissionActionItem[]
+      derivedSources?: Array<{
+        actionId: string
+        packageIds: string[]
+      }>
     }
 
     interface FeaturePackageActionSetParams {

@@ -10,6 +10,9 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
+	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
 type TenantModule struct {
@@ -40,14 +43,20 @@ func (m *TenantModule) RegisterRoutes(rg *gin.RouterGroup) {
 	roleActionRepo := user.NewRoleActionPermissionRepository(m.db)
 	userRoleRepo := user.NewUserRoleRepository(m.db)
 	actionRepo := user.NewPermissionActionRepository(m.db)
-	tenantActionRepo := user.NewTenantActionPermissionRepository(m.db)
 	manualActionRepo := user.NewTeamManualActionPermissionRepository(m.db)
+	blockedActionRepo := user.NewTeamBlockedActionRepository(m.db)
 	userActionRepo := user.NewUserActionPermissionRepository(m.db)
 	teamPackageRepo := user.NewTeamFeaturePackageRepository(m.db)
+	rolePackageRepo := user.NewRoleFeaturePackageRepository(m.db)
+	featurePkgRepo := user.NewFeaturePackageRepository(m.db)
 	packageActionRepo := user.NewFeaturePackageActionRepository(m.db)
+	packageMenuRepo := user.NewFeaturePackageMenuRepository(m.db)
+	boundaryService := teamboundary.NewService(m.db)
+	platformService := platformaccess.NewService(m.db)
+	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService)
 
-	tenantService := NewTenantService(m.db, tenantRepo, tenantMemberRepo, userRepo, roleRepo, userRoleRepo, m.logger)
-	tenantHandler := NewTenantHandler(tenantService, tenantMemberRepo, userRepo, roleRepo, roleMenuRepo, roleActionRepo, userRoleRepo, actionRepo, tenantActionRepo, manualActionRepo, userActionRepo, teamPackageRepo, packageActionRepo, m.logger)
+	tenantService := NewTenantService(m.db, tenantRepo, tenantMemberRepo, userRepo, roleRepo, userRoleRepo, refresher, m.logger)
+	tenantHandler := NewTenantHandler(tenantService, tenantMemberRepo, userRepo, roleRepo, roleMenuRepo, roleActionRepo, userRoleRepo, actionRepo, manualActionRepo, blockedActionRepo, userActionRepo, teamPackageRepo, rolePackageRepo, featurePkgRepo, packageActionRepo, packageMenuRepo, boundaryService, refresher, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 
 	tenants := rg.Group("/tenants")
@@ -67,6 +76,8 @@ func (m *TenantModule) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.POST("/my-team/roles", &apiregistry.RouteMeta{Summary: "创建当前团队角色", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.CreateMyTeamRole)
 		reg.PUT("/my-team/roles/:roleId", &apiregistry.RouteMeta{Summary: "更新当前团队角色", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.UpdateMyTeamRole)
 		reg.DELETE("/my-team/roles/:roleId", &apiregistry.RouteMeta{Summary: "删除当前团队角色", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.DeleteMyTeamRole)
+		reg.GET("/my-team/roles/:roleId/packages", &apiregistry.RouteMeta{Summary: "获取当前团队角色功能包", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.GetMyTeamRolePackages)
+		reg.PUT("/my-team/roles/:roleId/packages", &apiregistry.RouteMeta{Summary: "配置当前团队角色功能包", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.SetMyTeamRolePackages)
 		reg.GET("/my-team/roles/:roleId/menus", &apiregistry.RouteMeta{Summary: "获取当前团队角色菜单权限", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.GetMyTeamRoleMenus)
 		reg.PUT("/my-team/roles/:roleId/menus", &apiregistry.RouteMeta{Summary: "配置当前团队角色菜单权限", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.SetMyTeamRoleMenus)
 		reg.GET("/my-team/roles/:roleId/actions", &apiregistry.RouteMeta{Summary: "获取当前团队角色功能权限", ResourceCode: "team_member", ActionCode: "assign_action"}, authzService.RequireAction("team.member.assign_action"), tenantHandler.GetMyTeamRoleActions)

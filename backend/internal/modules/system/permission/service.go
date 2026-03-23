@@ -11,6 +11,8 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
 var (
@@ -27,26 +29,38 @@ type PermissionService interface {
 }
 
 type permissionService struct {
-	actionRepo       user.PermissionActionRepository
-	roleActionRepo   user.RoleActionPermissionRepository
-	tenantActionRepo user.TenantActionPermissionRepository
-	manualActionRepo user.TeamManualActionPermissionRepository
-	userActionRepo   user.UserActionPermissionRepository
+	actionRepo        user.PermissionActionRepository
+	roleActionRepo    user.RoleActionPermissionRepository
+	packageActionRepo user.FeaturePackageActionRepository
+	teamPackageRepo   user.TeamFeaturePackageRepository
+	tenantActionRepo  user.TenantActionPermissionRepository
+	manualActionRepo  user.TeamManualActionPermissionRepository
+	userActionRepo    user.UserActionPermissionRepository
+	boundaryService   teamboundary.Service
+	refresher         permissionrefresh.Service
 }
 
 func NewPermissionService(
 	actionRepo user.PermissionActionRepository,
 	roleActionRepo user.RoleActionPermissionRepository,
+	packageActionRepo user.FeaturePackageActionRepository,
+	teamPackageRepo user.TeamFeaturePackageRepository,
 	tenantActionRepo user.TenantActionPermissionRepository,
 	manualActionRepo user.TeamManualActionPermissionRepository,
 	userActionRepo user.UserActionPermissionRepository,
+	boundaryService teamboundary.Service,
+	refresher permissionrefresh.Service,
 ) PermissionService {
 	return &permissionService{
-		actionRepo:       actionRepo,
-		roleActionRepo:   roleActionRepo,
-		tenantActionRepo: tenantActionRepo,
-		manualActionRepo: manualActionRepo,
-		userActionRepo:   userActionRepo,
+		actionRepo:        actionRepo,
+		roleActionRepo:    roleActionRepo,
+		packageActionRepo: packageActionRepo,
+		teamPackageRepo:   teamPackageRepo,
+		tenantActionRepo:  tenantActionRepo,
+		manualActionRepo:  manualActionRepo,
+		userActionRepo:    userActionRepo,
+		boundaryService:   boundaryService,
+		refresher:         refresher,
 	}
 }
 
@@ -271,7 +285,24 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 		}
 		return err
 	}
+	packageIDs, err := s.packageActionRepo.GetPackageIDsByActionID(id)
+	if err != nil {
+		return err
+	}
+	affectedTeams := make(map[uuid.UUID]struct{})
+	for _, packageID := range packageIDs {
+		teamIDs, teamErr := s.teamPackageRepo.GetTeamIDsByPackageID(packageID)
+		if teamErr != nil {
+			return teamErr
+		}
+		for _, teamID := range teamIDs {
+			affectedTeams[teamID] = struct{}{}
+		}
+	}
 	if err := s.roleActionRepo.DeleteByActionID(id); err != nil {
+		return err
+	}
+	if err := s.packageActionRepo.DeleteByActionID(id); err != nil {
 		return err
 	}
 	if err := s.tenantActionRepo.DeleteByActionID(id); err != nil {
@@ -283,5 +314,19 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 	if err := s.userActionRepo.DeleteByActionID(id); err != nil {
 		return err
 	}
-	return s.actionRepo.Delete(id)
+	if err := s.actionRepo.Delete(id); err != nil {
+		return err
+	}
+	if s.refresher != nil {
+		if err := s.refresher.RefreshByPackages(packageIDs); err != nil {
+			return err
+		}
+		return nil
+	}
+	for teamID := range affectedTeams {
+		if _, err := s.boundaryService.RefreshCache(teamID); err != nil {
+			return err
+		}
+	}
+	return nil
 }

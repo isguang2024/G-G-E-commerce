@@ -1,18 +1,18 @@
 <template>
   <ElDialog
     v-model="visible"
-    :title="`用户功能权限 - ${userTitle}`"
+    :title="`用户权限例外 - ${userTitle}`"
     width="1120px"
     destroy-on-close
     class="user-permission-dialog"
   >
     <div class="dialog-shell" v-loading="loading">
-      <div class="dialog-note">
-        配置个人功能权限。默认继承角色，仅在例外场景下使用单独配置。勾选后可设置为允许或拒绝，不勾选则继续继承角色。
-      </div>
+        <div class="dialog-note">
+          平台用户请优先绑定功能包。这里是兼容性的个人例外权限入口，默认继承全局角色与用户已绑定功能包，仅在需要显式允许或拒绝时使用。
+        </div>
 
       <ElTabs v-model="activeTab" class="permission-tabs">
-        <ElTabPane label="例外配置" name="custom">
+        <ElTabPane label="权限例外" name="custom">
           <div class="cascader-pane">
             <div class="cascader-toolbar">
               <div class="cascader-tags">
@@ -550,7 +550,7 @@ async function handleSave() {
       effect
     }))
     await fetchSetUserActions(props.userData.id, payload)
-    ElMessage.success('用户功能权限已保存')
+    ElMessage.success('用户权限例外已保存')
     emit('success')
     visible.value = false
   } catch (error: any) {

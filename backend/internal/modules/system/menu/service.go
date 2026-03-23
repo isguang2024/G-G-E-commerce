@@ -11,6 +11,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 )
 
 var (
@@ -31,12 +32,13 @@ type MenuService interface {
 }
 
 type menuService struct {
-	menuRepo user.MenuRepository
-	logger   *zap.Logger
+	menuRepo  user.MenuRepository
+	refresher permissionrefresh.Service
+	logger    *zap.Logger
 }
 
-func NewMenuService(menuRepo user.MenuRepository, logger *zap.Logger) MenuService {
-	return &menuService{menuRepo: menuRepo, logger: logger}
+func NewMenuService(menuRepo user.MenuRepository, refresher permissionrefresh.Service, logger *zap.Logger) MenuService {
+	return &menuService{menuRepo: menuRepo, refresher: refresher, logger: logger}
 }
 
 func (s *menuService) GetTree(all bool, allowedMenuIDs []uuid.UUID) ([]*user.Menu, error) {
@@ -173,7 +175,13 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 		m.Meta = req.Meta
 	}
 	m.Hidden = req.Hidden
-	return s.menuRepo.Update(m, shouldUpdateParent)
+	if err := s.menuRepo.Update(m, shouldUpdateParent); err != nil {
+		return err
+	}
+	if s.refresher != nil {
+		return s.refresher.RefreshByMenu(id)
+	}
+	return nil
 }
 
 func (s *menuService) isDescendant(flat []user.Menu, ancestorID, targetID uuid.UUID) bool {
@@ -212,7 +220,13 @@ func (s *menuService) Delete(id uuid.UUID) error {
 		return errors.New("该菜单存在子菜单，无法删除")
 	}
 
-	return s.menuRepo.Delete(id)
+	if err := s.menuRepo.Delete(id); err != nil {
+		return err
+	}
+	if s.refresher != nil {
+		return s.refresher.RefreshByMenu(id)
+	}
+	return nil
 }
 
 // 菜单备份相关方法

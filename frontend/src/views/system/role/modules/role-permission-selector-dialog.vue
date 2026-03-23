@@ -7,9 +7,9 @@
     class="role-permission-dialog"
   >
     <div class="dialog-shell" v-loading="loading">
-      <div class="dialog-note">
-        统一配置角色菜单权限、功能权限和数据权限。菜单权限控制入口可见，功能权限勾选后即允许，不勾选默认不允许，数据权限控制资源范围。
-      </div>
+        <div class="dialog-note">
+          请先为角色绑定功能包，再在角色已绑定功能包范围内裁剪菜单权限、功能权限和数据权限。菜单权限控制入口可见，功能权限勾选后即允许，不勾选默认不允许，数据权限控制资源范围。
+        </div>
 
       <ElTabs v-model="activeTab" class="permission-tabs">
         <ElTabPane label="菜单权限" name="menus">
@@ -293,9 +293,11 @@ const actionKeyword = ref('')
 
 const menuTreeData = ref<RoleMenuNode[]>([])
 const selectedMenuNodeValues = ref<string[]>([])
+const roleMenuBoundary = ref<Api.SystemManage.RoleMenuBoundaryResponse | null>(null)
 
 const permissionActions = ref<Api.SystemManage.PermissionActionItem[]>([])
 const selectedActionNodeValues = ref<string[]>([])
+const roleActionBoundary = ref<Api.SystemManage.RoleActionBoundaryResponse | null>(null)
 
 const dataRows = ref<DataRow[]>([])
 const dataScopeOptions = ref<Api.SystemManage.RoleDataPermissionScopeOption[]>([])
@@ -305,6 +307,12 @@ const roleTitle = computed(() => props.roleData?.roleName || '')
 const menuOptions = computed<MenuOption[]>(() => normalizeMenuOptions(menuTreeData.value))
 const menuNodeCount = computed(() => flattenMenuIds(menuTreeData.value).length)
 const selectedMenuIdSet = computed(() => new Set(expandedSelectedMenuIds.value))
+const hasRoleMenuBoundary = computed(
+  () => Boolean(roleMenuBoundary.value?.has_menu_boundary || roleMenuBoundary.value?.package_ids?.length)
+)
+const availableMenuIdSet = computed(
+  () => new Set((roleMenuBoundary.value?.available_menu_ids || []).map((item) => `${item}`))
+)
 
 const menuBranchMap = computed(() => {
   const map = new Map<string, string[]>()
@@ -327,7 +335,17 @@ const menuBranchMap = computed(() => {
 
 const expandedSelectedMenuIds = computed(() => expandSelectedValues(selectedMenuNodeValues.value, menuBranchMap.value))
 
-const filteredPermissionActions = computed(() => permissionActions.value)
+const hasRoleActionBoundary = computed(
+  () => Boolean(roleActionBoundary.value?.has_package_boundary || roleActionBoundary.value?.package_ids?.length)
+)
+const availableActionIdSet = computed(
+  () => new Set((roleActionBoundary.value?.available_action_ids || []).map((item) => `${item}`))
+)
+
+const filteredPermissionActions = computed(() => {
+  if (!hasRoleActionBoundary.value) return permissionActions.value
+  return permissionActions.value.filter((item) => availableActionIdSet.value.has(item.id))
+})
 
 const actionOptions = computed<ActionOption[]>(() => {
   const featureMap = new Map<string, ActionOption>()
@@ -431,6 +449,7 @@ const actionCascaderProps: CascaderProps = {
 const filteredMenuOptions = computed(() => {
   const keyword = menuKeyword.value.trim().toLowerCase()
   return filterNestedOptions(menuOptions.value, (node) => {
+    if (hasRoleMenuBoundary.value && !availableMenuIdSet.value.has(`${node.value}`)) return false
     if (!node.leaf) return !keyword
     if (!showInnerMenus.value && node.isInnerPage) return false
     if (!showHiddenMenus.value && !node.isInnerPage && node.isHide) return false
@@ -496,10 +515,14 @@ async function loadData() {
     ])
 
     menuTreeData.value = Array.isArray(menuTree) ? normalizeMenus(menuTree) : []
+    roleMenuBoundary.value = roleMenus || null
     selectedMenuNodeValues.value = (roleMenus?.menu_ids || []).map((item) => `${item}`)
 
     permissionActions.value = actionList?.records || []
-    const availableActionIDSet = new Set(filteredPermissionActions.value.map((item) => item.id))
+    roleActionBoundary.value = roleActions || null
+    const availableActionIDSet = hasRoleActionBoundary.value
+      ? availableActionIdSet.value
+      : new Set(permissionActions.value.map((item) => item.id))
     selectedActionNodeValues.value = (roleActions?.action_ids || []).filter(
       (item) => item && availableActionIDSet.has(item)
     )

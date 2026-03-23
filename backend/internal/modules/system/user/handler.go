@@ -23,12 +23,22 @@ type UserHandler struct {
 	actionRepo interface {
 		GetByIDs(ids []uuid.UUID) ([]PermissionAction, error)
 	}
+	featurePkgRepo interface {
+		GetByIDs(ids []uuid.UUID) ([]FeaturePackage, error)
+	}
+	userPackageRepo interface {
+		GetPackageIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error)
+		ReplaceUserPackages(userID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error
+	}
 	userActionRepo interface {
 		GetByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]UserActionPermission, error)
 		ReplaceUserActions(userID uuid.UUID, tenantID *uuid.UUID, actions []UserActionPermission) error
 	}
 	menuRepo interface {
 		ListAll() ([]Menu, error)
+	}
+	refresher interface {
+		RefreshPlatformUser(userID uuid.UUID) error
 	}
 	logger *zap.Logger
 }
@@ -37,18 +47,28 @@ func NewUserHandler(userService UserService, permissionService interface {
 	GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
 }, actionRepo interface {
 	GetByIDs(ids []uuid.UUID) ([]PermissionAction, error)
+}, featurePkgRepo interface {
+	GetByIDs(ids []uuid.UUID) ([]FeaturePackage, error)
+}, userPackageRepo interface {
+	GetPackageIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceUserPackages(userID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error
 }, userActionRepo interface {
 	GetByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]UserActionPermission, error)
 	ReplaceUserActions(userID uuid.UUID, tenantID *uuid.UUID, actions []UserActionPermission) error
 }, menuRepo interface {
 	ListAll() ([]Menu, error)
+}, refresher interface {
+	RefreshPlatformUser(userID uuid.UUID) error
 }, logger *zap.Logger) *UserHandler {
 	return &UserHandler{
 		userService:       userService,
 		permissionService: permissionService,
 		actionRepo:        actionRepo,
+		featurePkgRepo:    featurePkgRepo,
+		userPackageRepo:   userPackageRepo,
 		userActionRepo:    userActionRepo,
 		menuRepo:          menuRepo,
+		refresher:         refresher,
 		logger:            logger,
 	}
 }
@@ -307,6 +327,14 @@ func (h *UserHandler) AssignRoles(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	if h.refresher != nil {
+		if err := h.refresher.RefreshPlatformUser(id); err != nil {
+			h.logger.Error("Refresh platform user after assigning roles failed", zap.Error(err))
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新用户权限快照失败")
+			c.JSON(status, resp)
+			return
+		}
+	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
@@ -442,6 +470,14 @@ func (h *UserHandler) SetActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	if h.refresher != nil {
+		if err := h.refresher.RefreshPlatformUser(id); err != nil {
+			h.logger.Error("Refresh platform user after setting actions failed", zap.Error(err))
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新用户权限快照失败")
+			c.JSON(status, resp)
+			return
+		}
+	}
 
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
@@ -492,12 +528,161 @@ func (h *UserHandler) GetPermissions(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(menuTree))
 }
 
+func (h *UserHandler) GetPackages(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+	if _, err := h.userService.Get(id); err != nil {
+		if err == ErrUserNotFound {
+			status, resp := errcode.Response(errcode.ErrUserNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户失败")
+		c.JSON(status, resp)
+		return
+	}
+	packageIDs, err := h.userPackageRepo.GetPackageIDsByUserID(id)
+	if err != nil {
+		h.logger.Error("Get user packages failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户功能包失败")
+		c.JSON(status, resp)
+		return
+	}
+	packages, err := h.featurePkgRepo.GetByIDs(packageIDs)
+	if err != nil {
+		h.logger.Error("Get user package details failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包详情失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"package_ids": packageIDsToStrings(packageIDs),
+		"packages":    featurePackageListToMaps(packages),
+	}))
+}
+
+func (h *UserHandler) SetPackages(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+	if _, err := h.userService.Get(id); err != nil {
+		if err == ErrUserNotFound {
+			status, resp := errcode.Response(errcode.ErrUserNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	var req dto.RoleFeaturePackagesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	packageIDs := make([]uuid.UUID, 0, len(req.PackageIDs))
+	for _, item := range req.PackageIDs {
+		packageID, parseErr := uuid.Parse(item)
+		if parseErr != nil {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能包ID")
+			c.JSON(status, resp)
+			return
+		}
+		packageIDs = append(packageIDs, packageID)
+	}
+	if len(packageIDs) > 0 {
+		packages, err := h.featurePkgRepo.GetByIDs(packageIDs)
+		if err != nil {
+			h.logger.Error("Get user package details failed", zap.Error(err))
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包失败")
+			c.JSON(status, resp)
+			return
+		}
+		if len(packages) != len(packageIDs) {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "包含不存在的功能包")
+			c.JSON(status, resp)
+			return
+		}
+		for _, item := range packages {
+			if !supportsPlatformContext(item.ContextType) {
+				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "仅支持绑定平台功能包")
+				c.JSON(status, resp)
+				return
+			}
+		}
+	}
+	var grantedBy *uuid.UUID
+	if rawUserID, ok := c.Get("user_id"); ok {
+		if userIDStr, ok := rawUserID.(string); ok {
+			if userID, parseErr := uuid.Parse(userIDStr); parseErr == nil {
+				grantedBy = &userID
+			}
+		}
+	}
+	if err := h.userPackageRepo.ReplaceUserPackages(id, packageIDs, grantedBy); err != nil {
+		h.logger.Error("Set user packages failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存用户功能包失败")
+		c.JSON(status, resp)
+		return
+	}
+	if h.refresher != nil {
+		if err := h.refresher.RefreshPlatformUser(id); err != nil {
+			h.logger.Error("Refresh platform user after setting packages failed", zap.Error(err))
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新用户权限快照失败")
+			c.JSON(status, resp)
+			return
+		}
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
 func roleCodes(roles []Role) []string {
 	codes := make([]string, 0, len(roles))
 	for _, r := range roles {
 		codes = append(codes, r.Code)
 	}
 	return codes
+}
+
+func packageIDsToStrings(ids []uuid.UUID) []string {
+	result := make([]string, 0, len(ids))
+	for _, id := range ids {
+		result = append(result, id.String())
+	}
+	return result
+}
+
+func featurePackageListToMaps(items []FeaturePackage) []gin.H {
+	result := make([]gin.H, 0, len(items))
+	for _, item := range items {
+		result = append(result, gin.H{
+			"id":           item.ID.String(),
+			"package_key":  item.PackageKey,
+			"package_type": item.PackageType,
+			"name":         item.Name,
+			"description":  item.Description,
+			"context_type": item.ContextType,
+			"status":       item.Status,
+			"is_builtin":   item.IsBuiltin,
+			"sort_order":   item.SortOrder,
+		})
+	}
+	return result
+}
+
+func supportsPlatformContext(contextType string) bool {
+	return contextType == "" || contextType == "platform" || contextType == "platform,team"
 }
 
 func roleInfos(roles []Role) []gin.H {

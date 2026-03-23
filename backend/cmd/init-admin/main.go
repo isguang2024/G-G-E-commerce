@@ -122,8 +122,8 @@ func assignAdminRole(userID uuid.UUID, logger *zap.Logger) error {
 	result := database.DB.Where("user_id = ? AND role_id = ? AND tenant_id IS NULL", userID, adminRole.ID).First(&userRole)
 	if result.Error == gorm.ErrRecordNotFound {
 		userRole = user.UserRole{
-			UserID: userID,
-			RoleID: adminRole.ID,
+			UserID:   userID,
+			RoleID:   adminRole.ID,
 			TenantID: nil,
 		}
 		if err := database.DB.Create(&userRole).Error; err != nil {

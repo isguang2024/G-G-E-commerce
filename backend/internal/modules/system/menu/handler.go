@@ -13,33 +13,48 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
 const tenantContextHeader = "X-Tenant-ID"
 
 type MenuHandler struct {
-	menuService      MenuService
+	menuService       MenuService
+	permissionService interface {
+		GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
+	}
 	userRepo         user.UserRepository
+	roleRepo         user.RoleRepository
 	roleMenuRepo     user.RoleMenuRepository
 	userRoleRepo     user.UserRoleRepository
 	tenantMemberRepo user.TenantMemberRepository
+	teamPackageRepo  user.TeamFeaturePackageRepository
+	packageMenuRepo  user.FeaturePackageMenuRepository
+	boundaryService  teamboundary.Service
 	authzService     interface {
 		Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionAction, error)
 	}
 	logger *zap.Logger
 }
 
-func NewMenuHandler(menuService MenuService, userRepo user.UserRepository, roleMenuRepo user.RoleMenuRepository, userRoleRepo user.UserRoleRepository, tenantMemberRepo user.TenantMemberRepository, authzService interface {
+func NewMenuHandler(menuService MenuService, permissionService interface {
+	GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
+}, userRepo user.UserRepository, roleRepo user.RoleRepository, roleMenuRepo user.RoleMenuRepository, userRoleRepo user.UserRoleRepository, tenantMemberRepo user.TenantMemberRepository, teamPackageRepo user.TeamFeaturePackageRepository, packageMenuRepo user.FeaturePackageMenuRepository, boundaryService teamboundary.Service, authzService interface {
 	Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionAction, error)
 }, logger *zap.Logger) *MenuHandler {
 	return &MenuHandler{
-		menuService:      menuService,
-		userRepo:         userRepo,
-		roleMenuRepo:     roleMenuRepo,
-		userRoleRepo:     userRoleRepo,
-		tenantMemberRepo: tenantMemberRepo,
-		authzService:     authzService,
-		logger:           logger,
+		menuService:       menuService,
+		permissionService: permissionService,
+		userRepo:          userRepo,
+		roleRepo:          roleRepo,
+		roleMenuRepo:      roleMenuRepo,
+		userRoleRepo:      userRoleRepo,
+		tenantMemberRepo:  tenantMemberRepo,
+		teamPackageRepo:   teamPackageRepo,
+		packageMenuRepo:   packageMenuRepo,
+		boundaryService:   boundaryService,
+		authzService:      authzService,
+		logger:            logger,
 	}
 }
 
@@ -68,39 +83,11 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 
 	var allowedMenuIDs []uuid.UUID
 	if !all {
-		userIDStr, ok := c.Get("user_id")
-		if ok {
-			if idStr, ok := userIDStr.(string); ok {
-				if userID, err := uuid.Parse(idStr); err == nil {
-					tenantIDStr := strings.TrimSpace(c.Query("tenant_id"))
-					if tenantIDStr == "" {
-						tenantIDStr = strings.TrimSpace(c.GetHeader(tenantContextHeader))
-					}
-					if tenantIDStr != "" && h.tenantMemberRepo != nil && h.roleMenuRepo != nil {
-						if tid, err := uuid.Parse(tenantIDStr); err == nil {
-							roleIDs, _ := h.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndTenant(userID, &tid)
-							allowedMenuIDs, _ = h.roleMenuRepo.GetMenuIDsByRoleIDs(roleIDs)
-						}
-					}
-					if len(allowedMenuIDs) == 0 && h.userRepo != nil {
-						user, err := h.userRepo.GetByID(userID)
-						if err == nil && user.Roles != nil && len(user.Roles) > 0 {
-							roleIDs := make([]uuid.UUID, 0, len(user.Roles))
-							isAdmin := false
-							for _, r := range user.Roles {
-								roleIDs = append(roleIDs, r.ID)
-								if r.Code == "admin" {
-									isAdmin = true
-								}
-							}
-							allowedMenuIDs, _ = h.roleMenuRepo.GetMenuIDsByRoleIDs(roleIDs)
-							// 如果是admin角色且没有菜单关联，返回所有菜单
-							if len(allowedMenuIDs) == 0 && isAdmin {
-								all = true
-							}
-						}
-					}
-				}
+		userID, err := currentUserID(c)
+		if err == nil && h.permissionService != nil {
+			tenantID, tenantErr := currentTenantID(c)
+			if tenantErr == nil {
+				allowedMenuIDs, _ = h.permissionService.GetUserMenuIDs(userID, tenantID)
 			}
 		}
 	}
@@ -116,6 +103,73 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 		out = append(out, menuToMap(node))
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(out))
+}
+
+func (h *MenuHandler) getTeamContextAllowedMenuIDs(teamID uuid.UUID, roleIDs []uuid.UUID) ([]uuid.UUID, error) {
+	if len(roleIDs) == 0 || h.roleRepo == nil || h.boundaryService == nil {
+		return []uuid.UUID{}, nil
+	}
+	roles, err := h.roleRepo.GetByIDs(roleIDs)
+	if err != nil {
+		return nil, err
+	}
+	roleMap := make(map[uuid.UUID]user.Role, len(roles))
+	for _, role := range roles {
+		roleMap[role.ID] = role
+	}
+	allowedSet := make(map[uuid.UUID]struct{})
+	for _, roleID := range roleIDs {
+		role, ok := roleMap[roleID]
+		if !ok {
+			continue
+		}
+		roleMenus, roleMenusErr := h.roleMenuRepo.GetMenuIDsByRoleID(role.ID)
+		if roleMenusErr != nil {
+			return nil, roleMenusErr
+		}
+		snapshot, snapshotErr := h.boundaryService.GetRoleSnapshot(teamID, role.ID, role.TenantID == nil)
+		if snapshotErr != nil {
+			return nil, snapshotErr
+		}
+		roleAllowed := roleMenus
+		if snapshot.HasMenuBoundary {
+			roleAllowed = intersectMenuIDs(roleMenus, snapshot.MenuIDs)
+		}
+		for _, menuID := range roleAllowed {
+			allowedSet[menuID] = struct{}{}
+		}
+	}
+	if len(allowedSet) == 0 {
+		return []uuid.UUID{}, nil
+	}
+	allowedMenuIDs := make([]uuid.UUID, 0, len(allowedSet))
+	for menuID := range allowedSet {
+		allowedMenuIDs = append(allowedMenuIDs, menuID)
+	}
+	return allowedMenuIDs, nil
+}
+
+func intersectMenuIDs(primary, boundary []uuid.UUID) []uuid.UUID {
+	if len(primary) == 0 || len(boundary) == 0 {
+		return []uuid.UUID{}
+	}
+	boundarySet := make(map[uuid.UUID]struct{}, len(boundary))
+	for _, id := range boundary {
+		boundarySet[id] = struct{}{}
+	}
+	result := make([]uuid.UUID, 0, len(primary))
+	seen := make(map[uuid.UUID]struct{}, len(primary))
+	for _, id := range primary {
+		if _, ok := boundarySet[id]; !ok {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		result = append(result, id)
+	}
+	return result
 }
 
 func (h *MenuHandler) Create(c *gin.Context) {

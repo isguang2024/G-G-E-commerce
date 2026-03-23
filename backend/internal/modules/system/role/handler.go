@@ -183,6 +183,86 @@ func (h *RoleHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
+func (h *RoleHandler) GetRolePackages(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
+		c.JSON(status, resp)
+		return
+	}
+	packageIDs, packages, err := h.roleService.GetRolePackages(id)
+	if err != nil {
+		if err == ErrRoleNotFound {
+			status, resp := errcode.Response(errcode.ErrRoleNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		if err == ErrTenantRoleManagedByTeam {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "团队自定义角色需要在团队上下文中维护")
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get role packages failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取角色功能包失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"package_ids": packageIDsToStrings(packageIDs),
+		"packages":    featurePackageListToMaps(packages),
+	}))
+}
+
+func (h *RoleHandler) SetRolePackages(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
+		c.JSON(status, resp)
+		return
+	}
+	var req dto.RoleFeaturePackagesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	packageIDs := make([]uuid.UUID, 0, len(req.PackageIDs))
+	for _, item := range req.PackageIDs {
+		packageID, parseErr := uuid.Parse(item)
+		if parseErr != nil {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能包ID")
+			c.JSON(status, resp)
+			return
+		}
+		packageIDs = append(packageIDs, packageID)
+	}
+	var grantedBy *uuid.UUID
+	if rawUserID, ok := c.Get("user_id"); ok {
+		if userIDStr, ok := rawUserID.(string); ok {
+			if userID, parseErr := uuid.Parse(userIDStr); parseErr == nil {
+				grantedBy = &userID
+			}
+		}
+	}
+	if err := h.roleService.SetRolePackages(id, packageIDs, grantedBy); err != nil {
+		if err == ErrRoleNotFound {
+			status, resp := errcode.Response(errcode.ErrRoleNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		if err == ErrTenantRoleManagedByTeam {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "团队自定义角色需要在团队上下文中维护")
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Set role packages failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存角色功能包失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
 func (h *RoleHandler) GetRoleMenus(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -190,10 +270,15 @@ func (h *RoleHandler) GetRoleMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	menuIDs, err := h.roleService.GetRoleMenuIDs(id)
+	boundary, err := h.roleService.GetRoleMenuBoundary(id)
 	if err != nil {
 		if err == ErrRoleNotFound {
 			status, resp := errcode.Response(errcode.ErrRoleNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		if err == ErrTenantRoleManagedByTeam {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "团队自定义角色需要在团队上下文中维护")
 			c.JSON(status, resp)
 			return
 		}
@@ -202,11 +287,69 @@ func (h *RoleHandler) GetRoleMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	ids := make([]string, 0, len(menuIDs))
-	for _, u := range menuIDs {
-		ids = append(ids, u.String())
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"menu_ids":             packageIDsToStrings(boundary.EffectiveMenuIDs),
+		"available_menu_ids":   packageIDsToStrings(boundary.AvailableMenuIDs),
+		"hidden_menu_ids":      packageIDsToStrings(boundary.HiddenMenuIDs),
+		"package_ids":          packageIDsToStrings(boundary.PackageIDs),
+		"expanded_package_ids": packageIDsToStrings(boundary.ExpandedPackageIDs),
+		"derived_sources":      buildMenuSourceMaps(boundary.MenuSourceMap),
+		"has_menu_boundary":    boundary.HasPackageConfig,
+	}))
+}
+
+func packageIDsToStrings(ids []uuid.UUID) []string {
+	result := make([]string, 0, len(ids))
+	for _, id := range ids {
+		result = append(result, id.String())
 	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"menu_ids": ids}))
+	return result
+}
+
+func featurePackageListToMaps(items []user.FeaturePackage) []gin.H {
+	result := make([]gin.H, 0, len(items))
+	for _, item := range items {
+		result = append(result, gin.H{
+			"id":           item.ID.String(),
+			"package_key":  item.PackageKey,
+			"package_type": item.PackageType,
+			"name":         item.Name,
+			"description":  item.Description,
+			"context_type": item.ContextType,
+			"status":       item.Status,
+			"is_builtin":   item.IsBuiltin,
+			"sort_order":   item.SortOrder,
+		})
+	}
+	return result
+}
+
+func buildActionSourceMaps(sourceMap map[uuid.UUID][]uuid.UUID) []gin.H {
+	if len(sourceMap) == 0 {
+		return []gin.H{}
+	}
+	result := make([]gin.H, 0, len(sourceMap))
+	for actionID, packageIDs := range sourceMap {
+		result = append(result, gin.H{
+			"action_id":   actionID.String(),
+			"package_ids": packageIDsToStrings(packageIDs),
+		})
+	}
+	return result
+}
+
+func buildMenuSourceMaps(sourceMap map[uuid.UUID][]uuid.UUID) []gin.H {
+	if len(sourceMap) == 0 {
+		return []gin.H{}
+	}
+	result := make([]gin.H, 0, len(sourceMap))
+	for menuID, packageIDs := range sourceMap {
+		result = append(result, gin.H{
+			"menu_id":     menuID.String(),
+			"package_ids": packageIDsToStrings(packageIDs),
+		})
+	}
+	return result
 }
 
 func (h *RoleHandler) SetRoleMenus(c *gin.Context) {
@@ -258,10 +401,15 @@ func (h *RoleHandler) GetRoleActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	records, err := h.roleService.GetRoleActions(id)
+	boundary, err := h.roleService.GetRoleActionBoundary(id)
 	if err != nil {
 		if err == ErrRoleNotFound {
 			status, resp := errcode.Response(errcode.ErrRoleNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		if err == ErrTenantRoleManagedByTeam {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "团队自定义角色需要在团队上下文中维护")
 			c.JSON(status, resp)
 			return
 		}
@@ -270,11 +418,15 @@ func (h *RoleHandler) GetRoleActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	actionIDs := make([]string, 0, len(records))
-	for _, record := range records {
-		actionIDs = append(actionIDs, record.ActionID.String())
-	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"action_ids": actionIDs}))
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"action_ids":           packageIDsToStrings(boundary.EffectiveActionIDs),
+		"available_action_ids": packageIDsToStrings(boundary.AvailableActionIDs),
+		"disabled_action_ids":  packageIDsToStrings(boundary.DisabledActionIDs),
+		"package_ids":          packageIDsToStrings(boundary.PackageIDs),
+		"expanded_package_ids": packageIDsToStrings(boundary.ExpandedPackageIDs),
+		"derived_sources":      buildActionSourceMaps(boundary.ActionSourceMap),
+		"has_package_boundary": boundary.HasPackageConfig,
+	}))
 }
 
 func (h *RoleHandler) SetRoleActions(c *gin.Context) {

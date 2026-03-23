@@ -6,12 +6,18 @@
           <div>
             <div class="font-medium">当前团队角色管理</div>
             <div class="mt-2 text-sm text-gray-500">
-              基础团队角色只读展示；当前团队自定义角色可单独维护菜单权限和功能权限。
+              基础团队角色默认继承当前团队已开通功能包；当前团队自定义角色先绑定功能包，再在功能包范围内维护菜单权限和角色权限。
             </div>
           </div>
           <ElButton type="primary" @click="openAddDialog">新增团队角色</ElButton>
         </div>
       </template>
+
+      <div class="stats-row">
+        <ElTag effect="plain" round>角色总数 {{ data.length }}</ElTag>
+        <ElTag type="info" effect="plain" round>基础角色 {{ baseRoleCount }}</ElTag>
+        <ElTag type="success" effect="plain" round>团队自定义 {{ customRoleCount }}</ElTag>
+      </div>
 
       <ArtTableHeader
         v-model:columns="columnChecks"
@@ -31,19 +37,21 @@
     </ElCard>
 
     <TeamRoleDialog v-model="roleDialog" :dialog-type="dialogType" :role-data="currentRoleData" @success="onSuccess" />
+    <TeamRolePackageDialog v-model="packageDialog" :role-data="currentRoleData" @success="onSuccess" />
     <TeamRoleMenuDialog v-model="menuDialog" :role-data="currentRoleData" @success="onSuccess" />
     <TeamRoleActionDialog v-model="actionDialog" :role-data="currentRoleData" @success="onSuccess" />
   </div>
 </template>
 
 <script setup lang="ts">
-  import { h, ref } from 'vue'
+  import { computed, h, ref } from 'vue'
   import { ElMessageBox, ElTag } from 'element-plus'
   import { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { useTable } from '@/hooks/core/useTable'
   import { fetchDeleteMyTeamRole, fetchGetMyTeamRoles } from '@/api/team'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import TeamRoleDialog from './modules/team-role-dialog.vue'
+  import TeamRolePackageDialog from './modules/team-role-package-dialog.vue'
   import TeamRoleMenuDialog from './modules/team-role-menu-dialog.vue'
   import TeamRoleActionDialog from './modules/team-role-action-dialog.vue'
 
@@ -53,10 +61,13 @@
 
   const showSearchBar = ref(false)
   const roleDialog = ref(false)
+  const packageDialog = ref(false)
   const menuDialog = ref(false)
   const actionDialog = ref(false)
   const dialogType = ref<'add' | 'edit'>('add')
   const currentRoleData = ref<RoleListItem | undefined>(undefined)
+  const baseRoleCount = computed(() => data.value.filter((item) => item.isGlobal).length)
+  const customRoleCount = computed(() => data.value.filter((item) => !item.isGlobal).length)
 
   const { columns, columnChecks, data, loading, pagination, handleSizeChange, handleCurrentChange, refreshData } =
     useTable({
@@ -95,8 +106,9 @@
             fixed: 'right',
             formatter: (row: RoleListItem) => {
               const list = [
+                { key: 'packages', label: row.isGlobal ? '查看功能包' : '功能包', icon: 'ri:apps-2-line' },
                 { key: 'menus', label: row.isGlobal ? '查看菜单权限' : '菜单权限', icon: 'ri:menu-line' },
-                { key: 'actions', label: row.isGlobal ? '查看功能权限' : '功能权限', icon: 'ri:shield-keyhole-line' }
+                { key: 'actions', label: row.isGlobal ? '查看角色权限' : '角色权限', icon: 'ri:shield-keyhole-line' }
               ]
               if (!row.isGlobal) {
                 list.unshift({ key: 'edit', label: '编辑角色', icon: 'ri:edit-line' })
@@ -131,6 +143,10 @@
       menuDialog.value = true
       return
     }
+    if (item.key === 'packages') {
+      packageDialog.value = true
+      return
+    }
     if (item.key === 'actions') {
       actionDialog.value = true
       return
@@ -153,5 +169,12 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
+  }
+
+  .stats-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
   }
 </style>

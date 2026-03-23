@@ -10,6 +10,9 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
+	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
 type MenuModule struct {
@@ -33,13 +36,26 @@ func (m *MenuModule) Init() error {
 
 func (m *MenuModule) RegisterRoutes(rg *gin.RouterGroup) {
 	menuRepo := user.NewMenuRepository(m.db)
-	menuService := NewMenuService(menuRepo, m.logger)
 	userRepo := user.NewUserRepository(m.db)
+	roleRepo := user.NewRoleRepository(m.db)
 	roleMenuRepo := user.NewRoleMenuRepository(m.db)
 	userRoleRepo := user.NewUserRoleRepository(m.db)
+	rolePackageRepo := user.NewRoleFeaturePackageRepository(m.db)
+	userPackageRepo := user.NewUserFeaturePackageRepository(m.db)
+	packageRepo := user.NewFeaturePackageRepository(m.db)
+	packageBundleRepo := user.NewFeaturePackageBundleRepository(m.db)
+	roleHiddenMenuRepo := user.NewRoleHiddenMenuRepository(m.db)
+	userHiddenMenuRepo := user.NewUserHiddenMenuRepository(m.db)
 	tenantMemberRepo := user.NewTenantMemberRepository(m.db)
+	teamPackageRepo := user.NewTeamFeaturePackageRepository(m.db)
+	packageMenuRepo := user.NewFeaturePackageMenuRepository(m.db)
+	boundaryService := teamboundary.NewService(m.db)
+	platformService := platformaccess.NewService(m.db)
+	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService)
+	menuService := NewMenuService(menuRepo, refresher, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
-	menuHandler := NewMenuHandler(menuService, userRepo, roleMenuRepo, userRoleRepo, tenantMemberRepo, authzService, m.logger)
+	permissionService := user.NewPermissionService(userRepo, roleRepo, userRoleRepo, roleMenuRepo, rolePackageRepo, userPackageRepo, packageRepo, packageMenuRepo, packageBundleRepo, roleHiddenMenuRepo, userHiddenMenuRepo, menuRepo, boundaryService, platformService)
+	menuHandler := NewMenuHandler(menuService, permissionService, userRepo, roleRepo, roleMenuRepo, userRoleRepo, tenantMemberRepo, teamPackageRepo, packageMenuRepo, boundaryService, authzService, m.logger)
 
 	menus := rg.Group("/menus")
 	reg := apiregistry.NewRegistrar(menus, "menu")

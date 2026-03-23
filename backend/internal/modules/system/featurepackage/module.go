@@ -9,6 +9,9 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
+	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
 type Module struct {
@@ -29,12 +32,16 @@ func (m *Module) Init() error {
 func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	packageRepo := user.NewFeaturePackageRepository(m.db)
 	packageActionRepo := user.NewFeaturePackageActionRepository(m.db)
+	packageMenuRepo := user.NewFeaturePackageMenuRepository(m.db)
 	teamPackageRepo := user.NewTeamFeaturePackageRepository(m.db)
+	rolePackageRepo := user.NewRoleFeaturePackageRepository(m.db)
 	actionRepo := user.NewPermissionActionRepository(m.db)
-	tenantActionRepo := user.NewTenantActionPermissionRepository(m.db)
-	manualActionRepo := user.NewTeamManualActionPermissionRepository(m.db)
+	menuRepo := user.NewMenuRepository(m.db)
 	tenantRepo := user.NewTenantRepository(m.db)
-	service := NewService(packageRepo, packageActionRepo, teamPackageRepo, actionRepo, tenantActionRepo, manualActionRepo, tenantRepo)
+	boundaryService := teamboundary.NewService(m.db)
+	platformService := platformaccess.NewService(m.db)
+	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService)
+	service := NewService(packageRepo, packageActionRepo, packageMenuRepo, teamPackageRepo, rolePackageRepo, actionRepo, menuRepo, tenantRepo, boundaryService, refresher)
 	handler := NewHandler(service, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 
@@ -48,6 +55,8 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除功能包", ResourceCode: "feature_package", ActionCode: "delete"}, authzService.RequireAction("platform.package.manage"), handler.Delete)
 		reg.GET("/:id/actions", &apiregistry.RouteMeta{Summary: "获取功能包权限", ResourceCode: "feature_package", ActionCode: "assign_action"}, authzService.RequireAction("platform.package.manage"), handler.GetPackageActions)
 		reg.PUT("/:id/actions", &apiregistry.RouteMeta{Summary: "配置功能包权限", ResourceCode: "feature_package", ActionCode: "assign_action"}, authzService.RequireAction("platform.package.manage"), handler.SetPackageActions)
+		reg.GET("/:id/menus", &apiregistry.RouteMeta{Summary: "获取功能包菜单", ResourceCode: "feature_package", ActionCode: "assign_menu"}, authzService.RequireAction("platform.package.manage"), handler.GetPackageMenus)
+		reg.PUT("/:id/menus", &apiregistry.RouteMeta{Summary: "配置功能包菜单", ResourceCode: "feature_package", ActionCode: "assign_menu"}, authzService.RequireAction("platform.package.manage"), handler.SetPackageMenus)
 		reg.GET("/:id/teams", &apiregistry.RouteMeta{Summary: "获取功能包团队", ResourceCode: "feature_package", ActionCode: "assign_team"}, authzService.RequireAction("platform.package.assign"), handler.GetPackageTeams)
 		reg.PUT("/:id/teams", &apiregistry.RouteMeta{Summary: "配置功能包团队", ResourceCode: "feature_package", ActionCode: "assign_team"}, authzService.RequireAction("platform.package.assign"), handler.SetPackageTeams)
 		reg.GET("/teams/:teamId", &apiregistry.RouteMeta{Summary: "获取团队功能包", ResourceCode: "feature_package", ActionCode: "assign_team"}, authzService.RequireAction("platform.package.assign"), handler.GetTeamPackages)

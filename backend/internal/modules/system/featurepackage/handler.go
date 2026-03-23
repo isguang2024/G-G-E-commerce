@@ -40,7 +40,7 @@ func (h *Handler) List(c *gin.Context) {
 	for _, item := range list {
 		packageIDs = append(packageIDs, item.ID)
 	}
-	actionCounts, teamCounts, err := h.service.GetPackageStats(packageIDs)
+	actionCounts, menuCounts, teamCounts, err := h.service.GetPackageStats(packageIDs)
 	if err != nil {
 		h.logger.Error("Get feature package stats failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包统计失败")
@@ -49,7 +49,7 @@ func (h *Handler) List(c *gin.Context) {
 	}
 	records := make([]gin.H, 0, len(list))
 	for _, item := range list {
-		records = append(records, packageToMapWithStats(&item, actionCounts[item.ID], teamCounts[item.ID]))
+		records = append(records, packageToMapWithStats(&item, actionCounts[item.ID], menuCounts[item.ID], teamCounts[item.ID]))
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
 		"records": records,
@@ -147,6 +147,11 @@ func (h *Handler) Delete(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
+		if err == ErrFeaturePackageBuiltin {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "内置功能包不允许删除")
+			c.JSON(status, resp)
+			return
+		}
 		h.logger.Error("Delete feature package failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "删除功能包失败")
 		c.JSON(status, resp)
@@ -207,6 +212,64 @@ func (h *Handler) SetPackageActions(c *gin.Context) {
 		}
 		h.logger.Error("Set package actions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存功能包权限失败: "+err.Error())
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *Handler) GetPackageMenus(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能包ID")
+		c.JSON(status, resp)
+		return
+	}
+	menuIDs, menus, err := h.service.GetPackageMenus(id)
+	if err != nil {
+		if err == ErrFeaturePackageNotFound {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get package menus failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包菜单失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"menu_ids": uuidListToStrings(menuIDs),
+		"menus":    menuListToMaps(menus),
+	}))
+}
+
+func (h *Handler) SetPackageMenus(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能包ID")
+		c.JSON(status, resp)
+		return
+	}
+	var req dto.FeaturePackageMenuSetRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	menuIDs, err := parseUUIDSlice(req.MenuIDs)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的菜单ID")
+		c.JSON(status, resp)
+		return
+	}
+	if err := h.service.SetPackageMenus(id, menuIDs); err != nil {
+		if err == ErrFeaturePackageNotFound {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Set package menus failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存功能包菜单失败: "+err.Error())
 		c.JSON(status, resp)
 		return
 	}
@@ -333,9 +396,11 @@ func packageToMap(item *user.FeaturePackage) gin.H {
 	return gin.H{
 		"id":           item.ID.String(),
 		"package_key":  item.PackageKey,
+		"package_type": item.PackageType,
 		"name":         item.Name,
 		"description":  item.Description,
 		"context_type": item.ContextType,
+		"is_builtin":   item.IsBuiltin,
 		"status":       item.Status,
 		"sort_order":   item.SortOrder,
 		"created_at":   item.CreatedAt.Format("2006-01-02 15:04:05"),
@@ -343,9 +408,10 @@ func packageToMap(item *user.FeaturePackage) gin.H {
 	}
 }
 
-func packageToMapWithStats(item *user.FeaturePackage, actionCount, teamCount int64) gin.H {
+func packageToMapWithStats(item *user.FeaturePackage, actionCount, menuCount, teamCount int64) gin.H {
 	result := packageToMap(item)
 	result["action_count"] = actionCount
+	result["menu_count"] = menuCount
 	result["team_count"] = teamCount
 	return result
 }
@@ -369,6 +435,32 @@ func actionListToMaps(actions []user.PermissionAction) []gin.H {
 		})
 	}
 	return items
+}
+
+func menuListToMaps(menus []user.Menu) []gin.H {
+	items := make([]gin.H, 0, len(menus))
+	for _, menu := range menus {
+		items = append(items, gin.H{
+			"id":         menu.ID.String(),
+			"parent_id":  uuidPtrToString(menu.ParentID),
+			"path":       menu.Path,
+			"name":       menu.Name,
+			"component":  menu.Component,
+			"title":      menu.Title,
+			"icon":       menu.Icon,
+			"hidden":     menu.Hidden,
+			"sort_order": menu.SortOrder,
+			"meta":       menu.Meta,
+		})
+	}
+	return items
+}
+
+func uuidPtrToString(value *uuid.UUID) string {
+	if value == nil {
+		return ""
+	}
+	return value.String()
 }
 
 func parseUUIDSlice(items []string) ([]uuid.UUID, error) {

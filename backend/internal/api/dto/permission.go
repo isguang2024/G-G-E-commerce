@@ -45,6 +45,10 @@ type RoleActionPermissionsRequest struct {
 	ActionIDs []string `json:"action_ids"`
 }
 
+type RoleFeaturePackagesRequest struct {
+	PackageIDs []string `json:"package_ids"`
+}
+
 type TenantActionPermissionsRequest struct {
 	ActionIDs []string `json:"action_ids"`
 }
@@ -63,6 +67,7 @@ type FeaturePackageListRequest struct {
 	Size        int    `form:"size"`
 	Keyword     string `form:"keyword"`
 	PackageKey  string `form:"package_key"`
+	PackageType string `form:"package_type"`
 	Name        string `form:"name"`
 	ContextType string `form:"context_type"`
 	Status      string `form:"status"`
@@ -70,6 +75,7 @@ type FeaturePackageListRequest struct {
 
 type FeaturePackageCreateRequest struct {
 	PackageKey  string `json:"package_key" binding:"required,max=100"`
+	PackageType string `json:"package_type" binding:"max=20"`
 	Name        string `json:"name" binding:"required,max=150"`
 	Description string `json:"description"`
 	ContextType string `json:"context_type" binding:"max=20"`
@@ -79,6 +85,7 @@ type FeaturePackageCreateRequest struct {
 
 type FeaturePackageUpdateRequest struct {
 	PackageKey  string `json:"package_key" binding:"max=100"`
+	PackageType string `json:"package_type" binding:"max=20"`
 	Name        string `json:"name" binding:"max=150"`
 	Description string `json:"description"`
 	ContextType string `json:"context_type" binding:"max=20"`
@@ -88,6 +95,10 @@ type FeaturePackageUpdateRequest struct {
 
 type FeaturePackageActionSetRequest struct {
 	ActionIDs []string `json:"action_ids"`
+}
+
+type FeaturePackageMenuSetRequest struct {
+	MenuIDs []string `json:"menu_ids"`
 }
 
 type TeamFeaturePackageSetRequest struct {

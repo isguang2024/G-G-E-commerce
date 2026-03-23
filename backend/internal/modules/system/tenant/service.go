@@ -39,10 +39,24 @@ type tenantService struct {
 	userRepo         user.UserRepository
 	roleRepo         user.RoleRepository
 	userRoleRepo     user.UserRoleRepository
-	logger           *zap.Logger
+	refresher        interface {
+		RefreshTeam(teamID uuid.UUID) error
+	}
+	logger *zap.Logger
 }
 
-func NewTenantService(db *gorm.DB, tenantRepo user.TenantRepository, tenantMemberRepo user.TenantMemberRepository, userRepo user.UserRepository, roleRepo user.RoleRepository, userRoleRepo user.UserRoleRepository, logger *zap.Logger) TenantService {
+func NewTenantService(
+	db *gorm.DB,
+	tenantRepo user.TenantRepository,
+	tenantMemberRepo user.TenantMemberRepository,
+	userRepo user.UserRepository,
+	roleRepo user.RoleRepository,
+	userRoleRepo user.UserRoleRepository,
+	refresher interface {
+		RefreshTeam(teamID uuid.UUID) error
+	},
+	logger *zap.Logger,
+) TenantService {
 	return &tenantService{
 		db:               db,
 		tenantRepo:       tenantRepo,
@@ -50,6 +64,7 @@ func NewTenantService(db *gorm.DB, tenantRepo user.TenantRepository, tenantMembe
 		userRepo:         userRepo,
 		roleRepo:         roleRepo,
 		userRoleRepo:     userRoleRepo,
+		refresher:        refresher,
 		logger:           logger,
 	}
 }
@@ -113,6 +128,11 @@ func (s *tenantService) Create(req *dto.TenantCreateRequest, ownerID *uuid.UUID)
 	if err := s.syncTenantAdmins(t.ID, adminIDs, ownerID); err != nil {
 		return nil, err
 	}
+	if s.refresher != nil {
+		if err := s.refresher.RefreshTeam(t.ID); err != nil {
+			return nil, err
+		}
+	}
 
 	return t, nil
 }
@@ -154,6 +174,11 @@ func (s *tenantService) Update(id uuid.UUID, req *dto.TenantUpdateRequest) error
 		}
 		if err := s.syncTenantAdmins(id, adminIDs, nil); err != nil {
 			return err
+		}
+		if s.refresher != nil {
+			if err := s.refresher.RefreshTeam(id); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -242,6 +267,11 @@ func (s *tenantService) AddMember(tenantID uuid.UUID, req *dto.TenantAddMemberRe
 	if err := s.syncTenantIdentityRole(userID, tenantID, roleCode); err != nil {
 		return err
 	}
+	if s.refresher != nil {
+		if err := s.refresher.RefreshTeam(tenantID); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -255,7 +285,7 @@ func (s *tenantService) RemoveMember(tenantID, userID uuid.UUID) error {
 		return err
 	}
 
-	return s.db.Transaction(func(tx *gorm.DB) error {
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("user_id = ? AND tenant_id = ?", userID, tenantID).Delete(&user.UserActionPermission{}).Error; err != nil {
 			return err
 		}
@@ -269,7 +299,15 @@ func (s *tenantService) RemoveMember(tenantID, userID uuid.UUID) error {
 		}
 
 		return nil
-	})
+	}); err != nil {
+		return err
+	}
+	if s.refresher != nil {
+		if err := s.refresher.RefreshTeam(tenantID); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *tenantService) UpdateMemberRole(tenantID, userID uuid.UUID, roleCode string) error {
@@ -287,6 +325,11 @@ func (s *tenantService) UpdateMemberRole(tenantID, userID uuid.UUID, roleCode st
 
 	if err := s.syncTenantIdentityRole(userID, tenantID, roleCode); err != nil {
 		return err
+	}
+	if s.refresher != nil {
+		if err := s.refresher.RefreshTeam(tenantID); err != nil {
+			return err
+		}
 	}
 
 	return nil
