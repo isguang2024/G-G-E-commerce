@@ -456,22 +456,22 @@
         fetchGetMyTeam()
       ])
       const packageRes = team?.id ? await fetchGetTeamFeaturePackages(team.id) : { packages: [] }
-      actions.value = memberActions.availableActions || []
-      derivedActionIds.value = [...(memberActions.availableActionIds || [])]
+      actions.value = memberActions.available_actions || []
+      derivedActionIds.value = [...(memberActions.available_action_ids || [])]
       manualActionIds.value = []
       derivedSourceMap.value = Object.fromEntries(
-        (memberActions.derivedSources || []).map((item) => [item.actionId, item.packageIds])
+        (memberActions.derived_sources || []).map((item) => [item.action_id, item.package_ids])
       )
       featurePackages.value = packageRes?.packages || []
       selectedDerivedPackageId.value = ''
-      derivedActionCount.value = memberActions.availableActionIds?.length || 0
+      derivedActionCount.value = memberActions.available_action_ids?.length || 0
       manualActionCount.value = 0
       Object.keys(effectMap).forEach((key) => delete effectMap[key])
       actions.value.forEach((item) => {
         effectMap[item.id] = ''
       })
       ;(memberActions.actions || []).forEach((item) => {
-        effectMap[item.actionId] = item.effect
+        effectMap[item.action_id] = item.effect
       })
 
       await loadRoleBaseline()

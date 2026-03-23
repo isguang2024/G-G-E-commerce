@@ -329,8 +329,6 @@ declare namespace Api {
       package_ids: string[]
       expanded_package_ids?: string[]
       disabled_action_ids?: string[]
-      has_package_boundary?: boolean
-      inherited?: boolean
       derived_sources?: Array<{
         action_id: string
         package_ids: string[]
@@ -343,8 +341,6 @@ declare namespace Api {
       package_ids: string[]
       expanded_package_ids?: string[]
       hidden_menu_ids?: string[]
-      inherited?: boolean
-      has_menu_boundary?: boolean
       derived_sources?: Array<{
         menu_id: string
         package_ids: string[]
@@ -352,41 +348,22 @@ declare namespace Api {
     }
 
     interface TeamActionOriginsResponse {
-      packageIds: string[]
-      expandedPackageIds?: string[]
-      derivedActionIds: string[]
-      derivedSources?: Array<{
-        actionId: string
-        packageIds: string[]
+      derived_action_ids: string[]
+      derived_sources?: Array<{
+        action_id: string
+        package_ids: string[]
       }>
-      blockedActionIds?: string[]
-      manualActionIds?: string[]
-      effectiveActionIds: string[]
-      fromCache?: boolean
+      blocked_action_ids?: string[]
+      from_cache?: boolean
     }
 
     interface TeamMenuOriginsResponse {
-      packageIds: string[]
-      expandedPackageIds?: string[]
-      derivedMenuIds: string[]
-      derivedSources?: Array<{
-        menuId: string
-        packageIds: string[]
+      derived_menu_ids: string[]
+      derived_sources?: Array<{
+        menu_id: string
+        package_ids: string[]
       }>
-      blockedMenuIds?: string[]
-      effectiveMenuIds: string[]
-    }
-
-    interface TeamMenuOriginsResponse {
-      packageIds: string[]
-      expandedPackageIds?: string[]
-      derivedMenuIds: string[]
-      derivedSources?: Array<{
-        menuId: string
-        packageIds: string[]
-      }>
-      blockedMenuIds: string[]
-      effectiveMenuIds: string[]
+      blocked_menu_ids: string[]
     }
 
     interface APIEndpointItem {
@@ -519,39 +496,33 @@ declare namespace Api {
     }
 
     interface UserActionPermissionItem {
-      actionId: string
+      action_id: string
       effect: 'allow' | 'deny'
       action?: PermissionActionItem
     }
 
     interface UserActionPermissionResponse {
       actions: UserActionPermissionItem[]
-      compatActions?: UserActionPermissionItem[]
-      snapshotActionIds?: string[]
-      snapshotActions?: PermissionActionItem[]
-      effectiveActionIds?: string[]
-      availableActionIds?: string[]
-      availableActions?: PermissionActionItem[]
-      packageIds?: string[]
-      expandedPackageIds?: string[]
-      derivedSources?: Array<{
-        actionId: string
-        packageIds: string[]
+      available_action_ids?: string[]
+      available_actions?: PermissionActionItem[]
+      expanded_package_ids?: string[]
+      derived_sources?: Array<{
+        action_id: string
+        package_ids: string[]
       }>
-      hasPackageConfig?: boolean
+      has_package_config?: boolean
     }
 
     interface UserMenuBoundaryResponse {
-      menuIds: string[]
-      availableMenuIds?: string[]
-      hiddenMenuIds?: string[]
-      packageIds?: string[]
-      expandedPackageIds?: string[]
-      derivedSources?: Array<{
-        menuId: string
-        packageIds: string[]
+      menu_ids: string[]
+      available_menu_ids?: string[]
+      hidden_menu_ids?: string[]
+      expanded_package_ids?: string[]
+      derived_sources?: Array<{
+        menu_id: string
+        package_ids: string[]
       }>
-      hasPackageConfig?: boolean
+      has_package_config?: boolean
     }
 
     /** 团队列表 */
@@ -624,18 +595,18 @@ declare namespace Api {
     }
 
     interface TeamMemberActionPermissionItem {
-      actionId: string
+      action_id: string
       effect: 'allow' | 'deny'
       action?: PermissionActionItem
     }
 
     interface TeamMemberActionPermissionResponse {
       actions: TeamMemberActionPermissionItem[]
-      availableActionIds?: string[]
-      availableActions?: PermissionActionItem[]
-      derivedSources?: Array<{
-        actionId: string
-        packageIds: string[]
+      available_action_ids?: string[]
+      available_actions?: PermissionActionItem[]
+      derived_sources?: Array<{
+        action_id: string
+        package_ids: string[]
       }>
     }
 

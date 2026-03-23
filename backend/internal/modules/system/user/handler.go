@@ -18,8 +18,8 @@ import (
 const tenantContextHeader = "X-Tenant-ID"
 
 type UserHandler struct {
-	userService       UserService
-	actionRepo interface {
+	userService UserService
+	actionRepo  interface {
 		GetByIDs(ids []uuid.UUID) ([]PermissionAction, error)
 	}
 	featurePkgRepo interface {
@@ -27,11 +27,8 @@ type UserHandler struct {
 	}
 	platformService platformaccess.Service
 	boundaryService teamboundary.Service
-	roleRepo interface {
+	roleRepo        interface {
 		GetByIDs(ids []uuid.UUID) ([]Role, error)
-	}
-	roleMenuRepo interface {
-		GetMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error)
 	}
 	userRoleRepo interface {
 		GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
@@ -63,8 +60,6 @@ func NewUserHandler(userService UserService, actionRepo interface {
 	GetByIDs(ids []uuid.UUID) ([]FeaturePackage, error)
 }, platformService platformaccess.Service, boundaryService teamboundary.Service, roleRepo interface {
 	GetByIDs(ids []uuid.UUID) ([]Role, error)
-}, roleMenuRepo interface {
-	GetMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error)
 }, userRoleRepo interface {
 	GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
 }, userPackageRepo interface {
@@ -88,7 +83,6 @@ func NewUserHandler(userService UserService, actionRepo interface {
 		platformService:    platformService,
 		boundaryService:    boundaryService,
 		roleRepo:           roleRepo,
-		roleMenuRepo:       roleMenuRepo,
 		userRoleRepo:       userRoleRepo,
 		userPackageRepo:    userPackageRepo,
 		userHiddenMenuRepo: userHiddenMenuRepo,
@@ -457,13 +451,8 @@ func (h *UserHandler) GetActions(c *gin.Context) {
 
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
 		"actions":              compatItems,
-		"compat_actions":       compatItems,
-		"snapshot_action_ids":  actionIDsToStrings(snapshot.ActionIDs),
-		"snapshot_actions":     actionListToMaps(snapshotActions),
-		"effective_action_ids": actionIDsToStrings(snapshot.ActionIDs),
 		"available_action_ids": actionIDsToStrings(snapshot.ActionIDs),
 		"available_actions":    actionListToMaps(snapshotActions),
-		"package_ids":          actionIDsToStrings(snapshot.DirectPackageIDs),
 		"expanded_package_ids": actionIDsToStrings(snapshot.ExpandedPackageIDs),
 		"derived_sources":      buildUserActionSourceMaps(snapshot.ActionSourceMap),
 		"has_package_config":   snapshot.HasPackageConfig,
@@ -514,7 +503,6 @@ func (h *UserHandler) GetMenus(c *gin.Context) {
 		"menu_ids":             packageIDsToStrings(menuIDs),
 		"available_menu_ids":   packageIDsToStrings(availableMenuIDs),
 		"hidden_menu_ids":      packageIDsToStrings(hiddenMenuIDs),
-		"package_ids":          packageIDsToStrings(snapshot.DirectPackageIDs),
 		"expanded_package_ids": packageIDsToStrings(snapshot.ExpandedPackageIDs),
 		"derived_sources":      buildUserMenuSourceMaps(snapshot.AvailableMenuMap),
 		"has_package_config":   snapshot.HasPackageConfig,
@@ -765,7 +753,7 @@ func (h *UserHandler) getPermissionMenuIDs(userID uuid.UUID, tenantID *uuid.UUID
 }
 
 func (h *UserHandler) getTeamPermissionMenuIDs(userID, teamID uuid.UUID) ([]uuid.UUID, error) {
-	if h.userRoleRepo == nil || h.roleRepo == nil || h.roleMenuRepo == nil || h.boundaryService == nil {
+	if h.userRoleRepo == nil || h.roleRepo == nil || h.boundaryService == nil {
 		return h.finalizePermissionMenuIDs(nil)
 	}
 	roleIDs, err := h.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndTenant(userID, &teamID)
@@ -789,19 +777,11 @@ func (h *UserHandler) getTeamPermissionMenuIDs(userID, teamID uuid.UUID) ([]uuid
 		if !ok {
 			continue
 		}
-		roleMenuIDs, roleMenuErr := h.roleMenuRepo.GetMenuIDsByRoleID(roleID)
-		if roleMenuErr != nil {
-			return nil, roleMenuErr
-		}
 		snapshot, snapshotErr := h.boundaryService.GetRoleSnapshot(teamID, roleID, role.TenantID == nil)
 		if snapshotErr != nil {
 			return nil, snapshotErr
 		}
-		allowedMenuIDs := roleMenuIDs
-		if snapshot.HasMenuBoundary {
-			allowedMenuIDs = intersectUUIDSlices(roleMenuIDs, snapshot.MenuIDs)
-		}
-		for _, menuID := range allowedMenuIDs {
+		for _, menuID := range snapshot.MenuIDs {
 			menuSet[menuID] = struct{}{}
 		}
 	}

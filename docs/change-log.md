@@ -550,3 +550,59 @@
 ### 下次方向
 - 继续沿当前主线把运行时权限读链往快照表推进，进一步缩小旧正向表和现算分支在平台/团队鉴权中的职责。
 - 继续检查团队边界、团队角色、平台角色页面里残留的旧兼容字段判断，进一步固定到“功能包展开 + 减法裁剪 + 快照读取”的单主链。
+
+## 2026-03-24 团队角色减法裁剪与运行时快照读链收口
+
+### 本次改动
+- 团队角色快照补齐了 `available_* / hidden_* / disabled_*` 边界字段，并新增迁移 `20260324_team_role_access_snapshot_boundary_fields`，把团队角色菜单/能力的候选范围与最终结果一起固化到快照表。
+- 团队角色菜单与能力接口改为按“功能包展开候选 - 角色裁剪”读写 `role_hidden_menus` / `role_disabled_actions`，保存后同步清空旧 `role_menus` / `role_action_permissions` 正向表，避免页面显示与运行时鉴权继续错位。
+- 平台/团队运行时菜单与能力读取进一步收口到快照：`authorization`、`menu`、`user` 相关链路不再把旧正向表作为主判断；团队边界前端页也移除了 camelCase/旧兼容字段折叠，统一按快照响应字段消费。
+- 已验证：`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit`。未执行 `frontend/pnpm build`。
+
+### 下次方向
+- 继续检查平台角色和其余权限来源页是否还残留旧兼容响应折叠，尤其是共享 API 包装层里未被主页面使用但仍在保留的旧别名。
+- 继续推进平台用户、团队成员等运行时消费点对快照 source map / 边界字段的统一，逐步压缩旧正向表只保留迁移清理职责。
+
+## 2026-03-24 快照主链收尾小节6 鉴权死代码与包装层双轨清理
+
+### 本次改动
+- 删除了 `authorization.go` 中已失效的旧“用户覆盖 + 角色正向表”辅助函数，避免核心鉴权文件继续传递旧主链信号。
+- 收口 `frontend/src/api/team.ts` 的 my-team action 包装函数为 snake_case 主字段；同步统一平台角色 API 包装层的 `actions/packages` 读取形态，减少页面侧再次补兼容分支的空间。
+- 已验证：`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit`。未执行 `frontend/pnpm build`。
+
+### 下次方向
+- 继续检查 `system-manage.ts` 与团队成员相关包装函数里是否还有非主页面使用但会污染语义边界的双轨字段。
+- 继续把团队角色里仅用于清空旧表的依赖显式标成 legacy cleanup，降低后续误读成本。
+
+## 2026-03-24 快照主链收尾小节7 团队角色 legacy cleanup 显式化
+
+### 本次改动
+- 团队角色 handler/module 中，旧 `role_menus` / `role_action_permissions` 仓库依赖已显式重命名为 `legacy*CleanupRepo`，明确它们只用于保存后清空旧正向表，不参与运行时主链判断。
+- 已验证：`backend/go test ./...`。未执行前端校验与构建。
+
+### 下次方向
+- 继续清理团队成员与平台用户包装层里不必要的 camelCase 投影，尽量把快照字段统一在 API 层就固定下来。
+- 视需要把 tenant handler 里 legacy cleanup 调用再补一层短注释，进一步降低后续维护误判。
+
+## 2026-03-24 快照主链收尾小节8 平台用户与团队成员包装层收口
+
+### 本次改动
+- `frontend/src/api/system-manage.ts` 的平台用户权限/菜单包装层改成“输入兼容、输出固定”：继续兼容后端历史 camelCase/旧字段读取，但对页面只输出 `available_* / derived_* / has_package_config` 这套 snake_case 主字段。
+- `frontend/src/views/system/user/modules/user-permission-selector-dialog.vue` 与 `frontend/src/views/system/user/modules/user-menu-selector-dialog.vue` 已同步去掉 `snapshot/effective/compat` 多级 fallback，改为直接消费包装层固定后的快照候选字段，保留兼容审计语义但不再让旧别名参与页面主判断。
+- `frontend/src/api/team.ts` 与 `frontend/src/views/team/team-members/modules/member-action-dialog.vue` 已统一团队成员动作例外响应为 snake_case，避免团队成员页继续传播 camelCase 包装别名。
+- 已验证：`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit`。未执行 `frontend/pnpm build`。
+
+### 下次方向
+- 继续检查平台用户兼容审计页是否还能把局部状态命名和说明文案再贴近“快照候选 + 例外覆盖”语义，进一步降低旧主链暗示。
+- 继续把平台/团队快照缺失时的刷新与落库策略统一到单套服务入口，减少运行时现算分支。
+## 2026-03-24 快照主链一次性收口 ABC
+
+### 本次改动
+- 一次性执行了前端包装层、团队边界/团队角色消费页、平台用户兼容审计页的主链收口：页面只再消费固定 snake_case 快照字段，旧 `snapshot/effective/compat` 回退和多余 camelCase 投影不再参与主判断。
+- 后端把平台用户与团队边界来源接口继续压到“候选集 + 减法裁剪 + 快照结果”，移除了不再被前端主链消费的 `manual/effective/package_ids` 等冗余输出，并把团队 manual 清理仓库显式标成 legacy cleanup。
+- 运行时链路继续瘦身：清掉了 `menu/user` 模块里不再参与主链的旧依赖注入，团队角色菜单/能力响应不再暴露 `has_*` 决策字段，快照服务只保留仍有业务意义的继承信息。
+- 已验证：`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build` 全部通过。
+
+### 下次方向
+- 继续检查 `backend/internal/modules/system/models/model.go` 与相关快照表字段，把仅剩的历史列和运行时实际消费语义再分层标注，降低后续误读成本。
+- 如果继续收尾权限改版，下一步优先看平台/团队快照刷新入口是否还能再并口，进一步压缩“缺失即现算”的残余分支。

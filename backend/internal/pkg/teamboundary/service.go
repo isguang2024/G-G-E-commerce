@@ -14,7 +14,7 @@ type Snapshot struct {
 	DerivedIDs         []uuid.UUID
 	DerivedMap         map[uuid.UUID][]uuid.UUID
 	BlockedIDs         []uuid.UUID
-	ManualIDs          []uuid.UUID
+	LegacyManualIDs    []uuid.UUID
 	EffectiveIDs       []uuid.UUID
 	FromCache          bool
 }
@@ -31,11 +31,14 @@ type MenuSnapshot struct {
 type RoleSnapshot struct {
 	PackageIDs         []uuid.UUID
 	ExpandedPackageIDs []uuid.UUID
+	AvailableActionIDs []uuid.UUID
+	DisabledActionIDs  []uuid.UUID
 	ActionIDs          []uuid.UUID
 	ActionSourceMap    map[uuid.UUID][]uuid.UUID
+	AvailableMenuIDs   []uuid.UUID
+	HiddenMenuIDs      []uuid.UUID
 	MenuIDs            []uuid.UUID
 	MenuSourceMap      map[uuid.UUID][]uuid.UUID
-	HasMenuBoundary    bool
 	Inherited          bool
 }
 
@@ -85,13 +88,13 @@ func (s *service) calculateActionSnapshot(teamID uuid.UUID) (*Snapshot, error) {
 	if err != nil {
 		return nil, err
 	}
-	manualIDs, err := s.getManualActionIDsByTeamID(teamID)
+	legacyManualIDs, err := s.getManualActionIDsByTeamID(teamID)
 	if err != nil {
 		return nil, err
 	}
-	effectiveIDs := subtractIDs(mergeActionIDs(derivedIDs, manualIDs), blockedIDs)
+	effectiveIDs := subtractIDs(mergeActionIDs(derivedIDs, legacyManualIDs), blockedIDs)
 	fromCache := false
-	if len(packageIDs) == 0 && len(blockedIDs) == 0 && len(manualIDs) == 0 && len(effectiveIDs) == 0 {
+	if len(packageIDs) == 0 && len(blockedIDs) == 0 && len(legacyManualIDs) == 0 && len(effectiveIDs) == 0 {
 		cacheIDs, cacheErr := s.getCachedActionIDsByTeamID(teamID)
 		if cacheErr != nil {
 			return nil, cacheErr
@@ -107,7 +110,7 @@ func (s *service) calculateActionSnapshot(teamID uuid.UUID) (*Snapshot, error) {
 		DerivedIDs:         derivedIDs,
 		DerivedMap:         derivedMap,
 		BlockedIDs:         blockedIDs,
-		ManualIDs:          manualIDs,
+		LegacyManualIDs:    legacyManualIDs,
 		EffectiveIDs:       effectiveIDs,
 		FromCache:          fromCache,
 	}, nil
@@ -214,7 +217,7 @@ func (s *service) calculateRoleSnapshot(teamID, roleID uuid.UUID, inheritAll boo
 			inherited = true
 		}
 	}
-	actionIDs, actionSourceMap, err := s.getDerivedActionIDs(effectiveExpandedPackageIDs)
+	availableActionIDs, actionSourceMap, err := s.getDerivedActionIDs(effectiveExpandedPackageIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -222,17 +225,17 @@ func (s *service) calculateRoleSnapshot(teamID, roleID uuid.UUID, inheritAll boo
 	if err != nil {
 		return nil, err
 	}
-	actionIDs = subtractIDs(actionIDs, teamBlockedActionIDs)
-	actionSourceMap = filterSourceMap(actionSourceMap, actionIDs)
+	availableActionIDs = subtractIDs(availableActionIDs, teamBlockedActionIDs)
+	actionSourceMap = filterSourceMap(actionSourceMap, availableActionIDs)
 
 	roleDisabledActionIDs, err := s.getDisabledActionIDsByRoleID(roleID)
 	if err != nil {
 		return nil, err
 	}
-	actionIDs = subtractIDs(actionIDs, roleDisabledActionIDs)
-	actionSourceMap = filterSourceMap(actionSourceMap, actionIDs)
+	disabledActionIDs := intersectIDs(availableActionIDs, roleDisabledActionIDs)
+	effectiveActionIDs := subtractIDs(availableActionIDs, disabledActionIDs)
 
-	menuIDs, menuSourceMap, err := s.getMenuIDsByPackageIDs(effectiveExpandedPackageIDs)
+	availableMenuIDs, menuSourceMap, err := s.getMenuIDsByPackageIDs(effectiveExpandedPackageIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -240,24 +243,27 @@ func (s *service) calculateRoleSnapshot(teamID, roleID uuid.UUID, inheritAll boo
 	if err != nil {
 		return nil, err
 	}
-	menuIDs = subtractIDs(menuIDs, teamBlockedMenuIDs)
-	menuSourceMap = filterSourceMap(menuSourceMap, menuIDs)
+	availableMenuIDs = subtractIDs(availableMenuIDs, teamBlockedMenuIDs)
+	menuSourceMap = filterSourceMap(menuSourceMap, availableMenuIDs)
 
 	roleHiddenMenuIDs, err := s.getHiddenMenuIDsByRoleID(roleID)
 	if err != nil {
 		return nil, err
 	}
-	menuIDs = subtractIDs(menuIDs, roleHiddenMenuIDs)
-	menuSourceMap = filterSourceMap(menuSourceMap, menuIDs)
+	hiddenMenuIDs := intersectIDs(availableMenuIDs, roleHiddenMenuIDs)
+	effectiveMenuIDs := subtractIDs(availableMenuIDs, hiddenMenuIDs)
 
 	return &RoleSnapshot{
 		PackageIDs:         effectivePackageIDs,
 		ExpandedPackageIDs: effectiveExpandedPackageIDs,
-		ActionIDs:          actionIDs,
+		AvailableActionIDs: availableActionIDs,
+		DisabledActionIDs:  disabledActionIDs,
+		ActionIDs:          effectiveActionIDs,
 		ActionSourceMap:    actionSourceMap,
-		MenuIDs:            menuIDs,
+		AvailableMenuIDs:   availableMenuIDs,
+		HiddenMenuIDs:      hiddenMenuIDs,
+		MenuIDs:            effectiveMenuIDs,
 		MenuSourceMap:      menuSourceMap,
-		HasMenuBoundary:    len(effectiveExpandedPackageIDs) > 0,
 		Inherited:          inherited,
 	}, nil
 }
@@ -298,7 +304,7 @@ func (s *service) loadActionSnapshot(teamID uuid.UUID) (*Snapshot, error) {
 		DerivedIDs:         uuidStringsToIDs(record.DerivedActionIDs),
 		DerivedMap:         sourceMapStringsToUUIDs(record.DerivedActionMap),
 		BlockedIDs:         uuidStringsToIDs(record.BlockedActionIDs),
-		ManualIDs:          uuidStringsToIDs(record.ManualActionIDs),
+		LegacyManualIDs:    uuidStringsToIDs(record.ManualActionIDs),
 		EffectiveIDs:       uuidStringsToIDs(record.EffectiveActionIDs),
 		FromCache:          false,
 	}, nil
@@ -330,7 +336,7 @@ func (s *service) saveSnapshot(teamID uuid.UUID, actionSnapshot *Snapshot, menuS
 		DerivedActionIDs:   idsToUUIDStrings(actionSnapshot.DerivedIDs),
 		DerivedActionMap:   sourceMapUUIDsToStrings(actionSnapshot.DerivedMap),
 		BlockedActionIDs:   idsToUUIDStrings(actionSnapshot.BlockedIDs),
-		ManualActionIDs:    idsToUUIDStrings(actionSnapshot.ManualIDs),
+		ManualActionIDs:    idsToUUIDStrings(actionSnapshot.LegacyManualIDs),
 		EffectiveActionIDs: idsToUUIDStrings(actionSnapshot.EffectiveIDs),
 		DerivedMenuIDs:     idsToUUIDStrings(menuSnapshot.DerivedIDs),
 		DerivedMenuMap:     sourceMapUUIDsToStrings(menuSnapshot.DerivedMap),
@@ -354,11 +360,14 @@ func (s *service) loadRoleSnapshot(teamID, roleID uuid.UUID) (*RoleSnapshot, err
 	return &RoleSnapshot{
 		PackageIDs:         uuidStringsToIDs(record.PackageIDs),
 		ExpandedPackageIDs: uuidStringsToIDs(record.ExpandedPackageIDs),
+		AvailableActionIDs: uuidStringsToIDs(record.AvailableActionIDs),
+		DisabledActionIDs:  uuidStringsToIDs(record.DisabledActionIDs),
 		ActionIDs:          uuidStringsToIDs(record.ActionIDs),
 		ActionSourceMap:    sourceMapStringsToUUIDs(record.ActionSourceMap),
+		AvailableMenuIDs:   uuidStringsToIDs(record.AvailableMenuIDs),
+		HiddenMenuIDs:      uuidStringsToIDs(record.HiddenMenuIDs),
 		MenuIDs:            uuidStringsToIDs(record.MenuIDs),
 		MenuSourceMap:      sourceMapStringsToUUIDs(record.MenuSourceMap),
-		HasMenuBoundary:    record.HasMenuBoundary,
 		Inherited:          record.Inherited,
 	}, nil
 }
@@ -369,11 +378,14 @@ func (s *service) saveRoleSnapshot(teamID, roleID uuid.UUID, snapshot *RoleSnaps
 		RoleID:             roleID,
 		PackageIDs:         idsToUUIDStrings(snapshot.PackageIDs),
 		ExpandedPackageIDs: idsToUUIDStrings(snapshot.ExpandedPackageIDs),
+		AvailableActionIDs: idsToUUIDStrings(snapshot.AvailableActionIDs),
+		DisabledActionIDs:  idsToUUIDStrings(snapshot.DisabledActionIDs),
 		ActionIDs:          idsToUUIDStrings(snapshot.ActionIDs),
 		ActionSourceMap:    sourceMapUUIDsToStrings(snapshot.ActionSourceMap),
+		AvailableMenuIDs:   idsToUUIDStrings(snapshot.AvailableMenuIDs),
+		HiddenMenuIDs:      idsToUUIDStrings(snapshot.HiddenMenuIDs),
 		MenuIDs:            idsToUUIDStrings(snapshot.MenuIDs),
 		MenuSourceMap:      sourceMapUUIDsToStrings(snapshot.MenuSourceMap),
-		HasMenuBoundary:    snapshot.HasMenuBoundary,
 		Inherited:          snapshot.Inherited,
 	}
 	return s.db.Clauses(clause.OnConflict{

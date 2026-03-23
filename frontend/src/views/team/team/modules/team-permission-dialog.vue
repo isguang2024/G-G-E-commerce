@@ -147,15 +147,15 @@ async function loadData() {
     ])
 
     permissionActions.value = actionsRes?.records || []
-    selectedIds.value = [...(currentRes?.actionIds || [])]
+    selectedIds.value = [...(currentRes?.action_ids || [])]
     featurePackages.value = packageRes?.packages || []
-    derivedActionIds.value = [...(originsRes?.derivedActionIds || [])]
-    blockedActionIds.value = [...(originsRes?.blockedActionIds || originsRes?.manualActionIds || [])]
+    derivedActionIds.value = [...(originsRes?.derived_action_ids || [])]
+    blockedActionIds.value = [...(originsRes?.blocked_action_ids || [])]
     derivedSourceMap.value = Object.fromEntries(
-      (originsRes?.derivedSources || []).map((item) => [item.actionId, item.packageIds])
+      (originsRes?.derived_sources || []).map((item) => [item.action_id, item.package_ids])
     )
     selectedDerivedPackageId.value = ''
-    fromCache.value = Boolean(originsRes?.fromCache)
+    fromCache.value = Boolean(originsRes?.from_cache)
   } catch (error: any) {
     ElMessage.error(error?.message || '加载团队边界失败')
   } finally {

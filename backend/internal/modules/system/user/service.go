@@ -177,7 +177,6 @@ type permissionService struct {
 	userRepo           UserRepository
 	roleRepo           RoleRepository
 	userRoleRepo       UserRoleRepository
-	roleMenuRepo       RoleMenuRepository
 	rolePackageRepo    RoleFeaturePackageRepository
 	userPackageRepo    UserFeaturePackageRepository
 	packageRepo        FeaturePackageRepository
@@ -194,7 +193,6 @@ func NewPermissionService(
 	userRepo UserRepository,
 	roleRepo RoleRepository,
 	userRoleRepo UserRoleRepository,
-	roleMenuRepo RoleMenuRepository,
 	rolePackageRepo RoleFeaturePackageRepository,
 	userPackageRepo UserFeaturePackageRepository,
 	packageRepo FeaturePackageRepository,
@@ -210,7 +208,6 @@ func NewPermissionService(
 		userRepo:           userRepo,
 		roleRepo:           roleRepo,
 		userRoleRepo:       userRoleRepo,
-		roleMenuRepo:       roleMenuRepo,
 		rolePackageRepo:    rolePackageRepo,
 		userPackageRepo:    userPackageRepo,
 		packageRepo:        packageRepo,
@@ -248,45 +245,9 @@ func (s *permissionService) getPlatformUserMenuIDs(userID uuid.UUID) ([]uuid.UUI
 		if err != nil {
 			return nil, err
 		}
-		if snapshot.HasPackageConfig {
-			return s.finalizeMenuIDs(snapshot.MenuIDs)
-		}
+		return s.finalizeMenuIDs(snapshot.MenuIDs)
 	}
-	roleIDs, err := s.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndTenant(userID, nil)
-	if err != nil {
-		return nil, err
-	}
-	roleMenuIDs, err := s.roleMenuRepo.GetMenuIDsByRoleIDs(roleIDs)
-	if err != nil {
-		return nil, err
-	}
-	rolePackageIDs, err := s.getRolePackageIDs(roleIDs)
-	if err != nil {
-		return nil, err
-	}
-	userPackageIDs, err := s.userPackageRepo.GetPackageIDsByUserID(userID)
-	if err != nil {
-		return nil, err
-	}
-	packageMenuIDs, err := s.getPlatformPackageMenuIDs(mergeUUIDLists(rolePackageIDs, userPackageIDs))
-	if err != nil {
-		return nil, err
-	}
-	if len(packageMenuIDs) > 0 && len(roleMenuIDs) > 0 {
-		packageMenuIDs = intersectUUIDs(packageMenuIDs, roleMenuIDs)
-	}
-	if len(packageMenuIDs) == 0 {
-		packageMenuIDs = roleMenuIDs
-	}
-	hiddenRoleMenuIDs, err := s.getHiddenRoleMenuIDs(roleIDs)
-	if err != nil {
-		return nil, err
-	}
-	hiddenUserMenuIDs, err := s.userHiddenMenuRepo.GetMenuIDsByUserID(userID)
-	if err != nil {
-		return nil, err
-	}
-	return s.finalizeMenuIDs(subtractUUIDs(packageMenuIDs, mergeUUIDLists(hiddenRoleMenuIDs, hiddenUserMenuIDs)))
+	return s.finalizeMenuIDs(nil)
 }
 
 func (s *permissionService) getTeamUserMenuIDs(userID, teamID uuid.UUID) ([]uuid.UUID, error) {
@@ -311,19 +272,11 @@ func (s *permissionService) getTeamUserMenuIDs(userID, teamID uuid.UUID) ([]uuid
 		if !ok {
 			continue
 		}
-		roleMenuIDs, roleMenuErr := s.roleMenuRepo.GetMenuIDsByRoleID(roleID)
-		if roleMenuErr != nil {
-			return nil, roleMenuErr
-		}
 		snapshot, snapshotErr := s.boundaryService.GetRoleSnapshot(teamID, roleID, role.TenantID == nil)
 		if snapshotErr != nil {
 			return nil, snapshotErr
 		}
-		allowedMenuIDs := roleMenuIDs
-		if snapshot.HasMenuBoundary {
-			allowedMenuIDs = intersectUUIDs(roleMenuIDs, snapshot.MenuIDs)
-		}
-		for _, menuID := range allowedMenuIDs {
+		for _, menuID := range snapshot.MenuIDs {
 			menuSet[menuID] = struct{}{}
 		}
 	}

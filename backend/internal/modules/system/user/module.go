@@ -38,7 +38,6 @@ func (m *UserModule) RegisterRoutes(rg *gin.RouterGroup) {
 	userRepo := NewUserRepository(m.db)
 	roleRepo := NewRoleRepository(m.db)
 	menuRepo := NewMenuRepository(m.db)
-	roleMenuRepo := NewRoleMenuRepository(m.db)
 	userRoleRepo := NewUserRoleRepository(m.db)
 	userPackageRepo := NewUserFeaturePackageRepository(m.db)
 	packageRepo := NewFeaturePackageRepository(m.db)
@@ -50,7 +49,7 @@ func (m *UserModule) RegisterRoutes(rg *gin.RouterGroup) {
 	roleSnapshotService := platformroleaccess.NewService(m.db)
 	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
 	userService := NewUserService(userRepo, roleRepo, m.logger)
-	userHandler := NewUserHandler(userService, actionRepo, packageRepo, platformService, boundaryService, roleRepo, roleMenuRepo, userRoleRepo, userPackageRepo, userHiddenMenuRepo, userActionRepo, menuRepo, refresher, m.logger)
+	userHandler := NewUserHandler(userService, actionRepo, packageRepo, platformService, boundaryService, roleRepo, userRoleRepo, userPackageRepo, userHiddenMenuRepo, userActionRepo, menuRepo, refresher, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 
 	users := rg.Group("/users")

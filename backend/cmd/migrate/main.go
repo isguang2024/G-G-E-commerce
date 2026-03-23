@@ -563,6 +563,44 @@ func runNamedMigrations(logger *zap.Logger) error {
 			},
 		},
 		{
+			Name: "20260324_team_role_access_snapshot_boundary_fields",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`CREATE TABLE IF NOT EXISTS team_role_access_snapshots (
+						team_id uuid NOT NULL,
+						role_id uuid NOT NULL,
+						package_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						expanded_package_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						available_action_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						disabled_action_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						action_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						action_source_map jsonb NOT NULL DEFAULT '{}'::jsonb,
+						available_menu_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						hidden_menu_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						menu_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
+						menu_source_map jsonb NOT NULL DEFAULT '{}'::jsonb,
+						has_menu_boundary boolean NOT NULL DEFAULT FALSE,
+						inherited boolean NOT NULL DEFAULT FALSE,
+						refreshed_at timestamptz NOT NULL DEFAULT NOW(),
+						created_at timestamptz NOT NULL DEFAULT NOW(),
+						updated_at timestamptz NOT NULL DEFAULT NOW(),
+						PRIMARY KEY (team_id, role_id)
+					)`,
+					`ALTER TABLE team_role_access_snapshots ADD COLUMN IF NOT EXISTS available_action_ids jsonb NOT NULL DEFAULT '[]'::jsonb`,
+					`ALTER TABLE team_role_access_snapshots ADD COLUMN IF NOT EXISTS disabled_action_ids jsonb NOT NULL DEFAULT '[]'::jsonb`,
+					`ALTER TABLE team_role_access_snapshots ADD COLUMN IF NOT EXISTS available_menu_ids jsonb NOT NULL DEFAULT '[]'::jsonb`,
+					`ALTER TABLE team_role_access_snapshots ADD COLUMN IF NOT EXISTS hidden_menu_ids jsonb NOT NULL DEFAULT '[]'::jsonb`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260324_team_role_access_snapshot_boundary_fields"))
+				return nil
+			},
+		},
+		{
 			Name: "20260323_team_manual_action_backfill",
 			Run: func(logger *zap.Logger) error {
 				statement := `

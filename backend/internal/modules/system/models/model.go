@@ -351,24 +351,24 @@ func (UserHiddenMenu) TableName() string {
 }
 
 type PlatformUserAccessSnapshot struct {
-	UserID             uuid.UUID            `gorm:"type:uuid;primaryKey" json:"user_id"`
-	RoleIDs            []string             `gorm:"type:jsonb;serializer:json" json:"role_ids"`
-	RolePackageIDs     []string             `gorm:"type:jsonb;serializer:json" json:"role_package_ids"`
-	UserPackageIDs     []string             `gorm:"type:jsonb;serializer:json" json:"user_package_ids"`
-	DirectPackageIDs   []string             `gorm:"type:jsonb;serializer:json" json:"direct_package_ids"`
-	ExpandedPackageIDs []string             `gorm:"type:jsonb;serializer:json" json:"expanded_package_ids"`
-	ActionIDs          []string             `gorm:"type:jsonb;serializer:json" json:"action_ids"`
-	ActionSourceMap    map[string][]string  `gorm:"type:jsonb;serializer:json" json:"action_source_map"`
-	AvailableMenuIDs   []string             `gorm:"type:jsonb;serializer:json" json:"available_menu_ids"`
-	AvailableMenuMap   map[string][]string  `gorm:"type:jsonb;serializer:json" json:"available_menu_map"`
-	MenuIDs            []string             `gorm:"type:jsonb;serializer:json" json:"menu_ids"`
-	MenuSourceMap      map[string][]string  `gorm:"type:jsonb;serializer:json" json:"menu_source_map"`
-	HiddenMenuIDs      []string             `gorm:"type:jsonb;serializer:json" json:"hidden_menu_ids"`
-	DisabledActionIDs  []string             `gorm:"type:jsonb;serializer:json" json:"disabled_action_ids"`
-	HasPackageConfig   bool                 `gorm:"not null;default:false" json:"has_package_config"`
-	RefreshedAt        time.Time            `gorm:"not null;default:CURRENT_TIMESTAMP" json:"refreshed_at"`
-	CreatedAt          time.Time            `json:"created_at"`
-	UpdatedAt          time.Time            `json:"updated_at"`
+	UserID             uuid.UUID           `gorm:"type:uuid;primaryKey" json:"user_id"`
+	RoleIDs            []string            `gorm:"type:jsonb;serializer:json" json:"role_ids"`
+	RolePackageIDs     []string            `gorm:"type:jsonb;serializer:json" json:"role_package_ids"`
+	UserPackageIDs     []string            `gorm:"type:jsonb;serializer:json" json:"user_package_ids"`
+	DirectPackageIDs   []string            `gorm:"type:jsonb;serializer:json" json:"direct_package_ids"`
+	ExpandedPackageIDs []string            `gorm:"type:jsonb;serializer:json" json:"expanded_package_ids"`
+	ActionIDs          []string            `gorm:"type:jsonb;serializer:json" json:"action_ids"`
+	ActionSourceMap    map[string][]string `gorm:"type:jsonb;serializer:json" json:"action_source_map"`
+	AvailableMenuIDs   []string            `gorm:"type:jsonb;serializer:json" json:"available_menu_ids"`
+	AvailableMenuMap   map[string][]string `gorm:"type:jsonb;serializer:json" json:"available_menu_map"`
+	MenuIDs            []string            `gorm:"type:jsonb;serializer:json" json:"menu_ids"`
+	MenuSourceMap      map[string][]string `gorm:"type:jsonb;serializer:json" json:"menu_source_map"`
+	HiddenMenuIDs      []string            `gorm:"type:jsonb;serializer:json" json:"hidden_menu_ids"`
+	DisabledActionIDs  []string            `gorm:"type:jsonb;serializer:json" json:"disabled_action_ids"`
+	HasPackageConfig   bool                `gorm:"not null;default:false" json:"has_package_config"`
+	RefreshedAt        time.Time           `gorm:"not null;default:CURRENT_TIMESTAMP" json:"refreshed_at"`
+	CreatedAt          time.Time           `json:"created_at"`
+	UpdatedAt          time.Time           `json:"updated_at"`
 }
 
 func (PlatformUserAccessSnapshot) TableName() string {
@@ -398,21 +398,21 @@ func (PlatformRoleAccessSnapshot) TableName() string {
 }
 
 type TeamAccessSnapshot struct {
-	TeamID              uuid.UUID           `gorm:"type:uuid;primaryKey" json:"team_id"`
-	PackageIDs          []string            `gorm:"type:jsonb;serializer:json" json:"package_ids"`
-	ExpandedPackageIDs  []string            `gorm:"type:jsonb;serializer:json" json:"expanded_package_ids"`
-	DerivedActionIDs    []string            `gorm:"type:jsonb;serializer:json" json:"derived_action_ids"`
-	DerivedActionMap    map[string][]string `gorm:"type:jsonb;serializer:json" json:"derived_action_map"`
-	BlockedActionIDs    []string            `gorm:"type:jsonb;serializer:json" json:"blocked_action_ids"`
-	ManualActionIDs     []string            `gorm:"type:jsonb;serializer:json" json:"manual_action_ids"`
-	EffectiveActionIDs  []string            `gorm:"type:jsonb;serializer:json" json:"effective_action_ids"`
-	DerivedMenuIDs      []string            `gorm:"type:jsonb;serializer:json" json:"derived_menu_ids"`
-	DerivedMenuMap      map[string][]string `gorm:"type:jsonb;serializer:json" json:"derived_menu_map"`
-	BlockedMenuIDs      []string            `gorm:"type:jsonb;serializer:json" json:"blocked_menu_ids"`
-	EffectiveMenuIDs    []string            `gorm:"type:jsonb;serializer:json" json:"effective_menu_ids"`
-	RefreshedAt         time.Time           `gorm:"not null;default:CURRENT_TIMESTAMP" json:"refreshed_at"`
-	CreatedAt           time.Time           `json:"created_at"`
-	UpdatedAt           time.Time           `json:"updated_at"`
+	TeamID             uuid.UUID           `gorm:"type:uuid;primaryKey" json:"team_id"`
+	PackageIDs         []string            `gorm:"type:jsonb;serializer:json" json:"package_ids"`
+	ExpandedPackageIDs []string            `gorm:"type:jsonb;serializer:json" json:"expanded_package_ids"`
+	DerivedActionIDs   []string            `gorm:"type:jsonb;serializer:json" json:"derived_action_ids"`
+	DerivedActionMap   map[string][]string `gorm:"type:jsonb;serializer:json" json:"derived_action_map"`
+	BlockedActionIDs   []string            `gorm:"type:jsonb;serializer:json" json:"blocked_action_ids"`
+	ManualActionIDs    []string            `gorm:"type:jsonb;serializer:json" json:"manual_action_ids"`
+	EffectiveActionIDs []string            `gorm:"type:jsonb;serializer:json" json:"effective_action_ids"`
+	DerivedMenuIDs     []string            `gorm:"type:jsonb;serializer:json" json:"derived_menu_ids"`
+	DerivedMenuMap     map[string][]string `gorm:"type:jsonb;serializer:json" json:"derived_menu_map"`
+	BlockedMenuIDs     []string            `gorm:"type:jsonb;serializer:json" json:"blocked_menu_ids"`
+	EffectiveMenuIDs   []string            `gorm:"type:jsonb;serializer:json" json:"effective_menu_ids"`
+	RefreshedAt        time.Time           `gorm:"not null;default:CURRENT_TIMESTAMP" json:"refreshed_at"`
+	CreatedAt          time.Time           `json:"created_at"`
+	UpdatedAt          time.Time           `json:"updated_at"`
 }
 
 func (TeamAccessSnapshot) TableName() string {
@@ -424,8 +424,12 @@ type TeamRoleAccessSnapshot struct {
 	RoleID             uuid.UUID           `gorm:"type:uuid;primaryKey" json:"role_id"`
 	PackageIDs         []string            `gorm:"type:jsonb;serializer:json" json:"package_ids"`
 	ExpandedPackageIDs []string            `gorm:"type:jsonb;serializer:json" json:"expanded_package_ids"`
+	AvailableActionIDs []string            `gorm:"type:jsonb;serializer:json" json:"available_action_ids"`
+	DisabledActionIDs  []string            `gorm:"type:jsonb;serializer:json" json:"disabled_action_ids"`
 	ActionIDs          []string            `gorm:"type:jsonb;serializer:json" json:"action_ids"`
 	ActionSourceMap    map[string][]string `gorm:"type:jsonb;serializer:json" json:"action_source_map"`
+	AvailableMenuIDs   []string            `gorm:"type:jsonb;serializer:json" json:"available_menu_ids"`
+	HiddenMenuIDs      []string            `gorm:"type:jsonb;serializer:json" json:"hidden_menu_ids"`
 	MenuIDs            []string            `gorm:"type:jsonb;serializer:json" json:"menu_ids"`
 	MenuSourceMap      map[string][]string `gorm:"type:jsonb;serializer:json" json:"menu_source_map"`
 	HasMenuBoundary    bool                `gorm:"not null;default:false" json:"has_menu_boundary"`

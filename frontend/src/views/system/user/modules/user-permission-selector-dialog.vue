@@ -496,31 +496,25 @@ async function loadData() {
       fetchGetUserPackages(props.userData.id)
     ])
 
-    hasPackageConfig.value = Boolean(currentRes?.hasPackageConfig)
-    availableActionIds.value =
-      currentRes?.snapshotActionIds ||
-      currentRes?.effectiveActionIds ||
-      currentRes?.availableActionIds ||
-      []
+    hasPackageConfig.value = Boolean(currentRes?.has_package_config)
+    availableActionIds.value = currentRes?.available_action_ids || []
     directPackageIds.value = packageRes?.package_ids || []
-    expandedPackageIds.value = currentRes?.expandedPackageIds || []
+    expandedPackageIds.value = currentRes?.expanded_package_ids || []
     featurePackages.value = packageRes?.packages || []
     derivedSourceMap.value = Object.fromEntries(
-      (currentRes?.derivedSources || []).map((item: { actionId: string; packageIds: string[] }) => [
-        item.actionId,
-        item.packageIds
+      (currentRes?.derived_sources || []).map((item: { action_id: string; package_ids: string[] }) => [
+        item.action_id,
+        item.package_ids
       ])
     )
-    const compatActions = currentRes?.compatActions || currentRes?.actions || []
+    const compatActions = currentRes?.actions || []
     const compatActionItems = compatActions
       .map((item) => item.action)
       .filter(Boolean) as Api.SystemManage.PermissionActionItem[]
     permissionActions.value =
-      currentRes?.snapshotActions?.length
-        ? currentRes.snapshotActions
-        : currentRes?.availableActions?.length
-          ? currentRes.availableActions
-          : compatActionItems
+      currentRes?.available_actions?.length
+        ? currentRes.available_actions
+        : compatActionItems
     const availableActionIDSet = new Set(
       availableActionIds.value.length
         ? availableActionIds.value
@@ -530,11 +524,11 @@ async function loadData() {
     const nextMap: Record<string, 'allow' | 'deny'> = {}
     compatActions.forEach((item) => {
       if (
-        item.actionId &&
-        availableActionIDSet.has(item.actionId) &&
+        item.action_id &&
+        availableActionIDSet.has(item.action_id) &&
         (item.effect === 'allow' || item.effect === 'deny')
       ) {
-        nextMap[item.actionId] = item.effect
+        nextMap[item.action_id] = item.effect
       }
     })
     decisionMap.value = nextMap

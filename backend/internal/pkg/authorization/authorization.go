@@ -106,7 +106,10 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey
 	if currentUser.IsSuperAdmin {
 		return true, &actionDef, nil
 	}
-	if tenantID == nil && s.platformService != nil {
+	if tenantID == nil {
+		if s.platformService == nil {
+			return false, &actionDef, nil
+		}
 		snapshot, err := s.platformService.GetSnapshot(userID)
 		if err != nil {
 			return false, &actionDef, err
@@ -114,55 +117,21 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey
 		return containsUUID(snapshot.ActionIDs, actionDef.ID), &actionDef, nil
 	}
 
-	if tenantID != nil {
-		memberActive, boundaryConfigured, boundaryActionSet, ctxErr := s.resolveTenantActionContext(userID, tenantID)
-		if ctxErr != nil {
-			return false, &actionDef, ctxErr
-		}
-		if !memberActive {
-			return false, &actionDef, ErrTenantMemberNotFound
-		}
-		if boundaryConfigured && !boundaryActionSet[actionDef.ID] {
-			return false, &actionDef, ErrPermissionDenied
-		}
-		if boundaryConfigured {
-			roleActionSet, err := s.getTeamRoleSnapshotActionSet(userID, *tenantID)
-			if err != nil {
-				return false, &actionDef, err
-			}
-			return roleActionSet[actionDef.ID], &actionDef, nil
-		}
-		roleActionSet, err := s.getTeamRoleSnapshotActionSet(userID, *tenantID)
-		if err != nil {
-			return false, &actionDef, err
-		}
-		return roleActionSet[actionDef.ID], &actionDef, nil
+	memberActive, boundaryConfigured, boundaryActionSet, ctxErr := s.resolveTenantActionContext(userID, tenantID)
+	if ctxErr != nil {
+		return false, &actionDef, ctxErr
 	}
-
-	overrideEffect, hasOverride, err := s.resolveUserOverride(userID, tenantID, actionDef.ID)
+	if !memberActive {
+		return false, &actionDef, ErrTenantMemberNotFound
+	}
+	if boundaryConfigured && !boundaryActionSet[actionDef.ID] {
+		return false, &actionDef, ErrPermissionDenied
+	}
+	roleActionSet, err := s.getTeamRoleSnapshotActionSet(userID, *tenantID)
 	if err != nil {
 		return false, &actionDef, err
 	}
-	if hasOverride {
-		return overrideEffect == "allow", &actionDef, nil
-	}
-
-	roleIDs, err := s.getEffectiveActiveRoleIDs(userID, tenantID)
-	if err != nil {
-		return false, &actionDef, err
-	}
-	var rolePermissions []models.RoleActionPermission
-	if len(roleIDs) > 0 {
-		err = s.db.Where("role_id IN ? AND action_id = ?", roleIDs, actionDef.ID).Find(&rolePermissions).Error
-		if err != nil {
-			return false, &actionDef, err
-		}
-	}
-	effect := evaluateEffects(rolePermissions)
-	if effect == "allow" {
-		return true, &actionDef, nil
-	}
-	return false, &actionDef, nil
+	return roleActionSet[actionDef.ID], &actionDef, nil
 }
 
 func (s *Service) GetUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error) {
@@ -202,7 +171,10 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 		}
 		return keys, []string{}, nil
 	}
-	if tenantID == nil && s.platformService != nil {
+	if tenantID == nil {
+		if s.platformService == nil {
+			return []string{}, []string{}, nil
+		}
 		snapshot, err := s.platformService.GetSnapshot(userID)
 		if err != nil {
 			return nil, nil, err
@@ -211,54 +183,22 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 	}
 
 	memberActive := false
-	if tenantID != nil {
-		var ctxErr error
-		memberActive, _, _, ctxErr = s.resolveTenantActionContext(userID, tenantID)
-		if ctxErr != nil {
-			if errors.Is(ctxErr, ErrTenantMemberInactive) {
-				return []string{}, []string{}, nil
-			}
-			return nil, nil, ctxErr
-		}
-		if !memberActive {
+	var ctxErr error
+	memberActive, _, _, ctxErr = s.resolveTenantActionContext(userID, tenantID)
+	if ctxErr != nil {
+		if errors.Is(ctxErr, ErrTenantMemberInactive) {
 			return []string{}, []string{}, nil
 		}
-		roleActionIDs, roleErr := s.getTeamRoleSnapshotActionIDs(userID, *tenantID)
-		if roleErr != nil {
-			return nil, nil, roleErr
-		}
-		return buildActionKeysFromIDs(actions, roleActionIDs), []string{}, nil
+		return nil, nil, ctxErr
 	}
-
-	roleIDs, err := s.getEffectiveActiveRoleIDs(userID, tenantID)
-	if err != nil {
-		return nil, nil, err
+	if !memberActive {
+		return []string{}, []string{}, nil
 	}
-	roleEffectMap, err := s.buildRoleEffectMap(roleIDs)
-	if err != nil {
-		return nil, nil, err
+	roleActionIDs, roleErr := s.getTeamRoleSnapshotActionIDs(userID, *tenantID)
+	if roleErr != nil {
+		return nil, nil, roleErr
 	}
-
-	globalOverrideMap, _, err := s.buildUserOverrideMaps(userID, tenantID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	keys := make([]string, 0, len(actions))
-	keySet := make(map[string]struct{}, len(actions))
-	for _, action := range actions {
-		if effect, ok := globalOverrideMap[action.ID]; ok {
-			if effect == "allow" {
-				appendActionKeys(&keys, keySet, action)
-			}
-			continue
-		}
-		if roleEffectMap[action.ID] == "allow" {
-			appendActionKeys(&keys, keySet, action)
-		}
-	}
-
-	return keys, []string{}, nil
+	return buildActionKeysFromIDs(actions, roleActionIDs), []string{}, nil
 }
 
 func appendActionKeys(keys *[]string, keySet map[string]struct{}, action models.PermissionAction) {
@@ -397,55 +337,6 @@ func resolvePermissionKey(permissionKey string, legacy ...string) string {
 	return permissionkey.Normalize(permissionKey)
 }
 
-func (s *Service) resolveUserOverride(userID uuid.UUID, tenantID *uuid.UUID, actionID uuid.UUID) (string, bool, error) {
-	var records []models.UserActionPermission
-	query := s.db.Where("user_id = ? AND action_id = ?", userID, actionID)
-	if tenantID == nil {
-		query = query.Where("tenant_id IS NULL")
-	} else {
-		query = query.Where("tenant_id IS NULL OR tenant_id = ?", *tenantID)
-	}
-	err := query.Find(&records).Error
-	if err != nil {
-		return "", false, err
-	}
-	if tenantID != nil {
-		if effect, ok := pickOverrideEffect(records, tenantID); ok {
-			return effect, true, nil
-		}
-	}
-	if effect, ok := pickOverrideEffect(records, nil); ok {
-		return effect, true, nil
-	}
-	return "", false, nil
-}
-
-func pickOverrideEffect(records []models.UserActionPermission, tenantID *uuid.UUID) (string, bool) {
-	foundAllow := false
-	for _, record := range records {
-		if !sameTenant(record.TenantID, tenantID) {
-			continue
-		}
-		if record.Effect == "deny" {
-			return "deny", true
-		}
-		if record.Effect == "allow" {
-			foundAllow = true
-		}
-	}
-	if foundAllow {
-		return "allow", true
-	}
-	return "", false
-}
-
-func evaluateEffects(records []models.RoleActionPermission) string {
-	if len(records) > 0 {
-		return "allow"
-	}
-	return ""
-}
-
 func userIDFromContext(c *gin.Context) (uuid.UUID, error) {
 	value, ok := c.Get("user_id")
 	if !ok {
@@ -478,16 +369,6 @@ func resolveTenantID(c *gin.Context) (*uuid.UUID, error) {
 		return &tenantID, nil
 	}
 	return nil, nil
-}
-
-func sameTenant(left, right *uuid.UUID) bool {
-	if left == nil && right == nil {
-		return true
-	}
-	if left == nil || right == nil {
-		return false
-	}
-	return *left == *right
 }
 
 func (s *Service) getEffectiveActiveRoleIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {
@@ -527,7 +408,7 @@ func (s *Service) resolveTenantActionContext(userID uuid.UUID, tenantID *uuid.UU
 	if err != nil {
 		return false, false, nil, err
 	}
-	configured := len(snapshot.PackageIDs) > 0 || len(snapshot.ExpandedPackageIDs) > 0 || len(snapshot.BlockedIDs) > 0 || len(snapshot.ManualIDs) > 0
+	configured := len(snapshot.PackageIDs) > 0 || len(snapshot.ExpandedPackageIDs) > 0 || len(snapshot.BlockedIDs) > 0 || len(snapshot.LegacyManualIDs) > 0
 	if !configured && len(snapshot.EffectiveIDs) == 0 {
 		return true, false, boundaryActionSet, nil
 	}
@@ -538,57 +419,4 @@ func (s *Service) resolveTenantActionContext(userID uuid.UUID, tenantID *uuid.UU
 		boundaryActionSet[actionID] = true
 	}
 	return true, true, boundaryActionSet, nil
-}
-
-func (s *Service) buildRoleEffectMap(roleIDs []uuid.UUID) (map[uuid.UUID]string, error) {
-	result := make(map[uuid.UUID]string)
-	if len(roleIDs) == 0 {
-		return result, nil
-	}
-
-	var rolePermissions []models.RoleActionPermission
-	if err := s.db.Where("role_id IN ?", roleIDs).Find(&rolePermissions).Error; err != nil {
-		return nil, err
-	}
-
-	for _, record := range rolePermissions {
-		result[record.ActionID] = "allow"
-	}
-	return result, nil
-}
-
-func (s *Service) buildUserOverrideMaps(userID uuid.UUID, tenantID *uuid.UUID) (map[uuid.UUID]string, map[uuid.UUID]string, error) {
-	globalOverrides := make(map[uuid.UUID]string)
-	tenantOverrides := make(map[uuid.UUID]string)
-
-	query := s.db.Where("user_id = ?", userID)
-	if tenantID == nil {
-		query = query.Where("tenant_id IS NULL")
-	} else {
-		query = query.Where("tenant_id IS NULL OR tenant_id = ?", *tenantID)
-	}
-
-	var records []models.UserActionPermission
-	if err := query.Find(&records).Error; err != nil {
-		return nil, nil, err
-	}
-
-	for _, record := range records {
-		target := globalOverrides
-		if record.TenantID != nil {
-			target = tenantOverrides
-		}
-		if target[record.ActionID] == "deny" {
-			continue
-		}
-		if record.Effect == "deny" {
-			target[record.ActionID] = "deny"
-			continue
-		}
-		if record.Effect == "allow" {
-			target[record.ActionID] = "allow"
-		}
-	}
-
-	return globalOverrides, tenantOverrides, nil
 }

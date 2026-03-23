@@ -21,16 +21,12 @@ const tenantContextHeader = "X-Tenant-ID"
 
 type MenuHandler struct {
 	menuService MenuService
-	userRepo         user.UserRepository
-	menuRepo         interface {
+	userRepo    user.UserRepository
+	menuRepo    interface {
 		ListAll() ([]user.Menu, error)
 	}
 	roleRepo         user.RoleRepository
-	roleMenuRepo     user.RoleMenuRepository
 	userRoleRepo     user.UserRoleRepository
-	tenantMemberRepo user.TenantMemberRepository
-	teamPackageRepo  user.TeamFeaturePackageRepository
-	packageMenuRepo  user.FeaturePackageMenuRepository
 	platformService  platformaccess.Service
 	boundaryService  teamboundary.Service
 	authzService     interface {
@@ -41,7 +37,7 @@ type MenuHandler struct {
 
 func NewMenuHandler(menuService MenuService, userRepo user.UserRepository, menuRepo interface {
 	ListAll() ([]user.Menu, error)
-}, roleRepo user.RoleRepository, roleMenuRepo user.RoleMenuRepository, userRoleRepo user.UserRoleRepository, tenantMemberRepo user.TenantMemberRepository, teamPackageRepo user.TeamFeaturePackageRepository, packageMenuRepo user.FeaturePackageMenuRepository, boundaryService teamboundary.Service, authzService interface {
+}, roleRepo user.RoleRepository, userRoleRepo user.UserRoleRepository, boundaryService teamboundary.Service, authzService interface {
 	Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionAction, error)
 }, platformService platformaccess.Service, logger *zap.Logger) *MenuHandler {
 	return &MenuHandler{
@@ -49,11 +45,7 @@ func NewMenuHandler(menuService MenuService, userRepo user.UserRepository, menuR
 		userRepo:         userRepo,
 		menuRepo:         menuRepo,
 		roleRepo:         roleRepo,
-		roleMenuRepo:     roleMenuRepo,
 		userRoleRepo:     userRoleRepo,
-		tenantMemberRepo: tenantMemberRepo,
-		teamPackageRepo:  teamPackageRepo,
-		packageMenuRepo:  packageMenuRepo,
 		platformService:  platformService,
 		boundaryService:  boundaryService,
 		authzService:     authzService,
@@ -178,19 +170,11 @@ func (h *MenuHandler) getTeamContextAllowedMenuIDs(teamID uuid.UUID, roleIDs []u
 		if !ok {
 			continue
 		}
-		roleMenus, roleMenusErr := h.roleMenuRepo.GetMenuIDsByRoleID(role.ID)
-		if roleMenusErr != nil {
-			return nil, roleMenusErr
-		}
 		snapshot, snapshotErr := h.boundaryService.GetRoleSnapshot(teamID, role.ID, role.TenantID == nil)
 		if snapshotErr != nil {
 			return nil, snapshotErr
 		}
-		roleAllowed := roleMenus
-		if snapshot.HasMenuBoundary {
-			roleAllowed = intersectMenuIDs(roleMenus, snapshot.MenuIDs)
-		}
-		for _, menuID := range roleAllowed {
+		for _, menuID := range snapshot.MenuIDs {
 			allowedSet[menuID] = struct{}{}
 		}
 	}
@@ -202,29 +186,6 @@ func (h *MenuHandler) getTeamContextAllowedMenuIDs(teamID uuid.UUID, roleIDs []u
 		allowedMenuIDs = append(allowedMenuIDs, menuID)
 	}
 	return allowedMenuIDs, nil
-}
-
-func intersectMenuIDs(primary, boundary []uuid.UUID) []uuid.UUID {
-	if len(primary) == 0 || len(boundary) == 0 {
-		return []uuid.UUID{}
-	}
-	boundarySet := make(map[uuid.UUID]struct{}, len(boundary))
-	for _, id := range boundary {
-		boundarySet[id] = struct{}{}
-	}
-	result := make([]uuid.UUID, 0, len(primary))
-	seen := make(map[uuid.UUID]struct{}, len(primary))
-	for _, id := range primary {
-		if _, ok := boundarySet[id]; !ok {
-			continue
-		}
-		if _, ok := seen[id]; ok {
-			continue
-		}
-		seen[id] = struct{}{}
-		result = append(result, id)
-	}
-	return result
 }
 
 func (h *MenuHandler) Create(c *gin.Context) {

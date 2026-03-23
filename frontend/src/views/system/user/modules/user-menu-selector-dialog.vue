@@ -178,17 +178,17 @@ async function loadData() {
     ])
 
     featurePackages.value = packageRes?.packages || []
-    availableMenuIds.value = menuRes?.availableMenuIds || []
-    derivedMenuIds.value = menuRes?.availableMenuIds || []
-    hiddenMenuIds.value = menuRes?.hiddenMenuIds || []
-    selectedIds.value = normalizeSelectedMenuIDs(menuRes?.menuIds || [], derivedMenuIds.value)
+    availableMenuIds.value = menuRes?.available_menu_ids || []
+    derivedMenuIds.value = menuRes?.available_menu_ids || []
+    hiddenMenuIds.value = menuRes?.hidden_menu_ids || []
+    selectedIds.value = normalizeSelectedMenuIDs(menuRes?.menu_ids || [], derivedMenuIds.value)
     derivedSourceMap.value = Object.fromEntries(
-      (menuRes?.derivedSources || []).map((item: { menuId: string; packageIds: string[] }) => [
-        item.menuId,
-        item.packageIds
+      (menuRes?.derived_sources || []).map((item: { menu_id: string; package_ids: string[] }) => [
+        item.menu_id,
+        item.package_ids
       ])
     )
-    hasPackageConfig.value = Boolean(menuRes?.hasPackageConfig)
+    hasPackageConfig.value = Boolean(menuRes?.has_package_config)
     selectedDerivedPackageId.value = ''
 
     const allMenuList = Array.isArray(allMenus) ? allMenus : []

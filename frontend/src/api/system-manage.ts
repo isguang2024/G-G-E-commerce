@@ -203,46 +203,21 @@ export async function fetchGetUserActions(userId: string) {
   const res = await request.get<Api.SystemManage.UserActionPermissionResponse>({
     url: `${USER_BASE}/${userId}/actions`
   })
-  const raw = res as any
-  const compatActions = (raw?.compat_actions || raw?.compatActions || raw?.actions || []).map(
-    (item: any) => ({
-      actionId: item?.action_id || item?.actionId || '',
+  const actions = (res?.actions || []).map((item: any) => ({
+      action_id: item?.action_id || '',
       effect: item?.effect || 'allow',
       action: item?.action ? normalizePermissionAction(item.action) : undefined
-    })
-  ) as Api.SystemManage.UserActionPermissionItem[]
-  const snapshotActions = (
-    raw?.snapshot_actions ||
-    raw?.snapshotActions ||
-    raw?.available_actions ||
-    raw?.availableActions ||
-    []
-  ).map((item: any) => normalizePermissionAction(item))
+    })) as Api.SystemManage.UserActionPermissionItem[]
   return {
-    actions: compatActions,
-    compatActions,
-    snapshotActionIds:
-      raw?.snapshot_action_ids ||
-      raw?.snapshotActionIds ||
-      raw?.effective_action_ids ||
-      raw?.effectiveActionIds ||
-      [],
-    snapshotActions,
-    effectiveActionIds:
-      raw?.effective_action_ids ||
-      raw?.effectiveActionIds ||
-      raw?.snapshot_action_ids ||
-      raw?.snapshotActionIds ||
-      [],
-    availableActionIds: raw?.available_action_ids || raw?.availableActionIds || [],
-    availableActions: snapshotActions,
-    packageIds: raw?.package_ids || raw?.packageIds || [],
-    expandedPackageIds: raw?.expanded_package_ids || raw?.expandedPackageIds || [],
-    derivedSources: (raw?.derived_sources || raw?.derivedSources || []).map((item: any) => ({
-      actionId: item?.action_id || item?.actionId || '',
-      packageIds: item?.package_ids || item?.packageIds || []
+    actions,
+    available_action_ids: res?.available_action_ids || [],
+    available_actions: (res?.available_actions || []).map(normalizePermissionAction),
+    expanded_package_ids: res?.expanded_package_ids || [],
+    derived_sources: (res?.derived_sources || []).map((item: any) => ({
+      action_id: item?.action_id || '',
+      package_ids: item?.package_ids || []
     })),
-    hasPackageConfig: Boolean(raw?.has_package_config ?? raw?.hasPackageConfig)
+    has_package_config: Boolean(res?.has_package_config)
   }
 }
 
@@ -253,18 +228,16 @@ export async function fetchGetUserMenus(userId: string) {
   const res = await request.get<Api.SystemManage.UserMenuBoundaryResponse>({
     url: `${USER_BASE}/${userId}/menus`
   })
-  const raw = res as any
   return {
-    menuIds: raw?.menu_ids || raw?.menuIds || [],
-    availableMenuIds: raw?.available_menu_ids || raw?.availableMenuIds || [],
-    hiddenMenuIds: raw?.hidden_menu_ids || raw?.hiddenMenuIds || [],
-    packageIds: raw?.package_ids || raw?.packageIds || [],
-    expandedPackageIds: raw?.expanded_package_ids || raw?.expandedPackageIds || [],
-    derivedSources: (raw?.derived_sources || raw?.derivedSources || []).map((item: any) => ({
-      menuId: item?.menu_id || item?.menuId || '',
-      packageIds: item?.package_ids || item?.packageIds || []
+    menu_ids: res?.menu_ids || [],
+    available_menu_ids: res?.available_menu_ids || [],
+    hidden_menu_ids: res?.hidden_menu_ids || [],
+    expanded_package_ids: res?.expanded_package_ids || [],
+    derived_sources: (res?.derived_sources || []).map((item: any) => ({
+      menu_id: item?.menu_id || '',
+      package_ids: item?.package_ids || []
     })),
-    hasPackageConfig: Boolean(raw?.has_package_config ?? raw?.hasPackageConfig)
+    has_package_config: Boolean(res?.has_package_config)
   }
 }
 
@@ -347,8 +320,7 @@ export function fetchGetRoleMenus(roleId: string) {
       hidden_menu_ids: res?.hidden_menu_ids || [],
       package_ids: res?.package_ids || [],
       expanded_package_ids: res?.expanded_package_ids || [],
-      derived_sources: res?.derived_sources || [],
-      has_menu_boundary: Boolean(res?.has_menu_boundary)
+      derived_sources: res?.derived_sources || []
     }))
 }
 
@@ -360,8 +332,7 @@ export function fetchGetRolePackages(roleId: string) {
     })
     .then((res) => ({
       package_ids: res?.package_ids || [],
-      packages: (res?.packages || []).map(normalizeFeaturePackage),
-      inherited: Boolean(res?.inherited)
+      packages: (res?.packages || []).map(normalizeFeaturePackage)
     }))
 }
 
@@ -391,11 +362,10 @@ export function fetchGetRoleActions(roleId: string) {
       action_ids: res?.action_ids || [],
       available_action_ids: res?.available_action_ids || [],
       disabled_action_ids: res?.disabled_action_ids || [],
-      actions: res?.actions || [],
+      actions: (res?.actions || []).map(normalizePermissionAction),
       package_ids: res?.package_ids || [],
       expanded_package_ids: res?.expanded_package_ids || [],
-      derived_sources: res?.derived_sources || [],
-      has_package_boundary: Boolean(res?.has_package_boundary)
+      derived_sources: res?.derived_sources || []
     }))
 }
 

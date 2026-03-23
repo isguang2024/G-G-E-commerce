@@ -153,11 +153,11 @@ async function loadData() {
     ])
 
     featurePackages.value = packageRes?.packages || []
-    derivedMenuIds.value = originRes?.derivedMenuIds || []
-    blockedMenuIds.value = originRes?.blockedMenuIds || []
-    selectedIds.value = normalizeSelectedMenuIDs(currentRes?.menuIds || [], derivedMenuIds.value)
+    derivedMenuIds.value = originRes?.derived_menu_ids || []
+    blockedMenuIds.value = originRes?.blocked_menu_ids || []
+    selectedIds.value = normalizeSelectedMenuIDs(currentRes?.menu_ids || [], derivedMenuIds.value)
     derivedSourceMap.value = Object.fromEntries(
-      (originRes?.derivedSources || []).map((item) => [item.menuId, item.packageIds])
+      (originRes?.derived_sources || []).map((item) => [item.menu_id, item.package_ids])
     )
     selectedDerivedPackageId.value = ''
 
