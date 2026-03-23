@@ -129,9 +129,7 @@ function buildFrontendUserInfo(data: Api.Auth.UserInfo): Api.Auth.UserInfo {
     avatar: data.avatar_url,
     roles,
     buttons: data.buttons || [],
-    actions: data.actions || [],
-    scoped_actions: data.scoped_actions || data.scopedActions || [],
-    scopedActions: data.scoped_actions || data.scopedActions || []
+    actions: data.actions || []
   }
 }
 

@@ -130,37 +130,18 @@ function normalizeRequiredActions(
   actions: string[],
   availableActions: Api.SystemManage.PermissionActionItem[]
 ) {
-  const scopedKeyMap = new Map<string, string>()
-  const unscopedKeyMap = new Map<string, string[]>()
+  const actionKeyMap = new Map<string, string>()
 
   availableActions.forEach((item) => {
-    const scopedKey = buildScopedActionKey(
-      `${item.resourceCode}:${item.actionCode}`,
-      item.scopeCode || item.scope
-    )
-    const unscopedKey = resolveActionKey(scopedKey).key
-    scopedKeyMap.set(scopedKey, scopedKey)
-    const current = unscopedKeyMap.get(unscopedKey) || []
-    current.push(scopedKey)
-    unscopedKeyMap.set(unscopedKey, current)
+    const key = buildScopedActionKey(item.permissionKey || `${item.resourceCode}:${item.actionCode}`)
+    actionKeyMap.set(key, key)
   })
 
   return Array.from(
     new Set(
       actions.map((item) => {
-        if (scopedKeyMap.has(item)) return item
-
-        const raw = resolveActionKey(item)
-        const candidates = unscopedKeyMap.get(raw.key) || []
-        if (!candidates.length) return item
-
-        if (raw.scope) {
-          const exactKey = buildScopedActionKey(raw.key, raw.scope)
-          const exact = candidates.find((candidate) => candidate === exactKey)
-          if (exact) return exact
-        }
-
-        return candidates.find((candidate) => candidate.endsWith('@global')) || candidates[0]
+        const raw = resolveActionKey(item).key
+        return actionKeyMap.get(raw) || item
       })
     )
   )

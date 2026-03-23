@@ -222,9 +222,7 @@
           avatar: response.user.avatar_url,
           roles: response.user.is_super_admin ? ['R_SUPER'] : ['R_USER'],
           buttons: [],
-          actions: response.user.actions || [],
-          scoped_actions: response.user.scoped_actions || response.user.scopedActions || [],
-          scopedActions: response.user.scoped_actions || response.user.scopedActions || []
+          actions: response.user.actions || []
         }
         userStore.setUserInfo(userInfo)
       }

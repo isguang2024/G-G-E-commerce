@@ -1,7 +1,0 @@
-./auth.go
-./common.go
-./menu.go
-./role.go
-./scope.go
-./tenant.go
-./user.go

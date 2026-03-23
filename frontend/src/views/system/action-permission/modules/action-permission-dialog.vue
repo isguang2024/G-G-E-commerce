@@ -10,16 +10,8 @@
       <ElFormItem label="来源">
         <ElTag :type="sourceTagType">{{ sourceLabel }}</ElTag>
       </ElFormItem>
-      <ElFormItem label="权限键">
-        <ElInput :model-value="permissionKeyPreview" disabled />
-      </ElFormItem>
-      <ElFormItem label="分类" prop="category">
-        <ElAutocomplete
-          v-model="form.category"
-          :fetch-suggestions="queryCategorySuggestions"
-          clearable
-          placeholder="输入或选择历史分类"
-        />
+      <ElFormItem label="权限键" prop="permissionKey">
+        <ElInput v-model="form.permissionKey" placeholder="例如 system.role.manage" />
       </ElFormItem>
       <ElFormItem label="模块归属" prop="moduleCode">
         <ElAutocomplete
@@ -35,32 +27,17 @@
           <ElOption label="业务功能" value="business" />
         </ElSelect>
       </ElFormItem>
-      <ElFormItem label="资源编码" prop="resourceCode">
-        <ElInput v-model="form.resourceCode" placeholder="例如 team_member" />
-      </ElFormItem>
-      <ElFormItem label="动作编码" prop="actionCode">
-        <ElInput v-model="form.actionCode" placeholder="例如 assign_action" />
+      <ElFormItem label="上下文" prop="contextType">
+        <ElSelect v-model="form.contextType" style="width: 100%">
+          <ElOption label="平台" value="platform" />
+          <ElOption label="团队" value="team" />
+        </ElSelect>
       </ElFormItem>
       <ElFormItem label="权限名称" prop="name">
         <ElInput v-model="form.name" placeholder="请输入名称" />
       </ElFormItem>
       <ElFormItem label="描述">
         <ElInput v-model="form.description" type="textarea" :rows="3" placeholder="请输入描述" />
-      </ElFormItem>
-      <ElFormItem label="作用域" prop="scopeId">
-        <ElSelect v-model="form.scopeId" style="width: 100%" :loading="scopeLoading">
-          <ElOption
-            v-for="scope in scopeList"
-            :key="scope.scopeId"
-            :label="scope.scopeName"
-            :value="scope.scopeId"
-          >
-            <span>{{ scope.scopeName }}</span>
-            <span style="color: #8492a6; font-size: 13px; margin-left: 8px"
-              >({{ scope.scopeCode }})</span
-            >
-          </ElOption>
-        </ElSelect>
       </ElFormItem>
       <ElFormItem label="状态" prop="status">
         <ElSelect v-model="form.status" style="width: 100%">
@@ -82,18 +59,13 @@
 
 <script setup lang="ts">
   import type { FormInstance, FormRules } from 'element-plus'
-  import {
-    fetchGetAllScopes,
-    fetchCreatePermissionAction,
-    fetchUpdatePermissionAction
-  } from '@/api/system-manage'
+  import { fetchCreatePermissionAction, fetchUpdatePermissionAction } from '@/api/system-manage'
   import { ElMessage } from 'element-plus'
 
   interface Props {
     modelValue: boolean
     dialogType: 'add' | 'edit'
     actionData?: Api.SystemManage.PermissionActionItem
-    categoryOptions?: string[]
     moduleOptions?: string[]
   }
 
@@ -101,7 +73,6 @@
     modelValue: false,
     dialogType: 'add',
     actionData: undefined,
-    categoryOptions: () => [],
     moduleOptions: () => []
   })
 
@@ -117,41 +88,30 @@
 
   const formRef = ref<FormInstance>()
   const submitting = ref(false)
-  const scopeLoading = ref(false)
-  const scopeList = ref<Api.SystemManage.ScopeListItem[]>([])
   const form = reactive({
     id: '',
-    resourceCode: '',
-    actionCode: '',
+    permissionKey: '',
     moduleCode: '',
-    category: '',
     source: 'business',
     featureKind: 'business',
+    contextType: 'team',
     name: '',
     description: '',
-    scopeId: '',
     status: 'normal',
     sortOrder: 0
   })
 
   const rules = reactive<FormRules>({
-    category: [{ max: 100, message: '分类长度不能超过 100 个字符', trigger: 'blur' }],
+    permissionKey: [{ required: true, message: '请输入权限键', trigger: 'blur' }],
     moduleCode: [{ required: true, message: '请输入模块归属', trigger: 'blur' }],
     featureKind: [{ required: true, message: '请选择功能归属', trigger: 'change' }],
-    resourceCode: [{ required: true, message: '请输入资源编码', trigger: 'blur' }],
-    actionCode: [{ required: true, message: '请输入动作编码', trigger: 'blur' }],
+    contextType: [{ required: true, message: '请选择上下文', trigger: 'change' }],
     name: [{ required: true, message: '请输入权限名称', trigger: 'blur' }],
-    scopeId: [{ required: true, message: '请选择作用域', trigger: 'change' }],
     status: [{ required: true, message: '请选择状态', trigger: 'change' }]
   })
 
   const permissionKeyPreview = computed(() => {
-    const resourceCode = form.resourceCode.trim()
-    const actionCode = form.actionCode.trim()
-    if (!resourceCode && !actionCode) {
-      return ''
-    }
-    return `${resourceCode || 'resource'}:${actionCode || 'action'}`
+    return form.permissionKey.trim()
   })
 
   const sourceLabel = computed(() => {
@@ -166,18 +126,6 @@
     return 'warning'
   })
 
-  function queryCategorySuggestions(
-    queryString: string,
-    cb: (items: Array<{ value: string }>) => void
-  ) {
-    const keyword = queryString.trim().toLowerCase()
-    const suggestions = (props.categoryOptions || [])
-      .filter((item) => !keyword || item.toLowerCase().includes(keyword))
-      .slice(0, 12)
-      .map((value) => ({ value }))
-    cb(suggestions)
-  }
-
   function queryModuleSuggestions(
     queryString: string,
     cb: (items: Array<{ value: string }>) => void
@@ -190,51 +138,31 @@
     cb(suggestions)
   }
 
-  async function loadScopes() {
-    try {
-      scopeLoading.value = true
-      scopeList.value = await fetchGetAllScopes()
-    } finally {
-      scopeLoading.value = false
-    }
-  }
-
   function initForm() {
     if (props.dialogType === 'edit' && props.actionData) {
-      let scopeId = props.actionData.scopeId || ''
-      if (!scopeId && props.actionData.scopeCode && scopeList.value.length > 0) {
-        const matchedScope = scopeList.value.find(
-          (scope) => scope.scopeCode === props.actionData?.scopeCode
-        )
-        scopeId = matchedScope?.scopeId || ''
-      }
       Object.assign(form, {
         id: props.actionData.id,
-        resourceCode: props.actionData.resourceCode,
-        actionCode: props.actionData.actionCode,
+        permissionKey: props.actionData.permissionKey || `${props.actionData.resourceCode}:${props.actionData.actionCode}`,
         moduleCode: props.actionData.moduleCode || props.actionData.resourceCode,
-        category: props.actionData.category || '',
         source: props.actionData.source || 'business',
         featureKind: props.actionData.featureKind || 'system',
+        contextType: props.actionData.contextType || 'team',
         name: props.actionData.name,
         description: props.actionData.description || '',
-        scopeId,
         status: props.actionData.status || 'normal',
         sortOrder: props.actionData.sortOrder ?? 0
       })
       return
     }
     Object.assign(form, {
-        id: '',
-        resourceCode: '',
-        actionCode: '',
-        moduleCode: '',
-        category: '',
+      id: '',
+      permissionKey: '',
+      moduleCode: '',
       source: 'business',
       featureKind: 'business',
+      contextType: 'team',
       name: '',
       description: '',
-      scopeId: scopeList.value[0]?.scopeId || '',
       status: 'normal',
       sortOrder: 0
     })
@@ -244,9 +172,6 @@
     () => [props.modelValue, props.actionData, props.dialogType],
     async ([opened]) => {
       if (!opened) return
-      if (scopeList.value.length === 0) {
-        await loadScopes()
-      }
       initForm()
     },
     { deep: true }
@@ -263,14 +188,12 @@
     submitting.value = true
     try {
       const payload = {
-        resource_code: form.resourceCode.trim(),
-        action_code: form.actionCode.trim(),
+        permission_key: form.permissionKey.trim(),
         module_code: form.moduleCode.trim(),
-        category: form.category.trim(),
+        context_type: form.contextType,
         feature_kind: form.featureKind,
         name: form.name.trim(),
         description: form.description.trim(),
-        scope_id: form.scopeId,
         status: form.status,
         sort_order: form.sortOrder ?? 0
       }

@@ -15,13 +15,13 @@ import (
 type AuthHandler struct {
 	authService  AuthService
 	authzService interface {
-		GetUserActionSnapshot(userID uuid.UUID, tenantID *uuid.UUID) ([]string, []string, error)
+		GetUserActionSnapshot(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
 	}
 	logger *zap.Logger
 }
 
 func NewAuthHandler(authService AuthService, authzService interface {
-	GetUserActionSnapshot(userID uuid.UUID, tenantID *uuid.UUID) ([]string, []string, error)
+	GetUserActionSnapshot(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
 }, logger *zap.Logger) *AuthHandler {
 	return &AuthHandler{
 		authService:  authService,
@@ -173,13 +173,11 @@ func (h *AuthHandler) GetUserInfo(c *gin.Context) {
 	}
 
 	actionKeys := make([]string, 0)
-	scopedActionKeys := make([]string, 0)
 	if h.authzService != nil {
-		if keys, scopedKeys, snapErr := h.authzService.GetUserActionSnapshot(userID, tenantID); snapErr != nil {
+		if keys, snapErr := h.authzService.GetUserActionSnapshot(userID, tenantID); snapErr != nil {
 			h.logger.Warn("Failed to resolve user actions", zap.Error(snapErr), zap.String("user_id", userID.String()))
 		} else {
 			actionKeys = keys
-			scopedActionKeys = scopedKeys
 		}
 	}
 
@@ -194,7 +192,6 @@ func (h *AuthHandler) GetUserInfo(c *gin.Context) {
 		"is_super_admin": user.IsSuperAdmin,
 		"roles":          roles,
 		"actions":        actionKeys,
-		"scoped_actions": scopedActionKeys,
 		"created_at":     user.CreatedAt,
 		"updated_at":     user.UpdatedAt,
 	}

@@ -18,7 +18,7 @@
           <ElInput
             v-model="filters.keyword"
             clearable
-            placeholder="搜索权限名称/权限键/模块归属/分类"
+            placeholder="搜索权限名称/权限键/模块归属/兼容编码"
             class="toolbar-input"
           />
           <ElSelect v-model="filters.featureKind" clearable placeholder="功能归属" class="toolbar-select">
@@ -106,7 +106,6 @@
                 <div v-if="data.meta" class="node-subtitle">{{ data.meta }}</div>
               </div>
               <div class="node-actions node-actions--leaf">
-                <ElTag size="small" effect="plain" class="muted-tag">{{ data.scopeText }}</ElTag>
                 <ElTag size="small" effect="plain" class="muted-tag">{{ data.roleEffectText }}</ElTag>
                 <ElSelect
                   v-model="effectMap[data.actionId]"
@@ -153,7 +152,6 @@
     fetchGetMyTeamRoles,
     fetchSetMyTeamMemberActions
   } from '@/api/team'
-  import { formatScopeLabel } from '@/utils/permission/scope'
   import { ElMessage } from 'element-plus'
 
   interface Props {
@@ -170,7 +168,6 @@
     children?: PermissionTreeNode[]
     actionIds: string[]
     actionId?: string
-    scopeText?: string
     roleEffectText?: string
   }
 
@@ -229,7 +226,6 @@
         item.name,
         item.permissionKey,
         item.moduleCode,
-        item.category,
         item.resourceCode,
         item.actionCode,
         item.description
@@ -253,7 +249,6 @@
   const treeData = computed<PermissionTreeNode[]>(() =>
     buildPermissionTree(filteredGroups.value, (action) => ({
       meta: buildActionMeta(action),
-      scopeText: formatScopeLabel(action.scopeCode, action.scopeName),
       roleEffectText: buildRoleEffectText(action.id)
     })) as PermissionTreeNode[]
   )

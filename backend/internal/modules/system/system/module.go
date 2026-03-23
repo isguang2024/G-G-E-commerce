@@ -6,9 +6,9 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/config"
-	cachepkg "github.com/gg-ecommerce/backend/internal/pkg/cache"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
+	cachepkg "github.com/gg-ecommerce/backend/internal/pkg/cache"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
 )
 
@@ -49,7 +49,7 @@ func (m *SystemModule) RegisterRoutes(rg *gin.RouterGroup) {
 	system := rg.Group("/system")
 	reg := apiregistry.NewRegistrar(system, "system")
 	{
-	reg.GET("/view-pages", &apiregistry.RouteMeta{Summary: "获取页面文件映射", ResourceCode: "system", ActionCode: "view_page_catalog", ScopeCode: "global"}, authzService.RequireAction("system", "view_page_catalog", "global"), systemHandler.GetViewPages)
+		reg.GET("/view-pages", &apiregistry.RouteMeta{Summary: "获取页面文件映射", ResourceCode: "system", ActionCode: "view_page_catalog"}, authzService.RequireAction("system.page_catalog.view"), systemHandler.GetViewPages)
 	}
 }
 

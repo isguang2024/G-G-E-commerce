@@ -176,6 +176,14 @@ func (s *tenantService) Delete(id uuid.UUID) error {
 			return err
 		}
 
+		if err := tx.Where("tenant_id = ?", id).Delete(&user.TeamManualActionPermission{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("team_id = ?", id).Delete(&user.TeamFeaturePackage{}).Error; err != nil {
+			return err
+		}
+
 		if err := tx.Where("tenant_id = ?", id).Delete(&user.APIKey{}).Error; err != nil {
 			return err
 		}

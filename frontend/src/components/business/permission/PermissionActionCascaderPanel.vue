@@ -23,21 +23,6 @@
           :prefix-icon="Search"
           class="toolbar-search"
         />
-
-        <ElSelect
-          v-model="scopeFilter"
-          clearable
-          placeholder="作用域"
-          class="toolbar-scope"
-        >
-          <ElOption label="全部作用域" value="" />
-          <ElOption
-            v-for="item in scopeOptions"
-            :key="item"
-            :label="item"
-            :value="item"
-          />
-        </ElSelect>
       </div>
     </div>
 
@@ -59,15 +44,6 @@
               <span v-if="data.permissionText" class="meta-text" :title="data.permissionText">
                 {{ data.permissionText }}
               </span>
-              <ElTag
-                v-if="data.scopeText"
-                size="small"
-                effect="plain"
-                round
-                class="meta-tag"
-              >
-                {{ data.scopeText }}
-              </ElTag>
               <ElTag
                 v-if="data.sourceText"
                 size="small"
@@ -121,7 +97,6 @@ interface CascaderPanelExpose {
 
 interface PermissionOption extends CascaderOption {
   permissionText?: string
-  scopeText?: string
   sourceText?: string
   totalLeafCount?: number
   selectedLeafCount?: number
@@ -145,7 +120,6 @@ const panelRef = ref<CascaderPanelExpose>()
 const selectedNodeValues = ref<string[]>([])
 const syncingFromProps = ref(false)
 const searchKeyword = ref('')
-const scopeFilter = ref('')
 
 const baseOptions = computed<PermissionOption[]>(() => {
   const featureMap = new Map<string, PermissionOption>()
@@ -183,7 +157,6 @@ const baseOptions = computed<PermissionOption[]>(() => {
       label: action.name,
       leaf: true,
       permissionText: action.permissionKey || `${action.resourceCode}:${action.actionCode}`,
-      scopeText: action.scopeName || action.scopeCode || '',
       sourceText: formatSource(action.source)
     })
     module.children = leafChildren
@@ -193,16 +166,6 @@ const baseOptions = computed<PermissionOption[]>(() => {
 })
 
 const leafCount = computed(() => props.actions.length)
-
-const scopeOptions = computed(() => {
-  return Array.from(
-    new Set(
-      props.actions
-        .map((item) => `${item.scopeName || item.scopeCode || ''}`.trim())
-        .filter(Boolean)
-    )
-  )
-})
 
 const branchLeafMap = computed(() => {
   const map = new Map<string, string[]>()
@@ -288,13 +251,12 @@ const topLevelTags = computed(() => {
 
 const filteredOptions = computed<PermissionOption[]>(() => {
   const keyword = searchKeyword.value.trim().toLowerCase()
-  const scope = scopeFilter.value.trim()
 
   const filterNodes = (nodes: PermissionOption[]): PermissionOption[] => {
     return nodes
       .map((node) => {
         const children = Array.isArray(node.children) ? filterNodes(node.children as PermissionOption[]) : []
-        const selfMatched = matchesNode(node, keyword, scope)
+        const selfMatched = matchesNode(node, keyword)
         if (selfMatched || children.length > 0) {
           return { ...node, children }
         }
@@ -365,15 +327,14 @@ function ensureExpandedMenus() {
   panel.menus = nextMenus
 }
 
-function matchesNode(node: PermissionOption, keyword: string, scope: string) {
-  if (!node.leaf) return !keyword && !scope
+function matchesNode(node: PermissionOption, keyword: string) {
+  if (!node.leaf) return !keyword
 
-  const text = [node.label, node.permissionText, node.scopeText, node.sourceText]
+  const text = [node.label, node.permissionText, node.sourceText]
     .filter(Boolean)
     .join(' ')
     .toLowerCase()
 
-  if (scope && node.scopeText !== scope) return false
   if (keyword && !text.includes(keyword)) return false
   return true
 }
@@ -453,11 +414,6 @@ function formatSource(source?: string) {
   width: 210px;
   flex: 0 0 210px;
   margin-left: 8px;
-}
-
-.toolbar-scope {
-  width: 140px;
-  flex: 0 0 140px;
 }
 
 .panel-body {
@@ -574,8 +530,7 @@ function formatSource(source?: string) {
   line-height: 1.35;
 }
 
-.toolbar-search :deep(.el-input__wrapper),
-.toolbar-scope :deep(.el-select__wrapper) {
+.toolbar-search :deep(.el-input__wrapper) {
   min-height: 36px;
   height: 36px;
 }
@@ -592,8 +547,7 @@ function formatSource(source?: string) {
     flex-wrap: wrap;
   }
 
-  .toolbar-search,
-  .toolbar-scope {
+  .toolbar-search {
     width: 100%;
     flex: 1 1 auto;
     margin-left: 0;

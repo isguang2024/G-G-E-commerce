@@ -11,8 +11,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted } from 'vue'
-  import { fetchGetAllScopes } from '@/api/system-manage'
+  import { ref, computed } from 'vue'
   interface Props {
     modelValue: Record<string, any>
   }
@@ -27,20 +26,6 @@
   const emit = defineEmits<Emits>()
 
   const searchBarRef = ref()
-  const scopeOptions = ref<{ label: string; value: string }[]>([])
-
-  onMounted(async () => {
-    try {
-      const scopes = await fetchGetAllScopes()
-      scopeOptions.value = scopes.map((item) => ({
-        label: item.scopeName,
-        value: item.scopeCode
-      }))
-    } catch {
-      scopeOptions.value = []
-    }
-  })
-
   /**
    * 表单数据双向绑定
    */
@@ -72,17 +57,6 @@
       type: 'input',
       placeholder: '请输入角色名称',
       clearable: true
-    },
-    {
-      label: '作用域',
-      key: 'scopes',
-      type: 'select',
-      props: {
-        placeholder: '请选择作用域（可多选）',
-        options: scopeOptions.value,
-        multiple: true,
-        clearable: true
-      }
     },
     {
       label: '角色编码',

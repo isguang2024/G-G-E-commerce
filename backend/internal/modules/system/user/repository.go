@@ -2,7 +2,6 @@ package user
 
 import (
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -212,19 +211,13 @@ type RoleRepository interface {
 	GetByCode(code string) (*Role, error)
 	FindByCode(code string) ([]Role, error)
 	GetByIDs(ids []uuid.UUID) ([]Role, error)
-	GetByScopeID(scopeID uuid.UUID) ([]Role, error)
-	GetScopeIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error)
+	ListTeamRoles(tenantID uuid.UUID) ([]Role, error)
 	Create(role *Role) error
 	Update(role *Role) error
 	Delete(id uuid.UUID) error
 	GetAll() ([]Role, error)
-	GetByScope(scope string) ([]Role, error)
-	GetByScopeIDs(scopeIDs []uuid.UUID) ([]Role, error)
 	List() ([]Role, error)
 	ListByPage(offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error)
-	ListByScope(scope string, offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error)
-	ListByScopeIDs(scopeIDs []uuid.UUID, offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error)
-	ReplaceRoleScopes(roleID uuid.UUID, scopeIDs []uuid.UUID) error
 	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
 }
 
@@ -238,7 +231,7 @@ func NewRoleRepository(db *gorm.DB) RoleRepository {
 
 func (r *roleRepository) GetByID(id uuid.UUID) (*Role, error) {
 	var role Role
-	err := r.db.Preload("Scopes").Where("id = ?", id).First(&role).Error
+	err := r.db.Where("id = ?", id).First(&role).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
@@ -250,7 +243,7 @@ func (r *roleRepository) GetByID(id uuid.UUID) (*Role, error) {
 
 func (r *roleRepository) GetByCode(code string) (*Role, error) {
 	var role Role
-	err := r.db.Where("code = ?", code).First(&role).Error
+	err := r.db.Where("code = ? AND tenant_id IS NULL", code).First(&role).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
@@ -262,49 +255,28 @@ func (r *roleRepository) GetByCode(code string) (*Role, error) {
 
 func (r *roleRepository) FindByCode(code string) ([]Role, error) {
 	var roles []Role
-	err := r.db.Where("code = ?", code).Find(&roles).Error
+	err := r.db.Where("code = ? AND tenant_id IS NULL", code).Find(&roles).Error
 	return roles, err
 }
 
 func (r *roleRepository) GetByIDs(ids []uuid.UUID) ([]Role, error) {
 	var roles []Role
-	err := r.db.Preload("Scopes").Where("id IN ?", ids).Find(&roles).Error
+	err := r.db.Where("id IN ?", ids).Find(&roles).Error
 	return roles, err
 }
 
 func (r *roleRepository) List() ([]Role, error) {
 	var roles []Role
-	err := r.db.Preload("Scopes").Find(&roles).Error
+	err := r.db.Where("tenant_id IS NULL").Find(&roles).Error
 	return roles, err
 }
 
-func (r *roleRepository) GetByScopeID(scopeID uuid.UUID) ([]Role, error) {
-	return r.GetByScopeIDs([]uuid.UUID{scopeID})
-}
-
-func (r *roleRepository) GetScopeIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error) {
-	var scopeIDs []uuid.UUID
-	err := r.db.Model(&RoleScope{}).Where("role_id = ?", roleID).Pluck("scope_id", &scopeIDs).Error
-	return scopeIDs, err
-}
-
-func (r *roleRepository) GetByScopeIDs(scopeIDs []uuid.UUID) ([]Role, error) {
-	if len(scopeIDs) == 0 {
-		return []Role{}, nil
-	}
-	var roleIDs []uuid.UUID
-	query := r.db.Table("roles").
-		Select("DISTINCT roles.id").
-		Joins("LEFT JOIN role_scopes ON role_scopes.role_id = roles.id").
-		Where("role_scopes.scope_id IN ?", scopeIDs)
-	if err := query.Pluck("roles.id", &roleIDs).Error; err != nil {
-		return nil, err
-	}
-	if len(roleIDs) == 0 {
-		return []Role{}, nil
-	}
+func (r *roleRepository) ListTeamRoles(tenantID uuid.UUID) ([]Role, error) {
 	var roles []Role
-	err := r.db.Preload("Scopes").Where("id IN ?", roleIDs).Find(&roles).Error
+	err := r.db.
+		Where("(tenant_id IS NULL AND code IN ?) OR tenant_id = ?", []string{"team_admin", "team_member"}, tenantID).
+		Order("tenant_id IS NULL DESC, sort_order ASC, created_at DESC").
+		Find(&roles).Error
 	return roles, err
 }
 
@@ -322,46 +294,12 @@ func (r *roleRepository) Delete(id uuid.UUID) error {
 
 func (r *roleRepository) GetAll() ([]Role, error) {
 	var roles []Role
-	err := r.db.Preload("Scopes").Find(&roles).Error
+	err := r.db.Where("tenant_id IS NULL").Find(&roles).Error
 	return roles, err
 }
 
-func (r *roleRepository) GetByScope(scope string) ([]Role, error) {
-	var scopeIDs []uuid.UUID
-	if err := r.db.Model(&Scope{}).Where("code = ?", scope).Pluck("id", &scopeIDs).Error; err != nil {
-		return nil, err
-	}
-	return r.GetByScopeIDs(scopeIDs)
-}
-
 func (r *roleRepository) ListByPage(offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error) {
-	return r.listWithScope(offset, limit, roleCode, roleName, description, startTime, endTime, enabled, "")
-}
-
-func (r *roleRepository) ListByScope(scope string, offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error) {
-	var scopeIDs []uuid.UUID
-	if err := r.db.Model(&Scope{}).Where("code = ?", scope).Pluck("id", &scopeIDs).Error; err != nil {
-		return nil, 0, err
-	}
-	return r.listWithScopeByScopeIDs(offset, limit, roleCode, roleName, description, startTime, endTime, enabled, scopeIDs)
-}
-
-func (r *roleRepository) ListByScopeIDs(scopeIDs []uuid.UUID, offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error) {
-	return r.listWithScopeByScopeIDs(offset, limit, roleCode, roleName, description, startTime, endTime, enabled, scopeIDs)
-}
-
-func (r *roleRepository) listWithScope(offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool, scope string) ([]Role, int64, error) {
-	var scopeIDs []uuid.UUID
-	if scope != "" {
-		if err := r.db.Model(&Scope{}).Where("code = ?", scope).Pluck("id", &scopeIDs).Error; err != nil {
-			return nil, 0, err
-		}
-	}
-	return r.listWithScopeByScopeIDs(offset, limit, roleCode, roleName, description, startTime, endTime, enabled, scopeIDs)
-}
-
-func (r *roleRepository) listWithScopeByScopeIDs(offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool, scopeIDs []uuid.UUID) ([]Role, int64, error) {
-	baseQuery := r.db.Model(&Role{}).Preload("Scopes")
+	baseQuery := r.db.Model(&Role{}).Where("tenant_id IS NULL")
 	if roleCode != "" {
 		baseQuery = baseQuery.Where("code LIKE ?", "%"+roleCode+"%")
 	}
@@ -384,17 +322,6 @@ func (r *roleRepository) listWithScopeByScopeIDs(offset, limit int, roleCode, ro
 			baseQuery = baseQuery.Where("status = ?", "disabled")
 		}
 	}
-	if len(scopeIDs) > 0 {
-		roleIDs, err := r.getRoleIDsByScopeIDs(scopeIDs)
-		if err != nil {
-			return nil, 0, err
-		}
-		if len(roleIDs) == 0 {
-			return []Role{}, 0, nil
-		}
-		baseQuery = baseQuery.Where("id IN ?", roleIDs)
-	}
-
 	var total int64
 	if err := baseQuery.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -407,133 +334,6 @@ func (r *roleRepository) listWithScopeByScopeIDs(offset, limit int, roleCode, ro
 
 func (r *roleRepository) UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error {
 	return r.db.Model(&Role{}).Where("id = ?", id).Updates(updates).Error
-}
-
-func (r *roleRepository) ReplaceRoleScopes(roleID uuid.UUID, scopeIDs []uuid.UUID) error {
-	return r.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("role_id = ?", roleID).Delete(&RoleScope{}).Error; err != nil {
-			return err
-		}
-		if len(scopeIDs) == 0 {
-			return nil
-		}
-		records := make([]RoleScope, 0, len(scopeIDs))
-		for _, scopeID := range scopeIDs {
-			records = append(records, RoleScope{RoleID: roleID, ScopeID: scopeID})
-		}
-		return tx.Create(&records).Error
-	})
-}
-
-func (r *roleRepository) getRoleIDsByScopeIDs(scopeIDs []uuid.UUID) ([]uuid.UUID, error) {
-	var roleIDs []uuid.UUID
-	query := r.db.Table("roles").
-		Select("DISTINCT roles.id").
-		Joins("LEFT JOIN role_scopes ON role_scopes.role_id = roles.id").
-		Where("role_scopes.scope_id IN ?", scopeIDs)
-	if err := query.Pluck("roles.id", &roleIDs).Error; err != nil {
-		return nil, err
-	}
-	return roleIDs, nil
-}
-
-type ScopeRepository interface {
-	GetByID(id uuid.UUID) (*Scope, error)
-	GetByCode(code string) (*Scope, error)
-	GetByIDs(ids []uuid.UUID) ([]Scope, error)
-	GetByCodes(codes []string) ([]Scope, error)
-	Create(scope *Scope) error
-	Update(scope *Scope) error
-	Delete(id uuid.UUID) error
-	GetAll() ([]Scope, error)
-	List(offset, limit int, code, name string) ([]Scope, int64, error)
-}
-
-type scopeRepository struct {
-	db *gorm.DB
-}
-
-func NewScopeRepository(db *gorm.DB) ScopeRepository {
-	return &scopeRepository{db: db}
-}
-
-func (r *scopeRepository) GetByID(id uuid.UUID) (*Scope, error) {
-	var scope Scope
-	err := r.db.Where("id = ?", id).First(&scope).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, gorm.ErrRecordNotFound
-		}
-		return nil, err
-	}
-	return &scope, nil
-}
-
-func (r *scopeRepository) GetByCode(code string) (*Scope, error) {
-	var scope Scope
-	err := r.db.Where("code = ?", code).First(&scope).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, gorm.ErrRecordNotFound
-		}
-		return nil, err
-	}
-	return &scope, nil
-}
-
-func (r *scopeRepository) GetByIDs(ids []uuid.UUID) ([]Scope, error) {
-	var scopes []Scope
-	if len(ids) == 0 {
-		return scopes, nil
-	}
-	err := r.db.Where("id IN ?", ids).Find(&scopes).Error
-	return scopes, err
-}
-
-func (r *scopeRepository) GetByCodes(codes []string) ([]Scope, error) {
-	var scopes []Scope
-	if len(codes) == 0 {
-		return scopes, nil
-	}
-	err := r.db.Where("code IN ?", codes).Find(&scopes).Error
-	return scopes, err
-}
-
-func (r *scopeRepository) Create(scope *Scope) error {
-	return r.db.Create(scope).Error
-}
-
-func (r *scopeRepository) Update(scope *Scope) error {
-	return r.db.Model(scope).Updates(scope).Error
-}
-
-func (r *scopeRepository) Delete(id uuid.UUID) error {
-	return r.db.Delete(&Scope{}, id).Error
-}
-
-func (r *scopeRepository) GetAll() ([]Scope, error) {
-	var scopes []Scope
-	err := r.db.Order("sort_order ASC").Find(&scopes).Error
-	return scopes, err
-}
-
-func (r *scopeRepository) List(offset, limit int, code, name string) ([]Scope, int64, error) {
-	baseQuery := r.db.Model(&Scope{})
-	if code != "" {
-		baseQuery = baseQuery.Where("code LIKE ?", "%"+code+"%")
-	}
-	if name != "" {
-		baseQuery = baseQuery.Where("name LIKE ?", "%"+name+"%")
-	}
-
-	var total int64
-	if err := baseQuery.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-
-	var scopes []Scope
-	err := baseQuery.Offset(offset).Limit(limit).Order("sort_order ASC").Find(&scopes).Error
-	return scopes, total, err
 }
 
 type MenuRepository interface {
@@ -1021,9 +821,6 @@ func (r *userRepository) loadGlobalRoles(users []*User) error {
 		Description string    `gorm:"column:description"`
 		Status      string    `gorm:"column:status"`
 		Priority    int       `gorm:"column:priority"`
-		ScopeID     *uuid.UUID `gorm:"column:scope_id"`
-		ScopeCode   *string    `gorm:"column:scope_code"`
-		ScopeName   *string    `gorm:"column:scope_name"`
 		SortOrder   int       `gorm:"column:sort_order"`
 		IsSystem    bool      `gorm:"column:is_system"`
 		CreatedAt   time.Time `gorm:"column:created_at"`
@@ -1032,10 +829,8 @@ func (r *userRepository) loadGlobalRoles(users []*User) error {
 
 	var rows []userRoleRow
 	if err := r.db.Table("user_roles").
-		Select("user_roles.user_id, roles.id, roles.code, roles.name, roles.description, roles.status, roles.priority, scopes.id AS scope_id, scopes.code AS scope_code, scopes.name AS scope_name, roles.sort_order, roles.is_system, roles.created_at, roles.updated_at").
+		Select("user_roles.user_id, roles.id, roles.code, roles.name, roles.description, roles.status, roles.priority, roles.sort_order, roles.is_system, roles.created_at, roles.updated_at").
 		Joins("JOIN roles ON roles.id = user_roles.role_id").
-		Joins("LEFT JOIN role_scopes ON role_scopes.role_id = roles.id").
-		Joins("LEFT JOIN scopes ON scopes.id = role_scopes.scope_id").
 		Where("user_roles.user_id IN ?", userIDs).
 		Where("user_roles.tenant_id IS NULL").
 		Scan(&rows).Error; err != nil {
@@ -1065,30 +860,6 @@ func (r *userRepository) loadGlobalRoles(users []*User) error {
 				UpdatedAt:   row.UpdatedAt,
 			}
 			roleCache[row.ID] = role
-		}
-		if row.ScopeID != nil {
-			alreadyAdded := false
-			for _, scope := range role.Scopes {
-				if scope.ID == *row.ScopeID {
-					alreadyAdded = true
-					break
-				}
-			}
-			if !alreadyAdded {
-				scopeCode := ""
-				if row.ScopeCode != nil {
-					scopeCode = *row.ScopeCode
-				}
-				scopeName := ""
-				if row.ScopeName != nil {
-					scopeName = *row.ScopeName
-				}
-				role.Scopes = append(role.Scopes, Scope{
-					ID:   *row.ScopeID,
-					Code: scopeCode,
-					Name: scopeName,
-				})
-			}
 		}
 		if _, exists := userRoleIndex[target.ID]; !exists {
 			userRoleIndex[target.ID] = make(map[uuid.UUID]int)
@@ -1162,26 +933,26 @@ type PermissionActionRepository interface {
 	List(offset, limit int, params *PermissionActionListParams) ([]PermissionAction, int64, error)
 	GetByID(id uuid.UUID) (*PermissionAction, error)
 	GetByIDs(ids []uuid.UUID) ([]PermissionAction, error)
-	GetByResourceAndAction(resourceCode, actionCode, scopeCode string) (*PermissionAction, error)
+	GetByPermissionKey(permissionKey string) (*PermissionAction, error)
+	GetByResourceAndAction(resourceCode, actionCode string) (*PermissionAction, error)
 	GetAllEnabled() ([]PermissionAction, error)
-	ListDistinctResourceCodesByScope(scopeCode string) ([]string, error)
+	ListDistinctResourceCodes() ([]string, error)
 	Create(action *PermissionAction) error
 	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
 	Delete(id uuid.UUID) error
 }
 
 type PermissionActionListParams struct {
-	Keyword               string
-	Name                  string
-	ResourceCode          string
-	ActionCode            string
-	ModuleCode            string
-	Category              string
-	Source                string
-	FeatureKind           string
-	ScopeID               *uuid.UUID
-	ScopeCode             string
-	Status                string
+	Keyword       string
+	PermissionKey string
+	Name          string
+	ResourceCode  string
+	ActionCode    string
+	ModuleCode    string
+	ContextType   string
+	Source        string
+	FeatureKind   string
+	Status        string
 }
 
 type permissionActionRepository struct {
@@ -1193,14 +964,17 @@ func NewPermissionActionRepository(db *gorm.DB) PermissionActionRepository {
 }
 
 func (r *permissionActionRepository) List(offset, limit int, params *PermissionActionListParams) ([]PermissionAction, int64, error) {
-	query := r.db.Model(&PermissionAction{}).Preload("Scope")
+	query := r.db.Model(&PermissionAction{})
 	if params != nil {
 		if params.Keyword != "" {
 			keyword := "%" + params.Keyword + "%"
 			query = query.Where(
-				"(name LIKE ? OR description LIKE ? OR resource_code LIKE ? OR action_code LIKE ? OR module_code LIKE ? OR category LIKE ? OR feature_kind LIKE ?)",
+				"(name LIKE ? OR description LIKE ? OR permission_key LIKE ? OR resource_code LIKE ? OR action_code LIKE ? OR module_code LIKE ? OR feature_kind LIKE ?)",
 				keyword, keyword, keyword, keyword, keyword, keyword, keyword,
 			)
+		}
+		if params.PermissionKey != "" {
+			query = query.Where("permission_key LIKE ?", "%"+params.PermissionKey+"%")
 		}
 		if params.Name != "" {
 			query = query.Where("name LIKE ?", "%"+params.Name+"%")
@@ -1214,20 +988,14 @@ func (r *permissionActionRepository) List(offset, limit int, params *PermissionA
 		if params.ModuleCode != "" {
 			query = query.Where("module_code LIKE ?", "%"+params.ModuleCode+"%")
 		}
-		if params.Category != "" {
-			query = query.Where("category LIKE ?", "%"+params.Category+"%")
+		if params.ContextType != "" {
+			query = query.Where("context_type = ?", params.ContextType)
 		}
 		if params.Source != "" {
 			query = query.Where("source = ?", params.Source)
 		}
 		if params.FeatureKind != "" {
 			query = query.Where("feature_kind = ?", params.FeatureKind)
-		}
-		if params.ScopeID != nil {
-			query = query.Where("scope_id = ?", *params.ScopeID)
-		}
-		if params.ScopeCode != "" {
-			query = query.Joins("JOIN scopes ON permission_actions.scope_id = scopes.id").Where("scopes.code = ?", params.ScopeCode)
 		}
 		if params.Status != "" {
 			query = query.Where("status = ?", params.Status)
@@ -1244,7 +1012,19 @@ func (r *permissionActionRepository) List(offset, limit int, params *PermissionA
 
 func (r *permissionActionRepository) GetByID(id uuid.UUID) (*PermissionAction, error) {
 	var action PermissionAction
-	err := r.db.Preload("Scope").Where("id = ?", id).First(&action).Error
+	err := r.db.Where("id = ?", id).First(&action).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &action, nil
+}
+
+func (r *permissionActionRepository) GetByPermissionKey(permissionKey string) (*PermissionAction, error) {
+	var action PermissionAction
+	err := r.db.Where("permission_actions.permission_key = ?", permissionKey).First(&action).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
@@ -1259,17 +1039,13 @@ func (r *permissionActionRepository) GetByIDs(ids []uuid.UUID) ([]PermissionActi
 	if len(ids) == 0 {
 		return actions, nil
 	}
-	err := r.db.Preload("Scope").Where("id IN ?", ids).Order("sort_order ASC, created_at DESC").Find(&actions).Error
+	err := r.db.Where("id IN ?", ids).Order("sort_order ASC, created_at DESC").Find(&actions).Error
 	return actions, err
 }
 
-func (r *permissionActionRepository) GetByResourceAndAction(resourceCode, actionCode, scopeCode string) (*PermissionAction, error) {
+func (r *permissionActionRepository) GetByResourceAndAction(resourceCode, actionCode string) (*PermissionAction, error) {
 	var action PermissionAction
-	query := r.db.Preload("Scope").Where("permission_actions.resource_code = ? AND permission_actions.action_code = ?", resourceCode, actionCode)
-	if trimmedScopeCode := strings.TrimSpace(scopeCode); trimmedScopeCode != "" {
-		query = query.Joins("JOIN scopes ON permission_actions.scope_id = scopes.id").Where("scopes.code = ?", trimmedScopeCode)
-	}
-	err := query.First(&action).Error
+	err := r.db.Where("permission_actions.resource_code = ? AND permission_actions.action_code = ?", resourceCode, actionCode).First(&action).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
@@ -1281,17 +1057,13 @@ func (r *permissionActionRepository) GetByResourceAndAction(resourceCode, action
 
 func (r *permissionActionRepository) GetAllEnabled() ([]PermissionAction, error) {
 	var actions []PermissionAction
-	err := r.db.Preload("Scope").Where("status = ?", "normal").Order("sort_order ASC, created_at DESC").Find(&actions).Error
+	err := r.db.Where("status = ?", "normal").Order("sort_order ASC, created_at DESC").Find(&actions).Error
 	return actions, err
 }
 
-func (r *permissionActionRepository) ListDistinctResourceCodesByScope(scopeCode string) ([]string, error) {
+func (r *permissionActionRepository) ListDistinctResourceCodes() ([]string, error) {
 	var resourceCodes []string
-	query := r.db.Model(&PermissionAction{}).Distinct("permission_actions.resource_code")
-	if scopeCode != "" {
-		query = query.Joins("JOIN scopes ON permission_actions.scope_id = scopes.id").Where("scopes.code = ?", scopeCode)
-	}
-	err := query.Order("permission_actions.resource_code ASC").Pluck("permission_actions.resource_code", &resourceCodes).Error
+	err := r.db.Model(&PermissionAction{}).Distinct("permission_actions.resource_code").Order("permission_actions.resource_code ASC").Pluck("permission_actions.resource_code", &resourceCodes).Error
 	return resourceCodes, err
 }
 
@@ -1412,6 +1184,13 @@ type TenantActionPermissionRepository interface {
 	DeleteByActionID(actionID uuid.UUID) error
 }
 
+type TeamManualActionPermissionRepository interface {
+	GetEnabledActionIDsByTenantID(tenantID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceTenantActions(tenantID uuid.UUID, actionIDs []uuid.UUID) error
+	DeleteByTenantID(tenantID uuid.UUID) error
+	DeleteByActionID(actionID uuid.UUID) error
+}
+
 type tenantActionPermissionRepository struct {
 	db *gorm.DB
 }
@@ -1468,6 +1247,58 @@ func (r *tenantActionPermissionRepository) IsActionEnabled(tenantID, actionID uu
 
 func (r *tenantActionPermissionRepository) DeleteByActionID(actionID uuid.UUID) error {
 	return r.db.Where("action_id = ?", actionID).Delete(&TenantActionPermission{}).Error
+}
+
+type teamManualActionPermissionRepository struct {
+	db *gorm.DB
+}
+
+func NewTeamManualActionPermissionRepository(db *gorm.DB) TeamManualActionPermissionRepository {
+	return &teamManualActionPermissionRepository{db: db}
+}
+
+func (r *teamManualActionPermissionRepository) GetEnabledActionIDsByTenantID(tenantID uuid.UUID) ([]uuid.UUID, error) {
+	var actionIDs []uuid.UUID
+	err := r.db.Model(&TeamManualActionPermission{}).
+		Where("tenant_id = ? AND enabled = ?", tenantID, true).
+		Pluck("action_id", &actionIDs).Error
+	return actionIDs, err
+}
+
+func (r *teamManualActionPermissionRepository) ReplaceTenantActions(tenantID uuid.UUID, actionIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("tenant_id = ?", tenantID).Delete(&TeamManualActionPermission{}).Error; err != nil {
+			return err
+		}
+		if len(actionIDs) == 0 {
+			return nil
+		}
+		records := make([]TeamManualActionPermission, 0, len(actionIDs))
+		seen := make(map[uuid.UUID]struct{}, len(actionIDs))
+		for _, actionID := range actionIDs {
+			if _, ok := seen[actionID]; ok {
+				continue
+			}
+			seen[actionID] = struct{}{}
+			records = append(records, TeamManualActionPermission{
+				TenantID: tenantID,
+				ActionID: actionID,
+				Enabled:  true,
+			})
+		}
+		if len(records) == 0 {
+			return nil
+		}
+		return tx.Create(&records).Error
+	})
+}
+
+func (r *teamManualActionPermissionRepository) DeleteByTenantID(tenantID uuid.UUID) error {
+	return r.db.Where("tenant_id = ?", tenantID).Delete(&TeamManualActionPermission{}).Error
+}
+
+func (r *teamManualActionPermissionRepository) DeleteByActionID(actionID uuid.UUID) error {
+	return r.db.Where("action_id = ?", actionID).Delete(&TeamManualActionPermission{}).Error
 }
 
 type UserActionPermissionRepository interface {
@@ -1537,15 +1368,266 @@ type APIEndpointRepository interface {
 	GetByMethodAndPath(method, path string) (*APIEndpoint, error)
 }
 
+type FeaturePackageRepository interface {
+	List(offset, limit int, params *FeaturePackageListParams) ([]FeaturePackage, int64, error)
+	GetByID(id uuid.UUID) (*FeaturePackage, error)
+	GetByPackageKey(packageKey string) (*FeaturePackage, error)
+	Create(item *FeaturePackage) error
+	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
+	Delete(id uuid.UUID) error
+}
+
+type FeaturePackageListParams struct {
+	Keyword     string
+	PackageKey  string
+	Name        string
+	ContextType string
+	Status      string
+}
+
+type featurePackageRepository struct {
+	db *gorm.DB
+}
+
+func NewFeaturePackageRepository(db *gorm.DB) FeaturePackageRepository {
+	return &featurePackageRepository{db: db}
+}
+
+func (r *featurePackageRepository) List(offset, limit int, params *FeaturePackageListParams) ([]FeaturePackage, int64, error) {
+	query := r.db.Model(&FeaturePackage{})
+	if params != nil {
+		if params.Keyword != "" {
+			keyword := "%" + params.Keyword + "%"
+			query = query.Where("(package_key LIKE ? OR name LIKE ? OR description LIKE ?)", keyword, keyword, keyword)
+		}
+		if params.PackageKey != "" {
+			query = query.Where("package_key LIKE ?", "%"+params.PackageKey+"%")
+		}
+		if params.Name != "" {
+			query = query.Where("name LIKE ?", "%"+params.Name+"%")
+		}
+		if params.ContextType != "" {
+			query = query.Where("context_type = ?", params.ContextType)
+		}
+		if params.Status != "" {
+			query = query.Where("status = ?", params.Status)
+		}
+	}
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	var items []FeaturePackage
+	err := query.Offset(offset).Limit(limit).Order("sort_order ASC, created_at DESC").Find(&items).Error
+	return items, total, err
+}
+
+func (r *featurePackageRepository) GetByID(id uuid.UUID) (*FeaturePackage, error) {
+	var item FeaturePackage
+	err := r.db.Where("id = ?", id).First(&item).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *featurePackageRepository) GetByPackageKey(packageKey string) (*FeaturePackage, error) {
+	var item FeaturePackage
+	err := r.db.Where("package_key = ?", packageKey).First(&item).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *featurePackageRepository) Create(item *FeaturePackage) error {
+	return r.db.Create(item).Error
+}
+
+func (r *featurePackageRepository) UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error {
+	return r.db.Model(&FeaturePackage{}).Where("id = ?", id).Updates(updates).Error
+}
+
+func (r *featurePackageRepository) Delete(id uuid.UUID) error {
+	return r.db.Delete(&FeaturePackage{}, id).Error
+}
+
+type FeaturePackageActionRepository interface {
+	GetActionIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error)
+	CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error)
+	ReplacePackageActions(packageID uuid.UUID, actionIDs []uuid.UUID) error
+	DeleteByPackageID(packageID uuid.UUID) error
+}
+
+type featurePackageActionRepository struct {
+	db *gorm.DB
+}
+
+func NewFeaturePackageActionRepository(db *gorm.DB) FeaturePackageActionRepository {
+	return &featurePackageActionRepository{db: db}
+}
+
+func (r *featurePackageActionRepository) GetActionIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error) {
+	var actionIDs []uuid.UUID
+	err := r.db.Model(&FeaturePackageAction{}).Where("package_id = ?", packageID).Pluck("action_id", &actionIDs).Error
+	return actionIDs, err
+}
+
+func (r *featurePackageActionRepository) CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
+	result := make(map[uuid.UUID]int64, len(packageIDs))
+	if len(packageIDs) == 0 {
+		return result, nil
+	}
+	type row struct {
+		PackageID uuid.UUID
+		Total     int64
+	}
+	var rows []row
+	if err := r.db.Model(&FeaturePackageAction{}).
+		Select("package_id, COUNT(*) AS total").
+		Where("package_id IN ?", packageIDs).
+		Group("package_id").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	for _, item := range rows {
+		result[item.PackageID] = item.Total
+	}
+	return result, nil
+}
+
+func (r *featurePackageActionRepository) ReplacePackageActions(packageID uuid.UUID, actionIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("package_id = ?", packageID).Delete(&FeaturePackageAction{}).Error; err != nil {
+			return err
+		}
+		if len(actionIDs) == 0 {
+			return nil
+		}
+		items := make([]FeaturePackageAction, 0, len(actionIDs))
+		seen := make(map[uuid.UUID]struct{}, len(actionIDs))
+		for _, actionID := range actionIDs {
+			if _, ok := seen[actionID]; ok {
+				continue
+			}
+			seen[actionID] = struct{}{}
+			items = append(items, FeaturePackageAction{PackageID: packageID, ActionID: actionID})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *featurePackageActionRepository) DeleteByPackageID(packageID uuid.UUID) error {
+	return r.db.Where("package_id = ?", packageID).Delete(&FeaturePackageAction{}).Error
+}
+
+type TeamFeaturePackageRepository interface {
+	GetPackageIDsByTeamID(teamID uuid.UUID) ([]uuid.UUID, error)
+	GetTeamIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error)
+	CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error)
+	ReplaceTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error
+	DeleteByPackageID(packageID uuid.UUID) error
+}
+
+type teamFeaturePackageRepository struct {
+	db *gorm.DB
+}
+
+func NewTeamFeaturePackageRepository(db *gorm.DB) TeamFeaturePackageRepository {
+	return &teamFeaturePackageRepository{db: db}
+}
+
+func (r *teamFeaturePackageRepository) GetPackageIDsByTeamID(teamID uuid.UUID) ([]uuid.UUID, error) {
+	var packageIDs []uuid.UUID
+	err := r.db.Model(&TeamFeaturePackage{}).
+		Where("team_id = ? AND enabled = ?", teamID, true).
+		Pluck("package_id", &packageIDs).Error
+	return packageIDs, err
+}
+
+func (r *teamFeaturePackageRepository) GetTeamIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error) {
+	var teamIDs []uuid.UUID
+	err := r.db.Model(&TeamFeaturePackage{}).
+		Where("package_id = ? AND enabled = ?", packageID, true).
+		Pluck("team_id", &teamIDs).Error
+	return teamIDs, err
+}
+
+func (r *teamFeaturePackageRepository) CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
+	result := make(map[uuid.UUID]int64, len(packageIDs))
+	if len(packageIDs) == 0 {
+		return result, nil
+	}
+	type row struct {
+		PackageID uuid.UUID
+		Total     int64
+	}
+	var rows []row
+	if err := r.db.Model(&TeamFeaturePackage{}).
+		Select("package_id, COUNT(*) AS total").
+		Where("package_id IN ? AND enabled = ?", packageIDs, true).
+		Group("package_id").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	for _, item := range rows {
+		result[item.PackageID] = item.Total
+	}
+	return result, nil
+}
+
+func (r *teamFeaturePackageRepository) ReplaceTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("team_id = ?", teamID).Delete(&TeamFeaturePackage{}).Error; err != nil {
+			return err
+		}
+		if len(packageIDs) == 0 {
+			return nil
+		}
+		items := make([]TeamFeaturePackage, 0, len(packageIDs))
+		seen := make(map[uuid.UUID]struct{}, len(packageIDs))
+		now := time.Now()
+		for _, packageID := range packageIDs {
+			if _, ok := seen[packageID]; ok {
+				continue
+			}
+			seen[packageID] = struct{}{}
+			items = append(items, TeamFeaturePackage{
+				TeamID:    teamID,
+				PackageID: packageID,
+				Enabled:   true,
+				GrantedBy: grantedBy,
+				GrantedAt: &now,
+			})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *teamFeaturePackageRepository) DeleteByPackageID(packageID uuid.UUID) error {
+	return r.db.Where("package_id = ?", packageID).Delete(&TeamFeaturePackage{}).Error
+}
+
 type APIEndpointListParams struct {
-	Method                string
-	Path                  string
-	Module                string
-	FeatureKind           string
-	ResourceCode          string
-	ActionCode            string
-	ScopeCode             string
-	Status                string
+	Method       string
+	Path         string
+	Module       string
+	FeatureKind  string
+	ResourceCode string
+	ActionCode   string
+	Status       string
 }
 
 type apiEndpointRepository struct {
@@ -1557,7 +1639,7 @@ func NewAPIEndpointRepository(db *gorm.DB) APIEndpointRepository {
 }
 
 func (r *apiEndpointRepository) List(offset, limit int, params *APIEndpointListParams) ([]APIEndpoint, int64, error) {
-	query := r.db.Model(&APIEndpoint{}).Preload("Scope")
+	query := r.db.Model(&APIEndpoint{})
 	if params != nil {
 		if params.Method != "" {
 			query = query.Where("method = ?", params.Method)
@@ -1576,9 +1658,6 @@ func (r *apiEndpointRepository) List(offset, limit int, params *APIEndpointListP
 		}
 		if params.ActionCode != "" {
 			query = query.Where("action_code LIKE ?", "%"+params.ActionCode+"%")
-		}
-		if params.ScopeCode != "" {
-			query = query.Joins("LEFT JOIN scopes ON api_endpoints.scope_id = scopes.id").Where("scopes.code = ?", params.ScopeCode)
 		}
 		if params.Status != "" {
 			query = query.Where("status = ?", params.Status)
@@ -1610,14 +1689,13 @@ func (r *apiEndpointRepository) Upsert(endpoint *APIEndpoint) error {
 		return nil
 	}
 	updates := map[string]interface{}{
-		"module":                  endpoint.Module,
-		"feature_kind":            endpoint.FeatureKind,
-		"handler":                 endpoint.Handler,
-		"summary":                 endpoint.Summary,
-		"resource_code":           endpoint.ResourceCode,
-		"action_code":             endpoint.ActionCode,
-		"scope_id":                endpoint.ScopeID,
-		"status":                  endpoint.Status,
+		"module":        endpoint.Module,
+		"feature_kind":  endpoint.FeatureKind,
+		"handler":       endpoint.Handler,
+		"summary":       endpoint.Summary,
+		"resource_code": endpoint.ResourceCode,
+		"action_code":   endpoint.ActionCode,
+		"status":        endpoint.Status,
 	}
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		var existing APIEndpoint

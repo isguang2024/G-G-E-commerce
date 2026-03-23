@@ -96,7 +96,6 @@ declare namespace Api {
       is_super_admin: boolean
       current_tenant_id?: string
       actions?: string[]
-      scoped_actions?: string[]
       created_at: string
       updated_at?: string
       // 兼容字段
@@ -105,7 +104,7 @@ declare namespace Api {
       avatar?: string
       roles?: string[]
       buttons?: string[]
-      scopedActions?: string[]
+      [k: string]: unknown
     }
   }
 
@@ -195,10 +194,6 @@ declare namespace Api {
       createTime: string
       tenantId?: string | null
       isGlobal?: boolean
-      scopeId?: string
-      scopeCode?: string
-      scopeName?: string
-      scope?: string // 兼容旧字段
       canEditPermission?: boolean
     }
 
@@ -214,7 +209,6 @@ declare namespace Api {
       name: string
       description?: string
       sort_order?: number
-      scope_ids: string[]
       priority?: number
       status?: string
     }
@@ -224,42 +218,24 @@ declare namespace Api {
       code?: string
       name?: string
       description?: string
-      scope_ids?: string[]
       sort_order?: number
       priority?: number
       status?: string
     }
 
-    interface RoleScopeItem {
-      scopeId: string
-      scopeCode: string
-      scopeName: string
-      dataPermissionCode?: string
-      dataPermissionName?: string
-    }
-
-    interface RoleListItem {
-      scopeIds?: string[]
-      scopes?: RoleScopeItem[]
-    }
-
-      interface PermissionActionItem {
-        id: string
-        resourceCode: string
-        actionCode: string
-        moduleCode?: string
-        permissionKey?: string
-        category?: string
+    interface PermissionActionItem {
+      id: string
+      resourceCode: string
+      actionCode: string
+      moduleCode?: string
+      contextType?: 'platform' | 'team' | string
+      permissionKey?: string
       source?: 'system' | 'api' | 'business' | string
       featureKind?: 'system' | 'business' | string
       name: string
       description?: string
-      scopeId?: string
-      scopeCode?: string
-      scopeName?: string
       dataPermissionCode?: string
       dataPermissionName?: string
-      scope?: string
       status: string
       sortOrder?: number
       createdAt?: string
@@ -268,19 +244,80 @@ declare namespace Api {
 
     type PermissionActionList = Api.Common.PaginatedResponse<PermissionActionItem>
 
+    interface FeaturePackageItem {
+      id: string
+      packageKey: string
+      name: string
+      description?: string
+      contextType?: 'platform' | 'team' | string
+      actionCount?: number
+      teamCount?: number
+      status: string
+      sortOrder?: number
+      createdAt?: string
+      updatedAt?: string
+    }
+
+    interface FeaturePackageTeamBinding {
+      team_ids: string[]
+    }
+
+    type FeaturePackageList = Api.Common.PaginatedResponse<FeaturePackageItem>
+
+    type FeaturePackageSearchParams = Partial<
+      Pick<FeaturePackageItem, 'name' | 'status'> &
+        Api.Common.CommonSearchParams & {
+          keyword?: string
+          packageKey?: string
+          contextType?: string
+        }
+    >
+
+    interface FeaturePackageCreateParams {
+      package_key: string
+      name: string
+      description?: string
+      context_type?: 'platform' | 'team' | string
+      status?: string
+      sort_order?: number
+    }
+
+    interface FeaturePackageUpdateParams {
+      package_key?: string
+      name?: string
+      description?: string
+      context_type?: 'platform' | 'team' | string
+      status?: string
+      sort_order?: number
+    }
+
+    interface FeaturePackageActionResponse {
+      action_ids: string[]
+      actions: PermissionActionItem[]
+    }
+
+    interface FeaturePackageTeamSetParams {
+      team_ids: string[]
+    }
+
+    interface TeamFeaturePackageResponse {
+      package_ids: string[]
+      packages: FeaturePackageItem[]
+    }
+
     interface APIEndpointItem {
       id: string
       method: string
       path: string
+      spec?: string
       module: string
       featureKind?: 'system' | 'business' | string
       handler?: string
       summary?: string
+      permissionKey?: string
+      authMode?: 'public' | 'jwt' | 'permission' | 'api_key' | string
       resourceCode?: string
       actionCode?: string
-      scopeId?: string
-      scopeCode?: string
-      scopeName?: string
       dataPermissionCode?: string
       dataPermissionName?: string
       status: string
@@ -290,60 +327,100 @@ declare namespace Api {
 
     type APIEndpointList = Api.Common.PaginatedResponse<APIEndpointItem>
 
+    interface FeaturePackageItem {
+      id: string
+      packageKey: string
+      name: string
+      description?: string
+      contextType?: 'platform' | 'team' | string
+      status: string
+      sortOrder?: number
+      createdAt?: string
+      updatedAt?: string
+    }
+
+    type FeaturePackageList = Api.Common.PaginatedResponse<FeaturePackageItem>
+
     type APIEndpointSearchParams = Partial<
       Pick<APIEndpointItem, 'method' | 'path' | 'module' | 'status'> &
         Api.Common.CommonSearchParams & {
           featureKind?: string
           resourceCode?: string
           actionCode?: string
-          scopeCode?: string
         }
     >
 
     type PermissionActionSearchParams = Partial<
-      Pick<PermissionActionItem, 'name' | 'status' | 'category' | 'source'> &
+      Pick<PermissionActionItem, 'name' | 'status' | 'source'> &
           Api.Common.CommonSearchParams & {
             keyword?: string
+            permissionKey?: string
             resourceCode?: string
             actionCode?: string
             moduleCode?: string
+            contextType?: string
             featureKind?: string
-            scopeId?: string
-            scopeCode?: string
+        }
+    >
+
+    type FeaturePackageSearchParams = Partial<
+      Pick<FeaturePackageItem, 'name' | 'status'> &
+        Api.Common.CommonSearchParams & {
+          keyword?: string
+          packageKey?: string
+          contextType?: string
         }
     >
 
       interface PermissionActionCreateParams {
-        resource_code: string
-        action_code: string
+        permission_key: string
+        resource_code?: string
+        action_code?: string
         module_code?: string
-        category?: string
+        context_type?: 'platform' | 'team' | string
         feature_kind?: 'system' | 'business' | string
       name: string
       description?: string
-      scope_id: string
       status?: string
       sort_order?: number
     }
 
       interface PermissionActionUpdateParams {
+        permission_key?: string
         resource_code?: string
         action_code?: string
         module_code?: string
-        category?: string
-      feature_kind?: 'system' | 'business' | string
+        context_type?: 'platform' | 'team' | string
+        feature_kind?: 'system' | 'business' | string
       name?: string
       description?: string
-      scope_id?: string
       status?: string
       sort_order?: number
     }
 
     type RoleActionPermissionItem = string
 
+    interface FeaturePackageCreateParams {
+      package_key: string
+      name: string
+      description?: string
+      context_type?: 'platform' | 'team' | string
+      status?: string
+      sort_order?: number
+    }
+
+    interface FeaturePackageUpdateParams {
+      package_key?: string
+      name?: string
+      description?: string
+      context_type?: 'platform' | 'team' | string
+      status?: string
+      sort_order?: number
+    }
+
     interface RoleDataPermissionItem {
       resourceCode: string
-      scopeCode: string
+      dataScope: string
     }
 
     interface RoleDataPermissionResourceItem {
@@ -360,47 +437,6 @@ declare namespace Api {
       actionId: string
       effect: 'allow' | 'deny'
       action?: PermissionActionItem
-    }
-
-    /** 作用域列表 */
-    type ScopeList = Api.Common.PaginatedResponse<ScopeListItem>
-
-    /** 作用域列表项 */
-    interface ScopeListItem {
-      scopeId: string
-      scopeCode: string
-      scopeName: string
-      description?: string
-      isSystem?: boolean
-      dataPermissionCode?: string
-      dataPermissionName?: string
-      sortOrder?: number
-      createTime?: string
-    }
-
-    /** 作用域搜索参数 */
-    type ScopeSearchParams = Partial<
-      Pick<ScopeListItem, 'scopeCode' | 'scopeName'> & Api.Common.CommonSearchParams
-    >
-
-    /** 创建作用域参数 */
-    interface ScopeCreateParams {
-      code: string
-      name: string
-      description?: string
-      data_permission_code?: string
-      data_permission_name?: string
-      sort_order?: number
-    }
-
-    /** 更新作用域参数 */
-    interface ScopeUpdateParams {
-      code?: string
-      name?: string
-      description?: string
-      data_permission_code?: string
-      data_permission_name?: string
-      sort_order?: number
     }
 
     /** 团队列表 */
@@ -476,6 +512,14 @@ declare namespace Api {
       actionId: string
       effect: 'allow' | 'deny'
       action?: PermissionActionItem
+    }
+
+    interface FeaturePackageActionSetParams {
+      action_ids: string[]
+    }
+
+    interface TeamFeaturePackageSetParams {
+      package_ids: string[]
     }
 
     /** 创建菜单参数（与后端 MenuCreateRequest 一致） */

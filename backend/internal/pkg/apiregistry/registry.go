@@ -7,11 +7,11 @@ import (
 	"sync"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 )
 
 type RouteMeta struct {
@@ -19,7 +19,6 @@ type RouteMeta struct {
 	Summary      string
 	ResourceCode string
 	ActionCode   string
-	ScopeCode    string
 	FeatureKind  string
 }
 
@@ -90,17 +89,11 @@ func SyncRoutes(db *gorm.DB, logger *zap.Logger, routes []gin.RouteInfo) error {
 	if db == nil {
 		return errors.New("database is nil")
 	}
-
-	scopeIDs, err := loadScopeIDs(db)
-	if err != nil {
-		return err
-	}
-	return syncRoutesInternal(db, scopeIDs, logger, routes)
+	return syncRoutesInternal(db, logger, routes)
 }
 
 func syncRoutesInternal(
 	db *gorm.DB,
-	scopeIDs map[string]uuid.UUID,
 	logger *zap.Logger,
 	routes []gin.RouteInfo,
 ) error {
@@ -115,14 +108,6 @@ func syncRoutesInternal(
 			moduleName = deriveModuleName(route.Path)
 		}
 
-		var scopeID *uuid.UUID
-		if scopeCode := strings.TrimSpace(meta.ScopeCode); scopeCode != "" {
-			if id, ok := scopeIDs[scopeCode]; ok {
-				scopeValue := id
-				scopeID = &scopeValue
-			}
-		}
-
 		endpoint := &models.APIEndpoint{
 			Method:       strings.ToUpper(route.Method),
 			Path:         route.Path,
@@ -132,7 +117,6 @@ func syncRoutesInternal(
 			Summary:      strings.TrimSpace(meta.Summary),
 			ResourceCode: strings.TrimSpace(meta.ResourceCode),
 			ActionCode:   strings.TrimSpace(meta.ActionCode),
-			ScopeID:      scopeID,
 			Status:       "normal",
 		}
 		if err := upsertEndpoint(db, endpoint); err != nil {
@@ -149,12 +133,13 @@ func syncRoutesInternal(
 }
 
 func ensurePermissionAction(db *gorm.DB, endpoint *models.APIEndpoint, logger *zap.Logger) error {
-	if endpoint == nil || endpoint.ResourceCode == "" || endpoint.ActionCode == "" || endpoint.ScopeID == nil {
+	if endpoint == nil || endpoint.ResourceCode == "" || endpoint.ActionCode == "" {
 		return nil
 	}
 
+	mapping := permissionkey.FromLegacy(endpoint.ResourceCode, endpoint.ActionCode)
 	var existing models.PermissionAction
-	err := db.Where("resource_code = ? AND action_code = ? AND scope_id = ?", endpoint.ResourceCode, endpoint.ActionCode, *endpoint.ScopeID).First(&existing).Error
+	err := db.Where("permission_key = ?", mapping.Key).First(&existing).Error
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return err
 	}
@@ -164,16 +149,15 @@ func ensurePermissionAction(db *gorm.DB, endpoint *models.APIEndpoint, logger *z
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		action := &models.PermissionAction{
-			ResourceCode: endpoint.ResourceCode,
-			ActionCode:   endpoint.ActionCode,
-			ModuleCode:   normalizeModuleCode(endpoint.Module, endpoint.ResourceCode),
-			Category:     endpoint.Module,
-			Source:       "api",
-			FeatureKind:  normalizeFeatureKind(endpoint.FeatureKind),
-			Name:         name,
-			Description:  description,
-			ScopeID:      *endpoint.ScopeID,
-			Status:       "normal",
+			PermissionKey: mapping.Key,
+			ResourceCode:  mapping.ResourceCode,
+			ActionCode:    mapping.ActionCode,
+			ModuleCode:    normalizeModuleCode(endpoint.Module, mapping.ResourceCode),
+			Source:        "api",
+			FeatureKind:   normalizeFeatureKind(endpoint.FeatureKind),
+			Name:          name,
+			Description:   description,
+			Status:        "normal",
 		}
 		return db.Create(action).Error
 	}
@@ -182,13 +166,19 @@ func ensurePermissionAction(db *gorm.DB, endpoint *models.APIEndpoint, logger *z
 	if existing.Source != "api" {
 		updates["source"] = "api"
 	}
+	if strings.TrimSpace(existing.PermissionKey) != mapping.Key {
+		updates["permission_key"] = mapping.Key
+	}
 	if normalizeFeatureKind(existing.FeatureKind) != normalizeFeatureKind(endpoint.FeatureKind) {
 		updates["feature_kind"] = normalizeFeatureKind(endpoint.FeatureKind)
 	}
-	if strings.TrimSpace(endpoint.Module) != "" && strings.TrimSpace(existing.Category) != endpoint.Module {
-		updates["category"] = endpoint.Module
+	if strings.TrimSpace(existing.ResourceCode) != mapping.ResourceCode {
+		updates["resource_code"] = mapping.ResourceCode
 	}
-	if normalizedModuleCode := normalizeModuleCode(endpoint.Module, endpoint.ResourceCode); strings.TrimSpace(existing.ModuleCode) != normalizedModuleCode {
+	if strings.TrimSpace(existing.ActionCode) != mapping.ActionCode {
+		updates["action_code"] = mapping.ActionCode
+	}
+	if normalizedModuleCode := normalizeModuleCode(endpoint.Module, mapping.ResourceCode); strings.TrimSpace(existing.ModuleCode) != normalizedModuleCode {
 		updates["module_code"] = normalizedModuleCode
 	}
 	if strings.TrimSpace(existing.Status) == "" {
@@ -204,21 +194,8 @@ func ensurePermissionAction(db *gorm.DB, endpoint *models.APIEndpoint, logger *z
 		return nil
 	}
 	logger.Info("Permission action metadata updated from API registry",
-		zap.String("resource", endpoint.ResourceCode),
-		zap.String("action", endpoint.ActionCode))
+		zap.String("permission_key", mapping.Key))
 	return db.Model(&models.PermissionAction{}).Where("id = ?", existing.ID).Updates(updates).Error
-}
-
-func loadScopeIDs(db *gorm.DB) (map[string]uuid.UUID, error) {
-	var scopes []models.Scope
-	if err := db.Find(&scopes).Error; err != nil {
-		return nil, err
-	}
-	result := make(map[string]uuid.UUID, len(scopes))
-	for _, scope := range scopes {
-		result[scope.Code] = scope.ID
-	}
-	return result, nil
 }
 
 func deriveModuleName(routePath string) string {
@@ -296,7 +273,6 @@ func upsertEndpoint(db *gorm.DB, endpoint *models.APIEndpoint) error {
 		"summary":       endpoint.Summary,
 		"resource_code": endpoint.ResourceCode,
 		"action_code":   endpoint.ActionCode,
-		"scope_id":      endpoint.ScopeID,
 		"status":        endpoint.Status,
 	}
 	return db.Transaction(func(tx *gorm.DB) error {

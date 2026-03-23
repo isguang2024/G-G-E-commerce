@@ -155,14 +155,6 @@
                       </div>
 
                       <div class="action-tags">
-                        <ElTag
-                          v-if="action.scopeName || action.scopeCode"
-                          effect="plain"
-                          size="small"
-                          round
-                        >
-                          {{ action.scopeName || action.scopeCode }}
-                        </ElTag>
                         <ElTag v-if="action.source" effect="plain" size="small" round>
                           {{ formatSource(action.source) }}
                         </ElTag>

@@ -1,5 +1,16 @@
 <template>
   <div class="art-full-height">
+    <ElAlert class="page-alert" type="info" :closable="false">
+      <template #title>
+        <div class="alert-title-row">
+          <span>功能权限页负责定义最小能力单元；功能包负责组合能力并开通给团队。</span>
+          <ElButton v-action="'platform.package.manage'" text type="primary" @click="goToFeaturePackagePage">
+            前往功能包管理
+          </ElButton>
+        </div>
+      </template>
+    </ElAlert>
+
     <ArtSearchBar
       v-show="showSearchBar"
       v-model="searchForm"
@@ -7,14 +18,6 @@
       @search="handleSearch"
       @reset="handleReset"
     >
-      <template #category>
-        <ElAutocomplete
-          v-model="searchForm.category"
-          :fetch-suggestions="queryCategorySuggestions"
-          clearable
-          placeholder="输入或选择历史分类"
-        />
-      </template>
       <template #moduleCode>
         <ElAutocomplete
           v-model="searchForm.moduleCode"
@@ -56,12 +59,12 @@
       </ElCol>
       <ElCol :xs="24" :sm="12" :md="8" :lg="6">
         <ElCard shadow="never" class="stats-card">
-          <div class="stats-label">分类分布</div>
+          <div class="stats-label">上下文分布</div>
           <div class="stats-tags">
-            <ElTag v-for="item in stats.categoryTags" :key="item.label" type="info" effect="light">
+            <ElTag v-for="item in stats.contextTypeTags" :key="item.label" type="warning" effect="light">
               {{ item.label }} {{ item.count }}
             </ElTag>
-            <span v-if="stats.categoryTags.length === 0" class="stats-empty">暂无分类</span>
+            <span v-if="stats.contextTypeTags.length === 0" class="stats-empty">暂无上下文</span>
           </div>
         </ElCard>
       </ElCol>
@@ -78,12 +81,12 @@
       </ElCol>
       <ElCol :xs="24" :sm="12" :md="8" :lg="6">
         <ElCard shadow="never" class="stats-card">
-          <div class="stats-label">资源编码分布</div>
+          <div class="stats-label">权限键分布</div>
           <div class="stats-tags">
-            <ElTag v-for="item in stats.resourceTags" :key="item.label" type="warning" effect="light">
+            <ElTag v-for="item in stats.permissionKeyTags" :key="item.label" type="warning" effect="light">
               {{ item.label }} {{ item.count }}
             </ElTag>
-            <span v-if="stats.resourceTags.length === 0" class="stats-empty">暂无资源</span>
+            <span v-if="stats.permissionKeyTags.length === 0" class="stats-empty">暂无权限键</span>
           </div>
         </ElCard>
       </ElCol>
@@ -101,7 +104,7 @@
         @refresh="handleRefresh"
       >
         <template #left>
-          <ElButton v-action="'permission_action:create'" type="primary" @click="openDialog('add')" v-ripple>
+          <ElButton v-action="'system.permission.manage'" type="primary" @click="openDialog('add')" v-ripple>
             新增功能权限
           </ElButton>
         </template>
@@ -121,7 +124,6 @@
       v-model="dialogVisible"
       :dialog-type="dialogType"
       :action-data="currentAction"
-      :category-options="categoryOptions"
       :module-options="moduleOptions"
       @success="handleRefresh"
     />
@@ -131,16 +133,12 @@
 <script setup lang="ts">
   import type { FormItem } from '@/components/core/forms/art-form/index.vue'
   import { useTable } from '@/hooks/core/useTable'
-  import {
-    fetchDeletePermissionAction,
-    fetchGetAllScopes,
-    fetchGetPermissionActionList
-  } from '@/api/system-manage'
-  import { formatScopeLabel, getScopeTagType } from '@/utils/permission/scope'
+  import { fetchDeletePermissionAction, fetchGetPermissionActionList } from '@/api/system-manage'
   import ActionPermissionDialog from './modules/action-permission-dialog.vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { ElMessage, ElMessageBox, ElTag } from 'element-plus'
+  import { useRouter } from 'vue-router'
 
   defineOptions({ name: 'ActionPermission' })
 
@@ -156,39 +154,37 @@
   const dialogType = ref<'add' | 'edit'>('add')
   const currentAction = ref<PermissionActionItem | undefined>()
   const showSearchBar = ref(true)
-  const categoryOptions = ref<string[]>([])
   const moduleOptions = ref<string[]>([])
+  const router = useRouter()
   const stats = reactive<{
     total: number
     sourceTags: StatsTag[]
     featureKindTags: StatsTag[]
-    categoryTags: StatsTag[]
+    contextTypeTags: StatsTag[]
     moduleTags: StatsTag[]
-    resourceTags: StatsTag[]
+    permissionKeyTags: StatsTag[]
   }>({
     total: 0,
     sourceTags: [],
     featureKindTags: [],
-    categoryTags: [],
+    contextTypeTags: [],
     moduleTags: [],
-    resourceTags: []
+    permissionKeyTags: []
   })
 
   const searchForm = reactive<{
     keyword: string
     source: string
     featureKind: string
+    contextType: string
     moduleCode: string
-    category: string
-    scopeCode: string
     status: string
   }>({
     keyword: '',
     source: '',
     featureKind: '',
+    contextType: '',
     moduleCode: '',
-    category: '',
-    scopeCode: '',
     status: ''
   })
 
@@ -204,36 +200,22 @@
     { label: '系统功能', value: 'system' },
     { label: '业务功能', value: 'business' }
   ]
-
-  const scopeOptions = ref([{ label: '全部作用域', value: '' }])
-
+  const contextTypeOptions = [
+    { label: '全部上下文', value: '' },
+    { label: '平台', value: 'platform' },
+    { label: '团队', value: 'team' }
+  ]
   const statusOptions = [
     { label: '全部状态', value: '' },
     { label: '正常', value: 'normal' },
     { label: '停用', value: 'suspended' }
   ]
-
-  onMounted(async () => {
-    try {
-      const scopes = await fetchGetAllScopes()
-      scopeOptions.value = [
-        { label: '全部作用域', value: '' },
-        ...scopes.map((scope) => ({
-          label: scope.scopeName || scope.scopeCode,
-          value: scope.scopeCode
-        }))
-      ]
-    } catch {
-      scopeOptions.value = [{ label: '全部作用域', value: '' }]
-    }
-  })
-
   const searchItems = computed<FormItem[]>(() => [
     {
       label: '关键词',
       key: 'keyword',
       type: 'input',
-      props: { placeholder: '名称/描述/资源编码/动作编码/分类' }
+      props: { placeholder: '名称/描述/权限键/模块' }
     },
     {
       label: '来源',
@@ -242,28 +224,22 @@
       props: { options: sourceOptions, clearable: true }
     },
     {
+      label: '上下文',
+      key: 'contextType',
+      type: 'select',
+      props: { options: contextTypeOptions, clearable: true }
+    },
+    {
       label: '模块归属',
       key: 'moduleCode',
       type: 'input',
       props: { placeholder: '输入或选择模块归属' }
     },
     {
-      label: '分类',
-      key: 'category',
-      type: 'input',
-      props: { placeholder: '输入或选择历史分类' }
-    },
-    {
       label: '功能归属',
       key: 'featureKind',
       type: 'select',
       props: { options: featureKindOptions, clearable: true }
-    },
-    {
-      label: '作用域',
-      key: 'scopeCode',
-      type: 'select',
-      props: { options: scopeOptions.value, clearable: true }
     },
     {
       label: '状态',
@@ -298,7 +274,7 @@
           prop: 'permissionKey',
           label: '权限键',
           minWidth: 220,
-          formatter: (row: PermissionActionItem) => row.permissionKey || `${row.resourceCode}:${row.actionCode}`
+          formatter: (row: PermissionActionItem) => row.permissionKey || '-'
         },
         {
           prop: 'moduleCode',
@@ -307,10 +283,13 @@
           formatter: (row: PermissionActionItem) => row.moduleCode || '-'
         },
         {
-          prop: 'category',
-          label: '分类',
-          minWidth: 120,
-          formatter: (row: PermissionActionItem) => row.category || '-'
+          prop: 'contextType',
+          label: '上下文',
+          width: 100,
+          formatter: (row: PermissionActionItem) =>
+            h(ElTag, { type: row.contextType === 'platform' ? 'warning' : 'primary' }, () =>
+              row.contextType === 'platform' ? '平台' : '团队'
+            )
         },
         {
           prop: 'featureKind',
@@ -334,15 +313,6 @@
                   : { type: 'warning', text: '业务定义' }
             return h(ElTag, { type: sourceConfig.type as 'success' | 'info' | 'warning' }, () => sourceConfig.text)
           }
-        },
-        {
-          prop: 'scopeName',
-          label: '作用域',
-          width: 100,
-          formatter: (row: PermissionActionItem) =>
-            h(ElTag, { type: getScopeTagType(row.scopeCode) }, () =>
-              formatScopeLabel(row.scopeCode, row.scopeName)
-            )
         },
         {
           prop: 'description',
@@ -373,7 +343,7 @@
                 key: 'edit',
                 label: '编辑',
                 icon: 'ri:edit-2-line',
-                auth: 'permission_action:update'
+                auth: 'system.permission.manage'
               }
             ]
             if (row.source !== 'api' && row.source !== 'system') {
@@ -381,7 +351,7 @@
                 key: 'delete',
                 label: '删除',
                 icon: 'ri:delete-bin-4-line',
-                auth: 'permission_action:delete'
+                auth: 'system.permission.manage'
               })
             }
             return h(ArtButtonMore, {
@@ -399,9 +369,8 @@
       keyword: searchForm.keyword?.trim() || undefined,
       source: searchForm.source || undefined,
       featureKind: searchForm.featureKind || undefined,
+      contextType: searchForm.contextType || undefined,
       moduleCode: searchForm.moduleCode?.trim() || undefined,
-      category: searchForm.category?.trim() || undefined,
-      scopeCode: searchForm.scopeCode || undefined,
       status: searchForm.status || undefined
     }
   }
@@ -420,19 +389,13 @@
   }
 
   function updateCategoryOptions(items: PermissionActionItem[]) {
-    const nextOptions = new Set(categoryOptions.value)
     const nextModuleOptions = new Set(moduleOptions.value)
     items.forEach((item) => {
       const moduleCode = item.moduleCode?.trim()
       if (moduleCode) {
         nextModuleOptions.add(moduleCode)
       }
-      const category = item.category?.trim()
-      if (category) {
-        nextOptions.add(category)
-      }
     })
-    categoryOptions.value = [...nextOptions].sort((a, b) => a.localeCompare(b, 'zh-CN'))
     moduleOptions.value = [...nextModuleOptions].sort((a, b) => a.localeCompare(b, 'zh-CN'))
   }
 
@@ -460,18 +423,12 @@
       { label: '系统功能', count: records.filter((item) => item.featureKind !== 'business').length },
       { label: '业务功能', count: records.filter((item) => item.featureKind === 'business').length }
     ].filter((item) => item.count > 0)
-    stats.categoryTags = buildTopTags(records, (item) => item.category || '')
+    stats.contextTypeTags = [
+      { label: '平台', count: records.filter((item) => item.contextType === 'platform').length },
+      { label: '团队', count: records.filter((item) => item.contextType !== 'platform').length }
+    ].filter((item) => item.count > 0)
     stats.moduleTags = buildTopTags(records, (item) => item.moduleCode || '')
-    stats.resourceTags = buildTopTags(records, (item) => item.resourceCode || '')
-  }
-
-  function queryCategorySuggestions(queryString: string, cb: (items: SuggestionItem[]) => void) {
-    const keyword = queryString.trim().toLowerCase()
-    const suggestions = categoryOptions.value
-      .filter((item) => !keyword || item.toLowerCase().includes(keyword))
-      .slice(0, 12)
-      .map((value) => ({ value }))
-    cb(suggestions)
+    stats.permissionKeyTags = buildTopTags(records, (item) => item.permissionKey || '')
   }
 
   function queryModuleSuggestions(queryString: string, cb: (items: SuggestionItem[]) => void) {
@@ -494,9 +451,8 @@
       keyword: '',
       source: '',
       featureKind: '',
+      contextType: '',
       moduleCode: '',
-      category: '',
-      scopeCode: '',
       status: ''
     })
     await resetSearchParams()
@@ -512,6 +468,10 @@
     dialogType.value = type
     currentAction.value = row
     dialogVisible.value = true
+  }
+
+  function goToFeaturePackagePage() {
+    router.push({ name: 'FeaturePackage' })
   }
 
   function handleAction(command: string, row: PermissionActionItem) {
@@ -540,6 +500,18 @@
 </script>
 
 <style scoped>
+  .page-alert {
+    margin-top: 12px;
+  }
+
+  .alert-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+  }
+
   .stats-row {
     margin-top: 12px;
   }
@@ -577,5 +549,12 @@
   .stats-empty {
     font-size: 12px;
     color: var(--el-text-color-secondary);
+  }
+
+  @media (max-width: 900px) {
+    .alert-title-row {
+      align-items: flex-start;
+      flex-direction: column;
+    }
   }
 </style>

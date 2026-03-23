@@ -9,11 +9,11 @@ import (
 	"github.com/gg-ecommerce/backend/internal/config"
 	"github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
 	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
+	"github.com/gg-ecommerce/backend/internal/modules/system/featurepackage"
 	"github.com/gg-ecommerce/backend/internal/modules/system/media"
 	"github.com/gg-ecommerce/backend/internal/modules/system/menu"
 	"github.com/gg-ecommerce/backend/internal/modules/system/permission"
 	"github.com/gg-ecommerce/backend/internal/modules/system/role"
-	"github.com/gg-ecommerce/backend/internal/modules/system/scope"
 	"github.com/gg-ecommerce/backend/internal/modules/system/system"
 	"github.com/gg-ecommerce/backend/internal/modules/system/tenant"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
@@ -40,8 +40,8 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 	userModule := user.NewUserModule(db, cfg, logger)
 	menuModule := menu.NewMenuModule(db, cfg, logger)
 	permissionModule := permission.NewPermissionModule(db, cfg, logger)
+	featurePackageModule := featurepackage.NewModule(db, cfg, logger)
 	roleModule := role.NewRoleModule(db, cfg, logger)
-	scopeModule := scope.NewScopeModule(db, cfg, logger)
 	tenantModule := tenant.NewTenantModule(db, cfg, logger)
 	mediaModule := media.NewMediaModule(db, cfg, logger)
 	systemModule := system.NewSystemModule(db, cfg, logger)
@@ -64,8 +64,8 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			userModule.RegisterRoutes(authenticated)
 			menuModule.RegisterRoutes(authenticated)
 			permissionModule.RegisterRoutes(authenticated)
+			featurePackageModule.RegisterRoutes(authenticated)
 			roleModule.RegisterRoutes(authenticated)
-			scopeModule.RegisterRoutes(authenticated)
 			tenantModule.RegisterRoutes(authenticated)
 			mediaModule.RegisterRoutes(authenticated)
 			systemModule.RegisterRoutes(authenticated)

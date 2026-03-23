@@ -43,7 +43,7 @@
               </span>
             </div>
             <ElTooltip content="创建菜单" placement="top">
-              <ElButton v-action="'menu:create'" type="primary" @click="handleAddMenu" v-ripple class="ml-2">
+              <ElButton v-action="'system.menu.manage'" type="primary" @click="handleAddMenu" v-ripple class="ml-2">
                 创建菜单
             </ElButton>
           </ElTooltip>
@@ -51,10 +51,10 @@
             {{ isExpanded ? '收起' : '展开' }}
           </ElButton>
           <ElTooltip content="备份菜单" placement="top">
-            <ElButton v-action="'menu_backup:create'" @click="handleBackupMenu" v-ripple class="ml-2"> 备份 </ElButton>
+            <ElButton v-action="'system.menu.backup'" @click="handleBackupMenu" v-ripple class="ml-2"> 备份 </ElButton>
           </ElTooltip>
           <ElTooltip content="管理备份" placement="top">
-            <ElButton v-action="'menu_backup:list'" @click="handleManageBackups" v-ripple class="ml-2"> 管理备份 </ElButton>
+            <ElButton v-action="'system.menu.backup'" @click="handleManageBackups" v-ripple class="ml-2"> 管理备份 </ElButton>
           </ElTooltip>
         </template>
       </ArtTableHeader>
@@ -208,14 +208,14 @@
               <template #default="{ row }">
                 <div class="flex gap-2">
                   <ElButton
-                    v-action="'menu_backup:restore'"
+                    v-action="'system.menu.backup'"
                     type="primary"
                     size="small"
                     @click="handleRestoreBackup(row.id)"
                   >
                     恢复
                   </ElButton>
-                  <ElButton v-action="'menu_backup:delete'" type="danger" size="small" @click="handleDeleteBackup(row.id)">
+                  <ElButton v-action="'system.menu.backup'" type="danger" size="small" @click="handleDeleteBackup(row.id)">
                     删除
                   </ElButton>
                 </div>
@@ -393,9 +393,9 @@
 
   const getOperationList = (row: any): ButtonMoreItem[] => {
     const list: ButtonMoreItem[] = [
-      { key: 'add', label: '新增子菜单', icon: 'ri:add-fill', auth: 'menu:create' },
-      { key: 'edit', label: '编辑菜单', icon: 'ri:edit-2-line', auth: 'menu:update' },
-      { key: 'action_requirement', label: '功能权限', icon: 'ri:shield-keyhole-line', auth: 'menu:update' }
+      { key: 'add', label: '新增子菜单', icon: 'ri:add-fill', auth: 'system.menu.manage' },
+      { key: 'edit', label: '编辑菜单', icon: 'ri:edit-2-line', auth: 'system.menu.manage' },
+      { key: 'action_requirement', label: '功能权限', icon: 'ri:shield-keyhole-line', auth: 'system.menu.manage' }
     ]
     if (!row.is_system) {
       list.push({
@@ -403,7 +403,7 @@
         label: '删除菜单',
         icon: 'ri:delete-bin-4-line',
         color: '#f56c6c',
-        auth: 'menu:delete'
+        auth: 'system.menu.manage'
       })
     }
     return list

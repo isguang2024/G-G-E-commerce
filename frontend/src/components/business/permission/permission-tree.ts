@@ -2,12 +2,11 @@ export type PermissionActionItem = Api.SystemManage.PermissionActionItem
 export type TreeNodeType = 'feature' | 'module' | 'action'
 
 export interface ModuleGroup {
-  key: string
-  label: string
-  category: string
-  count: number
-  actionIds: string[]
-  actions: PermissionActionItem[]
+	key: string
+	label: string
+	count: number
+	actionIds: string[]
+	actions: PermissionActionItem[]
 }
 
 export interface FeatureGroup {
@@ -48,14 +47,13 @@ export function buildPermissionGroups(actions: PermissionActionItem[]): FeatureG
     const moduleCode = action.moduleCode || action.resourceCode || 'common'
     const moduleKey = `${featureKey}:${moduleCode}`
     let moduleGroup = featureGroup.modules.find((item) => item.key === moduleKey)
-    if (!moduleGroup) {
-      moduleGroup = {
-        key: moduleKey,
-        label: moduleCode,
-        category: action.category || '',
-        count: 0,
-        actionIds: [],
-        actions: []
+		if (!moduleGroup) {
+			moduleGroup = {
+				key: moduleKey,
+				label: moduleCode,
+				count: 0,
+				actionIds: [],
+				actions: []
       }
       featureGroup.modules.push(moduleGroup)
     }
@@ -88,19 +86,19 @@ export function buildPermissionTree<TLeaf extends { meta: string } & Record<stri
   groups: FeatureGroup[],
   mapLeaf: (action: PermissionActionItem) => TLeaf
 ): Array<PermissionTreeNodeBase & Record<string, unknown>> {
-  return groups.map((featureGroup) => ({
+	return groups.map((featureGroup) => ({
     key: featureGroup.key,
     label: featureGroup.label,
     nodeType: 'feature',
     meta: `${featureGroup.modules.length} 个模块，${featureGroup.count} 条权限`,
     actionIds: featureGroup.actionIds,
-    children: featureGroup.modules.map((moduleGroup) => ({
-      key: moduleGroup.key,
-      label: moduleGroup.label,
-      nodeType: 'module',
-      meta: `${moduleGroup.count} 条权限${moduleGroup.category ? `，分类 ${moduleGroup.category}` : ''}`,
-      actionIds: moduleGroup.actionIds,
-      children: moduleGroup.actions.map((action) => ({
+		children: featureGroup.modules.map((moduleGroup) => ({
+			key: moduleGroup.key,
+			label: moduleGroup.label,
+			nodeType: 'module',
+			meta: `${moduleGroup.count} 条权限`,
+			actionIds: moduleGroup.actionIds,
+			children: moduleGroup.actions.map((action) => ({
         key: action.id,
         label: action.name,
         nodeType: 'action',

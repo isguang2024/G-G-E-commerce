@@ -364,18 +364,13 @@ func (h *UserHandler) GetActions(c *gin.Context) {
 		}
 		if action, ok := actionMap[record.ActionID]; ok {
 			item["action"] = gin.H{
-				"id":                      action.ID.String(),
-				"resource_code":           action.ResourceCode,
-				"action_code":             action.ActionCode,
-				"name":                    action.Name,
-				"description":             action.Description,
-				"scope_id":                action.ScopeID.String(),
-				"scope_code":              action.Scope.Code,
-				"scope_name":              action.Scope.Name,
-				"data_permission_code":    action.Scope.DataPermissionCode,
-				"data_permission_name":    action.Scope.DataPermissionName,
-				"status":                  action.Status,
-				"sort_order":              action.SortOrder,
+				"id":            action.ID.String(),
+				"resource_code": action.ResourceCode,
+				"action_code":   action.ActionCode,
+				"name":          action.Name,
+				"description":   action.Description,
+				"status":        action.Status,
+				"sort_order":    action.SortOrder,
 			}
 		}
 		items = append(items, item)
@@ -441,14 +436,6 @@ func (h *UserHandler) SetActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	for _, action := range actions {
-		if action.Scope.Code != "global" {
-			status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "单用户权限只能配置平台级功能权限")
-			c.JSON(status, resp)
-			return
-		}
-	}
-
 	if err := h.userActionRepo.ReplaceUserActions(id, nil, records); err != nil {
 		h.logger.Error("Set user action permissions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存用户功能权限失败")

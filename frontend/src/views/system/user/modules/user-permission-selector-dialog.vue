@@ -37,20 +37,6 @@
                   class="toolbar-search"
                 />
 
-                <ElSelect
-                  v-model="actionScopeFilter"
-                  clearable
-                  placeholder="作用域"
-                  class="toolbar-scope"
-                >
-                  <ElOption label="全部作用域" value="" />
-                  <ElOption
-                    v-for="item in actionScopeOptions"
-                    :key="item"
-                    :label="item"
-                    :value="item"
-                  />
-                </ElSelect>
               </div>
             </div>
 
@@ -75,14 +61,6 @@
                           {{ data.permissionText }}
                         </span>
                         <div class="panel-node__tags">
-                          <ElTag
-                            v-if="data.scopeText"
-                            size="small"
-                            effect="plain"
-                            round
-                          >
-                            {{ data.scopeText }}
-                          </ElTag>
                           <ElTag
                             v-if="data.sourceText"
                             size="small"
@@ -214,10 +192,9 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import type { CascaderProps } from 'element-plus'
+import type { CascaderOption, CascaderProps } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import {
-  fetchGetAllScopes,
   fetchGetPermissionActionList,
   fetchGetUserActions,
   fetchSetUserActions
@@ -228,19 +205,12 @@ interface Props {
   userData?: Api.SystemManage.UserListItem
 }
 
-interface CascaderOption {
-  value: string
-  label: string
-  children?: CascaderOption[]
-  leaf?: boolean
+interface ActionOption extends CascaderOption {
   permissionText?: string
-  scopeText?: string
   sourceText?: string
   totalLeafCount?: number
   selectedLeafCount?: number
 }
-
-interface ActionOption extends CascaderOption {}
 
 const props = defineProps<Props>()
 
@@ -258,9 +228,7 @@ const loading = ref(false)
 const saving = ref(false)
 const activeTab = ref('custom')
 const actionKeyword = ref('')
-const actionScopeFilter = ref('')
 const permissionActions = ref<Api.SystemManage.PermissionActionItem[]>([])
-const scopeList = ref<Api.SystemManage.ScopeListItem[]>([])
 const selectedActionNodeValues = ref<string[]>([])
 const decisionMap = ref<Record<string, 'allow' | 'deny'>>({})
 const actionPanelRef = ref()
@@ -319,7 +287,6 @@ const actionOptions = computed<ActionOption[]>(() => {
       label: action.name,
       leaf: true,
       permissionText: action.permissionKey || `${action.resourceCode}:${action.actionCode}`,
-      scopeText: action.scopeName || action.scopeCode || '',
       sourceText: formatSource(action.source)
     })
     module.children = leaves
@@ -356,10 +323,6 @@ const expandedSelectedActionIds = computed(() =>
 )
 
 const actionLeafCount = computed(() => permissionActions.value.length)
-
-const actionScopeOptions = computed(() =>
-  scopeList.value.map((item) => item.scopeName || item.scopeCode).filter(Boolean)
-)
 
 const topLevelActionTags = computed(() => {
   const counter = new Map<string, number>()
@@ -413,15 +376,13 @@ const actionCascaderProps: CascaderProps = {
 
 const filteredActionOptions = computed(() => {
   const keyword = actionKeyword.value.trim().toLowerCase()
-  const scope = actionScopeFilter.value.trim()
 
   return filterNestedOptions(actionOptions.value, (node) => {
-    if (!node.leaf) return !keyword && !scope
-    const text = [node.label, node.permissionText, node.scopeText, node.sourceText]
+    if (!node.leaf) return !keyword
+    const text = [node.label, node.permissionText, node.sourceText]
       .filter(Boolean)
       .join(' ')
       .toLowerCase()
-    if (scope && node.scopeText !== scope) return false
     if (keyword && !text.includes(keyword)) return false
     return true
   })
@@ -461,16 +422,13 @@ async function loadData() {
   loading.value = true
   activeTab.value = 'custom'
   actionKeyword.value = ''
-  actionScopeFilter.value = ''
 
   try {
-    const [scopeRes, actionsRes, currentRes] = await Promise.all([
-      fetchGetAllScopes(),
+    const [actionsRes, currentRes] = await Promise.all([
       fetchGetPermissionActionList({ current: 1, size: 1000, status: 'normal' }),
       fetchGetUserActions(props.userData.id)
     ])
 
-    scopeList.value = scopeRes || []
     permissionActions.value = actionsRes?.records || []
     const availableActionIDSet = new Set(permissionActions.value.map((item) => item.id))
 
@@ -558,7 +516,7 @@ function countOptionLeaves(node: CascaderOption): number {
 }
 
 function countConfiguredLeaves(node: CascaderOption, selectedSet: Set<string>): number {
-  if (!node.children?.length) return selectedSet.has(node.value) ? 1 : 0
+  if (!node.children?.length) return selectedSet.has(`${node.value || ''}`) ? 1 : 0
   return node.children.reduce((sum, child) => sum + countConfiguredLeaves(child, selectedSet), 0)
 }
 

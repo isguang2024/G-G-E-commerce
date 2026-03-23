@@ -4,12 +4,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 )
 
 type Handler struct {
@@ -31,7 +31,6 @@ func (h *Handler) List(c *gin.Context) {
 		FeatureKind  string `form:"feature_kind"`
 		ResourceCode string `form:"resource_code"`
 		ActionCode   string `form:"action_code"`
-		ScopeCode    string `form:"scope_code"`
 		Status       string `form:"status"`
 	}
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -48,7 +47,6 @@ func (h *Handler) List(c *gin.Context) {
 		FeatureKind:  req.FeatureKind,
 		ResourceCode: req.ResourceCode,
 		ActionCode:   req.ActionCode,
-		ScopeCode:    req.ScopeCode,
 		Status:       req.Status,
 	})
 	if err != nil {
@@ -80,32 +78,37 @@ func (h *Handler) Sync(c *gin.Context) {
 }
 
 func endpointToMap(endpoint *user.APIEndpoint) gin.H {
-	scopeID := ""
-	scopeCode := ""
-	scopeName := ""
-	if endpoint.Scope.ID != (uuid.UUID{}) {
-		scopeID = endpoint.Scope.ID.String()
-		scopeCode = endpoint.Scope.Code
-		scopeName = endpoint.Scope.Name
+	permissionKey := ""
+	if endpoint.ResourceCode != "" && endpoint.ActionCode != "" {
+		permissionKey = permissionkey.FromLegacy(endpoint.ResourceCode, endpoint.ActionCode).Key
+	}
+	authMode := "jwt"
+	switch {
+	case endpoint.Path == "/health":
+		authMode = "public"
+	case endpoint.Path == "/api/v1/auth/login" || endpoint.Path == "/api/v1/auth/register" || endpoint.Path == "/api/v1/auth/refresh":
+		authMode = "public"
+	case len(endpoint.Path) >= len("/open/v1/") && endpoint.Path[:len("/open/v1/")] == "/open/v1/":
+		authMode = "api_key"
+	case permissionKey != "":
+		authMode = "permission"
 	}
 	return gin.H{
-		"id":                      endpoint.ID.String(),
-		"method":                  endpoint.Method,
-		"path":                    endpoint.Path,
-		"module":                  endpoint.Module,
-		"feature_kind":            endpoint.FeatureKind,
-		"handler":                 endpoint.Handler,
-		"summary":                 endpoint.Summary,
-		"resource_code":           endpoint.ResourceCode,
-		"action_code":             endpoint.ActionCode,
-		"scope_id":                scopeID,
-		"scope_code":              scopeCode,
-		"scope_name":              scopeName,
-		"data_permission_code": endpoint.Scope.DataPermissionCode,
-		"data_permission_name": endpoint.Scope.DataPermissionName,
-		"status":               endpoint.Status,
-		"created_at":           endpoint.CreatedAt.Format("2006-01-02 15:04:05"),
-		"updated_at":           endpoint.UpdatedAt.Format("2006-01-02 15:04:05"),
+		"id":             endpoint.ID.String(),
+		"method":         endpoint.Method,
+		"path":           endpoint.Path,
+		"spec":           endpoint.Method + " " + endpoint.Path,
+		"module":         endpoint.Module,
+		"feature_kind":   endpoint.FeatureKind,
+		"handler":        endpoint.Handler,
+		"summary":        endpoint.Summary,
+		"permission_key": permissionKey,
+		"auth_mode":      authMode,
+		"resource_code":  endpoint.ResourceCode,
+		"action_code":    endpoint.ActionCode,
+		"status":         endpoint.Status,
+		"created_at":     endpoint.CreatedAt.Format("2006-01-02 15:04:05"),
+		"updated_at":     endpoint.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
 }
 

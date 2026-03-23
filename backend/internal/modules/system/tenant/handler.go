@@ -13,35 +13,46 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/database"
 )
 
 const tenantContextHeader = "X-Tenant-ID"
 
+var ErrMyTeamRoleForbidden = errors.New("team role forbidden")
+
 type TenantHandler struct {
-	tenantService    TenantService
-	tenantMemberRepo user.TenantMemberRepository
-	userRepo         user.UserRepository
-	roleRepo         user.RoleRepository
-	roleActionRepo   user.RoleActionPermissionRepository
-	userRoleRepo     user.UserRoleRepository
-	actionRepo       user.PermissionActionRepository
-	tenantActionRepo user.TenantActionPermissionRepository
-	userActionRepo   user.UserActionPermissionRepository
-	logger           *zap.Logger
+	tenantService     TenantService
+	tenantMemberRepo  user.TenantMemberRepository
+	userRepo          user.UserRepository
+	roleRepo          user.RoleRepository
+	roleMenuRepo      user.RoleMenuRepository
+	roleActionRepo    user.RoleActionPermissionRepository
+	userRoleRepo      user.UserRoleRepository
+	actionRepo        user.PermissionActionRepository
+	tenantActionRepo  user.TenantActionPermissionRepository
+	manualActionRepo  user.TeamManualActionPermissionRepository
+	userActionRepo    user.UserActionPermissionRepository
+	teamPackageRepo   user.TeamFeaturePackageRepository
+	packageActionRepo user.FeaturePackageActionRepository
+	logger            *zap.Logger
 }
 
-func NewTenantHandler(tenantService TenantService, tenantMemberRepo user.TenantMemberRepository, userRepo user.UserRepository, roleRepo user.RoleRepository, roleActionRepo user.RoleActionPermissionRepository, userRoleRepo user.UserRoleRepository, actionRepo user.PermissionActionRepository, tenantActionRepo user.TenantActionPermissionRepository, userActionRepo user.UserActionPermissionRepository, logger *zap.Logger) *TenantHandler {
+func NewTenantHandler(tenantService TenantService, tenantMemberRepo user.TenantMemberRepository, userRepo user.UserRepository, roleRepo user.RoleRepository, roleMenuRepo user.RoleMenuRepository, roleActionRepo user.RoleActionPermissionRepository, userRoleRepo user.UserRoleRepository, actionRepo user.PermissionActionRepository, tenantActionRepo user.TenantActionPermissionRepository, manualActionRepo user.TeamManualActionPermissionRepository, userActionRepo user.UserActionPermissionRepository, teamPackageRepo user.TeamFeaturePackageRepository, packageActionRepo user.FeaturePackageActionRepository, logger *zap.Logger) *TenantHandler {
 	return &TenantHandler{
-		tenantService:    tenantService,
-		tenantMemberRepo: tenantMemberRepo,
-		userRepo:         userRepo,
-		roleRepo:         roleRepo,
-		roleActionRepo:   roleActionRepo,
-		userRoleRepo:     userRoleRepo,
-		actionRepo:       actionRepo,
-		tenantActionRepo: tenantActionRepo,
-		userActionRepo:   userActionRepo,
-		logger:           logger,
+		tenantService:     tenantService,
+		tenantMemberRepo:  tenantMemberRepo,
+		userRepo:          userRepo,
+		roleRepo:          roleRepo,
+		roleMenuRepo:      roleMenuRepo,
+		roleActionRepo:    roleActionRepo,
+		userRoleRepo:      userRoleRepo,
+		actionRepo:        actionRepo,
+		tenantActionRepo:  tenantActionRepo,
+		manualActionRepo:  manualActionRepo,
+		userActionRepo:    userActionRepo,
+		teamPackageRepo:   teamPackageRepo,
+		packageActionRepo: packageActionRepo,
+		logger:            logger,
 	}
 }
 
@@ -620,7 +631,7 @@ func (h *TenantHandler) SetMyTeamMemberRoles(c *gin.Context) {
 		return
 	}
 
-	allRoles, err := h.roleRepo.GetAll()
+	allRoles, err := h.roleRepo.ListTeamRoles(member.TenantID)
 	if err != nil {
 		h.logger.Error("Get team roles failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队角色失败")
@@ -631,16 +642,6 @@ func (h *TenantHandler) SetMyTeamMemberRoles(c *gin.Context) {
 	allowedTeamRoleIDs := make(map[uuid.UUID]user.Role)
 	protectedRoleID := uuid.Nil
 	for _, role := range allRoles {
-		hasTenantScope := false
-		for _, scope := range role.Scopes {
-			if isTeamScopeCode(scope.Code) {
-				hasTenantScope = true
-				break
-			}
-		}
-		if !hasTenantScope {
-			continue
-		}
 		allowedTeamRoleIDs[role.ID] = role
 		if role.Code == memberRecord.RoleCode {
 			protectedRoleID = role.ID
@@ -690,7 +691,7 @@ func (h *TenantHandler) ListMyTeamRoles(c *gin.Context) {
 	}
 
 	_ = member.TenantID
-	allRoles, err := h.roleRepo.GetAll()
+	allRoles, err := h.roleRepo.ListTeamRoles(member.TenantID)
 	if err != nil {
 		h.logger.Error("List roles failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取角色列表失败")
@@ -700,35 +701,22 @@ func (h *TenantHandler) ListMyTeamRoles(c *gin.Context) {
 
 	roleList := make([]gin.H, 0, len(allRoles))
 	for _, r := range allRoles {
-		scopes := make([]gin.H, 0, len(r.Scopes))
-		hasTenantScope := false
-		for _, scope := range r.Scopes {
-			if isTeamScopeCode(scope.Code) {
-				hasTenantScope = true
-			}
-			scopes = append(scopes, gin.H{
-				"scopeId":            scope.ID.String(),
-				"scopeCode":          scope.Code,
-				"scopeName":          scope.Name,
-				"dataPermissionCode": scope.DataPermissionCode,
-				"dataPermissionName": scope.DataPermissionName,
-			})
-		}
-		if !hasTenantScope {
-			continue
-		}
 		roleList = append(roleList, gin.H{
-			"id":        r.ID.String(),
-			"code":      r.Code,
-			"name":      r.Name,
-			"scopes":    scopes,
-			"is_system": r.IsSystem,
+			"id":          r.ID.String(),
+			"code":        r.Code,
+			"name":        r.Name,
+			"description": r.Description,
+			"status":      r.Status,
+			"is_system":   r.IsSystem,
+			"tenant_id":   uuidPtrToString(r.TenantID),
+			"is_global":   r.TenantID == nil,
+			"create_time": r.CreatedAt.Format("2006-01-02 15:04:05"),
 		})
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(roleList))
 }
 
-func (h *TenantHandler) GetMyTeamRoleActions(c *gin.Context) {
+func (h *TenantHandler) CreateMyTeamRole(c *gin.Context) {
 	member, err := h.resolveTenantMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrTenantMemberNotFound {
@@ -742,52 +730,282 @@ func (h *TenantHandler) GetMyTeamRoleActions(c *gin.Context) {
 		return
 	}
 
-	roleID, err := uuid.Parse(c.Param("roleId"))
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
+	var req dto.RoleCreateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
 		return
 	}
 
-	role, err := h.roleRepo.GetByID(roleID)
+	code := strings.TrimSpace(req.Code)
+	if code == "" || strings.TrimSpace(req.Name) == "" {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "角色编码和角色名称不能为空")
+		c.JSON(status, resp)
+		return
+	}
+	existingRoles, err := h.roleRepo.FindByCode(code)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			status, resp := errcode.Response(errcode.ErrRoleNotFound)
+		h.logger.Error("Find team role code failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "校验角色编码失败")
+		c.JSON(status, resp)
+		return
+	}
+	for _, existing := range existingRoles {
+		if existing.TenantID != nil && *existing.TenantID == member.TenantID {
+			status, resp := errcode.Response(errcode.ErrRoleCodeExists)
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Get team role failed", zap.Error(err))
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取角色失败")
-		c.JSON(status, resp)
-		return
 	}
-	hasTeamScope := false
-	for _, scope := range role.Scopes {
-		if isTeamScopeCode(scope.Code) {
-			hasTeamScope = true
-			break
-		}
+
+	role := &user.Role{
+		TenantID:    &member.TenantID,
+		Code:        code,
+		Name:        strings.TrimSpace(req.Name),
+		Description: strings.TrimSpace(req.Description),
+		SortOrder:   req.SortOrder,
+		Priority:    req.Priority,
+		Status:      normalizeRoleStatus(req.Status),
 	}
-	if !hasTeamScope {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "仅支持查看团队角色功能权限")
+	if err := h.roleRepo.Create(role); err != nil {
+		h.logger.Error("Create team role failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "创建团队角色失败")
 		c.JSON(status, resp)
 		return
 	}
 
-	_ = member.TenantID
-	records, err := h.roleActionRepo.GetByRoleID(roleID)
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"roleId": role.ID.String()}))
+}
+
+func (h *TenantHandler) UpdateMyTeamRole(c *gin.Context) {
+	member, role, err := h.resolveEditableMyTeamRole(c)
+	if err != nil {
+		h.respondMyTeamRoleError(c, err)
+		return
+	}
+
+	var req dto.RoleUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+
+	updates := map[string]interface{}{
+		"name":        strings.TrimSpace(defaultString(req.Name, role.Name)),
+		"description": strings.TrimSpace(defaultString(req.Description, role.Description)),
+		"sort_order":  req.SortOrder,
+		"priority":    req.Priority,
+		"status":      normalizeRoleStatus(defaultString(req.Status, role.Status)),
+	}
+	if code := strings.TrimSpace(req.Code); code != "" && code != role.Code {
+		existingRoles, findErr := h.roleRepo.FindByCode(code)
+		if findErr != nil {
+			h.logger.Error("Find team role code failed", zap.Error(findErr))
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "校验角色编码失败")
+			c.JSON(status, resp)
+			return
+		}
+		for _, existing := range existingRoles {
+			if existing.ID == role.ID {
+				continue
+			}
+			if existing.TenantID != nil && *existing.TenantID == member.TenantID {
+				status, resp := errcode.Response(errcode.ErrRoleCodeExists)
+				c.JSON(status, resp)
+				return
+			}
+		}
+		updates["code"] = code
+	}
+
+	if err := h.roleRepo.UpdateWithMap(role.ID, updates); err != nil {
+		h.logger.Error("Update team role failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "更新团队角色失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *TenantHandler) DeleteMyTeamRole(c *gin.Context) {
+	member, role, err := h.resolveEditableMyTeamRole(c)
+	if err != nil {
+		h.respondMyTeamRoleError(c, err)
+		return
+	}
+
+	if err := database.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("user_id = ? AND role_id = ? AND tenant_id = ?", member.UserID, role.ID, member.TenantID).Delete(&user.UserRole{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("role_id = ?", role.ID).Delete(&user.RoleMenu{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("role_id = ?", role.ID).Delete(&user.RoleActionPermission{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("role_id = ?", role.ID).Delete(&user.RoleDataPermission{}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&user.Role{}, role.ID).Error
+	}); err != nil {
+		h.logger.Error("Delete team role failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "删除团队角色失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *TenantHandler) GetMyTeamRoleMenus(c *gin.Context) {
+	_, role, err := h.resolveMyTeamRole(c)
+	if err != nil {
+		h.respondMyTeamRoleError(c, err)
+		return
+	}
+
+	menuIDs, err := h.roleMenuRepo.GetMenuIDsByRoleID(role.ID)
+	if err != nil {
+		h.logger.Error("Get team role menus failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队角色菜单权限失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"menu_ids": actionIDsToStrings(menuIDs)}))
+}
+
+func (h *TenantHandler) SetMyTeamRoleMenus(c *gin.Context) {
+	_, role, err := h.resolveEditableMyTeamRole(c)
+	if err != nil {
+		h.respondMyTeamRoleError(c, err)
+		return
+	}
+
+	var req dto.RoleMenusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+
+	menuIDs, parseErr := parseUUIDSlice(req.MenuIDs)
+	if parseErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的菜单ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	if err := h.roleMenuRepo.SetRoleMenus(role.ID, menuIDs); err != nil {
+		h.logger.Error("Set team role menus failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存团队角色菜单权限失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *TenantHandler) GetMyTeamRoleActions(c *gin.Context) {
+	member, role, err := h.resolveMyTeamRole(c)
+	if err != nil {
+		h.respondMyTeamRoleError(c, err)
+		return
+	}
+
+	records, err := h.roleActionRepo.GetByRoleID(role.ID)
 	if err != nil {
 		h.logger.Error("Get team role actions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队角色功能权限失败")
 		c.JSON(status, resp)
 		return
 	}
+	enabledActionSet, err := h.getTenantEnabledActionSet(member.TenantID)
+	if err != nil {
+		h.logger.Error("Get team enabled actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队功能边界失败")
+		c.JSON(status, resp)
+		return
+	}
 
 	actionIDs := make([]string, 0, len(records))
 	for _, record := range records {
+		if !enabledActionSet[record.ActionID] {
+			continue
+		}
 		actionIDs = append(actionIDs, record.ActionID.String())
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"action_ids": actionIDs}))
+}
+
+func (h *TenantHandler) SetMyTeamRoleActions(c *gin.Context) {
+	member, role, err := h.resolveEditableMyTeamRole(c)
+	if err != nil {
+		h.respondMyTeamRoleError(c, err)
+		return
+	}
+
+	var req dto.RoleActionPermissionsRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+
+	actionIDs, parseErr := parseUUIDSlice(req.ActionIDs)
+	if parseErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能权限ID")
+		c.JSON(status, resp)
+		return
+	}
+	if len(actionIDs) > 0 {
+		actionList, actionErr := h.actionRepo.GetByIDs(actionIDs)
+		if actionErr != nil {
+			h.logger.Error("Get role action detail failed", zap.Error(actionErr))
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能权限失败")
+			c.JSON(status, resp)
+			return
+		}
+		if len(actionList) != len(actionIDs) {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "存在无效的功能权限")
+			c.JSON(status, resp)
+			return
+		}
+	}
+
+	enabledActionSet, err := h.getTenantEnabledActionSet(member.TenantID)
+	if err != nil {
+		h.logger.Error("Get team enabled actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队功能边界失败")
+		c.JSON(status, resp)
+		return
+	}
+	for _, actionID := range actionIDs {
+		if !enabledActionSet[actionID] {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "存在超出当前团队已开通能力范围的功能权限")
+			c.JSON(status, resp)
+			return
+		}
+	}
+
+	actions := make([]user.RoleActionPermission, 0, len(actionIDs))
+	for _, actionID := range actionIDs {
+		actions = append(actions, user.RoleActionPermission{
+			RoleID:   role.ID,
+			ActionID: actionID,
+		})
+	}
+	if err := h.roleActionRepo.SetRoleActions(role.ID, actions); err != nil {
+		h.logger.Error("Set team role actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存团队角色功能权限失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
 func (h *TenantHandler) GetTenantActions(c *gin.Context) {
@@ -815,6 +1033,16 @@ func (h *TenantHandler) GetTenantActions(c *gin.Context) {
 		"action_ids": actionIDsToStrings(actionIDs),
 		"actions":    actionListToMaps(actions),
 	}))
+}
+
+func (h *TenantHandler) GetTenantActionOrigins(c *gin.Context) {
+	tenantID, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		c.JSON(status, resp)
+		return
+	}
+	h.respondTenantActionOrigins(c, tenantID)
 }
 
 func (h *TenantHandler) SetTenantActions(c *gin.Context) {
@@ -849,15 +1077,23 @@ func (h *TenantHandler) SetTenantActions(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
-		for _, action := range actions {
-			if !isTeamScopeCode(action.Scope.Code) {
-				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "团队仅可配置团队作用域功能权限")
-				c.JSON(status, resp)
-				return
-			}
-		}
 	}
-	if err := h.tenantActionRepo.ReplaceTenantActions(tenantID, actionIDs); err != nil {
+	derivedIDs, err := h.getDerivedTeamActionIDs(tenantID)
+	if err != nil {
+		h.logger.Error("Get derived team actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包展开权限失败")
+		c.JSON(status, resp)
+		return
+	}
+	manualIDs := excludeActionIDs(actionIDs, derivedIDs)
+	effectiveIDs := mergeActionIDs(derivedIDs, manualIDs)
+	if err := h.manualActionRepo.ReplaceTenantActions(tenantID, manualIDs); err != nil {
+		h.logger.Error("Set manual tenant actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存团队补充权限失败")
+		c.JSON(status, resp)
+		return
+	}
+	if err := h.tenantActionRepo.ReplaceTenantActions(tenantID, effectiveIDs); err != nil {
 		h.logger.Error("Set tenant actions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存团队功能权限失败")
 		c.JSON(status, resp)
@@ -899,6 +1135,136 @@ func (h *TenantHandler) GetMyTeamActions(c *gin.Context) {
 	}))
 }
 
+func (h *TenantHandler) GetMyTeamActionOrigins(c *gin.Context) {
+	member, err := h.resolveTenantMember(c)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound || err == ErrTenantMemberNotFound {
+			status, resp := errcode.Response(errcode.ErrNoTeam)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Resolve my team failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的团队失败")
+		c.JSON(status, resp)
+		return
+	}
+	h.respondTenantActionOrigins(c, member.TenantID)
+}
+
+func (h *TenantHandler) respondTenantActionOrigins(c *gin.Context, tenantID uuid.UUID) {
+	actionIDs, err := h.tenantActionRepo.GetEnabledActionIDsByTenantID(tenantID)
+	if err != nil {
+		h.logger.Error("Get tenant action ids failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队功能权限来源失败")
+		c.JSON(status, resp)
+		return
+	}
+	packageIDs, err := h.teamPackageRepo.GetPackageIDsByTeamID(tenantID)
+	if err != nil {
+		h.logger.Error("Get team packages failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队功能包失败")
+		c.JSON(status, resp)
+		return
+	}
+	derivedIDs, err := h.getDerivedTeamActionIDs(tenantID)
+	if err != nil {
+		h.logger.Error("Get derived actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包权限失败")
+		c.JSON(status, resp)
+		return
+	}
+	manualIDs, err := h.manualActionRepo.GetEnabledActionIDsByTenantID(tenantID)
+	if err != nil {
+		h.logger.Error("Get manual actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队补充权限失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"package_ids":          actionIDsToStrings(packageIDs),
+		"derived_action_ids":   actionIDsToStrings(derivedIDs),
+		"manual_action_ids":    actionIDsToStrings(manualIDs),
+		"effective_action_ids": actionIDsToStrings(actionIDs),
+	}))
+}
+
+func (h *TenantHandler) getDerivedTeamActionIDs(tenantID uuid.UUID) ([]uuid.UUID, error) {
+	packageIDs, err := h.teamPackageRepo.GetPackageIDsByTeamID(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]uuid.UUID, 0)
+	seen := make(map[uuid.UUID]struct{})
+	for _, packageID := range packageIDs {
+		actionIDs, err := h.packageActionRepo.GetActionIDsByPackageID(packageID)
+		if err != nil {
+			return nil, err
+		}
+		for _, actionID := range actionIDs {
+			if _, ok := seen[actionID]; ok {
+				continue
+			}
+			seen[actionID] = struct{}{}
+			result = append(result, actionID)
+		}
+	}
+	return result, nil
+}
+
+func excludeActionIDs(source []uuid.UUID, excluded []uuid.UUID) []uuid.UUID {
+	excludedSet := make(map[uuid.UUID]struct{}, len(excluded))
+	for _, actionID := range excluded {
+		excludedSet[actionID] = struct{}{}
+	}
+	result := make([]uuid.UUID, 0, len(source))
+	seen := make(map[uuid.UUID]struct{}, len(source))
+	for _, actionID := range source {
+		if _, skip := excludedSet[actionID]; skip {
+			continue
+		}
+		if _, ok := seen[actionID]; ok {
+			continue
+		}
+		seen[actionID] = struct{}{}
+		result = append(result, actionID)
+	}
+	return result
+}
+
+func mergeActionIDs(groups ...[]uuid.UUID) []uuid.UUID {
+	result := make([]uuid.UUID, 0)
+	seen := make(map[uuid.UUID]struct{})
+	for _, group := range groups {
+		for _, actionID := range group {
+			if _, ok := seen[actionID]; ok {
+				continue
+			}
+			seen[actionID] = struct{}{}
+			result = append(result, actionID)
+		}
+	}
+	return result
+}
+
+func (h *TenantHandler) getTenantEnabledActionSet(tenantID uuid.UUID) (map[uuid.UUID]bool, error) {
+	actionIDs, err := h.tenantActionRepo.GetEnabledActionIDsByTenantID(tenantID)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[uuid.UUID]bool, len(actionIDs))
+	for _, actionID := range actionIDs {
+		result[actionID] = true
+	}
+	return result, nil
+}
+
+func isAssignableTeamRoleForTenant(role user.Role, tenantID uuid.UUID) bool {
+	if role.TenantID != nil {
+		return *role.TenantID == tenantID
+	}
+	return role.Code == "team_admin" || role.Code == "team_member"
+}
+
 func (h *TenantHandler) GetMyTeamMemberActionPermissions(c *gin.Context) {
 	member, err := h.resolveTenantMember(c)
 	if err != nil {
@@ -936,8 +1302,18 @@ func (h *TenantHandler) GetMyTeamMemberActionPermissions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	enabledActionSet, err := h.getTenantEnabledActionSet(member.TenantID)
+	if err != nil {
+		h.logger.Error("Get team enabled actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队功能边界失败")
+		c.JSON(status, resp)
+		return
+	}
 	actionIDs := make([]uuid.UUID, 0, len(records))
 	for _, record := range records {
+		if !enabledActionSet[record.ActionID] {
+			continue
+		}
 		actionIDs = append(actionIDs, record.ActionID)
 	}
 	actions, err := h.actionRepo.GetByIDs(actionIDs)
@@ -953,6 +1329,9 @@ func (h *TenantHandler) GetMyTeamMemberActionPermissions(c *gin.Context) {
 	}
 	items := make([]gin.H, 0, len(records))
 	for _, record := range records {
+		if !enabledActionSet[record.ActionID] {
+			continue
+		}
 		item := gin.H{
 			"action_id": record.ActionID.String(),
 			"effect":    record.Effect,
@@ -1031,12 +1410,19 @@ func (h *TenantHandler) SetMyTeamMemberActionPermissions(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
-		for _, action := range actionList {
-			if !isTeamScopeCode(action.Scope.Code) {
-				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "成员仅可配置团队作用域功能权限")
-				c.JSON(status, resp)
-				return
-			}
+	}
+	enabledActionSet, err := h.getTenantEnabledActionSet(member.TenantID)
+	if err != nil {
+		h.logger.Error("Get team enabled actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队功能边界失败")
+		c.JSON(status, resp)
+		return
+	}
+	for _, actionID := range actionIDs {
+		if !enabledActionSet[actionID] {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "存在超出当前团队已开通能力范围的功能权限")
+			c.JSON(status, resp)
+			return
 		}
 	}
 	if err := h.userActionRepo.ReplaceUserActions(targetUserID, &member.TenantID, actions); err != nil {
@@ -1111,6 +1497,81 @@ func (h *TenantHandler) resolveTenantMember(c *gin.Context) (*user.TenantMember,
 	return h.tenantMemberRepo.GetByUserID(userID)
 }
 
+func (h *TenantHandler) resolveMyTeamRole(c *gin.Context) (*user.TenantMember, *user.Role, error) {
+	member, err := h.resolveTenantMember(c)
+	if err != nil {
+		return nil, nil, err
+	}
+	roleID, err := uuid.Parse(c.Param("roleId"))
+	if err != nil {
+		return member, nil, err
+	}
+	role, err := h.roleRepo.GetByID(roleID)
+	if err != nil {
+		return member, nil, err
+	}
+	if !isAssignableTeamRoleForTenant(*role, member.TenantID) {
+		return member, nil, ErrMyTeamRoleForbidden
+	}
+	return member, role, nil
+}
+
+func (h *TenantHandler) resolveEditableMyTeamRole(c *gin.Context) (*user.TenantMember, *user.Role, error) {
+	member, role, err := h.resolveMyTeamRole(c)
+	if err != nil {
+		return member, role, err
+	}
+	if role.TenantID == nil {
+		return member, role, ErrMyTeamRoleForbidden
+	}
+	return member, role, nil
+}
+
+func (h *TenantHandler) respondMyTeamRoleError(c *gin.Context, err error) {
+	switch {
+	case err == gorm.ErrRecordNotFound:
+		status, resp := errcode.Response(errcode.ErrRoleNotFound)
+		c.JSON(status, resp)
+	case err == ErrTenantMemberNotFound:
+		status, resp := errcode.Response(errcode.ErrNoTeam)
+		c.JSON(status, resp)
+	case errors.Is(err, ErrMyTeamRoleForbidden):
+		status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "仅支持操作当前团队自定义角色")
+		c.JSON(status, resp)
+	default:
+		if _, parseErr := uuid.Parse(c.Param("roleId")); parseErr != nil {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Resolve my team role failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队角色失败")
+		c.JSON(status, resp)
+	}
+}
+
+func uuidPtrToString(value *uuid.UUID) string {
+	if value == nil {
+		return ""
+	}
+	return value.String()
+}
+
+func normalizeRoleStatus(status string) string {
+	value := strings.TrimSpace(status)
+	if value == "" {
+		return "normal"
+	}
+	return value
+}
+
+func defaultString(value, fallback string) string {
+	if strings.TrimSpace(value) == "" {
+		return fallback
+	}
+	return value
+}
+
 func parseTenantIDFromContext(c *gin.Context) (uuid.UUID, bool) {
 	candidates := []string{
 		strings.TrimSpace(c.Query("tenant_id")),
@@ -1177,30 +1638,16 @@ func memberToMap(m *user.TenantMember, userInfo *user.User) gin.H {
 }
 
 func actionMapToMap(action *user.PermissionAction) gin.H {
-	scopeID := ""
-	scopeCode := ""
-	scopeName := ""
-	if action.Scope.ID != (uuid.UUID{}) {
-		scopeID = action.Scope.ID.String()
-		scopeCode = action.Scope.Code
-		scopeName = action.Scope.Name
-	}
 	return gin.H{
-		"id":                      action.ID.String(),
-		"resource_code":           action.ResourceCode,
-		"action_code":             action.ActionCode,
-		"name":                    action.Name,
-		"description":             action.Description,
-		"scope_id":                scopeID,
-		"scope_code":              scopeCode,
-		"scope_name":              scopeName,
-		"data_permission_code":    action.Scope.DataPermissionCode,
-		"data_permission_name":    action.Scope.DataPermissionName,
-		"scope":                   scopeCode,
-				"status":                  action.Status,
-		"sort_order":              action.SortOrder,
-		"created_at":              action.CreatedAt.Format("2006-01-02 15:04:05"),
-		"updated_at":              action.UpdatedAt.Format("2006-01-02 15:04:05"),
+		"id":            action.ID.String(),
+		"resource_code": action.ResourceCode,
+		"action_code":   action.ActionCode,
+		"name":          action.Name,
+		"description":   action.Description,
+		"status":        action.Status,
+		"sort_order":    action.SortOrder,
+		"created_at":    action.CreatedAt.Format("2006-01-02 15:04:05"),
+		"updated_at":    action.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
 }
 
@@ -1218,15 +1665,6 @@ func actionIDsToStrings(ids []uuid.UUID) []string {
 		items = append(items, id.String())
 	}
 	return items
-}
-
-func isTeamScopeCode(scopeCode string) bool {
-	switch strings.TrimSpace(strings.ToLower(scopeCode)) {
-	case "team", "tenant":
-		return true
-	default:
-		return false
-	}
 }
 
 func parseUUIDSlice(items []string) ([]uuid.UUID, error) {

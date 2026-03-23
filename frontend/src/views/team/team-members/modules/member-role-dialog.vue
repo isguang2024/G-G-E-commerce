@@ -7,7 +7,7 @@
   >
     <div v-loading="loading" class="role-dialog-content">
       <div class="mb-4 text-gray-500 text-sm">
-        请选择该成员在本团队内拥有的功能角色（支持多选）：
+        请选择该成员在当前团队内拥有的角色（支持多选）。基础团队角色由系统提供，团队自定义角色仅在当前团队内生效。
       </div>
 
       <ElCheckboxGroup v-model="selectedRoleIds" class="flex flex-col gap-2">
@@ -15,7 +15,9 @@
           <ElCheckbox :value="role.roleId" :disabled="isTeamAdminRole(role.roleCode)">
             <div class="flex items-center gap-2">
               <span class="font-medium">{{ role.roleName }}</span>
-              <ElTag type="info" size="small">团队角色</ElTag>
+              <ElTag :type="role.isGlobal ? 'info' : 'success'" size="small">
+                {{ role.isGlobal ? '基础角色' : '团队自定义' }}
+              </ElTag>
             </div>
             <div v-if="role.description" class="text-xs text-gray-400 mt-1 pl-6">
               {{ role.description }}
@@ -50,7 +52,7 @@
   const visible = ref(false)
   const loading = ref(false)
   const submitting = ref(false)
-  const allRoles = ref<any[]>([])
+  const allRoles = ref<Api.SystemManage.RoleListItem[]>([])
   const selectedRoleIds = ref<string[]>([])
   const memberRoleCodes = ref<string[]>([])
 
@@ -67,7 +69,10 @@
     try {
       // 1. 获取所有可选角色（全局+本团队）
       const rolesRes = await fetchGetMyTeamRoles()
-      allRoles.value = rolesRes || []
+      allRoles.value = [...(rolesRes || [])].sort((left, right) => {
+        if (left.isGlobal === right.isGlobal) return left.roleName.localeCompare(right.roleName, 'zh-CN')
+        return left.isGlobal ? -1 : 1
+      })
 
       // 2. 获取该成员当前已有的角色
       const memberRolesRes = await fetchGetMyTeamMemberRoles(props.member.userId)

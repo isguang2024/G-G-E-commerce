@@ -1,7 +1,6 @@
-﻿package role
+package role
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -49,8 +48,6 @@ func (h *RoleHandler) List(c *gin.Context) {
 	}
 	records := make([]gin.H, 0, len(list))
 	for _, r := range list {
-		canEditPermission := true
-		scopeIDs, scopes := buildRoleScopePayload(r)
 		records = append(records, gin.H{
 			"roleId":            r.ID.String(),
 			"roleName":          r.Name,
@@ -60,9 +57,7 @@ func (h *RoleHandler) List(c *gin.Context) {
 			"sortOrder":         r.SortOrder,
 			"priority":          r.Priority,
 			"createTime":        r.CreatedAt.Format("2006-01-02 15:04:05"),
-			"scopeIds":          scopeIDs,
-			"scopes":            scopes,
-			"canEditPermission": canEditPermission,
+			"canEditPermission": true,
 		})
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
@@ -74,8 +69,7 @@ func (h *RoleHandler) List(c *gin.Context) {
 }
 
 func (h *RoleHandler) Get(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
 		c.JSON(status, resp)
@@ -92,7 +86,6 @@ func (h *RoleHandler) Get(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	scopeIDs, scopes := buildRoleScopePayload(*role)
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
 		"roleId":      role.ID.String(),
 		"roleName":    role.Name,
@@ -102,8 +95,6 @@ func (h *RoleHandler) Get(c *gin.Context) {
 		"sortOrder":   role.SortOrder,
 		"priority":    role.Priority,
 		"createTime":  role.CreatedAt.Format("2006-01-02 15:04:05"),
-		"scopeIds":    scopeIDs,
-		"scopes":      scopes,
 	}))
 }
 
@@ -130,8 +121,7 @@ func (h *RoleHandler) Create(c *gin.Context) {
 }
 
 func (h *RoleHandler) Update(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
 		c.JSON(status, resp)
@@ -143,14 +133,18 @@ func (h *RoleHandler) Update(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	h.logger.Info("更新角色请求", zap.String("roleId", idStr), zap.Any("scopeIds", req.ScopeIDs), zap.Any("req", req))
 	if err := h.roleService.Update(id, &req); err != nil {
 		if err == ErrRoleNotFound {
 			status, resp := errcode.Response(errcode.ErrRoleNotFound)
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Update role failed", zap.String("roleId", idStr), zap.Error(err))
+		if err == ErrTenantRoleManagedByTeam {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "团队自定义角色需要在团队上下文中维护")
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Update role failed", zap.String("roleId", id.String()), zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "更新角色失败: "+err.Error())
 		c.JSON(status, resp)
 		return
@@ -159,8 +153,7 @@ func (h *RoleHandler) Update(c *gin.Context) {
 }
 
 func (h *RoleHandler) Delete(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
 		c.JSON(status, resp)
@@ -169,6 +162,11 @@ func (h *RoleHandler) Delete(c *gin.Context) {
 	if err := h.roleService.Delete(id); err != nil {
 		if err == ErrRoleNotFound {
 			status, resp := errcode.Response(errcode.ErrRoleNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		if err == ErrTenantRoleManagedByTeam {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "团队自定义角色需要在团队上下文中维护")
 			c.JSON(status, resp)
 			return
 		}
@@ -186,8 +184,7 @@ func (h *RoleHandler) Delete(c *gin.Context) {
 }
 
 func (h *RoleHandler) GetRoleMenus(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
 		c.JSON(status, resp)
@@ -212,29 +209,8 @@ func (h *RoleHandler) GetRoleMenus(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"menu_ids": ids}))
 }
 
-func (h *RoleHandler) isSuperAdmin(c *gin.Context) bool {
-	userIDStr, ok := c.Get("user_id")
-	if !ok {
-		return false
-	}
-	userIDStrValue, ok := userIDStr.(string)
-	if !ok || userIDStrValue == "" {
-		return false
-	}
-	userID, err := uuid.Parse(userIDStrValue)
-	if err != nil {
-		return false
-	}
-	user, err := h.userRepo.GetByID(userID)
-	if err != nil || user == nil {
-		return false
-	}
-	return user.IsSuperAdmin
-}
-
 func (h *RoleHandler) SetRoleMenus(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
 		c.JSON(status, resp)
@@ -247,33 +223,28 @@ func (h *RoleHandler) SetRoleMenus(c *gin.Context) {
 		return
 	}
 	menuIDs := make([]uuid.UUID, 0, len(req.MenuIDs))
-	for _, s := range req.MenuIDs {
-		if s == "" {
-			continue
-		}
-		u, err := uuid.Parse(s)
-		if err != nil {
-			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的菜单ID: "+s)
+	for _, item := range req.MenuIDs {
+		menuID, parseErr := uuid.Parse(item)
+		if parseErr != nil {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的菜单ID")
 			c.JSON(status, resp)
 			return
 		}
-		menuIDs = append(menuIDs, u)
+		menuIDs = append(menuIDs, menuID)
 	}
-	h.logger.Info("Setting role menus",
-		zap.String("roleId", id.String()),
-		zap.Int("menuCount", len(menuIDs)))
-
 	if err := h.roleService.SetRoleMenus(id, menuIDs); err != nil {
 		if err == ErrRoleNotFound {
 			status, resp := errcode.Response(errcode.ErrRoleNotFound)
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Set role menus failed",
-			zap.String("roleId", id.String()),
-			zap.Error(err),
-			zap.Int("menuCount", len(menuIDs)))
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, fmt.Sprintf("保存角色菜单失败: %v", err))
+		if err == ErrTenantRoleManagedByTeam {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "团队自定义角色需要在团队上下文中维护")
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Set role menus failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存角色菜单失败")
 		c.JSON(status, resp)
 		return
 	}
@@ -281,8 +252,7 @@ func (h *RoleHandler) SetRoleMenus(c *gin.Context) {
 }
 
 func (h *RoleHandler) GetRoleActions(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
 		c.JSON(status, resp)
@@ -308,8 +278,7 @@ func (h *RoleHandler) GetRoleActions(c *gin.Context) {
 }
 
 func (h *RoleHandler) SetRoleActions(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
 		c.JSON(status, resp)
@@ -340,6 +309,16 @@ func (h *RoleHandler) SetRoleActions(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
+		if err == ErrTenantRoleManagedByTeam {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "团队自定义角色需要在团队上下文中维护")
+			c.JSON(status, resp)
+			return
+		}
+		if err == ErrTeamRoleActionReadonly {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "团队角色功能权限由团队能力边界控制，不支持在系统角色页直接修改")
+			c.JSON(status, resp)
+			return
+		}
 		h.logger.Error("Set role actions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存角色功能权限失败")
 		c.JSON(status, resp)
@@ -349,14 +328,13 @@ func (h *RoleHandler) SetRoleActions(c *gin.Context) {
 }
 
 func (h *RoleHandler) GetRoleDataPermissions(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
 		c.JSON(status, resp)
 		return
 	}
-	records, resourceCodes, scopeOptions, err := h.roleService.GetRoleDataPermissions(id)
+	records, resourceCodes, dataScopeOptions, err := h.roleService.GetRoleDataPermissions(id)
 	if err != nil {
 		if err == ErrRoleNotFound {
 			status, resp := errcode.Response(errcode.ErrRoleNotFound)
@@ -373,7 +351,7 @@ func (h *RoleHandler) GetRoleDataPermissions(c *gin.Context) {
 	for _, record := range records {
 		permissions = append(permissions, gin.H{
 			"resource_code": record.ResourceCode,
-			"scope_code":    record.ScopeCode,
+			"data_scope":    record.DataScope,
 		})
 	}
 
@@ -385,24 +363,23 @@ func (h *RoleHandler) GetRoleDataPermissions(c *gin.Context) {
 		})
 	}
 
-	scopes := make([]gin.H, 0, len(scopeOptions))
-	for _, option := range scopeOptions {
-		scopes = append(scopes, gin.H{
-			"scope_code": option.Code,
-			"scope_name": option.Name,
+	dataScopes := make([]gin.H, 0, len(dataScopeOptions))
+	for _, option := range dataScopeOptions {
+		dataScopes = append(dataScopes, gin.H{
+			"data_scope": option.Code,
+			"label":      option.Name,
 		})
 	}
 
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
-		"permissions":      permissions,
-		"resources":        resources,
-		"available_scopes": scopes,
+		"permissions":           permissions,
+		"resources":             resources,
+		"available_data_scopes": dataScopes,
 	}))
 }
 
 func (h *RoleHandler) SetRoleDataPermissions(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := uuid.Parse(idStr)
+	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
 		c.JSON(status, resp)
@@ -420,12 +397,17 @@ func (h *RoleHandler) SetRoleDataPermissions(c *gin.Context) {
 		permissions = append(permissions, user.RoleDataPermission{
 			RoleID:       id,
 			ResourceCode: item.ResourceCode,
-			ScopeCode:    item.ScopeCode,
+			DataScope:    item.DataScope,
 		})
 	}
 	if err := h.roleService.SetRoleDataPermissions(id, permissions); err != nil {
 		if err == ErrRoleNotFound {
 			status, resp := errcode.Response(errcode.ErrRoleNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		if err == ErrTenantRoleManagedByTeam {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "团队自定义角色需要在团队上下文中维护")
 			c.JSON(status, resp)
 			return
 		}
@@ -435,36 +417,6 @@ func (h *RoleHandler) SetRoleDataPermissions(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
-}
-
-func buildRoleScopePayload(role user.Role) ([]string, []gin.H) {
-	scopeMap := make(map[string]struct{})
-	scopeIDs := make([]string, 0, len(role.Scopes))
-	scopes := make([]gin.H, 0, len(role.Scopes))
-
-	for _, scope := range role.Scopes {
-		if scope.ID == (uuid.UUID{}) && scope.Code == "" {
-			continue
-		}
-		key := scope.ID.String()
-		if key == "" {
-			key = scope.Code
-		}
-		if _, ok := scopeMap[key]; ok {
-			continue
-		}
-		scopeMap[key] = struct{}{}
-		if scope.ID != (uuid.UUID{}) {
-			scopeIDs = append(scopeIDs, scope.ID.String())
-		}
-		scopes = append(scopes, gin.H{
-			"scopeId":   scope.ID.String(),
-			"scopeCode": scope.Code,
-			"scopeName": scope.Name,
-		})
-	}
-
-	return scopeIDs, scopes
 }
 
 func formatRoleDataResourceName(resourceCode string) string {

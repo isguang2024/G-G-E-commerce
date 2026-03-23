@@ -4,32 +4,28 @@ import { AppRouteRecord } from '@/types/router'
 const USER_BASE = '/api/v1/users'
 const ROLE_BASE = '/api/v1/roles'
 const ACTION_PERMISSION_BASE = '/api/v1/permission-actions'
-const SCOPE_BASE = '/api/v1/scopes'
+const FEATURE_PACKAGE_BASE = '/api/v1/feature-packages'
 const TENANT_BASE = '/api/v1/tenants'
 const SYSTEM_BASE = '/api/v1/system'
 const API_ENDPOINT_BASE = '/api/v1/api-endpoints'
 
 function normalizePermissionAction(item: any): Api.SystemManage.PermissionActionItem {
+  const resourceCode = item?.resource_code || item?.resourceCode || ''
+  const actionCode = item?.action_code || item?.actionCode || ''
+  const fallbackPermissionKey = resourceCode && actionCode ? `${resourceCode}:${actionCode}` : ''
   return {
     id: item?.id || '',
-    resourceCode: item?.resource_code || item?.resourceCode || '',
-    actionCode: item?.action_code || item?.actionCode || '',
-    moduleCode: item?.module_code || item?.moduleCode || item?.category || item?.resource_code || item?.resourceCode || '',
-    permissionKey:
-      item?.permission_key ||
-      item?.permissionKey ||
-      `${item?.resource_code || item?.resourceCode || ''}:${item?.action_code || item?.actionCode || ''}`,
-    category: item?.category || '',
+    resourceCode,
+    actionCode,
+    moduleCode: item?.module_code || item?.moduleCode || resourceCode || '',
+    contextType: item?.context_type || item?.contextType || 'team',
+    permissionKey: item?.permission_key || item?.permissionKey || fallbackPermissionKey,
     source: item?.source || 'business',
     featureKind: item?.feature_kind || item?.featureKind || 'system',
     name: item?.name || '',
     description: item?.description || '',
-    scopeId: item?.scope_id || item?.scopeId || '',
-    scopeCode: item?.scope_code || item?.scopeCode || item?.scope || '',
-    scopeName: item?.scope_name || item?.scopeName || '',
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
     dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
-    scope: item?.scope || item?.scope_code || item?.scopeCode || '',
     status: item?.status || 'normal',
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
     createdAt: item?.created_at || item?.createdAt || '',
@@ -38,19 +34,22 @@ function normalizePermissionAction(item: any): Api.SystemManage.PermissionAction
 }
 
 function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
+  const resourceCode = item?.resource_code || item?.resourceCode || ''
+  const actionCode = item?.action_code || item?.actionCode || ''
+  const fallbackPermissionKey = resourceCode && actionCode ? `${resourceCode}:${actionCode}` : ''
   return {
     id: item?.id || '',
     method: item?.method || '',
     path: item?.path || '',
+    spec: item?.spec || '',
     module: item?.module || '',
     featureKind: item?.feature_kind || item?.featureKind || 'system',
     handler: item?.handler || '',
     summary: item?.summary || '',
-    resourceCode: item?.resource_code || item?.resourceCode || '',
-    actionCode: item?.action_code || item?.actionCode || '',
-    scopeId: item?.scope_id || item?.scopeId || '',
-    scopeCode: item?.scope_code || item?.scopeCode || '',
-    scopeName: item?.scope_name || item?.scopeName || '',
+    permissionKey: item?.permission_key || item?.permissionKey || fallbackPermissionKey,
+    authMode: item?.auth_mode || item?.authMode || (fallbackPermissionKey ? 'permission' : 'jwt'),
+    resourceCode,
+    actionCode,
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
     dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
     status: item?.status || 'normal',
@@ -59,17 +58,19 @@ function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
   }
 }
 
-function normalizeScope(item: any): Api.SystemManage.ScopeListItem {
+function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem {
   return {
-    scopeId: item?.scope_id || item?.scopeId || '',
-    scopeCode: item?.scope_code || item?.scopeCode || '',
-    scopeName: item?.scope_name || item?.scopeName || '',
+    id: item?.id || '',
+    packageKey: item?.package_key || item?.packageKey || '',
+    name: item?.name || '',
     description: item?.description || '',
-    isSystem: Boolean(item?.is_system ?? item?.isSystem ?? false),
-    dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
-    dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
+    contextType: item?.context_type || item?.contextType || 'team',
+    actionCount: item?.action_count ?? item?.actionCount ?? 0,
+    teamCount: item?.team_count ?? item?.teamCount ?? 0,
+    status: item?.status || 'normal',
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
-    createTime: item?.create_time || item?.createTime || ''
+    createdAt: item?.created_at || item?.createdAt || '',
+    updatedAt: item?.updated_at || item?.updatedAt || ''
   }
 }
 
@@ -228,9 +229,9 @@ export function fetchSetRoleActions(roleId: string, actionIds: string[]) {
 /** 获取角色数据权限 */
 export async function fetchGetRoleDataPermissions(roleId: string) {
   return request.get<{
-    permissions: Array<{ resource_code: string; scope_code: string }>
+    permissions: Array<{ resource_code: string; data_scope: string }>
     resources: Array<{ resource_code: string; resource_name: string }>
-    available_scopes: Array<{ scope_code: string; scope_name: string }>
+    available_data_scopes: Array<{ data_scope: string; label: string }>
   }>({
     url: `${ROLE_BASE}/${roleId}/data-permissions`
   })
@@ -239,7 +240,7 @@ export async function fetchGetRoleDataPermissions(roleId: string) {
 /** 设置角色数据权限 */
 export function fetchSetRoleDataPermissions(
   roleId: string,
-  permissions: Array<{ resource_code: string; scope_code: string }>
+  permissions: Array<{ resource_code: string; data_scope: string }>
 ) {
   return request.put<void>({
     url: `${ROLE_BASE}/${roleId}/data-permissions`,
@@ -251,18 +252,18 @@ export function fetchSetRoleDataPermissions(
 export function fetchGetPermissionActionList(params: Api.SystemManage.PermissionActionSearchParams) {
   const normalizedParams = {
     ...params,
+    permission_key: params?.permissionKey,
     resource_code: params?.resourceCode,
     action_code: params?.actionCode,
-    module_code: params?.moduleCode,
-    scope_id: params?.scopeId,
-    scope_code: params?.scopeCode,
-    feature_kind: params?.featureKind,
+      module_code: params?.moduleCode,
+      context_type: params?.contextType,
+      feature_kind: params?.featureKind,
+    permissionKey: undefined,
     resourceCode: undefined,
     actionCode: undefined,
-    moduleCode: undefined,
-    scopeId: undefined,
-    scopeCode: undefined,
-    featureKind: undefined
+      moduleCode: undefined,
+      contextType: undefined,
+      featureKind: undefined
   }
   return request
     .get<Api.SystemManage.PermissionActionList>({
@@ -310,17 +311,137 @@ export function fetchDeletePermissionAction(id: string) {
   })
 }
 
+/** 获取功能包列表 */
+export function fetchGetFeaturePackageList(params: Api.SystemManage.FeaturePackageSearchParams) {
+  const normalizedParams = {
+    ...params,
+    package_key: params?.packageKey,
+    context_type: params?.contextType,
+    packageKey: undefined,
+    contextType: undefined
+  }
+  return request
+    .get<Api.SystemManage.FeaturePackageList>({
+      url: FEATURE_PACKAGE_BASE,
+      params: normalizedParams
+    })
+    .then((res) => ({
+      ...res,
+      records: (res?.records || []).map(normalizeFeaturePackage)
+    }))
+}
+
+/** 获取功能包详情 */
+export function fetchGetFeaturePackage(id: string) {
+  return request
+    .get<Api.SystemManage.FeaturePackageItem>({
+      url: `${FEATURE_PACKAGE_BASE}/${id}`
+    })
+    .then((res) => normalizeFeaturePackage(res))
+}
+
+/** 创建功能包 */
+export function fetchCreateFeaturePackage(data: Api.SystemManage.FeaturePackageCreateParams) {
+  return request.post<{ id: string }>({
+    url: FEATURE_PACKAGE_BASE,
+    data
+  })
+}
+
+/** 更新功能包 */
+export function fetchUpdateFeaturePackage(
+  id: string,
+  data: Api.SystemManage.FeaturePackageUpdateParams
+) {
+  return request.put<void>({
+    url: `${FEATURE_PACKAGE_BASE}/${id}`,
+    data
+  })
+}
+
+/** 删除功能包 */
+export function fetchDeleteFeaturePackage(id: string) {
+  return request.del<void>({
+    url: `${FEATURE_PACKAGE_BASE}/${id}`
+  })
+}
+
+/** 获取功能包包含的功能权限 */
+export function fetchGetFeaturePackageActions(id: string) {
+  return request
+    .get<Api.SystemManage.FeaturePackageActionResponse>({
+      url: `${FEATURE_PACKAGE_BASE}/${id}/actions`
+    })
+    .then((res) => ({
+      action_ids: res?.action_ids || [],
+      actions: (res?.actions || []).map(normalizePermissionAction)
+    }))
+}
+
+/** 设置功能包包含的功能权限 */
+export function fetchSetFeaturePackageActions(
+  id: string,
+  actionIds: string[] | Api.SystemManage.FeaturePackageActionSetParams
+) {
+  const payload = Array.isArray(actionIds) ? { action_ids: actionIds } : actionIds
+  return request.put<void>({
+    url: `${FEATURE_PACKAGE_BASE}/${id}/actions`,
+    data: payload
+  })
+}
+
+/** 获取已开通当前功能包的团队 */
+export function fetchGetFeaturePackageTeams(id: string) {
+  return request.get<Api.SystemManage.FeaturePackageTeamBinding>({
+    url: `${FEATURE_PACKAGE_BASE}/${id}/teams`
+  })
+}
+
+/** 配置功能包开通团队 */
+export function fetchSetFeaturePackageTeams(
+  id: string,
+  teamIds: string[] | Api.SystemManage.FeaturePackageTeamSetParams
+) {
+  const payload = Array.isArray(teamIds) ? { team_ids: teamIds } : teamIds
+  return request.put<void>({
+    url: `${FEATURE_PACKAGE_BASE}/${id}/teams`,
+    data: payload
+  })
+}
+
+/** 获取团队已开通的功能包 */
+export function fetchGetTeamFeaturePackages(teamId: string) {
+  return request
+    .get<Api.SystemManage.TeamFeaturePackageResponse>({
+      url: `${FEATURE_PACKAGE_BASE}/teams/${teamId}`
+    })
+    .then((res) => ({
+      package_ids: res?.package_ids || [],
+      packages: (res?.packages || []).map(normalizeFeaturePackage)
+    }))
+}
+
+/** 设置团队功能包 */
+export function fetchSetTeamFeaturePackages(
+  teamId: string,
+  packageIds: string[] | Api.SystemManage.TeamFeaturePackageSetParams
+) {
+  const payload = Array.isArray(packageIds) ? { package_ids: packageIds } : packageIds
+  return request.put<void>({
+    url: `${FEATURE_PACKAGE_BASE}/teams/${teamId}`,
+    data: payload
+  })
+}
+
 /** 获取 API 注册表 */
 export function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpointSearchParams) {
   const normalizedParams = {
     ...params,
     resource_code: params?.resourceCode,
     action_code: params?.actionCode,
-    scope_code: params?.scopeCode,
     feature_kind: params?.featureKind,
     resourceCode: undefined,
     actionCode: undefined,
-    scopeCode: undefined,
     featureKind: undefined
   }
   return request
@@ -338,65 +459,6 @@ export function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpointSear
 export function fetchSyncApiEndpoints() {
   return request.post<void>({
     url: `${API_ENDPOINT_BASE}/sync`
-  })
-}
-
-// ========== 作用域管理 ==========
-/** 获取作用域列表 */
-export function fetchGetScopeList(params: Api.SystemManage.ScopeSearchParams) {
-  return request
-    .get<Api.SystemManage.ScopeList>({
-      url: SCOPE_BASE,
-      params
-    })
-    .then((res) => ({
-      ...res,
-      records: (res?.records || []).map(normalizeScope)
-    }))
-}
-
-/** 获取所有作用域（用于下拉选择） */
-export function fetchGetAllScopes() {
-  return request
-    .get<Api.SystemManage.ScopeListItem[] | { records?: Api.SystemManage.ScopeListItem[] }>({
-      url: `${SCOPE_BASE}/all`
-    })
-    .then((res) => {
-      if (Array.isArray(res)) return res.map(normalizeScope)
-      return (res?.records || []).map(normalizeScope)
-    })
-}
-
-/** 获取作用域详情 */
-export function fetchGetScope(id: string) {
-  return request
-    .get<Api.SystemManage.ScopeListItem>({
-      url: `${SCOPE_BASE}/${id}`
-    })
-    .then((res) => normalizeScope(res))
-}
-
-/** 创建作用域 */
-export function fetchCreateScope(data: Api.SystemManage.ScopeCreateParams) {
-  return request.post<{ scopeId: string }>({
-    url: SCOPE_BASE,
-    data
-  })
-}
-
-/** 更新作用域 */
-export function fetchUpdateScope(id: string, data: Api.SystemManage.ScopeUpdateParams) {
-  return request.put<void>({
-    url: `${SCOPE_BASE}/${id}`,
-    data
-  })
-}
-
-/** 删除作用域 */
-export function fetchDeleteScope(id: string) {
-  return request.del<void>({
-    url: `${SCOPE_BASE}/${id}`,
-    showErrorMessage: false // 禁用自动错误消息显示，由业务代码处理
   })
 }
 

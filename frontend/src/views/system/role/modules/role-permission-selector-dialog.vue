@@ -113,20 +113,6 @@
                   class="toolbar-search"
                 />
 
-                <ElSelect
-                  v-model="actionScopeFilter"
-                  clearable
-                  placeholder="作用域"
-                  class="toolbar-scope"
-                >
-                  <ElOption label="全部作用域" value="" />
-                  <ElOption
-                    v-for="item in actionScopeOptions"
-                    :key="item"
-                    :label="item"
-                    :value="item"
-                  />
-                </ElSelect>
               </div>
             </div>
 
@@ -151,14 +137,6 @@
                           {{ data.permissionText }}
                         </span>
                         <div class="panel-node__tags">
-                          <ElTag
-                            v-if="data.scopeText"
-                            size="small"
-                            effect="plain"
-                            round
-                          >
-                            {{ data.scopeText }}
-                          </ElTag>
                           <ElTag
                             v-if="data.sourceText"
                             size="small"
@@ -206,13 +184,13 @@
               <ElTableColumn label="数据范围" min-width="260">
                 <template #default="{ row }">
                   <ElSelect
-                    v-model="row.selectedScope"
-                    placeholder="选择作用域"
+                    v-model="row.selectedDataScope"
+                    placeholder="选择数据范围"
                     clearable
                     style="width: 100%"
                   >
                     <ElOption
-                      v-for="scope in scopeOptions"
+                      v-for="scope in dataScopeOptions"
                       :key="scope.scopeCode"
                       :label="scope.scopeName"
                       :value="scope.scopeCode"
@@ -239,7 +217,6 @@ import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { CascaderOption, CascaderProps } from 'element-plus'
 import {
-  fetchGetAllScopes,
   fetchGetMenuTreeAll,
   fetchGetPermissionActionList,
   fetchGetRoleActions,
@@ -273,14 +250,13 @@ interface MenuOption extends CascaderOption {
 
 interface ActionOption extends CascaderOption {
   permissionText?: string
-  scopeText?: string
   sourceText?: string
 }
 
 interface DataRow {
   resourceCode: string
   resourceName: string
-  selectedScope: string
+  selectedDataScope: string
 }
 
 interface Props {
@@ -314,28 +290,17 @@ const showIframeMenus = ref(true)
 const showEnabledMenus = ref(true)
 const showMenuPath = ref(false)
 const actionKeyword = ref('')
-const actionScopeFilter = ref('')
 
 const menuTreeData = ref<RoleMenuNode[]>([])
 const selectedMenuNodeValues = ref<string[]>([])
 
 const permissionActions = ref<Api.SystemManage.PermissionActionItem[]>([])
-const scopeList = ref<Api.SystemManage.ScopeListItem[]>([])
 const selectedActionNodeValues = ref<string[]>([])
 
 const dataRows = ref<DataRow[]>([])
-const scopeOptions = ref<Api.SystemManage.RoleDataPermissionScopeOption[]>([])
+const dataScopeOptions = ref<Api.SystemManage.RoleDataPermissionScopeOption[]>([])
 
 const roleTitle = computed(() => props.roleData?.roleName || '')
-const roleScopeCodeSet = computed(() => {
-  const codes = new Set<string>()
-  const scopes = Array.isArray((props.roleData as any)?.scopes) ? (props.roleData as any).scopes : []
-  scopes.forEach((scope: any) => {
-    const code = `${scope?.scopeCode || ''}`.trim()
-    if (code) codes.add(code)
-  })
-  return codes
-})
 
 const menuOptions = computed<MenuOption[]>(() => normalizeMenuOptions(menuTreeData.value))
 const menuNodeCount = computed(() => flattenMenuIds(menuTreeData.value).length)
@@ -362,13 +327,7 @@ const menuBranchMap = computed(() => {
 
 const expandedSelectedMenuIds = computed(() => expandSelectedValues(selectedMenuNodeValues.value, menuBranchMap.value))
 
-const filteredPermissionActions = computed(() => {
-  if (roleScopeCodeSet.value.size === 0) return permissionActions.value
-  return permissionActions.value.filter((action) => {
-    const scopeCode = `${action.scopeCode || ''}`.trim()
-    return scopeCode ? roleScopeCodeSet.value.has(scopeCode) : false
-  })
-})
+const filteredPermissionActions = computed(() => permissionActions.value)
 
 const actionOptions = computed<ActionOption[]>(() => {
   const featureMap = new Map<string, ActionOption>()
@@ -406,7 +365,6 @@ const actionOptions = computed<ActionOption[]>(() => {
       label: action.name,
       leaf: true,
       permissionText: action.permissionKey || `${action.resourceCode}:${action.actionCode}`,
-      scopeText: action.scopeName || action.scopeCode || '',
       sourceText: formatSource(action.source)
     })
     module.children = leaves
@@ -435,10 +393,6 @@ const expandedSelectedActionIds = computed(() =>
 
 const actionLeafCount = computed(() => filteredPermissionActions.value.length)
 
-const actionScopeOptions = computed(() =>
-  scopeList.value.map((item) => item.scopeName || item.scopeCode).filter(Boolean)
-)
-
 const topLevelActionTags = computed(() => {
   const counter = new Map<string, number>()
   expandedSelectedActionIds.value.forEach((actionId) => {
@@ -452,7 +406,7 @@ const topLevelActionTags = computed(() => {
   }))
 })
 
-const configuredDataCount = computed(() => dataRows.value.filter((item) => item.selectedScope).length)
+const configuredDataCount = computed(() => dataRows.value.filter((item) => item.selectedDataScope).length)
 
 const menuCascaderProps: CascaderProps = {
   multiple: true,
@@ -489,15 +443,13 @@ const filteredMenuOptions = computed(() => {
 
 const filteredActionOptions = computed(() => {
   const keyword = actionKeyword.value.trim().toLowerCase()
-  const scope = actionScopeFilter.value.trim()
 
   return filterNestedOptions(actionOptions.value, (node) => {
-    if (!node.leaf) return !keyword && !scope
-    const text = [node.label, node.permissionText, node.scopeText, node.sourceText]
+    if (!node.leaf) return !keyword
+    const text = [node.label, node.permissionText, node.sourceText]
       .filter(Boolean)
       .join(' ')
       .toLowerCase()
-    if (scope && node.scopeText !== scope) return false
     if (keyword && !text.includes(keyword)) return false
     return true
   })
@@ -533,11 +485,9 @@ async function loadData() {
   activeTab.value = 'menus'
   menuKeyword.value = ''
   actionKeyword.value = ''
-  actionScopeFilter.value = ''
 
   try {
-    const [scopeRes, menuTree, roleMenus, actionList, roleActions, dataPermissionRes] = await Promise.all([
-      fetchGetAllScopes(),
+    const [menuTree, roleMenus, actionList, roleActions, dataPermissionRes] = await Promise.all([
       fetchGetMenuTreeAll(),
       fetchGetRoleMenus(props.roleData.roleId),
       fetchGetPermissionActionList({ current: 1, size: 1000, status: 'normal' }),
@@ -548,25 +498,24 @@ async function loadData() {
     menuTreeData.value = Array.isArray(menuTree) ? normalizeMenus(menuTree) : []
     selectedMenuNodeValues.value = (roleMenus?.menu_ids || []).map((item) => `${item}`)
 
-    scopeList.value = scopeRes || []
     permissionActions.value = actionList?.records || []
     const availableActionIDSet = new Set(filteredPermissionActions.value.map((item) => item.id))
     selectedActionNodeValues.value = (roleActions?.action_ids || []).filter(
       (item) => item && availableActionIDSet.has(item)
     )
 
-    scopeOptions.value = (dataPermissionRes?.available_scopes || []).map((item) => ({
-      scopeCode: item.scope_code,
-      scopeName: item.scope_name
+    dataScopeOptions.value = (dataPermissionRes?.available_data_scopes || []).map((item) => ({
+      scopeCode: item.data_scope,
+      scopeName: item.label
     }))
     const selectedScopeMap = new Map<string, string>()
     ;(dataPermissionRes?.permissions || []).forEach((item) => {
-      selectedScopeMap.set(item.resource_code, item.scope_code)
+      selectedScopeMap.set(item.resource_code, item.data_scope)
     })
     dataRows.value = (dataPermissionRes?.resources || []).map((item) => ({
       resourceCode: item.resource_code,
       resourceName: item.resource_name,
-      selectedScope: selectedScopeMap.get(item.resource_code) || ''
+      selectedDataScope: selectedScopeMap.get(item.resource_code) || ''
     }))
 
     await nextTick()
@@ -712,10 +661,10 @@ async function handleSave() {
   saving.value = true
   try {
     const dataPayload = dataRows.value
-      .filter((item) => item.selectedScope)
+      .filter((item) => item.selectedDataScope)
       .map((item) => ({
         resource_code: item.resourceCode,
-        scope_code: item.selectedScope
+        data_scope: item.selectedDataScope
       }))
 
     await Promise.all([

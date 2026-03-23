@@ -21,26 +21,6 @@
           placeholder="请输入角色描述"
         />
       </ElFormItem>
-      <ElFormItem label="作用域" prop="scopeIds">
-        <ElSelect
-          v-model="form.scopeIds"
-          multiple
-          filterable
-          placeholder="请选择作用域"
-          style="width: 100%"
-          :loading="scopeLoading"
-        >
-          <ElOption
-            v-for="scope in scopeList"
-            :key="scope.scopeId"
-            :label="scope.scopeName"
-            :value="scope.scopeId"
-          >
-            <span>{{ scope.scopeName }}</span>
-            <span style="color: #8492a6; font-size: 13px; margin-left: 8px">({{ scope.scopeCode }})</span>
-          </ElOption>
-        </ElSelect>
-      </ElFormItem>
       <ElFormItem label="状态">
         <ElSelect v-model="form.status" placeholder="请选择状态" style="width: 100%">
           <ElOption label="正常" value="normal" />
@@ -75,7 +55,7 @@
 
 <script setup lang="ts">
   import type { FormInstance, FormRules } from 'element-plus'
-  import { fetchCreateRole, fetchUpdateRole, fetchGetAllScopes } from '@/api/system-manage'
+  import { fetchCreateRole, fetchUpdateRole } from '@/api/system-manage'
   import { ElMessage } from 'element-plus'
 
   type RoleListItem = Api.SystemManage.RoleListItem
@@ -114,12 +94,8 @@
       { required: true, message: '请输入角色编码', trigger: 'blur' },
       { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
     ],
-    description: [{ required: true, message: '请输入角色描述', trigger: 'blur' }],
-    scopeIds: [{ required: true, type: 'array', min: 1, message: '请选择至少一个作用域', trigger: 'change' }]
+    description: [{ required: true, message: '请输入角色描述', trigger: 'blur' }]
   })
-
-  const scopeList = ref<Api.SystemManage.ScopeListItem[]>([])
-  const scopeLoading = ref(false)
 
   const form = reactive({
     roleId: '',
@@ -127,21 +103,10 @@
     roleCode: '',
     description: '',
     createTime: '',
-    scopeIds: [] as string[],
     sortOrder: 0,
     priority: 0,
     status: 'normal'
   })
-
-  function getRoleScopeIds(roleData?: RoleListItem) {
-    if (!roleData) return [] as string[]
-    const scopes = Array.isArray((roleData as any).scopes) ? (roleData as any).scopes : []
-    const scopeIds = scopes.map((item: any) => item.scopeId).filter(Boolean)
-    if (scopeIds.length > 0) {
-      return Array.from(new Set(scopeIds))
-    }
-    return Array.isArray((roleData as any).scopeIds) ? Array.from(new Set((roleData as any).scopeIds)) : []
-  }
 
   const initForm = () => {
     if (props.dialogType === 'edit' && props.roleData) {
@@ -152,7 +117,6 @@
         roleCode: roleData.roleCode,
         description: roleData.description || '',
         createTime: roleData.createTime || '',
-        scopeIds: getRoleScopeIds(roleData),
         sortOrder: roleData.sortOrder ?? 0,
         priority: roleData.priority || 0,
         status: roleData.status || 'normal'
@@ -166,32 +130,17 @@
       roleCode: '',
       description: '',
       createTime: '',
-      scopeIds: [],
       sortOrder: 0,
       priority: 0,
       status: 'normal'
     })
   }
 
-  const loadScopes = async () => {
-    try {
-      scopeLoading.value = true
-      scopeList.value = await fetchGetAllScopes()
-      if (props.modelValue) {
-        initForm()
-      }
-    } catch (error: any) {
-      ElMessage.error(error?.message || '加载作用域列表失败')
-    } finally {
-      scopeLoading.value = false
-    }
-  }
-
   watch(
     () => props.modelValue,
     (newVal) => {
       if (newVal) {
-        loadScopes()
+        initForm()
       }
     }
   )
@@ -199,7 +148,7 @@
   watch(
     () => props.roleData,
     (newData) => {
-      if (newData && props.modelValue && scopeList.value.length > 0) {
+      if (newData && props.modelValue) {
         initForm()
       }
     },
@@ -221,7 +170,6 @@
         code: form.roleCode,
         name: form.roleName,
         description: form.description || '',
-        scope_ids: form.scopeIds,
         sort_order: form.sortOrder ?? 0,
         priority: form.priority || 0,
         status: form.status || 'normal'

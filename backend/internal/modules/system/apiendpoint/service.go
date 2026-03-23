@@ -20,7 +20,6 @@ type ListRequest struct {
 	FeatureKind  string
 	ResourceCode string
 	ActionCode   string
-	ScopeCode    string
 	Status       string
 }
 
@@ -54,7 +53,6 @@ func (s *service) List(req *ListRequest) ([]user.APIEndpoint, int64, error) {
 		FeatureKind:  strings.TrimSpace(req.FeatureKind),
 		ResourceCode: strings.TrimSpace(req.ResourceCode),
 		ActionCode:   strings.TrimSpace(req.ActionCode),
-		ScopeCode:    strings.TrimSpace(req.ScopeCode),
 		Status:       strings.TrimSpace(req.Status),
 	})
 }

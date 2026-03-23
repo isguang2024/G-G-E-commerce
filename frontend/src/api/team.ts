@@ -27,12 +27,8 @@ function normalizeAction(item: any): Api.SystemManage.PermissionActionItem {
     actionCode: item?.action_code || item?.actionCode || '',
     name: item?.name || '',
     description: item?.description || '',
-    scopeId: item?.scope_id || item?.scopeId || '',
-    scopeCode: item?.scope_code || item?.scopeCode || item?.scope || '',
-    scopeName: item?.scope_name || item?.scopeName || '',
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
     dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
-    scope: item?.scope || item?.scope_code || item?.scopeCode || '',
     status: item?.status || 'normal',
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
     createdAt: item?.created_at || item?.createdAt || '',
@@ -201,27 +197,57 @@ export async function fetchGetMyTeamRoles() {
     roleCode: item?.code || '',
     roleName: item?.name || '',
     description: item?.description || '',
-    scope: item?.scope || '',
-    scopes: Array.isArray(item?.scopes)
-      ? item.scopes.map((scope: any) => ({
-          scopeId: scope?.scopeId || scope?.scope_id || '',
-          scopeCode: scope?.scopeCode || scope?.scope_code || '',
-          scopeName: scope?.scopeName || scope?.scope_name || '',
-          dataPermissionCode:
-            scope?.dataPermissionCode || scope?.data_permission_code || '',
-          dataPermissionName:
-            scope?.dataPermissionName || scope?.data_permission_name || ''
-        }))
-      : [],
     status: item?.status || 'normal',
     isSystem: Boolean(item?.is_system ?? item?.isSystem ?? false),
-    createTime: item?.created_at || ''
+    tenantId: item?.tenant_id || item?.tenantId || '',
+    isGlobal: Boolean(item?.is_global ?? item?.isGlobal ?? false),
+    createTime: item?.create_time || item?.created_at || ''
   }))
+}
+
+export function fetchCreateMyTeamRole(data: Api.SystemManage.RoleCreateParams) {
+  return request.post<{ roleId: string }>({
+    url: `${TENANT_BASE}/my-team/roles`,
+    data
+  })
+}
+
+export function fetchUpdateMyTeamRole(roleId: string, data: Api.SystemManage.RoleUpdateParams) {
+  return request.put<void>({
+    url: `${TENANT_BASE}/my-team/roles/${roleId}`,
+    data
+  })
+}
+
+export function fetchDeleteMyTeamRole(roleId: string) {
+  return request.del<void>({
+    url: `${TENANT_BASE}/my-team/roles/${roleId}`
+  })
+}
+
+export function fetchGetMyTeamRoleMenus(roleId: string) {
+  return request.get<{ menu_ids: string[] }>({
+    url: `${TENANT_BASE}/my-team/roles/${roleId}/menus`
+  })
+}
+
+export function fetchSetMyTeamRoleMenus(roleId: string, menuIds: string[]) {
+  return request.put<void>({
+    url: `${TENANT_BASE}/my-team/roles/${roleId}/menus`,
+    data: { menu_ids: menuIds }
+  })
 }
 
 export function fetchGetMyTeamRoleActions(roleId: string) {
   return request.get<{ action_ids: string[] }>({
     url: `${TENANT_BASE}/my-team/roles/${roleId}/actions`
+  })
+}
+
+export function fetchSetMyTeamRoleActions(roleId: string, actionIds: string[]) {
+  return request.put<void>({
+    url: `${TENANT_BASE}/my-team/roles/${roleId}/actions`,
+    data: { action_ids: actionIds }
   })
 }
 
@@ -233,6 +259,17 @@ export async function fetchGetTeamActions(teamId: string) {
     actionIds: res?.action_ids || [],
     actions: (res?.actions || []).map(normalizeAction)
   }
+}
+
+export function fetchGetTeamActionOrigins(teamId: string) {
+  return request.get<{
+    package_ids: string[]
+    derived_action_ids: string[]
+    manual_action_ids: string[]
+    effective_action_ids: string[]
+  }>({
+    url: `${TENANT_BASE}/${teamId}/action-origins`
+  })
 }
 
 export function fetchSetTeamActions(teamId: string, actionIds: string[]) {

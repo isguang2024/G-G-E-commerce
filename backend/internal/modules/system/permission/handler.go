@@ -144,34 +144,24 @@ func (h *PermissionHandler) Delete(c *gin.Context) {
 }
 
 func actionToMap(action *user.PermissionAction) gin.H {
-	scopeID := ""
-	scopeCode := ""
-	scopeName := ""
-	if action.Scope.ID != (uuid.UUID{}) {
-		scopeID = action.Scope.ID.String()
-		scopeCode = action.Scope.Code
-		scopeName = action.Scope.Name
+	permissionKey := action.PermissionKey
+	if permissionKey == "" {
+		permissionKey = action.ResourceCode + ":" + action.ActionCode
 	}
 	return gin.H{
-		"id":                      action.ID.String(),
-		"resource_code":           action.ResourceCode,
-		"action_code":             action.ActionCode,
-		"module_code":             action.ModuleCode,
-		"permission_key":          action.ResourceCode + ":" + action.ActionCode,
-		"category":                action.Category,
-		"source":                  action.Source,
-		"feature_kind":            action.FeatureKind,
-		"name":                    action.Name,
-		"description":             action.Description,
-		"scope_id":                scopeID,
-		"scope_code":              scopeCode,
-		"scope_name":              scopeName,
-		"data_permission_code":    action.Scope.DataPermissionCode,
-		"data_permission_name":    action.Scope.DataPermissionName,
-		"scope":                   scopeCode,
-		"status":                  action.Status,
-		"sort_order":              action.SortOrder,
-		"created_at":              action.CreatedAt.Format("2006-01-02 15:04:05"),
-		"updated_at":              action.UpdatedAt.Format("2006-01-02 15:04:05"),
+		"id":             action.ID.String(),
+		"permission_key": permissionKey,
+		"resource_code":  action.ResourceCode,
+		"action_code":    action.ActionCode,
+		"module_code":    action.ModuleCode,
+		"context_type":   action.ContextType,
+		"source":         action.Source,
+		"feature_kind":   action.FeatureKind,
+		"name":           action.Name,
+		"description":    action.Description,
+		"status":         action.Status,
+		"sort_order":     action.SortOrder,
+		"created_at":     action.CreatedAt.Format("2006-01-02 15:04:05"),
+		"updated_at":     action.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
 }

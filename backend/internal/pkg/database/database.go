@@ -87,15 +87,17 @@ func AutoMigrate() error {
 	err := DB.AutoMigrate(
 		// 用户和角色相关
 		&models.User{},
-		&models.Scope{},
 		&models.Role{},
-		&models.RoleScope{},
 		&models.UserRole{},
 		&models.RoleMenu{},
 		&models.PermissionAction{},
+		&models.FeaturePackage{},
+		&models.FeaturePackageAction{},
+		&models.TeamFeaturePackage{},
 		&models.RoleActionPermission{},
 		&models.RoleDataPermission{},
 		&models.TenantActionPermission{},
+		&models.TeamManualActionPermission{},
 		&models.UserActionPermission{},
 		&models.APIEndpoint{},
 		&models.Menu{},
@@ -158,10 +160,13 @@ func createUniqueIndexes() error {
 		}
 	}
 
-	actionUniqueIndexName := "idx_permission_actions_resource_action_unique"
+	actionUniqueIndexName := "idx_permission_actions_permission_key"
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", actionUniqueIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + actionUniqueIndexName + " ON permission_actions (resource_code, action_code, scope_id)").Error; err != nil {
+		if err := DB.Exec("DROP INDEX IF EXISTS idx_permission_actions_resource_action_unique").Error; err != nil {
+			return err
+		}
+		if err := DB.Exec("CREATE UNIQUE INDEX " + actionUniqueIndexName + " ON permission_actions (permission_key) WHERE deleted_at IS NULL").Error; err != nil {
 			return err
 		}
 	}
@@ -198,6 +203,38 @@ func createUniqueIndexes() error {
 		}
 	}
 
+	featurePackageIndexName := "idx_feature_packages_key_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", featurePackageIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + featurePackageIndexName + " ON feature_packages (package_key) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	featurePackageActionIndexName := "idx_feature_package_actions_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", featurePackageActionIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + featurePackageActionIndexName + " ON feature_package_actions (package_id, action_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	teamManualActionIndexName := "idx_team_manual_action_permissions_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", teamManualActionIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + teamManualActionIndexName + " ON team_manual_action_permissions (tenant_id, action_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	teamFeaturePackageIndexName := "idx_team_feature_packages_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", teamFeaturePackageIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + teamFeaturePackageIndexName + " ON team_feature_packages (team_id, package_id)").Error; err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -208,10 +245,7 @@ func migrateLegacyUserRoles() error {
 		SELECT tm.user_id, r.id, tm.tenant_id
 		FROM tenant_members tm
 		JOIN roles r ON r.code = tm.role_code
-		JOIN role_scopes rs ON rs.role_id = r.id
-		JOIN scopes s ON s.id = rs.scope_id
-		WHERE s.code = 'team'
-		  AND tm.role_code IN ('team_admin', 'team_member')
+		WHERE tm.role_code IN ('team_admin', 'team_member')
 		  AND NOT EXISTS (
 		    SELECT 1
 		    FROM user_roles ur
@@ -235,13 +269,10 @@ func migrateLegacyUserRoles() error {
 		  HAVING COUNT(DISTINCT tenant_id) = 1
 		) tm,
 		roles r
-		JOIN role_scopes rs ON rs.role_id = r.id,
-		scopes s
 		WHERE ur.user_id = tm.user_id
 		  AND r.id = ur.role_id
-		  AND s.id = rs.scope_id
 		  AND ur.tenant_id IS NULL
-		  AND s.code = 'team'
+		  AND r.code IN ('team_admin', 'team_member')
 		  AND NOT EXISTS (
 		    SELECT 1
 		    FROM user_roles existing
@@ -258,11 +289,8 @@ func migrateLegacyUserRoles() error {
 	deleteLegacyDefaultGlobalTeamRoles := `
 		DELETE FROM user_roles ur
 		USING roles r
-		JOIN role_scopes rs ON rs.role_id = r.id
-		JOIN scopes s ON s.id = rs.scope_id
 		WHERE ur.role_id = r.id
 		  AND ur.tenant_id IS NULL
-		  AND s.code = 'team'
 		  AND r.code IN ('team_admin', 'team_member')
 	`
 	return DB.Exec(deleteLegacyDefaultGlobalTeamRoles).Error

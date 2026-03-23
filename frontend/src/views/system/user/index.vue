@@ -13,7 +13,7 @@
       <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
         <template #left>
           <ElSpace wrap>
-            <ElButton v-action="'user:create'" @click="showDialog('add')" v-ripple>新增用户</ElButton>
+            <ElButton v-action="'system.user.manage'" @click="showDialog('add')" v-ripple>新增用户</ElButton>
           </ElSpace>
         </template>
       </ArtTableHeader>
@@ -278,21 +278,21 @@
                 key: 'permission',
                 label: '查看权限',
                 icon: 'ri:shield-check-line',
-                auth: 'user:get'
+                auth: 'system.user.manage'
               },
               {
                 key: 'action',
                 label: '功能权限',
                 icon: 'ri:shield-keyhole-line',
-                auth: 'user:assign_action'
+                auth: 'system.user.assign_action'
               },
-              { key: 'edit', label: '编辑用户', icon: 'ri:edit-2-line', auth: 'user:update' },
+              { key: 'edit', label: '编辑用户', icon: 'ri:edit-2-line', auth: 'system.user.manage' },
               {
                 key: 'delete',
                 label: '删除用户',
                 icon: 'ri:delete-bin-4-line',
                 color: '#f56c6c',
-                auth: 'user:delete'
+                auth: 'system.user.manage'
               }
             ]
             return h('div', [

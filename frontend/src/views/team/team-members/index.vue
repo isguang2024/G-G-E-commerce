@@ -18,7 +18,7 @@
         </template>
 
         <div class="flex flex-col gap-4">
-          <ElCard v-if="hasAction('team_member:create')" shadow="never" class="add-member-card">
+          <ElCard v-if="hasAction('team.member.manage')" shadow="never" class="add-member-card">
             <template #header>
               <span>添加成员</span>
             </template>
@@ -84,16 +84,16 @@
                     <ElButton :icon="MoreFilled" circle size="small" />
                     <template #dropdown>
                       <ElDropdownMenu>
-                        <ElDropdownItem v-if="hasAction('team_member:assign_role')" command="assign">
+                        <ElDropdownItem v-if="hasAction('team.member.assign_role')" command="assign">
                           <ElIcon><UserFilled /></ElIcon>
                           分配角色
                         </ElDropdownItem>
-                        <ElDropdownItem v-if="hasAction('team_member:assign_action')" command="action">
+                        <ElDropdownItem v-if="hasAction('team.member.assign_action')" command="action">
                           <ElIcon><UserFilled /></ElIcon>
                           功能权限
                         </ElDropdownItem>
                         <ElDropdownItem
-                          v-if="hasAction('team_member:delete')"
+                          v-if="hasAction('team.member.manage')"
                           command="delete"
                           :disabled="isAdmin(row)"
                           divided
@@ -147,9 +147,9 @@
   const members = ref<Api.SystemManage.TeamMemberItem[]>([])
   const hasMemberOperationPermission = computed(
     () =>
-      hasAction('team_member:assign_role') ||
-      hasAction('team_member:assign_action') ||
-      hasAction('team_member:delete')
+      hasAction('team.member.assign_role') ||
+      hasAction('team.member.assign_action') ||
+      hasAction('team.member.manage')
   )
   const loading = ref(false)
   const addLoading = ref(false)

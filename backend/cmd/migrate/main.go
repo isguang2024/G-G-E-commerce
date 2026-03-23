@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -15,6 +16,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/logger"
 	"github.com/gg-ecommerce/backend/internal/pkg/password"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 )
 
 func main() {
@@ -47,16 +49,12 @@ func main() {
 	logger.Info("Database migration completed successfully!")
 
 	// 初始化默认作用域
-	if err := initDefaultScopes(logger); err != nil {
-		logger.Warn("initDefaultScopes failed", zap.Error(err))
-	}
-
 	if err := runNamedMigrations(logger); err != nil {
 		logger.Fatal("Named migrations failed", zap.Error(err))
 	}
 
 	// 初始化默认角色
-	if err := initDefaultRoles(logger); err != nil {
+	if err := initDefaultRolesNoScope(logger); err != nil {
 		logger.Warn("Failed to initialize default roles", zap.Error(err))
 	} else {
 		logger.Info("Default roles initialized successfully")
@@ -70,7 +68,7 @@ func main() {
 	}
 
 	// 初始化默认菜单
-	if err := initDefaultMenus(logger); err != nil {
+	if err := initDefaultMenusNoScope(logger); err != nil {
 		logger.Warn("Failed to initialize default menus", zap.Error(err))
 	} else {
 		logger.Info("Default menus initialized successfully")
@@ -83,13 +81,19 @@ func main() {
 		logger.Info("Role-menus initialized successfully")
 	}
 
-	if err := initDefaultPermissionActions(logger); err != nil {
+	if err := initDefaultPermissionActionsNoScope(logger); err != nil {
 		logger.Warn("Failed to initialize permission actions", zap.Error(err))
 	} else {
 		logger.Info("Permission actions initialized successfully")
 	}
 
-	if err := initDefaultRoleActionPermissions(logger); err != nil {
+	if err := initDefaultFeaturePackages(logger); err != nil {
+		logger.Warn("Failed to initialize feature packages", zap.Error(err))
+	} else {
+		logger.Info("Feature packages initialized successfully")
+	}
+
+	if err := initDefaultRoleActionPermissionsNoScope(logger); err != nil {
 		logger.Warn("Failed to initialize role action permissions", zap.Error(err))
 	} else {
 		logger.Info("Role action permissions initialized successfully")
@@ -116,198 +120,275 @@ func runNamedMigrations(logger *zap.Logger) error {
 
 	tasks := []migrationTask{
 		{
-			Name: "20260317_permission_system_backfill_defaults",
+			Name: "20260323_permission_key_consolidation",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`ALTER TABLE permission_actions ADD COLUMN IF NOT EXISTS permission_key varchar(150)`,
+					`DROP INDEX IF EXISTS idx_permission_actions_resource_action_unique`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+
+				var actions []usermodel.PermissionAction
+				if err := database.DB.Order("created_at ASC, id ASC").Find(&actions).Error; err != nil {
+					return err
+				}
+
+				canonicalByKey := make(map[string]uuid.UUID, len(actions))
+				duplicateIDs := make([]uuid.UUID, 0)
+				for _, action := range actions {
+					mapping := permissionkey.FromLegacy(action.ResourceCode, action.ActionCode)
+					targetKey := permissionkey.Normalize(action.PermissionKey)
+					if targetKey == "" {
+						targetKey = mapping.Key
+					}
+					targetResource := strings.TrimSpace(mapping.ResourceCode)
+					if targetResource == "" {
+						targetResource = strings.TrimSpace(action.ResourceCode)
+					}
+					targetAction := strings.TrimSpace(mapping.ActionCode)
+					if targetAction == "" {
+						targetAction = strings.TrimSpace(action.ActionCode)
+					}
+					if err := database.DB.Model(&usermodel.PermissionAction{}).
+						Where("id = ?", action.ID).
+						Updates(map[string]interface{}{
+							"permission_key": targetKey,
+							"resource_code":  targetResource,
+							"action_code":    targetAction,
+						}).Error; err != nil {
+						return err
+					}
+					if canonicalID, exists := canonicalByKey[targetKey]; exists {
+						if err := rebindPermissionActionReferences(action.ID, canonicalID); err != nil {
+							return err
+						}
+						duplicateIDs = append(duplicateIDs, action.ID)
+						continue
+					}
+					canonicalByKey[targetKey] = action.ID
+				}
+
+				if len(duplicateIDs) > 0 {
+					if err := database.DB.Where("id IN ?", duplicateIDs).Delete(&usermodel.PermissionAction{}).Error; err != nil {
+						return err
+					}
+				}
+
+				finishStatements := []string{
+					`UPDATE permission_actions SET permission_key = CONCAT(resource_code, ':', action_code) WHERE COALESCE(permission_key, '') = ''`,
+					`ALTER TABLE permission_actions ALTER COLUMN permission_key SET NOT NULL`,
+					`DROP INDEX IF EXISTS idx_permission_actions_permission_key`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_permission_actions_permission_key ON permission_actions (permission_key) WHERE deleted_at IS NULL`,
+				}
+				for _, statement := range finishStatements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+
+				logger.Info("Named migration applied", zap.String("name", "20260323_permission_key_consolidation"))
+				return nil
+			},
+		},
+		{
+			Name: "20260323_permission_system_backfill_defaults",
 			Run: func(logger *zap.Logger) error {
 				statements := []string{
 					`UPDATE permission_actions SET status = 'normal' WHERE COALESCE(status, '') = ''`,
 					`UPDATE user_action_permissions SET effect = 'allow' WHERE COALESCE(effect, '') = ''`,
 					`UPDATE tenant_action_permissions SET enabled = TRUE WHERE enabled IS NULL`,
+					`UPDATE permission_actions SET source = 'system' WHERE COALESCE(source, '') = ''`,
+					`UPDATE permission_actions SET module_code = COALESCE(NULLIF(module_code, ''), resource_code)`,
+					`ALTER TABLE permission_actions ADD COLUMN IF NOT EXISTS context_type varchar(20)`,
+					`UPDATE permission_actions SET context_type = 'platform' WHERE COALESCE(context_type, '') = '' AND (permission_key LIKE 'system.%' OR permission_key LIKE 'tenant.%' OR permission_key LIKE 'platform.%')`,
+					`UPDATE permission_actions SET context_type = 'team' WHERE COALESCE(context_type, '') = ''`,
+					`UPDATE permission_actions SET feature_kind = 'system' WHERE COALESCE(feature_kind, '') = ''`,
+					`UPDATE permission_actions SET feature_kind = 'business' WHERE source = 'business' AND COALESCE(feature_kind, '') <> 'business'`,
+					`UPDATE permission_actions SET source = 'system', feature_kind = 'system', module_code = 'system_permission' WHERE resource_code = 'system_permission'`,
+					`UPDATE api_endpoints SET feature_kind = 'system' WHERE COALESCE(feature_kind, '') = ''`,
+					`UPDATE permission_actions pa
+					   SET source = 'api',
+					       module_code = COALESCE(NULLIF(ae.module, ''), pa.module_code)
+					  FROM api_endpoints ae
+					 WHERE pa.resource_code = ae.resource_code
+					   AND pa.action_code = ae.action_code
+					   AND COALESCE(ae.resource_code, '') <> ''
+					   AND COALESCE(ae.action_code, '') <> ''`,
 				}
 				if hasRoleActionEffect, err := hasColumn("role_action_permissions", "effect"); err != nil {
 					return err
 				} else if hasRoleActionEffect {
 					statements = append(statements, `UPDATE role_action_permissions SET effect = 'allow' WHERE COALESCE(effect, '') = ''`)
 				}
-				if hasLegacyScopeType, err := hasColumn("permission_actions", "scope_type"); err != nil {
-					return err
-				} else if hasLegacyScopeType {
-					statements = append([]string{
-						`UPDATE permission_actions SET scope_type = 'global' WHERE COALESCE(scope_type, '') = ''`,
-					}, statements...)
-				}
 				for _, statement := range statements {
 					if err := database.DB.Exec(statement).Error; err != nil {
 						return err
 					}
 				}
-				logger.Info("Named migration applied", zap.String("name", "20260317_permission_system_backfill_defaults"))
+				logger.Info("Named migration applied", zap.String("name", "20260323_permission_system_backfill_defaults"))
 				return nil
 			},
 		},
 		{
-			Name: "20260317_permission_actions_unify_scope_with_scopes",
+			Name: "20260323_feature_package_schema",
 			Run: func(logger *zap.Logger) error {
 				statements := []string{
-					`ALTER TABLE permission_actions ADD COLUMN IF NOT EXISTS scope_id uuid`,
-					`CREATE INDEX IF NOT EXISTS idx_permission_actions_scope_id ON permission_actions (scope_id)`,
+					`CREATE TABLE IF NOT EXISTS feature_packages (
+						id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+						package_key varchar(100) NOT NULL,
+						name varchar(150) NOT NULL,
+						description varchar(255),
+						context_type varchar(20) NOT NULL DEFAULT 'team',
+						status varchar(20) NOT NULL DEFAULT 'normal',
+						sort_order integer NOT NULL DEFAULT 0,
+						created_at timestamptz NOT NULL DEFAULT NOW(),
+						updated_at timestamptz NOT NULL DEFAULT NOW(),
+						deleted_at timestamptz
+					)`,
+					`CREATE TABLE IF NOT EXISTS feature_package_actions (
+						package_id uuid NOT NULL,
+						action_id uuid NOT NULL,
+						created_at timestamptz NOT NULL DEFAULT NOW()
+					)`,
+					`CREATE TABLE IF NOT EXISTS team_feature_packages (
+						id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+						team_id uuid NOT NULL,
+						package_id uuid NOT NULL,
+						enabled boolean NOT NULL DEFAULT TRUE,
+						granted_by uuid,
+						granted_at timestamptz,
+						created_at timestamptz NOT NULL DEFAULT NOW(),
+						updated_at timestamptz NOT NULL DEFAULT NOW()
+					)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_feature_packages_key_unique ON feature_packages (package_key) WHERE deleted_at IS NULL`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_feature_package_actions_unique ON feature_package_actions (package_id, action_id)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_team_feature_packages_unique ON team_feature_packages (team_id, package_id)`,
 				}
 				for _, statement := range statements {
 					if err := database.DB.Exec(statement).Error; err != nil {
 						return err
 					}
 				}
-				if hasLegacyScopeType, err := hasColumn("permission_actions", "scope_type"); err != nil {
-					return err
-				} else if hasLegacyScopeType {
-					if err := database.DB.Exec(`
-						UPDATE permission_actions pa
-						SET scope_id = s.id
-						FROM scopes s
-						WHERE pa.scope_id IS NULL
-						  AND (
-						    (COALESCE(pa.scope_type, 'global') = 'global' AND s.code = 'global') OR
-						    (COALESCE(pa.scope_type, 'global') IN ('team', 'tenant') AND s.code = 'team')
-						  )
-					`).Error; err != nil {
-						return err
-					}
-				}
-				logger.Info("Named migration applied", zap.String("name", "20260317_permission_actions_unify_scope_with_scopes"))
+				logger.Info("Named migration applied", zap.String("name", "20260323_feature_package_schema"))
 				return nil
 			},
 		},
 		{
-			Name: "20260317_permission_actions_finalize_scope_id",
+			Name: "20260323_team_manual_action_schema",
 			Run: func(logger *zap.Logger) error {
 				statements := []string{
-					`UPDATE permission_actions pa
-					 SET scope_id = s.id
-					 FROM scopes s
-					 WHERE pa.scope_id IS NULL
-					   AND s.code = 'global'`,
-					`CREATE INDEX IF NOT EXISTS idx_permission_actions_scope_id ON permission_actions (scope_id)`,
-					`ALTER TABLE permission_actions ALTER COLUMN scope_id SET NOT NULL`,
+					`CREATE TABLE IF NOT EXISTS team_manual_action_permissions (
+						tenant_id uuid NOT NULL,
+						action_id uuid NOT NULL,
+						enabled boolean NOT NULL DEFAULT TRUE,
+						created_at timestamptz NOT NULL DEFAULT NOW(),
+						updated_at timestamptz NOT NULL DEFAULT NOW()
+					)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_team_manual_action_permissions_unique ON team_manual_action_permissions (tenant_id, action_id)`,
 				}
 				for _, statement := range statements {
 					if err := database.DB.Exec(statement).Error; err != nil {
 						return err
 					}
 				}
-				if hasLegacyScopeType, err := hasColumn("permission_actions", "scope_type"); err != nil {
-					return err
-				} else if hasLegacyScopeType {
-					if err := database.DB.Exec(`ALTER TABLE permission_actions DROP COLUMN scope_type`).Error; err != nil {
-						return err
-					}
-				}
-				logger.Info("Named migration applied", zap.String("name", "20260317_permission_actions_finalize_scope_id"))
+				logger.Info("Named migration applied", zap.String("name", "20260323_team_manual_action_schema"))
 				return nil
 			},
 		},
 		{
-			Name: "20260317_permission_actions_expand_unique_scope",
+			Name: "20260323_team_manual_action_backfill",
 			Run: func(logger *zap.Logger) error {
-				statements := []string{
-					`DROP INDEX IF EXISTS idx_permission_actions_resource_action_unique`,
-					`CREATE UNIQUE INDEX IF NOT EXISTS idx_permission_actions_resource_action_unique ON permission_actions (resource_code, action_code, scope_id)`,
-				}
-				for _, statement := range statements {
-					if err := database.DB.Exec(statement).Error; err != nil {
-						return err
-					}
-				}
-				logger.Info("Named migration applied", zap.String("name", "20260317_permission_actions_expand_unique_scope"))
-				return nil
-			},
-		},
-		{
-			Name: "20260317_menus_remove_legacy_button_meta",
-			Run: func(logger *zap.Logger) error {
-				if err := database.DB.Exec(`
-					UPDATE menus
-					SET meta = COALESCE(meta, '{}'::jsonb) - 'authList' - 'authMark' - 'isAuthButton'
-					WHERE meta ? 'authList' OR meta ? 'authMark' OR meta ? 'isAuthButton'
-				`).Error; err != nil {
+				statement := `
+					INSERT INTO team_manual_action_permissions (tenant_id, action_id, enabled, created_at, updated_at)
+					SELECT tap.tenant_id, tap.action_id, TRUE, NOW(), NOW()
+					FROM tenant_action_permissions tap
+					LEFT JOIN team_feature_packages tfp
+						ON tfp.team_id = tap.tenant_id AND tfp.enabled = TRUE
+					LEFT JOIN feature_package_actions fpa
+						ON fpa.package_id = tfp.package_id AND fpa.action_id = tap.action_id
+					WHERE tap.enabled = TRUE
+					  AND fpa.action_id IS NULL
+					ON CONFLICT (tenant_id, action_id) DO NOTHING
+				`
+				if err := database.DB.Exec(statement).Error; err != nil {
 					return err
 				}
-				logger.Info("Named migration applied", zap.String("name", "20260317_menus_remove_legacy_button_meta"))
+				logger.Info("Named migration applied", zap.String("name", "20260323_team_manual_action_backfill"))
 				return nil
 			},
 		},
 		{
-			Name: "20260317_permission_actions_backfill_source_category",
+			Name: "20260323_permission_metadata_refresh",
+			Run: func(logger *zap.Logger) error {
+				for _, mapping := range permissionkey.ListMappings() {
+					if strings.TrimSpace(mapping.Key) == "" {
+						continue
+					}
+					updates := map[string]interface{}{}
+					if strings.TrimSpace(mapping.Name) != "" {
+						updates["name"] = strings.TrimSpace(mapping.Name)
+					}
+					if strings.TrimSpace(mapping.Description) != "" {
+						updates["description"] = strings.TrimSpace(mapping.Description)
+					}
+					if strings.TrimSpace(mapping.ResourceCode) != "" {
+						updates["resource_code"] = strings.TrimSpace(mapping.ResourceCode)
+					}
+					if strings.TrimSpace(mapping.ActionCode) != "" {
+						updates["action_code"] = strings.TrimSpace(mapping.ActionCode)
+					}
+					if strings.TrimSpace(mapping.ContextType) != "" {
+						updates["context_type"] = strings.TrimSpace(mapping.ContextType)
+					}
+					if len(updates) == 0 {
+						continue
+					}
+					if err := database.DB.Model(&usermodel.PermissionAction{}).
+						Where("permission_key = ?", mapping.Key).
+						Updates(updates).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260323_permission_metadata_refresh"))
+				return nil
+			},
+		},
+		{
+			Name: "20260323_drop_permission_category",
+			Run: func(logger *zap.Logger) error {
+				if err := database.DB.Exec(`ALTER TABLE permission_actions DROP COLUMN IF EXISTS category`).Error; err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260323_drop_permission_category"))
+				return nil
+			},
+		},
+		{
+			Name: "20260323_role_tenant_schema",
 			Run: func(logger *zap.Logger) error {
 				statements := []string{
-					`UPDATE permission_actions SET source = 'system' WHERE COALESCE(source, '') = ''`,
-					`UPDATE permission_actions SET category = resource_code WHERE COALESCE(category, '') = ''`,
-					`UPDATE permission_actions pa
-					 SET source = 'api',
-					     category = COALESCE(NULLIF(ae.module, ''), pa.category)
-					 FROM api_endpoints ae
-					 WHERE pa.resource_code = ae.resource_code
-					   AND pa.action_code = ae.action_code
-					   AND pa.scope_id = ae.scope_id
-					   AND COALESCE(ae.resource_code, '') <> ''
-					   AND COALESCE(ae.action_code, '') <> ''`,
+					`ALTER TABLE roles ADD COLUMN IF NOT EXISTS tenant_id uuid`,
+					`DROP INDEX IF EXISTS roles_code_key`,
+					`DROP INDEX IF EXISTS idx_roles_code`,
+					`DROP INDEX IF EXISTS idx_roles_code_unique`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_roles_global_code_unique ON roles (code) WHERE tenant_id IS NULL AND deleted_at IS NULL`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_roles_tenant_code_unique ON roles (tenant_id, code) WHERE tenant_id IS NOT NULL AND deleted_at IS NULL`,
 				}
 				for _, statement := range statements {
 					if err := database.DB.Exec(statement).Error; err != nil {
 						return err
 					}
 				}
-				logger.Info("Named migration applied", zap.String("name", "20260317_permission_actions_backfill_source_category"))
+				logger.Info("Named migration applied", zap.String("name", "20260323_role_tenant_schema"))
 				return nil
 			},
 		},
 		{
-			Name: "20260317_permission_actions_normalize_source_and_feature_kind",
-			Run: func(logger *zap.Logger) error {
-				statements := []string{
-					`UPDATE permission_actions SET source = 'business' WHERE source = 'manual'`,
-					`UPDATE permission_actions SET feature_kind = 'system' WHERE COALESCE(feature_kind, '') = ''`,
-					`UPDATE permission_actions SET feature_kind = 'business' WHERE source = 'business'`,
-					`UPDATE permission_actions SET source = 'system', feature_kind = 'system', category = 'system_permission' WHERE resource_code = 'system_permission'`,
-					`UPDATE api_endpoints SET feature_kind = 'system' WHERE COALESCE(feature_kind, '') = ''`,
-				}
-				for _, statement := range statements {
-					if err := database.DB.Exec(statement).Error; err != nil {
-						return err
-					}
-				}
-				logger.Info("Named migration applied", zap.String("name", "20260317_permission_actions_normalize_source_and_feature_kind"))
-				return nil
-			},
-		},
-		{
-			Name: "20260317_permission_actions_add_module_code",
-			Run: func(logger *zap.Logger) error {
-				statements := []string{
-					`ALTER TABLE permission_actions ADD COLUMN IF NOT EXISTS module_code varchar(100)`,
-					`UPDATE permission_actions pa
-					   SET module_code = COALESCE(NULLIF(ae.module, ''), NULLIF(pa.category, ''), pa.resource_code)
-					  FROM api_endpoints ae
-					 WHERE COALESCE(pa.module_code, '') = ''
-					   AND pa.resource_code = ae.resource_code
-					   AND pa.action_code = ae.action_code
-					   AND pa.scope_id = ae.scope_id
-					   AND COALESCE(ae.resource_code, '') <> ''
-					   AND COALESCE(ae.action_code, '') <> ''`,
-					`UPDATE permission_actions
-					    SET module_code = COALESCE(NULLIF(category, ''), resource_code)
-					  WHERE COALESCE(module_code, '') = ''`,
-					`ALTER TABLE permission_actions ALTER COLUMN module_code SET NOT NULL`,
-				}
-				for _, statement := range statements {
-					if err := database.DB.Exec(statement).Error; err != nil {
-						return err
-					}
-				}
-				logger.Info("Named migration applied", zap.String("name", "20260317_permission_actions_add_module_code"))
-				return nil
-			},
-		},
-		{
-			Name: "20260318_restore_permission_scope_schema",
+			Name: "20260323_restore_permission_schema",
 			Run: func(logger *zap.Logger) error {
 				statements := []string{}
 				if hasScopeTargetID, err := hasColumn("user_roles", "scope_target_id"); err != nil {
@@ -323,18 +404,6 @@ func runNamedMigrations(logger *zap.Logger) error {
 					statements = append(statements, `UPDATE user_action_permissions
 					  SET tenant_id = COALESCE(tenant_id, scope_target_id)
 					  WHERE tenant_id IS NULL AND scope_target_id IS NOT NULL`)
-				}
-				if hasRoleScopeBindings, err := hasTable("role_scope_bindings"); err != nil {
-					return err
-				} else if hasRoleScopeBindings {
-					if hasRoleScopeID, columnErr := hasColumn("roles", "scope_id"); columnErr != nil {
-						return columnErr
-					} else if hasRoleScopeID {
-						statements = append(statements, `UPDATE roles r
-						  SET scope_id = rsb.scope_id
-						  FROM role_scope_bindings rsb
-						  WHERE r.id = rsb.role_id AND r.scope_id IS NULL`)
-					}
 				}
 				statements = append(statements,
 					`ALTER TABLE user_action_permissions DROP CONSTRAINT IF EXISTS user_action_permissions_pkey`,
@@ -364,18 +433,23 @@ func runNamedMigrations(logger *zap.Logger) error {
 					`DROP TABLE IF EXISTS permissions`,
 					`DROP TABLE IF EXISTS role_permissions`,
 					`DROP TABLE IF EXISTS role_scope_bindings`,
+					`UPDATE menus
+					   SET meta = COALESCE(meta, '{}'::jsonb) - 'authList' - 'authMark' - 'isAuthButton' - 'requiresTenantContext'
+					 WHERE meta ? 'authList' OR meta ? 'authMark' OR meta ? 'isAuthButton' OR meta ? 'requiresTenantContext'`,
+					`ALTER TABLE permission_actions DROP COLUMN IF EXISTS requires_tenant_context`,
+					`ALTER TABLE api_endpoints DROP COLUMN IF EXISTS requires_tenant_context`,
 				)
 				for _, statement := range statements {
 					if err := database.DB.Exec(statement).Error; err != nil {
 						return err
 					}
 				}
-				logger.Info("Named migration applied", zap.String("name", "20260318_restore_permission_scope_schema"))
+				logger.Info("Named migration applied", zap.String("name", "20260323_restore_permission_schema"))
 				return nil
 			},
 		},
 		{
-			Name: "20260318_drop_unused_core_columns",
+			Name: "20260323_drop_unused_core_columns",
 			Run: func(logger *zap.Logger) error {
 				statements := []string{
 					`ALTER TABLE users DROP COLUMN IF EXISTS email_verified_at`,
@@ -389,172 +463,61 @@ func runNamedMigrations(logger *zap.Logger) error {
 						return err
 					}
 				}
-				logger.Info("Named migration applied", zap.String("name", "20260318_drop_unused_core_columns"))
+				logger.Info("Named migration applied", zap.String("name", "20260323_drop_unused_core_columns"))
 				return nil
 			},
 		},
 		{
-			Name: "20260318_roles_use_role_scopes",
+			Name: "20260323_drop_scope_schema",
 			Run: func(logger *zap.Logger) error {
 				statements := []string{
-					`CREATE TABLE IF NOT EXISTS role_scopes (
-						role_id uuid NOT NULL,
-						scope_id uuid NOT NULL,
-						PRIMARY KEY (role_id, scope_id)
-					)`,
-					`CREATE INDEX IF NOT EXISTS idx_role_scopes_role_id ON role_scopes (role_id)`,
-					`CREATE INDEX IF NOT EXISTS idx_role_scopes_scope_id ON role_scopes (scope_id)`,
+					`DELETE FROM role_menus WHERE menu_id IN (SELECT id FROM menus WHERE name = 'Scope' OR path = 'scope' OR component = '/system/scope')`,
+					`DELETE FROM menus WHERE name = 'Scope' OR path = 'scope' OR component = '/system/scope'`,
+					`DELETE FROM role_action_permissions WHERE action_id IN (SELECT id FROM permission_actions WHERE resource_code = 'scope')`,
+					`DELETE FROM user_action_permissions WHERE action_id IN (SELECT id FROM permission_actions WHERE resource_code = 'scope')`,
+					`DELETE FROM tenant_action_permissions WHERE action_id IN (SELECT id FROM permission_actions WHERE resource_code = 'scope')`,
+					`DELETE FROM permission_actions WHERE resource_code = 'scope'`,
+					`DELETE FROM api_endpoints WHERE resource_code = 'scope'`,
+					`ALTER TABLE role_data_permissions ADD COLUMN IF NOT EXISTS data_scope varchar(30)`,
+					`ALTER TABLE roles DROP COLUMN IF EXISTS scope_id`,
+					`ALTER TABLE permission_actions DROP COLUMN IF EXISTS scope_id`,
+					`ALTER TABLE permission_actions DROP COLUMN IF EXISTS scope_type`,
+					`ALTER TABLE api_endpoints DROP COLUMN IF EXISTS scope_id`,
+					`DROP INDEX IF EXISTS idx_permission_actions_scope_id`,
+					`DROP INDEX IF EXISTS idx_permission_actions_resource_action_unique`,
+					`DROP INDEX IF EXISTS idx_permission_actions_permission_key`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_permission_actions_permission_key ON permission_actions (permission_key) WHERE deleted_at IS NULL`,
+					`DROP TABLE IF EXISTS role_scopes`,
+					`DROP TABLE IF EXISTS scopes`,
 				}
-				if hasRoleScopeID, err := hasColumn("roles", "scope_id"); err != nil {
-					return err
-				} else if hasRoleScopeID {
-					statements = append(statements,
-						`INSERT INTO role_scopes (role_id, scope_id)
-						 SELECT id, scope_id FROM roles WHERE scope_id IS NOT NULL
-						 ON CONFLICT DO NOTHING`,
-						`ALTER TABLE roles DROP COLUMN IF EXISTS scope_id`,
-					)
-				}
-				statements = append(statements, `DROP TABLE IF EXISTS role_scope_bindings`)
-				for _, statement := range statements {
-					if err := database.DB.Exec(statement).Error; err != nil {
-						return err
-					}
-				}
-				logger.Info("Named migration applied", zap.String("name", "20260318_roles_use_role_scopes"))
-				return nil
-			},
-		},
-		{
-			Name: "20260318_role_action_permissions_remove_effect",
-			Run: func(logger *zap.Logger) error {
 				if hasRoleActionEffect, err := hasColumn("role_action_permissions", "effect"); err != nil {
 					return err
-				} else if !hasRoleActionEffect {
-					logger.Info("Named migration applied", zap.String("name", "20260318_role_action_permissions_remove_effect"))
-					return nil
+				} else if hasRoleActionEffect {
+					statements = append([]string{
+						`DELETE FROM role_action_permissions WHERE COALESCE(effect, '') = 'deny'`,
+						`UPDATE role_action_permissions SET effect = 'allow' WHERE COALESCE(effect, '') = ''`,
+					}, statements...)
+					statements = append(statements, `ALTER TABLE role_action_permissions DROP COLUMN IF EXISTS effect`)
 				}
-
-				statements := []string{
-					`DELETE FROM role_action_permissions WHERE COALESCE(effect, '') = 'deny'`,
-					`UPDATE role_action_permissions SET effect = 'allow' WHERE COALESCE(effect, '') = ''`,
-					`ALTER TABLE role_action_permissions DROP COLUMN IF EXISTS effect`,
+				roleDataScopeUpdate, err := buildRoleDataScopeUpdateStatement()
+				if err != nil {
+					return err
 				}
+				statements = append(statements,
+					roleDataScopeUpdate,
+					`UPDATE role_data_permissions SET data_scope = 'self' WHERE COALESCE(data_scope, '') = ''`,
+					`ALTER TABLE role_data_permissions ALTER COLUMN data_scope SET DEFAULT 'self'`,
+					`ALTER TABLE role_data_permissions ALTER COLUMN data_scope SET NOT NULL`,
+					`ALTER TABLE role_data_permissions DROP COLUMN IF EXISTS scope_code`,
+					`ALTER TABLE role_data_permissions DROP COLUMN IF EXISTS data_permission_code`,
+					`ALTER TABLE role_data_permissions DROP COLUMN IF EXISTS data_permission_name`,
+				)
 				for _, statement := range statements {
 					if err := database.DB.Exec(statement).Error; err != nil {
 						return err
 					}
 				}
-				logger.Info("Named migration applied", zap.String("name", "20260318_role_action_permissions_remove_effect"))
-				return nil
-			},
-		},
-		{
-			Name: "20260318_scope_rule_fields",
-			Run: func(logger *zap.Logger) error {
-				statements := []string{
-					`ALTER TABLE scopes ADD COLUMN IF NOT EXISTS context_kind varchar(20)`,
-					`ALTER TABLE scopes ADD COLUMN IF NOT EXISTS data_permission_code varchar(50)`,
-					`ALTER TABLE scopes ADD COLUMN IF NOT EXISTS data_permission_name varchar(100)`,
-					`UPDATE scopes SET context_kind = CASE WHEN code IN ('team', 'tenant') THEN 'tenant' ELSE 'global' END WHERE COALESCE(context_kind, '') = ''`,
-					`UPDATE scopes SET data_permission_code = CASE WHEN code IN ('team', 'tenant') THEN 'team' ELSE '' END WHERE COALESCE(data_permission_code, '') = ''`,
-					`UPDATE scopes SET data_permission_name = CASE WHEN code IN ('team', 'tenant') THEN name ELSE COALESCE(NULLIF(data_permission_name, ''), name) END WHERE COALESCE(data_permission_name, '') = ''`,
-					`ALTER TABLE scopes ALTER COLUMN context_kind SET DEFAULT 'global'`,
-					`ALTER TABLE scopes ALTER COLUMN data_permission_code SET DEFAULT ''`,
-					`ALTER TABLE scopes ALTER COLUMN data_permission_name SET DEFAULT ''`,
-					`ALTER TABLE scopes ALTER COLUMN context_kind SET NOT NULL`,
-					`ALTER TABLE scopes ALTER COLUMN data_permission_code SET NOT NULL`,
-					`ALTER TABLE scopes ALTER COLUMN data_permission_name SET NOT NULL`,
-				}
-				for _, statement := range statements {
-					if err := database.DB.Exec(statement).Error; err != nil {
-						return err
-					}
-				}
-				logger.Info("Named migration applied", zap.String("name", "20260318_scope_rule_fields"))
-				return nil
-			},
-		},
-		{
-			Name: "20260318_scope_system_flag",
-			Run: func(logger *zap.Logger) error {
-				statements := []string{
-					`ALTER TABLE scopes ADD COLUMN IF NOT EXISTS is_system boolean`,
-					`UPDATE scopes SET is_system = CASE WHEN code IN ('global', 'team') THEN TRUE ELSE FALSE END WHERE is_system IS NULL`,
-					`ALTER TABLE scopes ALTER COLUMN is_system SET DEFAULT FALSE`,
-					`ALTER TABLE scopes ALTER COLUMN is_system SET NOT NULL`,
-				}
-				for _, statement := range statements {
-					if err := database.DB.Exec(statement).Error; err != nil {
-						return err
-					}
-				}
-				logger.Info("Named migration applied", zap.String("name", "20260318_scope_system_flag"))
-				return nil
-			},
-		},
-		{
-			Name: "20260318_scopes_drop_context_kind",
-			Run: func(logger *zap.Logger) error {
-				statements := []string{
-					`UPDATE scopes SET code = 'team', name = '团队', is_system = TRUE WHERE code = 'tenant' AND NOT EXISTS (SELECT 1 FROM scopes existing WHERE existing.code = 'team')`,
-					`WITH team_scope AS (
-						SELECT id FROM scopes WHERE code = 'team' LIMIT 1
-					), tenant_scope AS (
-						SELECT id FROM scopes WHERE code = 'tenant' LIMIT 1
-					)
-					INSERT INTO role_scopes (role_id, scope_id)
-					SELECT rs.role_id, ts.id
-					FROM role_scopes rs, tenant_scope tns, team_scope ts
-					WHERE rs.scope_id = tns.id
-					ON CONFLICT DO NOTHING`,
-					`WITH team_scope AS (
-						SELECT id FROM scopes WHERE code = 'team' LIMIT 1
-					), tenant_scope AS (
-						SELECT id FROM scopes WHERE code = 'tenant' LIMIT 1
-					)
-					UPDATE permission_actions
-					SET scope_id = ts.id
-					FROM tenant_scope tns, team_scope ts
-					WHERE permission_actions.scope_id = tns.id`,
-					`WITH team_scope AS (
-						SELECT id FROM scopes WHERE code = 'team' LIMIT 1
-					), tenant_scope AS (
-						SELECT id FROM scopes WHERE code = 'tenant' LIMIT 1
-					)
-					UPDATE api_endpoints
-					SET scope_id = ts.id
-					FROM tenant_scope tns, team_scope ts
-					WHERE api_endpoints.scope_id = tns.id`,
-					`DELETE FROM role_scopes WHERE scope_id IN (SELECT id FROM scopes WHERE code = 'tenant')`,
-					`DELETE FROM scopes WHERE code = 'tenant'`,
-					`ALTER TABLE scopes DROP COLUMN IF EXISTS context_kind`,
-				}
-				for _, statement := range statements {
-					if err := database.DB.Exec(statement).Error; err != nil {
-						return err
-					}
-				}
-				logger.Info("Named migration applied", zap.String("name", "20260318_scopes_drop_context_kind"))
-				return nil
-			},
-		},
-		{
-			Name: "20260319_remove_requires_tenant_context",
-			Run: func(logger *zap.Logger) error {
-				statements := []string{
-					`UPDATE menus
-					 SET meta = COALESCE(meta, '{}'::jsonb) - 'requiresTenantContext'
-					 WHERE meta ? 'requiresTenantContext'`,
-					`ALTER TABLE permission_actions DROP COLUMN IF EXISTS requires_tenant_context`,
-					`ALTER TABLE api_endpoints DROP COLUMN IF EXISTS requires_tenant_context`,
-				}
-				for _, statement := range statements {
-					if err := database.DB.Exec(statement).Error; err != nil {
-						return err
-					}
-				}
-				logger.Info("Named migration applied", zap.String("name", "20260319_remove_requires_tenant_context"))
+				logger.Info("Named migration applied", zap.String("name", "20260323_drop_scope_schema"))
 				return nil
 			},
 		},
@@ -617,56 +580,111 @@ func hasColumn(tableName, columnName string) (bool, error) {
 	return count > 0, nil
 }
 
-func hasTable(tableName string) (bool, error) {
-	var count int64
-	err := database.DB.Raw(`
-		SELECT COUNT(*)
-		FROM information_schema.tables
-		WHERE table_schema = CURRENT_SCHEMA()
-		  AND table_name = ?
-	`, tableName).Scan(&count).Error
-	if err != nil {
-		return false, err
+func buildRoleDataScopeUpdateStatement() (string, error) {
+	candidates := make([]string, 0, 3)
+	if hasDataScope, err := hasColumn("role_data_permissions", "data_scope"); err != nil {
+		return "", err
+	} else if hasDataScope {
+		candidates = append(candidates, "NULLIF(data_scope, '')")
 	}
-	return count > 0, nil
+	if hasScopeCode, err := hasColumn("role_data_permissions", "scope_code"); err != nil {
+		return "", err
+	} else if hasScopeCode {
+		candidates = append(candidates, "NULLIF(scope_code, '')")
+	}
+	if hasDataPermissionCode, err := hasColumn("role_data_permissions", "data_permission_code"); err != nil {
+		return "", err
+	} else if hasDataPermissionCode {
+		candidates = append(candidates, "NULLIF(data_permission_code, '')")
+	}
+	if len(candidates) == 0 {
+		return `UPDATE role_data_permissions SET data_scope = 'self'`, nil
+	}
+	return fmt.Sprintf(
+		`UPDATE role_data_permissions SET data_scope = COALESCE(%s, 'self')`,
+		strings.Join(candidates, ", "),
+	), nil
 }
 
-func initDefaultRoles(logger *zap.Logger) error {
-	var globalScope usermodel.Scope
-	if err := database.DB.Where("code = ?", "global").First(&globalScope).Error; err != nil {
-		logger.Error("Failed to find global scope", zap.Error(err))
-		return err
+func rebindPermissionActionReferences(fromID, toID uuid.UUID) error {
+	if fromID == toID {
+		return nil
 	}
-	var teamScope usermodel.Scope
-	if err := database.DB.Where("code = ?", "team").First(&teamScope).Error; err != nil {
-		logger.Error("Failed to find team scope", zap.Error(err))
-		return err
+	statements := []struct {
+		sql  string
+		args []interface{}
+	}{
+		{
+			sql: `UPDATE role_action_permissions target
+				    SET action_id = ?
+				  WHERE action_id = ?
+				    AND NOT EXISTS (
+				      SELECT 1 FROM role_action_permissions existing
+				      WHERE existing.role_id = target.role_id AND existing.action_id = ?
+				    )`,
+			args: []interface{}{toID, fromID, toID},
+		},
+		{
+			sql:  `DELETE FROM role_action_permissions WHERE action_id = ?`,
+			args: []interface{}{fromID},
+		},
+		{
+			sql: `UPDATE tenant_action_permissions target
+				    SET action_id = ?
+				  WHERE action_id = ?
+				    AND NOT EXISTS (
+				      SELECT 1 FROM tenant_action_permissions existing
+				      WHERE existing.tenant_id = target.tenant_id AND existing.action_id = ?
+				    )`,
+			args: []interface{}{toID, fromID, toID},
+		},
+		{
+			sql:  `DELETE FROM tenant_action_permissions WHERE action_id = ?`,
+			args: []interface{}{fromID},
+		},
+		{
+			sql: `UPDATE user_action_permissions target
+				    SET action_id = ?
+				  WHERE action_id = ?
+				    AND NOT EXISTS (
+				      SELECT 1 FROM user_action_permissions existing
+				      WHERE existing.user_id = target.user_id
+				        AND existing.action_id = ?
+				        AND (
+				          (existing.tenant_id IS NULL AND target.tenant_id IS NULL) OR
+				          existing.tenant_id = target.tenant_id
+				        )
+				    )`,
+			args: []interface{}{toID, fromID, toID},
+		},
+		{
+			sql:  `DELETE FROM user_action_permissions WHERE action_id = ?`,
+			args: []interface{}{fromID},
+		},
 	}
+	for _, statement := range statements {
+		if err := database.DB.Exec(statement.sql, statement.args...).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
+func initDefaultRolesNoScope(logger *zap.Logger) error {
 	roles := []struct {
 		Code        string
 		Name        string
 		Description string
-		ScopeCodes  []string
 		SortOrder   int
 	}{
-		{"admin", "管理员", "系统管理员，拥有所有权限", []string{"global"}, 1},
-		{"team_admin", "团队管理员", "团队管理员，可以管理团队成员和团队内容", []string{"team"}, 2},
-		{"team_member", "团队成员", "团队成员，可以查看和编辑团队内容", []string{"team"}, 3},
+		{"admin", "管理员", "系统管理员，拥有所有权限", 1},
+		{"team_admin", "团队管理员", "团队管理员，可以管理团队成员和团队内容", 2},
+		{"team_member", "团队成员", "团队成员，可以查看和编辑团队内容", 3},
 	}
-
-	_ = database.DB.Model(&usermodel.Scope{}).Where("code = ?", "global").Updates(map[string]interface{}{
-		"data_permission_code": "",
-		"data_permission_name": "全局",
-	}).Error
-	_ = database.DB.Model(&usermodel.Scope{}).Where("code IN ?", []string{"team", "tenant"}).Updates(map[string]interface{}{
-		"data_permission_code": "team",
-		"data_permission_name": "当前团队",
-	}).Error
 
 	for _, roleData := range roles {
 		var role usermodel.Role
-		result := database.DB.Where("code = ?", roleData.Code).First(&role)
+		result := database.DB.Where("code = ? AND tenant_id IS NULL", roleData.Code).First(&role)
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				role = usermodel.Role{
@@ -680,10 +698,6 @@ func initDefaultRoles(logger *zap.Logger) error {
 					logger.Error("Failed to create role", zap.String("code", roleData.Code), zap.Error(err))
 					return err
 				}
-				if err := ensureRoleScopeBindings(role.ID, roleData.ScopeCodes); err != nil {
-					logger.Error("Failed to create role-scope binding", zap.String("code", roleData.Code), zap.Error(err))
-					return err
-				}
 				logger.Info("Role created", zap.String("code", roleData.Code), zap.String("name", roleData.Name))
 			} else {
 				return result.Error
@@ -695,25 +709,7 @@ func initDefaultRoles(logger *zap.Logger) error {
 				"sort_order":  roleData.SortOrder,
 				"is_system":   true,
 			}).Error
-			_ = ensureRoleScopeBindings(role.ID, roleData.ScopeCodes)
 			logger.Info("Role already exists", zap.String("code", roleData.Code))
-		}
-	}
-	return nil
-}
-
-func ensureRoleScopeBindings(roleID uuid.UUID, scopeCodes []string) error {
-	scopeIDs, err := getScopeIDsByCode(scopeCodes)
-	if err != nil {
-		return err
-	}
-	for _, scopeID := range scopeIDs {
-		if err := database.DB.Exec(
-			`INSERT INTO role_scopes (role_id, scope_id) VALUES (?, ?) ON CONFLICT DO NOTHING`,
-			roleID,
-			scopeID,
-		).Error; err != nil {
-			return err
 		}
 	}
 	return nil
@@ -789,7 +785,7 @@ func initDefaultAdmin(logger *zap.Logger) error {
 
 func assignAdminRole(userID uuid.UUID, logger *zap.Logger) error {
 	var adminRole usermodel.Role
-	if err := database.DB.Where("code = ?", "admin").First(&adminRole).Error; err != nil {
+	if err := database.DB.Where("code = ? AND tenant_id IS NULL", "admin").First(&adminRole).Error; err != nil {
 		logger.Error("Failed to find admin role", zap.Error(err))
 		return err
 	}
@@ -818,61 +814,7 @@ func assignAdminRole(userID uuid.UUID, logger *zap.Logger) error {
 	return nil
 }
 
-func initDefaultScopes(logger *zap.Logger) error {
-	scopes := []struct {
-		Code        string
-		Name        string
-		Description string
-		DataCode    string
-		DataName    string
-		IsSystem    bool
-		SortOrder   int
-	}{
-		{"global", "全局", "跨应用全局作用域", "", "全局", true, 1},
-		{"team", "团队", "仅团队功能使用的作用域", "team", "当前团队", true, 2},
-	}
-
-	for _, scopeData := range scopes {
-		var scope usermodel.Scope
-		result := database.DB.Where("code = ?", scopeData.Code).First(&scope)
-		if result.Error != nil {
-			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				scope = usermodel.Scope{
-					Code:               scopeData.Code,
-					Name:               scopeData.Name,
-					Description:        scopeData.Description,
-					IsSystem:           scopeData.IsSystem,
-					DataPermissionCode: scopeData.DataCode,
-					DataPermissionName: scopeData.DataName,
-					SortOrder:          scopeData.SortOrder,
-				}
-				if err := database.DB.Create(&scope).Error; err != nil {
-					logger.Error("Failed to create scope", zap.String("code", scopeData.Code), zap.Error(err))
-					return err
-				}
-				logger.Info("Scope created", zap.String("code", scopeData.Code), zap.String("name", scopeData.Name))
-			} else {
-				return result.Error
-			}
-		} else {
-			updates := map[string]interface{}{
-				"name":                 scopeData.Name,
-				"description":          scopeData.Description,
-				"is_system":            scopeData.IsSystem,
-				"data_permission_code": scopeData.DataCode,
-				"data_permission_name": scopeData.DataName,
-				"sort_order":           scopeData.SortOrder,
-			}
-			if err := database.DB.Model(&scope).Updates(updates).Error; err != nil {
-				return err
-			}
-			logger.Info("Scope already exists", zap.String("code", scopeData.Code))
-		}
-	}
-	return nil
-}
-
-func initDefaultMenus(logger *zap.Logger) error {
+func initDefaultMenusNoScope(logger *zap.Logger) error {
 	if err := cleanupDeprecatedMenus(logger); err != nil {
 		return err
 	}
@@ -895,15 +837,15 @@ func initDefaultMenus(logger *zap.Logger) error {
 		{Name: "UserCenter", ParentName: "Dashboard", Path: "user-center", Component: "/system/user-center", Title: "menus.system.userCenter", SortOrder: 2, Meta: usermodel.MetaJSON{"isHide": true, "keepAlive": true, "isHideTab": true}},
 
 		{Name: "Role", ParentName: "System", Path: "role", Component: "/system/role", Title: "menus.system.role", SortOrder: 1, Meta: metaSuperAdmin},
-		{Name: "Scope", ParentName: "System", Path: "scope", Component: "/system/scope", Title: "menus.system.scope", SortOrder: 2, Meta: metaSuperAdmin},
-		{Name: "User", ParentName: "System", Path: "user", Component: "/system/user", Title: "menus.system.user", SortOrder: 3, Meta: metaSuperAdminAndAdmin},
-		{Name: "TeamRolesAndPermissions", ParentName: "System", Path: "team-roles-permissions", Component: "/system/team-roles-permissions", Title: "menus.system.teamRolesAndPermissions", SortOrder: 4, Meta: metaSuperAdmin},
-		{Name: "Menus", ParentName: "System", Path: "menu", Component: "/system/menu", Title: "menus.system.menu", SortOrder: 5, Meta: usermodel.MetaJSON{
+		{Name: "User", ParentName: "System", Path: "user", Component: "/system/user", Title: "menus.system.user", SortOrder: 2, Meta: metaSuperAdminAndAdmin},
+		{Name: "TeamRolesAndPermissions", ParentName: "System", Path: "team-roles-permissions", Component: "/system/team-roles-permissions", Title: "menus.system.teamRolesAndPermissions", SortOrder: 3, Meta: metaSuperAdmin},
+		{Name: "Menus", ParentName: "System", Path: "menu", Component: "/system/menu", Title: "menus.system.menu", SortOrder: 4, Meta: usermodel.MetaJSON{
 			"roles":     []interface{}{"R_SUPER"},
 			"keepAlive": true,
 		}},
-		{Name: "ActionPermission", ParentName: "System", Path: "action-permission", Component: "/system/action-permission", Title: "功能权限", SortOrder: 6, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
-		{Name: "ApiEndpoint", ParentName: "System", Path: "api-endpoint", Component: "/system/api-endpoint", Title: "API管理", SortOrder: 7, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "ActionPermission", ParentName: "System", Path: "action-permission", Component: "/system/action-permission", Title: "功能权限", SortOrder: 5, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "ApiEndpoint", ParentName: "System", Path: "api-endpoint", Component: "/system/api-endpoint", Title: "API管理", SortOrder: 6, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "FeaturePackage", ParentName: "System", Path: "feature-package", Component: "/system/feature-package", Title: "功能包管理", SortOrder: 7, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 
 		{Name: "TeamManagement", ParentName: "TeamRoot", Path: "team", Component: "/team/team", Title: "团队管理", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "TeamMembers", ParentName: "TeamRoot", Path: "members", Component: "/team/team-members", Title: "menus.system.teamMembers", SortOrder: 2, Meta: metaTeamAdminOnly},
@@ -971,7 +913,7 @@ func ensureMenuSeed(spec menuSeedSpec) (*usermodel.Menu, error) {
 }
 
 func cleanupDeprecatedMenus(logger *zap.Logger) error {
-	deprecatedNames := []string{"PageAssociation", "TeamManagementRedirect"}
+	deprecatedNames := []string{"PageAssociation", "TeamManagementRedirect", "Scope"}
 	var deprecatedMenus []usermodel.Menu
 	if err := database.DB.Where("name IN ?", deprecatedNames).Find(&deprecatedMenus).Error; err != nil {
 		return err
@@ -1000,7 +942,7 @@ func initDefaultRoleMenus(logger *zap.Logger) error {
 	}
 
 	var roles []usermodel.Role
-	if err := database.DB.Where("code IN ?", []string{"admin", "team_admin", "team_member"}).Find(&roles).Error; err != nil {
+	if err := database.DB.Where("tenant_id IS NULL AND code IN ?", []string{"admin", "team_admin", "team_member"}).Find(&roles).Error; err != nil {
 		return err
 	}
 	roleByCode := make(map[string]uuid.UUID)
@@ -1061,27 +1003,23 @@ func initDefaultRoleMenus(logger *zap.Logger) error {
 	return nil
 }
 
-func initDefaultPermissionActions(logger *zap.Logger) error {
-	scopeIDs, err := getScopeIDsByCode([]string{"global", "team"})
-	if err != nil {
-		return err
-	}
+func initDefaultPermissionActionsNoScope(logger *zap.Logger) error {
 	for index, actionSeed := range defaultPermissionActionSeeds() {
 		actionData := usermodel.PermissionAction{
-			ResourceCode: actionSeed.ResourceCode,
-			ActionCode:   actionSeed.ActionCode,
-			ModuleCode:   actionSeed.ModuleCode,
-			Category:     actionSeed.Category,
-			Source:       actionSeed.Source,
-			FeatureKind:  actionSeed.FeatureKind,
-			Name:         actionSeed.Name,
-			Description:  actionSeed.Description,
-			ScopeID:      scopeIDs[actionSeed.ScopeCode],
-			Status:       "normal",
-			SortOrder:    index + 1,
+			PermissionKey: actionSeed.PermissionKey,
+			ResourceCode:  actionSeed.ResourceCode,
+			ActionCode:    actionSeed.ActionCode,
+			ModuleCode:    actionSeed.ModuleCode,
+			ContextType:   actionSeed.ContextType,
+			Source:        actionSeed.Source,
+			FeatureKind:   actionSeed.FeatureKind,
+			Name:          actionSeed.Name,
+			Description:   actionSeed.Description,
+			Status:        "normal",
+			SortOrder:     index + 1,
 		}
 		var action usermodel.PermissionAction
-		result := database.DB.Where("resource_code = ? AND action_code = ? AND scope_id = ?", actionData.ResourceCode, actionData.ActionCode, actionData.ScopeID).First(&action)
+		result := database.DB.Where("permission_key = ?", actionData.PermissionKey).First(&action)
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				if err := database.DB.Create(&actionData).Error; err != nil {
@@ -1092,15 +1030,17 @@ func initDefaultPermissionActions(logger *zap.Logger) error {
 			return result.Error
 		}
 		updates := map[string]interface{}{
-			"name":         actionData.Name,
-			"description":  actionData.Description,
-			"module_code":  actionData.ModuleCode,
-			"category":     actionData.Category,
-			"source":       actionData.Source,
-			"feature_kind": actionData.FeatureKind,
-			"scope_id":     actionData.ScopeID,
-			"status":       actionData.Status,
-			"sort_order":   actionData.SortOrder,
+			"permission_key": actionData.PermissionKey,
+			"resource_code":  actionData.ResourceCode,
+			"action_code":    actionData.ActionCode,
+			"name":           actionData.Name,
+			"description":    actionData.Description,
+			"module_code":    actionData.ModuleCode,
+			"context_type":   actionData.ContextType,
+			"source":         actionData.Source,
+			"feature_kind":   actionData.FeatureKind,
+			"status":         actionData.Status,
+			"sort_order":     actionData.SortOrder,
 		}
 		if err := database.DB.Model(&action).Updates(updates).Error; err != nil {
 			return err
@@ -1110,9 +1050,9 @@ func initDefaultPermissionActions(logger *zap.Logger) error {
 	return nil
 }
 
-func initDefaultRoleActionPermissions(logger *zap.Logger) error {
+func initDefaultRoleActionPermissionsNoScope(logger *zap.Logger) error {
 	var roles []usermodel.Role
-	if err := database.DB.Preload("Scopes").Where("code IN ?", []string{"admin", "team_admin"}).Find(&roles).Error; err != nil {
+	if err := database.DB.Where("tenant_id IS NULL AND code IN ?", []string{"admin", "team_admin"}).Find(&roles).Error; err != nil {
 		return err
 	}
 	roleByCode := make(map[string]usermodel.Role, len(roles))
@@ -1121,7 +1061,7 @@ func initDefaultRoleActionPermissions(logger *zap.Logger) error {
 	}
 
 	var actions []usermodel.PermissionAction
-	if err := database.DB.Preload("Scope").Find(&actions).Error; err != nil {
+	if err := database.DB.Find(&actions).Error; err != nil {
 		return err
 	}
 
@@ -1130,15 +1070,13 @@ func initDefaultRoleActionPermissions(logger *zap.Logger) error {
 		"team_admin": {},
 	}
 	for _, action := range actions {
-		key := action.ResourceCode + ":" + action.ActionCode
-		scopeCode := ""
-		if action.Scope.ID != uuid.Nil {
-			scopeCode = action.Scope.Code
+		key := strings.TrimSpace(action.PermissionKey)
+		if key == "" {
+			key = action.ResourceCode + ":" + action.ActionCode
 		}
-		switch scopeCode {
-		case "global":
-			defaultAssignments["admin"][key] = struct{}{}
-		case "team":
+		defaultAssignments["admin"][key] = struct{}{}
+		switch key {
+		case "tenant.manage", "tenant.boundary.manage", "tenant.member.manage", "team.member.manage", "team.member.assign_role", "team.member.assign_action", "team.boundary.manage":
 			defaultAssignments["team_admin"][key] = struct{}{}
 		}
 	}
@@ -1149,7 +1087,10 @@ func initDefaultRoleActionPermissions(logger *zap.Logger) error {
 			continue
 		}
 		for _, action := range actions {
-			key := action.ResourceCode + ":" + action.ActionCode
+			key := strings.TrimSpace(action.PermissionKey)
+			if key == "" {
+				key = action.ResourceCode + ":" + action.ActionCode
+			}
 			if _, allowed := assignments[key]; !allowed {
 				continue
 			}
@@ -1168,107 +1109,224 @@ func initDefaultRoleActionPermissions(logger *zap.Logger) error {
 }
 
 type permissionActionSeed struct {
-	ResourceCode          string
-	ActionCode            string
-	ModuleCode            string
-	Category              string
-	Source                string
-	FeatureKind           string
-	Name                  string
-	Description           string
-	ScopeCode             string
+	PermissionKey string
+	ResourceCode  string
+	ActionCode    string
+	ModuleCode    string
+	ContextType   string
+	Source        string
+	FeatureKind   string
+	Name          string
+	Description   string
+}
+
+type featurePackageSeed struct {
+	PackageKey     string
+	Name           string
+	Description    string
+	ContextType    string
+	Status         string
+	SortOrder      int
+	PermissionKeys []string
 }
 
 func defaultPermissionActionSeeds() []permissionActionSeed {
 	return []permissionActionSeed{
-		newPermissionActionSeed("role", "list", "查看角色列表", "允许查看角色列表", "global"),
-		newPermissionActionSeed("role", "get", "查看角色详情", "允许查看角色详情", "global"),
-		newPermissionActionSeed("role", "create", "创建角色", "允许创建角色", "global"),
-		newPermissionActionSeed("role", "update", "更新角色", "允许更新角色", "global"),
-		newPermissionActionSeed("role", "delete", "删除角色", "允许删除角色", "global"),
-		newPermissionActionSeed("role", "assign_menu", "配置角色菜单权限", "允许为角色配置菜单权限", "global"),
-		newPermissionActionSeed("role", "assign_action", "配置角色功能权限", "允许为角色配置功能权限", "global"),
-		newPermissionActionSeed("role", "assign_data", "配置角色数据权限", "允许为角色配置数据权限", "global"),
-		newPermissionActionSeed("permission_action", "list", "查看功能权限列表", "允许查看功能权限列表", "global"),
-		newPermissionActionSeed("permission_action", "get", "查看功能权限详情", "允许查看功能权限详情", "global"),
-		newPermissionActionSeed("permission_action", "create", "创建功能权限", "允许创建功能权限", "global"),
-		newPermissionActionSeed("permission_action", "update", "更新功能权限", "允许更新功能权限", "global"),
-		newPermissionActionSeed("permission_action", "delete", "删除功能权限", "允许删除功能权限", "global"),
-		newPermissionActionSeed("scope", "list", "查看作用域列表", "允许查看作用域列表", "global"),
-		newPermissionActionSeed("scope", "get", "查看作用域详情", "允许查看作用域详情", "global"),
-		newPermissionActionSeed("scope", "create", "创建作用域", "允许创建作用域", "global"),
-		newPermissionActionSeed("scope", "update", "更新作用域", "允许更新作用域", "global"),
-		newPermissionActionSeed("scope", "delete", "删除作用域", "允许删除作用域", "global"),
-		newPermissionActionSeed("user", "list", "查看用户列表", "允许查看用户列表", "global"),
-		newPermissionActionSeed("user", "get", "查看用户详情", "允许查看用户详情", "global"),
-		newPermissionActionSeed("user", "create", "创建用户", "允许创建用户", "global"),
-		newPermissionActionSeed("user", "update", "更新用户", "允许更新用户", "global"),
-		newPermissionActionSeed("user", "delete", "删除用户", "允许删除用户", "global"),
-		newPermissionActionSeed("user", "assign_role", "分配用户角色", "允许为用户分配角色", "global"),
-		newPermissionActionSeed("user", "assign_action", "配置用户功能权限", "允许为用户配置平台级功能权限", "global"),
-		newPermissionActionSeed("menu", "list", "查看菜单管理树", "允许查看全部菜单管理树", "global"),
-		newPermissionActionSeed("menu", "create", "创建菜单", "允许创建菜单", "global"),
-		newPermissionActionSeed("menu", "update", "更新菜单", "允许更新菜单", "global"),
-		newPermissionActionSeed("menu", "delete", "删除菜单", "允许删除菜单", "global"),
-		newPermissionActionSeed("menu_backup", "create", "创建菜单备份", "允许创建菜单备份", "global"),
-		newPermissionActionSeed("menu_backup", "list", "查看菜单备份列表", "允许查看菜单备份列表", "global"),
-		newPermissionActionSeed("menu_backup", "delete", "删除菜单备份", "允许删除菜单备份", "global"),
-		newPermissionActionSeed("menu_backup", "restore", "恢复菜单备份", "允许恢复菜单备份", "global"),
-		newPermissionActionSeed("system", "view_page_catalog", "查看页面文件映射", "允许查看页面文件映射", "global"),
-		newPermissionActionSeed("tenant", "list", "查看团队列表", "允许查看团队列表", "global"),
-		newPermissionActionSeed("tenant", "get", "查看团队详情", "允许查看团队详情", "global"),
-		newPermissionActionSeed("tenant", "create", "创建团队", "允许创建团队", "global"),
-		newPermissionActionSeed("tenant", "update", "更新团队", "允许更新团队", "global"),
-		newPermissionActionSeed("tenant", "delete", "删除团队", "允许删除团队", "global"),
-		newPermissionActionSeed("tenant", "configure_action_boundary", "配置团队功能权限边界", "允许配置团队功能权限边界", "global"),
-		newPermissionActionSeed("tenant_member_admin", "list", "查看团队成员列表", "允许在系统管理中查看团队成员列表", "global"),
-		newPermissionActionSeed("tenant_member_admin", "create", "添加团队成员", "允许在系统管理中添加团队成员", "global"),
-		newPermissionActionSeed("tenant_member_admin", "delete", "移除团队成员", "允许在系统管理中移除团队成员", "global"),
-		newPermissionActionSeed("tenant_member_admin", "update_role", "更新团队成员身份", "允许在系统管理中更新团队成员身份", "global"),
-		newPermissionActionSeed("team_member", "create", "添加当前团队成员", "允许在当前团队中添加成员", "team"),
-		newPermissionActionSeed("team_member", "delete", "移除当前团队成员", "允许在当前团队中移除成员", "team"),
-		newPermissionActionSeed("team_member", "update_role", "更新当前团队成员身份", "允许在当前团队中更新成员身份", "team"),
-		newPermissionActionSeed("team_member", "assign_role", "配置当前团队成员角色", "允许在当前团队中配置成员角色", "team"),
-		newPermissionActionSeed("team_member", "assign_action", "配置当前团队成员功能权限", "允许在当前团队中配置成员功能权限", "team"),
-		newPermissionActionSeed("team", "configure_action_boundary", "查看和配置当前团队功能权限边界", "允许查看和配置当前团队功能权限边界", "team"),
-		newPermissionActionSeed("api_endpoint", "list", "查看 API 注册表", "允许查看 API 注册表", "global"),
-		newPermissionActionSeed("api_endpoint", "sync", "同步 API 注册表", "允许同步 API 注册表", "global"),
-		newPermissionActionSeed("system_permission", "manage_action_registry", "管理功能权限注册表", "允许维护功能权限注册信息", "global"),
-		newPermissionActionSeed("system_permission", "assign_role_action", "配置角色功能权限", "允许为角色分配功能权限", "global"),
+		newPermissionActionSeed("role", "list", "查看角色列表", "允许查看角色列表"),
+		newPermissionActionSeed("role", "get", "查看角色详情", "允许查看角色详情"),
+		newPermissionActionSeed("role", "create", "创建角色", "允许创建角色"),
+		newPermissionActionSeed("role", "update", "更新角色", "允许更新角色"),
+		newPermissionActionSeed("role", "delete", "删除角色", "允许删除角色"),
+		newPermissionActionSeed("role", "assign_menu", "配置角色菜单权限", "允许为角色配置菜单权限"),
+		newPermissionActionSeed("role", "assign_action", "配置角色功能权限", "允许为角色配置功能权限"),
+		newPermissionActionSeed("role", "assign_data", "配置角色数据权限", "允许为角色配置数据权限"),
+		newPermissionActionSeed("permission_action", "list", "查看功能权限列表", "允许查看功能权限列表"),
+		newPermissionActionSeed("permission_action", "get", "查看功能权限详情", "允许查看功能权限详情"),
+		newPermissionActionSeed("permission_action", "create", "创建功能权限", "允许创建功能权限"),
+		newPermissionActionSeed("permission_action", "update", "更新功能权限", "允许更新功能权限"),
+		newPermissionActionSeed("permission_action", "delete", "删除功能权限", "允许删除功能权限"),
+		newPermissionActionSeed("user", "list", "查看用户列表", "允许查看用户列表"),
+		newPermissionActionSeed("user", "get", "查看用户详情", "允许查看用户详情"),
+		newPermissionActionSeed("user", "create", "创建用户", "允许创建用户"),
+		newPermissionActionSeed("user", "update", "更新用户", "允许更新用户"),
+		newPermissionActionSeed("user", "delete", "删除用户", "允许删除用户"),
+		newPermissionActionSeed("user", "assign_role", "分配用户角色", "允许为用户分配角色"),
+		newPermissionActionSeed("user", "assign_action", "配置用户功能权限", "允许为用户配置平台级功能权限"),
+		newPermissionActionSeed("menu", "list", "查看菜单管理树", "允许查看全部菜单管理树"),
+		newPermissionActionSeed("menu", "create", "创建菜单", "允许创建菜单"),
+		newPermissionActionSeed("menu", "update", "更新菜单", "允许更新菜单"),
+		newPermissionActionSeed("menu", "delete", "删除菜单", "允许删除菜单"),
+		newPermissionActionSeed("menu_backup", "create", "创建菜单备份", "允许创建菜单备份"),
+		newPermissionActionSeed("menu_backup", "list", "查看菜单备份列表", "允许查看菜单备份列表"),
+		newPermissionActionSeed("menu_backup", "delete", "删除菜单备份", "允许删除菜单备份"),
+		newPermissionActionSeed("menu_backup", "restore", "恢复菜单备份", "允许恢复菜单备份"),
+		newPermissionActionSeed("system", "view_page_catalog", "查看页面文件映射", "允许查看页面文件映射"),
+		newPermissionActionSeed("tenant", "list", "查看团队列表", "允许查看团队列表"),
+		newPermissionActionSeed("tenant", "get", "查看团队详情", "允许查看团队详情"),
+		newPermissionActionSeed("tenant", "create", "创建团队", "允许创建团队"),
+		newPermissionActionSeed("tenant", "update", "更新团队", "允许更新团队"),
+		newPermissionActionSeed("tenant", "delete", "删除团队", "允许删除团队"),
+		newPermissionActionSeed("tenant", "configure_action_boundary", "配置团队功能权限边界", "允许配置团队功能权限边界"),
+		newPermissionActionSeed("tenant_member_admin", "list", "查看团队成员列表", "允许在系统管理中查看团队成员列表"),
+		newPermissionActionSeed("tenant_member_admin", "create", "添加团队成员", "允许在系统管理中添加团队成员"),
+		newPermissionActionSeed("tenant_member_admin", "delete", "移除团队成员", "允许在系统管理中移除团队成员"),
+		newPermissionActionSeed("tenant_member_admin", "update_role", "更新团队成员身份", "允许在系统管理中更新团队成员身份"),
+		newPermissionActionSeed("team_member", "create", "添加当前团队成员", "允许在当前团队中添加成员"),
+		newPermissionActionSeed("team_member", "delete", "移除当前团队成员", "允许在当前团队中移除成员"),
+		newPermissionActionSeed("team_member", "update_role", "更新当前团队成员身份", "允许在当前团队中更新成员身份"),
+		newPermissionActionSeed("team_member", "assign_role", "配置当前团队成员角色", "允许在当前团队中配置成员角色"),
+		newPermissionActionSeed("team_member", "assign_action", "配置当前团队成员功能权限", "允许在当前团队中配置成员功能权限"),
+		newPermissionActionSeed("team", "configure_action_boundary", "查看和配置当前团队功能权限边界", "允许查看和配置当前团队功能权限边界"),
+		newPermissionActionSeed("api_endpoint", "list", "查看 API 注册表", "允许查看 API 注册表"),
+		newPermissionActionSeed("api_endpoint", "sync", "同步 API 注册表", "允许同步 API 注册表"),
+		newPermissionActionSeed("feature_package", "list", "查看功能包列表", "允许查看功能包列表"),
+		newPermissionActionSeed("feature_package", "get", "查看功能包详情", "允许查看功能包详情"),
+		newPermissionActionSeed("feature_package", "create", "创建功能包", "允许创建功能包"),
+		newPermissionActionSeed("feature_package", "update", "更新功能包", "允许更新功能包"),
+		newPermissionActionSeed("feature_package", "delete", "删除功能包", "允许删除功能包"),
+		newPermissionActionSeed("feature_package", "assign_action", "配置功能包权限", "允许配置功能包包含的功能权限"),
+		newPermissionActionSeed("feature_package", "assign_team", "配置团队功能包", "允许给团队开通功能包"),
+		newPermissionActionSeed("system_permission", "manage_action_registry", "管理功能权限注册表", "允许维护功能权限注册信息"),
+		newPermissionActionSeed("system_permission", "assign_role_action", "配置角色功能权限", "允许为角色分配功能权限"),
 	}
 }
 
 func newPermissionActionSeed(
-	resourceCode, actionCode, name, description, scopeCode string,
+	resourceCode, actionCode, name, description string,
 ) permissionActionSeed {
+	mapping := permissionkey.FromLegacy(resourceCode, actionCode)
+	moduleCode := strings.TrimSpace(mapping.ResourceCode)
+	if moduleCode == "" {
+		moduleCode = strings.TrimSpace(resourceCode)
+	}
+	displayName := strings.TrimSpace(mapping.Name)
+	if displayName == "" {
+		displayName = name
+	}
+	displayDescription := strings.TrimSpace(mapping.Description)
+	if displayDescription == "" {
+		displayDescription = description
+	}
 	return permissionActionSeed{
-		ResourceCode: resourceCode,
-		ActionCode:   actionCode,
-		ModuleCode:   resourceCode,
-		Category:     resourceCode,
-		Source:       "system",
-		FeatureKind:  "system",
-		Name:         name,
-		Description:  description,
-		ScopeCode:    scopeCode,
+		PermissionKey: mapping.Key,
+		ResourceCode:  mapping.ResourceCode,
+		ActionCode:    mapping.ActionCode,
+		ModuleCode:    moduleCode,
+		ContextType:   strings.TrimSpace(mapping.ContextType),
+		Source:        "system",
+		FeatureKind:   "system",
+		Name:          displayName,
+		Description:   displayDescription,
 	}
 }
 
-func getScopeIDsByCode(codes []string) (map[string]uuid.UUID, error) {
-	var scopes []usermodel.Scope
-	if err := database.DB.Where("code IN ?", codes).Find(&scopes).Error; err != nil {
-		return nil, err
+func defaultFeaturePackageSeeds() []featurePackageSeed {
+	return []featurePackageSeed{
+		{
+			PackageKey:     "platform.system_admin",
+			Name:           "平台系统管理包",
+			Description:    "包含平台系统管理核心能力",
+			ContextType:    "platform",
+			Status:         "normal",
+			SortOrder:      1,
+			PermissionKeys: []string{"system.user.manage", "system.role.manage", "system.permission.manage"},
+		},
+		{
+			PackageKey:     "platform.menu_admin",
+			Name:           "平台菜单管理包",
+			Description:    "包含菜单管理与菜单备份能力",
+			ContextType:    "platform",
+			Status:         "normal",
+			SortOrder:      2,
+			PermissionKeys: []string{"system.menu.manage", "system.menu.backup"},
+		},
+		{
+			PackageKey:     "platform.api_admin",
+			Name:           "平台接口管理包",
+			Description:    "包含 API 注册表查看与同步能力",
+			ContextType:    "platform",
+			Status:         "normal",
+			SortOrder:      3,
+			PermissionKeys: []string{"system.api_registry.view", "system.api_registry.sync", "platform.package.manage", "platform.package.assign"},
+		},
+		{
+			PackageKey:     "team.member_admin",
+			Name:           "团队成员管理包",
+			Description:    "包含团队成员、角色和功能权限配置能力",
+			ContextType:    "team",
+			Status:         "normal",
+			SortOrder:      10,
+			PermissionKeys: []string{"team.member.manage", "team.member.assign_role", "team.member.assign_action", "team.boundary.manage"},
+		},
 	}
-	scopeIDs := make(map[string]uuid.UUID, len(scopes))
-	for _, scope := range scopes {
-		scopeIDs[scope.Code] = scope.ID
-	}
-	for _, code := range codes {
-		if _, ok := scopeIDs[code]; !ok {
-			return nil, fmt.Errorf("scope %s not found", code)
+}
+
+func initDefaultFeaturePackages(logger *zap.Logger) error {
+	for _, seed := range defaultFeaturePackageSeeds() {
+		item := usermodel.FeaturePackage{
+			PackageKey:  seed.PackageKey,
+			Name:        seed.Name,
+			Description: seed.Description,
+			ContextType: seed.ContextType,
+			Status:      seed.Status,
+			SortOrder:   seed.SortOrder,
+		}
+
+		var existing usermodel.FeaturePackage
+		result := database.DB.Where("package_key = ?", item.PackageKey).First(&existing)
+		if result.Error != nil {
+			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+				if err := database.DB.Create(&item).Error; err != nil {
+					return err
+				}
+				existing = item
+			} else {
+				return result.Error
+			}
+		} else {
+			if err := database.DB.Model(&existing).Updates(map[string]interface{}{
+				"name":         item.Name,
+				"description":  item.Description,
+				"context_type": item.ContextType,
+				"status":       item.Status,
+				"sort_order":   item.SortOrder,
+			}).Error; err != nil {
+				return err
+			}
+		}
+
+		actionIDs := make([]uuid.UUID, 0, len(seed.PermissionKeys))
+		for _, permissionKey := range seed.PermissionKeys {
+			var action usermodel.PermissionAction
+			if err := database.DB.Where("permission_key = ?", permissionKey).First(&action).Error; err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					continue
+				}
+				return err
+			}
+			actionIDs = append(actionIDs, action.ID)
+		}
+
+		if err := database.DB.Where("package_id = ?", existing.ID).Delete(&usermodel.FeaturePackageAction{}).Error; err != nil {
+			return err
+		}
+		seen := make(map[uuid.UUID]struct{}, len(actionIDs))
+		records := make([]usermodel.FeaturePackageAction, 0, len(actionIDs))
+		for _, actionID := range actionIDs {
+			if _, ok := seen[actionID]; ok {
+				continue
+			}
+			seen[actionID] = struct{}{}
+			records = append(records, usermodel.FeaturePackageAction{PackageID: existing.ID, ActionID: actionID})
+		}
+		if len(records) > 0 {
+			if err := database.DB.Create(&records).Error; err != nil {
+				return err
+			}
 		}
 	}
-	return scopeIDs, nil
+	logger.Info("Default feature packages seeded")
+	return nil
 }
 
 func syncAPIRegistry(logger *zap.Logger, cfg *config.Config) error {

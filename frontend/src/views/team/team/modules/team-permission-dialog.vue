@@ -15,6 +15,23 @@
         <ElTag effect="plain" round>团队 {{ teamName }}</ElTag>
         <ElTag type="success" effect="plain" round>已选 {{ selectedIds.length }}</ElTag>
         <ElTag type="info" effect="plain" round>总计 {{ permissionActions.length }}</ElTag>
+        <ElTag type="warning" effect="plain" round>功能包展开 {{ derivedActionIds.length }}</ElTag>
+        <ElTag type="primary" effect="plain" round>额外补充 {{ manualActionIds.length }}</ElTag>
+      </div>
+
+      <div v-if="featurePackages.length" class="package-card">
+        <div class="package-title">已开通功能包</div>
+        <div class="package-tags">
+          <ElTag
+            v-for="item in featurePackages"
+            :key="item.id"
+            type="success"
+            effect="plain"
+            round
+          >
+            {{ item.name }}
+          </ElTag>
+        </div>
       </div>
 
       <PermissionActionCascaderPanel
@@ -36,8 +53,8 @@
 import { computed, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import PermissionActionCascaderPanel from '@/components/business/permission/PermissionActionCascaderPanel.vue'
-import { fetchGetTeamActions, fetchSetTeamActions } from '@/api/team'
-import { fetchGetPermissionActionList } from '@/api/system-manage'
+import { fetchGetTeamActions, fetchGetTeamActionOrigins, fetchSetTeamActions } from '@/api/team'
+import { fetchGetPermissionActionList, fetchGetTeamFeaturePackages } from '@/api/system-manage'
 
 interface Props {
   modelValue: boolean
@@ -61,6 +78,9 @@ const loading = ref(false)
 const saving = ref(false)
 const permissionActions = ref<Api.SystemManage.PermissionActionItem[]>([])
 const selectedIds = ref<string[]>([])
+const featurePackages = ref<Api.SystemManage.FeaturePackageItem[]>([])
+const derivedActionIds = ref<string[]>([])
+const manualActionIds = ref<string[]>([])
 
 watch(
   () => props.modelValue,
@@ -75,13 +95,18 @@ async function loadData() {
   if (!props.teamId) return
   loading.value = true
   try {
-    const [actionsRes, currentRes] = await Promise.all([
-      fetchGetPermissionActionList({ current: 1, size: 1000, status: 'normal', scopeCode: 'team' }),
-      fetchGetTeamActions(props.teamId)
+    const [actionsRes, currentRes, packageRes, originsRes] = await Promise.all([
+      fetchGetPermissionActionList({ current: 1, size: 1000, status: 'normal' }),
+      fetchGetTeamActions(props.teamId),
+      fetchGetTeamFeaturePackages(props.teamId),
+      fetchGetTeamActionOrigins(props.teamId)
     ])
 
-    permissionActions.value = (actionsRes?.records || []).filter((item) => item.scopeCode === 'team')
+    permissionActions.value = actionsRes?.records || []
     selectedIds.value = [...(currentRes?.actionIds || [])]
+    featurePackages.value = packageRes?.packages || []
+    derivedActionIds.value = [...(originsRes?.derived_action_ids || [])]
+    manualActionIds.value = [...(originsRes?.manual_action_ids || [])]
   } catch (error: any) {
     ElMessage.error(error?.message || '加载团队功能权限失败')
   } finally {
@@ -160,6 +185,26 @@ function expandSelectedValues(
 }
 
 .summary-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.package-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.package-title {
+  color: #475569;
+  font-size: 13px;
+}
+
+.package-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;

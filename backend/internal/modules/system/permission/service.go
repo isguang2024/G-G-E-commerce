@@ -10,6 +10,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 )
 
 var (
@@ -29,23 +30,23 @@ type permissionService struct {
 	actionRepo       user.PermissionActionRepository
 	roleActionRepo   user.RoleActionPermissionRepository
 	tenantActionRepo user.TenantActionPermissionRepository
+	manualActionRepo user.TeamManualActionPermissionRepository
 	userActionRepo   user.UserActionPermissionRepository
-	scopeRepo        user.ScopeRepository
 }
 
 func NewPermissionService(
 	actionRepo user.PermissionActionRepository,
 	roleActionRepo user.RoleActionPermissionRepository,
 	tenantActionRepo user.TenantActionPermissionRepository,
+	manualActionRepo user.TeamManualActionPermissionRepository,
 	userActionRepo user.UserActionPermissionRepository,
-	scopeRepo user.ScopeRepository,
 ) PermissionService {
 	return &permissionService{
 		actionRepo:       actionRepo,
 		roleActionRepo:   roleActionRepo,
 		tenantActionRepo: tenantActionRepo,
+		manualActionRepo: manualActionRepo,
 		userActionRepo:   userActionRepo,
-		scopeRepo:        scopeRepo,
 	}
 }
 
@@ -57,22 +58,17 @@ func (s *permissionService) List(req *dto.PermissionActionListRequest) ([]user.P
 		req.Size = 20
 	}
 	params := &user.PermissionActionListParams{
-		Keyword:               strings.TrimSpace(req.Keyword),
-		Name:                  req.Name,
-		ResourceCode:          req.ResourceCode,
-		ActionCode:            req.ActionCode,
-		ModuleCode:            strings.TrimSpace(req.ModuleCode),
-		Category:              strings.TrimSpace(req.Category),
-		Source:                strings.TrimSpace(req.Source),
-		FeatureKind:           normalizeFeatureKind(req.FeatureKind, ""),
-		Status:                req.Status,
+		Keyword:       strings.TrimSpace(req.Keyword),
+		PermissionKey: strings.TrimSpace(req.PermissionKey),
+		Name:          req.Name,
+		ResourceCode:  req.ResourceCode,
+		ActionCode:    req.ActionCode,
+		ModuleCode:    strings.TrimSpace(req.ModuleCode),
+		ContextType:   normalizeContextType(req.ContextType, ""),
+		Source:        strings.TrimSpace(req.Source),
+		FeatureKind:   normalizeFeatureKind(req.FeatureKind, ""),
+		Status:        req.Status,
 	}
-	if req.ScopeID != "" {
-		if parsed, err := uuid.Parse(strings.TrimSpace(req.ScopeID)); err == nil {
-			params.ScopeID = &parsed
-		}
-	}
-	params.ScopeCode = strings.TrimSpace(req.ScopeCode)
 	return s.actionRepo.List((req.Current-1)*req.Size, req.Size, params)
 }
 
@@ -88,23 +84,26 @@ func (s *permissionService) Get(id uuid.UUID) (*user.PermissionAction, error) {
 }
 
 func (s *permissionService) Create(req *dto.PermissionActionCreateRequest) (*user.PermissionAction, error) {
+	permissionKey := permissionkey.Normalize(req.PermissionKey)
+	if permissionKey == "" {
+		permissionKey = permissionkey.FromLegacy(strings.TrimSpace(req.ResourceCode), strings.TrimSpace(req.ActionCode)).Key
+	}
+	if permissionKey == "" {
+		return nil, errors.New("permission_key 不能为空")
+	}
+	mapping := permissionkey.FromKey(permissionKey)
 	resourceCode := strings.TrimSpace(req.ResourceCode)
+	if resourceCode == "" {
+		resourceCode = strings.TrimSpace(mapping.ResourceCode)
+	}
 	actionCode := strings.TrimSpace(req.ActionCode)
+	if actionCode == "" {
+		actionCode = strings.TrimSpace(mapping.ActionCode)
+	}
 	if resourceCode == "" || actionCode == "" {
-		return nil, errors.New("resource_code 和 action_code 不能为空")
+		return nil, errors.New("无法根据 permission_key 推导兼容编码")
 	}
-	scopeID, err := uuid.Parse(strings.TrimSpace(req.ScopeID))
-	if err != nil {
-		return nil, errors.New("invalid scope_id")
-	}
-	scope, err := s.scopeRepo.GetByID(scopeID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("scope not found")
-		}
-		return nil, err
-	}
-	if _, err := s.actionRepo.GetByResourceAndAction(resourceCode, actionCode, scope.Code); err == nil {
+	if _, err := s.actionRepo.GetByPermissionKey(permissionKey); err == nil {
 		return nil, ErrPermissionActionExists
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
@@ -115,18 +114,19 @@ func (s *permissionService) Create(req *dto.PermissionActionCreateRequest) (*use
 	}
 	featureKind := normalizeFeatureKind(req.FeatureKind, "business")
 	moduleCode := normalizeModuleCode(req.ModuleCode, req.ResourceCode)
+	contextType := normalizeContextType(req.ContextType, deriveContextType(permissionKey, moduleCode))
 	action := &user.PermissionAction{
-		ResourceCode:          resourceCode,
-		ActionCode:            actionCode,
-		ModuleCode:            moduleCode,
-		Category:              strings.TrimSpace(req.Category),
-		Source:                "business",
-		FeatureKind:           featureKind,
-		Name:                  strings.TrimSpace(req.Name),
-		Description:           strings.TrimSpace(req.Description),
-		ScopeID:               scopeID,
-		Status:                status,
-		SortOrder:             req.SortOrder,
+		PermissionKey: permissionKey,
+		ResourceCode:  resourceCode,
+		ActionCode:    actionCode,
+		ModuleCode:    moduleCode,
+		ContextType:   contextType,
+		Source:        "business",
+		FeatureKind:   featureKind,
+		Name:          strings.TrimSpace(req.Name),
+		Description:   strings.TrimSpace(req.Description),
+		Status:        status,
+		SortOrder:     req.SortOrder,
 	}
 	if err := s.actionRepo.Create(action); err != nil {
 		return nil, err
@@ -142,46 +142,51 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionActionUpdate
 		}
 		return err
 	}
-
 	updates := map[string]interface{}{
 		"updated_at": time.Now(),
 		"sort_order": req.SortOrder,
 	}
+	if permissionKey := permissionkey.Normalize(req.PermissionKey); permissionKey != "" {
+		updates["permission_key"] = permissionKey
+	}
 	if name := strings.TrimSpace(req.Name); name != "" {
 		updates["name"] = name
-	}
-	if req.Category != "" {
-		updates["category"] = strings.TrimSpace(req.Category)
 	}
 	if featureKind := normalizeFeatureKind(req.FeatureKind, ""); featureKind != "" {
 		updates["feature_kind"] = featureKind
 	}
+	if contextType := normalizeContextType(req.ContextType, ""); contextType != "" {
+		updates["context_type"] = contextType
+	}
 	if req.Description != "" {
 		updates["description"] = strings.TrimSpace(req.Description)
-	}
-	if scopeIDStr := strings.TrimSpace(req.ScopeID); scopeIDStr != "" {
-		scopeID, parseErr := uuid.Parse(scopeIDStr)
-		if parseErr != nil {
-			return errors.New("invalid scope_id")
-		}
-		scope, getErr := s.scopeRepo.GetByID(scopeID)
-		if getErr != nil {
-			if errors.Is(getErr, gorm.ErrRecordNotFound) {
-				return errors.New("scope not found")
-			}
-			return getErr
-		}
-		updates["scope_id"] = scopeID
-		current.Scope = *scope
 	}
 	if status := strings.TrimSpace(req.Status); status != "" {
 		updates["status"] = status
 	}
-
 	resourceCode := strings.TrimSpace(req.ResourceCode)
 	actionCode := strings.TrimSpace(req.ActionCode)
 	targetResourceCode := current.ResourceCode
 	targetActionCode := current.ActionCode
+	if req.ModuleCode != "" {
+		updates["module_code"] = normalizeModuleCode(req.ModuleCode, targetResourceCode)
+	}
+	targetPermissionKey := current.PermissionKey
+	if permissionKey := permissionkey.Normalize(req.PermissionKey); permissionKey != "" {
+		targetPermissionKey = permissionKey
+	} else if targetPermissionKey == "" {
+		targetPermissionKey = permissionkey.FromLegacy(targetResourceCode, targetActionCode).Key
+		updates["permission_key"] = targetPermissionKey
+	}
+	if targetPermissionKey != "" {
+		mapping := permissionkey.FromKey(targetPermissionKey)
+		if resourceCode == "" {
+			resourceCode = strings.TrimSpace(mapping.ResourceCode)
+		}
+		if actionCode == "" {
+			actionCode = strings.TrimSpace(mapping.ActionCode)
+		}
+	}
 	if resourceCode != "" {
 		targetResourceCode = resourceCode
 		updates["resource_code"] = resourceCode
@@ -190,22 +195,14 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionActionUpdate
 		targetActionCode = actionCode
 		updates["action_code"] = actionCode
 	}
-	if req.ModuleCode != "" {
-		updates["module_code"] = normalizeModuleCode(req.ModuleCode, targetResourceCode)
-	}
 	if req.ModuleCode == "" && (resourceCode != "" || current.ModuleCode == "") {
 		updates["module_code"] = normalizeModuleCode(current.ModuleCode, targetResourceCode)
 	}
-	targetScopeCode := strings.TrimSpace(current.Scope.Code)
-	if targetScopeCode == "" {
-		if scope, getErr := s.scopeRepo.GetByID(current.ScopeID); getErr == nil {
-			targetScopeCode = scope.Code
-		} else if !errors.Is(getErr, gorm.ErrRecordNotFound) {
-			return getErr
-		}
+	if _, exists := updates["context_type"]; !exists && current.ContextType == "" {
+		updates["context_type"] = deriveContextType(targetPermissionKey, targetResourceCode)
 	}
-	if targetResourceCode != current.ResourceCode || targetActionCode != current.ActionCode || updates["scope_id"] != nil {
-		existing, getErr := s.actionRepo.GetByResourceAndAction(targetResourceCode, targetActionCode, targetScopeCode)
+	if targetPermissionKey != current.PermissionKey {
+		existing, getErr := s.actionRepo.GetByPermissionKey(targetPermissionKey)
 		if getErr == nil && existing != nil && existing.ID != id {
 			return ErrPermissionActionExists
 		}
@@ -213,7 +210,6 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionActionUpdate
 			return getErr
 		}
 	}
-
 	return s.actionRepo.UpdateWithMap(id, updates)
 }
 
@@ -223,6 +219,38 @@ func normalizeModuleCode(value, fallbackResource string) string {
 		return moduleCode
 	}
 	return strings.TrimSpace(fallbackResource)
+}
+
+func normalizeContextType(value, fallback string) string {
+	switch strings.TrimSpace(value) {
+	case "platform", "team":
+		return strings.TrimSpace(value)
+	case "":
+		return fallback
+	default:
+		return fallback
+	}
+}
+
+func deriveContextType(permissionKey, moduleCode string) string {
+	targetKey := strings.TrimSpace(permissionKey)
+	targetModule := strings.TrimSpace(moduleCode)
+	switch {
+	case strings.HasPrefix(targetKey, "system."),
+		strings.HasPrefix(targetKey, "tenant."),
+		strings.HasPrefix(targetKey, "platform."),
+		targetKey == "tenant.manage":
+		return "platform"
+	case strings.HasPrefix(targetKey, "team."),
+		strings.HasPrefix(targetKey, "product."),
+		strings.HasPrefix(targetKey, "channel."),
+		strings.HasPrefix(targetKey, "content."):
+		return "team"
+	case targetModule == "tenant" || targetModule == "role" || targetModule == "user" || targetModule == "menu" || targetModule == "permission_action" || targetModule == "api_endpoint":
+		return "platform"
+	default:
+		return "team"
+	}
 }
 
 func normalizeFeatureKind(value, fallback string) string {
@@ -247,6 +275,9 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 		return err
 	}
 	if err := s.tenantActionRepo.DeleteByActionID(id); err != nil {
+		return err
+	}
+	if err := s.manualActionRepo.DeleteByActionID(id); err != nil {
 		return err
 	}
 	if err := s.userActionRepo.DeleteByActionID(id); err != nil {
