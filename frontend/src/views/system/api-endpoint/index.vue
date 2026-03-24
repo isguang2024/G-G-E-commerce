@@ -1080,12 +1080,20 @@
   }
 
   async function loadModuleSummary() {
-    const res = await fetchGetApiEndpointList({
-      current: 1,
-      size: 1000
-    })
-    const records = res.records || []
-    totalCount.value = res.total || records.length
+    const records: APIEndpointItem[] = []
+    let current = 1
+    const size = 500
+    let total = 0
+    do {
+      const res = await fetchGetApiEndpointList({
+        current,
+        size
+      })
+      total = res.total || 0
+      records.push(...(res.records || []))
+      current += 1
+    } while (records.length < total)
+    totalCount.value = total || records.length
     const counter = new Map<string, number>()
     records.forEach((item) => {
       const key = (item.module || 'unknown').trim() || 'unknown'

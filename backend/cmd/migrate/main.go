@@ -47,6 +47,10 @@ func main() {
 
 	logger.Info("Database connected successfully")
 
+	if err := preparePermissionTableRenames(logger); err != nil {
+		logger.Fatal("Failed to prepare permission table renames", zap.Error(err))
+	}
+
 	// 自动迁移数据库表结构
 	if err := database.AutoMigrate(); err != nil {
 		logger.Fatal("Migration failed", zap.Error(err))
@@ -998,6 +1002,37 @@ func runNamedMigrations(logger *zap.Logger) error {
 		}
 	}
 
+	return nil
+}
+
+func preparePermissionTableRenames(logger *zap.Logger) error {
+	renamePairs := []struct {
+		oldName string
+		newName string
+	}{
+		{oldName: "permission_actions", newName: "permission_keys"},
+		{oldName: "feature_package_actions", newName: "feature_package_keys"},
+	}
+	for _, item := range renamePairs {
+		oldExists, err := hasTable(item.oldName)
+		if err != nil {
+			return err
+		}
+		newExists, err := hasTable(item.newName)
+		if err != nil {
+			return err
+		}
+		if !oldExists || newExists {
+			continue
+		}
+		if err := database.DB.Exec(fmt.Sprintf("ALTER TABLE %s RENAME TO %s", item.oldName, item.newName)).Error; err != nil {
+			return err
+		}
+		logger.Info("Renamed legacy permission table",
+			zap.String("from", item.oldName),
+			zap.String("to", item.newName),
+		)
+	}
 	return nil
 }
 

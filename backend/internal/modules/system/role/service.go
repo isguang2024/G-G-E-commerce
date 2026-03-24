@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
+	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
@@ -224,7 +225,14 @@ func (s *roleService) Delete(id uuid.UUID) error {
 	if role.Code == "admin" || role.Code == "team_admin" || role.Code == "team_member" {
 		return ErrSystemRoleCannotDelete
 	}
-	return database.DB.Transaction(func(tx *gorm.DB) error {
+	var affectedUserIDs []uuid.UUID
+	if err := database.DB.Model(&user.UserRole{}).
+		Where("role_id = ? AND tenant_id IS NULL", id).
+		Distinct("user_id").
+		Pluck("user_id", &affectedUserIDs).Error; err != nil {
+		return err
+	}
+	if err := database.DB.Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where("role_id = ?", id).Delete(&user.UserRole{}).Error; err != nil {
 			return err
 		}
@@ -240,8 +248,17 @@ func (s *roleService) Delete(id uuid.UUID) error {
 		if err := tx.Where("role_id = ?", id).Delete(&user.RoleDataPermission{}).Error; err != nil {
 			return err
 		}
+		if err := tx.Where("role_id = ?", id).Delete(&models.PlatformRoleAccessSnapshot{}).Error; err != nil {
+			return err
+		}
 		return tx.Delete(&user.Role{}, id).Error
-	})
+	}); err != nil {
+		return err
+	}
+	if s.refresher != nil {
+		return s.refresher.RefreshPlatformUsers(affectedUserIDs)
+	}
+	return nil
 }
 
 func (s *roleService) GetRolePackages(roleID uuid.UUID) ([]uuid.UUID, []user.FeaturePackage, error) {
@@ -285,6 +302,11 @@ func (s *roleService) SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, 
 		if len(packages) != len(packageIDs) {
 			return errors.New("invalid feature packages")
 		}
+		for _, pkg := range packages {
+			if !supportsPlatformPackageContext(pkg.ContextType) {
+				return errors.New("包含不支持平台上下文的功能包")
+			}
+		}
 	}
 	if err := s.rolePackageRepo.ReplaceRolePackages(roleID, packageIDs, grantedBy); err != nil {
 		return err
@@ -293,6 +315,15 @@ func (s *roleService) SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, 
 		return s.refresher.RefreshPlatformRole(roleID)
 	}
 	return nil
+}
+
+func supportsPlatformPackageContext(contextType string) bool {
+	switch strings.TrimSpace(contextType) {
+	case "platform", "common", "platform,team", "team,platform":
+		return true
+	default:
+		return false
+	}
 }
 
 func (s *roleService) GetRoleMenuIDs(roleID uuid.UUID) ([]uuid.UUID, error) {
@@ -465,7 +496,6 @@ func buildAvailableDataScopeOptions() []DataPermissionScopeOption {
 		{Code: "all", Name: "全部数据"},
 	}
 }
-
 
 func (s *roleService) GetRoleMenuBoundary(roleID uuid.UUID) (*RoleMenuBoundary, error) {
 	role, err := s.roleRepo.GetByID(roleID)

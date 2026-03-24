@@ -185,20 +185,14 @@ func EnsureDefaultFeaturePackages(db *gorm.DB) error {
 			}
 			actionIDs = append(actionIDs, action.ID)
 		}
-		if err := db.Where("package_id = ?", existing.ID).Delete(&usermodel.FeaturePackageAction{}).Error; err != nil {
-			return err
-		}
 		seenActionIDs := make(map[uuid.UUID]struct{}, len(actionIDs))
-		records := make([]usermodel.FeaturePackageAction, 0, len(actionIDs))
 		for _, actionID := range actionIDs {
 			if _, ok := seenActionIDs[actionID]; ok {
 				continue
 			}
 			seenActionIDs[actionID] = struct{}{}
-			records = append(records, usermodel.FeaturePackageAction{PackageID: existing.ID, ActionID: actionID})
-		}
-		if len(records) > 0 {
-			if err := db.Create(&records).Error; err != nil {
+			record := usermodel.FeaturePackageAction{PackageID: existing.ID, ActionID: actionID}
+			if err := db.Where("package_id = ? AND action_id = ?", existing.ID, actionID).FirstOrCreate(&record).Error; err != nil {
 				return err
 			}
 		}
@@ -214,20 +208,14 @@ func EnsureDefaultFeaturePackages(db *gorm.DB) error {
 			}
 			menuIDs = append(menuIDs, menu.ID)
 		}
-		if err := db.Where("package_id = ?", existing.ID).Delete(&usermodel.FeaturePackageMenu{}).Error; err != nil {
-			return err
-		}
 		seenMenuIDs := make(map[uuid.UUID]struct{}, len(menuIDs))
-		menuRecords := make([]usermodel.FeaturePackageMenu, 0, len(menuIDs))
 		for _, menuID := range menuIDs {
 			if _, ok := seenMenuIDs[menuID]; ok {
 				continue
 			}
 			seenMenuIDs[menuID] = struct{}{}
-			menuRecords = append(menuRecords, usermodel.FeaturePackageMenu{PackageID: existing.ID, MenuID: menuID})
-		}
-		if len(menuRecords) > 0 {
-			if err := db.Create(&menuRecords).Error; err != nil {
+			record := usermodel.FeaturePackageMenu{PackageID: existing.ID, MenuID: menuID}
+			if err := db.Where("package_id = ? AND menu_id = ?", existing.ID, menuID).FirstOrCreate(&record).Error; err != nil {
 				return err
 			}
 		}
@@ -253,25 +241,6 @@ func EnsureDefaultFeaturePackageBundles(db *gorm.DB) error {
 	packageByKey := make(map[string]usermodel.FeaturePackage, len(packages))
 	for _, item := range packages {
 		packageByKey[item.PackageKey] = item
-	}
-
-	parentIDs := make([]uuid.UUID, 0, len(seeds))
-	seenParentIDs := make(map[uuid.UUID]struct{}, len(seeds))
-	for _, seed := range seeds {
-		parentPkg, ok := packageByKey[seed.ParentPackageKey]
-		if !ok {
-			continue
-		}
-		if _, exists := seenParentIDs[parentPkg.ID]; exists {
-			continue
-		}
-		seenParentIDs[parentPkg.ID] = struct{}{}
-		parentIDs = append(parentIDs, parentPkg.ID)
-	}
-	if len(parentIDs) > 0 {
-		if err := db.Where("package_id IN ?", parentIDs).Delete(&usermodel.FeaturePackageBundle{}).Error; err != nil {
-			return err
-		}
 	}
 
 	for _, seed := range seeds {
@@ -337,16 +306,38 @@ func EnsureDefaultRoleFeaturePackages(db *gorm.DB) error {
 			if !ok {
 				continue
 			}
-			record := usermodel.RoleFeaturePackage{
-				RoleID:    role.ID,
-				PackageID: pkg.ID,
-				Enabled:   true,
+			var seedID uuid.UUID
+			for _, binding := range defaultBindings {
+				if binding.RoleCode == roleCode && binding.PackageKey == packageKey {
+					seedID = binding.ID
+					break
+				}
 			}
-			if err := db.Where("role_id = ? AND package_id = ?", role.ID, pkg.ID).FirstOrCreate(&record).Error; err != nil {
+			var record usermodel.RoleFeaturePackage
+			err := db.Where("role_id = ? AND package_id = ?", role.ID, pkg.ID).First(&record).Error
+			if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 				return err
 			}
-			if err := db.Model(&record).Update("enabled", true).Error; err != nil {
-				return err
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				record = usermodel.RoleFeaturePackage{
+					ID:        seedID,
+					RoleID:    role.ID,
+					PackageID: pkg.ID,
+					Enabled:   true,
+				}
+				if err := db.Create(&record).Error; err != nil {
+					return err
+				}
+			} else {
+				updates := map[string]interface{}{
+					"enabled": true,
+				}
+				if seedID != uuid.Nil && record.ID == uuid.Nil {
+					updates["id"] = seedID
+				}
+				if err := db.Model(&record).Updates(updates).Error; err != nil {
+					return err
+				}
 			}
 		}
 	}

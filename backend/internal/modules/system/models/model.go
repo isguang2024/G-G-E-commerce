@@ -149,7 +149,7 @@ type PermissionAction struct {
 	ID              uuid.UUID        `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	Code            string           `gorm:"type:varchar(36);uniqueIndex" json:"code"`
 	APIEndpointCode string           `gorm:"type:varchar(36)" json:"api_endpoint_code"`
-	PermissionKey   string           `gorm:"type:varchar(150);index:idx_permission_actions_permission_key" json:"permission_key"`
+	PermissionKey   string           `gorm:"type:varchar(150);index:idx_permission_keys_permission_key" json:"permission_key"`
 	ModuleCode      string           `gorm:"type:varchar(100);not null;default:''" json:"module_code"`
 	ModuleGroupID   *uuid.UUID       `gorm:"type:uuid;index" json:"module_group_id"`
 	FeatureGroupID  *uuid.UUID       `gorm:"type:uuid;index" json:"feature_group_id"`
@@ -168,7 +168,7 @@ type PermissionAction struct {
 }
 
 func (PermissionAction) TableName() string {
-	return "permission_actions"
+	return "permission_keys"
 }
 
 type FeaturePackage struct {
@@ -207,7 +207,7 @@ type FeaturePackageAction struct {
 }
 
 func (FeaturePackageAction) TableName() string {
-	return "feature_package_actions"
+	return "feature_package_keys"
 }
 
 type FeaturePackageMenu struct {

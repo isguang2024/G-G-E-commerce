@@ -12,6 +12,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
+	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
@@ -850,7 +851,7 @@ func (h *TenantHandler) DeleteMyTeamRole(c *gin.Context) {
 	}
 
 	if err := database.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("user_id = ? AND role_id = ? AND tenant_id = ?", member.UserID, role.ID, member.TenantID).Delete(&user.UserRole{}).Error; err != nil {
+		if err := tx.Where("role_id = ? AND tenant_id = ?", role.ID, member.TenantID).Delete(&user.UserRole{}).Error; err != nil {
 			return err
 		}
 		if err := tx.Where("role_id = ?", role.ID).Delete(&user.RoleFeaturePackage{}).Error; err != nil {
@@ -863,6 +864,9 @@ func (h *TenantHandler) DeleteMyTeamRole(c *gin.Context) {
 			return err
 		}
 		if err := tx.Where("role_id = ?", role.ID).Delete(&user.RoleDataPermission{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("team_id = ? AND role_id = ?", member.TenantID, role.ID).Delete(&models.TeamRoleAccessSnapshot{}).Error; err != nil {
 			return err
 		}
 		return tx.Delete(&user.Role{}, role.ID).Error

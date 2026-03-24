@@ -68,7 +68,7 @@ func (s *service) GetSnapshot(teamID uuid.UUID) (*Snapshot, error) {
 	if snapshot != nil {
 		return snapshot, nil
 	}
-	return emptyActionSnapshot(), nil
+	return s.RefreshSnapshot(teamID)
 }
 
 func (s *service) calculateActionSnapshot(teamID uuid.UUID) (*Snapshot, error) {
@@ -119,6 +119,16 @@ func (s *service) GetMenuSnapshot(teamID uuid.UUID) (*MenuSnapshot, error) {
 	if snapshot != nil {
 		return snapshot, nil
 	}
+	if _, err := s.RefreshSnapshot(teamID); err != nil {
+		return nil, err
+	}
+	snapshot, err = s.loadMenuSnapshot(teamID)
+	if err != nil {
+		return nil, err
+	}
+	if snapshot != nil {
+		return snapshot, nil
+	}
 	return emptyMenuSnapshot(), nil
 }
 
@@ -158,7 +168,14 @@ func (s *service) GetRoleSnapshot(teamID, roleID uuid.UUID, inheritAll bool) (*R
 	if snapshot != nil {
 		return snapshot, nil
 	}
-	return emptyRoleSnapshot(inheritAll), nil
+	snapshot, err = s.calculateRoleSnapshot(teamID, roleID, inheritAll)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.saveRoleSnapshot(teamID, roleID, snapshot); err != nil {
+		return nil, err
+	}
+	return snapshot, nil
 }
 
 func (s *service) calculateRoleSnapshot(teamID, roleID uuid.UUID, inheritAll bool) (*RoleSnapshot, error) {

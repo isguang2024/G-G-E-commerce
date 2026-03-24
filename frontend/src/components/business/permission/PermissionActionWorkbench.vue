@@ -241,24 +241,34 @@ const activeFeatures = ref<string[]>([])
 const featureOptions = computed(() => {
   return uniqueByValue(
     props.actions
-      .map((item) => item.featureKind)
-      .filter(Boolean)
-      .map((value) => ({
-        value: `${value}`,
-        label: formatFeature(`${value}`)
+      .map((item) => ({
+        value: `${item.featureGroupId || item.featureKind || ''}`,
+        label: item.featureGroup?.name || formatFeature(`${item.featureKind || ''}`)
       }))
+      .filter((item) => item.value)
   )
 })
+
+const moduleKeywords = (item: WorkbenchActionItem) =>
+  [
+    item.moduleGroup?.name,
+    item.moduleCode,
+    item.resourceCode,
+    item.featureGroup?.name,
+    item.featureKind
+  ]
+    .filter(Boolean)
+    .join(' ')
 
 const filteredActions = computed(() => {
   const keyword = searchKeyword.value.trim().toLowerCase()
   return props.actions.filter((item) => {
-    if (featureFilter.value && `${item.featureKind || ''}` !== featureFilter.value) {
+    if (featureFilter.value && `${item.featureGroupId || item.featureKind || ''}` !== featureFilter.value) {
       return false
     }
 
     if (keyword) {
-      const text = [item.name, item.permissionKey, item.code, item.moduleCode, item.description]
+      const text = [item.name, item.permissionKey, item.code, item.description, moduleKeywords(item)]
         .filter(Boolean)
         .join(' ')
         .toLowerCase()

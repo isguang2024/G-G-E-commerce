@@ -102,13 +102,29 @@ func (b *DeploymentBuilder) AnnotatedRoutes() []apiregistry.RuntimeRoute {
 func (b *DeploymentBuilder) UnregisteredRoutes() []apiregistry.RuntimeRoute {
 	routes := b.RuntimeRoutes()
 	result := make([]apiregistry.RuntimeRoute, 0, len(routes))
+	registered := make(map[string]struct{})
+	if b != nil && b.db != nil {
+		var rows []struct {
+			Method string
+			Path   string
+		}
+		if err := b.db.Table("api_endpoints").Select("method, path").Where("deleted_at IS NULL").Scan(&rows).Error; err == nil {
+			for _, row := range rows {
+				registered[routeSpec(row.Method, row.Path)] = struct{}{}
+			}
+		}
+	}
 	for _, route := range routes {
-		if route.HasMeta {
+		if _, ok := registered[routeSpec(route.Method, route.Path)]; ok {
 			continue
 		}
 		result = append(result, route)
 	}
 	return result
+}
+
+func routeSpec(method, path string) string {
+	return strings.ToUpper(strings.TrimSpace(method)) + " " + strings.TrimSpace(path)
 }
 
 func (b *DeploymentBuilder) Summary() map[string]interface{} {

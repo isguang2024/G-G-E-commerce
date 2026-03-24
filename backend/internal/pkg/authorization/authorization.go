@@ -103,7 +103,7 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey
 		return false, nil, ErrUserInactive
 	}
 	var actionDef models.PermissionAction
-	err = s.db.Where("permission_actions.permission_key = ?", resolvePermissionKey(permissionKey, legacy...)).First(&actionDef).Error
+	err = s.db.Where("permission_keys.permission_key = ?", resolvePermissionKey(permissionKey, legacy...)).First(&actionDef).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil, ErrPermissionActionMissing

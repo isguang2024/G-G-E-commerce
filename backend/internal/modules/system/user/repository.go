@@ -1134,7 +1134,7 @@ func (r *permissionActionRepository) GetByID(id uuid.UUID) (*PermissionAction, e
 
 func (r *permissionActionRepository) GetByPermissionKey(permissionKey string) (*PermissionAction, error) {
 	var action PermissionAction
-	err := r.db.Preload("ModuleGroup").Preload("FeatureGroup").Where("permission_actions.permission_key = ?", permissionKey).First(&action).Error
+	err := r.db.Preload("ModuleGroup").Preload("FeatureGroup").Where("permission_keys.permission_key = ?", permissionKey).First(&action).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
@@ -1162,10 +1162,10 @@ func (r *permissionActionRepository) GetAllEnabled() ([]PermissionAction, error)
 func (r *permissionActionRepository) ListDistinctModuleCodes() ([]string, error) {
 	var moduleCodes []string
 	err := r.db.Model(&PermissionAction{}).
-		Where("COALESCE(permission_actions.module_code, '') <> ''").
-		Distinct("permission_actions.module_code").
-		Order("permission_actions.module_code ASC").
-		Pluck("permission_actions.module_code", &moduleCodes).Error
+		Where("COALESCE(permission_keys.module_code, '') <> ''").
+		Distinct("permission_keys.module_code").
+		Order("permission_keys.module_code ASC").
+		Pluck("permission_keys.module_code", &moduleCodes).Error
 	return moduleCodes, err
 }
 

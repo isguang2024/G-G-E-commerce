@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
+	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 )
 
@@ -193,11 +194,24 @@ func (s *tenantService) Delete(id uuid.UUID) error {
 	}
 
 	return s.db.Transaction(func(tx *gorm.DB) error {
+		var roleIDs []uuid.UUID
+		if err := tx.Model(&user.Role{}).Where("tenant_id = ?", id).Pluck("id", &roleIDs).Error; err != nil {
+			return err
+		}
+
 		if err := tx.Where("tenant_id = ?", id).Delete(&user.UserActionPermission{}).Error; err != nil {
 			return err
 		}
 
 		if err := tx.Where("team_id = ?", id).Delete(&user.TeamFeaturePackage{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("team_id = ?", id).Delete(&user.TeamBlockedMenu{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("team_id = ?", id).Delete(&user.TeamBlockedAction{}).Error; err != nil {
 			return err
 		}
 
@@ -214,6 +228,31 @@ func (s *tenantService) Delete(id uuid.UUID) error {
 		}
 
 		if err := tx.Where("tenant_id = ?", id).Delete(&user.TenantMember{}).Error; err != nil {
+			return err
+		}
+
+		if len(roleIDs) > 0 {
+			if err := tx.Where("role_id IN ?", roleIDs).Delete(&user.RoleFeaturePackage{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("role_id IN ?", roleIDs).Delete(&user.RoleHiddenMenu{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("role_id IN ?", roleIDs).Delete(&user.RoleDisabledAction{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("role_id IN ?", roleIDs).Delete(&user.RoleDataPermission{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("role_id IN ?", roleIDs).Delete(&models.TeamRoleAccessSnapshot{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("id IN ?", roleIDs).Delete(&user.Role{}).Error; err != nil {
+				return err
+			}
+		}
+
+		if err := tx.Where("team_id = ?", id).Delete(&models.TeamAccessSnapshot{}).Error; err != nil {
 			return err
 		}
 

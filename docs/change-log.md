@@ -1051,3 +1051,16 @@
 - 继续把 `cmd/migrate/main.go` 中剩余非必要初始化细节迁入 `permissionseed`，尤其是可继续下沉的菜单/角色相关默认化逻辑。
 - 推进正式命名收口：`permission_actions -> permission_keys`、`feature_package_actions -> feature_package_keys`，让表名和当前主模型一致。
 - 若接下来转向别的主线，当前初始化层已经足够稳定，可优先避免再往迁移入口追加新的种子写库实现。
+
+## 2026-03-24 删除联动、快照补偿与初始化覆盖修复
+
+### 本次改动
+- 修复了平台角色、团队角色和团队删除时的关联清理链路，补齐用户角色绑定、角色功能包、角色菜单隐藏、角色功能禁用、角色数据权限、团队/平台快照等从属数据的删除，避免主体删除后残留脏权限。
+- 快照读取逻辑已改为“缺失即重算并持久化”，覆盖平台角色快照、团队功能快照、团队菜单快照和团队角色快照，避免首次读取或异常缺失时返回假空权限。
+- 初始化 Seeds 不再对内置功能包执行“先删后重建”覆盖，改为仅补齐缺失的默认动作、菜单和组合关系；同时 API 保存时开始校验 `permission_key` 是否真实存在，平台角色绑定功能包时增加上下文校验。
+- 前端同步补了 API 管理页全量统计、功能包 `common` 上下文范围选择以及权限工作台按功能分组筛选；已验证 `backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit` 通过，并重新执行真实迁移二进制，数据库校验结果仍为 `permission_groups=13`、`permission_actions=18`、`feature_packages=6`、`feature_package_bundles=3`、`feature_package_actions=11`、`role_feature_packages(enabled)=2`。
+
+### 下次方向
+- 继续把固定 ID 策略从默认 Seeds 推到正式表命名收口，优先推进 `permission_actions -> permission_keys` 与 `feature_package_actions -> feature_package_keys`。
+- 若后续要进一步增强删除一致性，可补数据库外键和 `ON DELETE CASCADE` 到纯从属表，但业务刷新与跨表补偿仍建议保留在服务层事务里。
+- API 管理和权限页面的主链已经稳定，下一轮可以把重心切到你准备转向的新主线，不必再回头做结构级清理。

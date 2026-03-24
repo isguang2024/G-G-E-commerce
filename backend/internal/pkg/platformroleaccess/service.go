@@ -42,7 +42,7 @@ func (s *service) GetSnapshot(roleID uuid.UUID) (*Snapshot, error) {
 	if snapshot != nil {
 		return snapshot, nil
 	}
-	return emptySnapshot(), nil
+	return s.RefreshSnapshot(roleID)
 }
 
 func (s *service) RefreshSnapshot(roleID uuid.UUID) (*Snapshot, error) {

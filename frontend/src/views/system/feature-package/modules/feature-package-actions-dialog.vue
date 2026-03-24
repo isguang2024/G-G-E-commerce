@@ -160,9 +160,20 @@
 
   function supportsActionContext(packageContextType: string, actionContextType: string) {
     if (packageContextType === 'common') {
-      return actionContextType === 'platform' || actionContextType === 'team'
+      return (
+        actionContextType === 'platform' ||
+        actionContextType === 'team' ||
+        actionContextType === 'common'
+      )
     }
-    return packageContextType === actionContextType
+    if (packageContextType === 'platform,team' || packageContextType === 'team,platform') {
+      return (
+        actionContextType === 'platform' ||
+        actionContextType === 'team' ||
+        actionContextType === 'common'
+      )
+    }
+    return packageContextType === actionContextType || actionContextType === 'common'
   }
 
   function formatContextType(contextType?: string) {

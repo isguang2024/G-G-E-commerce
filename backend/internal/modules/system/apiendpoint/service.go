@@ -333,6 +333,7 @@ func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string) (*us
 
 	keys := make([]string, 0, len(permissionKeys))
 	seen := make(map[string]struct{}, len(permissionKeys))
+	actionRepo := user.NewPermissionActionRepository(s.db)
 	for _, key := range permissionKeys {
 		target := strings.TrimSpace(key)
 		if target == "" {
@@ -342,6 +343,12 @@ func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string) (*us
 			continue
 		}
 		seen[target] = struct{}{}
+		if _, err := actionRepo.GetByPermissionKey(target); err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, errors.New("存在未注册的功能权限键")
+			}
+			return nil, err
+		}
 		keys = append(keys, target)
 	}
 	items := make([]user.APIEndpointPermissionBinding, 0, len(keys))

@@ -172,13 +172,16 @@ func createUniqueIndexes() error {
 		}
 	}
 
-	actionUniqueIndexName := "idx_permission_actions_permission_key"
+	actionUniqueIndexName := "idx_permission_keys_permission_key"
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", actionUniqueIndexName).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("DROP INDEX IF EXISTS idx_permission_actions_resource_action_unique").Error; err != nil {
 			return err
 		}
-		if err := DB.Exec("CREATE UNIQUE INDEX " + actionUniqueIndexName + " ON permission_actions (permission_key) WHERE deleted_at IS NULL").Error; err != nil {
+		if err := DB.Exec("DROP INDEX IF EXISTS idx_permission_actions_permission_key").Error; err != nil {
+			return err
+		}
+		if err := DB.Exec("CREATE UNIQUE INDEX " + actionUniqueIndexName + " ON permission_keys (permission_key) WHERE deleted_at IS NULL").Error; err != nil {
 			return err
 		}
 	}
@@ -223,10 +226,13 @@ func createUniqueIndexes() error {
 		}
 	}
 
-	permissionActionHotIndexName := "idx_permission_actions_status_sort_created"
+	permissionActionHotIndexName := "idx_permission_keys_status_sort_created"
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", permissionActionHotIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE INDEX " + permissionActionHotIndexName + " ON permission_actions (status, sort_order, created_at DESC)").Error; err != nil {
+		if err := DB.Exec("DROP INDEX IF EXISTS idx_permission_actions_status_sort_created").Error; err != nil {
+			return err
+		}
+		if err := DB.Exec("CREATE INDEX " + permissionActionHotIndexName + " ON permission_keys (status, sort_order, created_at DESC)").Error; err != nil {
 			return err
 		}
 	}
@@ -247,10 +253,13 @@ func createUniqueIndexes() error {
 		}
 	}
 
-	featurePackageActionIndexName := "idx_feature_package_actions_unique"
+	featurePackageActionIndexName := "idx_feature_package_keys_unique"
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", featurePackageActionIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + featurePackageActionIndexName + " ON feature_package_actions (package_id, action_id)").Error; err != nil {
+		if err := DB.Exec("DROP INDEX IF EXISTS idx_feature_package_actions_unique").Error; err != nil {
+			return err
+		}
+		if err := DB.Exec("CREATE UNIQUE INDEX " + featurePackageActionIndexName + " ON feature_package_keys (package_id, action_id)").Error; err != nil {
 			return err
 		}
 	}
