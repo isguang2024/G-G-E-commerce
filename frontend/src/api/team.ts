@@ -40,6 +40,7 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
     module === 'menu' ||
     module === 'menu_backup' ||
     module === 'permission_action' ||
+    module === 'permission_key' ||
     module === 'api_endpoint' ||
     module === 'feature_package'
   ) {

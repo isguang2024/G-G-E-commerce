@@ -29,8 +29,8 @@ type Service interface {
 	Delete(id uuid.UUID) error
 	GetPackageChildren(id uuid.UUID) ([]uuid.UUID, []user.FeaturePackage, error)
 	SetPackageChildren(id uuid.UUID, childPackageIDs []uuid.UUID) error
-	GetPackageActions(id uuid.UUID) ([]uuid.UUID, []user.PermissionAction, error)
-	SetPackageActions(id uuid.UUID, actionIDs []uuid.UUID) error
+	GetPackageKeys(id uuid.UUID) ([]uuid.UUID, []user.PermissionKey, error)
+	SetPackageKeys(id uuid.UUID, actionIDs []uuid.UUID) error
 	GetPackageMenus(id uuid.UUID) ([]uuid.UUID, []user.Menu, error)
 	SetPackageMenus(id uuid.UUID, menuIDs []uuid.UUID) error
 	GetPackageTeams(id uuid.UUID) ([]uuid.UUID, error)
@@ -42,11 +42,11 @@ type Service interface {
 type service struct {
 	packageRepo       user.FeaturePackageRepository
 	packageBundleRepo user.FeaturePackageBundleRepository
-	packageActionRepo user.FeaturePackageActionRepository
+	packageActionRepo user.FeaturePackageKeyRepository
 	packageMenuRepo   user.FeaturePackageMenuRepository
 	teamPackageRepo   user.TeamFeaturePackageRepository
 	rolePackageRepo   user.RoleFeaturePackageRepository
-	actionRepo        user.PermissionActionRepository
+	actionRepo        user.PermissionKeyRepository
 	menuRepo          user.MenuRepository
 	tenantRepo        user.TenantRepository
 	boundaryService   teamboundary.Service
@@ -56,11 +56,11 @@ type service struct {
 func NewService(
 	packageRepo user.FeaturePackageRepository,
 	packageBundleRepo user.FeaturePackageBundleRepository,
-	packageActionRepo user.FeaturePackageActionRepository,
+	packageActionRepo user.FeaturePackageKeyRepository,
 	packageMenuRepo user.FeaturePackageMenuRepository,
 	teamPackageRepo user.TeamFeaturePackageRepository,
 	rolePackageRepo user.RoleFeaturePackageRepository,
-	actionRepo user.PermissionActionRepository,
+	actionRepo user.PermissionKeyRepository,
 	menuRepo user.MenuRepository,
 	tenantRepo user.TenantRepository,
 	boundaryService teamboundary.Service,
@@ -182,7 +182,7 @@ func (s *service) Update(id uuid.UUID, req *dto.FeaturePackageUpdateRequest) err
 	if packageType := normalizePackageType(req.PackageType); packageType != "" {
 		if packageType != current.PackageType {
 			if packageType == "bundle" {
-				actionIDs, getActionErr := s.packageActionRepo.GetActionIDsByPackageID(id)
+				actionIDs, getActionErr := s.packageActionRepo.GetKeyIDsByPackageID(id)
 				if getActionErr != nil {
 					return getActionErr
 				}
@@ -340,14 +340,14 @@ func (s *service) SetPackageChildren(id uuid.UUID, childPackageIDs []uuid.UUID) 
 	return nil
 }
 
-func (s *service) GetPackageActions(id uuid.UUID) ([]uuid.UUID, []user.PermissionAction, error) {
+func (s *service) GetPackageKeys(id uuid.UUID) ([]uuid.UUID, []user.PermissionKey, error) {
 	if _, err := s.packageRepo.GetByID(id); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil, ErrFeaturePackageNotFound
 		}
 		return nil, nil, err
 	}
-	actionIDs, err := s.packageActionRepo.GetActionIDsByPackageID(id)
+	actionIDs, err := s.packageActionRepo.GetKeyIDsByPackageID(id)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -358,7 +358,7 @@ func (s *service) GetPackageActions(id uuid.UUID) ([]uuid.UUID, []user.Permissio
 	return actionIDs, actions, nil
 }
 
-func (s *service) SetPackageActions(id uuid.UUID, actionIDs []uuid.UUID) error {
+func (s *service) SetPackageKeys(id uuid.UUID, actionIDs []uuid.UUID) error {
 	item, err := s.packageRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -383,7 +383,7 @@ func (s *service) SetPackageActions(id uuid.UUID, actionIDs []uuid.UUID) error {
 			}
 		}
 	}
-	if err := s.packageActionRepo.ReplacePackageActions(id, actionIDs); err != nil {
+	if err := s.packageActionRepo.ReplacePackageKeys(id, actionIDs); err != nil {
 		return err
 	}
 	if s.refresher != nil {

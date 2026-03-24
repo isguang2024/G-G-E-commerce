@@ -25,12 +25,12 @@ type MenuHandler struct {
 	menuRepo    interface {
 		ListAll() ([]user.Menu, error)
 	}
-	roleRepo         user.RoleRepository
-	userRoleRepo     user.UserRoleRepository
-	platformService  platformaccess.Service
-	boundaryService  teamboundary.Service
-	authzService     interface {
-		Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionAction, error)
+	roleRepo        user.RoleRepository
+	userRoleRepo    user.UserRoleRepository
+	platformService platformaccess.Service
+	boundaryService teamboundary.Service
+	authzService    interface {
+		Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
 	}
 	logger *zap.Logger
 }
@@ -38,18 +38,18 @@ type MenuHandler struct {
 func NewMenuHandler(menuService MenuService, userRepo user.UserRepository, menuRepo interface {
 	ListAll() ([]user.Menu, error)
 }, roleRepo user.RoleRepository, userRoleRepo user.UserRoleRepository, boundaryService teamboundary.Service, authzService interface {
-	Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionAction, error)
+	Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
 }, platformService platformaccess.Service, logger *zap.Logger) *MenuHandler {
 	return &MenuHandler{
-		menuService:      menuService,
-		userRepo:         userRepo,
-		menuRepo:         menuRepo,
-		roleRepo:         roleRepo,
-		userRoleRepo:     userRoleRepo,
-		platformService:  platformService,
-		boundaryService:  boundaryService,
-		authzService:     authzService,
-		logger:           logger,
+		menuService:     menuService,
+		userRepo:        userRepo,
+		menuRepo:        menuRepo,
+		roleRepo:        roleRepo,
+		userRoleRepo:    userRoleRepo,
+		platformService: platformService,
+		boundaryService: boundaryService,
+		authzService:    authzService,
+		logger:          logger,
 	}
 }
 

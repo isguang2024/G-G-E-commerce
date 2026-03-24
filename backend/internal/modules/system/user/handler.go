@@ -18,7 +18,7 @@ import (
 const tenantContextHeader = "X-Tenant-ID"
 
 type UserHandler struct {
-	userService UserService
+	userService    UserService
 	featurePkgRepo interface {
 		GetByIDs(ids []uuid.UUID) ([]FeaturePackage, error)
 	}
@@ -847,7 +847,7 @@ func actionIDsToStrings(ids []uuid.UUID) []string {
 	return packageIDsToStrings(ids)
 }
 
-func actionListToMaps(items []PermissionAction) []gin.H {
+func actionListToMaps(items []PermissionKey) []gin.H {
 	result := make([]gin.H, 0, len(items))
 	for _, item := range items {
 		result = append(result, gin.H{

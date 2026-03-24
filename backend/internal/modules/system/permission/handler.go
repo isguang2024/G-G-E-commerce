@@ -23,7 +23,7 @@ func NewPermissionHandler(permissionService PermissionService, logger *zap.Logge
 }
 
 func (h *PermissionHandler) List(c *gin.Context) {
-	var req dto.PermissionActionListRequest
+	var req dto.PermissionKeyListRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -31,14 +31,14 @@ func (h *PermissionHandler) List(c *gin.Context) {
 	}
 	list, total, err := h.permissionService.List(&req)
 	if err != nil {
-		h.logger.Error("List permission actions failed", zap.Error(err))
+		h.logger.Error("List permission keys failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能权限列表失败")
 		c.JSON(status, resp)
 		return
 	}
 	records := make([]gin.H, 0, len(list))
-	for _, action := range list {
-		records = append(records, actionToMap(&action))
+	for _, item := range list {
+		records = append(records, permissionKeyToMap(&item))
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
 		"records": records,
@@ -55,9 +55,9 @@ func (h *PermissionHandler) Get(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	action, err := h.permissionService.Get(id)
+	item, err := h.permissionService.Get(id)
 	if err != nil {
-		if err == ErrPermissionActionNotFound {
+		if err == ErrPermissionKeyNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能权限不存在")
 			c.JSON(status, resp)
 			return
@@ -66,7 +66,7 @@ func (h *PermissionHandler) Get(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(actionToMap(action)))
+	c.JSON(http.StatusOK, dto.SuccessResponse(permissionKeyToMap(item)))
 }
 
 func (h *PermissionHandler) ListGroups(c *gin.Context) {
@@ -104,12 +104,12 @@ func (h *PermissionHandler) ListEndpoints(c *gin.Context) {
 	}
 	list, err := h.permissionService.ListEndpoints(id)
 	if err != nil {
-		if err == ErrPermissionActionNotFound {
+		if err == ErrPermissionKeyNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能权限不存在")
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("List permission action endpoints failed", zap.Error(err))
+		h.logger.Error("List permission key endpoints failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能权限关联接口失败")
 		c.JSON(status, resp)
 		return
@@ -179,25 +179,25 @@ func (h *PermissionHandler) UpdateGroup(c *gin.Context) {
 }
 
 func (h *PermissionHandler) Create(c *gin.Context) {
-	var req dto.PermissionActionCreateRequest
+	var req dto.PermissionKeyCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
 		return
 	}
-	action, err := h.permissionService.Create(&req)
+	item, err := h.permissionService.Create(&req)
 	if err != nil {
-		if err == ErrPermissionActionExists {
+		if err == ErrPermissionKeyExists {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrConflict, "功能权限编码已存在")
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Create permission action failed", zap.Error(err))
+		h.logger.Error("Create permission key failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "创建功能权限失败: "+err.Error())
 		c.JSON(status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"id": action.ID.String()}))
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"id": item.ID.String()}))
 }
 
 func (h *PermissionHandler) Update(c *gin.Context) {
@@ -207,24 +207,24 @@ func (h *PermissionHandler) Update(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	var req dto.PermissionActionUpdateRequest
+	var req dto.PermissionKeyUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
 		return
 	}
 	if err := h.permissionService.Update(id, &req); err != nil {
-		if err == ErrPermissionActionNotFound {
+		if err == ErrPermissionKeyNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能权限不存在")
 			c.JSON(status, resp)
 			return
 		}
-		if err == ErrPermissionActionExists {
+		if err == ErrPermissionKeyExists {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrConflict, "功能权限编码已存在")
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Update permission action failed", zap.Error(err))
+		h.logger.Error("Update permission key failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "更新功能权限失败: "+err.Error())
 		c.JSON(status, resp)
 		return
@@ -240,12 +240,12 @@ func (h *PermissionHandler) Delete(c *gin.Context) {
 		return
 	}
 	if err := h.permissionService.Delete(id); err != nil {
-		if err == ErrPermissionActionNotFound {
+		if err == ErrPermissionKeyNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能权限不存在")
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Delete permission action failed", zap.Error(err))
+		h.logger.Error("Delete permission key failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "删除功能权限失败")
 		c.JSON(status, resp)
 		return
@@ -253,43 +253,43 @@ func (h *PermissionHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
-func actionToMap(action *user.PermissionAction) gin.H {
-	permissionKey := canonicalPermissionKey(action.PermissionKey)
+func permissionKeyToMap(item *user.PermissionKey) gin.H {
+	permissionKey := canonicalPermissionKey(item.PermissionKey)
 	mapping := permissionkey.FromKey(permissionKey)
-	contextType := action.ContextType
+	contextType := item.ContextType
 	if contextType == "" {
 		contextType = mapping.ContextType
 	}
-	name := action.Name
-	description := action.Description
+	name := item.Name
+	description := item.Description
 	if description == "" && mapping.Description != "" {
 		description = mapping.Description
 	}
-	moduleCode := action.ModuleCode
-	if action.ModuleGroup != nil && action.ModuleGroup.Code != "" {
-		moduleCode = action.ModuleGroup.Code
+	moduleCode := item.ModuleCode
+	if item.ModuleGroup != nil && item.ModuleGroup.Code != "" {
+		moduleCode = item.ModuleGroup.Code
 	}
-	featureKind := action.FeatureKind
-	if action.FeatureGroup != nil && action.FeatureGroup.Code != "" {
-		featureKind = action.FeatureGroup.Code
+	featureKind := item.FeatureKind
+	if item.FeatureGroup != nil && item.FeatureGroup.Code != "" {
+		featureKind = item.FeatureGroup.Code
 	}
 	return gin.H{
-		"id":               action.ID.String(),
+		"id":               item.ID.String(),
 		"permission_key":   permissionKey,
 		"module_code":      moduleCode,
-		"module_group_id":  stringifyUUIDPointer(action.ModuleGroupID),
-		"feature_group_id": stringifyUUIDPointer(action.FeatureGroupID),
-		"module_group":     permissionGroupToMap(action.ModuleGroup),
-		"feature_group":    permissionGroupToMap(action.FeatureGroup),
+		"module_group_id":  stringifyUUIDPointer(item.ModuleGroupID),
+		"feature_group_id": stringifyUUIDPointer(item.FeatureGroupID),
+		"module_group":     permissionGroupToMap(item.ModuleGroup),
+		"feature_group":    permissionGroupToMap(item.FeatureGroup),
 		"context_type":     contextType,
 		"feature_kind":     featureKind,
 		"name":             name,
 		"description":      description,
-		"status":           action.Status,
-		"sort_order":       action.SortOrder,
-		"is_builtin":       action.IsBuiltin,
-		"created_at":       action.CreatedAt.Format("2006-01-02 15:04:05"),
-		"updated_at":       action.UpdatedAt.Format("2006-01-02 15:04:05"),
+		"status":           item.Status,
+		"sort_order":       item.SortOrder,
+		"is_builtin":       item.IsBuiltin,
+		"created_at":       item.CreatedAt.Format("2006-01-02 15:04:05"),
+		"updated_at":       item.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
 }
 

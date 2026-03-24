@@ -322,14 +322,14 @@ func featurePackageListToMaps(items []user.FeaturePackage) []gin.H {
 	return result
 }
 
-func buildActionSourceMaps(sourceMap map[uuid.UUID][]uuid.UUID) []gin.H {
+func buildKeySourceMaps(sourceMap map[uuid.UUID][]uuid.UUID) []gin.H {
 	if len(sourceMap) == 0 {
 		return []gin.H{}
 	}
 	result := make([]gin.H, 0, len(sourceMap))
-	for actionID, packageIDs := range sourceMap {
+	for keyID, packageIDs := range sourceMap {
 		result = append(result, gin.H{
-			"action_id":   actionID.String(),
+			"action_id":   keyID.String(),
 			"package_ids": packageIDsToStrings(packageIDs),
 		})
 	}
@@ -392,14 +392,14 @@ func (h *RoleHandler) SetRoleMenus(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
-func (h *RoleHandler) GetRoleActions(c *gin.Context) {
+func (h *RoleHandler) GetRoleKeys(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
 		c.JSON(status, resp)
 		return
 	}
-	boundary, err := h.roleService.GetRoleActionBoundary(id)
+	boundary, err := h.roleService.GetRoleKeyBoundary(id)
 	if err != nil {
 		if err == ErrRoleNotFound {
 			status, resp := errcode.Response(errcode.ErrRoleNotFound)
@@ -411,47 +411,47 @@ func (h *RoleHandler) GetRoleActions(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Get role actions failed", zap.Error(err))
+		h.logger.Error("Get role permission keys failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取角色功能权限失败")
 		c.JSON(status, resp)
 		return
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
-		"action_ids":           packageIDsToStrings(boundary.EffectiveActionIDs),
-		"available_action_ids": packageIDsToStrings(boundary.AvailableActionIDs),
-		"disabled_action_ids":  packageIDsToStrings(boundary.DisabledActionIDs),
+		"action_ids":           packageIDsToStrings(boundary.EffectiveKeyIDs),
+		"available_action_ids": packageIDsToStrings(boundary.AvailableKeyIDs),
+		"disabled_action_ids":  packageIDsToStrings(boundary.DisabledKeyIDs),
 		"expanded_package_ids": packageIDsToStrings(boundary.ExpandedPackageIDs),
-		"derived_sources":      buildActionSourceMaps(boundary.ActionSourceMap),
+		"derived_sources":      buildKeySourceMaps(boundary.KeySourceMap),
 	}))
 }
 
-func (h *RoleHandler) SetRoleActions(c *gin.Context) {
+func (h *RoleHandler) SetRoleKeys(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的角色ID")
 		c.JSON(status, resp)
 		return
 	}
-	var req dto.RoleActionPermissionsRequest
+	var req dto.RoleKeyPermissionsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
 		return
 	}
-	actions := make([]user.RoleActionPermission, 0, len(req.ActionIDs))
-	for _, item := range req.ActionIDs {
-		actionID, parseErr := uuid.Parse(item)
+	keys := make([]user.RoleKeyPermission, 0, len(req.KeyIDs))
+	for _, item := range req.KeyIDs {
+		keyID, parseErr := uuid.Parse(item)
 		if parseErr != nil {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能权限ID")
 			c.JSON(status, resp)
 			return
 		}
-		actions = append(actions, user.RoleActionPermission{
-			RoleID:   id,
-			ActionID: actionID,
+		keys = append(keys, user.RoleKeyPermission{
+			RoleID: id,
+			KeyID:  keyID,
 		})
 	}
-	if err := h.roleService.SetRoleActions(id, actions); err != nil {
+	if err := h.roleService.SetRoleKeys(id, keys); err != nil {
 		if err == ErrRoleNotFound {
 			status, resp := errcode.Response(errcode.ErrRoleNotFound)
 			c.JSON(status, resp)
@@ -462,12 +462,12 @@ func (h *RoleHandler) SetRoleActions(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
-		if err == ErrTeamRoleActionReadonly {
+		if err == ErrTeamRoleKeyReadonly {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "团队角色功能权限由团队能力边界控制，不支持在系统角色页直接修改")
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Set role actions failed", zap.Error(err))
+		h.logger.Error("Set role permission keys failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存角色功能权限失败")
 		c.JSON(status, resp)
 		return
@@ -574,7 +574,7 @@ func formatRoleDataResourceName(resourceCode string) string {
 		"scope":               "作用域",
 		"menu":                "菜单",
 		"menu_backup":         "菜单备份",
-		"permission_action":   "功能权限",
+		"permission_key":      "功能权限",
 		"tenant":              "团队",
 		"tenant_member_admin": "团队成员（系统）",
 		"team":                "当前团队",

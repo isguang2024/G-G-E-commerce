@@ -32,11 +32,11 @@ func (m *PermissionModule) Init() error {
 }
 
 func (m *PermissionModule) RegisterRoutes(rg *gin.RouterGroup) {
-	actionRepo := user.NewPermissionActionRepository(m.db)
+	actionRepo := user.NewPermissionKeyRepository(m.db)
 	groupRepo := user.NewPermissionGroupRepository(m.db)
 	apiEndpointRepo := user.NewAPIEndpointRepository(m.db)
 	apiEndpointBindingRepo := user.NewAPIEndpointPermissionBindingRepository(m.db)
-	packageActionRepo := user.NewFeaturePackageActionRepository(m.db)
+	packageActionRepo := user.NewFeaturePackageKeyRepository(m.db)
 	teamPackageRepo := user.NewTeamFeaturePackageRepository(m.db)
 	roleDisabledActionRepo := user.NewRoleDisabledActionRepository(m.db)
 	teamBlockedActionRepo := user.NewTeamBlockedActionRepository(m.db)
@@ -50,7 +50,7 @@ func (m *PermissionModule) RegisterRoutes(rg *gin.RouterGroup) {
 	authzService := authorization.NewService(m.db, m.logger)
 
 	actions := rg.Group("/permission-actions")
-	reg := apiregistry.NewRegistrar(actions, "permission_action")
+	reg := apiregistry.NewRegistrar(actions, "permission_key")
 	{
 		reg.GETProtected("", reg.Meta("获取功能权限列表").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.List)
 		reg.GETProtected("/groups", reg.Meta("获取功能权限分组列表").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.ListGroups)

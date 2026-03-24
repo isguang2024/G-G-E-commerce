@@ -359,3 +359,60 @@
   - 若快照存在，则直接返回。
   - 若快照缺失，则自动重新计算并持久化，再返回结果。
   - 不允许再以“返回空快照”作为缺失快照的默认处理。
+
+## 2026-03-24 权限主表命名收口补充
+- 数据库正式主表名已收口为：
+  - `permission_keys`
+  - `feature_package_keys`
+- 历史表名：
+  - `permission_actions`
+  - `feature_package_actions`
+  现在仅作为迁移兼容来源，不再是正式模型名。
+- 迁移入口会在 `AutoMigrate` 前优先执行旧表重命名，保证老环境升级时不会先创建一套新空表。
+- 当前兼容策略为：
+  - 数据库表名已切换到新命名
+  - Go 结构名、Repo 名、Service 名现已同步收口到 `PermissionKey / FeaturePackageKey`
+  - 仓储、鉴权、初始化、索引维护均已改为落新表
+- 当前仍保留兼容的主要范围只包括：
+  - API 路径中的 `/actions`
+  - JSON 字段中的 `action_ids / action_id`
+  - 少量历史表名对应的仓储实现名，例如 `RoleDisabledActionRepository`
+- 这些兼容命名只用于降低外部破坏面，不再代表系统内部正式模型仍是旧 action 语义。
+
+## 2026-03-24 默认权限分组固定化补充
+- 功能权限的默认分组不允许再通过“扫描已有权限键 code 自动生成”得到。
+- 当前正式规则改为：
+  - 默认功能分组走固定 Seed 清单
+  - 默认模块分组走固定 Seed 清单
+  - 所有默认分组 ID 使用稳定 UUID 固定生成
+  - 部署迁移时统一由 `permissionseed` 导入
+- 当前内置功能权限默认绑定策略：
+  - 默认功能分组统一绑定到 `system`
+  - 默认模块分组按现有系统模块显式绑定
+- 当前默认模块分组最少应覆盖：
+  - `role`
+  - `permission_key`
+  - `user`
+  - `menu`
+  - `menu_backup`
+  - `system`
+  - `tenant`
+  - `tenant_member_admin`
+  - `team_member`
+  - `team`
+  - `api_endpoint`
+  - `feature_package`
+  - `system_permission`
+- 这些默认模块分组必须作为“可迁移主数据”存在，不能依赖运行时再推导名称。
+
+## 2026-03-24 permission_action 到 permission_key 正式迁移补充
+- `permission_action` 现在只允许作为历史兼容映射存在，不再允许作为正式模块编码、API 分类编码或默认模块分组编码继续落库。
+- 当前正式编码统一为：
+  - API 分类：`permission_key`
+  - 默认模块分组：`permission_key`
+  - 内置功能键 `module_code`：`permission_key`
+- 迁移链路必须满足以下顺序：
+  - 先确保 `permission_key` 对应的默认 API 分类、默认模块分组和默认功能键已存在
+  - 再把旧 `permission_action` 关联的数据引用迁到 `permission_key`
+  - 最后删除旧 `permission_action` 分类与旧模块分组
+- 这条迁移必须保持幂等，允许在老环境重复执行，直到数据库中只剩 `permission_key` 正式编码为止。

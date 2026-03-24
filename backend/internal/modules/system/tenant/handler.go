@@ -30,13 +30,13 @@ type TenantHandler struct {
 	roleHiddenMenuRepo     user.RoleHiddenMenuRepository
 	roleDisabledActionRepo user.RoleDisabledActionRepository
 	userRoleRepo           user.UserRoleRepository
-	actionRepo             user.PermissionActionRepository
+	actionRepo             user.PermissionKeyRepository
 	blockedMenuRepo        user.TeamBlockedMenuRepository
 	blockedActionRepo      user.TeamBlockedActionRepository
 	teamPackageRepo        user.TeamFeaturePackageRepository
 	rolePackageRepo        user.RoleFeaturePackageRepository
 	featurePkgRepo         user.FeaturePackageRepository
-	packageActionRepo      user.FeaturePackageActionRepository
+	packageActionRepo      user.FeaturePackageKeyRepository
 	packageMenuRepo        user.FeaturePackageMenuRepository
 	boundaryService        teamboundary.Service
 	refresher              interface {
@@ -45,7 +45,7 @@ type TenantHandler struct {
 	logger *zap.Logger
 }
 
-func NewTenantHandler(tenantService TenantService, tenantMemberRepo user.TenantMemberRepository, userRepo user.UserRepository, roleRepo user.RoleRepository, roleHiddenMenuRepo user.RoleHiddenMenuRepository, roleDisabledActionRepo user.RoleDisabledActionRepository, userRoleRepo user.UserRoleRepository, actionRepo user.PermissionActionRepository, blockedMenuRepo user.TeamBlockedMenuRepository, blockedActionRepo user.TeamBlockedActionRepository, teamPackageRepo user.TeamFeaturePackageRepository, rolePackageRepo user.RoleFeaturePackageRepository, featurePkgRepo user.FeaturePackageRepository, packageActionRepo user.FeaturePackageActionRepository, packageMenuRepo user.FeaturePackageMenuRepository, boundaryService teamboundary.Service, refresher interface {
+func NewTenantHandler(tenantService TenantService, tenantMemberRepo user.TenantMemberRepository, userRepo user.UserRepository, roleRepo user.RoleRepository, roleHiddenMenuRepo user.RoleHiddenMenuRepository, roleDisabledActionRepo user.RoleDisabledActionRepository, userRoleRepo user.UserRoleRepository, actionRepo user.PermissionKeyRepository, blockedMenuRepo user.TeamBlockedMenuRepository, blockedActionRepo user.TeamBlockedActionRepository, teamPackageRepo user.TeamFeaturePackageRepository, rolePackageRepo user.RoleFeaturePackageRepository, featurePkgRepo user.FeaturePackageRepository, packageActionRepo user.FeaturePackageKeyRepository, packageMenuRepo user.FeaturePackageMenuRepository, boundaryService teamboundary.Service, refresher interface {
 	RefreshTeam(teamID uuid.UUID) error
 }, logger *zap.Logger) *TenantHandler {
 	return &TenantHandler{
@@ -1114,14 +1114,14 @@ func (h *TenantHandler) SetMyTeamRoleActions(c *gin.Context) {
 		return
 	}
 
-	var req dto.RoleActionPermissionsRequest
+	var req dto.RoleKeyPermissionsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
 		return
 	}
 
-	actionIDs, parseErr := parseUUIDSlice(req.ActionIDs)
+	actionIDs, parseErr := parseUUIDSlice(req.KeyIDs)
 	if parseErr != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能权限ID")
 		c.JSON(status, resp)
@@ -1250,13 +1250,13 @@ func (h *TenantHandler) SetTenantActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	var req dto.RoleActionPermissionsRequest
+	var req dto.RoleKeyPermissionsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
 		return
 	}
-	actionIDs, parseErr := parseUUIDSlice(req.ActionIDs)
+	actionIDs, parseErr := parseUUIDSlice(req.KeyIDs)
 	if parseErr != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能权限ID")
 		c.JSON(status, resp)
@@ -1823,7 +1823,7 @@ func memberToMap(m *user.TenantMember, userInfo *user.User) gin.H {
 	return result
 }
 
-func actionMapToMap(action *user.PermissionAction) gin.H {
+func actionMapToMap(action *user.PermissionKey) gin.H {
 	return gin.H{
 		"id":             action.ID.String(),
 		"module_code":    action.ModuleCode,
@@ -1839,7 +1839,7 @@ func actionMapToMap(action *user.PermissionAction) gin.H {
 	}
 }
 
-func actionListToMaps(actions []user.PermissionAction) []gin.H {
+func actionListToMaps(actions []user.PermissionKey) []gin.H {
 	items := make([]gin.H, 0, len(actions))
 	for _, action := range actions {
 		items = append(items, actionMapToMap(&action))

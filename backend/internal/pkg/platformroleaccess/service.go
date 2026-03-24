@@ -217,7 +217,7 @@ func (s *service) getActionIDsByPackageIDs(packageIDs []uuid.UUID) ([]uuid.UUID,
 		PackageID uuid.UUID
 		ActionID  uuid.UUID
 	}
-	if err := s.db.Model(&models.FeaturePackageAction{}).
+	if err := s.db.Model(&models.FeaturePackageKey{}).
 		Select("package_id, action_id").
 		Where("package_id IN ?", packageIDs).
 		Scan(&rows).Error; err != nil {

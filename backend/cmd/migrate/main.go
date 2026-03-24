@@ -90,7 +90,7 @@ func main() {
 		logger.Info("Default permission groups initialized successfully")
 	}
 
-	if err := initDefaultPermissionActionsNoScope(logger); err != nil {
+	if err := initDefaultPermissionKeysNoScope(logger); err != nil {
 		logger.Warn("Failed to initialize permission actions", zap.Error(err))
 	} else {
 		logger.Info("Permission actions initialized successfully")
@@ -141,7 +141,7 @@ func main() {
 	if err := mergeDeprecatedTeamPermissionKeys(logger); err != nil {
 		logger.Warn("Failed to merge deprecated team permission keys after API sync", zap.Error(err))
 	}
-	if err := syncCanonicalPermissionActions(logger); err != nil {
+	if err := syncCanonicalPermissionKeys(logger); err != nil {
 		logger.Warn("Failed to sync canonical permission actions", zap.Error(err))
 	} else {
 		logger.Info("Canonical permission actions synchronized successfully")
@@ -173,6 +173,114 @@ func runNamedMigrations(logger *zap.Logger) error {
 	}
 
 	tasks := []migrationTask{
+		{
+			Name: "20260324_permission_key_code_alignment",
+			Run: func(logger *zap.Logger) error {
+				oldCategoryID := permissionseed.StableID("api-endpoint-category", "permission_action")
+				newCategoryID := permissionseed.StableID("api-endpoint-category", "permission_key")
+				oldModuleGroupID := permissionseed.StableID("permission-group", "module:permission_action")
+				newModuleGroupID := permissionseed.StableID("permission-group", "module:permission_key")
+
+				return database.DB.Transaction(func(tx *gorm.DB) error {
+					if err := tx.Model(&usermodel.APIEndpoint{}).
+						Where("category_id = ?", oldCategoryID).
+						Update("category_id", newCategoryID).Error; err != nil {
+						return err
+					}
+					if err := tx.Where("group_type = ? AND code = ?", "module", "permission_action").
+						Delete(&usermodel.PermissionGroup{}).Error; err != nil {
+						return err
+					}
+					if err := tx.Where("code = ?", "permission_action").
+						Delete(&usermodel.APIEndpointCategory{}).Error; err != nil {
+						return err
+					}
+					if err := tx.Model(&usermodel.PermissionKey{}).
+						Where("module_code = ?", "permission_action").
+						Updates(map[string]interface{}{
+							"module_code":      "permission_key",
+							"module_group_id":  newModuleGroupID,
+							"feature_group_id": permissionseed.StableID("permission-group", "feature:system"),
+						}).Error; err != nil {
+						return err
+					}
+					if err := tx.Model(&usermodel.APIEndpoint{}).
+						Where("module = ?", "permission_action").
+						Update("module", "permission_key").Error; err != nil {
+						return err
+					}
+					if err := tx.Model(&usermodel.APIEndpoint{}).
+						Where("category_id = ?", oldCategoryID).
+						Update("category_id", newCategoryID).Error; err != nil {
+						return err
+					}
+					if err := tx.Model(&usermodel.PermissionKey{}).
+						Where("module_group_id = ?", oldModuleGroupID).
+						Update("module_group_id", newModuleGroupID).Error; err != nil {
+						return err
+					}
+					return nil
+				})
+			},
+		},
+		{
+			Name: "20260324_permission_key_code_alignment_v2",
+			Run: func(logger *zap.Logger) error {
+				oldCategoryID := permissionseed.StableID("api-endpoint-category", "permission_action")
+				newCategoryID := permissionseed.StableID("api-endpoint-category", "permission_key")
+				oldModuleGroupID := permissionseed.StableID("permission-group", "module:permission_action")
+				newModuleGroupID := permissionseed.StableID("permission-group", "module:permission_key")
+				systemFeatureGroupID := permissionseed.StableID("permission-group", "feature:system")
+
+				return database.DB.Transaction(func(tx *gorm.DB) error {
+					if err := permissionseed.EnsureDefaultAPIEndpointCategories(tx); err != nil {
+						return err
+					}
+					if err := permissionseed.EnsureDefaultPermissionGroups(tx); err != nil {
+						return err
+					}
+					if err := permissionseed.EnsureDefaultPermissionKeys(tx); err != nil {
+						return err
+					}
+					if err := tx.Model(&usermodel.PermissionKey{}).
+						Where("module_code = ?", "permission_action").
+						Updates(map[string]interface{}{
+							"module_code":      "permission_key",
+							"module_group_id":  newModuleGroupID,
+							"feature_group_id": systemFeatureGroupID,
+						}).Error; err != nil {
+						return err
+					}
+					if err := tx.Model(&usermodel.PermissionKey{}).
+						Where("module_group_id = ?", oldModuleGroupID).
+						Update("module_group_id", newModuleGroupID).Error; err != nil {
+						return err
+					}
+					if err := tx.Model(&usermodel.APIEndpoint{}).
+						Where("module = ?", "permission_action").
+						Update("module", "permission_key").Error; err != nil {
+						return err
+					}
+					if err := tx.Model(&usermodel.APIEndpoint{}).
+						Where("category_id = ?", oldCategoryID).
+						Update("category_id", newCategoryID).Error; err != nil {
+						return err
+					}
+					if err := tx.Unscoped().
+						Where("group_type = ? AND code = ?", "module", "permission_action").
+						Delete(&usermodel.PermissionGroup{}).Error; err != nil {
+						return err
+					}
+					if err := tx.Unscoped().
+						Where("code = ?", "permission_action").
+						Delete(&usermodel.APIEndpointCategory{}).Error; err != nil {
+						return err
+					}
+					logger.Info("Named migration applied", zap.String("name", "20260324_permission_key_code_alignment_v2"))
+					return nil
+				})
+			},
+		},
 		{
 			Name: "20260324_team_menu_single_context_cleanup",
 			Run: func(logger *zap.Logger) error {
@@ -275,7 +383,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 			Name: "20260323_permission_key_consolidation",
 			Run: func(logger *zap.Logger) error {
 				statements := []string{
-					`ALTER TABLE permission_actions ADD COLUMN IF NOT EXISTS permission_key varchar(150)`,
+					`ALTER TABLE permission_keys ADD COLUMN IF NOT EXISTS permission_key varchar(150)`,
 					`DROP INDEX IF EXISTS idx_permission_actions_resource_action_unique`,
 				}
 				for _, statement := range statements {
@@ -284,21 +392,21 @@ func runNamedMigrations(logger *zap.Logger) error {
 					}
 				}
 
-				hasResourceCode, err := hasColumn("permission_actions", "resource_code")
+				hasResourceCode, err := hasColumn("permission_keys", "resource_code")
 				if err != nil {
 					return err
 				}
-				hasActionCode, err := hasColumn("permission_actions", "action_code")
+				hasActionCode, err := hasColumn("permission_keys", "action_code")
 				if err != nil {
 					return err
 				}
-				type legacyPermissionAction struct {
+				type legacyPermissionKey struct {
 					ID            uuid.UUID
 					PermissionKey string
 					ResourceCode  string
 					ActionCode    string
 				}
-				var actions []legacyPermissionAction
+				var actions []legacyPermissionKey
 				selects := []string{"id", "permission_key"}
 				if hasResourceCode {
 					selects = append(selects, "resource_code")
@@ -306,7 +414,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 				if hasActionCode {
 					selects = append(selects, "action_code")
 				}
-				if err := database.DB.Table("permission_actions").Select(strings.Join(selects, ", ")).Order("created_at ASC, id ASC").Scan(&actions).Error; err != nil {
+				if err := database.DB.Table("permission_keys").Select(strings.Join(selects, ", ")).Order("created_at ASC, id ASC").Scan(&actions).Error; err != nil {
 					return err
 				}
 
@@ -318,13 +426,13 @@ func runNamedMigrations(logger *zap.Logger) error {
 						mapping := permissionkey.FromLegacy(action.ResourceCode, action.ActionCode)
 						targetKey = mapping.Key
 					}
-					if err := database.DB.Model(&usermodel.PermissionAction{}).
+					if err := database.DB.Model(&usermodel.PermissionKey{}).
 						Where("id = ?", action.ID).
 						Update("permission_key", targetKey).Error; err != nil {
 						return err
 					}
 					if canonicalID, exists := canonicalByKey[targetKey]; exists {
-						if err := rebindPermissionActionReferences(action.ID, canonicalID); err != nil {
+						if err := rebindPermissionKeyReferences(action.ID, canonicalID); err != nil {
 							return err
 						}
 						duplicateIDs = append(duplicateIDs, action.ID)
@@ -334,15 +442,16 @@ func runNamedMigrations(logger *zap.Logger) error {
 				}
 
 				if len(duplicateIDs) > 0 {
-					if err := database.DB.Where("id IN ?", duplicateIDs).Delete(&usermodel.PermissionAction{}).Error; err != nil {
+					if err := database.DB.Where("id IN ?", duplicateIDs).Delete(&usermodel.PermissionKey{}).Error; err != nil {
 						return err
 					}
 				}
 
 				finishStatements := []string{
-					`ALTER TABLE permission_actions ALTER COLUMN permission_key SET NOT NULL`,
+					`ALTER TABLE permission_keys ALTER COLUMN permission_key SET NOT NULL`,
 					`DROP INDEX IF EXISTS idx_permission_actions_permission_key`,
-					`CREATE UNIQUE INDEX IF NOT EXISTS idx_permission_actions_permission_key ON permission_actions (permission_key) WHERE deleted_at IS NULL`,
+					`DROP INDEX IF EXISTS idx_permission_keys_permission_key`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_permission_keys_permission_key ON permission_keys (permission_key) WHERE deleted_at IS NULL`,
 				}
 				for _, statement := range finishStatements {
 					if err := database.DB.Exec(statement).Error; err != nil {
@@ -357,12 +466,12 @@ func runNamedMigrations(logger *zap.Logger) error {
 		{
 			Name: "20260324_permission_key_dot_cleanup",
 			Run: func(logger *zap.Logger) error {
-				type legacyPermissionAction struct {
+				type legacyPermissionKey struct {
 					ID            uuid.UUID
 					PermissionKey string
 				}
-				var actions []legacyPermissionAction
-				if err := database.DB.Table("permission_actions").Select("id, permission_key").Where("permission_key LIKE ?", "%:%").Order("created_at ASC, id ASC").Scan(&actions).Error; err != nil {
+				var actions []legacyPermissionKey
+				if err := database.DB.Table("permission_keys").Select("id, permission_key").Where("permission_key LIKE ?", "%:%").Order("created_at ASC, id ASC").Scan(&actions).Error; err != nil {
 					return err
 				}
 				if len(actions) == 0 {
@@ -371,8 +480,8 @@ func runNamedMigrations(logger *zap.Logger) error {
 				}
 
 				canonicalByKey := map[string]uuid.UUID{}
-				var existing []legacyPermissionAction
-				if err := database.DB.Table("permission_actions").Select("id, permission_key").Order("created_at ASC, id ASC").Scan(&existing).Error; err != nil {
+				var existing []legacyPermissionKey
+				if err := database.DB.Table("permission_keys").Select("id, permission_key").Order("created_at ASC, id ASC").Scan(&existing).Error; err != nil {
 					return err
 				}
 				for _, action := range existing {
@@ -392,16 +501,16 @@ func runNamedMigrations(logger *zap.Logger) error {
 						continue
 					}
 					if canonicalID, exists := canonicalByKey[targetKey]; exists && canonicalID != action.ID {
-						if err := rebindPermissionActionReferences(action.ID, canonicalID); err != nil {
+						if err := rebindPermissionKeyReferences(action.ID, canonicalID); err != nil {
 							return err
 						}
-						if err := database.DB.Delete(&usermodel.PermissionAction{}, action.ID).Error; err != nil {
+						if err := database.DB.Delete(&usermodel.PermissionKey{}, action.ID).Error; err != nil {
 							return err
 						}
 						updatedCount++
 						continue
 					}
-					if err := database.DB.Model(&usermodel.PermissionAction{}).
+					if err := database.DB.Model(&usermodel.PermissionKey{}).
 						Where("id = ?", action.ID).
 						Update("permission_key", targetKey).Error; err != nil {
 						return err
@@ -425,7 +534,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 					if contextType == "" {
 						continue
 					}
-					if err := database.DB.Model(&usermodel.PermissionAction{}).
+					if err := database.DB.Model(&usermodel.PermissionKey{}).
 						Where("permission_key = ?", mapping.Key).
 						Update("context_type", contextType).Error; err != nil {
 						return err
@@ -433,15 +542,15 @@ func runNamedMigrations(logger *zap.Logger) error {
 				}
 
 				statements := []string{
-					`UPDATE permission_actions SET context_type = 'platform' WHERE permission_key LIKE 'system.%'`,
-					`UPDATE permission_actions SET context_type = 'platform' WHERE permission_key LIKE 'tenant.%'`,
-					`UPDATE permission_actions SET context_type = 'platform' WHERE permission_key LIKE 'platform.%'`,
-					`UPDATE permission_actions SET context_type = 'team' WHERE permission_key LIKE 'team.%'`,
-					`UPDATE permission_actions SET permission_key = 'system.permission.manage', context_type = 'platform' WHERE permission_key IN ('system_permission.manage_action_registry', 'permission_action.manage')`,
-					`UPDATE permission_actions SET permission_key = 'system.role.assign_action', context_type = 'platform' WHERE permission_key = 'system_permission.assign_role_action'`,
-					`UPDATE permission_actions SET context_type = 'platform' WHERE module_code IN ('role', 'user', 'menu', 'menu_backup', 'permission_action', 'api_endpoint', 'feature_package')`,
-					`UPDATE permission_actions SET context_type = 'platform' WHERE permission_key IN ('feature_package.assign_action', 'feature_package.assign_menu', 'feature_package.assign_team')`,
-					`UPDATE permission_actions SET context_type = 'team' WHERE permission_key IN ('team.configure_action_boundary', 'team.configure_menu_boundary')`,
+					`UPDATE permission_keys SET context_type = 'platform' WHERE permission_key LIKE 'system.%'`,
+					`UPDATE permission_keys SET context_type = 'platform' WHERE permission_key LIKE 'tenant.%'`,
+					`UPDATE permission_keys SET context_type = 'platform' WHERE permission_key LIKE 'platform.%'`,
+					`UPDATE permission_keys SET context_type = 'team' WHERE permission_key LIKE 'team.%'`,
+					`UPDATE permission_keys SET permission_key = 'system.permission.manage', context_type = 'platform' WHERE permission_key IN ('system_permission.manage_action_registry', 'permission_action.manage')`,
+					`UPDATE permission_keys SET permission_key = 'system.role.assign_action', context_type = 'platform' WHERE permission_key = 'system_permission.assign_role_action'`,
+					`UPDATE permission_keys SET context_type = 'platform' WHERE module_code IN ('role', 'user', 'menu', 'menu_backup', 'permission_action', 'permission_key', 'api_endpoint', 'feature_package')`,
+					`UPDATE permission_keys SET context_type = 'platform' WHERE permission_key IN ('feature_package.assign_action', 'feature_package.assign_menu', 'feature_package.assign_team')`,
+					`UPDATE permission_keys SET context_type = 'team' WHERE permission_key IN ('team.configure_action_boundary', 'team.configure_menu_boundary')`,
 				}
 				for _, statement := range statements {
 					if err := database.DB.Exec(statement).Error; err != nil {
@@ -457,12 +566,12 @@ func runNamedMigrations(logger *zap.Logger) error {
 			Name: "20260323_permission_system_backfill_defaults",
 			Run: func(logger *zap.Logger) error {
 				statements := []string{
-					`UPDATE permission_actions SET status = 'normal' WHERE COALESCE(status, '') = ''`,
+					`UPDATE permission_keys SET status = 'normal' WHERE COALESCE(status, '') = ''`,
 					`UPDATE user_action_permissions SET effect = 'allow' WHERE COALESCE(effect, '') = ''`,
-					`ALTER TABLE permission_actions ADD COLUMN IF NOT EXISTS context_type varchar(20)`,
-					`UPDATE permission_actions SET context_type = 'platform' WHERE COALESCE(context_type, '') = '' AND (permission_key LIKE 'system.%' OR permission_key LIKE 'tenant.%' OR permission_key LIKE 'platform.%')`,
-					`UPDATE permission_actions SET context_type = 'team' WHERE COALESCE(context_type, '') = ''`,
-					`UPDATE permission_actions SET feature_kind = 'system' WHERE COALESCE(feature_kind, '') = ''`,
+					`ALTER TABLE permission_keys ADD COLUMN IF NOT EXISTS context_type varchar(20)`,
+					`UPDATE permission_keys SET context_type = 'platform' WHERE COALESCE(context_type, '') = '' AND (permission_key LIKE 'system.%' OR permission_key LIKE 'tenant.%' OR permission_key LIKE 'platform.%')`,
+					`UPDATE permission_keys SET context_type = 'team' WHERE COALESCE(context_type, '') = ''`,
+					`UPDATE permission_keys SET feature_kind = 'system' WHERE COALESCE(feature_kind, '') = ''`,
 					`UPDATE api_endpoints SET feature_kind = 'system' WHERE COALESCE(feature_kind, '') = ''`,
 				}
 				for _, statement := range statements {
@@ -470,7 +579,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 						return err
 					}
 				}
-				var actions []usermodel.PermissionAction
+				var actions []usermodel.PermissionKey
 				if err := database.DB.Find(&actions).Error; err != nil {
 					return err
 				}
@@ -482,7 +591,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 					if moduleCode == "" {
 						continue
 					}
-					if err := database.DB.Model(&usermodel.PermissionAction{}).
+					if err := database.DB.Model(&usermodel.PermissionKey{}).
 						Where("id = ?", action.ID).
 						Update("module_code", moduleCode).Error; err != nil {
 						return err
@@ -495,7 +604,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 		{
 			Name: "20260324_permission_action_drop_source_column",
 			Run: func(logger *zap.Logger) error {
-				hasSource, err := hasColumn("permission_actions", "source")
+				hasSource, err := hasColumn("permission_keys", "source")
 				if err != nil {
 					return err
 				}
@@ -503,7 +612,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 					logger.Info("Named migration skipped", zap.String("name", "20260324_permission_action_drop_source_column"))
 					return nil
 				}
-				if err := database.DB.Exec(`ALTER TABLE permission_actions DROP COLUMN IF EXISTS source`).Error; err != nil {
+				if err := database.DB.Exec(`ALTER TABLE permission_keys DROP COLUMN IF EXISTS source`).Error; err != nil {
 					return err
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260324_permission_action_drop_source_column"))
@@ -513,7 +622,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 		{
 			Name: "20260324_permission_action_drop_source_column_v2",
 			Run: func(logger *zap.Logger) error {
-				hasSource, err := hasColumn("permission_actions", "source")
+				hasSource, err := hasColumn("permission_keys", "source")
 				if err != nil {
 					return err
 				}
@@ -521,7 +630,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 					logger.Info("Named migration skipped", zap.String("name", "20260324_permission_action_drop_source_column_v2"))
 					return nil
 				}
-				if err := database.DB.Exec(`ALTER TABLE permission_actions DROP COLUMN IF EXISTS source`).Error; err != nil {
+				if err := database.DB.Exec(`ALTER TABLE permission_keys DROP COLUMN IF EXISTS source`).Error; err != nil {
 					return err
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260324_permission_action_drop_source_column_v2"))
@@ -531,10 +640,10 @@ func runNamedMigrations(logger *zap.Logger) error {
 		{
 			Name: "20260324_permission_action_drop_legacy_code_columns",
 			Run: func(logger *zap.Logger) error {
-				if err := database.DB.Exec(`ALTER TABLE permission_actions DROP COLUMN IF EXISTS resource_code`).Error; err != nil {
+				if err := database.DB.Exec(`ALTER TABLE permission_keys DROP COLUMN IF EXISTS resource_code`).Error; err != nil {
 					return err
 				}
-				if err := database.DB.Exec(`ALTER TABLE permission_actions DROP COLUMN IF EXISTS action_code`).Error; err != nil {
+				if err := database.DB.Exec(`ALTER TABLE permission_keys DROP COLUMN IF EXISTS action_code`).Error; err != nil {
 					return err
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260324_permission_action_drop_legacy_code_columns"))
@@ -544,10 +653,10 @@ func runNamedMigrations(logger *zap.Logger) error {
 		{
 			Name: "20260324_permission_action_drop_legacy_code_columns_v2",
 			Run: func(logger *zap.Logger) error {
-				if err := database.DB.Exec(`ALTER TABLE permission_actions DROP COLUMN IF EXISTS resource_code`).Error; err != nil {
+				if err := database.DB.Exec(`ALTER TABLE permission_keys DROP COLUMN IF EXISTS resource_code`).Error; err != nil {
 					return err
 				}
-				if err := database.DB.Exec(`ALTER TABLE permission_actions DROP COLUMN IF EXISTS action_code`).Error; err != nil {
+				if err := database.DB.Exec(`ALTER TABLE permission_keys DROP COLUMN IF EXISTS action_code`).Error; err != nil {
 					return err
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260324_permission_action_drop_legacy_code_columns_v2"))
@@ -570,7 +679,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 						updated_at timestamptz NOT NULL DEFAULT NOW(),
 						deleted_at timestamptz
 					)`,
-					`CREATE TABLE IF NOT EXISTS feature_package_actions (
+					`CREATE TABLE IF NOT EXISTS feature_package_keys (
 						package_id uuid NOT NULL,
 						action_id uuid NOT NULL,
 						created_at timestamptz NOT NULL DEFAULT NOW()
@@ -591,7 +700,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 						updated_at timestamptz NOT NULL DEFAULT NOW()
 					)`,
 					`CREATE UNIQUE INDEX IF NOT EXISTS idx_feature_packages_key_unique ON feature_packages (package_key) WHERE deleted_at IS NULL`,
-					`CREATE UNIQUE INDEX IF NOT EXISTS idx_feature_package_actions_unique ON feature_package_actions (package_id, action_id)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_feature_package_keys_unique ON feature_package_keys (package_id, action_id)`,
 					`CREATE UNIQUE INDEX IF NOT EXISTS idx_feature_package_menus_unique ON feature_package_menus (package_id, menu_id)`,
 					`CREATE UNIQUE INDEX IF NOT EXISTS idx_team_feature_packages_unique ON team_feature_packages (team_id, package_id)`,
 				}
@@ -822,7 +931,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 					if len(updates) == 0 {
 						continue
 					}
-					if err := database.DB.Model(&usermodel.PermissionAction{}).
+					if err := database.DB.Model(&usermodel.PermissionKey{}).
 						Where("permission_key = ?", mapping.Key).
 						Updates(updates).Error; err != nil {
 						return err
@@ -835,7 +944,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 		{
 			Name: "20260323_drop_permission_category",
 			Run: func(logger *zap.Logger) error {
-				if err := database.DB.Exec(`ALTER TABLE permission_actions DROP COLUMN IF EXISTS category`).Error; err != nil {
+				if err := database.DB.Exec(`ALTER TABLE permission_keys DROP COLUMN IF EXISTS category`).Error; err != nil {
 					return err
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260323_drop_permission_category"))
@@ -911,7 +1020,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 					`UPDATE menus
 					   SET meta = COALESCE(meta, '{}'::jsonb) - 'authList' - 'authMark' - 'isAuthButton' - 'requiresTenantContext'
 					 WHERE meta ? 'authList' OR meta ? 'authMark' OR meta ? 'isAuthButton' OR meta ? 'requiresTenantContext'`,
-					`ALTER TABLE permission_actions DROP COLUMN IF EXISTS requires_tenant_context`,
+					`ALTER TABLE permission_keys DROP COLUMN IF EXISTS requires_tenant_context`,
 					`ALTER TABLE api_endpoints DROP COLUMN IF EXISTS requires_tenant_context`,
 				)
 				for _, statement := range statements {
@@ -947,17 +1056,18 @@ func runNamedMigrations(logger *zap.Logger) error {
 			Run: func(logger *zap.Logger) error {
 				statements := []string{
 					`DELETE FROM menus WHERE name = 'Scope' OR path = 'scope' OR component = '/system/scope'`,
-					`DELETE FROM user_action_permissions WHERE action_id IN (SELECT id FROM permission_actions WHERE permission_key LIKE 'scope.%')`,
-					`DELETE FROM permission_actions WHERE permission_key LIKE 'scope.%'`,
+					`DELETE FROM user_action_permissions WHERE action_id IN (SELECT id FROM permission_keys WHERE permission_key LIKE 'scope.%')`,
+					`DELETE FROM permission_keys WHERE permission_key LIKE 'scope.%'`,
 					`ALTER TABLE role_data_permissions ADD COLUMN IF NOT EXISTS data_scope varchar(30)`,
 					`ALTER TABLE roles DROP COLUMN IF EXISTS scope_id`,
-					`ALTER TABLE permission_actions DROP COLUMN IF EXISTS scope_id`,
-					`ALTER TABLE permission_actions DROP COLUMN IF EXISTS scope_type`,
+					`ALTER TABLE permission_keys DROP COLUMN IF EXISTS scope_id`,
+					`ALTER TABLE permission_keys DROP COLUMN IF EXISTS scope_type`,
 					`ALTER TABLE api_endpoints DROP COLUMN IF EXISTS scope_id`,
 					`DROP INDEX IF EXISTS idx_permission_actions_scope_id`,
 					`DROP INDEX IF EXISTS idx_permission_actions_resource_action_unique`,
 					`DROP INDEX IF EXISTS idx_permission_actions_permission_key`,
-					`CREATE UNIQUE INDEX IF NOT EXISTS idx_permission_actions_permission_key ON permission_actions (permission_key) WHERE deleted_at IS NULL`,
+					`DROP INDEX IF EXISTS idx_permission_keys_permission_key`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_permission_keys_permission_key ON permission_keys (permission_key) WHERE deleted_at IS NULL`,
 					`DROP TABLE IF EXISTS role_scopes`,
 					`DROP TABLE IF EXISTS scopes`,
 				}
@@ -1058,6 +1168,21 @@ func markMigrationRun(name string) error {
 	return database.DB.Exec("INSERT INTO app_migrations (name) VALUES (?) ON CONFLICT (name) DO NOTHING", name).Error
 }
 
+func hasTable(tableName string) (bool, error) {
+	var count int64
+	err := database.DB.Raw(`
+		SELECT COUNT(*)
+		FROM information_schema.tables
+		WHERE table_schema = CURRENT_SCHEMA()
+		  AND table_name = ?
+		  AND table_type = 'BASE TABLE'
+	`, tableName).Scan(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 func hasColumn(tableName, columnName string) (bool, error) {
 	var count int64
 	err := database.DB.Raw(`
@@ -1099,7 +1224,7 @@ func buildRoleDataScopeUpdateStatement() (string, error) {
 	), nil
 }
 
-func rebindPermissionActionReferences(fromID, toID uuid.UUID) error {
+func rebindPermissionKeyReferences(fromID, toID uuid.UUID) error {
 	if fromID == toID {
 		return nil
 	}
@@ -1127,18 +1252,18 @@ func rebindPermissionActionReferences(fromID, toID uuid.UUID) error {
 			args: []interface{}{fromID},
 		},
 		{
-			sql: `UPDATE feature_package_actions target
+			sql: `UPDATE feature_package_keys target
 				    SET action_id = ?
 				  WHERE action_id = ?
 				    AND NOT EXISTS (
-				      SELECT 1 FROM feature_package_actions existing
+				      SELECT 1 FROM feature_package_keys existing
 				      WHERE existing.package_id = target.package_id
 				        AND existing.action_id = ?
 				    )`,
 			args: []interface{}{toID, fromID, toID},
 		},
 		{
-			sql:  `DELETE FROM feature_package_actions WHERE action_id = ?`,
+			sql:  `DELETE FROM feature_package_keys WHERE action_id = ?`,
 			args: []interface{}{fromID},
 		},
 		{
@@ -1197,7 +1322,7 @@ func mergeDeprecatedTeamPermissionKeys(logger *zap.Logger) error {
 
 	mergedCount := 0
 	for _, item := range merges {
-		var fromAction usermodel.PermissionAction
+		var fromAction usermodel.PermissionKey
 		if err := database.DB.Where("permission_key = ?", item.From).First(&fromAction).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				continue
@@ -1205,15 +1330,15 @@ func mergeDeprecatedTeamPermissionKeys(logger *zap.Logger) error {
 			return err
 		}
 
-		var toAction usermodel.PermissionAction
+		var toAction usermodel.PermissionKey
 		if err := database.DB.Where("permission_key = ?", item.To).First(&toAction).Error; err != nil {
 			return err
 		}
 
-		if err := rebindPermissionActionReferences(fromAction.ID, toAction.ID); err != nil {
+		if err := rebindPermissionKeyReferences(fromAction.ID, toAction.ID); err != nil {
 			return err
 		}
-		if err := database.DB.Delete(&usermodel.PermissionAction{}, fromAction.ID).Error; err != nil {
+		if err := database.DB.Delete(&usermodel.PermissionKey{}, fromAction.ID).Error; err != nil {
 			return err
 		}
 		mergedCount++
@@ -1223,7 +1348,7 @@ func mergeDeprecatedTeamPermissionKeys(logger *zap.Logger) error {
 	return nil
 }
 
-func syncCanonicalPermissionActions(logger *zap.Logger) error {
+func syncCanonicalPermissionKeys(logger *zap.Logger) error {
 	seen := make(map[string]struct{})
 	updatedCount := 0
 	for _, mapping := range permissionkey.ListMappings() {
@@ -1243,7 +1368,7 @@ func syncCanonicalPermissionActions(logger *zap.Logger) error {
 			"module_code":    strings.TrimSpace(mapping.ResourceCode),
 			"updated_at":     time.Now(),
 		}
-		result := database.DB.Model(&usermodel.PermissionAction{}).
+		result := database.DB.Model(&usermodel.PermissionKey{}).
 			Where("permission_key = ? AND deleted_at IS NULL", mapping.Key).
 			Updates(updates)
 		if result.Error != nil {
@@ -1608,7 +1733,7 @@ func initDefaultPermissionGroups(logger *zap.Logger) error {
 	return nil
 }
 
-func initDefaultPermissionActionsNoScope(logger *zap.Logger) error {
+func initDefaultPermissionKeysNoScope(logger *zap.Logger) error {
 	if err := permissionseed.EnsureDefaultPermissionKeys(database.DB); err != nil {
 		return err
 	}

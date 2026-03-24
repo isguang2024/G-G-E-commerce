@@ -19,13 +19,13 @@ import (
 const tenantContextHeader = "X-Tenant-ID"
 
 var (
-	ErrUnauthorized            = errors.New("unauthorized")
-	ErrUserInactive            = errors.New("user inactive")
-	ErrPermissionActionMissing = errors.New("permission action missing")
-	ErrTenantContextRequired   = errors.New("tenant context required")
-	ErrTenantMemberNotFound    = errors.New("tenant member not found")
-	ErrTenantMemberInactive    = errors.New("tenant member inactive")
-	ErrPermissionDenied        = errors.New("permission denied")
+	ErrUnauthorized          = errors.New("unauthorized")
+	ErrUserInactive          = errors.New("user inactive")
+	ErrPermissionKeyMissing  = errors.New("permission action missing")
+	ErrTenantContextRequired = errors.New("tenant context required")
+	ErrTenantMemberNotFound  = errors.New("tenant member not found")
+	ErrTenantMemberInactive  = errors.New("tenant member inactive")
+	ErrPermissionDenied      = errors.New("permission denied")
 )
 
 type Service struct {
@@ -90,7 +90,7 @@ func (s *Service) RequireAnyAction(permissionKeys ...string) gin.HandlerFunc {
 	}
 }
 
-func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionAction, error) {
+func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error) {
 	var currentUser models.User
 	err := s.db.Where("id = ?", userID).First(&currentUser).Error
 	if err != nil {
@@ -102,11 +102,11 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey
 	if currentUser.Status != "active" {
 		return false, nil, ErrUserInactive
 	}
-	var actionDef models.PermissionAction
+	var actionDef models.PermissionKey
 	err = s.db.Where("permission_keys.permission_key = ?", resolvePermissionKey(permissionKey, legacy...)).First(&actionDef).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return false, nil, ErrPermissionActionMissing
+			return false, nil, ErrPermissionKeyMissing
 		}
 		return false, nil, err
 	}
@@ -144,15 +144,15 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey
 	return roleActionSet[actionDef.ID], &actionDef, nil
 }
 
-func (s *Service) AuthorizeAny(userID uuid.UUID, tenantID *uuid.UUID, permissionKeys ...string) (bool, *models.PermissionAction, string, error) {
+func (s *Service) AuthorizeAny(userID uuid.UUID, tenantID *uuid.UUID, permissionKeys ...string) (bool, *models.PermissionKey, string, error) {
 	resolvedKeys := resolvePermissionKeys(permissionKeys...)
 	if len(resolvedKeys) == 0 {
-		return false, nil, "", ErrPermissionActionMissing
+		return false, nil, "", ErrPermissionKeyMissing
 	}
 
 	missingCount := 0
 	denied := false
-	var deniedAction *models.PermissionAction
+	var deniedAction *models.PermissionKey
 	for _, key := range resolvedKeys {
 		allowed, actionDef, err := s.Authorize(userID, tenantID, key)
 		if err == nil {
@@ -167,7 +167,7 @@ func (s *Service) AuthorizeAny(userID uuid.UUID, tenantID *uuid.UUID, permission
 		}
 
 		switch {
-		case errors.Is(err, ErrPermissionActionMissing):
+		case errors.Is(err, ErrPermissionKeyMissing):
 			missingCount++
 		case errors.Is(err, ErrPermissionDenied):
 			denied = true
@@ -183,7 +183,7 @@ func (s *Service) AuthorizeAny(userID uuid.UUID, tenantID *uuid.UUID, permission
 		return false, deniedAction, "", ErrPermissionDenied
 	}
 	if missingCount == len(resolvedKeys) {
-		return false, nil, "", ErrPermissionActionMissing
+		return false, nil, "", ErrPermissionKeyMissing
 	}
 	return false, deniedAction, "", ErrPermissionDenied
 }
@@ -213,7 +213,7 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 		return []string{}, []string{}, nil
 	}
 
-	var actions []models.PermissionAction
+	var actions []models.PermissionKey
 	if err := s.db.Where("status = ?", "normal").Order("sort_order ASC, created_at DESC").Find(&actions).Error; err != nil {
 		return nil, nil, err
 	}
@@ -255,7 +255,7 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 	return buildActionKeysFromIDs(actions, roleActionIDs), []string{}, nil
 }
 
-func appendActionKeys(keys *[]string, keySet map[string]struct{}, action models.PermissionAction) {
+func appendActionKeys(keys *[]string, keySet map[string]struct{}, action models.PermissionKey) {
 	key := permissionkey.Normalize(action.PermissionKey)
 	if _, exists := keySet[key]; !exists {
 		*keys = append(*keys, key)
@@ -263,7 +263,7 @@ func appendActionKeys(keys *[]string, keySet map[string]struct{}, action models.
 	}
 }
 
-func buildActionKeysFromIDs(actions []models.PermissionAction, allowedActionIDs []uuid.UUID) []string {
+func buildActionKeysFromIDs(actions []models.PermissionKey, allowedActionIDs []uuid.UUID) []string {
 	allowedSet := make(map[uuid.UUID]struct{}, len(allowedActionIDs))
 	for _, actionID := range allowedActionIDs {
 		allowedSet[actionID] = struct{}{}
@@ -351,7 +351,7 @@ func (s *Service) respondAuthError(c *gin.Context, authErr error, permissionKey 
 	case errors.Is(authErr, ErrTenantMemberInactive), errors.Is(authErr, ErrUserInactive):
 		status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "当前账号状态不可用")
 		c.JSON(status, resp)
-	case errors.Is(authErr, ErrPermissionActionMissing):
+	case errors.Is(authErr, ErrPermissionKeyMissing):
 		status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "功能权限未注册，禁止访问")
 		c.JSON(status, resp)
 	case errors.Is(authErr, ErrPermissionDenied):

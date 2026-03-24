@@ -21,7 +21,7 @@ var (
 	ErrRoleNotFound            = errors.New("role not found")
 	ErrRoleCodeExists          = errors.New("role code already exists")
 	ErrSystemRoleCannotDelete  = errors.New("system role cannot be deleted")
-	ErrTeamRoleActionReadonly  = errors.New("team role actions are managed by team boundary")
+	ErrTeamRoleKeyReadonly     = errors.New("team role permission keys are managed by team boundary")
 	ErrTenantRoleManagedByTeam = errors.New("tenant role is managed in team context")
 )
 
@@ -36,9 +36,9 @@ type RoleService interface {
 	GetRoleMenuBoundary(roleID uuid.UUID) (*RoleMenuBoundary, error)
 	GetRoleMenuIDs(roleID uuid.UUID) ([]uuid.UUID, error)
 	SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error
-	GetRoleActionBoundary(roleID uuid.UUID) (*RoleActionBoundary, error)
-	GetRoleActions(roleID uuid.UUID) ([]user.RoleActionPermission, error)
-	SetRoleActions(roleID uuid.UUID, actions []user.RoleActionPermission) error
+	GetRoleKeyBoundary(roleID uuid.UUID) (*RoleKeyBoundary, error)
+	GetRoleKeys(roleID uuid.UUID) ([]user.RoleKeyPermission, error)
+	SetRoleKeys(roleID uuid.UUID, keys []user.RoleKeyPermission) error
 	GetRoleDataPermissions(roleID uuid.UUID) ([]user.RoleDataPermission, []string, []DataPermissionScopeOption, error)
 	SetRoleDataPermissions(roleID uuid.UUID, permissions []user.RoleDataPermission) error
 }
@@ -52,13 +52,13 @@ type RoleMenuBoundary struct {
 	MenuSourceMap      map[uuid.UUID][]uuid.UUID
 }
 
-type RoleActionBoundary struct {
+type RoleKeyBoundary struct {
 	PackageIDs         []uuid.UUID
 	ExpandedPackageIDs []uuid.UUID
-	AvailableActionIDs []uuid.UUID
-	DisabledActionIDs  []uuid.UUID
-	EffectiveActionIDs []uuid.UUID
-	ActionSourceMap    map[uuid.UUID][]uuid.UUID
+	AvailableKeyIDs    []uuid.UUID
+	DisabledKeyIDs     []uuid.UUID
+	EffectiveKeyIDs    []uuid.UUID
+	KeySourceMap       map[uuid.UUID][]uuid.UUID
 }
 
 type DataPermissionScopeOption struct {
@@ -70,13 +70,13 @@ type roleService struct {
 	roleRepo               user.RoleRepository
 	rolePackageRepo        user.RoleFeaturePackageRepository
 	featurePkgRepo         user.FeaturePackageRepository
-	packageActionRepo      user.FeaturePackageActionRepository
+	packageKeyRepo         user.FeaturePackageKeyRepository
 	packageMenuRepo        user.FeaturePackageMenuRepository
 	packageBundleRepo      user.FeaturePackageBundleRepository
 	roleHiddenMenuRepo     user.RoleHiddenMenuRepository
 	roleDisabledActionRepo user.RoleDisabledActionRepository
 	roleDataRepo           user.RoleDataPermissionRepository
-	actionRepo             user.PermissionActionRepository
+	keyRepo                user.PermissionKeyRepository
 	roleSnapshotService    platformroleaccess.Service
 	refresher              permissionrefresh.Service
 	logger                 *zap.Logger
@@ -86,13 +86,13 @@ func NewRoleService(
 	roleRepo user.RoleRepository,
 	rolePackageRepo user.RoleFeaturePackageRepository,
 	featurePkgRepo user.FeaturePackageRepository,
-	packageActionRepo user.FeaturePackageActionRepository,
+	packageKeyRepo user.FeaturePackageKeyRepository,
 	packageMenuRepo user.FeaturePackageMenuRepository,
 	packageBundleRepo user.FeaturePackageBundleRepository,
 	roleHiddenMenuRepo user.RoleHiddenMenuRepository,
 	roleDisabledActionRepo user.RoleDisabledActionRepository,
 	roleDataRepo user.RoleDataPermissionRepository,
-	actionRepo user.PermissionActionRepository,
+	keyRepo user.PermissionKeyRepository,
 	roleSnapshotService platformroleaccess.Service,
 	refresher permissionrefresh.Service,
 	logger *zap.Logger,
@@ -101,13 +101,13 @@ func NewRoleService(
 		roleRepo:               roleRepo,
 		rolePackageRepo:        rolePackageRepo,
 		featurePkgRepo:         featurePkgRepo,
-		packageActionRepo:      packageActionRepo,
+		packageKeyRepo:         packageKeyRepo,
 		packageMenuRepo:        packageMenuRepo,
 		packageBundleRepo:      packageBundleRepo,
 		roleHiddenMenuRepo:     roleHiddenMenuRepo,
 		roleDisabledActionRepo: roleDisabledActionRepo,
 		roleDataRepo:           roleDataRepo,
-		actionRepo:             actionRepo,
+		keyRepo:                keyRepo,
 		roleSnapshotService:    roleSnapshotService,
 		refresher:              refresher,
 		logger:                 logger,
@@ -363,15 +363,15 @@ func (s *roleService) SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error 
 	return nil
 }
 
-func (s *roleService) GetRoleActions(roleID uuid.UUID) ([]user.RoleActionPermission, error) {
-	boundary, err := s.GetRoleActionBoundary(roleID)
+func (s *roleService) GetRoleKeys(roleID uuid.UUID) ([]user.RoleKeyPermission, error) {
+	boundary, err := s.GetRoleKeyBoundary(roleID)
 	if err != nil {
 		return nil, err
 	}
-	return buildRoleActionPermissions(roleID, boundary.EffectiveActionIDs), nil
+	return buildRoleKeyPermissions(roleID, boundary.EffectiveKeyIDs), nil
 }
 
-func (s *roleService) SetRoleActions(roleID uuid.UUID, actions []user.RoleActionPermission) error {
+func (s *roleService) SetRoleKeys(roleID uuid.UUID, keys []user.RoleKeyPermission) error {
 	role, err := s.roleRepo.GetByID(roleID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -383,35 +383,35 @@ func (s *roleService) SetRoleActions(roleID uuid.UUID, actions []user.RoleAction
 		return ErrTenantRoleManagedByTeam
 	}
 	if role.Code == "team_admin" || role.Code == "team_member" {
-		return ErrTeamRoleActionReadonly
+		return ErrTeamRoleKeyReadonly
 	}
-	actionIDs := make([]uuid.UUID, 0, len(actions))
-	for _, item := range actions {
-		actionIDs = append(actionIDs, item.ActionID)
+	keyIDs := make([]uuid.UUID, 0, len(keys))
+	for _, item := range keys {
+		keyIDs = append(keyIDs, item.KeyID)
 	}
-	permissionActions, err := s.actionRepo.GetByIDs(actionIDs)
+	permissionKeys, err := s.keyRepo.GetByIDs(keyIDs)
 	if err != nil {
 		return err
 	}
-	permissionActionByID := make(map[uuid.UUID]struct{}, len(permissionActions))
-	for _, action := range permissionActions {
-		permissionActionByID[action.ID] = struct{}{}
+	permissionKeyByID := make(map[uuid.UUID]struct{}, len(permissionKeys))
+	for _, item := range permissionKeys {
+		permissionKeyByID[item.ID] = struct{}{}
 	}
-	for _, item := range actions {
-		if _, ok := permissionActionByID[item.ActionID]; !ok {
+	for _, item := range keys {
+		if _, ok := permissionKeyByID[item.KeyID]; !ok {
 			return errors.New("功能权限不存在")
 		}
 	}
-	boundary, err := s.GetRoleActionBoundary(roleID)
+	boundary, err := s.GetRoleKeyBoundary(roleID)
 	if err != nil {
 		return err
 	}
-	selectedActionIDs, err := ensureSubsetUUIDs(actionIDs, boundary.AvailableActionIDs, "role actions exceed bound feature packages")
+	selectedKeyIDs, err := ensureSubsetUUIDs(keyIDs, boundary.AvailableKeyIDs, "role permission keys exceed bound feature packages")
 	if err != nil {
 		return err
 	}
-	disabledActionIDs := subtractUUIDs(boundary.AvailableActionIDs, selectedActionIDs)
-	if err := s.roleDisabledActionRepo.ReplaceRoleDisabledActions(roleID, disabledActionIDs); err != nil {
+	disabledKeyIDs := subtractUUIDs(boundary.AvailableKeyIDs, selectedKeyIDs)
+	if err := s.roleDisabledActionRepo.ReplaceRoleDisabledActions(roleID, disabledKeyIDs); err != nil {
 		return err
 	}
 	if s.refresher != nil {
@@ -431,7 +431,7 @@ func (s *roleService) GetRoleDataPermissions(roleID uuid.UUID) ([]user.RoleDataP
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	resourceCodes, err := s.actionRepo.ListDistinctModuleCodes()
+	resourceCodes, err := s.keyRepo.ListDistinctModuleCodes()
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -449,7 +449,7 @@ func (s *roleService) SetRoleDataPermissions(roleID uuid.UUID, permissions []use
 	if role.TenantID != nil {
 		return ErrTenantRoleManagedByTeam
 	}
-	resourceCodes, err := s.actionRepo.ListDistinctModuleCodes()
+	resourceCodes, err := s.keyRepo.ListDistinctModuleCodes()
 	if err != nil {
 		return err
 	}
@@ -525,7 +525,7 @@ func (s *roleService) GetRoleMenuBoundary(roleID uuid.UUID) (*RoleMenuBoundary, 
 	return &RoleMenuBoundary{PackageIDs: []uuid.UUID{}, ExpandedPackageIDs: []uuid.UUID{}, AvailableMenuIDs: []uuid.UUID{}, HiddenMenuIDs: []uuid.UUID{}, EffectiveMenuIDs: []uuid.UUID{}, MenuSourceMap: map[uuid.UUID][]uuid.UUID{}}, nil
 }
 
-func (s *roleService) GetRoleActionBoundary(roleID uuid.UUID) (*RoleActionBoundary, error) {
+func (s *roleService) GetRoleKeyBoundary(roleID uuid.UUID) (*RoleKeyBoundary, error) {
 	role, err := s.roleRepo.GetByID(roleID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -541,16 +541,16 @@ func (s *roleService) GetRoleActionBoundary(roleID uuid.UUID) (*RoleActionBounda
 		if snapshotErr != nil {
 			return nil, snapshotErr
 		}
-		return &RoleActionBoundary{
+		return &RoleKeyBoundary{
 			PackageIDs:         dedupeUUIDs(snapshot.PackageIDs),
 			ExpandedPackageIDs: dedupeUUIDs(snapshot.ExpandedPackageIDs),
-			AvailableActionIDs: dedupeUUIDs(snapshot.AvailableActionIDs),
-			DisabledActionIDs:  dedupeUUIDs(snapshot.DisabledActionIDs),
-			EffectiveActionIDs: dedupeUUIDs(snapshot.EffectiveActionIDs),
-			ActionSourceMap:    filterUUIDSourceMap(snapshot.ActionSourceMap, snapshot.AvailableActionIDs),
+			AvailableKeyIDs:    dedupeUUIDs(snapshot.AvailableActionIDs),
+			DisabledKeyIDs:     dedupeUUIDs(snapshot.DisabledActionIDs),
+			EffectiveKeyIDs:    dedupeUUIDs(snapshot.EffectiveActionIDs),
+			KeySourceMap:       filterUUIDSourceMap(snapshot.ActionSourceMap, snapshot.AvailableActionIDs),
 		}, nil
 	}
-	return &RoleActionBoundary{PackageIDs: []uuid.UUID{}, ExpandedPackageIDs: []uuid.UUID{}, AvailableActionIDs: []uuid.UUID{}, DisabledActionIDs: []uuid.UUID{}, EffectiveActionIDs: []uuid.UUID{}, ActionSourceMap: map[uuid.UUID][]uuid.UUID{}}, nil
+	return &RoleKeyBoundary{PackageIDs: []uuid.UUID{}, ExpandedPackageIDs: []uuid.UUID{}, AvailableKeyIDs: []uuid.UUID{}, DisabledKeyIDs: []uuid.UUID{}, EffectiveKeyIDs: []uuid.UUID{}, KeySourceMap: map[uuid.UUID][]uuid.UUID{}}, nil
 }
 
 func ensureSubsetUUIDs(selected []uuid.UUID, allowed []uuid.UUID, errMsg string) ([]uuid.UUID, error) {
@@ -573,12 +573,12 @@ func ensureSubsetUUIDs(selected []uuid.UUID, allowed []uuid.UUID, errMsg string)
 	return result, nil
 }
 
-func buildRoleActionPermissions(roleID uuid.UUID, actionIDs []uuid.UUID) []user.RoleActionPermission {
-	result := make([]user.RoleActionPermission, 0, len(actionIDs))
-	for _, actionID := range actionIDs {
-		result = append(result, user.RoleActionPermission{
-			RoleID:   roleID,
-			ActionID: actionID,
+func buildRoleKeyPermissions(roleID uuid.UUID, keyIDs []uuid.UUID) []user.RoleKeyPermission {
+	result := make([]user.RoleKeyPermission, 0, len(keyIDs))
+	for _, keyID := range keyIDs {
+		result = append(result, user.RoleKeyPermission{
+			RoleID: roleID,
+			KeyID:  keyID,
 		})
 	}
 	return result

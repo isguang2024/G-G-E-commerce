@@ -17,30 +17,30 @@ import (
 )
 
 var (
-	ErrPermissionActionNotFound = errors.New("permission action not found")
-	ErrPermissionActionExists   = errors.New("permission action already exists")
-	ErrPermissionGroupNotFound  = errors.New("permission group not found")
-	ErrPermissionGroupExists    = errors.New("permission group already exists")
+	ErrPermissionKeyNotFound   = errors.New("permission key not found")
+	ErrPermissionKeyExists     = errors.New("permission key already exists")
+	ErrPermissionGroupNotFound = errors.New("permission group not found")
+	ErrPermissionGroupExists   = errors.New("permission group already exists")
 )
 
 type PermissionService interface {
-	List(req *dto.PermissionActionListRequest) ([]user.PermissionAction, int64, error)
-	Get(id uuid.UUID) (*user.PermissionAction, error)
+	List(req *dto.PermissionKeyListRequest) ([]user.PermissionKey, int64, error)
+	Get(id uuid.UUID) (*user.PermissionKey, error)
 	ListGroups(req *dto.PermissionGroupListRequest) ([]user.PermissionGroup, int64, error)
 	ListEndpoints(id uuid.UUID) ([]user.APIEndpoint, error)
 	CreateGroup(req *dto.PermissionGroupSaveRequest) (*user.PermissionGroup, error)
 	UpdateGroup(id uuid.UUID, req *dto.PermissionGroupSaveRequest) error
-	Create(req *dto.PermissionActionCreateRequest) (*user.PermissionAction, error)
-	Update(id uuid.UUID, req *dto.PermissionActionUpdateRequest) error
+	Create(req *dto.PermissionKeyCreateRequest) (*user.PermissionKey, error)
+	Update(id uuid.UUID, req *dto.PermissionKeyUpdateRequest) error
 	Delete(id uuid.UUID) error
 }
 
 type permissionService struct {
 	groupRepo              user.PermissionGroupRepository
-	actionRepo             user.PermissionActionRepository
+	keyRepo                user.PermissionKeyRepository
 	apiEndpointRepo        user.APIEndpointRepository
 	apiEndpointBindingRepo user.APIEndpointPermissionBindingRepository
-	packageActionRepo      user.FeaturePackageActionRepository
+	packageKeyRepo         user.FeaturePackageKeyRepository
 	teamPackageRepo        user.TeamFeaturePackageRepository
 	roleDisabledActionRepo user.RoleDisabledActionRepository
 	teamBlockedActionRepo  user.TeamBlockedActionRepository
@@ -51,10 +51,10 @@ type permissionService struct {
 
 func NewPermissionService(
 	groupRepo user.PermissionGroupRepository,
-	actionRepo user.PermissionActionRepository,
+	keyRepo user.PermissionKeyRepository,
 	apiEndpointRepo user.APIEndpointRepository,
 	apiEndpointBindingRepo user.APIEndpointPermissionBindingRepository,
-	packageActionRepo user.FeaturePackageActionRepository,
+	packageKeyRepo user.FeaturePackageKeyRepository,
 	teamPackageRepo user.TeamFeaturePackageRepository,
 	roleDisabledActionRepo user.RoleDisabledActionRepository,
 	teamBlockedActionRepo user.TeamBlockedActionRepository,
@@ -64,10 +64,10 @@ func NewPermissionService(
 ) PermissionService {
 	return &permissionService{
 		groupRepo:              groupRepo,
-		actionRepo:             actionRepo,
+		keyRepo:                keyRepo,
 		apiEndpointRepo:        apiEndpointRepo,
 		apiEndpointBindingRepo: apiEndpointBindingRepo,
-		packageActionRepo:      packageActionRepo,
+		packageKeyRepo:         packageKeyRepo,
 		teamPackageRepo:        teamPackageRepo,
 		roleDisabledActionRepo: roleDisabledActionRepo,
 		teamBlockedActionRepo:  teamBlockedActionRepo,
@@ -78,14 +78,14 @@ func NewPermissionService(
 }
 
 func (s *permissionService) ListEndpoints(id uuid.UUID) ([]user.APIEndpoint, error) {
-	action, err := s.actionRepo.GetByID(id)
+	item, err := s.keyRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrPermissionActionNotFound
+			return nil, ErrPermissionKeyNotFound
 		}
 		return nil, err
 	}
-	permissionKey := canonicalPermissionKey(action.PermissionKey)
+	permissionKey := canonicalPermissionKey(item.PermissionKey)
 	endpointIDs, err := s.apiEndpointBindingRepo.ListEndpointIDsByPermissionKey(permissionKey)
 	if err != nil {
 		return nil, err
@@ -117,7 +117,7 @@ func canonicalPermissionKey(permissionKey string) string {
 	return permissionkey.Normalize(permissionKey)
 }
 
-func (s *permissionService) List(req *dto.PermissionActionListRequest) ([]user.PermissionAction, int64, error) {
+func (s *permissionService) List(req *dto.PermissionKeyListRequest) ([]user.PermissionKey, int64, error) {
 	if req.Current <= 0 {
 		req.Current = 1
 	}
@@ -136,7 +136,7 @@ func (s *permissionService) List(req *dto.PermissionActionListRequest) ([]user.P
 	if parsed, ok := parseBool(req.IsBuiltin); ok {
 		isBuiltin = &parsed
 	}
-	params := &user.PermissionActionListParams{
+	params := &user.PermissionKeyListParams{
 		Keyword:        strings.TrimSpace(req.Keyword),
 		PermissionKey:  strings.TrimSpace(req.PermissionKey),
 		Name:           req.Name,
@@ -148,7 +148,7 @@ func (s *permissionService) List(req *dto.PermissionActionListRequest) ([]user.P
 		Status:         req.Status,
 		IsBuiltin:      isBuiltin,
 	}
-	return s.actionRepo.List((req.Current-1)*req.Size, req.Size, params)
+	return s.keyRepo.List((req.Current-1)*req.Size, req.Size, params)
 }
 
 func (s *permissionService) ListGroups(req *dto.PermissionGroupListRequest) ([]user.PermissionGroup, int64, error) {
@@ -227,18 +227,18 @@ func (s *permissionService) UpdateGroup(id uuid.UUID, req *dto.PermissionGroupSa
 	})
 }
 
-func (s *permissionService) Get(id uuid.UUID) (*user.PermissionAction, error) {
-	action, err := s.actionRepo.GetByID(id)
+func (s *permissionService) Get(id uuid.UUID) (*user.PermissionKey, error) {
+	item, err := s.keyRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrPermissionActionNotFound
+			return nil, ErrPermissionKeyNotFound
 		}
 		return nil, err
 	}
-	return action, nil
+	return item, nil
 }
 
-func (s *permissionService) Create(req *dto.PermissionActionCreateRequest) (*user.PermissionAction, error) {
+func (s *permissionService) Create(req *dto.PermissionKeyCreateRequest) (*user.PermissionKey, error) {
 	permissionKey := permissionkey.Normalize(req.PermissionKey)
 	if permissionKey == "" {
 		return nil, errors.New("permission_key 不能为空")
@@ -251,8 +251,8 @@ func (s *permissionService) Create(req *dto.PermissionActionCreateRequest) (*use
 	if resourceCode == "" {
 		return nil, errors.New("无法根据 permission_key 推导模块编码")
 	}
-	if _, err := s.actionRepo.GetByPermissionKey(permissionKey); err == nil {
-		return nil, ErrPermissionActionExists
+	if _, err := s.keyRepo.GetByPermissionKey(permissionKey); err == nil {
+		return nil, ErrPermissionKeyExists
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
@@ -264,14 +264,14 @@ func (s *permissionService) Create(req *dto.PermissionActionCreateRequest) (*use
 	if err != nil {
 		return nil, err
 	}
-	featureGroup, err := s.resolvePermissionGroup(req.FeatureGroupID, "feature", req.FeatureKind, "business")
+	featureGroup, err := s.resolvePermissionGroup(req.FeatureGroupID, "feature", req.FeatureKind, "system")
 	if err != nil {
 		return nil, err
 	}
-	featureKind := normalizeFeatureKind(featureGroup.Code, "business")
+	featureKind := normalizeFeatureKind(featureGroup.Code, "system")
 	moduleCode := normalizeModuleCode(moduleGroup.Code, resourceCode)
 	contextType := normalizeContextType(req.ContextType, deriveContextType(permissionKey, moduleCode))
-	action := &user.PermissionAction{
+	item := &user.PermissionKey{
 		PermissionKey:  permissionKey,
 		ModuleCode:     moduleCode,
 		ModuleGroupID:  &moduleGroup.ID,
@@ -284,17 +284,17 @@ func (s *permissionService) Create(req *dto.PermissionActionCreateRequest) (*use
 		SortOrder:      req.SortOrder,
 		IsBuiltin:      false,
 	}
-	if err := s.actionRepo.Create(action); err != nil {
+	if err := s.keyRepo.Create(item); err != nil {
 		return nil, err
 	}
-	return s.actionRepo.GetByID(action.ID)
+	return s.keyRepo.GetByID(item.ID)
 }
 
-func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionActionUpdateRequest) error {
-	current, err := s.actionRepo.GetByID(id)
+func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionKeyUpdateRequest) error {
+	current, err := s.keyRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrPermissionActionNotFound
+			return ErrPermissionKeyNotFound
 		}
 		return err
 	}
@@ -343,15 +343,15 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionActionUpdate
 		updates["context_type"] = deriveContextType(targetPermissionKey, normalizeModuleCode(moduleGroup.Code, current.ModuleCode))
 	}
 	if targetPermissionKey != current.PermissionKey {
-		existing, getErr := s.actionRepo.GetByPermissionKey(targetPermissionKey)
+		existing, getErr := s.keyRepo.GetByPermissionKey(targetPermissionKey)
 		if getErr == nil && existing != nil && existing.ID != id {
-			return ErrPermissionActionExists
+			return ErrPermissionKeyExists
 		}
 		if getErr != nil && !errors.Is(getErr, gorm.ErrRecordNotFound) {
 			return getErr
 		}
 	}
-	return s.actionRepo.UpdateWithMap(id, updates)
+	return s.keyRepo.UpdateWithMap(id, updates)
 }
 
 func (s *permissionService) resolvePermissionGroup(idText string, groupType string, codeText string, fallbackCode string) (*user.PermissionGroup, error) {
@@ -374,7 +374,7 @@ func (s *permissionService) resolvePermissionGroup(idText string, groupType stri
 	}
 	if code == "" {
 		if groupType == "feature" {
-			code = "business"
+			code = "system"
 		} else {
 			code = "common"
 		}
@@ -465,7 +465,7 @@ func deriveContextType(permissionKey, moduleCode string) string {
 		strings.HasPrefix(targetKey, "channel."),
 		strings.HasPrefix(targetKey, "content."):
 		return "team"
-	case targetModule == "tenant" || targetModule == "role" || targetModule == "user" || targetModule == "menu" || targetModule == "permission_action" || targetModule == "api_endpoint":
+	case targetModule == "tenant" || targetModule == "role" || targetModule == "user" || targetModule == "menu" || targetModule == "permission_key" || targetModule == "api_endpoint":
 		return "platform"
 	default:
 		return "team"
@@ -483,13 +483,13 @@ func normalizeFeatureKind(value, fallback string) string {
 }
 
 func (s *permissionService) Delete(id uuid.UUID) error {
-	if _, err := s.actionRepo.GetByID(id); err != nil {
+	if _, err := s.keyRepo.GetByID(id); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrPermissionActionNotFound
+			return ErrPermissionKeyNotFound
 		}
 		return err
 	}
-	packageIDs, err := s.packageActionRepo.GetPackageIDsByActionID(id)
+	packageIDs, err := s.packageKeyRepo.GetPackageIDsByKeyID(id)
 	if err != nil {
 		return err
 	}
@@ -503,19 +503,19 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 			affectedTeams[teamID] = struct{}{}
 		}
 	}
-	if err := s.packageActionRepo.DeleteByActionID(id); err != nil {
+	if err := s.packageKeyRepo.DeleteByKeyID(id); err != nil {
 		return err
 	}
-	if err := s.roleDisabledActionRepo.DeleteByActionID(id); err != nil {
+	if err := s.roleDisabledActionRepo.DeleteByKeyID(id); err != nil {
 		return err
 	}
-	if err := s.teamBlockedActionRepo.DeleteByActionID(id); err != nil {
+	if err := s.teamBlockedActionRepo.DeleteByKeyID(id); err != nil {
 		return err
 	}
-	if err := s.userActionRepo.DeleteByActionID(id); err != nil {
+	if err := s.userActionRepo.DeleteByKeyID(id); err != nil {
 		return err
 	}
-	if err := s.actionRepo.Delete(id); err != nil {
+	if err := s.keyRepo.Delete(id); err != nil {
 		return err
 	}
 	if s.refresher != nil {

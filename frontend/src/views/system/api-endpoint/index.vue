@@ -1,218 +1,129 @@
 <template>
   <div class="art-full-height">
-    <ElCard class="module-card" shadow="never">
-      <div class="module-header">
-        <div class="module-title">模块分类</div>
-        <div class="module-help">接口注册按模块展示，Method 与路径独立显示，便于核对注册配置</div>
-      </div>
-      <div class="module-tags">
-        <ElTag
-          :type="selectedModule === '' ? 'primary' : 'info'"
-          effect="light"
-          class="module-tag"
-          @click="handleModuleSelect('')"
-        >
-          全部 {{ totalCount }}
-        </ElTag>
-        <ElTag
-          v-for="item in moduleSummary"
-          :key="item.label"
-          :type="selectedModule === item.label ? 'primary' : 'info'"
-          effect="light"
-          class="module-tag"
-          @click="handleModuleSelect(item.label)"
-        >
-          {{ item.label }} {{ item.count }}
-        </ElTag>
-      </div>
+    <div class="api-layout">
+      <ElCard class="category-tree-card" shadow="never">
+        <div class="category-tree-header">
+          <div class="module-title">分类树</div>
+        </div>
 
-      <div class="status-overview">
-        <div class="status-card is-sync">
-          <div class="status-label">自动注册</div>
-          <div class="status-value">{{ registrySummary.sync }}</div>
-          <div class="status-help">带元数据并已进入 API 单元</div>
-        </div>
-        <div class="status-card is-manual">
-          <div class="status-label">手工补录</div>
-          <div class="status-value">{{ registrySummary.manual }}</div>
-          <div class="status-help">后台手动创建并绑定路由</div>
-        </div>
-        <div class="status-card is-seed">
-          <div class="status-label">初始种子</div>
-          <div class="status-value">{{ registrySummary.seed }}</div>
-          <div class="status-help">部署初始化直接导入</div>
-        </div>
-        <div class="status-card is-pending">
-          <div class="status-label">未注册路由</div>
-          <div class="status-value">{{ unregisteredCount }}</div>
-          <div class="status-help">运行时存在但尚未进入 API 单元</div>
-        </div>
-      </div>
-
-      <div class="category-panel">
-        <div class="category-panel-header">
-          <div class="module-title">分类管理</div>
-          <div class="module-help"
-            >直接在 API 管理页维护分类，停用后保留历史归属但不建议继续分配。</div
-          >
-        </div>
-        <div v-if="sortedCategories.length" class="category-list">
-          <div
-            v-for="item in sortedCategories"
-            :key="item.id"
-            class="category-card"
-            :class="{ 'is-suspended': item.status === 'suspended' }"
-          >
-            <div class="category-card-main">
-              <div class="category-card-title">
-                <span>{{ item.name }}</span>
-                <ElTag
-                  size="small"
-                  :type="item.status === 'normal' ? 'success' : 'info'"
-                  effect="plain"
-                >
-                  {{ item.status === 'normal' ? '正常' : '停用' }}
-                </ElTag>
+        <ElTree
+          class="category-tree"
+          :data="categoryTreeData"
+          node-key="id"
+          default-expand-all
+          highlight-current
+          :expand-on-click-node="false"
+          :current-node-key="selectedCategoryTreeKey"
+          @node-click="handleCategoryTreeSelect"
+        >
+          <template #default="{ data: node }">
+            <div class="category-tree-node">
+              <div class="category-tree-node-main">
+                <span class="category-tree-node-status">
+                  <ElTag
+                    v-if="node.type === 'category' && node.status === 'suspended'"
+                    size="small"
+                    type="info"
+                    effect="plain"
+                  >
+                    停用
+                  </ElTag>
+                </span>
+                <span class="category-tree-node-label">{{ node.label }}</span>
               </div>
-              <div class="category-card-meta">{{ item.code }} / {{ item.nameEn }}</div>
+              <div class="category-tree-node-side">
+                <span class="category-tree-node-count">{{ node.count }}</span>
+                <ElButton
+                  v-if="node.type === 'category'"
+                  class="category-tree-node-edit"
+                  text
+                  type="primary"
+                  @click.stop="openCategoryDrawer(node.category)"
+                >
+                  编辑
+                </ElButton>
+              </div>
             </div>
-            <div class="category-card-actions">
-              <ElButton text type="primary" @click="openCategoryDialog(item)">编辑</ElButton>
-              <ElButton
-                text
-                :type="item.status === 'normal' ? 'danger' : 'success'"
-                :loading="categorySwitchingId === item.id"
-                @click="toggleCategoryStatus(item)"
-              >
-                {{ item.status === 'normal' ? '停用' : '启用' }}
-              </ElButton>
-            </div>
+          </template>
+        </ElTree>
+      </ElCard>
+
+      <ElCard class="art-table-card api-table-card" shadow="never">
+        <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
+          <template #left>
+            <ElButton
+              v-action="'system.api_registry.sync'"
+              type="primary"
+              @click="openCreateDialog"
+              v-ripple
+            >
+              新增 API
+            </ElButton>
+            <ElButton
+              v-action="'system.api_registry.sync'"
+              type="primary"
+              plain
+              :loading="syncing"
+              @click="handleSync"
+              v-ripple
+            >
+              同步 API
+            </ElButton>
+            <ElButton v-action="'system.api_registry.view'" plain @click="openUnregisteredDialog" v-ripple>
+              未注册 API
+              <span v-if="unregisteredCount > 0" class="toolbar-count">({{ unregisteredCount }})</span>
+            </ElButton>
+          </template>
+        </ArtTableHeader>
+
+        <div class="table-query-panel">
+          <ElSelect v-model="selectedSource" clearable placeholder="注册方式">
+            <ElOption label="自动注册" value="sync" />
+            <ElOption label="手工补录" value="manual" />
+            <ElOption label="初始种子" value="seed" />
+          </ElSelect>
+          <ElSelect v-model="tableQuery.method" clearable placeholder="Method">
+            <ElOption v-for="item in methodOptions" :key="item" :label="item" :value="item" />
+          </ElSelect>
+          <ElInput v-model="tableQuery.path" clearable placeholder="按路径搜索" />
+          <ElInput v-model="tableQuery.keyword" clearable placeholder="按摘要/处理器/模块搜索" />
+          <ElInput v-model="tableQuery.permissionKey" clearable placeholder="按权限键搜索" />
+          <ElSelect v-model="tableQuery.contextScope" clearable placeholder="团队上下文">
+            <ElOption label="可选" value="optional" />
+            <ElOption label="必需" value="required" />
+            <ElOption label="禁止" value="forbidden" />
+          </ElSelect>
+          <ElSelect v-model="tableQuery.featureKind" clearable placeholder="功能归属">
+            <ElOption label="系统" value="system" />
+            <ElOption label="业务" value="business" />
+          </ElSelect>
+          <ElSelect v-model="tableQuery.status" clearable placeholder="状态">
+            <ElOption label="正常" value="normal" />
+            <ElOption label="停用" value="suspended" />
+          </ElSelect>
+          <ElSelect v-model="tableQuery.hasPermissionKey" clearable placeholder="权限键">
+            <ElOption label="有权限键" value="true" />
+            <ElOption label="无权限键" value="false" />
+          </ElSelect>
+          <div class="table-query-actions">
+            <ElButton type="primary" @click="handleTableSearch">查询</ElButton>
+            <ElButton @click="resetTableQuery">重置</ElButton>
           </div>
         </div>
-        <div v-else class="category-empty">暂无分类，可直接新建。</div>
-      </div>
-    </ElCard>
 
-    <ElCard class="art-table-card" shadow="never">
-      <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
-        <template #left>
-          <ElButton
-            v-action="'system.api_registry.sync'"
-            type="primary"
-            @click="openCreateDialog"
-            v-ripple
-          >
-            新增 API
-          </ElButton>
-          <ElButton v-action="'system.api_registry.sync'" @click="openCategoryDialog()" v-ripple>
-            新建分类
-          </ElButton>
-          <ElButton
-            v-action="'system.api_registry.sync'"
-            type="primary"
-            plain
-            :loading="syncing"
-            @click="handleSync"
-            v-ripple
-          >
-            同步 API
-          </ElButton>
-          <ElButton v-action="'system.api_registry.view'" plain @click="openUnregisteredDialog" v-ripple>
-            未注册 API
-            <span v-if="unregisteredCount > 0" class="toolbar-count">({{ unregisteredCount }})</span>
-          </ElButton>
-        </template>
-      </ArtTableHeader>
-
-      <div class="table-query-panel">
-        <ElSelect v-model="tableQuery.method" clearable placeholder="Method">
-          <ElOption v-for="item in methodOptions" :key="item" :label="item" :value="item" />
-        </ElSelect>
-        <ElInput v-model="tableQuery.path" clearable placeholder="按路径搜索" />
-        <ElInput v-model="tableQuery.keyword" clearable placeholder="按摘要/处理器/模块搜索" />
-        <ElInput v-model="tableQuery.permissionKey" clearable placeholder="按权限键搜索" />
-        <ElSelect v-model="tableQuery.categoryId" clearable filterable placeholder="分类">
-          <ElOption
-            v-for="item in sortedCategories"
-            :key="item.id"
-            :label="`${item.name} / ${item.nameEn}`"
-            :value="item.id"
+        <div class="api-table-main">
+          <ArtTable
+            :loading="loading"
+            :data="data"
+            :columns="columns"
+            :pagination="pagination"
+            size="small"
+            @pagination:size-change="handleSizeChange"
+            @pagination:current-change="handleCurrentChange"
           />
-        </ElSelect>
-        <ElSelect v-model="tableQuery.contextScope" clearable placeholder="团队上下文">
-          <ElOption label="可选" value="optional" />
-          <ElOption label="必需" value="required" />
-          <ElOption label="禁止" value="forbidden" />
-        </ElSelect>
-        <ElSelect v-model="tableQuery.featureKind" clearable placeholder="功能归属">
-          <ElOption label="系统" value="system" />
-          <ElOption label="业务" value="business" />
-        </ElSelect>
-        <ElSelect v-model="tableQuery.status" clearable placeholder="状态">
-          <ElOption label="正常" value="normal" />
-          <ElOption label="停用" value="suspended" />
-        </ElSelect>
-        <ElSelect v-model="tableQuery.hasPermissionKey" clearable placeholder="权限键">
-          <ElOption label="有权限键" value="true" />
-          <ElOption label="无权限键" value="false" />
-        </ElSelect>
-        <ElSelect v-model="tableQuery.hasCategory" clearable placeholder="分类归属">
-          <ElOption label="已分配分类" value="true" />
-          <ElOption label="未分配分类" value="false" />
-        </ElSelect>
-        <div class="table-query-actions">
-          <ElButton type="primary" @click="handleTableSearch">查询</ElButton>
-          <ElButton @click="resetTableQuery">重置</ElButton>
         </div>
-      </div>
-
-      <div class="source-filter-panel">
-        <div class="source-filter-title">注册方式</div>
-        <div class="source-filter-tags">
-          <ElTag
-            :type="selectedSource === '' ? 'primary' : 'info'"
-            effect="light"
-            class="module-tag"
-            @click="handleSourceSelect('')"
-          >
-            全部 {{ totalCount }}
-          </ElTag>
-          <ElTag
-            :type="selectedSource === 'sync' ? 'primary' : 'info'"
-            effect="light"
-            class="module-tag"
-            @click="handleSourceSelect('sync')"
-          >
-            自动注册 {{ registrySummary.sync }}
-          </ElTag>
-          <ElTag
-            :type="selectedSource === 'manual' ? 'primary' : 'info'"
-            effect="light"
-            class="module-tag"
-            @click="handleSourceSelect('manual')"
-          >
-            手工补录 {{ registrySummary.manual }}
-          </ElTag>
-          <ElTag
-            :type="selectedSource === 'seed' ? 'primary' : 'info'"
-            effect="light"
-            class="module-tag"
-            @click="handleSourceSelect('seed')"
-          >
-            初始种子 {{ registrySummary.seed }}
-          </ElTag>
-        </div>
-      </div>
-
-      <ArtTable
-        :loading="loading"
-        :data="data"
-        :columns="columns"
-        :pagination="pagination"
-        @pagination:size-change="handleSizeChange"
-        @pagination:current-change="handleCurrentChange"
-      />
-    </ElCard>
+      </ElCard>
+    </div>
 
     <ElDialog
       v-model="formVisible"
@@ -275,7 +186,7 @@
                     :disabled="item.status === 'suspended' && formState.categoryId !== item.id"
                   />
                 </ElSelect>
-                <ElButton text type="primary" @click="openCategoryDialog()">新建分类</ElButton>
+                <ElButton text type="primary" @click="openCategoryDrawer()">分类管理</ElButton>
               </div>
             </ElFormItem>
           </ElCol>
@@ -328,42 +239,101 @@
       </template>
     </ElDialog>
 
-    <ElDialog
-      v-model="categoryDialogVisible"
-      :title="categoryForm.id ? '编辑分类' : '新建分类'"
-      width="560px"
+    <ElDrawer
+      v-model="categoryDrawerVisible"
+      :title="categoryForm.id ? '编辑分类' : '分类管理'"
+      size="860px"
       destroy-on-close
     >
-      <ElForm :model="categoryForm" label-width="100px">
-        <ElFormItem label="分类编码">
-          <ElInput v-model="categoryForm.code" placeholder="例如 system_manage" />
-        </ElFormItem>
-        <ElFormItem label="中文名称">
-          <ElInput v-model="categoryForm.name" placeholder="例如 系统管理" />
-        </ElFormItem>
-        <ElFormItem label="英文名称">
-          <ElInput v-model="categoryForm.nameEn" placeholder="例如 System Management" />
-        </ElFormItem>
-        <ElFormItem label="排序">
-          <ElInputNumber
-            v-model="categoryForm.sortOrder"
-            :min="0"
-            :max="9999"
-            style="width: 100%"
-          />
-        </ElFormItem>
-        <ElFormItem label="状态">
-          <ElSelect v-model="categoryForm.status" placeholder="请选择">
-            <ElOption label="正常" value="normal" />
-            <ElOption label="停用" value="suspended" />
-          </ElSelect>
-        </ElFormItem>
-      </ElForm>
-      <template #footer>
-        <ElButton @click="categoryDialogVisible = false">取消</ElButton>
-        <ElButton type="primary" :loading="categorySaving" @click="submitCategory">保存</ElButton>
-      </template>
-    </ElDialog>
+      <div class="category-drawer">
+        <div class="category-drawer-toolbar">
+          <div>
+            <div class="module-title">分类配置</div>
+            <div class="module-help">分类停用后会保留历史归属，但不建议继续分配。</div>
+          </div>
+          <ElButton type="primary" @click="startCreateCategory">新建分类</ElButton>
+        </div>
+
+        <div class="category-drawer-content">
+          <div class="category-drawer-list">
+            <div v-if="sortedCategories.length" class="category-list">
+              <div
+                v-for="item in sortedCategories"
+                :key="item.id"
+                class="category-card"
+                :class="{ 'is-suspended': item.status === 'suspended' }"
+              >
+                <div class="category-card-main">
+                  <div class="category-card-title">
+                    <span>{{ item.name }}</span>
+                    <ElTag
+                      size="small"
+                      :type="item.status === 'normal' ? 'success' : 'info'"
+                      effect="plain"
+                    >
+                      {{ item.status === 'normal' ? '正常' : '停用' }}
+                    </ElTag>
+                  </div>
+                  <div class="category-card-meta">{{ item.code }} / {{ item.nameEn }}</div>
+                </div>
+                <div class="category-card-actions">
+                  <ElButton text type="primary" @click="openCategoryDrawer(item)">编辑</ElButton>
+                  <ElButton
+                    text
+                    :type="item.status === 'normal' ? 'danger' : 'success'"
+                    :loading="categorySwitchingId === item.id"
+                    @click="toggleCategoryStatus(item)"
+                  >
+                    {{ item.status === 'normal' ? '停用' : '启用' }}
+                  </ElButton>
+                </div>
+              </div>
+            </div>
+            <div v-else class="category-empty">暂无分类，可直接新建。</div>
+          </div>
+
+          <div class="category-form-panel">
+            <div class="category-form-header">
+              <div class="module-title">{{ categoryForm.id ? '编辑分类' : '新建分类' }}</div>
+              <ElButton text @click="resetCategoryForm">清空</ElButton>
+            </div>
+
+            <ElForm :model="categoryForm" label-width="88px">
+              <ElFormItem label="分类编码">
+                <ElInput v-model="categoryForm.code" placeholder="例如 system_manage" />
+              </ElFormItem>
+              <ElFormItem label="中文名称">
+                <ElInput v-model="categoryForm.name" placeholder="例如 系统管理" />
+              </ElFormItem>
+              <ElFormItem label="英文名称">
+                <ElInput v-model="categoryForm.nameEn" placeholder="例如 System Management" />
+              </ElFormItem>
+              <ElFormItem label="排序">
+                <ElInputNumber
+                  v-model="categoryForm.sortOrder"
+                  :min="0"
+                  :max="9999"
+                  style="width: 100%"
+                />
+              </ElFormItem>
+              <ElFormItem label="状态">
+                <ElSelect v-model="categoryForm.status" placeholder="请选择">
+                  <ElOption label="正常" value="normal" />
+                  <ElOption label="停用" value="suspended" />
+                </ElSelect>
+              </ElFormItem>
+            </ElForm>
+
+            <div class="category-form-actions">
+              <ElButton @click="resetCategoryForm">重置</ElButton>
+              <ElButton type="primary" :loading="categorySaving" @click="submitCategory">
+                保存
+              </ElButton>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ElDrawer>
 
     <ElDialog
       v-model="unregisteredVisible"
@@ -463,20 +433,28 @@
   type APIEndpointCategoryItem = Api.SystemManage.APIEndpointCategoryItem
   type APIUnregisteredRouteItem = Api.SystemManage.APIUnregisteredRouteItem
   type SummaryItem = { label: string; count: number }
+  type CategoryTreeNode = {
+    id: string
+    label: string
+    count: number
+    type: 'all' | 'uncategorized' | 'category'
+    status?: string
+    category?: APIEndpointCategoryItem
+    children?: CategoryTreeNode[]
+  }
   type PersistedTableState = {
     selectedModule: string
     selectedSource: string
+    selectedCategoryTreeKey: string
     tableQuery: {
       method: string
       path: string
       keyword: string
       permissionKey: string
-      categoryId: string
       contextScope: string
       featureKind: string
       status: string
       hasPermissionKey: string
-      hasCategory: string
     }
   }
 
@@ -488,8 +466,9 @@
   const categorySwitchingId = ref('')
   const selectedModule = ref('')
   const selectedSource = ref('')
+  const selectedCategoryTreeKey = ref('all')
   const formVisible = ref(false)
-  const categoryDialogVisible = ref(false)
+  const categoryDrawerVisible = ref(false)
   const unregisteredVisible = ref(false)
   const unregisteredLoading = ref(false)
   const shouldRefreshUnregistered = ref(false)
@@ -499,12 +478,9 @@
   const unregisteredRoutes = ref<APIUnregisteredRouteItem[]>([])
   const totalCount = ref(0)
   const unregisteredCount = ref(0)
+  const uncategorizedCount = ref(0)
   const moduleSummary = ref<SummaryItem[]>([])
-  const registrySummary = reactive({
-    sync: 0,
-    manual: 0,
-    seed: 0
-  })
+  const categoryCountMap = ref<Record<string, number>>({})
   const unregisteredPagination = reactive({
     current: 1,
     size: 10,
@@ -561,6 +537,31 @@
         `${a.name || ''}`.localeCompare(`${b.name || ''}`, 'zh-CN')
     )
   )
+
+  const categoryTreeData = computed<CategoryTreeNode[]>(() => [
+    {
+      id: 'all',
+      label: '全部 API',
+      count: totalCount.value,
+      type: 'all',
+      children: [
+        {
+          id: 'uncategorized',
+          label: '未分类',
+          count: uncategorizedCount.value,
+          type: 'uncategorized'
+        },
+        ...sortedCategories.value.map((item) => ({
+          id: `category:${item.id}`,
+          label: item.name || item.code || '未命名分类',
+          count: categoryCountMap.value[item.id] || 0,
+          type: 'category' as const,
+          status: item.status,
+          category: item
+        }))
+      ]
+    }
+  ])
 
   const {
     columns,
@@ -752,17 +753,16 @@
     const payload: PersistedTableState = {
       selectedModule: selectedModule.value,
       selectedSource: selectedSource.value,
+      selectedCategoryTreeKey: selectedCategoryTreeKey.value,
       tableQuery: {
         method: tableQuery.method,
         path: tableQuery.path,
         keyword: tableQuery.keyword,
         permissionKey: tableQuery.permissionKey,
-        categoryId: tableQuery.categoryId,
         contextScope: tableQuery.contextScope,
         featureKind: tableQuery.featureKind,
         status: tableQuery.status,
-        hasPermissionKey: tableQuery.hasPermissionKey,
-        hasCategory: tableQuery.hasCategory
+        hasPermissionKey: tableQuery.hasPermissionKey
       }
     }
     localStorage.setItem(API_ENDPOINT_TABLE_STATE_KEY, JSON.stringify(payload))
@@ -777,17 +777,16 @@
       const payload = JSON.parse(raw) as Partial<PersistedTableState>
       selectedModule.value = payload.selectedModule || ''
       selectedSource.value = payload.selectedSource || ''
+      selectedCategoryTreeKey.value = payload.selectedCategoryTreeKey || 'all'
       Object.assign(tableQuery, {
         method: payload.tableQuery?.method || '',
         path: payload.tableQuery?.path || '',
         keyword: payload.tableQuery?.keyword || '',
         permissionKey: payload.tableQuery?.permissionKey || '',
-        categoryId: payload.tableQuery?.categoryId || '',
         contextScope: payload.tableQuery?.contextScope || '',
         featureKind: payload.tableQuery?.featureKind || '',
         status: payload.tableQuery?.status || '',
-        hasPermissionKey: payload.tableQuery?.hasPermissionKey || '',
-        hasCategory: payload.tableQuery?.hasCategory || ''
+        hasPermissionKey: payload.tableQuery?.hasPermissionKey || ''
       })
     } catch {
       localStorage.removeItem(API_ENDPOINT_TABLE_STATE_KEY)
@@ -839,6 +838,15 @@
     formState.permissionKeys = []
   }
 
+  function resetCategoryForm() {
+    categoryForm.id = ''
+    categoryForm.code = ''
+    categoryForm.name = ''
+    categoryForm.nameEn = ''
+    categoryForm.sortOrder = 0
+    categoryForm.status = 'normal'
+  }
+
   function openCreateDialog() {
     resetForm()
     formVisible.value = true
@@ -870,14 +878,52 @@
     formVisible.value = true
   }
 
-  function openCategoryDialog(category?: APIEndpointCategoryItem) {
-    categoryForm.id = category?.id || ''
-    categoryForm.code = category?.code || ''
-    categoryForm.name = category?.name || ''
-    categoryForm.nameEn = category?.nameEn || ''
-    categoryForm.sortOrder = category?.sortOrder ?? 0
-    categoryForm.status = category?.status || 'normal'
-    categoryDialogVisible.value = true
+  function startCreateCategory() {
+    resetCategoryForm()
+  }
+
+  function openCategoryDrawer(category?: APIEndpointCategoryItem) {
+    if (category) {
+      categoryForm.id = category.id || ''
+      categoryForm.code = category.code || ''
+      categoryForm.name = category.name || ''
+      categoryForm.nameEn = category.nameEn || ''
+      categoryForm.sortOrder = category.sortOrder ?? 0
+      categoryForm.status = category.status || 'normal'
+    } else {
+      resetCategoryForm()
+    }
+    categoryDrawerVisible.value = true
+  }
+
+  async function handleCategoryTreeSelect(node: CategoryTreeNode) {
+    selectedCategoryTreeKey.value = node.id
+    if (node.type === 'uncategorized') {
+      tableQuery.categoryId = ''
+      tableQuery.hasCategory = 'false'
+    } else if (node.type === 'category') {
+      tableQuery.categoryId = node.category?.id || ''
+      tableQuery.hasCategory = 'true'
+    } else {
+      tableQuery.categoryId = ''
+      tableQuery.hasCategory = ''
+    }
+    await applyTableFilters()
+  }
+
+  function syncCategoryFilterFromTree() {
+    if (selectedCategoryTreeKey.value === 'uncategorized') {
+      tableQuery.categoryId = ''
+      tableQuery.hasCategory = 'false'
+      return
+    }
+    if (selectedCategoryTreeKey.value.startsWith('category:')) {
+      tableQuery.categoryId = selectedCategoryTreeKey.value.replace(/^category:/, '')
+      tableQuery.hasCategory = 'true'
+      return
+    }
+    tableQuery.categoryId = ''
+    tableQuery.hasCategory = ''
   }
 
   async function loadUnregisteredRoutes() {
@@ -979,13 +1025,19 @@
         sort_order: categoryForm.sortOrder,
         status: categoryForm.status || 'normal'
       }
+      let savedCategory: APIEndpointCategoryItem
       if (categoryForm.id) {
-        await fetchUpdateApiEndpointCategory(categoryForm.id, payload)
+        savedCategory = await fetchUpdateApiEndpointCategory(categoryForm.id, payload)
       } else {
-        await fetchCreateApiEndpointCategory(payload)
+        savedCategory = await fetchCreateApiEndpointCategory(payload)
+        if (formVisible.value) {
+          formState.categoryId = savedCategory.id
+        }
       }
-      await Promise.all([loadCategories(), refreshData()])
-      categoryDialogVisible.value = false
+      await Promise.all([loadCategories(), refreshData(), loadModuleSummary()])
+      if (selectedCategoryTreeKey.value.startsWith('category:')) {
+        syncCategoryFilterFromTree()
+      }
       ElMessage.success('分类保存成功')
     } catch (error: any) {
       ElMessage.error(error?.message || '分类保存失败')
@@ -1019,7 +1071,7 @@
         status: nextStatus
       }
       await fetchUpdateApiEndpointCategory(category.id, payload)
-      await Promise.all([loadCategories(), refreshData()])
+      await Promise.all([loadCategories(), refreshData(), loadModuleSummary()])
       ElMessage.success(`分类已${actionText}`)
     } catch (error: any) {
       ElMessage.error(error?.message || `分类${actionText}失败`)
@@ -1095,26 +1147,19 @@
     } while (records.length < total)
     totalCount.value = total || records.length
     const counter = new Map<string, number>()
+    const categoryCounter = new Map<string, number>()
+    let uncategorized = 0
     records.forEach((item) => {
       const key = (item.module || 'unknown').trim() || 'unknown'
       counter.set(key, (counter.get(key) || 0) + 1)
-    })
-    registrySummary.sync = 0
-    registrySummary.manual = 0
-    registrySummary.seed = 0
-    records.forEach((item) => {
-      switch (item.source) {
-        case 'manual':
-          registrySummary.manual += 1
-          break
-        case 'seed':
-          registrySummary.seed += 1
-          break
-        default:
-          registrySummary.sync += 1
-          break
+      if (item.categoryId) {
+        categoryCounter.set(item.categoryId, (categoryCounter.get(item.categoryId) || 0) + 1)
+      } else {
+        uncategorized += 1
       }
     })
+    categoryCountMap.value = Object.fromEntries(categoryCounter.entries())
+    uncategorizedCount.value = uncategorized
     moduleSummary.value = [...counter.entries()]
       .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-CN'))
       .map(([label, count]) => ({ label, count }))
@@ -1122,11 +1167,6 @@
 
   async function handleModuleSelect(module: string) {
     selectedModule.value = module
-    await applyTableFilters()
-  }
-
-  async function handleSourceSelect(source: string) {
-    selectedSource.value = source
     await applyTableFilters()
   }
 
@@ -1158,6 +1198,7 @@
   async function resetTableQuery() {
     selectedModule.value = ''
     selectedSource.value = ''
+    selectedCategoryTreeKey.value = 'all'
     tableQuery.method = ''
     tableQuery.path = ''
     tableQuery.keyword = ''
@@ -1174,6 +1215,7 @@
   onMounted(async () => {
     restoreTableState()
     await Promise.all([loadCategories(), loadModuleSummary(), loadUnregisteredCount()])
+    syncCategoryFilterFromTree()
     if (selectedModule.value || selectedSource.value || Object.values(tableQuery).some((item) => item)) {
       await applyTableFilters()
     }
@@ -1183,6 +1225,25 @@
 <style scoped>
   .module-card {
     margin-bottom: 12px;
+  }
+
+  .api-layout {
+    display: grid;
+    grid-template-columns: 272px minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    min-height: calc(100vh - 196px);
+  }
+
+  .category-tree-card,
+  .api-table-card {
+    height: calc(100vh - 196px);
+    min-height: 600px;
+    max-height: calc(100vh - 196px);
+  }
+
+  .category-tree-card {
+    overflow: hidden;
   }
 
   .module-header {
@@ -1263,55 +1324,180 @@
     cursor: pointer;
   }
 
-  .category-panel {
-    margin-top: 16px;
-    padding-top: 16px;
-    border-top: 1px solid var(--el-border-color-lighter);
+  .category-tree-card :deep(.el-card__body) {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    flex-direction: column;
+    padding: 14px 12px 12px;
+    overflow: hidden;
   }
 
-  .source-filter-panel {
-    margin-bottom: 12px;
-    padding: 12px 0 4px;
+  .api-table-card {
+    overflow: hidden;
+  }
+
+  .api-table-card :deep(.el-card__body) {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    flex-direction: column;
+    padding: 14px 16px 12px;
+    overflow: hidden;
+  }
+
+  .category-tree-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .category-tree {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .category-tree :deep(.el-tree-node__content) {
+    height: 36px;
+    padding-right: 4px;
+    border-radius: 8px;
+  }
+
+  .category-tree-node {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-right: 2px;
+    font-size: 14px;
+  }
+
+  .category-tree-node-main {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+  }
+
+  .category-tree-node-status {
+    display: inline-flex;
+    width: 38px;
+    justify-content: flex-start;
+    flex-shrink: 0;
+  }
+
+  .category-tree-node-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.2;
+  }
+
+  .category-tree-node-side {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    min-width: 66px;
+    flex-shrink: 0;
+  }
+
+  .category-tree-node-count {
+    min-width: 24px;
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+    text-align: right;
+  }
+
+  .category-tree-node-edit {
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .category-tree-node:hover .category-tree-node-edit {
+    visibility: visible;
+    opacity: 1;
   }
 
   .table-query-panel {
     display: grid;
-    grid-template-columns: 120px repeat(4, minmax(0, 1fr)) repeat(5, minmax(140px, 1fr)) auto;
-    gap: 12px;
+    grid-template-columns: repeat(4, minmax(140px, 1fr)) repeat(5, minmax(120px, 1fr)) auto;
+    gap: 10px;
     align-items: center;
-    margin-bottom: 12px;
+    margin-top: 8px;
+    margin-bottom: 14px;
   }
 
   .table-query-actions {
     display: flex;
-    gap: 8px;
+    gap: 6px;
     flex-wrap: wrap;
   }
 
-  .source-filter-title {
-    margin-bottom: 10px;
+  .api-table-main {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .api-table-card :deep(.table-header-left) {
+    gap: 8px;
+    row-gap: 8px;
+  }
+
+  .api-table-card :deep(#art-table-header) {
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .api-table-card :deep(#art-table-header > .flex-wrap) {
+    align-items: flex-start;
+  }
+
+  .api-table-card :deep(#art-table-header > .flex-c) {
+    padding-top: 0;
+  }
+
+  .api-table-card :deep(.el-button) {
+    --el-component-size: 34px;
+  }
+
+  .api-table-card :deep(.el-button + .el-button) {
+    margin-left: 0;
+  }
+
+  .api-table-card :deep(.el-input__wrapper),
+  .api-table-card :deep(.el-select__wrapper) {
+    min-height: 34px;
+  }
+
+  .api-table-card :deep(.el-tag) {
+    font-size: 12px;
+  }
+
+  .api-table-card :deep(.el-table) {
     font-size: 13px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
   }
 
-  .source-filter-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+  .api-table-card :deep(.el-table th),
+  .api-table-card :deep(.el-table td) {
+    padding: 8px 0;
   }
 
-  .category-panel-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 12px;
+  .api-table-card :deep(.el-pagination) {
+    padding-top: 8px;
   }
 
   .category-list {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 12px;
   }
 
@@ -1363,6 +1549,52 @@
     padding: 12px 0 4px;
     font-size: 13px;
     color: var(--el-text-color-secondary);
+  }
+
+  .category-drawer {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .category-drawer-toolbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .category-drawer-content {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 16px;
+    min-height: 0;
+  }
+
+  .category-drawer-list {
+    min-height: 0;
+  }
+
+  .category-form-panel {
+    padding: 16px;
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 12px;
+    background: linear-gradient(180deg, #fff, var(--el-fill-color-extra-light));
+  }
+
+  .category-form-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .category-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
   }
 
   .category-input-wrap {
@@ -1423,12 +1655,35 @@
   }
 
   @media (max-width: 1280px) {
+    .api-layout {
+      grid-template-columns: 1fr;
+      min-height: 0;
+    }
+
+    .category-tree-card,
+    .api-table-card {
+      position: static;
+      height: auto;
+      min-height: 0;
+      max-height: none;
+    }
+
+    .category-tree-card :deep(.el-card__body),
+    .api-table-card :deep(.el-card__body) {
+      height: auto;
+      min-height: 320px;
+    }
+
     .status-overview {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .table-query-panel {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .category-drawer-content {
+      grid-template-columns: 1fr;
     }
 
     .unregistered-toolbar {
@@ -1448,6 +1703,13 @@
 
     .table-query-panel {
       grid-template-columns: 1fr;
+    }
+
+    .category-tree-header,
+    .category-drawer-toolbar,
+    .category-form-header {
+      flex-direction: column;
+      align-items: stretch;
     }
   }
 </style>

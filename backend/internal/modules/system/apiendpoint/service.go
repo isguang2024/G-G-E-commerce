@@ -333,7 +333,7 @@ func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string) (*us
 
 	keys := make([]string, 0, len(permissionKeys))
 	seen := make(map[string]struct{}, len(permissionKeys))
-	actionRepo := user.NewPermissionActionRepository(s.db)
+	actionRepo := user.NewPermissionKeyRepository(s.db)
 	for _, key := range permissionKeys {
 		target := strings.TrimSpace(key)
 		if target == "" {

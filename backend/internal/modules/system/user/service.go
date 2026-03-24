@@ -85,14 +85,14 @@ func (s *userService) Create(req *dto.UserCreateRequest) (*User, error) {
 		status = "active"
 	}
 	user := &User{
-		Username:     req.Username,
-		PasswordHash: hash,
-		Email:        req.Email,
-		Nickname:     req.Nickname,
-		Phone:        req.Phone,
-		SystemRemark: req.SystemRemark,
+		Username:       req.Username,
+		PasswordHash:   hash,
+		Email:          req.Email,
+		Nickname:       req.Nickname,
+		Phone:          req.Phone,
+		SystemRemark:   req.SystemRemark,
 		RegisterSource: "admin",
-		Status:       status,
+		Status:         status,
 	}
 	if err := s.userRepo.Create(user); err != nil {
 		return nil, err

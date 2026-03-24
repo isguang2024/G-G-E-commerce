@@ -12,10 +12,10 @@ type Role = models.Role
 type Menu = models.Menu
 type UserRole = models.UserRole
 type PermissionGroup = models.PermissionGroup
-type PermissionAction = models.PermissionAction
+type PermissionKey = models.PermissionKey
 type FeaturePackage = models.FeaturePackage
 type FeaturePackageBundle = models.FeaturePackageBundle
-type FeaturePackageAction = models.FeaturePackageAction
+type FeaturePackageKey = models.FeaturePackageKey
 type FeaturePackageMenu = models.FeaturePackageMenu
 type TeamFeaturePackage = models.TeamFeaturePackage
 type UserFeaturePackage = models.UserFeaturePackage
@@ -37,7 +37,7 @@ type APIKey = models.APIKey
 type MediaAsset = models.MediaAsset
 type MenuBackup = models.MenuBackup
 
-type RoleActionPermission struct {
-	RoleID   uuid.UUID `json:"role_id"`
-	ActionID uuid.UUID `json:"action_id"`
+type RoleKeyPermission struct {
+	RoleID uuid.UUID `json:"role_id"`
+	KeyID  uuid.UUID `json:"action_id"`
 }

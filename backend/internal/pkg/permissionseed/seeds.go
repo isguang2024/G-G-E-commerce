@@ -93,7 +93,7 @@ func DefaultAPIEndpointCategories() []APIEndpointCategorySeed {
 		{Code: "system", Name: "系统", NameEn: "System", SortOrder: 20, Status: "normal"},
 		{Code: "user", Name: "用户", NameEn: "User", SortOrder: 30, Status: "normal"},
 		{Code: "role", Name: "角色", NameEn: "Role", SortOrder: 40, Status: "normal"},
-		{Code: "permission_action", Name: "功能键", NameEn: "Permission Key", SortOrder: 50, Status: "normal"},
+		{Code: "permission_key", Name: "功能键", NameEn: "Permission Key", SortOrder: 50, Status: "normal"},
 		{Code: "feature_package", Name: "功能包", NameEn: "Feature Package", SortOrder: 60, Status: "normal"},
 		{Code: "api_endpoint", Name: "API 管理", NameEn: "API Management", SortOrder: 70, Status: "normal"},
 		{Code: "menu", Name: "菜单", NameEn: "Menu", SortOrder: 80, Status: "normal"},
@@ -116,11 +116,11 @@ func DefaultPermissionKeys() []PermissionKeySeed {
 		newPermissionKeySeed("role", "assign_menu", "配置角色菜单权限", "允许为角色配置菜单权限"),
 		newPermissionKeySeed("role", "assign_action", "配置角色功能权限", "允许为角色配置功能权限"),
 		newPermissionKeySeed("role", "assign_data", "配置角色数据权限", "允许为角色配置数据权限"),
-		newPermissionKeySeed("permission_action", "list", "查看功能权限列表", "允许查看功能权限列表"),
-		newPermissionKeySeed("permission_action", "get", "查看功能权限详情", "允许查看功能权限详情"),
-		newPermissionKeySeed("permission_action", "create", "创建功能权限", "允许创建功能权限"),
-		newPermissionKeySeed("permission_action", "update", "更新功能权限", "允许更新功能权限"),
-		newPermissionKeySeed("permission_action", "delete", "删除功能权限", "允许删除功能权限"),
+		newPermissionKeySeed("permission_key", "list", "查看功能权限列表", "允许查看功能权限列表"),
+		newPermissionKeySeed("permission_key", "get", "查看功能权限详情", "允许查看功能权限详情"),
+		newPermissionKeySeed("permission_key", "create", "创建功能权限", "允许创建功能权限"),
+		newPermissionKeySeed("permission_key", "update", "更新功能权限", "允许更新功能权限"),
+		newPermissionKeySeed("permission_key", "delete", "删除功能权限", "允许删除功能权限"),
 		newPermissionKeySeed("user", "list", "查看用户列表", "允许查看用户列表"),
 		newPermissionKeySeed("user", "get", "查看用户详情", "允许查看用户详情"),
 		newPermissionKeySeed("user", "create", "创建用户", "允许创建用户"),
@@ -173,35 +173,171 @@ func DefaultPermissionKeys() []PermissionKeySeed {
 }
 
 func DefaultPermissionGroups() []PermissionGroupSeed {
-	items := []PermissionGroupSeed{
-		{GroupType: "feature", Code: "system", Name: "系统功能", NameEn: "System Feature", Description: "系统初始化和管理能力", Status: "normal", SortOrder: 1, IsBuiltin: true},
-		{GroupType: "feature", Code: "business", Name: "业务功能", NameEn: "Business Feature", Description: "业务扩展能力", Status: "normal", SortOrder: 2, IsBuiltin: true},
-	}
-	moduleSeen := map[string]struct{}{}
-	for _, item := range DefaultPermissionKeys() {
-		code := strings.TrimSpace(item.ModuleGroupCode)
-		if code == "" {
-			continue
-		}
-		if _, ok := moduleSeen[code]; ok {
-			continue
-		}
-		moduleSeen[code] = struct{}{}
-		items = append(items, PermissionGroupSeed{
-			GroupType:   "module",
-			Code:        code,
-			Name:        code,
-			NameEn:      strings.ToUpper(strings.ReplaceAll(code, "_", " ")),
-			Description: "默认模块分组",
-			Status:      "normal",
-			SortOrder:   len(items) + 1,
-			IsBuiltin:   true,
-		})
-	}
+	items := append(DefaultPermissionFeatureGroups(), DefaultPermissionModuleGroups()...)
 	for i := range items {
 		items[i].ID = StableID("permission-group", items[i].GroupType+":"+items[i].Code)
 	}
 	return items
+}
+
+func DefaultPermissionFeatureGroups() []PermissionGroupSeed {
+	return []PermissionGroupSeed{
+		{
+			GroupType:   "feature",
+			Code:        "system",
+			Name:        "系统功能",
+			NameEn:      "System Feature",
+			Description: "系统初始化、权限治理与后台管理能力",
+			Status:      "normal",
+			SortOrder:   1,
+			IsBuiltin:   true,
+		},
+		{
+			GroupType:   "feature",
+			Code:        "business",
+			Name:        "业务功能",
+			NameEn:      "Business Feature",
+			Description: "面向业务域扩展的功能能力",
+			Status:      "normal",
+			SortOrder:   2,
+			IsBuiltin:   true,
+		},
+	}
+}
+
+func DefaultPermissionModuleGroups() []PermissionGroupSeed {
+	return []PermissionGroupSeed{
+		{
+			GroupType:   "module",
+			Code:        "role",
+			Name:        "角色管理",
+			NameEn:      "Role Management",
+			Description: "系统角色、角色菜单、角色功能权限与数据权限管理",
+			Status:      "normal",
+			SortOrder:   100,
+			IsBuiltin:   true,
+		},
+		{
+			GroupType:   "module",
+			Code:        "permission_key",
+			Name:        "权限键管理",
+			NameEn:      "Permission Key Management",
+			Description: "功能权限键、功能分组与接口绑定管理",
+			Status:      "normal",
+			SortOrder:   110,
+			IsBuiltin:   true,
+		},
+		{
+			GroupType:   "module",
+			Code:        "user",
+			Name:        "用户管理",
+			NameEn:      "User Management",
+			Description: "平台用户、角色与例外权限管理",
+			Status:      "normal",
+			SortOrder:   120,
+			IsBuiltin:   true,
+		},
+		{
+			GroupType:   "module",
+			Code:        "menu",
+			Name:        "菜单管理",
+			NameEn:      "Menu Management",
+			Description: "平台菜单树维护与菜单权限治理",
+			Status:      "normal",
+			SortOrder:   130,
+			IsBuiltin:   true,
+		},
+		{
+			GroupType:   "module",
+			Code:        "menu_backup",
+			Name:        "菜单备份",
+			NameEn:      "Menu Backup",
+			Description: "菜单备份与恢复能力",
+			Status:      "normal",
+			SortOrder:   140,
+			IsBuiltin:   true,
+		},
+		{
+			GroupType:   "module",
+			Code:        "system",
+			Name:        "系统工具",
+			NameEn:      "System Utilities",
+			Description: "系统页映射与系统工具能力",
+			Status:      "normal",
+			SortOrder:   150,
+			IsBuiltin:   true,
+		},
+		{
+			GroupType:   "module",
+			Code:        "tenant",
+			Name:        "团队管理",
+			NameEn:      "Team Management",
+			Description: "平台团队、团队边界与团队主体治理",
+			Status:      "normal",
+			SortOrder:   160,
+			IsBuiltin:   true,
+		},
+		{
+			GroupType:   "module",
+			Code:        "tenant_member_admin",
+			Name:        "团队成员管理",
+			NameEn:      "Team Member Admin",
+			Description: "平台侧团队成员与团队身份配置",
+			Status:      "normal",
+			SortOrder:   170,
+			IsBuiltin:   true,
+		},
+		{
+			GroupType:   "module",
+			Code:        "team_member",
+			Name:        "当前团队成员",
+			NameEn:      "Current Team Members",
+			Description: "当前团队上下文内的成员管理与成员权限配置",
+			Status:      "normal",
+			SortOrder:   180,
+			IsBuiltin:   true,
+		},
+		{
+			GroupType:   "module",
+			Code:        "team",
+			Name:        "团队边界",
+			NameEn:      "Team Boundary",
+			Description: "当前团队功能边界与团队角色能力边界管理",
+			Status:      "normal",
+			SortOrder:   190,
+			IsBuiltin:   true,
+		},
+		{
+			GroupType:   "module",
+			Code:        "api_endpoint",
+			Name:        "API 管理",
+			NameEn:      "API Management",
+			Description: "API 单元、未注册路由与接口元数据管理",
+			Status:      "normal",
+			SortOrder:   200,
+			IsBuiltin:   true,
+		},
+		{
+			GroupType:   "module",
+			Code:        "feature_package",
+			Name:        "功能包管理",
+			NameEn:      "Feature Package Management",
+			Description: "功能包、组合包与开通关系管理",
+			Status:      "normal",
+			SortOrder:   210,
+			IsBuiltin:   true,
+		},
+		{
+			GroupType:   "module",
+			Code:        "system_permission",
+			Name:        "权限系统配置",
+			NameEn:      "Permission System Settings",
+			Description: "权限注册表与系统级权限配置能力",
+			Status:      "normal",
+			SortOrder:   220,
+			IsBuiltin:   true,
+		},
+	}
 }
 
 func DefaultFeaturePackages() []FeaturePackageSeed {

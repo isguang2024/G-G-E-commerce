@@ -1,6 +1,6 @@
 package dto
 
-type PermissionActionListRequest struct {
+type PermissionKeyListRequest struct {
 	Current        int    `form:"current"`
 	Size           int    `form:"size"`
 	Keyword        string `form:"keyword"`
@@ -15,7 +15,7 @@ type PermissionActionListRequest struct {
 	IsBuiltin      string `form:"is_builtin"`
 }
 
-type PermissionActionCreateRequest struct {
+type PermissionKeyCreateRequest struct {
 	PermissionKey  string `json:"permission_key" binding:"required,max=150"`
 	ModuleCode     string `json:"module_code" binding:"max=100"`
 	ModuleGroupID  string `json:"module_group_id" binding:"max=36"`
@@ -28,7 +28,7 @@ type PermissionActionCreateRequest struct {
 	SortOrder      int    `json:"sort_order"`
 }
 
-type PermissionActionUpdateRequest struct {
+type PermissionKeyUpdateRequest struct {
 	PermissionKey  string `json:"permission_key" binding:"max=150"`
 	ModuleCode     string `json:"module_code" binding:"max=100"`
 	ModuleGroupID  string `json:"module_group_id" binding:"max=36"`
@@ -59,29 +59,29 @@ type PermissionGroupSaveRequest struct {
 	SortOrder   int    `json:"sort_order"`
 }
 
-type RoleActionPermissionsRequest struct {
-	ActionIDs []string `json:"action_ids"`
+type RoleKeyPermissionsRequest struct {
+	KeyIDs []string `json:"action_ids"`
 }
 
 type RoleFeaturePackagesRequest struct {
 	PackageIDs []string `json:"package_ids"`
 }
 
-type TenantActionPermissionsRequest struct {
-	ActionIDs []string `json:"action_ids"`
+type TenantKeyPermissionsRequest struct {
+	KeyIDs []string `json:"action_ids"`
 }
 
 type TenantMenuPermissionsRequest struct {
 	MenuIDs []string `json:"menu_ids"`
 }
 
-type UserActionPermissionItem struct {
-	ActionID string `json:"action_id" binding:"required"`
-	Effect   string `json:"effect" binding:"required"`
+type UserKeyPermissionItem struct {
+	KeyID  string `json:"action_id" binding:"required"`
+	Effect string `json:"effect" binding:"required"`
 }
 
-type UserActionPermissionsRequest struct {
-	Actions []UserActionPermissionItem `json:"actions"`
+type UserKeyPermissionsRequest struct {
+	Actions []UserKeyPermissionItem `json:"actions"`
 }
 
 type FeaturePackageListRequest struct {
@@ -115,7 +115,7 @@ type FeaturePackageUpdateRequest struct {
 	SortOrder   int    `json:"sort_order"`
 }
 
-type FeaturePackageActionSetRequest struct {
+type FeaturePackageKeySetRequest struct {
 	ActionIDs []string `json:"action_ids"`
 }
 

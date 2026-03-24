@@ -260,12 +260,12 @@
 - `platform_user_access_snapshots`
 
 ## 2026-03-24 上下文与权限键补充约束
-- 权限自动注册写入 `permission_actions` 时，必须显式写入 `context_type`；平台系统权限不得依赖模型默认值 `team`。
+- 权限自动注册写入 `permission_keys` 时，必须显式写入 `context_type`；平台系统权限不得依赖模型默认值 `team`。
 - 当 `context_type` 缺失时，只允许按点式 `permission_key` 与模块编码做兜底推导：
   - `system.*`
   - `tenant.*`
   - `platform.*`
-  - 模块 `role / user / menu / menu_backup / permission_action / api_endpoint / feature_package`
+  - 模块 `role / user / menu / menu_backup / permission_key / api_endpoint / feature_package`
   统一归 `platform`
 - 权限列表、角色边界、团队边界、功能包来源等正式接口返回中，`permission_key` 必须优先输出点式格式；历史冒号格式只能作为兼容输入，不再作为展示主值。
 - `platform_role_access_snapshots`
@@ -562,3 +562,39 @@
   - 平台角色只允许绑定 `platform` 或 `common` 上下文功能包
   - 团队角色与团队边界只允许绑定 `team` 或 `common` 上下文功能包
   - `common` 功能包在功能范围选择时应同时允许看到 `common` 功能权限本身
+
+### 8.2 功能包功能键关联表命名补充
+- 功能包与功能键的正式关联表名已收口为 `feature_package_keys`。
+- 历史表名 `feature_package_actions` 仅保留迁移兼容意义，不再作为正式设计文档中的表名。
+- 功能权限主表的正式名称同步收口为 `permission_keys`，因此功能包关系链正式表述应为：
+  - `permission_keys`
+  - `feature_package_keys`
+  - `feature_packages`
+  - `role_feature_packages / user_feature_packages / team_feature_packages`
+- 当前代码层的正式命名也已同步收口：
+  - `PermissionKey`
+  - `FeaturePackageKey`
+  - `PermissionKeyRepository`
+  - `FeaturePackageKeyRepository`
+- 当前仅保留外部兼容命名：
+  - 路径层 `/actions`
+  - JSON 字段 `action_ids / action_id`
+  这些兼容项仅用于维持前端与既有调用稳定，不代表内部设计仍使用旧 action 语义。
+
+### 8.3 默认权限分组固定化补充
+- 默认功能键现在必须绑定固定的模块分组与功能分组，不能再在部署时通过现有权限键列表反推模块分组名称。
+- `permissionseed` 必须显式维护：
+  - 默认功能分组清单
+  - 默认模块分组清单
+  - 每个默认功能键对应的 `module_group_code`
+  - 每个默认功能键对应的 `feature_group_code`
+- 当前系统内置功能键的默认功能分组统一收口到 `system`，这样在迁移导入时，模块分组和功能分组都能直接一次写库并稳定复用。
+- 默认分组 ID 必须使用稳定 UUID，与 API 分类一样预先固定，保证跨环境迁移、导表、联表和初始化快照都不会因重新生成 ID 而漂移。
+
+### 8.4 permission_key 正式编码补充
+- 功能权限模块的正式模块编码已经收口为 `permission_key`，不再使用 `permission_action` 作为默认主数据编码。
+- 对应的默认主数据必须同步保持一致：
+  - API 分类编码使用 `permission_key`
+  - 模块分组编码使用 `permission_key`
+  - 内置功能键的 `module_code` 使用 `permission_key`
+- 老环境迁移时，允许保留少量兼容解析，但数据库最终状态必须只保留 `permission_key` 这一套正式编码。

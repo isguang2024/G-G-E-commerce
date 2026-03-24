@@ -160,14 +160,14 @@ func (h *Handler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
-func (h *Handler) GetPackageActions(c *gin.Context) {
+func (h *Handler) GetPackageKeys(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能包ID")
 		c.JSON(status, resp)
 		return
 	}
-	actionIDs, actions, err := h.service.GetPackageActions(id)
+	actionIDs, actions, err := h.service.GetPackageKeys(id)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
@@ -248,14 +248,14 @@ func (h *Handler) SetPackageChildren(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
-func (h *Handler) SetPackageActions(c *gin.Context) {
+func (h *Handler) SetPackageKeys(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能包ID")
 		c.JSON(status, resp)
 		return
 	}
-	var req dto.FeaturePackageActionSetRequest
+	var req dto.FeaturePackageKeySetRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -267,7 +267,7 @@ func (h *Handler) SetPackageActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.service.SetPackageActions(id, actionIDs); err != nil {
+	if err := h.service.SetPackageKeys(id, actionIDs); err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
 			c.JSON(status, resp)
@@ -479,18 +479,18 @@ func packageToMapWithStats(item *user.FeaturePackage, actionCount, menuCount, te
 	return result
 }
 
-func actionListToMaps(actions []user.PermissionAction) []gin.H {
+func actionListToMaps(actions []user.PermissionKey) []gin.H {
 	items := make([]gin.H, 0, len(actions))
 	for _, action := range actions {
 		moduleGroup := gin.H(nil)
 		if action.ModuleGroup != nil {
 			moduleGroup = gin.H{
-				"id": action.ModuleGroup.ID.String(),
+				"id":         action.ModuleGroup.ID.String(),
 				"group_type": action.ModuleGroup.GroupType,
-				"code": action.ModuleGroup.Code,
-				"name": action.ModuleGroup.Name,
-				"name_en": action.ModuleGroup.NameEn,
-				"status": action.ModuleGroup.Status,
+				"code":       action.ModuleGroup.Code,
+				"name":       action.ModuleGroup.Name,
+				"name_en":    action.ModuleGroup.NameEn,
+				"status":     action.ModuleGroup.Status,
 				"sort_order": action.ModuleGroup.SortOrder,
 				"is_builtin": action.ModuleGroup.IsBuiltin,
 			}
@@ -498,12 +498,12 @@ func actionListToMaps(actions []user.PermissionAction) []gin.H {
 		featureGroup := gin.H(nil)
 		if action.FeatureGroup != nil {
 			featureGroup = gin.H{
-				"id": action.FeatureGroup.ID.String(),
+				"id":         action.FeatureGroup.ID.String(),
 				"group_type": action.FeatureGroup.GroupType,
-				"code": action.FeatureGroup.Code,
-				"name": action.FeatureGroup.Name,
-				"name_en": action.FeatureGroup.NameEn,
-				"status": action.FeatureGroup.Status,
+				"code":       action.FeatureGroup.Code,
+				"name":       action.FeatureGroup.Name,
+				"name_en":    action.FeatureGroup.NameEn,
+				"status":     action.FeatureGroup.Status,
 				"sort_order": action.FeatureGroup.SortOrder,
 				"is_builtin": action.FeatureGroup.IsBuiltin,
 			}
@@ -512,7 +512,7 @@ func actionListToMaps(actions []user.PermissionAction) []gin.H {
 			"id":               action.ID.String(),
 			"permission_key":   strings.TrimSpace(action.PermissionKey),
 			"module_code":      action.ModuleCode,
-			"module_group_id": uuidPtrToString(action.ModuleGroupID),
+			"module_group_id":  uuidPtrToString(action.ModuleGroupID),
 			"feature_group_id": uuidPtrToString(action.FeatureGroupID),
 			"module_group":     moduleGroup,
 			"feature_group":    featureGroup,

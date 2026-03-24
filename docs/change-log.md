@@ -1064,3 +1064,63 @@
 - 继续把固定 ID 策略从默认 Seeds 推到正式表命名收口，优先推进 `permission_actions -> permission_keys` 与 `feature_package_actions -> feature_package_keys`。
 - 若后续要进一步增强删除一致性，可补数据库外键和 `ON DELETE CASCADE` 到纯从属表，但业务刷新与跨表补偿仍建议保留在服务层事务里。
 - API 管理和权限页面的主链已经稳定，下一轮可以把重心切到你准备转向的新主线，不必再回头做结构级清理。
+
+## 2026-03-24 权限主表正式收口到 permission_keys
+
+### 本次改动
+- 将数据库正式主表名从 `permission_actions / feature_package_actions` 收口为 `permission_keys / feature_package_keys`，并在迁移入口增加了 `AutoMigrate` 前重命名补偿，确保老库升级不会先建新空表。
+- 后端 ORM、仓储、鉴权、索引维护和命名迁移 SQL 已同步改到新表名；当前 Go 结构名仍保留 `PermissionAction / FeaturePackageAction` 作为兼容层，避免这一轮把服务层和接口语义同时放大。
+- 已验证 `backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit` 通过，并重新执行真实迁移二进制；数据库校验结果为仅保留 `permission_keys`、`feature_package_keys` 两张正式表，数据量分别为 `18`、`11`。
+
+### 下次方向
+- 下一步可以继续把代码语义层也正式收口，把结构名、Repo 名、Service 名从 `Action` 改成 `Key`，彻底结束兼容过渡态。
+- 如果要补数据库约束，建议围绕新表名继续加唯一索引、外键和纯从属级联，不要再往旧表名追加任何新逻辑。
+- 当前数据库命名已经稳定，接下来可以安全转向新的主线，不必再回头处理旧 `permission_actions` 命名问题。
+
+## 2026-03-24 权限键代码语义命名收口
+
+### 本次改动
+- 将后端内部主链的结构名、仓储名和服务方法名继续从 `Action` 语义收口到 `Key` 语义，重点覆盖 `PermissionKey`、`FeaturePackageKey`、角色权限边界、角色权限设置 DTO 与角色权限服务方法。
+- 保持外部兼容面稳定：API 路径仍保留 `/actions`，JSON 字段仍保留 `action_id / action_ids`，避免这一轮同时破坏前端和外部调用。
+- 同步修正文档口径，明确系统内部正式模型已经完成 `Key` 化；已执行 `backend/go test ./...` 与 `frontend/pnpm exec vue-tsc --noEmit`，通过。
+
+### 下次方向
+- 若后续要继续彻底清理旧心智，可再处理少量兼容残留，例如日志文案、局部变量名和 `RoleDisabledActionRepository` 这类基于历史表语义保留的实现名。
+- 如果未来允许接口破坏式升级，再考虑把 `/actions` 路径和 `action_ids` 字段统一切到 `keys` 命名，并配套前端与接口文档一起升级。
+- 当前内部主链已经足够稳定，后续可以优先转向新的业务主线，不必再反复回头处理权限命名。 
+
+## 2026-03-24 API 管理页改为左树右表
+
+### 本次改动
+- 将 API 管理页重构为左右布局：左侧新增分类树用于筛选全部 API、未分类 API 和具体分类，右侧保留 API 列表、查询条件、注册方式筛选和表格操作。
+- 原页面内嵌的分类管理区已移除，统一改为 `Drawer` 抽屉配置；抽屉内同时提供分类列表、启停、编辑和新建表单，避免主页面信息堆叠。
+- 同步补了分类树筛选状态持久化、分类计数统计和移动端自适应样式；已验证 `frontend/npm run build` 通过，未单独做浏览器手工点测。
+
+### 下次方向
+- 下一步建议在浏览器里补一次真实交互验证，重点看分类树选中态、Drawer 编辑后列表刷新，以及移动端折叠后的可用性。
+- 如果后端后续支持真正的多级分类结构，可以直接把当前左侧树从单层统计扩展成真实树形，不需要再推翻这次布局。
+
+## 2026-03-24 默认权限分组固定化
+
+### 本次改动
+- 将默认权限分组从“按已有权限键动态推导模块分组”改为“显式固定 Seed 清单”，新增固定模块分组定义并统一使用稳定 UUID，确保部署迁移时可以一键导入。
+- 默认内置权限键的功能分组默认值统一收口到 `system`，并继续按模块分组固定绑定到 `role`、`user`、`api_endpoint`、`feature_package`、`tenant_member_admin`、`system_permission` 等显式模块分组。
+- 已重新执行真实迁移并校验数据库，`permission_groups` 现为 `15` 条，模块分组名称已更新为中文固定名，内置 `permission_keys` 已绑定固定 `module_group_id / feature_group_id`；同时执行了 `backend/go test ./...` 与 `frontend/pnpm exec vue-tsc --noEmit`，通过。
+
+### 下次方向
+- 如果后续要给新业务模块预埋权限主数据，直接往 `permissionseed` 的固定模块分组和默认功能键清单里追加，不要再回到运行时动态推导。
+- 前端权限键管理页下一步可以直接展示“系统固定模块分组”与“管理员自建分组”的差异，例如增加 `is_builtin` 只读提示。
+- 当前默认分组已经稳定，接下来可以把重心转到新的业务方向，不需要再为迁移一致性回头补分组 ID 规则。
+
+## 2026-03-24 permission_action 正式迁移到 permission_key
+
+### 本次改动
+- 补充了新的幂等命名迁移 `20260324_permission_key_code_alignment_v2`，在迁移中先确保 `permission_key` 对应的默认 API 分类、默认模块分组和默认功能键存在，再统一把旧 `permission_action` 引用迁移到 `permission_key`。
+- 迁移会同步更新 `api_endpoints.category_id`、`api_endpoints.module`、`permission_keys.module_code`、`permission_keys.module_group_id`，并物理清理旧的 `permission_action` API 分类和模块分组，避免数据库长期保留双份正式编码。
+- 文档规则已同步收口到 `permission_key`：默认模块分组、API 分类和功能键模块编码全部以 `permission_key` 为正式值；前端仍保留少量旧值兼容解析，但数据库正式状态已完成切换。
+- 已验证：`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit` 通过；重新构建并执行真实迁移二进制后，数据库核验结果为 `permission_groups=15`、`permission_keys=18`、`feature_packages=5`、`feature_package_keys=11`、`role_feature_packages(enabled)=2`，且 `permission_action` 分类与模块分组已清理完成。
+
+### 下次方向
+- 如果后续要继续减兼容层，可以逐步移除前端与映射层对 `permission_action` 的兜底解析，只保留 `permission_key` 正式编码。
+- 历史文档中若仍出现 `permission_actions` 或 `permission_action` 旧表述，可继续按“历史兼容说明”与“正式模型说明”两层再做一次全文清理。
+- 当前数据库主数据和迁移链已稳定，后续新增系统功能请直接在 `permissionseed` 中补固定分组、固定功能键和固定分类，不要再引入动态推导。

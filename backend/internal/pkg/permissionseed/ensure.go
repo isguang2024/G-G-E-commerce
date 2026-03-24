@@ -88,7 +88,7 @@ func EnsureDefaultPermissionKeys(db *gorm.DB) error {
 	for _, actionSeed := range DefaultPermissionKeys() {
 		moduleGroupID := groupIDs["module:"+actionSeed.ModuleGroupCode]
 		featureGroupID := groupIDs["feature:"+actionSeed.FeatureGroupCode]
-		actionData := usermodel.PermissionAction{
+		actionData := usermodel.PermissionKey{
 			ID:             actionSeed.ID,
 			Code:           StableID("permission-action-code", actionSeed.Key).String(),
 			PermissionKey:  actionSeed.Key,
@@ -103,7 +103,7 @@ func EnsureDefaultPermissionKeys(db *gorm.DB) error {
 			SortOrder:      actionSeed.SortOrder,
 			IsBuiltin:      actionSeed.IsBuiltin,
 		}
-		var action usermodel.PermissionAction
+		var action usermodel.PermissionKey
 		result := db.Where("permission_key = ?", actionData.PermissionKey).First(&action)
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -176,7 +176,7 @@ func EnsureDefaultFeaturePackages(db *gorm.DB) error {
 
 		actionIDs := make([]uuid.UUID, 0, len(seed.PermissionKeys))
 		for _, permissionKey := range seed.PermissionKeys {
-			var action usermodel.PermissionAction
+			var action usermodel.PermissionKey
 			if err := db.Where("permission_key = ?", permissionKey).First(&action).Error; err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
 					continue
@@ -191,7 +191,7 @@ func EnsureDefaultFeaturePackages(db *gorm.DB) error {
 				continue
 			}
 			seenActionIDs[actionID] = struct{}{}
-			record := usermodel.FeaturePackageAction{PackageID: existing.ID, ActionID: actionID}
+			record := usermodel.FeaturePackageKey{PackageID: existing.ID, ActionID: actionID}
 			if err := db.Where("package_id = ? AND action_id = ?", existing.ID, actionID).FirstOrCreate(&record).Error; err != nil {
 				return err
 			}

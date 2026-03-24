@@ -960,19 +960,19 @@ func userSlicePointers(users []User) []*User {
 	return result
 }
 
-type PermissionActionRepository interface {
-	List(offset, limit int, params *PermissionActionListParams) ([]PermissionAction, int64, error)
-	GetByID(id uuid.UUID) (*PermissionAction, error)
-	GetByIDs(ids []uuid.UUID) ([]PermissionAction, error)
-	GetByPermissionKey(permissionKey string) (*PermissionAction, error)
-	GetAllEnabled() ([]PermissionAction, error)
+type PermissionKeyRepository interface {
+	List(offset, limit int, params *PermissionKeyListParams) ([]PermissionKey, int64, error)
+	GetByID(id uuid.UUID) (*PermissionKey, error)
+	GetByIDs(ids []uuid.UUID) ([]PermissionKey, error)
+	GetByPermissionKey(permissionKey string) (*PermissionKey, error)
+	GetAllEnabled() ([]PermissionKey, error)
 	ListDistinctModuleCodes() ([]string, error)
-	Create(action *PermissionAction) error
+	Create(action *PermissionKey) error
 	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
 	Delete(id uuid.UUID) error
 }
 
-type PermissionActionListParams struct {
+type PermissionKeyListParams struct {
 	Keyword        string
 	PermissionKey  string
 	Name           string
@@ -1065,16 +1065,16 @@ func (r *permissionGroupRepository) UpdateWithMap(id uuid.UUID, updates map[stri
 	return r.db.Model(&PermissionGroup{}).Where("id = ?", id).Updates(updates).Error
 }
 
-type permissionActionRepository struct {
+type permissionKeyRepository struct {
 	db *gorm.DB
 }
 
-func NewPermissionActionRepository(db *gorm.DB) PermissionActionRepository {
-	return &permissionActionRepository{db: db}
+func NewPermissionKeyRepository(db *gorm.DB) PermissionKeyRepository {
+	return &permissionKeyRepository{db: db}
 }
 
-func (r *permissionActionRepository) List(offset, limit int, params *PermissionActionListParams) ([]PermissionAction, int64, error) {
-	query := r.db.Model(&PermissionAction{}).Preload("ModuleGroup").Preload("FeatureGroup")
+func (r *permissionKeyRepository) List(offset, limit int, params *PermissionKeyListParams) ([]PermissionKey, int64, error) {
+	query := r.db.Model(&PermissionKey{}).Preload("ModuleGroup").Preload("FeatureGroup")
 	if params != nil {
 		if params.Keyword != "" {
 			keyword := "%" + params.Keyword + "%"
@@ -1115,13 +1115,13 @@ func (r *permissionActionRepository) List(offset, limit int, params *PermissionA
 	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
-	var actions []PermissionAction
+	var actions []PermissionKey
 	err := query.Offset(offset).Limit(limit).Order("sort_order ASC, created_at DESC").Find(&actions).Error
 	return actions, total, err
 }
 
-func (r *permissionActionRepository) GetByID(id uuid.UUID) (*PermissionAction, error) {
-	var action PermissionAction
+func (r *permissionKeyRepository) GetByID(id uuid.UUID) (*PermissionKey, error) {
+	var action PermissionKey
 	err := r.db.Preload("ModuleGroup").Preload("FeatureGroup").Where("id = ?", id).First(&action).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -1132,8 +1132,8 @@ func (r *permissionActionRepository) GetByID(id uuid.UUID) (*PermissionAction, e
 	return &action, nil
 }
 
-func (r *permissionActionRepository) GetByPermissionKey(permissionKey string) (*PermissionAction, error) {
-	var action PermissionAction
+func (r *permissionKeyRepository) GetByPermissionKey(permissionKey string) (*PermissionKey, error) {
+	var action PermissionKey
 	err := r.db.Preload("ModuleGroup").Preload("FeatureGroup").Where("permission_keys.permission_key = ?", permissionKey).First(&action).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -1144,8 +1144,8 @@ func (r *permissionActionRepository) GetByPermissionKey(permissionKey string) (*
 	return &action, nil
 }
 
-func (r *permissionActionRepository) GetByIDs(ids []uuid.UUID) ([]PermissionAction, error) {
-	var actions []PermissionAction
+func (r *permissionKeyRepository) GetByIDs(ids []uuid.UUID) ([]PermissionKey, error) {
+	var actions []PermissionKey
 	if len(ids) == 0 {
 		return actions, nil
 	}
@@ -1153,15 +1153,15 @@ func (r *permissionActionRepository) GetByIDs(ids []uuid.UUID) ([]PermissionActi
 	return actions, err
 }
 
-func (r *permissionActionRepository) GetAllEnabled() ([]PermissionAction, error) {
-	var actions []PermissionAction
+func (r *permissionKeyRepository) GetAllEnabled() ([]PermissionKey, error) {
+	var actions []PermissionKey
 	err := r.db.Preload("ModuleGroup").Preload("FeatureGroup").Where("status = ?", "normal").Order("sort_order ASC, created_at DESC").Find(&actions).Error
 	return actions, err
 }
 
-func (r *permissionActionRepository) ListDistinctModuleCodes() ([]string, error) {
+func (r *permissionKeyRepository) ListDistinctModuleCodes() ([]string, error) {
 	var moduleCodes []string
-	err := r.db.Model(&PermissionAction{}).
+	err := r.db.Model(&PermissionKey{}).
 		Where("COALESCE(permission_keys.module_code, '') <> ''").
 		Distinct("permission_keys.module_code").
 		Order("permission_keys.module_code ASC").
@@ -1169,16 +1169,16 @@ func (r *permissionActionRepository) ListDistinctModuleCodes() ([]string, error)
 	return moduleCodes, err
 }
 
-func (r *permissionActionRepository) Create(action *PermissionAction) error {
+func (r *permissionKeyRepository) Create(action *PermissionKey) error {
 	return r.db.Create(action).Error
 }
 
-func (r *permissionActionRepository) UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error {
-	return r.db.Model(&PermissionAction{}).Where("id = ?", id).Updates(updates).Error
+func (r *permissionKeyRepository) UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error {
+	return r.db.Model(&PermissionKey{}).Where("id = ?", id).Updates(updates).Error
 }
 
-func (r *permissionActionRepository) Delete(id uuid.UUID) error {
-	return r.db.Delete(&PermissionAction{}, id).Error
+func (r *permissionKeyRepository) Delete(id uuid.UUID) error {
+	return r.db.Delete(&PermissionKey{}, id).Error
 }
 
 type RoleDataPermissionRepository interface {
@@ -1221,7 +1221,7 @@ type UserActionPermissionRepository interface {
 	GetByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]UserActionPermission, error)
 	GetEffectiveByUserAndAction(userID uuid.UUID, tenantID *uuid.UUID, actionID uuid.UUID) ([]UserActionPermission, error)
 	ReplaceUserActions(userID uuid.UUID, tenantID *uuid.UUID, actions []UserActionPermission) error
-	DeleteByActionID(actionID uuid.UUID) error
+	DeleteByKeyID(actionID uuid.UUID) error
 }
 
 type userActionPermissionRepository struct {
@@ -1274,7 +1274,7 @@ func (r *userActionPermissionRepository) ReplaceUserActions(userID uuid.UUID, te
 	})
 }
 
-func (r *userActionPermissionRepository) DeleteByActionID(actionID uuid.UUID) error {
+func (r *userActionPermissionRepository) DeleteByKeyID(actionID uuid.UUID) error {
 	return r.db.Where("action_id = ?", actionID).Delete(&UserActionPermission{}).Error
 }
 
@@ -1404,36 +1404,36 @@ func (r *featurePackageRepository) Delete(id uuid.UUID) error {
 	return r.db.Delete(&FeaturePackage{}, id).Error
 }
 
-type FeaturePackageActionRepository interface {
-	GetActionIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error)
-	GetPackageIDsByActionID(actionID uuid.UUID) ([]uuid.UUID, error)
+type FeaturePackageKeyRepository interface {
+	GetKeyIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error)
+	GetPackageIDsByKeyID(actionID uuid.UUID) ([]uuid.UUID, error)
 	CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error)
-	ReplacePackageActions(packageID uuid.UUID, actionIDs []uuid.UUID) error
+	ReplacePackageKeys(packageID uuid.UUID, actionIDs []uuid.UUID) error
 	DeleteByPackageID(packageID uuid.UUID) error
-	DeleteByActionID(actionID uuid.UUID) error
+	DeleteByKeyID(actionID uuid.UUID) error
 }
 
-type featurePackageActionRepository struct {
+type featurePackageKeyRepository struct {
 	db *gorm.DB
 }
 
-func NewFeaturePackageActionRepository(db *gorm.DB) FeaturePackageActionRepository {
-	return &featurePackageActionRepository{db: db}
+func NewFeaturePackageKeyRepository(db *gorm.DB) FeaturePackageKeyRepository {
+	return &featurePackageKeyRepository{db: db}
 }
 
-func (r *featurePackageActionRepository) GetActionIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error) {
+func (r *featurePackageKeyRepository) GetKeyIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error) {
 	var actionIDs []uuid.UUID
-	err := r.db.Model(&FeaturePackageAction{}).Where("package_id = ?", packageID).Pluck("action_id", &actionIDs).Error
+	err := r.db.Model(&FeaturePackageKey{}).Where("package_id = ?", packageID).Pluck("action_id", &actionIDs).Error
 	return actionIDs, err
 }
 
-func (r *featurePackageActionRepository) GetPackageIDsByActionID(actionID uuid.UUID) ([]uuid.UUID, error) {
+func (r *featurePackageKeyRepository) GetPackageIDsByKeyID(actionID uuid.UUID) ([]uuid.UUID, error) {
 	var packageIDs []uuid.UUID
-	err := r.db.Model(&FeaturePackageAction{}).Where("action_id = ?", actionID).Pluck("package_id", &packageIDs).Error
+	err := r.db.Model(&FeaturePackageKey{}).Where("action_id = ?", actionID).Pluck("package_id", &packageIDs).Error
 	return packageIDs, err
 }
 
-func (r *featurePackageActionRepository) CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
+func (r *featurePackageKeyRepository) CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
 	result := make(map[uuid.UUID]int64, len(packageIDs))
 	if len(packageIDs) == 0 {
 		return result, nil
@@ -1443,7 +1443,7 @@ func (r *featurePackageActionRepository) CountByPackageIDs(packageIDs []uuid.UUI
 		Total     int64
 	}
 	var rows []row
-	if err := r.db.Model(&FeaturePackageAction{}).
+	if err := r.db.Model(&FeaturePackageKey{}).
 		Select("package_id, COUNT(*) AS total").
 		Where("package_id IN ?", packageIDs).
 		Group("package_id").
@@ -1456,22 +1456,22 @@ func (r *featurePackageActionRepository) CountByPackageIDs(packageIDs []uuid.UUI
 	return result, nil
 }
 
-func (r *featurePackageActionRepository) ReplacePackageActions(packageID uuid.UUID, actionIDs []uuid.UUID) error {
+func (r *featurePackageKeyRepository) ReplacePackageKeys(packageID uuid.UUID, actionIDs []uuid.UUID) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("package_id = ?", packageID).Delete(&FeaturePackageAction{}).Error; err != nil {
+		if err := tx.Where("package_id = ?", packageID).Delete(&FeaturePackageKey{}).Error; err != nil {
 			return err
 		}
 		if len(actionIDs) == 0 {
 			return nil
 		}
-		items := make([]FeaturePackageAction, 0, len(actionIDs))
+		items := make([]FeaturePackageKey, 0, len(actionIDs))
 		seen := make(map[uuid.UUID]struct{}, len(actionIDs))
 		for _, actionID := range actionIDs {
 			if _, ok := seen[actionID]; ok {
 				continue
 			}
 			seen[actionID] = struct{}{}
-			items = append(items, FeaturePackageAction{PackageID: packageID, ActionID: actionID})
+			items = append(items, FeaturePackageKey{PackageID: packageID, ActionID: actionID})
 		}
 		if len(items) == 0 {
 			return nil
@@ -1480,12 +1480,12 @@ func (r *featurePackageActionRepository) ReplacePackageActions(packageID uuid.UU
 	})
 }
 
-func (r *featurePackageActionRepository) DeleteByPackageID(packageID uuid.UUID) error {
-	return r.db.Where("package_id = ?", packageID).Delete(&FeaturePackageAction{}).Error
+func (r *featurePackageKeyRepository) DeleteByPackageID(packageID uuid.UUID) error {
+	return r.db.Where("package_id = ?", packageID).Delete(&FeaturePackageKey{}).Error
 }
 
-func (r *featurePackageActionRepository) DeleteByActionID(actionID uuid.UUID) error {
-	return r.db.Where("action_id = ?", actionID).Delete(&FeaturePackageAction{}).Error
+func (r *featurePackageKeyRepository) DeleteByKeyID(actionID uuid.UUID) error {
+	return r.db.Where("action_id = ?", actionID).Delete(&FeaturePackageKey{}).Error
 }
 
 type FeaturePackageMenuRepository interface {
@@ -1909,7 +1909,7 @@ type RoleDisabledActionRepository interface {
 	GetActionIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error)
 	ReplaceRoleDisabledActions(roleID uuid.UUID, actionIDs []uuid.UUID) error
 	DeleteByRoleID(roleID uuid.UUID) error
-	DeleteByActionID(actionID uuid.UUID) error
+	DeleteByKeyID(actionID uuid.UUID) error
 }
 
 type roleDisabledActionRepository struct {
@@ -1957,7 +1957,7 @@ func (r *roleDisabledActionRepository) DeleteByRoleID(roleID uuid.UUID) error {
 	return r.db.Where("role_id = ?", roleID).Delete(&RoleDisabledAction{}).Error
 }
 
-func (r *roleDisabledActionRepository) DeleteByActionID(actionID uuid.UUID) error {
+func (r *roleDisabledActionRepository) DeleteByKeyID(actionID uuid.UUID) error {
 	return r.db.Where("action_id = ?", actionID).Delete(&RoleDisabledAction{}).Error
 }
 
@@ -2021,7 +2021,7 @@ type TeamBlockedActionRepository interface {
 	GetActionIDsByTeamID(teamID uuid.UUID) ([]uuid.UUID, error)
 	ReplaceTeamBlockedActions(teamID uuid.UUID, actionIDs []uuid.UUID) error
 	DeleteByTeamID(teamID uuid.UUID) error
-	DeleteByActionID(actionID uuid.UUID) error
+	DeleteByKeyID(actionID uuid.UUID) error
 }
 
 type teamBlockedActionRepository struct {
@@ -2069,7 +2069,7 @@ func (r *teamBlockedActionRepository) DeleteByTeamID(teamID uuid.UUID) error {
 	return r.db.Where("team_id = ?", teamID).Delete(&TeamBlockedAction{}).Error
 }
 
-func (r *teamBlockedActionRepository) DeleteByActionID(actionID uuid.UUID) error {
+func (r *teamBlockedActionRepository) DeleteByKeyID(actionID uuid.UUID) error {
 	return r.db.Where("action_id = ?", actionID).Delete(&TeamBlockedAction{}).Error
 }
 

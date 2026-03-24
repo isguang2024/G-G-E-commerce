@@ -512,7 +512,7 @@ func (s *service) getChildPackageIDs(packageID uuid.UUID) ([]uuid.UUID, error) {
 
 func (s *service) getActionIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error) {
 	var actionIDs []uuid.UUID
-	err := s.db.Model(&models.FeaturePackageAction{}).
+	err := s.db.Model(&models.FeaturePackageKey{}).
 		Where("package_id = ?", packageID).
 		Pluck("action_id", &actionIDs).Error
 	return actionIDs, err

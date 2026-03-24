@@ -145,7 +145,7 @@ func (RoleHiddenMenu) TableName() string {
 	return "role_hidden_menus"
 }
 
-type PermissionAction struct {
+type PermissionKey struct {
 	ID              uuid.UUID        `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	Code            string           `gorm:"type:varchar(36);uniqueIndex" json:"code"`
 	APIEndpointCode string           `gorm:"type:varchar(36)" json:"api_endpoint_code"`
@@ -167,7 +167,7 @@ type PermissionAction struct {
 	DeletedAt       gorm.DeletedAt   `gorm:"index" json:"deleted_at,omitempty"`
 }
 
-func (PermissionAction) TableName() string {
+func (PermissionKey) TableName() string {
 	return "permission_keys"
 }
 
@@ -200,13 +200,13 @@ func (FeaturePackageBundle) TableName() string {
 	return "feature_package_bundles"
 }
 
-type FeaturePackageAction struct {
+type FeaturePackageKey struct {
 	PackageID uuid.UUID `gorm:"type:uuid;primaryKey" json:"package_id"`
 	ActionID  uuid.UUID `gorm:"type:uuid;primaryKey" json:"action_id"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
-func (FeaturePackageAction) TableName() string {
+func (FeaturePackageKey) TableName() string {
 	return "feature_package_keys"
 }
 
