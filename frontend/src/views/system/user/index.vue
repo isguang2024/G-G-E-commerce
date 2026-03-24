@@ -51,34 +51,6 @@
         @open-packages="openCurrentUserPackagesFromMenu"
       />
 
-      <UserPermissionSelectorDialog
-        v-model="permissionDialogVisible"
-        :user-data="currentUserDataForAction"
-        @success="refreshData"
-        @open-packages="openCurrentUserPackages"
-      />
-
-      <!-- 用户权限查看抽屉 -->
-      <ElDrawer v-model="permissionDrawerVisible" :title="permissionDrawerTitle" size="450px">
-        <div v-loading="permissionLoading">
-          <ElEmpty v-if="permissionList.length === 0" description="该用户暂无权限" />
-          <ElTree
-            v-else
-            :data="permissionList"
-            :props="treeProps"
-            node-key="id"
-            default-expand-all
-            highlight-current
-            class="permission-tree"
-          >
-            <template #default="{ node, data }">
-              <span class="tree-node">
-                <span class="tree-node-label">{{ node.label }}</span>
-              </span>
-            </template>
-          </ElTree>
-        </div>
-      </ElDrawer>
     </ElCard>
   </div>
 </template>
@@ -92,15 +64,13 @@
     fetchGetUserList,
     fetchDeleteUser,
     fetchCreateUser,
-    fetchUpdateUser,
-    fetchGetUserPermissions
+    fetchUpdateUser
   } from '@/api/system-manage'
   import UserSearch from './modules/user-search.vue'
   import UserDialog from './modules/user-dialog.vue'
   import UserPackageDialog from './modules/user-package-dialog.vue'
   import UserMenuSelectorDialog from './modules/user-menu-selector-dialog.vue'
-  import UserPermissionSelectorDialog from './modules/user-permission-selector-dialog.vue'
-  import { ElTag, ElMessageBox, ElImage, ElDrawer, ElTree, ElIcon, ElMessage } from 'element-plus'
+  import { ElTag, ElMessageBox, ElImage, ElMessage } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
 
   defineOptions({ name: 'User' })
@@ -120,7 +90,6 @@
   const currentUserData = ref<Partial<UserListItem>>({})
   const packageDialogVisible = ref(false)
   const menuDialogVisible = ref(false)
-  const permissionDialogVisible = ref(false)
   const currentUserDataForAction = ref<UserListItem | undefined>(undefined)
 
   // 选中行
@@ -299,22 +268,10 @@
                 auth: 'platform.package.assign'
               },
               {
-                key: 'permission',
-                label: '查看最终菜单',
-                icon: 'ri:shield-check-line',
-                auth: 'system.user.manage'
-              },
-              {
                 key: 'menuBoundary',
                 label: '菜单裁剪',
                 icon: 'ri:menu-line',
                 auth: 'system.user.manage'
-              },
-              {
-                key: 'actionOverride',
-                label: '权限例外审计',
-                icon: 'ri:shield-user-line',
-                auth: 'system.user.assign_action'
               },
               { key: 'edit', label: '编辑用户', icon: 'ri:edit-2-line', auth: 'system.user.manage' },
               {
@@ -396,10 +353,6 @@
       showPackageDialog(row)
     } else if (item.key === 'menuBoundary') {
       showMenuDialog(row)
-    } else if (item.key === 'actionOverride') {
-      showPermissionDialog(row)
-    } else if (item.key === 'permission') {
-      showPermissionDrawer(row)
     } else if (item.key === 'edit') {
       showDialog('edit', row)
     } else if (item.key === 'delete') {
@@ -415,17 +368,6 @@
   const showMenuDialog = (row: UserListItem) => {
     currentUserDataForAction.value = row
     menuDialogVisible.value = true
-  }
-
-  const showPermissionDialog = (row: UserListItem) => {
-    currentUserDataForAction.value = row
-    permissionDialogVisible.value = true
-  }
-
-  const openCurrentUserPackages = () => {
-    if (!currentUserDataForAction.value) return
-    permissionDialogVisible.value = false
-    packageDialogVisible.value = true
   }
 
   const openCurrentUserPackagesFromMenu = () => {
@@ -489,52 +431,4 @@
     selectedRows.value = selection
     console.log('选中行数据:', selectedRows.value)
   }
-
-  // 查看用户权限相关
-  const permissionDrawerVisible = ref(false)
-  const permissionDrawerTitle = ref('')
-  const permissionList = ref<any[]>([])
-  const permissionLoading = ref(false)
-
-  // 树形组件配置
-  const treeProps = {
-    children: 'children',
-    label: 'name'
-  }
-
-  // 查看用户权限
-  const showPermissionDrawer = async (row: UserListItem) => {
-    permissionDrawerTitle.value = `用户权限 - ${row.nickName || row.userName}`
-    permissionDrawerVisible.value = true
-    permissionLoading.value = true
-    try {
-      const res = await fetchGetUserPermissions(row.id)
-      permissionList.value = res || []
-    } catch (e: any) {
-      ElMessage.error(e?.message || '获取权限失败')
-    } finally {
-      permissionLoading.value = false
-    }
-  }
 </script>
-
-<style scoped>
-  .permission-tree {
-    background: transparent;
-  }
-  .permission-tree :deep(.el-tree-node__content) {
-    height: 32px;
-  }
-  .tree-node {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .tree-node-icon {
-    font-size: 16px;
-    color: #909399;
-  }
-  .tree-node-label {
-    font-size: 13px;
-  }
-</style>

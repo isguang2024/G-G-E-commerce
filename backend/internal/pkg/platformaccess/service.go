@@ -89,10 +89,20 @@ func (s *service) calculateSnapshot(userID uuid.UUID) (*Snapshot, error) {
 	actionIDs = subtractUUIDs(actionIDs, disabledActionIDs)
 	actionSourceMap = filterSourceMap(actionSourceMap, actionIDs)
 
-	menuIDs, menuSourceMap, err := s.getMenuIDsByPackageIDs(expandedPackageIDs)
+	menuIDs, menuSourceMap, err := s.getEffectiveMenuContributionByRoleIDs(roleIDs)
 	if err != nil {
 		return nil, err
 	}
+	userExpandedPackageIDs, err := s.expandPackageIDs(userPackageIDs, "platform")
+	if err != nil {
+		return nil, err
+	}
+	userMenuIDs, userMenuSourceMap, err := s.getMenuIDsByPackageIDs(userExpandedPackageIDs)
+	if err != nil {
+		return nil, err
+	}
+	menuIDs = mergeUUIDs(menuIDs, userMenuIDs)
+	menuSourceMap = mergeSourceMaps(menuSourceMap, userMenuSourceMap)
 	publicMenuIDs, err := s.getPublicMenuIDs()
 	if err != nil {
 		return nil, err
@@ -100,7 +110,7 @@ func (s *service) calculateSnapshot(userID uuid.UUID) (*Snapshot, error) {
 	menuIDs = mergeUUIDs(menuIDs, publicMenuIDs)
 	availableMenuIDs := append([]uuid.UUID{}, menuIDs...)
 	availableMenuMap := filterSourceMap(menuSourceMap, availableMenuIDs)
-	hiddenMenuIDs, err := s.getHiddenMenuIDs(userID, roleIDs)
+	hiddenMenuIDs, err := s.getUserHiddenMenuIDs(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -330,18 +340,55 @@ func (s *service) getDisabledActionIDsByRoleIDs(roleIDs []uuid.UUID) ([]uuid.UUI
 	return actionIDs, err
 }
 
-func (s *service) getHiddenMenuIDs(userID uuid.UUID, roleIDs []uuid.UUID) ([]uuid.UUID, error) {
-	hiddenMenuIDs := make([]uuid.UUID, 0)
-	if len(roleIDs) > 0 {
-		var roleHidden []uuid.UUID
-		if err := s.db.Model(&models.RoleHiddenMenu{}).
-			Where("role_id IN ?", roleIDs).
-			Distinct("menu_id").
-			Pluck("menu_id", &roleHidden).Error; err != nil {
-			return nil, err
-		}
-		hiddenMenuIDs = mergeUUIDs(hiddenMenuIDs, roleHidden)
+func (s *service) getEffectiveMenuContributionByRoleIDs(roleIDs []uuid.UUID) ([]uuid.UUID, map[uuid.UUID][]uuid.UUID, error) {
+	if len(roleIDs) == 0 {
+		return []uuid.UUID{}, map[uuid.UUID][]uuid.UUID{}, nil
 	}
+	menuIDs := make([]uuid.UUID, 0)
+	sourceMap := make(map[uuid.UUID][]uuid.UUID)
+	for _, roleID := range roleIDs {
+		packageIDs, err := s.getPackageIDsByRoleID(roleID)
+		if err != nil {
+			return nil, nil, err
+		}
+		expandedPackageIDs, err := s.expandPackageIDs(packageIDs, "platform")
+		if err != nil {
+			return nil, nil, err
+		}
+		roleMenuIDs, roleSourceMap, err := s.getMenuIDsByPackageIDs(expandedPackageIDs)
+		if err != nil {
+			return nil, nil, err
+		}
+		roleHiddenMenuIDs, err := s.getHiddenMenuIDsByRoleID(roleID)
+		if err != nil {
+			return nil, nil, err
+		}
+		effectiveRoleMenuIDs := subtractUUIDs(roleMenuIDs, roleHiddenMenuIDs)
+		menuIDs = mergeUUIDs(menuIDs, effectiveRoleMenuIDs)
+		sourceMap = mergeSourceMaps(sourceMap, filterSourceMap(roleSourceMap, effectiveRoleMenuIDs))
+	}
+	return menuIDs, sourceMap, nil
+}
+
+func (s *service) getPackageIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error) {
+	var packageIDs []uuid.UUID
+	err := s.db.Model(&models.RoleFeaturePackage{}).
+		Where("role_id = ? AND enabled = ?", roleID, true).
+		Distinct("package_id").
+		Pluck("package_id", &packageIDs).Error
+	return packageIDs, err
+}
+
+func (s *service) getHiddenMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error) {
+	var menuIDs []uuid.UUID
+	err := s.db.Model(&models.RoleHiddenMenu{}).
+		Where("role_id = ?", roleID).
+		Distinct("menu_id").
+		Pluck("menu_id", &menuIDs).Error
+	return menuIDs, err
+}
+
+func (s *service) getUserHiddenMenuIDs(userID uuid.UUID) ([]uuid.UUID, error) {
 	var userHidden []uuid.UUID
 	if err := s.db.Model(&models.UserHiddenMenu{}).
 		Where("user_id = ?", userID).
@@ -349,7 +396,7 @@ func (s *service) getHiddenMenuIDs(userID uuid.UUID, roleIDs []uuid.UUID) ([]uui
 		Pluck("menu_id", &userHidden).Error; err != nil {
 		return nil, err
 	}
-	return mergeUUIDs(hiddenMenuIDs, userHidden), nil
+	return userHidden, nil
 }
 
 func (s *service) getPublicMenuIDs() ([]uuid.UUID, error) {
@@ -407,6 +454,24 @@ func mergeUUIDs(groups ...[]uuid.UUID) []uuid.UUID {
 	return result
 }
 
+func mergeSourceMaps(base map[uuid.UUID][]uuid.UUID, incoming map[uuid.UUID][]uuid.UUID) map[uuid.UUID][]uuid.UUID {
+	if len(base) == 0 && len(incoming) == 0 {
+		return map[uuid.UUID][]uuid.UUID{}
+	}
+	result := make(map[uuid.UUID][]uuid.UUID, len(base)+len(incoming))
+	for key, values := range base {
+		result[key] = append([]uuid.UUID{}, values...)
+	}
+	for key, values := range incoming {
+		current := result[key]
+		for _, value := range values {
+			current = appendIfMissing(current, value)
+		}
+		result[key] = current
+	}
+	return result
+}
+
 func subtractUUIDs(source, blocked []uuid.UUID) []uuid.UUID {
 	if len(source) == 0 {
 		return []uuid.UUID{}
@@ -457,9 +522,9 @@ func contextAllowsPackage(targetContext, packageContext string) bool {
 	}
 	switch targetContext {
 	case "platform":
-		return packageContext == "platform" || packageContext == "platform,team"
+		return packageContext == "platform" || packageContext == "common"
 	case "team":
-		return packageContext == "team" || packageContext == "platform,team"
+		return packageContext == "team" || packageContext == "common"
 	default:
 		return false
 	}

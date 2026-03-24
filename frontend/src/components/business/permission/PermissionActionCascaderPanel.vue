@@ -44,16 +44,6 @@
               <span v-if="data.permissionText" class="meta-text" :title="data.permissionText">
                 {{ data.permissionText }}
               </span>
-              <ElTag
-                v-if="data.sourceText"
-                size="small"
-                effect="plain"
-                round
-                type="info"
-                class="meta-tag"
-              >
-                {{ data.sourceText }}
-              </ElTag>
             </div>
 
             <ElTag
@@ -97,7 +87,6 @@ interface CascaderPanelExpose {
 
 interface PermissionOption extends CascaderOption {
   permissionText?: string
-  sourceText?: string
   totalLeafCount?: number
   selectedLeafCount?: number
 }
@@ -125,13 +114,15 @@ const baseOptions = computed<PermissionOption[]>(() => {
   const featureMap = new Map<string, PermissionOption>()
 
   props.actions.forEach((action) => {
-    const featureKey = `${action.featureKind || 'business'}`
-    const moduleKey = `${action.moduleCode || action.resourceCode || 'default'}`
+    const featureKey = `${action.featureGroupId || action.featureKind || 'business'}`
+    const moduleKey = `${action.moduleGroupId || action.moduleCode || action.resourceCode || 'default'}`
+    const featureLabel = action.featureGroup?.name || formatFeature(`${action.featureKind || 'business'}`)
+    const moduleLabel = action.moduleGroup?.name || action.moduleCode || action.resourceCode || '未分类模块'
 
     if (!featureMap.has(featureKey)) {
       featureMap.set(featureKey, {
         value: `feature:${featureKey}`,
-        label: formatFeature(featureKey),
+        label: featureLabel,
         children: []
       })
     }
@@ -144,7 +135,7 @@ const baseOptions = computed<PermissionOption[]>(() => {
     if (!module) {
       module = {
         value: normalizedModuleValue,
-        label: action.moduleCode || action.resourceCode || '未分类模块',
+        label: moduleLabel,
         children: []
       }
       children.push(module)
@@ -156,8 +147,7 @@ const baseOptions = computed<PermissionOption[]>(() => {
       value: action.id,
       label: action.name,
       leaf: true,
-      permissionText: action.permissionKey || `${action.resourceCode}:${action.actionCode}`,
-      sourceText: formatSource(action.source)
+      permissionText: action.permissionKey || `${action.resourceCode}:${action.actionCode}`
     })
     module.children = leafChildren
   })
@@ -330,7 +320,7 @@ function ensureExpandedMenus() {
 function matchesNode(node: PermissionOption, keyword: string) {
   if (!node.leaf) return !keyword
 
-  const text = [node.label, node.permissionText, node.sourceText]
+  const text = [node.label, node.permissionText]
     .filter(Boolean)
     .join(' ')
     .toLowerCase()
@@ -355,13 +345,6 @@ function formatFeature(value: string) {
   if (value === 'system') return '系统功能'
   if (value === 'business') return '业务功能'
   return value
-}
-
-function formatSource(source?: string) {
-  if (source === 'api') return '接口自动'
-  if (source === 'system') return '系统内置'
-  if (source === 'business') return '业务定义'
-  return source || ''
 }
 </script>
 

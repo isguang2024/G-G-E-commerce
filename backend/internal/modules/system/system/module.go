@@ -49,7 +49,7 @@ func (m *SystemModule) RegisterRoutes(rg *gin.RouterGroup) {
 	system := rg.Group("/system")
 	reg := apiregistry.NewRegistrar(system, "system")
 	{
-		reg.GET("/view-pages", &apiregistry.RouteMeta{Summary: "获取页面文件映射", ResourceCode: "system", ActionCode: "view_page_catalog"}, authzService.RequireAction("system.page_catalog.view"), systemHandler.GetViewPages)
+		reg.GETProtected("/view-pages", reg.Meta("获取页面文件映射").BindPermissionKey("system.page_catalog.view").Build(), "system.page_catalog.view", authzService.RequireAction, systemHandler.GetViewPages)
 	}
 }
 

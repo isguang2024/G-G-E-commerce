@@ -46,7 +46,6 @@ func (m *TenantModule) RegisterRoutes(rg *gin.RouterGroup) {
 	actionRepo := user.NewPermissionActionRepository(m.db)
 	blockedMenuRepo := user.NewTeamBlockedMenuRepository(m.db)
 	blockedActionRepo := user.NewTeamBlockedActionRepository(m.db)
-	userActionRepo := user.NewUserActionPermissionRepository(m.db)
 	teamPackageRepo := user.NewTeamFeaturePackageRepository(m.db)
 	rolePackageRepo := user.NewRoleFeaturePackageRepository(m.db)
 	featurePkgRepo := user.NewFeaturePackageRepository(m.db)
@@ -58,7 +57,26 @@ func (m *TenantModule) RegisterRoutes(rg *gin.RouterGroup) {
 	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
 
 	tenantService := NewTenantService(m.db, tenantRepo, tenantMemberRepo, userRepo, roleRepo, userRoleRepo, refresher, m.logger)
-	tenantHandler := NewTenantHandler(tenantService, tenantMemberRepo, userRepo, roleRepo, roleHiddenMenuRepo, roleDisabledActionRepo, userRoleRepo, actionRepo, blockedMenuRepo, blockedActionRepo, userActionRepo, teamPackageRepo, rolePackageRepo, featurePkgRepo, packageActionRepo, packageMenuRepo, boundaryService, refresher, m.logger)
+	tenantHandler := NewTenantHandler(
+		tenantService,
+		tenantMemberRepo,
+		userRepo,
+		roleRepo,
+		roleHiddenMenuRepo,
+		roleDisabledActionRepo,
+		userRoleRepo,
+		actionRepo,
+		blockedMenuRepo,
+		blockedActionRepo,
+		teamPackageRepo,
+		rolePackageRepo,
+		featurePkgRepo,
+		packageActionRepo,
+		packageMenuRepo,
+		boundaryService,
+		refresher,
+		m.logger,
+	)
 	authzService := authorization.NewService(m.db, m.logger)
 
 	tenants := rg.Group("/tenants")
@@ -67,43 +85,43 @@ func (m *TenantModule) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.GET("/my-teams", &apiregistry.RouteMeta{Summary: "获取我的团队列表"}, tenantHandler.ListMyTeams)
 		reg.GET("/my-team", &apiregistry.RouteMeta{Summary: "获取当前团队详情"}, tenantHandler.GetMyTeam)
 		reg.GET("/my-team/members", &apiregistry.RouteMeta{Summary: "获取当前团队成员列表"}, tenantHandler.ListMyMembers)
-		reg.POST("/my-team/members", &apiregistry.RouteMeta{Summary: "添加当前团队成员", ResourceCode: "team_member", ActionCode: "create"}, authzService.RequireAction("team.member.manage"), tenantHandler.AddMyMember)
-		reg.DELETE("/my-team/members/:userId", &apiregistry.RouteMeta{Summary: "移除当前团队成员", ResourceCode: "team_member", ActionCode: "delete"}, authzService.RequireAction("team.member.manage"), tenantHandler.RemoveMyMember)
-		reg.PUT("/my-team/members/:userId/role", &apiregistry.RouteMeta{Summary: "更新当前团队成员身份", ResourceCode: "team_member", ActionCode: "update_role"}, authzService.RequireAction("team.member.manage"), tenantHandler.UpdateMyMemberRole)
-		reg.GET("/my-team/members/:userId/roles", &apiregistry.RouteMeta{Summary: "获取当前团队成员角色", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.GetMyTeamMemberRoles)
-		reg.PUT("/my-team/members/:userId/roles", &apiregistry.RouteMeta{Summary: "配置当前团队成员角色", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.SetMyTeamMemberRoles)
-		reg.GET("/my-team/members/:userId/actions", &apiregistry.RouteMeta{Summary: "获取当前团队成员功能权限", ResourceCode: "team_member", ActionCode: "assign_action"}, authzService.RequireAction("team.member.assign_action"), tenantHandler.GetMyTeamMemberActionPermissions)
-		reg.PUT("/my-team/members/:userId/actions", &apiregistry.RouteMeta{Summary: "配置当前团队成员功能权限", ResourceCode: "team_member", ActionCode: "assign_action"}, authzService.RequireAction("team.member.assign_action"), tenantHandler.SetMyTeamMemberActionPermissions)
-		reg.GET("/my-team/roles", &apiregistry.RouteMeta{Summary: "获取当前团队可分配角色", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.ListMyTeamRoles)
-		reg.POST("/my-team/roles", &apiregistry.RouteMeta{Summary: "创建当前团队角色", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.CreateMyTeamRole)
-		reg.PUT("/my-team/roles/:roleId", &apiregistry.RouteMeta{Summary: "更新当前团队角色", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.UpdateMyTeamRole)
-		reg.DELETE("/my-team/roles/:roleId", &apiregistry.RouteMeta{Summary: "删除当前团队角色", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.DeleteMyTeamRole)
-		reg.GET("/my-team/roles/:roleId/packages", &apiregistry.RouteMeta{Summary: "获取当前团队角色功能包", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.GetMyTeamRolePackages)
-		reg.PUT("/my-team/roles/:roleId/packages", &apiregistry.RouteMeta{Summary: "配置当前团队角色功能包", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.SetMyTeamRolePackages)
-		reg.GET("/my-team/roles/:roleId/menus", &apiregistry.RouteMeta{Summary: "获取当前团队角色菜单权限", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.GetMyTeamRoleMenus)
-		reg.PUT("/my-team/roles/:roleId/menus", &apiregistry.RouteMeta{Summary: "配置当前团队角色菜单权限", ResourceCode: "team_member", ActionCode: "assign_role"}, authzService.RequireAction("team.member.assign_role"), tenantHandler.SetMyTeamRoleMenus)
-		reg.GET("/my-team/roles/:roleId/actions", &apiregistry.RouteMeta{Summary: "获取当前团队角色功能权限", ResourceCode: "team_member", ActionCode: "assign_action"}, authzService.RequireAction("team.member.assign_action"), tenantHandler.GetMyTeamRoleActions)
-		reg.PUT("/my-team/roles/:roleId/actions", &apiregistry.RouteMeta{Summary: "配置当前团队角色功能权限", ResourceCode: "team_member", ActionCode: "assign_action"}, authzService.RequireAction("team.member.assign_action"), tenantHandler.SetMyTeamRoleActions)
-		reg.GET("/my-team/menus", &apiregistry.RouteMeta{Summary: "获取当前团队菜单边界", ResourceCode: "team", ActionCode: "configure_menu_boundary"}, authzService.RequireAction("team.boundary.manage"), tenantHandler.GetMyTeamMenus)
-		reg.GET("/my-team/menu-origins", &apiregistry.RouteMeta{Summary: "获取当前团队菜单来源", ResourceCode: "team", ActionCode: "configure_menu_boundary"}, authzService.RequireAction("team.boundary.manage"), tenantHandler.GetMyTeamMenuOrigins)
-		reg.GET("/my-team/actions", &apiregistry.RouteMeta{Summary: "获取当前团队功能权限边界", ResourceCode: "team", ActionCode: "configure_action_boundary"}, authzService.RequireAction("team.boundary.manage"), tenantHandler.GetMyTeamActions)
-		reg.GET("/my-team/action-origins", &apiregistry.RouteMeta{Summary: "获取当前团队功能权限来源", ResourceCode: "team", ActionCode: "configure_action_boundary"}, authzService.RequireAction("team.boundary.manage"), tenantHandler.GetMyTeamActionOrigins)
+		reg.POSTAction("/my-team/members", "添加当前团队成员", "team.member.manage", authzService.RequireAction, tenantHandler.AddMyMember)
+		reg.DELETEAction("/my-team/members/:userId", "移除当前团队成员", "team.member.manage", authzService.RequireAction, tenantHandler.RemoveMyMember)
+		reg.PUTAction("/my-team/members/:userId/role", "更新当前团队成员身份", "team.member.manage", authzService.RequireAction, tenantHandler.UpdateMyMemberRole)
+		reg.GETAction("/my-team/members/:userId/roles", "获取当前团队成员角色", "team.member.manage", authzService.RequireAction, tenantHandler.GetMyTeamMemberRoles)
+		reg.PUTAction("/my-team/members/:userId/roles", "配置当前团队成员角色", "team.member.manage", authzService.RequireAction, tenantHandler.SetMyTeamMemberRoles)
+		reg.GETAction("/my-team/roles", "获取当前团队可分配角色", "team.member.manage", authzService.RequireAction, tenantHandler.ListMyTeamRoles)
+		reg.POSTAction("/my-team/roles", "创建当前团队角色", "team.member.manage", authzService.RequireAction, tenantHandler.CreateMyTeamRole)
+		reg.GETAction("/my-team/boundary/roles", "获取当前团队边界可见角色", "team.boundary.manage", authzService.RequireAction, tenantHandler.ListMyTeamRoles)
+		reg.PUTAction("/my-team/boundary/roles/:roleId", "更新当前团队角色(边界管理)", "team.member.manage", authzService.RequireAction, tenantHandler.UpdateMyTeamRole)
+		reg.DELETEAction("/my-team/boundary/roles/:roleId", "删除当前团队角色(边界管理)", "team.member.manage", authzService.RequireAction, tenantHandler.DeleteMyTeamRole)
+		reg.GETAction("/my-team/boundary/roles/:roleId/packages", "获取当前团队角色功能包(边界管理)", "team.boundary.manage", authzService.RequireAction, tenantHandler.GetMyTeamRolePackages)
+		reg.PUTAction("/my-team/boundary/roles/:roleId/packages", "配置当前团队角色功能包(边界管理)", "team.boundary.manage", authzService.RequireAction, tenantHandler.SetMyTeamRolePackages)
+		reg.GETAction("/my-team/boundary/roles/:roleId/menus", "获取当前团队角色菜单权限(边界管理)", "team.boundary.manage", authzService.RequireAction, tenantHandler.GetMyTeamRoleMenus)
+		reg.PUTAction("/my-team/boundary/roles/:roleId/menus", "配置当前团队角色菜单权限(边界管理)", "team.boundary.manage", authzService.RequireAction, tenantHandler.SetMyTeamRoleMenus)
+		reg.GETAction("/my-team/boundary/roles/:roleId/actions", "获取当前团队角色功能权限(边界管理)", "team.boundary.manage", authzService.RequireAction, tenantHandler.GetMyTeamRoleActions)
+		reg.PUTAction("/my-team/boundary/roles/:roleId/actions", "配置当前团队角色功能权限(边界管理)", "team.boundary.manage", authzService.RequireAction, tenantHandler.SetMyTeamRoleActions)
+		reg.GETAction("/my-team/boundary/packages", "获取当前团队已开通功能包(边界管理)", "team.boundary.manage", authzService.RequireAction, tenantHandler.GetMyTeamBoundaryPackages)
+		reg.GETAction("/my-team/menus", "获取当前团队菜单边界", "team.boundary.manage", authzService.RequireAction, tenantHandler.GetMyTeamMenus)
+		reg.GETAction("/my-team/menu-origins", "获取当前团队菜单来源", "team.boundary.manage", authzService.RequireAction, tenantHandler.GetMyTeamMenuOrigins)
+		reg.GETAction("/my-team/actions", "获取当前团队功能权限边界", "team.boundary.manage", authzService.RequireAction, tenantHandler.GetMyTeamActions)
+		reg.GETAction("/my-team/action-origins", "获取当前团队功能权限来源", "team.boundary.manage", authzService.RequireAction, tenantHandler.GetMyTeamActionOrigins)
 
-		reg.GET("", &apiregistry.RouteMeta{Summary: "获取团队列表", ResourceCode: "tenant", ActionCode: "list"}, authzService.RequireAction("tenant.manage"), tenantHandler.List)
-		reg.GET("/:id", &apiregistry.RouteMeta{Summary: "获取团队详情", ResourceCode: "tenant", ActionCode: "get"}, authzService.RequireAction("tenant.manage"), tenantHandler.Get)
-		reg.POST("", &apiregistry.RouteMeta{Summary: "创建团队", ResourceCode: "tenant", ActionCode: "create"}, authzService.RequireAction("tenant.manage"), tenantHandler.Create)
-		reg.PUT("/:id", &apiregistry.RouteMeta{Summary: "更新团队", ResourceCode: "tenant", ActionCode: "update"}, authzService.RequireAction("tenant.manage"), tenantHandler.Update)
-		reg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除团队", ResourceCode: "tenant", ActionCode: "delete"}, authzService.RequireAction("tenant.manage"), tenantHandler.Delete)
-		reg.GET("/:id/menus", &apiregistry.RouteMeta{Summary: "获取团队菜单边界", ResourceCode: "tenant", ActionCode: "configure_menu_boundary"}, authzService.RequireAction("tenant.boundary.manage"), tenantHandler.GetTenantMenus)
-		reg.GET("/:id/menu-origins", &apiregistry.RouteMeta{Summary: "获取团队菜单来源", ResourceCode: "tenant", ActionCode: "configure_menu_boundary"}, authzService.RequireAction("tenant.boundary.manage"), tenantHandler.GetTenantMenuOrigins)
-		reg.PUT("/:id/menus", &apiregistry.RouteMeta{Summary: "配置团队菜单边界", ResourceCode: "tenant", ActionCode: "configure_menu_boundary"}, authzService.RequireAction("tenant.boundary.manage"), tenantHandler.SetTenantMenus)
-		reg.GET("/:id/actions", &apiregistry.RouteMeta{Summary: "获取团队功能权限边界", ResourceCode: "tenant", ActionCode: "configure_action_boundary"}, authzService.RequireAction("tenant.boundary.manage"), tenantHandler.GetTenantActions)
-		reg.GET("/:id/action-origins", &apiregistry.RouteMeta{Summary: "获取团队功能权限来源", ResourceCode: "tenant", ActionCode: "configure_action_boundary"}, authzService.RequireAction("tenant.boundary.manage"), tenantHandler.GetTenantActionOrigins)
-		reg.PUT("/:id/actions", &apiregistry.RouteMeta{Summary: "配置团队功能权限边界", ResourceCode: "tenant", ActionCode: "configure_action_boundary"}, authzService.RequireAction("tenant.boundary.manage"), tenantHandler.SetTenantActions)
-		reg.GET("/:id/members", &apiregistry.RouteMeta{Summary: "获取团队成员列表", ResourceCode: "tenant_member_admin", ActionCode: "list"}, authzService.RequireAction("tenant.member.manage"), tenantHandler.ListMembers)
-		reg.POST("/:id/members", &apiregistry.RouteMeta{Summary: "添加团队成员", ResourceCode: "tenant_member_admin", ActionCode: "create"}, authzService.RequireAction("tenant.member.manage"), tenantHandler.AddMember)
-		reg.DELETE("/:id/members/:userId", &apiregistry.RouteMeta{Summary: "移除团队成员", ResourceCode: "tenant_member_admin", ActionCode: "delete"}, authzService.RequireAction("tenant.member.manage"), tenantHandler.RemoveMember)
-		reg.PUT("/:id/members/:userId/role", &apiregistry.RouteMeta{Summary: "更新团队成员身份", ResourceCode: "tenant_member_admin", ActionCode: "update_role"}, authzService.RequireAction("tenant.member.manage"), tenantHandler.UpdateMemberRole)
+		reg.GETAction("", "获取团队列表", "tenant.manage", authzService.RequireAction, tenantHandler.List)
+		reg.GETAction("/:id", "获取团队详情", "tenant.manage", authzService.RequireAction, tenantHandler.Get)
+		reg.POSTAction("", "创建团队", "tenant.manage", authzService.RequireAction, tenantHandler.Create)
+		reg.PUTAction("/:id", "更新团队", "tenant.manage", authzService.RequireAction, tenantHandler.Update)
+		reg.DELETEAction("/:id", "删除团队", "tenant.manage", authzService.RequireAction, tenantHandler.Delete)
+		reg.GETAction("/:id/menus", "获取团队菜单边界", "tenant.manage", authzService.RequireAction, tenantHandler.GetTenantMenus)
+		reg.GETAction("/:id/menu-origins", "获取团队菜单来源", "tenant.manage", authzService.RequireAction, tenantHandler.GetTenantMenuOrigins)
+		reg.PUTAction("/:id/menus", "配置团队菜单边界", "tenant.manage", authzService.RequireAction, tenantHandler.SetTenantMenus)
+		reg.GETAction("/:id/actions", "获取团队功能权限边界", "tenant.manage", authzService.RequireAction, tenantHandler.GetTenantActions)
+		reg.GETAction("/:id/action-origins", "获取团队功能权限来源", "tenant.manage", authzService.RequireAction, tenantHandler.GetTenantActionOrigins)
+		reg.PUTAction("/:id/actions", "配置团队功能权限边界", "tenant.manage", authzService.RequireAction, tenantHandler.SetTenantActions)
+		reg.GETAction("/:id/members", "获取团队成员列表", "tenant.manage", authzService.RequireAction, tenantHandler.ListMembers)
+		reg.POSTAction("/:id/members", "添加团队成员", "tenant.manage", authzService.RequireAction, tenantHandler.AddMember)
+		reg.DELETEAction("/:id/members/:userId", "移除团队成员", "tenant.manage", authzService.RequireAction, tenantHandler.RemoveMember)
+		reg.PUTAction("/:id/members/:userId/role", "更新团队成员身份", "tenant.manage", authzService.RequireAction, tenantHandler.UpdateMemberRole)
 	}
 }
 

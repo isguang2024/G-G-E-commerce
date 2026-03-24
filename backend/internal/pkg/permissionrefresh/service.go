@@ -1,6 +1,8 @@
 package permissionrefresh
 
 import (
+	"database/sql"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
@@ -85,7 +87,18 @@ func (s *service) RefreshPlatformRole(roleID uuid.UUID) error {
 }
 
 func (s *service) RefreshPlatformRoles(roleIDs []uuid.UUID) error {
-	userIDs, err := s.getPlatformUserIDsByRoleIDs(roleIDs)
+	dedupedRoleIDs := dedupeUUIDs(roleIDs)
+	if s.roleService != nil {
+		for _, roleID := range dedupedRoleIDs {
+			if roleID == uuid.Nil {
+				continue
+			}
+			if _, err := s.roleService.RefreshSnapshot(roleID); err != nil {
+				return err
+			}
+		}
+	}
+	userIDs, err := s.getPlatformUserIDsByRoleIDs(dedupedRoleIDs)
 	if err != nil {
 		return err
 	}
@@ -153,6 +166,11 @@ type roleBinding struct {
 	TenantID *uuid.UUID
 }
 
+type roleBindingRow struct {
+	RoleID   uuid.UUID
+	TenantID sql.NullString
+}
+
 func (s *service) collectImpactedPackageIDs(packageIDs []uuid.UUID) ([]uuid.UUID, error) {
 	current := dedupeUUIDs(packageIDs)
 	if len(current) == 0 {
@@ -204,14 +222,30 @@ func (s *service) getRoleBindingsByPackageIDs(packageIDs []uuid.UUID) ([]roleBin
 	if len(packageIDs) == 0 {
 		return []roleBinding{}, nil
 	}
-	var rows []roleBinding
+	var rows []roleBindingRow
 	err := s.db.Model(&models.RoleFeaturePackage{}).
 		Select("roles.id AS role_id, roles.tenant_id AS tenant_id").
 		Joins("JOIN roles ON roles.id = role_feature_packages.role_id").
 		Where("role_feature_packages.package_id IN ? AND role_feature_packages.enabled = ?", packageIDs, true).
 		Distinct().
 		Scan(&rows).Error
-	return rows, err
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]roleBinding, 0, len(rows))
+	for _, row := range rows {
+		binding := roleBinding{RoleID: row.RoleID}
+		if row.TenantID.Valid && row.TenantID.String != "" {
+			tenantID, parseErr := uuid.Parse(row.TenantID.String)
+			if parseErr != nil {
+				return nil, parseErr
+			}
+			binding.TenantID = &tenantID
+		}
+		result = append(result, binding)
+	}
+	return result, nil
 }
 
 func (s *service) getPlatformUserIDsByPackageIDs(packageIDs []uuid.UUID) ([]uuid.UUID, error) {

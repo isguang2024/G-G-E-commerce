@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -665,7 +666,13 @@ func (r *userRoleRepository) GetRoleIDsByUserAndTenant(userID uuid.UUID, tenantI
 		query = query.Where("tenant_id = ?", *tenantID)
 	}
 	err := query.Pluck("role_id", &roleIDs).Error
-	return roleIDs, err
+	if err != nil {
+		return nil, err
+	}
+	if tenantID != nil && len(roleIDs) == 0 {
+		return r.getTenantIdentityRoleIDs(userID, *tenantID, false)
+	}
+	return roleIDs, nil
 }
 
 func (r *userRoleRepository) GetRoleCodesByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error) {
@@ -679,7 +686,13 @@ func (r *userRoleRepository) GetRoleCodesByUserAndTenant(userID uuid.UUID, tenan
 		query = query.Where("user_roles.tenant_id = ?", *tenantID)
 	}
 	err := query.Pluck("roles.code", &codes).Error
-	return codes, err
+	if err != nil {
+		return nil, err
+	}
+	if tenantID != nil && len(codes) == 0 {
+		return r.getTenantIdentityRoleCodes(userID, *tenantID, false)
+	}
+	return codes, nil
 }
 
 func (r *userRoleRepository) GetEffectiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {
@@ -691,7 +704,13 @@ func (r *userRoleRepository) GetEffectiveRoleIDsByUserAndTenant(userID uuid.UUID
 		query = query.Where("tenant_id = ?", *tenantID)
 	}
 	err := query.Pluck("role_id", &roleIDs).Error
-	return roleIDs, err
+	if err != nil {
+		return nil, err
+	}
+	if tenantID != nil && len(roleIDs) == 0 {
+		return r.getTenantIdentityRoleIDs(userID, *tenantID, false)
+	}
+	return roleIDs, nil
 }
 
 func (r *userRoleRepository) GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {
@@ -706,7 +725,13 @@ func (r *userRoleRepository) GetEffectiveActiveRoleIDsByUserAndTenant(userID uui
 		query = query.Where("user_roles.tenant_id = ?", *tenantID)
 	}
 	err := query.Distinct("user_roles.role_id").Pluck("user_roles.role_id", &roleIDs).Error
-	return roleIDs, err
+	if err != nil {
+		return nil, err
+	}
+	if tenantID != nil && len(roleIDs) == 0 {
+		return r.getTenantIdentityRoleIDs(userID, *tenantID, true)
+	}
+	return roleIDs, nil
 }
 
 func (r *userRoleRepository) GetEffectiveRoleCodesByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error) {
@@ -720,7 +745,59 @@ func (r *userRoleRepository) GetEffectiveRoleCodesByUserAndTenant(userID uuid.UU
 		query = query.Where("user_roles.tenant_id = ?", *tenantID)
 	}
 	err := query.Pluck("roles.code", &codes).Error
-	return codes, err
+	if err != nil {
+		return nil, err
+	}
+	if tenantID != nil && len(codes) == 0 {
+		return r.getTenantIdentityRoleCodes(userID, *tenantID, false)
+	}
+	return codes, nil
+}
+
+func (r *userRoleRepository) getTenantIdentityRoleIDs(userID, tenantID uuid.UUID, onlyActive bool) ([]uuid.UUID, error) {
+	roles, err := r.getTenantIdentityRoles(userID, tenantID, onlyActive)
+	if err != nil {
+		return nil, err
+	}
+	roleIDs := make([]uuid.UUID, 0, len(roles))
+	for _, role := range roles {
+		roleIDs = append(roleIDs, role.ID)
+	}
+	return roleIDs, nil
+}
+
+func (r *userRoleRepository) getTenantIdentityRoleCodes(userID, tenantID uuid.UUID, onlyActive bool) ([]string, error) {
+	roles, err := r.getTenantIdentityRoles(userID, tenantID, onlyActive)
+	if err != nil {
+		return nil, err
+	}
+	codes := make([]string, 0, len(roles))
+	for _, role := range roles {
+		codes = append(codes, role.Code)
+	}
+	return codes, nil
+}
+
+func (r *userRoleRepository) getTenantIdentityRoles(userID, tenantID uuid.UUID, onlyActive bool) ([]Role, error) {
+	var member TenantMember
+	err := r.db.Where("user_id = ? AND tenant_id = ?", userID, tenantID).First(&member).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []Role{}, nil
+		}
+		return nil, err
+	}
+	if member.Status != "active" {
+		return []Role{}, nil
+	}
+
+	var roles []Role
+	query := r.db.Where("code = ? AND tenant_id IS NULL", member.RoleCode)
+	if onlyActive {
+		query = query.Where("status = ?", "normal")
+	}
+	err = query.Order("sort_order ASC, created_at DESC").Find(&roles).Error
+	return roles, err
 }
 
 func (r *userRoleRepository) ReplaceUserRoles(userID uuid.UUID, tenantID *uuid.UUID, roleIDs []uuid.UUID) error {
@@ -888,25 +965,104 @@ type PermissionActionRepository interface {
 	GetByID(id uuid.UUID) (*PermissionAction, error)
 	GetByIDs(ids []uuid.UUID) ([]PermissionAction, error)
 	GetByPermissionKey(permissionKey string) (*PermissionAction, error)
-	GetByResourceAndAction(resourceCode, actionCode string) (*PermissionAction, error)
 	GetAllEnabled() ([]PermissionAction, error)
-	ListDistinctResourceCodes() ([]string, error)
+	ListDistinctModuleCodes() ([]string, error)
 	Create(action *PermissionAction) error
 	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
 	Delete(id uuid.UUID) error
 }
 
 type PermissionActionListParams struct {
-	Keyword       string
-	PermissionKey string
-	Name          string
-	ResourceCode  string
-	ActionCode    string
-	ModuleCode    string
-	ContextType   string
-	Source        string
-	FeatureKind   string
-	Status        string
+	Keyword        string
+	PermissionKey  string
+	Name           string
+	ModuleCode     string
+	ModuleGroupID  *uuid.UUID
+	FeatureGroupID *uuid.UUID
+	ContextType    string
+	FeatureKind    string
+	Status         string
+	IsBuiltin      *bool
+}
+
+type PermissionGroupRepository interface {
+	List(offset, limit int, groupType string, keyword string, status string) ([]PermissionGroup, int64, error)
+	GetByID(id uuid.UUID) (*PermissionGroup, error)
+	GetByTypeAndCode(groupType, code string) (*PermissionGroup, error)
+	ListByType(groupType string) ([]PermissionGroup, error)
+	Create(group *PermissionGroup) error
+	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
+}
+
+type permissionGroupRepository struct {
+	db *gorm.DB
+}
+
+func NewPermissionGroupRepository(db *gorm.DB) PermissionGroupRepository {
+	return &permissionGroupRepository{db: db}
+}
+
+func (r *permissionGroupRepository) List(offset, limit int, groupType string, keyword string, status string) ([]PermissionGroup, int64, error) {
+	query := r.db.Model(&PermissionGroup{})
+	if strings.TrimSpace(groupType) != "" {
+		query = query.Where("group_type = ?", strings.TrimSpace(groupType))
+	}
+	if strings.TrimSpace(keyword) != "" {
+		target := "%" + strings.TrimSpace(keyword) + "%"
+		query = query.Where("(code LIKE ? OR name LIKE ? OR name_en LIKE ? OR description LIKE ?)", target, target, target, target)
+	}
+	if strings.TrimSpace(status) != "" {
+		query = query.Where("status = ?", strings.TrimSpace(status))
+	}
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	var items []PermissionGroup
+	err := query.Offset(offset).Limit(limit).Order("group_type ASC, sort_order ASC, created_at DESC").Find(&items).Error
+	return items, total, err
+}
+
+func (r *permissionGroupRepository) GetByID(id uuid.UUID) (*PermissionGroup, error) {
+	var item PermissionGroup
+	err := r.db.Where("id = ?", id).First(&item).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *permissionGroupRepository) GetByTypeAndCode(groupType, code string) (*PermissionGroup, error) {
+	var item PermissionGroup
+	err := r.db.Where("group_type = ? AND code = ?", strings.TrimSpace(groupType), strings.TrimSpace(code)).First(&item).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *permissionGroupRepository) ListByType(groupType string) ([]PermissionGroup, error) {
+	var items []PermissionGroup
+	query := r.db.Model(&PermissionGroup{})
+	if strings.TrimSpace(groupType) != "" {
+		query = query.Where("group_type = ?", strings.TrimSpace(groupType))
+	}
+	err := query.Order("sort_order ASC, created_at DESC").Find(&items).Error
+	return items, err
+}
+
+func (r *permissionGroupRepository) Create(group *PermissionGroup) error {
+	return r.db.Create(group).Error
+}
+
+func (r *permissionGroupRepository) UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error {
+	return r.db.Model(&PermissionGroup{}).Where("id = ?", id).Updates(updates).Error
 }
 
 type permissionActionRepository struct {
@@ -918,13 +1074,13 @@ func NewPermissionActionRepository(db *gorm.DB) PermissionActionRepository {
 }
 
 func (r *permissionActionRepository) List(offset, limit int, params *PermissionActionListParams) ([]PermissionAction, int64, error) {
-	query := r.db.Model(&PermissionAction{})
+	query := r.db.Model(&PermissionAction{}).Preload("ModuleGroup").Preload("FeatureGroup")
 	if params != nil {
 		if params.Keyword != "" {
 			keyword := "%" + params.Keyword + "%"
 			query = query.Where(
-				"(name LIKE ? OR description LIKE ? OR permission_key LIKE ? OR resource_code LIKE ? OR action_code LIKE ? OR module_code LIKE ? OR feature_kind LIKE ?)",
-				keyword, keyword, keyword, keyword, keyword, keyword, keyword,
+				"(name LIKE ? OR description LIKE ? OR permission_key LIKE ? OR module_code LIKE ? OR feature_kind LIKE ?)",
+				keyword, keyword, keyword, keyword, keyword,
 			)
 		}
 		if params.PermissionKey != "" {
@@ -933,26 +1089,26 @@ func (r *permissionActionRepository) List(offset, limit int, params *PermissionA
 		if params.Name != "" {
 			query = query.Where("name LIKE ?", "%"+params.Name+"%")
 		}
-		if params.ResourceCode != "" {
-			query = query.Where("resource_code LIKE ?", "%"+params.ResourceCode+"%")
-		}
-		if params.ActionCode != "" {
-			query = query.Where("action_code LIKE ?", "%"+params.ActionCode+"%")
-		}
 		if params.ModuleCode != "" {
 			query = query.Where("module_code LIKE ?", "%"+params.ModuleCode+"%")
 		}
+		if params.ModuleGroupID != nil {
+			query = query.Where("module_group_id = ?", *params.ModuleGroupID)
+		}
+		if params.FeatureGroupID != nil {
+			query = query.Where("feature_group_id = ?", *params.FeatureGroupID)
+		}
 		if params.ContextType != "" {
 			query = query.Where("context_type = ?", params.ContextType)
-		}
-		if params.Source != "" {
-			query = query.Where("source = ?", params.Source)
 		}
 		if params.FeatureKind != "" {
 			query = query.Where("feature_kind = ?", params.FeatureKind)
 		}
 		if params.Status != "" {
 			query = query.Where("status = ?", params.Status)
+		}
+		if params.IsBuiltin != nil {
+			query = query.Where("is_builtin = ?", *params.IsBuiltin)
 		}
 	}
 	var total int64
@@ -966,7 +1122,7 @@ func (r *permissionActionRepository) List(offset, limit int, params *PermissionA
 
 func (r *permissionActionRepository) GetByID(id uuid.UUID) (*PermissionAction, error) {
 	var action PermissionAction
-	err := r.db.Where("id = ?", id).First(&action).Error
+	err := r.db.Preload("ModuleGroup").Preload("FeatureGroup").Where("id = ?", id).First(&action).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
@@ -978,7 +1134,7 @@ func (r *permissionActionRepository) GetByID(id uuid.UUID) (*PermissionAction, e
 
 func (r *permissionActionRepository) GetByPermissionKey(permissionKey string) (*PermissionAction, error) {
 	var action PermissionAction
-	err := r.db.Where("permission_actions.permission_key = ?", permissionKey).First(&action).Error
+	err := r.db.Preload("ModuleGroup").Preload("FeatureGroup").Where("permission_actions.permission_key = ?", permissionKey).First(&action).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
@@ -993,32 +1149,24 @@ func (r *permissionActionRepository) GetByIDs(ids []uuid.UUID) ([]PermissionActi
 	if len(ids) == 0 {
 		return actions, nil
 	}
-	err := r.db.Where("id IN ?", ids).Order("sort_order ASC, created_at DESC").Find(&actions).Error
+	err := r.db.Preload("ModuleGroup").Preload("FeatureGroup").Where("id IN ?", ids).Order("sort_order ASC, created_at DESC").Find(&actions).Error
 	return actions, err
-}
-
-func (r *permissionActionRepository) GetByResourceAndAction(resourceCode, actionCode string) (*PermissionAction, error) {
-	var action PermissionAction
-	err := r.db.Where("permission_actions.resource_code = ? AND permission_actions.action_code = ?", resourceCode, actionCode).First(&action).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, gorm.ErrRecordNotFound
-		}
-		return nil, err
-	}
-	return &action, nil
 }
 
 func (r *permissionActionRepository) GetAllEnabled() ([]PermissionAction, error) {
 	var actions []PermissionAction
-	err := r.db.Where("status = ?", "normal").Order("sort_order ASC, created_at DESC").Find(&actions).Error
+	err := r.db.Preload("ModuleGroup").Preload("FeatureGroup").Where("status = ?", "normal").Order("sort_order ASC, created_at DESC").Find(&actions).Error
 	return actions, err
 }
 
-func (r *permissionActionRepository) ListDistinctResourceCodes() ([]string, error) {
-	var resourceCodes []string
-	err := r.db.Model(&PermissionAction{}).Distinct("permission_actions.resource_code").Order("permission_actions.resource_code ASC").Pluck("permission_actions.resource_code", &resourceCodes).Error
-	return resourceCodes, err
+func (r *permissionActionRepository) ListDistinctModuleCodes() ([]string, error) {
+	var moduleCodes []string
+	err := r.db.Model(&PermissionAction{}).
+		Where("COALESCE(permission_actions.module_code, '') <> ''").
+		Distinct("permission_actions.module_code").
+		Order("permission_actions.module_code ASC").
+		Pluck("permission_actions.module_code", &moduleCodes).Error
+	return moduleCodes, err
 }
 
 func (r *permissionActionRepository) Create(action *PermissionAction) error {
@@ -1134,6 +1282,17 @@ type APIEndpointRepository interface {
 	List(offset, limit int, params *APIEndpointListParams) ([]APIEndpoint, int64, error)
 	Upsert(endpoint *APIEndpoint) error
 	GetByMethodAndPath(method, path string) (*APIEndpoint, error)
+	GetByID(id uuid.UUID) (*APIEndpoint, error)
+	Create(endpoint *APIEndpoint) error
+	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
+}
+
+type APIEndpointCategoryRepository interface {
+	List() ([]APIEndpointCategory, error)
+	GetByID(id uuid.UUID) (*APIEndpointCategory, error)
+	GetByCode(code string) (*APIEndpointCategory, error)
+	Create(item *APIEndpointCategory) error
+	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
 }
 
 type FeaturePackageRepository interface {
@@ -1182,7 +1341,7 @@ func (r *featurePackageRepository) List(offset, limit int, params *FeaturePackag
 		if params.ContextType != "" {
 			switch params.ContextType {
 			case "platform", "team":
-				query = query.Where("(context_type = ? OR context_type = ?)", params.ContextType, "platform,team")
+				query = query.Where("(context_type = ? OR context_type = ?)", params.ContextType, "common")
 			default:
 				query = query.Where("context_type = ?", params.ContextType)
 			}
@@ -1971,13 +2130,18 @@ func (r *userHiddenMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
 }
 
 type APIEndpointListParams struct {
-	Method       string
-	Path         string
-	Module       string
-	FeatureKind  string
-	ResourceCode string
-	ActionCode   string
-	Status       string
+	Method        string
+	PermissionKey string
+	Keyword       string
+	Path          string
+	Module        string
+	CategoryID    string
+	ContextScope  string
+	Source        string
+	FeatureKind   string
+	Status        string
+	HasPermission *bool
+	HasCategory   *bool
 }
 
 type apiEndpointRepository struct {
@@ -1994,23 +2158,44 @@ func (r *apiEndpointRepository) List(offset, limit int, params *APIEndpointListP
 		if params.Method != "" {
 			query = query.Where("method = ?", params.Method)
 		}
+		if params.Keyword != "" {
+			keyword := "%" + params.Keyword + "%"
+			query = query.Where("(path LIKE ? OR module LIKE ? OR summary LIKE ? OR handler LIKE ?)", keyword, keyword, keyword, keyword)
+		}
 		if params.Path != "" {
 			query = query.Where("path LIKE ?", "%"+params.Path+"%")
 		}
 		if params.Module != "" {
 			query = query.Where("module LIKE ?", "%"+params.Module+"%")
 		}
+		if params.CategoryID != "" {
+			query = query.Where("category_id = ?", params.CategoryID)
+		}
+		if params.ContextScope != "" {
+			query = query.Where("context_scope = ?", params.ContextScope)
+		}
+		if params.Source != "" {
+			query = query.Where("source = ?", params.Source)
+		}
 		if params.FeatureKind != "" {
 			query = query.Where("feature_kind = ?", params.FeatureKind)
 		}
-		if params.ResourceCode != "" {
-			query = query.Where("resource_code LIKE ?", "%"+params.ResourceCode+"%")
-		}
-		if params.ActionCode != "" {
-			query = query.Where("action_code LIKE ?", "%"+params.ActionCode+"%")
-		}
 		if params.Status != "" {
 			query = query.Where("status = ?", params.Status)
+		}
+		if params.HasPermission != nil {
+			if *params.HasPermission {
+				query = query.Where("EXISTS (SELECT 1 FROM api_endpoint_permission_bindings b WHERE b.endpoint_id = api_endpoints.id)")
+			} else {
+				query = query.Where("NOT EXISTS (SELECT 1 FROM api_endpoint_permission_bindings b WHERE b.endpoint_id = api_endpoints.id)")
+			}
+		}
+		if params.HasCategory != nil {
+			if *params.HasCategory {
+				query = query.Where("category_id IS NOT NULL")
+			} else {
+				query = query.Where("category_id IS NULL")
+			}
 		}
 	}
 	var total int64
@@ -2034,6 +2219,26 @@ func (r *apiEndpointRepository) GetByMethodAndPath(method, path string) (*APIEnd
 	return &endpoint, nil
 }
 
+func (r *apiEndpointRepository) GetByID(id uuid.UUID) (*APIEndpoint, error) {
+	var endpoint APIEndpoint
+	err := r.db.Where("id = ?", id).First(&endpoint).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &endpoint, nil
+}
+
+func (r *apiEndpointRepository) Create(endpoint *APIEndpoint) error {
+	return r.db.Create(endpoint).Error
+}
+
+func (r *apiEndpointRepository) UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error {
+	return r.db.Model(&APIEndpoint{}).Where("id = ?", id).Updates(updates).Error
+}
+
 func (r *apiEndpointRepository) Upsert(endpoint *APIEndpoint) error {
 	if endpoint == nil {
 		return nil
@@ -2043,8 +2248,9 @@ func (r *apiEndpointRepository) Upsert(endpoint *APIEndpoint) error {
 		"feature_kind":  endpoint.FeatureKind,
 		"handler":       endpoint.Handler,
 		"summary":       endpoint.Summary,
-		"resource_code": endpoint.ResourceCode,
-		"action_code":   endpoint.ActionCode,
+		"category_id":   endpoint.CategoryID,
+		"context_scope": endpoint.ContextScope,
+		"source":        endpoint.Source,
 		"status":        endpoint.Status,
 	}
 	return r.db.Transaction(func(tx *gorm.DB) error {
@@ -2057,5 +2263,101 @@ func (r *apiEndpointRepository) Upsert(endpoint *APIEndpoint) error {
 			return err
 		}
 		return tx.Model(&existing).Updates(updates).Error
+	})
+}
+
+type apiEndpointCategoryRepository struct {
+	db *gorm.DB
+}
+
+func NewAPIEndpointCategoryRepository(db *gorm.DB) APIEndpointCategoryRepository {
+	return &apiEndpointCategoryRepository{db: db}
+}
+
+func (r *apiEndpointCategoryRepository) List() ([]APIEndpointCategory, error) {
+	var items []APIEndpointCategory
+	err := r.db.Order("sort_order ASC, created_at ASC").Find(&items).Error
+	return items, err
+}
+
+func (r *apiEndpointCategoryRepository) GetByID(id uuid.UUID) (*APIEndpointCategory, error) {
+	var item APIEndpointCategory
+	err := r.db.Where("id = ?", id).First(&item).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *apiEndpointCategoryRepository) GetByCode(code string) (*APIEndpointCategory, error) {
+	var item APIEndpointCategory
+	err := r.db.Where("code = ?", code).First(&item).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *apiEndpointCategoryRepository) Create(item *APIEndpointCategory) error {
+	return r.db.Create(item).Error
+}
+
+func (r *apiEndpointCategoryRepository) UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error {
+	return r.db.Model(&APIEndpointCategory{}).Where("id = ?", id).Updates(updates).Error
+}
+
+type APIEndpointPermissionBindingRepository interface {
+	ListByEndpointIDs(endpointIDs []uuid.UUID) ([]APIEndpointPermissionBinding, error)
+	ListByEndpointID(endpointID uuid.UUID) ([]APIEndpointPermissionBinding, error)
+	ListEndpointIDsByPermissionKey(permissionKey string) ([]uuid.UUID, error)
+	ReplaceByEndpointID(endpointID uuid.UUID, items []APIEndpointPermissionBinding) error
+}
+
+type apiEndpointPermissionBindingRepository struct {
+	db *gorm.DB
+}
+
+func NewAPIEndpointPermissionBindingRepository(db *gorm.DB) APIEndpointPermissionBindingRepository {
+	return &apiEndpointPermissionBindingRepository{db: db}
+}
+
+func (r *apiEndpointPermissionBindingRepository) ListByEndpointIDs(endpointIDs []uuid.UUID) ([]APIEndpointPermissionBinding, error) {
+	if len(endpointIDs) == 0 {
+		return []APIEndpointPermissionBinding{}, nil
+	}
+	var items []APIEndpointPermissionBinding
+	err := r.db.Where("endpoint_id IN ?", endpointIDs).Order("sort_order ASC, created_at ASC").Find(&items).Error
+	return items, err
+}
+
+func (r *apiEndpointPermissionBindingRepository) ListByEndpointID(endpointID uuid.UUID) ([]APIEndpointPermissionBinding, error) {
+	var items []APIEndpointPermissionBinding
+	err := r.db.Where("endpoint_id = ?", endpointID).Order("sort_order ASC, created_at ASC").Find(&items).Error
+	return items, err
+}
+
+func (r *apiEndpointPermissionBindingRepository) ListEndpointIDsByPermissionKey(permissionKey string) ([]uuid.UUID, error) {
+	var ids []uuid.UUID
+	err := r.db.Model(&APIEndpointPermissionBinding{}).
+		Where("permission_key = ?", permissionKey).
+		Pluck("endpoint_id", &ids).Error
+	return ids, err
+}
+
+func (r *apiEndpointPermissionBindingRepository) ReplaceByEndpointID(endpointID uuid.UUID, items []APIEndpointPermissionBinding) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("endpoint_id = ?", endpointID).Delete(&APIEndpointPermissionBinding{}).Error; err != nil {
+			return err
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
 	})
 }

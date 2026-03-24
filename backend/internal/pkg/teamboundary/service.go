@@ -1,6 +1,8 @@
 package teamboundary
 
 import (
+	"database/sql"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -557,15 +559,39 @@ func (s *service) getRelevantRoleIDs(teamID uuid.UUID) ([]uuid.UUID, error) {
 		Pluck("role_id", &assignedRoleIDs).Error; err != nil {
 		return nil, err
 	}
-	return mergeActionIDs(roleIDs, assignedRoleIDs), nil
+	identityRoleIDs, err := s.getTenantIdentityRoleIDs(teamID)
+	if err != nil {
+		return nil, err
+	}
+	return mergeActionIDs(roleIDs, assignedRoleIDs, identityRoleIDs), nil
+}
+
+func (s *service) getTenantIdentityRoleIDs(teamID uuid.UUID) ([]uuid.UUID, error) {
+	var roleCodes []string
+	if err := s.db.Model(&models.TenantMember{}).
+		Where("tenant_id = ? AND status = ?", teamID, "active").
+		Distinct("role_code").
+		Pluck("role_code", &roleCodes).Error; err != nil {
+		return nil, err
+	}
+	if len(roleCodes) == 0 {
+		return []uuid.UUID{}, nil
+	}
+
+	var roleIDs []uuid.UUID
+	err := s.db.Model(&models.Role{}).
+		Where("tenant_id IS NULL AND status = ? AND code IN ?", "normal", roleCodes).
+		Distinct("id").
+		Pluck("id", &roleIDs).Error
+	return roleIDs, err
 }
 
 func (s *service) isInheritedRole(roleID uuid.UUID) (bool, error) {
-	var tenantID *uuid.UUID
+	var tenantID sql.NullString
 	if err := s.db.Model(&models.Role{}).Select("tenant_id").Where("id = ?", roleID).Scan(&tenantID).Error; err != nil {
 		return false, err
 	}
-	return tenantID == nil, nil
+	return !tenantID.Valid || tenantID.String == "", nil
 }
 
 func emptyActionSnapshot() *Snapshot {
@@ -735,9 +761,9 @@ func contextAllowsPackage(targetContext, packageContext string) bool {
 	}
 	switch targetContext {
 	case "team":
-		return packageContext == "team" || packageContext == "platform,team"
+		return packageContext == "team" || packageContext == "common"
 	case "platform":
-		return packageContext == "platform" || packageContext == "platform,team"
+		return packageContext == "platform" || packageContext == "common"
 	default:
 		return false
 	}

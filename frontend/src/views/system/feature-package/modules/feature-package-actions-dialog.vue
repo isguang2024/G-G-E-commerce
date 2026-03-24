@@ -2,7 +2,7 @@
   <ElDialog
     v-model="visible"
     :title="`功能包功能范围配置 - ${packageName}`"
-    width="980px"
+    width="1240px"
     destroy-on-close
   >
     <div class="dialog-shell" v-loading="loading">
@@ -46,7 +46,7 @@
     modelValue: boolean
     packageId: string
     packageName: string
-    contextType?: 'platform' | 'team' | string
+    contextType?: 'platform' | 'team' | 'common' | string
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -95,7 +95,7 @@
           current: 1,
           size: 1000,
           status: 'normal',
-          contextType: props.contextType === 'platform,team' ? undefined : props.contextType || 'team'
+          contextType: props.contextType === 'common' ? undefined : props.contextType || 'team'
         }),
         fetchGetFeaturePackageActions(props.packageId)
       ])
@@ -129,8 +129,8 @@
     const moduleMap = new Map<string, Api.SystemManage.PermissionActionItem[]>()
 
     actions.forEach((action) => {
-      const featureKey = `${action.featureKind || 'business'}`
-      const moduleKey = `${action.moduleCode || action.resourceCode || 'default'}`
+      const featureKey = `${action.featureGroupId || action.featureKind || 'business'}`
+      const moduleKey = `${action.moduleGroupId || action.moduleCode || action.resourceCode || 'default'}`
       const featureValue = `feature:${featureKey}`
       const moduleValue = `module:${featureKey}:${moduleKey}`
 
@@ -159,7 +159,7 @@
   }
 
   function supportsActionContext(packageContextType: string, actionContextType: string) {
-    if (packageContextType === 'platform,team') {
+    if (packageContextType === 'common') {
       return actionContextType === 'platform' || actionContextType === 'team'
     }
     return packageContextType === actionContextType
@@ -168,7 +168,7 @@
   function formatContextType(contextType?: string) {
     if (contextType === 'platform') return '平台'
     if (contextType === 'team') return '团队'
-    if (contextType === 'platform,team') return '平台/团队'
+    if (contextType === 'common') return '通用'
     return contextType || '-'
   }
 </script>

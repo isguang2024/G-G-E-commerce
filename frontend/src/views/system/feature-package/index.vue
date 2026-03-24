@@ -150,7 +150,7 @@
   const routeOpenSignature = ref('')
   const platformPackageCount = computed(() => data.value.filter((item) => supportsPlatform(item.contextType)).length)
   const teamPackageCount = computed(() => data.value.filter((item) => supportsTeam(item.contextType)).length)
-  const sharedPackageCount = computed(() => data.value.filter((item) => item.contextType === 'platform,team').length)
+  const sharedPackageCount = computed(() => data.value.filter((item) => item.contextType === 'common').length)
   const bundleCount = computed(() => data.value.filter((item) => item.packageType === 'bundle').length)
   const totalActionCount = computed(() => data.value.reduce((sum, item) => sum + (item.actionCount || 0), 0))
   const totalMenuCount = computed(() => data.value.reduce((sum, item) => sum + (item.menuCount || 0), 0))
@@ -169,7 +169,7 @@
     { label: '全部上下文', value: '' },
     { label: '平台功能包', value: 'platform' },
     { label: '团队功能包', value: 'team' },
-    { label: '双上下文功能包', value: 'platform,team' }
+    { label: '通用功能包', value: 'common' }
   ]
 
   const statusOptions = [
@@ -473,17 +473,17 @@
   )
 
   function supportsPlatform(contextType?: string) {
-    return contextType === 'platform' || contextType === 'platform,team'
+    return contextType === 'platform' || contextType === 'common'
   }
 
   function supportsTeam(contextType?: string) {
-    return contextType === 'team' || contextType === 'platform,team'
+    return contextType === 'team' || contextType === 'common'
   }
 
   function formatContextType(contextType?: string) {
     if (contextType === 'platform') return '平台'
     if (contextType === 'team') return '团队'
-    if (contextType === 'platform,team') return '平台/团队'
+    if (contextType === 'common') return '通用'
     return contextType || '-'
   }
 

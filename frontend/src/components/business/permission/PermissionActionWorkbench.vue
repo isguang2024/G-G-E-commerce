@@ -13,16 +13,6 @@
           </template>
         </ElInput>
 
-        <ElSelect v-model="sourceFilter" placeholder="来源" clearable class="toolbar-select">
-          <ElOption label="全部来源" value="" />
-          <ElOption
-            v-for="item in sourceOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </ElSelect>
-
         <ElSelect v-model="featureFilter" placeholder="功能归属" clearable class="toolbar-select">
           <ElOption label="全部归属" value="" />
           <ElOption
@@ -154,11 +144,6 @@
                         <span v-if="action.description">{{ action.description }}</span>
                       </div>
 
-                      <div class="action-tags">
-                        <ElTag v-if="action.source" effect="plain" size="small" round>
-                          {{ formatSource(action.source) }}
-                        </ElTag>
-                      </div>
                     </div>
 
                     <div class="action-side">
@@ -247,24 +232,11 @@ const emit = defineEmits<{
 }>()
 
 const searchKeyword = ref('')
-const sourceFilter = ref('')
 const featureFilter = ref('')
 const stateFilter = ref('all')
 const showMeta = ref(false)
 const compactMode = ref(false)
 const activeFeatures = ref<string[]>([])
-
-const sourceOptions = computed(() => {
-  return uniqueByValue(
-    props.actions
-      .map((item) => item.source)
-      .filter(Boolean)
-      .map((value) => ({
-        value: `${value}`,
-        label: formatSource(`${value}`)
-      }))
-  )
-})
 
 const featureOptions = computed(() => {
   return uniqueByValue(
@@ -281,10 +253,6 @@ const featureOptions = computed(() => {
 const filteredActions = computed(() => {
   const keyword = searchKeyword.value.trim().toLowerCase()
   return props.actions.filter((item) => {
-    if (sourceFilter.value && `${item.source || ''}` !== sourceFilter.value) {
-      return false
-    }
-
     if (featureFilter.value && `${item.featureKind || ''}` !== featureFilter.value) {
       return false
     }
@@ -327,13 +295,13 @@ const groupedActions = computed(() => {
   >()
 
   filteredActions.value.forEach((item) => {
-    const featureKey = `${item.featureKind || 'business'}`
-    const moduleKey = `${item.moduleCode || item.resourceCode || 'default'}`
+    const featureKey = `${item.featureGroupId || item.featureKind || 'business'}`
+    const moduleKey = `${item.moduleGroupId || item.moduleCode || item.resourceCode || 'default'}`
 
     if (!featureMap.has(featureKey)) {
       featureMap.set(featureKey, {
         key: featureKey,
-        label: formatFeature(featureKey),
+        label: item.featureGroup?.name || formatFeature(featureKey),
         modules: [],
         moduleCount: 0,
         actionCount: 0,
@@ -487,15 +455,6 @@ function uniqueByValue<T extends { value: string }>(items: T[]) {
   })
 }
 
-function formatSource(source: string) {
-  const map: Record<string, string> = {
-    api: '接口自动',
-    system: '系统内置',
-    business: '业务定义'
-  }
-  return map[source] || source
-}
-
 function formatFeature(feature: string) {
   const map: Record<string, string> = {
     system: '系统功能',
@@ -505,7 +464,7 @@ function formatFeature(feature: string) {
 }
 
 function formatModule(action: WorkbenchActionItem) {
-  return action.moduleCode || action.resourceCode || '未分类模块'
+  return action.moduleGroup?.name || action.moduleCode || action.resourceCode || '未分类模块'
 }
 
 function matchState(actionId: string) {

@@ -105,6 +105,7 @@
   import { fetchLogin } from '@/api/auth'
   import { ElNotification, type FormInstance, type FormRules } from 'element-plus'
   import { useSettingStore } from '@/store/modules/setting'
+  import { resetRouterState } from '@/router/guards/beforeEach'
 
   defineOptions({ name: 'Login' })
 
@@ -209,6 +210,7 @@
       }
 
       // 存储 token 和登录状态
+      resetRouterState(0)
       userStore.setToken(response.access_token, response.refresh_token)
       userStore.setLoginStatus(true)
 

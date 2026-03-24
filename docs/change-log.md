@@ -712,3 +712,342 @@
 ### 下次方向
 - 继续做组合包详情级运营视图，把“组合包引用了哪些基础包、影响了哪些角色/团队、展开出哪些菜单/权限”整理成可筛选页面，而不只停留在弹窗预览。
 - 补循环依赖检测、停用影响提示和最小自动化测试，避免组合包正式进入运营后再把约束问题带回运行时。
+
+## 2026-03-24 ?????????
+
+### ????
+- ?????????????????????????????????????????????/??????????????????????????????
+- ??? [FeaturePackageGrantPreview.vue](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/components/business/permission/FeaturePackageGrantPreview.vue) ???????????????????????????????????????
+- ???????????????????????????????????????? `frontend/pnpm exec vue-tsc --noEmit` ? `backend/go test ./...` ?????????????????
+
+### ????
+- ????????????????????????????????????????????????????????
+- ?????????????????????????????????????????????????
+## 2026-03-24 功能包弹窗莫兰迪语义配色统一
+
+### 本次改动
+- 统一调整平台角色、团队角色、团队功能包、用户功能包四类弹窗与功能包预览组件的标签配色，按基础包、组合包、平台、团队、平台/团队、正常、停用、异常等语义分别映射到低饱和度色板。
+- 同步将复选框选中态、主按钮强调色、输入框聚焦态收敛到静谧蓝主色，保证弹窗整体视觉统一，减少此前中性色和多色标签混杂的问题。
+- 已通过 `pnpm exec vue-tsc --noEmit` 验证，未执行视觉回归截图比对。
+
+### 下次方向
+- 建议补一轮真实数据联调，确认停用、异常、平台/团队混合上下文等少量状态在所有弹窗里的显示是否符合预期。
+- 如需继续统一系统视觉，可把这套 tag token 抽到公共样式层，避免多个弹窗各自维护同一套颜色变量。
+## 2026-03-24 功能包弹窗回归组件库主题风格
+
+### 本次改动
+- 全量回查并调整平台角色、团队角色、团队功能包、用户功能包弹窗及功能包预览组件，移除上一轮新增的硬编码商务配色、按钮和复选框皮肤，恢复到组件库原生语义色与主题变量体系。
+- 标签展示改回基于 `ElTag` 的 `type` 语义映射，容器、表格和展开区仅保留布局与 `var(--default-border)`、`var(--default-bg-color)`、`var(--default-box-color)` 等主题变量，重新兼容深色/浅色模式。
+- 未改动筛选、展开、保存等业务逻辑；已通过 `pnpm exec vue-tsc --noEmit` 验证。
+
+### 下次方向
+- 建议在浅色与深色模式下各回归一次这几类弹窗，重点确认 `ElTag` 的 `primary/success/warning/info/danger` 语义是否完全符合业务认知。
+- 如果后续还要做视觉增强，优先通过全局主题变量或组件库主题配置实现，避免再次在单页里写死颜色覆盖。
+## 2026-03-24 08:41:05 用户权限例外审计弹窗下线
+
+### 本次改动
+
+- 删除了用户管理页里的“权限例外审计”入口和对应弹窗，保留功能包、菜单裁剪等主链能力不变。
+- 移除了前端独占 API `GET/PUT /api/v1/users/:id/actions` 的调用封装，以及后端 `/users/:id/actions` 路由和处理逻辑。
+- 清理了用户模块里仅服务该弹窗的注入依赖，避免保留无效接线；已通过 `pnpm exec vue-tsc --noEmit` 和 `go test ./...` 验证。
+
+### 下次方向
+
+- 建议继续检查权限相关页面是否还保留“历史兼容/审计”文案，统一收口到功能包、角色和菜单裁剪主链。
+- 若后续需要恢复只读审计能力，建议独立成后台审计页，而不是重新挂回用户配置入口。
+## 2026-03-24 团队管理权限键合并与迁移
+
+### 本次改动
+- 合并了团队管理相关的细粒度权限键：平台侧将 `tenant.member.manage`、`tenant.boundary.manage` 并入 `tenant.manage`，团队侧将 `team.member.assign_role`、`team.member.assign_action` 并入 `team.member.manage`，保留 `team.boundary.manage` 独立存在。
+- 同步修改了后端权限映射、团队模块接口鉴权和前端团队页/团队成员页的 `hasAction` 判断，避免继续依赖已废弃的旧权限键。
+- 扩展了迁移逻辑，自动回写 `feature_package_actions`、`role_disabled_actions`、`team_blocked_actions`、`user_action_permissions` 等引用表并软删除旧权限键；已执行 `backend/go run cmd/migrate/main.go`、`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit` 验证通过。
+
+### 下次方向
+- 建议继续检查团队相关功能包和角色是否还保留旧文案，避免页面上继续出现“成员角色配置/成员功能权限配置”这类已经被合并的概念。
+- 如果后续决定进一步收敛团队边界能力，可以再评估是否把 `team.boundary.manage` 也并入 `team.member.manage` 或单独抽成更清晰的团队管理包。
+
+## 2026-03-24 功能权限查看接口链路补齐
+
+### 本次改动
+- 给功能权限管理页补了“查看接口”入口，点击后会跳到 API 管理页并自动按当前权限键过滤，直接查看该权限组下的全部接口。
+- 后端 `/api/v1/api-endpoints` 列表新增 `permission_key` 查询支持，前端 API 管理页同步接入路由筛选态和清除筛选入口，不额外新增接口。
+- 已验证 `backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit` 通过。
+
+### 下次方向
+- 如果后面还要继续增强，可再补一个接口数量列，直接在功能权限列表上展示“关联接口数”。
+- 若 API 总量继续增长，再把 `permission_key` 过滤下沉到仓储 SQL 层，避免当前服务层内存过滤持续放大。
+
+## 2026-03-24 功能权限页内查看关联接口
+
+### 本次改动
+- 新增后端接口 `GET /api/v1/permission-actions/:id/endpoints`，按功能权限 ID 直接返回该权限组关联的全部接口，避免继续依赖 API 管理页的跳转筛选。
+- 功能权限页改成页内弹窗查看接口列表，支持直接查看接口规格、鉴权模式、处理函数和状态，交互路径更短。
+- 已验证 `backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit` 通过。
+
+### 下次方向
+- 可以继续补“复制接口路径”“按方法筛选”等轻量操作，方便直接在弹窗里排查问题。
+- 如果后面确认 API 管理页不再需要 `permission_key` 跳转筛选，可再收掉那层兼容逻辑。 
+
+## 2026-03-24 功能权限旧键与旧文案清理
+
+### 本次改动
+- 清理了菜单边界相关的旧点式权限键，把 `tenant.configure_menu_boundary` 并入 `tenant.manage`，把 `team.configure_menu_boundary` 并入 `team.boundary.manage`，不再依赖运行时兼容。
+- 补上了 [permissionkey.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/permissionkey/permissionkey.go) 中 `team:configure_menu_boundary` 的源头映射，并重新执行迁移，避免 API 注册同步再次生成旧权限键。
+- 已重新执行 `backend/go run cmd/migrate/main.go` 与 `backend/go test ./...`，数据库当前生效集里仅剩 `tenant.manage` 和 `team.boundary.manage`。
+
+### 下次方向
+- 建议继续把功能权限列表里的展示名和描述统一收口成权限组语义，减少“获取/配置某接口边界”这类接口化表达。
+- 如果要进一步降噪，可以继续把 `feature_package.assign_menu`、`user.assign_menu` 这类自动注册名称也统一成业务名。 
+## 2026-03-24 删除团队成员权限例外审计
+
+### 本次改动
+- 删除了团队成员页里的“权限例外审计”入口、对应弹窗 [member-action-dialog.vue](/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/views/team/team-members/modules/member-action-dialog.vue) 以及相关前端请求封装，团队成员页只保留“分配角色”和“删除”主链操作。
+- 删除了后端 `/api/v1/tenants/my-team/members/:userId/actions` 读写接口及其 handler 实现，并清理了 Tenant 模块里仅供该链路使用的仓储注入和死代码，避免界面下线后仍保留无用 API。
+- 已执行 `frontend/pnpm exec vue-tsc --noEmit` 与 `backend/go test ./...`，通过；全局检索确认当前仓库不再有该弹窗、接口封装和入口调用残留。
+
+### 下次方向
+- 如果后续还要继续收口团队权限体系，可以把功能权限列表里与成员例外审计相关的历史说明文案一并清理，避免页面语义继续暗示这条旧能力存在。
+- 若数据库里仍保留该接口历史注册记录，下一步可在迁移里补一条专门的 API 注册表清理，进一步收干净历史痕迹。
+
+## 2026-03-24 团队管理员菜单与前端身份收口
+
+### 本次改动
+- 将团队管理员默认功能包 `team.member_admin` 的菜单范围收口为 `TeamRoot`、`TeamMembers`、`TeamRolesAndPermissions`，不再默认挂入平台侧的 `TeamManagement`，避免团队管理员登录后命中平台团队管理链路。
+- 新增迁移 `20260324_team_menu_single_context_cleanup`，把现有库里的 `TeamRoot`、`TeamMembers`、`TeamRolesAndPermissions` 菜单统一纠正到团队菜单树下，并重置它们的 `meta`，清掉旧的前端角色限制和遗留动作配置。
+- 前端将非超级管理员统一映射为单一身份 `R_USER`，同时把 `hasPlatformAccess` 改为仅识别 `system.* / platform.* / tenant.*` 平台动作前缀，避免团队用户拿到 `team.*` 后被误判成平台态；已执行 `backend/go test ./...`、`backend/go run cmd/migrate/main.go`、`frontend/pnpm exec vue-tsc --noEmit` 验证。
+
+### 下次方向
+- 建议用一个仅绑定团队和 `team_admin` 的新账号重新登录，重点验证默认落点是否进入 `/team/*`，以及“团队成员”“团队角色及权限”两个页面是否都不再跳 403。
+- 如果后续决定彻底删除平台态团队管理链路，再继续下线 `tenant.manage` 相关页面、接口和功能包，当前这次先完成团队管理员主链收口，未动平台管理员团队管理能力。
+
+## 2026-03-24 登录切账号菜单重建修复
+
+### 本次改动
+- 在登录页成功登录后，先调用路由守卫的重置逻辑清空旧账号的动态路由和菜单状态，再写入新 token 和用户信息，避免同一标签页切换账号时继续沿用上一个账号的菜单缓存。
+- 这样可以修复“新账号登录后没有重新发起菜单请求，直接落入 /403 或首页”的问题，尤其是从管理员切到团队账号这类跨权限范围切换场景。
+- 已执行 `frontend/pnpm exec vue-tsc --noEmit` 验证通过。
+
+### 下次方向
+- 建议再观察一次从管理员账号直接切到团队管理员账号的场景，确认登录后一定会重新拉菜单树。
+- 如果后续仍有偶发状态残留，可以再把登录成功后的 tenant 状态和 worktab 状态做更彻底的同步重置。
+## 2026-03-24 功能权限关联接口与权限组同步修复
+
+### 本次改动
+- 修正功能权限关联接口查询逻辑，统一按规范权限组匹配接口，不再因旧 permission_key 文本导致返回空数组。
+- 在迁移中新增规范权限组同步，自动把活跃的 permission_actions 名称、描述、上下文、资源码和动作码收口到当前映射定义。
+- 已执行 go test ./...、go run cmd/migrate/main.go，并重启 8080 后端进程使新逻辑生效。
+
+### 下次方向
+- 建议继续清理功能权限页仍可能残留的旧展示文案，并观察是否还有历史缓存导致的旧项显示。
+- 若后续继续合并权限组，保持先改映射、再跑迁移、最后重启服务，避免再次出现列表与关联接口不同步。
+
+## 2026-03-24 API固定GUID与重建流程收口
+
+### 本次改动
+- 重构了接口注册核心逻辑：`api_endpoints.code` 改为默认按 `METHOD + PATH` 生成稳定 GUID，`permission_actions.code` 改为按 `permission_key` 生成稳定 GUID，避免每次注册出现随机标识导致关联漂移。
+- 在 `apiregistry` 新增 `GETAction/POSTAction/PUTAction/DELETEAction` 与 `*Protected` 封装，路由可直接用权限键注入鉴权中间件并自动补元数据；已落地到 API 管理、角色、用户、功能权限、功能包、菜单、系统模块。
+- 新增 `POST /api/v1/api-endpoints/rebuild`：测试环境可一键重建 API/权限/功能包基础数据（保留菜单列表，保留并重建默认管理员、默认角色、默认基础包与组合包），并在重建后自动重新同步 API 注册表。
+- 前端 API 管理页新增“重建数据”按钮与二次确认，调用新接口完成重建。
+- 已验证 `backend/go test ./internal/pkg/apiregistry ./internal/modules/system/apiendpoint ./internal/modules/system/role ./internal/modules/system/user ./internal/modules/system/permission ./internal/modules/system/featurepackage ./internal/modules/system/menu ./internal/modules/system/system` 与 `frontend/pnpm exec vue-tsc --noEmit` 通过。
+
+### 下次方向
+- 建议在测试库先执行一次“重建数据”，重点核对默认功能包菜单挂载与角色包绑定是否符合预期。
+- 若后续希望在生产也具备安全重建能力，可再补“白名单环境 + 手工确认令牌 + 审计日志”三重保护，而不是仅按 `env != production` 放行。
+
+## 2026-03-24 Tenant 路由封装收口
+
+### 本次改动
+- 将 Tenant 模块中所有需要鉴权的接口统一改为 `GETAction/POSTAction/PUTAction/DELETEAction` 封装，直接绑定 `permission_key`，不再手工维护 `ResourceCode/ActionCode` 与 `RequireAction(...)` 组合写法。
+- 团队侧接口统一使用 `team.member.manage` 与 `team.boundary.manage`，平台团队管理接口统一使用 `tenant.manage`，避免历史旧权限键残留导致注册元数据漂移。
+- 已执行 `backend/go test ./internal/modules/system/tenant ./internal/modules/system/apiendpoint ./internal/pkg/apiregistry` 验证通过。
+
+### 下次方向
+- 建议在测试环境实际调用一次 `POST /api/v1/api-endpoints/rebuild`，确认 Tenant 相关接口在重建后仍能按权限键正确聚合。
+- 若后续继续统一接口定义，可按同样方式扫一遍非 system 模块，确保路由注册风格一致。
+
+## 2026-03-24 API 重建联调与兼容修复
+
+### 本次改动
+- 为 API 注册新增 `system.api_registry.rebuild` 权限映射，并把默认平台接口管理包描述与默认权限清单补齐（包含 `view/sync/rebuild`）。
+- 修复 `apiregistry` 的接口写入逻辑：`upsertEndpoint` 先按 `code` 查找，未命中时再按 `method+path` 回退匹配并更新，解决旧数据升级后 `sync` 触发 `idx_api_endpoints_method_path_unique` 冲突的问题。
+- 完成真实联调：执行 `go run cmd/migrate/main.go` 后，已验证 `POST /api/v1/api-endpoints/sync` 与 `POST /api/v1/api-endpoints/rebuild` 返回成功；并验证默认角色（`admin/team_admin/team_member`）、默认功能包（基础包+组合包）和角色绑定重建正常，菜单树接口可正常返回。
+- 当前 `rebuild` 接口鉴权仍复用 `system.api_registry.sync`（保证旧环境立即可用），前端“重建数据”按钮也保持该权限键可见，避免新权限未分配时出现 403。
+
+### 下次方向
+- 若要彻底拆分高危权限，建议升级 `authorization.resolvePermissionKey` 支持“主权限键 + 备选权限键”而非旧 `resource/action` 双参语义，再把 `rebuild` 路由切回独立 `system.api_registry.rebuild`。
+- 可补一条迁移，把现有管理员角色默认补授 `system.api_registry.rebuild`，完成权限平滑切换并移除兼容路径。
+
+## 2026-03-24 Rebuild 独立权限与默认快照刷新
+
+### 本次改动
+- 在鉴权层新增 `RequireAnyAction/AuthorizeAny`，并将 `POST /api/v1/api-endpoints/rebuild` 的注册元数据切到独立权限 `system.api_registry.rebuild`；实际放行逻辑同时兼容旧权限 `system.api_registry.sync`，保证旧测试库迁移前后都能过渡访问。
+- 迁移脚本补充 `api_endpoint/rebuild` 默认权限种子，把 `platform.api_admin` 默认权限清单更新为 `view/sync/rebuild`，并在迁移结束后主动刷新默认管理员角色与默认功能包快照，避免已有账号继续使用旧权限快照。
+- 前端 API 管理页“重建数据”按钮已切换到 `v-action='system.api_registry.rebuild'`；已重新执行 `go test ./internal/pkg/authorization ./internal/modules/system/apiendpoint ./internal/pkg/apiregistry ./internal/pkg/permissionkey`、`pnpm -C frontend exec vue-tsc --noEmit`、`go run cmd/migrate/main.go`，并在重启 8080 最新后端后实测 `POST /api/v1/api-endpoints/sync`、`POST /api/v1/api-endpoints/rebuild` 均返回 `code=0`，按 `permission_key=system.api_registry.rebuild` 可查到重建接口，`platform.api_admin` 已包含该权限。
+
+### 下次方向
+- 建议再用非超级管理员但拥有平台接口管理包的账号回归一次前端页面，确认“重建数据”按钮显隐与刷新后的权限缓存完全一致。
+- 等旧环境都执行过这次迁移后，可再移除 `rebuild -> sync` 的兼容放行分支，彻底把高风险操作权限独立出来。
+
+## 2026-03-24 团队身份角色回填与团队菜单恢复
+
+### 本次改动
+- 修正了团队菜单链路对 `user_roles` 的硬依赖：当团队成员的团队作用域角色记录缺失时，后端现在会回退到 `tenant_members.role_code` 解析默认身份角色，避免旧数据直接导致团队菜单、团队鉴权和团队角色列表全部判空。
+- 扩展了团队边界快照构建逻辑，`team_role_access_snapshots` 会把活跃团队成员的身份角色一并纳入；迁移中新增团队身份角色回填，会为现有 `tenant_members` 自动补齐团队作用域 `user_roles`，并刷新对应团队快照。
+- 前端平台用户相关接口补充 `skipTenantHeader`，避免在团队上下文里把 `X-Tenant-ID` 混入平台用户功能包/菜单裁剪请求，减少上下文误判。
+- 已执行 `go test ./internal/modules/system/user ./internal/pkg/teamboundary ./cmd/migrate`、`pnpm -C frontend exec vue-tsc --noEmit`、`go run cmd/migrate/main.go`，并针对团队 `5767135e-9476-4cf9-922e-496cb6f7e193` 验证：团队作用域 `user_roles` 已回填出 `team_admin`，`team_role_access_snapshots` 已生成，8080 后端已重启到最新代码。
+
+### 下次方向
+- 建议直接用该团队管理员账号重新登录，确认侧边栏已能进入 `/team/*`，并核对“团队成员”“团队角色及权限”两个页面是否都恢复正常。
+- `platform.api_admin` 属于平台上下文功能包，不会出现在团队角色功能包或团队菜单链路里；如果后续还要继续降误解，建议把平台/团队功能包入口文案再做一次上下文区分。
+
+## 2026-03-24 团队角色功能包并入团队边界接口
+
+### 本次改动
+- 在 Tenant 模块新增一组“当前团队功能边界管理”角色接口：`/api/v1/tenants/my-team/boundary/roles` 及其 `packages/menus/actions` 子路由，统一绑定 `team.boundary.manage` 权限，复用原有处理逻辑，不新增重复数据模型。
+- 团队角色权限页面改为调用上述边界接口（角色列表、功能包、菜单裁剪、权限裁剪），确保团队管理员即使没有 `team.member.manage`，也可获取并管理角色功能包链路。
+- 页面操作按钮按权限分层：新增/编辑/删除角色继续要求 `team.member.manage`；功能包/菜单/权限裁剪走 `team.boundary.manage`，避免误触发 403。
+- 已执行 `backend/go test ./internal/modules/system/tenant/...` 与 `frontend/pnpm exec vue-tsc --noEmit`，通过。
+
+### 下次方向
+- 建议用团队管理员账号携带 `X-Tenant-ID=5767135e-9476-4cf9-922e-496cb6f7e193` 回归：验证“团队角色及权限”可打开、功能包可保存、菜单裁剪可保存。
+- 若后续要彻底去掉旧链路，可在确认前端全部切换后下线 `/my-team/roles/:roleId/*` 上 `team.member.manage` 的同功能接口，减少权限歧义。
+
+## 2026-03-24 团队角色功能包列表权限修复
+
+### 本次改动
+- 新增团队边界接口 `GET /api/v1/tenants/my-team/boundary/packages`（权限键 `team.boundary.manage`），返回当前团队已开通且团队上下文可用的功能包列表。
+- 团队角色功能包弹窗改为调用团队边界功能包接口，不再调用平台接口 `/api/v1/feature-packages`，解决团队管理员在该页面出现 `code=2003` 的无权限问题。
+- 已执行 `backend/go test ./internal/modules/system/tenant/...` 与 `frontend/pnpm exec vue-tsc --noEmit`，通过。
+
+### 下次方向
+- 建议用团队管理员账号再次验证“团队角色 -> 功能包”弹窗的加载与保存，确认不再触发 `/feature-packages` 403/2003。
+- 若后续还存在角色裁剪链路中的平台接口调用，可继续同样收口到 `team.boundary.manage` 域，彻底避免团队态串到平台权限。
+
+## 2026-03-24 权限与 API 体系硬切换（无兼容）
+
+### 本次改动
+- 后端 API 注册链路已硬切换为“纯 API 元信息 + 多权限绑定”模型：`apiendpoint/service` 移除 `rebuild` 全链路与旧重建逻辑，仅保留 `List/Save/Sync/ListBindings`；`Save` 支持多权限键绑定（`api_endpoint_permission_bindings`，`match_mode=ANY`）并对 `method+path` 做唯一校验。
+- API 元信息改造继续落地：新增并透传 `group_code/group_name/context_scope/source`；手工创建和编辑 API 接口已可通过 `POST/PUT /api-endpoints` 管理，接口 `code` 使用固定算法生成稳定 GUID（避免重复注册导致标识漂移）。
+- 清理旧能力残留：删除 `api_endpoint.rebuild` 默认权限种子与“同步与重建”文案；全仓已无 `api_registry.rebuild`、`/rebuild`、`platform,team`/`team,platform` 残留。
+- 前端 API 管理页升级为可管理模型：新增“新增 API/编辑 API”弹窗，支持多权限键、分组、团队上下文策略（`required|forbidden|optional`）、来源配置；列表同步展示多权限键、分组、上下文、来源。
+- 前端上下文三态补齐：`context_type` 相关类型、筛选与展示增加 `common`，包括功能权限弹窗、功能权限列表、功能包能力/菜单弹窗及 API 类型声明；功能包 context 兜底逻辑新增 `common.*` 识别。
+- 已验证：`go test ./...`（backend）通过；`pnpm exec vue-tsc --noEmit`（frontend）通过。
+
+### 下次方向
+- 若要彻底下线 `/my-team/roles/:roleId*` 全链路（含角色 CRUD），需先补齐并切换到新的团队角色 CRUD 路由后再删除旧路由，避免页面“编辑/删除角色”断链。
+- 建议补一条专门的破坏性迁移任务，对历史库执行一次性清理与重建（保留 `users/tenants/roles/menus` 主体），并在迁移后做团队管理员实测回归：团队角色功能包、菜单裁剪、权限裁剪与菜单可见性链路。
+
+## 2026-03-24 API 管理分类化与元数据收口
+
+### 本次改动
+- API 元信息从旧 `group_code/group_name` 模式切到“分类表 + category_id”模式：新增 `api_endpoint_categories`，支持固定种子 ID、分类编码、中文名、英文名；迁移会自动初始化默认分类并把接口按模块回填分类。
+- API 注册同步元数据已改为走分类编码派生，不再写入分组字段；迁移执行后会直接删除 `api_endpoints.group_code/group_name` 旧列，避免继续混用。
+- API 管理页已改为 Method 独立首列、路径单独展示、来源中文化、功能归属仅系统/业务、分类可新建（中英文字段）、团队上下文可在列表内直接修改。
+- 已验证 `go test ./...`、`pnpm exec vue-tsc --noEmit`、`go run ./cmd/migrate/main.go` 通过。
+
+### 下次方向
+- 如果你要进一步做“分类管理”，下一步建议把分类编辑/停用入口直接放进 API 管理页列表，而不是只在弹窗里新建。
+- 当前团队上下文在列表内是直接选择器；如果你要更强的视觉提示，可以下一轮改成“标签 + 点击切换”的交互，而不用再动后端接口。
+
+## 2026-03-24 API 自动注册收口与部署 Builder 骨架
+
+### 本次改动
+- API 自动注册规则已收口为“仅同步带元数据的路由”；未声明元数据的普通 API 不再自动写入 `api_endpoints`，但如果管理员已手工创建同 `method+path` 的 API 单元，后续同步仍会保留并更新其路由侧信息。
+- API 管理后端新增“未注册路由”能力：`GET /api/v1/api-endpoints/unregistered` 会从运行中路由中筛出尚未进入 API 单元的接口，并返回方法、路径、处理器、模块以及是否带元数据，供后续后台手动补录使用。
+- 新增 `internal/pkg/permissionseed` 部署初始化骨架：提供固定 UUID 规则、默认 API 分类 Seeds、默认功能键 Seeds、默认功能包 Seeds、默认角色绑定 Seeds，以及部署摘要 Builder，用于后续把初始化链路从迁移主文件中收口出来。
+- 权限设计文档已同步补充：明确“带元数据 API 才自动注册”“普通 API 可在后台手动创建 API 单元并绑定路由”“API 管理页必须支持搜索未注册 API”“部署链路采用独立初始化 Builder”。
+- 已验证 `backend/go test ./...` 通过。
+
+### 下次方向
+- 下一步应把 `permissionseed.DeploymentBuilder` 真正接入 `cmd/migrate`，完成默认功能键、默认功能包、默认角色绑定的统一导入，不再继续把种子硬编码散落在 `cmd/migrate/main.go`。
+- 需要继续收口 `permission_actions -> permission_keys` 与 `feature_package_actions -> feature_package_keys`，让“功能键”正式成为主模型，避免旧 action 语义继续扩散。
+- 前端 API 管理页下一轮应补上“未注册 API 搜索/选择后创建 API 单元”的交互闭环，并增加可观测提示，区分“自动注册 API”“手动补录 API”“未注册路由”三类状态。
+
+## 2026-03-24 部署 Builder 接入迁移入口
+
+### 本次改动
+- 已将 `permissionseed` 新骨架接入 [main.go](/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/cmd/migrate/main.go) 的初始化入口：默认 API 分类、核心功能键、核心功能包和默认角色绑定现在开始通过统一 Seeds 索引参与初始化，不再完全依赖散落的硬编码创建逻辑。
+- `syncAPIRegistry` 现在会基于 `permissionseed.DeploymentBuilder` 输出初始化摘要，补充默认分类数、默认功能键数、默认功能包数、默认角色绑定数、带元数据路由数、未注册路由数，作为部署链路的基础可观测信息。
+- 核心默认数据已开始固定化：命中新 Seeds 的功能键和功能包在首次创建时会写入稳定 UUID，后续为正式收口 `permission_keys` / `permission_packages` 做准备。
+- 已执行 `backend/go test ./...` 通过；`go run ./cmd/migrate/main.go` 在当前 Windows 环境启动临时可执行文件时被系统拒绝，报错 `Access is denied`，因此本轮未完成命令级迁移验证。
+
+### 下次方向
+- 下一步应继续把剩余默认种子从 `cmd/migrate/main.go` 迁入 `permissionseed`，尤其是功能包菜单绑定、功能包功能键绑定和默认角色包绑定逻辑，减少迁移主文件体积。
+- 需要补前端“未注册 API”页面闭环，并把自动注册/手动补录/未注册三类状态明确展示出来。
+- 等当前环境的 `go run` 执行限制排除后，建议补一次完整迁移回归，确认初始化摘要、默认 UUID 落库和 API 自动注册结果都符合预期。
+
+## 2026-03-24 API 管理页未注册补录闭环
+
+### 本次改动
+- 前端 API 管理页新增“未注册 API”入口与弹窗，可直接查询运行时尚未进入 `api_endpoints` 的路由，并支持按 `method/path/module/keyword/only_no_meta` 过滤。
+- 未注册路由列表已支持“一键创建 API”，会将路由与元数据自动带入新增 API 表单，减少管理员手工补录时的重复输入。
+- `frontend/src/api/system-manage.ts` 与 `frontend/src/types/api/api.d.ts` 已补齐未注册路由列表的请求封装与类型声明；权限设计文档同步追加了补录交互规则。
+- 已执行 `frontend/pnpm exec vue-tsc --noEmit` 通过；本轮未执行前端构建与服务联调。
+
+### 下次方向
+- 继续补 API 管理页的状态区分与提示，把“自动注册 API / 手工补录 API / 未注册路由”三类状态明确展示出来。
+- 可继续补“从未注册路由直接创建分类映射”的轻量能力，但应坚持简单稳定，不把复杂运营逻辑塞进首版弹窗。
+- 等下一轮联调时，建议配合真实路由同步和手工补录流程一起回归，确认保存后未注册列表、API 主列表和权限绑定结果一致。
+
+## 2026-03-24 API 管理页状态概览补齐
+
+### 本次改动
+- API 管理页新增顶部状态概览，直接展示自动注册、手工补录、初始种子、未注册路由四类数量，提升部署初始化后的可观测性。
+- “未注册 API”按钮已同步显示未注册数量，`同步 API` 与保存 API 后会自动刷新概览和未注册统计，减少页面状态滞后。
+- 权限设计文档同步补充了 API 管理页状态概览要求，明确这四类数量应作为后台默认观察面板的一部分。
+- 已执行 `frontend/pnpm exec vue-tsc --noEmit` 通过；本轮未执行前端构建与浏览器联调。
+
+### 下次方向
+- 下一步可继续把 API 主列表做成更明确的状态视图，例如列表级标签或筛选器，区分自动注册、手工补录、初始种子。
+- 若后续补前端联调，建议一起验证同步 API、手工补录 API、未注册列表刷新三条路径是否完全一致。
+- 后端初始化链路仍需继续收口到 `permissionseed`，尤其是默认功能包与功能键绑定关系，避免页面状态与初始化种子长期脱节。
+
+## 2026-03-24 API 主列表注册方式筛选补齐
+
+### 本次改动
+- API 管理页主列表新增“注册方式”快速筛选，可直接切换查看自动注册、手工补录、初始种子三类 API，不再只依赖顶部统计卡片判断来源分布。
+- 路径列新增行内标签，直接显示 API 来源与功能归属，让列表明细与顶部概览形成呼应，减少进入编辑弹窗前的信息缺失。
+- 权限设计文档同步补充：API 主列表应支持按注册方式快速筛选，作为管理页标准交互的一部分。
+- 已执行 `frontend/pnpm exec vue-tsc --noEmit` 通过；本轮未执行前端构建与浏览器联调。
+
+### 下次方向
+- 下一步可以继续补主列表的关键字搜索和组合筛选，把模块、来源、路径关键字一起收口到更完整的查询条。
+- 若要继续提升可观测性，可以考虑在列表层再增加“是否带权限键”“是否带分类”的轻量筛选，但应保持界面不过载。
+- 后端初始化种子仍需继续迁移到 `permissionseed`，前端状态视图只是观察层，不能长期替代初始化链路本身的收口。
+
+## 2026-03-24 permissionseed 全量收口与 API 管理页统一查询
+
+### 本次改动
+- `backend/internal/pkg/permissionseed` 已扩展为默认主数据唯一目录，统一承载默认 API 分类、默认功能键、默认功能包、功能包菜单绑定、功能包功能键绑定、组合包包含关系和默认角色功能包绑定。
+- `backend/cmd/migrate/main.go` 已改为直接消费 `permissionseed`，移除本地平行默认清单；默认功能键、功能包、组合包、角色绑定和 API 分类初始化都开始走单一 Seeds 来源。
+- API 管理页补齐统一查询条，支持按 `method/path/category/contextScope/status` 组合筛选，并继续与模块切片、注册方式切片联动，形成完整查询入口。
+- 部署摘要新增默认组合包关系数量；已执行 `backend/go test ./...` 与 `frontend/pnpm exec vue-tsc --noEmit`，通过。
+
+### 下次方向
+- 下一步建议继续把 `permission_actions -> permission_keys` 与 `feature_package_actions -> feature_package_keys` 的正式模型收口推进下去，让默认 Seeds 与正式表结构语义一致。
+- 若要继续增强 API 管理页，可补“是否有权限键 / 是否有分类”的轻量筛选和空态提示，但应坚持简单稳定，不把页面做成重运营后台。
+- 当前仍未执行真实迁移命令与浏览器联调；下一轮建议配合本地数据库跑一次完整 `migrate` 和页面操作回归，确认初始化落库与筛选交互都符合预期。
+## 2026-03-24 功能权限旧列彻底摘除与 API 元数据收口
+
+### 本次改动
+- 将 `permission_actions` 的正式主链收口为 `permission_key + module_code + module_group_id + feature_group_id + context_type`，后端服务、仓储、鉴权和前端权限适配都不再依赖 `resource_code / action_code` 历史列。
+- 迁移程序已实际执行并完成数据库清理，`permission_actions.source`、`permission_actions.resource_code`、`permission_actions.action_code` 三个历史列已物理删除，同时保留默认功能键、功能包和角色绑定数据不变。
+- `internal/pkg/apiregistry` 的 `RouteMeta` 与链式 Builder 已同步去掉旧 `resource/action` 元数据入口，API 注册正式只保留 `code/module/summary/category/source/context_scope/permission_keys` 等字段。
+- 已验证：`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit` 通过，并校验数据库结果 `permission_groups=13`、`permission_actions=18`、`feature_package_actions=11`、`role_feature_packages(enabled)=2`。
+
+### 下次方向
+- 继续把 `apiregistry` 周边调用和页面说明统一到“权限键 + 分组 + 分类”模型，避免后续再次引入旧 `resource/action` 心智。
+- 继续把 `cmd/migrate/main.go` 中剩余零散初始化逻辑迁入 `permissionseed`，让部署入口进一步接近单一 Builder/Seeds 结构。
+- 如需继续做物理收口，可下一轮推进 `permission_actions -> permission_keys`、`feature_package_actions -> feature_package_keys` 的正式命名迁移。
+## 2026-03-24 permissionseed 初始化执行层收口
+
+### 本次改动
+- 在 [permissionseed](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/permissionseed) 新增执行型 Ensure 能力，将默认 API 分类、默认权限分组、默认功能键、默认功能包、默认组合包关系、默认角色功能包绑定统一收口到同一包内，不再只保留静态 Seeds 常量。
+- [main.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/cmd/migrate/main.go) 已改为直接调用 `permissionseed` 的执行函数，迁移入口继续瘦身，职责收口为顺序编排、日志输出和刷新链路串联。
+- 为部署摘要新增 `WithCoreDefaults()` 入口，统一装载默认菜单、分类、功能键、功能包、组合包和角色绑定，减少后续初始化场景的重复拼装。
+- 已验证：`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit` 通过；已重新构建并执行真实迁移二进制，数据库校验结果为 `permission_groups=13`、`permission_actions=18`、`feature_packages=6`、`feature_package_bundles=3`、`feature_package_actions=11`、`role_feature_packages(enabled)=2`。
+
+### 下次方向
+- 继续把 `cmd/migrate/main.go` 中剩余非必要初始化细节迁入 `permissionseed`，尤其是可继续下沉的菜单/角色相关默认化逻辑。
+- 推进正式命名收口：`permission_actions -> permission_keys`、`feature_package_actions -> feature_package_keys`，让表名和当前主模型一致。
+- 若接下来转向别的主线，当前初始化层已经足够稳定，可优先避免再往迁移入口追加新的种子写库实现。

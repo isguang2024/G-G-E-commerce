@@ -1,105 +1,54 @@
 <template>
   <div class="art-full-height">
-    <ElAlert class="page-alert" type="info" :closable="false">
-      <template #title>
-        <div class="alert-title-row">
-          <span>功能权限页负责定义最小能力单元；功能包负责组合能力并开通给团队。</span>
-          <ElButton v-action="'platform.package.manage'" text type="primary" @click="goToFeaturePackagePage">
-            前往功能包管理
-          </ElButton>
+    <ElCard class="group-card" shadow="never">
+      <div class="group-header">
+        <div>
+          <div class="group-title">功能权限分组</div>
+          <div class="group-help">模块分组和功能分组统一维护，功能权限只绑定分组，不再使用来源筛选。</div>
         </div>
-      </template>
-    </ElAlert>
+        <div class="group-actions">
+          <ElButton v-action="'system.permission.manage'" @click="openGroupDialog('module')">新建模块分组</ElButton>
+          <ElButton v-action="'system.permission.manage'" type="primary" @click="openGroupDialog('feature')">新建功能分组</ElButton>
+        </div>
+      </div>
 
-    <ArtSearchBar
-      v-show="showSearchBar"
-      v-model="searchForm"
-      :items="searchItems"
-      @search="handleSearch"
-      @reset="handleReset"
-    >
-      <template #moduleCode>
-        <ElAutocomplete
-          v-model="searchForm.moduleCode"
-          :fetch-suggestions="queryModuleSuggestions"
-          clearable
-          placeholder="输入或选择模块归属"
-        />
-      </template>
-    </ArtSearchBar>
+      <div class="group-grid">
+        <div class="group-panel">
+          <div class="panel-title">模块分组</div>
+          <div class="panel-tags">
+            <ElTag
+              v-for="item in moduleGroups"
+              :key="item.id"
+              :type="searchForm.moduleGroupId === item.id ? 'primary' : 'info'"
+              effect="light"
+              class="panel-tag"
+              @click="handleGroupFilter('module', item.id)"
+            >
+              {{ item.name }}
+            </ElTag>
+          </div>
+        </div>
+        <div class="group-panel">
+          <div class="panel-title">功能分组</div>
+          <div class="panel-tags">
+            <ElTag
+              v-for="item in featureGroups"
+              :key="item.id"
+              :type="searchForm.featureGroupId === item.id ? 'primary' : 'success'"
+              effect="light"
+              class="panel-tag"
+              @click="handleGroupFilter('feature', item.id)"
+            >
+              {{ item.name }}
+            </ElTag>
+          </div>
+        </div>
+      </div>
+    </ElCard>
 
-    <ElRow :gutter="12" class="stats-row">
-      <ElCol :xs="24" :sm="12" :md="8" :lg="6">
-        <ElCard shadow="never" class="stats-card">
-          <div class="stats-label">当前筛选权限数</div>
-          <div class="stats-value">{{ stats.total }}</div>
-          <div class="stats-help">按当前搜索条件汇总</div>
-        </ElCard>
-      </ElCol>
-      <ElCol :xs="24" :sm="12" :md="8" :lg="6">
-        <ElCard shadow="never" class="stats-card">
-          <div class="stats-label">来源分布</div>
-          <div class="stats-tags">
-            <ElTag v-for="item in stats.sourceTags" :key="item.label" :type="item.type" effect="light">
-              {{ item.label }} {{ item.count }}
-            </ElTag>
-          </div>
-        </ElCard>
-      </ElCol>
-      <ElCol :xs="24" :sm="12" :md="8" :lg="6">
-        <ElCard shadow="never" class="stats-card">
-          <div class="stats-label">功能归属</div>
-          <div class="stats-tags">
-            <ElTag v-for="item in stats.featureKindTags" :key="item.label" type="success" effect="light">
-              {{ item.label }} {{ item.count }}
-            </ElTag>
-            <span v-if="stats.featureKindTags.length === 0" class="stats-empty">暂无归属</span>
-          </div>
-        </ElCard>
-      </ElCol>
-      <ElCol :xs="24" :sm="12" :md="8" :lg="6">
-        <ElCard shadow="never" class="stats-card">
-          <div class="stats-label">上下文分布</div>
-          <div class="stats-tags">
-            <ElTag v-for="item in stats.contextTypeTags" :key="item.label" type="warning" effect="light">
-              {{ item.label }} {{ item.count }}
-            </ElTag>
-            <span v-if="stats.contextTypeTags.length === 0" class="stats-empty">暂无上下文</span>
-          </div>
-        </ElCard>
-      </ElCol>
-      <ElCol :xs="24" :sm="12" :md="8" :lg="6">
-        <ElCard shadow="never" class="stats-card">
-          <div class="stats-label">模块归属分布</div>
-          <div class="stats-tags">
-            <ElTag v-for="item in stats.moduleTags" :key="item.label" type="primary" effect="light">
-              {{ item.label }} {{ item.count }}
-            </ElTag>
-            <span v-if="stats.moduleTags.length === 0" class="stats-empty">暂无模块</span>
-          </div>
-        </ElCard>
-      </ElCol>
-      <ElCol :xs="24" :sm="12" :md="8" :lg="6">
-        <ElCard shadow="never" class="stats-card">
-          <div class="stats-label">权限键分布</div>
-          <div class="stats-tags">
-            <ElTag v-for="item in stats.permissionKeyTags" :key="item.label" type="warning" effect="light">
-              {{ item.label }} {{ item.count }}
-            </ElTag>
-            <span v-if="stats.permissionKeyTags.length === 0" class="stats-empty">暂无权限键</span>
-          </div>
-        </ElCard>
-      </ElCol>
-    </ElRow>
-
-    <ElCard
-      class="art-table-card"
-      shadow="never"
-      :style="{ 'margin-top': '12px' }"
-    >
+    <ElCard class="art-table-card" shadow="never">
       <ArtTableHeader
         v-model:columns="columnChecks"
-        v-model:showSearchBar="showSearchBar"
         :loading="loading"
         @refresh="handleRefresh"
       >
@@ -109,6 +58,33 @@
           </ElButton>
         </template>
       </ArtTableHeader>
+
+      <div class="query-row">
+        <ElInput v-model="searchForm.keyword" clearable placeholder="名称/描述/权限键" />
+        <ElSelect v-model="searchForm.moduleGroupId" clearable filterable placeholder="模块分组">
+          <ElOption v-for="item in moduleGroups" :key="item.id" :label="item.name" :value="item.id" />
+        </ElSelect>
+        <ElSelect v-model="searchForm.featureGroupId" clearable filterable placeholder="功能分组">
+          <ElOption v-for="item in featureGroups" :key="item.id" :label="item.name" :value="item.id" />
+        </ElSelect>
+        <ElSelect v-model="searchForm.contextType" clearable placeholder="上下文">
+          <ElOption label="平台" value="platform" />
+          <ElOption label="团队" value="team" />
+          <ElOption label="通用" value="common" />
+        </ElSelect>
+        <ElSelect v-model="searchForm.status" clearable placeholder="状态">
+          <ElOption label="正常" value="normal" />
+          <ElOption label="停用" value="suspended" />
+        </ElSelect>
+        <ElSelect v-model="searchForm.isBuiltin" clearable placeholder="是否内置">
+          <ElOption label="内置" value="true" />
+          <ElOption label="自定义" value="false" />
+        </ElSelect>
+        <div class="query-actions">
+          <ElButton type="primary" @click="handleSearch">查询</ElButton>
+          <ElButton @click="handleReset">重置</ElButton>
+        </div>
+      </div>
 
       <ArtTable
         :loading="loading"
@@ -124,130 +100,65 @@
       v-model="dialogVisible"
       :dialog-type="dialogType"
       :action-data="currentAction"
-      :module-options="moduleOptions"
-      @success="handleRefresh"
+      :module-groups="moduleGroups"
+      :feature-groups="featureGroups"
+      @open-group="openGroupDialog"
+      @success="handlePermissionSaved"
+    />
+
+    <PermissionGroupDialog
+      v-model="groupDialogVisible"
+      :group-type="groupDialogType"
+      :group-data="currentGroup"
+      @success="handleGroupSaved"
+    />
+
+    <ActionPermissionEndpointsDialog
+      v-model="endpointDialogVisible"
+      :permission-id="currentAction?.id || ''"
+      :permission-name="currentAction?.name || ''"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-  import type { FormItem } from '@/components/core/forms/art-form/index.vue'
+  import { computed, h, reactive, ref } from 'vue'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchDeletePermissionAction, fetchGetPermissionActionList } from '@/api/system-manage'
+  import {
+    fetchDeletePermissionAction,
+    fetchGetPermissionActionList,
+    fetchGetPermissionGroupList
+  } from '@/api/system-manage'
   import ActionPermissionDialog from './modules/action-permission-dialog.vue'
+  import ActionPermissionEndpointsDialog from './modules/action-permission-endpoints-dialog.vue'
+  import PermissionGroupDialog from './modules/permission-group-dialog.vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { ElMessage, ElMessageBox, ElTag } from 'element-plus'
-  import { useRouter } from 'vue-router'
 
   defineOptions({ name: 'ActionPermission' })
 
   type PermissionActionItem = Api.SystemManage.PermissionActionItem
-  type SuggestionItem = { value: string }
-  type StatsTag = {
-    label: string
-    count: number
-    type?: 'success' | 'info' | 'warning'
-  }
+  type PermissionGroupItem = Api.SystemManage.PermissionGroupItem
 
   const dialogVisible = ref(false)
+  const endpointDialogVisible = ref(false)
+  const groupDialogVisible = ref(false)
   const dialogType = ref<'add' | 'edit'>('add')
-  const currentAction = ref<PermissionActionItem | undefined>()
-  const showSearchBar = ref(true)
-  const moduleOptions = ref<string[]>([])
-  const router = useRouter()
-  const stats = reactive<{
-    total: number
-    sourceTags: StatsTag[]
-    featureKindTags: StatsTag[]
-    contextTypeTags: StatsTag[]
-    moduleTags: StatsTag[]
-    permissionKeyTags: StatsTag[]
-  }>({
-    total: 0,
-    sourceTags: [],
-    featureKindTags: [],
-    contextTypeTags: [],
-    moduleTags: [],
-    permissionKeyTags: []
-  })
+  const groupDialogType = ref<'module' | 'feature'>('module')
+  const currentAction = ref<PermissionActionItem>()
+  const currentGroup = ref<PermissionGroupItem>()
+  const moduleGroups = ref<PermissionGroupItem[]>([])
+  const featureGroups = ref<PermissionGroupItem[]>([])
 
-  const searchForm = reactive<{
-    keyword: string
-    source: string
-    featureKind: string
-    contextType: string
-    moduleCode: string
-    status: string
-  }>({
+  const searchForm = reactive({
     keyword: '',
-    source: '',
-    featureKind: '',
+    moduleGroupId: '',
+    featureGroupId: '',
     contextType: '',
-    moduleCode: '',
-    status: ''
+    status: '',
+    isBuiltin: ''
   })
-
-  const sourceOptions = [
-    { label: '全部来源', value: '' },
-    { label: '接口自动注册', value: 'api' },
-    { label: '系统内置', value: 'system' },
-    { label: '业务定义', value: 'business' }
-  ]
-
-  const featureKindOptions = [
-    { label: '全部归属', value: '' },
-    { label: '系统功能', value: 'system' },
-    { label: '业务功能', value: 'business' }
-  ]
-  const contextTypeOptions = [
-    { label: '全部上下文', value: '' },
-    { label: '平台', value: 'platform' },
-    { label: '团队', value: 'team' }
-  ]
-  const statusOptions = [
-    { label: '全部状态', value: '' },
-    { label: '正常', value: 'normal' },
-    { label: '停用', value: 'suspended' }
-  ]
-  const searchItems = computed<FormItem[]>(() => [
-    {
-      label: '关键词',
-      key: 'keyword',
-      type: 'input',
-      props: { placeholder: '名称/描述/权限键/模块' }
-    },
-    {
-      label: '来源',
-      key: 'source',
-      type: 'select',
-      props: { options: sourceOptions, clearable: true }
-    },
-    {
-      label: '上下文',
-      key: 'contextType',
-      type: 'select',
-      props: { options: contextTypeOptions, clearable: true }
-    },
-    {
-      label: '模块归属',
-      key: 'moduleCode',
-      type: 'input',
-      props: { placeholder: '输入或选择模块归属' }
-    },
-    {
-      label: '功能归属',
-      key: 'featureKind',
-      type: 'select',
-      props: { options: featureKindOptions, clearable: true }
-    },
-    {
-      label: '状态',
-      key: 'status',
-      type: 'select',
-      props: { options: statusOptions, clearable: true }
-    },
-  ])
 
   const {
     columns,
@@ -257,7 +168,6 @@
     pagination,
     getData,
     searchParams,
-    resetSearchParams,
     handleSizeChange,
     handleCurrentChange,
     refreshData
@@ -269,7 +179,7 @@
         size: 20
       },
       columnsFactory: () => [
-        { prop: 'name', label: '权限名称', minWidth: 160, showOverflowTooltip: true },
+        { prop: 'name', label: '权限名称', minWidth: 180, showOverflowTooltip: true },
         {
           prop: 'permissionKey',
           label: '权限键',
@@ -277,47 +187,40 @@
           formatter: (row: PermissionActionItem) => row.permissionKey || '-'
         },
         {
-          prop: 'moduleCode',
-          label: '模块归属',
-          minWidth: 120,
-          formatter: (row: PermissionActionItem) => row.moduleCode || '-'
+          prop: 'moduleGroup',
+          label: '模块分组',
+          minWidth: 140,
+          formatter: (row: PermissionActionItem) => row.moduleGroup?.name || row.moduleCode || '-'
+        },
+        {
+          prop: 'featureGroup',
+          label: '功能分组',
+          minWidth: 140,
+          formatter: (row: PermissionActionItem) => row.featureGroup?.name || row.featureKind || '-'
         },
         {
           prop: 'contextType',
           label: '上下文',
           width: 100,
-          formatter: (row: PermissionActionItem) =>
-            h(ElTag, { type: row.contextType === 'platform' ? 'warning' : 'primary' }, () =>
-              row.contextType === 'platform' ? '平台' : '团队'
-            )
-        },
-        {
-          prop: 'featureKind',
-          label: '功能归属',
-          width: 110,
-          formatter: (row: PermissionActionItem) =>
-            h(ElTag, { type: row.featureKind === 'business' ? 'success' : 'info' }, () =>
-              row.featureKind === 'business' ? '业务功能' : '系统功能'
-            )
-        },
-        {
-          prop: 'source',
-          label: '来源',
-          width: 110,
           formatter: (row: PermissionActionItem) => {
-            const sourceConfig =
-              row.source === 'api'
-                ? { type: 'success', text: '接口自动' }
-                : row.source === 'system'
-                  ? { type: 'info', text: '系统内置' }
-                  : { type: 'warning', text: '业务定义' }
-            return h(ElTag, { type: sourceConfig.type as 'success' | 'info' | 'warning' }, () => sourceConfig.text)
+            if (row.contextType === 'platform') return h(ElTag, { type: 'warning' }, () => '平台')
+            if (row.contextType === 'team') return h(ElTag, { type: 'primary' }, () => '团队')
+            return h(ElTag, { type: 'info' }, () => '通用')
           }
+        },
+        {
+          prop: 'isBuiltin',
+          label: '内置',
+          width: 90,
+          formatter: (row: PermissionActionItem) =>
+            h(ElTag, { type: row.isBuiltin ? 'success' : 'info', effect: 'plain' }, () =>
+              row.isBuiltin ? '是' : '否'
+            )
         },
         {
           prop: 'description',
           label: '描述',
-          minWidth: 180,
+          minWidth: 220,
           showOverflowTooltip: true,
           formatter: (row: PermissionActionItem) => row.description || '-'
         },
@@ -339,14 +242,10 @@
           fixed: 'right',
           formatter: (row: PermissionActionItem) => {
             const list: ButtonMoreItem[] = [
-              {
-                key: 'edit',
-                label: '编辑',
-                icon: 'ri:edit-2-line',
-                auth: 'system.permission.manage'
-              }
+              { key: 'view-apis', label: '查看接口', icon: 'ri:links-line', auth: 'system.api_registry.view' },
+              { key: 'edit', label: '编辑', icon: 'ri:edit-2-line', auth: 'system.permission.manage' }
             ]
-            if (row.source !== 'api' && row.source !== 'system') {
+            if (!row.isBuiltin) {
               list.push({
                 key: 'delete',
                 label: '删除',
@@ -361,107 +260,50 @@
           }
         }
       ]
-    },
+    }
   })
 
-  function normalizeSearchParams() {
-    return {
-      keyword: searchForm.keyword?.trim() || undefined,
-      source: searchForm.source || undefined,
-      featureKind: searchForm.featureKind || undefined,
-      contextType: searchForm.contextType || undefined,
-      moduleCode: searchForm.moduleCode?.trim() || undefined,
-      status: searchForm.status || undefined
-    }
-  }
+  const groupMap = computed(() => ({
+    module: moduleGroups.value,
+    feature: featureGroups.value
+  }))
 
-  function buildTopTags(items: PermissionActionItem[], getter: (item: PermissionActionItem) => string) {
-    const counter = new Map<string, number>()
-    items.forEach((item) => {
-      const key = getter(item).trim()
-      if (!key) return
-      counter.set(key, (counter.get(key) || 0) + 1)
-    })
-    return [...counter.entries()]
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-CN'))
-      .slice(0, 6)
-      .map(([label, count]) => ({ label, count }))
-  }
-
-  function updateCategoryOptions(items: PermissionActionItem[]) {
-    const nextModuleOptions = new Set(moduleOptions.value)
-    items.forEach((item) => {
-      const moduleCode = item.moduleCode?.trim()
-      if (moduleCode) {
-        nextModuleOptions.add(moduleCode)
-      }
-    })
-    moduleOptions.value = [...nextModuleOptions].sort((a, b) => a.localeCompare(b, 'zh-CN'))
-  }
-
-  async function loadStats() {
-    const res = await fetchGetPermissionActionList({
-      current: 1,
-      size: 1000,
-      ...normalizeSearchParams()
-    })
-    const records = res.records || []
-    updateCategoryOptions(records)
-    stats.total = res.total || records.length
-    const sourceCount = {
-      api: records.filter((item) => item.source === 'api').length,
-      business: records.filter((item) => item.source === 'business').length,
-      system: records.filter((item) => item.source === 'system').length
-    }
-    stats.sourceTags = [
-      { label: '接口自动', count: sourceCount.api, type: 'success' },
-      { label: '系统内置', count: sourceCount.system, type: 'info' },
-      { label: '业务定义', count: sourceCount.business, type: 'warning' }
-    ] as StatsTag[]
-    stats.sourceTags = stats.sourceTags.filter((item) => item.count > 0)
-    stats.featureKindTags = [
-      { label: '系统功能', count: records.filter((item) => item.featureKind !== 'business').length },
-      { label: '业务功能', count: records.filter((item) => item.featureKind === 'business').length }
-    ].filter((item) => item.count > 0)
-    stats.contextTypeTags = [
-      { label: '平台', count: records.filter((item) => item.contextType === 'platform').length },
-      { label: '团队', count: records.filter((item) => item.contextType !== 'platform').length }
-    ].filter((item) => item.count > 0)
-    stats.moduleTags = buildTopTags(records, (item) => item.moduleCode || '')
-    stats.permissionKeyTags = buildTopTags(records, (item) => item.permissionKey || '')
-  }
-
-  function queryModuleSuggestions(queryString: string, cb: (items: SuggestionItem[]) => void) {
-    const keyword = queryString.trim().toLowerCase()
-    const suggestions = moduleOptions.value
-      .filter((item) => !keyword || item.toLowerCase().includes(keyword))
-      .slice(0, 12)
-      .map((value) => ({ value }))
-    cb(suggestions)
+  async function loadGroups() {
+    const [moduleRes, featureRes] = await Promise.all([
+      fetchGetPermissionGroupList({ current: 1, size: 200, groupType: 'module', status: 'normal' }),
+      fetchGetPermissionGroupList({ current: 1, size: 200, groupType: 'feature', status: 'normal' })
+    ])
+    moduleGroups.value = moduleRes.records || []
+    featureGroups.value = featureRes.records || []
   }
 
   async function handleSearch() {
-    Object.assign(searchParams, normalizeSearchParams())
+    Object.assign(searchParams, {
+      keyword: searchForm.keyword || undefined,
+      moduleGroupId: searchForm.moduleGroupId || undefined,
+      featureGroupId: searchForm.featureGroupId || undefined,
+      contextType: searchForm.contextType || undefined,
+      status: searchForm.status || undefined,
+      isBuiltin: searchForm.isBuiltin === '' ? undefined : searchForm.isBuiltin === 'true',
+      current: 1
+    })
     await getData()
-    await loadStats()
   }
 
   async function handleReset() {
     Object.assign(searchForm, {
       keyword: '',
-      source: '',
-      featureKind: '',
+      moduleGroupId: '',
+      featureGroupId: '',
       contextType: '',
-      moduleCode: '',
-      status: ''
+      status: '',
+      isBuiltin: ''
     })
-    await resetSearchParams()
-    await loadStats()
+    await handleSearch()
   }
 
   async function handleRefresh() {
-    await refreshData()
-    await loadStats()
+    await Promise.all([refreshData(), loadGroups()])
   }
 
   function openDialog(type: 'add' | 'edit', row?: PermissionActionItem) {
@@ -470,11 +312,35 @@
     dialogVisible.value = true
   }
 
-  function goToFeaturePackagePage() {
-    router.push({ name: 'FeaturePackage' })
+  function openGroupDialog(type: 'module' | 'feature', row?: PermissionGroupItem) {
+    groupDialogType.value = type
+    currentGroup.value = row
+    groupDialogVisible.value = true
+  }
+
+  async function handlePermissionSaved() {
+    await handleRefresh()
+  }
+
+  async function handleGroupSaved() {
+    await loadGroups()
+  }
+
+  async function handleGroupFilter(type: 'module' | 'feature', id: string) {
+    if (type === 'module') {
+      searchForm.moduleGroupId = searchForm.moduleGroupId === id ? '' : id
+    } else {
+      searchForm.featureGroupId = searchForm.featureGroupId === id ? '' : id
+    }
+    await handleSearch()
   }
 
   function handleAction(command: string, row: PermissionActionItem) {
+    if (command === 'view-apis') {
+      currentAction.value = row
+      endpointDialogVisible.value = true
+      return
+    }
     if (command === 'edit') {
       openDialog('edit', row)
       return
@@ -485,76 +351,83 @@
       type: 'warning'
     })
       .then(() => fetchDeletePermissionAction(row.id))
-      .then(() => {
+      .then(async () => {
         ElMessage.success('删除成功')
-        handleRefresh()
+        await handleRefresh()
       })
       .catch((e) => {
         if (e !== 'cancel') ElMessage.error(e?.message || '删除失败')
       })
   }
 
-  onMounted(() => {
-    loadStats()
-  })
+  loadGroups().then(handleSearch)
 </script>
 
 <style scoped>
-  .page-alert {
-    margin-top: 12px;
+  .group-card {
+    margin-bottom: 12px;
   }
 
-  .alert-title-row {
+  .group-header {
     display: flex;
-    align-items: center;
     justify-content: space-between;
     gap: 12px;
-    width: 100%;
+    margin-bottom: 12px;
   }
 
-  .stats-row {
-    margin-top: 12px;
+  .group-title {
+    font-size: 14px;
+    font-weight: 600;
   }
 
-  .stats-card {
-    min-height: 128px;
-  }
-
-  .stats-label {
-    font-size: 13px;
-    color: var(--el-text-color-secondary);
-  }
-
-  .stats-value {
-    margin-top: 10px;
-    font-size: 30px;
-    font-weight: 700;
-    line-height: 1.1;
-    color: var(--el-text-color-primary);
-  }
-
-  .stats-help {
-    margin-top: 8px;
+  .group-help {
     font-size: 12px;
     color: var(--el-text-color-secondary);
+    margin-top: 4px;
   }
 
-  .stats-tags {
+  .group-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .group-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .group-panel {
+    border: 1px solid var(--el-border-color-lighter);
+    border-radius: 10px;
+    padding: 12px;
+  }
+
+  .panel-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .panel-tags {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 12px;
   }
 
-  .stats-empty {
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
+  .panel-tag {
+    cursor: pointer;
   }
 
-  @media (max-width: 900px) {
-    .alert-title-row {
-      align-items: flex-start;
-      flex-direction: column;
-    }
+  .query-row {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .query-actions {
+    display: flex;
+    gap: 8px;
   }
 </style>

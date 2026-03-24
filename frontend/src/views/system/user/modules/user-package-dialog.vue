@@ -1,24 +1,56 @@
 <template>
-  <ElDialog v-model="visible" :title="`用户功能包 - ${userTitle}`" width="920px" destroy-on-close>
+  <ElDialog
+    v-model="visible"
+    :title="`用户功能包 - ${userTitle}`"
+    width="1280px"
+    destroy-on-close
+    class="business-dialog"
+  >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        平台用户可直接绑定平台功能包。用户直绑功能包会与其全局角色功能包做并集生效，用于开通非团队业务模块；菜单隐藏仍在用户菜单裁剪链路中处理。
+        平台用户可直接绑定平台功能包。用户直绑功能包会与其全局角色功能包做并集生效，用于开通非团队业务模块。
       </div>
 
       <div class="summary-card">
-        <ElTag effect="plain" round>用户 {{ userTitle }}</ElTag>
-        <ElTag type="warning" effect="plain" round>平台上下文</ElTag>
-        <ElTag type="success" effect="plain" round>已选 {{ selectedPackageIds.length }}</ElTag>
+        <ElTag type="primary" effect="light" round>用户 {{ userTitle }}</ElTag>
+        <ElTag type="info" effect="light" round>已开通 {{ selectedPackageIds.length }}</ElTag>
+        <ElTag type="info" effect="light" round>当前筛选 {{ filteredPackages.length }}</ElTag>
+        <ElTag type="info" effect="light" round>全部 {{ packages.length }}</ElTag>
       </div>
 
-      <ElInput
-        v-model="keyword"
-        clearable
-        placeholder="搜索功能包名称、编码或说明"
-        class="toolbar-search"
-      />
+      <div class="toolbar-row">
+        <ElInput
+          v-model="keyword"
+          clearable
+          placeholder="搜索功能包名称、编码或说明"
+          class="toolbar-search"
+        />
+        <ElSelect v-model="contextFilter" class="toolbar-select">
+          <ElOption label="全部上下文" value="" />
+          <ElOption label="平台" value="platform" />
+          <ElOption label="团队" value="team" />
+          <ElOption label="通用" value="common" />
+        </ElSelect>
+        <ElSelect v-model="selectionFilter" class="toolbar-select">
+          <ElOption label="全部" value="all" />
+          <ElOption label="已开通" value="selected" />
+          <ElOption label="未开通" value="unselected" />
+        </ElSelect>
+        <ElSelect v-model="statusFilter" class="toolbar-select">
+          <ElOption label="全部状态" value="" />
+          <ElOption label="正常" value="normal" />
+          <ElOption label="停用" value="disabled" />
+        </ElSelect>
+      </div>
 
-      <ElTable :data="filteredPackages" border max-height="420">
+      <ElTable :data="filteredPackages" border max-height="520" row-key="id">
+        <ElTableColumn type="expand" width="56">
+          <template #default="{ row }">
+            <div class="expand-panel">
+              <FeaturePackageGrantPreview :package-id="row.id" :package-item="row" :packages="packages" />
+            </div>
+          </template>
+        </ElTableColumn>
         <ElTableColumn width="60">
           <template #default="{ row }">
             <ElCheckbox
@@ -29,27 +61,36 @@
         </ElTableColumn>
         <ElTableColumn prop="packageKey" label="功能包编码" min-width="220" show-overflow-tooltip />
         <ElTableColumn prop="name" label="功能包名称" min-width="180" show-overflow-tooltip />
+        <ElTableColumn label="功能包种类" width="120">
+          <template #default="{ row }">
+            <ElTag :type="getPackageTypeTagType(row.packageType)" effect="light" round>
+              {{ formatPackageType(row.packageType) }}
+            </ElTag>
+          </template>
+        </ElTableColumn>
         <ElTableColumn label="上下文" width="120">
           <template #default="{ row }">
-            <ElTag :type="row.contextType === 'team' ? 'success' : 'warning'" effect="plain">
+            <ElTag :type="getContextTagType(row.contextType)" effect="light" round>
               {{ formatContext(row.contextType) }}
             </ElTag>
           </template>
         </ElTableColumn>
         <ElTableColumn label="状态" width="100">
           <template #default="{ row }">
-            <ElTag :type="row.status === 'normal' ? 'success' : 'info'" effect="plain">
+            <ElTag :type="getStatusTagType(row.status)" effect="light" round>
               {{ row.status === 'normal' ? '正常' : '停用' }}
             </ElTag>
           </template>
         </ElTableColumn>
-        <ElTableColumn prop="description" label="说明" min-width="240" show-overflow-tooltip />
+        <ElTableColumn prop="description" label="说明" min-width="320" show-overflow-tooltip />
       </ElTable>
     </div>
 
     <template #footer>
       <ElButton @click="visible = false">取消</ElButton>
-      <ElButton type="primary" :loading="saving" @click="handleSave">保存</ElButton>
+      <ElButton type="primary" :loading="saving" @click="handleSave">
+        保存
+      </ElButton>
     </template>
   </ElDialog>
 </template>
@@ -57,6 +98,7 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
+  import FeaturePackageGrantPreview from '@/components/business/permission/FeaturePackageGrantPreview.vue'
   import {
     fetchGetFeaturePackageList,
     fetchGetUserPackages,
@@ -82,6 +124,9 @@
   const loading = ref(false)
   const saving = ref(false)
   const keyword = ref('')
+  const contextFilter = ref('')
+  const selectionFilter = ref<'all' | 'selected' | 'unselected'>('selected')
+  const statusFilter = ref('')
   const packages = ref<Api.SystemManage.FeaturePackageItem[]>([])
   const selectedPackageIds = ref<string[]>([])
 
@@ -91,21 +136,39 @@
 
   const filteredPackages = computed(() => {
     const currentKeyword = keyword.value.trim().toLowerCase()
-    if (!currentKeyword) return packages.value
-    return packages.value.filter((item) =>
-      [item.packageKey, item.name, item.description]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase()
-        .includes(currentKeyword)
-    )
+    return packages.value.filter((item) => {
+      if (
+        currentKeyword &&
+        ![item.packageKey, item.name, item.description]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+          .includes(currentKeyword)
+      ) {
+        return false
+      }
+
+      if (statusFilter.value && item.status !== statusFilter.value) {
+        return false
+      }
+      if (contextFilter.value && item.contextType !== contextFilter.value) {
+        return false
+      }
+
+      const isSelected = selectedPackageIds.value.includes(item.id)
+      if (selectionFilter.value === 'selected' && !isSelected) return false
+      if (selectionFilter.value === 'unselected' && isSelected) return false
+      return true
+    })
   })
 
   watch(
     () => props.modelValue,
     (open) => {
       if (open) {
-        loadData()
+        void loadData()
+      } else {
+        resetFilters()
       }
     }
   )
@@ -114,6 +177,7 @@
     const userId = props.userData?.id
     if (!userId) return
     loading.value = true
+    resetFilters()
     try {
       const [listRes, userRes] = await Promise.all([
         fetchGetFeaturePackageList({ current: 1, size: 1000, contextType: 'platform' }),
@@ -121,11 +185,21 @@
       ])
       packages.value = listRes?.records || []
       selectedPackageIds.value = [...(userRes?.package_ids || [])]
+      if (!selectedPackageIds.value.length) {
+        selectionFilter.value = 'all'
+      }
     } catch (error: any) {
       ElMessage.error(error?.message || '加载用户功能包失败')
     } finally {
       loading.value = false
     }
+  }
+
+  function resetFilters() {
+    keyword.value = ''
+    contextFilter.value = ''
+    selectionFilter.value = 'selected'
+    statusFilter.value = ''
   }
 
   function toggleSelection(packageId: string, checked: boolean | string | number) {
@@ -138,10 +212,30 @@
     selectedPackageIds.value = selectedPackageIds.value.filter((item) => item !== packageId)
   }
 
+  function formatPackageType(packageType?: string) {
+    return packageType === 'bundle' ? '组合包' : '基础包'
+  }
+
+  function getPackageTypeTagType(packageType?: string) {
+    return packageType === 'bundle' ? 'warning' : 'primary'
+  }
+
   function formatContext(contextType?: string) {
-    if (contextType === 'platform,team') return '平台/团队'
-    if (contextType === 'team') return '团队'
-    return '平台'
+    if (contextType === 'common') return '通用'
+    if (contextType === 'platform') return '平台'
+    return '团队'
+  }
+
+  function getContextTagType(contextType?: string) {
+    if (contextType === 'common') return 'primary'
+    if (contextType === 'platform') return 'success'
+    return 'warning'
+  }
+
+  function getStatusTagType(status?: string) {
+    if (status === 'normal') return 'success'
+    if (status === 'disabled') return 'info'
+    return 'danger'
   }
 
   async function handleSave() {
@@ -162,24 +256,93 @@
 </script>
 
 <style scoped lang="scss">
+  :deep(.business-dialog .el-dialog) {
+    border-radius: 16px;
+    border: 1px solid var(--default-border);
+    background: var(--default-box-color);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+  }
+
+  :deep(.business-dialog .el-dialog__header) {
+    margin-right: 0;
+    padding: 22px 24px 12px;
+    border-bottom: 1px solid var(--default-border);
+  }
+
+  :deep(.business-dialog .el-dialog__title) {
+    color: var(--art-gray-900);
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  :deep(.business-dialog .el-dialog__body) {
+    padding: 22px 24px 18px;
+  }
+
+  :deep(.business-dialog .el-dialog__footer) {
+    padding: 14px 24px 22px;
+    border-top: 1px solid var(--default-border);
+  }
+
+  :deep(.business-dialog .el-table) {
+    --el-table-border-color: var(--default-border);
+    --el-table-header-bg-color: var(--default-bg-color);
+    --el-table-row-hover-bg-color: var(--art-hover-color);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+
+  :deep(.business-dialog .el-table th.el-table__cell) {
+    color: var(--art-gray-700);
+    font-weight: 600;
+  }
+
   .dialog-shell {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 18px;
   }
 
   .dialog-note {
-    color: #6b7280;
-    line-height: 1.6;
+    color: var(--art-gray-700);
+    line-height: 1.75;
   }
 
   .summary-card {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px;
+  }
+
+  .toolbar-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
   }
 
   .toolbar-search {
-    width: 320px;
+    width: 360px;
+    max-width: 100%;
+  }
+
+  .toolbar-select {
+    width: 160px;
+  }
+
+  .expand-panel {
+    padding: 16px 18px;
+    background: var(--default-bg-color);
+    border-top: 1px solid var(--default-border);
+  }
+
+  @media (max-width: 960px) {
+    .toolbar-row {
+      flex-direction: column;
+    }
+
+    .toolbar-search,
+    .toolbar-select {
+      width: 100%;
+    }
   }
 </style>

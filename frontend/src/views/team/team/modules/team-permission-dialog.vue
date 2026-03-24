@@ -182,8 +182,8 @@ function expandSelectedValues(
   const moduleMap = new Map<string, Api.SystemManage.PermissionActionItem[]>()
 
   actions.forEach((action) => {
-    const featureKey = `${action.featureKind || 'business'}`
-    const moduleKey = `${action.moduleCode || action.resourceCode || 'default'}`
+    const featureKey = `${action.featureGroupId || action.featureKind || 'business'}`
+    const moduleKey = `${action.moduleGroupId || action.moduleCode || action.resourceCode || 'default'}`
     const featureValue = `feature:${featureKey}`
     const moduleValue = `module:${featureKey}:${moduleKey}`
 

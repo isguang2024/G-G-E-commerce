@@ -55,7 +55,11 @@
   import PermissionSourcePanels from '@/components/business/permission/PermissionSourcePanels.vue'
   import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
   import { fetchGetMenuTreeAll } from '@/api/system-manage'
-  import { fetchGetMyTeamRoleMenus, fetchGetMyTeamRolePackages, fetchSetMyTeamRoleMenus } from '@/api/team'
+  import {
+    fetchGetMyTeamBoundaryRoleMenus,
+    fetchGetMyTeamBoundaryRolePackages,
+    fetchSetMyTeamBoundaryRoleMenus
+  } from '@/api/team'
   import { formatMenuTitle } from '@/utils/router'
 
   interface Props {
@@ -112,8 +116,8 @@
       try {
         const [menus, assigned, packagesRes] = await Promise.all([
           fetchGetMenuTreeAll(),
-          fetchGetMyTeamRoleMenus(props.roleData.roleId),
-          fetchGetMyTeamRolePackages(props.roleData.roleId)
+          fetchGetMyTeamBoundaryRoleMenus(props.roleData.roleId),
+          fetchGetMyTeamBoundaryRolePackages(props.roleData.roleId)
         ])
         availableMenuIds.value = assigned?.available_menu_ids || []
         featurePackages.value = packagesRes?.packages || []
@@ -167,7 +171,7 @@
     if (!props.roleData?.roleId) return
     saving.value = true
     try {
-      await fetchSetMyTeamRoleMenus(props.roleData.roleId, selectedMenuIds.value)
+      await fetchSetMyTeamBoundaryRoleMenus(props.roleData.roleId, selectedMenuIds.value)
       ElMessage.success('团队角色菜单裁剪已保存')
       emit('success')
       handleClose()

@@ -84,13 +84,9 @@
                     <ElButton :icon="MoreFilled" circle size="small" />
                     <template #dropdown>
                       <ElDropdownMenu>
-                        <ElDropdownItem v-if="hasAction('team.member.assign_role')" command="assign">
+                        <ElDropdownItem v-if="hasAction('team.member.manage')" command="assign">
                           <ElIcon><UserFilled /></ElIcon>
                           分配角色
-                        </ElDropdownItem>
-                        <ElDropdownItem v-if="hasAction('team.member.assign_action')" command="action">
-                          <ElIcon><UserFilled /></ElIcon>
-                          权限例外审计
                         </ElDropdownItem>
                         <ElDropdownItem
                           v-if="hasAction('team.member.manage')"
@@ -113,7 +109,6 @@
     </template>
 
     <MemberRoleDialog ref="roleDialogRef" :member="currentMember" @success="loadMembers" />
-    <MemberActionDialog ref="actionDialogRef" :member="currentMember" @success="loadMembers" />
   </div>
 </template>
 
@@ -131,12 +126,10 @@
   import { useTenantStore } from '@/store/modules/tenant'
   import NoTeamState from '@/components/business/team/NoTeamState.vue'
   import MemberRoleDialog from './modules/member-role-dialog.vue'
-  import MemberActionDialog from './modules/member-action-dialog.vue'
 
   defineOptions({ name: 'TeamMembers' })
 
   const roleDialogRef = ref()
-  const actionDialogRef = ref()
   const currentMember = ref<Api.SystemManage.TeamMemberItem | null>(null)
   const tenantStore = useTenantStore()
   const { hasAction } = useAuth()
@@ -146,10 +139,7 @@
   const teamLoadDone = ref(false)
   const members = ref<Api.SystemManage.TeamMemberItem[]>([])
   const hasMemberOperationPermission = computed(
-    () =>
-      hasAction('team.member.assign_role') ||
-      hasAction('team.member.assign_action') ||
-      hasAction('team.member.manage')
+    () => hasAction('team.member.manage')
   )
   const loading = ref(false)
   const addLoading = ref(false)
@@ -211,18 +201,9 @@
     })
   }
 
-  function handleAssignActions(member: Api.SystemManage.TeamMemberItem) {
-    currentMember.value = member
-    nextTick(() => {
-      actionDialogRef.value?.open()
-    })
-  }
-
   function handleCommand(command: string, member: Api.SystemManage.TeamMemberItem) {
     if (command === 'assign') {
       handleAssignRoles(member)
-    } else if (command === 'action') {
-      handleAssignActions(member)
     } else if (command === 'delete') {
       removeMember(member)
     }

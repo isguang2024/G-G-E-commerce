@@ -28,25 +28,9 @@
       <ElTabs v-model="activeTab" class="permission-tabs">
         <ElTabPane label="菜单权限" name="menus">
           <div class="cascader-pane">
-            <PermissionSourcePanels
-              v-model="selectedMenuSourcePackageId"
-              :packages="featurePackages"
-              :source-map="menuSourceMapText"
-              :derived-items="menuSourceItems"
-              :blocked-items="hiddenMenuItems"
-              derived-title="功能包展开菜单"
-              blocked-title="当前角色已屏蔽菜单"
-              open="menus"
-              filtered-blocked-empty-text="当前筛选下暂无角色显式屏蔽菜单"
-              empty-title="当前暂无角色菜单来源"
-              empty-text="请先为角色绑定功能包，或检查平台角色快照是否已经刷新。"
-            />
-
             <div class="cascader-toolbar">
               <div class="cascader-tags">
-                <ElTag effect="plain" round>功能包展开 {{ menuSourceList.length }}</ElTag>
                 <ElTag type="success" effect="plain" round>已保留 {{ expandedSelectedMenuIds.length }}</ElTag>
-                <ElTag type="danger" effect="plain" round>已屏蔽 {{ hiddenMenuCount }}</ElTag>
                 <ElTag type="info" effect="plain" round>树节点 {{ menuNodeCount }}</ElTag>
               </div>
 
@@ -182,17 +166,6 @@
                         >
                           {{ data.permissionText }}
                         </span>
-                        <div class="panel-node__tags">
-                          <ElTag
-                            v-if="data.sourceText"
-                            size="small"
-                            effect="plain"
-                            round
-                            type="info"
-                          >
-                            {{ data.sourceText }}
-                          </ElTag>
-                        </div>
                       </template>
                     </div>
 
@@ -263,7 +236,6 @@ import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { CascaderOption, CascaderProps } from 'element-plus'
 import { useRouter } from 'vue-router'
-import PermissionSourcePanels from '@/components/business/permission/PermissionSourcePanels.vue'
 import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
 import {
   fetchGetMenuTreeAll,
@@ -294,12 +266,12 @@ interface MenuOption extends CascaderOption {
   isIframe?: boolean
   isEnable?: boolean
   totalLeafCount?: number
+  availableLeafCount?: number
   selectedLeafCount?: number
 }
 
 interface ActionOption extends CascaderOption {
   permissionText?: string
-  sourceText?: string
 }
 
 interface DataRow {
@@ -345,7 +317,6 @@ const menuTreeData = ref<RoleMenuNode[]>([])
 const selectedMenuNodeValues = ref<string[]>([])
 const roleMenuBoundary = ref<Api.SystemManage.RoleMenuBoundaryResponse | null>(null)
 const featurePackages = ref<Api.SystemManage.FeaturePackageItem[]>([])
-const selectedMenuSourcePackageId = ref('')
 
 const permissionActions = ref<Api.SystemManage.PermissionActionItem[]>([])
 const selectedActionNodeValues = ref<string[]>([])
@@ -359,30 +330,17 @@ const roleTitle = computed(() => props.roleData?.roleName || '')
 const summaryItems = computed(() => [
   { label: '角色', value: roleTitle.value || '-' },
   { label: '功能包', value: featurePackages.value.length, type: 'success' as const },
-  { label: '菜单已屏蔽', value: hiddenMenuCount.value, type: 'warning' as const },
   { label: '能力已关闭', value: disabledActionCount.value, type: 'danger' as const }
 ])
 
 const menuOptions = computed<MenuOption[]>(() => normalizeMenuOptions(menuTreeData.value))
-const menuNodeCount = computed(() => flattenMenuIds(menuTreeData.value).length)
 const selectedMenuIdSet = computed(() => new Set(expandedSelectedMenuIds.value))
 const availableMenuIdSet = computed(
   () => new Set((roleMenuBoundary.value?.available_menu_ids || []).map((item) => `${item}`))
 )
-const hiddenMenuCount = computed(() => roleMenuBoundary.value?.hidden_menu_ids?.length || 0)
 const hiddenMenuIdSet = computed(
   () => new Set((roleMenuBoundary.value?.hidden_menu_ids || []).map((item) => `${item}`))
 )
-const menuDerivedSourceMap = computed(() =>
-  Object.fromEntries((roleMenuBoundary.value?.derived_sources || []).map((item) => [item.menu_id, item.package_ids]))
-)
-const menuSourceList = computed(() => buildMenuSourceList(menuTreeData.value, roleMenuBoundary.value?.available_menu_ids || []))
-const menuSourceMapText = computed(() =>
-  Object.fromEntries(Object.entries(menuDerivedSourceMap.value).map(([key, value]) => [key, value.map((item) => `${item}`)]))
-)
-const hiddenMenus = computed(() => menuSourceList.value.filter((item) => hiddenMenuIdSet.value.has(item.id)))
-const menuSourceItems = computed(() => menuSourceList.value)
-const hiddenMenuItems = computed(() => hiddenMenus.value)
 
 const menuBranchMap = computed(() => {
   const map = new Map<string, string[]>()
@@ -431,13 +389,15 @@ const actionOptions = computed<ActionOption[]>(() => {
   const featureMap = new Map<string, ActionOption>()
 
   filteredPermissionActions.value.forEach((action) => {
-    const featureKey = `${action.featureKind || 'business'}`
-    const moduleKey = `${action.moduleCode || action.resourceCode || 'default'}`
+    const featureKey = `${action.featureGroupId || action.featureKind || 'business'}`
+    const moduleKey = `${action.moduleGroupId || action.moduleCode || action.resourceCode || 'default'}`
+    const featureLabel = action.featureGroup?.name || formatFeature(`${action.featureKind || 'business'}`)
+    const moduleLabel = action.moduleGroup?.name || action.moduleCode || action.resourceCode || '未分类模块'
 
     if (!featureMap.has(featureKey)) {
       featureMap.set(featureKey, {
         value: `feature:${featureKey}`,
-        label: formatFeature(featureKey),
+        label: featureLabel,
         children: []
       })
     }
@@ -450,7 +410,7 @@ const actionOptions = computed<ActionOption[]>(() => {
     if (!module) {
       module = {
         value: moduleValue,
-        label: action.moduleCode || action.resourceCode || '未分类模块',
+        label: moduleLabel,
         children: []
       }
       modules.push(module)
@@ -462,8 +422,7 @@ const actionOptions = computed<ActionOption[]>(() => {
       value: action.id,
       label: action.name,
       leaf: true,
-      permissionText: action.permissionKey || `${action.resourceCode}:${action.actionCode}`,
-      sourceText: formatSource(action.source)
+      permissionText: action.permissionKey || `${action.resourceCode}:${action.actionCode}`
     })
     module.children = leaves
   })
@@ -495,8 +454,8 @@ const topLevelActionTags = computed(() => {
   const counter = new Map<string, number>()
   expandedSelectedActionIds.value.forEach((actionId) => {
     const action = filteredPermissionActions.value.find((item) => item.id === actionId)
-    const featureKey = `${action?.featureKind || 'business'}`
-    counter.set(featureKey, (counter.get(featureKey) || 0) + 1)
+    const featureLabel = `${action?.featureGroup?.name || action?.featureKind || 'business'}`
+    counter.set(featureLabel, (counter.get(featureLabel) || 0) + 1)
   })
   return Array.from(counter.entries()).map(([key, count]) => ({
     label: formatFeature(key),
@@ -529,8 +488,10 @@ const actionCascaderProps: CascaderProps = {
 const filteredMenuOptions = computed(() => {
   const keyword = menuKeyword.value.trim().toLowerCase()
   return filterNestedOptions(menuOptions.value, (node) => {
-    if (!availableMenuIdSet.value.has(`${node.value}`)) return false
-    if (!node.leaf) return !keyword
+    if (!node.leaf) {
+      return (node.availableLeafCount || 0) > 0 && !keyword
+    }
+    if (!availableMenuIdSet.value.has(`${node.value || ''}`)) return false
     if (!showInnerMenus.value && node.isInnerPage) return false
     if (!showHiddenMenus.value && !node.isInnerPage && node.isHide) return false
     if (!showIframeMenus.value && node.isIframe) return false
@@ -539,13 +500,14 @@ const filteredMenuOptions = computed(() => {
     return true
   })
 })
+const menuNodeCount = computed(() => flattenMenuOptionIds(filteredMenuOptions.value).length)
 
 const filteredActionOptions = computed(() => {
   const keyword = actionKeyword.value.trim().toLowerCase()
 
   return filterNestedOptions(actionOptions.value, (node) => {
     if (!node.leaf) return !keyword
-    const text = [node.label, node.permissionText, node.sourceText]
+    const text = [node.label, node.permissionText]
       .filter(Boolean)
       .join(' ')
       .toLowerCase()
@@ -584,7 +546,6 @@ async function loadData() {
   activeTab.value = 'menus'
   menuKeyword.value = ''
   actionKeyword.value = ''
-  selectedMenuSourcePackageId.value = ''
   selectedActionSourcePackageId.value = ''
 
   try {
@@ -648,6 +609,11 @@ function normalizeMenus(items: any[]): RoleMenuNode[] {
 function normalizeMenuOptions(items: RoleMenuNode[]): MenuOption[] {
   return items.map((item) => {
     const children = normalizeMenuOptions(item.children || [])
+    const isLeaf = !item.children?.length
+    const isAvailable = availableMenuIdSet.value.has(item.id)
+    const availableLeafCount = isLeaf
+      ? (isAvailable ? 1 : 0)
+      : children.reduce((sum, child) => sum + (child.availableLeafCount || 0), 0)
 
     return {
       value: item.id,
@@ -657,16 +623,18 @@ function normalizeMenuOptions(items: RoleMenuNode[]): MenuOption[] {
       isHide: item.isHide,
       isIframe: item.isIframe,
       isEnable: item.isEnable,
-      leaf: !item.children?.length,
+      leaf: isLeaf,
+      disabled: availableLeafCount === 0,
       totalLeafCount: countMenuLeaves(item),
+      availableLeafCount,
       selectedLeafCount: countSelectedMenuLeaves(item, selectedMenuIdSet.value),
       children
     }
   })
 }
 
-function flattenMenuIds(items: RoleMenuNode[]): string[] {
-  return items.flatMap((item) => [item.id, ...flattenMenuIds(item.children || [])])
+function flattenMenuOptionIds(items: MenuOption[]): string[] {
+  return items.flatMap((item) => [`${item.value}`, ...flattenMenuOptionIds((item.children || []) as MenuOption[])])
 }
 
 function countMenuLeaves(node: RoleMenuNode): number {
@@ -749,32 +717,8 @@ function formatFeature(value: string) {
   return value
 }
 
-function formatSource(source?: string) {
-  if (source === 'api') return '接口自动'
-  if (source === 'system') return '系统内置'
-  if (source === 'business') return '业务定义'
-  return source || ''
-}
-
 function handleCancel() {
   visible.value = false
-}
-
-function buildMenuSourceList(items: RoleMenuNode[], availableIds: string[]) {
-  const indexMap = new Map<string, { id: string; label: string }>()
-
-  const visit = (nodes: RoleMenuNode[]) => {
-    nodes.forEach((node) => {
-      indexMap.set(node.id, {
-        id: node.id,
-        label: node.label
-      })
-      if (node.children?.length) visit(node.children)
-    })
-  }
-
-  visit(items)
-  return availableIds.map((id) => indexMap.get(`${id}`)).filter(Boolean) as Array<{ id: string; label: string }>
 }
 
 function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem, open?: 'menus' | 'actions') {

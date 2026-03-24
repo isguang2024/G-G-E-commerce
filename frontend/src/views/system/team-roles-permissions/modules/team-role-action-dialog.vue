@@ -63,9 +63,9 @@
   import PermissionActionCascaderPanel from '@/components/business/permission/PermissionActionCascaderPanel.vue'
   import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
   import {
-    fetchGetMyTeamRoleActions,
-    fetchGetMyTeamRolePackages,
-    fetchSetMyTeamRoleActions
+    fetchGetMyTeamBoundaryRoleActions,
+    fetchGetMyTeamBoundaryRolePackages,
+    fetchSetMyTeamBoundaryRoleActions
   } from '@/api/team'
 
   interface Props {
@@ -121,8 +121,8 @@
       loading.value = true
       try {
         const [packagesRes, selected] = await Promise.all([
-          fetchGetMyTeamRolePackages(props.roleData.roleId),
-          fetchGetMyTeamRoleActions(props.roleData.roleId)
+          fetchGetMyTeamBoundaryRolePackages(props.roleData.roleId),
+          fetchGetMyTeamBoundaryRoleActions(props.roleData.roleId)
         ])
         actions.value = selected?.actions || []
         selectedIds.value = [...(selected?.action_ids || [])]
@@ -146,7 +146,7 @@
     if (!props.roleData?.roleId) return
     saving.value = true
     try {
-      await fetchSetMyTeamRoleActions(props.roleData.roleId, selectedIds.value)
+      await fetchSetMyTeamBoundaryRoleActions(props.roleData.roleId, selectedIds.value)
       ElMessage.success('团队角色权限裁剪已保存')
       emit('success')
       visible.value = false

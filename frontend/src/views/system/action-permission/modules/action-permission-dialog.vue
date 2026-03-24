@@ -7,30 +7,40 @@
     @close="handleClose"
   >
     <ElForm ref="formRef" :model="form" :rules="rules" label-width="110px">
-      <ElFormItem label="来源">
-        <ElTag :type="sourceTagType">{{ sourceLabel }}</ElTag>
-      </ElFormItem>
       <ElFormItem label="权限键" prop="permissionKey">
         <ElInput v-model="form.permissionKey" placeholder="例如 system.role.manage" />
       </ElFormItem>
-      <ElFormItem label="模块归属" prop="moduleCode">
-        <ElAutocomplete
-          v-model="form.moduleCode"
-          :fetch-suggestions="queryModuleSuggestions"
-          clearable
-          placeholder="例如 order_center"
-        />
+      <ElFormItem label="模块分组" prop="moduleGroupId">
+        <div class="group-select-row">
+          <ElSelect v-model="form.moduleGroupId" filterable clearable style="width: 100%">
+            <ElOption
+              v-for="item in moduleGroups"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </ElSelect>
+          <ElButton text type="primary" @click="emit('open-group', 'module')">新建分组</ElButton>
+        </div>
       </ElFormItem>
-      <ElFormItem label="功能归属" prop="featureKind">
-        <ElSelect v-model="form.featureKind" style="width: 100%">
-          <ElOption label="系统功能" value="system" />
-          <ElOption label="业务功能" value="business" />
-        </ElSelect>
+      <ElFormItem label="功能分组" prop="featureGroupId">
+        <div class="group-select-row">
+          <ElSelect v-model="form.featureGroupId" filterable clearable style="width: 100%">
+            <ElOption
+              v-for="item in featureGroups"
+              :key="item.id"
+              :label="item.name"
+              :value="item.id"
+            />
+          </ElSelect>
+          <ElButton text type="primary" @click="emit('open-group', 'feature')">新建分组</ElButton>
+        </div>
       </ElFormItem>
       <ElFormItem label="上下文" prop="contextType">
         <ElSelect v-model="form.contextType" style="width: 100%">
           <ElOption label="平台" value="platform" />
           <ElOption label="团队" value="team" />
+          <ElOption label="通用" value="common" />
         </ElSelect>
       </ElFormItem>
       <ElFormItem label="权限名称" prop="name">
@@ -66,7 +76,8 @@
     modelValue: boolean
     dialogType: 'add' | 'edit'
     actionData?: Api.SystemManage.PermissionActionItem
-    moduleOptions?: string[]
+    moduleGroups?: Api.SystemManage.PermissionGroupItem[]
+    featureGroups?: Api.SystemManage.PermissionGroupItem[]
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -79,6 +90,7 @@
   const emit = defineEmits<{
     (e: 'update:modelValue', value: boolean): void
     (e: 'success'): void
+    (e: 'open-group', value: 'module' | 'feature'): void
   }>()
 
   const visible = computed({
@@ -92,7 +104,8 @@
     id: '',
     permissionKey: '',
     moduleCode: '',
-    source: 'business',
+    moduleGroupId: '',
+    featureGroupId: '',
     featureKind: 'business',
     contextType: 'team',
     name: '',
@@ -103,48 +116,21 @@
 
   const rules = reactive<FormRules>({
     permissionKey: [{ required: true, message: '请输入权限键', trigger: 'blur' }],
-    moduleCode: [{ required: true, message: '请输入模块归属', trigger: 'blur' }],
-    featureKind: [{ required: true, message: '请选择功能归属', trigger: 'change' }],
+    moduleGroupId: [{ required: true, message: '请选择模块分组', trigger: 'change' }],
+    featureGroupId: [{ required: true, message: '请选择功能分组', trigger: 'change' }],
     contextType: [{ required: true, message: '请选择上下文', trigger: 'change' }],
     name: [{ required: true, message: '请输入权限名称', trigger: 'blur' }],
     status: [{ required: true, message: '请选择状态', trigger: 'change' }]
   })
 
-  const permissionKeyPreview = computed(() => {
-    return form.permissionKey.trim()
-  })
-
-  const sourceLabel = computed(() => {
-    if (form.source === 'api') return '接口自动注册'
-    if (form.source === 'system') return '系统内置'
-    return '业务定义'
-  })
-
-  const sourceTagType = computed(() => {
-    if (form.source === 'api') return 'success'
-    if (form.source === 'system') return 'info'
-    return 'warning'
-  })
-
-  function queryModuleSuggestions(
-    queryString: string,
-    cb: (items: Array<{ value: string }>) => void
-  ) {
-    const keyword = queryString.trim().toLowerCase()
-    const suggestions = (props.moduleOptions || [])
-      .filter((item) => !keyword || item.toLowerCase().includes(keyword))
-      .slice(0, 12)
-      .map((value) => ({ value }))
-    cb(suggestions)
-  }
-
   function initForm() {
     if (props.dialogType === 'edit' && props.actionData) {
       Object.assign(form, {
         id: props.actionData.id,
-        permissionKey: props.actionData.permissionKey || `${props.actionData.resourceCode}:${props.actionData.actionCode}`,
-        moduleCode: props.actionData.moduleCode || props.actionData.resourceCode,
-        source: props.actionData.source || 'business',
+        permissionKey: props.actionData.permissionKey || '',
+        moduleCode: props.actionData.moduleCode || '',
+        moduleGroupId: props.actionData.moduleGroupId || '',
+        featureGroupId: props.actionData.featureGroupId || '',
         featureKind: props.actionData.featureKind || 'system',
         contextType: props.actionData.contextType || 'team',
         name: props.actionData.name,
@@ -158,7 +144,8 @@
       id: '',
       permissionKey: '',
       moduleCode: '',
-      source: 'business',
+      moduleGroupId: props.moduleGroups?.[0]?.id || '',
+      featureGroupId: props.featureGroups?.[0]?.id || '',
       featureKind: 'business',
       contextType: 'team',
       name: '',
@@ -190,8 +177,11 @@
       const payload = {
         permission_key: form.permissionKey.trim(),
         module_code: form.moduleCode.trim(),
+        module_group_id: form.moduleGroupId,
+        feature_group_id: form.featureGroupId,
         context_type: form.contextType,
-        feature_kind: form.featureKind,
+        feature_kind:
+          props.featureGroups?.find((item) => item.id === form.featureGroupId)?.code || form.featureKind,
         name: form.name.trim(),
         description: form.description.trim(),
         status: form.status,
@@ -212,3 +202,11 @@
     }
   }
 </script>
+
+<style scoped>
+  .group-select-row {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+</style>

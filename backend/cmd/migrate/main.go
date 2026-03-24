@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -17,6 +18,11 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/logger"
 	"github.com/gg-ecommerce/backend/internal/pkg/password"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
+	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
 func main() {
@@ -74,10 +80,22 @@ func main() {
 		logger.Info("Default menus initialized successfully")
 	}
 
+	if err := initDefaultPermissionGroups(logger); err != nil {
+		logger.Warn("Failed to initialize default permission groups", zap.Error(err))
+	} else {
+		logger.Info("Default permission groups initialized successfully")
+	}
+
 	if err := initDefaultPermissionActionsNoScope(logger); err != nil {
 		logger.Warn("Failed to initialize permission actions", zap.Error(err))
 	} else {
 		logger.Info("Permission actions initialized successfully")
+	}
+
+	if err := mergeDeprecatedTeamPermissionKeys(logger); err != nil {
+		logger.Warn("Failed to merge deprecated team permission keys", zap.Error(err))
+	} else {
+		logger.Info("Deprecated team permission keys merged successfully")
 	}
 
 	if err := initDefaultFeaturePackages(logger); err != nil {
@@ -98,10 +116,43 @@ func main() {
 		logger.Info("Default role feature packages initialized successfully")
 	}
 
+	if err := initDefaultAPIEndpointCategories(logger); err != nil {
+		logger.Warn("Failed to initialize api endpoint categories", zap.Error(err))
+	} else {
+		logger.Info("API endpoint categories initialized successfully")
+	}
+
 	if err := syncAPIRegistry(logger, cfg); err != nil {
 		logger.Warn("Failed to sync API registry", zap.Error(err))
 	} else {
 		logger.Info("API registry synchronized successfully")
+	}
+
+	if err := finalizeAPIEndpointSchema(logger); err != nil {
+		logger.Warn("Failed to finalize api endpoint schema", zap.Error(err))
+	} else {
+		logger.Info("API endpoint schema finalized successfully")
+	}
+
+	if err := mergeDeprecatedTeamPermissionKeys(logger); err != nil {
+		logger.Warn("Failed to merge deprecated team permission keys after API sync", zap.Error(err))
+	}
+	if err := syncCanonicalPermissionActions(logger); err != nil {
+		logger.Warn("Failed to sync canonical permission actions", zap.Error(err))
+	} else {
+		logger.Info("Canonical permission actions synchronized successfully")
+	}
+
+	if err := backfillTenantIdentityUserRoles(logger); err != nil {
+		logger.Warn("Failed to backfill tenant identity user roles", zap.Error(err))
+	} else {
+		logger.Info("Tenant identity user roles backfilled successfully")
+	}
+
+	if err := refreshDefaultAccessSnapshots(logger); err != nil {
+		logger.Warn("Failed to refresh default access snapshots", zap.Error(err))
+	} else {
+		logger.Info("Default access snapshots refreshed successfully")
 	}
 
 	fmt.Println("✅ Migration completed successfully!")
@@ -118,6 +169,84 @@ func runNamedMigrations(logger *zap.Logger) error {
 	}
 
 	tasks := []migrationTask{
+		{
+			Name: "20260324_team_menu_single_context_cleanup",
+			Run: func(logger *zap.Logger) error {
+				var teamRoot usermodel.Menu
+				if err := database.DB.Where("name = ?", "TeamRoot").First(&teamRoot).Error; err != nil {
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						logger.Info("Named migration applied", zap.String("name", "20260324_team_menu_single_context_cleanup"), zap.String("status", "skipped"))
+						return nil
+					}
+					return err
+				}
+
+				teamAccessMeta := usermodel.MetaJSON{
+					"keepAlive": true,
+				}
+
+				if err := database.DB.Model(&usermodel.Menu{}).
+					Where("id = ?", teamRoot.ID).
+					Updates(map[string]interface{}{
+						"path":       "/team",
+						"component":  "/index/index",
+						"title":      "menus.system.team",
+						"icon":       "ri:team-line",
+						"sort_order": 5,
+						"meta":       teamAccessMeta,
+					}).Error; err != nil {
+					return err
+				}
+
+				var teamMembers usermodel.Menu
+				if err := database.DB.Where("name = ?", "TeamMembers").First(&teamMembers).Error; err == nil {
+					if err := database.DB.Model(&usermodel.Menu{}).
+						Where("id = ?", teamMembers.ID).
+						Updates(map[string]interface{}{
+							"parent_id":  teamRoot.ID,
+							"path":       "members",
+							"component":  "/team/team-members",
+							"title":      "menus.system.teamMembers",
+							"sort_order": 2,
+							"meta":       teamAccessMeta,
+						}).Error; err != nil {
+						return err
+					}
+				} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+					return err
+				}
+
+				var teamRoles usermodel.Menu
+				if err := database.DB.Where("name = ?", "TeamRolesAndPermissions").First(&teamRoles).Error; err == nil {
+					if err := database.DB.Model(&usermodel.Menu{}).
+						Where("id = ?", teamRoles.ID).
+						Updates(map[string]interface{}{
+							"parent_id":  teamRoot.ID,
+							"path":       "roles",
+							"component":  "/system/team-roles-permissions",
+							"title":      "menus.system.teamRolesAndPermissions",
+							"sort_order": 3,
+							"meta":       teamAccessMeta,
+						}).Error; err != nil {
+						return err
+					}
+				} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+					return err
+				}
+
+				var teamManagement usermodel.Menu
+				if err := database.DB.Where("name = ?", "TeamManagement").First(&teamManagement).Error; err == nil {
+					if err := deleteMenuTree(teamManagement.ID); err != nil {
+						return err
+					}
+				} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+					return err
+				}
+
+				logger.Info("Named migration applied", zap.String("name", "20260324_team_menu_single_context_cleanup"))
+				return nil
+			},
+		},
 		{
 			Name: "20260324_drop_legacy_permission_tables",
 			Run: func(logger *zap.Logger) error {
@@ -151,34 +280,43 @@ func runNamedMigrations(logger *zap.Logger) error {
 					}
 				}
 
-				var actions []usermodel.PermissionAction
-				if err := database.DB.Order("created_at ASC, id ASC").Find(&actions).Error; err != nil {
+				hasResourceCode, err := hasColumn("permission_actions", "resource_code")
+				if err != nil {
+					return err
+				}
+				hasActionCode, err := hasColumn("permission_actions", "action_code")
+				if err != nil {
+					return err
+				}
+				type legacyPermissionAction struct {
+					ID            uuid.UUID
+					PermissionKey string
+					ResourceCode  string
+					ActionCode    string
+				}
+				var actions []legacyPermissionAction
+				selects := []string{"id", "permission_key"}
+				if hasResourceCode {
+					selects = append(selects, "resource_code")
+				}
+				if hasActionCode {
+					selects = append(selects, "action_code")
+				}
+				if err := database.DB.Table("permission_actions").Select(strings.Join(selects, ", ")).Order("created_at ASC, id ASC").Scan(&actions).Error; err != nil {
 					return err
 				}
 
 				canonicalByKey := make(map[string]uuid.UUID, len(actions))
 				duplicateIDs := make([]uuid.UUID, 0)
 				for _, action := range actions {
-					mapping := permissionkey.FromLegacy(action.ResourceCode, action.ActionCode)
 					targetKey := permissionkey.Normalize(action.PermissionKey)
-					if targetKey == "" {
+					if targetKey == "" && hasResourceCode && hasActionCode {
+						mapping := permissionkey.FromLegacy(action.ResourceCode, action.ActionCode)
 						targetKey = mapping.Key
-					}
-					targetResource := strings.TrimSpace(mapping.ResourceCode)
-					if targetResource == "" {
-						targetResource = strings.TrimSpace(action.ResourceCode)
-					}
-					targetAction := strings.TrimSpace(mapping.ActionCode)
-					if targetAction == "" {
-						targetAction = strings.TrimSpace(action.ActionCode)
 					}
 					if err := database.DB.Model(&usermodel.PermissionAction{}).
 						Where("id = ?", action.ID).
-						Updates(map[string]interface{}{
-							"permission_key": targetKey,
-							"resource_code":  targetResource,
-							"action_code":    targetAction,
-						}).Error; err != nil {
+						Update("permission_key", targetKey).Error; err != nil {
 						return err
 					}
 					if canonicalID, exists := canonicalByKey[targetKey]; exists {
@@ -198,7 +336,6 @@ func runNamedMigrations(logger *zap.Logger) error {
 				}
 
 				finishStatements := []string{
-					`UPDATE permission_actions SET permission_key = CONCAT(resource_code, '.', action_code) WHERE COALESCE(permission_key, '') = ''`,
 					`ALTER TABLE permission_actions ALTER COLUMN permission_key SET NOT NULL`,
 					`DROP INDEX IF EXISTS idx_permission_actions_permission_key`,
 					`CREATE UNIQUE INDEX IF NOT EXISTS idx_permission_actions_permission_key ON permission_actions (permission_key) WHERE deleted_at IS NULL`,
@@ -216,8 +353,12 @@ func runNamedMigrations(logger *zap.Logger) error {
 		{
 			Name: "20260324_permission_key_dot_cleanup",
 			Run: func(logger *zap.Logger) error {
-				var actions []usermodel.PermissionAction
-				if err := database.DB.Where("permission_key LIKE ?", "%:%").Order("created_at ASC, id ASC").Find(&actions).Error; err != nil {
+				type legacyPermissionAction struct {
+					ID            uuid.UUID
+					PermissionKey string
+				}
+				var actions []legacyPermissionAction
+				if err := database.DB.Table("permission_actions").Select("id, permission_key").Where("permission_key LIKE ?", "%:%").Order("created_at ASC, id ASC").Scan(&actions).Error; err != nil {
 					return err
 				}
 				if len(actions) == 0 {
@@ -226,8 +367,8 @@ func runNamedMigrations(logger *zap.Logger) error {
 				}
 
 				canonicalByKey := map[string]uuid.UUID{}
-				var existing []usermodel.PermissionAction
-				if err := database.DB.Order("created_at ASC, id ASC").Find(&existing).Error; err != nil {
+				var existing []legacyPermissionAction
+				if err := database.DB.Table("permission_actions").Select("id, permission_key").Order("created_at ASC, id ASC").Scan(&existing).Error; err != nil {
 					return err
 				}
 				for _, action := range existing {
@@ -242,18 +383,9 @@ func runNamedMigrations(logger *zap.Logger) error {
 
 				updatedCount := 0
 				for _, action := range actions {
-					mapping := permissionkey.FromLegacy(action.ResourceCode, action.ActionCode)
-					targetKey := permissionkey.Normalize(mapping.Key)
+					targetKey := permissionkey.Normalize(action.PermissionKey)
 					if targetKey == "" {
 						continue
-					}
-					targetResource := strings.TrimSpace(mapping.ResourceCode)
-					if targetResource == "" {
-						targetResource = strings.TrimSpace(action.ResourceCode)
-					}
-					targetAction := strings.TrimSpace(mapping.ActionCode)
-					if targetAction == "" {
-						targetAction = strings.TrimSpace(action.ActionCode)
 					}
 					if canonicalID, exists := canonicalByKey[targetKey]; exists && canonicalID != action.ID {
 						if err := rebindPermissionActionReferences(action.ID, canonicalID); err != nil {
@@ -267,11 +399,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 					}
 					if err := database.DB.Model(&usermodel.PermissionAction{}).
 						Where("id = ?", action.ID).
-						Updates(map[string]interface{}{
-							"permission_key": targetKey,
-							"resource_code":  targetResource,
-							"action_code":    targetAction,
-						}).Error; err != nil {
+						Update("permission_key", targetKey).Error; err != nil {
 						return err
 					}
 					canonicalByKey[targetKey] = action.ID
@@ -307,7 +435,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 					`UPDATE permission_actions SET context_type = 'team' WHERE permission_key LIKE 'team.%'`,
 					`UPDATE permission_actions SET permission_key = 'system.permission.manage', context_type = 'platform' WHERE permission_key IN ('system_permission.manage_action_registry', 'permission_action.manage')`,
 					`UPDATE permission_actions SET permission_key = 'system.role.assign_action', context_type = 'platform' WHERE permission_key = 'system_permission.assign_role_action'`,
-					`UPDATE permission_actions SET context_type = 'platform' WHERE resource_code IN ('role', 'user', 'menu', 'menu_backup', 'permission_action', 'api_endpoint', 'feature_package')`,
+					`UPDATE permission_actions SET context_type = 'platform' WHERE module_code IN ('role', 'user', 'menu', 'menu_backup', 'permission_action', 'api_endpoint', 'feature_package')`,
 					`UPDATE permission_actions SET context_type = 'platform' WHERE permission_key IN ('feature_package.assign_action', 'feature_package.assign_menu', 'feature_package.assign_team')`,
 					`UPDATE permission_actions SET context_type = 'team' WHERE permission_key IN ('team.configure_action_boundary', 'team.configure_menu_boundary')`,
 				}
@@ -327,30 +455,98 @@ func runNamedMigrations(logger *zap.Logger) error {
 				statements := []string{
 					`UPDATE permission_actions SET status = 'normal' WHERE COALESCE(status, '') = ''`,
 					`UPDATE user_action_permissions SET effect = 'allow' WHERE COALESCE(effect, '') = ''`,
-					`UPDATE permission_actions SET source = 'system' WHERE COALESCE(source, '') = ''`,
-					`UPDATE permission_actions SET module_code = COALESCE(NULLIF(module_code, ''), resource_code)`,
 					`ALTER TABLE permission_actions ADD COLUMN IF NOT EXISTS context_type varchar(20)`,
 					`UPDATE permission_actions SET context_type = 'platform' WHERE COALESCE(context_type, '') = '' AND (permission_key LIKE 'system.%' OR permission_key LIKE 'tenant.%' OR permission_key LIKE 'platform.%')`,
 					`UPDATE permission_actions SET context_type = 'team' WHERE COALESCE(context_type, '') = ''`,
 					`UPDATE permission_actions SET feature_kind = 'system' WHERE COALESCE(feature_kind, '') = ''`,
-					`UPDATE permission_actions SET feature_kind = 'business' WHERE source = 'business' AND COALESCE(feature_kind, '') <> 'business'`,
-					`UPDATE permission_actions SET source = 'system', feature_kind = 'system', module_code = 'system_permission' WHERE resource_code = 'system_permission'`,
 					`UPDATE api_endpoints SET feature_kind = 'system' WHERE COALESCE(feature_kind, '') = ''`,
-					`UPDATE permission_actions pa
-					   SET source = 'api',
-					       module_code = COALESCE(NULLIF(ae.module, ''), pa.module_code)
-					  FROM api_endpoints ae
-					 WHERE pa.resource_code = ae.resource_code
-					   AND pa.action_code = ae.action_code
-					   AND COALESCE(ae.resource_code, '') <> ''
-					   AND COALESCE(ae.action_code, '') <> ''`,
 				}
 				for _, statement := range statements {
 					if err := database.DB.Exec(statement).Error; err != nil {
 						return err
 					}
 				}
+				var actions []usermodel.PermissionAction
+				if err := database.DB.Find(&actions).Error; err != nil {
+					return err
+				}
+				for _, action := range actions {
+					if strings.TrimSpace(action.ModuleCode) != "" {
+						continue
+					}
+					moduleCode := strings.TrimSpace(permissionkey.FromKey(action.PermissionKey).ResourceCode)
+					if moduleCode == "" {
+						continue
+					}
+					if err := database.DB.Model(&usermodel.PermissionAction{}).
+						Where("id = ?", action.ID).
+						Update("module_code", moduleCode).Error; err != nil {
+						return err
+					}
+				}
 				logger.Info("Named migration applied", zap.String("name", "20260323_permission_system_backfill_defaults"))
+				return nil
+			},
+		},
+		{
+			Name: "20260324_permission_action_drop_source_column",
+			Run: func(logger *zap.Logger) error {
+				hasSource, err := hasColumn("permission_actions", "source")
+				if err != nil {
+					return err
+				}
+				if !hasSource {
+					logger.Info("Named migration skipped", zap.String("name", "20260324_permission_action_drop_source_column"))
+					return nil
+				}
+				if err := database.DB.Exec(`ALTER TABLE permission_actions DROP COLUMN IF EXISTS source`).Error; err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260324_permission_action_drop_source_column"))
+				return nil
+			},
+		},
+		{
+			Name: "20260324_permission_action_drop_source_column_v2",
+			Run: func(logger *zap.Logger) error {
+				hasSource, err := hasColumn("permission_actions", "source")
+				if err != nil {
+					return err
+				}
+				if !hasSource {
+					logger.Info("Named migration skipped", zap.String("name", "20260324_permission_action_drop_source_column_v2"))
+					return nil
+				}
+				if err := database.DB.Exec(`ALTER TABLE permission_actions DROP COLUMN IF EXISTS source`).Error; err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260324_permission_action_drop_source_column_v2"))
+				return nil
+			},
+		},
+		{
+			Name: "20260324_permission_action_drop_legacy_code_columns",
+			Run: func(logger *zap.Logger) error {
+				if err := database.DB.Exec(`ALTER TABLE permission_actions DROP COLUMN IF EXISTS resource_code`).Error; err != nil {
+					return err
+				}
+				if err := database.DB.Exec(`ALTER TABLE permission_actions DROP COLUMN IF EXISTS action_code`).Error; err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260324_permission_action_drop_legacy_code_columns"))
+				return nil
+			},
+		},
+		{
+			Name: "20260324_permission_action_drop_legacy_code_columns_v2",
+			Run: func(logger *zap.Logger) error {
+				if err := database.DB.Exec(`ALTER TABLE permission_actions DROP COLUMN IF EXISTS resource_code`).Error; err != nil {
+					return err
+				}
+				if err := database.DB.Exec(`ALTER TABLE permission_actions DROP COLUMN IF EXISTS action_code`).Error; err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260324_permission_action_drop_legacy_code_columns_v2"))
 				return nil
 			},
 		},
@@ -614,10 +810,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 						updates["description"] = strings.TrimSpace(mapping.Description)
 					}
 					if strings.TrimSpace(mapping.ResourceCode) != "" {
-						updates["resource_code"] = strings.TrimSpace(mapping.ResourceCode)
-					}
-					if strings.TrimSpace(mapping.ActionCode) != "" {
-						updates["action_code"] = strings.TrimSpace(mapping.ActionCode)
+						updates["module_code"] = strings.TrimSpace(mapping.ResourceCode)
 					}
 					if strings.TrimSpace(mapping.ContextType) != "" {
 						updates["context_type"] = strings.TrimSpace(mapping.ContextType)
@@ -750,9 +943,8 @@ func runNamedMigrations(logger *zap.Logger) error {
 			Run: func(logger *zap.Logger) error {
 				statements := []string{
 					`DELETE FROM menus WHERE name = 'Scope' OR path = 'scope' OR component = '/system/scope'`,
-					`DELETE FROM user_action_permissions WHERE action_id IN (SELECT id FROM permission_actions WHERE resource_code = 'scope')`,
-					`DELETE FROM permission_actions WHERE resource_code = 'scope'`,
-					`DELETE FROM api_endpoints WHERE resource_code = 'scope'`,
+					`DELETE FROM user_action_permissions WHERE action_id IN (SELECT id FROM permission_actions WHERE permission_key LIKE 'scope.%')`,
+					`DELETE FROM permission_actions WHERE permission_key LIKE 'scope.%'`,
 					`ALTER TABLE role_data_permissions ADD COLUMN IF NOT EXISTS data_scope varchar(30)`,
 					`ALTER TABLE roles DROP COLUMN IF EXISTS scope_id`,
 					`ALTER TABLE permission_actions DROP COLUMN IF EXISTS scope_id`,
@@ -899,12 +1091,236 @@ func rebindPermissionActionReferences(fromID, toID uuid.UUID) error {
 			sql:  `DELETE FROM user_action_permissions WHERE action_id = ?`,
 			args: []interface{}{fromID},
 		},
+		{
+			sql: `UPDATE feature_package_actions target
+				    SET action_id = ?
+				  WHERE action_id = ?
+				    AND NOT EXISTS (
+				      SELECT 1 FROM feature_package_actions existing
+				      WHERE existing.package_id = target.package_id
+				        AND existing.action_id = ?
+				    )`,
+			args: []interface{}{toID, fromID, toID},
+		},
+		{
+			sql:  `DELETE FROM feature_package_actions WHERE action_id = ?`,
+			args: []interface{}{fromID},
+		},
+		{
+			sql: `UPDATE role_disabled_actions target
+				    SET action_id = ?
+				  WHERE action_id = ?
+				    AND NOT EXISTS (
+				      SELECT 1 FROM role_disabled_actions existing
+				      WHERE existing.role_id = target.role_id
+				        AND existing.action_id = ?
+				    )`,
+			args: []interface{}{toID, fromID, toID},
+		},
+		{
+			sql:  `DELETE FROM role_disabled_actions WHERE action_id = ?`,
+			args: []interface{}{fromID},
+		},
+		{
+			sql: `UPDATE team_blocked_actions target
+				    SET action_id = ?
+				  WHERE action_id = ?
+				    AND NOT EXISTS (
+				      SELECT 1 FROM team_blocked_actions existing
+				      WHERE existing.team_id = target.team_id
+				        AND existing.action_id = ?
+				    )`,
+			args: []interface{}{toID, fromID, toID},
+		},
+		{
+			sql:  `DELETE FROM team_blocked_actions WHERE action_id = ?`,
+			args: []interface{}{fromID},
+		},
 	}
 	for _, statement := range statements {
 		if err := database.DB.Exec(statement.sql, statement.args...).Error; err != nil {
 			return err
 		}
 	}
+	return nil
+}
+
+func mergeDeprecatedTeamPermissionKeys(logger *zap.Logger) error {
+	merges := []struct {
+		From string
+		To   string
+	}{
+		{From: "tenant.member.manage", To: "tenant.manage"},
+		{From: "tenant.boundary.manage", To: "tenant.manage"},
+		{From: "tenant.configure_menu_boundary", To: "tenant.manage"},
+		{From: "user.assign_menu", To: "system.user.manage"},
+		{From: "team.member.assign_role", To: "team.member.manage"},
+		{From: "team.member.assign_action", To: "team.member.manage"},
+		{From: "team.configure_menu_boundary", To: "team.boundary.manage"},
+		{From: "feature_package.assign_menu", To: "platform.package.manage"},
+	}
+
+	mergedCount := 0
+	for _, item := range merges {
+		var fromAction usermodel.PermissionAction
+		if err := database.DB.Where("permission_key = ?", item.From).First(&fromAction).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				continue
+			}
+			return err
+		}
+
+		var toAction usermodel.PermissionAction
+		if err := database.DB.Where("permission_key = ?", item.To).First(&toAction).Error; err != nil {
+			return err
+		}
+
+		if err := rebindPermissionActionReferences(fromAction.ID, toAction.ID); err != nil {
+			return err
+		}
+		if err := database.DB.Delete(&usermodel.PermissionAction{}, fromAction.ID).Error; err != nil {
+			return err
+		}
+		mergedCount++
+	}
+
+	logger.Info("Deprecated team permission key merge applied", zap.Int("merged", mergedCount))
+	return nil
+}
+
+func syncCanonicalPermissionActions(logger *zap.Logger) error {
+	seen := make(map[string]struct{})
+	updatedCount := 0
+	for _, mapping := range permissionkey.ListMappings() {
+		if mapping.Key == "" {
+			continue
+		}
+		if _, exists := seen[mapping.Key]; exists {
+			continue
+		}
+		seen[mapping.Key] = struct{}{}
+
+		updates := map[string]interface{}{
+			"permission_key": mapping.Key,
+			"name":           mapping.Name,
+			"description":    mapping.Description,
+			"context_type":   mapping.ContextType,
+			"module_code":    strings.TrimSpace(mapping.ResourceCode),
+			"updated_at":     time.Now(),
+		}
+		result := database.DB.Model(&usermodel.PermissionAction{}).
+			Where("permission_key = ? AND deleted_at IS NULL", mapping.Key).
+			Updates(updates)
+		if result.Error != nil {
+			return result.Error
+		}
+		updatedCount += int(result.RowsAffected)
+	}
+	logger.Info("Canonical permission action sync applied", zap.Int("updated", updatedCount))
+	return nil
+}
+
+func backfillTenantIdentityUserRoles(logger *zap.Logger) error {
+	type tenantMemberRow struct {
+		TenantID uuid.UUID
+		UserID   uuid.UUID
+		RoleCode string
+		Status   string
+	}
+
+	var members []tenantMemberRow
+	if err := database.DB.Model(&usermodel.TenantMember{}).
+		Select("tenant_id, user_id, role_code, status").
+		Where("status = ?", "active").
+		Find(&members).Error; err != nil {
+		return err
+	}
+	if len(members) == 0 {
+		logger.Info("Tenant identity user role backfill applied", zap.Int("members", 0), zap.Int("rebound", 0), zap.Int("teams", 0))
+		return nil
+	}
+
+	roleCodes := make([]string, 0)
+	seenCodes := make(map[string]struct{})
+	for _, member := range members {
+		code := strings.TrimSpace(member.RoleCode)
+		if code == "" {
+			continue
+		}
+		if _, exists := seenCodes[code]; exists {
+			continue
+		}
+		seenCodes[code] = struct{}{}
+		roleCodes = append(roleCodes, code)
+	}
+	if len(roleCodes) == 0 {
+		logger.Info("Tenant identity user role backfill applied", zap.Int("members", len(members)), zap.Int("rebound", 0), zap.Int("teams", 0))
+		return nil
+	}
+
+	var roles []usermodel.Role
+	if err := database.DB.Where("tenant_id IS NULL AND code IN ?", roleCodes).Find(&roles).Error; err != nil {
+		return err
+	}
+	roleIDByCode := make(map[string]uuid.UUID, len(roles))
+	identityRoleIDs := make([]uuid.UUID, 0, len(roles))
+	for _, role := range roles {
+		code := strings.TrimSpace(role.Code)
+		if code == "" {
+			continue
+		}
+		roleIDByCode[code] = role.ID
+		identityRoleIDs = append(identityRoleIDs, role.ID)
+	}
+	if len(identityRoleIDs) == 0 {
+		logger.Info("Tenant identity user role backfill applied", zap.Int("members", len(members)), zap.Int("rebound", 0), zap.Int("teams", 0))
+		return nil
+	}
+
+	reboundCount := 0
+	touchedTeams := make([]uuid.UUID, 0)
+	seenTeams := make(map[uuid.UUID]struct{})
+	if err := database.DB.Transaction(func(tx *gorm.DB) error {
+		for _, member := range members {
+			roleID, ok := roleIDByCode[strings.TrimSpace(member.RoleCode)]
+			if !ok {
+				continue
+			}
+			if err := tx.Where("user_id = ? AND tenant_id = ? AND role_id IN ?", member.UserID, member.TenantID, identityRoleIDs).
+				Delete(&usermodel.UserRole{}).Error; err != nil {
+				return err
+			}
+			record := usermodel.UserRole{
+				UserID:   member.UserID,
+				RoleID:   roleID,
+				TenantID: &member.TenantID,
+			}
+			if err := tx.Create(&record).Error; err != nil {
+				return err
+			}
+			reboundCount++
+			if _, exists := seenTeams[member.TenantID]; !exists {
+				seenTeams[member.TenantID] = struct{}{}
+				touchedTeams = append(touchedTeams, member.TenantID)
+			}
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	boundaryService := teamboundary.NewService(database.DB)
+	for _, teamID := range touchedTeams {
+		if _, err := boundaryService.RefreshSnapshot(teamID); err != nil {
+			return err
+		}
+	}
+
+	logger.Info("Tenant identity user role backfill applied",
+		zap.Int("members", len(members)),
+		zap.Int("rebound", reboundCount),
+		zap.Int("teams", len(touchedTeams)),
+	)
 	return nil
 }
 
@@ -1057,46 +1473,7 @@ func initDefaultMenusNoScope(logger *zap.Logger) error {
 		return err
 	}
 
-	metaSuperAdmin := usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}}
-	metaSuperAdminAndAdmin := usermodel.MetaJSON{"roles": []interface{}{"R_SUPER", "R_ADMIN"}}
-	metaTeamAdminOnly := usermodel.MetaJSON{
-		"roles":     []interface{}{"R_ADMIN"},
-		"keepAlive": true,
-	}
-
-	specs := []menuSeedSpec{
-		{Name: "Dashboard", Path: "/dashboard", Component: "/index/index", Title: "menus.dashboard.title", Icon: "ri:pie-chart-line", SortOrder: 1, Meta: metaSuperAdminAndAdmin},
-		{Name: "System", Path: "/system", Component: "/index/index", Title: "menus.system.title", Icon: "ri:user-3-line", SortOrder: 2, Meta: metaSuperAdminAndAdmin},
-		{Name: "Result", Path: "/result", Component: "/index/index", Title: "menus.result.title", Icon: "ri:checkbox-circle-line", SortOrder: 3},
-		{Name: "Exception", Path: "/exception", Component: "/index/index", Title: "menus.exception.title", Icon: "ri:error-warning-line", SortOrder: 4},
-		{Name: "TeamRoot", Path: "/team", Component: "/index/index", Title: "menus.system.team", Icon: "ri:team-line", SortOrder: 5, Meta: metaSuperAdminAndAdmin},
-
-		{Name: "Console", ParentName: "Dashboard", Path: "console", Component: "/dashboard/console", Title: "menus.dashboard.console", SortOrder: 1, Meta: usermodel.MetaJSON{"keepAlive": false, "fixedTab": true}},
-		{Name: "UserCenter", ParentName: "Dashboard", Path: "user-center", Component: "/system/user-center", Title: "menus.system.userCenter", SortOrder: 2, Meta: usermodel.MetaJSON{"isHide": true, "keepAlive": true, "isHideTab": true}},
-
-		{Name: "Role", ParentName: "System", Path: "role", Component: "/system/role", Title: "menus.system.role", SortOrder: 1, Meta: metaSuperAdmin},
-		{Name: "User", ParentName: "System", Path: "user", Component: "/system/user", Title: "menus.system.user", SortOrder: 2, Meta: metaSuperAdminAndAdmin},
-		{Name: "TeamRolesAndPermissions", ParentName: "System", Path: "team-roles-permissions", Component: "/system/team-roles-permissions", Title: "menus.system.teamRolesAndPermissions", SortOrder: 3, Meta: metaSuperAdmin},
-		{Name: "Menus", ParentName: "System", Path: "menu", Component: "/system/menu", Title: "menus.system.menu", SortOrder: 4, Meta: usermodel.MetaJSON{
-			"roles":     []interface{}{"R_SUPER"},
-			"keepAlive": true,
-		}},
-		{Name: "ActionPermission", ParentName: "System", Path: "action-permission", Component: "/system/action-permission", Title: "功能权限", SortOrder: 5, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
-		{Name: "ApiEndpoint", ParentName: "System", Path: "api-endpoint", Component: "/system/api-endpoint", Title: "API管理", SortOrder: 6, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
-		{Name: "FeaturePackage", ParentName: "System", Path: "feature-package", Component: "/system/feature-package", Title: "功能包管理", SortOrder: 7, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
-
-		{Name: "TeamManagement", ParentName: "TeamRoot", Path: "team", Component: "/team/team", Title: "团队管理", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
-		{Name: "TeamMembers", ParentName: "TeamRoot", Path: "members", Component: "/team/team-members", Title: "menus.system.teamMembers", SortOrder: 2, Meta: metaTeamAdminOnly},
-
-		{Name: "ResultSuccess", ParentName: "Result", Path: "success", Component: "/result/success", Title: "menus.result.success", Icon: "ri:checkbox-circle-line", SortOrder: 1, Meta: usermodel.MetaJSON{"keepAlive": true}},
-		{Name: "ResultFail", ParentName: "Result", Path: "fail", Component: "/result/fail", Title: "menus.result.fail", Icon: "ri:close-circle-line", SortOrder: 2, Meta: usermodel.MetaJSON{"keepAlive": true}},
-
-		{Name: "Exception403", ParentName: "Exception", Path: "403", Component: "/exception/403", Title: "menus.exception.forbidden", SortOrder: 1, Meta: usermodel.MetaJSON{"keepAlive": true, "isHideTab": true, "isFullPage": true}},
-		{Name: "Exception404", ParentName: "Exception", Path: "404", Component: "/exception/404", Title: "menus.exception.notFound", SortOrder: 2, Meta: usermodel.MetaJSON{"keepAlive": true, "isHideTab": true, "isFullPage": true}},
-		{Name: "Exception500", ParentName: "Exception", Path: "500", Component: "/exception/500", Title: "menus.exception.serverError", SortOrder: 3, Meta: usermodel.MetaJSON{"keepAlive": true, "isHideTab": true, "isFullPage": true}},
-	}
-
-	for _, spec := range specs {
+	for _, spec := range permissionseed.DefaultMenus() {
 		if _, err := ensureMenuSeed(spec); err != nil {
 			return err
 		}
@@ -1106,18 +1483,7 @@ func initDefaultMenusNoScope(logger *zap.Logger) error {
 	return nil
 }
 
-type menuSeedSpec struct {
-	Name       string
-	ParentName string
-	Path       string
-	Component  string
-	Title      string
-	Icon       string
-	SortOrder  int
-	Meta       usermodel.MetaJSON
-}
-
-func ensureMenuSeed(spec menuSeedSpec) (*usermodel.Menu, error) {
+func ensureMenuSeed(spec permissionseed.MenuSeed) (*usermodel.Menu, error) {
 	var existing usermodel.Menu
 	if err := database.DB.Where("name = ?", spec.Name).First(&existing).Error; err == nil {
 		return &existing, nil
@@ -1151,7 +1517,7 @@ func ensureMenuSeed(spec menuSeedSpec) (*usermodel.Menu, error) {
 }
 
 func cleanupDeprecatedMenus(logger *zap.Logger) error {
-	deprecatedNames := []string{"PageAssociation", "TeamManagementRedirect", "Scope"}
+	deprecatedNames := permissionseed.DeprecatedDefaultMenuNames()
 	var deprecatedMenus []usermodel.Menu
 	if err := database.DB.Where("name IN ?", deprecatedNames).Find(&deprecatedMenus).Error; err != nil {
 		return err
@@ -1199,478 +1565,131 @@ func deleteMenuTree(rootID uuid.UUID) error {
 	return database.DB.Where("id IN ?", collected).Delete(&usermodel.Menu{}).Error
 }
 
+func initDefaultPermissionGroups(logger *zap.Logger) error {
+	if err := permissionseed.EnsureDefaultPermissionGroups(database.DB); err != nil {
+		return err
+	}
+	logger.Info("Default permission groups seeded")
+	return nil
+}
+
 func initDefaultPermissionActionsNoScope(logger *zap.Logger) error {
-	for index, actionSeed := range defaultPermissionActionSeeds() {
-		actionData := usermodel.PermissionAction{
-			PermissionKey: actionSeed.PermissionKey,
-			ResourceCode:  actionSeed.ResourceCode,
-			ActionCode:    actionSeed.ActionCode,
-			ModuleCode:    actionSeed.ModuleCode,
-			ContextType:   actionSeed.ContextType,
-			Source:        actionSeed.Source,
-			FeatureKind:   actionSeed.FeatureKind,
-			Name:          actionSeed.Name,
-			Description:   actionSeed.Description,
-			Status:        "normal",
-			SortOrder:     index + 1,
-		}
-		var action usermodel.PermissionAction
-		result := database.DB.Where("permission_key = ?", actionData.PermissionKey).First(&action)
-		if result.Error != nil {
-			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				if err := database.DB.Create(&actionData).Error; err != nil {
-					return err
-				}
-				continue
-			}
-			return result.Error
-		}
-		updates := map[string]interface{}{
-			"permission_key": actionData.PermissionKey,
-			"resource_code":  actionData.ResourceCode,
-			"action_code":    actionData.ActionCode,
-			"name":           actionData.Name,
-			"description":    actionData.Description,
-			"module_code":    actionData.ModuleCode,
-			"context_type":   actionData.ContextType,
-			"source":         actionData.Source,
-			"feature_kind":   actionData.FeatureKind,
-			"status":         actionData.Status,
-			"sort_order":     actionData.SortOrder,
-		}
-		if err := database.DB.Model(&action).Updates(updates).Error; err != nil {
-			return err
-		}
+	if err := permissionseed.EnsureDefaultPermissionKeys(database.DB); err != nil {
+		return err
 	}
 	logger.Info("Default permission actions seeded")
 	return nil
 }
 
-type permissionActionSeed struct {
-	PermissionKey string
-	ResourceCode  string
-	ActionCode    string
-	ModuleCode    string
-	ContextType   string
-	Source        string
-	FeatureKind   string
-	Name          string
-	Description   string
-}
-
-type featurePackageSeed struct {
-	PackageKey     string
-	PackageType    string
-	Name           string
-	Description    string
-	ContextType    string
-	IsBuiltin      bool
-	Status         string
-	SortOrder      int
-	MenuNames      []string
-	PermissionKeys []string
-}
-
-func defaultPermissionActionSeeds() []permissionActionSeed {
-	return []permissionActionSeed{
-		newPermissionActionSeed("role", "list", "查看角色列表", "允许查看角色列表"),
-		newPermissionActionSeed("role", "get", "查看角色详情", "允许查看角色详情"),
-		newPermissionActionSeed("role", "create", "创建角色", "允许创建角色"),
-		newPermissionActionSeed("role", "update", "更新角色", "允许更新角色"),
-		newPermissionActionSeed("role", "delete", "删除角色", "允许删除角色"),
-		newPermissionActionSeed("role", "assign_menu", "配置角色菜单权限", "允许为角色配置菜单权限"),
-		newPermissionActionSeed("role", "assign_action", "配置角色功能权限", "允许为角色配置功能权限"),
-		newPermissionActionSeed("role", "assign_data", "配置角色数据权限", "允许为角色配置数据权限"),
-		newPermissionActionSeed("permission_action", "list", "查看功能权限列表", "允许查看功能权限列表"),
-		newPermissionActionSeed("permission_action", "get", "查看功能权限详情", "允许查看功能权限详情"),
-		newPermissionActionSeed("permission_action", "create", "创建功能权限", "允许创建功能权限"),
-		newPermissionActionSeed("permission_action", "update", "更新功能权限", "允许更新功能权限"),
-		newPermissionActionSeed("permission_action", "delete", "删除功能权限", "允许删除功能权限"),
-		newPermissionActionSeed("user", "list", "查看用户列表", "允许查看用户列表"),
-		newPermissionActionSeed("user", "get", "查看用户详情", "允许查看用户详情"),
-		newPermissionActionSeed("user", "create", "创建用户", "允许创建用户"),
-		newPermissionActionSeed("user", "update", "更新用户", "允许更新用户"),
-		newPermissionActionSeed("user", "delete", "删除用户", "允许删除用户"),
-		newPermissionActionSeed("user", "assign_role", "分配用户角色", "允许为用户分配角色"),
-		newPermissionActionSeed("user", "assign_action", "配置用户功能权限", "允许为用户配置平台级功能权限"),
-		newPermissionActionSeed("menu", "list", "查看菜单管理树", "允许查看全部菜单管理树"),
-		newPermissionActionSeed("menu", "create", "创建菜单", "允许创建菜单"),
-		newPermissionActionSeed("menu", "update", "更新菜单", "允许更新菜单"),
-		newPermissionActionSeed("menu", "delete", "删除菜单", "允许删除菜单"),
-		newPermissionActionSeed("menu_backup", "create", "创建菜单备份", "允许创建菜单备份"),
-		newPermissionActionSeed("menu_backup", "list", "查看菜单备份列表", "允许查看菜单备份列表"),
-		newPermissionActionSeed("menu_backup", "delete", "删除菜单备份", "允许删除菜单备份"),
-		newPermissionActionSeed("menu_backup", "restore", "恢复菜单备份", "允许恢复菜单备份"),
-		newPermissionActionSeed("system", "view_page_catalog", "查看页面文件映射", "允许查看页面文件映射"),
-		newPermissionActionSeed("tenant", "list", "查看团队列表", "允许查看团队列表"),
-		newPermissionActionSeed("tenant", "get", "查看团队详情", "允许查看团队详情"),
-		newPermissionActionSeed("tenant", "create", "创建团队", "允许创建团队"),
-		newPermissionActionSeed("tenant", "update", "更新团队", "允许更新团队"),
-		newPermissionActionSeed("tenant", "delete", "删除团队", "允许删除团队"),
-		newPermissionActionSeed("tenant", "configure_action_boundary", "配置团队功能权限边界", "允许配置团队功能权限边界"),
-		newPermissionActionSeed("tenant_member_admin", "list", "查看团队成员列表", "允许在系统管理中查看团队成员列表"),
-		newPermissionActionSeed("tenant_member_admin", "create", "添加团队成员", "允许在系统管理中添加团队成员"),
-		newPermissionActionSeed("tenant_member_admin", "delete", "移除团队成员", "允许在系统管理中移除团队成员"),
-		newPermissionActionSeed("tenant_member_admin", "update_role", "更新团队成员身份", "允许在系统管理中更新团队成员身份"),
-		newPermissionActionSeed("team_member", "create", "添加当前团队成员", "允许在当前团队中添加成员"),
-		newPermissionActionSeed("team_member", "delete", "移除当前团队成员", "允许在当前团队中移除成员"),
-		newPermissionActionSeed("team_member", "update_role", "更新当前团队成员身份", "允许在当前团队中更新成员身份"),
-		newPermissionActionSeed("team_member", "assign_role", "配置当前团队成员角色", "允许在当前团队中配置成员角色"),
-		newPermissionActionSeed("team_member", "assign_action", "配置当前团队成员功能权限", "允许在当前团队中配置成员功能权限"),
-		newPermissionActionSeed("team", "configure_action_boundary", "查看和配置当前团队功能权限边界", "允许查看和配置当前团队功能权限边界"),
-		newPermissionActionSeed("api_endpoint", "list", "查看 API 注册表", "允许查看 API 注册表"),
-		newPermissionActionSeed("api_endpoint", "sync", "同步 API 注册表", "允许同步 API 注册表"),
-		newPermissionActionSeed("feature_package", "list", "查看功能包列表", "允许查看功能包列表"),
-		newPermissionActionSeed("feature_package", "get", "查看功能包详情", "允许查看功能包详情"),
-		newPermissionActionSeed("feature_package", "create", "创建功能包", "允许创建功能包"),
-		newPermissionActionSeed("feature_package", "update", "更新功能包", "允许更新功能包"),
-		newPermissionActionSeed("feature_package", "delete", "删除功能包", "允许删除功能包"),
-		newPermissionActionSeed("feature_package", "assign_action", "配置功能包权限", "允许配置功能包包含的功能权限"),
-		newPermissionActionSeed("feature_package", "assign_team", "配置团队功能包", "允许给团队开通功能包"),
-		newPermissionActionSeed("system_permission", "manage_action_registry", "管理功能权限注册表", "允许维护功能权限注册信息"),
-		newPermissionActionSeed("system_permission", "assign_role_action", "配置角色功能权限", "允许为角色分配功能权限"),
-	}
-}
-
-func newPermissionActionSeed(
-	resourceCode, actionCode, name, description string,
-) permissionActionSeed {
-	mapping := permissionkey.FromLegacy(resourceCode, actionCode)
-	moduleCode := strings.TrimSpace(mapping.ResourceCode)
-	if moduleCode == "" {
-		moduleCode = strings.TrimSpace(resourceCode)
-	}
-	displayName := strings.TrimSpace(mapping.Name)
-	if displayName == "" {
-		displayName = name
-	}
-	displayDescription := strings.TrimSpace(mapping.Description)
-	if displayDescription == "" {
-		displayDescription = description
-	}
-	return permissionActionSeed{
-		PermissionKey: mapping.Key,
-		ResourceCode:  mapping.ResourceCode,
-		ActionCode:    mapping.ActionCode,
-		ModuleCode:    moduleCode,
-		ContextType:   strings.TrimSpace(mapping.ContextType),
-		Source:        "system",
-		FeatureKind:   "system",
-		Name:          displayName,
-		Description:   displayDescription,
-	}
-}
-
-func defaultFeaturePackageSeeds() []featurePackageSeed {
-	return []featurePackageSeed{
-		{
-			PackageKey:     "platform.system_admin",
-			PackageType:    "base",
-			Name:           "平台系统管理包",
-			Description:    "包含平台系统管理核心能力",
-			ContextType:    "platform",
-			IsBuiltin:      true,
-			Status:         "normal",
-			SortOrder:      1,
-			MenuNames:      []string{"System", "Role", "User", "ActionPermission", "TeamRolesAndPermissions"},
-			PermissionKeys: []string{"system.user.manage", "system.role.manage", "system.permission.manage"},
-		},
-		{
-			PackageKey:     "platform.menu_admin",
-			PackageType:    "base",
-			Name:           "平台菜单管理包",
-			Description:    "包含菜单管理与菜单备份能力",
-			ContextType:    "platform",
-			IsBuiltin:      true,
-			Status:         "normal",
-			SortOrder:      2,
-			MenuNames:      []string{"System", "Menus"},
-			PermissionKeys: []string{"system.menu.manage", "system.menu.backup"},
-		},
-		{
-			PackageKey:     "platform.api_admin",
-			PackageType:    "base",
-			Name:           "平台接口管理包",
-			Description:    "包含 API 注册表查看与同步能力",
-			ContextType:    "platform",
-			IsBuiltin:      true,
-			Status:         "normal",
-			SortOrder:      3,
-			MenuNames:      []string{"System", "ApiEndpoint", "FeaturePackage"},
-			PermissionKeys: []string{"system.api_registry.view", "system.api_registry.sync", "platform.package.manage", "platform.package.assign"},
-		},
-		{
-			PackageKey:     "team.member_admin",
-			PackageType:    "base",
-			Name:           "团队成员管理包",
-			Description:    "包含团队成员、角色和功能权限配置能力",
-			ContextType:    "team",
-			IsBuiltin:      true,
-			Status:         "normal",
-			SortOrder:      10,
-			MenuNames:      []string{"TeamRoot", "TeamManagement", "TeamMembers"},
-			PermissionKeys: []string{"team.member.manage", "team.member.assign_role", "team.member.assign_action", "team.boundary.manage"},
-		},
-		{
-			PackageKey:  "platform.admin_bundle",
-			PackageType: "bundle",
-			Name:        "平台管理员组合包",
-			Description: "统一聚合平台系统、菜单与接口管理基础包",
-			ContextType: "platform",
-			IsBuiltin:   true,
-			Status:      "normal",
-			SortOrder:   4,
-		},
-	}
-}
-
-func defaultFeaturePackageBundleSeeds() map[string][]string {
-	return map[string][]string{
-		"platform.admin_bundle": {
-			"platform.system_admin",
-			"platform.menu_admin",
-			"platform.api_admin",
-		},
-	}
-}
-
 func initDefaultFeaturePackages(logger *zap.Logger) error {
-	for _, seed := range defaultFeaturePackageSeeds() {
-		item := usermodel.FeaturePackage{
-			PackageKey:  seed.PackageKey,
-			PackageType: seed.PackageType,
-			Name:        seed.Name,
-			Description: seed.Description,
-			ContextType: seed.ContextType,
-			IsBuiltin:   seed.IsBuiltin,
-			Status:      seed.Status,
-			SortOrder:   seed.SortOrder,
-		}
-
-		var existing usermodel.FeaturePackage
-		result := database.DB.Where("package_key = ?", item.PackageKey).First(&existing)
-		if result.Error != nil {
-			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-				if err := database.DB.Create(&item).Error; err != nil {
-					return err
-				}
-				existing = item
-			} else {
-				return result.Error
-			}
-		} else {
-			if err := database.DB.Model(&existing).Updates(map[string]interface{}{
-				"name":         item.Name,
-				"description":  item.Description,
-				"package_type": item.PackageType,
-				"context_type": item.ContextType,
-				"is_builtin":   item.IsBuiltin,
-				"status":       item.Status,
-				"sort_order":   item.SortOrder,
-			}).Error; err != nil {
-				return err
-			}
-		}
-
-		actionIDs := make([]uuid.UUID, 0, len(seed.PermissionKeys))
-		for _, permissionKey := range seed.PermissionKeys {
-			var action usermodel.PermissionAction
-			if err := database.DB.Where("permission_key = ?", permissionKey).First(&action).Error; err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
-					continue
-				}
-				return err
-			}
-			actionIDs = append(actionIDs, action.ID)
-		}
-
-		if err := database.DB.Where("package_id = ?", existing.ID).Delete(&usermodel.FeaturePackageAction{}).Error; err != nil {
-			return err
-		}
-		seen := make(map[uuid.UUID]struct{}, len(actionIDs))
-		records := make([]usermodel.FeaturePackageAction, 0, len(actionIDs))
-		for _, actionID := range actionIDs {
-			if _, ok := seen[actionID]; ok {
-				continue
-			}
-			seen[actionID] = struct{}{}
-			records = append(records, usermodel.FeaturePackageAction{PackageID: existing.ID, ActionID: actionID})
-		}
-		if len(records) > 0 {
-			if err := database.DB.Create(&records).Error; err != nil {
-				return err
-			}
-		}
-
-		menuIDs := make([]uuid.UUID, 0, len(seed.MenuNames))
-		for _, menuName := range seed.MenuNames {
-			var menu usermodel.Menu
-			if err := database.DB.Where("name = ?", menuName).First(&menu).Error; err != nil {
-				if errors.Is(err, gorm.ErrRecordNotFound) {
-					continue
-				}
-				return err
-			}
-			menuIDs = append(menuIDs, menu.ID)
-		}
-
-		if err := database.DB.Where("package_id = ?", existing.ID).Delete(&usermodel.FeaturePackageMenu{}).Error; err != nil {
-			return err
-		}
-		menuSeen := make(map[uuid.UUID]struct{}, len(menuIDs))
-		menuRecords := make([]usermodel.FeaturePackageMenu, 0, len(menuIDs))
-		for _, menuID := range menuIDs {
-			if _, ok := menuSeen[menuID]; ok {
-				continue
-			}
-			menuSeen[menuID] = struct{}{}
-			menuRecords = append(menuRecords, usermodel.FeaturePackageMenu{PackageID: existing.ID, MenuID: menuID})
-		}
-		if len(menuRecords) > 0 {
-			if err := database.DB.Create(&menuRecords).Error; err != nil {
-				return err
-			}
-		}
+	if err := permissionseed.EnsureDefaultFeaturePackages(database.DB); err != nil {
+		return err
 	}
 	logger.Info("Default feature packages seeded")
 	return nil
 }
 
 func initDefaultFeaturePackageBundles(logger *zap.Logger) error {
-	seeds := defaultFeaturePackageBundleSeeds()
-	if len(seeds) == 0 {
-		return nil
-	}
-
-	var packages []usermodel.FeaturePackage
-	packageKeys := make([]string, 0, len(seeds)*4)
-	for parentKey, childKeys := range seeds {
-		packageKeys = append(packageKeys, parentKey)
-		packageKeys = append(packageKeys, childKeys...)
-	}
-	if err := database.DB.Where("package_key IN ?", packageKeys).Find(&packages).Error; err != nil {
+	if err := permissionseed.EnsureDefaultFeaturePackageBundles(database.DB); err != nil {
 		return err
 	}
-	packageByKey := make(map[string]usermodel.FeaturePackage, len(packages))
-	for _, item := range packages {
-		packageByKey[item.PackageKey] = item
-	}
-
-	for parentKey, childKeys := range seeds {
-		parentPkg, ok := packageByKey[parentKey]
-		if !ok {
-			continue
-		}
-		if err := database.DB.Where("package_id = ?", parentPkg.ID).Delete(&usermodel.FeaturePackageBundle{}).Error; err != nil {
-			return err
-		}
-
-		seen := make(map[uuid.UUID]struct{}, len(childKeys))
-		records := make([]usermodel.FeaturePackageBundle, 0, len(childKeys))
-		for _, childKey := range childKeys {
-			childPkg, ok := packageByKey[childKey]
-			if !ok || childPkg.ID == parentPkg.ID {
-				continue
-			}
-			if _, exists := seen[childPkg.ID]; exists {
-				continue
-			}
-			seen[childPkg.ID] = struct{}{}
-			records = append(records, usermodel.FeaturePackageBundle{
-				PackageID:      parentPkg.ID,
-				ChildPackageID: childPkg.ID,
-			})
-		}
-		if len(records) > 0 {
-			if err := database.DB.Create(&records).Error; err != nil {
-				return err
-			}
-		}
-	}
-
 	logger.Info("Default feature package bundles seeded")
 	return nil
 }
 
 func initDefaultRoleFeaturePackages(logger *zap.Logger) error {
-	roleCodes := []string{"admin", "team_admin"}
-	packageKeys := []string{
-		"platform.system_admin",
-		"platform.menu_admin",
-		"platform.api_admin",
-		"platform.admin_bundle",
-		"team.member_admin",
-	}
-
-	var roles []usermodel.Role
-	if err := database.DB.Where("tenant_id IS NULL AND code IN ?", roleCodes).Find(&roles).Error; err != nil {
+	if err := permissionseed.EnsureDefaultRoleFeaturePackages(database.DB); err != nil {
 		return err
 	}
-	roleByCode := make(map[string]usermodel.Role, len(roles))
-	for _, role := range roles {
-		roleByCode[role.Code] = role
-	}
-
-	var packages []usermodel.FeaturePackage
-	if err := database.DB.Where("package_key IN ?", packageKeys).Find(&packages).Error; err != nil {
-		return err
-	}
-	packageByKey := make(map[string]usermodel.FeaturePackage, len(packages))
-	for _, item := range packages {
-		packageByKey[item.PackageKey] = item
-	}
-
-	assignments := map[string][]string{
-		"admin":      {"platform.admin_bundle"},
-		"team_admin": {"team.member_admin"},
-	}
-
-	for roleCode, keys := range assignments {
-		role, ok := roleByCode[roleCode]
-		if !ok {
-			continue
-		}
-		for _, packageKey := range keys {
-			pkg, ok := packageByKey[packageKey]
-			if !ok {
-				continue
-			}
-			record := usermodel.RoleFeaturePackage{
-				RoleID:    role.ID,
-				PackageID: pkg.ID,
-				Enabled:   true,
-			}
-			if err := database.DB.Where("role_id = ? AND package_id = ?", role.ID, pkg.ID).FirstOrCreate(&record).Error; err != nil {
-				return err
-			}
-			if err := database.DB.Model(&record).Update("enabled", true).Error; err != nil {
-				return err
-			}
-		}
-	}
-
-	adminRole, ok := roleByCode["admin"]
-	if ok {
-		legacyKeys := []string{"platform.system_admin", "platform.menu_admin", "platform.api_admin"}
-		legacyIDs := make([]uuid.UUID, 0, len(legacyKeys))
-		for _, packageKey := range legacyKeys {
-			if pkg, exists := packageByKey[packageKey]; exists {
-				legacyIDs = append(legacyIDs, pkg.ID)
-			}
-		}
-		if len(legacyIDs) > 0 {
-			if err := database.DB.Where("role_id = ? AND package_id IN ?", adminRole.ID, legacyIDs).
-				Delete(&usermodel.RoleFeaturePackage{}).Error; err != nil {
-				return err
-			}
-		}
-	}
-
 	logger.Info("Default role feature packages ensured")
 	return nil
 }
 
-func syncAPIRegistry(logger *zap.Logger, cfg *config.Config) error {
-	apirouter.SetupRouter(cfg, logger, database.DB)
+func refreshDefaultAccessSnapshots(logger *zap.Logger) error {
+	boundaryService := teamboundary.NewService(database.DB)
+	platformService := platformaccess.NewService(database.DB)
+	roleSnapshotService := platformroleaccess.NewService(database.DB)
+	refresher := permissionrefresh.NewService(database.DB, boundaryService, platformService, roleSnapshotService)
+
+	defaultRoleCodes := permissionseed.DefaultRoleCodes()
+	var roles []usermodel.Role
+	if err := database.DB.Where("tenant_id IS NULL AND code IN ?", defaultRoleCodes).Find(&roles).Error; err != nil {
+		return err
+	}
+	roleIDs := make([]uuid.UUID, 0, len(roles))
+	for _, role := range roles {
+		roleIDs = append(roleIDs, role.ID)
+	}
+	if err := refresher.RefreshPlatformRoles(roleIDs); err != nil {
+		return err
+	}
+
+	defaultPackageKeys := permissionseed.DefaultFeaturePackageKeys()
+	var packages []usermodel.FeaturePackage
+	if err := database.DB.Where("package_key IN ?", defaultPackageKeys).Find(&packages).Error; err != nil {
+		return err
+	}
+	packageIDs := make([]uuid.UUID, 0, len(packages))
+	for _, item := range packages {
+		packageIDs = append(packageIDs, item.ID)
+	}
+	if err := refresher.RefreshByPackages(packageIDs); err != nil {
+		return err
+	}
+
+	logger.Info("Default access snapshots refreshed", zap.Int("roles", len(roleIDs)), zap.Int("packages", len(packageIDs)))
 	return nil
+}
+
+func initDefaultAPIEndpointCategories(logger *zap.Logger) error {
+	if err := permissionseed.EnsureDefaultAPIEndpointCategories(database.DB); err != nil {
+		return err
+	}
+	logger.Info("Default api endpoint categories seeded")
+	return nil
+}
+
+func finalizeAPIEndpointSchema(logger *zap.Logger) error {
+	statements := []string{
+		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS category_id uuid`,
+		`UPDATE api_endpoints ae
+		    SET category_id = c.id
+		   FROM api_endpoint_categories c
+		  WHERE ae.category_id IS NULL
+		    AND c.code = ae.module`,
+		`ALTER TABLE api_endpoints DROP COLUMN IF EXISTS group_code`,
+		`ALTER TABLE api_endpoints DROP COLUMN IF EXISTS group_name`,
+	}
+	for _, statement := range statements {
+		if err := database.DB.Exec(statement).Error; err != nil {
+			return err
+		}
+	}
+	logger.Info("API endpoint schema finalized")
+	return nil
+}
+
+func syncAPIRegistry(logger *zap.Logger, cfg *config.Config) error {
+	router := apirouter.SetupRouter(cfg, logger, database.DB)
+	builder := permissionseed.NewDeploymentBuilder(database.DB, logger, router).
+		WithCoreDefaults()
+	builder.LogSummary()
+	return nil
+}
+
+func uniqueStrings(values []string) []string {
+	result := make([]string, 0, len(values))
+	seen := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		target := strings.TrimSpace(value)
+		if target == "" {
+			continue
+		}
+		if _, ok := seen[target]; ok {
+			continue
+		}
+		seen[target] = struct{}{}
+		result = append(result, target)
+	}
+	return result
 }

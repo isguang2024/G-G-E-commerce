@@ -30,15 +30,24 @@ func (m *Module) Init() error {
 
 func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	repo := user.NewAPIEndpointRepository(m.db)
-	service := NewService(m.db, repo, m.router, m.logger)
+	categoryRepo := user.NewAPIEndpointCategoryRepository(m.db)
+	bindingRepo := user.NewAPIEndpointPermissionBindingRepository(m.db)
+	service := NewService(m.db, repo, categoryRepo, bindingRepo, m.router, m.logger, m.config.Env)
 	handler := NewHandler(service, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 
 	endpoints := rg.Group("/api-endpoints")
 	reg := apiregistry.NewRegistrar(endpoints, "api_endpoint")
 	{
-		reg.GET("", &apiregistry.RouteMeta{Summary: "获取 API 注册表", ResourceCode: "api_endpoint", ActionCode: "list"}, authzService.RequireAction("system.api_registry.view"), handler.List)
-		reg.POST("/sync", &apiregistry.RouteMeta{Summary: "同步 API 注册表", ResourceCode: "api_endpoint", ActionCode: "sync"}, authzService.RequireAction("system.api_registry.sync"), handler.Sync)
+		reg.GETAction("/unregistered", "获取未注册 API 路由", "system.api_registry.view", authzService.RequireAction, handler.ListUnregistered)
+		reg.GETProtected("", reg.Meta("获取 API 注册表").BindGroup("api_endpoint").BindPermissionKey("system.api_registry.view").Build(), "system.api_registry.view", authzService.RequireAction, handler.List)
+		reg.GETProtected("/categories", reg.Meta("获取 API 分类").BindGroup("api_endpoint").BindPermissionKey("system.api_registry.view").Build(), "system.api_registry.view", authzService.RequireAction, handler.ListCategories)
+		reg.POSTProtected("/sync", reg.Meta("同步 API 注册表").BindGroup("api_endpoint").BindSource("manual").BindPermissionKey("system.api_registry.sync").Build(), "system.api_registry.sync", authzService.RequireAction, handler.Sync)
+		reg.POSTProtected("", reg.Meta("创建 API 注册项").BindGroup("api_endpoint").BindSource("manual").BindPermissionKey("system.api_registry.sync").Build(), "system.api_registry.sync", authzService.RequireAction, handler.Create)
+		reg.PUTProtected("/:id", reg.Meta("更新 API 注册项").BindGroup("api_endpoint").BindSource("manual").BindPermissionKey("system.api_registry.sync").Build(), "system.api_registry.sync", authzService.RequireAction, handler.Update)
+		reg.PUTProtected("/:id/context-scope", reg.Meta("更新 API 团队上下文").BindGroup("api_endpoint").BindSource("manual").BindPermissionKey("system.api_registry.sync").Build(), "system.api_registry.sync", authzService.RequireAction, handler.UpdateContextScope)
+		reg.POSTProtected("/categories", reg.Meta("创建 API 分类").BindGroup("api_endpoint").BindSource("manual").BindPermissionKey("system.api_registry.sync").Build(), "system.api_registry.sync", authzService.RequireAction, handler.SaveCategory)
+		reg.PUTProtected("/categories/:id", reg.Meta("更新 API 分类").BindGroup("api_endpoint").BindSource("manual").BindPermissionKey("system.api_registry.sync").Build(), "system.api_registry.sync", authzService.RequireAction, handler.UpdateCategory)
 	}
 }
 

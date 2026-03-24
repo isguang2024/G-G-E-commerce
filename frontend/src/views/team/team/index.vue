@@ -190,19 +190,19 @@
                           '编辑'
                         ])
                       : null,
-                    hasAction('tenant.member.manage')
+                    hasAction('tenant.manage')
                       ? h(ElDropdownItem, { command: 'view' }, () => [
                           h(ElIcon, {}, () => h(UserFilled)),
                           '查看人员'
                         ])
                       : null,
-                    hasAction('tenant.boundary.manage')
+                    hasAction('tenant.manage')
                       ? h(ElDropdownItem, { command: 'menu' }, () => [
                           h(ElIcon, {}, () => h(UserFilled)),
                           '菜单边界'
                         ])
                       : null,
-                    hasAction('tenant.boundary.manage')
+                    hasAction('tenant.manage')
                       ? h(ElDropdownItem, { command: 'action' }, () => [
                           h(ElIcon, {}, () => h(UserFilled)),
                           '团队边界'

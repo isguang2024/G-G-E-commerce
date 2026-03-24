@@ -12,24 +12,34 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
 var (
 	ErrPermissionActionNotFound = errors.New("permission action not found")
 	ErrPermissionActionExists   = errors.New("permission action already exists")
+	ErrPermissionGroupNotFound  = errors.New("permission group not found")
+	ErrPermissionGroupExists    = errors.New("permission group already exists")
 )
 
 type PermissionService interface {
 	List(req *dto.PermissionActionListRequest) ([]user.PermissionAction, int64, error)
 	Get(id uuid.UUID) (*user.PermissionAction, error)
+	ListGroups(req *dto.PermissionGroupListRequest) ([]user.PermissionGroup, int64, error)
+	ListEndpoints(id uuid.UUID) ([]user.APIEndpoint, error)
+	CreateGroup(req *dto.PermissionGroupSaveRequest) (*user.PermissionGroup, error)
+	UpdateGroup(id uuid.UUID, req *dto.PermissionGroupSaveRequest) error
 	Create(req *dto.PermissionActionCreateRequest) (*user.PermissionAction, error)
 	Update(id uuid.UUID, req *dto.PermissionActionUpdateRequest) error
 	Delete(id uuid.UUID) error
 }
 
 type permissionService struct {
+	groupRepo              user.PermissionGroupRepository
 	actionRepo             user.PermissionActionRepository
+	apiEndpointRepo        user.APIEndpointRepository
+	apiEndpointBindingRepo user.APIEndpointPermissionBindingRepository
 	packageActionRepo      user.FeaturePackageActionRepository
 	teamPackageRepo        user.TeamFeaturePackageRepository
 	roleDisabledActionRepo user.RoleDisabledActionRepository
@@ -40,7 +50,10 @@ type permissionService struct {
 }
 
 func NewPermissionService(
+	groupRepo user.PermissionGroupRepository,
 	actionRepo user.PermissionActionRepository,
+	apiEndpointRepo user.APIEndpointRepository,
+	apiEndpointBindingRepo user.APIEndpointPermissionBindingRepository,
 	packageActionRepo user.FeaturePackageActionRepository,
 	teamPackageRepo user.TeamFeaturePackageRepository,
 	roleDisabledActionRepo user.RoleDisabledActionRepository,
@@ -50,7 +63,10 @@ func NewPermissionService(
 	refresher permissionrefresh.Service,
 ) PermissionService {
 	return &permissionService{
+		groupRepo:              groupRepo,
 		actionRepo:             actionRepo,
+		apiEndpointRepo:        apiEndpointRepo,
+		apiEndpointBindingRepo: apiEndpointBindingRepo,
 		packageActionRepo:      packageActionRepo,
 		teamPackageRepo:        teamPackageRepo,
 		roleDisabledActionRepo: roleDisabledActionRepo,
@@ -61,6 +77,46 @@ func NewPermissionService(
 	}
 }
 
+func (s *permissionService) ListEndpoints(id uuid.UUID) ([]user.APIEndpoint, error) {
+	action, err := s.actionRepo.GetByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrPermissionActionNotFound
+		}
+		return nil, err
+	}
+	permissionKey := canonicalPermissionKey(action.PermissionKey)
+	endpointIDs, err := s.apiEndpointBindingRepo.ListEndpointIDsByPermissionKey(permissionKey)
+	if err != nil {
+		return nil, err
+	}
+	if len(endpointIDs) == 0 {
+		return []user.APIEndpoint{}, nil
+	}
+	endpoints, _, err := s.apiEndpointRepo.List(0, 5000, &user.APIEndpointListParams{
+		Status: "normal",
+	})
+	if err != nil {
+		return nil, err
+	}
+	endpointIDSet := make(map[uuid.UUID]struct{}, len(endpointIDs))
+	for _, endpointID := range endpointIDs {
+		endpointIDSet[endpointID] = struct{}{}
+	}
+	result := make([]user.APIEndpoint, 0, len(endpoints))
+	for _, endpoint := range endpoints {
+		if _, ok := endpointIDSet[endpoint.ID]; !ok {
+			continue
+		}
+		result = append(result, endpoint)
+	}
+	return result, nil
+}
+
+func canonicalPermissionKey(permissionKey string) string {
+	return permissionkey.Normalize(permissionKey)
+}
+
 func (s *permissionService) List(req *dto.PermissionActionListRequest) ([]user.PermissionAction, int64, error) {
 	if req.Current <= 0 {
 		req.Current = 1
@@ -68,19 +124,107 @@ func (s *permissionService) List(req *dto.PermissionActionListRequest) ([]user.P
 	if req.Size <= 0 {
 		req.Size = 20
 	}
+	var moduleGroupID *uuid.UUID
+	if parsed, ok := parseUUID(req.ModuleGroupID); ok {
+		moduleGroupID = &parsed
+	}
+	var featureGroupID *uuid.UUID
+	if parsed, ok := parseUUID(req.FeatureGroupID); ok {
+		featureGroupID = &parsed
+	}
+	var isBuiltin *bool
+	if parsed, ok := parseBool(req.IsBuiltin); ok {
+		isBuiltin = &parsed
+	}
 	params := &user.PermissionActionListParams{
-		Keyword:       strings.TrimSpace(req.Keyword),
-		PermissionKey: strings.TrimSpace(req.PermissionKey),
-		Name:          req.Name,
-		ResourceCode:  req.ResourceCode,
-		ActionCode:    req.ActionCode,
-		ModuleCode:    strings.TrimSpace(req.ModuleCode),
-		ContextType:   normalizeContextType(req.ContextType, ""),
-		Source:        strings.TrimSpace(req.Source),
-		FeatureKind:   normalizeFeatureKind(req.FeatureKind, ""),
-		Status:        req.Status,
+		Keyword:        strings.TrimSpace(req.Keyword),
+		PermissionKey:  strings.TrimSpace(req.PermissionKey),
+		Name:           req.Name,
+		ModuleCode:     strings.TrimSpace(req.ModuleCode),
+		ModuleGroupID:  moduleGroupID,
+		FeatureGroupID: featureGroupID,
+		ContextType:    normalizeContextType(req.ContextType, ""),
+		FeatureKind:    normalizeFeatureKind(req.FeatureKind, ""),
+		Status:         req.Status,
+		IsBuiltin:      isBuiltin,
 	}
 	return s.actionRepo.List((req.Current-1)*req.Size, req.Size, params)
+}
+
+func (s *permissionService) ListGroups(req *dto.PermissionGroupListRequest) ([]user.PermissionGroup, int64, error) {
+	if req.Current <= 0 {
+		req.Current = 1
+	}
+	if req.Size <= 0 {
+		req.Size = 200
+	}
+	return s.groupRepo.List((req.Current-1)*req.Size, req.Size, strings.TrimSpace(req.GroupType), strings.TrimSpace(req.Keyword), strings.TrimSpace(req.Status))
+}
+
+func (s *permissionService) CreateGroup(req *dto.PermissionGroupSaveRequest) (*user.PermissionGroup, error) {
+	groupType := normalizeGroupType(req.GroupType)
+	if groupType == "" {
+		return nil, errors.New("group_type 仅支持 module|feature")
+	}
+	code := strings.TrimSpace(req.Code)
+	if code == "" {
+		return nil, errors.New("code 不能为空")
+	}
+	if _, err := s.groupRepo.GetByTypeAndCode(groupType, code); err == nil {
+		return nil, ErrPermissionGroupExists
+	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
+	}
+	item := &user.PermissionGroup{
+		ID:          permissionSeedGroupID(groupType, code),
+		GroupType:   groupType,
+		Code:        code,
+		Name:        strings.TrimSpace(req.Name),
+		NameEn:      strings.TrimSpace(req.NameEn),
+		Description: strings.TrimSpace(req.Description),
+		Status:      normalizeStatus(req.Status),
+		SortOrder:   req.SortOrder,
+		IsBuiltin:   false,
+	}
+	if err := s.groupRepo.Create(item); err != nil {
+		return nil, err
+	}
+	return s.groupRepo.GetByID(item.ID)
+}
+
+func (s *permissionService) UpdateGroup(id uuid.UUID, req *dto.PermissionGroupSaveRequest) error {
+	current, err := s.groupRepo.GetByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrPermissionGroupNotFound
+		}
+		return err
+	}
+	groupType := current.GroupType
+	if target := normalizeGroupType(req.GroupType); target != "" {
+		groupType = target
+	}
+	code := strings.TrimSpace(req.Code)
+	if code == "" {
+		code = current.Code
+	}
+	existing, getErr := s.groupRepo.GetByTypeAndCode(groupType, code)
+	if getErr == nil && existing.ID != id {
+		return ErrPermissionGroupExists
+	}
+	if getErr != nil && !errors.Is(getErr, gorm.ErrRecordNotFound) {
+		return getErr
+	}
+	return s.groupRepo.UpdateWithMap(id, map[string]interface{}{
+		"group_type":  groupType,
+		"code":        code,
+		"name":        strings.TrimSpace(req.Name),
+		"name_en":     strings.TrimSpace(req.NameEn),
+		"description": strings.TrimSpace(req.Description),
+		"status":      normalizeStatus(req.Status),
+		"sort_order":  req.SortOrder,
+		"updated_at":  time.Now(),
+	})
 }
 
 func (s *permissionService) Get(id uuid.UUID) (*user.PermissionAction, error) {
@@ -97,22 +241,15 @@ func (s *permissionService) Get(id uuid.UUID) (*user.PermissionAction, error) {
 func (s *permissionService) Create(req *dto.PermissionActionCreateRequest) (*user.PermissionAction, error) {
 	permissionKey := permissionkey.Normalize(req.PermissionKey)
 	if permissionKey == "" {
-		permissionKey = permissionkey.FromLegacy(strings.TrimSpace(req.ResourceCode), strings.TrimSpace(req.ActionCode)).Key
-	}
-	if permissionKey == "" {
 		return nil, errors.New("permission_key 不能为空")
 	}
 	mapping := permissionkey.FromKey(permissionKey)
-	resourceCode := strings.TrimSpace(req.ResourceCode)
+	resourceCode := strings.TrimSpace(mapping.ResourceCode)
 	if resourceCode == "" {
-		resourceCode = strings.TrimSpace(mapping.ResourceCode)
+		resourceCode = strings.TrimSpace(req.ModuleCode)
 	}
-	actionCode := strings.TrimSpace(req.ActionCode)
-	if actionCode == "" {
-		actionCode = strings.TrimSpace(mapping.ActionCode)
-	}
-	if resourceCode == "" || actionCode == "" {
-		return nil, errors.New("无法根据 permission_key 推导兼容编码")
+	if resourceCode == "" {
+		return nil, errors.New("无法根据 permission_key 推导模块编码")
 	}
 	if _, err := s.actionRepo.GetByPermissionKey(permissionKey); err == nil {
 		return nil, ErrPermissionActionExists
@@ -123,21 +260,29 @@ func (s *permissionService) Create(req *dto.PermissionActionCreateRequest) (*use
 	if status == "" {
 		status = "normal"
 	}
-	featureKind := normalizeFeatureKind(req.FeatureKind, "business")
-	moduleCode := normalizeModuleCode(req.ModuleCode, req.ResourceCode)
+	moduleGroup, err := s.resolvePermissionGroup(req.ModuleGroupID, "module", req.ModuleCode, resourceCode)
+	if err != nil {
+		return nil, err
+	}
+	featureGroup, err := s.resolvePermissionGroup(req.FeatureGroupID, "feature", req.FeatureKind, "business")
+	if err != nil {
+		return nil, err
+	}
+	featureKind := normalizeFeatureKind(featureGroup.Code, "business")
+	moduleCode := normalizeModuleCode(moduleGroup.Code, resourceCode)
 	contextType := normalizeContextType(req.ContextType, deriveContextType(permissionKey, moduleCode))
 	action := &user.PermissionAction{
-		PermissionKey: permissionKey,
-		ResourceCode:  resourceCode,
-		ActionCode:    actionCode,
-		ModuleCode:    moduleCode,
-		ContextType:   contextType,
-		Source:        "business",
-		FeatureKind:   featureKind,
-		Name:          strings.TrimSpace(req.Name),
-		Description:   strings.TrimSpace(req.Description),
-		Status:        status,
-		SortOrder:     req.SortOrder,
+		PermissionKey:  permissionKey,
+		ModuleCode:     moduleCode,
+		ModuleGroupID:  &moduleGroup.ID,
+		FeatureGroupID: &featureGroup.ID,
+		ContextType:    contextType,
+		FeatureKind:    featureKind,
+		Name:           strings.TrimSpace(req.Name),
+		Description:    strings.TrimSpace(req.Description),
+		Status:         status,
+		SortOrder:      req.SortOrder,
+		IsBuiltin:      false,
 	}
 	if err := s.actionRepo.Create(action); err != nil {
 		return nil, err
@@ -163,9 +308,6 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionActionUpdate
 	if name := strings.TrimSpace(req.Name); name != "" {
 		updates["name"] = name
 	}
-	if featureKind := normalizeFeatureKind(req.FeatureKind, ""); featureKind != "" {
-		updates["feature_kind"] = featureKind
-	}
 	if contextType := normalizeContextType(req.ContextType, ""); contextType != "" {
 		updates["context_type"] = contextType
 	}
@@ -175,42 +317,30 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionActionUpdate
 	if status := strings.TrimSpace(req.Status); status != "" {
 		updates["status"] = status
 	}
-	resourceCode := strings.TrimSpace(req.ResourceCode)
-	actionCode := strings.TrimSpace(req.ActionCode)
-	targetResourceCode := current.ResourceCode
-	targetActionCode := current.ActionCode
-	if req.ModuleCode != "" {
-		updates["module_code"] = normalizeModuleCode(req.ModuleCode, targetResourceCode)
-	}
 	targetPermissionKey := current.PermissionKey
 	if permissionKey := permissionkey.Normalize(req.PermissionKey); permissionKey != "" {
 		targetPermissionKey = permissionKey
-	} else if targetPermissionKey == "" {
-		targetPermissionKey = permissionkey.FromLegacy(targetResourceCode, targetActionCode).Key
-		updates["permission_key"] = targetPermissionKey
 	}
 	if targetPermissionKey != "" {
 		mapping := permissionkey.FromKey(targetPermissionKey)
-		if resourceCode == "" {
-			resourceCode = strings.TrimSpace(mapping.ResourceCode)
-		}
-		if actionCode == "" {
-			actionCode = strings.TrimSpace(mapping.ActionCode)
+		if mappedResource := strings.TrimSpace(mapping.ResourceCode); mappedResource != "" && strings.TrimSpace(req.ModuleCode) == "" {
+			req.ModuleCode = mappedResource
 		}
 	}
-	if resourceCode != "" {
-		targetResourceCode = resourceCode
-		updates["resource_code"] = resourceCode
+	moduleGroup, err := s.resolvePermissionGroup(req.ModuleGroupID, "module", req.ModuleCode, current.ModuleCode)
+	if err != nil {
+		return err
 	}
-	if actionCode != "" {
-		targetActionCode = actionCode
-		updates["action_code"] = actionCode
+	featureGroup, err := s.resolvePermissionGroup(req.FeatureGroupID, "feature", req.FeatureKind, current.FeatureKind)
+	if err != nil {
+		return err
 	}
-	if req.ModuleCode == "" && (resourceCode != "" || current.ModuleCode == "") {
-		updates["module_code"] = normalizeModuleCode(current.ModuleCode, targetResourceCode)
-	}
+	updates["module_group_id"] = moduleGroup.ID
+	updates["feature_group_id"] = featureGroup.ID
+	updates["module_code"] = normalizeModuleCode(moduleGroup.Code, current.ModuleCode)
+	updates["feature_kind"] = normalizeFeatureKind(featureGroup.Code, current.FeatureKind)
 	if _, exists := updates["context_type"]; !exists && current.ContextType == "" {
-		updates["context_type"] = deriveContextType(targetPermissionKey, targetResourceCode)
+		updates["context_type"] = deriveContextType(targetPermissionKey, normalizeModuleCode(moduleGroup.Code, current.ModuleCode))
 	}
 	if targetPermissionKey != current.PermissionKey {
 		existing, getErr := s.actionRepo.GetByPermissionKey(targetPermissionKey)
@@ -224,6 +354,84 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionActionUpdate
 	return s.actionRepo.UpdateWithMap(id, updates)
 }
 
+func (s *permissionService) resolvePermissionGroup(idText string, groupType string, codeText string, fallbackCode string) (*user.PermissionGroup, error) {
+	if parsed, ok := parseUUID(idText); ok {
+		item, err := s.groupRepo.GetByID(parsed)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, ErrPermissionGroupNotFound
+			}
+			return nil, err
+		}
+		if item.GroupType != groupType {
+			return nil, errors.New("分组类型不匹配")
+		}
+		return item, nil
+	}
+	code := strings.TrimSpace(codeText)
+	if code == "" {
+		code = strings.TrimSpace(fallbackCode)
+	}
+	if code == "" {
+		if groupType == "feature" {
+			code = "business"
+		} else {
+			code = "common"
+		}
+	}
+	item, err := s.groupRepo.GetByTypeAndCode(groupType, code)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrPermissionGroupNotFound
+		}
+		return nil, err
+	}
+	return item, nil
+}
+
+func parseUUID(value string) (uuid.UUID, bool) {
+	target := strings.TrimSpace(value)
+	if target == "" {
+		return uuid.Nil, false
+	}
+	id, err := uuid.Parse(target)
+	if err != nil {
+		return uuid.Nil, false
+	}
+	return id, true
+}
+
+func parseBool(value string) (bool, bool) {
+	switch strings.TrimSpace(strings.ToLower(value)) {
+	case "true", "1":
+		return true, true
+	case "false", "0":
+		return false, true
+	default:
+		return false, false
+	}
+}
+
+func normalizeStatus(value string) string {
+	if strings.TrimSpace(value) == "suspended" {
+		return "suspended"
+	}
+	return "normal"
+}
+
+func normalizeGroupType(value string) string {
+	switch strings.TrimSpace(value) {
+	case "module", "feature":
+		return strings.TrimSpace(value)
+	default:
+		return ""
+	}
+}
+
+func permissionSeedGroupID(groupType, code string) uuid.UUID {
+	return permissionseed.StableID("permission-group", groupType+":"+code)
+}
+
 func normalizeModuleCode(value, fallbackResource string) string {
 	moduleCode := strings.TrimSpace(value)
 	if moduleCode != "" {
@@ -234,7 +442,7 @@ func normalizeModuleCode(value, fallbackResource string) string {
 
 func normalizeContextType(value, fallback string) string {
 	switch strings.TrimSpace(value) {
-	case "platform", "team":
+	case "platform", "team", "common":
 		return strings.TrimSpace(value)
 	case "":
 		return fallback
@@ -265,13 +473,12 @@ func deriveContextType(permissionKey, moduleCode string) string {
 }
 
 func normalizeFeatureKind(value, fallback string) string {
-	switch strings.TrimSpace(value) {
-	case "system", "business":
-		return strings.TrimSpace(value)
+	target := strings.TrimSpace(value)
+	switch target {
 	case "":
 		return fallback
 	default:
-		return fallback
+		return target
 	}
 }
 

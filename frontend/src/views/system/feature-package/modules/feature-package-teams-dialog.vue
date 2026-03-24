@@ -150,7 +150,7 @@
   }
 
   function supportsTeamContext(contextType?: string) {
-    return contextType === 'team' || contextType === 'platform,team'
+    return contextType === 'team' || contextType === 'common'
   }
 </script>
 

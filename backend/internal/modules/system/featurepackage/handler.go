@@ -482,19 +482,47 @@ func packageToMapWithStats(item *user.FeaturePackage, actionCount, menuCount, te
 func actionListToMaps(actions []user.PermissionAction) []gin.H {
 	items := make([]gin.H, 0, len(actions))
 	for _, action := range actions {
+		moduleGroup := gin.H(nil)
+		if action.ModuleGroup != nil {
+			moduleGroup = gin.H{
+				"id": action.ModuleGroup.ID.String(),
+				"group_type": action.ModuleGroup.GroupType,
+				"code": action.ModuleGroup.Code,
+				"name": action.ModuleGroup.Name,
+				"name_en": action.ModuleGroup.NameEn,
+				"status": action.ModuleGroup.Status,
+				"sort_order": action.ModuleGroup.SortOrder,
+				"is_builtin": action.ModuleGroup.IsBuiltin,
+			}
+		}
+		featureGroup := gin.H(nil)
+		if action.FeatureGroup != nil {
+			featureGroup = gin.H{
+				"id": action.FeatureGroup.ID.String(),
+				"group_type": action.FeatureGroup.GroupType,
+				"code": action.FeatureGroup.Code,
+				"name": action.FeatureGroup.Name,
+				"name_en": action.FeatureGroup.NameEn,
+				"status": action.FeatureGroup.Status,
+				"sort_order": action.FeatureGroup.SortOrder,
+				"is_builtin": action.FeatureGroup.IsBuiltin,
+			}
+		}
 		items = append(items, gin.H{
-			"id":             action.ID.String(),
-			"permission_key": strings.TrimSpace(action.PermissionKey),
-			"resource_code":  action.ResourceCode,
-			"action_code":    action.ActionCode,
-			"module_code":    action.ModuleCode,
-			"context_type":   action.ContextType,
-			"source":         action.Source,
-			"feature_kind":   action.FeatureKind,
-			"name":           action.Name,
-			"description":    action.Description,
-			"status":         action.Status,
-			"sort_order":     action.SortOrder,
+			"id":               action.ID.String(),
+			"permission_key":   strings.TrimSpace(action.PermissionKey),
+			"module_code":      action.ModuleCode,
+			"module_group_id": uuidPtrToString(action.ModuleGroupID),
+			"feature_group_id": uuidPtrToString(action.FeatureGroupID),
+			"module_group":     moduleGroup,
+			"feature_group":    featureGroup,
+			"context_type":     action.ContextType,
+			"feature_kind":     action.FeatureKind,
+			"name":             action.Name,
+			"description":      action.Description,
+			"status":           action.Status,
+			"sort_order":       action.SortOrder,
+			"is_builtin":       action.IsBuiltin,
 		})
 	}
 	return items

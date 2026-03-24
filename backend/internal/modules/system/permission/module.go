@@ -33,6 +33,9 @@ func (m *PermissionModule) Init() error {
 
 func (m *PermissionModule) RegisterRoutes(rg *gin.RouterGroup) {
 	actionRepo := user.NewPermissionActionRepository(m.db)
+	groupRepo := user.NewPermissionGroupRepository(m.db)
+	apiEndpointRepo := user.NewAPIEndpointRepository(m.db)
+	apiEndpointBindingRepo := user.NewAPIEndpointPermissionBindingRepository(m.db)
 	packageActionRepo := user.NewFeaturePackageActionRepository(m.db)
 	teamPackageRepo := user.NewTeamFeaturePackageRepository(m.db)
 	roleDisabledActionRepo := user.NewRoleDisabledActionRepository(m.db)
@@ -42,18 +45,22 @@ func (m *PermissionModule) RegisterRoutes(rg *gin.RouterGroup) {
 	platformService := platformaccess.NewService(m.db)
 	roleSnapshotService := platformroleaccess.NewService(m.db)
 	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
-	service := NewPermissionService(actionRepo, packageActionRepo, teamPackageRepo, roleDisabledActionRepo, teamBlockedActionRepo, userActionRepo, boundaryService, refresher)
+	service := NewPermissionService(groupRepo, actionRepo, apiEndpointRepo, apiEndpointBindingRepo, packageActionRepo, teamPackageRepo, roleDisabledActionRepo, teamBlockedActionRepo, userActionRepo, boundaryService, refresher)
 	handler := NewPermissionHandler(service, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 
 	actions := rg.Group("/permission-actions")
 	reg := apiregistry.NewRegistrar(actions, "permission_action")
 	{
-		reg.GET("", &apiregistry.RouteMeta{Summary: "获取功能权限列表", ResourceCode: "permission_action", ActionCode: "list"}, authzService.RequireAction("system.permission.manage"), handler.List)
-		reg.GET("/:id", &apiregistry.RouteMeta{Summary: "获取功能权限详情", ResourceCode: "permission_action", ActionCode: "get"}, authzService.RequireAction("system.permission.manage"), handler.Get)
-		reg.POST("", &apiregistry.RouteMeta{Summary: "创建功能权限", ResourceCode: "permission_action", ActionCode: "create"}, authzService.RequireAction("system.permission.manage"), handler.Create)
-		reg.PUT("/:id", &apiregistry.RouteMeta{Summary: "更新功能权限", ResourceCode: "permission_action", ActionCode: "update"}, authzService.RequireAction("system.permission.manage"), handler.Update)
-		reg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除功能权限", ResourceCode: "permission_action", ActionCode: "delete"}, authzService.RequireAction("system.permission.manage"), handler.Delete)
+		reg.GETProtected("", reg.Meta("获取功能权限列表").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.List)
+		reg.GETProtected("/groups", reg.Meta("获取功能权限分组列表").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.ListGroups)
+		reg.GETProtected("/:id", reg.Meta("获取功能权限详情").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.Get)
+		reg.GETProtected("/:id/endpoints", reg.Meta("获取功能权限关联接口").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.ListEndpoints)
+		reg.POSTProtected("/groups", reg.Meta("创建功能权限分组").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.CreateGroup)
+		reg.PUTProtected("/groups/:id", reg.Meta("更新功能权限分组").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.UpdateGroup)
+		reg.POSTProtected("", reg.Meta("创建功能权限").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.Create)
+		reg.PUTProtected("/:id", reg.Meta("更新功能权限").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.Update)
+		reg.DELETEProtected("/:id", reg.Meta("删除功能权限").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.Delete)
 	}
 }
 

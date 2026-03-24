@@ -51,19 +51,19 @@ func (m *MenuModule) RegisterRoutes(rg *gin.RouterGroup) {
 	menus := rg.Group("/menus")
 	reg := apiregistry.NewRegistrar(menus, "menu")
 	{
-		reg.GET("/tree", &apiregistry.RouteMeta{Summary: "获取菜单树", ResourceCode: "menu", ActionCode: "list"}, menuHandler.GetTree)
-		reg.POST("", &apiregistry.RouteMeta{Summary: "创建菜单", ResourceCode: "menu", ActionCode: "create"}, authzService.RequireAction("system.menu.manage"), menuHandler.Create)
-		reg.PUT("/:id", &apiregistry.RouteMeta{Summary: "更新菜单", ResourceCode: "menu", ActionCode: "update"}, authzService.RequireAction("system.menu.manage"), menuHandler.Update)
-		reg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除菜单", ResourceCode: "menu", ActionCode: "delete"}, authzService.RequireAction("system.menu.manage"), menuHandler.Delete)
+		reg.GET("/tree", reg.Meta("获取菜单树").Build(), menuHandler.GetTree)
+		reg.POSTProtected("", reg.Meta("创建菜单").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.Create)
+		reg.PUTProtected("/:id", reg.Meta("更新菜单").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.Update)
+		reg.DELETEProtected("/:id", reg.Meta("删除菜单").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.Delete)
 
 		// 菜单备份相关路由
 		backups := menus.Group("/backups")
 		backupReg := apiregistry.NewRegistrar(backups, "menu_backup")
 		{
-			backupReg.POST("", &apiregistry.RouteMeta{Summary: "创建菜单备份", ResourceCode: "menu_backup", ActionCode: "create"}, authzService.RequireAction("system.menu.backup"), menuHandler.CreateBackup)
-			backupReg.GET("", &apiregistry.RouteMeta{Summary: "获取菜单备份列表", ResourceCode: "menu_backup", ActionCode: "list"}, authzService.RequireAction("system.menu.backup"), menuHandler.ListBackups)
-			backupReg.DELETE("/:id", &apiregistry.RouteMeta{Summary: "删除菜单备份", ResourceCode: "menu_backup", ActionCode: "delete"}, authzService.RequireAction("system.menu.backup"), menuHandler.DeleteBackup)
-			backupReg.POST("/:id/restore", &apiregistry.RouteMeta{Summary: "恢复菜单备份", ResourceCode: "menu_backup", ActionCode: "restore"}, authzService.RequireAction("system.menu.backup"), menuHandler.RestoreBackup)
+			backupReg.POSTProtected("", backupReg.Meta("创建菜单备份").BindPermissionKey("system.menu.backup").Build(), "system.menu.backup", authzService.RequireAction, menuHandler.CreateBackup)
+			backupReg.GETProtected("", backupReg.Meta("获取菜单备份列表").BindPermissionKey("system.menu.backup").Build(), "system.menu.backup", authzService.RequireAction, menuHandler.ListBackups)
+			backupReg.DELETEProtected("/:id", backupReg.Meta("删除菜单备份").BindPermissionKey("system.menu.backup").Build(), "system.menu.backup", authzService.RequireAction, menuHandler.DeleteBackup)
+			backupReg.POSTProtected("/:id/restore", backupReg.Meta("恢复菜单备份").BindPermissionKey("system.menu.backup").Build(), "system.menu.backup", authzService.RequireAction, menuHandler.RestoreBackup)
 		}
 	}
 }

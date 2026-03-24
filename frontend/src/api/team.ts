@@ -1,8 +1,9 @@
 import request from '@/utils/http'
 
 const TENANT_BASE = '/api/v1/tenants'
+const MY_TEAM_BOUNDARY_ROLE_BASE = `${TENANT_BASE}/my-team/boundary/roles`
 
-function normalizePermissionKey(value?: string, resourceCode?: string, actionCode?: string) {
+function normalizePermissionKey(value?: string) {
   const target = `${value || ''}`.trim()
   if (target) {
     if (target.includes(':')) {
@@ -11,9 +12,19 @@ function normalizePermissionKey(value?: string, resourceCode?: string, actionCod
     }
     return target
   }
-  const fallbackResource = `${resourceCode || ''}`.trim()
-  const fallbackAction = `${actionCode || ''}`.trim()
-  return fallbackResource && fallbackAction ? `${fallbackResource}.${fallbackAction}` : ''
+  return ''
+}
+
+function derivePermissionSegments(permissionKey?: string) {
+  const normalized = normalizePermissionKey(permissionKey)
+  const parts = normalized.split('.').filter(Boolean)
+  if (parts.length <= 1) {
+    return { resourceCode: '', actionCode: '' }
+  }
+  return {
+    resourceCode: parts.slice(0, -1).join('_'),
+    actionCode: parts[parts.length - 1]
+  }
 }
 
 function deriveContextType(permissionKey?: string, moduleCode?: string) {
@@ -56,30 +67,45 @@ function normalizeTeam(item: any): Api.SystemManage.TeamListItem {
 }
 
 function normalizeAction(item: any): Api.SystemManage.PermissionActionItem {
-  const resourceCode = item?.resource_code || item?.resourceCode || ''
-  const actionCode = item?.action_code || item?.actionCode || ''
-  const permissionKey = normalizePermissionKey(
-    item?.permission_key || item?.permissionKey,
-    resourceCode,
-    actionCode
-  )
-  const moduleCode = item?.module_code || item?.moduleCode || ''
+  const permissionKey = normalizePermissionKey(item?.permission_key || item?.permissionKey)
+  const legacy = derivePermissionSegments(permissionKey)
+  const moduleCode = item?.module_code || item?.moduleCode || legacy.resourceCode || ''
+  const normalizeGroup = (value: any): Api.SystemManage.PermissionGroupItem | undefined =>
+    value
+      ? {
+          id: value?.id || '',
+          groupType: value?.group_type || value?.groupType || '',
+          code: value?.code || '',
+          name: value?.name || '',
+          nameEn: value?.name_en || value?.nameEn || '',
+          description: value?.description || '',
+          status: value?.status || 'normal',
+          sortOrder: value?.sort_order ?? value?.sortOrder ?? 0,
+          isBuiltin: Boolean(value?.is_builtin ?? value?.isBuiltin ?? false)
+        }
+      : undefined
+  const moduleGroup = normalizeGroup(item?.module_group || item?.moduleGroup)
+  const featureGroup = normalizeGroup(item?.feature_group || item?.featureGroup)
   return {
     id: item?.id || '',
-    resourceCode,
-    actionCode,
-    moduleCode,
+    resourceCode: legacy.resourceCode,
+    actionCode: legacy.actionCode,
+    moduleCode: moduleGroup?.code || moduleCode,
+    moduleGroupId: item?.module_group_id || item?.moduleGroupId || moduleGroup?.id || '',
+    featureGroupId: item?.feature_group_id || item?.featureGroupId || featureGroup?.id || '',
+    moduleGroup,
+    featureGroup,
     contextType:
       item?.context_type || item?.contextType || deriveContextType(permissionKey, moduleCode),
     permissionKey,
-    source: item?.source || 'business',
-    featureKind: item?.feature_kind || item?.featureKind || 'business',
+    featureKind: featureGroup?.code || item?.feature_kind || item?.featureKind || 'business',
     name: item?.name || '',
     description: item?.description || '',
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
     dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
     status: item?.status || 'normal',
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
+    isBuiltin: Boolean(item?.is_builtin ?? item?.isBuiltin ?? false),
     createdAt: item?.created_at || item?.createdAt || '',
     updatedAt: item?.updated_at || item?.updatedAt || ''
   }
@@ -90,7 +116,11 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
   const contextType =
     item?.context_type ||
     item?.contextType ||
-    (packageKey.startsWith('platform.') ? 'platform' : 'team')
+    (packageKey.startsWith('platform.')
+      ? 'platform'
+      : packageKey.startsWith('common.')
+        ? 'common'
+        : 'team')
   return {
     id: item?.id || '',
     packageKey,
@@ -278,6 +308,23 @@ export async function fetchGetMyTeamRoles() {
   }))
 }
 
+export async function fetchGetMyTeamBoundaryRoles() {
+  const res = await request.get<any[]>({
+    url: MY_TEAM_BOUNDARY_ROLE_BASE
+  })
+  return (res || []).map((item: any) => ({
+    roleId: item?.id || '',
+    roleCode: item?.code || '',
+    roleName: item?.name || '',
+    description: item?.description || '',
+    status: item?.status || 'normal',
+    isSystem: Boolean(item?.is_system ?? item?.isSystem ?? false),
+    tenantId: item?.tenant_id || item?.tenantId || '',
+    isGlobal: Boolean(item?.is_global ?? item?.isGlobal ?? false),
+    createTime: item?.create_time || item?.created_at || ''
+  }))
+}
+
 export function fetchCreateMyTeamRole(data: Api.SystemManage.RoleCreateParams) {
   return request.post<{ roleId: string }>({
     url: `${TENANT_BASE}/my-team/roles`,
@@ -287,21 +334,21 @@ export function fetchCreateMyTeamRole(data: Api.SystemManage.RoleCreateParams) {
 
 export function fetchUpdateMyTeamRole(roleId: string, data: Api.SystemManage.RoleUpdateParams) {
   return request.put<void>({
-    url: `${TENANT_BASE}/my-team/roles/${roleId}`,
+    url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}`,
     data
   })
 }
 
 export function fetchDeleteMyTeamRole(roleId: string) {
   return request.del<void>({
-    url: `${TENANT_BASE}/my-team/roles/${roleId}`
+    url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}`
   })
 }
 
-export function fetchGetMyTeamRoleMenus(roleId: string) {
+export function fetchGetMyTeamBoundaryRoleMenus(roleId: string) {
   return request
     .get<Api.SystemManage.RoleMenuBoundaryResponse>({
-      url: `${TENANT_BASE}/my-team/roles/${roleId}/menus`
+      url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/menus`
     })
     .then((res) => ({
       menu_ids: res?.menu_ids || [],
@@ -315,17 +362,17 @@ export function fetchGetMyTeamRoleMenus(roleId: string) {
     }))
 }
 
-export function fetchSetMyTeamRoleMenus(roleId: string, menuIds: string[]) {
+export function fetchSetMyTeamBoundaryRoleMenus(roleId: string, menuIds: string[]) {
   return request.put<void>({
-    url: `${TENANT_BASE}/my-team/roles/${roleId}/menus`,
+    url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/menus`,
     data: { menu_ids: menuIds }
   })
 }
 
-export function fetchGetMyTeamRoleActions(roleId: string) {
+export function fetchGetMyTeamBoundaryRoleActions(roleId: string) {
   return request
     .get<Api.SystemManage.RoleActionBoundaryResponse>({
-      url: `${TENANT_BASE}/my-team/roles/${roleId}/actions`
+      url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/actions`
     })
     .then((res) => ({
       action_ids: res?.action_ids || [],
@@ -340,17 +387,17 @@ export function fetchGetMyTeamRoleActions(roleId: string) {
     }))
 }
 
-export function fetchSetMyTeamRoleActions(roleId: string, actionIds: string[]) {
+export function fetchSetMyTeamBoundaryRoleActions(roleId: string, actionIds: string[]) {
   return request.put<void>({
-    url: `${TENANT_BASE}/my-team/roles/${roleId}/actions`,
+    url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/actions`,
     data: { action_ids: actionIds }
   })
 }
 
-export function fetchGetMyTeamRolePackages(roleId: string) {
+export function fetchGetMyTeamBoundaryRolePackages(roleId: string) {
   return request
     .get<Api.SystemManage.RoleFeaturePackageResponse>({
-      url: `${TENANT_BASE}/my-team/roles/${roleId}/packages`
+      url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/packages`
     })
     .then((res) => ({
       package_ids: res?.package_ids || [],
@@ -359,11 +406,22 @@ export function fetchGetMyTeamRolePackages(roleId: string) {
     }))
 }
 
-export function fetchSetMyTeamRolePackages(roleId: string, packageIds: string[]) {
+export function fetchSetMyTeamBoundaryRolePackages(roleId: string, packageIds: string[]) {
   return request.put<void>({
-    url: `${TENANT_BASE}/my-team/roles/${roleId}/packages`,
+    url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/packages`,
     data: { package_ids: packageIds }
   })
+}
+
+export function fetchGetMyTeamBoundaryPackages() {
+  return request
+    .get<{ package_ids: string[]; packages: any[] }>({
+      url: `${TENANT_BASE}/my-team/boundary/packages`
+    })
+    .then((res) => ({
+      package_ids: res?.package_ids || [],
+      packages: (res?.packages || []).map(normalizeFeaturePackage)
+    }))
 }
 
 export async function fetchGetTeamActions(teamId: string) {
@@ -458,33 +516,3 @@ export function fetchGetMyTeamActionOrigins() {
     }))
 }
 
-export async function fetchGetMyTeamMemberActions(
-  userId: string
-): Promise<Api.SystemManage.TeamMemberActionPermissionResponse> {
-  const res = await request.get<Api.SystemManage.TeamMemberActionPermissionResponse>({
-    url: `${TENANT_BASE}/my-team/members/${userId}/actions`
-  })
-  return {
-    actions: (res?.actions || []).map((item: any) => ({
-      action_id: item?.action_id || '',
-      effect: item?.effect || 'allow',
-      action: item?.action ? normalizeAction(item.action) : undefined
-    })) as Api.SystemManage.TeamMemberActionPermissionItem[],
-    available_action_ids: res?.available_action_ids || [],
-    available_actions: (res?.available_actions || []).map(normalizeAction),
-    derived_sources: (res?.derived_sources || []).map((item) => ({
-      action_id: item?.action_id || '',
-      package_ids: item?.package_ids || []
-    }))
-  } as Api.SystemManage.TeamMemberActionPermissionResponse
-}
-
-export function fetchSetMyTeamMemberActions(
-  userId: string,
-  actions: Array<{ action_id: string; effect: 'allow' | 'deny' }>
-) {
-  return request.put<void>({
-    url: `${TENANT_BASE}/my-team/members/${userId}/actions`,
-    data: { actions }
-  })
-}

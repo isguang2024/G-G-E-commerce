@@ -61,7 +61,7 @@ func (s *service) calculateSnapshot(roleID uuid.UUID) (*Snapshot, error) {
 	if err != nil {
 		return nil, err
 	}
-	expandedPackageIDs, err := s.expandPackageIDs(packageIDs, "platform")
+	expandedPackageIDs, err := s.expandPackageIDs(packageIDs, "all")
 	if err != nil {
 		return nil, err
 	}
@@ -324,10 +324,13 @@ func isPublicMenu(meta map[string]interface{}) bool {
 }
 
 func contextAllowsPackage(context, packageContext string) bool {
+	if context == "all" {
+		return true
+	}
 	switch packageContext {
 	case "", context:
 		return true
-	case "platform,team", "team,platform":
+	case "common":
 		return context == "platform" || context == "team"
 	default:
 		return false

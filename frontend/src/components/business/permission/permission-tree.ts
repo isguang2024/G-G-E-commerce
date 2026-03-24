@@ -31,12 +31,13 @@ export function buildPermissionGroups(actions: PermissionActionItem[]): FeatureG
   const featureMap = new Map<string, FeatureGroup>()
 
   actions.forEach((action) => {
-    const featureKey = action.featureKind === 'business' ? 'business' : 'system'
+    const featureKey = action.featureGroup?.id || action.featureKind || 'system'
+    const featureLabel = action.featureGroup?.name || (action.featureKind === 'business' ? '业务功能' : '系统功能')
     let featureGroup = featureMap.get(featureKey)
     if (!featureGroup) {
       featureGroup = {
         key: featureKey,
-        label: featureKey === 'business' ? '业务功能' : '系统功能',
+        label: featureLabel,
         count: 0,
         actionIds: [],
         modules: []
@@ -44,7 +45,7 @@ export function buildPermissionGroups(actions: PermissionActionItem[]): FeatureG
       featureMap.set(featureKey, featureGroup)
     }
 
-    const moduleCode = action.moduleCode || action.resourceCode || 'common'
+    const moduleCode = action.moduleGroup?.name || action.moduleCode || action.resourceCode || 'common'
     const moduleKey = `${featureKey}:${moduleCode}`
     let moduleGroup = featureGroup.modules.find((item) => item.key === moduleKey)
 		if (!moduleGroup) {

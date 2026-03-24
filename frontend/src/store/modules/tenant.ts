@@ -10,7 +10,11 @@ export function hasPlatformAccessByUserInfo(
 ): boolean {
   if (!userInfo) return false
   if (userInfo.is_super_admin) return true
-  return Array.isArray(userInfo.actions) && userInfo.actions.length > 0
+  if (!Array.isArray(userInfo.actions)) return false
+  return userInfo.actions.some((item) => {
+    const key = `${item || ''}`.trim()
+    return key.startsWith('system.') || key.startsWith('platform.') || key.startsWith('tenant.')
+  })
 }
 
 export const useTenantStore = defineStore(

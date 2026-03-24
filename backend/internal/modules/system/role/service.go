@@ -283,12 +283,7 @@ func (s *roleService) SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, 
 			return err
 		}
 		if len(packages) != len(packageIDs) {
-			return errors.New("存在无效的功能包")
-		}
-		for _, item := range packages {
-			if !supportsPlatformPackage(item.ContextType) {
-				return errors.New("仅支持为平台角色绑定平台功能包")
-			}
+			return errors.New("invalid feature packages")
 		}
 	}
 	if err := s.rolePackageRepo.ReplaceRolePackages(roleID, packageIDs, grantedBy); err != nil {
@@ -405,7 +400,7 @@ func (s *roleService) GetRoleDataPermissions(roleID uuid.UUID) ([]user.RoleDataP
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	resourceCodes, err := s.actionRepo.ListDistinctResourceCodes()
+	resourceCodes, err := s.actionRepo.ListDistinctModuleCodes()
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -423,7 +418,7 @@ func (s *roleService) SetRoleDataPermissions(roleID uuid.UUID, permissions []use
 	if role.TenantID != nil {
 		return ErrTenantRoleManagedByTeam
 	}
-	resourceCodes, err := s.actionRepo.ListDistinctResourceCodes()
+	resourceCodes, err := s.actionRepo.ListDistinctModuleCodes()
 	if err != nil {
 		return err
 	}
@@ -471,9 +466,6 @@ func buildAvailableDataScopeOptions() []DataPermissionScopeOption {
 	}
 }
 
-func supportsPlatformPackage(contextType string) bool {
-	return contextType == "" || contextType == "platform" || contextType == "platform,team"
-}
 
 func (s *roleService) GetRoleMenuBoundary(roleID uuid.UUID) (*RoleMenuBoundary, error) {
 	role, err := s.roleRepo.GetByID(roleID)

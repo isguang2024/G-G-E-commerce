@@ -9,7 +9,7 @@
               基础团队角色默认继承当前团队已开通功能包；当前团队自定义角色先绑定功能包，再在功能包范围内维护菜单权限和角色权限。
             </div>
           </div>
-          <ElButton type="primary" @click="openAddDialog">新增团队角色</ElButton>
+          <ElButton v-if="hasAction('team.member.manage')" type="primary" @click="openAddDialog">新增团队角色</ElButton>
         </div>
       </template>
 
@@ -47,8 +47,9 @@
   import { computed, h, ref } from 'vue'
   import { ElMessageBox, ElTag } from 'element-plus'
   import { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
+  import { useAuth } from '@/hooks/core/useAuth'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchDeleteMyTeamRole, fetchGetMyTeamRoles } from '@/api/team'
+  import { fetchDeleteMyTeamRole, fetchGetMyTeamBoundaryRoles } from '@/api/team'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import TeamRoleDialog from './modules/team-role-dialog.vue'
   import TeamRolePackageDialog from './modules/team-role-package-dialog.vue'
@@ -58,6 +59,7 @@
   defineOptions({ name: 'TeamRolesAndPermissions' })
 
   type RoleListItem = Api.SystemManage.RoleListItem
+  const { hasAction } = useAuth()
 
   const showSearchBar = ref(false)
   const roleDialog = ref(false)
@@ -73,7 +75,7 @@
     useTable({
       core: {
         apiFn: async () => {
-          const list = await fetchGetMyTeamRoles()
+          const list = await fetchGetMyTeamBoundaryRoles()
           return {
             records: list,
             total: list.length,
@@ -110,7 +112,7 @@
                 { key: 'menus', label: row.isGlobal ? '查看菜单裁剪' : '菜单裁剪', icon: 'ri:menu-line' },
                 { key: 'actions', label: row.isGlobal ? '查看权限裁剪' : '权限裁剪', icon: 'ri:shield-keyhole-line' }
               ]
-              if (!row.isGlobal) {
+              if (!row.isGlobal && hasAction('team.member.manage')) {
                 list.unshift({ key: 'edit', label: '编辑角色', icon: 'ri:edit-line' })
                 list.push({ key: 'delete', label: '删除角色', icon: 'ri:delete-bin-line' })
               }

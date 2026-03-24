@@ -403,12 +403,7 @@ function mapBackendRolesToFrontend(data: {
   is_super_admin?: boolean
 }): string[] {
   if (data.is_super_admin) return ['R_SUPER']
-  const codes = (data.roles || []).map((r) => (typeof r === 'string' ? r : r.code))
-  const frontend: string[] = []
-  if (codes.includes('admin')) frontend.push('R_SUPER')
-  if (codes.includes('team_admin')) frontend.push('R_ADMIN')
-  if (codes.includes('team_member')) frontend.push('R_USER')
-  return frontend.length ? frontend : ['R_USER']
+  return ['R_USER']
 }
 
 /**

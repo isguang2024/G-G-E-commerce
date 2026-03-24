@@ -109,12 +109,6 @@ func (h *MenuHandler) getAllowedMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) (
 		return h.getTeamContextAllowedMenuIDs(*tenantID, roleIDs)
 	}
 	if tenantID == nil && h.platformService != nil {
-		if h.userRepo != nil {
-			userEntity, err := h.userRepo.GetByID(userID)
-			if err == nil && userEntity.IsSuperAdmin {
-				return h.listEnabledMenuIDs()
-			}
-		}
 		snapshot, err := h.platformService.GetSnapshot(userID)
 		if err != nil {
 			return nil, err
@@ -122,24 +116,6 @@ func (h *MenuHandler) getAllowedMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) (
 		return snapshot.MenuIDs, nil
 	}
 	return []uuid.UUID{}, nil
-}
-
-func (h *MenuHandler) listEnabledMenuIDs() ([]uuid.UUID, error) {
-	if h.menuRepo == nil {
-		return []uuid.UUID{}, nil
-	}
-	allMenus, err := h.menuRepo.ListAll()
-	if err != nil {
-		return nil, err
-	}
-	result := make([]uuid.UUID, 0, len(allMenus))
-	for _, menu := range allMenus {
-		if !isMenuEnabled(menu) {
-			continue
-		}
-		result = append(result, menu.ID)
-	}
-	return result, nil
 }
 
 func isMenuEnabled(menu user.Menu) bool {

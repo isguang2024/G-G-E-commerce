@@ -45,6 +45,12 @@ func NewService(db *gorm.DB, logger *zap.Logger) *Service {
 }
 
 func (s *Service) RequireAction(permissionKey string, legacy ...string) gin.HandlerFunc {
+	resolvedKey := resolvePermissionKey(permissionKey, legacy...)
+	return s.RequireAnyAction(resolvedKey)
+}
+
+func (s *Service) RequireAnyAction(permissionKeys ...string) gin.HandlerFunc {
+	resolvedKeys := resolvePermissionKeys(permissionKeys...)
 	return func(c *gin.Context) {
 		userID, err := userIDFromContext(c)
 		if err != nil {
@@ -62,13 +68,17 @@ func (s *Service) RequireAction(permissionKey string, legacy ...string) gin.Hand
 			return
 		}
 
-		allowed, actionDef, authErr := s.Authorize(userID, tenantID, permissionKey, legacy...)
+		allowed, actionDef, matchedKey, authErr := s.AuthorizeAny(userID, tenantID, resolvedKeys...)
+		targetKey := strings.Join(resolvedKeys, " | ")
+		if strings.TrimSpace(matchedKey) != "" {
+			targetKey = matchedKey
+		}
 		if authErr != nil {
-			s.respondAuthError(c, authErr, resolvePermissionKey(permissionKey, legacy...))
+			s.respondAuthError(c, authErr, targetKey)
 			return
 		}
 		if !allowed {
-			s.respondAuthError(c, ErrPermissionDenied, resolvePermissionKey(permissionKey, legacy...))
+			s.respondAuthError(c, ErrPermissionDenied, targetKey)
 			return
 		}
 
@@ -132,6 +142,50 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey
 		return false, &actionDef, err
 	}
 	return roleActionSet[actionDef.ID], &actionDef, nil
+}
+
+func (s *Service) AuthorizeAny(userID uuid.UUID, tenantID *uuid.UUID, permissionKeys ...string) (bool, *models.PermissionAction, string, error) {
+	resolvedKeys := resolvePermissionKeys(permissionKeys...)
+	if len(resolvedKeys) == 0 {
+		return false, nil, "", ErrPermissionActionMissing
+	}
+
+	missingCount := 0
+	denied := false
+	var deniedAction *models.PermissionAction
+	for _, key := range resolvedKeys {
+		allowed, actionDef, err := s.Authorize(userID, tenantID, key)
+		if err == nil {
+			if allowed {
+				return true, actionDef, key, nil
+			}
+			denied = true
+			if actionDef != nil {
+				deniedAction = actionDef
+			}
+			continue
+		}
+
+		switch {
+		case errors.Is(err, ErrPermissionActionMissing):
+			missingCount++
+		case errors.Is(err, ErrPermissionDenied):
+			denied = true
+			if actionDef != nil {
+				deniedAction = actionDef
+			}
+		default:
+			return false, actionDef, key, err
+		}
+	}
+
+	if denied {
+		return false, deniedAction, "", ErrPermissionDenied
+	}
+	if missingCount == len(resolvedKeys) {
+		return false, nil, "", ErrPermissionActionMissing
+	}
+	return false, deniedAction, "", ErrPermissionDenied
 }
 
 func (s *Service) GetUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error) {
@@ -202,12 +256,7 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 }
 
 func appendActionKeys(keys *[]string, keySet map[string]struct{}, action models.PermissionAction) {
-	key := strings.TrimSpace(action.PermissionKey)
-	if key == "" {
-		key = permissionkey.FromLegacy(action.ResourceCode, action.ActionCode).Key
-	} else {
-		key = permissionkey.Normalize(key)
-	}
+	key := permissionkey.Normalize(action.PermissionKey)
 	if _, exists := keySet[key]; !exists {
 		*keys = append(*keys, key)
 		keySet[key] = struct{}{}
@@ -335,6 +384,23 @@ func resolvePermissionKey(permissionKey string, legacy ...string) string {
 		return permissionkey.FromLegacy(parts[0], parts[1]).Key
 	}
 	return permissionkey.Normalize(permissionKey)
+}
+
+func resolvePermissionKeys(permissionKeys ...string) []string {
+	result := make([]string, 0, len(permissionKeys))
+	seen := make(map[string]struct{}, len(permissionKeys))
+	for _, item := range permissionKeys {
+		key := resolvePermissionKey(item)
+		if key == "" {
+			continue
+		}
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+		result = append(result, key)
+	}
+	return result
 }
 
 func userIDFromContext(c *gin.Context) (uuid.UUID, error) {

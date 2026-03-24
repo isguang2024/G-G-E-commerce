@@ -1,89 +1,114 @@
 <template>
   <div class="preview-shell" v-loading="loading">
-    <div class="summary-card">
-      <ElTag effect="plain" round>直绑 {{ selectedPackages.length }}</ElTag>
-      <ElTag type="warning" effect="plain" round>展开基础包 {{ expandedBasePackages.length }}</ElTag>
-      <ElTag type="success" effect="plain" round>展开权限 {{ actionPreviewItems.length }}</ElTag>
-      <ElTag type="info" effect="plain" round>展开菜单 {{ menuPreviewItems.length }}</ElTag>
-    </div>
-
-    <div class="preview-grid">
-      <div class="preview-card">
-        <div class="preview-title">当前授予包</div>
-        <div class="preview-tags">
-          <ElTag
-            v-for="item in selectedPackages"
-            :key="item.id"
-            :type="item.packageType === 'bundle' ? 'warning' : 'success'"
-            effect="plain"
-            round
-            :title="`${formatPackageType(item.packageType)} · ${item.packageKey}`"
-          >
-            {{ item.name }}
+    <template v-if="previewMode === 'single'">
+      <div class="single-header">
+        <div class="single-title">
+          <span>{{ activePackage?.name || '功能包详情' }}</span>
+          <ElTag v-if="activePackage" :type="getPackageTypeTagType(activePackage.packageType)" effect="light" round>
+            {{ formatPackageType(activePackage.packageType) }}
           </ElTag>
         </div>
-        <div v-if="!selectedPackages.length" class="preview-empty">当前尚未选择功能包。</div>
+        <div v-if="activePackage?.description" class="single-description">
+          {{ activePackage.description }}
+        </div>
       </div>
 
-      <div class="preview-card">
-        <div class="preview-title">组合包展开后的基础包</div>
-        <div class="preview-tags">
-          <ElTag
-            v-for="item in expandedBasePackages"
-            :key="item.id"
-            type="warning"
-            effect="plain"
-            round
-            :title="buildBasePackageTitle(item.id)"
-          >
-            {{ item.name }}
+      <div class="summary-card">
+          <ElTag type="info" effect="light" round>
+            {{ activePackage?.packageKey || '-' }}
           </ElTag>
-        </div>
-        <div v-if="!expandedBasePackages.length" class="preview-empty">当前没有展开出的基础包。</div>
-      </div>
-    </div>
-
-    <div class="preview-grid">
-      <div class="preview-card">
-        <div class="preview-title">展开权限预览</div>
-        <div class="preview-tags">
-          <ElTag
-            v-for="item in visibleActionItems"
-            :key="item.id"
-            type="success"
-            effect="plain"
-            round
-            :title="buildActionTitle(item.id)"
-          >
-            {{ item.label }}
+          <ElTag type="info" effect="light" round>
+            展开基础包 {{ expandedBasePackages.length }}
           </ElTag>
-        </div>
-        <div v-if="actionPreviewItems.length > previewLimit" class="preview-more">
-          还有 {{ actionPreviewItems.length - previewLimit }} 项权限未展开显示
-        </div>
-        <div v-if="!actionPreviewItems.length" class="preview-empty">当前没有展开出的权限。</div>
+          <ElTag type="info" effect="light" round>
+            权限 {{ actionPreviewItems.length }}
+          </ElTag>
+          <ElTag type="info" effect="light" round>
+            菜单 {{ menuPreviewItems.length }}
+          </ElTag>
       </div>
 
-      <div class="preview-card">
-        <div class="preview-title">展开菜单预览</div>
-        <div class="preview-tags">
-          <ElTag
-            v-for="item in visibleMenuItems"
-            :key="item.id"
-            type="info"
-            effect="plain"
-            round
-            :title="buildMenuTitle(item.id)"
-          >
-            {{ item.label }}
-          </ElTag>
+      <div class="preview-grid">
+        <div class="preview-card">
+          <div class="preview-title">当前功能包</div>
+          <div class="preview-tags">
+              <ElTag v-if="activePackage" :type="getPackageTypeTagType(activePackage.packageType)" effect="light" round>
+                {{ activePackage.name }}
+              </ElTag>
+          </div>
         </div>
-        <div v-if="menuPreviewItems.length > previewLimit" class="preview-more">
-          还有 {{ menuPreviewItems.length - previewLimit }} 项菜单未展开显示
+
+        <div class="preview-card">
+          <div class="preview-title">组合展开后的基础包</div>
+          <div class="preview-tags">
+            <ElTag
+              v-for="item in expandedBasePackages"
+              :key="item.id"
+                type="info"
+                effect="light"
+                round
+                :title="buildBasePackageTitle(item.id)"
+              >
+              {{ item.name }}
+            </ElTag>
+          </div>
+          <div v-if="!expandedBasePackages.length" class="preview-empty">当前没有展开出的基础包。</div>
         </div>
-        <div v-if="!menuPreviewItems.length" class="preview-empty">当前没有展开出的菜单。</div>
       </div>
-    </div>
+    </template>
+
+    <template v-else>
+      <div class="summary-card">
+          <ElTag type="info" effect="light" round>
+            直绑 {{ selectedPackages.length }}
+          </ElTag>
+          <ElTag type="info" effect="light" round>
+            展开基础包 {{ expandedBasePackages.length }}
+          </ElTag>
+          <ElTag type="info" effect="light" round>
+            展开权限 {{ actionPreviewItems.length }}
+          </ElTag>
+          <ElTag type="info" effect="light" round>
+            展开菜单 {{ menuPreviewItems.length }}
+          </ElTag>
+      </div>
+
+      <div class="preview-grid">
+        <div class="preview-card">
+          <div class="preview-title">当前授予包</div>
+          <div class="preview-tags">
+              <ElTag
+                v-for="item in selectedPackages"
+                :key="item.id"
+                :type="getPackageTypeTagType(item.packageType)"
+                effect="light"
+                round
+                :title="`${formatPackageType(item.packageType)} · ${item.packageKey}`"
+              >
+                {{ item.name }}
+              </ElTag>
+          </div>
+          <div v-if="!selectedPackages.length" class="preview-empty">当前尚未选择功能包。</div>
+        </div>
+
+        <div class="preview-card">
+          <div class="preview-title">组合展开后的基础包</div>
+          <div class="preview-tags">
+            <ElTag
+              v-for="item in expandedBasePackages"
+              :key="item.id"
+                type="info"
+                effect="light"
+                round
+                :title="buildBasePackageTitle(item.id)"
+              >
+              {{ item.name }}
+            </ElTag>
+          </div>
+          <div v-if="!expandedBasePackages.length" class="preview-empty">当前没有展开出的基础包。</div>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -103,22 +128,46 @@
   }
 
   interface Props {
-    selectedPackageIds: string[]
-    packages: Api.SystemManage.FeaturePackageItem[]
+    packageId?: string
+    packageItem?: Api.SystemManage.FeaturePackageItem
+    selectedPackageIds?: string[]
+    packages?: Api.SystemManage.FeaturePackageItem[]
   }
 
-  const props = defineProps<Props>()
+  const props = withDefaults(defineProps<Props>(), {
+    packageId: '',
+    packageItem: undefined,
+    selectedPackageIds: () => [],
+    packages: () => []
+  })
 
   const loading = ref(false)
-  const previewLimit = 24
   const detailMap = ref<Record<string, PackageDetail>>({})
   const knownPackages = ref<Record<string, Api.SystemManage.FeaturePackageItem>>({})
 
-  const selectedPackages = computed(() =>
-    props.selectedPackageIds
+  const previewMode = computed(() => (props.packageId || props.packageItem ? 'single' : 'multiple'))
+
+  const activePackage = computed(() => {
+    if (props.packageItem) return props.packageItem
+    if (props.packageId) return knownPackages.value[props.packageId] || null
+    return null
+  })
+
+  const activePackageIds = computed(() => {
+    if (previewMode.value === 'single') {
+      return activePackage.value?.id ? [activePackage.value.id] : []
+    }
+    return props.selectedPackageIds
+  })
+
+  const selectedPackages = computed(() => {
+    if (previewMode.value === 'single') {
+      return activePackage.value ? [activePackage.value] : []
+    }
+    return activePackageIds.value
       .map((id) => knownPackages.value[id] || props.packages.find((item) => item.id === id))
       .filter(Boolean) as Api.SystemManage.FeaturePackageItem[]
-  )
+  })
 
   const expandedBasePackageEntries = computed(() => {
     const map = new Map<string, { item: Api.SystemManage.FeaturePackageItem; sourceNames: string[] }>()
@@ -173,14 +222,17 @@
 
   const actionPreviewItems = computed(() => actionPreviewEntries.value.map(({ id, label }) => ({ id, label })))
   const menuPreviewItems = computed(() => menuPreviewEntries.value.map(({ id, label }) => ({ id, label })))
-  const visibleActionItems = computed(() => actionPreviewItems.value.slice(0, previewLimit))
-  const visibleMenuItems = computed(() => menuPreviewItems.value.slice(0, previewLimit))
 
   watch(
-    () => [props.selectedPackageIds.join(','), props.packages.map((item) => item.id).join(',')],
+    () => [
+      props.packageId,
+      props.packageItem?.id,
+      props.selectedPackageIds.join(','),
+      props.packages.map((item) => item.id).join(',')
+    ],
     () => {
       syncKnownPackages()
-      loadDetails()
+      void loadDetails()
     },
     { immediate: true }
   )
@@ -190,17 +242,18 @@
     props.packages.forEach((item) => {
       next[item.id] = item
     })
+    if (props.packageItem?.id) {
+      next[props.packageItem.id] = props.packageItem
+    }
     knownPackages.value = next
   }
 
   async function loadDetails() {
-    if (!props.selectedPackageIds.length) {
-      return
-    }
+    if (!activePackageIds.value.length) return
     loading.value = true
     try {
-      for (const packageId of props.selectedPackageIds) {
-        await ensurePackageDetail(packageId)
+      for (const targetPackageId of activePackageIds.value) {
+        await ensurePackageDetail(targetPackageId)
       }
     } finally {
       loading.value = false
@@ -266,20 +319,12 @@
     return `来源授予包：${target.sourceNames.join('、')}`
   }
 
-  function buildActionTitle(actionId: string) {
-    const target = actionPreviewEntries.value.find((item) => item.id === actionId)
-    if (!target) return ''
-    return `来源基础包：${target.sourceNames.join('、')}`
-  }
-
-  function buildMenuTitle(menuId: string) {
-    const target = menuPreviewEntries.value.find((item) => item.id === menuId)
-    if (!target) return ''
-    return `来源基础包：${target.sourceNames.join('、')}`
-  }
-
   function formatPackageType(packageType?: string) {
     return packageType === 'bundle' ? '组合包' : '基础包'
+  }
+
+  function getPackageTypeTagType(packageType?: string) {
+    return packageType === 'bundle' ? 'warning' : 'primary'
   }
 </script>
 
@@ -287,40 +332,61 @@
   .preview-shell {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
+  }
+
+  .single-header {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .single-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--art-gray-900);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .single-description {
+    color: var(--art-gray-700);
+    font-size: 13px;
+    line-height: 1.7;
   }
 
   .summary-card,
   .preview-tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 10px 12px;
   }
 
   .preview-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 14px;
   }
 
   .preview-card {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 12px 14px;
-    border-radius: 12px;
-    border: 1px solid #e5e7eb;
-    background: #fff;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--default-border);
+    background: var(--default-box-color);
   }
 
   .preview-title {
-    color: #475569;
+    color: var(--art-gray-700);
     font-size: 13px;
+    font-weight: 600;
   }
 
-  .preview-empty,
-  .preview-more {
-    color: #94a3b8;
+  .preview-empty {
+    color: var(--art-gray-500);
     font-size: 12px;
     line-height: 1.6;
   }

@@ -46,21 +46,6 @@
         </div>
       </div>
 
-      <PermissionSourcePanels
-        v-model="selectedDerivedPackageId"
-        :packages="featurePackages"
-        :source-map="derivedSourceMap"
-        :derived-items="derivedMenus"
-        :blocked-items="blockedMenus"
-        derived-title="功能包展开菜单"
-        blocked-title="当前用户已隐藏菜单"
-        open="menus"
-        blocked-tag-type="primary"
-        filtered-blocked-empty-text="当前筛选下暂无用户显式隐藏菜单"
-        empty-title="当前暂无用户菜单来源"
-        empty-text="请先检查用户直绑功能包、平台角色功能包或平台用户快照是否已经生成。"
-      />
-
       <div class="tree-shell">
         <ElTree
           ref="treeRef"
@@ -98,7 +83,6 @@ import { useRouter } from 'vue-router'
 import type { AppRouteRecord } from '@/types/router'
 import { formatMenuTitle } from '@/utils/router'
 import { fetchGetMenuTreeAll, fetchGetUserMenus, fetchGetUserPackages, fetchSetUserMenus } from '@/api/system-manage'
-import PermissionSourcePanels from '@/components/business/permission/PermissionSourcePanels.vue'
 import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
 
 interface Props {
@@ -128,9 +112,6 @@ const selectedIds = ref<string[]>([])
 const featurePackages = ref<Api.SystemManage.FeaturePackageItem[]>([])
 const candidateMenuIds = ref<string[]>([])
 const hiddenMenuIds = ref<string[]>([])
-const derivedSourceMap = ref<Record<string, string[]>>({})
-const menuSourceList = ref<Array<{ id: string; label: string }>>([])
-const selectedDerivedPackageId = ref('')
 const hasPackageConfig = ref(false)
 
 const userTitle = computed(() => props.userData?.nickName || props.userData?.userName || '')
@@ -139,7 +120,6 @@ const summaryItems = computed(() => [
   { label: '当前显示', value: selectedIds.value.length, type: 'success' as const },
   { label: '候选', value: candidateMenuIds.value.length, type: 'info' as const },
   { label: '功能包', value: featurePackages.value.length },
-  { label: '功能包展开', value: candidateMenuIds.value.length, type: 'warning' as const },
   { label: '已隐藏', value: hiddenMenuIds.value.length, type: 'primary' as const }
 ])
 const defaultProps = {
@@ -148,14 +128,6 @@ const defaultProps = {
     String(formatMenuTitle(data?.meta?.title) || data?.name || data?.path || data?.id || '')
 }
 
-const derivedMenus = computed(() => {
-  const idSet = new Set(candidateMenuIds.value)
-  return menuSourceList.value.filter((item) => idSet.has(item.id))
-})
-const blockedMenus = computed(() => {
-  const idSet = new Set(hiddenMenuIds.value)
-  return menuSourceList.value.filter((item) => idSet.has(item.id))
-})
 watch(
   () => props.modelValue,
   (open) => {
@@ -180,17 +152,9 @@ async function loadData() {
     candidateMenuIds.value = menuRes?.available_menu_ids || []
     hiddenMenuIds.value = menuRes?.hidden_menu_ids || []
     selectedIds.value = normalizeSelectedMenuIDs(menuRes?.menu_ids || [], candidateMenuIds.value)
-    derivedSourceMap.value = Object.fromEntries(
-      (menuRes?.derived_sources || []).map((item: { menu_id: string; package_ids: string[] }) => [
-        item.menu_id,
-        item.package_ids
-      ])
-    )
     hasPackageConfig.value = Boolean(menuRes?.has_package_config)
-    selectedDerivedPackageId.value = ''
 
     const allMenuList = Array.isArray(allMenus) ? allMenus : []
-    menuSourceList.value = buildMenuSourceList(allMenuList, candidateMenuIds.value)
     menuTree.value = filterMenuTreeByAllowedIDs(allMenuList, new Set(candidateMenuIds.value))
     await nextTick()
     treeRef.value?.setCheckedKeys(selectedIds.value)
@@ -255,23 +219,6 @@ function normalizeSelectedMenuIDs(selected: string[], derived: string[]) {
     result.push(id)
   })
   return result
-}
-
-function buildMenuSourceList(source: AppRouteRecord[], allowedIDs: string[]) {
-  const indexMap: Record<string, { id: string; label: string }> = {}
-  const walk = (items: AppRouteRecord[]) => {
-    items.forEach((item: any) => {
-      indexMap[item.id] = {
-        id: item.id,
-        label: formatMenuTitle(item.meta?.title) || item.label || item.name || item.path || item.id
-      }
-      if (Array.isArray(item.children) && item.children.length) {
-        walk(item.children)
-      }
-    })
-  }
-  walk(source)
-  return allowedIDs.map((id) => indexMap[id]).filter(Boolean)
 }
 
 function filterMenuTreeByAllowedIDs(source: AppRouteRecord[], allowed: Set<string>): AppRouteRecord[] {

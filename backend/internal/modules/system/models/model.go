@@ -106,6 +106,25 @@ func (Menu) TableName() string {
 	return "menus"
 }
 
+type PermissionGroup struct {
+	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	GroupType   string         `gorm:"type:varchar(20);not null" json:"group_type"`
+	Code        string         `gorm:"type:varchar(100);not null" json:"code"`
+	Name        string         `gorm:"type:varchar(150);not null" json:"name"`
+	NameEn      string         `gorm:"type:varchar(150)" json:"name_en"`
+	Description string         `gorm:"type:varchar(255)" json:"description"`
+	Status      string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	SortOrder   int            `gorm:"default:0" json:"sort_order"`
+	IsBuiltin   bool           `gorm:"not null;default:false" json:"is_builtin"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (PermissionGroup) TableName() string {
+	return "permission_groups"
+}
+
 type UserRole struct {
 	UserID   uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
 	RoleID   uuid.UUID  `gorm:"type:uuid;not null;index" json:"role_id"`
@@ -127,21 +146,25 @@ func (RoleHiddenMenu) TableName() string {
 }
 
 type PermissionAction struct {
-	ID            uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	PermissionKey string         `gorm:"type:varchar(150);index:idx_permission_actions_permission_key" json:"permission_key"`
-	ResourceCode  string         `gorm:"type:varchar(100);not null" json:"resource_code"`
-	ActionCode    string         `gorm:"type:varchar(100);not null" json:"action_code"`
-	ModuleCode    string         `gorm:"type:varchar(100);not null;default:''" json:"module_code"`
-	ContextType   string         `gorm:"type:varchar(20);not null;default:'team'" json:"context_type"`
-	Source        string         `gorm:"type:varchar(20);not null;default:'business'" json:"source"`
-	FeatureKind   string         `gorm:"type:varchar(20);not null;default:'system'" json:"feature_kind"`
-	Name          string         `gorm:"type:varchar(150);not null" json:"name"`
-	Description   string         `gorm:"type:varchar(255)" json:"description"`
-	Status        string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
-	SortOrder     int            `gorm:"default:0" json:"sort_order"`
-	CreatedAt     time.Time      `json:"created_at"`
-	UpdatedAt     time.Time      `json:"updated_at"`
-	DeletedAt     gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID              uuid.UUID        `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Code            string           `gorm:"type:varchar(36);uniqueIndex" json:"code"`
+	APIEndpointCode string           `gorm:"type:varchar(36)" json:"api_endpoint_code"`
+	PermissionKey   string           `gorm:"type:varchar(150);index:idx_permission_actions_permission_key" json:"permission_key"`
+	ModuleCode      string           `gorm:"type:varchar(100);not null;default:''" json:"module_code"`
+	ModuleGroupID   *uuid.UUID       `gorm:"type:uuid;index" json:"module_group_id"`
+	FeatureGroupID  *uuid.UUID       `gorm:"type:uuid;index" json:"feature_group_id"`
+	ContextType     string           `gorm:"type:varchar(20);not null;default:'team'" json:"context_type"`
+	FeatureKind     string           `gorm:"type:varchar(20);not null;default:'system'" json:"feature_kind"`
+	Name            string           `gorm:"type:varchar(150);not null" json:"name"`
+	Description     string           `gorm:"type:varchar(255)" json:"description"`
+	Status          string           `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	SortOrder       int              `gorm:"default:0" json:"sort_order"`
+	IsBuiltin       bool             `gorm:"not null;default:false" json:"is_builtin"`
+	ModuleGroup     *PermissionGroup `gorm:"foreignKey:ModuleGroupID" json:"module_group,omitempty"`
+	FeatureGroup    *PermissionGroup `gorm:"foreignKey:FeatureGroupID" json:"feature_group,omitempty"`
+	CreatedAt       time.Time        `json:"created_at"`
+	UpdatedAt       time.Time        `json:"updated_at"`
+	DeletedAt       gorm.DeletedAt   `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (PermissionAction) TableName() string {
@@ -402,14 +425,16 @@ func (TeamRoleAccessSnapshot) TableName() string {
 
 type APIEndpoint struct {
 	ID           uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Code         string         `gorm:"type:varchar(36);uniqueIndex" json:"code"`
 	Method       string         `gorm:"type:varchar(10);not null" json:"method"`
 	Path         string         `gorm:"type:varchar(255);not null" json:"path"`
 	Module       string         `gorm:"type:varchar(100);not null" json:"module"`
 	FeatureKind  string         `gorm:"type:varchar(20);not null;default:'system'" json:"feature_kind"`
 	Handler      string         `gorm:"type:varchar(255)" json:"handler"`
 	Summary      string         `gorm:"type:varchar(255)" json:"summary"`
-	ResourceCode string         `gorm:"type:varchar(100)" json:"resource_code"`
-	ActionCode   string         `gorm:"type:varchar(100)" json:"action_code"`
+	CategoryID   *uuid.UUID     `gorm:"type:uuid;index" json:"category_id"`
+	ContextScope string         `gorm:"type:varchar(20);not null;default:'optional'" json:"context_scope"`
+	Source       string         `gorm:"type:varchar(20);not null;default:'sync'" json:"source"`
 	Status       string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
@@ -418,6 +443,37 @@ type APIEndpoint struct {
 
 func (APIEndpoint) TableName() string {
 	return "api_endpoints"
+}
+
+type APIEndpointCategory struct {
+	ID        uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Code      string         `gorm:"type:varchar(100);not null;uniqueIndex" json:"code"`
+	Name      string         `gorm:"type:varchar(150);not null" json:"name"`
+	NameEn    string         `gorm:"type:varchar(150);not null;default:''" json:"name_en"`
+	SortOrder int            `gorm:"default:0" json:"sort_order"`
+	Status    string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (APIEndpointCategory) TableName() string {
+	return "api_endpoint_categories"
+}
+
+type APIEndpointPermissionBinding struct {
+	ID            uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	EndpointID    uuid.UUID      `gorm:"type:uuid;not null;index" json:"endpoint_id"`
+	PermissionKey string         `gorm:"type:varchar(150);not null;index" json:"permission_key"`
+	MatchMode     string         `gorm:"type:varchar(10);not null;default:'ANY'" json:"match_mode"`
+	SortOrder     int            `gorm:"default:0" json:"sort_order"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
+	DeletedAt     gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (APIEndpointPermissionBinding) TableName() string {
+	return "api_endpoint_permission_bindings"
 }
 
 type Tenant struct {

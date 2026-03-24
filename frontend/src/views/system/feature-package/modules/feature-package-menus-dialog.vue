@@ -47,7 +47,7 @@
     modelValue: boolean
     packageId: string
     packageName: string
-    contextType?: 'platform' | 'team' | string
+    contextType?: 'platform' | 'team' | 'common' | string
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -136,7 +136,7 @@
   function formatContextType(contextType?: string) {
     if (contextType === 'platform') return '平台'
     if (contextType === 'team') return '团队'
-    if (contextType === 'platform,team') return '平台/团队'
+    if (contextType === 'common') return '通用'
     return contextType || '-'
   }
 </script>

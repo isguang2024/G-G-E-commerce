@@ -9,7 +9,7 @@ const TENANT_BASE = '/api/v1/tenants'
 const SYSTEM_BASE = '/api/v1/system'
 const API_ENDPOINT_BASE = '/api/v1/api-endpoints'
 
-function normalizePermissionKey(value?: string, resourceCode?: string, actionCode?: string) {
+function normalizePermissionKey(value?: string) {
   const target = `${value || ''}`.trim()
   if (target) {
     if (target.includes(':')) {
@@ -18,9 +18,19 @@ function normalizePermissionKey(value?: string, resourceCode?: string, actionCod
     }
     return target
   }
-  const fallbackResource = `${resourceCode || ''}`.trim()
-  const fallbackAction = `${actionCode || ''}`.trim()
-  return fallbackResource && fallbackAction ? `${fallbackResource}.${fallbackAction}` : ''
+  return ''
+}
+
+function derivePermissionSegments(permissionKey?: string) {
+  const normalized = normalizePermissionKey(permissionKey)
+  const parts = normalized.split('.').filter(Boolean)
+  if (parts.length <= 1) {
+    return { resourceCode: '', actionCode: '' }
+  }
+  return {
+    resourceCode: parts.slice(0, -1).join('_'),
+    actionCode: parts[parts.length - 1]
+  }
 }
 
 function deriveContextType(permissionKey?: string, moduleCode?: string) {
@@ -45,45 +55,59 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
 }
 
 function normalizePermissionAction(item: any): Api.SystemManage.PermissionActionItem {
-  const resourceCode = item?.resource_code || item?.resourceCode || ''
-  const actionCode = item?.action_code || item?.actionCode || ''
-  const permissionKey = normalizePermissionKey(
-    item?.permission_key || item?.permissionKey,
-    resourceCode,
-    actionCode
-  )
-  const moduleCode = item?.module_code || item?.moduleCode || resourceCode || ''
+  const permissionKey = normalizePermissionKey(item?.permission_key || item?.permissionKey)
+  const legacy = derivePermissionSegments(permissionKey)
+  const moduleCode = item?.module_code || item?.moduleCode || legacy.resourceCode || ''
+  const normalizeGroup = (value: any): Api.SystemManage.PermissionGroupItem | undefined =>
+    value
+      ? {
+          id: value?.id || '',
+          groupType: value?.group_type || value?.groupType || '',
+          code: value?.code || '',
+          name: value?.name || '',
+          nameEn: value?.name_en || value?.nameEn || '',
+          description: value?.description || '',
+          status: value?.status || 'normal',
+          sortOrder: value?.sort_order ?? value?.sortOrder ?? 0,
+          isBuiltin: Boolean(value?.is_builtin ?? value?.isBuiltin ?? false)
+        }
+      : undefined
+  const moduleGroup = normalizeGroup(item?.module_group || item?.moduleGroup)
+  const featureGroup = normalizeGroup(item?.feature_group || item?.featureGroup)
   return {
     id: item?.id || '',
-    resourceCode,
-    actionCode,
-    moduleCode,
+    resourceCode: legacy.resourceCode,
+    actionCode: legacy.actionCode,
+    moduleCode: moduleGroup?.code || moduleCode,
+    moduleGroupId: item?.module_group_id || item?.moduleGroupId || moduleGroup?.id || '',
+    featureGroupId: item?.feature_group_id || item?.featureGroupId || featureGroup?.id || '',
+    moduleGroup,
+    featureGroup,
     contextType:
       item?.context_type || item?.contextType || deriveContextType(permissionKey, moduleCode),
     permissionKey,
-    source: item?.source || 'business',
-    featureKind: item?.feature_kind || item?.featureKind || 'system',
+    featureKind: featureGroup?.code || item?.feature_kind || item?.featureKind || 'system',
     name: item?.name || '',
     description: item?.description || '',
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
     dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
     status: item?.status || 'normal',
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
+    isBuiltin: Boolean(item?.is_builtin ?? item?.isBuiltin ?? false),
     createdAt: item?.created_at || item?.createdAt || '',
     updatedAt: item?.updated_at || item?.updatedAt || ''
   }
 }
 
 function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
-  const resourceCode = item?.resource_code || item?.resourceCode || ''
-  const actionCode = item?.action_code || item?.actionCode || ''
-  const permissionKey = normalizePermissionKey(
-    item?.permission_key || item?.permissionKey,
-    resourceCode,
-    actionCode
-  )
+  const permissionKeysRaw = item?.permission_keys || item?.permissionKeys || []
+  const permissionKeys = Array.isArray(permissionKeysRaw)
+    ? permissionKeysRaw.map((v: any) => `${v || ''}`.trim()).filter(Boolean)
+    : []
+  const permissionKey = normalizePermissionKey(item?.permission_key || item?.permissionKey) || permissionKeys[0] || ''
   return {
     id: item?.id || '',
+    code: item?.code || '',
     method: item?.method || '',
     path: item?.path || '',
     spec: item?.spec || '',
@@ -92,9 +116,21 @@ function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
     handler: item?.handler || '',
     summary: item?.summary || '',
     permissionKey,
+    permissionKeys,
     authMode: item?.auth_mode || item?.authMode || (permissionKey ? 'permission' : 'jwt'),
-    resourceCode,
-    actionCode,
+    categoryId: item?.category_id || item?.categoryId || item?.category?.id || '',
+    category: item?.category
+      ? {
+          id: item.category.id || '',
+          code: item.category.code || '',
+          name: item.category.name || '',
+          nameEn: item.category.name_en || item.category.nameEn || '',
+          sortOrder: item.category.sort_order ?? item.category.sortOrder ?? 0,
+          status: item.category.status || 'normal'
+        }
+      : undefined,
+    contextScope: item?.context_scope || item?.contextScope || 'optional',
+    source: item?.source || 'sync',
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
     dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
     status: item?.status || 'normal',
@@ -108,7 +144,11 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
   const contextType =
     item?.context_type ||
     item?.contextType ||
-    (packageKey.startsWith('platform.') ? 'platform' : 'team')
+    (packageKey.startsWith('platform.')
+      ? 'platform'
+      : packageKey.startsWith('common.')
+        ? 'common'
+        : 'team')
   return {
     id: item?.id || '',
     packageKey,
@@ -135,18 +175,12 @@ export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
   })
 }
 
-/** 获取用户权限（计算后的菜单权限） */
-export function fetchGetUserPermissions(userId: string) {
-  return request.get<any[]>({
-    url: `${USER_BASE}/${userId}/permissions`
-  })
-}
-
 /** 获取用户平台功能包 */
 export function fetchGetUserPackages(userId: string) {
   return request
     .get<Api.SystemManage.UserFeaturePackageResponse>({
-      url: `${USER_BASE}/${userId}/packages`
+      url: `${USER_BASE}/${userId}/packages`,
+      skipTenantHeader: true
     })
     .then((res) => ({
       package_ids: res?.package_ids || [],
@@ -158,8 +192,44 @@ export function fetchGetUserPackages(userId: string) {
 export function fetchSetUserPackages(userId: string, packageIds: string[]) {
   return request.put<void>({
     url: `${USER_BASE}/${userId}/packages`,
+    skipTenantHeader: true,
     data: { package_ids: packageIds }
   })
+}
+
+function normalizeApiEndpointCategory(item: any): Api.SystemManage.APIEndpointCategoryItem {
+  return {
+    id: item?.id || '',
+    code: item?.code || '',
+    name: item?.name || '',
+    nameEn: item?.name_en || item?.nameEn || '',
+    sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
+    status: item?.status || 'normal'
+  }
+}
+
+function normalizeUnregisteredApiRoute(item: any): Api.SystemManage.APIUnregisteredRouteItem {
+  return {
+    method: item?.method || '',
+    path: item?.path || '',
+    spec: item?.spec || `${item?.method || ''} ${item?.path || ''}`.trim(),
+    handler: item?.handler || '',
+    module: item?.module || '',
+    hasMeta: Boolean(item?.has_meta ?? item?.hasMeta),
+    meta: item?.meta
+      ? {
+          summary: item.meta.summary || '',
+          module: item.meta.module || '',
+          category_code: item.meta.category_code || '',
+          context_scope: item.meta.context_scope || 'optional',
+          source: item.meta.source || '',
+          feature_kind: item.meta.feature_kind || 'system',
+          permission_keys: Array.isArray(item.meta.permission_keys)
+            ? item.meta.permission_keys
+            : []
+        }
+      : undefined
+  }
 }
 
 // 获取用户详情
@@ -200,33 +270,11 @@ export function fetchAssignUserRoles(id: string, roleIds: string[]) {
   })
 }
 
-/** 获取平台用户权限例外审计 */
-export async function fetchGetUserActions(userId: string): Promise<Api.SystemManage.UserActionPermissionResponse> {
-  const res = await request.get<Api.SystemManage.UserActionPermissionResponse>({
-    url: `${USER_BASE}/${userId}/actions`
-  })
-  const actions = (res?.actions || []).map((item: any) => ({
-    action_id: item?.action_id || '',
-    effect: item?.effect || 'allow',
-    action: item?.action ? normalizePermissionAction(item.action) : undefined
-  })) as Api.SystemManage.UserActionPermissionItem[]
-  return {
-    actions,
-    available_action_ids: res?.available_action_ids || [],
-    available_actions: (res?.available_actions || []).map(normalizePermissionAction),
-    expanded_package_ids: res?.expanded_package_ids || [],
-    derived_sources: (res?.derived_sources || []).map((item: any) => ({
-      action_id: item?.action_id || '',
-      package_ids: item?.package_ids || []
-    })),
-    has_package_config: Boolean(res?.has_package_config)
-  }
-}
-
 /** 获取平台用户菜单裁剪 */
 export async function fetchGetUserMenus(userId: string) {
   const res = await request.get<Api.SystemManage.UserMenuBoundaryResponse>({
-    url: `${USER_BASE}/${userId}/menus`
+    url: `${USER_BASE}/${userId}/menus`,
+    skipTenantHeader: true
   })
   return {
     menu_ids: res?.menu_ids || [],
@@ -245,18 +293,8 @@ export async function fetchGetUserMenus(userId: string) {
 export function fetchSetUserMenus(userId: string, menuIds: string[]) {
   return request.put<void>({
     url: `${USER_BASE}/${userId}/menus`,
+    skipTenantHeader: true,
     data: { menu_ids: menuIds }
-  })
-}
-
-/** 设置平台用户权限例外审计 */
-export function fetchSetUserActions(
-  userId: string,
-  actions: Array<{ action_id: string; effect: 'allow' | 'deny' }>
-) {
-  return request.put<void>({
-    url: `${USER_BASE}/${userId}/actions`,
-    data: { actions }
   })
 }
 
@@ -402,17 +440,19 @@ export function fetchGetPermissionActionList(
   const normalizedParams = {
     ...params,
     permission_key: params?.permissionKey,
-    resource_code: params?.resourceCode,
-    action_code: params?.actionCode,
     module_code: params?.moduleCode,
+    module_group_id: params?.moduleGroupId,
+    feature_group_id: params?.featureGroupId,
     context_type: params?.contextType,
     feature_kind: params?.featureKind,
+    is_builtin: params?.isBuiltin,
     permissionKey: undefined,
-    resourceCode: undefined,
-    actionCode: undefined,
     moduleCode: undefined,
+    moduleGroupId: undefined,
+    featureGroupId: undefined,
     contextType: undefined,
-    featureKind: undefined
+    featureKind: undefined,
+    isBuiltin: undefined
   }
   return request
     .get<Api.SystemManage.PermissionActionList>({
@@ -432,6 +472,18 @@ export function fetchGetPermissionAction(id: string) {
       url: `${ACTION_PERMISSION_BASE}/${id}`
     })
     .then((res) => normalizePermissionAction(res))
+}
+
+/** 获取功能权限关联接口 */
+export function fetchGetPermissionActionEndpoints(id: string) {
+  return request
+    .get<Api.SystemManage.PermissionActionEndpointResponse>({
+      url: `${ACTION_PERMISSION_BASE}/${id}/endpoints`
+    })
+    .then((res) => ({
+      records: (res?.records || []).map(normalizeApiEndpoint),
+      total: res?.total || 0
+    }))
 }
 
 /** 创建功能权限 */
@@ -489,6 +541,32 @@ export function fetchGetFeaturePackage(id: string) {
       url: `${FEATURE_PACKAGE_BASE}/${id}`
     })
     .then((res) => normalizeFeaturePackage(res))
+}
+
+export function fetchGetPermissionGroupList(params: Api.SystemManage.PermissionGroupSearchParams) {
+  const normalizedParams = {
+    ...params,
+    group_type: params?.groupType,
+    groupType: undefined
+  }
+  return request.get<Api.SystemManage.PermissionGroupList>({
+    url: `${ACTION_PERMISSION_BASE}/groups`,
+    params: normalizedParams
+  })
+}
+
+export function fetchCreatePermissionGroup(data: Api.SystemManage.PermissionGroupSaveParams) {
+  return request.post<{ id: string }>({
+    url: `${ACTION_PERMISSION_BASE}/groups`,
+    data
+  })
+}
+
+export function fetchUpdatePermissionGroup(id: string, data: Api.SystemManage.PermissionGroupSaveParams) {
+  return request.put<void>({
+    url: `${ACTION_PERMISSION_BASE}/groups/${id}`,
+    data
+  })
 }
 
 /** 获取组合包基础包 */
@@ -633,13 +711,20 @@ export function fetchSetTeamFeaturePackages(
 /** 获取 API 注册表 */
 export function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpointSearchParams) {
   const normalizedParams = {
-    ...params,
-    resource_code: params?.resourceCode,
-    action_code: params?.actionCode,
+    permission_key: params?.permissionKey,
+    keyword: params?.keyword,
+    method: params?.method,
+    path: params?.path,
+    module: params?.module,
+    status: params?.status,
+    current: params?.current,
+    size: params?.size,
     feature_kind: params?.featureKind,
-    resourceCode: undefined,
-    actionCode: undefined,
-    featureKind: undefined
+    category_id: params?.categoryId,
+    context_scope: params?.contextScope,
+    source: params?.source,
+    has_permission_key: params?.hasPermissionKey,
+    has_category: params?.hasCategory
   }
   return request
     .get<Api.SystemManage.APIEndpointList>({
@@ -659,6 +744,80 @@ export function fetchSyncApiEndpoints() {
   })
 }
 
+export function fetchCreateApiEndpoint(data: Partial<Api.SystemManage.APIEndpointItem>) {
+  return request.post<Api.SystemManage.APIEndpointItem>({
+    url: API_ENDPOINT_BASE,
+    data
+  })
+}
+
+export function fetchUpdateApiEndpoint(id: string, data: Partial<Api.SystemManage.APIEndpointItem>) {
+  return request.put<Api.SystemManage.APIEndpointItem>({
+    url: `${API_ENDPOINT_BASE}/${id}`,
+    data
+  })
+}
+
+export function fetchUpdateApiEndpointContextScope(id: string, contextScope: string) {
+  return request.put<Api.SystemManage.APIEndpointItem>({
+    url: `${API_ENDPOINT_BASE}/${id}/context-scope`,
+    data: { context_scope: contextScope }
+  })
+}
+
+export function fetchGetApiEndpointCategories() {
+  return request
+    .get<{ records: Api.SystemManage.APIEndpointCategoryItem[]; total: number }>({
+      url: `${API_ENDPOINT_BASE}/categories`
+    })
+    .then((res) => ({
+      records: (res?.records || []).map(normalizeApiEndpointCategory),
+      total: res?.total || 0
+    }))
+}
+
+export function fetchGetUnregisteredApiRouteList(params: {
+  current?: number
+  size?: number
+  method?: string
+  path?: string
+  module?: string
+  keyword?: string
+  only_no_meta?: boolean
+}) {
+  return request
+    .get<Api.SystemManage.APIUnregisteredRouteList>({
+      url: `${API_ENDPOINT_BASE}/unregistered`,
+      params
+    })
+    .then((res) => ({
+      ...res,
+      records: (res?.records || []).map(normalizeUnregisteredApiRoute)
+    }))
+}
+
+export function fetchCreateApiEndpointCategory(data: Partial<Api.SystemManage.APIEndpointCategoryItem>) {
+  return request
+    .post<Api.SystemManage.APIEndpointCategoryItem>({
+      url: `${API_ENDPOINT_BASE}/categories`,
+      data
+    })
+    .then((res) => normalizeApiEndpointCategory(res))
+}
+
+export function fetchUpdateApiEndpointCategory(
+  id: string,
+  data: Partial<Api.SystemManage.APIEndpointCategoryItem>
+) {
+  return request
+    .put<Api.SystemManage.APIEndpointCategoryItem>({
+      url: `${API_ENDPOINT_BASE}/categories/${id}`,
+      data
+    })
+    .then((res) => normalizeApiEndpointCategory(res))
+}
+
+/** 重建 API/权限/功能包基础数据（保留菜单、默认管理员与默认角色） */
 const MENU_BASE = '/api/v1/menus'
 
 /** 获取菜单树（按当前用户角色过滤，用于侧栏；后端菜单模式时使用） */

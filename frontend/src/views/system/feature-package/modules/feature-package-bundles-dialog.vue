@@ -76,7 +76,7 @@
     modelValue: boolean
     packageId: string
     packageName: string
-    contextType?: 'platform' | 'team' | 'platform,team' | string
+    contextType?: 'platform' | 'team' | 'common' | string
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -175,13 +175,13 @@
 
   function supportsChildPackage(bundleContextType: string, childContextType: string) {
     if (bundleContextType === 'platform') {
-      return childContextType === 'platform' || childContextType === 'platform,team'
+      return childContextType === 'platform' || childContextType === 'common'
     }
     if (bundleContextType === 'team') {
-      return childContextType === 'team' || childContextType === 'platform,team'
+      return childContextType === 'team' || childContextType === 'common'
     }
-    if (bundleContextType === 'platform,team') {
-      return ['platform', 'team', 'platform,team'].includes(childContextType)
+    if (bundleContextType === 'common') {
+      return ['platform', 'team', 'common'].includes(childContextType)
     }
     return false
   }
@@ -189,7 +189,7 @@
   function formatContextType(contextType?: string) {
     if (contextType === 'platform') return '平台'
     if (contextType === 'team') return '团队'
-    if (contextType === 'platform,team') return '平台/团队'
+    if (contextType === 'common') return '通用'
     return contextType || '-'
   }
 </script>

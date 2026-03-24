@@ -568,7 +568,7 @@ func (s *service) SetTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, gran
 
 func normalizeContextType(value string) string {
 	switch strings.ReplaceAll(strings.TrimSpace(value), " ", "") {
-	case "platform", "team", "platform,team":
+	case "platform", "team", "common":
 		return strings.ReplaceAll(strings.TrimSpace(value), " ", "")
 	default:
 		return ""
@@ -608,11 +608,11 @@ func normalizePackageTypeDefault(value, fallback string) string {
 }
 
 func supportsTeamContext(contextType string) bool {
-	return contextType == "team" || contextType == "platform,team"
+	return contextType == "team" || contextType == "common"
 }
 
 func contextSupportsAction(packageContextType, actionContextType string) bool {
-	if packageContextType == "platform,team" {
+	if packageContextType == "common" {
 		return actionContextType == "platform" || actionContextType == "team"
 	}
 	return packageContextType == actionContextType
@@ -621,11 +621,11 @@ func contextSupportsAction(packageContextType, actionContextType string) bool {
 func contextSupportsChildPackage(bundleContextType, childContextType string) bool {
 	switch bundleContextType {
 	case "platform":
-		return childContextType == "platform" || childContextType == "platform,team"
+		return childContextType == "platform" || childContextType == "common"
 	case "team":
-		return childContextType == "team" || childContextType == "platform,team"
-	case "platform,team":
-		return childContextType == "platform" || childContextType == "team" || childContextType == "platform,team"
+		return childContextType == "team" || childContextType == "common"
+	case "common":
+		return childContextType == "platform" || childContextType == "team" || childContextType == "common"
 	default:
 		return false
 	}

@@ -91,6 +91,7 @@ func (s *userService) Create(req *dto.UserCreateRequest) (*User, error) {
 		Nickname:     req.Nickname,
 		Phone:        req.Phone,
 		SystemRemark: req.SystemRemark,
+		RegisterSource: "admin",
 		Status:       status,
 	}
 	if err := s.userRepo.Create(user); err != nil {
@@ -229,9 +230,6 @@ func (s *permissionService) GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID
 
 	if user.Status != "active" {
 		return []uuid.UUID{}, nil
-	}
-	if user.IsSuperAdmin && tenantID == nil {
-		return s.listEnabledAndPublicMenuIDs()
 	}
 	if tenantID != nil {
 		return s.getTeamUserMenuIDs(userID, *tenantID)
@@ -411,21 +409,6 @@ func (s *permissionService) finalizeMenuIDs(menuIDs []uuid.UUID) ([]uuid.UUID, e
 	return result, nil
 }
 
-func (s *permissionService) listEnabledAndPublicMenuIDs() ([]uuid.UUID, error) {
-	allMenus, err := s.menuRepo.ListAll()
-	if err != nil {
-		return nil, err
-	}
-	result := make([]uuid.UUID, 0, len(allMenus))
-	for _, menu := range allMenus {
-		if !isMenuEnabled(menu) {
-			continue
-		}
-		result = append(result, menu.ID)
-	}
-	return result, nil
-}
-
 func mergeUUIDLists(groups ...[]uuid.UUID) []uuid.UUID {
 	result := make([]uuid.UUID, 0)
 	seen := make(map[uuid.UUID]struct{})
@@ -494,7 +477,7 @@ func packageMatchesContext(packageContext, currentContext string) bool {
 	if packageContext == "" || packageContext == currentContext {
 		return true
 	}
-	return packageContext == "platform,team"
+	return packageContext == "common"
 }
 
 func isMenuEnabled(menu Menu) bool {

@@ -89,6 +89,7 @@ func AutoMigrate() error {
 		&models.User{},
 		&models.Role{},
 		&models.UserRole{},
+		&models.PermissionGroup{},
 		&models.PermissionAction{},
 		&models.FeaturePackage{},
 		&models.FeaturePackageBundle{},
@@ -108,7 +109,9 @@ func AutoMigrate() error {
 		&models.PlatformRoleAccessSnapshot{},
 		&models.TeamAccessSnapshot{},
 		&models.TeamRoleAccessSnapshot{},
+		&models.APIEndpointCategory{},
 		&models.APIEndpoint{},
+		&models.APIEndpointPermissionBinding{},
 		&models.Menu{},
 		&models.Tenant{},
 		&models.TenantMember{},
@@ -204,10 +207,34 @@ func createUniqueIndexes() error {
 		}
 	}
 
+	apiEndpointCategoryCodeIndexName := "idx_api_endpoint_categories_code"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", apiEndpointCategoryCodeIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + apiEndpointCategoryCodeIndexName + " ON api_endpoint_categories (code) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	apiEndpointPermissionBindingUnique := "idx_api_endpoint_permission_bindings_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", apiEndpointPermissionBindingUnique).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + apiEndpointPermissionBindingUnique + " ON api_endpoint_permission_bindings (endpoint_id, permission_key) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
 	permissionActionHotIndexName := "idx_permission_actions_status_sort_created"
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", permissionActionHotIndexName).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE INDEX " + permissionActionHotIndexName + " ON permission_actions (status, sort_order, created_at DESC)").Error; err != nil {
+			return err
+		}
+	}
+
+	permissionGroupIndexName := "idx_permission_groups_type_code"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", permissionGroupIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + permissionGroupIndexName + " ON permission_groups (group_type, code) WHERE deleted_at IS NULL").Error; err != nil {
 			return err
 		}
 	}

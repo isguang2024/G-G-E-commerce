@@ -221,3 +221,118 @@
 - 还缺关键闭环：
   - 循环依赖与停用影响的更强校验反馈
   - 组合包详情级运营视图与影响范围总览
+
+## 2026-03-24 权限主数据收口决策
+- 正式主链收口为：`API -> 功能键 -> 功能包 -> 授权对象`。
+- `api_endpoints` 与 `api_endpoint_permission_bindings` 继续保留，作为 API 自动注册与 API 归属功能键的正式模型。
+- `feature_packages`、`feature_package_bundles`、`role_feature_packages`、`user_feature_packages`、`team_feature_packages` 继续保留，作为功能包与授权对象的正式模型。
+- `permission_actions` 当前同时混合“功能键主数据 / 动作语义 / API 关联”三层职责，不再继续作为长期正式模型扩张；后续应迁移收口为单独的 `permission_keys` 主表，`feature_package_actions` 也同步演进为 `feature_package_keys`。
+
+## 2026-03-24 API 元数据策略决策
+- API 元数据采用“代码注册时内联声明”的正式策略，而不是外部配置文件全量驱动。
+- 原因是 API 元数据与真实路由强耦合，跟随注册点声明最不容易漏，且最符合“项目里的 API 自动注册”目标。
+- 但初始化默认数据仍应独立为 Seeds 模块，专门维护基础功能键、管理员功能包、默认角色绑定和固定 UUID。
+- 后续正式分层为：
+  - 路由注册阶段：注册 API，并同步 `method/path/module/summary/permission_keys/category/source`。
+  - 初始化阶段：导入默认功能键、默认功能包、默认角色绑定等主数据。
+- 自动注册范围进一步收口为：只有“带元数据的 API”才会自动进入 API 单元；没有元数据的普通 API 不自动写入 `api_endpoints`。
+- 对于未自动注册的普通 API，系统应允许管理员在 API 管理页面手动创建 API 单元，并绑定到实际路由。
+- API 管理页必须提供“搜索未注册 API”能力，用于从当前运行中的真实路由里筛出尚未进入 API 单元的接口。
+
+## 2026-03-24 API 元数据注册器方向
+- 现有 `internal/pkg/apiregistry` 已经是路由元数据唯一入口，后续应继续在该包内扩展链式 Builder，而不是把元数据逻辑散落到业务模块。
+- 正式目标是提供类似“类方法”式的注册体验，减少每个 API 重复书写，例如：
+  - `Meta("获取用户列表").绑定分组("user").绑定来源("sync").绑定功能键("system.user.manage").Build()`
+- `Registrar` 继续负责 `GET/POST/PUT/DELETE` 注册；Builder 只负责组织 `RouteMeta`，以兼容现有 `*RouteMeta` 调用方式并允许渐进迁移。
+- 该 Builder 还应内置统一规范：权限键去重、模块默认继承、分类默认推导、稳定 endpoint code 推导。
+- API 元数据正式字段已收口为：
+  - `code`
+  - `module`
+  - `summary`
+  - `feature_kind`
+  - `category_code`
+  - `context_scope`
+  - `source`
+  - `permission_keys`
+- 历史 `resource_code / action_code` 不再属于 `RouteMeta` 正式模型，也不应再通过 Builder 暴露；权限归属统一改由 `permission_key` 表达。
+
+## 2026-03-24 功能权限旧列清理补充
+- `permission_actions.source`、`permission_actions.resource_code`、`permission_actions.action_code` 已从正式模型、迁移链路和数据库中移除。
+- 功能权限正式主链固定为：
+  - `permission_key`
+  - `module_code`
+  - `module_group_id`
+  - `feature_group_id`
+  - `context_type`
+- 前端权限页、功能包权限选择、API 绑定展示都不应再依赖旧 `resource/action` 二段式字段；若需要展示兼容信息，只能从点式 `permission_key` 派生只读显示值。
+
+## 2026-03-24 部署初始化 Builder 决策
+- 部署链路应额外提供独立的初始化 Builder，用于串联默认分类、默认功能键、默认功能包、默认角色绑定和带元数据 API 的同步。
+- 该 Builder 的职责是“部署与初始化”，不是“业务路由注册”；因此不应把初始化逻辑塞回各模块 `module.go`。
+- 默认主数据应继续从 `internal/pkg/permissionseed` 单点输出，至少包括：
+  - 默认 API 分类
+  - 默认功能键
+  - 默认功能包
+  - 功能包菜单绑定
+  - 功能包功能键绑定
+  - 组合包包含关系
+  - 默认角色功能包绑定
+- `cmd/migrate/main.go` 的职责应收口为“消费 Seeds 并写库”，不再继续维护第二套本地默认数组。
+- 初始化 Builder 需要具备基础可观测性，至少能输出：
+  - 默认分类数量
+  - 默认功能键数量
+  - 默认功能包数量
+  - 默认组合包关系数量
+  - 默认角色绑定数量
+  - 带元数据可自动注册的路由数量
+  - 未注册路由数量
+
+## 2026-03-24 初始化执行层收口补充
+- `internal/pkg/permissionseed` 已不再只是“静态 Seeds 常量目录”，同时承载默认主数据的执行型 Ensure 能力。
+- 当前已由 `permissionseed` 统一负责的初始化动作包括：
+  - 默认 API 分类
+  - 默认权限分组
+  - 默认功能键
+  - 默认功能包
+  - 默认组合包关系
+  - 默认角色功能包绑定
+- `cmd/migrate/main.go` 的职责进一步收口为：
+  - 组织执行顺序
+  - 记录日志与摘要
+  - 串联刷新与补偿逻辑
+- 后续新增默认主数据时，应优先补到 `permissionseed`，而不是把新数组和写库逻辑直接塞回迁移入口。
+
+## 2026-03-24 API 管理页补录闭环补充
+- API 管理页现阶段必须具备“未注册 API”弹窗能力，可直接查询运行时未注册路由。
+- 查询维度至少包括：
+  - Method
+  - 路径
+  - 模块
+  - 关键字
+  - 是否仅查看无元数据路由
+- 管理员从未注册路由发起“创建 API”时，页面应自动把已有路由信息带入新增 API 表单，包括：
+  - method
+  - path
+  - module
+  - summary
+  - feature_kind
+  - category_code 对应分类
+  - context_scope
+  - source
+  - permission_keys
+- 该补录链路以“简单稳定”为第一优先级，当前不要求在未注册弹窗内直接完成复杂编辑。
+- API 管理页还应提供基础状态概览，至少能看见：
+  - 自动注册 API 数量
+  - 手工补录 API 数量
+  - 初始种子 API 数量
+  - 未注册路由数量
+- API 主列表应支持按注册方式快速筛选，至少包括：
+  - `sync`
+  - `manual`
+  - `seed`
+- API 管理页还应提供统一查询条，至少支持：
+  - Method
+  - 路径
+  - 分类
+  - 团队上下文
+  - 状态
