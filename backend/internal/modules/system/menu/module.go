@@ -44,7 +44,7 @@ func (m *MenuModule) RegisterRoutes(rg *gin.RouterGroup) {
 	platformService := platformaccess.NewService(m.db)
 	roleSnapshotService := platformroleaccess.NewService(m.db)
 	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
-	menuService := NewMenuService(menuRepo, refresher, m.logger)
+	menuService := NewMenuService(m.db, menuRepo, refresher, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 	menuHandler := NewMenuHandler(menuService, userRepo, menuRepo, roleRepo, userRoleRepo, boundaryService, authzService, platformService, m.logger)
 
@@ -55,6 +55,10 @@ func (m *MenuModule) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.POSTProtected("", reg.Meta("创建菜单").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.Create)
 		reg.PUTProtected("/:id", reg.Meta("更新菜单").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.Update)
 		reg.DELETEProtected("/:id", reg.Meta("删除菜单").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.Delete)
+		reg.GETProtected("/groups", reg.Meta("获取菜单分组列表").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.ListGroups)
+		reg.POSTProtected("/groups", reg.Meta("创建菜单分组").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.CreateGroup)
+		reg.PUTProtected("/groups/:id", reg.Meta("更新菜单分组").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.UpdateGroup)
+		reg.DELETEProtected("/groups/:id", reg.Meta("删除菜单分组").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.DeleteGroup)
 
 		// 菜单备份相关路由
 		backups := menus.Group("/backups")

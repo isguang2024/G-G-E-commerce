@@ -1,10 +1,11 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="`组合包基础包配置 - ${packageName}`"
-    width="920px"
+    size="920px"
     destroy-on-close
-  >
+    direction="rtl"
+    class="config-drawer">
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
         组合包只聚合基础包，不直接维护功能范围和菜单。这里保存的是组合包展开时要包含的基础包集合。
@@ -60,7 +61,7 @@
       <ElButton @click="visible = false">取消</ElButton>
       <ElButton type="primary" :loading="saving" @click="handleSave">保存</ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

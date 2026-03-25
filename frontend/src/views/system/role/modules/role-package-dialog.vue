@@ -1,11 +1,11 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="`角色功能包 - ${roleTitle}`"
-    width="1280px"
+    size="1280px"
     destroy-on-close
-    class="business-dialog"
-  >
+    class="business-dialog config-drawer"
+    direction="rtl">
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
         角色只负责绑定功能包。绑定后，角色菜单和权限会以功能包展开结果为基础继续裁剪，这里不再区分平台或团队语义。
@@ -92,7 +92,7 @@
         保存
       </ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

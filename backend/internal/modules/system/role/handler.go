@@ -10,18 +10,21 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 )
 
 type RoleHandler struct {
 	roleService RoleService
 	userRepo    user.UserRepository
+	keyRepo     user.PermissionKeyRepository
 	logger      *zap.Logger
 }
 
-func NewRoleHandler(roleService RoleService, userRepo user.UserRepository, logger *zap.Logger) *RoleHandler {
+func NewRoleHandler(roleService RoleService, userRepo user.UserRepository, keyRepo user.PermissionKeyRepository, logger *zap.Logger) *RoleHandler {
 	return &RoleHandler{
 		roleService: roleService,
 		userRepo:    userRepo,
+		keyRepo:     keyRepo,
 		logger:      logger,
 	}
 }
@@ -418,9 +421,23 @@ func (h *RoleHandler) GetRoleKeys(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+
+	actionIDs := boundary.AvailableKeyIDs
+	if len(actionIDs) == 0 {
+		// 兜底：历史快照延迟或脏数据时，至少回显已生效动作，避免前端列表空白。
+		actionIDs = boundary.EffectiveKeyIDs
+	}
+	actions, err := h.keyRepo.GetByIDs(actionIDs)
+	if err != nil {
+		h.logger.Error("Load role permission action details failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取角色功能权限详情失败")
+		c.JSON(status, resp)
+		return
+	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
 		"action_ids":           packageIDsToStrings(boundary.EffectiveKeyIDs),
 		"available_action_ids": packageIDsToStrings(boundary.AvailableKeyIDs),
+		"actions":              permissionActionListToMaps(actions),
 		"disabled_action_ids":  packageIDsToStrings(boundary.DisabledKeyIDs),
 		"expanded_package_ids": packageIDsToStrings(boundary.ExpandedPackageIDs),
 		"derived_sources":      buildKeySourceMaps(boundary.KeySourceMap),
@@ -588,4 +605,59 @@ func formatRoleDataResourceName(resourceCode string) string {
 		return name
 	}
 	return resourceCode
+}
+
+func permissionActionListToMaps(items []user.PermissionKey) []gin.H {
+	result := make([]gin.H, 0, len(items))
+	for _, item := range items {
+		parsedKey := permissionkey.FromKey(item.PermissionKey)
+		row := gin.H{
+			"id":             item.ID.String(),
+			"permissionKey":  item.PermissionKey,
+			"resourceCode":   parsedKey.ResourceCode,
+			"actionCode":     parsedKey.ActionCode,
+			"moduleCode":     item.ModuleCode,
+			"contextType":    item.ContextType,
+			"featureKind":    item.FeatureKind,
+			"name":           item.Name,
+			"description":    item.Description,
+			"status":         item.Status,
+			"sortOrder":      item.SortOrder,
+			"isBuiltin":      item.IsBuiltin,
+			"moduleGroupId":  "",
+			"featureGroupId": "",
+		}
+		if item.ModuleGroupID != nil {
+			row["moduleGroupId"] = item.ModuleGroupID.String()
+		}
+		if item.FeatureGroupID != nil {
+			row["featureGroupId"] = item.FeatureGroupID.String()
+		}
+		if item.ModuleGroup != nil {
+			row["moduleGroup"] = gin.H{
+				"id":        item.ModuleGroup.ID.String(),
+				"groupType": item.ModuleGroup.GroupType,
+				"code":      item.ModuleGroup.Code,
+				"name":      item.ModuleGroup.Name,
+				"nameEn":    item.ModuleGroup.NameEn,
+				"status":    item.ModuleGroup.Status,
+				"sortOrder": item.ModuleGroup.SortOrder,
+				"isBuiltin": item.ModuleGroup.IsBuiltin,
+			}
+		}
+		if item.FeatureGroup != nil {
+			row["featureGroup"] = gin.H{
+				"id":        item.FeatureGroup.ID.String(),
+				"groupType": item.FeatureGroup.GroupType,
+				"code":      item.FeatureGroup.Code,
+				"name":      item.FeatureGroup.Name,
+				"nameEn":    item.FeatureGroup.NameEn,
+				"status":    item.FeatureGroup.Status,
+				"sortOrder": item.FeatureGroup.SortOrder,
+				"isBuiltin": item.FeatureGroup.IsBuiltin,
+			}
+		}
+		result = append(result, row)
+	}
+	return result
 }

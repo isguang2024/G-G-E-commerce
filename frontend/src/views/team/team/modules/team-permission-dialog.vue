@@ -1,11 +1,11 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="`团队边界 - ${teamName}`"
-    width="960px"
+    size="960px"
     destroy-on-close
-    class="team-permission-dialog"
-  >
+    class="team-permission-dialog config-drawer"
+    direction="rtl">
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
         这里配置的是团队边界减法。正式开通能力请通过功能包完成；这里保存的内容只会从功能包展开结果中屏蔽个别权限，不会额外开通新能力。
@@ -60,7 +60,7 @@
       <ElButton @click="handleCancel">取消</ElButton>
       <ElButton type="primary" :loading="saving" @click="handleSave">保存</ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

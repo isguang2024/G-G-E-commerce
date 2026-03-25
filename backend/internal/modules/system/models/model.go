@@ -85,15 +85,17 @@ func (Role) TableName() string {
 }
 
 type Menu struct {
-	ID        uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	ParentID  *uuid.UUID `gorm:"type:uuid" json:"parent_id"`
-	Path      string     `gorm:"type:varchar(255)" json:"path"`
-	Name      string     `gorm:"type:varchar(100)" json:"name"`
-	Component string     `gorm:"type:varchar(255)" json:"component"`
-	Title     string     `gorm:"type:varchar(100)" json:"title"`
-	Icon      string     `gorm:"type:varchar(100)" json:"icon"`
-	SortOrder int        `gorm:"default:0" json:"sort_order"`
-	Hidden    bool       `gorm:"default:false" json:"hidden"`
+	ID            uuid.UUID        `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ParentID      *uuid.UUID       `gorm:"type:uuid" json:"parent_id"`
+	ManageGroupID *uuid.UUID       `gorm:"type:uuid;index" json:"manage_group_id"`
+	Path          string           `gorm:"type:varchar(255)" json:"path"`
+	Name          string           `gorm:"type:varchar(100)" json:"name"`
+	Component     string           `gorm:"type:varchar(255)" json:"component"`
+	Title         string           `gorm:"type:varchar(100)" json:"title"`
+	Icon          string           `gorm:"type:varchar(100)" json:"icon"`
+	SortOrder     int              `gorm:"default:0" json:"sort_order"`
+	Hidden        bool             `gorm:"default:false" json:"hidden"`
+	ManageGroup   *MenuManageGroup `gorm:"foreignKey:ManageGroupID" json:"manage_group,omitempty"`
 
 	Meta      MetaJSON       `gorm:"type:jsonb" json:"meta"`
 	CreatedAt time.Time      `json:"created_at"`
@@ -105,6 +107,20 @@ type Menu struct {
 
 func (Menu) TableName() string {
 	return "menus"
+}
+
+type MenuManageGroup struct {
+	ID        uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Name      string         `gorm:"type:varchar(100);not null" json:"name"`
+	SortOrder int            `gorm:"default:0" json:"sort_order"`
+	Status    string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (MenuManageGroup) TableName() string {
+	return "menu_manage_groups"
 }
 
 type UIPage struct {

@@ -313,16 +313,17 @@ func (s *service) SetPackageChildren(id uuid.UUID, childPackageIDs []uuid.UUID) 
 	if item.PackageType != "bundle" {
 		return errors.New("仅组合包允许配置基础包集合")
 	}
+	childMap, err := s.getPackageMap(childPackageIDs)
+	if err != nil {
+		return err
+	}
 	for _, childPackageID := range childPackageIDs {
 		if childPackageID == id {
 			return errors.New("组合包不能包含自己")
 		}
-		child, getErr := s.packageRepo.GetByID(childPackageID)
-		if getErr != nil {
-			if errors.Is(getErr, gorm.ErrRecordNotFound) {
-				return ErrFeaturePackageNotFound
-			}
-			return getErr
+		child, ok := childMap[childPackageID]
+		if !ok {
+			return ErrFeaturePackageNotFound
 		}
 		if child.PackageType != "base" {
 			return errors.New("组合包只能包含基础包")
@@ -447,16 +448,9 @@ func (s *service) GetTeamPackages(teamID uuid.UUID) ([]uuid.UUID, []user.Feature
 	if err != nil {
 		return nil, nil, err
 	}
-	items := make([]user.FeaturePackage, 0, len(packageIDs))
-	for _, packageID := range packageIDs {
-		item, getErr := s.packageRepo.GetByID(packageID)
-		if getErr != nil {
-			if errors.Is(getErr, gorm.ErrRecordNotFound) {
-				continue
-			}
-			return nil, nil, getErr
-		}
-		items = append(items, *item)
+	items, err := s.packageRepo.GetByIDs(packageIDs)
+	if err != nil {
+		return nil, nil, err
 	}
 	return packageIDs, items, nil
 }
@@ -495,12 +489,13 @@ func (s *service) SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *
 	for _, teamID := range currentTeamIDs {
 		affected[teamID] = struct{}{}
 	}
+	teamMap, err := s.getTeamMap(teamIDs)
+	if err != nil {
+		return err
+	}
 	for _, teamID := range teamIDs {
-		if _, err := s.tenantRepo.GetByID(teamID); err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return errors.New("存在无效的团队")
-			}
-			return err
+		if _, ok := teamMap[teamID]; !ok {
+			return errors.New("存在无效的团队")
 		}
 		desired[teamID] = struct{}{}
 		affected[teamID] = struct{}{}
@@ -544,13 +539,14 @@ func (s *service) SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *
 }
 
 func (s *service) SetTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error {
+	packageMap, err := s.getPackageMap(packageIDs)
+	if err != nil {
+		return err
+	}
 	for _, packageID := range packageIDs {
-		item, err := s.packageRepo.GetByID(packageID)
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return ErrFeaturePackageNotFound
-			}
-			return err
+		item, ok := packageMap[packageID]
+		if !ok {
+			return ErrFeaturePackageNotFound
 		}
 		if !supportsTeamContext(item.ContextType) {
 			return errors.New("仅支持为团队分配团队功能包")
@@ -562,8 +558,32 @@ func (s *service) SetTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, gran
 	if s.refresher != nil {
 		return s.refresher.RefreshTeam(teamID)
 	}
-	_, err := s.boundaryService.RefreshSnapshot(teamID)
+	_, err = s.boundaryService.RefreshSnapshot(teamID)
 	return err
+}
+
+func (s *service) getPackageMap(packageIDs []uuid.UUID) (map[uuid.UUID]user.FeaturePackage, error) {
+	items, err := s.packageRepo.GetByIDs(packageIDs)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[uuid.UUID]user.FeaturePackage, len(items))
+	for _, item := range items {
+		result[item.ID] = item
+	}
+	return result, nil
+}
+
+func (s *service) getTeamMap(teamIDs []uuid.UUID) (map[uuid.UUID]struct{}, error) {
+	items, err := s.tenantRepo.GetByIDs(teamIDs)
+	if err != nil {
+		return nil, err
+	}
+	result := make(map[uuid.UUID]struct{}, len(items))
+	for _, item := range items {
+		result[item.ID] = struct{}{}
+	}
+	return result, nil
 }
 
 func normalizeContextType(value string) string {

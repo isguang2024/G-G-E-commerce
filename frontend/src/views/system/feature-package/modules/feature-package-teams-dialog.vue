@@ -1,10 +1,11 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="`开通团队 - ${packageName}`"
-    width="920px"
+    size="920px"
     destroy-on-close
-  >
+    direction="rtl"
+    class="config-drawer">
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
         平台为团队开通功能包后，团队功能边界会自动同步；这里支持团队包和平台/团队共享包。
@@ -49,7 +50,7 @@
       <ElButton @click="visible = false">取消</ElButton>
       <ElButton type="primary" :loading="saving" @click="handleSave">保存</ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

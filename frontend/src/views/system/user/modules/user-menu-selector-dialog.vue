@@ -1,14 +1,14 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="`用户菜单裁剪 - ${userTitle}`"
-    width="960px"
+    size="960px"
     destroy-on-close
-    class="user-menu-dialog"
-  >
+    class="user-menu-dialog config-drawer"
+    direction="rtl">
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        这里配置的是平台用户菜单减法裁剪。请先绑定平台功能包；此处只会在功能包展开菜单范围内隐藏个别入口，不会额外新增菜单能力。
+        这里配置的是平台用户菜单减法裁剪，只影响平台上下文菜单显示，不包含团队内菜单。请先绑定平台功能包；此处只会在功能包展开菜单范围内隐藏个别入口，不会额外新增菜单能力。
       </div>
 
       <div
@@ -73,7 +73,7 @@
         保存
       </ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

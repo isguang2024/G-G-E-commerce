@@ -1,11 +1,11 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="`团队功能包 - ${teamName}`"
-    width="1280px"
+    size="1280px"
     destroy-on-close
-    class="business-dialog"
-  >
+    class="business-dialog config-drawer"
+    direction="rtl">
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
         团队功能包由平台统一开通。保存后会同步刷新该团队的功能权限边界和菜单边界。
@@ -92,7 +92,7 @@
         保存
       </ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

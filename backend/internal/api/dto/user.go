@@ -40,3 +40,12 @@ type UserUpdateRequest struct {
 type UserAssignRolesRequest struct {
 	RoleIDs []string `json:"roleIds" binding:"required"`
 }
+
+type UserPermissionDiagnosisRequest struct {
+	TenantID      string `form:"tenant_id"`
+	PermissionKey string `form:"permission_key"`
+}
+
+type UserPermissionRefreshRequest struct {
+	TenantID string `json:"tenant_id"`
+}

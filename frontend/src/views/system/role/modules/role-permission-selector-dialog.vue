@@ -1,11 +1,11 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="`角色权限配置 - ${roleTitle}`"
-    width="1120px"
+    size="1120px"
     destroy-on-close
-    class="role-permission-dialog"
-  >
+    class="role-permission-dialog config-drawer"
+    direction="rtl">
     <div class="dialog-shell" v-loading="loading">
         <div class="dialog-note">
           请先为角色绑定功能包，再在角色已绑定功能包范围内裁剪菜单权限、功能权限和数据权限。菜单权限控制入口可见，功能权限勾选后即允许，不勾选默认不允许，数据权限控制资源范围。
@@ -223,7 +223,7 @@
       <ElButton @click="handleCancel">取消</ElButton>
       <ElButton type="primary" :loading="saving" @click="handleSave">保存</ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">
@@ -368,7 +368,12 @@ const actionSourceMapText = computed(() =>
 )
 
 const filteredPermissionActions = computed(() => {
-  return permissionActions.value.filter((item) => availableActionIdSet.value.has(item.id))
+  const allActions = permissionActions.value || []
+  if (!allActions.length) return []
+  // 兜底：部分历史角色或快照延迟场景下 available_action_ids 可能为空，
+  // 此时不应把功能权限面板清空，回退到服务端返回的 actions 列表。
+  if (availableActionIdSet.value.size === 0) return allActions
+  return allActions.filter((item) => availableActionIdSet.value.has(item.id))
 })
 const derivedActions = computed(() => filteredPermissionActions.value)
 const disabledActions = computed(() => derivedActions.value.filter((item) => disabledActionIdSet.value.has(item.id)))
@@ -554,9 +559,11 @@ async function loadData() {
     permissionActions.value = roleActions?.actions || []
     roleActionBoundary.value = roleActions || null
     const availableActionIDSet = availableActionIdSet.value
-    selectedActionNodeValues.value = (roleActions?.action_ids || []).filter(
-      (item) => item && availableActionIDSet.has(item)
-    )
+    selectedActionNodeValues.value = (roleActions?.action_ids || []).filter((item) => {
+      if (!item) return false
+      if (availableActionIDSet.size === 0) return true
+      return availableActionIDSet.has(item)
+    })
 
     dataScopeOptions.value = (dataPermissionRes?.available_data_scopes || []).map((item) => ({
       scopeCode: item.data_scope,

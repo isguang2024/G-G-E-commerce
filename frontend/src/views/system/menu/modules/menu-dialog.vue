@@ -5,7 +5,7 @@
     @update:model-value="handleCancel"
     size="960px"
     direction="rtl"
-    class="menu-dialog"
+    class="menu-dialog config-drawer"
     @closed="handleClosed"
     :before-close="handleCancel"
   >
@@ -141,12 +141,14 @@
     accessMode: 'permission' | 'jwt' | 'public'
     roles: string[]
     isFullPage: boolean
+    manageGroupId: string
   }
 
   interface Props {
     visible: boolean
     editData?: AppRouteRecord | any
     menuTree?: AppRouteRecord[]
+    manageGroups?: Api.SystemManage.MenuManageGroupItem[]
     editingMenuId?: string
     initialParentId?: string
   }
@@ -159,6 +161,7 @@
   const props = withDefaults(defineProps<Props>(), {
     visible: false,
     menuTree: () => [],
+    manageGroups: () => [],
     editingMenuId: '',
     initialParentId: ''
   })
@@ -203,6 +206,14 @@
     return options
   })
 
+  const manageGroupOptions = computed(() => [
+    { label: '不分组', value: '' },
+    ...(props.manageGroups || []).map((item) => ({
+      label: item.name,
+      value: item.id
+    }))
+  ])
+
   const emit = defineEmits<Emits>()
 
   const formRef = ref()
@@ -232,7 +243,8 @@
     customParent: '',
     accessMode: 'permission',
     roles: [],
-    isFullPage: false
+    isFullPage: false,
+    manageGroupId: ''
   })
 
   const rules = reactive<FormRules>({
@@ -321,6 +333,20 @@
         key: 'sort',
         type: 'number',
         props: { controlsPosition: 'right', style: { width: '100%' } }
+      },
+      {
+        label: createLabelTooltip(
+          '管理分组',
+          '仅用于菜单管理页分组显示，不影响运行时菜单、权限和同层排序。'
+        ),
+        key: 'manageGroupId',
+        type: 'select',
+        props: {
+          placeholder: '可选，选择菜单管理分组',
+          options: manageGroupOptions.value,
+          clearable: true,
+          style: { width: '100%' }
+        }
       },
       {
         label: '外部链接',
@@ -424,6 +450,7 @@
     form.accessMode = row.meta?.accessMode || 'permission'
     form.roles = row.meta?.roles || []
     form.isFullPage = row.meta?.isFullPage ?? false
+    form.manageGroupId = String(row.manage_group_id || row.manageGroupId || row.manage_group?.id || '')
   }
 
   const handleSubmit = async (): Promise<void> => {

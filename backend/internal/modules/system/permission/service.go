@@ -96,19 +96,13 @@ func (s *permissionService) ListEndpoints(id uuid.UUID) ([]user.APIEndpoint, err
 	if len(endpointIDs) == 0 {
 		return []user.APIEndpoint{}, nil
 	}
-	endpoints, _, err := s.apiEndpointRepo.List(0, 5000, &user.APIEndpointListParams{
-		Status: "normal",
-	})
+	endpoints, err := s.apiEndpointRepo.GetByIDs(endpointIDs)
 	if err != nil {
 		return nil, err
 	}
-	endpointIDSet := make(map[uuid.UUID]struct{}, len(endpointIDs))
-	for _, endpointID := range endpointIDs {
-		endpointIDSet[endpointID] = struct{}{}
-	}
 	result := make([]user.APIEndpoint, 0, len(endpoints))
 	for _, endpoint := range endpoints {
-		if _, ok := endpointIDSet[endpoint.ID]; !ok {
+		if endpoint.Status != "normal" {
 			continue
 		}
 		result = append(result, endpoint)

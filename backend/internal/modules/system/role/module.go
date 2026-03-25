@@ -66,7 +66,7 @@ func (m *RoleModule) RegisterRoutes(rg *gin.RouterGroup) {
 		m.logger,
 	)
 	userRepo := user.NewUserRepository(m.db)
-	roleHandler := NewRoleHandler(roleService, userRepo, m.logger)
+	roleHandler := NewRoleHandler(roleService, userRepo, actionRepo, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 
 	roles := rg.Group("/roles")

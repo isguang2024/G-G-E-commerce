@@ -1,13 +1,14 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
-    :title="`功能包功能范围配置 - ${packageName}`"
-    width="1240px"
+    :title="drawerTitle"
+    size="1240px"
     destroy-on-close
-  >
+    direction="rtl"
+    class="config-drawer">
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        这里配置的是团队开通该功能包后可进入边界的功能范围，不是直接给角色或成员授予权限。团队角色和成员仍然只在这批已开通范围内继续细分授权。
+        {{ noteText }}
       </div>
 
       <div class="summary-card">
@@ -20,7 +21,7 @@
       <PermissionActionCascaderPanel
         :actions="filteredActions"
         :selected-ids="selectedIds"
-        footer-text="这里保存的是团队可开放能力范围，角色和成员分配仍然基于基础功能权限。"
+        :footer-text="footerText"
         @update:selected-ids="selectedIds = $event"
       />
     </div>
@@ -29,7 +30,7 @@
       <ElButton @click="visible = false">取消</ElButton>
       <ElButton type="primary" :loading="saving" @click="handleSave">保存</ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">
@@ -78,6 +79,15 @@
   )
 
   const contextLabel = computed(() => formatContextType(props.contextType))
+  const drawerTitle = computed(() => `功能包功能范围配置 - ${props.packageName}`)
+  const noteText = computed(() => {
+    const scopeLabel = getScopeLabel(props.contextType)
+    return `这里配置的是${scopeLabel}启用该功能包后可进入的功能范围，不是直接给角色或成员授予权限。后续角色和成员的权限分配，仍然只能在这批已开通范围内继续细分。`
+  })
+  const footerText = computed(() => {
+    const scopeLabel = getScopeLabel(props.contextType)
+    return `这里保存的是${scopeLabel}可开放能力范围，角色和成员分配仍然基于基础功能权限。`
+  })
 
   watch(
     () => props.modelValue,
@@ -180,7 +190,16 @@
     if (contextType === 'platform') return '平台'
     if (contextType === 'team') return '团队'
     if (contextType === 'common') return '通用'
+    if (contextType === 'platform,team' || contextType === 'team,platform') return '平台/团队'
     return contextType || '-'
+  }
+
+  function getScopeLabel(contextType?: string) {
+    if (contextType === 'platform') return '平台'
+    if (contextType === 'team') return '团队'
+    if (contextType === 'common') return '平台或团队'
+    if (contextType === 'platform,team' || contextType === 'team,platform') return '平台或团队'
+    return '当前上下文'
   }
 </script>
 

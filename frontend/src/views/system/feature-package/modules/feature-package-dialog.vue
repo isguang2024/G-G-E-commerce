@@ -1,11 +1,11 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="dialogType === 'add' ? '新增功能包' : '编辑功能包'"
-    width="36%"
-    align-center
+    size="36%"
     @close="handleClose"
-  >
+    direction="rtl"
+    class="config-drawer">
     <ElForm ref="formRef" :model="form" :rules="rules" label-width="110px">
       <ElFormItem label="功能包编码" prop="packageKey">
         <ElInput v-model="form.packageKey" placeholder="例如 platform.system_admin" />
@@ -46,7 +46,7 @@
       <ElButton @click="handleClose">取消</ElButton>
       <ElButton type="primary" @click="handleSubmit">提交</ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

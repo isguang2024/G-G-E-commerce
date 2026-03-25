@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/apiendpointaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 )
 
@@ -51,6 +52,7 @@ type UnregisteredRouteItem struct {
 type Service interface {
 	List(req *ListRequest) ([]user.APIEndpoint, int64, error)
 	ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]UnregisteredRouteItem, int64, error)
+	ListBindingsByEndpointIDs(endpointIDs []uuid.UUID) ([]user.APIEndpointPermissionBinding, error)
 	ListBindings(endpointID uuid.UUID) ([]user.APIEndpointPermissionBinding, error)
 	ListCategories() ([]user.APIEndpointCategory, error)
 	Save(endpoint *user.APIEndpoint, permissionKeys []string) (*user.APIEndpoint, error)
@@ -60,24 +62,26 @@ type Service interface {
 }
 
 type service struct {
-	db           *gorm.DB
-	repo         user.APIEndpointRepository
-	categoryRepo user.APIEndpointCategoryRepository
-	bindingRepo  user.APIEndpointPermissionBindingRepository
-	router       *gin.Engine
-	logger       *zap.Logger
-	env          string
+	db             *gorm.DB
+	repo           user.APIEndpointRepository
+	categoryRepo   user.APIEndpointCategoryRepository
+	bindingRepo    user.APIEndpointPermissionBindingRepository
+	router         *gin.Engine
+	logger         *zap.Logger
+	env            string
+	endpointAccess apiendpointaccess.Service
 }
 
-func NewService(db *gorm.DB, repo user.APIEndpointRepository, categoryRepo user.APIEndpointCategoryRepository, bindingRepo user.APIEndpointPermissionBindingRepository, router *gin.Engine, logger *zap.Logger, env string) Service {
+func NewService(db *gorm.DB, repo user.APIEndpointRepository, categoryRepo user.APIEndpointCategoryRepository, bindingRepo user.APIEndpointPermissionBindingRepository, router *gin.Engine, logger *zap.Logger, env string, endpointAccess apiendpointaccess.Service) Service {
 	return &service{
-		db:           db,
-		repo:         repo,
-		categoryRepo: categoryRepo,
-		bindingRepo:  bindingRepo,
-		router:       router,
-		logger:       logger,
-		env:          strings.TrimSpace(env),
+		db:             db,
+		repo:           repo,
+		categoryRepo:   categoryRepo,
+		bindingRepo:    bindingRepo,
+		router:         router,
+		logger:         logger,
+		env:            strings.TrimSpace(env),
+		endpointAccess: endpointAccess,
 	}
 }
 
@@ -109,30 +113,7 @@ func (s *service) List(req *ListRequest) ([]user.APIEndpoint, int64, error) {
 		if len(endpointIDs) == 0 {
 			return []user.APIEndpoint{}, 0, nil
 		}
-		all, _, err := s.repo.List(0, 5000, params)
-		if err != nil {
-			return nil, 0, err
-		}
-		idSet := make(map[uuid.UUID]struct{}, len(endpointIDs))
-		for _, endpointID := range endpointIDs {
-			idSet[endpointID] = struct{}{}
-		}
-		filtered := make([]user.APIEndpoint, 0, len(all))
-		for _, item := range all {
-			if _, ok := idSet[item.ID]; ok {
-				filtered = append(filtered, item)
-			}
-		}
-		total := int64(len(filtered))
-		start := (req.Current - 1) * req.Size
-		if start >= len(filtered) {
-			return []user.APIEndpoint{}, total, nil
-		}
-		end := start + req.Size
-		if end > len(filtered) {
-			end = len(filtered)
-		}
-		return filtered[start:end], total, nil
+		params.EndpointIDs = endpointIDs
 	}
 	return s.repo.List((req.Current-1)*req.Size, req.Size, params)
 }
@@ -220,11 +201,18 @@ func (s *service) Sync() error {
 	if s.router == nil {
 		return nil
 	}
-	return apiregistry.SyncRoutes(s.db, s.logger, s.router.Routes())
+	if err := apiregistry.SyncRoutes(s.db, s.logger, s.router.Routes()); err != nil {
+		return err
+	}
+	return s.refreshRuntimeCache()
 }
 
 func (s *service) ListBindings(endpointID uuid.UUID) ([]user.APIEndpointPermissionBinding, error) {
 	return s.bindingRepo.ListByEndpointID(endpointID)
+}
+
+func (s *service) ListBindingsByEndpointIDs(endpointIDs []uuid.UUID) ([]user.APIEndpointPermissionBinding, error) {
+	return s.bindingRepo.ListByEndpointIDs(endpointIDs)
 }
 
 func (s *service) ListCategories() ([]user.APIEndpointCategory, error) {
@@ -281,6 +269,8 @@ func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string) (*us
 		endpoint.CategoryID = nil
 	}
 
+	var oldMethod string
+	var oldPath string
 	if endpoint.ID == uuid.Nil {
 		exists, err := s.repo.GetByMethodAndPath(endpoint.Method, endpoint.Path)
 		if err == nil && exists != nil {
@@ -293,6 +283,15 @@ func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string) (*us
 			return nil, err
 		}
 	} else {
+		current, err := s.repo.GetByID(endpoint.ID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, errors.New("API 不存在")
+			}
+			return nil, err
+		}
+		oldMethod = current.Method
+		oldPath = current.Path
 		exists, err := s.repo.GetByMethodAndPath(endpoint.Method, endpoint.Path)
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, err
@@ -347,6 +346,9 @@ func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string) (*us
 		})
 	}
 	if err := s.bindingRepo.ReplaceByEndpointID(endpoint.ID, items); err != nil {
+		return nil, err
+	}
+	if err := s.refreshRuntimeCacheForSave(oldMethod, oldPath, endpoint.Method, endpoint.Path); err != nil {
 		return nil, err
 	}
 
@@ -420,4 +422,28 @@ func deriveStableEndpointCode(method, path string) string {
 
 func routeSpec(method, path string) string {
 	return strings.ToUpper(strings.TrimSpace(method)) + " " + strings.TrimSpace(path)
+}
+
+func (s *service) refreshRuntimeCache() error {
+	if s.endpointAccess == nil {
+		return nil
+	}
+	return s.endpointAccess.Refresh()
+}
+
+func (s *service) refreshRuntimeCacheForSave(oldMethod, oldPath, newMethod, newPath string) error {
+	if s.endpointAccess == nil {
+		return nil
+	}
+
+	oldKeyMethod := strings.ToUpper(strings.TrimSpace(oldMethod))
+	oldKeyPath := strings.TrimSpace(oldPath)
+	newKeyMethod := strings.ToUpper(strings.TrimSpace(newMethod))
+	newKeyPath := strings.TrimSpace(newPath)
+
+	if oldKeyMethod != "" && oldKeyPath != "" && (oldKeyMethod != newKeyMethod || oldKeyPath != newKeyPath) {
+		s.endpointAccess.RemoveByRoute(oldKeyMethod, oldKeyPath)
+	}
+
+	return s.endpointAccess.RefreshByRoute(newKeyMethod, newKeyPath)
 }

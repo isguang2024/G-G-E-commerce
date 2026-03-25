@@ -112,6 +112,7 @@ func AutoMigrate() error {
 		&models.APIEndpointCategory{},
 		&models.APIEndpoint{},
 		&models.APIEndpointPermissionBinding{},
+		&models.MenuManageGroup{},
 		&models.Menu{},
 		&models.UIPage{},
 		&models.Tenant{},
@@ -337,6 +338,30 @@ func createUniqueIndexes() error {
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", userHiddenMenuIndexName).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE UNIQUE INDEX " + userHiddenMenuIndexName + " ON user_hidden_menus (user_id, menu_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	menuManageGroupNameIndex := "idx_menu_manage_groups_name_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", menuManageGroupNameIndex).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + menuManageGroupNameIndex + " ON menu_manage_groups (name) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	menuManageGroupSortIndex := "idx_menu_manage_groups_sort_status"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", menuManageGroupSortIndex).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + menuManageGroupSortIndex + " ON menu_manage_groups (sort_order, status)").Error; err != nil {
+			return err
+		}
+	}
+
+	menuManageGroupIDIndex := "idx_menus_manage_group_id"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", menuManageGroupIDIndex).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + menuManageGroupIDIndex + " ON menus (manage_group_id)").Error; err != nil {
 			return err
 		}
 	}

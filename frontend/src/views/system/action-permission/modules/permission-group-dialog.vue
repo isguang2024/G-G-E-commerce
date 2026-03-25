@@ -1,11 +1,12 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="`${groupTypeLabel}管理`"
-    width="1160px"
+    size="1160px"
     destroy-on-close
     @open="handleDialogOpen"
-  >
+    direction="rtl"
+    class="config-drawer">
     <div class="group-dialog-body">
       <ElCard shadow="never" class="group-list-card">
         <template #header>
@@ -20,7 +21,7 @@
         <ElTable
           v-loading="listLoading"
           :data="groupList"
-          height="340"
+          height="100%"
           highlight-current-row
           @current-change="handleCurrentChange"
         >
@@ -66,7 +67,15 @@
           <ElFormItem label="英文名称">
             <ElInput v-model="form.nameEn" placeholder="可选" />
           </ElFormItem>
-          <ElFormItem label="状态">
+          <ElFormItem>
+            <template #label>
+              <span class="label-help">
+                <span>状态</span>
+                <ElTooltip content="仅影响分组管理，不影响鉴权判断；权限是否可用以权限键状态为准。" placement="top">
+                  <ElIcon class="label-help-icon"><QuestionFilled /></ElIcon>
+                </ElTooltip>
+              </span>
+            </template>
             <ElSelect v-model="form.status" style="width: 100%">
               <ElOption label="正常" value="normal" />
               <ElOption label="停用" value="suspended" />
@@ -86,14 +95,15 @@
       <ElButton @click="visible = false">取消</ElButton>
       <ElButton type="primary" :loading="submitting" @click="handleSubmit">保存</ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import type { FormInstance, FormRules } from 'element-plus'
-  import { ElMessage, ElMessageBox } from 'element-plus'
+  import { QuestionFilled } from '@element-plus/icons-vue'
+  import { ElIcon, ElMessage, ElMessageBox, ElTooltip } from 'element-plus'
   import {
     fetchCreatePermissionGroup,
     fetchDeletePermissionGroup,
@@ -297,6 +307,8 @@
     display: grid;
     grid-template-columns: 1.2fr 1fr;
     gap: 12px;
+    height: calc(100vh - 186px);
+    min-height: 560px;
   }
 
   .group-list-header,
@@ -313,7 +325,67 @@
 
   .group-list-card,
   .group-form-card {
-    min-height: 460px;
+    height: 100%;
+  }
+
+  .group-list-card :deep(.el-card__body),
+  .group-form-card :deep(.el-card__body) {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .group-list-card :deep(.el-table) {
+    flex: 1;
+  }
+
+  .group-form-card :deep(.el-form) {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .group-form-card :deep(.el-form-item:last-child) {
+    flex: 1;
+    align-items: stretch;
+  }
+
+  .group-form-card :deep(.el-form-item:last-child .el-form-item__content) {
+    align-items: stretch;
+  }
+
+  .group-form-card :deep(.el-textarea),
+  .group-form-card :deep(.el-textarea__inner) {
+    height: 100%;
+    min-height: 180px !important;
+  }
+
+  .label-help {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .label-help-icon {
+    font-size: 14px;
+    color: var(--el-text-color-secondary);
+    cursor: help;
+  }
+
+  @media (max-width: 1200px) {
+    .group-dialog-body {
+      grid-template-columns: 1fr;
+      height: auto;
+      min-height: 0;
+    }
+
+    .group-list-card,
+    .group-form-card {
+      height: auto;
+      min-height: 420px;
+    }
   }
 
 </style>

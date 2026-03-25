@@ -1,10 +1,10 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
-    width="1120px"
+    size="1120px"
     destroy-on-close
-    class="menu-permission-dialog"
-  >
+    class="menu-permission-dialog config-drawer"
+    direction="rtl">
     <template #header>
       <div class="dialog-title">
         <span class="dialog-title-text">{{ dialogTitle }}</span>
@@ -50,7 +50,7 @@
       <ElButton @click="handleCancel">取消</ElButton>
       <ElButton type="primary" :loading="saving" @click="handleSave">保存</ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

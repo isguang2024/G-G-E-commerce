@@ -8,9 +8,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
+	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
@@ -18,17 +22,28 @@ import (
 const tenantContextHeader = "X-Tenant-ID"
 
 type UserHandler struct {
+	db             *gorm.DB
 	userService    UserService
 	featurePkgRepo interface {
 		GetByIDs(ids []uuid.UUID) ([]FeaturePackage, error)
 	}
+	keyRepo interface {
+		GetByPermissionKey(permissionKey string) (*PermissionKey, error)
+	}
 	platformService platformaccess.Service
 	boundaryService teamboundary.Service
+	authzService    interface {
+		Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
+	}
 	roleRepo        interface {
 		GetByIDs(ids []uuid.UUID) ([]Role, error)
 	}
 	userRoleRepo interface {
 		GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
+	}
+	tenantMemberRepo interface {
+		GetByUserAndTenant(userID, tenantID uuid.UUID) (*TenantMember, error)
+		GetTenantsByUserID(userID uuid.UUID) ([]Tenant, error)
 	}
 	userPackageRepo interface {
 		GetPackageIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error)
@@ -43,16 +58,24 @@ type UserHandler struct {
 	}
 	refresher interface {
 		RefreshPlatformUser(userID uuid.UUID) error
+		RefreshTeam(teamID uuid.UUID) error
 	}
 	logger *zap.Logger
 }
 
-func NewUserHandler(userService UserService, featurePkgRepo interface {
+func NewUserHandler(db *gorm.DB, userService UserService, featurePkgRepo interface {
 	GetByIDs(ids []uuid.UUID) ([]FeaturePackage, error)
+}, keyRepo interface {
+	GetByPermissionKey(permissionKey string) (*PermissionKey, error)
 }, platformService platformaccess.Service, boundaryService teamboundary.Service, roleRepo interface {
 	GetByIDs(ids []uuid.UUID) ([]Role, error)
+}, authzService interface {
+	Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
 }, userRoleRepo interface {
 	GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
+}, tenantMemberRepo interface {
+	GetByUserAndTenant(userID, tenantID uuid.UUID) (*TenantMember, error)
+	GetTenantsByUserID(userID uuid.UUID) ([]Tenant, error)
 }, userPackageRepo interface {
 	GetPackageIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error)
 	ReplaceUserPackages(userID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error
@@ -63,20 +86,64 @@ func NewUserHandler(userService UserService, featurePkgRepo interface {
 	ListAll() ([]Menu, error)
 }, refresher interface {
 	RefreshPlatformUser(userID uuid.UUID) error
+	RefreshTeam(teamID uuid.UUID) error
 }, logger *zap.Logger) *UserHandler {
 	return &UserHandler{
+		db:                 db,
 		userService:        userService,
 		featurePkgRepo:     featurePkgRepo,
+		keyRepo:            keyRepo,
 		platformService:    platformService,
 		boundaryService:    boundaryService,
+		authzService:       authzService,
 		roleRepo:           roleRepo,
 		userRoleRepo:       userRoleRepo,
+		tenantMemberRepo:   tenantMemberRepo,
 		userPackageRepo:    userPackageRepo,
 		userHiddenMenuRepo: userHiddenMenuRepo,
 		menuRepo:           menuRepo,
 		refresher:          refresher,
 		logger:             logger,
 	}
+}
+
+func (h *UserHandler) GetTeams(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+	if _, err := h.userService.Get(id); err != nil {
+		if err == ErrUserNotFound {
+			status, resp := errcode.Response(errcode.ErrUserNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户失败")
+		c.JSON(status, resp)
+		return
+	}
+	if h.tenantMemberRepo == nil {
+		c.JSON(http.StatusOK, dto.SuccessResponse([]gin.H{}))
+		return
+	}
+	tenants, err := h.tenantMemberRepo.GetTenantsByUserID(id)
+	if err != nil {
+		h.logger.Error("Get user teams failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户所在团队失败")
+		c.JSON(status, resp)
+		return
+	}
+	result := make([]gin.H, 0, len(tenants))
+	for _, item := range tenants {
+		result = append(result, gin.H{
+			"id":     item.ID.String(),
+			"name":   item.Name,
+			"status": item.Status,
+		})
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(result))
 }
 
 func (h *UserHandler) List(c *gin.Context) {
@@ -579,6 +646,663 @@ func (h *UserHandler) GetPermissions(c *gin.Context) {
 	menuTree := buildMenuTree(allMenus, menuIDSet)
 
 	c.JSON(http.StatusOK, dto.SuccessResponse(menuTree))
+}
+
+func (h *UserHandler) GetPermissionDiagnosis(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	var req dto.UserPermissionDiagnosisRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+
+	tenantID, parseErr := parseTenantContextID(req.TenantID, c.GetHeader(tenantContextHeader))
+	if parseErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	payload, err := h.buildPermissionDiagnosis(id, tenantID, req.PermissionKey)
+	if err != nil {
+		if err == ErrUserNotFound {
+			status, resp := errcode.Response(errcode.ErrUserNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get user permission diagnosis failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户权限诊断失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse(payload))
+}
+
+func (h *UserHandler) RefreshPermissionSnapshot(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的用户ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	if _, err := h.userService.Get(id); err != nil {
+		if err == ErrUserNotFound {
+			status, resp := errcode.Response(errcode.ErrUserNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get user before refreshing permission snapshot failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	var req dto.UserPermissionRefreshRequest
+	if err := c.ShouldBindJSON(&req); err != nil && err.Error() != "EOF" {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+
+	tenantID, parseErr := parseTenantContextID(req.TenantID, c.GetHeader(tenantContextHeader))
+	if parseErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	if tenantID == nil {
+		if h.refresher != nil {
+			if err := h.refresher.RefreshPlatformUser(id); err != nil {
+				h.logger.Error("Refresh platform permission snapshot failed", zap.Error(err))
+				status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新平台权限快照失败")
+				c.JSON(status, resp)
+				return
+			}
+		}
+	} else if h.refresher != nil {
+		if err := h.refresher.RefreshTeam(*tenantID); err != nil {
+			h.logger.Error("Refresh team permission snapshot failed", zap.Error(err))
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新团队权限快照失败")
+			c.JSON(status, resp)
+			return
+		}
+	}
+
+	payload, err := h.buildPermissionDiagnosis(id, tenantID, "")
+	if err != nil {
+		h.logger.Error("Build permission diagnosis after refresh failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新权限快照后读取失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse(payload))
+}
+
+func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.UUID, rawPermissionKey string) (gin.H, error) {
+	userEntity, err := h.userService.Get(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	permissionKeyValue := permissionkey.Normalize(rawPermissionKey)
+	userInfo := gin.H{
+		"id":             userEntity.ID.String(),
+		"user_name":      userEntity.Username,
+		"nick_name":      userEntity.Nickname,
+		"status":         userEntity.Status,
+		"is_super_admin": userEntity.IsSuperAdmin,
+	}
+
+	if tenantID == nil {
+		snapshot, err := h.getPlatformSnapshot(userID)
+		if err != nil {
+			return nil, err
+		}
+		meta, err := h.getPlatformSnapshotRecord(userID)
+		if err != nil {
+			return nil, err
+		}
+		payload := gin.H{
+			"user":      userInfo,
+			"context":   gin.H{"type": "platform", "tenant_id": "", "tenant_name": ""},
+			"snapshot":  buildPlatformSnapshotSummary(snapshot, meta),
+			"roles":     []gin.H{},
+			"diagnosis": nil,
+		}
+		if permissionKeyValue != "" {
+			diagnosis, err := h.buildPlatformPermissionDiagnosis(userEntity, snapshot, permissionKeyValue)
+			if err != nil {
+				return nil, err
+			}
+			payload["diagnosis"] = diagnosis
+		}
+		return payload, nil
+	}
+
+	teamSnapshot, err := h.boundaryService.GetSnapshot(*tenantID)
+	if err != nil {
+		return nil, err
+	}
+	teamMeta, err := h.getTeamSnapshotRecord(*tenantID)
+	if err != nil {
+		return nil, err
+	}
+	roleStates, err := h.buildTeamRoleStates(userID, *tenantID, permissionKeyValue)
+	if err != nil {
+		return nil, err
+	}
+	payload := gin.H{
+		"user": userInfo,
+		"context": gin.H{
+			"type":      "team",
+			"tenant_id": tenantID.String(),
+			"tenant_name": "",
+		},
+		"snapshot":     buildTeamSnapshotSummary(teamSnapshot, teamMeta),
+		"roles":        roleStates,
+		"team_member":  h.buildTeamMemberMap(userID, *tenantID),
+		"team_packages": h.buildPackageMapsByIDs(teamSnapshot.ExpandedPackageIDs),
+		"diagnosis":    nil,
+	}
+	if permissionKeyValue != "" {
+		diagnosis, err := h.buildTeamPermissionDiagnosis(userEntity, *tenantID, teamSnapshot, roleStates, permissionKeyValue)
+		if err != nil {
+			return nil, err
+		}
+		payload["diagnosis"] = diagnosis
+	}
+	return payload, nil
+}
+
+func (h *UserHandler) buildPlatformPermissionDiagnosis(userEntity *User, snapshot *platformaccess.Snapshot, permissionKeyValue string) (gin.H, error) {
+	allowed, actionDef, authErr := h.authzService.Authorize(userEntity.ID, nil, permissionKeyValue)
+	actionDetail, err := h.loadPermissionKeyDetail(permissionKeyValue)
+	if err != nil {
+		return nil, err
+	}
+
+	var actionID uuid.UUID
+	sourcePackageIDs := []uuid.UUID{}
+	inSnapshot := false
+	if actionDef != nil {
+		actionID = actionDef.ID
+		inSnapshot = containsUUID(snapshot.ActionIDs, actionID)
+		sourcePackageIDs = append(sourcePackageIDs, snapshot.ActionSourceMap[actionID]...)
+	}
+	bypassedBySuperAdmin := userEntity.IsSuperAdmin && authErr == nil && allowed && !inSnapshot
+	reasons := buildPermissionDiagnosisReasons(authErr, allowed, "platform", bypassedBySuperAdmin)
+
+	return gin.H{
+		"permission_key":            permissionKeyValue,
+		"allowed":                   authErr == nil && allowed,
+		"reason_text":               strings.Join(reasons, "；"),
+		"reasons":                   reasons,
+		"matched_in_snapshot":       inSnapshot,
+		"bypassed_by_super_admin":   bypassedBySuperAdmin,
+		"action":                    buildPermissionActionMap(actionDetail, actionDef),
+		"source_packages":           h.buildPackageMapsByIDs(sourcePackageIDs),
+		"role_results":              []gin.H{},
+	}, nil
+}
+
+func (h *UserHandler) buildTeamPermissionDiagnosis(userEntity *User, teamID uuid.UUID, teamSnapshot *teamboundary.Snapshot, roleStates []gin.H, permissionKeyValue string) (gin.H, error) {
+	allowed, actionDef, authErr := h.authzService.Authorize(userEntity.ID, &teamID, permissionKeyValue)
+	actionDetail, err := h.loadPermissionKeyDetail(permissionKeyValue)
+	if err != nil {
+		return nil, err
+	}
+
+	var actionID uuid.UUID
+	blockedByTeam := false
+	sourcePackageIDs := []uuid.UUID{}
+	if actionDef != nil {
+		actionID = actionDef.ID
+		blockedByTeam = containsUUID(teamSnapshot.BlockedIDs, actionID)
+		for _, roleItem := range roleStates {
+			if sourceItems, ok := roleItem["source_package_ids"].([]uuid.UUID); ok {
+				sourcePackageIDs = mergeUUIDLists(sourcePackageIDs, sourceItems)
+			}
+		}
+	}
+	inSnapshot := actionDef != nil && containsUUID(teamSnapshot.EffectiveIDs, actionID)
+	bypassedBySuperAdmin := userEntity.IsSuperAdmin && authErr == nil && allowed && !inSnapshot
+	reasons := buildPermissionDiagnosisReasons(authErr, allowed, "team", bypassedBySuperAdmin)
+	memberStatus, memberMatched, err := h.getTenantMemberDiagnosis(userEntity.ID, teamID)
+	if err != nil {
+		return nil, err
+	}
+	roleMatched, roleDisabled, roleAvailable := summarizeRoleChain(roleStates)
+	boundaryConfigured := len(teamSnapshot.PackageIDs) > 0 || len(teamSnapshot.ExpandedPackageIDs) > 0 || len(teamSnapshot.BlockedIDs) > 0
+	boundaryState, denialStage, denialReason := buildTeamDiagnosisDecision(authErr, allowed, blockedByTeam, boundaryConfigured, inSnapshot, memberStatus, memberMatched, roleMatched, roleDisabled, roleAvailable, bypassedBySuperAdmin)
+
+	return gin.H{
+		"permission_key":            permissionKeyValue,
+		"allowed":                   authErr == nil && allowed,
+		"reason_text":               strings.Join(reasons, "；"),
+		"reasons":                   reasons,
+		"matched_in_snapshot":       inSnapshot,
+		"bypassed_by_super_admin":   bypassedBySuperAdmin,
+		"blocked_by_team":           blockedByTeam,
+		"denial_stage":              denialStage,
+		"denial_reason":             denialReason,
+		"member_status":             memberStatus,
+		"member_matched":            memberMatched,
+		"boundary_state":            boundaryState,
+		"boundary_configured":       boundaryConfigured,
+		"role_chain_matched":        roleMatched,
+		"role_chain_disabled":       roleDisabled,
+		"role_chain_available":      roleAvailable,
+		"action":                    buildPermissionActionMap(actionDetail, actionDef),
+		"source_packages":           h.buildPackageMapsByIDs(sourcePackageIDs),
+		"role_results":              roleStates,
+	}, nil
+}
+
+func (h *UserHandler) buildTeamRoleStates(userID, teamID uuid.UUID, permissionKeyValue string) ([]gin.H, error) {
+	if h.userRoleRepo == nil || h.roleRepo == nil || h.boundaryService == nil {
+		return []gin.H{}, nil
+	}
+	roleIDs, err := h.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndTenant(userID, &teamID)
+	if err != nil {
+		return nil, err
+	}
+	if len(roleIDs) == 0 {
+		return []gin.H{}, nil
+	}
+	roles, err := h.roleRepo.GetByIDs(roleIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	actionDetail, err := h.loadPermissionKeyDetail(permissionKeyValue)
+	if err != nil {
+		return nil, err
+	}
+
+	roleStates := make([]gin.H, 0, len(roles))
+	for _, role := range roles {
+		inheritAll := role.TenantID == nil
+		snapshot, err := h.boundaryService.GetRoleSnapshot(teamID, role.ID, inheritAll)
+		if err != nil {
+			return nil, err
+		}
+		meta, err := h.getTeamRoleSnapshotRecord(teamID, role.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		roleState := gin.H{
+			"role_id":               role.ID.String(),
+			"role_code":             role.Code,
+			"role_name":             role.Name,
+			"inherited":             snapshot.Inherited,
+			"refreshed_at":          formatTimeValue(meta.RefreshedAt),
+			"available_action_count": len(snapshot.AvailableActionIDs),
+			"disabled_action_count":  len(snapshot.DisabledActionIDs),
+			"effective_action_count": len(snapshot.ActionIDs),
+			"matched":               false,
+			"disabled":              false,
+			"available":             false,
+			"source_packages":       []gin.H{},
+			"source_package_ids":    []uuid.UUID{},
+		}
+		if actionDetail != nil {
+			roleState["available"] = containsUUID(snapshot.AvailableActionIDs, actionDetail.ID)
+			roleState["disabled"] = containsUUID(snapshot.DisabledActionIDs, actionDetail.ID)
+			roleState["matched"] = containsUUID(snapshot.ActionIDs, actionDetail.ID)
+			sourceIDs := snapshot.ActionSourceMap[actionDetail.ID]
+			roleState["source_package_ids"] = sourceIDs
+			roleState["source_packages"] = h.buildPackageMapsByIDs(sourceIDs)
+		}
+		roleStates = append(roleStates, roleState)
+	}
+	return roleStates, nil
+}
+
+func (h *UserHandler) loadPermissionKeyDetail(permissionKeyValue string) (*PermissionKey, error) {
+	if strings.TrimSpace(permissionKeyValue) == "" || h.keyRepo == nil {
+		return nil, nil
+	}
+	item, err := h.keyRepo.GetByPermissionKey(permissionKeyValue)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return item, nil
+}
+
+func buildPermissionActionMap(detail *PermissionKey, runtime *models.PermissionKey) gin.H {
+	target := runtime
+	if detail == nil && target == nil {
+		return nil
+	}
+	if target == nil && detail != nil {
+		target = &models.PermissionKey{
+			ID:            detail.ID,
+			PermissionKey: detail.PermissionKey,
+			Name:          detail.Name,
+			Description:   detail.Description,
+			Status:        detail.Status,
+			ContextType:   detail.ContextType,
+			FeatureKind:   detail.FeatureKind,
+			ModuleCode:    detail.ModuleCode,
+		}
+	}
+
+	result := gin.H{
+		"id":             target.ID.String(),
+		"permission_key": target.PermissionKey,
+		"name":           target.Name,
+		"description":    target.Description,
+		"status":         target.Status,
+		"context_type":   target.ContextType,
+		"feature_kind":   target.FeatureKind,
+		"module_code":    target.ModuleCode,
+	}
+	if detail != nil {
+		result["self_status"] = detail.Status
+		result["module_group"] = permissionGroupToLiteMap(detail.ModuleGroup)
+		result["feature_group"] = permissionGroupToLiteMap(detail.FeatureGroup)
+		result["module_group_status"] = groupStatus(detail.ModuleGroup)
+		result["feature_group_status"] = groupStatus(detail.FeatureGroup)
+	}
+	return result
+}
+
+func buildPlatformSnapshotSummary(snapshot *platformaccess.Snapshot, meta *models.PlatformUserAccessSnapshot) gin.H {
+	return gin.H{
+		"refreshed_at":          formatTimeValue(timeValue(meta, func(item *models.PlatformUserAccessSnapshot) time.Time { return item.RefreshedAt })),
+		"updated_at":            formatTimeValue(timeValue(meta, func(item *models.PlatformUserAccessSnapshot) time.Time { return item.UpdatedAt })),
+		"role_count":            len(snapshot.RoleIDs),
+		"direct_package_count":  len(snapshot.DirectPackageIDs),
+		"expanded_package_count": len(snapshot.ExpandedPackageIDs),
+		"action_count":          len(snapshot.ActionIDs),
+		"disabled_action_count": len(snapshot.DisabledActionIDs),
+		"menu_count":            len(snapshot.MenuIDs),
+		"has_package_config":    snapshot.HasPackageConfig,
+	}
+}
+
+func buildTeamSnapshotSummary(snapshot *teamboundary.Snapshot, meta *models.TeamAccessSnapshot) gin.H {
+	return gin.H{
+		"refreshed_at":           formatTimeValue(timeValue(meta, func(item *models.TeamAccessSnapshot) time.Time { return item.RefreshedAt })),
+		"updated_at":             formatTimeValue(timeValue(meta, func(item *models.TeamAccessSnapshot) time.Time { return item.UpdatedAt })),
+		"direct_package_count":   len(snapshot.PackageIDs),
+		"expanded_package_count": len(snapshot.ExpandedPackageIDs),
+		"derived_action_count":   len(snapshot.DerivedIDs),
+		"blocked_action_count":   len(snapshot.BlockedIDs),
+		"effective_action_count": len(snapshot.EffectiveIDs),
+	}
+}
+
+func (h *UserHandler) buildPackageMapsByIDs(ids []uuid.UUID) []gin.H {
+	if len(ids) == 0 || h.featurePkgRepo == nil {
+		return []gin.H{}
+	}
+	items, err := h.featurePkgRepo.GetByIDs(ids)
+	if err != nil {
+		h.logger.Warn("Load feature packages for permission diagnosis failed", zap.Error(err))
+		return []gin.H{}
+	}
+	return featurePackageListToMaps(items)
+}
+
+func (h *UserHandler) buildTeamMemberMap(userID, teamID uuid.UUID) gin.H {
+	if h.tenantMemberRepo == nil {
+		return nil
+	}
+	member, err := h.tenantMemberRepo.GetByUserAndTenant(userID, teamID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return gin.H{
+				"matched": false,
+				"status":  "missing",
+			}
+		}
+		h.logger.Warn("Load team member for permission diagnosis failed", zap.Error(err))
+		return nil
+	}
+	return gin.H{
+		"id":        member.ID.String(),
+		"tenant_id": member.TenantID.String(),
+		"user_id":   member.UserID.String(),
+		"role_code": member.RoleCode,
+		"status":    member.Status,
+		"matched":   true,
+	}
+}
+
+func (h *UserHandler) getPlatformSnapshotRecord(userID uuid.UUID) (*models.PlatformUserAccessSnapshot, error) {
+	if h.db == nil {
+		return nil, nil
+	}
+	var record models.PlatformUserAccessSnapshot
+	if err := h.db.Where("user_id = ?", userID).First(&record).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &record, nil
+}
+
+func (h *UserHandler) getTeamSnapshotRecord(teamID uuid.UUID) (*models.TeamAccessSnapshot, error) {
+	if h.db == nil {
+		return nil, nil
+	}
+	var record models.TeamAccessSnapshot
+	if err := h.db.Where("team_id = ?", teamID).First(&record).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &record, nil
+}
+
+func (h *UserHandler) getTeamRoleSnapshotRecord(teamID, roleID uuid.UUID) (*models.TeamRoleAccessSnapshot, error) {
+	if h.db == nil {
+		return nil, nil
+	}
+	var record models.TeamRoleAccessSnapshot
+	if err := h.db.Where("team_id = ? AND role_id = ?", teamID, roleID).First(&record).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &record, nil
+}
+
+func permissionGroupToLiteMap(group *PermissionGroup) gin.H {
+	if group == nil {
+		return nil
+	}
+	return gin.H{
+		"id":     group.ID.String(),
+		"code":   group.Code,
+		"name":   group.Name,
+		"status": group.Status,
+	}
+}
+
+func groupStatus(group *PermissionGroup) string {
+	if group == nil {
+		return ""
+	}
+	return group.Status
+}
+
+func buildPermissionDiagnosisReasons(err error, allowed bool, context string, bypassedBySuperAdmin bool) []string {
+	switch {
+	case bypassedBySuperAdmin:
+		return []string{"当前用户是超级管理员，直接放行，不依赖快照命中"}
+	case err == nil && allowed:
+		return []string{"权限测试通过"}
+	case err == authorization.ErrPermissionKeyMissing:
+		return []string{"权限键未注册或未找到"}
+	case err == authorization.ErrUserInactive:
+		return []string{"用户已停用"}
+	case err == authorization.ErrTenantMemberNotFound:
+		return []string{"当前团队下无有效成员或角色"}
+	case err == authorization.ErrTenantContextRequired:
+		return []string{"当前权限需要团队上下文"}
+	case err == authorization.ErrPermissionDenied:
+		if context == "team" {
+			return []string{"当前团队上下文下未生效此权限"}
+		}
+		return []string{"平台上下文下未生效此权限"}
+	default:
+		return []string{"权限未通过"}
+	}
+}
+
+func (h *UserHandler) getTenantMemberDiagnosis(userID, teamID uuid.UUID) (string, bool, error) {
+	if h.db == nil {
+		return "", false, nil
+	}
+	var member models.TenantMember
+	if err := h.db.Where("user_id = ? AND tenant_id = ?", userID, teamID).First(&member).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return "missing", false, nil
+		}
+		return "", false, err
+	}
+	return member.Status, member.Status == "active", nil
+}
+
+func summarizeRoleChain(roleStates []gin.H) (matched bool, disabled bool, available bool) {
+	for _, roleItem := range roleStates {
+		if value, ok := roleItem["matched"].(bool); ok && value {
+			matched = true
+		}
+		if value, ok := roleItem["disabled"].(bool); ok && value {
+			disabled = true
+		}
+		if value, ok := roleItem["available"].(bool); ok && value {
+			available = true
+		}
+	}
+	return matched, disabled, available
+}
+
+func buildTeamDiagnosisDecision(authErr error, allowed bool, blockedByTeam bool, boundaryConfigured bool, inSnapshot bool, memberStatus string, memberMatched bool, roleMatched bool, roleDisabled bool, roleAvailable bool, bypassedBySuperAdmin bool) (string, string, string) {
+	if bypassedBySuperAdmin {
+		return "超级管理员直通", "", ""
+	}
+	if allowed && authErr == nil {
+		switch {
+		case blockedByTeam:
+			return "拦截", "团队边界校验", "团队边界已屏蔽该权限"
+		case inSnapshot:
+			return "命中", "", ""
+		case !boundaryConfigured:
+			return "未配置", "", ""
+		default:
+			return "命中", "", ""
+		}
+	}
+
+	switch authErr {
+	case authorization.ErrUserInactive:
+		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "用户状态校验", "当前用户已停用"
+	case authorization.ErrTenantMemberNotFound:
+		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "团队成员校验", "当前用户不是该团队有效成员"
+	case authorization.ErrTenantMemberInactive:
+		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "团队成员校验", "团队成员状态不是 active"
+	case authorization.ErrTenantContextRequired:
+		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "团队上下文校验", "当前权限需要团队上下文"
+	case authorization.ErrPermissionKeyMissing:
+		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "权限键校验", "权限键未注册或未找到"
+	case authorization.ErrPermissionDenied:
+		switch {
+		case blockedByTeam:
+			return "拦截", "团队边界校验", "团队边界未开通或已屏蔽该权限"
+		case !memberMatched || memberStatus == "missing":
+			return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "团队成员校验", "当前用户不是该团队有效成员"
+		case memberStatus != "" && memberStatus != "active":
+			return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "团队成员校验", "团队成员状态不是 active"
+		case roleMatched:
+			return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "角色权限校验", "角色链路命中，但最终权限未通过"
+		case roleDisabled:
+			return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "角色权限校验", "角色链路存在，但权限被角色层禁用"
+		case roleAvailable:
+			return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "角色权限校验", "角色链路可用，但最终未生效为可执行权限"
+		default:
+			return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "角色权限校验", "当前团队角色未最终授予该权限"
+		}
+	default:
+		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "", ""
+	}
+}
+
+func currentBoundaryState(boundaryConfigured bool, blockedByTeam bool, inSnapshot bool) string {
+	switch {
+	case blockedByTeam:
+		return "拦截"
+	case inSnapshot:
+		return "命中"
+	case !boundaryConfigured:
+		return "未配置"
+	default:
+		return "未命中"
+	}
+}
+
+func parseTenantContextID(values ...string) (*uuid.UUID, error) {
+	for _, value := range values {
+		target := strings.TrimSpace(value)
+		if target == "" {
+			continue
+		}
+		parsed, err := uuid.Parse(target)
+		if err != nil {
+			return nil, err
+		}
+		return &parsed, nil
+	}
+	return nil, nil
+}
+
+func containsUUID(items []uuid.UUID, target uuid.UUID) bool {
+	if target == uuid.Nil {
+		return false
+	}
+	for _, item := range items {
+		if item == target {
+			return true
+		}
+	}
+	return false
+}
+
+func formatTimeValue(value time.Time) string {
+	if value.IsZero() {
+		return ""
+	}
+	return value.Format("2006-01-02 15:04:05")
+}
+
+func timeValue[T any](item *T, getter func(*T) time.Time) time.Time {
+	if item == nil {
+		return time.Time{}
+	}
+	return getter(item)
 }
 
 func (h *UserHandler) getPermissionMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {

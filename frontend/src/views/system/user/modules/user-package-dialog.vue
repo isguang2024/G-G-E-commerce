@@ -1,14 +1,14 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="`用户功能包 - ${userTitle}`"
-    width="1280px"
+    size="1280px"
     destroy-on-close
-    class="business-dialog"
-  >
+    class="business-dialog config-drawer"
+    direction="rtl">
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        平台用户可直接绑定平台功能包。用户直绑功能包会与其全局角色功能包做并集生效，用于开通非团队业务模块。
+        这里配置的是平台上下文功能包。用户直绑功能包会与其全局角色功能包做并集生效，只影响平台侧权限与平台菜单，不直接决定团队内权限。
       </div>
 
       <div class="summary-card">
@@ -92,7 +92,7 @@
         保存
       </ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

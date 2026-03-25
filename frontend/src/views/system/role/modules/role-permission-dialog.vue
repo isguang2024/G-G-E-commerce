@@ -1,12 +1,11 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     title="菜单权限"
-    width="520px"
-    align-center
-    class="el-dialog-border"
+    size="520px"
+    class="el-dialog-border config-drawer"
     @close="handleClose"
-  >
+    direction="rtl">
     <div v-if="menuLoadError" class="text-red-500 py-2">{{ menuLoadError }}</div>
     <ElScrollbar v-if="!menuLoadError" height="70vh">
       <ElTree
@@ -32,7 +31,7 @@
       }}</ElButton>
       <ElButton type="primary" :loading="saving" @click="savePermission"> 保存 </ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

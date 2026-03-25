@@ -1,8 +1,6 @@
 package teamboundary
 
 import (
-	"database/sql"
-
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -382,11 +380,12 @@ func (s *service) refreshRoleSnapshots(teamID uuid.UUID) error {
 	if err != nil {
 		return err
 	}
+	inheritMap, err := s.getInheritedRoleMap(roleIDs)
+	if err != nil {
+		return err
+	}
 	for _, roleID := range roleIDs {
-		inheritAll, inheritErr := s.isInheritedRole(roleID)
-		if inheritErr != nil {
-			return inheritErr
-		}
+		inheritAll := inheritMap[roleID]
 		snapshot, snapshotErr := s.calculateRoleSnapshot(teamID, roleID, inheritAll)
 		if snapshotErr != nil {
 			return snapshotErr
@@ -402,22 +401,31 @@ func (s *service) refreshRoleSnapshots(teamID uuid.UUID) error {
 }
 
 func (s *service) getDerivedActionIDs(packageIDs []uuid.UUID) ([]uuid.UUID, map[uuid.UUID][]uuid.UUID, error) {
-	result := make([]uuid.UUID, 0)
-	seen := make(map[uuid.UUID]struct{})
+	if len(packageIDs) == 0 {
+		return []uuid.UUID{}, map[uuid.UUID][]uuid.UUID{}, nil
+	}
+	type packageActionRow struct {
+		PackageID uuid.UUID
+		ActionID  uuid.UUID
+	}
+	var rows []packageActionRow
+	if err := s.db.Model(&models.FeaturePackageKey{}).
+		Select("package_id", "action_id").
+		Where("package_id IN ?", packageIDs).
+		Order("package_id ASC").
+		Find(&rows).Error; err != nil {
+		return nil, nil, err
+	}
+	result := make([]uuid.UUID, 0, len(rows))
+	seen := make(map[uuid.UUID]struct{}, len(rows))
 	derivedMap := make(map[uuid.UUID][]uuid.UUID)
-	for _, packageID := range packageIDs {
-		actionIDs, err := s.getActionIDsByPackageID(packageID)
-		if err != nil {
-			return nil, nil, err
+	for _, row := range rows {
+		derivedMap[row.ActionID] = appendDerivedPackageID(derivedMap[row.ActionID], row.PackageID)
+		if _, ok := seen[row.ActionID]; ok {
+			continue
 		}
-		for _, actionID := range actionIDs {
-			derivedMap[actionID] = appendDerivedPackageID(derivedMap[actionID], packageID)
-			if _, ok := seen[actionID]; ok {
-				continue
-			}
-			seen[actionID] = struct{}{}
-			result = append(result, actionID)
-		}
+		seen[row.ActionID] = struct{}{}
+		result = append(result, row.ActionID)
 	}
 	return result, derivedMap, nil
 }
@@ -434,49 +442,51 @@ func (s *service) resolvePackageSet(ids []uuid.UUID, context string) ([]uuid.UUI
 	if len(ids) == 0 {
 		return []uuid.UUID{}, []uuid.UUID{}, nil
 	}
+	packages, err := s.getPackagesByIDs(ids)
+	if err != nil {
+		return nil, nil, err
+	}
+	packageMap := make(map[uuid.UUID]models.FeaturePackage, len(packages))
+	for _, item := range packages {
+		packageMap[item.ID] = item
+	}
+	bundleChildrenMap, err := s.getBundleChildrenMap()
+	if err != nil {
+		return nil, nil, err
+	}
 	validDirect := make([]uuid.UUID, 0, len(ids))
 	seenDirect := make(map[uuid.UUID]struct{}, len(ids))
 	expanded := make([]uuid.UUID, 0, len(ids))
 	seenExpanded := make(map[uuid.UUID]struct{}, len(ids))
 	visited := make(map[uuid.UUID]struct{}, len(ids))
 	for _, id := range ids {
-		pkg, err := s.getPackageByID(id)
-		if err != nil {
-			return nil, nil, err
-		}
-		if pkg == nil || !contextAllowsPackage(context, pkg.ContextType) {
+		pkg, ok := packageMap[id]
+		if !ok || !contextAllowsPackage(context, pkg.ContextType) {
 			continue
 		}
 		if _, ok := seenDirect[id]; !ok {
 			seenDirect[id] = struct{}{}
 			validDirect = append(validDirect, id)
 		}
-		if err := s.expandPackageID(id, context, visited, seenExpanded, &expanded); err != nil {
+		if err := s.expandPackageID(id, context, packageMap, bundleChildrenMap, visited, seenExpanded, &expanded); err != nil {
 			return nil, nil, err
 		}
 	}
 	return validDirect, expanded, nil
 }
 
-func (s *service) expandPackageID(packageID uuid.UUID, context string, visited map[uuid.UUID]struct{}, seenExpanded map[uuid.UUID]struct{}, expanded *[]uuid.UUID) error {
+func (s *service) expandPackageID(packageID uuid.UUID, context string, packageMap map[uuid.UUID]models.FeaturePackage, bundleChildrenMap map[uuid.UUID][]uuid.UUID, visited map[uuid.UUID]struct{}, seenExpanded map[uuid.UUID]struct{}, expanded *[]uuid.UUID) error {
 	if _, ok := visited[packageID]; ok {
 		return nil
 	}
 	visited[packageID] = struct{}{}
-	pkg, err := s.getPackageByID(packageID)
-	if err != nil {
-		return err
-	}
-	if pkg == nil || !contextAllowsPackage(context, pkg.ContextType) {
+	pkg, ok := packageMap[packageID]
+	if !ok || !contextAllowsPackage(context, pkg.ContextType) {
 		return nil
 	}
 	if pkg.PackageType == "bundle" {
-		childIDs, err := s.getChildPackageIDs(packageID)
-		if err != nil {
-			return err
-		}
-		for _, childID := range childIDs {
-			if err := s.expandPackageID(childID, context, visited, seenExpanded, expanded); err != nil {
+		for _, childID := range bundleChildrenMap[packageID] {
+			if err := s.expandPackageID(childID, context, packageMap, bundleChildrenMap, visited, seenExpanded, expanded); err != nil {
 				return err
 			}
 		}
@@ -490,65 +500,34 @@ func (s *service) expandPackageID(packageID uuid.UUID, context string, visited m
 	return nil
 }
 
-func (s *service) getPackageByID(packageID uuid.UUID) (*models.FeaturePackage, error) {
-	var item models.FeaturePackage
-	err := s.db.Where("id = ? AND status = ?", packageID, "normal").First(&item).Error
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &item, nil
-}
-
-func (s *service) getChildPackageIDs(packageID uuid.UUID) ([]uuid.UUID, error) {
-	var ids []uuid.UUID
-	err := s.db.Model(&models.FeaturePackageBundle{}).
-		Where("package_id = ?", packageID).
-		Pluck("child_package_id", &ids).Error
-	return ids, err
-}
-
-func (s *service) getActionIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error) {
-	var actionIDs []uuid.UUID
-	err := s.db.Model(&models.FeaturePackageKey{}).
-		Where("package_id = ?", packageID).
-		Pluck("action_id", &actionIDs).Error
-	return actionIDs, err
-}
-
 func (s *service) getMenuIDsByPackageIDs(packageIDs []uuid.UUID) ([]uuid.UUID, map[uuid.UUID][]uuid.UUID, error) {
-	var menuIDs []uuid.UUID
 	if len(packageIDs) == 0 {
-		return menuIDs, map[uuid.UUID][]uuid.UUID{}, nil
+		return []uuid.UUID{}, map[uuid.UUID][]uuid.UUID{}, nil
 	}
-	err := s.db.Model(&models.FeaturePackageMenu{}).
-		Distinct("menu_id").
+	type packageMenuRow struct {
+		PackageID uuid.UUID
+		MenuID    uuid.UUID
+	}
+	var rows []packageMenuRow
+	if err := s.db.Model(&models.FeaturePackageMenu{}).
+		Select("package_id", "menu_id").
 		Where("package_id IN ?", packageIDs).
-		Pluck("menu_id", &menuIDs).Error
-	if err != nil {
+		Order("package_id ASC").
+		Find(&rows).Error; err != nil {
 		return nil, nil, err
 	}
+	menuIDs := make([]uuid.UUID, 0, len(rows))
+	seen := make(map[uuid.UUID]struct{}, len(rows))
 	sourceMap := make(map[uuid.UUID][]uuid.UUID)
-	for _, packageID := range packageIDs {
-		packageMenuIDs, menuErr := s.getMenuIDsByPackageID(packageID)
-		if menuErr != nil {
-			return nil, nil, menuErr
+	for _, row := range rows {
+		sourceMap[row.MenuID] = appendDerivedPackageID(sourceMap[row.MenuID], row.PackageID)
+		if _, ok := seen[row.MenuID]; ok {
+			continue
 		}
-		for _, menuID := range packageMenuIDs {
-			sourceMap[menuID] = appendDerivedPackageID(sourceMap[menuID], packageID)
-		}
+		seen[row.MenuID] = struct{}{}
+		menuIDs = append(menuIDs, row.MenuID)
 	}
 	return menuIDs, sourceMap, nil
-}
-
-func (s *service) getMenuIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error) {
-	var menuIDs []uuid.UUID
-	err := s.db.Model(&models.FeaturePackageMenu{}).
-		Where("package_id = ?", packageID).
-		Pluck("menu_id", &menuIDs).Error
-	return menuIDs, err
 }
 
 func (s *service) getPackageIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error) {
@@ -603,12 +582,75 @@ func (s *service) getTenantIdentityRoleIDs(teamID uuid.UUID) ([]uuid.UUID, error
 	return roleIDs, err
 }
 
-func (s *service) isInheritedRole(roleID uuid.UUID) (bool, error) {
-	var tenantID sql.NullString
-	if err := s.db.Model(&models.Role{}).Select("tenant_id").Where("id = ?", roleID).Scan(&tenantID).Error; err != nil {
-		return false, err
+func (s *service) getInheritedRoleMap(roleIDs []uuid.UUID) (map[uuid.UUID]bool, error) {
+	result := make(map[uuid.UUID]bool, len(roleIDs))
+	if len(roleIDs) == 0 {
+		return result, nil
 	}
-	return !tenantID.Valid || tenantID.String == "", nil
+	type roleTenantRow struct {
+		ID       uuid.UUID
+		TenantID *uuid.UUID
+	}
+	var rows []roleTenantRow
+	if err := s.db.Model(&models.Role{}).
+		Select("id", "tenant_id").
+		Where("id IN ?", roleIDs).
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		result[row.ID] = row.TenantID == nil || *row.TenantID == uuid.Nil
+	}
+	return result, nil
+}
+
+func (s *service) getPackagesByIDs(seedIDs []uuid.UUID) ([]models.FeaturePackage, error) {
+	if len(seedIDs) == 0 {
+		return []models.FeaturePackage{}, nil
+	}
+	var bundleRows []models.FeaturePackageBundle
+	if err := s.db.Model(&models.FeaturePackageBundle{}).
+		Select("package_id", "child_package_id").
+		Find(&bundleRows).Error; err != nil {
+		return nil, err
+	}
+	queue := append([]uuid.UUID{}, seedIDs...)
+	seen := make(map[uuid.UUID]struct{}, len(seedIDs))
+	for _, id := range seedIDs {
+		seen[id] = struct{}{}
+	}
+	for index := 0; index < len(queue); index++ {
+		current := queue[index]
+		for _, row := range bundleRows {
+			if row.PackageID != current {
+				continue
+			}
+			if _, ok := seen[row.ChildPackageID]; ok {
+				continue
+			}
+			seen[row.ChildPackageID] = struct{}{}
+			queue = append(queue, row.ChildPackageID)
+		}
+	}
+	var items []models.FeaturePackage
+	if err := s.db.Where("id IN ? AND status = ?", queue, "normal").Find(&items).Error; err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+func (s *service) getBundleChildrenMap() (map[uuid.UUID][]uuid.UUID, error) {
+	var rows []models.FeaturePackageBundle
+	if err := s.db.Model(&models.FeaturePackageBundle{}).
+		Select("package_id", "child_package_id").
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	result := make(map[uuid.UUID][]uuid.UUID)
+	for _, row := range rows {
+		result[row.PackageID] = append(result[row.PackageID], row.ChildPackageID)
+	}
+	return result, nil
 }
 
 func emptyActionSnapshot() *Snapshot {

@@ -7,20 +7,22 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/config"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/apiendpointaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
 )
 
 type Module struct {
-	db     *gorm.DB
-	config *config.Config
-	logger *zap.Logger
-	router *gin.Engine
+	db             *gorm.DB
+	config         *config.Config
+	logger         *zap.Logger
+	router         *gin.Engine
+	endpointAccess apiendpointaccess.Service
 }
 
-func NewModule(db *gorm.DB, cfg *config.Config, logger *zap.Logger, router *gin.Engine) *Module {
-	return &Module{db: db, config: cfg, logger: logger, router: router}
+func NewModule(db *gorm.DB, cfg *config.Config, logger *zap.Logger, router *gin.Engine, endpointAccess apiendpointaccess.Service) *Module {
+	return &Module{db: db, config: cfg, logger: logger, router: router, endpointAccess: endpointAccess}
 }
 
 func (m *Module) Init() error {
@@ -32,7 +34,7 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	repo := user.NewAPIEndpointRepository(m.db)
 	categoryRepo := user.NewAPIEndpointCategoryRepository(m.db)
 	bindingRepo := user.NewAPIEndpointPermissionBindingRepository(m.db)
-	service := NewService(m.db, repo, categoryRepo, bindingRepo, m.router, m.logger, m.config.Env)
+	service := NewService(m.db, repo, categoryRepo, bindingRepo, m.router, m.logger, m.config.Env, m.endpointAccess)
 	handler := NewHandler(service, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 

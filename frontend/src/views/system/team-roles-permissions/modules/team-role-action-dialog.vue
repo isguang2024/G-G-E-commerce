@@ -1,10 +1,11 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="`团队角色权限裁剪 - ${roleTitle}`"
-    width="980px"
+    size="980px"
     destroy-on-close
-  >
+    direction="rtl"
+    class="config-drawer">
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
         {{
@@ -53,7 +54,7 @@
       <ElButton @click="visible = false">取消</ElButton>
       <ElButton v-if="!props.roleData?.isGlobal" type="primary" :loading="saving" @click="handleSave">保存</ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

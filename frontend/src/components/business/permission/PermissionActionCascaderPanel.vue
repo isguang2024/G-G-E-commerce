@@ -273,12 +273,12 @@ watch(
 )
 
 watch(
-  () => filteredOptions.value,
+  () => [searchKeyword.value, baseOptions.value.length],
   async () => {
     await nextTick()
     ensureExpandedMenus()
   },
-  { deep: true }
+  { deep: false }
 )
 
 watch(
@@ -353,6 +353,7 @@ function formatFeature(value: string) {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 0;
 }
 
 .panel-header,
@@ -404,11 +405,12 @@ function formatFeature(value: string) {
   border-radius: 14px;
   overflow: hidden;
   background: #fff;
+  min-height: 0;
 }
 
 .permission-panel {
   width: 100%;
-  height: 360px;
+  height: clamp(420px, calc(100vh - 320px), 640px);
 }
 
 .permission-panel :deep(.el-cascader-panel) {
@@ -534,6 +536,10 @@ function formatFeature(value: string) {
     width: 100%;
     flex: 1 1 auto;
     margin-left: 0;
+  }
+
+  .permission-panel {
+    height: clamp(360px, calc(100vh - 360px), 520px);
   }
 
   .node-content.is-leaf {

@@ -54,6 +54,11 @@
         @success="refreshData"
         @open-packages="openCurrentUserPackagesFromMenu"
       />
+
+      <UserPermissionTestDrawer
+        v-model="permissionTestVisible"
+        :user-data="currentUserDataForAction"
+      />
     </ElCard>
   </div>
 </template>
@@ -72,6 +77,7 @@
   import UserDialog from './modules/user-dialog.vue'
   import UserPackageDialog from './modules/user-package-dialog.vue'
   import UserMenuSelectorDialog from './modules/user-menu-selector-dialog.vue'
+  import UserPermissionTestDrawer from './modules/user-permission-test-drawer.vue'
   import { ElTag, ElMessageBox, ElImage, ElMessage } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
 
@@ -93,6 +99,7 @@
   const currentUserData = ref<Partial<UserListItem>>({})
   const packageDialogVisible = ref(false)
   const menuDialogVisible = ref(false)
+  const permissionTestVisible = ref(false)
   const currentUserDataForAction = ref<UserListItem | undefined>(undefined)
 
   // 选中行
@@ -276,6 +283,12 @@
                 icon: 'ri:menu-line',
                 auth: 'system.user.manage'
               },
+              {
+                key: 'permissionTest',
+                label: '权限测试',
+                icon: 'ri:shield-keyhole-line',
+                auth: 'system.user.manage'
+              },
               { key: 'edit', label: '编辑用户', icon: 'ri:edit-2-line', auth: 'system.user.manage' },
               {
                 key: 'delete',
@@ -352,6 +365,8 @@
       showPackageDialog(row)
     } else if (item.key === 'menuBoundary') {
       showMenuDialog(row)
+    } else if (item.key === 'permissionTest') {
+      showPermissionTestDialog(row)
     } else if (item.key === 'edit') {
       showDialog('edit', row)
     } else if (item.key === 'delete') {
@@ -373,6 +388,11 @@
     if (!currentUserDataForAction.value) return
     menuDialogVisible.value = false
     packageDialogVisible.value = true
+  }
+
+  const showPermissionTestDialog = (row: UserListItem) => {
+    currentUserDataForAction.value = row
+    permissionTestVisible.value = true
   }
 
   /**

@@ -119,6 +119,21 @@ declare namespace Api {
       [k: string]: unknown
     }
 
+    interface MenuManageGroupItem {
+      id: string
+      name: string
+      sortOrder: number
+      status: 'normal' | 'disabled' | string
+      createdAt?: string
+      updatedAt?: string
+    }
+
+    interface MenuManageGroupSaveParams {
+      name: string
+      sort_order?: number
+      status?: 'normal' | 'disabled' | string
+    }
+
     /** 用户列表 */
     type UserList = Api.Common.PaginatedResponse<UserListItem>
 
@@ -177,6 +192,120 @@ declare namespace Api {
       systemRemark?: string
       status?: string
       roleIds?: string[]
+    }
+
+    interface UserPermissionContext {
+      type: 'platform' | 'team' | string
+      tenantId?: string
+      tenantName?: string
+    }
+
+    interface UserPermissionSnapshotSummary {
+      refreshedAt?: string
+      updatedAt?: string
+      roleCount?: number
+      directPackageCount?: number
+      expandedPackageCount?: number
+      actionCount?: number
+      disabledActionCount?: number
+      menuCount?: number
+      hasPackageConfig?: boolean
+      derivedActionCount?: number
+      blockedActionCount?: number
+      effectiveActionCount?: number
+    }
+
+    interface UserPermissionRoleResult {
+      roleId: string
+      roleCode: string
+      roleName: string
+      inherited?: boolean
+      refreshedAt?: string
+      availableActionCount?: number
+      disabledActionCount?: number
+      effectiveActionCount?: number
+      matched?: boolean
+      disabled?: boolean
+      available?: boolean
+      sourcePackages?: FeaturePackageItem[]
+    }
+
+    interface UserPermissionDiagnosisAction {
+      id: string
+      permissionKey: string
+      name?: string
+      description?: string
+      status?: string
+      selfStatus?: string
+      contextType?: string
+      featureKind?: string
+      moduleCode?: string
+      moduleGroupStatus?: string
+      featureGroupStatus?: string
+      moduleGroup?: PermissionGroupItem
+      featureGroup?: PermissionGroupItem
+    }
+
+    interface UserPermissionDiagnosisResult {
+      permissionKey: string
+      allowed: boolean
+      reasonText?: string
+      reasons: string[]
+      matchedInSnapshot?: boolean
+      bypassedBySuperAdmin?: boolean
+      blockedByTeam?: boolean
+      denialStage?: string
+      denialReason?: string
+      memberStatus?: string
+      memberMatched?: boolean
+      boundaryState?: string
+      boundaryConfigured?: boolean
+      roleChainMatched?: boolean
+      roleChainDisabled?: boolean
+      roleChainAvailable?: boolean
+      action?: UserPermissionDiagnosisAction | null
+      sourcePackages?: FeaturePackageItem[]
+      roleResults?: UserPermissionRoleResult[]
+    }
+
+    interface UserPermissionMenuNode {
+      id: string
+      name?: string
+      title?: string
+      path?: string
+      component?: string
+      hidden?: boolean
+      sort?: number
+      children?: UserPermissionMenuNode[]
+    }
+
+    interface UserPermissionDiagnosisResponse {
+      user: {
+        id: string
+        userName?: string
+        nickName?: string
+        status: string
+        isSuperAdmin?: boolean
+      }
+      context: UserPermissionContext
+      snapshot: UserPermissionSnapshotSummary
+      roles: UserPermissionRoleResult[]
+      teamMember?: {
+        id?: string
+        tenantId?: string
+        userId?: string
+        roleCode?: string
+        status?: string
+        matched?: boolean
+      } | null
+      teamPackages?: FeaturePackageItem[]
+      diagnosis?: UserPermissionDiagnosisResult | null
+      menus?: UserPermissionMenuNode[]
+    }
+
+    interface UserPermissionDiagnosisParams {
+      tenantId?: string
+      permissionKey?: string
     }
 
     /** 角色列表 */
@@ -753,6 +882,7 @@ declare namespace Api {
     /** 创建菜单参数（与后端 MenuCreateRequest 一致） */
     interface MenuCreateParams {
       parent_id: string | null
+      manage_group_id?: string | null
       path: string
       name: string
       component?: string
@@ -766,6 +896,7 @@ declare namespace Api {
     /** 更新菜单参数（与后端 MenuUpdateRequest 一致） */
     interface MenuUpdateParams {
       parent_id: string | null
+      manage_group_id?: string | null
       path?: string
       name?: string
       component?: string

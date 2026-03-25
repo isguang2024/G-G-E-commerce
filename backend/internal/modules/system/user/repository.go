@@ -361,9 +361,25 @@ func NewMenuRepository(db *gorm.DB) MenuRepository {
 	return &menuRepository{db: db}
 }
 
+func (r *menuRepository) supportsMenuManageGroupColumn() bool {
+	return r.db.Migrator().HasColumn(&Menu{}, "manage_group_id")
+}
+
+func (r *menuRepository) supportsMenuManageGroupTable() bool {
+	return r.db.Migrator().HasTable(&MenuManageGroup{})
+}
+
+func (r *menuRepository) menuQuery() *gorm.DB {
+	query := r.db
+	if r.supportsMenuManageGroupColumn() && r.supportsMenuManageGroupTable() {
+		query = query.Preload("ManageGroup")
+	}
+	return query
+}
+
 func (r *menuRepository) GetByID(id uuid.UUID) (*Menu, error) {
 	var menu Menu
-	err := r.db.Where("id = ?", id).First(&menu).Error
+	err := r.menuQuery().Where("id = ?", id).First(&menu).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
@@ -375,29 +391,20 @@ func (r *menuRepository) GetByID(id uuid.UUID) (*Menu, error) {
 
 func (r *menuRepository) GetChildren(parentID uuid.UUID) ([]Menu, error) {
 	var menus []Menu
-	err := r.db.Where("parent_id = ?", parentID).Find(&menus).Error
+	err := r.menuQuery().Where("parent_id = ?", parentID).Find(&menus).Error
 	return menus, err
 }
 
 func (r *menuRepository) Create(menu *Menu) error {
-	return r.db.Create(menu).Error
+	if r.supportsMenuManageGroupColumn() {
+		return r.db.Create(menu).Error
+	}
+	menu.ManageGroupID = nil
+	return r.db.Omit("ManageGroupID", "ManageGroup").Create(menu).Error
 }
 
 func (r *menuRepository) Update(menu *Menu, updateParent bool) error {
-	if updateParent {
-		return r.db.Model(menu).Updates(map[string]interface{}{
-			"parent_id":  menu.ParentID,
-			"path":       menu.Path,
-			"name":       menu.Name,
-			"component":  menu.Component,
-			"title":      menu.Title,
-			"icon":       menu.Icon,
-			"sort_order": menu.SortOrder,
-			"meta":       menu.Meta,
-			"hidden":     menu.Hidden,
-		}).Error
-	}
-	return r.db.Model(menu).Updates(map[string]interface{}{
+	updates := map[string]interface{}{
 		"path":       menu.Path,
 		"name":       menu.Name,
 		"component":  menu.Component,
@@ -406,7 +413,27 @@ func (r *menuRepository) Update(menu *Menu, updateParent bool) error {
 		"sort_order": menu.SortOrder,
 		"meta":       menu.Meta,
 		"hidden":     menu.Hidden,
-	}).Error
+	}
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		baseQuery := tx.Model(&Menu{}).Where("id = ?", menu.ID)
+		if err := baseQuery.Updates(updates).Error; err != nil {
+			return err
+		}
+
+		if r.supportsMenuManageGroupColumn() {
+			if err := baseQuery.Update("manage_group_id", menu.ManageGroupID).Error; err != nil {
+				return err
+			}
+		}
+
+		if updateParent {
+			if err := baseQuery.Update("parent_id", menu.ParentID).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
 
 func (r *menuRepository) Delete(id uuid.UUID) error {
@@ -415,13 +442,13 @@ func (r *menuRepository) Delete(id uuid.UUID) error {
 
 func (r *menuRepository) ListAll() ([]Menu, error) {
 	var menus []Menu
-	err := r.db.Order("sort_order ASC").Find(&menus).Error
+	err := r.menuQuery().Order("sort_order ASC").Find(&menus).Error
 	return menus, err
 }
 
 func (r *menuRepository) GetByIDs(ids []uuid.UUID) ([]Menu, error) {
 	var menus []Menu
-	err := r.db.Where("id IN ?", ids).Find(&menus).Error
+	err := r.menuQuery().Where("id IN ?", ids).Find(&menus).Error
 	return menus, err
 }
 
@@ -473,6 +500,7 @@ func BuildTree(menus []Menu, parentID *uuid.UUID) []*Menu {
 
 type TenantRepository interface {
 	GetByID(id uuid.UUID) (*Tenant, error)
+	GetByIDs(ids []uuid.UUID) ([]Tenant, error)
 	Create(tenant *Tenant) error
 	Update(tenant *Tenant) error
 	Delete(id uuid.UUID) error
@@ -498,6 +526,15 @@ func (r *tenantRepository) GetByID(id uuid.UUID) (*Tenant, error) {
 		return nil, err
 	}
 	return &tenant, nil
+}
+
+func (r *tenantRepository) GetByIDs(ids []uuid.UUID) ([]Tenant, error) {
+	var tenants []Tenant
+	if len(ids) == 0 {
+		return tenants, nil
+	}
+	err := r.db.Where("id IN ?", ids).Find(&tenants).Error
+	return tenants, err
 }
 
 func (r *tenantRepository) Create(tenant *Tenant) error {
@@ -1074,7 +1111,12 @@ func NewPermissionKeyRepository(db *gorm.DB) PermissionKeyRepository {
 }
 
 func (r *permissionKeyRepository) List(offset, limit int, params *PermissionKeyListParams) ([]PermissionKey, int64, error) {
-	query := r.db.Model(&PermissionKey{}).Preload("ModuleGroup").Preload("FeatureGroup")
+	query := r.db.
+		Model(&PermissionKey{}).
+		Joins("LEFT JOIN permission_groups AS module_groups ON module_groups.id = permission_keys.module_group_id AND module_groups.deleted_at IS NULL").
+		Joins("LEFT JOIN permission_groups AS feature_groups ON feature_groups.id = permission_keys.feature_group_id AND feature_groups.deleted_at IS NULL").
+		Preload("ModuleGroup").
+		Preload("FeatureGroup")
 	if params != nil {
 		if params.Keyword != "" {
 			keyword := "%" + params.Keyword + "%"
@@ -1105,7 +1147,16 @@ func (r *permissionKeyRepository) List(offset, limit int, params *PermissionKeyL
 			query = query.Where("feature_kind = ?", params.FeatureKind)
 		}
 		if params.Status != "" {
-			query = query.Where("status = ?", params.Status)
+			query = query.Where(
+				`CASE
+					WHEN permission_keys.status = 'suspended'
+						OR module_groups.status = 'suspended'
+						OR feature_groups.status = 'suspended'
+					THEN 'suspended'
+					ELSE 'normal'
+				END = ?`,
+				params.Status,
+			)
 		}
 		if params.IsBuiltin != nil {
 			query = query.Where("is_builtin = ?", *params.IsBuiltin)
@@ -1283,6 +1334,7 @@ type APIEndpointRepository interface {
 	Upsert(endpoint *APIEndpoint) error
 	GetByMethodAndPath(method, path string) (*APIEndpoint, error)
 	GetByID(id uuid.UUID) (*APIEndpoint, error)
+	GetByIDs(ids []uuid.UUID) ([]APIEndpoint, error)
 	Create(endpoint *APIEndpoint) error
 	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
 }
@@ -2130,6 +2182,7 @@ func (r *userHiddenMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
 }
 
 type APIEndpointListParams struct {
+	EndpointIDs    []uuid.UUID
 	Method        string
 	PermissionKey string
 	Keyword       string
@@ -2154,6 +2207,9 @@ func NewAPIEndpointRepository(db *gorm.DB) APIEndpointRepository {
 func (r *apiEndpointRepository) List(offset, limit int, params *APIEndpointListParams) ([]APIEndpoint, int64, error) {
 	query := r.db.Model(&APIEndpoint{})
 	if params != nil {
+		if len(params.EndpointIDs) > 0 {
+			query = query.Where("id IN ?", params.EndpointIDs)
+		}
 		if params.Method != "" {
 			query = query.Where("method = ?", params.Method)
 		}
@@ -2225,6 +2281,15 @@ func (r *apiEndpointRepository) GetByID(id uuid.UUID) (*APIEndpoint, error) {
 		return nil, err
 	}
 	return &endpoint, nil
+}
+
+func (r *apiEndpointRepository) GetByIDs(ids []uuid.UUID) ([]APIEndpoint, error) {
+	var endpoints []APIEndpoint
+	if len(ids) == 0 {
+		return endpoints, nil
+	}
+	err := r.db.Where("id IN ?", ids).Order("path ASC, method ASC").Find(&endpoints).Error
+	return endpoints, err
 }
 
 func (r *apiEndpointRepository) Create(endpoint *APIEndpoint) error {

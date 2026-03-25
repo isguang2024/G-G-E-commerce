@@ -1,5 +1,7 @@
 <template>
-  <ElDialog v-model="visible" :title="`团队角色菜单裁剪 - ${roleTitle}`" width="620px" align-center @close="handleClose">
+  <ElDrawer v-model="visible" :title="`团队角色菜单裁剪 - ${roleTitle}`" size="620px" @close="handleClose"
+    direction="rtl"
+    class="config-drawer">
     <div class="dialog-shell">
       <div class="dialog-note">
         {{
@@ -46,7 +48,7 @@
       <ElButton @click="handleClose">取消</ElButton>
       <ElButton v-if="!props.roleData?.isGlobal" type="primary" :loading="saving" @click="handleSave">保存</ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

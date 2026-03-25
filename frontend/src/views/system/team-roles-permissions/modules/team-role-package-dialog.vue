@@ -1,11 +1,11 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="`团队角色功能包 - ${roleTitle}`"
-    width="1280px"
+    size="1280px"
     destroy-on-close
-    class="business-dialog"
-  >
+    class="business-dialog config-drawer"
+    direction="rtl">
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
         {{
@@ -107,7 +107,7 @@
         保存
       </ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

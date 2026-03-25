@@ -1,10 +1,11 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="`分配角色 - ${member?.userName || ''}`"
-    width="600px"
+    size="600px"
     destroy-on-close
-  >
+    direction="rtl"
+    class="config-drawer">
     <div v-loading="loading" class="role-dialog-content">
       <div class="mb-4 text-gray-500 text-sm">
         请选择该成员在当前团队内拥有的角色（支持多选）。基础团队角色由系统提供，团队自定义角色仅在当前团队内生效。
@@ -38,7 +39,7 @@
       <ElButton @click="visible = false">取消</ElButton>
       <ElButton type="primary" :loading="submitting" @click="handleSubmit"> 保存更改 </ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

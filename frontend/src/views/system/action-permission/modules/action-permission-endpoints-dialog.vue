@@ -1,10 +1,11 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="`关联接口 - ${permissionName}`"
-    width="1080px"
+    size="1080px"
     destroy-on-close
-  >
+    direction="rtl"
+    class="config-drawer">
     <div class="toolbar">
       <ElSelect
         v-model="selectedEndpointId"
@@ -54,7 +55,7 @@
     <template #footer>
       <ElButton @click="visible = false">关闭</ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

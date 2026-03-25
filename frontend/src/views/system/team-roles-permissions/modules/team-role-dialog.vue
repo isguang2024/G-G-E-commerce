@@ -1,11 +1,11 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="dialogType === 'add' ? '新增团队角色' : '编辑团队角色'"
-    width="520px"
-    align-center
+    size="520px"
     @close="handleClose"
-  >
+    direction="rtl"
+    class="config-drawer">
     <ElForm ref="formRef" :model="form" :rules="rules" label-width="110px">
       <ElFormItem label="角色名称" prop="roleName">
         <ElInput v-model="form.roleName" placeholder="请输入角色名称" />
@@ -33,7 +33,7 @@
       <ElButton @click="handleClose">取消</ElButton>
       <ElButton type="primary" :loading="saving" @click="handleSubmit">保存</ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

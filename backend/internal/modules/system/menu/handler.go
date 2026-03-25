@@ -30,7 +30,7 @@ type MenuHandler struct {
 	platformService platformaccess.Service
 	boundaryService teamboundary.Service
 	authzService    menuAuthzService
-	logger *zap.Logger
+	logger          *zap.Logger
 }
 
 type menuAuthzService interface {
@@ -242,6 +242,98 @@ func (h *MenuHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
+func (h *MenuHandler) ListGroups(c *gin.Context) {
+	groups, err := h.menuService.ListGroups()
+	if err != nil {
+		h.logger.Error("List menu groups failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取菜单分组失败")
+		c.JSON(status, resp)
+		return
+	}
+	out := make([]gin.H, 0, len(groups))
+	for _, item := range groups {
+		out = append(out, gin.H{
+			"id":         item.ID.String(),
+			"name":       item.Name,
+			"sort_order": item.SortOrder,
+			"status":     item.Status,
+			"created_at": item.CreatedAt,
+			"updated_at": item.UpdatedAt,
+		})
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(out))
+}
+
+func (h *MenuHandler) CreateGroup(c *gin.Context) {
+	var req dto.MenuManageGroupCreateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	group, err := h.menuService.CreateGroup(&req)
+	if err != nil {
+		h.logger.Error("Create menu group failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "创建菜单分组失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"id": group.ID.String()}))
+}
+
+func (h *MenuHandler) UpdateGroup(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的菜单分组ID")
+		c.JSON(status, resp)
+		return
+	}
+	var req dto.MenuManageGroupUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	if err := h.menuService.UpdateGroup(id, &req); err != nil {
+		if err == ErrMenuGroupNotFound {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "菜单分组不存在")
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Update menu group failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "更新菜单分组失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *MenuHandler) DeleteGroup(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的菜单分组ID")
+		c.JSON(status, resp)
+		return
+	}
+	if err := h.menuService.DeleteGroup(id); err != nil {
+		if err == ErrMenuGroupNotFound {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "菜单分组不存在")
+			c.JSON(status, resp)
+			return
+		}
+		if err == ErrMenuGroupInUse {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrConflict, "菜单分组下仍有关联菜单，无法删除")
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Delete menu group failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "删除菜单分组失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
 // 菜单备份相关接口
 func (h *MenuHandler) CreateBackup(c *gin.Context) {
 	var req struct {
@@ -355,6 +447,17 @@ func menuToMap(m *user.Menu) gin.H {
 	}
 	if m.ParentID != nil {
 		node["parent_id"] = m.ParentID.String()
+	}
+	if m.ManageGroupID != nil {
+		node["manage_group_id"] = m.ManageGroupID.String()
+	}
+	if m.ManageGroup != nil {
+		node["manage_group"] = gin.H{
+			"id":         m.ManageGroup.ID.String(),
+			"name":       m.ManageGroup.Name,
+			"sort_order": m.ManageGroup.SortOrder,
+			"status":     m.ManageGroup.Status,
+		}
 	}
 	if len(m.Children) > 0 {
 		children := make([]gin.H, 0, len(m.Children))

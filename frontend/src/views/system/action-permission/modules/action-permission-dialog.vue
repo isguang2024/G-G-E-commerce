@@ -1,18 +1,25 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="dialogType === 'add' ? '新增功能权限' : '编辑功能权限'"
-    width="640px"
+    size="640px"
     destroy-on-close
     @close="handleClose"
-  >
+    direction="rtl"
+    class="config-drawer">
     <ElForm ref="formRef" :model="form" :rules="rules" label-width="110px">
       <ElFormItem label="权限键" prop="permissionKey">
         <ElInput v-model="form.permissionKey" placeholder="例如 system.role.manage" />
       </ElFormItem>
       <ElFormItem label="模块分组" prop="moduleGroupId">
         <div class="group-select-row">
-          <ElSelect v-model="form.moduleGroupId" filterable clearable style="width: 100%">
+          <ElSelect
+            v-model="form.moduleGroupId"
+            filterable
+            clearable
+            style="width: 100%"
+            popper-class="action-group-select-popper"
+          >
             <ElOption
               v-for="item in moduleGroups"
               :key="item.id"
@@ -25,7 +32,13 @@
       </ElFormItem>
       <ElFormItem label="功能分组" prop="featureGroupId">
         <div class="group-select-row">
-          <ElSelect v-model="form.featureGroupId" filterable clearable style="width: 100%">
+          <ElSelect
+            v-model="form.featureGroupId"
+            filterable
+            clearable
+            style="width: 100%"
+            popper-class="action-group-select-popper"
+          >
             <ElOption
               v-for="item in featureGroups"
               :key="item.id"
@@ -49,7 +62,15 @@
       <ElFormItem label="描述">
         <ElInput v-model="form.description" type="textarea" :rows="3" placeholder="请输入描述" />
       </ElFormItem>
-      <ElFormItem label="状态" prop="status">
+      <ElFormItem prop="status">
+        <template #label>
+          <span class="label-help">
+            <span>状态</span>
+            <ElTooltip content="功能权限状态参与权限判断；停用后该权限键不再作为可用权限生效。" placement="top">
+              <ElIcon class="label-help-icon"><QuestionFilled /></ElIcon>
+            </ElTooltip>
+          </span>
+        </template>
         <ElSelect v-model="form.status" style="width: 100%">
           <ElOption label="正常" value="normal" />
           <ElOption label="停用" value="suspended" />
@@ -64,13 +85,14 @@
       <ElButton @click="handleClose">取消</ElButton>
       <ElButton type="primary" :loading="submitting" @click="handleSubmit">保存</ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">
+  import { QuestionFilled } from '@element-plus/icons-vue'
   import type { FormInstance, FormRules } from 'element-plus'
   import { fetchCreatePermissionAction, fetchUpdatePermissionAction } from '@/api/system-manage'
-  import { ElMessage } from 'element-plus'
+  import { ElIcon, ElMessage, ElTooltip } from 'element-plus'
 
   interface Props {
     modelValue: boolean
@@ -204,6 +226,18 @@
 </script>
 
 <style scoped>
+  .label-help {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .label-help-icon {
+    color: var(--el-text-color-placeholder);
+    cursor: help;
+    font-size: 14px;
+  }
+
   .group-select-row {
     display: flex;
     gap: 8px;

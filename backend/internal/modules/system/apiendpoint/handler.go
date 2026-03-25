@@ -70,9 +70,17 @@ func (h *Handler) List(c *gin.Context) {
 		categoryMap[category.ID] = category
 	}
 	records := make([]gin.H, 0, len(list))
+	endpointIDs := make([]uuid.UUID, 0, len(list))
 	for _, endpoint := range list {
-		bindings, _ := h.service.ListBindings(endpoint.ID)
-		records = append(records, endpointToMap(&endpoint, bindings, categoryMap))
+		endpointIDs = append(endpointIDs, endpoint.ID)
+	}
+	bindings, _ := h.service.ListBindingsByEndpointIDs(endpointIDs)
+	bindingsMap := make(map[uuid.UUID][]user.APIEndpointPermissionBinding, len(endpointIDs))
+	for _, item := range bindings {
+		bindingsMap[item.EndpointID] = append(bindingsMap[item.EndpointID], item)
+	}
+	for _, endpoint := range list {
+		records = append(records, endpointToMap(&endpoint, bindingsMap[endpoint.ID], categoryMap))
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
 		"records": records,

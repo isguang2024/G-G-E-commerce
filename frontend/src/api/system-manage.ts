@@ -244,6 +244,17 @@ function normalizePageBreadcrumbPreviewItem(
   }
 }
 
+function normalizeMenuManageGroup(item: any): Api.SystemManage.MenuManageGroupItem {
+  return {
+    id: item?.id || '',
+    name: item?.name || '',
+    sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
+    status: item?.status || 'normal',
+    createdAt: item?.created_at || item?.createdAt || '',
+    updatedAt: item?.updated_at || item?.updatedAt || ''
+  }
+}
+
 // 获取用户列表
 export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
   return request.get<Api.SystemManage.UserList>({
@@ -369,6 +380,253 @@ export function fetchSetUserMenus(userId: string, menuIds: string[]) {
     skipTenantHeader: true,
     data: { menu_ids: menuIds }
   })
+}
+
+function normalizeUserPermissionDiagnosisResponse(item: any): Api.SystemManage.UserPermissionDiagnosisResponse {
+  const normalizePackages = (items: any[] | undefined) => (items || []).map(normalizeFeaturePackage)
+  const normalizeGroup = (value: any): Api.SystemManage.PermissionGroupItem | undefined =>
+    value
+      ? {
+          id: value?.id || '',
+          groupType: value?.group_type || value?.groupType || '',
+          code: value?.code || '',
+          name: value?.name || '',
+          nameEn: value?.name_en || value?.nameEn || '',
+          description: value?.description || '',
+          status: value?.status || 'normal',
+          sortOrder: value?.sort_order ?? value?.sortOrder ?? 0,
+          isBuiltin: Boolean(value?.is_builtin ?? value?.isBuiltin ?? false)
+        }
+      : undefined
+
+  const diagnosis = item?.diagnosis
+    ? {
+        permissionKey: item.diagnosis?.permission_key || item.diagnosis?.permissionKey || '',
+        allowed: Boolean(item.diagnosis?.allowed),
+        reasonText: item.diagnosis?.reason_text || item.diagnosis?.reasonText || '',
+        reasons: item.diagnosis?.reasons || [],
+        matchedInSnapshot: Boolean(
+          item.diagnosis?.matched_in_snapshot ?? item.diagnosis?.matchedInSnapshot
+        ),
+        bypassedBySuperAdmin: Boolean(
+          item.diagnosis?.bypassed_by_super_admin ?? item.diagnosis?.bypassedBySuperAdmin
+        ),
+        blockedByTeam: Boolean(item.diagnosis?.blocked_by_team ?? item.diagnosis?.blockedByTeam),
+        denialStage: item.diagnosis?.denial_stage || item.diagnosis?.denialStage || '',
+        denialReason: item.diagnosis?.denial_reason || item.diagnosis?.denialReason || '',
+        memberStatus: item.diagnosis?.member_status || item.diagnosis?.memberStatus || '',
+        memberMatched: Boolean(item.diagnosis?.member_matched ?? item.diagnosis?.memberMatched),
+        boundaryState: item.diagnosis?.boundary_state || item.diagnosis?.boundaryState || '',
+        boundaryConfigured: Boolean(
+          item.diagnosis?.boundary_configured ?? item.diagnosis?.boundaryConfigured
+        ),
+        roleChainMatched: Boolean(
+          item.diagnosis?.role_chain_matched ?? item.diagnosis?.roleChainMatched
+        ),
+        roleChainDisabled: Boolean(
+          item.diagnosis?.role_chain_disabled ?? item.diagnosis?.roleChainDisabled
+        ),
+        roleChainAvailable: Boolean(
+          item.diagnosis?.role_chain_available ?? item.diagnosis?.roleChainAvailable
+        ),
+        action: item.diagnosis?.action
+          ? {
+              id: item.diagnosis.action?.id || '',
+              permissionKey:
+                item.diagnosis.action?.permission_key || item.diagnosis.action?.permissionKey || '',
+              name: item.diagnosis.action?.name || '',
+              description: item.diagnosis.action?.description || '',
+              status: item.diagnosis.action?.status || '',
+              selfStatus:
+                item.diagnosis.action?.self_status || item.diagnosis.action?.selfStatus || '',
+              contextType:
+                item.diagnosis.action?.context_type || item.diagnosis.action?.contextType || '',
+              featureKind:
+                item.diagnosis.action?.feature_kind || item.diagnosis.action?.featureKind || '',
+              moduleCode:
+                item.diagnosis.action?.module_code || item.diagnosis.action?.moduleCode || '',
+              moduleGroupStatus:
+                item.diagnosis.action?.module_group_status ||
+                item.diagnosis.action?.moduleGroupStatus ||
+                '',
+              featureGroupStatus:
+                item.diagnosis.action?.feature_group_status ||
+                item.diagnosis.action?.featureGroupStatus ||
+                '',
+              moduleGroup: normalizeGroup(
+                item.diagnosis.action?.module_group || item.diagnosis.action?.moduleGroup
+              ),
+              featureGroup: normalizeGroup(
+                item.diagnosis.action?.feature_group || item.diagnosis.action?.featureGroup
+              )
+            }
+          : null,
+        sourcePackages: normalizePackages(
+          item.diagnosis?.source_packages || item.diagnosis?.sourcePackages
+        ),
+        roleResults: (item.diagnosis?.role_results || item.diagnosis?.roleResults || []).map(
+          (role: any) => ({
+            roleId: role?.role_id || role?.roleId || '',
+            roleCode: role?.role_code || role?.roleCode || '',
+            roleName: role?.role_name || role?.roleName || '',
+            inherited: Boolean(role?.inherited),
+            refreshedAt: role?.refreshed_at || role?.refreshedAt || '',
+            availableActionCount:
+              role?.available_action_count ?? role?.availableActionCount ?? 0,
+            disabledActionCount:
+              role?.disabled_action_count ?? role?.disabledActionCount ?? 0,
+            effectiveActionCount:
+              role?.effective_action_count ?? role?.effectiveActionCount ?? 0,
+            matched: Boolean(role?.matched),
+            disabled: Boolean(role?.disabled),
+            available: Boolean(role?.available),
+            sourcePackages: normalizePackages(role?.source_packages || role?.sourcePackages)
+          })
+        )
+      }
+    : null
+
+  return {
+    user: {
+      id: item?.user?.id || '',
+      userName: item?.user?.user_name || item?.user?.userName || '',
+      nickName: item?.user?.nick_name || item?.user?.nickName || '',
+      status: item?.user?.status || 'inactive',
+      isSuperAdmin: Boolean(item?.user?.is_super_admin ?? item?.user?.isSuperAdmin)
+    },
+    context: {
+      type: item?.context?.type || 'platform',
+      tenantId: item?.context?.tenant_id || item?.context?.tenantId || '',
+      tenantName: item?.context?.tenant_name || item?.context?.tenantName || ''
+    },
+    snapshot: {
+      refreshedAt: item?.snapshot?.refreshed_at || item?.snapshot?.refreshedAt || '',
+      updatedAt: item?.snapshot?.updated_at || item?.snapshot?.updatedAt || '',
+      roleCount: item?.snapshot?.role_count ?? item?.snapshot?.roleCount ?? 0,
+      directPackageCount: item?.snapshot?.direct_package_count ?? item?.snapshot?.directPackageCount ?? 0,
+      expandedPackageCount:
+        item?.snapshot?.expanded_package_count ?? item?.snapshot?.expandedPackageCount ?? 0,
+      actionCount: item?.snapshot?.action_count ?? item?.snapshot?.actionCount ?? 0,
+      disabledActionCount:
+        item?.snapshot?.disabled_action_count ?? item?.snapshot?.disabledActionCount ?? 0,
+      menuCount: item?.snapshot?.menu_count ?? item?.snapshot?.menuCount ?? 0,
+      hasPackageConfig: Boolean(
+        item?.snapshot?.has_package_config ?? item?.snapshot?.hasPackageConfig
+      ),
+      derivedActionCount:
+        item?.snapshot?.derived_action_count ?? item?.snapshot?.derivedActionCount ?? 0,
+      blockedActionCount:
+        item?.snapshot?.blocked_action_count ?? item?.snapshot?.blockedActionCount ?? 0,
+      effectiveActionCount:
+        item?.snapshot?.effective_action_count ?? item?.snapshot?.effectiveActionCount ?? 0
+    },
+    roles: (item?.roles || []).map((role: any) => ({
+      roleId: role?.role_id || role?.roleId || '',
+      roleCode: role?.role_code || role?.roleCode || '',
+      roleName: role?.role_name || role?.roleName || '',
+      inherited: Boolean(role?.inherited),
+      refreshedAt: role?.refreshed_at || role?.refreshedAt || '',
+      availableActionCount: role?.available_action_count ?? role?.availableActionCount ?? 0,
+      disabledActionCount: role?.disabled_action_count ?? role?.disabledActionCount ?? 0,
+      effectiveActionCount: role?.effective_action_count ?? role?.effectiveActionCount ?? 0,
+      matched: Boolean(role?.matched),
+      disabled: Boolean(role?.disabled),
+      available: Boolean(role?.available),
+      sourcePackages: normalizePackages(role?.source_packages || role?.sourcePackages)
+    })),
+    teamMember: item?.team_member || item?.teamMember
+      ? {
+          id: item?.team_member?.id || item?.teamMember?.id || '',
+          tenantId: item?.team_member?.tenant_id || item?.teamMember?.tenantId || '',
+          userId: item?.team_member?.user_id || item?.teamMember?.userId || '',
+          roleCode: item?.team_member?.role_code || item?.teamMember?.roleCode || '',
+          status: item?.team_member?.status || item?.teamMember?.status || '',
+          matched: Boolean(item?.team_member?.matched ?? item?.teamMember?.matched)
+        }
+      : null,
+    teamPackages: normalizePackages(item?.team_packages || item?.teamPackages),
+    diagnosis,
+    menus: (item?.menus || []).map((menu: any) => normalizeUserPermissionMenuTree(menu))
+  }
+}
+
+export async function fetchGetUserTeams(userId: string) {
+  const res = await request.get<Api.SystemManage.TeamListItem[]>({
+    url: `${USER_BASE}/${userId}/teams`,
+    skipTenantHeader: true
+  })
+  return (res || []).map((item: any) => normalizeUserTeamItem(item))
+}
+
+function normalizeUserPermissionMenuTree(item: any): Api.SystemManage.UserPermissionMenuNode {
+  return {
+    id: item?.id || '',
+    name: item?.name || '',
+    title: item?.title || '',
+    path: item?.path || '',
+    component: item?.component || '',
+    hidden: Boolean(item?.hidden),
+    sort: item?.sort ?? 0,
+    children: (item?.children || []).map((child: any) => normalizeUserPermissionMenuTree(child))
+  }
+}
+
+function normalizeUserTeamItem(item: any): Api.SystemManage.TeamListItem {
+  return {
+    id: item?.id || '',
+    name: item?.name || '',
+    remark: item?.remark || '',
+    logoUrl: item?.logo_url || item?.logoUrl || '',
+    plan: item?.plan || 'free',
+    maxMembers: item?.max_members ?? item?.maxMembers ?? 0,
+    status: item?.status || 'active',
+    createTime: item?.created_at || item?.createTime || '',
+    updateTime: item?.updated_at || item?.updateTime || '',
+    adminUsers: item?.admin_users || item?.adminUsers || [],
+    adminUserIds: item?.admin_user_ids || item?.adminUserIds || [],
+    currentRoleCode: item?.current_role_code || item?.currentRoleCode || '',
+    memberStatus: item?.member_status || item?.memberStatus || ''
+  }
+}
+
+/** 获取用户权限诊断 */
+export async function fetchGetUserPermissionDiagnosis(
+  userId: string,
+  params?: Api.SystemManage.UserPermissionDiagnosisParams
+) {
+  const res = await request.get<Api.SystemManage.UserPermissionDiagnosisResponse>({
+    url: `${USER_BASE}/${userId}/permission-diagnosis`,
+    skipTenantHeader: true,
+    params: {
+      tenant_id: params?.tenantId,
+      permission_key: params?.permissionKey
+    }
+  })
+  return normalizeUserPermissionDiagnosisResponse(res)
+}
+
+/** 刷新用户权限快照 */
+export async function fetchRefreshUserPermissionSnapshot(userId: string, tenantId?: string) {
+  const res = await request.post<Api.SystemManage.UserPermissionDiagnosisResponse>({
+    url: `${USER_BASE}/${userId}/permission-refresh`,
+    skipTenantHeader: true,
+    data: {
+      tenant_id: tenantId
+    }
+  })
+  return normalizeUserPermissionDiagnosisResponse(res)
+}
+
+/** 获取用户当前上下文可见菜单 */
+export async function fetchGetUserPermissionMenus(userId: string, tenantId?: string) {
+  const res = await request.get<Api.SystemManage.UserPermissionMenuNode[]>({
+    url: `${USER_BASE}/${userId}/permissions`,
+    skipTenantHeader: true,
+    params: {
+      tenant_id: tenantId
+    }
+  })
+  return (res || []).map((item: any) => normalizeUserPermissionMenuTree(item))
 }
 
 // 获取角色列表
@@ -1092,6 +1350,41 @@ export function fetchUpdateMenu(id: string, data: Api.SystemManage.MenuUpdatePar
     url: `${MENU_BASE}/${id}`,
     data,
     ...config
+  })
+}
+
+/** 获取菜单管理分组 */
+export function fetchGetMenuManageGroups() {
+  return request
+    .get<Api.SystemManage.MenuManageGroupItem[]>({
+      url: `${MENU_BASE}/groups`
+    })
+    .then((res) => (res || []).map(normalizeMenuManageGroup))
+}
+
+/** 创建菜单管理分组 */
+export function fetchCreateMenuManageGroup(data: Api.SystemManage.MenuManageGroupSaveParams) {
+  return request.post<{ id: string }>({
+    url: `${MENU_BASE}/groups`,
+    data
+  })
+}
+
+/** 更新菜单管理分组 */
+export function fetchUpdateMenuManageGroup(
+  id: string,
+  data: Api.SystemManage.MenuManageGroupSaveParams
+) {
+  return request.put<void>({
+    url: `${MENU_BASE}/groups/${id}`,
+    data
+  })
+}
+
+/** 删除菜单管理分组 */
+export function fetchDeleteMenuManageGroup(id: string) {
+  return request.del<void>({
+    url: `${MENU_BASE}/groups/${id}`
   })
 }
 

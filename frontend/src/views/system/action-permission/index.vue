@@ -139,6 +139,10 @@
     }))
   )
 
+  function isGroupSuspended(row: PermissionActionItem) {
+    return row.moduleGroup?.status === 'suspended' || row.featureGroup?.status === 'suspended'
+  }
+
   const {
     columns,
     columnChecks,
@@ -209,9 +213,10 @@
           label: '状态',
           width: 90,
           formatter: (row: PermissionActionItem) =>
-            h(ElTag, { type: row.status === 'normal' ? 'success' : 'danger' }, () =>
-              row.status === 'normal' ? '正常' : '停用'
-            )
+            h(ElTag, { type: row.status === 'normal' ? 'success' : 'danger' }, () => {
+              if (row.status === 'normal') return '正常'
+              return isGroupSuspended(row) ? '停用(分组)' : '停用'
+            })
         },
         { prop: 'updatedAt', label: '更新时间', width: 170 },
         {
@@ -242,12 +247,14 @@
                 auth: 'system.permission.manage'
               })
             }
-            list.push({
-              key: row.status === 'normal' ? 'disable' : 'enable',
-              label: row.status === 'normal' ? '停用' : '启用',
-              icon: row.status === 'normal' ? 'ri:forbid-2-line' : 'ri:check-line',
-              auth: 'system.permission.manage'
-            })
+            if (!isGroupSuspended(row)) {
+              list.push({
+                key: row.status === 'normal' ? 'disable' : 'enable',
+                label: row.status === 'normal' ? '停用' : '启用',
+                icon: row.status === 'normal' ? 'ri:forbid-2-line' : 'ri:check-line',
+                auth: 'system.permission.manage'
+              })
+            }
             return h(ArtButtonMore, {
               list,
               onClick: (item: ButtonMoreItem) => handleAction(item.key as string, row)

@@ -1,11 +1,11 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="`团队菜单边界 - ${teamName}`"
-    width="960px"
+    size="960px"
     destroy-on-close
-    class="team-menu-boundary-dialog"
-  >
+    class="team-menu-boundary-dialog config-drawer"
+    direction="rtl">
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
         这里配置的是团队菜单边界减法。正式开通入口请通过功能包完成；此处只会从功能包展开菜单中屏蔽个别入口，不会额外新增菜单能力。
@@ -64,7 +64,7 @@
       <ElButton @click="handleCancel">取消</ElButton>
       <ElButton type="primary" :loading="saving" @click="handleSave">保存</ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

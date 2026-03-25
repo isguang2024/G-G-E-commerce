@@ -13,7 +13,7 @@ import { ComponentLoader } from './ComponentLoader'
 import { IframeRouteManager } from './IframeRouteManager'
 
 interface ConvertedRoute extends Omit<RouteRecordRaw, 'children'> {
-  id?: number
+  id?: AppRouteRecord['id']
   children?: ConvertedRoute[]
   component?: RouteRecordRaw['component'] | (() => Promise<any>)
 }

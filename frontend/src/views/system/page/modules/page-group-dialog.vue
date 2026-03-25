@@ -4,7 +4,7 @@
     :title="dialogTitle"
     size="860px"
     direction="rtl"
-    class="page-group-drawer"
+    class="page-group-drawer config-drawer"
     destroy-on-close
     @close="handleClose"
   >

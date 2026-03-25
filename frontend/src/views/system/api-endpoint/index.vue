@@ -113,24 +113,26 @@
       </div>
     </div>
 
-    <ElDialog
+    <ElDrawer
       v-model="formVisible"
       :title="editingId ? '编辑 API' : '新增 API'"
-      width="760px"
+      size="760px"
+      direction="rtl"
       destroy-on-close
-    >
+    
+    class="config-drawer">
       <ElForm :model="formState" label-width="110px">
         <ElRow :gutter="12">
           <ElCol :span="8">
             <ElFormItem label="Method" prop="method">
-              <ElSelect v-model="formState.method" placeholder="请选择">
+              <ElSelect v-model="formState.method" placeholder="请选择" popper-class="api-endpoint-select-popper">
                 <ElOption v-for="item in methodOptions" :key="item" :label="item" :value="item" />
               </ElSelect>
             </ElFormItem>
           </ElCol>
           <ElCol :span="8">
             <ElFormItem label="功能归属" prop="featureKind">
-              <ElSelect v-model="formState.featureKind" placeholder="请选择">
+              <ElSelect v-model="formState.featureKind" placeholder="请选择" popper-class="api-endpoint-select-popper">
                 <ElOption label="系统" value="system" />
                 <ElOption label="业务" value="business" />
               </ElSelect>
@@ -138,7 +140,7 @@
           </ElCol>
           <ElCol :span="8">
             <ElFormItem label="来源" prop="source">
-              <ElSelect v-model="formState.source" placeholder="请选择">
+              <ElSelect v-model="formState.source" placeholder="请选择" popper-class="api-endpoint-select-popper">
                 <ElOption label="自动同步" value="sync" />
                 <ElOption label="初始种子" value="seed" />
                 <ElOption label="手工维护" value="manual" />
@@ -153,7 +155,13 @@
 
         <ElFormItem label="分类" prop="categoryId">
           <div class="category-input-wrap">
-            <ElSelect v-model="formState.categoryId" clearable filterable placeholder="请选择分类">
+            <ElSelect
+              v-model="formState.categoryId"
+              clearable
+              filterable
+              placeholder="请选择分类"
+              popper-class="api-endpoint-select-popper"
+            >
               <ElOption
                 v-for="item in sortedCategories"
                 :key="item.id"
@@ -169,7 +177,7 @@
         <ElRow :gutter="12">
           <ElCol :span="12">
             <ElFormItem label="团队上下文" prop="contextScope">
-              <ElSelect v-model="formState.contextScope" placeholder="请选择">
+              <ElSelect v-model="formState.contextScope" placeholder="请选择" popper-class="api-endpoint-select-popper">
                 <ElOption label="可选" value="optional" />
                 <ElOption label="必需" value="required" />
                 <ElOption label="禁止" value="forbidden" />
@@ -177,8 +185,16 @@
             </ElFormItem>
           </ElCol>
           <ElCol :span="12">
-            <ElFormItem label="状态" prop="status">
-              <ElSelect v-model="formState.status" placeholder="请选择">
+            <ElFormItem prop="status">
+              <template #label>
+                <span class="label-help">
+                  <span>状态</span>
+                  <ElTooltip content="停用后该 API 将被运行时拒绝访问。" placement="top">
+                    <ElIcon class="label-help-icon"><QuestionFilled /></ElIcon>
+                  </ElTooltip>
+                </span>
+              </template>
+              <ElSelect v-model="formState.status" placeholder="请选择" popper-class="api-endpoint-select-popper">
                 <ElOption label="正常" value="normal" />
                 <ElOption label="停用" value="suspended" />
               </ElSelect>
@@ -197,6 +213,7 @@
             filterable
             allow-create
             default-first-option
+            popper-class="api-endpoint-select-popper"
           >
             <ElOption
               v-for="item in formState.permissionKeys"
@@ -211,14 +228,15 @@
         <ElButton @click="formVisible = false">取消</ElButton>
         <ElButton type="primary" :loading="saving" @click="submitForm">保存</ElButton>
       </template>
-    </ElDialog>
+    </ElDrawer>
 
     <ElDrawer
       v-model="categoryDrawerVisible"
       :title="categoryForm.id ? '编辑分类' : '分类管理'"
       size="860px"
       destroy-on-close
-    >
+    
+    class="config-drawer">
       <div class="category-drawer">
         <div class="category-drawer-toolbar">
           <div>
@@ -290,7 +308,15 @@
                   style="width: 100%"
                 />
               </ElFormItem>
-              <ElFormItem label="状态">
+              <ElFormItem>
+                <template #label>
+                  <span class="label-help">
+                    <span>状态</span>
+                    <ElTooltip content="仅影响分类管理，不影响接口鉴权判断。" placement="top">
+                      <ElIcon class="label-help-icon"><QuestionFilled /></ElIcon>
+                    </ElTooltip>
+                  </span>
+                </template>
                 <ElSelect v-model="categoryForm.status" placeholder="请选择">
                   <ElOption label="正常" value="normal" />
                   <ElOption label="停用" value="suspended" />
@@ -373,12 +399,14 @@
       </div>
     </ElDialog>
 
-    <ElDialog
+    <ElDrawer
       v-model="permissionBindVisible"
       :title="permissionDialogMode === 'remove' ? '移除权限键' : '加入权限键'"
-      width="560px"
+      size="560px"
+      direction="rtl"
       destroy-on-close
-    >
+    
+    class="config-drawer">
       <ElForm label-width="92px">
         <ElFormItem label="接口">
           <ElInput :model-value="permissionBinding.endpointSpec" readonly />
@@ -390,6 +418,7 @@
             clearable
             placeholder="请选择权限键"
             :loading="permissionActionLoading"
+            popper-class="api-endpoint-select-popper"
           >
             <ElOption
               v-for="item in currentPermissionActionOptions"
@@ -409,7 +438,7 @@
           {{ permissionDialogMode === 'remove' ? '确认移除' : '确认加入' }}
         </ElButton>
       </template>
-    </ElDialog>
+    </ElDrawer>
   </div>
 </template>
 
@@ -436,14 +465,17 @@
   import {
     ElButton,
     ElCheckbox,
+    ElIcon,
     ElInput,
     ElInputNumber,
     ElMessage,
     ElMessageBox,
     ElOption,
     ElSelect,
+    ElTooltip,
     ElTag
   } from 'element-plus'
+  import { QuestionFilled } from '@element-plus/icons-vue'
   import ApiEndpointSearch from './modules/api-endpoint-search.vue'
 
   defineOptions({ name: 'ApiEndpoint' })
@@ -1741,6 +1773,18 @@
 
   .toolbar-count {
     margin-left: 4px;
+  }
+
+  .label-help {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .label-help-icon {
+    font-size: 14px;
+    color: var(--el-text-color-secondary);
+    cursor: help;
   }
 
   @media (max-width: 1280px) {

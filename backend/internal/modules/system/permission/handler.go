@@ -339,6 +339,7 @@ func permissionKeyToMap(item *user.PermissionKey) gin.H {
 	if item.FeatureGroup != nil && item.FeatureGroup.Code != "" {
 		featureKind = item.FeatureGroup.Code
 	}
+	effectiveStatus := resolvePermissionKeyStatus(item)
 	return gin.H{
 		"id":               item.ID.String(),
 		"permission_key":   permissionKey,
@@ -351,12 +352,29 @@ func permissionKeyToMap(item *user.PermissionKey) gin.H {
 		"feature_kind":     featureKind,
 		"name":             name,
 		"description":      description,
-		"status":           item.Status,
+		"status":           effectiveStatus,
+		"self_status":      item.Status,
 		"sort_order":       item.SortOrder,
 		"is_builtin":       item.IsBuiltin,
 		"created_at":       item.CreatedAt.Format("2006-01-02 15:04:05"),
 		"updated_at":       item.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
+}
+
+func resolvePermissionKeyStatus(item *user.PermissionKey) string {
+	if item == nil {
+		return "normal"
+	}
+	if item.Status == "suspended" {
+		return "suspended"
+	}
+	if item.ModuleGroup != nil && item.ModuleGroup.Status == "suspended" {
+		return "suspended"
+	}
+	if item.FeatureGroup != nil && item.FeatureGroup.Status == "suspended" {
+		return "suspended"
+	}
+	return "normal"
 }
 
 func permissionGroupToMap(group *user.PermissionGroup) gin.H {

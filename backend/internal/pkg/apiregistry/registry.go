@@ -436,15 +436,9 @@ func upsertEndpoint(db *gorm.DB, endpoint *models.APIEndpoint) error {
 	if endpoint == nil {
 		return nil
 	}
-	updates := map[string]interface{}{
-		"feature_kind":  normalizeFeatureKind(endpoint.FeatureKind),
-		"handler":       endpoint.Handler,
-		"summary":       endpoint.Summary,
-		"category_id":   endpoint.CategoryID,
-		"context_scope": normalizeContextScope(endpoint.ContextScope),
-		"source":        normalizeSource(endpoint.Source),
-		"status":        endpoint.Status,
-	}
+	normalizedFeatureKind := normalizeFeatureKind(endpoint.FeatureKind)
+	normalizedContextScope := normalizeContextScope(endpoint.ContextScope)
+	normalizedSource := normalizeSource(endpoint.Source)
 	return db.Transaction(func(tx *gorm.DB) error {
 		var existing models.APIEndpoint
 		var err error
@@ -458,14 +452,42 @@ func upsertEndpoint(db *gorm.DB, endpoint *models.APIEndpoint) error {
 		}
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
+				endpoint.FeatureKind = normalizedFeatureKind
+				endpoint.ContextScope = normalizedContextScope
+				endpoint.Source = normalizedSource
 				return tx.Create(endpoint).Error
 			}
 			return err
 		}
+		updates := make(map[string]interface{})
 		if endpoint.Code != "" && existing.Code != endpoint.Code {
 			updates["code"] = endpoint.Code
 		}
+		if existing.FeatureKind != normalizedFeatureKind {
+			updates["feature_kind"] = normalizedFeatureKind
+		}
+		if existing.Handler != endpoint.Handler {
+			updates["handler"] = endpoint.Handler
+		}
+		if existing.Summary != endpoint.Summary {
+			updates["summary"] = endpoint.Summary
+		}
+		if !sameUUIDPointer(existing.CategoryID, endpoint.CategoryID) {
+			updates["category_id"] = endpoint.CategoryID
+		}
+		if existing.ContextScope != normalizedContextScope {
+			updates["context_scope"] = normalizedContextScope
+		}
+		if existing.Source != normalizedSource {
+			updates["source"] = normalizedSource
+		}
+		if existing.Status != endpoint.Status {
+			updates["status"] = endpoint.Status
+		}
 		endpoint.ID = existing.ID
+		if len(updates) == 0 {
+			return nil
+		}
 		return tx.Model(&existing).Updates(updates).Error
 	})
 }
@@ -488,6 +510,16 @@ func replaceEndpointPermissionBindings(db *gorm.DB, endpoint *models.APIEndpoint
 	}
 	keys := normalizePermissionKeys(permissionKeys)
 	return db.Transaction(func(tx *gorm.DB) error {
+		var existing []models.APIEndpointPermissionBinding
+		if err := tx.
+			Where("endpoint_id = ?", endpoint.ID).
+			Order("sort_order ASC, created_at ASC").
+			Find(&existing).Error; err != nil {
+			return err
+		}
+		if samePermissionBindings(existing, keys) {
+			return nil
+		}
 		if err := tx.Where("endpoint_id = ?", endpoint.ID).Delete(&models.APIEndpointPermissionBinding{}).Error; err != nil {
 			return err
 		}
@@ -505,6 +537,35 @@ func replaceEndpointPermissionBindings(db *gorm.DB, endpoint *models.APIEndpoint
 		}
 		return tx.Create(&items).Error
 	})
+}
+
+func sameUUIDPointer(left, right *uuid.UUID) bool {
+	switch {
+	case left == nil && right == nil:
+		return true
+	case left == nil || right == nil:
+		return false
+	default:
+		return *left == *right
+	}
+}
+
+func samePermissionBindings(existing []models.APIEndpointPermissionBinding, permissionKeys []string) bool {
+	if len(existing) != len(permissionKeys) {
+		return false
+	}
+	for idx, item := range existing {
+		if strings.TrimSpace(item.PermissionKey) != permissionKeys[idx] {
+			return false
+		}
+		if strings.TrimSpace(item.MatchMode) != "ANY" {
+			return false
+		}
+		if item.SortOrder != idx {
+			return false
+		}
+	}
+	return true
 }
 
 func normalizePermissionKeys(values []string) []string {

@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
+	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 )
@@ -17,6 +18,8 @@ import (
 var (
 	ErrMenuNotFound        = errors.New("menu not found")
 	ErrMenuSystemProtected = errors.New("系统默认菜单不可删除")
+	ErrMenuGroupNotFound   = errors.New("menu group not found")
+	ErrMenuGroupInUse      = errors.New("menu group in use")
 )
 
 type MenuService interface {
@@ -24,6 +27,10 @@ type MenuService interface {
 	Create(req *dto.MenuCreateRequest) (*user.Menu, error)
 	Update(id uuid.UUID, req *dto.MenuUpdateRequest) error
 	Delete(id uuid.UUID) error
+	ListGroups() ([]user.MenuManageGroup, error)
+	CreateGroup(req *dto.MenuManageGroupCreateRequest) (*user.MenuManageGroup, error)
+	UpdateGroup(id uuid.UUID, req *dto.MenuManageGroupUpdateRequest) error
+	DeleteGroup(id uuid.UUID) error
 	// 菜单备份相关方法
 	CreateBackup(name, description string, createdBy *uuid.UUID) error
 	ListBackups() ([]*user.MenuBackup, error)
@@ -32,13 +39,14 @@ type MenuService interface {
 }
 
 type menuService struct {
+	db        *gorm.DB
 	menuRepo  user.MenuRepository
 	refresher permissionrefresh.Service
 	logger    *zap.Logger
 }
 
-func NewMenuService(menuRepo user.MenuRepository, refresher permissionrefresh.Service, logger *zap.Logger) MenuService {
-	return &menuService{menuRepo: menuRepo, refresher: refresher, logger: logger}
+func NewMenuService(db *gorm.DB, menuRepo user.MenuRepository, refresher permissionrefresh.Service, logger *zap.Logger) MenuService {
+	return &menuService{db: db, menuRepo: menuRepo, refresher: refresher, logger: logger}
 }
 
 func (s *menuService) GetTree(all bool, allowedMenuIDs []uuid.UUID) ([]*user.Menu, error) {
@@ -144,16 +152,21 @@ func (s *menuService) Create(req *dto.MenuCreateRequest) (*user.Menu, error) {
 		}
 		parentID = &pid
 	}
+	manageGroupID, err := parseOptionalUUID(req.ManageGroupID)
+	if err != nil {
+		return nil, err
+	}
 	m := &user.Menu{
-		ParentID:  parentID,
-		Path:      req.Path,
-		Name:      req.Name,
-		Component: req.Component,
-		Title:     req.Title,
-		Icon:      req.Icon,
-		SortOrder: req.SortOrder,
-		Meta:      req.Meta,
-		Hidden:    req.Hidden,
+		ParentID:      parentID,
+		ManageGroupID: manageGroupID,
+		Path:          req.Path,
+		Name:          req.Name,
+		Component:     req.Component,
+		Title:         req.Title,
+		Icon:          req.Icon,
+		SortOrder:     req.SortOrder,
+		Meta:          sanitizeMenuMeta(req.Meta),
+		Hidden:        req.Hidden,
 	}
 	if err := s.menuRepo.Create(m); err != nil {
 		return nil, err
@@ -194,6 +207,11 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 		m.ParentID = nil
 		s.logger.Info("Menu parent set to top level", zap.String("menu_id", id.String()))
 	}
+	manageGroupID, err := parseOptionalUUID(req.ManageGroupID)
+	if err != nil {
+		return err
+	}
+	m.ManageGroupID = manageGroupID
 	m.Path = req.Path
 	m.Name = req.Name
 	m.Component = req.Component
@@ -201,7 +219,7 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 	m.Icon = req.Icon
 	m.SortOrder = req.SortOrder
 	if req.Meta != nil {
-		m.Meta = req.Meta
+		m.Meta = sanitizeMenuMeta(req.Meta)
 	}
 	m.Hidden = req.Hidden
 	if err := s.menuRepo.Update(m, shouldUpdateParent); err != nil {
@@ -211,6 +229,59 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 		return s.refresher.RefreshByMenu(id)
 	}
 	return nil
+}
+
+func (s *menuService) ListGroups() ([]user.MenuManageGroup, error) {
+	var groups []user.MenuManageGroup
+	err := s.db.Order("sort_order ASC, created_at ASC").Find(&groups).Error
+	return groups, err
+}
+
+func (s *menuService) CreateGroup(req *dto.MenuManageGroupCreateRequest) (*user.MenuManageGroup, error) {
+	group := &user.MenuManageGroup{
+		Name:      strings.TrimSpace(req.Name),
+		SortOrder: req.SortOrder,
+		Status:    normalizeMenuGroupStatus(req.Status),
+	}
+	if err := s.db.Create(group).Error; err != nil {
+		return nil, err
+	}
+	return group, nil
+}
+
+func (s *menuService) UpdateGroup(id uuid.UUID, req *dto.MenuManageGroupUpdateRequest) error {
+	var group user.MenuManageGroup
+	if err := s.db.Where("id = ?", id).First(&group).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrMenuGroupNotFound
+		}
+		return err
+	}
+	return s.db.Model(&group).Updates(map[string]interface{}{
+		"name":       strings.TrimSpace(req.Name),
+		"sort_order": req.SortOrder,
+		"status":     normalizeMenuGroupStatus(req.Status),
+	}).Error
+}
+
+func (s *menuService) DeleteGroup(id uuid.UUID) error {
+	var group user.MenuManageGroup
+	if err := s.db.Where("id = ?", id).First(&group).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrMenuGroupNotFound
+		}
+		return err
+	}
+
+	var count int64
+	if err := s.db.Model(&models.Menu{}).Where("manage_group_id = ?", id).Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return ErrMenuGroupInUse
+	}
+
+	return s.db.Delete(&group).Error
 }
 
 func (s *menuService) isDescendant(flat []user.Menu, ancestorID, targetID uuid.UUID) bool {
@@ -267,8 +338,17 @@ func (s *menuService) CreateBackup(name, description string, createdBy *uuid.UUI
 		return err
 	}
 
+	var groups []user.MenuManageGroup
+	if err := s.db.Order("sort_order ASC, created_at ASC").Find(&groups).Error; err != nil {
+		s.logger.Error("Failed to list menu groups for backup", zap.Error(err))
+		return err
+	}
+
 	// 将菜单数据转换为JSON
-	menuData, err := json.Marshal(menus)
+	menuData, err := json.Marshal(ginMenuBackupPayload{
+		Groups: groups,
+		Menus:  menus,
+	})
 	if err != nil {
 		s.logger.Error("Failed to marshal menu data", zap.Error(err))
 		return err
@@ -338,24 +418,41 @@ func (s *menuService) RestoreBackup(id uuid.UUID) error {
 	}
 
 	// 解析备份的菜单数据
+	var payload ginMenuBackupPayload
 	var menus []user.Menu
-	if err := json.Unmarshal([]byte(backup.MenuData), &menus); err != nil {
-		s.logger.Error("Failed to unmarshal menu data", zap.Error(err))
-		return err
-	}
-
-	// 清空现有菜单
-	if err := s.menuRepo.DeleteAllMenus(); err != nil {
-		s.logger.Error("Failed to delete all menus", zap.Error(err))
-		return err
-	}
-
-	// 重新创建菜单
-	for i := range menus {
-		if err := s.menuRepo.Create(&menus[i]); err != nil {
-			s.logger.Error("Failed to create menu during restore", zap.Error(err))
+	var groups []user.MenuManageGroup
+	if err := json.Unmarshal([]byte(backup.MenuData), &payload); err == nil && len(payload.Menus) > 0 {
+		menus = payload.Menus
+		groups = payload.Groups
+	} else {
+		if err := json.Unmarshal([]byte(backup.MenuData), &menus); err != nil {
+			s.logger.Error("Failed to unmarshal menu data", zap.Error(err))
 			return err
 		}
+	}
+
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Exec("DELETE FROM menus").Error; err != nil {
+			return err
+		}
+		if err := tx.Exec("DELETE FROM menu_manage_groups").Error; err != nil {
+			return err
+		}
+		for i := range groups {
+			if err := tx.Create(&groups[i]).Error; err != nil {
+				return err
+			}
+		}
+		for i := range menus {
+			menus[i].Meta = sanitizeMenuMeta(menus[i].Meta)
+			if err := tx.Create(&menus[i]).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		s.logger.Error("Failed to restore menu backup", zap.Error(err))
+		return err
 	}
 
 	// 清理无效的角色菜单关联
@@ -370,4 +467,43 @@ func (s *menuService) RestoreBackup(id uuid.UUID) error {
 // 清理无效的角色菜单关联（删除关联表中不存在于菜单表内的关联）
 func (s *menuService) cleanupInvalidRoleMenus() error {
 	return nil
+}
+
+type ginMenuBackupPayload struct {
+	Groups []user.MenuManageGroup `json:"groups"`
+	Menus  []user.Menu            `json:"menus"`
+}
+
+func parseOptionalUUID(value *string) (*uuid.UUID, error) {
+	if value == nil || strings.TrimSpace(*value) == "" {
+		return nil, nil
+	}
+	id, err := uuid.Parse(strings.TrimSpace(*value))
+	if err != nil {
+		return nil, err
+	}
+	return &id, nil
+}
+
+func sanitizeMenuMeta(meta map[string]interface{}) map[string]interface{} {
+	if meta == nil {
+		return nil
+	}
+	sanitized := make(map[string]interface{}, len(meta))
+	for key, value := range meta {
+		if key == "manageGroup" {
+			continue
+		}
+		sanitized[key] = value
+	}
+	return sanitized
+}
+
+func normalizeMenuGroupStatus(value string) string {
+	switch strings.TrimSpace(value) {
+	case "disabled":
+		return "disabled"
+	default:
+		return "normal"
+	}
 }

@@ -213,6 +213,16 @@ func runNamedMigrations(logger *zap.Logger) error {
 			},
 		},
 		{
+			Name: "20260326_menu_manage_groups_backfill",
+			Run: func(logger *zap.Logger) error {
+				if err := backfillMenuManageGroups(logger); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260326_menu_manage_groups_backfill"))
+				return nil
+			},
+		},
+		{
 			Name: "20260325_permission_endpoint_binding_ops",
 			Run: func(logger *zap.Logger) error {
 				permissionKey := "system.permission.manage"
@@ -1868,6 +1878,63 @@ func cleanupDeprecatedMenus(logger *zap.Logger) error {
 		logger.Info("Legacy team menu tree removed", zap.String("name", menu.Name), zap.String("path", menu.Path))
 	}
 	return nil
+}
+
+func backfillMenuManageGroups(logger *zap.Logger) error {
+	var menus []usermodel.Menu
+	if err := database.DB.Find(&menus).Error; err != nil {
+		return err
+	}
+
+	return database.DB.Transaction(func(tx *gorm.DB) error {
+		groupNameToID := make(map[string]uuid.UUID)
+
+		for i := range menus {
+			menu := &menus[i]
+			if menu.Meta == nil {
+				continue
+			}
+			rawName, ok := menu.Meta["manageGroup"]
+			if !ok {
+				continue
+			}
+			groupName := strings.TrimSpace(fmt.Sprint(rawName))
+			delete(menu.Meta, "manageGroup")
+			if groupName == "" {
+				if err := tx.Model(&usermodel.Menu{}).Where("id = ?", menu.ID).Updates(map[string]interface{}{
+					"meta":            menu.Meta,
+					"manage_group_id": nil,
+				}).Error; err != nil {
+					return err
+				}
+				continue
+			}
+
+			groupID, exists := groupNameToID[groupName]
+			if !exists {
+				group := usermodel.MenuManageGroup{
+					Name:      groupName,
+					SortOrder: 0,
+					Status:    "normal",
+				}
+				if err := tx.Where("name = ?", groupName).FirstOrCreate(&group).Error; err != nil {
+					return err
+				}
+				groupID = group.ID
+				groupNameToID[groupName] = groupID
+			}
+
+			if err := tx.Model(&usermodel.Menu{}).Where("id = ?", menu.ID).Updates(map[string]interface{}{
+				"meta":            menu.Meta,
+				"manage_group_id": groupID,
+			}).Error; err != nil {
+				return err
+			}
+		}
+
+		logger.Info("Menu manage groups backfilled", zap.Int("menus", len(menus)), zap.Int("groups", len(groupNameToID)))
+		return nil
+	})
 }
 
 func deleteMenuTree(rootID uuid.UUID) error {

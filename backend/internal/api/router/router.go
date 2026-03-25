@@ -18,6 +18,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/system"
 	"github.com/gg-ecommerce/backend/internal/modules/system/tenant"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/apiendpointaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
 )
@@ -37,6 +38,8 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		c.JSON(200, gin.H{"status": "ok"})
 	})
 
+	endpointAccessService := apiendpointaccess.NewService(db, logger)
+
 	authModule := auth.NewAuthModule(db, cfg, logger)
 	userModule := user.NewUserModule(db, cfg, logger)
 	menuModule := menu.NewMenuModule(db, cfg, logger)
@@ -47,7 +50,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 	tenantModule := tenant.NewTenantModule(db, cfg, logger)
 	mediaModule := media.NewMediaModule(db, cfg, logger)
 	systemModule := system.NewSystemModule(db, cfg, logger)
-	apiEndpointModule := apiendpoint.NewModule(db, cfg, logger, r)
+	apiEndpointModule := apiendpoint.NewModule(db, cfg, logger, r, endpointAccessService)
 
 	modules := module.GetRegistry().GetModules()
 	for _, m := range modules {
@@ -57,6 +60,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 	}
 
 	v1 := r.Group("/api/v1")
+	v1.Use(endpointAccessService.RequireActiveEndpoint())
 	{
 		authModule.RegisterRoutes(v1)
 		pageModule.RegisterPublicRoutes(v1)
@@ -77,13 +81,16 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		}
 
 		open := r.Group("/open/v1")
-		open.Use(middleware.APIKeyAuth())
+		open.Use(endpointAccessService.RequireActiveEndpoint(), middleware.APIKeyAuth())
 		{
 		}
 	}
 
 	if err := apiregistry.SyncRoutes(db, logger, r.Routes()); err != nil {
 		logger.Error("Failed to sync API registry", zap.Error(err))
+	}
+	if err := endpointAccessService.Refresh(); err != nil {
+		logger.Error("Failed to refresh API endpoint runtime cache", zap.Error(err))
 	}
 
 	return r

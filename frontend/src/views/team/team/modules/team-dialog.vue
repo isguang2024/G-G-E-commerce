@@ -1,10 +1,10 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="dialogVisible"
     :title="type === 'add' ? '新增团队' : '编辑团队'"
-    width="500px"
-    align-center
-  >
+    size="500px"
+    direction="rtl"
+    class="config-drawer">
     <ElForm ref="formRef" :model="formData" :rules="rules" label-width="100px">
       <ElFormItem label="团队名称" prop="name">
         <ElInput
@@ -67,7 +67,7 @@
         <ElButton type="primary" @click="handleSubmit">确定</ElButton>
       </div>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">
