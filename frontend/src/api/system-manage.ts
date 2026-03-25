@@ -255,6 +255,38 @@ function normalizeMenuManageGroup(item: any): Api.SystemManage.MenuManageGroupIt
   }
 }
 
+function normalizeRuntimeMenuTree(item: any): AppRouteRecord {
+  const meta = item?.meta || {}
+  const children = Array.isArray(item?.children)
+    ? item.children.map((child: any) => normalizeRuntimeMenuTree(child))
+    : []
+  return {
+    id: item?.id || '',
+    path: item?.path || '',
+    name: item?.name || '',
+    component: item?.component || '',
+    parent_id: item?.parent_id || item?.parentId || '',
+    sort_order: item?.sort_order ?? item?.sortOrder ?? 0,
+    redirect: item?.redirect || '',
+    meta: {
+      title: meta?.title || '',
+      icon: meta?.icon || '',
+      accessMode: `${meta?.accessMode || ''}`.trim() || undefined,
+      activePath: `${meta?.activePath || ''}`.trim() || undefined,
+      link: `${meta?.link || ''}`.trim() || undefined,
+      roles: Array.isArray(meta?.roles) && meta.roles.length ? meta.roles : undefined,
+      isEnable: meta?.isEnable === true,
+      isHide: meta?.isHide === true,
+      isIframe: meta?.isIframe === true,
+      isHideTab: meta?.isHideTab === true,
+      keepAlive: meta?.keepAlive === true,
+      fixedTab: meta?.fixedTab === true,
+      isFullPage: meta?.isFullPage === true
+    },
+    children
+  } as AppRouteRecord
+}
+
 // 获取用户列表
 export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
   return request.get<Api.SystemManage.UserList>({
@@ -1310,9 +1342,11 @@ const MENU_BASE = '/api/v1/menus'
 
 /** 获取菜单树（按当前用户角色过滤，用于侧栏；后端菜单模式时使用） */
 export function fetchGetMenuList() {
-  return request.get<AppRouteRecord[]>({
-    url: `${MENU_BASE}/tree`
-  })
+  return request
+    .get<AppRouteRecord[]>({
+      url: `${MENU_BASE}/tree`
+    })
+    .then((res) => (res || []).map((item: any) => normalizeRuntimeMenuTree(item)))
 }
 
 /** 获取完整菜单树（不限角色，用于菜单管理页；需管理员） */
