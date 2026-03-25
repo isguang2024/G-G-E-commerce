@@ -58,6 +58,10 @@ func main() {
 
 	logger.Info("Database migration completed successfully!")
 
+	if err := ensureAPIEndpointLegacyModuleNullable(logger); err != nil {
+		logger.Fatal("Failed to prepare api endpoint legacy schema", zap.Error(err))
+	}
+
 	// 初始化默认作用域
 	if err := runNamedMigrations(logger); err != nil {
 		logger.Fatal("Named migrations failed", zap.Error(err))
@@ -126,16 +130,16 @@ func main() {
 		logger.Info("API endpoint categories initialized successfully")
 	}
 
-	if err := syncAPIRegistry(logger, cfg); err != nil {
-		logger.Warn("Failed to sync API registry", zap.Error(err))
-	} else {
-		logger.Info("API registry synchronized successfully")
-	}
-
 	if err := finalizeAPIEndpointSchema(logger); err != nil {
 		logger.Warn("Failed to finalize api endpoint schema", zap.Error(err))
 	} else {
 		logger.Info("API endpoint schema finalized successfully")
+	}
+
+	if err := syncAPIRegistry(logger, cfg); err != nil {
+		logger.Warn("Failed to sync API registry", zap.Error(err))
+	} else {
+		logger.Info("API registry synchronized successfully")
 	}
 
 	if err := mergeDeprecatedTeamPermissionKeys(logger); err != nil {
@@ -174,6 +178,84 @@ func runNamedMigrations(logger *zap.Logger) error {
 
 	tasks := []migrationTask{
 		{
+			Name: "20260325_permission_endpoint_binding_ops",
+			Run: func(logger *zap.Logger) error {
+				permissionKey := "system.permission.manage"
+				categoryID := permissionseed.StableID("api-endpoint-category", "permission_key")
+				categoryIDPtr := &categoryID
+				endpoints := []struct {
+					Method  string
+					Path    string
+					Summary string
+				}{
+					{Method: "POST", Path: "/api/v1/permission-actions/:id/endpoints", Summary: "新增功能权限关联接口"},
+					{Method: "DELETE", Path: "/api/v1/permission-actions/:id/endpoints/:endpointId", Summary: "删除功能权限关联接口"},
+				}
+
+				return database.DB.Transaction(func(tx *gorm.DB) error {
+					for _, item := range endpoints {
+						method := strings.ToUpper(strings.TrimSpace(item.Method))
+						path := strings.TrimSpace(item.Path)
+						code := permissionseed.StableID("api-endpoint-code", method+" "+path).String()
+
+						endpoint := &usermodel.APIEndpoint{
+							Code:         code,
+							Method:       method,
+							Path:         path,
+							FeatureKind:  "system",
+							Summary:      item.Summary,
+							CategoryID:   categoryIDPtr,
+							ContextScope: "optional",
+							Source:       "sync",
+							Status:       "normal",
+						}
+
+						var existing usermodel.APIEndpoint
+						err := tx.Where("method = ? AND path = ?", method, path).First(&existing).Error
+						if err != nil {
+							if errors.Is(err, gorm.ErrRecordNotFound) {
+								if createErr := tx.Create(endpoint).Error; createErr != nil {
+									return createErr
+								}
+								existing = *endpoint
+							} else {
+								return err
+							}
+						} else {
+							if updateErr := tx.Model(&existing).Updates(map[string]interface{}{
+								"summary":       item.Summary,
+								"feature_kind":  "system",
+								"category_id":   categoryID,
+								"context_scope": "optional",
+								"source":        "sync",
+								"status":        "normal",
+							}).Error; updateErr != nil {
+								return updateErr
+							}
+						}
+
+						var count int64
+						if countErr := tx.Model(&usermodel.APIEndpointPermissionBinding{}).
+							Where("endpoint_id = ? AND permission_key = ?", existing.ID, permissionKey).
+							Count(&count).Error; countErr != nil {
+							return countErr
+						}
+						if count == 0 {
+							if createBindErr := tx.Create(&usermodel.APIEndpointPermissionBinding{
+								EndpointID:    existing.ID,
+								PermissionKey: permissionKey,
+								MatchMode:     "ANY",
+								SortOrder:     0,
+							}).Error; createBindErr != nil {
+								return createBindErr
+							}
+						}
+					}
+					return nil
+				})
+			},
+		},
+		{
 			Name: "20260324_permission_key_code_alignment",
 			Run: func(logger *zap.Logger) error {
 				oldCategoryID := permissionseed.StableID("api-endpoint-category", "permission_action")
@@ -202,11 +284,6 @@ func runNamedMigrations(logger *zap.Logger) error {
 							"module_group_id":  newModuleGroupID,
 							"feature_group_id": permissionseed.StableID("permission-group", "feature:system"),
 						}).Error; err != nil {
-						return err
-					}
-					if err := tx.Model(&usermodel.APIEndpoint{}).
-						Where("module = ?", "permission_action").
-						Update("module", "permission_key").Error; err != nil {
 						return err
 					}
 					if err := tx.Model(&usermodel.APIEndpoint{}).
@@ -254,11 +331,6 @@ func runNamedMigrations(logger *zap.Logger) error {
 					if err := tx.Model(&usermodel.PermissionKey{}).
 						Where("module_group_id = ?", oldModuleGroupID).
 						Update("module_group_id", newModuleGroupID).Error; err != nil {
-						return err
-					}
-					if err := tx.Model(&usermodel.APIEndpoint{}).
-						Where("module = ?", "permission_action").
-						Update("module", "permission_key").Error; err != nil {
 						return err
 					}
 					if err := tx.Model(&usermodel.APIEndpoint{}).
@@ -889,6 +961,22 @@ func runNamedMigrations(logger *zap.Logger) error {
 					}
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260324_team_role_access_snapshot_boundary_fields"))
+				return nil
+			},
+		},
+		{
+			Name: "20260324_role_custom_params_jsonb",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`ALTER TABLE roles ADD COLUMN IF NOT EXISTS custom_params jsonb NOT NULL DEFAULT '{}'::jsonb`,
+					`UPDATE roles SET custom_params = '{}'::jsonb WHERE custom_params IS NULL`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260324_role_custom_params_jsonb"))
 				return nil
 			},
 		},
@@ -1810,15 +1898,30 @@ func initDefaultAPIEndpointCategories(logger *zap.Logger) error {
 }
 
 func finalizeAPIEndpointSchema(logger *zap.Logger) error {
+	if err := database.DB.Exec(`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS category_id uuid`).Error; err != nil {
+		return err
+	}
+
+	hasModule, err := hasColumn("api_endpoints", "module")
+	if err != nil {
+		return err
+	}
+	if hasModule {
+		if err := database.DB.Exec(`
+			UPDATE api_endpoints ae
+			   SET category_id = c.id
+			  FROM api_endpoint_categories c
+			 WHERE ae.category_id IS NULL
+			   AND c.code = ae.module
+		`).Error; err != nil {
+			return err
+		}
+	}
+
 	statements := []string{
-		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS category_id uuid`,
-		`UPDATE api_endpoints ae
-		    SET category_id = c.id
-		   FROM api_endpoint_categories c
-		  WHERE ae.category_id IS NULL
-		    AND c.code = ae.module`,
 		`ALTER TABLE api_endpoints DROP COLUMN IF EXISTS group_code`,
 		`ALTER TABLE api_endpoints DROP COLUMN IF EXISTS group_name`,
+		`ALTER TABLE api_endpoints DROP COLUMN IF EXISTS module`,
 	}
 	for _, statement := range statements {
 		if err := database.DB.Exec(statement).Error; err != nil {
@@ -1826,6 +1929,27 @@ func finalizeAPIEndpointSchema(logger *zap.Logger) error {
 		}
 	}
 	logger.Info("API endpoint schema finalized")
+	return nil
+}
+
+func ensureAPIEndpointLegacyModuleNullable(logger *zap.Logger) error {
+	hasModule, err := hasColumn("api_endpoints", "module")
+	if err != nil {
+		return err
+	}
+	if !hasModule {
+		return nil
+	}
+	statements := []string{
+		`ALTER TABLE api_endpoints ALTER COLUMN module DROP NOT NULL`,
+		`ALTER TABLE api_endpoints ALTER COLUMN module SET DEFAULT ''`,
+	}
+	for _, statement := range statements {
+		if err := database.DB.Exec(statement).Error; err != nil {
+			return err
+		}
+	}
+	logger.Info("Legacy api_endpoints.module constraint prepared")
 	return nil
 }
 

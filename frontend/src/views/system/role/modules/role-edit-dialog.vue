@@ -45,6 +45,14 @@
           style="width: 100%"
         />
       </ElFormItem>
+      <ElFormItem label="自定义参数(JSON)" prop="customParamsText">
+        <ElInput
+          v-model="form.customParamsText"
+          type="textarea"
+          :rows="6"
+          placeholder='请输入 JSON 对象，例如：{"dataScope":"team","editable":true}'
+        />
+      </ElFormItem>
     </ElForm>
     <template #footer>
       <ElButton @click="handleClose">取消</ElButton>
@@ -94,7 +102,29 @@
       { required: true, message: '请输入角色编码', trigger: 'blur' },
       { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
     ],
-    description: [{ required: true, message: '请输入角色描述', trigger: 'blur' }]
+    description: [{ required: true, message: '请输入角色描述', trigger: 'blur' }],
+    customParamsText: [
+      {
+        validator: (_rule, value, callback) => {
+          const raw = `${value || ''}`.trim()
+          if (!raw) {
+            callback()
+            return
+          }
+          try {
+            const parsed = JSON.parse(raw)
+            if (parsed === null || Array.isArray(parsed) || typeof parsed !== 'object') {
+              callback(new Error('自定义参数必须是 JSON 对象'))
+              return
+            }
+            callback()
+          } catch {
+            callback(new Error('JSON 格式不正确'))
+          }
+        },
+        trigger: 'blur'
+      }
+    ]
   })
 
   const form = reactive({
@@ -105,8 +135,14 @@
     createTime: '',
     sortOrder: 0,
     priority: 0,
-    status: 'normal'
+    status: 'normal',
+    customParamsText: '{}'
   })
+
+  const formatCustomParams = (value?: Record<string, any>) => {
+    const target = value && typeof value === 'object' && !Array.isArray(value) ? value : {}
+    return JSON.stringify(target, null, 2)
+  }
 
   const initForm = () => {
     if (props.dialogType === 'edit' && props.roleData) {
@@ -119,7 +155,8 @@
         createTime: roleData.createTime || '',
         sortOrder: roleData.sortOrder ?? 0,
         priority: roleData.priority || 0,
-        status: roleData.status || 'normal'
+        status: roleData.status || 'normal',
+        customParamsText: formatCustomParams(roleData.customParams)
       })
       return
     }
@@ -132,7 +169,8 @@
       createTime: '',
       sortOrder: 0,
       priority: 0,
-      status: 'normal'
+      status: 'normal',
+      customParamsText: '{}'
     })
   }
 
@@ -166,12 +204,14 @@
 
     try {
       await formRef.value.validate()
+      const parsedCustomParams = JSON.parse(form.customParamsText || '{}')
       const payload = {
         code: form.roleCode,
         name: form.roleName,
         description: form.description || '',
         sort_order: form.sortOrder ?? 0,
         priority: form.priority || 0,
+        custom_params: parsedCustomParams,
         status: form.status || 'normal'
       }
 

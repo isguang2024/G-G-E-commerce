@@ -60,6 +60,8 @@ export class RouteTransformer {
       this.handleIframeRoute(converted, route, depth)
     } else if (this.isFirstLevelRoute(route, depth)) {
       this.handleFirstLevelRoute(converted, route, componentPath)
+    } else if (this.shouldAutoInjectLayout(route, depth, componentPath)) {
+      converted.component = this.componentLoader.loadLayout()
     } else {
       this.handleNormalRoute(converted, componentPath)
     }
@@ -137,6 +139,21 @@ export class RouteTransformer {
     if (component) {
       converted.component = this.componentLoader.load(component)
     }
+  }
+
+  /**
+   * 一级目录菜单缺少 component 时，自动注入 Layout 兜底
+   */
+  private shouldAutoInjectLayout(
+    route: AppRouteRecord,
+    depth: number,
+    component: string | undefined
+  ): boolean {
+    if (depth !== 0) return false
+    if (component) return false
+    if (route.meta?.isIframe) return false
+    if (route.meta?.link?.trim()) return false
+    return Array.isArray(route.children) && route.children.length > 0
   }
 
   /**

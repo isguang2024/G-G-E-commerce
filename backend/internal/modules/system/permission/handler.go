@@ -124,6 +124,72 @@ func (h *PermissionHandler) ListEndpoints(c *gin.Context) {
 	}))
 }
 
+func (h *PermissionHandler) AddEndpoint(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能权限ID")
+		c.JSON(status, resp)
+		return
+	}
+	var req dto.PermissionKeyEndpointBindRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	endpointID, err := uuid.Parse(req.EndpointID)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的接口ID")
+		c.JSON(status, resp)
+		return
+	}
+	if err := h.permissionService.AddEndpoint(id, endpointID); err != nil {
+		switch err {
+		case ErrPermissionKeyNotFound:
+			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能权限不存在")
+			c.JSON(status, resp)
+			return
+		case ErrAPIEndpointNotFound:
+			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "接口不存在")
+			c.JSON(status, resp)
+			return
+		default:
+			h.logger.Error("Add permission key endpoint failed", zap.Error(err))
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "新增关联接口失败: "+err.Error())
+			c.JSON(status, resp)
+			return
+		}
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *PermissionHandler) RemoveEndpoint(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能权限ID")
+		c.JSON(status, resp)
+		return
+	}
+	endpointID, err := uuid.Parse(c.Param("endpointId"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的接口ID")
+		c.JSON(status, resp)
+		return
+	}
+	if err := h.permissionService.RemoveEndpoint(id, endpointID); err != nil {
+		if err == ErrPermissionKeyNotFound {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能权限不存在")
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Remove permission key endpoint failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "删除关联接口失败: "+err.Error())
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
 func (h *PermissionHandler) CreateGroup(c *gin.Context) {
 	var req dto.PermissionGroupSaveRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -327,7 +393,6 @@ func endpointToMap(endpoint *user.APIEndpoint) gin.H {
 		"method":        endpoint.Method,
 		"path":          endpoint.Path,
 		"spec":          endpoint.Method + " " + endpoint.Path,
-		"module":        endpoint.Module,
 		"feature_kind":  endpoint.FeatureKind,
 		"handler":       endpoint.Handler,
 		"summary":       endpoint.Summary,

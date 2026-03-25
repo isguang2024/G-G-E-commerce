@@ -2134,7 +2134,6 @@ type APIEndpointListParams struct {
 	PermissionKey string
 	Keyword       string
 	Path          string
-	Module        string
 	CategoryID    string
 	ContextScope  string
 	Source        string
@@ -2160,13 +2159,10 @@ func (r *apiEndpointRepository) List(offset, limit int, params *APIEndpointListP
 		}
 		if params.Keyword != "" {
 			keyword := "%" + params.Keyword + "%"
-			query = query.Where("(path LIKE ? OR module LIKE ? OR summary LIKE ? OR handler LIKE ?)", keyword, keyword, keyword, keyword)
+			query = query.Where("(path LIKE ? OR summary LIKE ? OR handler LIKE ?)", keyword, keyword, keyword)
 		}
 		if params.Path != "" {
 			query = query.Where("path LIKE ?", "%"+params.Path+"%")
-		}
-		if params.Module != "" {
-			query = query.Where("module LIKE ?", "%"+params.Module+"%")
 		}
 		if params.CategoryID != "" {
 			query = query.Where("category_id = ?", params.CategoryID)
@@ -2203,7 +2199,7 @@ func (r *apiEndpointRepository) List(offset, limit int, params *APIEndpointListP
 		return nil, 0, err
 	}
 	var endpoints []APIEndpoint
-	err := query.Offset(offset).Limit(limit).Order("module ASC, path ASC, method ASC").Find(&endpoints).Error
+	err := query.Offset(offset).Limit(limit).Order("path ASC, method ASC").Find(&endpoints).Error
 	return endpoints, total, err
 }
 
@@ -2244,7 +2240,6 @@ func (r *apiEndpointRepository) Upsert(endpoint *APIEndpoint) error {
 		return nil
 	}
 	updates := map[string]interface{}{
-		"module":        endpoint.Module,
 		"feature_kind":  endpoint.FeatureKind,
 		"handler":       endpoint.Handler,
 		"summary":       endpoint.Summary,
@@ -2317,6 +2312,8 @@ type APIEndpointPermissionBindingRepository interface {
 	ListByEndpointID(endpointID uuid.UUID) ([]APIEndpointPermissionBinding, error)
 	ListEndpointIDsByPermissionKey(permissionKey string) ([]uuid.UUID, error)
 	ReplaceByEndpointID(endpointID uuid.UUID, items []APIEndpointPermissionBinding) error
+	AddByPermissionKey(permissionKey string, endpointID uuid.UUID) error
+	RemoveByPermissionKey(permissionKey string, endpointID uuid.UUID) error
 }
 
 type apiEndpointPermissionBindingRepository struct {
@@ -2360,4 +2357,28 @@ func (r *apiEndpointPermissionBindingRepository) ReplaceByEndpointID(endpointID 
 		}
 		return tx.Create(&items).Error
 	})
+}
+
+func (r *apiEndpointPermissionBindingRepository) AddByPermissionKey(permissionKey string, endpointID uuid.UUID) error {
+	var count int64
+	if err := r.db.Model(&APIEndpointPermissionBinding{}).
+		Where("permission_key = ? AND endpoint_id = ?", permissionKey, endpointID).
+		Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return nil
+	}
+	item := &APIEndpointPermissionBinding{
+		EndpointID:    endpointID,
+		PermissionKey: permissionKey,
+		MatchMode:     "ANY",
+		SortOrder:     0,
+	}
+	return r.db.Create(item).Error
+}
+
+func (r *apiEndpointPermissionBindingRepository) RemoveByPermissionKey(permissionKey string, endpointID uuid.UUID) error {
+	return r.db.Where("permission_key = ? AND endpoint_id = ?", permissionKey, endpointID).
+		Delete(&APIEndpointPermissionBinding{}).Error
 }

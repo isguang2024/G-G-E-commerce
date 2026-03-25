@@ -1,90 +1,52 @@
 <template>
   <div class="art-full-height">
-    <ElCard class="group-card" shadow="never">
-      <div class="group-header">
-        <div>
-          <div class="group-title">功能权限分组</div>
-          <div class="group-help">模块分组和功能分组统一维护，功能权限只绑定分组，不再使用来源筛选。</div>
-        </div>
-        <div class="group-actions">
-          <ElButton v-action="'system.permission.manage'" @click="openGroupDialog('module')">新建模块分组</ElButton>
-          <ElButton v-action="'system.permission.manage'" type="primary" @click="openGroupDialog('feature')">新建功能分组</ElButton>
-        </div>
-      </div>
+    <ActionPermissionSearch
+      v-show="showSearchBar"
+      v-model="searchForm"
+      :module-group-options="moduleGroupOptions"
+      :feature-group-options="featureGroupOptions"
+      @search="handleSearch"
+      @reset="handleReset"
+    />
 
-      <div class="group-grid">
-        <div class="group-panel">
-          <div class="panel-title">模块分组</div>
-          <div class="panel-tags">
-            <ElTag
-              v-for="item in moduleGroups"
-              :key="item.id"
-              :type="searchForm.moduleGroupId === item.id ? 'primary' : 'info'"
-              effect="light"
-              class="panel-tag"
-              @click="handleGroupFilter('module', item.id)"
-            >
-              {{ item.name }}
-            </ElTag>
-          </div>
-        </div>
-        <div class="group-panel">
-          <div class="panel-title">功能分组</div>
-          <div class="panel-tags">
-            <ElTag
-              v-for="item in featureGroups"
-              :key="item.id"
-              :type="searchForm.featureGroupId === item.id ? 'primary' : 'success'"
-              effect="light"
-              class="panel-tag"
-              @click="handleGroupFilter('feature', item.id)"
-            >
-              {{ item.name }}
-            </ElTag>
-          </div>
-        </div>
-      </div>
-    </ElCard>
-
-    <ElCard class="art-table-card" shadow="never">
+    <ElCard
+      class="art-table-card"
+      shadow="never"
+      :style="{ marginTop: showSearchBar ? '12px' : '0' }"
+    >
       <ArtTableHeader
         v-model:columns="columnChecks"
+        v-model:showSearchBar="showSearchBar"
         :loading="loading"
         @refresh="handleRefresh"
       >
         <template #left>
-          <ElButton v-action="'system.permission.manage'" type="primary" @click="openDialog('add')" v-ripple>
+          <ElButton
+            v-action="'system.permission.manage'"
+            type="primary"
+            @click="openDialog('add')"
+            v-ripple
+          >
             新增功能权限
+          </ElButton>
+          <ElButton
+            v-action="'system.permission.manage'"
+            @click="openGroupDialog('module')"
+            v-ripple
+          >
+            管理模块分组
+          </ElButton>
+          <ElButton
+            v-action="'system.permission.manage'"
+            type="primary"
+            plain
+            @click="openGroupDialog('feature')"
+            v-ripple
+          >
+            管理功能分组
           </ElButton>
         </template>
       </ArtTableHeader>
-
-      <div class="query-row">
-        <ElInput v-model="searchForm.keyword" clearable placeholder="名称/描述/权限键" />
-        <ElSelect v-model="searchForm.moduleGroupId" clearable filterable placeholder="模块分组">
-          <ElOption v-for="item in moduleGroups" :key="item.id" :label="item.name" :value="item.id" />
-        </ElSelect>
-        <ElSelect v-model="searchForm.featureGroupId" clearable filterable placeholder="功能分组">
-          <ElOption v-for="item in featureGroups" :key="item.id" :label="item.name" :value="item.id" />
-        </ElSelect>
-        <ElSelect v-model="searchForm.contextType" clearable placeholder="上下文">
-          <ElOption label="平台" value="platform" />
-          <ElOption label="团队" value="team" />
-          <ElOption label="通用" value="common" />
-        </ElSelect>
-        <ElSelect v-model="searchForm.status" clearable placeholder="状态">
-          <ElOption label="正常" value="normal" />
-          <ElOption label="停用" value="suspended" />
-        </ElSelect>
-        <ElSelect v-model="searchForm.isBuiltin" clearable placeholder="是否内置">
-          <ElOption label="内置" value="true" />
-          <ElOption label="自定义" value="false" />
-        </ElSelect>
-        <div class="query-actions">
-          <ElButton type="primary" @click="handleSearch">查询</ElButton>
-          <ElButton @click="handleReset">重置</ElButton>
-        </div>
-      </div>
 
       <ArtTable
         :loading="loading"
@@ -125,12 +87,14 @@
   import { computed, h, reactive, ref } from 'vue'
   import { useTable } from '@/hooks/core/useTable'
   import {
+    fetchUpdatePermissionAction,
     fetchDeletePermissionAction,
     fetchGetPermissionActionList,
     fetchGetPermissionGroupList
   } from '@/api/system-manage'
   import ActionPermissionDialog from './modules/action-permission-dialog.vue'
   import ActionPermissionEndpointsDialog from './modules/action-permission-endpoints-dialog.vue'
+  import ActionPermissionSearch from './modules/action-permission-search.vue'
   import PermissionGroupDialog from './modules/permission-group-dialog.vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
@@ -146,6 +110,7 @@
   const groupDialogVisible = ref(false)
   const dialogType = ref<'add' | 'edit'>('add')
   const groupDialogType = ref<'module' | 'feature'>('module')
+  const showSearchBar = ref(true)
   const currentAction = ref<PermissionActionItem>()
   const currentGroup = ref<PermissionGroupItem>()
   const moduleGroups = ref<PermissionGroupItem[]>([])
@@ -159,6 +124,20 @@
     status: '',
     isBuiltin: ''
   })
+
+  const moduleGroupOptions = computed(() =>
+    moduleGroups.value.map((item) => ({
+      label: item.name,
+      value: item.id
+    }))
+  )
+
+  const featureGroupOptions = computed(() =>
+    featureGroups.value.map((item) => ({
+      label: item.name,
+      value: item.id
+    }))
+  )
 
   const {
     columns,
@@ -242,8 +221,18 @@
           fixed: 'right',
           formatter: (row: PermissionActionItem) => {
             const list: ButtonMoreItem[] = [
-              { key: 'view-apis', label: '查看接口', icon: 'ri:links-line', auth: 'system.api_registry.view' },
-              { key: 'edit', label: '编辑', icon: 'ri:edit-2-line', auth: 'system.permission.manage' }
+              {
+                key: 'view-apis',
+                label: '查看接口',
+                icon: 'ri:links-line',
+                auth: 'system.api_registry.view'
+              },
+              {
+                key: 'edit',
+                label: '编辑',
+                icon: 'ri:edit-2-line',
+                auth: 'system.permission.manage'
+              }
             ]
             if (!row.isBuiltin) {
               list.push({
@@ -253,6 +242,12 @@
                 auth: 'system.permission.manage'
               })
             }
+            list.push({
+              key: row.status === 'normal' ? 'disable' : 'enable',
+              label: row.status === 'normal' ? '停用' : '启用',
+              icon: row.status === 'normal' ? 'ri:forbid-2-line' : 'ri:check-line',
+              auth: 'system.permission.manage'
+            })
             return h(ArtButtonMore, {
               list,
               onClick: (item: ButtonMoreItem) => handleAction(item.key as string, row)
@@ -262,11 +257,6 @@
       ]
     }
   })
-
-  const groupMap = computed(() => ({
-    module: moduleGroups.value,
-    feature: featureGroups.value
-  }))
 
   async function loadGroups() {
     const [moduleRes, featureRes] = await Promise.all([
@@ -326,15 +316,6 @@
     await loadGroups()
   }
 
-  async function handleGroupFilter(type: 'module' | 'feature', id: string) {
-    if (type === 'module') {
-      searchForm.moduleGroupId = searchForm.moduleGroupId === id ? '' : id
-    } else {
-      searchForm.featureGroupId = searchForm.featureGroupId === id ? '' : id
-    }
-    await handleSearch()
-  }
-
   function handleAction(command: string, row: PermissionActionItem) {
     if (command === 'view-apis') {
       currentAction.value = row
@@ -343,6 +324,24 @@
     }
     if (command === 'edit') {
       openDialog('edit', row)
+      return
+    }
+    if (command === 'disable' || command === 'enable') {
+      const targetStatus = command === 'disable' ? 'suspended' : 'normal'
+      const actionText = command === 'disable' ? '停用' : '启用'
+      ElMessageBox.confirm(`确定${actionText}功能权限「${row.name}」吗？`, `${actionText}确认`, {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      })
+        .then(() => fetchUpdatePermissionAction(row.id, { status: targetStatus }))
+        .then(async () => {
+          ElMessage.success(`${actionText}成功`)
+          await handleRefresh()
+        })
+        .catch((e) => {
+          if (e !== 'cancel') ElMessage.error(e?.message || `${actionText}失败`)
+        })
       return
     }
     ElMessageBox.confirm(`确定删除功能权限「${row.name}」吗？`, '删除确认', {
@@ -364,70 +363,8 @@
 </script>
 
 <style scoped>
-  .group-card {
-    margin-bottom: 12px;
-  }
-
-  .group-header {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-
-  .group-title {
-    font-size: 14px;
-    font-weight: 600;
-  }
-
-  .group-help {
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-    margin-top: 4px;
-  }
-
-  .group-actions {
-    display: flex;
-    gap: 8px;
-  }
-
-  .group-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .group-panel {
-    border: 1px solid var(--el-border-color-lighter);
-    border-radius: 10px;
-    padding: 12px;
-  }
-
-  .panel-title {
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 10px;
-  }
-
-  .panel-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .panel-tag {
-    cursor: pointer;
-  }
-
-  .query-row {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
-    gap: 12px;
-    margin-bottom: 12px;
-  }
-
-  .query-actions {
-    display: flex;
-    gap: 8px;
+  .art-table-card :deep(.table-header-left) {
+    gap: 10px;
+    row-gap: 8px;
   }
 </style>

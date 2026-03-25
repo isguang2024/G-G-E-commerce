@@ -14,22 +14,24 @@ type RoleListRequest struct {
 
 // RoleCreateRequest 创建角色请求
 type RoleCreateRequest struct {
-	Code        string `json:"code" binding:"required,max=50"`
-	Name        string `json:"name" binding:"required,max=100"`
-	Description string `json:"description"`
-	SortOrder   int    `json:"sort_order"`
-	Priority    int    `json:"priority"`
-	Status      string `json:"status"`
+	Code         string         `json:"code" binding:"required,max=50"`
+	Name         string         `json:"name" binding:"required,max=100"`
+	Description  string         `json:"description"`
+	SortOrder    int            `json:"sort_order"`
+	Priority     int            `json:"priority"`
+	CustomParams map[string]any `json:"custom_params"`
+	Status       string         `json:"status"`
 }
 
 // RoleUpdateRequest 更新角色请求
 type RoleUpdateRequest struct {
-	Code        string `json:"code" binding:"max=50"`
-	Name        string `json:"name" binding:"max=100"`
-	Description string `json:"description"`
-	SortOrder   int    `json:"sort_order"`
-	Priority    int    `json:"priority"`
-	Status      string `json:"status"`
+	Code         string         `json:"code" binding:"max=50"`
+	Name         string         `json:"name" binding:"max=100"`
+	Description  string         `json:"description"`
+	SortOrder    int            `json:"sort_order"`
+	Priority     int            `json:"priority"`
+	CustomParams map[string]any `json:"custom_params"`
+	Status       string         `json:"status"`
 }
 
 // RoleMenusRequest 角色菜单权限请求

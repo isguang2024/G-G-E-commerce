@@ -150,12 +150,13 @@ func (s *roleService) Create(req *dto.RoleCreateRequest) (*user.Role, error) {
 		status = req.Status
 	}
 	role := &user.Role{
-		Code:        req.Code,
-		Name:        req.Name,
-		Description: req.Description,
-		SortOrder:   req.SortOrder,
-		Priority:    req.Priority,
-		Status:      status,
+		Code:         req.Code,
+		Name:         req.Name,
+		Description:  req.Description,
+		SortOrder:    req.SortOrder,
+		Priority:     req.Priority,
+		CustomParams: user.MetaJSON(req.CustomParams),
+		Status:       status,
 	}
 	if err := database.DB.Create(role).Error; err != nil {
 		return nil, err
@@ -193,6 +194,7 @@ func (s *roleService) Update(id uuid.UUID, req *dto.RoleUpdateRequest) error {
 	}
 	updates["sort_order"] = req.SortOrder
 	updates["priority"] = req.Priority
+	updates["custom_params"] = user.MetaJSON(req.CustomParams)
 	if req.Status != "" {
 		updates["status"] = req.Status
 	}

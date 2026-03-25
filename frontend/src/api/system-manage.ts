@@ -55,26 +55,27 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
   return 'team'
 }
 
+function normalizePermissionGroup(value: any): Api.SystemManage.PermissionGroupItem | undefined {
+  if (!value) return undefined
+  return {
+    id: value?.id || '',
+    groupType: value?.group_type || value?.groupType || '',
+    code: value?.code || '',
+    name: value?.name || '',
+    nameEn: value?.name_en || value?.nameEn || '',
+    description: value?.description || '',
+    status: value?.status || 'normal',
+    sortOrder: value?.sort_order ?? value?.sortOrder ?? 0,
+    isBuiltin: Boolean(value?.is_builtin ?? value?.isBuiltin ?? false)
+  }
+}
+
 function normalizePermissionAction(item: any): Api.SystemManage.PermissionActionItem {
   const permissionKey = normalizePermissionKey(item?.permission_key || item?.permissionKey)
   const legacy = derivePermissionSegments(permissionKey)
   const moduleCode = item?.module_code || item?.moduleCode || legacy.resourceCode || ''
-  const normalizeGroup = (value: any): Api.SystemManage.PermissionGroupItem | undefined =>
-    value
-      ? {
-          id: value?.id || '',
-          groupType: value?.group_type || value?.groupType || '',
-          code: value?.code || '',
-          name: value?.name || '',
-          nameEn: value?.name_en || value?.nameEn || '',
-          description: value?.description || '',
-          status: value?.status || 'normal',
-          sortOrder: value?.sort_order ?? value?.sortOrder ?? 0,
-          isBuiltin: Boolean(value?.is_builtin ?? value?.isBuiltin ?? false)
-        }
-      : undefined
-  const moduleGroup = normalizeGroup(item?.module_group || item?.moduleGroup)
-  const featureGroup = normalizeGroup(item?.feature_group || item?.featureGroup)
+  const moduleGroup = normalizePermissionGroup(item?.module_group || item?.moduleGroup)
+  const featureGroup = normalizePermissionGroup(item?.feature_group || item?.featureGroup)
   return {
     id: item?.id || '',
     resourceCode: legacy.resourceCode,
@@ -105,14 +106,14 @@ function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
   const permissionKeys = Array.isArray(permissionKeysRaw)
     ? permissionKeysRaw.map((v: any) => `${v || ''}`.trim()).filter(Boolean)
     : []
-  const permissionKey = normalizePermissionKey(item?.permission_key || item?.permissionKey) || permissionKeys[0] || ''
+  const permissionKey =
+    normalizePermissionKey(item?.permission_key || item?.permissionKey) || permissionKeys[0] || ''
   return {
     id: item?.id || '',
     code: item?.code || '',
     method: item?.method || '',
     path: item?.path || '',
     spec: item?.spec || '',
-    module: item?.module || '',
     featureKind: item?.feature_kind || item?.featureKind || 'system',
     handler: item?.handler || '',
     summary: item?.summary || '',
@@ -215,19 +216,15 @@ function normalizeUnregisteredApiRoute(item: any): Api.SystemManage.APIUnregiste
     path: item?.path || '',
     spec: item?.spec || `${item?.method || ''} ${item?.path || ''}`.trim(),
     handler: item?.handler || '',
-    module: item?.module || '',
     hasMeta: Boolean(item?.has_meta ?? item?.hasMeta),
     meta: item?.meta
       ? {
           summary: item.meta.summary || '',
-          module: item.meta.module || '',
           category_code: item.meta.category_code || '',
           context_scope: item.meta.context_scope || 'optional',
           source: item.meta.source || '',
           feature_kind: item.meta.feature_kind || 'system',
-          permission_keys: Array.isArray(item.meta.permission_keys)
-            ? item.meta.permission_keys
-            : []
+          permission_keys: Array.isArray(item.meta.permission_keys) ? item.meta.permission_keys : []
         }
       : undefined
   }
@@ -487,6 +484,21 @@ export function fetchGetPermissionActionEndpoints(id: string) {
     }))
 }
 
+/** 新增功能权限关联接口 */
+export function fetchAddPermissionActionEndpoint(id: string, endpointId: string) {
+  return request.post<void>({
+    url: `${ACTION_PERMISSION_BASE}/${id}/endpoints`,
+    data: { endpoint_id: endpointId }
+  })
+}
+
+/** 删除功能权限关联接口 */
+export function fetchDeletePermissionActionEndpoint(id: string, endpointId: string) {
+  return request.del<void>({
+    url: `${ACTION_PERMISSION_BASE}/${id}/endpoints/${endpointId}`
+  })
+}
+
 /** 创建功能权限 */
 export function fetchCreatePermissionAction(data: Api.SystemManage.PermissionActionCreateParams) {
   return request.post<{ id: string }>({
@@ -550,10 +562,17 @@ export function fetchGetPermissionGroupList(params: Api.SystemManage.PermissionG
     group_type: params?.groupType,
     groupType: undefined
   }
-  return request.get<Api.SystemManage.PermissionGroupList>({
-    url: `${ACTION_PERMISSION_BASE}/groups`,
-    params: normalizedParams
-  })
+  return request
+    .get<Api.SystemManage.PermissionGroupList>({
+      url: `${ACTION_PERMISSION_BASE}/groups`,
+      params: normalizedParams
+    })
+    .then((res) => ({
+      ...res,
+      records: (res?.records || [])
+        .map((item: any) => normalizePermissionGroup(item))
+        .filter((item): item is Api.SystemManage.PermissionGroupItem => Boolean(item))
+    }))
 }
 
 export function fetchCreatePermissionGroup(data: Api.SystemManage.PermissionGroupSaveParams) {
@@ -563,10 +582,19 @@ export function fetchCreatePermissionGroup(data: Api.SystemManage.PermissionGrou
   })
 }
 
-export function fetchUpdatePermissionGroup(id: string, data: Api.SystemManage.PermissionGroupSaveParams) {
+export function fetchUpdatePermissionGroup(
+  id: string,
+  data: Api.SystemManage.PermissionGroupSaveParams
+) {
   return request.put<void>({
     url: `${ACTION_PERMISSION_BASE}/groups/${id}`,
     data
+  })
+}
+
+export function fetchDeletePermissionGroup(id: string) {
+  return request.del<void>({
+    url: `${ACTION_PERMISSION_BASE}/groups/${id}`
   })
 }
 
@@ -716,7 +744,6 @@ export function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpointSear
     keyword: params?.keyword,
     method: params?.method,
     path: params?.path,
-    module: params?.module,
     status: params?.status,
     current: params?.current,
     size: params?.size,
@@ -752,7 +779,10 @@ export function fetchCreateApiEndpoint(data: Partial<Api.SystemManage.APIEndpoin
   })
 }
 
-export function fetchUpdateApiEndpoint(id: string, data: Partial<Api.SystemManage.APIEndpointItem>) {
+export function fetchUpdateApiEndpoint(
+  id: string,
+  data: Partial<Api.SystemManage.APIEndpointItem>
+) {
   return request.put<Api.SystemManage.APIEndpointItem>({
     url: `${API_ENDPOINT_BASE}/${id}`,
     data
@@ -782,7 +812,6 @@ export function fetchGetUnregisteredApiRouteList(params: {
   size?: number
   method?: string
   path?: string
-  module?: string
   keyword?: string
   only_no_meta?: boolean
 }) {
@@ -797,7 +826,9 @@ export function fetchGetUnregisteredApiRouteList(params: {
     }))
 }
 
-export function fetchCreateApiEndpointCategory(data: Partial<Api.SystemManage.APIEndpointCategoryItem>) {
+export function fetchCreateApiEndpointCategory(
+  data: Partial<Api.SystemManage.APIEndpointCategoryItem>
+) {
   return request
     .post<Api.SystemManage.APIEndpointCategoryItem>({
       url: `${API_ENDPOINT_BASE}/categories`,

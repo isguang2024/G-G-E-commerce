@@ -1,6 +1,11 @@
 <template>
   <div class="feature-package-page art-full-height">
-    <ElTabs v-model="activePackageType" class="package-tabs" @tab-change="handleTabChange">
+    <ElTabs
+      v-model="activePackageType"
+      type="card"
+      class="package-tabs"
+      @tab-change="handleTabChange"
+    >
       <ElTabPane label="基础包" name="base" />
       <ElTabPane label="组合包" name="bundle" />
     </ElTabs>
@@ -9,43 +14,56 @@
       v-show="showSearchBar"
       v-model="searchForm"
       :items="searchItems"
+      label-width="auto"
       :showExpand="false"
       @search="handleSearch"
       @reset="handleReset"
     />
 
-    <div class="stats-row">
-      <ElCard shadow="never" class="stats-card">
-        <div class="stats-label">当前页功能包数</div>
-        <div class="stats-value">{{ data.length }}</div>
-      </ElCard>
-      <ElCard shadow="never" class="stats-card">
-        <div class="stats-label">平台功能包</div>
-        <div class="stats-value">{{ platformPackageCount }}</div>
-      </ElCard>
-      <ElCard shadow="never" class="stats-card">
-        <div class="stats-label">团队功能包</div>
-        <div class="stats-value">{{ teamPackageCount }}</div>
-      </ElCard>
-      <ElCard shadow="never" class="stats-card">
-        <div class="stats-label">双上下文功能包</div>
-        <div class="stats-value">{{ sharedPackageCount }}</div>
-      </ElCard>
-      <ElCard shadow="never" class="stats-card">
-        <div class="stats-label">{{ activePackageType === 'base' ? '已组合功能范围数' : '组合包数量' }}</div>
-        <div class="stats-value">{{ activePackageType === 'base' ? totalActionCount : bundleCount }}</div>
-      </ElCard>
-      <ElCard shadow="never" class="stats-card">
-        <div class="stats-label">{{ activePackageType === 'base' ? '已绑定菜单数' : '团队开通数' }}</div>
-        <div class="stats-value">{{ activePackageType === 'base' ? totalMenuCount : totalTeamCount }}</div>
-      </ElCard>
-      <ElCard shadow="never" class="stats-card">
-        <div class="stats-label">停用功能包</div>
-        <div class="stats-value">{{ disabledPackageCount }}</div>
-      </ElCard>
-    </div>
+    <ElCard
+      class="art-table-card"
+      shadow="never"
+      :style="{ marginTop: showSearchBar ? '12px' : '0' }"
+    >
+      <div class="stats-row">
+        <ElCard shadow="never" class="stats-card stats-card-compact">
+          <div class="stats-label">当前页功能包数</div>
+          <div class="stats-value">{{ data.length }}</div>
+        </ElCard>
+        <ElCard shadow="never" class="stats-card stats-card-compact">
+          <div class="stats-label">平台功能包</div>
+          <div class="stats-value">{{ platformPackageCount }}</div>
+        </ElCard>
+        <ElCard shadow="never" class="stats-card stats-card-compact">
+          <div class="stats-label">团队功能包</div>
+          <div class="stats-value">{{ teamPackageCount }}</div>
+        </ElCard>
+        <ElCard shadow="never" class="stats-card stats-card-compact">
+          <div class="stats-label">双上下文功能包</div>
+          <div class="stats-value">{{ sharedPackageCount }}</div>
+        </ElCard>
+        <ElCard shadow="never" class="stats-card stats-card-compact">
+          <div class="stats-label">{{
+            activePackageType === 'base' ? '已组合功能范围数' : '组合包数量'
+          }}</div>
+          <div class="stats-value">{{
+            activePackageType === 'base' ? totalActionCount : bundleCount
+          }}</div>
+        </ElCard>
+        <ElCard shadow="never" class="stats-card stats-card-compact">
+          <div class="stats-label">{{
+            activePackageType === 'base' ? '已绑定菜单数' : '团队开通数'
+          }}</div>
+          <div class="stats-value">{{
+            activePackageType === 'base' ? totalMenuCount : totalTeamCount
+          }}</div>
+        </ElCard>
+        <ElCard shadow="never" class="stats-card stats-card-compact">
+          <div class="stats-label">停用功能包</div>
+          <div class="stats-value">{{ disabledPackageCount }}</div>
+        </ElCard>
+      </div>
 
-    <ElCard class="art-table-card" shadow="never" :style="{ marginTop: showSearchBar ? '12px' : '0' }">
       <ArtTableHeader
         v-model:columns="columnChecks"
         v-model:showSearchBar="showSearchBar"
@@ -53,7 +71,12 @@
         @refresh="handleRefresh"
       >
         <template #left>
-          <ElButton v-action="'platform.package.manage'" type="primary" @click="openDialog('add')" v-ripple>
+          <ElButton
+            v-action="'platform.package.manage'"
+            type="primary"
+            @click="openDialog('add')"
+            v-ripple
+          >
             新增{{ activePackageType === 'base' ? '基础包' : '组合包' }}
           </ElButton>
         </template>
@@ -148,14 +171,30 @@
   const dialogType = ref<'add' | 'edit'>('add')
   const currentPackage = ref<Partial<PackageItem>>({})
   const routeOpenSignature = ref('')
-  const platformPackageCount = computed(() => data.value.filter((item) => supportsPlatform(item.contextType)).length)
-  const teamPackageCount = computed(() => data.value.filter((item) => supportsTeam(item.contextType)).length)
-  const sharedPackageCount = computed(() => data.value.filter((item) => item.contextType === 'common').length)
-  const bundleCount = computed(() => data.value.filter((item) => item.packageType === 'bundle').length)
-  const totalActionCount = computed(() => data.value.reduce((sum, item) => sum + (item.actionCount || 0), 0))
-  const totalMenuCount = computed(() => data.value.reduce((sum, item) => sum + (item.menuCount || 0), 0))
-  const totalTeamCount = computed(() => data.value.reduce((sum, item) => sum + (item.teamCount || 0), 0))
-  const disabledPackageCount = computed(() => data.value.filter((item) => item.status === 'disabled').length)
+  const platformPackageCount = computed(
+    () => data.value.filter((item) => supportsPlatform(item.contextType)).length
+  )
+  const teamPackageCount = computed(
+    () => data.value.filter((item) => supportsTeam(item.contextType)).length
+  )
+  const sharedPackageCount = computed(
+    () => data.value.filter((item) => item.contextType === 'common').length
+  )
+  const bundleCount = computed(
+    () => data.value.filter((item) => item.packageType === 'bundle').length
+  )
+  const totalActionCount = computed(() =>
+    data.value.reduce((sum, item) => sum + (item.actionCount || 0), 0)
+  )
+  const totalMenuCount = computed(() =>
+    data.value.reduce((sum, item) => sum + (item.menuCount || 0), 0)
+  )
+  const totalTeamCount = computed(() =>
+    data.value.reduce((sum, item) => sum + (item.teamCount || 0), 0)
+  )
+  const disabledPackageCount = computed(
+    () => data.value.filter((item) => item.status === 'disabled').length
+  )
 
   const searchForm = reactive<SearchForm>({
     keyword: '',
@@ -180,15 +219,25 @@
 
   const searchItems = computed<FormItem[]>(() => [
     { label: '关键词', key: 'keyword', type: 'input', props: { placeholder: '名称/编码/描述' } },
-    { label: '功能包编码', key: 'packageKey', type: 'input', props: { placeholder: '请输入功能包编码' } },
-    { label: '功能包名称', key: 'name', type: 'input', props: { placeholder: '请输入功能包名称' } },
+    {
+      label: '包编码',
+      key: 'packageKey',
+      type: 'input',
+      props: { placeholder: '请输入包编码' }
+    },
+    { label: '包名称', key: 'name', type: 'input', props: { placeholder: '请输入包名称' } },
     {
       label: '上下文类型',
       key: 'contextType',
       type: 'select',
       props: { options: contextTypeOptions, clearable: true }
     },
-    { label: '状态', key: 'status', type: 'select', props: { options: statusOptions, clearable: true } }
+    {
+      label: '状态',
+      key: 'status',
+      type: 'select',
+      props: { options: statusOptions, clearable: true }
+    }
   ])
 
   const {
@@ -228,7 +277,14 @@
           formatter: (row: PackageItem) =>
             h(
               ElTag,
-              { type: row.contextType === 'platform' ? 'success' : row.contextType === 'team' ? 'info' : 'warning' },
+              {
+                type:
+                  row.contextType === 'platform'
+                    ? 'success'
+                    : row.contextType === 'team'
+                      ? 'info'
+                      : 'warning'
+              },
               () => formatContextType(row.contextType)
             )
         },
@@ -243,16 +299,28 @@
           prop: 'actionCount',
           label: '功能范围数',
           width: 100,
-          formatter: (row: PackageItem) => (row.packageType === 'bundle' ? '-' : row.actionCount ?? 0)
+          formatter: (row: PackageItem) =>
+            row.packageType === 'bundle' ? '-' : (row.actionCount ?? 0)
         },
         {
           prop: 'menuCount',
           label: '绑定菜单数',
           width: 96,
-          formatter: (row: PackageItem) => (row.packageType === 'bundle' ? '-' : row.menuCount ?? 0)
+          formatter: (row: PackageItem) =>
+            row.packageType === 'bundle' ? '-' : (row.menuCount ?? 0)
         },
-        { prop: 'teamCount', label: '团队数', width: 90, formatter: (row: PackageItem) => row.teamCount ?? 0 },
-        { prop: 'sortOrder', label: '排序', width: 80, formatter: (row: PackageItem) => row.sortOrder ?? 0 },
+        {
+          prop: 'teamCount',
+          label: '团队数',
+          width: 90,
+          formatter: (row: PackageItem) => row.teamCount ?? 0
+        },
+        {
+          prop: 'sortOrder',
+          label: '排序',
+          width: 80,
+          formatter: (row: PackageItem) => row.sortOrder ?? 0
+        },
         {
           prop: 'status',
           label: '状态',
@@ -285,8 +353,18 @@
                       auth: 'platform.package.assign',
                       disabled: !supportsTeam(row.contextType)
                     },
-                    { key: 'edit', label: '编辑', icon: 'ri:edit-2-line', auth: 'platform.package.manage' },
-                    { key: 'delete', label: '删除', icon: 'ri:delete-bin-4-line', auth: 'platform.package.manage' }
+                    {
+                      key: 'edit',
+                      label: '编辑',
+                      icon: 'ri:edit-2-line',
+                      auth: 'platform.package.manage'
+                    },
+                    {
+                      key: 'delete',
+                      label: '删除',
+                      icon: 'ri:delete-bin-4-line',
+                      auth: 'platform.package.manage'
+                    }
                   ]
                 : [
                     {
@@ -308,8 +386,18 @@
                       auth: 'platform.package.assign',
                       disabled: !supportsTeam(row.contextType)
                     },
-                    { key: 'edit', label: '编辑', icon: 'ri:edit-2-line', auth: 'platform.package.manage' },
-                    { key: 'delete', label: '删除', icon: 'ri:delete-bin-4-line', auth: 'platform.package.manage' }
+                    {
+                      key: 'edit',
+                      label: '编辑',
+                      icon: 'ri:edit-2-line',
+                      auth: 'platform.package.manage'
+                    },
+                    {
+                      key: 'delete',
+                      label: '删除',
+                      icon: 'ri:delete-bin-4-line',
+                      auth: 'platform.package.manage'
+                    }
                   ]
             return h(ArtButtonMore, {
               list,
@@ -354,7 +442,8 @@
   }
 
   async function syncRouteFilters() {
-    activePackageType.value = normalizePackageType(String(route.query.tab || route.query.packageType || '')) || 'base'
+    activePackageType.value =
+      normalizePackageType(String(route.query.tab || route.query.packageType || '')) || 'base'
     searchForm.keyword = String(route.query.keyword || '')
     searchForm.packageKey = String(route.query.packageKey || '')
     searchForm.name = String(route.query.name || '')
@@ -369,7 +458,9 @@
     const openMode = String(route.query.open || '')
     const packageKey = String(route.query.packageKey || '')
     const contextType = String(route.query.contextType || '')
-    const packageType = normalizePackageType(String(route.query.tab || route.query.packageType || ''))
+    const packageType = normalizePackageType(
+      String(route.query.tab || route.query.packageType || '')
+    )
     if (!openMode || !packageKey) return
 
     const signature = `${openMode}|${packageKey}|${contextType}|${packageType}`
@@ -450,9 +541,7 @@
         cancelButtonText: '取消',
         type: 'warning'
       })
-        .then(() =>
-          fetchDeleteFeaturePackage(row.id)
-        )
+        .then(() => fetchDeleteFeaturePackage(row.id))
         .then(() => {
           ElMessage.success('删除成功')
           handleRefresh()
@@ -493,6 +582,12 @@
 </script>
 
 <style scoped lang="scss">
+  .feature-package-page {
+    :deep(.art-search-bar .el-form-item__label) {
+      white-space: nowrap;
+    }
+  }
+
   .package-tabs {
     margin-bottom: 12px;
   }
@@ -500,24 +595,30 @@
   .stats-row {
     display: grid;
     grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 12px;
+    gap: 8px;
+    margin-bottom: 8px;
   }
 
   .stats-card {
-    min-height: 112px;
+    min-height: 64px;
   }
 
   .stats-label {
-    font-size: 13px;
+    font-size: 12px;
     color: var(--el-text-color-secondary);
+    line-height: 1.2;
   }
 
   .stats-value {
-    margin-top: 10px;
-    font-size: 30px;
+    margin-top: 4px;
+    font-size: 16px;
     font-weight: 700;
     line-height: 1.1;
     color: var(--el-text-color-primary);
+  }
+
+  .stats-card-compact :deep(.el-card__body) {
+    padding: 8px 10px;
   }
 
   @media (max-width: 1200px) {

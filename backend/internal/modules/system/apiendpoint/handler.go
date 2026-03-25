@@ -30,7 +30,6 @@ func (h *Handler) List(c *gin.Context) {
 		Keyword       string `form:"keyword"`
 		Method        string `form:"method"`
 		Path          string `form:"path"`
-		Module        string `form:"module"`
 		CategoryID    string `form:"category_id"`
 		ContextScope  string `form:"context_scope"`
 		Source        string `form:"source"`
@@ -51,7 +50,6 @@ func (h *Handler) List(c *gin.Context) {
 		Keyword:       req.Keyword,
 		Method:        req.Method,
 		Path:          req.Path,
-		Module:        req.Module,
 		CategoryID:    req.CategoryID,
 		ContextScope:  req.ContextScope,
 		Source:        req.Source,
@@ -90,7 +88,6 @@ func (h *Handler) ListUnregistered(c *gin.Context) {
 		Size       int    `form:"size"`
 		Method     string `form:"method"`
 		Path       string `form:"path"`
-		Module     string `form:"module"`
 		Keyword    string `form:"keyword"`
 		OnlyNoMeta bool   `form:"only_no_meta"`
 	}
@@ -104,7 +101,6 @@ func (h *Handler) ListUnregistered(c *gin.Context) {
 		Size:       req.Size,
 		Method:     req.Method,
 		Path:       req.Path,
-		Module:     req.Module,
 		Keyword:    req.Keyword,
 		OnlyNoMeta: req.OnlyNoMeta,
 	})
@@ -155,7 +151,6 @@ func (h *Handler) Create(c *gin.Context) {
 		Code           string   `json:"code"`
 		Method         string   `json:"method" binding:"required"`
 		Path           string   `json:"path" binding:"required"`
-		Module         string   `json:"module"`
 		Summary        string   `json:"summary"`
 		FeatureKind    string   `json:"feature_kind"`
 		CategoryID     string   `json:"category_id"`
@@ -180,7 +175,6 @@ func (h *Handler) Create(c *gin.Context) {
 		Code:         strings.TrimSpace(req.Code),
 		Method:       strings.TrimSpace(req.Method),
 		Path:         strings.TrimSpace(req.Path),
-		Module:       strings.TrimSpace(req.Module),
 		Summary:      strings.TrimSpace(req.Summary),
 		FeatureKind:  strings.TrimSpace(req.FeatureKind),
 		CategoryID:   categoryID,
@@ -216,7 +210,6 @@ func (h *Handler) Update(c *gin.Context) {
 		Code           string   `json:"code"`
 		Method         string   `json:"method" binding:"required"`
 		Path           string   `json:"path" binding:"required"`
-		Module         string   `json:"module"`
 		Summary        string   `json:"summary"`
 		FeatureKind    string   `json:"feature_kind"`
 		CategoryID     string   `json:"category_id"`
@@ -242,7 +235,6 @@ func (h *Handler) Update(c *gin.Context) {
 		Code:         strings.TrimSpace(req.Code),
 		Method:       strings.TrimSpace(req.Method),
 		Path:         strings.TrimSpace(req.Path),
-		Module:       strings.TrimSpace(req.Module),
 		Summary:      strings.TrimSpace(req.Summary),
 		FeatureKind:  strings.TrimSpace(req.FeatureKind),
 		CategoryID:   categoryID,
@@ -397,7 +389,6 @@ func endpointToMap(endpoint *user.APIEndpoint, bindings []user.APIEndpointPermis
 		"method":          endpoint.Method,
 		"path":            endpoint.Path,
 		"spec":            endpoint.Method + " " + endpoint.Path,
-		"module":          endpoint.Module,
 		"feature_kind":    endpoint.FeatureKind,
 		"handler":         endpoint.Handler,
 		"summary":         endpoint.Summary,

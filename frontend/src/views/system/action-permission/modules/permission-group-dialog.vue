@@ -1,33 +1,96 @@
 <template>
   <ElDialog
     v-model="visible"
-    :title="form.id ? `编辑${groupTypeLabel}` : `新建${groupTypeLabel}`"
-    width="560px"
+    :title="`${groupTypeLabel}管理`"
+    width="1160px"
     destroy-on-close
+    @open="handleDialogOpen"
   >
-    <ElForm ref="formRef" :model="form" :rules="rules" label-width="100px">
-      <ElFormItem label="分组编码" prop="code">
-        <ElInput v-model="form.code" placeholder="例如 role 或 system_feature" />
-      </ElFormItem>
-      <ElFormItem label="分组名称" prop="name">
-        <ElInput v-model="form.name" placeholder="请输入名称" />
-      </ElFormItem>
-      <ElFormItem label="英文名称">
-        <ElInput v-model="form.nameEn" placeholder="可选" />
-      </ElFormItem>
-      <ElFormItem label="状态">
-        <ElSelect v-model="form.status" style="width: 100%">
-          <ElOption label="正常" value="normal" />
-          <ElOption label="停用" value="suspended" />
-        </ElSelect>
-      </ElFormItem>
-      <ElFormItem label="排序">
-        <ElInputNumber v-model="form.sortOrder" :min="0" :max="9999" style="width: 100%" />
-      </ElFormItem>
-      <ElFormItem label="说明">
-        <ElInput v-model="form.description" type="textarea" :rows="3" />
-      </ElFormItem>
-    </ElForm>
+    <div class="group-dialog-body">
+      <ElCard shadow="never" class="group-list-card">
+        <template #header>
+          <div class="group-list-header">
+            <span>{{ groupTypeLabel }}列表</span>
+            <div class="group-list-actions">
+              <ElButton size="small" @click="loadGroupList" :loading="listLoading">刷新</ElButton>
+              <ElButton size="small" type="primary" @click="startCreate">新增分组</ElButton>
+            </div>
+          </div>
+        </template>
+        <ElTable
+          v-loading="listLoading"
+          :data="groupList"
+          height="340"
+          highlight-current-row
+          @current-change="handleCurrentChange"
+        >
+          <ElTableColumn prop="code" label="分组编码" min-width="120" show-overflow-tooltip />
+          <ElTableColumn prop="name" label="分组名称" min-width="140" show-overflow-tooltip />
+          <ElTableColumn label="状态" width="90" align="center">
+            <template #default="{ row }">
+              <ElTag :type="row.status === 'normal' ? 'success' : 'danger'">
+                {{ row.status === 'normal' ? '正常' : '停用' }}
+              </ElTag>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn prop="sortOrder" label="排序" width="70" align="center" />
+          <ElTableColumn label="内置" width="70" align="center">
+            <template #default="{ row }">
+              <ElTag :type="row.isBuiltin ? 'success' : 'info'" effect="plain">
+                {{ row.isBuiltin ? '是' : '否' }}
+              </ElTag>
+            </template>
+          </ElTableColumn>
+          <ElTableColumn label="操作" width="170" fixed="right">
+            <template #default="{ row }">
+              <div class="operation-row">
+                <ElButton text type="primary" @click="startEdit(row)">编辑</ElButton>
+                <ElButton
+                  text
+                  type="danger"
+                  :disabled="row.isBuiltin"
+                  @click="handleDelete(row)"
+                >
+                  删除
+                </ElButton>
+              </div>
+            </template>
+          </ElTableColumn>
+        </ElTable>
+      </ElCard>
+
+      <ElCard shadow="never" class="group-form-card">
+        <template #header>
+          <div class="group-form-header">
+            <span>{{ form.id ? `编辑${groupTypeLabel}` : `新增${groupTypeLabel}` }}</span>
+            <ElButton text @click="startCreate">清空</ElButton>
+          </div>
+        </template>
+        <ElForm ref="formRef" :model="form" :rules="rules" label-width="90px">
+          <ElFormItem label="分组编码" prop="code">
+            <ElInput v-model="form.code" placeholder="例如 role 或 system_feature" />
+          </ElFormItem>
+          <ElFormItem label="分组名称" prop="name">
+            <ElInput v-model="form.name" placeholder="请输入名称" />
+          </ElFormItem>
+          <ElFormItem label="英文名称">
+            <ElInput v-model="form.nameEn" placeholder="可选" />
+          </ElFormItem>
+          <ElFormItem label="状态">
+            <ElSelect v-model="form.status" style="width: 100%">
+              <ElOption label="正常" value="normal" />
+              <ElOption label="停用" value="suspended" />
+            </ElSelect>
+          </ElFormItem>
+          <ElFormItem label="排序">
+            <ElInputNumber v-model="form.sortOrder" :min="0" :max="9999" style="width: 100%" />
+          </ElFormItem>
+          <ElFormItem label="说明">
+            <ElInput v-model="form.description" type="textarea" :rows="4" />
+          </ElFormItem>
+        </ElForm>
+      </ElCard>
+    </div>
 
     <template #footer>
       <ElButton @click="visible = false">取消</ElButton>
@@ -38,8 +101,13 @@
 
 <script setup lang="ts">
   import type { FormInstance, FormRules } from 'element-plus'
-  import { ElMessage } from 'element-plus'
-  import { fetchCreatePermissionGroup, fetchUpdatePermissionGroup } from '@/api/system-manage'
+  import { ElMessage, ElMessageBox } from 'element-plus'
+  import {
+    fetchCreatePermissionGroup,
+    fetchDeletePermissionGroup,
+    fetchGetPermissionGroupList,
+    fetchUpdatePermissionGroup
+  } from '@/api/system-manage'
 
   interface Props {
     modelValue: boolean
@@ -65,7 +133,9 @@
 
   const groupTypeLabel = computed(() => (props.groupType === 'module' ? '模块分组' : '功能分组'))
   const formRef = ref<FormInstance>()
+  const listLoading = ref(false)
   const submitting = ref(false)
+  const groupList = ref<Api.SystemManage.PermissionGroupItem[]>([])
   const form = reactive({
     id: '',
     code: '',
@@ -81,23 +151,95 @@
     name: [{ required: true, message: '请输入分组名称', trigger: 'blur' }]
   })
 
-  function initForm() {
+  function initForm(data?: Api.SystemManage.PermissionGroupItem) {
     Object.assign(form, {
-      id: props.groupData?.id || '',
-      code: props.groupData?.code || '',
-      name: props.groupData?.name || '',
-      nameEn: props.groupData?.nameEn || '',
-      description: props.groupData?.description || '',
-      status: props.groupData?.status || 'normal',
-      sortOrder: props.groupData?.sortOrder ?? 0
+      id: data?.id || '',
+      code: data?.code || '',
+      name: data?.name || '',
+      nameEn: data?.nameEn || '',
+      description: data?.description || '',
+      status: data?.status || 'normal',
+      sortOrder: data?.sortOrder ?? 0
     })
+  }
+
+  function startCreate() {
+    formRef.value?.clearValidate()
+    initForm()
+  }
+
+  function startEdit(row: Api.SystemManage.PermissionGroupItem) {
+    formRef.value?.clearValidate()
+    initForm(row)
+  }
+
+  function handleCurrentChange(row?: Api.SystemManage.PermissionGroupItem) {
+    if (!row) return
+    startEdit(row)
+  }
+
+  async function loadGroupList() {
+    listLoading.value = true
+    try {
+      const res = await fetchGetPermissionGroupList({
+        current: 1,
+        size: 500,
+        groupType: props.groupType
+      })
+      groupList.value = (res.records || []).slice().sort((a, b) => {
+        const sortA = a.sortOrder ?? 0
+        const sortB = b.sortOrder ?? 0
+        if (sortA !== sortB) return sortA - sortB
+        return (a.name || '').localeCompare(b.name || '', 'zh-CN')
+      })
+    } finally {
+      listLoading.value = false
+    }
+  }
+
+  async function handleDialogOpen() {
+    await loadGroupList()
+    if (props.groupData?.id) {
+      const current = groupList.value.find((item) => item.id === props.groupData?.id)
+      if (current) {
+        startEdit(current)
+        return
+      }
+      initForm(props.groupData)
+      return
+    }
+    startCreate()
+  }
+
+  async function handleDelete(row: Api.SystemManage.PermissionGroupItem) {
+    if (row.isBuiltin) return
+    try {
+      await ElMessageBox.confirm(
+        `确定删除${groupTypeLabel.value}「${row.name}」吗？\n若该分组已被功能权限引用，系统将拦截删除。`,
+        '删除确认',
+        {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }
+      )
+      await fetchDeletePermissionGroup(row.id)
+      ElMessage.success('删除成功')
+      await loadGroupList()
+      if (form.id === row.id) startCreate()
+      emit('success')
+    } catch (error: any) {
+      if (error !== 'cancel') {
+        ElMessage.error(error?.message || '删除失败')
+      }
+    }
   }
 
   watch(
     () => [props.modelValue, props.groupData, props.groupType],
-    ([opened]) => {
+    async ([opened]) => {
       if (!opened) return
-      initForm()
+      await handleDialogOpen()
     },
     { deep: true }
   )
@@ -122,8 +264,10 @@
         await fetchCreatePermissionGroup(payload)
       }
       ElMessage.success('分组保存成功')
+      await loadGroupList()
       emit('success')
-      visible.value = false
+      const current = groupList.value.find((item) => item.code === payload.code)
+      if (current) startEdit(current)
     } catch (error: any) {
       ElMessage.error(error?.message || '分组保存失败')
     } finally {
@@ -131,3 +275,35 @@
     }
   }
 </script>
+
+<style scoped>
+  .group-dialog-body {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 12px;
+  }
+
+  .group-list-header,
+  .group-form-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .group-list-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .group-list-card,
+  .group-form-card {
+    min-height: 460px;
+  }
+
+  .operation-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+</style>

@@ -21,6 +21,7 @@ var (
 	ErrPermissionKeyExists     = errors.New("permission key already exists")
 	ErrPermissionGroupNotFound = errors.New("permission group not found")
 	ErrPermissionGroupExists   = errors.New("permission group already exists")
+	ErrAPIEndpointNotFound     = errors.New("api endpoint not found")
 )
 
 type PermissionService interface {
@@ -28,6 +29,8 @@ type PermissionService interface {
 	Get(id uuid.UUID) (*user.PermissionKey, error)
 	ListGroups(req *dto.PermissionGroupListRequest) ([]user.PermissionGroup, int64, error)
 	ListEndpoints(id uuid.UUID) ([]user.APIEndpoint, error)
+	AddEndpoint(id uuid.UUID, endpointID uuid.UUID) error
+	RemoveEndpoint(id uuid.UUID, endpointID uuid.UUID) error
 	CreateGroup(req *dto.PermissionGroupSaveRequest) (*user.PermissionGroup, error)
 	UpdateGroup(id uuid.UUID, req *dto.PermissionGroupSaveRequest) error
 	Create(req *dto.PermissionKeyCreateRequest) (*user.PermissionKey, error)
@@ -111,6 +114,40 @@ func (s *permissionService) ListEndpoints(id uuid.UUID) ([]user.APIEndpoint, err
 		result = append(result, endpoint)
 	}
 	return result, nil
+}
+
+func (s *permissionService) AddEndpoint(id uuid.UUID, endpointID uuid.UUID) error {
+	item, err := s.keyRepo.GetByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrPermissionKeyNotFound
+		}
+		return err
+	}
+	if _, err := s.apiEndpointRepo.GetByID(endpointID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrAPIEndpointNotFound
+		}
+		return err
+	}
+	if err := s.apiEndpointBindingRepo.AddByPermissionKey(canonicalPermissionKey(item.PermissionKey), endpointID); err != nil {
+		return err
+	}
+	return s.refreshByPermissionKeyID(item.ID)
+}
+
+func (s *permissionService) RemoveEndpoint(id uuid.UUID, endpointID uuid.UUID) error {
+	item, err := s.keyRepo.GetByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrPermissionKeyNotFound
+		}
+		return err
+	}
+	if err := s.apiEndpointBindingRepo.RemoveByPermissionKey(canonicalPermissionKey(item.PermissionKey), endpointID); err != nil {
+		return err
+	}
+	return s.refreshByPermissionKeyID(item.ID)
 }
 
 func canonicalPermissionKey(permissionKey string) string {
@@ -527,6 +564,35 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 	for teamID := range affectedTeams {
 		if _, err := s.boundaryService.RefreshSnapshot(teamID); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+func (s *permissionService) refreshByPermissionKeyID(keyID uuid.UUID) error {
+	packageIDs, err := s.packageKeyRepo.GetPackageIDsByKeyID(keyID)
+	if err != nil {
+		return err
+	}
+	if len(packageIDs) == 0 {
+		return nil
+	}
+	if s.refresher != nil {
+		return s.refresher.RefreshByPackages(packageIDs)
+	}
+	affectedTeams := make(map[uuid.UUID]struct{})
+	for _, packageID := range packageIDs {
+		teamIDs, teamErr := s.teamPackageRepo.GetTeamIDsByPackageID(packageID)
+		if teamErr != nil {
+			return teamErr
+		}
+		for _, teamID := range teamIDs {
+			affectedTeams[teamID] = struct{}{}
+		}
+	}
+	for teamID := range affectedTeams {
+		if _, refreshErr := s.boundaryService.RefreshSnapshot(teamID); refreshErr != nil {
+			return refreshErr
 		}
 	}
 	return nil

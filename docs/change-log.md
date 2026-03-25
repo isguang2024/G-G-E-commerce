@@ -1124,3 +1124,157 @@
 - 如果后续要继续减兼容层，可以逐步移除前端与映射层对 `permission_action` 的兜底解析，只保留 `permission_key` 正式编码。
 - 历史文档中若仍出现 `permission_actions` 或 `permission_action` 旧表述，可继续按“历史兼容说明”与“正式模型说明”两层再做一次全文清理。
 - 当前数据库主数据和迁移链已稳定，后续新增系统功能请直接在 `permissionseed` 中补固定分组、固定功能键和固定分类，不要再引入动态推导。
+
+## 2026-03-24 API 管理页模块字段改为分类主语义
+
+### 本次改动
+- API endpoint 对外接口已去掉 `module` 查询、表单和返回字段，主列表、未注册路由列表、权限关联接口弹窗统一改为按分类展示与筛选。
+- 前端类型与请求封装已同步收口到 `category`，API 管理页新增/编辑、未注册补录、分类树统计都不再依赖模块字段，避免页面继续混用两套语义。
+- 后端保留底层 `api_endpoints.module` 存量字段用于兼容已有同步链路，但更新 API 时若前端未传该字段会保留历史值，不会被错误覆盖；已验证 `backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit` 通过。
+
+### 下次方向
+- 若后续确认底层同步与自动注册也不再需要 `module`，可继续评估 `apiregistry`、模型字段和数据库迁移的彻底清理方案。
+- 浏览器侧建议补一次 API 管理页与权限关联弹窗的手工联调，重点确认分类筛选、未注册补录和保存后回显一致。
+
+## 2026-03-24 API endpoint 模块字段彻底删除
+
+### 本次改动
+- 继续把 `api_endpoints.module` 从主链中彻底移除：后端模型、API 管理接口、权限关联接口返回、前端类型和页面展示都不再依赖该字段，统一按分类语义工作。
+- `internal/pkg/apiregistry` 已去掉 API 注册阶段的模块元数据与模块推导，自动注册现在只使用显式分类编码；未声明分类的路由不再按路径自动推模块。
+- 迁移入口已补“先用旧 module 回填 category_id，再删除 module 列”的收口逻辑，并移除命名迁移里对 `api_endpoints.module` 的兼容更新；已验证 `backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit` 通过。
+
+### 下次方向
+- 下一步建议执行一次真实迁移并检查现有库，确认 `api_endpoints.module` 已被成功删除，且历史 API 的 `category_id` 回填完整。
+- 浏览器侧建议补一次 API 管理页、未注册 API 补录和权限关联接口弹窗联调，重点确认分类显示与保存回显一致。
+
+## 2026-03-24 system/action-permission 分组管理弹窗升级
+
+### 任务概述
+- 为 `/system/action-permission` 的模块分组与功能分组提供统一弹窗管理能力，支持查看全部、新增、编辑、删除。
+
+### 本次改动
+- 将权限分组弹窗升级为“列表 + 表单”一体化管理：左侧展示当前分组类型的全量列表，右侧进行新增/编辑。
+- 在分组弹窗中新增删除能力，并对内置分组禁用删除操作，避免误删系统基础分组。
+- 新增前端分组删除 API 封装，并将页面入口按钮从“新建分组”调整为“管理分组”，与新交互语义一致。
+- 影响范围：`system/action-permission` 页面及其分组弹窗、`system-manage` 分组接口封装。
+- 已验证：执行 `pnpm -C frontend run build` 成功（包含 `vue-tsc --noEmit`）。
+
+### 下次方向
+- 建议补充分组删除前的“被引用数量”提示（如有权限项绑定时给出拦截/确认策略），降低误操作风险。
+- 建议补充分组管理弹窗的自动化 UI 测试（新增/编辑/删除/内置分组限制场景）。
+- 未验证项：未在真实后端数据环境逐条手工验证删除分组时的后端约束提示与联动反馈。
+
+## 2026-03-24 系统页面搜索组件统一与默认收起调整
+
+### 任务概述
+- 将菜单管理、用户管理相关页面搜索统一为独立搜索组件模式，并将功能权限页搜索默认状态调整为收起。
+
+### 本次改动
+- 新增菜单搜索组件 `menu-search.vue`，将菜单管理页的内联搜索栏改为模块化搜索组件接入。
+- 用户管理页继续使用既有 `UserSearch` 组件，保持搜索组件化一致性。
+- 功能权限搜索组件 `action-permission-search.vue` 的 `defaultExpanded` 由 `true` 改为 `false`，默认收起。
+- 影响范围：`system/menu`、`system/action-permission` 的搜索交互与组件组织。
+- 已验证：执行 `pnpm -C frontend exec vue-tsc --noEmit` 通过。
+
+### 下次方向
+- 建议统一 `ArtTableHeader` 的 `showSearchBar` 开关状态持久化（按页面记忆上次展开状态）。
+- 建议补充菜单页和功能权限页的搜索重置/查询联动用例，防止后续重构回归。
+- 未验证项：未执行完整 `vite build`（仓库当前存在其它页面模板语法问题，非本次改动引入）。
+
+## 2026-03-24 全局角色新增 custom_params(JSONB) 与编辑页自定义参数
+
+### 任务概述
+- 为全局角色增加参数配置能力，后端使用 `jsonb` 存储，并在系统角色编辑页新增“自定义参数”维护入口。
+
+### 本次改动
+- 后端模型 `roles` 增加 `custom_params` 字段（`jsonb`，默认 `{}`），并新增命名迁移 `20260324_role_custom_params_jsonb`。
+- 角色创建/更新 DTO 增加 `custom_params`，服务层在创建与更新时写入该字段。
+- 角色列表/详情接口返回 `customParams`，前端可直接回填编辑。
+- 前端角色类型定义补充 `customParams/custom_params`，角色编辑弹窗新增“自定义参数(JSON)”输入框，支持格式化回填与 JSON 对象校验后提交。
+- 影响范围：后端迁移、角色模型、角色 CRUD 接口、前端角色编辑页面。
+- 已验证：`pnpm -C frontend exec vue-tsc --noEmit` 通过；`go test ./internal/modules/system/role ./internal/api/dto ./internal/modules/system/models ./cmd/migrate` 通过。
+
+### 下次方向
+- 建议为 `custom_params` 约束一版业务 schema（键白名单/类型），避免后续被任意结构污染。
+- 建议在角色列表页增加“参数摘要”列（可选），方便运营快速识别关键配置。
+- 待确认：是否需要对团队角色（tenant 角色）同样开放该参数字段与编辑能力。
+
+## 2026-03-25 功能权限关联接口新增/删除与迁移补齐
+
+### 任务概述
+- 为功能权限键补充“关联接口”的新增与删除能力，并确保新增接口在老环境通过迁移自动归属 API 管理并绑定到既有权限键。
+
+### 本次改动
+- 后端新增接口：`POST /api/v1/permission-actions/:id/endpoints`（新增关联）与 `DELETE /api/v1/permission-actions/:id/endpoints/:endpointId`（删除关联），均使用 `system.permission.manage` 权限保护。
+- 新增请求 DTO：`PermissionKeyEndpointBindRequest`，服务层新增 `AddEndpoint/RemoveEndpoint`，并增加 `ErrAPIEndpointNotFound` 错误语义。
+- 扩展 `APIEndpointPermissionBindingRepository`：新增按 `permission_key + endpoint_id` 的增删方法，避免重复绑定并支持精准移除。
+- 快照刷新：关联接口变更后，按功能权限键反查受影响功能包并触发 `permissionrefresh.RefreshByPackages`，确保团队/平台权限快照同步。
+- 新增命名迁移 `20260325_permission_endpoint_binding_ops`：
+  - 自动补齐两条新接口到 `api_endpoints`；
+  - 强制归属 `permission_key` 分类（API 管理归属）；
+  - 自动写入 `api_endpoint_permission_bindings`，绑定 `system.permission.manage`。
+- 前端“关联接口”弹窗增加：
+  - 可选接口下拉 + “新增关联接口”按钮；
+  - 列表“移除”操作；
+  - 调用新增后端接口并联动刷新可选项与当前列表。
+- 影响范围：权限键关联接口管理、API 注册表归属与绑定迁移、权限快照刷新链路、功能权限前端操作体验。
+- 已验证：
+  - `go test ./internal/modules/system/permission ./internal/modules/system/user ./cmd/migrate` 通过；
+  - `pnpm -C frontend build` 通过。
+
+### 下次方向
+- 建议在“新增关联接口”中加入服务端分页/远程搜索，避免接口数量很大时一次性加载过多数据。
+- 建议补充后端用例：覆盖重复绑定幂等、无效 endpointId、迁移重复执行幂等。
+- 建议在 API 管理页增加“按权限键反查已绑定接口”入口，便于运维审计。
+
+## 2026-03-25 API 同步与旧库 schema 兼容修复
+
+### 任务概述
+- 修复 `POST /api/v1/api-endpoints/sync` 在旧库结构下报错 `api_endpoints.module NOT NULL` 导致 5001 的问题，统一迁移顺序与运行时兼容行为。
+
+### 本次改动
+- 调整迁移主流程顺序：先执行 `finalizeAPIEndpointSchema`，再执行 `syncAPIRegistry`，避免旧 `module` 列约束在同步阶段触发插入失败。
+- 在 `apiregistry.SyncRoutes` 增加旧结构兼容预处理：若检测到 `api_endpoints.module` 列存在，自动执行：
+  - `ALTER COLUMN module DROP NOT NULL`
+  - `ALTER COLUMN module SET DEFAULT ''`
+- 新增 `hasColumn` 检测函数，用于运行时按表结构安全分支处理。
+- 影响范围：API 同步链路、迁移执行顺序、旧库升级兼容。
+- 已验证：`go test ./internal/pkg/apiregistry ./internal/modules/system/apiendpoint ./cmd/migrate` 通过。
+
+### 下次方向
+- 建议补充集成测试：覆盖“旧库带 module NOT NULL”场景下的 `SyncRoutes` 回归。
+- 建议在 API 同步失败响应中附带简化错误摘要（保留安全边界），降低排障成本。
+- 待确认：是否在后续版本彻底删除旧 `module` 列相关兼容代码（以迁移完成率为准）。
+
+## 2026-03-25 移除 API 同步旧库兼容逻辑
+
+### 任务概述
+- 在确认环境已完成迁移后，移除 `apiregistry.SyncRoutes` 中针对旧 `api_endpoints.module` 列的运行时兼容分支。
+
+### 本次改动
+- 删除 `syncRoutesInternal` 入口处的旧库预处理调用。
+- 删除旧库兼容函数 `prepareLegacyAPIEndpointSchema` 与 `hasColumn`。
+- 保留并依赖迁移链路中的 schema 统一（`finalizeAPIEndpointSchema`）作为唯一升级路径。
+- 影响范围：API 同步流程从“兼容旧库+新库”收敛为“仅支持已迁移库”。
+- 已验证：`go test ./internal/pkg/apiregistry ./cmd/migrate` 通过。
+
+### 下次方向
+- 建议在部署文档中明确“必须先执行迁移再启用同步 API”顺序，避免新环境漏跑迁移。
+- 建议增加启动期 schema 健康检查（检测 `api_endpoints.module` 是否仍存在并给出明确告警）。
+
+## 2026-03-25 迁移前置修复（api_endpoints.module 旧约束）
+
+### 任务概述
+- 处理旧库在命名迁移阶段写入 `api_endpoints` 时触发 `module NOT NULL` 约束报错，导致迁移中断的问题。
+
+### 本次改动
+- 在 `runNamedMigrations` 之前新增前置步骤 `ensureAPIEndpointLegacyModuleNullable`。
+- 若检测到旧列 `api_endpoints.module` 存在，则先执行：
+  - `ALTER COLUMN module DROP NOT NULL`
+  - `ALTER COLUMN module SET DEFAULT ''`
+- 确保命名迁移插入 API 注册记录时不再被旧约束阻断，并保持后续 `finalizeAPIEndpointSchema` 统一清理旧列。
+- 已验证：`go run ./cmd/migrate` 在当前环境执行成功，最终输出 `Migration completed successfully`。
+
+### 下次方向
+- 建议把 `cmd/migrate` 的 SQL 调试日志级别下调，避免迁移日志过长影响故障定位效率。
+- 建议补一条自动化校验：迁移后若仍存在 `api_endpoints.module/group_code/group_name` 则直接告警失败。

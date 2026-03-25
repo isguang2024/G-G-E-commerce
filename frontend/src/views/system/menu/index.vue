@@ -2,20 +2,24 @@
 <template>
   <div class="menu-page art-full-height">
     <!-- 搜索栏 -->
-    <ArtSearchBar
+    <MenuSearch
+      v-show="showSearchBar"
       v-model="formFilters"
-      :items="formItems"
-      :showExpand="false"
       @reset="handleReset"
       @search="handleSearch"
     />
 
-    <ElCard class="art-table-card" shadow="never">
+    <ElCard
+      class="art-table-card"
+      shadow="never"
+      :style="{ marginTop: showSearchBar ? '12px' : '0' }"
+    >
       <!-- 表格头部 -->
       <ArtTableHeader
         :showZebra="false"
         :loading="loading"
         v-model:columns="columnChecks"
+        v-model:showSearchBar="showSearchBar"
         @refresh="handleRefresh"
         >
           <template #left>
@@ -240,6 +244,7 @@
   import type { AppRouteRecord } from '@/types/router'
   import MenuDialog from './modules/menu-dialog.vue'
   import MenuPermissionDialog from './modules/menu-permission-dialog.vue'
+  import MenuSearch from './modules/menu-search.vue'
   import {
     fetchGetMenuTreeAll,
     fetchCreateMenu,
@@ -257,6 +262,7 @@
 
   // --- 状态管理 ---
   const loading = ref(false)
+  const showSearchBar = ref(true)
   const isExpanded = ref(false)
   const showInnerPages = ref(false)
   const showHiddenMenus = ref(true)
@@ -278,11 +284,6 @@
   const initialSearchState = { name: '', route: '' }
   const formFilters = reactive({ ...initialSearchState })
   const appliedFilters = reactive({ ...initialSearchState })
-  const formItems = computed(() => [
-    { label: '菜单名称', key: 'name', type: 'input', props: { clearable: true } },
-    { label: '路由地址', key: 'route', type: 'input', props: { clearable: true } }
-  ])
-
   // --- 弹窗相关 ---
   const dialogVisible = ref(false)
   const dialogType = ref<'menu' | 'inner'>('menu')

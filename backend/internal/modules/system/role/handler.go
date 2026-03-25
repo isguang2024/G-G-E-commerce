@@ -56,6 +56,7 @@ func (h *RoleHandler) List(c *gin.Context) {
 			"status":            r.Status,
 			"sortOrder":         r.SortOrder,
 			"priority":          r.Priority,
+			"customParams":      r.CustomParams,
 			"createTime":        r.CreatedAt.Format("2006-01-02 15:04:05"),
 			"canEditPermission": true,
 		})
@@ -87,14 +88,15 @@ func (h *RoleHandler) Get(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
-		"roleId":      role.ID.String(),
-		"roleName":    role.Name,
-		"roleCode":    role.Code,
-		"description": role.Description,
-		"status":      role.Status,
-		"sortOrder":   role.SortOrder,
-		"priority":    role.Priority,
-		"createTime":  role.CreatedAt.Format("2006-01-02 15:04:05"),
+		"roleId":       role.ID.String(),
+		"roleName":     role.Name,
+		"roleCode":     role.Code,
+		"description":  role.Description,
+		"status":       role.Status,
+		"sortOrder":    role.SortOrder,
+		"priority":     role.Priority,
+		"customParams": role.CustomParams,
+		"createTime":   role.CreatedAt.Format("2006-01-02 15:04:05"),
 	}))
 }
 

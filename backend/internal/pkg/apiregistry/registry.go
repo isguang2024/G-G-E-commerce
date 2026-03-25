@@ -18,7 +18,6 @@ import (
 
 type RouteMeta struct {
 	Code           string
-	Module         string
 	Summary        string
 	FeatureKind    string
 	CategoryCode   string
@@ -35,7 +34,6 @@ type RuntimeRoute struct {
 	Method    string
 	Path      string
 	Handler   string
-	Module    string
 	HasMeta   bool
 	RouteMeta RouteMeta
 	IsOpenAPI bool
@@ -58,14 +56,13 @@ func Lookup(method, fullPath string) (RouteMeta, bool) {
 }
 
 type Registrar struct {
-	group  *gin.RouterGroup
-	module string
+	group *gin.RouterGroup
 }
 
 type RequireActionFunc func(permissionKey string, legacy ...string) gin.HandlerFunc
 
-func NewRegistrar(group *gin.RouterGroup, module string) *Registrar {
-	return &Registrar{group: group, module: module}
+func NewRegistrar(group *gin.RouterGroup, _ string) *Registrar {
+	return &Registrar{group: group}
 }
 
 func Meta(summary string) *MetaBuilder {
@@ -73,7 +70,7 @@ func Meta(summary string) *MetaBuilder {
 }
 
 func (r *Registrar) Meta(summary string) *MetaBuilder {
-	return Meta(summary).WithModule(r.module)
+	return Meta(summary)
 }
 
 func (r *Registrar) GET(relativePath string, meta *RouteMeta, handlers ...gin.HandlerFunc) gin.IRoutes {
@@ -171,12 +168,6 @@ func (b *MetaBuilder) WithSummary(summary string) *MetaBuilder {
 	return next
 }
 
-func (b *MetaBuilder) WithModule(module string) *MetaBuilder {
-	next := b.clone()
-	next.meta.Module = strings.TrimSpace(module)
-	return next
-}
-
 func (b *MetaBuilder) BindCode(code string) *MetaBuilder {
 	next := b.clone()
 	next.meta.Code = strings.TrimSpace(code)
@@ -230,7 +221,6 @@ func (b *MetaBuilder) Build() *RouteMeta {
 	}
 	meta := b.meta
 	meta.Summary = strings.TrimSpace(meta.Summary)
-	meta.Module = strings.TrimSpace(meta.Module)
 	meta.Code = strings.TrimSpace(meta.Code)
 	meta.FeatureKind = strings.TrimSpace(meta.FeatureKind)
 	meta.CategoryCode = strings.TrimSpace(meta.CategoryCode)
@@ -266,11 +256,7 @@ func appendRequireAnyActionHandler(permissionKeys []string, requireAction Requir
 
 func (r *Registrar) handle(method, relativePath string, meta *RouteMeta, handlers ...gin.HandlerFunc) gin.IRoutes {
 	if meta != nil {
-		resolved := *meta
-		if strings.TrimSpace(resolved.Module) == "" {
-			resolved.Module = r.module
-		}
-		Annotate(method, joinPath(r.group.BasePath(), relativePath), resolved)
+		Annotate(method, joinPath(r.group.BasePath(), relativePath), *meta)
 	}
 
 	switch method {
@@ -301,15 +287,10 @@ func CollectRuntimeRoutes(routes []gin.RouteInfo) []RuntimeRoute {
 			continue
 		}
 		meta, hasMeta := Lookup(route.Method, route.Path)
-		moduleName := strings.TrimSpace(meta.Module)
-		if moduleName == "" {
-			moduleName = deriveModuleName(route.Path)
-		}
 		result = append(result, RuntimeRoute{
 			Method:    strings.ToUpper(strings.TrimSpace(route.Method)),
 			Path:      route.Path,
 			Handler:   route.Handler,
-			Module:    moduleName,
 			HasMeta:   hasMeta,
 			RouteMeta: meta,
 			IsOpenAPI: strings.HasPrefix(route.Path, "/open/v1/"),
@@ -338,15 +319,6 @@ func syncRoutesInternal(
 			continue
 		}
 
-		moduleName := strings.TrimSpace(meta.Module)
-		if moduleName == "" {
-			if existing != nil && strings.TrimSpace(existing.Module) != "" {
-				moduleName = strings.TrimSpace(existing.Module)
-			} else {
-				moduleName = deriveModuleName(route.Path)
-			}
-		}
-
 		endpointCode := strings.TrimSpace(meta.Code)
 		if endpointCode == "" {
 			if existing != nil && strings.TrimSpace(existing.Code) != "" {
@@ -366,7 +338,7 @@ func syncRoutesInternal(
 			featureKind = normalizeFeatureKind(existing.FeatureKind)
 		}
 
-		categoryID := resolveCategoryID(db, deriveCategoryCode(meta.CategoryCode, moduleName))
+		categoryID := resolveCategoryID(db, meta.CategoryCode)
 		if categoryID == nil && existing != nil {
 			categoryID = existing.CategoryID
 		}
@@ -385,7 +357,6 @@ func syncRoutesInternal(
 			Code:         endpointCode,
 			Method:       strings.ToUpper(route.Method),
 			Path:         route.Path,
-			Module:       moduleName,
 			FeatureKind:  featureKind,
 			Handler:      route.Handler,
 			Summary:      summary,
@@ -431,18 +402,6 @@ func isManagedRoute(path string) bool {
 	return strings.HasPrefix(path, "/api/v1/") || strings.HasPrefix(path, "/open/v1/")
 }
 
-func deriveModuleName(routePath string) string {
-	trimmed := strings.TrimPrefix(routePath, "/")
-	segments := strings.Split(trimmed, "/")
-	if len(segments) >= 3 {
-		return segments[2]
-	}
-	if len(segments) >= 1 {
-		return segments[len(segments)-1]
-	}
-	return "unknown"
-}
-
 func normalizeFeatureKind(value string) string {
 	switch strings.TrimSpace(value) {
 	case "business":
@@ -478,7 +437,6 @@ func upsertEndpoint(db *gorm.DB, endpoint *models.APIEndpoint) error {
 		return nil
 	}
 	updates := map[string]interface{}{
-		"module":        endpoint.Module,
 		"feature_kind":  normalizeFeatureKind(endpoint.FeatureKind),
 		"handler":       endpoint.Handler,
 		"summary":       endpoint.Summary,
@@ -510,14 +468,6 @@ func upsertEndpoint(db *gorm.DB, endpoint *models.APIEndpoint) error {
 		endpoint.ID = existing.ID
 		return tx.Model(&existing).Updates(updates).Error
 	})
-}
-
-func deriveCategoryCode(value, module string) string {
-	target := strings.TrimSpace(value)
-	if target != "" {
-		return target
-	}
-	return strings.TrimSpace(module)
 }
 
 func resolveCategoryID(db *gorm.DB, code string) *uuid.UUID {

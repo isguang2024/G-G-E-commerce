@@ -1,128 +1,116 @@
 <template>
   <div class="art-full-height">
-    <div class="api-layout">
-      <ElCard class="category-tree-card" shadow="never">
-        <div class="category-tree-header">
-          <div class="module-title">分类树</div>
-        </div>
+    <div class="box-border flex gap-4 h-full max-md:block max-md:gap-0 max-md:h-auto">
+      <div class="flex-shrink-0 w-58 h-full max-md:w-full max-md:h-auto max-md:mb-5">
+        <ElCard class="tree-card art-card-xs flex flex-col h-full mt-0" shadow="never">
+          <template #header>
+            <b>分类树</b>
+          </template>
+          <ElScrollbar>
+            <ElTree
+              class="category-tree"
+              :data="categoryTreeData"
+              node-key="id"
+              default-expand-all
+              highlight-current
+              :expand-on-click-node="false"
+              :current-node-key="selectedCategoryTreeKey"
+              @node-click="handleCategoryTreeSelect"
+            >
+              <template #default="{ data: node }">
+                <div class="category-tree-node">
+                  <div class="category-tree-node-main">
+                    <span
+                      v-if="node.type === 'category' && node.status === 'suspended'"
+                      class="category-tree-node-status"
+                    >
+                      <ElTag size="small" type="info" effect="plain"> 停用 </ElTag>
+                    </span>
+                    <span class="category-tree-node-label">{{ node.label }}</span>
+                  </div>
+                  <div class="category-tree-node-side">
+                    <span class="category-tree-node-count">{{ node.count }}</span>
+                    <ElButton
+                      v-if="node.type === 'category'"
+                      class="category-tree-node-edit"
+                      text
+                      type="primary"
+                      @click.stop="openCategoryDrawer(node.category)"
+                    >
+                      编辑
+                    </ElButton>
+                  </div>
+                </div>
+              </template>
+            </ElTree>
+          </ElScrollbar>
+        </ElCard>
+      </div>
 
-        <ElTree
-          class="category-tree"
-          :data="categoryTreeData"
-          node-key="id"
-          default-expand-all
-          highlight-current
-          :expand-on-click-node="false"
-          :current-node-key="selectedCategoryTreeKey"
-          @node-click="handleCategoryTreeSelect"
+      <div class="flex flex-col flex-grow min-w-0">
+        <ApiEndpointSearch
+          v-show="showSearchBar"
+          v-model="searchForm"
+          @search="handleTableSearch"
+          @reset="resetTableQuery"
+        />
+        <ElCard
+          class="flex flex-col flex-1 min-h-0 art-table-card api-table-card"
+          shadow="never"
+          :style="{ marginTop: showSearchBar ? '12px' : '0' }"
         >
-          <template #default="{ data: node }">
-            <div class="category-tree-node">
-              <div class="category-tree-node-main">
-                <span class="category-tree-node-status">
-                  <ElTag
-                    v-if="node.type === 'category' && node.status === 'suspended'"
-                    size="small"
-                    type="info"
-                    effect="plain"
-                  >
-                    停用
-                  </ElTag>
-                </span>
-                <span class="category-tree-node-label">{{ node.label }}</span>
-              </div>
-              <div class="category-tree-node-side">
-                <span class="category-tree-node-count">{{ node.count }}</span>
-                <ElButton
-                  v-if="node.type === 'category'"
-                  class="category-tree-node-edit"
-                  text
-                  type="primary"
-                  @click.stop="openCategoryDrawer(node.category)"
-                >
-                  编辑
-                </ElButton>
-              </div>
-            </div>
-          </template>
-        </ElTree>
-      </ElCard>
-
-      <ElCard class="art-table-card api-table-card" shadow="never">
-        <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
-          <template #left>
-            <ElButton
-              v-action="'system.api_registry.sync'"
-              type="primary"
-              @click="openCreateDialog"
-              v-ripple
-            >
-              新增 API
-            </ElButton>
-            <ElButton
-              v-action="'system.api_registry.sync'"
-              type="primary"
-              plain
-              :loading="syncing"
-              @click="handleSync"
-              v-ripple
-            >
-              同步 API
-            </ElButton>
-            <ElButton v-action="'system.api_registry.view'" plain @click="openUnregisteredDialog" v-ripple>
-              未注册 API
-              <span v-if="unregisteredCount > 0" class="toolbar-count">({{ unregisteredCount }})</span>
-            </ElButton>
-          </template>
-        </ArtTableHeader>
-
-        <div class="table-query-panel">
-          <ElSelect v-model="selectedSource" clearable placeholder="注册方式">
-            <ElOption label="自动注册" value="sync" />
-            <ElOption label="手工补录" value="manual" />
-            <ElOption label="初始种子" value="seed" />
-          </ElSelect>
-          <ElSelect v-model="tableQuery.method" clearable placeholder="Method">
-            <ElOption v-for="item in methodOptions" :key="item" :label="item" :value="item" />
-          </ElSelect>
-          <ElInput v-model="tableQuery.path" clearable placeholder="按路径搜索" />
-          <ElInput v-model="tableQuery.keyword" clearable placeholder="按摘要/处理器/模块搜索" />
-          <ElInput v-model="tableQuery.permissionKey" clearable placeholder="按权限键搜索" />
-          <ElSelect v-model="tableQuery.contextScope" clearable placeholder="团队上下文">
-            <ElOption label="可选" value="optional" />
-            <ElOption label="必需" value="required" />
-            <ElOption label="禁止" value="forbidden" />
-          </ElSelect>
-          <ElSelect v-model="tableQuery.featureKind" clearable placeholder="功能归属">
-            <ElOption label="系统" value="system" />
-            <ElOption label="业务" value="business" />
-          </ElSelect>
-          <ElSelect v-model="tableQuery.status" clearable placeholder="状态">
-            <ElOption label="正常" value="normal" />
-            <ElOption label="停用" value="suspended" />
-          </ElSelect>
-          <ElSelect v-model="tableQuery.hasPermissionKey" clearable placeholder="权限键">
-            <ElOption label="有权限键" value="true" />
-            <ElOption label="无权限键" value="false" />
-          </ElSelect>
-          <div class="table-query-actions">
-            <ElButton type="primary" @click="handleTableSearch">查询</ElButton>
-            <ElButton @click="resetTableQuery">重置</ElButton>
-          </div>
-        </div>
-
-        <div class="api-table-main">
-          <ArtTable
+          <ArtTableHeader
+            v-model:columns="columnChecks"
+            v-model:showSearchBar="showSearchBar"
             :loading="loading"
-            :data="data"
-            :columns="columns"
-            :pagination="pagination"
-            size="small"
-            @pagination:size-change="handleSizeChange"
-            @pagination:current-change="handleCurrentChange"
-          />
-        </div>
-      </ElCard>
+            @refresh="refreshData"
+          >
+            <template #left>
+              <ElButton
+                v-action="'system.api_registry.sync'"
+                type="primary"
+                @click="openCreateDialog"
+                v-ripple
+              >
+                新增 API
+              </ElButton>
+              <ElButton
+                v-action="'system.api_registry.sync'"
+                type="primary"
+                plain
+                :loading="syncing"
+                @click="handleSync"
+                v-ripple
+              >
+                同步 API
+              </ElButton>
+              <ElButton
+                v-action="'system.api_registry.view'"
+                plain
+                @click="openUnregisteredDialog"
+                v-ripple
+              >
+                未注册 API
+                <span v-if="unregisteredCount > 0" class="toolbar-count"
+                  >({{ unregisteredCount }})</span
+                >
+              </ElButton>
+            </template>
+          </ArtTableHeader>
+
+          <div class="api-table-main">
+            <ArtTable
+              :loading="loading"
+              :data="data"
+              :columns="columns"
+              :pagination="pagination"
+              size="small"
+              @pagination:size-change="handleSizeChange"
+              @pagination:current-change="handleCurrentChange"
+            />
+          </div>
+        </ElCard>
+      </div>
     </div>
 
     <ElDialog
@@ -163,34 +151,20 @@
           <ElInput v-model="formState.path" placeholder="/api/v1/..." />
         </ElFormItem>
 
-        <ElRow :gutter="12">
-          <ElCol :span="12">
-            <ElFormItem label="模块" prop="module">
-              <ElInput v-model="formState.module" />
-            </ElFormItem>
-          </ElCol>
-          <ElCol :span="12">
-            <ElFormItem label="分类" prop="categoryId">
-              <div class="category-input-wrap">
-                <ElSelect
-                  v-model="formState.categoryId"
-                  clearable
-                  filterable
-                  placeholder="请选择分类"
-                >
-                  <ElOption
-                    v-for="item in sortedCategories"
-                    :key="item.id"
-                    :label="`${item.name} / ${item.nameEn}${item.status === 'suspended' ? '（已停用）' : ''}`"
-                    :value="item.id"
-                    :disabled="item.status === 'suspended' && formState.categoryId !== item.id"
-                  />
-                </ElSelect>
-                <ElButton text type="primary" @click="openCategoryDrawer()">分类管理</ElButton>
-              </div>
-            </ElFormItem>
-          </ElCol>
-        </ElRow>
+        <ElFormItem label="分类" prop="categoryId">
+          <div class="category-input-wrap">
+            <ElSelect v-model="formState.categoryId" clearable filterable placeholder="请选择分类">
+              <ElOption
+                v-for="item in sortedCategories"
+                :key="item.id"
+                :label="`${item.name} / ${item.nameEn}${item.status === 'suspended' ? '（已停用）' : ''}`"
+                :value="item.id"
+                :disabled="item.status === 'suspended' && formState.categoryId !== item.id"
+              />
+            </ElSelect>
+            <ElButton text type="primary" @click="openCategoryDrawer()">分类管理</ElButton>
+          </div>
+        </ElFormItem>
 
         <ElRow :gutter="12">
           <ElCol :span="12">
@@ -335,18 +309,17 @@
       </div>
     </ElDrawer>
 
-    <ElDialog
-      v-model="unregisteredVisible"
-      title="未注册 API"
-      width="980px"
-      destroy-on-close
-    >
+    <ElDialog v-model="unregisteredVisible" title="未注册 API" width="980px" destroy-on-close>
       <div class="unregistered-toolbar">
-        <ElSelect v-model="unregisteredQuery.method" clearable placeholder="Method" style="width: 120px">
+        <ElSelect
+          v-model="unregisteredQuery.method"
+          clearable
+          placeholder="Method"
+          style="width: 120px"
+        >
           <ElOption v-for="item in methodOptions" :key="item" :label="item" :value="item" />
         </ElSelect>
         <ElInput v-model="unregisteredQuery.path" placeholder="按路径筛选" clearable />
-        <ElInput v-model="unregisteredQuery.module" placeholder="按模块筛选" clearable />
         <ElInput v-model="unregisteredQuery.keyword" placeholder="按摘要或处理器搜索" clearable />
         <ElCheckbox v-model="unregisteredQuery.onlyNoMeta">仅看无元数据</ElCheckbox>
         <ElButton type="primary" :loading="unregisteredLoading" @click="handleUnregisteredSearch">
@@ -362,7 +335,6 @@
           </template>
         </ElTableColumn>
         <ElTableColumn prop="path" label="路径" min-width="280" show-overflow-tooltip />
-        <ElTableColumn prop="module" label="模块" width="120" show-overflow-tooltip />
         <ElTableColumn label="元数据" width="120">
           <template #default="{ row }">
             <ElTag :type="row.hasMeta ? 'success' : 'info'" effect="plain">
@@ -385,7 +357,9 @@
       </ElTable>
 
       <div class="unregistered-footer">
-        <div class="unregistered-footer-text">共 {{ unregisteredPagination.total }} 条未注册路由</div>
+        <div class="unregistered-footer-text"
+          >共 {{ unregisteredPagination.total }} 条未注册路由</div
+        >
         <ElPagination
           background
           layout="total, sizes, prev, pager, next"
@@ -398,17 +372,61 @@
         />
       </div>
     </ElDialog>
+
+    <ElDialog
+      v-model="permissionBindVisible"
+      :title="permissionDialogMode === 'remove' ? '移除权限键' : '加入权限键'"
+      width="560px"
+      destroy-on-close
+    >
+      <ElForm label-width="92px">
+        <ElFormItem label="接口">
+          <ElInput :model-value="permissionBinding.endpointSpec" readonly />
+        </ElFormItem>
+        <ElFormItem label="权限键">
+          <ElSelect
+            v-model="permissionBinding.permissionActionId"
+            filterable
+            clearable
+            placeholder="请选择权限键"
+            :loading="permissionActionLoading"
+          >
+            <ElOption
+              v-for="item in currentPermissionActionOptions"
+              :key="item.id"
+              :label="`${item.name || item.permissionKey || '-'}（${item.permissionKey || '-'}）`"
+              :value="item.id"
+            />
+          </ElSelect>
+        </ElFormItem>
+      </ElForm>
+      <template #footer>
+        <ElButton @click="permissionBindVisible = false">取消</ElButton>
+        <ElButton
+          :type="permissionDialogMode === 'remove' ? 'danger' : 'primary'"
+          @click="submitPermissionBind"
+        >
+          {{ permissionDialogMode === 'remove' ? '确认移除' : '确认加入' }}
+        </ElButton>
+      </template>
+    </ElDialog>
   </div>
 </template>
 
 <script setup lang="ts">
   import { computed, h, onMounted, reactive, ref } from 'vue'
   import { useTable } from '@/hooks/core/useTable'
+  import { useAuth } from '@/hooks/core/useAuth'
+  import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
+  import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import {
+    fetchAddPermissionActionEndpoint,
     fetchCreateApiEndpoint,
     fetchCreateApiEndpointCategory,
+    fetchDeletePermissionActionEndpoint,
     fetchGetApiEndpointCategories,
     fetchGetApiEndpointList,
+    fetchGetPermissionActionList,
     fetchGetUnregisteredApiRouteList,
     fetchSyncApiEndpoints,
     fetchUpdateApiEndpoint,
@@ -426,13 +444,13 @@
     ElSelect,
     ElTag
   } from 'element-plus'
+  import ApiEndpointSearch from './modules/api-endpoint-search.vue'
 
   defineOptions({ name: 'ApiEndpoint' })
 
   type APIEndpointItem = Api.SystemManage.APIEndpointItem
   type APIEndpointCategoryItem = Api.SystemManage.APIEndpointCategoryItem
   type APIUnregisteredRouteItem = Api.SystemManage.APIUnregisteredRouteItem
-  type SummaryItem = { label: string; count: number }
   type CategoryTreeNode = {
     id: string
     label: string
@@ -443,7 +461,6 @@
     children?: CategoryTreeNode[]
   }
   type PersistedTableState = {
-    selectedModule: string
     selectedSource: string
     selectedCategoryTreeKey: string
     tableQuery: {
@@ -459,27 +476,37 @@
   }
 
   const methodOptions = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+  const { hasAction } = useAuth()
   const API_ENDPOINT_TABLE_STATE_KEY = 'system:api-endpoint:table-state'
   const syncing = ref(false)
+  const showSearchBar = ref(false)
   const saving = ref(false)
   const categorySaving = ref(false)
   const categorySwitchingId = ref('')
-  const selectedModule = ref('')
   const selectedSource = ref('')
   const selectedCategoryTreeKey = ref('all')
   const formVisible = ref(false)
   const categoryDrawerVisible = ref(false)
+  const permissionBindVisible = ref(false)
+  const permissionDialogMode = ref<'add' | 'remove'>('add')
   const unregisteredVisible = ref(false)
   const unregisteredLoading = ref(false)
   const shouldRefreshUnregistered = ref(false)
   const editingId = ref('')
   const pendingLocateRoute = ref<{ method: string; path: string; source: string } | null>(null)
   const categories = ref<APIEndpointCategoryItem[]>([])
+  const permissionActionOptions = ref<Api.SystemManage.PermissionActionItem[]>([])
+  const permissionActionLoading = ref(false)
+  const permissionBinding = reactive({
+    endpointId: '',
+    endpointSpec: '',
+    endpointPermissionKeys: [] as string[],
+    permissionActionId: ''
+  })
   const unregisteredRoutes = ref<APIUnregisteredRouteItem[]>([])
   const totalCount = ref(0)
   const unregisteredCount = ref(0)
   const uncategorizedCount = ref(0)
-  const moduleSummary = ref<SummaryItem[]>([])
   const categoryCountMap = ref<Record<string, number>>({})
   const unregisteredPagination = reactive({
     current: 1,
@@ -490,7 +517,6 @@
   const formState = reactive({
     method: 'GET',
     path: '',
-    module: '',
     summary: '',
     featureKind: 'system',
     categoryId: '',
@@ -512,7 +538,6 @@
   const unregisteredQuery = reactive({
     method: '',
     path: '',
-    module: '',
     keyword: '',
     onlyNoMeta: false
   })
@@ -529,6 +554,42 @@
     hasPermissionKey: '',
     hasCategory: ''
   })
+
+  const searchForm = reactive({
+    source: '',
+    method: '',
+    path: '',
+    keyword: '',
+    permissionKey: '',
+    contextScope: '',
+    featureKind: '',
+    status: '',
+    hasPermissionKey: ''
+  })
+
+  function syncSearchFormFromQuery() {
+    searchForm.source = selectedSource.value
+    searchForm.method = tableQuery.method
+    searchForm.path = tableQuery.path
+    searchForm.keyword = tableQuery.keyword
+    searchForm.permissionKey = tableQuery.permissionKey
+    searchForm.contextScope = tableQuery.contextScope
+    searchForm.featureKind = tableQuery.featureKind
+    searchForm.status = tableQuery.status
+    searchForm.hasPermissionKey = tableQuery.hasPermissionKey
+  }
+
+  function syncQueryFromSearchForm() {
+    selectedSource.value = searchForm.source || ''
+    tableQuery.method = searchForm.method || ''
+    tableQuery.path = searchForm.path || ''
+    tableQuery.keyword = searchForm.keyword || ''
+    tableQuery.permissionKey = searchForm.permissionKey || ''
+    tableQuery.contextScope = searchForm.contextScope || ''
+    tableQuery.featureKind = searchForm.featureKind || ''
+    tableQuery.status = searchForm.status || ''
+    tableQuery.hasPermissionKey = searchForm.hasPermissionKey || ''
+  }
 
   const sortedCategories = computed(() =>
     [...categories.value].sort(
@@ -580,7 +641,6 @@
       apiParams: {
         current: 1,
         size: 20,
-        module: '',
         source: ''
       },
       columnsFactory: () => [
@@ -605,38 +665,20 @@
           minWidth: 300,
           showOverflowTooltip: true,
           formatter: (row: APIEndpointItem) =>
-            h('div', { class: 'path-cell' }, [
-              h('div', { class: 'path-main' }, row.path),
-              h('div', { class: 'path-sub' }, row.summary || '-'),
-              h('div', { class: 'path-tags' }, [
-                h(
-                  ElTag,
-                  {
-                    size: 'small',
-                    type: sourceTagType(row.source),
-                    effect: 'plain'
-                  },
-                  () => formatSource(row.source)
-                ),
-                h(
-                  ElTag,
-                  {
-                    size: 'small',
-                    type: row.featureKind === 'business' ? 'success' : 'info',
-                    effect: 'plain'
-                  },
-                  () => (row.featureKind === 'business' ? '业务 API' : '系统 API')
-                )
-              ])
-            ])
+            h('div', { class: 'path-cell' }, [h('div', { class: 'path-main' }, row.path)])
         },
-        { prop: 'module', label: '模块', width: 120 },
+        {
+          prop: 'summary',
+          label: '介绍',
+          minWidth: 220,
+          showOverflowTooltip: true,
+          formatter: (row: APIEndpointItem) => row.summary || '-'
+        },
         {
           prop: 'category',
           label: '分类',
           minWidth: 180,
-          formatter: (row: APIEndpointItem) =>
-            row.category ? `${row.category.name} / ${row.category.nameEn}` : '-'
+          formatter: (row: APIEndpointItem) => row.category?.name || '-'
         },
         {
           prop: 'permissionKey',
@@ -697,22 +739,134 @@
         {
           prop: 'operate',
           label: '操作',
-          width: 90,
+          width: 70,
           fixed: 'right',
-          formatter: (row: APIEndpointItem) =>
-            h(
-              ElButton,
+          formatter: (row: APIEndpointItem) => {
+            const list: ButtonMoreItem[] = [
               {
-                text: true,
-                type: 'primary',
-                onClick: () => openEditDialog(row)
+                key: 'edit',
+                label: '编辑',
+                icon: 'ri:edit-2-line'
               },
-              () => '编辑'
-            )
+              {
+                key: 'add',
+                label: '加入权限键',
+                icon: 'ri:links-line',
+                auth: 'system.permission.manage'
+              },
+              {
+                key: 'remove',
+                label: '移除权限键',
+                icon: 'ri:link-unlink',
+                auth: 'system.permission.manage'
+              }
+            ]
+            return h(ArtButtonMore, {
+              list,
+              onClick: (item: ButtonMoreItem) => handleOperateCommand(row, item.key as string)
+            })
+          }
         }
       ]
     }
   })
+
+  function handleOperateCommand(row: APIEndpointItem, command: string) {
+    if (command === 'edit') {
+      openEditDialog(row)
+      return
+    }
+    if (command === 'add') {
+      openPermissionBindDialog(row, 'add')
+      return
+    }
+    if (command === 'remove') {
+      openPermissionBindDialog(row, 'remove')
+    }
+  }
+
+  const currentPermissionActionOptions = computed(() => {
+    if (permissionDialogMode.value !== 'remove') {
+      return permissionActionOptions.value
+    }
+    const boundKeys = new Set(
+      (permissionBinding.endpointPermissionKeys || []).map((item) => `${item || ''}`.trim())
+    )
+    return permissionActionOptions.value.filter((item) =>
+      boundKeys.has(`${item.permissionKey || ''}`.trim())
+    )
+  })
+
+  async function loadPermissionActionOptions() {
+    permissionActionLoading.value = true
+    try {
+      const records: Api.SystemManage.PermissionActionItem[] = []
+      let current = 1
+      const size = 200
+      let total = 0
+      do {
+        const res = await fetchGetPermissionActionList({
+          current,
+          size
+        })
+        total = res.total || 0
+        records.push(...(res.records || []))
+        current += 1
+      } while (records.length < total)
+      permissionActionOptions.value = records
+    } catch (error: any) {
+      ElMessage.error(error?.message || '获取权限键失败')
+    } finally {
+      permissionActionLoading.value = false
+    }
+  }
+
+  async function openPermissionBindDialog(row: APIEndpointItem, mode: 'add' | 'remove') {
+    if (!hasAction('system.permission.manage')) {
+      ElMessage.warning('无权限操作')
+      return
+    }
+    permissionDialogMode.value = mode
+    permissionBinding.endpointId = row.id
+    permissionBinding.endpointSpec = `${row.method || ''} ${row.path || ''}`.trim()
+    permissionBinding.endpointPermissionKeys = [
+      ...(row.permissionKeys || (row.permissionKey ? [row.permissionKey] : []))
+    ]
+    permissionBinding.permissionActionId = ''
+    permissionBindVisible.value = true
+    await loadPermissionActionOptions()
+    if (mode === 'remove' && currentPermissionActionOptions.value.length === 0) {
+      ElMessage.info('当前接口没有可移除的权限键')
+      permissionBindVisible.value = false
+    }
+  }
+
+  async function submitPermissionBind() {
+    if (!permissionBinding.endpointId || !permissionBinding.permissionActionId) {
+      ElMessage.warning('请选择权限键')
+      return
+    }
+    try {
+      if (permissionDialogMode.value === 'remove') {
+        await fetchDeletePermissionActionEndpoint(
+          permissionBinding.permissionActionId,
+          permissionBinding.endpointId
+        )
+      } else {
+        await fetchAddPermissionActionEndpoint(
+          permissionBinding.permissionActionId,
+          permissionBinding.endpointId
+        )
+      }
+      ElMessage.success(permissionDialogMode.value === 'remove' ? '已移除权限键' : '已加入权限键')
+      permissionBindVisible.value = false
+      await refreshData()
+    } catch (error: any) {
+      ElMessage.error(
+        error?.message || (permissionDialogMode.value === 'remove' ? '移除权限键失败' : '加入权限键失败')
+      )
+    }
+  }
 
   function methodTagType(method?: string) {
     switch (`${method || ''}`.toUpperCase()) {
@@ -751,7 +905,6 @@
 
   function saveTableState() {
     const payload: PersistedTableState = {
-      selectedModule: selectedModule.value,
       selectedSource: selectedSource.value,
       selectedCategoryTreeKey: selectedCategoryTreeKey.value,
       tableQuery: {
@@ -775,7 +928,6 @@
     }
     try {
       const payload = JSON.parse(raw) as Partial<PersistedTableState>
-      selectedModule.value = payload.selectedModule || ''
       selectedSource.value = payload.selectedSource || ''
       selectedCategoryTreeKey.value = payload.selectedCategoryTreeKey || 'all'
       Object.assign(tableQuery, {
@@ -788,6 +940,7 @@
         status: payload.tableQuery?.status || '',
         hasPermissionKey: payload.tableQuery?.hasPermissionKey || ''
       })
+      syncSearchFormFromQuery()
     } catch {
       localStorage.removeItem(API_ENDPOINT_TABLE_STATE_KEY)
     }
@@ -804,7 +957,7 @@
       await fetchSyncApiEndpoints()
       ElMessage.success('同步成功')
       await refreshData()
-      await loadModuleSummary()
+      await loadCategorySummary()
       await loadUnregisteredCount()
     } catch (error: any) {
       ElMessage.error(error?.message || '同步失败')
@@ -828,7 +981,6 @@
     pendingLocateRoute.value = null
     formState.method = 'GET'
     formState.path = ''
-    formState.module = ''
     formState.summary = ''
     formState.featureKind = 'system'
     formState.categoryId = ''
@@ -857,7 +1009,10 @@
     if (!target) {
       return ''
     }
-    return categories.value.find((item) => `${item.code || ''}`.trim().toLowerCase() === target)?.id || ''
+    return (
+      categories.value.find((item) => `${item.code || ''}`.trim().toLowerCase() === target)?.id ||
+      ''
+    )
   }
 
   function openEditDialog(row: APIEndpointItem) {
@@ -865,7 +1020,6 @@
     pendingLocateRoute.value = null
     formState.method = (row.method || 'GET').toUpperCase()
     formState.path = row.path || ''
-    formState.module = row.module || ''
     formState.summary = row.summary || ''
     formState.featureKind = row.featureKind || 'system'
     formState.categoryId = row.categoryId || ''
@@ -934,7 +1088,6 @@
         size: unregisteredPagination.size,
         method: unregisteredQuery.method || undefined,
         path: unregisteredQuery.path || undefined,
-        module: unregisteredQuery.module || undefined,
         keyword: unregisteredQuery.keyword || undefined,
         only_no_meta: unregisteredQuery.onlyNoMeta || undefined
       })
@@ -986,7 +1139,6 @@
   async function resetUnregisteredQuery() {
     unregisteredQuery.method = ''
     unregisteredQuery.path = ''
-    unregisteredQuery.module = ''
     unregisteredQuery.keyword = ''
     unregisteredQuery.onlyNoMeta = false
     unregisteredPagination.current = 1
@@ -997,7 +1149,6 @@
     resetForm()
     formState.method = (route.method || 'GET').toUpperCase()
     formState.path = route.path || ''
-    formState.module = route.meta?.module || route.module || ''
     formState.summary = route.meta?.summary || ''
     formState.featureKind = route.meta?.feature_kind || 'system'
     formState.categoryId = resolveCategoryIdByCode(route.meta?.category_code)
@@ -1034,7 +1185,7 @@
           formState.categoryId = savedCategory.id
         }
       }
-      await Promise.all([loadCategories(), refreshData(), loadModuleSummary()])
+      await Promise.all([loadCategories(), refreshData(), loadCategorySummary()])
       if (selectedCategoryTreeKey.value.startsWith('category:')) {
         syncCategoryFilterFromTree()
       }
@@ -1071,7 +1222,7 @@
         status: nextStatus
       }
       await fetchUpdateApiEndpointCategory(category.id, payload)
-      await Promise.all([loadCategories(), refreshData(), loadModuleSummary()])
+      await Promise.all([loadCategories(), refreshData(), loadCategorySummary()])
       ElMessage.success(`分类已${actionText}`)
     } catch (error: any) {
       ElMessage.error(error?.message || `分类${actionText}失败`)
@@ -1085,7 +1236,6 @@
     const payload = {
       method: formState.method,
       path: formState.path,
-      module: formState.module,
       summary: formState.summary,
       feature_kind: formState.featureKind,
       category_id: formState.categoryId || undefined,
@@ -1109,7 +1259,7 @@
       ElMessage.success('保存成功')
       formVisible.value = false
       await refreshData()
-      await loadModuleSummary()
+      await loadCategorySummary()
       await loadUnregisteredCount()
       if (shouldRefreshUnregistered.value) {
         await loadUnregisteredRoutes()
@@ -1118,6 +1268,7 @@
         selectedSource.value = pendingLocateRoute.value.source || ''
         tableQuery.method = pendingLocateRoute.value.method || ''
         tableQuery.path = pendingLocateRoute.value.path || ''
+        syncSearchFormFromQuery()
         await applyTableFilters()
         pendingLocateRoute.value = null
       }
@@ -1131,7 +1282,7 @@
     }
   }
 
-  async function loadModuleSummary() {
+  async function loadCategorySummary() {
     const records: APIEndpointItem[] = []
     let current = 1
     const size = 500
@@ -1146,12 +1297,9 @@
       current += 1
     } while (records.length < total)
     totalCount.value = total || records.length
-    const counter = new Map<string, number>()
     const categoryCounter = new Map<string, number>()
     let uncategorized = 0
     records.forEach((item) => {
-      const key = (item.module || 'unknown').trim() || 'unknown'
-      counter.set(key, (counter.get(key) || 0) + 1)
       if (item.categoryId) {
         categoryCounter.set(item.categoryId, (categoryCounter.get(item.categoryId) || 0) + 1)
       } else {
@@ -1160,19 +1308,10 @@
     })
     categoryCountMap.value = Object.fromEntries(categoryCounter.entries())
     uncategorizedCount.value = uncategorized
-    moduleSummary.value = [...counter.entries()]
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'zh-CN'))
-      .map(([label, count]) => ({ label, count }))
-  }
-
-  async function handleModuleSelect(module: string) {
-    selectedModule.value = module
-    await applyTableFilters()
   }
 
   async function applyTableFilters() {
     Object.assign(searchParams, {
-      module: selectedModule.value || undefined,
       source: selectedSource.value || undefined,
       method: tableQuery.method || undefined,
       path: tableQuery.path || undefined,
@@ -1192,31 +1331,32 @@
   }
 
   async function handleTableSearch() {
+    syncQueryFromSearchForm()
     await applyTableFilters()
   }
 
   async function resetTableQuery() {
-    selectedModule.value = ''
-    selectedSource.value = ''
+    searchForm.source = ''
+    searchForm.method = ''
+    searchForm.path = ''
+    searchForm.keyword = ''
+    searchForm.permissionKey = ''
+    searchForm.contextScope = ''
+    searchForm.featureKind = ''
+    searchForm.status = ''
+    searchForm.hasPermissionKey = ''
+    syncQueryFromSearchForm()
     selectedCategoryTreeKey.value = 'all'
-    tableQuery.method = ''
-    tableQuery.path = ''
-    tableQuery.keyword = ''
-    tableQuery.permissionKey = ''
     tableQuery.categoryId = ''
-    tableQuery.contextScope = ''
-    tableQuery.featureKind = ''
-    tableQuery.status = ''
-    tableQuery.hasPermissionKey = ''
     tableQuery.hasCategory = ''
     await applyTableFilters()
   }
 
   onMounted(async () => {
     restoreTableState()
-    await Promise.all([loadCategories(), loadModuleSummary(), loadUnregisteredCount()])
+    await Promise.all([loadCategories(), loadCategorySummary(), loadUnregisteredCount()])
     syncCategoryFilterFromTree()
-    if (selectedModule.value || selectedSource.value || Object.values(tableQuery).some((item) => item)) {
+    if (selectedSource.value || Object.values(tableQuery).some((item) => item)) {
       await applyTableFilters()
     }
   })
@@ -1227,23 +1367,11 @@
     margin-bottom: 12px;
   }
 
-  .api-layout {
-    display: grid;
-    grid-template-columns: 272px minmax(0, 1fr);
-    gap: 10px;
-    align-items: start;
-    min-height: calc(100vh - 196px);
-  }
-
-  .category-tree-card,
+  .tree-card,
   .api-table-card {
-    height: calc(100vh - 196px);
-    min-height: 600px;
-    max-height: calc(100vh - 196px);
-  }
-
-  .category-tree-card {
-    overflow: hidden;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
   }
 
   .module-header {
@@ -1265,72 +1393,25 @@
     color: var(--el-text-color-secondary);
   }
 
-  .module-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-
-  .status-overview {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 12px;
-    margin-top: 16px;
-  }
-
-  .status-card {
-    padding: 14px 16px;
-    border-radius: 14px;
-    border: 1px solid var(--el-border-color-lighter);
-    background: linear-gradient(135deg, var(--el-fill-color-extra-light), #fff);
-  }
-
-  .status-card.is-sync {
-    border-color: rgba(64, 158, 255, 0.24);
-  }
-
-  .status-card.is-manual {
-    border-color: rgba(230, 162, 60, 0.28);
-  }
-
-  .status-card.is-seed {
-    border-color: rgba(103, 194, 58, 0.28);
-  }
-
-  .status-card.is-pending {
-    border-color: rgba(144, 147, 153, 0.28);
-  }
-
-  .status-label {
-    font-size: 13px;
-    color: var(--el-text-color-secondary);
-  }
-
-  .status-value {
-    margin-top: 8px;
-    font-size: 28px;
-    font-weight: 700;
-    line-height: 1;
-    color: var(--el-text-color-primary);
-  }
-
-  .status-help {
-    margin-top: 8px;
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-  }
-
   .module-tag {
     cursor: pointer;
   }
 
-  .category-tree-card :deep(.el-card__body) {
+  .tree-card :deep(.el-card__body) {
+    flex: 1;
+    min-height: 0;
+    padding: 10px 2px 10px 10px;
+  }
+
+  .tree-card :deep(.el-scrollbar) {
     display: flex;
-    height: 100%;
+    flex: 1;
     min-height: 0;
     flex-direction: column;
-    padding: 14px 12px 12px;
-    overflow: hidden;
+  }
+
+  .tree-card :deep(.el-scrollbar__wrap) {
+    min-height: 0;
   }
 
   .api-table-card {
@@ -1346,49 +1427,39 @@
     overflow: hidden;
   }
 
-  .category-tree-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 10px;
-  }
-
   .category-tree {
-    flex: 1;
-    overflow: auto;
-    min-height: 0;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
+    width: 100%;
   }
 
   .category-tree :deep(.el-tree-node__content) {
-    height: 36px;
+    height: auto;
+    min-height: 32px;
     padding-right: 4px;
     border-radius: 8px;
   }
 
   .category-tree-node {
     display: flex;
+    position: relative;
     width: 100%;
-    align-items: center;
+    align-items: stretch;
     justify-content: space-between;
-    gap: 10px;
-    padding-right: 2px;
-    font-size: 14px;
+    gap: 6px;
+    padding-right: 10px;
+    font-size: 13px;
   }
 
   .category-tree-node-main {
     display: flex;
     min-width: 0;
     align-items: center;
-    gap: 8px;
+    justify-content: flex-start;
+    gap: 4px;
     flex: 1;
   }
 
   .category-tree-node-status {
     display: inline-flex;
-    width: 38px;
     justify-content: flex-start;
     flex-shrink: 0;
   }
@@ -1398,49 +1469,60 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    line-height: 1.2;
   }
 
   .category-tree-node-side {
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    gap: 8px;
-    min-width: 66px;
+    gap: 6px;
+    min-width: 60px;
     flex-shrink: 0;
+    padding-right: 2px;
   }
 
   .category-tree-node-count {
-    min-width: 24px;
-    font-size: 13px;
+    min-width: 18px;
+    font-size: 12px;
     color: var(--el-text-color-secondary);
     text-align: right;
   }
 
   .category-tree-node-edit {
-    visibility: hidden;
-    opacity: 0;
-    transition: opacity 0.2s ease;
+    display: none;
+    position: static;
+    min-height: 0;
+    padding: 0;
+    font-size: 12px;
+    line-height: 1;
+    color: var(--el-color-primary);
+    background-color: transparent;
+    border: 0;
+    border-radius: 0;
+    --el-button-hover-bg-color: transparent;
+    --el-button-active-bg-color: transparent;
+    --el-button-hover-border-color: transparent;
+    --el-button-active-border-color: transparent;
   }
 
   .category-tree-node:hover .category-tree-node-edit {
-    visibility: visible;
-    opacity: 1;
+    display: inline-flex;
   }
 
-  .table-query-panel {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(140px, 1fr)) repeat(5, minmax(120px, 1fr)) auto;
-    gap: 10px;
-    align-items: center;
-    margin-top: 8px;
-    margin-bottom: 14px;
+  .category-tree-node-edit:hover {
+    color: var(--el-color-primary-light-3);
+    background-color: transparent;
+    border: 0;
   }
 
-  .table-query-actions {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
+  :deep(.category-tree-node-edit.el-button),
+  :deep(.category-tree-node-edit.el-button:hover),
+  :deep(.category-tree-node-edit.el-button:focus),
+  :deep(.category-tree-node-edit.el-button:active),
+  :deep(.category-tree-node-edit.el-button.is-active) {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
   }
 
   .api-table-main {
@@ -1449,7 +1531,7 @@
   }
 
   .api-table-card :deep(.table-header-left) {
-    gap: 8px;
+    gap: 10px;
     row-gap: 8px;
   }
 
@@ -1471,7 +1553,7 @@
   }
 
   .api-table-card :deep(.el-button + .el-button) {
-    margin-left: 0;
+    margin-left: 8px;
   }
 
   .api-table-card :deep(.el-input__wrapper),
@@ -1494,6 +1576,7 @@
 
   .api-table-card :deep(.el-pagination) {
     padding-top: 8px;
+    margin-top: 8px;
   }
 
   .category-list {
@@ -1629,6 +1712,12 @@
     gap: 6px;
   }
 
+  .operate-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .unregistered-toolbar {
     display: grid;
     grid-template-columns: 120px repeat(3, minmax(0, 1fr)) auto auto;
@@ -1655,12 +1744,7 @@
   }
 
   @media (max-width: 1280px) {
-    .api-layout {
-      grid-template-columns: 1fr;
-      min-height: 0;
-    }
-
-    .category-tree-card,
+    .tree-card,
     .api-table-card {
       position: static;
       height: auto;
@@ -1668,18 +1752,10 @@
       max-height: none;
     }
 
-    .category-tree-card :deep(.el-card__body),
+    .tree-card :deep(.el-card__body),
     .api-table-card :deep(.el-card__body) {
       height: auto;
       min-height: 320px;
-    }
-
-    .status-overview {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .table-query-panel {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .category-drawer-content {
@@ -1697,15 +1773,6 @@
   }
 
   @media (max-width: 768px) {
-    .status-overview {
-      grid-template-columns: 1fr;
-    }
-
-    .table-query-panel {
-      grid-template-columns: 1fr;
-    }
-
-    .category-tree-header,
     .category-drawer-toolbar,
     .category-form-header {
       flex-direction: column;

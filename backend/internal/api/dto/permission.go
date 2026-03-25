@@ -41,6 +41,10 @@ type PermissionKeyUpdateRequest struct {
 	SortOrder      int    `json:"sort_order"`
 }
 
+type PermissionKeyEndpointBindRequest struct {
+	EndpointID string `json:"endpoint_id" binding:"required,max=36"`
+}
+
 type PermissionGroupListRequest struct {
 	Current   int    `form:"current"`
 	Size      int    `form:"size"`

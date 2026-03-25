@@ -191,6 +191,7 @@ declare namespace Api {
       sortOrder?: number
       status?: string // normal/suspended
       priority?: number // 优先级
+      customParams?: Record<string, any>
       createTime: string
       tenantId?: string | null
       isGlobal?: boolean
@@ -210,6 +211,7 @@ declare namespace Api {
       description?: string
       sort_order?: number
       priority?: number
+      custom_params?: Record<string, any>
       status?: string
     }
 
@@ -220,6 +222,7 @@ declare namespace Api {
       description?: string
       sort_order?: number
       priority?: number
+      custom_params?: Record<string, any>
       status?: string
     }
 
@@ -396,7 +399,6 @@ declare namespace Api {
       method: string
       path: string
       spec?: string
-      module: string
       featureKind?: 'system' | 'business' | string
       handler?: string
       summary?: string
@@ -428,11 +430,9 @@ declare namespace Api {
       path: string
       spec: string
       handler?: string
-      module?: string
       hasMeta?: boolean
       meta?: {
         summary?: string
-        module?: string
         category_code?: string
         context_scope?: string
         source?: string
@@ -450,7 +450,7 @@ declare namespace Api {
     }
 
     type APIEndpointSearchParams = Partial<
-      Pick<APIEndpointItem, 'method' | 'path' | 'module' | 'status'> &
+      Pick<APIEndpointItem, 'method' | 'path' | 'status'> &
         Api.Common.CommonSearchParams & {
           keyword?: string
           permissionKey?: string
@@ -471,10 +471,10 @@ declare namespace Api {
           moduleCode?: string
           moduleGroupId?: string
           featureGroupId?: string
-              contextType?: string
-              featureKind?: string
-              isBuiltin?: boolean
-          }
+          contextType?: string
+          featureKind?: string
+          isBuiltin?: boolean
+        }
     >
     interface PermissionActionCreateParams {
       permission_key: string

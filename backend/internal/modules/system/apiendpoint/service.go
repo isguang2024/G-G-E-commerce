@@ -21,7 +21,6 @@ type ListRequest struct {
 	Keyword       string
 	Method        string
 	Path          string
-	Module        string
 	CategoryID    string
 	ContextScope  string
 	Source        string
@@ -36,7 +35,6 @@ type UnregisteredRouteListRequest struct {
 	Size       int
 	Method     string
 	Path       string
-	Module     string
 	Keyword    string
 	OnlyNoMeta bool
 }
@@ -46,7 +44,6 @@ type UnregisteredRouteItem struct {
 	Path    string                 `json:"path"`
 	Spec    string                 `json:"spec"`
 	Handler string                 `json:"handler"`
-	Module  string                 `json:"module"`
 	HasMeta bool                   `json:"has_meta"`
 	Meta    map[string]interface{} `json:"meta"`
 }
@@ -96,7 +93,6 @@ func (s *service) List(req *ListRequest) ([]user.APIEndpoint, int64, error) {
 		PermissionKey: strings.TrimSpace(req.PermissionKey),
 		Keyword:       strings.TrimSpace(req.Keyword),
 		Path:          strings.TrimSpace(req.Path),
-		Module:        strings.TrimSpace(req.Module),
 		CategoryID:    strings.TrimSpace(req.CategoryID),
 		ContextScope:  strings.TrimSpace(req.ContextScope),
 		Source:        strings.TrimSpace(req.Source),
@@ -167,7 +163,6 @@ func (s *service) ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]U
 
 	methodFilter := strings.ToUpper(strings.TrimSpace(req.Method))
 	pathFilter := strings.TrimSpace(req.Path)
-	moduleFilter := strings.TrimSpace(req.Module)
 	keyword := strings.TrimSpace(req.Keyword)
 
 	items := make([]UnregisteredRouteItem, 0, len(runtimeRoutes))
@@ -184,11 +179,8 @@ func (s *service) ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]U
 		if pathFilter != "" && !strings.Contains(route.Path, pathFilter) {
 			continue
 		}
-		if moduleFilter != "" && !strings.Contains(route.Module, moduleFilter) {
-			continue
-		}
 		if keyword != "" {
-			target := strings.ToLower(route.Method + " " + route.Path + " " + route.Module + " " + route.Handler + " " + route.RouteMeta.Summary)
+			target := strings.ToLower(route.Method + " " + route.Path + " " + route.Handler + " " + route.RouteMeta.Summary + " " + route.RouteMeta.CategoryCode)
 			if !strings.Contains(target, strings.ToLower(keyword)) {
 				continue
 			}
@@ -196,7 +188,6 @@ func (s *service) ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]U
 		meta := map[string]interface{}{}
 		if route.HasMeta {
 			meta["summary"] = route.RouteMeta.Summary
-			meta["module"] = route.RouteMeta.Module
 			meta["category_code"] = route.RouteMeta.CategoryCode
 			meta["context_scope"] = route.RouteMeta.ContextScope
 			meta["source"] = route.RouteMeta.Source
@@ -208,7 +199,6 @@ func (s *service) ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]U
 			Path:    route.Path,
 			Spec:    routeSpec(route.Method, route.Path),
 			Handler: route.Handler,
-			Module:  route.Module,
 			HasMeta: route.HasMeta,
 			Meta:    meta,
 		})
@@ -252,9 +242,6 @@ func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string) (*us
 	}
 	if endpoint.Code == "" {
 		endpoint.Code = deriveStableEndpointCode(endpoint.Method, endpoint.Path)
-	}
-	if endpoint.Module == "" {
-		endpoint.Module = "manual"
 	}
 	if endpoint.ContextScope == "" {
 		endpoint.ContextScope = "optional"
@@ -317,7 +304,6 @@ func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string) (*us
 			"code":          endpoint.Code,
 			"method":        endpoint.Method,
 			"path":          endpoint.Path,
-			"module":        endpoint.Module,
 			"feature_kind":  endpoint.FeatureKind,
 			"handler":       endpoint.Handler,
 			"summary":       endpoint.Summary,

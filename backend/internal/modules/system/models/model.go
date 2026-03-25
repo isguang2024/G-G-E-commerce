@@ -65,18 +65,19 @@ func (User) TableName() string {
 }
 
 type Role struct {
-	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	TenantID    *uuid.UUID     `gorm:"type:uuid;index" json:"tenant_id"`
-	Code        string         `gorm:"type:varchar(50);not null" json:"code"`
-	Name        string         `gorm:"type:varchar(100);not null" json:"name"`
-	Description string         `gorm:"type:varchar(255)" json:"description"`
-	Priority    int            `gorm:"default:0" json:"priority"`
-	SortOrder   int            `gorm:"default:0" json:"sort_order"`
-	Status      string         `gorm:"type:varchar(20);default:'normal'" json:"status"`
-	IsSystem    bool           `gorm:"default:false" json:"is_system"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID           uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	TenantID     *uuid.UUID     `gorm:"type:uuid;index" json:"tenant_id"`
+	Code         string         `gorm:"type:varchar(50);not null" json:"code"`
+	Name         string         `gorm:"type:varchar(100);not null" json:"name"`
+	Description  string         `gorm:"type:varchar(255)" json:"description"`
+	Priority     int            `gorm:"default:0" json:"priority"`
+	SortOrder    int            `gorm:"default:0" json:"sort_order"`
+	CustomParams MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"custom_params"`
+	Status       string         `gorm:"type:varchar(20);default:'normal'" json:"status"`
+	IsSystem     bool           `gorm:"default:false" json:"is_system"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	DeletedAt    gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (Role) TableName() string {
@@ -428,7 +429,6 @@ type APIEndpoint struct {
 	Code         string         `gorm:"type:varchar(36);uniqueIndex" json:"code"`
 	Method       string         `gorm:"type:varchar(10);not null" json:"method"`
 	Path         string         `gorm:"type:varchar(255);not null" json:"path"`
-	Module       string         `gorm:"type:varchar(100);not null" json:"module"`
 	FeatureKind  string         `gorm:"type:varchar(20);not null;default:'system'" json:"feature_kind"`
 	Handler      string         `gorm:"type:varchar(255)" json:"handler"`
 	Summary      string         `gorm:"type:varchar(255)" json:"summary"`
