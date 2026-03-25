@@ -129,10 +129,6 @@ func AutoMigrate() error {
 		return fmt.Errorf("failed to create unique indexes: %w", err)
 	}
 
-	if err := migrateLegacyUserRoles(); err != nil {
-		return fmt.Errorf("failed to migrate legacy user roles: %w", err)
-	}
-
 	return nil
 }
 
@@ -345,64 +341,6 @@ func createUniqueIndexes() error {
 	}
 
 	return nil
-}
-
-func migrateLegacyUserRoles() error {
-	// 先把 tenant_members 里的默认团队身份同步为租户级 user_roles
-	insertDefaultTenantRoles := `
-		INSERT INTO user_roles (user_id, role_id, tenant_id)
-		SELECT tm.user_id, r.id, tm.tenant_id
-		FROM tenant_members tm
-		JOIN roles r ON r.code = tm.role_code
-		WHERE tm.role_code IN ('team_admin', 'team_member')
-		  AND NOT EXISTS (
-		    SELECT 1
-		    FROM user_roles ur
-		    WHERE ur.user_id = tm.user_id
-		      AND ur.role_id = r.id
-		      AND ur.tenant_id = tm.tenant_id
-		  )
-	`
-	if err := DB.Exec(insertDefaultTenantRoles).Error; err != nil {
-		return err
-	}
-
-	// 对“只有一个租户成员关系”的历史团队角色，自动迁移到对应 tenant_id
-	updateSingleTenantScopedRoles := `
-		UPDATE user_roles ur
-		SET tenant_id = tm.tenant_id
-		FROM (
-		  SELECT user_id, MAX(tenant_id::text)::uuid AS tenant_id
-		  FROM tenant_members
-		  GROUP BY user_id
-		  HAVING COUNT(DISTINCT tenant_id) = 1
-		) tm,
-		roles r
-		WHERE ur.user_id = tm.user_id
-		  AND r.id = ur.role_id
-		  AND ur.tenant_id IS NULL
-		  AND r.code IN ('team_admin', 'team_member')
-		  AND NOT EXISTS (
-		    SELECT 1
-		    FROM user_roles existing
-		    WHERE existing.user_id = ur.user_id
-		      AND existing.role_id = ur.role_id
-		      AND existing.tenant_id = tm.tenant_id
-		  )
-	`
-	if err := DB.Exec(updateSingleTenantScopedRoles).Error; err != nil {
-		return err
-	}
-
-	// 对默认团队身份的旧全局记录做清理，避免和 tenant_members 同步后的租户角色重复
-	deleteLegacyDefaultGlobalTeamRoles := `
-		DELETE FROM user_roles ur
-		USING roles r
-		WHERE ur.role_id = r.id
-		  AND ur.tenant_id IS NULL
-		  AND r.code IN ('team_admin', 'team_member')
-	`
-	return DB.Exec(deleteLegacyDefaultGlobalTeamRoles).Error
 }
 
 // enableExtensions 启用 PostgreSQL 扩展

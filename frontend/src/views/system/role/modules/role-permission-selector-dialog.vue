@@ -338,9 +338,6 @@ const selectedMenuIdSet = computed(() => new Set(expandedSelectedMenuIds.value))
 const availableMenuIdSet = computed(
   () => new Set((roleMenuBoundary.value?.available_menu_ids || []).map((item) => `${item}`))
 )
-const hiddenMenuIdSet = computed(
-  () => new Set((roleMenuBoundary.value?.hidden_menu_ids || []).map((item) => `${item}`))
-)
 
 const menuBranchMap = computed(() => {
   const map = new Map<string, string[]>()

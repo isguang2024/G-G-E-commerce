@@ -1,9 +1,9 @@
 <template>
   <ArtSearchBar
-    ref="searchBarRef"
     v-model="formData"
     :items="formItems"
-    :rules="rules"
+    :showExpand="true"
+    :defaultExpanded="true"
     @reset="handleReset"
     @search="handleSearch"
   >
@@ -11,21 +11,20 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed } from 'vue'
+  import { computed, ref } from 'vue'
   interface Props {
     modelValue: Record<string, any>
   }
 
   interface Emits {
     (e: 'update:modelValue', value: Record<string, any>): void
-    (e: 'search', params: Record<string, any>): void
+    (e: 'search'): void
     (e: 'reset'): void
   }
 
   const props = defineProps<Props>()
   const emit = defineEmits<Emits>()
 
-  const searchBarRef = ref()
   /**
    * 表单数据双向绑定
    */
@@ -33,11 +32,6 @@
     get: () => props.modelValue,
     set: (val) => emit('update:modelValue', val)
   })
-
-  /**
-   * 表单校验规则
-   */
-  const rules = {}
 
   /**
    * 角色状态选项
@@ -114,8 +108,5 @@
    * 处理搜索事件
    * 验证表单后触发搜索
    */
-  const handleSearch = async () => {
-    await searchBarRef.value.validate()
-    emit('search', formData.value)
-  }
+  const handleSearch = () => emit('search')
 </script>

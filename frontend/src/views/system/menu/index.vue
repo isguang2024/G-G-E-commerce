@@ -208,21 +208,12 @@
                 <span class="text-gray-600">{{ row.created_by || '系统' }}</span>
               </template>
             </ElTableColumn>
-            <ElTableColumn label="操作" width="200" fixed="right">
+            <ElTableColumn label="操作" width="72" fixed="right" align="center">
               <template #default="{ row }">
-                <div class="flex gap-2">
-                  <ElButton
-                    v-action="'system.menu.backup'"
-                    type="primary"
-                    size="small"
-                    @click="handleRestoreBackup(row.id)"
-                  >
-                    恢复
-                  </ElButton>
-                  <ElButton v-action="'system.menu.backup'" type="danger" size="small" @click="handleDeleteBackup(row.id)">
-                    删除
-                  </ElButton>
-                </div>
+                <ArtButtonMore
+                  :list="getBackupOperationList()"
+                  @click="(item) => handleBackupOperation(item, row)"
+                />
               </template>
             </ElTableColumn>
           </ElTable>
@@ -236,7 +227,7 @@
 </template>
 
 <script setup lang="ts">
-  import { onMounted, ref, reactive, computed, watch, nextTick } from 'vue'
+  import { onMounted, ref, reactive, watch, nextTick } from 'vue'
   import { formatMenuTitle } from '@/utils/router'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
@@ -410,6 +401,17 @@
     return list
   }
 
+  const getBackupOperationList = (): ButtonMoreItem[] => [
+    { key: 'restore', label: '恢复备份', icon: 'ri:history-line', auth: 'system.menu.backup' },
+    {
+      key: 'delete',
+      label: '删除备份',
+      icon: 'ri:delete-bin-4-line',
+      color: '#f56c6c',
+      auth: 'system.menu.backup'
+    }
+  ]
+
   // --- 事件处理 ---
   const handleReset = () => {
     Object.assign(formFilters, initialSearchState)
@@ -471,6 +473,16 @@
     else if (item.key === 'edit') handleEditMenu(row)
     else if (item.key === 'action_requirement') handleEditActionRequirement(row)
     else if (item.key === 'delete') handleDeleteMenu(row)
+  }
+
+  const handleBackupOperation = (item: ButtonMoreItem, row: any) => {
+    if (item.key === 'restore') {
+      handleRestoreBackup(row.id)
+      return
+    }
+    if (item.key === 'delete') {
+      handleDeleteBackup(row.id)
+    }
   }
 
   const handleDeleteMenu = async (row: any) => {

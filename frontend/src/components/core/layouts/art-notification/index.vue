@@ -374,20 +374,11 @@
 
   // 业务逻辑处理
   const useBusinessLogic = () => {
-    const handleNoticeAll = () => {
-      // 处理查看全部通知
-      console.log('查看全部通知')
-    }
+    const handleNoticeAll = () => {}
 
-    const handleMsgAll = () => {
-      // 处理查看全部消息
-      console.log('查看全部消息')
-    }
+    const handleMsgAll = () => {}
 
-    const handlePendingAll = () => {
-      // 处理查看全部待办
-      console.log('查看全部待办')
-    }
+    const handlePendingAll = () => {}
 
     return {
       handleNoticeAll,

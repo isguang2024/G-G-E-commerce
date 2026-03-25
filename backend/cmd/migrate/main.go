@@ -58,10 +58,6 @@ func main() {
 
 	logger.Info("Database migration completed successfully!")
 
-	if err := ensureAPIEndpointLegacyModuleNullable(logger); err != nil {
-		logger.Fatal("Failed to prepare api endpoint legacy schema", zap.Error(err))
-	}
-
 	// 初始化默认作用域
 	if err := runNamedMigrations(logger); err != nil {
 		logger.Fatal("Named migrations failed", zap.Error(err))
@@ -95,15 +91,9 @@ func main() {
 	}
 
 	if err := initDefaultPermissionKeysNoScope(logger); err != nil {
-		logger.Warn("Failed to initialize permission actions", zap.Error(err))
+		logger.Warn("Failed to initialize permission keys", zap.Error(err))
 	} else {
-		logger.Info("Permission actions initialized successfully")
-	}
-
-	if err := mergeDeprecatedTeamPermissionKeys(logger); err != nil {
-		logger.Warn("Failed to merge deprecated team permission keys", zap.Error(err))
-	} else {
-		logger.Info("Deprecated team permission keys merged successfully")
+		logger.Info("Permission keys initialized successfully")
 	}
 
 	if err := initDefaultFeaturePackages(logger); err != nil {
@@ -146,9 +136,9 @@ func main() {
 		logger.Warn("Failed to merge deprecated team permission keys after API sync", zap.Error(err))
 	}
 	if err := syncCanonicalPermissionKeys(logger); err != nil {
-		logger.Warn("Failed to sync canonical permission actions", zap.Error(err))
+		logger.Warn("Failed to sync canonical permission keys", zap.Error(err))
 	} else {
-		logger.Info("Canonical permission actions synchronized successfully")
+		logger.Info("Canonical permission keys synchronized successfully")
 	}
 
 	if err := backfillTenantIdentityUserRoles(logger); err != nil {
@@ -163,7 +153,7 @@ func main() {
 		logger.Info("Default access snapshots refreshed successfully")
 	}
 
-	fmt.Println("✅ Migration completed successfully!")
+	logger.Info("Migration completed successfully")
 }
 
 type migrationTask struct {
@@ -256,51 +246,6 @@ func runNamedMigrations(logger *zap.Logger) error {
 			},
 		},
 		{
-			Name: "20260324_permission_key_code_alignment",
-			Run: func(logger *zap.Logger) error {
-				oldCategoryID := permissionseed.StableID("api-endpoint-category", "permission_action")
-				newCategoryID := permissionseed.StableID("api-endpoint-category", "permission_key")
-				oldModuleGroupID := permissionseed.StableID("permission-group", "module:permission_action")
-				newModuleGroupID := permissionseed.StableID("permission-group", "module:permission_key")
-
-				return database.DB.Transaction(func(tx *gorm.DB) error {
-					if err := tx.Model(&usermodel.APIEndpoint{}).
-						Where("category_id = ?", oldCategoryID).
-						Update("category_id", newCategoryID).Error; err != nil {
-						return err
-					}
-					if err := tx.Where("group_type = ? AND code = ?", "module", "permission_action").
-						Delete(&usermodel.PermissionGroup{}).Error; err != nil {
-						return err
-					}
-					if err := tx.Where("code = ?", "permission_action").
-						Delete(&usermodel.APIEndpointCategory{}).Error; err != nil {
-						return err
-					}
-					if err := tx.Model(&usermodel.PermissionKey{}).
-						Where("module_code = ?", "permission_action").
-						Updates(map[string]interface{}{
-							"module_code":      "permission_key",
-							"module_group_id":  newModuleGroupID,
-							"feature_group_id": permissionseed.StableID("permission-group", "feature:system"),
-						}).Error; err != nil {
-						return err
-					}
-					if err := tx.Model(&usermodel.APIEndpoint{}).
-						Where("category_id = ?", oldCategoryID).
-						Update("category_id", newCategoryID).Error; err != nil {
-						return err
-					}
-					if err := tx.Model(&usermodel.PermissionKey{}).
-						Where("module_group_id = ?", oldModuleGroupID).
-						Update("module_group_id", newModuleGroupID).Error; err != nil {
-						return err
-					}
-					return nil
-				})
-			},
-		},
-		{
 			Name: "20260324_permission_key_code_alignment_v2",
 			Run: func(logger *zap.Logger) error {
 				oldCategoryID := permissionseed.StableID("api-endpoint-category", "permission_action")
@@ -310,15 +255,6 @@ func runNamedMigrations(logger *zap.Logger) error {
 				systemFeatureGroupID := permissionseed.StableID("permission-group", "feature:system")
 
 				return database.DB.Transaction(func(tx *gorm.DB) error {
-					if err := permissionseed.EnsureDefaultAPIEndpointCategories(tx); err != nil {
-						return err
-					}
-					if err := permissionseed.EnsureDefaultPermissionGroups(tx); err != nil {
-						return err
-					}
-					if err := permissionseed.EnsureDefaultPermissionKeys(tx); err != nil {
-						return err
-					}
 					if err := tx.Model(&usermodel.PermissionKey{}).
 						Where("module_code = ?", "permission_action").
 						Updates(map[string]interface{}{
@@ -631,6 +567,57 @@ func runNamedMigrations(logger *zap.Logger) error {
 				}
 
 				logger.Info("Named migration applied", zap.String("name", "20260324_permission_context_backfill"))
+				return nil
+			},
+		},
+		{
+			Name: "20260325_legacy_user_roles_backfill",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`INSERT INTO user_roles (user_id, role_id, tenant_id)
+					SELECT tm.user_id, r.id, tm.tenant_id
+					FROM tenant_members tm
+					JOIN roles r ON r.code = tm.role_code
+					WHERE tm.role_code IN ('team_admin', 'team_member')
+					  AND NOT EXISTS (
+					    SELECT 1
+					    FROM user_roles ur
+					    WHERE ur.user_id = tm.user_id
+					      AND ur.role_id = r.id
+					      AND ur.tenant_id = tm.tenant_id
+					  )`,
+					`UPDATE user_roles ur
+					SET tenant_id = tm.tenant_id
+					FROM (
+					  SELECT user_id, MAX(tenant_id::text)::uuid AS tenant_id
+					  FROM tenant_members
+					  GROUP BY user_id
+					  HAVING COUNT(DISTINCT tenant_id) = 1
+					) tm,
+					roles r
+					WHERE ur.user_id = tm.user_id
+					  AND r.id = ur.role_id
+					  AND ur.tenant_id IS NULL
+					  AND r.code IN ('team_admin', 'team_member')
+					  AND NOT EXISTS (
+					    SELECT 1
+					    FROM user_roles existing
+					    WHERE existing.user_id = ur.user_id
+					      AND existing.role_id = ur.role_id
+					      AND existing.tenant_id = tm.tenant_id
+					  )`,
+					`DELETE FROM user_roles ur
+					USING roles r
+					WHERE ur.role_id = r.id
+					  AND ur.tenant_id IS NULL
+					  AND r.code IN ('team_admin', 'team_member')`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260325_legacy_user_roles_backfill"))
 				return nil
 			},
 		},
@@ -1452,7 +1439,6 @@ func syncCanonicalPermissionKeys(logger *zap.Logger) error {
 			"permission_key": mapping.Key,
 			"name":           mapping.Name,
 			"description":    mapping.Description,
-			"context_type":   mapping.ContextType,
 			"module_code":    strings.TrimSpace(mapping.ResourceCode),
 			"updated_at":     time.Now(),
 		}
@@ -1464,7 +1450,7 @@ func syncCanonicalPermissionKeys(logger *zap.Logger) error {
 		}
 		updatedCount += int(result.RowsAffected)
 	}
-	logger.Info("Canonical permission action sync applied", zap.Int("updated", updatedCount))
+	logger.Info("Canonical permission key sync applied", zap.Int("updated", updatedCount))
 	return nil
 }
 
@@ -1825,7 +1811,7 @@ func initDefaultPermissionKeysNoScope(logger *zap.Logger) error {
 	if err := permissionseed.EnsureDefaultPermissionKeys(database.DB); err != nil {
 		return err
 	}
-	logger.Info("Default permission actions seeded")
+	logger.Info("Default permission keys seeded")
 	return nil
 }
 
@@ -1929,27 +1915,6 @@ func finalizeAPIEndpointSchema(logger *zap.Logger) error {
 		}
 	}
 	logger.Info("API endpoint schema finalized")
-	return nil
-}
-
-func ensureAPIEndpointLegacyModuleNullable(logger *zap.Logger) error {
-	hasModule, err := hasColumn("api_endpoints", "module")
-	if err != nil {
-		return err
-	}
-	if !hasModule {
-		return nil
-	}
-	statements := []string{
-		`ALTER TABLE api_endpoints ALTER COLUMN module DROP NOT NULL`,
-		`ALTER TABLE api_endpoints ALTER COLUMN module SET DEFAULT ''`,
-	}
-	for _, statement := range statements {
-		if err := database.DB.Exec(statement).Error; err != nil {
-			return err
-		}
-	}
-	logger.Info("Legacy api_endpoints.module constraint prepared")
 	return nil
 }
 

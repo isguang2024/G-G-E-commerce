@@ -1,7 +1,9 @@
+> 历史说明：本文件较早记录中提到的 `permission-package-design.md` 已于 2026-03-25 收敛下线，相关设计说明统一以 `permission-overall-summary.md` 为准。
+
 ## 2026-03-23 权限系统设计文档重写
 
 ### 本次改动
-- 按最新确认的“功能包优先”模型，重写了 [permission-package-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/permission-package-design.md) 和 [permission-overall-summary.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/permission-overall-summary.md)。
+- 按最新确认的“功能包优先”模型，重写了权限总览文档；其中旧 `permission-package-design.md` 的内容现已并入 [permission-overall-summary.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/permission-overall-summary.md)。
 - 正式写清了两上下文模型、基础包与组合包、团队边界减法、平台用户减法裁剪、公共菜单、初始化包、快照策略和自动注册边界。
 - 文档明确区分了“当前正式设计基线”和“后续仍需按设计实现的代码部分”，避免设计与现状继续混淆。
 
@@ -98,7 +100,7 @@
 ## 2026-03-23 快照刷新机制规范补充
 
 ### 本次改动
-- 更新 `docs/permission-package-design.md`，将平台用户减法裁剪收口为“用户隐藏菜单”，并新增“快照刷新机制”章节。
+- 更新权限总览文档，将平台用户减法裁剪收口为“用户隐藏菜单”，并新增“快照刷新机制”章节。
 - 更新 `docs/permission-overall-summary.md`，补充快照刷新触发源清单，明确 `platform` 与 `team` 需分上下文刷新。
 - 触发源已覆盖：功能包绑定、组合包关系、菜单启停、角色包、用户直绑包、角色减法、用户隐藏菜单、团队开包、团队边界减法、团队角色裁剪、成员角色、功能包状态变更。
 
@@ -111,7 +113,7 @@
 ### 本次改动
 - 新增 `backend/internal/pkg/permissionrefresh/service.go`，把团队刷新、平台用户刷新、按功能包传播刷新、按菜单传播刷新统一收口为显式编排入口；第一阶段仍采用同步刷新，不引入事件总线。
 - 功能包、平台角色、平台用户、菜单更新四条关键写链已开始接入统一刷新入口：功能包变更会传播到相关团队/平台主体，平台角色包与减法裁剪变更会刷新关联用户，平台用户绑包/分配角色/旧个人权限变更会刷新该用户，菜单更新/删除会走按菜单传播刷新。
-- 同步补强了规范文档：`docs/permission-package-design.md` 与 `docs/permission-overall-summary.md` 进一步明确“刷新必须在写事务成功后触发”；验证通过 `backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build`。
+- 同步补强了权限总览与规范文档，进一步明确“刷新必须在写事务成功后触发”；验证通过 `backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build`。
 
 ### 下次方向
 - 继续把团队角色写链、团队边界菜单减法、成员角色变更接入统一刷新入口，避免团队侧仍有零散 `RefreshCache` 直接调用。
@@ -180,7 +182,7 @@
 ### 本次改动
 - 团队成员“权限例外（兼容）”页已降级为只读审计视图：批量覆盖按钮、分组覆盖按钮、单项允许/拒绝编辑和保存入口都已退出页面主交互。
 - 当前页面仍保留来源功能包、团队边界、角色基线、既有例外结果的可视化能力，便于审计历史数据，但不再鼓励继续走成员级例外写链。
-- `docs/permission-overall-summary.md` 与 `docs/permission-package-design.md` 已同步写明：团队成员个人例外处于迁移期只读审计状态。已验证：`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build`。
+- 权限总览文档已同步写明：团队成员个人例外处于迁移期只读审计状态。已验证：`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build`。
 
 ### 下次方向
 - 继续处理团队边界“屏蔽菜单”缺口，把团队边界从“只有权限减法”补成“菜单 + 权限”完整减法模型。
@@ -191,7 +193,7 @@
 ### 本次改动
 - 团队角色菜单裁剪页与权限裁剪页的“展开能力”和“已屏蔽能力”标签都支持直接点击跳转来源功能包，排查链路从“看结果”缩短到“定位配置”。
 - 平台“用户权限例外（兼容）”页新增未绑定功能包时的“前往绑定功能包”引导按钮，并在角色继承区域补充“功能包约束/兼容回退”状态标签，进一步明确该页是兼容入口而非主入口。
-- `docs/permission-package-design.md` 与 `docs/permission-overall-summary.md` 已同步更新当前实现状态，清理重复错位条目，并补充团队侧与平台侧兼容入口的现状说明。
+- 权限总览文档已同步更新当前实现状态，清理重复错位条目，并补充团队侧与平台侧兼容入口的现状说明。
 - 已验证：`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build`；本轮未启动服务。
 
 ### 下次方向
@@ -203,7 +205,7 @@
 ### 本次改动
 - 后端已补齐团队菜单边界接口：新增团队菜单快照读取、菜单来源返回和菜单边界保存，团队菜单边界现在正式以“功能包展开菜单 - 团队屏蔽菜单”工作。
 - 前端团队页新增“菜单边界”入口，并新增团队菜单边界弹窗；当前支持按功能包来源查看菜单、按来源功能包跳转，以及“全部保留/全部屏蔽”批量操作。
-- 文档已同步收口：`permission-overall-summary.md` 与 `permission-package-design.md` 现在都明确记录团队边界已形成“菜单 + 权限”双减法模型。
+- 文档已同步收口：权限总览文档已明确记录团队边界已形成“菜单 + 权限”双减法模型。
 - 已验证：`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build`。本轮未启动服务。
 
 ### 下次方向
@@ -216,7 +218,7 @@
 - 新增团队菜单边界前端主入口：团队列表操作菜单补齐“菜单边界”，并挂载新弹窗 `frontend/src/views/team/team/modules/team-menu-permission-dialog.vue`。
 - 新增团队菜单边界前端 API：`fetchGetTeamMenus`、`fetchGetTeamMenuOrigins`、`fetchSetTeamMenus`，并补齐团队边界返回字段（含 `expandedPackageIds`、`blockedActionIds`）。
 - 团队菜单边界弹窗支持来源分组、功能包筛选、功能包跳转、全保留/全屏蔽批量操作，保存语义固定为“功能包展开菜单 - 团队屏蔽菜单”。
-- 同步更新 `docs/permission-overall-summary.md` 与 `docs/permission-package-design.md`，将团队边界正式收口为“菜单减法 + 权限减法”双边界模型。
+- 同步更新权限总览文档，将团队边界正式收口为“菜单减法 + 权限减法”双边界模型。
 - 已验证：`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build` 全部通过；本轮未启动服务。
 
 ### 下次方向
@@ -229,7 +231,7 @@
 ### 本次改动
 - 后端已补齐平台用户菜单裁剪接口，用户菜单读写现在基于平台快照的“候选菜单 + 最终菜单”双层结构工作，支持从功能包展开菜单中反推出用户隐藏菜单，并在保存后统一刷新平台用户快照。
 - 平台快照已补充候选菜单层，避免“已隐藏菜单无法恢复”的问题；用户管理页新增“菜单裁剪”入口，并新增 `user-menu-selector-dialog.vue`，当前支持功能包来源筛选、目标功能包跳转、全部保留/全部隐藏批量操作。
-- 平台用户菜单裁剪已成为正式入口，平台用户“权限例外（兼容）”继续保留但降级为兼容副入口；`permission-overall-summary.md` 与 `permission-package-design.md` 已同步写明这一点。
+- 平台用户菜单裁剪已成为正式入口，平台用户“权限例外（兼容）”继续保留但降级为兼容副入口；权限总览文档已同步写明这一点。
 - 已验证：`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build` 全部通过；本轮未启动服务。
 
 ### 下次方向
@@ -242,7 +244,7 @@
 ### 本次改动
 - 平台用户“权限例外（兼容）”页已从可写入口降级为只读审计视图：当前保留历史 allow/deny 例外、角色继承、来源功能包与结果预览，但退出保存与交互修改，不再和平台主链并列。
 - 用户管理页操作文案同步收口为“权限例外审计”，强调平台侧主配置应优先使用“功能包 + 菜单裁剪”；平台角色权限页也新增了功能包摘要、菜单已屏蔽数、能力已关闭数，开始统一平台侧来源与减法心智。
-- `permission-overall-summary.md` 与 `permission-package-design.md` 已同步更新当前状态。已验证：`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build` 全部通过；本轮未启动服务。
+- 权限总览文档已同步更新当前状态。已验证：`backend/go test ./...`、`frontend/pnpm exec vue-tsc --noEmit`、`frontend/pnpm build` 全部通过；本轮未启动服务。
 
 ### 下次方向
 - 继续统一平台角色、团队角色、团队边界三处来源视图，把“包展开结果 / 显式屏蔽结果 / 最终生效结果”做成一致交互。
@@ -370,7 +372,7 @@
 
 ### 下次方向
 - 继续把平台与团队最终权限集合的运行时读取往快照表推进，进一步缩小旧现算与旧正向表在鉴权链中的职责。
-- 继续整理并压缩 `permission-package-design.md` 中已累计的重复段落，保持设计文档只表达当前正式状态与实现差距。
+- 继续整理并压缩旧设计文档沉淀的重复段落，保持权限总览只表达当前正式状态与实现差距。
 ## 2026-03-24 平台用户权限审计主链收口与设计文档重写
 
 ### 本次改动
@@ -1278,3 +1280,98 @@
 ### 下次方向
 - 建议把 `cmd/migrate` 的 SQL 调试日志级别下调，避免迁移日志过长影响故障定位效率。
 - 建议补一条自动化校验：迁移后若仍存在 `api_endpoints.module/group_code/group_name` 则直接告警失败。
+
+## 2026-03-25 清理与文档统一（第一批）
+
+### 任务概述
+- 按“行为不变”原则执行仓库清理与文档重整。
+- 前后端同步清理低风险冗余代码。
+- 建立前端高频交互统一规范，并接入 AGENTS 约束链路。
+
+### 本次改动
+- 前端清理：
+  - `system/user` 页面移除无用导入 `ArtButtonTable`、移除调试 `console.log`、简化操作列渲染包装。
+  - `system/menu` 备份列表“操作”由并排按钮改为 `ArtButtonMore` 三点菜单，统一操作列交互风格。
+- 后端清理：
+  - `menu/handler.go` 将重复匿名授权接口收敛为单一 `menuAuthzService` 类型，减少重复定义。
+- 文档重整：
+  - 新增 `FRONTEND_GUIDELINE.md`，固化搜索区、操作列、弹窗工具栏、状态/辅助文案规范。
+  - `AGENTS.md` 增加前端规范引用条款。
+  - 重写 `PROJECT_FRAMEWORK.md` 为可执行清单版本（触发条件、输入/设计/实施检查、完成标准、常见反例）。
+  - 新增 `docs/README.md` 作为 docs 索引。
+  - 删除重复文档 `docs/permission-package-design.md`，并在 `permission-overall-summary.md` 标注收敛说明。
+
+### 下次方向
+- 继续执行“第二批”业务功能分离交付：把当前权限链路功能改动与清理改动拆分提交。
+- 在 `views/system` 范围继续收敛搜索组件字段布局与交互一致性（保持业务字段差异）。
+- 对剩余候选“无用代码”执行引用级扫描后再删，避免动态场景误删。
+
+### 验证
+- 已验证：
+  - `go test ./...`（backend）通过。
+  - `pnpm exec vue-tsc --noEmit`（frontend）通过。
+- 未验证：
+  - 前端构建 `vite build`（本次按需求未执行）。
+
+## 2026-03-25 持续优化（前端统一 + 迁移收口）
+
+### 任务概述
+- 继续按“行为不变”原则推进前端统一与后端内部收敛。
+- 前端聚焦系统管理页的无用代码与操作列统一。
+- 后端聚焦迁移职责边界，避免 `AutoMigrate` 混入历史数据修复。
+
+### 本次改动
+- 前端：
+  - `system/menu` 页面移除无用的 `computed` 导入。
+  - `system/role` 权限选择弹窗移除未使用的 `hiddenMenuIdSet`。
+  - `action-permission/permission-group-dialog` 的列表操作列统一改为 `ArtButtonMore` 三点菜单。
+  - `FRONTEND_GUIDELINE.md` 补充规则级别、标准片段和反例，提升可执行性。
+- 后端：
+  - `database.AutoMigrate()` 不再执行历史 `user_roles` 数据修复，只保留 schema/index 职责。
+  - `cmd/migrate` 新增 `20260325_legacy_user_roles_backfill` 命名迁移，承接旧 `user_roles` 修复。
+  - `20260324_permission_key_code_alignment_v2` 去掉重复 `EnsureDefault*` 初始化。
+  - `syncCanonicalPermissionKeys` 不再重复回写 `context_type`，降低与 `permission_context_backfill` 的职责重叠。
+  - 迁移日志文案从旧 `permission actions` 收口为 `permission keys`，并统一使用 logger 收尾。
+- 文档：
+  - `docs/README.md` 补充 `FRONTEND_GUIDELINE.md`、`AGENTS.md` 入口和阅读路径。
+  - `PROJECT_FRAMEWORK.md` 补充最低验证命令矩阵与未验证项记录格式。
+
+### 下次方向
+- 继续清理 `docs/change-log.md` 中对已删除文档的历史坏链引用。
+- 继续收敛系统页搜索组件触发契约与默认展开策略，但不与本轮低风险清理混提。
+- 若确认线上已完成兼容窗口，可规划下线 `legacy ...string` 权限兼容入参链。
+
+### 验证
+- 已验证：
+  - `go test ./...`（backend）通过。
+  - `pnpm exec vue-tsc --noEmit`（frontend）通过。
+- 未验证：
+  - 前端构建 `vite build`，原因：本轮按既定约束未执行。
+
+## 2026-03-25 持续优化（搜索契约与组件日志清理）
+
+### 任务概述
+- 继续按“行为不变”原则清理系统页交互分叉与基础组件调试噪音。
+- 收口搜索组件事件契约，减少父子双通道传参。
+
+### 本次改动
+- 前端：
+  - `system/role` 与 `system/user` 的搜索组件统一改为 `emit('search')`，父层直接从 `v-model` 读取当前筛选值。
+  - `system/menu/modules/menu-search.vue` 收口到可展开搜索区配置，与当前前端规范一致。
+  - 移除基础组件中的明显调试输出：
+    - `art-wang-editor` 去掉全屏 `console.log`
+    - `art-notification` 去掉“查看全部”占位日志
+    - `art-video-player` 去掉播放/暂停日志
+    - `art-cutter-img` 去掉下载日志
+- 文档：
+  - `change-log.md` 顶部补充历史说明，明确 `permission-package-design.md` 已下线并由 `permission-overall-summary.md` 接替。
+
+### 下次方向
+- 继续清理 `change-log.md` 中直接出现旧设计文档名的历史条目，但以批量文案收口方式处理。
+- 继续收敛系统页搜索区默认展开策略，避免不同页面继续各自漂移。
+
+### 验证
+- 已验证：
+  - `pnpm exec vue-tsc --noEmit`（frontend）通过。
+- 未验证：
+  - 前端构建 `vite build`，原因：本轮按既定约束未执行。

@@ -227,8 +227,8 @@ function showPackageDialog(row?: RoleListItem) {
   packageDialog.value = true
 }
 
-function handleSearch(params: Record<string, any>) {
-  const { daterange, ...rest } = params
+function handleSearch() {
+  const { daterange, ...rest } = searchForm.value
   const [startTime, endTime] = Array.isArray(daterange) ? daterange : [null, null]
   Object.assign(searchParams, { ...rest, startTime, endTime })
   getData()

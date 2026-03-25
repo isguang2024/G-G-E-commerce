@@ -1,24 +1,17 @@
-<!-- 用户管理页面 -->
-<!-- art-full-height 自动计算出页面剩余高度 -->
-<!-- art-table-card 一个符合系统样式的 class，同时自动撑满剩余高度 -->
-<!-- 更多 useTable 使用示例请移步至 功能示例 下面的高级表格示例或者查看官方文档 -->
-<!-- useTable 文档：https://www.artd.pro/docs/zh/guide/hooks/use-table.html -->
 <template>
   <div class="user-page art-full-height">
-    <!-- 搜索栏 -->
     <UserSearch
       v-show="showSearchBar"
       v-model="searchForm"
       @search="handleSearch"
       @reset="resetSearchParams"
-    ></UserSearch>
+    />
 
     <ElCard
       class="art-table-card"
       shadow="never"
       :style="{ marginTop: showSearchBar ? '12px' : '0' }"
     >
-      <!-- 表格头部 -->
       <ArtTableHeader
         v-model:columns="columnChecks"
         v-model:showSearchBar="showSearchBar"
@@ -32,7 +25,6 @@
         </template>
       </ArtTableHeader>
 
-      <!-- 表格 -->
       <ArtTable
         :loading="loading"
         :data="data"
@@ -41,10 +33,8 @@
         @selection-change="handleSelectionChange"
         @pagination:size-change="handleSizeChange"
         @pagination:current-change="handleCurrentChange"
-      >
-      </ArtTable>
+      />
 
-      <!-- 用户弹窗 -->
       <UserDialog
         v-model:visible="dialogVisible"
         :type="dialogType"
@@ -64,13 +54,11 @@
         @success="refreshData"
         @open-packages="openCurrentUserPackagesFromMenu"
       />
-
     </ElCard>
   </div>
 </template>
 
 <script setup lang="ts">
-  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { useTable } from '@/hooks/core/useTable'
@@ -297,12 +285,10 @@
                 auth: 'system.user.manage'
               }
             ]
-            return h('div', [
-              h(ArtButtonMore, {
-                list,
-                onClick: (item: ButtonMoreItem) => handleUserOperation(item, row)
-              })
-            ])
+            return h(ArtButtonMore, {
+              list,
+              onClick: (item: ButtonMoreItem) => handleUserOperation(item, row)
+            })
           }
         }
       ]
@@ -319,10 +305,9 @@
    * 搜索处理
    * @param params 参数
    */
-  const handleSearch = (params: Record<string, any>) => {
-    console.log(params)
+  const handleSearch = () => {
     // 搜索参数赋值
-    Object.assign(searchParams, params)
+    Object.assign(searchParams, searchForm.value)
     getData()
   }
 
@@ -330,7 +315,6 @@
    * 显示用户弹窗
    */
   const showDialog = (type: DialogType, row?: UserListItem): void => {
-    console.log('打开弹窗:', { type, row })
     dialogType.value = type
     currentUserData.value = row || {}
     nextTick(() => {
@@ -444,6 +428,5 @@
    */
   const handleSelectionChange = (selection: UserListItem[]): void => {
     selectedRows.value = selection
-    console.log('选中行数据:', selectedRows.value)
   }
 </script>

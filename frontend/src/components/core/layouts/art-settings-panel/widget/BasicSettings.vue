@@ -22,6 +22,11 @@
   const settingStore = useSettingStore()
   const { basicSettingsConfig } = useSettingsConfig()
   const { basicHandlers } = useSettingsHandlers()
+  const warnDev = (...args: unknown[]) => {
+    if (import.meta.env.DEV) {
+      console.warn(...args)
+    }
+  }
 
   // 获取store的响应式状态
   const {
@@ -71,7 +76,7 @@
     if (typeof handler === 'function') {
       handler(value)
     } else {
-      console.warn(`Handler "${handlerName}" not found in basicHandlers`)
+      warnDev(`Handler "${handlerName}" not found in basicHandlers`)
     }
   }
 </script>

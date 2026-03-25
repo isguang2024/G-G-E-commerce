@@ -29,17 +29,17 @@ type MenuHandler struct {
 	userRoleRepo    user.UserRoleRepository
 	platformService platformaccess.Service
 	boundaryService teamboundary.Service
-	authzService    interface {
-		Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
-	}
+	authzService    menuAuthzService
 	logger *zap.Logger
+}
+
+type menuAuthzService interface {
+	Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
 }
 
 func NewMenuHandler(menuService MenuService, userRepo user.UserRepository, menuRepo interface {
 	ListAll() ([]user.Menu, error)
-}, roleRepo user.RoleRepository, userRoleRepo user.UserRoleRepository, boundaryService teamboundary.Service, authzService interface {
-	Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
-}, platformService platformaccess.Service, logger *zap.Logger) *MenuHandler {
+}, roleRepo user.RoleRepository, userRoleRepo user.UserRoleRepository, boundaryService teamboundary.Service, authzService menuAuthzService, platformService platformaccess.Service, logger *zap.Logger) *MenuHandler {
 	return &MenuHandler{
 		menuService:     menuService,
 		userRepo:        userRepo,

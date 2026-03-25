@@ -41,19 +41,9 @@
               </ElTag>
             </template>
           </ElTableColumn>
-          <ElTableColumn label="操作" width="170" fixed="right">
+          <ElTableColumn label="操作" width="72" fixed="right" align="center">
             <template #default="{ row }">
-              <div class="operation-row">
-                <ElButton text type="primary" @click="startEdit(row)">编辑</ElButton>
-                <ElButton
-                  text
-                  type="danger"
-                  :disabled="row.isBuiltin"
-                  @click="handleDelete(row)"
-                >
-                  删除
-                </ElButton>
-              </div>
+              <ArtButtonMore :list="buildOperationList(row)" @click="(item) => handleOperation(item, row)" />
             </template>
           </ElTableColumn>
         </ElTable>
@@ -100,6 +90,8 @@
 </template>
 
 <script setup lang="ts">
+  import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
+  import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import type { FormInstance, FormRules } from 'element-plus'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import {
@@ -176,6 +168,30 @@
   function handleCurrentChange(row?: Api.SystemManage.PermissionGroupItem) {
     if (!row) return
     startEdit(row)
+  }
+
+  function buildOperationList(row: Api.SystemManage.PermissionGroupItem): ButtonMoreItem[] {
+    const list: ButtonMoreItem[] = [
+      { key: 'edit', label: '编辑', icon: 'ri:edit-2-line' }
+    ]
+    list.push({
+      key: 'delete',
+      label: '删除',
+      icon: 'ri:delete-bin-4-line',
+      color: '#f56c6c',
+      disabled: !!row.isBuiltin
+    })
+    return list
+  }
+
+  function handleOperation(item: ButtonMoreItem, row: Api.SystemManage.PermissionGroupItem) {
+    if (item.key === 'edit') {
+      startEdit(row)
+      return
+    }
+    if (item.key === 'delete' && !row.isBuiltin) {
+      handleDelete(row)
+    }
   }
 
   async function loadGroupList() {
@@ -300,10 +316,4 @@
     min-height: 460px;
   }
 
-  .operation-row {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    white-space: nowrap;
-  }
 </style>

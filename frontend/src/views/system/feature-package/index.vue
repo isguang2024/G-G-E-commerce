@@ -15,7 +15,8 @@
       v-model="searchForm"
       :items="searchItems"
       label-width="auto"
-      :showExpand="false"
+      :showExpand="true"
+      :defaultExpanded="true"
       @search="handleSearch"
       @reset="handleReset"
     />

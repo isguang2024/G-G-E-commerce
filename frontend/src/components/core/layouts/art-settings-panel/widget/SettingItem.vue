@@ -64,6 +64,11 @@
 
   const props = defineProps<Props>()
   const emit = defineEmits<Emits>()
+  const warnDev = (...args: unknown[]) => {
+    if (import.meta.env.DEV) {
+      console.warn(...args)
+    }
+  }
 
   // 标准化选项，处理computed和普通数组
   const normalizedOptions = computed(() => {
@@ -78,7 +83,7 @@
       // 如果是普通数组，直接返回
       return Array.isArray(props.config.options) ? props.config.options : []
     } catch (error) {
-      console.warn('Error processing options for config:', props.config.key, error)
+      warnDev('Error processing options for config:', props.config.key, error)
       return []
     }
   })
