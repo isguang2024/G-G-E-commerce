@@ -113,6 +113,7 @@ func AutoMigrate() error {
 		&models.APIEndpoint{},
 		&models.APIEndpointPermissionBinding{},
 		&models.Menu{},
+		&models.UIPage{},
 		&models.Tenant{},
 		&models.TenantMember{},
 		&models.APIKey{},
@@ -336,6 +337,78 @@ func createUniqueIndexes() error {
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", userHiddenMenuIndexName).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE UNIQUE INDEX " + userHiddenMenuIndexName + " ON user_hidden_menus (user_id, menu_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageKeyIndexName := "idx_ui_pages_page_key_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageKeyIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + uiPageKeyIndexName + " ON ui_pages (page_key) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageRouteNameIndexName := "idx_ui_pages_route_name_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageRouteNameIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + uiPageRouteNameIndexName + " ON ui_pages (route_name) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageParentMenuIndexName := "idx_ui_pages_parent_menu_id"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageParentMenuIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + uiPageParentMenuIndexName + " ON ui_pages (parent_menu_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageModuleIndexName := "idx_ui_pages_module_key"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageModuleIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + uiPageModuleIndexName + " ON ui_pages (module_key)").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageParentPageIndexName := "idx_ui_pages_parent_page_key"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageParentPageIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + uiPageParentPageIndexName + " ON ui_pages (parent_page_key)").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageDisplayGroupIndexName := "idx_ui_pages_display_group_key"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageDisplayGroupIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + uiPageDisplayGroupIndexName + " ON ui_pages (display_group_key)").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageTypeStatusIndexName := "idx_ui_pages_page_type_status"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageTypeStatusIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + uiPageTypeStatusIndexName + " ON ui_pages (page_type, status)").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageAccessModeIndexName := "idx_ui_pages_access_mode"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageAccessModeIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + uiPageAccessModeIndexName + " ON ui_pages (access_mode)").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageParentSortIndexName := "idx_ui_pages_parent_sort_order"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageParentSortIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + uiPageParentSortIndexName + " ON ui_pages (parent_page_key, sort_order)").Error; err != nil {
 			return err
 		}
 	}

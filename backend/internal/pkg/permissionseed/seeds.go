@@ -96,9 +96,10 @@ func DefaultAPIEndpointCategories() []APIEndpointCategorySeed {
 		{Code: "permission_key", Name: "功能键", NameEn: "Permission Key", SortOrder: 50, Status: "normal"},
 		{Code: "feature_package", Name: "功能包", NameEn: "Feature Package", SortOrder: 60, Status: "normal"},
 		{Code: "api_endpoint", Name: "API 管理", NameEn: "API Management", SortOrder: 70, Status: "normal"},
-		{Code: "menu", Name: "菜单", NameEn: "Menu", SortOrder: 80, Status: "normal"},
-		{Code: "menu_backup", Name: "菜单备份", NameEn: "Menu Backup", SortOrder: 90, Status: "normal"},
-		{Code: "tenant", Name: "团队", NameEn: "Tenant", SortOrder: 100, Status: "normal"},
+		{Code: "page", Name: "页面", NameEn: "Page", SortOrder: 80, Status: "normal"},
+		{Code: "menu", Name: "菜单", NameEn: "Menu", SortOrder: 90, Status: "normal"},
+		{Code: "menu_backup", Name: "菜单备份", NameEn: "Menu Backup", SortOrder: 100, Status: "normal"},
+		{Code: "tenant", Name: "团队", NameEn: "Tenant", SortOrder: 110, Status: "normal"},
 	}
 	for i := range items {
 		items[i].ID = StableID("api-endpoint-category", items[i].Code)
@@ -162,6 +163,12 @@ func DefaultPermissionKeys() []PermissionKeySeed {
 		newPermissionKeySeed("feature_package", "delete", "删除功能包", "允许删除功能包"),
 		newPermissionKeySeed("feature_package", "assign_action", "配置功能包权限", "允许配置功能包包含的功能权限"),
 		newPermissionKeySeed("feature_package", "assign_team", "配置团队功能包", "允许给团队开通功能包"),
+		newPermissionKeySeed("page", "list", "查看页面管理列表", "允许查看页面管理列表"),
+		newPermissionKeySeed("page", "get", "查看页面详情", "允许查看页面详情"),
+		newPermissionKeySeed("page", "create", "创建页面", "允许创建页面"),
+		newPermissionKeySeed("page", "update", "更新页面", "允许更新页面"),
+		newPermissionKeySeed("page", "delete", "删除页面", "允许删除页面"),
+		newPermissionKeySeed("page", "sync", "同步页面注册表", "允许同步页面注册表"),
 		newPermissionKeySeed("system_permission", "manage_action_registry", "管理功能权限注册表", "允许维护功能权限注册信息"),
 		newPermissionKeySeed("system_permission", "assign_role_action", "配置角色功能权限", "允许为角色分配功能权限"),
 	}
@@ -319,6 +326,16 @@ func DefaultPermissionModuleGroups() []PermissionGroupSeed {
 		},
 		{
 			GroupType:   "module",
+			Code:        "page",
+			Name:        "页面管理",
+			NameEn:      "Page Management",
+			Description: "页面注册表、数据内页与全局页管理",
+			Status:      "normal",
+			SortOrder:   205,
+			IsBuiltin:   true,
+		},
+		{
+			GroupType:   "module",
 			Code:        "feature_package",
 			Name:        "功能包管理",
 			NameEn:      "Feature Package Management",
@@ -351,8 +368,8 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      1,
-			MenuNames:      []string{"System", "Role", "User", "ActionPermission", "TeamRolesAndPermissions"},
-			PermissionKeys: []string{"system.user.manage", "system.role.manage", "system.permission.manage"},
+			MenuNames:      []string{"System", "Role", "User", "ActionPermission", "TeamRolesAndPermissions", "PageManagement"},
+			PermissionKeys: []string{"system.user.manage", "system.role.manage", "system.permission.manage", "system.page.manage", "system.page.sync"},
 		},
 		{
 			PackageKey:     "platform.menu_admin",
@@ -419,14 +436,15 @@ func DefaultMenus() []MenuSeed {
 	metaSuperAdmin := usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}}
 	metaSuperAdminAndAdmin := usermodel.MetaJSON{"roles": []interface{}{"R_SUPER", "R_ADMIN"}}
 	metaTeamAccessOnly := usermodel.MetaJSON{"keepAlive": true}
+	metaJWT := usermodel.MetaJSON{"accessMode": "jwt"}
 	return []MenuSeed{
-		{Name: "Dashboard", Path: "/dashboard", Component: "/index/index", Title: "menus.dashboard.title", Icon: "ri:pie-chart-line", SortOrder: 1, Meta: metaSuperAdminAndAdmin},
+		{Name: "Dashboard", Path: "/dashboard", Component: "/index/index", Title: "menus.dashboard.title", Icon: "ri:pie-chart-line", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER", "R_ADMIN"}, "accessMode": "jwt"}},
 		{Name: "System", Path: "/system", Component: "/index/index", Title: "menus.system.title", Icon: "ri:user-3-line", SortOrder: 2, Meta: metaSuperAdminAndAdmin},
-		{Name: "Result", Path: "/result", Component: "/index/index", Title: "menus.result.title", Icon: "ri:checkbox-circle-line", SortOrder: 3},
-		{Name: "Exception", Path: "/exception", Component: "/index/index", Title: "menus.exception.title", Icon: "ri:error-warning-line", SortOrder: 4},
+		{Name: "Result", Path: "/result", Component: "/index/index", Title: "menus.result.title", Icon: "ri:checkbox-circle-line", SortOrder: 3, Meta: metaJWT},
+		{Name: "Exception", Path: "/exception", Component: "/index/index", Title: "menus.exception.title", Icon: "ri:error-warning-line", SortOrder: 4, Meta: metaJWT},
 		{Name: "TeamRoot", Path: "/team", Component: "/index/index", Title: "menus.system.team", Icon: "ri:team-line", SortOrder: 5, Meta: metaTeamAccessOnly},
 		{Name: "Console", ParentName: "Dashboard", Path: "console", Component: "/dashboard/console", Title: "menus.dashboard.console", SortOrder: 1, Meta: usermodel.MetaJSON{"keepAlive": false, "fixedTab": true}},
-		{Name: "UserCenter", ParentName: "Dashboard", Path: "user-center", Component: "/system/user-center", Title: "menus.system.userCenter", SortOrder: 2, Meta: usermodel.MetaJSON{"isHide": true, "keepAlive": true, "isHideTab": true}},
+		{Name: "UserCenter", ParentName: "Dashboard", Path: "user-center", Component: "/system/user-center", Title: "menus.system.userCenter", SortOrder: 2, Meta: usermodel.MetaJSON{"isHide": true, "keepAlive": true, "isHideTab": true, "accessMode": "jwt"}},
 		{Name: "Role", ParentName: "System", Path: "role", Component: "/system/role", Title: "menus.system.role", SortOrder: 1, Meta: metaSuperAdmin},
 		{Name: "User", ParentName: "System", Path: "user", Component: "/system/user", Title: "menus.system.user", SortOrder: 2, Meta: metaSuperAdminAndAdmin},
 		{Name: "TeamRolesAndPermissions", ParentName: "TeamRoot", Path: "roles", Component: "/system/team-roles-permissions", Title: "menus.system.teamRolesAndPermissions", SortOrder: 3, Meta: metaTeamAccessOnly},
@@ -434,6 +452,7 @@ func DefaultMenus() []MenuSeed {
 		{Name: "ActionPermission", ParentName: "System", Path: "action-permission", Component: "/system/action-permission", Title: "功能权限", SortOrder: 5, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "ApiEndpoint", ParentName: "System", Path: "api-endpoint", Component: "/system/api-endpoint", Title: "API管理", SortOrder: 6, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "FeaturePackage", ParentName: "System", Path: "feature-package", Component: "/system/feature-package", Title: "功能包管理", SortOrder: 7, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "PageManagement", ParentName: "System", Path: "page", Component: "/system/page", Title: "页面管理", SortOrder: 8, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "TeamMembers", ParentName: "TeamRoot", Path: "members", Component: "/team/team-members", Title: "menus.system.teamMembers", SortOrder: 2, Meta: metaTeamAccessOnly},
 		{Name: "ResultSuccess", ParentName: "Result", Path: "success", Component: "/result/success", Title: "menus.result.success", Icon: "ri:checkbox-circle-line", SortOrder: 1, Meta: usermodel.MetaJSON{"keepAlive": true}},
 		{Name: "ResultFail", ParentName: "Result", Path: "fail", Component: "/result/fail", Title: "menus.result.fail", Icon: "ri:close-circle-line", SortOrder: 2, Meta: usermodel.MetaJSON{"keepAlive": true}},

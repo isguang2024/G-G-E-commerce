@@ -107,6 +107,38 @@ func (Menu) TableName() string {
 	return "menus"
 }
 
+type UIPage struct {
+	ID                uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	PageKey           string         `gorm:"type:varchar(150);not null" json:"page_key"`
+	Name              string         `gorm:"type:varchar(150);not null" json:"name"`
+	RouteName         string         `gorm:"type:varchar(150);not null" json:"route_name"`
+	RoutePath         string         `gorm:"type:varchar(255);not null" json:"route_path"`
+	Component         string         `gorm:"type:varchar(255);not null" json:"component"`
+	PageType          string         `gorm:"type:varchar(20);not null;default:'inner'" json:"page_type"`
+	Source            string         `gorm:"type:varchar(20);not null;default:'manual'" json:"source"`
+	ModuleKey         string         `gorm:"type:varchar(100);not null;default:''" json:"module_key"`
+	SortOrder         int            `gorm:"not null;default:0" json:"sort_order"`
+	ParentMenuID      *uuid.UUID     `gorm:"type:uuid" json:"parent_menu_id"`
+	ParentPageKey     string         `gorm:"type:varchar(150);not null;default:''" json:"parent_page_key"`
+	DisplayGroupKey   string         `gorm:"type:varchar(150);not null;default:''" json:"display_group_key"`
+	ActiveMenuPath    string         `gorm:"type:varchar(255);not null;default:''" json:"active_menu_path"`
+	BreadcrumbMode    string         `gorm:"type:varchar(20);not null;default:'inherit_menu'" json:"breadcrumb_mode"`
+	AccessMode        string         `gorm:"type:varchar(20);not null;default:'inherit'" json:"access_mode"`
+	PermissionKey     string         `gorm:"type:varchar(150);not null;default:''" json:"permission_key"`
+	InheritPermission bool           `gorm:"not null;default:true" json:"inherit_permission"`
+	KeepAlive         bool           `gorm:"not null;default:false" json:"keep_alive"`
+	IsFullPage        bool           `gorm:"not null;default:false" json:"is_full_page"`
+	Status            string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	Meta              MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"meta"`
+	CreatedAt         time.Time      `json:"created_at"`
+	UpdatedAt         time.Time      `json:"updated_at"`
+	DeletedAt         gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (UIPage) TableName() string {
+	return "ui_pages"
+}
+
 type PermissionGroup struct {
 	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	GroupType   string         `gorm:"type:varchar(20);not null" json:"group_type"`

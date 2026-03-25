@@ -336,6 +336,108 @@ declare namespace Api {
       team_ids: string[]
     }
 
+    interface PageMenuOptionItem {
+      id: string
+      name: string
+      title?: string
+      path?: string
+      children?: PageMenuOptionItem[]
+    }
+
+    interface PageItem {
+      id: string
+      pageKey: string
+      name: string
+      routeName: string
+      routePath: string
+      component: string
+      pageType: 'group' | 'display_group' | 'inner' | 'global' | string
+      source: 'seed' | 'sync' | 'manual' | string
+      moduleKey?: string
+      sortOrder?: number
+      parentMenuId?: string
+      parentMenuName?: string
+      parentPageKey?: string
+      parentPageName?: string
+      displayGroupKey?: string
+      displayGroupName?: string
+      activeMenuPath?: string
+      breadcrumbMode?: 'inherit_menu' | 'inherit_page' | 'custom' | string
+      accessMode?: 'inherit' | 'public' | 'jwt' | 'permission' | string
+      permissionKey?: string
+      inheritPermission?: boolean
+      keepAlive?: boolean
+      isFullPage?: boolean
+      isIframe?: boolean
+      isHideTab?: boolean
+      link?: string
+      status: 'normal' | 'suspended' | string
+      meta?: Record<string, any>
+      createdAt?: string
+      updatedAt?: string
+    }
+
+    interface PageUnregisteredItem {
+      filePath: string
+      component: string
+      pageKey: string
+      name: string
+      routeName: string
+      routePath: string
+      pageType: 'group' | 'display_group' | 'inner' | 'global' | string
+      moduleKey?: string
+      parentMenuId?: string
+      parentMenuName?: string
+      activeMenuPath?: string
+    }
+
+    interface PageSyncResult {
+      createdCount: number
+      skippedCount: number
+      createdKeys: string[]
+    }
+
+    interface PageBreadcrumbPreviewItem {
+      type: 'menu' | 'page' | string
+      title: string
+      path?: string
+      pageKey?: string
+    }
+
+    type PageList = Api.Common.PaginatedResponse<PageItem>
+
+    type PageSearchParams = Partial<
+      Pick<PageItem, 'pageType' | 'moduleKey' | 'accessMode' | 'source' | 'status'> &
+        Api.Common.CommonSearchParams & {
+          keyword?: string
+          parentMenuId?: string
+        }
+    >
+
+    interface PageSaveParams {
+      page_key: string
+      name: string
+      route_name: string
+      route_path: string
+      component: string
+      page_type?: 'group' | 'display_group' | 'inner' | 'global' | string
+      source?: 'seed' | 'sync' | 'manual' | string
+      module_key?: string
+      sort_order?: number
+      parent_menu_id?: string
+      parent_page_key?: string
+      display_group_key?: string
+      active_menu_path?: string
+      breadcrumb_mode?: 'inherit_menu' | 'inherit_page' | 'custom' | string
+      access_mode?: 'inherit' | 'public' | 'jwt' | 'permission' | string
+      permission_key?: string
+      inherit_permission?: boolean
+      keep_alive?: boolean
+      is_full_page?: boolean
+      status?: 'normal' | 'suspended' | string
+      meta?: Record<string, any>
+    }
+
     interface TeamFeaturePackageResponse {
       package_ids: string[]
       packages: FeaturePackageItem[]

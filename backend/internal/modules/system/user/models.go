@@ -10,6 +10,7 @@ type MetaJSON = models.MetaJSON
 type User = models.User
 type Role = models.Role
 type Menu = models.Menu
+type UIPage = models.UIPage
 type UserRole = models.UserRole
 type PermissionGroup = models.PermissionGroup
 type PermissionKey = models.PermissionKey

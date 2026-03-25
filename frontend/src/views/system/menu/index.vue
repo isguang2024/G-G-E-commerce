@@ -25,15 +25,6 @@
         <template #left>
           <div class="menu-toolbar">
             <div class="menu-filter-switches">
-              <ElTooltip
-                content="内页默认不显示在侧栏，仅通过按钮跳转；开启后可在列表中查看内页项"
-                placement="top"
-              >
-                <span class="inline-flex items-center gap-2">
-                  <span class="text-sm text-gray-600">显示内页</span>
-                  <ElSwitch v-model="showInnerPages" />
-                </span>
-              </ElTooltip>
               <span class="inline-flex items-center gap-2">
                 <span class="text-sm text-gray-600">显示隐藏</span>
                 <ElSwitch v-model="showHiddenMenus" />
@@ -114,7 +105,7 @@
             <ElTag v-if="row.meta?.keepAlive" size="small" effect="light" type="primary" class="mr-2">
               缓存
             </ElTag>
-            <ElTag v-if="!row.meta?.isInnerPage && row.meta?.isHide" size="small" effect="light" type="warning" class="mr-2">
+            <ElTag v-if="row.meta?.isHide" size="small" effect="light" type="warning" class="mr-2">
               隐藏
             </ElTag>
             <ElTag v-if="row.meta?.isIframe" size="small" effect="light" type="info" class="mr-2">
@@ -129,8 +120,11 @@
             <ElTag v-if="row.meta?.isFullPage" size="small" effect="light" type="primary" class="mr-2">
               全屏
             </ElTag>
+            <ElTag size="small" effect="light" :type="getAccessModeTag(row.meta?.accessMode)" class="mr-2">
+              {{ getAccessModeLabel(row.meta?.accessMode) }}
+            </ElTag>
             <ElTag
-              v-if="getMenuActionRequirement(row.meta).actions.length"
+              v-if="getMenuActionRequirement(row.meta).actions.length && `${row.meta?.accessMode || 'permission'}` === 'permission'"
               size="small"
               effect="light"
               type="info"
@@ -162,12 +156,10 @@
       <!-- 菜单弹窗 -->
       <MenuDialog
         v-model:visible="dialogVisible"
-        :type="dialogType"
         :editData="editData"
         :menuTree="tableData"
         :editingMenuId="editData?.id"
         :initialParentId="String(parentRowForAdd?.id ?? '')"
-        :lockType="lockMenuType"
         @submit="handleSubmit"
       />
 
@@ -224,7 +216,6 @@
   const loading = ref(false)
   const showSearchBar = ref(true)
   const isExpanded = ref(false)
-  const showInnerPages = ref(false)
   const showHiddenMenus = ref(true)
   const showIframeMenus = ref(true)
   const showEnabledMenus = ref(true)
@@ -244,10 +235,8 @@
   const appliedFilters = reactive({ ...initialSearchState })
   // --- 弹窗相关 ---
   const dialogVisible = ref(false)
-  const dialogType = ref<'menu' | 'inner'>('menu')
   const editData = ref<any>(null)
   const parentRowForAdd = ref<AppRouteRecord | null>(null)
-  const lockMenuType = ref(false)
   const actionRequirementVisible = ref(false)
   const actionRequirementData = ref<any>(null)
 
@@ -255,8 +244,7 @@
   const normalizeKeyword = (value?: string) => `${value || ''}`.trim().toLowerCase()
 
   const matchesMenuFilters = (item: AppRouteRecord) => {
-    if (!showInnerPages.value && item.meta?.isInnerPage) return false
-    if (!showHiddenMenus.value && !item.meta?.isInnerPage && item.meta?.isHide) return false
+    if (!showHiddenMenus.value && item.meta?.isHide) return false
     if (!showIframeMenus.value && item.meta?.isIframe) return false
     if (!showEnabledMenus.value && item.meta?.isEnable !== false) return false
     return true
@@ -347,13 +335,11 @@
 
   // --- 辅助方法 ---
   const getMenuTypeTag = (row: any) => {
-    if (row.meta?.isInnerPage) return 'warning'
     if (row.children?.length) return 'info'
     return 'primary'
   }
 
   const getMenuTypeText = (row: any) => {
-    if (row.meta?.isInnerPage) return '内页'
     if (row.children?.length) return '目录'
     return '菜单'
   }
@@ -363,6 +349,20 @@
     if (!requirement.actions.length) return ''
     const visibilityText = requirement.visibilityMode === 'show' ? '显示' : '隐藏'
     return `功能权限: 不满足${visibilityText}`
+  }
+
+  const getAccessModeLabel = (accessMode?: string) => {
+    const mode = `${accessMode || 'permission'}`.trim()
+    if (mode === 'jwt') return '登录可见'
+    if (mode === 'public') return '公开可见'
+    return '权限控制'
+  }
+
+  const getAccessModeTag = (accessMode?: string) => {
+    const mode = `${accessMode || 'permission'}`.trim()
+    if (mode === 'jwt') return 'warning'
+    if (mode === 'public') return 'success'
+    return 'info'
   }
 
   const getOperationList = (row: any): ButtonMoreItem[] => {
@@ -413,24 +413,18 @@
 
   // --- CRUD 操作 ---
   const handleAddMenu = () => {
-    dialogType.value = 'menu'
     editData.value = null
     parentRowForAdd.value = null
-    lockMenuType.value = true
     dialogVisible.value = true
   }
   const handleAddUnderRow = (row: any) => {
-    dialogType.value = 'menu'
     editData.value = null
     parentRowForAdd.value = row
-    lockMenuType.value = false
     dialogVisible.value = true
   }
   const handleEditMenu = (row: any) => {
-    dialogType.value = 'menu'
     editData.value = row
     parentRowForAdd.value = null
-    lockMenuType.value = true
     dialogVisible.value = true
   }
   const handleEditActionRequirement = (row: any) => {
@@ -468,12 +462,11 @@
   }
 
   const buildMenuMetaFromForm = (formData: any) => {
-    const isInner = formData.menuType === 'inner'
     const meta: Record<string, any> = {
       roles: formData.roles,
       isEnable: formData.isEnable,
       keepAlive: formData.keepAlive,
-      isHide: isInner ? true : !!formData.isHide,
+      isHide: !!formData.isHide,
       isHideTab: formData.isHideTab,
       isIframe: formData.isIframe,
       showBadge: formData.showBadge,
@@ -482,7 +475,7 @@
       activePath: formData.activePath || '',
       fixedTab: formData.fixedTab,
       isFullPage: formData.isFullPage,
-      isInnerPage: isInner
+      accessMode: formData.accessMode || 'permission'
     }
     if (formData.customParent?.trim()) {
       meta.customParent = formData.customParent.trim()

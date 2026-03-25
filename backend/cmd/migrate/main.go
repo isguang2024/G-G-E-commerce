@@ -168,6 +168,51 @@ func runNamedMigrations(logger *zap.Logger) error {
 
 	tasks := []migrationTask{
 		{
+			Name: "20260325_page_management_menu_seed",
+			Run: func(logger *zap.Logger) error {
+				if _, err := ensureDefaultMenuSeedByName("PageManagement"); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260325_page_management_menu_seed"))
+				return nil
+			},
+		},
+		{
+			Name: "20260325_page_management_menu_activate",
+			Run: func(logger *zap.Logger) error {
+				meta := usermodel.MetaJSON{
+					"roles":     []interface{}{"R_SUPER"},
+					"keepAlive": true,
+				}
+				if err := database.DB.Model(&usermodel.Menu{}).
+					Where("name = ?", "PageManagement").
+					Updates(map[string]interface{}{
+						"path":       "page",
+						"component":  "/system/page",
+						"title":      "页面管理",
+						"sort_order": 8,
+						"meta":       meta,
+					}).Error; err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260325_page_management_menu_activate"))
+				return nil
+			},
+		},
+		{
+			Name: "20260325_menu_access_mode_jwt_defaults",
+			Run: func(logger *zap.Logger) error {
+				targetMenus := []string{"Dashboard", "Result", "Exception", "UserCenter"}
+				for _, menuName := range targetMenus {
+					if err := ensureMenuAccessMode(menuName, "jwt"); err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260325_menu_access_mode_jwt_defaults"))
+				return nil
+			},
+		},
+		{
 			Name: "20260325_permission_endpoint_binding_ops",
 			Run: func(logger *zap.Logger) error {
 				permissionKey := "system.permission.manage"
@@ -1717,6 +1762,27 @@ func initDefaultMenusNoScope(logger *zap.Logger) error {
 	return nil
 }
 
+func ensureDefaultMenuSeedByName(name string) (*usermodel.Menu, error) {
+	targetName := strings.TrimSpace(name)
+	if targetName == "" {
+		return nil, fmt.Errorf("menu seed name is required")
+	}
+
+	for _, spec := range permissionseed.DefaultMenus() {
+		if spec.Name != targetName {
+			continue
+		}
+		if spec.ParentName != "" {
+			if _, err := ensureDefaultMenuSeedByName(spec.ParentName); err != nil {
+				return nil, err
+			}
+		}
+		return ensureMenuSeed(spec)
+	}
+
+	return nil, fmt.Errorf("default menu seed not found: %s", targetName)
+}
+
 func ensureMenuSeed(spec permissionseed.MenuSeed) (*usermodel.Menu, error) {
 	var existing usermodel.Menu
 	if err := database.DB.Where("name = ?", spec.Name).First(&existing).Error; err == nil {
@@ -1748,6 +1814,35 @@ func ensureMenuSeed(spec permissionseed.MenuSeed) (*usermodel.Menu, error) {
 		return nil, err
 	}
 	return menu, nil
+}
+
+func ensureMenuAccessMode(menuName, accessMode string) error {
+	targetName := strings.TrimSpace(menuName)
+	targetMode := strings.TrimSpace(strings.ToLower(accessMode))
+	if targetName == "" {
+		return fmt.Errorf("menu name is required")
+	}
+	if targetMode != "permission" && targetMode != "jwt" && targetMode != "public" {
+		return fmt.Errorf("invalid access mode: %s", accessMode)
+	}
+
+	var menu usermodel.Menu
+	if err := database.DB.Where("name = ?", targetName).First(&menu).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	meta := menu.Meta
+	if meta == nil {
+		meta = usermodel.MetaJSON{}
+	}
+	if current := strings.TrimSpace(strings.ToLower(fmt.Sprintf("%v", meta["accessMode"]))); current == targetMode {
+		return nil
+	}
+	meta["accessMode"] = targetMode
+	return database.DB.Model(&menu).Update("meta", meta).Error
 }
 
 func cleanupDeprecatedMenus(logger *zap.Logger) error {

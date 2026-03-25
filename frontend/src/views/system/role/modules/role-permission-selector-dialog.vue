@@ -43,10 +43,6 @@
                   class="toolbar-search"
                 />
                 <span class="toolbar-switch">
-                  <span class="toolbar-switch__label">显示内页</span>
-                  <ElSwitch v-model="showInnerMenus" size="small" />
-                </span>
-                <span class="toolbar-switch">
                   <span class="toolbar-switch__label">显示隐藏</span>
                   <ElSwitch v-model="showHiddenMenus" size="small" />
                 </span>
@@ -252,7 +248,6 @@ interface RoleMenuNode {
   id: string
   label: string
   path?: string
-  isInnerPage?: boolean
   isHide?: boolean
   isIframe?: boolean
   isEnable?: boolean
@@ -261,7 +256,6 @@ interface RoleMenuNode {
 
 interface MenuOption extends CascaderOption {
   path?: string
-  isInnerPage?: boolean
   isHide?: boolean
   isIframe?: boolean
   isEnable?: boolean
@@ -306,7 +300,6 @@ const menuPanelRef = ref<any>()
 const actionPanelRef = ref<any>()
 
 const menuKeyword = ref('')
-const showInnerMenus = ref(true)
 const showHiddenMenus = ref(true)
 const showIframeMenus = ref(true)
 const showEnabledMenus = ref(true)
@@ -489,8 +482,7 @@ const filteredMenuOptions = computed(() => {
       return (node.availableLeafCount || 0) > 0 && !keyword
     }
     if (!availableMenuIdSet.value.has(`${node.value || ''}`)) return false
-    if (!showInnerMenus.value && node.isInnerPage) return false
-    if (!showHiddenMenus.value && !node.isInnerPage && node.isHide) return false
+    if (!showHiddenMenus.value && node.isHide) return false
     if (!showIframeMenus.value && node.isIframe) return false
     if (!showEnabledMenus.value && node.isEnable !== false) return false
     if (keyword && !`${node.label || ''} ${node.path || ''}`.toLowerCase().includes(keyword)) return false
@@ -521,7 +513,7 @@ watch(
 )
 
 watch(
-  [menuKeyword, showInnerMenus, showHiddenMenus, showIframeMenus, showEnabledMenus, menuTreeData],
+  [menuKeyword, showHiddenMenus, showIframeMenus, showEnabledMenus, menuTreeData],
   async () => {
     await nextTick()
     ensureExpandedMenus(menuPanelRef.value, selectedMenuNodeValues.value)
@@ -595,7 +587,6 @@ function normalizeMenus(items: any[]): RoleMenuNode[] {
     id: `${item.id}`,
     label: item.meta?.title || item.name || item.path || '未命名菜单',
     path: item.path || '',
-    isInnerPage: Boolean(item.meta?.isInnerPage),
     isHide: Boolean(item.meta?.isHide),
     isIframe: Boolean(item.meta?.isIframe),
     isEnable: item.meta?.isEnable !== false,
@@ -616,7 +607,6 @@ function normalizeMenuOptions(items: RoleMenuNode[]): MenuOption[] {
       value: item.id,
       label: item.label,
       path: item.path || '',
-      isInnerPage: item.isInnerPage,
       isHide: item.isHide,
       isIframe: item.isIframe,
       isEnable: item.isEnable,

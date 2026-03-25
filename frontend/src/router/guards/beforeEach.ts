@@ -36,6 +36,7 @@
  * @author Art Design Pro Team
  */
 import type { Router, RouteLocationNormalized, NavigationGuardNext } from 'vue-router'
+import type { AppRouteRecord } from '@/types/router'
 import { nextTick } from 'vue'
 import NProgress from 'nprogress'
 import { useSettingStore } from '@/store/modules/setting'
@@ -50,16 +51,25 @@ import { useCommon } from '@/hooks/core/useCommon'
 import { useWorktabStore } from '@/store/modules/worktab'
 import { hasPlatformAccessByUserInfo, useTenantStore } from '@/store/modules/tenant'
 import { fetchGetUserInfo } from '@/api/auth'
+import { fetchGetRuntimePageList } from '@/api/system-manage'
 import { ApiStatus } from '@/utils/http/status'
 import { isHttpError } from '@/utils/http/error'
-import { RouteRegistry, MenuProcessor, IframeRouteManager, RoutePermissionValidator } from '../core'
+import {
+  RouteRegistry,
+  MenuProcessor,
+  IframeRouteManager,
+  RoutePermissionValidator,
+  ManagedPageProcessor
+} from '../core'
 import { hasMenuActionAccess, shouldHideMenuWhenActionDenied } from '@/utils/permission/menu'
 
 // 路由注册器实例
 let routeRegistry: RouteRegistry | null = null
+let routeRegistrationMode: 'none' | 'public' | 'authenticated' = 'none'
 
 // 菜单处理器实例
 const menuProcessor = new MenuProcessor()
+const managedPageProcessor = new ManagedPageProcessor()
 
 // 跟踪是否需要关闭 loading
 let pendingLoading = false
@@ -70,6 +80,24 @@ let routeInitFailed = false
 
 // 路由初始化进行中标记，防止并发请求
 let routeInitInProgress = false
+
+async function buildRegisteredRouteList(menuList: AppRouteRecord[]): Promise<AppRouteRecord[]> {
+  const baseMenus = Array.isArray(menuList) ? menuList : []
+
+  try {
+    const runtimeRes = await fetchGetRuntimePageList()
+    const userStore = useUserStore()
+    const runtimeRoutes = managedPageProcessor.buildRoutes(
+      baseMenus,
+      runtimeRes.records || [],
+      userStore.getUserInfo as Api.Auth.UserInfo
+    )
+    return [...baseMenus, ...runtimeRoutes]
+  } catch (error) {
+    console.error('[RouteGuard] 获取运行时页面注册表失败，已回退为纯菜单路由:', error)
+    return baseMenus
+  }
+}
 
 /**
  * 获取 pendingLoading 状态
@@ -98,6 +126,7 @@ export function getRouteInitFailed(): boolean {
 export function resetRouteInitState(): void {
   routeInitFailed = false
   routeInitInProgress = false
+  routeRegistrationMode = 'none'
 }
 
 /**
@@ -108,9 +137,10 @@ export async function refreshUserMenus(): Promise<void> {
   const menuStore = useMenuStore()
   try {
     const list = await menuProcessor.getMenuList()
-    if (!menuProcessor.validateMenuList(list)) return
+    const registeredRoutes = await buildRegisteredRouteList(list)
     routeRegistry.unregister()
-    routeRegistry.register(list)
+    routeRegistry.register(registeredRoutes)
+    routeRegistrationMode = 'authenticated'
     menuStore.setMenuList(list)
     menuStore.clearRemoveRouteFns()
     menuStore.addRemoveRouteFns(routeRegistry.getRemoveRouteFns())
@@ -198,6 +228,21 @@ async function handleRouteGuard(
     NProgress.start()
   }
 
+  // 0. 未登录时，先尝试注册公开运行时页面
+  if (!userStore.isLogin && !isStaticRoute(to.path) && to.path !== RoutesAlias.Login) {
+    const alreadyMatchedPublicRoute = isPublicRuntimeRoute(to)
+    const matchedPublicRoute = await ensurePublicRuntimeRoutes(to, router)
+    if (matchedPublicRoute && !alreadyMatchedPublicRoute) {
+      next({
+        path: to.path,
+        query: to.query,
+        hash: to.hash,
+        replace: true
+      })
+      return
+    }
+  }
+
   // 1. 检查登录状态
   if (!handleLoginStatus(to, userStore, next)) {
     return
@@ -216,7 +261,7 @@ async function handleRouteGuard(
   }
 
   // 3. 处理动态路由注册
-  if (!routeRegistry?.isRegistered() && userStore.isLogin) {
+  if (userStore.isLogin && routeRegistrationMode !== 'authenticated') {
     // 防止并发请求（快速连续导航场景）
     if (routeInitInProgress) {
       // 正在初始化中，等待完成后重新导航
@@ -259,7 +304,12 @@ function handleLoginStatus(
   next: NavigationGuardNext
 ): boolean {
   // 已登录或访问登录页或静态路由，直接放行
-  if (userStore.isLogin || to.path === RoutesAlias.Login || isStaticRoute(to.path)) {
+  if (
+    userStore.isLogin ||
+    to.path === RoutesAlias.Login ||
+    isStaticRoute(to.path) ||
+    isPublicRuntimeRoute(to)
+  ) {
     return true
   }
 
@@ -270,6 +320,50 @@ function handleLoginStatus(
     query: { redirect: to.fullPath }
   })
   return false
+}
+
+async function ensurePublicRuntimeRoutes(
+  to: RouteLocationNormalized,
+  router: Router
+): Promise<boolean> {
+  if (!routeRegistry) {
+    return false
+  }
+  if (routeRegistrationMode === 'authenticated') {
+    return isPublicRuntimeRoute(to)
+  }
+  if (routeRegistrationMode === 'public' && isPublicRuntimeRoute(to)) {
+    return true
+  }
+  if (routeRegistrationMode === 'public') {
+    routeRegistry.unregister()
+    routeRegistrationMode = 'none'
+  }
+  try {
+    const runtimeRes = await fetchGetRuntimePageList()
+    const publicRoutes = managedPageProcessor.buildRoutes([], runtimeRes.records || [], null)
+    routeRegistry.register(publicRoutes)
+    routeRegistrationMode = 'public'
+    const resolved = router.resolve({
+      path: to.path,
+      query: to.query,
+      hash: to.hash
+    })
+    return resolved.matched.some(
+      (record) => Boolean(record.meta?.isInnerPage) && `${record.meta?.accessMode || ''}`.trim() === 'public'
+    )
+  } catch (error) {
+    console.error('[RouteGuard] 注册公开运行时页面失败:', error)
+    routeRegistry?.unregister()
+    routeRegistrationMode = 'none'
+    return false
+  }
+}
+
+function isPublicRuntimeRoute(to: RouteLocationNormalized): boolean {
+  return to.matched.some(
+    (record) => Boolean(record.meta?.isInnerPage) && `${record.meta?.accessMode || ''}`.trim() === 'public'
+  )
 }
 
 /**
@@ -318,10 +412,13 @@ async function handleDynamicRoutes(
 
     // 2. 获取菜单数据
     const menuList = await menuProcessor.getMenuList()
+    const registeredRoutes = await buildRegisteredRouteList(menuList)
 
     // 3. 验证菜单数据
     // 4. 注册动态路由
-    routeRegistry?.register(menuList)
+    routeRegistry?.unregister()
+    routeRegistry?.register(registeredRoutes)
+    routeRegistrationMode = 'authenticated'
 
     // 5. 保存菜单数据到 store
     const menuStore = useMenuStore()
@@ -338,7 +435,7 @@ async function handleDynamicRoutes(
     const { homePath } = useCommon()
     const { path: validatedPath, hasPermission } = RoutePermissionValidator.validatePath(
       to.path,
-      menuList,
+      registeredRoutes,
       homePath.value || '/403'
     )
 

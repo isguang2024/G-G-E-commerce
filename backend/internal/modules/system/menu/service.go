@@ -3,6 +3,7 @@ package menu
 import (
 	"encoding/json"
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -59,12 +60,41 @@ func (s *menuService) mergeSystemMenuIDs(flat []user.Menu, allowed []uuid.UUID) 
 	for _, id := range allowed {
 		set[id] = struct{}{}
 	}
-	// 移除自动添加所有系统菜单的逻辑，只保留用户有权限的菜单
+
+	// 对 jwt/public 菜单做默认放行，不依赖功能权限分配。
+	for _, menu := range flat {
+		accessMode := menuAccessMode(menu.Meta)
+		if accessMode == "jwt" || accessMode == "public" {
+			set[menu.ID] = struct{}{}
+		}
+	}
+
 	out := make([]uuid.UUID, 0, len(set))
 	for id := range set {
 		out = append(out, id)
 	}
 	return out
+}
+
+func menuAccessMode(meta map[string]interface{}) string {
+	if meta == nil {
+		return "permission"
+	}
+	raw, ok := meta["accessMode"]
+	if !ok {
+		return "permission"
+	}
+	value, ok := raw.(string)
+	if !ok {
+		return "permission"
+	}
+	value = strings.TrimSpace(strings.ToLower(value))
+	switch value {
+	case "public", "jwt", "permission":
+		return value
+	default:
+		return "permission"
+	}
 }
 
 func (s *menuService) visibleMenuIDs(flat []user.Menu, allowed []uuid.UUID) map[uuid.UUID]struct{} {

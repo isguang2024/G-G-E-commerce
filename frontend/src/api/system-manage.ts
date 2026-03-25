@@ -8,6 +8,7 @@ const FEATURE_PACKAGE_BASE = '/api/v1/feature-packages'
 const TENANT_BASE = '/api/v1/tenants'
 const SYSTEM_BASE = '/api/v1/system'
 const API_ENDPOINT_BASE = '/api/v1/api-endpoints'
+const PAGE_BASE = '/api/v1/pages'
 
 function normalizePermissionKey(value?: string) {
   const target = `${value || ''}`.trim()
@@ -48,7 +49,8 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
     module === 'permission_action' ||
     module === 'permission_key' ||
     module === 'api_endpoint' ||
-    module === 'feature_package'
+    module === 'feature_package' ||
+    module === 'page'
   ) {
     return 'platform'
   }
@@ -166,6 +168,79 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
     createdAt: item?.created_at || item?.createdAt || '',
     updatedAt: item?.updated_at || item?.updatedAt || ''
+  }
+}
+
+function normalizePageItem(item: any): Api.SystemManage.PageItem {
+  const meta = item?.meta || {}
+  return {
+    id: item?.id || '',
+    pageKey: item?.page_key || item?.pageKey || '',
+    name: item?.name || '',
+    routeName: item?.route_name || item?.routeName || '',
+    routePath: item?.route_path || item?.routePath || '',
+    component: item?.component || '',
+    pageType: item?.page_type || item?.pageType || 'inner',
+    source: item?.source || 'manual',
+    moduleKey: item?.module_key || item?.moduleKey || '',
+    sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
+    parentMenuId: item?.parent_menu_id || item?.parentMenuId || '',
+    parentMenuName: item?.parent_menu_name || item?.parentMenuName || '',
+    parentPageKey: item?.parent_page_key || item?.parentPageKey || '',
+    parentPageName: item?.parent_page_name || item?.parentPageName || '',
+    displayGroupKey: item?.display_group_key || item?.displayGroupKey || '',
+    displayGroupName: item?.display_group_name || item?.displayGroupName || '',
+    activeMenuPath: item?.active_menu_path || item?.activeMenuPath || '',
+    breadcrumbMode: item?.breadcrumb_mode || item?.breadcrumbMode || 'inherit_menu',
+    accessMode: item?.access_mode || item?.accessMode || 'inherit',
+    permissionKey: item?.permission_key || item?.permissionKey || '',
+    inheritPermission: Boolean(item?.inherit_permission ?? item?.inheritPermission ?? true),
+    keepAlive: Boolean(item?.keep_alive ?? item?.keepAlive ?? false),
+    isFullPage: Boolean(item?.is_full_page ?? item?.isFullPage ?? false),
+    isIframe: Boolean(meta?.isIframe ?? item?.is_iframe ?? item?.isIframe ?? false),
+    isHideTab: Boolean(meta?.isHideTab ?? item?.is_hide_tab ?? item?.isHideTab ?? false),
+    link: `${meta?.link || item?.link || ''}`.trim(),
+    status: item?.status || 'normal',
+    meta,
+    createdAt: item?.created_at || item?.createdAt || '',
+    updatedAt: item?.updated_at || item?.updatedAt || ''
+  }
+}
+
+function normalizePageMenuOption(item: any): Api.SystemManage.PageMenuOptionItem {
+  return {
+    id: item?.id || '',
+    name: item?.name || '',
+    title: item?.title || '',
+    path: item?.path || '',
+    children: Array.isArray(item?.children) ? item.children.map(normalizePageMenuOption) : []
+  }
+}
+
+function normalizePageUnregisteredItem(item: any): Api.SystemManage.PageUnregisteredItem {
+  return {
+    filePath: item?.file_path || item?.filePath || '',
+    component: item?.component || '',
+    pageKey: item?.page_key || item?.pageKey || '',
+    name: item?.name || '',
+    routeName: item?.route_name || item?.routeName || '',
+    routePath: item?.route_path || item?.routePath || '',
+    pageType: item?.page_type || item?.pageType || 'inner',
+    moduleKey: item?.module_key || item?.moduleKey || '',
+    parentMenuId: item?.parent_menu_id || item?.parentMenuId || '',
+    parentMenuName: item?.parent_menu_name || item?.parentMenuName || '',
+    activeMenuPath: item?.active_menu_path || item?.activeMenuPath || ''
+  }
+}
+
+function normalizePageBreadcrumbPreviewItem(
+  item: any
+): Api.SystemManage.PageBreadcrumbPreviewItem {
+  return {
+    type: item?.type || 'page',
+    title: item?.title || '',
+    path: item?.path || '',
+    pageKey: item?.page_key || item?.pageKey || ''
   }
 }
 
@@ -735,6 +810,129 @@ export function fetchSetTeamFeaturePackages(
     url: `${FEATURE_PACKAGE_BASE}/teams/${teamId}`,
     data: payload
   })
+}
+
+/** 获取页面列表 */
+export function fetchGetPageList(params: Api.SystemManage.PageSearchParams) {
+  const normalizedParams = {
+    current: params?.current,
+    size: params?.size,
+    keyword: params?.keyword,
+    page_type: params?.pageType,
+    module_key: params?.moduleKey,
+    parent_menu_id: params?.parentMenuId,
+    access_mode: params?.accessMode,
+    source: params?.source,
+    status: params?.status
+  }
+  return request
+    .get<Api.SystemManage.PageList>({
+      url: PAGE_BASE,
+      params: normalizedParams
+    })
+    .then((res) => ({
+      ...res,
+      records: (res?.records || []).map(normalizePageItem)
+    }))
+}
+
+/** 获取运行时页面注册表 */
+export function fetchGetRuntimePageList() {
+  return request
+    .get<{ records: Api.SystemManage.PageItem[]; total: number }>({
+      url: `${PAGE_BASE}/runtime`
+    })
+    .then((res) => ({
+      records: (res?.records || []).map(normalizePageItem),
+      total: res?.total || 0
+    }))
+}
+
+/** 获取未注册页面 */
+export function fetchGetPageUnregisteredList() {
+  return request
+    .get<{ records: Api.SystemManage.PageUnregisteredItem[]; total: number }>({
+      url: `${PAGE_BASE}/unregistered`
+    })
+    .then((res) => ({
+      records: (res?.records || []).map(normalizePageUnregisteredItem),
+      total: res?.total || 0
+    }))
+}
+
+/** 同步页面注册表 */
+export function fetchSyncPages() {
+  return request
+    .post<
+      Api.SystemManage.PageSyncResult & {
+        created_count?: number
+        skipped_count?: number
+        created_keys?: string[]
+      }
+    >({
+      url: `${PAGE_BASE}/sync`
+    })
+    .then((res) => ({
+      createdCount: res?.createdCount ?? res?.created_count ?? 0,
+      skippedCount: res?.skippedCount ?? res?.skipped_count ?? 0,
+      createdKeys: res?.createdKeys || res?.created_keys || []
+    }))
+}
+
+/** 预览页面面包屑 */
+export function fetchGetPageBreadcrumbPreview(id: string) {
+  return request
+    .get<{ items: Api.SystemManage.PageBreadcrumbPreviewItem[]; total: number }>({
+      url: `${PAGE_BASE}/${id}/breadcrumb-preview`
+    })
+    .then((res) => ({
+      items: (res?.items || []).map(normalizePageBreadcrumbPreviewItem),
+      total: res?.total || 0
+    }))
+}
+
+/** 获取页面详情 */
+export function fetchGetPage(id: string) {
+  return request
+    .get<Api.SystemManage.PageItem>({
+      url: `${PAGE_BASE}/${id}`
+    })
+    .then((res) => normalizePageItem(res))
+}
+
+/** 创建页面 */
+export function fetchCreatePage(data: Api.SystemManage.PageSaveParams) {
+  return request.post<Api.SystemManage.PageItem>({
+    url: PAGE_BASE,
+    data
+  })
+}
+
+/** 更新页面 */
+export function fetchUpdatePage(id: string, data: Api.SystemManage.PageSaveParams) {
+  return request.put<Api.SystemManage.PageItem>({
+    url: `${PAGE_BASE}/${id}`,
+    data
+  })
+}
+
+/** 删除页面 */
+export function fetchDeletePage(id: string) {
+  return request.del<void>({
+    url: `${PAGE_BASE}/${id}`
+  })
+}
+
+/** 获取页面上级菜单候选 */
+export function fetchGetPageMenuOptions() {
+  return request
+    .get<{ records: Api.SystemManage.PageMenuOptionItem[]; total: number }>({
+      url: `${PAGE_BASE}/menu-options`
+    })
+    .then((res) => ({
+      records: (res?.records || []).map(normalizePageMenuOption),
+      total: res?.total || 0
+    }))
 }
 
 /** 获取 API 注册表 */

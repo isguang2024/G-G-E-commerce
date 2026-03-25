@@ -11,6 +11,14 @@ interface MenuActionRequirement {
   visibilityMode: ActionVisibilityMode
 }
 
+function normalizeAccessMode(meta: MenuPermissionMeta): 'public' | 'jwt' | 'permission' {
+  const value = `${meta?.accessMode || ''}`.trim().toLowerCase()
+  if (value === 'public' || value === 'jwt' || value === 'permission') {
+    return value
+  }
+  return 'permission'
+}
+
 function normalizeActionList(meta: MenuPermissionMeta): string[] {
   const actions: string[] = []
   const requiredAction = `${meta?.requiredAction || ''}`.trim()
@@ -42,6 +50,10 @@ export function hasMenuActionAccess(
   userInfo: Partial<Api.Auth.UserInfo> | null | undefined,
   meta: MenuPermissionMeta
 ): boolean {
+  const accessMode = normalizeAccessMode(meta)
+  if (accessMode === 'public' || accessMode === 'jwt') {
+    return true
+  }
   const requirement = getMenuActionRequirement(meta)
   if (!requirement.actions.length) {
     return true
@@ -56,5 +68,9 @@ export function hasMenuActionAccess(
 }
 
 export function shouldHideMenuWhenActionDenied(meta: MenuPermissionMeta): boolean {
+  const accessMode = normalizeAccessMode(meta)
+  if (accessMode === 'public' || accessMode === 'jwt') {
+    return false
+  }
   return getMenuActionRequirement(meta).visibilityMode !== 'show'
 }

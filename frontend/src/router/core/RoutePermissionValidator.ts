@@ -36,7 +36,12 @@ export class RoutePermissionValidator {
     if (targetPath === '/') return true
 
     const pathSet = this.buildMenuPathSet(menuList)
-    return pathSet.has(targetPath) || this.checkPathPrefix(targetPath, pathSet)
+    for (const routePath of pathSet) {
+      if (this.matchRoutePath(targetPath, routePath)) {
+        return true
+      }
+    }
+    return false
   }
 
   /**
@@ -56,6 +61,9 @@ export class RoutePermissionValidator {
     for (const menuItem of menuList) {
       // 跳过隐藏的菜单项，但允许内页路由
       if ((menuItem.meta?.isHide && !menuItem.meta?.isInnerPage) || !menuItem.path) {
+        continue
+      }
+      if (/^https?:\/\//i.test(menuItem.path)) {
         continue
       }
 
@@ -87,6 +95,39 @@ export class RoutePermissionValidator {
       }
     }
     return false
+  }
+
+  private static matchRoutePath(targetPath: string, routePath: string): boolean {
+    const normalizedTarget = this.normalizePath(targetPath)
+    const normalizedRoute = this.normalizePath(routePath)
+
+    if (!normalizedTarget || !normalizedRoute) {
+      return false
+    }
+    if (normalizedTarget === normalizedRoute) {
+      return true
+    }
+    if (!this.hasDynamicSegment(normalizedRoute) && normalizedTarget.startsWith(`${normalizedRoute}/`)) {
+      return true
+    }
+    if (!this.hasDynamicSegment(normalizedRoute)) {
+      return false
+    }
+
+    const pattern = normalizedRoute
+      .replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+      .replace(/\/:([^/]+)/g, '/[^/]+')
+      .replace(/\/\*([^/]*)/g, '/.*')
+    return new RegExp(`^${pattern}$`).test(normalizedTarget)
+  }
+
+  private static hasDynamicSegment(routePath: string): boolean {
+    return /\/:|\/\*/.test(routePath)
+  }
+
+  private static normalizePath(path: string): string {
+    const normalized = `/${String(path || '').replace(/^\/+/, '')}`.replace(/\/+/g, '/')
+    return normalized !== '/' ? normalized.replace(/\/$/, '') : normalized
   }
 
   /**

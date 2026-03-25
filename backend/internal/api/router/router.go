@@ -12,6 +12,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/featurepackage"
 	"github.com/gg-ecommerce/backend/internal/modules/system/media"
 	"github.com/gg-ecommerce/backend/internal/modules/system/menu"
+	"github.com/gg-ecommerce/backend/internal/modules/system/page"
 	"github.com/gg-ecommerce/backend/internal/modules/system/permission"
 	"github.com/gg-ecommerce/backend/internal/modules/system/role"
 	"github.com/gg-ecommerce/backend/internal/modules/system/system"
@@ -39,6 +40,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 	authModule := auth.NewAuthModule(db, cfg, logger)
 	userModule := user.NewUserModule(db, cfg, logger)
 	menuModule := menu.NewMenuModule(db, cfg, logger)
+	pageModule := page.NewModule(db, cfg, logger)
 	permissionModule := permission.NewPermissionModule(db, cfg, logger)
 	featurePackageModule := featurepackage.NewModule(db, cfg, logger)
 	roleModule := role.NewRoleModule(db, cfg, logger)
@@ -57,12 +59,14 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 	v1 := r.Group("/api/v1")
 	{
 		authModule.RegisterRoutes(v1)
+		pageModule.RegisterPublicRoutes(v1)
 
 		authenticated := v1.Group("")
 		authenticated.Use(auth.JWTAuth(cfg.JWT.Secret))
 		{
 			userModule.RegisterRoutes(authenticated)
 			menuModule.RegisterRoutes(authenticated)
+			pageModule.RegisterRoutes(authenticated)
 			permissionModule.RegisterRoutes(authenticated)
 			featurePackageModule.RegisterRoutes(authenticated)
 			roleModule.RegisterRoutes(authenticated)
