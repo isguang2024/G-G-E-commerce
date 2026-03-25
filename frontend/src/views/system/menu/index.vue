@@ -21,8 +21,9 @@
         v-model:columns="columnChecks"
         v-model:showSearchBar="showSearchBar"
         @refresh="handleRefresh"
-        >
-          <template #left>
+      >
+        <template #left>
+          <div class="menu-toolbar">
             <div class="menu-filter-switches">
               <ElTooltip
                 content="内页默认不显示在侧栏，仅通过按钮跳转；开启后可在列表中查看内页项"
@@ -46,20 +47,33 @@
                 <ElSwitch v-model="showEnabledMenus" />
               </span>
             </div>
-            <ElTooltip content="创建菜单" placement="top">
-              <ElButton v-action="'system.menu.manage'" type="primary" @click="handleAddMenu" v-ripple class="ml-2">
-                创建菜单
-            </ElButton>
-          </ElTooltip>
-          <ElButton @click="toggleExpand" v-ripple class="ml-2">
-            {{ isExpanded ? '收起' : '展开' }}
-          </ElButton>
-          <ElTooltip content="备份菜单" placement="top">
-            <ElButton v-action="'system.menu.backup'" @click="handleBackupMenu" v-ripple class="ml-2"> 备份 </ElButton>
-          </ElTooltip>
-          <ElTooltip content="管理备份" placement="top">
-            <ElButton v-action="'system.menu.backup'" @click="handleManageBackups" v-ripple class="ml-2"> 管理备份 </ElButton>
-          </ElTooltip>
+
+            <div class="menu-toolbar-actions">
+              <ElTooltip content="创建菜单" placement="top">
+                <ElButton
+                  v-action="'system.menu.manage'"
+                  type="primary"
+                  @click="handleAddMenu"
+                  v-ripple
+                >
+                  创建菜单
+                </ElButton>
+              </ElTooltip>
+              <ElButton @click="toggleExpand" v-ripple>
+                {{ isExpanded ? '收起' : '展开' }}
+              </ElButton>
+              <ElTooltip content="备份菜单" placement="top">
+                <ElButton v-action="'system.menu.backup'" @click="handleBackupMenu" v-ripple>
+                  备份
+                </ElButton>
+              </ElTooltip>
+              <ElTooltip content="管理备份" placement="top">
+                <ElButton v-action="'system.menu.backup'" @click="handleManageBackups" v-ripple>
+                  管理备份
+                </ElButton>
+              </ElTooltip>
+            </div>
+          </div>
         </template>
       </ArtTableHeader>
 
@@ -163,77 +177,32 @@
         @submit="handleActionRequirementSubmit"
       />
 
-      <!-- 备份菜单弹窗 -->
-      <ElDialog v-model="backupDialogVisible" title="备份菜单" width="500px">
-        <ElForm :model="{ name: backupName, description: backupDescription }" label-width="80px">
-          <ElFormItem label="备份名称" required>
-            <ElInput v-model="backupName" placeholder="请输入备份名称" />
-          </ElFormItem>
-          <ElFormItem label="备份描述">
-            <ElInput
-              v-model="backupDescription"
-              type="textarea"
-              placeholder="请输入备份描述"
-              :rows="3"
-            />
-          </ElFormItem>
-        </ElForm>
-        <template #footer>
-          <span class="dialog-footer">
-            <ElButton @click="backupDialogVisible = false">取消</ElButton>
-            <ElButton type="primary" @click="handleCreateBackup" :loading="backupLoading">
-              确认备份
-            </ElButton>
-          </span>
-        </template>
-      </ElDialog>
+      <MenuBackupDialog
+        v-model="backupDialogVisible"
+        :loading="backupLoading"
+        @submit="handleCreateBackup"
+      />
 
-      <!-- 管理备份弹窗 -->
-      <ElDialog v-model="backupListDialogVisible" title="管理备份" width="800px" class="backup-dialog">
-        <div class="backup-list-container">
-          <ElTable v-loading="backupLoading" :data="backupList" style="width: 100%" border stripe>
-            <ElTableColumn prop="name" label="备份名称" width="200">
-              <template #default="{ row }">
-                <span class="font-medium">{{ row.name }}</span>
-              </template>
-            </ElTableColumn>
-            <ElTableColumn prop="description" label="备份描述">
-              <template #default="{ row }">
-                <span class="text-gray-600">{{ row.description || '-' }}</span>
-              </template>
-            </ElTableColumn>
-            <ElTableColumn prop="created_at" label="创建时间" width="200" />
-            <ElTableColumn prop="created_by" label="创建人" width="150">
-              <template #default="{ row }">
-                <span class="text-gray-600">{{ row.created_by || '系统' }}</span>
-              </template>
-            </ElTableColumn>
-            <ElTableColumn label="操作" width="72" fixed="right" align="center">
-              <template #default="{ row }">
-                <ArtButtonMore
-                  :list="getBackupOperationList()"
-                  @click="(item) => handleBackupOperation(item, row)"
-                />
-              </template>
-            </ElTableColumn>
-          </ElTable>
-          <div v-if="backupList.length === 0" class="empty-backup">
-            <ElEmpty description="暂无备份数据" />
-          </div>
-        </div>
-      </ElDialog>
+      <MenuBackupListDialog
+        v-model="backupListDialogVisible"
+        :loading="backupLoading"
+        :items="backupList"
+        @action="handleBackupListAction"
+      />
     </ElCard>
   </div>
 </template>
 
 <script setup lang="ts">
-  import { onMounted, ref, reactive, watch, nextTick } from 'vue'
+  import { computed, onMounted, ref, reactive, nextTick } from 'vue'
   import { formatMenuTitle } from '@/utils/router'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
   import type { AppRouteRecord } from '@/types/router'
   import MenuDialog from './modules/menu-dialog.vue'
+  import MenuBackupDialog from './modules/menu-backup-dialog.vue'
+  import MenuBackupListDialog from './modules/menu-backup-list-dialog.vue'
   import MenuPermissionDialog from './modules/menu-permission-dialog.vue'
   import MenuSearch from './modules/menu-search.vue'
   import {
@@ -260,15 +229,13 @@
   const showIframeMenus = ref(true)
   const showEnabledMenus = ref(true)
   const tableRef = ref()
-  const tableData = ref<AppRouteRecord[]>([])
+  const rawMenuTree = ref<AppRouteRecord[]>([])
   const dataFromBackend = ref(false)
 
   // --- 菜单备份相关状态 ---
   const backupLoading = ref(false)
   const backupDialogVisible = ref(false)
   const backupListDialogVisible = ref(false)
-  const backupName = ref('')
-  const backupDescription = ref('')
   const backupList = ref<any[]>([])
 
   // --- 搜索相关 ---
@@ -285,49 +252,64 @@
   const actionRequirementData = ref<any>(null)
 
   // --- 菜单列表处理 ---
+  const normalizeKeyword = (value?: string) => `${value || ''}`.trim().toLowerCase()
+
+  const matchesMenuFilters = (item: AppRouteRecord) => {
+    if (!showInnerPages.value && item.meta?.isInnerPage) return false
+    if (!showHiddenMenus.value && !item.meta?.isInnerPage && item.meta?.isHide) return false
+    if (!showIframeMenus.value && item.meta?.isIframe) return false
+    if (!showEnabledMenus.value && item.meta?.isEnable !== false) return false
+    return true
+  }
+
+  const matchesMenuSearch = (item: AppRouteRecord) => {
+    const searchName = normalizeKeyword(appliedFilters.name)
+    const searchRoute = normalizeKeyword(appliedFilters.route)
+    const title = normalizeKeyword(formatMenuTitle(item.meta?.title))
+    const path = normalizeKeyword(item.path)
+    const titleMatch = !searchName || title.includes(searchName)
+    const routeMatch = !searchRoute || path.includes(searchRoute)
+    return titleMatch && routeMatch
+  }
+
+  const cloneMenuNode = (item: AppRouteRecord, children: AppRouteRecord[]): AppRouteRecord => ({
+    ...item,
+    meta: item.meta ? { ...item.meta } : item.meta,
+    children
+  })
+
+  const filterMenuTree = (items: AppRouteRecord[]): AppRouteRecord[] => {
+    return items.reduce<AppRouteRecord[]>((result, item) => {
+      if (!matchesMenuFilters(item)) {
+        return result
+      }
+
+      const children = item.children?.length ? filterMenuTree(item.children as AppRouteRecord[]) : []
+      if (!matchesMenuSearch(item) && children.length === 0) {
+        return result
+      }
+
+      result.push(cloneMenuNode(item, children))
+      return result
+    }, [])
+  }
+
+  const tableData = computed(() => filterMenuTree(rawMenuTree.value))
+
   const getMenuList = async () => {
     loading.value = true
     dataFromBackend.value = false
     try {
       const list = await fetchGetMenuTreeAll()
-      const rawData = Array.isArray(list) ? list : []
-      tableData.value = filterAndSearch(rawData)
+      rawMenuTree.value = Array.isArray(list) ? list : []
       dataFromBackend.value = true
     } catch (error) {
       console.error('获取菜单数据失败:', error)
-      tableData.value = []
+      rawMenuTree.value = []
       ElMessage.error('菜单数据加载失败，请检查后端菜单配置或服务状态')
     } finally {
       loading.value = false
     }
-  }
-
-  const filterAndSearch = (items: AppRouteRecord[]): AppRouteRecord[] => {
-    return items
-      .filter((item) => {
-        if (!showInnerPages.value && item.meta?.isInnerPage) return false
-        if (!showHiddenMenus.value && !item.meta?.isInnerPage && item.meta?.isHide) return false
-        if (!showIframeMenus.value && item.meta?.isIframe) return false
-        if (!showEnabledMenus.value && item.meta?.isEnable !== false) return false
-        return true
-      })
-      .map((item) => {
-        const cloned = JSON.parse(JSON.stringify(item))
-
-        if (cloned.children?.length) {
-          cloned.children = filterAndSearch(cloned.children)
-        }
-
-        return cloned
-      })
-      .filter((item) => {
-        const searchName = appliedFilters.name?.toLowerCase().trim() || ''
-        const searchRoute = appliedFilters.route?.toLowerCase().trim() || ''
-        const titleMatch =
-          !searchName || formatMenuTitle(item.meta?.title).toLowerCase().includes(searchName)
-        const routeMatch = !searchRoute || (item.path || '').toLowerCase().includes(searchRoute)
-        return (titleMatch && routeMatch) || (item.children && item.children.length > 0)
-      })
   }
 
   // --- 表格列配置 ---  
@@ -401,26 +383,13 @@
     return list
   }
 
-  const getBackupOperationList = (): ButtonMoreItem[] => [
-    { key: 'restore', label: '恢复备份', icon: 'ri:history-line', auth: 'system.menu.backup' },
-    {
-      key: 'delete',
-      label: '删除备份',
-      icon: 'ri:delete-bin-4-line',
-      color: '#f56c6c',
-      auth: 'system.menu.backup'
-    }
-  ]
-
   // --- 事件处理 ---
   const handleReset = () => {
     Object.assign(formFilters, initialSearchState)
     Object.assign(appliedFilters, initialSearchState)
-    getMenuList()
   }
   const handleSearch = () => {
     Object.assign(appliedFilters, formFilters)
-    getMenuList()
   }
   const handleRefresh = () => getMenuList()
   const rowKey = (row: any) => String(row.id || row.path)
@@ -428,7 +397,7 @@
   const toggleExpand = () => {
     isExpanded.value = !isExpanded.value
     nextTick(() => {
-      if (tableRef.value?.elTableRef && tableData.value) {
+      if (tableRef.value?.elTableRef && tableData.value.length) {
         const processRows = (rows: any[]) => {
           rows.forEach((row) => {
             if (row.children?.length) {
@@ -468,6 +437,72 @@
     actionRequirementData.value = row
     actionRequirementVisible.value = true
   }
+
+  const normalizeRequiredActions = (items?: string[]) =>
+    Array.from(new Set((items || []).map((item) => `${item || ''}`.trim()).filter(Boolean)))
+
+  const applyActionRequirementToMeta = (
+    meta: Record<string, any>,
+    formData: {
+      requiredActions?: string[]
+      actionMatchMode?: 'any' | 'all'
+      actionVisibilityMode?: 'hide' | 'show'
+    }
+  ) => {
+    const requiredActions = normalizeRequiredActions(formData.requiredActions)
+    delete meta.requiredAction
+    delete meta.requiredActions
+    delete meta.actionMatchMode
+    delete meta.actionVisibilityMode
+
+    if (requiredActions.length === 1) {
+      meta.requiredAction = requiredActions[0]
+    }
+    if (requiredActions.length > 1) {
+      meta.requiredActions = requiredActions
+      meta.actionMatchMode = formData.actionMatchMode === 'all' ? 'all' : 'any'
+    }
+    if (requiredActions.length > 0) {
+      meta.actionVisibilityMode = formData.actionVisibilityMode === 'show' ? 'show' : 'hide'
+    }
+  }
+
+  const buildMenuMetaFromForm = (formData: any) => {
+    const isInner = formData.menuType === 'inner'
+    const meta: Record<string, any> = {
+      roles: formData.roles,
+      isEnable: formData.isEnable,
+      keepAlive: formData.keepAlive,
+      isHide: isInner ? true : !!formData.isHide,
+      isHideTab: formData.isHideTab,
+      isIframe: formData.isIframe,
+      showBadge: formData.showBadge,
+      showTextBadge: formData.showTextBadge || '',
+      link: formData.link || '',
+      activePath: formData.activePath || '',
+      fixedTab: formData.fixedTab,
+      isFullPage: formData.isFullPage,
+      isInnerPage: isInner
+    }
+    if (formData.customParent?.trim()) {
+      meta.customParent = formData.customParent.trim()
+    }
+    applyActionRequirementToMeta(meta, formData)
+    return meta
+  }
+
+  const buildMenuRequestPayload = (formData: any, meta: Record<string, any>) => ({
+    path: formData.path || '/',
+    name: formData.label || '',
+    component: formData.component || '',
+    title: formData.name || '',
+    icon: formData.icon || '',
+    sort_order: Number(formData.sort ?? 0),
+    meta
+  })
+
+  const resolveParentId = (formData: any) =>
+    formData.parentId?.trim() || (parentRowForAdd.value?.id ? String(parentRowForAdd.value.id) : null)
   const handleMenuOperation = (item: ButtonMoreItem, row: any) => {
     if (item.key === 'add') handleAddUnderRow(row)
     else if (item.key === 'edit') handleEditMenu(row)
@@ -475,12 +510,12 @@
     else if (item.key === 'delete') handleDeleteMenu(row)
   }
 
-  const handleBackupOperation = (item: ButtonMoreItem, row: any) => {
-    if (item.key === 'restore') {
+  const handleBackupListAction = (action: string, row: any) => {
+    if (action === 'restore') {
       handleRestoreBackup(row.id)
       return
     }
-    if (item.key === 'delete') {
+    if (action === 'delete') {
       handleDeleteBackup(row.id)
     }
   }
@@ -503,62 +538,12 @@
   const handleSubmit = async (formData: any) => {
     if (!dataFromBackend.value) return getMenuList()
     try {
-      const isInner = formData.menuType === 'inner'
-      // 构建meta对象
-      const meta: any = {
-        roles: formData.roles,
-        isEnable: formData.isEnable,
-        keepAlive: formData.keepAlive,
-        isHide: isInner ? true : !!formData.isHide,
-        isHideTab: formData.isHideTab,
-        isIframe: formData.isIframe,
-        showBadge: formData.showBadge,
-        showTextBadge: formData.showTextBadge || '',
-        link: formData.link || '',
-        activePath: formData.activePath || '',
-        fixedTab: formData.fixedTab,
-        isFullPage: formData.isFullPage,
-        isInnerPage: isInner
-      }
-      const requiredActions = Array.from(
-        new Set(
-          (formData.requiredActions || [])
-            .map((item: string) => `${item || ''}`.trim())
-            .filter(Boolean)
-        )
-      )
-      if (requiredActions.length === 1) {
-        meta.requiredAction = requiredActions[0]
-      }
-      if (requiredActions.length > 0) {
-        meta.actionVisibilityMode = formData.actionVisibilityMode === 'show' ? 'show' : 'hide'
-      }
-      if (requiredActions.length > 1) {
-        meta.requiredActions = requiredActions
-        meta.actionMatchMode = formData.actionMatchMode === 'all' ? 'all' : 'any'
-      }
-      
-      // 只有当customParent有值时才添加到meta中
-      if (formData.customParent && formData.customParent.trim() !== '') {
-        meta.customParent = formData.customParent
-      }
-      
-      const payload = {
-        path: formData.path || '/',
-        name: formData.label || '',
-        component: formData.component || '',
-        title: formData.name || '',
-        icon: formData.icon || '',
-        sort_order: Number(formData.sort ?? 0),
-        meta: meta
-      }
+      const payload = buildMenuRequestPayload(formData, buildMenuMetaFromForm(formData))
       if (editData.value?.id) {
         const parentId = formData.parentId?.trim() || null
         await fetchUpdateMenu(String(editData.value.id), { ...payload, parent_id: parentId }, { showErrorMessage: false })
       } else {
-        const parentId =
-          formData.parentId?.trim() ||
-          (parentRowForAdd.value?.id ? String(parentRowForAdd.value.id) : null)
+        const parentId = resolveParentId(formData)
         await fetchCreateMenu({ ...payload, parent_id: parentId }, { showErrorMessage: false })
       }
       // 只有成功时才显示成功消息
@@ -584,23 +569,7 @@
     try {
       const row = actionRequirementData.value
       const meta = buildMenuMetaForUpdate(row)
-      const requiredActions = Array.from(
-        new Set((formData.requiredActions || []).map((item: string) => `${item || ''}`.trim()).filter(Boolean))
-      )
-      delete meta.requiredAction
-      delete meta.requiredActions
-      delete meta.actionMatchMode
-      delete meta.actionVisibilityMode
-      if (requiredActions.length === 1) {
-        meta.requiredAction = requiredActions[0]
-      }
-      if (requiredActions.length > 1) {
-        meta.requiredActions = requiredActions
-        meta.actionMatchMode = formData.actionMatchMode === 'all' ? 'all' : 'any'
-      }
-      if (requiredActions.length > 0) {
-        meta.actionVisibilityMode = formData.actionVisibilityMode === 'show' ? 'show' : 'hide'
-      }
+      applyActionRequirementToMeta(meta, formData)
       await fetchUpdateMenu(
         String(row.id),
         {
@@ -626,20 +595,15 @@
 
   // --- 菜单备份相关方法 ---
   const handleBackupMenu = () => {
-    backupName.value = ''
-    backupDescription.value = ''
     backupDialogVisible.value = true
   }
 
-  const handleCreateBackup = async () => {
-    if (!backupName.value.trim()) {
-      return ElMessage.warning('请输入备份名称')
-    }
+  const handleCreateBackup = async (formData: { name: string; description: string }) => {
     backupLoading.value = true
     try {
       await fetchCreateMenuBackup({
-        name: backupName.value.trim(),
-        description: backupDescription.value.trim()
+        name: formData.name,
+        description: formData.description
       })
       ElMessage.success('备份成功')
       backupDialogVisible.value = false
@@ -706,13 +670,17 @@
 
   // --- 生命周期 & 监听 ---
   onMounted(() => getMenuList())
-
-  watch([showInnerPages, showHiddenMenus, showIframeMenus, showEnabledMenus], () => {
-    getMenuList()
-  })
 </script>
 
 <style lang="scss" scoped>
+  .menu-toolbar {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px 16px;
+    width: 100%;
+  }
+
   .menu-filter-switches {
     display: inline-flex;
     align-items: center;
@@ -720,60 +688,48 @@
     gap: 12px;
   }
 
-  .backup-dialog {
-    .backup-list-container {
-      padding: 10px 0;
-      
-      .empty-backup {
-        padding: 40px 0;
-        text-align: center;
-      }
-    }
-    
-    :deep(.el-table) {
-      .el-table__row {
-        transition: all 0.3s ease;
-        
-        &:hover {
-          background-color: #f5f7fa !important;
-        }
-      }
-      
-      .el-table__header-wrapper th {
-        background-color: #fafafa;
-        font-weight: 600;
-      }
-    }
+  .menu-toolbar-actions {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
   }
-  
+
   .inline-flex {
     align-items: center;
   }
-  
+
   .advanced-configs {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
   }
-  
+
   :deep(.el-table) {
     .el-table__row {
       transition: all 0.3s ease;
-      
+
       &:hover {
         background-color: #f5f7fa !important;
       }
     }
-    
+
     .el-table__header-wrapper th {
       background-color: #fafafa;
       font-weight: 600;
     }
-    
+
     .el-table__body-wrapper {
       .el-table__row {
         height: 48px;
       }
+    }
+  }
+
+  @media (max-width: 960px) {
+    .menu-toolbar {
+      align-items: flex-start;
+      flex-direction: column;
     }
   }
 </style>

@@ -60,6 +60,9 @@ import PermissionActionCascaderPanel from '@/components/business/permission/Perm
 import { fetchGetPermissionActionList } from '@/api/system-manage'
 import { buildScopedActionKey, resolveActionKey } from '@/utils/permission/action'
 
+let cachedPermissionActions: Api.SystemManage.PermissionActionItem[] | null = null
+let permissionActionsPromise: Promise<Api.SystemManage.PermissionActionItem[]> | null = null
+
 interface Props {
   modelValue: boolean
   menuData?: any
@@ -103,8 +106,7 @@ watch(
 async function loadData() {
   loading.value = true
   try {
-    const res = await fetchGetPermissionActionList({ current: 1, size: 1000, status: 'normal' })
-    const records = res?.records || []
+    const records = await loadPermissionActions()
     permissionActions.value = records
 
     const meta = props.menuData?.meta || {}
@@ -124,6 +126,30 @@ async function loadData() {
   } finally {
     loading.value = false
   }
+}
+
+async function loadPermissionActions() {
+  if (cachedPermissionActions) {
+    return cachedPermissionActions
+  }
+
+  if (!permissionActionsPromise) {
+    permissionActionsPromise = fetchGetPermissionActionList({
+      current: 1,
+      size: 1000,
+      status: 'normal'
+    })
+      .then((res) => res?.records || [])
+      .then((records) => {
+        cachedPermissionActions = records
+        return records
+      })
+      .finally(() => {
+        permissionActionsPromise = null
+      })
+  }
+
+  return permissionActionsPromise
 }
 
 function normalizeRequiredActions(

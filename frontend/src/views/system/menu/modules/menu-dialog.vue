@@ -365,7 +365,7 @@
     return isEdit.value ? `编辑${type}` : `新建${type}`
   })
 
-  const disableMenuType = computed(() => false)
+  const disableMenuType = computed(() => props.lockType)
 
   const resetForm = (): void => {
     formRef.value?.reset()
