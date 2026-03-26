@@ -1,24 +1,30 @@
-<!-- 用户管理页面 -->
-<!-- art-full-height 自动计算出页面剩余高度 -->
-<!-- art-table-card 一个符合系统样式的 class，同时自动撑满剩余高度 -->
-<!-- 更多 useTable 使用示例请移步至 功能示例 下面的高级表格示例或者查看官方文档 -->
-<!-- useTable 文档：https://www.artd.pro/docs/zh/guide/hooks/use-table.html -->
 <template>
   <div class="user-page art-full-height">
-    <!-- 搜索栏 -->
-    <UserSearch v-model="searchForm" @search="handleSearch" @reset="resetSearchParams"></UserSearch>
+    <UserSearch
+      v-show="showSearchBar"
+      v-model="searchForm"
+      @search="handleSearch"
+      @reset="resetSearchParams"
+    />
 
-    <ElCard class="art-table-card" shadow="never">
-      <!-- 表格头部 -->
-      <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
+    <ElCard
+      class="art-table-card"
+      shadow="never"
+      :style="{ marginTop: showSearchBar ? '12px' : '0' }"
+    >
+      <ArtTableHeader
+        v-model:columns="columnChecks"
+        v-model:showSearchBar="showSearchBar"
+        :loading="loading"
+        @refresh="refreshData"
+      >
         <template #left>
           <ElSpace wrap>
-            <ElButton @click="showDialog('add')" v-ripple>新增用户</ElButton>
+            <ElButton v-action="'system.user.manage'" @click="showDialog('add')" v-ripple>新增用户</ElButton>
           </ElSpace>
         </template>
       </ArtTableHeader>
 
-      <!-- 表格 -->
       <ArtTable
         :loading="loading"
         :data="data"
@@ -27,10 +33,8 @@
         @selection-change="handleSelectionChange"
         @pagination:size-change="handleSizeChange"
         @pagination:current-change="handleCurrentChange"
-      >
-      </ArtTable>
+      />
 
-      <!-- 用户弹窗 -->
       <UserDialog
         v-model:visible="dialogVisible"
         :type="dialogType"
@@ -38,33 +42,28 @@
         @submit="handleDialogSubmit"
       />
 
-      <!-- 用户权限查看抽屉 -->
-      <ElDrawer v-model="permissionDrawerVisible" :title="permissionDrawerTitle" size="450px">
-        <div v-loading="permissionLoading">
-          <ElEmpty v-if="permissionList.length === 0" description="该用户暂无权限" />
-          <ElTree
-            v-else
-            :data="permissionList"
-            :props="treeProps"
-            node-key="id"
-            default-expand-all
-            highlight-current
-            class="permission-tree"
-          >
-            <template #default="{ node, data }">
-              <span class="tree-node">
-                <span class="tree-node-label">{{ node.label }}</span>
-              </span>
-            </template>
-          </ElTree>
-        </div>
-      </ElDrawer>
+      <UserPackageDialog
+        v-model="packageDialogVisible"
+        :user-data="currentUserDataForAction"
+        @success="refreshData"
+      />
+
+      <UserMenuSelectorDialog
+        v-model="menuDialogVisible"
+        :user-data="currentUserDataForAction"
+        @success="refreshData"
+        @open-packages="openCurrentUserPackagesFromMenu"
+      />
+
+      <UserPermissionTestDrawer
+        v-model="permissionTestVisible"
+        :user-data="currentUserDataForAction"
+      />
     </ElCard>
   </div>
 </template>
 
 <script setup lang="ts">
-  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { useTable } from '@/hooks/core/useTable'
@@ -72,12 +71,14 @@
     fetchGetUserList,
     fetchDeleteUser,
     fetchCreateUser,
-    fetchUpdateUser,
-    fetchGetUserPermissions
+    fetchUpdateUser
   } from '@/api/system-manage'
   import UserSearch from './modules/user-search.vue'
   import UserDialog from './modules/user-dialog.vue'
-  import { ElTag, ElMessageBox, ElImage, ElDrawer, ElTree, ElIcon, ElMessage } from 'element-plus'
+  import UserPackageDialog from './modules/user-package-dialog.vue'
+  import UserMenuSelectorDialog from './modules/user-menu-selector-dialog.vue'
+  import UserPermissionTestDrawer from './modules/user-permission-test-drawer.vue'
+  import { ElTag, ElMessageBox, ElImage, ElMessage } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
 
   defineOptions({ name: 'User' })
@@ -93,8 +94,13 @@
 
   // 弹窗相关
   const dialogType = ref<DialogType>('add')
+  const showSearchBar = ref(true)
   const dialogVisible = ref(false)
   const currentUserData = ref<Partial<UserListItem>>({})
+  const packageDialogVisible = ref(false)
+  const menuDialogVisible = ref(false)
+  const permissionTestVisible = ref(false)
+  const currentUserDataForAction = ref<UserListItem | undefined>(undefined)
 
   // 选中行
   const selectedRows = ref<UserListItem[]>([])
@@ -265,16 +271,37 @@
           formatter: (row) => {
             const list = [
               { key: 'copy', label: '复制用户ID', icon: 'ri:file-copy-line' },
-              { key: 'permission', label: '查看权限', icon: 'ri:shield-check-line' },
-              { key: 'edit', label: '编辑用户', icon: 'ri:edit-2-line' },
-              { key: 'delete', label: '删除用户', icon: 'ri:delete-bin-4-line', color: '#f56c6c' }
+              {
+                key: 'packages',
+                label: '功能包',
+                icon: 'ri:apps-2-line',
+                auth: 'platform.package.assign'
+              },
+              {
+                key: 'menuBoundary',
+                label: '菜单裁剪',
+                icon: 'ri:menu-line',
+                auth: 'system.user.manage'
+              },
+              {
+                key: 'permissionTest',
+                label: '权限测试',
+                icon: 'ri:shield-keyhole-line',
+                auth: 'system.user.manage'
+              },
+              { key: 'edit', label: '编辑用户', icon: 'ri:edit-2-line', auth: 'system.user.manage' },
+              {
+                key: 'delete',
+                label: '删除用户',
+                icon: 'ri:delete-bin-4-line',
+                color: '#f56c6c',
+                auth: 'system.user.manage'
+              }
             ]
-            return h('div', [
-              h(ArtButtonMore, {
-                list,
-                onClick: (item: ButtonMoreItem) => handleUserOperation(item, row)
-              })
-            ])
+            return h(ArtButtonMore, {
+              list,
+              onClick: (item: ButtonMoreItem) => handleUserOperation(item, row)
+            })
           }
         }
       ]
@@ -291,10 +318,9 @@
    * 搜索处理
    * @param params 参数
    */
-  const handleSearch = (params: Record<string, any>) => {
-    console.log(params)
+  const handleSearch = () => {
     // 搜索参数赋值
-    Object.assign(searchParams, params)
+    Object.assign(searchParams, searchForm.value)
     getData()
   }
 
@@ -302,7 +328,6 @@
    * 显示用户弹窗
    */
   const showDialog = (type: DialogType, row?: UserListItem): void => {
-    console.log('打开弹窗:', { type, row })
     dialogType.value = type
     currentUserData.value = row || {}
     nextTick(() => {
@@ -336,13 +361,38 @@
     if (item.key === 'copy') {
       navigator.clipboard.writeText(row.id)
       ElMessage.success('用户ID已复制')
-    } else if (item.key === 'permission') {
-      showPermissionDrawer(row)
+    } else if (item.key === 'packages') {
+      showPackageDialog(row)
+    } else if (item.key === 'menuBoundary') {
+      showMenuDialog(row)
+    } else if (item.key === 'permissionTest') {
+      showPermissionTestDialog(row)
     } else if (item.key === 'edit') {
       showDialog('edit', row)
     } else if (item.key === 'delete') {
       deleteUser(row)
     }
+  }
+
+  const showPackageDialog = (row: UserListItem) => {
+    currentUserDataForAction.value = row
+    packageDialogVisible.value = true
+  }
+
+  const showMenuDialog = (row: UserListItem) => {
+    currentUserDataForAction.value = row
+    menuDialogVisible.value = true
+  }
+
+  const openCurrentUserPackagesFromMenu = () => {
+    if (!currentUserDataForAction.value) return
+    menuDialogVisible.value = false
+    packageDialogVisible.value = true
+  }
+
+  const showPermissionTestDialog = (row: UserListItem) => {
+    currentUserDataForAction.value = row
+    permissionTestVisible.value = true
   }
 
   /**
@@ -398,54 +448,5 @@
    */
   const handleSelectionChange = (selection: UserListItem[]): void => {
     selectedRows.value = selection
-    console.log('选中行数据:', selectedRows.value)
-  }
-
-  // 查看用户权限相关
-  const permissionDrawerVisible = ref(false)
-  const permissionDrawerTitle = ref('')
-  const permissionList = ref<any[]>([])
-  const permissionLoading = ref(false)
-
-  // 树形组件配置
-  const treeProps = {
-    children: 'children',
-    label: 'name'
-  }
-
-  // 查看用户权限
-  const showPermissionDrawer = async (row: UserListItem) => {
-    permissionDrawerTitle.value = `用户权限 - ${row.nickName || row.userName}`
-    permissionDrawerVisible.value = true
-    permissionLoading.value = true
-    try {
-      const res = await fetchGetUserPermissions(row.id)
-      permissionList.value = res || []
-    } catch (e: any) {
-      ElMessage.error(e?.message || '获取权限失败')
-    } finally {
-      permissionLoading.value = false
-    }
   }
 </script>
-
-<style scoped>
-  .permission-tree {
-    background: transparent;
-  }
-  .permission-tree :deep(.el-tree-node__content) {
-    height: 32px;
-  }
-  .tree-node {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .tree-node-icon {
-    font-size: 16px;
-    color: #909399;
-  }
-  .tree-node-label {
-    font-size: 13px;
-  }
-</style>

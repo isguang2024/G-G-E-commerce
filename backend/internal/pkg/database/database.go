@@ -87,11 +87,34 @@ func AutoMigrate() error {
 	err := DB.AutoMigrate(
 		// 用户和角色相关
 		&models.User{},
-		&models.Scope{},
 		&models.Role{},
 		&models.UserRole{},
-		&models.RoleMenu{},
+		&models.PermissionGroup{},
+		&models.PermissionKey{},
+		&models.FeaturePackage{},
+		&models.FeaturePackageBundle{},
+		&models.FeaturePackageKey{},
+		&models.FeaturePackageMenu{},
+		&models.TeamFeaturePackage{},
+		&models.UserFeaturePackage{},
+		&models.RoleFeaturePackage{},
+		&models.RoleHiddenMenu{},
+		&models.RoleDisabledAction{},
+		&models.RoleDataPermission{},
+		&models.TeamBlockedMenu{},
+		&models.TeamBlockedAction{},
+		&models.UserActionPermission{},
+		&models.UserHiddenMenu{},
+		&models.PlatformUserAccessSnapshot{},
+		&models.PlatformRoleAccessSnapshot{},
+		&models.TeamAccessSnapshot{},
+		&models.TeamRoleAccessSnapshot{},
+		&models.APIEndpointCategory{},
+		&models.APIEndpoint{},
+		&models.APIEndpointPermissionBinding{},
+		&models.MenuManageGroup{},
 		&models.Menu{},
+		&models.UIPage{},
 		&models.Tenant{},
 		&models.TenantMember{},
 		&models.APIKey{},
@@ -106,10 +129,6 @@ func AutoMigrate() error {
 	// 创建唯一索引（AutoMigrate 不会自动创建唯一索引）
 	if err := createUniqueIndexes(); err != nil {
 		return fmt.Errorf("failed to create unique indexes: %w", err)
-	}
-
-	if err := migrateLegacyUserRoles(); err != nil {
-		return fmt.Errorf("failed to migrate legacy user roles: %w", err)
 	}
 
 	return nil
@@ -151,71 +170,275 @@ func createUniqueIndexes() error {
 		}
 	}
 
+	actionUniqueIndexName := "idx_permission_keys_permission_key"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", actionUniqueIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("DROP INDEX IF EXISTS idx_permission_actions_resource_action_unique").Error; err != nil {
+			return err
+		}
+		if err := DB.Exec("DROP INDEX IF EXISTS idx_permission_actions_permission_key").Error; err != nil {
+			return err
+		}
+		if err := DB.Exec("CREATE UNIQUE INDEX " + actionUniqueIndexName + " ON permission_keys (permission_key) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	userActionGlobalIndexName := "idx_user_action_permissions_global_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", userActionGlobalIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + userActionGlobalIndexName + " ON user_action_permissions (user_id, action_id) WHERE tenant_id IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	userActionTenantIndexName := "idx_user_action_permissions_tenant_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", userActionTenantIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + userActionTenantIndexName + " ON user_action_permissions (user_id, action_id, tenant_id) WHERE tenant_id IS NOT NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	apiEndpointIndexName := "idx_api_endpoints_method_path_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", apiEndpointIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + apiEndpointIndexName + " ON api_endpoints (method, path)").Error; err != nil {
+			return err
+		}
+	}
+
+	apiEndpointCategoryCodeIndexName := "idx_api_endpoint_categories_code"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", apiEndpointCategoryCodeIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + apiEndpointCategoryCodeIndexName + " ON api_endpoint_categories (code) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	apiEndpointPermissionBindingUnique := "idx_api_endpoint_permission_bindings_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", apiEndpointPermissionBindingUnique).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + apiEndpointPermissionBindingUnique + " ON api_endpoint_permission_bindings (endpoint_id, permission_key) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	permissionActionHotIndexName := "idx_permission_keys_status_sort_created"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", permissionActionHotIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("DROP INDEX IF EXISTS idx_permission_actions_status_sort_created").Error; err != nil {
+			return err
+		}
+		if err := DB.Exec("CREATE INDEX " + permissionActionHotIndexName + " ON permission_keys (status, sort_order, created_at DESC)").Error; err != nil {
+			return err
+		}
+	}
+
+	permissionGroupIndexName := "idx_permission_groups_type_code"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", permissionGroupIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + permissionGroupIndexName + " ON permission_groups (group_type, code) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	featurePackageIndexName := "idx_feature_packages_key_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", featurePackageIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + featurePackageIndexName + " ON feature_packages (package_key) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	featurePackageActionIndexName := "idx_feature_package_keys_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", featurePackageActionIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("DROP INDEX IF EXISTS idx_feature_package_actions_unique").Error; err != nil {
+			return err
+		}
+		if err := DB.Exec("CREATE UNIQUE INDEX " + featurePackageActionIndexName + " ON feature_package_keys (package_id, action_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	featurePackageMenuIndexName := "idx_feature_package_menus_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", featurePackageMenuIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + featurePackageMenuIndexName + " ON feature_package_menus (package_id, menu_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	featurePackageBundleIndexName := "idx_feature_package_bundles_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", featurePackageBundleIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + featurePackageBundleIndexName + " ON feature_package_bundles (package_id, child_package_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	teamFeaturePackageIndexName := "idx_team_feature_packages_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", teamFeaturePackageIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + teamFeaturePackageIndexName + " ON team_feature_packages (team_id, package_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	userFeaturePackageIndexName := "idx_user_feature_packages_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", userFeaturePackageIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + userFeaturePackageIndexName + " ON user_feature_packages (user_id, package_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	roleFeaturePackageIndexName := "idx_role_feature_packages_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", roleFeaturePackageIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + roleFeaturePackageIndexName + " ON role_feature_packages (role_id, package_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	roleHiddenMenuIndexName := "idx_role_hidden_menus_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", roleHiddenMenuIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + roleHiddenMenuIndexName + " ON role_hidden_menus (role_id, menu_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	roleDisabledActionIndexName := "idx_role_disabled_actions_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", roleDisabledActionIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + roleDisabledActionIndexName + " ON role_disabled_actions (role_id, action_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	teamBlockedMenuIndexName := "idx_team_blocked_menus_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", teamBlockedMenuIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + teamBlockedMenuIndexName + " ON team_blocked_menus (team_id, menu_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	teamBlockedActionIndexName := "idx_team_blocked_actions_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", teamBlockedActionIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + teamBlockedActionIndexName + " ON team_blocked_actions (team_id, action_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	userHiddenMenuIndexName := "idx_user_hidden_menus_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", userHiddenMenuIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + userHiddenMenuIndexName + " ON user_hidden_menus (user_id, menu_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	menuManageGroupNameIndex := "idx_menu_manage_groups_name_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", menuManageGroupNameIndex).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + menuManageGroupNameIndex + " ON menu_manage_groups (name) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	menuManageGroupSortIndex := "idx_menu_manage_groups_sort_status"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", menuManageGroupSortIndex).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + menuManageGroupSortIndex + " ON menu_manage_groups (sort_order, status)").Error; err != nil {
+			return err
+		}
+	}
+
+	menuManageGroupIDIndex := "idx_menus_manage_group_id"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", menuManageGroupIDIndex).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + menuManageGroupIDIndex + " ON menus (manage_group_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageKeyIndexName := "idx_ui_pages_page_key_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageKeyIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + uiPageKeyIndexName + " ON ui_pages (page_key) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageRouteNameIndexName := "idx_ui_pages_route_name_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageRouteNameIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + uiPageRouteNameIndexName + " ON ui_pages (route_name) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageParentMenuIndexName := "idx_ui_pages_parent_menu_id"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageParentMenuIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + uiPageParentMenuIndexName + " ON ui_pages (parent_menu_id)").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageModuleIndexName := "idx_ui_pages_module_key"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageModuleIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + uiPageModuleIndexName + " ON ui_pages (module_key)").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageParentPageIndexName := "idx_ui_pages_parent_page_key"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageParentPageIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + uiPageParentPageIndexName + " ON ui_pages (parent_page_key)").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageDisplayGroupIndexName := "idx_ui_pages_display_group_key"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageDisplayGroupIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + uiPageDisplayGroupIndexName + " ON ui_pages (display_group_key)").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageTypeStatusIndexName := "idx_ui_pages_page_type_status"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageTypeStatusIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + uiPageTypeStatusIndexName + " ON ui_pages (page_type, status)").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageAccessModeIndexName := "idx_ui_pages_access_mode"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageAccessModeIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + uiPageAccessModeIndexName + " ON ui_pages (access_mode)").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageParentSortIndexName := "idx_ui_pages_parent_sort_order"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageParentSortIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + uiPageParentSortIndexName + " ON ui_pages (parent_page_key, sort_order)").Error; err != nil {
+			return err
+		}
+	}
+
 	return nil
-}
-
-func migrateLegacyUserRoles() error {
-	// 先把 tenant_members 里的默认团队身份同步为租户级 user_roles
-	insertDefaultTenantRoles := `
-		INSERT INTO user_roles (user_id, role_id, tenant_id)
-		SELECT tm.user_id, r.id, tm.tenant_id
-		FROM tenant_members tm
-		JOIN roles r ON r.code = tm.role_code
-		JOIN scopes s ON s.id = r.scope_id
-		WHERE s.code = 'team'
-		  AND tm.role_code IN ('team_admin', 'team_member')
-		  AND NOT EXISTS (
-		    SELECT 1
-		    FROM user_roles ur
-		    WHERE ur.user_id = tm.user_id
-		      AND ur.role_id = r.id
-		      AND ur.tenant_id = tm.tenant_id
-		  )
-	`
-	if err := DB.Exec(insertDefaultTenantRoles).Error; err != nil {
-		return err
-	}
-
-	// 对“只有一个租户成员关系”的历史团队角色，自动迁移到对应 tenant_id
-	updateSingleTenantScopedRoles := `
-		UPDATE user_roles ur
-		SET tenant_id = tm.tenant_id
-		FROM (
-		  SELECT user_id, MAX(tenant_id::text)::uuid AS tenant_id
-		  FROM tenant_members
-		  GROUP BY user_id
-		  HAVING COUNT(DISTINCT tenant_id) = 1
-		) tm,
-		roles r,
-		scopes s
-		WHERE ur.user_id = tm.user_id
-		  AND r.id = ur.role_id
-		  AND s.id = r.scope_id
-		  AND ur.tenant_id IS NULL
-		  AND s.code = 'team'
-		  AND NOT EXISTS (
-		    SELECT 1
-		    FROM user_roles existing
-		    WHERE existing.user_id = ur.user_id
-		      AND existing.role_id = ur.role_id
-		      AND existing.tenant_id = tm.tenant_id
-		  )
-	`
-	if err := DB.Exec(updateSingleTenantScopedRoles).Error; err != nil {
-		return err
-	}
-
-	// 对默认团队身份的旧全局记录做清理，避免和 tenant_members 同步后的租户角色重复
-	deleteLegacyDefaultGlobalTeamRoles := `
-		DELETE FROM user_roles ur
-		USING roles r
-		JOIN scopes s ON s.id = r.scope_id
-		WHERE ur.role_id = r.id
-		  AND ur.tenant_id IS NULL
-		  AND s.code = 'team'
-		  AND r.code IN ('team_admin', 'team_member')
-	`
-	return DB.Exec(deleteLegacyDefaultGlobalTeamRoles).Error
 }
 
 // enableExtensions 启用 PostgreSQL 扩展

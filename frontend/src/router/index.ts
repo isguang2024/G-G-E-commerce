@@ -2,11 +2,12 @@ import type { App } from 'vue'
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { staticRoutes } from './routes/staticRoutes'
 import { configureNProgress } from '@/utils/router'
-import { setupBeforeEachGuard, refreshUserMenus } from './guards/beforeEach'
+import { setupBeforeEachGuard, refreshCurrentUserInfoContext, refreshUserMenus } from './guards/beforeEach'
 import { setupAfterEachGuard } from './guards/afterEach'
 
 /** 角色/用户菜单权限变更后调用，使侧栏与动态路由立即更新 */
 export { refreshUserMenus }
+export { refreshCurrentUserInfoContext }
 
 // 创建路由实例
 export const router = createRouter({

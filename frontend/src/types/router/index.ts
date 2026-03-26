@@ -47,11 +47,6 @@ export interface RouteMeta extends Record<string | number | symbol, unknown> {
   isIframe?: boolean
   /** 是否缓存 */
   keepAlive?: boolean
-  /** 操作权限 */
-  authList?: Array<{
-    title: string
-    authMark: string
-  }>
   /** 是否为一级菜单 */
   isFirstLevel?: boolean
   /** 角色权限 */
@@ -62,18 +57,27 @@ export interface RouteMeta extends Record<string | number | symbol, unknown> {
   activePath?: string
   /** 是否为全屏页面 */
   isFullPage?: boolean
-  /** 是否为权限按钮行 */
-  isAuthButton?: boolean
-  /** 权限标识 */
-  authMark?: string
   /** 父级路径 */
   parentPath?: string
   /** 是否启用 */
   isEnable?: boolean
-  /** 是否依赖当前团队上下文 */
-  requiresTenantContext?: boolean
+  /** 进入页面所需的基础功能权限 */
+  requiredAction?: string
+  /** 进入页面所需的基础功能权限列表 */
+  requiredActions?: string[]
+  /** 多个功能权限的匹配方式 */
+  actionMatchMode?: 'any' | 'all'
+  /** 功能权限不满足时的菜单可见策略 */
+  actionVisibilityMode?: 'hide' | 'show'
   /** 自定义上级菜单路径（用于面包屑显示） */
   customParent?: string
+  /** 菜单访问模式：permission 需要权限，jwt 登录可见，public 公开可见 */
+  accessMode?: 'permission' | 'jwt' | 'public' | string
+  /** 运行时注入的完整面包屑链（不包含当前页） */
+  breadcrumbChain?: Array<{
+    title: string
+    path?: string
+  }>
 }
 
 /**
@@ -81,11 +85,18 @@ export interface RouteMeta extends Record<string | number | symbol, unknown> {
  * 扩展 Vue Router 的路由记录类型
  */
 export interface AppRouteRecord extends Omit<RouteRecordRaw, 'meta' | 'children' | 'component'> {
-  id?: number
+  id?: number | string
   meta: RouteMeta
   children?: AppRouteRecord[]
   component?: string | (() => Promise<any>)
   sort_order?: number
   parent_id?: number | string
   is_system?: boolean
+  manage_group_id?: string
+  manage_group?: {
+    id: string
+    name: string
+    sort_order?: number
+    status?: string
+  }
 }

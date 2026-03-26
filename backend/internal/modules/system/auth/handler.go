@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -12,14 +13,20 @@ import (
 )
 
 type AuthHandler struct {
-	authService AuthService
-	logger      *zap.Logger
+	authService  AuthService
+	authzService interface {
+		GetUserActionSnapshot(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
+	}
+	logger *zap.Logger
 }
 
-func NewAuthHandler(authService AuthService, logger *zap.Logger) *AuthHandler {
+func NewAuthHandler(authService AuthService, authzService interface {
+	GetUserActionSnapshot(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
+}, logger *zap.Logger) *AuthHandler {
 	return &AuthHandler{
-		authService: authService,
-		logger:      logger,
+		authService:  authService,
+		authzService: authzService,
+		logger:       logger,
 	}
 }
 
@@ -154,6 +161,26 @@ func (h *AuthHandler) GetUserInfo(c *gin.Context) {
 		}
 	}
 
+	var tenantID *uuid.UUID
+	tenantIDStr := strings.TrimSpace(c.Query("tenant_id"))
+	if tenantIDStr == "" {
+		tenantIDStr = strings.TrimSpace(c.GetHeader("X-Tenant-ID"))
+	}
+	if tenantIDStr != "" {
+		if parsedTenantID, parseErr := uuid.Parse(tenantIDStr); parseErr == nil {
+			tenantID = &parsedTenantID
+		}
+	}
+
+	actionKeys := make([]string, 0)
+	if h.authzService != nil {
+		if keys, snapErr := h.authzService.GetUserActionSnapshot(userID, tenantID); snapErr != nil {
+			h.logger.Warn("Failed to resolve user actions", zap.Error(snapErr), zap.String("user_id", userID.String()))
+		} else {
+			actionKeys = keys
+		}
+	}
+
 	userInfo := map[string]interface{}{
 		"id":             user.ID.String(),
 		"email":          user.Email,
@@ -164,8 +191,12 @@ func (h *AuthHandler) GetUserInfo(c *gin.Context) {
 		"status":         user.Status,
 		"is_super_admin": user.IsSuperAdmin,
 		"roles":          roles,
+		"actions":        actionKeys,
 		"created_at":     user.CreatedAt,
 		"updated_at":     user.UpdatedAt,
+	}
+	if tenantID != nil {
+		userInfo["current_tenant_id"] = tenantID.String()
 	}
 
 	c.JSON(http.StatusOK, dto.SuccessResponse(userInfo))

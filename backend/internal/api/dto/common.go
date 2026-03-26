@@ -10,10 +10,10 @@ type Response struct {
 
 // Meta 分页元信息
 type Meta struct {
-	Total    int64 `json:"total"`
-	Page     int   `json:"page"`
-	PageSize int   `json:"page_size"`
-	TotalPages int `json:"total_pages"`
+	Total      int64 `json:"total"`
+	Page       int   `json:"page"`
+	PageSize   int   `json:"page_size"`
+	TotalPages int   `json:"total_pages"`
 }
 
 // SuccessResponse 成功响应

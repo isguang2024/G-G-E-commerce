@@ -1,10 +1,10 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="dialogVisible"
     :title="dialogType === 'add' ? '添加用户' : '编辑用户'"
-    width="30%"
-    align-center
-  >
+    size="30%"
+    direction="rtl"
+    class="config-drawer">
     <ElForm ref="formRef" :model="formData" :rules="rules" label-width="80px">
       <ElFormItem label="用户名" prop="username">
         <ElInput v-model="formData.username" placeholder="请输入用户名" />
@@ -64,7 +64,7 @@
         <ElButton type="primary" @click="handleSubmit">提交</ElButton>
       </div>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">

@@ -1,13 +1,21 @@
 <template>
-  <ElDialog
+  <ElDrawer
     v-model="visible"
     :title="`分配角色 - ${member?.userName || ''}`"
-    width="600px"
+    size="600px"
     destroy-on-close
-  >
+    direction="rtl"
+    class="config-drawer">
     <div v-loading="loading" class="role-dialog-content">
       <div class="mb-4 text-gray-500 text-sm">
-        请选择该成员在本团队内拥有的功能角色（支持多选）：
+        请选择该成员在当前团队内拥有的角色（支持多选）。基础团队角色由系统提供，团队自定义角色仅在当前团队内生效。
+      </div>
+
+      <div class="summary-row">
+        <ElTag effect="plain" round>总计 {{ allRoles.length }}</ElTag>
+        <ElTag type="info" effect="plain" round>基础角色 {{ globalRoleCount }}</ElTag>
+        <ElTag type="success" effect="plain" round>团队自定义 {{ customRoleCount }}</ElTag>
+        <ElTag type="warning" effect="plain" round>已选 {{ selectedRoleIds.length }}</ElTag>
       </div>
 
       <ElCheckboxGroup v-model="selectedRoleIds" class="flex flex-col gap-2">
@@ -15,7 +23,9 @@
           <ElCheckbox :value="role.roleId" :disabled="isTeamAdminRole(role.roleCode)">
             <div class="flex items-center gap-2">
               <span class="font-medium">{{ role.roleName }}</span>
-              <ElTag type="info" size="small">团队角色</ElTag>
+              <ElTag :type="role.isGlobal ? 'info' : 'success'" size="small">
+                {{ role.isGlobal ? '基础角色' : '团队自定义' }}
+              </ElTag>
             </div>
             <div v-if="role.description" class="text-xs text-gray-400 mt-1 pl-6">
               {{ role.description }}
@@ -29,7 +39,7 @@
       <ElButton @click="visible = false">取消</ElButton>
       <ElButton type="primary" :loading="submitting" @click="handleSubmit"> 保存更改 </ElButton>
     </template>
-  </ElDialog>
+  </ElDrawer>
 </template>
 
 <script setup lang="ts">
@@ -50,9 +60,11 @@
   const visible = ref(false)
   const loading = ref(false)
   const submitting = ref(false)
-  const allRoles = ref<any[]>([])
+  const allRoles = ref<Api.SystemManage.RoleListItem[]>([])
   const selectedRoleIds = ref<string[]>([])
   const memberRoleCodes = ref<string[]>([])
+  const globalRoleCount = computed(() => allRoles.value.filter((role) => role.isGlobal).length)
+  const customRoleCount = computed(() => allRoles.value.filter((role) => !role.isGlobal).length)
 
   function isTeamAdminRole(roleCode: string): boolean {
     // 如果成员已经是团队管理员，则禁用 team_admin 角色的选择
@@ -67,7 +79,10 @@
     try {
       // 1. 获取所有可选角色（全局+本团队）
       const rolesRes = await fetchGetMyTeamRoles()
-      allRoles.value = rolesRes || []
+      allRoles.value = [...(rolesRes || [])].sort((left, right) => {
+        if (left.isGlobal === right.isGlobal) return left.roleName.localeCompare(right.roleName, 'zh-CN')
+        return left.isGlobal ? -1 : 1
+      })
 
       // 2. 获取该成员当前已有的角色
       const memberRolesRes = await fetchGetMyTeamMemberRoles(props.member.userId)
@@ -110,6 +125,12 @@
     padding: 8px;
     border-radius: 4px;
     transition: background 0.2s;
+  }
+  .summary-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 12px;
   }
   .role-item:hover {
     background-color: var(--el-fill-color-light);

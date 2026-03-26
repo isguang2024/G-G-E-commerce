@@ -6,6 +6,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/config"
+	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
+	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	cachepkg "github.com/gg-ecommerce/backend/internal/pkg/cache"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
 )
@@ -42,10 +44,12 @@ func (m *SystemModule) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 
 	systemHandler := NewSystemHandler(m.logger, systemCache)
+	authzService := authorization.NewService(m.db, m.logger)
 
 	system := rg.Group("/system")
+	reg := apiregistry.NewRegistrar(system, "system")
 	{
-		system.GET("/view-pages", systemHandler.GetViewPages)
+		reg.GETProtected("/view-pages", reg.Meta("获取页面文件映射").BindPermissionKey("system.page_catalog.view").Build(), "system.page_catalog.view", authzService.RequireAction, systemHandler.GetViewPages)
 	}
 }
 

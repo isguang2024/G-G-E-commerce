@@ -7,7 +7,7 @@
         <ElDropdownMenu>
           <template v-for="item in list" :key="item.key">
             <ElDropdownItem
-              v-if="!item.auth || hasAuth(item.auth)"
+              v-if="!item.auth || hasAction(item.auth)"
               :disabled="item.disabled"
               @click="handleClick(item)"
             >
@@ -29,7 +29,7 @@
 
   defineOptions({ name: 'ArtButtonMore' })
 
-  const { hasAuth } = useAuth()
+  const { hasAction } = useAuth()
 
   export interface ButtonMoreItem {
     /** 按钮标识，可用于点击事件 */
@@ -59,7 +59,7 @@
 
   // 检查是否有任何有权限的 item
   const hasAnyAuthItem = computed(() => {
-    return props.list.some((item) => !item.auth || hasAuth(item.auth))
+    return props.list.some((item) => !item.auth || hasAction(item.auth))
   })
 
   const emit = defineEmits<{

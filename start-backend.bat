@@ -1,24 +1,28 @@
 @echo off
+setlocal
 chcp 65001 >nul
 
-echo ========================================
-echo   启动后端服务
-echo ========================================
-
 cd /d "%~dp0backend"
-
-where go >nul 2>nul
-if %errorlevel% neq 0 (
-    echo 错误: 未安装 Go，请先安装 Go 语言环境
-    pause
-    exit /b 1
+if errorlevel 1 (
+  echo Failed to enter backend directory.
+  pause
+  exit /b 1
 )
 
-go version
+go version >nul 2>nul
+if errorlevel 1 (
+  echo Go is not installed or not in PATH.
+  pause
+  exit /b 1
+)
 
-echo.
-echo 正在启动后端服务...
-echo 后端地址: http://localhost:8080
+echo Starting backend in debug mode...
+echo URL: http://localhost:8080
 echo.
 
-start cmd /k "cd /d C:\Users\Administrator\Documents\GitHub\G-G-E-commerce\backend && go run cmd/server/main.go"
+go run cmd/server/main.go
+set "RC=%errorlevel%"
+echo.
+echo Backend exited. code=%RC%
+pause
+exit /b %RC%

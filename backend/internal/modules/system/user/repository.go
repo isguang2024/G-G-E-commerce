@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -97,7 +98,18 @@ func (r *userRepository) Update(user *User) error {
 }
 
 func (r *userRepository) Delete(id uuid.UUID) error {
-	return r.db.Delete(&User{}, id).Error
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("user_id = ?", id).Delete(&UserRole{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("user_id = ?", id).Delete(&UserActionPermission{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("user_id = ?", id).Delete(&TenantMember{}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&User{}, id).Error
+	})
 }
 
 func (r *userRepository) ExistsByEmail(email string) (bool, error) {
@@ -200,15 +212,13 @@ type RoleRepository interface {
 	GetByCode(code string) (*Role, error)
 	FindByCode(code string) ([]Role, error)
 	GetByIDs(ids []uuid.UUID) ([]Role, error)
-	GetByScopeID(scopeID uuid.UUID) ([]Role, error)
+	ListTeamRoles(tenantID uuid.UUID) ([]Role, error)
 	Create(role *Role) error
 	Update(role *Role) error
 	Delete(id uuid.UUID) error
 	GetAll() ([]Role, error)
-	GetByScope(scope string) ([]Role, error)
 	List() ([]Role, error)
 	ListByPage(offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error)
-	ListByScope(scope string, offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error)
 	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
 }
 
@@ -222,7 +232,7 @@ func NewRoleRepository(db *gorm.DB) RoleRepository {
 
 func (r *roleRepository) GetByID(id uuid.UUID) (*Role, error) {
 	var role Role
-	err := r.db.Preload("Scope").Where("id = ?", id).First(&role).Error
+	err := r.db.Where("id = ?", id).First(&role).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
@@ -234,7 +244,7 @@ func (r *roleRepository) GetByID(id uuid.UUID) (*Role, error) {
 
 func (r *roleRepository) GetByCode(code string) (*Role, error) {
 	var role Role
-	err := r.db.Where("code = ?", code).First(&role).Error
+	err := r.db.Where("code = ? AND tenant_id IS NULL", code).First(&role).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
@@ -246,7 +256,7 @@ func (r *roleRepository) GetByCode(code string) (*Role, error) {
 
 func (r *roleRepository) FindByCode(code string) ([]Role, error) {
 	var roles []Role
-	err := r.db.Where("code = ?", code).Find(&roles).Error
+	err := r.db.Where("code = ? AND tenant_id IS NULL", code).Find(&roles).Error
 	return roles, err
 }
 
@@ -258,13 +268,16 @@ func (r *roleRepository) GetByIDs(ids []uuid.UUID) ([]Role, error) {
 
 func (r *roleRepository) List() ([]Role, error) {
 	var roles []Role
-	err := r.db.Find(&roles).Error
+	err := r.db.Where("tenant_id IS NULL").Find(&roles).Error
 	return roles, err
 }
 
-func (r *roleRepository) GetByScopeID(scopeID uuid.UUID) ([]Role, error) {
+func (r *roleRepository) ListTeamRoles(tenantID uuid.UUID) ([]Role, error) {
 	var roles []Role
-	err := r.db.Where("scope_id = ?", scopeID).Find(&roles).Error
+	err := r.db.
+		Where("(tenant_id IS NULL AND code IN ?) OR tenant_id = ?", []string{"team_admin", "team_member"}, tenantID).
+		Order("tenant_id IS NULL DESC, sort_order ASC, created_at DESC").
+		Find(&roles).Error
 	return roles, err
 }
 
@@ -282,26 +295,12 @@ func (r *roleRepository) Delete(id uuid.UUID) error {
 
 func (r *roleRepository) GetAll() ([]Role, error) {
 	var roles []Role
-	err := r.db.Find(&roles).Error
-	return roles, err
-}
-
-func (r *roleRepository) GetByScope(scope string) ([]Role, error) {
-	var roles []Role
-	err := r.db.Joins("JOIN scopes ON roles.scope_id = scopes.id").Where("scopes.code = ?", scope).Find(&roles).Error
+	err := r.db.Where("tenant_id IS NULL").Find(&roles).Error
 	return roles, err
 }
 
 func (r *roleRepository) ListByPage(offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error) {
-	return r.listWithScope(offset, limit, roleCode, roleName, description, startTime, endTime, enabled, "")
-}
-
-func (r *roleRepository) ListByScope(scope string, offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error) {
-	return r.listWithScope(offset, limit, roleCode, roleName, description, startTime, endTime, enabled, scope)
-}
-
-func (r *roleRepository) listWithScope(offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool, scope string) ([]Role, int64, error) {
-	baseQuery := r.db.Model(&Role{}).Preload("Scope")
+	baseQuery := r.db.Model(&Role{}).Where("tenant_id IS NULL")
 	if roleCode != "" {
 		baseQuery = baseQuery.Where("code LIKE ?", "%"+roleCode+"%")
 	}
@@ -324,10 +323,6 @@ func (r *roleRepository) listWithScope(offset, limit int, roleCode, roleName, de
 			baseQuery = baseQuery.Where("status = ?", "disabled")
 		}
 	}
-	if scope != "" {
-		baseQuery = baseQuery.Joins("JOIN scopes ON roles.scope_id = scopes.id").Where("scopes.code = ?", scope)
-	}
-
 	var total int64
 	if err := baseQuery.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -340,85 +335,6 @@ func (r *roleRepository) listWithScope(offset, limit int, roleCode, roleName, de
 
 func (r *roleRepository) UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error {
 	return r.db.Model(&Role{}).Where("id = ?", id).Updates(updates).Error
-}
-
-type ScopeRepository interface {
-	GetByID(id uuid.UUID) (*Scope, error)
-	GetByCode(code string) (*Scope, error)
-	Create(scope *Scope) error
-	Update(scope *Scope) error
-	Delete(id uuid.UUID) error
-	GetAll() ([]Scope, error)
-	List(offset, limit int, code, name string) ([]Scope, int64, error)
-}
-
-type scopeRepository struct {
-	db *gorm.DB
-}
-
-func NewScopeRepository(db *gorm.DB) ScopeRepository {
-	return &scopeRepository{db: db}
-}
-
-func (r *scopeRepository) GetByID(id uuid.UUID) (*Scope, error) {
-	var scope Scope
-	err := r.db.Where("id = ?", id).First(&scope).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, gorm.ErrRecordNotFound
-		}
-		return nil, err
-	}
-	return &scope, nil
-}
-
-func (r *scopeRepository) GetByCode(code string) (*Scope, error) {
-	var scope Scope
-	err := r.db.Where("code = ?", code).First(&scope).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, gorm.ErrRecordNotFound
-		}
-		return nil, err
-	}
-	return &scope, nil
-}
-
-func (r *scopeRepository) Create(scope *Scope) error {
-	return r.db.Create(scope).Error
-}
-
-func (r *scopeRepository) Update(scope *Scope) error {
-	return r.db.Model(scope).Updates(scope).Error
-}
-
-func (r *scopeRepository) Delete(id uuid.UUID) error {
-	return r.db.Delete(&Scope{}, id).Error
-}
-
-func (r *scopeRepository) GetAll() ([]Scope, error) {
-	var scopes []Scope
-	err := r.db.Order("sort_order ASC").Find(&scopes).Error
-	return scopes, err
-}
-
-func (r *scopeRepository) List(offset, limit int, code, name string) ([]Scope, int64, error) {
-	baseQuery := r.db.Model(&Scope{})
-	if code != "" {
-		baseQuery = baseQuery.Where("code LIKE ?", "%"+code+"%")
-	}
-	if name != "" {
-		baseQuery = baseQuery.Where("name LIKE ?", "%"+name+"%")
-	}
-
-	var total int64
-	if err := baseQuery.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
-
-	var scopes []Scope
-	err := baseQuery.Offset(offset).Limit(limit).Order("sort_order ASC").Find(&scopes).Error
-	return scopes, total, err
 }
 
 type MenuRepository interface {
@@ -445,9 +361,25 @@ func NewMenuRepository(db *gorm.DB) MenuRepository {
 	return &menuRepository{db: db}
 }
 
+func (r *menuRepository) supportsMenuManageGroupColumn() bool {
+	return r.db.Migrator().HasColumn(&Menu{}, "manage_group_id")
+}
+
+func (r *menuRepository) supportsMenuManageGroupTable() bool {
+	return r.db.Migrator().HasTable(&MenuManageGroup{})
+}
+
+func (r *menuRepository) menuQuery() *gorm.DB {
+	query := r.db
+	if r.supportsMenuManageGroupColumn() && r.supportsMenuManageGroupTable() {
+		query = query.Preload("ManageGroup")
+	}
+	return query
+}
+
 func (r *menuRepository) GetByID(id uuid.UUID) (*Menu, error) {
 	var menu Menu
-	err := r.db.Where("id = ?", id).First(&menu).Error
+	err := r.menuQuery().Where("id = ?", id).First(&menu).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
@@ -459,29 +391,20 @@ func (r *menuRepository) GetByID(id uuid.UUID) (*Menu, error) {
 
 func (r *menuRepository) GetChildren(parentID uuid.UUID) ([]Menu, error) {
 	var menus []Menu
-	err := r.db.Where("parent_id = ?", parentID).Find(&menus).Error
+	err := r.menuQuery().Where("parent_id = ?", parentID).Find(&menus).Error
 	return menus, err
 }
 
 func (r *menuRepository) Create(menu *Menu) error {
-	return r.db.Create(menu).Error
+	if r.supportsMenuManageGroupColumn() {
+		return r.db.Create(menu).Error
+	}
+	menu.ManageGroupID = nil
+	return r.db.Omit("ManageGroupID", "ManageGroup").Create(menu).Error
 }
 
 func (r *menuRepository) Update(menu *Menu, updateParent bool) error {
-	if updateParent {
-		return r.db.Model(menu).Updates(map[string]interface{}{
-			"parent_id":  menu.ParentID,
-			"path":       menu.Path,
-			"name":       menu.Name,
-			"component":  menu.Component,
-			"title":      menu.Title,
-			"icon":       menu.Icon,
-			"sort_order": menu.SortOrder,
-			"meta":       menu.Meta,
-			"hidden":     menu.Hidden,
-		}).Error
-	}
-	return r.db.Model(menu).Updates(map[string]interface{}{
+	updates := map[string]interface{}{
 		"path":       menu.Path,
 		"name":       menu.Name,
 		"component":  menu.Component,
@@ -490,7 +413,27 @@ func (r *menuRepository) Update(menu *Menu, updateParent bool) error {
 		"sort_order": menu.SortOrder,
 		"meta":       menu.Meta,
 		"hidden":     menu.Hidden,
-	}).Error
+	}
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		baseQuery := tx.Model(&Menu{}).Where("id = ?", menu.ID)
+		if err := baseQuery.Updates(updates).Error; err != nil {
+			return err
+		}
+
+		if r.supportsMenuManageGroupColumn() {
+			if err := baseQuery.Update("manage_group_id", menu.ManageGroupID).Error; err != nil {
+				return err
+			}
+		}
+
+		if updateParent {
+			if err := baseQuery.Update("parent_id", menu.ParentID).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
 
 func (r *menuRepository) Delete(id uuid.UUID) error {
@@ -499,13 +442,13 @@ func (r *menuRepository) Delete(id uuid.UUID) error {
 
 func (r *menuRepository) ListAll() ([]Menu, error) {
 	var menus []Menu
-	err := r.db.Order("sort_order ASC").Find(&menus).Error
+	err := r.menuQuery().Order("sort_order ASC").Find(&menus).Error
 	return menus, err
 }
 
 func (r *menuRepository) GetByIDs(ids []uuid.UUID) ([]Menu, error) {
 	var menus []Menu
-	err := r.db.Where("id IN ?", ids).Find(&menus).Error
+	err := r.menuQuery().Where("id IN ?", ids).Find(&menus).Error
 	return menus, err
 }
 
@@ -557,6 +500,7 @@ func BuildTree(menus []Menu, parentID *uuid.UUID) []*Menu {
 
 type TenantRepository interface {
 	GetByID(id uuid.UUID) (*Tenant, error)
+	GetByIDs(ids []uuid.UUID) ([]Tenant, error)
 	Create(tenant *Tenant) error
 	Update(tenant *Tenant) error
 	Delete(id uuid.UUID) error
@@ -582,6 +526,15 @@ func (r *tenantRepository) GetByID(id uuid.UUID) (*Tenant, error) {
 		return nil, err
 	}
 	return &tenant, nil
+}
+
+func (r *tenantRepository) GetByIDs(ids []uuid.UUID) ([]Tenant, error) {
+	var tenants []Tenant
+	if len(ids) == 0 {
+		return tenants, nil
+	}
+	err := r.db.Where("id IN ?", ids).Find(&tenants).Error
+	return tenants, err
 }
 
 func (r *tenantRepository) Create(tenant *Tenant) error {
@@ -724,6 +677,7 @@ type UserRoleRepository interface {
 	GetRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID, tenantMemberRepo TenantMemberRepository) ([]uuid.UUID, error)
 	GetRoleCodesByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
 	GetEffectiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
+	GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
 	GetEffectiveRoleCodesByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
 	ReplaceUserRoles(userID uuid.UUID, tenantID *uuid.UUID, roleIDs []uuid.UUID) error
 	AssignRole(userID, roleID uuid.UUID, tenantID *uuid.UUID) error
@@ -749,7 +703,13 @@ func (r *userRoleRepository) GetRoleIDsByUserAndTenant(userID uuid.UUID, tenantI
 		query = query.Where("tenant_id = ?", *tenantID)
 	}
 	err := query.Pluck("role_id", &roleIDs).Error
-	return roleIDs, err
+	if err != nil {
+		return nil, err
+	}
+	if tenantID != nil && len(roleIDs) == 0 {
+		return r.getTenantIdentityRoleIDs(userID, *tenantID, false)
+	}
+	return roleIDs, nil
 }
 
 func (r *userRoleRepository) GetRoleCodesByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error) {
@@ -763,7 +723,13 @@ func (r *userRoleRepository) GetRoleCodesByUserAndTenant(userID uuid.UUID, tenan
 		query = query.Where("user_roles.tenant_id = ?", *tenantID)
 	}
 	err := query.Pluck("roles.code", &codes).Error
-	return codes, err
+	if err != nil {
+		return nil, err
+	}
+	if tenantID != nil && len(codes) == 0 {
+		return r.getTenantIdentityRoleCodes(userID, *tenantID, false)
+	}
+	return codes, nil
 }
 
 func (r *userRoleRepository) GetEffectiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {
@@ -772,10 +738,37 @@ func (r *userRoleRepository) GetEffectiveRoleIDsByUserAndTenant(userID uuid.UUID
 	if tenantID == nil {
 		query = query.Where("tenant_id IS NULL")
 	} else {
-		query = query.Where("tenant_id IS NULL OR tenant_id = ?", *tenantID)
+		query = query.Where("tenant_id = ?", *tenantID)
 	}
 	err := query.Pluck("role_id", &roleIDs).Error
-	return roleIDs, err
+	if err != nil {
+		return nil, err
+	}
+	if tenantID != nil && len(roleIDs) == 0 {
+		return r.getTenantIdentityRoleIDs(userID, *tenantID, false)
+	}
+	return roleIDs, nil
+}
+
+func (r *userRoleRepository) GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {
+	var roleIDs []uuid.UUID
+	query := r.db.Model(&UserRole{}).
+		Joins("JOIN roles ON roles.id = user_roles.role_id").
+		Where("user_roles.user_id = ?", userID).
+		Where("roles.status = ?", "normal")
+	if tenantID == nil {
+		query = query.Where("user_roles.tenant_id IS NULL")
+	} else {
+		query = query.Where("user_roles.tenant_id = ?", *tenantID)
+	}
+	err := query.Distinct("user_roles.role_id").Pluck("user_roles.role_id", &roleIDs).Error
+	if err != nil {
+		return nil, err
+	}
+	if tenantID != nil && len(roleIDs) == 0 {
+		return r.getTenantIdentityRoleIDs(userID, *tenantID, true)
+	}
+	return roleIDs, nil
 }
 
 func (r *userRoleRepository) GetEffectiveRoleCodesByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error) {
@@ -786,10 +779,62 @@ func (r *userRoleRepository) GetEffectiveRoleCodesByUserAndTenant(userID uuid.UU
 	if tenantID == nil {
 		query = query.Where("user_roles.tenant_id IS NULL")
 	} else {
-		query = query.Where("user_roles.tenant_id IS NULL OR user_roles.tenant_id = ?", *tenantID)
+		query = query.Where("user_roles.tenant_id = ?", *tenantID)
 	}
 	err := query.Pluck("roles.code", &codes).Error
-	return codes, err
+	if err != nil {
+		return nil, err
+	}
+	if tenantID != nil && len(codes) == 0 {
+		return r.getTenantIdentityRoleCodes(userID, *tenantID, false)
+	}
+	return codes, nil
+}
+
+func (r *userRoleRepository) getTenantIdentityRoleIDs(userID, tenantID uuid.UUID, onlyActive bool) ([]uuid.UUID, error) {
+	roles, err := r.getTenantIdentityRoles(userID, tenantID, onlyActive)
+	if err != nil {
+		return nil, err
+	}
+	roleIDs := make([]uuid.UUID, 0, len(roles))
+	for _, role := range roles {
+		roleIDs = append(roleIDs, role.ID)
+	}
+	return roleIDs, nil
+}
+
+func (r *userRoleRepository) getTenantIdentityRoleCodes(userID, tenantID uuid.UUID, onlyActive bool) ([]string, error) {
+	roles, err := r.getTenantIdentityRoles(userID, tenantID, onlyActive)
+	if err != nil {
+		return nil, err
+	}
+	codes := make([]string, 0, len(roles))
+	for _, role := range roles {
+		codes = append(codes, role.Code)
+	}
+	return codes, nil
+}
+
+func (r *userRoleRepository) getTenantIdentityRoles(userID, tenantID uuid.UUID, onlyActive bool) ([]Role, error) {
+	var member TenantMember
+	err := r.db.Where("user_id = ? AND tenant_id = ?", userID, tenantID).First(&member).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []Role{}, nil
+		}
+		return nil, err
+	}
+	if member.Status != "active" {
+		return []Role{}, nil
+	}
+
+	var roles []Role
+	query := r.db.Where("code = ? AND tenant_id IS NULL", member.RoleCode)
+	if onlyActive {
+		query = query.Where("status = ?", "normal")
+	}
+	err = query.Order("sort_order ASC, created_at DESC").Find(&roles).Error
+	return roles, err
 }
 
 func (r *userRoleRepository) ReplaceUserRoles(userID uuid.UUID, tenantID *uuid.UUID, roleIDs []uuid.UUID) error {
@@ -890,7 +935,6 @@ func (r *userRepository) loadGlobalRoles(users []*User) error {
 		Description string    `gorm:"column:description"`
 		Status      string    `gorm:"column:status"`
 		Priority    int       `gorm:"column:priority"`
-		ScopeID     uuid.UUID `gorm:"column:scope_id"`
 		SortOrder   int       `gorm:"column:sort_order"`
 		IsSystem    bool      `gorm:"column:is_system"`
 		CreatedAt   time.Time `gorm:"column:created_at"`
@@ -899,7 +943,7 @@ func (r *userRepository) loadGlobalRoles(users []*User) error {
 
 	var rows []userRoleRow
 	if err := r.db.Table("user_roles").
-		Select("user_roles.user_id, roles.id, roles.code, roles.name, roles.description, roles.status, roles.priority, roles.scope_id, roles.sort_order, roles.is_system, roles.created_at, roles.updated_at").
+		Select("user_roles.user_id, roles.id, roles.code, roles.name, roles.description, roles.status, roles.priority, roles.sort_order, roles.is_system, roles.created_at, roles.updated_at").
 		Joins("JOIN roles ON roles.id = user_roles.role_id").
 		Where("user_roles.user_id IN ?", userIDs).
 		Where("user_roles.tenant_id IS NULL").
@@ -907,24 +951,39 @@ func (r *userRepository) loadGlobalRoles(users []*User) error {
 		return err
 	}
 
+	roleCache := make(map[uuid.UUID]*Role)
+	userRoleIndex := make(map[uuid.UUID]map[uuid.UUID]int, len(users))
+
 	for _, row := range rows {
 		target, ok := userIndex[row.UserID]
 		if !ok {
 			continue
 		}
-		target.Roles = append(target.Roles, Role{
-			ID:          row.ID,
-			Code:        row.Code,
-			Name:        row.Name,
-			Description: row.Description,
-			Status:      row.Status,
-			Priority:    row.Priority,
-			ScopeID:     row.ScopeID,
-			SortOrder:   row.SortOrder,
-			IsSystem:    row.IsSystem,
-			CreatedAt:   row.CreatedAt,
-			UpdatedAt:   row.UpdatedAt,
-		})
+		role, exists := roleCache[row.ID]
+		if !exists {
+			role = &Role{
+				ID:          row.ID,
+				Code:        row.Code,
+				Name:        row.Name,
+				Description: row.Description,
+				Status:      row.Status,
+				Priority:    row.Priority,
+				SortOrder:   row.SortOrder,
+				IsSystem:    row.IsSystem,
+				CreatedAt:   row.CreatedAt,
+				UpdatedAt:   row.UpdatedAt,
+			}
+			roleCache[row.ID] = role
+		}
+		if _, exists := userRoleIndex[target.ID]; !exists {
+			userRoleIndex[target.ID] = make(map[uuid.UUID]int)
+		}
+		if roleIdx, exists := userRoleIndex[target.ID][role.ID]; exists {
+			target.Roles[roleIdx] = *role
+			continue
+		}
+		userRoleIndex[target.ID][role.ID] = len(target.Roles)
+		target.Roles = append(target.Roles, *role)
 	}
 
 	return nil
@@ -938,45 +997,1453 @@ func userSlicePointers(users []User) []*User {
 	return result
 }
 
-type RoleMenuRepository interface {
-	GetMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error)
-	GetMenuIDsByRoleIDs(roleIDs []uuid.UUID) ([]uuid.UUID, error)
-	SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error
+type PermissionKeyRepository interface {
+	List(offset, limit int, params *PermissionKeyListParams) ([]PermissionKey, int64, error)
+	GetByID(id uuid.UUID) (*PermissionKey, error)
+	GetByIDs(ids []uuid.UUID) ([]PermissionKey, error)
+	GetByPermissionKey(permissionKey string) (*PermissionKey, error)
+	GetAllEnabled() ([]PermissionKey, error)
+	ListDistinctModuleCodes() ([]string, error)
+	Create(action *PermissionKey) error
+	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
+	Delete(id uuid.UUID) error
 }
 
-type roleMenuRepository struct {
+type PermissionKeyListParams struct {
+	Keyword        string
+	PermissionKey  string
+	Name           string
+	ModuleCode     string
+	ModuleGroupID  *uuid.UUID
+	FeatureGroupID *uuid.UUID
+	ContextType    string
+	FeatureKind    string
+	Status         string
+	IsBuiltin      *bool
+}
+
+type PermissionGroupRepository interface {
+	List(offset, limit int, groupType string, keyword string, status string) ([]PermissionGroup, int64, error)
+	GetByID(id uuid.UUID) (*PermissionGroup, error)
+	GetByTypeAndCode(groupType, code string) (*PermissionGroup, error)
+	ListByType(groupType string) ([]PermissionGroup, error)
+	Create(group *PermissionGroup) error
+	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
+}
+
+type permissionGroupRepository struct {
 	db *gorm.DB
 }
 
-func NewRoleMenuRepository(db *gorm.DB) RoleMenuRepository {
-	return &roleMenuRepository{db: db}
+func NewPermissionGroupRepository(db *gorm.DB) PermissionGroupRepository {
+	return &permissionGroupRepository{db: db}
 }
 
-func (r *roleMenuRepository) GetMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error) {
+func (r *permissionGroupRepository) List(offset, limit int, groupType string, keyword string, status string) ([]PermissionGroup, int64, error) {
+	query := r.db.Model(&PermissionGroup{})
+	if strings.TrimSpace(groupType) != "" {
+		query = query.Where("group_type = ?", strings.TrimSpace(groupType))
+	}
+	if strings.TrimSpace(keyword) != "" {
+		target := "%" + strings.TrimSpace(keyword) + "%"
+		query = query.Where("(code LIKE ? OR name LIKE ? OR name_en LIKE ? OR description LIKE ?)", target, target, target, target)
+	}
+	if strings.TrimSpace(status) != "" {
+		query = query.Where("status = ?", strings.TrimSpace(status))
+	}
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	var items []PermissionGroup
+	err := query.Offset(offset).Limit(limit).Order("group_type ASC, sort_order ASC, created_at DESC").Find(&items).Error
+	return items, total, err
+}
+
+func (r *permissionGroupRepository) GetByID(id uuid.UUID) (*PermissionGroup, error) {
+	var item PermissionGroup
+	err := r.db.Where("id = ?", id).First(&item).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *permissionGroupRepository) GetByTypeAndCode(groupType, code string) (*PermissionGroup, error) {
+	var item PermissionGroup
+	err := r.db.Where("group_type = ? AND code = ?", strings.TrimSpace(groupType), strings.TrimSpace(code)).First(&item).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *permissionGroupRepository) ListByType(groupType string) ([]PermissionGroup, error) {
+	var items []PermissionGroup
+	query := r.db.Model(&PermissionGroup{})
+	if strings.TrimSpace(groupType) != "" {
+		query = query.Where("group_type = ?", strings.TrimSpace(groupType))
+	}
+	err := query.Order("sort_order ASC, created_at DESC").Find(&items).Error
+	return items, err
+}
+
+func (r *permissionGroupRepository) Create(group *PermissionGroup) error {
+	return r.db.Create(group).Error
+}
+
+func (r *permissionGroupRepository) UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error {
+	return r.db.Model(&PermissionGroup{}).Where("id = ?", id).Updates(updates).Error
+}
+
+type permissionKeyRepository struct {
+	db *gorm.DB
+}
+
+func NewPermissionKeyRepository(db *gorm.DB) PermissionKeyRepository {
+	return &permissionKeyRepository{db: db}
+}
+
+func (r *permissionKeyRepository) List(offset, limit int, params *PermissionKeyListParams) ([]PermissionKey, int64, error) {
+	query := r.db.
+		Model(&PermissionKey{}).
+		Joins("LEFT JOIN permission_groups AS module_groups ON module_groups.id = permission_keys.module_group_id AND module_groups.deleted_at IS NULL").
+		Joins("LEFT JOIN permission_groups AS feature_groups ON feature_groups.id = permission_keys.feature_group_id AND feature_groups.deleted_at IS NULL").
+		Preload("ModuleGroup").
+		Preload("FeatureGroup")
+	if params != nil {
+		if params.Keyword != "" {
+			keyword := "%" + params.Keyword + "%"
+			query = query.Where(
+				"(name LIKE ? OR description LIKE ? OR permission_key LIKE ? OR module_code LIKE ? OR feature_kind LIKE ?)",
+				keyword, keyword, keyword, keyword, keyword,
+			)
+		}
+		if params.PermissionKey != "" {
+			query = query.Where("permission_key LIKE ?", "%"+params.PermissionKey+"%")
+		}
+		if params.Name != "" {
+			query = query.Where("name LIKE ?", "%"+params.Name+"%")
+		}
+		if params.ModuleCode != "" {
+			query = query.Where("module_code LIKE ?", "%"+params.ModuleCode+"%")
+		}
+		if params.ModuleGroupID != nil {
+			query = query.Where("module_group_id = ?", *params.ModuleGroupID)
+		}
+		if params.FeatureGroupID != nil {
+			query = query.Where("feature_group_id = ?", *params.FeatureGroupID)
+		}
+		if params.ContextType != "" {
+			query = query.Where("context_type = ?", params.ContextType)
+		}
+		if params.FeatureKind != "" {
+			query = query.Where("feature_kind = ?", params.FeatureKind)
+		}
+		if params.Status != "" {
+			query = query.Where(
+				`CASE
+					WHEN permission_keys.status = 'suspended'
+						OR module_groups.status = 'suspended'
+						OR feature_groups.status = 'suspended'
+					THEN 'suspended'
+					ELSE 'normal'
+				END = ?`,
+				params.Status,
+			)
+		}
+		if params.IsBuiltin != nil {
+			query = query.Where("is_builtin = ?", *params.IsBuiltin)
+		}
+	}
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	var actions []PermissionKey
+	err := query.Offset(offset).Limit(limit).Order("sort_order ASC, created_at DESC").Find(&actions).Error
+	return actions, total, err
+}
+
+func (r *permissionKeyRepository) GetByID(id uuid.UUID) (*PermissionKey, error) {
+	var action PermissionKey
+	err := r.db.Preload("ModuleGroup").Preload("FeatureGroup").Where("id = ?", id).First(&action).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &action, nil
+}
+
+func (r *permissionKeyRepository) GetByPermissionKey(permissionKey string) (*PermissionKey, error) {
+	var action PermissionKey
+	err := r.db.Preload("ModuleGroup").Preload("FeatureGroup").Where("permission_keys.permission_key = ?", permissionKey).First(&action).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &action, nil
+}
+
+func (r *permissionKeyRepository) GetByIDs(ids []uuid.UUID) ([]PermissionKey, error) {
+	var actions []PermissionKey
+	if len(ids) == 0 {
+		return actions, nil
+	}
+	err := r.db.Preload("ModuleGroup").Preload("FeatureGroup").Where("id IN ?", ids).Order("sort_order ASC, created_at DESC").Find(&actions).Error
+	return actions, err
+}
+
+func (r *permissionKeyRepository) GetAllEnabled() ([]PermissionKey, error) {
+	var actions []PermissionKey
+	err := r.db.Preload("ModuleGroup").Preload("FeatureGroup").Where("status = ?", "normal").Order("sort_order ASC, created_at DESC").Find(&actions).Error
+	return actions, err
+}
+
+func (r *permissionKeyRepository) ListDistinctModuleCodes() ([]string, error) {
+	var moduleCodes []string
+	err := r.db.Model(&PermissionKey{}).
+		Where("COALESCE(permission_keys.module_code, '') <> ''").
+		Distinct("permission_keys.module_code").
+		Order("permission_keys.module_code ASC").
+		Pluck("permission_keys.module_code", &moduleCodes).Error
+	return moduleCodes, err
+}
+
+func (r *permissionKeyRepository) Create(action *PermissionKey) error {
+	return r.db.Create(action).Error
+}
+
+func (r *permissionKeyRepository) UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error {
+	return r.db.Model(&PermissionKey{}).Where("id = ?", id).Updates(updates).Error
+}
+
+func (r *permissionKeyRepository) Delete(id uuid.UUID) error {
+	return r.db.Delete(&PermissionKey{}, id).Error
+}
+
+type RoleDataPermissionRepository interface {
+	GetByRoleID(roleID uuid.UUID) ([]RoleDataPermission, error)
+	ReplaceRoleDataPermissions(roleID uuid.UUID, permissions []RoleDataPermission) error
+	DeleteByRoleID(roleID uuid.UUID) error
+}
+
+type roleDataPermissionRepository struct {
+	db *gorm.DB
+}
+
+func NewRoleDataPermissionRepository(db *gorm.DB) RoleDataPermissionRepository {
+	return &roleDataPermissionRepository{db: db}
+}
+
+func (r *roleDataPermissionRepository) GetByRoleID(roleID uuid.UUID) ([]RoleDataPermission, error) {
+	var records []RoleDataPermission
+	err := r.db.Where("role_id = ?", roleID).Order("resource_code ASC").Find(&records).Error
+	return records, err
+}
+
+func (r *roleDataPermissionRepository) ReplaceRoleDataPermissions(roleID uuid.UUID, permissions []RoleDataPermission) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("role_id = ?", roleID).Delete(&RoleDataPermission{}).Error; err != nil {
+			return err
+		}
+		if len(permissions) == 0 {
+			return nil
+		}
+		return tx.Create(&permissions).Error
+	})
+}
+
+func (r *roleDataPermissionRepository) DeleteByRoleID(roleID uuid.UUID) error {
+	return r.db.Where("role_id = ?", roleID).Delete(&RoleDataPermission{}).Error
+}
+
+type UserActionPermissionRepository interface {
+	GetByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]UserActionPermission, error)
+	GetEffectiveByUserAndAction(userID uuid.UUID, tenantID *uuid.UUID, actionID uuid.UUID) ([]UserActionPermission, error)
+	ReplaceUserActions(userID uuid.UUID, tenantID *uuid.UUID, actions []UserActionPermission) error
+	DeleteByKeyID(actionID uuid.UUID) error
+}
+
+type userActionPermissionRepository struct {
+	db *gorm.DB
+}
+
+func NewUserActionPermissionRepository(db *gorm.DB) UserActionPermissionRepository {
+	return &userActionPermissionRepository{db: db}
+}
+
+func (r *userActionPermissionRepository) GetByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]UserActionPermission, error) {
+	var records []UserActionPermission
+	query := r.db.Where("user_id = ?", userID)
+	if tenantID == nil {
+		query = query.Where("tenant_id IS NULL")
+	} else {
+		query = query.Where("tenant_id = ?", *tenantID)
+	}
+	err := query.Find(&records).Error
+	return records, err
+}
+
+func (r *userActionPermissionRepository) GetEffectiveByUserAndAction(userID uuid.UUID, tenantID *uuid.UUID, actionID uuid.UUID) ([]UserActionPermission, error) {
+	var records []UserActionPermission
+	query := r.db.Where("user_id = ? AND action_id = ?", userID, actionID)
+	if tenantID == nil {
+		query = query.Where("tenant_id IS NULL")
+	} else {
+		query = query.Where("tenant_id IS NULL OR tenant_id = ?", *tenantID)
+	}
+	err := query.Find(&records).Error
+	return records, err
+}
+
+func (r *userActionPermissionRepository) ReplaceUserActions(userID uuid.UUID, tenantID *uuid.UUID, actions []UserActionPermission) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		query := tx.Where("user_id = ?", userID)
+		if tenantID == nil {
+			query = query.Where("tenant_id IS NULL")
+		} else {
+			query = query.Where("tenant_id = ?", *tenantID)
+		}
+		if err := query.Delete(&UserActionPermission{}).Error; err != nil {
+			return err
+		}
+		if len(actions) == 0 {
+			return nil
+		}
+		return tx.Create(&actions).Error
+	})
+}
+
+func (r *userActionPermissionRepository) DeleteByKeyID(actionID uuid.UUID) error {
+	return r.db.Where("action_id = ?", actionID).Delete(&UserActionPermission{}).Error
+}
+
+type APIEndpointRepository interface {
+	List(offset, limit int, params *APIEndpointListParams) ([]APIEndpoint, int64, error)
+	Upsert(endpoint *APIEndpoint) error
+	GetByMethodAndPath(method, path string) (*APIEndpoint, error)
+	GetByID(id uuid.UUID) (*APIEndpoint, error)
+	GetByIDs(ids []uuid.UUID) ([]APIEndpoint, error)
+	Create(endpoint *APIEndpoint) error
+	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
+}
+
+type APIEndpointCategoryRepository interface {
+	List() ([]APIEndpointCategory, error)
+	GetByID(id uuid.UUID) (*APIEndpointCategory, error)
+	GetByCode(code string) (*APIEndpointCategory, error)
+	Create(item *APIEndpointCategory) error
+	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
+}
+
+type FeaturePackageRepository interface {
+	List(offset, limit int, params *FeaturePackageListParams) ([]FeaturePackage, int64, error)
+	GetByID(id uuid.UUID) (*FeaturePackage, error)
+	GetByIDs(ids []uuid.UUID) ([]FeaturePackage, error)
+	GetByPackageKey(packageKey string) (*FeaturePackage, error)
+	Create(item *FeaturePackage) error
+	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
+	Delete(id uuid.UUID) error
+}
+
+type FeaturePackageListParams struct {
+	Keyword     string
+	PackageKey  string
+	PackageType string
+	Name        string
+	ContextType string
+	Status      string
+}
+
+type featurePackageRepository struct {
+	db *gorm.DB
+}
+
+func NewFeaturePackageRepository(db *gorm.DB) FeaturePackageRepository {
+	return &featurePackageRepository{db: db}
+}
+
+func (r *featurePackageRepository) List(offset, limit int, params *FeaturePackageListParams) ([]FeaturePackage, int64, error) {
+	query := r.db.Model(&FeaturePackage{})
+	if params != nil {
+		if params.Keyword != "" {
+			keyword := "%" + params.Keyword + "%"
+			query = query.Where("(package_key LIKE ? OR name LIKE ? OR description LIKE ?)", keyword, keyword, keyword)
+		}
+		if params.PackageKey != "" {
+			query = query.Where("package_key LIKE ?", "%"+params.PackageKey+"%")
+		}
+		if params.PackageType != "" {
+			query = query.Where("package_type = ?", params.PackageType)
+		}
+		if params.Name != "" {
+			query = query.Where("name LIKE ?", "%"+params.Name+"%")
+		}
+		if params.ContextType != "" {
+			switch params.ContextType {
+			case "platform", "team":
+				query = query.Where("(context_type = ? OR context_type = ?)", params.ContextType, "common")
+			default:
+				query = query.Where("context_type = ?", params.ContextType)
+			}
+		}
+		if params.Status != "" {
+			query = query.Where("status = ?", params.Status)
+		}
+	}
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	var items []FeaturePackage
+	err := query.Offset(offset).Limit(limit).Order("sort_order ASC, created_at DESC").Find(&items).Error
+	return items, total, err
+}
+
+func (r *featurePackageRepository) GetByID(id uuid.UUID) (*FeaturePackage, error) {
+	var item FeaturePackage
+	err := r.db.Where("id = ?", id).First(&item).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *featurePackageRepository) GetByIDs(ids []uuid.UUID) ([]FeaturePackage, error) {
+	var items []FeaturePackage
+	if len(ids) == 0 {
+		return items, nil
+	}
+	err := r.db.Where("id IN ?", ids).Order("sort_order ASC, created_at DESC").Find(&items).Error
+	return items, err
+}
+
+func (r *featurePackageRepository) GetByPackageKey(packageKey string) (*FeaturePackage, error) {
+	var item FeaturePackage
+	err := r.db.Where("package_key = ?", packageKey).First(&item).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *featurePackageRepository) Create(item *FeaturePackage) error {
+	return r.db.Create(item).Error
+}
+
+func (r *featurePackageRepository) UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error {
+	return r.db.Model(&FeaturePackage{}).Where("id = ?", id).Updates(updates).Error
+}
+
+func (r *featurePackageRepository) Delete(id uuid.UUID) error {
+	return r.db.Delete(&FeaturePackage{}, id).Error
+}
+
+type FeaturePackageKeyRepository interface {
+	GetKeyIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error)
+	GetPackageIDsByKeyID(actionID uuid.UUID) ([]uuid.UUID, error)
+	CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error)
+	ReplacePackageKeys(packageID uuid.UUID, actionIDs []uuid.UUID) error
+	DeleteByPackageID(packageID uuid.UUID) error
+	DeleteByKeyID(actionID uuid.UUID) error
+}
+
+type featurePackageKeyRepository struct {
+	db *gorm.DB
+}
+
+func NewFeaturePackageKeyRepository(db *gorm.DB) FeaturePackageKeyRepository {
+	return &featurePackageKeyRepository{db: db}
+}
+
+func (r *featurePackageKeyRepository) GetKeyIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error) {
+	var actionIDs []uuid.UUID
+	err := r.db.Model(&FeaturePackageKey{}).Where("package_id = ?", packageID).Pluck("action_id", &actionIDs).Error
+	return actionIDs, err
+}
+
+func (r *featurePackageKeyRepository) GetPackageIDsByKeyID(actionID uuid.UUID) ([]uuid.UUID, error) {
+	var packageIDs []uuid.UUID
+	err := r.db.Model(&FeaturePackageKey{}).Where("action_id = ?", actionID).Pluck("package_id", &packageIDs).Error
+	return packageIDs, err
+}
+
+func (r *featurePackageKeyRepository) CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
+	result := make(map[uuid.UUID]int64, len(packageIDs))
+	if len(packageIDs) == 0 {
+		return result, nil
+	}
+	type row struct {
+		PackageID uuid.UUID
+		Total     int64
+	}
+	var rows []row
+	if err := r.db.Model(&FeaturePackageKey{}).
+		Select("package_id, COUNT(*) AS total").
+		Where("package_id IN ?", packageIDs).
+		Group("package_id").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	for _, item := range rows {
+		result[item.PackageID] = item.Total
+	}
+	return result, nil
+}
+
+func (r *featurePackageKeyRepository) ReplacePackageKeys(packageID uuid.UUID, actionIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("package_id = ?", packageID).Delete(&FeaturePackageKey{}).Error; err != nil {
+			return err
+		}
+		if len(actionIDs) == 0 {
+			return nil
+		}
+		items := make([]FeaturePackageKey, 0, len(actionIDs))
+		seen := make(map[uuid.UUID]struct{}, len(actionIDs))
+		for _, actionID := range actionIDs {
+			if _, ok := seen[actionID]; ok {
+				continue
+			}
+			seen[actionID] = struct{}{}
+			items = append(items, FeaturePackageKey{PackageID: packageID, ActionID: actionID})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *featurePackageKeyRepository) DeleteByPackageID(packageID uuid.UUID) error {
+	return r.db.Where("package_id = ?", packageID).Delete(&FeaturePackageKey{}).Error
+}
+
+func (r *featurePackageKeyRepository) DeleteByKeyID(actionID uuid.UUID) error {
+	return r.db.Where("action_id = ?", actionID).Delete(&FeaturePackageKey{}).Error
+}
+
+type FeaturePackageMenuRepository interface {
+	GetMenuIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error)
+	GetMenuIDsByPackageIDs(packageIDs []uuid.UUID) ([]uuid.UUID, error)
+	CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error)
+	ReplacePackageMenus(packageID uuid.UUID, menuIDs []uuid.UUID) error
+	DeleteByPackageID(packageID uuid.UUID) error
+	DeleteByMenuID(menuID uuid.UUID) error
+}
+
+type featurePackageMenuRepository struct {
+	db *gorm.DB
+}
+
+func NewFeaturePackageMenuRepository(db *gorm.DB) FeaturePackageMenuRepository {
+	return &featurePackageMenuRepository{db: db}
+}
+
+func (r *featurePackageMenuRepository) GetMenuIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error) {
 	var menuIDs []uuid.UUID
-	err := r.db.Model(&RoleMenu{}).Where("role_id = ?", roleID).Pluck("menu_id", &menuIDs).Error
+	err := r.db.Model(&FeaturePackageMenu{}).Where("package_id = ?", packageID).Pluck("menu_id", &menuIDs).Error
 	return menuIDs, err
 }
 
-func (r *roleMenuRepository) GetMenuIDsByRoleIDs(roleIDs []uuid.UUID) ([]uuid.UUID, error) {
+func (r *featurePackageMenuRepository) GetMenuIDsByPackageIDs(packageIDs []uuid.UUID) ([]uuid.UUID, error) {
 	var menuIDs []uuid.UUID
-	err := r.db.Model(&RoleMenu{}).Where("role_id IN ?", roleIDs).Pluck("menu_id", &menuIDs).Error
+	if len(packageIDs) == 0 {
+		return menuIDs, nil
+	}
+	err := r.db.Model(&FeaturePackageMenu{}).Distinct("menu_id").Where("package_id IN ?", packageIDs).Pluck("menu_id", &menuIDs).Error
 	return menuIDs, err
 }
 
-func (r *roleMenuRepository) SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error {
-	tx := r.db.Begin()
-	if err := tx.Where("role_id = ?", roleID).Delete(&RoleMenu{}).Error; err != nil {
-		tx.Rollback()
+func (r *featurePackageMenuRepository) CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
+	result := make(map[uuid.UUID]int64, len(packageIDs))
+	if len(packageIDs) == 0 {
+		return result, nil
+	}
+	type row struct {
+		PackageID uuid.UUID
+		Total     int64
+	}
+	var rows []row
+	if err := r.db.Model(&FeaturePackageMenu{}).
+		Select("package_id, COUNT(*) AS total").
+		Where("package_id IN ?", packageIDs).
+		Group("package_id").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	for _, item := range rows {
+		result[item.PackageID] = item.Total
+	}
+	return result, nil
+}
+
+func (r *featurePackageMenuRepository) ReplacePackageMenus(packageID uuid.UUID, menuIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("package_id = ?", packageID).Delete(&FeaturePackageMenu{}).Error; err != nil {
+			return err
+		}
+		if len(menuIDs) == 0 {
+			return nil
+		}
+		items := make([]FeaturePackageMenu, 0, len(menuIDs))
+		seen := make(map[uuid.UUID]struct{}, len(menuIDs))
+		for _, menuID := range menuIDs {
+			if _, ok := seen[menuID]; ok {
+				continue
+			}
+			seen[menuID] = struct{}{}
+			items = append(items, FeaturePackageMenu{PackageID: packageID, MenuID: menuID})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *featurePackageMenuRepository) DeleteByPackageID(packageID uuid.UUID) error {
+	return r.db.Where("package_id = ?", packageID).Delete(&FeaturePackageMenu{}).Error
+}
+
+func (r *featurePackageMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
+	return r.db.Where("menu_id = ?", menuID).Delete(&FeaturePackageMenu{}).Error
+}
+
+type TeamFeaturePackageRepository interface {
+	GetPackageIDsByTeamID(teamID uuid.UUID) ([]uuid.UUID, error)
+	GetTeamIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error)
+	CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error)
+	ReplaceTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error
+	DeleteByPackageID(packageID uuid.UUID) error
+}
+
+type teamFeaturePackageRepository struct {
+	db *gorm.DB
+}
+
+func NewTeamFeaturePackageRepository(db *gorm.DB) TeamFeaturePackageRepository {
+	return &teamFeaturePackageRepository{db: db}
+}
+
+func (r *teamFeaturePackageRepository) GetPackageIDsByTeamID(teamID uuid.UUID) ([]uuid.UUID, error) {
+	var packageIDs []uuid.UUID
+	err := r.db.Model(&TeamFeaturePackage{}).
+		Where("team_id = ? AND enabled = ?", teamID, true).
+		Pluck("package_id", &packageIDs).Error
+	return packageIDs, err
+}
+
+func (r *teamFeaturePackageRepository) GetTeamIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error) {
+	var teamIDs []uuid.UUID
+	err := r.db.Model(&TeamFeaturePackage{}).
+		Where("package_id = ? AND enabled = ?", packageID, true).
+		Pluck("team_id", &teamIDs).Error
+	return teamIDs, err
+}
+
+func (r *teamFeaturePackageRepository) CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
+	result := make(map[uuid.UUID]int64, len(packageIDs))
+	if len(packageIDs) == 0 {
+		return result, nil
+	}
+	type row struct {
+		PackageID uuid.UUID
+		Total     int64
+	}
+	var rows []row
+	if err := r.db.Model(&TeamFeaturePackage{}).
+		Select("package_id, COUNT(*) AS total").
+		Where("package_id IN ? AND enabled = ?", packageIDs, true).
+		Group("package_id").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	for _, item := range rows {
+		result[item.PackageID] = item.Total
+	}
+	return result, nil
+}
+
+func (r *teamFeaturePackageRepository) ReplaceTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("team_id = ?", teamID).Delete(&TeamFeaturePackage{}).Error; err != nil {
+			return err
+		}
+		if len(packageIDs) == 0 {
+			return nil
+		}
+		items := make([]TeamFeaturePackage, 0, len(packageIDs))
+		seen := make(map[uuid.UUID]struct{}, len(packageIDs))
+		now := time.Now()
+		for _, packageID := range packageIDs {
+			if _, ok := seen[packageID]; ok {
+				continue
+			}
+			seen[packageID] = struct{}{}
+			items = append(items, TeamFeaturePackage{
+				TeamID:    teamID,
+				PackageID: packageID,
+				Enabled:   true,
+				GrantedBy: grantedBy,
+				GrantedAt: &now,
+			})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *teamFeaturePackageRepository) DeleteByPackageID(packageID uuid.UUID) error {
+	return r.db.Where("package_id = ?", packageID).Delete(&TeamFeaturePackage{}).Error
+}
+
+type RoleFeaturePackageRepository interface {
+	GetPackageIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error
+	DeleteByRoleID(roleID uuid.UUID) error
+	DeleteByPackageID(packageID uuid.UUID) error
+}
+
+type roleFeaturePackageRepository struct {
+	db *gorm.DB
+}
+
+func NewRoleFeaturePackageRepository(db *gorm.DB) RoleFeaturePackageRepository {
+	return &roleFeaturePackageRepository{db: db}
+}
+
+func (r *roleFeaturePackageRepository) GetPackageIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error) {
+	var packageIDs []uuid.UUID
+	err := r.db.Model(&RoleFeaturePackage{}).
+		Where("role_id = ? AND enabled = ?", roleID, true).
+		Pluck("package_id", &packageIDs).Error
+	return packageIDs, err
+}
+
+func (r *roleFeaturePackageRepository) ReplaceRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("role_id = ?", roleID).Delete(&RoleFeaturePackage{}).Error; err != nil {
+			return err
+		}
+		if len(packageIDs) == 0 {
+			return nil
+		}
+		items := make([]RoleFeaturePackage, 0, len(packageIDs))
+		seen := make(map[uuid.UUID]struct{}, len(packageIDs))
+		now := time.Now()
+		for _, packageID := range packageIDs {
+			if _, ok := seen[packageID]; ok {
+				continue
+			}
+			seen[packageID] = struct{}{}
+			items = append(items, RoleFeaturePackage{
+				RoleID:    roleID,
+				PackageID: packageID,
+				Enabled:   true,
+				GrantedBy: grantedBy,
+				GrantedAt: &now,
+			})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *roleFeaturePackageRepository) DeleteByRoleID(roleID uuid.UUID) error {
+	return r.db.Where("role_id = ?", roleID).Delete(&RoleFeaturePackage{}).Error
+}
+
+func (r *roleFeaturePackageRepository) DeleteByPackageID(packageID uuid.UUID) error {
+	return r.db.Where("package_id = ?", packageID).Delete(&RoleFeaturePackage{}).Error
+}
+
+type FeaturePackageBundleRepository interface {
+	GetChildPackageIDs(packageID uuid.UUID) ([]uuid.UUID, error)
+	GetParentPackageIDs(childPackageID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceChildPackages(packageID uuid.UUID, childPackageIDs []uuid.UUID) error
+	DeleteByPackageID(packageID uuid.UUID) error
+	DeleteByChildPackageID(childPackageID uuid.UUID) error
+}
+
+type featurePackageBundleRepository struct {
+	db *gorm.DB
+}
+
+func NewFeaturePackageBundleRepository(db *gorm.DB) FeaturePackageBundleRepository {
+	return &featurePackageBundleRepository{db: db}
+}
+
+func (r *featurePackageBundleRepository) GetChildPackageIDs(packageID uuid.UUID) ([]uuid.UUID, error) {
+	var ids []uuid.UUID
+	err := r.db.Model(&FeaturePackageBundle{}).Where("package_id = ?", packageID).Pluck("child_package_id", &ids).Error
+	return ids, err
+}
+
+func (r *featurePackageBundleRepository) GetParentPackageIDs(childPackageID uuid.UUID) ([]uuid.UUID, error) {
+	var ids []uuid.UUID
+	err := r.db.Model(&FeaturePackageBundle{}).Where("child_package_id = ?", childPackageID).Pluck("package_id", &ids).Error
+	return ids, err
+}
+
+func (r *featurePackageBundleRepository) ReplaceChildPackages(packageID uuid.UUID, childPackageIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("package_id = ?", packageID).Delete(&FeaturePackageBundle{}).Error; err != nil {
+			return err
+		}
+		if len(childPackageIDs) == 0 {
+			return nil
+		}
+		items := make([]FeaturePackageBundle, 0, len(childPackageIDs))
+		seen := make(map[uuid.UUID]struct{}, len(childPackageIDs))
+		for _, childPackageID := range childPackageIDs {
+			if _, ok := seen[childPackageID]; ok {
+				continue
+			}
+			seen[childPackageID] = struct{}{}
+			items = append(items, FeaturePackageBundle{PackageID: packageID, ChildPackageID: childPackageID})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *featurePackageBundleRepository) DeleteByPackageID(packageID uuid.UUID) error {
+	return r.db.Where("package_id = ?", packageID).Delete(&FeaturePackageBundle{}).Error
+}
+
+func (r *featurePackageBundleRepository) DeleteByChildPackageID(childPackageID uuid.UUID) error {
+	return r.db.Where("child_package_id = ?", childPackageID).Delete(&FeaturePackageBundle{}).Error
+}
+
+type UserFeaturePackageRepository interface {
+	GetPackageIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceUserPackages(userID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error
+	DeleteByUserID(userID uuid.UUID) error
+	DeleteByPackageID(packageID uuid.UUID) error
+}
+
+type userFeaturePackageRepository struct {
+	db *gorm.DB
+}
+
+func NewUserFeaturePackageRepository(db *gorm.DB) UserFeaturePackageRepository {
+	return &userFeaturePackageRepository{db: db}
+}
+
+func (r *userFeaturePackageRepository) GetPackageIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error) {
+	var packageIDs []uuid.UUID
+	err := r.db.Model(&UserFeaturePackage{}).
+		Where("user_id = ? AND enabled = ?", userID, true).
+		Pluck("package_id", &packageIDs).Error
+	return packageIDs, err
+}
+
+func (r *userFeaturePackageRepository) ReplaceUserPackages(userID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("user_id = ?", userID).Delete(&UserFeaturePackage{}).Error; err != nil {
+			return err
+		}
+		if len(packageIDs) == 0 {
+			return nil
+		}
+		now := time.Now()
+		items := make([]UserFeaturePackage, 0, len(packageIDs))
+		seen := make(map[uuid.UUID]struct{}, len(packageIDs))
+		for _, packageID := range packageIDs {
+			if _, ok := seen[packageID]; ok {
+				continue
+			}
+			seen[packageID] = struct{}{}
+			items = append(items, UserFeaturePackage{
+				UserID:    userID,
+				PackageID: packageID,
+				Enabled:   true,
+				GrantedBy: grantedBy,
+				GrantedAt: &now,
+			})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *userFeaturePackageRepository) DeleteByUserID(userID uuid.UUID) error {
+	return r.db.Where("user_id = ?", userID).Delete(&UserFeaturePackage{}).Error
+}
+
+func (r *userFeaturePackageRepository) DeleteByPackageID(packageID uuid.UUID) error {
+	return r.db.Where("package_id = ?", packageID).Delete(&UserFeaturePackage{}).Error
+}
+
+type RoleHiddenMenuRepository interface {
+	GetMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceRoleHiddenMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error
+	DeleteByRoleID(roleID uuid.UUID) error
+	DeleteByMenuID(menuID uuid.UUID) error
+}
+
+type roleHiddenMenuRepository struct {
+	db *gorm.DB
+}
+
+func NewRoleHiddenMenuRepository(db *gorm.DB) RoleHiddenMenuRepository {
+	return &roleHiddenMenuRepository{db: db}
+}
+
+func (r *roleHiddenMenuRepository) GetMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error) {
+	var menuIDs []uuid.UUID
+	err := r.db.Model(&RoleHiddenMenu{}).Where("role_id = ?", roleID).Pluck("menu_id", &menuIDs).Error
+	return menuIDs, err
+}
+
+func (r *roleHiddenMenuRepository) ReplaceRoleHiddenMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("role_id = ?", roleID).Delete(&RoleHiddenMenu{}).Error; err != nil {
+			return err
+		}
+		if len(menuIDs) == 0 {
+			return nil
+		}
+		items := make([]RoleHiddenMenu, 0, len(menuIDs))
+		seen := make(map[uuid.UUID]struct{}, len(menuIDs))
+		for _, menuID := range menuIDs {
+			if menuID == uuid.Nil {
+				continue
+			}
+			if _, ok := seen[menuID]; ok {
+				continue
+			}
+			seen[menuID] = struct{}{}
+			items = append(items, RoleHiddenMenu{RoleID: roleID, MenuID: menuID})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *roleHiddenMenuRepository) DeleteByRoleID(roleID uuid.UUID) error {
+	return r.db.Where("role_id = ?", roleID).Delete(&RoleHiddenMenu{}).Error
+}
+
+func (r *roleHiddenMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
+	return r.db.Where("menu_id = ?", menuID).Delete(&RoleHiddenMenu{}).Error
+}
+
+type RoleDisabledActionRepository interface {
+	GetActionIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceRoleDisabledActions(roleID uuid.UUID, actionIDs []uuid.UUID) error
+	DeleteByRoleID(roleID uuid.UUID) error
+	DeleteByKeyID(actionID uuid.UUID) error
+}
+
+type roleDisabledActionRepository struct {
+	db *gorm.DB
+}
+
+func NewRoleDisabledActionRepository(db *gorm.DB) RoleDisabledActionRepository {
+	return &roleDisabledActionRepository{db: db}
+}
+
+func (r *roleDisabledActionRepository) GetActionIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error) {
+	var actionIDs []uuid.UUID
+	err := r.db.Model(&RoleDisabledAction{}).Where("role_id = ?", roleID).Pluck("action_id", &actionIDs).Error
+	return actionIDs, err
+}
+
+func (r *roleDisabledActionRepository) ReplaceRoleDisabledActions(roleID uuid.UUID, actionIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("role_id = ?", roleID).Delete(&RoleDisabledAction{}).Error; err != nil {
+			return err
+		}
+		if len(actionIDs) == 0 {
+			return nil
+		}
+		items := make([]RoleDisabledAction, 0, len(actionIDs))
+		seen := make(map[uuid.UUID]struct{}, len(actionIDs))
+		for _, actionID := range actionIDs {
+			if actionID == uuid.Nil {
+				continue
+			}
+			if _, ok := seen[actionID]; ok {
+				continue
+			}
+			seen[actionID] = struct{}{}
+			items = append(items, RoleDisabledAction{RoleID: roleID, ActionID: actionID})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *roleDisabledActionRepository) DeleteByRoleID(roleID uuid.UUID) error {
+	return r.db.Where("role_id = ?", roleID).Delete(&RoleDisabledAction{}).Error
+}
+
+func (r *roleDisabledActionRepository) DeleteByKeyID(actionID uuid.UUID) error {
+	return r.db.Where("action_id = ?", actionID).Delete(&RoleDisabledAction{}).Error
+}
+
+type TeamBlockedMenuRepository interface {
+	GetMenuIDsByTeamID(teamID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceTeamBlockedMenus(teamID uuid.UUID, menuIDs []uuid.UUID) error
+	DeleteByTeamID(teamID uuid.UUID) error
+	DeleteByMenuID(menuID uuid.UUID) error
+}
+
+type teamBlockedMenuRepository struct {
+	db *gorm.DB
+}
+
+func NewTeamBlockedMenuRepository(db *gorm.DB) TeamBlockedMenuRepository {
+	return &teamBlockedMenuRepository{db: db}
+}
+
+func (r *teamBlockedMenuRepository) GetMenuIDsByTeamID(teamID uuid.UUID) ([]uuid.UUID, error) {
+	var menuIDs []uuid.UUID
+	err := r.db.Model(&TeamBlockedMenu{}).Where("team_id = ?", teamID).Pluck("menu_id", &menuIDs).Error
+	return menuIDs, err
+}
+
+func (r *teamBlockedMenuRepository) ReplaceTeamBlockedMenus(teamID uuid.UUID, menuIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("team_id = ?", teamID).Delete(&TeamBlockedMenu{}).Error; err != nil {
+			return err
+		}
+		if len(menuIDs) == 0 {
+			return nil
+		}
+		items := make([]TeamBlockedMenu, 0, len(menuIDs))
+		seen := make(map[uuid.UUID]struct{}, len(menuIDs))
+		for _, menuID := range menuIDs {
+			if menuID == uuid.Nil {
+				continue
+			}
+			if _, ok := seen[menuID]; ok {
+				continue
+			}
+			seen[menuID] = struct{}{}
+			items = append(items, TeamBlockedMenu{TeamID: teamID, MenuID: menuID})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *teamBlockedMenuRepository) DeleteByTeamID(teamID uuid.UUID) error {
+	return r.db.Where("team_id = ?", teamID).Delete(&TeamBlockedMenu{}).Error
+}
+
+func (r *teamBlockedMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
+	return r.db.Where("menu_id = ?", menuID).Delete(&TeamBlockedMenu{}).Error
+}
+
+type TeamBlockedActionRepository interface {
+	GetActionIDsByTeamID(teamID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceTeamBlockedActions(teamID uuid.UUID, actionIDs []uuid.UUID) error
+	DeleteByTeamID(teamID uuid.UUID) error
+	DeleteByKeyID(actionID uuid.UUID) error
+}
+
+type teamBlockedActionRepository struct {
+	db *gorm.DB
+}
+
+func NewTeamBlockedActionRepository(db *gorm.DB) TeamBlockedActionRepository {
+	return &teamBlockedActionRepository{db: db}
+}
+
+func (r *teamBlockedActionRepository) GetActionIDsByTeamID(teamID uuid.UUID) ([]uuid.UUID, error) {
+	var actionIDs []uuid.UUID
+	err := r.db.Model(&TeamBlockedAction{}).Where("team_id = ?", teamID).Pluck("action_id", &actionIDs).Error
+	return actionIDs, err
+}
+
+func (r *teamBlockedActionRepository) ReplaceTeamBlockedActions(teamID uuid.UUID, actionIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("team_id = ?", teamID).Delete(&TeamBlockedAction{}).Error; err != nil {
+			return err
+		}
+		if len(actionIDs) == 0 {
+			return nil
+		}
+		items := make([]TeamBlockedAction, 0, len(actionIDs))
+		seen := make(map[uuid.UUID]struct{}, len(actionIDs))
+		for _, actionID := range actionIDs {
+			if actionID == uuid.Nil {
+				continue
+			}
+			if _, ok := seen[actionID]; ok {
+				continue
+			}
+			seen[actionID] = struct{}{}
+			items = append(items, TeamBlockedAction{TeamID: teamID, ActionID: actionID})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *teamBlockedActionRepository) DeleteByTeamID(teamID uuid.UUID) error {
+	return r.db.Where("team_id = ?", teamID).Delete(&TeamBlockedAction{}).Error
+}
+
+func (r *teamBlockedActionRepository) DeleteByKeyID(actionID uuid.UUID) error {
+	return r.db.Where("action_id = ?", actionID).Delete(&TeamBlockedAction{}).Error
+}
+
+type UserHiddenMenuRepository interface {
+	GetMenuIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceUserHiddenMenus(userID uuid.UUID, menuIDs []uuid.UUID) error
+	DeleteByUserID(userID uuid.UUID) error
+	DeleteByMenuID(menuID uuid.UUID) error
+}
+
+type userHiddenMenuRepository struct {
+	db *gorm.DB
+}
+
+func NewUserHiddenMenuRepository(db *gorm.DB) UserHiddenMenuRepository {
+	return &userHiddenMenuRepository{db: db}
+}
+
+func (r *userHiddenMenuRepository) GetMenuIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error) {
+	var menuIDs []uuid.UUID
+	err := r.db.Model(&UserHiddenMenu{}).Where("user_id = ?", userID).Pluck("menu_id", &menuIDs).Error
+	return menuIDs, err
+}
+
+func (r *userHiddenMenuRepository) ReplaceUserHiddenMenus(userID uuid.UUID, menuIDs []uuid.UUID) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("user_id = ?", userID).Delete(&UserHiddenMenu{}).Error; err != nil {
+			return err
+		}
+		if len(menuIDs) == 0 {
+			return nil
+		}
+		items := make([]UserHiddenMenu, 0, len(menuIDs))
+		seen := make(map[uuid.UUID]struct{}, len(menuIDs))
+		for _, menuID := range menuIDs {
+			if menuID == uuid.Nil {
+				continue
+			}
+			if _, ok := seen[menuID]; ok {
+				continue
+			}
+			seen[menuID] = struct{}{}
+			items = append(items, UserHiddenMenu{UserID: userID, MenuID: menuID})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *userHiddenMenuRepository) DeleteByUserID(userID uuid.UUID) error {
+	return r.db.Where("user_id = ?", userID).Delete(&UserHiddenMenu{}).Error
+}
+
+func (r *userHiddenMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
+	return r.db.Where("menu_id = ?", menuID).Delete(&UserHiddenMenu{}).Error
+}
+
+type APIEndpointListParams struct {
+	EndpointIDs    []uuid.UUID
+	Method        string
+	PermissionKey string
+	Keyword       string
+	Path          string
+	CategoryID    string
+	ContextScope  string
+	Source        string
+	FeatureKind   string
+	Status        string
+	HasPermission *bool
+	HasCategory   *bool
+}
+
+type apiEndpointRepository struct {
+	db *gorm.DB
+}
+
+func NewAPIEndpointRepository(db *gorm.DB) APIEndpointRepository {
+	return &apiEndpointRepository{db: db}
+}
+
+func (r *apiEndpointRepository) List(offset, limit int, params *APIEndpointListParams) ([]APIEndpoint, int64, error) {
+	query := r.db.Model(&APIEndpoint{})
+	if params != nil {
+		if len(params.EndpointIDs) > 0 {
+			query = query.Where("id IN ?", params.EndpointIDs)
+		}
+		if params.Method != "" {
+			query = query.Where("method = ?", params.Method)
+		}
+		if params.Keyword != "" {
+			keyword := "%" + params.Keyword + "%"
+			query = query.Where("(path LIKE ? OR summary LIKE ? OR handler LIKE ?)", keyword, keyword, keyword)
+		}
+		if params.Path != "" {
+			query = query.Where("path LIKE ?", "%"+params.Path+"%")
+		}
+		if params.CategoryID != "" {
+			query = query.Where("category_id = ?", params.CategoryID)
+		}
+		if params.ContextScope != "" {
+			query = query.Where("context_scope = ?", params.ContextScope)
+		}
+		if params.Source != "" {
+			query = query.Where("source = ?", params.Source)
+		}
+		if params.FeatureKind != "" {
+			query = query.Where("feature_kind = ?", params.FeatureKind)
+		}
+		if params.Status != "" {
+			query = query.Where("status = ?", params.Status)
+		}
+		if params.HasPermission != nil {
+			if *params.HasPermission {
+				query = query.Where("EXISTS (SELECT 1 FROM api_endpoint_permission_bindings b WHERE b.endpoint_id = api_endpoints.id)")
+			} else {
+				query = query.Where("NOT EXISTS (SELECT 1 FROM api_endpoint_permission_bindings b WHERE b.endpoint_id = api_endpoints.id)")
+			}
+		}
+		if params.HasCategory != nil {
+			if *params.HasCategory {
+				query = query.Where("category_id IS NOT NULL")
+			} else {
+				query = query.Where("category_id IS NULL")
+			}
+		}
+	}
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	var endpoints []APIEndpoint
+	err := query.Offset(offset).Limit(limit).Order("path ASC, method ASC").Find(&endpoints).Error
+	return endpoints, total, err
+}
+
+func (r *apiEndpointRepository) GetByMethodAndPath(method, path string) (*APIEndpoint, error) {
+	var endpoint APIEndpoint
+	err := r.db.Where("method = ? AND path = ?", method, path).First(&endpoint).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &endpoint, nil
+}
+
+func (r *apiEndpointRepository) GetByID(id uuid.UUID) (*APIEndpoint, error) {
+	var endpoint APIEndpoint
+	err := r.db.Where("id = ?", id).First(&endpoint).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &endpoint, nil
+}
+
+func (r *apiEndpointRepository) GetByIDs(ids []uuid.UUID) ([]APIEndpoint, error) {
+	var endpoints []APIEndpoint
+	if len(ids) == 0 {
+		return endpoints, nil
+	}
+	err := r.db.Where("id IN ?", ids).Order("path ASC, method ASC").Find(&endpoints).Error
+	return endpoints, err
+}
+
+func (r *apiEndpointRepository) Create(endpoint *APIEndpoint) error {
+	return r.db.Create(endpoint).Error
+}
+
+func (r *apiEndpointRepository) UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error {
+	return r.db.Model(&APIEndpoint{}).Where("id = ?", id).Updates(updates).Error
+}
+
+func (r *apiEndpointRepository) Upsert(endpoint *APIEndpoint) error {
+	if endpoint == nil {
+		return nil
+	}
+	updates := map[string]interface{}{
+		"feature_kind":  endpoint.FeatureKind,
+		"handler":       endpoint.Handler,
+		"summary":       endpoint.Summary,
+		"category_id":   endpoint.CategoryID,
+		"context_scope": endpoint.ContextScope,
+		"source":        endpoint.Source,
+		"status":        endpoint.Status,
+	}
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		var existing APIEndpoint
+		err := tx.Where("method = ? AND path = ?", endpoint.Method, endpoint.Path).First(&existing).Error
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return tx.Create(endpoint).Error
+			}
+			return err
+		}
+		return tx.Model(&existing).Updates(updates).Error
+	})
+}
+
+type apiEndpointCategoryRepository struct {
+	db *gorm.DB
+}
+
+func NewAPIEndpointCategoryRepository(db *gorm.DB) APIEndpointCategoryRepository {
+	return &apiEndpointCategoryRepository{db: db}
+}
+
+func (r *apiEndpointCategoryRepository) List() ([]APIEndpointCategory, error) {
+	var items []APIEndpointCategory
+	err := r.db.Order("sort_order ASC, created_at ASC").Find(&items).Error
+	return items, err
+}
+
+func (r *apiEndpointCategoryRepository) GetByID(id uuid.UUID) (*APIEndpointCategory, error) {
+	var item APIEndpointCategory
+	err := r.db.Where("id = ?", id).First(&item).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *apiEndpointCategoryRepository) GetByCode(code string) (*APIEndpointCategory, error) {
+	var item APIEndpointCategory
+	err := r.db.Where("code = ?", code).First(&item).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (r *apiEndpointCategoryRepository) Create(item *APIEndpointCategory) error {
+	return r.db.Create(item).Error
+}
+
+func (r *apiEndpointCategoryRepository) UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error {
+	return r.db.Model(&APIEndpointCategory{}).Where("id = ?", id).Updates(updates).Error
+}
+
+type APIEndpointPermissionBindingRepository interface {
+	ListByEndpointIDs(endpointIDs []uuid.UUID) ([]APIEndpointPermissionBinding, error)
+	ListByEndpointID(endpointID uuid.UUID) ([]APIEndpointPermissionBinding, error)
+	ListEndpointIDsByPermissionKey(permissionKey string) ([]uuid.UUID, error)
+	ReplaceByEndpointID(endpointID uuid.UUID, items []APIEndpointPermissionBinding) error
+	AddByPermissionKey(permissionKey string, endpointID uuid.UUID) error
+	RemoveByPermissionKey(permissionKey string, endpointID uuid.UUID) error
+}
+
+type apiEndpointPermissionBindingRepository struct {
+	db *gorm.DB
+}
+
+func NewAPIEndpointPermissionBindingRepository(db *gorm.DB) APIEndpointPermissionBindingRepository {
+	return &apiEndpointPermissionBindingRepository{db: db}
+}
+
+func (r *apiEndpointPermissionBindingRepository) ListByEndpointIDs(endpointIDs []uuid.UUID) ([]APIEndpointPermissionBinding, error) {
+	if len(endpointIDs) == 0 {
+		return []APIEndpointPermissionBinding{}, nil
+	}
+	var items []APIEndpointPermissionBinding
+	err := r.db.Where("endpoint_id IN ?", endpointIDs).Order("sort_order ASC, created_at ASC").Find(&items).Error
+	return items, err
+}
+
+func (r *apiEndpointPermissionBindingRepository) ListByEndpointID(endpointID uuid.UUID) ([]APIEndpointPermissionBinding, error) {
+	var items []APIEndpointPermissionBinding
+	err := r.db.Where("endpoint_id = ?", endpointID).Order("sort_order ASC, created_at ASC").Find(&items).Error
+	return items, err
+}
+
+func (r *apiEndpointPermissionBindingRepository) ListEndpointIDsByPermissionKey(permissionKey string) ([]uuid.UUID, error) {
+	var ids []uuid.UUID
+	err := r.db.Model(&APIEndpointPermissionBinding{}).
+		Where("permission_key = ?", permissionKey).
+		Pluck("endpoint_id", &ids).Error
+	return ids, err
+}
+
+func (r *apiEndpointPermissionBindingRepository) ReplaceByEndpointID(endpointID uuid.UUID, items []APIEndpointPermissionBinding) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("endpoint_id = ?", endpointID).Delete(&APIEndpointPermissionBinding{}).Error; err != nil {
+			return err
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *apiEndpointPermissionBindingRepository) AddByPermissionKey(permissionKey string, endpointID uuid.UUID) error {
+	var count int64
+	if err := r.db.Model(&APIEndpointPermissionBinding{}).
+		Where("permission_key = ? AND endpoint_id = ?", permissionKey, endpointID).
+		Count(&count).Error; err != nil {
 		return err
 	}
-	roleMenus := make([]RoleMenu, 0, len(menuIDs))
-	for _, menuID := range menuIDs {
-		roleMenus = append(roleMenus, RoleMenu{RoleID: roleID, MenuID: menuID})
+	if count > 0 {
+		return nil
 	}
-	if err := tx.Create(&roleMenus).Error; err != nil {
-		tx.Rollback()
-		return err
+	item := &APIEndpointPermissionBinding{
+		EndpointID:    endpointID,
+		PermissionKey: permissionKey,
+		MatchMode:     "ANY",
+		SortOrder:     0,
 	}
-	return tx.Commit().Error
+	return r.db.Create(item).Error
+}
+
+func (r *apiEndpointPermissionBindingRepository) RemoveByPermissionKey(permissionKey string, endpointID uuid.UUID) error {
+	return r.db.Where("permission_key = ? AND endpoint_id = ?", permissionKey, endpointID).
+		Delete(&APIEndpointPermissionBinding{}).Error
 }

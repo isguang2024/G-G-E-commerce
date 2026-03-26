@@ -57,6 +57,11 @@
   })
 
   const modelValue = defineModel<string>({ required: true })
+  const warnDev = (...args: unknown[]) => {
+    if (import.meta.env.DEV) {
+      console.warn(...args)
+    }
+  }
 
   // 编辑器实例
   const editorRef = shallowRef<IDomEditor>()
@@ -132,11 +137,6 @@
   const onCreateEditor = (editor: IDomEditor) => {
     editorRef.value = editor
 
-    // 监听全屏事件
-    editor.on('fullScreen', () => {
-      console.log('编辑器进入全屏模式')
-    })
-
     // 确保在编辑器创建后应用自定义图标
     applyCustomIcons()
   }
@@ -179,7 +179,7 @@
         retryCount++
         setTimeout(tryApplyIcons, retryDelay)
       } else {
-        console.warn('工具栏渲染超时，无法应用自定义图标 - 编辑器实例:', editor.id)
+        warnDev('工具栏渲染超时，无法应用自定义图标 - 编辑器实例:', editor.id)
       }
     }
 

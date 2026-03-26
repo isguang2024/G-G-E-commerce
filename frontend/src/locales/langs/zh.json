@@ -261,6 +261,7 @@
       "title": "系统管理",
       "user": "用户管理",
       "role": "角色管理",
+      "scope": "作用域管理",
       "teamRolesAndPermissions": "团队角色及权限",
       "team": "团队管理",
       "teamMembers": "团队成员",

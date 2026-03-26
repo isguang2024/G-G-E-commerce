@@ -6,8 +6,9 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/pkg/module"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
+	"github.com/gg-ecommerce/backend/internal/pkg/module"
 )
 
 type AuthModule struct {
@@ -32,7 +33,8 @@ func (m *AuthModule) Init() error {
 func (m *AuthModule) RegisterRoutes(rg *gin.RouterGroup) {
 	userRepo := user.NewUserRepository(m.db)
 	authService := NewAuthService(userRepo, &m.config.JWT, m.logger)
-	authHandler := NewAuthHandler(authService, m.logger)
+	authzService := authorization.NewService(m.db, m.logger)
+	authHandler := NewAuthHandler(authService, authzService, m.logger)
 
 	auth := rg.Group("/auth")
 	{

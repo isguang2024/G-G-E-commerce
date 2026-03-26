@@ -10,6 +10,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
+	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 )
 
@@ -39,10 +40,24 @@ type tenantService struct {
 	userRepo         user.UserRepository
 	roleRepo         user.RoleRepository
 	userRoleRepo     user.UserRoleRepository
-	logger           *zap.Logger
+	refresher        interface {
+		RefreshTeam(teamID uuid.UUID) error
+	}
+	logger *zap.Logger
 }
 
-func NewTenantService(db *gorm.DB, tenantRepo user.TenantRepository, tenantMemberRepo user.TenantMemberRepository, userRepo user.UserRepository, roleRepo user.RoleRepository, userRoleRepo user.UserRoleRepository, logger *zap.Logger) TenantService {
+func NewTenantService(
+	db *gorm.DB,
+	tenantRepo user.TenantRepository,
+	tenantMemberRepo user.TenantMemberRepository,
+	userRepo user.UserRepository,
+	roleRepo user.RoleRepository,
+	userRoleRepo user.UserRoleRepository,
+	refresher interface {
+		RefreshTeam(teamID uuid.UUID) error
+	},
+	logger *zap.Logger,
+) TenantService {
 	return &tenantService{
 		db:               db,
 		tenantRepo:       tenantRepo,
@@ -50,6 +65,7 @@ func NewTenantService(db *gorm.DB, tenantRepo user.TenantRepository, tenantMembe
 		userRepo:         userRepo,
 		roleRepo:         roleRepo,
 		userRoleRepo:     userRoleRepo,
+		refresher:        refresher,
 		logger:           logger,
 	}
 }
@@ -113,6 +129,11 @@ func (s *tenantService) Create(req *dto.TenantCreateRequest, ownerID *uuid.UUID)
 	if err := s.syncTenantAdmins(t.ID, adminIDs, ownerID); err != nil {
 		return nil, err
 	}
+	if s.refresher != nil {
+		if err := s.refresher.RefreshTeam(t.ID); err != nil {
+			return nil, err
+		}
+	}
 
 	return t, nil
 }
@@ -155,6 +176,11 @@ func (s *tenantService) Update(id uuid.UUID, req *dto.TenantUpdateRequest) error
 		if err := s.syncTenantAdmins(id, adminIDs, nil); err != nil {
 			return err
 		}
+		if s.refresher != nil {
+			if err := s.refresher.RefreshTeam(id); err != nil {
+				return err
+			}
+		}
 	}
 	return nil
 }
@@ -168,6 +194,27 @@ func (s *tenantService) Delete(id uuid.UUID) error {
 	}
 
 	return s.db.Transaction(func(tx *gorm.DB) error {
+		var roleIDs []uuid.UUID
+		if err := tx.Model(&user.Role{}).Where("tenant_id = ?", id).Pluck("id", &roleIDs).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("tenant_id = ?", id).Delete(&user.UserActionPermission{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("team_id = ?", id).Delete(&user.TeamFeaturePackage{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("team_id = ?", id).Delete(&user.TeamBlockedMenu{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("team_id = ?", id).Delete(&user.TeamBlockedAction{}).Error; err != nil {
+			return err
+		}
+
 		if err := tx.Where("tenant_id = ?", id).Delete(&user.APIKey{}).Error; err != nil {
 			return err
 		}
@@ -181,6 +228,31 @@ func (s *tenantService) Delete(id uuid.UUID) error {
 		}
 
 		if err := tx.Where("tenant_id = ?", id).Delete(&user.TenantMember{}).Error; err != nil {
+			return err
+		}
+
+		if len(roleIDs) > 0 {
+			if err := tx.Where("role_id IN ?", roleIDs).Delete(&user.RoleFeaturePackage{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("role_id IN ?", roleIDs).Delete(&user.RoleHiddenMenu{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("role_id IN ?", roleIDs).Delete(&user.RoleDisabledAction{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("role_id IN ?", roleIDs).Delete(&user.RoleDataPermission{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("role_id IN ?", roleIDs).Delete(&models.TeamRoleAccessSnapshot{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("id IN ?", roleIDs).Delete(&user.Role{}).Error; err != nil {
+				return err
+			}
+		}
+
+		if err := tx.Where("team_id = ?", id).Delete(&models.TeamAccessSnapshot{}).Error; err != nil {
 			return err
 		}
 
@@ -207,7 +279,7 @@ func (s *tenantService) AddMember(tenantID uuid.UUID, req *dto.TenantAddMemberRe
 		return ErrTenantMemberExists
 	}
 
-	roleCode := normalizeTenantRoleCode(req.RoleCode, req.Role)
+	roleCode := normalizeTenantRoleCode(req.RoleCode)
 
 	member := &user.TenantMember{
 		TenantID: tenantID,
@@ -226,6 +298,11 @@ func (s *tenantService) AddMember(tenantID uuid.UUID, req *dto.TenantAddMemberRe
 	if err := s.syncTenantIdentityRole(userID, tenantID, roleCode); err != nil {
 		return err
 	}
+	if s.refresher != nil {
+		if err := s.refresher.RefreshTeam(tenantID); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
@@ -239,14 +316,28 @@ func (s *tenantService) RemoveMember(tenantID, userID uuid.UUID) error {
 		return err
 	}
 
-	if err := s.tenantMemberRepo.Delete(member.ID); err != nil {
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("user_id = ? AND tenant_id = ?", userID, tenantID).Delete(&user.UserActionPermission{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Where("user_id = ? AND tenant_id = ?", userID, tenantID).Delete(&user.UserRole{}).Error; err != nil {
+			return err
+		}
+
+		if err := tx.Delete(&user.TenantMember{}, "id = ?", member.ID).Error; err != nil {
+			return err
+		}
+
+		return nil
+	}); err != nil {
 		return err
 	}
-
-	if err := s.userRoleRepo.RemoveUserRole(userID, &tenantID); err != nil {
-		return err
+	if s.refresher != nil {
+		if err := s.refresher.RefreshTeam(tenantID); err != nil {
+			return err
+		}
 	}
-
 	return nil
 }
 
@@ -265,6 +356,11 @@ func (s *tenantService) UpdateMemberRole(tenantID, userID uuid.UUID, roleCode st
 
 	if err := s.syncTenantIdentityRole(userID, tenantID, roleCode); err != nil {
 		return err
+	}
+	if s.refresher != nil {
+		if err := s.refresher.RefreshTeam(tenantID); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -367,18 +463,15 @@ func appendIfMissingUUID(items []uuid.UUID, id uuid.UUID) []uuid.UUID {
 	return append(items, id)
 }
 
-func normalizeTenantRoleCode(roleCode string, role string) string {
+func normalizeTenantRoleCode(roleCode string) string {
 	if strings.TrimSpace(roleCode) != "" {
 		return roleCode
-	}
-	if strings.TrimSpace(role) != "" {
-		return role
 	}
 	return defaultTeamRoleMemberCode
 }
 
 func (s *tenantService) syncTenantIdentityRole(userID, tenantID uuid.UUID, roleCode string) error {
-	roleCode = normalizeTenantRoleCode(roleCode, "")
+	roleCode = normalizeTenantRoleCode(roleCode)
 	if err := s.userRoleRepo.RemoveRolesByCodes(
 		userID,
 		&tenantID,

@@ -69,6 +69,11 @@
 
   const router = useRouter()
   const popoverRef = ref()
+  const warnDev = (...args: unknown[]) => {
+    if (import.meta.env.DEV) {
+      console.warn(...args)
+    }
+  }
 
   // 使用快速入口配置
   const { enabledApplications, enabledQuickLinks } = useFastEnter()
@@ -82,7 +87,7 @@
     const targetPath = routeName || link
 
     if (!targetPath) {
-      console.warn('导航配置无效：缺少路由名称或链接')
+      warnDev('导航配置无效：缺少路由名称或链接')
       return
     }
 

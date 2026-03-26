@@ -18,7 +18,7 @@
         </template>
 
         <div class="flex flex-col gap-4">
-          <ElCard shadow="never" class="add-member-card">
+          <ElCard v-if="hasAction('team.member.manage')" shadow="never" class="add-member-card">
             <template #header>
               <span>添加成员</span>
             </template>
@@ -38,7 +38,7 @@
                 />
               </ElFormItem>
               <ElFormItem label="团队角色" class="mb-0">
-                <ElSelect v-model="addForm.role" placeholder="请选择角色" style="width: 140px">
+                <ElSelect v-model="addForm.role_code" placeholder="请选择角色" style="width: 140px">
                   <ElOption label="团队管理员" value="team_admin" />
                   <ElOption label="团队成员" value="team_member" />
                 </ElSelect>
@@ -76,15 +76,24 @@
               <ElTableColumn prop="joinedAt" label="加入时间" width="170" />
               <ElTableColumn label="操作" width="60" fixed="right">
                 <template #default="{ row }">
-                  <ElDropdown trigger="click" @command="(cmd: string) => handleCommand(cmd, row)">
+                  <ElDropdown
+                    v-if="hasMemberOperationPermission"
+                    trigger="click"
+                    @command="(cmd: string) => handleCommand(cmd, row)"
+                  >
                     <ElButton :icon="MoreFilled" circle size="small" />
                     <template #dropdown>
                       <ElDropdownMenu>
-                        <ElDropdownItem command="assign">
+                        <ElDropdownItem v-if="hasAction('team.member.manage')" command="assign">
                           <ElIcon><UserFilled /></ElIcon>
                           分配角色
                         </ElDropdownItem>
-                        <ElDropdownItem command="delete" :disabled="isAdmin(row)" divided>
+                        <ElDropdownItem
+                          v-if="hasAction('team.member.manage')"
+                          command="delete"
+                          :disabled="isAdmin(row)"
+                          divided
+                        >
                           <ElIcon><Delete /></ElIcon>
                           删除
                         </ElDropdownItem>
@@ -106,6 +115,7 @@
 <script setup lang="ts">
   import { Loading, MoreFilled, UserFilled, Delete } from '@element-plus/icons-vue'
   import { storeToRefs } from 'pinia'
+  import { useAuth } from '@/hooks/core/useAuth'
   import {
     fetchGetMyTeam,
     fetchGetMyTeamMembers,
@@ -122,17 +132,21 @@
   const roleDialogRef = ref()
   const currentMember = ref<Api.SystemManage.TeamMemberItem | null>(null)
   const tenantStore = useTenantStore()
+  const { hasAction } = useAuth()
   const { currentTenantId, hasTeams } = storeToRefs(tenantStore)
 
   const team = ref<Api.SystemManage.TeamListItem | null>(null)
   const teamLoadDone = ref(false)
   const members = ref<Api.SystemManage.TeamMemberItem[]>([])
+  const hasMemberOperationPermission = computed(
+    () => hasAction('team.member.manage')
+  )
   const loading = ref(false)
   const addLoading = ref(false)
 
   const addForm = reactive({
     user_id: '',
-    role: 'team_member'
+    role_code: 'team_member'
   })
 
   function isAdmin(row: Api.SystemManage.TeamMemberItem): boolean {
@@ -225,7 +239,7 @@
 
     addLoading.value = true
     try {
-      await fetchAddMyTeamMember({ user_id: uid, role: addForm.role })
+      await fetchAddMyTeamMember({ user_id: uid, role_code: addForm.role_code })
       ElMessage.success('添加成功')
       addForm.user_id = ''
       await loadMembers()

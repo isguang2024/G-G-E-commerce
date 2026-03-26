@@ -78,11 +78,16 @@
   })
 
   const emit = defineEmits<CountToEmits>()
+  const warnDev = (...args: unknown[]) => {
+    if (import.meta.env.DEV) {
+      console.warn(...args)
+    }
+  }
 
   // 工具函数
   const validateNumber = (value: number, name: string, defaultValue: number): number => {
     if (!Number.isFinite(value)) {
-      console.warn(`[CountTo] Invalid ${name} value:`, value)
+      warnDev(`[CountTo] Invalid ${name} value:`, value)
       return defaultValue
     }
     return value
@@ -126,7 +131,7 @@
   const safeEasing = computed(() => {
     const easing = props.easing
     if (!(easing in TransitionPresets)) {
-      console.warn('[CountTo] Invalid easing value:', easing)
+      warnDev('[CountTo] Invalid easing value:', easing)
       return DEFAULT_EASING
     }
     return easing
@@ -181,14 +186,14 @@
   // 公共方法
   const start = (target?: number): void => {
     if (props.disabled) {
-      console.warn('[CountTo] Animation is disabled')
+      warnDev('[CountTo] Animation is disabled')
       return
     }
 
     const finalTarget = target !== undefined ? target : targetValue.value
 
     if (!Number.isFinite(finalTarget)) {
-      console.warn('[CountTo] Invalid target value for start:', finalTarget)
+      warnDev('[CountTo] Invalid target value for start:', finalTarget)
       return
     }
 
@@ -233,7 +238,7 @@
 
   const setTarget = (target: number): void => {
     if (!Number.isFinite(target)) {
-      console.warn('[CountTo] Invalid target value for setTarget:', target)
+      warnDev('[CountTo] Invalid target value for setTarget:', target)
       return
     }
 

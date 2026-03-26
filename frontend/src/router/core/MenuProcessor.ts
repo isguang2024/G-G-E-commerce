@@ -9,11 +9,10 @@
 
 import type { AppRouteRecord } from '@/types/router'
 import { fetchGetMenuList } from '@/api/system-manage'
+import { useUserStore } from '@/store/modules/user'
 import { RoutesAlias } from '../routesAlias'
 import { formatMenuTitle } from '@/utils'
-import { getComponentPathByRouteName } from './routeNameComponentMap'
-import { useTenantStore } from '@/store/modules/tenant'
-import { useUserStore } from '@/store/modules/user'
+import { hasMenuActionAccess, shouldHideMenuWhenActionDenied } from '@/utils/permission/menu'
 
 export class MenuProcessor {
   /**
@@ -21,13 +20,13 @@ export class MenuProcessor {
    */
   async getMenuList(): Promise<AppRouteRecord[]> {
     const menuList = await fetchGetMenuList()
-    const filteredByTenant = this.filterTenantContextMenus(menuList)
+    const filteredByAction = this.filterActionRequirementMenus(menuList)
 
     // 在规范化路径之前，验证原始路径配置
-    this.validateMenuPaths(filteredByTenant)
+    this.validateMenuPaths(filteredByAction)
 
     // 规范化路径（将相对路径转换为完整路径）
-    return this.normalizeMenuPaths(this.filterEmptyMenus(filteredByTenant))
+    return this.normalizeMenuPaths(this.filterEmptyMenus(filteredByAction))
   }
 
   /**
@@ -62,11 +61,6 @@ export class MenuProcessor {
           return true
         }
 
-        // 若有 name 且能按前端路由表解析到组件路径，保留（后端未配置 component 时仍可正确打开页面，如角色管理）
-        if (item.name && getComponentPathByRouteName(String(item.name))) {
-          return true
-        }
-
         // 其他情况过滤掉
         return false
       })
@@ -80,29 +74,33 @@ export class MenuProcessor {
   }
 
   /**
-   * 过滤依赖团队上下文的菜单
-   * 普通用户无团队时隐藏该类菜单，系统管理员不受限制
+   * 过滤绑定了基础功能门槛但当前用户不满足的菜单
    */
-  private filterTenantContextMenus(menuList: AppRouteRecord[]): AppRouteRecord[] {
+  private filterActionRequirementMenus(menuList: AppRouteRecord[]): AppRouteRecord[] {
     const userStore = useUserStore()
-    const tenantStore = useTenantStore()
+    const userInfo = userStore.getUserInfo as Api.Auth.UserInfo | undefined
 
-    if (userStore.getUserInfo?.is_super_admin || tenantStore.hasTeams) {
+    if (userInfo?.is_super_admin) {
       return menuList
     }
 
-    return menuList
-      .map((item) => {
+    return menuList.reduce<AppRouteRecord[]>((result, item) => {
         const children = item.children?.length
-          ? this.filterTenantContextMenus(item.children)
+          ? this.filterActionRequirementMenus(item.children)
           : item.children
+        const hasActionAccess = hasMenuActionAccess(userInfo, item.meta)
+        const shouldHide = shouldHideMenuWhenActionDenied(item.meta)
 
-        return {
+        if (!hasActionAccess && shouldHide && !children?.length) {
+          return result
+        }
+
+        result.push({
           ...item,
           children
-        }
-      })
-      .filter((item) => !item.meta?.requiresTenantContext)
+        })
+        return result
+      }, [])
   }
 
   /**
@@ -127,10 +125,6 @@ export class MenuProcessor {
     })
   }
 
-  /**
-   * 验证菜单路径配置
-   * 检测非一级菜单是否错误使用了 / 开头的路径
-   */
   /**
    * 验证菜单路径配置
    * 检测非一级菜单是否错误使用了 / 开头的路径

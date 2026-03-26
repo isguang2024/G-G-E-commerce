@@ -5,7 +5,8 @@
     size="800px"
     destroy-on-close
     @open="onOpen"
-  >
+  
+    class="config-drawer">
     <!-- 搜索和筛选 -->
     <div class="search-container mb-4">
       <ElRow :gutter="12">

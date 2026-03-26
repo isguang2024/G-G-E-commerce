@@ -4,7 +4,7 @@
     <ul class="flex-c h-full">
       <li
         v-for="(item, index) in breadcrumbItems"
-        :key="item.path"
+        :key="`${item.path || item.meta?.title || 'breadcrumb'}-${index}`"
         class="box-border flex-c h-7 text-sm leading-7"
       >
         <div
@@ -43,7 +43,7 @@
   defineOptions({ name: 'ArtBreadcrumb' })
 
   export interface BreadcrumbItem {
-    path: string
+    path?: string
     meta: RouteRecordRaw['meta']
   }
 
@@ -65,7 +65,21 @@
     const currentRoute = matched[lastIndex]
     const currentRouteMeta = currentRoute.meta
 
-    // 检查是否有自定义上级
+    // 优先使用运行时注入的完整面包屑链
+    const runtimeChain = Array.isArray(currentRouteMeta?.breadcrumbChain)
+      ? currentRouteMeta.breadcrumbChain
+      : []
+    if (runtimeChain.length) {
+      const chainItems = runtimeChain.map((item: any) => ({
+        path: normalizePath(String(item?.path || '')),
+        meta: {
+          title: item?.title || ''
+        }
+      }))
+      return [...chainItems, createBreadcrumbItem(currentRoute)]
+    }
+
+    // 兼容历史 customParent 逻辑
     if (
       typeof currentRouteMeta?.customParent === 'string' &&
       currentRouteMeta.customParent.trim() !== ''
@@ -123,7 +137,7 @@
 
   // 辅助函数：创建面包屑项目
   const createBreadcrumbItem = (route: RouteLocationMatched): BreadcrumbItem => ({
-    path: route.path,
+    path: normalizePath(route.path),
     meta: route.meta
   })
 
@@ -138,7 +152,7 @@
 
   // 辅助函数：判断是否可点击
   const isClickable = (item: BreadcrumbItem, index: number): boolean =>
-    item.path !== '/outside' && !isLastItem(index)
+    Boolean(item.path) && item.path !== '/outside' && !isLastItem(index)
 
   // 辅助函数：查找路由的第一个有效子路由
   const findFirstValidChild = (route: RouteRecordRaw) =>
@@ -149,6 +163,9 @@
 
   // 统一路径比较格式（保留根路径 "/"）
   const normalizePath = (path: string): string => {
+    if (!`${path || ''}`.trim()) {
+      return ''
+    }
     const normalized = `/${String(path || '').replace(/^\/+/, '')}`.replace(/\/+/g, '/')
     return normalized !== '/' ? normalized.replace(/\/$/, '') : normalized
   }
@@ -156,7 +173,7 @@
   // 处理面包屑点击事件
   async function handleBreadcrumbClick(item: BreadcrumbItem, index: number): Promise<void> {
     // 如果是最后一项或外部链接，不处理
-    if (isLastItem(index) || item.path === '/outside') {
+    if (isLastItem(index) || !item.path || item.path === '/outside') {
       return
     }
 

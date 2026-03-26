@@ -99,12 +99,13 @@
 <script setup lang="ts">
   import AppConfig from '@/config'
   import { useUserStore } from '@/store/modules/user'
-  import { useTenantStore } from '@/store/modules/tenant'
+  import { hasPlatformAccessByUserInfo, useTenantStore } from '@/store/modules/tenant'
   import { useI18n } from 'vue-i18n'
   import { HttpError } from '@/utils/http/error'
   import { fetchLogin } from '@/api/auth'
   import { ElNotification, type FormInstance, type FormRules } from 'element-plus'
   import { useSettingStore } from '@/store/modules/setting'
+  import { resetRouterState } from '@/router/guards/beforeEach'
 
   defineOptions({ name: 'Login' })
 
@@ -209,6 +210,7 @@
       }
 
       // 存储 token 和登录状态
+      resetRouterState(0)
       userStore.setToken(response.access_token, response.refresh_token)
       userStore.setLoginStatus(true)
 
@@ -221,12 +223,17 @@
           userName: response.user.username || response.user.email,
           avatar: response.user.avatar_url,
           roles: response.user.is_super_admin ? ['R_SUPER'] : ['R_USER'],
-          buttons: []
+          buttons: [],
+          actions: response.user.actions || []
         }
         userStore.setUserInfo(userInfo)
+        tenantStore.setPlatformAccess(hasPlatformAccessByUserInfo(userInfo))
       }
 
-      await tenantStore.loadMyTeams()
+      await tenantStore.loadMyTeams({
+        preferredTenantId: response.user?.current_tenant_id || '',
+        preferPlatform: hasPlatformAccessByUserInfo(response.user || undefined)
+      })
 
       // 登录成功处理
       persistRememberedCredentials()

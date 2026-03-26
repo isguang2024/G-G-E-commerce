@@ -94,6 +94,8 @@ declare namespace Api {
       phone?: string
       status: string
       is_super_admin: boolean
+      current_tenant_id?: string
+      actions?: string[]
       created_at: string
       updated_at?: string
       // 兼容字段
@@ -102,11 +104,36 @@ declare namespace Api {
       avatar?: string
       roles?: string[]
       buttons?: string[]
+      [k: string]: unknown
     }
   }
 
   /** 系统管理类型 */
   namespace SystemManage {
+    interface MenuMetaConfig {
+      roles?: string[]
+      requiredAction?: string
+      requiredActions?: string[]
+      actionMatchMode?: 'any' | 'all'
+      actionVisibilityMode?: 'hide' | 'show'
+      [k: string]: unknown
+    }
+
+    interface MenuManageGroupItem {
+      id: string
+      name: string
+      sortOrder: number
+      status: 'normal' | 'disabled' | string
+      createdAt?: string
+      updatedAt?: string
+    }
+
+    interface MenuManageGroupSaveParams {
+      name: string
+      sort_order?: number
+      status?: 'normal' | 'disabled' | string
+    }
+
     /** 用户列表 */
     type UserList = Api.Common.PaginatedResponse<UserListItem>
 
@@ -167,6 +194,120 @@ declare namespace Api {
       roleIds?: string[]
     }
 
+    interface UserPermissionContext {
+      type: 'platform' | 'team' | string
+      tenantId?: string
+      tenantName?: string
+    }
+
+    interface UserPermissionSnapshotSummary {
+      refreshedAt?: string
+      updatedAt?: string
+      roleCount?: number
+      directPackageCount?: number
+      expandedPackageCount?: number
+      actionCount?: number
+      disabledActionCount?: number
+      menuCount?: number
+      hasPackageConfig?: boolean
+      derivedActionCount?: number
+      blockedActionCount?: number
+      effectiveActionCount?: number
+    }
+
+    interface UserPermissionRoleResult {
+      roleId: string
+      roleCode: string
+      roleName: string
+      inherited?: boolean
+      refreshedAt?: string
+      availableActionCount?: number
+      disabledActionCount?: number
+      effectiveActionCount?: number
+      matched?: boolean
+      disabled?: boolean
+      available?: boolean
+      sourcePackages?: FeaturePackageItem[]
+    }
+
+    interface UserPermissionDiagnosisAction {
+      id: string
+      permissionKey: string
+      name?: string
+      description?: string
+      status?: string
+      selfStatus?: string
+      contextType?: string
+      featureKind?: string
+      moduleCode?: string
+      moduleGroupStatus?: string
+      featureGroupStatus?: string
+      moduleGroup?: PermissionGroupItem
+      featureGroup?: PermissionGroupItem
+    }
+
+    interface UserPermissionDiagnosisResult {
+      permissionKey: string
+      allowed: boolean
+      reasonText?: string
+      reasons: string[]
+      matchedInSnapshot?: boolean
+      bypassedBySuperAdmin?: boolean
+      blockedByTeam?: boolean
+      denialStage?: string
+      denialReason?: string
+      memberStatus?: string
+      memberMatched?: boolean
+      boundaryState?: string
+      boundaryConfigured?: boolean
+      roleChainMatched?: boolean
+      roleChainDisabled?: boolean
+      roleChainAvailable?: boolean
+      action?: UserPermissionDiagnosisAction | null
+      sourcePackages?: FeaturePackageItem[]
+      roleResults?: UserPermissionRoleResult[]
+    }
+
+    interface UserPermissionMenuNode {
+      id: string
+      name?: string
+      title?: string
+      path?: string
+      component?: string
+      hidden?: boolean
+      sort?: number
+      children?: UserPermissionMenuNode[]
+    }
+
+    interface UserPermissionDiagnosisResponse {
+      user: {
+        id: string
+        userName?: string
+        nickName?: string
+        status: string
+        isSuperAdmin?: boolean
+      }
+      context: UserPermissionContext
+      snapshot: UserPermissionSnapshotSummary
+      roles: UserPermissionRoleResult[]
+      teamMember?: {
+        id?: string
+        tenantId?: string
+        userId?: string
+        roleCode?: string
+        status?: string
+        matched?: boolean
+      } | null
+      teamPackages?: FeaturePackageItem[]
+      diagnosis?: UserPermissionDiagnosisResult | null
+      menus?: UserPermissionMenuNode[]
+    }
+
+    interface UserPermissionDiagnosisParams {
+      tenantId?: string
+      permissionKey?: string
+    }
+
     /** 角色列表 */
     type RoleList = Api.Common.PaginatedResponse<RoleListItem>
 
@@ -179,13 +320,10 @@ declare namespace Api {
       sortOrder?: number
       status?: string // normal/suspended
       priority?: number // 优先级
+      customParams?: Record<string, any>
       createTime: string
       tenantId?: string | null
       isGlobal?: boolean
-      scopeId?: string
-      scopeCode?: string
-      scopeName?: string
-      scope?: string // 兼容旧字段
       canEditPermission?: boolean
     }
 
@@ -201,8 +339,8 @@ declare namespace Api {
       name: string
       description?: string
       sort_order?: number
-      scope_id: string
       priority?: number
+      custom_params?: Record<string, any>
       status?: string
     }
 
@@ -211,44 +349,453 @@ declare namespace Api {
       code?: string
       name?: string
       description?: string
-      scope_id?: string
       sort_order?: number
       priority?: number
+      custom_params?: Record<string, any>
       status?: string
     }
 
-    /** 作用域列表 */
-    type ScopeList = Api.Common.PaginatedResponse<ScopeListItem>
-
-    /** 作用域列表项 */
-    interface ScopeListItem {
-      scopeId: string
-      scopeCode: string
-      scopeName: string
-      description?: string
-      sortOrder?: number
-      createTime?: string
-    }
-
-    /** 作用域搜索参数 */
-    type ScopeSearchParams = Partial<
-      Pick<ScopeListItem, 'scopeCode' | 'scopeName'> & Api.Common.CommonSearchParams
-    >
-
-    /** 创建作用域参数 */
-    interface ScopeCreateParams {
+    interface PermissionGroupItem {
+      id: string
+      groupType: 'module' | 'feature' | string
       code: string
       name: string
+      nameEn?: string
       description?: string
+      status: string
+      sortOrder?: number
+      isBuiltin?: boolean
+    }
+
+    interface PermissionActionItem {
+      id: string
+      resourceCode?: string
+      actionCode?: string
+      moduleCode?: string
+      moduleGroupId?: string
+      featureGroupId?: string
+      moduleGroup?: PermissionGroupItem
+      featureGroup?: PermissionGroupItem
+      contextType?: 'platform' | 'team' | 'common' | string
+      permissionKey?: string
+      featureKind?: 'system' | 'business' | string
+      name: string
+      description?: string
+      dataPermissionCode?: string
+      dataPermissionName?: string
+      status: string
+      sortOrder?: number
+      isBuiltin?: boolean
+      createdAt?: string
+      updatedAt?: string
+    }
+
+    type PermissionActionList = Api.Common.PaginatedResponse<PermissionActionItem>
+    type PermissionGroupList = Api.Common.PaginatedResponse<PermissionGroupItem>
+
+    interface FeaturePackageItem {
+      id: string
+      packageKey: string
+      packageType?: 'base' | 'bundle' | string
+      name: string
+      description?: string
+      contextType?: 'platform' | 'team' | 'common' | string
+      isBuiltin?: boolean
+      actionCount?: number
+      menuCount?: number
+      teamCount?: number
+      status: string
+      sortOrder?: number
+      createdAt?: string
+      updatedAt?: string
+    }
+
+    interface FeaturePackageTeamBinding {
+      team_ids: string[]
+    }
+
+    type FeaturePackageList = Api.Common.PaginatedResponse<FeaturePackageItem>
+
+    type FeaturePackageSearchParams = Partial<
+      Pick<FeaturePackageItem, 'name' | 'status'> &
+        Api.Common.CommonSearchParams & {
+          keyword?: string
+          packageKey?: string
+          packageType?: string
+          contextType?: string
+        }
+    >
+
+    interface FeaturePackageCreateParams {
+      package_key: string
+      package_type?: 'base' | 'bundle' | string
+      name: string
+      description?: string
+      context_type?: 'platform' | 'team' | 'common' | string
+      status?: string
       sort_order?: number
     }
 
-    /** 更新作用域参数 */
-    interface ScopeUpdateParams {
-      code?: string
+    interface FeaturePackageUpdateParams {
+      package_key?: string
+      package_type?: 'base' | 'bundle' | string
       name?: string
       description?: string
+      context_type?: 'platform' | 'team' | 'common' | string
+      status?: string
       sort_order?: number
+    }
+
+    interface FeaturePackageActionResponse {
+      action_ids: string[]
+      actions: PermissionActionItem[]
+    }
+
+    interface FeaturePackageBundleResponse {
+      child_package_ids: string[]
+      packages: FeaturePackageItem[]
+    }
+
+    interface FeaturePackageMenuResponse {
+      menu_ids: string[]
+      menus: AppRouteRecord[]
+    }
+
+    interface FeaturePackageTeamSetParams {
+      team_ids: string[]
+    }
+
+    interface PageMenuOptionItem {
+      id: string
+      name: string
+      title?: string
+      path?: string
+      children?: PageMenuOptionItem[]
+    }
+
+    interface PageItem {
+      id: string
+      pageKey: string
+      name: string
+      routeName: string
+      routePath: string
+      component: string
+      pageType: 'group' | 'display_group' | 'inner' | 'global' | string
+      source: 'seed' | 'sync' | 'manual' | string
+      moduleKey?: string
+      sortOrder?: number
+      parentMenuId?: string
+      parentMenuName?: string
+      parentPageKey?: string
+      parentPageName?: string
+      displayGroupKey?: string
+      displayGroupName?: string
+      activeMenuPath?: string
+      breadcrumbMode?: 'inherit_menu' | 'inherit_page' | 'custom' | string
+      accessMode?: 'inherit' | 'public' | 'jwt' | 'permission' | string
+      permissionKey?: string
+      inheritPermission?: boolean
+      keepAlive?: boolean
+      isFullPage?: boolean
+      isIframe?: boolean
+      isHideTab?: boolean
+      link?: string
+      status: 'normal' | 'suspended' | string
+      meta?: Record<string, any>
+      createdAt?: string
+      updatedAt?: string
+    }
+
+    interface PageUnregisteredItem {
+      filePath: string
+      component: string
+      pageKey: string
+      name: string
+      routeName: string
+      routePath: string
+      pageType: 'group' | 'display_group' | 'inner' | 'global' | string
+      moduleKey?: string
+      parentMenuId?: string
+      parentMenuName?: string
+      activeMenuPath?: string
+    }
+
+    interface PageSyncResult {
+      createdCount: number
+      skippedCount: number
+      createdKeys: string[]
+    }
+
+    interface PageBreadcrumbPreviewItem {
+      type: 'menu' | 'page' | string
+      title: string
+      path?: string
+      pageKey?: string
+    }
+
+    type PageList = Api.Common.PaginatedResponse<PageItem>
+
+    type PageSearchParams = Partial<
+      Pick<PageItem, 'pageType' | 'moduleKey' | 'accessMode' | 'source' | 'status'> &
+        Api.Common.CommonSearchParams & {
+          keyword?: string
+          parentMenuId?: string
+        }
+    >
+
+    interface PageSaveParams {
+      page_key: string
+      name: string
+      route_name: string
+      route_path: string
+      component: string
+      page_type?: 'group' | 'display_group' | 'inner' | 'global' | string
+      source?: 'seed' | 'sync' | 'manual' | string
+      module_key?: string
+      sort_order?: number
+      parent_menu_id?: string
+      parent_page_key?: string
+      display_group_key?: string
+      active_menu_path?: string
+      breadcrumb_mode?: 'inherit_menu' | 'inherit_page' | 'custom' | string
+      access_mode?: 'inherit' | 'public' | 'jwt' | 'permission' | string
+      permission_key?: string
+      inherit_permission?: boolean
+      keep_alive?: boolean
+      is_full_page?: boolean
+      status?: 'normal' | 'suspended' | string
+      meta?: Record<string, any>
+    }
+
+    interface TeamFeaturePackageResponse {
+      package_ids: string[]
+      packages: FeaturePackageItem[]
+    }
+
+    interface RoleFeaturePackageResponse {
+      package_ids: string[]
+      packages: FeaturePackageItem[]
+      inherited?: boolean
+    }
+
+    interface UserFeaturePackageResponse {
+      package_ids: string[]
+      packages: FeaturePackageItem[]
+    }
+
+    interface RoleActionBoundaryResponse {
+      action_ids: string[]
+      available_action_ids: string[]
+      actions?: PermissionActionItem[]
+      expanded_package_ids?: string[]
+      disabled_action_ids?: string[]
+      derived_sources?: Array<{
+        action_id: string
+        package_ids: string[]
+      }>
+    }
+
+    interface RoleMenuBoundaryResponse {
+      menu_ids: string[]
+      available_menu_ids: string[]
+      expanded_package_ids?: string[]
+      hidden_menu_ids?: string[]
+      derived_sources?: Array<{
+        menu_id: string
+        package_ids: string[]
+      }>
+    }
+
+    interface TeamActionOriginsResponse {
+      derived_action_ids: string[]
+      derived_sources?: Array<{
+        action_id: string
+        package_ids: string[]
+      }>
+      blocked_action_ids?: string[]
+    }
+
+    interface TeamMenuOriginsResponse {
+      derived_menu_ids: string[]
+      derived_sources?: Array<{
+        menu_id: string
+        package_ids: string[]
+      }>
+      blocked_menu_ids: string[]
+    }
+
+    interface APIEndpointItem {
+      id: string
+      code?: string
+      method: string
+      path: string
+      spec?: string
+      featureKind?: 'system' | 'business' | string
+      handler?: string
+      summary?: string
+      permissionKey?: string
+      permissionKeys?: string[]
+      authMode?: 'public' | 'jwt' | 'permission' | 'api_key' | string
+      categoryId?: string
+      category?: APIEndpointCategoryItem
+      contextScope?: 'required' | 'forbidden' | 'optional' | string
+      source?: 'sync' | 'seed' | 'manual' | string
+      dataPermissionCode?: string
+      dataPermissionName?: string
+      status: string
+      createdAt?: string
+      updatedAt?: string
+    }
+
+    interface APIEndpointCategoryItem {
+      id: string
+      code: string
+      name: string
+      nameEn: string
+      sortOrder?: number
+      status?: string
+    }
+
+    interface APIUnregisteredRouteItem {
+      method: string
+      path: string
+      spec: string
+      handler?: string
+      hasMeta?: boolean
+      meta?: {
+        summary?: string
+        category_code?: string
+        context_scope?: string
+        source?: string
+        feature_kind?: string
+        permission_keys?: string[]
+      }
+    }
+
+    type APIEndpointList = Api.Common.PaginatedResponse<APIEndpointItem>
+    type APIUnregisteredRouteList = Api.Common.PaginatedResponse<APIUnregisteredRouteItem>
+
+    interface PermissionActionEndpointResponse {
+      records: APIEndpointItem[]
+      total: number
+    }
+
+    type APIEndpointSearchParams = Partial<
+      Pick<APIEndpointItem, 'method' | 'path' | 'status'> &
+        Api.Common.CommonSearchParams & {
+          keyword?: string
+          permissionKey?: string
+          featureKind?: string
+          categoryId?: string
+          contextScope?: string
+          source?: string
+          hasPermissionKey?: boolean
+          hasCategory?: boolean
+        }
+    >
+
+    type PermissionActionSearchParams = Partial<
+      Pick<PermissionActionItem, 'name' | 'status'> &
+        Api.Common.CommonSearchParams & {
+          keyword?: string
+          permissionKey?: string
+          moduleCode?: string
+          moduleGroupId?: string
+          featureGroupId?: string
+          contextType?: string
+          featureKind?: string
+          isBuiltin?: boolean
+        }
+    >
+    interface PermissionActionCreateParams {
+      permission_key: string
+      module_code?: string
+      module_group_id?: string
+      feature_group_id?: string
+      context_type?: 'platform' | 'team' | 'common' | string
+      feature_kind?: 'system' | 'business' | string
+      name: string
+      description?: string
+      status?: string
+      sort_order?: number
+    }
+
+    interface PermissionActionUpdateParams {
+      permission_key?: string
+      module_code?: string
+      module_group_id?: string
+      feature_group_id?: string
+      context_type?: 'platform' | 'team' | 'common' | string
+      feature_kind?: 'system' | 'business' | string
+      name?: string
+      description?: string
+      status?: string
+      sort_order?: number
+    }
+
+    type PermissionGroupSearchParams = Partial<
+      Pick<PermissionGroupItem, 'status'> &
+        Api.Common.CommonSearchParams & {
+          groupType?: string
+          keyword?: string
+        }
+    >
+
+    interface PermissionGroupSaveParams {
+      code: string
+      name: string
+      name_en?: string
+      description?: string
+      group_type: 'module' | 'feature' | string
+      status?: string
+      sort_order?: number
+    }
+
+    type RoleActionPermissionItem = string
+
+    interface RoleDataPermissionItem {
+      resourceCode: string
+      dataScope: string
+    }
+
+    interface RoleDataPermissionResourceItem {
+      resourceCode: string
+      resourceName: string
+    }
+
+    interface RoleDataPermissionScopeOption {
+      scopeCode: string
+      scopeName: string
+    }
+
+    interface UserActionPermissionItem {
+      action_id: string
+      effect: 'allow' | 'deny'
+      action?: PermissionActionItem
+    }
+
+    interface UserActionPermissionResponse {
+      actions: UserActionPermissionItem[] // 历史例外审计字段，主链候选集优先使用 available_action_ids / available_actions
+      available_action_ids?: string[]
+      available_actions?: PermissionActionItem[]
+      expanded_package_ids?: string[]
+      derived_sources?: Array<{
+        action_id: string
+        package_ids: string[]
+      }>
+      has_package_config?: boolean
+    }
+
+    interface UserMenuBoundaryResponse {
+      menu_ids: string[]
+      available_menu_ids?: string[]
+      hidden_menu_ids?: string[]
+      expanded_package_ids?: string[]
+      derived_sources?: Array<{
+        menu_id: string
+        package_ids: string[]
+      }>
+      has_package_config?: boolean
     }
 
     /** 团队列表 */
@@ -320,29 +867,43 @@ declare namespace Api {
       avatar?: string
     }
 
+    interface FeaturePackageActionSetParams {
+      action_ids: string[]
+    }
+
+    interface FeaturePackageChildSetParams {
+      child_package_ids: string[]
+    }
+
+    interface TeamFeaturePackageSetParams {
+      package_ids: string[]
+    }
+
     /** 创建菜单参数（与后端 MenuCreateRequest 一致） */
     interface MenuCreateParams {
       parent_id: string | null
+      manage_group_id?: string | null
       path: string
       name: string
       component?: string
       title: string
       icon?: string
       sort_order?: number
-      meta?: { roles?: string[]; requiresTenantContext?: boolean; [k: string]: unknown }
+      meta?: MenuMetaConfig
       hidden?: boolean
     }
 
     /** 更新菜单参数（与后端 MenuUpdateRequest 一致） */
     interface MenuUpdateParams {
       parent_id: string | null
+      manage_group_id?: string | null
       path?: string
       name?: string
       component?: string
       title?: string
       icon?: string
       sort_order?: number
-      meta?: { roles?: string[]; requiresTenantContext?: boolean; [k: string]: unknown }
+      meta?: MenuMetaConfig
       hidden?: boolean
     }
   }

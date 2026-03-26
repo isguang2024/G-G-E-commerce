@@ -1,9 +1,9 @@
 <template>
   <ArtSearchBar
-    ref="searchBarRef"
     v-model="formData"
     :items="formItems"
-    :rules="rules"
+    :showExpand="true"
+    :defaultExpanded="true"
     @reset="handleReset"
     @search="handleSearch"
   >
@@ -11,37 +11,19 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted } from 'vue'
-  import { fetchGetAllScopes } from '@/api/system-manage'
+  import { computed, ref } from 'vue'
   interface Props {
     modelValue: Record<string, any>
   }
 
   interface Emits {
     (e: 'update:modelValue', value: Record<string, any>): void
-    (e: 'search', params: Record<string, any>): void
+    (e: 'search'): void
     (e: 'reset'): void
   }
 
   const props = defineProps<Props>()
   const emit = defineEmits<Emits>()
-
-  const searchBarRef = ref()
-  const scopeOptions = ref<{ label: string; value: string }[]>([])
-
-  onMounted(async () => {
-    try {
-      const scopes = await fetchGetAllScopes()
-      // 后端返回结构为 { records: [{ scopeId, scopeCode, scopeName }] }
-      const records = (scopes as any)?.records ?? scopes ?? []
-      scopeOptions.value = (records as any[]).map((item: any) => ({
-        label: item.scopeName || item.name || item.code,
-        value: item.scopeCode || item.code
-      }))
-    } catch {
-      scopeOptions.value = []
-    }
-  })
 
   /**
    * 表单数据双向绑定
@@ -50,11 +32,6 @@
     get: () => props.modelValue,
     set: (val) => emit('update:modelValue', val)
   })
-
-  /**
-   * 表单校验规则
-   */
-  const rules = {}
 
   /**
    * 角色状态选项
@@ -74,17 +51,6 @@
       type: 'input',
       placeholder: '请输入角色名称',
       clearable: true
-    },
-    {
-      label: '作用域',
-      key: 'scopes',
-      type: 'select',
-      props: {
-        placeholder: '请选择作用域（可多选）',
-        options: scopeOptions.value,
-        multiple: true,
-        clearable: true
-      }
     },
     {
       label: '角色编码',
@@ -142,8 +108,5 @@
    * 处理搜索事件
    * 验证表单后触发搜索
    */
-  const handleSearch = async () => {
-    await searchBarRef.value.validate()
-    emit('search', formData.value)
-  }
+  const handleSearch = () => emit('search')
 </script>
