@@ -118,15 +118,16 @@ func (s *tenantService) Create(req *dto.TenantCreateRequest, ownerID *uuid.UUID)
 		MaxMembers: maxMembers,
 		Status:     status,
 	}
-	if err := s.tenantRepo.Create(t); err != nil {
-		return nil, err
-	}
-
 	adminIDs, err := parseAdminUserIDs(req.AdminUserIDs)
 	if err != nil {
 		return nil, err
 	}
-	if err := s.syncTenantAdmins(t.ID, adminIDs, ownerID); err != nil {
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(t).Error; err != nil {
+			return err
+		}
+		return s.syncTenantAdminsTx(tx, t.ID, adminIDs, ownerID)
+	}); err != nil {
 		return nil, err
 	}
 	if s.refresher != nil {
@@ -158,28 +159,40 @@ func (s *tenantService) Update(id uuid.UUID, req *dto.TenantUpdateRequest) error
 	if req.MaxMembers > 0 {
 		updates["max_members"] = req.MaxMembers
 	}
-	if len(updates) == 0 {
+	var adminIDs []uuid.UUID
+	if req.AdminUserIDs != nil {
+		var err error
+		adminIDs, err = parseAdminUserIDs(req.AdminUserIDs)
+		if err != nil {
+			return err
+		}
+	}
+	if len(updates) == 0 && req.AdminUserIDs == nil {
 		return nil
 	}
-	if err := s.tenantRepo.UpdateWithMap(id, updates); err != nil {
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		var tenant user.Tenant
+		if err := tx.Where("id = ?", id).First(&tenant).Error; err != nil {
+			return err
+		}
+		if len(updates) > 0 {
+			if err := tx.Model(&tenant).Updates(updates).Error; err != nil {
+				return err
+			}
+		}
+		if req.AdminUserIDs != nil {
+			return s.syncTenantAdminsTx(tx, id, adminIDs, nil)
+		}
+		return nil
+	}); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrTenantNotFound
 		}
 		return err
 	}
-
-	if req.AdminUserIDs != nil {
-		adminIDs, err := parseAdminUserIDs(req.AdminUserIDs)
-		if err != nil {
+	if req.AdminUserIDs != nil && s.refresher != nil {
+		if err := s.refresher.RefreshTeam(id); err != nil {
 			return err
-		}
-		if err := s.syncTenantAdmins(id, adminIDs, nil); err != nil {
-			return err
-		}
-		if s.refresher != nil {
-			if err := s.refresher.RefreshTeam(id); err != nil {
-				return err
-			}
 		}
 	}
 	return nil
@@ -278,6 +291,9 @@ func (s *tenantService) AddMember(tenantID uuid.UUID, req *dto.TenantAddMemberRe
 	if err == nil && existing != nil {
 		return ErrTenantMemberExists
 	}
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
 
 	roleCode := normalizeTenantRoleCode(req.RoleCode)
 
@@ -291,11 +307,12 @@ func (s *tenantService) AddMember(tenantID uuid.UUID, req *dto.TenantAddMemberRe
 		member.InvitedBy = invitedBy
 	}
 
-	if err := s.tenantMemberRepo.Create(member); err != nil {
-		return err
-	}
-
-	if err := s.syncTenantIdentityRole(userID, tenantID, roleCode); err != nil {
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(member).Error; err != nil {
+			return err
+		}
+		return s.syncTenantIdentityRoleTx(tx, userID, tenantID, roleCode)
+	}); err != nil {
 		return err
 	}
 	if s.refresher != nil {
@@ -350,11 +367,12 @@ func (s *tenantService) UpdateMemberRole(tenantID, userID uuid.UUID, roleCode st
 		return err
 	}
 
-	if err := s.tenantMemberRepo.UpdateRole(member.ID, roleCode); err != nil {
-		return err
-	}
-
-	if err := s.syncTenantIdentityRole(userID, tenantID, roleCode); err != nil {
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&user.TenantMember{}).Where("id = ?", member.ID).Update("role_code", normalizeTenantRoleCode(roleCode)).Error; err != nil {
+			return err
+		}
+		return s.syncTenantIdentityRoleTx(tx, userID, tenantID, roleCode)
+	}); err != nil {
 		return err
 	}
 	if s.refresher != nil {
@@ -367,15 +385,25 @@ func (s *tenantService) UpdateMemberRole(tenantID, userID uuid.UUID, roleCode st
 }
 
 func (s *tenantService) syncTenantAdmins(tenantID uuid.UUID, adminIDs []uuid.UUID, invitedBy *uuid.UUID) error {
-	currentMembers, err := s.tenantMemberRepo.List(tenantID, nil)
-	if err != nil {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		return s.syncTenantAdminsTx(tx, tenantID, adminIDs, invitedBy)
+	})
+}
+
+func (s *tenantService) syncTenantAdminsTx(tx *gorm.DB, tenantID uuid.UUID, adminIDs []uuid.UUID, invitedBy *uuid.UUID) error {
+	var tenant user.Tenant
+	if err := tx.Select("id", "owner_id").Where("id = ?", tenantID).First(&tenant).Error; err != nil {
+		return err
+	}
+	adminIDs = appendIfMissingUUID(adminIDs, tenant.OwnerID)
+	var currentMembers []user.TenantMember
+	if err := tx.Where("tenant_id = ?", tenantID).Find(&currentMembers).Error; err != nil {
 		return err
 	}
 
 	existingByUser := make(map[uuid.UUID]*user.TenantMember, len(currentMembers))
 	for i := range currentMembers {
-		member := currentMembers[i]
-		existingByUser[member.UserID] = &member
+		existingByUser[currentMembers[i].UserID] = &currentMembers[i]
 	}
 
 	adminSet := make(map[uuid.UUID]struct{}, len(adminIDs))
@@ -387,17 +415,18 @@ func (s *tenantService) syncTenantAdmins(tenantID uuid.UUID, adminIDs []uuid.UUI
 		member, exists := existingByUser[adminID]
 		if exists {
 			if member.RoleCode != defaultTeamRoleAdminCode {
-				if err := s.tenantMemberRepo.UpdateRole(member.ID, defaultTeamRoleAdminCode); err != nil {
+				if err := tx.Model(&user.TenantMember{}).Where("id = ?", member.ID).Update("role_code", defaultTeamRoleAdminCode).Error; err != nil {
 					return err
 				}
-				if err := s.syncTenantIdentityRole(adminID, tenantID, defaultTeamRoleAdminCode); err != nil {
+				if err := s.syncTenantIdentityRoleTx(tx, adminID, tenantID, defaultTeamRoleAdminCode); err != nil {
 					return err
 				}
 			}
 			continue
 		}
 
-		if _, err := s.userRepo.GetByID(adminID); err != nil {
+		var adminUser user.User
+		if err := tx.Where("id = ?", adminID).First(&adminUser).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return errors.New("admin user not found")
 			}
@@ -413,10 +442,10 @@ func (s *tenantService) syncTenantAdmins(tenantID uuid.UUID, adminIDs []uuid.UUI
 		if invitedBy != nil {
 			member.InvitedBy = invitedBy
 		}
-		if err := s.tenantMemberRepo.Create(member); err != nil {
+		if err := tx.Create(member).Error; err != nil {
 			return err
 		}
-		if err := s.syncTenantIdentityRole(adminID, tenantID, defaultTeamRoleAdminCode); err != nil {
+		if err := s.syncTenantIdentityRoleTx(tx, adminID, tenantID, defaultTeamRoleAdminCode); err != nil {
 			return err
 		}
 	}
@@ -426,10 +455,10 @@ func (s *tenantService) syncTenantAdmins(tenantID uuid.UUID, adminIDs []uuid.UUI
 			continue
 		}
 		if _, keep := adminSet[member.UserID]; !keep {
-			if err := s.tenantMemberRepo.UpdateRole(member.ID, defaultTeamRoleMemberCode); err != nil {
+			if err := tx.Model(&user.TenantMember{}).Where("id = ?", member.ID).Update("role_code", defaultTeamRoleMemberCode).Error; err != nil {
 				return err
 			}
-			if err := s.syncTenantIdentityRole(member.UserID, tenantID, defaultTeamRoleMemberCode); err != nil {
+			if err := s.syncTenantIdentityRoleTx(tx, member.UserID, tenantID, defaultTeamRoleMemberCode); err != nil {
 				return err
 			}
 		}
@@ -471,22 +500,32 @@ func normalizeTenantRoleCode(roleCode string) string {
 }
 
 func (s *tenantService) syncTenantIdentityRole(userID, tenantID uuid.UUID, roleCode string) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		return s.syncTenantIdentityRoleTx(tx, userID, tenantID, roleCode)
+	})
+}
+
+func (s *tenantService) syncTenantIdentityRoleTx(tx *gorm.DB, userID, tenantID uuid.UUID, roleCode string) error {
 	roleCode = normalizeTenantRoleCode(roleCode)
-	if err := s.userRoleRepo.RemoveRolesByCodes(
-		userID,
-		&tenantID,
-		[]string{defaultTeamRoleAdminCode, defaultTeamRoleMemberCode},
-	); err != nil {
+	var roleIDs []uuid.UUID
+	if err := tx.Model(&user.Role{}).
+		Where("tenant_id IS NULL AND code IN ?", []string{defaultTeamRoleAdminCode, defaultTeamRoleMemberCode}).
+		Pluck("id", &roleIDs).Error; err != nil {
 		return err
 	}
+	if len(roleIDs) > 0 {
+		if err := tx.Where("user_id = ? AND tenant_id = ? AND role_id IN ?", userID, tenantID, roleIDs).Delete(&user.UserRole{}).Error; err != nil {
+			return err
+		}
+	}
 
-	roles, err := s.roleRepo.FindByCode(roleCode)
-	if err != nil {
+	var roles []user.Role
+	if err := tx.Where("code = ? AND tenant_id IS NULL", roleCode).Find(&roles).Error; err != nil {
 		return err
 	}
 	if len(roles) == 0 {
 		return nil
 	}
 
-	return s.userRoleRepo.AssignRole(userID, roles[0].ID, &tenantID)
+	return tx.Create(&user.UserRole{UserID: userID, RoleID: roles[0].ID, TenantID: &tenantID}).Error
 }

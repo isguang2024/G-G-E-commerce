@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -25,6 +26,7 @@ type ServerConfig struct {
 	Host         string `mapstructure:"host"`
 	ReadTimeout  int    `mapstructure:"read_timeout"`
 	WriteTimeout int    `mapstructure:"write_timeout"`
+	IdleTimeout  int    `mapstructure:"idle_timeout"`
 }
 
 // DBConfig 数据库配置
@@ -65,8 +67,8 @@ type MinIOConfig struct {
 // JWTConfig JWT 配置
 type JWTConfig struct {
 	Secret        string `mapstructure:"secret"`
-	AccessExpire  int    `mapstructure:"access_expire"`  // 分钟
-	RefreshExpire int    `mapstructure:"refresh_expire"` // 分钟
+	AccessExpire  int    `mapstructure:"access_expire"`
+	RefreshExpire int    `mapstructure:"refresh_expire"`
 }
 
 // LogConfig 日志配置
@@ -84,11 +86,9 @@ func Load() (*Config, error) {
 	viper.AddConfigPath("../configs")
 	viper.AddConfigPath("../../configs")
 
-	// 环境变量支持
 	viper.SetEnvPrefix("GG")
 	viper.AutomaticEnv()
 
-	// 设置默认值
 	setDefaults()
 
 	if err := viper.ReadInConfig(); err != nil {
@@ -102,9 +102,12 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 
-	// 从环境变量覆盖
 	if env := os.Getenv("GG_ENV"); env != "" {
 		cfg.Env = env
+	}
+
+	if err := cfg.Validate(); err != nil {
+		return nil, err
 	}
 
 	return &cfg, nil
@@ -114,6 +117,9 @@ func setDefaults() {
 	viper.SetDefault("env", "development")
 	viper.SetDefault("server.port", 8080)
 	viper.SetDefault("server.host", "0.0.0.0")
+	viper.SetDefault("server.read_timeout", 15)
+	viper.SetDefault("server.write_timeout", 30)
+	viper.SetDefault("server.idle_timeout", 60)
 	viper.SetDefault("db.host", "localhost")
 	viper.SetDefault("db.port", 5432)
 	viper.SetDefault("db.sslmode", "disable")
@@ -123,4 +129,20 @@ func setDefaults() {
 	viper.SetDefault("redis.db", 0)
 	viper.SetDefault("log.level", "info")
 	viper.SetDefault("log.output", "stdout")
+}
+
+func (c *Config) Validate() error {
+	if c == nil {
+		return fmt.Errorf("config is nil")
+	}
+	if strings.TrimSpace(c.JWT.Secret) == "" {
+		return fmt.Errorf("jwt.secret 不能为空")
+	}
+	if strings.EqualFold(strings.TrimSpace(c.Env), "production") && strings.TrimSpace(c.JWT.Secret) == "your-secret-key-change-in-production" {
+		return fmt.Errorf("production 环境禁止使用默认 jwt.secret")
+	}
+	if c.Server.ReadTimeout < 0 || c.Server.WriteTimeout < 0 || c.Server.IdleTimeout < 0 {
+		return fmt.Errorf("server 超时配置不能为负数")
+	}
+	return nil
 }

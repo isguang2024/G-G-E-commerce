@@ -16,7 +16,7 @@ type MenuCreateRequest struct {
 
 // MenuUpdateRequest 更新菜单
 type MenuUpdateRequest struct {
-	ParentID      *string                `json:"parent_id"` // 空字符串或 null 表示移至顶级
+	ParentID      *string                `json:"parent_id"` // 空字符串表示移至顶级；省略字段表示保持不变
 	ManageGroupID *string                `json:"manage_group_id"`
 	Path          string                 `json:"path" binding:"max=255"`
 	Name          string                 `json:"name" binding:"max=100"`

@@ -2,13 +2,16 @@ package user
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
+	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/pkg/password"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
@@ -30,16 +33,18 @@ type UserService interface {
 
 type userService struct {
 	userRepo UserRepository
+	db       *gorm.DB
 	roleRepo interface {
 		GetByID(id uuid.UUID) (*Role, error)
 	}
-	logger *zap.Logger
+	refresher permissionrefresh.Service
+	logger    *zap.Logger
 }
 
-func NewUserService(userRepo UserRepository, roleRepo interface {
+func NewUserService(db *gorm.DB, userRepo UserRepository, roleRepo interface {
 	GetByID(id uuid.UUID) (*Role, error)
-}, logger *zap.Logger) UserService {
-	return &userService{userRepo: userRepo, roleRepo: roleRepo, logger: logger}
+}, refresher permissionrefresh.Service, logger *zap.Logger) UserService {
+	return &userService{db: db, userRepo: userRepo, roleRepo: roleRepo, refresher: refresher, logger: logger}
 }
 
 func (s *userService) List(req *dto.UserListRequest) ([]User, int64, error) {
@@ -94,12 +99,22 @@ func (s *userService) Create(req *dto.UserCreateRequest) (*User, error) {
 		RegisterSource: "admin",
 		Status:         status,
 	}
-	if err := s.userRepo.Create(user); err != nil {
+	roleUUIDs, _ := parseUUIDs(req.RoleIDs)
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(user).Error; err != nil {
+			return err
+		}
+		if len(roleUUIDs) == 0 {
+			return nil
+		}
+		return replaceGlobalUserRoles(tx, user.ID, roleUUIDs)
+	}); err != nil {
 		return nil, err
 	}
-	roleUUIDs, _ := parseUUIDs(req.RoleIDs)
-	if len(roleUUIDs) > 0 {
-		_ = s.userRepo.ReplaceRoles(user.ID, roleUUIDs)
+	if s.refresher != nil {
+		if err := s.refresher.RefreshPlatformUser(user.ID); err != nil {
+			return nil, err
+		}
 	}
 	return s.userRepo.GetByID(user.ID)
 }
@@ -119,12 +134,32 @@ func (s *userService) Update(id uuid.UUID, req *dto.UserUpdateRequest) error {
 	if req.Status != "" {
 		user.Status = req.Status
 	}
-	if err := s.userRepo.Update(user); err != nil {
+	roleUUIDs := []uuid.UUID(nil)
+	if req.RoleIDs != nil {
+		roleUUIDs, err = parseUUIDs(req.RoleIDs)
+		if err != nil {
+			return err
+		}
+	}
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&models.User{}).Where("id = ?", id).Updates(map[string]interface{}{
+			"email":         user.Email,
+			"nickname":      user.Nickname,
+			"phone":         user.Phone,
+			"system_remark": user.SystemRemark,
+			"status":        user.Status,
+		}).Error; err != nil {
+			return err
+		}
+		if req.RoleIDs == nil {
+			return nil
+		}
+		return replaceGlobalUserRoles(tx, id, roleUUIDs)
+	}); err != nil {
 		return err
 	}
-	if req.RoleIDs != nil {
-		roleUUIDs, _ := parseUUIDs(req.RoleIDs)
-		return s.userRepo.ReplaceRoles(id, roleUUIDs)
+	if s.refresher != nil {
+		return s.refresher.RefreshPlatformUser(id)
 	}
 	return nil
 }
@@ -168,6 +203,31 @@ func parseUUIDs(ids []string) ([]uuid.UUID, error) {
 		result = append(result, id)
 	}
 	return result, nil
+}
+
+func replaceGlobalUserRoles(tx *gorm.DB, userID uuid.UUID, roleIDs []uuid.UUID) error {
+	if err := tx.Where("user_id = ? AND tenant_id IS NULL", userID).Delete(&models.UserRole{}).Error; err != nil {
+		return err
+	}
+	if len(roleIDs) == 0 {
+		return nil
+	}
+	items := make([]models.UserRole, 0, len(roleIDs))
+	seen := make(map[uuid.UUID]struct{}, len(roleIDs))
+	for _, roleID := range roleIDs {
+		if roleID == uuid.Nil {
+			continue
+		}
+		if _, ok := seen[roleID]; ok {
+			continue
+		}
+		seen[roleID] = struct{}{}
+		items = append(items, models.UserRole{UserID: userID, RoleID: roleID})
+	}
+	if len(items) == 0 {
+		return nil
+	}
+	return tx.Create(&items).Error
 }
 
 type PermissionService interface {
@@ -494,10 +554,29 @@ func isPublicMenu(menu Menu) bool {
 	if menu.Meta == nil {
 		return false
 	}
-	for _, key := range []string{"isPublic", "publicMenu", "public_menu"} {
+	if accessMode := menuAccessMode(menu.Meta); accessMode == "public" || accessMode == "jwt" {
+		return true
+	}
+	for _, key := range []string{"isPublic", "public", "globalVisible", "publicMenu", "public_menu"} {
 		if value, ok := menu.Meta[key].(bool); ok && value {
 			return true
 		}
 	}
 	return false
+}
+
+func menuAccessMode(meta map[string]interface{}) string {
+	if meta == nil {
+		return "permission"
+	}
+	value, ok := meta["accessMode"].(string)
+	if !ok {
+		return "permission"
+	}
+	switch strings.TrimSpace(strings.ToLower(value)) {
+	case "public", "jwt":
+		return strings.TrimSpace(strings.ToLower(value))
+	default:
+		return "permission"
+	}
 }

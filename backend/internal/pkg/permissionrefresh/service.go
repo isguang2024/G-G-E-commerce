@@ -83,7 +83,11 @@ func (s *service) RefreshPlatformRole(roleID uuid.UUID) error {
 			return err
 		}
 	}
-	return s.RefreshPlatformRoles([]uuid.UUID{roleID})
+	userIDs, err := s.getPlatformUserIDsByRoleIDs([]uuid.UUID{roleID})
+	if err != nil {
+		return err
+	}
+	return s.RefreshPlatformUsers(userIDs)
 }
 
 func (s *service) RefreshPlatformRoles(roleIDs []uuid.UUID) error {
@@ -142,6 +146,9 @@ func (s *service) RefreshByPackages(packageIDs []uuid.UUID) error {
 
 	roleUserIDs, err := s.getPlatformUserIDsByRoleIDs(platformRoleIDs)
 	if err != nil {
+		return err
+	}
+	if err := s.RefreshPlatformRoles(platformRoleIDs); err != nil {
 		return err
 	}
 	if err := s.RefreshTeams(teamIDs); err != nil {

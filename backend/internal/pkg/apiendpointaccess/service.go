@@ -133,6 +133,10 @@ func (s *service) RequireActiveEndpoint() gin.HandlerFunc {
 			c.Next()
 			return
 		}
+		if shouldBypassEndpointStatusCheck(path) {
+			c.Next()
+			return
+		}
 
 		meta, ok := s.Get(c.Request.Method, path)
 		if !ok {
@@ -150,6 +154,17 @@ func (s *service) RequireActiveEndpoint() gin.HandlerFunc {
 		}
 
 		c.Next()
+	}
+}
+
+func shouldBypassEndpointStatusCheck(path string) bool {
+	switch {
+	case path == "/api/v1/api-endpoints":
+		return true
+	case strings.HasPrefix(path, "/api/v1/api-endpoints/"):
+		return true
+	default:
+		return false
 	}
 }
 

@@ -1,29 +1,33 @@
-﻿# docs 文档索引
+# docs 文档索引
 
-## 阅读顺序
+> 现状基线：2026-03-27。`docs/` 只保留当前有效架构说明与近期里程碑，不再保留阶段性草案堆叠。
 
-1. `../PROJECT_FRAMEWORK.md`：项目主框架与执行清单（全局约束）。
-2. `permission-overall-summary.md`：权限系统总体模型与现状。
-3. `menu-page-management-design.md`：菜单、全局菜单、页面管理的正式设计方案。
-4. `menu-page-management-implementation-plan.md`：菜单与页面管理的数据库、接口、守卫和迁移实施草案。
-5. `change-log.md`：按时间追加的改动记录。
-6. `../FRONTEND_GUIDELINE.md`：前端系统管理页统一规范。
-7. `../AGENTS.md`：仓库协作规则与交付约束。
+## 1. 推荐阅读顺序
 
-## 阅读路径
+1. [PROJECT_FRAMEWORK.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/PROJECT_FRAMEWORK.md)：项目主框架、边界与执行清单
+2. [permission-overall-summary.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/permission-overall-summary.md)：权限、功能包、快照主链
+3. [menu-page-management-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/menu-page-management-design.md)：菜单与页面正式架构
+4. [menu-page-management-implementation-plan.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/menu-page-management-implementation-plan.md)：菜单与页面当前实现现状
+5. [FRONTEND_GUIDELINE.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/FRONTEND_GUIDELINE.md)：前端管理页统一规范
+6. [change-log.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/change-log.md)：近期里程碑
 
-- 新人接手：先看 `../PROJECT_FRAMEWORK.md`，再看 `permission-overall-summary.md`、`menu-page-management-design.md` 与 `menu-page-management-implementation-plan.md`，最后看 `change-log.md` 了解最近演进。
-- 日常开发：先看任务相关模块文档，再回看 `../FRONTEND_GUIDELINE.md` 与 `../AGENTS.md` 校对实现与交付约束。
-- 评审回归：先看 `change-log.md` 最近记录，再核对 `permission-overall-summary.md` 与代码当前行为。
+## 2. 文档分工
 
-## 文档维护规则
+- 根目录文档：全局长期规则
+- `permission-overall-summary.md`：权限、功能包、API、快照的正式语义
+- `menu-page-management-design.md`：菜单与页面的稳定模型
+- `menu-page-management-implementation-plan.md`：当前已落地实现、剩余边界、实施注意点
+- `change-log.md`：只记录近期有效里程碑，不记碎片化推进过程
 
-- `docs/` 只保留长期有效文档与变更日志。
-- 重复、过期、阶段性草案要合并后删除，避免多版本并存。
-- 涉及核心链路（权限、API、迁移、上下文）变更时，必须同步更新对应文档。
-- 文档与代码冲突时，以代码真实行为为准，随后补文档。
-- 删除文档时，必须同步检查 `change-log.md` 与根目录文档中是否仍存在旧链接或旧名称引用。
+## 3. 维护规则
 
-## 本次收敛
+- 文档与代码冲突时，以代码真实行为为准，然后更新文档。
+- 新增核心链路变更时，必须同步修改对应专题文档。
+- 重复、过期、阶段性说明要合并后删除，避免多版本并存。
+- 删除或改名文档时，必须同步检查根文档、专题文档和变更日志中的旧链接。
 
-- 已移除重复设计文档 `permission-package-design.md`，内容已并入现有权限总览与框架文档。
+## 4. 变更日志保留策略
+
+- `change-log.md` 只保留近期里程碑与当前架构仍有参考价值的收口记录。
+- 过细过程日志、同日重复推进日志、已经被专题文档吸收的旧记录，应合并后移除。
+- 需要长期保留的结论，写回专题文档，不依赖日志存活。

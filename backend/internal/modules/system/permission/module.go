@@ -45,7 +45,7 @@ func (m *PermissionModule) RegisterRoutes(rg *gin.RouterGroup) {
 	platformService := platformaccess.NewService(m.db)
 	roleSnapshotService := platformroleaccess.NewService(m.db)
 	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
-	service := NewPermissionService(groupRepo, actionRepo, apiEndpointRepo, apiEndpointBindingRepo, packageActionRepo, teamPackageRepo, roleDisabledActionRepo, teamBlockedActionRepo, userActionRepo, boundaryService, refresher)
+	service := NewPermissionService(m.db, groupRepo, actionRepo, apiEndpointRepo, apiEndpointBindingRepo, packageActionRepo, teamPackageRepo, roleDisabledActionRepo, teamBlockedActionRepo, userActionRepo, boundaryService, refresher)
 	handler := NewPermissionHandler(service, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 

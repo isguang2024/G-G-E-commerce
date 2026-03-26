@@ -1,12 +1,14 @@
 package database
 
 import (
+	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	gormlogger "gorm.io/gorm/logger"
 
 	"github.com/gg-ecommerce/backend/internal/config"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
@@ -15,8 +17,13 @@ import (
 // DB 数据库实例
 var DB *gorm.DB
 
+type RuntimeOptions struct {
+	Env      string
+	LogLevel string
+}
+
 // Init 初始化数据库连接
-func Init(cfg *config.DBConfig) (*gorm.DB, error) {
+func Init(cfg *config.DBConfig, runtimeOptions ...RuntimeOptions) (*gorm.DB, error) {
 	dsn := fmt.Sprintf(
 		"host=%s user=%s password=%s dbname=%s port=%d sslmode=%s TimeZone=%s",
 		cfg.Host,
@@ -28,9 +35,14 @@ func Init(cfg *config.DBConfig) (*gorm.DB, error) {
 		cfg.TimeZone,
 	)
 
+	runtime := RuntimeOptions{}
+	if len(runtimeOptions) > 0 {
+		runtime = runtimeOptions[0]
+	}
+
 	var err error
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Info),
+		Logger: gormlogger.Default.LogMode(resolveGormLogLevel(runtime)),
 		NowFunc: func() time.Time {
 			return time.Now().Local()
 		},
@@ -51,11 +63,30 @@ func Init(cfg *config.DBConfig) (*gorm.DB, error) {
 	sqlDB.SetConnMaxLifetime(time.Hour)
 
 	// 测试连接
-	if err := sqlDB.Ping(); err != nil {
+	pingCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := sqlDB.PingContext(pingCtx); err != nil {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 
 	return DB, nil
+}
+
+func resolveGormLogLevel(runtime RuntimeOptions) gormlogger.LogLevel {
+	switch strings.ToLower(strings.TrimSpace(runtime.LogLevel)) {
+	case "debug":
+		return gormlogger.Info
+	case "warn":
+		return gormlogger.Warn
+	case "error":
+		return gormlogger.Error
+	case "silent":
+		return gormlogger.Silent
+	}
+	if strings.EqualFold(strings.TrimSpace(runtime.Env), "production") {
+		return gormlogger.Warn
+	}
+	return gormlogger.Info
 }
 
 // Close 关闭数据库连接

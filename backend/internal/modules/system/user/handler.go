@@ -35,7 +35,7 @@ type UserHandler struct {
 	authzService    interface {
 		Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
 	}
-	roleRepo        interface {
+	roleRepo interface {
 		GetByIDs(ids []uuid.UUID) ([]Role, error)
 	}
 	userRoleRepo interface {
@@ -807,15 +807,15 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.
 	payload := gin.H{
 		"user": userInfo,
 		"context": gin.H{
-			"type":      "team",
-			"tenant_id": tenantID.String(),
+			"type":        "team",
+			"tenant_id":   tenantID.String(),
 			"tenant_name": "",
 		},
-		"snapshot":     buildTeamSnapshotSummary(teamSnapshot, teamMeta),
-		"roles":        roleStates,
-		"team_member":  h.buildTeamMemberMap(userID, *tenantID),
+		"snapshot":      buildTeamSnapshotSummary(teamSnapshot, teamMeta),
+		"roles":         roleStates,
+		"team_member":   h.buildTeamMemberMap(userID, *tenantID),
 		"team_packages": h.buildPackageMapsByIDs(teamSnapshot.ExpandedPackageIDs),
-		"diagnosis":    nil,
+		"diagnosis":     nil,
 	}
 	if permissionKeyValue != "" {
 		diagnosis, err := h.buildTeamPermissionDiagnosis(userEntity, *tenantID, teamSnapshot, roleStates, permissionKeyValue)
@@ -846,15 +846,15 @@ func (h *UserHandler) buildPlatformPermissionDiagnosis(userEntity *User, snapsho
 	reasons := buildPermissionDiagnosisReasons(authErr, allowed, "platform", bypassedBySuperAdmin)
 
 	return gin.H{
-		"permission_key":            permissionKeyValue,
-		"allowed":                   authErr == nil && allowed,
-		"reason_text":               strings.Join(reasons, "；"),
-		"reasons":                   reasons,
-		"matched_in_snapshot":       inSnapshot,
-		"bypassed_by_super_admin":   bypassedBySuperAdmin,
-		"action":                    buildPermissionActionMap(actionDetail, actionDef),
-		"source_packages":           h.buildPackageMapsByIDs(sourcePackageIDs),
-		"role_results":              []gin.H{},
+		"permission_key":          permissionKeyValue,
+		"allowed":                 authErr == nil && allowed,
+		"reason_text":             strings.Join(reasons, "；"),
+		"reasons":                 reasons,
+		"matched_in_snapshot":     inSnapshot,
+		"bypassed_by_super_admin": bypassedBySuperAdmin,
+		"action":                  buildPermissionActionMap(actionDetail, actionDef),
+		"source_packages":         h.buildPackageMapsByIDs(sourcePackageIDs),
+		"role_results":            []gin.H{},
 	}, nil
 }
 
@@ -889,25 +889,25 @@ func (h *UserHandler) buildTeamPermissionDiagnosis(userEntity *User, teamID uuid
 	boundaryState, denialStage, denialReason := buildTeamDiagnosisDecision(authErr, allowed, blockedByTeam, boundaryConfigured, inSnapshot, memberStatus, memberMatched, roleMatched, roleDisabled, roleAvailable, bypassedBySuperAdmin)
 
 	return gin.H{
-		"permission_key":            permissionKeyValue,
-		"allowed":                   authErr == nil && allowed,
-		"reason_text":               strings.Join(reasons, "；"),
-		"reasons":                   reasons,
-		"matched_in_snapshot":       inSnapshot,
-		"bypassed_by_super_admin":   bypassedBySuperAdmin,
-		"blocked_by_team":           blockedByTeam,
-		"denial_stage":              denialStage,
-		"denial_reason":             denialReason,
-		"member_status":             memberStatus,
-		"member_matched":            memberMatched,
-		"boundary_state":            boundaryState,
-		"boundary_configured":       boundaryConfigured,
-		"role_chain_matched":        roleMatched,
-		"role_chain_disabled":       roleDisabled,
-		"role_chain_available":      roleAvailable,
-		"action":                    buildPermissionActionMap(actionDetail, actionDef),
-		"source_packages":           h.buildPackageMapsByIDs(sourcePackageIDs),
-		"role_results":              roleStates,
+		"permission_key":          permissionKeyValue,
+		"allowed":                 authErr == nil && allowed,
+		"reason_text":             strings.Join(reasons, "；"),
+		"reasons":                 reasons,
+		"matched_in_snapshot":     inSnapshot,
+		"bypassed_by_super_admin": bypassedBySuperAdmin,
+		"blocked_by_team":         blockedByTeam,
+		"denial_stage":            denialStage,
+		"denial_reason":           denialReason,
+		"member_status":           memberStatus,
+		"member_matched":          memberMatched,
+		"boundary_state":          boundaryState,
+		"boundary_configured":     boundaryConfigured,
+		"role_chain_matched":      roleMatched,
+		"role_chain_disabled":     roleDisabled,
+		"role_chain_available":    roleAvailable,
+		"action":                  buildPermissionActionMap(actionDetail, actionDef),
+		"source_packages":         h.buildPackageMapsByIDs(sourcePackageIDs),
+		"role_results":            roleStates,
 	}, nil
 }
 
@@ -945,19 +945,19 @@ func (h *UserHandler) buildTeamRoleStates(userID, teamID uuid.UUID, permissionKe
 		}
 
 		roleState := gin.H{
-			"role_id":               role.ID.String(),
-			"role_code":             role.Code,
-			"role_name":             role.Name,
-			"inherited":             snapshot.Inherited,
-			"refreshed_at":          formatTimeValue(meta.RefreshedAt),
+			"role_id":                role.ID.String(),
+			"role_code":              role.Code,
+			"role_name":              role.Name,
+			"inherited":              snapshot.Inherited,
+			"refreshed_at":           formatTimeValue(meta.RefreshedAt),
 			"available_action_count": len(snapshot.AvailableActionIDs),
 			"disabled_action_count":  len(snapshot.DisabledActionIDs),
 			"effective_action_count": len(snapshot.ActionIDs),
-			"matched":               false,
-			"disabled":              false,
-			"available":             false,
-			"source_packages":       []gin.H{},
-			"source_package_ids":    []uuid.UUID{},
+			"matched":                false,
+			"disabled":               false,
+			"available":              false,
+			"source_packages":        []gin.H{},
+			"source_package_ids":     []uuid.UUID{},
 		}
 		if actionDetail != nil {
 			roleState["available"] = containsUUID(snapshot.AvailableActionIDs, actionDetail.ID)
@@ -1026,15 +1026,15 @@ func buildPermissionActionMap(detail *PermissionKey, runtime *models.PermissionK
 
 func buildPlatformSnapshotSummary(snapshot *platformaccess.Snapshot, meta *models.PlatformUserAccessSnapshot) gin.H {
 	return gin.H{
-		"refreshed_at":          formatTimeValue(timeValue(meta, func(item *models.PlatformUserAccessSnapshot) time.Time { return item.RefreshedAt })),
-		"updated_at":            formatTimeValue(timeValue(meta, func(item *models.PlatformUserAccessSnapshot) time.Time { return item.UpdatedAt })),
-		"role_count":            len(snapshot.RoleIDs),
-		"direct_package_count":  len(snapshot.DirectPackageIDs),
+		"refreshed_at":           formatTimeValue(timeValue(meta, func(item *models.PlatformUserAccessSnapshot) time.Time { return item.RefreshedAt })),
+		"updated_at":             formatTimeValue(timeValue(meta, func(item *models.PlatformUserAccessSnapshot) time.Time { return item.UpdatedAt })),
+		"role_count":             len(snapshot.RoleIDs),
+		"direct_package_count":   len(snapshot.DirectPackageIDs),
 		"expanded_package_count": len(snapshot.ExpandedPackageIDs),
-		"action_count":          len(snapshot.ActionIDs),
-		"disabled_action_count": len(snapshot.DisabledActionIDs),
-		"menu_count":            len(snapshot.MenuIDs),
-		"has_package_config":    snapshot.HasPackageConfig,
+		"action_count":           len(snapshot.ActionIDs),
+		"disabled_action_count":  len(snapshot.DisabledActionIDs),
+		"menu_count":             len(snapshot.MenuIDs),
+		"has_package_config":     snapshot.HasPackageConfig,
 	}
 }
 

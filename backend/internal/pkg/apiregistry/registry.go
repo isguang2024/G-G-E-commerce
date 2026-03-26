@@ -60,6 +60,7 @@ type Registrar struct {
 }
 
 type RequireActionFunc func(permissionKey string, legacy ...string) gin.HandlerFunc
+type RequireAnyActionFunc func(permissionKeys ...string) gin.HandlerFunc
 
 func NewRegistrar(group *gin.RouterGroup, _ string) *Registrar {
 	return &Registrar{group: group}
@@ -93,7 +94,7 @@ func (r *Registrar) GETAction(relativePath, summary, permissionKey string, requi
 	return r.GET(relativePath, MetaWithPermission(summary, permissionKey), appendRequireActionHandler(permissionKey, requireAction, handlers)...)
 }
 
-func (r *Registrar) GETActions(relativePath, summary string, permissionKeys []string, requireAction RequireActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+func (r *Registrar) GETActions(relativePath, summary string, permissionKeys []string, requireAction RequireAnyActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
 	return r.GET(relativePath, MetaWithPermissions(summary, permissionKeys), appendRequireAnyActionHandler(permissionKeys, requireAction, handlers)...)
 }
 
@@ -105,7 +106,7 @@ func (r *Registrar) POSTAction(relativePath, summary, permissionKey string, requ
 	return r.POST(relativePath, MetaWithPermission(summary, permissionKey), appendRequireActionHandler(permissionKey, requireAction, handlers)...)
 }
 
-func (r *Registrar) POSTActions(relativePath, summary string, permissionKeys []string, requireAction RequireActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+func (r *Registrar) POSTActions(relativePath, summary string, permissionKeys []string, requireAction RequireAnyActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
 	return r.POST(relativePath, MetaWithPermissions(summary, permissionKeys), appendRequireAnyActionHandler(permissionKeys, requireAction, handlers)...)
 }
 
@@ -117,7 +118,7 @@ func (r *Registrar) PUTAction(relativePath, summary, permissionKey string, requi
 	return r.PUT(relativePath, MetaWithPermission(summary, permissionKey), appendRequireActionHandler(permissionKey, requireAction, handlers)...)
 }
 
-func (r *Registrar) PUTActions(relativePath, summary string, permissionKeys []string, requireAction RequireActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+func (r *Registrar) PUTActions(relativePath, summary string, permissionKeys []string, requireAction RequireAnyActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
 	return r.PUT(relativePath, MetaWithPermissions(summary, permissionKeys), appendRequireAnyActionHandler(permissionKeys, requireAction, handlers)...)
 }
 
@@ -129,7 +130,7 @@ func (r *Registrar) DELETEAction(relativePath, summary, permissionKey string, re
 	return r.DELETE(relativePath, MetaWithPermission(summary, permissionKey), appendRequireActionHandler(permissionKey, requireAction, handlers)...)
 }
 
-func (r *Registrar) DELETEActions(relativePath, summary string, permissionKeys []string, requireAction RequireActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
+func (r *Registrar) DELETEActions(relativePath, summary string, permissionKeys []string, requireAction RequireAnyActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
 	return r.DELETE(relativePath, MetaWithPermissions(summary, permissionKeys), appendRequireAnyActionHandler(permissionKeys, requireAction, handlers)...)
 }
 
@@ -240,7 +241,7 @@ func appendRequireActionHandler(permissionKey string, requireAction RequireActio
 	return withAuth
 }
 
-func appendRequireAnyActionHandler(permissionKeys []string, requireAction RequireActionFunc, handlers []gin.HandlerFunc) []gin.HandlerFunc {
+func appendRequireAnyActionHandler(permissionKeys []string, requireAction RequireAnyActionFunc, handlers []gin.HandlerFunc) []gin.HandlerFunc {
 	if requireAction == nil {
 		return handlers
 	}
@@ -249,7 +250,7 @@ func appendRequireAnyActionHandler(permissionKeys []string, requireAction Requir
 		return handlers
 	}
 	withAuth := make([]gin.HandlerFunc, 0, len(handlers)+1)
-	withAuth = append(withAuth, requireAction(keys[0]))
+	withAuth = append(withAuth, requireAction(keys...))
 	withAuth = append(withAuth, handlers...)
 	return withAuth
 }
@@ -363,7 +364,7 @@ func syncRoutesInternal(
 			CategoryID:   categoryID,
 			ContextScope: contextScope,
 			Source:       source,
-			Status:       "normal",
+			Status:       resolveSyncedEndpointStatus(existing),
 		}
 		if existing != nil {
 			endpoint.ID = existing.ID
@@ -596,4 +597,15 @@ func normalizeSource(value string) string {
 	default:
 		return "sync"
 	}
+}
+
+func resolveSyncedEndpointStatus(existing *models.APIEndpoint) string {
+	if existing == nil {
+		return "normal"
+	}
+	status := strings.TrimSpace(existing.Status)
+	if status == "" {
+		return "normal"
+	}
+	return status
 }

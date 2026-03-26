@@ -81,7 +81,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		}
 
 		open := r.Group("/open/v1")
-		open.Use(endpointAccessService.RequireActiveEndpoint(), middleware.APIKeyAuth())
+		open.Use(endpointAccessService.RequireActiveEndpoint(), middleware.APIKeyAuth(db))
 		{
 		}
 	}

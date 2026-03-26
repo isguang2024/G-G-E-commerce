@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+
+	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 )
 
 type UserRepository interface {
@@ -105,7 +107,16 @@ func (r *userRepository) Delete(id uuid.UUID) error {
 		if err := tx.Where("user_id = ?", id).Delete(&UserActionPermission{}).Error; err != nil {
 			return err
 		}
+		if err := tx.Where("user_id = ?", id).Delete(&UserFeaturePackage{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("user_id = ?", id).Delete(&UserHiddenMenu{}).Error; err != nil {
+			return err
+		}
 		if err := tx.Where("user_id = ?", id).Delete(&TenantMember{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("user_id = ?", id).Delete(&models.PlatformUserAccessSnapshot{}).Error; err != nil {
 			return err
 		}
 		return tx.Delete(&User{}, id).Error
@@ -164,7 +175,10 @@ func (r *userRepository) List(offset, limit int, username, userPhone, userEmail,
 		baseQuery = baseQuery.Where("invited_by = ?", invitedBy)
 	}
 	if roleID != "" {
-		baseQuery = baseQuery.Joins("JOIN user_roles ON users.id = user_roles.user_id").Where("user_roles.role_id = ?", roleID)
+		baseQuery = baseQuery.Where(
+			"EXISTS (SELECT 1 FROM user_roles WHERE users.id = user_roles.user_id AND user_roles.tenant_id IS NULL AND user_roles.role_id = ?)",
+			roleID,
+		)
 	}
 
 	var total int64
@@ -186,17 +200,31 @@ func (r *userRepository) List(offset, limit int, username, userPhone, userEmail,
 func (r *userRepository) ReplaceRoles(userID uuid.UUID, roleIDs []uuid.UUID) error {
 	tx := r.db.Begin()
 
-	if err := tx.Where("user_id = ?", userID).Delete(&UserRole{}).Error; err != nil {
+	if err := tx.Where("user_id = ? AND tenant_id IS NULL", userID).Delete(&UserRole{}).Error; err != nil {
 		tx.Rollback()
 		return err
 	}
+	if len(roleIDs) == 0 {
+		return tx.Commit().Error
+	}
 
 	userRoles := make([]UserRole, 0, len(roleIDs))
+	seen := make(map[uuid.UUID]struct{}, len(roleIDs))
 	for _, roleID := range roleIDs {
+		if roleID == uuid.Nil {
+			continue
+		}
+		if _, ok := seen[roleID]; ok {
+			continue
+		}
+		seen[roleID] = struct{}{}
 		userRoles = append(userRoles, UserRole{
 			UserID: userID,
 			RoleID: roleID,
 		})
+	}
+	if len(userRoles) == 0 {
+		return tx.Commit().Error
 	}
 
 	if err := tx.Create(&userRoles).Error; err != nil {
@@ -2182,7 +2210,7 @@ func (r *userHiddenMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
 }
 
 type APIEndpointListParams struct {
-	EndpointIDs    []uuid.UUID
+	EndpointIDs   []uuid.UUID
 	Method        string
 	PermissionKey string
 	Keyword       string

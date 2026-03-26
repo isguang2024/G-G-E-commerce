@@ -38,7 +38,10 @@ func main() {
 	)
 
 	// 初始化数据库
-	db, err := database.Init(&cfg.DB)
+	db, err := database.Init(&cfg.DB, database.RuntimeOptions{
+		Env:      cfg.Env,
+		LogLevel: cfg.Log.Level,
+	})
 	if err != nil {
 		logger.Fatal("Failed to initialize database", zap.Error(err))
 	}
@@ -50,8 +53,11 @@ func main() {
 
 	// 创建 HTTP 服务器
 	srv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", cfg.Server.Port),
-		Handler: r,
+		Addr:         fmt.Sprintf(":%d", cfg.Server.Port),
+		Handler:      r,
+		ReadTimeout:  resolveServerTimeout(cfg.Server.ReadTimeout, 15*time.Second),
+		WriteTimeout: resolveServerTimeout(cfg.Server.WriteTimeout, 30*time.Second),
+		IdleTimeout:  resolveServerTimeout(cfg.Server.IdleTimeout, 60*time.Second),
 	}
 
 	// 启动服务器（goroutine）
@@ -81,4 +87,11 @@ func main() {
 	}
 
 	logger.Info("Server exited")
+}
+
+func resolveServerTimeout(seconds int, fallback time.Duration) time.Duration {
+	if seconds <= 0 {
+		return fallback
+	}
+	return time.Duration(seconds) * time.Second
 }

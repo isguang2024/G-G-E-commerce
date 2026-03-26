@@ -25,7 +25,8 @@ func NewCache(host string, port int, password string, db int) (*Cache, error) {
 	})
 
 	// 测试连接
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 	if err := client.Ping(ctx).Err(); err != nil {
 		return nil, fmt.Errorf("failed to connect to redis: %w", err)
 	}

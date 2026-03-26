@@ -1,11 +1,21 @@
 package platformroleaccess
 
 import (
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+)
+
+var (
+	platformRolePublicMenuCacheMu        sync.RWMutex
+	platformRolePublicMenuCacheIDs       []uuid.UUID
+	platformRolePublicMenuCacheExpiresAt time.Time
 )
 
 type Snapshot struct {
@@ -32,6 +42,13 @@ type service struct {
 
 func NewService(db *gorm.DB) Service {
 	return &service{db: db}
+}
+
+func InvalidatePublicMenuCache() {
+	platformRolePublicMenuCacheMu.Lock()
+	defer platformRolePublicMenuCacheMu.Unlock()
+	platformRolePublicMenuCacheIDs = nil
+	platformRolePublicMenuCacheExpiresAt = time.Time{}
 }
 
 func (s *service) GetSnapshot(roleID uuid.UUID) (*Snapshot, error) {
@@ -160,53 +177,11 @@ func (s *service) expandPackageIDs(packageIDs []uuid.UUID, context string) ([]uu
 	if len(packageIDs) == 0 {
 		return []uuid.UUID{}, nil
 	}
-	result := make([]uuid.UUID, 0, len(packageIDs))
-	seenExpanded := make(map[uuid.UUID]struct{}, len(packageIDs))
-	visited := make(map[uuid.UUID]struct{}, len(packageIDs))
-	for _, packageID := range packageIDs {
-		if err := s.expandPackageID(packageID, context, visited, seenExpanded, &result); err != nil {
-			return nil, err
-		}
+	packageMap, bundleChildrenMap, err := s.loadPackageGraph(packageIDs)
+	if err != nil {
+		return nil, err
 	}
-	return result, nil
-}
-
-func (s *service) expandPackageID(packageID uuid.UUID, context string, visited map[uuid.UUID]struct{}, seenExpanded map[uuid.UUID]struct{}, result *[]uuid.UUID) error {
-	if _, ok := visited[packageID]; ok {
-		return nil
-	}
-	visited[packageID] = struct{}{}
-
-	var item models.FeaturePackage
-	if err := s.db.Where("id = ? AND status = ?", packageID, "normal").First(&item).Error; err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil
-		}
-		return err
-	}
-	if !contextAllowsPackage(context, item.ContextType) {
-		return nil
-	}
-	if item.PackageType == "bundle" {
-		var childIDs []uuid.UUID
-		if err := s.db.Model(&models.FeaturePackageBundle{}).
-			Where("package_id = ?", packageID).
-			Pluck("child_package_id", &childIDs).Error; err != nil {
-			return err
-		}
-		for _, childID := range childIDs {
-			if err := s.expandPackageID(childID, context, visited, seenExpanded, result); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-	if _, ok := seenExpanded[packageID]; ok {
-		return nil
-	}
-	seenExpanded[packageID] = struct{}{}
-	*result = append(*result, packageID)
-	return nil
+	return expandRolePackageIDsFromGraph(packageIDs, context, packageMap, bundleChildrenMap), nil
 }
 
 func (s *service) getActionIDsByPackageIDs(packageIDs []uuid.UUID) ([]uuid.UUID, map[uuid.UUID][]uuid.UUID, error) {
@@ -284,8 +259,16 @@ func (s *service) getHiddenMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error
 }
 
 func (s *service) getPublicMenuIDs() ([]uuid.UUID, error) {
+	platformRolePublicMenuCacheMu.RLock()
+	if time.Now().Before(platformRolePublicMenuCacheExpiresAt) {
+		cached := append([]uuid.UUID{}, platformRolePublicMenuCacheIDs...)
+		platformRolePublicMenuCacheMu.RUnlock()
+		return cached, nil
+	}
+	platformRolePublicMenuCacheMu.RUnlock()
+
 	var menus []models.Menu
-	if err := s.db.Find(&menus).Error; err != nil {
+	if err := s.db.Select("id", "meta").Find(&menus).Error; err != nil {
 		return nil, err
 	}
 	result := make([]uuid.UUID, 0)
@@ -300,7 +283,91 @@ func (s *service) getPublicMenuIDs() ([]uuid.UUID, error) {
 			result = append(result, item.ID)
 		}
 	}
+	platformRolePublicMenuCacheMu.Lock()
+	platformRolePublicMenuCacheIDs = append([]uuid.UUID{}, result...)
+	platformRolePublicMenuCacheExpiresAt = time.Now().Add(30 * time.Second)
+	platformRolePublicMenuCacheMu.Unlock()
 	return result, nil
+}
+
+func (s *service) loadPackageGraph(seedIDs []uuid.UUID) (map[uuid.UUID]models.FeaturePackage, map[uuid.UUID][]uuid.UUID, error) {
+	packageMap := make(map[uuid.UUID]models.FeaturePackage)
+	if len(seedIDs) == 0 {
+		return packageMap, map[uuid.UUID][]uuid.UUID{}, nil
+	}
+	var bundleRows []models.FeaturePackageBundle
+	if err := s.db.Model(&models.FeaturePackageBundle{}).
+		Select("package_id", "child_package_id").
+		Find(&bundleRows).Error; err != nil {
+		return nil, nil, err
+	}
+	bundleChildrenMap := make(map[uuid.UUID][]uuid.UUID)
+	queue := make([]uuid.UUID, 0, len(seedIDs))
+	seen := make(map[uuid.UUID]struct{}, len(seedIDs))
+	for _, id := range seedIDs {
+		if id == uuid.Nil {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		queue = append(queue, id)
+	}
+	for index := 0; index < len(queue); index++ {
+		current := queue[index]
+		for _, row := range bundleRows {
+			if row.PackageID != current {
+				continue
+			}
+			bundleChildrenMap[row.PackageID] = appendIfMissing(bundleChildrenMap[row.PackageID], row.ChildPackageID)
+			if _, ok := seen[row.ChildPackageID]; ok {
+				continue
+			}
+			seen[row.ChildPackageID] = struct{}{}
+			queue = append(queue, row.ChildPackageID)
+		}
+	}
+	var packages []models.FeaturePackage
+	if err := s.db.Where("id IN ? AND status = ?", queue, "normal").Find(&packages).Error; err != nil {
+		return nil, nil, err
+	}
+	for _, item := range packages {
+		packageMap[item.ID] = item
+	}
+	return packageMap, bundleChildrenMap, nil
+}
+
+func expandRolePackageIDsFromGraph(seedIDs []uuid.UUID, context string, packageMap map[uuid.UUID]models.FeaturePackage, bundleChildrenMap map[uuid.UUID][]uuid.UUID) []uuid.UUID {
+	result := make([]uuid.UUID, 0, len(seedIDs))
+	seenExpanded := make(map[uuid.UUID]struct{}, len(seedIDs))
+	visited := make(map[uuid.UUID]struct{}, len(seedIDs))
+	var visit func(packageID uuid.UUID)
+	visit = func(packageID uuid.UUID) {
+		if _, ok := visited[packageID]; ok {
+			return
+		}
+		visited[packageID] = struct{}{}
+		item, ok := packageMap[packageID]
+		if !ok || !contextAllowsPackage(context, item.ContextType) {
+			return
+		}
+		if item.PackageType == "bundle" {
+			for _, childID := range bundleChildrenMap[packageID] {
+				visit(childID)
+			}
+			return
+		}
+		if _, ok := seenExpanded[packageID]; ok {
+			return
+		}
+		seenExpanded[packageID] = struct{}{}
+		result = append(result, packageID)
+	}
+	for _, packageID := range seedIDs {
+		visit(packageID)
+	}
+	return result
 }
 
 func isMenuEnabled(meta map[string]interface{}) bool {
@@ -317,10 +384,32 @@ func isPublicMenu(meta map[string]interface{}) bool {
 	if meta == nil {
 		return false
 	}
-	if public, ok := meta["isPublic"].(bool); ok {
-		return public
+	if accessMode := menuAccessMode(meta); accessMode == "public" || accessMode == "jwt" {
+		return true
+	}
+	for _, key := range []string{"isPublic", "public", "globalVisible", "publicMenu", "public_menu"} {
+		flag, ok := meta[key].(bool)
+		if ok && flag {
+			return true
+		}
 	}
 	return false
+}
+
+func menuAccessMode(meta map[string]interface{}) string {
+	if meta == nil {
+		return "permission"
+	}
+	value, ok := meta["accessMode"].(string)
+	if !ok {
+		return "permission"
+	}
+	switch strings.TrimSpace(strings.ToLower(value)) {
+	case "public", "jwt":
+		return strings.TrimSpace(strings.ToLower(value))
+	default:
+		return "permission"
+	}
 }
 
 func contextAllowsPackage(context, packageContext string) bool {

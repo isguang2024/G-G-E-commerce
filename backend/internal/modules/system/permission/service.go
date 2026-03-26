@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
+	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
@@ -39,6 +40,7 @@ type PermissionService interface {
 }
 
 type permissionService struct {
+	db                     *gorm.DB
 	groupRepo              user.PermissionGroupRepository
 	keyRepo                user.PermissionKeyRepository
 	apiEndpointRepo        user.APIEndpointRepository
@@ -53,6 +55,7 @@ type permissionService struct {
 }
 
 func NewPermissionService(
+	db *gorm.DB,
 	groupRepo user.PermissionGroupRepository,
 	keyRepo user.PermissionKeyRepository,
 	apiEndpointRepo user.APIEndpointRepository,
@@ -66,6 +69,7 @@ func NewPermissionService(
 	refresher permissionrefresh.Service,
 ) PermissionService {
 	return &permissionService{
+		db:                     db,
 		groupRepo:              groupRepo,
 		keyRepo:                keyRepo,
 		apiEndpointRepo:        apiEndpointRepo,
@@ -382,7 +386,22 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionKeyUpdateReq
 			return getErr
 		}
 	}
-	return s.keyRepo.UpdateWithMap(id, updates)
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&models.PermissionKey{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+			return err
+		}
+		if targetPermissionKey != current.PermissionKey {
+			if err := tx.Model(&models.APIEndpointPermissionBinding{}).
+				Where("permission_key = ?", current.PermissionKey).
+				Update("permission_key", targetPermissionKey).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+	return s.refreshByPermissionKeyID(id)
 }
 
 func (s *permissionService) resolvePermissionGroup(idText string, groupType string, codeText string, fallbackCode string) (*user.PermissionGroup, error) {

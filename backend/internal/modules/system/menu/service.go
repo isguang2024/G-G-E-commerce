@@ -14,6 +14,8 @@ import (
 	page "github.com/gg-ecommerce/backend/internal/modules/system/page"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
 )
 
 var (
@@ -173,6 +175,10 @@ func (s *menuService) Create(req *dto.MenuCreateRequest) (*user.Menu, error) {
 		return nil, err
 	}
 	page.InvalidateRuntimeCache()
+	invalidateMenuCaches()
+	if err := s.refreshAllMenuSnapshots(); err != nil {
+		return nil, err
+	}
 	return s.menuRepo.GetByID(m.ID)
 }
 
@@ -184,8 +190,9 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 		}
 		return err
 	}
-	shouldUpdateParent := true
+	shouldUpdateParent := false
 	if req.ParentID != nil {
+		shouldUpdateParent = true
 		if *req.ParentID == "" {
 			m.ParentID = nil
 			s.logger.Info("Menu parent cleared", zap.String("menu_id", id.String()))
@@ -205,9 +212,6 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 			m.ParentID = &pid
 			s.logger.Info("Menu parent updated", zap.String("menu_id", id.String()), zap.String("parent_id", pid.String()))
 		}
-	} else {
-		m.ParentID = nil
-		s.logger.Info("Menu parent set to top level", zap.String("menu_id", id.String()))
 	}
 	manageGroupID, err := parseOptionalUUID(req.ManageGroupID)
 	if err != nil {
@@ -228,10 +232,8 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 		return err
 	}
 	page.InvalidateRuntimeCache()
-	if s.refresher != nil {
-		return s.refresher.RefreshByMenu(id)
-	}
-	return nil
+	invalidateMenuCaches()
+	return s.refreshAllMenuSnapshots()
 }
 
 func (s *menuService) ListGroups() ([]user.MenuManageGroup, error) {
@@ -327,10 +329,8 @@ func (s *menuService) Delete(id uuid.UUID) error {
 		return err
 	}
 	page.InvalidateRuntimeCache()
-	if s.refresher != nil {
-		return s.refresher.RefreshByMenu(id)
-	}
-	return nil
+	invalidateMenuCaches()
+	return s.refreshAllMenuSnapshots()
 }
 
 // 菜单备份相关方法
@@ -459,19 +459,62 @@ func (s *menuService) RestoreBackup(id uuid.UUID) error {
 		return err
 	}
 	page.InvalidateRuntimeCache()
+	invalidateMenuCaches()
 
 	// 清理无效的角色菜单关联
-	if err := s.cleanupInvalidRoleMenus(); err != nil {
-		s.logger.Warn("Failed to cleanup invalid role-menus after restore", zap.Error(err))
+	if err := s.cleanupInvalidMenuRelations(); err != nil {
+		return err
+	}
+	if err := s.refreshAllMenuSnapshots(); err != nil {
+		return err
 	}
 
 	s.logger.Info("Menu backup restored", zap.String("backup_id", id.String()))
 	return nil
 }
 
-// 清理无效的角色菜单关联（删除关联表中不存在于菜单表内的关联）
-func (s *menuService) cleanupInvalidRoleMenus() error {
+func (s *menuService) cleanupInvalidMenuRelations() error {
+	if s.db == nil {
+		return nil
+	}
+	statements := []string{
+		"DELETE FROM feature_package_menus WHERE menu_id NOT IN (SELECT id FROM menus)",
+		"DELETE FROM role_hidden_menus WHERE menu_id NOT IN (SELECT id FROM menus)",
+		"DELETE FROM team_blocked_menus WHERE menu_id NOT IN (SELECT id FROM menus)",
+		"DELETE FROM user_hidden_menus WHERE menu_id NOT IN (SELECT id FROM menus)",
+		"UPDATE ui_pages SET parent_menu_id = NULL WHERE parent_menu_id IS NOT NULL AND parent_menu_id NOT IN (SELECT id FROM menus)",
+	}
+	for _, statement := range statements {
+		if err := s.db.Exec(statement).Error; err != nil {
+			return err
+		}
+	}
 	return nil
+}
+
+func (s *menuService) refreshAllMenuSnapshots() error {
+	if s.refresher == nil || s.db == nil {
+		return nil
+	}
+	var teamIDs []uuid.UUID
+	if err := s.db.Model(&models.Tenant{}).Pluck("id", &teamIDs).Error; err != nil {
+		return err
+	}
+	if err := s.refresher.RefreshTeams(teamIDs); err != nil {
+		return err
+	}
+	var roleIDs []uuid.UUID
+	if err := s.db.Model(&models.Role{}).Where("tenant_id IS NULL").Pluck("id", &roleIDs).Error; err != nil {
+		return err
+	}
+	if err := s.refresher.RefreshPlatformRoles(roleIDs); err != nil {
+		return err
+	}
+	var userIDs []uuid.UUID
+	if err := s.db.Model(&models.User{}).Pluck("id", &userIDs).Error; err != nil {
+		return err
+	}
+	return s.refresher.RefreshPlatformUsers(userIDs)
 }
 
 type ginMenuBackupPayload struct {
@@ -511,4 +554,9 @@ func normalizeMenuGroupStatus(value string) string {
 	default:
 		return "normal"
 	}
+}
+
+func invalidateMenuCaches() {
+	platformaccess.InvalidatePublicMenuCache()
+	platformroleaccess.InvalidatePublicMenuCache()
 }

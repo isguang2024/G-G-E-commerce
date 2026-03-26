@@ -1,11 +1,21 @@
 package platformaccess
 
 import (
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+)
+
+var (
+	platformPublicMenuCacheMu        sync.RWMutex
+	platformPublicMenuCacheIDs       []uuid.UUID
+	platformPublicMenuCacheExpiresAt time.Time
 )
 
 type Snapshot struct {
@@ -36,6 +46,13 @@ type service struct {
 
 func NewService(db *gorm.DB) Service {
 	return &service{db: db}
+}
+
+func InvalidatePublicMenuCache() {
+	platformPublicMenuCacheMu.Lock()
+	defer platformPublicMenuCacheMu.Unlock()
+	platformPublicMenuCacheIDs = nil
+	platformPublicMenuCacheExpiresAt = time.Time{}
 }
 
 func (s *service) GetSnapshot(userID uuid.UUID) (*Snapshot, error) {
@@ -222,54 +239,11 @@ func (s *service) expandPackageIDs(packageIDs []uuid.UUID, context string) ([]uu
 	if len(packageIDs) == 0 {
 		return []uuid.UUID{}, nil
 	}
-	result := make([]uuid.UUID, 0, len(packageIDs))
-	seenExpanded := make(map[uuid.UUID]struct{}, len(packageIDs))
-	visited := make(map[uuid.UUID]struct{}, len(packageIDs))
-	for _, packageID := range packageIDs {
-		if err := s.expandPackageID(packageID, context, visited, seenExpanded, &result); err != nil {
-			return nil, err
-		}
-	}
-	return result, nil
-}
-
-func (s *service) expandPackageID(packageID uuid.UUID, context string, visited map[uuid.UUID]struct{}, seenExpanded map[uuid.UUID]struct{}, result *[]uuid.UUID) error {
-	if _, ok := visited[packageID]; ok {
-		return nil
-	}
-	visited[packageID] = struct{}{}
-
-	var item models.FeaturePackage
-	err := s.db.Where("id = ? AND status = ?", packageID, "normal").First(&item).Error
+	packageMap, bundleChildrenMap, err := s.loadPackageGraph(packageIDs)
 	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil
-		}
-		return err
+		return nil, err
 	}
-	if !contextAllowsPackage(context, item.ContextType) {
-		return nil
-	}
-	if item.PackageType == "bundle" {
-		var childIDs []uuid.UUID
-		if err := s.db.Model(&models.FeaturePackageBundle{}).
-			Where("package_id = ?", packageID).
-			Pluck("child_package_id", &childIDs).Error; err != nil {
-			return err
-		}
-		for _, childID := range childIDs {
-			if err := s.expandPackageID(childID, context, visited, seenExpanded, result); err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-	if _, ok := seenExpanded[packageID]; ok {
-		return nil
-	}
-	seenExpanded[packageID] = struct{}{}
-	*result = append(*result, packageID)
-	return nil
+	return expandPackageIDsFromGraph(packageIDs, context, packageMap, bundleChildrenMap), nil
 }
 
 func (s *service) getActionIDsByPackageIDs(packageIDs []uuid.UUID) ([]uuid.UUID, map[uuid.UUID][]uuid.UUID, error) {
@@ -344,27 +318,50 @@ func (s *service) getEffectiveMenuContributionByRoleIDs(roleIDs []uuid.UUID) ([]
 	if len(roleIDs) == 0 {
 		return []uuid.UUID{}, map[uuid.UUID][]uuid.UUID{}, nil
 	}
+	rolePackageMap, allPackageIDs, err := s.getPackageIDsByRoleIDsMap(roleIDs)
+	if err != nil {
+		return nil, nil, err
+	}
+	packageMap, bundleChildrenMap, err := s.loadPackageGraph(allPackageIDs)
+	if err != nil {
+		return nil, nil, err
+	}
+	roleExpandedPackageMap := make(map[uuid.UUID][]uuid.UUID, len(roleIDs))
+	allExpandedPackageIDs := make([]uuid.UUID, 0, len(allPackageIDs))
+	expandedSeen := make(map[uuid.UUID]struct{}, len(allPackageIDs))
+	for _, roleID := range roleIDs {
+		expandedPackageIDs := expandPackageIDsFromGraph(rolePackageMap[roleID], "platform", packageMap, bundleChildrenMap)
+		roleExpandedPackageMap[roleID] = expandedPackageIDs
+		for _, packageID := range expandedPackageIDs {
+			if _, ok := expandedSeen[packageID]; ok {
+				continue
+			}
+			expandedSeen[packageID] = struct{}{}
+			allExpandedPackageIDs = append(allExpandedPackageIDs, packageID)
+		}
+	}
+	packageMenuMap, err := s.getPackageMenuMapByPackageIDs(allExpandedPackageIDs)
+	if err != nil {
+		return nil, nil, err
+	}
+	roleHiddenMenuMap, err := s.getHiddenMenuIDsByRoleIDsMap(roleIDs)
+	if err != nil {
+		return nil, nil, err
+	}
 	menuIDs := make([]uuid.UUID, 0)
+	menuSeen := make(map[uuid.UUID]struct{})
 	sourceMap := make(map[uuid.UUID][]uuid.UUID)
 	for _, roleID := range roleIDs {
-		packageIDs, err := s.getPackageIDsByRoleID(roleID)
-		if err != nil {
-			return nil, nil, err
-		}
-		expandedPackageIDs, err := s.expandPackageIDs(packageIDs, "platform")
-		if err != nil {
-			return nil, nil, err
-		}
-		roleMenuIDs, roleSourceMap, err := s.getMenuIDsByPackageIDs(expandedPackageIDs)
-		if err != nil {
-			return nil, nil, err
-		}
-		roleHiddenMenuIDs, err := s.getHiddenMenuIDsByRoleID(roleID)
-		if err != nil {
-			return nil, nil, err
-		}
+		roleMenuIDs, roleSourceMap := buildMenuContributionByPackageIDs(roleExpandedPackageMap[roleID], packageMenuMap)
+		roleHiddenMenuIDs := roleHiddenMenuMap[roleID]
 		effectiveRoleMenuIDs := subtractUUIDs(roleMenuIDs, roleHiddenMenuIDs)
-		menuIDs = mergeUUIDs(menuIDs, effectiveRoleMenuIDs)
+		for _, menuID := range effectiveRoleMenuIDs {
+			if _, ok := menuSeen[menuID]; ok {
+				continue
+			}
+			menuSeen[menuID] = struct{}{}
+			menuIDs = append(menuIDs, menuID)
+		}
 		sourceMap = mergeSourceMaps(sourceMap, filterSourceMap(roleSourceMap, effectiveRoleMenuIDs))
 	}
 	return menuIDs, sourceMap, nil
@@ -379,6 +376,37 @@ func (s *service) getPackageIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error) {
 	return packageIDs, err
 }
 
+func (s *service) getPackageIDsByRoleIDsMap(roleIDs []uuid.UUID) (map[uuid.UUID][]uuid.UUID, []uuid.UUID, error) {
+	result := make(map[uuid.UUID][]uuid.UUID, len(roleIDs))
+	if len(roleIDs) == 0 {
+		return result, []uuid.UUID{}, nil
+	}
+	var rows []struct {
+		RoleID    uuid.UUID
+		PackageID uuid.UUID
+	}
+	if err := s.db.Model(&models.RoleFeaturePackage{}).
+		Select("role_id, package_id").
+		Where("role_id IN ? AND enabled = ?", roleIDs, true).
+		Scan(&rows).Error; err != nil {
+		return nil, nil, err
+	}
+	for _, roleID := range roleIDs {
+		result[roleID] = []uuid.UUID{}
+	}
+	allPackageIDs := make([]uuid.UUID, 0, len(rows))
+	allSeen := make(map[uuid.UUID]struct{}, len(rows))
+	for _, row := range rows {
+		result[row.RoleID] = appendIfMissing(result[row.RoleID], row.PackageID)
+		if _, ok := allSeen[row.PackageID]; ok {
+			continue
+		}
+		allSeen[row.PackageID] = struct{}{}
+		allPackageIDs = append(allPackageIDs, row.PackageID)
+	}
+	return result, allPackageIDs, nil
+}
+
 func (s *service) getHiddenMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error) {
 	var menuIDs []uuid.UUID
 	err := s.db.Model(&models.RoleHiddenMenu{}).
@@ -386,6 +414,30 @@ func (s *service) getHiddenMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error
 		Distinct("menu_id").
 		Pluck("menu_id", &menuIDs).Error
 	return menuIDs, err
+}
+
+func (s *service) getHiddenMenuIDsByRoleIDsMap(roleIDs []uuid.UUID) (map[uuid.UUID][]uuid.UUID, error) {
+	result := make(map[uuid.UUID][]uuid.UUID, len(roleIDs))
+	if len(roleIDs) == 0 {
+		return result, nil
+	}
+	var rows []struct {
+		RoleID uuid.UUID
+		MenuID uuid.UUID
+	}
+	if err := s.db.Model(&models.RoleHiddenMenu{}).
+		Select("role_id, menu_id").
+		Where("role_id IN ?", roleIDs).
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	for _, roleID := range roleIDs {
+		result[roleID] = []uuid.UUID{}
+	}
+	for _, row := range rows {
+		result[row.RoleID] = appendIfMissing(result[row.RoleID], row.MenuID)
+	}
+	return result, nil
 }
 
 func (s *service) getUserHiddenMenuIDs(userID uuid.UUID) ([]uuid.UUID, error) {
@@ -400,24 +452,153 @@ func (s *service) getUserHiddenMenuIDs(userID uuid.UUID) ([]uuid.UUID, error) {
 }
 
 func (s *service) getPublicMenuIDs() ([]uuid.UUID, error) {
+	platformPublicMenuCacheMu.RLock()
+	if time.Now().Before(platformPublicMenuCacheExpiresAt) {
+		cached := append([]uuid.UUID{}, platformPublicMenuCacheIDs...)
+		platformPublicMenuCacheMu.RUnlock()
+		return cached, nil
+	}
+	platformPublicMenuCacheMu.RUnlock()
+
 	var menus []models.Menu
-	if err := s.db.Find(&menus).Error; err != nil {
+	if err := s.db.Select("id", "meta").Find(&menus).Error; err != nil {
 		return nil, err
 	}
 	result := make([]uuid.UUID, 0)
 	for _, item := range menus {
+		if !isMenuEnabled(item.Meta) {
+			continue
+		}
 		if isPublicMenu(item.Meta) {
 			result = append(result, item.ID)
 		}
 	}
+	platformPublicMenuCacheMu.Lock()
+	platformPublicMenuCacheIDs = append([]uuid.UUID{}, result...)
+	platformPublicMenuCacheExpiresAt = time.Now().Add(30 * time.Second)
+	platformPublicMenuCacheMu.Unlock()
 	return result, nil
+}
+
+func (s *service) getPackageMenuMapByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID][]uuid.UUID, error) {
+	result := make(map[uuid.UUID][]uuid.UUID)
+	if len(packageIDs) == 0 {
+		return result, nil
+	}
+	var rows []struct {
+		PackageID uuid.UUID
+		MenuID    uuid.UUID
+	}
+	if err := s.db.Model(&models.FeaturePackageMenu{}).
+		Select("package_id, menu_id").
+		Where("package_id IN ?", packageIDs).
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		result[row.PackageID] = appendIfMissing(result[row.PackageID], row.MenuID)
+	}
+	return result, nil
+}
+
+func (s *service) loadPackageGraph(seedIDs []uuid.UUID) (map[uuid.UUID]models.FeaturePackage, map[uuid.UUID][]uuid.UUID, error) {
+	packageMap := make(map[uuid.UUID]models.FeaturePackage)
+	if len(seedIDs) == 0 {
+		return packageMap, map[uuid.UUID][]uuid.UUID{}, nil
+	}
+	var bundleRows []models.FeaturePackageBundle
+	if err := s.db.Model(&models.FeaturePackageBundle{}).
+		Select("package_id", "child_package_id").
+		Find(&bundleRows).Error; err != nil {
+		return nil, nil, err
+	}
+	bundleChildrenMap := make(map[uuid.UUID][]uuid.UUID)
+	queue := make([]uuid.UUID, 0, len(seedIDs))
+	seen := make(map[uuid.UUID]struct{}, len(seedIDs))
+	for _, id := range seedIDs {
+		if id == uuid.Nil {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		queue = append(queue, id)
+	}
+	for index := 0; index < len(queue); index++ {
+		current := queue[index]
+		for _, row := range bundleRows {
+			if row.PackageID != current {
+				continue
+			}
+			bundleChildrenMap[row.PackageID] = appendIfMissing(bundleChildrenMap[row.PackageID], row.ChildPackageID)
+			if _, ok := seen[row.ChildPackageID]; ok {
+				continue
+			}
+			seen[row.ChildPackageID] = struct{}{}
+			queue = append(queue, row.ChildPackageID)
+		}
+	}
+	var packages []models.FeaturePackage
+	if err := s.db.Where("id IN ? AND status = ?", queue, "normal").Find(&packages).Error; err != nil {
+		return nil, nil, err
+	}
+	for _, item := range packages {
+		packageMap[item.ID] = item
+	}
+	return packageMap, bundleChildrenMap, nil
+}
+
+func expandPackageIDsFromGraph(seedIDs []uuid.UUID, context string, packageMap map[uuid.UUID]models.FeaturePackage, bundleChildrenMap map[uuid.UUID][]uuid.UUID) []uuid.UUID {
+	result := make([]uuid.UUID, 0, len(seedIDs))
+	seenExpanded := make(map[uuid.UUID]struct{}, len(seedIDs))
+	visited := make(map[uuid.UUID]struct{}, len(seedIDs))
+	var visit func(packageID uuid.UUID)
+	visit = func(packageID uuid.UUID) {
+		if _, ok := visited[packageID]; ok {
+			return
+		}
+		visited[packageID] = struct{}{}
+		item, ok := packageMap[packageID]
+		if !ok || !contextAllowsPackage(context, item.ContextType) {
+			return
+		}
+		if item.PackageType == "bundle" {
+			for _, childID := range bundleChildrenMap[packageID] {
+				visit(childID)
+			}
+			return
+		}
+		if _, ok := seenExpanded[packageID]; ok {
+			return
+		}
+		seenExpanded[packageID] = struct{}{}
+		result = append(result, packageID)
+	}
+	for _, packageID := range seedIDs {
+		visit(packageID)
+	}
+	return result
+}
+
+func isMenuEnabled(meta models.MetaJSON) bool {
+	if meta == nil {
+		return true
+	}
+	if enabled, ok := meta["isEnable"].(bool); ok {
+		return enabled
+	}
+	return true
 }
 
 func isPublicMenu(meta models.MetaJSON) bool {
 	if meta == nil {
 		return false
 	}
-	for _, key := range []string{"isPublic", "public", "globalVisible"} {
+	if accessMode := menuAccessMode(meta); accessMode == "public" || accessMode == "jwt" {
+		return true
+	}
+	for _, key := range []string{"isPublic", "public", "globalVisible", "publicMenu", "public_menu"} {
 		value, ok := meta[key]
 		if !ok {
 			continue
@@ -428,6 +609,41 @@ func isPublicMenu(meta models.MetaJSON) bool {
 		}
 	}
 	return false
+}
+
+func menuAccessMode(meta models.MetaJSON) string {
+	if meta == nil {
+		return "permission"
+	}
+	value, ok := meta["accessMode"].(string)
+	if !ok {
+		return "permission"
+	}
+	switch strings.TrimSpace(strings.ToLower(value)) {
+	case "public", "jwt":
+		return strings.TrimSpace(strings.ToLower(value))
+	default:
+		return "permission"
+	}
+}
+
+func buildMenuContributionByPackageIDs(packageIDs []uuid.UUID, packageMenuMap map[uuid.UUID][]uuid.UUID) ([]uuid.UUID, map[uuid.UUID][]uuid.UUID) {
+	if len(packageIDs) == 0 {
+		return []uuid.UUID{}, map[uuid.UUID][]uuid.UUID{}
+	}
+	menuIDs := make([]uuid.UUID, 0)
+	menuSeen := make(map[uuid.UUID]struct{})
+	sourceMap := make(map[uuid.UUID][]uuid.UUID)
+	for _, packageID := range packageIDs {
+		for _, menuID := range packageMenuMap[packageID] {
+			if _, ok := menuSeen[menuID]; !ok {
+				menuSeen[menuID] = struct{}{}
+				menuIDs = append(menuIDs, menuID)
+			}
+			sourceMap[menuID] = appendIfMissing(sourceMap[menuID], packageID)
+		}
+	}
+	return menuIDs, sourceMap
 }
 
 func appendIfMissing(current []uuid.UUID, value uuid.UUID) []uuid.UUID {
