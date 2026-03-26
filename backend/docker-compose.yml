@@ -3,7 +3,8 @@ version: '3.8'
 services:
   # PostgreSQL 数据库
   postgres:
-    image: postgres:16-alpine
+    # 16 -> 18 属于主版本升级，复用旧数据卷前请先执行 pg_upgrade 或逻辑备份恢复
+    image: postgres:18.3-alpine
     container_name: gg-postgres
     environment:
       POSTGRES_USER: postgres
