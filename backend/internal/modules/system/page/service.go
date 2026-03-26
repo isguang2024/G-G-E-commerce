@@ -118,6 +118,7 @@ type BreadcrumbPreviewItem struct {
 type Service interface {
 	List(req *ListRequest) ([]Record, int64, error)
 	ListRuntime() ([]Record, error)
+	ListRuntimePublic() ([]Record, error)
 	ListUnregistered() ([]UnregisteredRecord, error)
 	Sync() (*SyncResult, error)
 	PreviewBreadcrumb(id uuid.UUID) ([]BreadcrumbPreviewItem, error)
@@ -184,24 +185,32 @@ func (s *service) List(req *ListRequest) ([]Record, int64, error) {
 }
 
 func (s *service) ListRuntime() ([]Record, error) {
+	return s.loadRuntimeRecords()
+}
+
+func (s *service) ListRuntimePublic() ([]Record, error) {
+	return s.loadPublicRuntimeRecords()
+}
+
+func (s *service) buildRuntimeRecords() ([]Record, map[uuid.UUID]runtimeMenuNode, error) {
 	var items []models.UIPage
 	if err := s.db.
 		Where("status = ? AND page_type <> ?", "normal", "display_group").
 		Order("sort_order ASC, created_at ASC").
 		Find(&items).Error; err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	records, err := s.decorateRecords(items)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	menuMap, err := s.loadMenuMap()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	pageMap, err := s.loadPageMap()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	for index := range records {
 		records[index].ActiveMenuPath = s.resolveActiveMenuPath(
@@ -211,7 +220,7 @@ func (s *service) ListRuntime() ([]Record, error) {
 			map[string]struct{}{},
 		)
 	}
-	return records, nil
+	return records, menuMap, nil
 }
 
 func (s *service) ListUnregistered() ([]UnregisteredRecord, error) {
@@ -310,6 +319,7 @@ func (s *service) Create(req *SaveRequest) (*Record, error) {
 	if err := s.db.Create(item).Error; err != nil {
 		return nil, err
 	}
+	InvalidateRuntimeCache()
 	return s.Get(item.ID)
 }
 
@@ -346,6 +356,7 @@ func (s *service) Update(id uuid.UUID, req *SaveRequest) (*Record, error) {
 	}); err != nil {
 		return nil, err
 	}
+	InvalidateRuntimeCache()
 	return s.Get(id)
 }
 
@@ -373,6 +384,7 @@ func (s *service) Delete(id uuid.UUID) error {
 	if result.RowsAffected == 0 {
 		return ErrPageNotFound
 	}
+	InvalidateRuntimeCache()
 	return nil
 }
 

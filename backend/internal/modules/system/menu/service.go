@@ -11,6 +11,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	page "github.com/gg-ecommerce/backend/internal/modules/system/page"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 )
@@ -171,6 +172,7 @@ func (s *menuService) Create(req *dto.MenuCreateRequest) (*user.Menu, error) {
 	if err := s.menuRepo.Create(m); err != nil {
 		return nil, err
 	}
+	page.InvalidateRuntimeCache()
 	return s.menuRepo.GetByID(m.ID)
 }
 
@@ -225,6 +227,7 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 	if err := s.menuRepo.Update(m, shouldUpdateParent); err != nil {
 		return err
 	}
+	page.InvalidateRuntimeCache()
 	if s.refresher != nil {
 		return s.refresher.RefreshByMenu(id)
 	}
@@ -323,6 +326,7 @@ func (s *menuService) Delete(id uuid.UUID) error {
 	if err := s.menuRepo.Delete(id); err != nil {
 		return err
 	}
+	page.InvalidateRuntimeCache()
 	if s.refresher != nil {
 		return s.refresher.RefreshByMenu(id)
 	}
@@ -454,6 +458,7 @@ func (s *menuService) RestoreBackup(id uuid.UUID) error {
 		s.logger.Error("Failed to restore menu backup", zap.Error(err))
 		return err
 	}
+	page.InvalidateRuntimeCache()
 
 	// 清理无效的角色菜单关联
 	if err := s.cleanupInvalidRoleMenus(); err != nil {

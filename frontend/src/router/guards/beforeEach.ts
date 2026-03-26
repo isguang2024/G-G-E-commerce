@@ -51,7 +51,7 @@ import { useCommon } from '@/hooks/core/useCommon'
 import { useWorktabStore } from '@/store/modules/worktab'
 import { hasPlatformAccessByUserInfo, useTenantStore } from '@/store/modules/tenant'
 import { fetchGetUserInfo } from '@/api/auth'
-import { fetchGetRuntimePageList } from '@/api/system-manage'
+import { fetchGetRuntimePageList, fetchGetRuntimePublicPageList } from '@/api/system-manage'
 import { ApiStatus } from '@/utils/http/status'
 import { isHttpError } from '@/utils/http/error'
 import {
@@ -340,7 +340,7 @@ async function ensurePublicRuntimeRoutes(
     routeRegistrationMode = 'none'
   }
   try {
-    const runtimeRes = await fetchGetRuntimePageList()
+    const runtimeRes = await fetchGetRuntimePublicPageList()
     const publicRoutes = managedPageProcessor.buildRoutes([], runtimeRes.records || [], null)
     routeRegistry.register(publicRoutes)
     routeRegistrationMode = 'public'

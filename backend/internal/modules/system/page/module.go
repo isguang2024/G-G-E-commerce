@@ -53,5 +53,6 @@ func (m *Module) RegisterPublicRoutes(rg *gin.RouterGroup) {
 	reg := apiregistry.NewRegistrar(group, "page")
 	{
 		reg.GET("/runtime", reg.Meta("获取运行时页面注册表").BindGroup("page").BindSource("sync").Build(), handler.ListRuntime)
+		reg.GET("/runtime/public", reg.Meta("获取公开运行时页面注册表").BindGroup("page").BindSource("sync").Build(), handler.ListRuntimePublic)
 	}
 }

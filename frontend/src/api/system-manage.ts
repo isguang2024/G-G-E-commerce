@@ -1138,6 +1138,18 @@ export function fetchGetRuntimePageList() {
     }))
 }
 
+/** 获取公开运行时页面注册表 */
+export function fetchGetRuntimePublicPageList() {
+  return request
+    .get<{ records: Api.SystemManage.PageItem[]; total: number }>({
+      url: `${PAGE_BASE}/runtime/public`
+    })
+    .then((res) => ({
+      records: (res?.records || []).map(normalizePageItem),
+      total: res?.total || 0
+    }))
+}
+
 /** 获取未注册页面 */
 export function fetchGetPageUnregisteredList() {
   return request
