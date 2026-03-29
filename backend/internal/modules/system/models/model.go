@@ -615,3 +615,17 @@ type MenuBackup struct {
 func (MenuBackup) TableName() string {
 	return "menu_backups"
 }
+
+type SystemSetting struct {
+	ID        uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Key       string         `gorm:"type:varchar(150);not null" json:"key"`
+	Value     MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"value"`
+	Status    string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (SystemSetting) TableName() string {
+	return "system_settings"
+}

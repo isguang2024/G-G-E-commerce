@@ -18,15 +18,23 @@ import (
 )
 
 type SystemHandler struct {
-	logger *zap.Logger
-	cache  *cachepkg.Cache
+	logger           *zap.Logger
+	cache            *cachepkg.Cache
+	fastEnterService *fastEnterService
 }
 
-func NewSystemHandler(logger *zap.Logger, cache *cachepkg.Cache) *SystemHandler {
+func NewSystemHandler(logger *zap.Logger, cache *cachepkg.Cache, fastEnterService *fastEnterService) *SystemHandler {
 	return &SystemHandler{
-		logger: logger,
-		cache:  cache,
+		logger:           logger,
+		cache:            cache,
+		fastEnterService: fastEnterService,
 	}
+}
+
+type fastEnterSaveRequest struct {
+	Applications []FastEnterApplication `json:"applications"`
+	QuickLinks   []FastEnterQuickLink   `json:"quickLinks"`
+	MinWidth     int                    `json:"minWidth"`
 }
 
 type ViewPageItem struct {
@@ -84,6 +92,40 @@ func (h *SystemHandler) GetViewPages(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, dto.SuccessResponse(resp))
+}
+
+func (h *SystemHandler) GetFastEnterConfig(c *gin.Context) {
+	config, err := h.fastEnterService.GetConfig()
+	if err != nil {
+		h.logger.Error("Failed to get fast enter config", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取快捷入口配置失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(config))
+}
+
+func (h *SystemHandler) UpdateFastEnterConfig(c *gin.Context) {
+	var req fastEnterSaveRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+
+	config, err := h.fastEnterService.SaveConfig(FastEnterConfig{
+		Applications: req.Applications,
+		QuickLinks:   req.QuickLinks,
+		MinWidth:     req.MinWidth,
+	})
+	if err != nil {
+		h.logger.Error("Failed to update fast enter config", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存快捷入口配置失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	c.JSON(http.StatusOK, dto.SuccessResponse(config))
 }
 
 func findProjectRoot() (string, error) {

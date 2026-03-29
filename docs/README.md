@@ -7,15 +7,17 @@
 1. [PROJECT_FRAMEWORK.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/PROJECT_FRAMEWORK.md)：项目主框架、边界与执行清单
 2. [permission-overall-summary.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/permission-overall-summary.md)：权限、功能包、快照主链
 3. [menu-page-management-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/menu-page-management-design.md)：菜单与页面正式架构
-4. [menu-page-management-implementation-plan.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/menu-page-management-implementation-plan.md)：菜单与页面当前实现现状
-5. [FRONTEND_GUIDELINE.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/FRONTEND_GUIDELINE.md)：前端管理页统一规范
-6. [change-log.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/change-log.md)：近期里程碑
+4. [message-system-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/message-system-design.md)：消息系统正式设计
+5. [menu-page-management-implementation-plan.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/menu-page-management-implementation-plan.md)：菜单与页面当前实现现状
+6. [FRONTEND_GUIDELINE.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/FRONTEND_GUIDELINE.md)：前端管理页统一规范
+7. [change-log.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/change-log.md)：近期里程碑
 
 ## 2. 文档分工
 
 - 根目录文档：全局长期规则
 - `permission-overall-summary.md`：权限、功能包、API、快照的正式语义
 - `menu-page-management-design.md`：菜单与页面的稳定模型
+- `message-system-design.md`：右上角消息面板、消息中心、消息模型与投递链路
 - `menu-page-management-implementation-plan.md`：当前已落地实现、剩余边界、实施注意点
 - `change-log.md`：只记录近期有效里程碑，不记碎片化推进过程
 

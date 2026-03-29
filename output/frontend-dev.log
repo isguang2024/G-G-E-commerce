@@ -38,3 +38,34 @@
 [2m16:58:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/auth/login/index.vue, /src/assets/styles/core/tailwind.css[22m
 [2m17:00:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-header-bar/widget/ArtUserMenu.vue, /src/assets/styles/core/tailwind.css[22m
 [2m17:00:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/dashboard/console/index.vue, /src/assets/styles/core/tailwind.css[22m
+[2m17:10:56[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/config/modules/fastEnter.ts[22m
+[2m17:11:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css, /src/components/core/layouts/art-fast-enter/index.vue[22m
+[2m17:11:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
+[2m17:11:58[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/router/routes/staticRoutes.ts[22m
+[2m17:11:58[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/system/fast-enter/index.vue[22m
+[2m17:12:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
+[2m17:13:21[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ new dependencies optimized: [33melement-plus/es/components/color-picker/style/css[32m[39m
+[2m17:13:21[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ optimized dependencies changed. reloading[39m
+[2m17:13:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/router/guards/beforeEach.ts[22m
+[2m17:27:13[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/api/system-manage.ts[22m
+[2m17:27:13[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css, /src/components/core/layouts/art-fast-enter/index.vue, /src/views/system/fast-enter/index.vue[22m
+[2m17:27:13[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/router/routes/staticRoutes.ts[22m
+[2m17:27:13[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
+[2m17:27:13[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
+[2m17:27:44[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/config/modules/fastEnter.ts[22m
+[2m17:28:28[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/api/system-manage.ts[22m
+[2m18:05:40[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css, /src/components/core/layouts/art-fast-enter/index.vue[22m
+[2m18:05:40[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
+[2m18:23:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/system/fast-enter/index.vue[22m
+[2m18:24:56[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/system/fast-enter/index.vue[22m
+[2m18:26:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue, /src/views/system/fast-enter/index.vue?vue&type=style&index=0&scoped=f1de6f67&lang.scss, /src/assets/styles/core/tailwind.css[22m
+[2m18:28:40[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
+[2m18:30:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
+[2m18:31:04[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
+[2m18:31:12[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
+[2m18:31:26[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
+[2m18:31:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue?vue&type=style&index=0&scoped=f1de6f67&lang.scss, /src/assets/styles/core/tailwind.css[22m
+[2m18:39:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/router/core/MenuProcessor.ts[22m
+[2m19:00:52[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/utils/router.ts[22m
+[2m19:00:52[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-menus/art-sidebar-menu/index.vue, /src/assets/styles/core/tailwind.css[22m
+[2m19:03:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/role/index.vue, /src/assets/styles/core/tailwind.css[22m

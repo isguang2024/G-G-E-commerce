@@ -1,69 +1,65 @@
 <template>
   <div class="art-full-height">
-    <router-view v-if="hasNestedRoute" />
-    <template v-else>
-      <RoleSearch
-        v-show="showSearchBar"
-        v-model="searchForm"
-        @search="handleSearch"
-        @reset="resetSearchParams"
-      />
+    <RoleSearch
+      v-show="showSearchBar"
+      v-model="searchForm"
+      @search="handleSearch"
+      @reset="resetSearchParams"
+    />
 
-      <ElCard
-        class="art-table-card"
-        shadow="never"
-        :style="{ marginTop: showSearchBar ? '12px' : '0' }"
+    <ElCard
+      class="art-table-card"
+      shadow="never"
+      :style="{ marginTop: showSearchBar ? '12px' : '0' }"
+    >
+      <ArtTableHeader
+        v-model:columns="columnChecks"
+        v-model:showSearchBar="showSearchBar"
+        :loading="loading"
+        @refresh="refreshData"
       >
-        <ArtTableHeader
-          v-model:columns="columnChecks"
-          v-model:showSearchBar="showSearchBar"
-          :loading="loading"
-          @refresh="refreshData"
-        >
-          <template #left>
-            <ElSpace wrap>
-              <ElButton v-action="'system.role.manage'" @click="showDialog('add')" v-ripple>
-                新增角色
-              </ElButton>
-            </ElSpace>
-          </template>
-        </ArtTableHeader>
+        <template #left>
+          <ElSpace wrap>
+            <ElButton v-action="'system.role.manage'" @click="showDialog('add')" v-ripple>
+              新增角色
+            </ElButton>
+          </ElSpace>
+        </template>
+      </ArtTableHeader>
 
-        <ArtTable
-          :loading="loading"
-          :data="data"
-          :columns="columns"
-          :pagination="pagination"
-          @pagination:size-change="handleSizeChange"
-          @pagination:current-change="handleCurrentChange"
-        />
-      </ElCard>
-
-      <RoleEditDialog
-        v-model="dialogVisible"
-        :dialog-type="dialogType"
-        :role-data="currentRoleData"
-        @success="refreshData"
+      <ArtTable
+        :loading="loading"
+        :data="data"
+        :columns="columns"
+        :pagination="pagination"
+        @pagination:size-change="handleSizeChange"
+        @pagination:current-change="handleCurrentChange"
       />
+    </ElCard>
 
-      <RolePermissionDialog
-        v-model="permissionDialog"
-        :role-data="currentRoleData"
-        @success="handlePermissionSuccess"
-      />
+    <RoleEditDialog
+      v-model="dialogVisible"
+      :dialog-type="dialogType"
+      :role-data="currentRoleData"
+      @success="refreshData"
+    />
 
-      <RolePackageDialog
-        v-model="packageDialog"
-        :role-data="currentRoleData"
-        @success="handlePermissionSuccess"
-      />
-    </template>
+    <RolePermissionDialog
+      v-model="permissionDialog"
+      :role-data="currentRoleData"
+      @success="handlePermissionSuccess"
+    />
+
+    <RolePackageDialog
+      v-model="packageDialog"
+      :role-data="currentRoleData"
+      @success="handlePermissionSuccess"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, h, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { h, ref } from 'vue'
 import { ElMessage, ElMessageBox, ElTag } from 'element-plus'
 import { useAuth } from '@/hooks/core/useAuth'
 import { useTable } from '@/hooks/core/useTable'
@@ -80,10 +76,8 @@ defineOptions({ name: 'Role' })
 
 type RoleListItem = Api.SystemManage.RoleListItem
 
-const route = useRoute()
 const { hasAction } = useAuth()
 
-const hasNestedRoute = computed(() => route.matched.length > 2)
 const showSearchBar = ref(false)
 const dialogVisible = ref(false)
 const permissionDialog = ref(false)

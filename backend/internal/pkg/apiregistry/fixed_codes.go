@@ -89,6 +89,8 @@ var fixedManagedRouteCodes = map[string]string{
 	routeKey("PUT", "/api/v1/roles/:id"):                                         "673cacbc-4919-5e37-a4b3-56dab25e270f",
 	routeKey("DELETE", "/api/v1/roles/:id"):                                      "d347d4f4-24ec-59aa-9060-818897521e8e",
 	routeKey("GET", "/api/v1/system/view-pages"):                                 "63cd7d02-c887-5811-a9fe-0d2c9a76c23f",
+	routeKey("GET", "/api/v1/system/fast-enter"):                                 "6c72d4ff-d692-51f0-b83c-9705694f7395",
+	routeKey("PUT", "/api/v1/system/fast-enter"):                                 "c01cb465-b9fa-5618-b4b4-f5a1e1456754",
 	routeKey("GET", "/api/v1/tenants/my-teams"):                                  "6445519a-1913-5e1b-ab8a-3972f3bb8ee4",
 	routeKey("GET", "/api/v1/tenants/my-team"):                                   "f173a24e-480a-5379-918a-96a84a271b5a",
 	routeKey("GET", "/api/v1/tenants/my-team/members"):                           "119ba807-e132-5836-8a5b-c212dfd3ab45",

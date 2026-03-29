@@ -1,5 +1,6 @@
 import request from '@/utils/http'
 import { AppRouteRecord } from '@/types/router'
+import type { FastEnterApplication, FastEnterQuickLink } from '@/types/config'
 
 const USER_BASE = '/api/v1/users'
 const ROLE_BASE = '/api/v1/roles'
@@ -995,6 +996,42 @@ export function fetchGetFeaturePackageOptions(
     }))
 }
 
+function normalizeFastEnterConfig(item: any): Api.SystemManage.FastEnterConfig {
+  const applications = Array.isArray(item?.applications) ? item.applications : []
+  const quickLinks = Array.isArray(item?.quickLinks)
+    ? item.quickLinks
+    : Array.isArray(item?.quick_links)
+      ? item.quick_links
+      : []
+
+  return {
+    applications: applications.map(
+      (entry: any): FastEnterApplication => ({
+        id: entry?.id || '',
+        name: entry?.name || '',
+        description: entry?.description || '',
+        icon: entry?.icon || 'ri:apps-2-line',
+        iconColor: entry?.iconColor || entry?.icon_color || '#377dff',
+        enabled: entry?.enabled !== false,
+        order: entry?.order ?? 0,
+        routeName: entry?.routeName || entry?.route_name || '',
+        link: entry?.link || ''
+      })
+    ),
+    quickLinks: quickLinks.map(
+      (entry: any): FastEnterQuickLink => ({
+        id: entry?.id || '',
+        name: entry?.name || '',
+        enabled: entry?.enabled !== false,
+        order: entry?.order ?? 0,
+        routeName: entry?.routeName || entry?.route_name || '',
+        link: entry?.link || ''
+      })
+    ),
+    minWidth: item?.minWidth ?? item?.min_width ?? 1200
+  }
+}
+
 export function fetchGetTenantOptions(params?: Partial<Api.SystemManage.TeamSearchParams>) {
   return request
     .get<{ records: Api.SystemManage.TeamListItem[]; total: number }>({
@@ -1531,6 +1568,23 @@ export function fetchGetViewPages(force = false) {
     url: `${SYSTEM_BASE}/view-pages`,
     params: force ? { force: 1 } : undefined
   })
+}
+
+export function fetchGetFastEnterConfig() {
+  return request
+    .get<Api.SystemManage.FastEnterConfig>({
+      url: `${SYSTEM_BASE}/fast-enter`
+    })
+    .then((res) => normalizeFastEnterConfig(res))
+}
+
+export function fetchUpdateFastEnterConfig(data: Api.SystemManage.FastEnterConfig) {
+  return request
+    .put<Api.SystemManage.FastEnterConfig>({
+      url: `${SYSTEM_BASE}/fast-enter`,
+      data
+    })
+    .then((res) => normalizeFastEnterConfig(res))
 }
 
 /** 创建菜单 */

@@ -224,6 +224,44 @@ func runNamedMigrations(logger *zap.Logger) error {
 			},
 		},
 		{
+			Name: "20260329_system_menu_third_level_grouping",
+			Run: func(logger *zap.Logger) error {
+				targetMenus := []string{
+					"SystemAccess",
+					"SystemNavigation",
+					"SystemIntegration",
+					"Role",
+					"User",
+					"ActionPermission",
+					"FeaturePackage",
+					"Menus",
+					"PageManagement",
+					"FastEnterManage",
+					"ApiEndpoint",
+				}
+				for _, menuName := range targetMenus {
+					if _, err := syncDefaultMenuSeedByName(menuName); err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_system_menu_third_level_grouping"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_system_menu_group_directory_component_cleanup",
+			Run: func(logger *zap.Logger) error {
+				targetMenus := []string{"SystemAccess", "SystemNavigation", "SystemIntegration"}
+				if err := database.DB.Model(&usermodel.Menu{}).
+					Where("name IN ?", targetMenus).
+					Update("component", "").Error; err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_system_menu_group_directory_component_cleanup"))
+				return nil
+			},
+		},
+		{
 			Name: "20260325_permission_endpoint_binding_ops",
 			Run: func(logger *zap.Logger) error {
 				permissionKey := "system.permission.manage"
@@ -1809,6 +1847,27 @@ func ensureDefaultMenuSeedByName(name string) (*usermodel.Menu, error) {
 	return nil, fmt.Errorf("default menu seed not found: %s", targetName)
 }
 
+func syncDefaultMenuSeedByName(name string) (*usermodel.Menu, error) {
+	targetName := strings.TrimSpace(name)
+	if targetName == "" {
+		return nil, fmt.Errorf("menu seed name is required")
+	}
+
+	for _, spec := range permissionseed.DefaultMenus() {
+		if spec.Name != targetName {
+			continue
+		}
+		if spec.ParentName != "" {
+			if _, err := syncDefaultMenuSeedByName(spec.ParentName); err != nil {
+				return nil, err
+			}
+		}
+		return syncMenuSeed(spec)
+	}
+
+	return nil, fmt.Errorf("default menu seed not found: %s", targetName)
+}
+
 func ensureMenuSeed(spec permissionseed.MenuSeed) (*usermodel.Menu, error) {
 	var existing usermodel.Menu
 	if err := database.DB.Where("name = ?", spec.Name).First(&existing).Error; err == nil {
@@ -1840,6 +1899,64 @@ func ensureMenuSeed(spec permissionseed.MenuSeed) (*usermodel.Menu, error) {
 		return nil, err
 	}
 	return menu, nil
+}
+
+func syncMenuSeed(spec permissionseed.MenuSeed) (*usermodel.Menu, error) {
+	var parentID *uuid.UUID
+	if spec.ParentName != "" {
+		var parent usermodel.Menu
+		if err := database.DB.Where("name = ?", spec.ParentName).First(&parent).Error; err != nil {
+			return nil, err
+		}
+		parentID = &parent.ID
+	}
+
+	var existing usermodel.Menu
+	if err := database.DB.Where("name = ?", spec.Name).First(&existing).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			menu := &usermodel.Menu{
+				ParentID:  parentID,
+				Path:      spec.Path,
+				Name:      spec.Name,
+				Component: spec.Component,
+				Title:     spec.Title,
+				Icon:      spec.Icon,
+				SortOrder: spec.SortOrder,
+				Meta:      spec.Meta,
+			}
+			if err := database.DB.Create(menu).Error; err != nil {
+				return nil, err
+			}
+			return menu, nil
+		}
+		return nil, err
+	}
+
+	updates := map[string]interface{}{
+		"parent_id":  parentID,
+		"path":       spec.Path,
+		"component":  spec.Component,
+		"title":      spec.Title,
+		"icon":       spec.Icon,
+		"sort_order": spec.SortOrder,
+		"meta":       spec.Meta,
+		"updated_at": time.Now(),
+	}
+	if err := database.DB.Model(&existing).Updates(updates).Error; err != nil {
+		return nil, err
+	}
+	if parentID != nil {
+		existing.ParentID = parentID
+	} else {
+		existing.ParentID = nil
+	}
+	existing.Path = spec.Path
+	existing.Component = spec.Component
+	existing.Title = spec.Title
+	existing.Icon = spec.Icon
+	existing.SortOrder = spec.SortOrder
+	existing.Meta = spec.Meta
+	return &existing, nil
 }
 
 func ensureMenuAccessMode(menuName, accessMode string) error {

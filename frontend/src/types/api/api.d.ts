@@ -894,6 +894,29 @@ declare namespace Api {
       package_ids: string[]
     }
 
+    interface FastEnterBaseItem {
+      id?: string
+      name: string
+      enabled?: boolean
+      order?: number
+      routeName?: string
+      link?: string
+    }
+
+    interface FastEnterApplicationItem extends FastEnterBaseItem {
+      description: string
+      icon: string
+      iconColor: string
+    }
+
+    type FastEnterQuickLinkItem = FastEnterBaseItem
+
+    interface FastEnterConfig {
+      applications: FastEnterApplicationItem[]
+      quickLinks: FastEnterQuickLinkItem[]
+      minWidth?: number
+    }
+
     /** 创建菜单参数（与后端 MenuCreateRequest 一致） */
     interface MenuCreateParams {
       parent_id: string | null

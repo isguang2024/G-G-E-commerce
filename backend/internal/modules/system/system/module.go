@@ -43,13 +43,16 @@ func (m *SystemModule) RegisterRoutes(rg *gin.RouterGroup) {
 		m.logger.Warn("Redis cache unavailable, page-association cache disabled", zap.Error(cacheErr))
 	}
 
-	systemHandler := NewSystemHandler(m.logger, systemCache)
+	fastEnterService := NewFastEnterService(m.db)
+	systemHandler := NewSystemHandler(m.logger, systemCache, fastEnterService)
 	authzService := authorization.NewService(m.db, m.logger)
 
 	system := rg.Group("/system")
 	reg := apiregistry.NewRegistrar(system, "system")
 	{
 		reg.GETProtected("/view-pages", reg.Meta("获取页面文件映射").BindPermissionKey("system.page_catalog.view").Build(), "system.page_catalog.view", authzService.RequireAction, systemHandler.GetViewPages)
+		reg.GET("/fast-enter", reg.Meta("获取快捷入口配置").BindGroup("system").Build(), systemHandler.GetFastEnterConfig)
+		reg.PUTProtected("/fast-enter", reg.Meta("更新快捷入口配置").BindGroup("system").BindPermissionKey("system.fast_enter.manage").Build(), "system.fast_enter.manage", authzService.RequireAction, systemHandler.UpdateFastEnterConfig)
 	}
 }
 

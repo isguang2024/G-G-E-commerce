@@ -89,6 +89,8 @@ export interface SystemBasicConfig {
 
 // 快速入口基础项
 export interface FastEnterBaseItem {
+  /** 唯一标识 */
+  id?: string
   /** 名称 */
   name: string
   /** 是否启用 */

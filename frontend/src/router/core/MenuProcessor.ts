@@ -127,7 +127,7 @@ export class MenuProcessor {
 
   /**
    * 验证菜单路径配置
-   * 检测非一级菜单是否错误使用了 / 开头的路径
+   * 检测非法的绝对路径配置
    */
   private validateMenuPaths(menuList: AppRouteRecord[], level = 1): void {
     menuList.forEach((route) => {
@@ -157,6 +157,7 @@ export class MenuProcessor {
    */
   private isValidAbsolutePath(path: string): boolean {
     return (
+      path.startsWith('/') ||
       path.startsWith('http://') ||
       path.startsWith('https://') ||
       path.startsWith('/outside/iframe/')
@@ -179,9 +180,9 @@ export class MenuProcessor {
     console.error(
       `[路由配置错误] 菜单 "${formatMenuTitle(menuTitle)}" (name: ${routeName}, path: ${path}) 配置错误\n` +
         `  位置: ${parentName} > ${routeName}\n` +
-        `  问题: ${level + 1}级菜单的 path 不能以 / 开头\n` +
+        `  问题: 当前绝对路径不在允许范围内\n` +
         `  当前配置: path: '${path}'\n` +
-        `  应该改为: path: '${suggestedPath}'`
+        `  建议检查是否应改为相对路径: '${suggestedPath}'`
     )
   }
 

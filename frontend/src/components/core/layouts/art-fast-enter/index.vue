@@ -25,7 +25,7 @@
           <!-- 应用列表 -->
           <div
             v-for="application in enabledApplications"
-            :key="application.name"
+            :key="application.id || application.name"
             class="mr-3 c-p flex-c gap-3 rounded-lg p-2 hover:bg-g-200/70 dark:hover:bg-g-200/90 hover:[&_.app-icon]:!bg-transparent"
             @click="handleApplicationClick(application)"
           >
@@ -49,7 +49,7 @@
         <ul>
           <li
             v-for="quickLink in enabledQuickLinks"
-            :key="quickLink.name"
+            :key="quickLink.id || quickLink.name"
             class="c-p py-2 hover:[&_span]:text-theme"
             @click="handleQuickLinkClick(quickLink)"
           >
@@ -62,13 +62,17 @@
 </template>
 
 <script setup lang="ts">
+  import { onMounted } from 'vue'
   import { useFastEnter } from '@/hooks/core/useFastEnter'
+  import { useFastEnterStore } from '@/store/modules/fast-enter'
   import type { FastEnterApplication, FastEnterQuickLink } from '@/types/config'
 
   defineOptions({ name: 'ArtFastEnter' })
 
   const router = useRouter()
   const popoverRef = ref()
+  const fastEnterStore = useFastEnterStore()
+  const isExternalLink = (value?: string) => /^https?:\/\//i.test(`${value || ''}`.trim())
   const warnDev = (...args: unknown[]) => {
     if (import.meta.env.DEV) {
       console.warn(...args)
@@ -84,17 +88,27 @@
    * @param link 外部链接
    */
   const handleNavigate = (routeName?: string, link?: string): void => {
-    const targetPath = routeName || link
+    const routeTarget = `${routeName || ''}`.trim()
+    const linkTarget = `${link || ''}`.trim()
+    const targetPath = routeTarget || linkTarget
 
     if (!targetPath) {
       warnDev('导航配置无效：缺少路由名称或链接')
       return
     }
 
-    if (targetPath.startsWith('http')) {
-      window.open(targetPath, '_blank')
+    if (routeTarget && router.hasRoute(routeTarget)) {
+      router.push({ name: routeTarget })
+    } else if (isExternalLink(linkTarget)) {
+      window.open(linkTarget, '_blank')
+    } else if (linkTarget.startsWith('/')) {
+      router.push(linkTarget)
     } else {
-      router.push({ name: targetPath })
+      warnDev('导航配置无效：目标路由不可访问且外链地址无效', {
+        routeName: routeTarget,
+        link: linkTarget
+      })
+      return
     }
 
     popoverRef.value?.hide()
@@ -115,4 +129,10 @@
   const handleQuickLinkClick = (quickLink: FastEnterQuickLink): void => {
     handleNavigate(quickLink.routeName, quickLink.link)
   }
+
+  onMounted(() => {
+    void fastEnterStore.loadConfig().catch((error) => {
+      warnDev('加载快捷入口配置失败，已回退默认配置', error)
+    })
+  })
 </script>

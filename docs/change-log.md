@@ -257,3 +257,62 @@
 ### 下次方向
 - 如果后续需要给平台管理员保留平台入口，建议放到单独导航或用户菜单中，而不是重新回到顶部并列切换模型。
 - 后面继续清理首页和系统页里残留的“平台 / 团队”叙事，让团队切换成为唯一高频上下文动作。
+
+## 2026-03-29 顶部快捷入口管理页
+
+### 本次改动
+- 顶部面包屑左侧的快捷应用不再只依赖 `config/modules/fastEnter.ts` 固定写死，新增 `fastEnterStore` 作为可持久化配置源，支持管理显示宽度、快捷应用和快捷链接。
+- 新增快捷入口管理页 `#/workspace/fast-enter`，可直接管理“展示哪些应用、哪些快捷链接”，并支持启停、排序、新增、删除、编辑内部路由或外链。
+- 顶部快捷入口面板右侧新增“管理快捷入口”入口，可直接跳转到配置页；默认配置仍保留，必要时可一键恢复默认。
+- 已验证：`pnpm exec vue-tsc --noEmit`（frontend）通过；浏览器实测 `#/workspace/fast-enter` 可打开并显示“保存配置”。
+
+### 下次方向
+- 目前快捷入口配置先走前端本地持久化；如果后续需要多人共享或按角色下发，再补后端配置表和接口。
+- 后面可以再补一层可选约束，例如只允许选择系统内已注册菜单/页面，减少手工填写 `routeName` 的出错率。
+
+## 2026-03-29 快捷应用管理改为后台共享配置
+
+### 本次改动
+- 后端新增 `system_settings` 配置表与 `/api/v1/system/fast-enter` 读写接口，顶部快捷应用和快捷链接配置改为后台共享存储，不再依赖浏览器本地持久化。
+- 新增 `system.fast_enter.manage` 权限键、`FastEnterManage` 系统菜单和对应功能包绑定，快捷应用管理页面改为通过系统菜单进入；顶部快捷面板里的“管理快捷入口”按钮已移除。
+- 前端 `fastEnterStore` 改成接口驱动，顶部面板启动后自动拉取后台配置；默认兜底配置同步收口为后台工作台场景，不再保留登录/注册等演示型快捷入口。
+- 已验证：`pnpm exec vue-tsc --noEmit`（frontend）通过，`go test ./...`（backend）通过；已执行 `go run ./cmd/migrate` 落库并重启后端；`GET /health`、`GET /api/v1/system/fast-enter`、`PUT /api/v1/system/fast-enter` 均返回正常，菜单树中已包含“快捷应用管理”。
+
+### 下次方向
+- 当前快捷入口配置是全局共享一份；如果后续出现明显的团队差异化需求，再评估是否扩展为按团队或按角色覆盖，不要过早把配置模型做重。
+- 管理页目前仍允许手填 `routeName` 和外链；后续可补成“仅从已注册页面/菜单中选择”的约束，进一步降低配置错误率。
+
+## 2026-03-29 系统管理菜单升级为三级分组
+
+### 本次改动
+- 系统管理默认菜单新增 `SystemAccess`、`SystemNavigation`、`SystemIntegration` 三个分组目录，把用户、角色、功能权限、功能包、菜单、页面、快捷应用、API 管理重组为三级菜单，避免系统页继续在二级菜单里平铺增长。
+- 同步更新默认功能包的菜单绑定，并在迁移中新增 `20260329_system_menu_third_level_grouping`，旧库执行 `go run ./cmd/migrate` 后会自动补齐分组节点、重挂父子关系、更新排序；业务页仍保留 `/system/user`、`/system/page` 等原地址，不强制改深 URL。
+- 前端菜单路径校验同步放宽为支持绝对内部路径，兼容新的三级分组结构；专题文档 `docs/menu-page-management-design.md` 也补充了“分组目录只负责导航归类，不要求业务页 URL 跟着加深”的说明。
+- 已验证：`go test ./...`（backend）通过；`pnpm exec vue-tsc --noEmit`（frontend）通过；`go run ./cmd/migrate` 已执行，数据库中系统管理菜单父子关系已更新为三级结构。
+
+### 下次方向
+- 当前浏览器会话里的菜单树可能还保留旧缓存；下一步可以补一个更明确的菜单刷新机制，避免每次结构迁移后都依赖手动刷新页面重新拉取菜单。
+- 如果系统管理后面继续增长，可以再补“分组目录的文案和图标维护规范”，保证后续新增菜单统一落到稳定分组，不再回到无序平铺。
+
+## 2026-03-29 系统管理三级菜单目录节点修复
+
+### 本次改动
+- 修复系统管理三级分组目录误用 `/index/index` 作为组件的问题，`SystemAccess`、`SystemNavigation`、`SystemIntegration` 现在改为纯目录节点，不再在页面内容区重复渲染一层后台壳层。
+- 迁移新增 `20260329_system_menu_group_directory_component_cleanup`，确保旧库会把这 3 条目录菜单的 `component` 清空，而不是只更新默认种子后停留在历史数据。
+- 已验证：`go test ./...`（backend）通过；`go run ./cmd/migrate` 执行完成；浏览器实测 `#/system/user` 不再出现页面内嵌第二套菜单壳层。
+
+### 下次方向
+- 现在三级菜单结构已正常，但现有菜单标题国际化键还有部分显示成 `title`、`user`、`role`，下一步应把这些系统菜单标题统一收口成稳定文案或补齐 i18n 映射。
+- 如果后面还会继续扩展分组目录，建议在菜单管理里显式标记“目录菜单 / 页面菜单”，减少再次把目录节点误配置成页面组件的可能。
+## 2026-03-29 消息系统设计收口
+
+### 本次改动
+- 基于当前右上角通知组件的真实结构，新增了 [message-system-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/message-system-design.md)，明确消息系统正式模型，不再停留在 mock 组件层。
+- 设计中确定继续保留 `通知 / 消息 / 待办` 三栏，同时把消息发送者正式区分为 `system / platform_user / team_user / service / automation`，避免后续所有消息都伪装成“某个用户发来”。
+- 明确后端采用 `messages + message_deliveries` 两表模型，并给出收件箱摘要、列表、已读、待办处理、管理侧发信等接口边界；第一阶段先做拉取式真实收件箱，不强依赖 websocket。
+- 文档索引 [README.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/README.md) 已同步补入消息系统设计入口。
+
+### 下次方向
+- 先补最小可用版本：右上角消息面板真实数据化、`#/workspace/inbox` 完整消息中心页、未读摘要接口。
+- 第一阶段不急着做复杂后台发信页，优先把邀请、公告、同步结果、待办这几类真实消息接入。
+- 等收件箱链路稳定后，再接 websocket 未读数推送和消息模板。

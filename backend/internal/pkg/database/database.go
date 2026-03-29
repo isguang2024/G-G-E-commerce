@@ -151,6 +151,7 @@ func AutoMigrate() error {
 		&models.APIKey{},
 		&models.MediaAsset{},
 		&models.MenuBackup{},
+		&models.SystemSetting{},
 	)
 
 	if err != nil {
@@ -465,6 +466,14 @@ func createUniqueIndexes() error {
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageParentSortIndexName).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE INDEX " + uiPageParentSortIndexName + " ON ui_pages (parent_page_key, sort_order)").Error; err != nil {
+			return err
+		}
+	}
+
+	systemSettingKeyIndexName := "idx_system_settings_key_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", systemSettingKeyIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + systemSettingKeyIndexName + " ON system_settings (key) WHERE deleted_at IS NULL").Error; err != nil {
 			return err
 		}
 	}
