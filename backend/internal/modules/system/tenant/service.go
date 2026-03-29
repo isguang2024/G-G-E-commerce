@@ -20,6 +20,7 @@ var ErrTenantMemberNotFound = errors.New("member not in team")
 
 type TenantService interface {
 	List(req *dto.TenantListRequest) ([]user.Tenant, int64, error)
+	ListOptions(req *dto.TenantListRequest) ([]user.Tenant, error)
 	Get(id uuid.UUID) (*user.Tenant, error)
 	Create(req *dto.TenantCreateRequest, ownerID *uuid.UUID) (*user.Tenant, error)
 	Update(id uuid.UUID, req *dto.TenantUpdateRequest) error
@@ -79,6 +80,25 @@ func (s *tenantService) List(req *dto.TenantListRequest) ([]user.Tenant, int64, 
 	}
 	offset := (req.Current - 1) * req.Size
 	return s.tenantRepo.List(offset, req.Size, req.Name, req.Status)
+}
+
+func (s *tenantService) ListOptions(req *dto.TenantListRequest) ([]user.Tenant, error) {
+	query := s.db.Model(&user.Tenant{})
+	if req != nil {
+		if name := strings.TrimSpace(req.Name); name != "" {
+			query = query.Where("name LIKE ?", "%"+name+"%")
+		}
+		if status := strings.TrimSpace(req.Status); status != "" {
+			query = query.Where("status = ?", status)
+		}
+	}
+
+	items := make([]user.Tenant, 0)
+	err := query.
+		Select("id", "name", "remark", "logo_url", "plan", "owner_id", "max_members", "status", "created_at", "updated_at").
+		Order("created_at DESC").
+		Find(&items).Error
+	return items, err
 }
 
 func (s *tenantService) Get(id uuid.UUID) (*user.Tenant, error) {

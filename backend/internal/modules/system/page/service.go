@@ -117,6 +117,7 @@ type BreadcrumbPreviewItem struct {
 
 type Service interface {
 	List(req *ListRequest) ([]Record, int64, error)
+	ListOptions() ([]models.UIPage, error)
 	ListRuntime() ([]Record, error)
 	ListRuntimePublic() ([]Record, error)
 	ListUnregistered() ([]UnregisteredRecord, error)
@@ -182,6 +183,28 @@ func (s *service) List(req *ListRequest) ([]Record, int64, error) {
 	}
 	records, err := s.decorateRecords(items)
 	return records, total, err
+}
+
+func (s *service) ListOptions() ([]models.UIPage, error) {
+	items := make([]models.UIPage, 0)
+	err := s.db.
+		Model(&models.UIPage{}).
+		Select(
+			"id",
+			"page_key",
+			"name",
+			"route_name",
+			"route_path",
+			"page_type",
+			"module_key",
+			"parent_menu_id",
+			"parent_page_key",
+			"display_group_key",
+			"status",
+		).
+		Order("sort_order ASC, created_at ASC").
+		Find(&items).Error
+	return items, err
 }
 
 func (s *service) ListRuntime() ([]Record, error) {

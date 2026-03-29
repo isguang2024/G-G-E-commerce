@@ -15,6 +15,11 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 )
 
+var (
+	ErrNoStaleCleanupSelection = errors.New("请选择要清理的失效 API")
+	ErrStaleCleanupTargetGone  = errors.New("所选 API 已不是失效状态，请刷新后重试")
+)
+
 type ListRequest struct {
 	Current       int
 	Size          int
@@ -49,16 +54,43 @@ type UnregisteredRouteItem struct {
 	Meta    map[string]interface{} `json:"meta"`
 }
 
+type EndpointRuntimeState struct {
+	RuntimeExists bool   `json:"runtime_exists"`
+	Stale         bool   `json:"stale"`
+	StaleReason   string `json:"stale_reason,omitempty"`
+}
+
+type EndpointCategoryCount struct {
+	CategoryID string `json:"category_id"`
+	Count      int64  `json:"count"`
+}
+
+type EndpointOverview struct {
+	TotalCount         int64                   `json:"total_count"`
+	UncategorizedCount int64                   `json:"uncategorized_count"`
+	StaleCount         int64                   `json:"stale_count"`
+	CategoryCounts     []EndpointCategoryCount `json:"category_counts"`
+}
+
+type StaleListRequest struct {
+	Current int
+	Size    int
+}
+
 type Service interface {
 	List(req *ListRequest) ([]user.APIEndpoint, int64, error)
+	Overview() (*EndpointOverview, error)
+	ListRuntimeStates(endpoints []user.APIEndpoint) map[uuid.UUID]EndpointRuntimeState
+	ListStale(req *StaleListRequest) ([]user.APIEndpoint, int64, error)
 	ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]UnregisteredRouteItem, int64, error)
-	ListBindingsByEndpointIDs(endpointIDs []uuid.UUID) ([]user.APIEndpointPermissionBinding, error)
-	ListBindings(endpointID uuid.UUID) ([]user.APIEndpointPermissionBinding, error)
+	ListBindingsByEndpointCodes(endpointCodes []string) ([]user.APIEndpointPermissionBinding, error)
+	ListBindings(endpointCode string) ([]user.APIEndpointPermissionBinding, error)
 	ListCategories() ([]user.APIEndpointCategory, error)
 	Save(endpoint *user.APIEndpoint, permissionKeys []string) (*user.APIEndpoint, error)
 	SaveCategory(item *user.APIEndpointCategory) (*user.APIEndpointCategory, error)
 	UpdateContextScope(endpointID uuid.UUID, contextScope string) (*user.APIEndpoint, error)
 	Sync() error
+	CleanupStale(endpointIDs []uuid.UUID) (int, error)
 }
 
 type service struct {
@@ -106,16 +138,72 @@ func (s *service) List(req *ListRequest) ([]user.APIEndpoint, int64, error) {
 		HasCategory:   req.HasCategory,
 	}
 	if params.PermissionKey != "" {
-		endpointIDs, err := s.bindingRepo.ListEndpointIDsByPermissionKey(params.PermissionKey)
+		endpointCodes, err := s.bindingRepo.ListEndpointCodesByPermissionKey(params.PermissionKey)
 		if err != nil {
 			return nil, 0, err
 		}
-		if len(endpointIDs) == 0 {
+		if len(endpointCodes) == 0 {
 			return []user.APIEndpoint{}, 0, nil
 		}
-		params.EndpointIDs = endpointIDs
+		params.EndpointCodes = endpointCodes
 	}
 	return s.repo.List((req.Current-1)*req.Size, req.Size, params)
+}
+
+func (s *service) Overview() (*EndpointOverview, error) {
+	overview := &EndpointOverview{
+		CategoryCounts: make([]EndpointCategoryCount, 0),
+	}
+	if err := s.db.Model(&user.APIEndpoint{}).Count(&overview.TotalCount).Error; err != nil {
+		return nil, err
+	}
+	if err := s.db.Model(&user.APIEndpoint{}).Where("category_id IS NULL").Count(&overview.UncategorizedCount).Error; err != nil {
+		return nil, err
+	}
+
+	type categoryCountRow struct {
+		CategoryID *uuid.UUID `gorm:"column:category_id"`
+		Count      int64      `gorm:"column:count"`
+	}
+	rows := make([]categoryCountRow, 0)
+	if err := s.db.
+		Model(&user.APIEndpoint{}).
+		Select("category_id, COUNT(*) AS count").
+		Where("category_id IS NOT NULL").
+		Group("category_id").
+		Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	for _, row := range rows {
+		if row.CategoryID == nil {
+			continue
+		}
+		overview.CategoryCounts = append(overview.CategoryCounts, EndpointCategoryCount{
+			CategoryID: row.CategoryID.String(),
+			Count:      row.Count,
+		})
+	}
+
+	syncCandidates, err := s.listSyncRuntimeCandidates()
+	if err != nil {
+		return nil, err
+	}
+	runtimeStates := s.ListRuntimeStates(syncCandidates)
+	overview.StaleCount = int64(len(filterStaleEndpoints(syncCandidates, runtimeStates)))
+	return overview, nil
+}
+
+func (s *service) ListRuntimeStates(endpoints []user.APIEndpoint) map[uuid.UUID]EndpointRuntimeState {
+	result := make(map[uuid.UUID]EndpointRuntimeState, len(endpoints))
+	if len(endpoints) == 0 || s.router == nil {
+		return result
+	}
+
+	index := s.buildRuntimeRouteIndex()
+	for _, endpoint := range endpoints {
+		result[endpoint.ID] = resolveEndpointRuntimeState(endpoint, index)
+	}
+	return result
 }
 
 func (s *service) ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]UnregisteredRouteItem, int64, error) {
@@ -133,13 +221,18 @@ func (s *service) ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]U
 	}
 
 	runtimeRoutes := apiregistry.CollectRuntimeRoutes(s.router.Routes())
-	registered, _, err := s.repo.List(0, 5000, nil)
+	registered, err := s.listPotentiallyRegisteredEndpointsForRoutes(runtimeRoutes)
 	if err != nil {
 		return nil, 0, err
 	}
-	registeredSet := make(map[string]struct{}, len(registered))
+	registeredCodeSet := make(map[string]struct{}, len(registered))
+	legacyRegisteredSet := make(map[string]struct{}, len(registered))
 	for _, item := range registered {
-		registeredSet[routeSpec(item.Method, item.Path)] = struct{}{}
+		if code := strings.TrimSpace(item.Code); code != "" {
+			registeredCodeSet[code] = struct{}{}
+			continue
+		}
+		legacyRegisteredSet[routeSpec(item.Method, item.Path)] = struct{}{}
 	}
 
 	methodFilter := strings.ToUpper(strings.TrimSpace(req.Method))
@@ -148,7 +241,11 @@ func (s *service) ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]U
 
 	items := make([]UnregisteredRouteItem, 0, len(runtimeRoutes))
 	for _, route := range runtimeRoutes {
-		if _, ok := registeredSet[routeSpec(route.Method, route.Path)]; ok {
+		routeCode := apiregistry.ResolveRouteCode(route.Method, route.Path, routeMetaPointer(route))
+		if _, ok := registeredCodeSet[routeCode]; ok {
+			continue
+		}
+		if _, ok := legacyRegisteredSet[routeSpec(route.Method, route.Path)]; ok {
 			continue
 		}
 		if req.OnlyNoMeta && route.HasMeta {
@@ -197,6 +294,35 @@ func (s *service) ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]U
 	return items[start:end], total, nil
 }
 
+func (s *service) ListStale(req *StaleListRequest) ([]user.APIEndpoint, int64, error) {
+	if req == nil {
+		req = &StaleListRequest{}
+	}
+	if req.Current <= 0 {
+		req.Current = 1
+	}
+	if req.Size <= 0 {
+		req.Size = 20
+	}
+
+	syncCandidates, err := s.listSyncRuntimeCandidates()
+	if err != nil {
+		return nil, 0, err
+	}
+	runtimeStates := s.ListRuntimeStates(syncCandidates)
+	staleEndpoints := filterStaleEndpoints(syncCandidates, runtimeStates)
+	total := int64(len(staleEndpoints))
+	start := (req.Current - 1) * req.Size
+	if start >= len(staleEndpoints) {
+		return []user.APIEndpoint{}, total, nil
+	}
+	end := start + req.Size
+	if end > len(staleEndpoints) {
+		end = len(staleEndpoints)
+	}
+	return staleEndpoints[start:end], total, nil
+}
+
 func (s *service) Sync() error {
 	if s.router == nil {
 		return nil
@@ -207,12 +333,62 @@ func (s *service) Sync() error {
 	return s.refreshRuntimeCache()
 }
 
-func (s *service) ListBindings(endpointID uuid.UUID) ([]user.APIEndpointPermissionBinding, error) {
-	return s.bindingRepo.ListByEndpointID(endpointID)
+func (s *service) CleanupStale(endpointIDs []uuid.UUID) (int, error) {
+	if s.router == nil {
+		return 0, nil
+	}
+	if len(endpointIDs) == 0 {
+		return 0, ErrNoStaleCleanupSelection
+	}
+
+	endpoints, err := s.listSyncRuntimeCandidates()
+	if err != nil {
+		return 0, err
+	}
+	if len(endpoints) == 0 {
+		return 0, nil
+	}
+
+	runtimeStates := s.ListRuntimeStates(endpoints)
+	staleEndpoints := selectStaleEndpointsForCleanup(endpoints, runtimeStates, endpointIDs)
+	if len(staleEndpoints) == 0 {
+		return 0, ErrStaleCleanupTargetGone
+	}
+	staleIDs := make([]uuid.UUID, 0, len(staleEndpoints))
+	staleCodes := make([]string, 0, len(staleEndpoints))
+	for _, endpoint := range staleEndpoints {
+		staleIDs = append(staleIDs, endpoint.ID)
+		if code := strings.TrimSpace(endpoint.Code); code != "" {
+			staleCodes = append(staleCodes, code)
+		}
+	}
+
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		if len(staleCodes) > 0 {
+			if err := tx.Unscoped().Where("endpoint_code IN ?", staleCodes).Delete(&user.APIEndpointPermissionBinding{}).Error; err != nil {
+				return err
+			}
+		}
+		if err := tx.Where("id IN ?", staleIDs).Delete(&user.APIEndpoint{}).Error; err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return 0, err
+	}
+
+	if err := s.refreshRuntimeCache(); err != nil {
+		return 0, err
+	}
+	return len(staleEndpoints), nil
 }
 
-func (s *service) ListBindingsByEndpointIDs(endpointIDs []uuid.UUID) ([]user.APIEndpointPermissionBinding, error) {
-	return s.bindingRepo.ListByEndpointIDs(endpointIDs)
+func (s *service) ListBindings(endpointCode string) ([]user.APIEndpointPermissionBinding, error) {
+	return s.bindingRepo.ListByEndpointCode(endpointCode)
+}
+
+func (s *service) ListBindingsByEndpointCodes(endpointCodes []string) ([]user.APIEndpointPermissionBinding, error) {
+	return s.bindingRepo.ListByEndpointCodes(endpointCodes)
 }
 
 func (s *service) ListCategories() ([]user.APIEndpointCategory, error) {
@@ -227,9 +403,6 @@ func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string) (*us
 	endpoint.Path = strings.TrimSpace(endpoint.Path)
 	if endpoint.Method == "" || endpoint.Path == "" {
 		return nil, errors.New("method 和 path 不能为空")
-	}
-	if endpoint.Code == "" {
-		endpoint.Code = deriveStableEndpointCode(endpoint.Method, endpoint.Path)
 	}
 	if endpoint.ContextScope == "" {
 		endpoint.ContextScope = "optional"
@@ -271,7 +444,16 @@ func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string) (*us
 
 	var oldMethod string
 	var oldPath string
+	var current *user.APIEndpoint
 	if endpoint.ID == uuid.Nil {
+		endpoint.Code = resolveEndpointCodeForSave(endpoint, nil)
+		existsByCode, err := s.repo.GetByCode(endpoint.Code)
+		if err == nil && existsByCode != nil {
+			return nil, errors.New("code 已存在")
+		}
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
 		exists, err := s.repo.GetByMethodAndPath(endpoint.Method, endpoint.Path)
 		if err == nil && exists != nil {
 			return nil, errors.New("method+path 已存在")
@@ -283,15 +465,24 @@ func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string) (*us
 			return nil, err
 		}
 	} else {
-		current, err := s.repo.GetByID(endpoint.ID)
+		var err error
+		current, err = s.repo.GetByID(endpoint.ID)
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return nil, errors.New("API 不存在")
 			}
 			return nil, err
 		}
+		endpoint.Code = resolveEndpointCodeForSave(endpoint, current)
 		oldMethod = current.Method
 		oldPath = current.Path
+		existsByCode, err := s.repo.GetByCode(endpoint.Code)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		if existsByCode != nil && existsByCode.ID != endpoint.ID {
+			return nil, errors.New("code 已存在")
+		}
 		exists, err := s.repo.GetByMethodAndPath(endpoint.Method, endpoint.Path)
 		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, err
@@ -339,13 +530,13 @@ func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string) (*us
 	items := make([]user.APIEndpointPermissionBinding, 0, len(keys))
 	for idx, key := range keys {
 		items = append(items, user.APIEndpointPermissionBinding{
-			EndpointID:    endpoint.ID,
+			EndpointCode:  endpoint.Code,
 			PermissionKey: key,
 			MatchMode:     "ANY",
 			SortOrder:     idx,
 		})
 	}
-	if err := s.bindingRepo.ReplaceByEndpointID(endpoint.ID, items); err != nil {
+	if err := s.bindingRepo.ReplaceByEndpointCode(endpoint.Code, items); err != nil {
 		return nil, err
 	}
 	if err := s.refreshRuntimeCacheForSave(oldMethod, oldPath, endpoint.Method, endpoint.Path); err != nil {
@@ -420,8 +611,205 @@ func deriveStableEndpointCode(method, path string) string {
 	return uuid.NewHash(sha1.New(), uuid.NameSpaceURL, []byte("api-endpoint:"+targetMethod+" "+targetPath), 5).String()
 }
 
+type runtimeRouteIndex struct {
+	codeSet map[string]struct{}
+	specSet map[string]struct{}
+}
+
+func (s *service) buildRuntimeRouteIndex() runtimeRouteIndex {
+	index := runtimeRouteIndex{
+		codeSet: make(map[string]struct{}),
+		specSet: make(map[string]struct{}),
+	}
+	if s.router == nil {
+		return index
+	}
+
+	runtimeRoutes := apiregistry.CollectRuntimeRoutes(s.router.Routes())
+	for _, route := range runtimeRoutes {
+		index.specSet[routeSpec(route.Method, route.Path)] = struct{}{}
+		if code := strings.TrimSpace(apiregistry.ResolveRouteCode(route.Method, route.Path, routeMetaPointer(route))); code != "" {
+			index.codeSet[code] = struct{}{}
+		}
+	}
+	return index
+}
+
+func resolveEndpointRuntimeState(endpoint user.APIEndpoint, index runtimeRouteIndex) EndpointRuntimeState {
+	code := strings.TrimSpace(endpoint.Code)
+	if code != "" {
+		if _, ok := index.codeSet[code]; ok {
+			return EndpointRuntimeState{RuntimeExists: true}
+		}
+	}
+
+	if _, ok := index.specSet[routeSpec(endpoint.Method, endpoint.Path)]; ok {
+		return EndpointRuntimeState{RuntimeExists: true}
+	}
+
+	state := EndpointRuntimeState{}
+	if shouldMarkEndpointStale(endpoint) {
+		state.Stale = true
+		state.StaleReason = "源码中已不存在该自动同步 API"
+	}
+	return state
+}
+
+func shouldMarkEndpointStale(endpoint user.APIEndpoint) bool {
+	if strings.TrimSpace(endpoint.Source) != "sync" {
+		return false
+	}
+	code := strings.TrimSpace(endpoint.Code)
+	if code == "" {
+		return false
+	}
+	if apiregistry.IsFixedManagedRouteCode(code) {
+		return true
+	}
+	_, err := uuid.Parse(code)
+	return err == nil
+}
+
+func selectStaleEndpointsForCleanup(endpoints []user.APIEndpoint, runtimeStates map[uuid.UUID]EndpointRuntimeState, endpointIDs []uuid.UUID) []user.APIEndpoint {
+	staleEndpoints := filterStaleEndpoints(endpoints, runtimeStates)
+	if len(staleEndpoints) == 0 || len(endpointIDs) == 0 {
+		return []user.APIEndpoint{}
+	}
+	selectedSet := make(map[uuid.UUID]struct{}, len(endpointIDs))
+	for _, endpointID := range endpointIDs {
+		if endpointID == uuid.Nil {
+			continue
+		}
+		selectedSet[endpointID] = struct{}{}
+	}
+	if len(selectedSet) == 0 {
+		return []user.APIEndpoint{}
+	}
+
+	result := make([]user.APIEndpoint, 0, len(selectedSet))
+	for _, endpoint := range staleEndpoints {
+		if _, ok := selectedSet[endpoint.ID]; ok {
+			result = append(result, endpoint)
+		}
+	}
+	return result
+}
+
+func filterStaleEndpoints(endpoints []user.APIEndpoint, runtimeStates map[uuid.UUID]EndpointRuntimeState) []user.APIEndpoint {
+	if len(endpoints) == 0 {
+		return []user.APIEndpoint{}
+	}
+	result := make([]user.APIEndpoint, 0, len(endpoints))
+	for _, endpoint := range endpoints {
+		if state, ok := runtimeStates[endpoint.ID]; ok && state.Stale {
+			result = append(result, endpoint)
+		}
+	}
+	return result
+}
+
+func (s *service) listSyncRuntimeCandidates() ([]user.APIEndpoint, error) {
+	items := make([]user.APIEndpoint, 0)
+	err := s.db.
+		Model(&user.APIEndpoint{}).
+		Select("id", "code", "method", "path", "category_id", "status", "source").
+		Where("source = ?", "sync").
+		Order("path ASC, method ASC").
+		Find(&items).Error
+	return items, err
+}
+
+func (s *service) listPotentiallyRegisteredEndpointsForRoutes(runtimeRoutes []apiregistry.RuntimeRoute) ([]user.APIEndpoint, error) {
+	if len(runtimeRoutes) == 0 {
+		return []user.APIEndpoint{}, nil
+	}
+
+	codeSet := make(map[string]struct{}, len(runtimeRoutes))
+	methodSet := make(map[string]struct{}, len(runtimeRoutes))
+	pathSet := make(map[string]struct{}, len(runtimeRoutes))
+	for _, route := range runtimeRoutes {
+		if code := strings.TrimSpace(apiregistry.ResolveRouteCode(route.Method, route.Path, routeMetaPointer(route))); code != "" {
+			codeSet[code] = struct{}{}
+		}
+		methodSet[route.Method] = struct{}{}
+		pathSet[route.Path] = struct{}{}
+	}
+
+	codes := make([]string, 0, len(codeSet))
+	for code := range codeSet {
+		codes = append(codes, code)
+	}
+	methods := make([]string, 0, len(methodSet))
+	for method := range methodSet {
+		methods = append(methods, method)
+	}
+	paths := make([]string, 0, len(pathSet))
+	for path := range pathSet {
+		paths = append(paths, path)
+	}
+
+	items := make([]user.APIEndpoint, 0, len(runtimeRoutes))
+	seen := make(map[uuid.UUID]struct{}, len(runtimeRoutes))
+	appendDistinct := func(batch []user.APIEndpoint) {
+		for _, item := range batch {
+			if _, ok := seen[item.ID]; ok {
+				continue
+			}
+			seen[item.ID] = struct{}{}
+			items = append(items, item)
+		}
+	}
+
+	if len(codes) > 0 {
+		batch := make([]user.APIEndpoint, 0, len(codes))
+		if err := s.db.
+			Model(&user.APIEndpoint{}).
+			Select("id", "code", "method", "path").
+			Where("code IN ?", codes).
+			Find(&batch).Error; err != nil {
+			return nil, err
+		}
+		appendDistinct(batch)
+	}
+	if len(methods) > 0 && len(paths) > 0 {
+		batch := make([]user.APIEndpoint, 0, len(runtimeRoutes))
+		if err := s.db.
+			Model(&user.APIEndpoint{}).
+			Select("id", "code", "method", "path").
+			Where("method IN ? AND path IN ?", methods, paths).
+			Find(&batch).Error; err != nil {
+			return nil, err
+		}
+		appendDistinct(batch)
+	}
+	return items, nil
+}
+
 func routeSpec(method, path string) string {
 	return strings.ToUpper(strings.TrimSpace(method)) + " " + strings.TrimSpace(path)
+}
+
+func routeMetaPointer(route apiregistry.RuntimeRoute) *apiregistry.RouteMeta {
+	if !route.HasMeta {
+		return nil
+	}
+	meta := route.RouteMeta
+	return &meta
+}
+
+func resolveEndpointCodeForSave(endpoint *user.APIEndpoint, current *user.APIEndpoint) string {
+	if current != nil {
+		if code := strings.TrimSpace(current.Code); code != "" {
+			return code
+		}
+	}
+	if endpoint != nil {
+		if code := strings.TrimSpace(endpoint.Code); code != "" {
+			return code
+		}
+		return deriveStableEndpointCode(endpoint.Method, endpoint.Path)
+	}
+	return ""
 }
 
 func (s *service) refreshRuntimeCache() error {

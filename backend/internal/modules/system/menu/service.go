@@ -496,25 +496,13 @@ func (s *menuService) refreshAllMenuSnapshots() error {
 	if s.refresher == nil || s.db == nil {
 		return nil
 	}
-	var teamIDs []uuid.UUID
-	if err := s.db.Model(&models.Tenant{}).Pluck("id", &teamIDs).Error; err != nil {
+	if err := s.refresher.RefreshAllTeams(); err != nil {
 		return err
 	}
-	if err := s.refresher.RefreshTeams(teamIDs); err != nil {
+	if err := s.refresher.RefreshAllPlatformRoles(); err != nil {
 		return err
 	}
-	var roleIDs []uuid.UUID
-	if err := s.db.Model(&models.Role{}).Where("tenant_id IS NULL").Pluck("id", &roleIDs).Error; err != nil {
-		return err
-	}
-	if err := s.refresher.RefreshPlatformRoles(roleIDs); err != nil {
-		return err
-	}
-	var userIDs []uuid.UUID
-	if err := s.db.Model(&models.User{}).Pluck("id", &userIDs).Error; err != nil {
-		return err
-	}
-	return s.refresher.RefreshPlatformUsers(userIDs)
+	return s.refresher.RefreshAllPlatformUsers()
 }
 
 type ginMenuBackupPayload struct {

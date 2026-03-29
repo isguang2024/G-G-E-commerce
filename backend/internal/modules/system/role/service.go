@@ -27,6 +27,7 @@ var (
 
 type RoleService interface {
 	List(req *dto.RoleListRequest) ([]user.Role, int64, error)
+	ListOptions() ([]user.Role, error)
 	Get(id uuid.UUID) (*user.Role, error)
 	Create(req *dto.RoleCreateRequest) (*user.Role, error)
 	Update(id uuid.UUID, req *dto.RoleUpdateRequest) error
@@ -67,6 +68,7 @@ type DataPermissionScopeOption struct {
 }
 
 type roleService struct {
+	db                     *gorm.DB
 	roleRepo               user.RoleRepository
 	rolePackageRepo        user.RoleFeaturePackageRepository
 	featurePkgRepo         user.FeaturePackageRepository
@@ -83,6 +85,7 @@ type roleService struct {
 }
 
 func NewRoleService(
+	db *gorm.DB,
 	roleRepo user.RoleRepository,
 	rolePackageRepo user.RoleFeaturePackageRepository,
 	featurePkgRepo user.FeaturePackageRepository,
@@ -98,6 +101,7 @@ func NewRoleService(
 	logger *zap.Logger,
 ) RoleService {
 	return &roleService{
+		db:                     db,
 		roleRepo:               roleRepo,
 		rolePackageRepo:        rolePackageRepo,
 		featurePkgRepo:         featurePkgRepo,
@@ -132,6 +136,17 @@ func (s *roleService) List(req *dto.RoleListRequest) ([]user.Role, int64, error)
 		req.EndTime,
 		req.Enabled,
 	)
+}
+
+func (s *roleService) ListOptions() ([]user.Role, error) {
+	items := make([]user.Role, 0)
+	err := s.db.
+		Model(&user.Role{}).
+		Select("id", "code", "name", "description", "priority", "sort_order", "custom_params", "status", "created_at", "updated_at").
+		Where("tenant_id IS NULL").
+		Order("sort_order ASC, created_at DESC").
+		Find(&items).Error
+	return items, err
 }
 
 func (s *roleService) Get(id uuid.UUID) (*user.Role, error) {

@@ -30,14 +30,6 @@ func EnsureDefaultAPIEndpointCategories(db *gorm.DB) error {
 			}
 			return result.Error
 		}
-		if err := db.Model(&item).Updates(map[string]interface{}{
-			"name":       seed.Name,
-			"name_en":    seed.NameEn,
-			"sort_order": seed.SortOrder,
-			"status":     seed.Status,
-		}).Error; err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -65,16 +57,6 @@ func EnsureDefaultPermissionGroups(db *gorm.DB) error {
 				continue
 			}
 			return result.Error
-		}
-		if err := db.Model(&existing).Updates(map[string]interface{}{
-			"name":        item.Name,
-			"name_en":     item.NameEn,
-			"description": item.Description,
-			"status":      item.Status,
-			"sort_order":  item.SortOrder,
-			"is_builtin":  item.IsBuiltin,
-		}).Error; err != nil {
-			return err
 		}
 	}
 	return nil
@@ -114,23 +96,6 @@ func EnsureDefaultPermissionKeys(db *gorm.DB) error {
 			}
 			return result.Error
 		}
-		updates := map[string]interface{}{
-			"code":             actionData.Code,
-			"permission_key":   actionData.PermissionKey,
-			"name":             actionData.Name,
-			"description":      actionData.Description,
-			"module_code":      actionData.ModuleCode,
-			"module_group_id":  actionData.ModuleGroupID,
-			"feature_group_id": actionData.FeatureGroupID,
-			"context_type":     actionData.ContextType,
-			"feature_kind":     actionData.FeatureKind,
-			"status":           actionData.Status,
-			"sort_order":       actionData.SortOrder,
-			"is_builtin":       actionData.IsBuiltin,
-		}
-		if err := db.Model(&action).Updates(updates).Error; err != nil {
-			return err
-		}
 	}
 	return nil
 }
@@ -159,18 +124,6 @@ func EnsureDefaultFeaturePackages(db *gorm.DB) error {
 				existing = item
 			} else {
 				return result.Error
-			}
-		} else {
-			if err := db.Model(&existing).Updates(map[string]interface{}{
-				"name":         item.Name,
-				"description":  item.Description,
-				"package_type": item.PackageType,
-				"context_type": item.ContextType,
-				"is_builtin":   item.IsBuiltin,
-				"status":       item.Status,
-				"sort_order":   item.SortOrder,
-			}).Error; err != nil {
-				return err
 			}
 		}
 

@@ -34,6 +34,7 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	reg := apiregistry.NewRegistrar(group, "page")
 	{
 		reg.GETProtected("/menu-options", reg.Meta("获取页面上级菜单候选").BindGroup("page").BindPermissionKey("system.page.manage").Build(), "system.page.manage", authzService.RequireAction, handler.ListMenuOptions)
+		reg.GETProtected("/options", reg.Meta("获取页面候选").BindGroup("page").BindPermissionKey("system.page.manage").Build(), "system.page.manage", authzService.RequireAction, handler.ListPageOptions)
 		reg.GETProtected("/unregistered", reg.Meta("获取未注册页面").BindGroup("page").BindPermissionKey("system.page.sync").Build(), "system.page.sync", authzService.RequireAction, handler.ListUnregistered)
 		reg.POSTProtected("/sync", reg.Meta("同步页面注册表").BindGroup("page").BindSource("sync").BindPermissionKey("system.page.sync").Build(), "system.page.sync", authzService.RequireAction, handler.Sync)
 		reg.GETProtected("", reg.Meta("获取页面列表").BindGroup("page").BindPermissionKey("system.page.manage").Build(), "system.page.manage", authzService.RequireAction, handler.List)

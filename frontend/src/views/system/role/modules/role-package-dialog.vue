@@ -5,7 +5,8 @@
     size="1280px"
     destroy-on-close
     class="business-dialog config-drawer"
-    direction="rtl">
+    direction="rtl"
+  >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
         角色只负责绑定功能包。绑定后，角色菜单和权限会以功能包展开结果为基础继续裁剪，这里不再区分平台或团队语义。
@@ -47,7 +48,11 @@
         <ElTableColumn type="expand" width="56">
           <template #default="{ row }">
             <div class="expand-panel">
-              <FeaturePackageGrantPreview :package-id="row.id" :package-item="row" :packages="packages" />
+              <FeaturePackageGrantPreview
+                :package-id="row.id"
+                :package-item="row"
+                :packages="packages"
+              />
             </div>
           </template>
         </ElTableColumn>
@@ -88,9 +93,7 @@
 
     <template #footer>
       <ElButton @click="visible = false">取消</ElButton>
-      <ElButton type="primary" :loading="saving" @click="handleSave">
-        保存
-      </ElButton>
+      <ElButton type="primary" :loading="saving" @click="handleSave"> 保存 </ElButton>
     </template>
   </ElDrawer>
 </template>
@@ -100,7 +103,7 @@
   import { ElMessage } from 'element-plus'
   import FeaturePackageGrantPreview from '@/components/business/permission/FeaturePackageGrantPreview.vue'
   import {
-    fetchGetFeaturePackageList,
+    fetchGetFeaturePackageOptions,
     fetchGetRolePackages,
     fetchSetRolePackages
   } from '@/api/system-manage'
@@ -177,7 +180,7 @@
     resetFilters()
     try {
       const [listRes, roleRes] = await Promise.all([
-        fetchGetFeaturePackageList({ current: 1, size: 1000 }),
+        fetchGetFeaturePackageOptions(),
         fetchGetRolePackages(props.roleData.roleId)
       ])
       packages.value = listRes?.records || []

@@ -99,7 +99,8 @@ func DefaultAPIEndpointCategories() []APIEndpointCategorySeed {
 		{Code: "page", Name: "页面", NameEn: "Page", SortOrder: 80, Status: "normal"},
 		{Code: "menu", Name: "菜单", NameEn: "Menu", SortOrder: 90, Status: "normal"},
 		{Code: "menu_backup", Name: "菜单备份", NameEn: "Menu Backup", SortOrder: 100, Status: "normal"},
-		{Code: "tenant", Name: "团队", NameEn: "Tenant", SortOrder: 110, Status: "normal"},
+		{Code: "media", Name: "媒体", NameEn: "Media", SortOrder: 110, Status: "normal"},
+		{Code: "tenant", Name: "团队", NameEn: "Tenant", SortOrder: 120, Status: "normal"},
 	}
 	for i := range items {
 		items[i].ID = StableID("api-endpoint-category", items[i].Code)

@@ -95,6 +95,17 @@
                   >({{ unregisteredCount }})</span
                 >
               </ElButton>
+              <ElButton
+                v-action="'system.api_registry.sync'"
+                plain
+                type="danger"
+                :loading="cleaningStale"
+                @click="handleCleanupStale"
+                v-ripple
+              >
+                清理失效 API
+                <span v-if="staleCount > 0" class="toolbar-count">({{ staleCount }})</span>
+              </ElButton>
             </template>
           </ArtTableHeader>
 
@@ -119,20 +130,28 @@
       size="760px"
       direction="rtl"
       destroy-on-close
-    
-    class="config-drawer">
+      class="config-drawer"
+    >
       <ElForm :model="formState" label-width="110px">
         <ElRow :gutter="12">
           <ElCol :span="8">
             <ElFormItem label="Method" prop="method">
-              <ElSelect v-model="formState.method" placeholder="请选择" popper-class="api-endpoint-select-popper">
+              <ElSelect
+                v-model="formState.method"
+                placeholder="请选择"
+                popper-class="api-endpoint-select-popper"
+              >
                 <ElOption v-for="item in methodOptions" :key="item" :label="item" :value="item" />
               </ElSelect>
             </ElFormItem>
           </ElCol>
           <ElCol :span="8">
             <ElFormItem label="功能归属" prop="featureKind">
-              <ElSelect v-model="formState.featureKind" placeholder="请选择" popper-class="api-endpoint-select-popper">
+              <ElSelect
+                v-model="formState.featureKind"
+                placeholder="请选择"
+                popper-class="api-endpoint-select-popper"
+              >
                 <ElOption label="系统" value="system" />
                 <ElOption label="业务" value="business" />
               </ElSelect>
@@ -140,7 +159,11 @@
           </ElCol>
           <ElCol :span="8">
             <ElFormItem label="来源" prop="source">
-              <ElSelect v-model="formState.source" placeholder="请选择" popper-class="api-endpoint-select-popper">
+              <ElSelect
+                v-model="formState.source"
+                placeholder="请选择"
+                popper-class="api-endpoint-select-popper"
+              >
                 <ElOption label="自动同步" value="sync" />
                 <ElOption label="初始种子" value="seed" />
                 <ElOption label="手工维护" value="manual" />
@@ -177,7 +200,11 @@
         <ElRow :gutter="12">
           <ElCol :span="12">
             <ElFormItem label="团队上下文" prop="contextScope">
-              <ElSelect v-model="formState.contextScope" placeholder="请选择" popper-class="api-endpoint-select-popper">
+              <ElSelect
+                v-model="formState.contextScope"
+                placeholder="请选择"
+                popper-class="api-endpoint-select-popper"
+              >
                 <ElOption label="可选" value="optional" />
                 <ElOption label="必需" value="required" />
                 <ElOption label="禁止" value="forbidden" />
@@ -194,7 +221,11 @@
                   </ElTooltip>
                 </span>
               </template>
-              <ElSelect v-model="formState.status" placeholder="请选择" popper-class="api-endpoint-select-popper">
+              <ElSelect
+                v-model="formState.status"
+                placeholder="请选择"
+                popper-class="api-endpoint-select-popper"
+              >
                 <ElOption label="正常" value="normal" />
                 <ElOption label="停用" value="suspended" />
               </ElSelect>
@@ -235,8 +266,8 @@
       :title="categoryForm.id ? '编辑分类' : '分类管理'"
       size="860px"
       destroy-on-close
-    
-    class="config-drawer">
+      class="config-drawer"
+    >
       <div class="category-drawer">
         <div class="category-drawer-toolbar">
           <div>
@@ -335,6 +366,72 @@
       </div>
     </ElDrawer>
 
+    <ElDialog v-model="staleDialogVisible" title="清理失效 API" width="980px" destroy-on-close>
+      <div class="stale-dialog-tip">
+        仅会删除“来源为自动同步、且源码中已不存在”的失效 API，请勾选后执行删除。
+      </div>
+
+      <ElTable
+        ref="staleTableRef"
+        :data="staleCandidates"
+        border
+        height="420px"
+        row-key="id"
+        @selection-change="handleStaleSelectionChange"
+      >
+        <ElTableColumn type="selection" width="52" reserve-selection />
+        <ElTableColumn label="Method" width="92">
+          <template #default="{ row }">
+            <ElTag :type="methodTagType(row.method)" effect="dark">{{ row.method }}</ElTag>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn prop="path" label="路径" min-width="300" show-overflow-tooltip />
+        <ElTableColumn label="分类" min-width="140" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ row.category?.name || '-' }}
+          </template>
+        </ElTableColumn>
+        <ElTableColumn label="状态" width="110">
+          <template #default="{ row }">
+            <ElTag type="warning" effect="plain">{{
+              row.status === 'suspended' ? '停用(失效)' : '失效'
+            }}</ElTag>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn label="失效原因" min-width="260" show-overflow-tooltip>
+          <template #default="{ row }">
+            {{ row.staleReason || '源码中已不存在该自动同步 API' }}
+          </template>
+        </ElTableColumn>
+      </ElTable>
+
+      <template #footer>
+        <div class="stale-dialog-footer">
+          <div class="stale-dialog-footer-meta">
+            <div class="stale-dialog-footer-text">
+              已选 {{ selectedStaleIds.length }} 项，共 {{ stalePagination.total }} 条失效 API
+            </div>
+            <ElPagination
+              background
+              layout="total, sizes, prev, pager, next"
+              :current-page="stalePagination.current"
+              :page-size="stalePagination.size"
+              :page-sizes="[20, 50, 100]"
+              :total="stalePagination.total"
+              @current-change="handleStaleCurrentChange"
+              @size-change="handleStaleSizeChange"
+            />
+          </div>
+          <div class="stale-dialog-footer-actions">
+            <ElButton @click="closeStaleDialog">取消</ElButton>
+            <ElButton type="danger" :loading="cleaningStale" @click="submitCleanupStale">
+              删除选中
+            </ElButton>
+          </div>
+        </div>
+      </template>
+    </ElDialog>
+
     <ElDialog v-model="unregisteredVisible" title="未注册 API" width="980px" destroy-on-close>
       <div class="unregistered-toolbar">
         <ElSelect
@@ -391,7 +488,7 @@
           layout="total, sizes, prev, pager, next"
           :current-page="unregisteredPagination.current"
           :page-size="unregisteredPagination.size"
-          :page-sizes="[10, 20, 50, 100]"
+          :page-sizes="[20, 50, 100]"
           :total="unregisteredPagination.total"
           @current-change="handleUnregisteredCurrentChange"
           @size-change="handleUnregisteredSizeChange"
@@ -405,8 +502,8 @@
       size="560px"
       direction="rtl"
       destroy-on-close
-    
-    class="config-drawer">
+      class="config-drawer"
+    >
       <ElForm label-width="92px">
         <ElFormItem label="接口">
           <ElInput :model-value="permissionBinding.endpointSpec" readonly />
@@ -443,19 +540,22 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, h, onMounted, reactive, ref } from 'vue'
+  import { computed, h, nextTick, onMounted, reactive, ref } from 'vue'
   import { useTable } from '@/hooks/core/useTable'
   import { useAuth } from '@/hooks/core/useAuth'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import {
     fetchAddPermissionActionEndpoint,
+    fetchCleanupStaleApiEndpoints,
     fetchCreateApiEndpoint,
     fetchCreateApiEndpointCategory,
     fetchDeletePermissionActionEndpoint,
     fetchGetApiEndpointCategories,
     fetchGetApiEndpointList,
-    fetchGetPermissionActionList,
+    fetchGetApiEndpointOverview,
+    fetchGetPermissionActionOptions,
+    fetchGetStaleApiEndpointList,
     fetchGetUnregisteredApiRouteList,
     fetchSyncApiEndpoints,
     fetchUpdateApiEndpoint,
@@ -510,7 +610,9 @@
   const methodOptions = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
   const { hasAction } = useAuth()
   const API_ENDPOINT_TABLE_STATE_KEY = 'system:api-endpoint:table-state'
+  const staleTableRef = ref<any>(null)
   const syncing = ref(false)
+  const cleaningStale = ref(false)
   const showSearchBar = ref(false)
   const saving = ref(false)
   const categorySaving = ref(false)
@@ -522,6 +624,7 @@
   const permissionBindVisible = ref(false)
   const permissionDialogMode = ref<'add' | 'remove'>('add')
   const unregisteredVisible = ref(false)
+  const staleDialogVisible = ref(false)
   const unregisteredLoading = ref(false)
   const shouldRefreshUnregistered = ref(false)
   const editingId = ref('')
@@ -530,19 +633,27 @@
   const permissionActionOptions = ref<Api.SystemManage.PermissionActionItem[]>([])
   const permissionActionLoading = ref(false)
   const permissionBinding = reactive({
-    endpointId: '',
+    endpointCode: '',
     endpointSpec: '',
     endpointPermissionKeys: [] as string[],
     permissionActionId: ''
   })
   const unregisteredRoutes = ref<APIUnregisteredRouteItem[]>([])
+  const staleCandidates = ref<APIEndpointItem[]>([])
+  const selectedStaleIds = ref<string[]>([])
   const totalCount = ref(0)
+  const staleCount = ref(0)
   const unregisteredCount = ref(0)
   const uncategorizedCount = ref(0)
   const categoryCountMap = ref<Record<string, number>>({})
   const unregisteredPagination = reactive({
     current: 1,
-    size: 10,
+    size: 20,
+    total: 0
+  })
+  const stalePagination = reactive({
+    current: 1,
+    size: 20,
     total: 0
   })
 
@@ -761,11 +872,22 @@
         {
           prop: 'status',
           label: '状态',
-          width: 90,
-          formatter: (row: APIEndpointItem) =>
-            h(ElTag, { type: row.status === 'normal' ? 'success' : 'danger' }, () =>
+          width: 180,
+          formatter: (row: APIEndpointItem) => {
+            if (row.stale) {
+              return h('div', { class: 'status-cell' }, [
+                h(ElTag, { type: 'warning' }, () => '失效'),
+                h(
+                  'div',
+                  { class: 'status-note' },
+                  row.staleReason || '源码中已不存在该自动同步 API'
+                )
+              ])
+            }
+            return h(ElTag, { type: row.status === 'normal' ? 'success' : 'danger' }, () =>
               row.status === 'normal' ? '正常' : '停用'
             )
+          }
         },
         { prop: 'updatedAt', label: '更新时间', width: 170 },
         {
@@ -832,20 +954,8 @@
   async function loadPermissionActionOptions() {
     permissionActionLoading.value = true
     try {
-      const records: Api.SystemManage.PermissionActionItem[] = []
-      let current = 1
-      const size = 200
-      let total = 0
-      do {
-        const res = await fetchGetPermissionActionList({
-          current,
-          size
-        })
-        total = res.total || 0
-        records.push(...(res.records || []))
-        current += 1
-      } while (records.length < total)
-      permissionActionOptions.value = records
+      const res = await fetchGetPermissionActionOptions()
+      permissionActionOptions.value = res.records || []
     } catch (error: any) {
       ElMessage.error(error?.message || '获取权限键失败')
     } finally {
@@ -858,8 +968,12 @@
       ElMessage.warning('无权限操作')
       return
     }
+    if (!row.code) {
+      ElMessage.warning('当前 API 缺少固定编码，请先重建 API 注册表')
+      return
+    }
     permissionDialogMode.value = mode
-    permissionBinding.endpointId = row.id
+    permissionBinding.endpointCode = row.code
     permissionBinding.endpointSpec = `${row.method || ''} ${row.path || ''}`.trim()
     permissionBinding.endpointPermissionKeys = [
       ...(row.permissionKeys || (row.permissionKey ? [row.permissionKey] : []))
@@ -874,7 +988,7 @@
   }
 
   async function submitPermissionBind() {
-    if (!permissionBinding.endpointId || !permissionBinding.permissionActionId) {
+    if (!permissionBinding.endpointCode || !permissionBinding.permissionActionId) {
       ElMessage.warning('请选择权限键')
       return
     }
@@ -882,12 +996,12 @@
       if (permissionDialogMode.value === 'remove') {
         await fetchDeletePermissionActionEndpoint(
           permissionBinding.permissionActionId,
-          permissionBinding.endpointId
+          permissionBinding.endpointCode
         )
       } else {
         await fetchAddPermissionActionEndpoint(
           permissionBinding.permissionActionId,
-          permissionBinding.endpointId
+          permissionBinding.endpointCode
         )
       }
       ElMessage.success(permissionDialogMode.value === 'remove' ? '已移除权限键' : '已加入权限键')
@@ -895,7 +1009,8 @@
       await refreshData()
     } catch (error: any) {
       ElMessage.error(
-        error?.message || (permissionDialogMode.value === 'remove' ? '移除权限键失败' : '加入权限键失败')
+        error?.message ||
+          (permissionDialogMode.value === 'remove' ? '移除权限键失败' : '加入权限键失败')
       )
     }
   }
@@ -995,6 +1110,74 @@
       ElMessage.error(error?.message || '同步失败')
     } finally {
       syncing.value = false
+    }
+  }
+
+  async function handleCleanupStale() {
+    try {
+      await loadCategorySummary()
+    } catch (error: any) {
+      ElMessage.error(error?.message || '获取失效 API 列表失败')
+      return
+    }
+    if (!staleCount.value) {
+      ElMessage.info('当前没有可清理的失效 API')
+      return
+    }
+    stalePagination.current = 1
+    selectedStaleIds.value = []
+    staleDialogVisible.value = true
+    await loadStaleCandidates()
+  }
+
+  function closeStaleDialog() {
+    staleDialogVisible.value = false
+    selectedStaleIds.value = []
+    staleCandidates.value = []
+    staleTableRef.value?.clearSelection?.()
+  }
+
+  function handleStaleSelectionChange(rows: APIEndpointItem[]) {
+    const currentPageIds = new Set(staleCandidates.value.map((item) => item.id).filter(Boolean))
+    const selectedSet = new Set(selectedStaleIds.value)
+    currentPageIds.forEach((id) => selectedSet.delete(id))
+    rows.forEach((item) => {
+      if (item.id) {
+        selectedSet.add(item.id)
+      }
+    })
+    selectedStaleIds.value = Array.from(selectedSet)
+  }
+
+  async function handleStaleCurrentChange(page: number) {
+    stalePagination.current = page
+    await loadStaleCandidates()
+  }
+
+  async function handleStaleSizeChange(size: number) {
+    stalePagination.size = size
+    stalePagination.current = 1
+    await loadStaleCandidates()
+  }
+
+  async function submitCleanupStale() {
+    if (selectedStaleIds.value.length === 0) {
+      ElMessage.warning('请先勾选要删除的失效 API')
+      return
+    }
+    cleaningStale.value = true
+    try {
+      const res = await fetchCleanupStaleApiEndpoints(selectedStaleIds.value)
+      closeStaleDialog()
+      await Promise.all([refreshData(), loadCategorySummary(), loadUnregisteredCount()])
+      if (shouldRefreshUnregistered.value) {
+        await loadUnregisteredRoutes()
+      }
+      ElMessage.success(`已清理 ${res.deletedCount || 0} 个失效 API`)
+    } catch (error: any) {
+      ElMessage.error(error?.message || '清理失效 API 失败')
+    } finally {
+      cleaningStale.value = false
     }
   }
 
@@ -1143,6 +1326,31 @@
     } catch (error: any) {
       ElMessage.error(error?.message || '获取未注册路由统计失败')
     }
+  }
+
+  async function loadStaleCandidates() {
+    const res = await fetchGetStaleApiEndpointList({
+      current: stalePagination.current,
+      size: stalePagination.size
+    })
+    staleCandidates.value = res.records || []
+    stalePagination.total = res.total || 0
+    await nextTick()
+    syncStaleSelection()
+  }
+
+  function syncStaleSelection() {
+    const table = staleTableRef.value
+    if (!table) {
+      return
+    }
+    const selectedSet = new Set(selectedStaleIds.value)
+    table.clearSelection?.()
+    staleCandidates.value.forEach((item) => {
+      if (selectedSet.has(item.id)) {
+        table.toggleRowSelection?.(item, true)
+      }
+    })
   }
 
   async function openUnregisteredDialog() {
@@ -1315,31 +1523,13 @@
   }
 
   async function loadCategorySummary() {
-    const records: APIEndpointItem[] = []
-    let current = 1
-    const size = 500
-    let total = 0
-    do {
-      const res = await fetchGetApiEndpointList({
-        current,
-        size
-      })
-      total = res.total || 0
-      records.push(...(res.records || []))
-      current += 1
-    } while (records.length < total)
-    totalCount.value = total || records.length
-    const categoryCounter = new Map<string, number>()
-    let uncategorized = 0
-    records.forEach((item) => {
-      if (item.categoryId) {
-        categoryCounter.set(item.categoryId, (categoryCounter.get(item.categoryId) || 0) + 1)
-      } else {
-        uncategorized += 1
-      }
-    })
-    categoryCountMap.value = Object.fromEntries(categoryCounter.entries())
-    uncategorizedCount.value = uncategorized
+    const res = await fetchGetApiEndpointOverview()
+    totalCount.value = res.totalCount || 0
+    uncategorizedCount.value = res.uncategorizedCount || 0
+    staleCount.value = res.staleCount || 0
+    categoryCountMap.value = Object.fromEntries(
+      (res.categoryCounts || []).map((item) => [item.categoryId, item.count || 0])
+    )
   }
 
   async function applyTableFilters() {
@@ -1744,6 +1934,18 @@
     gap: 6px;
   }
 
+  .status-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .status-note {
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--el-text-color-secondary);
+  }
+
   .operate-cell {
     display: flex;
     align-items: center;
@@ -1769,6 +1971,36 @@
   .unregistered-footer-text {
     font-size: 13px;
     color: var(--el-text-color-secondary);
+  }
+
+  .stale-dialog-tip {
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .stale-dialog-footer {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .stale-dialog-footer-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .stale-dialog-footer-text {
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+  }
+
+  .stale-dialog-footer-actions {
+    display: flex;
+    gap: 8px;
   }
 
   .toolbar-count {
@@ -1813,6 +2045,11 @@
     .unregistered-footer {
       flex-direction: column;
       align-items: flex-start;
+    }
+
+    .stale-dialog-footer {
+      flex-direction: column;
+      align-items: stretch;
     }
   }
 

@@ -8,7 +8,7 @@
     class="config-drawer">
     <div class="toolbar">
       <ElSelect
-        v-model="selectedEndpointId"
+        v-model="selectedEndpointCode"
         filterable
         remote
         reserve-keyword
@@ -21,9 +21,9 @@
       >
         <ElOption
           v-for="item in candidateEndpoints"
-          :key="item.id"
+          :key="item.code"
           :label="item.spec || `${item.method} ${item.path}`"
-          :value="item.id"
+          :value="item.code"
         >
           <div class="candidate-option">
             <span class="candidate-option-spec">{{ item.spec || `${item.method} ${item.path}` }}</span>
@@ -100,7 +100,7 @@
   const candidateCurrent = ref(1)
   const candidateSize = ref(20)
   const candidateTotal = ref(0)
-  const selectedEndpointId = ref('')
+  const selectedEndpointCode = ref('')
   const candidateInFlightKey = ref('')
   const candidateLastLoadedKey = ref('')
   const candidatePageCount = computed(() =>
@@ -235,9 +235,9 @@
         status: 'normal',
         keyword: candidateKeyword.value || undefined
       })
-      const linked = new Set((data.value || []).map((item) => item.id))
+      const linked = new Set((data.value || []).map((item) => item.code))
       candidateTotal.value = res.total || 0
-      candidateEndpoints.value = (res.records || []).filter((item) => !linked.has(item.id))
+      candidateEndpoints.value = (res.records || []).filter((item) => item.code && !linked.has(item.code))
       candidateLastLoadedKey.value = requestKey
     } catch (error: any) {
       ElMessage.error(error?.message || '加载可关联接口失败')
@@ -269,15 +269,15 @@
 
   async function handleAddEndpoint() {
     if (!props.permissionId) return
-    if (!selectedEndpointId.value) {
+    if (!selectedEndpointCode.value) {
       ElMessage.warning('请先选择接口')
       return
     }
     adding.value = true
     try {
-      await fetchAddPermissionActionEndpoint(props.permissionId, selectedEndpointId.value)
+      await fetchAddPermissionActionEndpoint(props.permissionId, selectedEndpointCode.value)
       ElMessage.success('新增关联接口成功')
-      selectedEndpointId.value = ''
+      selectedEndpointCode.value = ''
       await loadData(props.permissionId)
       await loadCandidateEndpoints({ force: true })
     } catch (error: any) {
@@ -289,12 +289,16 @@
 
   function handleRemoveEndpoint(row: Api.SystemManage.APIEndpointItem) {
     if (!props.permissionId) return
+    if (!row.code) {
+      ElMessage.warning('当前接口缺少固定编码，请先重建 API 注册表')
+      return
+    }
     ElMessageBox.confirm(`确定移除接口「${row.spec || `${row.method} ${row.path}`}」吗？`, '移除确认', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
-      .then(() => fetchDeletePermissionActionEndpoint(props.permissionId, row.id))
+      .then(() => fetchDeletePermissionActionEndpoint(props.permissionId, row.code))
       .then(async () => {
         ElMessage.success('移除成功')
         await loadData(props.permissionId)

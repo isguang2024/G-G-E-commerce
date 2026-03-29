@@ -12,13 +12,17 @@
       <div class="dialog-intro">
         <div class="dialog-intro__main">
           <div class="dialog-intro__title">逻辑分组配置说明</div>
-          <div class="dialog-intro__desc">逻辑分组不注册运行时路由，但可以承接路径和权限继承，供下级页面或下级逻辑分组继续复用。</div>
+          <div class="dialog-intro__desc"
+            >逻辑分组不注册运行时路由，但可以承接路径和权限继承，供下级页面或下级逻辑分组继续复用。</div
+          >
         </div>
         <ElButton text type="primary" @click="showExamples = !showExamples">
           {{ showExamples ? '收起示例' : '查看示例' }}
         </ElButton>
         <div v-if="showExamples" class="dialog-intro__examples">
-          <div v-for="item in groupExamples" :key="item" class="dialog-intro__example">{{ item }}</div>
+          <div v-for="item in groupExamples" :key="item" class="dialog-intro__example">{{
+            item
+          }}</div>
         </div>
       </div>
 
@@ -33,7 +37,10 @@
           <ElCol :span="12">
             <ElFormItem label="名称" prop="name">
               <template #label>
-                <PageFieldLabel label="名称" help="给人看的逻辑分组名称，显示在页面管理树和上级逻辑分组选择中。逻辑分组标识由系统自动生成，无需手填。" />
+                <PageFieldLabel
+                  label="名称"
+                  help="给人看的逻辑分组名称，显示在页面管理树和上级逻辑分组选择中。逻辑分组标识由系统自动生成，无需手填。"
+                />
               </template>
               <ElInput v-model="form.name" placeholder="请输入名称" />
             </ElFormItem>
@@ -50,7 +57,10 @@
 
         <ElFormItem label="挂载方式" prop="mountMode">
           <template #label>
-            <PageFieldLabel label="挂载方式" help="决定分组是独立存在，直接归属某个菜单，还是继续挂在另一个分组之下。" />
+            <PageFieldLabel
+              label="挂载方式"
+              help="决定分组是独立存在，直接归属某个菜单，还是继续挂在另一个分组之下。"
+            />
           </template>
           <ElRadioGroup v-model="mountMode" class="mount-mode-group">
             <ElRadioButton label="none">不挂载</ElRadioButton>
@@ -62,7 +72,10 @@
           <ElCol :span="24">
             <ElFormItem label="上级菜单" prop="parentMenuId">
               <template #label>
-                <PageFieldLabel label="上级菜单" help="逻辑分组直接归属的菜单。分组下页面可继续继承这条菜单链路。" />
+                <PageFieldLabel
+                  label="上级菜单"
+                  help="逻辑分组直接归属的菜单。分组下页面可继续继承这条菜单链路。"
+                />
               </template>
               <ElCascader
                 v-model="form.parentMenuId"
@@ -82,9 +95,18 @@
           <ElCol :span="24">
             <ElFormItem label="上级逻辑分组" prop="parentPageKey">
               <template #label>
-                <PageFieldLabel label="上级逻辑分组" help="逻辑分组的父分组。选择后会自动沿父分组继承菜单链，无需重复选择菜单。" />
+                <PageFieldLabel
+                  label="上级逻辑分组"
+                  help="逻辑分组的父分组。选择后会自动沿父分组继承菜单链，无需重复选择菜单。"
+                />
               </template>
-              <ElSelect v-model="form.parentPageKey" filterable clearable style="width: 100%" placeholder="请选择上级逻辑分组">
+              <ElSelect
+                v-model="form.parentPageKey"
+                filterable
+                clearable
+                style="width: 100%"
+                placeholder="请选择上级逻辑分组"
+              >
                 <ElOption
                   v-for="item in parentGroupOptions"
                   :key="item.pageKey"
@@ -100,9 +122,18 @@
           <ElCol :span="24">
             <ElFormItem label="普通分组" prop="displayGroupKey">
               <template #label>
-                <PageFieldLabel label="普通分组" help="仅用于页面管理列表归类，不影响逻辑分组的路径、权限和面包屑继承。" />
+                <PageFieldLabel
+                  label="普通分组"
+                  help="仅用于页面管理列表归类，不影响逻辑分组的路径、权限和面包屑继承。"
+                />
               </template>
-              <ElSelect v-model="form.displayGroupKey" clearable filterable style="width: 100%" placeholder="可选，选择普通分组">
+              <ElSelect
+                v-model="form.displayGroupKey"
+                clearable
+                filterable
+                style="width: 100%"
+                placeholder="可选，选择普通分组"
+              >
                 <ElOption
                   v-for="item in displayGroupOptions"
                   :key="item.pageKey"
@@ -126,7 +157,10 @@
           <ElCol :span="12">
             <ElFormItem label="基础路径" prop="routePath">
               <template #label>
-                <PageFieldLabel label="基础路径" help="逻辑分组自身不注册页面，但这里的路径会成为下级页面和下级逻辑分组的可继承基础路径。" />
+                <PageFieldLabel
+                  label="基础路径"
+                  help="逻辑分组自身不注册页面，但这里的路径会成为下级页面和下级逻辑分组的可继承基础路径。"
+                />
               </template>
               <ElInput v-model="form.routePath" :placeholder="routePathPlaceholder" />
             </ElFormItem>
@@ -134,7 +168,10 @@
           <ElCol :span="12">
             <ElFormItem label="最终路径">
               <template #label>
-                <PageFieldLabel label="最终路径" help="系统根据挂载方式、上级菜单、上级分组和基础路径推导出的最终继承路径。" />
+                <PageFieldLabel
+                  label="最终路径"
+                  help="系统根据挂载方式、上级菜单、上级分组和基础路径推导出的最终继承路径。"
+                />
               </template>
               <div class="route-preview-box">
                 <code>{{ resolvedRoutePreview || '-' }}</code>
@@ -148,7 +185,10 @@
           <ElCol :span="12">
             <ElFormItem label="访问模式" prop="accessMode">
               <template #label>
-                <PageFieldLabel label="访问模式" help="逻辑分组可作为权限继承节点使用。下级页面若选择继承，将沿分组链继续继承这里的访问模式或上层菜单权限。" />
+                <PageFieldLabel
+                  label="访问模式"
+                  help="逻辑分组可作为权限继承节点使用。下级页面若选择继承，将沿分组链继续继承这里的访问模式或上层菜单权限。"
+                />
               </template>
               <ElSelect v-model="form.accessMode" style="width: 100%">
                 <ElOption label="继承" value="inherit" />
@@ -161,7 +201,10 @@
           <ElCol :span="12">
             <ElFormItem label="权限键" prop="permissionKey">
               <template #label>
-                <PageFieldLabel label="权限键" help="当访问模式为权限时必填。下级页面或下级逻辑分组选择继承后，会继续继承该权限约束。" />
+                <PageFieldLabel
+                  label="权限键"
+                  help="当访问模式为权限时必填。下级页面或下级逻辑分组选择继承后，会继续继承该权限约束。"
+                />
               </template>
               <ElInput
                 v-model="form.permissionKey"
@@ -176,7 +219,10 @@
           <ElCol :span="12">
             <ElFormItem label="状态" prop="status">
               <template #label>
-                <PageFieldLabel label="状态" help="正常状态的逻辑分组才会参与页面树展示；停用后数据保留，但不会作为有效链路使用。" />
+                <PageFieldLabel
+                  label="状态"
+                  help="正常状态的逻辑分组才会参与页面树展示；停用后数据保留，但不会作为有效链路使用。"
+                />
               </template>
               <div class="inline-flex items-center gap-2">
                 <ElSwitch v-model="form.status" active-value="normal" inactive-value="suspended" />
@@ -204,8 +250,8 @@
   import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
   import {
     fetchCreatePage,
-    fetchGetPageList,
     fetchGetPageMenuOptions,
+    fetchGetPageOptions,
     fetchUpdatePage
   } from '@/api/system-manage'
   import { joinManagedPagePath, resolveManagedPageRoutePath } from '@/utils/navigation/managed-page'
@@ -300,7 +346,10 @@
   )
   const displayGroupOptions = computed(() =>
     allPages.value.filter(
-      (item) => item.id !== form.id && `${item.pageType || ''}`.trim() === 'display_group' && item.status === 'normal'
+      (item) =>
+        item.id !== form.id &&
+        `${item.pageType || ''}`.trim() === 'display_group' &&
+        item.status === 'normal'
     )
   )
   const pageMap = computed(() => {
@@ -335,7 +384,9 @@
     return '例如 analysis 或 report/detail'
   })
   const resolvedRoutePreview = computed(() =>
-    resolveManagedPageRoutePath<Pick<PageItem, 'pageKey' | 'routePath' | 'parentMenuId' | 'parentPageKey'>>(
+    resolveManagedPageRoutePath<
+      Pick<PageItem, 'pageKey' | 'routePath' | 'parentMenuId' | 'parentPageKey'>
+    >(
       {
         pageKey: form.pageKey,
         routePath: form.routePath,
@@ -462,10 +513,7 @@
   })
 
   async function loadOptions() {
-    const [menuRes, pageRes] = await Promise.all([
-      fetchGetPageMenuOptions(),
-      fetchGetPageList({ current: 1, size: 1000 })
-    ])
+    const [menuRes, pageRes] = await Promise.all([fetchGetPageMenuOptions(), fetchGetPageOptions()])
     menuOptions.value = menuRes.records || []
     allPages.value = pageRes.records || []
   }
@@ -517,7 +565,9 @@
         form.parentMenuId = ''
         form.parentPageKey = ''
       }
-      nextTick(() => formRef.value?.validateField(['parentMenuId', 'parentPageKey']).catch(() => undefined))
+      nextTick(() =>
+        formRef.value?.validateField(['parentMenuId', 'parentPageKey']).catch(() => undefined)
+      )
     }
   )
 
@@ -574,7 +624,13 @@
       } else {
         await fetchCreatePage(payload)
       }
-      ElMessage.success(props.dialogType === 'edit' ? '修改成功' : props.dialogType === 'copy' ? '复制成功' : '新增成功')
+      ElMessage.success(
+        props.dialogType === 'edit'
+          ? '修改成功'
+          : props.dialogType === 'copy'
+            ? '复制成功'
+            : '新增成功'
+      )
       emit('success')
       handleClose()
     } catch (error: any) {
@@ -598,7 +654,11 @@
   }
 
   .dialog-intro {
-    background: linear-gradient(180deg, var(--el-fill-color-light) 0%, color-mix(in srgb, var(--el-fill-color-light) 72%, white) 100%);
+    background: linear-gradient(
+      180deg,
+      var(--el-fill-color-light) 0%,
+      color-mix(in srgb, var(--el-fill-color-light) 72%, white) 100%
+    );
     border: 1px solid var(--el-border-color-lighter);
     border-radius: 14px;
     margin-bottom: 18px;

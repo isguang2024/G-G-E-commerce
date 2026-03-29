@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/config"
+	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
 )
 
@@ -32,10 +33,11 @@ func (m *MediaModule) RegisterRoutes(rg *gin.RouterGroup) {
 	mediaHandler := NewMediaHandler()
 
 	media := rg.Group("/media")
+	reg := apiregistry.NewRegistrar(media, "media")
 	{
-		media.POST("/upload", mediaHandler.Upload)
-		media.GET("", mediaHandler.List)
-		media.DELETE("/:id", mediaHandler.Delete)
+		reg.POST("/upload", reg.Meta("上传媒体资源").Build(), mediaHandler.Upload)
+		reg.GET("", reg.Meta("获取媒体资源列表").Build(), mediaHandler.List)
+		reg.DELETE("/:id", reg.Meta("删除媒体资源").Build(), mediaHandler.Delete)
 	}
 }
 

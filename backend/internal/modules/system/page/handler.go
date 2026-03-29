@@ -111,6 +111,20 @@ func (h *Handler) ListMenuOptions(c *gin.Context) {
 	}))
 }
 
+func (h *Handler) ListPageOptions(c *gin.Context) {
+	items, err := h.service.ListOptions()
+	if err != nil {
+		h.logger.Error("List page options failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取页面候选失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"records": items,
+		"total":   len(items),
+	}))
+}
+
 func (h *Handler) Get(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

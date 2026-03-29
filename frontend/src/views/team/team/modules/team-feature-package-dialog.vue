@@ -5,7 +5,8 @@
     size="1280px"
     destroy-on-close
     class="business-dialog config-drawer"
-    direction="rtl">
+    direction="rtl"
+  >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
         团队功能包由平台统一开通。保存后会同步刷新该团队的功能权限边界和菜单边界。
@@ -47,7 +48,11 @@
         <ElTableColumn type="expand" width="56">
           <template #default="{ row }">
             <div class="expand-panel">
-              <FeaturePackageGrantPreview :package-id="row.id" :package-item="row" :packages="packages" />
+              <FeaturePackageGrantPreview
+                :package-id="row.id"
+                :package-item="row"
+                :packages="packages"
+              />
             </div>
           </template>
         </ElTableColumn>
@@ -88,9 +93,7 @@
 
     <template #footer>
       <ElButton @click="visible = false">取消</ElButton>
-      <ElButton type="primary" :loading="saving" @click="handleSave">
-        保存
-      </ElButton>
+      <ElButton type="primary" :loading="saving" @click="handleSave"> 保存 </ElButton>
     </template>
   </ElDrawer>
 </template>
@@ -100,7 +103,7 @@
   import { ElMessage } from 'element-plus'
   import FeaturePackageGrantPreview from '@/components/business/permission/FeaturePackageGrantPreview.vue'
   import {
-    fetchGetFeaturePackageList,
+    fetchGetFeaturePackageOptions,
     fetchGetTeamFeaturePackages,
     fetchSetTeamFeaturePackages
   } from '@/api/system-manage'
@@ -181,7 +184,7 @@
     resetFilters()
     try {
       const [listRes, teamRes] = await Promise.all([
-        fetchGetFeaturePackageList({ current: 1, size: 1000, contextType: 'team', status: 'normal' }),
+        fetchGetFeaturePackageOptions({ contextType: 'team', status: 'normal' }),
         fetchGetTeamFeaturePackages(props.teamId)
       ])
       packages.value = listRes?.records || []

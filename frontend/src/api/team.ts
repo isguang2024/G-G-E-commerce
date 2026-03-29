@@ -173,6 +173,18 @@ export async function fetchGetTeamList(params: Api.SystemManage.TeamSearchParams
   }
 }
 
+export async function fetchGetTeamOptions(params?: Partial<Api.SystemManage.TeamSearchParams>) {
+  const res = await request.get<{ records: Api.SystemManage.TeamListItem[]; total: number }>({
+    url: `${TENANT_BASE}/options`,
+    params
+  })
+
+  return {
+    records: (res?.records || []).map(normalizeTeam),
+    total: res?.total || 0
+  }
+}
+
 export async function fetchGetTeam(id: string) {
   const res = await request.get<Api.SystemManage.TeamListItem>({
     url: `${TENANT_BASE}/${id}`
@@ -516,4 +528,3 @@ export function fetchGetMyTeamActionOrigins() {
       blocked_action_ids: res?.blocked_action_ids || []
     }))
 }
-

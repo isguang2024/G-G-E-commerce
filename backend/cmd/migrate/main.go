@@ -14,6 +14,7 @@ import (
 	apirouter "github.com/gg-ecommerce/backend/internal/api/router"
 	"github.com/gg-ecommerce/backend/internal/config"
 	usermodel "github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/logger"
 	"github.com/gg-ecommerce/backend/internal/pkg/password"
@@ -234,14 +235,17 @@ func runNamedMigrations(logger *zap.Logger) error {
 					Summary string
 				}{
 					{Method: "POST", Path: "/api/v1/permission-actions/:id/endpoints", Summary: "新增功能权限关联接口"},
-					{Method: "DELETE", Path: "/api/v1/permission-actions/:id/endpoints/:endpointId", Summary: "删除功能权限关联接口"},
+					{Method: "DELETE", Path: "/api/v1/permission-actions/:id/endpoints/:endpointCode", Summary: "删除功能权限关联接口"},
 				}
 
 				return database.DB.Transaction(func(tx *gorm.DB) error {
 					for _, item := range endpoints {
 						method := strings.ToUpper(strings.TrimSpace(item.Method))
 						path := strings.TrimSpace(item.Path)
-						code := permissionseed.StableID("api-endpoint-code", method+" "+path).String()
+						code := apiregistry.ResolveRouteCode(method, path, nil)
+						if code == "" {
+							code = permissionseed.StableID("api-endpoint-code", method+" "+path).String()
+						}
 
 						endpoint := &usermodel.APIEndpoint{
 							Code:         code,
@@ -281,13 +285,13 @@ func runNamedMigrations(logger *zap.Logger) error {
 
 						var count int64
 						if countErr := tx.Model(&usermodel.APIEndpointPermissionBinding{}).
-							Where("endpoint_id = ? AND permission_key = ?", existing.ID, permissionKey).
+							Where("endpoint_code = ? AND permission_key = ?", existing.Code, permissionKey).
 							Count(&count).Error; countErr != nil {
 							return countErr
 						}
 						if count == 0 {
 							if createBindErr := tx.Create(&usermodel.APIEndpointPermissionBinding{
-								EndpointID:    existing.ID,
+								EndpointCode:  existing.Code,
 								PermissionKey: permissionKey,
 								MatchMode:     "ANY",
 								SortOrder:     0,
@@ -1490,16 +1494,28 @@ func syncCanonicalPermissionKeys(logger *zap.Logger) error {
 		}
 		seen[mapping.Key] = struct{}{}
 
-		updates := map[string]interface{}{
-			"permission_key": mapping.Key,
-			"name":           mapping.Name,
-			"description":    mapping.Description,
-			"module_code":    strings.TrimSpace(mapping.ResourceCode),
-			"updated_at":     time.Now(),
+		var item usermodel.PermissionKey
+		if err := database.DB.Where("permission_key = ? AND deleted_at IS NULL", mapping.Key).First(&item).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				continue
+			}
+			return err
 		}
-		result := database.DB.Model(&usermodel.PermissionKey{}).
-			Where("permission_key = ? AND deleted_at IS NULL", mapping.Key).
-			Updates(updates)
+
+		updates := map[string]interface{}{}
+		if strings.TrimSpace(item.Code) == "" {
+			updates["code"] = permissionseed.StableID("permission-action-code", mapping.Key).String()
+		}
+		if strings.TrimSpace(item.ModuleCode) == "" {
+			if moduleCode := strings.TrimSpace(mapping.ResourceCode); moduleCode != "" {
+				updates["module_code"] = moduleCode
+			}
+		}
+		if len(updates) == 0 {
+			continue
+		}
+		updates["updated_at"] = time.Now()
+		result := database.DB.Model(&item).Updates(updates)
 		if result.Error != nil {
 			return result.Error
 		}
@@ -2049,6 +2065,9 @@ func finalizeAPIEndpointSchema(logger *zap.Logger) error {
 	if err := database.DB.Exec(`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS category_id uuid`).Error; err != nil {
 		return err
 	}
+	if err := database.DB.Exec(`ALTER TABLE api_endpoint_permission_bindings ADD COLUMN IF NOT EXISTS endpoint_code varchar(36)`).Error; err != nil {
+		return err
+	}
 
 	hasModule, err := hasColumn("api_endpoints", "module")
 	if err != nil {
@@ -2065,11 +2084,31 @@ func finalizeAPIEndpointSchema(logger *zap.Logger) error {
 			return err
 		}
 	}
+	hasEndpointID, err := hasColumn("api_endpoint_permission_bindings", "endpoint_id")
+	if err != nil {
+		return err
+	}
+	if hasEndpointID {
+		if err := database.DB.Exec(`
+			UPDATE api_endpoint_permission_bindings b
+			   SET endpoint_code = ae.code
+			  FROM api_endpoints ae
+			 WHERE (b.endpoint_code IS NULL OR b.endpoint_code = '')
+			   AND ae.id = b.endpoint_id
+		`).Error; err != nil {
+			return err
+		}
+	}
+	if err := database.DB.Exec(`DELETE FROM api_endpoint_permission_bindings WHERE COALESCE(endpoint_code, '') = ''`).Error; err != nil {
+		return err
+	}
 
 	statements := []string{
 		`ALTER TABLE api_endpoints DROP COLUMN IF EXISTS group_code`,
 		`ALTER TABLE api_endpoints DROP COLUMN IF EXISTS group_name`,
 		`ALTER TABLE api_endpoints DROP COLUMN IF EXISTS module`,
+		`ALTER TABLE api_endpoint_permission_bindings ALTER COLUMN endpoint_code SET NOT NULL`,
+		`ALTER TABLE api_endpoint_permission_bindings DROP COLUMN IF EXISTS endpoint_id`,
 	}
 	for _, statement := range statements {
 		if err := database.DB.Exec(statement).Error; err != nil {

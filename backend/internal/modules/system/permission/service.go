@@ -27,11 +27,12 @@ var (
 
 type PermissionService interface {
 	List(req *dto.PermissionKeyListRequest) ([]user.PermissionKey, int64, error)
+	ListOptions(req *dto.PermissionKeyListRequest) ([]user.PermissionKey, error)
 	Get(id uuid.UUID) (*user.PermissionKey, error)
 	ListGroups(req *dto.PermissionGroupListRequest) ([]user.PermissionGroup, int64, error)
 	ListEndpoints(id uuid.UUID) ([]user.APIEndpoint, error)
-	AddEndpoint(id uuid.UUID, endpointID uuid.UUID) error
-	RemoveEndpoint(id uuid.UUID, endpointID uuid.UUID) error
+	AddEndpoint(id uuid.UUID, endpointCode string) error
+	RemoveEndpoint(id uuid.UUID, endpointCode string) error
 	CreateGroup(req *dto.PermissionGroupSaveRequest) (*user.PermissionGroup, error)
 	UpdateGroup(id uuid.UUID, req *dto.PermissionGroupSaveRequest) error
 	Create(req *dto.PermissionKeyCreateRequest) (*user.PermissionKey, error)
@@ -93,14 +94,14 @@ func (s *permissionService) ListEndpoints(id uuid.UUID) ([]user.APIEndpoint, err
 		return nil, err
 	}
 	permissionKey := canonicalPermissionKey(item.PermissionKey)
-	endpointIDs, err := s.apiEndpointBindingRepo.ListEndpointIDsByPermissionKey(permissionKey)
+	endpointCodes, err := s.apiEndpointBindingRepo.ListEndpointCodesByPermissionKey(permissionKey)
 	if err != nil {
 		return nil, err
 	}
-	if len(endpointIDs) == 0 {
+	if len(endpointCodes) == 0 {
 		return []user.APIEndpoint{}, nil
 	}
-	endpoints, err := s.apiEndpointRepo.GetByIDs(endpointIDs)
+	endpoints, err := s.apiEndpointRepo.GetByCodes(endpointCodes)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +115,7 @@ func (s *permissionService) ListEndpoints(id uuid.UUID) ([]user.APIEndpoint, err
 	return result, nil
 }
 
-func (s *permissionService) AddEndpoint(id uuid.UUID, endpointID uuid.UUID) error {
+func (s *permissionService) AddEndpoint(id uuid.UUID, endpointCode string) error {
 	item, err := s.keyRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -122,19 +123,23 @@ func (s *permissionService) AddEndpoint(id uuid.UUID, endpointID uuid.UUID) erro
 		}
 		return err
 	}
-	if _, err := s.apiEndpointRepo.GetByID(endpointID); err != nil {
+	targetCode := strings.TrimSpace(endpointCode)
+	if targetCode == "" {
+		return ErrAPIEndpointNotFound
+	}
+	if _, err := s.apiEndpointRepo.GetByCode(targetCode); err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrAPIEndpointNotFound
 		}
 		return err
 	}
-	if err := s.apiEndpointBindingRepo.AddByPermissionKey(canonicalPermissionKey(item.PermissionKey), endpointID); err != nil {
+	if err := s.apiEndpointBindingRepo.AddByPermissionKey(canonicalPermissionKey(item.PermissionKey), targetCode); err != nil {
 		return err
 	}
 	return s.refreshByPermissionKeyID(item.ID)
 }
 
-func (s *permissionService) RemoveEndpoint(id uuid.UUID, endpointID uuid.UUID) error {
+func (s *permissionService) RemoveEndpoint(id uuid.UUID, endpointCode string) error {
 	item, err := s.keyRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -142,7 +147,7 @@ func (s *permissionService) RemoveEndpoint(id uuid.UUID, endpointID uuid.UUID) e
 		}
 		return err
 	}
-	if err := s.apiEndpointBindingRepo.RemoveByPermissionKey(canonicalPermissionKey(item.PermissionKey), endpointID); err != nil {
+	if err := s.apiEndpointBindingRepo.RemoveByPermissionKey(canonicalPermissionKey(item.PermissionKey), strings.TrimSpace(endpointCode)); err != nil {
 		return err
 	}
 	return s.refreshByPermissionKeyID(item.ID)
@@ -153,12 +158,32 @@ func canonicalPermissionKey(permissionKey string) string {
 }
 
 func (s *permissionService) List(req *dto.PermissionKeyListRequest) ([]user.PermissionKey, int64, error) {
+	query := s.buildPermissionListQuery(req)
+	current, size := 1, 20
 	if req.Current <= 0 {
 		req.Current = 1
 	}
 	if req.Size <= 0 {
 		req.Size = 20
 	}
+	current, size = req.Current, req.Size
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	var actions []user.PermissionKey
+	err := query.Offset((current - 1) * size).Limit(size).Order("sort_order ASC, created_at DESC").Find(&actions).Error
+	return actions, total, err
+}
+
+func (s *permissionService) ListOptions(req *dto.PermissionKeyListRequest) ([]user.PermissionKey, error) {
+	query := s.buildPermissionListQuery(req)
+	var actions []user.PermissionKey
+	err := query.Order("sort_order ASC, created_at DESC").Find(&actions).Error
+	return actions, err
+}
+
+func (s *permissionService) buildPermissionListQuery(req *dto.PermissionKeyListRequest) *gorm.DB {
 	var moduleGroupID *uuid.UUID
 	if parsed, ok := parseUUID(req.ModuleGroupID); ok {
 		moduleGroupID = &parsed
@@ -183,7 +208,56 @@ func (s *permissionService) List(req *dto.PermissionKeyListRequest) ([]user.Perm
 		Status:         req.Status,
 		IsBuiltin:      isBuiltin,
 	}
-	return s.keyRepo.List((req.Current-1)*req.Size, req.Size, params)
+	query := s.db.
+		Model(&user.PermissionKey{}).
+		Joins("LEFT JOIN permission_groups AS module_groups ON module_groups.id = permission_keys.module_group_id AND module_groups.deleted_at IS NULL").
+		Joins("LEFT JOIN permission_groups AS feature_groups ON feature_groups.id = permission_keys.feature_group_id AND feature_groups.deleted_at IS NULL").
+		Preload("ModuleGroup").
+		Preload("FeatureGroup")
+	if params.Keyword != "" {
+		keyword := "%" + params.Keyword + "%"
+		query = query.Where(
+			"(name LIKE ? OR description LIKE ? OR permission_key LIKE ? OR module_code LIKE ? OR feature_kind LIKE ?)",
+			keyword, keyword, keyword, keyword, keyword,
+		)
+	}
+	if params.PermissionKey != "" {
+		query = query.Where("permission_key LIKE ?", "%"+params.PermissionKey+"%")
+	}
+	if params.Name != "" {
+		query = query.Where("name LIKE ?", "%"+params.Name+"%")
+	}
+	if params.ModuleCode != "" {
+		query = query.Where("module_code LIKE ?", "%"+params.ModuleCode+"%")
+	}
+	if params.ModuleGroupID != nil {
+		query = query.Where("module_group_id = ?", *params.ModuleGroupID)
+	}
+	if params.FeatureGroupID != nil {
+		query = query.Where("feature_group_id = ?", *params.FeatureGroupID)
+	}
+	if params.ContextType != "" {
+		query = query.Where("context_type = ?", params.ContextType)
+	}
+	if params.FeatureKind != "" {
+		query = query.Where("feature_kind = ?", params.FeatureKind)
+	}
+	if params.Status != "" {
+		query = query.Where(
+			`CASE
+				WHEN permission_keys.status = 'suspended'
+					OR module_groups.status = 'suspended'
+					OR feature_groups.status = 'suspended'
+				THEN 'suspended'
+				ELSE 'normal'
+			END = ?`,
+			params.Status,
+		)
+	}
+	if params.IsBuiltin != nil {
+		query = query.Where("is_builtin = ?", *params.IsBuiltin)
+	}
+	return query
 }
 
 func (s *permissionService) ListGroups(req *dto.PermissionGroupListRequest) ([]user.PermissionGroup, int64, error) {

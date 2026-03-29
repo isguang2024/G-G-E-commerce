@@ -22,6 +22,7 @@ var (
 
 type Service interface {
 	List(req *dto.FeaturePackageListRequest) ([]user.FeaturePackage, int64, error)
+	ListOptions(req *dto.FeaturePackageListRequest) ([]user.FeaturePackage, error)
 	GetPackageStats(packageIDs []uuid.UUID) (map[uuid.UUID]int64, map[uuid.UUID]int64, map[uuid.UUID]int64, error)
 	Get(id uuid.UUID) (*user.FeaturePackage, error)
 	Create(req *dto.FeaturePackageCreateRequest) (*user.FeaturePackage, error)
@@ -40,6 +41,7 @@ type Service interface {
 }
 
 type service struct {
+	db                *gorm.DB
 	packageRepo       user.FeaturePackageRepository
 	packageBundleRepo user.FeaturePackageBundleRepository
 	packageActionRepo user.FeaturePackageKeyRepository
@@ -54,6 +56,7 @@ type service struct {
 }
 
 func NewService(
+	db *gorm.DB,
 	packageRepo user.FeaturePackageRepository,
 	packageBundleRepo user.FeaturePackageBundleRepository,
 	packageActionRepo user.FeaturePackageKeyRepository,
@@ -67,6 +70,7 @@ func NewService(
 	refresher permissionrefresh.Service,
 ) Service {
 	return &service{
+		db:                db,
 		packageRepo:       packageRepo,
 		packageBundleRepo: packageBundleRepo,
 		packageActionRepo: packageActionRepo,
@@ -96,6 +100,43 @@ func (s *service) List(req *dto.FeaturePackageListRequest) ([]user.FeaturePackag
 		ContextType: normalizeContextType(req.ContextType),
 		Status:      strings.TrimSpace(req.Status),
 	})
+}
+
+func (s *service) ListOptions(req *dto.FeaturePackageListRequest) ([]user.FeaturePackage, error) {
+	query := s.db.Model(&user.FeaturePackage{})
+	if req != nil {
+		if keyword := strings.TrimSpace(req.Keyword); keyword != "" {
+			like := "%" + keyword + "%"
+			query = query.Where("(package_key LIKE ? OR name LIKE ? OR description LIKE ?)", like, like, like)
+		}
+		if packageKey := strings.TrimSpace(req.PackageKey); packageKey != "" {
+			query = query.Where("package_key LIKE ?", "%"+packageKey+"%")
+		}
+		if packageType := normalizePackageType(req.PackageType); packageType != "" {
+			query = query.Where("package_type = ?", packageType)
+		}
+		if name := strings.TrimSpace(req.Name); name != "" {
+			query = query.Where("name LIKE ?", "%"+name+"%")
+		}
+		if contextType := normalizeContextType(req.ContextType); contextType != "" {
+			switch contextType {
+			case "platform", "team":
+				query = query.Where("(context_type = ? OR context_type = ?)", contextType, "common")
+			default:
+				query = query.Where("context_type = ?", contextType)
+			}
+		}
+		if status := strings.TrimSpace(req.Status); status != "" {
+			query = query.Where("status = ?", status)
+		}
+	}
+
+	items := make([]user.FeaturePackage, 0)
+	err := query.
+		Select("id", "package_key", "package_type", "name", "description", "context_type", "is_builtin", "status", "sort_order", "created_at", "updated_at").
+		Order("sort_order ASC, created_at DESC").
+		Find(&items).Error
+	return items, err
 }
 
 func (s *service) GetPackageStats(packageIDs []uuid.UUID) (map[uuid.UUID]int64, map[uuid.UUID]int64, map[uuid.UUID]int64, error) {

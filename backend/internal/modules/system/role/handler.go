@@ -72,6 +72,35 @@ func (h *RoleHandler) List(c *gin.Context) {
 	}))
 }
 
+func (h *RoleHandler) ListOptions(c *gin.Context) {
+	list, err := h.roleService.ListOptions()
+	if err != nil {
+		h.logger.Error("Role options failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取角色候选失败")
+		c.JSON(status, resp)
+		return
+	}
+	records := make([]gin.H, 0, len(list))
+	for _, r := range list {
+		records = append(records, gin.H{
+			"roleId":            r.ID.String(),
+			"roleName":          r.Name,
+			"roleCode":          r.Code,
+			"description":       r.Description,
+			"status":            r.Status,
+			"sortOrder":         r.SortOrder,
+			"priority":          r.Priority,
+			"customParams":      r.CustomParams,
+			"createTime":        r.CreatedAt.Format("2006-01-02 15:04:05"),
+			"canEditPermission": true,
+		})
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"records": records,
+		"total":   len(records),
+	}))
+}
+
 func (h *RoleHandler) Get(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

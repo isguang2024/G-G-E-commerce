@@ -511,7 +511,7 @@ func (APIEndpointCategory) TableName() string {
 
 type APIEndpointPermissionBinding struct {
 	ID            uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	EndpointID    uuid.UUID      `gorm:"type:uuid;not null;index" json:"endpoint_id"`
+	EndpointCode  string         `gorm:"type:varchar(36);not null;index" json:"endpoint_code"`
 	PermissionKey string         `gorm:"type:varchar(150);not null;index" json:"permission_key"`
 	MatchMode     string         `gorm:"type:varchar(10);not null;default:'ANY'" json:"match_mode"`
 	SortOrder     int            `gorm:"default:0" json:"sort_order"`

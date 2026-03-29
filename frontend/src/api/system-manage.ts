@@ -137,6 +137,9 @@ function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
     source: item?.source || 'sync',
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
     dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
+    runtimeExists: Boolean(item?.runtime_exists ?? item?.runtimeExists),
+    stale: Boolean(item?.stale),
+    staleReason: item?.stale_reason || item?.staleReason || '',
     status: item?.status || 'normal',
     createdAt: item?.created_at || item?.createdAt || '',
     updatedAt: item?.updated_at || item?.updatedAt || ''
@@ -168,6 +171,25 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
     createdAt: item?.created_at || item?.createdAt || '',
     updatedAt: item?.updated_at || item?.updatedAt || ''
+  }
+}
+
+function normalizeTeam(item: any): Api.SystemManage.TeamListItem {
+  return {
+    id: item?.id || '',
+    name: item?.name || '',
+    remark: item?.remark || '',
+    logoUrl: item?.logo_url || item?.logoUrl || '',
+    plan: item?.plan || 'free',
+    maxMembers: item?.max_members ?? item?.maxMembers ?? 0,
+    status: item?.status || 'active',
+    createTime: item?.created_at || item?.createTime || '',
+    updateTime: item?.updated_at || item?.updateTime || '',
+    ownerId: item?.owner_id || item?.ownerId || '',
+    adminUsers: item?.admin_users || item?.adminUsers || [],
+    adminUserIds: item?.admin_user_ids || item?.adminUserIds || [],
+    currentRoleCode: item?.current_role_code || item?.currentRoleCode || '',
+    memberStatus: item?.member_status || item?.memberStatus || ''
   }
 }
 
@@ -233,9 +255,7 @@ function normalizePageUnregisteredItem(item: any): Api.SystemManage.PageUnregist
   }
 }
 
-function normalizePageBreadcrumbPreviewItem(
-  item: any
-): Api.SystemManage.PageBreadcrumbPreviewItem {
+function normalizePageBreadcrumbPreviewItem(item: any): Api.SystemManage.PageBreadcrumbPreviewItem {
   return {
     type: item?.type || 'page',
     title: item?.title || '',
@@ -414,7 +434,9 @@ export function fetchSetUserMenus(userId: string, menuIds: string[]) {
   })
 }
 
-function normalizeUserPermissionDiagnosisResponse(item: any): Api.SystemManage.UserPermissionDiagnosisResponse {
+function normalizeUserPermissionDiagnosisResponse(
+  item: any
+): Api.SystemManage.UserPermissionDiagnosisResponse {
   const normalizePackages = (items: any[] | undefined) => (items || []).map(normalizeFeaturePackage)
   const normalizeGroup = (value: any): Api.SystemManage.PermissionGroupItem | undefined =>
     value
@@ -503,12 +525,9 @@ function normalizeUserPermissionDiagnosisResponse(item: any): Api.SystemManage.U
             roleName: role?.role_name || role?.roleName || '',
             inherited: Boolean(role?.inherited),
             refreshedAt: role?.refreshed_at || role?.refreshedAt || '',
-            availableActionCount:
-              role?.available_action_count ?? role?.availableActionCount ?? 0,
-            disabledActionCount:
-              role?.disabled_action_count ?? role?.disabledActionCount ?? 0,
-            effectiveActionCount:
-              role?.effective_action_count ?? role?.effectiveActionCount ?? 0,
+            availableActionCount: role?.available_action_count ?? role?.availableActionCount ?? 0,
+            disabledActionCount: role?.disabled_action_count ?? role?.disabledActionCount ?? 0,
+            effectiveActionCount: role?.effective_action_count ?? role?.effectiveActionCount ?? 0,
             matched: Boolean(role?.matched),
             disabled: Boolean(role?.disabled),
             available: Boolean(role?.available),
@@ -535,7 +554,8 @@ function normalizeUserPermissionDiagnosisResponse(item: any): Api.SystemManage.U
       refreshedAt: item?.snapshot?.refreshed_at || item?.snapshot?.refreshedAt || '',
       updatedAt: item?.snapshot?.updated_at || item?.snapshot?.updatedAt || '',
       roleCount: item?.snapshot?.role_count ?? item?.snapshot?.roleCount ?? 0,
-      directPackageCount: item?.snapshot?.direct_package_count ?? item?.snapshot?.directPackageCount ?? 0,
+      directPackageCount:
+        item?.snapshot?.direct_package_count ?? item?.snapshot?.directPackageCount ?? 0,
       expandedPackageCount:
         item?.snapshot?.expanded_package_count ?? item?.snapshot?.expandedPackageCount ?? 0,
       actionCount: item?.snapshot?.action_count ?? item?.snapshot?.actionCount ?? 0,
@@ -566,16 +586,17 @@ function normalizeUserPermissionDiagnosisResponse(item: any): Api.SystemManage.U
       available: Boolean(role?.available),
       sourcePackages: normalizePackages(role?.source_packages || role?.sourcePackages)
     })),
-    teamMember: item?.team_member || item?.teamMember
-      ? {
-          id: item?.team_member?.id || item?.teamMember?.id || '',
-          tenantId: item?.team_member?.tenant_id || item?.teamMember?.tenantId || '',
-          userId: item?.team_member?.user_id || item?.teamMember?.userId || '',
-          roleCode: item?.team_member?.role_code || item?.teamMember?.roleCode || '',
-          status: item?.team_member?.status || item?.teamMember?.status || '',
-          matched: Boolean(item?.team_member?.matched ?? item?.teamMember?.matched)
-        }
-      : null,
+    teamMember:
+      item?.team_member || item?.teamMember
+        ? {
+            id: item?.team_member?.id || item?.teamMember?.id || '',
+            tenantId: item?.team_member?.tenant_id || item?.teamMember?.tenantId || '',
+            userId: item?.team_member?.user_id || item?.teamMember?.userId || '',
+            roleCode: item?.team_member?.role_code || item?.teamMember?.roleCode || '',
+            status: item?.team_member?.status || item?.teamMember?.status || '',
+            matched: Boolean(item?.team_member?.matched ?? item?.teamMember?.matched)
+          }
+        : null,
     teamPackages: normalizePackages(item?.team_packages || item?.teamPackages),
     diagnosis,
     menus: (item?.menus || []).map((menu: any) => normalizeUserPermissionMenuTree(menu))
@@ -669,12 +690,20 @@ export function fetchGetRoleList(params: Api.SystemManage.RoleSearchParams) {
   })
 }
 
+export function fetchGetRoleOptions() {
+  return request.get<{ records: Api.SystemManage.RoleListItem[]; total: number }>({
+    url: `${ROLE_BASE}/options`
+  })
+}
+
 // 获取角色列表（简单列表，用于下拉等）
 export function fetchGetRoleListSimple() {
-  return request.get<Api.SystemManage.RoleList>({
-    url: ROLE_BASE,
-    params: { current: 1, size: 100 }
-  })
+  return fetchGetRoleOptions().then((res) => ({
+    records: res?.records || [],
+    total: res?.total || 0,
+    current: 1,
+    size: Math.max(res?.total || 0, 20)
+  }))
 }
 
 // 获取角色详情
@@ -828,6 +857,37 @@ export function fetchGetPermissionActionList(
     }))
 }
 
+export function fetchGetPermissionActionOptions(
+  params?: Api.SystemManage.PermissionActionSearchParams
+) {
+  const normalizedParams = {
+    ...params,
+    permission_key: params?.permissionKey,
+    module_code: params?.moduleCode,
+    module_group_id: params?.moduleGroupId,
+    feature_group_id: params?.featureGroupId,
+    context_type: params?.contextType,
+    feature_kind: params?.featureKind,
+    is_builtin: params?.isBuiltin,
+    permissionKey: undefined,
+    moduleCode: undefined,
+    moduleGroupId: undefined,
+    featureGroupId: undefined,
+    contextType: undefined,
+    featureKind: undefined,
+    isBuiltin: undefined
+  }
+  return request
+    .get<{ records: Api.SystemManage.PermissionActionItem[]; total: number }>({
+      url: `${ACTION_PERMISSION_BASE}/options`,
+      params: normalizedParams
+    })
+    .then((res) => ({
+      records: (res?.records || []).map(normalizePermissionAction),
+      total: res?.total || 0
+    }))
+}
+
 /** 获取功能权限详情 */
 export function fetchGetPermissionAction(id: string) {
   return request
@@ -850,17 +910,17 @@ export function fetchGetPermissionActionEndpoints(id: string) {
 }
 
 /** 新增功能权限关联接口 */
-export function fetchAddPermissionActionEndpoint(id: string, endpointId: string) {
+export function fetchAddPermissionActionEndpoint(id: string, endpointCode: string) {
   return request.post<void>({
     url: `${ACTION_PERMISSION_BASE}/${id}/endpoints`,
-    data: { endpoint_id: endpointId }
+    data: { endpoint_code: endpointCode }
   })
 }
 
 /** 删除功能权限关联接口 */
-export function fetchDeletePermissionActionEndpoint(id: string, endpointId: string) {
+export function fetchDeletePermissionActionEndpoint(id: string, endpointCode: string) {
   return request.del<void>({
-    url: `${ACTION_PERMISSION_BASE}/${id}/endpoints/${endpointId}`
+    url: `${ACTION_PERMISSION_BASE}/${id}/endpoints/${endpointCode}`
   })
 }
 
@@ -909,6 +969,41 @@ export function fetchGetFeaturePackageList(params: Api.SystemManage.FeaturePacka
     .then((res) => ({
       ...res,
       records: (res?.records || []).map(normalizeFeaturePackage)
+    }))
+}
+
+export function fetchGetFeaturePackageOptions(
+  params?: Api.SystemManage.FeaturePackageSearchParams
+) {
+  const normalizedParams = {
+    ...params,
+    package_key: params?.packageKey,
+    package_type: params?.packageType,
+    context_type: params?.contextType,
+    packageKey: undefined,
+    packageType: undefined,
+    contextType: undefined
+  }
+  return request
+    .get<{ records: Api.SystemManage.FeaturePackageItem[]; total: number }>({
+      url: `${FEATURE_PACKAGE_BASE}/options`,
+      params: normalizedParams
+    })
+    .then((res) => ({
+      records: (res?.records || []).map(normalizeFeaturePackage),
+      total: res?.total || 0
+    }))
+}
+
+export function fetchGetTenantOptions(params?: Partial<Api.SystemManage.TeamSearchParams>) {
+  return request
+    .get<{ records: Api.SystemManage.TeamListItem[]; total: number }>({
+      url: `${TENANT_BASE}/options`,
+      params
+    })
+    .then((res) => ({
+      records: (res?.records || []).map(normalizeTeam),
+      total: res?.total || 0
     }))
 }
 
@@ -1126,6 +1221,17 @@ export function fetchGetPageList(params: Api.SystemManage.PageSearchParams) {
     }))
 }
 
+export function fetchGetPageOptions() {
+  return request
+    .get<{ records: Api.SystemManage.PageItem[]; total: number }>({
+      url: `${PAGE_BASE}/options`
+    })
+    .then((res) => ({
+      records: (res?.records || []).map(normalizePageItem),
+      total: res?.total || 0
+    }))
+}
+
 /** 获取运行时页面注册表 */
 export function fetchGetRuntimePageList() {
   return request
@@ -1265,11 +1371,57 @@ export function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpointSear
     }))
 }
 
+export function fetchGetApiEndpointOverview() {
+  return request
+    .get<
+      Api.SystemManage.APIEndpointOverview & {
+        total_count?: number
+        uncategorized_count?: number
+        stale_count?: number
+        category_counts?: any[]
+      }
+    >({
+      url: `${API_ENDPOINT_BASE}/overview`
+    })
+    .then((res) => ({
+      totalCount: res?.totalCount ?? res?.total_count ?? 0,
+      uncategorizedCount: res?.uncategorizedCount ?? res?.uncategorized_count ?? 0,
+      staleCount: res?.staleCount ?? res?.stale_count ?? 0,
+      categoryCounts: (res?.categoryCounts || res?.category_counts || []).map((item: any) => ({
+        categoryId: item?.categoryId || item?.category_id || '',
+        count: item?.count || 0
+      }))
+    }))
+}
+
+export function fetchGetStaleApiEndpointList(params: { current?: number; size?: number }) {
+  return request
+    .get<Api.SystemManage.APIEndpointList>({
+      url: `${API_ENDPOINT_BASE}/stale`,
+      params
+    })
+    .then((res) => ({
+      ...res,
+      records: (res?.records || []).map(normalizeApiEndpoint)
+    }))
+}
+
 /** 同步 API 注册表 */
 export function fetchSyncApiEndpoints() {
   return request.post<void>({
     url: `${API_ENDPOINT_BASE}/sync`
   })
+}
+
+export function fetchCleanupStaleApiEndpoints(ids: string[]) {
+  return request
+    .post<{ deleted_count?: number; deletedCount?: number }>({
+      url: `${API_ENDPOINT_BASE}/cleanup-stale`,
+      data: { ids }
+    })
+    .then((res) => ({
+      deletedCount: res?.deletedCount ?? res?.deleted_count ?? 0
+    }))
 }
 
 export function fetchCreateApiEndpoint(data: Partial<Api.SystemManage.APIEndpointItem>) {

@@ -44,7 +44,7 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	platformService := platformaccess.NewService(m.db)
 	roleSnapshotService := platformroleaccess.NewService(m.db)
 	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
-	service := NewService(packageRepo, packageBundleRepo, packageActionRepo, packageMenuRepo, teamPackageRepo, rolePackageRepo, actionRepo, menuRepo, tenantRepo, boundaryService, refresher)
+	service := NewService(m.db, packageRepo, packageBundleRepo, packageActionRepo, packageMenuRepo, teamPackageRepo, rolePackageRepo, actionRepo, menuRepo, tenantRepo, boundaryService, refresher)
 	handler := NewHandler(service, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 
@@ -52,6 +52,7 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	reg := apiregistry.NewRegistrar(group, "feature_package")
 	{
 		reg.GETProtected("", reg.Meta("获取功能包列表").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.List)
+		reg.GETProtected("/options", reg.Meta("获取功能包候选").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.ListOptions)
 		reg.GETProtected("/:id", reg.Meta("获取功能包详情").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.Get)
 		reg.POSTProtected("", reg.Meta("创建功能包").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.Create)
 		reg.PUTProtected("/:id", reg.Meta("更新功能包").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.Update)

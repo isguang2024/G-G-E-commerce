@@ -5,7 +5,8 @@
     size="920px"
     destroy-on-close
     direction="rtl"
-    class="config-drawer">
+    class="config-drawer"
+  >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
         组合包只聚合基础包，不直接维护功能范围和菜单。这里保存的是组合包展开时要包含的基础包集合。
@@ -40,7 +41,13 @@
           <template #default="{ row }">
             <ElTag
               effect="plain"
-              :type="row.contextType === 'platform' ? 'success' : row.contextType === 'team' ? 'info' : 'warning'"
+              :type="
+                row.contextType === 'platform'
+                  ? 'success'
+                  : row.contextType === 'team'
+                    ? 'info'
+                    : 'warning'
+              "
             >
               {{ formatContextType(row.contextType) }}
             </ElTag>
@@ -69,7 +76,7 @@
   import { ElMessage } from 'element-plus'
   import {
     fetchGetFeaturePackageChildren,
-    fetchGetFeaturePackageList,
+    fetchGetFeaturePackageOptions,
     fetchSetFeaturePackageChildren
   } from '@/api/system-manage'
 
@@ -107,7 +114,9 @@
     const currentKeyword = keyword.value.trim().toLowerCase()
     return basePackages.value
       .filter((item) => item.id !== props.packageId)
-      .filter((item) => supportsChildPackage(props.contextType || 'team', item.contextType || 'team'))
+      .filter((item) =>
+        supportsChildPackage(props.contextType || 'team', item.contextType || 'team')
+      )
       .filter((item) => {
         if (!currentKeyword) return true
         return [item.packageKey, item.name, item.description]
@@ -133,9 +142,7 @@
     keyword.value = ''
     try {
       const [packageRes, bundleRes] = await Promise.all([
-        fetchGetFeaturePackageList({
-          current: 1,
-          size: 1000,
+        fetchGetFeaturePackageOptions({
           packageType: 'base'
         }),
         fetchGetFeaturePackageChildren(props.packageId)

@@ -122,6 +122,7 @@ func (m *TenantModule) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.POSTAction("/:id/members", "添加团队成员", "tenant.manage", authzService.RequireAction, tenantHandler.AddMember)
 		reg.DELETEAction("/:id/members/:userId", "移除团队成员", "tenant.manage", authzService.RequireAction, tenantHandler.RemoveMember)
 		reg.PUTAction("/:id/members/:userId/role", "更新团队成员身份", "tenant.manage", authzService.RequireAction, tenantHandler.UpdateMemberRole)
+		reg.GETAction("/options", "获取团队候选", "tenant.manage", authzService.RequireAction, tenantHandler.ListOptions)
 	}
 }
 

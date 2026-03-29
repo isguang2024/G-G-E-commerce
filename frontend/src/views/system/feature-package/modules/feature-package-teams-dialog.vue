@@ -5,7 +5,8 @@
     size="920px"
     destroy-on-close
     direction="rtl"
-    class="config-drawer">
+    class="config-drawer"
+  >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
         平台为团队开通功能包后，团队功能边界会自动同步；这里支持团队包和平台/团队共享包。
@@ -56,8 +57,11 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
-  import { fetchGetTeamList } from '@/api/team'
-  import { fetchGetFeaturePackageTeams, fetchSetFeaturePackageTeams } from '@/api/system-manage'
+  import {
+    fetchGetFeaturePackageTeams,
+    fetchGetTenantOptions,
+    fetchSetFeaturePackageTeams
+  } from '@/api/system-manage'
 
   interface Props {
     modelValue: boolean
@@ -109,7 +113,7 @@
     loading.value = true
     try {
       const [teamRes, bindingRes] = await Promise.all([
-        fetchGetTeamList({ current: 1, size: 1000 }),
+        fetchGetTenantOptions(),
         fetchGetFeaturePackageTeams(props.packageId)
       ])
       teams.value = teamRes?.records || []

@@ -56,14 +56,18 @@ func Lookup(method, fullPath string) (RouteMeta, bool) {
 }
 
 type Registrar struct {
-	group *gin.RouterGroup
+	group        *gin.RouterGroup
+	categoryHint string
 }
 
 type RequireActionFunc func(permissionKey string, legacy ...string) gin.HandlerFunc
 type RequireAnyActionFunc func(permissionKeys ...string) gin.HandlerFunc
 
-func NewRegistrar(group *gin.RouterGroup, _ string) *Registrar {
-	return &Registrar{group: group}
+func NewRegistrar(group *gin.RouterGroup, categoryHint string) *Registrar {
+	return &Registrar{
+		group:        group,
+		categoryHint: normalizeCategoryCode(categoryHint),
+	}
 }
 
 func Meta(summary string) *MetaBuilder {
@@ -71,7 +75,11 @@ func Meta(summary string) *MetaBuilder {
 }
 
 func (r *Registrar) Meta(summary string) *MetaBuilder {
-	return Meta(summary)
+	builder := Meta(summary)
+	if r == nil || r.categoryHint == "" {
+		return builder
+	}
+	return builder.BindCategory(r.categoryHint)
 }
 
 func (r *Registrar) GET(relativePath string, meta *RouteMeta, handlers ...gin.HandlerFunc) gin.IRoutes {
@@ -91,11 +99,11 @@ func (r *Registrar) DELETE(relativePath string, meta *RouteMeta, handlers ...gin
 }
 
 func (r *Registrar) GETAction(relativePath, summary, permissionKey string, requireAction RequireActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
-	return r.GET(relativePath, MetaWithPermission(summary, permissionKey), appendRequireActionHandler(permissionKey, requireAction, handlers)...)
+	return r.GET(relativePath, r.metaWithPermission(summary, permissionKey), appendRequireActionHandler(permissionKey, requireAction, handlers)...)
 }
 
 func (r *Registrar) GETActions(relativePath, summary string, permissionKeys []string, requireAction RequireAnyActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
-	return r.GET(relativePath, MetaWithPermissions(summary, permissionKeys), appendRequireAnyActionHandler(permissionKeys, requireAction, handlers)...)
+	return r.GET(relativePath, r.metaWithPermissions(summary, permissionKeys), appendRequireAnyActionHandler(permissionKeys, requireAction, handlers)...)
 }
 
 func (r *Registrar) GETProtected(relativePath string, meta *RouteMeta, permissionKey string, requireAction RequireActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
@@ -103,11 +111,11 @@ func (r *Registrar) GETProtected(relativePath string, meta *RouteMeta, permissio
 }
 
 func (r *Registrar) POSTAction(relativePath, summary, permissionKey string, requireAction RequireActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
-	return r.POST(relativePath, MetaWithPermission(summary, permissionKey), appendRequireActionHandler(permissionKey, requireAction, handlers)...)
+	return r.POST(relativePath, r.metaWithPermission(summary, permissionKey), appendRequireActionHandler(permissionKey, requireAction, handlers)...)
 }
 
 func (r *Registrar) POSTActions(relativePath, summary string, permissionKeys []string, requireAction RequireAnyActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
-	return r.POST(relativePath, MetaWithPermissions(summary, permissionKeys), appendRequireAnyActionHandler(permissionKeys, requireAction, handlers)...)
+	return r.POST(relativePath, r.metaWithPermissions(summary, permissionKeys), appendRequireAnyActionHandler(permissionKeys, requireAction, handlers)...)
 }
 
 func (r *Registrar) POSTProtected(relativePath string, meta *RouteMeta, permissionKey string, requireAction RequireActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
@@ -115,11 +123,11 @@ func (r *Registrar) POSTProtected(relativePath string, meta *RouteMeta, permissi
 }
 
 func (r *Registrar) PUTAction(relativePath, summary, permissionKey string, requireAction RequireActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
-	return r.PUT(relativePath, MetaWithPermission(summary, permissionKey), appendRequireActionHandler(permissionKey, requireAction, handlers)...)
+	return r.PUT(relativePath, r.metaWithPermission(summary, permissionKey), appendRequireActionHandler(permissionKey, requireAction, handlers)...)
 }
 
 func (r *Registrar) PUTActions(relativePath, summary string, permissionKeys []string, requireAction RequireAnyActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
-	return r.PUT(relativePath, MetaWithPermissions(summary, permissionKeys), appendRequireAnyActionHandler(permissionKeys, requireAction, handlers)...)
+	return r.PUT(relativePath, r.metaWithPermissions(summary, permissionKeys), appendRequireAnyActionHandler(permissionKeys, requireAction, handlers)...)
 }
 
 func (r *Registrar) PUTProtected(relativePath string, meta *RouteMeta, permissionKey string, requireAction RequireActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
@@ -127,11 +135,11 @@ func (r *Registrar) PUTProtected(relativePath string, meta *RouteMeta, permissio
 }
 
 func (r *Registrar) DELETEAction(relativePath, summary, permissionKey string, requireAction RequireActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
-	return r.DELETE(relativePath, MetaWithPermission(summary, permissionKey), appendRequireActionHandler(permissionKey, requireAction, handlers)...)
+	return r.DELETE(relativePath, r.metaWithPermission(summary, permissionKey), appendRequireActionHandler(permissionKey, requireAction, handlers)...)
 }
 
 func (r *Registrar) DELETEActions(relativePath, summary string, permissionKeys []string, requireAction RequireAnyActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
-	return r.DELETE(relativePath, MetaWithPermissions(summary, permissionKeys), appendRequireAnyActionHandler(permissionKeys, requireAction, handlers)...)
+	return r.DELETE(relativePath, r.metaWithPermissions(summary, permissionKeys), appendRequireAnyActionHandler(permissionKeys, requireAction, handlers)...)
 }
 
 func (r *Registrar) DELETEProtected(relativePath string, meta *RouteMeta, permissionKey string, requireAction RequireActionFunc, handlers ...gin.HandlerFunc) gin.IRoutes {
@@ -139,11 +147,7 @@ func (r *Registrar) DELETEProtected(relativePath string, meta *RouteMeta, permis
 }
 
 func MetaWithPermission(summary, permissionKey string) *RouteMeta {
-	return Meta(summary).
-		BindPermissionKey(permissionKey).
-		BindContextScope("optional").
-		BindSource("sync").
-		Build()
+	return MetaWithPermissions(summary, []string{permissionKey})
 }
 
 func MetaWithPermissions(summary string, permissionKeys []string) *RouteMeta {
@@ -152,6 +156,21 @@ func MetaWithPermissions(summary string, permissionKeys []string) *RouteMeta {
 		BindContextScope("optional").
 		BindSource("sync").
 		Build()
+}
+
+func (r *Registrar) metaWithPermission(summary, permissionKey string) *RouteMeta {
+	return r.metaWithPermissions(summary, []string{permissionKey})
+}
+
+func (r *Registrar) metaWithPermissions(summary string, permissionKeys []string) *RouteMeta {
+	builder := Meta(summary).
+		BindPermissionKeys(permissionKeys...).
+		BindContextScope("optional").
+		BindSource("sync")
+	if r != nil && r.categoryHint != "" {
+		builder = builder.BindCategory(r.categoryHint)
+	}
+	return builder.Build()
 }
 
 func (b *MetaBuilder) clone() *MetaBuilder {
@@ -256,8 +275,10 @@ func appendRequireAnyActionHandler(permissionKeys []string, requireAction Requir
 }
 
 func (r *Registrar) handle(method, relativePath string, meta *RouteMeta, handlers ...gin.HandlerFunc) gin.IRoutes {
+	fullPath := joinPath(r.group.BasePath(), relativePath)
 	if meta != nil {
-		Annotate(method, joinPath(r.group.BasePath(), relativePath), *meta)
+		normalizedMeta := normalizeRouteMeta(method, fullPath, applyDefaultCategory(meta, r.categoryHint))
+		Annotate(method, fullPath, normalizedMeta)
 	}
 
 	switch method {
@@ -272,6 +293,15 @@ func (r *Registrar) handle(method, relativePath string, meta *RouteMeta, handler
 	default:
 		return r.group.Handle(method, relativePath, handlers...)
 	}
+}
+
+func applyDefaultCategory(meta *RouteMeta, categoryHint string) *RouteMeta {
+	if meta == nil || strings.TrimSpace(meta.CategoryCode) != "" || strings.TrimSpace(categoryHint) == "" {
+		return meta
+	}
+	cloned := *meta
+	cloned.CategoryCode = normalizeCategoryCode(categoryHint)
+	return &cloned
 }
 
 func SyncRoutes(db *gorm.DB, logger *zap.Logger, routes []gin.RouteInfo) error {
@@ -312,47 +342,50 @@ func syncRoutesInternal(
 		}
 
 		meta, hasMeta := Lookup(route.Method, route.Path)
-		existing, err := findEndpointByMethodAndPath(db, route.Method, route.Path)
+		if !hasMeta {
+			continue
+		}
+		categoryID := resolveCategoryID(db, meta.CategoryCode)
+
+		endpointCode := ResolveRouteCode(route.Method, route.Path, &meta)
+		if endpointCode == "" {
+			if logger != nil {
+				logger.Warn("Skip syncing API endpoint without fixed route code",
+					zap.String("method", strings.ToUpper(strings.TrimSpace(route.Method))),
+					zap.String("path", strings.TrimSpace(route.Path)),
+				)
+			}
+			continue
+		}
+		existing, err := findEndpointByCode(db, endpointCode)
 		if err != nil {
 			return err
 		}
-		if !hasMeta && existing == nil {
+		if !shouldInsertManagedEndpoint(existing) {
 			continue
 		}
 
-		endpointCode := strings.TrimSpace(meta.Code)
-		if endpointCode == "" {
-			if existing != nil && strings.TrimSpace(existing.Code) != "" {
-				endpointCode = strings.TrimSpace(existing.Code)
-			} else {
-				endpointCode = deriveStableEndpointCode(route.Method, route.Path)
+		legacy, err := findEndpointByMethodAndPath(db, route.Method, route.Path)
+		if err != nil {
+			return err
+		}
+		if shouldBackfillManagedEndpointCode(legacy) {
+			if err := backfillEndpointCode(db, legacy.ID, endpointCode); err != nil {
+				return err
 			}
+			continue
+		}
+		if legacy != nil {
+			continue
 		}
 
 		summary := strings.TrimSpace(meta.Summary)
-		if summary == "" && existing != nil {
-			summary = strings.TrimSpace(existing.Summary)
-		}
 
 		featureKind := normalizeFeatureKind(meta.FeatureKind)
-		if strings.TrimSpace(meta.FeatureKind) == "" && existing != nil {
-			featureKind = normalizeFeatureKind(existing.FeatureKind)
-		}
-
-		categoryID := resolveCategoryID(db, meta.CategoryCode)
-		if categoryID == nil && existing != nil {
-			categoryID = existing.CategoryID
-		}
 
 		contextScope := normalizeContextScope(meta.ContextScope)
-		if strings.TrimSpace(meta.ContextScope) == "" && existing != nil {
-			contextScope = normalizeContextScope(existing.ContextScope)
-		}
 
 		source := normalizeSource(meta.Source)
-		if !hasMeta && existing != nil {
-			source = normalizeSource(existing.Source)
-		}
 
 		endpoint := &models.APIEndpoint{
 			Code:         endpointCode,
@@ -364,24 +397,35 @@ func syncRoutesInternal(
 			CategoryID:   categoryID,
 			ContextScope: contextScope,
 			Source:       source,
-			Status:       resolveSyncedEndpointStatus(existing),
+			Status:       "normal",
 		}
-		if existing != nil {
-			endpoint.ID = existing.ID
-		}
-		if err := upsertEndpoint(db, endpoint); err != nil {
+		if err := insertEndpoint(db, endpoint); err != nil {
 			return err
 		}
 
-		if hasMeta {
-			if err := replaceEndpointPermissionBindings(db, endpoint, meta.PermissionKeys); err != nil {
-				return err
-			}
+		if err := replaceEndpointPermissionBindings(db, endpoint, meta.PermissionKeys); err != nil {
+			return err
 		}
 	}
 
 	logger.Info("API endpoints synced", zap.Int("count", len(routes)))
 	return nil
+}
+
+func findEndpointByCode(db *gorm.DB, code string) (*models.APIEndpoint, error) {
+	target := strings.TrimSpace(code)
+	if db == nil || target == "" {
+		return nil, nil
+	}
+	var endpoint models.APIEndpoint
+	err := db.Where("code = ?", target).First(&endpoint).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &endpoint, nil
 }
 
 func findEndpointByMethodAndPath(db *gorm.DB, method, path string) (*models.APIEndpoint, error) {
@@ -401,6 +445,21 @@ func findEndpointByMethodAndPath(db *gorm.DB, method, path string) (*models.APIE
 
 func isManagedRoute(path string) bool {
 	return strings.HasPrefix(path, "/api/v1/") || strings.HasPrefix(path, "/open/v1/")
+}
+
+func normalizeRouteMeta(method, fullPath string, meta *RouteMeta) RouteMeta {
+	if meta == nil {
+		return RouteMeta{}
+	}
+	normalized := *meta
+	normalized.Code = ResolveRouteCode(method, fullPath, meta)
+	normalized.Summary = strings.TrimSpace(normalized.Summary)
+	normalized.FeatureKind = normalizeFeatureKind(normalized.FeatureKind)
+	normalized.CategoryCode = strings.TrimSpace(normalized.CategoryCode)
+	normalized.ContextScope = normalizeContextScope(normalized.ContextScope)
+	normalized.Source = normalizeSource(normalized.Source)
+	normalized.PermissionKeys = normalizePermissionKeys(normalized.PermissionKeys)
+	return normalized
 }
 
 func normalizeFeatureKind(value string) string {
@@ -428,69 +487,53 @@ func routeKey(method, fullPath string) string {
 	return strings.ToUpper(strings.TrimSpace(method)) + " " + strings.TrimSpace(fullPath)
 }
 
+func ResolveRouteCode(method, path string, meta *RouteMeta) string {
+	if meta != nil {
+		if code := strings.TrimSpace(meta.Code); code != "" {
+			return code
+		}
+	}
+	if code := lookupFixedRouteCode(method, path); code != "" {
+		return code
+	}
+	return ""
+}
+
 func deriveStableEndpointCode(method, path string) string {
 	normalized := strings.ToUpper(strings.TrimSpace(method)) + " " + strings.TrimSpace(path)
 	return uuid.NewHash(sha1.New(), uuid.NameSpaceURL, []byte("api-endpoint:"+normalized), 5).String()
 }
 
-func upsertEndpoint(db *gorm.DB, endpoint *models.APIEndpoint) error {
+func shouldInsertManagedEndpoint(existing *models.APIEndpoint) bool {
+	return existing == nil
+}
+
+func shouldBackfillManagedEndpointCode(existing *models.APIEndpoint) bool {
+	if existing == nil {
+		return false
+	}
+	return strings.TrimSpace(existing.Code) == ""
+}
+
+func insertEndpoint(db *gorm.DB, endpoint *models.APIEndpoint) error {
 	if endpoint == nil {
 		return nil
 	}
-	normalizedFeatureKind := normalizeFeatureKind(endpoint.FeatureKind)
-	normalizedContextScope := normalizeContextScope(endpoint.ContextScope)
-	normalizedSource := normalizeSource(endpoint.Source)
-	return db.Transaction(func(tx *gorm.DB) error {
-		var existing models.APIEndpoint
-		var err error
-		if endpoint.Code != "" {
-			err = tx.Where("code = ?", endpoint.Code).First(&existing).Error
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				err = tx.Where("method = ? AND path = ?", endpoint.Method, endpoint.Path).First(&existing).Error
-			}
-		} else {
-			err = tx.Where("method = ? AND path = ?", endpoint.Method, endpoint.Path).First(&existing).Error
-		}
-		if err != nil {
-			if errors.Is(err, gorm.ErrRecordNotFound) {
-				endpoint.FeatureKind = normalizedFeatureKind
-				endpoint.ContextScope = normalizedContextScope
-				endpoint.Source = normalizedSource
-				return tx.Create(endpoint).Error
-			}
-			return err
-		}
-		updates := make(map[string]interface{})
-		if endpoint.Code != "" && existing.Code != endpoint.Code {
-			updates["code"] = endpoint.Code
-		}
-		if existing.FeatureKind != normalizedFeatureKind {
-			updates["feature_kind"] = normalizedFeatureKind
-		}
-		if existing.Handler != endpoint.Handler {
-			updates["handler"] = endpoint.Handler
-		}
-		if existing.Summary != endpoint.Summary {
-			updates["summary"] = endpoint.Summary
-		}
-		if !sameUUIDPointer(existing.CategoryID, endpoint.CategoryID) {
-			updates["category_id"] = endpoint.CategoryID
-		}
-		if existing.ContextScope != normalizedContextScope {
-			updates["context_scope"] = normalizedContextScope
-		}
-		if existing.Source != normalizedSource {
-			updates["source"] = normalizedSource
-		}
-		if existing.Status != endpoint.Status {
-			updates["status"] = endpoint.Status
-		}
-		endpoint.ID = existing.ID
-		if len(updates) == 0 {
-			return nil
-		}
-		return tx.Model(&existing).Updates(updates).Error
-	})
+	endpoint.FeatureKind = normalizeFeatureKind(endpoint.FeatureKind)
+	endpoint.ContextScope = normalizeContextScope(endpoint.ContextScope)
+	endpoint.Source = normalizeSource(endpoint.Source)
+	if strings.TrimSpace(endpoint.Status) == "" {
+		endpoint.Status = "normal"
+	}
+	return db.Create(endpoint).Error
+}
+
+func backfillEndpointCode(db *gorm.DB, endpointID uuid.UUID, code string) error {
+	targetCode := strings.TrimSpace(code)
+	if db == nil || endpointID == uuid.Nil || targetCode == "" {
+		return nil
+	}
+	return db.Model(&models.APIEndpoint{}).Where("id = ?", endpointID).Update("code", targetCode).Error
 }
 
 func resolveCategoryID(db *gorm.DB, code string) *uuid.UUID {
@@ -509,11 +552,15 @@ func replaceEndpointPermissionBindings(db *gorm.DB, endpoint *models.APIEndpoint
 	if db == nil || endpoint == nil {
 		return nil
 	}
+	endpointCode := strings.TrimSpace(endpoint.Code)
+	if endpointCode == "" {
+		return nil
+	}
 	keys := normalizePermissionKeys(permissionKeys)
 	return db.Transaction(func(tx *gorm.DB) error {
 		var existing []models.APIEndpointPermissionBinding
 		if err := tx.
-			Where("endpoint_id = ?", endpoint.ID).
+			Where("endpoint_code = ?", endpointCode).
 			Order("sort_order ASC, created_at ASC").
 			Find(&existing).Error; err != nil {
 			return err
@@ -521,7 +568,7 @@ func replaceEndpointPermissionBindings(db *gorm.DB, endpoint *models.APIEndpoint
 		if samePermissionBindings(existing, keys) {
 			return nil
 		}
-		if err := tx.Where("endpoint_id = ?", endpoint.ID).Delete(&models.APIEndpointPermissionBinding{}).Error; err != nil {
+		if err := tx.Unscoped().Where("endpoint_code = ?", endpointCode).Delete(&models.APIEndpointPermissionBinding{}).Error; err != nil {
 			return err
 		}
 		if len(keys) == 0 {
@@ -530,7 +577,7 @@ func replaceEndpointPermissionBindings(db *gorm.DB, endpoint *models.APIEndpoint
 		items := make([]models.APIEndpointPermissionBinding, 0, len(keys))
 		for idx, key := range keys {
 			items = append(items, models.APIEndpointPermissionBinding{
-				EndpointID:    endpoint.ID,
+				EndpointCode:  endpointCode,
 				PermissionKey: key,
 				MatchMode:     "ANY",
 				SortOrder:     idx,
@@ -538,17 +585,6 @@ func replaceEndpointPermissionBindings(db *gorm.DB, endpoint *models.APIEndpoint
 		}
 		return tx.Create(&items).Error
 	})
-}
-
-func sameUUIDPointer(left, right *uuid.UUID) bool {
-	switch {
-	case left == nil && right == nil:
-		return true
-	case left == nil || right == nil:
-		return false
-	default:
-		return *left == *right
-	}
 }
 
 func samePermissionBindings(existing []models.APIEndpointPermissionBinding, permissionKeys []string) bool {
@@ -581,6 +617,17 @@ func normalizePermissionKeys(values []string) []string {
 	return result
 }
 
+func normalizeCategoryCode(value string) string {
+	switch strings.TrimSpace(value) {
+	case "permission_action", "system_permission":
+		return "permission_key"
+	case "team", "team_member", "tenant_member_admin":
+		return "tenant"
+	default:
+		return strings.TrimSpace(value)
+	}
+}
+
 func normalizeContextScope(value string) string {
 	switch strings.TrimSpace(value) {
 	case "required", "forbidden":
@@ -597,15 +644,4 @@ func normalizeSource(value string) string {
 	default:
 		return "sync"
 	}
-}
-
-func resolveSyncedEndpointStatus(existing *models.APIEndpoint) string {
-	if existing == nil {
-		return "normal"
-	}
-	status := strings.TrimSpace(existing.Status)
-	if status == "" {
-		return "normal"
-	}
-	return status
 }

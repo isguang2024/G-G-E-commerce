@@ -42,7 +42,7 @@ type PermissionKeyUpdateRequest struct {
 }
 
 type PermissionKeyEndpointBindRequest struct {
-	EndpointID string `json:"endpoint_id" binding:"required,max=36"`
+	EndpointCode string `json:"endpoint_code" binding:"required,max=36"`
 }
 
 type PermissionGroupListRequest struct {

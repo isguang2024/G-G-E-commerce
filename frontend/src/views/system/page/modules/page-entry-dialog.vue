@@ -21,7 +21,9 @@
           {{ showExamples ? '收起示例' : '查看示例' }}
         </ElButton>
         <div v-if="showExamples" class="dialog-intro__examples">
-          <div v-for="item in pageExamples" :key="item" class="dialog-intro__example">{{ item }}</div>
+          <div v-for="item in pageExamples" :key="item" class="dialog-intro__example">{{
+            item
+          }}</div>
         </div>
       </div>
 
@@ -36,7 +38,10 @@
           <ElCol :span="12">
             <ElFormItem label="页面名称" prop="name">
               <template #label>
-                <PageFieldLabel label="页面名称" help="给人看的名称，显示在页面管理、面包屑预览和关联选择里。" />
+                <PageFieldLabel
+                  label="页面名称"
+                  help="给人看的名称，显示在页面管理、面包屑预览和关联选择里。"
+                />
               </template>
               <ElInput v-model="form.name" placeholder="请输入页面名称" />
             </ElFormItem>
@@ -44,7 +49,10 @@
           <ElCol :span="12">
             <ElFormItem label="页面标识" prop="pageKey">
               <template #label>
-                <PageFieldLabel label="页面标识" help="页面的稳定业务标识，用于父子页面关联、同步识别和配置引用。上线后尽量不要改。" />
+                <PageFieldLabel
+                  label="页面标识"
+                  help="页面的稳定业务标识，用于父子页面关联、同步识别和配置引用。上线后尽量不要改。"
+                />
               </template>
               <ElInput v-model="form.pageKey" placeholder="例如 store.management.detail" />
             </ElFormItem>
@@ -55,7 +63,10 @@
           <ElCol :span="12">
             <ElFormItem label="页面类型" prop="pageType">
               <template #label>
-                <PageFieldLabel label="页面类型" help="内页会继承菜单或上级页面链路；全局页独立存在，不要求挂到菜单。" />
+                <PageFieldLabel
+                  label="页面类型"
+                  help="内页会继承菜单或上级页面链路；全局页独立存在，不要求挂到菜单。"
+                />
               </template>
               <ElSelect v-model="form.pageType" style="width: 100%">
                 <ElOption label="内页" value="inner" />
@@ -77,7 +88,10 @@
           <ElCol :span="12">
             <ElFormItem label="模块标识" prop="moduleKey">
               <template #label>
-                <PageFieldLabel label="模块标识" help="页面所属业务模块，用于筛选、归类和后续批量管理，例如 system、dashboard、order。" />
+                <PageFieldLabel
+                  label="模块标识"
+                  help="页面所属业务模块，用于筛选、归类和后续批量管理，例如 system、dashboard、order。"
+                />
               </template>
               <ElInput v-model="form.moduleKey" placeholder="例如 system / order" />
             </ElFormItem>
@@ -85,9 +99,15 @@
           <ElCol :span="12">
             <ElFormItem label="路由名称" prop="routeName">
               <template #label>
-                <PageFieldLabel label="路由名称" help="Vue Router 内部路由名。可留空，留空时默认使用页面标识。" />
+                <PageFieldLabel
+                  label="路由名称"
+                  help="Vue Router 内部路由名。可留空，留空时默认使用页面标识。"
+                />
               </template>
-              <ElInput v-model="form.routeName" placeholder="例如 StoreManagementDetail；留空时默认使用页面标识" />
+              <ElInput
+                v-model="form.routeName"
+                placeholder="例如 StoreManagementDetail；留空时默认使用页面标识"
+              />
             </ElFormItem>
           </ElCol>
         </ElRow>
@@ -104,7 +124,10 @@
           <ElCol :span="12">
             <ElFormItem label="路由路径" prop="routePath">
               <template #label>
-                <PageFieldLabel label="路由路径" help="单段路径会按上级菜单或上级页面自动拼接；多段绝对路径会按完整路径注册。" />
+                <PageFieldLabel
+                  label="路由路径"
+                  help="单段路径会按上级菜单或上级页面自动拼接；多段绝对路径会按完整路径注册。"
+                />
               </template>
               <ElInput v-model="form.routePath" :placeholder="routePathPlaceholder" />
             </ElFormItem>
@@ -112,7 +135,10 @@
           <ElCol :span="12">
             <ElFormItem label="组件路径" prop="component">
               <template #label>
-                <PageFieldLabel label="组件路径" help="实际渲染的前端页面组件路径。内嵌模式下会自动改为 /outside/Iframe。" />
+                <PageFieldLabel
+                  label="组件路径"
+                  help="实际渲染的前端页面组件路径。内嵌模式下会自动改为 /outside/Iframe。"
+                />
               </template>
               <ElInput
                 v-model="form.component"
@@ -127,7 +153,10 @@
           <ElCol :span="12">
             <ElFormItem label="是否内嵌" prop="isIframe">
               <template #label>
-                <PageFieldLabel label="是否内嵌" help="开启后页面将通过 iframe 加载外部地址，组件路径自动切为 /outside/Iframe。" />
+                <PageFieldLabel
+                  label="是否内嵌"
+                  help="开启后页面将通过 iframe 加载外部地址，组件路径自动切为 /outside/Iframe。"
+                />
               </template>
               <ElSwitch v-model="form.isIframe" />
             </ElFormItem>
@@ -135,7 +164,10 @@
           <ElCol :span="12">
             <ElFormItem label="状态" prop="status">
               <template #label>
-                <PageFieldLabel label="状态" help="正常状态才会参与运行时注册；停用后页面保留数据，但不会被动态加载。" />
+                <PageFieldLabel
+                  label="状态"
+                  help="正常状态才会参与运行时注册；停用后页面保留数据，但不会被动态加载。"
+                />
               </template>
               <div class="inline-flex items-center gap-2">
                 <ElSwitch v-model="form.status" active-value="normal" inactive-value="suspended" />
@@ -151,7 +183,10 @@
           <ElCol :span="24">
             <ElFormItem label="外链地址" prop="link">
               <template #label>
-                <PageFieldLabel label="外链地址" help="内嵌模式下必填，填写要加载的 http:// 或 https:// 地址。" />
+                <PageFieldLabel
+                  label="外链地址"
+                  help="内嵌模式下必填，填写要加载的 http:// 或 https:// 地址。"
+                />
               </template>
               <ElInput v-model="form.link" placeholder="例如 https://example.com" />
             </ElFormItem>
@@ -160,7 +195,10 @@
 
         <ElFormItem label="最终路径" class="final-path-item">
           <template #label>
-            <PageFieldLabel label="最终路径" help="系统根据路由路径、挂载方式、上级菜单和上级页面推导出的真实访问路径。" />
+            <PageFieldLabel
+              label="最终路径"
+              help="系统根据路由路径、挂载方式、上级菜单和上级页面推导出的真实访问路径。"
+            />
           </template>
           <div class="route-preview-box">
             <code>{{ resolvedRoutePreview || '-' }}</code>
@@ -182,7 +220,10 @@
           <ElCol :span="24">
             <ElFormItem label="挂载方式" prop="mountMode">
               <template #label>
-                <PageFieldLabel label="挂载方式" help="决定当前页面是独立存在，还是归属某个菜单，或归属到另一个页面/分组下面。" />
+                <PageFieldLabel
+                  label="挂载方式"
+                  help="决定当前页面是独立存在，还是归属某个菜单，或归属到另一个页面/分组下面。"
+                />
               </template>
               <ElRadioGroup v-model="mountMode" class="mount-mode-group">
                 <ElRadioButton label="none">不挂载</ElRadioButton>
@@ -197,7 +238,10 @@
           <ElCol :span="24">
             <ElFormItem label="上级菜单" prop="parentMenuId">
               <template #label>
-                <PageFieldLabel label="上级菜单" help="页面直接归属的菜单。单段路由会自动拼到该菜单路径后，并继承菜单高亮。" />
+                <PageFieldLabel
+                  label="上级菜单"
+                  help="页面直接归属的菜单。单段路由会自动拼到该菜单路径后，并继承菜单高亮。"
+                />
               </template>
               <ElCascader
                 v-model="form.parentMenuId"
@@ -217,9 +261,18 @@
           <ElCol :span="24">
             <ElFormItem label="上级页面" prop="parentPageKey">
               <template #label>
-                <PageFieldLabel label="上级页面" help="页面直接归属的父页面或逻辑分组。选择后会优先继承其访问路径、菜单链和默认面包屑。" />
+                <PageFieldLabel
+                  label="上级页面"
+                  help="页面直接归属的父页面或逻辑分组。选择后会优先继承其访问路径、菜单链和默认面包屑。"
+                />
               </template>
-              <ElSelect v-model="form.parentPageKey" clearable filterable style="width: 100%" placeholder="请选择上级页面或逻辑分组">
+              <ElSelect
+                v-model="form.parentPageKey"
+                clearable
+                filterable
+                style="width: 100%"
+                placeholder="请选择上级页面或逻辑分组"
+              >
                 <ElOption
                   v-for="item in parentPageOptions"
                   :key="item.pageKey"
@@ -235,9 +288,18 @@
           <ElCol :span="24">
             <ElFormItem label="普通分组" prop="displayGroupKey">
               <template #label>
-                <PageFieldLabel label="普通分组" help="仅用于页面管理列表归类，不影响页面的菜单挂载、路径、权限和面包屑继承。" />
+                <PageFieldLabel
+                  label="普通分组"
+                  help="仅用于页面管理列表归类，不影响页面的菜单挂载、路径、权限和面包屑继承。"
+                />
               </template>
-              <ElSelect v-model="form.displayGroupKey" clearable filterable style="width: 100%" placeholder="可选，选择普通分组">
+              <ElSelect
+                v-model="form.displayGroupKey"
+                clearable
+                filterable
+                style="width: 100%"
+                placeholder="可选，选择普通分组"
+              >
                 <ElOption
                   v-for="item in displayGroupOptions"
                   :key="item.pageKey"
@@ -264,7 +326,10 @@
           <ElCol :span="12">
             <ElFormItem label="访问模式" prop="accessMode">
               <template #label>
-                <PageFieldLabel label="访问模式" help="继承表示跟随上级菜单或页面；登录表示只验登录；权限表示还需校验权限键。" />
+                <PageFieldLabel
+                  label="访问模式"
+                  help="继承表示跟随上级菜单或页面；登录表示只验登录；权限表示还需校验权限键。"
+                />
               </template>
               <ElSelect v-model="form.accessMode" style="width: 100%">
                 <ElOption label="继承" value="inherit" />
@@ -277,7 +342,10 @@
           <ElCol :span="12">
             <ElFormItem label="权限键" prop="permissionKey">
               <template #label>
-                <PageFieldLabel label="权限键" help="仅在访问模式为权限时生效，填写后页面进入前会按该权限键校验访问权限。" />
+                <PageFieldLabel
+                  label="权限键"
+                  help="仅在访问模式为权限时生效，填写后页面进入前会按该权限键校验访问权限。"
+                />
               </template>
               <ElInput
                 v-model="form.permissionKey"
@@ -292,7 +360,10 @@
           <ElCol :span="12">
             <ElFormItem label="缓存页面" prop="keepAlive">
               <template #label>
-                <PageFieldLabel label="缓存页面" help="开启后页面会进入 keep-alive 缓存，适合表单或列表类页面；内嵌页通常不缓存。" />
+                <PageFieldLabel
+                  label="缓存页面"
+                  help="开启后页面会进入 keep-alive 缓存，适合表单或列表类页面；内嵌页通常不缓存。"
+                />
               </template>
               <ElSwitch v-model="form.keepAlive" :disabled="form.isIframe" />
             </ElFormItem>
@@ -300,7 +371,10 @@
           <ElCol :span="12">
             <ElFormItem label="全屏页面" prop="isFullPage">
               <template #label>
-                <PageFieldLabel label="全屏页面" help="开启后页面按全屏模式展示，通常用于沉浸式页面或不依赖常规布局的场景。" />
+                <PageFieldLabel
+                  label="全屏页面"
+                  help="开启后页面按全屏模式展示，通常用于沉浸式页面或不依赖常规布局的场景。"
+                />
               </template>
               <ElSwitch v-model="form.isFullPage" />
             </ElFormItem>
@@ -311,7 +385,10 @@
           <ElCol :span="12">
             <ElFormItem label="面包屑模式" prop="breadcrumbMode">
               <template #label>
-                <PageFieldLabel label="面包屑模式" help="继承菜单表示按菜单链展示；继承页面表示把父页面链也带上；自定义用于高级覆盖。" />
+                <PageFieldLabel
+                  label="面包屑模式"
+                  help="继承菜单表示按菜单链展示；继承页面表示把父页面链也带上；自定义用于高级覆盖。"
+                />
               </template>
               <ElSelect v-model="form.breadcrumbMode" style="width: 100%">
                 <ElOption label="继承菜单" value="inherit_menu" />
@@ -323,7 +400,10 @@
           <ElCol :span="12">
             <ElFormItem label="高亮菜单路径" prop="activeMenuPath">
               <template #label>
-                <PageFieldLabel label="高亮菜单路径" help="仅在自动推导不满足时手工覆盖菜单高亮路径。大多数页面可留空。" />
+                <PageFieldLabel
+                  label="高亮菜单路径"
+                  help="仅在自动推导不满足时手工覆盖菜单高亮路径。大多数页面可留空。"
+                />
               </template>
               <ElInput v-model="form.activeMenuPath" placeholder="可选，例如 /system/page" />
             </ElFormItem>
@@ -344,7 +424,12 @@
 <script setup lang="ts">
   import { computed, nextTick, reactive, ref, watch } from 'vue'
   import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-  import { fetchCreatePage, fetchGetPageList, fetchGetPageMenuOptions, fetchUpdatePage } from '@/api/system-manage'
+  import {
+    fetchCreatePage,
+    fetchGetPageMenuOptions,
+    fetchGetPageOptions,
+    fetchUpdatePage
+  } from '@/api/system-manage'
   import {
     isSingleSegmentManagedPagePath,
     joinManagedPagePath,
@@ -457,11 +542,16 @@
   }
 
   const parentPageOptions = computed(() =>
-    allPages.value.filter((item) => item.id !== form.id && `${item.pageType || ''}`.trim() !== 'display_group')
+    allPages.value.filter(
+      (item) => item.id !== form.id && `${item.pageType || ''}`.trim() !== 'display_group'
+    )
   )
   const displayGroupOptions = computed(() =>
     allPages.value.filter(
-      (item) => item.id !== form.id && `${item.pageType || ''}`.trim() === 'display_group' && item.status === 'normal'
+      (item) =>
+        item.id !== form.id &&
+        `${item.pageType || ''}`.trim() === 'display_group' &&
+        item.status === 'normal'
     )
   )
 
@@ -492,12 +582,16 @@
     return map
   })
 
-  const configHintTitle = computed(() => (form.pageType === 'global' ? '全局页配置说明' : '页面配置说明'))
+  const configHintTitle = computed(() =>
+    form.pageType === 'global' ? '全局页配置说明' : '页面配置说明'
+  )
   const isUnregisteredCandidate = computed(
     () => props.dialogType === 'add' && Boolean(props.defaultData?.meta?.fromUnregistered)
   )
   const isComponentLocked = computed(() => isUnregisteredCandidate.value && !form.isIframe)
-  const shouldAutoAdjustRoutePath = computed(() => props.dialogType === 'edit' || isUnregisteredCandidate.value)
+  const shouldAutoAdjustRoutePath = computed(
+    () => props.dialogType === 'edit' || isUnregisteredCandidate.value
+  )
 
   const configHintDescription = computed(() => {
     if (form.pageType === 'global') {
@@ -521,8 +615,12 @@
       {
         ...form,
         source: props.pageData?.source || props.defaultData?.source || 'manual',
-        parentMenuId: form.pageType === 'global' || mountMode.value !== 'menu' ? '' : normalizeMenuId(form.parentMenuId),
-        parentPageKey: form.pageType === 'global' || mountMode.value !== 'page' ? '' : form.parentPageKey
+        parentMenuId:
+          form.pageType === 'global' || mountMode.value !== 'menu'
+            ? ''
+            : normalizeMenuId(form.parentMenuId),
+        parentPageKey:
+          form.pageType === 'global' || mountMode.value !== 'page' ? '' : form.parentPageKey
       },
       {
         getPageByKey: (pageKey) => pageMap.value.get(pageKey),
@@ -615,7 +713,9 @@
   }
 
   function getResolvedPathSnapshot(routePath: string, parentMenuId: string, parentPageKey: string) {
-    return resolveManagedPageRoutePath<Pick<PageItem, 'pageKey' | 'routePath' | 'parentMenuId' | 'parentPageKey'>>(
+    return resolveManagedPageRoutePath<
+      Pick<PageItem, 'pageKey' | 'routePath' | 'parentMenuId' | 'parentPageKey'>
+    >(
       {
         pageKey: originalRouteContext.value.pageKey,
         routePath,
@@ -659,7 +759,11 @@
   }
 
   function maybeAdjustRoutePathForMountedEdit() {
-    if (!shouldAutoAdjustRoutePath.value || form.pageType === 'global' || mountMode.value === 'none') {
+    if (
+      !shouldAutoAdjustRoutePath.value ||
+      form.pageType === 'global' ||
+      mountMode.value === 'none'
+    ) {
       return
     }
     if (hasManualRoutePathEdit.value) {
@@ -676,8 +780,12 @@
     const previousParentMenuId = originalRouteContext.value.parentMenuId
     const previousParentPageKey = originalRouteContext.value.parentPageKey
     const currentParentMenuId = mountMode.value === 'menu' ? normalizeMenuId(form.parentMenuId) : ''
-    const currentParentPageKey = mountMode.value === 'page' ? `${form.parentPageKey || ''}`.trim() : ''
-    if (currentParentMenuId === previousParentMenuId && currentParentPageKey === previousParentPageKey) {
+    const currentParentPageKey =
+      mountMode.value === 'page' ? `${form.parentPageKey || ''}`.trim() : ''
+    if (
+      currentParentMenuId === previousParentMenuId &&
+      currentParentPageKey === previousParentPageKey
+    ) {
       return
     }
     const relativeRoutePath = deriveRelativeRoutePath(currentRoutePath)
@@ -786,7 +894,8 @@
         status: props.pageData.status || 'normal'
       })
       mountMode.value = form.parentPageKey ? 'page' : form.parentMenuId ? 'menu' : 'none'
-      showAdvanced.value = Boolean(form.activeMenuPath) || form.breadcrumbMode !== defaultBreadcrumbMode()
+      showAdvanced.value =
+        Boolean(form.activeMenuPath) || form.breadcrumbMode !== defaultBreadcrumbMode()
       return
     }
 
@@ -797,7 +906,10 @@
       routeName: props.defaultData?.routeName || '',
       routePath: props.defaultData?.routePath || '',
       component: props.defaultData?.component || '',
-      pageType: props.defaultData?.pageType === 'global' || props.initialPageType === 'global' ? 'global' : 'inner',
+      pageType:
+        props.defaultData?.pageType === 'global' || props.initialPageType === 'global'
+          ? 'global'
+          : 'inner',
       moduleKey: props.defaultData?.moduleKey || '',
       sortOrder: props.defaultData?.sortOrder ?? 0,
       parentMenuId: props.defaultData?.parentMenuId || props.initialParentMenuId || '',
@@ -819,10 +931,7 @@
   }
 
   async function loadOptions() {
-    const [menuRes, pageRes] = await Promise.all([
-      fetchGetPageMenuOptions(),
-      fetchGetPageList({ current: 1, size: 1000 })
-    ])
+    const [menuRes, pageRes] = await Promise.all([fetchGetPageMenuOptions(), fetchGetPageOptions()])
     menuOptions.value = menuRes.records || []
     allPages.value = pageRes.records || []
   }
@@ -899,9 +1008,7 @@
       }
       maybeAdjustRoutePathForMountedEdit()
       nextTick(() =>
-        formRef.value
-          ?.validateField(['parentMenuId', 'parentPageKey'])
-          .catch(() => undefined)
+        formRef.value?.validateField(['parentMenuId', 'parentPageKey']).catch(() => undefined)
       )
     }
   )
@@ -1002,11 +1109,19 @@
             : `${props.defaultData?.source || 'manual'}`,
         module_key: form.moduleKey.trim(),
         sort_order: form.sortOrder,
-        parent_menu_id: form.pageType === 'global' || mountMode.value !== 'menu' ? '' : normalizeMenuId(form.parentMenuId),
-        parent_page_key: form.pageType === 'global' || mountMode.value !== 'page' ? '' : form.parentPageKey || '',
+        parent_menu_id:
+          form.pageType === 'global' || mountMode.value !== 'menu'
+            ? ''
+            : normalizeMenuId(form.parentMenuId),
+        parent_page_key:
+          form.pageType === 'global' || mountMode.value !== 'page' ? '' : form.parentPageKey || '',
         display_group_key: mountMode.value === 'page' ? '' : form.displayGroupKey || '',
         active_menu_path: showAdvanced.value ? form.activeMenuPath.trim() : '',
-        breadcrumb_mode: showAdvanced.value ? form.breadcrumbMode : form.pageType === 'global' ? 'inherit_menu' : defaultBreadcrumbMode(),
+        breadcrumb_mode: showAdvanced.value
+          ? form.breadcrumbMode
+          : form.pageType === 'global'
+            ? 'inherit_menu'
+            : defaultBreadcrumbMode(),
         access_mode: form.accessMode,
         permission_key: form.accessMode === 'permission' ? form.permissionKey.trim() : '',
         keep_alive: form.isIframe ? false : form.keepAlive,
@@ -1022,7 +1137,13 @@
       } else {
         await fetchCreatePage(payload)
       }
-      ElMessage.success(props.dialogType === 'edit' ? '修改成功' : props.dialogType === 'copy' ? '复制成功' : '新增成功')
+      ElMessage.success(
+        props.dialogType === 'edit'
+          ? '修改成功'
+          : props.dialogType === 'copy'
+            ? '复制成功'
+            : '新增成功'
+      )
       emit('success')
       handleClose()
     } catch (error: any) {
@@ -1046,7 +1167,11 @@
   }
 
   .dialog-intro {
-    background: linear-gradient(180deg, var(--el-fill-color-light) 0%, color-mix(in srgb, var(--el-fill-color-light) 72%, white) 100%);
+    background: linear-gradient(
+      180deg,
+      var(--el-fill-color-light) 0%,
+      color-mix(in srgb, var(--el-fill-color-light) 72%, white) 100%
+    );
     border: 1px solid var(--el-border-color-lighter);
     border-radius: 14px;
     margin-bottom: 18px;

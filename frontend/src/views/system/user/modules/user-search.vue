@@ -11,7 +11,7 @@
 </template>
 
 <script setup lang="ts">
-  import { fetchGetRoleList } from '@/api/system-manage'
+  import { fetchGetRoleOptions } from '@/api/system-manage'
 
   interface Props {
     modelValue: Record<string, any>
@@ -51,7 +51,7 @@
   const loadRoles = async () => {
     try {
       roleLoading.value = true
-      const res = await fetchGetRoleList({ current: 1, size: 1000 })
+      const res = await fetchGetRoleOptions()
       const roles = res?.records || []
       roleOptions.value = roles.map((role: Api.SystemManage.RoleListItem) => ({
         label: `${role.roleName} (${role.roleCode})`,

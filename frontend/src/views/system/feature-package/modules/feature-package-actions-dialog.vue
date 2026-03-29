@@ -5,7 +5,8 @@
     size="1240px"
     destroy-on-close
     direction="rtl"
-    class="config-drawer">
+    class="config-drawer"
+  >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
         {{ noteText }}
@@ -39,7 +40,7 @@
   import PermissionActionCascaderPanel from '@/components/business/permission/PermissionActionCascaderPanel.vue'
   import {
     fetchGetFeaturePackageActions,
-    fetchGetPermissionActionList,
+    fetchGetPermissionActionOptions,
     fetchSetFeaturePackageActions
   } from '@/api/system-manage'
 
@@ -101,9 +102,7 @@
     loading.value = true
     try {
       const [actionsRes, currentRes] = await Promise.all([
-        fetchGetPermissionActionList({
-          current: 1,
-          size: 1000,
+        fetchGetPermissionActionOptions({
           status: 'normal',
           contextType: props.contextType === 'common' ? undefined : props.contextType || 'team'
         }),
@@ -122,7 +121,10 @@
     if (!props.packageId) return
     saving.value = true
     try {
-      await fetchSetFeaturePackageActions(props.packageId, expandSelectedValues(selectedIds.value, filteredActions.value))
+      await fetchSetFeaturePackageActions(
+        props.packageId,
+        expandSelectedValues(selectedIds.value, filteredActions.value)
+      )
       ElMessage.success('功能包功能范围已保存')
       emit('success')
       visible.value = false
@@ -133,7 +135,10 @@
     }
   }
 
-  function expandSelectedValues(values: string[], actions: Api.SystemManage.PermissionActionItem[]) {
+  function expandSelectedValues(
+    values: string[],
+    actions: Api.SystemManage.PermissionActionItem[]
+  ) {
     const result = new Set<string>()
     const featureMap = new Map<string, Api.SystemManage.PermissionActionItem[]>()
     const moduleMap = new Map<string, Api.SystemManage.PermissionActionItem[]>()

@@ -41,10 +41,13 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	endpoints := rg.Group("/api-endpoints")
 	reg := apiregistry.NewRegistrar(endpoints, "api_endpoint")
 	{
+		reg.GETProtected("/overview", reg.Meta("获取 API 概览").BindGroup("api_endpoint").BindPermissionKey("system.api_registry.view").Build(), "system.api_registry.view", authzService.RequireAction, handler.Overview)
+		reg.GETProtected("/stale", reg.Meta("获取失效 API").BindGroup("api_endpoint").BindPermissionKey("system.api_registry.view").Build(), "system.api_registry.view", authzService.RequireAction, handler.ListStale)
 		reg.GETAction("/unregistered", "获取未注册 API 路由", "system.api_registry.view", authzService.RequireAction, handler.ListUnregistered)
 		reg.GETProtected("", reg.Meta("获取 API 注册表").BindGroup("api_endpoint").BindPermissionKey("system.api_registry.view").Build(), "system.api_registry.view", authzService.RequireAction, handler.List)
 		reg.GETProtected("/categories", reg.Meta("获取 API 分类").BindGroup("api_endpoint").BindPermissionKey("system.api_registry.view").Build(), "system.api_registry.view", authzService.RequireAction, handler.ListCategories)
 		reg.POSTProtected("/sync", reg.Meta("同步 API 注册表").BindGroup("api_endpoint").BindSource("manual").BindPermissionKey("system.api_registry.sync").Build(), "system.api_registry.sync", authzService.RequireAction, handler.Sync)
+		reg.POSTProtected("/cleanup-stale", reg.Meta("清理失效 API").BindGroup("api_endpoint").BindSource("manual").BindPermissionKey("system.api_registry.sync").Build(), "system.api_registry.sync", authzService.RequireAction, handler.CleanupStale)
 		reg.POSTProtected("", reg.Meta("创建 API 注册项").BindGroup("api_endpoint").BindSource("manual").BindPermissionKey("system.api_registry.sync").Build(), "system.api_registry.sync", authzService.RequireAction, handler.Create)
 		reg.PUTProtected("/:id", reg.Meta("更新 API 注册项").BindGroup("api_endpoint").BindSource("manual").BindPermissionKey("system.api_registry.sync").Build(), "system.api_registry.sync", authzService.RequireAction, handler.Update)
 		reg.PUTProtected("/:id/context-scope", reg.Meta("更新 API 团队上下文").BindGroup("api_endpoint").BindSource("manual").BindPermissionKey("system.api_registry.sync").Build(), "system.api_registry.sync", authzService.RequireAction, handler.UpdateContextScope)

@@ -248,11 +248,11 @@ func createUniqueIndexes() error {
 	}
 
 	apiEndpointPermissionBindingUnique := "idx_api_endpoint_permission_bindings_unique"
-	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", apiEndpointPermissionBindingUnique).Scan(&count)
-	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + apiEndpointPermissionBindingUnique + " ON api_endpoint_permission_bindings (endpoint_id, permission_key) WHERE deleted_at IS NULL").Error; err != nil {
-			return err
-		}
+	if err := DB.Exec("DROP INDEX IF EXISTS " + apiEndpointPermissionBindingUnique).Error; err != nil {
+		return err
+	}
+	if err := DB.Exec("CREATE UNIQUE INDEX IF NOT EXISTS " + apiEndpointPermissionBindingUnique + " ON api_endpoint_permission_bindings (endpoint_code, permission_key) WHERE deleted_at IS NULL").Error; err != nil {
+		return err
 	}
 
 	permissionActionHotIndexName := "idx_permission_keys_status_sort_created"

@@ -51,6 +51,7 @@ func (m *RoleModule) RegisterRoutes(rg *gin.RouterGroup) {
 	roleSnapshotService := platformroleaccess.NewService(m.db)
 	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
 	roleService := NewRoleService(
+		m.db,
 		roleRepo,
 		rolePackageRepo,
 		featurePkgRepo,
@@ -73,6 +74,7 @@ func (m *RoleModule) RegisterRoutes(rg *gin.RouterGroup) {
 	reg := apiregistry.NewRegistrar(roles, "role")
 	{
 		reg.GETProtected("", reg.Meta("获取角色列表").BindGroup("role").BindPermissionKey("system.role.manage").Build(), "system.role.manage", authzService.RequireAction, roleHandler.List)
+		reg.GETProtected("/options", reg.Meta("获取角色候选").BindGroup("role").BindPermissionKey("system.role.manage").Build(), "system.role.manage", authzService.RequireAction, roleHandler.ListOptions)
 		reg.GETProtected("/:id", reg.Meta("获取角色详情").BindGroup("role").BindPermissionKey("system.role.manage").Build(), "system.role.manage", authzService.RequireAction, roleHandler.Get)
 		reg.GETAction("/:id/packages", "获取角色功能包", "platform.package.assign", authzService.RequireAction, roleHandler.GetRolePackages)
 		reg.PUTAction("/:id/packages", "配置角色功能包", "platform.package.assign", authzService.RequireAction, roleHandler.SetRolePackages)

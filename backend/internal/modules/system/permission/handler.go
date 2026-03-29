@@ -2,6 +2,7 @@ package permission
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -45,6 +46,31 @@ func (h *PermissionHandler) List(c *gin.Context) {
 		"total":   total,
 		"current": req.Current,
 		"size":    req.Size,
+	}))
+}
+
+func (h *PermissionHandler) ListOptions(c *gin.Context) {
+	var req dto.PermissionKeyListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	list, err := h.permissionService.ListOptions(&req)
+	if err != nil {
+		h.logger.Error("List permission key options failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能权限候选失败")
+		c.JSON(status, resp)
+		return
+	}
+	records := make([]gin.H, 0, len(list))
+	for _, item := range list {
+		action := item
+		records = append(records, permissionKeyToMap(&action))
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"records": records,
+		"total":   len(records),
 	}))
 }
 
@@ -137,13 +163,13 @@ func (h *PermissionHandler) AddEndpoint(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	endpointID, err := uuid.Parse(req.EndpointID)
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的接口ID")
+	endpointCode := strings.TrimSpace(req.EndpointCode)
+	if endpointCode == "" {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "无效的接口编码")
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.permissionService.AddEndpoint(id, endpointID); err != nil {
+	if err := h.permissionService.AddEndpoint(id, endpointCode); err != nil {
 		switch err {
 		case ErrPermissionKeyNotFound:
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能权限不存在")
@@ -170,13 +196,13 @@ func (h *PermissionHandler) RemoveEndpoint(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	endpointID, err := uuid.Parse(c.Param("endpointId"))
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的接口ID")
+	endpointCode := strings.TrimSpace(c.Param("endpointCode"))
+	if endpointCode == "" {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "无效的接口编码")
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.permissionService.RemoveEndpoint(id, endpointID); err != nil {
+	if err := h.permissionService.RemoveEndpoint(id, endpointCode); err != nil {
 		if err == ErrPermissionKeyNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能权限不存在")
 			c.JSON(status, resp)
@@ -408,6 +434,7 @@ func endpointToMap(endpoint *user.APIEndpoint) gin.H {
 	}
 	return gin.H{
 		"id":            endpoint.ID.String(),
+		"code":          endpoint.Code,
 		"method":        endpoint.Method,
 		"path":          endpoint.Path,
 		"spec":          endpoint.Method + " " + endpoint.Path,

@@ -97,6 +97,31 @@ func (h *TenantHandler) List(c *gin.Context) {
 	}))
 }
 
+func (h *TenantHandler) ListOptions(c *gin.Context) {
+	var req dto.TenantListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	list, err := h.tenantService.ListOptions(&req)
+	if err != nil {
+		h.logger.Error("Tenant options failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队候选失败")
+		c.JSON(status, resp)
+		return
+	}
+	records := make([]gin.H, 0, len(list))
+	for _, t := range list {
+		tenant := t
+		records = append(records, tenantToMap(&tenant, nil))
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"records": records,
+		"total":   len(records),
+	}))
+}
+
 func (h *TenantHandler) Get(c *gin.Context) {
 	idStr := c.Param("id")
 	if strings.TrimSpace(strings.ToLower(idStr)) == "my-team" {

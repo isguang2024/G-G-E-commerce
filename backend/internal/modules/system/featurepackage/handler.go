@@ -59,6 +59,31 @@ func (h *Handler) List(c *gin.Context) {
 	}))
 }
 
+func (h *Handler) ListOptions(c *gin.Context) {
+	var req dto.FeaturePackageListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	list, err := h.service.ListOptions(&req)
+	if err != nil {
+		h.logger.Error("List feature package options failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包候选失败")
+		c.JSON(status, resp)
+		return
+	}
+	records := make([]gin.H, 0, len(list))
+	for _, item := range list {
+		packageItem := item
+		records = append(records, packageToMap(&packageItem))
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"records": records,
+		"total":   len(records),
+	}))
+}
+
 func (h *Handler) Get(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

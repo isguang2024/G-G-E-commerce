@@ -1361,8 +1361,10 @@ type APIEndpointRepository interface {
 	List(offset, limit int, params *APIEndpointListParams) ([]APIEndpoint, int64, error)
 	Upsert(endpoint *APIEndpoint) error
 	GetByMethodAndPath(method, path string) (*APIEndpoint, error)
+	GetByCode(code string) (*APIEndpoint, error)
 	GetByID(id uuid.UUID) (*APIEndpoint, error)
 	GetByIDs(ids []uuid.UUID) ([]APIEndpoint, error)
+	GetByCodes(codes []string) ([]APIEndpoint, error)
 	Create(endpoint *APIEndpoint) error
 	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
 }
@@ -2210,7 +2212,7 @@ func (r *userHiddenMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
 }
 
 type APIEndpointListParams struct {
-	EndpointIDs   []uuid.UUID
+	EndpointCodes []string
 	Method        string
 	PermissionKey string
 	Keyword       string
@@ -2235,8 +2237,8 @@ func NewAPIEndpointRepository(db *gorm.DB) APIEndpointRepository {
 func (r *apiEndpointRepository) List(offset, limit int, params *APIEndpointListParams) ([]APIEndpoint, int64, error) {
 	query := r.db.Model(&APIEndpoint{})
 	if params != nil {
-		if len(params.EndpointIDs) > 0 {
-			query = query.Where("id IN ?", params.EndpointIDs)
+		if len(params.EndpointCodes) > 0 {
+			query = query.Where("code IN ?", params.EndpointCodes)
 		}
 		if params.Method != "" {
 			query = query.Where("method = ?", params.Method)
@@ -2265,9 +2267,9 @@ func (r *apiEndpointRepository) List(offset, limit int, params *APIEndpointListP
 		}
 		if params.HasPermission != nil {
 			if *params.HasPermission {
-				query = query.Where("EXISTS (SELECT 1 FROM api_endpoint_permission_bindings b WHERE b.endpoint_id = api_endpoints.id)")
+				query = query.Where("EXISTS (SELECT 1 FROM api_endpoint_permission_bindings b WHERE b.endpoint_code = api_endpoints.code)")
 			} else {
-				query = query.Where("NOT EXISTS (SELECT 1 FROM api_endpoint_permission_bindings b WHERE b.endpoint_id = api_endpoints.id)")
+				query = query.Where("NOT EXISTS (SELECT 1 FROM api_endpoint_permission_bindings b WHERE b.endpoint_code = api_endpoints.code)")
 			}
 		}
 		if params.HasCategory != nil {
@@ -2299,6 +2301,18 @@ func (r *apiEndpointRepository) GetByMethodAndPath(method, path string) (*APIEnd
 	return &endpoint, nil
 }
 
+func (r *apiEndpointRepository) GetByCode(code string) (*APIEndpoint, error) {
+	var endpoint APIEndpoint
+	err := r.db.Where("code = ?", code).First(&endpoint).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, gorm.ErrRecordNotFound
+		}
+		return nil, err
+	}
+	return &endpoint, nil
+}
+
 func (r *apiEndpointRepository) GetByID(id uuid.UUID) (*APIEndpoint, error) {
 	var endpoint APIEndpoint
 	err := r.db.Where("id = ?", id).First(&endpoint).Error
@@ -2320,6 +2334,15 @@ func (r *apiEndpointRepository) GetByIDs(ids []uuid.UUID) ([]APIEndpoint, error)
 	return endpoints, err
 }
 
+func (r *apiEndpointRepository) GetByCodes(codes []string) ([]APIEndpoint, error) {
+	var endpoints []APIEndpoint
+	if len(codes) == 0 {
+		return endpoints, nil
+	}
+	err := r.db.Where("code IN ?", codes).Order("path ASC, method ASC").Find(&endpoints).Error
+	return endpoints, err
+}
+
 func (r *apiEndpointRepository) Create(endpoint *APIEndpoint) error {
 	return r.db.Create(endpoint).Error
 }
@@ -2333,6 +2356,9 @@ func (r *apiEndpointRepository) Upsert(endpoint *APIEndpoint) error {
 		return nil
 	}
 	updates := map[string]interface{}{
+		"code":          endpoint.Code,
+		"method":        endpoint.Method,
+		"path":          endpoint.Path,
 		"feature_kind":  endpoint.FeatureKind,
 		"handler":       endpoint.Handler,
 		"summary":       endpoint.Summary,
@@ -2343,7 +2369,11 @@ func (r *apiEndpointRepository) Upsert(endpoint *APIEndpoint) error {
 	}
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		var existing APIEndpoint
-		err := tx.Where("method = ? AND path = ?", endpoint.Method, endpoint.Path).First(&existing).Error
+		query := tx.Where("code = ?", endpoint.Code)
+		if strings.TrimSpace(endpoint.Code) == "" {
+			query = tx.Where("method = ? AND path = ?", endpoint.Method, endpoint.Path)
+		}
+		err := query.First(&existing).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				return tx.Create(endpoint).Error
@@ -2401,12 +2431,12 @@ func (r *apiEndpointCategoryRepository) UpdateWithMap(id uuid.UUID, updates map[
 }
 
 type APIEndpointPermissionBindingRepository interface {
-	ListByEndpointIDs(endpointIDs []uuid.UUID) ([]APIEndpointPermissionBinding, error)
-	ListByEndpointID(endpointID uuid.UUID) ([]APIEndpointPermissionBinding, error)
-	ListEndpointIDsByPermissionKey(permissionKey string) ([]uuid.UUID, error)
-	ReplaceByEndpointID(endpointID uuid.UUID, items []APIEndpointPermissionBinding) error
-	AddByPermissionKey(permissionKey string, endpointID uuid.UUID) error
-	RemoveByPermissionKey(permissionKey string, endpointID uuid.UUID) error
+	ListByEndpointCodes(endpointCodes []string) ([]APIEndpointPermissionBinding, error)
+	ListByEndpointCode(endpointCode string) ([]APIEndpointPermissionBinding, error)
+	ListEndpointCodesByPermissionKey(permissionKey string) ([]string, error)
+	ReplaceByEndpointCode(endpointCode string, items []APIEndpointPermissionBinding) error
+	AddByPermissionKey(permissionKey string, endpointCode string) error
+	RemoveByPermissionKey(permissionKey string, endpointCode string) error
 }
 
 type apiEndpointPermissionBindingRepository struct {
@@ -2417,32 +2447,32 @@ func NewAPIEndpointPermissionBindingRepository(db *gorm.DB) APIEndpointPermissio
 	return &apiEndpointPermissionBindingRepository{db: db}
 }
 
-func (r *apiEndpointPermissionBindingRepository) ListByEndpointIDs(endpointIDs []uuid.UUID) ([]APIEndpointPermissionBinding, error) {
-	if len(endpointIDs) == 0 {
+func (r *apiEndpointPermissionBindingRepository) ListByEndpointCodes(endpointCodes []string) ([]APIEndpointPermissionBinding, error) {
+	if len(endpointCodes) == 0 {
 		return []APIEndpointPermissionBinding{}, nil
 	}
 	var items []APIEndpointPermissionBinding
-	err := r.db.Where("endpoint_id IN ?", endpointIDs).Order("sort_order ASC, created_at ASC").Find(&items).Error
+	err := r.db.Where("endpoint_code IN ?", endpointCodes).Order("sort_order ASC, created_at ASC").Find(&items).Error
 	return items, err
 }
 
-func (r *apiEndpointPermissionBindingRepository) ListByEndpointID(endpointID uuid.UUID) ([]APIEndpointPermissionBinding, error) {
+func (r *apiEndpointPermissionBindingRepository) ListByEndpointCode(endpointCode string) ([]APIEndpointPermissionBinding, error) {
 	var items []APIEndpointPermissionBinding
-	err := r.db.Where("endpoint_id = ?", endpointID).Order("sort_order ASC, created_at ASC").Find(&items).Error
+	err := r.db.Where("endpoint_code = ?", endpointCode).Order("sort_order ASC, created_at ASC").Find(&items).Error
 	return items, err
 }
 
-func (r *apiEndpointPermissionBindingRepository) ListEndpointIDsByPermissionKey(permissionKey string) ([]uuid.UUID, error) {
-	var ids []uuid.UUID
+func (r *apiEndpointPermissionBindingRepository) ListEndpointCodesByPermissionKey(permissionKey string) ([]string, error) {
+	var codes []string
 	err := r.db.Model(&APIEndpointPermissionBinding{}).
 		Where("permission_key = ?", permissionKey).
-		Pluck("endpoint_id", &ids).Error
-	return ids, err
+		Pluck("endpoint_code", &codes).Error
+	return codes, err
 }
 
-func (r *apiEndpointPermissionBindingRepository) ReplaceByEndpointID(endpointID uuid.UUID, items []APIEndpointPermissionBinding) error {
+func (r *apiEndpointPermissionBindingRepository) ReplaceByEndpointCode(endpointCode string, items []APIEndpointPermissionBinding) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("endpoint_id = ?", endpointID).Delete(&APIEndpointPermissionBinding{}).Error; err != nil {
+		if err := tx.Unscoped().Where("endpoint_code = ?", endpointCode).Delete(&APIEndpointPermissionBinding{}).Error; err != nil {
 			return err
 		}
 		if len(items) == 0 {
@@ -2452,10 +2482,10 @@ func (r *apiEndpointPermissionBindingRepository) ReplaceByEndpointID(endpointID 
 	})
 }
 
-func (r *apiEndpointPermissionBindingRepository) AddByPermissionKey(permissionKey string, endpointID uuid.UUID) error {
+func (r *apiEndpointPermissionBindingRepository) AddByPermissionKey(permissionKey string, endpointCode string) error {
 	var count int64
 	if err := r.db.Model(&APIEndpointPermissionBinding{}).
-		Where("permission_key = ? AND endpoint_id = ?", permissionKey, endpointID).
+		Where("permission_key = ? AND endpoint_code = ?", permissionKey, endpointCode).
 		Count(&count).Error; err != nil {
 		return err
 	}
@@ -2463,7 +2493,7 @@ func (r *apiEndpointPermissionBindingRepository) AddByPermissionKey(permissionKe
 		return nil
 	}
 	item := &APIEndpointPermissionBinding{
-		EndpointID:    endpointID,
+		EndpointCode:  endpointCode,
 		PermissionKey: permissionKey,
 		MatchMode:     "ANY",
 		SortOrder:     0,
@@ -2471,7 +2501,7 @@ func (r *apiEndpointPermissionBindingRepository) AddByPermissionKey(permissionKe
 	return r.db.Create(item).Error
 }
 
-func (r *apiEndpointPermissionBindingRepository) RemoveByPermissionKey(permissionKey string, endpointID uuid.UUID) error {
-	return r.db.Where("permission_key = ? AND endpoint_id = ?", permissionKey, endpointID).
+func (r *apiEndpointPermissionBindingRepository) RemoveByPermissionKey(permissionKey string, endpointCode string) error {
+	return r.db.Unscoped().Where("permission_key = ? AND endpoint_code = ?", permissionKey, endpointCode).
 		Delete(&APIEndpointPermissionBinding{}).Error
 }

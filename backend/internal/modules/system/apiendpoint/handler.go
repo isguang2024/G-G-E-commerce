@@ -1,6 +1,8 @@
 package apiendpoint
 
 import (
+	"errors"
+	"io"
 	"net/http"
 	"strings"
 
@@ -69,18 +71,70 @@ func (h *Handler) List(c *gin.Context) {
 	for _, category := range categories {
 		categoryMap[category.ID] = category
 	}
+	runtimeStateMap := h.service.ListRuntimeStates(list)
 	records := make([]gin.H, 0, len(list))
-	endpointIDs := make([]uuid.UUID, 0, len(list))
+	endpointCodes := make([]string, 0, len(list))
 	for _, endpoint := range list {
-		endpointIDs = append(endpointIDs, endpoint.ID)
+		if code := strings.TrimSpace(endpoint.Code); code != "" {
+			endpointCodes = append(endpointCodes, code)
+		}
 	}
-	bindings, _ := h.service.ListBindingsByEndpointIDs(endpointIDs)
-	bindingsMap := make(map[uuid.UUID][]user.APIEndpointPermissionBinding, len(endpointIDs))
+	bindings, _ := h.service.ListBindingsByEndpointCodes(endpointCodes)
+	bindingsMap := make(map[string][]user.APIEndpointPermissionBinding, len(endpointCodes))
 	for _, item := range bindings {
-		bindingsMap[item.EndpointID] = append(bindingsMap[item.EndpointID], item)
+		bindingsMap[item.EndpointCode] = append(bindingsMap[item.EndpointCode], item)
 	}
 	for _, endpoint := range list {
-		records = append(records, endpointToMap(&endpoint, bindingsMap[endpoint.ID], categoryMap))
+		records = append(records, endpointToMap(&endpoint, bindingsMap[endpoint.Code], categoryMap, runtimeStateMap[endpoint.ID]))
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"records": records,
+		"total":   total,
+		"current": maxInt(req.Current, 1),
+		"size":    maxInt(req.Size, 20),
+	}))
+}
+
+func (h *Handler) Overview(c *gin.Context) {
+	overview, err := h.service.Overview()
+	if err != nil {
+		h.logger.Error("Get api endpoint overview failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取 API 概览失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(overview))
+}
+
+func (h *Handler) ListStale(c *gin.Context) {
+	var req struct {
+		Current int `form:"current"`
+		Size    int `form:"size"`
+	}
+	if err := c.ShouldBindQuery(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	list, total, err := h.service.ListStale(&StaleListRequest{
+		Current: req.Current,
+		Size:    req.Size,
+	})
+	if err != nil {
+		h.logger.Error("List stale api endpoints failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取失效 API 失败")
+		c.JSON(status, resp)
+		return
+	}
+	categories, _ := h.service.ListCategories()
+	categoryMap := make(map[uuid.UUID]user.APIEndpointCategory, len(categories))
+	for _, category := range categories {
+		categoryMap[category.ID] = category
+	}
+	runtimeStateMap := h.service.ListRuntimeStates(list)
+	records := make([]gin.H, 0, len(list))
+	for _, endpoint := range list {
+		records = append(records, endpointToMap(&endpoint, nil, categoryMap, runtimeStateMap[endpoint.ID]))
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
 		"records": records,
@@ -154,6 +208,53 @@ func (h *Handler) Sync(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
+func (h *Handler) CleanupStale(c *gin.Context) {
+	var req struct {
+		IDs []string `json:"ids"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	if len(req.IDs) == 0 {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "请选择要清理的失效 API")
+		c.JSON(status, resp)
+		return
+	}
+	endpointIDs := make([]uuid.UUID, 0, len(req.IDs))
+	seen := make(map[uuid.UUID]struct{}, len(req.IDs))
+	for _, rawID := range req.IDs {
+		endpointID, parseErr := uuid.Parse(strings.TrimSpace(rawID))
+		if parseErr != nil {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "存在无效的API ID")
+			c.JSON(status, resp)
+			return
+		}
+		if _, ok := seen[endpointID]; ok {
+			continue
+		}
+		seen[endpointID] = struct{}{}
+		endpointIDs = append(endpointIDs, endpointID)
+	}
+
+	deletedCount, err := h.service.CleanupStale(endpointIDs)
+	if err != nil {
+		if errors.Is(err, ErrNoStaleCleanupSelection) || errors.Is(err, ErrStaleCleanupTargetGone) {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, err.Error())
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Cleanup stale api endpoints failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "清理失效 API 失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"deleted_count": deletedCount,
+	}))
+}
+
 func (h *Handler) Create(c *gin.Context) {
 	var req struct {
 		Code           string   `json:"code"`
@@ -198,13 +299,13 @@ func (h *Handler) Create(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	bindings, _ := h.service.ListBindings(saved.ID)
+	bindings, _ := h.service.ListBindings(saved.Code)
 	categories, _ := h.service.ListCategories()
 	categoryMap := make(map[uuid.UUID]user.APIEndpointCategory, len(categories))
 	for _, category := range categories {
 		categoryMap[category.ID] = category
 	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(endpointToMap(saved, bindings, categoryMap)))
+	c.JSON(http.StatusOK, dto.SuccessResponse(endpointToMap(saved, bindings, categoryMap, EndpointRuntimeState{})))
 }
 
 func (h *Handler) Update(c *gin.Context) {
@@ -258,13 +359,13 @@ func (h *Handler) Update(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	bindings, _ := h.service.ListBindings(saved.ID)
+	bindings, _ := h.service.ListBindings(saved.Code)
 	categories, _ := h.service.ListCategories()
 	categoryMap := make(map[uuid.UUID]user.APIEndpointCategory, len(categories))
 	for _, category := range categories {
 		categoryMap[category.ID] = category
 	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(endpointToMap(saved, bindings, categoryMap)))
+	c.JSON(http.StatusOK, dto.SuccessResponse(endpointToMap(saved, bindings, categoryMap, EndpointRuntimeState{})))
 }
 
 func (h *Handler) SaveCategory(c *gin.Context) {
@@ -356,16 +457,16 @@ func (h *Handler) UpdateContextScope(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	bindings, _ := h.service.ListBindings(saved.ID)
+	bindings, _ := h.service.ListBindings(saved.Code)
 	categories, _ := h.service.ListCategories()
 	categoryMap := make(map[uuid.UUID]user.APIEndpointCategory, len(categories))
 	for _, category := range categories {
 		categoryMap[category.ID] = category
 	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(endpointToMap(saved, bindings, categoryMap)))
+	c.JSON(http.StatusOK, dto.SuccessResponse(endpointToMap(saved, bindings, categoryMap, EndpointRuntimeState{})))
 }
 
-func endpointToMap(endpoint *user.APIEndpoint, bindings []user.APIEndpointPermissionBinding, categoryMap map[uuid.UUID]user.APIEndpointCategory) gin.H {
+func endpointToMap(endpoint *user.APIEndpoint, bindings []user.APIEndpointPermissionBinding, categoryMap map[uuid.UUID]user.APIEndpointCategory, runtimeState EndpointRuntimeState) gin.H {
 	permissionKeys := make([]string, 0, len(bindings))
 	for _, item := range bindings {
 		permissionKeys = append(permissionKeys, item.PermissionKey)
@@ -408,6 +509,9 @@ func endpointToMap(endpoint *user.APIEndpoint, bindings []user.APIEndpointPermis
 		"context_scope":   endpoint.ContextScope,
 		"source":          endpoint.Source,
 		"status":          endpoint.Status,
+		"runtime_exists":  runtimeState.RuntimeExists,
+		"stale":           runtimeState.Stale,
+		"stale_reason":    runtimeState.StaleReason,
 		"created_at":      endpoint.CreatedAt.Format("2006-01-02 15:04:05"),
 		"updated_at":      endpoint.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}

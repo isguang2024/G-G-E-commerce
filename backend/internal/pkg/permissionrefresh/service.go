@@ -15,10 +15,13 @@ import (
 type Service interface {
 	RefreshTeam(teamID uuid.UUID) error
 	RefreshTeams(teamIDs []uuid.UUID) error
+	RefreshAllTeams() error
 	RefreshPlatformUser(userID uuid.UUID) error
 	RefreshPlatformUsers(userIDs []uuid.UUID) error
+	RefreshAllPlatformUsers() error
 	RefreshPlatformRole(roleID uuid.UUID) error
 	RefreshPlatformRoles(roleIDs []uuid.UUID) error
+	RefreshAllPlatformRoles() error
 	RefreshByPackage(packageID uuid.UUID) error
 	RefreshByPackages(packageIDs []uuid.UUID) error
 	RefreshByMenu(menuID uuid.UUID) error
@@ -57,6 +60,30 @@ func (s *service) RefreshTeams(teamIDs []uuid.UUID) error {
 	return nil
 }
 
+func (s *service) RefreshAllTeams() error {
+	if s.db == nil {
+		return nil
+	}
+	type tenantIDOnly struct {
+		ID uuid.UUID
+	}
+	return s.db.Model(&models.Tenant{}).
+		Select("id").
+		FindInBatches(&[]tenantIDOnly{}, 200, func(tx *gorm.DB, _ int) error {
+			rows, ok := tx.Statement.Dest.(*[]tenantIDOnly)
+			if !ok || len(*rows) == 0 {
+				return nil
+			}
+			teamIDs := make([]uuid.UUID, 0, len(*rows))
+			for _, row := range *rows {
+				if row.ID != uuid.Nil {
+					teamIDs = append(teamIDs, row.ID)
+				}
+			}
+			return s.RefreshTeams(teamIDs)
+		}).Error
+}
+
 func (s *service) RefreshPlatformUser(userID uuid.UUID) error {
 	if userID == uuid.Nil || s.platformService == nil {
 		return nil
@@ -72,6 +99,30 @@ func (s *service) RefreshPlatformUsers(userIDs []uuid.UUID) error {
 		}
 	}
 	return nil
+}
+
+func (s *service) RefreshAllPlatformUsers() error {
+	if s.db == nil {
+		return nil
+	}
+	type userIDOnly struct {
+		ID uuid.UUID
+	}
+	return s.db.Model(&models.User{}).
+		Select("id").
+		FindInBatches(&[]userIDOnly{}, 200, func(tx *gorm.DB, _ int) error {
+			rows, ok := tx.Statement.Dest.(*[]userIDOnly)
+			if !ok || len(*rows) == 0 {
+				return nil
+			}
+			userIDs := make([]uuid.UUID, 0, len(*rows))
+			for _, row := range *rows {
+				if row.ID != uuid.Nil {
+					userIDs = append(userIDs, row.ID)
+				}
+			}
+			return s.RefreshPlatformUsers(userIDs)
+		}).Error
 }
 
 func (s *service) RefreshPlatformRole(roleID uuid.UUID) error {
@@ -107,6 +158,31 @@ func (s *service) RefreshPlatformRoles(roleIDs []uuid.UUID) error {
 		return err
 	}
 	return s.RefreshPlatformUsers(userIDs)
+}
+
+func (s *service) RefreshAllPlatformRoles() error {
+	if s.db == nil {
+		return nil
+	}
+	type roleIDOnly struct {
+		ID uuid.UUID
+	}
+	return s.db.Model(&models.Role{}).
+		Select("id").
+		Where("tenant_id IS NULL").
+		FindInBatches(&[]roleIDOnly{}, 200, func(tx *gorm.DB, _ int) error {
+			rows, ok := tx.Statement.Dest.(*[]roleIDOnly)
+			if !ok || len(*rows) == 0 {
+				return nil
+			}
+			roleIDs := make([]uuid.UUID, 0, len(*rows))
+			for _, row := range *rows {
+				if row.ID != uuid.Nil {
+					roleIDs = append(roleIDs, row.ID)
+				}
+			}
+			return s.RefreshPlatformRoles(roleIDs)
+		}).Error
 }
 
 func (s *service) RefreshByPackage(packageID uuid.UUID) error {

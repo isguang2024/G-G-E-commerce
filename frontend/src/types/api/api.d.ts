@@ -626,7 +626,7 @@ declare namespace Api {
 
     interface APIEndpointItem {
       id: string
-      code?: string
+      code: string
       method: string
       path: string
       spec?: string
@@ -642,6 +642,9 @@ declare namespace Api {
       source?: 'sync' | 'seed' | 'manual' | string
       dataPermissionCode?: string
       dataPermissionName?: string
+      runtimeExists?: boolean
+      stale?: boolean
+      staleReason?: string
       status: string
       createdAt?: string
       updatedAt?: string
@@ -654,6 +657,18 @@ declare namespace Api {
       nameEn: string
       sortOrder?: number
       status?: string
+    }
+
+    interface APIEndpointCategoryCountItem {
+      categoryId: string
+      count: number
+    }
+
+    interface APIEndpointOverview {
+      totalCount: number
+      uncategorizedCount: number
+      staleCount: number
+      categoryCounts: APIEndpointCategoryCountItem[]
     }
 
     interface APIUnregisteredRouteItem {

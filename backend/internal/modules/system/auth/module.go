@@ -7,6 +7,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/config"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
 )
@@ -37,16 +38,18 @@ func (m *AuthModule) RegisterRoutes(rg *gin.RouterGroup) {
 	authHandler := NewAuthHandler(authService, authzService, m.logger)
 
 	auth := rg.Group("/auth")
+	authReg := apiregistry.NewRegistrar(auth, "auth")
 	{
-		auth.POST("/login", authHandler.Login)
-		auth.POST("/register", authHandler.Register)
-		auth.POST("/refresh", authHandler.RefreshToken)
+		authReg.POST("/login", authReg.Meta("用户登录").Build(), authHandler.Login)
+		authReg.POST("/register", authReg.Meta("用户注册").Build(), authHandler.Register)
+		authReg.POST("/refresh", authReg.Meta("刷新访问令牌").Build(), authHandler.RefreshToken)
 	}
 
 	authenticated := rg.Group("")
 	authenticated.Use(JWTAuth(m.config.JWT.Secret))
+	authenticatedReg := apiregistry.NewRegistrar(authenticated, "auth")
 	{
-		authenticated.GET("/user/info", authHandler.GetUserInfo)
+		authenticatedReg.GET("/user/info", authenticatedReg.Meta("获取当前登录用户信息").Build(), authHandler.GetUserInfo)
 	}
 }
 
