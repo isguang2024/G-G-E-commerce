@@ -231,8 +231,7 @@
       }
 
       await tenantStore.loadMyTeams({
-        preferredTenantId: response.user?.current_tenant_id || '',
-        preferPlatform: hasPlatformAccessByUserInfo(response.user || undefined)
+        preferredTenantId: response.user?.current_tenant_id || ''
       })
 
       // 登录成功处理

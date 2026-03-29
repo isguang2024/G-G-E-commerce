@@ -9,6 +9,13 @@
     @closed="handleClosed"
     :before-close="handleCancel"
   >
+    <div class="menu-dialog-intro">
+      <div class="menu-dialog-intro__title">{{ isEdit ? '编辑导航入口' : '创建导航入口' }}</div>
+      <div class="menu-dialog-intro__text">
+        菜单只负责导航入口、显示方式和访问模式。页面挂载与页面内逻辑不要继续回到菜单层维护。
+      </div>
+    </div>
+
     <ArtForm
       ref="formRef"
       v-model="form"
@@ -38,6 +45,7 @@
 
       <template #advancedConfig>
         <div class="advanced-config-container w-full">
+          <div class="advanced-config-intro">统一配置运行时展示行为、标签行为和访问开关。</div>
           <ElCollapse v-model="activeCollapse" class="w-full">
             <ElCollapseItem title="高级配置" name="1" class="w-full">
               <div class="grid grid-cols-2 gap-4">
@@ -518,6 +526,28 @@
 </script>
 
 <style lang="scss" scoped>
+  .menu-dialog-intro {
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    border: 1px solid rgb(226 232 240 / 0.95);
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgb(248 250 252 / 0.98), rgb(241 245 249 / 0.95));
+  }
+
+  .menu-dialog-intro__title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .menu-dialog-intro__text,
+  .advanced-config-intro {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #64748b;
+  }
+
   .advanced-config-container {
     margin-top: 20px;
   }

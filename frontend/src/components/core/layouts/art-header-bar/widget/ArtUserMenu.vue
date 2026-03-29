@@ -36,6 +36,10 @@
           <ArtTenantSwitcher compact />
         </div>
         <ul class="py-4 mt-3 border-t border-g-300/80">
+          <li v-if="hasPlatformAccess" class="btn-item" @click="enterPlatformManagement">
+            <ArtSvgIcon icon="ri:building-line" />
+            <span>进入平台管理</span>
+          </li>
           <li class="btn-item" @click="goPage('/user-center')">
             <ArtSvgIcon icon="ri:user-3-line" />
             <span>{{ $t('topBar.user.userCenter') }}</span>
@@ -70,6 +74,7 @@
   import { useTenantStore } from '@/store/modules/tenant'
   import { WEB_LINKS } from '@/utils/constants'
   import { mittBus } from '@/utils/sys'
+  import { refreshCurrentUserInfoContext, refreshUserMenus } from '@/router'
   import ArtTenantSwitcher from './ArtTenantSwitcher.vue'
 
   defineOptions({ name: 'ArtUserMenu' })
@@ -80,7 +85,7 @@
   const tenantStore = useTenantStore()
 
   const { getUserInfo: userInfo } = storeToRefs(userStore)
-  const { teamList } = storeToRefs(tenantStore)
+  const { teamList, hasPlatformAccess, currentContextMode } = storeToRefs(tenantStore)
   const userMenuPopover = ref()
 
   /**
@@ -89,6 +94,19 @@
    */
   const goPage = (path: string): void => {
     router.push(path)
+  }
+
+  const enterPlatformManagement = async (): Promise<void> => {
+    if (currentContextMode.value === 'platform') {
+      closeUserMenu()
+      router.push('/')
+      return
+    }
+    closeUserMenu()
+    tenantStore.enterPlatformContext()
+    await refreshCurrentUserInfoContext()
+    await refreshUserMenus()
+    router.push('/')
   }
 
   /**

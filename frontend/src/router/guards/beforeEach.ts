@@ -515,8 +515,7 @@ async function fetchUserInfo(): Promise<void> {
   userStore.checkAndClearWorktabs()
   tenantStore.setPlatformAccess(hasPlatformAccessByUserInfo(frontendUserInfo))
   await tenantStore.loadMyTeams({
-    preferredTenantId: data.current_tenant_id || '',
-    preferPlatform: hasPlatformAccessByUserInfo(frontendUserInfo)
+    preferredTenantId: data.current_tenant_id || ''
   })
   if (tenantStore.currentContextMode === 'team' && tenantStore.currentTenantId !== (data.current_tenant_id || '')) {
     await refreshCurrentUserInfoContext()

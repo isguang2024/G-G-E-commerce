@@ -12,6 +12,18 @@
       shadow="never"
       :style="{ marginTop: showSearchBar ? '12px' : '0' }"
     >
+      <AdminWorkspaceHero
+        title="用户管理"
+        description="管理平台账号、角色归属、菜单裁剪和权限测试，先在这里确认平台身份链路。"
+        :metrics="summaryMetrics"
+      >
+        <div class="user-hero-actions">
+          <ElButton v-action="'system.user.manage'" type="primary" @click="showDialog('add')" v-ripple>
+            新增用户
+          </ElButton>
+        </div>
+      </AdminWorkspaceHero>
+
       <ArtTableHeader
         v-model:columns="columnChecks"
         v-model:showSearchBar="showSearchBar"
@@ -19,9 +31,7 @@
         @refresh="refreshData"
       >
         <template #left>
-          <ElSpace wrap>
-            <ElButton v-action="'system.user.manage'" @click="showDialog('add')" v-ripple>新增用户</ElButton>
-          </ElSpace>
+          <div class="user-toolbar-tip">角色、功能包、菜单裁剪和权限测试统一从操作菜单进入。</div>
         </template>
       </ArtTableHeader>
 
@@ -66,6 +76,7 @@
 <script setup lang="ts">
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
+  import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { useTable } from '@/hooks/core/useTable'
   import {
     fetchGetUserList,
@@ -104,6 +115,11 @@
 
   // 选中行
   const selectedRows = ref<UserListItem[]>([])
+  const summaryMetrics = computed(() => [
+    { label: '当前页', value: data.value.length || 0 },
+    { label: '总用户', value: pagination.total || 0 },
+    { label: '已选', value: selectedRows.value.length || 0 }
+  ])
 
   // 搜索表单（与后端 status: active/inactive 一致）
   const searchForm = ref({
@@ -450,3 +466,16 @@
     selectedRows.value = selection
   }
 </script>
+
+<style scoped lang="scss">
+  .user-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .user-toolbar-tip {
+    font-size: 13px;
+    color: var(--el-text-color-secondary);
+  }
+</style>

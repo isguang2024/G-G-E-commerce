@@ -59,55 +59,64 @@
           shadow="never"
           :style="{ marginTop: showSearchBar ? '12px' : '0' }"
         >
+          <AdminWorkspaceHero
+            title="API 管理"
+            description="维护接口注册、分类、权限键与运行时状态，未注册和失效接口也在同一页诊断。"
+            :metrics="summaryMetrics"
+          >
+            <div class="api-hero-actions">
+              <div class="api-hero-actions__group">
+                <ElButton
+                  v-action="'system.api_registry.sync'"
+                  type="primary"
+                  @click="openCreateDialog"
+                  v-ripple
+                >
+                  新增 API
+                </ElButton>
+                <ElButton
+                  v-action="'system.api_registry.sync'"
+                  plain
+                  :loading="syncing"
+                  @click="handleSync"
+                  v-ripple
+                >
+                  同步 API
+                </ElButton>
+              </div>
+              <div class="api-hero-actions__group api-hero-actions__group--secondary">
+                <ElButton
+                  v-action="'system.api_registry.view'"
+                  plain
+                  @click="openUnregisteredDialog"
+                  v-ripple
+                >
+                  未注册 API
+                  <span v-if="unregisteredCount > 0" class="toolbar-count"
+                    >({{ unregisteredCount }})</span
+                  >
+                </ElButton>
+                <ElButton
+                  v-action="'system.api_registry.sync'"
+                  plain
+                  type="danger"
+                  :loading="cleaningStale"
+                  @click="handleCleanupStale"
+                  v-ripple
+                >
+                  清理失效 API
+                  <span v-if="staleCount > 0" class="toolbar-count">({{ staleCount }})</span>
+                </ElButton>
+              </div>
+            </div>
+          </AdminWorkspaceHero>
+
           <ArtTableHeader
             v-model:columns="columnChecks"
             v-model:showSearchBar="showSearchBar"
             :loading="loading"
             @refresh="refreshData"
-          >
-            <template #left>
-              <ElButton
-                v-action="'system.api_registry.sync'"
-                type="primary"
-                @click="openCreateDialog"
-                v-ripple
-              >
-                新增 API
-              </ElButton>
-              <ElButton
-                v-action="'system.api_registry.sync'"
-                type="primary"
-                plain
-                :loading="syncing"
-                @click="handleSync"
-                v-ripple
-              >
-                同步 API
-              </ElButton>
-              <ElButton
-                v-action="'system.api_registry.view'"
-                plain
-                @click="openUnregisteredDialog"
-                v-ripple
-              >
-                未注册 API
-                <span v-if="unregisteredCount > 0" class="toolbar-count"
-                  >({{ unregisteredCount }})</span
-                >
-              </ElButton>
-              <ElButton
-                v-action="'system.api_registry.sync'"
-                plain
-                type="danger"
-                :loading="cleaningStale"
-                @click="handleCleanupStale"
-                v-ripple
-              >
-                清理失效 API
-                <span v-if="staleCount > 0" class="toolbar-count">({{ staleCount }})</span>
-              </ElButton>
-            </template>
-          </ArtTableHeader>
+          />
 
           <div class="api-table-main">
             <ArtTable
@@ -132,128 +141,151 @@
       destroy-on-close
       class="config-drawer"
     >
-      <ElForm :model="formState" label-width="110px">
-        <ElRow :gutter="12">
-          <ElCol :span="8">
-            <ElFormItem label="Method" prop="method">
-              <ElSelect
-                v-model="formState.method"
-                placeholder="请选择"
-                popper-class="api-endpoint-select-popper"
-              >
-                <ElOption v-for="item in methodOptions" :key="item" :label="item" :value="item" />
-              </ElSelect>
-            </ElFormItem>
-          </ElCol>
-          <ElCol :span="8">
-            <ElFormItem label="功能归属" prop="featureKind">
-              <ElSelect
-                v-model="formState.featureKind"
-                placeholder="请选择"
-                popper-class="api-endpoint-select-popper"
-              >
-                <ElOption label="系统" value="system" />
-                <ElOption label="业务" value="business" />
-              </ElSelect>
-            </ElFormItem>
-          </ElCol>
-          <ElCol :span="8">
-            <ElFormItem label="来源" prop="source">
-              <ElSelect
-                v-model="formState.source"
-                placeholder="请选择"
-                popper-class="api-endpoint-select-popper"
-              >
-                <ElOption label="自动同步" value="sync" />
-                <ElOption label="初始种子" value="seed" />
-                <ElOption label="手工维护" value="manual" />
-              </ElSelect>
-            </ElFormItem>
-          </ElCol>
-        </ElRow>
+      <ElForm :model="formState" label-width="110px" class="api-form">
+        <div class="form-intro">
+          <div class="form-intro__title">{{ editingId ? '调整接口元数据' : '新增接口注册项' }}</div>
+          <div class="form-intro__text">
+            先明确接口身份，再配置分类、团队上下文和权限键。这里保存的是正式注册信息，不是临时调试项。
+          </div>
+        </div>
 
-        <ElFormItem label="路径" prop="path">
-          <ElInput v-model="formState.path" placeholder="/api/v1/..." />
-        </ElFormItem>
+        <div class="form-section">
+          <div class="form-section__header">
+            <div class="form-section__title">接口身份</div>
+            <div class="form-section__desc">Method、路径、来源和功能归属决定这条接口如何进入正式注册表。</div>
+          </div>
+          <ElRow :gutter="12">
+            <ElCol :span="8">
+              <ElFormItem label="Method" prop="method">
+                <ElSelect
+                  v-model="formState.method"
+                  placeholder="请选择"
+                  popper-class="api-endpoint-select-popper"
+                >
+                  <ElOption v-for="item in methodOptions" :key="item" :label="item" :value="item" />
+                </ElSelect>
+              </ElFormItem>
+            </ElCol>
+            <ElCol :span="8">
+              <ElFormItem label="功能归属" prop="featureKind">
+                <ElSelect
+                  v-model="formState.featureKind"
+                  placeholder="请选择"
+                  popper-class="api-endpoint-select-popper"
+                >
+                  <ElOption label="系统" value="system" />
+                  <ElOption label="业务" value="business" />
+                </ElSelect>
+              </ElFormItem>
+            </ElCol>
+            <ElCol :span="8">
+              <ElFormItem label="来源" prop="source">
+                <ElSelect
+                  v-model="formState.source"
+                  placeholder="请选择"
+                  popper-class="api-endpoint-select-popper"
+                >
+                  <ElOption label="自动同步" value="sync" />
+                  <ElOption label="初始种子" value="seed" />
+                  <ElOption label="手工维护" value="manual" />
+                </ElSelect>
+              </ElFormItem>
+            </ElCol>
+          </ElRow>
+          <ElFormItem label="路径" prop="path">
+            <ElInput v-model="formState.path" placeholder="/api/v1/..." />
+          </ElFormItem>
+          <ElFormItem label="说明" prop="summary">
+            <ElInput v-model="formState.summary" placeholder="说明这条接口的用途和影响范围" />
+          </ElFormItem>
+        </div>
 
-        <ElFormItem label="分类" prop="categoryId">
-          <div class="category-input-wrap">
+        <div class="form-section">
+          <div class="form-section__header">
+            <div class="form-section__title">归属与运行时</div>
+            <div class="form-section__desc">分类影响管理归档，团队上下文和状态影响运行时访问与诊断结果。</div>
+          </div>
+          <ElFormItem label="分类" prop="categoryId">
+            <div class="category-input-wrap">
+              <ElSelect
+                v-model="formState.categoryId"
+                clearable
+                filterable
+                placeholder="请选择分类"
+                popper-class="api-endpoint-select-popper"
+              >
+                <ElOption
+                  v-for="item in sortedCategories"
+                  :key="item.id"
+                  :label="`${item.name} / ${item.nameEn}${item.status === 'suspended' ? '（已停用）' : ''}`"
+                  :value="item.id"
+                  :disabled="item.status === 'suspended' && formState.categoryId !== item.id"
+                />
+              </ElSelect>
+              <ElButton text type="primary" @click="openCategoryDrawer()">分类管理</ElButton>
+            </div>
+          </ElFormItem>
+
+          <ElRow :gutter="12">
+            <ElCol :span="12">
+              <ElFormItem label="团队上下文" prop="contextScope">
+                <ElSelect
+                  v-model="formState.contextScope"
+                  placeholder="请选择"
+                  popper-class="api-endpoint-select-popper"
+                >
+                  <ElOption label="可选" value="optional" />
+                  <ElOption label="必需" value="required" />
+                  <ElOption label="禁止" value="forbidden" />
+                </ElSelect>
+              </ElFormItem>
+            </ElCol>
+            <ElCol :span="12">
+              <ElFormItem prop="status">
+                <template #label>
+                  <span class="label-help">
+                    <span>状态</span>
+                    <ElTooltip content="停用后该 API 将被运行时拒绝访问。" placement="top">
+                      <ElIcon class="label-help-icon"><QuestionFilled /></ElIcon>
+                    </ElTooltip>
+                  </span>
+                </template>
+                <ElSelect
+                  v-model="formState.status"
+                  placeholder="请选择"
+                  popper-class="api-endpoint-select-popper"
+                >
+                  <ElOption label="正常" value="normal" />
+                  <ElOption label="停用" value="suspended" />
+                </ElSelect>
+              </ElFormItem>
+            </ElCol>
+          </ElRow>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section__header">
+            <div class="form-section__title">权限绑定</div>
+            <div class="form-section__desc">权限键决定这条接口会被哪条能力链消费，没有权限键时会更接近基础接口。</div>
+          </div>
+          <ElFormItem label="权限键">
             <ElSelect
-              v-model="formState.categoryId"
-              clearable
+              v-model="formState.permissionKeys"
+              multiple
               filterable
-              placeholder="请选择分类"
+              allow-create
+              default-first-option
               popper-class="api-endpoint-select-popper"
             >
               <ElOption
-                v-for="item in sortedCategories"
-                :key="item.id"
-                :label="`${item.name} / ${item.nameEn}${item.status === 'suspended' ? '（已停用）' : ''}`"
-                :value="item.id"
-                :disabled="item.status === 'suspended' && formState.categoryId !== item.id"
+                v-for="item in formState.permissionKeys"
+                :key="item"
+                :label="item"
+                :value="item"
               />
             </ElSelect>
-            <ElButton text type="primary" @click="openCategoryDrawer()">分类管理</ElButton>
-          </div>
-        </ElFormItem>
-
-        <ElRow :gutter="12">
-          <ElCol :span="12">
-            <ElFormItem label="团队上下文" prop="contextScope">
-              <ElSelect
-                v-model="formState.contextScope"
-                placeholder="请选择"
-                popper-class="api-endpoint-select-popper"
-              >
-                <ElOption label="可选" value="optional" />
-                <ElOption label="必需" value="required" />
-                <ElOption label="禁止" value="forbidden" />
-              </ElSelect>
-            </ElFormItem>
-          </ElCol>
-          <ElCol :span="12">
-            <ElFormItem prop="status">
-              <template #label>
-                <span class="label-help">
-                  <span>状态</span>
-                  <ElTooltip content="停用后该 API 将被运行时拒绝访问。" placement="top">
-                    <ElIcon class="label-help-icon"><QuestionFilled /></ElIcon>
-                  </ElTooltip>
-                </span>
-              </template>
-              <ElSelect
-                v-model="formState.status"
-                placeholder="请选择"
-                popper-class="api-endpoint-select-popper"
-              >
-                <ElOption label="正常" value="normal" />
-                <ElOption label="停用" value="suspended" />
-              </ElSelect>
-            </ElFormItem>
-          </ElCol>
-        </ElRow>
-
-        <ElFormItem label="说明" prop="summary">
-          <ElInput v-model="formState.summary" />
-        </ElFormItem>
-
-        <ElFormItem label="权限键">
-          <ElSelect
-            v-model="formState.permissionKeys"
-            multiple
-            filterable
-            allow-create
-            default-first-option
-            popper-class="api-endpoint-select-popper"
-          >
-            <ElOption
-              v-for="item in formState.permissionKeys"
-              :key="item"
-              :label="item"
-              :value="item"
-            />
-          </ElSelect>
-        </ElFormItem>
+          </ElFormItem>
+        </div>
       </ElForm>
       <template #footer>
         <ElButton @click="formVisible = false">取消</ElButton>
@@ -541,6 +573,7 @@
 
 <script setup lang="ts">
   import { computed, h, nextTick, onMounted, reactive, ref } from 'vue'
+  import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { useTable } from '@/hooks/core/useTable'
   import { useAuth } from '@/hooks/core/useAuth'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
@@ -765,6 +798,13 @@
         }))
       ]
     }
+  ])
+
+  const summaryMetrics = computed(() => [
+    { label: '注册总量', value: totalCount.value || 0 },
+    { label: '未分类', value: uncategorizedCount.value || 0 },
+    { label: '失效', value: staleCount.value || 0 },
+    { label: '未注册', value: unregisteredCount.value || 0 }
   ])
 
   const {
@@ -1752,6 +1792,24 @@
     min-height: 0;
   }
 
+  .api-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .api-hero-actions__group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .api-hero-actions__group--secondary {
+    padding-left: 10px;
+    margin-left: 2px;
+    border-left: 1px solid rgb(203 213 225 / 0.9);
+  }
+
   .api-table-card :deep(.table-header-left) {
     gap: 10px;
     row-gap: 8px;
@@ -1912,6 +1970,45 @@
     flex: 1;
   }
 
+  .api-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .form-intro {
+    padding: 14px 16px;
+    border: 1px solid rgb(226 232 240 / 0.95);
+    border-radius: 16px;
+    background: linear-gradient(135deg, rgb(248 250 252 / 0.98), rgb(241 245 249 / 0.95));
+  }
+
+  .form-intro__title,
+  .form-section__title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .form-intro__text,
+  .form-section__desc {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #64748b;
+  }
+
+  .form-section {
+    padding: 14px 16px 4px;
+    border: 1px solid rgb(226 232 240 / 0.9);
+    border-radius: 16px;
+    background: rgb(255 255 255 / 0.96);
+  }
+
+  .form-section__header {
+    margin-bottom: 12px;
+  }
+
   .path-cell {
     display: flex;
     flex-direction: column;
@@ -2050,6 +2147,12 @@
     .stale-dialog-footer {
       flex-direction: column;
       align-items: stretch;
+    }
+
+    .api-hero-actions__group--secondary {
+      padding-left: 0;
+      margin-left: 0;
+      border-left: 0;
     }
   }
 

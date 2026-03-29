@@ -61,6 +61,8 @@
       </div>
 
       <div class="flex-c gap-2.5">
+        <ArtTenantSwitcher class="max-lg:!hidden" />
+
         <!-- 搜索 -->
         <div
           v-if="shouldShowGlobalSearch"
@@ -182,6 +184,7 @@
   import { themeAnimation } from '@/utils/ui/animation'
   import { useCommon } from '@/hooks/core/useCommon'
   import { useHeaderBar } from '@/hooks/core/useHeaderBar'
+  import ArtTenantSwitcher from './widget/ArtTenantSwitcher.vue'
   import ArtUserMenu from './widget/ArtUserMenu.vue'
 
   defineOptions({ name: 'ArtHeaderBar' })

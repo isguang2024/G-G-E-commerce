@@ -9,16 +9,10 @@
       :model-value="selectedValue"
       class="tenant-select"
       size="default"
-      placeholder="选择上下文"
+      placeholder="切换团队"
       :loading="loading"
       @change="handleChange"
     >
-      <ElOption
-        v-if="hasPlatformAccess"
-        key="__platform__"
-        label="平台空间"
-        value="__platform__"
-      />
       <ElOption
         v-for="team in teamList"
         :key="team.id"
@@ -43,16 +37,10 @@
 
   const router = useRouter()
   const tenantStore = useTenantStore()
-  const { currentContextMode, currentTenantId, teamList, loading, hasPlatformAccess, shouldShowSwitcher } =
-    storeToRefs(tenantStore)
-  const platformValue = '__platform__'
+  const { currentTenantId, teamList, loading, shouldShowSwitcher, currentTeam } = storeToRefs(tenantStore)
 
-  const selectedValue = computed(() =>
-    currentContextMode.value === 'platform' ? platformValue : currentTenantId.value
-  )
-  const currentContextLabel = computed(() =>
-    currentContextMode.value === 'platform' ? '当前空间' : '当前团队'
-  )
+  const selectedValue = computed(() => currentTenantId.value)
+  const currentContextLabel = computed(() => currentTeam.value?.name || '当前团队')
 
   const buildTeamLabel = (team: Api.SystemManage.TeamListItem) => {
     const suffix = team.currentRoleCode === 'team_admin' ? '管理员' : '成员'
@@ -61,35 +49,27 @@
 
   const handleChange = async (value: string) => {
     if (!value) return
-    if (value === platformValue && currentContextMode.value === 'platform') return
-    if (value !== platformValue && currentContextMode.value === 'team' && value === currentTenantId.value) {
-      return
-    }
+    if (value === currentTenantId.value) return
 
     try {
-      if (value === platformValue) {
-        tenantStore.enterPlatformContext()
-      } else {
-        tenantStore.enterTeamContext(value)
-      }
+      tenantStore.enterTeamContext(value)
       await refreshCurrentUserInfoContext()
       await refreshUserMenus()
       await router.push('/')
-      ElMessage.success(value === platformValue ? '已切换到平台空间' : '已切换团队')
+      ElMessage.success('已切换团队')
     } catch (error) {
       console.error('[TenantSwitcher] 切换团队失败:', error)
       await tenantStore.loadMyTeams({
-        preferredTenantId: currentContextMode.value === 'team' ? currentTenantId.value : '',
-        preferPlatform: currentContextMode.value === 'platform'
+        preferredTenantId: currentTenantId.value || ''
       })
-      ElMessage.error(value === platformValue ? '切换平台空间失败' : '切换团队失败')
+      ElMessage.error('切换团队失败')
     }
   }
 </script>
 
 <style scoped lang="scss">
   .tenant-switcher {
-    min-width: 180px;
+    min-width: 210px;
     margin-right: 6px;
   }
 
@@ -110,12 +90,18 @@
   }
 
   :deep(.el-select__wrapper) {
-    min-height: 36px;
-    border-radius: 10px;
+    min-height: 38px;
+    border-radius: 12px;
+    background:
+      radial-gradient(circle at top left, rgb(255 255 255 / 0.92), transparent 55%),
+      linear-gradient(135deg, rgb(248 250 252 / 0.98), rgb(241 245 249 / 0.94));
+    box-shadow: inset 0 0 0 1px rgb(226 232 240 / 0.95);
   }
 
   .tenant-switcher-compact :deep(.el-select__wrapper) {
     min-height: 40px;
-    background-color: var(--art-gray-100);
+    background:
+      radial-gradient(circle at top left, rgb(255 255 255 / 0.96), transparent 58%),
+      linear-gradient(135deg, rgb(248 250 252 / 0.98), rgb(241 245 249 / 0.94));
   }
 </style>

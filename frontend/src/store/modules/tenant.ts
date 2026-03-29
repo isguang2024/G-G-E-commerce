@@ -31,9 +31,7 @@ export const useTenantStore = defineStore(
     )
     const hasTeams = computed(() => teamList.value.length > 0)
     const isPlatformContext = computed(() => currentContextMode.value === 'platform')
-    const shouldShowSwitcher = computed(
-      () => hasPlatformAccess.value || teamList.value.length > 1
-    )
+    const shouldShowSwitcher = computed(() => teamList.value.length > 1)
 
     const setCurrentTenantId = (tenantId: string) => {
       currentTenantId.value = tenantId
@@ -76,11 +74,6 @@ export const useTenantStore = defineStore(
       if (teamList.value.length === 0) {
         currentTenantId.value = ''
         currentContextMode.value = hasPlatformAccess.value ? 'platform' : 'team'
-        return
-      }
-
-      if (options?.preferPlatform && hasPlatformAccess.value) {
-        enterPlatformContext()
         return
       }
 
