@@ -629,3 +629,144 @@ type SystemSetting struct {
 func (SystemSetting) TableName() string {
 	return "system_settings"
 }
+
+type Message struct {
+	ID                   uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	MessageType          string         `gorm:"type:varchar(20);not null;default:'notice'" json:"message_type"`
+	BizType              string         `gorm:"type:varchar(100);not null;default:''" json:"biz_type"`
+	ScopeType            string         `gorm:"type:varchar(20);not null;default:'platform'" json:"scope_type"`
+	ScopeID              *uuid.UUID     `gorm:"type:uuid;index" json:"scope_id"`
+	SenderID             *uuid.UUID     `gorm:"type:uuid;index" json:"sender_id"`
+	SenderType           string         `gorm:"type:varchar(30);not null;default:'system'" json:"sender_type"`
+	SenderUserID         *uuid.UUID     `gorm:"type:uuid;index" json:"sender_user_id"`
+	SenderNameSnapshot   string         `gorm:"type:varchar(150);not null;default:''" json:"sender_name_snapshot"`
+	SenderAvatarSnapshot string         `gorm:"type:varchar(500);not null;default:''" json:"sender_avatar_snapshot"`
+	SenderServiceKey     string         `gorm:"type:varchar(100);not null;default:''" json:"sender_service_key"`
+	AudienceType         string         `gorm:"type:varchar(30);not null;default:'specified_users'" json:"audience_type"`
+	AudienceScope        string         `gorm:"type:varchar(20);not null;default:'platform'" json:"audience_scope"`
+	TargetTenantID       *uuid.UUID     `gorm:"type:uuid;index" json:"target_tenant_id"`
+	TargetRoleCodes      []string       `gorm:"type:jsonb;serializer:json" json:"target_role_codes"`
+	TargetUserIDs        []string       `gorm:"type:jsonb;serializer:json" json:"target_user_ids"`
+	TargetGroupIDs       []string       `gorm:"type:jsonb;serializer:json" json:"target_group_ids"`
+	TemplateID           *uuid.UUID     `gorm:"type:uuid;index" json:"template_id"`
+	Title                string         `gorm:"type:varchar(255);not null" json:"title"`
+	Summary              string         `gorm:"type:text;not null;default:''" json:"summary"`
+	Content              string         `gorm:"type:text;not null;default:''" json:"content"`
+	Priority             string         `gorm:"type:varchar(20);not null;default:'normal'" json:"priority"`
+	ActionType           string         `gorm:"type:varchar(20);not null;default:'none'" json:"action_type"`
+	ActionTarget         string         `gorm:"type:varchar(500);not null;default:''" json:"action_target"`
+	Status               string         `gorm:"type:varchar(20);not null;default:'published'" json:"status"`
+	PublishedAt          *time.Time     `json:"published_at"`
+	ExpiredAt            *time.Time     `json:"expired_at"`
+	Meta                 MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"meta"`
+	CreatedAt            time.Time      `json:"created_at"`
+	UpdatedAt            time.Time      `json:"updated_at"`
+	DeletedAt            gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (Message) TableName() string {
+	return "messages"
+}
+
+type MessageDelivery struct {
+	ID              uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	MessageID       uuid.UUID      `gorm:"type:uuid;not null;index" json:"message_id"`
+	RecipientUserID uuid.UUID      `gorm:"type:uuid;not null;index" json:"recipient_user_id"`
+	RecipientTeamID *uuid.UUID     `gorm:"type:uuid;index" json:"recipient_team_id"`
+	BoxType         string         `gorm:"type:varchar(20);not null;default:'notice'" json:"box_type"`
+	DeliveryStatus  string         `gorm:"type:varchar(20);not null;default:'unread'" json:"delivery_status"`
+	TodoStatus      string         `gorm:"type:varchar(20);not null;default:''" json:"todo_status"`
+	ReadAt          *time.Time     `json:"read_at"`
+	ArchivedAt      *time.Time     `json:"archived_at"`
+	DoneAt          *time.Time     `json:"done_at"`
+	LastActionAt    *time.Time     `json:"last_action_at"`
+	Meta            MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"meta"`
+	CreatedAt       time.Time      `json:"created_at"`
+	UpdatedAt       time.Time      `json:"updated_at"`
+	DeletedAt       gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (MessageDelivery) TableName() string {
+	return "message_deliveries"
+}
+
+type MessageTemplate struct {
+	ID                   uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	TemplateKey          string         `gorm:"type:varchar(120);not null;uniqueIndex" json:"template_key"`
+	Name                 string         `gorm:"type:varchar(150);not null" json:"name"`
+	Description          string         `gorm:"type:text;not null;default:''" json:"description"`
+	MessageType          string         `gorm:"type:varchar(20);not null;default:'notice'" json:"message_type"`
+	OwnerScope           string         `gorm:"type:varchar(20);not null;default:'platform'" json:"owner_scope"`
+	OwnerTenantID        *uuid.UUID     `gorm:"type:uuid;index" json:"owner_tenant_id"`
+	AudienceType         string         `gorm:"type:varchar(30);not null;default:'specified_users'" json:"audience_type"`
+	TitleTemplate        string         `gorm:"type:text;not null;default:''" json:"title_template"`
+	SummaryTemplate      string         `gorm:"type:text;not null;default:''" json:"summary_template"`
+	ContentTemplate      string         `gorm:"type:text;not null;default:''" json:"content_template"`
+	ActionType           string         `gorm:"type:varchar(20);not null;default:'none'" json:"action_type"`
+	ActionTargetTemplate string         `gorm:"type:text;not null;default:''" json:"action_target_template"`
+	Status               string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	Meta                 MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"meta"`
+	CreatedAt            time.Time      `json:"created_at"`
+	UpdatedAt            time.Time      `json:"updated_at"`
+	DeletedAt            gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (MessageTemplate) TableName() string {
+	return "message_templates"
+}
+
+type MessageSender struct {
+	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ScopeType   string         `gorm:"type:varchar(20);not null;default:'platform';index" json:"scope_type"`
+	ScopeID     *uuid.UUID     `gorm:"type:uuid;index" json:"scope_id"`
+	Name        string         `gorm:"type:varchar(120);not null" json:"name"`
+	Description string         `gorm:"type:text;not null;default:''" json:"description"`
+	AvatarURL   string         `gorm:"type:varchar(500);not null;default:''" json:"avatar_url"`
+	IsDefault   bool           `gorm:"not null;default:false" json:"is_default"`
+	Status      string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	Meta        MetaJSON       `gorm:"type:jsonb;serializer:json" json:"meta"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (MessageSender) TableName() string {
+	return "message_senders"
+}
+
+type MessageRecipientGroup struct {
+	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	ScopeType   string         `gorm:"type:varchar(20);not null;default:'platform';index" json:"scope_type"`
+	ScopeID     *uuid.UUID     `gorm:"type:uuid;index" json:"scope_id"`
+	Name        string         `gorm:"type:varchar(120);not null" json:"name"`
+	Description string         `gorm:"type:text;not null;default:''" json:"description"`
+	MatchMode   string         `gorm:"type:varchar(20);not null;default:'manual'" json:"match_mode"`
+	Status      string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	Meta        MetaJSON       `gorm:"type:jsonb;serializer:json" json:"meta"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (MessageRecipientGroup) TableName() string {
+	return "message_recipient_groups"
+}
+
+type MessageRecipientGroupTarget struct {
+	ID         uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	GroupID    uuid.UUID      `gorm:"type:uuid;not null;index" json:"group_id"`
+	TargetType string         `gorm:"type:varchar(30);not null" json:"target_type"`
+	UserID     *uuid.UUID     `gorm:"type:uuid;index" json:"user_id"`
+	TenantID   *uuid.UUID     `gorm:"type:uuid;index" json:"tenant_id"`
+	RoleCode   string         `gorm:"type:varchar(80);not null;default:''" json:"role_code"`
+	PackageKey string         `gorm:"type:varchar(120);not null;default:''" json:"package_key"`
+	SortOrder  int            `gorm:"not null;default:0" json:"sort_order"`
+	Meta       MetaJSON       `gorm:"type:jsonb;serializer:json" json:"meta"`
+	CreatedAt  time.Time      `json:"created_at"`
+	UpdatedAt  time.Time      `json:"updated_at"`
+	DeletedAt  gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (MessageRecipientGroupTarget) TableName() string {
+	return "message_recipient_group_targets"
+}

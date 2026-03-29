@@ -29,7 +29,7 @@
             <div class="page-toolbar-head">
               <div class="page-toolbar-title-row">
                 <div class="page-toolbar-title">页面管理</div>
-                <div class="page-toolbar-subtitle">页面、逻辑分组与普通分组统一收口查看</div>
+                <div class="page-toolbar-subtitle">独立页面、挂接页面、逻辑分组与普通分组统一查看</div>
                 <div class="page-toolbar-metrics">
                   <span v-for="item in summaryStats" :key="item.label" class="page-toolbar-metric">
                     {{ item.label }} {{ item.value }}
@@ -163,6 +163,10 @@
 
         <template #effectiveChain="{ row }">
           <span class="page-muted-text">{{ getEffectiveChainText(row) }}</span>
+        </template>
+
+        <template #mountTarget="{ row }">
+          <span class="page-muted-text">{{ getMountTargetText(row) }}</span>
         </template>
 
         <template #parentChainStatus="{ row }">
@@ -312,6 +316,7 @@ const initialSearchState = {
     { prop: 'name', label: '页面', minWidth: 300, useSlot: true, slotName: 'name' },
     { prop: 'route', label: '最终路径', minWidth: 220, useSlot: true, slotName: 'route' },
     { prop: 'component', label: '组件入口', minWidth: 180, useSlot: true, slotName: 'component' },
+    { prop: 'mountTarget', label: '挂接对象', minWidth: 180, useSlot: true, slotName: 'mountTarget' },
     { prop: 'effectiveChain', label: '生效链路', minWidth: 150, useSlot: true, slotName: 'effectiveChain' },
     { prop: 'parentChainStatus', label: '父链状态', minWidth: 130, useSlot: true, slotName: 'parentChainStatus' },
     {
@@ -364,8 +369,13 @@ const initialSearchState = {
   const visibleCount = computed(() => countTreeNodes(tableData.value))
   const summaryStats = computed(() => {
     const suspendedCount = rawPages.value.filter((item) => item.status !== 'normal').length
+    const independentCount = rawPages.value.filter((item) => {
+      if (item.pageType === 'display_group') return false
+      return !`${item.parentMenuId || ''}`.trim() && !`${item.parentPageKey || ''}`.trim()
+    }).length
     return [
       { label: '当前显示', value: visibleCount.value },
+      { label: '独立页面', value: independentCount || 0 },
       { label: '停用', value: suspendedCount || 0 },
       { label: '总条目', value: rawPages.value.length }
     ]
@@ -696,19 +706,33 @@ const initialSearchState = {
     if (row.pageType === 'display_group') {
       return '仅列表归类'
     }
+    if (row.pageType === 'global') {
+      return '独立页面'
+    }
     const parentPageName = `${row.parentPageName || ''}`.trim()
     if (parentPageName) {
-      return parentPageName
+      return `挂到页面 · ${parentPageName}`
     }
     const parentMenuName = `${row.parentMenuName || ''}`.trim()
     if (parentMenuName) {
-      return parentMenuName
+      return `挂到菜单 · ${parentMenuName}`
     }
     const displayGroupName = `${row.displayGroupName || ''}`.trim()
     if (displayGroupName) {
       return `普通分组：${displayGroupName}`
     }
-    return '-'
+    return '独立内页'
+  }
+
+  function getMountTargetText(row: PageItem) {
+    if (row.pageType === 'display_group') return '普通分组'
+    if (row.pageType === 'group') {
+      return row.displayGroupName ? `逻辑分组 · ${row.displayGroupName}` : '逻辑分组'
+    }
+    if (row.parentMenuName) return `挂到菜单 · ${row.parentMenuName}`
+    if (row.parentPageName) return `挂到页面 · ${row.parentPageName}`
+    if (row.displayGroupName) return `列表分组 · ${row.displayGroupName}`
+    return row.pageType === 'global' ? '独立页面' : '独立内页'
   }
 
   function formatUpdatedAt(value?: string) {
@@ -832,20 +856,25 @@ const initialSearchState = {
   }
 
   function getMountModeText(row: PageItem) {
-    if (row.parentPageKey) return '挂到页面/分组'
+    if (row.parentPageKey) return '挂到页面'
     if (row.parentMenuId) return '挂到菜单'
-    return '不挂载'
+    return row.pageType === 'global' ? '独立页面' : '独立内页'
   }
 
   function getEffectiveChainText(row: PageItem) {
     if (row.pageType === 'display_group') return '仅分组展示'
     if (row.pageType === 'group' && !row.parentPageKey && !row.parentMenuId) return '分组独立生效'
+    if (row.parentMenuId) {
+      if (row.accessMode && row.accessMode !== 'inherit') {
+        return `菜单权限 + 页面权限（${getAccessModeText(row.accessMode)}）`
+      }
+      return '默认继承菜单权限'
+    }
     if (row.accessMode && row.accessMode !== 'inherit') return `自身（${getAccessModeText(row.accessMode)}）`
     if (row.parentPageKey) {
       const parent = pageMap.value.get(row.parentPageKey)
       return parent ? `继承页面（${parent.name}）` : '继承页面（父级缺失）'
     }
-    if (row.parentMenuId) return '继承菜单'
     return '自身生效'
   }
 

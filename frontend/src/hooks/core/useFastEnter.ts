@@ -20,18 +20,42 @@ import { useRouter } from 'vue-router'
 import { useFastEnterStore } from '@/store/modules/fast-enter'
 import type { FastEnterApplication, FastEnterQuickLink } from '@/types/config'
 
+const COMPACT_MESSAGE_WORKSPACE_ROUTE_NAMES = new Set([
+  'MessageTemplateManage',
+  'MessageRecordManage',
+  'MessageSenderManage',
+  'MessageRecipientGroupManage',
+  'TeamMessageManage',
+  'TeamMessageTemplateManage',
+  'TeamMessageRecordManage',
+  'TeamMessageSenderManage',
+  'TeamMessageRecipientGroupManage'
+])
+
 export function useFastEnter() {
   const router = useRouter()
   const fastEnterStore = useFastEnterStore()
   const { config: fastEnterConfig } = storeToRefs(fastEnterStore)
 
   const isExternalLink = (value?: string) => /^https?:\/\//i.test(`${value || ''}`.trim())
+  const normalizeTargetKey = (item: FastEnterApplication | FastEnterQuickLink) => {
+    const routeName = `${item.routeName || ''}`.trim()
+    if (routeName) return `route:${routeName}`
+
+    const link = `${item.link || ''}`.trim()
+    if (!link) return ''
+    return isExternalLink(link) ? `link:${link.toLowerCase()}` : `path:${link}`
+  }
 
   const isAllowedItem = (item: FastEnterApplication | FastEnterQuickLink) => {
     if (item.enabled === false) return false
 
     const routeName = `${item.routeName || ''}`.trim()
     const link = `${item.link || ''}`.trim()
+
+    if (routeName && COMPACT_MESSAGE_WORKSPACE_ROUTE_NAMES.has(routeName)) {
+      return false
+    }
 
     if (routeName && router.hasRoute(routeName)) {
       return true
@@ -48,22 +72,37 @@ export function useFastEnter() {
     return false
   }
 
+  const dedupeItems = <T extends FastEnterApplication | FastEnterQuickLink>(items: T[]) => {
+    const seen = new Set<string>()
+    return items.filter((item) => {
+      const targetKey = normalizeTargetKey(item)
+      if (!targetKey) return false
+      if (seen.has(targetKey)) return false
+      seen.add(targetKey)
+      return true
+    })
+  }
+
   // 获取启用的应用列表（按排序权重排序）
   const enabledApplications = computed<FastEnterApplication[]>(() => {
     if (!fastEnterConfig.value?.applications) return []
 
-    return fastEnterConfig.value.applications
-      .filter(isAllowedItem)
-      .sort((a, b) => (a.order || 0) - (b.order || 0))
+    return dedupeItems(
+      [...fastEnterConfig.value.applications]
+        .filter(isAllowedItem)
+        .sort((a, b) => (a.order || 0) - (b.order || 0))
+    )
   })
 
   // 获取启用的快速链接（按排序权重排序）
   const enabledQuickLinks = computed<FastEnterQuickLink[]>(() => {
     if (!fastEnterConfig.value?.quickLinks) return []
 
-    return fastEnterConfig.value.quickLinks
-      .filter(isAllowedItem)
-      .sort((a, b) => (a.order || 0) - (b.order || 0))
+    return dedupeItems(
+      [...fastEnterConfig.value.quickLinks]
+        .filter(isAllowedItem)
+        .sort((a, b) => (a.order || 0) - (b.order || 0))
+    )
   })
 
   // 获取最小显示宽度

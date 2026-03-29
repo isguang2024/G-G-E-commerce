@@ -205,6 +205,7 @@
           <div class="fast-enter-drawer__hint">
             <span>当前支持 3 种写法：菜单树路由名、以 `/` 开头的内部路径、`http/https` 外部链接。</span>
             <span>内部跳转会跟随当前菜单权限和页面可访问结果自动过滤；外链不受菜单权限裁剪。</span>
+            <span>消息模块建议只保留消息发送主入口和消息中心，模板、发送人、接收组、发送记录统一从消息页内导航进入。</span>
           </div>
         </div>
       </template>
@@ -243,6 +244,18 @@
     path: string
     children?: RouteTreeOption[]
   }
+
+  const compactMessageWorkspaceRouteNames = new Set([
+    'MessageTemplateManage',
+    'MessageRecordManage',
+    'MessageSenderManage',
+    'MessageRecipientGroupManage',
+    'TeamMessageManage',
+    'TeamMessageTemplateManage',
+    'TeamMessageRecordManage',
+    'TeamMessageSenderManage',
+    'TeamMessageRecipientGroupManage'
+  ])
 
   type DrawerApplicationDraft = FastEnterApplication & { id: string }
   type DrawerQuickLinkDraft = FastEnterQuickLink & { id: string }
@@ -304,6 +317,13 @@
       const title = String(titleSource)
       const path = `${item.path || ''}`.trim()
       const children = Array.isArray(item.children) ? buildRouteTree(item.children) : []
+
+      if (routeName && compactMessageWorkspaceRouteNames.has(routeName)) {
+        if (children.length) {
+          result.push(...children)
+        }
+        continue
+      }
 
       if (!routeName && children.length === 0) {
         continue

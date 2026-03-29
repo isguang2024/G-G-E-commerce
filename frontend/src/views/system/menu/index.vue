@@ -231,6 +231,22 @@
           <span class="text-gray-600">{{ isManageGroupRow(row) ? '-' : row.component || '-' }}</span>
         </template>
 
+        <template #linkedPage="{ row }">
+          <div v-if="!isManageGroupRow(row)" class="menu-linked-page-cell">
+            <template v-if="getLinkedPages(row).length">
+              <span class="menu-linked-page-cell__primary">{{ getLinkedPages(row)[0].name }}</span>
+              <span class="menu-linked-page-cell__meta">
+                {{ getLinkedPages(row)[0].pageKey }}
+                <template v-if="getLinkedPages(row).length > 1">
+                  · 另有 {{ getLinkedPages(row).length - 1 }} 个挂接页
+                </template>
+              </span>
+            </template>
+            <span v-else class="text-gray-400">未挂接页面</span>
+          </div>
+          <span v-else class="text-gray-400">-</span>
+        </template>
+
         <!-- 高级配置列 -->
         <template #advanced="{ row }">
           <div v-if="!isManageGroupRow(row)" class="advanced-configs">
@@ -297,6 +313,9 @@
         :editData="editData"
         :menuTree="filteredMenuTree"
         :manageGroups="menuGroups"
+        :pageOptions="rawPages"
+        :currentMenuPages="getLinkedPages(editData || {})"
+        :linkedPageKey="getLinkedPages(editData || {}).at(0)?.pageKey || ''"
         :editingMenuId="editData?.id"
         :initialParentId="String(parentRowForAdd?.id ?? '')"
         @submit="handleSubmit"
@@ -388,6 +407,8 @@
     fetchCreateMenuManageGroup,
     fetchUpdateMenuManageGroup,
     fetchDeleteMenuManageGroup,
+    fetchGetPageOptions,
+    fetchUpdatePage,
     fetchCreateMenuBackup,
     fetchGetMenuBackupList,
     fetchDeleteMenuBackup,
@@ -424,6 +445,7 @@
   const tableRef = ref()
   const multiSelectEnabled = ref(false)
   const rawMenuTree = ref<AppRouteRecord[]>([])
+  const rawPages = ref<Api.SystemManage.PageItem[]>([])
   const menuGroups = ref<Api.SystemManage.MenuManageGroupItem[]>([])
   const dataFromBackend = ref(false)
   const menuGroupApiUnavailable = ref(false)
@@ -490,8 +512,38 @@
     new Map(menuGroups.value.map((item) => [item.id, item]))
   )
 
+  const pageMap = computed(
+    () => new Map(rawPages.value.map((item) => [item.pageKey, item]))
+  )
+
+  const linkedPagesByMenuId = computed(() => {
+    const map = new Map<string, Api.SystemManage.PageItem[]>()
+    rawPages.value.forEach((item) => {
+      const menuId = `${item.parentMenuId || ''}`.trim()
+      if (!menuId) return
+      const list = map.get(menuId) || []
+      list.push(item)
+      map.set(menuId, list)
+    })
+    map.forEach((list, key) => {
+      list.sort((left, right) => {
+        const sortDiff = Number(left.sortOrder || 0) - Number(right.sortOrder || 0)
+        if (sortDiff !== 0) return sortDiff
+        return `${left.name || ''}${left.pageKey || ''}`.localeCompare(
+          `${right.name || ''}${right.pageKey || ''}`,
+          'zh-Hans-CN'
+        )
+      })
+      map.set(key, list)
+    })
+    return map
+  })
+
   const getManageGroupId = (item: AppRouteRecord) =>
     `${item?.manage_group_id || item?.manage_group?.id || ''}`.trim()
+
+  const getLinkedPages = (item: any) =>
+    linkedPagesByMenuId.value.get(String(item?.id || '')) || []
 
   const hashToNegativeNumber = (value: string) => {
     let hash = 0
@@ -613,13 +665,15 @@
     loading.value = true
     dataFromBackend.value = false
     try {
-      const [list, groupsResult] = await Promise.all([
+      const [list, pagesResult, groupsResult] = await Promise.all([
         fetchGetMenuTreeAll(),
+        fetchGetPageOptions().then((res) => res.records || []),
         fetchGetMenuManageGroups()
           .then((groups) => ({ ok: true as const, groups }))
           .catch((error) => ({ ok: false as const, error, groups: [] as Api.SystemManage.MenuManageGroupItem[] }))
       ])
       rawMenuTree.value = Array.isArray(list) ? list : []
+      rawPages.value = Array.isArray(pagesResult) ? pagesResult : []
       menuGroups.value = groupsResult.groups || []
       dataFromBackend.value = true
 
@@ -635,6 +689,7 @@
     } catch (error) {
       console.error('获取菜单数据失败:', error)
       rawMenuTree.value = []
+      rawPages.value = []
       ElMessage.error('菜单数据加载失败，请检查后端菜单配置或服务状态')
     } finally {
       loading.value = false
@@ -656,11 +711,12 @@
     } as any,
     { prop: 'title', label: '菜单名称', minWidth: 200, useSlot: true, slotName: 'title' },
     { prop: 'sort_order', label: '排序', width: 80, align: 'center' },
-    { prop: 'type', label: '类型', width: 100, align: 'center', useSlot: true, slotName: 'type' },
-    { prop: 'path', label: '路由', minWidth: 150, useSlot: true, slotName: 'path' },
-    { prop: 'component', label: '组件路径', minWidth: 200, useSlot: true, slotName: 'component' },
-    {
-      prop: 'advanced',
+      { prop: 'type', label: '类型', width: 100, align: 'center', useSlot: true, slotName: 'type' },
+      { prop: 'path', label: '路由', minWidth: 150, useSlot: true, slotName: 'path' },
+      { prop: 'component', label: '组件路径', minWidth: 200, useSlot: true, slotName: 'component' },
+      { prop: 'linkedPage', label: '挂接主页面', minWidth: 220, useSlot: true, slotName: 'linkedPage' },
+      {
+        prop: 'advanced',
       label: '高级配置',
       minWidth: 200,
       align: 'center',
@@ -996,18 +1052,75 @@
   }
 
   const buildMenuRequestPayload = (formData: any, meta: Record<string, any>) => ({
-    path: formData.path || '/',
-    name: formData.label || '',
-    component: formData.component || '',
+      path: formData.path || '/',
+      name: formData.label || '',
+      component: formData.component || '',
     title: formData.name || '',
     icon: formData.icon || '',
     sort_order: Number(formData.sort ?? 0),
     manage_group_id: formData.manageGroupId?.trim() || null,
-    meta
+      meta
+    })
+
+  const buildPageSavePayload = (
+    page: Api.SystemManage.PageItem,
+    overrides?: Partial<Api.SystemManage.PageSaveParams>
+  ): Api.SystemManage.PageSaveParams => ({
+    page_key: page.pageKey,
+    name: page.name,
+    route_name: page.routeName,
+    route_path: page.routePath,
+    component: page.component,
+    page_type: page.pageType,
+    source: page.source,
+    module_key: page.moduleKey || '',
+    sort_order: Number(page.sortOrder || 0),
+    parent_menu_id: page.parentMenuId || '',
+    parent_page_key: page.parentPageKey || '',
+    display_group_key: page.displayGroupKey || '',
+    active_menu_path: page.activeMenuPath || '',
+    breadcrumb_mode: page.breadcrumbMode || 'inherit_menu',
+    access_mode: page.accessMode || 'inherit',
+    permission_key: page.permissionKey || '',
+    inherit_permission: page.inheritPermission ?? true,
+    keep_alive: page.keepAlive ?? false,
+    is_full_page: page.isFullPage ?? false,
+    status: page.status || 'normal',
+    meta: {
+      ...(page.meta || {}),
+      isIframe: page.isIframe ?? false,
+      isHideTab: page.isHideTab ?? false,
+      link: page.link || ''
+    },
+    ...overrides
   })
 
+  const syncMenuLinkedPage = async (menuId: string, formData: any, previousRow?: any) => {
+    const previousLinkedPage = previousRow ? getLinkedPages(previousRow)[0] : undefined
+    const nextPageKey = `${formData.linkedPageKey || ''}`.trim()
+
+    if (previousLinkedPage && previousLinkedPage.pageKey !== nextPageKey) {
+      await fetchUpdatePage(
+        previousLinkedPage.id,
+        buildPageSavePayload(previousLinkedPage, { parent_menu_id: '' })
+      )
+    }
+
+    if (!nextPageKey) return
+
+    const nextPage = pageMap.value.get(nextPageKey)
+    if (!nextPage) return
+    await fetchUpdatePage(
+      nextPage.id,
+      buildPageSavePayload(nextPage, {
+        parent_menu_id: menuId,
+        parent_page_key: ''
+      })
+    )
+  }
+
   const resolveParentId = (formData: any) =>
-    formData.parentId?.trim() || (parentRowForAdd.value?.id ? String(parentRowForAdd.value.id) : null)
+      formData.parentId?.trim() || (parentRowForAdd.value?.id ? String(parentRowForAdd.value.id) : null)
   const handleMenuOperation = (item: ButtonMoreItem, row: any) => {
     if (item.key === 'add') handleAddUnderRow(row)
     else if (item.key === 'edit') handleEditMenu(row)
@@ -1048,15 +1161,16 @@
         ? String(editData.value.manage_group_id)
         : null
       const payload = buildMenuRequestPayload(formData, buildMenuMetaFromForm(formData))
-      if (editData.value?.id) {
-        const parentId = formData.parentId?.trim() || null
-        await fetchUpdateMenu(
-          String(editData.value.id),
-          { ...payload, parent_id: parentId },
-          { showErrorMessage: false }
-        )
+        if (editData.value?.id) {
+          const parentId = formData.parentId?.trim() || null
+          await fetchUpdateMenu(
+            String(editData.value.id),
+            { ...payload, parent_id: parentId },
+            { showErrorMessage: false }
+          )
+          await syncMenuLinkedPage(String(editData.value.id), formData, editData.value)
 
-        if (currentManageGroupID !== nextManageGroupID) {
+          if (currentManageGroupID !== nextManageGroupID) {
           const descendants = collectMenuSubtree(editData.value.children || []).filter(
             (row) => !isManageGroupRow(row)
           )
@@ -1072,12 +1186,18 @@
             )
           }
         }
-      } else {
-        const parentId = resolveParentId(formData)
-        await fetchCreateMenu({ ...payload, parent_id: parentId }, { showErrorMessage: false })
-      }
-      // 只有成功时才显示成功消息
-      ElMessage.success('保存成功')
+        } else {
+          const parentId = resolveParentId(formData)
+          const created = await fetchCreateMenu(
+            { ...payload, parent_id: parentId },
+            { showErrorMessage: false }
+          )
+          if (created?.id) {
+            await syncMenuLinkedPage(String(created.id), formData)
+          }
+        }
+        // 只有成功时才显示成功消息
+        ElMessage.success('保存成功')
       getMenuList()
     } catch (e: any) {
       ElMessage.error(e?.message || '保存失败')
@@ -1448,6 +1568,26 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 6px;
+  }
+
+  .menu-linked-page-cell {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .menu-linked-page-cell__primary {
+    overflow: hidden;
+    color: #0f172a;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .menu-linked-page-cell__meta {
+    font-size: 12px;
+    line-height: 1.5;
+    color: #64748b;
   }
 
   .menu-group-title {

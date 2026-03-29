@@ -1,4 +1,3 @@
-<!-- 通知组件 -->
 <template>
   <div
     class="art-notification-panel art-card-sm !shadow-xl"
@@ -10,16 +9,20 @@
     @click.stop
   >
     <div class="flex-cb px-3.5 mt-3.5">
-      <span class="text-base font-medium text-g-800">{{ $t('notice.title') }}</span>
-      <span class="text-xs text-g-800 px-1.5 py-1 c-p select-none rounded hover:bg-g-200">
-        {{ $t('notice.btnRead') }}
+      <span class="text-base font-medium text-g-800">消息中心</span>
+      <span
+        class="text-xs text-g-800 px-1.5 py-1 c-p select-none rounded hover:bg-g-200"
+        :class="{ 'opacity-40 pointer-events-none': !allowMarkAllRead || currentUnreadCount === 0 }"
+        @click="handleMarkAllRead"
+      >
+        {{ activeBoxType === 'todo' ? '去处理' : '全部已读' }}
       </span>
     </div>
 
     <ul class="box-border flex items-end w-full h-12.5 px-3.5 border-b-d">
       <li
         v-for="(item, index) in barList"
-        :key="index"
+        :key="item.key"
         class="h-12 leading-12 mr-5 overflow-hidden text-[13px] text-g-700 c-p select-none"
         :class="{ 'bar-active': barActiveIndex === index }"
         @click="changeBar(index)"
@@ -30,71 +33,55 @@
 
     <div class="w-full h-[calc(100%-95px)]">
       <div class="h-[calc(100%-60px)] overflow-y-scroll scrollbar-thin">
-        <!-- 通知 -->
-        <ul v-show="barActiveIndex === 0">
+        <ul v-if="currentList.length">
           <li
-            v-for="(item, index) in noticeList"
-            :key="index"
-            class="box-border flex-c px-3.5 py-3.5 c-p last:border-b-0 hover:bg-g-200/60"
+            v-for="item in currentList"
+            :key="item.id"
+            class="message-row"
+            :class="{ 'is-unread': item.delivery_status === 'unread' }"
+            @click="handleItemClick(item)"
           >
-            <div
-              class="size-9 leading-9 text-center rounded-lg flex-cc"
-              :class="[getNoticeStyle(item.type).iconClass]"
-            >
-              <ArtSvgIcon class="text-lg !bg-transparent" :icon="getNoticeStyle(item.type).icon" />
+            <div class="message-row__avatar" :class="resolveAvatarClass(item)">
+              <img
+                v-if="item.sender_avatar_snapshot"
+                :src="item.sender_avatar_snapshot"
+                class="size-full rounded-xl object-cover"
+              />
+              <ArtSvgIcon v-else :icon="resolveItemIcon(item)" class="text-lg !bg-transparent" />
             </div>
-            <div class="w-[calc(100%-45px)] ml-3.5">
-              <h4 class="text-sm font-normal leading-5.5 text-g-900">{{ item.title }}</h4>
-              <p class="mt-1.5 text-xs text-g-500">{{ item.time }}</p>
+
+            <div class="message-row__body">
+              <div class="message-row__head">
+                <h4 class="message-row__title">{{ item.title }}</h4>
+                <span v-if="item.delivery_status === 'unread'" class="message-row__dot"></span>
+              </div>
+              <p class="message-row__summary">{{ resolveSummary(item) }}</p>
+              <div class="message-row__meta">
+                <div class="message-row__meta-tags">
+                  <span class="message-chip">{{ resolveSourceLabel(item) }}</span>
+                  <span v-if="resolveTeamTag(item)" class="message-chip is-team">{{ resolveTeamTag(item) }}</span>
+                </div>
+                <span class="message-row__time">{{ formatTime(item.last_action_at || item.published_at || item.created_at) }}</span>
+              </div>
+
+              <div v-if="item.box_type === 'todo'" class="message-row__todo-actions">
+                <ElButton size="small" type="primary" plain @click.stop="handleTodo(item, 'done')">
+                  完成
+                </ElButton>
+                <ElButton size="small" @click.stop="handleTodo(item, 'ignored')">忽略</ElButton>
+              </div>
             </div>
           </li>
         </ul>
 
-        <!-- 消息 -->
-        <ul v-show="barActiveIndex === 1">
-          <li
-            v-for="(item, index) in msgList"
-            :key="index"
-            class="box-border flex-c px-3.5 py-3.5 c-p last:border-b-0 hover:bg-g-200/60"
-          >
-            <div class="w-9 h-9">
-              <img :src="item.avatar" class="w-full h-full rounded-lg" />
-            </div>
-            <div class="w-[calc(100%-45px)] ml-3.5">
-              <h4 class="text-xs font-normal leading-5.5">{{ item.title }}</h4>
-              <p class="mt-1.5 text-xs text-g-500">{{ item.time }}</p>
-            </div>
-          </li>
-        </ul>
-
-        <!-- 待办 -->
-        <ul v-show="barActiveIndex === 2">
-          <li
-            v-for="(item, index) in pendingList"
-            :key="index"
-            class="box-border px-5 py-3.5 last:border-b-0"
-          >
-            <h4>{{ item.title }}</h4>
-            <p class="text-xs text-g-500">{{ item.time }}</p>
-          </li>
-        </ul>
-
-        <!-- 空状态 -->
-        <div
-          v-show="currentTabIsEmpty"
-          class="relative top-25 h-full text-g-500 text-center !bg-transparent"
-        >
+        <div v-else class="message-empty">
           <ArtSvgIcon icon="system-uicons:inbox" class="text-5xl" />
-          <p class="mt-3.5 text-xs !bg-transparent"
-            >{{ $t('notice.text[0]') }}{{ barList[barActiveIndex].name }}</p
-          >
+          <p class="mt-3.5 text-xs !bg-transparent">当前没有{{ currentBarName }}</p>
         </div>
       </div>
 
       <div class="relative box-border w-full px-3.5">
-        <ElButton class="w-full mt-3" @click="handleViewAll" v-ripple>
-          {{ $t('notice.viewAll') }}
-        </ElButton>
+        <ElButton class="w-full mt-3" @click="handleViewAll" v-ripple>查看全部</ElButton>
       </div>
     </div>
 
@@ -103,61 +90,14 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch, type Ref, type ComputedRef } from 'vue'
-  import { useI18n } from 'vue-i18n'
-
-  // 导入头像图片
-  import avatar1 from '@/assets/images/avatar/avatar1.webp'
-  import avatar2 from '@/assets/images/avatar/avatar2.webp'
-  import avatar3 from '@/assets/images/avatar/avatar3.webp'
-  import avatar4 from '@/assets/images/avatar/avatar4.webp'
-  import avatar5 from '@/assets/images/avatar/avatar5.webp'
-  import avatar6 from '@/assets/images/avatar/avatar6.webp'
+  import { computed, ref, watch } from 'vue'
+  import { ElMessage } from 'element-plus'
+  import { useRouter } from 'vue-router'
+  import { storeToRefs } from 'pinia'
+  import { useMessageStore } from '@/store/modules/message'
+  import { useTenantStore } from '@/store/modules/tenant'
 
   defineOptions({ name: 'ArtNotification' })
-
-  interface NoticeItem {
-    /** 标题 */
-    title: string
-    /** 时间 */
-    time: string
-    /** 类型 */
-    type: NoticeType
-  }
-
-  interface MessageItem {
-    /** 标题 */
-    title: string
-    /** 时间 */
-    time: string
-    /** 头像 */
-    avatar: string
-  }
-
-  interface PendingItem {
-    /** 标题 */
-    title: string
-    /** 时间 */
-    time: string
-  }
-
-  interface BarItem {
-    /** 名称 */
-    name: ComputedRef<string>
-    /** 数量 */
-    num: number
-  }
-
-  interface NoticeStyle {
-    /** 图标 */
-    icon: string
-    /** icon 样式 */
-    iconClass: string
-  }
-
-  type NoticeType = 'email' | 'message' | 'collection' | 'user' | 'notice'
-
-  const { t } = useI18n()
 
   const props = defineProps<{
     value: boolean
@@ -167,270 +107,341 @@
     'update:value': [value: boolean]
   }>()
 
+  const router = useRouter()
+  const messageStore = useMessageStore()
+  const tenantStore = useTenantStore()
+  const { previewMap } = storeToRefs(messageStore)
+
   const show = ref(false)
   const visible = ref(false)
   const barActiveIndex = ref(0)
 
-  const useNotificationData = () => {
-    // 通知数据
-    const noticeList = ref<NoticeItem[]>([
-      {
-        title: '新增国际化',
-        time: '2024-6-13 0:10',
-        type: 'notice'
-      },
-      {
-        title: '冷月呆呆给你发了一条消息',
-        time: '2024-4-21 8:05',
-        type: 'message'
-      },
-      {
-        title: '小肥猪关注了你',
-        time: '2020-3-17 21:12',
-        type: 'collection'
-      },
-      {
-        title: '新增使用文档',
-        time: '2024-02-14 0:20',
-        type: 'notice'
-      },
-      {
-        title: '小肥猪给你发了一封邮件',
-        time: '2024-1-20 0:15',
-        type: 'email'
-      },
-      {
-        title: '菜单mock本地真实数据',
-        time: '2024-1-17 22:06',
-        type: 'notice'
-      }
-    ])
+  const barList = computed(() => [
+    { key: 'notice', name: '通知', num: previewMap.value.notice.length },
+    { key: 'message', name: '消息', num: previewMap.value.message.length },
+    { key: 'todo', name: '待办', num: previewMap.value.todo.length }
+  ])
 
-    // 消息数据
-    const msgList = ref<MessageItem[]>([
-      {
-        title: '池不胖 关注了你',
-        time: '2021-2-26 23:50',
-        avatar: avatar1
-      },
-      {
-        title: '唐不苦 关注了你',
-        time: '2021-2-21 8:05',
-        avatar: avatar2
-      },
-      {
-        title: '中小鱼 关注了你',
-        time: '2020-1-17 21:12',
-        avatar: avatar3
-      },
-      {
-        title: '何小荷 关注了你',
-        time: '2021-01-14 0:20',
-        avatar: avatar4
-      },
-      {
-        title: '誶誶淰 关注了你',
-        time: '2020-12-20 0:15',
-        avatar: avatar5
-      },
-      {
-        title: '冷月呆呆 关注了你',
-        time: '2020-12-17 22:06',
-        avatar: avatar6
-      }
-    ])
+  const activeBoxType = computed<Api.Message.BoxType>(() => {
+    return (barList.value[barActiveIndex.value]?.key || 'notice') as Api.Message.BoxType
+  })
 
-    // 待办数据
-    const pendingList = ref<PendingItem[]>([])
-
-    // 标签栏数据
-    const barList = computed<BarItem[]>(() => [
-      {
-        name: computed(() => t('notice.bar[0]')),
-        num: noticeList.value.length
-      },
-      {
-        name: computed(() => t('notice.bar[1]')),
-        num: msgList.value.length
-      },
-      {
-        name: computed(() => t('notice.bar[2]')),
-        num: pendingList.value.length
-      }
-    ])
-
-    return {
-      noticeList,
-      msgList,
-      pendingList,
-      barList
-    }
-  }
-
-  // 样式管理
-  const useNotificationStyles = () => {
-    const noticeStyleMap: Record<NoticeType, NoticeStyle> = {
-      email: {
-        icon: 'ri:mail-line',
-        iconClass: 'bg-warning/12 text-warning'
-      },
-      message: {
-        icon: 'ri:volume-down-line',
-        iconClass: 'bg-success/12 text-success'
-      },
-      collection: {
-        icon: 'ri:heart-3-line',
-        iconClass: 'bg-danger/12 text-danger'
-      },
-      user: {
-        icon: 'ri:volume-down-line',
-        iconClass: 'bg-info/12 text-info'
-      },
-      notice: {
-        icon: 'ri:notification-3-line',
-        iconClass: 'bg-theme/12 text-theme'
-      }
-    }
-
-    const getNoticeStyle = (type: NoticeType): NoticeStyle => {
-      const defaultStyle: NoticeStyle = {
-        icon: 'ri:arrow-right-circle-line',
-        iconClass: 'bg-theme/12 text-theme'
-      }
-
-      return noticeStyleMap[type] || defaultStyle
-    }
-
-    return {
-      getNoticeStyle
-    }
-  }
-
-  // 动画管理
-  const useNotificationAnimation = () => {
-    const showNotice = (open: boolean) => {
-      if (open) {
-        visible.value = true
-        setTimeout(() => {
-          show.value = true
-        }, 5)
-      } else {
-        show.value = false
-        setTimeout(() => {
-          visible.value = false
-        }, 350)
-      }
-    }
-
-    return {
-      showNotice
-    }
-  }
-
-  // 标签页管理
-  const useTabManagement = (
-    noticeList: Ref<NoticeItem[]>,
-    msgList: Ref<MessageItem[]>,
-    pendingList: Ref<PendingItem[]>,
-    businessHandlers: {
-      handleNoticeAll: () => void
-      handleMsgAll: () => void
-      handlePendingAll: () => void
-    }
-  ) => {
-    const changeBar = (index: number) => {
-      barActiveIndex.value = index
-    }
-
-    // 检查当前标签页是否为空
-    const currentTabIsEmpty = computed(() => {
-      const tabDataMap = [noticeList.value, msgList.value, pendingList.value]
-
-      const currentData = tabDataMap[barActiveIndex.value]
-      return currentData && currentData.length === 0
-    })
-
-    const handleViewAll = () => {
-      // 查看全部处理器映射
-      const viewAllHandlers: Record<number, () => void> = {
-        0: businessHandlers.handleNoticeAll,
-        1: businessHandlers.handleMsgAll,
-        2: businessHandlers.handlePendingAll
-      }
-
-      const handler = viewAllHandlers[barActiveIndex.value]
-      handler?.()
-
-      // 关闭通知面板
-      emit('update:value', false)
-    }
-
-    return {
-      changeBar,
-      currentTabIsEmpty,
-      handleViewAll
-    }
-  }
-
-  // 业务逻辑处理
-  const useBusinessLogic = () => {
-    const handleNoticeAll = () => {}
-
-    const handleMsgAll = () => {}
-
-    const handlePendingAll = () => {}
-
-    return {
-      handleNoticeAll,
-      handleMsgAll,
-      handlePendingAll
-    }
-  }
-
-  // 组合所有逻辑
-  const { noticeList, msgList, pendingList, barList } = useNotificationData()
-  const { getNoticeStyle } = useNotificationStyles()
-  const { showNotice } = useNotificationAnimation()
-  const { handleNoticeAll, handleMsgAll, handlePendingAll } = useBusinessLogic()
-  const { changeBar, currentTabIsEmpty, handleViewAll } = useTabManagement(
-    noticeList,
-    msgList,
-    pendingList,
-    { handleNoticeAll, handleMsgAll, handlePendingAll }
+  const currentBarName = computed(() => barList.value[barActiveIndex.value]?.name || '消息')
+  const currentList = computed(() => previewMap.value[activeBoxType.value] || [])
+  const currentUnreadCount = computed(
+    () => currentList.value.filter((item) => item.delivery_status === 'unread').length
   )
+  const allowMarkAllRead = computed(() => activeBoxType.value !== 'todo')
 
-  // 监听属性变化
+  const animatePanel = (open: boolean) => {
+    if (open) {
+      visible.value = true
+      setTimeout(() => {
+        show.value = true
+      }, 5)
+      messageStore.loadPanelData(true).catch(() => {
+        ElMessage.error('获取消息失败')
+      })
+      return
+    }
+    show.value = false
+    setTimeout(() => {
+      visible.value = false
+    }, 300)
+  }
+
+  const changeBar = (index: number) => {
+    barActiveIndex.value = index
+    messageStore.loadPreview(activeBoxType.value, true).catch(() => {
+      ElMessage.error('获取消息失败')
+    })
+  }
+
+  const formatTime = (value?: string) => {
+    if (!value) return '刚刚'
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return value
+    return new Intl.DateTimeFormat('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    }).format(date)
+  }
+
+  const resolveItemIcon = (item: Api.Message.InboxItem) => {
+    if (item.box_type === 'todo') return 'ri:task-line'
+    if (item.sender_type === 'service' || item.sender_type === 'automation') return 'ri:robot-2-line'
+    if (item.box_type === 'message') return 'ri:message-2-line'
+    return 'ri:notification-3-line'
+  }
+
+  const resolveAvatarClass = (item: Api.Message.InboxItem) => {
+    if (item.box_type === 'todo') return 'is-todo'
+    if (item.box_type === 'message') return 'is-message'
+    return 'is-notice'
+  }
+
+  const resolveSourceLabel = (item: Api.Message.InboxItem) => {
+    if (item.sender_name_snapshot) return item.sender_name_snapshot
+    if (item.sender_type === 'system') return '系统'
+    if (item.sender_type === 'service') return item.sender_service_key || '服务'
+    if (item.sender_type === 'automation') return '自动任务'
+    return item.box_type === 'todo' ? '待处理' : '站内消息'
+  }
+
+  const plainTextFromHtml = (value?: string) => {
+    const target = `${value || ''}`.trim()
+    if (!target) return ''
+    if (typeof window === 'undefined') {
+      return target.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+    }
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(target, 'text/html')
+    return (doc.body.textContent || '').replace(/\s+/g, ' ').trim()
+  }
+
+  const resolveSummary = (item: Api.Message.InboxItem) => {
+    return plainTextFromHtml(item.summary) || plainTextFromHtml(item.content) || '点击查看消息详情'
+  }
+
+  const resolveTeamTag = (item: Api.Message.InboxItem) => {
+    const teamId = item.scope_type === 'team'
+      ? (item.scope_id || item.recipient_team_id || item.target_tenant_id)
+      : (item.recipient_team_id || item.target_tenant_id || item.scope_id)
+    if (!teamId) return ''
+    const teamName = tenantStore.teamList.find((team) => team.id === teamId)?.name || ''
+    return teamName ? `团队 · ${teamName}` : ''
+  }
+
+  const navigateByItem = async (item: Api.Message.InboxItem) => {
+    await router.push({
+      path: '/workspace/inbox',
+      query: {
+        deliveryId: item.id,
+        boxType: item.box_type
+      }
+    })
+  }
+
+  const handleItemClick = async (item: Api.Message.InboxItem) => {
+    try {
+      if (item.delivery_status === 'unread') {
+        await messageStore.markRead(item.id)
+      }
+      emit('update:value', false)
+      await navigateByItem(item)
+    } catch (error) {
+      ElMessage.error('打开消息失败')
+    }
+  }
+
+  const handleMarkAllRead = async () => {
+    if (activeBoxType.value === 'todo') {
+      handleViewAll()
+      return
+    }
+    if (currentUnreadCount.value === 0) return
+    try {
+      await messageStore.markReadAll(activeBoxType.value)
+      ElMessage.success('已标记当前分类为已读')
+    } catch (error) {
+      ElMessage.error('批量已读失败')
+    }
+  }
+
+  const handleTodo = async (item: Api.Message.InboxItem, action: 'done' | 'ignored') => {
+    try {
+      await messageStore.handleTodo(item.id, action)
+      ElMessage.success(action === 'done' ? '待办已完成' : '待办已忽略')
+    } catch (error) {
+      ElMessage.error('处理待办失败')
+    }
+  }
+
+  const handleViewAll = () => {
+    emit('update:value', false)
+    router.push({
+      path: '/workspace/inbox',
+      query: {
+        boxType: activeBoxType.value
+      }
+    })
+  }
+
   watch(
     () => props.value,
     (newValue) => {
-      showNotice(newValue)
-    }
+      animatePanel(newValue)
+    },
+    { immediate: true }
   )
 </script>
 
-<style scoped>
+<style scoped lang="scss">
   @reference '@styles/core/tailwind.css';
 
   .art-notification-panel {
-    @apply absolute 
-    top-14.5 
-    right-5 
-    w-90 
-    h-125 
-    overflow-hidden 
-    transition-all 
-    duration-300
-    origin-top 
-    will-change-[top,left] 
-    max-[640px]:top-[65px]
-    max-[640px]:right-0
-    max-[640px]:w-full 
-    max-[640px]:h-[80vh];
+    position: absolute;
+    top: 58px;
+    right: 20px;
+    z-index: 60;
+    width: min(360px, calc(100vw - 32px));
+    height: 500px;
+    overflow: hidden;
+    transform-origin: top right;
+    transition:
+      transform 0.3s ease,
+      opacity 0.3s ease;
+    will-change: transform, opacity;
+  }
+
+  @media (max-width: 640px) {
+    .art-notification-panel {
+      top: 64px;
+      right: 12px;
+      width: calc(100vw - 24px);
+      height: min(80vh, 560px);
+    }
   }
 
   .bar-active {
     color: var(--theme-color) !important;
     border-bottom: 2px solid var(--theme-color);
+  }
+
+  .message-row {
+    display: flex;
+    gap: 12px;
+    padding: 12px 13px;
+    cursor: pointer;
+    border-bottom: 1px solid rgb(226 232 240 / 0.7);
+    transition:
+      background-color 0.2s ease,
+      transform 0.2s ease;
+  }
+
+  .message-row:hover {
+    background: rgb(248 250 252 / 0.9);
+  }
+
+  .message-row.is-unread {
+    background: linear-gradient(90deg, rgb(239 246 255 / 0.85), transparent 72%);
+  }
+
+  .message-row__avatar {
+    display: flex;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+  }
+
+  .message-row__avatar.is-notice {
+    background: rgb(219 234 254 / 0.75);
+    color: #1d4ed8;
+  }
+
+  .message-row__avatar.is-message {
+    background: rgb(220 252 231 / 0.85);
+    color: #047857;
+  }
+
+  .message-row__avatar.is-todo {
+    background: rgb(254 242 242 / 0.95);
+    color: #dc2626;
+  }
+
+  .message-row__body {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .message-row__head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .message-row__title {
+    margin: 0;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.5;
+    color: #0f172a;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .message-row__dot {
+    width: 7px;
+    height: 7px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: #ef4444;
+  }
+
+  .message-row__summary {
+    margin: 4px 0 0;
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 12px;
+    line-height: 1.55;
+    color: #64748b;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .message-row__meta {
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .message-row__meta-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .message-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgb(241 245 249 / 1);
+    font-size: 11px;
+    color: #475569;
+  }
+
+  .message-chip.is-team {
+    background: rgb(219 234 254 / 0.9);
+    color: #1d4ed8;
+  }
+
+  .message-row__time {
+    font-size: 11px;
+    color: #94a3b8;
+  }
+
+  .message-row__todo-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .message-empty {
+    position: relative;
+    top: 100px;
+    text-align: center;
+    color: #64748b;
+    background: transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {

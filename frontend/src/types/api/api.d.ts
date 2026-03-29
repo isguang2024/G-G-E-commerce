@@ -945,4 +945,364 @@ declare namespace Api {
       hidden?: boolean
     }
   }
+
+  namespace Message {
+    type BoxType = 'notice' | 'message' | 'todo'
+    type DeliveryStatus = 'unread' | 'read' | string
+    type TodoStatus = 'pending' | 'done' | 'ignored' | string
+    type SenderType = 'system' | 'platform_user' | 'team_user' | 'service' | 'automation' | string
+    type ActionType = 'route' | 'external_link' | 'api' | 'none' | string
+    type AudienceType =
+      | 'all_users'
+      | 'tenant_admins'
+      | 'tenant_users'
+      | 'specified_users'
+      | 'recipient_group'
+      | 'role'
+      | 'feature_package'
+      | string
+
+    interface InboxSummary {
+      unread_total: number
+      notice_count: number
+      message_count: number
+      todo_count: number
+    }
+
+    interface InboxQuery extends Partial<Api.Common.CommonSearchParams> {
+      box_type?: BoxType | ''
+      unread_only?: boolean
+    }
+
+    interface InboxItem {
+      id: string
+      message_id: string
+      box_type: BoxType
+      delivery_status: DeliveryStatus
+      todo_status?: TodoStatus
+      read_at?: string
+      done_at?: string
+      last_action_at?: string
+      recipient_team_id?: string
+      title: string
+      summary?: string
+      content?: string
+      priority?: string
+      action_type?: ActionType
+      action_target?: string
+      message_type?: BoxType
+      biz_type?: string
+      scope_type?: string
+      scope_id?: string
+      sender_type?: SenderType
+      sender_name_snapshot?: string
+      sender_avatar_snapshot?: string
+      sender_service_key?: string
+      audience_type?: string
+      audience_scope?: string
+      target_tenant_id?: string
+      published_at?: string
+      expired_at?: string
+      created_at: string
+      meta?: Record<string, any>
+    }
+
+    type InboxListResponse = Api.Common.PaginatedResponse<InboxItem>
+    type InboxDetail = InboxItem
+
+    interface TodoActionParams {
+      action: 'done' | 'ignored'
+    }
+
+    interface DispatchAudienceOption {
+      value: AudienceType
+      label: string
+      description: string
+    }
+
+    interface DispatchTemplateOption {
+      id: string
+      template_key: string
+      name: string
+      description: string
+      message_type: BoxType
+      owner_scope: 'platform' | 'team' | string
+      audience_type: AudienceType
+      title_template?: string
+      summary_template?: string
+      content_template?: string
+    }
+
+    interface DispatchTeamOption {
+      id: string
+      name: string
+    }
+
+    interface DispatchUserOption {
+      id: string
+      name: string
+      display_name: string
+      description?: string
+      team_id?: string
+      team_name?: string
+    }
+
+      interface DispatchRecipientGroupOption {
+        id: string
+        name: string
+        description?: string
+        match_mode?: string
+        estimated_count?: number
+      }
+
+      interface DispatchRoleOption {
+        id: string
+        code: string
+        name: string
+        description?: string
+      }
+
+      interface DispatchFeaturePackageOption {
+        id: string
+        package_key: string
+        name: string
+        description?: string
+      }
+
+    interface DispatchOptions {
+        sender_scope: 'platform' | 'team' | string
+        current_tenant_id?: string
+        current_tenant_name?: string
+        sender_options: DispatchSenderOption[]
+        default_sender_id?: string
+        audience_options: DispatchAudienceOption[]
+        template_options: DispatchTemplateOption[]
+          teams: DispatchTeamOption[]
+          users: DispatchUserOption[]
+          recipient_groups: DispatchRecipientGroupOption[]
+          roles: DispatchRoleOption[]
+          feature_packages: DispatchFeaturePackageOption[]
+          default_message_type: BoxType
+        default_audience_type: AudienceType
+        default_priority: string
+        supports_external_link: boolean
+      }
+
+      interface DispatchSenderOption {
+        id: string
+        name: string
+        description?: string
+        avatar_url?: string
+        is_default?: boolean
+      }
+
+      interface DispatchParams {
+        sender_id?: string
+        template_id?: string
+        template_key?: string
+        message_type: BoxType
+      audience_type: AudienceType
+      target_tenant_ids?: string[]
+      target_user_ids?: string[]
+      target_group_ids?: string[]
+      title: string
+      summary?: string
+      content?: string
+      priority?: string
+      action_type?: ActionType
+      action_target?: string
+      biz_type?: string
+      expired_at?: string
+    }
+
+    interface DispatchResult {
+      message_id: string
+      delivery_count: number
+      dispatch_status: 'queued' | 'processing' | 'published' | 'failed' | string
+    }
+
+    interface MessageTemplateQuery extends Partial<Api.Common.CommonSearchParams> {
+      keyword?: string
+    }
+
+    interface MessageTemplateItem {
+      id: string
+      template_key: string
+      name: string
+      description?: string
+      message_type: BoxType
+      owner_scope: 'platform' | 'team' | string
+      owner_tenant_id?: string
+      owner_tenant_name?: string
+      audience_type: AudienceType
+      title_template?: string
+      summary_template?: string
+      content_template?: string
+      status: 'normal' | 'disabled' | string
+      editable: boolean
+      meta?: Record<string, any>
+      created_at?: string
+      updated_at?: string
+    }
+
+    type MessageTemplateListResponse = Api.Common.PaginatedResponse<MessageTemplateItem>
+
+      interface MessageTemplateSaveParams {
+        template_key?: string
+        name: string
+      description?: string
+      message_type: BoxType
+      audience_type: AudienceType
+      title_template?: string
+      summary_template?: string
+      content_template?: string
+        status?: 'normal' | 'disabled' | string
+      }
+
+      interface MessageSenderItem {
+        id: string
+        scope_type: 'platform' | 'team' | string
+        scope_id?: string
+        name: string
+        description?: string
+        avatar_url?: string
+        is_default?: boolean
+        status: 'normal' | 'disabled' | string
+        editable: boolean
+        meta?: Record<string, any>
+        created_at?: string
+        updated_at?: string
+      }
+
+      interface MessageSenderListResponse {
+        records: MessageSenderItem[]
+      }
+
+      interface MessageSenderSaveParams {
+        name: string
+        description?: string
+        avatar_url?: string
+        is_default?: boolean
+        status?: 'normal' | 'disabled' | string
+        meta?: Record<string, any>
+      }
+
+      interface MessageRecipientGroupTargetItem {
+        id: string
+        target_type: 'user' | 'tenant_users' | 'tenant_admins' | string
+        user_id?: string
+        user_name?: string
+          tenant_id?: string
+          tenant_name?: string
+          role_code?: string
+          role_name?: string
+          package_key?: string
+          package_name?: string
+          sort_order?: number
+          meta?: Record<string, any>
+        }
+
+      interface MessageRecipientGroupItem {
+        id: string
+        scope_type: 'platform' | 'team' | string
+        scope_id?: string
+        name: string
+        description?: string
+        match_mode?: 'manual' | string
+        status: 'normal' | 'disabled' | string
+        editable: boolean
+        estimated_count?: number
+        meta?: Record<string, any>
+        targets: MessageRecipientGroupTargetItem[]
+        created_at?: string
+        updated_at?: string
+      }
+
+      interface MessageRecipientGroupListResponse {
+        records: MessageRecipientGroupItem[]
+      }
+
+      interface MessageRecipientGroupTargetSaveParams {
+          target_type: 'user' | 'tenant_users' | 'tenant_admins' | 'role' | 'feature_package' | string
+        user_id?: string
+        tenant_id?: string
+        role_code?: string
+        package_key?: string
+        sort_order?: number
+        meta?: Record<string, any>
+      }
+
+      interface MessageRecipientGroupSaveParams {
+        name: string
+        description?: string
+        match_mode?: 'manual' | string
+        status?: 'normal' | 'disabled' | string
+        meta?: Record<string, any>
+        targets: MessageRecipientGroupTargetSaveParams[]
+      }
+
+    interface DispatchRecordQuery extends Partial<Api.Common.CommonSearchParams> {
+      keyword?: string
+      message_type?: BoxType | ''
+      audience_type?: AudienceType | ''
+    }
+
+    interface DispatchRecordSummary {
+      total_messages: number
+      total_deliveries: number
+      read_deliveries: number
+      todo_messages: number
+    }
+
+    interface DispatchRecordItem {
+      id: string
+      title: string
+      summary?: string
+      content?: string
+      message_type: BoxType
+      audience_type: AudienceType
+      scope_type: 'platform' | 'team' | string
+      scope_id?: string
+      target_tenant_id?: string
+      target_tenant_name?: string
+      sender_name?: string
+      template_name?: string
+      priority?: string
+      status?: string
+      published_at?: string
+      created_at: string
+      delivery_count: number
+      read_count: number
+      unread_count: number
+      pending_todo_count: number
+    }
+
+    interface DispatchRecordDeliveryItem {
+      id: string
+      recipient_user_id: string
+      recipient_name: string
+      recipient_team_id?: string
+      recipient_team_name?: string
+      delivery_status: DeliveryStatus
+      todo_status?: TodoStatus
+      read_at?: string
+      done_at?: string
+      last_action_at?: string
+      source_group_id?: string
+      source_group_name?: string
+      source_rule_type?: string
+      source_rule_label?: string
+      source_target_id?: string
+      source_target_type?: string
+      source_target_value?: string
+    }
+
+    interface DispatchRecordDetail extends DispatchRecordItem {
+      deliveries: DispatchRecordDeliveryItem[]
+    }
+
+    interface DispatchRecordListResponse extends Api.Common.PaginatedResponse<DispatchRecordItem> {
+      summary: DispatchRecordSummary
+    }
+  }
 }

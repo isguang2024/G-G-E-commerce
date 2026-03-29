@@ -49,6 +49,7 @@
 
   const route = useRoute()
   const router = useRouter()
+  const menuStore = useMenuStore()
 
   // 使用computed替代watch，提高性能
   const breadcrumbItems = computed<BreadcrumbItem[]>(() => {
@@ -79,6 +80,11 @@
       return [...chainItems, createBreadcrumbItem(currentRoute)]
     }
 
+    const resolvedMenuChain = resolveMenuChainFromMeta(currentRouteMeta)
+    if (resolvedMenuChain.length) {
+      return [...resolvedMenuChain, createBreadcrumbItem(currentRoute)]
+    }
+
     // 兼容历史 customParent 逻辑
     if (
       typeof currentRouteMeta?.customParent === 'string' &&
@@ -86,20 +92,6 @@
     ) {
       const customParentPath = normalizePath(String(currentRouteMeta.customParent))
 
-      // 从菜单 store 中查找对应的菜单标题
-      const menuStore = useMenuStore()
-      const findMenuTitle = (menus: AppRouteRecord[], path: string): string | undefined => {
-        for (const menu of menus) {
-          if (menu.path === path) {
-            return menu.meta?.title
-          }
-          if (menu.children?.length) {
-            const found = findMenuTitle(menu.children, path)
-            if (found) return found
-          }
-        }
-        return undefined
-      }
       const parentTitle = findMenuTitle(menuStore.menuList, customParentPath)
 
       // 直接创建一个自定义的面包屑项
@@ -168,6 +160,67 @@
     }
     const normalized = `/${String(path || '').replace(/^\/+/, '')}`.replace(/\/+/g, '/')
     return normalized !== '/' ? normalized.replace(/\/$/, '') : normalized
+  }
+
+  const normalizeMenuResolvedPath = (path: string, parentPath = ''): string => {
+    const target = `${path || ''}`.trim()
+    if (!target) return normalizePath(parentPath)
+    if (/^https?:\/\//i.test(target)) return target
+    if (target.startsWith('/')) return normalizePath(target)
+    return normalizePath(`${normalizePath(parentPath)}/${target}`)
+  }
+
+  const buildMenuChain = (
+    menus: AppRouteRecord[],
+    targetPath: string,
+    parentPath = ''
+  ): BreadcrumbItem[] => {
+    for (const menu of menus) {
+      const currentPath = normalizeMenuResolvedPath(String(menu.path || ''), parentPath)
+      const currentItem: BreadcrumbItem = {
+        path: currentPath,
+        meta: menu.meta
+      }
+      if (currentPath === targetPath) {
+        return [currentItem]
+      }
+      if (menu.children?.length) {
+        const childChain = buildMenuChain(menu.children, targetPath, currentPath)
+        if (childChain.length) {
+          return [currentItem, ...childChain]
+        }
+      }
+    }
+    return []
+  }
+
+  const findMenuTitle = (menus: AppRouteRecord[], path: string, parentPath = ''): string | undefined => {
+    for (const menu of menus) {
+      const currentPath = normalizeMenuResolvedPath(String(menu.path || ''), parentPath)
+      if (currentPath === path) {
+        return String(menu.meta?.title || '')
+      }
+      if (menu.children?.length) {
+        const found = findMenuTitle(menu.children, path, currentPath)
+        if (found) return found
+      }
+    }
+    return undefined
+  }
+
+  const resolveMenuChainFromMeta = (meta?: RouteRecordRaw['meta']): BreadcrumbItem[] => {
+    const candidatePaths = [
+      normalizePath(String(meta?.activePath || '')),
+      normalizePath(String(meta?.customParent || ''))
+    ].filter(Boolean)
+
+    for (const candidatePath of candidatePaths) {
+      const chain = buildMenuChain(menuStore.menuList, candidatePath)
+      if (chain.length) {
+        return chain
+      }
+    }
+    return []
   }
 
   // 处理面包屑点击事件

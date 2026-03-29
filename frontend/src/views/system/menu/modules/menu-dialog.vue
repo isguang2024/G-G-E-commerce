@@ -14,6 +14,19 @@
       <div class="menu-dialog-intro__text">
         菜单只负责导航入口、显示方式和访问模式。页面挂载与页面内逻辑不要继续回到菜单层维护。
       </div>
+      <div class="menu-dialog-intro__tip">
+        需要显式建立菜单和页面的主关系时，可直接选择“挂接主页面”，保存后会同步更新页面归属。
+      </div>
+    </div>
+
+    <div v-if="linkedPageSummary" class="menu-dialog-link-summary">
+      <div class="menu-dialog-link-summary__title">挂接关系预览</div>
+      <div class="menu-dialog-link-summary__text">{{ linkedPageSummary }}</div>
+    </div>
+
+    <div v-if="currentMenuPageSummary" class="menu-dialog-link-summary is-neutral">
+      <div class="menu-dialog-link-summary__title">当前菜单页面关系</div>
+      <div class="menu-dialog-link-summary__text">{{ currentMenuPageSummary }}</div>
     </div>
 
     <ArtForm
@@ -150,6 +163,7 @@
     roles: string[]
     isFullPage: boolean
     manageGroupId: string
+    linkedPageKey: string
   }
 
   interface Props {
@@ -157,6 +171,9 @@
     editData?: AppRouteRecord | any
     menuTree?: AppRouteRecord[]
     manageGroups?: Api.SystemManage.MenuManageGroupItem[]
+    pageOptions?: Api.SystemManage.PageItem[]
+    currentMenuPages?: Api.SystemManage.PageItem[]
+    linkedPageKey?: string
     editingMenuId?: string
     initialParentId?: string
   }
@@ -170,6 +187,9 @@
     visible: false,
     menuTree: () => [],
     manageGroups: () => [],
+    pageOptions: () => [],
+    currentMenuPages: () => [],
+    linkedPageKey: '',
     editingMenuId: '',
     initialParentId: ''
   })
@@ -222,6 +242,51 @@
     }))
   ])
 
+  const pageOptions = computed(() =>
+    (props.pageOptions || [])
+      .filter((item) => item.pageType !== 'group' && item.pageType !== 'display_group')
+      .map((item) => ({
+        label: item.parentMenuName
+          ? `${item.name} · ${item.pageKey} · 当前挂在 ${item.parentMenuName}`
+          : `${item.name} · ${item.pageKey}`,
+        value: item.pageKey
+      }))
+  )
+
+  const selectedLinkedPage = computed(() =>
+    (props.pageOptions || []).find((item) => item.pageKey === form.linkedPageKey)
+  )
+
+  const linkedPageSummary = computed(() => {
+    const page = selectedLinkedPage.value
+    if (!page) return ''
+    const currentMenu = `${page.parentMenuName || ''}`.trim()
+    const relationText = currentMenu
+      ? `当前该页面已挂在“${currentMenu}”，保存后会切换到本菜单。`
+      : '当前该页面还没有挂接主菜单，保存后会归属到本菜单。'
+    const permissionText =
+      page.accessMode === 'permission'
+        ? '页面自身已配置权限，挂到菜单后将按“菜单准入 + 页面权限”交集放行。'
+        : '页面当前走继承模式，挂到菜单后默认跟随菜单权限。'
+    return `${relationText}${permissionText}`
+  })
+
+  const currentMenuPageSummary = computed(() => {
+    const pages = props.currentMenuPages || []
+    if (!isEdit.value || pages.length === 0) {
+      return isEdit.value ? '当前菜单下还没有挂接页面。' : ''
+    }
+    const primaryPageKey = `${form.linkedPageKey || props.linkedPageKey || ''}`.trim()
+    const names = pages.map((item) =>
+      item.pageKey === primaryPageKey ? `${item.name}（主页面）` : item.name
+    )
+    const primaryHint =
+      pages.length > 1
+        ? '一个菜单可以挂多个页面，但建议只保留一个主页面作为导航代表页。'
+        : '当前只有一个挂接页面，适合作为主页面。'
+    return `当前菜单下共有 ${pages.length} 个页面：${names.join('、')}。${primaryHint}`
+  })
+
   const emit = defineEmits<Emits>()
 
   const formRef = ref()
@@ -252,7 +317,8 @@
     accessMode: 'permission',
     roles: [],
     isFullPage: false,
-    manageGroupId: ''
+    manageGroupId: '',
+    linkedPageKey: ''
   })
 
   const rules = reactive<FormRules>({
@@ -353,6 +419,21 @@
           placeholder: '可选，选择菜单管理分组',
           options: manageGroupOptions.value,
           clearable: true,
+          style: { width: '100%' }
+        }
+      },
+      {
+        label: createLabelTooltip(
+          '挂接主页面',
+          '可选，为当前菜单指定一个主页面。保存后会把该页面挂到当前菜单下，便于在菜单管理和页面管理里双向查看。'
+        ),
+        key: 'linkedPageKey',
+        type: 'select',
+        props: {
+          placeholder: '可选，选择挂接主页面',
+          options: pageOptions.value,
+          clearable: true,
+          filterable: true,
           style: { width: '100%' }
         }
       },
@@ -459,6 +540,7 @@
     form.roles = row.meta?.roles || []
     form.isFullPage = row.meta?.isFullPage ?? false
     form.manageGroupId = String(row.manage_group_id || row.manageGroupId || row.manage_group?.id || '')
+    form.linkedPageKey = props.linkedPageKey || ''
   }
 
   const handleSubmit = async (): Promise<void> => {
@@ -492,6 +574,7 @@
             loadFormData()
           } else {
             form.parentId = props.initialParentId || ''
+            form.linkedPageKey = ''
           }
         })
       }
@@ -541,11 +624,42 @@
   }
 
   .menu-dialog-intro__text,
+  .menu-dialog-intro__tip,
   .advanced-config-intro {
     margin-top: 6px;
     font-size: 12px;
     line-height: 1.6;
     color: #64748b;
+  }
+
+  .menu-dialog-intro__tip {
+    color: #475569;
+  }
+
+  .menu-dialog-link-summary {
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border: 1px solid rgb(219 234 254 / 0.95);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgb(239 246 255 / 0.95), rgb(248 250 252 / 0.98));
+  }
+
+  .menu-dialog-link-summary__title {
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .menu-dialog-link-summary__text {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: #475569;
+  }
+
+  .menu-dialog-link-summary.is-neutral {
+    border-color: rgb(226 232 240 / 0.95);
+    background: linear-gradient(180deg, rgb(248 250 252 / 0.96), rgb(255 255 255 / 0.98));
   }
 
   .advanced-config-container {

@@ -4,3 +4,4 @@
 
 [1m[33m[@vue/compiler-sfc][0m[33m `v-model` cannot update a `const` reactive binding `form`. The compiler has transformed it to `let` to make the update work.[0m
 
+[2m19:28:18[22m [31m[1m[vite][22m[39m [31m[2m(client)[22m[39m Pre-transform error: Failed to load url /src/components/core/layouts/art-notification/index.vue (resolved id: C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/components/core/layouts/art-notification/index.vue) in C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/components/core/layouts/art-header-bar/index.vue. Does the file exist?

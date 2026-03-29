@@ -13,6 +13,7 @@ import (
 
 	apirouter "github.com/gg-ecommerce/backend/internal/api/router"
 	"github.com/gg-ecommerce/backend/internal/config"
+	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
 	usermodel "github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
@@ -203,7 +204,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 		{
 			Name: "20260325_menu_access_mode_jwt_defaults",
 			Run: func(logger *zap.Logger) error {
-				targetMenus := []string{"Dashboard", "Result", "Exception", "UserCenter"}
+				targetMenus := []string{"Dashboard", "Result", "Exception"}
 				for _, menuName := range targetMenus {
 					if err := ensureMenuAccessMode(menuName, "jwt"); err != nil {
 						return err
@@ -238,6 +239,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 					"PageManagement",
 					"FastEnterManage",
 					"ApiEndpoint",
+					"MessageManage",
 				}
 				for _, menuName := range targetMenus {
 					if _, err := syncDefaultMenuSeedByName(menuName); err != nil {
@@ -258,6 +260,337 @@ func runNamedMigrations(logger *zap.Logger) error {
 					return err
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260329_system_menu_group_directory_component_cleanup"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_workspace_inbox_menu_seed",
+			Run: func(logger *zap.Logger) error {
+				if _, err := syncDefaultMenuSeedByName("WorkspaceInbox"); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_workspace_inbox_menu_seed"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_message_manage_menu_seed",
+			Run: func(logger *zap.Logger) error {
+				if _, err := syncDefaultMenuSeedByName("MessageManage"); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_message_manage_menu_seed"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_team_message_manage_menu_seed",
+			Run: func(logger *zap.Logger) error {
+				if _, err := syncDefaultMenuSeedByName("TeamMessageManage"); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_team_message_manage_menu_seed"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_message_template_and_record_menu_seed",
+			Run: func(logger *zap.Logger) error {
+				targetMenus := []string{"MessageTemplateManage", "MessageRecordManage", "TeamMessageTemplateManage", "TeamMessageRecordManage"}
+				for _, menuName := range targetMenus {
+					if _, err := syncDefaultMenuSeedByName(menuName); err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_message_template_and_record_menu_seed"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_system_pages_registry_seed",
+			Run: func(logger *zap.Logger) error {
+				targetPages := []string{
+					"display.system_pages",
+					"workspace.user_center",
+					"workspace.inbox",
+					"system.message.manage",
+					"system.message.recipient_group.manage",
+					"system.message.sender.manage",
+					"system.message.template.manage",
+					"system.message.record.manage",
+					"team.message.manage",
+					"team.message.recipient_group.manage",
+					"team.message.sender.manage",
+					"team.message.template.manage",
+					"team.message.record.manage",
+				}
+				for _, pageKey := range targetPages {
+					if _, err := syncDefaultPageSeedByKey(pageKey); err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_system_pages_registry_seed"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_user_center_page_seed",
+			Run: func(logger *zap.Logger) error {
+				if _, err := syncDefaultPageSeedByKey("workspace.user_center"); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_user_center_page_seed"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_message_manage_page_permission_align",
+			Run: func(logger *zap.Logger) error {
+				if _, err := syncDefaultPageSeedByKey("system.message.manage"); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_message_manage_page_permission_align"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_team_message_manage_page_seed",
+			Run: func(logger *zap.Logger) error {
+				if _, err := syncDefaultPageSeedByKey("team.message.manage"); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_team_message_manage_page_seed"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_message_template_and_record_page_seed",
+			Run: func(logger *zap.Logger) error {
+				targetPages := []string{
+					"system.message.recipient_group.manage",
+					"system.message.sender.manage",
+					"system.message.template.manage",
+					"system.message.record.manage",
+					"team.message.recipient_group.manage",
+					"team.message.sender.manage",
+					"team.message.template.manage",
+					"team.message.record.manage",
+				}
+				for _, pageKey := range targetPages {
+					if _, err := syncDefaultPageSeedByKey(pageKey); err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_message_template_and_record_page_seed"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_message_sender_page_seed",
+			Run: func(logger *zap.Logger) error {
+				targetPages := []string{
+					"system.message.sender.manage",
+					"team.message.sender.manage",
+				}
+				for _, pageKey := range targetPages {
+					if _, err := syncDefaultPageSeedByKey(pageKey); err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_message_sender_page_seed"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_message_recipient_group_page_seed",
+			Run: func(logger *zap.Logger) error {
+				targetPages := []string{
+					"system.message.recipient_group.manage",
+					"team.message.recipient_group.manage",
+				}
+				for _, pageKey := range targetPages {
+					if _, err := syncDefaultPageSeedByKey(pageKey); err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_message_recipient_group_page_seed"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_message_send_navigation_realign",
+			Run: func(logger *zap.Logger) error {
+				deprecatedMenus := []string{
+					"MessageTemplateManage",
+					"MessageRecordManage",
+					"TeamMessageTemplateManage",
+					"TeamMessageRecordManage",
+				}
+				for _, menuName := range deprecatedMenus {
+					var menu usermodel.Menu
+					err := database.DB.Where("name = ?", menuName).First(&menu).Error
+					if errors.Is(err, gorm.ErrRecordNotFound) {
+						continue
+					}
+					if err != nil {
+						return err
+					}
+					if err := deleteMenuTree(menu.ID); err != nil {
+						return err
+					}
+				}
+
+				targetMenus := []string{"MessageManage", "TeamMessageManage"}
+				for _, menuName := range targetMenus {
+					if _, err := syncDefaultMenuSeedByName(menuName); err != nil {
+						return err
+					}
+				}
+
+				targetPages := []string{
+					"system.message.manage",
+					"system.message.template.manage",
+					"system.message.record.manage",
+					"team.message.manage",
+					"team.message.template.manage",
+					"team.message.record.manage",
+				}
+				for _, pageKey := range targetPages {
+					if _, err := syncDefaultPageSeedByKey(pageKey); err != nil {
+						return err
+					}
+				}
+
+				logger.Info("Named migration applied", zap.String("name", "20260329_message_send_navigation_realign"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_message_recipient_groups_table_init",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`ALTER TABLE messages ADD COLUMN IF NOT EXISTS target_group_ids jsonb NOT NULL DEFAULT '[]'::jsonb`,
+					`CREATE TABLE IF NOT EXISTS message_recipient_groups (
+						id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+						scope_type varchar(20) NOT NULL DEFAULT 'platform',
+						scope_id uuid NULL,
+						name varchar(120) NOT NULL,
+						description text NOT NULL DEFAULT '',
+						match_mode varchar(20) NOT NULL DEFAULT 'manual',
+						status varchar(20) NOT NULL DEFAULT 'normal',
+						meta jsonb NOT NULL DEFAULT '{}'::jsonb,
+						created_at timestamptz NOT NULL DEFAULT NOW(),
+						updated_at timestamptz NOT NULL DEFAULT NOW(),
+						deleted_at timestamptz NULL
+					)`,
+					`CREATE TABLE IF NOT EXISTS message_recipient_group_targets (
+						id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+						group_id uuid NOT NULL,
+						target_type varchar(30) NOT NULL,
+						user_id uuid NULL,
+						tenant_id uuid NULL,
+						role_code varchar(80) NOT NULL DEFAULT '',
+						package_key varchar(120) NOT NULL DEFAULT '',
+						sort_order integer NOT NULL DEFAULT 0,
+						meta jsonb NOT NULL DEFAULT '{}'::jsonb,
+						created_at timestamptz NOT NULL DEFAULT NOW(),
+						updated_at timestamptz NOT NULL DEFAULT NOW(),
+						deleted_at timestamptz NULL
+					)`,
+					`CREATE INDEX IF NOT EXISTS idx_messages_target_group_ids ON messages USING gin (target_group_ids)`,
+					`CREATE INDEX IF NOT EXISTS idx_message_recipient_groups_scope_type ON message_recipient_groups (scope_type)`,
+					`CREATE INDEX IF NOT EXISTS idx_message_recipient_groups_scope_id ON message_recipient_groups (scope_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_message_recipient_groups_deleted_at ON message_recipient_groups (deleted_at)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_message_recipient_groups_scope_name_unique ON message_recipient_groups (scope_type, COALESCE(scope_id, '00000000-0000-0000-0000-000000000000'::uuid), name) WHERE deleted_at IS NULL`,
+					`CREATE INDEX IF NOT EXISTS idx_message_recipient_group_targets_group_id ON message_recipient_group_targets (group_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_message_recipient_group_targets_user_id ON message_recipient_group_targets (user_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_message_recipient_group_targets_tenant_id ON message_recipient_group_targets (tenant_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_message_recipient_group_targets_deleted_at ON message_recipient_group_targets (deleted_at)`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_message_recipient_groups_table_init"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_message_senders_table_init",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`CREATE TABLE IF NOT EXISTS message_senders (
+						id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+						scope_type varchar(20) NOT NULL DEFAULT 'platform',
+						scope_id uuid NULL,
+						name varchar(120) NOT NULL,
+						description text NOT NULL DEFAULT '',
+						avatar_url varchar(500) NOT NULL DEFAULT '',
+						is_default boolean NOT NULL DEFAULT false,
+						status varchar(20) NOT NULL DEFAULT 'normal',
+						meta jsonb NOT NULL DEFAULT '{}'::jsonb,
+						created_at timestamptz NOT NULL DEFAULT NOW(),
+						updated_at timestamptz NOT NULL DEFAULT NOW(),
+						deleted_at timestamptz NULL
+					)`,
+					`ALTER TABLE messages ADD COLUMN IF NOT EXISTS sender_id uuid NULL`,
+					`CREATE INDEX IF NOT EXISTS idx_message_senders_scope_type ON message_senders (scope_type)`,
+					`CREATE INDEX IF NOT EXISTS idx_message_senders_scope_id ON message_senders (scope_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_message_senders_deleted_at ON message_senders (deleted_at)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_message_senders_scope_name_unique ON message_senders (scope_type, COALESCE(scope_id, '00000000-0000-0000-0000-000000000000'::uuid), name) WHERE deleted_at IS NULL`,
+					`CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON messages (sender_id)`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_message_senders_table_init"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_message_sender_deduplicate",
+			Run: func(logger *zap.Logger) error {
+				deleteSQL := `
+					DELETE FROM message_senders target
+					USING message_senders existing
+					WHERE target.id <> existing.id
+					  AND target.deleted_at IS NULL
+					  AND existing.deleted_at IS NULL
+					  AND target.scope_type = existing.scope_type
+					  AND COALESCE(target.scope_id, '00000000-0000-0000-0000-000000000000'::uuid) = COALESCE(existing.scope_id, '00000000-0000-0000-0000-000000000000'::uuid)
+					  AND target.name = existing.name
+					  AND target.created_at > existing.created_at
+				`
+				if err := database.DB.Exec(deleteSQL).Error; err != nil {
+					return err
+				}
+				if err := database.DB.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_message_senders_scope_name_unique ON message_senders (scope_type, COALESCE(scope_id, '00000000-0000-0000-0000-000000000000'::uuid), name) WHERE deleted_at IS NULL`).Error; err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_message_sender_deduplicate"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_message_templates_seed",
+			Run: func(logger *zap.Logger) error {
+				if err := seedDefaultMessageTemplates(logger); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_message_templates_seed"))
+				return nil
+			},
+		},
+		{
+			Name: "20260329_demo_messages_seed",
+			Run: func(logger *zap.Logger) error {
+				if err := seedDemoMessages(logger); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260329_demo_messages_seed"))
 				return nil
 			},
 		},
@@ -2011,6 +2344,507 @@ func cleanupDeprecatedMenus(logger *zap.Logger) error {
 		logger.Info("Legacy team menu tree removed", zap.String("name", menu.Name), zap.String("path", menu.Path))
 	}
 	return nil
+}
+
+func syncDefaultPageSeedByKey(pageKey string) (*systemmodels.UIPage, error) {
+	targetKey := strings.TrimSpace(pageKey)
+	if targetKey == "" {
+		return nil, fmt.Errorf("page seed key is required")
+	}
+
+	for _, spec := range permissionseed.DefaultPages() {
+		if strings.TrimSpace(spec.PageKey) != targetKey {
+			continue
+		}
+		if spec.ParentMenuName != "" {
+			if _, err := syncDefaultMenuSeedByName(spec.ParentMenuName); err != nil {
+				return nil, err
+			}
+		}
+		if spec.DisplayGroupKey != "" && spec.DisplayGroupKey != targetKey {
+			if _, err := syncDefaultPageSeedByKey(spec.DisplayGroupKey); err != nil {
+				return nil, err
+			}
+		}
+		if spec.ParentPageKey != "" && spec.ParentPageKey != targetKey {
+			if _, err := syncDefaultPageSeedByKey(spec.ParentPageKey); err != nil {
+				return nil, err
+			}
+		}
+		return syncUIPageSeed(spec)
+	}
+
+	return nil, fmt.Errorf("default page seed not found: %s", targetKey)
+}
+
+func syncUIPageSeed(spec permissionseed.PageSeed) (*systemmodels.UIPage, error) {
+	pageType := strings.TrimSpace(spec.PageType)
+	if pageType == "" {
+		pageType = "inner"
+	}
+	source := strings.TrimSpace(spec.Source)
+	if source == "" {
+		source = "manual"
+	}
+	breadcrumbMode := strings.TrimSpace(spec.BreadcrumbMode)
+	if breadcrumbMode == "" {
+		breadcrumbMode = "inherit_menu"
+	}
+	accessMode := strings.TrimSpace(spec.AccessMode)
+	if accessMode == "" {
+		accessMode = "inherit"
+	}
+	status := strings.TrimSpace(spec.Status)
+	if status == "" {
+		status = "normal"
+	}
+
+	var parentMenuID *uuid.UUID
+	if parentMenuName := strings.TrimSpace(spec.ParentMenuName); parentMenuName != "" {
+		var parentMenu usermodel.Menu
+		if err := database.DB.Where("name = ?", parentMenuName).First(&parentMenu).Error; err != nil {
+			return nil, err
+		}
+		parentMenuID = &parentMenu.ID
+	}
+
+	meta := spec.Meta
+	if meta == nil {
+		meta = usermodel.MetaJSON{}
+	}
+
+	item := &systemmodels.UIPage{
+		PageKey:           strings.TrimSpace(spec.PageKey),
+		Name:              strings.TrimSpace(spec.Name),
+		RouteName:         strings.TrimSpace(spec.RouteName),
+		RoutePath:         strings.TrimSpace(spec.RoutePath),
+		Component:         strings.TrimSpace(spec.Component),
+		PageType:          pageType,
+		Source:            source,
+		ModuleKey:         strings.TrimSpace(spec.ModuleKey),
+		SortOrder:         spec.SortOrder,
+		ParentMenuID:      parentMenuID,
+		ParentPageKey:     strings.TrimSpace(spec.ParentPageKey),
+		DisplayGroupKey:   strings.TrimSpace(spec.DisplayGroupKey),
+		ActiveMenuPath:    strings.TrimSpace(spec.ActiveMenuPath),
+		BreadcrumbMode:    breadcrumbMode,
+		AccessMode:        accessMode,
+		PermissionKey:     strings.TrimSpace(spec.PermissionKey),
+		InheritPermission: spec.InheritPermission,
+		KeepAlive:         spec.KeepAlive,
+		IsFullPage:        spec.IsFullPage,
+		Status:            status,
+		Meta:              meta,
+	}
+
+	var existing systemmodels.UIPage
+	if err := database.DB.Where("page_key = ?", item.PageKey).First(&existing).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			if err := database.DB.Create(item).Error; err != nil {
+				return nil, err
+			}
+			return item, nil
+		}
+		return nil, err
+	}
+
+	item.ID = existing.ID
+	updates := map[string]interface{}{
+		"name":               item.Name,
+		"route_name":         item.RouteName,
+		"route_path":         item.RoutePath,
+		"component":          item.Component,
+		"page_type":          item.PageType,
+		"source":             item.Source,
+		"module_key":         item.ModuleKey,
+		"sort_order":         item.SortOrder,
+		"parent_menu_id":     item.ParentMenuID,
+		"parent_page_key":    item.ParentPageKey,
+		"display_group_key":  item.DisplayGroupKey,
+		"active_menu_path":   item.ActiveMenuPath,
+		"breadcrumb_mode":    item.BreadcrumbMode,
+		"access_mode":        item.AccessMode,
+		"permission_key":     item.PermissionKey,
+		"inherit_permission": item.InheritPermission,
+		"keep_alive":         item.KeepAlive,
+		"is_full_page":       item.IsFullPage,
+		"status":             item.Status,
+		"meta":               item.Meta,
+		"updated_at":         time.Now(),
+	}
+	if err := database.DB.Model(&existing).Updates(updates).Error; err != nil {
+		return nil, err
+	}
+	return item, nil
+}
+
+func seedDefaultMessageTemplates(logger *zap.Logger) error {
+	items := []systemmodels.MessageTemplate{
+		{
+			TemplateKey:     "platform.notice.all_users",
+			Name:            "平台全员公告",
+			Description:     "平台向全部用户发送公告通知",
+			MessageType:     "notice",
+			OwnerScope:      "platform",
+			AudienceType:    "all_users",
+			TitleTemplate:   "{{title}}",
+			SummaryTemplate: "{{summary}}",
+			ContentTemplate: "{{content}}",
+			ActionType:      "none",
+			Status:          "normal",
+			Meta:            systemmodels.MetaJSON{"builtin": true},
+		},
+		{
+			TemplateKey:     "platform.notice.tenant_admins",
+			Name:            "平台团队管理员提醒",
+			Description:     "平台向团队管理员发送治理提醒",
+			MessageType:     "message",
+			OwnerScope:      "platform",
+			AudienceType:    "tenant_admins",
+			TitleTemplate:   "{{title}}",
+			SummaryTemplate: "{{summary}}",
+			ContentTemplate: "{{content}}",
+			ActionType:      "route",
+			Status:          "normal",
+			Meta:            systemmodels.MetaJSON{"builtin": true},
+		},
+		{
+			TemplateKey:     "tenant.notice.team_members",
+			Name:            "团队公告模板",
+			Description:     "团队管理员向指定团队发送公告或待办",
+			MessageType:     "todo",
+			OwnerScope:      "tenant",
+			AudienceType:    "tenant_users",
+			TitleTemplate:   "{{title}}",
+			SummaryTemplate: "{{summary}}",
+			ContentTemplate: "{{content}}",
+			ActionType:      "route",
+			Status:          "normal",
+			Meta:            systemmodels.MetaJSON{"builtin": true},
+		},
+	}
+
+	for _, item := range items {
+		var existing systemmodels.MessageTemplate
+		err := database.DB.Where("template_key = ?", item.TemplateKey).First(&existing).Error
+		if err == nil {
+			if updateErr := database.DB.Model(&existing).Updates(map[string]interface{}{
+				"name":                   item.Name,
+				"description":            item.Description,
+				"message_type":           item.MessageType,
+				"owner_scope":            item.OwnerScope,
+				"audience_type":          item.AudienceType,
+				"title_template":         item.TitleTemplate,
+				"summary_template":       item.SummaryTemplate,
+				"content_template":       item.ContentTemplate,
+				"action_type":            item.ActionType,
+				"action_target_template": item.ActionTargetTemplate,
+				"status":                 item.Status,
+				"meta":                   item.Meta,
+				"updated_at":             time.Now(),
+			}).Error; updateErr != nil {
+				return updateErr
+			}
+			continue
+		}
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		if createErr := database.DB.Create(&item).Error; createErr != nil {
+			return createErr
+		}
+	}
+
+	logger.Info("Default message templates synchronized")
+	return nil
+}
+
+func seedDemoMessages(logger *zap.Logger) error {
+	return database.DB.Transaction(func(tx *gorm.DB) error {
+		type userLite struct {
+			ID        uuid.UUID
+			Username  string
+			Nickname  string
+			AvatarURL string `gorm:"column:avatar_url"`
+		}
+
+		var users []userLite
+		if err := tx.Table("users").
+			Select("id, username, nickname, avatar_url").
+			Where("deleted_at IS NULL AND status = ?", "active").
+			Find(&users).Error; err != nil {
+			return err
+		}
+		if len(users) == 0 {
+			return nil
+		}
+
+		templateMap := make(map[string]uuid.UUID)
+		var templates []systemmodels.MessageTemplate
+		if err := tx.Where("template_key IN ?", []string{
+			"platform.notice.all_users",
+			"platform.notice.tenant_admins",
+			"tenant.notice.team_members",
+		}).Find(&templates).Error; err != nil {
+			return err
+		}
+		for _, item := range templates {
+			templateMap[item.TemplateKey] = item.ID
+		}
+
+		allUserIDs := make([]string, 0, len(users))
+		for _, item := range users {
+			allUserIDs = append(allUserIDs, item.ID.String())
+		}
+
+		var tenantAdmins []struct {
+			TenantID uuid.UUID `gorm:"column:tenant_id"`
+			UserID   uuid.UUID `gorm:"column:user_id"`
+		}
+		if err := tx.Table("tenant_members").
+			Select("tenant_id, user_id").
+			Where("deleted_at IS NULL AND status = ? AND role_code = ?", "active", "team_admin").
+			Find(&tenantAdmins).Error; err != nil {
+			return err
+		}
+
+		seedItems := []struct {
+			BizType        string
+			TemplateKey    string
+			MessageType    string
+			SenderType     string
+			SenderName     string
+			SenderService  string
+			AudienceType   string
+			AudienceScope  string
+			TargetTenantID *uuid.UUID
+			TargetUserIDs  []string
+			Title          string
+			Summary        string
+			Content        string
+			ActionType     string
+			ActionTarget   string
+			Priority       string
+			Deliveries     []systemmodels.MessageDelivery
+		}{
+			{
+				BizType:       "platform_announcement",
+				TemplateKey:   "platform.notice.all_users",
+				MessageType:   "notice",
+				SenderType:    "system",
+				SenderName:    "平台消息中心",
+				SenderService: "platform_console",
+				AudienceType:  "all_users",
+				AudienceScope: "platform",
+				TargetUserIDs: allUserIDs,
+				Title:         "平台消息中心已启用",
+				Summary:       "右上角通知面板已接入真实收件箱，可查看未读、消息和待办。",
+				Content:       "这是第一条平台全员公告，用于验证消息中心和右上角收件箱链路已经可用。",
+				ActionType:    "route",
+				ActionTarget:  "/workspace/inbox",
+				Priority:      "normal",
+			},
+		}
+
+		if len(tenantAdmins) > 0 {
+			deliveries := make([]systemmodels.MessageDelivery, 0, len(tenantAdmins))
+			seen := make(map[string]struct{})
+			for _, item := range tenantAdmins {
+				key := item.UserID.String() + ":" + item.TenantID.String()
+				if _, ok := seen[key]; ok {
+					continue
+				}
+				seen[key] = struct{}{}
+				tenantID := item.TenantID
+				deliveries = append(deliveries, systemmodels.MessageDelivery{
+					RecipientUserID: item.UserID,
+					RecipientTeamID: &tenantID,
+					BoxType:         "message",
+					DeliveryStatus:  "unread",
+				})
+			}
+			if len(deliveries) > 0 {
+				seedItems = append(seedItems, struct {
+					BizType        string
+					TemplateKey    string
+					MessageType    string
+					SenderType     string
+					SenderName     string
+					SenderService  string
+					AudienceType   string
+					AudienceScope  string
+					TargetTenantID *uuid.UUID
+					TargetUserIDs  []string
+					Title          string
+					Summary        string
+					Content        string
+					ActionType     string
+					ActionTarget   string
+					Priority       string
+					Deliveries     []systemmodels.MessageDelivery
+				}{
+					BizType:       "platform_tenant_admin_notice",
+					TemplateKey:   "platform.notice.tenant_admins",
+					MessageType:   "message",
+					SenderType:    "service",
+					SenderName:    "平台治理服务",
+					SenderService: "platform_governance",
+					AudienceType:  "tenant_admins",
+					AudienceScope: "platform",
+					Title:         "请检查团队配置边界",
+					Summary:       "平台已开放消息中心，团队管理员后续会通过这里接收边界、配额和待办提醒。",
+					Content:       "这是一条发给团队管理员的示例消息，后续平台可用同类消息处理团队级治理提醒。",
+					ActionType:    "route",
+					ActionTarget:  "/workspace/inbox",
+					Priority:      "high",
+					Deliveries:    deliveries,
+				})
+			}
+		}
+
+		if len(tenantAdmins) > 0 {
+			targetTenantID := tenantAdmins[0].TenantID
+			var teamMembers []struct {
+				UserID uuid.UUID `gorm:"column:user_id"`
+			}
+			if err := tx.Table("tenant_members").
+				Select("user_id").
+				Where("deleted_at IS NULL AND status = ? AND tenant_id = ?", "active", targetTenantID).
+				Find(&teamMembers).Error; err != nil {
+				return err
+			}
+			if len(teamMembers) > 0 {
+				deliveries := make([]systemmodels.MessageDelivery, 0, len(teamMembers))
+				targetUserIDs := make([]string, 0, len(teamMembers))
+				var sender userLite
+				for _, userItem := range users {
+					if userItem.ID == tenantAdmins[0].UserID {
+						sender = userItem
+						break
+					}
+				}
+				for _, item := range teamMembers {
+					targetUserIDs = append(targetUserIDs, item.UserID.String())
+					tenantID := targetTenantID
+					deliveries = append(deliveries, systemmodels.MessageDelivery{
+						RecipientUserID: item.UserID,
+						RecipientTeamID: &tenantID,
+						BoxType:         "todo",
+						DeliveryStatus:  "unread",
+						TodoStatus:      "pending",
+					})
+				}
+				senderName := strings.TrimSpace(sender.Nickname)
+				if senderName == "" {
+					senderName = strings.TrimSpace(sender.Username)
+				}
+				seedItems = append(seedItems, struct {
+					BizType        string
+					TemplateKey    string
+					MessageType    string
+					SenderType     string
+					SenderName     string
+					SenderService  string
+					AudienceType   string
+					AudienceScope  string
+					TargetTenantID *uuid.UUID
+					TargetUserIDs  []string
+					Title          string
+					Summary        string
+					Content        string
+					ActionType     string
+					ActionTarget   string
+					Priority       string
+					Deliveries     []systemmodels.MessageDelivery
+				}{
+					BizType:        "tenant_admin_team_todo",
+					TemplateKey:    "tenant.notice.team_members",
+					MessageType:    "todo",
+					SenderType:     "team_user",
+					SenderName:     senderName,
+					AudienceType:   "tenant_users",
+					AudienceScope:  "tenant",
+					TargetTenantID: &targetTenantID,
+					TargetUserIDs:  targetUserIDs,
+					Title:          "请查看团队本周待办",
+					Summary:        "团队管理员已发布团队内待办提醒，请在消息中心确认处理。",
+					Content:        "这是团队管理员给指定团队发送的示例待办，用于验证团队域消息、发送对象和待办状态链路。",
+					ActionType:     "route",
+					ActionTarget:   "/workspace/inbox",
+					Priority:       "normal",
+					Deliveries:     deliveries,
+				})
+			}
+		}
+
+		for _, item := range seedItems {
+			var existing systemmodels.Message
+			err := tx.Where("biz_type = ? AND title = ?", item.BizType, item.Title).First(&existing).Error
+			if err == nil {
+				continue
+			}
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+
+			now := time.Now()
+			message := systemmodels.Message{
+				MessageType:        item.MessageType,
+				BizType:            item.BizType,
+				ScopeType:          item.AudienceScope,
+				TargetTenantID:     item.TargetTenantID,
+				SenderType:         item.SenderType,
+				SenderNameSnapshot: item.SenderName,
+				SenderServiceKey:   item.SenderService,
+				AudienceType:       item.AudienceType,
+				AudienceScope:      item.AudienceScope,
+				TargetUserIDs:      item.TargetUserIDs,
+				Title:              item.Title,
+				Summary:            item.Summary,
+				Content:            item.Content,
+				Priority:           item.Priority,
+				ActionType:         item.ActionType,
+				ActionTarget:       item.ActionTarget,
+				Status:             "published",
+				PublishedAt:        &now,
+				Meta:               systemmodels.MetaJSON{"seeded": true},
+			}
+			if templateID, ok := templateMap[item.TemplateKey]; ok {
+				message.TemplateID = &templateID
+			}
+			if err := tx.Create(&message).Error; err != nil {
+				return err
+			}
+			for _, delivery := range item.Deliveries {
+				delivery.MessageID = message.ID
+				if delivery.BoxType == "" {
+					delivery.BoxType = item.MessageType
+				}
+				if delivery.DeliveryStatus == "" {
+					delivery.DeliveryStatus = "unread"
+				}
+				if err := tx.Create(&delivery).Error; err != nil {
+					return err
+				}
+			}
+			if len(item.Deliveries) == 0 {
+				for _, userItem := range users {
+					delivery := systemmodels.MessageDelivery{
+						MessageID:       message.ID,
+						RecipientUserID: userItem.ID,
+						BoxType:         item.MessageType,
+						DeliveryStatus:  "unread",
+					}
+					if err := tx.Create(&delivery).Error; err != nil {
+						return err
+					}
+				}
+			}
+		}
+
+		logger.Info("Demo messages synchronized")
+		return nil
+	})
 }
 
 func backfillMenuManageGroups(logger *zap.Logger) error {

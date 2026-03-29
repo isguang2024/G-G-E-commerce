@@ -55,6 +55,8 @@ var mappings = map[string]Mapping{
 	"page:delete":                              {Key: "system.page.manage", ResourceCode: "page", ActionCode: "manage", Name: "页面管理", Description: "允许查看和维护页面注册表", ContextType: "platform"},
 	"page:sync":                                {Key: "system.page.sync", ResourceCode: "page", ActionCode: "sync", Name: "页面注册同步", Description: "允许同步页面注册表", ContextType: "platform"},
 	"fast_enter:manage":                        {Key: "system.fast_enter.manage", ResourceCode: "fast_enter", ActionCode: "manage", Name: "快捷应用管理", Description: "允许维护顶部快捷应用和快捷链接配置", ContextType: "platform"},
+	"message:manage":                           {Key: "message.manage", ResourceCode: "message", ActionCode: "manage", Name: "消息管理", Description: "允许发送站内通知、消息和待办", ContextType: "platform"},
+	"team_message:manage":                      {Key: "team.message.manage", ResourceCode: "team_message", ActionCode: "manage", Name: "团队消息发送", Description: "允许团队管理员向当前团队发送站内通知、消息和待办", ContextType: "team"},
 	"feature_package:list":                     {Key: "platform.package.manage", ResourceCode: "feature_package", ActionCode: "manage", Name: "平台功能包管理", Description: "允许查看和维护平台功能包", ContextType: "platform"},
 	"feature_package:get":                      {Key: "platform.package.manage", ResourceCode: "feature_package", ActionCode: "manage", Name: "平台功能包管理", Description: "允许查看和维护平台功能包", ContextType: "platform"},
 	"feature_package:create":                   {Key: "platform.package.manage", ResourceCode: "feature_package", ActionCode: "manage", Name: "平台功能包管理", Description: "允许查看和维护平台功能包", ContextType: "platform"},

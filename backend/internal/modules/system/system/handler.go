@@ -21,13 +21,15 @@ type SystemHandler struct {
 	logger           *zap.Logger
 	cache            *cachepkg.Cache
 	fastEnterService *fastEnterService
+	messageService   *messageService
 }
 
-func NewSystemHandler(logger *zap.Logger, cache *cachepkg.Cache, fastEnterService *fastEnterService) *SystemHandler {
+func NewSystemHandler(logger *zap.Logger, cache *cachepkg.Cache, fastEnterService *fastEnterService, messageService *messageService) *SystemHandler {
 	return &SystemHandler{
 		logger:           logger,
 		cache:            cache,
 		fastEnterService: fastEnterService,
+		messageService:   messageService,
 	}
 }
 

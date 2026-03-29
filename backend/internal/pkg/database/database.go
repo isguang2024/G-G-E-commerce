@@ -152,6 +152,9 @@ func AutoMigrate() error {
 		&models.MediaAsset{},
 		&models.MenuBackup{},
 		&models.SystemSetting{},
+		&models.MessageTemplate{},
+		&models.Message{},
+		&models.MessageDelivery{},
 	)
 
 	if err != nil {
@@ -474,6 +477,22 @@ func createUniqueIndexes() error {
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", systemSettingKeyIndexName).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE UNIQUE INDEX " + systemSettingKeyIndexName + " ON system_settings (key) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	messageTemplateKeyIndexName := "idx_message_templates_template_key_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", messageTemplateKeyIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + messageTemplateKeyIndexName + " ON message_templates (template_key) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	messageDeliveryRecipientIndexName := "idx_message_deliveries_message_recipient_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", messageDeliveryRecipientIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + messageDeliveryRecipientIndexName + " ON message_deliveries (message_id, recipient_user_id) WHERE deleted_at IS NULL").Error; err != nil {
 			return err
 		}
 	}

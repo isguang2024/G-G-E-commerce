@@ -80,6 +80,7 @@ let routeInitFailed = false
 
 // 路由初始化进行中标记，防止并发请求
 let routeInitInProgress = false
+const routeRefreshAttempted = new Set<string>()
 
 async function buildRegisteredRouteList(menuList: AppRouteRecord[]): Promise<AppRouteRecord[]> {
   const baseMenus = Array.isArray(menuList) ? menuList : []
@@ -127,6 +128,7 @@ export function resetRouteInitState(): void {
   routeInitFailed = false
   routeInitInProgress = false
   routeRegistrationMode = 'none'
+  routeRefreshAttempted.clear()
 }
 
 /**
@@ -145,9 +147,15 @@ export async function refreshUserMenus(): Promise<void> {
     menuStore.clearRemoveRouteFns()
     menuStore.addRemoveRouteFns(routeRegistry.getRemoveRouteFns())
     IframeRouteManager.getInstance().save()
+    routeRefreshAttempted.clear()
   } catch (e) {
     console.error('[RouteGuard] refreshUserMenus failed', e)
   }
+}
+
+export async function refreshUserAccessAndMenus(): Promise<void> {
+  await refreshCurrentUserInfoContext()
+  await refreshUserMenus()
 }
 
 function buildFrontendUserInfo(data: Api.Auth.UserInfo): Api.Auth.UserInfo {
@@ -284,9 +292,14 @@ async function handleRouteGuard(
 
   // 6. 处理已匹配的路由
   if (to.matched.length > 0) {
+    routeRefreshAttempted.delete(to.fullPath)
     setWorktab(to)
     setPageTitle(to)
     next()
+    return
+  }
+
+  if (await tryRefreshMissingDynamicRoute(to, next)) {
     return
   }
 
@@ -604,4 +617,34 @@ function handleMenuActionRedirect(
  */
 function isUnauthorizedError(error: unknown): boolean {
   return isHttpError(error) && error.code === ApiStatus.unauthorized
+}
+
+async function tryRefreshMissingDynamicRoute(
+  to: RouteLocationNormalized,
+  next: NavigationGuardNext
+): Promise<boolean> {
+  const userStore = useUserStore()
+  if (!userStore.isLogin || isStaticRoute(to.path) || isPublicRuntimeRoute(to)) {
+    return false
+  }
+  if (routeRefreshAttempted.has(to.fullPath)) {
+    routeRefreshAttempted.delete(to.fullPath)
+    return false
+  }
+
+  routeRefreshAttempted.add(to.fullPath)
+  try {
+    await refreshUserAccessAndMenus()
+    next({
+      path: to.path,
+      query: to.query,
+      hash: to.hash,
+      replace: true
+    })
+    return true
+  } catch (error) {
+    console.error('[RouteGuard] 动态路由缺失自动刷新失败:', error)
+    routeRefreshAttempted.delete(to.fullPath)
+    return false
+  }
 }

@@ -14,6 +14,7 @@ type ActionVisibilityMode = 'hide' | 'show'
 
 interface IndexedMenus {
   byId: Map<string, AppRouteRecord>
+  byName: Map<string, AppRouteRecord>
   byPath: Map<string, AppRouteRecord>
   names: Set<string>
   paths: Set<string>
@@ -182,10 +183,16 @@ export class ManagedPageProcessor {
       }
 
       if (indexedMenus.names.has(routeName) || runtimeRoutes.some((item) => item.name === routeName)) {
+        if (this.isExpectedMenuBackedDuplicate(page, routeName, routePath, indexedMenus)) {
+          continue
+        }
         this.warnDuplicate('name', routeName, pageKey)
         continue
       }
       if (indexedMenus.paths.has(routePath) || runtimeRoutes.some((item) => item.path === routePath)) {
+        if (this.isExpectedMenuBackedDuplicate(page, routeName, routePath, indexedMenus)) {
+          continue
+        }
         this.warnDuplicate('path', routePath, pageKey)
         continue
       }
@@ -470,6 +477,7 @@ export class ManagedPageProcessor {
 
   private indexMenus(menuList: AppRouteRecord[]): IndexedMenus {
     const byId = new Map<string, AppRouteRecord>()
+    const byName = new Map<string, AppRouteRecord>()
     const byPath = new Map<string, AppRouteRecord>()
     const names = new Set<string>()
     const paths = new Set<string>()
@@ -488,6 +496,7 @@ export class ManagedPageProcessor {
           paths.add(path)
         }
         if (name) {
+          byName.set(name, item)
           names.add(name)
         }
         if (Array.isArray(item.children) && item.children.length > 0) {
@@ -497,7 +506,37 @@ export class ManagedPageProcessor {
     }
 
     walk(menuList)
-    return { byId, byPath, names, paths }
+    return { byId, byName, byPath, names, paths }
+  }
+
+  private isExpectedMenuBackedDuplicate(
+    page: RuntimePageItem,
+    routeName: string,
+    routePath: string,
+    indexedMenus: IndexedMenus
+  ): boolean {
+    const menuByPath = indexedMenus.byPath.get(routePath)
+    if (menuByPath && this.normalizeValue(menuByPath.name) === routeName) {
+      return true
+    }
+
+    const menuByName = indexedMenus.byName.get(routeName)
+    if (menuByName && this.normalizePath(menuByName.path) === routePath) {
+      return true
+    }
+
+    const parentMenuId = this.normalizeValue(page.parentMenuId)
+    if (!parentMenuId) {
+      return false
+    }
+    const parentMenu = indexedMenus.byId.get(parentMenuId)
+    if (!parentMenu) {
+      return false
+    }
+    return (
+      this.normalizeValue(parentMenu.name) === routeName &&
+      this.normalizePath(parentMenu.path) === routePath
+    )
   }
 
   private isRuntimePage(page: RuntimePageItem): boolean {

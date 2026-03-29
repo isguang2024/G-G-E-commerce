@@ -231,6 +231,10 @@
                 <ElRadioButton label="page">挂到页面/分组</ElRadioButton>
               </ElRadioGroup>
             </ElFormItem>
+            <div v-if="mountOwnershipSummary" class="mount-summary-box is-neutral">
+              <div class="mount-summary-box__title">当前归属说明</div>
+              <div class="mount-summary-box__text">{{ mountOwnershipSummary }}</div>
+            </div>
           </ElCol>
         </ElRow>
 
@@ -240,7 +244,7 @@
               <template #label>
                 <PageFieldLabel
                   label="上级菜单"
-                  help="页面直接归属的菜单。单段路由会自动拼到该菜单路径后，并继承菜单高亮。"
+                  help="页面直接归属的菜单。单段路由会自动拼到该菜单路径后，并继承菜单高亮与菜单准入。若页面再单独配置权限，则最终按菜单权限与页面权限交集放行。"
                 />
               </template>
               <ElCascader
@@ -254,6 +258,14 @@
                 placeholder="请选择上级菜单"
               />
             </ElFormItem>
+            <div v-if="mountMenuSummary" class="mount-summary-box">
+              <div class="mount-summary-box__title">挂接关系预览</div>
+              <div class="mount-summary-box__text">{{ mountMenuSummary }}</div>
+            </div>
+            <div v-if="menuSiblingSummary" class="mount-summary-box is-neutral">
+              <div class="mount-summary-box__title">同菜单页面摘要</div>
+              <div class="mount-summary-box__text">{{ menuSiblingSummary }}</div>
+            </div>
           </ElCol>
         </ElRow>
 
@@ -328,7 +340,7 @@
               <template #label>
                 <PageFieldLabel
                   label="访问模式"
-                  help="继承表示跟随上级菜单或页面；登录表示只验登录；权限表示还需校验权限键。"
+                  help="继承表示跟随上级菜单或页面；登录表示只验登录；权限表示还需校验权限键。挂到菜单时，继承即默认跟菜单权限走；若改成权限模式，则在菜单准入基础上再校验页面权限。"
                 />
               </template>
               <ElSelect v-model="form.accessMode" style="width: 100%">
@@ -344,7 +356,7 @@
               <template #label>
                 <PageFieldLabel
                   label="权限键"
-                  help="仅在访问模式为权限时生效，填写后页面进入前会按该权限键校验访问权限。"
+                  help="仅在访问模式为权限时生效。挂到菜单时，这里不是覆盖菜单权限，而是在菜单准入基础上追加页面权限校验。"
                 />
               </template>
               <ElInput
@@ -582,6 +594,22 @@
     return map
   })
 
+  const menuNameMap = computed(() => {
+    const map = new Map<string, string>()
+    const walk = (items: PageMenuOptionItem[]) => {
+      items.forEach((item) => {
+        if (item.id) {
+          map.set(item.id, item.title || item.name || item.path || item.id)
+        }
+        if (Array.isArray(item.children) && item.children.length) {
+          walk(item.children)
+        }
+      })
+    }
+    walk(menuOptions.value)
+    return map
+  })
+
   const configHintTitle = computed(() =>
     form.pageType === 'global' ? '全局页配置说明' : '页面配置说明'
   )
@@ -595,9 +623,22 @@
 
   const configHintDescription = computed(() => {
     if (form.pageType === 'global') {
-      return '全局页不依赖菜单归属，适合登录后可直达或公开访问的页面。'
+      return '全局页属于独立页面，不依赖菜单归属，适合登录后直达或公开访问的页面。'
     }
-    return '普通页面默认挂到菜单或上级页面，系统会自动推导最终访问路径、菜单高亮与权限继承。'
+    return '普通页面可以挂到菜单、挂到上级页面，也可以作为独立内页存在；系统会自动推导最终访问路径、菜单高亮与权限继承。'
+  })
+
+  const mountOwnershipSummary = computed(() => {
+    if (form.pageType === 'global') {
+      return '当前页面属于独立页面，只在页面管理中维护，不占用左侧菜单入口。'
+    }
+    if (mountMode.value === 'menu') {
+      return '当前页面会挂到菜单下，菜单负责入口可见、默认高亮和默认准入。'
+    }
+    if (mountMode.value === 'page') {
+      return '当前页面会挂到上级页面或逻辑分组下，优先继承其路径链、菜单链和默认面包屑。'
+    }
+    return '当前页面作为独立内页存在，不挂菜单，也不挂到其他页面；适合个人中心、结果页、隐式工作流页这类页面。'
   })
 
   const routePathPlaceholder = computed(() => {
@@ -608,6 +649,31 @@
       return '例如 /dashboard/example-page 或 /detail/:id'
     }
     return '例如 detail 或 detail/:id；如需绝对路径可填 /system/detail'
+  })
+
+  const mountMenuSummary = computed(() => {
+    if (form.pageType === 'global' || mountMode.value !== 'menu') return ''
+    const menuName = menuNameMap.value.get(normalizeMenuId(form.parentMenuId)) || '所选菜单'
+    const permissionText =
+      form.accessMode === 'permission'
+        ? '当前页面单独配置了权限，最终会按“菜单准入 + 页面权限”交集放行。'
+        : '当前页面走继承模式，最终默认跟随菜单权限。'
+    return `页面将挂到“${menuName}”下，菜单负责入口可见与默认准入。${permissionText}`
+  })
+
+  const menuSiblingSummary = computed(() => {
+    if (form.pageType === 'global' || mountMode.value !== 'menu') return ''
+    const menuId = normalizeMenuId(form.parentMenuId)
+    if (!menuId) return ''
+    const siblings = allPages.value.filter(
+      (item) => item.id !== form.id && `${item.parentMenuId || ''}`.trim() === menuId
+    )
+    if (siblings.length === 0) {
+      return '当前菜单下还没有其他挂接页面。'
+    }
+    const names = siblings.slice(0, 4).map((item) => item.name)
+    const suffix = siblings.length > 4 ? ` 等 ${siblings.length} 个页面` : ''
+    return `当前菜单下还有 ${siblings.length} 个页面：${names.join('、')}${suffix}。如需把当前页作为导航代表页，建议在菜单管理里将它设为主页面。`
   })
 
   const resolvedRoutePreview = computed(() =>
@@ -639,7 +705,7 @@
     if (mountMode.value === 'page') {
       return '挂到页面时，单段路径会自动拼到上级页面路径后；多段绝对路径仍按你填写的完整路径注册。'
     }
-    return '挂到菜单时，单段路径会自动拼到菜单路径后；多段绝对路径仍按你填写的完整路径注册。'
+    return '挂到菜单时，单段路径会自动拼到菜单路径后；访问上默认继承菜单权限，如页面再单独配置权限，则最终按菜单权限与页面权限交集放行。'
   })
 
   const pageExamples = computed(() => {
@@ -653,8 +719,8 @@
     if (mountMode.value === 'none') {
       return [
         '例 1：挂载方式=不挂载，路由路径=/dashboard/example-page，最终路径就是 /dashboard/example-page。',
-        '例 2：挂载方式=不挂载，路由路径=/report/overview，页面可独立访问，不参与菜单高亮继承。',
-        '例 3：如果只填单段路径 example-page，系统会补成 /example-page，但更推荐直接写完整路径。'
+        '例 2：挂载方式=不挂载，路由路径=/report/overview，页面会作为独立内页存在，不参与菜单高亮继承。',
+        '例 3：个人中心、结果页、引导页这类不需要出现在菜单中的页面，适合使用独立内页。'
       ]
     }
     if (mountMode.value === 'page') {
@@ -1256,6 +1322,36 @@
     font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
     font-size: 12px;
     word-break: break-all;
+  }
+
+  .mount-summary-box {
+    margin: -4px 0 10px;
+    padding: 12px 14px;
+    border: 1px solid rgb(219 234 254 / 0.95);
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgb(239 246 255 / 0.95), rgb(248 250 252 / 0.98));
+  }
+
+  .mount-summary-box__title {
+    color: var(--el-text-color-primary);
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .mount-summary-box__text {
+    margin-top: 6px;
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .mount-summary-box.is-neutral {
+    border-color: var(--el-border-color-lighter);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--el-fill-color-light) 86%, white) 0%,
+      white 100%
+    );
   }
 
   .advanced-grid {

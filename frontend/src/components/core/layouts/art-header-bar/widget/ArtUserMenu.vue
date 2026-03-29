@@ -44,17 +44,9 @@
             <ArtSvgIcon icon="ri:user-3-line" />
             <span>{{ $t('topBar.user.userCenter') }}</span>
           </li>
-          <li class="btn-item" @click="toDocs()">
-            <ArtSvgIcon icon="ri:book-2-line" />
-            <span>{{ $t('topBar.user.docs') }}</span>
-          </li>
-          <li class="btn-item" @click="toGithub()">
-            <ArtSvgIcon icon="ri:github-line" />
-            <span>{{ $t('topBar.user.github') }}</span>
-          </li>
-          <li class="btn-item" @click="lockScreen()">
-            <ArtSvgIcon icon="ri:lock-line" />
-            <span>{{ $t('topBar.user.lockScreen') }}</span>
+          <li class="btn-item" @click="refreshPermissionsAndMenus">
+            <ArtSvgIcon icon="ri:refresh-line" />
+            <span>刷新状态</span>
           </li>
           <div class="w-full h-px my-2 bg-g-300/80"></div>
           <div class="log-out c-p" @click="loginOut">
@@ -69,12 +61,10 @@
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
-  import { ElMessageBox } from 'element-plus'
+  import { ElMessage, ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
   import { useTenantStore } from '@/store/modules/tenant'
-  import { WEB_LINKS } from '@/utils/constants'
-  import { mittBus } from '@/utils/sys'
-  import { refreshCurrentUserInfoContext, refreshUserMenus } from '@/router'
+  import { refreshCurrentUserInfoContext, refreshUserMenus, refreshUserAccessAndMenus } from '@/router'
   import ArtTenantSwitcher from './ArtTenantSwitcher.vue'
 
   defineOptions({ name: 'ArtUserMenu' })
@@ -88,11 +78,8 @@
   const { teamList, hasPlatformAccess, currentContextMode } = storeToRefs(tenantStore)
   const userMenuPopover = ref()
 
-  /**
-   * 页面跳转
-   * @param {string} path - 目标路径
-   */
   const goPage = (path: string): void => {
+    closeUserMenu()
     router.push(path)
   }
 
@@ -109,25 +96,19 @@
     router.push('/')
   }
 
-  /**
-   * 打开文档页面
-   */
-  const toDocs = (): void => {
-    window.open(WEB_LINKS.DOCS)
-  }
-
-  /**
-   * 打开 GitHub 页面
-   */
-  const toGithub = (): void => {
-    window.open(WEB_LINKS.GITHUB)
-  }
-
-  /**
-   * 打开锁屏功能
-   */
-  const lockScreen = (): void => {
-    mittBus.emit('openLockScreen')
+  const refreshPermissionsAndMenus = async (): Promise<void> => {
+    closeUserMenu()
+    try {
+      await refreshUserAccessAndMenus()
+      await router.replace({
+        path: router.currentRoute.value.path,
+        query: router.currentRoute.value.query,
+        hash: router.currentRoute.value.hash
+      })
+      ElMessage.success('状态已刷新')
+    } catch (error) {
+      ElMessage.error('刷新状态失败')
+    }
   }
 
   /**
