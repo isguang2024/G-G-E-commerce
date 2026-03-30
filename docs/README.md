@@ -7,17 +7,27 @@
 1. [PROJECT_FRAMEWORK.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/PROJECT_FRAMEWORK.md)：项目主框架、边界与执行清单
 2. [permission-overall-summary.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/permission-overall-summary.md)：权限、功能包、快照主链
 3. [menu-page-management-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/menu-page-management-design.md)：菜单与页面正式架构
-4. [message-system-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/message-system-design.md)：消息系统正式设计
-5. [menu-page-management-implementation-plan.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/menu-page-management-implementation-plan.md)：菜单与页面当前实现现状
-6. [FRONTEND_GUIDELINE.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/FRONTEND_GUIDELINE.md)：前端管理页统一规范
-7. [change-log.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/change-log.md)：近期里程碑
+4. [space-host-architecture-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/space-host-architecture-design.md)：空间模型与可配置多子域架构
+5. [message-system-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/message-system-design.md)：消息系统正式设计
+6. [system-wrapup-plan.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/system-wrapup-plan.md)：系统部分收尾计划与当前优先级
+7. [system-regression-checklist.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/system-regression-checklist.md)：系统侧最小回归验收清单
+8. [system-demo-data.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/system-demo-data.md)：系统最小演示数据与初始化命令
+9. [system-compatibility-audit.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/system-compatibility-audit.md)：系统兼容分支与收紧状态
+10. [menu-page-management-implementation-plan.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/menu-page-management-implementation-plan.md)：菜单与页面当前实现现状
+11. [FRONTEND_GUIDELINE.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/FRONTEND_GUIDELINE.md)：前端管理页统一规范
+12. [change-log.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/change-log.md)：近期里程碑
 
 ## 2. 文档分工
 
 - 根目录文档：全局长期规则
 - `permission-overall-summary.md`：权限、功能包、API、快照的正式语义
 - `menu-page-management-design.md`：菜单与页面的稳定模型
+- `space-host-architecture-design.md`：空间模型、Host/Subdomain 配置模型与分阶段演进路线
 - `message-system-design.md`：右上角消息面板、消息中心、消息模型与投递链路
+- `system-wrapup-plan.md`：系统收尾计划、验收边界与后续交付顺序
+- `system-regression-checklist.md`：系统侧固定回归项与最小验证方式
+- `system-demo-data.md`：演示账号、团队、空间、模板、消息的固定命名与初始化方式
+- `system-compatibility-audit.md`：系统兼容层的保留、收紧与待清理边界
 - `menu-page-management-implementation-plan.md`：当前已落地实现、剩余边界、实施注意点
 - `change-log.md`：只记录近期有效里程碑，不记碎片化推进过程
 

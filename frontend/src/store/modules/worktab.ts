@@ -56,6 +56,12 @@ interface WorktabState {
 export const useWorktabStore = defineStore(
   'worktabStore',
   () => {
+    const warnDev = (...args: any[]) => {
+      if (import.meta.env.DEV) {
+        console.warn(...args)
+      }
+    }
+
     // 状态定义
     const current = ref<Partial<WorkTab>>({})
     const opened = ref<WorkTab[]>([])
@@ -94,7 +100,7 @@ export const useWorktabStore = defineStore(
      */
     const safeRouterPush = (tab: Partial<WorkTab>): void => {
       if (!tab.path) {
-        console.warn('尝试跳转到无效路径的标签页')
+        warnDev('尝试跳转到无效路径的标签页')
         return
       }
 
@@ -113,7 +119,7 @@ export const useWorktabStore = defineStore(
      */
     const openTab = (tab: WorkTab): void => {
       if (!tab.path) {
-        console.warn('尝试打开无效的标签页')
+        warnDev('尝试打开无效的标签页')
         return
       }
 
@@ -186,12 +192,12 @@ export const useWorktabStore = defineStore(
       const targetIndex = findTabIndex(path)
 
       if (targetIndex === -1) {
-        console.warn(`尝试关闭不存在的标签页: ${path}`)
+        warnDev(`尝试关闭不存在的标签页: ${path}`)
         return
       }
 
       if (targetTab && !isTabClosable(targetTab)) {
-        console.warn(`尝试关闭固定标签页: ${path}`)
+        warnDev(`尝试关闭固定标签页: ${path}`)
         return
       }
 
@@ -229,7 +235,7 @@ export const useWorktabStore = defineStore(
       const targetIndex = findTabIndex(path)
 
       if (targetIndex === -1) {
-        console.warn(`尝试关闭左侧标签页，但目标标签页不存在: ${path}`)
+        warnDev(`尝试关闭左侧标签页，但目标标签页不存在: ${path}`)
         return
       }
 
@@ -238,7 +244,7 @@ export const useWorktabStore = defineStore(
       const closableLeftTabs = leftTabs.filter(isTabClosable)
 
       if (closableLeftTabs.length === 0) {
-        console.warn('左侧没有可关闭的标签页')
+        warnDev('左侧没有可关闭的标签页')
         return
       }
 
@@ -264,7 +270,7 @@ export const useWorktabStore = defineStore(
       const targetIndex = findTabIndex(path)
 
       if (targetIndex === -1) {
-        console.warn(`尝试关闭右侧标签页，但目标标签页不存在: ${path}`)
+        warnDev(`尝试关闭右侧标签页，但目标标签页不存在: ${path}`)
         return
       }
 
@@ -273,7 +279,7 @@ export const useWorktabStore = defineStore(
       const closableRightTabs = rightTabs.filter(isTabClosable)
 
       if (closableRightTabs.length === 0) {
-        console.warn('右侧没有可关闭的标签页')
+        warnDev('右侧没有可关闭的标签页')
         return
       }
 
@@ -299,7 +305,7 @@ export const useWorktabStore = defineStore(
       const targetTab = getTab(path)
 
       if (!targetTab) {
-        console.warn(`尝试关闭其他标签页，但目标标签页不存在: ${path}`)
+        warnDev(`尝试关闭其他标签页，但目标标签页不存在: ${path}`)
         return
       }
 
@@ -308,7 +314,7 @@ export const useWorktabStore = defineStore(
       const closableTabs = otherTabs.filter(isTabClosable)
 
       if (closableTabs.length === 0) {
-        console.warn('没有其他可关闭的标签页')
+        warnDev('没有其他可关闭的标签页')
         return
       }
 
@@ -337,7 +343,7 @@ export const useWorktabStore = defineStore(
       })
 
       if (closableTabs.length === 0) {
-        console.warn('没有可关闭的标签页')
+        warnDev('没有可关闭的标签页')
         return
       }
 
@@ -402,7 +408,7 @@ export const useWorktabStore = defineStore(
       const targetIndex = findTabIndex(path)
 
       if (targetIndex === -1) {
-        console.warn(`尝试切换不存在标签页的固定状态: ${path}`)
+        warnDev(`尝试切换不存在标签页的固定状态: ${path}`)
         return
       }
 
@@ -458,7 +464,7 @@ export const useWorktabStore = defineStore(
         const validTabs = opened.value.filter((tab) => isTabRouteValid(tab))
 
         if (validTabs.length !== opened.value.length) {
-          console.warn('发现无效的标签页路由，已自动清理')
+          warnDev('发现无效的标签页路由，已自动清理')
           opened.value = validTabs
         }
 
@@ -466,7 +472,7 @@ export const useWorktabStore = defineStore(
         const isCurrentValid = current.value && isTabRouteValid(current.value)
 
         if (!isCurrentValid && validTabs.length > 0) {
-          console.warn('当前激活标签无效，已自动切换')
+          warnDev('当前激活标签无效，已自动切换')
           current.value = validTabs[0]
         } else if (!isCurrentValid) {
           current.value = {}

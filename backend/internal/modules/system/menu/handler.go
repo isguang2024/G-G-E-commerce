@@ -8,10 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	spaceutil "github.com/gg-ecommerce/backend/internal/modules/system/space"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
@@ -20,6 +22,7 @@ import (
 const tenantContextHeader = "X-Tenant-ID"
 
 type MenuHandler struct {
+	db          *gorm.DB
 	menuService MenuService
 	userRepo    user.UserRepository
 	menuRepo    interface {
@@ -37,10 +40,11 @@ type menuAuthzService interface {
 	Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
 }
 
-func NewMenuHandler(menuService MenuService, userRepo user.UserRepository, menuRepo interface {
+func NewMenuHandler(db *gorm.DB, menuService MenuService, userRepo user.UserRepository, menuRepo interface {
 	ListAll() ([]user.Menu, error)
 }, roleRepo user.RoleRepository, userRoleRepo user.UserRoleRepository, boundaryService teamboundary.Service, authzService menuAuthzService, platformService platformaccess.Service, logger *zap.Logger) *MenuHandler {
 	return &MenuHandler{
+		db:              db,
 		menuService:     menuService,
 		userRepo:        userRepo,
 		menuRepo:        menuRepo,
@@ -55,6 +59,7 @@ func NewMenuHandler(menuService MenuService, userRepo user.UserRepository, menuR
 
 func (h *MenuHandler) GetTree(c *gin.Context) {
 	all := c.Query("all") == "1" || c.Query("all") == "true"
+	spaceKey := ""
 	if all && h.authzService != nil {
 		userID, err := currentUserID(c)
 		if err != nil {
@@ -75,6 +80,12 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 			return
 		}
 	}
+	if all {
+		spaceKey = spaceutil.RequestSpaceKey(c)
+		if strings.TrimSpace(spaceKey) == "" {
+			spaceKey = spaceutil.DefaultMenuSpaceKey
+		}
+	}
 
 	var allowedMenuIDs []uuid.UUID
 	if !all {
@@ -85,8 +96,9 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 				allowedMenuIDs, _ = h.getAllowedMenuIDs(userID, tenantID)
 			}
 		}
+		spaceKey = spaceutil.ResolveSpaceKey(h.db, c)
 	}
-	tree, err := h.menuService.GetTree(all, allowedMenuIDs)
+	tree, err := h.menuService.GetTree(all, allowedMenuIDs, spaceKey)
 	if err != nil {
 		h.logger.Error("Menu tree failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取菜单失败")
@@ -443,6 +455,7 @@ func menuToMap(m *user.Menu) gin.H {
 	}
 	node := gin.H{
 		"id":         m.ID.String(),
+		"space_key":  m.SpaceKey,
 		"path":       m.Path,
 		"name":       m.Name,
 		"component":  m.Component,
@@ -504,6 +517,7 @@ func menuToRuntimeMap(m *user.Menu) gin.H {
 
 	node := gin.H{
 		"id":         m.ID.String(),
+		"space_key":  m.SpaceKey,
 		"path":       m.Path,
 		"name":       m.Name,
 		"component":  m.Component,

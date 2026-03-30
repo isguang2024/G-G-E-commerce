@@ -33,6 +33,7 @@ import { MenuThemeEnum, MenuTypeEnum, SystemThemeEnum } from '@/enums/appEnum'
 import { SystemConfig } from '@/types/config'
 import { configImages } from './assets/images'
 import fastEnterConfig from './modules/fastEnter'
+import menuSpaceConfig from './modules/menuSpace'
 import { headerBarConfig } from './modules/headerBar'
 
 const appConfig: SystemConfig = {
@@ -128,6 +129,8 @@ const appConfig: SystemConfig = {
   ] as const,
   // 快速入口配置
   fastEnter: fastEnterConfig,
+  // 菜单空间配置
+  menuSpace: menuSpaceConfig,
   // 顶部栏功能配置
   headerBar: headerBarConfig
 }

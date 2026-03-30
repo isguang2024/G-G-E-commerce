@@ -18,6 +18,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useFastEnterStore } from '@/store/modules/fast-enter'
+import { useMenuSpaceStore } from '@/store/modules/menu-space'
 import type { FastEnterApplication, FastEnterQuickLink } from '@/types/config'
 
 const COMPACT_MESSAGE_WORKSPACE_ROUTE_NAMES = new Set([
@@ -35,6 +36,7 @@ const COMPACT_MESSAGE_WORKSPACE_ROUTE_NAMES = new Set([
 export function useFastEnter() {
   const router = useRouter()
   const fastEnterStore = useFastEnterStore()
+  const menuSpaceStore = useMenuSpaceStore()
   const { config: fastEnterConfig } = storeToRefs(fastEnterStore)
 
   const isExternalLink = (value?: string) => /^https?:\/\//i.test(`${value || ''}`.trim())
@@ -110,10 +112,51 @@ export function useFastEnter() {
     return fastEnterConfig.value?.minWidth || 1200
   })
 
+  const openNavigationTarget = async (routeName?: string, link?: string) => {
+    const routeTarget = `${routeName || ''}`.trim()
+    const linkTarget = `${link || ''}`.trim()
+
+    if (routeTarget && router.hasRoute(routeTarget)) {
+      const resolved = router.resolve({ name: routeTarget })
+      const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
+        resolved.href,
+        `${resolved.meta?.spaceKey || ''}`.trim() || undefined
+      )
+      if (nextTarget.mode === 'router') {
+        await router.push({ name: routeTarget })
+      } else {
+        window.location.assign(nextTarget.target)
+      }
+      return true
+    }
+
+    if (isExternalLink(linkTarget)) {
+      window.open(linkTarget, '_blank')
+      return true
+    }
+
+    if (linkTarget.startsWith('/')) {
+      const resolved = router.resolve(linkTarget)
+      const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
+        resolved.href,
+        `${resolved.meta?.spaceKey || ''}`.trim() || undefined
+      )
+      if (nextTarget.mode === 'router') {
+        await router.push(linkTarget)
+      } else {
+        window.location.assign(nextTarget.target)
+      }
+      return true
+    }
+
+    return false
+  }
+
   return {
     fastEnterConfig,
     enabledApplications,
     enabledQuickLinks,
-    minWidth
+    minWidth,
+    openNavigationTarget
   }
 }

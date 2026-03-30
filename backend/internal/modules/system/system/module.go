@@ -6,10 +6,15 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/config"
+	space "github.com/gg-ecommerce/backend/internal/modules/system/space"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	cachepkg "github.com/gg-ecommerce/backend/internal/pkg/cache"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
+	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
 type SystemModule struct {
@@ -46,6 +51,12 @@ func (m *SystemModule) RegisterRoutes(rg *gin.RouterGroup) {
 	fastEnterService := NewFastEnterService(m.db)
 	messageService := NewMessageService(m.db, m.logger)
 	systemHandler := NewSystemHandler(m.logger, systemCache, fastEnterService, messageService)
+	boundaryService := teamboundary.NewService(m.db)
+	platformService := platformaccess.NewService(m.db)
+	roleSnapshotService := platformroleaccess.NewService(m.db)
+	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
+	menuSpaceService := space.NewService(m.db, refresher, m.logger)
+	menuSpaceHandler := space.NewHandler(m.logger, menuSpaceService)
 	authzService := authorization.NewService(m.db, m.logger)
 
 	system := rg.Group("/system")
@@ -54,6 +65,12 @@ func (m *SystemModule) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.GETProtected("/view-pages", reg.Meta("获取页面文件映射").BindPermissionKey("system.page_catalog.view").Build(), "system.page_catalog.view", authzService.RequireAction, systemHandler.GetViewPages)
 		reg.GET("/fast-enter", reg.Meta("获取快捷入口配置").BindGroup("system").Build(), systemHandler.GetFastEnterConfig)
 		reg.PUTProtected("/fast-enter", reg.Meta("更新快捷入口配置").BindGroup("system").BindPermissionKey("system.fast_enter.manage").Build(), "system.fast_enter.manage", authzService.RequireAction, systemHandler.UpdateFastEnterConfig)
+		reg.GET("/menu-spaces/current", reg.Meta("获取当前菜单空间").BindGroup("system").Build(), menuSpaceHandler.GetCurrent)
+		reg.GETProtected("/menu-spaces", reg.Meta("获取菜单空间列表").BindGroup("system").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuSpaceHandler.List)
+		reg.POSTProtected("/menu-spaces", reg.Meta("保存菜单空间").BindGroup("system").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuSpaceHandler.SaveSpace)
+		reg.POSTProtected("/menu-spaces/:spaceKey/initialize-default", reg.Meta("从默认空间初始化菜单空间").BindGroup("system").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuSpaceHandler.InitializeFromDefault)
+		reg.GETProtected("/menu-space-host-bindings", reg.Meta("获取菜单空间Host绑定").BindGroup("system").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuSpaceHandler.ListHostBindings)
+		reg.POSTProtected("/menu-space-host-bindings", reg.Meta("保存菜单空间Host绑定").BindGroup("system").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuSpaceHandler.SaveHostBinding)
 	}
 
 	messages := rg.Group("/messages")

@@ -5,6 +5,8 @@
     :model-value="modelValue"
     :dialog-type="dialogType"
     :page-data="pageData"
+    :menu-spaces="menuSpaces"
+    :current-space-key="currentSpaceKey"
     :initial-parent-page-key="initialParentPageKey"
     :initial-parent-menu-id="initialParentMenuId"
     :initial-page-type="initialPageType"
@@ -18,6 +20,8 @@
     :model-value="modelValue"
     :dialog-type="dialogType"
     :page-data="pageData"
+    :menu-spaces="menuSpaces"
+    :current-space-key="currentSpaceKey"
     :initial-parent-page-key="initialParentPageKey"
     :initial-parent-menu-id="initialParentMenuId"
     :initial-page-type="initialPageType"
@@ -31,6 +35,8 @@
     :model-value="modelValue"
     :dialog-type="dialogType"
     :page-data="pageData"
+    :menu-spaces="menuSpaces"
+    :current-space-key="currentSpaceKey"
     :initial-parent-page-key="initialParentPageKey"
     :initial-parent-menu-id="initialParentMenuId"
     :initial-page-type="initialPageType"
@@ -52,6 +58,8 @@
     modelValue: boolean
     dialogType: 'add' | 'edit' | 'copy'
     pageData?: Partial<PageItem>
+    menuSpaces?: Api.SystemManage.MenuSpaceItem[]
+    currentSpaceKey?: string
     initialParentPageKey?: string
     initialParentMenuId?: string
     initialPageType?: PageItem['pageType']
@@ -67,6 +75,8 @@
     modelValue: false,
     dialogType: 'add',
     pageData: undefined,
+    menuSpaces: () => [],
+    currentSpaceKey: 'default',
     initialParentPageKey: '',
     initialParentMenuId: '',
     initialPageType: 'inner',

@@ -9,6 +9,15 @@
 
     <MessageWorkspaceNav :scope="props.scope" current="group" />
 
+    <ElAlert
+      v-if="loadError"
+      class="message-group-inline-alert"
+      type="info"
+      :closable="false"
+      show-icon
+      :title="loadError"
+    />
+
     <section class="message-group-shell art-card">
       <header class="message-group-shell__toolbar">
         <div>
@@ -261,6 +270,7 @@
     useMessageWorkspace(props.scope)
 
   const loading = ref(false)
+  const loadError = ref('')
   const saving = ref(false)
   const sequence = ref(1)
   const list = ref<Api.Message.MessageRecipientGroupItem[]>([])
@@ -400,6 +410,7 @@
 
   const loadGroups = async () => {
     loading.value = true
+    loadError.value = ''
     try {
       ensureTeamContext()
       await loadDispatchHelpers()
@@ -408,7 +419,8 @@
       })
       list.value = result.records || []
     } catch (error) {
-      ElMessage.error('获取接收组失败')
+      list.value = []
+      loadError.value = '接收组暂时不可用，稍后重试或刷新状态。'
     } finally {
       loading.value = false
     }
@@ -535,6 +547,10 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
+
+  .message-group-inline-alert {
+    margin-top: -4px;
   }
 
   .message-group-hero__actions {

@@ -76,7 +76,9 @@
 
         <div v-else class="message-empty">
           <ArtSvgIcon icon="system-uicons:inbox" class="text-5xl" />
-          <p class="mt-3.5 text-xs !bg-transparent">当前没有{{ currentBarName }}</p>
+          <p class="mt-3.5 text-xs !bg-transparent">
+            {{ previewLoadFailed ? '消息暂时不可用，稍后重试' : `当前没有${currentBarName}` }}
+          </p>
         </div>
       </div>
 
@@ -95,6 +97,7 @@
   import { useRouter } from 'vue-router'
   import { storeToRefs } from 'pinia'
   import { useMessageStore } from '@/store/modules/message'
+  import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import { useTenantStore } from '@/store/modules/tenant'
 
   defineOptions({ name: 'ArtNotification' })
@@ -109,12 +112,14 @@
 
   const router = useRouter()
   const messageStore = useMessageStore()
+  const menuSpaceStore = useMenuSpaceStore()
   const tenantStore = useTenantStore()
   const { previewMap } = storeToRefs(messageStore)
 
   const show = ref(false)
   const visible = ref(false)
   const barActiveIndex = ref(0)
+  const previewLoadFailed = ref(false)
 
   const barList = computed(() => [
     { key: 'notice', name: '通知', num: previewMap.value.notice.length },
@@ -139,9 +144,14 @@
       setTimeout(() => {
         show.value = true
       }, 5)
-      messageStore.loadPanelData(true).catch(() => {
-        ElMessage.error('获取消息失败')
-      })
+      messageStore
+        .loadPanelData(true)
+        .then(() => {
+          previewLoadFailed.value = false
+        })
+        .catch(() => {
+          previewLoadFailed.value = true
+        })
       return
     }
     show.value = false
@@ -152,9 +162,14 @@
 
   const changeBar = (index: number) => {
     barActiveIndex.value = index
-    messageStore.loadPreview(activeBoxType.value, true).catch(() => {
-      ElMessage.error('获取消息失败')
-    })
+    messageStore
+      .loadPreview(activeBoxType.value, true)
+      .then(() => {
+        previewLoadFailed.value = false
+      })
+      .catch(() => {
+        previewLoadFailed.value = true
+      })
   }
 
   const formatTime = (value?: string) => {
@@ -214,13 +229,35 @@
     return teamName ? `团队 · ${teamName}` : ''
   }
 
-  const navigateByItem = async (item: Api.Message.InboxItem) => {
-    await router.push({
+  const openInbox = async (query?: Record<string, string | undefined>) => {
+    const resolved = router.resolve({
       path: '/workspace/inbox',
-      query: {
-        deliveryId: item.id,
-        boxType: item.box_type
+      query
+    })
+    const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
+      resolved.href,
+      `${resolved.meta?.spaceKey || ''}`.trim() || undefined
+    )
+    if (nextTarget.mode === 'router') {
+      await router.push({
+        path: '/workspace/inbox',
+        query
+      })
+      return
+    }
+    const targetUrl = new URL(nextTarget.target)
+    Object.entries(query || {}).forEach(([key, value]) => {
+      if (value) {
+        targetUrl.searchParams.set(key, value)
       }
+    })
+    window.location.assign(targetUrl.toString())
+  }
+
+  const navigateByItem = async (item: Api.Message.InboxItem) => {
+    await openInbox({
+      deliveryId: item.id,
+      boxType: item.box_type
     })
   }
 
@@ -261,11 +298,8 @@
 
   const handleViewAll = () => {
     emit('update:value', false)
-    router.push({
-      path: '/workspace/inbox',
-      query: {
-        boxType: activeBoxType.value
-      }
+    openInbox({
+      boxType: activeBoxType.value
     })
   }
 

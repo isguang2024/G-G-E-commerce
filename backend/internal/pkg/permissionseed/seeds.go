@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 
+	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
 	usermodel "github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 )
@@ -57,6 +58,7 @@ type FeaturePackageBundleSeed struct {
 }
 
 type MenuSeed struct {
+	SpaceKey   string
 	Name       string
 	ParentName string
 	Path       string
@@ -65,6 +67,16 @@ type MenuSeed struct {
 	Icon       string
 	SortOrder  int
 	Meta       usermodel.MetaJSON
+}
+
+type MenuSpaceSeed struct {
+	SpaceKey        string
+	Name            string
+	Description     string
+	DefaultHomePath string
+	IsDefault       bool
+	Status          string
+	Meta            usermodel.MetaJSON
 }
 
 type RolePackageBindingSeed struct {
@@ -83,6 +95,7 @@ type APIEndpointCategorySeed struct {
 }
 
 type PageSeed struct {
+	SpaceKey          string
 	PageKey           string
 	Name              string
 	RouteName         string
@@ -426,7 +439,7 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      1,
-			MenuNames:      []string{"System", "SystemAccess", "Role", "User", "ActionPermission", "FeaturePackage", "TeamRolesAndPermissions", "SystemNavigation", "PageManagement", "FastEnterManage", "SystemIntegration", "MessageManage"},
+			MenuNames:      []string{"System", "SystemAccess", "Role", "User", "ActionPermission", "FeaturePackage", "TeamRolesAndPermissions", "SystemNavigation", "PageManagement", "FastEnterManage", "MenuSpaceManage", "SystemIntegration", "MessageManage"},
 			PermissionKeys: []string{"system.user.manage", "system.role.manage", "system.permission.manage", "system.page.manage", "system.page.sync", "system.fast_enter.manage", "message.manage"},
 		},
 		{
@@ -438,7 +451,7 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      2,
-			MenuNames:      []string{"System", "SystemNavigation", "Menus"},
+			MenuNames:      []string{"System", "SystemNavigation", "Menus", "MenuSpaceManage"},
 			PermissionKeys: []string{"system.menu.manage", "system.menu.backup"},
 		},
 		{
@@ -495,8 +508,8 @@ func DefaultMenus() []MenuSeed {
 	metaSuperAdminAndAdmin := usermodel.MetaJSON{"roles": []interface{}{"R_SUPER", "R_ADMIN"}}
 	metaTeamAccessOnly := usermodel.MetaJSON{"keepAlive": true}
 	metaJWT := usermodel.MetaJSON{"accessMode": "jwt"}
-	return []MenuSeed{
-		{Name: "Dashboard", Path: "/dashboard", Component: "/index/index", Title: "menus.dashboard.title", Icon: "ri:pie-chart-line", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER", "R_ADMIN"}, "accessMode": "jwt"}},
+	items := []MenuSeed{
+		{Name: "Dashboard", Path: "/dashboard", Component: "/index/index", Title: "menus.dashboard.title", Icon: "ri:pie-chart-line", SortOrder: 1, Meta: metaJWT},
 		{Name: "System", Path: "/system", Component: "/index/index", Title: "menus.system.title", Icon: "ri:user-3-line", SortOrder: 2, Meta: metaSuperAdminAndAdmin},
 		{Name: "Result", Path: "/result", Component: "/index/index", Title: "menus.result.title", Icon: "ri:checkbox-circle-line", SortOrder: 3, Meta: metaJWT},
 		{Name: "Exception", Path: "/exception", Component: "/index/index", Title: "menus.exception.title", Icon: "ri:error-warning-line", SortOrder: 4, Meta: metaJWT},
@@ -517,12 +530,33 @@ func DefaultMenus() []MenuSeed {
 		{Name: "FeaturePackage", ParentName: "SystemAccess", Path: "/system/feature-package", Component: "/system/feature-package", Title: "功能包管理", SortOrder: 4, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "PageManagement", ParentName: "SystemNavigation", Path: "/system/page", Component: "/system/page", Title: "页面管理", SortOrder: 2, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "FastEnterManage", ParentName: "SystemNavigation", Path: "/system/fast-enter", Component: "/system/fast-enter", Title: "快捷应用管理", SortOrder: 3, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "MenuSpaceManage", ParentName: "SystemNavigation", Path: "/system/menu-space", Component: "/system/menu-space", Title: "菜单空间", SortOrder: 4, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "TeamMembers", ParentName: "TeamRoot", Path: "members", Component: "/team/team-members", Title: "menus.system.teamMembers", SortOrder: 2, Meta: metaTeamAccessOnly},
 		{Name: "ResultSuccess", ParentName: "Result", Path: "success", Component: "/result/success", Title: "menus.result.success", Icon: "ri:checkbox-circle-line", SortOrder: 1, Meta: usermodel.MetaJSON{"keepAlive": true}},
 		{Name: "ResultFail", ParentName: "Result", Path: "fail", Component: "/result/fail", Title: "menus.result.fail", Icon: "ri:close-circle-line", SortOrder: 2, Meta: usermodel.MetaJSON{"keepAlive": true}},
 		{Name: "Exception403", ParentName: "Exception", Path: "403", Component: "/exception/403", Title: "menus.exception.forbidden", SortOrder: 1, Meta: usermodel.MetaJSON{"keepAlive": true, "isHideTab": true, "isFullPage": true}},
 		{Name: "Exception404", ParentName: "Exception", Path: "404", Component: "/exception/404", Title: "menus.exception.notFound", SortOrder: 2, Meta: usermodel.MetaJSON{"keepAlive": true, "isHideTab": true, "isFullPage": true}},
 		{Name: "Exception500", ParentName: "Exception", Path: "500", Component: "/exception/500", Title: "menus.exception.serverError", SortOrder: 3, Meta: usermodel.MetaJSON{"keepAlive": true, "isHideTab": true, "isFullPage": true}},
+	}
+	for i := range items {
+		if strings.TrimSpace(items[i].SpaceKey) == "" {
+			items[i].SpaceKey = systemmodels.DefaultMenuSpaceKey
+		}
+	}
+	return items
+}
+
+func DefaultMenuSpaces() []MenuSpaceSeed {
+	return []MenuSpaceSeed{
+		{
+			SpaceKey:        systemmodels.DefaultMenuSpaceKey,
+			Name:            "默认菜单空间",
+			Description:     "兼容当前单域单菜单运行模式",
+			DefaultHomePath: "/dashboard/console",
+			IsDefault:       true,
+			Status:          "normal",
+			Meta:            usermodel.MetaJSON{},
+		},
 	}
 }
 
@@ -569,8 +603,9 @@ func DefaultRoleCodes() []string {
 }
 
 func DefaultPages() []PageSeed {
-	return []PageSeed{
+	items := []PageSeed{
 		{
+			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
 			PageKey:           "display.system_pages",
 			Name:              "系统页面",
 			RouteName:         "display.system_pages",
@@ -584,6 +619,7 @@ func DefaultPages() []PageSeed {
 			Meta:              usermodel.MetaJSON{},
 		},
 		{
+			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
 			PageKey:           "workspace.user_center",
 			Name:              "个人中心",
 			RouteName:         "UserCenter",
@@ -604,6 +640,7 @@ func DefaultPages() []PageSeed {
 			Meta:              usermodel.MetaJSON{"isHideTab": true},
 		},
 		{
+			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
 			PageKey:           "workspace.inbox",
 			Name:              "消息中心",
 			RouteName:         "WorkspaceInbox",
@@ -622,6 +659,28 @@ func DefaultPages() []PageSeed {
 			KeepAlive:         true,
 			Status:            "normal",
 			Meta:              usermodel.MetaJSON{"isHideTab": false},
+		},
+		{
+			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
+			PageKey:           "system.menu_space.manage",
+			Name:              "菜单空间",
+			RouteName:         "MenuSpaceManage",
+			RoutePath:         "/system/menu-space",
+			Component:         "/system/menu-space",
+			PageType:          "inner",
+			Source:            "manual",
+			ModuleKey:         "menu_space",
+			SortOrder:         25,
+			ParentMenuName:    "MenuSpaceManage",
+			DisplayGroupKey:   "display.system_pages",
+			ActiveMenuPath:    "/system/menu-space",
+			BreadcrumbMode:    "inherit_menu",
+			AccessMode:        "permission",
+			PermissionKey:     "system.menu.manage",
+			InheritPermission: false,
+			KeepAlive:         true,
+			Status:            "normal",
+			Meta:              usermodel.MetaJSON{},
 		},
 		{
 			PageKey:           "system.message.manage",
@@ -834,6 +893,12 @@ func DefaultPages() []PageSeed {
 			Meta:              usermodel.MetaJSON{},
 		},
 	}
+	for i := range items {
+		if strings.TrimSpace(items[i].SpaceKey) == "" {
+			items[i].SpaceKey = systemmodels.DefaultMenuSpaceKey
+		}
+	}
+	return items
 }
 
 func newPermissionKeySeed(resourceCode, actionCode, name, description string) PermissionKeySeed {

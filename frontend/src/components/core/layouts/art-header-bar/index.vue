@@ -58,10 +58,11 @@
 
         <!-- 混合菜单-顶部 -->
         <ArtMixedMenu v-if="isTopLeftMenu" :list="menuList" />
-      </div>
+        </div>
 
-      <div class="flex-c gap-2.5">
-        <ArtTenantSwitcher class="max-lg:!hidden" />
+        <div class="flex-c gap-2.5">
+          <AppContextBadge class="max-xl:!hidden" />
+          <ArtTenantSwitcher class="max-lg:!hidden" />
 
         <!-- 搜索 -->
         <div
@@ -178,6 +179,7 @@
   import { themeAnimation } from '@/utils/ui/animation'
   import { useCommon } from '@/hooks/core/useCommon'
   import { useHeaderBar } from '@/hooks/core/useHeaderBar'
+  import AppContextBadge from '@/components/business/layout/AppContextBadge.vue'
   import ArtTenantSwitcher from './widget/ArtTenantSwitcher.vue'
   import ArtUserMenu from './widget/ArtUserMenu.vue'
 

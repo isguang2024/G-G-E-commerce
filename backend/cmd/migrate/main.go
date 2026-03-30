@@ -10,10 +10,12 @@ import (
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	apirouter "github.com/gg-ecommerce/backend/internal/api/router"
 	"github.com/gg-ecommerce/backend/internal/config"
 	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
+	space "github.com/gg-ecommerce/backend/internal/modules/system/space"
 	usermodel "github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
@@ -77,6 +79,13 @@ func main() {
 		logger.Warn("Failed to initialize default admin", zap.Error(err))
 	} else {
 		logger.Info("Default admin initialized successfully")
+	}
+
+	// 初始化默认菜单空间
+	if err := initDefaultMenuSpaces(logger); err != nil {
+		logger.Warn("Failed to initialize default menu spaces", zap.Error(err))
+	} else {
+		logger.Info("Default menu spaces initialized successfully")
 	}
 
 	// 初始化默认菜单
@@ -169,6 +178,57 @@ func runNamedMigrations(logger *zap.Logger) error {
 	}
 
 	tasks := []migrationTask{
+		{
+			Name: "20260330_menu_space_foundation",
+			Run: func(logger *zap.Logger) error {
+				statements := []string{
+					`CREATE TABLE IF NOT EXISTS menu_spaces (
+						id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+						space_key varchar(100) NOT NULL UNIQUE,
+						name varchar(150) NOT NULL,
+						description text NOT NULL DEFAULT '',
+						default_home_path varchar(255) NOT NULL DEFAULT '',
+						is_default boolean NOT NULL DEFAULT false,
+						status varchar(20) NOT NULL DEFAULT 'normal',
+						meta jsonb NOT NULL DEFAULT '{}'::jsonb,
+						created_at timestamptz NOT NULL DEFAULT NOW(),
+						updated_at timestamptz NOT NULL DEFAULT NOW(),
+						deleted_at timestamptz NULL
+					)`,
+					`CREATE TABLE IF NOT EXISTS menu_space_host_bindings (
+						id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+						space_key varchar(100) NOT NULL,
+						host varchar(255) NOT NULL UNIQUE,
+						description text NOT NULL DEFAULT '',
+						is_default boolean NOT NULL DEFAULT false,
+						status varchar(20) NOT NULL DEFAULT 'normal',
+						meta jsonb NOT NULL DEFAULT '{}'::jsonb,
+						created_at timestamptz NOT NULL DEFAULT NOW(),
+						updated_at timestamptz NOT NULL DEFAULT NOW(),
+						deleted_at timestamptz NULL
+					)`,
+					`ALTER TABLE menus ADD COLUMN IF NOT EXISTS space_key varchar(100) NOT NULL DEFAULT 'default'`,
+					`ALTER TABLE ui_pages ADD COLUMN IF NOT EXISTS space_key varchar(100) NOT NULL DEFAULT 'default'`,
+					`ALTER TABLE menus ALTER COLUMN space_key SET DEFAULT 'default'`,
+					`ALTER TABLE ui_pages ALTER COLUMN space_key SET DEFAULT 'default'`,
+					`UPDATE menus SET space_key = 'default' WHERE COALESCE(TRIM(space_key), '') = ''`,
+					`UPDATE ui_pages SET space_key = 'default' WHERE COALESCE(TRIM(space_key), '') = ''`,
+					`INSERT INTO menu_spaces (space_key, name, description, default_home_path, is_default, status, meta, created_at, updated_at)
+					 VALUES ('default', '默认菜单空间', '兼容当前单域单菜单运行模式', '/dashboard/console', TRUE, 'normal', '{}'::jsonb, NOW(), NOW())
+					 ON CONFLICT (space_key) DO NOTHING`,
+				}
+				for _, statement := range statements {
+					if err := database.DB.Exec(statement).Error; err != nil {
+						return err
+					}
+				}
+				if err := space.EnsureDefaultMenuSpace(database.DB); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260330_menu_space_foundation"))
+				return nil
+			},
+		},
 		{
 			Name: "20260325_page_management_menu_seed",
 			Run: func(logger *zap.Logger) error {
@@ -270,6 +330,16 @@ func runNamedMigrations(logger *zap.Logger) error {
 					return err
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260329_workspace_inbox_menu_seed"))
+				return nil
+			},
+		},
+		{
+			Name: "20260330_dashboard_menu_access_mode_align",
+			Run: func(logger *zap.Logger) error {
+				if _, err := syncDefaultMenuSeedByName("Dashboard"); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260330_dashboard_menu_access_mode_align"))
 				return nil
 			},
 		},
@@ -2159,6 +2229,51 @@ func initDefaultMenusNoScope(logger *zap.Logger) error {
 	return nil
 }
 
+func initDefaultMenuSpaces(logger *zap.Logger) error {
+	for _, spec := range permissionseed.DefaultMenuSpaces() {
+		spaceModel := &systemmodels.MenuSpace{
+			SpaceKey:        strings.TrimSpace(spec.SpaceKey),
+			Name:            strings.TrimSpace(spec.Name),
+			Description:     strings.TrimSpace(spec.Description),
+			DefaultHomePath: strings.TrimSpace(spec.DefaultHomePath),
+			IsDefault:       spec.IsDefault || strings.TrimSpace(spec.SpaceKey) == systemmodels.DefaultMenuSpaceKey,
+			Status:          normalizeMenuSpaceStatus(spec.Status),
+			Meta:            spec.Meta,
+		}
+		if spaceModel.SpaceKey == "" {
+			spaceModel.SpaceKey = systemmodels.DefaultMenuSpaceKey
+		}
+		if spaceModel.Name == "" {
+			spaceModel.Name = "默认菜单空间"
+		}
+		if spaceModel.DefaultHomePath == "" && spaceModel.SpaceKey == systemmodels.DefaultMenuSpaceKey {
+			spaceModel.DefaultHomePath = "/dashboard/console"
+		}
+		if spaceModel.Meta == nil {
+			spaceModel.Meta = usermodel.MetaJSON{}
+		}
+		if err := database.DB.Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "space_key"}},
+			DoUpdates: clause.AssignmentColumns([]string{
+				"name",
+				"description",
+				"default_home_path",
+				"is_default",
+				"status",
+				"meta",
+				"updated_at",
+			}),
+		}).Create(spaceModel).Error; err != nil {
+			return err
+		}
+	}
+	if err := space.EnsureDefaultMenuSpace(database.DB); err != nil {
+		return err
+	}
+	logger.Info("Default menu spaces ensured")
+	return nil
+}
+
 func ensureDefaultMenuSeedByName(name string) (*usermodel.Menu, error) {
 	targetName := strings.TrimSpace(name)
 	if targetName == "" {
@@ -2220,6 +2335,7 @@ func ensureMenuSeed(spec permissionseed.MenuSeed) (*usermodel.Menu, error) {
 
 	menu := &usermodel.Menu{
 		ParentID:  parentID,
+		SpaceKey:  normalizeMenuSeedSpaceKey(spec.SpaceKey),
 		Path:      spec.Path,
 		Name:      spec.Name,
 		Component: spec.Component,
@@ -2249,6 +2365,7 @@ func syncMenuSeed(spec permissionseed.MenuSeed) (*usermodel.Menu, error) {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			menu := &usermodel.Menu{
 				ParentID:  parentID,
+				SpaceKey:  normalizeMenuSeedSpaceKey(spec.SpaceKey),
 				Path:      spec.Path,
 				Name:      spec.Name,
 				Component: spec.Component,
@@ -2267,6 +2384,7 @@ func syncMenuSeed(spec permissionseed.MenuSeed) (*usermodel.Menu, error) {
 
 	updates := map[string]interface{}{
 		"parent_id":  parentID,
+		"space_key":  normalizeMenuSeedSpaceKey(spec.SpaceKey),
 		"path":       spec.Path,
 		"component":  spec.Component,
 		"title":      spec.Title,
@@ -2419,6 +2537,7 @@ func syncUIPageSeed(spec permissionseed.PageSeed) (*systemmodels.UIPage, error) 
 		RouteName:         strings.TrimSpace(spec.RouteName),
 		RoutePath:         strings.TrimSpace(spec.RoutePath),
 		Component:         strings.TrimSpace(spec.Component),
+		SpaceKey:          normalizeMenuSeedSpaceKey(spec.SpaceKey),
 		PageType:          pageType,
 		Source:            source,
 		ModuleKey:         strings.TrimSpace(spec.ModuleKey),
@@ -2454,6 +2573,7 @@ func syncUIPageSeed(spec permissionseed.PageSeed) (*systemmodels.UIPage, error) 
 		"route_name":         item.RouteName,
 		"route_path":         item.RoutePath,
 		"component":          item.Component,
+		"space_key":          item.SpaceKey,
 		"page_type":          item.PageType,
 		"source":             item.Source,
 		"module_key":         item.ModuleKey,
@@ -3076,6 +3196,23 @@ func syncAPIRegistry(logger *zap.Logger, cfg *config.Config) error {
 		WithCoreDefaults()
 	builder.LogSummary()
 	return nil
+}
+
+func normalizeMenuSpaceStatus(value string) string {
+	switch strings.TrimSpace(strings.ToLower(value)) {
+	case "disabled":
+		return "disabled"
+	default:
+		return "normal"
+	}
+}
+
+func normalizeMenuSeedSpaceKey(value string) string {
+	target := strings.TrimSpace(strings.ToLower(value))
+	if target == "" {
+		return systemmodels.DefaultMenuSpaceKey
+	}
+	return target
 }
 
 func uniqueStrings(values []string) []string {

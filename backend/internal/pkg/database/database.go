@@ -143,6 +143,8 @@ func AutoMigrate() error {
 		&models.APIEndpointCategory{},
 		&models.APIEndpoint{},
 		&models.APIEndpointPermissionBinding{},
+		&models.MenuSpace{},
+		&models.MenuSpaceHostBinding{},
 		&models.MenuManageGroup{},
 		&models.Menu{},
 		&models.UIPage{},
@@ -247,6 +249,46 @@ func createUniqueIndexes() error {
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", apiEndpointCategoryCodeIndexName).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE UNIQUE INDEX " + apiEndpointCategoryCodeIndexName + " ON api_endpoint_categories (code) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	menuSpaceCodeIndexName := "idx_menu_spaces_space_key"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", menuSpaceCodeIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + menuSpaceCodeIndexName + " ON menu_spaces (space_key)").Error; err != nil {
+			return err
+		}
+	}
+
+	menuSpaceHostIndexName := "idx_menu_space_host_bindings_host"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", menuSpaceHostIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + menuSpaceHostIndexName + " ON menu_space_host_bindings (host)").Error; err != nil {
+			return err
+		}
+	}
+
+	menuSpaceBindingSpaceIndexName := "idx_menu_space_host_bindings_space_key"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", menuSpaceBindingSpaceIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + menuSpaceBindingSpaceIndexName + " ON menu_space_host_bindings (space_key)").Error; err != nil {
+			return err
+		}
+	}
+
+	menuSpaceTableIndexName := "idx_menus_space_key"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", menuSpaceTableIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + menuSpaceTableIndexName + " ON menus (space_key)").Error; err != nil {
+			return err
+		}
+	}
+
+	uiPageSpaceIndexName := "idx_ui_pages_space_key"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", uiPageSpaceIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + uiPageSpaceIndexName + " ON ui_pages (space_key)").Error; err != nil {
 			return err
 		}
 	}

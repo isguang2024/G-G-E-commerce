@@ -31,8 +31,30 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { AppRouteRecord } from '@/types/router'
-import { getFirstMenuPath } from '@/utils'
 import { HOME_PAGE_PATH } from '@/router'
+import { useMenuSpaceStore } from '@/store/modules/menu-space'
+
+function collectMenuEntryPaths(list: AppRouteRecord[]): string[] {
+  const visiblePaths: string[] = []
+  const hiddenPaths: string[] = []
+  const walk = (items: AppRouteRecord[]) => {
+    ;(items || []).forEach((item) => {
+      const path = `${item.path || ''}`.trim()
+      if (path && !item.children?.length) {
+        if (item.meta?.isHide) {
+          hiddenPaths.push(path)
+        } else {
+          visiblePaths.push(path)
+        }
+      }
+      if (item.children?.length) {
+        walk(item.children)
+      }
+    })
+  }
+  walk(list)
+  return visiblePaths.length ? visiblePaths : hiddenPaths
+}
 
 /**
  * 菜单状态管理
@@ -54,7 +76,9 @@ export const useMenuStore = defineStore('menuStore', () => {
    */
   const setMenuList = (list: AppRouteRecord[]) => {
     menuList.value = list
-    setHomePath(HOME_PAGE_PATH || getFirstMenuPath(list))
+    const menuSpaceStore = useMenuSpaceStore()
+    const preferredHomePath = menuSpaceStore.resolveSpaceLandingPath(collectMenuEntryPaths(list))
+    setHomePath(HOME_PAGE_PATH || preferredHomePath)
   }
 
   /**

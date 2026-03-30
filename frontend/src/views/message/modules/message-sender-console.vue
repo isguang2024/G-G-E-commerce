@@ -9,6 +9,15 @@
 
     <MessageWorkspaceNav :scope="props.scope" current="sender" />
 
+    <ElAlert
+      v-if="loadError"
+      class="message-sender-inline-alert"
+      type="info"
+      :closable="false"
+      show-icon
+      :title="loadError"
+    />
+
     <section class="message-sender-shell art-card">
       <header class="message-sender-shell__toolbar">
         <div>
@@ -143,6 +152,7 @@
     useMessageWorkspace(props.scope)
 
   const loading = ref(false)
+  const loadError = ref('')
   const saving = ref(false)
   const list = ref<Api.Message.MessageSenderItem[]>([])
   const drawerVisible = ref(false)
@@ -181,6 +191,7 @@
 
   const loadSenders = async () => {
     loading.value = true
+    loadError.value = ''
     try {
       ensureTeamContext()
       const result = await fetchGetMessageSenderList({
@@ -188,7 +199,8 @@
       })
       list.value = result.records || []
     } catch (error) {
-      ElMessage.error('获取发送人失败')
+      list.value = []
+      loadError.value = '发送人列表暂时不可用，稍后重试或刷新状态。'
     } finally {
       loading.value = false
     }
@@ -248,6 +260,10 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
+
+  .message-sender-inline-alert {
+    margin-top: -4px;
   }
 
   .message-sender-hero__actions {

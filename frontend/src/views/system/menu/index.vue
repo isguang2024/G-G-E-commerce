@@ -14,6 +14,14 @@
       shadow="never"
       :style="{ marginTop: showSearchBar ? '12px' : '0' }"
     >
+      <ElAlert
+        v-if="loadError"
+        class="menu-inline-alert"
+        type="info"
+        :closable="false"
+        show-icon
+        :title="loadError"
+      />
       <div class="menu-overview">
         <div class="menu-overview-main">
           <div class="menu-overview-heading">
@@ -46,11 +54,11 @@
               </span>
               <span class="menu-switch-item">
                 <span class="menu-switch-label">启用分组</span>
-                <ElSwitch v-model="groupingEnabled" />
+                <ElSwitch v-model="groupingEnabled" :disabled="!groupingAvailable" />
               </span>
               <span class="menu-switch-item">
                 <span class="menu-switch-label">分组可视</span>
-                <ElSwitch v-model="groupedMenuVisible" />
+                <ElSwitch v-model="groupedMenuVisible" :disabled="!groupingAvailable" />
               </span>
               <span class="menu-switch-item">
                 <span class="menu-switch-label">多选模式</span>
@@ -149,6 +157,19 @@
           <div class="menu-toolbar">
             <div class="menu-toolbar-right">
               <div class="menu-toolbar-actions">
+                <ElSelect
+                  v-model="activeSpaceKey"
+                  class="menu-space-select"
+                  filterable
+                  @change="handleSpaceChange"
+                >
+                  <ElOption
+                    v-for="item in menuSpaceOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value"
+                  />
+                </ElSelect>
                 <ElTooltip content="创建菜单" placement="top">
                   <ElButton
                     v-action="'system.menu.manage'"
@@ -159,19 +180,24 @@
                     创建菜单
                   </ElButton>
                 </ElTooltip>
-                <ElDropdown @command="handleMoreActionCommand">
-                  <ElButton v-ripple>
-                    更多操作
-                  </ElButton>
-                  <template #dropdown>
-                    <ElDropdownMenu>
-                      <ElDropdownItem command="manageGroup">管理分组</ElDropdownItem>
-                      <ElDropdownItem command="backup">备份菜单</ElDropdownItem>
-                      <ElDropdownItem command="backupList">管理备份</ElDropdownItem>
-                    </ElDropdownMenu>
-                  </template>
-                </ElDropdown>
-              </div>
+              <ElDropdown @command="handleMoreActionCommand">
+                <ElButton v-ripple>
+                  更多操作
+                </ElButton>
+                <template #dropdown>
+                  <ElDropdownMenu>
+                    <ElDropdownItem command="manageGroup" :disabled="!groupingAvailable">
+                      管理分组
+                    </ElDropdownItem>
+                    <ElDropdownItem command="backup">备份菜单</ElDropdownItem>
+                    <ElDropdownItem command="backupList">管理备份</ElDropdownItem>
+                  </ElDropdownMenu>
+                </template>
+              </ElDropdown>
+            </div>
+            <div v-if="menuGroupApiUnavailable" class="menu-inline-note">
+              菜单分组暂不可用，当前按普通菜单树显示
+            </div>
 
               <div v-if="multiSelectEnabled" class="menu-toolbar-actions menu-toolbar-batch">
                 <span class="menu-batch-count">已选 {{ selectedMenuRows.length }} 项</span>
@@ -247,6 +273,12 @@
           <span v-else class="text-gray-400">-</span>
         </template>
 
+        <template #space="{ row }">
+          <ElTag size="small" effect="plain" type="info">
+            {{ getSpaceName(row.spaceKey || row.meta?.spaceKey) }}
+          </ElTag>
+        </template>
+
         <!-- 高级配置列 -->
         <template #advanced="{ row }">
           <div v-if="!isManageGroupRow(row)" class="advanced-configs">
@@ -314,6 +346,8 @@
         :menuTree="filteredMenuTree"
         :manageGroups="menuGroups"
         :pageOptions="rawPages"
+        :menuSpaces="menuSpaces"
+        :currentSpaceKey="activeSpaceKey"
         :currentMenuPages="getLinkedPages(editData || {})"
         :linkedPageKey="getLinkedPages(editData || {}).at(0)?.pageKey || ''"
         :editingMenuId="editData?.id"
@@ -385,6 +419,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, ref, reactive, nextTick, watch } from 'vue'
+  import { useRoute, useRouter } from 'vue-router'
   import { formatMenuTitle } from '@/utils/router'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
@@ -408,6 +443,7 @@
     fetchUpdateMenuManageGroup,
     fetchDeleteMenuManageGroup,
     fetchGetPageOptions,
+    fetchGetMenuSpaces,
     fetchUpdatePage,
     fetchCreateMenuBackup,
     fetchGetMenuBackupList,
@@ -435,6 +471,7 @@
 
   // --- 状态管理 ---
   const loading = ref(false)
+  const loadError = ref('')
   const showSearchBar = ref(false)
   const isExpanded = ref(false)
   const showHiddenMenus = ref(true)
@@ -446,6 +483,10 @@
   const multiSelectEnabled = ref(false)
   const rawMenuTree = ref<AppRouteRecord[]>([])
   const rawPages = ref<Api.SystemManage.PageItem[]>([])
+  const menuSpaces = ref<Api.SystemManage.MenuSpaceItem[]>([])
+  const activeSpaceKey = ref('default')
+  const route = useRoute()
+  const router = useRouter()
   const menuGroups = ref<Api.SystemManage.MenuManageGroupItem[]>([])
   const dataFromBackend = ref(false)
   const menuGroupApiUnavailable = ref(false)
@@ -457,6 +498,11 @@
   const backupDialogVisible = ref(false)
   const backupListDialogVisible = ref(false)
   const backupList = ref<any[]>([])
+  const warnDev = (...args: any[]) => {
+    if (import.meta.env.DEV) {
+      console.info(...args)
+    }
+  }
 
   // --- 搜索相关 ---
   const initialSearchState = { name: '', route: '' }
@@ -512,6 +558,16 @@
     new Map(menuGroups.value.map((item) => [item.id, item]))
   )
 
+  const menuSpaceMap = computed(() =>
+    new Map(menuSpaces.value.map((item) => [item.spaceKey, item]))
+  )
+  const menuSpaceOptions = computed(() =>
+    menuSpaces.value.map((item) => ({
+      label: item.isDefault ? `${item.name}（默认）` : item.name,
+      value: item.spaceKey
+    }))
+  )
+
   const pageMap = computed(
     () => new Map(rawPages.value.map((item) => [item.pageKey, item]))
   )
@@ -544,6 +600,11 @@
 
   const getLinkedPages = (item: any) =>
     linkedPagesByMenuId.value.get(String(item?.id || '')) || []
+
+  const getSpaceName = (spaceKey?: string) => {
+    const normalized = `${spaceKey || ''}`.trim() || 'default'
+    return menuSpaceMap.value.get(normalized)?.name || normalized
+  }
 
   const hashToNegativeNumber = (value: string) => {
     let hash = 0
@@ -635,8 +696,12 @@
 
   const filteredMenuTree = computed(() => filterMenuTree(rawMenuTree.value))
 
+  const groupingAvailable = computed(() => !menuGroupApiUnavailable.value)
+
   const tableData = computed(() =>
-    groupingEnabled.value ? injectManageGroups(filteredMenuTree.value) : filteredMenuTree.value
+    groupingAvailable.value && groupingEnabled.value
+      ? injectManageGroups(filteredMenuTree.value)
+      : filteredMenuTree.value
   )
 
   const menuStats = computed(() => {
@@ -663,11 +728,12 @@
 
   const getMenuList = async () => {
     loading.value = true
+    loadError.value = ''
     dataFromBackend.value = false
     try {
       const [list, pagesResult, groupsResult] = await Promise.all([
-        fetchGetMenuTreeAll(),
-        fetchGetPageOptions().then((res) => res.records || []),
+        fetchGetMenuTreeAll(activeSpaceKey.value),
+        fetchGetPageOptions(activeSpaceKey.value).then((res) => res.records || []),
         fetchGetMenuManageGroups()
           .then((groups) => ({ ok: true as const, groups }))
           .catch((error) => ({ ok: false as const, error, groups: [] as Api.SystemManage.MenuManageGroupItem[] }))
@@ -678,19 +744,18 @@
       dataFromBackend.value = true
 
       if (!groupsResult.ok) {
-        console.warn('菜单分组接口不可用，已降级为无分组模式:', groupsResult.error)
-        if (!menuGroupApiUnavailable.value) {
-          menuGroupApiUnavailable.value = true
-          ElMessage.warning('菜单分组接口未生效，已临时按无分组模式显示菜单')
-        }
+        warnDev('[Menus] 菜单分组接口不可用，已降级为无分组模式', groupsResult.error)
+        menuGroupApiUnavailable.value = true
       } else {
         menuGroupApiUnavailable.value = false
       }
     } catch (error) {
-      console.error('获取菜单数据失败:', error)
+      warnDev('[Menus] 获取菜单数据失败，已回退为空列表', error)
       rawMenuTree.value = []
       rawPages.value = []
-      ElMessage.error('菜单数据加载失败，请检查后端菜单配置或服务状态')
+      menuGroups.value = []
+      menuGroupApiUnavailable.value = false
+      loadError.value = '菜单数据暂时不可用，稍后重试或刷新状态。'
     } finally {
       loading.value = false
     }
@@ -714,6 +779,7 @@
       { prop: 'type', label: '类型', width: 100, align: 'center', useSlot: true, slotName: 'type' },
       { prop: 'path', label: '路由', minWidth: 150, useSlot: true, slotName: 'path' },
       { prop: 'component', label: '组件路径', minWidth: 200, useSlot: true, slotName: 'component' },
+      { prop: 'space', label: '菜单空间', width: 120, align: 'center', useSlot: true, slotName: 'space' },
       { prop: 'linkedPage', label: '挂接主页面', minWidth: 220, useSlot: true, slotName: 'linkedPage' },
       {
         prop: 'advanced',
@@ -824,7 +890,28 @@
     item.visible = nextVisible
     item.checked = nextVisible
   }
+  const syncRouteSpaceKey = (spaceKey: string) => {
+    router.replace({
+      query: {
+        ...route.query,
+        spaceKey
+      }
+    })
+  }
+
+  const resolveInitialSpaceKey = () => {
+    const requestedSpaceKey = `${route.query.spaceKey || ''}`.trim()
+    if (requestedSpaceKey && menuSpaces.value.some((item) => item.spaceKey === requestedSpaceKey)) {
+      return requestedSpaceKey
+    }
+    return menuSpaces.value.find((item) => item.isDefault)?.spaceKey || 'default'
+  }
+
   const handleRefresh = () => getMenuList()
+  const handleSpaceChange = () => {
+    syncRouteSpaceKey(activeSpaceKey.value)
+    getMenuList()
+  }
   const rowKey = (row: any) => String(row.id || row.path)
 
   const clearBatchSelection = () => {
@@ -857,6 +944,7 @@
 
   const handleMoreActionCommand = (command: string) => {
     if (command === 'manageGroup') {
+      if (!groupingAvailable.value) return
       manageGroupDrawerVisible.value = true
       return
     }
@@ -872,15 +960,16 @@
   const hasOwnManageGroup = (row: any) => Boolean(`${row?.manage_group_id || ''}`.trim())
 
   const buildMenuUpdatePayloadFromRow = (row: any, manageGroupID: string | null) => {
-      const meta = buildMenuMetaForUpdate(row)
-      return {
-        parent_id: row.parent_id ? String(row.parent_id) : null,
-        path: row.path || '',
-        name: row.name || '',
+    const meta = buildMenuMetaForUpdate(row)
+    return {
+      parent_id: row.parent_id ? String(row.parent_id) : null,
+      path: row.path || '',
+      name: row.name || '',
       component: typeof row.component === 'string' ? row.component : '',
       title: row.meta?.title || '',
       icon: row.meta?.icon || '',
       sort_order: Number(row.sort_order ?? 0),
+      space_key: `${row.spaceKey || row.space_key || row.meta?.spaceKey || activeSpaceKey.value || 'default'}`.trim(),
       manage_group_id: manageGroupID,
       meta
     }
@@ -1042,8 +1131,9 @@
       activePath: formData.activePath || '',
       fixedTab: formData.fixedTab,
       isFullPage: formData.isFullPage,
-      accessMode: formData.accessMode || 'permission'
-    }
+        accessMode: formData.accessMode || 'permission',
+        spaceKey: `${formData.spaceKey || activeSpaceKey.value || 'default'}`.trim()
+      }
     if (formData.customParent?.trim()) {
       meta.customParent = formData.customParent.trim()
     }
@@ -1051,14 +1141,15 @@
     return meta
   }
 
-  const buildMenuRequestPayload = (formData: any, meta: Record<string, any>) => ({
+    const buildMenuRequestPayload = (formData: any, meta: Record<string, any>) => ({
       path: formData.path || '/',
       name: formData.label || '',
       component: formData.component || '',
-    title: formData.name || '',
-    icon: formData.icon || '',
-    sort_order: Number(formData.sort ?? 0),
-    manage_group_id: formData.manageGroupId?.trim() || null,
+      title: formData.name || '',
+      icon: formData.icon || '',
+      sort_order: Number(formData.sort ?? 0),
+      space_key: `${formData.spaceKey || activeSpaceKey.value || 'default'}`.trim(),
+      manage_group_id: formData.manageGroupId?.trim() || null,
       meta
     })
 
@@ -1081,11 +1172,12 @@
     active_menu_path: page.activeMenuPath || '',
     breadcrumb_mode: page.breadcrumbMode || 'inherit_menu',
     access_mode: page.accessMode || 'inherit',
-    permission_key: page.permissionKey || '',
-    inherit_permission: page.inheritPermission ?? true,
-    keep_alive: page.keepAlive ?? false,
-    is_full_page: page.isFullPage ?? false,
-    status: page.status || 'normal',
+      permission_key: page.permissionKey || '',
+      inherit_permission: page.inheritPermission ?? true,
+      keep_alive: page.keepAlive ?? false,
+      is_full_page: page.isFullPage ?? false,
+      space_key: page.spaceKey || activeSpaceKey.value || 'default',
+      status: page.status || 'normal',
     meta: {
       ...(page.meta || {}),
       isIframe: page.isIframe ?? false,
@@ -1102,7 +1194,10 @@
     if (previousLinkedPage && previousLinkedPage.pageKey !== nextPageKey) {
       await fetchUpdatePage(
         previousLinkedPage.id,
-        buildPageSavePayload(previousLinkedPage, { parent_menu_id: '' })
+        buildPageSavePayload(previousLinkedPage, {
+          parent_menu_id: '',
+          space_key: previousLinkedPage.spaceKey || activeSpaceKey.value || 'default'
+        })
       )
     }
 
@@ -1110,14 +1205,15 @@
 
     const nextPage = pageMap.value.get(nextPageKey)
     if (!nextPage) return
-    await fetchUpdatePage(
-      nextPage.id,
-      buildPageSavePayload(nextPage, {
-        parent_menu_id: menuId,
-        parent_page_key: ''
-      })
-    )
-  }
+      await fetchUpdatePage(
+        nextPage.id,
+        buildPageSavePayload(nextPage, {
+          parent_menu_id: menuId,
+          parent_page_key: '',
+          space_key: `${formData.spaceKey || activeSpaceKey.value || 'default'}`.trim()
+        })
+      )
+    }
 
   const resolveParentId = (formData: any) =>
       formData.parentId?.trim() || (parentRowForAdd.value?.id ? String(parentRowForAdd.value.id) : null)
@@ -1226,12 +1322,13 @@
           parent_id: row.parent_id ? String(row.parent_id) : null,
           path: row.path || '',
           name: row.name || '',
-          component: typeof row.component === 'string' ? row.component : '',
-          title: row.meta?.title || '',
-          icon: row.meta?.icon || '',
-          sort_order: Number(row.sort_order ?? 0),
-          meta
-        },
+            component: typeof row.component === 'string' ? row.component : '',
+            title: row.meta?.title || '',
+            icon: row.meta?.icon || '',
+            sort_order: Number(row.sort_order ?? 0),
+            space_key: `${row.spaceKey || row.space_key || row.meta?.spaceKey || activeSpaceKey.value || 'default'}`.trim(),
+            meta
+          },
         { showErrorMessage: false }
       )
       ElMessage.success('功能权限已保存')
@@ -1363,6 +1460,12 @@
     localStorage.setItem('system:menu:grouping-enabled', enabled ? '1' : '0')
   })
 
+  watch(menuGroupApiUnavailable, (unavailable) => {
+    if (unavailable) {
+      setExpandState(false)
+    }
+  })
+
   watch(groupedMenuVisible, (visible) => {
     localStorage.setItem('system:menu:grouped-visible', visible ? '1' : '0')
   })
@@ -1371,8 +1474,30 @@
   onMounted(() => {
     groupingEnabled.value = localStorage.getItem('system:menu:grouping-enabled') !== '0'
     groupedMenuVisible.value = localStorage.getItem('system:menu:grouped-visible') !== '0'
-    getMenuList()
+    fetchGetMenuSpaces()
+      .then((res) => {
+        menuSpaces.value = res.records || []
+        activeSpaceKey.value = resolveInitialSpaceKey()
+      })
+      .finally(() => {
+        getMenuList()
+      })
   })
+
+  watch(
+    () => route.query.spaceKey,
+    (value) => {
+      const requestedSpaceKey = `${value || ''}`.trim()
+      if (!requestedSpaceKey || requestedSpaceKey === activeSpaceKey.value) {
+        return
+      }
+      if (!menuSpaces.value.some((item) => item.spaceKey === requestedSpaceKey)) {
+        return
+      }
+      activeSpaceKey.value = requestedSpaceKey
+      getMenuList()
+    }
+  )
 </script>
 
 <style lang="scss" scoped>
@@ -1380,6 +1505,10 @@
     padding: 4px 0 14px;
     margin-bottom: 8px;
     border-bottom: 1px solid #eef2f7;
+  }
+
+  .menu-inline-alert {
+    margin-bottom: 14px;
   }
 
   .menu-overview-main {
@@ -1507,9 +1636,19 @@
     gap: 8px 10px;
   }
 
+  .menu-space-select {
+    width: 220px;
+  }
+
   .menu-toolbar-batch {
     padding-left: 14px;
     border-left: 1px solid #e5e7eb;
+  }
+
+  .menu-inline-note {
+    font-size: 12px;
+    color: #64748b;
+    white-space: nowrap;
   }
 
   .inline-flex,

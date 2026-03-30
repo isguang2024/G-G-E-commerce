@@ -31,6 +31,14 @@
  */
 import type { App } from 'vue'
 
+function isIgnorableResizeObserverMessage(message: unknown): boolean {
+  const normalizedMessage = `${message || ''}`.trim()
+  return (
+    normalizedMessage.includes('ResizeObserver loop limit exceeded') ||
+    normalizedMessage.includes('ResizeObserver loop completed with undelivered notifications')
+  )
+}
+
 /**
  * Vue 运行时错误处理
  */
@@ -52,6 +60,9 @@ export function scriptErrorHandler(
   colno?: number,
   error?: Error
 ): boolean {
+  if (isIgnorableResizeObserverMessage(typeof message === 'string' ? message : error?.message)) {
+    return true
+  }
   if (import.meta.env.DEV) {
     console.error('[ScriptError]', { message, source, lineno, colno, error })
   }
@@ -64,6 +75,10 @@ export function scriptErrorHandler(
  */
 export function registerPromiseErrorHandler() {
   window.addEventListener('unhandledrejection', (event) => {
+    if (isIgnorableResizeObserverMessage(event.reason?.message || event.reason)) {
+      event.preventDefault()
+      return
+    }
     if (import.meta.env.DEV) {
       console.error('[PromiseError]', event.reason)
     }

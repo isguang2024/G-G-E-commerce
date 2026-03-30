@@ -9,10 +9,12 @@
 
 import type { AppRouteRecord } from '@/types/router'
 import { fetchGetMenuList } from '@/api/system-manage'
+import { useMenuSpaceStore } from '@/store/modules/menu-space'
 import { useUserStore } from '@/store/modules/user'
 import { RoutesAlias } from '../routesAlias'
 import { formatMenuTitle } from '@/utils'
 import { hasMenuActionAccess, shouldHideMenuWhenActionDenied } from '@/utils/permission/menu'
+import { isMenuSpaceVisible, normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
 
 export class MenuProcessor {
   /**
@@ -21,12 +23,19 @@ export class MenuProcessor {
   async getMenuList(): Promise<AppRouteRecord[]> {
     const menuList = await fetchGetMenuList()
     const filteredByAction = this.filterActionRequirementMenus(menuList)
+    const spaceStore = useMenuSpaceStore()
+    spaceStore.syncRuntimeHost()
+    const filteredBySpace = this.filterMenusBySpace(
+      filteredByAction,
+      spaceStore.currentSpaceKey,
+      spaceStore.defaultSpaceKey
+    )
 
     // 在规范化路径之前，验证原始路径配置
-    this.validateMenuPaths(filteredByAction)
+    this.validateMenuPaths(filteredBySpace)
 
     // 规范化路径（将相对路径转换为完整路径）
-    return this.normalizeMenuPaths(this.filterEmptyMenus(filteredByAction))
+    return this.normalizeMenuPaths(this.filterEmptyMenus(filteredBySpace))
   }
 
   /**
@@ -101,6 +110,43 @@ export class MenuProcessor {
         })
         return result
       }, [])
+  }
+
+  /**
+   * 按菜单空间过滤菜单
+   */
+  private filterMenusBySpace(
+    menuList: AppRouteRecord[],
+    currentSpaceKey: string,
+    defaultSpaceKey: string,
+    inheritedSpaceKey = ''
+  ): AppRouteRecord[] {
+    return menuList.reduce<AppRouteRecord[]>((result, item) => {
+      const ownSpaceKey = normalizeMenuSpaceKey(
+        item.spaceKey || item.meta?.spaceKey || item.meta?.space_key
+      )
+      const effectiveSpaceKey = ownSpaceKey || normalizeMenuSpaceKey(inheritedSpaceKey) || defaultSpaceKey
+      const children = item.children?.length
+        ? this.filterMenusBySpace(item.children, currentSpaceKey, defaultSpaceKey, effectiveSpaceKey)
+        : item.children
+
+      const clone: AppRouteRecord = {
+        ...item,
+        spaceKey: effectiveSpaceKey,
+        meta: {
+          ...(item.meta || {}),
+          spaceKey: effectiveSpaceKey
+        },
+        children
+      }
+
+      if (!isMenuSpaceVisible(effectiveSpaceKey, currentSpaceKey, defaultSpaceKey) && !children?.length) {
+        return result
+      }
+
+      result.push(clone)
+      return result
+    }, [])
   }
 
   /**

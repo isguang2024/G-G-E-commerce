@@ -28,6 +28,7 @@
   import { computed } from 'vue'
   import { useRouter } from 'vue-router'
   import { useTenantStore } from '@/store/modules/tenant'
+  import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import { refreshCurrentUserInfoContext, refreshUserMenus } from '@/router'
 
   defineOptions({ name: 'ArtTenantSwitcher' })
@@ -37,6 +38,7 @@
 
   const router = useRouter()
   const tenantStore = useTenantStore()
+  const menuSpaceStore = useMenuSpaceStore()
   const { currentTenantId, teamList, loading, shouldShowSwitcher, currentTeam } = storeToRefs(tenantStore)
 
   const selectedValue = computed(() => currentTenantId.value)
@@ -55,7 +57,18 @@
       tenantStore.enterTeamContext(value)
       await refreshCurrentUserInfoContext()
       await refreshUserMenus()
-      await router.push('/')
+      const landingPath = menuSpaceStore.resolveSpaceLandingPath()
+      const resolved = router.resolve(landingPath)
+      const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
+        resolved.href,
+        `${resolved.meta?.spaceKey || ''}`.trim() || undefined
+      )
+      if (nextTarget.mode === 'router') {
+        await router.push(landingPath)
+      } else {
+        window.location.assign(nextTarget.target)
+        return
+      }
       ElMessage.success('已切换团队')
     } catch (error) {
       console.error('[TenantSwitcher] 切换团队失败:', error)

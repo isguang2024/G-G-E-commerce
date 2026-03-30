@@ -14,6 +14,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	spaceutil "github.com/gg-ecommerce/backend/internal/modules/system/space"
 )
 
 var (
@@ -31,6 +32,7 @@ type ListRequest struct {
 	Current      int
 	Size         int
 	Keyword      string
+	SpaceKey     string `form:"space_key"`
 	PageType     string
 	ModuleKey    string
 	ParentMenuID string
@@ -45,6 +47,7 @@ type SaveRequest struct {
 	RouteName         string                 `json:"route_name"`
 	RoutePath         string                 `json:"route_path"`
 	Component         string                 `json:"component"`
+	SpaceKey          string                 `json:"space_key"`
 	PageType          string                 `json:"page_type"`
 	Source            string                 `json:"source"`
 	ModuleKey         string                 `json:"module_key"`
@@ -117,9 +120,9 @@ type BreadcrumbPreviewItem struct {
 
 type Service interface {
 	List(req *ListRequest) ([]Record, int64, error)
-	ListOptions() ([]models.UIPage, error)
-	ListRuntime() ([]Record, error)
-	ListRuntimePublic() ([]Record, error)
+	ListOptions(spaceKey string) ([]models.UIPage, error)
+	ListRuntime(host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error)
+	ListRuntimePublic(host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error)
 	ListUnregistered() ([]UnregisteredRecord, error)
 	Sync() (*SyncResult, error)
 	PreviewBreadcrumb(id uuid.UUID) ([]BreadcrumbPreviewItem, error)
@@ -127,7 +130,7 @@ type Service interface {
 	Create(req *SaveRequest) (*Record, error)
 	Update(id uuid.UUID, req *SaveRequest) (*Record, error)
 	Delete(id uuid.UUID) error
-	ListMenuOptions() ([]MenuOption, error)
+	ListMenuOptions(spaceKey string) ([]MenuOption, error)
 }
 
 type service struct {
@@ -153,6 +156,9 @@ func (s *service) List(req *ListRequest) ([]Record, int64, error) {
 		}
 		if moduleKey := strings.TrimSpace(req.ModuleKey); moduleKey != "" {
 			query = query.Where("module_key = ?", moduleKey)
+		}
+		if spaceKey := normalizeSpaceKey(req.SpaceKey); spaceKey != "" {
+			query = query.Where("COALESCE(NULLIF(space_key, ''), ?) = ?", spaceutil.DefaultMenuSpaceKey, spaceKey)
 		}
 		if accessMode := normalizeAccessMode(req.AccessMode); accessMode != "" {
 			query = query.Where("access_mode = ?", accessMode)
@@ -185,16 +191,20 @@ func (s *service) List(req *ListRequest) ([]Record, int64, error) {
 	return records, total, err
 }
 
-func (s *service) ListOptions() ([]models.UIPage, error) {
+func (s *service) ListOptions(spaceKey string) ([]models.UIPage, error) {
 	items := make([]models.UIPage, 0)
-	err := s.db.
-		Model(&models.UIPage{}).
+	query := s.db.Model(&models.UIPage{})
+	if normalized := normalizeSpaceKey(spaceKey); normalized != "" {
+		query = query.Where("COALESCE(NULLIF(space_key, ''), ?) = ?", spaceutil.DefaultMenuSpaceKey, normalized)
+	}
+	err := query.
 		Select(
 			"id",
 			"page_key",
 			"name",
 			"route_name",
 			"route_path",
+			"space_key",
 			"page_type",
 			"module_key",
 			"parent_menu_id",
@@ -207,18 +217,21 @@ func (s *service) ListOptions() ([]models.UIPage, error) {
 	return items, err
 }
 
-func (s *service) ListRuntime() ([]Record, error) {
-	return s.loadRuntimeRecords()
+func (s *service) ListRuntime(host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error) {
+	return s.loadRuntimeRecords(host, requestedSpaceKey, userID, tenantID)
 }
 
-func (s *service) ListRuntimePublic() ([]Record, error) {
-	return s.loadPublicRuntimeRecords()
+func (s *service) ListRuntimePublic(host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error) {
+	return s.loadPublicRuntimeRecords(host, requestedSpaceKey, userID, tenantID)
 }
 
-func (s *service) buildRuntimeRecords() ([]Record, map[uuid.UUID]runtimeMenuNode, error) {
+func (s *service) buildRuntimeRecords(spaceKey string) ([]Record, map[uuid.UUID]runtimeMenuNode, error) {
 	var items []models.UIPage
-	if err := s.db.
-		Where("status = ? AND page_type <> ?", "normal", "display_group").
+	query := s.db.Where("status = ? AND page_type <> ?", "normal", "display_group")
+	if normalized := normalizeSpaceKey(spaceKey); normalized != "" {
+		query = query.Where("COALESCE(NULLIF(space_key, ''), ?) = ?", spaceutil.DefaultMenuSpaceKey, normalized)
+	}
+	if err := query.
 		Order("sort_order ASC, created_at ASC").
 		Find(&items).Error; err != nil {
 		return nil, nil, err
@@ -411,9 +424,13 @@ func (s *service) Delete(id uuid.UUID) error {
 	return nil
 }
 
-func (s *service) ListMenuOptions() ([]MenuOption, error) {
+func (s *service) ListMenuOptions(spaceKey string) ([]MenuOption, error) {
 	var menus []models.Menu
-	if err := s.db.Order("sort_order ASC, created_at ASC").Find(&menus).Error; err != nil {
+	query := s.db.Order("sort_order ASC, created_at ASC")
+	if normalized := normalizeSpaceKey(spaceKey); normalized != "" {
+		query = query.Where("COALESCE(NULLIF(space_key, ''), ?) = ?", spaceutil.DefaultMenuSpaceKey, normalized)
+	}
+	if err := query.Find(&menus).Error; err != nil {
 		return nil, err
 	}
 
@@ -626,6 +643,7 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 		RouteName:         routeName,
 		RoutePath:         routePath,
 		Component:         component,
+		SpaceKey:          normalizeSpaceKey(req.SpaceKey),
 		PageType:          pageType,
 		Source:            source,
 		ModuleKey:         moduleKey,
@@ -765,6 +783,7 @@ func pageToUpdateMap(item *models.UIPage) map[string]interface{} {
 		"route_name":         item.RouteName,
 		"route_path":         item.RoutePath,
 		"component":          item.Component,
+		"space_key":          item.SpaceKey,
 		"page_type":          item.PageType,
 		"source":             item.Source,
 		"module_key":         item.ModuleKey,

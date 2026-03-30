@@ -1,6 +1,7 @@
 import request from '@/utils/http'
 import { AppRouteRecord } from '@/types/router'
 import type { FastEnterApplication, FastEnterQuickLink } from '@/types/config'
+import { normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
 
 const USER_BASE = '/api/v1/users'
 const ROLE_BASE = '/api/v1/roles'
@@ -196,6 +197,9 @@ function normalizeTeam(item: any): Api.SystemManage.TeamListItem {
 
 function normalizePageItem(item: any): Api.SystemManage.PageItem {
   const meta = item?.meta || {}
+  const spaceKey = normalizeMenuSpaceKey(item?.space_key || item?.spaceKey || meta?.spaceKey)
+  const spaceType = `${item?.space_type || item?.spaceType || meta?.spaceType || ''}`.trim()
+  const hostKey = `${item?.host_key || item?.hostKey || meta?.hostKey || ''}`.trim()
   return {
     id: item?.id || '',
     pageKey: item?.page_key || item?.pageKey || '',
@@ -223,8 +227,16 @@ function normalizePageItem(item: any): Api.SystemManage.PageItem {
     isIframe: Boolean(meta?.isIframe ?? item?.is_iframe ?? item?.isIframe ?? false),
     isHideTab: Boolean(meta?.isHideTab ?? item?.is_hide_tab ?? item?.isHideTab ?? false),
     link: `${meta?.link || item?.link || ''}`.trim(),
+    spaceKey,
+    spaceType,
+    hostKey,
     status: item?.status || 'normal',
-    meta,
+    meta: {
+      ...meta,
+      ...(spaceKey ? { spaceKey } : {}),
+      ...(spaceType ? { spaceType } : {}),
+      ...(hostKey ? { hostKey } : {})
+    },
     createdAt: item?.created_at || item?.createdAt || '',
     updatedAt: item?.updated_at || item?.updatedAt || ''
   }
@@ -252,7 +264,56 @@ function normalizePageUnregisteredItem(item: any): Api.SystemManage.PageUnregist
     moduleKey: item?.module_key || item?.moduleKey || '',
     parentMenuId: item?.parent_menu_id || item?.parentMenuId || '',
     parentMenuName: item?.parent_menu_name || item?.parentMenuName || '',
-    activeMenuPath: item?.active_menu_path || item?.activeMenuPath || ''
+    activeMenuPath: item?.active_menu_path || item?.activeMenuPath || '',
+    spaceKey: normalizeMenuSpaceKey(item?.space_key || item?.spaceKey),
+    spaceType: `${item?.space_type || item?.spaceType || ''}`.trim(),
+    hostKey: `${item?.host_key || item?.hostKey || ''}`.trim()
+  }
+}
+
+function normalizeMenuSpace(item: any): Api.SystemManage.MenuSpaceItem {
+  return {
+    id: item?.id || '',
+    spaceKey: normalizeMenuSpaceKey(item?.space_key || item?.spaceKey),
+    name: item?.name || '',
+    description: item?.description || '',
+    defaultHomePath: item?.default_home_path || item?.defaultHomePath || '',
+    isDefault: Boolean(item?.is_default ?? item?.isDefault ?? false),
+    status: item?.status || 'normal',
+    hostCount: item?.host_count ?? item?.hostCount ?? 0,
+    hosts: Array.isArray(item?.hosts) ? item.hosts.map((value: any) => `${value || ''}`.trim()).filter(Boolean) : [],
+    menuCount: Number(item?.menu_count ?? item?.menuCount ?? 0),
+    pageCount: Number(item?.page_count ?? item?.pageCount ?? 0),
+    accessMode: `${item?.access_mode || item?.accessMode || item?.meta?.access_mode || item?.meta?.accessMode || 'all'}`.trim(),
+    allowedRoleCodes: Array.isArray(item?.allowed_role_codes ?? item?.allowedRoleCodes)
+      ? (item?.allowed_role_codes ?? item?.allowedRoleCodes).map((value: any) => `${value || ''}`.trim()).filter(Boolean)
+      : [],
+    meta: item?.meta || {},
+    createdAt: item?.created_at || item?.createdAt || '',
+    updatedAt: item?.updated_at || item?.updatedAt || ''
+  }
+}
+
+function normalizeMenuSpaceHostBinding(item: any): Api.SystemManage.MenuSpaceHostBindingItem {
+  const meta = item?.meta || {}
+  return {
+    id: item?.id || '',
+    host: `${item?.host || ''}`.trim(),
+    spaceKey: normalizeMenuSpaceKey(item?.space_key || item?.spaceKey),
+    spaceName: item?.space_name || item?.spaceName || '',
+    description: item?.description || '',
+    isDefault: Boolean(item?.is_default ?? item?.isDefault ?? false),
+    status: item?.status || 'normal',
+    scheme: `${item?.scheme || item?.meta?.scheme || meta?.scheme || 'https'}`.trim() || 'https',
+    routePrefix: `${item?.route_prefix || item?.routePrefix || meta?.route_prefix || meta?.routePrefix || ''}`.trim(),
+    authMode: `${item?.auth_mode || item?.authMode || meta?.auth_mode || meta?.authMode || 'inherit_host'}`.trim() || 'inherit_host',
+    loginHost: `${item?.login_host || item?.loginHost || meta?.login_host || meta?.loginHost || ''}`.trim(),
+    callbackHost: `${item?.callback_host || item?.callbackHost || meta?.callback_host || meta?.callbackHost || ''}`.trim(),
+    cookieScopeMode: `${item?.cookie_scope_mode || item?.cookieScopeMode || meta?.cookie_scope_mode || meta?.cookieScopeMode || 'inherit'}`.trim() || 'inherit',
+    cookieDomain: `${item?.cookie_domain || item?.cookieDomain || meta?.cookie_domain || meta?.cookieDomain || ''}`.trim(),
+    meta,
+    createdAt: item?.created_at || item?.createdAt || '',
+    updatedAt: item?.updated_at || item?.updatedAt || ''
   }
 }
 
@@ -281,6 +342,9 @@ function normalizeRuntimeMenuTree(item: any): AppRouteRecord {
   const children = Array.isArray(item?.children)
     ? item.children.map((child: any) => normalizeRuntimeMenuTree(child))
     : []
+  const spaceKey = normalizeMenuSpaceKey(item?.space_key || item?.spaceKey || meta?.spaceKey)
+  const spaceType = `${item?.space_type || item?.spaceType || meta?.spaceType || ''}`.trim()
+  const hostKey = `${item?.host_key || item?.hostKey || meta?.hostKey || ''}`.trim()
   return {
     id: item?.id || '',
     path: item?.path || '',
@@ -289,6 +353,9 @@ function normalizeRuntimeMenuTree(item: any): AppRouteRecord {
     parent_id: item?.parent_id || item?.parentId || '',
     sort_order: item?.sort_order ?? item?.sortOrder ?? 0,
     redirect: item?.redirect || '',
+    spaceKey,
+    spaceType,
+    hostKey,
     meta: {
       title: meta?.title || '',
       icon: meta?.icon || '',
@@ -296,6 +363,9 @@ function normalizeRuntimeMenuTree(item: any): AppRouteRecord {
       activePath: `${meta?.activePath || ''}`.trim() || undefined,
       link: `${meta?.link || ''}`.trim() || undefined,
       roles: Array.isArray(meta?.roles) && meta.roles.length ? meta.roles : undefined,
+      spaceKey: spaceKey || undefined,
+      spaceType: spaceType || undefined,
+      hostKey: hostKey || undefined,
       isEnable: meta?.isEnable === true,
       isHide: meta?.isHide === true,
       isIframe: meta?.isIframe === true,
@@ -1243,6 +1313,7 @@ export function fetchGetPageList(params: Api.SystemManage.PageSearchParams) {
     page_type: params?.pageType,
     module_key: params?.moduleKey,
     parent_menu_id: params?.parentMenuId,
+    space_key: params?.spaceKey,
     access_mode: params?.accessMode,
     source: params?.source,
     status: params?.status
@@ -1258,10 +1329,11 @@ export function fetchGetPageList(params: Api.SystemManage.PageSearchParams) {
     }))
 }
 
-export function fetchGetPageOptions() {
+export function fetchGetPageOptions(spaceKey?: string) {
   return request
     .get<{ records: Api.SystemManage.PageItem[]; total: number }>({
-      url: `${PAGE_BASE}/options`
+      url: `${PAGE_BASE}/options`,
+      params: spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : undefined
     })
     .then((res) => ({
       records: (res?.records || []).map(normalizePageItem),
@@ -1369,10 +1441,11 @@ export function fetchDeletePage(id: string) {
 }
 
 /** 获取页面上级菜单候选 */
-export function fetchGetPageMenuOptions() {
+export function fetchGetPageMenuOptions(spaceKey?: string) {
   return request
     .get<{ records: Api.SystemManage.PageMenuOptionItem[]; total: number }>({
-      url: `${PAGE_BASE}/menu-options`
+      url: `${PAGE_BASE}/menu-options`,
+      params: spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : undefined
     })
     .then((res) => ({
       records: (res?.records || []).map(normalizePageMenuOption),
@@ -1542,20 +1615,26 @@ export function fetchUpdateApiEndpointCategory(
 const MENU_BASE = '/api/v1/menus'
 
 /** 获取菜单树（按当前用户角色过滤，用于侧栏；后端菜单模式时使用） */
-export function fetchGetMenuList() {
+export function fetchGetMenuList(spaceKey?: string) {
   return request
     .get<AppRouteRecord[]>({
-      url: `${MENU_BASE}/tree`
+      url: `${MENU_BASE}/tree`,
+      params: spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : undefined
     })
     .then((res) => (res || []).map((item: any) => normalizeRuntimeMenuTree(item)))
 }
 
 /** 获取完整菜单树（不限角色，用于菜单管理页；需管理员） */
-export function fetchGetMenuTreeAll() {
-  return request.get<AppRouteRecord[]>({
-    url: `${MENU_BASE}/tree`,
-    params: { all: 1 }
-  })
+export function fetchGetMenuTreeAll(spaceKey?: string) {
+  return request
+    .get<AppRouteRecord[]>({
+      url: `${MENU_BASE}/tree`,
+      params: {
+        all: 1,
+        ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {})
+      }
+    })
+    .then((res) => (res || []).map((item: any) => normalizeRuntimeMenuTree(item)))
 }
 
 /** 枚举 views 页面文件（后端 Redis 缓存，支持强制刷新） */
@@ -1585,6 +1664,87 @@ export function fetchUpdateFastEnterConfig(data: Api.SystemManage.FastEnterConfi
       data
     })
     .then((res) => normalizeFastEnterConfig(res))
+}
+
+export function fetchGetCurrentMenuSpace(spaceKey?: string) {
+  return request
+    .get<Api.SystemManage.CurrentMenuSpaceResponse>({
+      url: `${SYSTEM_BASE}/menu-spaces/current`,
+      params: spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : undefined
+    })
+      .then((res: any) => ({
+        space: normalizeMenuSpace(res?.space || {}),
+        binding: res?.binding ? normalizeMenuSpaceHostBinding(res.binding) : undefined,
+        resolvedBy: `${res?.resolved_by || res?.resolvedBy || ''}`.trim(),
+        requestHost: `${res?.request_host || res?.requestHost || ''}`.trim(),
+        accessGranted: Boolean(res?.access_granted ?? res?.accessGranted ?? true)
+      }))
+  }
+
+export function fetchGetMenuSpaces() {
+  return request
+    .get<{ records: Api.SystemManage.MenuSpaceItem[]; total: number }>({
+      url: `${SYSTEM_BASE}/menu-spaces`
+    })
+    .then((res) => ({
+      records: (res?.records || []).map(normalizeMenuSpace),
+      total: res?.total || 0
+    }))
+}
+
+export function fetchSaveMenuSpace(data: Api.SystemManage.MenuSpaceSaveParams) {
+  return request
+      .post<Api.SystemManage.MenuSpaceItem>({
+        url: `${SYSTEM_BASE}/menu-spaces`,
+        data
+      })
+      .then((res) => normalizeMenuSpace(res))
+}
+
+export function fetchInitializeMenuSpaceFromDefault(spaceKey: string, force = false) {
+  return request
+      .post<Api.SystemManage.MenuSpaceInitializeResult>({
+        url: `${SYSTEM_BASE}/menu-spaces/${normalizeMenuSpaceKey(spaceKey)}/initialize-default`,
+        params: force ? { force: true } : undefined
+      })
+      .then((res: any) => ({
+        sourceSpaceKey: res?.source_space_key || res?.sourceSpaceKey || 'default',
+        targetSpaceKey:
+          res?.target_space_key || res?.targetSpaceKey || normalizeMenuSpaceKey(spaceKey),
+        forceReinitialized: Boolean(res?.force_reinitialized ?? res?.forceReinitialized ?? false),
+        clearedMenuCount: Number(res?.cleared_menu_count ?? res?.clearedMenuCount ?? 0),
+        clearedPageCount: Number(res?.cleared_page_count ?? res?.clearedPageCount ?? 0),
+        clearedPackageMenuLinkCount: Number(
+          res?.cleared_package_menu_link_count ?? res?.clearedPackageMenuLinkCount ?? 0
+        ),
+        createdMenuCount: Number(res?.created_menu_count ?? res?.createdMenuCount ?? 0),
+        createdPageCount: Number(res?.created_page_count ?? res?.createdPageCount ?? 0),
+        createdPackageMenuLinkCount: Number(
+          res?.created_package_menu_link_count ?? res?.createdPackageMenuLinkCount ?? 0
+        )
+      }))
+}
+
+export function fetchGetMenuSpaceHostBindings() {
+  return request
+    .get<{ records: Api.SystemManage.MenuSpaceHostBindingItem[]; total: number }>({
+      url: `${SYSTEM_BASE}/menu-space-host-bindings`
+    })
+    .then((res) => ({
+      records: (res?.records || []).map(normalizeMenuSpaceHostBinding),
+      total: res?.total || 0
+    }))
+}
+
+export function fetchSaveMenuSpaceHostBinding(
+  data: Api.SystemManage.MenuSpaceHostBindingSaveParams
+) {
+  return request
+    .post<Api.SystemManage.MenuSpaceHostBindingItem>({
+      url: `${SYSTEM_BASE}/menu-space-host-bindings`,
+      data
+    })
+    .then((res) => normalizeMenuSpaceHostBinding(res))
 }
 
 /** 创建菜单 */

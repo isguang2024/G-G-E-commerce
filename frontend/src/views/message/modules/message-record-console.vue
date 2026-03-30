@@ -8,6 +8,15 @@
 
     <MessageWorkspaceNav :scope="props.scope" current="record" />
 
+    <ElAlert
+      v-if="loadError"
+      class="message-record-inline-alert"
+      type="info"
+      :closable="false"
+      show-icon
+      :title="loadError"
+    />
+
     <section class="message-record-shell art-card">
       <header class="message-record-toolbar">
         <ElInput
@@ -151,6 +160,14 @@
             <h4>投递明细</h4>
             <span>{{ activeRecord.deliveries?.length || 0 }} 条</span>
           </div>
+          <ElAlert
+            v-if="detailError && !detailLoading"
+            class="message-record-detail-alert"
+            type="info"
+            :closable="false"
+            show-icon
+            :title="detailError"
+          />
           <ElSkeleton v-if="detailLoading" :rows="5" animated />
           <div v-else-if="activeRecord.deliveries?.length" class="message-record-delivery-list">
             <article
@@ -181,12 +198,20 @@
 
         <div class="message-record-rich-text">
           <h4>摘要</h4>
-          <div class="rich-text-content" v-html="renderRichText(activeRecord.summary, '未填写摘要')"></div>
+          <div
+            class="rich-text-content"
+            v-html="renderRichText(activeRecord.summary, '未填写摘要')"
+            @click="handleRichTextClick"
+          ></div>
         </div>
 
         <div class="message-record-rich-text">
           <h4>正文</h4>
-          <div class="rich-text-content" v-html="renderRichText(activeRecord.content, '未填写正文')"></div>
+          <div
+            class="rich-text-content"
+            v-html="renderRichText(activeRecord.content, '未填写正文')"
+            @click="handleRichTextClick"
+          ></div>
         </div>
       </template>
     </ElDrawer>
@@ -196,9 +221,12 @@
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref } from 'vue'
   import { ElMessage } from 'element-plus'
+  import { useRouter } from 'vue-router'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import MessageWorkspaceNav from '@/views/message/modules/message-workspace-nav.vue'
   import { fetchGetDispatchRecordDetail, fetchGetDispatchRecordList } from '@/api/message'
+  import { useMenuSpaceStore } from '@/store/modules/menu-space'
+  import { handleRichTextLinkNavigation } from '@/utils/navigation/rich-text'
   import { useMessageWorkspace } from '@/views/message/modules/useMessageWorkspace'
 
   defineOptions({ name: 'MessageRecordConsole' })
@@ -207,10 +235,14 @@
     scope: 'platform' | 'team'
   }>()
 
+  const router = useRouter()
+  const menuSpaceStore = useMenuSpaceStore()
   const { isTeamScope, skipTenantHeader, currentTeamName, ensureTeamContext, plainTextFromHtml, formatTime } =
     useMessageWorkspace(props.scope)
   const loading = ref(false)
+  const loadError = ref('')
   const detailLoading = ref(false)
+  const detailError = ref('')
   const drawerVisible = ref(false)
   const list = ref<Api.Message.DispatchRecordItem[]>([])
   const activeRecord = ref<Api.Message.DispatchRecordDetail | null>(null)
@@ -334,6 +366,7 @@
 
   const loadRecords = async () => {
     loading.value = true
+    loadError.value = ''
     try {
       ensureTeamContext()
       const result = await fetchGetDispatchRecordList(
@@ -350,7 +383,15 @@
       pagination.total = result.total || 0
       Object.assign(summary, result.summary || {})
     } catch (error) {
-      ElMessage.error('获取发送记录失败')
+      list.value = []
+      pagination.total = 0
+      Object.assign(summary, {
+        total_messages: 0,
+        total_deliveries: 0,
+        read_deliveries: 0,
+        todo_messages: 0
+      })
+      loadError.value = '发送记录暂时不可用，稍后重试或刷新状态。'
     } finally {
       loading.value = false
     }
@@ -364,6 +405,7 @@
   const openDetail = async (row: Api.Message.DispatchRecordItem) => {
     drawerVisible.value = true
     detailLoading.value = true
+    detailError.value = ''
     activeRecord.value = {
       ...row,
       deliveries: []
@@ -373,10 +415,17 @@
         skipTenantHeader: skipTenantHeader.value
       })
     } catch (error) {
-      ElMessage.error('获取发送详情失败')
+      detailError.value = '发送详情暂时不可用，稍后重试。'
     } finally {
       detailLoading.value = false
     }
+  }
+
+  const handleRichTextClick = async (event: MouseEvent) => {
+    await handleRichTextLinkNavigation(event, {
+      router,
+      spaceResolver: menuSpaceStore
+    })
   }
 
   onMounted(() => {
@@ -389,6 +438,10 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
+
+  .message-record-inline-alert {
+    margin-top: -4px;
   }
 
   .message-record-hero__actions {
@@ -501,6 +554,10 @@
     padding: 16px;
     border-radius: 18px;
     background: rgb(248 250 252 / 0.92);
+  }
+
+  .message-record-detail-alert {
+    margin-bottom: 12px;
   }
 
   .message-record-delivery-block__header {

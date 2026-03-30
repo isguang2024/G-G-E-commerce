@@ -64,6 +64,7 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
   import { useTenantStore } from '@/store/modules/tenant'
+  import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import { refreshCurrentUserInfoContext, refreshUserMenus, refreshUserAccessAndMenus } from '@/router'
   import ArtTenantSwitcher from './ArtTenantSwitcher.vue'
 
@@ -73,6 +74,7 @@
   const { t } = useI18n()
   const userStore = useUserStore()
   const tenantStore = useTenantStore()
+  const menuSpaceStore = useMenuSpaceStore()
 
   const { getUserInfo: userInfo } = storeToRefs(userStore)
   const { teamList, hasPlatformAccess, currentContextMode } = storeToRefs(tenantStore)
@@ -80,20 +82,39 @@
 
   const goPage = (path: string): void => {
     closeUserMenu()
-    router.push(path)
+    const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(path)
+    if (nextTarget.mode === 'router') {
+      router.push(nextTarget.target)
+      return
+    }
+    window.location.assign(nextTarget.target)
   }
 
   const enterPlatformManagement = async (): Promise<void> => {
     if (currentContextMode.value === 'platform') {
       closeUserMenu()
-      router.push('/')
+      const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
+        menuSpaceStore.resolveSpaceLandingPath()
+      )
+      if (nextTarget.mode === 'router') {
+        router.push(nextTarget.target)
+        return
+      }
+      window.location.assign(nextTarget.target)
       return
     }
     closeUserMenu()
     tenantStore.enterPlatformContext()
     await refreshCurrentUserInfoContext()
     await refreshUserMenus()
-    router.push('/')
+    const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
+      menuSpaceStore.resolveSpaceLandingPath()
+    )
+    if (nextTarget.mode === 'router') {
+      router.push(nextTarget.target)
+      return
+    }
+    window.location.assign(nextTarget.target)
   }
 
   const refreshPermissionsAndMenus = async (): Promise<void> => {

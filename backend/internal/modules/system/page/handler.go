@@ -10,6 +10,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
+	spaceutil "github.com/gg-ecommerce/backend/internal/modules/system/space"
 )
 
 type Handler struct {
@@ -45,7 +46,7 @@ func (h *Handler) List(c *gin.Context) {
 }
 
 func (h *Handler) ListRuntime(c *gin.Context) {
-	list, err := h.service.ListRuntime()
+	list, err := h.service.ListRuntime(spaceutil.RequestHost(c), spaceutil.RequestSpaceKey(c), pageContextUserID(c), pageContextTenantID(c))
 	if err != nil {
 		h.logger.Error("List runtime pages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取运行时页面注册表失败")
@@ -60,7 +61,7 @@ func (h *Handler) ListRuntime(c *gin.Context) {
 }
 
 func (h *Handler) ListRuntimePublic(c *gin.Context) {
-	list, err := h.service.ListRuntimePublic()
+	list, err := h.service.ListRuntimePublic(spaceutil.RequestHost(c), spaceutil.RequestSpaceKey(c), pageContextUserID(c), pageContextTenantID(c))
 	if err != nil {
 		h.logger.Error("List public runtime pages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取公开运行时页面注册表失败")
@@ -98,7 +99,7 @@ func (h *Handler) Sync(c *gin.Context) {
 }
 
 func (h *Handler) ListMenuOptions(c *gin.Context) {
-	items, err := h.service.ListMenuOptions()
+	items, err := h.service.ListMenuOptions(spaceutil.RequestSpaceKey(c))
 	if err != nil {
 		h.logger.Error("List page menu options failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取上级菜单候选失败")
@@ -112,7 +113,7 @@ func (h *Handler) ListMenuOptions(c *gin.Context) {
 }
 
 func (h *Handler) ListPageOptions(c *gin.Context) {
-	items, err := h.service.ListOptions()
+	items, err := h.service.ListOptions(spaceutil.RequestSpaceKey(c))
 	if err != nil {
 		h.logger.Error("List page options failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取页面候选失败")
@@ -243,6 +244,44 @@ func (h *Handler) respondServiceError(c *gin.Context, err error, fallback string
 	}
 }
 
+func pageContextUserID(c *gin.Context) *uuid.UUID {
+	raw, ok := c.Get("user_id")
+	if !ok {
+		return nil
+	}
+	value, ok := raw.(string)
+	if !ok {
+		return nil
+	}
+	id, err := uuid.Parse(strings.TrimSpace(value))
+	if err != nil {
+		return nil
+	}
+	return &id
+}
+
+func pageContextTenantID(c *gin.Context) *uuid.UUID {
+	raw, ok := c.Get("tenant_id")
+	if ok {
+		value, ok := raw.(string)
+		if ok && strings.TrimSpace(value) != "" {
+			id, err := uuid.Parse(strings.TrimSpace(value))
+			if err == nil {
+				return &id
+			}
+		}
+	}
+	headerValue := strings.TrimSpace(c.GetHeader("X-Tenant-ID"))
+	if headerValue == "" {
+		return nil
+	}
+	id, err := uuid.Parse(headerValue)
+	if err != nil {
+		return nil
+	}
+	return &id
+}
+
 func buildRuntimePageRecords(items []Record) []gin.H {
 	if len(items) == 0 {
 		return []gin.H{}
@@ -271,6 +310,9 @@ func buildRuntimePageRecord(item Record) gin.H {
 		"page_key":   item.PageKey,
 		"name":       item.Name,
 		"route_path": item.RoutePath,
+	}
+	if spaceKey := strings.TrimSpace(item.SpaceKey); spaceKey != "" {
+		node["space_key"] = spaceKey
 	}
 
 	if routeName := strings.TrimSpace(item.RouteName); routeName != "" && routeName != strings.TrimSpace(item.PageKey) {

@@ -69,10 +69,8 @@
 
   defineOptions({ name: 'ArtFastEnter' })
 
-  const router = useRouter()
   const popoverRef = ref()
   const fastEnterStore = useFastEnterStore()
-  const isExternalLink = (value?: string) => /^https?:\/\//i.test(`${value || ''}`.trim())
   const warnDev = (...args: unknown[]) => {
     if (import.meta.env.DEV) {
       console.warn(...args)
@@ -80,7 +78,7 @@
   }
 
   // 使用快速入口配置
-  const { enabledApplications, enabledQuickLinks } = useFastEnter()
+  const { enabledApplications, enabledQuickLinks, openNavigationTarget } = useFastEnter()
 
   /**
    * 处理导航跳转
@@ -88,30 +86,20 @@
    * @param link 外部链接
    */
   const handleNavigate = (routeName?: string, link?: string): void => {
-    const routeTarget = `${routeName || ''}`.trim()
-    const linkTarget = `${link || ''}`.trim()
-    const targetPath = routeTarget || linkTarget
-
-    if (!targetPath) {
-      warnDev('导航配置无效：缺少路由名称或链接')
-      return
-    }
-
-    if (routeTarget && router.hasRoute(routeTarget)) {
-      router.push({ name: routeTarget })
-    } else if (isExternalLink(linkTarget)) {
-      window.open(linkTarget, '_blank')
-    } else if (linkTarget.startsWith('/')) {
-      router.push(linkTarget)
-    } else {
-      warnDev('导航配置无效：目标路由不可访问且外链地址无效', {
-        routeName: routeTarget,
-        link: linkTarget
+    openNavigationTarget(routeName, link)
+      .then((handled) => {
+        if (!handled) {
+          warnDev('导航配置无效：目标路由不可访问且外链地址无效', {
+            routeName,
+            link
+          })
+          return
+        }
+        popoverRef.value?.hide()
       })
-      return
-    }
-
-    popoverRef.value?.hide()
+      .catch((error) => {
+        warnDev('快捷入口跳转失败', error)
+      })
   }
 
   /**

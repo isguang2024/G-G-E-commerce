@@ -55,6 +55,27 @@
           </ElCol>
         </ElRow>
 
+        <ElRow :gutter="14">
+          <ElCol :span="12">
+            <ElFormItem label="菜单空间" prop="spaceKey">
+              <template #label>
+                <PageFieldLabel
+                  label="菜单空间"
+                  help="逻辑分组也属于页面中心对象，需要显式归属到某个菜单空间，避免后续多空间时父链串线。"
+                />
+              </template>
+              <ElSelect v-model="form.spaceKey" style="width: 100%">
+                <ElOption
+                  v-for="item in menuSpaceOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </ElSelect>
+            </ElFormItem>
+          </ElCol>
+        </ElRow>
+
         <ElFormItem label="挂载方式" prop="mountMode">
           <template #label>
             <PageFieldLabel
@@ -265,6 +286,8 @@
     modelValue: boolean
     dialogType: 'add' | 'edit' | 'copy'
     pageData?: Partial<PageItem>
+    menuSpaces?: Api.SystemManage.MenuSpaceItem[]
+    currentSpaceKey?: string
     initialParentPageKey?: string
     initialParentMenuId?: string
     initialPageType?: PageItem['pageType']
@@ -280,6 +303,8 @@
     modelValue: false,
     dialogType: 'add',
     pageData: undefined,
+    menuSpaces: () => [],
+    currentSpaceKey: 'default',
     initialParentPageKey: '',
     initialParentMenuId: '',
     initialPageType: 'group',
@@ -320,6 +345,7 @@
     accessMode: 'inherit',
     permissionKey: '',
     moduleKey: '',
+    spaceKey: 'default',
     sortOrder: 0,
     parentMenuId: '',
     parentPageKey: '',
@@ -335,6 +361,12 @@
   })
 
   const menuTreeOptions = computed(() => menuOptions.value.map(toTreeSelectNode))
+  const menuSpaceOptions = computed(() =>
+    (props.menuSpaces || []).map((item) => ({
+      label: item.isDefault ? `${item.name}（默认）` : item.name,
+      value: item.spaceKey
+    }))
+  )
   const menuCascaderProps = {
     checkStrictly: true,
     emitPath: false
@@ -473,6 +505,7 @@
         accessMode: props.pageData.accessMode || 'inherit',
         permissionKey: props.pageData.permissionKey || '',
         moduleKey: props.pageData.moduleKey || '',
+        spaceKey: props.pageData.spaceKey || props.currentSpaceKey || 'default',
         sortOrder: props.pageData.sortOrder ?? 0,
         parentMenuId: props.pageData.parentMenuId || '',
         parentPageKey: props.pageData.parentPageKey || '',
@@ -487,11 +520,12 @@
       id: '',
       pageKey: props.defaultData?.pageKey || '',
       name: props.defaultData?.name || '',
-      routePath: props.defaultData?.routePath || '',
-      accessMode: props.defaultData?.accessMode || 'inherit',
-      permissionKey: props.defaultData?.permissionKey || '',
-      moduleKey: props.defaultData?.moduleKey || '',
-      sortOrder: props.defaultData?.sortOrder ?? 0,
+        routePath: props.defaultData?.routePath || '',
+        accessMode: props.defaultData?.accessMode || 'inherit',
+        permissionKey: props.defaultData?.permissionKey || '',
+        moduleKey: props.defaultData?.moduleKey || '',
+        spaceKey: props.defaultData?.spaceKey || props.currentSpaceKey || 'default',
+        sortOrder: props.defaultData?.sortOrder ?? 0,
       parentMenuId: props.defaultData?.parentMenuId || props.initialParentMenuId || '',
       parentPageKey: props.defaultData?.parentPageKey || props.initialParentPageKey || '',
       displayGroupKey: props.defaultData?.displayGroupKey || '',
@@ -513,7 +547,10 @@
   })
 
   async function loadOptions() {
-    const [menuRes, pageRes] = await Promise.all([fetchGetPageMenuOptions(), fetchGetPageOptions()])
+    const [menuRes, pageRes] = await Promise.all([
+      fetchGetPageMenuOptions(form.spaceKey),
+      fetchGetPageOptions(form.spaceKey)
+    ])
     menuOptions.value = menuRes.records || []
     allPages.value = pageRes.records || []
   }
@@ -525,6 +562,24 @@
     await nextTick()
     formRef.value?.clearValidate()
   }
+
+  watch(
+    () => form.spaceKey,
+    async (spaceKey, previousSpaceKey) => {
+      if (!props.modelValue || !`${spaceKey || ''}`.trim() || spaceKey === previousSpaceKey) {
+        return
+      }
+      form.parentMenuId = ''
+      form.parentPageKey = ''
+      form.displayGroupKey = ''
+      await loadOptions()
+      nextTick(() =>
+        formRef.value
+          ?.validateField(['parentMenuId', 'parentPageKey', 'displayGroupKey'])
+          .catch(() => undefined)
+      )
+    }
+  )
 
   watch(
     () => props.modelValue,
@@ -600,12 +655,13 @@
         route_path: form.routePath.trim(),
         component: '',
         page_type: 'group',
-        source:
-          props.dialogType === 'edit'
-            ? `${props.pageData?.source || 'manual'}`
-            : `${props.defaultData?.source || 'manual'}`,
-        module_key: resolvedModuleKey.value,
-        sort_order: form.sortOrder,
+          source:
+            props.dialogType === 'edit'
+              ? `${props.pageData?.source || 'manual'}`
+              : `${props.defaultData?.source || 'manual'}`,
+          module_key: resolvedModuleKey.value,
+          space_key: form.spaceKey,
+          sort_order: form.sortOrder,
         parent_menu_id: mountMode.value === 'menu' ? normalizeMenuId(form.parentMenuId) : '',
         parent_page_key: mountMode.value === 'page' ? form.parentPageKey || '' : '',
         display_group_key: mountMode.value === 'page' ? '' : form.displayGroupKey || '',

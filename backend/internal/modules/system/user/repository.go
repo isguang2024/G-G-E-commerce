@@ -634,7 +634,7 @@ func (r *tenantMemberRepository) GetByUserAndTenant(userID, tenantID uuid.UUID) 
 func (r *tenantMemberRepository) GetTenantsByUserID(userID uuid.UUID) ([]Tenant, error) {
 	var tenants []Tenant
 	err := r.db.Joins("JOIN tenant_members ON tenants.id = tenant_members.tenant_id").
-		Where("tenant_members.user_id = ?", userID).
+		Where("tenant_members.user_id = ? AND tenant_members.deleted_at IS NULL", userID).
 		Find(&tenants).Error
 	return tenants, err
 }
@@ -642,7 +642,11 @@ func (r *tenantMemberRepository) GetTenantsByUserID(userID uuid.UUID) ([]Tenant,
 func (r *tenantMemberRepository) GetAdminUsersByTenantID(tenantID uuid.UUID) ([]User, error) {
 	var users []User
 	err := r.db.Joins("JOIN tenant_members ON users.id = tenant_members.user_id").
-		Where("tenant_members.tenant_id = ? AND tenant_members.role_code = ?", tenantID, "team_admin").
+		Where(
+			"tenant_members.tenant_id = ? AND tenant_members.role_code = ? AND tenant_members.deleted_at IS NULL",
+			tenantID,
+			"team_admin",
+		).
 		Find(&users).Error
 	return users, err
 }

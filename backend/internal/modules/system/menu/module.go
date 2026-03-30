@@ -46,7 +46,7 @@ func (m *MenuModule) RegisterRoutes(rg *gin.RouterGroup) {
 	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
 	menuService := NewMenuService(m.db, menuRepo, refresher, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
-	menuHandler := NewMenuHandler(menuService, userRepo, menuRepo, roleRepo, userRoleRepo, boundaryService, authzService, platformService, m.logger)
+	menuHandler := NewMenuHandler(m.db, menuService, userRepo, menuRepo, roleRepo, userRoleRepo, boundaryService, authzService, platformService, m.logger)
 
 	menus := rg.Group("/menus")
 	reg := apiregistry.NewRegistrar(menus, "menu")

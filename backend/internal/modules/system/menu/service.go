@@ -12,6 +12,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	page "github.com/gg-ecommerce/backend/internal/modules/system/page"
+	spaceutil "github.com/gg-ecommerce/backend/internal/modules/system/space"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
@@ -26,7 +27,7 @@ var (
 )
 
 type MenuService interface {
-	GetTree(all bool, allowedMenuIDs []uuid.UUID) ([]*user.Menu, error)
+	GetTree(all bool, allowedMenuIDs []uuid.UUID, spaceKey string) ([]*user.Menu, error)
 	Create(req *dto.MenuCreateRequest) (*user.Menu, error)
 	Update(id uuid.UUID, req *dto.MenuUpdateRequest) error
 	Delete(id uuid.UUID) error
@@ -52,10 +53,14 @@ func NewMenuService(db *gorm.DB, menuRepo user.MenuRepository, refresher permiss
 	return &menuService{db: db, menuRepo: menuRepo, refresher: refresher, logger: logger}
 }
 
-func (s *menuService) GetTree(all bool, allowedMenuIDs []uuid.UUID) ([]*user.Menu, error) {
+func (s *menuService) GetTree(all bool, allowedMenuIDs []uuid.UUID, spaceKey string) ([]*user.Menu, error) {
 	flat, err := s.menuRepo.ListAll()
 	if err != nil {
 		return nil, err
+	}
+	if strings.TrimSpace(spaceKey) != "" {
+		normalized := spaceutil.NormalizeSpaceKey(spaceKey)
+		flat = filterMenusBySpace(flat, normalized)
 	}
 	tree := user.BuildTree(flat, nil)
 	if all {
@@ -106,6 +111,21 @@ func menuAccessMode(meta map[string]interface{}) string {
 	default:
 		return "permission"
 	}
+}
+
+func filterMenusBySpace(flat []user.Menu, spaceKey string) []user.Menu {
+	target := spaceutil.NormalizeSpaceKey(spaceKey)
+	if target == "" {
+		return flat
+	}
+	result := make([]user.Menu, 0, len(flat))
+	for _, menu := range flat {
+		if spaceutil.NormalizeSpaceKey(menu.SpaceKey) != target {
+			continue
+		}
+		result = append(result, menu)
+	}
+	return result
 }
 
 func (s *menuService) visibleMenuIDs(flat []user.Menu, allowed []uuid.UUID) map[uuid.UUID]struct{} {
@@ -162,6 +182,7 @@ func (s *menuService) Create(req *dto.MenuCreateRequest) (*user.Menu, error) {
 	m := &user.Menu{
 		ParentID:      parentID,
 		ManageGroupID: manageGroupID,
+		SpaceKey:      normalizeMenuSpaceKey(req.SpaceKey),
 		Path:          req.Path,
 		Name:          req.Name,
 		Component:     req.Component,
@@ -218,6 +239,7 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 		return err
 	}
 	m.ManageGroupID = manageGroupID
+	m.SpaceKey = normalizeMenuSpaceKey(req.SpaceKey)
 	m.Path = req.Path
 	m.Name = req.Name
 	m.Component = req.Component
@@ -448,6 +470,7 @@ func (s *menuService) RestoreBackup(id uuid.UUID) error {
 			}
 		}
 		for i := range menus {
+			menus[i].SpaceKey = normalizeMenuSpaceKey(menus[i].SpaceKey)
 			menus[i].Meta = sanitizeMenuMeta(menus[i].Meta)
 			if err := tx.Create(&menus[i]).Error; err != nil {
 				return err
@@ -533,6 +556,14 @@ func sanitizeMenuMeta(meta map[string]interface{}) map[string]interface{} {
 		sanitized[key] = value
 	}
 	return sanitized
+}
+
+func normalizeMenuSpaceKey(value string) string {
+	target := strings.ToLower(strings.TrimSpace(value))
+	if target == "" {
+		return spaceutil.DefaultMenuSpaceKey
+	}
+	return target
 }
 
 func normalizeMenuGroupStatus(value string) string {

@@ -7,11 +7,20 @@
     >
       <div class="message-manage-hero__actions">
         <ElButton @click="loadOptions" :loading="loading" v-ripple>刷新配置</ElButton>
-        <ElButton type="primary" @click="submitDispatch" :loading="submitting" v-ripple>发送消息</ElButton>
+        <ElButton type="primary" @click="submitDispatch" :loading="submitting" :disabled="!canDispatch" v-ripple>发送消息</ElButton>
       </div>
     </AdminWorkspaceHero>
 
     <MessageWorkspaceNav :scope="props.scope" current="dispatch" />
+
+    <ElAlert
+      v-if="loadError"
+      class="message-manage-inline-alert"
+      type="info"
+      :closable="false"
+      show-icon
+      :title="loadError"
+    />
 
     <section class="message-manage-shell" v-loading="loading">
       <div class="message-manage-main art-card">
@@ -234,13 +243,21 @@
             <span>{{ selectedPriorityLabel }}</span>
           </div>
           <h4>{{ form.title || '未填写标题' }}</h4>
-          <div class="message-manage-preview__summary rich-text-content" v-html="previewSummaryHtml"></div>
+          <div
+            class="message-manage-preview__summary rich-text-content"
+            v-html="previewSummaryHtml"
+            @click="handlePreviewRichTextClick"
+          ></div>
           <div class="message-manage-preview__meta">
             <ElTag effect="plain" type="info">{{ selectedSenderLabel }}</ElTag>
             <ElTag effect="plain">{{ selectedAudienceLabel }}</ElTag>
             <ElTag effect="plain" type="success">{{ receiverSummary }}</ElTag>
           </div>
-          <div class="message-manage-preview__content rich-text-content" v-html="previewContentHtml"></div>
+          <div
+            class="message-manage-preview__content rich-text-content"
+            v-html="previewContentHtml"
+            @click="handlePreviewRichTextClick"
+          ></div>
         </div>
 
         <div class="message-manage-preview__template" v-if="activeTemplate">
@@ -256,10 +273,13 @@
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref } from 'vue'
   import { ElMessage } from 'element-plus'
+  import { useRouter } from 'vue-router'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import ArtWangEditor from '@/components/core/forms/art-wang-editor/index.vue'
   import MessageWorkspaceNav from '@/views/message/modules/message-workspace-nav.vue'
   import { fetchDispatchMessage, fetchGetMessageDispatchOptions } from '@/api/message'
+  import { useMenuSpaceStore } from '@/store/modules/menu-space'
+  import { handleRichTextLinkNavigation } from '@/utils/navigation/rich-text'
   import { useMessageWorkspace } from '@/views/message/modules/useMessageWorkspace'
 
   defineOptions({ name: 'MessageDispatchConsole' })
@@ -268,7 +288,10 @@
     scope: 'platform' | 'team'
   }>()
 
+  const router = useRouter()
+  const menuSpaceStore = useMenuSpaceStore()
   const loading = ref(false)
+  const loadError = ref('')
   const submitting = ref(false)
   const formRef = ref()
   const { isTeamScope, skipTenantHeader, currentTeamName, ensureTeamContext, plainTextFromHtml } =
@@ -289,6 +312,25 @@
     feature_packages: [],
     default_message_type: 'notice',
     default_audience_type: 'all_users',
+    default_priority: 'normal',
+    supports_external_link: true
+  })
+
+  const createDefaultDispatchOptions = (): Api.Message.DispatchOptions => ({
+    sender_scope: isTeamScope.value ? 'team' : 'platform',
+    current_tenant_id: '',
+    current_tenant_name: '',
+    sender_options: [],
+    default_sender_id: '',
+    audience_options: [],
+    template_options: [],
+    teams: [],
+    users: [],
+    recipient_groups: [],
+    roles: [],
+    feature_packages: [],
+    default_message_type: 'notice',
+    default_audience_type: isTeamScope.value ? 'tenant_users' : 'all_users',
     default_priority: 'normal',
     supports_external_link: true
   })
@@ -446,6 +488,7 @@
     { label: '可选对象', value: options.audience_options.length },
     { label: isTeamScope.value ? '当前团队' : '目标团队', value: isTeamScope.value ? effectiveTeamName.value : options.teams.length }
   ])
+  const canDispatch = computed(() => !loadError.value && options.sender_options.length > 0)
 
   const normalizeEditorValue = (value?: string) => {
     const target = `${value || ''}`.trim()
@@ -500,6 +543,7 @@
 
   const loadOptions = async () => {
     loading.value = true
+    loadError.value = ''
     try {
       ensureTeamContext()
       const data = await fetchGetMessageDispatchOptions({
@@ -508,7 +552,9 @@
       Object.assign(options, data || {})
       resetFormDefaults()
     } catch (error) {
-      ElMessage.error('获取发信配置失败')
+      Object.assign(options, createDefaultDispatchOptions())
+      resetFormDefaults()
+      loadError.value = '发信配置暂时不可用，稍后重试或刷新状态。'
     } finally {
       loading.value = false
     }
@@ -617,6 +663,13 @@
     }
   }
 
+  const handlePreviewRichTextClick = async (event: MouseEvent) => {
+    await handleRichTextLinkNavigation(event, {
+      router,
+      spaceResolver: menuSpaceStore
+    })
+  }
+
   onMounted(() => {
     loadOptions()
   })
@@ -628,6 +681,10 @@
     grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.9fr);
     gap: 18px;
     margin-top: 18px;
+  }
+
+  .message-manage-inline-alert {
+    margin-top: 16px;
   }
 
   .message-manage-main,

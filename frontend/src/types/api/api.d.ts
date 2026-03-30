@@ -110,14 +110,17 @@ declare namespace Api {
 
   /** 系统管理类型 */
   namespace SystemManage {
-    interface MenuMetaConfig {
-      roles?: string[]
-      requiredAction?: string
-      requiredActions?: string[]
-      actionMatchMode?: 'any' | 'all'
-      actionVisibilityMode?: 'hide' | 'show'
-      [k: string]: unknown
-    }
+      interface MenuMetaConfig {
+        roles?: string[]
+        requiredAction?: string
+        requiredActions?: string[]
+        actionMatchMode?: 'any' | 'all'
+        actionVisibilityMode?: 'hide' | 'show'
+        spaceKey?: string
+        spaceType?: string
+        hostKey?: string
+        [k: string]: unknown
+      }
 
     interface MenuManageGroupItem {
       id: string
@@ -132,6 +135,95 @@ declare namespace Api {
       name: string
       sort_order?: number
       status?: 'normal' | 'disabled' | string
+    }
+
+    interface MenuSpaceItem {
+      id?: string
+      spaceKey: string
+      name: string
+      description?: string
+      defaultHomePath?: string
+      isDefault?: boolean
+      status?: 'normal' | 'disabled' | string
+      hostCount?: number
+      hosts?: string[]
+      menuCount?: number
+      pageCount?: number
+      accessMode?: 'all' | 'platform_admin' | 'team_admin' | 'role_codes' | string
+      allowedRoleCodes?: string[]
+      meta?: Record<string, any>
+      createdAt?: string
+      updatedAt?: string
+    }
+
+    interface MenuSpaceHostBindingItem {
+      id?: string
+      host: string
+      spaceKey: string
+      spaceName?: string
+      description?: string
+      isDefault?: boolean
+      status?: 'normal' | 'disabled' | string
+      scheme?: 'http' | 'https' | string
+      routePrefix?: string
+      authMode?: 'inherit_host' | 'centralized_login' | 'shared_cookie' | string
+      loginHost?: string
+      callbackHost?: string
+      cookieScopeMode?: 'inherit' | 'host_only' | 'parent_domain' | string
+      cookieDomain?: string
+      meta?: Record<string, any>
+      createdAt?: string
+      updatedAt?: string
+    }
+
+    interface CurrentMenuSpaceResponse {
+      space: MenuSpaceItem
+      binding?: MenuSpaceHostBindingItem
+      resolvedBy?: string
+      requestHost?: string
+      accessGranted?: boolean
+    }
+
+    interface MenuSpaceInitializeResult {
+      sourceSpaceKey: string
+      targetSpaceKey: string
+      forceReinitialized?: boolean
+      clearedMenuCount?: number
+      clearedPageCount?: number
+      clearedPackageMenuLinkCount?: number
+      createdMenuCount: number
+      createdPageCount: number
+      createdPackageMenuLinkCount: number
+    }
+
+    interface MenuSpaceSaveParams {
+      space_key: string
+      name: string
+      description?: string
+      default_home_path?: string
+      is_default?: boolean
+      status?: 'normal' | 'disabled' | string
+      access_mode?: 'all' | 'platform_admin' | 'team_admin' | 'role_codes' | string
+      allowed_role_codes?: string[]
+      meta?: Record<string, any>
+    }
+
+    interface MenuSpaceHostBindingSaveParams {
+      host: string
+      space_key: string
+      description?: string
+      is_default?: boolean
+      status?: 'normal' | 'disabled' | string
+      meta?: {
+        scheme?: 'http' | 'https' | string
+        route_prefix?: string
+        auth_mode?: 'inherit_host' | 'centralized_login' | 'shared_cookie' | string
+        login_host?: string
+        callback_host?: string
+        cookie_scope_mode?: 'inherit' | 'host_only' | 'parent_domain' | string
+        cookie_domain?: string
+        [key: string]: any
+      }
     }
 
     /** 用户列表 */
@@ -473,9 +565,9 @@ declare namespace Api {
       children?: PageMenuOptionItem[]
     }
 
-    interface PageItem {
-      id: string
-      pageKey: string
+      interface PageItem {
+        id: string
+        pageKey: string
       name: string
       routeName: string
       routePath: string
@@ -490,35 +582,41 @@ declare namespace Api {
       parentPageName?: string
       displayGroupKey?: string
       displayGroupName?: string
-      activeMenuPath?: string
-      breadcrumbMode?: 'inherit_menu' | 'inherit_page' | 'custom' | string
-      accessMode?: 'inherit' | 'public' | 'jwt' | 'permission' | string
-      permissionKey?: string
-      inheritPermission?: boolean
+        activeMenuPath?: string
+        breadcrumbMode?: 'inherit_menu' | 'inherit_page' | 'custom' | string
+        accessMode?: 'inherit' | 'public' | 'jwt' | 'permission' | string
+        permissionKey?: string
+        inheritPermission?: boolean
       keepAlive?: boolean
       isFullPage?: boolean
       isIframe?: boolean
-      isHideTab?: boolean
-      link?: string
-      status: 'normal' | 'suspended' | string
-      meta?: Record<string, any>
-      createdAt?: string
-      updatedAt?: string
-    }
+        isHideTab?: boolean
+        link?: string
+        spaceKey?: string
+        spaceType?: string
+        hostKey?: string
+        status: 'normal' | 'suspended' | string
+        meta?: Record<string, any>
+        createdAt?: string
+        updatedAt?: string
+      }
 
-    interface PageUnregisteredItem {
-      filePath: string
-      component: string
-      pageKey: string
-      name: string
+      interface PageUnregisteredItem {
+        filePath: string
+        component: string
+        pageKey: string
+        name: string
       routeName: string
       routePath: string
       pageType: 'group' | 'display_group' | 'inner' | 'global' | string
-      moduleKey?: string
-      parentMenuId?: string
-      parentMenuName?: string
-      activeMenuPath?: string
-    }
+        moduleKey?: string
+        parentMenuId?: string
+        parentMenuName?: string
+        activeMenuPath?: string
+        spaceKey?: string
+        spaceType?: string
+        hostKey?: string
+      }
 
     interface PageSyncResult {
       createdCount: number
@@ -535,17 +633,18 @@ declare namespace Api {
 
     type PageList = Api.Common.PaginatedResponse<PageItem>
 
-    type PageSearchParams = Partial<
-      Pick<PageItem, 'pageType' | 'moduleKey' | 'accessMode' | 'source' | 'status'> &
-        Api.Common.CommonSearchParams & {
-          keyword?: string
-          parentMenuId?: string
-        }
-    >
+      type PageSearchParams = Partial<
+        Pick<PageItem, 'pageType' | 'moduleKey' | 'accessMode' | 'source' | 'status'> &
+          Api.Common.CommonSearchParams & {
+            keyword?: string
+            parentMenuId?: string
+            spaceKey?: string
+          }
+      >
 
-    interface PageSaveParams {
-      page_key: string
-      name: string
+      interface PageSaveParams {
+        page_key: string
+        name: string
       route_name: string
       route_path: string
       component: string
@@ -562,10 +661,13 @@ declare namespace Api {
       permission_key?: string
       inherit_permission?: boolean
       keep_alive?: boolean
-      is_full_page?: boolean
-      status?: 'normal' | 'suspended' | string
-      meta?: Record<string, any>
-    }
+        is_full_page?: boolean
+        space_key?: string
+        space_type?: string
+        host_key?: string
+        status?: 'normal' | 'suspended' | string
+        meta?: Record<string, any>
+      }
 
     interface TeamFeaturePackageResponse {
       package_ids: string[]
@@ -918,32 +1020,38 @@ declare namespace Api {
     }
 
     /** 创建菜单参数（与后端 MenuCreateRequest 一致） */
-    interface MenuCreateParams {
-      parent_id: string | null
-      manage_group_id?: string | null
-      path: string
-      name: string
+      interface MenuCreateParams {
+        parent_id: string | null
+        manage_group_id?: string | null
+        path: string
+        name: string
       component?: string
       title: string
       icon?: string
-      sort_order?: number
-      meta?: MenuMetaConfig
-      hidden?: boolean
-    }
+        sort_order?: number
+        meta?: MenuMetaConfig
+        space_key?: string
+        space_type?: string
+        host_key?: string
+        hidden?: boolean
+      }
 
     /** 更新菜单参数（与后端 MenuUpdateRequest 一致） */
-    interface MenuUpdateParams {
-      parent_id: string | null
-      manage_group_id?: string | null
-      path?: string
-      name?: string
+      interface MenuUpdateParams {
+        parent_id: string | null
+        manage_group_id?: string | null
+        path?: string
+        name?: string
       component?: string
       title?: string
-      icon?: string
-      sort_order?: number
-      meta?: MenuMetaConfig
-      hidden?: boolean
-    }
+        icon?: string
+        sort_order?: number
+        meta?: MenuMetaConfig
+        space_key?: string
+        space_type?: string
+        host_key?: string
+        hidden?: boolean
+      }
   }
 
   namespace Message {

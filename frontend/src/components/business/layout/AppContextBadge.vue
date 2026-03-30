@@ -7,12 +7,16 @@
       </ElTag>
       <span class="context-badge__name">{{ scopeName }}</span>
     </div>
+    <div v-if="showSpaceLabel" class="context-badge__space">
+      菜单空间 · {{ spaceName }}
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
   import { computed } from 'vue'
   import { useTenantStore } from '@/store/modules/tenant'
+  import { useMenuSpaceStore } from '@/store/modules/menu-space'
 
   defineOptions({ name: 'AppContextBadge' })
 
@@ -26,13 +30,17 @@
   )
 
   const tenantStore = useTenantStore()
+  const menuSpaceStore = useMenuSpaceStore()
   const { currentContextMode, currentTeam } = storeToRefs(tenantStore)
+  const { currentSpace, shouldShowSpaceBadge, isDefaultSpace } = storeToRefs(menuSpaceStore)
 
   const modeLabel = computed(() => (currentContextMode.value === 'platform' ? '平台' : '团队'))
   const scopeName = computed(() =>
     currentContextMode.value === 'platform' ? '平台管理空间' : currentTeam.value?.name || '未选择团队'
   )
   const tagType = computed(() => (currentContextMode.value === 'platform' ? 'success' : 'warning'))
+  const showSpaceLabel = computed(() => shouldShowSpaceBadge.value && !isDefaultSpace.value)
+  const spaceName = computed(() => currentSpace.value?.spaceName || currentSpace.value?.spaceKey || '默认菜单空间')
 </script>
 
 <style scoped lang="scss">
@@ -89,5 +97,17 @@
 
   .context-badge--solid .context-badge__name {
     color: #f8fafc;
+  }
+
+  .context-badge__space {
+    overflow: hidden;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .context-badge--solid .context-badge__space {
+    color: rgb(226 232 240 / 0.86);
   }
 </style>

@@ -50,6 +50,7 @@ import { loadingService } from '@/utils/ui'
 import { useCommon } from '@/hooks/core/useCommon'
 import { useWorktabStore } from '@/store/modules/worktab'
 import { hasPlatformAccessByUserInfo, useTenantStore } from '@/store/modules/tenant'
+import { useMenuSpaceStore } from '@/store/modules/menu-space'
 import { fetchGetUserInfo } from '@/api/auth'
 import { fetchGetRuntimePageList, fetchGetRuntimePublicPageList } from '@/api/system-manage'
 import { ApiStatus } from '@/utils/http/status'
@@ -82,6 +83,12 @@ let routeInitFailed = false
 let routeInitInProgress = false
 const routeRefreshAttempted = new Set<string>()
 
+const warnDev = (...args: any[]) => {
+  if (import.meta.env.DEV) {
+    console.warn(...args)
+  }
+}
+
 async function buildRegisteredRouteList(menuList: AppRouteRecord[]): Promise<AppRouteRecord[]> {
   const baseMenus = Array.isArray(menuList) ? menuList : []
 
@@ -95,7 +102,7 @@ async function buildRegisteredRouteList(menuList: AppRouteRecord[]): Promise<App
     )
     return [...baseMenus, ...runtimeRoutes]
   } catch (error) {
-    console.error('[RouteGuard] 获取运行时页面注册表失败，已回退为纯菜单路由:', error)
+    warnDev('[RouteGuard] 获取运行时页面注册表失败，已回退为纯菜单路由:', error)
     return baseMenus
   }
 }
@@ -143,7 +150,7 @@ export async function refreshUserMenus(): Promise<void> {
     routeRegistry.unregister()
     routeRegistry.register(registeredRoutes)
     routeRegistrationMode = 'authenticated'
-    menuStore.setMenuList(list)
+    syncHomePathWithRegisteredRoutes(list, registeredRoutes)
     menuStore.clearRemoveRouteFns()
     menuStore.addRemoveRouteFns(routeRegistry.getRemoveRouteFns())
     IframeRouteManager.getInstance().save()
@@ -151,6 +158,43 @@ export async function refreshUserMenus(): Promise<void> {
   } catch (e) {
     console.error('[RouteGuard] refreshUserMenus failed', e)
   }
+}
+
+function syncHomePathWithRegisteredRoutes(
+  menuList: AppRouteRecord[],
+  registeredRoutes: AppRouteRecord[]
+): void {
+  const menuStore = useMenuStore()
+  const menuSpaceStore = useMenuSpaceStore()
+  menuStore.setMenuList(menuList)
+
+  const availablePaths = collectRegisteredEntryPaths(registeredRoutes)
+  const preferredHomePath = menuSpaceStore.resolveSpaceLandingPath(availablePaths)
+  if (preferredHomePath) {
+    menuStore.setHomePath(preferredHomePath)
+  }
+}
+
+function collectRegisteredEntryPaths(list: AppRouteRecord[]): string[] {
+  const visiblePaths: string[] = []
+  const fallbackPaths: string[] = []
+  const walk = (items: AppRouteRecord[]) => {
+    ;(items || []).forEach((item) => {
+      const path = `${item.path || ''}`.trim()
+      if (path && !item.children?.length) {
+        if (item.meta?.isHide) {
+          fallbackPaths.push(path)
+        } else {
+          visiblePaths.push(path)
+        }
+      }
+      if (item.children?.length) {
+        walk(item.children)
+      }
+    })
+  }
+  walk(list)
+  return visiblePaths.length ? [...visiblePaths, ...fallbackPaths] : fallbackPaths
 }
 
 export async function refreshUserAccessAndMenus(): Promise<void> {
@@ -174,6 +218,7 @@ function buildFrontendUserInfo(data: Api.Auth.UserInfo): Api.Auth.UserInfo {
 export async function refreshCurrentUserInfoContext(): Promise<void> {
   const userStore = useUserStore()
   const tenantStore = useTenantStore()
+  const menuSpaceStore = useMenuSpaceStore()
   const data = await fetchGetUserInfo()
   const mergedInfo: Api.Auth.UserInfo = {
     ...(userStore.getUserInfo as Api.Auth.UserInfo),
@@ -181,6 +226,9 @@ export async function refreshCurrentUserInfoContext(): Promise<void> {
   }
   userStore.setUserInfo(mergedInfo)
   tenantStore.setPlatformAccess(hasPlatformAccessByUserInfo(mergedInfo))
+  menuSpaceStore.syncRuntimeHost()
+  await menuSpaceStore.refreshRuntimeConfig(true)
+  await menuSpaceStore.syncResolvedCurrentSpace()
 }
 
 /**
@@ -435,8 +483,9 @@ async function handleDynamicRoutes(
 
     // 5. 保存菜单数据到 store
     const menuStore = useMenuStore()
-    menuStore.setMenuList(menuList)
+    syncHomePathWithRegisteredRoutes(menuList, registeredRoutes)
     menuStore.addRemoveRouteFns(routeRegistry?.getRemoveRouteFns() || [])
+    const landingPath = menuStore.getHomePath() || '/'
 
     // 6. 保存 iframe 路由
     IframeRouteManager.getInstance().save()
@@ -466,13 +515,18 @@ async function handleDynamicRoutes(
     // 初始化成功，重置进行中标记
     routeInitInProgress = false
 
+    if (to.path === '/' && landingPath !== '/') {
+      next({
+        path: landingPath,
+        replace: true
+      })
+      return
+    }
+
     // 9. 重新导航到目标路由
     if (!hasPermission) {
       // 无权限访问，跳转到首页
       closeLoading()
-
-      // 输出警告信息
-      console.warn(`[RouteGuard] 用户无权限访问路径: ${to.path}，已跳转到首页`)
 
       // 直接跳转到首页
       next({
@@ -533,11 +587,17 @@ function mapBackendRolesToFrontend(data: {
 async function fetchUserInfo(): Promise<void> {
   const userStore = useUserStore()
   const tenantStore = useTenantStore()
+  const menuSpaceStore = useMenuSpaceStore()
   const data = await fetchGetUserInfo()
   const frontendUserInfo = buildFrontendUserInfo(data)
+  userStore.syncLoginUserIdentity(
+    `${frontendUserInfo.userId || frontendUserInfo.id || ''}`.trim()
+  )
   userStore.setUserInfo(frontendUserInfo)
   userStore.checkAndClearWorktabs()
   tenantStore.setPlatformAccess(hasPlatformAccessByUserInfo(frontendUserInfo))
+  menuSpaceStore.syncRuntimeHost()
+  await menuSpaceStore.refreshRuntimeConfig(true)
   await tenantStore.loadMyTeams({
     preferredTenantId: data.current_tenant_id || ''
   })

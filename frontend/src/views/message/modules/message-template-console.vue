@@ -9,6 +9,15 @@
 
     <MessageWorkspaceNav :scope="props.scope" current="template" />
 
+    <ElAlert
+      v-if="loadError"
+      class="message-template-inline-alert"
+      type="info"
+      :closable="false"
+      show-icon
+      :title="loadError"
+    />
+
     <section class="message-template-shell art-card">
       <header class="message-template-shell__toolbar">
         <div class="message-template-shell__toolbar-main">
@@ -227,6 +236,7 @@
   }>()
 
   const loading = ref(false)
+  const loadError = ref('')
   const saving = ref(false)
   const list = ref<Api.Message.MessageTemplateItem[]>([])
   const drawerVisible = ref(false)
@@ -329,6 +339,7 @@
 
   const loadTemplates = async () => {
     loading.value = true
+    loadError.value = ''
     try {
       ensureTeamContext()
       const result = await fetchGetMessageTemplateList(
@@ -342,7 +353,9 @@
       list.value = result.records || []
       pagination.total = result.total || 0
     } catch (error) {
-      ElMessage.error('获取消息模板失败')
+      list.value = []
+      pagination.total = 0
+      loadError.value = '消息模板暂时不可用，稍后重试或刷新状态。'
     } finally {
       loading.value = false
     }
@@ -413,6 +426,10 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
+
+  .message-template-inline-alert {
+    margin-top: -4px;
   }
 
   .message-template-hero__actions {

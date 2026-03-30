@@ -33,6 +33,7 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("/pages")
 	reg := apiregistry.NewRegistrar(group, "page")
 	{
+		reg.GET("/runtime", reg.Meta("获取运行时页面注册表").BindGroup("page").BindSource("sync").Build(), handler.ListRuntime)
 		reg.GETProtected("/menu-options", reg.Meta("获取页面上级菜单候选").BindGroup("page").BindPermissionKey("system.page.manage").Build(), "system.page.manage", authzService.RequireAction, handler.ListMenuOptions)
 		reg.GETProtected("/options", reg.Meta("获取页面候选").BindGroup("page").BindPermissionKey("system.page.manage").Build(), "system.page.manage", authzService.RequireAction, handler.ListPageOptions)
 		reg.GETProtected("/unregistered", reg.Meta("获取未注册页面").BindGroup("page").BindPermissionKey("system.page.sync").Build(), "system.page.sync", authzService.RequireAction, handler.ListUnregistered)
@@ -53,7 +54,6 @@ func (m *Module) RegisterPublicRoutes(rg *gin.RouterGroup) {
 	group := rg.Group("/pages")
 	reg := apiregistry.NewRegistrar(group, "page")
 	{
-		reg.GET("/runtime", reg.Meta("获取运行时页面注册表").BindGroup("page").BindSource("sync").Build(), handler.ListRuntime)
 		reg.GET("/runtime/public", reg.Meta("获取公开运行时页面注册表").BindGroup("page").BindSource("sync").Build(), handler.ListRuntimePublic)
 	}
 }

@@ -18,6 +18,14 @@
       shadow="never"
       :style="{ marginTop: showSearchBar ? '12px' : '0' }"
     >
+      <ElAlert
+        v-if="loadError"
+        class="page-inline-alert"
+        type="info"
+        :closable="false"
+        show-icon
+        :title="loadError"
+      />
       <ArtTableHeader
         :loading="loading"
         v-model:columns="columnChecks"
@@ -38,6 +46,19 @@
               </div>
             </div>
             <div class="page-toolbar-actions">
+              <ElSelect
+                v-model="activeSpaceKey"
+                class="page-space-select"
+                filterable
+                @change="handleRefresh"
+              >
+                <ElOption
+                  v-for="item in menuSpaceOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </ElSelect>
               <ElDropdown trigger="click" @command="handleCreateCommand">
                 <ElButton v-action="'system.page.manage'" type="primary" v-ripple>
                   新增
@@ -165,6 +186,12 @@
           <span class="page-muted-text">{{ getEffectiveChainText(row) }}</span>
         </template>
 
+        <template #space="{ row }">
+          <ElTag size="small" effect="plain" type="info">
+            {{ getSpaceName(row.spaceKey) }}
+          </ElTag>
+        </template>
+
         <template #mountTarget="{ row }">
           <span class="page-muted-text">{{ getMountTargetText(row) }}</span>
         </template>
@@ -197,6 +224,8 @@
       :dialog-type="dialogType"
       :page-data="currentPage"
       :default-data="defaultPageData"
+      :menu-spaces="menuSpaces"
+      :current-space-key="activeSpaceKey"
       :initial-parent-page-key="initialParentPageKey"
       :initial-parent-menu-id="initialParentMenuId"
       :initial-page-type="initialPageType"
@@ -211,14 +240,16 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref, nextTick, onMounted } from 'vue'
+  import { computed, reactive, ref, nextTick, onMounted, watch } from 'vue'
+  import { useRoute, useRouter } from 'vue-router'
     import { ElButton, ElInput, ElMessage, ElMessageBox, ElTag } from 'element-plus'
   import type { FormItem } from '@/components/core/forms/art-form/index.vue'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
-    import { fetchDeletePage, fetchGetPageList, fetchGetPageMenuOptions, fetchSyncPages, fetchUpdatePage } from '@/api/system-manage'
+    import { fetchDeletePage, fetchGetMenuSpaces, fetchGetPageList, fetchGetPageMenuOptions, fetchSyncPages, fetchUpdatePage } from '@/api/system-manage'
   import { joinManagedPagePath, resolveManagedPageRoutePath } from '@/utils/navigation/managed-page'
+  import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import PageDialog from './modules/page-dialog.vue'
   import PageUnregisteredDialog from './modules/page-unregistered-dialog.vue'
 
@@ -228,6 +259,7 @@
   type TreePageItem = PageItem & { children?: TreePageItem[] }
 
   const loading = ref(false)
+  const loadError = ref('')
   const showSearchBar = ref(false)
   const isExpanded = ref(false)
   const syncing = ref(false)
@@ -238,6 +270,11 @@
   const tableRef = ref()
   const rawPages = ref<PageItem[]>([])
   const menuPathMap = ref(new Map<string, string>())
+  const menuSpaces = ref<Api.SystemManage.MenuSpaceItem[]>([])
+  const activeSpaceKey = ref('default')
+  const route = useRoute()
+  const router = useRouter()
+  const menuSpaceStore = useMenuSpaceStore()
 
   const dialogVisible = ref(false)
   const dialogType = ref<'add' | 'edit' | 'copy'>('add')
@@ -316,6 +353,7 @@ const initialSearchState = {
     { prop: 'name', label: '页面', minWidth: 300, useSlot: true, slotName: 'name' },
     { prop: 'route', label: '最终路径', minWidth: 220, useSlot: true, slotName: 'route' },
     { prop: 'component', label: '组件入口', minWidth: 180, useSlot: true, slotName: 'component' },
+    { prop: 'space', label: '菜单空间', width: 120, useSlot: true, slotName: 'space' },
     { prop: 'mountTarget', label: '挂接对象', minWidth: 180, useSlot: true, slotName: 'mountTarget' },
     { prop: 'effectiveChain', label: '生效链路', minWidth: 150, useSlot: true, slotName: 'effectiveChain' },
     { prop: 'parentChainStatus', label: '父链状态', minWidth: 130, useSlot: true, slotName: 'parentChainStatus' },
@@ -357,6 +395,13 @@ const initialSearchState = {
 
   const pageTree = computed<TreePageItem[]>(() => buildPageTree(rawPages.value))
   const tableData = computed<TreePageItem[]>(() => filterPageTree(pageTree.value))
+  const menuSpaceMap = computed(() => new Map(menuSpaces.value.map((item) => [item.spaceKey, item])))
+  const menuSpaceOptions = computed(() =>
+    menuSpaces.value.map((item) => ({
+      label: item.isDefault ? `${item.name}（默认）` : item.name,
+      value: item.spaceKey
+    }))
+  )
   const pageMap = computed(() => {
     const map = new Map<string, PageItem>()
     rawPages.value.forEach((item) => {
@@ -498,10 +543,11 @@ const initialSearchState = {
 
   async function getPageList() {
     loading.value = true
+    loadError.value = ''
     try {
       const [pageResponse, menuResponse] = await Promise.all([
-        fetchGetPageList({ current: 1, size: 1000 }),
-        fetchGetPageMenuOptions()
+        fetchGetPageList({ current: 1, size: 1000, spaceKey: activeSpaceKey.value }),
+        fetchGetPageMenuOptions(activeSpaceKey.value)
         ])
         rawPages.value = pageResponse.records || []
         Object.keys(sortDraftMap).forEach((key) => delete sortDraftMap[key])
@@ -517,7 +563,7 @@ const initialSearchState = {
         Object.keys(sortDraftMap).forEach((key) => delete sortDraftMap[key])
         editingSortId.value = ''
         menuPathMap.value = new Map()
-      ElMessage.error(error?.message || '页面数据加载失败')
+        loadError.value = error?.message || '页面数据暂时不可用，稍后重试或刷新状态。'
     } finally {
       loading.value = false
     }
@@ -541,6 +587,28 @@ const initialSearchState = {
     getPageList()
   }
 
+  function syncRouteSpaceKey(spaceKey: string) {
+    router.replace({
+      query: {
+        ...route.query,
+        spaceKey
+      }
+    })
+  }
+
+  function resolveInitialSpaceKey() {
+    const requestedSpaceKey = `${route.query.spaceKey || ''}`.trim()
+    if (requestedSpaceKey && menuSpaces.value.some((item) => item.spaceKey === requestedSpaceKey)) {
+      return requestedSpaceKey
+    }
+    return menuSpaces.value.find((item) => item.isDefault)?.spaceKey || 'default'
+  }
+
+  function getSpaceName(spaceKey?: string) {
+    const normalized = `${spaceKey || ''}`.trim() || 'default'
+    return menuSpaceMap.value.get(normalized)?.name || normalized
+  }
+
   async function openDialog(
     type: 'add' | 'edit' | 'copy',
     row?: PageItem,
@@ -555,7 +623,10 @@ const initialSearchState = {
     await nextTick()
     dialogType.value = type
     currentPage.value = type === 'edit' && row ? { ...row } : {}
-    defaultPageData.value = options?.defaultData ? { ...options.defaultData } : {}
+    defaultPageData.value = {
+      spaceKey: type === 'edit' && row ? row.spaceKey : activeSpaceKey.value,
+      ...(options?.defaultData ? { ...options.defaultData } : {})
+    }
     initialParentPageKey.value = options?.parentPageKey || ''
     initialParentMenuId.value = options?.parentMenuId || ''
     initialPageType.value = options?.pageType || 'inner'
@@ -752,19 +823,19 @@ const initialSearchState = {
     return `${year}-${month}-${day} ${hour}:${minute}`
   }
 
-  function toHashVisitUrl(path: string) {
-    const targetPath = `${path || ''}`.trim()
-    if (!targetPath || /^https?:\/\//i.test(targetPath)) {
-      return targetPath
-    }
-    const pathname = `${window.location.pathname || '/'}`.replace(/\/?$/, '/')
-    return `${window.location.origin}${pathname}#${targetPath}`
-  }
-
   function resolveVisitTarget(row: PageItem): string {
     const link = `${row.link || ''}`.trim()
     if (link) return link
-    return toHashVisitUrl(getResolvedRoutePath(row))
+    const resolvedPath = getResolvedRoutePath(row)
+    const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
+      resolvedPath,
+      row.spaceKey || activeSpaceKey.value
+    )
+    if (nextTarget.mode === 'location') {
+      return nextTarget.target
+    }
+    const pathname = `${window.location.pathname || '/'}`.replace(/\/?$/, '/')
+    return `${window.location.origin}${pathname}#${nextTarget.target}`
   }
 
   function handleVisit(row: PageItem) {
@@ -985,7 +1056,36 @@ const initialSearchState = {
   const rowKey = (row: PageItem) => String(row.id || row.pageKey)
 
   onMounted(() => {
-    getPageList()
+    fetchGetMenuSpaces()
+      .then((res) => {
+        menuSpaces.value = res.records || []
+        activeSpaceKey.value = resolveInitialSpaceKey()
+      })
+      .finally(() => {
+        getPageList()
+      })
+  })
+
+  watch(
+    () => route.query.spaceKey,
+    (value) => {
+      const requestedSpaceKey = `${value || ''}`.trim()
+      if (!requestedSpaceKey || requestedSpaceKey === activeSpaceKey.value) {
+        return
+      }
+      if (!menuSpaces.value.some((item) => item.spaceKey === requestedSpaceKey)) {
+        return
+      }
+      activeSpaceKey.value = requestedSpaceKey
+      getPageList()
+    }
+  )
+
+  watch(activeSpaceKey, (value, previousValue) => {
+    if (!`${value || ''}`.trim() || value === previousValue) {
+      return
+    }
+    syncRouteSpaceKey(value)
   })
 </script>
 
@@ -995,6 +1095,10 @@ const initialSearchState = {
     flex-direction: column;
     gap: 14px;
     width: 100%;
+  }
+
+  .page-inline-alert {
+    margin-bottom: 14px;
   }
 
   .page-toolbar-head {
@@ -1043,6 +1147,10 @@ const initialSearchState = {
     flex-wrap: wrap;
     gap: 8px;
     justify-content: flex-start;
+  }
+
+  .page-space-select {
+    width: 220px;
   }
 
   .page-switch {

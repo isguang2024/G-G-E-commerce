@@ -136,6 +136,28 @@ export const useUserStore = defineStore(
       }
     }
 
+    const resolveCurrentUserId = (): string => {
+      const userId = `${info.value.userId || info.value.id || ''}`.trim()
+      return userId
+    }
+
+    const syncLoginUserIdentity = (nextUserId?: string): void => {
+      const normalizedNextUserId = `${nextUserId || ''}`.trim()
+      if (!normalizedNextUserId) return
+
+      const currentUserId = resolveCurrentUserId()
+      const lastUserId = `${localStorage.getItem(StorageConfig.LAST_USER_ID_KEY) || ''}`.trim()
+      const shouldClearWorktabs =
+        (currentUserId && currentUserId !== normalizedNextUserId) ||
+        (lastUserId && lastUserId !== normalizedNextUserId)
+
+      if (shouldClearWorktabs) {
+        useWorktabStore().clearAll()
+      }
+
+      localStorage.removeItem(StorageConfig.LAST_USER_ID_KEY)
+    }
+
     /**
      * 退出登录
      * 清空所有用户相关状态并跳转到登录页
@@ -185,7 +207,7 @@ export const useUserStore = defineStore(
      */
     const checkAndClearWorktabs = () => {
       const lastUserId = localStorage.getItem(StorageConfig.LAST_USER_ID_KEY)
-      const currentUserId = info.value.userId
+      const currentUserId = resolveCurrentUserId()
 
       // 无法获取当前用户 ID，跳过检查
       if (!currentUserId) return
@@ -197,9 +219,7 @@ export const useUserStore = defineStore(
 
       // 不同用户登录，清空工作台标签页
       if (String(currentUserId) !== lastUserId) {
-        const worktabStore = useWorktabStore()
-        worktabStore.opened = []
-        worktabStore.keepAliveExclude = []
+        useWorktabStore().clearAll()
       }
 
       // 清除临时存储
@@ -225,6 +245,7 @@ export const useUserStore = defineStore(
       setLockStatus,
       setLockPassword,
       setToken,
+      syncLoginUserIdentity,
       logOut,
       checkAndClearWorktabs
     }

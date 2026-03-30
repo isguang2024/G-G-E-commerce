@@ -164,6 +164,7 @@
     isFullPage: boolean
     manageGroupId: string
     linkedPageKey: string
+    spaceKey: string
   }
 
   interface Props {
@@ -172,6 +173,8 @@
     menuTree?: AppRouteRecord[]
     manageGroups?: Api.SystemManage.MenuManageGroupItem[]
     pageOptions?: Api.SystemManage.PageItem[]
+    menuSpaces?: Api.SystemManage.MenuSpaceItem[]
+    currentSpaceKey?: string
     currentMenuPages?: Api.SystemManage.PageItem[]
     linkedPageKey?: string
     editingMenuId?: string
@@ -188,6 +191,8 @@
     menuTree: () => [],
     manageGroups: () => [],
     pageOptions: () => [],
+    menuSpaces: () => [],
+    currentSpaceKey: 'default',
     currentMenuPages: () => [],
     linkedPageKey: '',
     editingMenuId: '',
@@ -251,6 +256,13 @@
           : `${item.name} · ${item.pageKey}`,
         value: item.pageKey
       }))
+  )
+
+  const menuSpaceOptions = computed(() =>
+    (props.menuSpaces || []).map((item) => ({
+      label: item.isDefault ? `${item.name}（默认）` : item.name,
+      value: item.spaceKey
+    }))
   )
 
   const selectedLinkedPage = computed(() =>
@@ -318,7 +330,8 @@
     roles: [],
     isFullPage: false,
     manageGroupId: '',
-    linkedPageKey: ''
+    linkedPageKey: '',
+    spaceKey: 'default'
   })
 
   const rules = reactive<FormRules>({
@@ -356,6 +369,17 @@
           placeholder: '不选则为顶级菜单',
           options: parentMenuOptions.value,
           clearable: true,
+          style: { width: '100%' }
+        }
+      },
+      {
+        label: '菜单空间',
+        key: 'spaceKey',
+        type: 'select',
+        props: {
+          placeholder: '选择菜单空间',
+          options: menuSpaceOptions.value,
+          clearable: false,
           style: { width: '100%' }
         }
       },
@@ -541,6 +565,7 @@
     form.isFullPage = row.meta?.isFullPage ?? false
     form.manageGroupId = String(row.manage_group_id || row.manageGroupId || row.manage_group?.id || '')
     form.linkedPageKey = props.linkedPageKey || ''
+    form.spaceKey = `${row.spaceKey || row.space_key || row.meta?.spaceKey || props.currentSpaceKey || props.menuSpaces?.find((item) => item.isDefault)?.spaceKey || 'default'}`
   }
 
   const handleSubmit = async (): Promise<void> => {
@@ -575,6 +600,7 @@
           } else {
             form.parentId = props.initialParentId || ''
             form.linkedPageKey = ''
+            form.spaceKey = props.currentSpaceKey || props.menuSpaces?.find((item) => item.isDefault)?.spaceKey || 'default'
           }
         })
       }

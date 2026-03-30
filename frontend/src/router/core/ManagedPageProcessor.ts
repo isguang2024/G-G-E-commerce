@@ -1,4 +1,5 @@
 import type { AppRouteRecord, RouteMeta } from '@/types/router'
+import { useMenuSpaceStore } from '@/store/modules/menu-space'
 import { hasScopedActionPermission } from '@/utils/permission/action'
 import { resolveManagedPageRoutePath } from '@/utils/navigation/managed-page'
 import {
@@ -6,6 +7,7 @@ import {
   hasMenuActionAccess,
   shouldHideMenuWhenActionDenied
 } from '@/utils/permission/menu'
+import { isMenuSpaceVisible, normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
 
 type RuntimePageItem = Api.SystemManage.PageItem
 type UserInfo = Partial<Api.Auth.UserInfo> | null | undefined
@@ -26,6 +28,9 @@ interface ResolvedPageConfig {
   customParent: string
   breadcrumbChain: Array<{ title: string; path?: string }>
   effectiveAccessMode: 'public' | 'jwt' | 'permission'
+  spaceKey?: string
+  spaceType?: string
+  hostKey?: string
   requiredAction?: string
   requiredActions?: string[]
   actionMatchMode?: ActionMatchMode
@@ -43,6 +48,10 @@ export class ManagedPageProcessor {
     }
 
     const indexedMenus = this.indexMenus(menuList)
+    const spaceStore = useMenuSpaceStore()
+    spaceStore.syncRuntimeHost()
+    const currentSpaceKey = spaceStore.currentSpaceKey
+    const defaultSpaceKey = spaceStore.defaultSpaceKey
     const pageMap = new Map<string, RuntimePageItem>()
     pages.forEach((item) => {
       const pageKey = this.normalizeValue(item.pageKey)
@@ -55,6 +64,8 @@ export class ManagedPageProcessor {
     const routePathCache = new Map<string, string>()
     const parentChainCache = new Map<string, boolean>()
     const parentChainResolving = new Set<string>()
+    const spaceCache = new Map<string, string>()
+    const spaceResolving = new Set<string>()
 
     const hasAvailableParentChain = (pageKey: string): boolean => {
       const normalizedKey = this.normalizeValue(pageKey)
@@ -116,6 +127,12 @@ export class ManagedPageProcessor {
       const activePath = this.resolveActiveMenuPath(page, indexedMenus, pageMap, resolvePage)
       const breadcrumbChain = this.resolveBreadcrumbChain(page, indexedMenus, pageMap, resolvePage)
       const customParent = activePath
+      const resolvedSpaceKey = resolvePageSpaceKey(pageKey)
+      if (!isMenuSpaceVisible(resolvedSpaceKey, currentSpaceKey, defaultSpaceKey)) {
+        resolving.delete(normalizedKey)
+        resolvedCache.set(normalizedKey, { ...this.createDefaultResolvedConfig(), allowed: false })
+        return { ...this.createDefaultResolvedConfig(), allowed: false }
+      }
       const permissionConfig = this.resolvePermissionConfig(
         page,
         indexedMenus,
@@ -129,10 +146,59 @@ export class ManagedPageProcessor {
         ...permissionConfig,
         activePath,
         customParent,
-        breadcrumbChain
+        breadcrumbChain,
+        spaceKey: resolvedSpaceKey,
+        spaceType: this.normalizeValue(page.spaceType || (page.meta as any)?.spaceType),
+        hostKey: this.normalizeValue(page.hostKey || (page.meta as any)?.hostKey)
       }
       resolving.delete(normalizedKey)
       resolvedCache.set(normalizedKey, resolved)
+      return resolved
+    }
+
+    const resolvePageSpaceKey = (pageKey: string): string => {
+      const normalizedKey = this.normalizeValue(pageKey)
+      if (!normalizedKey) {
+        return defaultSpaceKey
+      }
+      const cached = spaceCache.get(normalizedKey)
+      if (cached !== undefined) {
+        return cached
+      }
+      if (spaceResolving.has(normalizedKey)) {
+        return defaultSpaceKey
+      }
+
+      const page = pageMap.get(normalizedKey)
+      if (!page) {
+        return defaultSpaceKey
+      }
+
+      spaceResolving.add(normalizedKey)
+      const explicit = this.normalizeValue(
+        page.spaceKey || (page.meta as any)?.spaceKey || (page.meta as any)?.space_key
+      )
+      let resolved = explicit
+      if (!resolved) {
+        const parentPageKey = this.normalizeValue(page.parentPageKey)
+        if (parentPageKey) {
+          resolved = resolvePageSpaceKey(parentPageKey)
+        }
+      }
+      if (!resolved) {
+        const parentMenuId = this.normalizeValue(page.parentMenuId)
+        if (parentMenuId) {
+          const parentMenu = indexedMenus.byId.get(parentMenuId)
+          resolved = this.normalizeValue(
+            parentMenu?.spaceKey || parentMenu?.meta?.spaceKey || parentMenu?.meta?.space_key
+          )
+        }
+      }
+      if (!resolved) {
+        resolved = defaultSpaceKey
+      }
+      spaceResolving.delete(normalizedKey)
+      spaceCache.set(normalizedKey, resolved)
       return resolved
     }
 
@@ -224,6 +290,15 @@ export class ManagedPageProcessor {
       accessMode: resolved.effectiveAccessMode
     }
 
+    if (resolved.spaceKey) {
+      meta.spaceKey = resolved.spaceKey
+    }
+    if (resolved.spaceType) {
+      meta.spaceType = resolved.spaceType
+    }
+    if (resolved.hostKey) {
+      meta.hostKey = resolved.hostKey
+    }
     if (resolved.activePath) {
       meta.activePath = resolved.activePath
     }

@@ -88,6 +88,7 @@ type Menu struct {
 	ID            uuid.UUID        `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	ParentID      *uuid.UUID       `gorm:"type:uuid" json:"parent_id"`
 	ManageGroupID *uuid.UUID       `gorm:"type:uuid;index" json:"manage_group_id"`
+	SpaceKey      string           `gorm:"type:varchar(100);not null;default:'default';index" json:"space_key"`
 	Path          string           `gorm:"type:varchar(255)" json:"path"`
 	Name          string           `gorm:"type:varchar(100)" json:"name"`
 	Component     string           `gorm:"type:varchar(255)" json:"component"`
@@ -130,6 +131,7 @@ type UIPage struct {
 	RouteName         string         `gorm:"type:varchar(150);not null" json:"route_name"`
 	RoutePath         string         `gorm:"type:varchar(255);not null" json:"route_path"`
 	Component         string         `gorm:"type:varchar(255);not null" json:"component"`
+	SpaceKey          string         `gorm:"type:varchar(100);not null;default:'default';index" json:"space_key"`
 	PageType          string         `gorm:"type:varchar(20);not null;default:'inner'" json:"page_type"`
 	Source            string         `gorm:"type:varchar(20);not null;default:'manual'" json:"source"`
 	ModuleKey         string         `gorm:"type:varchar(100);not null;default:''" json:"module_key"`

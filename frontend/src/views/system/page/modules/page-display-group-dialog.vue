@@ -39,6 +39,27 @@
         </ElRow>
 
         <ElRow :gutter="14">
+          <ElCol :span="24">
+            <ElFormItem label="菜单空间" prop="spaceKey">
+              <template #label>
+                <PageFieldLabel
+                  label="菜单空间"
+                  help="普通分组也要显式归属到菜单空间，保证页面管理列表和分组候选不会跨空间混用。"
+                />
+              </template>
+              <ElSelect v-model="form.spaceKey" style="width: 100%">
+                <ElOption
+                  v-for="item in menuSpaceOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </ElSelect>
+            </ElFormItem>
+          </ElCol>
+        </ElRow>
+
+        <ElRow :gutter="14">
           <ElCol :span="12">
             <ElFormItem label="排序" prop="sortOrder">
               <template #label>
@@ -85,6 +106,8 @@
     modelValue: boolean
     dialogType: 'add' | 'edit' | 'copy'
     pageData?: Partial<PageItem>
+    menuSpaces?: Api.SystemManage.MenuSpaceItem[]
+    currentSpaceKey?: string
     initialParentPageKey?: string
     initialParentMenuId?: string
     initialPageType?: PageItem['pageType']
@@ -100,6 +123,8 @@
     modelValue: false,
     dialogType: 'add',
     pageData: undefined,
+    menuSpaces: () => [],
+    currentSpaceKey: 'default',
     initialParentPageKey: '',
     initialParentMenuId: '',
     initialPageType: 'display_group',
@@ -125,6 +150,7 @@
     id: '',
     pageKey: '',
     name: '',
+    spaceKey: 'default',
     sortOrder: 0,
     status: 'normal'
   })
@@ -138,6 +164,12 @@
     '例 2：页面仍然可以直接挂到 /dashboard 菜单，普通分组只影响页面管理列表中的归类展示。',
     '例 3：停用普通分组后页面数据保留，只是不再作为有效归类节点显示。'
   ]
+  const menuSpaceOptions = computed(() =>
+    (props.menuSpaces || []).map((item) => ({
+      label: item.isDefault ? `${item.name}（默认）` : item.name,
+      value: item.spaceKey
+    }))
+  )
 
   function initForm() {
     if (props.dialogType === 'edit' && props.pageData) {
@@ -145,6 +177,7 @@
         id: props.pageData.id || '',
         pageKey: props.pageData.pageKey || '',
         name: props.pageData.name || '',
+        spaceKey: props.pageData.spaceKey || props.currentSpaceKey || 'default',
         sortOrder: props.pageData.sortOrder ?? 0,
         status: props.pageData.status || 'normal'
       })
@@ -155,6 +188,7 @@
       id: '',
       pageKey: props.defaultData?.pageKey || '',
       name: props.defaultData?.name || '',
+      spaceKey: props.defaultData?.spaceKey || props.currentSpaceKey || 'default',
       sortOrder: props.defaultData?.sortOrder ?? 0,
       status: props.defaultData?.status || 'normal'
     })
@@ -211,6 +245,7 @@
             ? `${props.pageData?.source || 'manual'}`
             : `${props.defaultData?.source || 'manual'}`,
         module_key: '',
+        space_key: form.spaceKey,
         sort_order: form.sortOrder,
         parent_menu_id: '',
         parent_page_key: '',

@@ -1422,7 +1422,30 @@ func (s *messageService) GetDispatchRecordDetail(tenantID *uuid.UUID, recordID s
 		return dispatchRecordDetail{}, errors.New("发送记录标识无效")
 	}
 
-	var detail dispatchRecordDetail
+	type dispatchRecordDetailRow struct {
+		ID               uuid.UUID  `gorm:"column:id"`
+		Title            string     `gorm:"column:title"`
+		Summary          string     `gorm:"column:summary"`
+		Content          string     `gorm:"column:content"`
+		MessageType      string     `gorm:"column:message_type"`
+		AudienceType     string     `gorm:"column:audience_type"`
+		ScopeType        string     `gorm:"column:scope_type"`
+		ScopeID          *uuid.UUID `gorm:"column:scope_id"`
+		TargetTenantID   *uuid.UUID `gorm:"column:target_tenant_id"`
+		TargetTenantName string     `gorm:"column:target_tenant_name"`
+		SenderName       string     `gorm:"column:sender_name"`
+		TemplateName     string     `gorm:"column:template_name"`
+		Priority         string     `gorm:"column:priority"`
+		Status           string     `gorm:"column:status"`
+		PublishedAt      *time.Time `gorm:"column:published_at"`
+		CreatedAt        time.Time  `gorm:"column:created_at"`
+		DeliveryCount    int64      `gorm:"column:delivery_count"`
+		ReadCount        int64      `gorm:"column:read_count"`
+		UnreadCount      int64      `gorm:"column:unread_count"`
+		PendingTodoCount int64      `gorm:"column:pending_todo_count"`
+	}
+
+	var row dispatchRecordDetailRow
 	err = s.dispatchRecordBaseQuery(tenantID).
 		Where("messages.id = ?", id).
 		Select(strings.Join([]string{
@@ -1451,12 +1474,38 @@ func (s *messageService) GetDispatchRecordDetail(tenantID *uuid.UUID, recordID s
 		Joins("LEFT JOIN tenants AS target_tenants ON target_tenants.id = messages.target_tenant_id").
 		Joins("LEFT JOIN message_deliveries ON message_deliveries.message_id = messages.id AND message_deliveries.deleted_at IS NULL").
 		Group("messages.id, target_tenants.name, message_templates.name").
-		Scan(&detail).Error
+		Scan(&row).Error
 	if err != nil {
 		return dispatchRecordDetail{}, err
 	}
-	if detail.ID == uuid.Nil {
+	if row.ID == uuid.Nil {
 		return dispatchRecordDetail{}, gorm.ErrRecordNotFound
+	}
+
+	detail := dispatchRecordDetail{
+		dispatchRecordListItem: dispatchRecordListItem{
+			ID:               row.ID,
+			Title:            row.Title,
+			Summary:          row.Summary,
+			Content:          row.Content,
+			MessageType:      row.MessageType,
+			AudienceType:     row.AudienceType,
+			ScopeType:        row.ScopeType,
+			ScopeID:          row.ScopeID,
+			TargetTenantID:   row.TargetTenantID,
+			TargetTenantName: row.TargetTenantName,
+			SenderName:       row.SenderName,
+			TemplateName:     row.TemplateName,
+			Priority:         row.Priority,
+			Status:           row.Status,
+			PublishedAt:      row.PublishedAt,
+			CreatedAt:        row.CreatedAt,
+			DeliveryCount:    row.DeliveryCount,
+			ReadCount:        row.ReadCount,
+			UnreadCount:      row.UnreadCount,
+			PendingTodoCount: row.PendingTodoCount,
+		},
+		Deliveries: make([]dispatchRecordDeliveryItem, 0),
 	}
 
 	type deliveryRow struct {

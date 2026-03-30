@@ -100,6 +100,7 @@
   import AppConfig from '@/config'
   import { useUserStore } from '@/store/modules/user'
   import { hasPlatformAccessByUserInfo, useTenantStore } from '@/store/modules/tenant'
+  import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import { useI18n } from 'vue-i18n'
   import { HttpError } from '@/utils/http/error'
   import { fetchLogin } from '@/api/auth'
@@ -123,6 +124,7 @@
 
   const userStore = useUserStore()
   const tenantStore = useTenantStore()
+  const menuSpaceStore = useMenuSpaceStore()
   const router = useRouter()
   const route = useRoute()
   const isPassing = ref(false)
@@ -216,6 +218,7 @@
 
       // 存储用户信息（映射后端返回的数据）
       if (response.user) {
+        userStore.syncLoginUserIdentity(response.user.id)
         const userInfo: Api.Auth.UserInfo = {
           ...response.user,
           // 兼容字段映射
@@ -233,6 +236,9 @@
       await tenantStore.loadMyTeams({
         preferredTenantId: response.user?.current_tenant_id || ''
       })
+      menuSpaceStore.syncRuntimeHost()
+      await menuSpaceStore.refreshRuntimeConfig(true)
+      await menuSpaceStore.syncResolvedCurrentSpace()
 
       // 登录成功处理
       persistRememberedCredentials()
@@ -242,7 +248,17 @@
 
       // 获取 redirect 参数，如果存在则跳转到指定页面，否则跳转到首页
       const redirect = route.query.redirect as string
-      router.push(redirect || '/')
+      const landingPath = redirect || '/'
+      const resolved = router.resolve(landingPath)
+      const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
+        resolved.href,
+        `${resolved.meta?.spaceKey || ''}`.trim() || undefined
+      )
+      if (nextTarget.mode === 'router') {
+        router.push(landingPath)
+      } else {
+        window.location.assign(nextTarget.target)
+      }
     } catch (error) {
       // 处理 HttpError
       if (error instanceof HttpError) {

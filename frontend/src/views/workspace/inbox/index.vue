@@ -9,6 +9,15 @@
       </div>
     </AdminWorkspaceHero>
 
+    <ElAlert
+      v-if="loadError"
+      class="message-center-inline-alert"
+      type="info"
+      :closable="false"
+      show-icon
+      :title="loadError"
+    />
+
     <section class="message-center-shell">
       <aside class="message-center-sidebar">
         <div class="message-center-sidebar__header">消息分类</div>
@@ -97,8 +106,24 @@
             </div>
           </header>
 
-          <div class="message-center-detail__summary rich-text-content" v-html="renderRichText(detail.summary, '这条消息没有额外摘要。')"></div>
-          <article class="message-center-detail__content rich-text-content" v-html="renderRichText(detail.content, '这条消息没有正文内容。')"></article>
+          <div
+            class="message-center-detail__summary rich-text-content"
+            v-html="renderRichText(detail.summary, '这条消息没有额外摘要。')"
+            @click="handleRichTextClick"
+          ></div>
+          <ElAlert
+            v-if="detailError && !detailLoading"
+            class="message-center-detail-alert"
+            type="info"
+            :closable="false"
+            show-icon
+            :title="detailError"
+          />
+          <article
+            class="message-center-detail__content rich-text-content"
+            v-html="renderRichText(detail.content, '这条消息没有正文内容。')"
+            @click="handleRichTextClick"
+          ></article>
 
           <div class="message-center-detail__actions">
             <ElButton
@@ -133,8 +158,10 @@
   import { useRoute, useRouter } from 'vue-router'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { fetchGetInboxList, fetchGetInboxDetail } from '@/api/message'
+  import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import { useMessageStore } from '@/store/modules/message'
   import { useTenantStore } from '@/store/modules/tenant'
+  import { handleRichTextLinkNavigation } from '@/utils/navigation/rich-text'
 
   defineOptions({ name: 'WorkspaceInbox' })
 
@@ -142,11 +169,14 @@
 
   const route = useRoute()
   const router = useRouter()
+  const menuSpaceStore = useMenuSpaceStore()
   const messageStore = useMessageStore()
   const tenantStore = useTenantStore()
 
   const loading = ref(false)
+  const loadError = ref('')
   const detailLoading = ref(false)
+  const detailError = ref('')
   const list = ref<Api.Message.InboxItem[]>([])
   const detail = ref<Api.Message.InboxDetail | null>(null)
   const selectedId = ref('')
@@ -258,6 +288,7 @@
 
   const loadList = async () => {
     loading.value = true
+    loadError.value = ''
     try {
       const response = await fetchGetInboxList({
         box_type: filters.boxType || undefined,
@@ -293,6 +324,12 @@
         detail.value = null
         syncRouteQuery()
       }
+    } catch (error) {
+      list.value = []
+      pagination.total = 0
+      selectedId.value = ''
+      detail.value = null
+      loadError.value = '消息中心暂时不可用，稍后重试或刷新状态。'
     } finally {
       loading.value = false
     }
@@ -301,6 +338,7 @@
   const loadDetail = async (deliveryId: string, markIfUnread = false) => {
     if (!deliveryId) return
     detailLoading.value = true
+    detailError.value = ''
     try {
       const nextDetail = await fetchGetInboxDetail(deliveryId)
       detail.value = nextDetail
@@ -313,6 +351,9 @@
         const target = list.value.find((item) => item.id === deliveryId)
         if (target) target.delivery_status = 'read'
       }
+    } catch (error) {
+      detailError.value = '消息详情暂时不可用，稍后重试。'
+      throw error
     } finally {
       detailLoading.value = false
     }
@@ -341,7 +382,7 @@
     try {
       await loadDetail(item.id, true)
     } catch (error) {
-      ElMessage.error('获取消息详情失败')
+      return
     }
   }
 
@@ -366,6 +407,13 @@
     } catch (error) {
       ElMessage.error('处理待办失败')
     }
+  }
+
+  const handleRichTextClick = async (event: MouseEvent) => {
+    await handleRichTextLinkNavigation(event, {
+      router,
+      spaceResolver: menuSpaceStore
+    })
   }
 
   const applyRouteQuery = () => {
@@ -394,6 +442,10 @@
 <style scoped lang="scss">
   .message-center-page {
     min-height: 100%;
+  }
+
+  .message-center-inline-alert {
+    margin-top: 16px;
   }
 
   .message-center-hero__actions {
@@ -631,6 +683,10 @@
     padding: 14px 16px;
     border-radius: 18px;
     background: rgb(248 250 252 / 0.92);
+  }
+
+  .message-center-detail-alert {
+    margin: 16px 20px 0;
   }
 
   .message-center-detail__content {

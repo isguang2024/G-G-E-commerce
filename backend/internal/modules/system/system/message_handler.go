@@ -583,14 +583,21 @@ func currentAuthUserID(c *gin.Context) (uuid.UUID, error) {
 
 func currentTenantID(c *gin.Context) (*uuid.UUID, error) {
 	raw, ok := c.Get("tenant_id")
-	if !ok {
-		return nil, nil
+	if ok {
+		value, ok := raw.(string)
+		if !ok {
+			return nil, errors.New("invalid tenant context")
+		}
+		target := strings.TrimSpace(value)
+		if target != "" {
+			id, err := uuid.Parse(target)
+			if err != nil {
+				return nil, err
+			}
+			return &id, nil
+		}
 	}
-	value, ok := raw.(string)
-	if !ok {
-		return nil, errors.New("invalid tenant context")
-	}
-	target := strings.TrimSpace(value)
+	target := strings.TrimSpace(c.GetHeader("X-Tenant-ID"))
 	if target == "" {
 		return nil, nil
 	}

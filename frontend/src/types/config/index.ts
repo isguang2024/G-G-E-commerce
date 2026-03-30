@@ -116,6 +116,39 @@ export interface FastEnterApplication extends FastEnterBaseItem {
 // 快速链接项
 export type FastEnterQuickLink = FastEnterBaseItem
 
+// 菜单空间定义
+export interface MenuSpaceDefinition {
+  spaceKey: string
+  spaceName: string
+  spaceType?: 'default' | 'platform' | 'team' | 'personal' | 'shared' | string
+  description?: string
+  enabled?: boolean
+  isDefault?: boolean
+  defaultLandingRoute?: string
+}
+
+// 菜单空间 Host 绑定
+export interface MenuSpaceHostBinding {
+  host: string
+  spaceKey: string
+  enabled?: boolean
+  isPrimary?: boolean
+  scheme?: 'http' | 'https' | string
+  routePrefix?: string
+  authMode?: 'inherit_host' | 'centralized_login' | 'shared_cookie' | string
+  loginHost?: string
+  callbackHost?: string
+  cookieScopeMode?: 'inherit' | 'host_only' | 'parent_domain' | string
+  cookieDomain?: string
+}
+
+// 菜单空间配置
+export interface MenuSpaceConfig {
+  defaultSpaceKey: string
+  spaces: MenuSpaceDefinition[]
+  hostBindings: MenuSpaceHostBinding[]
+}
+
 // 快速入口配置
 export interface FastEnterConfig {
   /** 应用列表 */
@@ -144,6 +177,8 @@ export interface SystemConfig {
   systemMainColor: readonly string[]
   // 快速入口配置
   fastEnter?: FastEnterConfig
+  // 菜单空间配置
+  menuSpace?: MenuSpaceConfig
   // 顶部栏功能配置
   headerBar?: HeaderBarFeatureConfig
 }
