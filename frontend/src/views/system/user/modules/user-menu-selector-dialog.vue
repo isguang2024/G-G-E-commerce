@@ -78,11 +78,13 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import type { AppRouteRecord } from '@/types/router'
 import { formatMenuTitle } from '@/utils/router'
 import { fetchGetMenuTreeAll, fetchGetUserMenus, fetchGetUserPackages, fetchSetUserMenus } from '@/api/system-manage'
+import { useMenuSpaceStore } from '@/store/modules/menu-space'
 import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
 
 interface Props {
@@ -102,6 +104,8 @@ const visible = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value)
 })
+const menuSpaceStore = useMenuSpaceStore()
+const { currentSpaceKey } = storeToRefs(menuSpaceStore)
 
 const loading = ref(false)
 const saving = ref(false)
@@ -143,7 +147,7 @@ async function loadData() {
   loading.value = true
   try {
     const [allMenus, menuRes, packageRes] = await Promise.all([
-      fetchGetMenuTreeAll(),
+      fetchGetMenuTreeAll(currentSpaceKey.value),
       fetchGetUserMenus(userId),
       fetchGetUserPackages(userId)
     ])

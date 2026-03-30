@@ -35,7 +35,9 @@
 </template>
 
 <script setup lang="ts">
+  import { storeToRefs } from 'pinia'
   import { fetchGetMenuTreeAll, fetchGetRoleMenus, fetchSetRoleMenus } from '@/api/system-manage'
+  import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import { formatMenuTitle } from '@/utils/router'
 
   type RoleListItem = Api.SystemManage.RoleListItem
@@ -58,6 +60,8 @@
   const emit = defineEmits<Emits>()
 
   const treeRef = ref()
+  const menuSpaceStore = useMenuSpaceStore()
+  const { currentSpaceKey } = storeToRefs(menuSpaceStore)
   const isExpandAll = ref(true)
   const isSelectAll = ref(false)
   const saving = ref(false)
@@ -136,7 +140,7 @@
       if (!open) return
       menuLoadError.value = ''
       try {
-        const list = await fetchGetMenuTreeAll()
+        const list = await fetchGetMenuTreeAll(currentSpaceKey.value)
         menuTreeRaw.value = Array.isArray(list) ? list : []
       } catch (e: any) {
         menuTreeRaw.value = []

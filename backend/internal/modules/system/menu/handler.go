@@ -506,7 +506,7 @@ func menuToRuntimeMap(m *user.Menu) gin.H {
 		if roles := filterStringArray(m.Meta["roles"]); len(roles) > 0 {
 			meta["roles"] = roles
 		}
-		copyTruthyBool(meta, "isEnable", m.Meta["isEnable"])
+		copyBool(meta, "isEnable", m.Meta["isEnable"])
 		copyTruthyBool(meta, "isHide", m.Meta["isHide"])
 		copyTruthyBool(meta, "isIframe", m.Meta["isIframe"])
 		copyTruthyBool(meta, "isHideTab", m.Meta["isHideTab"])
@@ -535,6 +535,12 @@ func menuToRuntimeMap(m *user.Menu) gin.H {
 		node["children"] = children
 	}
 	return node
+}
+
+func copyBool(target gin.H, key string, value any) {
+	if flag, ok := value.(bool); ok {
+		target[key] = flag
+	}
 }
 
 func copyTruthyBool(target gin.H, key string, value any) {

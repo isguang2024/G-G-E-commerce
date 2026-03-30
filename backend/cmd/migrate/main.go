@@ -665,6 +665,48 @@ func runNamedMigrations(logger *zap.Logger) error {
 			},
 		},
 		{
+			Name: "20260331_team_manage_page_seed",
+			Run: func(logger *zap.Logger) error {
+				if _, err := syncDefaultPageSeedByKey("team.team"); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260331_team_manage_page_seed"))
+				return nil
+			},
+		},
+		{
+			Name: "20260331_team_manage_menu_binding_fix",
+			Run: func(logger *zap.Logger) error {
+				if _, err := syncDefaultMenuSeedByName("TeamManage"); err != nil {
+					return err
+				}
+				if _, err := syncDefaultPageSeedByKey("team.team"); err != nil {
+					return err
+				}
+				if err := initDefaultFeaturePackages(logger); err != nil {
+					return err
+				}
+				if err := refreshDefaultAccessSnapshots(logger); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260331_team_manage_menu_binding_fix"))
+				return nil
+			},
+		},
+		{
+			Name: "20260331_team_root_duplicate_cleanup",
+			Run: func(logger *zap.Logger) error {
+				if err := cleanupDuplicateTeamRoots(logger); err != nil {
+					return err
+				}
+				if err := refreshDefaultAccessSnapshots(logger); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260331_team_root_duplicate_cleanup"))
+				return nil
+			},
+		},
+		{
 			Name: "20260325_permission_endpoint_binding_ops",
 			Run: func(logger *zap.Logger) error {
 				permissionKey := "system.permission.manage"
@@ -3230,4 +3272,121 @@ func uniqueStrings(values []string) []string {
 		result = append(result, target)
 	}
 	return result
+}
+
+func cleanupDuplicateTeamRoots(logger *zap.Logger) error {
+	return database.DB.Transaction(func(tx *gorm.DB) error {
+		var roots []usermodel.Menu
+		if err := tx.
+			Where("deleted_at IS NULL").
+			Where("name = ? AND path = ? AND component = ?", "TeamRoot", "/team", "/index/index").
+			Order("created_at ASC").
+			Find(&roots).Error; err != nil {
+			return err
+		}
+		if len(roots) <= 1 {
+			return nil
+		}
+
+		canonical := roots[0]
+		childCache := make(map[uuid.UUID][]usermodel.Menu, len(roots))
+		for _, root := range roots {
+			var children []usermodel.Menu
+			if err := tx.Where("deleted_at IS NULL AND parent_id = ?", root.ID).Order("created_at ASC").Find(&children).Error; err != nil {
+				return err
+			}
+			childCache[root.ID] = children
+			for _, child := range children {
+				if child.Name == "TeamManage" {
+					canonical = root
+				}
+			}
+		}
+
+		canonicalChildren := make(map[string]usermodel.Menu)
+		for _, child := range childCache[canonical.ID] {
+			canonicalChildren[child.Name] = child
+		}
+
+		for _, root := range roots {
+			if root.ID == canonical.ID {
+				continue
+			}
+
+			for _, child := range childCache[root.ID] {
+				if target, ok := canonicalChildren[child.Name]; ok {
+					if err := transferMenuReferences(tx, child.ID, target.ID); err != nil {
+						return err
+					}
+					if err := tx.Model(&usermodel.Menu{}).Where("parent_id = ?", child.ID).Update("parent_id", target.ID).Error; err != nil {
+						return err
+					}
+					if err := tx.Delete(&usermodel.Menu{}, "id = ?", child.ID).Error; err != nil {
+						return err
+					}
+					continue
+				}
+
+				if err := tx.Model(&usermodel.Menu{}).Where("id = ?", child.ID).Update("parent_id", canonical.ID).Error; err != nil {
+					return err
+				}
+			}
+
+			if err := transferMenuReferences(tx, root.ID, canonical.ID); err != nil {
+				return err
+			}
+			if err := tx.Delete(&usermodel.Menu{}, "id = ?", root.ID).Error; err != nil {
+				return err
+			}
+		}
+
+		logger.Info("Duplicate TeamRoot menus cleaned up", zap.Int("roots", len(roots)), zap.String("canonical_id", canonical.ID.String()))
+		return nil
+	})
+}
+
+func transferMenuReferences(tx *gorm.DB, sourceMenuID, targetMenuID uuid.UUID) error {
+	if sourceMenuID == targetMenuID {
+		return nil
+	}
+
+	if err := tx.Model(&systemmodels.UIPage{}).
+		Where("parent_menu_id = ?", sourceMenuID).
+		Update("parent_menu_id", targetMenuID).Error; err != nil {
+		return err
+	}
+
+	statements := []string{
+		`INSERT INTO feature_package_menus (package_id, menu_id)
+		 SELECT package_id, ? FROM feature_package_menus WHERE menu_id = ?
+		 ON CONFLICT DO NOTHING`,
+		`DELETE FROM feature_package_menus WHERE menu_id = ?`,
+		`INSERT INTO role_hidden_menus (role_id, menu_id, created_at)
+		 SELECT role_id, ?, created_at FROM role_hidden_menus WHERE menu_id = ?
+		 ON CONFLICT DO NOTHING`,
+		`DELETE FROM role_hidden_menus WHERE menu_id = ?`,
+		`INSERT INTO team_blocked_menus (team_id, menu_id, created_at, updated_at)
+		 SELECT team_id, ?, created_at, updated_at FROM team_blocked_menus WHERE menu_id = ?
+		 ON CONFLICT DO NOTHING`,
+		`DELETE FROM team_blocked_menus WHERE menu_id = ?`,
+		`INSERT INTO user_hidden_menus (user_id, menu_id, created_at, updated_at)
+		 SELECT user_id, ?, created_at, updated_at FROM user_hidden_menus WHERE menu_id = ?
+		 ON CONFLICT DO NOTHING`,
+		`DELETE FROM user_hidden_menus WHERE menu_id = ?`,
+	}
+
+	for index, statement := range statements {
+		switch index {
+		case 0, 2, 4, 6:
+			if err := tx.Exec(statement, targetMenuID, sourceMenuID).Error; err != nil {
+				return err
+			}
+		default:
+			if err := tx.Exec(statement, sourceMenuID).Error; err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

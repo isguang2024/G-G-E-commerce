@@ -61,7 +61,11 @@ func (c *runtimePageCacheStore) get(s *service, publicOnly bool, host, requested
 		if publicOnly {
 			return cloneRuntimeRecords(records), nil
 		}
-		return filterRuntimeRecordsForContext(s, records, snapshot.menuMap, userID, tenantID, resolvedSpaceKey)
+		filtered, err := filterRuntimeRecordsForContext(s, records, snapshot.menuMap, userID, tenantID, resolvedSpaceKey)
+		if err != nil {
+			return nil, err
+		}
+		return mergeRuntimeRecordsByOrder(records, filtered, snapshot.public), nil
 	}
 	c.mu.RUnlock()
 
@@ -80,7 +84,11 @@ func (c *runtimePageCacheStore) get(s *service, publicOnly bool, host, requested
 		if publicOnly {
 			return cloneRuntimeRecords(records), nil
 		}
-		return filterRuntimeRecordsForContext(s, records, snapshot.menuMap, userID, tenantID, resolvedSpaceKey)
+		filtered, err := filterRuntimeRecordsForContext(s, records, snapshot.menuMap, userID, tenantID, resolvedSpaceKey)
+		if err != nil {
+			return nil, err
+		}
+		return mergeRuntimeRecordsByOrder(records, filtered, snapshot.public), nil
 	}
 
 	all, menuMap, err := s.buildRuntimeRecords(resolvedSpaceKey)
@@ -98,7 +106,11 @@ func (c *runtimePageCacheStore) get(s *service, publicOnly bool, host, requested
 	if publicOnly {
 		return cloneRuntimeRecords(publicRecords), nil
 	}
-	return filterRuntimeRecordsForContext(s, all, menuMap, userID, tenantID, resolvedSpaceKey)
+	filtered, err := filterRuntimeRecordsForContext(s, all, menuMap, userID, tenantID, resolvedSpaceKey)
+	if err != nil {
+		return nil, err
+	}
+	return mergeRuntimeRecordsByOrder(all, filtered, publicRecords), nil
 }
 
 func (c *runtimePageCacheStore) invalidate() {
@@ -123,6 +135,35 @@ func cloneRuntimeMenuMap(items map[uuid.UUID]runtimeMenuNode) map[uuid.UUID]runt
 	result := make(map[uuid.UUID]runtimeMenuNode, len(items))
 	for id, item := range items {
 		result[id] = item
+	}
+	return result
+}
+
+func mergeRuntimeRecordsByOrder(all []Record, primary []Record, secondary []Record) []Record {
+	if len(all) == 0 {
+		return []Record{}
+	}
+	keep := make(map[string]struct{}, len(primary)+len(secondary))
+	for _, item := range primary {
+		key := strings.TrimSpace(item.PageKey)
+		if key != "" {
+			keep[key] = struct{}{}
+		}
+	}
+	for _, item := range secondary {
+		key := strings.TrimSpace(item.PageKey)
+		if key != "" {
+			keep[key] = struct{}{}
+		}
+	}
+	if len(keep) == 0 {
+		return []Record{}
+	}
+	result := make([]Record, 0, len(keep))
+	for _, item := range all {
+		if _, ok := keep[strings.TrimSpace(item.PageKey)]; ok {
+			result = append(result, item)
+		}
 	}
 	return result
 }
@@ -316,7 +357,7 @@ func filterRuntimeRecordsForContext(
 		var decision runtimeAccessDecision
 		switch mode {
 		case "public":
-			decision = runtimeAccessDecision{allowed: false, effectiveMode: "public"}
+			decision = runtimeAccessDecision{allowed: true, effectiveMode: "public"}
 		case "jwt":
 			decision = runtimeAccessDecision{allowed: accessCtx.authenticated, effectiveMode: "jwt"}
 		case "permission":
@@ -381,7 +422,7 @@ func filterRuntimeRecordsForContext(
 			continue
 		}
 		decision := resolvePageAccess(pageKey)
-		if !decision.allowed || decision.effectiveMode == "public" {
+		if !decision.allowed {
 			continue
 		}
 		includeAncestors(pageKey)
@@ -811,6 +852,15 @@ func normalizeSpaceKey(value string) string {
 }
 
 func resolveSpaceKeyForRuntime(s *service, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) string {
+	if spaceutil.IsSingleSpaceMode(s.db) {
+		explicit := normalizeSpaceKey(requestedSpaceKey)
+		if explicit != "" && explicit != spaceutil.DefaultMenuSpaceKey && s != nil && s.db != nil {
+			if allowed, accessErr := spaceutil.CanAccessSpace(s.db, userID, tenantID, explicit); accessErr == nil && allowed {
+				return explicit
+			}
+		}
+		return spaceutil.DefaultMenuSpaceKey
+	}
 	if s == nil || s.db == nil {
 		return normalizeSpaceKey(requestedSpaceKey)
 	}

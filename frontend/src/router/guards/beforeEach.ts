@@ -63,6 +63,7 @@ import {
   ManagedPageProcessor
 } from '../core'
 import { hasMenuActionAccess, shouldHideMenuWhenActionDenied } from '@/utils/permission/menu'
+import { normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
 
 // 路由注册器实例
 let routeRegistry: RouteRegistry | null = null
@@ -91,9 +92,11 @@ const warnDev = (...args: any[]) => {
 
 async function buildRegisteredRouteList(menuList: AppRouteRecord[]): Promise<AppRouteRecord[]> {
   const baseMenus = Array.isArray(menuList) ? menuList : []
+  const menuSpaceStore = useMenuSpaceStore()
+  const currentSpaceKey = menuSpaceStore.currentSpaceKey
 
   try {
-    const runtimeRes = await fetchGetRuntimePageList()
+    const runtimeRes = await fetchGetRuntimePageList(currentSpaceKey)
     const userStore = useUserStore()
     const runtimeRoutes = managedPageProcessor.buildRoutes(
       baseMenus,
@@ -278,6 +281,7 @@ async function handleRouteGuard(
 ): Promise<void> {
   const settingStore = useSettingStore()
   const userStore = useUserStore()
+  const preferredSpaceKey = resolvePreferredSpaceKeyFromRoute(to)
 
   // 启动进度条
   if (settingStore.showNprogress) {
@@ -326,6 +330,25 @@ async function handleRouteGuard(
     }
     await handleDynamicRoutes(to, from, next, router)
     return
+  }
+
+  // 3.1 已登录场景支持通过 URL 显式切换菜单空间（如 #/system/menu?space_key=ops）
+  if (userStore.isLogin && preferredSpaceKey) {
+    const menuSpaceStore = useMenuSpaceStore()
+    if (normalizeMenuSpaceKey(menuSpaceStore.currentSpaceKey) !== preferredSpaceKey) {
+      menuSpaceStore.setActiveSpaceKey(preferredSpaceKey)
+      await menuSpaceStore.syncResolvedCurrentSpace(preferredSpaceKey)
+      if (routeRegistrationMode === 'authenticated') {
+        await refreshUserMenus()
+      }
+      next({
+        path: to.path,
+        query: to.query,
+        hash: to.hash,
+        replace: true
+      })
+      return
+    }
   }
 
   // 4. 处理根路径重定向
@@ -401,7 +424,8 @@ async function ensurePublicRuntimeRoutes(
     routeRegistrationMode = 'none'
   }
   try {
-    const runtimeRes = await fetchGetRuntimePublicPageList()
+    const menuSpaceStore = useMenuSpaceStore()
+    const runtimeRes = await fetchGetRuntimePublicPageList(menuSpaceStore.currentSpaceKey)
     const publicRoutes = managedPageProcessor.buildRoutes([], runtimeRes.records || [], null)
     routeRegistry.register(publicRoutes)
     routeRegistrationMode = 'public'
@@ -469,7 +493,7 @@ async function handleDynamicRoutes(
 
   try {
     // 1. 获取用户信息
-    await fetchUserInfo()
+    await fetchUserInfo(resolvePreferredSpaceKeyFromRoute(to))
 
     // 2. 获取菜单数据
     const menuList = await menuProcessor.getMenuList()
@@ -584,7 +608,7 @@ function mapBackendRolesToFrontend(data: {
 /**
  * 获取用户信息
  */
-async function fetchUserInfo(): Promise<void> {
+async function fetchUserInfo(preferredSpaceKey = ''): Promise<void> {
   const userStore = useUserStore()
   const tenantStore = useTenantStore()
   const menuSpaceStore = useMenuSpaceStore()
@@ -598,6 +622,7 @@ async function fetchUserInfo(): Promise<void> {
   tenantStore.setPlatformAccess(hasPlatformAccessByUserInfo(frontendUserInfo))
   menuSpaceStore.syncRuntimeHost()
   await menuSpaceStore.refreshRuntimeConfig(true)
+  await menuSpaceStore.syncResolvedCurrentSpace(preferredSpaceKey)
   await tenantStore.loadMyTeams({
     preferredTenantId: data.current_tenant_id || ''
   })
@@ -677,6 +702,13 @@ function handleMenuActionRedirect(
  */
 function isUnauthorizedError(error: unknown): boolean {
   return isHttpError(error) && error.code === ApiStatus.unauthorized
+}
+
+function resolvePreferredSpaceKeyFromRoute(to: RouteLocationNormalized): string {
+  if (!to) {
+    return ''
+  }
+  return normalizeMenuSpaceKey(to.query?.space_key || to.query?.spaceKey)
 }
 
 async function tryRefreshMissingDynamicRoute(

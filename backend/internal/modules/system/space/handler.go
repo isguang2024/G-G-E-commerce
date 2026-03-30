@@ -17,6 +17,10 @@ type Handler struct {
 	service Service
 }
 
+type spaceModeSaveRequest struct {
+	Mode string `json:"mode"`
+}
+
 func NewHandler(logger *zap.Logger, service Service) *Handler {
 	return &Handler{
 		logger:  logger,
@@ -57,6 +61,44 @@ func (h *Handler) List(c *gin.Context) {
 		"records": items,
 		"total":   len(items),
 	}))
+}
+
+func (h *Handler) GetMode(c *gin.Context) {
+	if h.service == nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "空间服务未初始化")
+		c.JSON(status, resp)
+		return
+	}
+	mode, err := h.service.GetMode()
+	if err != nil {
+		h.logger.Error("Get menu space mode failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取菜单空间模式失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"mode": mode}))
+}
+
+func (h *Handler) SaveMode(c *gin.Context) {
+	if h.service == nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "空间服务未初始化")
+		c.JSON(status, resp)
+		return
+	}
+	var req spaceModeSaveRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	mode, err := h.service.SaveMode(req.Mode)
+	if err != nil {
+		h.logger.Error("Save menu space mode failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存菜单空间模式失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"mode": mode}))
 }
 
 func (h *Handler) ListHostBindings(c *gin.Context) {

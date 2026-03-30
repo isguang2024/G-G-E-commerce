@@ -53,10 +53,12 @@
 
 <script setup lang="ts">
   import { computed, nextTick, ref, watch } from 'vue'
+  import { storeToRefs } from 'pinia'
   import { ElButton, ElMessage } from 'element-plus'
   import PermissionSourcePanels from '@/components/business/permission/PermissionSourcePanels.vue'
   import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
   import { fetchGetMenuTreeAll } from '@/api/system-manage'
+  import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import {
     fetchGetMyTeamBoundaryRoleMenus,
     fetchGetMyTeamBoundaryRolePackages,
@@ -73,6 +75,8 @@
   const emit = defineEmits<{ (e: 'update:modelValue', value: boolean): void; (e: 'success'): void }>()
 
   const treeRef = ref()
+  const menuSpaceStore = useMenuSpaceStore()
+  const { currentSpaceKey } = storeToRefs(menuSpaceStore)
   const expandAll = ref(true)
   const saving = ref(false)
   const menuList = ref<any[]>([])
@@ -117,7 +121,7 @@
       if (!open || !props.roleData?.roleId) return
       try {
         const [menus, assigned, packagesRes] = await Promise.all([
-          fetchGetMenuTreeAll(),
+          fetchGetMenuTreeAll(currentSpaceKey.value),
           fetchGetMyTeamBoundaryRoleMenus(props.roleData.roleId),
           fetchGetMyTeamBoundaryRolePackages(props.roleData.roleId)
         ])

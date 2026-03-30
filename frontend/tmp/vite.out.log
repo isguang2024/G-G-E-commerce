@@ -1,0 +1,15 @@
+
+> art-design-pro@0.0.0 dev C:\Users\Administrator\Documents\GitHub\G-G-E-commerce\frontend
+> vite --open "--host" "0.0.0.0" "--port" "5173"
+
+
+  [32m[1mVITE[22m v7.3.1[39m  [2mready in [0m[1m2230[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://30.233.233.233:[1m5173[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.0.114:[1m5173[22m/[39m
+  ➜  Vue DevTools: Open http://localhost:5173/__devtools__/ as a separate window
+  ➜  Vue DevTools: Press Alt(⌥)+Shift(⇧)+D in App to toggle the Vue DevTools
+[2m01:51:58[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/api/system-manage.ts[22m
+[2m01:53:21[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/api/system-manage.ts[22m
+[2m01:54:22[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/api/system-manage.ts[22m

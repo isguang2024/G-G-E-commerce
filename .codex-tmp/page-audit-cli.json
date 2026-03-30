@@ -1,0 +1,351 @@
+﻿[
+    {
+        "key":  "dashboard_console",
+        "target":  "http://localhost:5173/#/dashboard/console",
+        "url":  "http://localhost:5173/#/dashboard/console",
+        "title":  "工作台 - G\u0026G-E",
+        "snapshot":  ".playwright-cli\\page-2026-03-30T18-10-59-920Z.yml",
+        "headings":  [
+                         "后台工作台"
+                     ],
+        "buttons":  [
+                        "进入页面管理",
+                        "查看 API 管理",
+                        "页面与菜单主链 先确认导航入口、页面挂载和访问模式是否一致。 /system/page",
+                        "API 注册与权限归属 查看分类、失效接口和未注册路由，保持注册表闭环。 /system/api-endpoint",
+                        "用户与角色治理 处理平台身份、功能包与权限测试链路。 /system/user"
+                    ],
+        "hasTable":  false,
+        "hasTree":  false,
+        "hasForm":  false,
+        "hasDrawer":  false,
+        "hasDialog":  false
+    },
+    {
+        "key":  "workspace_inbox",
+        "target":  "http://localhost:5173/#/workspace/inbox",
+        "url":  "http://localhost:5173/#/workspace/inbox?deliveryId=d45f0058-cfd9-4509-880a-89a7da4bf077",
+        "title":  "消息中心 - G\u0026G-E",
+        "snapshot":  ".playwright-cli\\page-2026-03-30T18-11-02-712Z.yml",
+        "headings":  [
+                         "消息中心",
+                         "全部",
+                         "空间导航联调消息 2026-03-30T08:07:11.545Z"
+                     ],
+        "buttons":  [
+                        "刷新",
+                        "当前分类全部已读",
+                        "全部 0",
+                        "通知 0",
+                        "消息 0",
+                        "待办 0",
+                        "空间导航联调消息 2026-03-30T08:07:11.545Z 2026/03/30 16:07 用于验证消息正文中的站内链接按菜单空间规则跳转。 平台 通知",
+                        "空间导航联调消息 2026-03-30 2026/03/30 22:16 用于验证消息中心和发送记录里的站内链接会按菜单空间规则跳转。 平台 通知",
+                        "平台测试通知 2026-03-29 20:05 2026/03/29 20:21 这是一条用于联调的站内测试通知。 系统管理 通知",
+                        "平台消息中心已启用 2026/03/29 19:37 右上角通知面板已接入真实收件箱，可查看未读、消息和待办。 平台消息中心 通知",
+                        "上一页",
+                        "下一页"
+                    ],
+        "hasTable":  false,
+        "hasTree":  false,
+        "hasForm":  false,
+        "hasDrawer":  false,
+        "hasDialog":  false
+    },
+    {
+        "key":  "system_user",
+        "target":  "http://localhost:5173/#/system/user",
+        "url":  "http://localhost:5173/#/system/user",
+        "title":  "用户管理 - G\u0026G-E",
+        "snapshot":  ".playwright-cli\\page-2026-03-30T18-11-05-625Z.yml",
+        "headings":  [
+                         "用户管理"
+                     ],
+        "buttons":  [
+                        "重置",
+                        "查询",
+                        "新增用户",
+                        "上一页",
+                        "下一页",
+                        "页"
+                    ],
+        "hasTable":  true,
+        "hasTree":  false,
+        "hasForm":  true,
+        "hasDrawer":  false,
+        "hasDialog":  false
+    },
+    {
+        "key":  "system_role",
+        "target":  "http://localhost:5173/#/system/role",
+        "url":  "http://localhost:5173/#/system/role",
+        "title":  "角色管理 - G\u0026G-E",
+        "snapshot":  ".playwright-cli\\page-2026-03-30T18-11-08-427Z.yml",
+        "headings":  [
+
+                     ],
+        "buttons":  [
+                        "新增角色",
+                        "按 创建时间 排序",
+                        "上一页",
+                        "下一页",
+                        "页"
+                    ],
+        "hasTable":  true,
+        "hasTree":  false,
+        "hasForm":  false,
+        "hasDrawer":  false,
+        "hasDialog":  false
+    },
+    {
+        "key":  "system_action_permission",
+        "target":  "http://localhost:5173/#/system/action-permission",
+        "url":  "http://localhost:5173/#/dashboard/console",
+        "title":  "功能权限 - G\u0026G-E",
+        "snapshot":  ".playwright-cli\\page-2026-03-30T18-11-11-296Z.yml",
+        "headings":  [
+                         "后台工作台"
+                     ],
+        "buttons":  [
+                        "重置",
+                        "查询",
+                        "新增功能权限",
+                        "管理模块分组",
+                        "管理功能分组",
+                        "上一页",
+                        "下一页",
+                        "页",
+                        "进入页面管理",
+                        "查看 API 管理",
+                        "页面与菜单主链 先确认导航入口、页面挂载和访问模式是否一致。 /system/page",
+                        "API 注册与权限归属 查看分类、失效接口和未注册路由，保持注册表闭环。 /system/api-endpoint"
+                    ],
+        "hasTable":  true,
+        "hasTree":  false,
+        "hasForm":  true,
+        "hasDrawer":  false,
+        "hasDialog":  false
+    },
+    {
+        "key":  "system_feature_package",
+        "target":  "http://localhost:5173/#/system/feature-package",
+        "url":  "http://localhost:5173/#/system/feature-package",
+        "title":  "功能包管理 - G\u0026G-E",
+        "snapshot":  ".playwright-cli\\page-2026-03-30T18-11-14-096Z.yml",
+        "headings":  [
+
+                     ],
+        "buttons":  [
+                        "重置",
+                        "查询",
+                        "新增基础包",
+                        "上一页",
+                        "下一页",
+                        "页"
+                    ],
+        "hasTable":  true,
+        "hasTree":  false,
+        "hasForm":  true,
+        "hasDrawer":  false,
+        "hasDialog":  false
+    },
+    {
+        "key":  "system_page",
+        "target":  "http://localhost:5173/#/system/page",
+        "url":  "http://localhost:5173/#/system/page",
+        "title":  "页面管理 - G\u0026G-E",
+        "snapshot":  ".playwright-cli\\page-2026-03-30T18-11-16-916Z.yml",
+        "headings":  [
+
+                     ],
+        "buttons":  [
+                        "新增",
+                        "未注册页面",
+                        "展开当前行",
+                        "编辑"
+                    ],
+        "hasTable":  true,
+        "hasTree":  false,
+        "hasForm":  false,
+        "hasDrawer":  false,
+        "hasDialog":  false
+    },
+    {
+        "key":  "system_menu",
+        "target":  "http://localhost:5173/#/system/menu",
+        "url":  "http://localhost:5173/#/system/menu",
+        "title":  "菜单管理 - G\u0026G-E",
+        "snapshot":  ".playwright-cli\\page-2026-03-30T18-11-34-807Z.yml",
+        "headings":  [
+
+                     ],
+        "buttons":  [
+                        "创建菜单",
+                        "更多操作",
+                        "展开当前行"
+                    ],
+        "hasTable":  true,
+        "hasTree":  false,
+        "hasForm":  false,
+        "hasDrawer":  false,
+        "hasDialog":  false
+    },
+    {
+        "key":  "system_menu_space",
+        "target":  "http://localhost:5173/#/system/menu-space",
+        "url":  "http://localhost:5173/#/system/menu-space",
+        "title":  "菜单空间 - G\u0026G-E",
+        "snapshot":  ".playwright-cli\\page-2026-03-30T18-11-37-645Z.yml",
+        "headings":  [
+                         "菜单空间"
+                     ],
+        "buttons":  [
+                        "保存模式",
+                        "新增空间",
+                        "新增 Host 绑定",
+                        "刷新",
+                        "默认菜单空间 默认 启用 标识 default 首页 /dashboard/console 菜单 29 页面 14 准入 全部可进 Host 0 兼容当前单域单菜单运行模式 已初始化 编辑 菜单管理 页面管理 绑定 Host",
+                        "编辑",
+                        "菜单管理",
+                        "页面管理",
+                        "绑定 Host",
+                        "运营空间 启用 标识 ops 首页 /dashboard/console 菜单 24 页面 13 准入 仅平台管理员 Host 0 系统收尾回归专用的非默认菜单空间示例 已初始化 编辑 菜单管理 页面管理 已初始化 绑定 Host",
+                        "已初始化",
+                        "进入菜单管理"
+                    ],
+        "hasTable":  false,
+        "hasTree":  false,
+        "hasForm":  false,
+        "hasDrawer":  false,
+        "hasDialog":  false
+    },
+    {
+        "key":  "system_api_endpoint",
+        "target":  "http://localhost:5173/#/system/api-endpoint",
+        "url":  "http://localhost:5173/#/system/api-endpoint",
+        "title":  "API管理 - G\u0026G-E",
+        "snapshot":  ".playwright-cli\\page-2026-03-30T18-11-40-610Z.yml",
+        "headings":  [
+                         "API 管理"
+                     ],
+        "buttons":  [
+                        "新增 API",
+                        "同步 API",
+                        "未注册 API (2)",
+                        "清理失效 API",
+                        "上一页",
+                        "下一页",
+                        "页"
+                    ],
+        "hasTable":  true,
+        "hasTree":  true,
+        "hasForm":  true,
+        "hasDrawer":  false,
+        "hasDialog":  false
+    },
+    {
+        "key":  "system_message",
+        "target":  "http://localhost:5173/#/system/message",
+        "url":  "http://localhost:5173/#/system/message",
+        "title":  "消息发送 - G\u0026G-E",
+        "snapshot":  ".playwright-cli\\page-2026-03-30T18-11-43-541Z.yml",
+        "headings":  [
+                         "消息发送",
+                         "发送配置",
+                         "基础信息",
+                         "接收对象",
+                         "内容编辑",
+                         "发送预览"
+                     ],
+        "buttons":  [
+                        "刷新配置",
+                        "发送消息",
+                        "消息发送 编辑并发出消息",
+                        "消息模板 维护摘要与正文模板",
+                        "发送人 管理发信身份",
+                        "接收组 管理固定接收规则",
+                        "发送记录 查看投递与审计",
+                        "正文",
+                        "默认字号",
+                        "默认行高"
+                    ],
+        "hasTable":  false,
+        "hasTree":  false,
+        "hasForm":  true,
+        "hasDrawer":  false,
+        "hasDialog":  false
+    },
+    {
+        "key":  "team_team",
+        "target":  "http://localhost:5173/#/team/team",
+        "url":  "http://localhost:5173/#/team/team",
+        "title":  "所有团队 - G\u0026G-E",
+        "snapshot":  ".playwright-cli\\page-2026-03-30T18-11-46-332Z.yml",
+        "headings":  [
+
+                     ],
+        "buttons":  [
+                        "重置",
+                        "查询",
+                        "新增团队",
+                        "上一页",
+                        "下一页",
+                        "页"
+                    ],
+        "hasTable":  true,
+        "hasTree":  false,
+        "hasForm":  true,
+        "hasDrawer":  false,
+        "hasDialog":  false
+    },
+    {
+        "key":  "team_roles_permissions",
+        "target":  "http://localhost:5173/#/system/team-roles-permissions",
+        "url":  "http://localhost:5173/#/system/team-roles-permissions",
+        "title":  "404 - G\u0026G-E",
+        "snapshot":  ".playwright-cli\\page-2026-03-30T18-11-49-124Z.yml",
+        "headings":  [
+
+                     ],
+        "buttons":  [
+                        "返回首页"
+                    ],
+        "hasTable":  false,
+        "hasTree":  false,
+        "hasForm":  false,
+        "hasDrawer":  false,
+        "hasDialog":  false
+    },
+    {
+        "key":  "team_message",
+        "target":  "http://localhost:5173/#/team/message",
+        "url":  "http://localhost:5173/#/team/message",
+        "title":  "团队消息发送 - G\u0026G-E",
+        "snapshot":  ".playwright-cli\\page-2026-03-30T18-11-51-979Z.yml",
+        "headings":  [
+                         "团队消息发送",
+                         "发送配置",
+                         "基础信息",
+                         "接收对象",
+                         "内容编辑",
+                         "发送预览"
+                     ],
+        "buttons":  [
+                        "刷新配置",
+                        "发送消息",
+                        "消息发送 编辑并发出消息",
+                        "消息模板 维护摘要与正文模板",
+                        "发送人 管理发信身份",
+                        "接收组 管理固定接收规则",
+                        "发送记录 查看投递与审计",
+                        "正文",
+                        "默认字号",
+                        "默认行高"
+                    ],
+        "hasTable":  false,
+        "hasTree":  false,
+        "hasForm":  true,
+        "hasDrawer":  false,
+        "hasDialog":  false
+    }
+]

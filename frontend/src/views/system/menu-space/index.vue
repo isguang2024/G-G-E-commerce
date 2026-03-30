@@ -6,6 +6,11 @@
       :metrics="summaryMetrics"
     >
       <div class="menu-space-hero-actions">
+        <ElSelect v-model="spaceMode" style="width: 140px">
+          <ElOption label="单空间模式" value="single" />
+          <ElOption label="多空间模式" value="multi" />
+        </ElSelect>
+        <ElButton :loading="savingSpaceMode" @click="saveSpaceMode" v-ripple>保存模式</ElButton>
         <ElButton type="primary" @click="openSpaceDrawer()" v-ripple>新增空间</ElButton>
         <ElButton @click="openHostDrawer()" v-ripple>新增 Host 绑定</ElButton>
         <ElButton @click="loadData" v-ripple>刷新</ElButton>
@@ -112,9 +117,11 @@
               <div class="menu-space-panel__title">Host 绑定</div>
               <div class="menu-space-panel__desc">可选配置。未命中任何 Host 时，系统会自动退回默认菜单空间。</div>
             </div>
-            <ElTag effect="plain" type="info">
-              当前解析 {{ currentSpaceLabel }}
-            </ElTag>
+            <div class="menu-space-panel__status">
+              <ElTag effect="plain" type="info">当前解析 {{ currentSpaceLabel }}</ElTag>
+              <ElTag effect="plain" :type="spaceModeTagType">模式 {{ spaceModeLabel }}</ElTag>
+              <ElTag v-if="resolveByLabel" effect="plain" type="warning">来源 {{ resolveByLabel }}</ElTag>
+            </div>
           </div>
         </template>
 
@@ -139,6 +146,14 @@
             <div class="menu-space-overview__item">
               <span class="menu-space-overview__label">空间准入</span>
               <strong>{{ getAccessModeSummary(currentSpace) }}</strong>
+            </div>
+            <div class="menu-space-overview__item">
+              <span class="menu-space-overview__label">解析来源</span>
+              <strong>{{ resolveByLabel || '未返回' }}</strong>
+            </div>
+            <div class="menu-space-overview__item">
+              <span class="menu-space-overview__label">请求 Host</span>
+              <strong>{{ currentRequestHost || '未命中' }}</strong>
             </div>
           </div>
           <div class="menu-space-overview__actions">
@@ -345,13 +360,15 @@
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import {
     fetchGetCurrentMenuSpace,
+    fetchGetMenuSpaceMode,
     fetchInitializeMenuSpaceFromDefault,
     fetchGetMenuList,
     fetchGetMenuSpaceHostBindings,
     fetchGetMenuSpaces,
     fetchGetPageList,
     fetchSaveMenuSpace,
-    fetchSaveMenuSpaceHostBinding
+    fetchSaveMenuSpaceHostBinding,
+    fetchUpdateMenuSpaceMode
   } from '@/api/system-manage'
   import { normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
 
@@ -362,10 +379,15 @@
   const loadError = ref('')
   const savingSpace = ref(false)
   const savingHost = ref(false)
+  const savingSpaceMode = ref(false)
   const initializingSpaceKey = ref('')
   const spaces = ref<Api.SystemManage.MenuSpaceItem[]>([])
   const hostBindings = ref<Api.SystemManage.MenuSpaceHostBindingItem[]>([])
   const currentSpaceKey = ref('default')
+  const spaceMode = ref<'single' | 'multi'>('single')
+  const currentResolvedBy = ref('')
+  const currentRequestHost = ref('')
+  const currentAccessGranted = ref(true)
   const loadingLandingPaths = ref(false)
   const landingPathOptions = ref<string[]>([])
   const warnDev = (...args: any[]) => {
@@ -421,6 +443,32 @@
   )
 
   const currentSpaceLabel = computed(() => currentSpace.value?.name || currentSpace.value?.spaceKey || '默认菜单空间')
+  const spaceModeLabel = computed(() => {
+    if (spaceMode.value === 'single') {
+      return '单空间'
+    }
+    return '多空间'
+  })
+  const spaceModeTagType = computed(() => (spaceModeLabel.value === '单空间' ? 'success' : 'warning'))
+  const resolveByLabel = computed(() => {
+    const value = `${currentResolvedBy.value || ''}`.trim()
+    switch (value) {
+      case 'single_mode':
+        return '单空间默认'
+      case 'single_mode_explicit':
+        return '单空间显式指定'
+      case 'host':
+        return 'Host 命中'
+      case 'explicit':
+        return '参数显式指定'
+      case 'default':
+        return '默认空间'
+      case 'fallback_default':
+        return currentAccessGranted.value ? '默认空间' : '无权限回退默认空间'
+      default:
+        return value
+    }
+  })
 
   const summaryMetrics = computed(() => [
     { label: '菜单空间', value: spaces.value.length || 0 },
@@ -520,22 +568,45 @@
     loading.value = true
     loadError.value = ''
     try {
-      const [spaceRes, hostRes, currentRes] = await Promise.all([
+      const [spaceRes, hostRes, currentRes, modeRes] = await Promise.all([
         fetchGetMenuSpaces(),
         fetchGetMenuSpaceHostBindings(),
-        fetchGetCurrentMenuSpace().catch(() => undefined)
+        fetchGetCurrentMenuSpace().catch(() => undefined),
+        fetchGetMenuSpaceMode().catch(() => ({ mode: 'single' }))
       ])
       spaces.value = spaceRes.records || []
       hostBindings.value = hostRes.records || []
       currentSpaceKey.value =
         currentRes?.space?.spaceKey || spaces.value.find((item) => item.isDefault)?.spaceKey || 'default'
+      spaceMode.value = `${modeRes?.mode || 'single'}`.trim() === 'multi' ? 'multi' : 'single'
+      currentResolvedBy.value = `${currentRes?.resolvedBy || ''}`.trim()
+      currentRequestHost.value = `${currentRes?.requestHost || ''}`.trim()
+      currentAccessGranted.value = Boolean(currentRes?.accessGranted ?? true)
     } catch (error: any) {
       spaces.value = []
       hostBindings.value = []
       currentSpaceKey.value = 'default'
+      spaceMode.value = 'single'
+      currentResolvedBy.value = ''
+      currentRequestHost.value = ''
+      currentAccessGranted.value = true
       loadError.value = error?.message || '菜单空间数据暂时不可用，稍后重试或刷新状态。'
     } finally {
       loading.value = false
+    }
+  }
+
+  async function saveSpaceMode() {
+    savingSpaceMode.value = true
+    try {
+      const res = await fetchUpdateMenuSpaceMode(spaceMode.value)
+      spaceMode.value = `${res?.mode || 'single'}`.trim() === 'multi' ? 'multi' : 'single'
+      ElMessage.success(`菜单空间模式已更新为${spaceModeLabel.value}`)
+      await loadData()
+    } catch (error: any) {
+      ElMessage.error(error?.message || '菜单空间模式保存失败')
+    } finally {
+      savingSpaceMode.value = false
     }
   }
 
@@ -909,6 +980,13 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
+  }
+
+  .menu-space-panel__status {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
   }
 
   .menu-space-panel__title {

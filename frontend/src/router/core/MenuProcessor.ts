@@ -21,9 +21,10 @@ export class MenuProcessor {
    * 获取菜单数据（仅从后端实时获取，不再使用前端默认菜单）
    */
   async getMenuList(): Promise<AppRouteRecord[]> {
-    const menuList = await fetchGetMenuList()
-    const filteredByAction = this.filterActionRequirementMenus(menuList)
     const spaceStore = useMenuSpaceStore()
+    const menuList = await fetchGetMenuList(spaceStore.currentSpaceKey)
+    const filteredByEnabled = this.filterDisabledMenus(menuList)
+    const filteredByAction = this.filterActionRequirementMenus(filteredByEnabled)
     spaceStore.syncRuntimeHost()
     const filteredBySpace = this.filterMenusBySpace(
       filteredByAction,
@@ -36,6 +37,24 @@ export class MenuProcessor {
 
     // 规范化路径（将相对路径转换为完整路径）
     return this.normalizeMenuPaths(this.filterEmptyMenus(filteredBySpace))
+  }
+
+  /**
+   * 过滤运行时被标记为未启用的菜单，避免后端遗漏时仍出现在导航里
+   */
+  private filterDisabledMenus(menuList: AppRouteRecord[]): AppRouteRecord[] {
+    return menuList.reduce<AppRouteRecord[]>((result, item) => {
+      if (item.meta?.isEnable === false) {
+        return result
+      }
+
+      const children = item.children?.length ? this.filterDisabledMenus(item.children) : item.children
+      result.push({
+        ...item,
+        children
+      })
+      return result
+    }, [])
   }
 
   /**

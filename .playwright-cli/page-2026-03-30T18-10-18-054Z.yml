@@ -1,0 +1,156 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e9]:
+        - generic [ref=e10] [cursor=pointer]:
+          - img "logo" [ref=e12]
+          - paragraph [ref=e13]: G&G-E
+        - menubar [ref=e14]:
+          - menuitem "仪表盘" [expanded] [ref=e15]:
+            - generic [ref=e16] [cursor=pointer]:
+              - img [ref=e18]
+              - generic [ref=e20]: 仪表盘
+              - img [ref=e22]
+            - menu [ref=e24]:
+              - menuitem "工作台" [active] [ref=e25] [cursor=pointer]:
+                - generic [ref=e26]: 工作台
+          - menuitem "系统管理" [expanded] [ref=e27]:
+            - generic [ref=e28] [cursor=pointer]:
+              - img [ref=e30]
+              - generic [ref=e32]: 系统管理
+              - img [ref=e34]
+            - menu [ref=e36]:
+              - menuitem "身份与权限" [expanded] [ref=e37]:
+                - generic [ref=e38] [cursor=pointer]:
+                  - img [ref=e40]
+                  - generic [ref=e42]: 身份与权限
+                  - img [ref=e44]
+                - menu [ref=e46]:
+                  - menuitem "角色管理" [ref=e47] [cursor=pointer]:
+                    - generic [ref=e48]: 角色管理
+                  - menuitem "用户管理" [ref=e49] [cursor=pointer]:
+                    - generic [ref=e50]: 用户管理
+                  - menuitem "功能权限" [ref=e51] [cursor=pointer]:
+                    - generic [ref=e52]: 功能权限
+                  - menuitem "功能包管理" [ref=e53] [cursor=pointer]:
+                    - generic [ref=e54]: 功能包管理
+              - menuitem "导航与界面" [ref=e55]:
+                - generic [ref=e56] [cursor=pointer]:
+                  - img [ref=e58]
+                  - generic [ref=e60]: 导航与界面
+                  - img [ref=e62]
+              - menuitem "接口与注册" [ref=e64]:
+                - generic [ref=e65] [cursor=pointer]:
+                  - img [ref=e67]
+                  - generic [ref=e69]: 接口与注册
+                  - img [ref=e71]
+          - menuitem "团队管理" [ref=e73]:
+            - generic [ref=e74] [cursor=pointer]:
+              - img [ref=e76]
+              - generic [ref=e78]: 团队管理
+              - img [ref=e80]
+    - main [ref=e82]:
+      - generic [ref=e84]:
+        - generic [ref=e85]:
+          - generic [ref=e86]:
+            - img [ref=e88] [cursor=pointer]
+            - img [ref=e91] [cursor=pointer]
+            - img [ref=e95] [cursor=pointer]
+            - navigation "breadcrumb" [ref=e97]:
+              - list [ref=e98]:
+                - listitem [ref=e99]:
+                  - generic [ref=e101] [cursor=pointer]: 仪表盘
+                  - generic [ref=e102]: /
+                - listitem [ref=e103]:
+                  - generic [ref=e105]: 工作台
+          - generic [ref=e106]:
+            - generic [ref=e107] [cursor=pointer]:
+              - generic [ref=e108]:
+                - img [ref=e109]
+                - generic [ref=e111]: 搜索
+              - generic [ref=e112]:
+                - img [ref=e113]
+                - generic [ref=e115]: k
+            - img [ref=e117] [cursor=pointer]
+            - img [ref=e120] [cursor=pointer]
+            - img [ref=e125] [cursor=pointer]
+            - img [ref=e128] [cursor=pointer]
+            - img "avatar" [ref=e130] [cursor=pointer]
+        - generic [ref=e131]:
+          - list [ref=e133]:
+            - listitem [ref=e134] [cursor=pointer]: 工作台
+            - listitem [ref=e135] [cursor=pointer]:
+              - text: 用户管理
+              - img [ref=e137]
+            - listitem [ref=e139] [cursor=pointer]:
+              - text: 角色管理
+              - img [ref=e141]
+            - listitem [ref=e143] [cursor=pointer]:
+              - text: 功能权限
+              - img [ref=e145]
+            - listitem [ref=e227] [cursor=pointer]:
+              - text: 菜单管理
+              - img [ref=e229]
+          - img [ref=e149] [cursor=pointer]
+      - generic [ref=e153]:
+        - generic [ref=e154]:
+          - generic [ref=e155]:
+            - generic [ref=e156]:
+              - heading "后台工作台" [level=1] [ref=e157]
+              - paragraph [ref=e158]: 把当前待处理模块、常用入口和本轮重点集中在一屏内，进入后台后先看这里。
+            - generic [ref=e159]:
+              - generic [ref=e160]:
+                - generic [ref=e161]: 团队数量
+                - strong [ref=e162]: "0"
+              - generic [ref=e163]:
+                - generic [ref=e164]: 当前团队
+                - strong [ref=e165]: 未选择团队
+              - generic [ref=e166]:
+                - generic [ref=e167]: 管理入口
+                - strong [ref=e168]: 平台管理
+          - generic [ref=e170]:
+            - button "进入页面管理" [ref=e171] [cursor=pointer]:
+              - generic [ref=e172]: 进入页面管理
+            - button "查看 API 管理" [ref=e173] [cursor=pointer]:
+              - generic [ref=e174]: 查看 API 管理
+        - generic [ref=e175]:
+          - generic [ref=e176]:
+            - generic [ref=e178]:
+              - generic [ref=e179]: 当前工作面
+              - paragraph [ref=e180]: 根据当前团队或管理入口，优先进入对应的治理链路。
+            - generic [ref=e181]:
+              - button "页面与菜单主链 先确认导航入口、页面挂载和访问模式是否一致。 /system/page" [ref=e182] [cursor=pointer]:
+                - generic [ref=e183]: 页面与菜单主链
+                - generic [ref=e184]: 先确认导航入口、页面挂载和访问模式是否一致。
+                - generic [ref=e185]: /system/page
+              - button "API 注册与权限归属 查看分类、失效接口和未注册路由，保持注册表闭环。 /system/api-endpoint" [ref=e186] [cursor=pointer]:
+                - generic [ref=e187]: API 注册与权限归属
+                - generic [ref=e188]: 查看分类、失效接口和未注册路由，保持注册表闭环。
+                - generic [ref=e189]: /system/api-endpoint
+              - button "用户与角色治理 处理平台身份、功能包与权限测试链路。 /system/user" [ref=e190] [cursor=pointer]:
+                - generic [ref=e191]: 用户与角色治理
+                - generic [ref=e192]: 处理平台身份、功能包与权限测试链路。
+                - generic [ref=e193]: /system/user
+          - generic [ref=e194]:
+            - generic [ref=e196]:
+              - generic [ref=e197]: 当前概览
+              - paragraph [ref=e198]: 把当前团队和当前入口状态收在一张卡片里，不额外强调空间模型。
+            - generic [ref=e199]:
+              - generic [ref=e200]: 当前入口
+              - generic [ref=e201]: 平台管理
+              - paragraph [ref=e202]: 这里用于处理菜单、页面、权限键、API 元数据和平台角色等平台治理能力。
+          - generic [ref=e203]:
+            - generic [ref=e205]:
+              - generic [ref=e206]: 本轮优先级
+              - paragraph [ref=e207]: 界面收口先做统一表达，再做深层配置能力。
+            - list [ref=e208]:
+              - listitem [ref=e209]: 继续收口系统页头部和操作区，减少不同页面之间的结构漂移。
+              - listitem [ref=e210]: 菜单、用户、API 管理继续对齐页面管理的分段式抽屉和顶部摘要。
+              - listitem [ref=e211]: 后续再补页面树轻量接口，收掉最后的全量树数据拉取。
+  - generic [ref=e212]:
+    - generic "Toggle devtools panel" [ref=e213] [cursor=pointer]:
+      - img [ref=e214]
+    - generic "Toggle Component Inspector" [ref=e219] [cursor=pointer]:
+      - img [ref=e220]
+  - tooltip "点击这里查看主题风格、 开启顶栏菜单等更多配置" [ref=e224]:
+    - paragraph [ref=e225]: 点击这里查看主题风格、 开启顶栏菜单等更多配置

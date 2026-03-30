@@ -1,0 +1,367 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e9]:
+        - generic [ref=e10] [cursor=pointer]:
+          - img "logo" [ref=e12]
+          - paragraph [ref=e13]: G&G-E
+        - menubar [ref=e14]:
+          - menuitem "仪表盘" [expanded] [ref=e15]:
+            - generic [ref=e16] [cursor=pointer]:
+              - img [ref=e18]
+              - generic [ref=e20]: 仪表盘
+              - img [ref=e22]
+            - menu [ref=e24]:
+              - menuitem "工作台" [ref=e25] [cursor=pointer]:
+                - generic [ref=e26]: 工作台
+          - menuitem "系统管理" [expanded] [ref=e27]:
+            - generic [ref=e28] [cursor=pointer]:
+              - img [ref=e30]
+              - generic [ref=e32]: 系统管理
+              - img [ref=e34]
+            - menu [ref=e36]:
+              - menuitem "身份与权限" [expanded] [ref=e37]:
+                - generic [ref=e38] [cursor=pointer]:
+                  - img [ref=e40]
+                  - generic [ref=e42]: 身份与权限
+                  - img [ref=e44]
+                - menu [ref=e46]:
+                  - menuitem "角色管理" [ref=e47] [cursor=pointer]:
+                    - generic [ref=e48]: 角色管理
+                  - menuitem "用户管理" [ref=e49] [cursor=pointer]:
+                    - generic [ref=e50]: 用户管理
+                  - menuitem "功能权限" [ref=e51] [cursor=pointer]:
+                    - generic [ref=e52]: 功能权限
+                  - menuitem "功能包管理" [ref=e53] [cursor=pointer]:
+                    - generic [ref=e54]: 功能包管理
+              - menuitem "导航与界面" [expanded] [ref=e55]:
+                - generic [ref=e56] [cursor=pointer]:
+                  - img [ref=e58]
+                  - generic [ref=e60]: 导航与界面
+                  - img [ref=e62]
+                - menu [ref=e231]:
+                  - menuitem "菜单管理" [ref=e232] [cursor=pointer]:
+                    - generic [ref=e233]: 菜单管理
+                  - menuitem "页面管理" [ref=e234] [cursor=pointer]:
+                    - generic [ref=e235]: 页面管理
+                  - menuitem "快捷应用管理" [ref=e236] [cursor=pointer]:
+                    - generic [ref=e237]: 快捷应用管理
+                  - menuitem "菜单空间" [ref=e238] [cursor=pointer]:
+                    - generic [ref=e239]: 菜单空间
+              - menuitem "接口与注册" [expanded] [ref=e64]:
+                - generic [ref=e65] [cursor=pointer]:
+                  - img [ref=e67]
+                  - generic [ref=e69]: 接口与注册
+                  - img [ref=e71]
+                - menu [ref=e3357]:
+                  - menuitem "API管理" [ref=e3358] [cursor=pointer]:
+                    - generic [ref=e3359]: API管理
+                  - menuitem "消息发送" [ref=e3360] [cursor=pointer]:
+                    - generic [ref=e3361]: 消息发送
+          - menuitem "团队管理" [ref=e73]:
+            - generic [ref=e74] [cursor=pointer]:
+              - img [ref=e76]
+              - generic [ref=e78]: 团队管理
+              - img [ref=e80]
+    - main [ref=e82]:
+      - generic [ref=e84]:
+        - generic [ref=e85]:
+          - generic [ref=e86]:
+            - img [ref=e88] [cursor=pointer]
+            - img [ref=e91] [cursor=pointer]
+            - img [ref=e95] [cursor=pointer]
+            - navigation "breadcrumb" [ref=e97]:
+              - list [ref=e98]:
+                - listitem [ref=e2213]:
+                  - generic [ref=e2215] [cursor=pointer]: 系统管理
+                  - generic [ref=e2216]: /
+                - listitem [ref=e3362]:
+                  - generic [ref=e3364] [cursor=pointer]: 接口与注册
+                  - generic [ref=e3365]: /
+                - listitem [ref=e4590]:
+                  - generic [ref=e4592]: 消息发送
+          - generic [ref=e106]:
+            - generic [ref=e107] [cursor=pointer]:
+              - generic [ref=e108]:
+                - img [ref=e109]
+                - generic [ref=e111]: 搜索
+              - generic [ref=e112]:
+                - img [ref=e113]
+                - generic [ref=e115]: k
+            - img [ref=e117] [cursor=pointer]
+            - img [ref=e120] [cursor=pointer]
+            - img [ref=e125] [cursor=pointer]
+            - img [ref=e128] [cursor=pointer]
+            - img "avatar" [ref=e130] [cursor=pointer]
+        - generic [ref=e131]:
+          - list [ref=e133]:
+            - listitem [ref=e134] [cursor=pointer]: 工作台
+            - listitem [ref=e135] [cursor=pointer]:
+              - text: 用户管理
+              - img [ref=e137]
+            - listitem [ref=e139] [cursor=pointer]:
+              - text: 角色管理
+              - img [ref=e141]
+            - listitem [ref=e143] [cursor=pointer]:
+              - text: 功能权限
+              - img [ref=e145]
+            - listitem [ref=e227] [cursor=pointer]:
+              - text: 菜单管理
+              - img [ref=e229]
+            - listitem [ref=e247] [cursor=pointer]:
+              - text: 页面管理
+              - img [ref=e249]
+            - listitem [ref=e251] [cursor=pointer]:
+              - text: 快捷应用管理
+              - img [ref=e253]
+            - listitem [ref=e473] [cursor=pointer]:
+              - text: 消息中心
+              - img [ref=e475]
+            - listitem [ref=e2209] [cursor=pointer]:
+              - text: 功能包管理
+              - img [ref=e2211]
+            - listitem [ref=e3201] [cursor=pointer]:
+              - text: 菜单空间
+              - img [ref=e3203]
+            - listitem [ref=e3353] [cursor=pointer]:
+              - text: API管理
+              - img [ref=e3355]
+            - listitem [ref=e4586] [cursor=pointer]:
+              - text: 消息发送
+              - img [ref=e4588]
+            - listitem [ref=e4923] [cursor=pointer]:
+              - text: 所有团队
+              - img [ref=e4925]
+          - img [ref=e149] [cursor=pointer]
+      - generic [ref=e4593]:
+        - generic [ref=e4594]:
+          - generic [ref=e4595]:
+            - generic [ref=e4596]:
+              - heading "消息发送" [level=1] [ref=e4597]
+              - paragraph [ref=e4598]: 统一给所有用户、团队管理员或指定团队成员发送站内通知、消息和待办，模板与发送记录都从这里进入。
+            - generic [ref=e4599]:
+              - generic [ref=e4600]:
+                - generic [ref=e4601]: 可用发送人
+                - strong [ref=e4602]: "2"
+              - generic [ref=e4603]:
+                - generic [ref=e4604]: 可用模板
+                - strong [ref=e4605]: "3"
+              - generic [ref=e4606]:
+                - generic [ref=e4607]: 可选对象
+                - strong [ref=e4608]: "7"
+              - generic [ref=e4609]:
+                - generic [ref=e4610]: 目标团队
+                - strong [ref=e4611]: "2"
+          - generic [ref=e4613]:
+            - button "刷新配置" [ref=e4614] [cursor=pointer]:
+              - generic [ref=e4615]: 刷新配置
+            - button "发送消息" [ref=e4616] [cursor=pointer]:
+              - generic [ref=e4617]: 发送消息
+        - navigation "消息工作台导航" [ref=e4618]:
+          - button "消息发送 编辑并发出消息" [ref=e4619]:
+            - generic [ref=e4620]: 消息发送
+            - generic [ref=e4621]: 编辑并发出消息
+          - button "消息模板 维护摘要与正文模板" [ref=e4622]:
+            - generic [ref=e4623]: 消息模板
+            - generic [ref=e4624]: 维护摘要与正文模板
+          - button "发送人 管理发信身份" [ref=e4625]:
+            - generic [ref=e4626]: 发送人
+            - generic [ref=e4627]: 管理发信身份
+          - button "接收组 管理固定接收规则" [ref=e4628]:
+            - generic [ref=e4629]: 接收组
+            - generic [ref=e4630]: 管理固定接收规则
+          - button "发送记录 查看投递与审计" [ref=e4631]:
+            - generic [ref=e4632]: 发送记录
+            - generic [ref=e4633]: 查看投递与审计
+        - generic [ref=e4634]:
+          - generic [ref=e4635]:
+            - generic [ref=e4636]:
+              - generic [ref=e4637]:
+                - heading "发送配置" [level=3] [ref=e4638]
+                - paragraph [ref=e4639]: 当前以平台管理身份发送，可按所有用户、团队管理员或指定团队成员分发。
+              - generic [ref=e4641]: 平台发信
+            - generic [ref=e4642]:
+              - generic [ref=e4643]:
+                - generic [ref=e4644]:
+                  - heading "基础信息" [level=4] [ref=e4645]
+                  - paragraph [ref=e4646]: 先确定模板、发送人、消息类型和优先级，再进入发送对象和内容配置。
+                - generic [ref=e4647]:
+                  - generic [ref=e4648]:
+                    - generic [ref=e4649]: 消息模板
+                    - generic [ref=e4650]:
+                      - generic [ref=e4652]:
+                        - generic:
+                          - combobox "消息模板" [ref=e4654]
+                          - generic [ref=e4655]: 可选，选择后带入默认标题和富文本内容
+                        - img [ref=e4658] [cursor=pointer]
+                      - generic [ref=e4660]: 模板归属只决定模板来源，不改变本次实际的发送对象。
+                  - generic [ref=e4661]:
+                    - generic [ref=e4662]: 发送人
+                    - generic [ref=e4663]:
+                      - generic [ref=e4665] [cursor=pointer]:
+                        - generic:
+                          - combobox "发送人" [ref=e4667]
+                          - generic [ref=e4668]: 平台 · 默认
+                        - img [ref=e4671]
+                      - generic [ref=e4673]: 平台默认发送人
+                  - generic [ref=e4674]:
+                    - generic [ref=e4675]: 消息类型
+                    - radiogroup "消息类型" [ref=e4677]:
+                      - generic [ref=e4678]:
+                        - radio "通知" [checked] [ref=e4679]
+                        - generic [ref=e4680] [cursor=pointer]: 通知
+                      - generic [ref=e4681]:
+                        - radio "消息" [ref=e4682]
+                        - generic [ref=e4683] [cursor=pointer]: 消息
+                      - generic [ref=e4684]:
+                        - radio "待办" [ref=e4685]
+                        - generic [ref=e4686] [cursor=pointer]: 待办
+                  - generic [ref=e4687]:
+                    - generic [ref=e4688]: 消息优先级
+                    - radiogroup "消息优先级" [ref=e4690]:
+                      - generic [ref=e4691]:
+                        - radio "低" [ref=e4692]
+                        - generic [ref=e4693] [cursor=pointer]: 低
+                      - generic [ref=e4694]:
+                        - radio "普通" [checked] [ref=e4695]
+                        - generic [ref=e4696] [cursor=pointer]: 普通
+                      - generic [ref=e4697]:
+                        - radio "高" [ref=e4698]
+                        - generic [ref=e4699] [cursor=pointer]: 高
+                      - generic [ref=e4700]:
+                        - radio "紧急" [ref=e4701]
+                        - generic [ref=e4702] [cursor=pointer]: 紧急
+              - generic [ref=e4703]:
+                - generic [ref=e4704]:
+                  - heading "接收对象" [level=4] [ref=e4705]
+                  - paragraph [ref=e4706]: 按主流消息公告后台习惯，先选对象，再补具体团队、用户或接收组。
+                - generic [ref=e4707]:
+                  - generic [ref=e4708]: 发送对象
+                  - generic [ref=e4709]:
+                    - generic [ref=e4711] [cursor=pointer]:
+                      - generic:
+                        - combobox "发送对象" [ref=e4713]
+                        - generic [ref=e4714]: 所有用户
+                      - img [ref=e4717]
+                    - generic [ref=e4719]: 平台统一给全部有效用户发送。
+              - generic [ref=e4720]:
+                - generic [ref=e4721]:
+                  - heading "内容编辑" [level=4] [ref=e4722]
+                  - paragraph [ref=e4723]: 摘要使用普通文本输入，正文保留富文本，更符合公告和站内信后台的常见做法。
+                - generic [ref=e4724]:
+                  - generic [ref=e4725]: 消息标题
+                  - generic [ref=e4728]:
+                    - textbox "消息标题" [ref=e4729]:
+                      - /placeholder: 例如：平台维护通知 / 团队待处理提醒
+                    - generic [ref=e4732]: 0 / 120
+                - generic [ref=e4733]:
+                  - generic [ref=e4734]: 摘要
+                  - generic [ref=e4735]:
+                    - generic [ref=e4736]:
+                      - textbox "摘要" [ref=e4737]:
+                        - /placeholder: 顶部消息预览和消息列表优先展示这里的摘要，建议一句话说明重点。
+                      - generic [ref=e4738]: 0 / 200
+                    - generic [ref=e4739]: 摘要保持纯文本，更适合列表、副标题和公告摘要展示。
+                - group "正文" [ref=e4740]:
+                  - generic [ref=e4741]: 正文
+                  - generic [ref=e4742]:
+                    - generic [ref=e4743]:
+                      - generic [ref=e4745]:
+                        - button "正文" [ref=e4747] [cursor=pointer]:
+                          - text: 正文
+                          - img [ref=e4748]
+                        - button [ref=e4751] [cursor=pointer]:
+                          - img [ref=e4752]
+                        - button [ref=e4756] [cursor=pointer]:
+                          - img [ref=e4757]
+                        - button [ref=e4760] [cursor=pointer]:
+                          - img [ref=e4761]
+                        - button [ref=e4764] [cursor=pointer]:
+                          - img [ref=e4765]
+                        - button [ref=e4768] [cursor=pointer]:
+                          - img [ref=e4769]
+                          - img [ref=e4773]
+                        - button [ref=e4776] [cursor=pointer]:
+                          - img [ref=e4777]
+                          - img [ref=e4779]
+                        - button [ref=e4782] [cursor=pointer]:
+                          - img [ref=e4783]
+                          - img [ref=e4785]
+                        - button "默认字号" [ref=e4789] [cursor=pointer]:
+                          - text: 默认字号
+                          - img [ref=e4790]
+                        - button "默认行高" [ref=e4793] [cursor=pointer]:
+                          - text: 默认行高
+                          - img [ref=e4794]
+                        - button [ref=e4798] [cursor=pointer]:
+                          - img [ref=e4799]
+                        - button [ref=e4802] [cursor=pointer]:
+                          - img [ref=e4803]
+                        - button [ref=e4806] [cursor=pointer]:
+                          - img [ref=e4807]
+                        - button [ref=e4810] [cursor=pointer]:
+                          - img [ref=e4811]
+                          - img [ref=e4813]
+                        - button [ref=e4816] [cursor=pointer]:
+                          - img [ref=e4817]
+                          - img [ref=e4819]
+                        - button [ref=e4823] [cursor=pointer]:
+                          - img [ref=e4824]
+                          - img [ref=e4826]
+                        - button [ref=e4829] [cursor=pointer]:
+                          - img [ref=e4830]
+                        - button [ref=e4834] [cursor=pointer]:
+                          - img [ref=e4835]
+                          - img [ref=e4837]
+                        - button [ref=e4840] [cursor=pointer]:
+                          - img [ref=e4841]
+                          - img [ref=e4843]
+                        - button [ref=e4846] [cursor=pointer]:
+                          - img [ref=e4847]
+                          - img [ref=e4849]
+                        - button [ref=e4852] [cursor=pointer]:
+                          - img [ref=e4853]
+                        - button [ref=e4856] [cursor=pointer]:
+                          - img [ref=e4857]
+                        - button [ref=e4865] [cursor=pointer]:
+                          - img [ref=e4866]
+                        - button [ref=e4869] [cursor=pointer]:
+                          - img [ref=e4870]
+                        - button [ref=e4874] [cursor=pointer]:
+                          - img [ref=e4875]
+                      - generic [ref=e4878]:
+                        - paragraph [ref=e4881]
+                        - generic: 正文支持富文本和超链接，相关跳转直接放在正文里即可。
+                    - generic [ref=e4882]: 内部链接、外部链接都放在正文里，不再单独配置动作按钮。
+                - generic [ref=e4883]:
+                  - generic [ref=e4884]:
+                    - generic [ref=e4885]: 业务分类
+                    - textbox "业务分类" [ref=e4889]:
+                      - /placeholder: 例如：platform_announcement / team_notice
+                  - generic [ref=e4890]:
+                    - generic [ref=e4891]: 失效时间
+                    - generic [ref=e4894]:
+                      - img [ref=e4897]
+                      - combobox "失效时间" [ref=e4901]
+          - complementary [ref=e4902]:
+            - generic [ref=e4904]:
+              - heading "发送预览" [level=3] [ref=e4905]
+              - paragraph [ref=e4906]: 这里模拟右上角消息面板和消息中心详情的最终展示效果。
+            - generic [ref=e4907]:
+              - generic [ref=e4908]:
+                - generic [ref=e4909]: 通知
+                - generic [ref=e4910]: 普通
+              - heading "未填写标题" [level=4] [ref=e4911]
+              - paragraph [ref=e4913]: 摘要会显示在顶部消息预览和列表项副标题里。
+              - generic [ref=e4914]:
+                - generic [ref=e4916]: 平台
+                - generic [ref=e4918]: 所有用户
+                - generic [ref=e4920]: 全部有效用户
+              - paragraph [ref=e4922]: 正文会显示在消息中心详情区域，链接也直接写在正文里。
+  - generic [ref=e212]:
+    - generic "Toggle devtools panel" [ref=e213] [cursor=pointer]:
+      - img [ref=e214]
+    - generic "Toggle Component Inspector" [ref=e219] [cursor=pointer]:
+      - img [ref=e220]
+  - tooltip "点击这里查看主题风格、 开启顶栏菜单等更多配置" [ref=e224]:
+    - paragraph [ref=e225]: 点击这里查看主题风格、 开启顶栏菜单等更多配置

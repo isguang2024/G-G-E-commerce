@@ -285,6 +285,8 @@
 - 普通成员通过真实浏览器正常登录后会落到 `#/workspace/inbox`
 - 普通成员消息中心摘要、列表、详情接口已确认能拿到至少 1 条平台演示消息
 - `member_demo` 调 `/api/v1/pages/runtime` 不再包含 `system.message.manage`、`team.message.manage`
+- 登录态 `/api/v1/pages/runtime` 已包含公开页 `dashboard.example.page`
+- 不带 `X-Tenant-ID` 调 `/api/v1/tenants/my-team` 不再隐式猜团队
 - `team_admin_demo` 带 `X-Tenant-ID` 调 `/api/v1/pages/runtime` 包含 `team.message.manage`
 - `platform_admin_demo` 调 `/api/v1/pages/runtime` 包含 `system.message.manage`
 

@@ -19,6 +19,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/logger"
 	"github.com/gg-ecommerce/backend/internal/pkg/password"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
@@ -153,10 +154,10 @@ func (s *demoInitializer) Run() error {
 	if err := s.ensureDemoTeamFeaturePackages(); err != nil {
 		return err
 	}
-	if err := s.refreshSnapshots(); err != nil {
+	if err := s.ensureDemoMenuSpace(); err != nil {
 		return err
 	}
-	if err := s.ensureDemoMenuSpace(); err != nil {
+	if err := s.refreshSnapshots(); err != nil {
 		return err
 	}
 	if err := s.ensureDemoMessagingAssets(); err != nil {
@@ -397,6 +398,9 @@ func (s *demoInitializer) ensureDemoMenuSpace() error {
 	if s.spaceKey == "" || s.spaceKey == systemmodels.DefaultMenuSpaceKey {
 		s.spaceKey = defaultDemoSpaceKey
 	}
+	if err := s.restoreDefaultSpaceSeedRecords(); err != nil {
+		return err
+	}
 	if _, err := s.spaceService.SaveSpace(&spacesvc.SaveSpaceRequest{
 		SpaceKey:        s.spaceKey,
 		Name:            "运营空间",
@@ -409,19 +413,103 @@ func (s *demoInitializer) ensureDemoMenuSpace() error {
 		return err
 	}
 
-	records, err := s.spaceService.ListSpaces()
-	if err != nil {
+	if _, err := s.spaceService.InitializeFromDefault(s.spaceKey, true, &s.platformAdmin.ID); err != nil {
 		return err
 	}
-	for _, item := range records {
-		if normalizeSpaceKey(item.SpaceKey) != s.spaceKey {
+	return nil
+}
+
+func (s *demoInitializer) restoreDefaultSpaceSeedRecords() error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if err := restoreDefaultSeedMenus(tx); err != nil {
+			return err
+		}
+		return restoreDefaultSeedPages(tx)
+	})
+}
+
+func restoreDefaultSeedMenus(tx *gorm.DB) error {
+	defaultSeedNames := make([]string, 0)
+	for _, item := range permissionseed.DefaultMenus() {
+		if normalizeSpaceKey(item.SpaceKey) != systemmodels.DefaultMenuSpaceKey {
 			continue
 		}
-		if item.MenuCount > 0 || item.PageCount > 0 {
-			return nil
+		name := strings.TrimSpace(item.Name)
+		if name == "" {
+			continue
 		}
-		_, err = s.spaceService.InitializeFromDefault(s.spaceKey, false, &s.platformAdmin.ID)
-		return err
+		defaultSeedNames = append(defaultSeedNames, name)
+	}
+	for _, name := range defaultSeedNames {
+		var activeCount int64
+		if err := tx.Model(&systemmodels.Menu{}).
+			Where("COALESCE(NULLIF(space_key, ''), ?) = ?", systemmodels.DefaultMenuSpaceKey, systemmodels.DefaultMenuSpaceKey).
+			Where("name = ?", name).
+			Count(&activeCount).Error; err != nil {
+			return err
+		}
+		if activeCount > 0 {
+			continue
+		}
+		var deleted systemmodels.Menu
+		if err := tx.Unscoped().
+			Where("COALESCE(NULLIF(space_key, ''), ?) = ?", systemmodels.DefaultMenuSpaceKey, systemmodels.DefaultMenuSpaceKey).
+			Where("name = ? AND deleted_at IS NOT NULL", name).
+			Order("updated_at DESC").
+			First(&deleted).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				continue
+			}
+			return err
+		}
+		if err := tx.Unscoped().Model(&systemmodels.Menu{}).
+			Where("id = ?", deleted.ID).
+			Update("deleted_at", nil).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func restoreDefaultSeedPages(tx *gorm.DB) error {
+	defaultSeedKeys := make([]string, 0)
+	for _, item := range permissionseed.DefaultPages() {
+		if normalizeSpaceKey(item.SpaceKey) != systemmodels.DefaultMenuSpaceKey {
+			continue
+		}
+		pageKey := strings.TrimSpace(item.PageKey)
+		if pageKey == "" {
+			continue
+		}
+		defaultSeedKeys = append(defaultSeedKeys, pageKey)
+	}
+	for _, pageKey := range defaultSeedKeys {
+		var activeCount int64
+		if err := tx.Model(&systemmodels.UIPage{}).
+			Where("COALESCE(NULLIF(space_key, ''), ?) = ?", systemmodels.DefaultMenuSpaceKey, systemmodels.DefaultMenuSpaceKey).
+			Where("page_key = ?", pageKey).
+			Count(&activeCount).Error; err != nil {
+			return err
+		}
+		if activeCount > 0 {
+			continue
+		}
+		var deleted systemmodels.UIPage
+		if err := tx.Unscoped().
+			Where("COALESCE(NULLIF(space_key, ''), ?) = ?", systemmodels.DefaultMenuSpaceKey, systemmodels.DefaultMenuSpaceKey).
+			Where("page_key = ? AND deleted_at IS NOT NULL", pageKey).
+			Order("updated_at DESC").
+			First(&deleted).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				continue
+			}
+			return err
+		}
+		if err := tx.Unscoped().Model(&systemmodels.UIPage{}).
+			Where("id = ?", deleted.ID).
+			Update("deleted_at", nil).Error; err != nil {
+			return err
+		}
 	}
 	return nil
 }

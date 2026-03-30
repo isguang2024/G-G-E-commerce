@@ -1705,7 +1705,7 @@ func (h *TenantHandler) resolveTenantMember(c *gin.Context) (*user.TenantMember,
 		return member, nil
 	}
 
-	return h.tenantMemberRepo.GetByUserID(userID)
+	return nil, ErrTenantMemberNotFound
 }
 
 func (h *TenantHandler) resolveMyTeamRole(c *gin.Context) (*user.TenantMember, *user.Role, error) {
@@ -1784,6 +1784,19 @@ func defaultString(value, fallback string) string {
 }
 
 func parseTenantIDFromContext(c *gin.Context) (uuid.UUID, bool) {
+	if value, ok := c.Get("tenant_id"); ok {
+		switch typed := value.(type) {
+		case string:
+			if tenantID, err := uuid.Parse(strings.TrimSpace(typed)); err == nil {
+				return tenantID, true
+			}
+		case uuid.UUID:
+			if typed != uuid.Nil {
+				return typed, true
+			}
+		}
+	}
+
 	candidates := []string{
 		strings.TrimSpace(c.Query("tenant_id")),
 		strings.TrimSpace(c.GetHeader(tenantContextHeader)),

@@ -84,10 +84,12 @@
 
 <script setup lang="ts">
   import { computed, nextTick, ref, watch } from 'vue'
+  import { storeToRefs } from 'pinia'
   import { Search } from '@element-plus/icons-vue'
   import { ElMessage } from 'element-plus'
   import type { CascaderOption, CascaderProps } from 'element-plus'
   import { fetchGetMenuTreeAll, fetchGetFeaturePackageMenus, fetchSetFeaturePackageMenus } from '@/api/system-manage'
+  import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import { formatMenuTitle } from '@/utils/router'
 
   interface Props {
@@ -141,6 +143,8 @@
   }
 
   const menuPanelRef = ref<any>()
+  const menuSpaceStore = useMenuSpaceStore()
+  const { currentSpaceKey } = storeToRefs(menuSpaceStore)
   const loading = ref(false)
   const saving = ref(false)
   const menuTreeData = ref<RawMenuNode[]>([])
@@ -212,7 +216,7 @@
     loading.value = true
     try {
       const [menus, assigned] = await Promise.all([
-        fetchGetMenuTreeAll(),
+        fetchGetMenuTreeAll(currentSpaceKey.value),
         fetchGetFeaturePackageMenus(props.packageId)
       ])
       menuTreeData.value = sanitizeMenuTree(menus)

@@ -90,6 +90,8 @@ type Service interface {
 	ListSpaces() ([]SpaceRecord, error)
 	GetCurrent(host string, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*CurrentResponse, error)
 	ListHostBindings() ([]HostBindingRecord, error)
+	GetMode() (string, error)
+	SaveMode(mode string) (string, error)
 	SaveSpace(req *SaveSpaceRequest) (*SpaceRecord, error)
 	SaveHostBinding(req *SaveHostBindingRequest) (*HostBindingRecord, error)
 	InitializeFromDefault(targetSpaceKey string, force bool, actorUserID *uuid.UUID) (*InitializeResult, error)
@@ -181,6 +183,45 @@ func (s *service) GetCurrent(host string, requestedSpaceKey string, userID *uuid
 	if err := EnsureDefaultMenuSpace(s.db); err != nil {
 		return nil, err
 	}
+	if IsSingleSpaceMode(s.db) {
+		explicit := NormalizeSpaceKey(requestedSpaceKey)
+		if explicit != "" && explicit != DefaultMenuSpaceKey {
+			ok, checkErr := spaceExists(s.db, explicit)
+			if checkErr != nil {
+				return nil, checkErr
+			}
+			if ok {
+				allowed, accessErr := CanAccessSpace(s.db, userID, tenantID, explicit)
+				if accessErr != nil {
+					return nil, accessErr
+				}
+				if allowed {
+					spaceRecord, err := s.getSpaceRecord(explicit)
+					if err != nil {
+						return nil, err
+					}
+					return &CurrentResponse{
+						Space:         *spaceRecord,
+						Binding:       nil,
+						ResolvedBy:    "single_mode_explicit",
+						RequestHost:   NormalizeHost(host),
+						AccessGranted: true,
+					}, nil
+				}
+			}
+		}
+		spaceRecord, err := s.getSpaceRecord(DefaultMenuSpaceKey)
+		if err != nil {
+			return nil, err
+		}
+		return &CurrentResponse{
+			Space:         *spaceRecord,
+			Binding:       nil,
+			ResolvedBy:    "single_mode",
+			RequestHost:   NormalizeHost(host),
+			AccessGranted: true,
+		}, nil
+	}
 	explicit := NormalizeSpaceKey(requestedSpaceKey)
 	resolvedKey, binding, err := ResolveSpaceKeyByHost(s.db, host)
 	if err != nil {
@@ -236,6 +277,14 @@ func (s *service) GetCurrent(host string, requestedSpaceKey string, userID *uuid
 		RequestHost:   NormalizeHost(host),
 		AccessGranted: accessGranted || resolvedKey == DefaultMenuSpaceKey,
 	}, nil
+}
+
+func (s *service) GetMode() (string, error) {
+	return CurrentSpaceMode(s.db), nil
+}
+
+func (s *service) SaveMode(mode string) (string, error) {
+	return SaveCurrentSpaceMode(s.db, mode)
 }
 
 func (s *service) ListHostBindings() ([]HostBindingRecord, error) {

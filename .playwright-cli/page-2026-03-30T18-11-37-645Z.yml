@@ -1,0 +1,255 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e9]:
+        - generic [ref=e10] [cursor=pointer]:
+          - img "logo" [ref=e12]
+          - paragraph [ref=e13]: G&G-E
+        - menubar [ref=e14]:
+          - menuitem "仪表盘" [expanded] [ref=e15]:
+            - generic [ref=e16] [cursor=pointer]:
+              - img [ref=e18]
+              - generic [ref=e20]: 仪表盘
+              - img [ref=e22]
+            - menu [ref=e24]:
+              - menuitem "工作台" [ref=e25] [cursor=pointer]:
+                - generic [ref=e26]: 工作台
+          - menuitem "系统管理" [expanded] [ref=e27]:
+            - generic [ref=e28] [cursor=pointer]:
+              - img [ref=e30]
+              - generic [ref=e32]: 系统管理
+              - img [ref=e34]
+            - menu [ref=e36]:
+              - menuitem "身份与权限" [expanded] [ref=e37]:
+                - generic [ref=e38] [cursor=pointer]:
+                  - img [ref=e40]
+                  - generic [ref=e42]: 身份与权限
+                  - img [ref=e44]
+                - menu [ref=e46]:
+                  - menuitem "角色管理" [ref=e47] [cursor=pointer]:
+                    - generic [ref=e48]: 角色管理
+                  - menuitem "用户管理" [ref=e49] [cursor=pointer]:
+                    - generic [ref=e50]: 用户管理
+                  - menuitem "功能权限" [ref=e51] [cursor=pointer]:
+                    - generic [ref=e52]: 功能权限
+                  - menuitem "功能包管理" [active] [ref=e53] [cursor=pointer]:
+                    - generic [ref=e54]: 功能包管理
+              - menuitem "导航与界面" [expanded] [ref=e55]:
+                - generic [ref=e56] [cursor=pointer]:
+                  - img [ref=e58]
+                  - generic [ref=e60]: 导航与界面
+                  - img [ref=e62]
+                - menu [ref=e231]:
+                  - menuitem "菜单管理" [ref=e232] [cursor=pointer]:
+                    - generic [ref=e233]: 菜单管理
+                  - menuitem "页面管理" [ref=e234] [cursor=pointer]:
+                    - generic [ref=e235]: 页面管理
+                  - menuitem "快捷应用管理" [ref=e236] [cursor=pointer]:
+                    - generic [ref=e237]: 快捷应用管理
+                  - menuitem "菜单空间" [ref=e238] [cursor=pointer]:
+                    - generic [ref=e239]: 菜单空间
+              - menuitem "接口与注册" [ref=e64]:
+                - generic [ref=e65] [cursor=pointer]:
+                  - img [ref=e67]
+                  - generic [ref=e69]: 接口与注册
+                  - img [ref=e71]
+          - menuitem "团队管理" [ref=e73]:
+            - generic [ref=e74] [cursor=pointer]:
+              - img [ref=e76]
+              - generic [ref=e78]: 团队管理
+              - img [ref=e80]
+    - main [ref=e82]:
+      - generic [ref=e84]:
+        - generic [ref=e85]:
+          - generic [ref=e86]:
+            - img [ref=e88] [cursor=pointer]
+            - img [ref=e91] [cursor=pointer]
+            - img [ref=e95] [cursor=pointer]
+            - navigation "breadcrumb" [ref=e97]:
+              - list [ref=e98]:
+                - listitem [ref=e2213]:
+                  - generic [ref=e2215] [cursor=pointer]: 系统管理
+                  - generic [ref=e2216]: /
+                - listitem [ref=e2631]:
+                  - generic [ref=e2633] [cursor=pointer]: 导航与界面
+                  - generic [ref=e2634]: /
+                - listitem [ref=e3205]:
+                  - generic [ref=e3207]: 菜单空间
+          - generic [ref=e106]:
+            - generic [ref=e107] [cursor=pointer]:
+              - generic [ref=e108]:
+                - img [ref=e109]
+                - generic [ref=e111]: 搜索
+              - generic [ref=e112]:
+                - img [ref=e113]
+                - generic [ref=e115]: k
+            - img [ref=e117] [cursor=pointer]
+            - img [ref=e120] [cursor=pointer]
+            - img [ref=e125] [cursor=pointer]
+            - img [ref=e128] [cursor=pointer]
+            - img "avatar" [ref=e130] [cursor=pointer]
+        - generic [ref=e131]:
+          - list [ref=e133]:
+            - listitem [ref=e134] [cursor=pointer]: 工作台
+            - listitem [ref=e135] [cursor=pointer]:
+              - text: 用户管理
+              - img [ref=e137]
+            - listitem [ref=e139] [cursor=pointer]:
+              - text: 角色管理
+              - img [ref=e141]
+            - listitem [ref=e143] [cursor=pointer]:
+              - text: 功能权限
+              - img [ref=e145]
+            - listitem [ref=e227] [cursor=pointer]:
+              - text: 菜单管理
+              - img [ref=e229]
+            - listitem [ref=e247] [cursor=pointer]:
+              - text: 页面管理
+              - img [ref=e249]
+            - listitem [ref=e251] [cursor=pointer]:
+              - text: 快捷应用管理
+              - img [ref=e253]
+            - listitem [ref=e473] [cursor=pointer]:
+              - text: 消息中心
+              - img [ref=e475]
+            - listitem [ref=e2209] [cursor=pointer]:
+              - text: 功能包管理
+              - img [ref=e2211]
+            - listitem [ref=e3201] [cursor=pointer]:
+              - text: 菜单空间
+              - img [ref=e3203]
+          - img [ref=e149] [cursor=pointer]
+      - generic [ref=e3208]:
+        - generic [ref=e3209]:
+          - generic [ref=e3210]:
+            - generic [ref=e3211]:
+              - heading "菜单空间" [level=1] [ref=e3212]
+              - paragraph [ref=e3213]: 先定义菜单空间，再按需绑定 Host。默认空间继续兼容当前单域单菜单模式，新增空间后也可以先在单域里逐步接入。
+            - generic [ref=e3214]:
+              - generic [ref=e3215]:
+                - generic [ref=e3216]: 菜单空间
+                - strong [ref=e3217]: "2"
+              - generic [ref=e3218]:
+                - generic [ref=e3219]: Host 绑定
+                - strong [ref=e3220]: "0"
+              - generic [ref=e3221]:
+                - generic [ref=e3222]: 已初始化
+                - strong [ref=e3223]: "2"
+              - generic [ref=e3224]:
+                - generic [ref=e3225]: 当前解析
+                - strong [ref=e3226]: default
+          - generic [ref=e3228]:
+            - generic [ref=e3230] [cursor=pointer]:
+              - generic:
+                - combobox [ref=e3232]
+                - generic [ref=e3233]: 单空间模式
+              - img [ref=e3236]
+            - button "保存模式" [ref=e3238] [cursor=pointer]:
+              - generic [ref=e3239]: 保存模式
+            - button "新增空间" [ref=e3240] [cursor=pointer]:
+              - generic [ref=e3241]: 新增空间
+            - button "新增 Host 绑定" [ref=e3242] [cursor=pointer]:
+              - generic [ref=e3243]: 新增 Host 绑定
+            - button "刷新" [ref=e3244] [cursor=pointer]:
+              - generic [ref=e3245]: 刷新
+        - generic [ref=e3246]:
+          - generic [ref=e3247]:
+            - generic [ref=e3250]:
+              - generic [ref=e3251]: 菜单空间
+              - generic [ref=e3252]: 默认空间始终兜底存在；新增空间后，可以逐步把菜单和页面迁过去。
+            - generic [ref=e3254]:
+              - button "默认菜单空间 默认 启用 标识 default 首页 /dashboard/console 菜单 29 页面 14 准入 全部可进 Host 0 兼容当前单域单菜单运行模式 已初始化 编辑 菜单管理 页面管理 绑定 Host" [ref=e3255]:
+                - generic [ref=e3256]:
+                  - generic [ref=e3257]:
+                    - generic [ref=e3258]: 默认菜单空间
+                    - generic [ref=e3260]: 默认
+                    - generic [ref=e3262]: 启用
+                  - generic [ref=e3263]:
+                    - generic [ref=e3264]: 标识 default
+                    - generic [ref=e3265]: 首页 /dashboard/console
+                    - generic [ref=e3266]: 菜单 29
+                    - generic [ref=e3267]: 页面 14
+                    - generic [ref=e3268]: 准入 全部可进
+                    - generic [ref=e3269]: Host 0
+                  - paragraph [ref=e3270]: 兼容当前单域单菜单运行模式
+                  - generic [ref=e3272]: 已初始化
+                - generic [ref=e3273]:
+                  - button "编辑" [ref=e3274] [cursor=pointer]:
+                    - generic [ref=e3275]: 编辑
+                  - button "菜单管理" [ref=e3276] [cursor=pointer]:
+                    - generic [ref=e3277]: 菜单管理
+                  - button "页面管理" [ref=e3278] [cursor=pointer]:
+                    - generic [ref=e3279]: 页面管理
+                  - button "绑定 Host" [ref=e3280] [cursor=pointer]:
+                    - generic [ref=e3281]: 绑定 Host
+              - button "运营空间 启用 标识 ops 首页 /dashboard/console 菜单 24 页面 13 准入 仅平台管理员 Host 0 系统收尾回归专用的非默认菜单空间示例 已初始化 编辑 菜单管理 页面管理 已初始化 绑定 Host" [ref=e3282]:
+                - generic [ref=e3283]:
+                  - generic [ref=e3284]:
+                    - generic [ref=e3285]: 运营空间
+                    - generic [ref=e3287]: 启用
+                  - generic [ref=e3288]:
+                    - generic [ref=e3289]: 标识 ops
+                    - generic [ref=e3290]: 首页 /dashboard/console
+                    - generic [ref=e3291]: 菜单 24
+                    - generic [ref=e3292]: 页面 13
+                    - generic [ref=e3293]: 准入 仅平台管理员
+                    - generic [ref=e3294]: Host 0
+                  - paragraph [ref=e3295]: 系统收尾回归专用的非默认菜单空间示例
+                  - generic [ref=e3297]: 已初始化
+                - generic [ref=e3298]:
+                  - button "编辑" [ref=e3299] [cursor=pointer]:
+                    - generic [ref=e3300]: 编辑
+                  - button "菜单管理" [ref=e3301] [cursor=pointer]:
+                    - generic [ref=e3302]: 菜单管理
+                  - button "页面管理" [ref=e3303] [cursor=pointer]:
+                    - generic [ref=e3304]: 页面管理
+                  - button "已初始化" [disabled] [ref=e3305]:
+                    - generic [ref=e3306]: 已初始化
+                  - button "绑定 Host" [ref=e3307] [cursor=pointer]:
+                    - generic [ref=e3308]: 绑定 Host
+          - generic [ref=e3309]:
+            - generic [ref=e3311]:
+              - generic [ref=e3312]:
+                - generic [ref=e3313]: Host 绑定
+                - generic [ref=e3314]: 可选配置。未命中任何 Host 时，系统会自动退回默认菜单空间。
+              - generic [ref=e3315]:
+                - generic [ref=e3317]: 当前解析 默认菜单空间
+                - generic [ref=e3319]: 模式 单空间
+                - generic [ref=e3321]: 来源 单空间默认
+            - generic [ref=e3322]:
+              - generic [ref=e3323]:
+                - generic [ref=e3324]:
+                  - generic [ref=e3325]:
+                    - generic [ref=e3326]: 当前空间
+                    - strong [ref=e3327]: 默认菜单空间
+                  - generic [ref=e3328]:
+                    - generic [ref=e3329]: 默认首页
+                    - strong [ref=e3330]: /dashboard/console
+                  - generic [ref=e3331]:
+                    - generic [ref=e3332]: 菜单 / 页面
+                    - strong [ref=e3333]: 29 / 14
+                  - generic [ref=e3334]:
+                    - generic [ref=e3335]: 初始化状态
+                    - strong [ref=e3336]: 已初始化
+                  - generic [ref=e3337]:
+                    - generic [ref=e3338]: 空间准入
+                    - strong [ref=e3339]: 全部可进
+                  - generic [ref=e3340]:
+                    - generic [ref=e3341]: 解析来源
+                    - strong [ref=e3342]: 单空间默认
+                  - generic [ref=e3343]:
+                    - generic [ref=e3344]: 请求 Host
+                    - strong [ref=e3345]: localhost
+                - generic [ref=e3346]:
+                  - button "进入菜单管理" [ref=e3347] [cursor=pointer]:
+                    - generic [ref=e3348]: 进入菜单管理
+                  - button "进入页面管理" [ref=e3349] [cursor=pointer]:
+                    - generic [ref=e3350]: 进入页面管理
+              - generic [ref=e3352]: 还没有 Host 绑定。当前依然按默认菜单空间运行，不影响现有架构。
+  - generic [ref=e212]:
+    - generic "Toggle devtools panel" [ref=e213] [cursor=pointer]:
+      - img [ref=e214]
+    - generic "Toggle Component Inspector" [ref=e219] [cursor=pointer]:
+      - img [ref=e220]
+  - tooltip "点击这里查看主题风格、 开启顶栏菜单等更多配置" [ref=e224]:
+    - paragraph [ref=e225]: 点击这里查看主题风格、 开启顶栏菜单等更多配置

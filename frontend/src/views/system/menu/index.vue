@@ -1119,7 +1119,6 @@
 
   const buildMenuMetaFromForm = (formData: any) => {
     const meta: Record<string, any> = {
-      roles: formData.roles,
       isEnable: formData.isEnable,
       keepAlive: formData.keepAlive,
       isHide: !!formData.isHide,

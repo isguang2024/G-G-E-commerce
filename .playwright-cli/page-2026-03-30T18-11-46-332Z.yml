@@ -1,0 +1,254 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e9]:
+        - generic [ref=e10] [cursor=pointer]:
+          - img "logo" [ref=e12]
+          - paragraph [ref=e13]: G&G-E
+        - menubar [ref=e14]:
+          - menuitem "仪表盘" [expanded] [ref=e15]:
+            - generic [ref=e16] [cursor=pointer]:
+              - img [ref=e18]
+              - generic [ref=e20]: 仪表盘
+              - img [ref=e22]
+            - menu [ref=e24]:
+              - menuitem "工作台" [ref=e25] [cursor=pointer]:
+                - generic [ref=e26]: 工作台
+          - menuitem "系统管理" [expanded] [ref=e27]:
+            - generic [ref=e28] [cursor=pointer]:
+              - img [ref=e30]
+              - generic [ref=e32]: 系统管理
+              - img [ref=e34]
+            - menu [ref=e36]:
+              - menuitem "身份与权限" [expanded] [ref=e37]:
+                - generic [ref=e38] [cursor=pointer]:
+                  - img [ref=e40]
+                  - generic [ref=e42]: 身份与权限
+                  - img [ref=e44]
+                - menu [ref=e46]:
+                  - menuitem "角色管理" [ref=e47] [cursor=pointer]:
+                    - generic [ref=e48]: 角色管理
+                  - menuitem "用户管理" [ref=e49] [cursor=pointer]:
+                    - generic [ref=e50]: 用户管理
+                  - menuitem "功能权限" [ref=e51] [cursor=pointer]:
+                    - generic [ref=e52]: 功能权限
+                  - menuitem "功能包管理" [ref=e53] [cursor=pointer]:
+                    - generic [ref=e54]: 功能包管理
+              - menuitem "导航与界面" [expanded] [ref=e55]:
+                - generic [ref=e56] [cursor=pointer]:
+                  - img [ref=e58]
+                  - generic [ref=e60]: 导航与界面
+                  - img [ref=e62]
+                - menu [ref=e231]:
+                  - menuitem "菜单管理" [ref=e232] [cursor=pointer]:
+                    - generic [ref=e233]: 菜单管理
+                  - menuitem "页面管理" [ref=e234] [cursor=pointer]:
+                    - generic [ref=e235]: 页面管理
+                  - menuitem "快捷应用管理" [ref=e236] [cursor=pointer]:
+                    - generic [ref=e237]: 快捷应用管理
+                  - menuitem "菜单空间" [ref=e238] [cursor=pointer]:
+                    - generic [ref=e239]: 菜单空间
+              - menuitem "接口与注册" [expanded] [ref=e64]:
+                - generic [ref=e65] [cursor=pointer]:
+                  - img [ref=e67]
+                  - generic [ref=e69]: 接口与注册
+                  - img [ref=e71]
+                - menu [ref=e3357]:
+                  - menuitem "API管理" [ref=e3358] [cursor=pointer]:
+                    - generic [ref=e3359]: API管理
+                  - menuitem "消息发送" [ref=e3360] [cursor=pointer]:
+                    - generic [ref=e3361]: 消息发送
+          - menuitem "团队管理" [expanded] [ref=e73]:
+            - generic [ref=e74] [cursor=pointer]:
+              - img [ref=e76]
+              - generic [ref=e78]: 团队管理
+              - img [ref=e80]
+            - menu [ref=e4927]:
+              - menuitem "所有团队" [ref=e4928] [cursor=pointer]:
+                - generic [ref=e4929]: 所有团队
+    - main [ref=e82]:
+      - generic [ref=e84]:
+        - generic [ref=e85]:
+          - generic [ref=e86]:
+            - img [ref=e88] [cursor=pointer]
+            - img [ref=e91] [cursor=pointer]
+            - img [ref=e95] [cursor=pointer]
+            - navigation "breadcrumb" [ref=e97]:
+              - list [ref=e98]:
+                - listitem [ref=e4930]:
+                  - generic [ref=e4932] [cursor=pointer]: 团队管理
+                  - generic [ref=e4933]: /
+                - listitem [ref=e4934]:
+                  - generic [ref=e4936]: 所有团队
+          - generic [ref=e106]:
+            - generic [ref=e107] [cursor=pointer]:
+              - generic [ref=e108]:
+                - img [ref=e109]
+                - generic [ref=e111]: 搜索
+              - generic [ref=e112]:
+                - img [ref=e113]
+                - generic [ref=e115]: k
+            - img [ref=e117] [cursor=pointer]
+            - img [ref=e120] [cursor=pointer]
+            - img [ref=e125] [cursor=pointer]
+            - img [ref=e128] [cursor=pointer]
+            - img "avatar" [ref=e130] [cursor=pointer]
+        - generic [ref=e131]:
+          - list [ref=e133]:
+            - listitem [ref=e134] [cursor=pointer]: 工作台
+            - listitem [ref=e135] [cursor=pointer]:
+              - text: 用户管理
+              - img [ref=e137]
+            - listitem [ref=e139] [cursor=pointer]:
+              - text: 角色管理
+              - img [ref=e141]
+            - listitem [ref=e143] [cursor=pointer]:
+              - text: 功能权限
+              - img [ref=e145]
+            - listitem [ref=e227] [cursor=pointer]:
+              - text: 菜单管理
+              - img [ref=e229]
+            - listitem [ref=e247] [cursor=pointer]:
+              - text: 页面管理
+              - img [ref=e249]
+            - listitem [ref=e251] [cursor=pointer]:
+              - text: 快捷应用管理
+              - img [ref=e253]
+            - listitem [ref=e473] [cursor=pointer]:
+              - text: 消息中心
+              - img [ref=e475]
+            - listitem [ref=e2209] [cursor=pointer]:
+              - text: 功能包管理
+              - img [ref=e2211]
+            - listitem [ref=e3201] [cursor=pointer]:
+              - text: 菜单空间
+              - img [ref=e3203]
+            - listitem [ref=e3353] [cursor=pointer]:
+              - text: API管理
+              - img [ref=e3355]
+            - listitem [ref=e4586] [cursor=pointer]:
+              - text: 消息发送
+              - img [ref=e4588]
+            - listitem [ref=e4923] [cursor=pointer]:
+              - text: 所有团队
+              - img [ref=e4925]
+          - img [ref=e149] [cursor=pointer]
+      - generic [ref=e4937]:
+        - generic [ref=e4940]:
+          - generic [ref=e4942]:
+            - generic [ref=e4944]: 团队名称
+            - textbox "团队名称" [ref=e4948]:
+              - /placeholder: 请输入团队名称
+          - generic [ref=e4950]:
+            - generic [ref=e4952]: 状态
+            - generic [ref=e4955] [cursor=pointer]:
+              - generic:
+                - combobox "状态" [ref=e4957]
+                - generic [ref=e4958]: 请选择状态
+              - img [ref=e4961]
+          - generic [ref=e4965]:
+            - button "重置" [ref=e4966] [cursor=pointer]:
+              - generic [ref=e4967]: 重置
+            - button "查询" [ref=e4968] [cursor=pointer]:
+              - generic [ref=e4969]: 查询
+        - generic [ref=e4971]:
+          - generic [ref=e4972]:
+            - button "新增团队" [ref=e4976] [cursor=pointer]:
+              - generic [ref=e4977]: 新增团队
+            - generic [ref=e4978]:
+              - img [ref=e4980] [cursor=pointer]
+              - button [ref=e4983] [cursor=pointer]:
+                - img [ref=e4984]
+              - img [ref=e4987] [cursor=pointer]
+              - img [ref=e4990] [cursor=pointer]
+              - img [ref=e4993] [cursor=pointer]
+          - generic [ref=e4995]:
+            - generic [ref=e4997]:
+              - table [ref=e4999]:
+                - rowgroup [ref=e5010]:
+                  - row "序号 团队名称 团队备注 管理员 套餐 最大成员数 状态 创建时间 操作" [ref=e5011]:
+                    - columnheader "序号" [ref=e5012]:
+                      - generic [ref=e5013]: 序号
+                    - columnheader "团队名称" [ref=e5014]:
+                      - generic [ref=e5015]: 团队名称
+                    - columnheader "团队备注" [ref=e5016]:
+                      - generic [ref=e5017]: 团队备注
+                    - columnheader "管理员" [ref=e5018]:
+                      - generic [ref=e5019]: 管理员
+                    - columnheader "套餐" [ref=e5020]:
+                      - generic [ref=e5021]: 套餐
+                    - columnheader "最大成员数" [ref=e5022]:
+                      - generic [ref=e5023]: 最大成员数
+                    - columnheader "状态" [ref=e5024]:
+                      - generic [ref=e5025]: 状态
+                    - columnheader "创建时间" [ref=e5026]:
+                      - generic [ref=e5027]: 创建时间
+                    - columnheader "操作" [ref=e5028]:
+                      - generic [ref=e5029]: 操作
+              - table [ref=e5034]:
+                - rowgroup [ref=e5045]:
+                  - row "1 演示团队 系统收尾回归演示团队 c626a4b8... demo 20 正常 2026-03-30 17:15:15" [ref=e5046]:
+                    - cell "1" [ref=e5047]:
+                      - generic [ref=e5049]: "1"
+                    - cell "演示团队" [ref=e5050]:
+                      - generic [ref=e5051]: 演示团队
+                    - cell "系统收尾回归演示团队" [ref=e5052]:
+                      - generic [ref=e5053]: 系统收尾回归演示团队
+                    - cell "c626a4b8..." [ref=e5054]:
+                      - generic [ref=e5058]: c626a4b8...
+                    - cell "demo" [ref=e5059]:
+                      - generic [ref=e5060]: demo
+                    - cell "20" [ref=e5061]:
+                      - generic [ref=e5062]: "20"
+                    - cell "正常" [ref=e5063]:
+                      - generic [ref=e5066]: 正常
+                    - cell "2026-03-30 17:15:15" [ref=e5067]:
+                      - generic [ref=e5068]: 2026-03-30 17:15:15
+                    - cell [ref=e5069]:
+                      - button [ref=e5072] [cursor=pointer]:
+                        - img [ref=e5074]
+                  - row "2 广广团队 07328a75... enterprise 10 正常 2026-03-24 10:17:37" [ref=e5076]:
+                    - cell "2" [ref=e5077]:
+                      - generic [ref=e5079]: "2"
+                    - cell "广广团队" [ref=e5080]:
+                      - generic [ref=e5081]: 广广团队
+                    - cell [ref=e5082]
+                    - cell "07328a75..." [ref=e5083]:
+                      - generic [ref=e5087]: 07328a75...
+                    - cell "enterprise" [ref=e5088]:
+                      - generic [ref=e5089]: enterprise
+                    - cell "10" [ref=e5090]:
+                      - generic [ref=e5091]: "10"
+                    - cell "正常" [ref=e5092]:
+                      - generic [ref=e5095]: 正常
+                    - cell "2026-03-24 10:17:37" [ref=e5096]:
+                      - generic [ref=e5097]: 2026-03-24 10:17:37
+                    - cell [ref=e5098]:
+                      - button [ref=e5101] [cursor=pointer]:
+                        - img [ref=e5103]
+            - generic [ref=e5106]:
+              - generic [ref=e5107]: 共 2 条
+              - button "上一页" [disabled] [ref=e5108]:
+                - generic:
+                  - img
+              - list [ref=e5109]:
+                - listitem "第 1 页" [ref=e5110]: "1"
+              - button "下一页" [disabled] [ref=e5111]:
+                - generic:
+                  - img
+              - generic [ref=e5114] [cursor=pointer]:
+                - generic:
+                  - combobox [ref=e5116]
+                  - generic [ref=e5117]: 20条/页
+                - img [ref=e5120]
+              - generic [ref=e5122]:
+                - generic [ref=e5123]: 前往
+                - spinbutton "页" [ref=e5126]: "1"
+                - generic [ref=e5127]: 页
+  - generic [ref=e212]:
+    - generic "Toggle devtools panel" [ref=e213] [cursor=pointer]:
+      - img [ref=e214]
+    - generic "Toggle Component Inspector" [ref=e219] [cursor=pointer]:
+      - img [ref=e220]
+  - tooltip "点击这里查看主题风格、 开启顶栏菜单等更多配置" [ref=e224]:
+    - paragraph [ref=e225]: 点击这里查看主题风格、 开启顶栏菜单等更多配置

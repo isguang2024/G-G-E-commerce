@@ -69,11 +69,13 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { formatMenuTitle } from '@/utils/router'
 import { fetchGetMenuTreeAll, fetchGetTeamFeaturePackages } from '@/api/system-manage'
 import { fetchGetTeamMenus, fetchGetTeamMenuOrigins, fetchSetTeamMenus } from '@/api/team'
+import { useMenuSpaceStore } from '@/store/modules/menu-space'
 import type { AppRouteRecord } from '@/types/router'
 import PermissionSourcePanels from '@/components/business/permission/PermissionSourcePanels.vue'
 import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
@@ -132,6 +134,8 @@ const blockedMenus = computed(() => {
   const idSet = new Set(blockedMenuIds.value)
   return menuSourceList.value.filter((item) => idSet.has(item.id))
 })
+const menuSpaceStore = useMenuSpaceStore()
+const { currentSpaceKey } = storeToRefs(menuSpaceStore)
 watch(
   () => props.modelValue,
   (open) => {
@@ -146,7 +150,7 @@ async function loadData() {
   loading.value = true
   try {
     const [allMenus, currentRes, packageRes, originRes] = await Promise.all([
-      fetchGetMenuTreeAll(),
+      fetchGetMenuTreeAll(currentSpaceKey.value),
       fetchGetTeamMenus(props.teamId),
       fetchGetTeamFeaturePackages(props.teamId),
       fetchGetTeamMenuOrigins(props.teamId)

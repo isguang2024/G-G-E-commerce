@@ -1,0 +1,762 @@
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e9]:
+        - generic [ref=e10] [cursor=pointer]:
+          - img "logo" [ref=e12]
+          - paragraph [ref=e13]: G&G-E
+        - menubar [ref=e14]:
+          - menuitem "仪表盘" [expanded] [ref=e15]:
+            - generic [ref=e16] [cursor=pointer]:
+              - img [ref=e18]
+              - generic [ref=e20]: 仪表盘
+              - img [ref=e22]
+            - menu [ref=e24]:
+              - menuitem "工作台" [active] [ref=e25] [cursor=pointer]:
+                - generic [ref=e26]: 工作台
+          - menuitem "系统管理" [expanded] [ref=e27]:
+            - generic [ref=e28] [cursor=pointer]:
+              - img [ref=e30]
+              - generic [ref=e32]: 系统管理
+              - img [ref=e34]
+            - menu [ref=e36]:
+              - menuitem "身份与权限" [expanded] [ref=e37]:
+                - generic [ref=e38] [cursor=pointer]:
+                  - img [ref=e40]
+                  - generic [ref=e42]: 身份与权限
+                  - img [ref=e44]
+                - menu [ref=e46]:
+                  - menuitem "角色管理" [ref=e47] [cursor=pointer]:
+                    - generic [ref=e48]: 角色管理
+                  - menuitem "用户管理" [ref=e49] [cursor=pointer]:
+                    - generic [ref=e50]: 用户管理
+                  - menuitem "功能权限" [ref=e51] [cursor=pointer]:
+                    - generic [ref=e52]: 功能权限
+                  - menuitem "功能包管理" [ref=e53] [cursor=pointer]:
+                    - generic [ref=e54]: 功能包管理
+              - menuitem "导航与界面" [ref=e55]:
+                - generic [ref=e56] [cursor=pointer]:
+                  - img [ref=e58]
+                  - generic [ref=e60]: 导航与界面
+                  - img [ref=e62]
+              - menuitem "接口与注册" [ref=e64]:
+                - generic [ref=e65] [cursor=pointer]:
+                  - img [ref=e67]
+                  - generic [ref=e69]: 接口与注册
+                  - img [ref=e71]
+          - menuitem "团队管理" [ref=e73]:
+            - generic [ref=e74] [cursor=pointer]:
+              - img [ref=e76]
+              - generic [ref=e78]: 团队管理
+              - img [ref=e80]
+    - main [ref=e82]:
+      - generic [ref=e84]:
+        - generic [ref=e85]:
+          - generic [ref=e86]:
+            - img [ref=e88] [cursor=pointer]
+            - img [ref=e91] [cursor=pointer]
+            - img [ref=e95] [cursor=pointer]
+            - navigation "breadcrumb" [ref=e97]:
+              - list [ref=e98]:
+                - listitem [ref=e2143]:
+                  - generic [ref=e2145] [cursor=pointer]: 仪表盘
+                  - generic [ref=e2146]: /
+                - listitem [ref=e2147]:
+                  - generic [ref=e2149]: 工作台
+          - generic [ref=e106]:
+            - generic [ref=e107] [cursor=pointer]:
+              - generic [ref=e108]:
+                - img [ref=e109]
+                - generic [ref=e111]: 搜索
+              - generic [ref=e112]:
+                - img [ref=e113]
+                - generic [ref=e115]: k
+            - img [ref=e117] [cursor=pointer]
+            - img [ref=e120] [cursor=pointer]
+            - img [ref=e125] [cursor=pointer]
+            - img [ref=e128] [cursor=pointer]
+            - img "avatar" [ref=e130] [cursor=pointer]
+        - generic [ref=e131]:
+          - list [ref=e133]:
+            - listitem [ref=e134] [cursor=pointer]: 工作台
+            - listitem [ref=e135] [cursor=pointer]:
+              - text: 用户管理
+              - img [ref=e137]
+            - listitem [ref=e139] [cursor=pointer]:
+              - text: 角色管理
+              - img [ref=e141]
+            - listitem [ref=e143] [cursor=pointer]:
+              - text: 功能权限
+              - img [ref=e145]
+            - listitem [ref=e227] [cursor=pointer]:
+              - text: 菜单管理
+              - img [ref=e229]
+            - listitem [ref=e247] [cursor=pointer]:
+              - text: 页面管理
+              - img [ref=e249]
+            - listitem [ref=e251] [cursor=pointer]:
+              - text: 快捷应用管理
+              - img [ref=e253]
+            - listitem [ref=e473] [cursor=pointer]:
+              - text: 消息中心
+              - img [ref=e475]
+          - img [ref=e149] [cursor=pointer]
+      - generic [ref=e152]:
+        - generic [ref=e1235]:
+          - generic [ref=e1238]:
+            - generic [ref=e1240]:
+              - generic [ref=e1242]: 关键词
+              - textbox "关键词" [ref=e1246]:
+                - /placeholder: 名称/描述/权限键
+            - generic [ref=e1248]:
+              - generic [ref=e1250]: 模块分组
+              - generic [ref=e1253]:
+                - generic:
+                  - combobox "模块分组" [ref=e1255]
+                  - generic [ref=e1256]: 请选择模块分组
+                - img [ref=e1259] [cursor=pointer]
+            - generic [ref=e1262]:
+              - generic [ref=e1264]: 功能分组
+              - generic [ref=e1267]:
+                - generic:
+                  - combobox "功能分组" [ref=e1269]
+                  - generic [ref=e1270]: 请选择功能分组
+                - img [ref=e1273] [cursor=pointer]
+            - generic [ref=e1276]:
+              - generic [ref=e1278]: 上下文
+              - generic [ref=e1281] [cursor=pointer]:
+                - generic:
+                  - combobox "上下文" [ref=e1283]
+                  - generic [ref=e1284]: 请选择上下文
+                - img [ref=e1287]
+            - generic [ref=e1290]:
+              - generic [ref=e1292]: 状态
+              - generic [ref=e1295] [cursor=pointer]:
+                - generic:
+                  - combobox "状态" [ref=e1297]
+                  - generic [ref=e1298]: 请选择状态
+                - img [ref=e1301]
+            - generic [ref=e1304]:
+              - generic [ref=e1306]: 是否内置
+              - generic [ref=e1309] [cursor=pointer]:
+                - generic:
+                  - combobox "是否内置" [ref=e1311]
+                  - generic [ref=e1312]: 请选择是否内置
+                - img [ref=e1315]
+            - generic [ref=e1318]:
+              - generic [ref=e1319]:
+                - button "重置" [ref=e1320] [cursor=pointer]:
+                  - generic [ref=e1321]: 重置
+                - button "查询" [ref=e1322] [cursor=pointer]:
+                  - generic [ref=e1323]: 查询
+              - generic [ref=e1324] [cursor=pointer]:
+                - generic [ref=e1325]: 收起
+                - img [ref=e1328]
+          - generic [ref=e1331]:
+            - generic [ref=e1332]:
+              - generic [ref=e1333]:
+                - button "新增功能权限" [ref=e1334] [cursor=pointer]:
+                  - generic [ref=e1335]: 新增功能权限
+                - button "管理模块分组" [ref=e1336] [cursor=pointer]:
+                  - generic [ref=e1337]: 管理模块分组
+                - button "管理功能分组" [ref=e1338] [cursor=pointer]:
+                  - generic [ref=e1339]: 管理功能分组
+              - generic [ref=e1340]:
+                - img [ref=e1342] [cursor=pointer]
+                - img [ref=e1345] [cursor=pointer]
+                - button [ref=e1348] [cursor=pointer]:
+                  - img [ref=e1349]
+                - img [ref=e1352] [cursor=pointer]
+                - img [ref=e1355] [cursor=pointer]
+                - img [ref=e1358] [cursor=pointer]
+            - generic [ref=e1360]:
+              - generic [ref=e1362]:
+                - table [ref=e1364]:
+                  - rowgroup [ref=e1377]:
+                    - row "权限名称 权限键 模块分组 功能分组 上下文 内置 描述 排序 状态 更新时间 操作" [ref=e1378]:
+                      - columnheader "权限名称" [ref=e1379]:
+                        - generic [ref=e1380]: 权限名称
+                      - columnheader "权限键" [ref=e1381]:
+                        - generic [ref=e1382]: 权限键
+                      - columnheader "模块分组" [ref=e1383]:
+                        - generic [ref=e1384]: 模块分组
+                      - columnheader "功能分组" [ref=e1385]:
+                        - generic [ref=e1386]: 功能分组
+                      - columnheader "上下文" [ref=e1387]:
+                        - generic [ref=e1388]: 上下文
+                      - columnheader "内置" [ref=e1389]:
+                        - generic [ref=e1390]: 内置
+                      - columnheader "描述" [ref=e1391]:
+                        - generic [ref=e1392]: 描述
+                      - columnheader "排序" [ref=e1393]:
+                        - generic [ref=e1394]: 排序
+                      - columnheader "状态" [ref=e1395]:
+                        - generic [ref=e1396]: 状态
+                      - columnheader "更新时间" [ref=e1397]:
+                        - generic [ref=e1398]: 更新时间
+                      - columnheader "操作" [ref=e1399]:
+                        - generic [ref=e1400]: 操作
+                - table [ref=e1405]:
+                  - rowgroup [ref=e1418]:
+                    - row "角色管理 system.role.manage 角色管理 系统功能 平台 是 允许查看和维护角色 5 正常 2026-03-26 00:28:54" [ref=e1419]:
+                      - cell "角色管理" [ref=e1420]:
+                        - generic [ref=e1421]: 角色管理
+                      - cell "system.role.manage" [ref=e1422]:
+                        - generic [ref=e1423]: system.role.manage
+                      - cell "角色管理" [ref=e1424]:
+                        - generic [ref=e1425]: 角色管理
+                      - cell "系统功能" [ref=e1426]:
+                        - generic [ref=e1427]: 系统功能
+                      - cell "平台" [ref=e1428]:
+                        - generic [ref=e1431]: 平台
+                      - cell "是" [ref=e1432]:
+                        - generic [ref=e1435]: 是
+                      - cell "允许查看和维护角色" [ref=e1436]:
+                        - generic [ref=e1437]: 允许查看和维护角色
+                      - cell "5" [ref=e1438]:
+                        - generic [ref=e1439]: "5"
+                      - cell "正常" [ref=e1440]:
+                        - generic [ref=e1443]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e1444]:
+                        - generic [ref=e1445]: 2026-03-26 00:28:54
+                      - cell [ref=e1446]:
+                        - button [ref=e1450] [cursor=pointer]:
+                          - img [ref=e1452]
+                    - row "配置角色菜单权限 system.role.assign_menu 角色管理 系统功能 平台 是 允许为角色配置菜单权限 6 正常 2026-03-26 00:28:54" [ref=e1454]:
+                      - cell "配置角色菜单权限" [ref=e1455]:
+                        - generic [ref=e1456]: 配置角色菜单权限
+                      - cell "system.role.assign_menu" [ref=e1457]:
+                        - generic [ref=e1458]: system.role.assign_menu
+                      - cell "角色管理" [ref=e1459]:
+                        - generic [ref=e1460]: 角色管理
+                      - cell "系统功能" [ref=e1461]:
+                        - generic [ref=e1462]: 系统功能
+                      - cell "平台" [ref=e1463]:
+                        - generic [ref=e1466]: 平台
+                      - cell "是" [ref=e1467]:
+                        - generic [ref=e1470]: 是
+                      - cell "允许为角色配置菜单权限" [ref=e1471]:
+                        - generic [ref=e1472]: 允许为角色配置菜单权限
+                      - cell "6" [ref=e1473]:
+                        - generic [ref=e1474]: "6"
+                      - cell "正常" [ref=e1475]:
+                        - generic [ref=e1478]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e1479]:
+                        - generic [ref=e1480]: 2026-03-26 00:28:54
+                      - cell [ref=e1481]:
+                        - button [ref=e1485] [cursor=pointer]:
+                          - img [ref=e1487]
+                    - row "配置角色数据权限 system.role.assign_data 角色管理 系统功能 平台 是 允许为角色配置数据权限 8 正常 2026-03-26 00:28:54" [ref=e1489]:
+                      - cell "配置角色数据权限" [ref=e1490]:
+                        - generic [ref=e1491]: 配置角色数据权限
+                      - cell "system.role.assign_data" [ref=e1492]:
+                        - generic [ref=e1493]: system.role.assign_data
+                      - cell "角色管理" [ref=e1494]:
+                        - generic [ref=e1495]: 角色管理
+                      - cell "系统功能" [ref=e1496]:
+                        - generic [ref=e1497]: 系统功能
+                      - cell "平台" [ref=e1498]:
+                        - generic [ref=e1501]: 平台
+                      - cell "是" [ref=e1502]:
+                        - generic [ref=e1505]: 是
+                      - cell "允许为角色配置数据权限" [ref=e1506]:
+                        - generic [ref=e1507]: 允许为角色配置数据权限
+                      - cell "8" [ref=e1508]:
+                        - generic [ref=e1509]: "8"
+                      - cell "正常" [ref=e1510]:
+                        - generic [ref=e1513]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e1514]:
+                        - generic [ref=e1515]: 2026-03-26 00:28:54
+                      - cell [ref=e1516]:
+                        - button [ref=e1520] [cursor=pointer]:
+                          - img [ref=e1522]
+                    - row "用户管理 system.user.manage 用户管理 系统功能 平台 是 允许查看和维护用户 18 正常 2026-03-26 00:28:54" [ref=e1524]:
+                      - cell "用户管理" [ref=e1525]:
+                        - generic [ref=e1526]: 用户管理
+                      - cell "system.user.manage" [ref=e1527]:
+                        - generic [ref=e1528]: system.user.manage
+                      - cell "用户管理" [ref=e1529]:
+                        - generic [ref=e1530]: 用户管理
+                      - cell "系统功能" [ref=e1531]:
+                        - generic [ref=e1532]: 系统功能
+                      - cell "平台" [ref=e1533]:
+                        - generic [ref=e1536]: 平台
+                      - cell "是" [ref=e1537]:
+                        - generic [ref=e1540]: 是
+                      - cell "允许查看和维护用户" [ref=e1541]:
+                        - generic [ref=e1542]: 允许查看和维护用户
+                      - cell "18" [ref=e1543]:
+                        - generic [ref=e1544]: "18"
+                      - cell "正常" [ref=e1545]:
+                        - generic [ref=e1548]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e1549]:
+                        - generic [ref=e1550]: 2026-03-26 00:28:54
+                      - cell [ref=e1551]:
+                        - button [ref=e1555] [cursor=pointer]:
+                          - img [ref=e1557]
+                    - row "分配用户角色 system.user.assign_role 用户管理 系统功能 平台 是 允许为用户分配角色 19 正常 2026-03-26 00:28:54" [ref=e1559]:
+                      - cell "分配用户角色" [ref=e1560]:
+                        - generic [ref=e1561]: 分配用户角色
+                      - cell "system.user.assign_role" [ref=e1562]:
+                        - generic [ref=e1563]: system.user.assign_role
+                      - cell "用户管理" [ref=e1564]:
+                        - generic [ref=e1565]: 用户管理
+                      - cell "系统功能" [ref=e1566]:
+                        - generic [ref=e1567]: 系统功能
+                      - cell "平台" [ref=e1568]:
+                        - generic [ref=e1571]: 平台
+                      - cell "是" [ref=e1572]:
+                        - generic [ref=e1575]: 是
+                      - cell "允许为用户分配角色" [ref=e1576]:
+                        - generic [ref=e1577]: 允许为用户分配角色
+                      - cell "19" [ref=e1578]:
+                        - generic [ref=e1579]: "19"
+                      - cell "正常" [ref=e1580]:
+                        - generic [ref=e1583]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e1584]:
+                        - generic [ref=e1585]: 2026-03-26 00:28:54
+                      - cell [ref=e1586]:
+                        - button [ref=e1590] [cursor=pointer]:
+                          - img [ref=e1592]
+                    - row "配置用户功能权限 system.user.assign_action 用户管理 系统功能 平台 是 允许为用户配置功能权限 20 正常 2026-03-26 00:28:54" [ref=e1594]:
+                      - cell "配置用户功能权限" [ref=e1595]:
+                        - generic [ref=e1596]: 配置用户功能权限
+                      - cell "system.user.assign_action" [ref=e1597]:
+                        - generic [ref=e1598]: system.user.assign_action
+                      - cell "用户管理" [ref=e1599]:
+                        - generic [ref=e1600]: 用户管理
+                      - cell "系统功能" [ref=e1601]:
+                        - generic [ref=e1602]: 系统功能
+                      - cell "平台" [ref=e1603]:
+                        - generic [ref=e1606]: 平台
+                      - cell "是" [ref=e1607]:
+                        - generic [ref=e1610]: 是
+                      - cell "允许为用户配置功能权限" [ref=e1611]:
+                        - generic [ref=e1612]: 允许为用户配置功能权限
+                      - cell "20" [ref=e1613]:
+                        - generic [ref=e1614]: "20"
+                      - cell "正常" [ref=e1615]:
+                        - generic [ref=e1618]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e1619]:
+                        - generic [ref=e1620]: 2026-03-26 00:28:54
+                      - cell [ref=e1621]:
+                        - button [ref=e1625] [cursor=pointer]:
+                          - img [ref=e1627]
+                    - row "菜单管理 system.menu.manage 菜单管理 系统功能 平台 是 允许查看和维护菜单 24 正常 2026-03-26 00:28:54" [ref=e1629]:
+                      - cell "菜单管理" [ref=e1630]:
+                        - generic [ref=e1631]: 菜单管理
+                      - cell "system.menu.manage" [ref=e1632]:
+                        - generic [ref=e1633]: system.menu.manage
+                      - cell "菜单管理" [ref=e1634]:
+                        - generic [ref=e1635]: 菜单管理
+                      - cell "系统功能" [ref=e1636]:
+                        - generic [ref=e1637]: 系统功能
+                      - cell "平台" [ref=e1638]:
+                        - generic [ref=e1641]: 平台
+                      - cell "是" [ref=e1642]:
+                        - generic [ref=e1645]: 是
+                      - cell "允许查看和维护菜单" [ref=e1646]:
+                        - generic [ref=e1647]: 允许查看和维护菜单
+                      - cell "24" [ref=e1648]:
+                        - generic [ref=e1649]: "24"
+                      - cell "正常" [ref=e1650]:
+                        - generic [ref=e1653]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e1654]:
+                        - generic [ref=e1655]: 2026-03-26 00:28:54
+                      - cell [ref=e1656]:
+                        - button [ref=e1660] [cursor=pointer]:
+                          - img [ref=e1662]
+                    - row "菜单备份管理 system.menu.backup 菜单备份 系统功能 平台 是 允许创建、查看、恢复和删除菜单备份 28 正常 2026-03-26 00:28:54" [ref=e1664]:
+                      - cell "菜单备份管理" [ref=e1665]:
+                        - generic [ref=e1666]: 菜单备份管理
+                      - cell "system.menu.backup" [ref=e1667]:
+                        - generic [ref=e1668]: system.menu.backup
+                      - cell "菜单备份" [ref=e1669]:
+                        - generic [ref=e1670]: 菜单备份
+                      - cell "系统功能" [ref=e1671]:
+                        - generic [ref=e1672]: 系统功能
+                      - cell "平台" [ref=e1673]:
+                        - generic [ref=e1676]: 平台
+                      - cell "是" [ref=e1677]:
+                        - generic [ref=e1680]: 是
+                      - cell "允许创建、查看、恢复和删除菜单备份" [ref=e1681]:
+                        - generic [ref=e1682]: 允许创建、查看、恢复和删除菜单备份
+                      - cell "28" [ref=e1683]:
+                        - generic [ref=e1684]: "28"
+                      - cell "正常" [ref=e1685]:
+                        - generic [ref=e1688]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e1689]:
+                        - generic [ref=e1690]: 2026-03-26 00:28:54
+                      - cell [ref=e1691]:
+                        - button [ref=e1695] [cursor=pointer]:
+                          - img [ref=e1697]
+                    - row "查看页面文件映射 system.page_catalog.view 系统工具 系统功能 平台 是 允许查看页面文件映射 29 正常 2026-03-26 00:28:54" [ref=e1699]:
+                      - cell "查看页面文件映射" [ref=e1700]:
+                        - generic [ref=e1701]: 查看页面文件映射
+                      - cell "system.page_catalog.view" [ref=e1702]:
+                        - generic [ref=e1703]: system.page_catalog.view
+                      - cell "系统工具" [ref=e1704]:
+                        - generic [ref=e1705]: 系统工具
+                      - cell "系统功能" [ref=e1706]:
+                        - generic [ref=e1707]: 系统功能
+                      - cell "平台" [ref=e1708]:
+                        - generic [ref=e1711]: 平台
+                      - cell "是" [ref=e1712]:
+                        - generic [ref=e1715]: 是
+                      - cell "允许查看页面文件映射" [ref=e1716]:
+                        - generic [ref=e1717]: 允许查看页面文件映射
+                      - cell "29" [ref=e1718]:
+                        - generic [ref=e1719]: "29"
+                      - cell "正常" [ref=e1720]:
+                        - generic [ref=e1723]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e1724]:
+                        - generic [ref=e1725]: 2026-03-26 00:28:54
+                      - cell [ref=e1726]:
+                        - button [ref=e1730] [cursor=pointer]:
+                          - img [ref=e1732]
+                    - row "团队管理 tenant.manage 团队管理 系统功能 平台 是 允许查看和维护团队及其边界 39 正常 2026-03-26 00:28:54" [ref=e1734]:
+                      - cell "团队管理" [ref=e1735]:
+                        - generic [ref=e1736]: 团队管理
+                      - cell "tenant.manage" [ref=e1737]:
+                        - generic [ref=e1738]: tenant.manage
+                      - cell "团队管理" [ref=e1739]:
+                        - generic [ref=e1740]: 团队管理
+                      - cell "系统功能" [ref=e1741]:
+                        - generic [ref=e1742]: 系统功能
+                      - cell "平台" [ref=e1743]:
+                        - generic [ref=e1746]: 平台
+                      - cell "是" [ref=e1747]:
+                        - generic [ref=e1750]: 是
+                      - cell "允许查看和维护团队及其边界" [ref=e1751]:
+                        - generic [ref=e1752]: 允许查看和维护团队及其边界
+                      - cell "39" [ref=e1753]:
+                        - generic [ref=e1754]: "39"
+                      - cell "正常" [ref=e1755]:
+                        - generic [ref=e1758]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e1759]:
+                        - generic [ref=e1760]: 2026-03-26 00:28:54
+                      - cell [ref=e1761]:
+                        - button [ref=e1765] [cursor=pointer]:
+                          - img [ref=e1767]
+                    - row "当前团队成员管理 team.member.manage 当前团队成员 系统功能 团队 是 允许在当前团队上下文中查看和维护本团队成员 44 正常 2026-03-26 00:28:54" [ref=e1769]:
+                      - cell "当前团队成员管理" [ref=e1770]:
+                        - generic [ref=e1771]: 当前团队成员管理
+                      - cell "team.member.manage" [ref=e1772]:
+                        - generic [ref=e1773]: team.member.manage
+                      - cell "当前团队成员" [ref=e1774]:
+                        - generic [ref=e1775]: 当前团队成员
+                      - cell "系统功能" [ref=e1776]:
+                        - generic [ref=e1777]: 系统功能
+                      - cell "团队" [ref=e1778]:
+                        - generic [ref=e1781]: 团队
+                      - cell "是" [ref=e1782]:
+                        - generic [ref=e1785]: 是
+                      - cell "允许在当前团队上下文中查看和维护本团队成员" [ref=e1786]:
+                        - generic [ref=e1787]: 允许在当前团队上下文中查看和维护本团队成员
+                      - cell "44" [ref=e1788]:
+                        - generic [ref=e1789]: "44"
+                      - cell "正常" [ref=e1790]:
+                        - generic [ref=e1793]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e1794]:
+                        - generic [ref=e1795]: 2026-03-26 00:28:54
+                      - cell [ref=e1796]:
+                        - button [ref=e1800] [cursor=pointer]:
+                          - img [ref=e1802]
+                    - row "当前团队功能边界管理 team.boundary.manage 团队边界 系统功能 团队 是 允许在当前团队上下文中查看和配置本团队的功能边界 45 正常 2026-03-26 00:28:54" [ref=e1804]:
+                      - cell "当前团队功能边界管理" [ref=e1805]:
+                        - generic [ref=e1806]: 当前团队功能边界管理
+                      - cell "team.boundary.manage" [ref=e1807]:
+                        - generic [ref=e1808]: team.boundary.manage
+                      - cell "团队边界" [ref=e1809]:
+                        - generic [ref=e1810]: 团队边界
+                      - cell "系统功能" [ref=e1811]:
+                        - generic [ref=e1812]: 系统功能
+                      - cell "团队" [ref=e1813]:
+                        - generic [ref=e1816]: 团队
+                      - cell "是" [ref=e1817]:
+                        - generic [ref=e1820]: 是
+                      - cell "允许在当前团队上下文中查看和配置本团队的功能边界" [ref=e1821]:
+                        - generic [ref=e1822]: 允许在当前团队上下文中查看和配置本团队的功能边界
+                      - cell "45" [ref=e1823]:
+                        - generic [ref=e1824]: "45"
+                      - cell "正常" [ref=e1825]:
+                        - generic [ref=e1828]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e1829]:
+                        - generic [ref=e1830]: 2026-03-26 00:28:54
+                      - cell [ref=e1831]:
+                        - button [ref=e1835] [cursor=pointer]:
+                          - img [ref=e1837]
+                    - row "查看 API 注册表 system.api_registry.view API 管理 系统功能 平台 是 允许查看 API 注册表 46 正常 2026-03-26 00:28:54" [ref=e1839]:
+                      - cell "查看 API 注册表" [ref=e1840]:
+                        - generic [ref=e1841]: 查看 API 注册表
+                      - cell "system.api_registry.view" [ref=e1842]:
+                        - generic [ref=e1843]: system.api_registry.view
+                      - cell "API 管理" [ref=e1844]:
+                        - generic [ref=e1845]: API 管理
+                      - cell "系统功能" [ref=e1846]:
+                        - generic [ref=e1847]: 系统功能
+                      - cell "平台" [ref=e1848]:
+                        - generic [ref=e1851]: 平台
+                      - cell "是" [ref=e1852]:
+                        - generic [ref=e1855]: 是
+                      - cell "允许查看 API 注册表" [ref=e1856]:
+                        - generic [ref=e1857]: 允许查看 API 注册表
+                      - cell "46" [ref=e1858]:
+                        - generic [ref=e1859]: "46"
+                      - cell "正常" [ref=e1860]:
+                        - generic [ref=e1863]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e1864]:
+                        - generic [ref=e1865]: 2026-03-26 00:28:54
+                      - cell [ref=e1866]:
+                        - button [ref=e1870] [cursor=pointer]:
+                          - img [ref=e1872]
+                    - row "允许同步 API 注册表 system.api_registry.sync API 管理 系统功能 平台 是 允许同步 API 注册表 47 正常 2026-03-26 00:28:54" [ref=e1874]:
+                      - cell "允许同步 API 注册表" [ref=e1875]:
+                        - generic [ref=e1876]: 允许同步 API 注册表
+                      - cell "system.api_registry.sync" [ref=e1877]:
+                        - generic [ref=e1878]: system.api_registry.sync
+                      - cell "API 管理" [ref=e1879]:
+                        - generic [ref=e1880]: API 管理
+                      - cell "系统功能" [ref=e1881]:
+                        - generic [ref=e1882]: 系统功能
+                      - cell "平台" [ref=e1883]:
+                        - generic [ref=e1886]: 平台
+                      - cell "是" [ref=e1887]:
+                        - generic [ref=e1890]: 是
+                      - cell "允许同步 API 注册表" [ref=e1891]:
+                        - generic [ref=e1892]: 允许同步 API 注册表
+                      - cell "47" [ref=e1893]:
+                        - generic [ref=e1894]: "47"
+                      - cell "正常" [ref=e1895]:
+                        - generic [ref=e1898]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e1899]:
+                        - generic [ref=e1900]: 2026-03-26 00:28:54
+                      - cell [ref=e1901]:
+                        - button [ref=e1905] [cursor=pointer]:
+                          - img [ref=e1907]
+                    - row "平台功能包管理 platform.package.manage 功能包管理 系统功能 平台 是 允许查看和维护平台功能包菜单 53 正常 2026-03-26 00:28:54" [ref=e1909]:
+                      - cell "平台功能包管理" [ref=e1910]:
+                        - generic [ref=e1911]: 平台功能包管理
+                      - cell "platform.package.manage" [ref=e1912]:
+                        - generic [ref=e1913]: platform.package.manage
+                      - cell "功能包管理" [ref=e1914]:
+                        - generic [ref=e1915]: 功能包管理
+                      - cell "系统功能" [ref=e1916]:
+                        - generic [ref=e1917]: 系统功能
+                      - cell "平台" [ref=e1918]:
+                        - generic [ref=e1921]: 平台
+                      - cell "是" [ref=e1922]:
+                        - generic [ref=e1925]: 是
+                      - cell "允许查看和维护平台功能包菜单" [ref=e1926]:
+                        - generic [ref=e1927]: 允许查看和维护平台功能包菜单
+                      - cell "53" [ref=e1928]:
+                        - generic [ref=e1929]: "53"
+                      - cell "正常" [ref=e1930]:
+                        - generic [ref=e1933]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e1934]:
+                        - generic [ref=e1935]: 2026-03-26 00:28:54
+                      - cell [ref=e1936]:
+                        - button [ref=e1940] [cursor=pointer]:
+                          - img [ref=e1942]
+                    - row "平台团队功能包开通 platform.package.assign 功能包管理 系统功能 平台 是 允许为团队开通和配置功能包 54 正常 2026-03-26 00:28:54" [ref=e1944]:
+                      - cell "平台团队功能包开通" [ref=e1945]:
+                        - generic [ref=e1946]: 平台团队功能包开通
+                      - cell "platform.package.assign" [ref=e1947]:
+                        - generic [ref=e1948]: platform.package.assign
+                      - cell "功能包管理" [ref=e1949]:
+                        - generic [ref=e1950]: 功能包管理
+                      - cell "系统功能" [ref=e1951]:
+                        - generic [ref=e1952]: 系统功能
+                      - cell "平台" [ref=e1953]:
+                        - generic [ref=e1956]: 平台
+                      - cell "是" [ref=e1957]:
+                        - generic [ref=e1960]: 是
+                      - cell "允许为团队开通和配置功能包" [ref=e1961]:
+                        - generic [ref=e1962]: 允许为团队开通和配置功能包
+                      - cell "54" [ref=e1963]:
+                        - generic [ref=e1964]: "54"
+                      - cell "正常" [ref=e1965]:
+                        - generic [ref=e1968]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e1969]:
+                        - generic [ref=e1970]: 2026-03-26 00:28:54
+                      - cell [ref=e1971]:
+                        - button [ref=e1975] [cursor=pointer]:
+                          - img [ref=e1977]
+                    - row "页面管理 system.page.manage 页面管理 系统功能 平台 是 允许查看和维护页面注册表 59 正常 2026-03-26 00:28:54" [ref=e1979]:
+                      - cell "页面管理" [ref=e1980]:
+                        - generic [ref=e1981]: 页面管理
+                      - cell "system.page.manage" [ref=e1982]:
+                        - generic [ref=e1983]: system.page.manage
+                      - cell "页面管理" [ref=e1984]:
+                        - generic [ref=e1985]: 页面管理
+                      - cell "系统功能" [ref=e1986]:
+                        - generic [ref=e1987]: 系统功能
+                      - cell "平台" [ref=e1988]:
+                        - generic [ref=e1991]: 平台
+                      - cell "是" [ref=e1992]:
+                        - generic [ref=e1995]: 是
+                      - cell "允许查看和维护页面注册表" [ref=e1996]:
+                        - generic [ref=e1997]: 允许查看和维护页面注册表
+                      - cell "59" [ref=e1998]:
+                        - generic [ref=e1999]: "59"
+                      - cell "正常" [ref=e2000]:
+                        - generic [ref=e2003]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e2004]:
+                        - generic [ref=e2005]: 2026-03-26 00:28:54
+                      - cell [ref=e2006]:
+                        - button [ref=e2010] [cursor=pointer]:
+                          - img [ref=e2012]
+                    - row "页面注册同步 system.page.sync 页面管理 系统功能 平台 是 允许同步页面注册表 60 正常 2026-03-26 00:28:54" [ref=e2014]:
+                      - cell "页面注册同步" [ref=e2015]:
+                        - generic [ref=e2016]: 页面注册同步
+                      - cell "system.page.sync" [ref=e2017]:
+                        - generic [ref=e2018]: system.page.sync
+                      - cell "页面管理" [ref=e2019]:
+                        - generic [ref=e2020]: 页面管理
+                      - cell "系统功能" [ref=e2021]:
+                        - generic [ref=e2022]: 系统功能
+                      - cell "平台" [ref=e2023]:
+                        - generic [ref=e2026]: 平台
+                      - cell "是" [ref=e2027]:
+                        - generic [ref=e2030]: 是
+                      - cell "允许同步页面注册表" [ref=e2031]:
+                        - generic [ref=e2032]: 允许同步页面注册表
+                      - cell "60" [ref=e2033]:
+                        - generic [ref=e2034]: "60"
+                      - cell "正常" [ref=e2035]:
+                        - generic [ref=e2038]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e2039]:
+                        - generic [ref=e2040]: 2026-03-26 00:28:54
+                      - cell [ref=e2041]:
+                        - button [ref=e2045] [cursor=pointer]:
+                          - img [ref=e2047]
+                    - row "快捷应用管理 system.fast_enter.manage 快捷应用管理 系统功能 平台 是 允许维护顶部快捷应用和快捷链接配置 61 正常 2026-03-29 17:29:26" [ref=e2049]:
+                      - cell "快捷应用管理" [ref=e2050]:
+                        - generic [ref=e2051]: 快捷应用管理
+                      - cell "system.fast_enter.manage" [ref=e2052]:
+                        - generic [ref=e2053]: system.fast_enter.manage
+                      - cell "快捷应用管理" [ref=e2054]:
+                        - generic [ref=e2055]: 快捷应用管理
+                      - cell "系统功能" [ref=e2056]:
+                        - generic [ref=e2057]: 系统功能
+                      - cell "平台" [ref=e2058]:
+                        - generic [ref=e2061]: 平台
+                      - cell "是" [ref=e2062]:
+                        - generic [ref=e2065]: 是
+                      - cell "允许维护顶部快捷应用和快捷链接配置" [ref=e2066]:
+                        - generic [ref=e2067]: 允许维护顶部快捷应用和快捷链接配置
+                      - cell "61" [ref=e2068]:
+                        - generic [ref=e2069]: "61"
+                      - cell "正常" [ref=e2070]:
+                        - generic [ref=e2073]: 正常
+                      - cell "2026-03-29 17:29:26" [ref=e2074]:
+                        - generic [ref=e2075]: 2026-03-29 17:29:26
+                      - cell [ref=e2076]:
+                        - button [ref=e2080] [cursor=pointer]:
+                          - img [ref=e2082]
+                    - row "功能权限管理 system.permission.manage 权限键管理 系统功能 平台 是 允许查看和维护功能权限 61 正常 2026-03-26 00:28:54" [ref=e2084]:
+                      - cell "功能权限管理" [ref=e2085]:
+                        - generic [ref=e2086]: 功能权限管理
+                      - cell "system.permission.manage" [ref=e2087]:
+                        - generic [ref=e2088]: system.permission.manage
+                      - cell "权限键管理" [ref=e2089]:
+                        - generic [ref=e2090]: 权限键管理
+                      - cell "系统功能" [ref=e2091]:
+                        - generic [ref=e2092]: 系统功能
+                      - cell "平台" [ref=e2093]:
+                        - generic [ref=e2096]: 平台
+                      - cell "是" [ref=e2097]:
+                        - generic [ref=e2100]: 是
+                      - cell "允许查看和维护功能权限" [ref=e2101]:
+                        - generic [ref=e2102]: 允许查看和维护功能权限
+                      - cell "61" [ref=e2103]:
+                        - generic [ref=e2104]: "61"
+                      - cell "正常" [ref=e2105]:
+                        - generic [ref=e2108]: 正常
+                      - cell "2026-03-26 00:28:54" [ref=e2109]:
+                        - generic [ref=e2110]: 2026-03-26 00:28:54
+                      - cell [ref=e2111]:
+                        - button [ref=e2115] [cursor=pointer]:
+                          - img [ref=e2117]
+              - generic [ref=e2120]:
+                - generic [ref=e2121]: 共 24 条
+                - button "上一页" [disabled] [ref=e2122]:
+                  - generic:
+                    - img
+                - list [ref=e2123]:
+                  - listitem "第 1 页" [ref=e2124]: "1"
+                  - listitem "第 2 页" [ref=e2125] [cursor=pointer]: "2"
+                - button "下一页" [ref=e2126] [cursor=pointer]:
+                  - generic:
+                    - img
+                - generic [ref=e2129] [cursor=pointer]:
+                  - generic:
+                    - combobox [ref=e2131]
+                    - generic [ref=e2132]: 20条/页
+                  - img [ref=e2135]
+                - generic [ref=e2137]:
+                  - generic [ref=e2138]: 前往
+                  - spinbutton "页" [ref=e2141]: "1"
+                  - generic [ref=e2142]: 页
+        - generic [ref=e2150]:
+          - generic [ref=e2151]:
+            - generic [ref=e2152]:
+              - generic [ref=e2153]:
+                - heading "后台工作台" [level=1] [ref=e2154]
+                - paragraph [ref=e2155]: 把当前待处理模块、常用入口和本轮重点集中在一屏内，进入后台后先看这里。
+              - generic [ref=e2156]:
+                - generic [ref=e2157]:
+                  - generic [ref=e2158]: 团队数量
+                  - strong [ref=e2159]: "0"
+                - generic [ref=e2160]:
+                  - generic [ref=e2161]: 当前团队
+                  - strong [ref=e2162]: 未选择团队
+                - generic [ref=e2163]:
+                  - generic [ref=e2164]: 管理入口
+                  - strong [ref=e2165]: 平台管理
+            - generic [ref=e2167]:
+              - button "进入页面管理" [ref=e2168] [cursor=pointer]:
+                - generic [ref=e2169]: 进入页面管理
+              - button "查看 API 管理" [ref=e2170] [cursor=pointer]:
+                - generic [ref=e2171]: 查看 API 管理
+          - generic [ref=e2172]:
+            - generic [ref=e2173]:
+              - generic [ref=e2175]:
+                - generic [ref=e2176]: 当前工作面
+                - paragraph [ref=e2177]: 根据当前团队或管理入口，优先进入对应的治理链路。
+              - generic [ref=e2178]:
+                - button "页面与菜单主链 先确认导航入口、页面挂载和访问模式是否一致。 /system/page" [ref=e2179] [cursor=pointer]:
+                  - generic [ref=e2180]: 页面与菜单主链
+                  - generic [ref=e2181]: 先确认导航入口、页面挂载和访问模式是否一致。
+                  - generic [ref=e2182]: /system/page
+                - button "API 注册与权限归属 查看分类、失效接口和未注册路由，保持注册表闭环。 /system/api-endpoint" [ref=e2183] [cursor=pointer]:
+                  - generic [ref=e2184]: API 注册与权限归属
+                  - generic [ref=e2185]: 查看分类、失效接口和未注册路由，保持注册表闭环。
+                  - generic [ref=e2186]: /system/api-endpoint
+                - button "用户与角色治理 处理平台身份、功能包与权限测试链路。 /system/user" [ref=e2187] [cursor=pointer]:
+                  - generic [ref=e2188]: 用户与角色治理
+                  - generic [ref=e2189]: 处理平台身份、功能包与权限测试链路。
+                  - generic [ref=e2190]: /system/user
+            - generic [ref=e2191]:
+              - generic [ref=e2193]:
+                - generic [ref=e2194]: 当前概览
+                - paragraph [ref=e2195]: 把当前团队和当前入口状态收在一张卡片里，不额外强调空间模型。
+              - generic [ref=e2196]:
+                - generic [ref=e2197]: 当前入口
+                - generic [ref=e2198]: 平台管理
+                - paragraph [ref=e2199]: 这里用于处理菜单、页面、权限键、API 元数据和平台角色等平台治理能力。
+            - generic [ref=e2200]:
+              - generic [ref=e2202]:
+                - generic [ref=e2203]: 本轮优先级
+                - paragraph [ref=e2204]: 界面收口先做统一表达，再做深层配置能力。
+              - list [ref=e2205]:
+                - listitem [ref=e2206]: 继续收口系统页头部和操作区，减少不同页面之间的结构漂移。
+                - listitem [ref=e2207]: 菜单、用户、API 管理继续对齐页面管理的分段式抽屉和顶部摘要。
+                - listitem [ref=e2208]: 后续再补页面树轻量接口，收掉最后的全量树数据拉取。
+  - generic [ref=e212]:
+    - generic "Toggle devtools panel" [ref=e213] [cursor=pointer]:
+      - img [ref=e214]
+    - generic "Toggle Component Inspector" [ref=e219] [cursor=pointer]:
+      - img [ref=e220]
+  - tooltip "点击这里查看主题风格、 开启顶栏菜单等更多配置" [ref=e224]:
+    - paragraph [ref=e225]: 点击这里查看主题风格、 开启顶栏菜单等更多配置

@@ -24,6 +24,9 @@ const (
 	spaceAccessModePlatform    = "platform_admin"
 	spaceAccessModeTeam        = "team_admin"
 	spaceAccessModeRoleCodes   = "role_codes"
+	spaceModeSingle            = "single"
+	spaceModeMulti             = "multi"
+	menuSpaceModeSettingKey    = "system.menu_space.mode"
 )
 
 type SpaceAccessProfile struct {
@@ -37,6 +40,56 @@ func NormalizeSpaceKey(value string) string {
 		return DefaultMenuSpaceKey
 	}
 	return target
+}
+
+func NormalizeSpaceMode(mode string) string {
+	switch strings.ToLower(strings.TrimSpace(mode)) {
+	case spaceModeMulti:
+		return spaceModeMulti
+	default:
+		return spaceModeSingle
+	}
+}
+
+func CurrentSpaceMode(db *gorm.DB) string {
+	if db == nil {
+		return spaceModeSingle
+	}
+	var setting models.SystemSetting
+	err := db.Where("key = ? AND deleted_at IS NULL", menuSpaceModeSettingKey).First(&setting).Error
+	if err != nil {
+		return spaceModeSingle
+	}
+	return NormalizeSpaceMode(toMetaString(setting.Value, "mode"))
+}
+
+func SaveCurrentSpaceMode(db *gorm.DB, mode string) (string, error) {
+	normalized := NormalizeSpaceMode(mode)
+	if db == nil {
+		return normalized, nil
+	}
+	payload := models.MetaJSON{"mode": normalized}
+	var setting models.SystemSetting
+	err := db.Where("key = ? AND deleted_at IS NULL", menuSpaceModeSettingKey).First(&setting).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			record := models.SystemSetting{
+				Key:    menuSpaceModeSettingKey,
+				Value:  payload,
+				Status: "normal",
+			}
+			return normalized, db.Create(&record).Error
+		}
+		return normalized, err
+	}
+	return normalized, db.Model(&setting).Updates(map[string]interface{}{
+		"value":  payload,
+		"status": "normal",
+	}).Error
+}
+
+func IsSingleSpaceMode(db *gorm.DB) bool {
+	return CurrentSpaceMode(db) == spaceModeSingle
 }
 
 func NormalizeHost(value string) string {
@@ -95,6 +148,23 @@ func ResolveSpaceKey(db *gorm.DB, c *gin.Context) string {
 	}
 	userID := currentContextUserID(c)
 	tenantID := currentContextTenantID(c)
+	if IsSingleSpaceMode(db) {
+		explicit := RequestSpaceKey(c)
+		if explicit == "" {
+			return DefaultMenuSpaceKey
+		}
+		if explicit == DefaultMenuSpaceKey {
+			return DefaultMenuSpaceKey
+		}
+		ok, err := spaceExists(db, explicit)
+		if err == nil && ok {
+			allowed, accessErr := CanAccessSpace(db, userID, tenantID, explicit)
+			if accessErr == nil && allowed {
+				return explicit
+			}
+		}
+		return DefaultMenuSpaceKey
+	}
 	if explicit := RequestSpaceKey(c); explicit != "" && explicit != DefaultMenuSpaceKey {
 		ok, err := spaceExists(db, explicit)
 		if err == nil && ok {
@@ -352,6 +422,9 @@ func normalizeMetaStringList(values ...interface{}) []string {
 }
 
 func ResolveSpaceKeyByHost(db *gorm.DB, host string) (string, *models.MenuSpaceHostBinding, error) {
+	if IsSingleSpaceMode(db) {
+		return DefaultMenuSpaceKey, nil, nil
+	}
 	if db == nil {
 		return DefaultMenuSpaceKey, nil, nil
 	}

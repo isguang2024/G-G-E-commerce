@@ -66,6 +66,8 @@ func (m *SystemModule) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.GET("/fast-enter", reg.Meta("获取快捷入口配置").BindGroup("system").Build(), systemHandler.GetFastEnterConfig)
 		reg.PUTProtected("/fast-enter", reg.Meta("更新快捷入口配置").BindGroup("system").BindPermissionKey("system.fast_enter.manage").Build(), "system.fast_enter.manage", authzService.RequireAction, systemHandler.UpdateFastEnterConfig)
 		reg.GET("/menu-spaces/current", reg.Meta("获取当前菜单空间").BindGroup("system").Build(), menuSpaceHandler.GetCurrent)
+		reg.GETProtected("/menu-space-mode", reg.Meta("获取菜单空间模式").BindGroup("system").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuSpaceHandler.GetMode)
+		reg.PUTProtected("/menu-space-mode", reg.Meta("保存菜单空间模式").BindGroup("system").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuSpaceHandler.SaveMode)
 		reg.GETProtected("/menu-spaces", reg.Meta("获取菜单空间列表").BindGroup("system").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuSpaceHandler.List)
 		reg.POSTProtected("/menu-spaces", reg.Meta("保存菜单空间").BindGroup("system").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuSpaceHandler.SaveSpace)
 		reg.POSTProtected("/menu-spaces/:spaceKey/initialize-default", reg.Meta("从默认空间初始化菜单空间").BindGroup("system").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuSpaceHandler.InitializeFromDefault)

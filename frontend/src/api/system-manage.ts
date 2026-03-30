@@ -359,14 +359,20 @@ function normalizeRuntimeMenuTree(item: any): AppRouteRecord {
     meta: {
       title: meta?.title || '',
       icon: meta?.icon || '',
+      // accessMode 由后端运行时菜单显式下发；空值时交给前端/后续链路按默认 permission 处理。
       accessMode: `${meta?.accessMode || ''}`.trim() || undefined,
+      // activePath 仅在需要高亮指定菜单时才返回，缺省表示沿用当前路由 path。
       activePath: `${meta?.activePath || ''}`.trim() || undefined,
+      // link 仅外链菜单需要，未返回时保持 undefined，避免误判成空链接。
       link: `${meta?.link || ''}`.trim() || undefined,
-      roles: Array.isArray(meta?.roles) && meta.roles.length ? meta.roles : undefined,
       spaceKey: spaceKey || undefined,
       spaceType: spaceType || undefined,
       hostKey: hostKey || undefined,
-      isEnable: meta?.isEnable === true,
+      // 运行时菜单里未返回 isEnable 表示“沿用默认启用”，不能归一成 false，
+      // 否则前端兜底过滤会把整棵菜单树误判为禁用。
+      isEnable: meta?.isEnable === false ? false : undefined,
+      // 后端运行时菜单对这些展示型布尔字段采用“只在为 true 时才返回”的约定，
+      // 所以前端归一化时只认显式 true，缺省一律视为未开启该特性。
       isHide: meta?.isHide === true,
       isIframe: meta?.isIframe === true,
       isHideTab: meta?.isHideTab === true,
@@ -1342,10 +1348,11 @@ export function fetchGetPageOptions(spaceKey?: string) {
 }
 
 /** 获取运行时页面注册表 */
-export function fetchGetRuntimePageList() {
+export function fetchGetRuntimePageList(spaceKey?: string) {
   return request
     .get<{ records: Api.SystemManage.PageItem[]; total: number }>({
-      url: `${PAGE_BASE}/runtime`
+      url: `${PAGE_BASE}/runtime`,
+      params: spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : undefined
     })
     .then((res) => ({
       records: (res?.records || []).map(normalizePageItem),
@@ -1354,10 +1361,11 @@ export function fetchGetRuntimePageList() {
 }
 
 /** 获取公开运行时页面注册表 */
-export function fetchGetRuntimePublicPageList() {
+export function fetchGetRuntimePublicPageList(spaceKey?: string) {
   return request
     .get<{ records: Api.SystemManage.PageItem[]; total: number }>({
-      url: `${PAGE_BASE}/runtime/public`
+      url: `${PAGE_BASE}/runtime/public`,
+      params: spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : undefined
     })
     .then((res) => ({
       records: (res?.records || []).map(normalizePageItem),
@@ -1680,6 +1688,27 @@ export function fetchGetCurrentMenuSpace(spaceKey?: string) {
         accessGranted: Boolean(res?.access_granted ?? res?.accessGranted ?? true)
       }))
   }
+
+export function fetchGetMenuSpaceMode() {
+  return request
+    .get<Api.SystemManage.MenuSpaceModeResponse>({
+      url: `${SYSTEM_BASE}/menu-space-mode`
+    })
+    .then((res: any) => ({
+      mode: `${res?.mode || 'single'}`.trim() || 'single'
+    }))
+}
+
+export function fetchUpdateMenuSpaceMode(mode: string) {
+  return request
+    .put<Api.SystemManage.MenuSpaceModeResponse>({
+      url: `${SYSTEM_BASE}/menu-space-mode`,
+      data: { mode }
+    })
+    .then((res: any) => ({
+      mode: `${res?.mode || 'single'}`.trim() || 'single'
+    }))
+}
 
 export function fetchGetMenuSpaces() {
   return request

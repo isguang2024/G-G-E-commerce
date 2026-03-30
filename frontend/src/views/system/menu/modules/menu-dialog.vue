@@ -160,7 +160,6 @@
     activePath: string
     customParent: string
     accessMode: 'permission' | 'jwt' | 'public'
-    roles: string[]
     isFullPage: boolean
     manageGroupId: string
     linkedPageKey: string
@@ -327,7 +326,6 @@
     activePath: '',
     customParent: '',
     accessMode: 'permission',
-    roles: [],
     isFullPage: false,
     manageGroupId: '',
     linkedPageKey: '',
@@ -417,18 +415,9 @@
           style: { width: '100%' }
         }
       },
-      {
-        label: createLabelTooltip(
-          '角色权限',
-          '仅用于前端权限模式：配置角色标识（如 R_SUPER、R_ADMIN）\n后端权限模式：无需配置'
-        ),
-        key: 'roles',
-        type: 'inputtag',
-        props: { placeholder: '输入角色标识后按回车，如：R_SUPER' }
-      },
-      {
-        label: '菜单排序',
-        key: 'sort',
+        {
+          label: '菜单排序',
+          key: 'sort',
         type: 'number',
         props: { controlsPosition: 'right', style: { width: '100%' } }
       },
@@ -559,10 +548,9 @@
     form.showTextBadge = row.meta?.showTextBadge || ''
     form.fixedTab = row.meta?.fixedTab ?? false
     form.activePath = row.meta?.activePath || ''
-    form.customParent = row.meta?.customParent || ''
-    form.accessMode = row.meta?.accessMode || 'permission'
-    form.roles = row.meta?.roles || []
-    form.isFullPage = row.meta?.isFullPage ?? false
+      form.customParent = row.meta?.customParent || ''
+      form.accessMode = row.meta?.accessMode || 'permission'
+      form.isFullPage = row.meta?.isFullPage ?? false
     form.manageGroupId = String(row.manage_group_id || row.manageGroupId || row.manage_group?.id || '')
     form.linkedPageKey = props.linkedPageKey || ''
     form.spaceKey = `${row.spaceKey || row.space_key || row.meta?.spaceKey || props.currentSpaceKey || props.menuSpaces?.find((item) => item.isDefault)?.spaceKey || 'default'}`

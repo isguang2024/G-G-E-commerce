@@ -184,6 +184,10 @@ declare namespace Api {
       accessGranted?: boolean
     }
 
+    interface MenuSpaceModeResponse {
+      mode: 'single' | 'multi' | string
+    }
+
     interface MenuSpaceInitializeResult {
       sourceSpaceKey: string
       targetSpaceKey: string

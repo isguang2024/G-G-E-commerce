@@ -228,11 +228,13 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { CascaderOption, CascaderProps } from 'element-plus'
 import { useRouter } from 'vue-router'
 import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
+import { useMenuSpaceStore } from '@/store/modules/menu-space'
 import {
   fetchGetMenuTreeAll,
   fetchGetRoleActions,
@@ -295,6 +297,8 @@ const visible = computed({
 const loading = ref(false)
 const saving = ref(false)
 const activeTab = ref<'menus' | 'actions' | 'data'>('menus')
+const menuSpaceStore = useMenuSpaceStore()
+const { currentSpaceKey } = storeToRefs(menuSpaceStore)
 
 const menuPanelRef = ref<any>()
 const actionPanelRef = ref<any>()
@@ -544,7 +548,7 @@ async function loadData() {
 
   try {
     const [menuTree, roleMenus, rolePackages, roleActions, dataPermissionRes] = await Promise.all([
-      fetchGetMenuTreeAll(),
+      fetchGetMenuTreeAll(currentSpaceKey.value),
       fetchGetRoleMenus(props.roleData.roleId),
       fetchGetRolePackages(props.roleData.roleId),
       fetchGetRoleActions(props.roleData.roleId),
