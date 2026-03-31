@@ -775,3 +775,52 @@ type MessageRecipientGroupTarget struct {
 func (MessageRecipientGroupTarget) TableName() string {
 	return "message_recipient_group_targets"
 }
+
+type RiskOperationAudit struct {
+	ID             uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	OperatorID     *uuid.UUID     `gorm:"type:uuid;index" json:"operator_id"`
+	ObjectType     string         `gorm:"type:varchar(80);not null;index" json:"object_type"`
+	ObjectID       string         `gorm:"type:varchar(120);not null;index" json:"object_id"`
+	OperationType  string         `gorm:"type:varchar(80);not null;index" json:"operation_type"`
+	BeforeSummary  MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"before_summary"`
+	AfterSummary   MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"after_summary"`
+	ImpactSummary  MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"impact_summary"`
+	RequestID      string         `gorm:"type:varchar(120);not null;default:'';index" json:"request_id"`
+	CreatedAt      time.Time      `gorm:"not null;default:CURRENT_TIMESTAMP;index" json:"created_at"`
+	DeletedAt      gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (RiskOperationAudit) TableName() string {
+	return "risk_operation_audits"
+}
+
+type FeaturePackageVersion struct {
+	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	PackageID   uuid.UUID      `gorm:"type:uuid;not null;index" json:"package_id"`
+	VersionNo   int            `gorm:"not null;default:1" json:"version_no"`
+	ChangeType  string         `gorm:"type:varchar(50);not null;default:'update'" json:"change_type"`
+	Snapshot    MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"snapshot"`
+	OperatorID  *uuid.UUID     `gorm:"type:uuid;index" json:"operator_id"`
+	RequestID   string         `gorm:"type:varchar(120);not null;default:'';index" json:"request_id"`
+	CreatedAt   time.Time      `gorm:"not null;default:CURRENT_TIMESTAMP;index" json:"created_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+}
+
+func (FeaturePackageVersion) TableName() string {
+	return "feature_package_versions"
+}
+
+type PermissionBatchTemplate struct {
+	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Name        string         `gorm:"type:varchar(120);not null;uniqueIndex:idx_permission_batch_templates_name_deleted" json:"name"`
+	Description string         `gorm:"type:varchar(255);not null;default:''" json:"description"`
+	Payload     MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"payload"`
+	CreatedBy   *uuid.UUID     `gorm:"type:uuid;index" json:"created_by"`
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+	DeletedAt   gorm.DeletedAt `gorm:"index;uniqueIndex:idx_permission_batch_templates_name_deleted" json:"deleted_at,omitempty"`
+}
+
+func (PermissionBatchTemplate) TableName() string {
+	return "permission_batch_templates"
+}

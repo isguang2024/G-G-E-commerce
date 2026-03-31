@@ -1,62 +1,63 @@
-<template>
+﻿<template>
   <div class="permission-page art-full-height">
-    <ActionPermissionSearch
-      v-show="showSearchBar"
-      v-model="searchForm"
-      :module-group-options="moduleGroupOptions"
-      :feature-group-options="featureGroupOptions"
-      @search="handleSearch"
-      @reset="handleReset"
-    />
+    <div class="page-top-stack">
+      <ActionPermissionSearch
+        v-show="showSearchBar"
+        v-model="searchForm"
+        :module-group-options="moduleGroupOptions"
+        :feature-group-options="featureGroupOptions"
+        @search="handleSearch"
+        @reset="handleReset"
+      />
 
-    <ElCard
-      class="art-table-card permission-table-card"
-      shadow="never"
-      :style="{ marginTop: showSearchBar ? '12px' : '0' }"
-    >
       <AdminWorkspaceHero
         title="功能权限"
         description="统一检查权限键被 API、页面和功能包消费的情况，并筛出跨上下文镜像与疑似重复键。"
         :metrics="summaryMetrics"
       >
         <div class="permission-hero-actions">
-          <ElButton
-            v-action="'system.permission.manage'"
-            type="primary"
-            @click="openDialog('add')"
-            v-ripple
-          >
-            新增功能权限
-          </ElButton>
-          <ElButton
-            v-action="'system.permission.manage'"
-            @click="openGroupDialog('module')"
-            v-ripple
-          >
-            管理模块分组
-          </ElButton>
-          <ElButton
-            v-action="'system.permission.manage'"
-            type="primary"
-            plain
-            @click="openGroupDialog('feature')"
-            v-ripple
-          >
-            管理功能分组
-          </ElButton>
-          <ElButton
-            v-action="'system.permission.manage'"
-            plain
-            type="danger"
-            :loading="cleaningUnused"
-            @click="handleCleanupUnused"
-            v-ripple
-          >
-            清理未消费自定义权限
-          </ElButton>
+        <ElButton
+          v-action="'system.permission.manage'"
+          type="primary"
+          @click="openDialog('add')"
+          v-ripple
+        >
+          新增功能权限
+        </ElButton>
+        <ElButton
+          v-action="'system.permission.manage'"
+          @click="openGroupDialog('module')"
+          v-ripple
+        >
+          管理模块分组
+        </ElButton>
+        <ElButton
+          v-action="'system.permission.manage'"
+          type="primary"
+          plain
+          @click="openGroupDialog('feature')"
+          v-ripple
+        >
+          管理功能分组
+        </ElButton>
+        <ElButton
+          v-action="'system.permission.manage'"
+          plain
+          type="danger"
+          :loading="cleaningUnused"
+          @click="handleCleanupUnused"
+          v-ripple
+        >
+          清理未消费自定义权限
+        </ElButton>
         </div>
       </AdminWorkspaceHero>
+    </div>
 
+    <ElCard
+      class="art-table-card permission-table-card"
+      shadow="never"
+    >
       <ArtTableHeader
         v-model:columns="columnChecks"
         v-model:showSearchBar="showSearchBar"
@@ -104,6 +105,54 @@
       :permission-id="currentAction?.id || ''"
       :permission-name="currentAction?.name || ''"
     />
+
+    <ElDialog v-model="consumerDialogVisible" title="权限消费明细" width="980px" destroy-on-close>
+      <div v-loading="consumerLoading" class="consumer-dialog">
+        <ElDescriptions :column="1" border size="small">
+          <ElDescriptionsItem label="权限键">
+            {{ consumerDetail.permissionKey || '-' }}
+          </ElDescriptionsItem>
+        </ElDescriptions>
+
+        <div class="consumer-section">
+          <h4>API 消费（{{ consumerDetail.apis.length }}）</h4>
+          <ElTable :data="consumerDetail.apis" size="small" border max-height="180">
+            <ElTableColumn prop="method" label="Method" width="90" />
+            <ElTableColumn prop="path" label="路径" min-width="280" />
+            <ElTableColumn prop="summary" label="说明" min-width="220" show-overflow-tooltip />
+          </ElTable>
+        </div>
+
+        <div class="consumer-section">
+          <h4>页面消费（{{ consumerDetail.pages.length }}）</h4>
+          <ElTable :data="consumerDetail.pages" size="small" border max-height="180">
+            <ElTableColumn prop="pageKey" label="页面Key" min-width="180" />
+            <ElTableColumn prop="name" label="页面名称" min-width="140" />
+            <ElTableColumn prop="routePath" label="路由" min-width="220" />
+            <ElTableColumn prop="accessMode" label="访问模式" width="100" />
+          </ElTable>
+        </div>
+
+        <div class="consumer-section">
+          <h4>功能包消费（{{ consumerDetail.featurePackages.length }}）</h4>
+          <ElTable :data="consumerDetail.featurePackages" size="small" border max-height="180">
+            <ElTableColumn prop="packageKey" label="包编码" min-width="180" />
+            <ElTableColumn prop="name" label="包名称" min-width="140" />
+            <ElTableColumn prop="packageType" label="类型" width="100" />
+            <ElTableColumn prop="contextType" label="上下文" width="100" />
+          </ElTable>
+        </div>
+
+        <div class="consumer-section">
+          <h4>角色引用（{{ consumerDetail.roles.length }}）</h4>
+          <ElTable :data="consumerDetail.roles" size="small" border max-height="180">
+            <ElTableColumn prop="code" label="角色编码" min-width="160" />
+            <ElTableColumn prop="name" label="角色名称" min-width="150" />
+            <ElTableColumn prop="contextType" label="上下文" width="100" />
+          </ElTable>
+        </div>
+      </div>
+    </ElDialog>
   </div>
 </template>
 
@@ -111,9 +160,11 @@
   import { computed, h, reactive, ref } from 'vue'
   import { useTable } from '@/hooks/core/useTable'
   import {
+    fetchGetPermissionActionImpactPreview,
     fetchCleanupUnusedPermissionActions,
     fetchUpdatePermissionAction,
     fetchDeletePermissionAction,
+    fetchGetPermissionActionConsumers,
     fetchGetPermissionActionList,
     fetchGetPermissionGroupList
   } from '@/api/system-manage'
@@ -138,13 +189,22 @@
   const groupDialogVisible = ref(false)
   const dialogType = ref<'add' | 'edit'>('add')
   const groupDialogType = ref<'module' | 'feature'>('module')
-  const showSearchBar = ref(true)
+  const showSearchBar = ref(false)
   const currentAction = ref<PermissionActionItem>()
   const currentGroup = ref<PermissionGroupItem>()
   const moduleGroups = ref<PermissionGroupItem[]>([])
   const featureGroups = ref<PermissionGroupItem[]>([])
   const auditSummary = ref<PermissionActionAuditSummary>(createEmptyAuditSummary())
   const cleaningUnused = ref(false)
+  const consumerDialogVisible = ref(false)
+  const consumerLoading = ref(false)
+  const consumerDetail = ref<Api.SystemManage.PermissionActionConsumerDetails>({
+    permissionKey: '',
+    apis: [],
+    pages: [],
+    featurePackages: [],
+    roles: []
+  })
 
   const searchForm = reactive({
     keyword: '',
@@ -223,7 +283,17 @@
         renderConsumerCountTag('页面', row.pageCount, 'primary'),
         renderConsumerCountTag('功能包', row.packageCount, 'warning')
       ]),
-      h('div', { class: 'permission-audit-cell__note' }, row.usageNote || '-')
+      h('div', { class: 'permission-audit-cell__note' }, row.usageNote || '-'),
+      h(
+        ElButton,
+        {
+          text: true,
+          type: 'primary',
+          size: 'small',
+          onClick: () => openConsumerDialog(row)
+        },
+        () => '查看消费明细'
+      )
     ])
   }
 
@@ -482,6 +552,19 @@
     await handleRefresh()
   }
 
+  async function openConsumerDialog(row: PermissionActionItem) {
+    if (!row.id) return
+    consumerDialogVisible.value = true
+    consumerLoading.value = true
+    try {
+      consumerDetail.value = await fetchGetPermissionActionConsumers(row.id)
+    } catch (error: any) {
+      ElMessage.error(error?.message || '获取消费明细失败')
+    } finally {
+      consumerLoading.value = false
+    }
+  }
+
   async function handleGroupSaved() {
     await loadGroups()
   }
@@ -499,11 +582,18 @@
     if (command === 'disable' || command === 'enable') {
       const targetStatus = command === 'disable' ? 'suspended' : 'normal'
       const actionText = command === 'disable' ? '停用' : '启用'
-      ElMessageBox.confirm(`确定${actionText}功能权限「${row.name}」吗？`, `${actionText}确认`, {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      })
+      fetchGetPermissionActionImpactPreview(row.id)
+        .then((impact) =>
+          ElMessageBox.confirm(
+            `${actionText}影响：API ${impact.apiCount}、页面 ${impact.pageCount}、功能包 ${impact.packageCount}、角色 ${impact.roleCount}、团队 ${impact.teamCount}、用户 ${impact.userCount}。确定继续？`,
+            `${actionText}确认`,
+            {
+              confirmButtonText: '确定',
+              cancelButtonText: '取消',
+              type: 'warning'
+            }
+          )
+        )
         .then(() => fetchUpdatePermissionAction(row.id, { status: targetStatus }))
         .then(async () => {
           ElMessage.success(`${actionText}成功`)
@@ -514,11 +604,18 @@
         })
       return
     }
-    ElMessageBox.confirm(`确定删除功能权限「${row.name}」吗？`, '删除确认', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
+    fetchGetPermissionActionImpactPreview(row.id)
+      .then((impact) =>
+        ElMessageBox.confirm(
+          `删除影响：API ${impact.apiCount}、页面 ${impact.pageCount}、功能包 ${impact.packageCount}、角色 ${impact.roleCount}、团队 ${impact.teamCount}、用户 ${impact.userCount}。确定删除「${row.name}」？`,
+          '删除确认',
+          {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }
+        )
+      )
       .then(() => fetchDeletePermissionAction(row.id))
       .then(async () => {
         ElMessage.success('删除成功')
@@ -557,7 +654,7 @@
   .permission-hero-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
   }
 
   .permission-toolbar-tip {
@@ -590,8 +687,25 @@
     overflow: auto;
   }
 
+  .consumer-dialog {
+    display: grid;
+    gap: 12px;
+  }
+
+  .consumer-section {
+    display: grid;
+    gap: 6px;
+  }
+
+  .consumer-section h4 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
   .art-table-card :deep(.table-header-left) {
-    gap: 10px;
+    gap: 12px;
     row-gap: 8px;
   }
 </style>
+

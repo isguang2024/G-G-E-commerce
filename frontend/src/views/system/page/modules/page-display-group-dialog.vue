@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
     :title="dialogTitle"
@@ -341,7 +341,7 @@
   .dialog-intro__examples {
     border-top: 1px dashed var(--el-border-color-lighter);
     margin-top: 8px;
-    padding-top: 10px;
+    padding-top: 12px;
   }
 
   .dialog-intro__example {
@@ -385,3 +385,4 @@
     padding: 14px 20px 18px;
   }
 </style>
+

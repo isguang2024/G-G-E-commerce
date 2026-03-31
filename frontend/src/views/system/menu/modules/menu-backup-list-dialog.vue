@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDialog v-model="visible" title="管理备份" width="800px" class="backup-dialog" destroy-on-close>
     <div class="backup-list-container">
       <ElAlert
@@ -7,7 +7,7 @@
         :closable="false"
         description="列表展示当前空间备份与全空间备份。恢复前请先核对作用范围。"
       />
-      <ElTable v-loading="loading" :data="items" style="width: 100%" border stripe>
+      <ElTable v-loading="loading" :data="pagedItems" style="width: 100%" border stripe>
         <ElTableColumn prop="name" label="备份名称" width="200">
           <template #default="{ row }">
             <span class="font-medium">{{ row.name }}</span>
@@ -40,6 +40,13 @@
           </template>
         </ElTableColumn>
       </ElTable>
+      <WorkspacePagination
+        v-if="items.length > 0"
+        v-model:current-page="pagination.current"
+        v-model:page-size="pagination.size"
+        :total="items.length"
+        compact
+      />
 
       <div v-if="items.length === 0" class="empty-backup">
         <ElEmpty description="暂无备份数据" />
@@ -49,7 +56,8 @@
 </template>
 
 <script setup lang="ts">
-  import { computed } from 'vue'
+  import { computed, reactive, watch } from 'vue'
+  import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
 
@@ -88,6 +96,16 @@
     set: (value) => emit('update:modelValue', value)
   })
 
+  const pagination = reactive({
+    current: 1,
+    size: 10
+  })
+
+  const pagedItems = computed(() => {
+    const start = (pagination.current - 1) * pagination.size
+    return props.items.slice(start, start + pagination.size)
+  })
+
   const getScopeLabel = (item: MenuBackupItem) => {
     if (item.space_name) {
       return item.space_name
@@ -112,11 +130,18 @@
       auth: 'system.menu.backup'
     }
   ]
+
+  watch(
+    () => [props.modelValue, props.items.length],
+    () => {
+      pagination.current = 1
+    }
+  )
 </script>
 
 <style scoped lang="scss">
   .backup-list-container {
-    padding: 10px 0;
+    padding: 12px 0;
   }
 
   .empty-backup {
@@ -139,3 +164,4 @@
     }
   }
 </style>
+

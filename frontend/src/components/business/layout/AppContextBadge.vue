@@ -48,14 +48,14 @@
     display: inline-flex;
     min-width: 0;
     flex-direction: column;
-    gap: 4px;
-    padding: 8px 12px;
-    border: 1px solid color-mix(in srgb, var(--el-border-color) 72%, white);
-    border-radius: 14px;
+    gap: 5px;
+    padding: 10px 14px;
+    border: 1px solid color-mix(in srgb, var(--el-border-color) 70%, white);
+    border-radius: 16px;
     background:
-      radial-gradient(circle at top left, rgb(255 255 255 / 0.85), transparent 58%),
-      linear-gradient(135deg, rgb(248 250 252 / 0.96), rgb(241 245 249 / 0.9));
-    box-shadow: 0 10px 24px rgb(15 23 42 / 0.06);
+      radial-gradient(circle at top left, rgb(255 255 255 / 0.9), transparent 58%),
+      linear-gradient(135deg, rgb(250 252 255 / 0.96), rgb(242 246 250 / 0.9));
+    box-shadow: var(--art-shadow-sm);
   }
 
   .context-badge--solid {
@@ -63,11 +63,11 @@
       radial-gradient(circle at top left, rgb(255 255 255 / 0.22), transparent 52%),
       linear-gradient(135deg, rgb(15 23 42 / 0.92), rgb(30 41 59 / 0.92));
     border-color: rgb(148 163 184 / 0.25);
-    box-shadow: 0 16px 36px rgb(15 23 42 / 0.18);
+    box-shadow: var(--art-shadow-md);
   }
 
   .context-badge__eyebrow {
-    font-size: 11px;
+    font-size: 10px;
     line-height: 1;
     letter-spacing: 0.08em;
     color: var(--el-text-color-secondary);
@@ -82,15 +82,15 @@
     display: flex;
     min-width: 0;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
   }
 
   .context-badge__name {
     min-width: 0;
     overflow: hidden;
     font-size: 13px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
+    font-weight: 650;
+    color: var(--art-text-strong);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -102,7 +102,7 @@
   .context-badge__space {
     overflow: hidden;
     font-size: 12px;
-    color: var(--el-text-color-secondary);
+    color: var(--art-text-muted);
     text-overflow: ellipsis;
     white-space: nowrap;
   }

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="message-sender-page art-full-height">
     <AdminWorkspaceHero :title="pageTitle" :description="pageDescription" :metrics="heroMetrics">
       <div class="message-sender-hero__actions">
@@ -28,7 +28,7 @@
 
       <div v-loading="loading" class="message-sender-board">
         <button
-          v-for="item in list"
+          v-for="item in pagedList"
           :key="item.id"
           type="button"
           class="message-sender-card"
@@ -60,6 +60,13 @@
 
         <ElEmpty v-if="!loading && !list.length" description="当前还没有可用发送人" />
       </div>
+
+      <WorkspacePagination
+        v-if="list.length > 0"
+        v-model:current-page="pagination.current"
+        v-model:page-size="pagination.size"
+        :total="list.length"
+      />
     </section>
 
     <ElDrawer
@@ -123,9 +130,10 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onMounted, reactive, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
+  import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import MessageWorkspaceNav from '@/views/message/modules/message-workspace-nav.vue'
   import {
     fetchCreateMessageSender,
@@ -155,6 +163,10 @@
   const loadError = ref('')
   const saving = ref(false)
   const list = ref<Api.Message.MessageSenderItem[]>([])
+  const pagination = reactive({
+    current: 1,
+    size: 8
+  })
   const drawerVisible = ref(false)
   const drawerEditingId = ref('')
   const drawerModel = ref<SenderDrawerModel | null>(null)
@@ -198,13 +210,20 @@
         skipTenantHeader: skipTenantHeader.value
       })
       list.value = result.records || []
+      pagination.current = 1
     } catch (error) {
       list.value = []
       loadError.value = '发送人列表暂时不可用，稍后重试或刷新状态。'
+      pagination.current = 1
     } finally {
       loading.value = false
     }
   }
+
+  const pagedList = computed(() => {
+    const start = (pagination.current - 1) * pagination.size
+    return list.value.slice(start, start + pagination.size)
+  })
 
   const openCreateDrawer = () => {
     drawerEditingId.value = ''
@@ -253,23 +272,30 @@
   onMounted(() => {
     loadSenders()
   })
+
+  watch(
+    () => pagination.size,
+    () => {
+      pagination.current = 1
+    }
+  )
 </script>
 
 <style scoped lang="scss">
   .message-sender-page {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 10px;
   }
 
   .message-sender-inline-alert {
-    margin-top: -4px;
+    margin-top: 0;
   }
 
   .message-sender-hero__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
   }
 
   .message-sender-shell {
@@ -403,3 +429,4 @@
     }
   }
 </style>
+

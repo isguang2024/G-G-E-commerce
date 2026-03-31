@@ -21,6 +21,8 @@ import { useSettingStore } from '@/store/modules/setting'
 import { headerBarConfig } from '@/config/modules/headerBar'
 import { HeaderBarFeatureConfig } from '@/types'
 
+const FAST_ENTER_DEFAULT_MIN_WIDTH = 1450
+
 /**
  * 顶部栏功能管理
  * @returns 顶部栏功能相关的状态和方法
@@ -110,8 +112,7 @@ export function useHeaderBar() {
 
   // 获取快速入口的最小宽度
   const fastEnterMinWidth = computed(() => {
-    const config = getFeatureConfig('fastEnter')
-    return (config as any)?.minWidth || 1200
+    return FAST_ENTER_DEFAULT_MIN_WIDTH
   })
 
   /**

@@ -16,6 +16,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/config"
 	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
 	space "github.com/gg-ecommerce/backend/internal/modules/system/space"
+	systemservice "github.com/gg-ecommerce/backend/internal/modules/system/system"
 	usermodel "github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
@@ -308,6 +309,21 @@ func runNamedMigrations(logger *zap.Logger) error {
 					return err
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260401_remove_unused_user_assign_action_permission_key"))
+				return nil
+			},
+		},
+		{
+			Name: "20260401_fast_enter_config_seed",
+			Run: func(logger *zap.Logger) error {
+				service := systemservice.NewFastEnterService(database.DB)
+				config, err := service.GetConfig()
+				if err != nil {
+					return err
+				}
+				if _, err := service.SaveConfig(config); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260401_fast_enter_config_seed"))
 				return nil
 			},
 		},
@@ -778,6 +794,19 @@ func runNamedMigrations(logger *zap.Logger) error {
 					return err
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260331_access_trace_navigation_seed"))
+				return nil
+			},
+		},
+		{
+			Name: "20260401_remove_permission_simulator_navigation",
+			Run: func(logger *zap.Logger) error {
+				if err := removePermissionSimulatorNavigation(logger); err != nil {
+					return err
+				}
+				if err := refreshDefaultAccessSnapshots(logger); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260401_remove_permission_simulator_navigation"))
 				return nil
 			},
 		},
@@ -1791,6 +1820,16 @@ func runNamedMigrations(logger *zap.Logger) error {
 			},
 		},
 		{
+			Name: "20260401_user_email_partial_unique_index",
+			Run: func(logger *zap.Logger) error {
+				if err := ensureUserEmailPartialUniqueIndex(); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260401_user_email_partial_unique_index"))
+				return nil
+			},
+		},
+		{
 			Name: "20260323_drop_scope_schema",
 			Run: func(logger *zap.Logger) error {
 				statements := []string{
@@ -1979,6 +2018,59 @@ func ensureAccessTraceNavigationSeed() error {
 		return err
 	}
 	return nil
+}
+
+func removePermissionSimulatorNavigation(logger *zap.Logger) error {
+	return database.DB.Transaction(func(tx *gorm.DB) error {
+		var menus []usermodel.Menu
+		if err := tx.Where("space_key = ? AND (name = ? OR title = ? OR path = ?)", systemmodels.DefaultMenuSpaceKey, "PermissionSimulator", "权限模拟", "/system/permission-simulator").
+			Find(&menus).Error; err != nil {
+			return err
+		}
+		menuIDs := make([]uuid.UUID, 0, len(menus))
+		for _, menu := range menus {
+			menuIDs = append(menuIDs, menu.ID)
+		}
+		if len(menuIDs) > 0 {
+			tables := []string{
+				"feature_package_menus",
+				"role_hidden_menus",
+				"team_blocked_menus",
+				"user_hidden_menus",
+			}
+			for _, table := range tables {
+				if err := tx.Exec("DELETE FROM "+table+" WHERE menu_id IN ?", menuIDs).Error; err != nil {
+					return err
+				}
+			}
+			if err := tx.Where("id IN ?", menuIDs).Delete(&usermodel.Menu{}).Error; err != nil {
+				return err
+			}
+		}
+		if err := tx.Where("page_key = ? OR route_path = ? OR name IN ?", "system.permission.simulator", "/system/permission-simulator", []string{"PermissionSimulator", "权限模拟"}).
+			Delete(&systemmodels.UIPage{}).Error; err != nil {
+			return err
+		}
+		if logger != nil {
+			logger.Info("Permission simulator navigation removed", zap.Int("menu_count", len(menuIDs)))
+		}
+		return nil
+	})
+}
+
+func ensureUserEmailPartialUniqueIndex() error {
+	return database.DB.Transaction(func(tx *gorm.DB) error {
+		statements := []string{
+			`DROP INDEX IF EXISTS idx_users_email`,
+			`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email ON users (email) WHERE deleted_at IS NULL AND btrim(email) <> ''`,
+		}
+		for _, statement := range statements {
+			if err := tx.Exec(statement).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func normalizeAccessTraceNavigationSeed(spaceKey, path string) error {

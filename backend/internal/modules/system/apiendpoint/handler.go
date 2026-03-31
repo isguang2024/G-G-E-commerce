@@ -182,6 +182,63 @@ func (h *Handler) ListUnregistered(c *gin.Context) {
 	}))
 }
 
+func (h *Handler) GetUnregisteredScanConfig(c *gin.Context) {
+	config, err := h.service.GetUnregisteredScanConfig()
+	if err != nil {
+		h.logger.Error("Get unregistered scan config failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取未注册扫描配置失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(config))
+}
+
+func (h *Handler) SaveUnregisteredScanConfig(c *gin.Context) {
+	var req struct {
+		Enabled              *bool  `json:"enabled"`
+		FrequencyMinutes     int    `json:"frequency_minutes"`
+		DefaultCategoryID    string `json:"default_category_id"`
+		DefaultPermissionKey string `json:"default_permission_key"`
+		MarkAsNoPermission   *bool  `json:"mark_as_no_permission"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	current, err := h.service.GetUnregisteredScanConfig()
+	if err != nil {
+		h.logger.Error("Get current unregistered scan config failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存未注册扫描配置失败")
+		c.JSON(status, resp)
+		return
+	}
+	target := UnregisteredScanConfig{
+		Enabled:              current.Enabled,
+		FrequencyMinutes:     req.FrequencyMinutes,
+		DefaultCategoryID:    strings.TrimSpace(req.DefaultCategoryID),
+		DefaultPermissionKey: strings.TrimSpace(req.DefaultPermissionKey),
+		MarkAsNoPermission:   current.MarkAsNoPermission,
+	}
+	if req.Enabled != nil {
+		target.Enabled = *req.Enabled
+	}
+	if req.FrequencyMinutes <= 0 {
+		target.FrequencyMinutes = current.FrequencyMinutes
+	}
+	if req.MarkAsNoPermission != nil {
+		target.MarkAsNoPermission = *req.MarkAsNoPermission
+	}
+	saved, saveErr := h.service.SaveUnregisteredScanConfig(target)
+	if saveErr != nil {
+		h.logger.Error("Save unregistered scan config failed", zap.Error(saveErr))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存未注册扫描配置失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(saved))
+}
+
 func (h *Handler) ListCategories(c *gin.Context) {
 	items, err := h.service.ListCategories()
 	if err != nil {

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="message-center-page art-full-height">
     <AdminWorkspaceHero title="消息中心" description="统一查看平台通知、直接消息和待处理事项。发送对象、模板归属和待办状态都从这里进入同一条收件链路。" :metrics="heroMetrics">
       <div class="message-center-hero__actions">
@@ -445,12 +445,12 @@
   }
 
   .message-center-inline-alert {
-    margin-top: 16px;
+    margin-top: 0;
   }
 
   .message-center-hero__actions {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
   }
 
@@ -488,7 +488,7 @@
     width: 100%;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
     padding: 12px 14px;
     border: 1px solid transparent;
     border-radius: 16px;
@@ -721,7 +721,7 @@
 
   .message-center-detail__actions {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
     padding: 22px 20px 24px;
   }
@@ -744,3 +744,4 @@
     }
   }
 </style>
+

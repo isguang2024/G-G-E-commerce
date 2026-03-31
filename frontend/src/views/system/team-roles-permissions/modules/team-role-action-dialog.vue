@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
     :title="`团队角色权限裁剪 - ${roleTitle}`"
@@ -182,7 +182,7 @@
   .package-summary-card {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     padding: 12px 14px;
     border-radius: 12px;
     border: 1px solid #d6e8d8;
@@ -195,3 +195,4 @@
     gap: 8px;
   }
 </style>
+

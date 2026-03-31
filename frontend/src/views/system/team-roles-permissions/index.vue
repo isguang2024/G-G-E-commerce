@@ -1,5 +1,15 @@
-<template>
+﻿<template>
   <div class="art-full-height">
+    <AdminWorkspaceHero
+      title="团队角色与权限"
+      description="统一查看当前团队角色、功能包、菜单裁剪和权限裁剪，先把团队边界收口。"
+      :metrics="heroMetrics"
+    >
+      <div class="team-role-hero-actions">
+        <ElButton v-if="hasAction('team.member.manage')" type="primary" @click="openAddDialog">新增团队角色</ElButton>
+      </div>
+    </AdminWorkspaceHero>
+
     <ElCard class="art-table-card" shadow="never">
       <template #header>
         <div class="header-row">
@@ -12,12 +22,6 @@
           <ElButton v-if="hasAction('team.member.manage')" type="primary" @click="openAddDialog">新增团队角色</ElButton>
         </div>
       </template>
-
-      <div class="stats-row">
-        <ElTag effect="plain" round>角色总数 {{ data.length }}</ElTag>
-        <ElTag type="info" effect="plain" round>基础角色 {{ baseRoleCount }}</ElTag>
-        <ElTag type="success" effect="plain" round>团队自定义 {{ customRoleCount }}</ElTag>
-      </div>
 
       <ArtTableHeader
         v-model:columns="columnChecks"
@@ -46,6 +50,7 @@
 <script setup lang="ts">
   import { computed, h, ref } from 'vue'
   import { ElMessageBox, ElTag } from 'element-plus'
+  import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { useAuth } from '@/hooks/core/useAuth'
   import { useTable } from '@/hooks/core/useTable'
@@ -68,6 +73,11 @@
   const actionDialog = ref(false)
   const dialogType = ref<'add' | 'edit'>('add')
   const currentRoleData = ref<RoleListItem | undefined>(undefined)
+  const heroMetrics = computed(() => [
+    { label: '角色总数', value: data.value.length || 0 },
+    { label: '基础角色', value: baseRoleCount.value },
+    { label: '团队自定义', value: customRoleCount.value }
+  ])
   const baseRoleCount = computed(() => data.value.filter((item) => item.isGlobal).length)
   const customRoleCount = computed(() => data.value.filter((item) => !item.isGlobal).length)
 
@@ -166,17 +176,17 @@
 </script>
 
 <style scoped lang="scss">
+  .team-role-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
   .header-row {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
   }
-
-  .stats-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 12px;
-  }
 </style>
+

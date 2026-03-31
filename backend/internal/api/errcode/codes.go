@@ -31,6 +31,7 @@ const (
 	ErrInvalidParent                = 3012 // 无效的上级（如不能将上级设为自己或子级）
 	ErrConflict                     = 3013 // 业务冲突（通用，如重复创建）
 	ErrUsernameExists               = 3014 // 用户名已存在
+	ErrEmailExists                  = 3015 // 邮箱已存在
 	ErrSystemRoleProtected          = 3016 // 系统角色不可删除
 	ErrProductNotFound              = 3017 // 商品不存在
 	ErrGlobalRolePermissionReadOnly = 3018 // 全局角色权限不可在此修改
@@ -69,6 +70,7 @@ var defaultMessages = map[int]string{
 	ErrInvalidParent:                "无效的上级",
 	ErrConflict:                     "业务冲突",
 	ErrUsernameExists:               "用户名已存在",
+	ErrEmailExists:                  "邮箱已存在",
 	ErrSystemRoleProtected:          "系统角色不可删除",
 	ErrProductNotFound:              "商品不存在",
 	ErrGlobalRolePermissionReadOnly: "全局角色权限不可在此修改",
@@ -105,6 +107,7 @@ var defaultHTTPStatus = map[int]int{
 	ErrInvalidParent:                400,
 	ErrConflict:                     409,
 	ErrUsernameExists:               409,
+	ErrEmailExists:                  409,
 	ErrSystemRoleProtected:          403,
 	ErrProductNotFound:              404,
 	ErrGlobalRolePermissionReadOnly: 403,

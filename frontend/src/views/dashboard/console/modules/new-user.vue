@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="art-card p-5 h-128 overflow-hidden mb-5 max-sm:mb-4">
     <div class="art-card-header">
       <div class="title">
@@ -13,7 +13,7 @@
     </div>
     <ArtTable
       class="w-full"
-      :data="tableData"
+      :data="pagedTableData"
       style="width: 100%"
       size="large"
       :border="false"
@@ -33,7 +33,7 @@
         <ElTableColumn label="性别" prop="avatar">
           <template #default="scope">
             <div style="display: flex; align-items: center">
-              <span style="margin-left: 10px">{{ scope.row.sex === 1 ? '男' : '女' }}</span>
+              <span style="margin-left: 12px">{{ scope.row.sex === 1 ? '男' : '女' }}</span>
             </div>
           </template>
         </ElTableColumn>
@@ -49,10 +49,20 @@
         </ElTableColumn>
       </template>
     </ArtTable>
+    <WorkspacePagination
+      v-model:current-page="pagination.current"
+      v-model:page-size="pagination.size"
+      :total="tableData.length"
+      layout="prev, pager, next"
+      small
+      compact
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+  import { computed, reactive, watch } from 'vue'
+  import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import avatar1 from '@/assets/images/avatar/avatar1.webp'
   import avatar2 from '@/assets/images/avatar/avatar2.webp'
   import avatar3 from '@/assets/images/avatar/avatar3.webp'
@@ -74,6 +84,10 @@
   const ANIMATION_DELAY = 100
 
   const radio2 = ref('本月')
+  const pagination = reactive({
+    current: 1,
+    size: 3
+  })
 
   /**
    * 新用户表格数据
@@ -141,6 +155,10 @@
       avatar: avatar6
     }
   ])
+  const pagedTableData = computed(() => {
+    const start = (pagination.current - 1) * pagination.size
+    return tableData.slice(start, start + pagination.size)
+  })
 
   /**
    * 添加进度条动画效果
@@ -157,6 +175,13 @@
   onMounted(() => {
     addAnimation()
   })
+
+  watch(
+    () => pagination.size,
+    () => {
+      pagination.current = 1
+    }
+  )
 </script>
 
 <style lang="scss" scoped>
@@ -167,3 +192,4 @@
     }
   }
 </style>
+

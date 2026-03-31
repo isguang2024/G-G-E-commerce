@@ -37,7 +37,7 @@
           position: relative;
           box-sizing: border-box;
           padding: 20px;
-          overflow: hidden;
+          overflow: visible;
           background: var(--default-box-color);
           border-radius: calc(var(--custom-radius) / 2 + 2px) !important;
         }

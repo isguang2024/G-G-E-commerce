@@ -167,16 +167,21 @@
       try {
         if (props.dialogType === 'add') {
           await fetchCreateFeaturePackage(payload)
+          ElMessage.success('新增成功')
         } else {
-          await fetchUpdateFeaturePackage(form.id, payload)
+          const stats = await fetchUpdateFeaturePackage(form.id, payload)
+          ElMessage.success(formatRefreshMessage(stats))
         }
-        ElMessage.success(props.dialogType === 'add' ? '新增成功' : '修改成功')
         emit('success')
         handleClose()
       } catch (error: any) {
         ElMessage.error(error?.message || '保存失败')
       }
     })
+  }
+
+  function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
+    return `本次增量刷新：角色 ${stats?.roleCount || 0}、团队 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 </script>
 

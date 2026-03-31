@@ -158,6 +158,9 @@ func AutoMigrate() error {
 		&models.MessageTemplate{},
 		&models.Message{},
 		&models.MessageDelivery{},
+		&models.RiskOperationAudit{},
+		&models.FeaturePackageVersion{},
+		&models.PermissionBatchTemplate{},
 	)
 
 	if err != nil {
@@ -544,6 +547,30 @@ func createUniqueIndexes() error {
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", messageDeliveryRecipientIndexName).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE UNIQUE INDEX " + messageDeliveryRecipientIndexName + " ON message_deliveries (message_id, recipient_user_id) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	riskAuditObjectIndexName := "idx_risk_operation_audits_object"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", riskAuditObjectIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + riskAuditObjectIndexName + " ON risk_operation_audits (object_type, object_id, created_at DESC)").Error; err != nil {
+			return err
+		}
+	}
+
+	featurePackageVersionUniqueIndex := "idx_feature_package_versions_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", featurePackageVersionUniqueIndex).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + featurePackageVersionUniqueIndex + " ON feature_package_versions (package_id, version_no) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	featurePackageVersionTimeIndex := "idx_feature_package_versions_created"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", featurePackageVersionTimeIndex).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE INDEX " + featurePackageVersionTimeIndex + " ON feature_package_versions (package_id, created_at DESC)").Error; err != nil {
 			return err
 		}
 	}

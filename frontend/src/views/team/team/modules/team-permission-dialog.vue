@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
     :title="`团队边界 - ${teamName}`"
@@ -231,7 +231,7 @@
   .package-card {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     padding: 12px 14px;
     border-radius: 12px;
     background: #f8fafc;
@@ -259,3 +259,4 @@
     color: #64748b;
   }
 </style>
+

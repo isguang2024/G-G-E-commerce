@@ -53,6 +53,11 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	{
 		reg.GETProtected("", reg.Meta("获取功能包列表").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.List)
 		reg.GETProtected("/options", reg.Meta("获取功能包候选").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.ListOptions)
+		reg.GETProtected("/relationship-tree", reg.Meta("获取功能包关系树").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.GetRelationTree)
+		reg.GETProtected("/:id/impact-preview", reg.Meta("获取功能包影响预览").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.GetImpactPreview)
+		reg.GETProtected("/:id/versions", reg.Meta("获取功能包版本历史").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.ListVersions)
+		reg.POSTProtected("/:id/rollback", reg.Meta("回滚功能包版本").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.Rollback)
+		reg.GETProtected("/:id/risk-audits", reg.Meta("获取功能包最近变更").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.ListRiskAudits)
 		reg.GETProtected("/:id", reg.Meta("获取功能包详情").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.Get)
 		reg.POSTProtected("", reg.Meta("创建功能包").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.Create)
 		reg.PUTProtected("/:id", reg.Meta("更新功能包").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.Update)

@@ -2,6 +2,7 @@ package permission
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -149,6 +150,152 @@ func (h *PermissionHandler) ListEndpoints(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
 		"records": records,
 		"total":   len(records),
+	}))
+}
+
+func (h *PermissionHandler) GetConsumerDetails(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能权限ID")
+		c.JSON(status, resp)
+		return
+	}
+	result, err := h.permissionService.GetConsumerDetails(id)
+	if err != nil {
+		if err == ErrPermissionKeyNotFound {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能权限不存在")
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get permission key consumer details failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能权限消费明细失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(result))
+}
+
+func (h *PermissionHandler) GetImpactPreview(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能权限ID")
+		c.JSON(status, resp)
+		return
+	}
+	result, err := h.permissionService.GetImpactPreview(id)
+	if err != nil {
+		if err == ErrPermissionKeyNotFound {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能权限不存在")
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get permission impact preview failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取影响预览失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(result))
+}
+
+func (h *PermissionHandler) BatchUpdate(c *gin.Context) {
+	var req PermissionBatchUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	operatorID := parseCurrentUserID(c)
+	result, err := h.permissionService.BatchUpdate(&req, operatorID, strings.TrimSpace(c.GetHeader("X-Request-ID")))
+	if err != nil {
+		h.logger.Error("Batch update permission actions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "批量更新功能权限失败: "+err.Error())
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(result))
+}
+
+func (h *PermissionHandler) SaveBatchTemplate(c *gin.Context) {
+	var req PermissionBatchTemplateSaveRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	operatorID := parseCurrentUserID(c)
+	item, err := h.permissionService.SaveBatchTemplate(&req, operatorID)
+	if err != nil {
+		h.logger.Error("Save permission batch template failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存批量模板失败: "+err.Error())
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"id":          item.ID.String(),
+		"name":        item.Name,
+		"description": item.Description,
+		"payload":     item.Payload,
+		"updated_at":  item.UpdatedAt.Format("2006-01-02 15:04:05"),
+	}))
+}
+
+func (h *PermissionHandler) ListBatchTemplates(c *gin.Context) {
+	items, err := h.permissionService.ListBatchTemplates()
+	if err != nil {
+		h.logger.Error("List permission batch templates failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取批量模板失败")
+		c.JSON(status, resp)
+		return
+	}
+	records := make([]gin.H, 0, len(items))
+	for _, item := range items {
+		records = append(records, gin.H{
+			"id":          item.ID.String(),
+			"name":        item.Name,
+			"description": item.Description,
+			"payload":     item.Payload,
+			"created_by":  stringifyUUIDPointer(item.CreatedBy),
+			"created_at":  item.CreatedAt.Format("2006-01-02 15:04:05"),
+			"updated_at":  item.UpdatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"records": records,
+		"total":   len(records),
+	}))
+}
+
+func (h *PermissionHandler) ListRiskAudits(c *gin.Context) {
+	current := parsePositiveInt(c.Query("current"), 1)
+	size := parsePositiveInt(c.Query("size"), 20)
+	objectID := strings.TrimSpace(c.Query("object_id"))
+	items, total, err := h.permissionService.ListRiskAudits(objectID, current, size)
+	if err != nil {
+		h.logger.Error("List permission risk audits failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取最近变更失败")
+		c.JSON(status, resp)
+		return
+	}
+	records := make([]gin.H, 0, len(items))
+	for _, item := range items {
+		records = append(records, gin.H{
+			"id":             item.ID.String(),
+			"operator_id":    stringifyUUIDPointer(item.OperatorID),
+			"object_type":    item.ObjectType,
+			"object_id":      item.ObjectID,
+			"operation_type": item.OperationType,
+			"before_summary": item.BeforeSummary,
+			"after_summary":  item.AfterSummary,
+			"impact_summary": item.ImpactSummary,
+			"request_id":     item.RequestID,
+			"created_at":     item.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"records": records,
+		"total":   total,
+		"current": current,
+		"size":    size,
 	}))
 }
 
@@ -505,4 +652,32 @@ func stringifyUUIDPointer(value *uuid.UUID) string {
 		return ""
 	}
 	return value.String()
+}
+
+func parseCurrentUserID(c *gin.Context) *uuid.UUID {
+	value, ok := c.Get("user_id")
+	if !ok {
+		return nil
+	}
+	userIDStr, ok := value.(string)
+	if !ok {
+		return nil
+	}
+	userID, err := uuid.Parse(strings.TrimSpace(userIDStr))
+	if err != nil {
+		return nil
+	}
+	return &userID
+}
+
+func parsePositiveInt(value string, fallback int) int {
+	target := strings.TrimSpace(value)
+	if target == "" {
+		return fallback
+	}
+	var parsed int
+	if _, err := fmt.Sscanf(target, "%d", &parsed); err != nil || parsed <= 0 {
+		return fallback
+	}
+	return parsed
 }

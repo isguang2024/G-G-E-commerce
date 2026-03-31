@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <nav class="message-workspace-nav" aria-label="消息工作台导航">
     <button
       v-for="item in navItems"
@@ -47,39 +47,50 @@
   .message-workspace-nav {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 10px;
+    gap: 12px;
+    padding: 10px;
+    border: 1px solid var(--art-card-border);
+    border-radius: 18px;
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(248 250 252 / 0.94));
+    box-shadow: var(--art-shadow-sm);
   }
 
   .message-workspace-nav__item {
     display: grid;
     gap: 4px;
-    padding: 14px 16px;
-    border: 1px solid rgb(226 232 240 / 0.9);
-    border-radius: 18px;
-    background: rgb(255 255 255 / 0.96);
+    padding: 13px 14px;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: rgb(255 255 255 / 0.88);
     text-align: left;
-    transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease;
+    transition:
+      border-color 0.2s ease,
+      background-color 0.2s ease,
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
   }
 
   .message-workspace-nav__item span {
     font-size: 13px;
     font-weight: 700;
-    color: #0f172a;
+    color: var(--art-text-strong);
   }
 
   .message-workspace-nav__item small {
     font-size: 11px;
     line-height: 1.5;
-    color: #64748b;
+    color: var(--art-text-muted);
   }
 
   .message-workspace-nav__item.is-active {
-    border-color: rgb(59 130 246 / 0.38);
-    background: rgb(239 246 255 / 0.88);
+    border-color: color-mix(in srgb, var(--theme-color) 22%, var(--art-card-border));
+    background: color-mix(in srgb, var(--theme-color) 6%, white);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--theme-color) 10%, white);
   }
 
   .message-workspace-nav__item:hover {
-    border-color: rgb(148 163 184 / 0.72);
+    border-color: color-mix(in srgb, var(--theme-color) 14%, var(--art-card-border));
+    box-shadow: var(--art-shadow-sm);
     transform: translateY(-1px);
   }
 
@@ -92,6 +103,8 @@
   @media (max-width: 640px) {
     .message-workspace-nav {
       grid-template-columns: 1fr;
+      padding: 10px;
     }
   }
 </style>
+

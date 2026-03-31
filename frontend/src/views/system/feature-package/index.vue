@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="feature-package-page art-full-height">
     <ElTabs
       v-model="activePackageType"
@@ -10,61 +10,62 @@
       <ElTabPane label="组合包" name="bundle" />
     </ElTabs>
 
-    <ArtSearchBar
-      v-show="showSearchBar"
-      v-model="searchForm"
-      :items="searchItems"
-      label-width="auto"
-      :showExpand="true"
-      :defaultExpanded="true"
-      @search="handleSearch"
-      @reset="handleReset"
-    />
+    <div class="page-top-stack">
+      <ArtSearchBar
+        v-show="showSearchBar"
+        v-model="searchForm"
+        :items="searchItems"
+        label-position="top"
+        :span="8"
+        :gutter="16"
+        :showExpand="true"
+        @search="handleSearch"
+        @reset="handleReset"
+      />
+
+      <AdminWorkspaceHero
+        title="功能包管理"
+        description="维护基础包、组合包、上下文范围与菜单 / 功能 / 团队的绑定关系，统一收口功能赋权与影响范围。"
+        :metrics="[
+        { label: '当前页功能包数', value: data.length },
+        { label: '平台功能包', value: platformPackageCount },
+        { label: '团队功能包', value: teamPackageCount },
+        { label: '双上下文功能包', value: sharedPackageCount },
+        {
+          label: activePackageType === 'base' ? '已组合功能范围数' : '组合包数量',
+          value: activePackageType === 'base' ? totalActionCount : bundleCount
+        },
+        {
+          label: activePackageType === 'base' ? '已绑定菜单数' : '团队开通数',
+          value: activePackageType === 'base' ? totalMenuCount : totalTeamCount
+        },
+        { label: '停用功能包', value: disabledPackageCount }
+      ]"
+    >
+      <div class="feature-package-hero-actions">
+        <ElButton
+          v-action="'platform.package.manage'"
+          @click="openRelationDialog"
+          v-ripple
+        >
+          包关系树
+        </ElButton>
+        <ElButton
+          v-action="'platform.package.manage'"
+          type="primary"
+          @click="openDialog('add')"
+          v-ripple
+        >
+          新增{{ activePackageType === 'base' ? '基础包' : '组合包' }}
+        </ElButton>
+      </div>
+    </AdminWorkspaceHero>
+    </div>
 
     <ElCard
       class="art-table-card"
       shadow="never"
-      :style="{ marginTop: showSearchBar ? '12px' : '0' }"
     >
-      <div class="stats-row">
-        <ElCard shadow="never" class="stats-card stats-card-compact">
-          <div class="stats-label">当前页功能包数</div>
-          <div class="stats-value">{{ data.length }}</div>
-        </ElCard>
-        <ElCard shadow="never" class="stats-card stats-card-compact">
-          <div class="stats-label">平台功能包</div>
-          <div class="stats-value">{{ platformPackageCount }}</div>
-        </ElCard>
-        <ElCard shadow="never" class="stats-card stats-card-compact">
-          <div class="stats-label">团队功能包</div>
-          <div class="stats-value">{{ teamPackageCount }}</div>
-        </ElCard>
-        <ElCard shadow="never" class="stats-card stats-card-compact">
-          <div class="stats-label">双上下文功能包</div>
-          <div class="stats-value">{{ sharedPackageCount }}</div>
-        </ElCard>
-        <ElCard shadow="never" class="stats-card stats-card-compact">
-          <div class="stats-label">{{
-            activePackageType === 'base' ? '已组合功能范围数' : '组合包数量'
-          }}</div>
-          <div class="stats-value">{{
-            activePackageType === 'base' ? totalActionCount : bundleCount
-          }}</div>
-        </ElCard>
-        <ElCard shadow="never" class="stats-card stats-card-compact">
-          <div class="stats-label">{{
-            activePackageType === 'base' ? '已绑定菜单数' : '团队开通数'
-          }}</div>
-          <div class="stats-value">{{
-            activePackageType === 'base' ? totalMenuCount : totalTeamCount
-          }}</div>
-        </ElCard>
-        <ElCard shadow="never" class="stats-card stats-card-compact">
-          <div class="stats-label">停用功能包</div>
-          <div class="stats-value">{{ disabledPackageCount }}</div>
-        </ElCard>
-      </div>
-
       <ArtTableHeader
         v-model:columns="columnChecks"
         v-model:showSearchBar="showSearchBar"
@@ -72,14 +73,9 @@
         @refresh="handleRefresh"
       >
         <template #left>
-          <ElButton
-            v-action="'platform.package.manage'"
-            type="primary"
-            @click="openDialog('add')"
-            v-ripple
-          >
-            新增{{ activePackageType === 'base' ? '基础包' : '组合包' }}
-          </ElButton>
+          <div class="feature-package-toolbar-tip">
+            包关系、菜单、功能范围和团队开通统一从操作菜单进入。
+          </div>
         </template>
       </ArtTableHeader>
 
@@ -132,6 +128,63 @@
       :context-type="currentPackage.contextType || 'team'"
       @success="handleRefresh"
     />
+
+    <ElDialog
+      v-model="relationDialogVisible"
+      title="功能包包含关系树"
+      width="920px"
+      destroy-on-close
+    >
+      <div class="relation-toolbar">
+        <ElInput
+          v-model="relationKeyword"
+          placeholder="按包名/编码过滤"
+          clearable
+          style="max-width: 260px"
+          @keyup.enter="loadRelationTree"
+        />
+        <ElButton :loading="relationLoading" type="primary" @click="loadRelationTree">
+          刷新关系树
+        </ElButton>
+      </div>
+      <ElAlert
+        v-if="relationTree.cycleDependencies.length"
+        type="warning"
+        :closable="false"
+        show-icon
+        class="relation-alert"
+        :title="`检测到循环依赖 ${relationTree.cycleDependencies.length} 组`"
+      />
+      <ElAlert
+        v-if="relationTree.isolatedBaseKeys.length"
+        type="info"
+        :closable="false"
+        show-icon
+        class="relation-alert"
+        :title="`孤立基础包：${relationTree.isolatedBaseKeys.join('、')}`"
+      />
+      <ElScrollbar max-height="520px" v-loading="relationLoading">
+        <ElTree
+          :data="relationTree.roots"
+          node-key="id"
+          default-expand-all
+          :expand-on-click-node="false"
+        >
+          <template #default="{ data: node }">
+            <div class="relation-node">
+              <span class="relation-node-name">{{ node.name }}</span>
+              <ElTag size="small" effect="plain" :type="node.packageType === 'bundle' ? 'warning' : 'success'">
+                {{ node.packageType === 'bundle' ? '组合包' : '基础包' }}
+              </ElTag>
+              <ElTag size="small" effect="plain" :type="node.contextType === 'platform' ? 'warning' : node.contextType === 'team' ? 'primary' : 'info'">
+                {{ node.contextType === 'platform' ? '平台' : node.contextType === 'team' ? '团队' : '通用' }}
+              </ElTag>
+              <ElTag size="small" effect="plain" type="info">被引用 {{ node.referenceCount }}</ElTag>
+            </div>
+          </template>
+        </ElTree>
+      </ElScrollbar>
+    </ElDialog>
   </div>
 </template>
 
@@ -140,7 +193,13 @@
   import { ElButton, ElCard, ElMessage, ElMessageBox, ElTag } from 'element-plus'
   import { useRoute } from 'vue-router'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchDeleteFeaturePackage, fetchGetFeaturePackageList } from '@/api/system-manage'
+  import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
+  import {
+    fetchDeleteFeaturePackage,
+    fetchGetFeaturePackageImpactPreview,
+    fetchGetFeaturePackageList,
+    fetchGetFeaturePackageRelationTree
+  } from '@/api/system-manage'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import type { FormItem } from '@/components/core/forms/art-form/index.vue'
@@ -161,7 +220,7 @@
     contextType: string
     status: string
   }
-  const showSearchBar = ref(true)
+  const showSearchBar = ref(false)
   const route = useRoute()
   const activePackageType = ref<'base' | 'bundle'>('base')
   const dialogVisible = ref(false)
@@ -170,6 +229,14 @@
   const menusDialogVisible = ref(false)
   const teamsDialogVisible = ref(false)
   const dialogType = ref<'add' | 'edit'>('add')
+  const relationDialogVisible = ref(false)
+  const relationLoading = ref(false)
+  const relationKeyword = ref('')
+  const relationTree = reactive<Api.SystemManage.FeaturePackageRelationTree>({
+    roots: [],
+    cycleDependencies: [],
+    isolatedBaseKeys: []
+  })
   const currentPackage = ref<Partial<PackageItem>>({})
   const routeOpenSignature = ref('')
   const platformPackageCount = computed(
@@ -442,6 +509,28 @@
     await refreshData()
   }
 
+  async function openRelationDialog() {
+    relationDialogVisible.value = true
+    await loadRelationTree()
+  }
+
+  async function loadRelationTree() {
+    relationLoading.value = true
+    try {
+      const result = await fetchGetFeaturePackageRelationTree({
+        contextType: searchForm.contextType || undefined,
+        keyword: relationKeyword.value.trim() || undefined
+      })
+      relationTree.roots = result.roots || []
+      relationTree.cycleDependencies = result.cycleDependencies || []
+      relationTree.isolatedBaseKeys = result.isolatedBaseKeys || []
+    } catch (error: any) {
+      ElMessage.error(error?.message || '加载功能包关系树失败')
+    } finally {
+      relationLoading.value = false
+    }
+  }
+
   async function syncRouteFilters() {
     activePackageType.value =
       normalizePackageType(String(route.query.tab || route.query.packageType || '')) || 'base'
@@ -537,14 +626,23 @@
       return
     }
     if (command === 'delete') {
-      ElMessageBox.confirm(`确定删除功能包「${row.name}」吗？`, '删除确认', {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      })
+      fetchGetFeaturePackageImpactPreview(row.id)
+        .then((impact) =>
+          ElMessageBox.confirm(
+            `删除后影响：角色 ${impact.roleCount}、团队 ${impact.teamCount}、用户 ${impact.userCount}。确认删除功能包「${row.name}」？`,
+            '删除确认',
+            {
+              confirmButtonText: '确认删除',
+              cancelButtonText: '取消',
+              type: 'warning'
+            }
+          )
+        )
         .then(() => fetchDeleteFeaturePackage(row.id))
-        .then(() => {
-          ElMessage.success('删除成功')
+        .then((stats) => {
+          ElMessage.success(
+            `本次增量刷新：角色 ${stats?.roleCount || 0}、团队 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
+          )
           handleRefresh()
         })
         .catch((e) => {
@@ -589,48 +687,85 @@
     }
   }
 
+  .feature-package-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
   .package-tabs {
+    margin-bottom: 0;
+    padding: 0 22px;
+    background: transparent;
+
+    :deep(.el-tabs__header) {
+      margin: 0;
+    }
+
+    :deep(.el-tabs__nav-wrap::after) {
+      height: 1px;
+      background-color: var(--art-border-soft);
+    }
+
+    :deep(.el-tabs__nav) {
+      border: 0;
+    }
+
+    :deep(.el-tabs__item) {
+      height: 42px;
+      padding: 0 20px;
+      border: 0;
+      border-bottom: 2px solid transparent;
+      background: transparent;
+      color: var(--art-text-muted);
+      font-size: 14px;
+      font-weight: 600;
+      transition:
+        color 0.15s ease,
+        border-color 0.15s ease,
+        background-color 0.15s ease;
+    }
+
+    :deep(.el-tabs__item:hover) {
+      color: var(--theme-color);
+    }
+
+    :deep(.el-tabs__item.is-active) {
+      color: var(--theme-color);
+      background: rgb(102 126 234 / 0.04);
+      border-bottom-color: var(--theme-color);
+    }
+  }
+
+  .feature-package-toolbar-tip {
+    color: var(--el-text-color-secondary);
+    font-size: 13px;
+  }
+
+  .relation-toolbar {
+    display: flex;
+    gap: 12px;
     margin-bottom: 12px;
   }
 
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    gap: 8px;
+  .relation-alert {
     margin-bottom: 8px;
   }
 
-  .stats-card {
-    min-height: 64px;
+  .relation-node {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 32px;
   }
 
-  .stats-label {
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
-    line-height: 1.2;
+  .relation-node-name {
+    min-width: 0;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
-  .stats-value {
-    margin-top: 4px;
-    font-size: 16px;
-    font-weight: 700;
-    line-height: 1.1;
-    color: var(--el-text-color-primary);
-  }
-
-  .stats-card-compact :deep(.el-card__body) {
-    padding: 8px 10px;
-  }
-
-  @media (max-width: 1200px) {
-    .stats-row {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
-  @media (max-width: 768px) {
-    .stats-row {
-      grid-template-columns: 1fr;
-    }
-  }
 </style>
+

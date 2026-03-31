@@ -19,6 +19,7 @@ import (
 var (
 	ErrUserNotFound = errors.New("user not found")
 	ErrUserExists   = errors.New("user already exists")
+	ErrEmailExists  = errors.New("email already exists")
 )
 
 type UserService interface {
@@ -81,6 +82,16 @@ func (s *userService) Create(req *dto.UserCreateRequest) (*User, error) {
 	if exists {
 		return nil, ErrUserExists
 	}
+	email := strings.TrimSpace(req.Email)
+	if email != "" {
+		exists, err := s.userRepo.ExistsByEmail(email)
+		if err != nil {
+			return nil, err
+		}
+		if exists {
+			return nil, ErrEmailExists
+		}
+	}
 	hash, err := password.Hash(req.Password)
 	if err != nil {
 		return nil, err
@@ -92,7 +103,7 @@ func (s *userService) Create(req *dto.UserCreateRequest) (*User, error) {
 	user := &User{
 		Username:       req.Username,
 		PasswordHash:   hash,
-		Email:          req.Email,
+		Email:          email,
 		Nickname:       req.Nickname,
 		Phone:          req.Phone,
 		SystemRemark:   req.SystemRemark,
@@ -127,7 +138,17 @@ func (s *userService) Update(id uuid.UUID, req *dto.UserUpdateRequest) error {
 		}
 		return err
 	}
-	user.Email = req.Email
+	email := strings.TrimSpace(req.Email)
+	if email != "" {
+		exists, err := s.userRepo.GetByEmail(email)
+		if err != nil && err != gorm.ErrRecordNotFound {
+			return err
+		}
+		if err == nil && exists.ID != id {
+			return ErrEmailExists
+		}
+	}
+	user.Email = email
 	user.Nickname = req.Nickname
 	user.Phone = req.Phone
 	user.SystemRemark = req.SystemRemark

@@ -2,6 +2,7 @@ package permissionrefresh
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -24,7 +25,19 @@ type Service interface {
 	RefreshAllPlatformRoles() error
 	RefreshByPackage(packageID uuid.UUID) error
 	RefreshByPackages(packageIDs []uuid.UUID) error
+	RefreshByPackageWithStats(packageID uuid.UUID) (RefreshStats, error)
+	RefreshByPackagesWithStats(packageIDs []uuid.UUID) (RefreshStats, error)
 	RefreshByMenu(menuID uuid.UUID) error
+}
+
+type RefreshStats struct {
+	RequestedPackageCount int       `json:"requested_package_count"`
+	ImpactedPackageCount  int       `json:"impacted_package_count"`
+	RoleCount             int       `json:"role_count"`
+	TeamCount             int       `json:"team_count"`
+	UserCount             int       `json:"user_count"`
+	ElapsedMilliseconds   int64     `json:"elapsed_milliseconds"`
+	FinishedAt            time.Time `json:"finished_at"`
 }
 
 type service struct {
@@ -190,25 +203,41 @@ func (s *service) RefreshByPackage(packageID uuid.UUID) error {
 }
 
 func (s *service) RefreshByPackages(packageIDs []uuid.UUID) error {
+	_, err := s.RefreshByPackagesWithStats(packageIDs)
+	return err
+}
+
+func (s *service) RefreshByPackageWithStats(packageID uuid.UUID) (RefreshStats, error) {
+	return s.RefreshByPackagesWithStats([]uuid.UUID{packageID})
+}
+
+func (s *service) RefreshByPackagesWithStats(packageIDs []uuid.UUID) (RefreshStats, error) {
+	startedAt := time.Now()
+	stats := RefreshStats{
+		RequestedPackageCount: len(dedupeUUIDs(packageIDs)),
+	}
 	impactedPackageIDs, err := s.collectImpactedPackageIDs(packageIDs)
 	if err != nil {
-		return err
+		return stats, err
 	}
+	stats.ImpactedPackageCount = len(impactedPackageIDs)
 	if len(impactedPackageIDs) == 0 {
-		return nil
+		stats.ElapsedMilliseconds = time.Since(startedAt).Milliseconds()
+		stats.FinishedAt = time.Now()
+		return stats, nil
 	}
 
 	teamIDs, err := s.getTeamIDsByPackageIDs(impactedPackageIDs)
 	if err != nil {
-		return err
+		return stats, err
 	}
 	roleBindings, err := s.getRoleBindingsByPackageIDs(impactedPackageIDs)
 	if err != nil {
-		return err
+		return stats, err
 	}
 	userIDs, err := s.getPlatformUserIDsByPackageIDs(impactedPackageIDs)
 	if err != nil {
-		return err
+		return stats, err
 	}
 
 	platformRoleIDs := make([]uuid.UUID, 0, len(roleBindings))
@@ -219,18 +248,31 @@ func (s *service) RefreshByPackages(packageIDs []uuid.UUID) error {
 		}
 		teamIDs = append(teamIDs, *binding.TenantID)
 	}
+	dedupedTeamIDs := dedupeUUIDs(teamIDs)
+	dedupedRoleIDs := dedupeUUIDs(platformRoleIDs)
 
-	roleUserIDs, err := s.getPlatformUserIDsByRoleIDs(platformRoleIDs)
+	roleUserIDs, err := s.getPlatformUserIDsByRoleIDs(dedupedRoleIDs)
 	if err != nil {
-		return err
+		return stats, err
 	}
-	if err := s.RefreshPlatformRoles(platformRoleIDs); err != nil {
-		return err
+	dedupedUserIDs := dedupeUUIDs(append(userIDs, roleUserIDs...))
+	stats.TeamCount = len(dedupedTeamIDs)
+	stats.RoleCount = len(dedupedRoleIDs)
+	stats.UserCount = len(dedupedUserIDs)
+
+	if err := s.RefreshPlatformRoles(dedupedRoleIDs); err != nil {
+		return stats, err
 	}
-	if err := s.RefreshTeams(teamIDs); err != nil {
-		return err
+	if err := s.RefreshTeams(dedupedTeamIDs); err != nil {
+		return stats, err
 	}
-	return s.RefreshPlatformUsers(append(userIDs, roleUserIDs...))
+	if err := s.RefreshPlatformUsers(dedupedUserIDs); err != nil {
+		return stats, err
+	}
+
+	stats.ElapsedMilliseconds = time.Since(startedAt).Milliseconds()
+	stats.FinishedAt = time.Now()
+	return stats, nil
 }
 
 func (s *service) RefreshByMenu(menuID uuid.UUID) error {

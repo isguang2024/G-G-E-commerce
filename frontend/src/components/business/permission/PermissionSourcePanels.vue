@@ -196,25 +196,27 @@ function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem) {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 14px;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  background: #fff;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--default-border) 84%, white);
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(248 250 252 / 0.94));
+  box-shadow: var(--art-shadow-sm);
 }
 
 .source-card--derived {
-  border-color: #f3d38a;
-  background: #fffaf0;
+  border-color: rgb(245 196 64 / 0.35);
+  background: linear-gradient(180deg, rgb(255 251 240 / 0.98), rgb(255 247 226 / 0.96));
 }
 
 .source-card--blocked {
-  border-color: #f1c0c0;
-  background: #fff6f6;
+  border-color: rgb(248 113 113 / 0.22);
+  background: linear-gradient(180deg, rgb(255 247 247 / 0.98), rgb(255 240 240 / 0.96));
 }
 
 .source-card--trimmed {
-  border-color: #bfd3ff;
-  background: #f5f9ff;
+  border-color: rgb(96 165 250 / 0.24);
+  background: linear-gradient(180deg, rgb(246 250 255 / 0.98), rgb(240 246 255 / 0.96));
 }
 
 .source-card--empty {
@@ -231,7 +233,8 @@ function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem) {
 
 .source-title {
   font-size: 13px;
-  color: #475569;
+  font-weight: 700;
+  color: var(--art-text-strong);
 }
 
 .source-tags,
@@ -248,7 +251,11 @@ function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem) {
 
 .source-empty-text {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--art-text-muted);
   line-height: 1.6;
+}
+
+.source-card :deep(.el-tag) {
+  border-radius: 9999px;
 }
 </style>

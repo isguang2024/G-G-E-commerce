@@ -12,6 +12,7 @@
       border: '1px solid var(--default-border)',
       borderRadius: 'calc(var(--custom-radius) / 2 + 4px)'
     }"
+    @show="handlePopoverShow"
   >
     <template #reference>
       <div class="flex-c gap-2">
@@ -62,7 +63,6 @@
 </template>
 
 <script setup lang="ts">
-  import { onMounted } from 'vue'
   import { useFastEnter } from '@/hooks/core/useFastEnter'
   import { useFastEnterStore } from '@/store/modules/fast-enter'
   import type { FastEnterApplication, FastEnterQuickLink } from '@/types/config'
@@ -79,6 +79,7 @@
 
   // 使用快速入口配置
   const { enabledApplications, enabledQuickLinks, openNavigationTarget } = useFastEnter()
+  const isExternalLink = (value?: string) => /^https?:\/\//i.test(`${value || ''}`.trim())
 
   /**
    * 处理导航跳转
@@ -86,6 +87,13 @@
    * @param link 外部链接
    */
   const handleNavigate = (routeName?: string, link?: string): void => {
+    const linkTarget = `${link || ''}`.trim()
+    if (isExternalLink(linkTarget)) {
+      window.open(linkTarget, '_blank', 'noopener,noreferrer')
+      popoverRef.value?.hide()
+      return
+    }
+
     openNavigationTarget(routeName, link)
       .then((handled) => {
         if (!handled) {
@@ -118,9 +126,9 @@
     handleNavigate(quickLink.routeName, quickLink.link)
   }
 
-  onMounted(() => {
+  const handlePopoverShow = () => {
     void fastEnterStore.loadConfig().catch((error) => {
       warnDev('加载快捷入口配置失败，已回退默认配置', error)
     })
-  })
+  }
 </script>

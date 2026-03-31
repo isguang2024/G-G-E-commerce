@@ -20,7 +20,7 @@
         </template>
         <ElTable
           v-loading="listLoading"
-          :data="groupList"
+          :data="pagedGroupList"
           height="100%"
           highlight-current-row
           @current-change="handleCurrentChange"
@@ -48,6 +48,12 @@
             </template>
           </ElTableColumn>
         </ElTable>
+        <WorkspacePagination
+          v-model:current-page="pagination.current"
+          v-model:page-size="pagination.size"
+          :total="groupList.length"
+          compact
+        />
       </ElCard>
 
       <ElCard shadow="never" class="group-form-card">
@@ -99,6 +105,7 @@
 </template>
 
 <script setup lang="ts">
+  import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import type { FormInstance, FormRules } from 'element-plus'
@@ -138,6 +145,10 @@
   const listLoading = ref(false)
   const submitting = ref(false)
   const groupList = ref<Api.SystemManage.PermissionGroupItem[]>([])
+  const pagination = reactive({
+    current: 1,
+    size: 10
+  })
   const form = reactive({
     id: '',
     code: '',
@@ -151,6 +162,11 @@
   const rules = reactive<FormRules>({
     code: [{ required: true, message: '请输入分组编码', trigger: 'blur' }],
     name: [{ required: true, message: '请输入分组名称', trigger: 'blur' }]
+  })
+
+  const pagedGroupList = computed(() => {
+    const start = (pagination.current - 1) * pagination.size
+    return groupList.value.slice(start, start + pagination.size)
   })
 
   function initForm(data?: Api.SystemManage.PermissionGroupItem) {
@@ -218,6 +234,7 @@
         if (sortA !== sortB) return sortA - sortB
         return (a.name || '').localeCompare(b.name || '', 'zh-CN')
       })
+      pagination.current = 1
     } finally {
       listLoading.value = false
     }

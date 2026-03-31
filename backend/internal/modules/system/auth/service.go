@@ -3,6 +3,7 @@ package auth
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -19,6 +20,7 @@ var (
 	ErrInvalidCredentials = errors.New("invalid email or password")
 	ErrUserNotFound       = errors.New("user not found")
 	ErrUserExists         = errors.New("user already exists")
+	ErrEmailExists        = errors.New("email already exists")
 	ErrUserInactive       = errors.New("user account is inactive")
 )
 
@@ -133,14 +135,15 @@ func (s *authService) Register(req *dto.RegisterRequest) (*dto.LoginResponse, er
 		return nil, errors.New("username already exists")
 	}
 
-	if req.Email != "" {
-		exists, err := s.userRepo.ExistsByEmail(req.Email)
+	email := strings.TrimSpace(req.Email)
+	if email != "" {
+		exists, err := s.userRepo.ExistsByEmail(email)
 		if err != nil {
 			s.logger.Error("Failed to check email existence", zap.Error(err))
 			return nil, fmt.Errorf("failed to check email: %w", err)
 		}
 		if exists {
-			return nil, ErrUserExists
+			return nil, ErrEmailExists
 		}
 	}
 
@@ -151,7 +154,7 @@ func (s *authService) Register(req *dto.RegisterRequest) (*dto.LoginResponse, er
 	}
 
 	user := &user.User{
-		Email:        req.Email,
+		Email:        email,
 		Username:     req.Username,
 		PasswordHash: passwordHash,
 		Nickname:     req.Nickname,

@@ -1,13 +1,32 @@
-<template>
+﻿<template>
   <div class="team-page art-full-height">
-    <TeamSearch v-model="searchForm" @search="handleSearch" @reset="resetSearchParams" />
+    <div class="page-top-stack">
+      <TeamSearch
+        v-show="showSearchBar"
+        v-model="searchForm"
+        :showExpand="true"
+        @search="handleSearch"
+        @reset="resetSearchParams"
+      />
+
+      <AdminWorkspaceHero :title="'团队管理'" :description="'统一管理团队边界、管理员与授权入口。'" :metrics="heroMetrics">
+        <div class="team-hero-actions">
+          <ElButton v-action="'tenant.manage'" type="primary" @click="showDialog('add')" v-ripple>
+            新增团队
+          </ElButton>
+        </div>
+      </AdminWorkspaceHero>
+    </div>
 
     <ElCard class="art-table-card" shadow="never">
-      <ArtTableHeader v-model:columns="columnChecks" :loading="loading" @refresh="refreshData">
+      <ArtTableHeader
+        v-model:columns="columnChecks"
+        v-model:showSearchBar="showSearchBar"
+        :loading="loading"
+        @refresh="refreshData"
+      >
         <template #left>
-          <ElSpace wrap>
-            <ElButton v-action="'tenant.manage'" @click="showDialog('add')" v-ripple>新增团队</ElButton>
-          </ElSpace>
+          <div class="team-toolbar-tip">团队管理同步菜单与成员边界，建议优先从主账号确认管理员后再开通功能包。</div>
         </template>
       </ArtTableHeader>
 
@@ -59,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-  import ArtButtonTable from '@/components/core/forms/art-button-table/index.vue'
+  import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { useAuth } from '@/hooks/core/useAuth'
   import { useTable } from '@/hooks/core/useTable'
   import { fetchGetTeamList, fetchDeleteTeam, fetchCreateTeam, fetchUpdateTeam } from '@/api/team'
@@ -89,6 +108,7 @@
   const dialogType = ref<DialogType>('add')
   const dialogVisible = ref(false)
   const currentTeamData = ref<Partial<TeamListItem>>({})
+  const showSearchBar = ref(false)
   const membersDrawerVisible = ref(false)
   const actionDialogVisible = ref(false)
   const menuDialogVisible = ref(false)
@@ -108,6 +128,25 @@
     }
     return map[status] || { type: 'info', text: status || '未知' }
   }
+
+  const heroMetrics = computed(() => [
+    { label: '团队总数', value: data.value.length },
+    {
+      label: '活跃团队',
+      value: data.value.filter((item) => item.status === 'active').length
+    },
+    {
+      label: '停用团队',
+      value: data.value.filter((item) => item.status === 'inactive').length
+    },
+    {
+      label: '管理员覆盖',
+      value: data.value.reduce(
+        (total, item) => total + (((item as any).adminUsers || (item as any).admin_users || []).length || 0),
+        0
+      )
+    }
+  ])
 
   const {
     columns,
@@ -329,3 +368,18 @@
     }
   }
 </script>
+
+<style lang="scss" scoped>
+  .team-hero-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .team-toolbar-tip {
+    color: var(--art-text-muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+</style>
+

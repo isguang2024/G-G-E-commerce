@@ -97,7 +97,7 @@ func (s *fastEnterService) saveConfig(config FastEnterConfig) error {
 
 func defaultFastEnterConfig() FastEnterConfig {
 	return FastEnterConfig{
-		MinWidth: 1200,
+		MinWidth: 1450,
 		Applications: []FastEnterApplication{
 			{ID: "console", Name: "工作台", Description: "系统概览与数据统计", Icon: "ri:pie-chart-line", IconColor: "#377dff", Enabled: true, Order: 1, RouteName: "Console"},
 			{ID: "role", Name: "角色管理", Description: "维护平台角色与角色权限", Icon: "ri:shield-user-line", IconColor: "#0f766e", Enabled: true, Order: 2, RouteName: "Role"},
@@ -105,11 +105,13 @@ func defaultFastEnterConfig() FastEnterConfig {
 			{ID: "menu", Name: "菜单管理", Description: "维护菜单树、菜单分组和备份", Icon: "ri:menu-line", IconColor: "#f97316", Enabled: true, Order: 4, RouteName: "Menus"},
 			{ID: "page", Name: "页面管理", Description: "维护页面注册表和运行时页面", Icon: "ri:layout-4-line", IconColor: "#7c3aed", Enabled: true, Order: 5, RouteName: "PageManagement"},
 			{ID: "api-endpoint", Name: "API 管理", Description: "同步 API 注册表与诊断未注册接口", Icon: "ri:route-line", IconColor: "#dc2626", Enabled: true, Order: 6, RouteName: "ApiEndpoint"},
+			{ID: "docs", Name: "项目文档", Description: "查看项目说明与规范文档", Icon: "ri:file-text-line", IconColor: "#0ea5e9", Enabled: true, Order: 7, Link: "https://www.artd.pro/docs/zh/"},
 		},
 		QuickLinks: []FastEnterQuickLink{
 			{ID: "user-center", Name: "个人中心", Enabled: true, Order: 1, RouteName: "UserCenter"},
 			{ID: "team-members", Name: "团队成员", Enabled: true, Order: 2, RouteName: "TeamMembers"},
 			{ID: "feature-package", Name: "功能包管理", Enabled: true, Order: 3, RouteName: "FeaturePackage"},
+			{ID: "support", Name: "技术支持", Enabled: true, Order: 4, Link: "https://www.artd.pro/docs/zh/community/communicate.html"},
 		},
 	}
 }
@@ -123,24 +125,20 @@ func normalizeFastEnterConfig(raw models.MetaJSON) FastEnterConfig {
 	}
 	if len(result.Applications) == 0 {
 		result.Applications = defaultConfig.Applications
+	} else {
+		result.Applications = mergeFastEnterApplications(result.Applications, defaultConfig.Applications)
 	}
 	if len(result.QuickLinks) == 0 {
 		result.QuickLinks = defaultConfig.QuickLinks
+	} else {
+		result.QuickLinks = mergeFastEnterQuickLinks(result.QuickLinks, defaultConfig.QuickLinks)
 	}
 	return result
 }
 
 func normalizeFastEnterMinWidth(raw interface{}, fallback int) int {
-	switch value := raw.(type) {
-	case int:
-		if value >= 960 && value <= 2400 {
-			return value
-		}
-	case float64:
-		target := int(value)
-		if target >= 960 && target <= 2400 {
-			return target
-		}
+	if fallback <= 0 {
+		return 1450
 	}
 	return fallback
 }
@@ -227,6 +225,84 @@ func normalizeFastEnterQuickLinks(raw interface{}, fallback []FastEnterQuickLink
 			Link:      strings.TrimSpace(toString(record["link"])),
 		})
 	}
+	return result
+}
+
+func mergeFastEnterApplications(items []FastEnterApplication, defaults []FastEnterApplication) []FastEnterApplication {
+	result := append([]FastEnterApplication(nil), items...)
+	existing := make(map[string]struct{}, len(items)*2)
+	for _, item := range items {
+		id := strings.TrimSpace(item.ID)
+		if id != "" {
+			existing["id:"+id] = struct{}{}
+		}
+		if routeName := strings.TrimSpace(item.RouteName); routeName != "" {
+			existing["route:"+routeName] = struct{}{}
+		}
+		if link := strings.TrimSpace(strings.ToLower(item.Link)); link != "" {
+			existing["link:"+link] = struct{}{}
+		}
+	}
+
+	for _, item := range defaults {
+		idKey := "id:" + strings.TrimSpace(item.ID)
+		routeKey := "route:" + strings.TrimSpace(item.RouteName)
+		linkKey := "link:" + strings.TrimSpace(strings.ToLower(item.Link))
+		if _, ok := existing[idKey]; ok {
+			continue
+		}
+		if item.RouteName != "" {
+			if _, ok := existing[routeKey]; ok {
+				continue
+			}
+		}
+		if item.Link != "" {
+			if _, ok := existing[linkKey]; ok {
+				continue
+			}
+		}
+		result = append(result, item)
+	}
+
+	return result
+}
+
+func mergeFastEnterQuickLinks(items []FastEnterQuickLink, defaults []FastEnterQuickLink) []FastEnterQuickLink {
+	result := append([]FastEnterQuickLink(nil), items...)
+	existing := make(map[string]struct{}, len(items)*2)
+	for _, item := range items {
+		id := strings.TrimSpace(item.ID)
+		if id != "" {
+			existing["id:"+id] = struct{}{}
+		}
+		if routeName := strings.TrimSpace(item.RouteName); routeName != "" {
+			existing["route:"+routeName] = struct{}{}
+		}
+		if link := strings.TrimSpace(strings.ToLower(item.Link)); link != "" {
+			existing["link:"+link] = struct{}{}
+		}
+	}
+
+	for _, item := range defaults {
+		idKey := "id:" + strings.TrimSpace(item.ID)
+		routeKey := "route:" + strings.TrimSpace(item.RouteName)
+		linkKey := "link:" + strings.TrimSpace(strings.ToLower(item.Link))
+		if _, ok := existing[idKey]; ok {
+			continue
+		}
+		if item.RouteName != "" {
+			if _, ok := existing[routeKey]; ok {
+				continue
+			}
+		}
+		if item.Link != "" {
+			if _, ok := existing[linkKey]; ok {
+				continue
+			}
+		}
+		result = append(result, item)
+	}
+
 	return result
 }
 

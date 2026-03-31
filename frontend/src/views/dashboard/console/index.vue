@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="console-page art-full-height">
     <AdminWorkspaceHero
       title="后台工作台"
@@ -149,7 +149,7 @@
   .console-hero-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
   }
 
   .console-grid {
@@ -287,3 +287,4 @@
     }
   }
 </style>
+

@@ -1,16 +1,29 @@
-<template>
+﻿<template>
   <div class="art-full-height">
-    <RoleSearch
-      v-show="showSearchBar"
-      v-model="searchForm"
-      @search="handleSearch"
-      @reset="resetSearchParams"
-    />
+    <div class="page-top-stack">
+      <RoleSearch
+        v-show="showSearchBar"
+        v-model="searchForm"
+        @search="handleSearch"
+        @reset="resetSearchParams"
+      />
+
+      <AdminWorkspaceHero
+        title="角色管理"
+        description="统一管理平台角色的权限、功能包与菜单范围，先在这里确认角色授权边界。"
+        :metrics="heroMetrics"
+      >
+        <div class="role-hero-actions">
+          <ElButton v-action="'system.role.manage'" type="primary" @click="showDialog('add')" v-ripple>
+            新增角色
+          </ElButton>
+        </div>
+      </AdminWorkspaceHero>
+    </div>
 
     <ElCard
       class="art-table-card"
       shadow="never"
-      :style="{ marginTop: showSearchBar ? '12px' : '0' }"
     >
       <ArtTableHeader
         v-model:columns="columnChecks"
@@ -19,11 +32,7 @@
         @refresh="refreshData"
       >
         <template #left>
-          <ElSpace wrap>
-            <ElButton v-action="'system.role.manage'" @click="showDialog('add')" v-ripple>
-              新增角色
-            </ElButton>
-          </ElSpace>
+          <div class="role-toolbar-tip">功能包、权限和菜单的裁剪都从角色入口统一治理。</div>
         </template>
       </ArtTableHeader>
 
@@ -59,7 +68,7 @@
 </template>
 
 <script setup lang="ts">
-import { h, ref } from 'vue'
+import { computed, h, ref } from 'vue'
 import { ElMessage, ElMessageBox, ElTag } from 'element-plus'
 import { useAuth } from '@/hooks/core/useAuth'
 import { useTable } from '@/hooks/core/useTable'
@@ -67,6 +76,7 @@ import { fetchDeleteRole, fetchGetRoleList } from '@/api/system-manage'
 import { refreshUserMenus } from '@/router'
 import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
 import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
+import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
 import RoleSearch from './modules/role-search.vue'
 import RoleEditDialog from './modules/role-edit-dialog.vue'
 import RolePackageDialog from './modules/role-package-dialog.vue'
@@ -84,6 +94,11 @@ const permissionDialog = ref(false)
 const packageDialog = ref(false)
 const dialogType = ref<'add' | 'edit'>('add')
 const currentRoleData = ref<RoleListItem | undefined>()
+const heroMetrics = computed(() => [
+  { label: '角色总数', value: pagination.total || data.value.length || 0 },
+  { label: '当前页', value: data.value.length || 0 },
+  { label: '正常', value: data.value.filter((item) => item.status === 'normal').length || 0 }
+])
 
 const searchForm = ref({
   roleName: undefined,
@@ -272,3 +287,17 @@ function deleteRole(row: RoleListItem) {
     })
 }
 </script>
+
+<style scoped lang="scss">
+  .role-hero-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .role-toolbar-tip {
+    font-size: 13px;
+    color: var(--art-text-muted);
+  }
+</style>
+

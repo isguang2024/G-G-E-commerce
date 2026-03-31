@@ -158,31 +158,6 @@ html.dark .el-card {
   }
 }
 
-.config-drawer {
-  .el-drawer__header {
-    margin-bottom: 0 !important;
-    padding: 20px 24px 16px !important;
-    border-bottom: 1px solid var(--el-border-color-lighter);
-
-    .el-drawer__title {
-      font-size: 16px;
-      font-weight: 600;
-      color: var(--el-text-color-primary);
-      letter-spacing: -0.01em;
-    }
-  }
-
-  .el-drawer__body {
-    padding: 20px 24px !important;
-    overflow: auto;
-  }
-
-  .el-drawer__footer {
-    padding: 16px 24px 20px !important;
-    border-top: 1px solid var(--el-border-color-lighter);
-  }
-}
-
 // el-message 样式优化
 .el-message {
   background-color: var(--default-box-color) !important;
@@ -493,16 +468,6 @@ html.dark .el-card {
   }
 }
 
-.action-group-select-popper {
-  .el-select-dropdown__wrap {
-    max-height: min(56vh, 520px) !important;
-  }
-
-  .el-select-dropdown__list {
-    padding: 6px !important;
-  }
-}
-
 // 实现水波纹在文字下面效果
 .el-button > span {
   position: relative;
@@ -550,15 +515,5 @@ html.dark .el-card {
   .el-input-number__decrease,
   .el-input-number__increase {
     height: calc((var(--el-component-size) / 2)) !important;
-  }
-}
-
-.api-endpoint-select-popper {
-  .el-select-dropdown__wrap {
-    max-height: min(56vh, 520px) !important;
-  }
-
-  .el-select-dropdown__list {
-    padding: 6px !important;
   }
 }

@@ -26,7 +26,7 @@
         class="toolbar-search"
       />
 
-      <ElTable :data="filteredPackages" border max-height="440">
+      <ElTable :data="pagedPackages" border max-height="440">
         <ElTableColumn width="60">
           <template #default="{ row }">
             <ElCheckbox
@@ -62,6 +62,12 @@
         </ElTableColumn>
         <ElTableColumn prop="description" label="描述" min-width="220" show-overflow-tooltip />
       </ElTable>
+      <WorkspacePagination
+        v-model:current-page="pagination.current"
+        v-model:page-size="pagination.size"
+        :total="filteredPackages.length"
+        compact
+      />
     </div>
 
     <template #footer>
@@ -74,6 +80,7 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
+  import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import {
     fetchGetFeaturePackageChildren,
     fetchGetFeaturePackageOptions,
@@ -109,6 +116,10 @@
   const keyword = ref('')
   const basePackages = ref<Api.SystemManage.FeaturePackageItem[]>([])
   const selectedPackageIds = ref<string[]>([])
+  const pagination = ref({
+    current: 1,
+    size: 10
+  })
 
   const filteredPackages = computed(() => {
     const currentKeyword = keyword.value.trim().toLowerCase()
@@ -125,6 +136,11 @@
           .toLowerCase()
           .includes(currentKeyword)
       })
+  })
+
+  const pagedPackages = computed(() => {
+    const start = (pagination.value.current - 1) * pagination.value.size
+    return filteredPackages.value.slice(start, start + pagination.value.size)
   })
 
   const contextLabel = computed(() => formatContextType(props.contextType))
@@ -149,6 +165,7 @@
       ])
       basePackages.value = packageRes?.records || []
       selectedPackageIds.value = [...(bundleRes?.child_package_ids || [])]
+      pagination.value.current = 1
     } catch (error: any) {
       ElMessage.error(error?.message || '加载组合包基础包失败')
     } finally {
@@ -170,8 +187,8 @@
     if (!props.packageId) return
     saving.value = true
     try {
-      await fetchSetFeaturePackageChildren(props.packageId, selectedPackageIds.value)
-      ElMessage.success('组合包基础包已保存')
+      const stats = await fetchSetFeaturePackageChildren(props.packageId, selectedPackageIds.value)
+      ElMessage.success(formatRefreshMessage(stats))
       emit('success')
       visible.value = false
     } catch (error: any) {
@@ -199,6 +216,14 @@
     if (contextType === 'team') return '团队'
     if (contextType === 'common') return '通用'
     return contextType || '-'
+  }
+
+  watch(keyword, () => {
+    pagination.value.current = 1
+  })
+
+  function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
+    return `本次增量刷新：角色 ${stats?.roleCount || 0}、团队 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 </script>
 

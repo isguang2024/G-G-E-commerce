@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="fast-enter-page art-full-height">
     <AdminWorkspaceHero
       title="快捷应用管理"
@@ -12,20 +12,18 @@
       </div>
     </AdminWorkspaceHero>
 
-    <section class="fast-enter-shell">
+    <ElCard class="fast-enter-shell art-card-xs" shadow="never">
       <div class="fast-enter-shell__toolbar">
         <div class="fast-enter-shell__toolbar-main">
           <div class="fast-enter-shell__title">顶部展示控制</div>
           <p class="fast-enter-shell__note">配置尽量贴近实际展示，不在这里堆大表单。点击条目后再在抽屉里编辑细节。</p>
         </div>
-        <div class="fast-enter-shell__toolbar-side">
-          <span class="fast-enter-shell__field-label">最小显示宽度</span>
-          <ElInputNumber v-model="draft.minWidth" :min="960" :max="2400" :step="20" />
-        </div>
       </div>
 
+      <div class="fast-enter-shell__divider" />
+
       <div class="fast-enter-board">
-        <section class="fast-enter-panel">
+        <ElCard class="fast-enter-panel art-card-xs" shadow="never">
           <header class="fast-enter-panel__header">
             <div>
               <div class="fast-enter-panel__title">快捷应用</div>
@@ -64,9 +62,9 @@
               </div>
             </button>
           </div>
-        </section>
+        </ElCard>
 
-        <section class="fast-enter-panel">
+        <ElCard class="fast-enter-panel art-card-xs" shadow="never">
           <header class="fast-enter-panel__header">
             <div>
               <div class="fast-enter-panel__title">快捷链接</div>
@@ -93,9 +91,9 @@
               </div>
             </button>
           </div>
-        </section>
+        </ElCard>
       </div>
-    </section>
+    </ElCard>
 
     <ElDrawer
       v-model="drawerVisible"
@@ -106,7 +104,7 @@
       class="fast-enter-drawer"
     >
       <template v-if="drawerDraft">
-        <div class="fast-enter-drawer__summary">
+        <ElCard class="fast-enter-drawer__summary art-card-xs" shadow="never">
           <div class="fast-enter-drawer__summary-icon" v-if="applicationDrawerDraft">
             <ArtSvgIcon
               :icon="applicationDrawerDraft.icon || 'ri:apps-2-line'"
@@ -119,7 +117,7 @@
               {{ drawerMode === 'application' ? '用于顶部左侧卡片区' : '用于顶部右侧轻量链接区' }}
             </div>
           </div>
-        </div>
+        </ElCard>
 
         <div class="fast-enter-drawer__form">
           <ElFormItem label="名称">
@@ -224,7 +222,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, reactive, ref, watch } from 'vue'
+  import { computed, onMounted, onUnmounted, reactive, ref, watch } from 'vue'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { storeToRefs } from 'pinia'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
@@ -271,6 +269,7 @@
     JSON.parse(JSON.stringify(value)) as DrawerDraft
 
   const draft = reactive<FastEnterConfig>(cloneConfig(config.value))
+  const persistedConfig = ref<FastEnterConfig>(cloneConfig(config.value))
   const menuRouteTree = ref<RouteTreeOption[]>([])
   const drawerVisible = ref(false)
   const drawerMode = ref<DrawerMode>('application')
@@ -296,8 +295,7 @@
   const summaryMetrics = computed(() => [
     { label: '快捷应用', value: draft.applications.length || 0 },
     { label: '快捷链接', value: draft.quickLinks.length || 0 },
-    { label: '启用项', value: [...draft.applications, ...draft.quickLinks].filter((item) => item.enabled !== false).length },
-    { label: '显示宽度', value: draft.minWidth || 1200 }
+    { label: '启用项', value: [...draft.applications, ...draft.quickLinks].filter((item) => item.enabled !== false).length }
   ])
 
   const drawerTitle = computed(() =>
@@ -375,13 +373,15 @@
   }
 
   const restoreDraft = () => {
-    Object.assign(draft, cloneConfig(config.value))
+    Object.assign(draft, cloneConfig(persistedConfig.value))
+    fastEnterStore.replaceConfig(cloneConfig(persistedConfig.value))
     ElMessage.success('已恢复到当前已保存配置')
   }
 
   const saveConfig = async () => {
     await fastEnterStore.saveConfig(cloneConfig(draft))
-    Object.assign(draft, cloneConfig(config.value))
+    persistedConfig.value = cloneConfig(config.value)
+    Object.assign(draft, cloneConfig(persistedConfig.value))
     ElMessage.success('快捷入口配置已保存')
   }
 
@@ -391,7 +391,13 @@
     })
     Object.assign(draft, getDefaultFastEnterConfig())
     await fastEnterStore.saveConfig(cloneConfig(draft))
+    persistedConfig.value = cloneConfig(config.value)
+    Object.assign(draft, cloneConfig(persistedConfig.value))
     ElMessage.success('已恢复默认配置并同步到后台')
+  }
+
+  const syncDraftPreview = () => {
+    fastEnterStore.replaceConfig(cloneConfig(draft))
   }
 
   const openCreateDrawer = (mode: DrawerMode) => {
@@ -485,7 +491,9 @@
       draft.quickLinks = items
     }
 
+    syncDraftPreview()
     drawerVisible.value = false
+    ElMessage.success(drawerEditing.value ? '已更新到未保存草稿' : '已加入未保存草稿')
   }
 
   const removeCurrentItem = async () => {
@@ -499,14 +507,21 @@
     } else {
       draft.quickLinks = draft.quickLinks.filter((item) => item.id !== drawerDraft.value?.id)
     }
+    syncDraftPreview()
     drawerVisible.value = false
+    ElMessage.success('已从未保存草稿中移除')
   }
 
   onMounted(async () => {
     await fastEnterStore.loadConfig(true)
     Object.assign(draft, cloneConfig(config.value))
+    persistedConfig.value = cloneConfig(config.value)
     const menuTree = await fetchGetMenuTreeAll()
     menuRouteTree.value = buildRouteTree(menuTree || [])
+  })
+
+  onUnmounted(() => {
+    fastEnterStore.replaceConfig(cloneConfig(persistedConfig.value))
   })
 </script>
 
@@ -514,39 +529,36 @@
   .fast-enter-page {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
   }
 
   .fast-enter-hero-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
   }
 
   .fast-enter-shell {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 20px;
     padding: 18px;
-    border: 1px solid rgb(226 232 240 / 0.88);
-    border-radius: 24px;
-    background:
-      linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(248 250 252 / 0.95)),
-      radial-gradient(circle at top right, rgb(14 165 233 / 0.08), transparent 32%);
   }
 
   .fast-enter-shell__toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 16px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid rgb(226 232 240 / 0.82);
+    gap: 18px;
+  }
+
+  .fast-enter-shell__divider {
+    display: none;
   }
 
   .fast-enter-shell__toolbar-main {
     display: grid;
-    gap: 4px;
+    gap: 6px;
   }
 
   .fast-enter-shell__title {
@@ -558,44 +570,32 @@
   .fast-enter-shell__note {
     margin: 0;
     font-size: 12px;
-    line-height: 1.7;
+    line-height: 1.65;
     color: #64748b;
-  }
-
-  .fast-enter-shell__toolbar-side {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .fast-enter-shell__field-label {
-    font-size: 12px;
-    color: #475569;
   }
 
   .fast-enter-board {
     display: grid;
     grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.84fr);
-    gap: 16px;
+    gap: 18px;
     min-height: 0;
+    margin-top: 20px;
   }
 
   .fast-enter-panel {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 0;
     min-height: 0;
-    padding: 16px;
-    border: 1px solid rgb(226 232 240 / 0.88);
-    border-radius: 20px;
-    background: rgb(255 255 255 / 0.88);
+    padding: 14px;
   }
 
   .fast-enter-panel__header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 12px;
+    gap: 14px;
+    padding-bottom: 0;
   }
 
   .fast-enter-panel__title {
@@ -613,8 +613,9 @@
 
   .fast-enter-preview {
     display: grid;
-    gap: 10px;
+    gap: 14px;
     min-height: 0;
+    margin-top: 20px;
   }
 
   .fast-enter-preview--apps {
@@ -624,8 +625,8 @@
   .fast-enter-preview-card,
   .fast-enter-link-row {
     width: 100%;
-    border: 1px solid rgb(226 232 240 / 0.9);
-    border-radius: 18px;
+    border: 1px solid rgb(226 232 240 / 0.82);
+    border-radius: 16px;
     background: rgb(255 255 255 / 0.96);
     text-align: left;
     transition:
@@ -646,7 +647,7 @@
     display: grid;
     grid-template-columns: 52px minmax(0, 1fr);
     gap: 12px;
-    padding: 14px;
+    padding: 13px 14px;
   }
 
   .fast-enter-preview-card__icon {
@@ -662,7 +663,7 @@
 
   .fast-enter-preview-card__content {
     display: grid;
-    gap: 8px;
+    gap: 7px;
     min-width: 0;
   }
 
@@ -727,12 +728,12 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 14px 16px;
+    padding: 14px 15px;
   }
 
   .fast-enter-link-row__main {
     display: grid;
-    gap: 4px;
+    gap: 6px;
     min-width: 0;
   }
 
@@ -761,9 +762,6 @@
     align-items: center;
     gap: 14px;
     padding: 14px 16px;
-    border: 1px solid rgb(226 232 240 / 0.9);
-    border-radius: 18px;
-    background: linear-gradient(180deg, rgb(248 250 252 / 0.96), rgb(255 255 255 / 0.98));
   }
 
   .fast-enter-drawer__summary-icon {
@@ -830,7 +828,7 @@
 
   .fast-enter-drawer__footer-actions {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     margin-left: auto;
   }
 
@@ -862,9 +860,9 @@
       align-items: stretch;
     }
 
-    .fast-enter-shell__toolbar-side,
     .fast-enter-drawer__footer-actions {
       width: 100%;
     }
   }
 </style>
+

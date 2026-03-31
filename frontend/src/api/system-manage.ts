@@ -405,6 +405,125 @@ function normalizePageBreadcrumbPreviewItem(item: any): Api.SystemManage.PageBre
   }
 }
 
+function normalizeRefreshStats(item: any): Api.SystemManage.RefreshStats {
+  return {
+    requestedPackageCount: Number(
+      item?.requestedPackageCount ?? item?.requested_package_count ?? 0
+    ),
+    impactedPackageCount: Number(item?.impactedPackageCount ?? item?.impacted_package_count ?? 0),
+    roleCount: Number(item?.roleCount ?? item?.role_count ?? 0),
+    teamCount: Number(item?.teamCount ?? item?.team_count ?? 0),
+    userCount: Number(item?.userCount ?? item?.user_count ?? 0),
+    elapsedMilliseconds: Number(
+      item?.elapsedMilliseconds ?? item?.elapsed_milliseconds ?? 0
+    ),
+    finishedAt: item?.finishedAt || item?.finished_at || ''
+  }
+}
+
+function normalizeRiskAudit(item: any): Api.SystemManage.RiskAuditItem {
+  return {
+    id: item?.id || '',
+    operatorId: item?.operator_id || item?.operatorId || '',
+    objectType: item?.object_type || item?.objectType || '',
+    objectId: item?.object_id || item?.objectId || '',
+    operationType: item?.operation_type || item?.operationType || '',
+    beforeSummary: item?.before_summary || item?.beforeSummary || {},
+    afterSummary: item?.after_summary || item?.afterSummary || {},
+    impactSummary: item?.impact_summary || item?.impactSummary || {},
+    requestId: item?.request_id || item?.requestId || '',
+    createdAt: item?.created_at || item?.createdAt || ''
+  }
+}
+
+function normalizeFeaturePackageRelationNode(item: any): Api.SystemManage.FeaturePackageRelationNode {
+  return {
+    id: item?.id || '',
+    packageKey: item?.package_key || item?.packageKey || '',
+    name: item?.name || '',
+    packageType: item?.package_type || item?.packageType || 'base',
+    contextType: item?.context_type || item?.contextType || 'team',
+    status: item?.status || 'normal',
+    referenceCount: Number(item?.reference_count ?? item?.referenceCount ?? 0),
+    children: Array.isArray(item?.children)
+      ? item.children.map((child: any) => normalizeFeaturePackageRelationNode(child))
+      : []
+  }
+}
+
+function normalizeFeaturePackageRelationTree(item: any): Api.SystemManage.FeaturePackageRelationTree {
+  return {
+    roots: Array.isArray(item?.roots)
+      ? item.roots.map((node: any) => normalizeFeaturePackageRelationNode(node))
+      : [],
+    cycleDependencies: Array.isArray(item?.cycle_dependencies || item?.cycleDependencies)
+      ? (item?.cycle_dependencies || item?.cycleDependencies).map((cycle: any) =>
+          Array.isArray(cycle)
+            ? cycle.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
+            : []
+        )
+      : [],
+    isolatedBaseKeys: Array.isArray(item?.isolated_base_keys || item?.isolatedBaseKeys)
+      ? (item?.isolated_base_keys || item?.isolatedBaseKeys)
+          .map((value: any) => `${value || ''}`.trim())
+          .filter(Boolean)
+      : []
+  }
+}
+
+function normalizePermissionActionConsumers(
+  item: any
+): Api.SystemManage.PermissionActionConsumerDetails {
+  return {
+    permissionKey: item?.permission_key || item?.permissionKey || '',
+    apis: Array.isArray(item?.apis)
+      ? item.apis.map((api: any) => ({
+          code: api?.code || '',
+          method: api?.method || '',
+          path: api?.path || '',
+          summary: api?.summary || ''
+        }))
+      : [],
+    pages: Array.isArray(item?.pages)
+      ? item.pages.map((page: any) => ({
+          pageKey: page?.page_key || page?.pageKey || '',
+          name: page?.name || '',
+          routePath: page?.route_path || page?.routePath || '',
+          accessMode: page?.access_mode || page?.accessMode || ''
+        }))
+      : [],
+    featurePackages: Array.isArray(item?.feature_packages || item?.featurePackages)
+      ? (item?.feature_packages || item?.featurePackages).map((pkg: any) => ({
+          id: pkg?.id || '',
+          packageKey: pkg?.package_key || pkg?.packageKey || '',
+          name: pkg?.name || '',
+          packageType: pkg?.package_type || pkg?.packageType || '',
+          contextType: pkg?.context_type || pkg?.contextType || ''
+        }))
+      : [],
+    roles: Array.isArray(item?.roles)
+      ? item.roles.map((role: any) => ({
+          id: role?.id || '',
+          code: role?.code || '',
+          name: role?.name || '',
+          contextType: role?.context_type || role?.contextType || ''
+        }))
+      : []
+  }
+}
+
+function normalizeUnregisteredApiScanConfig(
+  item: any
+): Api.SystemManage.APIUnregisteredScanConfig {
+  return {
+    enabled: Boolean(item?.enabled),
+    frequencyMinutes: Number(item?.frequency_minutes ?? item?.frequencyMinutes ?? 60),
+    defaultCategoryId: item?.default_category_id || item?.defaultCategoryId || '',
+    defaultPermissionKey: item?.default_permission_key || item?.defaultPermissionKey || '',
+    markAsNoPermission: Boolean(item?.mark_as_no_permission ?? item?.markAsNoPermission)
+  }
+}
+
 function normalizePageAccessTraceResult(item: any): Api.SystemManage.PageAccessTraceResult {
   return {
     userId: item?.user_id || item?.userId || '',
@@ -1171,6 +1290,15 @@ export function fetchGetPermissionActionEndpoints(id: string) {
     }))
 }
 
+/** 获取功能权限消费明细（API/页面/功能包/角色） */
+export function fetchGetPermissionActionConsumers(id: string) {
+  return request
+    .get<Api.SystemManage.PermissionActionConsumerDetails>({
+      url: `${ACTION_PERMISSION_BASE}/${id}/consumers`
+    })
+    .then((res) => normalizePermissionActionConsumers(res))
+}
+
 /** 新增功能权限关联接口 */
 export function fetchAddPermissionActionEndpoint(id: string, endpointCode: string) {
   return request.post<void>({
@@ -1225,6 +1353,106 @@ export function fetchDeletePermissionAction(id: string) {
   return request.del<void>({
     url: `${ACTION_PERMISSION_BASE}/${id}`
   })
+}
+
+export function fetchGetPermissionActionImpactPreview(id: string) {
+  return request
+    .get<Api.SystemManage.PermissionImpactPreview>({
+      url: `${ACTION_PERMISSION_BASE}/${id}/impact-preview`
+    })
+    .then((res: any) => ({
+      permissionKey: res?.permissionKey || res?.permission_key || '',
+      apiCount: Number(res?.apiCount ?? res?.api_count ?? 0),
+      pageCount: Number(res?.pageCount ?? res?.page_count ?? 0),
+      packageCount: Number(res?.packageCount ?? res?.package_count ?? 0),
+      roleCount: Number(res?.roleCount ?? res?.role_count ?? 0),
+      teamCount: Number(res?.teamCount ?? res?.team_count ?? 0),
+      userCount: Number(res?.userCount ?? res?.user_count ?? 0)
+    }))
+}
+
+export function fetchBatchUpdatePermissionActions(
+  data: Api.SystemManage.PermissionBatchUpdateParams
+) {
+  return request
+    .post<Api.SystemManage.PermissionBatchUpdateResult>({
+      url: `${ACTION_PERMISSION_BASE}/batch`,
+      data: {
+        ids: data.ids,
+        status: data.status,
+        module_group_id: data.moduleGroupId,
+        feature_group_id: data.featureGroupId,
+        template_name: data.templateName
+      }
+    })
+    .then((res: any) => ({
+      updatedCount: Number(res?.updatedCount ?? res?.updated_count ?? 0),
+      skippedIds: Array.isArray(res?.skippedIds || res?.skipped_ids)
+        ? (res?.skippedIds || res?.skipped_ids)
+        : []
+    }))
+}
+
+export function fetchSavePermissionBatchTemplate(
+  data: Partial<Api.SystemManage.PermissionBatchTemplateItem>
+) {
+  return request
+    .post<Api.SystemManage.PermissionBatchTemplateItem>({
+      url: `${ACTION_PERMISSION_BASE}/templates`,
+      data: {
+        name: data.name,
+        description: data.description,
+        payload: data.payload
+      }
+    })
+    .then((res: any) => ({
+      id: res?.id || '',
+      name: res?.name || '',
+      description: res?.description || '',
+      payload: res?.payload || {},
+      createdBy: res?.created_by || res?.createdBy || '',
+      createdAt: res?.created_at || res?.createdAt || '',
+      updatedAt: res?.updated_at || res?.updatedAt || ''
+    }))
+}
+
+export function fetchGetPermissionBatchTemplates() {
+  return request
+    .get<{ records: Api.SystemManage.PermissionBatchTemplateItem[]; total: number }>({
+      url: `${ACTION_PERMISSION_BASE}/templates`
+    })
+    .then((res: any) => ({
+      records: (res?.records || []).map((item: any) => ({
+        id: item?.id || '',
+        name: item?.name || '',
+        description: item?.description || '',
+        payload: item?.payload || {},
+        createdBy: item?.created_by || item?.createdBy || '',
+        createdAt: item?.created_at || item?.createdAt || '',
+        updatedAt: item?.updated_at || item?.updatedAt || ''
+      })),
+      total: Number(res?.total || 0)
+    }))
+}
+
+export function fetchGetPermissionRiskAudits(params?: {
+  current?: number
+  size?: number
+  objectId?: string
+}) {
+  return request
+    .get<{ records: Api.SystemManage.RiskAuditItem[]; total: number }>({
+      url: `${ACTION_PERMISSION_BASE}/risk-audits`,
+      params: {
+        current: params?.current,
+        size: params?.size,
+        object_id: params?.objectId
+      }
+    })
+    .then((res: any) => ({
+      records: (res?.records || []).map(normalizeRiskAudit),
+      total: Number(res?.total || 0)
+    }))
 }
 
 /** 获取功能包列表 */
@@ -1304,7 +1532,7 @@ function normalizeFastEnterConfig(item: any): Api.SystemManage.FastEnterConfig {
         link: entry?.link || ''
       })
     ),
-    minWidth: item?.minWidth ?? item?.min_width ?? 1200
+    minWidth: item?.minWidth ?? item?.min_width ?? 1450
   }
 }
 
@@ -1391,10 +1619,28 @@ export function fetchSetFeaturePackageChildren(
   const payload = Array.isArray(childPackageIds)
     ? { child_package_ids: childPackageIds }
     : childPackageIds
-  return request.put<void>({
-    url: `${FEATURE_PACKAGE_BASE}/${id}/children`,
-    data: payload
-  })
+  return request
+    .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
+      url: `${FEATURE_PACKAGE_BASE}/${id}/children`,
+      data: payload
+    })
+    .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
+}
+
+/** 获取功能包包含关系树 */
+export function fetchGetFeaturePackageRelationTree(params?: {
+  contextType?: string
+  keyword?: string
+}) {
+  return request
+    .get<Api.SystemManage.FeaturePackageRelationTree>({
+      url: `${FEATURE_PACKAGE_BASE}/relationship-tree`,
+      params: {
+        context_type: params?.contextType,
+        keyword: params?.keyword
+      }
+    })
+    .then((res) => normalizeFeaturePackageRelationTree(res))
 }
 
 /** 创建功能包 */
@@ -1410,17 +1656,21 @@ export function fetchUpdateFeaturePackage(
   id: string,
   data: Api.SystemManage.FeaturePackageUpdateParams
 ) {
-  return request.put<void>({
-    url: `${FEATURE_PACKAGE_BASE}/${id}`,
-    data
-  })
+  return request
+    .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
+      url: `${FEATURE_PACKAGE_BASE}/${id}`,
+      data
+    })
+    .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
 }
 
 /** 删除功能包 */
 export function fetchDeleteFeaturePackage(id: string) {
-  return request.del<void>({
-    url: `${FEATURE_PACKAGE_BASE}/${id}`
-  })
+  return request
+    .del<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
+      url: `${FEATURE_PACKAGE_BASE}/${id}`
+    })
+    .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
 }
 
 /** 获取功能包包含的功能权限 */
@@ -1441,10 +1691,12 @@ export function fetchSetFeaturePackageActions(
   actionIds: string[] | Api.SystemManage.FeaturePackageActionSetParams
 ) {
   const payload = Array.isArray(actionIds) ? { action_ids: actionIds } : actionIds
-  return request.put<void>({
-    url: `${FEATURE_PACKAGE_BASE}/${id}/actions`,
-    data: payload
-  })
+  return request
+    .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
+      url: `${FEATURE_PACKAGE_BASE}/${id}/actions`,
+      data: payload
+    })
+    .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
 }
 
 /** 获取功能包包含的菜单 */
@@ -1461,10 +1713,12 @@ export function fetchGetFeaturePackageMenus(id: string) {
 
 /** 设置功能包包含的菜单 */
 export function fetchSetFeaturePackageMenus(id: string, menuIds: string[]) {
-  return request.put<void>({
-    url: `${FEATURE_PACKAGE_BASE}/${id}/menus`,
-    data: { menu_ids: menuIds }
-  })
+  return request
+    .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
+      url: `${FEATURE_PACKAGE_BASE}/${id}/menus`,
+      data: { menu_ids: menuIds }
+    })
+    .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
 }
 
 /** 获取已开通当前功能包的团队 */
@@ -1480,10 +1734,12 @@ export function fetchSetFeaturePackageTeams(
   teamIds: string[] | Api.SystemManage.FeaturePackageTeamSetParams
 ) {
   const payload = Array.isArray(teamIds) ? { team_ids: teamIds } : teamIds
-  return request.put<void>({
-    url: `${FEATURE_PACKAGE_BASE}/${id}/teams`,
-    data: payload
-  })
+  return request
+    .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
+      url: `${FEATURE_PACKAGE_BASE}/${id}/teams`,
+      data: payload
+    })
+    .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
 }
 
 /** 获取团队已开通的功能包 */
@@ -1504,10 +1760,69 @@ export function fetchSetTeamFeaturePackages(
   packageIds: string[] | Api.SystemManage.TeamFeaturePackageSetParams
 ) {
   const payload = Array.isArray(packageIds) ? { package_ids: packageIds } : packageIds
-  return request.put<void>({
-    url: `${FEATURE_PACKAGE_BASE}/teams/${teamId}`,
-    data: payload
-  })
+  return request
+    .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
+      url: `${FEATURE_PACKAGE_BASE}/teams/${teamId}`,
+      data: payload
+    })
+    .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
+}
+
+export function fetchGetFeaturePackageImpactPreview(id: string) {
+  return request
+    .get<Api.SystemManage.FeaturePackageImpactPreview>({
+      url: `${FEATURE_PACKAGE_BASE}/${id}/impact-preview`
+    })
+    .then((res: any) => ({
+      packageId: res?.package_id || res?.packageId || '',
+      roleCount: Number(res?.role_count ?? res?.roleCount ?? 0),
+      teamCount: Number(res?.team_count ?? res?.teamCount ?? 0),
+      userCount: Number(res?.user_count ?? res?.userCount ?? 0),
+      menuCount: Number(res?.menu_count ?? res?.menuCount ?? 0),
+      actionCount: Number(res?.action_count ?? res?.actionCount ?? 0)
+    }))
+}
+
+export function fetchGetFeaturePackageVersions(id: string, current = 1, size = 20) {
+  return request
+    .get<{ records: Api.SystemManage.FeaturePackageVersionItem[]; total: number }>({
+      url: `${FEATURE_PACKAGE_BASE}/${id}/versions`,
+      params: { current, size }
+    })
+    .then((res: any) => ({
+      records: (res?.records || []).map((item: any) => ({
+        id: item?.id || '',
+        packageId: item?.package_id || item?.packageId || '',
+        versionNo: Number(item?.version_no ?? item?.versionNo ?? 0),
+        changeType: item?.change_type || item?.changeType || '',
+        snapshot: item?.snapshot || {},
+        operatorId: item?.operator_id || item?.operatorId || '',
+        requestId: item?.request_id || item?.requestId || '',
+        createdAt: item?.created_at || item?.createdAt || ''
+      })),
+      total: Number(res?.total || 0)
+    }))
+}
+
+export function fetchRollbackFeaturePackage(id: string, versionId: string) {
+  return request
+    .post<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
+      url: `${FEATURE_PACKAGE_BASE}/${id}/rollback`,
+      data: { version_id: versionId }
+    })
+    .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
+}
+
+export function fetchGetFeaturePackageRiskAudits(id: string, current = 1, size = 20) {
+  return request
+    .get<{ records: Api.SystemManage.RiskAuditItem[]; total: number }>({
+      url: `${FEATURE_PACKAGE_BASE}/${id}/risk-audits`,
+      params: { current, size }
+    })
+    .then((res: any) => ({
+      records: (res?.records || []).map(normalizeRiskAudit),
+      total: Number(res?.total || 0)
+    }))
 }
 
 /** 获取页面列表 */
@@ -1817,6 +2132,31 @@ export function fetchGetUnregisteredApiRouteList(params: {
       ...res,
       records: (res?.records || []).map(normalizeUnregisteredApiRoute)
     }))
+}
+
+export function fetchGetUnregisteredApiScanConfig() {
+  return request
+    .get<Api.SystemManage.APIUnregisteredScanConfig>({
+      url: `${API_ENDPOINT_BASE}/unregistered/scan-config`
+    })
+    .then((res) => normalizeUnregisteredApiScanConfig(res))
+}
+
+export function fetchSaveUnregisteredApiScanConfig(
+  data: Partial<Api.SystemManage.APIUnregisteredScanConfig>
+) {
+  return request
+    .put<Api.SystemManage.APIUnregisteredScanConfig>({
+      url: `${API_ENDPOINT_BASE}/unregistered/scan-config`,
+      data: {
+        enabled: data.enabled,
+        frequency_minutes: data.frequencyMinutes,
+        default_category_id: data.defaultCategoryId,
+        default_permission_key: data.defaultPermissionKey,
+        mark_as_no_permission: data.markAsNoPermission
+      }
+    })
+    .then((res) => normalizeUnregisteredApiScanConfig(res))
 }
 
 export function fetchCreateApiEndpointCategory(

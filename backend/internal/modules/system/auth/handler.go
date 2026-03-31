@@ -79,6 +79,11 @@ func (h *AuthHandler) Register(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
+		if err == ErrEmailExists {
+			status, resp := errcode.Response(errcode.ErrEmailExists)
+			c.JSON(status, resp)
+			return
+		}
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, err.Error())
 		c.JSON(status, resp)
 		return

@@ -44,6 +44,8 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.GETProtected("/overview", reg.Meta("获取 API 概览").BindGroup("api_endpoint").BindPermissionKey("system.api_registry.view").Build(), "system.api_registry.view", authzService.RequireAction, handler.Overview)
 		reg.GETProtected("/stale", reg.Meta("获取失效 API").BindGroup("api_endpoint").BindPermissionKey("system.api_registry.view").Build(), "system.api_registry.view", authzService.RequireAction, handler.ListStale)
 		reg.GETAction("/unregistered", "获取未注册 API 路由", "system.api_registry.view", authzService.RequireAction, handler.ListUnregistered)
+		reg.GETProtected("/unregistered/scan-config", reg.Meta("获取未注册 API 扫描配置").BindGroup("api_endpoint").BindPermissionKey("system.api_registry.view").Build(), "system.api_registry.view", authzService.RequireAction, handler.GetUnregisteredScanConfig)
+		reg.PUTProtected("/unregistered/scan-config", reg.Meta("保存未注册 API 扫描配置").BindGroup("api_endpoint").BindPermissionKey("system.api_registry.sync").Build(), "system.api_registry.sync", authzService.RequireAction, handler.SaveUnregisteredScanConfig)
 		reg.GETProtected("", reg.Meta("获取 API 注册表").BindGroup("api_endpoint").BindPermissionKey("system.api_registry.view").Build(), "system.api_registry.view", authzService.RequireAction, handler.List)
 		reg.GETProtected("/categories", reg.Meta("获取 API 分类").BindGroup("api_endpoint").BindPermissionKey("system.api_registry.view").Build(), "system.api_registry.view", authzService.RequireAction, handler.ListCategories)
 		reg.POSTProtected("/sync", reg.Meta("同步 API 注册表").BindGroup("api_endpoint").BindSource("manual").BindPermissionKey("system.api_registry.sync").Build(), "system.api_registry.sync", authzService.RequireAction, handler.Sync)

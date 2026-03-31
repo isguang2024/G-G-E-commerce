@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDialog
     v-model="visible"
     title="未注册受管页"
@@ -13,10 +13,10 @@
       </div>
       <div class="unregistered-toolbar-actions">
         <ElInput
+          class="unregistered-toolbar-keyword"
           v-model="keyword"
           clearable
           placeholder="搜索组件/标识/路由"
-          style="width: 240px"
         />
         <ElButton type="primary" :loading="syncing" @click="handleSync">同步受管页</ElButton>
       </div>
@@ -34,15 +34,11 @@
         </template>
       </ElTableColumn>
     </ElTable>
-    <div class="unregistered-pagination">
-      <ElPagination
-        v-model:current-page="pageState.current"
-        v-model:page-size="pageState.size"
-        :total="filteredRecords.length"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next"
-      />
-    </div>
+    <WorkspacePagination
+      v-model:current-page="pageState.current"
+      v-model:page-size="pageState.size"
+      :total="filteredRecords.length"
+    />
 
     <template #footer>
       <ElButton @click="handleClose">关闭</ElButton>
@@ -53,6 +49,7 @@
 <script setup lang="ts">
   import { computed, reactive, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
+  import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import { fetchGetPageUnregisteredList, fetchSyncPages } from '@/api/system-manage'
 
   type PageUnregisteredItem = Api.SystemManage.PageUnregisteredItem
@@ -174,13 +171,12 @@
     pageState.current = 1
   })
 </script>
-
 <style scoped lang="scss">
   .unregistered-toolbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
   }
 
   .unregistered-toolbar-summary {
@@ -201,9 +197,27 @@
     gap: 8px;
   }
 
-  .unregistered-pagination {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 12px;
+  .unregistered-toolbar-keyword {
+    width: min(100%, 260px);
   }
+
+  @media (max-width: 768px) {
+    .unregistered-toolbar {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+
+    .unregistered-toolbar-actions {
+      width: 100%;
+      justify-content: flex-end;
+    }
+
+    .unregistered-toolbar-keyword {
+      width: 100%;
+      min-width: 0;
+    }
+  }
+
 </style>
+

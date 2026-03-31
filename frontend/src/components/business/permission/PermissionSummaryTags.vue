@@ -31,4 +31,10 @@ defineProps<{
   gap: 8px;
   flex-wrap: wrap;
 }
+
+.summary-tags :deep(.el-tag) {
+  border-radius: 9999px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
 </style>

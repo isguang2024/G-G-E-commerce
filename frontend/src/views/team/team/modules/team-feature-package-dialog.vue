@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
     :title="`团队功能包 - ${teamName}`"
@@ -44,7 +44,7 @@
         </ElSelect>
       </div>
 
-      <ElTable :data="filteredPackages" border max-height="520" row-key="id">
+      <ElTable :data="pagedPackages" border max-height="520" row-key="id">
         <ElTableColumn type="expand" width="56">
           <template #default="{ row }">
             <div class="expand-panel">
@@ -89,6 +89,12 @@
         </ElTableColumn>
         <ElTableColumn prop="description" label="说明" min-width="280" show-overflow-tooltip />
       </ElTable>
+      <WorkspacePagination
+        v-model:current-page="pagination.current"
+        v-model:page-size="pagination.size"
+        :total="filteredPackages.length"
+        compact
+      />
     </div>
 
     <template #footer>
@@ -102,6 +108,7 @@
   import { computed, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import FeaturePackageGrantPreview from '@/components/business/permission/FeaturePackageGrantPreview.vue'
+  import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import {
     fetchGetFeaturePackageOptions,
     fetchGetTeamFeaturePackages,
@@ -138,6 +145,10 @@
   const statusFilter = ref('normal')
   const packages = ref<Api.SystemManage.FeaturePackageItem[]>([])
   const selectedPackageIds = ref<string[]>([])
+  const pagination = ref({
+    current: 1,
+    size: 10
+  })
 
   const filteredPackages = computed(() => {
     const currentKeyword = keyword.value.trim().toLowerCase()
@@ -167,6 +178,11 @@
     })
   })
 
+  const pagedPackages = computed(() => {
+    const start = (pagination.value.current - 1) * pagination.value.size
+    return filteredPackages.value.slice(start, start + pagination.value.size)
+  })
+
   watch(
     () => props.modelValue,
     (open) => {
@@ -189,6 +205,7 @@
       ])
       packages.value = listRes?.records || []
       selectedPackageIds.value = [...(teamRes?.package_ids || [])]
+      pagination.value.current = 1
       if (!selectedPackageIds.value.length) {
         selectionFilter.value = 'all'
       }
@@ -204,6 +221,7 @@
     contextFilter.value = ''
     selectionFilter.value = 'selected'
     statusFilter.value = 'normal'
+    pagination.value.current = 1
   }
 
   function toggleSelection(packageId: string, checked: boolean | string | number) {
@@ -246,8 +264,8 @@
     if (!props.teamId) return
     saving.value = true
     try {
-      await fetchSetTeamFeaturePackages(props.teamId, selectedPackageIds.value)
-      ElMessage.success('团队功能包已保存')
+      const stats = await fetchSetTeamFeaturePackages(props.teamId, selectedPackageIds.value)
+      ElMessage.success(formatRefreshMessage(stats))
       emit('success')
       visible.value = false
     } catch (error: any) {
@@ -255,6 +273,14 @@
     } finally {
       saving.value = false
     }
+  }
+
+  watch([keyword, contextFilter, selectionFilter, statusFilter], () => {
+    pagination.value.current = 1
+  })
+
+  function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
+    return `本次增量刷新：角色 ${stats?.roleCount || 0}、团队 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 </script>
 
@@ -314,7 +340,7 @@
   .summary-card {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
   }
 
   .toolbar-row {
@@ -349,3 +375,4 @@
     }
   }
 </style>
+

@@ -71,9 +71,6 @@
         <ElCol :xs="24" :sm="24" :md="span" :lg="span" :xl="span" class="action-column">
           <div class="action-buttons-wrapper" :style="actionButtonsStyle">
             <div class="form-buttons">
-              <ElButton v-if="showReset" class="reset-button" @click="handleReset" v-ripple>
-                {{ t('table.searchBar.reset') }}
-              </ElButton>
               <ElButton
                 v-if="showSearch"
                 type="primary"
@@ -83,6 +80,9 @@
                 :disabled="disabledSearch"
               >
                 {{ t('table.searchBar.search') }}
+              </ElButton>
+              <ElButton v-if="showReset" class="reset-button" @click="handleReset" v-ripple>
+                {{ t('table.searchBar.reset') }}
               </ElButton>
             </div>
             <div v-if="shouldShowExpandToggle" class="filter-toggle" @click="toggleExpand">
@@ -212,10 +212,10 @@
 
   const props = withDefaults(defineProps<SearchBarProps>(), {
     items: () => [],
-    span: 6,
-    gutter: 12,
+    span: 8,
+    gutter: 16,
     isExpand: false,
-    labelPosition: 'right',
+    labelPosition: 'top',
     labelWidth: '70px',
     showExpand: true,
     defaultExpanded: false,

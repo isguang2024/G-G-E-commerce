@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiendpointaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
@@ -87,6 +88,8 @@ type Service interface {
 	ListRuntimeStates(endpoints []user.APIEndpoint) map[uuid.UUID]EndpointRuntimeState
 	ListStale(req *StaleListRequest) ([]user.APIEndpoint, int64, error)
 	ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]UnregisteredRouteItem, int64, error)
+	GetUnregisteredScanConfig() (UnregisteredScanConfig, error)
+	SaveUnregisteredScanConfig(config UnregisteredScanConfig) (UnregisteredScanConfig, error)
 	ListBindingsByEndpointCodes(endpointCodes []string) ([]user.APIEndpointPermissionBinding, error)
 	ListBindings(endpointCode string) ([]user.APIEndpointPermissionBinding, error)
 	ListCategories() ([]user.APIEndpointCategory, error)
@@ -95,6 +98,16 @@ type Service interface {
 	UpdateContextScope(endpointID uuid.UUID, contextScope string) (*user.APIEndpoint, error)
 	Sync() error
 	CleanupStale(endpointIDs []uuid.UUID) (int, error)
+}
+
+const unregisteredScanConfigSettingKey = "api.unregistered_scan_config"
+
+type UnregisteredScanConfig struct {
+	Enabled              bool   `json:"enabled"`
+	FrequencyMinutes     int    `json:"frequency_minutes"`
+	DefaultCategoryID    string `json:"default_category_id"`
+	DefaultPermissionKey string `json:"default_permission_key"`
+	MarkAsNoPermission   bool   `json:"mark_as_no_permission"`
 }
 
 type service struct {
@@ -332,6 +345,59 @@ func (s *service) ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]U
 		end = len(items)
 	}
 	return items[start:end], total, nil
+}
+
+func (s *service) GetUnregisteredScanConfig() (UnregisteredScanConfig, error) {
+	var setting models.SystemSetting
+	err := s.db.Where("key = ?", unregisteredScanConfigSettingKey).First(&setting).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return defaultUnregisteredScanConfig(), nil
+		}
+		return UnregisteredScanConfig{}, err
+	}
+	return normalizeUnregisteredScanConfig(setting.Value), nil
+}
+
+func (s *service) SaveUnregisteredScanConfig(config UnregisteredScanConfig) (UnregisteredScanConfig, error) {
+	normalized := normalizeUnregisteredScanConfig(models.MetaJSON{
+		"enabled":                config.Enabled,
+		"frequency_minutes":      config.FrequencyMinutes,
+		"default_category_id":    strings.TrimSpace(config.DefaultCategoryID),
+		"default_permission_key": strings.TrimSpace(config.DefaultPermissionKey),
+		"mark_as_no_permission":  config.MarkAsNoPermission,
+	})
+	payload := models.MetaJSON{
+		"enabled":                normalized.Enabled,
+		"frequency_minutes":      normalized.FrequencyMinutes,
+		"default_category_id":    normalized.DefaultCategoryID,
+		"default_permission_key": normalized.DefaultPermissionKey,
+		"mark_as_no_permission":  normalized.MarkAsNoPermission,
+	}
+
+	var setting models.SystemSetting
+	err := s.db.Where("key = ?", unregisteredScanConfigSettingKey).First(&setting).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			record := models.SystemSetting{
+				Key:    unregisteredScanConfigSettingKey,
+				Value:  payload,
+				Status: "normal",
+			}
+			if createErr := s.db.Create(&record).Error; createErr != nil {
+				return UnregisteredScanConfig{}, createErr
+			}
+			return normalized, nil
+		}
+		return UnregisteredScanConfig{}, err
+	}
+	if err := s.db.Model(&setting).Updates(map[string]interface{}{
+		"value":  payload,
+		"status": "normal",
+	}).Error; err != nil {
+		return UnregisteredScanConfig{}, err
+	}
+	return normalized, nil
 }
 
 func (s *service) ListStale(req *StaleListRequest) ([]user.APIEndpoint, int64, error) {
@@ -874,4 +940,42 @@ func (s *service) refreshRuntimeCacheForSave(oldMethod, oldPath, newMethod, newP
 	}
 
 	return s.endpointAccess.RefreshByRoute(newKeyMethod, newKeyPath)
+}
+
+func defaultUnregisteredScanConfig() UnregisteredScanConfig {
+	return UnregisteredScanConfig{
+		Enabled:              false,
+		FrequencyMinutes:     60,
+		DefaultCategoryID:    "",
+		DefaultPermissionKey: "",
+		MarkAsNoPermission:   false,
+	}
+}
+
+func normalizeUnregisteredScanConfig(raw models.MetaJSON) UnregisteredScanConfig {
+	result := defaultUnregisteredScanConfig()
+	if target, ok := raw["enabled"].(bool); ok {
+		result.Enabled = target
+	}
+	switch value := raw["frequency_minutes"].(type) {
+	case int:
+		if value >= 5 && value <= 1440 {
+			result.FrequencyMinutes = value
+		}
+	case float64:
+		target := int(value)
+		if target >= 5 && target <= 1440 {
+			result.FrequencyMinutes = target
+		}
+	}
+	if target, ok := raw["default_category_id"].(string); ok {
+		result.DefaultCategoryID = strings.TrimSpace(target)
+	}
+	if target, ok := raw["default_permission_key"].(string); ok {
+		result.DefaultPermissionKey = strings.TrimSpace(target)
+	}
+	if target, ok := raw["mark_as_no_permission"].(bool); ok {
+		result.MarkAsNoPermission = target
+	}
+	return result
 }

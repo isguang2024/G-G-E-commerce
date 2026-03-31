@@ -31,6 +31,7 @@ type PermissionService interface {
 	List(req *dto.PermissionKeyListRequest) ([]PermissionListItem, int64, PermissionAuditSummary, error)
 	ListOptions(req *dto.PermissionKeyListRequest) ([]user.PermissionKey, error)
 	Get(id uuid.UUID) (*user.PermissionKey, error)
+	GetConsumerDetails(id uuid.UUID) (*PermissionConsumerDetails, error)
 	ListGroups(req *dto.PermissionGroupListRequest) ([]user.PermissionGroup, int64, error)
 	ListEndpoints(id uuid.UUID) ([]user.APIEndpoint, error)
 	CleanupUnused() (*CleanupUnusedResult, error)
@@ -41,11 +42,82 @@ type PermissionService interface {
 	Create(req *dto.PermissionKeyCreateRequest) (*user.PermissionKey, error)
 	Update(id uuid.UUID, req *dto.PermissionKeyUpdateRequest) error
 	Delete(id uuid.UUID) error
+	GetImpactPreview(id uuid.UUID) (*PermissionImpactPreview, error)
+	BatchUpdate(req *PermissionBatchUpdateRequest, operatorID *uuid.UUID, requestID string) (*PermissionBatchUpdateResult, error)
+	SaveBatchTemplate(req *PermissionBatchTemplateSaveRequest, operatorID *uuid.UUID) (*user.PermissionBatchTemplate, error)
+	ListBatchTemplates() ([]user.PermissionBatchTemplate, error)
+	ListRiskAudits(objectID string, current, size int) ([]user.RiskOperationAudit, int64, error)
 }
 
 type CleanupUnusedResult struct {
 	DeletedCount int
 	DeletedKeys  []string
+}
+
+type PermissionConsumerDetails struct {
+	PermissionKey string                          `json:"permission_key"`
+	APIs          []PermissionConsumerAPIItem     `json:"apis"`
+	Pages         []PermissionConsumerPageItem    `json:"pages"`
+	FeaturePkgs   []PermissionConsumerPackageItem `json:"feature_packages"`
+	Roles         []PermissionConsumerRoleItem    `json:"roles"`
+}
+
+type PermissionConsumerAPIItem struct {
+	Code    string `json:"code"`
+	Method  string `json:"method"`
+	Path    string `json:"path"`
+	Summary string `json:"summary"`
+}
+
+type PermissionConsumerPageItem struct {
+	PageKey    string `json:"page_key"`
+	Name       string `json:"name"`
+	RoutePath  string `json:"route_path"`
+	AccessMode string `json:"access_mode"`
+}
+
+type PermissionConsumerPackageItem struct {
+	ID          uuid.UUID `json:"id"`
+	PackageKey  string    `json:"package_key"`
+	Name        string    `json:"name"`
+	PackageType string    `json:"package_type"`
+	ContextType string    `json:"context_type"`
+}
+
+type PermissionConsumerRoleItem struct {
+	ID          uuid.UUID `json:"id"`
+	Code        string    `json:"code"`
+	Name        string    `json:"name"`
+	ContextType string    `json:"context_type"`
+}
+
+type PermissionImpactPreview struct {
+	PermissionKey string `json:"permission_key"`
+	APICount      int64  `json:"api_count"`
+	PageCount     int64  `json:"page_count"`
+	PackageCount  int64  `json:"package_count"`
+	RoleCount     int64  `json:"role_count"`
+	TeamCount     int64  `json:"team_count"`
+	UserCount     int64  `json:"user_count"`
+}
+
+type PermissionBatchUpdateRequest struct {
+	IDs            []string `json:"ids"`
+	Status         *string  `json:"status"`
+	ModuleGroupID  *string  `json:"module_group_id"`
+	FeatureGroupID *string  `json:"feature_group_id"`
+	TemplateName   string   `json:"template_name"`
+}
+
+type PermissionBatchUpdateResult struct {
+	UpdatedCount int      `json:"updated_count"`
+	SkippedIDs   []string `json:"skipped_ids"`
+}
+
+type PermissionBatchTemplateSaveRequest struct {
+	Name        string                 `json:"name"`
+	Description string                 `json:"description"`
+	Payload     map[string]interface{} `json:"payload"`
 }
 
 type permissionService struct {
@@ -121,6 +193,280 @@ func (s *permissionService) ListEndpoints(id uuid.UUID) ([]user.APIEndpoint, err
 		result = append(result, endpoint)
 	}
 	return result, nil
+}
+
+func (s *permissionService) GetConsumerDetails(id uuid.UUID) (*PermissionConsumerDetails, error) {
+	item, err := s.keyRepo.GetByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrPermissionKeyNotFound
+		}
+		return nil, err
+	}
+	permissionKey := canonicalPermissionKey(item.PermissionKey)
+	details := &PermissionConsumerDetails{
+		PermissionKey: permissionKey,
+		APIs:          make([]PermissionConsumerAPIItem, 0),
+		Pages:         make([]PermissionConsumerPageItem, 0),
+		FeaturePkgs:   make([]PermissionConsumerPackageItem, 0),
+		Roles:         make([]PermissionConsumerRoleItem, 0),
+	}
+
+	apiEndpoints, err := s.ListEndpoints(id)
+	if err != nil {
+		return nil, err
+	}
+	for _, endpoint := range apiEndpoints {
+		details.APIs = append(details.APIs, PermissionConsumerAPIItem{
+			Code:    endpoint.Code,
+			Method:  endpoint.Method,
+			Path:    endpoint.Path,
+			Summary: endpoint.Summary,
+		})
+	}
+
+	var pages []user.UIPage
+	if err := s.db.Model(&user.UIPage{}).
+		Select("page_key", "name", "route_path", "access_mode").
+		Where("permission_key = ? AND deleted_at IS NULL", permissionKey).
+		Order("sort_order ASC, created_at ASC").
+		Find(&pages).Error; err != nil {
+		return nil, err
+	}
+	for _, page := range pages {
+		details.Pages = append(details.Pages, PermissionConsumerPageItem{
+			PageKey:    page.PageKey,
+			Name:       page.Name,
+			RoutePath:  page.RoutePath,
+			AccessMode: page.AccessMode,
+		})
+	}
+
+	packageIDs, err := s.packageKeyRepo.GetPackageIDsByKeyID(id)
+	if err != nil {
+		return nil, err
+	}
+	if len(packageIDs) > 0 {
+		packages, getErr := user.NewFeaturePackageRepository(s.db).GetByIDs(packageIDs)
+		if getErr != nil {
+			return nil, getErr
+		}
+		for _, pkg := range packages {
+			details.FeaturePkgs = append(details.FeaturePkgs, PermissionConsumerPackageItem{
+				ID:          pkg.ID,
+				PackageKey:  pkg.PackageKey,
+				Name:        pkg.Name,
+				PackageType: pkg.PackageType,
+				ContextType: pkg.ContextType,
+			})
+		}
+
+		type roleRow struct {
+			ID       uuid.UUID
+			Code     string
+			Name     string
+			TenantID *uuid.UUID
+		}
+		var roleRows []roleRow
+		if err := s.db.Model(&user.RoleFeaturePackage{}).
+			Select("roles.id", "roles.code", "roles.name", "roles.tenant_id").
+			Joins("JOIN roles ON roles.id = role_feature_packages.role_id").
+			Where("role_feature_packages.package_id IN ? AND role_feature_packages.enabled = ?", packageIDs, true).
+			Where("roles.deleted_at IS NULL").
+			Distinct().
+			Find(&roleRows).Error; err != nil {
+			return nil, err
+		}
+		for _, role := range roleRows {
+			contextType := "platform"
+			if role.TenantID != nil {
+				contextType = "team"
+			}
+			details.Roles = append(details.Roles, PermissionConsumerRoleItem{
+				ID:          role.ID,
+				Code:        role.Code,
+				Name:        role.Name,
+				ContextType: contextType,
+			})
+		}
+	}
+
+	return details, nil
+}
+
+func (s *permissionService) GetImpactPreview(id uuid.UUID) (*PermissionImpactPreview, error) {
+	item, err := s.keyRepo.GetByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrPermissionKeyNotFound
+		}
+		return nil, err
+	}
+	permissionKey := canonicalPermissionKey(item.PermissionKey)
+	result := &PermissionImpactPreview{PermissionKey: permissionKey}
+
+	if err := s.db.Model(&user.APIEndpointPermissionBinding{}).Where("permission_key = ?", permissionKey).Distinct("endpoint_code").Count(&result.APICount).Error; err != nil {
+		return nil, err
+	}
+	if err := s.db.Model(&user.UIPage{}).Where("permission_key = ? AND deleted_at IS NULL", permissionKey).Count(&result.PageCount).Error; err != nil {
+		return nil, err
+	}
+	if err := s.db.Model(&user.FeaturePackageKey{}).Where("action_id = ?", id).Distinct("package_id").Count(&result.PackageCount).Error; err != nil {
+		return nil, err
+	}
+	packageIDs, err := s.packageKeyRepo.GetPackageIDsByKeyID(id)
+	if err != nil {
+		return nil, err
+	}
+	if len(packageIDs) > 0 {
+		if err := s.db.Model(&user.RoleFeaturePackage{}).Where("package_id IN ? AND enabled = ?", packageIDs, true).Distinct("role_id").Count(&result.RoleCount).Error; err != nil {
+			return nil, err
+		}
+		if err := s.db.Model(&user.TeamFeaturePackage{}).Where("package_id IN ? AND enabled = ?", packageIDs, true).Distinct("team_id").Count(&result.TeamCount).Error; err != nil {
+			return nil, err
+		}
+		if err := s.db.Model(&user.UserFeaturePackage{}).Where("package_id IN ? AND enabled = ?", packageIDs, true).Distinct("user_id").Count(&result.UserCount).Error; err != nil {
+			return nil, err
+		}
+	}
+	return result, nil
+}
+
+func (s *permissionService) BatchUpdate(req *PermissionBatchUpdateRequest, operatorID *uuid.UUID, requestID string) (*PermissionBatchUpdateResult, error) {
+	if req == nil {
+		return nil, errors.New("批量参数不能为空")
+	}
+	ids := make([]uuid.UUID, 0, len(req.IDs))
+	seen := make(map[uuid.UUID]struct{}, len(req.IDs))
+	for _, item := range req.IDs {
+		parsed, err := uuid.Parse(strings.TrimSpace(item))
+		if err != nil {
+			continue
+		}
+		if _, ok := seen[parsed]; ok {
+			continue
+		}
+		seen[parsed] = struct{}{}
+		ids = append(ids, parsed)
+	}
+	if len(ids) == 0 {
+		return &PermissionBatchUpdateResult{UpdatedCount: 0, SkippedIDs: req.IDs}, nil
+	}
+
+	moduleGroupID := (*uuid.UUID)(nil)
+	if req.ModuleGroupID != nil && strings.TrimSpace(*req.ModuleGroupID) != "" {
+		parsed, err := uuid.Parse(strings.TrimSpace(*req.ModuleGroupID))
+		if err != nil {
+			return nil, errors.New("无效的模块分组ID")
+		}
+		moduleGroupID = &parsed
+	}
+	featureGroupID := (*uuid.UUID)(nil)
+	if req.FeatureGroupID != nil && strings.TrimSpace(*req.FeatureGroupID) != "" {
+		parsed, err := uuid.Parse(strings.TrimSpace(*req.FeatureGroupID))
+		if err != nil {
+			return nil, errors.New("无效的功能分组ID")
+		}
+		featureGroupID = &parsed
+	}
+
+	updates := map[string]interface{}{
+		"updated_at": time.Now(),
+	}
+	if req.Status != nil {
+		targetStatus := normalizeStatus(strings.TrimSpace(*req.Status))
+		updates["status"] = targetStatus
+	}
+	if moduleGroupID != nil {
+		updates["module_group_id"] = *moduleGroupID
+	}
+	if featureGroupID != nil {
+		updates["feature_group_id"] = *featureGroupID
+	}
+	if len(updates) == 1 {
+		return &PermissionBatchUpdateResult{UpdatedCount: 0, SkippedIDs: []string{}}, nil
+	}
+
+	if err := s.db.Model(&user.PermissionKey{}).Where("id IN ?", ids).Updates(updates).Error; err != nil {
+		return nil, err
+	}
+	for _, id := range ids {
+		_ = s.refreshByPermissionKeyID(id)
+		_ = s.recordRiskAudit("permission_action", id.String(), "batch_update", nil, map[string]interface{}{
+			"status":           req.Status,
+			"module_group_id":  req.ModuleGroupID,
+			"feature_group_id": req.FeatureGroupID,
+			"template_name":    strings.TrimSpace(req.TemplateName),
+		}, nil, operatorID, requestID)
+	}
+	return &PermissionBatchUpdateResult{
+		UpdatedCount: len(ids),
+		SkippedIDs:   []string{},
+	}, nil
+}
+
+func (s *permissionService) SaveBatchTemplate(req *PermissionBatchTemplateSaveRequest, operatorID *uuid.UUID) (*user.PermissionBatchTemplate, error) {
+	if req == nil {
+		return nil, errors.New("模板参数不能为空")
+	}
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		return nil, errors.New("模板名称不能为空")
+	}
+	item := &user.PermissionBatchTemplate{
+		Name:        name,
+		Description: strings.TrimSpace(req.Description),
+		Payload:     req.Payload,
+		CreatedBy:   operatorID,
+	}
+	var existing user.PermissionBatchTemplate
+	if err := s.db.Where("name = ?", name).First(&existing).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		if createErr := s.db.Create(item).Error; createErr != nil {
+			return nil, createErr
+		}
+		return item, nil
+	}
+	if err := s.db.Model(&existing).Updates(map[string]interface{}{
+		"description": item.Description,
+		"payload":     item.Payload,
+		"updated_at":  time.Now(),
+	}).Error; err != nil {
+		return nil, err
+	}
+	return &existing, nil
+}
+
+func (s *permissionService) ListBatchTemplates() ([]user.PermissionBatchTemplate, error) {
+	items := make([]user.PermissionBatchTemplate, 0)
+	if err := s.db.Model(&user.PermissionBatchTemplate{}).Order("updated_at DESC, created_at DESC").Find(&items).Error; err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+func (s *permissionService) ListRiskAudits(objectID string, current, size int) ([]user.RiskOperationAudit, int64, error) {
+	if current <= 0 {
+		current = 1
+	}
+	if size <= 0 {
+		size = 20
+	}
+	query := s.db.Model(&user.RiskOperationAudit{}).Where("object_type = ?", "permission_action")
+	if strings.TrimSpace(objectID) != "" {
+		query = query.Where("object_id = ?", strings.TrimSpace(objectID))
+	}
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+	items := make([]user.RiskOperationAudit, 0)
+	if err := query.Order("created_at DESC").Offset((current - 1) * size).Limit(size).Find(&items).Error; err != nil {
+		return nil, 0, err
+	}
+	return items, total, nil
 }
 
 func (s *permissionService) CleanupUnused() (*CleanupUnusedResult, error) {
@@ -715,6 +1061,15 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionKeyUpdateReq
 	}); err != nil {
 		return err
 	}
+	_ = s.recordRiskAudit("permission_action", id.String(), "update", map[string]interface{}{
+		"permission_key": current.PermissionKey,
+		"status":         current.Status,
+		"context_type":   current.ContextType,
+	}, map[string]interface{}{
+		"permission_key": targetPermissionKey,
+		"status":         req.Status,
+		"context_type":   targetContextType,
+	}, nil, nil, "")
 	return s.refreshByPermissionKeyID(id)
 }
 
@@ -937,7 +1292,8 @@ func normalizeFeatureKind(value, fallback string) string {
 }
 
 func (s *permissionService) Delete(id uuid.UUID) error {
-	if _, err := s.keyRepo.GetByID(id); err != nil {
+	item, err := s.keyRepo.GetByID(id)
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrPermissionKeyNotFound
 		}
@@ -976,6 +1332,10 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 		if err := s.refresher.RefreshByPackages(packageIDs); err != nil {
 			return err
 		}
+		_ = s.recordRiskAudit("permission_action", id.String(), "delete", map[string]interface{}{
+			"permission_key": item.PermissionKey,
+			"context_type":   item.ContextType,
+		}, nil, map[string]interface{}{"package_count": len(packageIDs)}, nil, "")
 		return nil
 	}
 	for teamID := range affectedTeams {
@@ -983,6 +1343,10 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 			return err
 		}
 	}
+	_ = s.recordRiskAudit("permission_action", id.String(), "delete", map[string]interface{}{
+		"permission_key": item.PermissionKey,
+		"context_type":   item.ContextType,
+	}, nil, map[string]interface{}{"team_count": len(affectedTeams)}, nil, "")
 	return nil
 }
 
@@ -1013,4 +1377,27 @@ func (s *permissionService) refreshByPermissionKeyID(keyID uuid.UUID) error {
 		}
 	}
 	return nil
+}
+
+func (s *permissionService) recordRiskAudit(
+	objectType string,
+	objectID string,
+	operationType string,
+	beforeSummary map[string]interface{},
+	afterSummary map[string]interface{},
+	impactSummary map[string]interface{},
+	operatorID *uuid.UUID,
+	requestID string,
+) error {
+	item := &user.RiskOperationAudit{
+		ObjectType:    strings.TrimSpace(objectType),
+		ObjectID:      strings.TrimSpace(objectID),
+		OperationType: strings.TrimSpace(operationType),
+		BeforeSummary: beforeSummary,
+		AfterSummary:  afterSummary,
+		ImpactSummary: impactSummary,
+		OperatorID:    operatorID,
+		RequestID:     strings.TrimSpace(requestID),
+	}
+	return s.db.Create(item).Error
 }

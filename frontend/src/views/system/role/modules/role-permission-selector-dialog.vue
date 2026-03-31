@@ -194,7 +194,7 @@
               <ElTag type="warning" effect="plain" round>已配置 {{ configuredDataCount }}</ElTag>
             </div>
 
-            <ElTable :data="dataRows" border class="data-table">
+            <ElTable :data="pagedDataRows" border class="data-table">
               <ElTableColumn prop="resourceName" label="资源" min-width="220" />
               <ElTableColumn label="数据范围" min-width="260">
                 <template #default="{ row }">
@@ -214,6 +214,13 @@
                 </template>
               </ElTableColumn>
             </ElTable>
+            <WorkspacePagination
+              v-if="dataRows.length > 0"
+              v-model:current-page="dataPagination.current"
+              v-model:page-size="dataPagination.size"
+              :total="dataRows.length"
+              compact
+            />
           </div>
         </ElTabPane>
       </ElTabs>
@@ -234,6 +241,7 @@ import { ElMessage } from 'element-plus'
 import type { CascaderOption, CascaderProps } from 'element-plus'
 import { useRouter } from 'vue-router'
 import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
+import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
 import { useMenuSpaceStore } from '@/store/modules/menu-space'
 import {
   fetchGetMenuTreeAll,
@@ -321,6 +329,10 @@ const roleActionBoundary = ref<Api.SystemManage.RoleActionBoundaryResponse | nul
 const selectedActionSourcePackageId = ref('')
 
 const dataRows = ref<DataRow[]>([])
+const dataPagination = ref({
+  current: 1,
+  size: 10
+})
 const dataScopeOptions = ref<Api.SystemManage.RoleDataPermissionScopeOption[]>([])
 
 const roleTitle = computed(() => props.roleData?.roleName || '')
@@ -463,6 +475,10 @@ const topLevelActionTags = computed(() => {
 })
 
 const configuredDataCount = computed(() => dataRows.value.filter((item) => item.selectedDataScope).length)
+const pagedDataRows = computed(() => {
+  const start = (dataPagination.value.current - 1) * dataPagination.value.size
+  return dataRows.value.slice(start, start + dataPagination.value.size)
+})
 
 const menuCascaderProps: CascaderProps = {
   multiple: true,
@@ -582,6 +598,7 @@ async function loadData() {
       resourceName: item.resource_name,
       selectedDataScope: selectedScopeMap.get(item.resource_code) || ''
     }))
+    dataPagination.value.current = 1
 
     await nextTick()
     ensureExpandedMenus(menuPanelRef.value, selectedMenuNodeValues.value)
@@ -718,6 +735,13 @@ function formatFeature(value: string) {
 function handleCancel() {
   visible.value = false
 }
+
+watch(
+  () => dataPagination.value.size,
+  () => {
+    dataPagination.value.current = 1
+  }
+)
 
 function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem, open?: 'menus' | 'actions') {
   router.push({

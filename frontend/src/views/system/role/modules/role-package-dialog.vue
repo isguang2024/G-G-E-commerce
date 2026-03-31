@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
     :title="`角色功能包 - ${roleTitle}`"
@@ -44,7 +44,7 @@
         </ElSelect>
       </div>
 
-      <ElTable :data="filteredPackages" border max-height="520" row-key="id">
+      <ElTable :data="pagedPackages" border max-height="520" row-key="id">
         <ElTableColumn type="expand" width="56">
           <template #default="{ row }">
             <div class="expand-panel">
@@ -89,6 +89,12 @@
         </ElTableColumn>
         <ElTableColumn prop="description" label="说明" min-width="320" show-overflow-tooltip />
       </ElTable>
+      <WorkspacePagination
+        v-model:current-page="pagination.current"
+        v-model:page-size="pagination.size"
+        :total="filteredPackages.length"
+        compact
+      />
     </div>
 
     <template #footer>
@@ -102,6 +108,7 @@
   import { computed, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import FeaturePackageGrantPreview from '@/components/business/permission/FeaturePackageGrantPreview.vue'
+  import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import {
     fetchGetFeaturePackageOptions,
     fetchGetRolePackages,
@@ -132,6 +139,10 @@
   const statusFilter = ref('')
   const packages = ref<Api.SystemManage.FeaturePackageItem[]>([])
   const selectedPackageIds = ref<string[]>([])
+  const pagination = ref({
+    current: 1,
+    size: 10
+  })
 
   const roleTitle = computed(() => props.roleData?.roleName || '')
 
@@ -163,6 +174,11 @@
     })
   })
 
+  const pagedPackages = computed(() => {
+    const start = (pagination.value.current - 1) * pagination.value.size
+    return filteredPackages.value.slice(start, start + pagination.value.size)
+  })
+
   watch(
     () => props.modelValue,
     (open) => {
@@ -185,6 +201,7 @@
       ])
       packages.value = listRes?.records || []
       selectedPackageIds.value = [...(roleRes?.package_ids || [])]
+      pagination.value.current = 1
       if (!selectedPackageIds.value.length) {
         selectionFilter.value = 'all'
       }
@@ -200,6 +217,7 @@
     contextFilter.value = ''
     selectionFilter.value = 'selected'
     statusFilter.value = ''
+    pagination.value.current = 1
   }
 
   function toggleSelection(packageId: string, checked: boolean | string | number) {
@@ -237,6 +255,10 @@
     if (status === 'disabled') return 'info'
     return 'danger'
   }
+
+  watch([keyword, contextFilter, selectionFilter, statusFilter], () => {
+    pagination.value.current = 1
+  })
 
   async function handleSave() {
     if (!props.roleData?.roleId) return
@@ -310,7 +332,7 @@
   .summary-card {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
   }
 
   .toolbar-row {
@@ -345,3 +367,4 @@
     }
   }
 </style>
+

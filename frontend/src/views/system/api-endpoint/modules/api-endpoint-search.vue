@@ -3,7 +3,6 @@
     v-model="formData"
     :items="formItems"
     :showExpand="true"
-    :defaultExpanded="true"
     @search="handleSearch"
     @reset="handleReset"
   />

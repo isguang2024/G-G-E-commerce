@@ -8,14 +8,14 @@
         </div>
       </template>
 
-      <ElForm :inline="true" class="trace-form">
+      <ElForm class="trace-form">
         <ElFormItem label="用户">
           <ElSelect
             v-model="query.userId"
             filterable
             clearable
             placeholder="请选择用户"
-            style="width: 300px"
+            class="trace-field"
           >
             <ElOption
               v-for="user in userOptions"
@@ -31,7 +31,7 @@
             filterable
             clearable
             placeholder="选择团队"
-            style="width: 280px"
+            class="trace-field"
           >
             <ElOption
               v-for="team in teamOptions"
@@ -49,7 +49,7 @@
             v-model="roleCodeFilter"
             clearable
             placeholder="全部角色"
-            style="width: 160px"
+            class="trace-field"
           >
             <ElOption
               v-for="role in displayRoleOptions"
@@ -65,7 +65,7 @@
             filterable
             clearable
             placeholder="选择页面"
-            style="width: 260px"
+            class="trace-field"
           >
             <ElOption
               v-for="page in pageOptions"
@@ -90,14 +90,21 @@
       </ElDescriptions>
 
       <ElDivider v-if="result">角色链路</ElDivider>
-      <ElTable v-if="result" :data="result.roles" border>
+      <ElTable v-if="result" :data="pagedRoles" border>
         <ElTableColumn prop="roleCode" label="角色编码" min-width="160" />
         <ElTableColumn prop="roleName" label="角色名称" min-width="180" />
         <ElTableColumn prop="status" label="状态" width="120" />
       </ElTable>
+      <WorkspacePagination
+        v-if="result && roleRows.length > 0"
+        v-model:current-page="rolePagination.current"
+        v-model:page-size="rolePagination.size"
+        :total="roleRows.length"
+        compact
+      />
 
       <ElDivider v-if="result">页面链路结果</ElDivider>
-      <ElTable v-if="result" :data="result.pages" border>
+      <ElTable v-if="result" :data="pagedPages" border>
         <ElTableColumn prop="pageKey" label="页面Key" min-width="180" />
         <ElTableColumn prop="pageName" label="页面名称" min-width="140" />
         <ElTableColumn prop="routePath" label="路由" min-width="160" />
@@ -118,20 +125,22 @@
           </template>
         </ElTableColumn>
       </ElTable>
+      <WorkspacePagination
+        v-if="result && pageRows.length > 0"
+        v-model:current-page="pagePagination.current"
+        v-model:page-size="pagePagination.size"
+        :total="pageRows.length"
+        compact
+      />
     </ElCard>
   </div>
 </template>
 
 <script setup lang="ts">
   import { ElMessage } from 'element-plus'
+  import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import { fetchGetTeamMembers, fetchGetTeamRoles } from '@/api/team'
-  import {
-    fetchGetPageAccessTrace,
-    fetchGetPageList,
-    fetchGetRoleOptions,
-    fetchGetTenantOptions,
-    fetchGetUserList
-  } from '@/api/system-manage'
+  import { fetchGetPageAccessTrace, fetchGetPageList, fetchGetRoleOptions, fetchGetTenantOptions, fetchGetUserList } from '@/api/system-manage'
 
   defineOptions({ name: 'SystemAccessTrace' })
 
@@ -141,6 +150,14 @@
   const pageOptions = ref<Api.SystemManage.PageItem[]>([])
   const teamOptions = ref<Api.SystemManage.TeamListItem[]>([])
   const roleOptions = ref<Array<{ label: string; value: string; source: 'platform' | 'team' }>>([])
+  const rolePagination = reactive({
+    current: 1,
+    size: 10
+  })
+  const pagePagination = reactive({
+    current: 1,
+    size: 10
+  })
   const onlyTeamUsers = ref(false)
   const roleCodeFilter = ref('')
   const displayRoleOptions = computed(() =>
@@ -148,6 +165,16 @@
       ? roleOptions.value.filter((item) => item.source === 'team')
       : roleOptions.value.filter((item) => item.source === 'platform')
   )
+  const roleRows = computed(() => result.value?.roles || [])
+  const pageRows = computed(() => result.value?.pages || [])
+  const pagedRoles = computed(() => {
+    const start = (rolePagination.current - 1) * rolePagination.size
+    return roleRows.value.slice(start, start + rolePagination.size)
+  })
+  const pagedPages = computed(() => {
+    const start = (pagePagination.current - 1) * pagePagination.size
+    return pageRows.value.slice(start, start + pagePagination.size)
+  })
 
   const query = reactive<Api.SystemManage.PageAccessTraceParams>({
     userId: '',
@@ -251,6 +278,8 @@
     loading.value = true
     try {
       result.value = await fetchGetPageAccessTrace(query)
+      rolePagination.current = 1
+      pagePagination.current = 1
     } finally {
       loading.value = false
     }
@@ -282,6 +311,20 @@
       await loadUserOptions()
     }
   )
+
+  watch(
+    () => rolePagination.size,
+    () => {
+      rolePagination.current = 1
+    }
+  )
+
+  watch(
+    () => pagePagination.size,
+    () => {
+      pagePagination.current = 1
+    }
+  )
 </script>
 
 <style scoped>
@@ -300,8 +343,37 @@
   }
   .trace-form {
     margin-bottom: 12px;
+    display: grid;
+    gap: 8px 12px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    align-items: end;
+  }
+  .trace-field {
+    width: 100%;
   }
   .trace-summary {
     margin-bottom: 12px;
+  }
+
+  .trace-form :deep(.el-form-item) {
+    margin-bottom: 0;
+  }
+
+  @media (max-width: 1440px) {
+    .trace-form {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .trace-form {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 768px) {
+    .trace-form {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

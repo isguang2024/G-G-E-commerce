@@ -25,7 +25,7 @@
         class="toolbar-search"
       />
 
-      <ElTable :data="filteredTeams" border max-height="420">
+      <ElTable :data="pagedTeams" border max-height="420">
         <ElTableColumn width="60">
           <template #default="{ row }">
             <ElCheckbox
@@ -45,6 +45,12 @@
           </template>
         </ElTableColumn>
       </ElTable>
+      <WorkspacePagination
+        v-model:current-page="pagination.current"
+        v-model:page-size="pagination.size"
+        :total="filteredTeams.length"
+        compact
+      />
     </div>
 
     <template #footer>
@@ -57,6 +63,7 @@
 <script setup lang="ts">
   import { computed, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
+  import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import {
     fetchGetFeaturePackageTeams,
     fetchGetTenantOptions,
@@ -92,6 +99,10 @@
   const keyword = ref('')
   const teams = ref<Api.SystemManage.TeamListItem[]>([])
   const selectedTeamIds = ref<string[]>([])
+  const pagination = ref({
+    current: 1,
+    size: 10
+  })
 
   const filteredTeams = computed(() => {
     const currentKeyword = keyword.value.trim().toLowerCase()
@@ -99,6 +110,11 @@
     return teams.value.filter((item) =>
       [item.name, item.remark].filter(Boolean).join(' ').toLowerCase().includes(currentKeyword)
     )
+  })
+
+  const pagedTeams = computed(() => {
+    const start = (pagination.value.current - 1) * pagination.value.size
+    return filteredTeams.value.slice(start, start + pagination.value.size)
   })
 
   watch(
@@ -118,6 +134,7 @@
       ])
       teams.value = teamRes?.records || []
       selectedTeamIds.value = [...(bindingRes?.team_ids || [])]
+      pagination.value.current = 1
     } catch (error: any) {
       ElMessage.error(error?.message || '加载功能包团队失败')
     } finally {
@@ -143,8 +160,8 @@
     }
     saving.value = true
     try {
-      await fetchSetFeaturePackageTeams(props.packageId, selectedTeamIds.value)
-      ElMessage.success('功能包团队已保存')
+      const stats = await fetchSetFeaturePackageTeams(props.packageId, selectedTeamIds.value)
+      ElMessage.success(formatRefreshMessage(stats))
       emit('success')
       visible.value = false
     } catch (error: any) {
@@ -156,6 +173,14 @@
 
   function supportsTeamContext(contextType?: string) {
     return contextType === 'team' || contextType === 'common'
+  }
+
+  watch(keyword, () => {
+    pagination.value.current = 1
+  })
+
+  function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
+    return `本次增量刷新：角色 ${stats?.roleCount || 0}、团队 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 </script>
 

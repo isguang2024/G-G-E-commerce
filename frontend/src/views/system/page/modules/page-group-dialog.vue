@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
     :title="dialogTitle"
@@ -740,7 +740,7 @@
     color: var(--el-text-color-secondary);
     font-size: 12px;
     line-height: 1.5;
-    margin: -6px 0 10px;
+    margin: -6px 0 12px;
   }
 
   .field-hint--section {
@@ -779,7 +779,7 @@
   .dialog-intro__examples {
     border-top: 1px dashed var(--el-border-color-lighter);
     margin-top: 8px;
-    padding-top: 10px;
+    padding-top: 12px;
   }
 
   .dialog-intro__example {
@@ -852,3 +852,4 @@
     min-width: 96px;
   }
 </style>
+

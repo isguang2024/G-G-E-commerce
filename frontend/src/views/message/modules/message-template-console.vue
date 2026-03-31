@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="message-template-page art-full-height">
     <AdminWorkspaceHero :title="pageTitle" :description="pageDescription" :metrics="heroMetrics">
       <div class="message-template-hero__actions">
@@ -79,12 +79,11 @@
       </div>
 
       <footer class="message-template-shell__footer">
-        <ElPagination
+        <WorkspacePagination
           v-model:current-page="pagination.current"
           v-model:page-size="pagination.size"
-          layout="prev, pager, next"
           :total="pagination.total"
-          @current-change="loadTemplates"
+          layout="prev, pager, next"
         />
       </footer>
     </section>
@@ -217,9 +216,10 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, reactive, ref } from 'vue'
+  import { computed, onMounted, reactive, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
+  import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import ArtWangEditor from '@/components/core/forms/art-wang-editor/index.vue'
   import MessageWorkspaceNav from '@/views/message/modules/message-workspace-nav.vue'
   import {
@@ -419,23 +419,31 @@
   onMounted(() => {
     loadTemplates()
   })
+
+  watch(
+    () => [pagination.current, pagination.size],
+    ([current, size], [oldCurrent, oldSize]) => {
+      if (current === oldCurrent && size === oldSize) return
+      loadTemplates()
+    }
+  )
 </script>
 
 <style scoped lang="scss">
   .message-template-page {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 10px;
   }
 
   .message-template-inline-alert {
-    margin-top: -4px;
+    margin-top: 0;
   }
 
   .message-template-hero__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
   }
 
   .message-template-shell {
@@ -537,7 +545,7 @@
 
   .message-template-card__meta {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
     font-size: 11px;
     color: #475569;
@@ -640,7 +648,7 @@
   .message-template-drawer__footer {
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 12px;
     width: 100%;
   }
 
@@ -665,3 +673,4 @@
     }
   }
 </style>
+

@@ -180,12 +180,16 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-top: 12px;
+  margin-top: 0;
   border-radius: calc(var(--custom-radius) / 2 + 2px) !important;
 
   .el-card__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
     height: 100%;
-    overflow: hidden;
+    min-height: 0;
+    overflow: visible;
   }
 }
 
@@ -194,10 +198,34 @@
   height: var(--art-full-height);
   display: flex;
   flex-direction: column;
+  gap: 10px;
 
   @media (max-width: 640px) {
     height: auto;
   }
+}
+
+.page-top-stack,
+.menu-top-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+.page-top-stack > .workspace-hero,
+.menu-top-stack > .workspace-hero,
+.art-full-height > .workspace-hero {
+  margin-bottom: 0;
+}
+
+.page-top-stack + .art-table-card,
+.menu-top-stack + .art-table-card {
+  margin-top: 0;
+}
+
+.art-full-height > .workspace-hero + .art-table-card {
+  margin-top: 0;
 }
 
 // 徽章样式

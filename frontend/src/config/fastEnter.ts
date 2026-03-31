@@ -7,7 +7,7 @@ import type { FastEnterConfig } from '@/types/config'
 
 const fastEnterConfig: FastEnterConfig = {
   // 显示条件（屏幕宽度）
-  minWidth: 1200,
+  minWidth: 1450,
   // 应用列表
   applications: [
     {

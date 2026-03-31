@@ -725,7 +725,7 @@
   }
 
   .menu-kind-group {
-    margin-top: 10px;
+    margin-top: 12px;
   }
 
   .menu-dialog-advanced__row {
@@ -737,7 +737,7 @@
     align-items: center;
     justify-content: space-between;
     height: 32px;
-    margin-top: 10px;
+    margin-top: 12px;
     padding: 0 2px;
     color: #334155;
     font-size: 13px;
@@ -755,3 +755,4 @@
     }
   }
 </style>
+

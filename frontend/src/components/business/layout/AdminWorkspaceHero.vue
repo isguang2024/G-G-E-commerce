@@ -1,24 +1,31 @@
 <template>
-  <section class="workspace-hero">
-    <div class="workspace-hero__main">
-      <div class="workspace-hero__eyebrow">
-        <slot name="eyebrow" />
+  <ElCard class="workspace-hero art-card-xs" shadow="never">
+    <div class="workspace-hero__body">
+      <div class="workspace-hero__header">
+        <div class="workspace-hero__main">
+          <div class="workspace-hero__eyebrow">
+            <slot name="eyebrow" />
+          </div>
+          <div class="workspace-hero__heading">
+            <h1 class="workspace-hero__title">{{ title }}</h1>
+            <p v-if="description" class="workspace-hero__description">{{ description }}</p>
+          </div>
+        </div>
+        <div v-if="metrics.length" class="workspace-hero__metrics">
+          <div v-for="item in metrics" :key="item.label" class="workspace-metric">
+            <span class="workspace-metric__label">{{ item.label }}</span>
+            <strong class="workspace-metric__value">{{ item.value }}</strong>
+          </div>
+        </div>
       </div>
-      <div class="workspace-hero__heading">
-        <h1 class="workspace-hero__title">{{ title }}</h1>
-        <p v-if="description" class="workspace-hero__description">{{ description }}</p>
-      </div>
-      <div v-if="metrics.length" class="workspace-hero__metrics">
-        <div v-for="item in metrics" :key="item.label" class="workspace-metric">
-          <span class="workspace-metric__label">{{ item.label }}</span>
-          <strong class="workspace-metric__value">{{ item.value }}</strong>
+      <div v-if="$slots.default" class="workspace-hero__divider-wrap">
+        <div class="workspace-hero__divider" />
+        <div class="workspace-hero__actions">
+          <slot />
         </div>
       </div>
     </div>
-    <div class="workspace-hero__side">
-      <slot />
-    </div>
-  </section>
+  </ElCard>
 </template>
 
 <script setup lang="ts">
@@ -41,17 +48,24 @@
 
 <style scoped lang="scss">
   .workspace-hero {
+    margin-bottom: 0;
+  }
+
+  .workspace-hero :deep(.el-card__body) {
+    padding: 20px 22px;
+  }
+
+  .workspace-hero__body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .workspace-hero__header {
     display: flex;
     justify-content: space-between;
-    gap: 20px;
-    padding: 18px 20px;
-    margin-bottom: 12px;
-    border: 1px solid color-mix(in srgb, var(--el-border-color) 76%, white);
-    border-radius: 22px;
-    background:
-      radial-gradient(circle at top right, rgb(217 249 157 / 0.26), transparent 34%),
-      radial-gradient(circle at top left, rgb(191 219 254 / 0.34), transparent 40%),
-      linear-gradient(135deg, rgb(255 255 255 / 0.98), rgb(248 250 252 / 0.96));
+    align-items: flex-start;
+    gap: 18px;
   }
 
   .workspace-hero__main {
@@ -60,94 +74,128 @@
     flex: 1;
     flex-direction: column;
     gap: 12px;
+    max-width: 560px;
   }
 
   .workspace-hero__eyebrow:empty {
     display: none;
   }
 
+  .workspace-hero__eyebrow :deep(.el-tag) {
+    border-radius: 9999px;
+  }
+
   .workspace-hero__heading {
     display: flex;
     min-width: 0;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
   }
 
   .workspace-hero__title {
     margin: 0;
-    font-size: 26px;
-    font-weight: 700;
-    line-height: 1.04;
+    font-size: 24px;
+    font-weight: 720;
+    line-height: 1.1;
     letter-spacing: -0.03em;
-    color: #0f172a;
+    color: var(--art-text-strong);
   }
 
   .workspace-hero__description {
     margin: 0;
     max-width: 720px;
-    font-size: 13px;
-    line-height: 1.6;
-    color: #475569;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--art-text-muted);
+  }
+
+  .workspace-hero__divider-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .workspace-hero__divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, rgb(226 232 240 / 0.95), rgb(226 232 240 / 0.55), rgb(226 232 240 / 0.95));
   }
 
   .workspace-hero__metrics {
     display: flex;
     flex-wrap: wrap;
-    gap: 12px;
+    justify-content: flex-end;
+    gap: 10px;
+    align-self: flex-start;
   }
 
   .workspace-metric {
     display: inline-flex;
-    min-width: 110px;
     flex-direction: column;
     gap: 4px;
-    padding: 10px 12px;
-    border-radius: 14px;
-    background: rgb(255 255 255 / 0.78);
-    box-shadow: inset 0 0 0 1px rgb(226 232 240 / 0.9);
+    flex: 0 0 128px;
+    max-width: 128px;
+    min-height: 46px;
   }
 
   .workspace-metric__label {
-    font-size: 11px;
-    letter-spacing: 0.04em;
-    color: #64748b;
-    text-transform: uppercase;
+    font-size: 12px;
+    color: var(--art-text-soft);
   }
 
   .workspace-metric__value {
     font-size: 20px;
     line-height: 1;
-    color: #0f172a;
+    color: var(--art-text-strong);
   }
 
-  .workspace-hero__side {
+  .workspace-hero__actions {
     display: flex;
-    flex-shrink: 0;
-    align-items: flex-start;
-    justify-content: flex-end;
-    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    padding-top: 2px;
   }
 
   @media (max-width: 960px) {
-    .workspace-hero {
+    .workspace-hero__header {
       flex-direction: column;
     }
 
-    .workspace-hero__side {
+    .workspace-hero__main {
+      max-width: none;
+    }
+
+    .workspace-hero__metrics {
+      justify-content: flex-start;
+      align-self: stretch;
+    }
+
+    .workspace-hero__actions {
       width: 100%;
       justify-content: flex-start;
-      flex-wrap: wrap;
     }
   }
 
   @media (max-width: 640px) {
-    .workspace-hero {
+    .workspace-hero :deep(.el-card__body) {
       padding: 16px;
-      border-radius: 18px;
     }
 
     .workspace-hero__title {
-      font-size: 22px;
+      font-size: 20px;
+    }
+
+    .workspace-hero__metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      justify-content: stretch;
+    }
+
+    .workspace-metric {
+      flex-basis: auto;
+      max-width: none;
     }
   }
 </style>

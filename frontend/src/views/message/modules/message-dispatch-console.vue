@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="message-manage-page art-full-height">
     <AdminWorkspaceHero
       :title="pageTitle"
@@ -11,7 +11,9 @@
       </div>
     </AdminWorkspaceHero>
 
-    <MessageWorkspaceNav :scope="props.scope" current="dispatch" />
+    <div class="message-manage-nav">
+      <MessageWorkspaceNav :scope="props.scope" current="dispatch" />
+    </div>
 
     <ElAlert
       v-if="loadError"
@@ -48,13 +50,15 @@
                 @change="handleTemplateChange"
               >
                 <ElOption
-                  v-for="item in options.template_options"
+                  v-for="item in filteredTemplateOptions"
                   :key="item.id"
-                  :label="`${item.name} · ${item.owner_scope === 'team' ? '团队模板' : '平台模板'}`"
+                  :label="templateOptionLabel(item)"
                   :value="item.id"
                 />
               </ElSelect>
-              <div class="field-hint">模板归属只决定模板来源，不改变本次实际的发送对象。</div>
+              <div class="field-hint">
+                {{ isTeamScope ? '仅展示当前团队创建的模板，团队页不会混入平台模板。' : '仅展示平台模板。' }}
+              </div>
             </ElFormItem>
 
             <ElFormItem label="发送人" prop="sender_id">
@@ -139,7 +143,7 @@
               <ElOption
                 v-for="item in options.users"
                 :key="item.id"
-                :label="item.team_name ? `${item.display_name} · ${item.team_name}` : item.display_name"
+                :label="item.display_name"
                 :value="item.id"
               />
             </ElSelect>
@@ -262,7 +266,7 @@
 
         <div class="message-manage-preview__template" v-if="activeTemplate">
           <div class="message-manage-preview__template-title">当前模板</div>
-          <p>{{ activeTemplate.name }} · {{ activeTemplate.owner_scope === 'team' ? '团队模板' : '平台模板' }}</p>
+          <p>{{ templateOptionLabel(activeTemplate) }}</p>
           <span>{{ activeTemplate.description || '该模板未填写额外说明。' }}</span>
         </div>
       </aside>
@@ -279,6 +283,7 @@
   import MessageWorkspaceNav from '@/views/message/modules/message-workspace-nav.vue'
   import { fetchDispatchMessage, fetchGetMessageDispatchOptions } from '@/api/message'
   import { useMenuSpaceStore } from '@/store/modules/menu-space'
+  import { useTenantStore } from '@/store/modules/tenant'
   import { handleRichTextLinkNavigation } from '@/utils/navigation/rich-text'
   import { useMessageWorkspace } from '@/views/message/modules/useMessageWorkspace'
 
@@ -290,6 +295,7 @@
 
   const router = useRouter()
   const menuSpaceStore = useMenuSpaceStore()
+  const tenantStore = useTenantStore()
   const loading = ref(false)
   const loadError = ref('')
   const submitting = ref(false)
@@ -392,8 +398,14 @@
     }
   })
 
+  const filteredTemplateOptions = computed(() =>
+    options.template_options.filter((item) =>
+      isTeamScope.value ? item.owner_scope === 'team' : item.owner_scope === 'platform'
+    )
+  )
+
   const activeTemplate = computed(() =>
-    options.template_options.find((item) => item.id === form.template_id) || null
+    filteredTemplateOptions.value.find((item) => item.id === form.template_id) || null
   )
 
   const activeSender = computed(() =>
@@ -501,6 +513,10 @@
     const normalized = normalizeEditorValue(value)
     return normalized || `<p>${fallback}</p>`
   }
+  const templateOptionLabel = (template: Api.Message.DispatchTemplateOption) => {
+    if (isTeamScope.value) return `${template.name} · 团队模板`
+    return `${template.name} · 平台模板`
+  }
 
   const previewSummaryHtml = computed(() =>
     normalizeSummaryValue(form.summary)
@@ -546,10 +562,19 @@
     loadError.value = ''
     try {
       ensureTeamContext()
+      if (isTeamScope.value) {
+        await tenantStore.loadMyTeams({
+          preferredTenantId: tenantStore.currentTenantId || undefined
+        })
+      }
+      Object.assign(options, createDefaultDispatchOptions())
       const data = await fetchGetMessageDispatchOptions({
         skipTenantHeader: skipTenantHeader.value
       })
       Object.assign(options, data || {})
+      if (form.template_id && !filteredTemplateOptions.value.some((item) => item.id === form.template_id)) {
+        form.template_id = ''
+      }
       resetFormDefaults()
     } catch (error) {
       Object.assign(options, createDefaultDispatchOptions())
@@ -589,6 +614,11 @@
   }
 
   const submitDispatch = async () => {
+    if (isTeamScope.value && !tenantStore.currentTenantId) {
+      await tenantStore.loadMyTeams({
+        preferredTenantId: tenantStore.currentTenantId || undefined
+      })
+    }
     if (!form.title.trim()) {
       ElMessage.warning('请先填写消息标题')
       return
@@ -679,18 +709,25 @@
   .message-manage-shell {
     display: grid;
     grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.9fr);
-    gap: 18px;
-    margin-top: 18px;
+    gap: 16px;
+    margin-top: 0;
+  }
+
+  .message-manage-nav {
+    margin-top: 0;
   }
 
   .message-manage-inline-alert {
-    margin-top: 16px;
+    margin-top: 0;
   }
 
   .message-manage-main,
   .message-manage-preview {
-    padding: 20px 22px;
+    padding: 22px;
     border-radius: 20px;
+    border: 1px solid var(--art-card-border);
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(249 250 251 / 0.94));
+    box-shadow: var(--art-shadow-sm);
   }
 
   .message-manage-section__header {
@@ -704,15 +741,16 @@
   .message-manage-section__header h3 {
     margin: 0;
     font-size: 18px;
-    font-weight: 600;
-    color: #0f172a;
+    font-weight: 750;
+    letter-spacing: -0.03em;
+    color: var(--art-text-strong);
   }
 
   .message-manage-section__header p {
     margin: 6px 0 0;
     font-size: 13px;
     line-height: 1.6;
-    color: #64748b;
+    color: var(--art-text-muted);
   }
 
   .message-manage-grid {
@@ -728,16 +766,17 @@
 
   .message-manage-form {
     display: grid;
-    gap: 18px;
+    gap: 16px;
   }
 
   .message-manage-block {
     display: grid;
-    gap: 14px;
+    gap: 12px;
     padding: 18px;
-    border: 1px solid rgb(226 232 240 / 0.88);
-    border-radius: 20px;
-    background: linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(248 250 252 / 0.92));
+    border: 1px solid color-mix(in srgb, var(--art-card-border) 92%, white);
+    border-radius: 18px;
+    background: rgb(255 255 255 / 0.92);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.6);
   }
 
   .message-manage-block__header {
@@ -748,15 +787,15 @@
   .message-manage-block__header h4 {
     margin: 0;
     font-size: 15px;
-    font-weight: 700;
-    color: #0f172a;
+    font-weight: 750;
+    color: var(--art-text-strong);
   }
 
   .message-manage-block__header p {
     margin: 0;
     font-size: 12px;
     line-height: 1.7;
-    color: #64748b;
+    color: var(--art-text-muted);
   }
 
   .message-manage-target-layout {
@@ -776,28 +815,31 @@
     flex-direction: column;
     gap: 6px;
     padding: 14px 16px;
-    border: 1px solid rgb(226 232 240 / 0.9);
+    border: 1px solid color-mix(in srgb, var(--art-card-border) 92%, white);
     border-radius: 16px;
-    background: linear-gradient(180deg, rgb(248 250 252 / 0.95), rgb(255 255 255 / 1));
+    background: rgb(249 250 251 / 0.96);
   }
 
   .message-manage-fixed-target strong {
     font-size: 14px;
-    color: #0f172a;
+    color: var(--art-text-strong);
   }
 
   .message-manage-fixed-target span,
   .field-hint {
     font-size: 12px;
     line-height: 1.6;
-    color: #94a3b8;
+    color: var(--art-text-soft);
   }
 
   .message-manage-preview__card {
     padding: 18px;
-    border: 1px solid rgb(226 232 240 / 0.9);
+    border: 1px solid color-mix(in srgb, var(--art-card-border) 92%, white);
     border-radius: 18px;
-    background: linear-gradient(180deg, rgb(248 250 252 / 0.95), rgb(255 255 255 / 1));
+    background:
+      radial-gradient(circle at top right, rgb(191 219 254 / 0.12), transparent 24%),
+      linear-gradient(180deg, rgb(248 250 252 / 0.96), rgb(255 255 255 / 1));
+    box-shadow: var(--art-shadow-sm);
   }
 
   .message-manage-preview__eyebrow,
@@ -810,21 +852,22 @@
 
   .message-manage-preview__eyebrow {
     font-size: 12px;
-    color: #64748b;
+    color: var(--art-text-muted);
   }
 
   .message-manage-preview__card h4 {
     margin: 12px 0 0;
     font-size: 20px;
     line-height: 1.5;
-    color: #0f172a;
+    color: var(--art-text-strong);
   }
 
   .message-manage-preview__summary {
-    margin-top: 10px;
+    margin-top: 12px;
     padding: 14px 16px;
     border-radius: 16px;
-    background: rgb(248 250 252 / 0.92);
+    border: 1px solid color-mix(in srgb, var(--art-card-border) 88%, white);
+    background: rgb(248 250 252 / 0.88);
   }
 
   .message-manage-preview__meta {
@@ -837,12 +880,13 @@
     border-radius: 16px;
     background: rgb(255 255 255 / 0.88);
     padding: 16px;
+    border: 1px solid color-mix(in srgb, var(--art-card-border) 88%, white);
   }
 
   .rich-text-content {
     font-size: 13px;
     line-height: 1.8;
-    color: #334155;
+    color: var(--art-text-base);
     word-break: break-word;
   }
 
@@ -855,7 +899,7 @@
   }
 
   .rich-text-content :deep(a) {
-    color: #2563eb;
+    color: var(--theme-color);
     text-decoration: underline;
   }
 
@@ -869,25 +913,26 @@
     margin-top: 16px;
     padding: 16px 18px;
     border-radius: 18px;
-    background: rgb(248 250 252 / 0.9);
+    border: 1px dashed color-mix(in srgb, var(--art-card-border) 92%, white);
+    background: rgb(248 250 252 / 0.88);
   }
 
   .message-manage-preview__template-title {
     font-size: 12px;
-    color: #94a3b8;
+    color: var(--art-text-soft);
   }
 
   .message-manage-preview__template p {
     margin: 8px 0 4px;
     font-size: 14px;
     font-weight: 600;
-    color: #0f172a;
+    color: var(--art-text-strong);
   }
 
   .message-manage-preview__template span {
     font-size: 12px;
     line-height: 1.6;
-    color: #64748b;
+    color: var(--art-text-muted);
   }
 
   @media (max-width: 1180px) {
@@ -912,3 +957,4 @@
     }
   }
 </style>
+

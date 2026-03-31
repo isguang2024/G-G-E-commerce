@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
     :title="`用户菜单裁剪 - ${userTitle}`"
@@ -293,7 +293,7 @@ function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem) {
 .package-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   padding: 14px;
   background: #f8fafc;
   border: 1px solid #e5e7eb;
@@ -308,3 +308,4 @@ function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem) {
   border-radius: 12px;
 }
 </style>
+

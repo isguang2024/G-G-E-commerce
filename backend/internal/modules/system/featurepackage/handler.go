@@ -1,6 +1,7 @@
 package featurepackage
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 )
 
 type Handler struct {
@@ -84,6 +86,168 @@ func (h *Handler) ListOptions(c *gin.Context) {
 	}))
 }
 
+func (h *Handler) GetRelationTree(c *gin.Context) {
+	contextType := strings.TrimSpace(c.Query("context_type"))
+	keyword := strings.TrimSpace(c.Query("keyword"))
+	result, err := h.service.GetRelationTree(contextType, keyword)
+	if err != nil {
+		h.logger.Error("Get feature package relation tree failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包关系树失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(result))
+}
+
+func (h *Handler) GetImpactPreview(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能包ID")
+		c.JSON(status, resp)
+		return
+	}
+	result, err := h.service.GetImpactPreview(id)
+	if err != nil {
+		if err == ErrFeaturePackageNotFound {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get feature package impact preview failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取影响预览失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"package_id":   result.PackageID.String(),
+		"role_count":   result.RoleCount,
+		"team_count":   result.TeamCount,
+		"user_count":   result.UserCount,
+		"menu_count":   result.MenuCount,
+		"action_count": result.ActionCount,
+	}))
+}
+
+func (h *Handler) ListVersions(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能包ID")
+		c.JSON(status, resp)
+		return
+	}
+	current := parsePositiveInt(c.Query("current"), 1)
+	size := parsePositiveInt(c.Query("size"), 20)
+	items, total, err := h.service.ListVersions(id, current, size)
+	if err != nil {
+		if err == ErrFeaturePackageNotFound {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("List feature package versions failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取版本历史失败")
+		c.JSON(status, resp)
+		return
+	}
+	records := make([]gin.H, 0, len(items))
+	for _, item := range items {
+		records = append(records, gin.H{
+			"id":          item.ID.String(),
+			"package_id":  item.PackageID.String(),
+			"version_no":  item.VersionNo,
+			"change_type": item.ChangeType,
+			"snapshot":    item.Snapshot,
+			"operator_id": uuidPtrToString(item.OperatorID),
+			"request_id":  item.RequestID,
+			"created_at":  item.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"records": records,
+		"total":   total,
+		"current": current,
+		"size":    size,
+	}))
+}
+
+func (h *Handler) Rollback(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能包ID")
+		c.JSON(status, resp)
+		return
+	}
+	var req struct {
+		VersionID string `json:"version_id"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	versionID, err := uuid.Parse(strings.TrimSpace(req.VersionID))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的版本ID")
+		c.JSON(status, resp)
+		return
+	}
+	operatorID, _ := currentUserID(c)
+	stats, err := h.service.Rollback(id, versionID, operatorID, strings.TrimSpace(c.GetHeader("X-Request-ID")))
+	if err != nil {
+		if err == ErrFeaturePackageNotFound {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Rollback feature package failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "回滚功能包版本失败: "+err.Error())
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"refresh_stats": refreshStatsToMap(stats),
+	}))
+}
+
+func (h *Handler) ListRiskAudits(c *gin.Context) {
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能包ID")
+		c.JSON(status, resp)
+		return
+	}
+	current := parsePositiveInt(c.Query("current"), 1)
+	size := parsePositiveInt(c.Query("size"), 20)
+	items, total, err := h.service.ListRiskAudits(id, current, size)
+	if err != nil {
+		h.logger.Error("List feature package risk audits failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取最近变更失败")
+		c.JSON(status, resp)
+		return
+	}
+	records := make([]gin.H, 0, len(items))
+	for _, item := range items {
+		records = append(records, gin.H{
+			"id":             item.ID.String(),
+			"operator_id":    uuidPtrToString(item.OperatorID),
+			"object_type":    item.ObjectType,
+			"object_id":      item.ObjectID,
+			"operation_type": item.OperationType,
+			"before_summary": item.BeforeSummary,
+			"after_summary":  item.AfterSummary,
+			"impact_summary": item.ImpactSummary,
+			"request_id":     item.RequestID,
+			"created_at":     item.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"records": records,
+		"total":   total,
+		"current": current,
+		"size":    size,
+	}))
+}
+
 func (h *Handler) Get(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {
@@ -140,7 +304,8 @@ func (h *Handler) Update(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.service.Update(id, &req); err != nil {
+	stats, err := h.service.Update(id, &req)
+	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
 			c.JSON(status, resp)
@@ -156,7 +321,9 @@ func (h *Handler) Update(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"refresh_stats": refreshStatsToMap(stats),
+	}))
 }
 
 func (h *Handler) Delete(c *gin.Context) {
@@ -166,7 +333,8 @@ func (h *Handler) Delete(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.service.Delete(id); err != nil {
+	stats, err := h.service.Delete(id)
+	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
 			c.JSON(status, resp)
@@ -182,7 +350,9 @@ func (h *Handler) Delete(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"refresh_stats": refreshStatsToMap(stats),
+	}))
 }
 
 func (h *Handler) GetPackageKeys(c *gin.Context) {
@@ -259,7 +429,8 @@ func (h *Handler) SetPackageChildren(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.service.SetPackageChildren(id, childPackageIDs); err != nil {
+	stats, err := h.service.SetPackageChildren(id, childPackageIDs)
+	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
 			c.JSON(status, resp)
@@ -270,7 +441,9 @@ func (h *Handler) SetPackageChildren(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"refresh_stats": refreshStatsToMap(stats),
+	}))
 }
 
 func (h *Handler) SetPackageKeys(c *gin.Context) {
@@ -292,7 +465,8 @@ func (h *Handler) SetPackageKeys(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.service.SetPackageKeys(id, actionIDs); err != nil {
+	stats, err := h.service.SetPackageKeys(id, actionIDs)
+	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
 			c.JSON(status, resp)
@@ -303,7 +477,9 @@ func (h *Handler) SetPackageKeys(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"refresh_stats": refreshStatsToMap(stats),
+	}))
 }
 
 func (h *Handler) GetPackageMenus(c *gin.Context) {
@@ -350,7 +526,8 @@ func (h *Handler) SetPackageMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.service.SetPackageMenus(id, menuIDs); err != nil {
+	stats, err := h.service.SetPackageMenus(id, menuIDs)
+	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
 			c.JSON(status, resp)
@@ -361,7 +538,9 @@ func (h *Handler) SetPackageMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"refresh_stats": refreshStatsToMap(stats),
+	}))
 }
 
 func (h *Handler) GetPackageTeams(c *gin.Context) {
@@ -408,7 +587,8 @@ func (h *Handler) SetPackageTeams(c *gin.Context) {
 		return
 	}
 	grantedBy, _ := currentUserID(c)
-	if err := h.service.SetPackageTeams(id, teamIDs, grantedBy); err != nil {
+	stats, err := h.service.SetPackageTeams(id, teamIDs, grantedBy)
+	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
 			c.JSON(status, resp)
@@ -419,7 +599,9 @@ func (h *Handler) SetPackageTeams(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"refresh_stats": refreshStatsToMap(stats),
+	}))
 }
 
 func (h *Handler) GetTeamPackages(c *gin.Context) {
@@ -466,7 +648,8 @@ func (h *Handler) SetTeamPackages(c *gin.Context) {
 		return
 	}
 	grantedBy, _ := currentUserID(c)
-	if err := h.service.SetTeamPackages(teamID, packageIDs, grantedBy); err != nil {
+	stats, err := h.service.SetTeamPackages(teamID, packageIDs, grantedBy)
+	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "存在无效的功能包")
 			c.JSON(status, resp)
@@ -477,7 +660,9 @@ func (h *Handler) SetTeamPackages(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"refresh_stats": refreshStatsToMap(stats),
+	}))
 }
 
 func packageToMap(item *user.FeaturePackage) gin.H {
@@ -599,6 +784,18 @@ func parseUUIDSlice(items []string) ([]uuid.UUID, error) {
 	return result, nil
 }
 
+func parsePositiveInt(value string, fallback int) int {
+	target := strings.TrimSpace(value)
+	if target == "" {
+		return fallback
+	}
+	var parsed int
+	if _, err := fmt.Sscanf(target, "%d", &parsed); err != nil || parsed <= 0 {
+		return fallback
+	}
+	return parsed
+}
+
 func uuidListToStrings(items []uuid.UUID) []string {
 	result := make([]string, 0, len(items))
 	for _, item := range items {
@@ -621,4 +818,19 @@ func currentUserID(c *gin.Context) (*uuid.UUID, bool) {
 		return nil, false
 	}
 	return &userID, true
+}
+
+func refreshStatsToMap(stats *permissionrefresh.RefreshStats) gin.H {
+	if stats == nil {
+		return gin.H{}
+	}
+	return gin.H{
+		"requested_package_count": stats.RequestedPackageCount,
+		"impacted_package_count":  stats.ImpactedPackageCount,
+		"role_count":              stats.RoleCount,
+		"team_count":              stats.TeamCount,
+		"user_count":              stats.UserCount,
+		"elapsed_milliseconds":    stats.ElapsedMilliseconds,
+		"finished_at":             stats.FinishedAt,
+	}
 }

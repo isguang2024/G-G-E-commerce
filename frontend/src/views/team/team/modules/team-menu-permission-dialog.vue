@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
     :title="`团队菜单边界 - ${teamName}`"
@@ -290,7 +290,7 @@ function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem) {
 .package-card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   padding: 12px 14px;
   border-radius: 12px;
   background: #f8fafc;
@@ -321,3 +321,4 @@ function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem) {
   overflow: auto;
 }
 </style>
+

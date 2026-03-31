@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="art-full-height">
     <div class="box-border flex gap-4 h-full max-md:block max-md:gap-0 max-md:h-auto">
       <div class="flex-shrink-0 w-58 h-full max-md:w-full max-md:h-auto max-md:mb-5">
@@ -48,88 +48,99 @@
       </div>
 
       <div class="flex flex-col flex-grow min-w-0">
-        <ApiEndpointSearch
-          v-show="showSearchBar"
-          v-model="searchForm"
-          @search="handleTableSearch"
-          @reset="resetTableQuery"
-        />
-        <ElCard
-          class="flex flex-col flex-1 min-h-0 art-table-card api-table-card"
-          shadow="never"
-          :style="{ marginTop: showSearchBar ? '12px' : '0' }"
-        >
-          <AdminWorkspaceHero
-            title="API 管理"
-            description="维护接口注册、分类、权限键与运行时状态，未注册和失效接口也在同一页诊断。"
-            :metrics="summaryMetrics"
-          >
-            <div class="api-hero-actions">
-              <div class="api-hero-actions__group">
-                <ElButton
-                  v-action="'system.api_registry.sync'"
-                  type="primary"
-                  @click="openCreateDialog"
-                  v-ripple
-                >
-                  新增 API
-                </ElButton>
-                <ElButton
-                  v-action="'system.api_registry.sync'"
-                  plain
-                  :loading="syncing"
-                  @click="handleSync"
-                  v-ripple
-                >
-                  同步 API
-                </ElButton>
-              </div>
-              <div class="api-hero-actions__group api-hero-actions__group--secondary">
-                <ElButton
-                  v-action="'system.api_registry.view'"
-                  plain
-                  @click="openUnregisteredDialog"
-                  v-ripple
-                >
-                  未注册 API
-                  <span v-if="unregisteredCount > 0" class="toolbar-count"
-                    >({{ unregisteredCount }})</span
-                  >
-                </ElButton>
-                <ElButton
-                  v-action="'system.api_registry.sync'"
-                  plain
-                  type="danger"
-                  :loading="cleaningStale"
-                  @click="handleCleanupStale"
-                  v-ripple
-                >
-                  清理失效 API
-                  <span v-if="staleCount > 0" class="toolbar-count">({{ staleCount }})</span>
-                </ElButton>
-              </div>
-            </div>
-          </AdminWorkspaceHero>
-
-          <ArtTableHeader
-            v-model:columns="columnChecks"
-            v-model:showSearchBar="showSearchBar"
-            :loading="loading"
-            @refresh="refreshData"
+        <div class="page-top-stack">
+          <ApiEndpointSearch
+            v-show="showSearchBar"
+            v-model="searchForm"
+            @search="handleTableSearch"
+            @reset="resetTableQuery"
           />
 
-          <div class="api-table-main">
-            <ArtTable
+          <ElCard
+            class="flex flex-col flex-1 min-h-0 art-table-card api-table-card"
+            shadow="never"
+          >
+            <AdminWorkspaceHero
+              title="API 管理"
+              description="维护接口注册、分类、权限键与运行时状态，未注册和失效接口也在同一页诊断。"
+              :metrics="summaryMetrics"
+            >
+              <div class="api-hero-actions">
+                <div class="api-hero-actions__group">
+                  <ElButton
+                    v-action="'system.api_registry.sync'"
+                    type="primary"
+                    @click="openCreateDialog"
+                    v-ripple
+                  >
+                    新增 API
+                  </ElButton>
+                  <ElButton
+                    v-action="'system.api_registry.sync'"
+                    plain
+                    :loading="syncing"
+                    @click="handleSync"
+                    v-ripple
+                  >
+                    同步 API
+                  </ElButton>
+                </div>
+
+                <div class="api-hero-actions__group api-hero-actions__group--secondary">
+                  <ElButton
+                    v-action="'system.api_registry.sync'"
+                    plain
+                    @click="openScanConfigDialog"
+                    v-ripple
+                  >
+                    扫描配置
+                  </ElButton>
+                  <ElButton
+                    v-action="'system.api_registry.view'"
+                    plain
+                    @click="openUnregisteredDialog"
+                    v-ripple
+                  >
+                    未注册 API
+                    <span v-if="unregisteredCount > 0" class="toolbar-count">
+                      ({{ unregisteredCount }})
+                    </span>
+                  </ElButton>
+                  <ElButton
+                    v-action="'system.api_registry.sync'"
+                    plain
+                    type="danger"
+                    :loading="cleaningStale"
+                    @click="handleCleanupStale"
+                    v-ripple
+                  >
+                    清理失效 API
+                    <span v-if="staleCount > 0" class="toolbar-count">({{ staleCount }})</span>
+                  </ElButton>
+                </div>
+              </div>
+            </AdminWorkspaceHero>
+
+            <ArtTableHeader
+              v-model:columns="columnChecks"
+              v-model:showSearchBar="showSearchBar"
               :loading="loading"
-              :data="data"
-              :columns="columns"
-              :pagination="pagination"
-              size="small"
-              @pagination:size-change="handleSizeChange"
-              @pagination:current-change="handleCurrentChange"
+              @refresh="refreshData"
             />
-          </div>
-        </ElCard>
+
+            <div class="api-table-main">
+              <ArtTable
+                :loading="loading"
+                :data="data"
+                :columns="columns"
+                :pagination="pagination"
+                size="small"
+                @pagination:size-change="handleSizeChange"
+                @pagination:current-change="handleCurrentChange"
+              />
+            </div>
+          </ElCard>
+        </div>
       </div>
     </div>
 
@@ -467,10 +478,10 @@
     <ElDialog v-model="unregisteredVisible" title="未注册 API" width="980px" destroy-on-close>
       <div class="unregistered-toolbar">
         <ElSelect
+          class="unregistered-method-select"
           v-model="unregisteredQuery.method"
           clearable
           placeholder="Method"
-          style="width: 120px"
         >
           <ElOption v-for="item in methodOptions" :key="item" :label="item" :value="item" />
         </ElSelect>
@@ -526,6 +537,45 @@
           @size-change="handleUnregisteredSizeChange"
         />
       </div>
+    </ElDialog>
+
+    <ElDialog v-model="scanConfigVisible" title="未注册 API 扫描配置（实验功能）" width="560px" destroy-on-close>
+      <ElForm label-width="140px">
+        <ElAlert
+          type="warning"
+          :closable="false"
+          show-icon
+          title="当前仅保存配置，不代表已启用后台自动调度。"
+          style="margin-bottom: 12px"
+        />
+        <ElFormItem label="启用自动扫描">
+          <ElSwitch v-model="scanConfig.enabled" />
+        </ElFormItem>
+        <ElAlert
+          v-if="scanConfig.enabled"
+          type="info"
+          :closable="false"
+          show-icon
+          title="开关开启后，仍需后台调度器接入才会真正自动执行。"
+          style="margin-bottom: 12px"
+        />
+        <ElFormItem label="扫描频率（分钟）">
+          <ElInputNumber v-model="scanConfig.frequencyMinutes" :min="5" :max="1440" style="width: 100%" />
+        </ElFormItem>
+        <ElFormItem label="默认分类ID">
+          <ElInput v-model="scanConfig.defaultCategoryId" placeholder="可选，自动归类" />
+        </ElFormItem>
+        <ElFormItem label="默认权限键">
+          <ElInput v-model="scanConfig.defaultPermissionKey" placeholder="可选，自动绑定权限键" />
+        </ElFormItem>
+        <ElFormItem label="标记无权限要求">
+          <ElSwitch v-model="scanConfig.markAsNoPermission" />
+        </ElFormItem>
+      </ElForm>
+      <template #footer>
+        <ElButton @click="scanConfigVisible = false">取消</ElButton>
+        <ElButton type="primary" :loading="scanConfigSaving" @click="saveScanConfig">保存</ElButton>
+      </template>
     </ElDialog>
 
     <ElDrawer
@@ -589,7 +639,9 @@
     fetchGetApiEndpointOverview,
     fetchGetPermissionActionOptions,
     fetchGetStaleApiEndpointList,
+    fetchGetUnregisteredApiScanConfig,
     fetchGetUnregisteredApiRouteList,
+    fetchSaveUnregisteredApiScanConfig,
     fetchSyncApiEndpoints,
     fetchUpdateApiEndpoint,
     fetchUpdateApiEndpointCategory,
@@ -605,6 +657,7 @@
     ElMessageBox,
     ElOption,
     ElSelect,
+    ElSwitch,
     ElTooltip,
     ElTag
   } from 'element-plus'
@@ -658,6 +711,8 @@
   const permissionBindVisible = ref(false)
   const permissionDialogMode = ref<'add' | 'remove'>('add')
   const unregisteredVisible = ref(false)
+  const scanConfigVisible = ref(false)
+  const scanConfigSaving = ref(false)
   const staleDialogVisible = ref(false)
   const unregisteredLoading = ref(false)
   const shouldRefreshUnregistered = ref(false)
@@ -673,6 +728,13 @@
     permissionActionId: ''
   })
   const unregisteredRoutes = ref<APIUnregisteredRouteItem[]>([])
+  const scanConfig = reactive<Api.SystemManage.APIUnregisteredScanConfig>({
+    enabled: false,
+    frequencyMinutes: 60,
+    defaultCategoryId: '',
+    defaultPermissionKey: '',
+    markAsNoPermission: false
+  })
   const staleCandidates = ref<APIEndpointItem[]>([])
   const selectedStaleIds = ref<string[]>([])
   const totalCount = ref(0)
@@ -1494,6 +1556,44 @@
     await loadUnregisteredRoutes()
   }
 
+  async function openScanConfigDialog() {
+    scanConfigVisible.value = true
+    try {
+      const config = await fetchGetUnregisteredApiScanConfig()
+      scanConfig.enabled = Boolean(config.enabled)
+      scanConfig.frequencyMinutes = Number(config.frequencyMinutes || 60)
+      scanConfig.defaultCategoryId = config.defaultCategoryId || ''
+      scanConfig.defaultPermissionKey = config.defaultPermissionKey || ''
+      scanConfig.markAsNoPermission = Boolean(config.markAsNoPermission)
+    } catch (error: any) {
+      ElMessage.error(error?.message || '获取扫描配置失败')
+    }
+  }
+
+  async function saveScanConfig() {
+    scanConfigSaving.value = true
+    try {
+      const saved = await fetchSaveUnregisteredApiScanConfig({
+        enabled: scanConfig.enabled,
+        frequencyMinutes: scanConfig.frequencyMinutes,
+        defaultCategoryId: (scanConfig.defaultCategoryId || '').trim(),
+        defaultPermissionKey: (scanConfig.defaultPermissionKey || '').trim(),
+        markAsNoPermission: scanConfig.markAsNoPermission
+      })
+      scanConfig.enabled = Boolean(saved.enabled)
+      scanConfig.frequencyMinutes = Number(saved.frequencyMinutes || 60)
+      scanConfig.defaultCategoryId = saved.defaultCategoryId || ''
+      scanConfig.defaultPermissionKey = saved.defaultPermissionKey || ''
+      scanConfig.markAsNoPermission = Boolean(saved.markAsNoPermission)
+      scanConfigVisible.value = false
+      ElMessage.success('扫描配置已保存')
+    } catch (error: any) {
+      ElMessage.error(error?.message || '保存扫描配置失败')
+    } finally {
+      scanConfigSaving.value = false
+    }
+  }
+
   async function handleUnregisteredSearch() {
     unregisteredPagination.current = 1
     await loadUnregisteredRoutes()
@@ -1761,7 +1861,7 @@
   .tree-card :deep(.el-card__body) {
     flex: 1;
     min-height: 0;
-    padding: 10px 2px 10px 10px;
+    padding: 12px 2px 12px 12px;
   }
 
   .tree-card :deep(.el-scrollbar) {
@@ -1806,7 +1906,7 @@
     align-items: stretch;
     justify-content: space-between;
     gap: 6px;
-    padding-right: 10px;
+    padding-right: 12px;
     font-size: 13px;
   }
 
@@ -1894,23 +1994,23 @@
   .api-hero-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
   }
 
   .api-hero-actions__group {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
   }
 
   .api-hero-actions__group--secondary {
-    padding-left: 10px;
+    padding-left: 12px;
     margin-left: 2px;
     border-left: 1px solid rgb(203 213 225 / 0.9);
   }
 
   .api-table-card :deep(.table-header-left) {
-    gap: 10px;
+    gap: 12px;
     row-gap: 8px;
   }
 
@@ -2163,10 +2263,14 @@
 
   .unregistered-toolbar {
     display: grid;
-    grid-template-columns: 120px repeat(3, minmax(0, 1fr)) auto auto;
+    grid-template-columns: minmax(100px, 140px) repeat(3, minmax(0, 1fr)) auto auto;
     gap: 12px;
     align-items: center;
     margin-bottom: 16px;
+  }
+
+  .unregistered-method-select {
+    width: 100%;
   }
 
   .unregistered-footer {
@@ -2198,7 +2302,7 @@
   .stale-dialog-footer-meta {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     min-width: 0;
   }
 
@@ -2276,3 +2380,4 @@
     }
   }
 </style>
+

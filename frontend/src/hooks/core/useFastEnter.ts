@@ -22,6 +22,7 @@ import { useMenuSpaceStore } from '@/store/modules/menu-space'
 import type { FastEnterApplication, FastEnterQuickLink } from '@/types/config'
 import { findRegisteredRouteByPath, hasRegisteredRoutePath } from '@/utils/router'
 
+const FAST_ENTER_DEFAULT_MIN_WIDTH = 1450
 const COMPACT_MESSAGE_WORKSPACE_ROUTE_NAMES = new Set([
   'MessageTemplateManage',
   'MessageRecordManage',
@@ -110,7 +111,7 @@ export function useFastEnter() {
 
   // 获取最小显示宽度
   const minWidth = computed(() => {
-    return fastEnterConfig.value?.minWidth || 1200
+    return fastEnterConfig.value?.minWidth || FAST_ENTER_DEFAULT_MIN_WIDTH
   })
 
   const openNavigationTarget = async (routeName?: string, link?: string) => {

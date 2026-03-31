@@ -121,11 +121,11 @@
     if (!props.packageId) return
     saving.value = true
     try {
-      await fetchSetFeaturePackageActions(
+      const stats = await fetchSetFeaturePackageActions(
         props.packageId,
         expandSelectedValues(selectedIds.value, filteredActions.value)
       )
-      ElMessage.success('功能包功能范围已保存')
+      ElMessage.success(formatRefreshMessage(stats))
       emit('success')
       visible.value = false
     } catch (error: any) {
@@ -205,6 +205,10 @@
     if (contextType === 'common') return '平台或团队'
     if (contextType === 'platform,team' || contextType === 'team,platform') return '平台或团队'
     return '当前上下文'
+  }
+
+  function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
+    return `本次增量刷新：角色 ${stats?.roleCount || 0}、团队 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 </script>
 

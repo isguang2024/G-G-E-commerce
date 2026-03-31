@@ -107,6 +107,7 @@
   import { ElNotification, type FormInstance, type FormRules } from 'element-plus'
   import { useSettingStore } from '@/store/modules/setting'
   import { resetRouterState } from '@/router/guards/beforeEach'
+  import { RoutesAlias } from '@/router/routesAlias'
 
   defineOptions({ name: 'Login' })
 
@@ -181,16 +182,90 @@
 
   const loading = ref(false)
 
+  const normalizeRedirect = (raw?: string) => {
+    const cleanPath = `${raw || ''}`.trim()
+    if (!cleanPath) return '/'
+
+    let current = cleanPath
+    const decodeOnce = (value: string) => {
+      try {
+        return decodeURIComponent(value)
+      } catch (_error) {
+        return value
+      }
+    }
+
+    let safeIterations = 0
+    while (current.includes('redirect=') && safeIterations < 5) {
+      const redirectIndex = current.indexOf('redirect=')
+      current = decodeOnce(current.slice(redirectIndex + 'redirect='.length))
+      safeIterations += 1
+    }
+
+    const normalized = decodeOnce(current).trim()
+    if (!normalized || !normalized.startsWith('/')) return '/'
+    if (normalized.startsWith('/auth/login')) return '/'
+
+    return normalized
+  }
+
+  const gotoAfterLogin = async (landingPath: string) => {
+    const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(landingPath)
+    if (nextTarget.mode === 'location') {
+      window.location.assign(nextTarget.target)
+      return
+    }
+
+    const fallbackUrl = () => {
+      const fallback = new URL(window.location.href)
+      fallback.pathname = '/'
+      fallback.hash = `#${landingPath.startsWith('/') ? landingPath : `/${landingPath}`}`
+      return fallback.toString()
+    }
+    const fallbackFallbackUrl = fallbackUrl()
+
+    const hasJumpedOut = () => {
+      const currentPath = router.currentRoute.value.path
+      return currentPath !== RoutesAlias.Login
+    }
+
+    try {
+      await router.replace(landingPath)
+      await nextTick()
+      if (!hasJumpedOut()) {
+        setTimeout(() => {
+          if (!hasJumpedOut()) {
+            window.location.assign(fallbackFallbackUrl)
+          }
+        }, 900)
+      }
+    } catch (error) {
+      console.warn('[Login] 登录导航失败，尝试兜底跳转:', error)
+      window.location.assign(fallbackFallbackUrl)
+    }
+  }
+
+  const safeInitLoginContext = async (preferredTenantId: string) => {
+    try {
+      await tenantStore.loadMyTeams({
+        preferredTenantId
+      })
+      menuSpaceStore.syncRuntimeHost()
+      await menuSpaceStore.refreshRuntimeConfig(true)
+      await menuSpaceStore.syncResolvedCurrentSpace()
+    } catch (error) {
+      console.warn('[Login] 登录初始化上下文失败，仍允许进入应用:', error)
+    }
+  }
+
   // 登录
   const handleSubmit = async () => {
     if (!formRef.value) return
 
     try {
-      // 表单验证
       const valid = await formRef.value.validate()
       if (!valid) return
 
-      // 拖拽验证
       if (!isPassing.value) {
         isClickPass.value = true
         return
@@ -198,30 +273,24 @@
 
       loading.value = true
 
-      // 登录请求（使用 username 作为登录凭证）
       const { username, password } = formData
-
       const response = await fetchLogin({
-        username: username, // 使用 username 字段
+        username,
         password
       })
 
-      // 验证token
       if (!response.access_token) {
         throw new Error('Login failed - no token received')
       }
 
-      // 存储 token 和登录状态
       resetRouterState(0)
       userStore.setToken(response.access_token, response.refresh_token)
       userStore.setLoginStatus(true)
 
-      // 存储用户信息（映射后端返回的数据）
       if (response.user) {
         userStore.syncLoginUserIdentity(response.user.id)
         const userInfo: Api.Auth.UserInfo = {
           ...response.user,
-          // 兼容字段映射
           userId: response.user.id,
           userName: response.user.username || response.user.email,
           avatar: response.user.avatar_url,
@@ -233,42 +302,25 @@
         tenantStore.setPlatformAccess(hasPlatformAccessByUserInfo(userInfo))
       }
 
-      await tenantStore.loadMyTeams({
-        preferredTenantId: response.user?.current_tenant_id || ''
-      })
-      menuSpaceStore.syncRuntimeHost()
-      await menuSpaceStore.refreshRuntimeConfig(true)
-      await menuSpaceStore.syncResolvedCurrentSpace()
-
-      // 登录成功处理
       persistRememberedCredentials()
       const displayName =
         response.user?.nickname || response.user?.username || response.user?.email || systemName
       showLoginSuccessNotice(displayName)
 
-      // 获取 redirect 参数，如果存在则跳转到指定页面，否则跳转到首页
-      const redirect = route.query.redirect as string
-      const landingPath = redirect || '/'
-      // 登录后先交给路由守卫完成 runtime/navigation 注册，再决定是否进入 404；
-      // 这里不再用 router.resolve 预探测，避免动态路由尚未挂载时把合法跳转误报成 warning。
-      const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(landingPath)
-      if (nextTarget.mode === 'router') {
-        router.push(landingPath)
-      } else {
-        window.location.assign(nextTarget.target)
-      }
+      await safeInitLoginContext(response.user?.current_tenant_id || '')
+      const landingPath = normalizeRedirect(route.query.redirect as string)
+      await gotoAfterLogin(landingPath)
     } catch (error) {
-      // 处理 HttpError
       if (error instanceof HttpError) {
-        // console.log(error.code)
+        // handle silently
       } else {
-        // 处理非 HttpError
-        // ElMessage.error('登录失败，请稍后重试')
         console.error('[Login] Unexpected error:', error)
       }
     } finally {
       loading.value = false
-      resetDragVerify()
+      if (dragVerify.value && typeof dragVerify.value.reset === 'function') {
+        resetDragVerify()
+      }
     }
   }
 

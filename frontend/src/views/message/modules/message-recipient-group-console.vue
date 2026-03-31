@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="message-group-page art-full-height">
     <AdminWorkspaceHero :title="pageTitle" :description="pageDescription" :metrics="heroMetrics">
       <div class="message-group-hero__actions">
@@ -28,7 +28,7 @@
 
       <div v-loading="loading" class="message-group-board">
         <button
-          v-for="item in list"
+          v-for="item in pagedList"
           :key="item.id"
           type="button"
           class="message-group-card"
@@ -71,6 +71,13 @@
 
         <ElEmpty v-if="!loading && !list.length" description="当前还没有可用接收组" />
       </div>
+
+      <WorkspacePagination
+        v-if="list.length > 0"
+        v-model:current-page="pagination.current"
+        v-model:page-size="pagination.size"
+        :total="list.length"
+      />
     </section>
 
     <ElDrawer
@@ -231,9 +238,10 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, onMounted, ref } from 'vue'
+  import { computed, onMounted, reactive, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
+  import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import MessageWorkspaceNav from '@/views/message/modules/message-workspace-nav.vue'
   import {
     fetchCreateMessageRecipientGroup,
@@ -274,6 +282,10 @@
   const saving = ref(false)
   const sequence = ref(1)
   const list = ref<Api.Message.MessageRecipientGroupItem[]>([])
+  const pagination = reactive({
+    current: 1,
+    size: 8
+  })
   const drawerVisible = ref(false)
   const drawerEditingId = ref('')
   const drawerModel = ref<DrawerGroupModel | null>(null)
@@ -418,13 +430,20 @@
         skipTenantHeader: skipTenantHeader.value
       })
       list.value = result.records || []
+      pagination.current = 1
     } catch (error) {
       list.value = []
       loadError.value = '接收组暂时不可用，稍后重试或刷新状态。'
+      pagination.current = 1
     } finally {
       loading.value = false
     }
   }
+
+  const pagedList = computed(() => {
+    const start = (pagination.current - 1) * pagination.size
+    return list.value.slice(start, start + pagination.size)
+  })
 
   const openCreateDrawer = () => {
     drawerEditingId.value = ''
@@ -540,23 +559,30 @@
   onMounted(() => {
     loadGroups()
   })
+
+  watch(
+    () => pagination.size,
+    () => {
+      pagination.current = 1
+    }
+  )
 </script>
 
 <style scoped lang="scss">
   .message-group-page {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 10px;
   }
 
   .message-group-inline-alert {
-    margin-top: -4px;
+    margin-top: 0;
   }
 
   .message-group-hero__actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
   }
 
   .message-group-shell {
@@ -734,3 +760,4 @@
     }
   }
 </style>
+

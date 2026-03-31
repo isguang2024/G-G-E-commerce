@@ -317,6 +317,11 @@ func (h *UserHandler) Create(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
+		if err == ErrEmailExists {
+			status, resp := errcode.Response(errcode.ErrEmailExists)
+			c.JSON(status, resp)
+			return
+		}
 		h.logger.Error("Create user failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "创建用户失败")
 		c.JSON(status, resp)

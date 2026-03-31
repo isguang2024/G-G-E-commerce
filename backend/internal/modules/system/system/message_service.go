@@ -850,12 +850,7 @@ func (s *messageService) GetDispatchOptions(userID uuid.UUID, tenantID *uuid.UUI
 		Select("id", "template_key", "name", "description", "message_type", "owner_scope", "audience_type", "title_template", "summary_template", "content_template").
 		Where("status = ?", "normal")
 	if tenantID != nil {
-		templateQuery = templateQuery.Where(
-			"owner_scope = ? OR (owner_scope = ? AND owner_tenant_id = ?)",
-			"platform",
-			"team",
-			*tenantID,
-		)
+		templateQuery = templateQuery.Where("owner_scope = ? AND owner_tenant_id = ?", "team", *tenantID)
 	} else {
 		templateQuery = templateQuery.Where("owner_scope = ?", "platform")
 	}

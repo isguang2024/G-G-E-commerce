@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
     :title="`功能包绑定菜单 - ${packageName}`"
@@ -235,8 +235,8 @@
     saving.value = true
     try {
       const menuIds = expandedSelectedMenuIds.value
-      await fetchSetFeaturePackageMenus(props.packageId, menuIds)
-      ElMessage.success('功能包绑定菜单已保存')
+      const stats = await fetchSetFeaturePackageMenus(props.packageId, menuIds)
+      ElMessage.success(formatRefreshMessage(stats))
       emit('success')
       visible.value = false
     } catch (error: any) {
@@ -255,6 +255,10 @@
 
   function clearMenuSelection() {
     selectedMenuNodeValues.value = []
+  }
+
+  function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
+    return `本次增量刷新：角色 ${stats?.roleCount || 0}、团队 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 
   function normalizeMenuOptions(items: RawMenuNode[], selectedSet: Set<string>): MenuOption[] {
@@ -419,7 +423,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
+    gap: 12px;
   }
 
   .panel-node__main {
@@ -454,3 +458,4 @@
     font-size: 13px;
   }
 </style>
+

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDialog
     :model-value="visible"
     title="删除菜单"
@@ -264,7 +264,7 @@
   .menu-delete-dialog__footer {
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 12px;
   }
 
   :deep(.el-radio.is-bordered) {
@@ -276,7 +276,7 @@
 
   :deep(.el-radio__label) {
     width: 100%;
-    padding-left: 10px;
+    padding-left: 12px;
   }
 
   :deep(.el-select) {
@@ -291,3 +291,4 @@
     width: 100%;
   }
 </style>
+

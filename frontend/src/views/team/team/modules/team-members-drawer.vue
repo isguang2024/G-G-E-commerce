@@ -42,7 +42,7 @@
       <template #header>
         <span>成员列表（{{ filteredMembers.length }}）</span>
       </template>
-      <ElTable v-loading="loading" :data="filteredMembers" stripe>
+      <ElTable v-loading="loading" :data="pagedMembers" stripe>
         <ElTableColumn prop="userName" label="用户名" min-width="100" />
         <ElTableColumn prop="nickName" label="昵称" width="100" />
         <ElTableColumn prop="userEmail" label="邮箱" min-width="140" show-overflow-tooltip />
@@ -62,11 +62,18 @@
         </ElTableColumn>
         <ElTableColumn prop="joinedAt" label="加入时间" width="160" />
       </ElTable>
+      <WorkspacePagination
+        v-model:current-page="pagination.current"
+        v-model:page-size="pagination.size"
+        :total="filteredMembers.length"
+        compact
+      />
     </ElCard>
   </ElDrawer>
 </template>
 
 <script setup lang="ts">
+  import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import { fetchGetTeamMembers, fetchGetMyTeamRoles } from '@/api/team'
   import { ElMessage } from 'element-plus'
   import { ref, computed, reactive } from 'vue'
@@ -94,6 +101,10 @@
   const members = ref<Api.SystemManage.TeamMemberItem[]>([])
   const loading = ref(false)
   const teamRoles = ref<string[]>([])
+  const pagination = reactive({
+    current: 1,
+    size: 10
+  })
 
   const searchForm = reactive({
     userId: '',
@@ -121,15 +132,22 @@
   // 过滤后的成员列表（用于显示）
   const filteredMembers = computed(() => members.value)
 
+  const pagedMembers = computed(() => {
+    const start = (pagination.current - 1) * pagination.size
+    return filteredMembers.value.slice(start, start + pagination.size)
+  })
+
   async function loadMembers() {
     if (!props.teamId) return
     loading.value = true
     try {
       const res = await fetchGetTeamMembers(props.teamId, searchParams.value)
       members.value = res ?? []
+      pagination.current = 1
     } catch (e: any) {
       ElMessage.error(e?.message || '获取成员列表失败')
       members.value = []
+      pagination.current = 1
     } finally {
       loading.value = false
     }

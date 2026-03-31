@@ -1,17 +1,13 @@
-<template>
+﻿<template>
   <div class="user-page art-full-height">
-    <UserSearch
-      v-show="showSearchBar"
-      v-model="searchForm"
-      @search="handleSearch"
-      @reset="resetSearchParams"
-    />
+    <div class="page-top-stack">
+      <UserSearch
+        v-show="showSearchBar"
+        v-model="searchForm"
+        @search="handleSearch"
+        @reset="resetSearchParams"
+      />
 
-    <ElCard
-      class="art-table-card"
-      shadow="never"
-      :style="{ marginTop: showSearchBar ? '12px' : '0' }"
-    >
       <AdminWorkspaceHero
         title="用户管理"
         description="管理平台账号、角色归属、菜单裁剪和权限测试，先在这里确认平台身份链路。"
@@ -23,7 +19,12 @@
           </ElButton>
         </div>
       </AdminWorkspaceHero>
+    </div>
 
+    <ElCard
+      class="art-table-card"
+      shadow="never"
+    >
       <ArtTableHeader
         v-model:columns="columnChecks"
         v-model:showSearchBar="showSearchBar"
@@ -105,7 +106,7 @@
 
   // 弹窗相关
   const dialogType = ref<DialogType>('add')
-  const showSearchBar = ref(true)
+  const showSearchBar = ref(false)
   const dialogVisible = ref(false)
   const currentUserData = ref<Partial<UserListItem>>({})
   const packageDialogVisible = ref(false)
@@ -471,7 +472,7 @@
   .user-hero-actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 12px;
   }
 
   .user-toolbar-tip {
@@ -479,3 +480,4 @@
     color: var(--el-text-color-secondary);
   }
 </style>
+

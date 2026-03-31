@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="menu-space-page art-full-height" v-loading="loading">
     <AdminWorkspaceHero
       title="菜单空间"
@@ -6,7 +6,7 @@
       :metrics="summaryMetrics"
     >
       <div class="menu-space-hero-actions">
-        <ElSelect v-model="spaceMode" style="width: 140px">
+        <ElSelect v-model="spaceMode" class="menu-space-mode-select">
           <ElOption label="单空间模式" value="single" />
           <ElOption label="多空间模式" value="multi" />
         </ElSelect>
@@ -952,15 +952,19 @@
     gap: 12px;
   }
 
+  .menu-space-mode-select {
+    width: clamp(132px, 18vw, 168px);
+  }
+
   .menu-space-inline-alert {
-    margin-top: 16px;
+    margin-top: 0;
   }
 
   .menu-space-board {
     display: grid;
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
     gap: 16px;
-    margin-top: 16px;
+    margin-top: 0;
   }
 
   .menu-space-panel {
@@ -1055,7 +1059,7 @@
   }
 
   .menu-space-item__desc {
-    margin-top: 10px;
+    margin-top: 12px;
     font-size: 13px;
     line-height: 1.7;
     color: var(--art-gray-700);
@@ -1172,3 +1176,4 @@
     }
   }
 </style>
+

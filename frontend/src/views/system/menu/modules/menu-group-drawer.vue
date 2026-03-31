@@ -32,7 +32,7 @@
         </div>
       </div>
 
-      <ElTable :data="items" border v-loading="loading" class="group-table">
+      <ElTable :data="pagedItems" border v-loading="loading" class="group-table">
         <ElTableColumn prop="name" label="分组名称" min-width="220" />
         <ElTableColumn prop="sortOrder" label="排序" width="90" align="center" />
         <ElTableColumn label="操作" width="160" align="center">
@@ -44,14 +44,22 @@
           </template>
         </ElTableColumn>
       </ElTable>
+      <WorkspacePagination
+        v-if="items.length > 0"
+        v-model:current-page="pagination.current"
+        v-model:page-size="pagination.size"
+        :total="items.length"
+        compact
+      />
     </div>
   </ElDrawer>
 </template>
 
 <script setup lang="ts">
-  import { reactive, ref } from 'vue'
+  import { computed, reactive, ref, watch } from 'vue'
   import type { FormInstance, FormRules } from 'element-plus'
   import { ElMessageBox } from 'element-plus'
+  import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
 
   interface Props {
     modelValue: boolean
@@ -81,6 +89,10 @@
   const emit = defineEmits<Emits>()
   const formRef = ref<FormInstance>()
   const editingId = ref('')
+  const pagination = reactive({
+    current: 1,
+    size: 10
+  })
   const form = reactive({
     name: '',
     sortOrder: 0
@@ -89,6 +101,11 @@
   const rules: FormRules = {
     name: [{ required: true, message: '请输入分组名称', trigger: 'blur' }]
   }
+
+  const pagedItems = computed(() => {
+    const start = (pagination.current - 1) * pagination.size
+    return props.items.slice(start, start + pagination.size)
+  })
 
   function resetForm() {
     editingId.value = ''
@@ -100,6 +117,7 @@
   function handleClose() {
     emit('update:modelValue', false)
     resetForm()
+    pagination.current = 1
   }
 
   function startEdit(row: Api.SystemManage.MenuManageGroupItem) {
@@ -126,6 +144,13 @@
       resetForm()
     }
   }
+
+  watch(
+    () => [props.modelValue, props.items.length],
+    () => {
+      pagination.current = 1
+    }
+  )
 </script>
 
 <style lang="scss" scoped>

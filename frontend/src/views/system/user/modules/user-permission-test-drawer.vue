@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
     :title="`权限测试 - ${userTitle}`"
@@ -358,7 +358,7 @@
         <ElTabPane :disabled="contextType !== 'team'" label="角色链路" name="roles">
           <section class="role-panel">
             <div class="panel-title">角色链路</div>
-            <ElTable :data="diagnosisData?.roles || []" border max-height="320">
+            <ElTable :data="pagedRoleRows" border max-height="320">
           <ElTableColumn prop="roleCode" label="角色编码" min-width="140" show-overflow-tooltip />
           <ElTableColumn prop="roleName" label="角色名称" min-width="140" show-overflow-tooltip />
           <ElTableColumn label="继承团队" width="100">
@@ -395,6 +395,13 @@
             </template>
           </ElTableColumn>
             </ElTable>
+            <WorkspacePagination
+              v-if="roleRows.length > 0"
+              v-model:current-page="rolePagination.current"
+              v-model:page-size="rolePagination.size"
+              :total="roleRows.length"
+              compact
+            />
           </section>
         </ElTabPane>
       </ElTabs>
@@ -412,6 +419,7 @@
   import { ElMessage } from 'element-plus'
   import type { CascaderOption, CascaderProps } from 'element-plus'
   import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
+  import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import {
     fetchGetUserPermissionDiagnosis,
     fetchGetUserPermissionMenus,
@@ -451,6 +459,10 @@
   const showEnabledMenus = ref(true)
   const showMenuPath = ref(false)
   const selectedMenuPath = ref<string[]>([])
+  const rolePagination = ref({
+    current: 1,
+    size: 10
+  })
   const menuPanelRef = ref<any>()
 
   interface MenuOption extends CascaderOption {
@@ -535,6 +547,11 @@
     })
     return items
   })
+  const roleRows = computed(() => diagnosisData.value?.roles || [])
+  const pagedRoleRows = computed(() => {
+    const start = (rolePagination.value.current - 1) * rolePagination.value.size
+    return roleRows.value.slice(start, start + rolePagination.value.size)
+  })
 
   watch(
     () => props.modelValue,
@@ -607,6 +624,7 @@
       ])
       diagnosisData.value = diagnosis
       permissionMenus.value = menus
+      rolePagination.value.current = 1
       await nextTick()
       ensureExpandedMenus(menuPanelRef.value, selectedMenuPath.value)
     } catch (error: any) {
@@ -639,6 +657,7 @@
       ])
       diagnosisData.value = diagnosis
       permissionMenus.value = menus
+      rolePagination.value.current = 1
     } catch (error: any) {
       ElMessage.error(error?.message || '权限测试失败')
     } finally {
@@ -662,6 +681,7 @@
       ])
       diagnosisData.value = diagnosis
       permissionMenus.value = menus
+      rolePagination.value.current = 1
       ElMessage.success('权限快照已刷新')
     } catch (error: any) {
       ElMessage.error(error?.message || '刷新权限快照失败')
@@ -826,6 +846,13 @@
     if (childNode?.children?.length) nextMenus.push(childNode.children)
     panel.menus = nextMenus
   }
+
+  watch(
+    () => rolePagination.value.size,
+    () => {
+      rolePagination.value.current = 1
+    }
+  )
 </script>
 
 <style scoped lang="scss">
@@ -889,7 +916,7 @@
   .kv-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px 16px;
+    gap: 12px 16px;
   }
 
   .kv-item {
@@ -953,7 +980,7 @@
   .source-panel {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
   }
 
   .menu-panel {
@@ -998,7 +1025,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 10px;
+    margin-top: 12px;
   }
 
   .panel-node {
@@ -1006,7 +1033,7 @@
     display: inline-flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
+    gap: 12px;
   }
 
   .panel-node__main {
@@ -1061,3 +1088,4 @@
     }
   }
 </style>
+

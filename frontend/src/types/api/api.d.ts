@@ -514,6 +514,43 @@ declare namespace Api {
       deletedKeys: string[]
     }
 
+    interface PermissionActionConsumerApiItem {
+      code: string
+      method: string
+      path: string
+      summary?: string
+    }
+
+    interface PermissionActionConsumerPageItem {
+      pageKey: string
+      name: string
+      routePath: string
+      accessMode: string
+    }
+
+    interface PermissionActionConsumerPackageItem {
+      id: string
+      packageKey: string
+      name: string
+      packageType?: string
+      contextType?: string
+    }
+
+    interface PermissionActionConsumerRoleItem {
+      id: string
+      code: string
+      name: string
+      contextType?: string
+    }
+
+    interface PermissionActionConsumerDetails {
+      permissionKey: string
+      apis: PermissionActionConsumerApiItem[]
+      pages: PermissionActionConsumerPageItem[]
+      featurePackages: PermissionActionConsumerPackageItem[]
+      roles: PermissionActionConsumerRoleItem[]
+    }
+
     type PermissionActionList = Api.Common.PaginatedResponse<PermissionActionItem> & {
       auditSummary?: PermissionActionAuditSummary
     }
@@ -538,6 +575,33 @@ declare namespace Api {
 
     interface FeaturePackageTeamBinding {
       team_ids: string[]
+    }
+
+    interface RefreshStats {
+      requestedPackageCount?: number
+      impactedPackageCount?: number
+      roleCount?: number
+      teamCount?: number
+      userCount?: number
+      elapsedMilliseconds?: number
+      finishedAt?: string
+    }
+
+    interface FeaturePackageRelationNode {
+      id: string
+      packageKey: string
+      name: string
+      packageType: 'base' | 'bundle' | string
+      contextType: 'platform' | 'team' | 'common' | string
+      status: string
+      referenceCount: number
+      children?: FeaturePackageRelationNode[]
+    }
+
+    interface FeaturePackageRelationTree {
+      roots: FeaturePackageRelationNode[]
+      cycleDependencies: string[][]
+      isolatedBaseKeys: string[]
     }
 
     type FeaturePackageList = Api.Common.PaginatedResponse<FeaturePackageItem>
@@ -589,6 +653,72 @@ declare namespace Api {
 
     interface FeaturePackageTeamSetParams {
       team_ids: string[]
+    }
+
+    interface FeaturePackageImpactPreview {
+      packageId: string
+      roleCount: number
+      teamCount: number
+      userCount: number
+      menuCount: number
+      actionCount: number
+    }
+
+    interface FeaturePackageVersionItem {
+      id: string
+      packageId: string
+      versionNo: number
+      changeType: string
+      snapshot: Record<string, any>
+      operatorId?: string
+      requestId?: string
+      createdAt?: string
+    }
+
+    interface RiskAuditItem {
+      id: string
+      operatorId?: string
+      objectType: string
+      objectId: string
+      operationType: string
+      beforeSummary?: Record<string, any>
+      afterSummary?: Record<string, any>
+      impactSummary?: Record<string, any>
+      requestId?: string
+      createdAt?: string
+    }
+
+    interface PermissionImpactPreview {
+      permissionKey: string
+      apiCount: number
+      pageCount: number
+      packageCount: number
+      roleCount: number
+      teamCount: number
+      userCount: number
+    }
+
+    interface PermissionBatchUpdateParams {
+      ids: string[]
+      status?: string
+      moduleGroupId?: string
+      featureGroupId?: string
+      templateName?: string
+    }
+
+    interface PermissionBatchUpdateResult {
+      updatedCount: number
+      skippedIds: string[]
+    }
+
+    interface PermissionBatchTemplateItem {
+      id: string
+      name: string
+      description?: string
+      payload?: Record<string, any>
+      createdBy?: string
+      createdAt?: string
+      updatedAt?: string
     }
 
     interface PageMenuOptionItem {
@@ -1188,6 +1318,14 @@ declare namespace Api {
       space_type?: string
       host_key?: string
       hidden?: boolean
+    }
+
+    interface APIUnregisteredScanConfig {
+      enabled: boolean
+      frequencyMinutes: number
+      defaultCategoryId?: string
+      defaultPermissionKey?: string
+      markAsNoPermission: boolean
     }
 
     interface MenuDeleteParams {

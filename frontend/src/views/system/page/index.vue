@@ -1,22 +1,52 @@
-<template>
+﻿<template>
   <div class="page-management-page art-full-height">
-    <ArtSearchBar
-      class="page-search-bar"
-      v-show="showSearchBar"
-      v-model="searchForm"
-      :items="searchItems"
-      :span="4"
-      label-width="72px"
-      :showExpand="true"
-      :defaultExpanded="false"
-      @search="handleSearch"
-      @reset="handleReset"
-    />
+    <div class="page-top-stack">
+      <ArtSearchBar
+        class="page-search-bar"
+        v-show="showSearchBar"
+        v-model="searchForm"
+        :items="searchItems"
+        label-position="top"
+        :span="8"
+        :gutter="16"
+        :showExpand="true"
+        @search="handleSearch"
+        @reset="handleReset"
+      />
+
+      <AdminWorkspaceHero
+        title="受管页面"
+        description="只管理非菜单直达页、逻辑分组与普通分组；菜单入口页直接回到菜单管理维护。"
+        :metrics="summaryStats"
+      >
+        <div class="page-hero-actions">
+        <ElDropdown trigger="click" @command="handleCreateCommand">
+          <ElButton v-action="'system.page.manage'" type="primary" v-ripple>
+            新增
+          </ElButton>
+          <template #dropdown>
+            <ElDropdownMenu>
+              <ElDropdownItem command="page">新增受管页面</ElDropdownItem>
+              <ElDropdownItem command="group">新增逻辑分组</ElDropdownItem>
+              <ElDropdownItem command="display_group">新增普通分组</ElDropdownItem>
+            </ElDropdownMenu>
+          </template>
+        </ElDropdown>
+        <ElButton
+          v-action="'system.page.sync'"
+          :loading="syncing"
+          @click="unregisteredDialogVisible = true"
+          v-ripple
+        >
+          扫描未注册受管页
+        </ElButton>
+        </div>
+      </AdminWorkspaceHero>
+    </div>
 
     <ElCard
       class="art-table-card"
       shadow="never"
-      :style="{ marginTop: showSearchBar ? '12px' : '0' }"
     >
       <ElAlert
         v-if="loadError"
@@ -34,33 +64,10 @@
       >
         <template #left>
           <div class="page-toolbar">
-            <div class="page-toolbar-head">
-              <div class="page-toolbar-title-row">
-                <div class="page-toolbar-title">受管页面</div>
-                <div class="page-toolbar-subtitle">只管理非菜单直达页、逻辑分组与普通分组；菜单入口页直接回到菜单管理维护</div>
-                <div class="page-toolbar-metrics">
-                  <span v-for="item in summaryStats" :key="item.label" class="page-toolbar-metric">
-                    {{ item.label }} {{ item.value }}
-                  </span>
-                </div>
-              </div>
+            <div class="page-toolbar-tip">
+              页面挂载关系、访问方式和父链路在这里集中治理，避免菜单入口页与受管页重复维护。
             </div>
             <div class="page-toolbar-actions">
-              <ElDropdown trigger="click" @command="handleCreateCommand">
-                <ElButton v-action="'system.page.manage'" type="primary" v-ripple>
-                  新增
-                </ElButton>
-                <template #dropdown>
-                  <ElDropdownMenu>
-                    <ElDropdownItem command="page">新增受管页面</ElDropdownItem>
-                    <ElDropdownItem command="group">新增逻辑分组</ElDropdownItem>
-                    <ElDropdownItem command="display_group">新增普通分组</ElDropdownItem>
-                  </ElDropdownMenu>
-                </template>
-              </ElDropdown>
-              <ElButton v-action="'system.page.sync'" @click="unregisteredDialogVisible = true" v-ripple>
-                扫描未注册受管页
-              </ElButton>
               <div class="page-switch">
                 <span class="page-switch__label">展开分组</span>
                 <ElSwitch v-model="isExpanded" @change="handleExpandSwitchChange" />
@@ -222,12 +229,20 @@
 
 <script setup lang="ts">
   import { computed, reactive, ref, nextTick, onMounted } from 'vue'
-    import { ElButton, ElInput, ElMessage, ElMessageBox, ElTag } from 'element-plus'
+  import { ElButton, ElInput, ElMessage, ElMessageBox, ElTag } from 'element-plus'
+  import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import type { FormItem } from '@/components/core/forms/art-form/index.vue'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
-    import { fetchDeletePage, fetchGetMenuSpaces, fetchGetPageList, fetchGetPageMenuOptions, fetchSyncPages, fetchUpdatePage } from '@/api/system-manage'
+  import {
+    fetchDeletePage,
+    fetchGetMenuSpaces,
+    fetchGetPageList,
+    fetchGetPageMenuOptions,
+    fetchSyncPages,
+    fetchUpdatePage
+  } from '@/api/system-manage'
   import { joinManagedPagePath, resolveManagedPageRoutePath } from '@/utils/navigation/managed-page'
   import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import PageDialog from './modules/page-dialog.vue'
@@ -262,12 +277,12 @@
   const initialParentMenuId = ref('')
   const initialPageType = ref<PageItem['pageType']>('inner')
   const unregisteredDialogVisible = ref(false)
-const initialSearchState = {
-  keyword: '',
-  pageType: '',
-  accessMode: '',
-  status: ''
-}
+  const initialSearchState = {
+    keyword: '',
+    pageType: '',
+    accessMode: '',
+    status: ''
+  }
   const searchForm = reactive({ ...initialSearchState })
   const appliedFilters = reactive({ ...initialSearchState })
 
@@ -276,14 +291,12 @@ const initialSearchState = {
       label: '关键词',
       key: 'keyword',
       type: 'input',
-      span: 8,
       props: { placeholder: '名称/标识/路由/组件/上级' }
     },
     {
       label: '页面类型',
       key: 'pageType',
       type: 'select',
-      span: 4,
       props: {
         options: [
           { label: '全部', value: '' },
@@ -299,7 +312,6 @@ const initialSearchState = {
       label: '访问模式',
       key: 'accessMode',
       type: 'select',
-      span: 4,
       props: {
         options: [
           { label: '全部', value: '' },
@@ -315,7 +327,6 @@ const initialSearchState = {
       label: '状态',
       key: 'status',
       type: 'select',
-      span: 4,
       props: {
         options: [
           { label: '全部', value: '' },
@@ -1027,55 +1038,29 @@ const initialSearchState = {
 </script>
 
 <style lang="scss" scoped>
+  .page-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
   .page-toolbar {
     display: flex;
-    flex-direction: column;
-    gap: 14px;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px 16px;
     width: 100%;
   }
 
   .page-inline-alert {
-    margin-bottom: 14px;
+    margin-bottom: 12px;
   }
 
-  .page-toolbar-head {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    justify-content: flex-start;
-    width: 100%;
-  }
-
-  .page-toolbar-title-row {
-    align-items: center;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
-  .page-toolbar-title {
-    color: var(--el-text-color-primary);
-    font-size: 18px;
-    font-weight: 700;
-    line-height: 1.2;
-  }
-
-  .page-toolbar-subtitle {
-    color: var(--el-text-color-secondary);
+  .page-toolbar-tip {
+    color: var(--art-text-muted);
     font-size: 12px;
-    line-height: 1.4;
-  }
-
-  .page-toolbar-metrics {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-  }
-
-  .page-toolbar-metric {
-    color: var(--el-text-color-secondary);
-    font-size: 12px;
-    line-height: 1.2;
+    line-height: 1.6;
   }
 
   .page-toolbar-actions {
@@ -1094,7 +1079,7 @@ const initialSearchState = {
   }
 
   .page-switch__label {
-    color: var(--el-text-color-secondary);
+    color: var(--art-text-base);
     font-size: 12px;
     line-height: 1;
     white-space: nowrap;
@@ -1112,7 +1097,7 @@ const initialSearchState = {
   }
 
   .page-name-cell--logic-group {
-    color: var(--el-text-color-primary);
+    color: var(--art-text-strong);
     font-weight: 600;
   }
 
@@ -1137,7 +1122,7 @@ const initialSearchState = {
   }
 
   .page-name-cell__text {
-    color: var(--el-text-color-primary);
+    color: var(--art-text-strong);
     font-size: 14px;
     font-weight: 600;
     min-width: 0;
@@ -1147,7 +1132,7 @@ const initialSearchState = {
   }
 
   .page-inline-relation {
-    color: var(--el-text-color-secondary);
+    color: var(--art-text-muted);
     font-size: 12px;
     margin-left: 8px;
     overflow: hidden;
@@ -1156,7 +1141,7 @@ const initialSearchState = {
   }
 
   .page-muted-text {
-    color: var(--el-text-color-secondary);
+    color: var(--art-text-muted);
     font-size: 12px;
     line-height: 1.4;
   }
@@ -1169,7 +1154,7 @@ const initialSearchState = {
   }
 
   .page-route-text {
-    color: var(--el-text-color-primary);
+    color: var(--art-text-strong);
     display: inline-block;
     font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
     font-size: 12px;
@@ -1207,7 +1192,7 @@ const initialSearchState = {
   }
 
   .page-sort-value {
-    color: var(--el-text-color-primary);
+    color: var(--art-text-strong);
     font-variant-numeric: tabular-nums;
     min-width: 24px;
     text-align: center;
@@ -1272,16 +1257,16 @@ const initialSearchState = {
   }
 
   :deep(.el-table .el-table__body tr:has(.page-name-cell--logic-group)) {
-    background: color-mix(in srgb, var(--el-color-primary-light-9) 45%, white);
+    background: color-mix(in srgb, var(--theme-color) 6%, white);
   }
 
   :deep(.el-table .el-table__body tr:has(.page-name-cell--display-group)) {
-    background: color-mix(in srgb, var(--el-color-success-light-9) 65%, white);
+    background: color-mix(in srgb, var(--el-color-success-light-9) 45%, white);
   }
 
   @media (max-width: 960px) {
-    .page-toolbar-head {
-      flex-direction: column;
+    .page-toolbar {
+      align-items: flex-start;
     }
 
     .page-toolbar-actions {
@@ -1290,3 +1275,4 @@ const initialSearchState = {
     }
   }
 </style>
+

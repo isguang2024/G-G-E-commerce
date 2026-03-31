@@ -1,18 +1,63 @@
-<!-- 菜单管理页面 -->
+﻿<!-- 菜单管理页面 -->
 <template>
   <div class="menu-page art-full-height">
-    <!-- 搜索栏 -->
-    <MenuSearch
-      v-show="showSearchBar"
-      v-model="formFilters"
-      @reset="handleReset"
-      @search="handleSearch"
-    />
+    <div class="menu-top-stack">
+      <!-- 搜索栏 -->
+      <MenuSearch
+        v-show="showSearchBar"
+        v-model="formFilters"
+        @reset="handleReset"
+        @search="handleSearch"
+      />
+
+      <AdminWorkspaceHero
+        class="menu-hero"
+        title="菜单管理"
+        description="统一管理目录、入口路由与外链菜单；受管页面只在这里做只读关联查看。"
+        :metrics="menuHeroMetrics"
+      >
+        <div class="menu-hero-actions">
+          <ElSelect
+            v-model="activeSpaceKey"
+            class="menu-space-select"
+            filterable
+            @change="handleSpaceChange"
+          >
+            <ElOption
+              v-for="item in menuSpaceOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </ElSelect>
+          <ElButton
+            v-action="'system.menu.manage'"
+            type="primary"
+            @click="handleAddMenu"
+            v-ripple
+          >
+            创建菜单
+          </ElButton>
+          <ElDropdown @command="handleMoreActionCommand">
+            <ElButton v-ripple>更多操作</ElButton>
+            <template #dropdown>
+              <ElDropdownMenu>
+                <ElDropdownItem command="manageGroup" :disabled="!groupingAvailable">
+                  管理分组
+                </ElDropdownItem>
+                <ElDropdownItem command="backupSpace">备份当前空间</ElDropdownItem>
+                <ElDropdownItem command="backupGlobal">备份全部空间</ElDropdownItem>
+                <ElDropdownItem command="backupList">管理备份</ElDropdownItem>
+              </ElDropdownMenu>
+            </template>
+          </ElDropdown>
+        </div>
+      </AdminWorkspaceHero>
+    </div>
 
     <ElCard
       class="art-table-card"
       shadow="never"
-      :style="{ marginTop: showSearchBar ? '12px' : '0' }"
     >
       <ElAlert
         v-if="loadError"
@@ -22,183 +67,55 @@
         show-icon
         :title="loadError"
       />
-      <div class="menu-overview">
-        <div class="menu-overview-main">
-          <div class="menu-overview-heading">
-            <div class="menu-overview-title">菜单管理</div>
-          </div>
-          <div class="menu-overview-subline">
-            <div class="menu-overview-subtitle">
-              统一管理目录、入口路由与外链菜单；受管页面只在这里做只读关联查看
-            </div>
-            <div class="menu-overview-metrics">
-              <span class="menu-metric-item">总数 {{ menuStats.total }}</span>
-              <span class="menu-metric-item">目录 {{ menuStats.directory }}</span>
-              <span class="menu-metric-item">入口 {{ menuStats.entry }}</span>
-              <span class="menu-metric-item">外链 {{ menuStats.external }}</span>
-              <span class="menu-metric-item">分组 {{ menuStats.groups }}</span>
-            </div>
-          </div>
-          <div class="menu-overview-switches">
-            <div class="menu-overview-switch-list">
-              <span class="menu-switch-item">
-                <span class="menu-switch-label">显示隐藏</span>
-                <ElSwitch v-model="showHiddenMenus" />
-              </span>
-              <span class="menu-switch-item">
-                <span class="menu-switch-label">显示内嵌</span>
-                <ElSwitch v-model="showIframeMenus" />
-              </span>
-              <span class="menu-switch-item">
-                <span class="menu-switch-label">显示启用</span>
-                <ElSwitch v-model="showEnabledMenus" />
-              </span>
-              <span class="menu-switch-item">
-                <span class="menu-switch-label">启用分组</span>
-                <ElSwitch v-model="groupingEnabled" :disabled="!groupingAvailable" />
-              </span>
-              <span class="menu-switch-item">
-                <span class="menu-switch-label">分组可视</span>
-                <ElSwitch v-model="groupedMenuVisible" :disabled="!groupingAvailable" />
-              </span>
-              <span class="menu-switch-item">
-                <span class="menu-switch-label">多选模式</span>
-                <ElSwitch v-model="multiSelectEnabled" />
-              </span>
-              <span class="menu-switch-item">
-                <span class="menu-switch-label">展开菜单</span>
-                <ElSwitch v-model="isExpanded" @change="handleExpandSwitchChange" />
-              </span>
-            </div>
-            <div class="menu-overview-tools">
-              <ElTooltip :content="showSearchBar ? '收起搜索' : '展开搜索'" placement="top">
-                <button
-                  type="button"
-                  class="menu-tool-button"
-                  :class="{ 'is-active': showSearchBar }"
-                  @click="toggleSearchBar"
-                >
-                  <ArtSvgIcon icon="ri:search-line" />
-                </button>
-              </ElTooltip>
-              <ElTooltip content="刷新" placement="top">
-                <button
-                  type="button"
-                  class="menu-tool-button"
-                  :class="{ 'is-loading': loading }"
-                  @click="handleRefresh"
-                >
-                  <ArtSvgIcon icon="ri:refresh-line" :class="{ 'animate-spin': loading }" />
-                </button>
-              </ElTooltip>
-              <ElDropdown @command="handleTableSizeChange">
-                <button type="button" class="menu-tool-button">
-                  <ArtSvgIcon icon="ri:arrow-up-down-fill" />
-                </button>
-                <template #dropdown>
-                  <ElDropdownMenu>
-                    <ElDropdownItem
-                      v-for="item in tableSizeOptions"
-                      :key="item.value"
-                      :command="item.value"
-                    >
-                      {{ item.label }}
-                    </ElDropdownItem>
-                  </ElDropdownMenu>
-                </template>
-              </ElDropdown>
-              <ElTooltip :content="isTableFullScreen ? '退出全屏' : '全屏'" placement="top">
-                <button type="button" class="menu-tool-button" @click="toggleTableFullScreen">
-                  <ArtSvgIcon
-                    :icon="isTableFullScreen ? 'ri:fullscreen-exit-line' : 'ri:fullscreen-line'"
-                  />
-                </button>
-              </ElTooltip>
-              <ElPopover placement="bottom" trigger="click">
-                <template #reference>
-                  <button type="button" class="menu-tool-button">
-                    <ArtSvgIcon icon="ri:align-right" />
-                  </button>
-                </template>
-                <div class="menu-columns-popover">
-                  <ElCheckbox
-                    v-for="item in columnChecks"
-                    :key="item.prop || item.type"
-                    :model-value="item.visible !== false"
-                    :disabled="item.disabled"
-                    @update:model-value="(val) => updateColumnVisibility(item, val)"
-                  >
-                    {{ item.label || (item.type === 'selection' ? '勾选列' : '') }}
-                  </ElCheckbox>
-                </div>
-              </ElPopover>
-              <ElPopover placement="bottom" trigger="click">
-                <template #reference>
-                  <button type="button" class="menu-tool-button">
-                    <ArtSvgIcon icon="ri:settings-line" />
-                  </button>
-                </template>
-                <div class="menu-settings-popover">
-                  <span class="menu-settings-popover-text">菜单列表布局工具</span>
-                </div>
-              </ElPopover>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- 表格头部 -->
       <ArtTableHeader
-        layout=""
+        layout="search,refresh,size,fullscreen,columns"
         :showZebra="false"
         :loading="loading"
         v-model:columns="columnChecks"
+        v-model:showSearchBar="showSearchBar"
       >
         <template #left>
           <div class="menu-toolbar">
-            <div class="menu-toolbar-right">
-              <div class="menu-toolbar-actions">
-                <ElSelect
-                  v-model="activeSpaceKey"
-                  class="menu-space-select"
-                  filterable
-                  @change="handleSpaceChange"
-                >
-                  <ElOption
-                    v-for="item in menuSpaceOptions"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
-                  />
-                </ElSelect>
-                <ElTooltip content="创建菜单" placement="top">
-                  <ElButton
-                    v-action="'system.menu.manage'"
-                    type="primary"
-                    @click="handleAddMenu"
-                    v-ripple
-                  >
-                    创建菜单
-                  </ElButton>
-                </ElTooltip>
-                <ElDropdown @command="handleMoreActionCommand">
-                  <ElButton v-ripple> 更多操作 </ElButton>
-                  <template #dropdown>
-                    <ElDropdownMenu>
-                      <ElDropdownItem command="manageGroup" :disabled="!groupingAvailable">
-                        管理分组
-                      </ElDropdownItem>
-                      <ElDropdownItem command="backupSpace">备份当前空间</ElDropdownItem>
-                      <ElDropdownItem command="backupGlobal">备份全部空间</ElDropdownItem>
-                      <ElDropdownItem command="backupList">管理备份</ElDropdownItem>
-                    </ElDropdownMenu>
-                  </template>
-                </ElDropdown>
+            <div class="menu-toolbar-top">
+              <div class="menu-toolbar-tip">
+                通过空间、分组与可见条件统一治理菜单树，入口菜单和受管页面的映射在这里集中确认。
               </div>
               <div v-if="menuGroupApiUnavailable" class="menu-inline-note">
                 菜单分组暂不可用，当前按普通菜单树显示
               </div>
-
+            </div>
+            <div class="menu-toolbar-bottom">
+              <div class="menu-toolbar-switches">
+                <span class="menu-switch-item">
+                  <span class="menu-switch-label">显示隐藏</span>
+                  <ElSwitch v-model="showHiddenMenus" />
+                </span>
+                <span class="menu-switch-item">
+                  <span class="menu-switch-label">显示内嵌</span>
+                  <ElSwitch v-model="showIframeMenus" />
+                </span>
+                <span class="menu-switch-item">
+                  <span class="menu-switch-label">显示启用</span>
+                  <ElSwitch v-model="showEnabledMenus" />
+                </span>
+                <span class="menu-switch-item">
+                  <span class="menu-switch-label">启用分组</span>
+                  <ElSwitch v-model="groupingEnabled" :disabled="!groupingAvailable" />
+                </span>
+                <span class="menu-switch-item">
+                  <span class="menu-switch-label">分组可视</span>
+                  <ElSwitch v-model="groupedMenuVisible" :disabled="!groupingAvailable" />
+                </span>
+                <span class="menu-switch-item">
+                  <span class="menu-switch-label">多选模式</span>
+                  <ElSwitch v-model="multiSelectEnabled" />
+                </span>
+                <span class="menu-switch-item">
+                  <span class="menu-switch-label">展开菜单</span>
+                  <ElSwitch v-model="isExpanded" @change="handleExpandSwitchChange" />
+                </span>
+              </div>
               <div v-if="multiSelectEnabled" class="menu-toolbar-actions menu-toolbar-batch">
                 <span class="menu-batch-count">已选 {{ selectedMenuRows.length }} 项</span>
                 <ElDropdown @command="handleBatchCommand">
@@ -463,12 +380,11 @@
   import { computed, onMounted, ref, reactive, nextTick, watch } from 'vue'
   import { useRoute, useRouter } from 'vue-router'
   import { formatMenuTitle } from '@/utils/router'
+  import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
   import type { AppRouteRecord } from '@/types/router'
-  import { TableSizeEnum } from '@/enums/formEnum'
-  import { useTableStore } from '@/store/modules/table'
   import MenuDialog from './modules/menu-dialog.vue'
   import MenuGroupDrawer from './modules/menu-group-drawer.vue'
   import MenuBackupDialog from './modules/menu-backup-dialog.vue'
@@ -497,14 +413,11 @@
     ElTag,
     ElMessageBox,
     ElMessage,
-    ElTooltip,
     ElButton,
     ElSwitch,
     ElDropdown,
     ElDropdownMenu,
     ElDropdownItem,
-    ElPopover,
-    ElCheckbox,
     ElSelect,
     ElOption
   } from 'element-plus'
@@ -536,8 +449,6 @@
   const menuGroups = ref<Api.SystemManage.MenuManageGroupItem[]>([])
   const dataFromBackend = ref(false)
   const menuGroupApiUnavailable = ref(false)
-  const isTableFullScreen = ref(false)
-  const tableSizeStore = useTableStore()
 
   // --- 菜单备份相关状态 ---
   const backupLoading = ref(false)
@@ -570,11 +481,6 @@
   const selectedMenuRows = ref<any[]>([])
   const batchTargetGroupId = ref('')
   const batchAssignDialogVisible = ref(false)
-  const tableSizeOptions = [
-    { value: TableSizeEnum.SMALL, label: '紧凑' },
-    { value: TableSizeEnum.DEFAULT, label: '默认' },
-    { value: TableSizeEnum.LARGE, label: '宽松' }
-  ]
 
   // --- 菜单列表处理 ---
   const normalizeKeyword = (value?: string) => `${value || ''}`.trim().toLowerCase()
@@ -787,6 +693,14 @@
     return stats
   })
 
+  const menuHeroMetrics = computed(() => [
+    { label: '总数', value: menuStats.value.total },
+    { label: '目录', value: menuStats.value.directory },
+    { label: '入口', value: menuStats.value.entry },
+    { label: '外链', value: menuStats.value.external },
+    { label: '分组', value: menuStats.value.groups }
+  ])
+
   const getMenuList = async () => {
     loading.value = true
     loadError.value = ''
@@ -948,27 +862,6 @@
     Object.assign(appliedFilters, formFilters)
   }
 
-  const toggleSearchBar = () => {
-    showSearchBar.value = !showSearchBar.value
-  }
-
-  const handleTableSizeChange = (value: TableSizeEnum) => {
-    tableSizeStore.setTableSize(value)
-  }
-
-  const toggleTableFullScreen = () => {
-    const target = document.querySelector('.menu-page')
-    if (!target) return
-    isTableFullScreen.value = !isTableFullScreen.value
-    target.classList.toggle('el-full-screen', isTableFullScreen.value)
-    document.body.style.overflow = isTableFullScreen.value ? 'hidden' : ''
-  }
-
-  const updateColumnVisibility = (item: any, value: string | number | boolean) => {
-    const nextVisible = !!value
-    item.visible = nextVisible
-    item.checked = nextVisible
-  }
   const syncRouteSpaceKey = (spaceKey: string) => {
     router.replace({
       query: {
@@ -1621,13 +1514,13 @@
 
 <style lang="scss" scoped>
   .menu-overview {
-    padding: 4px 0 14px;
-    margin-bottom: 8px;
-    border-bottom: 1px solid #eef2f7;
+    padding: 2px 0 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--art-card-border);
   }
 
   .menu-inline-alert {
-    margin-bottom: 14px;
+    margin-bottom: 12px;
   }
 
   .menu-overview-main {
@@ -1638,14 +1531,14 @@
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: 10px 18px;
+    gap: 12px 18px;
   }
 
   .menu-overview-title {
-    font-size: 22px;
-    font-weight: 700;
+    font-size: 20px;
+    font-weight: 750;
     line-height: 1.1;
-    color: #111827;
+    color: var(--art-text-strong);
     letter-spacing: -0.02em;
   }
 
@@ -1653,7 +1546,7 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px 14px;
+    gap: 12px 14px;
   }
 
   .menu-overview-subline {
@@ -1661,20 +1554,20 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    margin-top: 6px;
+    margin-top: 12px;
   }
 
   .menu-metric-item {
     font-size: 13px;
     font-weight: 600;
-    color: #475569;
+    color: var(--art-text-base);
     white-space: nowrap;
   }
 
   .menu-overview-subtitle {
     font-size: 13px;
     line-height: 1.6;
-    color: #6b7280;
+    color: var(--art-text-muted);
   }
 
   .menu-overview-switches {
@@ -1684,14 +1577,14 @@
     gap: 12px 16px;
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid #eef2f7;
+    border-top: 1px solid var(--art-card-border);
   }
 
   .menu-overview-switch-list {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px 16px;
+    gap: 12px 16px;
   }
 
   .menu-overview-tools {
@@ -1707,15 +1600,22 @@
     justify-content: center;
     width: 32px;
     height: 32px;
-    color: rgb(55 65 81 / 1);
+    color: var(--art-text-base);
     cursor: pointer;
-    background: rgb(203 213 225 / 0.55);
-    border-radius: 6px;
-    transition: all 0.2s ease;
+    background: rgb(255 255 255 / 0.9);
+    border: 1px solid var(--art-card-border);
+    border-radius: 12px;
+    box-shadow: var(--art-shadow-sm);
+    transition:
+      border-color 0.15s ease,
+      background-color 0.15s ease,
+      transform 0.15s ease;
   }
 
   .menu-tool-button:hover {
-    background: rgb(203 213 225 / 1);
+    border-color: color-mix(in srgb, var(--theme-color) 20%, var(--art-card-border));
+    background: color-mix(in srgb, var(--theme-color) 7%, white);
+    transform: translateY(-1px);
   }
 
   .menu-tool-button.is-active {
@@ -1727,25 +1627,51 @@
     background: color-mix(in srgb, var(--el-color-primary) 80%, white);
   }
 
-  .menu-toolbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 14px 18px;
-    width: 100%;
-    padding: 12px 0 4px;
-  }
-
-  .menu-toolbar-right {
+  .menu-hero-actions {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px 14px;
+    gap: 12px;
   }
 
-  .menu-toolbar-right {
-    justify-content: space-between;
+  .menu-top-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .menu-hero {
+    margin-top: 0;
+  }
+
+  .menu-toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     width: 100%;
+    padding: 4px 0 2px;
+  }
+
+  .menu-toolbar-top,
+  .menu-toolbar-bottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 14px;
+  }
+
+  .menu-toolbar-tip {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--art-text-muted);
+  }
+
+  .menu-toolbar-switches {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 16px;
   }
 
   .menu-toolbar-actions {
@@ -1761,33 +1687,32 @@
 
   .menu-toolbar-batch {
     padding-left: 14px;
-    border-left: 1px solid #e5e7eb;
+    border-left: 1px solid var(--art-card-border);
   }
 
   .menu-inline-note {
     font-size: 12px;
-    color: #64748b;
+    color: var(--art-text-muted);
     white-space: nowrap;
   }
 
-  .inline-flex,
   .menu-switch-item {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     padding: 0;
   }
 
   .menu-switch-label {
     font-size: 13px;
-    color: #4b5563;
+    color: var(--art-text-base);
     white-space: nowrap;
   }
 
   .menu-batch-count {
     font-size: 13px;
     font-weight: 600;
-    color: #374151;
+    color: var(--art-text-strong);
   }
 
   .menu-batch-dialog {
@@ -1799,13 +1724,13 @@
   .menu-batch-dialog-count {
     font-size: 13px;
     line-height: 1.6;
-    color: #6b7280;
+    color: var(--art-text-muted);
   }
 
   .menu-batch-dialog-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 12px;
   }
 
   .menu-columns-popover,
@@ -1818,7 +1743,7 @@
 
   .menu-settings-popover-text {
     font-size: 13px;
-    color: #6b7280;
+    color: var(--art-text-muted);
   }
 
   .advanced-configs {
@@ -1837,7 +1762,7 @@
 
   .menu-linked-page-cell__primary {
     overflow: hidden;
-    color: #0f172a;
+    color: var(--art-text-strong);
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -1845,11 +1770,11 @@
   .menu-linked-page-cell__meta {
     font-size: 12px;
     line-height: 1.5;
-    color: #64748b;
+    color: var(--art-text-muted);
   }
 
   .menu-group-title {
-    color: #1f2937;
+    color: var(--art-text-strong);
     font-weight: 700;
   }
 
@@ -1858,14 +1783,14 @@
       transition: all 0.3s ease;
 
       &:hover {
-        background-color: #f5f7fa !important;
+        background-color: color-mix(in srgb, var(--theme-color) 4%, white) !important;
       }
     }
 
     .el-table__header-wrapper th {
-      background-color: #f8fafc;
+      background-color: color-mix(in srgb, var(--default-box-color) 94%, var(--default-bg-color));
       font-weight: 600;
-      color: #475569;
+      color: var(--art-text-base);
     }
 
     .el-table__body-wrapper {
@@ -1876,11 +1801,15 @@
   }
 
   :deep(.el-table .el-table__body tr:has(.menu-group-title)) {
-    background: linear-gradient(180deg, #eef2ff 0%, #e6ecff 100%) !important;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--theme-color) 7%, white) 0%,
+      color-mix(in srgb, var(--theme-color) 4%, white) 100%
+    ) !important;
   }
 
   :deep(.el-table .el-table__body tr:has(.menu-group-title):hover > td.el-table__cell) {
-    background-color: #dbe5ff !important;
+    background-color: color-mix(in srgb, var(--theme-color) 10%, white) !important;
   }
 
   :deep(.menu-table-multi-disabled .menu-selection-column) {
@@ -1895,27 +1824,12 @@
   }
 
   :deep(.el-card__body) {
-    padding-top: 16px;
-  }
-
-  @media (max-width: 1320px) {
-    .menu-overview-switches {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .menu-overview-tools {
-      margin-left: 0;
-    }
+    padding-top: 14px;
   }
 
   @media (max-width: 960px) {
-    .menu-toolbar {
-      align-items: flex-start;
-      flex-direction: column;
-    }
-
-    .menu-toolbar-right {
+    .menu-toolbar-top,
+    .menu-toolbar-bottom {
       justify-content: flex-start;
       width: 100%;
     }
@@ -1927,16 +1841,9 @@
   }
 
   @media (max-width: 640px) {
-    .menu-overview-heading,
-    .menu-overview-subline,
-    .menu-overview-metrics,
-    .menu-overview-switch-list {
+    .menu-hero-actions,
+    .menu-toolbar-switches {
       width: 100%;
-    }
-
-    .menu-overview-subline {
-      flex-direction: column;
-      align-items: flex-start;
     }
 
     .menu-switch-item {
@@ -1945,3 +1852,4 @@
     }
   }
 </style>
+

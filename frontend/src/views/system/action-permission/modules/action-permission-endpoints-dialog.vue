@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
     :title="`关联接口 - ${permissionName}`"
@@ -9,13 +9,13 @@
     <div class="toolbar">
       <ElSelect
         v-model="selectedEndpointCode"
+        class="candidate-endpoint-select"
         filterable
         remote
         reserve-keyword
         clearable
         :loading="candidateLoading"
         placeholder="选择要关联的接口"
-        style="width: 520px"
         :remote-method="handleCandidateSearch"
         @visible-change="handleCandidateVisibleChange"
       >
@@ -315,7 +315,11 @@
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
+  }
+
+  .candidate-endpoint-select {
+    width: min(100%, 520px);
   }
 
   .candidate-dropdown-footer {
@@ -353,4 +357,15 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
+  @media (max-width: 768px) {
+    .toolbar {
+      flex-wrap: wrap;
+    }
+
+    .candidate-endpoint-select {
+      width: 100%;
+    }
+  }
 </style>
+
