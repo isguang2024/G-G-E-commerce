@@ -355,6 +355,10 @@ func (h *MenuHandler) CreateBackup(c *gin.Context) {
 	var req struct {
 		Name        string `json:"name" binding:"required"`
 		Description string `json:"description"`
+		// scope_type 显式声明备份范围；旧客户端缺省时，仍按 space_key 是否为空兼容旧语义。
+		ScopeType string `json:"scope_type"`
+		// space_key 仅在 scope_type=space 时生效；global 备份会忽略该值并覆盖全部空间。
+		SpaceKey string `json:"space_key"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
@@ -372,7 +376,13 @@ func (h *MenuHandler) CreateBackup(c *gin.Context) {
 		}
 	}
 
-	if err := h.menuService.CreateBackup(req.Name, req.Description, createdBy); err != nil {
+	if err := h.menuService.CreateBackup(
+		req.Name,
+		req.Description,
+		req.ScopeType,
+		req.SpaceKey,
+		createdBy,
+	); err != nil {
 		h.logger.Error("Create backup failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "创建备份失败")
 		c.JSON(status, resp)
@@ -383,7 +393,8 @@ func (h *MenuHandler) CreateBackup(c *gin.Context) {
 }
 
 func (h *MenuHandler) ListBackups(c *gin.Context) {
-	backups, err := h.menuService.ListBackups()
+	spaceKey := strings.TrimSpace(c.Query("space_key"))
+	backups, err := h.menuService.ListBackups(spaceKey)
 	if err != nil {
 		h.logger.Error("List backups failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取备份列表失败")
@@ -393,12 +404,18 @@ func (h *MenuHandler) ListBackups(c *gin.Context) {
 
 	out := make([]gin.H, 0, len(backups))
 	for _, backup := range backups {
+		scopeInfo := resolveMenuBackupScopeInfo(*backup)
 		out = append(out, gin.H{
 			"id":          backup.ID.String(),
 			"name":        backup.Name,
 			"description": backup.Description,
-			"created_at":  backup.CreatedAt,
-			"created_by":  backup.CreatedBy,
+			// scope_type 保持“空间 / 全局”这层稳定主语义，便于兼容现有列表和恢复逻辑。
+			"space_key":  scopeInfo.SpaceKey,
+			"scope_type": scopeInfo.ScopeType,
+			// scope_origin 专门区分正式全局备份和历史兼容全局备份，前端据此给出更清晰的提示。
+			"scope_origin": scopeInfo.ScopeOrigin,
+			"created_at":   backup.CreatedAt,
+			"created_by":   backup.CreatedBy,
 		})
 	}
 
@@ -456,6 +473,7 @@ func menuToMap(m *user.Menu) gin.H {
 	node := gin.H{
 		"id":         m.ID.String(),
 		"space_key":  m.SpaceKey,
+		"kind":       m.Kind,
 		"path":       m.Path,
 		"name":       m.Name,
 		"component":  m.Component,
@@ -518,6 +536,7 @@ func menuToRuntimeMap(m *user.Menu) gin.H {
 	node := gin.H{
 		"id":         m.ID.String(),
 		"space_key":  m.SpaceKey,
+		"kind":       m.Kind,
 		"path":       m.Path,
 		"name":       m.Name,
 		"component":  m.Component,

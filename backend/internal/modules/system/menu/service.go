@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
@@ -36,8 +38,8 @@ type MenuService interface {
 	UpdateGroup(id uuid.UUID, req *dto.MenuManageGroupUpdateRequest) error
 	DeleteGroup(id uuid.UUID) error
 	// 菜单备份相关方法
-	CreateBackup(name, description string, createdBy *uuid.UUID) error
-	ListBackups() ([]*user.MenuBackup, error)
+	CreateBackup(name, description, scopeType, spaceKey string, createdBy *uuid.UUID) error
+	ListBackups(spaceKey string) ([]*user.MenuBackup, error)
 	DeleteBackup(id uuid.UUID) error
 	RestoreBackup(id uuid.UUID) error
 }
@@ -58,6 +60,7 @@ func (s *menuService) GetTree(all bool, allowedMenuIDs []uuid.UUID, spaceKey str
 	if err != nil {
 		return nil, err
 	}
+	normalizeMenuListKinds(flat)
 	if strings.TrimSpace(spaceKey) != "" {
 		normalized := spaceutil.NormalizeSpaceKey(spaceKey)
 		flat = filterMenusBySpace(flat, normalized)
@@ -179,17 +182,19 @@ func (s *menuService) Create(req *dto.MenuCreateRequest) (*user.Menu, error) {
 	if err != nil {
 		return nil, err
 	}
+	kind, component, meta := sanitizeMenuPayloadByKind(req.Kind, req.Component, req.Meta)
 	m := &user.Menu{
 		ParentID:      parentID,
 		ManageGroupID: manageGroupID,
 		SpaceKey:      normalizeMenuSpaceKey(req.SpaceKey),
+		Kind:          kind,
 		Path:          req.Path,
 		Name:          req.Name,
-		Component:     req.Component,
+		Component:     component,
 		Title:         req.Title,
 		Icon:          req.Icon,
 		SortOrder:     req.SortOrder,
-		Meta:          sanitizeMenuMeta(req.Meta),
+		Meta:          meta,
 		Hidden:        req.Hidden,
 	}
 	if err := s.menuRepo.Create(m); err != nil {
@@ -240,14 +245,16 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 	}
 	m.ManageGroupID = manageGroupID
 	m.SpaceKey = normalizeMenuSpaceKey(req.SpaceKey)
+	kind, component, meta := sanitizeMenuPayloadByKind(req.Kind, req.Component, req.Meta)
+	m.Kind = kind
 	m.Path = req.Path
 	m.Name = req.Name
-	m.Component = req.Component
+	m.Component = component
 	m.Title = req.Title
 	m.Icon = req.Icon
 	m.SortOrder = req.SortOrder
 	if req.Meta != nil {
-		m.Meta = sanitizeMenuMeta(req.Meta)
+		m.Meta = meta
 	}
 	m.Hidden = req.Hidden
 	if err := s.menuRepo.Update(m, shouldUpdateParent); err != nil {
@@ -356,24 +363,35 @@ func (s *menuService) Delete(id uuid.UUID) error {
 }
 
 // 菜单备份相关方法
-func (s *menuService) CreateBackup(name, description string, createdBy *uuid.UUID) error {
-	// 获取所有菜单
+func (s *menuService) CreateBackup(name, description, scopeType, spaceKey string, createdBy *uuid.UUID) error {
+	normalizedScopeType := normalizeBackupScopeType(scopeType, spaceKey)
+	backupSpaceKey := resolveBackupSpaceKey(normalizedScopeType, spaceKey)
+
+	// 新接口优先按 scope_type 明确创建空间备份或全局备份；
+	// 只有旧调用未传 scope_type 时，才沿用“缺省 space_key=全局”的兼容语义。
 	menus, err := s.menuRepo.ListAll()
 	if err != nil {
 		s.logger.Error("Failed to list menus for backup", zap.Error(err))
 		return err
 	}
 
-	var groups []user.MenuManageGroup
-	if err := s.db.Order("sort_order ASC, created_at ASC").Find(&groups).Error; err != nil {
+	if backupSpaceKey != "" {
+		menus = filterMenusBySpace(menus, backupSpaceKey)
+	}
+
+	groups, err := s.loadBackupGroups(menus, backupSpaceKey)
+	if err != nil {
 		s.logger.Error("Failed to list menu groups for backup", zap.Error(err))
 		return err
 	}
 
 	// 将菜单数据转换为JSON
 	menuData, err := json.Marshal(ginMenuBackupPayload{
-		Groups: groups,
-		Menus:  menus,
+		Version:   menuBackupPayloadVersion,
+		ScopeType: normalizedScopeType,
+		SpaceKey:  backupSpaceKey,
+		Groups:    groups,
+		Menus:     menus,
 	})
 	if err != nil {
 		s.logger.Error("Failed to marshal menu data", zap.Error(err))
@@ -384,6 +402,7 @@ func (s *menuService) CreateBackup(name, description string, createdBy *uuid.UUI
 	backup := &user.MenuBackup{
 		Name:        name,
 		Description: description,
+		SpaceKey:    backupSpaceKey,
 		MenuData:    string(menuData),
 		CreatedBy:   createdBy,
 	}
@@ -397,12 +416,14 @@ func (s *menuService) CreateBackup(name, description string, createdBy *uuid.UUI
 	return nil
 }
 
-func (s *menuService) ListBackups() ([]*user.MenuBackup, error) {
+func (s *menuService) ListBackups(spaceKey string) ([]*user.MenuBackup, error) {
 	backups, err := s.menuRepo.ListBackups()
 	if err != nil {
 		s.logger.Error("Failed to list menu backups", zap.Error(err))
 		return nil, err
 	}
+
+	backups = filterBackupsBySpace(backups, spaceKey)
 
 	// 转换为指针切片
 	backupPtrs := make([]*user.MenuBackup, len(backups))
@@ -444,39 +465,26 @@ func (s *menuService) RestoreBackup(id uuid.UUID) error {
 	}
 
 	// 解析备份的菜单数据
-	var payload ginMenuBackupPayload
-	var menus []user.Menu
-	var groups []user.MenuManageGroup
-	if err := json.Unmarshal([]byte(backup.MenuData), &payload); err == nil && len(payload.Menus) > 0 {
-		menus = payload.Menus
-		groups = payload.Groups
-	} else {
-		if err := json.Unmarshal([]byte(backup.MenuData), &menus); err != nil {
-			s.logger.Error("Failed to unmarshal menu data", zap.Error(err))
-			return err
-		}
+	payload, err := parseMenuBackupPayload(backup.MenuData)
+	if err != nil {
+		s.logger.Error("Failed to unmarshal menu data", zap.Error(err))
+		return err
+	}
+	groups := payload.Groups
+	menus := payload.Menus
+
+	backupSpaceKey := normalizeBackupSpaceKey(backup.SpaceKey)
+	if backupSpaceKey == "" {
+		backupSpaceKey = normalizeBackupSpaceKey(payload.SpaceKey)
 	}
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Exec("DELETE FROM menus").Error; err != nil {
-			return err
+		if backupSpaceKey == "" {
+			return s.restoreGlobalMenuBackup(tx, groups, menus)
 		}
-		if err := tx.Exec("DELETE FROM menu_manage_groups").Error; err != nil {
-			return err
-		}
-		for i := range groups {
-			if err := tx.Create(&groups[i]).Error; err != nil {
-				return err
-			}
-		}
-		for i := range menus {
-			menus[i].SpaceKey = normalizeMenuSpaceKey(menus[i].SpaceKey)
-			menus[i].Meta = sanitizeMenuMeta(menus[i].Meta)
-			if err := tx.Create(&menus[i]).Error; err != nil {
-				return err
-			}
-		}
-		return nil
+
+		spaceMenus := filterMenusBySpace(menus, backupSpaceKey)
+		return s.restoreSpaceMenuBackup(tx, backupSpaceKey, groups, spaceMenus)
 	}); err != nil {
 		s.logger.Error("Failed to restore menu backup", zap.Error(err))
 		return err
@@ -529,8 +537,248 @@ func (s *menuService) refreshAllMenuSnapshots() error {
 }
 
 type ginMenuBackupPayload struct {
-	Groups []user.MenuManageGroup `json:"groups"`
-	Menus  []user.Menu            `json:"menus"`
+	Version   string                 `json:"version,omitempty"`
+	ScopeType string                 `json:"scope_type,omitempty"`
+	SpaceKey  string                 `json:"space_key,omitempty"`
+	Groups    []user.MenuManageGroup `json:"groups"`
+	Menus     []user.Menu            `json:"menus"`
+}
+
+type menuBackupScopeInfo struct {
+	ScopeType   string
+	ScopeOrigin string
+	SpaceKey    string
+}
+
+const menuBackupPayloadVersion = "menu_backup.v2"
+
+func normalizeBackupSpaceKey(value string) string {
+	target := strings.TrimSpace(value)
+	if target == "" {
+		return ""
+	}
+	return normalizeMenuSpaceKey(target)
+}
+
+func normalizeBackupScopeType(scopeType string, spaceKey string) string {
+	switch strings.TrimSpace(strings.ToLower(scopeType)) {
+	case "global":
+		return "global"
+	case "space":
+		return "space"
+	default:
+		if normalizeBackupSpaceKey(spaceKey) != "" {
+			return "space"
+		}
+		return "global"
+	}
+}
+
+func resolveBackupSpaceKey(scopeType string, spaceKey string) string {
+	if normalizeBackupScopeType(scopeType, spaceKey) == "global" {
+		return ""
+	}
+	if normalized := normalizeBackupSpaceKey(spaceKey); normalized != "" {
+		return normalized
+	}
+	return spaceutil.DefaultMenuSpaceKey
+}
+
+func resolveMenuBackupScopeInfo(backup user.MenuBackup) menuBackupScopeInfo {
+	if backupSpaceKey := normalizeBackupSpaceKey(backup.SpaceKey); backupSpaceKey != "" {
+		return menuBackupScopeInfo{
+			ScopeType:   "space",
+			ScopeOrigin: "space",
+			SpaceKey:    backupSpaceKey,
+		}
+	}
+
+	trimmedPayload := strings.TrimSpace(backup.MenuData)
+	// 历史备份最早直接把菜单数组落成 JSON 数组，无法表达显式 scope_type；
+	// 这类记录继续标记为 legacy_global，方便前端单独提示其兼容性质。
+	if strings.HasPrefix(trimmedPayload, "[") {
+		return menuBackupScopeInfo{
+			ScopeType:   "global",
+			ScopeOrigin: "legacy_global",
+		}
+	}
+
+	payload, err := parseMenuBackupPayload(backup.MenuData)
+	if err != nil {
+		return menuBackupScopeInfo{
+			ScopeType:   "global",
+			ScopeOrigin: "legacy_global",
+		}
+	}
+
+	resolvedScopeType := normalizeBackupScopeType(payload.ScopeType, payload.SpaceKey)
+	if resolvedScopeType == "space" {
+		return menuBackupScopeInfo{
+			ScopeType:   "space",
+			ScopeOrigin: "space",
+			SpaceKey:    resolveBackupSpaceKey(resolvedScopeType, payload.SpaceKey),
+		}
+	}
+
+	return menuBackupScopeInfo{
+		ScopeType:   "global",
+		ScopeOrigin: "global",
+	}
+}
+
+func filterBackupsBySpace(backups []user.MenuBackup, spaceKey string) []user.MenuBackup {
+	targetSpaceKey := normalizeBackupSpaceKey(spaceKey)
+	if targetSpaceKey == "" {
+		return backups
+	}
+	filtered := make([]user.MenuBackup, 0, len(backups))
+	for _, backup := range backups {
+		scopeInfo := resolveMenuBackupScopeInfo(backup)
+		// 全局备份和历史全局兼容备份对所有空间都可见；空间备份只展示给目标空间。
+		if scopeInfo.ScopeType == "global" || scopeInfo.SpaceKey == targetSpaceKey {
+			filtered = append(filtered, backup)
+		}
+	}
+	return filtered
+}
+
+func parseMenuBackupPayload(raw string) (ginMenuBackupPayload, error) {
+	var payload ginMenuBackupPayload
+	if err := json.Unmarshal([]byte(raw), &payload); err == nil {
+		if payload.Version != "" || payload.SpaceKey != "" || payload.Groups != nil || payload.Menus != nil {
+			payload.ScopeType = normalizeBackupScopeType(payload.ScopeType, payload.SpaceKey)
+			return payload, nil
+		}
+	}
+
+	var legacyMenus []user.Menu
+	if err := json.Unmarshal([]byte(raw), &legacyMenus); err != nil {
+		return ginMenuBackupPayload{}, err
+	}
+
+	return ginMenuBackupPayload{
+		ScopeType: "global",
+		Menus:     legacyMenus,
+	}, nil
+}
+
+func (s *menuService) loadBackupGroups(menus []user.Menu, spaceKey string) ([]user.MenuManageGroup, error) {
+	if s.db == nil {
+		return nil, nil
+	}
+
+	backupSpaceKey := normalizeBackupSpaceKey(spaceKey)
+	var groups []user.MenuManageGroup
+	query := s.db.Order("sort_order ASC, created_at ASC")
+	if backupSpaceKey == "" {
+		if err := query.Find(&groups).Error; err != nil {
+			return nil, err
+		}
+		return groups, nil
+	}
+
+	groupIDs := collectMenuManageGroupIDs(menus)
+	if len(groupIDs) == 0 {
+		return []user.MenuManageGroup{}, nil
+	}
+	if err := query.Where("id IN ?", groupIDs).Find(&groups).Error; err != nil {
+		return nil, err
+	}
+	return groups, nil
+}
+
+func collectMenuManageGroupIDs(menus []user.Menu) []uuid.UUID {
+	seen := make(map[uuid.UUID]struct{})
+	ids := make([]uuid.UUID, 0)
+	for _, menu := range menus {
+		if menu.ManageGroupID == nil || *menu.ManageGroupID == uuid.Nil {
+			continue
+		}
+		if _, exists := seen[*menu.ManageGroupID]; exists {
+			continue
+		}
+		seen[*menu.ManageGroupID] = struct{}{}
+		ids = append(ids, *menu.ManageGroupID)
+	}
+	return ids
+}
+
+func (s *menuService) restoreGlobalMenuBackup(tx *gorm.DB, groups []user.MenuManageGroup, menus []user.Menu) error {
+	if err := tx.Exec("DELETE FROM menus").Error; err != nil {
+		return err
+	}
+	if err := tx.Exec("DELETE FROM menu_manage_groups").Error; err != nil {
+		return err
+	}
+	for i := range groups {
+		groups[i].Status = normalizeMenuGroupStatus(groups[i].Status)
+		if err := tx.Create(&groups[i]).Error; err != nil {
+			return err
+		}
+	}
+	for i := range menus {
+		menus[i].SpaceKey = normalizeMenuSpaceKey(menus[i].SpaceKey)
+		menus[i].Kind = normalizeMenuKind(menus[i].Kind, menus[i].Component, menus[i].Meta)
+		menus[i].Meta = sanitizeMenuMeta(menus[i].Meta)
+		if err := tx.Create(&menus[i]).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *menuService) restoreSpaceMenuBackup(
+	tx *gorm.DB,
+	spaceKey string,
+	groups []user.MenuManageGroup,
+	menus []user.Menu,
+) error {
+	if err := s.upsertMenuManageGroups(tx, groups); err != nil {
+		return err
+	}
+	if err := s.deleteMenusBySpace(tx, spaceKey); err != nil {
+		return err
+	}
+	for i := range menus {
+		menus[i].SpaceKey = normalizeMenuSpaceKey(spaceKey)
+		menus[i].Kind = normalizeMenuKind(menus[i].Kind, menus[i].Component, menus[i].Meta)
+		menus[i].Meta = sanitizeMenuMeta(menus[i].Meta)
+		if err := tx.Create(&menus[i]).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *menuService) upsertMenuManageGroups(tx *gorm.DB, groups []user.MenuManageGroup) error {
+	if len(groups) == 0 {
+		return nil
+	}
+	now := time.Now()
+	for i := range groups {
+		groups[i].Status = normalizeMenuGroupStatus(groups[i].Status)
+		if err := tx.Unscoped().Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "id"}},
+			DoUpdates: clause.Assignments(map[string]interface{}{
+				"name":       groups[i].Name,
+				"sort_order": groups[i].SortOrder,
+				"status":     groups[i].Status,
+				"updated_at": now,
+				"deleted_at": nil,
+			}),
+		}).Create(&groups[i]).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *menuService) deleteMenusBySpace(tx *gorm.DB, spaceKey string) error {
+	normalizedSpaceKey := normalizeMenuSpaceKey(spaceKey)
+	if normalizedSpaceKey == spaceutil.DefaultMenuSpaceKey {
+		return tx.Exec("DELETE FROM menus WHERE space_key = ? OR COALESCE(space_key, '') = ''", normalizedSpaceKey).Error
+	}
+	return tx.Exec("DELETE FROM menus WHERE space_key = ?", normalizedSpaceKey).Error
 }
 
 func parseOptionalUUID(value *string) (*uuid.UUID, error) {
@@ -556,6 +804,55 @@ func sanitizeMenuMeta(meta map[string]interface{}) map[string]interface{} {
 		sanitized[key] = value
 	}
 	return sanitized
+}
+
+func sanitizeMenuPayloadByKind(kind string, component string, meta map[string]interface{}) (string, string, map[string]interface{}) {
+	sanitizedMeta := sanitizeMenuMeta(meta)
+	resolvedKind := normalizeMenuKind(kind, component, sanitizedMeta)
+	sanitizedComponent := strings.TrimSpace(component)
+
+	switch resolvedKind {
+	case models.MenuKindDirectory:
+		sanitizedComponent = ""
+		if sanitizedMeta != nil {
+			delete(sanitizedMeta, "link")
+			delete(sanitizedMeta, "isIframe")
+		}
+	case models.MenuKindExternal:
+		sanitizedComponent = ""
+		if sanitizedMeta != nil {
+			delete(sanitizedMeta, "isIframe")
+		}
+	default:
+		if sanitizedMeta != nil {
+			delete(sanitizedMeta, "link")
+		}
+	}
+
+	return resolvedKind, sanitizedComponent, sanitizedMeta
+}
+
+func normalizeMenuKind(kind string, component string, meta map[string]interface{}) string {
+	target := strings.TrimSpace(strings.ToLower(kind))
+	switch target {
+	case models.MenuKindDirectory, models.MenuKindEntry, models.MenuKindExternal:
+		return target
+	}
+	if meta != nil {
+		if link := strings.TrimSpace(toStringValue(meta["link"])); link != "" {
+			return models.MenuKindExternal
+		}
+	}
+	if strings.TrimSpace(component) != "" && strings.TrimSpace(component) != "/index/index" {
+		return models.MenuKindEntry
+	}
+	return models.MenuKindDirectory
+}
+
+func normalizeMenuListKinds(items []user.Menu) {
+	for i := range items {
+		items[i].Kind = normalizeMenuKind(items[i].Kind, items[i].Component, items[i].Meta)
+	}
 }
 
 func normalizeMenuSpaceKey(value string) string {

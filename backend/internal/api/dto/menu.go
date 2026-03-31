@@ -5,6 +5,7 @@ type MenuCreateRequest struct {
 	ParentID      *string                `json:"parent_id"`
 	ManageGroupID *string                `json:"manage_group_id"`
 	SpaceKey      string                 `json:"space_key"`
+	Kind          string                 `json:"kind"`
 	Path          string                 `json:"path" binding:"max=255"`
 	Name          string                 `json:"name" binding:"required,max=100"`
 	Component     string                 `json:"component"`
@@ -20,6 +21,7 @@ type MenuUpdateRequest struct {
 	ParentID      *string                `json:"parent_id"` // 空字符串表示移至顶级；省略字段表示保持不变
 	ManageGroupID *string                `json:"manage_group_id"`
 	SpaceKey      string                 `json:"space_key"`
+	Kind          string                 `json:"kind"`
 	Path          string                 `json:"path" binding:"max=255"`
 	Name          string                 `json:"name" binding:"max=100"`
 	Component     string                 `json:"component"`

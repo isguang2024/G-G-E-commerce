@@ -40,11 +40,11 @@
 
         <ElRow :gutter="14">
           <ElCol :span="24">
-            <ElFormItem label="菜单空间" prop="spaceKey">
+            <ElFormItem label="空间视角" prop="spaceKey">
               <template #label>
                 <PageFieldLabel
-                  label="菜单空间"
-                  help="普通分组也要显式归属到菜单空间，保证页面管理列表和分组候选不会跨空间混用。"
+                  label="空间视角"
+                  help="仅用于决定当前页面管理视角下的分组候选与列表归类。普通分组本身不是按空间复制的页面定义，只有极少数独立页才会做额外空间暴露。"
                 />
               </template>
               <ElSelect v-model="form.spaceKey" style="width: 100%">
@@ -107,6 +107,7 @@
     dialogType: 'add' | 'edit' | 'copy'
     pageData?: Partial<PageItem>
     menuSpaces?: Api.SystemManage.MenuSpaceItem[]
+    // 仅作为当前编辑视角使用，驱动候选加载与兼容提交，不代表页面必须绑定该空间。
     currentSpaceKey?: string
     initialParentPageKey?: string
     initialParentMenuId?: string
@@ -150,6 +151,7 @@
     id: '',
     pageKey: '',
     name: '',
+    // 兼容旧接口保留的视角字段：用于列表归类视角，不是页面主语义。
     spaceKey: 'default',
     sortOrder: 0,
     status: 'normal'
@@ -245,6 +247,7 @@
             ? `${props.pageData?.source || 'manual'}`
             : `${props.defaultData?.source || 'manual'}`,
         module_key: '',
+        // 兼容后端当前写接口；真正的空间暴露由后端统一返回 spaceKeys / spaceScope。
         space_key: form.spaceKey,
         sort_order: form.sortOrder,
         parent_menu_id: '',

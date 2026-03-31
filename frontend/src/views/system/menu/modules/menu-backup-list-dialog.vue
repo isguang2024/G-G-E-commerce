@@ -1,10 +1,23 @@
 <template>
   <ElDialog v-model="visible" title="管理备份" width="800px" class="backup-dialog" destroy-on-close>
     <div class="backup-list-container">
+      <ElAlert
+        class="mb-4"
+        type="info"
+        :closable="false"
+        description="列表默认展示当前空间备份，并同时展示正式全空间备份与历史全局兼容备份。恢复前请先核对标签，确认覆盖范围。"
+      />
       <ElTable v-loading="loading" :data="items" style="width: 100%" border stripe>
         <ElTableColumn prop="name" label="备份名称" width="200">
           <template #default="{ row }">
             <span class="font-medium">{{ row.name }}</span>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn prop="space_name" label="作用范围" width="170">
+          <template #default="{ row }">
+            <ElTag :type="getScopeTagType(row)" effect="light">
+              {{ getScopeLabel(row) }}
+            </ElTag>
           </template>
         </ElTableColumn>
         <ElTableColumn prop="description" label="备份描述">
@@ -20,7 +33,10 @@
         </ElTableColumn>
         <ElTableColumn label="操作" width="72" fixed="right" align="center">
           <template #default="{ row }">
-            <ArtButtonMore :list="operationList" @click="(item) => emit('action', String(item.key), row)" />
+            <ArtButtonMore
+              :list="operationList"
+              @click="(item) => emit('action', String(item.key), row)"
+            />
           </template>
         </ElTableColumn>
       </ElTable>
@@ -41,6 +57,10 @@
     id: string
     name: string
     description?: string
+    scope_type?: string
+    scope_origin?: string
+    space_key?: string
+    space_name?: string
     created_at?: string
     created_by?: string
   }
@@ -68,6 +88,26 @@
     get: () => props.modelValue,
     set: (value) => emit('update:modelValue', value)
   })
+
+  const getScopeLabel = (item: MenuBackupItem) => {
+    if (item.space_name) {
+      return item.space_name
+    }
+    if (item.scope_origin === 'legacy_global') {
+      return '历史全局兼容备份'
+    }
+    if (item.scope_type === 'global') {
+      return '全空间备份'
+    }
+    return '-'
+  }
+
+  const getScopeTagType = (item: MenuBackupItem) => {
+    if (item.scope_origin === 'legacy_global') {
+      return 'info'
+    }
+    return item.scope_type === 'global' ? 'warning' : 'success'
+  }
 
   const operationList: ButtonMoreItem[] = [
     { key: 'restore', label: '恢复备份', icon: 'ri:history-line', auth: 'system.menu.backup' },

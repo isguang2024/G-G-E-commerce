@@ -110,17 +110,19 @@ declare namespace Api {
 
   /** 系统管理类型 */
   namespace SystemManage {
-      interface MenuMetaConfig {
-        roles?: string[]
-        requiredAction?: string
-        requiredActions?: string[]
-        actionMatchMode?: 'any' | 'all'
-        actionVisibilityMode?: 'hide' | 'show'
-        spaceKey?: string
-        spaceType?: string
-        hostKey?: string
-        [k: string]: unknown
-      }
+    interface MenuMetaConfig {
+      roles?: string[]
+      // 后端已编译导航显隐，这些字段主要保留给页面内按钮提示或兼容链路使用。
+      requiredAction?: string
+      requiredActions?: string[]
+      actionMatchMode?: 'any' | 'all'
+      actionVisibilityMode?: 'hide' | 'show'
+      // spaceKey / spaceType / hostKey 都属于后端显式下发的运行时上下文，前端不自行推导。
+      spaceKey?: string
+      spaceType?: string
+      hostKey?: string
+      [k: string]: unknown
+    }
 
     interface MenuManageGroupItem {
       id: string
@@ -569,9 +571,9 @@ declare namespace Api {
       children?: PageMenuOptionItem[]
     }
 
-      interface PageItem {
-        id: string
-        pageKey: string
+    interface PageItem {
+      id: string
+      pageKey: string
       name: string
       routeName: string
       routePath: string
@@ -586,41 +588,48 @@ declare namespace Api {
       parentPageName?: string
       displayGroupKey?: string
       displayGroupName?: string
-        activeMenuPath?: string
-        breadcrumbMode?: 'inherit_menu' | 'inherit_page' | 'custom' | string
-        accessMode?: 'inherit' | 'public' | 'jwt' | 'permission' | string
-        permissionKey?: string
-        inheritPermission?: boolean
+      activeMenuPath?: string
+      breadcrumbMode?: 'inherit_menu' | 'inherit_page' | 'custom' | string
+      accessMode?: 'inherit' | 'public' | 'jwt' | 'permission' | string
+      permissionKey?: string
+      inheritPermission?: boolean
       keepAlive?: boolean
       isFullPage?: boolean
       isIframe?: boolean
-        isHideTab?: boolean
-        link?: string
-        spaceKey?: string
-        spaceType?: string
-        hostKey?: string
-        status: 'normal' | 'suspended' | string
-        meta?: Record<string, any>
-        createdAt?: string
-        updatedAt?: string
-      }
+      isHideTab?: boolean
+      link?: string
+      // spaceKey 仅作为兼容展示字段；真正的空间归属优先看 spaceKeys / spaceScope。
+      spaceKey?: string
+      // 后端会把独立页的空间暴露编译成显式列表；为空表示默认全局共享或从父链继承。
+      spaceKeys?: string[]
+      // global 表示全局共享；bound 表示通过 page_space_bindings 或兼容字段显式约束。
+      spaceScope?: 'global' | 'bound' | string
+      spaceType?: string
+      hostKey?: string
+      status: 'normal' | 'suspended' | string
+      meta?: Record<string, any>
+      createdAt?: string
+      updatedAt?: string
+    }
 
-      interface PageUnregisteredItem {
-        filePath: string
-        component: string
-        pageKey: string
-        name: string
+    interface PageUnregisteredItem {
+      filePath: string
+      component: string
+      pageKey: string
+      name: string
       routeName: string
       routePath: string
       pageType: 'group' | 'display_group' | 'inner' | 'global' | string
-        moduleKey?: string
-        parentMenuId?: string
-        parentMenuName?: string
-        activeMenuPath?: string
-        spaceKey?: string
-        spaceType?: string
-        hostKey?: string
-      }
+      moduleKey?: string
+      parentMenuId?: string
+      parentMenuName?: string
+      activeMenuPath?: string
+      spaceKey?: string
+      spaceKeys?: string[]
+      spaceScope?: 'global' | 'bound' | string
+      spaceType?: string
+      hostKey?: string
+    }
 
     interface PageSyncResult {
       createdCount: number
@@ -637,18 +646,18 @@ declare namespace Api {
 
     type PageList = Api.Common.PaginatedResponse<PageItem>
 
-      type PageSearchParams = Partial<
-        Pick<PageItem, 'pageType' | 'moduleKey' | 'accessMode' | 'source' | 'status'> &
-          Api.Common.CommonSearchParams & {
-            keyword?: string
-            parentMenuId?: string
-            spaceKey?: string
-          }
-      >
+    type PageSearchParams = Partial<
+      Pick<PageItem, 'pageType' | 'moduleKey' | 'accessMode' | 'source' | 'status'> &
+        Api.Common.CommonSearchParams & {
+          keyword?: string
+          parentMenuId?: string
+          spaceKey?: string
+        }
+    >
 
-      interface PageSaveParams {
-        page_key: string
-        name: string
+    interface PageSaveParams {
+      page_key: string
+      name: string
       route_name: string
       route_path: string
       component: string
@@ -665,13 +674,44 @@ declare namespace Api {
       permission_key?: string
       inherit_permission?: boolean
       keep_alive?: boolean
-        is_full_page?: boolean
-        space_key?: string
-        space_type?: string
-        host_key?: string
-        status?: 'normal' | 'suspended' | string
-        meta?: Record<string, any>
+      is_full_page?: boolean
+      // 仅少量独立页会继续显式写入 space_key；挂到菜单/父页的页面由后端自动忽略该值。
+      space_key?: string
+      space_keys?: string[]
+      space_type?: string
+      host_key?: string
+      status?: 'normal' | 'suspended' | string
+      meta?: Record<string, any>
+    }
+
+    interface RuntimeNavigationManifest {
+      currentSpace?: {
+        space?: MenuSpaceItem
+        binding?: MenuSpaceHostBindingItem
+        resolvedBy?: string
+        requestHost?: string
+        accessGranted?: boolean
       }
+      context?: {
+        space_key?: string
+        requested_space_key?: string
+        request_host?: string
+        authenticated?: boolean
+        super_admin?: boolean
+        user_id?: string
+        tenant_id?: string
+        visible_menu_count?: number
+        managed_page_count?: number
+        action_key_count?: number
+      }
+      menuTree: AppRouteRecord[]
+      // entryRoutes 是给审计、兜底和后续增量注册预留的扁平入口视图；
+      // 当前前端仍以 menuTree 注册树形导航，避免再拼第二套路由结构。
+      entryRoutes: AppRouteRecord[]
+      // managedPages 只包含非菜单直达页；菜单 entry 自己就是页面入口，不会重复出现在这里。
+      managedPages: PageItem[]
+      versionStamp?: string
+    }
 
     interface TeamFeaturePackageResponse {
       package_ids: string[]
@@ -1024,38 +1064,64 @@ declare namespace Api {
     }
 
     /** 创建菜单参数（与后端 MenuCreateRequest 一致） */
-      interface MenuCreateParams {
-        parent_id: string | null
-        manage_group_id?: string | null
-        path: string
-        name: string
+    interface MenuCreateParams {
+      parent_id: string | null
+      manage_group_id?: string | null
+      // directory 只做分组；entry 直接作为页面入口；external 只维护外链展示。
+      kind?: 'directory' | 'entry' | 'external' | string
+      path: string
+      name: string
       component?: string
       title: string
       icon?: string
-        sort_order?: number
-        meta?: MenuMetaConfig
-        space_key?: string
-        space_type?: string
-        host_key?: string
-        hidden?: boolean
-      }
+      sort_order?: number
+      meta?: MenuMetaConfig
+      space_key?: string
+      space_type?: string
+      host_key?: string
+      hidden?: boolean
+    }
 
     /** 更新菜单参数（与后端 MenuUpdateRequest 一致） */
-      interface MenuUpdateParams {
-        parent_id: string | null
-        manage_group_id?: string | null
-        path?: string
-        name?: string
+    interface MenuUpdateParams {
+      parent_id: string | null
+      manage_group_id?: string | null
+      kind?: 'directory' | 'entry' | 'external' | string
+      path?: string
+      name?: string
       component?: string
       title?: string
-        icon?: string
-        sort_order?: number
-        meta?: MenuMetaConfig
-        space_key?: string
-        space_type?: string
-        host_key?: string
-        hidden?: boolean
-      }
+      icon?: string
+      sort_order?: number
+      meta?: MenuMetaConfig
+      space_key?: string
+      space_type?: string
+      host_key?: string
+      hidden?: boolean
+    }
+
+    interface MenuBackupItem {
+      id: string
+      name: string
+      description?: string
+      // scope_type 只保留“空间 / 全局”主语义；真正的来源区分看 scope_origin。
+      space_key?: string
+      space_name?: string
+      scope_type?: 'space' | 'global' | string
+      // scope_origin 用来区分正式全空间备份和历史兼容全局备份，便于列表提示和恢复确认文案更清晰。
+      scope_origin?: 'space' | 'global' | 'legacy_global' | string
+      created_at?: string
+      created_by?: string
+    }
+
+    interface MenuBackupCreateParams {
+      name: string
+      description?: string
+      // scope_type 显式声明要备份当前空间还是全部空间，避免再依赖省略 space_key 推断语义。
+      scope_type?: 'space' | 'global' | string
+      // 仅当 scope_type=space 时需要传入当前菜单空间；global 备份会忽略该字段。
+      space_key?: string
+    }
   }
 
   namespace Message {
@@ -1159,60 +1225,60 @@ declare namespace Api {
       team_name?: string
     }
 
-      interface DispatchRecipientGroupOption {
-        id: string
-        name: string
-        description?: string
-        match_mode?: string
-        estimated_count?: number
-      }
+    interface DispatchRecipientGroupOption {
+      id: string
+      name: string
+      description?: string
+      match_mode?: string
+      estimated_count?: number
+    }
 
-      interface DispatchRoleOption {
-        id: string
-        code: string
-        name: string
-        description?: string
-      }
+    interface DispatchRoleOption {
+      id: string
+      code: string
+      name: string
+      description?: string
+    }
 
-      interface DispatchFeaturePackageOption {
-        id: string
-        package_key: string
-        name: string
-        description?: string
-      }
+    interface DispatchFeaturePackageOption {
+      id: string
+      package_key: string
+      name: string
+      description?: string
+    }
 
     interface DispatchOptions {
-        sender_scope: 'platform' | 'team' | string
-        current_tenant_id?: string
-        current_tenant_name?: string
-        sender_options: DispatchSenderOption[]
-        default_sender_id?: string
-        audience_options: DispatchAudienceOption[]
-        template_options: DispatchTemplateOption[]
-          teams: DispatchTeamOption[]
-          users: DispatchUserOption[]
-          recipient_groups: DispatchRecipientGroupOption[]
-          roles: DispatchRoleOption[]
-          feature_packages: DispatchFeaturePackageOption[]
-          default_message_type: BoxType
-        default_audience_type: AudienceType
-        default_priority: string
-        supports_external_link: boolean
-      }
+      sender_scope: 'platform' | 'team' | string
+      current_tenant_id?: string
+      current_tenant_name?: string
+      sender_options: DispatchSenderOption[]
+      default_sender_id?: string
+      audience_options: DispatchAudienceOption[]
+      template_options: DispatchTemplateOption[]
+      teams: DispatchTeamOption[]
+      users: DispatchUserOption[]
+      recipient_groups: DispatchRecipientGroupOption[]
+      roles: DispatchRoleOption[]
+      feature_packages: DispatchFeaturePackageOption[]
+      default_message_type: BoxType
+      default_audience_type: AudienceType
+      default_priority: string
+      supports_external_link: boolean
+    }
 
-      interface DispatchSenderOption {
-        id: string
-        name: string
-        description?: string
-        avatar_url?: string
-        is_default?: boolean
-      }
+    interface DispatchSenderOption {
+      id: string
+      name: string
+      description?: string
+      avatar_url?: string
+      is_default?: boolean
+    }
 
-      interface DispatchParams {
-        sender_id?: string
-        template_id?: string
-        template_key?: string
-        message_type: BoxType
+    interface DispatchParams {
+      sender_id?: string
+      template_id?: string
+      template_key?: string
+      message_type: BoxType
       audience_type: AudienceType
       target_tenant_ids?: string[]
       target_user_ids?: string[]
@@ -1259,99 +1325,99 @@ declare namespace Api {
 
     type MessageTemplateListResponse = Api.Common.PaginatedResponse<MessageTemplateItem>
 
-      interface MessageTemplateSaveParams {
-        template_key?: string
-        name: string
+    interface MessageTemplateSaveParams {
+      template_key?: string
+      name: string
       description?: string
       message_type: BoxType
       audience_type: AudienceType
       title_template?: string
       summary_template?: string
       content_template?: string
-        status?: 'normal' | 'disabled' | string
-      }
+      status?: 'normal' | 'disabled' | string
+    }
 
-      interface MessageSenderItem {
-        id: string
-        scope_type: 'platform' | 'team' | string
-        scope_id?: string
-        name: string
-        description?: string
-        avatar_url?: string
-        is_default?: boolean
-        status: 'normal' | 'disabled' | string
-        editable: boolean
-        meta?: Record<string, any>
-        created_at?: string
-        updated_at?: string
-      }
+    interface MessageSenderItem {
+      id: string
+      scope_type: 'platform' | 'team' | string
+      scope_id?: string
+      name: string
+      description?: string
+      avatar_url?: string
+      is_default?: boolean
+      status: 'normal' | 'disabled' | string
+      editable: boolean
+      meta?: Record<string, any>
+      created_at?: string
+      updated_at?: string
+    }
 
-      interface MessageSenderListResponse {
-        records: MessageSenderItem[]
-      }
+    interface MessageSenderListResponse {
+      records: MessageSenderItem[]
+    }
 
-      interface MessageSenderSaveParams {
-        name: string
-        description?: string
-        avatar_url?: string
-        is_default?: boolean
-        status?: 'normal' | 'disabled' | string
-        meta?: Record<string, any>
-      }
+    interface MessageSenderSaveParams {
+      name: string
+      description?: string
+      avatar_url?: string
+      is_default?: boolean
+      status?: 'normal' | 'disabled' | string
+      meta?: Record<string, any>
+    }
 
-      interface MessageRecipientGroupTargetItem {
-        id: string
-        target_type: 'user' | 'tenant_users' | 'tenant_admins' | string
-        user_id?: string
-        user_name?: string
-          tenant_id?: string
-          tenant_name?: string
-          role_code?: string
-          role_name?: string
-          package_key?: string
-          package_name?: string
-          sort_order?: number
-          meta?: Record<string, any>
-        }
+    interface MessageRecipientGroupTargetItem {
+      id: string
+      target_type: 'user' | 'tenant_users' | 'tenant_admins' | string
+      user_id?: string
+      user_name?: string
+      tenant_id?: string
+      tenant_name?: string
+      role_code?: string
+      role_name?: string
+      package_key?: string
+      package_name?: string
+      sort_order?: number
+      meta?: Record<string, any>
+    }
 
-      interface MessageRecipientGroupItem {
-        id: string
-        scope_type: 'platform' | 'team' | string
-        scope_id?: string
-        name: string
-        description?: string
-        match_mode?: 'manual' | string
-        status: 'normal' | 'disabled' | string
-        editable: boolean
-        estimated_count?: number
-        meta?: Record<string, any>
-        targets: MessageRecipientGroupTargetItem[]
-        created_at?: string
-        updated_at?: string
-      }
+    interface MessageRecipientGroupItem {
+      id: string
+      scope_type: 'platform' | 'team' | string
+      scope_id?: string
+      name: string
+      description?: string
+      match_mode?: 'manual' | string
+      status: 'normal' | 'disabled' | string
+      editable: boolean
+      estimated_count?: number
+      meta?: Record<string, any>
+      targets: MessageRecipientGroupTargetItem[]
+      created_at?: string
+      updated_at?: string
+    }
 
-      interface MessageRecipientGroupListResponse {
-        records: MessageRecipientGroupItem[]
-      }
+    interface MessageRecipientGroupListResponse {
+      records: MessageRecipientGroupItem[]
+    }
 
-      interface MessageRecipientGroupTargetSaveParams {
-          target_type: 'user' | 'tenant_users' | 'tenant_admins' | 'role' | 'feature_package' | string
-        user_id?: string
-        tenant_id?: string
-        role_code?: string
-        package_key?: string
-        sort_order?: number
-        meta?: Record<string, any>
-      }
+    interface MessageRecipientGroupTargetSaveParams {
+      target_type: 'user' | 'tenant_users' | 'tenant_admins' | 'role' | 'feature_package' | string
+      user_id?: string
+      tenant_id?: string
+      role_code?: string
+      package_key?: string
+      sort_order?: number
+      meta?: Record<string, any>
+    }
 
-      interface MessageRecipientGroupSaveParams {
-        name: string
-        description?: string
-        match_mode?: 'manual' | string
-        status?: 'normal' | 'disabled' | string
-        meta?: Record<string, any>
-        targets: MessageRecipientGroupTargetSaveParams[]
-      }
+    interface MessageRecipientGroupSaveParams {
+      name: string
+      description?: string
+      match_mode?: 'manual' | string
+      status?: 'normal' | 'disabled' | string
+      meta?: Record<string, any>
+      targets: MessageRecipientGroupTargetSaveParams[]
+    }
 
     interface DispatchRecordQuery extends Partial<Api.Common.CommonSearchParams> {
       keyword?: string

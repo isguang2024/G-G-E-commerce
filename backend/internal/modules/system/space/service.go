@@ -22,6 +22,7 @@ type SpaceRecord struct {
 	HostCount        int      `json:"host_count"`
 	Hosts            []string `json:"hosts,omitempty"`
 	MenuCount        int      `json:"menu_count"`
+	// PageCount 统计的是独立页暴露数量，不再代表“复制到该空间的页面定义数量”。
 	PageCount        int      `json:"page_count"`
 	AccessMode       string   `json:"access_mode"`
 	AllowedRoleCodes []string `json:"allowed_role_codes"`
@@ -45,6 +46,7 @@ type InitializeResult struct {
 	TargetSpaceKey         string `json:"target_space_key"`
 	ForceReinitialized     bool   `json:"force_reinitialized"`
 	ClearedMenuCount       int    `json:"cleared_menu_count"`
+	// ClearedPageCount / CreatedPageCount 仅表示独立页暴露绑定数量，兼容旧接口命名保留。
 	ClearedPageCount       int    `json:"cleared_page_count"`
 	ClearedPackageMenuLink int    `json:"cleared_package_menu_link_count"`
 	CreatedMenuCount       int    `json:"created_menu_count"`
@@ -525,15 +527,6 @@ func (s *service) InitializeFromDefault(targetSpaceKey string, force bool, actor
 			return fmt.Errorf("目标空间已存在菜单，请先清空后再初始化")
 		}
 
-		var existingPageCount int64
-		if err := tx.Model(&models.UIPage{}).
-			Where("COALESCE(NULLIF(space_key, ''), ?) = ?", DefaultMenuSpaceKey, targetKey).
-			Count(&existingPageCount).Error; err != nil {
-			return err
-		}
-		if existingPageCount > 0 && !force {
-			return fmt.Errorf("目标空间已存在页面，请先清空后再初始化")
-		}
 		if force {
 			var targetMenus []models.Menu
 			if err := tx.Where("COALESCE(NULLIF(space_key, ''), ?) = ?", DefaultMenuSpaceKey, targetKey).
@@ -553,13 +546,6 @@ func (s *service) InitializeFromDefault(targetSpaceKey string, force bool, actor
 				}
 				result.ClearedPackageMenuLink = int(linkCount)
 				if err := tx.Where("menu_id IN ?", targetMenuIDs).Delete(&models.FeaturePackageMenu{}).Error; err != nil {
-					return err
-				}
-			}
-			if existingPageCount > 0 {
-				result.ClearedPageCount = int(existingPageCount)
-				if err := tx.Where("COALESCE(NULLIF(space_key, ''), ?) = ?", DefaultMenuSpaceKey, targetKey).
-					Delete(&models.UIPage{}).Error; err != nil {
 					return err
 				}
 			}
@@ -613,58 +599,6 @@ func (s *service) InitializeFromDefault(targetSpaceKey string, force bool, actor
 			}
 		}
 		result.CreatedMenuCount = len(clonedMenus)
-
-		var sourcePages []models.UIPage
-		if err := tx.Where("COALESCE(NULLIF(space_key, ''), ?) = ?", DefaultMenuSpaceKey, DefaultMenuSpaceKey).
-			Order("sort_order ASC, created_at ASC").
-			Find(&sourcePages).Error; err != nil {
-			return err
-		}
-		spaceSuffix := sanitizeSpaceKeySegment(targetKey)
-		pageKeyMap := make(map[string]string, len(sourcePages))
-		for _, item := range sourcePages {
-			pageKeyMap[item.PageKey] = fmt.Sprintf("%s.%s", item.PageKey, spaceSuffix)
-		}
-		clonedPages := make([]models.UIPage, 0, len(sourcePages))
-		for _, item := range sourcePages {
-			cloned := models.UIPage{
-				ID:                uuid.New(),
-				PageKey:           pageKeyMap[item.PageKey],
-				Name:              item.Name,
-				RouteName:         buildClonedRouteName(item.RouteName, spaceSuffix),
-				RoutePath:         item.RoutePath,
-				Component:         item.Component,
-				SpaceKey:          targetKey,
-				PageType:          item.PageType,
-				Source:            item.Source,
-				ModuleKey:         item.ModuleKey,
-				SortOrder:         item.SortOrder,
-				ParentMenuID:      nil,
-				ParentPageKey:     remapStringKey(pageKeyMap, item.ParentPageKey),
-				DisplayGroupKey:   remapStringKey(pageKeyMap, item.DisplayGroupKey),
-				ActiveMenuPath:    item.ActiveMenuPath,
-				BreadcrumbMode:    item.BreadcrumbMode,
-				AccessMode:        item.AccessMode,
-				PermissionKey:     item.PermissionKey,
-				InheritPermission: item.InheritPermission,
-				KeepAlive:         item.KeepAlive,
-				IsFullPage:        item.IsFullPage,
-				Status:            item.Status,
-				Meta:              cloneMetaJSON(item.Meta),
-			}
-			if item.ParentMenuID != nil {
-				if newParentMenuID, ok := menuIDMap[*item.ParentMenuID]; ok {
-					cloned.ParentMenuID = &newParentMenuID
-				}
-			}
-			clonedPages = append(clonedPages, cloned)
-		}
-		if len(clonedPages) > 0 {
-			if err := tx.Create(&clonedPages).Error; err != nil {
-				return err
-			}
-		}
-		result.CreatedPageCount = len(clonedPages)
 
 		var sourcePackageMenus []models.FeaturePackageMenu
 		sourceMenuIDs := make([]uuid.UUID, 0, len(sourceMenus))
@@ -816,17 +750,35 @@ func (s *service) loadPageCountMap() (map[string]int, error) {
 		SpaceKey string
 		Total    int
 	}
-	var rows []aggregate
-	if err := s.db.Model(&models.UIPage{}).
+	result := make(map[string]int)
+
+	var bindingRows []aggregate
+	if err := s.db.Model(&models.PageSpaceBinding{}).
 		Select("space_key, COUNT(*) AS total").
 		Where("deleted_at IS NULL").
 		Group("space_key").
-		Scan(&rows).Error; err != nil {
+		Scan(&bindingRows).Error; err != nil {
 		return nil, err
 	}
-	result := make(map[string]int, len(rows))
-	for _, item := range rows {
-		result[NormalizeSpaceKey(item.SpaceKey)] = item.Total
+	for _, item := range bindingRows {
+		result[NormalizeSpaceKey(item.SpaceKey)] += item.Total
+	}
+
+	var legacyRows []aggregate
+	if err := s.db.Model(&models.UIPage{}).
+		Select("space_key, COUNT(*) AS total").
+		Where("deleted_at IS NULL").
+		Where("parent_menu_id IS NULL").
+		Where("COALESCE(NULLIF(TRIM(parent_page_key), ''), '') = ''").
+		Where("COALESCE(NULLIF(TRIM(space_key), ''), '') <> ''").
+		Where("LOWER(TRIM(space_key)) <> ?", DefaultMenuSpaceKey).
+		Where("NOT EXISTS (SELECT 1 FROM page_space_bindings WHERE page_space_bindings.page_id = ui_pages.id AND page_space_bindings.deleted_at IS NULL)").
+		Group("space_key").
+		Scan(&legacyRows).Error; err != nil {
+		return nil, err
+	}
+	for _, item := range legacyRows {
+		result[NormalizeSpaceKey(item.SpaceKey)] += item.Total
 	}
 	return result, nil
 }
@@ -846,15 +798,15 @@ func (s *service) notifySpaceOperation(actorUserID uuid.UUID, result *Initialize
 		fmt.Sprintf("操作空间：%s（%s）", spaceRecord.Name, spaceRecord.SpaceKey),
 		fmt.Sprintf("操作人：%s", operatorName),
 		fmt.Sprintf("新建菜单：%d", result.CreatedMenuCount),
-		fmt.Sprintf("新建页面：%d", result.CreatedPageCount),
+		fmt.Sprintf("新建独立页暴露：%d", result.CreatedPageCount),
 		fmt.Sprintf("新建功能包菜单关联：%d", result.CreatedPackageMenuLink),
 	}
 	if result.ForceReinitialized {
 		actionText = "重新初始化"
-		summary = fmt.Sprintf("菜单空间“%s”已完成重新初始化，原有菜单与页面已被默认空间覆盖。", spaceRecord.Name)
+		summary = fmt.Sprintf("菜单空间“%s”已完成重新初始化，原有菜单树与功能包菜单关联已被默认空间覆盖。", spaceRecord.Name)
 		contentLines = append([]string{
 			fmt.Sprintf("已清空菜单：%d", result.ClearedMenuCount),
-			fmt.Sprintf("已清空页面：%d", result.ClearedPageCount),
+			fmt.Sprintf("已清空独立页暴露：%d", result.ClearedPageCount),
 			fmt.Sprintf("已清空功能包菜单关联：%d", result.ClearedPackageMenuLink),
 		}, contentLines...)
 	}
@@ -1060,35 +1012,4 @@ func cloneMetaJSON(meta models.MetaJSON) models.MetaJSON {
 		result[key] = value
 	}
 	return result
-}
-
-func sanitizeSpaceKeySegment(value string) string {
-	target := strings.TrimSpace(strings.ToLower(value))
-	target = strings.ReplaceAll(target, "-", "_")
-	target = strings.ReplaceAll(target, ".", "_")
-	target = strings.ReplaceAll(target, "/", "_")
-	target = strings.Trim(target, "_")
-	if target == "" {
-		return DefaultMenuSpaceKey
-	}
-	return target
-}
-
-func buildClonedRouteName(routeName string, spaceSuffix string) string {
-	target := strings.TrimSpace(routeName)
-	if target == "" {
-		target = "Page"
-	}
-	return target + "__" + strings.Title(spaceSuffix)
-}
-
-func remapStringKey(mapping map[string]string, source string) string {
-	target := strings.TrimSpace(source)
-	if target == "" {
-		return ""
-	}
-	if remapped, ok := mapping[target]; ok {
-		return remapped
-	}
-	return ""
 }

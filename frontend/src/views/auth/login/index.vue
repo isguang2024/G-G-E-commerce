@@ -249,11 +249,9 @@
       // 获取 redirect 参数，如果存在则跳转到指定页面，否则跳转到首页
       const redirect = route.query.redirect as string
       const landingPath = redirect || '/'
-      const resolved = router.resolve(landingPath)
-      const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
-        resolved.href,
-        `${resolved.meta?.spaceKey || ''}`.trim() || undefined
-      )
+      // 登录后先交给路由守卫完成 runtime/navigation 注册，再决定是否进入 404；
+      // 这里不再用 router.resolve 预探测，避免动态路由尚未挂载时把合法跳转误报成 warning。
+      const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(landingPath)
       if (nextTarget.mode === 'router') {
         router.push(landingPath)
       } else {

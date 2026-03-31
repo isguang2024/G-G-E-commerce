@@ -43,7 +43,7 @@ import { useSettingStore } from '@/store/modules/setting'
 import { useUserStore } from '@/store/modules/user'
 import { useMenuStore } from '@/store/modules/menu'
 import { setWorktab } from '@/utils/navigation'
-import { setPageTitle } from '@/utils/router'
+import { hasRegisteredRoutePath, setPageTitle } from '@/utils/router'
 import { RoutesAlias } from '../routesAlias'
 import { staticRoutes } from '../routes/staticRoutes'
 import { loadingService } from '@/utils/ui'
@@ -52,17 +52,18 @@ import { useWorktabStore } from '@/store/modules/worktab'
 import { hasPlatformAccessByUserInfo, useTenantStore } from '@/store/modules/tenant'
 import { useMenuSpaceStore } from '@/store/modules/menu-space'
 import { fetchGetUserInfo } from '@/api/auth'
-import { fetchGetRuntimePageList, fetchGetRuntimePublicPageList } from '@/api/system-manage'
+import {
+  fetchGetRuntimeNavigation,
+  fetchGetRuntimePublicPageList
+} from '@/api/system-manage'
 import { ApiStatus } from '@/utils/http/status'
 import { isHttpError } from '@/utils/http/error'
 import {
   RouteRegistry,
   MenuProcessor,
   IframeRouteManager,
-  RoutePermissionValidator,
   ManagedPageProcessor
 } from '../core'
-import { hasMenuActionAccess, shouldHideMenuWhenActionDenied } from '@/utils/permission/menu'
 import { normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
 
 // 路由注册器实例
@@ -84,29 +85,35 @@ let routeInitFailed = false
 let routeInitInProgress = false
 const routeRefreshAttempted = new Set<string>()
 
-const warnDev = (...args: any[]) => {
-  if (import.meta.env.DEV) {
-    console.warn(...args)
-  }
-}
-
-async function buildRegisteredRouteList(menuList: AppRouteRecord[]): Promise<AppRouteRecord[]> {
-  const baseMenus = Array.isArray(menuList) ? menuList : []
+async function buildRegisteredRoutesFromManifest(preferredSpaceKey = ''): Promise<{
+  menuList: AppRouteRecord[]
+  registeredRoutes: AppRouteRecord[]
+  manifest: Api.SystemManage.RuntimeNavigationManifest
+}> {
   const menuSpaceStore = useMenuSpaceStore()
-  const currentSpaceKey = menuSpaceStore.currentSpaceKey
+  const userStore = useUserStore()
+  const requestedSpaceKey = normalizeMenuSpaceKey(preferredSpaceKey || menuSpaceStore.currentSpaceKey)
+  const manifest = await fetchGetRuntimeNavigation(requestedSpaceKey)
+  const resolvedSpaceKey = normalizeMenuSpaceKey(
+    manifest.currentSpace?.space?.spaceKey || manifest.context?.space_key || requestedSpaceKey
+  )
 
-  try {
-    const runtimeRes = await fetchGetRuntimePageList(currentSpaceKey)
-    const userStore = useUserStore()
-    const runtimeRoutes = managedPageProcessor.buildRoutes(
-      baseMenus,
-      runtimeRes.records || [],
-      userStore.getUserInfo as Api.Auth.UserInfo
-    )
-    return [...baseMenus, ...runtimeRoutes]
-  } catch (error) {
-    warnDev('[RouteGuard] 获取运行时页面注册表失败，已回退为纯菜单路由:', error)
-    return baseMenus
+  if (resolvedSpaceKey && resolvedSpaceKey !== normalizeMenuSpaceKey(menuSpaceStore.currentSpaceKey)) {
+    menuSpaceStore.setActiveSpaceKey(resolvedSpaceKey)
+  }
+
+  const menuList = menuProcessor.normalizeMenuList(manifest.menuTree || [])
+  const runtimeRoutes = managedPageProcessor.buildRoutes(
+    menuList,
+    manifest.managedPages || [],
+    userStore.getUserInfo as Api.Auth.UserInfo,
+    { trustBackend: true }
+  )
+
+  return {
+    menuList,
+    registeredRoutes: [...menuList, ...runtimeRoutes],
+    manifest
   }
 }
 
@@ -148,12 +155,11 @@ export async function refreshUserMenus(): Promise<void> {
   if (!routeRegistry) return
   const menuStore = useMenuStore()
   try {
-    const list = await menuProcessor.getMenuList()
-    const registeredRoutes = await buildRegisteredRouteList(list)
+    const { menuList, registeredRoutes } = await buildRegisteredRoutesFromManifest()
     routeRegistry.unregister()
     routeRegistry.register(registeredRoutes)
     routeRegistrationMode = 'authenticated'
-    syncHomePathWithRegisteredRoutes(list, registeredRoutes)
+    syncHomePathWithRegisteredRoutes(menuList, registeredRoutes)
     menuStore.clearRemoveRouteFns()
     menuStore.addRemoveRouteFns(routeRegistry.getRemoveRouteFns())
     IframeRouteManager.getInstance().save()
@@ -356,12 +362,7 @@ async function handleRouteGuard(
     return
   }
 
-  // 5. 处理菜单绑定的基础功能门槛
-  if (handleMenuActionRedirect(to, next)) {
-    return
-  }
-
-  // 6. 处理已匹配的路由
+  // 5. 处理已匹配的路由
   if (to.matched.length > 0) {
     routeRefreshAttempted.delete(to.fullPath)
     setWorktab(to)
@@ -370,12 +371,12 @@ async function handleRouteGuard(
     return
   }
 
-  if (await tryRefreshMissingDynamicRoute(to, next)) {
+  if (await tryRefreshMissingDynamicRoute(to, next, router)) {
     return
   }
 
-  // 7. 未匹配到路由，跳转到 404
-  next({ name: 'Exception404' })
+  // 6. 未匹配到路由，跳转到 404
+  next({ name: 'Exception404', replace: true })
 }
 
 /**
@@ -426,7 +427,9 @@ async function ensurePublicRuntimeRoutes(
   try {
     const menuSpaceStore = useMenuSpaceStore()
     const runtimeRes = await fetchGetRuntimePublicPageList(menuSpaceStore.currentSpaceKey)
-    const publicRoutes = managedPageProcessor.buildRoutes([], runtimeRes.records || [], null)
+    const publicRoutes = managedPageProcessor.buildRoutes([], runtimeRes.records || [], null, {
+      trustBackend: true
+    })
     routeRegistry.register(publicRoutes)
     routeRegistrationMode = 'public'
     const resolved = router.resolve({
@@ -495,9 +498,10 @@ async function handleDynamicRoutes(
     // 1. 获取用户信息
     await fetchUserInfo(resolvePreferredSpaceKeyFromRoute(to))
 
-    // 2. 获取菜单数据
-    const menuList = await menuProcessor.getMenuList()
-    const registeredRoutes = await buildRegisteredRouteList(menuList)
+    // 2. 后端一次编译 navigation manifest，前端只做轻量归一化与路由注册
+    const { menuList, registeredRoutes } = await buildRegisteredRoutesFromManifest(
+      resolvePreferredSpaceKeyFromRoute(to)
+    )
 
     // 3. 验证菜单数据
     // 4. 注册动态路由
@@ -528,14 +532,6 @@ async function handleDynamicRoutes(
       return
     }
 
-    // 8. 验证目标路径权限
-    const { homePath } = useCommon()
-    const { path: validatedPath, hasPermission } = RoutePermissionValidator.validatePath(
-      to.path,
-      registeredRoutes,
-      homePath.value || '/403'
-    )
-
     // 初始化成功，重置进行中标记
     routeInitInProgress = false
 
@@ -547,25 +543,14 @@ async function handleDynamicRoutes(
       return
     }
 
-    // 9. 重新导航到目标路由
-    if (!hasPermission) {
-      // 无权限访问，跳转到首页
-      closeLoading()
-
-      // 直接跳转到首页
-      next({
-        path: validatedPath,
-        replace: true
-      })
-    } else {
-      // 有权限，正常导航
-      next({
-        path: to.path,
-        query: to.query,
-        hash: to.hash,
-        replace: true
-      })
-    }
+    // 8. 重新导航到目标路由。目标路径是否可访问由后端 manifest 产出的动态路由决定，
+    // 当前守卫不再重复做菜单/页面权限推导，只负责补注册后的二次命中。
+    next({
+      path: to.path,
+      query: to.query,
+      hash: to.hash,
+      replace: true
+    })
   } catch (error) {
     console.error('[RouteGuard] 动态路由注册失败:', error)
 
@@ -667,37 +652,6 @@ function handleRootPathRedirect(to: RouteLocationNormalized, next: NavigationGua
 }
 
 /**
- * 处理菜单绑定的基础功能门槛访问
- */
-function handleMenuActionRedirect(
-  to: RouteLocationNormalized,
-  next: NavigationGuardNext
-): boolean {
-  const userStore = useUserStore()
-  const menuStore = useMenuStore()
-  const guardedRecord = [...to.matched].reverse().find((record) => {
-    const requiredActions = record.meta?.requiredActions
-    return Boolean(record.meta?.requiredAction || (Array.isArray(requiredActions) && requiredActions.length))
-  })
-
-  if (!guardedRecord) {
-    return false
-  }
-
-  if (!shouldHideMenuWhenActionDenied(guardedRecord.meta)) {
-    return false
-  }
-
-  if (hasMenuActionAccess(userStore.getUserInfo as Api.Auth.UserInfo, guardedRecord.meta)) {
-    return false
-  }
-
-  const fallbackPath = menuStore.getHomePath() || '/403'
-  next({ path: fallbackPath, replace: true })
-  return true
-}
-
-/**
  * 判断是否为未授权错误（401）
  */
 function isUnauthorizedError(error: unknown): boolean {
@@ -713,7 +667,8 @@ function resolvePreferredSpaceKeyFromRoute(to: RouteLocationNormalized): string 
 
 async function tryRefreshMissingDynamicRoute(
   to: RouteLocationNormalized,
-  next: NavigationGuardNext
+  next: NavigationGuardNext,
+  router: Router
 ): Promise<boolean> {
   const userStore = useUserStore()
   if (!userStore.isLogin || isStaticRoute(to.path) || isPublicRuntimeRoute(to)) {
@@ -727,6 +682,14 @@ async function tryRefreshMissingDynamicRoute(
   routeRefreshAttempted.add(to.fullPath)
   try {
     await refreshUserAccessAndMenus()
+    // 刷新访问图后若目标路由仍不存在，说明它已经不在当前运行时导航清单里，
+    // 常见于菜单被禁用、空间切换后失效或权限被收回，此时直接落到 404，
+    // 避免再次强跳原路径造成一串 "No match found" 警告。
+    if (!hasRegisteredRoutePath(router, to.path)) {
+      routeRefreshAttempted.delete(to.fullPath)
+      next({ name: 'Exception404', replace: true })
+      return true
+    }
     next({
       path: to.path,
       query: to.query,

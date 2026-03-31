@@ -32,7 +32,7 @@
           <div class="menu-space-panel__header">
             <div>
               <div class="menu-space-panel__title">菜单空间</div>
-              <div class="menu-space-panel__desc">默认空间始终兜底存在；新增空间后，可以逐步把菜单和页面迁过去。</div>
+              <div class="menu-space-panel__desc">默认空间始终兜底存在；新增空间后，只复制菜单树与空间配置，受管页面默认继续全局复用。</div>
             </div>
           </div>
         </template>
@@ -62,7 +62,7 @@
                 <span>标识 {{ item.spaceKey }}</span>
                 <span>首页 {{ item.defaultHomePath || '-' }}</span>
                 <span>菜单 {{ item.menuCount || 0 }}</span>
-                <span>页面 {{ item.pageCount || 0 }}</span>
+                <span>独立页暴露 {{ item.pageCount || 0 }}</span>
                 <span>准入 {{ getAccessModeLabel(item.accessMode) }}</span>
                 <span>Host {{ item.hostCount || 0 }}</span>
               </div>
@@ -88,14 +88,14 @@
               <div class="menu-space-item__actions">
                 <ElButton text type="primary" @click.stop="openSpaceDrawer(item)">编辑</ElButton>
                 <ElButton text @click.stop="goToMenuManagement(item.spaceKey)">菜单管理</ElButton>
-                <ElButton text @click.stop="goToPageManagement(item.spaceKey)">页面管理</ElButton>
+                <ElButton text @click.stop="goToPageManagement(item.spaceKey)">受管页面</ElButton>
                 <ElButton
                   v-if="!item.isDefault && !isSpaceInitialized(item)"
                   text
                   :loading="initializingSpaceKey === item.spaceKey"
                   @click.stop="initializeSpace(item)"
                 >
-                  复制默认菜单
+                  初始化菜单树
                 </ElButton>
                 <ElButton
                   v-else-if="!item.isDefault"
@@ -136,7 +136,7 @@
               <strong>{{ currentSpace.defaultHomePath || '未设置' }}</strong>
             </div>
             <div class="menu-space-overview__item">
-              <span class="menu-space-overview__label">菜单 / 页面</span>
+              <span class="menu-space-overview__label">菜单 / 独立页暴露</span>
               <strong>{{ currentSpace.menuCount || 0 }} / {{ currentSpace.pageCount || 0 }}</strong>
             </div>
             <div class="menu-space-overview__item">
@@ -158,7 +158,7 @@
           </div>
           <div class="menu-space-overview__actions">
             <ElButton text @click="goToMenuManagement(currentSpace.spaceKey)">进入菜单管理</ElButton>
-            <ElButton text @click="goToPageManagement(currentSpace.spaceKey)">进入页面管理</ElButton>
+            <ElButton text @click="goToPageManagement(currentSpace.spaceKey)">进入受管页面</ElButton>
             <ElButton
               v-if="!currentSpace.isDefault && isSpaceInitialized(currentSpace)"
               text
@@ -241,7 +241,7 @@
           </div>
         </ElFormItem>
         <ElFormItem label="说明">
-          <ElInput v-model="spaceForm.description" type="textarea" :rows="3" placeholder="说明这个菜单空间承载什么菜单与页面" />
+          <ElInput v-model="spaceForm.description" type="textarea" :rows="3" placeholder="说明这个菜单空间承载什么菜单树、默认入口与 Host 边界" />
         </ElFormItem>
         <ElFormItem label="空间准入">
           <ElSelect v-model="spaceForm.access_mode" style="width: 100%">
@@ -250,7 +250,7 @@
             <ElOption label="仅团队管理员" value="team_admin" />
             <ElOption label="指定角色码" value="role_codes" />
           </ElSelect>
-          <div class="field-hint">先决定谁有资格进入这个菜单空间，进入后再按菜单与页面权限继续裁剪。</div>
+          <div class="field-hint">先决定谁有资格进入这个菜单空间，进入后菜单入口与受管页面都统一复用后端访问编译结果。</div>
         </ElFormItem>
         <ElFormItem v-if="spaceForm.access_mode === 'role_codes'" label="允许角色码">
           <ElInput
@@ -362,10 +362,9 @@
     fetchGetCurrentMenuSpace,
     fetchGetMenuSpaceMode,
     fetchInitializeMenuSpaceFromDefault,
-    fetchGetMenuList,
     fetchGetMenuSpaceHostBindings,
     fetchGetMenuSpaces,
-    fetchGetPageList,
+    fetchGetRuntimeNavigation,
     fetchSaveMenuSpace,
     fetchSaveMenuSpaceHostBinding,
     fetchUpdateMenuSpaceMode
@@ -488,7 +487,7 @@
   const hostDrawerTitle = computed(() => (editingHost.value ? '编辑 Host 绑定' : '新增 Host 绑定'))
   const landingPathHint = computed(() => {
     if (loadingLandingPaths.value) {
-      return '正在加载当前空间下可用的页面路径。'
+      return '正在加载当前空间下可用的入口路径。'
     }
     const value = `${spaceForm.default_home_path || ''}`.trim()
     if (!value) {
@@ -498,10 +497,10 @@
       return '默认首页必须是以 / 开头的站内路径，例如 /dashboard/console。'
     }
     if (!landingPathOptions.value.length) {
-      return '当前空间下还没有可选页面路径，可以先留空，等菜单和页面配置完成后再回填。'
+      return '当前空间下还没有可选入口路径，可以先留空，等菜单树与受管页面配置完成后再回填。'
     }
     if (!landingPathOptions.value.includes(value)) {
-      return '当前填写的路径不在这个菜单空间的已注册页面里，保存前建议先确认菜单或页面是否已经归属到该空间。'
+      return '当前填写的路径不在这个菜单空间的已注册入口里，保存前建议先确认菜单树或独立页暴露是否已经归属到该空间。'
     }
     return '该路径已命中当前菜单空间的可选页面，登录后和进入根路径时会优先跳到这里。'
   })
@@ -645,15 +644,8 @@
     const normalizedSpaceKey = normalizeMenuSpaceKey(spaceKey) || 'default'
     loadingLandingPaths.value = true
     try {
-      const [menuRes, pageRes] = await Promise.all([
-        fetchGetMenuList(normalizedSpaceKey),
-        fetchGetPageList({
-          current: 1,
-          size: 1000,
-          spaceKey: normalizedSpaceKey
-        })
-      ])
-      const pagePaths = (pageRes.records || [])
+      const manifest = await fetchGetRuntimeNavigation(normalizedSpaceKey)
+      const pagePaths = (manifest.managedPages || [])
         .filter(
           (item) =>
             item.status === 'normal' &&
@@ -663,7 +655,7 @@
         )
         .map((item) => normalizeInternalPath(`${item.routePath || ''}`.trim()))
       landingPathOptions.value = Array.from(
-        new Set([...collectMenuPaths(menuRes || []), ...pagePaths])
+        new Set([...collectMenuPaths(manifest.menuTree || []), ...pagePaths])
       ).sort((a, b) => a.localeCompare(b, 'zh-CN'))
     } catch (error) {
       warnDev('[MenuSpaceManage] 加载默认首页候选失败，已回退为空列表', error)
@@ -842,14 +834,14 @@
       return
     }
     if (isSpaceInitialized(item)) {
-      ElMessage.info('当前菜单空间已经初始化，可直接进入菜单管理或页面管理继续调整')
+      ElMessage.info('当前菜单空间已经初始化，可直接进入菜单管理或受管页面继续调整')
       return
     }
     initializingSpaceKey.value = item.spaceKey
     try {
       const result = await fetchInitializeMenuSpaceFromDefault(item.spaceKey)
       ElMessage.success(
-        `已完成初始化：复制 ${result.createdMenuCount} 个菜单、${result.createdPageCount} 个页面、${result.createdPackageMenuLinkCount} 条功能包菜单关联`
+        `已完成初始化：复制 ${result.createdMenuCount} 个菜单、同步 ${result.createdPackageMenuLinkCount} 条功能包菜单关联，独立页暴露 ${result.createdPageCount || 0} 项`
       )
       await loadData()
       goToMenuManagement(item.spaceKey)
@@ -866,7 +858,7 @@
     }
     try {
       await ElMessageBox.confirm(
-        `重新初始化会清空空间“${item.name}”当前已有的菜单、页面和功能包菜单关联，然后重新复制默认空间内容。这个操作适合首次搭建后重来一次，不适合保留现有裁剪结果。`,
+        `重新初始化会清空空间“${item.name}”当前已有的菜单树、独立页暴露和功能包菜单关联，然后重新复制默认空间内容。共享受管页面定义不会被复制，只会重新计算空间暴露。`,
         '确认重新初始化',
         {
           confirmButtonText: '确认覆盖',
@@ -882,7 +874,7 @@
     try {
       const result = await fetchInitializeMenuSpaceFromDefault(item.spaceKey, true)
       ElMessage.success(
-        `已重新初始化：清空 ${result.clearedMenuCount || 0} 个菜单、${result.clearedPageCount || 0} 个页面、${result.clearedPackageMenuLinkCount || 0} 条功能包菜单关联，并重新复制 ${result.createdMenuCount} 个菜单、${result.createdPageCount} 个页面`
+        `已重新初始化：清空 ${result.clearedMenuCount || 0} 个菜单、${result.clearedPageCount || 0} 项独立页暴露、${result.clearedPackageMenuLinkCount || 0} 条功能包菜单关联，并重新复制 ${result.createdMenuCount} 个菜单`
       )
       await loadData()
       goToMenuManagement(item.spaceKey)

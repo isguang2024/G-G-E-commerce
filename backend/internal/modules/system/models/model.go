@@ -89,6 +89,7 @@ type Menu struct {
 	ParentID      *uuid.UUID       `gorm:"type:uuid" json:"parent_id"`
 	ManageGroupID *uuid.UUID       `gorm:"type:uuid;index" json:"manage_group_id"`
 	SpaceKey      string           `gorm:"type:varchar(100);not null;default:'default';index" json:"space_key"`
+	Kind          string           `gorm:"type:varchar(20);not null;default:'directory';index" json:"kind"`
 	Path          string           `gorm:"type:varchar(255)" json:"path"`
 	Name          string           `gorm:"type:varchar(100)" json:"name"`
 	Component     string           `gorm:"type:varchar(255)" json:"component"`
@@ -604,14 +605,16 @@ func (MediaAsset) TableName() string {
 }
 
 type MenuBackup struct {
-	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	Name        string         `gorm:"type:varchar(100);not null" json:"name"`
-	Description string         `gorm:"type:varchar(255)" json:"description"`
-	MenuData    string         `gorm:"type:text;not null" json:"menu_data"` // JSON 格式的菜单数据
-	CreatedBy   *uuid.UUID     `gorm:"type:uuid" json:"created_by"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID          uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Name        string    `gorm:"type:varchar(100);not null" json:"name"`
+	Description string    `gorm:"type:varchar(255)" json:"description"`
+	// SpaceKey 为空表示历史全局备份；非空表示该备份仅针对对应菜单空间。
+	SpaceKey  string         `gorm:"type:varchar(100);not null;default:'';index" json:"space_key"`
+	MenuData  string         `gorm:"type:text;not null" json:"menu_data"` // JSON 格式的菜单数据
+	CreatedBy *uuid.UUID     `gorm:"type:uuid" json:"created_by"`
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (MenuBackup) TableName() string {

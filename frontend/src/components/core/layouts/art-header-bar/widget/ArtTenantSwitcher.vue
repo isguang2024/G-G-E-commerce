@@ -28,8 +28,10 @@
   import { computed } from 'vue'
   import { useRouter } from 'vue-router'
   import { useTenantStore } from '@/store/modules/tenant'
+  import { useMenuStore } from '@/store/modules/menu'
   import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import { refreshCurrentUserInfoContext, refreshUserMenus } from '@/router'
+  import { findRegisteredRouteByPath } from '@/utils/router'
 
   defineOptions({ name: 'ArtTenantSwitcher' })
   withDefaults(defineProps<{ compact?: boolean }>(), {
@@ -38,6 +40,7 @@
 
   const router = useRouter()
   const tenantStore = useTenantStore()
+  const menuStore = useMenuStore()
   const menuSpaceStore = useMenuSpaceStore()
   const { currentTenantId, teamList, loading, shouldShowSwitcher, currentTeam } = storeToRefs(tenantStore)
 
@@ -57,14 +60,16 @@
       tenantStore.enterTeamContext(value)
       await refreshCurrentUserInfoContext()
       await refreshUserMenus()
-      const landingPath = menuSpaceStore.resolveSpaceLandingPath()
-      const resolved = router.resolve(landingPath)
+      // 首页始终读取 refreshUserMenus 刚刚写入的已注册入口，
+      // 不再回退到空间配置里的裸 defaultLandingRoute，避免它指向已禁用菜单。
+      const landingPath = menuStore.getHomePath() || '/'
+      const resolvedRoute = findRegisteredRouteByPath(router, landingPath)
       const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
-        resolved.href,
-        `${resolved.meta?.spaceKey || ''}`.trim() || undefined
+        landingPath,
+        `${resolvedRoute?.meta?.spaceKey || ''}`.trim() || undefined
       )
       if (nextTarget.mode === 'router') {
-        await router.push(landingPath)
+        await router.push(nextTarget.target)
       } else {
         window.location.assign(nextTarget.target)
         return

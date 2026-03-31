@@ -57,11 +57,11 @@
 
         <ElRow :gutter="14">
           <ElCol :span="12">
-            <ElFormItem label="菜单空间" prop="spaceKey">
+            <ElFormItem label="空间视角" prop="spaceKey">
               <template #label>
                 <PageFieldLabel
-                  label="菜单空间"
-                  help="逻辑分组也属于页面中心对象，需要显式归属到某个菜单空间，避免后续多空间时父链串线。"
+                  label="空间视角"
+                  help="仅用于加载当前空间下的菜单候选、上级逻辑分组和普通分组候选。逻辑分组定义默认仍由页面中心统一维护，不会因为切换视角就复制一份。"
                 />
               </template>
               <ElSelect v-model="form.spaceKey" style="width: 100%">
@@ -287,6 +287,7 @@
     dialogType: 'add' | 'edit' | 'copy'
     pageData?: Partial<PageItem>
     menuSpaces?: Api.SystemManage.MenuSpaceItem[]
+    // 仅作为当前编辑视角使用，驱动候选加载与兼容提交，不代表页面必须绑定该空间。
     currentSpaceKey?: string
     initialParentPageKey?: string
     initialParentMenuId?: string
@@ -345,6 +346,7 @@
     accessMode: 'inherit',
     permissionKey: '',
     moduleKey: '',
+    // 兼容旧接口保留的视角字段：用于加载当前空间菜单/父分组选项，不是页面主语义。
     spaceKey: 'default',
     sortOrder: 0,
     parentMenuId: '',
@@ -547,6 +549,7 @@
   })
 
   async function loadOptions() {
+    // 页面中心仍按“当前空间视角”返回可挂接菜单与父分组选项，避免跨空间候选串线。
     const [menuRes, pageRes] = await Promise.all([
       fetchGetPageMenuOptions(form.spaceKey),
       fetchGetPageOptions(form.spaceKey)
@@ -655,13 +658,14 @@
         route_path: form.routePath.trim(),
         component: '',
         page_type: 'group',
-          source:
-            props.dialogType === 'edit'
-              ? `${props.pageData?.source || 'manual'}`
-              : `${props.defaultData?.source || 'manual'}`,
-          module_key: resolvedModuleKey.value,
-          space_key: form.spaceKey,
-          sort_order: form.sortOrder,
+        source:
+          props.dialogType === 'edit'
+            ? `${props.pageData?.source || 'manual'}`
+            : `${props.defaultData?.source || 'manual'}`,
+        module_key: resolvedModuleKey.value,
+        // 兼容后端当前写接口；真正的空间暴露归属由后端统一编译，不在这里直接复制页面定义。
+        space_key: form.spaceKey,
+        sort_order: form.sortOrder,
         parent_menu_id: mountMode.value === 'menu' ? normalizeMenuId(form.parentMenuId) : '',
         parent_page_key: mountMode.value === 'page' ? form.parentPageKey || '' : '',
         display_group_key: mountMode.value === 'page' ? '' : form.displayGroupKey || '',

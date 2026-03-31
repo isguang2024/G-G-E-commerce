@@ -43,6 +43,7 @@ import { router } from '@/router'
 import { LocationQueryRaw, Router } from 'vue-router'
 import { WorkTab } from '@/types'
 import { useCommon } from '@/hooks/core/useCommon'
+import { hasRegisteredRoutePath } from '@/utils/router'
 
 interface WorktabState {
   current: Partial<WorkTab>
@@ -440,7 +441,8 @@ export const useWorktabStore = defineStore(
      */
     const validateWorktabs = (routerInstance: Router): void => {
       try {
-        // 动态路由校验：优先使用路由 name 判断有效性；否则用 resolve 匹配参数化路径
+        // 动态路由校验：优先使用路由 name 判断有效性；否则静默匹配已注册路径，
+        // 避免菜单被禁用后为了探测失效标签再次触发 Vue Router warning。
         const isTabRouteValid = (tab: Partial<WorkTab>): boolean => {
           try {
             if (tab.name) {
@@ -448,11 +450,7 @@ export const useWorktabStore = defineStore(
               if (routes.some((r) => r.name === tab.name)) return true
             }
             if (tab.path) {
-              const resolved = routerInstance.resolve({
-                path: tab.path,
-                query: (tab.query as LocationQueryRaw) || undefined
-              })
-              return resolved.matched.length > 0
+              return hasRegisteredRoutePath(routerInstance, tab.path)
             }
             return false
           } catch {

@@ -41,7 +41,8 @@ export class ManagedPageProcessor {
   buildRoutes(
     menuList: AppRouteRecord[],
     pages: RuntimePageItem[],
-    userInfo: UserInfo
+    userInfo: UserInfo,
+    options: { trustBackend?: boolean } = {}
   ): AppRouteRecord[] {
     if (!Array.isArray(pages) || pages.length === 0) {
       return []
@@ -128,7 +129,7 @@ export class ManagedPageProcessor {
       const breadcrumbChain = this.resolveBreadcrumbChain(page, indexedMenus, pageMap, resolvePage)
       const customParent = activePath
       const resolvedSpaceKey = resolvePageSpaceKey(pageKey)
-      if (!isMenuSpaceVisible(resolvedSpaceKey, currentSpaceKey, defaultSpaceKey)) {
+      if (!options.trustBackend && !isMenuSpaceVisible(resolvedSpaceKey, currentSpaceKey, defaultSpaceKey)) {
         resolving.delete(normalizedKey)
         resolvedCache.set(normalizedKey, { ...this.createDefaultResolvedConfig(), allowed: false })
         return { ...this.createDefaultResolvedConfig(), allowed: false }
@@ -139,7 +140,8 @@ export class ManagedPageProcessor {
         pageMap,
         userInfo,
         resolvePage,
-        activePath
+        activePath,
+        Boolean(options.trustBackend)
       )
 
       const resolved: ResolvedPageConfig = {
@@ -330,8 +332,15 @@ export class ManagedPageProcessor {
     pageMap: Map<string, RuntimePageItem>,
     userInfo: UserInfo,
     resolvePage: (pageKey: string) => ResolvedPageConfig,
-    activePath: string
+    activePath: string,
+    trustBackend: boolean
   ): ResolvedPageConfig {
+    if (trustBackend) {
+      // runtime/navigation 与 /pages/runtime 已经在后端完成 AccessGraph 编译，
+      // 这里不再重复做菜单/页面权限裁剪，只负责把显式结果映射成路由 meta。
+      return this.resolveCompiledPermissionConfig(page, indexedMenus, pageMap, resolvePage, activePath)
+    }
+
     const isAuthenticated = this.isAuthenticated(userInfo)
     const accessMode = this.normalizeAccessMode(page.accessMode)
     if (accessMode === 'public') {
@@ -584,6 +593,61 @@ export class ManagedPageProcessor {
     return { byId, byName, byPath, names, paths }
   }
 
+  private resolveCompiledPermissionConfig(
+    page: RuntimePageItem,
+    indexedMenus: IndexedMenus,
+    pageMap: Map<string, RuntimePageItem>,
+    resolvePage: (pageKey: string) => ResolvedPageConfig,
+    activePath: string
+  ): ResolvedPageConfig {
+    const accessMode = this.normalizeAccessMode(page.accessMode)
+    if (accessMode === 'public') {
+      return this.createDefaultResolvedConfig('public')
+    }
+    if (accessMode === 'jwt') {
+      return this.createDefaultResolvedConfig('jwt')
+    }
+    if (accessMode === 'permission') {
+      const permissionKey = this.normalizeValue(page.permissionKey)
+      return {
+        allowed: true,
+        activePath: '',
+        breadcrumbChain: [],
+        customParent: '',
+        effectiveAccessMode: 'permission',
+        requiredAction: permissionKey || undefined,
+        actionMatchMode: 'any',
+        actionVisibilityMode: 'show'
+      }
+    }
+
+    const parentPageKey = this.normalizeValue(page.parentPageKey)
+    if (parentPageKey) {
+      const parentResolved = resolvePage(parentPageKey)
+      return {
+        ...parentResolved,
+        allowed: true
+      }
+    }
+
+    const menuNode =
+      indexedMenus.byPath.get(this.normalizePath(activePath)) ||
+      indexedMenus.byId.get(this.normalizeValue(page.parentMenuId))
+    const accessModeFromMenu = this.normalizeMenuAccessMode(menuNode?.meta)
+    const requirement = getMenuActionRequirement(menuNode?.meta)
+    return {
+      allowed: true,
+      activePath: '',
+      breadcrumbChain: [],
+      customParent: '',
+      effectiveAccessMode: accessModeFromMenu,
+      requiredAction: requirement.actions[0],
+      requiredActions: requirement.actions.length > 1 ? requirement.actions : undefined,
+      actionMatchMode: requirement.actions.length ? requirement.matchMode : undefined,
+      actionVisibilityMode: requirement.actions.length ? requirement.visibilityMode : undefined
+    }
+  }
+
   private isExpectedMenuBackedDuplicate(
     page: RuntimePageItem,
     routeName: string,
@@ -632,6 +696,14 @@ export class ManagedPageProcessor {
       return target
     }
     return 'inherit'
+  }
+
+  private normalizeMenuAccessMode(meta?: AppRouteRecord['meta']): 'public' | 'jwt' | 'permission' {
+    const target = this.normalizeValue(meta?.accessMode)
+    if (target === 'public' || target === 'jwt' || target === 'permission') {
+      return target
+    }
+    return 'permission'
   }
 
   private normalizeBreadcrumbMode(value?: string): string {

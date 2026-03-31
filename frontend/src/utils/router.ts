@@ -5,7 +5,12 @@
  *
  * @module utils/router
  */
-import { RouteLocationNormalized, RouteRecordRaw } from 'vue-router'
+import type {
+  RouteLocationNormalized,
+  RouteRecordRaw,
+  RouteRecordNormalized,
+  Router
+} from 'vue-router'
 import AppConfig from '@/config'
 import NProgress from 'nprogress'
 import 'nprogress/nprogress.css'
@@ -57,4 +62,72 @@ export const formatMenuTitle = (title: string): string => {
     return normalizedTitle
   }
   return ''
+}
+
+/**
+ * 统一比较路由路径时的归一化处理。
+ * 这里只做字符串标准化，不触发 router.resolve，避免在动态路由尚未注册时额外制造 warning。
+ */
+export const normalizeComparableRoutePath = (path: string): string => {
+  const target = `${path || ''}`.trim()
+  if (!target || /^https?:\/\//i.test(target)) {
+    return ''
+  }
+  const [pathname] = target.split(/[?#]/, 1)
+  const normalized = `/${pathname.replace(/^\/+/, '')}`.replace(/\/+/g, '/')
+  return normalized !== '/' ? normalized.replace(/\/$/, '') : normalized
+}
+
+export const routePathMatches = (routePath: string, targetPath: string): boolean => {
+  const normalizedRoute = normalizeComparableRoutePath(routePath)
+  const normalizedTarget = normalizeComparableRoutePath(targetPath)
+  if (!normalizedRoute || !normalizedTarget) {
+    return false
+  }
+  if (normalizedRoute === normalizedTarget) {
+    return true
+  }
+
+  const routeSegments = normalizedRoute.split('/')
+  const targetSegments = normalizedTarget.split('/')
+  if (routeSegments.length !== targetSegments.length) {
+    return false
+  }
+
+  for (let index = 0; index < routeSegments.length; index += 1) {
+    const routeSegment = routeSegments[index]
+    const targetSegment = targetSegments[index]
+    if (routeSegment === targetSegment) {
+      continue
+    }
+    if (routeSegment.startsWith(':')) {
+      continue
+    }
+    if (routeSegment.includes('*')) {
+      return true
+    }
+    return false
+  }
+
+  return true
+}
+
+/**
+ * runtime/navigation 已经是后端编译后的唯一真源。
+ * 当前端只想判断“这条路由是否已注册”时，必须静默读取 router.getRoutes()，
+ * 不能再用 router.resolve('/foo') 探测，否则菜单被禁用或权限撤回时会刷一串 No match warning。
+ */
+export const findRegisteredRouteByPath = (
+  router: Router,
+  targetPath: string
+): RouteRecordNormalized | undefined => {
+  const normalizedTarget = normalizeComparableRoutePath(targetPath)
+  if (!normalizedTarget) {
+    return undefined
+  }
+  return router.getRoutes().find((route) => routePathMatches(route.path, normalizedTarget))
+}
+
+export const hasRegisteredRoutePath = (router: Router, targetPath: string): boolean => {
+  return Boolean(findRegisteredRouteByPath(router, targetPath))
 }

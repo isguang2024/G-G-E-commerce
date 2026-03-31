@@ -64,9 +64,11 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
   import { useTenantStore } from '@/store/modules/tenant'
+  import { useMenuStore } from '@/store/modules/menu'
   import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import { refreshCurrentUserInfoContext, refreshUserMenus, refreshUserAccessAndMenus } from '@/router'
   import ArtTenantSwitcher from './ArtTenantSwitcher.vue'
+  import { findRegisteredRouteByPath } from '@/utils/router'
 
   defineOptions({ name: 'ArtUserMenu' })
 
@@ -74,6 +76,7 @@
   const { t } = useI18n()
   const userStore = useUserStore()
   const tenantStore = useTenantStore()
+  const menuStore = useMenuStore()
   const menuSpaceStore = useMenuSpaceStore()
 
   const { getUserInfo: userInfo } = storeToRefs(userStore)
@@ -91,11 +94,18 @@
   }
 
   const enterPlatformManagement = async (): Promise<void> => {
+    const resolveLandingTarget = () => {
+      const landingPath = menuStore.getHomePath() || '/'
+      const resolvedRoute = findRegisteredRouteByPath(router, landingPath)
+      return menuSpaceStore.resolveSpaceNavigationTarget(
+        landingPath,
+        `${resolvedRoute?.meta?.spaceKey || ''}`.trim() || undefined
+      )
+    }
+
     if (currentContextMode.value === 'platform') {
       closeUserMenu()
-      const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
-        menuSpaceStore.resolveSpaceLandingPath()
-      )
+      const nextTarget = resolveLandingTarget()
       if (nextTarget.mode === 'router') {
         router.push(nextTarget.target)
         return
@@ -107,9 +117,7 @@
     tenantStore.enterPlatformContext()
     await refreshCurrentUserInfoContext()
     await refreshUserMenus()
-    const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
-      menuSpaceStore.resolveSpaceLandingPath()
-    )
+    const nextTarget = resolveLandingTarget()
     if (nextTarget.mode === 'router') {
       router.push(nextTarget.target)
       return

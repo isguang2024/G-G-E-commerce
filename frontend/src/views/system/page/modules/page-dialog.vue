@@ -59,6 +59,7 @@
     dialogType: 'add' | 'edit' | 'copy'
     pageData?: Partial<PageItem>
     menuSpaces?: Api.SystemManage.MenuSpaceItem[]
+    // 当前页面管理视角，仅用于子弹窗加载菜单/父页候选，非页面空间归属主语义。
     currentSpaceKey?: string
     initialParentPageKey?: string
     initialParentMenuId?: string

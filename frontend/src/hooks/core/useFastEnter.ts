@@ -20,6 +20,7 @@ import { useRouter } from 'vue-router'
 import { useFastEnterStore } from '@/store/modules/fast-enter'
 import { useMenuSpaceStore } from '@/store/modules/menu-space'
 import type { FastEnterApplication, FastEnterQuickLink } from '@/types/config'
+import { findRegisteredRouteByPath, hasRegisteredRoutePath } from '@/utils/router'
 
 const COMPACT_MESSAGE_WORKSPACE_ROUTE_NAMES = new Set([
   'MessageTemplateManage',
@@ -68,7 +69,7 @@ export function useFastEnter() {
     }
 
     if (link.startsWith('/')) {
-      return router.resolve(link).matched.length > 0
+      return hasRegisteredRoutePath(router, link)
     }
 
     return false
@@ -136,10 +137,13 @@ export function useFastEnter() {
     }
 
     if (linkTarget.startsWith('/')) {
-      const resolved = router.resolve(linkTarget)
+      const resolvedRoute = findRegisteredRouteByPath(router, linkTarget)
+      if (!resolvedRoute) {
+        return false
+      }
       const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
-        resolved.href,
-        `${resolved.meta?.spaceKey || ''}`.trim() || undefined
+        linkTarget,
+        `${resolvedRoute.meta?.spaceKey || ''}`.trim() || undefined
       )
       if (nextTarget.mode === 'router') {
         await router.push(linkTarget)

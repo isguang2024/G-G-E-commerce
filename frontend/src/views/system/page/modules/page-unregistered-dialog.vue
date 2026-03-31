@@ -1,14 +1,15 @@
 <template>
   <ElDialog
     v-model="visible"
-    title="未注册页面"
+    title="未注册受管页"
     width="980px"
     destroy-on-close
     @close="handleClose"
   >
     <div class="unregistered-toolbar">
       <div class="unregistered-toolbar-summary">
-        <span>共 {{ records.length }} 项候选页面</span>
+        <span>共 {{ records.length }} 项候选受管页面</span>
+        <span class="unregistered-toolbar-note">菜单入口组件已自动排除，这里只显示非菜单直达页候选</span>
       </div>
       <div class="unregistered-toolbar-actions">
         <ElInput
@@ -17,7 +18,7 @@
           placeholder="搜索组件/标识/路由"
           style="width: 240px"
         />
-        <ElButton type="primary" :loading="syncing" @click="handleSync">同步入库</ElButton>
+        <ElButton type="primary" :loading="syncing" @click="handleSync">同步受管页</ElButton>
       </div>
     </div>
 
@@ -26,10 +27,10 @@
       <ElTableColumn prop="pageKey" label="页面标识" min-width="180" />
       <ElTableColumn prop="name" label="页面名称" min-width="140" />
       <ElTableColumn prop="routePath" label="路由路径" min-width="160" />
-      <ElTableColumn prop="parentMenuName" label="猜测上级菜单" min-width="120" />
+      <ElTableColumn prop="parentMenuName" label="推测入口菜单" min-width="120" />
       <ElTableColumn label="操作" width="120" align="center">
         <template #default="{ row }">
-          <ElButton type="primary" link @click="handleCreateFromCandidate(row)">创建页面</ElButton>
+          <ElButton type="primary" link @click="handleCreateFromCandidate(row)">创建受管页</ElButton>
         </template>
       </ElTableColumn>
     </ElTable>
@@ -50,7 +51,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
+  import { computed, reactive, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import { fetchGetPageUnregisteredList, fetchSyncPages } from '@/api/system-manage'
 
@@ -185,6 +186,13 @@
   .unregistered-toolbar-summary {
     color: var(--el-text-color-secondary);
     font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .unregistered-toolbar-note {
+    font-size: 12px;
   }
 
   .unregistered-toolbar-actions {

@@ -29,12 +29,13 @@
           </div>
           <div class="menu-overview-subline">
             <div class="menu-overview-subtitle">
-              统一管理菜单入口、目录层级与管理分组
+              统一管理目录、入口路由与外链菜单；受管页面只在这里做只读关联查看
             </div>
             <div class="menu-overview-metrics">
               <span class="menu-metric-item">总数 {{ menuStats.total }}</span>
               <span class="menu-metric-item">目录 {{ menuStats.directory }}</span>
-              <span class="menu-metric-item">菜单项 {{ menuStats.leaf }}</span>
+              <span class="menu-metric-item">入口 {{ menuStats.entry }}</span>
+              <span class="menu-metric-item">外链 {{ menuStats.external }}</span>
               <span class="menu-metric-item">分组 {{ menuStats.groups }}</span>
             </div>
           </div>
@@ -180,24 +181,23 @@
                     创建菜单
                   </ElButton>
                 </ElTooltip>
-              <ElDropdown @command="handleMoreActionCommand">
-                <ElButton v-ripple>
-                  更多操作
-                </ElButton>
-                <template #dropdown>
-                  <ElDropdownMenu>
-                    <ElDropdownItem command="manageGroup" :disabled="!groupingAvailable">
-                      管理分组
-                    </ElDropdownItem>
-                    <ElDropdownItem command="backup">备份菜单</ElDropdownItem>
-                    <ElDropdownItem command="backupList">管理备份</ElDropdownItem>
-                  </ElDropdownMenu>
-                </template>
-              </ElDropdown>
-            </div>
-            <div v-if="menuGroupApiUnavailable" class="menu-inline-note">
-              菜单分组暂不可用，当前按普通菜单树显示
-            </div>
+                <ElDropdown @command="handleMoreActionCommand">
+                  <ElButton v-ripple> 更多操作 </ElButton>
+                  <template #dropdown>
+                    <ElDropdownMenu>
+                      <ElDropdownItem command="manageGroup" :disabled="!groupingAvailable">
+                        管理分组
+                      </ElDropdownItem>
+                      <ElDropdownItem command="backupSpace">备份当前空间</ElDropdownItem>
+                      <ElDropdownItem command="backupGlobal">备份全部空间</ElDropdownItem>
+                      <ElDropdownItem command="backupList">管理备份</ElDropdownItem>
+                    </ElDropdownMenu>
+                  </template>
+                </ElDropdown>
+              </div>
+              <div v-if="menuGroupApiUnavailable" class="menu-inline-note">
+                菜单分组暂不可用，当前按普通菜单树显示
+              </div>
 
               <div v-if="multiSelectEnabled" class="menu-toolbar-actions menu-toolbar-batch">
                 <span class="menu-batch-count">已选 {{ selectedMenuRows.length }} 项</span>
@@ -254,7 +254,9 @@
 
         <!-- 组件路径列 -->
         <template #component="{ row }">
-          <span class="text-gray-600">{{ isManageGroupRow(row) ? '-' : row.component || '-' }}</span>
+          <span class="text-gray-600">{{
+            isManageGroupRow(row) ? '-' : row.component || '-'
+          }}</span>
         </template>
 
         <template #linkedPage="{ row }">
@@ -264,11 +266,11 @@
               <span class="menu-linked-page-cell__meta">
                 {{ getLinkedPages(row)[0].pageKey }}
                 <template v-if="getLinkedPages(row).length > 1">
-                  · 另有 {{ getLinkedPages(row).length - 1 }} 个挂接页
+                  · 另有 {{ getLinkedPages(row).length - 1 }} 个受管页面
                 </template>
               </span>
             </template>
-            <span v-else class="text-gray-400">未挂接页面</span>
+            <span v-else class="text-gray-400">无受管页面</span>
           </div>
           <span v-else class="text-gray-400">-</span>
         </template>
@@ -282,7 +284,13 @@
         <!-- 高级配置列 -->
         <template #advanced="{ row }">
           <div v-if="!isManageGroupRow(row)" class="advanced-configs">
-            <ElTag v-if="row.meta?.keepAlive" size="small" effect="light" type="primary" class="mr-2">
+            <ElTag
+              v-if="row.meta?.keepAlive"
+              size="small"
+              effect="light"
+              type="primary"
+              class="mr-2"
+            >
               缓存
             </ElTag>
             <ElTag v-if="row.meta?.isHide" size="small" effect="light" type="warning" class="mr-2">
@@ -291,20 +299,40 @@
             <ElTag v-if="row.meta?.isIframe" size="small" effect="light" type="info" class="mr-2">
               内嵌
             </ElTag>
-            <ElTag v-if="row.meta?.showBadge" size="small" effect="light" type="success" class="mr-2">
+            <ElTag
+              v-if="row.meta?.showBadge"
+              size="small"
+              effect="light"
+              type="success"
+              class="mr-2"
+            >
               徽章
             </ElTag>
             <ElTag v-if="row.meta?.fixedTab" size="small" effect="light" type="danger" class="mr-2">
               固定
             </ElTag>
-            <ElTag v-if="row.meta?.isFullPage" size="small" effect="light" type="primary" class="mr-2">
+            <ElTag
+              v-if="row.meta?.isFullPage"
+              size="small"
+              effect="light"
+              type="primary"
+              class="mr-2"
+            >
               全屏
             </ElTag>
-            <ElTag size="small" effect="light" :type="getAccessModeTag(row.meta?.accessMode)" class="mr-2">
+            <ElTag
+              size="small"
+              effect="light"
+              :type="getAccessModeTag(row.meta?.accessMode)"
+              class="mr-2"
+            >
               {{ getAccessModeLabel(row.meta?.accessMode) }}
             </ElTag>
             <ElTag
-              v-if="getMenuActionRequirement(row.meta).actions.length && `${row.meta?.accessMode || 'permission'}` === 'permission'"
+              v-if="
+                getMenuActionRequirement(row.meta).actions.length &&
+                `${row.meta?.accessMode || 'permission'}` === 'permission'
+              "
               size="small"
               effect="light"
               type="info"
@@ -345,11 +373,9 @@
         :editData="editData"
         :menuTree="filteredMenuTree"
         :manageGroups="menuGroups"
-        :pageOptions="rawPages"
         :menuSpaces="menuSpaces"
         :currentSpaceKey="activeSpaceKey"
         :currentMenuPages="getLinkedPages(editData || {})"
-        :linkedPageKey="getLinkedPages(editData || {}).at(0)?.pageKey || ''"
         :editingMenuId="editData?.id"
         :initialParentId="String(parentRowForAdd?.id ?? '')"
         @submit="handleSubmit"
@@ -373,6 +399,8 @@
       <MenuBackupDialog
         v-model="backupDialogVisible"
         :loading="backupLoading"
+        :scopeType="backupScopeType"
+        :currentSpaceName="currentSpaceName"
         @submit="handleCreateBackup"
       />
 
@@ -390,7 +418,9 @@
         destroy-on-close
       >
         <div class="menu-batch-dialog">
-          <div class="menu-batch-dialog-count">已选 {{ selectedMenuRows.length }} 项，将同步作用于所选菜单及其下级。</div>
+          <div class="menu-batch-dialog-count"
+            >已选 {{ selectedMenuRows.length }} 项，将同步作用于所选菜单及其下级。</div
+          >
           <ElSelect
             v-model="batchTargetGroupId"
             filterable
@@ -444,7 +474,6 @@
     fetchDeleteMenuManageGroup,
     fetchGetPageOptions,
     fetchGetMenuSpaces,
-    fetchUpdatePage,
     fetchCreateMenuBackup,
     fetchGetMenuBackupList,
     fetchDeleteMenuBackup,
@@ -468,6 +497,9 @@
   import { getMenuActionRequirement } from '@/utils/permission/menu'
 
   defineOptions({ name: 'Menus' })
+
+  type MenuBackupScopeType = 'space' | 'global'
+  type MenuBackupScopeOrigin = 'space' | 'global' | 'legacy_global'
 
   // --- 状态管理 ---
   const loading = ref(false)
@@ -497,7 +529,8 @@
   const backupLoading = ref(false)
   const backupDialogVisible = ref(false)
   const backupListDialogVisible = ref(false)
-  const backupList = ref<any[]>([])
+  const backupScopeType = ref<MenuBackupScopeType>('space')
+  const backupList = ref<Api.SystemManage.MenuBackupItem[]>([])
   const warnDev = (...args: any[]) => {
     if (import.meta.env.DEV) {
       console.info(...args)
@@ -554,22 +587,16 @@
 
   const isManageGroupRow = (item: any) => Boolean(item?.meta?.__manageGroupNode)
 
-  const menuGroupMap = computed(() =>
-    new Map(menuGroups.value.map((item) => [item.id, item]))
-  )
+  const menuGroupMap = computed(() => new Map(menuGroups.value.map((item) => [item.id, item])))
 
-  const menuSpaceMap = computed(() =>
-    new Map(menuSpaces.value.map((item) => [item.spaceKey, item]))
+  const menuSpaceMap = computed(
+    () => new Map(menuSpaces.value.map((item) => [item.spaceKey, item]))
   )
   const menuSpaceOptions = computed(() =>
     menuSpaces.value.map((item) => ({
       label: item.isDefault ? `${item.name}（默认）` : item.name,
       value: item.spaceKey
     }))
-  )
-
-  const pageMap = computed(
-    () => new Map(rawPages.value.map((item) => [item.pageKey, item]))
   )
 
   const linkedPagesByMenuId = computed(() => {
@@ -598,12 +625,24 @@
   const getManageGroupId = (item: AppRouteRecord) =>
     `${item?.manage_group_id || item?.manage_group?.id || ''}`.trim()
 
-  const getLinkedPages = (item: any) =>
-    linkedPagesByMenuId.value.get(String(item?.id || '')) || []
+  const getLinkedPages = (item: any) => linkedPagesByMenuId.value.get(String(item?.id || '')) || []
 
   const getSpaceName = (spaceKey?: string) => {
     const normalized = `${spaceKey || ''}`.trim() || 'default'
     return menuSpaceMap.value.get(normalized)?.name || normalized
+  }
+
+  const currentSpaceName = computed(() => getSpaceName(activeSpaceKey.value))
+
+  const getBackupScopeLabel = (item: Api.SystemManage.MenuBackupItem) => {
+    const scopeOrigin = `${item.scope_origin || ''}`.trim() as MenuBackupScopeOrigin
+    if (scopeOrigin === 'legacy_global') {
+      return '历史全局兼容备份'
+    }
+    if (`${item.scope_type || ''}`.trim() === 'global') {
+      return '全空间备份'
+    }
+    return getSpaceName(item.space_key || activeSpaceKey.value)
   }
 
   const hashToNegativeNumber = (value: string) => {
@@ -684,7 +723,9 @@
         return result
       }
 
-      const children = item.children?.length ? filterMenuTree(item.children as AppRouteRecord[]) : []
+      const children = item.children?.length
+        ? filterMenuTree(item.children as AppRouteRecord[])
+        : []
       if (!matchesMenuSearch(item) && children.length === 0) {
         return result
       }
@@ -708,18 +749,24 @@
     const stats = {
       total: 0,
       directory: 0,
-      leaf: 0,
+      entry: 0,
+      external: 0,
       groups: menuGroups.value.length
     }
     const walk = (items: AppRouteRecord[]) => {
       items.forEach((item) => {
         stats.total += 1
-        if (item.children?.length) {
+        const kind = `${item.kind || ''}`.trim()
+        if (kind === 'external') {
+          stats.external += 1
+        } else if (kind === 'entry') {
+          stats.entry += 1
+        } else {
           stats.directory += 1
-          walk(item.children as AppRouteRecord[])
-          return
         }
-        stats.leaf += 1
+        if (item.children?.length) {
+          walk(item.children as AppRouteRecord[])
+        }
       })
     }
     walk(filteredMenuTree.value)
@@ -736,7 +783,11 @@
         fetchGetPageOptions(activeSpaceKey.value).then((res) => res.records || []),
         fetchGetMenuManageGroups()
           .then((groups) => ({ ok: true as const, groups }))
-          .catch((error) => ({ ok: false as const, error, groups: [] as Api.SystemManage.MenuManageGroupItem[] }))
+          .catch((error) => ({
+            ok: false as const,
+            error,
+            groups: [] as Api.SystemManage.MenuManageGroupItem[]
+          }))
       ])
       rawMenuTree.value = Array.isArray(list) ? list : []
       rawPages.value = Array.isArray(pagesResult) ? pagesResult : []
@@ -761,11 +812,8 @@
     }
   }
 
-  // --- 表格列配置 ---  
-  const {
-    columnChecks,
-    columns: displayColumns
-  } = useTableColumns(() => [
+  // --- 表格列配置 ---
+  const { columnChecks, columns: displayColumns } = useTableColumns(() => [
     {
       type: 'selection',
       width: 52,
@@ -776,13 +824,20 @@
     } as any,
     { prop: 'title', label: '菜单名称', minWidth: 200, useSlot: true, slotName: 'title' },
     { prop: 'sort_order', label: '排序', width: 80, align: 'center' },
-      { prop: 'type', label: '类型', width: 100, align: 'center', useSlot: true, slotName: 'type' },
-      { prop: 'path', label: '路由', minWidth: 150, useSlot: true, slotName: 'path' },
-      { prop: 'component', label: '组件路径', minWidth: 200, useSlot: true, slotName: 'component' },
-      { prop: 'space', label: '菜单空间', width: 120, align: 'center', useSlot: true, slotName: 'space' },
-      { prop: 'linkedPage', label: '挂接主页面', minWidth: 220, useSlot: true, slotName: 'linkedPage' },
-      {
-        prop: 'advanced',
+    { prop: 'type', label: '类型', width: 100, align: 'center', useSlot: true, slotName: 'type' },
+    { prop: 'path', label: '路由', minWidth: 150, useSlot: true, slotName: 'path' },
+    { prop: 'component', label: '组件路径', minWidth: 200, useSlot: true, slotName: 'component' },
+    {
+      prop: 'space',
+      label: '菜单空间',
+      width: 120,
+      align: 'center',
+      useSlot: true,
+      slotName: 'space'
+    },
+    { prop: 'linkedPage', label: '受管页面', minWidth: 220, useSlot: true, slotName: 'linkedPage' },
+    {
+      prop: 'advanced',
       label: '高级配置',
       minWidth: 200,
       align: 'center',
@@ -810,14 +865,16 @@
   // --- 辅助方法 ---
   const getMenuTypeTag = (row: any) => {
     if (isManageGroupRow(row)) return 'warning'
-    if (row.children?.length) return 'info'
-    return 'primary'
+    if (row.kind === 'external') return 'success'
+    if (row.kind === 'entry') return 'primary'
+    return 'info'
   }
 
   const getMenuTypeText = (row: any) => {
     if (isManageGroupRow(row)) return '分组'
-    if (row.children?.length) return '目录'
-    return '菜单'
+    if (row.kind === 'external') return '外链'
+    if (row.kind === 'entry') return '入口'
+    return '目录'
   }
 
   const getMenuActionRequirementLabel = (row: any) => {
@@ -846,7 +903,12 @@
     const list: ButtonMoreItem[] = [
       { key: 'add', label: '新增子菜单', icon: 'ri:add-fill', auth: 'system.menu.manage' },
       { key: 'edit', label: '编辑菜单', icon: 'ri:edit-2-line', auth: 'system.menu.manage' },
-      { key: 'action_requirement', label: '功能权限', icon: 'ri:shield-keyhole-line', auth: 'system.menu.manage' }
+      {
+        key: 'action_requirement',
+        label: '功能权限',
+        icon: 'ri:shield-keyhole-line',
+        auth: 'system.menu.manage'
+      }
     ]
     if (!row.is_system) {
       list.push({
@@ -948,8 +1010,12 @@
       manageGroupDrawerVisible.value = true
       return
     }
-    if (command === 'backup') {
-      handleBackupMenu()
+    if (command === 'backupSpace') {
+      handleBackupMenu('space')
+      return
+    }
+    if (command === 'backupGlobal') {
+      handleBackupMenu('global')
       return
     }
     if (command === 'backupList') {
@@ -963,13 +1029,15 @@
     const meta = buildMenuMetaForUpdate(row)
     return {
       parent_id: row.parent_id ? String(row.parent_id) : null,
+      kind: row.kind || 'directory',
       path: row.path || '',
       name: row.name || '',
       component: typeof row.component === 'string' ? row.component : '',
       title: row.meta?.title || '',
       icon: row.meta?.icon || '',
       sort_order: Number(row.sort_order ?? 0),
-      space_key: `${row.spaceKey || row.space_key || row.meta?.spaceKey || activeSpaceKey.value || 'default'}`.trim(),
+      space_key:
+        `${row.spaceKey || row.space_key || row.meta?.spaceKey || activeSpaceKey.value || 'default'}`.trim(),
       manage_group_id: manageGroupID,
       meta
     }
@@ -988,32 +1056,27 @@
     const targetGroupID = action === 'remove' ? null : nextGroupID
     const expandedRows = collectMenuSubtree(selectedMenuRows.value)
     const actionableRows =
-      action === 'remove'
-        ? expandedRows.filter((row) => hasOwnManageGroup(row))
-        : expandedRows
+      action === 'remove' ? expandedRows.filter((row) => hasOwnManageGroup(row)) : expandedRows
 
     if (action === 'remove' && actionableRows.length === 0) {
       ElMessage.warning('所选菜单及其下级没有已绑定的分组')
       return
     }
 
-    const text =
-      action === 'remove'
-        ? '移出所选菜单的分组归属'
-        : '移入所选菜单到目标分组'
+    const text = action === 'remove' ? '移出所选菜单的分组归属' : '移入所选菜单到目标分组'
     try {
       await ElMessageBox.confirm(`确定要${text}吗？`, '批量操作确认', { type: 'warning' })
       await Promise.all(
         actionableRows.map((row) =>
-          fetchUpdateMenu(
-            String(row.id),
-            buildMenuUpdatePayloadFromRow(row, targetGroupID),
-            { showErrorMessage: false }
-          )
+          fetchUpdateMenu(String(row.id), buildMenuUpdatePayloadFromRow(row, targetGroupID), {
+            showErrorMessage: false
+          })
         )
       )
       if (action === 'remove' && actionableRows.length !== expandedRows.length) {
-        ElMessage.success(`批量移出成功，已跳过 ${expandedRows.length - actionableRows.length} 项未绑定分组菜单`)
+        ElMessage.success(
+          `批量移出成功，已跳过 ${expandedRows.length - actionableRows.length} 项未绑定分组菜单`
+        )
       } else {
         ElMessage.success('批量操作成功')
       }
@@ -1118,104 +1181,46 @@
   }
 
   const buildMenuMetaFromForm = (formData: any) => {
+    const isEntry = `${formData.kind || 'entry'}` === 'entry'
+    const isExternal = `${formData.kind || ''}` === 'external'
     const meta: Record<string, any> = {
       isEnable: formData.isEnable,
-      keepAlive: formData.keepAlive,
+      keepAlive: isEntry ? formData.keepAlive : false,
       isHide: !!formData.isHide,
-      isHideTab: formData.isHideTab,
-      isIframe: formData.isIframe,
+      isHideTab: isEntry ? formData.isHideTab : false,
+      isIframe: `${formData.kind || ''}` !== 'directory' ? formData.isIframe : false,
       showBadge: formData.showBadge,
       showTextBadge: formData.showTextBadge || '',
-      link: formData.link || '',
-      activePath: formData.activePath || '',
-      fixedTab: formData.fixedTab,
-      isFullPage: formData.isFullPage,
-        accessMode: formData.accessMode || 'permission',
-        spaceKey: `${formData.spaceKey || activeSpaceKey.value || 'default'}`.trim()
-      }
-    if (formData.customParent?.trim()) {
+      link: isExternal ? formData.link || '' : '',
+      activePath: isEntry ? formData.activePath || '' : '',
+      fixedTab: isEntry ? formData.fixedTab : false,
+      isFullPage: isEntry ? formData.isFullPage : false,
+      accessMode: formData.accessMode || 'permission',
+      spaceKey: `${formData.spaceKey || activeSpaceKey.value || 'default'}`.trim()
+    }
+    if (isEntry && formData.customParent?.trim()) {
       meta.customParent = formData.customParent.trim()
     }
     applyActionRequirementToMeta(meta, formData)
     return meta
   }
 
-    const buildMenuRequestPayload = (formData: any, meta: Record<string, any>) => ({
-      path: formData.path || '/',
-      name: formData.label || '',
-      component: formData.component || '',
-      title: formData.name || '',
-      icon: formData.icon || '',
-      sort_order: Number(formData.sort ?? 0),
-      space_key: `${formData.spaceKey || activeSpaceKey.value || 'default'}`.trim(),
-      manage_group_id: formData.manageGroupId?.trim() || null,
-      meta
-    })
-
-  const buildPageSavePayload = (
-    page: Api.SystemManage.PageItem,
-    overrides?: Partial<Api.SystemManage.PageSaveParams>
-  ): Api.SystemManage.PageSaveParams => ({
-    page_key: page.pageKey,
-    name: page.name,
-    route_name: page.routeName,
-    route_path: page.routePath,
-    component: page.component,
-    page_type: page.pageType,
-    source: page.source,
-    module_key: page.moduleKey || '',
-    sort_order: Number(page.sortOrder || 0),
-    parent_menu_id: page.parentMenuId || '',
-    parent_page_key: page.parentPageKey || '',
-    display_group_key: page.displayGroupKey || '',
-    active_menu_path: page.activeMenuPath || '',
-    breadcrumb_mode: page.breadcrumbMode || 'inherit_menu',
-    access_mode: page.accessMode || 'inherit',
-      permission_key: page.permissionKey || '',
-      inherit_permission: page.inheritPermission ?? true,
-      keep_alive: page.keepAlive ?? false,
-      is_full_page: page.isFullPage ?? false,
-      space_key: page.spaceKey || activeSpaceKey.value || 'default',
-      status: page.status || 'normal',
-    meta: {
-      ...(page.meta || {}),
-      isIframe: page.isIframe ?? false,
-      isHideTab: page.isHideTab ?? false,
-      link: page.link || ''
-    },
-    ...overrides
+  const buildMenuRequestPayload = (formData: any, meta: Record<string, any>) => ({
+    kind: formData.kind || 'entry',
+    path: formData.path || '/',
+    name: formData.label || '',
+    component: formData.kind === 'entry' ? formData.component || '' : '',
+    title: formData.name || '',
+    icon: formData.icon || '',
+    sort_order: Number(formData.sort ?? 0),
+    space_key: `${formData.spaceKey || activeSpaceKey.value || 'default'}`.trim(),
+    manage_group_id: formData.manageGroupId?.trim() || null,
+    meta
   })
 
-  const syncMenuLinkedPage = async (menuId: string, formData: any, previousRow?: any) => {
-    const previousLinkedPage = previousRow ? getLinkedPages(previousRow)[0] : undefined
-    const nextPageKey = `${formData.linkedPageKey || ''}`.trim()
-
-    if (previousLinkedPage && previousLinkedPage.pageKey !== nextPageKey) {
-      await fetchUpdatePage(
-        previousLinkedPage.id,
-        buildPageSavePayload(previousLinkedPage, {
-          parent_menu_id: '',
-          space_key: previousLinkedPage.spaceKey || activeSpaceKey.value || 'default'
-        })
-      )
-    }
-
-    if (!nextPageKey) return
-
-    const nextPage = pageMap.value.get(nextPageKey)
-    if (!nextPage) return
-      await fetchUpdatePage(
-        nextPage.id,
-        buildPageSavePayload(nextPage, {
-          parent_menu_id: menuId,
-          parent_page_key: '',
-          space_key: `${formData.spaceKey || activeSpaceKey.value || 'default'}`.trim()
-        })
-      )
-    }
-
   const resolveParentId = (formData: any) =>
-      formData.parentId?.trim() || (parentRowForAdd.value?.id ? String(parentRowForAdd.value.id) : null)
+    formData.parentId?.trim() ||
+    (parentRowForAdd.value?.id ? String(parentRowForAdd.value.id) : null)
   const handleMenuOperation = (item: ButtonMoreItem, row: any) => {
     if (item.key === 'add') handleAddUnderRow(row)
     else if (item.key === 'edit') handleEditMenu(row)
@@ -1223,9 +1228,9 @@
     else if (item.key === 'delete') handleDeleteMenu(row)
   }
 
-  const handleBackupListAction = (action: string, row: any) => {
+  const handleBackupListAction = (action: string, row: Api.SystemManage.MenuBackupItem) => {
     if (action === 'restore') {
-      handleRestoreBackup(row.id)
+      handleRestoreBackup(row)
       return
     }
     if (action === 'delete') {
@@ -1256,16 +1261,15 @@
         ? String(editData.value.manage_group_id)
         : null
       const payload = buildMenuRequestPayload(formData, buildMenuMetaFromForm(formData))
-        if (editData.value?.id) {
-          const parentId = formData.parentId?.trim() || null
-          await fetchUpdateMenu(
-            String(editData.value.id),
-            { ...payload, parent_id: parentId },
-            { showErrorMessage: false }
-          )
-          await syncMenuLinkedPage(String(editData.value.id), formData, editData.value)
+      if (editData.value?.id) {
+        const parentId = formData.parentId?.trim() || null
+        await fetchUpdateMenu(
+          String(editData.value.id),
+          { ...payload, parent_id: parentId },
+          { showErrorMessage: false }
+        )
 
-          if (currentManageGroupID !== nextManageGroupID) {
+        if (currentManageGroupID !== nextManageGroupID) {
           const descendants = collectMenuSubtree(editData.value.children || []).filter(
             (row) => !isManageGroupRow(row)
           )
@@ -1281,18 +1285,11 @@
             )
           }
         }
-        } else {
-          const parentId = resolveParentId(formData)
-          const created = await fetchCreateMenu(
-            { ...payload, parent_id: parentId },
-            { showErrorMessage: false }
-          )
-          if (created?.id) {
-            await syncMenuLinkedPage(String(created.id), formData)
-          }
-        }
-        // 只有成功时才显示成功消息
-        ElMessage.success('保存成功')
+      } else {
+        const parentId = resolveParentId(formData)
+        await fetchCreateMenu({ ...payload, parent_id: parentId }, { showErrorMessage: false })
+      }
+      ElMessage.success('保存成功')
       getMenuList()
     } catch (e: any) {
       ElMessage.error(e?.message || '保存失败')
@@ -1319,15 +1316,17 @@
         String(row.id),
         {
           parent_id: row.parent_id ? String(row.parent_id) : null,
+          kind: row.kind || 'directory',
           path: row.path || '',
           name: row.name || '',
-            component: typeof row.component === 'string' ? row.component : '',
-            title: row.meta?.title || '',
-            icon: row.meta?.icon || '',
-            sort_order: Number(row.sort_order ?? 0),
-            space_key: `${row.spaceKey || row.space_key || row.meta?.spaceKey || activeSpaceKey.value || 'default'}`.trim(),
-            meta
-          },
+          component: typeof row.component === 'string' ? row.component : '',
+          title: row.meta?.title || '',
+          icon: row.meta?.icon || '',
+          sort_order: Number(row.sort_order ?? 0),
+          space_key:
+            `${row.spaceKey || row.space_key || row.meta?.spaceKey || activeSpaceKey.value || 'default'}`.trim(),
+          meta
+        },
         { showErrorMessage: false }
       )
       ElMessage.success('功能权限已保存')
@@ -1340,7 +1339,8 @@
   }
 
   // --- 菜单备份相关方法 ---
-  const handleBackupMenu = () => {
+  const handleBackupMenu = (scopeType: MenuBackupScopeType) => {
+    backupScopeType.value = scopeType
     backupDialogVisible.value = true
   }
 
@@ -1379,11 +1379,18 @@
   const handleCreateBackup = async (formData: { name: string; description: string }) => {
     backupLoading.value = true
     try {
-      await fetchCreateMenuBackup({
+      const payload: Api.SystemManage.MenuBackupCreateParams = {
         name: formData.name,
-        description: formData.description
-      })
-      ElMessage.success('备份成功')
+        description: formData.description,
+        // scope_type 显式声明是“当前空间备份”还是“全部空间备份”，
+        // 后端创建逻辑不再依赖 space_key 是否缺省来猜测语义。
+        scope_type: backupScopeType.value
+      }
+      if (backupScopeType.value === 'space') {
+        payload.space_key = activeSpaceKey.value
+      }
+      await fetchCreateMenuBackup(payload)
+      ElMessage.success(backupScopeType.value === 'global' ? '全局备份已创建' : '空间备份已创建')
       backupDialogVisible.value = false
     } catch (e: any) {
       ElMessage.error(e?.message || '备份失败')
@@ -1395,8 +1402,12 @@
   const handleManageBackups = async () => {
     backupLoading.value = true
     try {
-      const list = await fetchGetMenuBackupList()
-      backupList.value = list || []
+      const list = await fetchGetMenuBackupList(activeSpaceKey.value)
+      backupList.value = (list || []).map((item) => ({
+        ...item,
+        // scope_origin 由后端显式区分正式全局备份和历史兼容备份，前端这里只负责映射清晰文案。
+        space_name: getBackupScopeLabel(item)
+      }))
       backupListDialogVisible.value = true
     } catch (e: any) {
       ElMessage.error(e?.message || '获取备份列表失败')
@@ -1405,15 +1416,26 @@
     }
   }
 
-  const handleRestoreBackup = async (id: string) => {
+  const buildBackupRestoreMessage = (item: Api.SystemManage.MenuBackupItem) => {
+    const scopeOrigin = `${item.scope_origin || ''}`.trim() as MenuBackupScopeOrigin
+    if (scopeOrigin === 'legacy_global') {
+      return '确定要恢复该备份吗？这是历史全局兼容备份，恢复后会覆盖所有空间的菜单配置。'
+    }
+    if (item.scope_type === 'global') {
+      return '确定要恢复该备份吗？该备份会覆盖所有空间的菜单配置。'
+    }
+    return `确定要恢复该备份吗？恢复后会覆盖当前菜单空间“${getSpaceName(item.space_key || activeSpaceKey.value)}”的菜单配置。`
+  }
+
+  const handleRestoreBackup = async (item: Api.SystemManage.MenuBackupItem) => {
     try {
-      await ElMessageBox.confirm('确定要恢复该备份吗？恢复后会覆盖当前菜单配置。', '提示', {
+      await ElMessageBox.confirm(buildBackupRestoreMessage(item), '提示', {
         type: 'warning',
         confirmButtonText: '确定',
         cancelButtonText: '取消'
       })
       backupLoading.value = true
-      await fetchRestoreMenuBackup(id)
+      await fetchRestoreMenuBackup(item.id)
       ElMessage.success('恢复成功')
       backupListDialogVisible.value = false
       getMenuList()

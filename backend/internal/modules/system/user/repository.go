@@ -433,6 +433,8 @@ func (r *menuRepository) Create(menu *Menu) error {
 
 func (r *menuRepository) Update(menu *Menu, updateParent bool) error {
 	updates := map[string]interface{}{
+		"space_key":   menu.SpaceKey,
+		"kind":        menu.Kind,
 		"path":       menu.Path,
 		"name":       menu.Name,
 		"component":  menu.Component,

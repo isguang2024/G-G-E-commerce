@@ -9,34 +9,27 @@
 
 import type { AppRouteRecord } from '@/types/router'
 import { fetchGetMenuList } from '@/api/system-manage'
-import { useMenuSpaceStore } from '@/store/modules/menu-space'
-import { useUserStore } from '@/store/modules/user'
 import { RoutesAlias } from '../routesAlias'
 import { formatMenuTitle } from '@/utils'
-import { hasMenuActionAccess, shouldHideMenuWhenActionDenied } from '@/utils/permission/menu'
-import { isMenuSpaceVisible, normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
 
 export class MenuProcessor {
   /**
-   * 获取菜单数据（仅从后端实时获取，不再使用前端默认菜单）
+   * 兼容旧链路：直接请求菜单树。
+   * 新链路优先走 `runtime/navigation`，这里只保留给管理刷新或兼容调用使用。
    */
   async getMenuList(): Promise<AppRouteRecord[]> {
-    const spaceStore = useMenuSpaceStore()
-    const menuList = await fetchGetMenuList(spaceStore.currentSpaceKey)
+    const menuList = await fetchGetMenuList()
+    return this.normalizeMenuList(menuList)
+  }
+
+  /**
+   * 后端 manifest 已经完成菜单空间解析、启用态裁剪和访问编译。
+   * 前端这里只保留路径规范化与兜底清洗，避免再次和后端做两套显隐判断。
+   */
+  normalizeMenuList(menuList: AppRouteRecord[]): AppRouteRecord[] {
     const filteredByEnabled = this.filterDisabledMenus(menuList)
-    const filteredByAction = this.filterActionRequirementMenus(filteredByEnabled)
-    spaceStore.syncRuntimeHost()
-    const filteredBySpace = this.filterMenusBySpace(
-      filteredByAction,
-      spaceStore.currentSpaceKey,
-      spaceStore.defaultSpaceKey
-    )
-
-    // 在规范化路径之前，验证原始路径配置
-    this.validateMenuPaths(filteredBySpace)
-
-    // 规范化路径（将相对路径转换为完整路径）
-    return this.normalizeMenuPaths(this.filterEmptyMenus(filteredBySpace))
+    this.validateMenuPaths(filteredByEnabled)
+    return this.normalizeMenuPaths(this.filterEmptyMenus(filteredByEnabled))
   }
 
   /**
@@ -99,73 +92,6 @@ export class MenuProcessor {
    */
   validateMenuList(menuList: AppRouteRecord[]): boolean {
     return Array.isArray(menuList)
-  }
-
-  /**
-   * 过滤绑定了基础功能门槛但当前用户不满足的菜单
-   */
-  private filterActionRequirementMenus(menuList: AppRouteRecord[]): AppRouteRecord[] {
-    const userStore = useUserStore()
-    const userInfo = userStore.getUserInfo as Api.Auth.UserInfo | undefined
-
-    if (userInfo?.is_super_admin) {
-      return menuList
-    }
-
-    return menuList.reduce<AppRouteRecord[]>((result, item) => {
-        const children = item.children?.length
-          ? this.filterActionRequirementMenus(item.children)
-          : item.children
-        const hasActionAccess = hasMenuActionAccess(userInfo, item.meta)
-        const shouldHide = shouldHideMenuWhenActionDenied(item.meta)
-
-        if (!hasActionAccess && shouldHide && !children?.length) {
-          return result
-        }
-
-        result.push({
-          ...item,
-          children
-        })
-        return result
-      }, [])
-  }
-
-  /**
-   * 按菜单空间过滤菜单
-   */
-  private filterMenusBySpace(
-    menuList: AppRouteRecord[],
-    currentSpaceKey: string,
-    defaultSpaceKey: string,
-    inheritedSpaceKey = ''
-  ): AppRouteRecord[] {
-    return menuList.reduce<AppRouteRecord[]>((result, item) => {
-      const ownSpaceKey = normalizeMenuSpaceKey(
-        item.spaceKey || item.meta?.spaceKey || item.meta?.space_key
-      )
-      const effectiveSpaceKey = ownSpaceKey || normalizeMenuSpaceKey(inheritedSpaceKey) || defaultSpaceKey
-      const children = item.children?.length
-        ? this.filterMenusBySpace(item.children, currentSpaceKey, defaultSpaceKey, effectiveSpaceKey)
-        : item.children
-
-      const clone: AppRouteRecord = {
-        ...item,
-        spaceKey: effectiveSpaceKey,
-        meta: {
-          ...(item.meta || {}),
-          spaceKey: effectiveSpaceKey
-        },
-        children
-      }
-
-      if (!isMenuSpaceVisible(effectiveSpaceKey, currentSpaceKey, defaultSpaceKey) && !children?.length) {
-        return result
-      }
-
-      result.push(clone)
-      return result
-    }, [])
   }
 
   /**

@@ -32,6 +32,25 @@ type runtimePageCacheStore struct {
 	snapshots map[string]*runtimePageCacheSnapshot
 }
 
+type CompiledAccessContext struct {
+	SpaceKey       string
+	Authenticated  bool
+	SuperAdmin     bool
+	ActionKeys     map[string]struct{}
+	VisibleMenuIDs map[uuid.UUID]struct{}
+}
+
+func (ctx *CompiledAccessContext) VisibleMenuIDList() []uuid.UUID {
+	if ctx == nil || len(ctx.VisibleMenuIDs) == 0 {
+		return []uuid.UUID{}
+	}
+	result := make([]uuid.UUID, 0, len(ctx.VisibleMenuIDs))
+	for id := range ctx.VisibleMenuIDs {
+		result = append(result, id)
+	}
+	return result
+}
+
 var globalRuntimePageCache runtimePageCacheStore
 
 func InvalidateRuntimeCache() {
@@ -44,6 +63,31 @@ func (s *service) loadRuntimeRecords(host, requestedSpaceKey string, userID *uui
 
 func (s *service) loadPublicRuntimeRecords(host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error) {
 	return globalRuntimePageCache.get(s, true, host, requestedSpaceKey, userID, tenantID)
+}
+
+func (s *service) buildCompiledAccessContextForSpace(spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*CompiledAccessContext, error) {
+	resolvedSpaceKey := normalizeSpaceKey(spaceKey)
+	menuMap, err := s.loadMenuMap()
+	if err != nil {
+		return nil, err
+	}
+	return s.buildRuntimeAccessContext(userID, tenantID, menuMap, resolvedSpaceKey)
+}
+
+func (s *service) loadRuntimeRecordsWithAccess(spaceKey string, accessCtx *CompiledAccessContext) ([]Record, error) {
+	resolvedSpaceKey := normalizeSpaceKey(spaceKey)
+	snapshot, err := globalRuntimePageCache.getSnapshot(s, resolvedSpaceKey)
+	if err != nil {
+		return nil, err
+	}
+	if accessCtx == nil {
+		return []Record{}, nil
+	}
+	filtered, err := filterRuntimeRecordsWithAccess(snapshot.all, snapshot.menuMap, accessCtx, resolvedSpaceKey)
+	if err != nil {
+		return nil, err
+	}
+	return mergeRuntimeRecordsByOrder(snapshot.all, filtered, snapshot.public), nil
 }
 
 func (c *runtimePageCacheStore) get(s *service, publicOnly bool, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error) {
@@ -111,6 +155,44 @@ func (c *runtimePageCacheStore) get(s *service, publicOnly bool, host, requested
 		return nil, err
 	}
 	return mergeRuntimeRecordsByOrder(all, filtered, publicRecords), nil
+}
+
+func (c *runtimePageCacheStore) getSnapshot(s *service, spaceKey string) (*runtimePageCacheSnapshot, error) {
+	resolvedSpaceKey := normalizeSpaceKey(spaceKey)
+	now := time.Now()
+
+	c.mu.RLock()
+	snapshot := c.snapshots[resolvedSpaceKey]
+	if snapshot != nil && now.Before(snapshot.expiresAt) {
+		c.mu.RUnlock()
+		return snapshot, nil
+	}
+	c.mu.RUnlock()
+
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	if c.snapshots == nil {
+		c.snapshots = make(map[string]*runtimePageCacheSnapshot)
+	}
+	snapshot = c.snapshots[resolvedSpaceKey]
+	if snapshot != nil && now.Before(snapshot.expiresAt) {
+		return snapshot, nil
+	}
+
+	all, menuMap, err := s.buildRuntimeRecords(resolvedSpaceKey)
+	if err != nil {
+		return nil, err
+	}
+	publicRecords := buildPublicRuntimeRecords(all, menuMap, resolvedSpaceKey)
+	snapshot = &runtimePageCacheSnapshot{
+		all:       cloneRuntimeRecords(all),
+		public:    cloneRuntimeRecords(publicRecords),
+		menuMap:   cloneRuntimeMenuMap(menuMap),
+		expiresAt: now.Add(runtimePageCacheTTL),
+	}
+	c.snapshots[resolvedSpaceKey] = snapshot
+	return snapshot, nil
 }
 
 func (c *runtimePageCacheStore) invalidate() {
@@ -272,12 +354,7 @@ func buildPublicRuntimeRecords(
 	return result
 }
 
-type runtimeAccessContext struct {
-	authenticated  bool
-	superAdmin     bool
-	actionKeys     map[string]struct{}
-	visibleMenuIDs map[uuid.UUID]struct{}
-}
+type runtimeAccessContext = CompiledAccessContext
 
 type runtimeAccessDecision struct {
 	allowed       bool
@@ -298,6 +375,19 @@ func filterRuntimeRecordsForContext(
 	tenantID *uuid.UUID,
 	spaceKey string,
 ) ([]Record, error) {
+	accessCtx, err := s.buildRuntimeAccessContext(userID, tenantID, menuMap, spaceKey)
+	if err != nil {
+		return nil, err
+	}
+	return filterRuntimeRecordsWithAccess(all, menuMap, accessCtx, spaceKey)
+}
+
+func filterRuntimeRecordsWithAccess(
+	all []Record,
+	menuMap map[uuid.UUID]runtimeMenuNode,
+	accessCtx *runtimeAccessContext,
+	spaceKey string,
+) ([]Record, error) {
 	if len(all) == 0 {
 		return []Record{}, nil
 	}
@@ -305,12 +395,7 @@ func filterRuntimeRecordsForContext(
 	if len(records) == 0 {
 		return []Record{}, nil
 	}
-
-	accessCtx, err := s.buildRuntimeAccessContext(userID, tenantID, menuMap, spaceKey)
-	if err != nil {
-		return nil, err
-	}
-	if !accessCtx.authenticated {
+	if accessCtx == nil || !accessCtx.Authenticated {
 		return []Record{}, nil
 	}
 
@@ -325,7 +410,7 @@ func filterRuntimeRecordsForContext(
 
 	visibleMenusByID, visibleMenusByPath := buildVisibleRuntimeMenuIndex(
 		menuMap,
-		accessCtx.visibleMenuIDs,
+		accessCtx.VisibleMenuIDs,
 		spaceKey,
 	)
 
@@ -359,7 +444,7 @@ func filterRuntimeRecordsForContext(
 		case "public":
 			decision = runtimeAccessDecision{allowed: true, effectiveMode: "public"}
 		case "jwt":
-			decision = runtimeAccessDecision{allowed: accessCtx.authenticated, effectiveMode: "jwt"}
+			decision = runtimeAccessDecision{allowed: accessCtx.Authenticated, effectiveMode: "jwt"}
 		case "permission":
 			decision = runtimeAccessDecision{
 				allowed:       accessCtx.hasAction(strings.TrimSpace(item.PermissionKey)),
@@ -389,7 +474,7 @@ func filterRuntimeRecordsForContext(
 				)
 			}
 		default:
-			decision = runtimeAccessDecision{allowed: accessCtx.authenticated, effectiveMode: "jwt"}
+			decision = runtimeAccessDecision{allowed: accessCtx.Authenticated, effectiveMode: "jwt"}
 		}
 
 		decisions[normalizedKey] = decision
@@ -444,8 +529,9 @@ func (s *service) buildRuntimeAccessContext(
 	spaceKey string,
 ) (*runtimeAccessContext, error) {
 	ctx := &runtimeAccessContext{
-		actionKeys:     make(map[string]struct{}),
-		visibleMenuIDs: make(map[uuid.UUID]struct{}),
+		SpaceKey:       normalizeSpaceKey(spaceKey),
+		ActionKeys:     make(map[string]struct{}),
+		VisibleMenuIDs: make(map[uuid.UUID]struct{}),
 	}
 	if s == nil || s.db == nil || userID == nil {
 		return ctx, nil
@@ -464,8 +550,8 @@ func (s *service) buildRuntimeAccessContext(
 		return ctx, nil
 	}
 
-	ctx.authenticated = true
-	ctx.superAdmin = currentUser.IsSuperAdmin
+	ctx.Authenticated = true
+	ctx.SuperAdmin = currentUser.IsSuperAdmin
 	if currentUser.IsSuperAdmin {
 		for id, node := range menuMap {
 			if normalizeSpaceKey(node.Menu.SpaceKey) != normalizeSpaceKey(spaceKey) {
@@ -474,7 +560,7 @@ func (s *service) buildRuntimeAccessContext(
 			if !isRuntimeMenuEnabled(node.Menu.Meta) {
 				continue
 			}
-			ctx.visibleMenuIDs[id] = struct{}{}
+			ctx.VisibleMenuIDs[id] = struct{}{}
 		}
 		return ctx, nil
 	}
@@ -489,7 +575,7 @@ func (s *service) buildRuntimeAccessContext(
 		if normalized == "" {
 			continue
 		}
-		ctx.actionKeys[normalized] = struct{}{}
+		ctx.ActionKeys[normalized] = struct{}{}
 	}
 
 	visibleMenuIDs, err := s.resolveRuntimeVisibleMenuIDs(*userID, tenantID, menuMap, spaceKey)
@@ -497,7 +583,7 @@ func (s *service) buildRuntimeAccessContext(
 		return nil, err
 	}
 	for _, menuID := range visibleMenuIDs {
-		ctx.visibleMenuIDs[menuID] = struct{}{}
+		ctx.VisibleMenuIDs[menuID] = struct{}{}
 	}
 	return ctx, nil
 }
@@ -507,10 +593,10 @@ func (ctx *runtimeAccessContext) hasAction(permissionKey string) bool {
 	if normalized == "" {
 		return false
 	}
-	if ctx.superAdmin {
+	if ctx.SuperAdmin {
 		return true
 	}
-	_, ok := ctx.actionKeys[normalized]
+	_, ok := ctx.ActionKeys[normalized]
 	return ok
 }
 
@@ -621,19 +707,25 @@ func resolveRuntimeMenuInheritedAccess(
 	visibleMenusByID map[uuid.UUID]runtimeMenuNode,
 	visibleMenusByPath map[string]runtimeMenuNode,
 ) runtimeAccessDecision {
-	if accessCtx == nil || !accessCtx.authenticated {
+	if accessCtx == nil || !accessCtx.Authenticated {
 		return runtimeAccessDecision{allowed: false, effectiveMode: "jwt"}
 	}
 
 	var node runtimeMenuNode
 	var ok bool
-	if activePath := normalizeRoutePath(page.ActiveMenuPath); activePath != "" {
+	activePath := normalizeRoutePath(page.ActiveMenuPath)
+	if activePath != "" {
 		node, ok = visibleMenusByPath[activePath]
 	}
 	if !ok && page.ParentMenuID != nil {
 		node, ok = visibleMenusByID[*page.ParentMenuID]
 	}
 	if !ok {
+		// 页面显式挂在某个菜单下时，若当前访问图里已经找不到该菜单，
+		// 说明菜单已禁用、被空间过滤或当前用户无权访问，此时必须同步拒绝页面深链进入。
+		if activePath != "" || page.ParentMenuID != nil {
+			return runtimeAccessDecision{allowed: false, effectiveMode: "jwt"}
+		}
 		return runtimeAccessDecision{allowed: true, effectiveMode: "jwt"}
 	}
 
@@ -829,13 +921,12 @@ func mergeRuntimeUUIDs(groups ...[]uuid.UUID) []uuid.UUID {
 }
 
 func filterRecordsBySpace(records []Record, spaceKey string) []Record {
-	target := normalizeSpaceKey(spaceKey)
-	if target == "" || len(records) == 0 {
+	if len(records) == 0 {
 		return records
 	}
 	result := make([]Record, 0, len(records))
 	for _, item := range records {
-		if normalizeSpaceKey(item.SpaceKey) != target {
+		if !isPageVisibleInSpace(item.UIPage, spaceKey) {
 			continue
 		}
 		result = append(result, item)

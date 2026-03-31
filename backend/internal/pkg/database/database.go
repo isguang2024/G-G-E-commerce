@@ -148,6 +148,7 @@ func AutoMigrate() error {
 		&models.MenuManageGroup{},
 		&models.Menu{},
 		&models.UIPage{},
+		&models.PageSpaceBinding{},
 		&models.Tenant{},
 		&models.TenantMember{},
 		&models.APIKey{},
@@ -257,6 +258,14 @@ func createUniqueIndexes() error {
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", menuSpaceCodeIndexName).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE UNIQUE INDEX " + menuSpaceCodeIndexName + " ON menu_spaces (space_key)").Error; err != nil {
+			return err
+		}
+	}
+
+	pageSpaceBindingIndexName := "idx_page_space_bindings_page_space_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", pageSpaceBindingIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + pageSpaceBindingIndexName + " ON page_space_bindings (page_id, space_key) WHERE deleted_at IS NULL").Error; err != nil {
 			return err
 		}
 	}

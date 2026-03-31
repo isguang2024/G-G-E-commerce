@@ -59,6 +59,7 @@ type FeaturePackageBundleSeed struct {
 
 type MenuSeed struct {
 	SpaceKey   string
+	Kind       string
 	Name       string
 	ParentName string
 	Path       string
@@ -543,8 +544,28 @@ func DefaultMenus() []MenuSeed {
 		if strings.TrimSpace(items[i].SpaceKey) == "" {
 			items[i].SpaceKey = systemmodels.DefaultMenuSpaceKey
 		}
+		if strings.TrimSpace(items[i].Kind) == "" {
+			items[i].Kind = deriveMenuSeedKind(items[i])
+		}
 	}
 	return items
+}
+
+func deriveMenuSeedKind(item MenuSeed) string {
+	link := ""
+	if item.Meta != nil {
+		if value, ok := item.Meta["link"].(string); ok {
+			link = strings.TrimSpace(value)
+		}
+	}
+	switch {
+	case link != "":
+		return systemmodels.MenuKindExternal
+	case strings.TrimSpace(item.Component) != "" && strings.TrimSpace(item.Component) != "/index/index":
+		return systemmodels.MenuKindEntry
+	default:
+		return systemmodels.MenuKindDirectory
+	}
 }
 
 func DefaultMenuSpaces() []MenuSpaceSeed {
@@ -604,6 +625,8 @@ func DefaultRoleCodes() []string {
 }
 
 func DefaultPages() []PageSeed {
+	// 页面种子只保留非菜单直达页。
+	// 常规入口页直接由 DefaultMenus 维护，避免菜单和 ui_pages 双写同一路由。
 	items := []PageSeed{
 		{
 			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
@@ -639,70 +662,6 @@ func DefaultPages() []PageSeed {
 			KeepAlive:         true,
 			Status:            "normal",
 			Meta:              usermodel.MetaJSON{"isHideTab": true},
-		},
-		{
-			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
-			PageKey:           "workspace.inbox",
-			Name:              "消息中心",
-			RouteName:         "WorkspaceInbox",
-			RoutePath:         "/workspace/inbox",
-			Component:         "/workspace/inbox",
-			PageType:          "global",
-			Source:            "manual",
-			ModuleKey:         "message",
-			SortOrder:         20,
-			ParentMenuName:    "Dashboard",
-			DisplayGroupKey:   "display.system_pages",
-			ActiveMenuPath:    "/dashboard/console",
-			BreadcrumbMode:    "inherit_menu",
-			AccessMode:        "jwt",
-			InheritPermission: true,
-			KeepAlive:         true,
-			Status:            "normal",
-			Meta:              usermodel.MetaJSON{"isHideTab": false},
-		},
-		{
-			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
-			PageKey:           "system.menu_space.manage",
-			Name:              "菜单空间",
-			RouteName:         "MenuSpaceManage",
-			RoutePath:         "/system/menu-space",
-			Component:         "/system/menu-space",
-			PageType:          "inner",
-			Source:            "manual",
-			ModuleKey:         "menu_space",
-			SortOrder:         25,
-			ParentMenuName:    "MenuSpaceManage",
-			DisplayGroupKey:   "display.system_pages",
-			ActiveMenuPath:    "/system/menu-space",
-			BreadcrumbMode:    "inherit_menu",
-			AccessMode:        "permission",
-			PermissionKey:     "system.menu.manage",
-			InheritPermission: false,
-			KeepAlive:         true,
-			Status:            "normal",
-			Meta:              usermodel.MetaJSON{},
-		},
-		{
-			PageKey:           "system.message.manage",
-			Name:              "消息发送",
-			RouteName:         "MessageManage",
-			RoutePath:         "/system/message",
-			Component:         "/system/message",
-			PageType:          "inner",
-			Source:            "manual",
-			ModuleKey:         "message",
-			SortOrder:         30,
-			ParentMenuName:    "MessageManage",
-			DisplayGroupKey:   "display.system_pages",
-			ActiveMenuPath:    "/system/message",
-			BreadcrumbMode:    "inherit_menu",
-			AccessMode:        "permission",
-			PermissionKey:     "message.manage",
-			InheritPermission: false,
-			KeepAlive:         true,
-			Status:            "normal",
-			Meta:              usermodel.MetaJSON{},
 		},
 		{
 			PageKey:           "system.message.template.manage",
@@ -783,48 +742,6 @@ func DefaultPages() []PageSeed {
 			BreadcrumbMode:    "inherit_menu",
 			AccessMode:        "permission",
 			PermissionKey:     "message.manage",
-			InheritPermission: false,
-			KeepAlive:         true,
-			Status:            "normal",
-			Meta:              usermodel.MetaJSON{},
-		},
-		{
-			PageKey:           "team.team",
-			Name:              "Team",
-			RouteName:         "TeamTeam",
-			RoutePath:         "/team/team",
-			Component:         "/team/team",
-			PageType:          "inner",
-			Source:            "manual",
-			ModuleKey:         "team",
-			SortOrder:         35,
-			ParentMenuName:    "TeamManage",
-			DisplayGroupKey:   "display.system_pages",
-			ActiveMenuPath:    "/team/team",
-			BreadcrumbMode:    "inherit_menu",
-			AccessMode:        "permission",
-			PermissionKey:     "tenant.manage",
-			InheritPermission: false,
-			KeepAlive:         true,
-			Status:            "normal",
-			Meta:              usermodel.MetaJSON{},
-		},
-		{
-			PageKey:           "team.message.manage",
-			Name:              "团队消息发送",
-			RouteName:         "TeamMessageManage",
-			RoutePath:         "/team/message",
-			Component:         "/team/message",
-			PageType:          "inner",
-			Source:            "manual",
-			ModuleKey:         "team_message",
-			SortOrder:         40,
-			ParentMenuName:    "TeamMessageManage",
-			DisplayGroupKey:   "display.system_pages",
-			ActiveMenuPath:    "/team/message",
-			BreadcrumbMode:    "inherit_menu",
-			AccessMode:        "permission",
-			PermissionKey:     "team.message.manage",
 			InheritPermission: false,
 			KeepAlive:         true,
 			Status:            "normal",
@@ -919,6 +836,123 @@ func DefaultPages() []PageSeed {
 		if strings.TrimSpace(items[i].SpaceKey) == "" {
 			items[i].SpaceKey = systemmodels.DefaultMenuSpaceKey
 		}
+	}
+	return items
+}
+
+// LegacyMenuBackedPages 仅供历史迁移回放使用。
+// 这些页面已被菜单 entry 接管，默认初始化与新数据不再写入 ui_pages。
+func LegacyMenuBackedPages() []PageSeed {
+	items := []PageSeed{
+		{
+			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
+			PageKey:           "workspace.inbox",
+			Name:              "消息中心",
+			RouteName:         "WorkspaceInbox",
+			RoutePath:         "/workspace/inbox",
+			Component:         "/workspace/inbox",
+			PageType:          "global",
+			Source:            "manual",
+			ModuleKey:         "message",
+			SortOrder:         20,
+			ParentMenuName:    "Dashboard",
+			DisplayGroupKey:   "display.system_pages",
+			ActiveMenuPath:    "/dashboard/console",
+			BreadcrumbMode:    "inherit_menu",
+			AccessMode:        "jwt",
+			InheritPermission: true,
+			KeepAlive:         true,
+			Status:            "normal",
+			Meta:              usermodel.MetaJSON{"isHideTab": false},
+		},
+		{
+			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
+			PageKey:           "system.menu_space.manage",
+			Name:              "菜单空间",
+			RouteName:         "MenuSpaceManage",
+			RoutePath:         "/system/menu-space",
+			Component:         "/system/menu-space",
+			PageType:          "inner",
+			Source:            "manual",
+			ModuleKey:         "menu_space",
+			SortOrder:         25,
+			ParentMenuName:    "MenuSpaceManage",
+			DisplayGroupKey:   "display.system_pages",
+			ActiveMenuPath:    "/system/menu-space",
+			BreadcrumbMode:    "inherit_menu",
+			AccessMode:        "permission",
+			PermissionKey:     "system.menu.manage",
+			InheritPermission: false,
+			KeepAlive:         true,
+			Status:            "normal",
+			Meta:              usermodel.MetaJSON{},
+		},
+		{
+			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
+			PageKey:           "system.message.manage",
+			Name:              "消息发送",
+			RouteName:         "MessageManage",
+			RoutePath:         "/system/message",
+			Component:         "/system/message",
+			PageType:          "inner",
+			Source:            "manual",
+			ModuleKey:         "message",
+			SortOrder:         30,
+			ParentMenuName:    "MessageManage",
+			DisplayGroupKey:   "display.system_pages",
+			ActiveMenuPath:    "/system/message",
+			BreadcrumbMode:    "inherit_menu",
+			AccessMode:        "permission",
+			PermissionKey:     "message.manage",
+			InheritPermission: false,
+			KeepAlive:         true,
+			Status:            "normal",
+			Meta:              usermodel.MetaJSON{},
+		},
+		{
+			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
+			PageKey:           "team.team",
+			Name:              "Team",
+			RouteName:         "TeamTeam",
+			RoutePath:         "/team/team",
+			Component:         "/team/team",
+			PageType:          "inner",
+			Source:            "manual",
+			ModuleKey:         "team",
+			SortOrder:         35,
+			ParentMenuName:    "TeamManage",
+			DisplayGroupKey:   "display.system_pages",
+			ActiveMenuPath:    "/team/team",
+			BreadcrumbMode:    "inherit_menu",
+			AccessMode:        "permission",
+			PermissionKey:     "tenant.manage",
+			InheritPermission: false,
+			KeepAlive:         true,
+			Status:            "normal",
+			Meta:              usermodel.MetaJSON{},
+		},
+		{
+			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
+			PageKey:           "team.message.manage",
+			Name:              "团队消息发送",
+			RouteName:         "TeamMessageManage",
+			RoutePath:         "/team/message",
+			Component:         "/team/message",
+			PageType:          "inner",
+			Source:            "manual",
+			ModuleKey:         "team_message",
+			SortOrder:         40,
+			ParentMenuName:    "TeamMessageManage",
+			DisplayGroupKey:   "display.system_pages",
+			ActiveMenuPath:    "/team/message",
+			BreadcrumbMode:    "inherit_menu",
+			AccessMode:        "permission",
+			PermissionKey:     "team.message.manage",
+			InheritPermission: false,
+			KeepAlive:         true,
+			Status:            "normal",
+			Meta:              usermodel.MetaJSON{},
+		},
 	}
 	return items
 }

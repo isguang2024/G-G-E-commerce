@@ -97,11 +97,11 @@
             </ElFormItem>
           </ElCol>
           <ElCol :span="12">
-            <ElFormItem label="菜单空间" prop="spaceKey">
+            <ElFormItem label="空间视角" prop="spaceKey">
               <template #label>
                 <PageFieldLabel
-                  label="菜单空间"
-                  help="决定当前页面属于哪个菜单空间。默认空间兼容现有单域单菜单模式；新增空间后可按空间隔离菜单和页面。"
+                  label="空间视角"
+                  help="用于加载当前空间下的菜单候选和父页面候选。受管页面默认全局定义，只有少数独立页才会额外绑定到特定空间。"
                 />
               </template>
               <ElSelect v-model="form.spaceKey" style="width: 100%">
@@ -705,7 +705,7 @@
     }
     const names = siblings.slice(0, 4).map((item) => item.name)
     const suffix = siblings.length > 4 ? ` 等 ${siblings.length} 个页面` : ''
-    return `当前菜单下还有 ${siblings.length} 个页面：${names.join('、')}${suffix}。如需把当前页作为导航代表页，建议在菜单管理里将它设为主页面。`
+    return `当前菜单下还有 ${siblings.length} 个页面：${names.join('、')}${suffix}。菜单入口页请直接在菜单管理维护；这里仅负责该入口下的受管页面。`
   })
 
   const resolvedRoutePreview = computed(() =>

@@ -36,8 +36,8 @@
           <div class="page-toolbar">
             <div class="page-toolbar-head">
               <div class="page-toolbar-title-row">
-                <div class="page-toolbar-title">页面管理</div>
-                <div class="page-toolbar-subtitle">独立页面、挂接页面、逻辑分组与普通分组统一查看</div>
+                <div class="page-toolbar-title">受管页面</div>
+                <div class="page-toolbar-subtitle">只管理非菜单直达页、逻辑分组与普通分组；菜单入口页直接回到菜单管理维护</div>
                 <div class="page-toolbar-metrics">
                   <span v-for="item in summaryStats" :key="item.label" class="page-toolbar-metric">
                     {{ item.label }} {{ item.value }}
@@ -65,14 +65,14 @@
                 </ElButton>
                 <template #dropdown>
                   <ElDropdownMenu>
-                    <ElDropdownItem command="page">新增页面</ElDropdownItem>
+                    <ElDropdownItem command="page">新增受管页面</ElDropdownItem>
                     <ElDropdownItem command="group">新增逻辑分组</ElDropdownItem>
                     <ElDropdownItem command="display_group">新增普通分组</ElDropdownItem>
                   </ElDropdownMenu>
                 </template>
               </ElDropdown>
               <ElButton v-action="'system.page.sync'" @click="unregisteredDialogVisible = true" v-ripple>
-                未注册页面
+                扫描未注册受管页
               </ElButton>
               <div class="page-switch">
                 <span class="page-switch__label">展开分组</span>
@@ -187,9 +187,12 @@
         </template>
 
         <template #space="{ row }">
-          <ElTag size="small" effect="plain" type="info">
-            {{ getSpaceName(row.spaceKey) }}
-          </ElTag>
+          <div class="page-space-cell">
+            <ElTag size="small" effect="plain" type="info">
+              {{ getSpaceScopeText(row) }}
+            </ElTag>
+            <span class="page-muted-text">{{ getSpaceScopeHint(row) }}</span>
+          </div>
         </template>
 
         <template #mountTarget="{ row }">
@@ -353,7 +356,7 @@ const initialSearchState = {
     { prop: 'name', label: '页面', minWidth: 300, useSlot: true, slotName: 'name' },
     { prop: 'route', label: '最终路径', minWidth: 220, useSlot: true, slotName: 'route' },
     { prop: 'component', label: '组件入口', minWidth: 180, useSlot: true, slotName: 'component' },
-    { prop: 'space', label: '菜单空间', width: 120, useSlot: true, slotName: 'space' },
+    { prop: 'space', label: '空间视角', width: 180, useSlot: true, slotName: 'space' },
     { prop: 'mountTarget', label: '挂接对象', minWidth: 180, useSlot: true, slotName: 'mountTarget' },
     { prop: 'effectiveChain', label: '生效链路', minWidth: 150, useSlot: true, slotName: 'effectiveChain' },
     { prop: 'parentChainStatus', label: '父链状态', minWidth: 130, useSlot: true, slotName: 'parentChainStatus' },
@@ -414,13 +417,16 @@ const initialSearchState = {
   const visibleCount = computed(() => countTreeNodes(tableData.value))
   const summaryStats = computed(() => {
     const suspendedCount = rawPages.value.filter((item) => item.status !== 'normal').length
-    const independentCount = rawPages.value.filter((item) => {
-      if (item.pageType === 'display_group') return false
-      return !`${item.parentMenuId || ''}`.trim() && !`${item.parentPageKey || ''}`.trim()
-    }).length
+    const managedEntryCount = rawPages.value.filter((item) =>
+      item.pageType === 'inner' || item.pageType === 'global'
+    ).length
+    const logicGroupCount = rawPages.value.filter((item) => item.pageType === 'group').length
+    const displayGroupCount = rawPages.value.filter((item) => item.pageType === 'display_group').length
     return [
       { label: '当前显示', value: visibleCount.value },
-      { label: '独立页面', value: independentCount || 0 },
+      { label: '受管页面', value: managedEntryCount || 0 },
+      { label: '逻辑分组', value: logicGroupCount || 0 },
+      { label: '普通分组', value: displayGroupCount || 0 },
       { label: '停用', value: suspendedCount || 0 },
       { label: '总条目', value: rawPages.value.length }
     ]
@@ -605,8 +611,43 @@ const initialSearchState = {
   }
 
   function getSpaceName(spaceKey?: string) {
-    const normalized = `${spaceKey || ''}`.trim() || 'default'
+    const normalized = `${spaceKey || ''}`.trim()
+    if (!normalized) {
+      return '全局'
+    }
     return menuSpaceMap.value.get(normalized)?.name || normalized
+  }
+
+  function resolveSpaceKeys(row: PageItem): string[] {
+    const meta = (row.meta || {}) as Record<string, any>
+    const values = Array.isArray(row.spaceKeys)
+      ? row.spaceKeys
+      : Array.isArray(meta.spaceKeys)
+        ? meta.spaceKeys
+        : []
+    return values.map((item) => `${item || ''}`.trim()).filter(Boolean)
+  }
+
+  function getSpaceScopeText(row: PageItem) {
+    const keys = resolveSpaceKeys(row)
+    if (keys.length === 0) {
+      return '全局共享'
+    }
+    if (keys.length === 1) {
+      return getSpaceName(keys[0])
+    }
+    return `绑定 ${keys.length} 个空间`
+  }
+
+  function getSpaceScopeHint(row: PageItem) {
+    const keys = resolveSpaceKeys(row)
+    if (keys.length === 0) {
+      return '默认随菜单或父页复用'
+    }
+    if (keys.length === 1) {
+      return row.spaceScope === 'bound' ? '独立页暴露控制' : '单空间可见'
+    }
+    return keys.map((key) => getSpaceName(key)).join(' / ')
   }
 
   async function openDialog(
@@ -1232,6 +1273,13 @@ const initialSearchState = {
   .page-component-cell {
     display: flex;
     align-items: center;
+    min-width: 0;
+  }
+
+  .page-space-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
     min-width: 0;
   }
 

@@ -707,6 +707,36 @@ func runNamedMigrations(logger *zap.Logger) error {
 			},
 		},
 		{
+			Name: "20260331_navigation_model_foundation",
+			Run: func(logger *zap.Logger) error {
+				if err := ensureNavigationModelFoundation(logger); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260331_navigation_model_foundation"))
+				return nil
+			},
+		},
+		{
+			Name: "20260331_menu_entry_page_cleanup",
+			Run: func(logger *zap.Logger) error {
+				if err := cleanupMenuBackedEntryPages(logger); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260331_menu_entry_page_cleanup"))
+				return nil
+			},
+		},
+		{
+			Name: "20260331_space_cloned_page_cleanup",
+			Run: func(logger *zap.Logger) error {
+				if err := cleanupSpaceClonedPages(logger); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260331_space_cloned_page_cleanup"))
+				return nil
+			},
+		},
+		{
 			Name: "20260325_permission_endpoint_binding_ops",
 			Run: func(logger *zap.Logger) error {
 				permissionKey := "system.permission.manage"
@@ -2378,6 +2408,7 @@ func ensureMenuSeed(spec permissionseed.MenuSeed) (*usermodel.Menu, error) {
 	menu := &usermodel.Menu{
 		ParentID:  parentID,
 		SpaceKey:  normalizeMenuSeedSpaceKey(spec.SpaceKey),
+		Kind:      normalizeMenuSeedKind(spec),
 		Path:      spec.Path,
 		Name:      spec.Name,
 		Component: spec.Component,
@@ -2408,6 +2439,7 @@ func syncMenuSeed(spec permissionseed.MenuSeed) (*usermodel.Menu, error) {
 			menu := &usermodel.Menu{
 				ParentID:  parentID,
 				SpaceKey:  normalizeMenuSeedSpaceKey(spec.SpaceKey),
+				Kind:      normalizeMenuSeedKind(spec),
 				Path:      spec.Path,
 				Name:      spec.Name,
 				Component: spec.Component,
@@ -2427,6 +2459,7 @@ func syncMenuSeed(spec permissionseed.MenuSeed) (*usermodel.Menu, error) {
 	updates := map[string]interface{}{
 		"parent_id":  parentID,
 		"space_key":  normalizeMenuSeedSpaceKey(spec.SpaceKey),
+		"kind":       normalizeMenuSeedKind(spec),
 		"path":       spec.Path,
 		"component":  spec.Component,
 		"title":      spec.Title,
@@ -2444,6 +2477,7 @@ func syncMenuSeed(spec permissionseed.MenuSeed) (*usermodel.Menu, error) {
 		existing.ParentID = nil
 	}
 	existing.Path = spec.Path
+	existing.Kind = normalizeMenuSeedKind(spec)
 	existing.Component = spec.Component
 	existing.Title = spec.Title
 	existing.Icon = spec.Icon
@@ -2506,13 +2540,270 @@ func cleanupDeprecatedMenus(logger *zap.Logger) error {
 	return nil
 }
 
+func ensureNavigationModelFoundation(logger *zap.Logger) error {
+	statements := []string{
+		`ALTER TABLE menus ADD COLUMN IF NOT EXISTS kind varchar(20) NOT NULL DEFAULT 'directory'`,
+		`ALTER TABLE menus ALTER COLUMN kind SET DEFAULT 'directory'`,
+		`CREATE INDEX IF NOT EXISTS idx_menus_kind ON menus (kind)`,
+		`CREATE TABLE IF NOT EXISTS page_space_bindings (
+			id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+			page_id uuid NOT NULL,
+			space_key varchar(100) NOT NULL,
+			created_at timestamptz NOT NULL DEFAULT NOW(),
+			updated_at timestamptz NOT NULL DEFAULT NOW(),
+			deleted_at timestamptz NULL
+		)`,
+		`CREATE UNIQUE INDEX IF NOT EXISTS idx_page_space_bindings_page_space_unique
+			ON page_space_bindings (page_id, space_key)
+			WHERE deleted_at IS NULL`,
+		`UPDATE menus
+			SET kind = CASE
+				WHEN COALESCE(NULLIF(TRIM(COALESCE(meta->>'link', '')), ''), '') <> '' THEN 'external'
+				WHEN COALESCE(NULLIF(TRIM(component), ''), '') <> '' AND component <> '/index/index' THEN 'entry'
+				ELSE 'directory'
+			END`,
+		`INSERT INTO page_space_bindings (page_id, space_key, created_at, updated_at)
+			SELECT id, LOWER(TRIM(space_key)), NOW(), NOW()
+			FROM ui_pages
+			WHERE COALESCE(NULLIF(TRIM(space_key), ''), '') <> ''
+			  AND LOWER(TRIM(space_key)) <> 'default'
+			  AND parent_menu_id IS NULL
+			  AND COALESCE(NULLIF(TRIM(parent_page_key), ''), '') = ''
+			ON CONFLICT DO NOTHING`,
+	}
+	for _, statement := range statements {
+		if err := database.DB.Exec(statement).Error; err != nil {
+			return err
+		}
+	}
+	if logger != nil {
+		logger.Info("Navigation model foundation ensured")
+	}
+	return nil
+}
+
+func cleanupMenuBackedEntryPages(logger *zap.Logger) error {
+	var menus []usermodel.Menu
+	if err := database.DB.Order("sort_order ASC, created_at ASC").Find(&menus).Error; err != nil {
+		return err
+	}
+	menuMap := make(map[uuid.UUID]usermodel.Menu, len(menus))
+	for _, item := range menus {
+		menuMap[item.ID] = item
+	}
+	fullPathMap := make(map[uuid.UUID]string, len(menus))
+	var resolveMenuPath func(menu usermodel.Menu) string
+	resolveMenuPath = func(menu usermodel.Menu) string {
+		if cached := strings.TrimSpace(fullPathMap[menu.ID]); cached != "" {
+			return cached
+		}
+		parentPath := ""
+		if menu.ParentID != nil {
+			if parent, ok := menuMap[*menu.ParentID]; ok {
+				parentPath = resolveMenuPath(parent)
+			}
+		}
+		fullPath := buildMenuSeedFullPath(menu.Path, parentPath)
+		fullPathMap[menu.ID] = fullPath
+		return fullPath
+	}
+	for _, item := range menus {
+		resolveMenuPath(item)
+	}
+
+	var pages []systemmodels.UIPage
+	if err := database.DB.Order("sort_order ASC, created_at ASC").Find(&pages).Error; err != nil {
+		return err
+	}
+	pageMap := make(map[string]systemmodels.UIPage, len(pages))
+	for _, item := range pages {
+		pageMap[strings.TrimSpace(item.PageKey)] = item
+	}
+	deleteIDs := make([]uuid.UUID, 0)
+	for _, page := range pages {
+		if page.ParentMenuID == nil {
+			continue
+		}
+		if page.PageType == systemmodels.PageTypeGroup || page.PageType == systemmodels.PageTypeDisplayGroup {
+			continue
+		}
+		menu, ok := menuMap[*page.ParentMenuID]
+		if !ok || deriveMenuKind(menu) != systemmodels.MenuKindEntry {
+			continue
+		}
+		if normalizeSeedRoutePath(page.RoutePath) != normalizeSeedRoutePath(fullPathMap[*page.ParentMenuID]) {
+			continue
+		}
+		if strings.TrimSpace(page.Component) == "" || strings.TrimSpace(page.Component) != strings.TrimSpace(menu.Component) {
+			continue
+		}
+		if hasPageDescendants(page.PageKey, pageMap) {
+			continue
+		}
+		deleteIDs = append(deleteIDs, page.ID)
+	}
+	if len(deleteIDs) == 0 {
+		return nil
+	}
+	if err := database.DB.Where("id IN ?", deleteIDs).Delete(&systemmodels.UIPage{}).Error; err != nil {
+		return err
+	}
+	if logger != nil {
+		logger.Info("Menu-backed entry pages cleaned", zap.Int("deleted_count", len(deleteIDs)))
+	}
+	return nil
+}
+
+func cleanupSpaceClonedPages(logger *zap.Logger) error {
+	return database.DB.Transaction(func(tx *gorm.DB) error {
+		var clonedPages []systemmodels.UIPage
+		if err := tx.
+			Where("deleted_at IS NULL").
+			Where("page_key LIKE ?", "%.ops").
+			Order("created_at ASC").
+			Find(&clonedPages).Error; err != nil {
+			return err
+		}
+		if len(clonedPages) == 0 {
+			return nil
+		}
+
+		var allPages []systemmodels.UIPage
+		if err := tx.Where("deleted_at IS NULL").Find(&allPages).Error; err != nil {
+			return err
+		}
+		pageMap := make(map[string]systemmodels.UIPage, len(allPages))
+		for _, item := range allPages {
+			pageMap[strings.TrimSpace(item.PageKey)] = item
+		}
+
+		deletedCount := 0
+		skippedKeys := make([]string, 0)
+		for _, page := range clonedPages {
+			clonedKey := strings.TrimSpace(page.PageKey)
+			canonicalKey := strings.TrimSpace(strings.TrimSuffix(clonedKey, ".ops"))
+			if canonicalKey == "" || canonicalKey == clonedKey {
+				skippedKeys = append(skippedKeys, clonedKey)
+				continue
+			}
+			canonical, ok := pageMap[canonicalKey]
+			if !ok {
+				skippedKeys = append(skippedKeys, clonedKey)
+				continue
+			}
+
+			if err := tx.Model(&systemmodels.UIPage{}).
+				Where("parent_page_key = ?", clonedKey).
+				Update("parent_page_key", canonicalKey).Error; err != nil {
+				return err
+			}
+			if err := tx.Model(&systemmodels.UIPage{}).
+				Where("display_group_key = ?", clonedKey).
+				Update("display_group_key", canonicalKey).Error; err != nil {
+				return err
+			}
+
+			// 历史空间克隆中的独立页收敛后，改用 page_space_bindings 表达“仅暴露到少量空间”。
+			if page.ParentMenuID == nil &&
+				strings.TrimSpace(page.ParentPageKey) == "" &&
+				normalizeMenuSeedSpaceKey(page.SpaceKey) != systemmodels.DefaultMenuSpaceKey {
+				if err := tx.Exec(
+					`INSERT INTO page_space_bindings (page_id, space_key, created_at, updated_at)
+					 VALUES (?, ?, NOW(), NOW())
+					 ON CONFLICT DO NOTHING`,
+					canonical.ID,
+					normalizeMenuSeedSpaceKey(page.SpaceKey),
+				).Error; err != nil {
+					return err
+				}
+			}
+
+			if err := tx.Where("page_id = ?", page.ID).Delete(&systemmodels.PageSpaceBinding{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Delete(&systemmodels.UIPage{}, "id = ?", page.ID).Error; err != nil {
+				return err
+			}
+			deletedCount++
+		}
+
+		if logger != nil {
+			fields := []zap.Field{zap.Int("deleted_count", deletedCount)}
+			if len(skippedKeys) > 0 {
+				fields = append(fields, zap.Strings("skipped_page_keys", skippedKeys))
+			}
+			logger.Info("Space-cloned pages cleaned up", fields...)
+		}
+		return nil
+	})
+}
+
+func hasPageDescendants(pageKey string, pageMap map[string]systemmodels.UIPage) bool {
+	target := strings.TrimSpace(pageKey)
+	if target == "" {
+		return false
+	}
+	for _, item := range pageMap {
+		if strings.TrimSpace(item.ParentPageKey) == target || strings.TrimSpace(item.DisplayGroupKey) == target {
+			return true
+		}
+	}
+	return false
+}
+
+func deriveMenuKind(item usermodel.Menu) string {
+	link := ""
+	if item.Meta != nil {
+		if value, ok := item.Meta["link"].(string); ok {
+			link = strings.TrimSpace(value)
+		}
+	}
+	switch {
+	case link != "":
+		return systemmodels.MenuKindExternal
+	case strings.TrimSpace(item.Component) != "" && strings.TrimSpace(item.Component) != "/index/index":
+		return systemmodels.MenuKindEntry
+	default:
+		return systemmodels.MenuKindDirectory
+	}
+}
+
+func buildMenuSeedFullPath(path, parentPath string) string {
+	target := strings.TrimSpace(path)
+	if target == "" {
+		return normalizeSeedRoutePath(parentPath)
+	}
+	if strings.HasPrefix(target, "/") {
+		return normalizeSeedRoutePath(target)
+	}
+	parent := normalizeSeedRoutePath(parentPath)
+	if parent == "" || parent == "/" {
+		return normalizeSeedRoutePath("/" + target)
+	}
+	return normalizeSeedRoutePath(strings.TrimRight(parent, "/") + "/" + strings.TrimLeft(target, "/"))
+}
+
+func normalizeSeedRoutePath(path string) string {
+	target := strings.TrimSpace(path)
+	if target == "" {
+		return ""
+	}
+	normalized := "/" + strings.TrimLeft(target, "/")
+	normalized = strings.ReplaceAll(normalized, "//", "/")
+	if normalized != "/" {
+		normalized = strings.TrimRight(normalized, "/")
+	}
+	return normalized
+}
+
 func syncDefaultPageSeedByKey(pageKey string) (*systemmodels.UIPage, error) {
 	targetKey := strings.TrimSpace(pageKey)
 	if targetKey == "" {
 		return nil, fmt.Errorf("page seed key is required")
 	}
 
-	for _, spec := range permissionseed.DefaultPages() {
+	pageSeeds := append(permissionseed.DefaultPages(), permissionseed.LegacyMenuBackedPages()...)
+	for _, spec := range pageSeeds {
 		if strings.TrimSpace(spec.PageKey) != targetKey {
 			continue
 		}
@@ -3255,6 +3546,32 @@ func normalizeMenuSeedSpaceKey(value string) string {
 		return systemmodels.DefaultMenuSpaceKey
 	}
 	return target
+}
+
+func normalizeMenuSeedKind(spec permissionseed.MenuSeed) string {
+	target := strings.TrimSpace(strings.ToLower(spec.Kind))
+	switch target {
+	case systemmodels.MenuKindDirectory, systemmodels.MenuKindEntry, systemmodels.MenuKindExternal:
+		return target
+	}
+	return deriveMenuSeedKindFromSpec(spec)
+}
+
+func deriveMenuSeedKindFromSpec(spec permissionseed.MenuSeed) string {
+	link := ""
+	if spec.Meta != nil {
+		if value, ok := spec.Meta["link"].(string); ok {
+			link = strings.TrimSpace(value)
+		}
+	}
+	switch {
+	case link != "":
+		return systemmodels.MenuKindExternal
+	case strings.TrimSpace(spec.Component) != "" && strings.TrimSpace(spec.Component) != "/index/index":
+		return systemmodels.MenuKindEntry
+	default:
+		return systemmodels.MenuKindDirectory
+	}
 }
 
 func uniqueStrings(values []string) []string {
