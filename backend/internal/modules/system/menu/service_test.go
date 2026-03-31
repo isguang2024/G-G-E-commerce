@@ -141,9 +141,8 @@ func TestResolveMenuBackupScopeInfoDistinguishesOrigins(t *testing.T) {
 				MenuData: string(spacePayload),
 			},
 			want: menuBackupScopeInfo{
-				ScopeType:   "space",
-				ScopeOrigin: "space",
-				SpaceKey:    "ops",
+				ScopeType: "space",
+				SpaceKey:  "ops",
 			},
 		},
 		{
@@ -152,8 +151,7 @@ func TestResolveMenuBackupScopeInfoDistinguishesOrigins(t *testing.T) {
 				MenuData: string(globalPayload),
 			},
 			want: menuBackupScopeInfo{
-				ScopeType:   "global",
-				ScopeOrigin: "global",
+				ScopeType: "global",
 			},
 		},
 		{
@@ -162,8 +160,7 @@ func TestResolveMenuBackupScopeInfoDistinguishesOrigins(t *testing.T) {
 				MenuData: string(legacyPayload),
 			},
 			want: menuBackupScopeInfo{
-				ScopeType:   "global",
-				ScopeOrigin: "legacy_global",
+				ScopeType: "global",
 			},
 		},
 	}
@@ -271,18 +268,8 @@ func TestParseMenuBackupPayloadSupportsV2AndLegacyFormats(t *testing.T) {
 		t.Fatalf("marshal legacy payload failed: %v", err)
 	}
 
-	parsedLegacy, err := parseMenuBackupPayload(string(legacyRaw))
-	if err != nil {
-		t.Fatalf("parse legacy payload failed: %v", err)
-	}
-	if parsedLegacy.ScopeType != "global" {
-		t.Fatalf("parsedLegacy.ScopeType = %q, want %q", parsedLegacy.ScopeType, "global")
-	}
-	if parsedLegacy.SpaceKey != "" {
-		t.Fatalf("parsedLegacy.SpaceKey = %q, want empty", parsedLegacy.SpaceKey)
-	}
-	if len(parsedLegacy.Menus) != 1 || parsedLegacy.Menus[0].Name != "OpsMenu" {
-		t.Fatalf("parsedLegacy.Menus = %#v, want one OpsMenu", parsedLegacy.Menus)
+	if _, err := parseMenuBackupPayload(string(legacyRaw)); err == nil {
+		t.Fatalf("parse legacy payload should fail for raw array payload")
 	}
 }
 
@@ -305,8 +292,49 @@ func TestResolveBackupSpaceKeyDefaultsToDefaultSpace(t *testing.T) {
 	if got := resolveBackupSpaceKey("space", ""); got != spaceutil.DefaultMenuSpaceKey {
 		t.Fatalf(
 			"resolveBackupSpaceKey(space, empty) = %q, want %q",
-			got,
-			spaceutil.DefaultMenuSpaceKey,
-		)
+		got,
+		spaceutil.DefaultMenuSpaceKey,
+	)
+	}
+}
+
+func TestBuildPromotedMenuFullPathMapRemapsChildren(t *testing.T) {
+	rootID := uuid.New()
+	childID := uuid.New()
+	grandChildID := uuid.New()
+
+	flat := []user.Menu{
+		{ID: rootID, Path: "dashboard"},
+		{ID: childID, ParentID: &rootID, Path: "console"},
+		{ID: grandChildID, ParentID: &childID, Path: "user-center"},
+	}
+
+	got := buildPromotedMenuFullPathMap(flat, rootID, nil)
+
+	if _, exists := got[rootID]; exists {
+		t.Fatalf("promoted path map should not contain deleted root %s", rootID)
+	}
+	if got[childID] != "/console" {
+		t.Fatalf("promoted child path = %q, want %q", got[childID], "/console")
+	}
+	if got[grandChildID] != "/console/user-center" {
+		t.Fatalf("promoted grand child path = %q, want %q", got[grandChildID], "/console/user-center")
+	}
+}
+
+func TestValidateMenuPromoteTargetRejectsSelfAndDescendants(t *testing.T) {
+	rootID := uuid.New()
+	childID := uuid.New()
+
+	flat := []user.Menu{
+		{ID: rootID, Path: "dashboard"},
+		{ID: childID, ParentID: &rootID, Path: "console"},
+	}
+
+	if err := validateMenuPromoteTarget(flat, rootID, rootID); err == nil {
+		t.Fatalf("validateMenuPromoteTarget() should reject self as target")
+	}
+	if err := validateMenuPromoteTarget(flat, rootID, childID); err == nil {
+		t.Fatalf("validateMenuPromoteTarget() should reject descendants as target")
 	}
 }

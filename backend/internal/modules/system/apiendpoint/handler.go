@@ -26,19 +26,20 @@ func NewHandler(service Service, logger *zap.Logger) *Handler {
 
 func (h *Handler) List(c *gin.Context) {
 	var req struct {
-		Current       int    `form:"current"`
-		Size          int    `form:"size"`
-		PermissionKey string `form:"permission_key"`
-		Keyword       string `form:"keyword"`
-		Method        string `form:"method"`
-		Path          string `form:"path"`
-		CategoryID    string `form:"category_id"`
-		ContextScope  string `form:"context_scope"`
-		Source        string `form:"source"`
-		FeatureKind   string `form:"feature_kind"`
-		Status        string `form:"status"`
-		HasPermission *bool  `form:"has_permission_key"`
-		HasCategory   *bool  `form:"has_category"`
+		Current           int    `form:"current"`
+		Size              int    `form:"size"`
+		PermissionKey     string `form:"permission_key"`
+		PermissionPattern string `form:"permission_pattern"`
+		Keyword           string `form:"keyword"`
+		Method            string `form:"method"`
+		Path              string `form:"path"`
+		CategoryID        string `form:"category_id"`
+		ContextScope      string `form:"context_scope"`
+		Source            string `form:"source"`
+		FeatureKind       string `form:"feature_kind"`
+		Status            string `form:"status"`
+		HasPermission     *bool  `form:"has_permission_key"`
+		HasCategory       *bool  `form:"has_category"`
 	}
 	if err := c.ShouldBindQuery(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
@@ -46,19 +47,20 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 	list, total, err := h.service.List(&ListRequest{
-		Current:       req.Current,
-		Size:          req.Size,
-		PermissionKey: req.PermissionKey,
-		Keyword:       req.Keyword,
-		Method:        req.Method,
-		Path:          req.Path,
-		CategoryID:    req.CategoryID,
-		ContextScope:  req.ContextScope,
-		Source:        req.Source,
-		FeatureKind:   req.FeatureKind,
-		Status:        req.Status,
-		HasPermission: req.HasPermission,
-		HasCategory:   req.HasCategory,
+		Current:           req.Current,
+		Size:              req.Size,
+		PermissionKey:     req.PermissionKey,
+		PermissionPattern: req.PermissionPattern,
+		Keyword:           req.Keyword,
+		Method:            req.Method,
+		Path:              req.Path,
+		CategoryID:        req.CategoryID,
+		ContextScope:      req.ContextScope,
+		Source:            req.Source,
+		FeatureKind:       req.FeatureKind,
+		Status:            req.Status,
+		HasPermission:     req.HasPermission,
+		HasCategory:       req.HasCategory,
 	})
 	if err != nil {
 		h.logger.Error("List api endpoints failed", zap.Error(err))
@@ -471,21 +473,8 @@ func endpointToMap(endpoint *user.APIEndpoint, bindings []user.APIEndpointPermis
 	for _, item := range bindings {
 		permissionKeys = append(permissionKeys, item.PermissionKey)
 	}
-	primaryPermissionKey := ""
-	if len(permissionKeys) > 0 {
-		primaryPermissionKey = permissionKeys[0]
-	}
-	authMode := "jwt"
-	switch {
-	case endpoint.Path == "/health":
-		authMode = "public"
-	case endpoint.Path == "/api/v1/auth/login" || endpoint.Path == "/api/v1/auth/register" || endpoint.Path == "/api/v1/auth/refresh":
-		authMode = "public"
-	case len(endpoint.Path) >= len("/open/v1/") && endpoint.Path[:len("/open/v1/")] == "/open/v1/":
-		authMode = "api_key"
-	case len(permissionKeys) > 0:
-		authMode = "permission"
-	}
+	profile := buildPermissionProfile(endpoint.Path, permissionKeys)
+	authMode := deriveEndpointAuthMode(endpoint.Path, profile.Keys)
 	var category gin.H
 	if endpoint.CategoryID != nil {
 		if item, ok := categoryMap[*endpoint.CategoryID]; ok {
@@ -493,27 +482,31 @@ func endpointToMap(endpoint *user.APIEndpoint, bindings []user.APIEndpointPermis
 		}
 	}
 	return gin.H{
-		"id":              endpoint.ID.String(),
-		"code":            endpoint.Code,
-		"method":          endpoint.Method,
-		"path":            endpoint.Path,
-		"spec":            endpoint.Method + " " + endpoint.Path,
-		"feature_kind":    endpoint.FeatureKind,
-		"handler":         endpoint.Handler,
-		"summary":         endpoint.Summary,
-		"permission_key":  primaryPermissionKey,
-		"permission_keys": permissionKeys,
-		"auth_mode":       authMode,
-		"category_id":     stringifyUUIDPointer(endpoint.CategoryID),
-		"category":        category,
-		"context_scope":   endpoint.ContextScope,
-		"source":          endpoint.Source,
-		"status":          endpoint.Status,
-		"runtime_exists":  runtimeState.RuntimeExists,
-		"stale":           runtimeState.Stale,
-		"stale_reason":    runtimeState.StaleReason,
-		"created_at":      endpoint.CreatedAt.Format("2006-01-02 15:04:05"),
-		"updated_at":      endpoint.UpdatedAt.Format("2006-01-02 15:04:05"),
+		"id":                      endpoint.ID.String(),
+		"code":                    endpoint.Code,
+		"method":                  endpoint.Method,
+		"path":                    endpoint.Path,
+		"spec":                    endpoint.Method + " " + endpoint.Path,
+		"feature_kind":            endpoint.FeatureKind,
+		"handler":                 endpoint.Handler,
+		"summary":                 endpoint.Summary,
+		"permission_key":          profile.PrimaryKey,
+		"permission_keys":         profile.Keys,
+		"permission_contexts":     profile.Contexts,
+		"permission_binding_mode": profile.BindingMode,
+		"shared_across_contexts":  profile.SharedAcrossContexts,
+		"permission_note":         profile.Note,
+		"auth_mode":               authMode,
+		"category_id":             stringifyUUIDPointer(endpoint.CategoryID),
+		"category":                category,
+		"context_scope":           endpoint.ContextScope,
+		"source":                  endpoint.Source,
+		"status":                  endpoint.Status,
+		"runtime_exists":          runtimeState.RuntimeExists,
+		"stale":                   runtimeState.Stale,
+		"stale_reason":            runtimeState.StaleReason,
+		"created_at":              endpoint.CreatedAt.Format("2006-01-02 15:04:05"),
+		"updated_at":              endpoint.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
 }
 

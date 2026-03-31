@@ -26,6 +26,12 @@ func TestResolveRouteCode(t *testing.T) {
 	if got := ResolveRouteCode(http.MethodGet, "/api/v1/unknown-fixed-code", nil); got != "" {
 		t.Fatalf("ResolveRouteCode() unknown route = %q, want empty", got)
 	}
+
+	derived := ResolveRouteCode(http.MethodGet, "/api/v1/unknown-fixed-code", &RouteMeta{Summary: "unknown"})
+	wantDerived := deriveStableEndpointCode(http.MethodGet, "/api/v1/unknown-fixed-code")
+	if derived != wantDerived {
+		t.Fatalf("ResolveRouteCode() derived = %q, want %q", derived, wantDerived)
+	}
 }
 
 func TestRegistrarAssignsStableCodeWhenMissing(t *testing.T) {
@@ -46,6 +52,16 @@ func TestRegistrarAssignsStableCodeWhenMissing(t *testing.T) {
 	}
 	if meta.CategoryCode != "menu" {
 		t.Fatalf("annotated meta category = %q, want %q", meta.CategoryCode, "menu")
+	}
+
+	reg.GET("/derived", reg.Meta("获取派生编码接口").Build(), func(c *gin.Context) {})
+	derivedMeta, ok := Lookup(http.MethodGet, "/api/v1/menus/derived")
+	if !ok {
+		t.Fatalf("expected derived route meta to be annotated")
+	}
+	derivedWant := deriveStableEndpointCode(http.MethodGet, "/api/v1/menus/derived")
+	if derivedMeta.Code != derivedWant {
+		t.Fatalf("annotated derived meta code = %q, want %q", derivedMeta.Code, derivedWant)
 	}
 }
 

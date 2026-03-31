@@ -747,6 +747,52 @@ func (h *TenantHandler) ListMyTeamRoles(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(roleList))
 }
 
+func (h *TenantHandler) ListTenantRoles(c *gin.Context) {
+	tenantIDStr := c.Param("id")
+	tenantID, err := uuid.Parse(tenantIDStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		c.JSON(status, resp)
+		return
+	}
+
+	if _, err := h.tenantService.Get(tenantID); err != nil {
+		if err == ErrTenantNotFound {
+			status, resp := errcode.Response(errcode.ErrTenantNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Get tenant failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	allRoles, err := h.roleRepo.ListTeamRoles(tenantID)
+	if err != nil {
+		h.logger.Error("List tenant roles failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队角色失败")
+		c.JSON(status, resp)
+		return
+	}
+
+	roleList := make([]gin.H, 0, len(allRoles))
+	for _, r := range allRoles {
+		roleList = append(roleList, gin.H{
+			"id":          r.ID.String(),
+			"code":        r.Code,
+			"name":        r.Name,
+			"description": r.Description,
+			"status":      r.Status,
+			"is_system":   r.IsSystem,
+			"tenant_id":   uuidPtrToString(r.TenantID),
+			"is_global":   r.TenantID == nil,
+			"create_time": r.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(roleList))
+}
+
 func (h *TenantHandler) CreateMyTeamRole(c *gin.Context) {
 	member, err := h.resolveTenantMember(c)
 	if err != nil {

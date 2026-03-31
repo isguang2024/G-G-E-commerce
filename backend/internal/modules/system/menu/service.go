@@ -2,8 +2,8 @@ package menu
 
 import (
 	"encoding/json"
-	"fmt"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -23,17 +23,20 @@ import (
 )
 
 var (
-	ErrMenuNotFound        = errors.New("menu not found")
-	ErrMenuSystemProtected = errors.New("系统默认菜单不可删除")
-	ErrMenuGroupNotFound   = errors.New("menu group not found")
-	ErrMenuGroupInUse      = errors.New("menu group in use")
+	ErrMenuNotFound          = errors.New("menu not found")
+	ErrMenuSystemProtected   = errors.New("系统默认菜单不可删除")
+	ErrMenuGroupNotFound     = errors.New("menu group not found")
+	ErrMenuGroupInUse        = errors.New("menu group in use")
+	ErrMenuDeleteModeInvalid = errors.New("无效的菜单删除方式")
+	ErrMenuHasChildren       = errors.New("该菜单存在子菜单，请选择删除策略")
 )
 
 type MenuService interface {
 	GetTree(all bool, allowedMenuIDs []uuid.UUID, spaceKey string) ([]*user.Menu, error)
 	Create(req *dto.MenuCreateRequest) (*user.Menu, error)
 	Update(id uuid.UUID, req *dto.MenuUpdateRequest) error
-	Delete(id uuid.UUID) error
+	DeletePreview(id uuid.UUID, mode string, targetParentID *uuid.UUID) (*MenuDeletePreview, error)
+	Delete(id uuid.UUID, mode string, targetParentID *uuid.UUID) error
 	ListGroups() ([]user.MenuManageGroup, error)
 	CreateGroup(req *dto.MenuManageGroupCreateRequest) (*user.MenuManageGroup, error)
 	UpdateGroup(id uuid.UUID, req *dto.MenuManageGroupUpdateRequest) error
@@ -50,6 +53,14 @@ type menuService struct {
 	menuRepo  user.MenuRepository
 	refresher permissionrefresh.Service
 	logger    *zap.Logger
+}
+
+type MenuDeletePreview struct {
+	Mode                  string `json:"mode"`
+	MenuCount             int    `json:"menu_count"`
+	ChildCount            int    `json:"child_count"`
+	AffectedPageCount     int    `json:"affected_page_count"`
+	AffectedRelationCount int    `json:"affected_relation_count"`
 }
 
 func NewMenuService(db *gorm.DB, menuRepo user.MenuRepository, refresher permissionrefresh.Service, logger *zap.Logger) MenuService {
@@ -337,8 +348,8 @@ func (s *menuService) isDescendant(flat []user.Menu, ancestorID, targetID uuid.U
 	}
 }
 
-func (s *menuService) Delete(id uuid.UUID) error {
-	_, err := s.menuRepo.GetByID(id)
+func (s *menuService) Delete(id uuid.UUID, mode string, targetParentID *uuid.UUID) error {
+	targetMenu, err := s.menuRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrMenuNotFound
@@ -346,21 +357,231 @@ func (s *menuService) Delete(id uuid.UUID) error {
 		return err
 	}
 
-	// 检查是否有子菜单
-	children, err := s.menuRepo.GetChildren(id)
+	deleteMode := normalizeMenuDeleteMode(mode)
+	if deleteMode == "" {
+		return ErrMenuDeleteModeInvalid
+	}
+
+	flatMenus, err := s.menuRepo.ListAll()
 	if err != nil {
 		return err
 	}
-	if len(children) > 0 {
-		return errors.New("该菜单存在子菜单，无法删除")
+
+	directChildren := collectDirectChildMenus(flatMenus, id)
+	if len(directChildren) > 0 && deleteMode == menuDeleteModeSingle {
+		return ErrMenuHasChildren
+	}
+	if deleteMode == menuDeleteModePromoteChildren && targetParentID != nil {
+		if err := validateMenuPromoteTarget(flatMenus, id, *targetParentID); err != nil {
+			return err
+		}
 	}
 
-	if err := s.menuRepo.Delete(id); err != nil {
+	affectedMenus := collectMenuSubtree(flatMenus, id)
+	affectedIDs := make([]uuid.UUID, 0, len(affectedMenus))
+	for _, item := range affectedMenus {
+		affectedIDs = append(affectedIDs, item.ID)
+	}
+
+	oldPathMap := buildMenuFullPathMap(flatMenus)
+	oldAffectedPaths := collectMenuPathSet(affectedIDs, oldPathMap)
+	newPathMap := map[uuid.UUID]string{}
+	if deleteMode == menuDeleteModePromoteChildren {
+		newPathMap = buildPromotedMenuFullPathMap(flatMenus, id, targetParentID)
+	}
+
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		switch deleteMode {
+		case menuDeleteModeCascade:
+			if err := s.cleanupMenuRelationsByIDs(tx, affectedIDs); err != nil {
+				return err
+			}
+			if err := tx.Model(&models.UIPage{}).
+				Where("parent_menu_id IN ?", affectedIDs).
+				Update("parent_menu_id", nil).Error; err != nil {
+				return err
+			}
+			if err := clearPageActiveMenuPaths(tx, oldAffectedPaths); err != nil {
+				return err
+			}
+			for index := len(affectedIDs) - 1; index >= 0; index-- {
+				if err := tx.Delete(&models.Menu{}, "id = ?", affectedIDs[index]).Error; err != nil {
+					return err
+				}
+			}
+		case menuDeleteModePromoteChildren:
+			if err := s.cleanupMenuRelationsByIDs(tx, []uuid.UUID{id}); err != nil {
+				return err
+			}
+			if err := tx.Model(&models.UIPage{}).
+				Where("parent_menu_id = ?", id).
+				Update("parent_menu_id", nil).Error; err != nil {
+				return err
+			}
+			if targetPath := normalizeManagedMenuPath(oldPathMap[id]); targetPath != "" {
+				if err := clearPageActiveMenuPaths(tx, []string{targetPath}); err != nil {
+					return err
+				}
+			}
+			if err := remapPageActiveMenuPaths(tx, oldPathMap, newPathMap); err != nil {
+				return err
+			}
+			if err := tx.Model(&models.Menu{}).
+				Where("parent_id = ?", id).
+				Update("parent_id", targetParentID).Error; err != nil {
+				return err
+			}
+			if err := tx.Delete(&models.Menu{}, "id = ?", id).Error; err != nil {
+				return err
+			}
+		default:
+			if err := s.cleanupMenuRelationsByIDs(tx, []uuid.UUID{id}); err != nil {
+				return err
+			}
+			if err := tx.Model(&models.UIPage{}).
+				Where("parent_menu_id = ?", id).
+				Update("parent_menu_id", nil).Error; err != nil {
+				return err
+			}
+			if err := clearPageActiveMenuPaths(tx, oldAffectedPaths); err != nil {
+				return err
+			}
+			if err := tx.Delete(&models.Menu{}, "id = ?", id).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
 		return err
 	}
+
+	s.logger.Info(
+		"Menu deleted",
+		zap.String("menu_id", id.String()),
+		zap.String("menu_title", strings.TrimSpace(targetMenu.Title)),
+		zap.String("delete_mode", deleteMode),
+		zap.Int("affected_menu_count", len(affectedIDs)),
+	)
 	page.InvalidateRuntimeCache()
 	invalidateMenuCaches()
 	return s.refreshAllMenuSnapshots()
+}
+
+func (s *menuService) DeletePreview(id uuid.UUID, mode string, targetParentID *uuid.UUID) (*MenuDeletePreview, error) {
+	_, err := s.menuRepo.GetByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrMenuNotFound
+		}
+		return nil, err
+	}
+
+	deleteMode := normalizeMenuDeleteMode(mode)
+	if deleteMode == "" {
+		return nil, ErrMenuDeleteModeInvalid
+	}
+
+	flatMenus, err := s.menuRepo.ListAll()
+	if err != nil {
+		return nil, err
+	}
+
+	affectedMenus := []user.Menu{}
+	childCount := len(collectDirectChildMenus(flatMenus, id))
+	switch deleteMode {
+	case menuDeleteModeCascade:
+		affectedMenus = collectMenuSubtree(flatMenus, id)
+	case menuDeleteModePromoteChildren, menuDeleteModeSingle:
+		affectedMenus = []user.Menu{{ID: id}}
+	}
+
+	affectedIDs := make([]uuid.UUID, 0, len(affectedMenus))
+	for _, item := range affectedMenus {
+		affectedIDs = append(affectedIDs, item.ID)
+	}
+	pageCount, err := s.countAffectedPages(flatMenus, affectedIDs, deleteMode, id)
+	if err != nil {
+		return nil, err
+	}
+	relationCount, err := s.countAffectedMenuRelations(affectedIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &MenuDeletePreview{
+		Mode:                  deleteMode,
+		MenuCount:             len(affectedIDs),
+		ChildCount:            childCount,
+		AffectedPageCount:     pageCount,
+		AffectedRelationCount: relationCount,
+	}, nil
+}
+
+func (s *menuService) countAffectedPages(flatMenus []user.Menu, affectedIDs []uuid.UUID, mode string, rootID uuid.UUID) (int, error) {
+	if len(affectedIDs) == 0 {
+		return 0, nil
+	}
+	var pages []models.UIPage
+	if err := s.db.Select("id", "parent_menu_id", "active_menu_path").Find(&pages).Error; err != nil {
+		return 0, err
+	}
+
+	pathMap := buildMenuFullPathMap(flatMenus)
+	targetPaths := collectMenuPathSet(affectedIDs, pathMap)
+	count := 0
+	seen := make(map[uuid.UUID]struct{})
+	for _, pageItem := range pages {
+		if _, ok := seen[pageItem.ID]; ok {
+			continue
+		}
+		if pageItem.ParentMenuID != nil {
+			for _, menuID := range affectedIDs {
+				if *pageItem.ParentMenuID == menuID {
+					seen[pageItem.ID] = struct{}{}
+					count++
+					break
+				}
+			}
+			continue
+		}
+		activePath := normalizeManagedMenuPath(pageItem.ActiveMenuPath)
+		if activePath == "" {
+			continue
+		}
+		matched := false
+		for _, path := range targetPaths {
+			if pathHasPrefix(activePath, path) {
+				matched = true
+				break
+			}
+		}
+		if matched {
+			seen[pageItem.ID] = struct{}{}
+			count++
+		}
+	}
+	return count, nil
+}
+
+func (s *menuService) countAffectedMenuRelations(menuIDs []uuid.UUID) (int, error) {
+	if len(menuIDs) == 0 {
+		return 0, nil
+	}
+	var count int64
+	tables := []string{
+		"feature_package_menus",
+		"role_hidden_menus",
+		"team_blocked_menus",
+		"user_hidden_menus",
+	}
+	for _, table := range tables {
+		var current int64
+		if err := s.db.Table(table).Where("menu_id IN ?", menuIDs).Count(&current).Error; err != nil {
+			return 0, err
+		}
+		count += current
+	}
+	return int(count), nil
 }
 
 // 菜单备份相关方法
@@ -551,6 +772,12 @@ type menuBackupScopeInfo struct {
 }
 
 const menuBackupPayloadVersion = "menu_backup.v2"
+
+const (
+	menuDeleteModeSingle          = "single"
+	menuDeleteModeCascade         = "cascade"
+	menuDeleteModePromoteChildren = "promote_children"
+)
 
 func normalizeBackupSpaceKey(value string) string {
 	target := strings.TrimSpace(value)
@@ -851,4 +1078,313 @@ func normalizeMenuGroupStatus(value string) string {
 func invalidateMenuCaches() {
 	platformaccess.InvalidatePublicMenuCache()
 	platformroleaccess.InvalidatePublicMenuCache()
+}
+
+func normalizeMenuDeleteMode(value string) string {
+	switch strings.TrimSpace(strings.ToLower(value)) {
+	case "", menuDeleteModeSingle:
+		return menuDeleteModeSingle
+	case menuDeleteModeCascade:
+		return menuDeleteModeCascade
+	case menuDeleteModePromoteChildren:
+		return menuDeleteModePromoteChildren
+	default:
+		return ""
+	}
+}
+
+func collectDirectChildMenus(flat []user.Menu, parentID uuid.UUID) []user.Menu {
+	items := make([]user.Menu, 0)
+	for _, item := range flat {
+		if item.ParentID != nil && *item.ParentID == parentID {
+			items = append(items, item)
+		}
+	}
+	return items
+}
+
+func collectMenuSubtree(flat []user.Menu, rootID uuid.UUID) []user.Menu {
+	childrenMap := make(map[uuid.UUID][]user.Menu)
+	menuMap := make(map[uuid.UUID]user.Menu, len(flat))
+	for _, item := range flat {
+		menuMap[item.ID] = item
+		if item.ParentID != nil {
+			childrenMap[*item.ParentID] = append(childrenMap[*item.ParentID], item)
+		}
+	}
+
+	root, ok := menuMap[rootID]
+	if !ok {
+		return []user.Menu{}
+	}
+
+	result := make([]user.Menu, 0, 8)
+	var walk func(user.Menu)
+	walk = func(item user.Menu) {
+		result = append(result, item)
+		for _, child := range childrenMap[item.ID] {
+			walk(child)
+		}
+	}
+	walk(root)
+	return result
+}
+
+func (s *menuService) cleanupMenuRelationsByIDs(tx *gorm.DB, menuIDs []uuid.UUID) error {
+	if tx == nil || len(menuIDs) == 0 {
+		return nil
+	}
+	statements := []string{
+		"DELETE FROM feature_package_menus WHERE menu_id IN ?",
+		"DELETE FROM role_hidden_menus WHERE menu_id IN ?",
+		"DELETE FROM team_blocked_menus WHERE menu_id IN ?",
+		"DELETE FROM user_hidden_menus WHERE menu_id IN ?",
+	}
+	for _, statement := range statements {
+		if err := tx.Exec(statement, menuIDs).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func collectMenuPathSet(menuIDs []uuid.UUID, pathMap map[uuid.UUID]string) []string {
+	paths := make([]string, 0, len(menuIDs))
+	seen := make(map[string]struct{}, len(menuIDs))
+	for _, menuID := range menuIDs {
+		path := normalizeManagedMenuPath(pathMap[menuID])
+		if path == "" {
+			continue
+		}
+		if _, ok := seen[path]; ok {
+			continue
+		}
+		seen[path] = struct{}{}
+		paths = append(paths, path)
+	}
+	return paths
+}
+
+func clearPageActiveMenuPaths(tx *gorm.DB, deletedPaths []string) error {
+	if tx == nil || len(deletedPaths) == 0 {
+		return nil
+	}
+
+	var pages []models.UIPage
+	if err := tx.Select("id", "active_menu_path").
+		Where("active_menu_path <> ''").
+		Find(&pages).Error; err != nil {
+		return err
+	}
+	for _, pageItem := range pages {
+		activePath := normalizeManagedMenuPath(pageItem.ActiveMenuPath)
+		if activePath == "" || !matchesDeletedMenuPath(activePath, deletedPaths) {
+			continue
+		}
+		if err := tx.Model(&models.UIPage{}).
+			Where("id = ?", pageItem.ID).
+			Update("active_menu_path", "").Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func remapPageActiveMenuPaths(tx *gorm.DB, oldPathMap map[uuid.UUID]string, newPathMap map[uuid.UUID]string) error {
+	if tx == nil || len(oldPathMap) == 0 || len(newPathMap) == 0 {
+		return nil
+	}
+
+	replacements := make(map[string]string)
+	for menuID, oldPath := range oldPathMap {
+		newPath := normalizeManagedMenuPath(newPathMap[menuID])
+		oldNormalized := normalizeManagedMenuPath(oldPath)
+		if oldNormalized == "" || newPath == "" || oldNormalized == newPath {
+			continue
+		}
+		replacements[oldNormalized] = newPath
+	}
+	if len(replacements) == 0 {
+		return nil
+	}
+
+	var pages []models.UIPage
+	if err := tx.Select("id", "active_menu_path").
+		Where("active_menu_path <> ''").
+		Find(&pages).Error; err != nil {
+		return err
+	}
+	for _, pageItem := range pages {
+		activePath := normalizeManagedMenuPath(pageItem.ActiveMenuPath)
+		if activePath == "" {
+			continue
+		}
+		nextPath := activePath
+		matched := false
+		for oldPath, newPath := range replacements {
+			if !pathHasPrefix(activePath, oldPath) {
+				continue
+			}
+			nextPath = strings.TrimSuffix(newPath, "/") + strings.TrimPrefix(activePath, oldPath)
+			matched = true
+			break
+		}
+		if !matched || nextPath == activePath {
+			continue
+		}
+		if err := tx.Model(&models.UIPage{}).
+			Where("id = ?", pageItem.ID).
+			Update("active_menu_path", nextPath).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func matchesDeletedMenuPath(activePath string, deletedPaths []string) bool {
+	for _, item := range deletedPaths {
+		if pathHasPrefix(activePath, item) {
+			return true
+		}
+	}
+	return false
+}
+
+func pathHasPrefix(path string, prefix string) bool {
+	target := normalizeManagedMenuPath(path)
+	base := normalizeManagedMenuPath(prefix)
+	if target == "" || base == "" {
+		return false
+	}
+	return target == base || strings.HasPrefix(target, strings.TrimRight(base, "/")+"/")
+}
+
+func buildPromotedMenuFullPathMap(flat []user.Menu, deletedID uuid.UUID, targetParentID *uuid.UUID) map[uuid.UUID]string {
+	overrides := make(map[uuid.UUID]*uuid.UUID)
+	for _, item := range flat {
+		if item.ParentID == nil {
+			continue
+		}
+		parentID := *item.ParentID
+		overrides[item.ID] = &parentID
+	}
+	for _, item := range flat {
+		if item.ParentID != nil && *item.ParentID == deletedID {
+			overrides[item.ID] = targetParentID
+		}
+	}
+	delete(overrides, deletedID)
+	return buildMenuFullPathMapWithParents(flat, overrides, deletedID)
+}
+
+func validateMenuPromoteTarget(flat []user.Menu, menuID, targetParentID uuid.UUID) error {
+	if targetParentID == menuID {
+		return ErrMenuHasChildren
+	}
+	ancestorMap := make(map[uuid.UUID]*uuid.UUID, len(flat))
+	for _, item := range flat {
+		ancestorMap[item.ID] = item.ParentID
+	}
+	cur := &targetParentID
+	for cur != nil {
+		if *cur == menuID {
+			return ErrMenuHasChildren
+		}
+		cur = ancestorMap[*cur]
+	}
+	return nil
+}
+
+func buildMenuFullPathMap(flat []user.Menu) map[uuid.UUID]string {
+	return buildMenuFullPathMapWithParents(flat, nil, uuid.Nil)
+}
+
+func buildMenuFullPathMapWithParents(
+	flat []user.Menu,
+	parentOverrides map[uuid.UUID]*uuid.UUID,
+	skipID uuid.UUID,
+) map[uuid.UUID]string {
+	menuMap := make(map[uuid.UUID]user.Menu, len(flat))
+	for _, item := range flat {
+		if skipID != uuid.Nil && item.ID == skipID {
+			continue
+		}
+		menuMap[item.ID] = item
+	}
+
+	result := make(map[uuid.UUID]string, len(menuMap))
+	visiting := make(map[uuid.UUID]struct{})
+	var resolve func(uuid.UUID) string
+	resolve = func(menuID uuid.UUID) string {
+		if path, ok := result[menuID]; ok {
+			return path
+		}
+		item, ok := menuMap[menuID]
+		if !ok {
+			return ""
+		}
+		if _, ok := visiting[menuID]; ok {
+			return normalizeManagedMenuPath(item.Path)
+		}
+		visiting[menuID] = struct{}{}
+		defer delete(visiting, menuID)
+
+		var parentID *uuid.UUID
+		if parentOverrides != nil {
+			if override, ok := parentOverrides[menuID]; ok {
+				parentID = override
+			} else {
+				parentID = item.ParentID
+			}
+		} else {
+			parentID = item.ParentID
+		}
+
+		parentPath := ""
+		if parentID != nil {
+			parentPath = resolve(*parentID)
+		}
+		fullPath := joinManagedMenuPath(item.Path, parentPath)
+		result[menuID] = fullPath
+		return fullPath
+	}
+
+	for menuID := range menuMap {
+		resolve(menuID)
+	}
+	return result
+}
+
+func joinManagedMenuPath(path string, parentPath string) string {
+	target := strings.TrimSpace(path)
+	if target == "" {
+		return normalizeManagedMenuPath(parentPath)
+	}
+	if strings.HasPrefix(target, "http://") || strings.HasPrefix(target, "https://") {
+		return target
+	}
+	if strings.HasPrefix(target, "/") {
+		return normalizeManagedMenuPath(target)
+	}
+	base := normalizeManagedMenuPath(parentPath)
+	if base == "" || base == "/" {
+		return normalizeManagedMenuPath("/" + target)
+	}
+	return normalizeManagedMenuPath(strings.TrimRight(base, "/") + "/" + strings.TrimLeft(target, "/"))
+}
+
+func normalizeManagedMenuPath(path string) string {
+	target := strings.TrimSpace(path)
+	if target == "" {
+		return ""
+	}
+	if strings.HasPrefix(target, "http://") || strings.HasPrefix(target, "https://") {
+		return target
+	}
+	normalized := "/" + strings.TrimLeft(target, "/")
+	normalized = strings.ReplaceAll(normalized, "//", "/")
+	if normalized != "/" {
+		normalized = strings.TrimRight(normalized, "/")
+	}
+	return normalized
 }

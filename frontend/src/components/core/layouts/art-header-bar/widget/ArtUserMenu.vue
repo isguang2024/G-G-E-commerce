@@ -83,24 +83,81 @@
   const { teamList, hasPlatformAccess, currentContextMode } = storeToRefs(tenantStore)
   const userMenuPopover = ref()
 
-  const goPage = (path: string): void => {
-    closeUserMenu()
-    const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(path)
-    if (nextTarget.mode === 'router') {
-      router.push(nextTarget.target)
+  const resolveNavigationTarget = (path: string, routeCandidates: string[] = []): { mode: 'router' | 'location', target: string } => {
+    const targetCandidates = Array.from(new Set([path, ...routeCandidates].filter((item) => `${item || ''}`.trim())))
+    for (const candidate of targetCandidates) {
+      const routeRecord = findRegisteredRouteByPath(router, candidate)
+      if (routeRecord) {
+        return menuSpaceStore.resolveSpaceNavigationTarget(
+          candidate,
+          `${routeRecord.meta?.spaceKey || ''}`.trim() || undefined
+        )
+      }
+    }
+    const routeName = 'UserCenter'
+    if (router.hasRoute(routeName) && path === '/user-center') {
+      const resolvedByName = router.resolve({ name: routeName })
+      if (resolvedByName?.path) {
+        const routeRecord = findRegisteredRouteByPath(router, resolvedByName.path)
+        return menuSpaceStore.resolveSpaceNavigationTarget(
+          resolvedByName.path,
+          `${routeRecord?.meta?.spaceKey || ''}`.trim() || undefined
+        )
+      }
+    }
+    const fallbackTarget = menuSpaceStore.resolveSpaceNavigationTarget(path)
+    return fallbackTarget
+  }
+
+  const resolveUserCenterNavigationTarget = (): { mode: 'router' | 'location', target: string } => {
+    const candidatePath = '/dashboard/console/user-center'
+    const routeRecord = findRegisteredRouteByPath(router, candidatePath)
+    if (routeRecord) {
+      return menuSpaceStore.resolveSpaceNavigationTarget(
+        candidatePath,
+        `${routeRecord.meta?.spaceKey || ''}`.trim() || undefined
+      )
+    }
+    if (router.hasRoute('UserCenter')) {
+      const resolvedByName = router.resolve({ name: 'UserCenter' })
+      if (resolvedByName?.path) {
+        const resolvedRecord = findRegisteredRouteByPath(router, resolvedByName.path)
+        return menuSpaceStore.resolveSpaceNavigationTarget(
+          resolvedByName.path,
+          `${resolvedRecord?.meta?.spaceKey || ''}`.trim() || undefined
+        )
+      }
+    }
+    return menuSpaceStore.resolveSpaceNavigationTarget(candidatePath)
+  }
+
+  const navigateByTarget = (target: { mode: 'router' | 'location', target: string }): void => {
+    if (target.mode === 'router') {
+      router.push(target.target)
       return
     }
-    window.location.assign(nextTarget.target)
+    window.location.assign(target.target)
+  }
+
+  const goPage = (path: string): void => {
+    closeUserMenu()
+    if (path === '/user-center') {
+      const nextTarget = resolveUserCenterNavigationTarget()
+      navigateByTarget(nextTarget)
+      return
+    }
+    const nextTarget = resolveNavigationTarget(path)
+    navigateByTarget(nextTarget)
   }
 
   const enterPlatformManagement = async (): Promise<void> => {
     const resolveLandingTarget = () => {
       const landingPath = menuStore.getHomePath() || '/'
-      const resolvedRoute = findRegisteredRouteByPath(router, landingPath)
-      return menuSpaceStore.resolveSpaceNavigationTarget(
-        landingPath,
-        `${resolvedRoute?.meta?.spaceKey || ''}`.trim() || undefined
-      )
+      const target = resolveNavigationTarget(landingPath, ['/dashboard/console', '/workspace/inbox', '/'])
+      if (target) {
+        return target
+      }
+      return menuSpaceStore.resolveSpaceNavigationTarget('/')
     }
 
     if (currentContextMode.value === 'platform') {
@@ -135,7 +192,7 @@
         hash: router.currentRoute.value.hash
       })
       ElMessage.success('状态已刷新')
-    } catch (error) {
+    } catch (_error) {
       ElMessage.error('刷新状态失败')
     }
   }

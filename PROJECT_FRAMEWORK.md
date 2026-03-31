@@ -7,6 +7,8 @@
 - `PROJECT_FRAMEWORK.md` 只定义全局稳定约束，不承载模块级实现细节。
 - 模块实现、专题规则、迁移说明放在 `docs/`。
 - 若文档与代码冲突，以代码真实行为为准，然后回补文档。
+- 根目录只保留长期稳定规则；阶段性计划、收尾说明、兼容审计一律不留在根目录。
+- `docs/` 中出现重复专题时，优先保留“正式设计 / 当前实现 / 固定清单”三类文档，其余内容合并后删除。
 
 适用场景：
 - 新增业务模块
@@ -124,8 +126,15 @@
 ## 7. 文档分层规则
 
 - 根目录文档：全局规则、主架构、执行清单
-- `docs/scaffold-navigation-access-redesign.md`：导航 / 页面 / 空间 / 权限重构总基线
 - `docs/permission-overall-summary.md`：权限、功能包、快照主链
 - `docs/menu-page-management-design.md`：菜单/页面正式架构
-- `docs/menu-page-management-implementation-plan.md`：当前已落地实现与收口项
+- `docs/system-regression-checklist.md`：系统侧固定回归项
+- `docs/system-demo-data.md`：系统最小演示数据
+- `docs/message-system-design.md`：消息系统正式设计
+- `docs/space-host-architecture-design.md`：空间与 Host 架构
 - `docs/change-log.md`：近期大里程碑与关键收口
+
+不再单独保留：
+- 纯阶段性收尾计划
+- 已被主框架或专题文档吸收的兼容审计
+- 与现行设计重复、但没有新增约束的摘要型文档

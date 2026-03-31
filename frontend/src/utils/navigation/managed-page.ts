@@ -4,6 +4,7 @@ type ManagedPageRouteLike = {
   activeMenuPath?: string
   parentMenuId?: string
   parentPageKey?: string
+  pageType?: string
 }
 
 interface ResolveManagedPageRouteOptions<T extends ManagedPageRouteLike> {
@@ -60,6 +61,9 @@ function resolveManagedPageBasePath<T extends ManagedPageRouteLike>(
   options: ResolveManagedPageRouteOptions<T>,
   seen: Set<string>
 ): string {
+  if (`${page.pageType || ''}`.trim() === 'global') {
+    return ''
+  }
   const explicitActivePath = normalizeManagedPagePath(page.activeMenuPath)
   if (explicitActivePath) {
     return explicitActivePath

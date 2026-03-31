@@ -1,0 +1,307 @@
+<template>
+  <div class="access-trace-page art-full-height">
+    <ElCard shadow="never" class="art-table-card">
+      <template #header>
+        <div class="trace-header">
+          <div class="trace-title">访问链路测试</div>
+          <div class="trace-subtitle">用户 -> 角色/团队 -> 菜单可见 -> 页面可见性</div>
+        </div>
+      </template>
+
+      <ElForm :inline="true" class="trace-form">
+        <ElFormItem label="用户">
+          <ElSelect
+            v-model="query.userId"
+            filterable
+            clearable
+            placeholder="请选择用户"
+            style="width: 300px"
+          >
+            <ElOption
+              v-for="user in userOptions"
+              :key="user.id"
+              :label="formatUserLabel(user)"
+              :value="user.id"
+            />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="团队(可选)">
+          <ElSelect
+            v-model="query.tenantId"
+            filterable
+            clearable
+            placeholder="选择团队"
+            style="width: 280px"
+          >
+            <ElOption
+              v-for="team in teamOptions"
+              :key="team.id"
+              :label="team.name"
+              :value="team.id"
+            />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="仅团队用户">
+          <ElSwitch v-model="onlyTeamUsers" :disabled="!query.tenantId" />
+        </ElFormItem>
+        <ElFormItem label="角色筛选">
+          <ElSelect
+            v-model="roleCodeFilter"
+            clearable
+            placeholder="全部角色"
+            style="width: 160px"
+          >
+            <ElOption
+              v-for="role in displayRoleOptions"
+              :key="role.value"
+              :label="role.label"
+              :value="role.value"
+            />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="页面Key(可选)">
+          <ElSelect
+            v-model="query.pageKey"
+            filterable
+            clearable
+            placeholder="选择页面"
+            style="width: 260px"
+          >
+            <ElOption
+              v-for="page in pageOptions"
+              :key="page.pageKey"
+              :label="`${page.pageKey} (${page.name})`"
+              :value="page.pageKey"
+            />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem>
+          <ElButton type="primary" :loading="loading" @click="handleQuery">测试链路</ElButton>
+        </ElFormItem>
+      </ElForm>
+
+      <ElDescriptions v-if="result" :column="2" border class="trace-summary">
+        <ElDescriptionsItem label="用户ID">{{ result.userId }}</ElDescriptionsItem>
+        <ElDescriptionsItem label="团队ID">{{ result.tenantId || '-' }}</ElDescriptionsItem>
+        <ElDescriptionsItem label="空间">{{ result.spaceKey }}</ElDescriptionsItem>
+        <ElDescriptionsItem label="登录态">{{ result.authenticated ? '已认证' : '未认证' }}</ElDescriptionsItem>
+        <ElDescriptionsItem label="超级管理员">{{ result.superAdmin ? '是' : '否' }}</ElDescriptionsItem>
+        <ElDescriptionsItem label="动作权限数">{{ result.actionKeyCount }}</ElDescriptionsItem>
+      </ElDescriptions>
+
+      <ElDivider v-if="result">角色链路</ElDivider>
+      <ElTable v-if="result" :data="result.roles" border>
+        <ElTableColumn prop="roleCode" label="角色编码" min-width="160" />
+        <ElTableColumn prop="roleName" label="角色名称" min-width="180" />
+        <ElTableColumn prop="status" label="状态" width="120" />
+      </ElTable>
+
+      <ElDivider v-if="result">页面链路结果</ElDivider>
+      <ElTable v-if="result" :data="result.pages" border>
+        <ElTableColumn prop="pageKey" label="页面Key" min-width="180" />
+        <ElTableColumn prop="pageName" label="页面名称" min-width="140" />
+        <ElTableColumn prop="routePath" label="路由" min-width="160" />
+        <ElTableColumn prop="accessMode" label="访问模式" width="120" />
+        <ElTableColumn prop="permissionKey" label="权限键" min-width="160" />
+        <ElTableColumn label="可见" width="90">
+          <template #default="{ row }">
+            <ElTag :type="row.visible ? 'success' : 'danger'" effect="plain">
+              {{ row.visible ? '是' : '否' }}
+            </ElTag>
+          </template>
+        </ElTableColumn>
+        <ElTableColumn prop="reason" label="判定原因" min-width="180" />
+        <ElTableColumn prop="matchedActionKey" label="命中动作" min-width="180" />
+        <ElTableColumn label="链路" min-width="220">
+          <template #default="{ row }">
+            <div>{{ (row.effectiveChain || []).join(' -> ') || '-' }}</div>
+          </template>
+        </ElTableColumn>
+      </ElTable>
+    </ElCard>
+  </div>
+</template>
+
+<script setup lang="ts">
+  import { ElMessage } from 'element-plus'
+  import { fetchGetTeamMembers, fetchGetTeamRoles } from '@/api/team'
+  import {
+    fetchGetPageAccessTrace,
+    fetchGetPageList,
+    fetchGetRoleOptions,
+    fetchGetTenantOptions,
+    fetchGetUserList
+  } from '@/api/system-manage'
+
+  defineOptions({ name: 'SystemAccessTrace' })
+
+  const loading = ref(false)
+  const result = ref<Api.SystemManage.PageAccessTraceResult | null>(null)
+  const userOptions = ref<Api.SystemManage.UserListItem[]>([])
+  const pageOptions = ref<Api.SystemManage.PageItem[]>([])
+  const teamOptions = ref<Api.SystemManage.TeamListItem[]>([])
+  const roleOptions = ref<Array<{ label: string; value: string; source: 'platform' | 'team' }>>([])
+  const onlyTeamUsers = ref(false)
+  const roleCodeFilter = ref('')
+  const displayRoleOptions = computed(() =>
+    query.tenantId
+      ? roleOptions.value.filter((item) => item.source === 'team')
+      : roleOptions.value.filter((item) => item.source === 'platform')
+  )
+
+  const query = reactive<Api.SystemManage.PageAccessTraceParams>({
+    userId: '',
+    tenantId: '',
+    pageKey: ''
+  })
+
+  function formatUserLabel(user: Api.SystemManage.UserListItem) {
+    const userName = `${user.userName || ''}`.trim()
+    const nickName = `${user.nickName || ''}`.trim()
+    if (userName && nickName && userName !== nickName) {
+      return `${userName}（${nickName}）`
+    }
+    return userName || nickName || user.id
+  }
+
+  async function loadUserOptions() {
+    const useTeamMembers = Boolean(query.tenantId) && (onlyTeamUsers.value || Boolean(roleCodeFilter.value))
+    if (useTeamMembers && query.tenantId) {
+      const teamMembers = await fetchGetTeamMembers(query.tenantId, {
+        role_code: roleCodeFilter.value || undefined
+      })
+      userOptions.value = (teamMembers || []).map((item) => ({
+        id: item.userId,
+        userName: item.userName,
+        nickName: item.nickName,
+        userPhone: '',
+        userEmail: item.userEmail || '',
+        avatar: item.avatar || '',
+        status: item.status || 'active',
+        roleIDs: [],
+        roleNames: [],
+        roleDetails: [],
+        userRoles: [],
+        registerSource: '',
+        invitedBy: '',
+        invitedByName: '',
+        createTime: '',
+        updateTime: ''
+      }))
+    } else {
+      const users = await fetchGetUserList({
+        current: 1,
+        size: 200,
+        roleId: roleCodeFilter.value || ''
+      })
+      userOptions.value = users.records || []
+    }
+
+    if (query.userId && !userOptions.value.some((item) => item.id === query.userId)) {
+      query.userId = ''
+    }
+  }
+
+  async function loadRoleOptions() {
+    if (query.tenantId) {
+      const teamRoles = await fetchGetTeamRoles(query.tenantId)
+      roleOptions.value = (teamRoles || [])
+        .filter((role) => {
+          const code = `${role.roleCode || ''}`.trim()
+          if (!code || code === 'admin') return false
+          if (code === 'team_admin' || code === 'team_member') return true
+          return Boolean(role.tenantId)
+        })
+        .map((role) => ({
+          label: role.roleName || role.roleCode,
+          value: role.roleCode,
+          source: 'team' as const
+        }))
+      return
+    }
+
+    const roleRes = await fetchGetRoleOptions()
+    roleOptions.value = (roleRes.records || []).map((role) => ({
+      label: role.roleName || role.roleCode,
+      value: role.roleId,
+      source: 'platform' as const
+    }))
+  }
+
+  async function loadOptions() {
+    const [pages, teams] = await Promise.all([
+      fetchGetPageList({ current: 1, size: 500 }),
+      fetchGetTenantOptions({ current: 1, size: 200 })
+    ])
+    pageOptions.value = pages.records || []
+    teamOptions.value = teams.records || []
+    await loadRoleOptions()
+    await loadUserOptions()
+  }
+
+  async function handleQuery() {
+    if (!query.userId) {
+      ElMessage.warning('请先选择用户')
+      return
+    }
+    if (query.tenantId && query.tenantId === query.userId) {
+      ElMessage.warning('团队 ID 不能与用户 ID 相同，请重新选择团队')
+      return
+    }
+    loading.value = true
+    try {
+      result.value = await fetchGetPageAccessTrace(query)
+    } finally {
+      loading.value = false
+    }
+  }
+
+  onMounted(() => {
+    loadOptions().catch(() => {
+      ElMessage.error('初始化测试数据失败')
+    })
+  })
+
+  watch(
+    () => query.tenantId,
+    async (tenantId, oldTenantId) => {
+      if (tenantId !== oldTenantId) {
+        roleCodeFilter.value = ''
+      }
+      if (!tenantId && onlyTeamUsers.value) {
+        onlyTeamUsers.value = false
+      }
+      await loadRoleOptions()
+      await loadUserOptions()
+    }
+  )
+
+  watch(
+    () => [onlyTeamUsers.value, roleCodeFilter.value],
+    async () => {
+      await loadUserOptions()
+    }
+  )
+</script>
+
+<style scoped>
+  .trace-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .trace-title {
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .trace-subtitle {
+    color: var(--el-text-color-secondary);
+    font-size: 13px;
+  }
+  .trace-form {
+    margin-bottom: 12px;
+  }
+  .trace-summary {
+    margin-bottom: 12px;
+  }
+</style>

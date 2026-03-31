@@ -633,6 +633,7 @@
       path: string
       keyword: string
       permissionKey: string
+      permissionPattern: string
       contextScope: string
       featureKind: string
       status: string
@@ -675,6 +676,9 @@
   const staleCandidates = ref<APIEndpointItem[]>([])
   const selectedStaleIds = ref<string[]>([])
   const totalCount = ref(0)
+  const noPermissionCount = ref(0)
+  const sharedPermissionCount = ref(0)
+  const crossContextSharedCount = ref(0)
   const staleCount = ref(0)
   const unregisteredCount = ref(0)
   const uncategorizedCount = ref(0)
@@ -723,6 +727,7 @@
     path: '',
     keyword: '',
     permissionKey: '',
+    permissionPattern: '',
     categoryId: '',
     contextScope: '',
     featureKind: '',
@@ -737,6 +742,7 @@
     path: '',
     keyword: '',
     permissionKey: '',
+    permissionPattern: '',
     contextScope: '',
     featureKind: '',
     status: '',
@@ -749,6 +755,7 @@
     searchForm.path = tableQuery.path
     searchForm.keyword = tableQuery.keyword
     searchForm.permissionKey = tableQuery.permissionKey
+    searchForm.permissionPattern = tableQuery.permissionPattern
     searchForm.contextScope = tableQuery.contextScope
     searchForm.featureKind = tableQuery.featureKind
     searchForm.status = tableQuery.status
@@ -761,6 +768,7 @@
     tableQuery.path = searchForm.path || ''
     tableQuery.keyword = searchForm.keyword || ''
     tableQuery.permissionKey = searchForm.permissionKey || ''
+    tableQuery.permissionPattern = searchForm.permissionPattern || ''
     tableQuery.contextScope = searchForm.contextScope || ''
     tableQuery.featureKind = searchForm.featureKind || ''
     tableQuery.status = searchForm.status || ''
@@ -802,6 +810,9 @@
 
   const summaryMetrics = computed(() => [
     { label: '注册总量', value: totalCount.value || 0 },
+    { label: '无权限键', value: noPermissionCount.value || 0 },
+    { label: '共享接口', value: sharedPermissionCount.value || 0 },
+    { label: '跨上下文共享', value: crossContextSharedCount.value || 0 },
     { label: '未分类', value: uncategorizedCount.value || 0 },
     { label: '失效', value: staleCount.value || 0 },
     { label: '未注册', value: unregisteredCount.value || 0 }
@@ -869,6 +880,32 @@
           minWidth: 240,
           formatter: (row: APIEndpointItem) =>
             (row.permissionKeys || []).join(', ') || row.permissionKey || '-'
+        },
+        {
+          prop: 'permissionBindingMode',
+          label: '权限结构',
+          minWidth: 220,
+          formatter: (row: APIEndpointItem) =>
+            h('div', { class: 'permission-structure-cell' }, [
+              h(
+                ElTag,
+                {
+                  type: permissionPatternTagType(row.permissionBindingMode),
+                  effect: 'plain'
+                },
+                () => formatPermissionPattern(row.permissionBindingMode)
+              ),
+              row.permissionContexts?.length
+                ? h(
+                    'div',
+                    { class: 'permission-structure-contexts' },
+                    row.permissionContexts.map((item) => formatPermissionContext(item)).join(' / ')
+                  )
+                : null,
+              row.permissionNote
+                ? h('div', { class: 'permission-structure-note' }, row.permissionNote)
+                : null
+            ])
         },
         {
           prop: 'contextScope',
@@ -1090,6 +1127,61 @@
     }
   }
 
+  function formatPermissionPattern(value?: string) {
+    switch (`${value || ''}`.trim()) {
+      case 'public':
+        return '公开接口'
+      case 'global_jwt':
+        return '登录态全局'
+      case 'self_jwt':
+        return '登录态自服务'
+      case 'api_key':
+        return '开放 API Key'
+      case 'single':
+        return '单权限'
+      case 'shared':
+        return '多权限共享'
+      case 'cross_context_shared':
+        return '跨上下文共享'
+      default:
+        return '无权限键'
+    }
+  }
+
+  function permissionPatternTagType(value?: string) {
+    switch (`${value || ''}`.trim()) {
+      case 'public':
+        return 'success'
+      case 'global_jwt':
+        return 'info'
+      case 'self_jwt':
+        return 'warning'
+      case 'api_key':
+        return 'success'
+      case 'single':
+        return 'success'
+      case 'shared':
+        return 'warning'
+      case 'cross_context_shared':
+        return 'danger'
+      default:
+        return 'info'
+    }
+  }
+
+  function formatPermissionContext(value?: string) {
+    switch (`${value || ''}`.trim()) {
+      case 'platform':
+        return '平台'
+      case 'team':
+        return '团队'
+      case 'common':
+        return '通用'
+      default:
+        return value || '-'
+    }
+  }
+
   function saveTableState() {
     const payload: PersistedTableState = {
       selectedSource: selectedSource.value,
@@ -1099,6 +1191,7 @@
         path: tableQuery.path,
         keyword: tableQuery.keyword,
         permissionKey: tableQuery.permissionKey,
+        permissionPattern: tableQuery.permissionPattern,
         contextScope: tableQuery.contextScope,
         featureKind: tableQuery.featureKind,
         status: tableQuery.status,
@@ -1122,6 +1215,7 @@
         path: payload.tableQuery?.path || '',
         keyword: payload.tableQuery?.keyword || '',
         permissionKey: payload.tableQuery?.permissionKey || '',
+        permissionPattern: payload.tableQuery?.permissionPattern || '',
         contextScope: payload.tableQuery?.contextScope || '',
         featureKind: payload.tableQuery?.featureKind || '',
         status: payload.tableQuery?.status || '',
@@ -1565,6 +1659,9 @@
   async function loadCategorySummary() {
     const res = await fetchGetApiEndpointOverview()
     totalCount.value = res.totalCount || 0
+    noPermissionCount.value = res.noPermissionCount || 0
+    sharedPermissionCount.value = res.sharedPermissionCount || 0
+    crossContextSharedCount.value = res.crossContextSharedCount || 0
     uncategorizedCount.value = res.uncategorizedCount || 0
     staleCount.value = res.staleCount || 0
     categoryCountMap.value = Object.fromEntries(
@@ -1579,6 +1676,7 @@
       path: tableQuery.path || undefined,
       keyword: tableQuery.keyword || undefined,
       permissionKey: tableQuery.permissionKey || undefined,
+      permissionPattern: tableQuery.permissionPattern || undefined,
       categoryId: tableQuery.categoryId || undefined,
       contextScope: tableQuery.contextScope || undefined,
       featureKind: tableQuery.featureKind || undefined,
@@ -1603,6 +1701,7 @@
     searchForm.path = ''
     searchForm.keyword = ''
     searchForm.permissionKey = ''
+    searchForm.permissionPattern = ''
     searchForm.contextScope = ''
     searchForm.featureKind = ''
     searchForm.status = ''
@@ -2038,6 +2137,19 @@
   }
 
   .status-note {
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--el-text-color-secondary);
+  }
+
+  .permission-structure-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .permission-structure-contexts,
+  .permission-structure-note {
     font-size: 12px;
     line-height: 1.4;
     color: var(--el-text-color-secondary);

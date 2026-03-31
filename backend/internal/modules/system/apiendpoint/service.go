@@ -21,19 +21,20 @@ var (
 )
 
 type ListRequest struct {
-	Current       int
-	Size          int
-	PermissionKey string
-	Keyword       string
-	Method        string
-	Path          string
-	CategoryID    string
-	ContextScope  string
-	Source        string
-	FeatureKind   string
-	Status        string
-	HasPermission *bool
-	HasCategory   *bool
+	Current           int
+	Size              int
+	PermissionKey     string
+	PermissionPattern string
+	Keyword           string
+	Method            string
+	Path              string
+	CategoryID        string
+	ContextScope      string
+	Source            string
+	FeatureKind       string
+	Status            string
+	HasPermission     *bool
+	HasCategory       *bool
 }
 
 type UnregisteredRouteListRequest struct {
@@ -66,10 +67,13 @@ type EndpointCategoryCount struct {
 }
 
 type EndpointOverview struct {
-	TotalCount         int64                   `json:"total_count"`
-	UncategorizedCount int64                   `json:"uncategorized_count"`
-	StaleCount         int64                   `json:"stale_count"`
-	CategoryCounts     []EndpointCategoryCount `json:"category_counts"`
+	TotalCount              int64                   `json:"total_count"`
+	UncategorizedCount      int64                   `json:"uncategorized_count"`
+	StaleCount              int64                   `json:"stale_count"`
+	NoPermissionCount       int64                   `json:"no_permission_count"`
+	SharedPermissionCount   int64                   `json:"shared_permission_count"`
+	CrossContextSharedCount int64                   `json:"cross_context_shared_count"`
+	CategoryCounts          []EndpointCategoryCount `json:"category_counts"`
 }
 
 type StaleListRequest struct {
@@ -125,17 +129,18 @@ func (s *service) List(req *ListRequest) ([]user.APIEndpoint, int64, error) {
 		req.Size = 20
 	}
 	params := &user.APIEndpointListParams{
-		Method:        strings.ToUpper(strings.TrimSpace(req.Method)),
-		PermissionKey: strings.TrimSpace(req.PermissionKey),
-		Keyword:       strings.TrimSpace(req.Keyword),
-		Path:          strings.TrimSpace(req.Path),
-		CategoryID:    strings.TrimSpace(req.CategoryID),
-		ContextScope:  strings.TrimSpace(req.ContextScope),
-		Source:        strings.TrimSpace(req.Source),
-		FeatureKind:   strings.TrimSpace(req.FeatureKind),
-		Status:        strings.TrimSpace(req.Status),
-		HasPermission: req.HasPermission,
-		HasCategory:   req.HasCategory,
+		Method:            strings.ToUpper(strings.TrimSpace(req.Method)),
+		PermissionKey:     strings.TrimSpace(req.PermissionKey),
+		PermissionPattern: strings.TrimSpace(req.PermissionPattern),
+		Keyword:           strings.TrimSpace(req.Keyword),
+		Path:              strings.TrimSpace(req.Path),
+		CategoryID:        strings.TrimSpace(req.CategoryID),
+		ContextScope:      strings.TrimSpace(req.ContextScope),
+		Source:            strings.TrimSpace(req.Source),
+		FeatureKind:       strings.TrimSpace(req.FeatureKind),
+		Status:            strings.TrimSpace(req.Status),
+		HasPermission:     req.HasPermission,
+		HasCategory:       req.HasCategory,
 	}
 	if params.PermissionKey != "" {
 		endpointCodes, err := s.bindingRepo.ListEndpointCodesByPermissionKey(params.PermissionKey)
@@ -190,6 +195,41 @@ func (s *service) Overview() (*EndpointOverview, error) {
 	}
 	runtimeStates := s.ListRuntimeStates(syncCandidates)
 	overview.StaleCount = int64(len(filterStaleEndpoints(syncCandidates, runtimeStates)))
+
+	endpoints := make([]user.APIEndpoint, 0)
+	if err := s.db.Model(&user.APIEndpoint{}).Select("id", "code", "path").Find(&endpoints).Error; err != nil {
+		return nil, err
+	}
+	endpointCodes := make([]string, 0, len(endpoints))
+	for _, endpoint := range endpoints {
+		if code := strings.TrimSpace(endpoint.Code); code != "" {
+			endpointCodes = append(endpointCodes, code)
+		}
+	}
+	bindings, err := s.bindingRepo.ListByEndpointCodes(endpointCodes)
+	if err != nil {
+		return nil, err
+	}
+	bindingMap := make(map[string][]string, len(endpointCodes))
+	for _, item := range bindings {
+		code := strings.TrimSpace(item.EndpointCode)
+		if code == "" {
+			continue
+		}
+		bindingMap[code] = append(bindingMap[code], item.PermissionKey)
+	}
+	for _, endpoint := range endpoints {
+		profile := buildPermissionProfile(endpoint.Path, bindingMap[endpoint.Code])
+		switch profile.BindingMode {
+		case permissionPatternNone, permissionPatternPublic, permissionPatternGlobalJWT, permissionPatternSelfJWT, permissionPatternAPIKey:
+			overview.NoPermissionCount++
+		case permissionPatternShared:
+			overview.SharedPermissionCount++
+		case permissionPatternCrossContextShared:
+			overview.SharedPermissionCount++
+			overview.CrossContextSharedCount++
+		}
+	}
 	return overview, nil
 }
 

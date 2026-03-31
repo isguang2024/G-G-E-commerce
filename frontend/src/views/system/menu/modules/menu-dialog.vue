@@ -208,14 +208,17 @@
         <ElRow v-if="form.kind !== 'directory'" :gutter="16" class="menu-dialog-advanced__row">
           <ElCol :span="8">
             <div class="switch-field">
-              <span>{{ isEntryKind ? '全屏页面' : '内嵌外链' }}</span>
-              <ElSwitch v-model="form.isFullPage" :disabled="!isEntryKind" />
+              <span>内嵌外链</span>
+              <ElSwitch v-model="form.isIframe" />
             </div>
           </ElCol>
+        </ElRow>
+
+        <ElRow v-if="isEntryKind" :gutter="16" class="menu-dialog-advanced__row">
           <ElCol :span="8">
             <div class="switch-field">
-              <span>内嵌模式</span>
-              <ElSwitch v-model="form.isIframe" />
+              <span>全屏页面</span>
+              <ElSwitch v-model="form.isFullPage" />
             </div>
           </ElCol>
           <ElCol :span="8">

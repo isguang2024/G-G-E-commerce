@@ -108,6 +108,7 @@ func (m *TenantModule) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.GETAction("/my-team/action-origins", "获取当前团队功能权限来源", "team.boundary.manage", authzService.RequireAction, tenantHandler.GetMyTeamActionOrigins)
 
 		reg.GETAction("", "获取团队列表", "tenant.manage", authzService.RequireAction, tenantHandler.List)
+		reg.GETAction("/:id/roles", "获取团队可分配角色", "tenant.manage", authzService.RequireAction, tenantHandler.ListTenantRoles)
 		reg.GETAction("/:id", "获取团队详情", "tenant.manage", authzService.RequireAction, tenantHandler.Get)
 		reg.POSTAction("", "创建团队", "tenant.manage", authzService.RequireAction, tenantHandler.Create)
 		reg.PUTAction("/:id", "更新团队", "tenant.manage", authzService.RequireAction, tenantHandler.Update)

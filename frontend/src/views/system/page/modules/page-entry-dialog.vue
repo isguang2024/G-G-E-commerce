@@ -358,25 +358,22 @@
           <div>
             <div class="form-section__title">访问与行为</div>
           </div>
-          <ElButton text type="primary" @click="showAdvanced = !showAdvanced">
-            {{ showAdvanced ? '收起高级配置' : '展开高级配置' }}
-          </ElButton>
+        <ElButton text type="primary" v-if="form.pageType !== 'global'" @click="showAdvanced = !showAdvanced">
+          {{ showAdvanced ? '收起高级配置' : '展开高级配置' }}
+        </ElButton>
         </div>
 
         <ElRow :gutter="14">
           <ElCol :span="12">
             <ElFormItem label="访问模式" prop="accessMode">
-              <template #label>
-                <PageFieldLabel
+            <template #label>
+              <PageFieldLabel
                   label="访问模式"
                   help="继承表示跟随上级菜单或页面；登录表示只验登录；权限表示还需校验权限键。挂到菜单时，继承即默认跟菜单权限走；若改成权限模式，则在菜单准入基础上再校验页面权限。"
                 />
               </template>
               <ElSelect v-model="form.accessMode" style="width: 100%">
-                <ElOption label="继承" value="inherit" />
-                <ElOption label="公开" value="public" />
-                <ElOption label="登录" value="jwt" />
-                <ElOption label="权限" value="permission" />
+                <ElOption v-for="item in accessModeOptions" :key="item.value" :label="item.label" :value="item.value" />
               </ElSelect>
             </ElFormItem>
           </ElCol>
@@ -422,7 +419,7 @@
           </ElCol>
         </ElRow>
 
-        <ElRow v-if="showAdvanced" :gutter="14" class="advanced-grid">
+        <ElRow v-if="showAdvanced && form.pageType !== 'global'" :gutter="14" class="advanced-grid">
           <ElCol :span="12">
             <ElFormItem label="面包屑模式" prop="breadcrumbMode">
               <template #label>
@@ -696,6 +693,19 @@
       return '当前页面会挂到上级页面或逻辑分组下，优先继承其路径链、菜单链和默认面包屑。'
     }
     return '当前页面作为独立内页存在，不挂菜单，也不挂到其他页面；适合个人中心、结果页、隐式工作流页这类页面。'
+  })
+
+  const accessModeOptions = computed(() => {
+    const options = [
+      { label: '继承', value: 'inherit' },
+      { label: '公开', value: 'public' },
+      { label: '登录', value: 'jwt' },
+      { label: '权限', value: 'permission' }
+    ]
+    if (form.pageType === 'global') {
+      return options.filter((item) => item.value !== 'inherit')
+    }
+    return options
   })
 
   const routePathPlaceholder = computed(() => {
@@ -1020,7 +1030,8 @@
         displayGroupKey: props.pageData.displayGroupKey || '',
         activeMenuPath: props.pageData.activeMenuPath || '',
         breadcrumbMode: props.pageData.breadcrumbMode || 'inherit_menu',
-        accessMode: props.pageData.accessMode || 'inherit',
+        accessMode:
+          props.pageData.pageType === 'global' ? props.pageData.accessMode || 'jwt' : props.pageData.accessMode || 'inherit',
         permissionKey: props.pageData.permissionKey || '',
         keepAlive: props.pageData.keepAlive ?? false,
         isFullPage: props.pageData.isFullPage ?? false,
@@ -1029,10 +1040,15 @@
         status: props.pageData.status || 'normal'
       })
       mountMode.value = form.parentPageKey ? 'page' : form.parentMenuId ? 'menu' : 'none'
-      showAdvanced.value =
-        Boolean(form.activeMenuPath) || form.breadcrumbMode !== defaultBreadcrumbMode()
+    if (form.pageType === 'global') {
+      form.accessMode = form.accessMode === 'inherit' ? 'jwt' : form.accessMode
+      showAdvanced.value = false
+      mountMode.value = 'none'
       return
     }
+    showAdvanced.value = Boolean(form.activeMenuPath) || form.breadcrumbMode !== defaultBreadcrumbMode()
+    return
+  }
 
     Object.assign(form, {
       id: '',
@@ -1063,7 +1079,10 @@
       displayGroupKey: props.defaultData?.displayGroupKey || '',
       activeMenuPath: props.defaultData?.activeMenuPath || '',
       breadcrumbMode: 'inherit_menu',
-      accessMode: props.defaultData?.accessMode || 'inherit',
+        accessMode:
+          props.defaultData?.pageType === 'global' || props.initialPageType === 'global'
+            ? props.defaultData?.accessMode || 'jwt'
+            : props.defaultData?.accessMode || 'inherit',
       permissionKey: props.defaultData?.permissionKey || '',
       keepAlive: props.defaultData?.keepAlive ?? false,
       isFullPage: props.defaultData?.isFullPage ?? false,
@@ -1071,7 +1090,7 @@
       link: `${props.defaultData?.meta?.link || props.defaultData?.link || ''}`.trim(),
       status: props.defaultData?.status || 'normal'
     })
-    mountMode.value = form.parentPageKey ? 'page' : form.parentMenuId ? 'menu' : 'none'
+    mountMode.value = form.pageType === 'global' ? 'none' : form.parentPageKey ? 'page' : form.parentMenuId ? 'menu' : 'none'
     form.breadcrumbMode = defaultBreadcrumbMode()
     showAdvanced.value = Boolean(form.activeMenuPath)
   }
@@ -1191,6 +1210,7 @@
     () => form.pageType,
     (pageType) => {
       if (pageType === 'global') {
+        mountMode.value = 'none'
         form.parentMenuId = ''
         form.parentPageKey = ''
         form.activeMenuPath = ''
@@ -1290,7 +1310,7 @@
           : form.pageType === 'global'
             ? 'inherit_menu'
             : defaultBreadcrumbMode(),
-        access_mode: form.accessMode,
+        access_mode: form.pageType === 'global' && form.accessMode === 'inherit' ? 'jwt' : form.accessMode,
         permission_key: form.accessMode === 'permission' ? form.permissionKey.trim() : '',
         keep_alive: form.isIframe ? false : form.keepAlive,
         is_full_page: form.isFullPage,

@@ -496,6 +496,9 @@ func ResolveRouteCode(method, path string, meta *RouteMeta) string {
 	if code := lookupFixedRouteCode(method, path); code != "" {
 		return code
 	}
+	if meta != nil {
+		return deriveStableEndpointCode(method, path)
+	}
 	return ""
 }
 

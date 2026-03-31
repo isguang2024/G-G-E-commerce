@@ -644,6 +644,49 @@ declare namespace Api {
       pageKey?: string
     }
 
+    interface PageAccessTraceParams {
+      userId: string
+      tenantId?: string
+      pageKey?: string
+      pageKeys?: string
+      routePath?: string
+      spaceKey?: string
+    }
+
+    interface PageAccessTraceRoleItem {
+      roleId: string
+      roleCode: string
+      roleName: string
+      status: string
+    }
+
+    interface PageAccessTracePageItem {
+      pageKey: string
+      pageName: string
+      routePath: string
+      accessMode: string
+      permissionKey?: string
+      parentPageKey?: string
+      parentMenuId?: string
+      activeMenuPath?: string
+      visible: boolean
+      reason: string
+      matchedActionKey?: string
+      effectiveChain?: string[]
+    }
+
+    interface PageAccessTraceResult {
+      userId: string
+      tenantId?: string
+      spaceKey: string
+      authenticated: boolean
+      superAdmin: boolean
+      actionKeyCount: number
+      visibleMenuIds: string[]
+      roles: PageAccessTraceRoleItem[]
+      pages: PageAccessTracePageItem[]
+    }
+
     type PageList = Api.Common.PaginatedResponse<PageItem>
 
     type PageSearchParams = Partial<
@@ -781,6 +824,19 @@ declare namespace Api {
       summary?: string
       permissionKey?: string
       permissionKeys?: string[]
+      permissionContexts?: string[]
+      permissionBindingMode?:
+        | 'none'
+        | 'public'
+        | 'global_jwt'
+        | 'self_jwt'
+        | 'api_key'
+        | 'single'
+        | 'shared'
+        | 'cross_context_shared'
+        | string
+      sharedAcrossContexts?: boolean
+      permissionNote?: string
       authMode?: 'public' | 'jwt' | 'permission' | 'api_key' | string
       categoryId?: string
       category?: APIEndpointCategoryItem
@@ -814,6 +870,9 @@ declare namespace Api {
       totalCount: number
       uncategorizedCount: number
       staleCount: number
+      noPermissionCount: number
+      sharedPermissionCount: number
+      crossContextSharedCount: number
       categoryCounts: APIEndpointCategoryCountItem[]
     }
 
@@ -850,6 +909,7 @@ declare namespace Api {
           categoryId?: string
           contextScope?: string
           source?: string
+          permissionPattern?: string
           hasPermissionKey?: boolean
           hasCategory?: boolean
         }
@@ -1098,6 +1158,24 @@ declare namespace Api {
       space_type?: string
       host_key?: string
       hidden?: boolean
+    }
+
+    interface MenuDeleteParams {
+      mode?: 'single' | 'cascade' | 'promote_children' | string
+      targetParentId?: string | null
+      target_parent_id?: string | null
+    }
+
+    interface MenuDeletePreviewItem {
+      mode?: 'single' | 'cascade' | 'promote_children' | string
+      menuCount?: number
+      childCount?: number
+      affectedPageCount?: number
+      affectedRelationCount?: number
+      menu_count?: number
+      child_count?: number
+      affected_page_count?: number
+      affected_relation_count?: number
     }
 
     interface MenuBackupItem {

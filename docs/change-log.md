@@ -1,5 +1,18 @@
 # 变更日志
 
+## 2026-03-31 访问链路菜单迁移治理
+
+### 本次改动
+
+- 处理 `backend/cmd/migrate/main.go` 中访问链路（AccessTrace）相关迁移的幂等与重复问题：移除两个临时修复迁移（`20260331_access_trace_package_binding`、`20260331_access_trace_parent_rebind_fix`），将入口保留为 `20260331_access_trace_navigation_seed`。
+- 将 `Access Trace` 菜单/页面显示名调整为中文 `访问链路测试`，并在菜单查找中统一按 `name + space_key + path` 做幂等匹配，减少未来重复插入与误绑定风险。
+- 新增 `menuSeedQuery` 统一查询函数并用于 `ensureMenuSeed`、`syncMenuSeed`，使菜单种子入库在空间/路径一致性下更稳定。
+
+### 下次方向
+
+- 建议执行一次 `go run ./cmd/migrate` 完成新迁移落库（用户环境已安装最新代码后可直接执行），确认 `菜单管理`、`页面管理` 中显示为中文“访问链路测试”，并确认页面链路无重复。
+- 后续如有新增类似菜单迁移，统一按 `space_key + path + name` 编写查询条件，避免与历史同名菜单发生串线。
+
 > 只记录大修改、重要节点或功能级收口；过程性推进已转写到专题文档。
 
 ## 2026-03-31 菜单备份去历史兼容与页面空间收紧
@@ -63,7 +76,7 @@
 ### 下次方向
 
 - 若后续确认页面只保留默认空间，可继续收敛页面表单中的空间辅助字段与候选加载。
-- 必要时再把“挂接对象 / 归属链路”进一步合并到详情展开区，继续降低表格横向宽度。
+- 必要时再把“挂接对象 / 归属链路”进一步合并到详情区，继续降低表格横向宽度。
 - 未验证项：本次未执行自动化测试。
 
 ## 2026-03-31 空间可见文案统一
@@ -95,11 +108,71 @@
 
 - 未验证项：前端联调尚未完整跑通，已完成后端 `go test ./internal/modules/system/page/...`。
 
+## 2026-03-31 Markdown 文档结构收口
+
+### 本次改动
+
+- 收紧了根目录文档边界，在 [AGENTS.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/AGENTS.md) 和 [PROJECT_FRAMEWORK.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/PROJECT_FRAMEWORK.md) 中明确根目录只保留长期稳定约束，`docs/` 只保留有效专题、固定清单和少量关键里程碑。
+- 重写了 [docs/README.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/README.md) 的索引方式，去掉重复目录式描述，改为“核心入口 / 保留原则 / 删除原则 / 维护规则”。
+- 删除了 `docs/system-wrapup-plan.md` 与 `docs/system-compatibility-audit.md` 两份阶段性或重复性文档，避免与主框架和专题文档并存造成多版本语义。
+
+### 下次方向
+
+- 继续检查 `docs/` 中是否还存在“阶段性计划、重复总结、已被专题吸收”的文档，优先按同一规则继续收口。
+- 后续如果菜单/页面链路的兼容边界继续稳定，可再评估是否进一步压缩到单一正式设计文档中。
+
+- 未验证项：本次仅做 Markdown 文档收口，未执行代码测试。
+
+## 2026-03-31 Markdown 文档结构收口-第二轮
+
+### 本次改动
+
+- 将 `docs/scaffold-navigation-access-redesign.md` 的剩余有效信息并入 [menu-page-management-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/menu-page-management-design.md)，补齐了“新空间初始化不复制页面定义”和统一验收口径。
+- 删除 `docs/scaffold-navigation-access-redesign.md`，避免与正式设计文档、实施现状文档形成第三份重复口径。
+- 同步更新了 [PROJECT_FRAMEWORK.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/PROJECT_FRAMEWORK.md) 和 [docs/README.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/README.md) 的文档入口与删除原则。
+
+### 下次方向
+
+- 继续评估菜单/页面链路的实现快照是否还需要独立文档；如果兼容边界完全稳定，可直接并入正式设计文档。
+- 后续新增文档时，优先先判断它属于“正式设计 / 当前实现 / 固定清单 / 关键里程碑”中的哪一类，不再新增摘要型重复文档。
+
+- 未验证项：本次仅做 Markdown 文档收口，未执行代码测试。
+
+## 2026-03-31 Markdown 文档结构收口-第三轮
+
+### 本次改动
+
+- 将 `docs/menu-page-management-implementation-plan.md` 中仍有价值的“当前实现落点、兼容边界、最低验证矩阵”并入 [menu-page-management-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/menu-page-management-design.md)。
+- 删除 `docs/menu-page-management-implementation-plan.md`，把菜单/页面链路从“正式设计 + 实现快照”继续压缩为单一主文档，避免同一主题继续分散在两份文档里。
+- 同步更新了 [PROJECT_FRAMEWORK.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/PROJECT_FRAMEWORK.md)、[docs/README.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/README.md) 和本日志中的旧引用。
+
+### 下次方向
+
+- 继续观察 [space-host-architecture-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/space-host-architecture-design.md) 是否存在过多未来态描述；如果与当前单域基线偏离过大，可继续拆分“当前约束”和“远期演进”。
+- 后续新增文档时，优先先补正式设计文档中的“当前实现落点 / 兼容边界 / 验收口径”，避免再单独创建实现快照型文档。
+
+- 未验证项：本次仅做 Markdown 文档收口，未执行代码测试。
+
+## 2026-03-31 Markdown 文档结构收口-第四轮
+
+### 本次改动
+
+- 重写了 [space-host-architecture-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/space-host-architecture-design.md)，删除过多的远期拆分方案、分阶段计划和未来字段推演，只保留当前可执行约束、已落地底座、运行规则与允许的演进方向。
+- 将“空间是运行时模型，Host 是可选部署映射”的边界明确成正式结论，避免后续再把子域设计当成当前实施要求。
+- 本轮未再新增或删除文档文件，但显著压缩了单篇文档体量，使 `docs/` 更接近“当前规则手册”而不是“架构脑暴记录”。
+
+### 下次方向
+
+- 如果还要继续收口，下一步应转向 `docs/change-log.md` 本身，按“同日重复主题合并”的原则压缩历史记录。
+- 后续新写专题文档时，默认只写“当前结论、稳定边界、验收口径”，把远期方案控制在必要的 1 到 2 段内。
+
+- 未验证项：本次仅做 Markdown 文档收口，未执行代码测试。
+
 ## 2026-03-31 页面空间多选全面收口
 
 ### 本次改动
 
-- 页面、逻辑分组、普通分组的空间字段统一为多选语义，并新增 `全空间可见` 选项。
+- 页面、逻辑分组、普通分组三类表单统一为多选语义，并新增 `全空间可见` 选项。
 - 后端 `page` 模块兼容 `space_keys` 写入，空数组视为全空间可见，不再误回退到默认空间。
 - 前端请求类型补齐了 `space_keys` 字段，三套表单已统一到同一份提交模型。
 
@@ -124,3 +197,83 @@
 - 需要时再把系统级路由与业务菜单的边界说明补进专题文档，避免后续再次混入菜单种子。
 
 - 未验证项：未执行全量迁移回归，仅完成 `go test ./internal/pkg/permissionseed/...` 与 `go test ./cmd/migrate`。
+
+## 2026-03-31 整改收口-菜单与全局页联调
+
+### 本次改动
+
+- 完成菜单删除弹窗的工程化修复：纠正 `menu-delete-dialog` 模板乱码和语法错误，补齐三种删除策略（含“子菜单提到指定父菜单”）的说明与确认联动，新增“删除”手工确认约束，删除模式对齐宽度，并默认将“删除当前及全部子菜单”下沉到末位。
+- 前端与后端联动方面，保持已完成的菜单删除预览/执行策略链路（含子树迁移、权限与路由映射清理）可用状态，并通过 `go test ./internal/modules/system/menu/... ./internal/modules/system/navigation/...` 与 `npm run build` 验证。
+- 收敛了全局页/结果异常页等链路的绑定清洗逻辑：全局页在后端保存与查询时统一清空 `parent_menu_id / parent_page_key / active_menu_path`，并增加历史数据清理迁移。
+- 头像入口跳转和用户中心路径使用统一 resolver，修复了部分 `/user-center` 直达和菜单跳转到错误路径的问题。
+
+### 下次方向
+
+- 继续逐页验证“菜单删除预览数值”和实际执行结果一致性，补一组端到端删除场景回归（尤其是有页面挂载与权限关联的子树）。
+- 对现有前端菜单/页面文案中的历史编码片段做一次统一扫描清理，建议逐文件比对，优先处理影响操作按钮与异常页展示的内容。
+- 后续如有空闲，增加 UI 自动化用例覆盖“提到指定父菜单”的树选择与降级清算路径，降低回归风险。
+
+## 2026-03-31 数据库残留清理与回归补强
+
+### 本次改动
+
+- 直接连接 PostgreSQL 容器核验全局页残留，确认 `ui_pages` 中 `page_type='global'` 的记录已无 `parent_menu_id / parent_page_key / active_menu_path` 残留。
+- 清理菜单表中遗留的 `Result / Exception` 菜单树，总计删除 59 条残留节点，删除前未发现页面挂载或权限关系表引用。
+- 补充了菜单删除路径重映射与全局页绑定归零的单测，并通过 `go test ./internal/modules/system/menu/...`、`go test ./internal/modules/system/page/...`、`go test ./internal/modules/system/navigation/...` 验证。
+
+### 下次方向
+
+- 如果后续继续收口数据库历史数据，优先按“菜单树残留、页面挂载残留、权限关系残留”三类顺序核验，避免只删主表不清子树。
+- 需要时再把这次数据库清理结果回写到专题文档，减少后续重复排查成本。
+## 2026-03-31 访问链路测试页接入（导航与页面）
+
+### 本次改动
+
+- 新增后端访问链路接口：`GET /api/v1/pages/access-trace`，基于现有运行时权限上下文输出用户、角色、可见菜单与页面可见性判定。
+- 新增迁移任务 `20260331_access_trace_navigation_seed`：自动创建/修正 `AccessTrace` 菜单与 `system.access_trace.manage` 页面，并刷新访问快照，避免手工二次配置。
+- 前端新增“访问链路测试”页面（`/system/access-trace`），支持按用户、团队、页面维度测试并展示链路结果。
+
+### 下次方向
+
+- 建议补一组后端接口测试，覆盖“无团队上下文/有团队上下文/页面不存在”三类场景，稳定返回语义。
+- 建议补前端 E2E 用例验证菜单迁移后入口可达与链路结果展示。
+- 未验证项：前端全量 `tsc` 当前受仓库内既有缺失文件影响未通过，本次仅完成后端模块编译验证。
+
+## 2026-03-31 访问链路测试团队角色接口修正
+
+### 本次改动
+
+- 新增后端接口 `GET /api/v1/tenants/:id/roles`，允许具备 `tenant.manage` 权限的管理员按指定团队获取可分配角色，返回基础团队角色和该团队自定义角色。
+- 访问链路测试页改为在选中团队后调用指定团队角色接口，不再错误依赖 `my-team/roles` 的当前登录团队上下文。
+- 已完成 `go test ./internal/modules/system/tenant/...`、`pnpm exec vue-tsc --noEmit` 验证。
+
+### 下次方向
+
+- 建议继续补一个后端接口测试，覆盖“团队不存在”“无权限”“团队含自定义角色”三类场景，避免后续接口回退。
+- 如果后续还有别的后台页需要管理员跨团队查看角色，也统一复用这个新接口，不再走 `my-team/*` 语义。
+
+## 2026-03-31 API 注册机制补漏
+
+### 本次改动
+
+- 调整 API 注册机制：带 `RouteMeta` 的受管接口在没有固定 route code 时，自动派生稳定 code，不再因为忘记维护固定码表而被识别成“未注册 API”。
+- 补充 `apiregistry` 单测，覆盖固定码、显式码和自动派生码三类场景，确保后续新增接口不会再次静默漏注册。
+- 已完成 `go test ./internal/pkg/apiregistry/... ./internal/modules/system/apiendpoint/...` 验证。
+
+### 下次方向
+
+- 如果还要继续压缩 API 管理页里的“未绑定权限键”噪音，建议给 JWT/自服务接口增加“无需权限键”的显式标识，而不是一律当成缺陷。
+- 可继续补一轮全量路由审计，把确实需要独立权限键的接口单独列出来收口，例如媒体类接口是否需要正式纳入权限体系。
+
+## 2026-03-31 API 管理权限结构审计增强
+
+### 本次改动
+
+- 为 API 管理补充权限结构诊断：接口现在会明确区分 `公开接口`、`登录态全局接口`、`登录态自服务接口`、`开放 API Key 接口`、`单权限接口`、`多权限共享`、`跨上下文共享`，不再把“无权限键”一律当成缺陷。
+- 新增后端筛选能力，支持按权限结构过滤 API；`message.manage + team.message.manage` 这类消息接口会被标记为“跨上下文共享”，用于表达平台与团队共用同一接口而非错误重复。
+- 前端 API 管理页新增权限结构列、权限结构筛选和概览指标（无权限键、共享接口、跨上下文共享），并通过 `go test ./internal/modules/system/apiendpoint/... ./internal/modules/system/user/... ./internal/pkg/apiregistry/...` 与 `pnpm exec vue-tsc --noEmit` 验证。
+
+### 下次方向
+
+- 建议继续审计仍属于 `登录态自服务接口` 但是否应升级为正式权限能力的接口，优先确认媒体类和其他通用工具类接口。
+- 如需进一步收口权限设计，可新增“权限键未被页面/功能包/API 消费”的反向审计，把真正冗余的权限键筛出来处理。

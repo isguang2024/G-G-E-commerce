@@ -1,45 +1,34 @@
 # docs 文档索引
 
-> 现状基线：2026-03-31。`docs/` 只保留当前有效架构说明、固定清单与少量关键里程碑。
+> 现状基线：2026-03-31。`docs/` 只保留当前有效专题、固定清单与少量关键里程碑。
 
-## 1. 推荐阅读顺序
+## 1. 核心入口
 
 1. [PROJECT_FRAMEWORK.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/PROJECT_FRAMEWORK.md)：项目主框架、边界与执行清单
-2. [permission-overall-summary.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/permission-overall-summary.md)：权限、功能包、快照主链
+2. [permission-overall-summary.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/permission-overall-summary.md)：权限、功能包、API、快照主链
 3. [menu-page-management-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/menu-page-management-design.md)：菜单与页面正式架构
-4. [space-host-architecture-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/space-host-architecture-design.md)：空间模型与可配置多子域架构
-5. [message-system-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/message-system-design.md)：消息系统正式设计
-6. [system-wrapup-plan.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/system-wrapup-plan.md)：系统收尾计划
-7. [system-regression-checklist.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/system-regression-checklist.md)：系统侧最小回归验收清单
-8. [system-demo-data.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/system-demo-data.md)：系统最小演示数据与初始化命令
-9. [system-compatibility-audit.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/system-compatibility-audit.md)：系统兼容收紧状态
-10. [menu-page-management-implementation-plan.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/menu-page-management-implementation-plan.md)：菜单与页面当前实现现状
-11. [FRONTEND_GUIDELINE.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/FRONTEND_GUIDELINE.md)：前端管理页统一规范
-12. [change-log.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/change-log.md)：近期关键里程碑
+4. [space-host-architecture-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/space-host-architecture-design.md)：空间与 Host 架构
+5. [message-system-design.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/message-system-design.md)：消息系统设计
+6. [system-regression-checklist.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/system-regression-checklist.md)：系统固定回归项
+7. [system-demo-data.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/system-demo-data.md)：系统演示数据
+8. [change-log.md](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/change-log.md)：关键里程碑
 
-## 2. 文档分工
+## 2. 保留原则
 
-- 根目录文档：全局长期规则
-- `permission-overall-summary.md`：权限、功能包、API、快照的正式语义
-- `menu-page-management-design.md`：菜单与页面的稳定模型
-- `space-host-architecture-design.md`：空间模型、Host/Subdomain 配置模型与分阶段演进路线
-- `message-system-design.md`：右上角消息面板、消息中心、消息模型与投递链路
-- `system-wrapup-plan.md`：系统收尾计划、验收边界与后续交付顺序
-- `system-regression-checklist.md`：系统侧固定回归项与最小验证方式
-- `system-demo-data.md`：演示账号、团队、空间、模板、消息的固定命名与初始化方式
-- `system-compatibility-audit.md`：系统兼容层的保留、收紧与待清理边界
-- `menu-page-management-implementation-plan.md`：当前已落地实现、剩余边界、实施注意点
-- `change-log.md`：只记录近期关键里程碑，不记碎片化推进过程
+- 保留正式设计文档：定义稳定模型与边界
+- 保留当前实现文档：记录已落地状态、兼容边界与最小验证
+- 保留固定清单文档：回归、演示数据、长期可复用检查项
+- 保留少量里程碑日志：仅承载近期关键收口
 
-## 3. 维护规则
+## 3. 删除原则
 
-- 文档与代码冲突时，以代码真实行为为准，然后更新文档。
-- 新增核心链路变更时，必须同步修改对应专题文档。
-- 重复、过期、阶段性说明要合并后删除，避免多版本并存。
-- 删除或改名文档时，必须同步检查根文档、专题文档和变更日志中的旧链接。
+- 阶段性收尾计划：结论已稳定后，合并进主框架或专题文档，再删除
+- 兼容审计摘要：如果没有新增长期约束，应并入实现文档，不单独保留
+- 重构基线摘要：如果已经被正式设计和实施现状覆盖，应优先合并后删除
+- 重复索引和重复总结：只保留一个主入口，避免同义文档并存
 
-## 4. 变更日志保留策略
+## 4. 维护规则
 
-- `change-log.md` 只保留重要节点与当前架构仍有参考价值的收口记录。
-- 过细过程日志、同日重复推进日志、已经被专题文档吸收的旧记录，应合并后移除。
-- 需要长期保留的结论，写回专题文档，不依赖日志存活。
+- 文档与代码冲突时，以代码真实行为为准，然后更新文档
+- 新增核心链路变更时，必须同步修改对应专题文档
+- 删除或改名文档时，必须同步清理根文档、专题文档和 `change-log.md` 中的旧链接

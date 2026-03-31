@@ -3,10 +3,13 @@
 ## 全局要求
 
 - 使用中文回答。
-- 编辑代码时保证文件编码为 UTF-8，尤其是通过 Shell 写入或保存文件时。
+- 编辑代码时保证文件编码为 UTF-8。
+- 通过 Shell 读取或写入文件时，必须显式使用 UTF-8 编码，例如 `Get-Content -Encoding utf8`、`Set-Content -Encoding utf8`、`Out-File -Encoding utf8`，避免默认编码导致乱码。
 - 优先遵循 `PROJECT_FRAMEWORK.md` 中定义的项目主框架与执行清单；该文件定义总体约束，不承载实现细节。
 - 前端改动默认遵循 `FRONTEND_GUIDELINE.md`（搜索区、列表操作列、弹窗工具栏、状态展示统一规范）。
 - 涉及前端视觉设计、页面排版、交互观感优化时，默认先调用 `frontend-skill`，再进行实现与样式调整。
+- 根目录 Markdown 只保留长期稳定约束：`AGENTS.md`、`PROJECT_FRAMEWORK.md`、`FRONTEND_GUIDELINE.md`。
+- `docs/` 只保留当前有效专题文档、固定检查清单与少量关键里程碑；阶段性计划、重复总结、已被正式文档吸收的说明应优先合并后删除。
 - 在完成一次代码咨询时，结尾追加简短总结，说明本次处理结果。
 - 当本次任务包含大型代码改动时，结尾必须额外追加固定说明。
 - `docs/change-log.md` 只记录大修改、重要节点或功能级收口；简单修补、碎片化过程和短期试错不要写入，优先回写到对应专题文档。

@@ -321,6 +321,24 @@ export async function fetchGetMyTeamRoles() {
   }))
 }
 
+export async function fetchGetTeamRoles(teamId: string) {
+  const res = await request.get<any[]>({
+    url: `${TENANT_BASE}/${teamId}/roles`
+  })
+
+  return (res || []).map((item: any) => ({
+    roleId: item?.id || '',
+    roleCode: item?.code || '',
+    roleName: item?.name || '',
+    description: item?.description || '',
+    status: item?.status || 'normal',
+    isSystem: Boolean(item?.is_system ?? item?.isSystem ?? false),
+    tenantId: item?.tenant_id || item?.tenantId || '',
+    isGlobal: Boolean(item?.is_global ?? item?.isGlobal ?? false),
+    createTime: item?.create_time || item?.created_at || ''
+  }))
+}
+
 export async function fetchGetMyTeamBoundaryRoles() {
   const res = await request.get<any[]>({
     url: MY_TEAM_BOUNDARY_ROLE_BASE

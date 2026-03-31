@@ -748,6 +748,7 @@ const initialSearchState = {
 
   function getMountTargetText(row: PageItem) {
     if (row.pageType === 'display_group') return '普通分组'
+    if (row.pageType === 'global') return '独立页面'
     if (row.pageType === 'group') {
       return row.displayGroupName ? `逻辑分组 · ${row.displayGroupName}` : '逻辑分组'
     }
@@ -878,13 +879,20 @@ const initialSearchState = {
   }
 
   function getMountModeText(row: PageItem) {
+    if (row.pageType === 'global') return '独立页面'
     if (row.parentPageKey) return '挂到页面'
     if (row.parentMenuId) return '挂到菜单'
-    return row.pageType === 'global' ? '独立页面' : '独立内页'
+    return '独立内页'
   }
 
   function getEffectiveChainText(row: PageItem) {
     if (row.pageType === 'display_group') return '仅分组展示'
+    if (row.pageType === 'global') {
+      if (row.accessMode && row.accessMode !== 'inherit') {
+        return `自身生效（${getAccessModeText(row.accessMode)}）`
+      }
+      return '自身生效（全局页）'
+    }
     if (row.pageType === 'group' && !row.parentPageKey && !row.parentMenuId) return '分组独立生效'
     if (row.parentMenuId) {
       if (row.accessMode && row.accessMode !== 'inherit') {
@@ -901,6 +909,7 @@ const initialSearchState = {
   }
 
   function getParentChainStatusText(row: PageItem) {
+    if (row.pageType === 'global') return '无父链（全局页）'
     if (!row.parentPageKey && !row.parentMenuId) return '无父链'
     if (row.parentMenuId && !row.parentPageKey) return '菜单链路'
     const visited = new Set<string>()

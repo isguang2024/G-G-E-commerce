@@ -1,181 +1,29 @@
 
 > art-design-pro@0.0.0 dev C:\Users\Administrator\Documents\GitHub\G-G-E-commerce\frontend
-> vite --open "--host" "0.0.0.0" "--port" "5173"
+> vite --open "--host" "0.0.0.0" "--port" "9005"
 
 
-  [32m[1mVITE[22m v7.3.1[39m  [2mready in [0m[1m3004[22m[2m[0m ms[22m
+  [32m[1mVITE[22m v7.3.1[39m  [2mready in [0m[1m2076[22m[2m[0m ms[22m
 
-  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
-  [32m➜[39m  [1mNetwork[22m: [36mhttp://30.233.233.233:[1m5173[22m/[39m
-  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.0.114:[1m5173[22m/[39m
-  ➜  Vue DevTools: Open http://localhost:5173/__devtools__/ as a separate window
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m9005[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://30.233.233.233:[1m9005[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://192.168.0.114:[1m9005[22m/[39m
+  ➜  Vue DevTools: Open http://localhost:9005/__devtools__/ as a separate window
   ➜  Vue DevTools: Press Alt(⌥)+Shift(⇧)+D in App to toggle the Vue DevTools
-[2m16:17:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/api/system-manage.ts[22m
-[2m16:17:34[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/feature-package/modules/feature-package-teams-dialog.vue, /src/assets/styles/core/tailwind.css[22m
-[2m16:25:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-header-bar/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m16:25:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-header-bar/widget/ArtTenantSwitcher.vue, /src/components/core/layouts/art-header-bar/widget/ArtTenantSwitcher.vue?vue&type=style&index=0&scoped=22d1db8b&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m16:25:45[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/dashboard/console/index.vue[22m
-[2m16:26:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/dashboard/console/index.vue[22m
-[2m16:26:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/dashboard/console/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m16:26:44[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/user/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m16:27:10[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/user/modules/user-dialog.vue, /src/assets/styles/core/tailwind.css[22m
-[2m16:27:53[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/api-endpoint/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m16:28:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/api-endpoint/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m16:28:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/api-endpoint/index.vue?vue&type=style&index=0&scoped=cec39aef&lang.css, /src/assets/styles/core/tailwind.css[22m
-[2m16:28:39[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/menu/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m16:29:11[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/menu/modules/menu-dialog.vue, /src/views/system/menu/modules/menu-dialog.vue?vue&type=style&index=0&scoped=0c10df1b&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m16:29:45[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/business/layout/AdminWorkspaceHero.vue, /src/assets/styles/core/tailwind.css[22m
-[2m16:29:49[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/user/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m16:37:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-header-bar/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m16:37:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/user/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m16:37:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/menu/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m16:37:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/api-endpoint/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m16:37:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/dashboard/console/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m16:41:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/api-endpoint/index.vue, /src/views/system/api-endpoint/index.vue?vue&type=style&index=0&scoped=cec39aef&lang.css, /src/assets/styles/core/tailwind.css[22m
-[2m16:58:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/store/modules/tenant.ts[22m
-[2m16:58:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/router/guards/beforeEach.ts[22m
-[2m16:58:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-header-bar/widget/ArtTenantSwitcher.vue, /src/assets/styles/core/tailwind.css[22m
-[2m16:58:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/auth/login/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m17:00:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-header-bar/widget/ArtUserMenu.vue, /src/assets/styles/core/tailwind.css[22m
-[2m17:00:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/dashboard/console/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m17:10:56[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/config/modules/fastEnter.ts[22m
-[2m17:11:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css, /src/components/core/layouts/art-fast-enter/index.vue[22m
-[2m17:11:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m17:11:58[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/router/routes/staticRoutes.ts[22m
-[2m17:11:58[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/system/fast-enter/index.vue[22m
-[2m17:12:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
-[2m17:13:21[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ new dependencies optimized: [33melement-plus/es/components/color-picker/style/css[32m[39m
-[2m17:13:21[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ optimized dependencies changed. reloading[39m
-[2m17:13:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/router/guards/beforeEach.ts[22m
-[2m17:27:13[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/api/system-manage.ts[22m
-[2m17:27:13[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css, /src/components/core/layouts/art-fast-enter/index.vue, /src/views/system/fast-enter/index.vue[22m
-[2m17:27:13[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/router/routes/staticRoutes.ts[22m
-[2m17:27:13[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m17:27:13[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m17:27:44[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/config/modules/fastEnter.ts[22m
-[2m17:28:28[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/api/system-manage.ts[22m
-[2m18:05:40[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css, /src/components/core/layouts/art-fast-enter/index.vue[22m
-[2m18:05:40[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m18:23:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/system/fast-enter/index.vue[22m
-[2m18:24:56[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/system/fast-enter/index.vue[22m
-[2m18:26:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue, /src/views/system/fast-enter/index.vue?vue&type=style&index=0&scoped=f1de6f67&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m18:28:40[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m18:30:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m18:31:04[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m18:31:12[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m18:31:26[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m18:31:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue?vue&type=style&index=0&scoped=f1de6f67&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m18:39:19[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/router/core/MenuProcessor.ts[22m
-[2m19:00:52[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/utils/router.ts[22m
-[2m19:00:52[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-menus/art-sidebar-menu/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m19:03:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/role/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m19:28:18[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css, /src/components/core/layouts/art-notification/index.vue, /src/components/core/layouts/art-notification/index.vue?vue&type=style&index=0&scoped=f7e78690&lang.css[22m
-[2m19:29:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css, /src/components/core/layouts/art-notification/index.vue, /src/components/core/layouts/art-notification/index.vue?vue&type=style&index=0&scoped=f7e78690&lang.css[22m
-[2m19:29:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-notification/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m19:29:45[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-header-bar/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m19:29:49[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-header-bar/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m19:31:04[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/workspace/inbox/index.vue[22m
-[2m19:39:26[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/workspace/inbox/index.vue[22m
-[2m19:40:51[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-notification/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m19:40:56[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-notification/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m19:59:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css, /src/components/core/layouts/art-notification/index.vue, /src/components/core/layouts/art-header-bar/index.vue, /src/views/workspace/inbox/index.vue[22m
-[2m20:00:10[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/system/message/index.vue[22m
-[2m20:00:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-notification/index.vue?vue&type=style&index=0&scoped=f7e78690&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m20:00:37[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
-[2m20:02:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ new dependencies optimized: [33melement-plus/es/components/date-picker/style/css[32m[39m
-[2m20:02:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ optimized dependencies changed. reloading[39m
-[2m20:03:34[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/message/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m20:23:13[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-notification/index.vue?vue&type=style&index=0&scoped=f7e78690&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m20:31:35[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/menu/modules/menu-dialog.vue, /src/views/system/menu/modules/menu-dialog.vue?vue&type=style&index=0&scoped=0c10df1b&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m20:31:52[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/menu/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m20:32:05[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/menu/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m20:32:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/menu/index.vue?vue&type=style&index=0&scoped=e0161664&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m20:35:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/page/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m20:35:51[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/page/modules/page-entry-dialog.vue, /src/assets/styles/core/tailwind.css[22m
-[2m20:53:28[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/menu/modules/menu-dialog.vue, /src/views/system/menu/modules/menu-dialog.vue?vue&type=style&index=0&scoped=0c10df1b&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m20:53:36[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/page/modules/page-entry-dialog.vue, /src/assets/styles/core/tailwind.css[22m
-[2m20:53:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/page/modules/page-entry-dialog.vue?vue&type=style&index=0&scoped=326ec254&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m20:55:20[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/menu/modules/menu-dialog.vue, /src/assets/styles/core/tailwind.css[22m
-[2m20:55:23[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/menu/modules/menu-dialog.vue?vue&type=style&index=0&scoped=0c10df1b&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m20:55:27[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/menu/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m20:55:35[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/page/modules/page-entry-dialog.vue, /src/assets/styles/core/tailwind.css[22m
-[2m20:55:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/page/modules/page-entry-dialog.vue?vue&type=style&index=0&scoped=326ec254&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m21:05:50[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css, /src/components/core/layouts/art-notification/index.vue, /src/components/core/layouts/art-header-bar/index.vue, /src/views/workspace/inbox/index.vue, /src/views/system/message/index.vue[22m
-[2m21:06:01[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/system/message/index.vue[22m
-[2m21:07:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/system/message/index.vue[22m
-[2m21:07:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/team/message/index.vue[22m
-[2m21:07:14[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/message/modules/message-dispatch-console.vue[22m
-[2m21:07:16[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ new dependencies optimized: [33m@wangeditor/editor-for-vue[32m[39m
-[2m21:07:16[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ optimized dependencies changed. reloading[39m
-[2m21:08:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/team/message/index.vue[22m
-[2m21:08:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/workspace/inbox/index.vue, /src/views/workspace/inbox/index.vue?vue&type=style&index=0&scoped=24d68304&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m21:08:57[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-notification/index.vue, /src/components/core/layouts/art-notification/index.vue?vue&type=style&index=0&scoped=f7e78690&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m21:09:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-dispatch-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m21:10:31[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-dispatch-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m21:13:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/team/message/index.vue[22m
-[2m21:16:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/router/guards/beforeEach.ts[22m
-[2m21:16:36[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/router/index.ts[22m
-[2m21:16:44[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-header-bar/widget/ArtUserMenu.vue, /src/assets/styles/core/tailwind.css[22m
-[2m21:17:21[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-dispatch-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m21:31:25[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css, /src/components/core/layouts/art-notification/index.vue, /src/components/core/layouts/art-header-bar/index.vue, /src/views/workspace/inbox/index.vue, /src/views/message/modules/message-dispatch-console.vue[22m
-[2m21:34:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/message/modules/message-template-console.vue[22m
-[2m21:35:31[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/message/modules/message-record-console.vue[22m
-[2m21:35:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/system/message-template/index.vue[22m
-[2m21:35:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/team/message-record/index.vue[22m
-[2m21:35:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/system/message-record/index.vue[22m
-[2m21:35:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/team/message-template/index.vue[22m
-[2m21:48:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-dispatch-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m22:00:59[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css, /src/components/core/layouts/art-notification/index.vue, /src/components/core/layouts/art-header-bar/index.vue, /src/views/workspace/inbox/index.vue, /src/views/message/modules/message-dispatch-console.vue, /src/views/message/modules/message-template-console.vue, /src/views/message/modules/message-record-console.vue[22m
-[2m22:01:36[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-dispatch-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m22:02:26[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/message/modules/message-sender-console.vue[22m
-[2m22:02:26[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/system/message-sender/index.vue[22m
-[2m22:02:26[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/team/message-sender/index.vue[22m
-[2m22:08:34[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-breadcrumb/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m22:25:06[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-header-bar/widget/ArtUserMenu.vue, /src/assets/styles/core/tailwind.css[22m
-[2m22:29:00[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-header-bar/widget/ArtUserMenu.vue, /src/assets/styles/core/tailwind.css[22m
-[2m22:30:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-header-bar/widget/ArtUserMenu.vue, /src/assets/styles/core/tailwind.css[22m
-[2m22:38:37[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/page/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m22:38:49[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/page/modules/page-entry-dialog.vue, /src/assets/styles/core/tailwind.css[22m
-[2m22:43:55[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/components/core/layouts/art-header-bar/index.vue, /src/components/core/layouts/art-header-bar/index.vue?vue&type=style&index=0&scoped=671af599&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m22:43:58[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css, /src/components/core/layouts/art-global-component/index.vue[22m
-[2m22:52:24[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css, /src/components/core/layouts/art-notification/index.vue, /src/components/core/layouts/art-header-bar/index.vue, /src/views/workspace/inbox/index.vue, /src/views/message/modules/message-dispatch-console.vue, /src/views/message/modules/message-template-console.vue, /src/views/message/modules/message-record-console.vue, /src/views/message/modules/message-sender-console.vue[22m
-[2m22:52:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-dispatch-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m22:55:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/message/modules/message-recipient-group-console.vue[22m
-[2m22:55:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/system/message-recipient-group/index.vue[22m
-[2m22:55:43[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/team/message-recipient-group/index.vue[22m
-[2m23:03:36[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-dispatch-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m23:03:47[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-dispatch-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m23:03:57[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
-[2m23:04:02[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
-[2m23:04:12[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
-[2m23:04:18[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
-[2m23:04:21[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
-[2m23:04:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
-[2m23:04:33[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
-[2m23:04:38[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
-[2m23:05:21[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-dispatch-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m23:14:08[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css, /src/components/core/layouts/art-notification/index.vue, /src/components/core/layouts/art-header-bar/index.vue, /src/views/workspace/inbox/index.vue, /src/views/message/modules/message-dispatch-console.vue, /src/views/message/modules/message-template-console.vue, /src/views/message/modules/message-record-console.vue, /src/views/message/modules/message-sender-console.vue[22m
-[2m23:14:42[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-record-console.vue, /src/views/message/modules/message-record-console.vue?vue&type=style&index=0&scoped=6c55b969&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m23:56:10[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-record-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m23:56:15[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-record-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m00:05:11[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/views/message/modules/message-workspace-nav.vue[22m
-[2m00:05:46[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-dispatch-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m00:05:52[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-dispatch-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m00:06:21[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-template-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m00:06:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-sender-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m00:06:39[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
-[2m00:06:49[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-record-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m00:09:10[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/router/core/ManagedPageProcessor.ts[22m
-[2m00:13:04[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-dispatch-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m00:13:09[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-dispatch-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m00:15:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-dispatch-console.vue, /src/views/message/modules/message-dispatch-console.vue?vue&type=style&index=0&scoped=b30d39b0&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m00:15:48[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-template-console.vue, /src/views/message/modules/message-template-console.vue?vue&type=style&index=0&scoped=e9bf45fe&lang.scss, /src/assets/styles/core/tailwind.css[22m
-[2m00:16:24[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-workspace-nav.vue, /src/assets/styles/core/tailwind.css[22m
-[2m00:16:55[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-template-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m00:20:31[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css, /src/components/core/layouts/art-fast-enter/index.vue[22m
-[2m00:20:31[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m00:20:41[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/system/fast-enter/index.vue, /src/assets/styles/core/tailwind.css[22m
-[2m00:31:34[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-dispatch-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m00:31:34[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/views/message/modules/message-record-console.vue, /src/assets/styles/core/tailwind.css[22m
-[2m00:32:40[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ new dependencies optimized: [33melement-plus/es/components/skeleton/style/css[32m[39m
-[2m00:32:40[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ optimized dependencies changed. reloading[39m
+[2m21:52:34[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
+[2m22:00:01[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
+[2m22:00:32[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
+[2m22:03:55[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
+[2m22:04:15[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
+[2m22:06:20[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
+[2m22:08:15[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
+[2m22:09:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
+[2m22:13:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/api/team.ts[22m
+[2m22:13:29[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
+[2m22:29:54[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/api/system-manage.ts[22m
+[2m22:30:07[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
+[2m22:30:15[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
+[2m22:30:21[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
+[2m22:30:30[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
+[2m22:30:52[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m
+[2m22:31:02[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/assets/styles/core/tailwind.css[22m

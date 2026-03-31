@@ -433,8 +433,8 @@ func (r *menuRepository) Create(menu *Menu) error {
 
 func (r *menuRepository) Update(menu *Menu, updateParent bool) error {
 	updates := map[string]interface{}{
-		"space_key":   menu.SpaceKey,
-		"kind":        menu.Kind,
+		"space_key":  menu.SpaceKey,
+		"kind":       menu.Kind,
 		"path":       menu.Path,
 		"name":       menu.Name,
 		"component":  menu.Component,
@@ -2218,18 +2218,19 @@ func (r *userHiddenMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
 }
 
 type APIEndpointListParams struct {
-	EndpointCodes []string
-	Method        string
-	PermissionKey string
-	Keyword       string
-	Path          string
-	CategoryID    string
-	ContextScope  string
-	Source        string
-	FeatureKind   string
-	Status        string
-	HasPermission *bool
-	HasCategory   *bool
+	EndpointCodes     []string
+	Method            string
+	PermissionKey     string
+	PermissionPattern string
+	Keyword           string
+	Path              string
+	CategoryID        string
+	ContextScope      string
+	Source            string
+	FeatureKind       string
+	Status            string
+	HasPermission     *bool
+	HasCategory       *bool
 }
 
 type apiEndpointRepository struct {
@@ -2277,6 +2278,26 @@ func (r *apiEndpointRepository) List(offset, limit int, params *APIEndpointListP
 			} else {
 				query = query.Where("NOT EXISTS (SELECT 1 FROM api_endpoint_permission_bindings b WHERE b.endpoint_code = api_endpoints.code)")
 			}
+		}
+		switch params.PermissionPattern {
+		case "none":
+			query = query.Where("NOT EXISTS (SELECT 1 FROM api_endpoint_permission_bindings b WHERE b.endpoint_code = api_endpoints.code)")
+		case "public":
+			query = query.Where("NOT EXISTS (SELECT 1 FROM api_endpoint_permission_bindings b WHERE b.endpoint_code = api_endpoints.code)").Where("(path = ? OR path IN ?)", "/health", []string{"/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh", "/api/v1/pages/runtime/public"})
+		case "global_jwt":
+			query = query.Where("NOT EXISTS (SELECT 1 FROM api_endpoint_permission_bindings b WHERE b.endpoint_code = api_endpoints.code)").Where("(path IN ? OR path LIKE ?)", []string{"/api/v1/pages/runtime", "/api/v1/system/fast-enter", "/api/v1/system/menu-spaces/current", "/api/v1/menus/tree"}, "/api/v1/runtime/%")
+		case "self_jwt":
+			query = query.Where("NOT EXISTS (SELECT 1 FROM api_endpoint_permission_bindings b WHERE b.endpoint_code = api_endpoints.code)").Where("path <> ? AND path NOT IN ? AND path <> ? AND path NOT LIKE ? AND path <> ?", "/health", []string{"/api/v1/auth/login", "/api/v1/auth/register", "/api/v1/auth/refresh", "/api/v1/pages/runtime/public"}, "/api/v1/pages/runtime", "/api/v1/runtime/%", "/api/v1/system/fast-enter").Where("path <> ? AND path <> ?", "/api/v1/system/menu-spaces/current", "/api/v1/menus/tree")
+		case "api_key":
+			query = query.Where("NOT EXISTS (SELECT 1 FROM api_endpoint_permission_bindings b WHERE b.endpoint_code = api_endpoints.code)").Where("path LIKE ?", "/open/v1/%")
+		case "single":
+			query = query.Where("(SELECT COUNT(1) FROM api_endpoint_permission_bindings b WHERE b.endpoint_code = api_endpoints.code) = 1")
+		case "shared":
+			query = query.Where("(SELECT COUNT(1) FROM api_endpoint_permission_bindings b WHERE b.endpoint_code = api_endpoints.code) > 1")
+		case "cross_context_shared":
+			query = query.
+				Where("(SELECT COUNT(1) FROM api_endpoint_permission_bindings b WHERE b.endpoint_code = api_endpoints.code) > 1").
+				Where("(SELECT COUNT(DISTINCT COALESCE(pk.context_type, '')) FROM api_endpoint_permission_bindings b JOIN permission_keys pk ON pk.key = b.permission_key WHERE b.endpoint_code = api_endpoints.code) > 1")
 		}
 		if params.HasCategory != nil {
 			if *params.HasCategory {

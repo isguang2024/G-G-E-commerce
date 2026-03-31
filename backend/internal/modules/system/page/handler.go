@@ -126,6 +126,21 @@ func (h *Handler) ListPageOptions(c *gin.Context) {
 	}))
 }
 
+func (h *Handler) GetAccessTrace(c *gin.Context) {
+	var req AccessTraceRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	result, err := h.service.GetAccessTrace(&req)
+	if err != nil {
+		h.respondServiceError(c, err, "鑾峰彇椤甸潰璁块棶閾捐矾澶辫触")
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(result))
+}
+
 func (h *Handler) Get(c *gin.Context) {
 	id, err := uuid.Parse(c.Param("id"))
 	if err != nil {

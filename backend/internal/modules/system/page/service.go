@@ -15,6 +15,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	spaceutil "github.com/gg-ecommerce/backend/internal/modules/system/space"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 )
 
 var (
@@ -119,12 +120,56 @@ type BreadcrumbPreviewItem struct {
 	PageKey string `json:"page_key,omitempty"`
 }
 
+type AccessTraceRequest struct {
+	UserID    string `form:"user_id"`
+	TenantID  string `form:"tenant_id"`
+	PageKey   string `form:"page_key"`
+	SpaceKey  string `form:"space_key"`
+	PageKeys  string `form:"page_keys"`
+	RoutePath string `form:"route_path"`
+}
+
+type AccessTraceRoleItem struct {
+	RoleID   string `json:"role_id"`
+	RoleCode string `json:"role_code"`
+	RoleName string `json:"role_name"`
+	Status   string `json:"status"`
+}
+
+type AccessTracePageItem struct {
+	PageKey          string   `json:"page_key"`
+	PageName         string   `json:"page_name"`
+	RoutePath        string   `json:"route_path"`
+	AccessMode       string   `json:"access_mode"`
+	PermissionKey    string   `json:"permission_key"`
+	ParentPageKey    string   `json:"parent_page_key"`
+	ParentMenuID     string   `json:"parent_menu_id"`
+	ActiveMenuPath   string   `json:"active_menu_path"`
+	Visible          bool     `json:"visible"`
+	Reason           string   `json:"reason"`
+	MatchedActionKey string   `json:"matched_action_key"`
+	EffectiveChain   []string `json:"effective_chain"`
+}
+
+type AccessTraceResult struct {
+	UserID         string                `json:"user_id"`
+	TenantID       string                `json:"tenant_id,omitempty"`
+	SpaceKey       string                `json:"space_key"`
+	Authenticated  bool                  `json:"authenticated"`
+	SuperAdmin     bool                  `json:"super_admin"`
+	ActionKeyCount int                   `json:"action_key_count"`
+	VisibleMenuIDs []string              `json:"visible_menu_ids"`
+	Roles          []AccessTraceRoleItem `json:"roles"`
+	Pages          []AccessTracePageItem `json:"pages"`
+}
+
 type Service interface {
 	List(req *ListRequest) ([]Record, int64, error)
 	ListOptions(spaceKey string) ([]models.UIPage, error)
 	ListRuntime(host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error)
 	ListRuntimePublic(host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error)
 	ResolveCompiledAccessContext(spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*CompiledAccessContext, error)
+	GetAccessTrace(req *AccessTraceRequest) (*AccessTraceResult, error)
 	ListRuntimeWithAccess(spaceKey string, accessCtx *CompiledAccessContext) ([]Record, error)
 	ListUnregistered() ([]UnregisteredRecord, error)
 	Sync() (*SyncResult, error)
@@ -219,6 +264,7 @@ func (s *service) ListOptions(spaceKey string) ([]models.UIPage, error) {
 			"name",
 			"route_name",
 			"route_path",
+			"component",
 			"space_key",
 			"page_type",
 			"module_key",
@@ -266,6 +312,194 @@ func (s *service) ListRuntimePublic(host, requestedSpaceKey string, userID *uuid
 
 func (s *service) ResolveCompiledAccessContext(spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*CompiledAccessContext, error) {
 	return s.buildCompiledAccessContextForSpace(spaceKey, userID, tenantID)
+}
+
+func (s *service) GetAccessTrace(req *AccessTraceRequest) (*AccessTraceResult, error) {
+	if req == nil {
+		return nil, fmt.Errorf("%w: request is required", ErrPageValidation)
+	}
+	userID, err := uuid.Parse(strings.TrimSpace(req.UserID))
+	if err != nil {
+		return nil, fmt.Errorf("%w: user_id is invalid", ErrPageValidation)
+	}
+	var tenantID *uuid.UUID
+	if rawTenantID := strings.TrimSpace(req.TenantID); rawTenantID != "" {
+		parsed, parseErr := uuid.Parse(rawTenantID)
+		if parseErr != nil {
+			return nil, fmt.Errorf("%w: tenant_id is invalid", ErrPageValidation)
+		}
+		tenantID = &parsed
+	}
+	spaceKey := normalizeSpaceKey(req.SpaceKey)
+	if spaceKey == "" {
+		spaceKey = spaceutil.DefaultMenuSpaceKey
+	}
+	accessCtx, err := s.ResolveCompiledAccessContext(spaceKey, &userID, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	records, err := s.ListRuntimeWithAccess(spaceKey, accessCtx)
+	if err != nil {
+		return nil, err
+	}
+	visiblePages := make(map[string]Record, len(records))
+	for _, item := range records {
+		visiblePages[strings.TrimSpace(item.PageKey)] = item
+	}
+
+	requestedPageKeys := resolveRequestedPageKeys(req, records)
+	pageItems := make([]AccessTracePageItem, 0, len(requestedPageKeys))
+	for _, pageKey := range requestedPageKeys {
+		page, getErr := s.findPageByKey(pageKey)
+		if getErr != nil {
+			continue
+		}
+		pageItems = append(pageItems, buildAccessTracePageItem(page, visiblePages, accessCtx))
+	}
+
+	roleItems, err := s.loadAccessTraceRoles(userID, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	visibleMenuIDs := accessCtx.VisibleMenuIDList()
+	sort.Slice(visibleMenuIDs, func(i, j int) bool {
+		return visibleMenuIDs[i].String() < visibleMenuIDs[j].String()
+	})
+	visibleMenuIDStrings := make([]string, 0, len(visibleMenuIDs))
+	for _, id := range visibleMenuIDs {
+		visibleMenuIDStrings = append(visibleMenuIDStrings, id.String())
+	}
+
+	result := &AccessTraceResult{
+		UserID:         userID.String(),
+		SpaceKey:       spaceKey,
+		Authenticated:  accessCtx.Authenticated,
+		SuperAdmin:     accessCtx.SuperAdmin,
+		ActionKeyCount: len(accessCtx.ActionKeys),
+		VisibleMenuIDs: visibleMenuIDStrings,
+		Roles:          roleItems,
+		Pages:          pageItems,
+	}
+	if tenantID != nil {
+		result.TenantID = tenantID.String()
+	}
+	return result, nil
+}
+
+func resolveRequestedPageKeys(req *AccessTraceRequest, runtimeRecords []Record) []string {
+	normalized := make([]string, 0)
+	seen := map[string]struct{}{}
+	appendKey := func(value string) {
+		key := strings.TrimSpace(value)
+		if key == "" {
+			return
+		}
+		if _, ok := seen[key]; ok {
+			return
+		}
+		seen[key] = struct{}{}
+		normalized = append(normalized, key)
+	}
+	appendKey(req.PageKey)
+	for _, item := range strings.Split(req.PageKeys, ",") {
+		appendKey(item)
+	}
+	routePath := normalizeRoutePath(req.RoutePath)
+	if routePath != "" {
+		for _, item := range runtimeRecords {
+			if normalizeRoutePath(item.RoutePath) == routePath {
+				appendKey(item.PageKey)
+			}
+		}
+	}
+	if len(normalized) > 0 {
+		return normalized
+	}
+	for _, item := range runtimeRecords {
+		appendKey(item.PageKey)
+	}
+	return normalized
+}
+
+func buildAccessTracePageItem(page *models.UIPage, visiblePages map[string]Record, accessCtx *CompiledAccessContext) AccessTracePageItem {
+	pageKey := strings.TrimSpace(page.PageKey)
+	_, visible := visiblePages[pageKey]
+	reason := "denied_or_not_in_runtime"
+	if visible {
+		reason = "visible_in_runtime"
+	}
+	matchedActionKey := ""
+	if permissionKey := strings.TrimSpace(page.PermissionKey); permissionKey != "" {
+		normalizedPermissionKey := permissionkey.Normalize(permissionKey)
+		if accessCtx != nil {
+			if _, ok := accessCtx.ActionKeys[normalizedPermissionKey]; ok {
+				matchedActionKey = normalizedPermissionKey
+			}
+		}
+	}
+	return AccessTracePageItem{
+		PageKey:          pageKey,
+		PageName:         strings.TrimSpace(page.Name),
+		RoutePath:        normalizeRoutePath(page.RoutePath),
+		AccessMode:       normalizeAccessMode(page.AccessMode),
+		PermissionKey:    strings.TrimSpace(page.PermissionKey),
+		ParentPageKey:    strings.TrimSpace(page.ParentPageKey),
+		ActiveMenuPath:   normalizeRoutePath(page.ActiveMenuPath),
+		Visible:          visible,
+		Reason:           reason,
+		MatchedActionKey: matchedActionKey,
+		EffectiveChain:   buildAccessTraceChain(page),
+	}
+}
+
+func buildAccessTraceChain(page *models.UIPage) []string {
+	chain := make([]string, 0, 3)
+	if key := strings.TrimSpace(page.PageKey); key != "" {
+		chain = append(chain, "page:"+key)
+	}
+	if key := strings.TrimSpace(page.ParentPageKey); key != "" {
+		chain = append(chain, "parent_page:"+key)
+	}
+	if path := normalizeRoutePath(page.ActiveMenuPath); path != "" {
+		chain = append(chain, "active_menu:"+path)
+	}
+	return chain
+}
+
+func (s *service) loadAccessTraceRoles(userID uuid.UUID, tenantID *uuid.UUID) ([]AccessTraceRoleItem, error) {
+	roles := make([]models.Role, 0)
+	if tenantID != nil {
+		effective, err := s.loadRuntimeEffectiveActiveRoles(userID, *tenantID)
+		if err != nil {
+			return nil, err
+		}
+		roles = effective
+	} else {
+		if err := s.db.Model(&models.Role{}).
+			Joins("JOIN user_roles ON user_roles.role_id = roles.id").
+			Where("user_roles.user_id = ?", userID).
+			Where("roles.status = ?", "normal").
+			Distinct("roles.*").
+			Find(&roles).Error; err != nil {
+			return nil, err
+		}
+	}
+	sort.Slice(roles, func(i, j int) bool {
+		if roles[i].SortOrder == roles[j].SortOrder {
+			return roles[i].Code < roles[j].Code
+		}
+		return roles[i].SortOrder < roles[j].SortOrder
+	})
+	items := make([]AccessTraceRoleItem, 0, len(roles))
+	for _, role := range roles {
+		items = append(items, AccessTraceRoleItem{
+			RoleID:   role.ID.String(),
+			RoleCode: strings.TrimSpace(role.Code),
+			RoleName: strings.TrimSpace(role.Name),
+			Status:   strings.TrimSpace(role.Status),
+		})
+	}
+	return items, nil
 }
 
 func (s *service) ListRuntimeWithAccess(spaceKey string, accessCtx *CompiledAccessContext) ([]Record, error) {
@@ -666,8 +900,12 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 	if err != nil {
 		return nil, ErrParentMenuInvalid
 	}
-	if pageType == "display_group" {
+	if pageType == "display_group" || pageType == "global" {
 		parentMenuID = nil
+	}
+	if pageType == "global" {
+		parentPageKey = ""
+		activeMenuPath = ""
 	}
 	if parentMenuID != nil {
 		var menuCount int64
@@ -793,7 +1031,8 @@ func (s *service) decorateRecords(items []models.UIPage) ([]Record, error) {
 	menuSeen := map[uuid.UUID]struct{}{}
 	pageSeen := map[string]struct{}{}
 	displayGroupSeen := map[string]struct{}{}
-	for _, item := range items {
+	for _, rawItem := range items {
+		item := normalizeLegacyGlobalPage(rawItem)
 		if item.ParentMenuID != nil {
 			if _, ok := menuSeen[*item.ParentMenuID]; !ok {
 				menuSeen[*item.ParentMenuID] = struct{}{}
@@ -848,7 +1087,8 @@ func (s *service) decorateRecords(items []models.UIPage) ([]Record, error) {
 	}
 
 	records := make([]Record, 0, len(items))
-	for _, item := range items {
+	for _, rawItem := range items {
+		item := normalizeLegacyGlobalPage(rawItem)
 		record := Record{UIPage: item}
 		if item.ParentMenuID != nil {
 			record.ParentMenuName = menuNameMap[*item.ParentMenuID]
@@ -955,7 +1195,8 @@ func (s *service) findPageByID(id uuid.UUID) (*models.UIPage, error) {
 		}
 		return nil, err
 	}
-	return &item, nil
+	normalized := normalizeLegacyGlobalPage(item)
+	return &normalized, nil
 }
 
 func (s *service) loadPageMap() (map[string]models.UIPage, error) {
@@ -964,7 +1205,8 @@ func (s *service) loadPageMap() (map[string]models.UIPage, error) {
 		return nil, err
 	}
 	result := make(map[string]models.UIPage, len(items))
-	for _, item := range items {
+	for _, rawItem := range items {
+		item := normalizeLegacyGlobalPage(rawItem)
 		result[item.PageKey] = item
 	}
 	return result, nil
@@ -1605,6 +1847,16 @@ func normalizePageType(value string) string {
 	default:
 		return ""
 	}
+}
+
+func normalizeLegacyGlobalPage(item models.UIPage) models.UIPage {
+	if normalizePageType(item.PageType) != "global" {
+		return item
+	}
+	item.ParentMenuID = nil
+	item.ParentPageKey = ""
+	item.ActiveMenuPath = ""
+	return item
 }
 
 func isRoutelessPageType(pageType string) bool {

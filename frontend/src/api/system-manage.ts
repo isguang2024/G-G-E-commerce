@@ -124,6 +124,17 @@ function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
     summary: item?.summary || '',
     permissionKey,
     permissionKeys,
+    permissionContexts: Array.isArray(item?.permission_contexts || item?.permissionContexts)
+      ? (item?.permission_contexts || item?.permissionContexts)
+          .map((v: any) => `${v || ''}`.trim())
+          .filter(Boolean)
+      : [],
+    permissionBindingMode:
+      item?.permission_binding_mode ||
+      item?.permissionBindingMode ||
+      (permissionKeys.length > 1 ? 'shared' : permissionKeys.length === 1 ? 'single' : 'none'),
+    sharedAcrossContexts: Boolean(item?.shared_across_contexts ?? item?.sharedAcrossContexts),
+    permissionNote: item?.permission_note || item?.permissionNote || '',
     authMode: item?.auth_mode || item?.authMode || (permissionKey ? 'permission' : 'jwt'),
     categoryId: item?.category_id || item?.categoryId || item?.category?.id || '',
     category: item?.category
@@ -354,6 +365,48 @@ function normalizePageBreadcrumbPreviewItem(item: any): Api.SystemManage.PageBre
     title: item?.title || '',
     path: item?.path || '',
     pageKey: item?.page_key || item?.pageKey || ''
+  }
+}
+
+function normalizePageAccessTraceResult(item: any): Api.SystemManage.PageAccessTraceResult {
+  return {
+    userId: item?.user_id || item?.userId || '',
+    tenantId: item?.tenant_id || item?.tenantId || '',
+    spaceKey: item?.space_key || item?.spaceKey || '',
+    authenticated: Boolean(item?.authenticated),
+    superAdmin: Boolean(item?.super_admin ?? item?.superAdmin),
+    actionKeyCount: Number(item?.action_key_count ?? item?.actionKeyCount ?? 0),
+    visibleMenuIds: Array.isArray(item?.visible_menu_ids || item?.visibleMenuIds)
+      ? (item?.visible_menu_ids || item?.visibleMenuIds)
+          .map((value: any) => `${value || ''}`.trim())
+          .filter(Boolean)
+      : [],
+    roles: Array.isArray(item?.roles)
+      ? item.roles.map((role: any) => ({
+          roleId: role?.role_id || role?.roleId || '',
+          roleCode: role?.role_code || role?.roleCode || '',
+          roleName: role?.role_name || role?.roleName || '',
+          status: role?.status || ''
+        }))
+      : [],
+    pages: Array.isArray(item?.pages)
+      ? item.pages.map((page: any) => ({
+          pageKey: page?.page_key || page?.pageKey || '',
+          pageName: page?.page_name || page?.pageName || '',
+          routePath: page?.route_path || page?.routePath || '',
+          accessMode: page?.access_mode || page?.accessMode || '',
+          permissionKey: page?.permission_key || page?.permissionKey || '',
+          parentPageKey: page?.parent_page_key || page?.parentPageKey || '',
+          parentMenuId: page?.parent_menu_id || page?.parentMenuId || '',
+          activeMenuPath: page?.active_menu_path || page?.activeMenuPath || '',
+          visible: Boolean(page?.visible),
+          reason: page?.reason || '',
+          matchedActionKey: page?.matched_action_key || page?.matchedActionKey || '',
+          effectiveChain: Array.isArray(page?.effective_chain || page?.effectiveChain)
+            ? page?.effective_chain || page?.effectiveChain
+            : []
+        }))
+      : []
   }
 }
 
@@ -1570,6 +1623,7 @@ export function fetchGetPageMenuOptions(spaceKey?: string) {
 export function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpointSearchParams) {
   const normalizedParams = {
     permission_key: params?.permissionKey,
+    permission_pattern: params?.permissionPattern,
     keyword: params?.keyword,
     method: params?.method,
     path: params?.path,
@@ -1601,6 +1655,9 @@ export function fetchGetApiEndpointOverview() {
         total_count?: number
         uncategorized_count?: number
         stale_count?: number
+        no_permission_count?: number
+        shared_permission_count?: number
+        cross_context_shared_count?: number
         category_counts?: any[]
       }
     >({
@@ -1610,6 +1667,10 @@ export function fetchGetApiEndpointOverview() {
       totalCount: res?.totalCount ?? res?.total_count ?? 0,
       uncategorizedCount: res?.uncategorizedCount ?? res?.uncategorized_count ?? 0,
       staleCount: res?.staleCount ?? res?.stale_count ?? 0,
+      noPermissionCount: res?.noPermissionCount ?? res?.no_permission_count ?? 0,
+      sharedPermissionCount: res?.sharedPermissionCount ?? res?.shared_permission_count ?? 0,
+      crossContextSharedCount:
+        res?.crossContextSharedCount ?? res?.cross_context_shared_count ?? 0,
       categoryCounts: (res?.categoryCounts || res?.category_counts || []).map((item: any) => ({
         categoryId: item?.categoryId || item?.category_id || '',
         count: item?.count || 0
@@ -1935,10 +1996,54 @@ export function fetchDeleteMenuManageGroup(id: string) {
 }
 
 /** 删除菜单 */
-export function fetchDeleteMenu(id: string) {
+export function fetchDeleteMenu(id: string, params?: Api.SystemManage.MenuDeleteParams) {
   return request.del<void>({
-    url: `${MENU_BASE}/${id}`
+    url: `${MENU_BASE}/${id}`,
+    params: params
+      ? {
+          ...params,
+          target_parent_id: params.target_parent_id || params.targetParentId || undefined
+        }
+      : undefined
   })
+}
+
+export function fetchGetPageAccessTrace(params: Api.SystemManage.PageAccessTraceParams) {
+  return request
+    .get<Api.SystemManage.PageAccessTraceResult>({
+      url: `${PAGE_BASE}/access-trace`,
+      params: {
+        user_id: params.userId,
+        tenant_id: params.tenantId,
+        page_key: params.pageKey,
+        page_keys: params.pageKeys,
+        route_path: params.routePath,
+        space_key: params.spaceKey
+      }
+    })
+    .then((res) => normalizePageAccessTraceResult(res))
+}
+
+export function fetchGetMenuDeletePreview(id: string, params?: Api.SystemManage.MenuDeleteParams) {
+  return request
+    .get<Api.SystemManage.MenuDeletePreviewItem>({
+      url: `${MENU_BASE}/${id}/delete-preview`,
+      params: params
+        ? {
+            ...params,
+            target_parent_id: params.target_parent_id || params.targetParentId || undefined
+          }
+        : undefined
+    })
+    .then((res) => ({
+      mode: `${res?.mode || 'single'}`.trim(),
+      menuCount: Number(res?.menuCount ?? res?.menu_count ?? 0),
+      childCount: Number(res?.childCount ?? res?.child_count ?? 0),
+      affectedPageCount: Number(res?.affectedPageCount ?? res?.affected_page_count ?? 0),
+      affectedRelationCount: Number(
+        res?.affectedRelationCount ?? res?.affected_relation_count ?? 0
+      )
+    }))
 }
 
 /** 更新菜单排序（全量重排） */

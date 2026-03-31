@@ -52,6 +52,7 @@ func (m *MenuModule) RegisterRoutes(rg *gin.RouterGroup) {
 	reg := apiregistry.NewRegistrar(menus, "menu")
 	{
 		reg.GET("/tree", reg.Meta("获取菜单树").Build(), menuHandler.GetTree)
+		reg.GETProtected("/:id/delete-preview", reg.Meta("获取菜单删除预览").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.DeletePreview)
 		reg.POSTProtected("", reg.Meta("创建菜单").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.Create)
 		reg.PUTProtected("/:id", reg.Meta("更新菜单").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.Update)
 		reg.DELETEProtected("/:id", reg.Meta("删除菜单").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.Delete)

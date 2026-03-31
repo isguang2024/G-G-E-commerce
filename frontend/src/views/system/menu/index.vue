@@ -285,7 +285,7 @@
         <template #advanced="{ row }">
           <div v-if="!isManageGroupRow(row)" class="advanced-configs">
             <ElTag
-              v-if="row.meta?.keepAlive"
+              v-if="isEntryMenuRow(row) && row.meta?.keepAlive"
               size="small"
               effect="light"
               type="primary"
@@ -296,7 +296,7 @@
             <ElTag v-if="row.meta?.isHide" size="small" effect="light" type="warning" class="mr-2">
               隐藏
             </ElTag>
-            <ElTag v-if="row.meta?.isIframe" size="small" effect="light" type="info" class="mr-2">
+            <ElTag v-if="!isDirectoryMenuRow(row) && row.meta?.isIframe" size="small" effect="light" type="info" class="mr-2">
               内嵌
             </ElTag>
             <ElTag
@@ -308,11 +308,11 @@
             >
               徽章
             </ElTag>
-            <ElTag v-if="row.meta?.fixedTab" size="small" effect="light" type="danger" class="mr-2">
+            <ElTag v-if="isEntryMenuRow(row) && row.meta?.fixedTab" size="small" effect="light" type="danger" class="mr-2">
               固定
             </ElTag>
             <ElTag
-              v-if="row.meta?.isFullPage"
+              v-if="isEntryMenuRow(row) && row.meta?.isFullPage"
               size="small"
               effect="light"
               type="primary"
@@ -411,6 +411,18 @@
         @action="handleBackupListAction"
       />
 
+      <MenuDeleteDialog
+        v-model:visible="deleteDialogVisible"
+        :loading="deleteLoading"
+        :menuTitle="formatMenuTitle(deleteTargetRow?.meta?.title) || deleteTargetRow?.name || ''"
+        :childCount="getMenuChildCount(deleteTargetRow)"
+        :descendantCount="getMenuDescendantCount(deleteTargetRow)"
+        :affectedPageCount="getAffectedPageCount(deleteTargetRow)"
+        :affectedRelationCount="deletePreview?.affectedRelationCount || 0"
+        :parentOptions="getDeleteParentOptions(deleteTargetRow)"
+        @confirm="handleDeleteMenuConfirm"
+      />
+
       <ElDialog
         v-model="batchAssignDialogVisible"
         title="批量移入分组"
@@ -461,6 +473,7 @@
   import MenuGroupDrawer from './modules/menu-group-drawer.vue'
   import MenuBackupDialog from './modules/menu-backup-dialog.vue'
   import MenuBackupListDialog from './modules/menu-backup-list-dialog.vue'
+  import MenuDeleteDialog from './modules/menu-delete-dialog.vue'
   import MenuPermissionDialog from './modules/menu-permission-dialog.vue'
   import MenuSearch from './modules/menu-search.vue'
   import {
@@ -468,6 +481,7 @@
     fetchCreateMenu,
     fetchUpdateMenu,
     fetchDeleteMenu,
+    fetchGetMenuDeletePreview,
     fetchGetMenuManageGroups,
     fetchCreateMenuManageGroup,
     fetchUpdateMenuManageGroup,
@@ -499,6 +513,7 @@
   defineOptions({ name: 'Menus' })
 
   type MenuBackupScopeType = 'space' | 'global'
+  type MenuDeleteMode = 'single' | 'cascade' | 'promote_children'
 
   // --- 状态管理 ---
   const loading = ref(false)
@@ -546,6 +561,10 @@
   const groupSaving = ref(false)
   const editData = ref<any>(null)
   const parentRowForAdd = ref<AppRouteRecord | null>(null)
+  const deleteDialogVisible = ref(false)
+  const deleteLoading = ref(false)
+  const deleteTargetRow = ref<any>(null)
+  const deletePreview = ref<Api.SystemManage.MenuDeletePreviewItem | null>(null)
   const actionRequirementVisible = ref(false)
   const actionRequirementData = ref<any>(null)
   const selectedMenuRows = ref<any[]>([])
@@ -872,6 +891,9 @@
     return '目录'
   }
 
+  const isDirectoryMenuRow = (row: any) => `${row?.kind || ''}`.trim() === 'directory'
+  const isEntryMenuRow = (row: any) => `${row?.kind || ''}`.trim() === 'entry'
+
   const getMenuActionRequirementLabel = (row: any) => {
     const requirement = getMenuActionRequirement(row.meta)
     if (!requirement.actions.length) return ''
@@ -997,6 +1019,59 @@
 
     rows.forEach((row) => visit(row))
     return result
+  }
+
+  const getMenuChildCount = (row: any) => ((row?.children || []).filter((item: any) => !isManageGroupRow(item))).length
+
+  const getMenuDescendantCount = (row: any) => {
+    if (!row) return 0
+    return collectMenuSubtree([row]).length
+  }
+
+  const getAffectedPageCount = (row: any) => {
+    if (!row?.id) return 0
+    const subtree = collectMenuSubtree([row]).map((item) => String(item.id || ''))
+    if (subtree.length === 0) return 0
+    const seen = new Set<string>()
+    let count = 0
+    subtree.forEach((menuId) => {
+      const pages = getLinkedPages({ id: menuId })
+      pages.forEach((page) => {
+        const key = String(page.pageKey || page.id || '')
+        if (!key || seen.has(key)) return
+        seen.add(key)
+        count += 1
+      })
+    })
+    return count
+  }
+
+  type MenuDeleteParentOption = {
+    label: string
+    value: string
+    children?: MenuDeleteParentOption[]
+  }
+
+  const getDeleteParentOptions = (row: any): MenuDeleteParentOption[] => {
+    if (!row?.id) return []
+    const excluded = new Set<string>(collectMenuSubtree([row]).map((item) => String(item.id || '')))
+    const walk = (items: AppRouteRecord[]) => {
+      return items.reduce<MenuDeleteParentOption[]>((acc, item) => {
+        if (isManageGroupRow(item)) return acc
+        const key = String(item.id || '')
+        if (!key || excluded.has(key)) return acc
+        const children = item.children
+          ? walk(item.children as AppRouteRecord[])
+          : []
+        acc.push({
+          label: formatMenuTitle(item.meta?.title) || String(item.name || key),
+          value: key,
+          children: children.length > 0 ? children : undefined
+        })
+        return acc
+      }, [])
+    }
+    return walk(filteredMenuTree.value)
   }
 
   const handleMoreActionCommand = (command: string) => {
@@ -1236,15 +1311,40 @@
   const handleDeleteMenu = async (row: any) => {
     if (!dataFromBackend.value || !row.id) return ElMessage.info('预览模式无法删除')
     if (row.is_system) return ElMessage.warning('系统菜单不可删除')
+    deleteTargetRow.value = row
+    deleteDialogVisible.value = true
+    deleteLoading.value = true
     try {
-      await ElMessageBox.confirm('确定要删除该菜单吗？', '提示', { type: 'warning' })
-      await fetchDeleteMenu(String(row.id))
-      ElMessage.success('删除成功')
-      getMenuList()
+      deletePreview.value = await fetchGetMenuDeletePreview(String(row.id), { mode: 'cascade' })
     } catch (e: any) {
-      if (e !== 'cancel') {
-        ElMessage.error(e?.message || '删除失败')
-      }
+      ElMessage.error(e?.message || '获取删除预览失败')
+      deleteDialogVisible.value = false
+      deleteTargetRow.value = null
+    } finally {
+      deleteLoading.value = false
+    }
+  }
+
+  const handleDeleteMenuConfirm = async (payload: {
+    mode: MenuDeleteMode
+    targetParentId?: string | null
+  }) => {
+    if (!deleteTargetRow.value?.id) return
+    deleteLoading.value = true
+    try {
+      await fetchDeleteMenu(String(deleteTargetRow.value.id), {
+        mode: payload.mode,
+        targetParentId: payload.targetParentId || undefined
+      })
+      ElMessage.success(payload.mode === 'cascade' ? '菜单树已删除' : '菜单已删除')
+      deleteDialogVisible.value = false
+      deleteTargetRow.value = null
+      deletePreview.value = null
+      await getMenuList()
+    } catch (e: any) {
+      ElMessage.error(e?.message || '删除失败')
+    } finally {
+      deleteLoading.value = false
     }
   }
 
@@ -1462,6 +1562,13 @@
   watch(multiSelectEnabled, (enabled) => {
     if (!enabled) {
       clearBatchSelection()
+    }
+  })
+
+  watch(deleteDialogVisible, (visible) => {
+    if (!visible && !deleteLoading.value) {
+      deleteTargetRow.value = null
+      deletePreview.value = null
     }
   })
 

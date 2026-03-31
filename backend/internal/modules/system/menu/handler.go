@@ -239,7 +239,14 @@ func (h *MenuHandler) Delete(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.menuService.Delete(id); err != nil {
+	deleteMode := strings.TrimSpace(c.Query("mode"))
+	targetParentID, err := parseOptionalQueryUUID(c, "target_parent_id")
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的目标父菜单ID")
+		c.JSON(status, resp)
+		return
+	}
+	if err := h.menuService.Delete(id, deleteMode, targetParentID); err != nil {
 		if err == ErrMenuNotFound {
 			status, resp := errcode.Response(errcode.ErrMenuNotFound)
 			c.JSON(status, resp)
@@ -250,12 +257,69 @@ func (h *MenuHandler) Delete(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
+		if err == ErrMenuDeleteModeInvalid {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, err.Error())
+			c.JSON(status, resp)
+			return
+		}
+		if err == ErrMenuHasChildren {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrConflict, err.Error())
+			c.JSON(status, resp)
+			return
+		}
 		h.logger.Error("Menu delete failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "删除菜单失败: "+err.Error())
 		c.JSON(status, resp)
 		return
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
+}
+
+func (h *MenuHandler) DeletePreview(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := uuid.Parse(idStr)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的菜单ID")
+		c.JSON(status, resp)
+		return
+	}
+	deleteMode := strings.TrimSpace(c.Query("mode"))
+	targetParentID, err := parseOptionalQueryUUID(c, "target_parent_id")
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的目标父菜单ID")
+		c.JSON(status, resp)
+		return
+	}
+	preview, err := h.menuService.DeletePreview(id, deleteMode, targetParentID)
+	if err != nil {
+		if err == ErrMenuNotFound {
+			status, resp := errcode.Response(errcode.ErrMenuNotFound)
+			c.JSON(status, resp)
+			return
+		}
+		if err == ErrMenuDeleteModeInvalid {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, err.Error())
+			c.JSON(status, resp)
+			return
+		}
+		h.logger.Error("Menu delete preview failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取删除预览失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(preview))
+}
+
+func parseOptionalQueryUUID(c *gin.Context, key string) (*uuid.UUID, error) {
+	raw := strings.TrimSpace(c.Query(key))
+	if raw == "" {
+		return nil, nil
+	}
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		return nil, err
+	}
+	return &id, nil
 }
 
 func (h *MenuHandler) ListGroups(c *gin.Context) {
@@ -355,8 +419,8 @@ func (h *MenuHandler) CreateBackup(c *gin.Context) {
 	var req struct {
 		Name        string `json:"name" binding:"required"`
 		Description string `json:"description"`
-		ScopeType string `json:"scope_type"`
-		SpaceKey string `json:"space_key"`
+		ScopeType   string `json:"scope_type"`
+		SpaceKey    string `json:"space_key"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
@@ -407,10 +471,10 @@ func (h *MenuHandler) ListBackups(c *gin.Context) {
 			"id":          backup.ID.String(),
 			"name":        backup.Name,
 			"description": backup.Description,
-			"space_key":  scopeInfo.SpaceKey,
-			"scope_type": scopeInfo.ScopeType,
-			"created_at":   backup.CreatedAt,
-			"created_by":   backup.CreatedBy,
+			"space_key":   scopeInfo.SpaceKey,
+			"scope_type":  scopeInfo.ScopeType,
+			"created_at":  backup.CreatedAt,
+			"created_by":  backup.CreatedBy,
 		})
 	}
 

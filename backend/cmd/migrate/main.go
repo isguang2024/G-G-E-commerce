@@ -749,6 +749,29 @@ func runNamedMigrations(logger *zap.Logger) error {
 			},
 		},
 		{
+			Name: "20260331_global_page_binding_cleanup",
+			Run: func(logger *zap.Logger) error {
+				if err := cleanupGlobalPageBindings(logger); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260331_global_page_binding_cleanup"))
+				return nil
+			},
+		},
+		{
+			Name: "20260331_access_trace_navigation_seed",
+			Run: func(logger *zap.Logger) error {
+				if err := ensureAccessTraceNavigationSeed(); err != nil {
+					return err
+				}
+				if err := refreshDefaultAccessSnapshots(logger); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260331_access_trace_navigation_seed"))
+				return nil
+			},
+		},
+		{
 			Name: "20260325_permission_endpoint_binding_ops",
 			Run: func(logger *zap.Logger) error {
 				permissionKey := "system.permission.manage"
@@ -1774,6 +1797,229 @@ func runNamedMigrations(logger *zap.Logger) error {
 	return nil
 }
 
+func ensureAccessTraceNavigationSeed() error {
+	var parent usermodel.Menu
+	if err := database.DB.Where("name = ? AND space_key = ?", "SystemNavigation", systemmodels.DefaultMenuSpaceKey).First(&parent).Error; err != nil {
+		return err
+	}
+	meta := usermodel.MetaJSON{
+		"roles":      []interface{}{"R_SUPER", "R_ADMIN"},
+		"keepAlive":  true,
+		"accessMode": "permission",
+	}
+	if err := normalizeAccessTraceNavigationSeed(systemmodels.DefaultMenuSpaceKey, "/system/access-trace"); err != nil {
+		return err
+	}
+	accessTraceMenuSpec := permissionseed.MenuSeed{
+		SpaceKey:  systemmodels.DefaultMenuSpaceKey,
+		Name:      "AccessTrace",
+		Path:      "/system/access-trace",
+		Component: "/system/access-trace",
+	}
+
+	var menu usermodel.Menu
+	if err := menuSeedQuery(accessTraceMenuSpec).First(&menu).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		if err := database.DB.Where("space_key = ? AND path = ? AND name IN ?", systemmodels.DefaultMenuSpaceKey, "/system/access-trace", []string{"Access Trace", "AccessTrace", "访问链路测试"}).
+			First(&menu).Error; err != nil {
+			if !errors.Is(err, gorm.ErrRecordNotFound) {
+				return err
+			}
+			menu = usermodel.Menu{}
+		}
+	}
+	if menu.ID != uuid.Nil {
+		menu.ParentID = &parent.ID
+		menu.SpaceKey = systemmodels.DefaultMenuSpaceKey
+		menu.Kind = systemmodels.MenuKindEntry
+		menu.Path = "/system/access-trace"
+		menu.Name = "访问链路测试"
+		menu.Component = "/system/access-trace"
+		menu.Title = "访问链路测试"
+		menu.SortOrder = 5
+		menu.Hidden = false
+		menu.Meta = meta
+		if err := database.DB.Save(&menu).Error; err != nil {
+			return err
+		}
+	} else {
+		menu = usermodel.Menu{
+			ParentID:  &parent.ID,
+			SpaceKey:  systemmodels.DefaultMenuSpaceKey,
+			Kind:      systemmodels.MenuKindEntry,
+			Path:      "/system/access-trace",
+			Name:      "访问链路测试",
+			Component: "/system/access-trace",
+			Title:     "访问链路测试",
+			SortOrder: 5,
+			Hidden:    false,
+			Meta:      meta,
+		}
+		if err := database.DB.Create(&menu).Error; err != nil {
+			return err
+		}
+	}
+
+	var page systemmodels.UIPage
+	if err := database.DB.Where("page_key = ?", "system.access_trace.manage").First(&page).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		page = systemmodels.UIPage{
+			PageKey:           "system.access_trace.manage",
+			Name:              "访问链路测试",
+			RouteName:         "SystemAccessTrace",
+			RoutePath:         "/system/access-trace",
+			Component:         "/system/access-trace",
+			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
+			PageType:          "inner",
+			Source:            "manual",
+			ModuleKey:         "page",
+			SortOrder:         28,
+			ParentMenuID:      &menu.ID,
+			DisplayGroupKey:   "display.system_pages",
+			ActiveMenuPath:    "/system/access-trace",
+			BreadcrumbMode:    "inherit_menu",
+			AccessMode:        "permission",
+			PermissionKey:     "system.page.manage",
+			InheritPermission: false,
+			KeepAlive:         true,
+			Status:            "normal",
+			Meta:              usermodel.MetaJSON{},
+		}
+		if err := database.DB.Create(&page).Error; err != nil {
+			return err
+		}
+	} else {
+		page.Name = "访问链路测试"
+		page.RouteName = "SystemAccessTrace"
+		page.RoutePath = "/system/access-trace"
+		page.Component = "/system/access-trace"
+		page.SpaceKey = systemmodels.DefaultMenuSpaceKey
+		page.PageType = "inner"
+		page.Source = "manual"
+		page.ModuleKey = "page"
+		page.SortOrder = 28
+		page.ParentMenuID = &menu.ID
+		page.DisplayGroupKey = "display.system_pages"
+		page.ActiveMenuPath = "/system/access-trace"
+		page.BreadcrumbMode = "inherit_menu"
+		page.AccessMode = "permission"
+		page.PermissionKey = "system.page.manage"
+		page.InheritPermission = false
+		page.KeepAlive = true
+		page.Status = "normal"
+		if page.Meta == nil {
+			page.Meta = usermodel.MetaJSON{}
+		}
+		if err := database.DB.Save(&page).Error; err != nil {
+			return err
+		}
+	}
+	if err := ensureAccessTracePackageMenuBinding(menu.ID); err != nil {
+		return err
+	}
+	return nil
+}
+
+func normalizeAccessTraceNavigationSeed(spaceKey, path string) error {
+	const accessTraceName = "\u8bbf\u95ee\u94fe\u8def\u6d4b\u8bd5"
+	var menus []usermodel.Menu
+	if err := database.DB.Where("space_key = ? AND path = ?", spaceKey, path).Order("created_at asc").Find(&menus).Error; err != nil {
+		return err
+	}
+	var primaryMenuID *uuid.UUID
+	if len(menus) > 0 {
+		primaryMenuID = &menus[0].ID
+	}
+	for _, item := range menus {
+		item.Name = accessTraceName
+		item.Title = accessTraceName
+		item.Component = path
+		item.SortOrder = 5
+		item.Hidden = false
+		item.Meta = usermodel.MetaJSON{
+			"roles":      []interface{}{"R_SUPER", "R_ADMIN"},
+			"keepAlive":  true,
+			"accessMode": "permission",
+		}
+		if err := database.DB.Save(&item).Error; err != nil {
+			return err
+		}
+	}
+
+	var pages []systemmodels.UIPage
+	if err := database.DB.Where("route_path = ?", path).Order("created_at asc").Find(&pages).Error; err != nil {
+		return err
+	}
+	for _, page := range pages {
+		page.Name = accessTraceName
+		page.RouteName = "SystemAccessTrace"
+		page.RoutePath = path
+		page.Component = path
+		page.SpaceKey = spaceKey
+		page.PageType = "inner"
+		page.Source = "manual"
+		page.ModuleKey = "page"
+		page.DisplayGroupKey = "display.system_pages"
+		page.ActiveMenuPath = path
+		page.BreadcrumbMode = "inherit_menu"
+		page.AccessMode = "permission"
+		page.PermissionKey = "system.page.manage"
+		page.InheritPermission = false
+		page.KeepAlive = true
+		page.Status = "normal"
+		if page.Meta == nil {
+			page.Meta = usermodel.MetaJSON{}
+		}
+		if primaryMenuID != nil {
+			page.ParentMenuID = primaryMenuID
+		}
+		if err := database.DB.Model(&systemmodels.UIPage{}).Where("id = ?", page.ID).Updates(map[string]interface{}{
+			"name":               accessTraceName,
+			"route_name":         page.RouteName,
+			"route_path":         page.RoutePath,
+			"component":          page.Component,
+			"space_key":          page.SpaceKey,
+			"page_type":          page.PageType,
+			"source":             page.Source,
+			"module_key":         page.ModuleKey,
+			"display_group_key":  page.DisplayGroupKey,
+			"active_menu_path":   page.ActiveMenuPath,
+			"breadcrumb_mode":    page.BreadcrumbMode,
+			"access_mode":        page.AccessMode,
+			"permission_key":     page.PermissionKey,
+			"inherit_permission": page.InheritPermission,
+			"keep_alive":         page.KeepAlive,
+			"status":             page.Status,
+			"parent_menu_id":     page.ParentMenuID,
+		}).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func ensureAccessTracePackageMenuBinding(menuID uuid.UUID) error {
+	packageKeys := []string{"platform.system_admin", "platform.menu_admin"}
+	var packages []systemmodels.FeaturePackage
+	if err := database.DB.Where("package_key IN ?", packageKeys).Find(&packages).Error; err != nil {
+		return err
+	}
+	for _, item := range packages {
+		binding := systemmodels.FeaturePackageMenu{
+			PackageID: item.ID,
+			MenuID:    menuID,
+		}
+		if err := database.DB.Where("package_id = ? AND menu_id = ?", item.ID, menuID).FirstOrCreate(&binding).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func preparePermissionTableRenames(logger *zap.Logger) error {
 	renamePairs := []struct {
 		oldName string
@@ -2402,7 +2648,7 @@ func syncDefaultMenuSeedByName(name string) (*usermodel.Menu, error) {
 
 func ensureMenuSeed(spec permissionseed.MenuSeed) (*usermodel.Menu, error) {
 	var existing usermodel.Menu
-	if err := database.DB.Where("name = ?", spec.Name).First(&existing).Error; err == nil {
+	if err := menuSeedQuery(spec).First(&existing).Error; err == nil {
 		return &existing, nil
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
@@ -2446,7 +2692,7 @@ func syncMenuSeed(spec permissionseed.MenuSeed) (*usermodel.Menu, error) {
 	}
 
 	var existing usermodel.Menu
-	if err := database.DB.Where("name = ?", spec.Name).First(&existing).Error; err != nil {
+	if err := menuSeedQuery(spec).First(&existing).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			menu := &usermodel.Menu{
 				ParentID:  parentID,
@@ -2496,6 +2742,16 @@ func syncMenuSeed(spec permissionseed.MenuSeed) (*usermodel.Menu, error) {
 	existing.SortOrder = spec.SortOrder
 	existing.Meta = spec.Meta
 	return &existing, nil
+}
+
+func menuSeedQuery(spec permissionseed.MenuSeed) *gorm.DB {
+	space := normalizeMenuSeedSpaceKey(spec.SpaceKey)
+	path := strings.TrimSpace(spec.Path)
+	query := database.DB.Where("name = ? AND space_key = ?", strings.TrimSpace(spec.Name), space)
+	if path != "" {
+		query = query.Where("path = ?", path)
+	}
+	return query
 }
 
 func ensureMenuAccessMode(menuName, accessMode string) error {
@@ -2745,6 +3001,27 @@ func cleanupSpaceClonedPages(logger *zap.Logger) error {
 				fields = append(fields, zap.Strings("skipped_page_keys", skippedKeys))
 			}
 			logger.Info("Space-cloned pages cleaned up", fields...)
+		}
+		return nil
+	})
+}
+
+func cleanupGlobalPageBindings(logger *zap.Logger) error {
+	return database.DB.Transaction(func(tx *gorm.DB) error {
+		updates := map[string]any{
+			"parent_menu_id":   nil,
+			"parent_page_key":  "",
+			"active_menu_path": "",
+		}
+		result := tx.Model(&systemmodels.UIPage{}).
+			Where("page_type = ?", systemmodels.PageTypeGlobal).
+			Where("parent_menu_id IS NOT NULL OR COALESCE(parent_page_key, '') <> '' OR COALESCE(active_menu_path, '') <> ''").
+			Updates(updates)
+		if result.Error != nil {
+			return result.Error
+		}
+		if logger != nil {
+			logger.Info("Global page binding cleanup completed", zap.Int64("updated_count", result.RowsAffected))
 		}
 		return nil
 	})

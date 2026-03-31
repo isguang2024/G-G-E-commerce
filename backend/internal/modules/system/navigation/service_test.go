@@ -240,8 +240,12 @@ func (s *stubMenuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error
 	return fmt.Errorf("unexpected Update call")
 }
 
-func (s *stubMenuService) Delete(id uuid.UUID) error {
+func (s *stubMenuService) Delete(id uuid.UUID, mode string, targetParentID *uuid.UUID) error {
 	return fmt.Errorf("unexpected Delete call")
+}
+
+func (s *stubMenuService) DeletePreview(id uuid.UUID, mode string, targetParentID *uuid.UUID) (*menupkg.MenuDeletePreview, error) {
+	return nil, fmt.Errorf("unexpected DeletePreview call")
 }
 
 func (s *stubMenuService) ListGroups() ([]user.MenuManageGroup, error) {
