@@ -2,6 +2,7 @@ package permissionseed
 
 import (
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -30,6 +31,16 @@ func EnsureDefaultAPIEndpointCategories(db *gorm.DB) error {
 			}
 			return result.Error
 		}
+		updates := map[string]interface{}{
+			"name":       seed.Name,
+			"name_en":    seed.NameEn,
+			"sort_order": seed.SortOrder,
+			"status":     seed.Status,
+			"updated_at": time.Now(),
+		}
+		if err := db.Model(&item).Updates(updates).Error; err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -57,6 +68,18 @@ func EnsureDefaultPermissionGroups(db *gorm.DB) error {
 				continue
 			}
 			return result.Error
+		}
+		updates := map[string]interface{}{
+			"name":        item.Name,
+			"name_en":     item.NameEn,
+			"description": item.Description,
+			"status":      item.Status,
+			"sort_order":  item.SortOrder,
+			"is_builtin":  item.IsBuiltin,
+			"updated_at":  time.Now(),
+		}
+		if err := db.Model(&existing).Updates(updates).Error; err != nil {
+			return err
 		}
 	}
 	return nil
@@ -95,6 +118,23 @@ func EnsureDefaultPermissionKeys(db *gorm.DB) error {
 				continue
 			}
 			return result.Error
+		}
+		updates := map[string]interface{}{
+			"code":             actionData.Code,
+			"module_code":      actionData.ModuleCode,
+			"module_group_id":  actionData.ModuleGroupID,
+			"feature_group_id": actionData.FeatureGroupID,
+			"context_type":     actionData.ContextType,
+			"feature_kind":     actionData.FeatureKind,
+			"name":             actionData.Name,
+			"description":      actionData.Description,
+			"status":           actionData.Status,
+			"sort_order":       actionData.SortOrder,
+			"is_builtin":       actionData.IsBuiltin,
+			"updated_at":       time.Now(),
+		}
+		if err := db.Model(&action).Updates(updates).Error; err != nil {
+			return err
 		}
 	}
 	return nil

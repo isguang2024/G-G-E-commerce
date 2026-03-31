@@ -139,6 +139,8 @@ func DefaultAPIEndpointCategories() []APIEndpointCategorySeed {
 		{Code: "menu_backup", Name: "菜单备份", NameEn: "Menu Backup", SortOrder: 100, Status: "normal"},
 		{Code: "media", Name: "媒体", NameEn: "Media", SortOrder: 110, Status: "normal"},
 		{Code: "tenant", Name: "团队", NameEn: "Tenant", SortOrder: 120, Status: "normal"},
+		{Code: "message", Name: "消息", NameEn: "Message", SortOrder: 130, Status: "normal"},
+		{Code: "navigation", Name: "导航运行时", NameEn: "Navigation Runtime", SortOrder: 140, Status: "normal"},
 	}
 	for i := range items {
 		items[i].ID = StableID("api-endpoint-category", items[i].Code)
@@ -167,7 +169,6 @@ func DefaultPermissionKeys() []PermissionKeySeed {
 		newPermissionKeySeed("user", "update", "更新用户", "允许更新用户"),
 		newPermissionKeySeed("user", "delete", "删除用户", "允许删除用户"),
 		newPermissionKeySeed("user", "assign_role", "分配用户角色", "允许为用户分配角色"),
-		newPermissionKeySeed("user", "assign_action", "配置用户功能权限", "允许为用户配置平台级功能权限"),
 		newPermissionKeySeed("menu", "list", "查看菜单管理树", "允许查看全部菜单管理树"),
 		newPermissionKeySeed("menu", "create", "创建菜单", "允许创建菜单"),
 		newPermissionKeySeed("menu", "update", "更新菜单", "允许更新菜单"),

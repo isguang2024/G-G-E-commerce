@@ -308,6 +308,10 @@ func (s *stubPageService) ResolveCompiledAccessContext(spaceKey string, userID *
 	return s.resolveCompiledAccessContextFn(spaceKey, userID, tenantID)
 }
 
+func (s *stubPageService) GetAccessTrace(req *pagepkg.AccessTraceRequest) (*pagepkg.AccessTraceResult, error) {
+	return nil, fmt.Errorf("unexpected GetAccessTrace call")
+}
+
 func (s *stubPageService) ListRuntimeWithAccess(spaceKey string, accessCtx *pagepkg.CompiledAccessContext) ([]pagepkg.Record, error) {
 	if s.listRuntimeWithAccessFn == nil {
 		return nil, fmt.Errorf("unexpected ListRuntimeWithAccess call")

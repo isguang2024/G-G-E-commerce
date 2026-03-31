@@ -481,6 +481,16 @@ declare namespace Api {
       description?: string
       dataPermissionCode?: string
       dataPermissionName?: string
+      apiCount?: number
+      pageCount?: number
+      packageCount?: number
+      consumerTypes?: string[]
+      usagePattern?: 'unused' | 'api_only' | 'page_only' | 'package_only' | 'multi_consumer' | string
+      usageNote?: string
+      duplicatePattern?: 'none' | 'cross_context_mirror' | 'suspected_duplicate' | string
+      duplicateGroup?: string
+      duplicateKeys?: string[]
+      duplicateNote?: string
       status: string
       sortOrder?: number
       isBuiltin?: boolean
@@ -488,7 +498,25 @@ declare namespace Api {
       updatedAt?: string
     }
 
-    type PermissionActionList = Api.Common.PaginatedResponse<PermissionActionItem>
+    interface PermissionActionAuditSummary {
+      totalCount: number
+      unusedCount: number
+      apiOnlyCount: number
+      pageOnlyCount: number
+      packageOnlyCount: number
+      multiConsumerCount: number
+      crossContextMirrorCount: number
+      suspectedDuplicateCount: number
+    }
+
+    interface PermissionActionCleanupResult {
+      deletedCount: number
+      deletedKeys: string[]
+    }
+
+    type PermissionActionList = Api.Common.PaginatedResponse<PermissionActionItem> & {
+      auditSummary?: PermissionActionAuditSummary
+    }
     type PermissionGroupList = Api.Common.PaginatedResponse<PermissionGroupItem>
 
     interface FeaturePackageItem {
@@ -926,6 +954,8 @@ declare namespace Api {
           contextType?: string
           featureKind?: string
           isBuiltin?: boolean
+          usagePattern?: string
+          duplicatePattern?: string
         }
     >
     interface PermissionActionCreateParams {

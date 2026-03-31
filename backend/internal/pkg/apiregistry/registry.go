@@ -361,22 +361,9 @@ func syncRoutesInternal(
 		if err != nil {
 			return err
 		}
-		if !shouldInsertManagedEndpoint(existing) {
-			continue
-		}
-
 		legacy, err := findEndpointByMethodAndPath(db, route.Method, route.Path)
 		if err != nil {
 			return err
-		}
-		if shouldBackfillManagedEndpointCode(legacy) {
-			if err := backfillEndpointCode(db, legacy.ID, endpointCode); err != nil {
-				return err
-			}
-			continue
-		}
-		if legacy != nil {
-			continue
 		}
 
 		summary := strings.TrimSpace(meta.Summary)
@@ -399,8 +386,24 @@ func syncRoutesInternal(
 			Source:       source,
 			Status:       "normal",
 		}
-		if err := insertEndpoint(db, endpoint); err != nil {
-			return err
+		switch {
+		case existing != nil:
+			if err := updateManagedEndpoint(db, existing.ID, endpoint); err != nil {
+				return err
+			}
+		case legacy != nil:
+			if shouldBackfillManagedEndpointCode(legacy) {
+				if err := backfillEndpointCode(db, legacy.ID, endpointCode); err != nil {
+					return err
+				}
+			}
+			if err := updateManagedEndpoint(db, legacy.ID, endpoint); err != nil {
+				return err
+			}
+		default:
+			if err := insertEndpoint(db, endpoint); err != nil {
+				return err
+			}
 		}
 
 		if err := replaceEndpointPermissionBindings(db, endpoint, meta.PermissionKeys); err != nil {
@@ -529,6 +532,31 @@ func insertEndpoint(db *gorm.DB, endpoint *models.APIEndpoint) error {
 		endpoint.Status = "normal"
 	}
 	return db.Create(endpoint).Error
+}
+
+func updateManagedEndpoint(db *gorm.DB, endpointID uuid.UUID, endpoint *models.APIEndpoint) error {
+	if db == nil || endpoint == nil || endpointID == uuid.Nil {
+		return nil
+	}
+	endpoint.FeatureKind = normalizeFeatureKind(endpoint.FeatureKind)
+	endpoint.ContextScope = normalizeContextScope(endpoint.ContextScope)
+	endpoint.Source = normalizeSource(endpoint.Source)
+	if strings.TrimSpace(endpoint.Status) == "" {
+		endpoint.Status = "normal"
+	}
+	updates := map[string]interface{}{
+		"code":          endpoint.Code,
+		"method":        endpoint.Method,
+		"path":          endpoint.Path,
+		"feature_kind":  endpoint.FeatureKind,
+		"handler":       endpoint.Handler,
+		"summary":       endpoint.Summary,
+		"category_id":   endpoint.CategoryID,
+		"context_scope": endpoint.ContextScope,
+		"source":        endpoint.Source,
+		"status":        endpoint.Status,
+	}
+	return db.Model(&models.APIEndpoint{}).Where("id = ?", endpointID).Updates(updates).Error
 }
 
 func backfillEndpointCode(db *gorm.DB, endpointID uuid.UUID, code string) error {

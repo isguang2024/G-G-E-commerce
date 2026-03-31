@@ -2,6 +2,7 @@ package permission
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -18,19 +19,21 @@ import (
 )
 
 var (
-	ErrPermissionKeyNotFound   = errors.New("permission key not found")
-	ErrPermissionKeyExists     = errors.New("permission key already exists")
-	ErrPermissionGroupNotFound = errors.New("permission group not found")
-	ErrPermissionGroupExists   = errors.New("permission group already exists")
-	ErrAPIEndpointNotFound     = errors.New("api endpoint not found")
+	ErrPermissionKeyNotFound    = errors.New("permission key not found")
+	ErrPermissionKeyExists      = errors.New("permission key already exists")
+	ErrPermissionContextInvalid = errors.New("permission context invalid")
+	ErrPermissionGroupNotFound  = errors.New("permission group not found")
+	ErrPermissionGroupExists    = errors.New("permission group already exists")
+	ErrAPIEndpointNotFound      = errors.New("api endpoint not found")
 )
 
 type PermissionService interface {
-	List(req *dto.PermissionKeyListRequest) ([]user.PermissionKey, int64, error)
+	List(req *dto.PermissionKeyListRequest) ([]PermissionListItem, int64, PermissionAuditSummary, error)
 	ListOptions(req *dto.PermissionKeyListRequest) ([]user.PermissionKey, error)
 	Get(id uuid.UUID) (*user.PermissionKey, error)
 	ListGroups(req *dto.PermissionGroupListRequest) ([]user.PermissionGroup, int64, error)
 	ListEndpoints(id uuid.UUID) ([]user.APIEndpoint, error)
+	CleanupUnused() (*CleanupUnusedResult, error)
 	AddEndpoint(id uuid.UUID, endpointCode string) error
 	RemoveEndpoint(id uuid.UUID, endpointCode string) error
 	CreateGroup(req *dto.PermissionGroupSaveRequest) (*user.PermissionGroup, error)
@@ -38,6 +41,11 @@ type PermissionService interface {
 	Create(req *dto.PermissionKeyCreateRequest) (*user.PermissionKey, error)
 	Update(id uuid.UUID, req *dto.PermissionKeyUpdateRequest) error
 	Delete(id uuid.UUID) error
+}
+
+type CleanupUnusedResult struct {
+	DeletedCount int
+	DeletedKeys  []string
 }
 
 type permissionService struct {
@@ -115,6 +123,40 @@ func (s *permissionService) ListEndpoints(id uuid.UUID) ([]user.APIEndpoint, err
 	return result, nil
 }
 
+func (s *permissionService) CleanupUnused() (*CleanupUnusedResult, error) {
+	var actions []user.PermissionKey
+	if err := s.db.
+		Model(&user.PermissionKey{}).
+		Where("is_builtin = ?", false).
+		Preload("ModuleGroup").
+		Preload("FeatureGroup").
+		Order("sort_order ASC, created_at DESC").
+		Find(&actions).Error; err != nil {
+		return nil, err
+	}
+
+	auditProfiles, err := s.buildPermissionAuditProfiles(actions)
+	if err != nil {
+		return nil, err
+	}
+
+	result := &CleanupUnusedResult{
+		DeletedKeys: make([]string, 0),
+	}
+	for _, action := range actions {
+		profile := auditProfiles[action.ID]
+		if profile.UsagePattern != permissionUsagePatternUnused {
+			continue
+		}
+		if err := s.Delete(action.ID); err != nil {
+			return nil, err
+		}
+		result.DeletedCount++
+		result.DeletedKeys = append(result.DeletedKeys, canonicalPermissionKey(action.PermissionKey))
+	}
+	return result, nil
+}
+
 func (s *permissionService) AddEndpoint(id uuid.UUID, endpointCode string) error {
 	item, err := s.keyRepo.GetByID(id)
 	if err != nil {
@@ -157,23 +199,53 @@ func canonicalPermissionKey(permissionKey string) string {
 	return permissionkey.Normalize(permissionKey)
 }
 
-func (s *permissionService) List(req *dto.PermissionKeyListRequest) ([]user.PermissionKey, int64, error) {
-	query := s.buildPermissionListQuery(req)
-	current, size := 1, 20
+func (s *permissionService) List(req *dto.PermissionKeyListRequest) ([]PermissionListItem, int64, PermissionAuditSummary, error) {
+	if req == nil {
+		req = &dto.PermissionKeyListRequest{}
+	}
 	if req.Current <= 0 {
 		req.Current = 1
 	}
 	if req.Size <= 0 {
 		req.Size = 20
 	}
-	current, size = req.Current, req.Size
-	var total int64
-	if err := query.Count(&total).Error; err != nil {
-		return nil, 0, err
-	}
+
 	var actions []user.PermissionKey
-	err := query.Offset((current - 1) * size).Limit(size).Order("sort_order ASC, created_at DESC").Find(&actions).Error
-	return actions, total, err
+	if err := s.buildPermissionListQuery(req).
+		Order("sort_order ASC, created_at DESC").
+		Find(&actions).Error; err != nil {
+		return nil, 0, PermissionAuditSummary{}, err
+	}
+
+	auditProfiles, err := s.buildPermissionAuditProfiles(actions)
+	if err != nil {
+		return nil, 0, PermissionAuditSummary{}, err
+	}
+
+	filtered := make([]PermissionListItem, 0, len(actions))
+	summary := PermissionAuditSummary{}
+	for _, action := range actions {
+		profile := auditProfiles[action.ID]
+		if !matchesPermissionAuditFilters(profile, req) {
+			continue
+		}
+		filtered = append(filtered, PermissionListItem{
+			PermissionKey: action,
+			Audit:         profile,
+		})
+		accumulatePermissionAuditSummary(&summary, profile)
+	}
+
+	total := int64(len(filtered))
+	start := (req.Current - 1) * req.Size
+	if start >= len(filtered) {
+		return []PermissionListItem{}, total, summary, nil
+	}
+	end := start + req.Size
+	if end > len(filtered) {
+		end = len(filtered)
+	}
+	return filtered[start:end], total, summary, nil
 }
 
 func (s *permissionService) ListOptions(req *dto.PermissionKeyListRequest) ([]user.PermissionKey, error) {
@@ -181,6 +253,161 @@ func (s *permissionService) ListOptions(req *dto.PermissionKeyListRequest) ([]us
 	var actions []user.PermissionKey
 	err := query.Order("sort_order ASC, created_at DESC").Find(&actions).Error
 	return actions, err
+}
+
+func (s *permissionService) buildPermissionAuditProfiles(
+	items []user.PermissionKey,
+) (map[uuid.UUID]PermissionAuditProfile, error) {
+	result := make(map[uuid.UUID]PermissionAuditProfile, len(items))
+	if len(items) == 0 {
+		return result, nil
+	}
+
+	counters, err := s.loadPermissionUsageCounters(items)
+	if err != nil {
+		return nil, err
+	}
+	duplicateProfiles, err := s.loadPermissionDuplicateProfiles()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, item := range items {
+		key := canonicalPermissionKey(item.PermissionKey)
+		result[item.ID] = buildPermissionAuditProfile(item, counters[item.ID], duplicateProfiles[key])
+	}
+	return result, nil
+}
+
+func (s *permissionService) loadPermissionUsageCounters(
+	items []user.PermissionKey,
+) (map[uuid.UUID]permissionUsageCounters, error) {
+	result := make(map[uuid.UUID]permissionUsageCounters, len(items))
+	if len(items) == 0 {
+		return result, nil
+	}
+
+	keyToID := make(map[string]uuid.UUID, len(items))
+	keyIDs := make([]uuid.UUID, 0, len(items))
+	permissionKeys := make([]string, 0, len(items))
+	for _, item := range items {
+		result[item.ID] = permissionUsageCounters{}
+		keyIDs = append(keyIDs, item.ID)
+		permissionKey := canonicalPermissionKey(item.PermissionKey)
+		if permissionKey == "" {
+			continue
+		}
+		if _, exists := keyToID[permissionKey]; exists {
+			continue
+		}
+		keyToID[permissionKey] = item.ID
+		permissionKeys = append(permissionKeys, permissionKey)
+	}
+
+	type keyedCountRow struct {
+		PermissionKey string
+		Total         int64
+	}
+	type idCountRow struct {
+		ActionID uuid.UUID
+		Total    int64
+	}
+
+	if len(permissionKeys) > 0 {
+		var apiRows []keyedCountRow
+		if err := s.db.Model(&user.APIEndpointPermissionBinding{}).
+			Select("permission_key, COUNT(DISTINCT endpoint_code) AS total").
+			Where("permission_key IN ?", permissionKeys).
+			Group("permission_key").
+			Scan(&apiRows).Error; err != nil {
+			return nil, err
+		}
+		for _, row := range apiRows {
+			actionID, ok := keyToID[canonicalPermissionKey(row.PermissionKey)]
+			if !ok {
+				continue
+			}
+			counter := result[actionID]
+			counter.APICount = row.Total
+			result[actionID] = counter
+		}
+
+		var pageRows []keyedCountRow
+		if err := s.db.Model(&user.UIPage{}).
+			Select("permission_key, COUNT(*) AS total").
+			Where("permission_key IN ?", permissionKeys).
+			Group("permission_key").
+			Scan(&pageRows).Error; err != nil {
+			return nil, err
+		}
+		for _, row := range pageRows {
+			actionID, ok := keyToID[canonicalPermissionKey(row.PermissionKey)]
+			if !ok {
+				continue
+			}
+			counter := result[actionID]
+			counter.PageCount = row.Total
+			result[actionID] = counter
+		}
+	}
+
+	if len(keyIDs) == 0 {
+		return result, nil
+	}
+
+	var packageRows []idCountRow
+	if err := s.db.Model(&user.FeaturePackageKey{}).
+		Select("action_id, COUNT(DISTINCT package_id) AS total").
+		Where("action_id IN ?", keyIDs).
+		Group("action_id").
+		Scan(&packageRows).Error; err != nil {
+		return nil, err
+	}
+	for _, row := range packageRows {
+		counter := result[row.ActionID]
+		counter.PackageCount = row.Total
+		result[row.ActionID] = counter
+	}
+
+	return result, nil
+}
+
+func (s *permissionService) loadPermissionDuplicateProfiles() (map[string]permissionDuplicateProfile, error) {
+	type sourceRow struct {
+		ID            uuid.UUID
+		PermissionKey string
+		ContextType   string
+	}
+
+	var rows []sourceRow
+	if err := s.db.Model(&user.PermissionKey{}).
+		Select("id, permission_key, context_type").
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	items := make([]permissionDuplicateSource, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, permissionDuplicateSource{
+			ID:            row.ID,
+			PermissionKey: row.PermissionKey,
+			ContextType:   row.ContextType,
+		})
+	}
+	return buildPermissionDuplicateProfiles(items), nil
+}
+
+func matchesPermissionAuditFilters(profile PermissionAuditProfile, req *dto.PermissionKeyListRequest) bool {
+	if req == nil {
+		return true
+	}
+	if usagePattern := strings.TrimSpace(req.UsagePattern); usagePattern != "" && profile.UsagePattern != usagePattern {
+		return false
+	}
+	if duplicatePattern := strings.TrimSpace(req.DuplicatePattern); duplicatePattern != "" && profile.DuplicatePattern != duplicatePattern {
+		return false
+	}
+	return true
 }
 
 func (s *permissionService) buildPermissionListQuery(req *dto.PermissionKeyListRequest) *gorm.DB {
@@ -380,6 +607,9 @@ func (s *permissionService) Create(req *dto.PermissionKeyCreateRequest) (*user.P
 	featureKind := normalizeFeatureKind(featureGroup.Code, "system")
 	moduleCode := normalizeModuleCode(moduleGroup.Code, resourceCode)
 	contextType := normalizeContextType(req.ContextType, deriveContextType(permissionKey, moduleCode))
+	if err := validatePermissionContext(permissionKey, moduleCode, contextType); err != nil {
+		return nil, err
+	}
 	item := &user.PermissionKey{
 		PermissionKey:  permissionKey,
 		ModuleCode:     moduleCode,
@@ -446,10 +676,20 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionKeyUpdateReq
 	}
 	updates["module_group_id"] = moduleGroup.ID
 	updates["feature_group_id"] = featureGroup.ID
-	updates["module_code"] = normalizeModuleCode(moduleGroup.Code, current.ModuleCode)
+	targetModuleCode := normalizeModuleCode(moduleGroup.Code, current.ModuleCode)
+	updates["module_code"] = targetModuleCode
 	updates["feature_kind"] = normalizeFeatureKind(featureGroup.Code, current.FeatureKind)
-	if _, exists := updates["context_type"]; !exists && current.ContextType == "" {
-		updates["context_type"] = deriveContextType(targetPermissionKey, normalizeModuleCode(moduleGroup.Code, current.ModuleCode))
+	targetContextType := current.ContextType
+	if contextType, exists := updates["context_type"]; exists {
+		targetContextType = normalizeContextType(fmt.Sprint(contextType), deriveContextType(targetPermissionKey, targetModuleCode))
+	} else {
+		targetContextType = normalizeContextType(current.ContextType, deriveContextType(targetPermissionKey, targetModuleCode))
+		if current.ContextType == "" {
+			updates["context_type"] = targetContextType
+		}
+	}
+	if err := validatePermissionContext(targetPermissionKey, targetModuleCode, targetContextType); err != nil {
+		return err
 	}
 	if targetPermissionKey != current.PermissionKey {
 		existing, getErr := s.keyRepo.GetByPermissionKey(targetPermissionKey)
@@ -584,15 +824,105 @@ func deriveContextType(permissionKey, moduleCode string) string {
 		strings.HasPrefix(targetKey, "platform."),
 		targetKey == "tenant.manage":
 		return "platform"
-	case strings.HasPrefix(targetKey, "team."),
-		strings.HasPrefix(targetKey, "product."),
-		strings.HasPrefix(targetKey, "channel."),
-		strings.HasPrefix(targetKey, "content."):
+	case strings.HasPrefix(targetKey, "team."):
 		return "team"
 	case targetModule == "tenant" || targetModule == "role" || targetModule == "user" || targetModule == "menu" || targetModule == "permission_key" || targetModule == "api_endpoint":
 		return "platform"
 	default:
+		return "common"
+	}
+}
+
+func validatePermissionContext(permissionKey, moduleCode, contextType string) error {
+	targetKey := canonicalPermissionKey(permissionKey)
+	targetModule := strings.TrimSpace(moduleCode)
+	targetContext := normalizeContextType(contextType, deriveContextType(targetKey, targetModule))
+	if targetContext == "" {
+		return fmt.Errorf("%w: context_type 仅支持 platform、team、common", ErrPermissionContextInvalid)
+	}
+
+	if mapping, ok := findCanonicalPermissionMapping(targetKey); ok {
+		expectedContext := normalizeContextType(mapping.ContextType, deriveContextType(targetKey, targetModule))
+		if expectedContext != "" && targetContext != expectedContext {
+			return fmt.Errorf("%w: 内置权限键 %s 必须使用 %s 上下文", ErrPermissionContextInvalid, targetKey, expectedContext)
+		}
+		return nil
+	}
+
+	if expectedContext := deriveReservedContextType(targetKey); expectedContext != "" && targetContext != expectedContext {
+		return fmt.Errorf("%w: 权限键 %s 必须使用 %s 上下文", ErrPermissionContextInvalid, targetKey, expectedContext)
+	}
+
+	if moduleContext := deriveModuleContextBoundary(targetModule); moduleContext != "" && targetContext != moduleContext {
+		return fmt.Errorf("%w: 模块 %s 仅允许使用 %s 上下文", ErrPermissionContextInvalid, targetModule, moduleContext)
+	}
+
+	switch targetContext {
+	case "platform":
+		if !hasPlatformPermissionNamespace(targetKey) && deriveModuleContextBoundary(targetModule) == "" {
+			return fmt.Errorf("%w: 平台自定义权限键请使用 system.、platform. 或 tenant. 前缀，或归入平台模块分组", ErrPermissionContextInvalid)
+		}
+	case "team":
+		if !hasTeamPermissionNamespace(targetKey) && deriveModuleContextBoundary(targetModule) == "" {
+			return fmt.Errorf("%w: 团队自定义权限键请使用 team. 前缀，或归入团队模块分组", ErrPermissionContextInvalid)
+		}
+	case "common":
+		if deriveReservedContextType(targetKey) != "" || deriveModuleContextBoundary(targetModule) != "" {
+			return fmt.Errorf("%w: 平台/团队专属权限键不能标记为 common", ErrPermissionContextInvalid)
+		}
+	}
+
+	return nil
+}
+
+func findCanonicalPermissionMapping(permissionKey string) (permissionkey.Mapping, bool) {
+	targetKey := canonicalPermissionKey(permissionKey)
+	if targetKey == "" {
+		return permissionkey.Mapping{}, false
+	}
+	for _, mapping := range permissionkey.ListMappings() {
+		if canonicalPermissionKey(mapping.Key) == targetKey {
+			return permissionkey.FromKey(targetKey), true
+		}
+	}
+	return permissionkey.Mapping{}, false
+}
+
+func deriveReservedContextType(permissionKey string) string {
+	targetKey := canonicalPermissionKey(permissionKey)
+	switch {
+	case hasPlatformPermissionNamespace(targetKey):
+		return "platform"
+	case hasTeamPermissionNamespace(targetKey):
 		return "team"
+	default:
+		return ""
+	}
+}
+
+func hasPlatformPermissionNamespace(permissionKey string) bool {
+	targetKey := canonicalPermissionKey(permissionKey)
+	return strings.HasPrefix(targetKey, "system.") ||
+		strings.HasPrefix(targetKey, "platform.") ||
+		strings.HasPrefix(targetKey, "tenant.")
+}
+
+func hasTeamPermissionNamespace(permissionKey string) bool {
+	targetKey := canonicalPermissionKey(permissionKey)
+	return strings.HasPrefix(targetKey, "team.")
+}
+
+func deriveModuleContextBoundary(moduleCode string) string {
+	targetModule := strings.TrimSpace(moduleCode)
+	switch targetModule {
+	case "role", "permission_key", "user", "menu", "menu_backup", "system", "tenant",
+		"tenant_member_admin", "api_endpoint", "page", "fast_enter", "message",
+		"feature_package", "system_permission", "menu_space", "navigation":
+		return "platform"
+	case "team_member", "team", "team_message":
+		return "team"
+	default:
+		return ""
 	}
 }
 

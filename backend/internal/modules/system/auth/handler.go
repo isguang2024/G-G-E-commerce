@@ -140,7 +140,7 @@ func (h *AuthHandler) GetUserInfo(c *gin.Context) {
 	if err != nil {
 		h.logger.Error("Failed to get user info", zap.String("user_id", userID.String()), zap.Error(err))
 		if err == ErrUserNotFound {
-			status, resp := errcode.Response(errcode.ErrUserNotFound)
+			status, resp := errcode.ResponseWithMsg(errcode.ErrUnauthorized, "登录状态已失效，请重新登录")
 			c.JSON(status, resp)
 			return
 		}

@@ -20,6 +20,8 @@
     contextType: string
     status: string
     isBuiltin: string
+    usagePattern: string
+    duplicatePattern: string
   }
 
   interface OptionItem {
@@ -103,6 +105,35 @@
         options: [
           { label: '正常', value: 'normal' },
           { label: '停用', value: 'suspended' }
+        ]
+      }
+    },
+    {
+      label: '消费情况',
+      key: 'usagePattern',
+      type: 'select',
+      props: {
+        clearable: true,
+        placeholder: '请选择消费情况',
+        options: [
+          { label: '未被消费', value: 'unused' },
+          { label: '仅 API', value: 'api_only' },
+          { label: '仅页面', value: 'page_only' },
+          { label: '仅功能包', value: 'package_only' },
+          { label: '多方复用', value: 'multi_consumer' }
+        ]
+      }
+    },
+    {
+      label: '重复判定',
+      key: 'duplicatePattern',
+      type: 'select',
+      props: {
+        clearable: true,
+        placeholder: '请选择重复判定',
+        options: [
+          { label: '跨上下文镜像', value: 'cross_context_mirror' },
+          { label: '疑似重复', value: 'suspected_duplicate' }
         ]
       }
     },

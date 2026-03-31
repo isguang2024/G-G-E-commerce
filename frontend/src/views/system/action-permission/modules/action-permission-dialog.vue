@@ -56,6 +56,11 @@
           <ElOption label="通用" value="common" />
         </ElSelect>
       </ElFormItem>
+      <div class="context-hint">
+        <span>平台：系统治理和平台后台能力，建议使用 `system.`、`platform.`、`tenant.` 前缀。</span>
+        <span>团队：团队内授权能力，建议使用 `team.` 前缀或团队模块分组。</span>
+        <span>通用：跨上下文业务能力，不要复用平台/团队专属前缀。</span>
+      </div>
       <ElFormItem label="权限名称" prop="name">
         <ElInput v-model="form.name" placeholder="请输入名称" />
       </ElFormItem>
@@ -129,7 +134,7 @@
     moduleGroupId: '',
     featureGroupId: '',
     featureKind: 'business',
-    contextType: 'team',
+    contextType: 'common',
     name: '',
     description: '',
     status: 'normal',
@@ -154,7 +159,7 @@
         moduleGroupId: props.actionData.moduleGroupId || '',
         featureGroupId: props.actionData.featureGroupId || '',
         featureKind: props.actionData.featureKind || 'system',
-        contextType: props.actionData.contextType || 'team',
+        contextType: props.actionData.contextType || 'common',
         name: props.actionData.name,
         description: props.actionData.description || '',
         status: props.actionData.status || 'normal',
@@ -169,7 +174,7 @@
       moduleGroupId: props.moduleGroups?.[0]?.id || '',
       featureGroupId: props.featureGroups?.[0]?.id || '',
       featureKind: 'business',
-      contextType: 'team',
+      contextType: 'common',
       name: '',
       description: '',
       status: 'normal',
@@ -242,5 +247,15 @@
     display: flex;
     gap: 8px;
     width: 100%;
+  }
+
+  .context-hint {
+    margin: -4px 0 12px 110px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--el-text-color-secondary);
+    line-height: 1.5;
   }
 </style>

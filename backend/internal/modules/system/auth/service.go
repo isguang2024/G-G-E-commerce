@@ -220,5 +220,12 @@ func (s *authService) RefreshToken(refreshToken string) (*dto.TokenResponse, err
 }
 
 func (s *authService) GetUserInfo(userID uuid.UUID) (*user.User, error) {
-	return s.userRepo.GetByID(userID)
+	item, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
+	}
+	return item, nil
 }

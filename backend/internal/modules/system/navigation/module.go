@@ -45,9 +45,9 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	handler := NewHandler(m.logger, NewService(m.db, menuService, pageService, spaceService))
 
 	group := rg.Group("/runtime")
-	reg := apiregistry.NewRegistrar(group, "runtime_navigation")
+	reg := apiregistry.NewRegistrar(group, "navigation")
 	{
-		reg.GET("/navigation", reg.Meta("获取运行时导航清单").BindGroup("navigation").Build(), handler.GetNavigation)
+		reg.GET("/navigation", reg.Meta("获取运行时导航清单").Build(), handler.GetNavigation)
 	}
 }
 

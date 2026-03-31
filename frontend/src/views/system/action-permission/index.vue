@@ -1,5 +1,5 @@
 <template>
-  <div class="art-full-height">
+  <div class="permission-page art-full-height">
     <ActionPermissionSearch
       v-show="showSearchBar"
       v-model="searchForm"
@@ -10,17 +10,16 @@
     />
 
     <ElCard
-      class="art-table-card"
+      class="art-table-card permission-table-card"
       shadow="never"
       :style="{ marginTop: showSearchBar ? '12px' : '0' }"
     >
-      <ArtTableHeader
-        v-model:columns="columnChecks"
-        v-model:showSearchBar="showSearchBar"
-        :loading="loading"
-        @refresh="handleRefresh"
+      <AdminWorkspaceHero
+        title="功能权限"
+        description="统一检查权限键被 API、页面和功能包消费的情况，并筛出跨上下文镜像与疑似重复键。"
+        :metrics="summaryMetrics"
       >
-        <template #left>
+        <div class="permission-hero-actions">
           <ElButton
             v-action="'system.permission.manage'"
             type="primary"
@@ -45,17 +44,42 @@
           >
             管理功能分组
           </ElButton>
+          <ElButton
+            v-action="'system.permission.manage'"
+            plain
+            type="danger"
+            :loading="cleaningUnused"
+            @click="handleCleanupUnused"
+            v-ripple
+          >
+            清理未消费自定义权限
+          </ElButton>
+        </div>
+      </AdminWorkspaceHero>
+
+      <ArtTableHeader
+        v-model:columns="columnChecks"
+        v-model:showSearchBar="showSearchBar"
+        :loading="loading"
+        @refresh="handleRefresh"
+      >
+        <template #left>
+          <div class="permission-toolbar-tip">
+            优先处理“未被消费”和“疑似重复”，跨上下文镜像键保留独立授权。
+          </div>
         </template>
       </ArtTableHeader>
 
-      <ArtTable
-        :loading="loading"
-        :data="data"
-        :columns="columns"
-        :pagination="pagination"
-        @pagination:size-change="handleSizeChange"
-        @pagination:current-change="handleCurrentChange"
-      />
+      <div class="permission-table-wrap">
+        <ArtTable
+          :loading="loading"
+          :data="data"
+          :columns="columns"
+          :pagination="pagination"
+          @pagination:size-change="handleSizeChange"
+          @pagination:current-change="handleCurrentChange"
+        />
+      </div>
     </ElCard>
 
     <ActionPermissionDialog
@@ -87,6 +111,7 @@
   import { computed, h, reactive, ref } from 'vue'
   import { useTable } from '@/hooks/core/useTable'
   import {
+    fetchCleanupUnusedPermissionActions,
     fetchUpdatePermissionAction,
     fetchDeletePermissionAction,
     fetchGetPermissionActionList,
@@ -98,12 +123,15 @@
   import PermissionGroupDialog from './modules/permission-group-dialog.vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
+  import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { ElMessage, ElMessageBox, ElTag } from 'element-plus'
 
   defineOptions({ name: 'ActionPermission' })
 
   type PermissionActionItem = Api.SystemManage.PermissionActionItem
   type PermissionGroupItem = Api.SystemManage.PermissionGroupItem
+  type PermissionActionAuditSummary = Api.SystemManage.PermissionActionAuditSummary
+  type PermissionActionListResponse = Api.SystemManage.PermissionActionList
 
   const dialogVisible = ref(false)
   const endpointDialogVisible = ref(false)
@@ -115,6 +143,8 @@
   const currentGroup = ref<PermissionGroupItem>()
   const moduleGroups = ref<PermissionGroupItem[]>([])
   const featureGroups = ref<PermissionGroupItem[]>([])
+  const auditSummary = ref<PermissionActionAuditSummary>(createEmptyAuditSummary())
+  const cleaningUnused = ref(false)
 
   const searchForm = reactive({
     keyword: '',
@@ -122,7 +152,9 @@
     featureGroupId: '',
     contextType: '',
     status: '',
-    isBuiltin: ''
+    isBuiltin: '',
+    usagePattern: '',
+    duplicatePattern: ''
   })
 
   const moduleGroupOptions = computed(() =>
@@ -143,6 +175,82 @@
     return row.moduleGroup?.status === 'suspended' || row.featureGroup?.status === 'suspended'
   }
 
+  function createEmptyAuditSummary(): PermissionActionAuditSummary {
+    return {
+      totalCount: 0,
+      unusedCount: 0,
+      apiOnlyCount: 0,
+      pageOnlyCount: 0,
+      packageOnlyCount: 0,
+      multiConsumerCount: 0,
+      crossContextMirrorCount: 0,
+      suspectedDuplicateCount: 0
+    }
+  }
+
+  const summaryMetrics = computed(() => [
+    { label: '当前页', value: data.value.length || 0 },
+    { label: '当前筛选', value: auditSummary.value.totalCount || pagination.total || 0 },
+    { label: '未被消费', value: auditSummary.value.unusedCount || 0 },
+    { label: '多方复用', value: auditSummary.value.multiConsumerCount || 0 },
+    { label: '跨上下文镜像', value: auditSummary.value.crossContextMirrorCount || 0 },
+    { label: '疑似重复', value: auditSummary.value.suspectedDuplicateCount || 0 }
+  ])
+
+  function renderContextType(row: PermissionActionItem) {
+    if (row.contextType === 'platform') return h(ElTag, { type: 'warning' }, () => '平台')
+    if (row.contextType === 'team') return h(ElTag, { type: 'primary' }, () => '团队')
+    return h(ElTag, { type: 'info' }, () => '通用')
+  }
+
+  function renderConsumerCountTag(
+    label: string,
+    count: number | undefined,
+    type: 'success' | 'primary' | 'warning'
+  ) {
+    const value = Number(count || 0)
+    return h(
+      ElTag,
+      { type: value > 0 ? type : 'info', effect: 'plain', size: 'small' },
+      () => `${label} ${value}`
+    )
+  }
+
+  function renderUsageCell(row: PermissionActionItem) {
+    return h('div', { class: 'permission-audit-cell' }, [
+      h('div', { class: 'permission-audit-cell__tags' }, [
+        renderConsumerCountTag('API', row.apiCount, 'success'),
+        renderConsumerCountTag('页面', row.pageCount, 'primary'),
+        renderConsumerCountTag('功能包', row.packageCount, 'warning')
+      ]),
+      h('div', { class: 'permission-audit-cell__note' }, row.usageNote || '-')
+    ])
+  }
+
+  function renderDuplicateCell(row: PermissionActionItem) {
+    if (!row.duplicatePattern || row.duplicatePattern === 'none') {
+      return h('div', { class: 'permission-audit-cell' }, [
+        h('div', { class: 'permission-audit-cell__note' }, '-')
+      ])
+    }
+    const tagType = row.duplicatePattern === 'cross_context_mirror' ? 'warning' : 'danger'
+    const tagLabel = row.duplicatePattern === 'cross_context_mirror' ? '跨上下文镜像' : '疑似重复'
+    const relatedKeys = row.duplicateKeys || []
+    return h('div', { class: 'permission-audit-cell' }, [
+      h('div', { class: 'permission-audit-cell__tags' }, [
+        h(ElTag, { type: tagType, effect: 'plain', size: 'small' }, () => tagLabel),
+        ...relatedKeys.slice(0, 2).map((key) =>
+          h(ElTag, { type: 'info', effect: 'plain', size: 'small' }, () => key)
+        )
+      ]),
+      h(
+        'div',
+        { class: 'permission-audit-cell__note' },
+        row.duplicateNote || relatedKeys.join(' / ') || '-'
+      )
+    ])
+  }
+
   const {
     columns,
     columnChecks,
@@ -161,6 +269,7 @@
         current: 1,
         size: 20
       },
+      immediate: false,
       columnsFactory: () => [
         { prop: 'name', label: '权限名称', minWidth: 180, showOverflowTooltip: true },
         {
@@ -185,11 +294,19 @@
           prop: 'contextType',
           label: '上下文',
           width: 100,
-          formatter: (row: PermissionActionItem) => {
-            if (row.contextType === 'platform') return h(ElTag, { type: 'warning' }, () => '平台')
-            if (row.contextType === 'team') return h(ElTag, { type: 'primary' }, () => '团队')
-            return h(ElTag, { type: 'info' }, () => '通用')
-          }
+          formatter: (row: PermissionActionItem) => renderContextType(row)
+        },
+        {
+          prop: 'usagePattern',
+          label: '消费结构',
+          minWidth: 250,
+          formatter: (row: PermissionActionItem) => renderUsageCell(row)
+        },
+        {
+          prop: 'duplicatePattern',
+          label: '重复检查',
+          minWidth: 260,
+          formatter: (row: PermissionActionItem) => renderDuplicateCell(row)
         },
         {
           prop: 'isBuiltin',
@@ -203,11 +320,10 @@
         {
           prop: 'description',
           label: '描述',
-          minWidth: 220,
+          minWidth: 180,
           showOverflowTooltip: true,
           formatter: (row: PermissionActionItem) => row.description || '-'
         },
-        { prop: 'sortOrder', label: '排序', width: 80 },
         {
           prop: 'status',
           label: '状态',
@@ -262,6 +378,21 @@
           }
         }
       ]
+    },
+    transform: {
+      responseAdapter: (response: PermissionActionListResponse) =>
+        ({
+          records: response?.records || [],
+          total: response?.total || 0,
+          current: response?.current,
+          size: response?.size,
+          auditSummary: response?.auditSummary || createEmptyAuditSummary()
+        }) as any
+    },
+    hooks: {
+      onSuccess: (_rows, response: any) => {
+        auditSummary.value = response?.auditSummary || createEmptyAuditSummary()
+      }
     }
   })
 
@@ -282,6 +413,8 @@
       contextType: searchForm.contextType || undefined,
       status: searchForm.status || undefined,
       isBuiltin: searchForm.isBuiltin === '' ? undefined : searchForm.isBuiltin === 'true',
+      usagePattern: searchForm.usagePattern || undefined,
+      duplicatePattern: searchForm.duplicatePattern || undefined,
       current: 1
     })
     await getData()
@@ -294,13 +427,43 @@
       featureGroupId: '',
       contextType: '',
       status: '',
-      isBuiltin: ''
+      isBuiltin: '',
+      usagePattern: '',
+      duplicatePattern: ''
     })
     await handleSearch()
   }
 
   async function handleRefresh() {
     await Promise.all([refreshData(), loadGroups()])
+  }
+
+  async function handleCleanupUnused() {
+    ElMessageBox.confirm(
+      '将删除所有“未被 API、页面、功能包消费”且“非内置”的功能权限，是否继续？',
+      '清理确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+      .then(async () => {
+        cleaningUnused.value = true
+        const result = await fetchCleanupUnusedPermissionActions()
+        if (result.deletedCount > 0) {
+          ElMessage.success(`已清理 ${result.deletedCount} 个未消费自定义权限`)
+        } else {
+          ElMessage.info('没有可清理的未消费自定义权限')
+        }
+        await handleRefresh()
+      })
+      .catch((e) => {
+        if (e !== 'cancel') ElMessage.error(e?.message || '清理失败')
+      })
+      .finally(() => {
+        cleaningUnused.value = false
+      })
   }
 
   function openDialog(type: 'add' | 'edit', row?: PermissionActionItem) {
@@ -370,6 +533,63 @@
 </script>
 
 <style scoped>
+  .permission-page {
+    display: flex;
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .permission-table-card {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+  }
+
+  .permission-table-card :deep(.el-card__body) {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .permission-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .permission-toolbar-tip {
+    color: var(--el-text-color-secondary);
+    font-size: 13px;
+  }
+
+  .permission-audit-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 4px 0;
+  }
+
+  .permission-audit-cell__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .permission-audit-cell__note {
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  .permission-table-wrap {
+    min-height: 0;
+    flex: 1;
+    overflow: auto;
+  }
+
   .art-table-card :deep(.table-header-left) {
     gap: 10px;
     row-gap: 8px;

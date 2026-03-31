@@ -1,6 +1,7 @@
 package permission
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -30,7 +31,7 @@ func (h *PermissionHandler) List(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	list, total, err := h.permissionService.List(&req)
+	list, total, summary, err := h.permissionService.List(&req)
 	if err != nil {
 		h.logger.Error("List permission keys failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能权限列表失败")
@@ -39,13 +40,14 @@ func (h *PermissionHandler) List(c *gin.Context) {
 	}
 	records := make([]gin.H, 0, len(list))
 	for _, item := range list {
-		records = append(records, permissionKeyToMap(&item))
+		records = append(records, permissionKeyToMap(&item.PermissionKey, item.Audit))
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
-		"records": records,
-		"total":   total,
-		"current": req.Current,
-		"size":    req.Size,
+		"records":       records,
+		"total":         total,
+		"current":       req.Current,
+		"size":          req.Size,
+		"audit_summary": permissionAuditSummaryToMap(summary),
 	}))
 }
 
@@ -66,7 +68,7 @@ func (h *PermissionHandler) ListOptions(c *gin.Context) {
 	records := make([]gin.H, 0, len(list))
 	for _, item := range list {
 		action := item
-		records = append(records, permissionKeyToMap(&action))
+		records = append(records, permissionKeyToMap(&action, PermissionAuditProfile{}))
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
 		"records": records,
@@ -92,7 +94,7 @@ func (h *PermissionHandler) Get(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	c.JSON(http.StatusOK, dto.SuccessResponse(permissionKeyToMap(item)))
+	c.JSON(http.StatusOK, dto.SuccessResponse(permissionKeyToMap(item, PermissionAuditProfile{})))
 }
 
 func (h *PermissionHandler) ListGroups(c *gin.Context) {
@@ -147,6 +149,20 @@ func (h *PermissionHandler) ListEndpoints(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
 		"records": records,
 		"total":   len(records),
+	}))
+}
+
+func (h *PermissionHandler) CleanupUnused(c *gin.Context) {
+	result, err := h.permissionService.CleanupUnused()
+	if err != nil {
+		h.logger.Error("Cleanup unused permission keys failed", zap.Error(err))
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "清理未消费功能权限失败")
+		c.JSON(status, resp)
+		return
+	}
+	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+		"deleted_count": result.DeletedCount,
+		"deleted_keys":  result.DeletedKeys,
 	}))
 }
 
@@ -284,6 +300,11 @@ func (h *PermissionHandler) Create(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
+		if errors.Is(err, ErrPermissionContextInvalid) {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, err.Error())
+			c.JSON(status, resp)
+			return
+		}
 		h.logger.Error("Create permission key failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "创建功能权限失败: "+err.Error())
 		c.JSON(status, resp)
@@ -316,6 +337,11 @@ func (h *PermissionHandler) Update(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
+		if errors.Is(err, ErrPermissionContextInvalid) {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, err.Error())
+			c.JSON(status, resp)
+			return
+		}
 		h.logger.Error("Update permission key failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "更新功能权限失败: "+err.Error())
 		c.JSON(status, resp)
@@ -345,7 +371,7 @@ func (h *PermissionHandler) Delete(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
-func permissionKeyToMap(item *user.PermissionKey) gin.H {
+func permissionKeyToMap(item *user.PermissionKey, audit PermissionAuditProfile) gin.H {
 	permissionKey := canonicalPermissionKey(item.PermissionKey)
 	mapping := permissionkey.FromKey(permissionKey)
 	contextType := item.ContextType
@@ -367,23 +393,46 @@ func permissionKeyToMap(item *user.PermissionKey) gin.H {
 	}
 	effectiveStatus := resolvePermissionKeyStatus(item)
 	return gin.H{
-		"id":               item.ID.String(),
-		"permission_key":   permissionKey,
-		"module_code":      moduleCode,
-		"module_group_id":  stringifyUUIDPointer(item.ModuleGroupID),
-		"feature_group_id": stringifyUUIDPointer(item.FeatureGroupID),
-		"module_group":     permissionGroupToMap(item.ModuleGroup),
-		"feature_group":    permissionGroupToMap(item.FeatureGroup),
-		"context_type":     contextType,
-		"feature_kind":     featureKind,
-		"name":             name,
-		"description":      description,
-		"status":           effectiveStatus,
-		"self_status":      item.Status,
-		"sort_order":       item.SortOrder,
-		"is_builtin":       item.IsBuiltin,
-		"created_at":       item.CreatedAt.Format("2006-01-02 15:04:05"),
-		"updated_at":       item.UpdatedAt.Format("2006-01-02 15:04:05"),
+		"id":                item.ID.String(),
+		"permission_key":    permissionKey,
+		"module_code":       moduleCode,
+		"module_group_id":   stringifyUUIDPointer(item.ModuleGroupID),
+		"feature_group_id":  stringifyUUIDPointer(item.FeatureGroupID),
+		"module_group":      permissionGroupToMap(item.ModuleGroup),
+		"feature_group":     permissionGroupToMap(item.FeatureGroup),
+		"context_type":      contextType,
+		"feature_kind":      featureKind,
+		"name":              name,
+		"description":       description,
+		"status":            effectiveStatus,
+		"self_status":       item.Status,
+		"sort_order":        item.SortOrder,
+		"is_builtin":        item.IsBuiltin,
+		"api_count":         audit.APICount,
+		"page_count":        audit.PageCount,
+		"package_count":     audit.PackageCount,
+		"consumer_types":    audit.ConsumerTypes,
+		"usage_pattern":     audit.UsagePattern,
+		"usage_note":        audit.UsageNote,
+		"duplicate_pattern": audit.DuplicatePattern,
+		"duplicate_group":   audit.DuplicateGroup,
+		"duplicate_keys":    audit.DuplicateKeys,
+		"duplicate_note":    audit.DuplicateNote,
+		"created_at":        item.CreatedAt.Format("2006-01-02 15:04:05"),
+		"updated_at":        item.UpdatedAt.Format("2006-01-02 15:04:05"),
+	}
+}
+
+func permissionAuditSummaryToMap(summary PermissionAuditSummary) gin.H {
+	return gin.H{
+		"total_count":                summary.TotalCount,
+		"unused_count":               summary.UnusedCount,
+		"api_only_count":             summary.APIOnlyCount,
+		"page_only_count":            summary.PageOnlyCount,
+		"package_only_count":         summary.PackageOnlyCount,
+		"multi_consumer_count":       summary.MultiConsumerCount,
+		"cross_context_mirror_count": summary.CrossContextMirrorCount,
+		"suspected_duplicate_count":  summary.SuspectedDuplicateCount,
 	}
 }
 

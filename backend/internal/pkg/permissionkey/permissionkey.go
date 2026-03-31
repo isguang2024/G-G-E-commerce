@@ -26,7 +26,6 @@ var mappings = map[string]Mapping{
 	"user:update":                              {Key: "system.user.manage", ResourceCode: "user", ActionCode: "manage", Name: "用户管理", Description: "允许查看和维护用户", ContextType: "platform"},
 	"user:delete":                              {Key: "system.user.manage", ResourceCode: "user", ActionCode: "manage", Name: "用户管理", Description: "允许查看和维护用户", ContextType: "platform"},
 	"user:assign_role":                         {Key: "system.user.assign_role", ResourceCode: "user", ActionCode: "assign_role", Name: "分配用户角色", Description: "允许为用户分配角色", ContextType: "platform"},
-	"user:assign_action":                       {Key: "system.user.assign_action", ResourceCode: "user", ActionCode: "assign_action", Name: "配置用户功能权限", Description: "允许为用户配置功能权限", ContextType: "platform"},
 	"user:assign_menu":                         {Key: "system.user.manage", ResourceCode: "user", ActionCode: "assign_menu", Name: "配置用户菜单裁剪", Description: "允许为用户配置菜单裁剪", ContextType: "platform"},
 	"menu:list":                                {Key: "system.menu.manage", ResourceCode: "menu", ActionCode: "manage", Name: "菜单管理", Description: "允许查看和维护菜单", ContextType: "platform"},
 	"menu:create":                              {Key: "system.menu.manage", ResourceCode: "menu", ActionCode: "manage", Name: "菜单管理", Description: "允许查看和维护菜单", ContextType: "platform"},

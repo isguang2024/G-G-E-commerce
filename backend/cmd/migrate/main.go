@@ -106,6 +106,11 @@ func main() {
 	} else {
 		logger.Info("Permission keys initialized successfully")
 	}
+	if err := cleanupDeprecatedPermissionKeys(logger); err != nil {
+		logger.Warn("Failed to cleanup deprecated permission keys", zap.Error(err))
+	} else {
+		logger.Info("Deprecated permission keys cleaned up successfully")
+	}
 
 	if err := initDefaultFeaturePackages(logger); err != nil {
 		logger.Warn("Failed to initialize feature packages", zap.Error(err))
@@ -297,6 +302,16 @@ func runNamedMigrations(logger *zap.Logger) error {
 			},
 		},
 		{
+			Name: "20260401_remove_unused_user_assign_action_permission_key",
+			Run: func(logger *zap.Logger) error {
+				if err := database.DB.Where("permission_key = ?", "system.user.assign_action").Delete(&usermodel.PermissionKey{}).Error; err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260401_remove_unused_user_assign_action_permission_key"))
+				return nil
+			},
+		},
+		{
 			Name: "20260329_system_menu_third_level_grouping",
 			Run: func(logger *zap.Logger) error {
 				targetMenus := []string{
@@ -381,6 +396,11 @@ func runNamedMigrations(logger *zap.Logger) error {
 				targetMenus := []string{"MessageTemplateManage", "MessageRecordManage", "TeamMessageTemplateManage", "TeamMessageRecordManage"}
 				for _, menuName := range targetMenus {
 					if _, err := syncDefaultMenuSeedByName(menuName); err != nil {
+						// 历史菜单种子已移除时，兼容跳过，避免阻塞全量迁移
+						if strings.Contains(err.Error(), "default menu seed not found") {
+							logger.Warn("Skip missing legacy menu seed", zap.String("menu", menuName), zap.Error(err))
+							continue
+						}
 						return err
 					}
 				}
@@ -667,16 +687,6 @@ func runNamedMigrations(logger *zap.Logger) error {
 			},
 		},
 		{
-			Name: "20260329_demo_messages_seed",
-			Run: func(logger *zap.Logger) error {
-				if err := seedDemoMessages(logger); err != nil {
-					return err
-				}
-				logger.Info("Named migration applied", zap.String("name", "20260329_demo_messages_seed"))
-				return nil
-			},
-		},
-		{
 			Name: "20260331_team_manage_page_seed",
 			Run: func(logger *zap.Logger) error {
 				if _, err := syncDefaultPageSeedByKey("team.team"); err != nil {
@@ -768,6 +778,53 @@ func runNamedMigrations(logger *zap.Logger) error {
 					return err
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260331_access_trace_navigation_seed"))
+				return nil
+			},
+		},
+		{
+			Name: "20260331_permission_api_registry_full_repair",
+			Run: func(logger *zap.Logger) error {
+				if err := initDefaultPermissionGroups(logger); err != nil {
+					return err
+				}
+				if err := initDefaultPermissionKeysNoScope(logger); err != nil {
+					return err
+				}
+				if err := initDefaultAPIEndpointCategories(logger); err != nil {
+					return err
+				}
+				targetPages := []string{
+					"workspace.inbox",
+					"system.message.manage",
+					"system.message.sender.manage",
+					"system.message.recipient_group.manage",
+					"system.message.template.manage",
+					"system.message.record.manage",
+					"team.message.manage",
+					"team.message.sender.manage",
+					"team.message.recipient_group.manage",
+					"team.message.template.manage",
+					"team.message.record.manage",
+				}
+				for _, pageKey := range targetPages {
+					if _, err := syncDefaultPageSeedByKey(pageKey); err != nil {
+						return err
+					}
+				}
+				if err := normalizeLegacyPermissionAndAPIData(logger); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260331_permission_api_registry_full_repair"))
+				return nil
+			},
+		},
+		{
+			Name: "20260331_restore_default_space_only",
+			Run: func(logger *zap.Logger) error {
+				if err := cleanupLegacyOpsSpace(logger); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260331_restore_default_space_only"))
 				return nil
 			},
 		},
@@ -2296,6 +2353,168 @@ func syncCanonicalPermissionKeys(logger *zap.Logger) error {
 	return nil
 }
 
+func normalizeLegacyPermissionAndAPIData(logger *zap.Logger) error {
+	if err := normalizeLegacyPagePermissionKeys(logger); err != nil {
+		return err
+	}
+	if err := deduplicateAPIEndpointPermissionBindings(logger); err != nil {
+		return err
+	}
+	return nil
+}
+
+func normalizeLegacyPagePermissionKeys(logger *zap.Logger) error {
+	pageSeeds := append(permissionseed.DefaultPages(), permissionseed.LegacyMenuBackedPages()...)
+	canonicalByKey := make(map[string]string, len(pageSeeds))
+	for _, spec := range pageSeeds {
+		pageKey := strings.TrimSpace(spec.PageKey)
+		permissionKey := strings.TrimSpace(spec.PermissionKey)
+		if pageKey == "" || permissionKey == "" || pageKey == permissionKey {
+			continue
+		}
+		canonicalByKey[pageKey] = permissionKey
+	}
+	if len(canonicalByKey) == 0 {
+		return nil
+	}
+
+	normalizedCount := 0
+	deletedCount := 0
+	for fromKey, toKey := range canonicalByKey {
+		var fromAction usermodel.PermissionKey
+		if err := database.DB.Where("permission_key = ? AND deleted_at IS NULL", fromKey).First(&fromAction).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				continue
+			}
+			return err
+		}
+
+		var toAction usermodel.PermissionKey
+		if err := database.DB.Where("permission_key = ? AND deleted_at IS NULL", toKey).First(&toAction).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				continue
+			}
+			return err
+		}
+
+		if err := database.DB.Model(&systemmodels.UIPage{}).
+			Where("permission_key = ? AND deleted_at IS NULL", fromKey).
+			Update("permission_key", toKey).Error; err != nil {
+			return err
+		}
+		if err := rebindAPIBindingPermissionKey(fromKey, toKey); err != nil {
+			return err
+		}
+		if err := rebindPermissionKeyReferences(fromAction.ID, toAction.ID); err != nil {
+			return err
+		}
+		normalizedCount++
+
+		remaining, err := countPermissionKeyReferences(fromAction.ID, fromKey)
+		if err != nil {
+			return err
+		}
+		if remaining == 0 {
+			if err := database.DB.Delete(&usermodel.PermissionKey{}, fromAction.ID).Error; err != nil {
+				return err
+			}
+			deletedCount++
+		}
+	}
+
+	logger.Info("Legacy page-backed permission keys normalized",
+		zap.Int("normalized", normalizedCount),
+		zap.Int("deleted", deletedCount),
+	)
+	return nil
+}
+
+func rebindAPIBindingPermissionKey(fromKey, toKey string) error {
+	if strings.TrimSpace(fromKey) == "" || strings.TrimSpace(toKey) == "" || strings.TrimSpace(fromKey) == strings.TrimSpace(toKey) {
+		return nil
+	}
+	updateSQL := `
+		UPDATE api_endpoint_permission_bindings target
+		   SET permission_key = ?
+		 WHERE permission_key = ?
+		   AND deleted_at IS NULL
+		   AND NOT EXISTS (
+		     SELECT 1
+		       FROM api_endpoint_permission_bindings existing
+		      WHERE existing.endpoint_code = target.endpoint_code
+		        AND existing.permission_key = ?
+		        AND existing.deleted_at IS NULL
+		   )`
+	if err := database.DB.Exec(updateSQL, toKey, fromKey, toKey).Error; err != nil {
+		return err
+	}
+	return database.DB.
+		Where("permission_key = ? AND deleted_at IS NULL", fromKey).
+		Delete(&usermodel.APIEndpointPermissionBinding{}).Error
+}
+
+func countPermissionKeyReferences(actionID uuid.UUID, permissionKey string) (int64, error) {
+	type counter struct {
+		Count int64
+	}
+	var result counter
+	query := `
+		SELECT COALESCE((
+			SELECT COUNT(*) FROM feature_package_keys WHERE action_id = ?
+		), 0) +
+		COALESCE((
+			SELECT COUNT(*) FROM user_action_permissions WHERE action_id = ?
+		), 0) +
+		COALESCE((
+			SELECT COUNT(*) FROM role_disabled_actions WHERE action_id = ?
+		), 0) +
+		COALESCE((
+			SELECT COUNT(*) FROM team_blocked_actions WHERE action_id = ?
+		), 0) +
+		COALESCE((
+			SELECT COUNT(*) FROM ui_pages WHERE permission_key = ? AND deleted_at IS NULL
+		), 0) +
+		COALESCE((
+			SELECT COUNT(*) FROM api_endpoint_permission_bindings WHERE permission_key = ? AND deleted_at IS NULL
+		), 0) AS count`
+	if err := database.DB.Raw(query, actionID, actionID, actionID, actionID, permissionKey, permissionKey).Scan(&result).Error; err != nil {
+		return 0, err
+	}
+	return result.Count, nil
+}
+
+func deduplicateAPIEndpointPermissionBindings(logger *zap.Logger) error {
+	deleteSQL := `
+		DELETE FROM api_endpoint_permission_bindings target
+		 WHERE deleted_at IS NULL
+		   AND EXISTS (
+		     SELECT 1
+		       FROM api_endpoint_permission_bindings existing
+		      WHERE existing.endpoint_code = target.endpoint_code
+		        AND existing.permission_key = target.permission_key
+		        AND existing.deleted_at IS NULL
+		        AND (
+		          existing.created_at < target.created_at OR
+		          (existing.created_at = target.created_at AND existing.id::text < target.id::text)
+		        )
+		   )`
+	result := database.DB.Exec(deleteSQL)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	if err := database.DB.Exec(`
+		CREATE UNIQUE INDEX IF NOT EXISTS idx_api_endpoint_permission_bindings_endpoint_permission_unique
+		    ON api_endpoint_permission_bindings (endpoint_code, permission_key)
+		 WHERE deleted_at IS NULL
+	`).Error; err != nil {
+		return err
+	}
+
+	logger.Info("API endpoint permission bindings deduplicated", zap.Int64("deleted", result.RowsAffected))
+	return nil
+}
+
 func backfillTenantIdentityUserRoles(logger *zap.Logger) error {
 	type tenantMemberRow struct {
 		TenantID uuid.UUID
@@ -3006,6 +3225,61 @@ func cleanupSpaceClonedPages(logger *zap.Logger) error {
 	})
 }
 
+func cleanupLegacyOpsSpace(logger *zap.Logger) error {
+	const legacySpaceKey = "ops"
+
+	return database.DB.Transaction(func(tx *gorm.DB) error {
+		var menuIDs []uuid.UUID
+		if err := tx.Model(&usermodel.Menu{}).
+			Where("deleted_at IS NULL AND COALESCE(NULLIF(space_key, ''), ?) = ?", systemmodels.DefaultMenuSpaceKey, legacySpaceKey).
+			Pluck("id", &menuIDs).Error; err != nil {
+			return err
+		}
+		if len(menuIDs) > 0 {
+			if err := tx.Where("menu_id IN ?", menuIDs).Delete(&usermodel.FeaturePackageMenu{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Exec("DELETE FROM role_hidden_menus WHERE menu_id IN ?", menuIDs).Error; err != nil {
+				return err
+			}
+			if err := tx.Exec("DELETE FROM team_blocked_menus WHERE menu_id IN ?", menuIDs).Error; err != nil {
+				return err
+			}
+			if err := tx.Exec("DELETE FROM user_hidden_menus WHERE menu_id IN ?", menuIDs).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("parent_menu_id IN ?", menuIDs).Delete(&systemmodels.UIPage{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("id IN ?", menuIDs).Delete(&usermodel.Menu{}).Error; err != nil {
+				return err
+			}
+		}
+
+		if err := tx.Where("space_key = ?", legacySpaceKey).Delete(&systemmodels.PageSpaceBinding{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("COALESCE(NULLIF(space_key, ''), ?) = ?", systemmodels.DefaultMenuSpaceKey, legacySpaceKey).
+			Delete(&systemmodels.UIPage{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("space_key = ?", legacySpaceKey).Delete(&usermodel.MenuBackup{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("space_key = ?", legacySpaceKey).Delete(&systemmodels.MenuSpaceHostBinding{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("space_key = ?", legacySpaceKey).Delete(&systemmodels.MenuSpace{}).Error; err != nil {
+			return err
+		}
+
+		if logger != nil {
+			logger.Info("Legacy ops menu space cleaned", zap.Int("menu_count", len(menuIDs)))
+		}
+		return nil
+	})
+}
+
 func cleanupGlobalPageBindings(logger *zap.Logger) error {
 	return database.DB.Transaction(func(tx *gorm.DB) error {
 		updates := map[string]any{
@@ -3301,294 +3575,6 @@ func seedDefaultMessageTemplates(logger *zap.Logger) error {
 	return nil
 }
 
-func seedDemoMessages(logger *zap.Logger) error {
-	return database.DB.Transaction(func(tx *gorm.DB) error {
-		type userLite struct {
-			ID        uuid.UUID
-			Username  string
-			Nickname  string
-			AvatarURL string `gorm:"column:avatar_url"`
-		}
-
-		var users []userLite
-		if err := tx.Table("users").
-			Select("id, username, nickname, avatar_url").
-			Where("deleted_at IS NULL AND status = ?", "active").
-			Find(&users).Error; err != nil {
-			return err
-		}
-		if len(users) == 0 {
-			return nil
-		}
-
-		templateMap := make(map[string]uuid.UUID)
-		var templates []systemmodels.MessageTemplate
-		if err := tx.Where("template_key IN ?", []string{
-			"platform.notice.all_users",
-			"platform.notice.tenant_admins",
-			"tenant.notice.team_members",
-		}).Find(&templates).Error; err != nil {
-			return err
-		}
-		for _, item := range templates {
-			templateMap[item.TemplateKey] = item.ID
-		}
-
-		allUserIDs := make([]string, 0, len(users))
-		for _, item := range users {
-			allUserIDs = append(allUserIDs, item.ID.String())
-		}
-
-		var tenantAdmins []struct {
-			TenantID uuid.UUID `gorm:"column:tenant_id"`
-			UserID   uuid.UUID `gorm:"column:user_id"`
-		}
-		if err := tx.Table("tenant_members").
-			Select("tenant_id, user_id").
-			Where("deleted_at IS NULL AND status = ? AND role_code = ?", "active", "team_admin").
-			Find(&tenantAdmins).Error; err != nil {
-			return err
-		}
-
-		seedItems := []struct {
-			BizType        string
-			TemplateKey    string
-			MessageType    string
-			SenderType     string
-			SenderName     string
-			SenderService  string
-			AudienceType   string
-			AudienceScope  string
-			TargetTenantID *uuid.UUID
-			TargetUserIDs  []string
-			Title          string
-			Summary        string
-			Content        string
-			ActionType     string
-			ActionTarget   string
-			Priority       string
-			Deliveries     []systemmodels.MessageDelivery
-		}{
-			{
-				BizType:       "platform_announcement",
-				TemplateKey:   "platform.notice.all_users",
-				MessageType:   "notice",
-				SenderType:    "system",
-				SenderName:    "平台消息中心",
-				SenderService: "platform_console",
-				AudienceType:  "all_users",
-				AudienceScope: "platform",
-				TargetUserIDs: allUserIDs,
-				Title:         "平台消息中心已启用",
-				Summary:       "右上角通知面板已接入真实收件箱，可查看未读、消息和待办。",
-				Content:       "这是第一条平台全员公告，用于验证消息中心和右上角收件箱链路已经可用。",
-				ActionType:    "route",
-				ActionTarget:  "/workspace/inbox",
-				Priority:      "normal",
-			},
-		}
-
-		if len(tenantAdmins) > 0 {
-			deliveries := make([]systemmodels.MessageDelivery, 0, len(tenantAdmins))
-			seen := make(map[string]struct{})
-			for _, item := range tenantAdmins {
-				key := item.UserID.String() + ":" + item.TenantID.String()
-				if _, ok := seen[key]; ok {
-					continue
-				}
-				seen[key] = struct{}{}
-				tenantID := item.TenantID
-				deliveries = append(deliveries, systemmodels.MessageDelivery{
-					RecipientUserID: item.UserID,
-					RecipientTeamID: &tenantID,
-					BoxType:         "message",
-					DeliveryStatus:  "unread",
-				})
-			}
-			if len(deliveries) > 0 {
-				seedItems = append(seedItems, struct {
-					BizType        string
-					TemplateKey    string
-					MessageType    string
-					SenderType     string
-					SenderName     string
-					SenderService  string
-					AudienceType   string
-					AudienceScope  string
-					TargetTenantID *uuid.UUID
-					TargetUserIDs  []string
-					Title          string
-					Summary        string
-					Content        string
-					ActionType     string
-					ActionTarget   string
-					Priority       string
-					Deliveries     []systemmodels.MessageDelivery
-				}{
-					BizType:       "platform_tenant_admin_notice",
-					TemplateKey:   "platform.notice.tenant_admins",
-					MessageType:   "message",
-					SenderType:    "service",
-					SenderName:    "平台治理服务",
-					SenderService: "platform_governance",
-					AudienceType:  "tenant_admins",
-					AudienceScope: "platform",
-					Title:         "请检查团队配置边界",
-					Summary:       "平台已开放消息中心，团队管理员后续会通过这里接收边界、配额和待办提醒。",
-					Content:       "这是一条发给团队管理员的示例消息，后续平台可用同类消息处理团队级治理提醒。",
-					ActionType:    "route",
-					ActionTarget:  "/workspace/inbox",
-					Priority:      "high",
-					Deliveries:    deliveries,
-				})
-			}
-		}
-
-		if len(tenantAdmins) > 0 {
-			targetTenantID := tenantAdmins[0].TenantID
-			var teamMembers []struct {
-				UserID uuid.UUID `gorm:"column:user_id"`
-			}
-			if err := tx.Table("tenant_members").
-				Select("user_id").
-				Where("deleted_at IS NULL AND status = ? AND tenant_id = ?", "active", targetTenantID).
-				Find(&teamMembers).Error; err != nil {
-				return err
-			}
-			if len(teamMembers) > 0 {
-				deliveries := make([]systemmodels.MessageDelivery, 0, len(teamMembers))
-				targetUserIDs := make([]string, 0, len(teamMembers))
-				var sender userLite
-				for _, userItem := range users {
-					if userItem.ID == tenantAdmins[0].UserID {
-						sender = userItem
-						break
-					}
-				}
-				for _, item := range teamMembers {
-					targetUserIDs = append(targetUserIDs, item.UserID.String())
-					tenantID := targetTenantID
-					deliveries = append(deliveries, systemmodels.MessageDelivery{
-						RecipientUserID: item.UserID,
-						RecipientTeamID: &tenantID,
-						BoxType:         "todo",
-						DeliveryStatus:  "unread",
-						TodoStatus:      "pending",
-					})
-				}
-				senderName := strings.TrimSpace(sender.Nickname)
-				if senderName == "" {
-					senderName = strings.TrimSpace(sender.Username)
-				}
-				seedItems = append(seedItems, struct {
-					BizType        string
-					TemplateKey    string
-					MessageType    string
-					SenderType     string
-					SenderName     string
-					SenderService  string
-					AudienceType   string
-					AudienceScope  string
-					TargetTenantID *uuid.UUID
-					TargetUserIDs  []string
-					Title          string
-					Summary        string
-					Content        string
-					ActionType     string
-					ActionTarget   string
-					Priority       string
-					Deliveries     []systemmodels.MessageDelivery
-				}{
-					BizType:        "tenant_admin_team_todo",
-					TemplateKey:    "tenant.notice.team_members",
-					MessageType:    "todo",
-					SenderType:     "team_user",
-					SenderName:     senderName,
-					AudienceType:   "tenant_users",
-					AudienceScope:  "tenant",
-					TargetTenantID: &targetTenantID,
-					TargetUserIDs:  targetUserIDs,
-					Title:          "请查看团队本周待办",
-					Summary:        "团队管理员已发布团队内待办提醒，请在消息中心确认处理。",
-					Content:        "这是团队管理员给指定团队发送的示例待办，用于验证团队域消息、发送对象和待办状态链路。",
-					ActionType:     "route",
-					ActionTarget:   "/workspace/inbox",
-					Priority:       "normal",
-					Deliveries:     deliveries,
-				})
-			}
-		}
-
-		for _, item := range seedItems {
-			var existing systemmodels.Message
-			err := tx.Where("biz_type = ? AND title = ?", item.BizType, item.Title).First(&existing).Error
-			if err == nil {
-				continue
-			}
-			if !errors.Is(err, gorm.ErrRecordNotFound) {
-				return err
-			}
-
-			now := time.Now()
-			message := systemmodels.Message{
-				MessageType:        item.MessageType,
-				BizType:            item.BizType,
-				ScopeType:          item.AudienceScope,
-				TargetTenantID:     item.TargetTenantID,
-				SenderType:         item.SenderType,
-				SenderNameSnapshot: item.SenderName,
-				SenderServiceKey:   item.SenderService,
-				AudienceType:       item.AudienceType,
-				AudienceScope:      item.AudienceScope,
-				TargetUserIDs:      item.TargetUserIDs,
-				Title:              item.Title,
-				Summary:            item.Summary,
-				Content:            item.Content,
-				Priority:           item.Priority,
-				ActionType:         item.ActionType,
-				ActionTarget:       item.ActionTarget,
-				Status:             "published",
-				PublishedAt:        &now,
-				Meta:               systemmodels.MetaJSON{"seeded": true},
-			}
-			if templateID, ok := templateMap[item.TemplateKey]; ok {
-				message.TemplateID = &templateID
-			}
-			if err := tx.Create(&message).Error; err != nil {
-				return err
-			}
-			for _, delivery := range item.Deliveries {
-				delivery.MessageID = message.ID
-				if delivery.BoxType == "" {
-					delivery.BoxType = item.MessageType
-				}
-				if delivery.DeliveryStatus == "" {
-					delivery.DeliveryStatus = "unread"
-				}
-				if err := tx.Create(&delivery).Error; err != nil {
-					return err
-				}
-			}
-			if len(item.Deliveries) == 0 {
-				for _, userItem := range users {
-					delivery := systemmodels.MessageDelivery{
-						MessageID:       message.ID,
-						RecipientUserID: userItem.ID,
-						BoxType:         item.MessageType,
-						DeliveryStatus:  "unread",
-					}
-					if err := tx.Create(&delivery).Error; err != nil {
-						return err
-					}
-				}
-			}
-		}
-
-		logger.Info("Demo messages synchronized")
-		return nil
-	})
-}
-
 func backfillMenuManageGroups(logger *zap.Logger) error {
 	var menus []usermodel.Menu
 	if err := database.DB.Find(&menus).Error; err != nil {
@@ -3698,6 +3684,17 @@ func initDefaultPermissionKeysNoScope(logger *zap.Logger) error {
 		return err
 	}
 	logger.Info("Default permission keys seeded")
+	return nil
+}
+
+func cleanupDeprecatedPermissionKeys(logger *zap.Logger) error {
+	deprecatedKeys := []string{
+		"system.user.assign_action",
+	}
+	if err := database.DB.Where("permission_key IN ?", deprecatedKeys).Delete(&usermodel.PermissionKey{}).Error; err != nil {
+		return err
+	}
+	logger.Info("Deprecated permission keys cleaned", zap.Int("count", len(deprecatedKeys)))
 	return nil
 }
 

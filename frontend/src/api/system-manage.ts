@@ -98,11 +98,48 @@ function normalizePermissionAction(item: any): Api.SystemManage.PermissionAction
     description: item?.description || '',
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
     dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
+    apiCount: Number(item?.api_count ?? item?.apiCount ?? 0),
+    pageCount: Number(item?.page_count ?? item?.pageCount ?? 0),
+    packageCount: Number(item?.package_count ?? item?.packageCount ?? 0),
+    consumerTypes: Array.isArray(item?.consumer_types || item?.consumerTypes)
+      ? (item?.consumer_types || item?.consumerTypes)
+          .map((value: any) => `${value || ''}`.trim())
+          .filter(Boolean)
+      : [],
+    usagePattern: item?.usage_pattern || item?.usagePattern || 'unused',
+    usageNote: item?.usage_note || item?.usageNote || '',
+    duplicatePattern: item?.duplicate_pattern || item?.duplicatePattern || 'none',
+    duplicateGroup: item?.duplicate_group || item?.duplicateGroup || '',
+    duplicateKeys: Array.isArray(item?.duplicate_keys || item?.duplicateKeys)
+      ? (item?.duplicate_keys || item?.duplicateKeys)
+          .map((value: any) => `${value || ''}`.trim())
+          .filter(Boolean)
+      : [],
+    duplicateNote: item?.duplicate_note || item?.duplicateNote || '',
     status: item?.status || 'normal',
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
     isBuiltin: Boolean(item?.is_builtin ?? item?.isBuiltin ?? false),
     createdAt: item?.created_at || item?.createdAt || '',
     updatedAt: item?.updated_at || item?.updatedAt || ''
+  }
+}
+
+function normalizePermissionAuditSummary(
+  item: any
+): Api.SystemManage.PermissionActionAuditSummary {
+  return {
+    totalCount: Number(item?.total_count ?? item?.totalCount ?? 0),
+    unusedCount: Number(item?.unused_count ?? item?.unusedCount ?? 0),
+    apiOnlyCount: Number(item?.api_only_count ?? item?.apiOnlyCount ?? 0),
+    pageOnlyCount: Number(item?.page_only_count ?? item?.pageOnlyCount ?? 0),
+    packageOnlyCount: Number(item?.package_only_count ?? item?.packageOnlyCount ?? 0),
+    multiConsumerCount: Number(item?.multi_consumer_count ?? item?.multiConsumerCount ?? 0),
+    crossContextMirrorCount: Number(
+      item?.cross_context_mirror_count ?? item?.crossContextMirrorCount ?? 0
+    ),
+    suspectedDuplicateCount: Number(
+      item?.suspected_duplicate_count ?? item?.suspectedDuplicateCount ?? 0
+    )
   }
 }
 
@@ -1058,13 +1095,17 @@ export function fetchGetPermissionActionList(
     context_type: params?.contextType,
     feature_kind: params?.featureKind,
     is_builtin: params?.isBuiltin,
+    usage_pattern: params?.usagePattern,
+    duplicate_pattern: params?.duplicatePattern,
     permissionKey: undefined,
     moduleCode: undefined,
     moduleGroupId: undefined,
     featureGroupId: undefined,
     contextType: undefined,
     featureKind: undefined,
-    isBuiltin: undefined
+    isBuiltin: undefined,
+    usagePattern: undefined,
+    duplicatePattern: undefined
   }
   return request
     .get<Api.SystemManage.PermissionActionList>({
@@ -1073,7 +1114,8 @@ export function fetchGetPermissionActionList(
     })
     .then((res) => ({
       ...res,
-      records: (res?.records || []).map(normalizePermissionAction)
+      records: (res?.records || []).map(normalizePermissionAction),
+      auditSummary: normalizePermissionAuditSummary((res as any)?.audit_summary || res?.auditSummary || {})
     }))
 }
 
@@ -1142,6 +1184,21 @@ export function fetchDeletePermissionActionEndpoint(id: string, endpointCode: st
   return request.del<void>({
     url: `${ACTION_PERMISSION_BASE}/${id}/endpoints/${endpointCode}`
   })
+}
+
+export function fetchCleanupUnusedPermissionActions() {
+  return request
+    .post<Api.SystemManage.PermissionActionCleanupResult & { deleted_count?: number; deleted_keys?: string[] }>({
+      url: `${ACTION_PERMISSION_BASE}/cleanup-unused`
+    })
+    .then((res) => ({
+      deletedCount: Number(res?.deletedCount ?? res?.deleted_count ?? 0),
+      deletedKeys: Array.isArray(res?.deletedKeys || res?.deleted_keys)
+        ? (res?.deletedKeys || res?.deleted_keys)
+            .map((value: any) => `${value || ''}`.trim())
+            .filter(Boolean)
+        : []
+    }))
 }
 
 /** 创建功能权限 */

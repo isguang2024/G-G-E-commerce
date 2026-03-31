@@ -1,18 +1,20 @@
 package dto
 
 type PermissionKeyListRequest struct {
-	Current        int    `form:"current"`
-	Size           int    `form:"size"`
-	Keyword        string `form:"keyword"`
-	PermissionKey  string `form:"permission_key"`
-	Name           string `form:"name"`
-	ModuleCode     string `form:"module_code"`
-	ModuleGroupID  string `form:"module_group_id"`
-	FeatureGroupID string `form:"feature_group_id"`
-	ContextType    string `form:"context_type"`
-	FeatureKind    string `form:"feature_kind"`
-	Status         string `form:"status"`
-	IsBuiltin      string `form:"is_builtin"`
+	Current          int    `form:"current"`
+	Size             int    `form:"size"`
+	Keyword          string `form:"keyword"`
+	PermissionKey    string `form:"permission_key"`
+	Name             string `form:"name"`
+	ModuleCode       string `form:"module_code"`
+	ModuleGroupID    string `form:"module_group_id"`
+	FeatureGroupID   string `form:"feature_group_id"`
+	ContextType      string `form:"context_type"`
+	FeatureKind      string `form:"feature_kind"`
+	Status           string `form:"status"`
+	IsBuiltin        string `form:"is_builtin"`
+	UsagePattern     string `form:"usage_pattern"`
+	DuplicatePattern string `form:"duplicate_pattern"`
 }
 
 type PermissionKeyCreateRequest struct {

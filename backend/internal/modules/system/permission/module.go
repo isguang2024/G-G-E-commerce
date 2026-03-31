@@ -57,6 +57,7 @@ func (m *PermissionModule) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.GETProtected("/groups", reg.Meta("获取功能权限分组列表").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.ListGroups)
 		reg.GETProtected("/:id", reg.Meta("获取功能权限详情").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.Get)
 		reg.GETProtected("/:id/endpoints", reg.Meta("获取功能权限关联接口").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.ListEndpoints)
+		reg.POSTProtected("/cleanup-unused", reg.Meta("清理未消费功能权限").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.CleanupUnused)
 		reg.POSTProtected("/:id/endpoints", reg.Meta("新增功能权限关联接口").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.AddEndpoint)
 		reg.DELETEProtected("/:id/endpoints/:endpointCode", reg.Meta("删除功能权限关联接口").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.RemoveEndpoint)
 		reg.POSTProtected("/groups", reg.Meta("创建功能权限分组").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.CreateGroup)
