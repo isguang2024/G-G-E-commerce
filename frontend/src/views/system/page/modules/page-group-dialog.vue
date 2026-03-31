@@ -57,14 +57,22 @@
 
         <ElRow :gutter="14">
           <ElCol :span="12">
-            <ElFormItem label="空间视角" prop="spaceKey">
+            <ElFormItem label="空间可见" prop="spaceKey">
               <template #label>
                 <PageFieldLabel
-                  label="空间视角"
-                  help="仅用于加载当前空间下的菜单候选、上级逻辑分组和普通分组候选。逻辑分组定义默认仍由页面中心统一维护，不会因为切换视角就复制一份。"
+                  label="空间可见"
+                  help="只影响这个逻辑分组在当前菜单空间里是否可见，不会复制页面定义。"
                 />
               </template>
-              <ElSelect v-model="form.spaceKey" style="width: 100%">
+              <ElSelect
+                v-model="form.spaceKeys"
+                multiple
+                collapse-tags
+                collapse-tags-tooltip
+                clearable
+                filterable
+                style="width: 100%"
+              >
                 <ElOption
                   v-for="item in menuSpaceOptions"
                   :key="item.value"
@@ -348,6 +356,7 @@
     moduleKey: '',
     // 兼容旧接口保留的视角字段：用于加载当前空间菜单/父分组选项，不是页面主语义。
     spaceKey: 'default',
+    spaceKeys: [] as string[],
     sortOrder: 0,
     parentMenuId: '',
     parentPageKey: '',
@@ -364,10 +373,13 @@
 
   const menuTreeOptions = computed(() => menuOptions.value.map(toTreeSelectNode))
   const menuSpaceOptions = computed(() =>
-    (props.menuSpaces || []).map((item) => ({
-      label: item.isDefault ? `${item.name}（默认）` : item.name,
-      value: item.spaceKey
-    }))
+    [
+      { label: '全空间可见', value: '__all__' },
+      ...(props.menuSpaces || []).map((item) => ({
+        label: item.isDefault ? `${item.name}（默认）` : item.name,
+        value: item.spaceKey
+      }))
+    ]
   )
   const menuCascaderProps = {
     checkStrictly: true,
@@ -499,6 +511,9 @@
 
   function initForm() {
     if (props.dialogType === 'edit' && props.pageData) {
+      const spaceKeys = Array.isArray(props.pageData.meta?.spaceKeys)
+        ? props.pageData.meta?.spaceKeys
+        : []
       Object.assign(form, {
         id: props.pageData.id || '',
         pageKey: props.pageData.pageKey || '',
@@ -508,6 +523,14 @@
         permissionKey: props.pageData.permissionKey || '',
         moduleKey: props.pageData.moduleKey || '',
         spaceKey: props.pageData.spaceKey || props.currentSpaceKey || 'default',
+        spaceKeys:
+          props.pageData.pageType === 'global'
+            ? ['__all__']
+            : spaceKeys.length > 0
+              ? spaceKeys
+              : props.pageData.spaceKey
+                ? [props.pageData.spaceKey]
+                : [props.currentSpaceKey || 'default'],
         sortOrder: props.pageData.sortOrder ?? 0,
         parentMenuId: props.pageData.parentMenuId || '',
         parentPageKey: props.pageData.parentPageKey || '',
@@ -525,8 +548,14 @@
         routePath: props.defaultData?.routePath || '',
         accessMode: props.defaultData?.accessMode || 'inherit',
         permissionKey: props.defaultData?.permissionKey || '',
-        moduleKey: props.defaultData?.moduleKey || '',
-        spaceKey: props.defaultData?.spaceKey || props.currentSpaceKey || 'default',
+      moduleKey: props.defaultData?.moduleKey || '',
+      spaceKey: props.defaultData?.spaceKey || props.currentSpaceKey || 'default',
+      spaceKeys:
+        props.defaultData?.pageType === 'global' || props.initialPageType === 'global'
+          ? ['__all__']
+          : props.defaultData?.spaceKey
+            ? [props.defaultData.spaceKey]
+            : [props.currentSpaceKey || 'default'],
         sortOrder: props.defaultData?.sortOrder ?? 0,
       parentMenuId: props.defaultData?.parentMenuId || props.initialParentMenuId || '',
       parentPageKey: props.defaultData?.parentPageKey || props.initialParentPageKey || '',
@@ -550,9 +579,11 @@
 
   async function loadOptions() {
     // 页面中心仍按“当前空间视角”返回可挂接菜单与父分组选项，避免跨空间候选串线。
+    const scopeKey =
+      (form.spaceKeys.find((item) => item !== '__all__') || form.spaceKey || props.currentSpaceKey || 'default')
     const [menuRes, pageRes] = await Promise.all([
-      fetchGetPageMenuOptions(form.spaceKey),
-      fetchGetPageOptions(form.spaceKey)
+      fetchGetPageMenuOptions(scopeKey),
+      fetchGetPageOptions(scopeKey)
     ])
     menuOptions.value = menuRes.records || []
     allPages.value = pageRes.records || []
@@ -567,11 +598,9 @@
   }
 
   watch(
-    () => form.spaceKey,
-    async (spaceKey, previousSpaceKey) => {
-      if (!props.modelValue || !`${spaceKey || ''}`.trim() || spaceKey === previousSpaceKey) {
-        return
-      }
+    () => form.spaceKeys,
+    async () => {
+      if (!props.modelValue) return
       form.parentMenuId = ''
       form.parentPageKey = ''
       form.displayGroupKey = ''
@@ -664,7 +693,12 @@
             : `${props.defaultData?.source || 'manual'}`,
         module_key: resolvedModuleKey.value,
         // 兼容后端当前写接口；真正的空间暴露归属由后端统一编译，不在这里直接复制页面定义。
-        space_key: form.spaceKey,
+        space_key: form.spaceKeys.includes('__all__')
+          ? (props.currentSpaceKey || 'default')
+          : (form.spaceKeys[0] || form.spaceKey),
+        space_keys: form.spaceKeys.includes('__all__')
+          ? []
+          : form.spaceKeys.filter((item) => item !== '__all__'),
         sort_order: form.sortOrder,
         parent_menu_id: mountMode.value === 'menu' ? normalizeMenuId(form.parentMenuId) : '',
         parent_page_key: mountMode.value === 'page' ? form.parentPageKey || '' : '',

@@ -5,7 +5,7 @@
         class="mb-4"
         type="info"
         :closable="false"
-        description="列表默认展示当前空间备份，并同时展示正式全空间备份与历史全局兼容备份。恢复前请先核对标签，确认覆盖范围。"
+        description="列表展示当前空间备份与全空间备份。恢复前请先核对作用范围。"
       />
       <ElTable v-loading="loading" :data="items" style="width: 100%" border stripe>
         <ElTableColumn prop="name" label="备份名称" width="200">
@@ -58,7 +58,6 @@
     name: string
     description?: string
     scope_type?: string
-    scope_origin?: string
     space_key?: string
     space_name?: string
     created_at?: string
@@ -93,9 +92,6 @@
     if (item.space_name) {
       return item.space_name
     }
-    if (item.scope_origin === 'legacy_global') {
-      return '历史全局兼容备份'
-    }
     if (item.scope_type === 'global') {
       return '全空间备份'
     }
@@ -103,9 +99,6 @@
   }
 
   const getScopeTagType = (item: MenuBackupItem) => {
-    if (item.scope_origin === 'legacy_global') {
-      return 'info'
-    }
     return item.scope_type === 'global' ? 'warning' : 'success'
   }
 

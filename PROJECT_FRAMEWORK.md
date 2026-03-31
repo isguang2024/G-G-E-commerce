@@ -128,4 +128,4 @@
 - `docs/permission-overall-summary.md`：权限、功能包、快照主链
 - `docs/menu-page-management-design.md`：菜单/页面正式架构
 - `docs/menu-page-management-implementation-plan.md`：当前已落地实现与收口项
-- `docs/change-log.md`：近期里程碑
+- `docs/change-log.md`：近期大里程碑与关键收口

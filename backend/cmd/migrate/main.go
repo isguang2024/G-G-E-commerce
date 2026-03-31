@@ -264,7 +264,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 		{
 			Name: "20260325_menu_access_mode_jwt_defaults",
 			Run: func(logger *zap.Logger) error {
-				targetMenus := []string{"Dashboard", "Result", "Exception"}
+				targetMenus := []string{"Dashboard"}
 				for _, menuName := range targetMenus {
 					if err := ensureMenuAccessMode(menuName, "jwt"); err != nil {
 						return err
@@ -281,6 +281,18 @@ func runNamedMigrations(logger *zap.Logger) error {
 					return err
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260326_menu_manage_groups_backfill"))
+				return nil
+			},
+		},
+		{
+			Name: "20260331_remove_result_exception_menu_trees",
+			Run: func(logger *zap.Logger) error {
+				for _, menuName := range []string{"Result", "Exception"} {
+					if err := deleteMenuTreeByName(menuName); err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260331_remove_result_exception_menu_trees"))
 				return nil
 			},
 		},
@@ -3379,6 +3391,21 @@ func deleteMenuTree(rootID uuid.UUID) error {
 		return err
 	}
 	return database.DB.Where("id IN ?", collected).Delete(&usermodel.Menu{}).Error
+}
+
+func deleteMenuTreeByName(name string) error {
+	target := strings.TrimSpace(name)
+	if target == "" {
+		return nil
+	}
+	var menu usermodel.Menu
+	if err := database.DB.Where("name = ?", target).First(&menu).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+	return deleteMenuTree(menu.ID)
 }
 
 func initDefaultPermissionGroups(logger *zap.Logger) error {

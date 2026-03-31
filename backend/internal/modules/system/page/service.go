@@ -48,6 +48,7 @@ type SaveRequest struct {
 	RoutePath         string                 `json:"route_path"`
 	Component         string                 `json:"component"`
 	SpaceKey          string                 `json:"space_key"`
+	SpaceKeys         []string               `json:"space_keys"`
 	PageType          string                 `json:"page_type"`
 	Source            string                 `json:"source"`
 	ModuleKey         string                 `json:"module_key"`
@@ -427,7 +428,7 @@ func (s *service) Create(req *SaveRequest) (*Record, error) {
 		if err := tx.Create(item).Error; err != nil {
 			return err
 		}
-		return syncPageSpaceBindings(tx, item.ID, req.SpaceKey, item.ParentMenuID, item.ParentPageKey)
+		return syncPageSpaceBindings(tx, item.ID, req.SpaceKey, req.SpaceKeys, item.ParentMenuID, item.ParentPageKey)
 	}); err != nil {
 		return nil, err
 	}
@@ -464,7 +465,7 @@ func (s *service) Update(id uuid.UUID, req *SaveRequest) (*Record, error) {
 		if err := tx.Model(&existing).Updates(pageToUpdateMap(item)).Error; err != nil {
 			return err
 		}
-		return syncPageSpaceBindings(tx, existing.ID, req.SpaceKey, item.ParentMenuID, item.ParentPageKey)
+		return syncPageSpaceBindings(tx, existing.ID, req.SpaceKey, req.SpaceKeys, item.ParentMenuID, item.ParentPageKey)
 	}); err != nil {
 		return nil, err
 	}
@@ -921,6 +922,7 @@ func syncPageSpaceBindings(
 	tx *gorm.DB,
 	pageID uuid.UUID,
 	spaceKey string,
+	spaceKeys []string,
 	parentMenuID *uuid.UUID,
 	parentPageKey string,
 ) error {
@@ -930,7 +932,7 @@ func syncPageSpaceBindings(
 	if err := tx.Where("page_id = ?", pageID).Delete(&models.PageSpaceBinding{}).Error; err != nil {
 		return err
 	}
-	bindingKeys := normalizeStandalonePageBindingKeys(spaceKey, parentMenuID, parentPageKey)
+	bindingKeys := normalizeStandalonePageBindingKeys(spaceKey, spaceKeys, parentMenuID, parentPageKey)
 	if len(bindingKeys) == 0 {
 		return nil
 	}
@@ -1662,15 +1664,31 @@ func normalizeStandalonePageSpaceKey(value string, parentMenuID *uuid.UUID, pare
 	return ""
 }
 
-func normalizeStandalonePageBindingKeys(value string, parentMenuID *uuid.UUID, parentPageKey string) []string {
+func normalizeStandalonePageBindingKeys(value string, values []string, parentMenuID *uuid.UUID, parentPageKey string) []string {
 	if parentMenuID != nil || strings.TrimSpace(parentPageKey) != "" {
 		return []string{}
 	}
-	target := normalizeSpaceKey(value)
-	if target == "" {
-		return []string{}
+	if values != nil {
+		candidates := make([]string, 0, len(values))
+		for _, item := range values {
+			if target := normalizeSpaceKey(item); target != "" {
+				candidates = append(candidates, target)
+			}
+		}
+		return uniqueSortedStrings(candidates)
 	}
-	return []string{target}
+	candidates := make([]string, 0, len(values)+1)
+	for _, item := range values {
+		if target := normalizeSpaceKey(item); target != "" {
+			candidates = append(candidates, target)
+		}
+	}
+	if len(candidates) == 0 {
+		if target := normalizeSpaceKey(value); target != "" {
+			candidates = append(candidates, target)
+		}
+	}
+	return uniqueSortedStrings(candidates)
 }
 
 func (s *service) findPageByKey(pageKey string) (*models.UIPage, error) {

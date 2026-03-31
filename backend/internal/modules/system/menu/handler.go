@@ -355,9 +355,7 @@ func (h *MenuHandler) CreateBackup(c *gin.Context) {
 	var req struct {
 		Name        string `json:"name" binding:"required"`
 		Description string `json:"description"`
-		// scope_type 显式声明备份范围；旧客户端缺省时，仍按 space_key 是否为空兼容旧语义。
 		ScopeType string `json:"scope_type"`
-		// space_key 仅在 scope_type=space 时生效；global 备份会忽略该值并覆盖全部空间。
 		SpaceKey string `json:"space_key"`
 	}
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -409,11 +407,8 @@ func (h *MenuHandler) ListBackups(c *gin.Context) {
 			"id":          backup.ID.String(),
 			"name":        backup.Name,
 			"description": backup.Description,
-			// scope_type 保持“空间 / 全局”这层稳定主语义，便于兼容现有列表和恢复逻辑。
 			"space_key":  scopeInfo.SpaceKey,
 			"scope_type": scopeInfo.ScopeType,
-			// scope_origin 专门区分正式全局备份和历史兼容全局备份，前端据此给出更清晰的提示。
-			"scope_origin": scopeInfo.ScopeOrigin,
 			"created_at":   backup.CreatedAt,
 			"created_by":   backup.CreatedBy,
 		})

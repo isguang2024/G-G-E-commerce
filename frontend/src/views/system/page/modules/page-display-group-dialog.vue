@@ -40,14 +40,22 @@
 
         <ElRow :gutter="14">
           <ElCol :span="24">
-            <ElFormItem label="空间视角" prop="spaceKey">
-              <template #label>
-                <PageFieldLabel
-                  label="空间视角"
-                  help="仅用于决定当前页面管理视角下的分组候选与列表归类。普通分组本身不是按空间复制的页面定义，只有极少数独立页才会做额外空间暴露。"
-                />
-              </template>
-              <ElSelect v-model="form.spaceKey" style="width: 100%">
+        <ElFormItem label="空间可见" prop="spaceKey">
+          <template #label>
+            <PageFieldLabel
+              label="空间可见"
+              help="只控制这个普通分组在哪些菜单空间里可见，不改变普通分组本身的定义。"
+            />
+          </template>
+              <ElSelect
+                v-model="form.spaceKeys"
+                multiple
+                collapse-tags
+                collapse-tags-tooltip
+                clearable
+                filterable
+                style="width: 100%"
+              >
                 <ElOption
                   v-for="item in menuSpaceOptions"
                   :key="item.value"
@@ -153,6 +161,7 @@
     name: '',
     // 兼容旧接口保留的视角字段：用于列表归类视角，不是页面主语义。
     spaceKey: 'default',
+    spaceKeys: [] as string[],
     sortOrder: 0,
     status: 'normal'
   })
@@ -167,19 +176,33 @@
     '例 3：停用普通分组后页面数据保留，只是不再作为有效归类节点显示。'
   ]
   const menuSpaceOptions = computed(() =>
-    (props.menuSpaces || []).map((item) => ({
-      label: item.isDefault ? `${item.name}（默认）` : item.name,
-      value: item.spaceKey
-    }))
+    [
+      { label: '全空间可见', value: '__all__' },
+      ...(props.menuSpaces || []).map((item) => ({
+        label: item.isDefault ? `${item.name}（默认）` : item.name,
+        value: item.spaceKey
+      }))
+    ]
   )
 
   function initForm() {
     if (props.dialogType === 'edit' && props.pageData) {
+      const spaceKeys = Array.isArray(props.pageData.meta?.spaceKeys)
+        ? props.pageData.meta?.spaceKeys
+        : []
       Object.assign(form, {
         id: props.pageData.id || '',
         pageKey: props.pageData.pageKey || '',
         name: props.pageData.name || '',
         spaceKey: props.pageData.spaceKey || props.currentSpaceKey || 'default',
+        spaceKeys:
+          props.pageData.pageType === 'global'
+            ? ['__all__']
+            : spaceKeys.length > 0
+              ? spaceKeys
+              : props.pageData.spaceKey
+                ? [props.pageData.spaceKey]
+                : [props.currentSpaceKey || 'default'],
         sortOrder: props.pageData.sortOrder ?? 0,
         status: props.pageData.status || 'normal'
       })
@@ -191,6 +214,12 @@
       pageKey: props.defaultData?.pageKey || '',
       name: props.defaultData?.name || '',
       spaceKey: props.defaultData?.spaceKey || props.currentSpaceKey || 'default',
+      spaceKeys:
+        props.defaultData?.pageType === 'global' || props.initialPageType === 'global'
+          ? ['__all__']
+          : props.defaultData?.spaceKey
+            ? [props.defaultData.spaceKey]
+            : [props.currentSpaceKey || 'default'],
       sortOrder: props.defaultData?.sortOrder ?? 0,
       status: props.defaultData?.status || 'normal'
     })
@@ -248,7 +277,12 @@
             : `${props.defaultData?.source || 'manual'}`,
         module_key: '',
         // 兼容后端当前写接口；真正的空间暴露由后端统一返回 spaceKeys / spaceScope。
-        space_key: form.spaceKey,
+        space_key: form.spaceKeys.includes('__all__')
+          ? (props.currentSpaceKey || 'default')
+          : (form.spaceKeys[0] || form.spaceKey),
+        space_keys: form.spaceKeys.includes('__all__')
+          ? []
+          : form.spaceKeys.filter((item) => item !== '__all__'),
         sort_order: form.sortOrder,
         parent_menu_id: '',
         parent_page_key: '',

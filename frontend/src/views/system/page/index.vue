@@ -46,19 +46,6 @@
               </div>
             </div>
             <div class="page-toolbar-actions">
-              <ElSelect
-                v-model="activeSpaceKey"
-                class="page-space-select"
-                filterable
-                @change="handleRefresh"
-              >
-                <ElOption
-                  v-for="item in menuSpaceOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
-              </ElSelect>
               <ElDropdown trigger="click" @command="handleCreateCommand">
                 <ElButton v-action="'system.page.manage'" type="primary" v-ripple>
                   新增
@@ -186,15 +173,6 @@
           <span class="page-muted-text">{{ getEffectiveChainText(row) }}</span>
         </template>
 
-        <template #space="{ row }">
-          <div class="page-space-cell">
-            <ElTag size="small" effect="plain" type="info">
-              {{ getSpaceScopeText(row) }}
-            </ElTag>
-            <span class="page-muted-text">{{ getSpaceScopeHint(row) }}</span>
-          </div>
-        </template>
-
         <template #mountTarget="{ row }">
           <span class="page-muted-text">{{ getMountTargetText(row) }}</span>
         </template>
@@ -243,8 +221,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref, nextTick, onMounted, watch } from 'vue'
-  import { useRoute, useRouter } from 'vue-router'
+  import { computed, reactive, ref, nextTick, onMounted } from 'vue'
     import { ElButton, ElInput, ElMessage, ElMessageBox, ElTag } from 'element-plus'
   import type { FormItem } from '@/components/core/forms/art-form/index.vue'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
@@ -275,8 +252,6 @@
   const menuPathMap = ref(new Map<string, string>())
   const menuSpaces = ref<Api.SystemManage.MenuSpaceItem[]>([])
   const activeSpaceKey = ref('default')
-  const route = useRoute()
-  const router = useRouter()
   const menuSpaceStore = useMenuSpaceStore()
 
   const dialogVisible = ref(false)
@@ -356,10 +331,9 @@ const initialSearchState = {
     { prop: 'name', label: '页面', minWidth: 300, useSlot: true, slotName: 'name' },
     { prop: 'route', label: '最终路径', minWidth: 220, useSlot: true, slotName: 'route' },
     { prop: 'component', label: '组件入口', minWidth: 180, useSlot: true, slotName: 'component' },
-    { prop: 'space', label: '空间视角', width: 180, useSlot: true, slotName: 'space' },
     { prop: 'mountTarget', label: '挂接对象', minWidth: 180, useSlot: true, slotName: 'mountTarget' },
-    { prop: 'effectiveChain', label: '生效链路', minWidth: 150, useSlot: true, slotName: 'effectiveChain' },
-    { prop: 'parentChainStatus', label: '父链状态', minWidth: 130, useSlot: true, slotName: 'parentChainStatus' },
+    { prop: 'effectiveChain', label: '归属链路', minWidth: 150, useSlot: true, slotName: 'effectiveChain' },
+    { prop: 'parentChainStatus', label: '链路状态', minWidth: 130, useSlot: true, slotName: 'parentChainStatus' },
     {
       prop: 'sortOrder',
       label: '排序',
@@ -398,13 +372,6 @@ const initialSearchState = {
 
   const pageTree = computed<TreePageItem[]>(() => buildPageTree(rawPages.value))
   const tableData = computed<TreePageItem[]>(() => filterPageTree(pageTree.value))
-  const menuSpaceMap = computed(() => new Map(menuSpaces.value.map((item) => [item.spaceKey, item])))
-  const menuSpaceOptions = computed(() =>
-    menuSpaces.value.map((item) => ({
-      label: item.isDefault ? `${item.name}（默认）` : item.name,
-      value: item.spaceKey
-    }))
-  )
   const pageMap = computed(() => {
     const map = new Map<string, PageItem>()
     rawPages.value.forEach((item) => {
@@ -591,63 +558,6 @@ const initialSearchState = {
 
   function handleRefresh() {
     getPageList()
-  }
-
-  function syncRouteSpaceKey(spaceKey: string) {
-    router.replace({
-      query: {
-        ...route.query,
-        spaceKey
-      }
-    })
-  }
-
-  function resolveInitialSpaceKey() {
-    const requestedSpaceKey = `${route.query.spaceKey || ''}`.trim()
-    if (requestedSpaceKey && menuSpaces.value.some((item) => item.spaceKey === requestedSpaceKey)) {
-      return requestedSpaceKey
-    }
-    return menuSpaces.value.find((item) => item.isDefault)?.spaceKey || 'default'
-  }
-
-  function getSpaceName(spaceKey?: string) {
-    const normalized = `${spaceKey || ''}`.trim()
-    if (!normalized) {
-      return '全局'
-    }
-    return menuSpaceMap.value.get(normalized)?.name || normalized
-  }
-
-  function resolveSpaceKeys(row: PageItem): string[] {
-    const meta = (row.meta || {}) as Record<string, any>
-    const values = Array.isArray(row.spaceKeys)
-      ? row.spaceKeys
-      : Array.isArray(meta.spaceKeys)
-        ? meta.spaceKeys
-        : []
-    return values.map((item) => `${item || ''}`.trim()).filter(Boolean)
-  }
-
-  function getSpaceScopeText(row: PageItem) {
-    const keys = resolveSpaceKeys(row)
-    if (keys.length === 0) {
-      return '全局共享'
-    }
-    if (keys.length === 1) {
-      return getSpaceName(keys[0])
-    }
-    return `绑定 ${keys.length} 个空间`
-  }
-
-  function getSpaceScopeHint(row: PageItem) {
-    const keys = resolveSpaceKeys(row)
-    if (keys.length === 0) {
-      return '默认随菜单或父页复用'
-    }
-    if (keys.length === 1) {
-      return row.spaceScope === 'bound' ? '独立页暴露控制' : '单空间可见'
-    }
-    return keys.map((key) => getSpaceName(key)).join(' / ')
   }
 
   async function openDialog(
@@ -1100,33 +1010,10 @@ const initialSearchState = {
     fetchGetMenuSpaces()
       .then((res) => {
         menuSpaces.value = res.records || []
-        activeSpaceKey.value = resolveInitialSpaceKey()
       })
       .finally(() => {
         getPageList()
       })
-  })
-
-  watch(
-    () => route.query.spaceKey,
-    (value) => {
-      const requestedSpaceKey = `${value || ''}`.trim()
-      if (!requestedSpaceKey || requestedSpaceKey === activeSpaceKey.value) {
-        return
-      }
-      if (!menuSpaces.value.some((item) => item.spaceKey === requestedSpaceKey)) {
-        return
-      }
-      activeSpaceKey.value = requestedSpaceKey
-      getPageList()
-    }
-  )
-
-  watch(activeSpaceKey, (value, previousValue) => {
-    if (!`${value || ''}`.trim() || value === previousValue) {
-      return
-    }
-    syncRouteSpaceKey(value)
   })
 </script>
 
@@ -1188,10 +1075,6 @@ const initialSearchState = {
     flex-wrap: wrap;
     gap: 8px;
     justify-content: flex-start;
-  }
-
-  .page-space-select {
-    width: 220px;
   }
 
   .page-switch {
@@ -1273,13 +1156,6 @@ const initialSearchState = {
   .page-component-cell {
     display: flex;
     align-items: center;
-    min-width: 0;
-  }
-
-  .page-space-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
     min-width: 0;
   }
 

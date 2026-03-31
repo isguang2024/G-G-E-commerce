@@ -499,7 +499,6 @@
   defineOptions({ name: 'Menus' })
 
   type MenuBackupScopeType = 'space' | 'global'
-  type MenuBackupScopeOrigin = 'space' | 'global' | 'legacy_global'
 
   // --- 状态管理 ---
   const loading = ref(false)
@@ -635,10 +634,6 @@
   const currentSpaceName = computed(() => getSpaceName(activeSpaceKey.value))
 
   const getBackupScopeLabel = (item: Api.SystemManage.MenuBackupItem) => {
-    const scopeOrigin = `${item.scope_origin || ''}`.trim() as MenuBackupScopeOrigin
-    if (scopeOrigin === 'legacy_global') {
-      return '历史全局兼容备份'
-    }
     if (`${item.scope_type || ''}`.trim() === 'global') {
       return '全空间备份'
     }
@@ -1417,10 +1412,6 @@
   }
 
   const buildBackupRestoreMessage = (item: Api.SystemManage.MenuBackupItem) => {
-    const scopeOrigin = `${item.scope_origin || ''}`.trim() as MenuBackupScopeOrigin
-    if (scopeOrigin === 'legacy_global') {
-      return '确定要恢复该备份吗？这是历史全局兼容备份，恢复后会覆盖所有空间的菜单配置。'
-    }
     if (item.scope_type === 'global') {
       return '确定要恢复该备份吗？该备份会覆盖所有空间的菜单配置。'
     }

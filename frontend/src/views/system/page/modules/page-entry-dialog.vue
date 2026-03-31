@@ -97,14 +97,22 @@
             </ElFormItem>
           </ElCol>
           <ElCol :span="12">
-            <ElFormItem label="空间视角" prop="spaceKey">
+            <ElFormItem label="空间可见" prop="spaceKey">
               <template #label>
                 <PageFieldLabel
-                  label="空间视角"
-                  help="用于加载当前空间下的菜单候选和父页面候选。受管页面默认全局定义，只有少数独立页才会额外绑定到特定空间。"
+                  label="空间可见"
+                  help="仅控制这个页面在哪个菜单空间里可见，不改变页面类型、路径、权限或菜单挂载。"
                 />
               </template>
-              <ElSelect v-model="form.spaceKey" style="width: 100%">
+              <ElSelect
+                v-model="form.spaceKeys"
+                multiple
+                collapse-tags
+                collapse-tags-tooltip
+                clearable
+                filterable
+                style="width: 100%"
+              >
                 <ElOption
                   v-for="item in menuSpaceOptions"
                   :key="item.value"
@@ -546,6 +554,7 @@
     pageType: 'inner',
     moduleKey: '',
     spaceKey: 'default',
+    spaceKeys: [] as string[],
     sortOrder: 0,
     parentMenuId: '',
     parentPageKey: '',
@@ -575,11 +584,27 @@
 
   const menuTreeOptions = computed(() => menuOptions.value.map(toTreeSelectNode))
   const menuSpaceOptions = computed(() =>
-    (props.menuSpaces || []).map((item) => ({
-      label: item.isDefault ? `${item.name}（默认）` : item.name,
-      value: item.spaceKey
-    }))
+    [
+      { label: '全空间可见', value: '__all__' },
+      ...(props.menuSpaces || []).map((item) => ({
+        label: item.isDefault ? `${item.name}（默认）` : item.name,
+        value: item.spaceKey
+      }))
+    ]
   )
+  const resolveSpaceBindingKeys = () => {
+    const values = form.spaceKeys
+      .map((item) => `${item || ''}`.trim())
+      .filter(Boolean)
+    if (values.includes('__all__')) {
+      return ['__all__']
+    }
+    return values
+  }
+  const resolveSpaceScopeKey = () => {
+    const values = resolveSpaceBindingKeys().filter((item) => item !== '__all__')
+    return values[0] || form.spaceKey || props.currentSpaceKey || 'default'
+  }
   const menuCascaderProps = {
     checkStrictly: true,
     emitPath: false
@@ -968,6 +993,9 @@
 
   function initForm() {
     if (props.dialogType === 'edit' && props.pageData) {
+      const spaceKeys = Array.isArray(props.pageData.meta?.spaceKeys)
+        ? props.pageData.meta?.spaceKeys
+        : []
       Object.assign(form, {
         id: props.pageData.id || '',
         pageKey: props.pageData.pageKey || '',
@@ -978,6 +1006,14 @@
         pageType: props.pageData.pageType === 'global' ? 'global' : 'inner',
         moduleKey: props.pageData.moduleKey || '',
         spaceKey: props.pageData.spaceKey || props.currentSpaceKey || 'default',
+        spaceKeys:
+          props.pageData.pageType === 'global'
+            ? ['__all__']
+            : spaceKeys.length > 0
+              ? spaceKeys
+              : props.pageData.spaceKey
+                ? [props.pageData.spaceKey]
+                : [props.currentSpaceKey || 'default'],
         sortOrder: props.pageData.sortOrder ?? 0,
         parentMenuId: props.pageData.parentMenuId || '',
         parentPageKey: props.pageData.parentPageKey || '',
@@ -1015,6 +1051,12 @@
         props.currentSpaceKey ||
         props.menuSpaces?.find((item) => item.isDefault)?.spaceKey ||
         'default',
+      spaceKeys:
+        props.defaultData?.pageType === 'global' || props.initialPageType === 'global'
+          ? ['__all__']
+          : props.defaultData?.spaceKey
+            ? [props.defaultData.spaceKey]
+            : [props.currentSpaceKey || props.menuSpaces?.find((item) => item.isDefault)?.spaceKey || 'default'],
       sortOrder: props.defaultData?.sortOrder ?? 0,
       parentMenuId: props.defaultData?.parentMenuId || props.initialParentMenuId || '',
       parentPageKey: props.defaultData?.parentPageKey || props.initialParentPageKey || '',
@@ -1035,9 +1077,10 @@
   }
 
   async function loadOptions() {
+    const scopeKey = resolveSpaceScopeKey()
     const [menuRes, pageRes] = await Promise.all([
-      fetchGetPageMenuOptions(form.spaceKey),
-      fetchGetPageOptions(form.spaceKey)
+      fetchGetPageMenuOptions(scopeKey),
+      fetchGetPageOptions(scopeKey)
     ])
     menuOptions.value = menuRes.records || []
     allPages.value = pageRes.records || []
@@ -1178,14 +1221,16 @@
   )
 
   watch(
-    () => form.spaceKey,
-    async (next, prev) => {
-      if (!visible.value || isInitializing.value || !next || next === prev) return
+    () => form.spaceKeys,
+    async () => {
+      if (!visible.value || isInitializing.value) return
       form.parentMenuId = ''
       form.parentPageKey = ''
       form.displayGroupKey = ''
       await loadOptions()
     }
+    ,
+    { deep: true }
   )
 
   watch(
@@ -1226,7 +1271,11 @@
               ? `${props.pageData?.source || 'manual'}`
               : `${props.defaultData?.source || 'manual'}`,
           module_key: form.moduleKey.trim(),
-          space_key: form.spaceKey,
+          space_key: resolveSpaceScopeKey(),
+          space_keys:
+            resolveSpaceBindingKeys().includes('__all__')
+              ? []
+              : resolveSpaceBindingKeys().filter((item) => item !== '__all__'),
           sort_order: form.sortOrder,
         parent_menu_id:
           form.pageType === 'global' || mountMode.value !== 'menu'

@@ -2,6 +2,7 @@ package menu
 
 import (
 	"encoding/json"
+	"fmt"
 	"errors"
 	"strings"
 	"time"
@@ -545,9 +546,8 @@ type ginMenuBackupPayload struct {
 }
 
 type menuBackupScopeInfo struct {
-	ScopeType   string
-	ScopeOrigin string
-	SpaceKey    string
+	ScopeType string
+	SpaceKey  string
 }
 
 const menuBackupPayloadVersion = "menu_backup.v2"
@@ -587,42 +587,28 @@ func resolveBackupSpaceKey(scopeType string, spaceKey string) string {
 func resolveMenuBackupScopeInfo(backup user.MenuBackup) menuBackupScopeInfo {
 	if backupSpaceKey := normalizeBackupSpaceKey(backup.SpaceKey); backupSpaceKey != "" {
 		return menuBackupScopeInfo{
-			ScopeType:   "space",
-			ScopeOrigin: "space",
-			SpaceKey:    backupSpaceKey,
-		}
-	}
-
-	trimmedPayload := strings.TrimSpace(backup.MenuData)
-	// 历史备份最早直接把菜单数组落成 JSON 数组，无法表达显式 scope_type；
-	// 这类记录继续标记为 legacy_global，方便前端单独提示其兼容性质。
-	if strings.HasPrefix(trimmedPayload, "[") {
-		return menuBackupScopeInfo{
-			ScopeType:   "global",
-			ScopeOrigin: "legacy_global",
+			ScopeType: "space",
+			SpaceKey:  backupSpaceKey,
 		}
 	}
 
 	payload, err := parseMenuBackupPayload(backup.MenuData)
 	if err != nil {
 		return menuBackupScopeInfo{
-			ScopeType:   "global",
-			ScopeOrigin: "legacy_global",
+			ScopeType: "global",
 		}
 	}
 
 	resolvedScopeType := normalizeBackupScopeType(payload.ScopeType, payload.SpaceKey)
 	if resolvedScopeType == "space" {
 		return menuBackupScopeInfo{
-			ScopeType:   "space",
-			ScopeOrigin: "space",
-			SpaceKey:    resolveBackupSpaceKey(resolvedScopeType, payload.SpaceKey),
+			ScopeType: "space",
+			SpaceKey:  resolveBackupSpaceKey(resolvedScopeType, payload.SpaceKey),
 		}
 	}
 
 	return menuBackupScopeInfo{
-		ScopeType:   "global",
-		ScopeOrigin: "global",
+		ScopeType: "global",
 	}
 }
 
@@ -634,7 +620,6 @@ func filterBackupsBySpace(backups []user.MenuBackup, spaceKey string) []user.Men
 	filtered := make([]user.MenuBackup, 0, len(backups))
 	for _, backup := range backups {
 		scopeInfo := resolveMenuBackupScopeInfo(backup)
-		// 全局备份和历史全局兼容备份对所有空间都可见；空间备份只展示给目标空间。
 		if scopeInfo.ScopeType == "global" || scopeInfo.SpaceKey == targetSpaceKey {
 			filtered = append(filtered, backup)
 		}
@@ -650,16 +635,7 @@ func parseMenuBackupPayload(raw string) (ginMenuBackupPayload, error) {
 			return payload, nil
 		}
 	}
-
-	var legacyMenus []user.Menu
-	if err := json.Unmarshal([]byte(raw), &legacyMenus); err != nil {
-		return ginMenuBackupPayload{}, err
-	}
-
-	return ginMenuBackupPayload{
-		ScopeType: "global",
-		Menus:     legacyMenus,
-	}, nil
+	return ginMenuBackupPayload{}, fmt.Errorf("invalid menu backup payload")
 }
 
 func (s *menuService) loadBackupGroups(menus []user.Menu, spaceKey string) ([]user.MenuManageGroup, error) {
