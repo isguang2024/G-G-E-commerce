@@ -1,0 +1,39 @@
+# OS / Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs / local runtime artifacts
+*.log
+*.err.log
+*.out.log
+output/
+.playwright-cli/
+.codex-tmp/
+.learnings/
+
+# Frontend / tool caches
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/coverage/
+**/.cache/
+**/.turbo/
+**/.vite/
+**/.parcel-cache/
+**/.pnpm-store/
+**/.eslintcache
+**/.stylelintcache
+**/*.tsbuildinfo
+**/tmp/
+**/.codex-tmp/
+**/.auto-import.json
+**/src/types/import/
+
