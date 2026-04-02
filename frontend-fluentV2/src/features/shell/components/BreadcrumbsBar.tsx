@@ -1,6 +1,6 @@
 import { Text, makeStyles, tokens } from '@fluentui/react-components'
 import { Link as RouterLink } from 'react-router-dom'
-import { usePageMetaQuery } from '@/features/navigation/navigation.service'
+import { useRouteContext } from '@/features/navigation/navigation.service'
 
 const useStyles = makeStyles({
   root: {
@@ -24,21 +24,21 @@ const useStyles = makeStyles({
   },
 })
 
-export function BreadcrumbsBar({ routeId }: { routeId: string }) {
+export function BreadcrumbsBar({ routeId }: { routeId?: string }) {
   const styles = useStyles()
-  const { data } = usePageMetaQuery(routeId)
+  const { context } = useRouteContext(routeId)
 
-  if (!data) {
+  if (!context) {
     return null
   }
 
   return (
     <div className={styles.root}>
-      {data.breadcrumbs.map((item, index) => {
-        const isLast = index === data.breadcrumbs.length - 1
+      {context.breadcrumbs.map((item, index) => {
+        const isLast = index === context.breadcrumbs.length - 1
 
         return (
-          <span key={`${routeId}-${item.label}-${index}`} style={{ display: 'contents' }}>
+          <span key={`${context.routeId}-${item.label}-${index}`} style={{ display: 'contents' }}>
             {item.path && !isLast ? (
               <RouterLink className={styles.link} to={item.path}>
                 {item.label}

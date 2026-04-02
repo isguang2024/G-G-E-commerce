@@ -107,5 +107,12 @@ export function AppIcon({ icon }: { icon: NavIconKey }) {
           <path d="M4 12l8 3.5 8-3.5M4 16.5 12 20l8-3.5" />
         </>,
       )
+    default:
+      return strokeIcon(
+        <>
+          <rect x="5" y="6" width="14" height="12" rx="2" />
+          <path d="M9 10h6M9 14h4" />
+        </>,
+      )
   }
 }

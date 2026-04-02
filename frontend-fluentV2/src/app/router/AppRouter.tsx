@@ -1,12 +1,10 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { AppShell } from '@/features/shell/AppShell'
-import { routeDefinitions, renderRouteElement } from '@/features/navigation/route-registry'
-import { RedirectIfAuthenticated, RequireAuth } from '@/features/session/AuthGuards'
+import { RedirectIfAuthenticated, RequireAuth } from '@/features/auth/AuthGuards'
+import { RuntimePageOutlet } from '@/features/navigation/route-registry'
 import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
-import { NotFoundPage } from '@/pages/not-found/NotFoundPage'
-import { appConfig } from '@/shared/config/app-config'
 
 export function AppRouter() {
   return (
@@ -27,11 +25,7 @@ export function AppRouter() {
           </RequireAuth>
         }
       >
-        <Route index element={<Navigate replace to={appConfig.defaultRoute} />} />
-        {routeDefinitions.map((definition) => (
-          <Route key={definition.id} path={definition.path} element={renderRouteElement(definition.id)} />
-        ))}
-        <Route path="*" element={<NotFoundPage />} />
+        <Route path="*" element={<RuntimePageOutlet />} />
       </Route>
     </Routes>
   )

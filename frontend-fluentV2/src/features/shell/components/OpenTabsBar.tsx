@@ -53,6 +53,7 @@ const TAB_FLIP_DURATION_MS = 160
 const TAB_FLIP_DRAG_DURATION_MS = 90
 const DRAG_FLIP_WARMUP_MS = 140
 const TAB_FLIP_EASING = 'cubic-bezier(0.33, 0, 0.67, 1)'
+const TAB_MIN_WIDTH = '108px'
 
 const useStyles = makeStyles({
   root: {
@@ -130,10 +131,10 @@ const useStyles = makeStyles({
     gridTemplateColumns: 'auto minmax(0, 1fr) auto',
     alignItems: 'center',
     gap: '6px',
-    minWidth: '138px',
+    minWidth: TAB_MIN_WIDTH,
     maxWidth: '214px',
     height: '34px',
-    padding: '0 10px 0 11px',
+    padding: '0 8px 0 9px',
     borderRadius: '10px 10px 0 0',
     border: `1px solid transparent`,
     borderBottomColor: 'transparent',
@@ -165,8 +166,8 @@ const useStyles = makeStyles({
   activeTab: {
     backgroundColor: tokens.colorNeutralBackground1,
     color: tokens.colorNeutralForeground1,
-    borderColor: tokens.colorNeutralStroke2,
-    borderBottomColor: tokens.colorNeutralBackground1,
+    border: `1px solid ${tokens.colorNeutralStroke2}`,
+    borderBottom: `1px solid ${tokens.colorNeutralBackground1}`,
     boxShadow: `0 1px 0 ${tokens.colorNeutralBackground1}, 0 -1px 0 ${tokens.colorNeutralStroke2}, 1px 0 0 ${tokens.colorNeutralStroke2}, -1px 0 0 ${tokens.colorNeutralStroke2}`,
     zIndex: 1,
   },
@@ -182,9 +183,9 @@ const useStyles = makeStyles({
     gridTemplateColumns: 'auto minmax(0, 1fr) auto',
     alignItems: 'center',
     gap: '6px',
-    minWidth: '138px',
+    minWidth: TAB_MIN_WIDTH,
     height: '34px',
-    padding: '0 10px 0 11px',
+    padding: '0 8px 0 9px',
     borderRadius: '10px 10px 0 0',
     backgroundColor: tokens.colorNeutralBackground1,
     color: tokens.colorNeutralForeground1,
@@ -210,7 +211,7 @@ const useStyles = makeStyles({
     justifyContent: 'center',
   },
   spacer: {
-    width: '16px',
+    width: '10px',
   },
   label: {
     minWidth: 0,
@@ -773,7 +774,7 @@ export function OpenTabsBar({
           tabIndex={active ? 0 : -1}
           className={mergeClasses(
             styles.tab,
-            dragState && styles.tabDragging,
+            Boolean(dragState) && styles.tabDragging,
             active && styles.tabVisibleClose,
             active && styles.activeTab,
             isDragging && styles.dragSourcePlaceholder,
@@ -811,7 +812,7 @@ export function OpenTabsBar({
           </Text>
           {closable && !tab.pinned ? (
             <Button
-              className={mergeClasses(styles.closeButton, dragState && styles.tabDragging)}
+              className={mergeClasses(styles.closeButton, Boolean(dragState) && styles.tabDragging)}
               appearance="subtle"
               aria-label={`关闭${tab.label}`}
               icon={<Dismiss16Regular />}
@@ -832,7 +833,7 @@ export function OpenTabsBar({
   }
 
   return (
-    <div className={mergeClasses(styles.root, dragState && styles.rootDragging)}>
+    <div className={mergeClasses(styles.root, Boolean(dragState) && styles.rootDragging)}>
       <div
         className={mergeClasses(
           styles.scrollerWrap,

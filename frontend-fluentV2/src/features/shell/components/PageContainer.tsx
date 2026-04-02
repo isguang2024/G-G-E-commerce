@@ -1,8 +1,7 @@
 import type { PropsWithChildren, ReactNode } from 'react'
 import { Badge, Body1, Spinner, makeStyles, tokens } from '@fluentui/react-components'
+import { useRouteContext } from '@/features/navigation/navigation.service'
 import { BreadcrumbsBar } from '@/features/shell/components/BreadcrumbsBar'
-import { usePageMetaQuery, useSpacesQuery } from '@/features/navigation/navigation.service'
-import { useShellStore } from '@/features/shell/store/useShellStore'
 
 const useStyles = makeStyles({
   root: {
@@ -67,14 +66,11 @@ export function PageContainer({
   routeId,
   actions,
   children,
-}: PropsWithChildren<{ routeId: string; actions?: ReactNode }>) {
+}: PropsWithChildren<{ routeId?: string; actions?: ReactNode }>) {
   const styles = useStyles()
-  const currentSpaceKey = useShellStore((state) => state.currentSpaceKey)
-  const pageMetaQuery = usePageMetaQuery(routeId)
-  const spacesQuery = useSpacesQuery()
-  const currentSpace = spacesQuery.data?.find((item) => item.key === currentSpaceKey)
+  const { context, isLoading } = useRouteContext(routeId)
 
-  if (pageMetaQuery.isLoading) {
+  if (isLoading) {
     return (
       <div className={styles.loading}>
         <Spinner label="正在读取页面信息" />
@@ -82,7 +78,7 @@ export function PageContainer({
     )
   }
 
-  if (!pageMetaQuery.data) {
+  if (!context) {
     return null
   }
 
@@ -92,16 +88,17 @@ export function PageContainer({
         <BreadcrumbsBar routeId={routeId} />
         <div className={styles.titleRow}>
           <div className={styles.titleBlock}>
-            <h1 className={styles.title}>{pageMetaQuery.data.title}</h1>
-            <Body1 className={styles.subtitle}>{pageMetaQuery.data.subtitle}</Body1>
+            <h1 className={styles.title}>{context.title}</h1>
+            <Body1 className={styles.subtitle}>{context.subtitle}</Body1>
           </div>
           {actions ? <div className={styles.actions}>{actions}</div> : null}
         </div>
         <div className={styles.metaRow}>
           <Badge appearance="filled" color="brand">
-            {pageMetaQuery.data.groupLabel}
+            {context.groupLabel}
           </Badge>
-          {currentSpace ? <Badge appearance="tint">{currentSpace.label}</Badge> : null}
+          {context.spaceKey ? <Badge appearance="tint">空间：{context.spaceKey}</Badge> : null}
+          <Badge appearance="outline">{context.status === 'implemented' ? '已实现' : '占位承接'}</Badge>
         </div>
       </header>
       <div className={styles.content}>{children}</div>

@@ -25,8 +25,9 @@ import {
 } from '@fluentui/react-icons'
 import { type FocusEvent, useEffect, useRef, useState } from 'react'
 import { MenuSearchDialog } from '@/features/shell/components/MenuSearchDialog'
+import { SpaceSwitcher } from '@/features/shell/components/SpaceSwitcher'
 import { AppLogo } from '@/shared/ui/AppLogo'
-import type { NavigationItem } from '@/shared/types/navigation'
+import type { NavigationItem, NavigationSpace } from '@/shared/types/navigation'
 import type { SessionUser } from '@/shared/types/session'
 
 const useStyles = makeStyles({
@@ -130,14 +131,6 @@ const useStyles = makeStyles({
       display: 'none',
     },
   },
-  mobileBrand: {
-    display: 'none',
-    '@media (max-width: 960px)': {
-      display: 'flex',
-      alignItems: 'center',
-      minWidth: 0,
-    },
-  },
   userButton: {
     minWidth: 'auto',
     paddingLeft: '8px',
@@ -172,10 +165,13 @@ export function HeaderBar({
   darkMode,
   navCollapsed,
   tabsEnabled,
+  currentSpace,
+  spaces,
   onToggleTheme,
   onToggleNav,
   onSetTabsEnabled,
   onOpenMobileNav,
+  onSelectSpace,
   onSignOut,
 }: {
   navigationItems: NavigationItem[]
@@ -183,10 +179,13 @@ export function HeaderBar({
   darkMode: boolean
   navCollapsed: boolean
   tabsEnabled: boolean
+  currentSpace: NavigationSpace | null
+  spaces: NavigationSpace[]
   onToggleTheme: () => void
   onToggleNav: () => void
   onSetTabsEnabled: (enabled: boolean) => void
   onOpenMobileNav: () => void
+  onSelectSpace: (spaceKey: string) => void
   onSignOut: () => void
 }) {
   const styles = useStyles()
@@ -234,7 +233,7 @@ export function HeaderBar({
             <Switch
               checked={tabsEnabled}
               label="显示标签栏"
-              onChange={(_, data) => onSetTabsEnabled(data.checked)}
+              onChange={(_, data) => onSetTabsEnabled(Boolean(data.checked))}
             />
           </div>
         </MenuPopover>
@@ -315,6 +314,7 @@ export function HeaderBar({
             </Tooltip>
           </div>
         </div>
+        {currentSpace ? <SpaceSwitcher currentSpace={currentSpace} spaces={spaces} onSelect={onSelectSpace} /> : null}
       </div>
 
       <div className={styles.right}>
@@ -325,14 +325,14 @@ export function HeaderBar({
                 <Avatar name={currentUser.displayName} size={28} />
                 <div className={styles.userText}>
                   <Body1>{currentUser.displayName}</Body1>
-                  <Caption1 className={styles.userMeta}>{currentUser.title}</Caption1>
+                  <Caption1 className={styles.userMeta}>{currentUser.email || currentUser.username}</Caption1>
                 </div>
               </div>
             </Button>
           </MenuTrigger>
           <MenuPopover>
             <MenuList>
-              <MenuItem>{currentUser.email}</MenuItem>
+              <MenuItem>{currentUser.email || currentUser.username}</MenuItem>
               <MenuItem icon={<ArrowExit20Regular />} onClick={onSignOut}>
                 退出登录
               </MenuItem>

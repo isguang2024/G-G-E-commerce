@@ -1,5 +1,19 @@
 # Change Log
 
+## 2026-04-02 frontend-fluentV2 第二版接入真实认证、运行时导航与菜单浏览
+
+### 本次改动
+- 将 `frontend-fluentV2` 从第一版 mock shell 升级为第二版真实运行时基础层，补齐真实登录、会话恢复、当前用户获取、退出登录、全局 `401` 清会话与 redirect 回跳闭环。
+- 重构共享请求层与适配层，新增统一 Axios client、接口模块、Query key、错误模型与 adapter 映射，页面层不再直接消费后端 DTO 细节。
+- 接入真实菜单空间与运行时导航：当前空间可持久化，登录后会按空间加载导航树，左侧导航、面包屑、迁移占位页与 `system/menu` 查询上下文会联动刷新。
+- 路由继续保持静态壳 + route registry 模式：本地已实现页面正常进入，运行时存在但未迁移页面统一进入上下文化占位页，避免动态组件路径直驱前端实现。
+- 将 `system/menu` 从占位页推进为真实浏览版，支持真实菜单树加载、空间联动、搜索、节点详情只读展示、页面绑定信息只读展示与基础空态/错误态渲染。
+- 已验证 `pnpm --dir frontend-fluentV2 exec tsc --noEmit` 与 `pnpm --dir frontend-fluentV2 build` 通过；当前生产构建仍有既有的大 chunk 告警，但不影响本次接入结果。
+
+### 下次方向
+- 第三版优先继续沿第二版的 adapter、query 与 route registry 基础，逐步把 `system/page`、`system/interface`、`system/role` 等治理链路从占位页迁移为真实页面。
+- `system/menu` 下一阶段建议补编辑、新增、删除、排序和更完整的关联治理能力，但继续保持危险操作集中在 feature/service 层，不把 DTO 兼容逻辑回灌到页面组件。
+
 # 2026-04-02 frontend-fluentV2 去除 React Fluent 2 显式标识
 
 ### 本次改动

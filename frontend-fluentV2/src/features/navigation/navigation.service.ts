@@ -1,43 +1,65 @@
+import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { navigationMock } from '@/shared/mocks/navigation.mock'
-import { pageMetaMock } from '@/shared/mocks/page-meta.mock'
-import { spacesMock } from '@/shared/mocks/spaces.mock'
-import { withDelay } from '@/shared/lib/delay'
+import { useLocation } from 'react-router-dom'
+import { fetchMenuSpaces, fetchRuntimeNavigationManifest } from '@/shared/api/modules/navigation.api'
+import { queryKeys } from '@/shared/api/query-keys'
+import { useShellStore } from '@/features/shell/store/useShellStore'
+import {
+  buildNavigationItems,
+  buildRouteContext,
+  getLocalRouteDefinitionById,
+  getLocalRouteDefinitionByPath,
+} from '@/features/navigation/route-registry'
 
-async function fetchSpaces() {
-  return withDelay(spacesMock)
+export function useMenuSpacesQuery() {
+  return useQuery({
+    queryKey: queryKeys.navigation.spaces,
+    queryFn: fetchMenuSpaces,
+  })
 }
 
-async function fetchNavigationTree() {
-  return withDelay(navigationMock)
+export function useRuntimeNavigationManifestQuery(spaceKey?: string) {
+  const fallbackSpaceKey = useShellStore((state) => state.currentSpaceKey)
+  const resolvedSpaceKey = spaceKey || fallbackSpaceKey
+
+  return useQuery({
+    queryKey: queryKeys.navigation.manifest(resolvedSpaceKey),
+    queryFn: () => fetchRuntimeNavigationManifest(resolvedSpaceKey),
+    enabled: Boolean(resolvedSpaceKey),
+  })
 }
 
-async function fetchPageMeta(routeId: string) {
-  const pageMeta = pageMetaMock[routeId]
-  if (!pageMeta) {
-    throw new Error(`Missing page metadata for route "${routeId}"`)
+export function useNavigationItems() {
+  const currentSpaceKey = useShellStore((state) => state.currentSpaceKey)
+  const manifestQuery = useRuntimeNavigationManifestQuery(currentSpaceKey)
+
+  const items = useMemo(
+    () => buildNavigationItems(manifestQuery.data?.menuTree || []),
+    [manifestQuery.data?.menuTree],
+  )
+
+  return {
+    ...manifestQuery,
+    items,
   }
-
-  return withDelay(pageMeta, 80)
 }
 
-export function useSpacesQuery() {
-  return useQuery({
-    queryKey: ['shell', 'spaces'],
-    queryFn: fetchSpaces,
-  })
-}
+export function useRouteContext(routeId?: string) {
+  const location = useLocation()
+  const currentSpaceKey = useShellStore((state) => state.currentSpaceKey)
+  const manifestQuery = useRuntimeNavigationManifestQuery(currentSpaceKey)
 
-export function useNavigationTreeQuery() {
-  return useQuery({
-    queryKey: ['navigation', 'tree'],
-    queryFn: fetchNavigationTree,
-  })
-}
+  const context = useMemo(() => {
+    const pathname = location.pathname
+    const fallbackRoute =
+      (routeId ? getLocalRouteDefinitionById(routeId) : undefined) ||
+      getLocalRouteDefinitionByPath(pathname)
 
-export function usePageMetaQuery(routeId: string) {
-  return useQuery({
-    queryKey: ['pages', 'meta', routeId],
-    queryFn: () => fetchPageMeta(routeId),
-  })
+    return buildRouteContext(pathname, manifestQuery.data, fallbackRoute)
+  }, [location.pathname, manifestQuery.data, routeId])
+
+  return {
+    ...manifestQuery,
+    context,
+  }
 }

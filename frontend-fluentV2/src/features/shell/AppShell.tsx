@@ -1,15 +1,14 @@
-import { type CSSProperties, useEffect, useState } from 'react'
+import { type CSSProperties, useEffect, useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { MessageBar, MessageBarBody, Spinner, makeStyles, tokens } from '@fluentui/react-components'
+import { useAuthStore } from '@/features/auth/auth.store'
+import { useNavigationItems, useRouteContext, useRuntimeNavigationManifestQuery, useMenuSpacesQuery } from '@/features/navigation/navigation.service'
+import { getLocalRouteDefinitionByPath } from '@/features/navigation/route-registry'
 import { HeaderBar } from '@/features/shell/components/HeaderBar'
 import { OpenTabsBar } from '@/features/shell/components/OpenTabsBar'
 import { SideNav } from '@/features/shell/components/SideNav'
-import { useAuthStore } from '@/features/session/auth.store'
-import { useNavigationTreeQuery, useSpacesQuery } from '@/features/navigation/navigation.service'
-import { resolveRouteByPath, resolveShellTabByPath } from '@/features/navigation/route-registry'
 import { useShellStore } from '@/features/shell/store/useShellStore'
 import { appConfig } from '@/shared/config/app-config'
-import type { NavigationItem, SpaceKey } from '@/shared/types/navigation'
 
 const useStyles = makeStyles({
   app: {
@@ -71,29 +70,12 @@ const useStyles = makeStyles({
 const NAV_CONTENT_APPEAR_DELAY_MS = 42
 const NAV_COLLAPSE_SWAP_DELAY_MS = 68
 
-function isVisibleForSpace(spaceVisibility: NavigationItem['spaceVisibility'], spaceKey: SpaceKey) {
-  return spaceVisibility === 'all' || spaceVisibility.includes(spaceKey)
-}
-
-function filterNavigation(items: NavigationItem[], spaceKey: SpaceKey): NavigationItem[] {
-  return items.reduce<NavigationItem[]>((result, item) => {
-    if (!isVisibleForSpace(item.spaceVisibility, spaceKey)) {
-      return result
-    }
-
-    const children = item.children ? filterNavigation(item.children, spaceKey) : undefined
-    result.push({
-      ...item,
-      children,
-    })
-    return result
-  }, [])
-}
-
 export function AppShell() {
   const styles = useStyles()
   const location = useLocation()
   const navigate = useNavigate()
+  const currentUser = useAuthStore((state) => state.currentUser)
+  const clearAuth = useAuthStore((state) => state.clearAuth)
   const {
     themeMode,
     navCollapsed,
@@ -116,18 +98,16 @@ export function AppShell() {
     closeTabsToRight,
     reorderTabs,
   } = useShellStore()
-  const currentUser = useAuthStore((state) => state.currentUser)
-  const signOut = useAuthStore((state) => state.signOut)
+  const spacesQuery = useMenuSpacesQuery()
+  const navigationItemsQuery = useNavigationItems()
+  const manifestQuery = useRuntimeNavigationManifestQuery(currentSpaceKey)
+  const routeContextQuery = useRouteContext()
   const [navRenderCollapsed, setNavRenderCollapsed] = useState(navCollapsed)
   const [navContentVisible, setNavContentVisible] = useState(!navCollapsed)
-
-  const spacesQuery = useSpacesQuery()
-  const navigationQuery = useNavigationTreeQuery()
 
   useEffect(() => {
     if (navCollapsed) {
       setNavContentVisible(false)
-
       const timeoutId = window.setTimeout(() => {
         setNavRenderCollapsed(true)
       }, NAV_COLLAPSE_SWAP_DELAY_MS)
@@ -136,7 +116,6 @@ export function AppShell() {
     }
 
     setNavRenderCollapsed(false)
-
     const timeoutId = window.setTimeout(() => {
       setNavContentVisible(true)
     }, NAV_CONTENT_APPEAR_DELAY_MS)
@@ -145,25 +124,40 @@ export function AppShell() {
   }, [navCollapsed])
 
   useEffect(() => {
-    if (spacesQuery.data && !spacesQuery.data.some((item) => item.key === currentSpaceKey)) {
-      setCurrentSpaceKey(spacesQuery.data[0]?.key || 'default')
+    const serverSpaceKey = manifestQuery.data?.currentSpace?.space.key
+    if (serverSpaceKey && serverSpaceKey !== currentSpaceKey) {
+      setCurrentSpaceKey(serverSpaceKey)
     }
-  }, [currentSpaceKey, setCurrentSpaceKey, spacesQuery.data])
+  }, [currentSpaceKey, manifestQuery.data?.currentSpace?.space.key, setCurrentSpaceKey])
 
   useEffect(() => {
-    const routeDefinition = resolveRouteByPath(location.pathname)
-    const shellTab = resolveShellTabByPath(location.pathname)
-
-    if (routeDefinition) {
-      setActiveTopContext(routeDefinition.shellTitle)
+    if (!routeContextQuery.context) {
+      return
     }
 
-    if (tabsEnabled && shellTab) {
-      registerTab(shellTab)
-    }
-  }, [location.pathname, registerTab, setActiveTopContext, tabsEnabled])
+    setActiveTopContext(routeContextQuery.context.title)
 
-  if (spacesQuery.isLoading || navigationQuery.isLoading || !currentUser) {
+    if (tabsEnabled) {
+      registerTab({
+        routeId: routeContextQuery.context.routeId,
+        path: routeContextQuery.context.path,
+        label: routeContextQuery.context.title,
+        group: routeContextQuery.context.group,
+        groupLabel: routeContextQuery.context.groupLabel,
+      })
+    }
+  }, [registerTab, routeContextQuery.context, setActiveTopContext, tabsEnabled])
+
+  const currentSpace = useMemo(
+    () =>
+      spacesQuery.data?.find((item) => item.key === currentSpaceKey) ||
+      manifestQuery.data?.currentSpace?.space ||
+      null,
+    [currentSpaceKey, manifestQuery.data?.currentSpace?.space, spacesQuery.data],
+  )
+  const activeTab = openTabs.find((item) => item.path === location.pathname)
+
+  if (!currentUser || spacesQuery.isLoading || manifestQuery.isLoading || navigationItemsQuery.isLoading) {
     return (
       <div className={styles.loading}>
         <Spinner label="正在初始化壳层" />
@@ -171,24 +165,20 @@ export function AppShell() {
     )
   }
 
-  if (spacesQuery.isError || navigationQuery.isError || !spacesQuery.data?.length) {
+  if (spacesQuery.isError || manifestQuery.isError || navigationItemsQuery.isError) {
     return (
       <div className={styles.content}>
-        <MessageBar>
-          <MessageBarBody>壳层 mock 初始化失败，请检查本地数据或 Query 配置。</MessageBarBody>
+        <MessageBar intent="error">
+          <MessageBarBody>运行时初始化失败，请检查登录态、菜单空间接口和导航接口。</MessageBarBody>
         </MessageBar>
       </div>
     )
   }
 
-  const currentSpace =
-    spacesQuery.data.find((item) => item.key === currentSpaceKey) || spacesQuery.data[0]
-  const filteredNavigation = filterNavigation(navigationQuery.data || [], currentSpace.key)
   const shellMotionStyle = {
     '--shell-sidebar-width': navCollapsed ? '72px' : '252px',
     '--shell-sidebar-padding-x': navCollapsed ? '8px' : '10px',
   } as CSSProperties
-  const activeTab = openTabs.find((item) => item.path === location.pathname)
 
   function handleSelectTab(path: string) {
     if (path !== location.pathname) {
@@ -203,10 +193,7 @@ export function AppShell() {
     }
 
     const isActive = location.pathname === path
-    const fallbackPath =
-      openTabs[tabIndex + 1]?.path ||
-      openTabs[tabIndex - 1]?.path ||
-      appConfig.defaultRoute
+    const fallbackPath = openTabs[tabIndex + 1]?.path || openTabs[tabIndex - 1]?.path || appConfig.defaultRoute
 
     closeTab(path)
 
@@ -229,10 +216,7 @@ export function AppShell() {
     const targetIndex = openTabs.findIndex((item) => item.path === path)
     const activeIndex = openTabs.findIndex((item) => item.path === location.pathname)
     const currentTab = openTabs[activeIndex]
-    const activeWillSurvive =
-      activeIndex < 0 ||
-      activeIndex >= targetIndex ||
-      currentTab?.pinned
+    const activeWillSurvive = activeIndex < 0 || activeIndex >= targetIndex || currentTab?.pinned
 
     closeTabsToLeft(path)
 
@@ -245,10 +229,7 @@ export function AppShell() {
     const targetIndex = openTabs.findIndex((item) => item.path === path)
     const activeIndex = openTabs.findIndex((item) => item.path === location.pathname)
     const currentTab = openTabs[activeIndex]
-    const activeWillSurvive =
-      activeIndex < 0 ||
-      activeIndex <= targetIndex ||
-      currentTab?.pinned
+    const activeWillSurvive = activeIndex < 0 || activeIndex <= targetIndex || currentTab?.pinned
 
     closeTabsToRight(path)
 
@@ -259,28 +240,47 @@ export function AppShell() {
 
   function handleSignOut() {
     clearTabs()
-    signOut()
+    clearAuth()
+    navigate('/login', { replace: true })
+  }
+
+  function handleSelectSpace(spaceKey: string) {
+    if (spaceKey === currentSpaceKey) {
+      return
+    }
+
+    const currentPathIsLocal = Boolean(getLocalRouteDefinitionByPath(location.pathname))
+    const targetFallback =
+      spacesQuery.data?.find((item) => item.key === spaceKey)?.defaultLandingRoute || appConfig.defaultRoute
+    setCurrentSpaceKey(spaceKey)
+
+    if (!currentPathIsLocal) {
+      navigate(targetFallback, { replace: true })
+    }
   }
 
   return (
     <div className={styles.app}>
       <HeaderBar
-        navigationItems={filteredNavigation}
+        navigationItems={navigationItemsQuery.items}
         currentUser={currentUser}
         darkMode={themeMode === 'dark'}
         navCollapsed={navCollapsed}
         tabsEnabled={tabsEnabled}
+        currentSpace={currentSpace}
+        spaces={spacesQuery.data || []}
         onToggleTheme={toggleTheme}
         onToggleNav={toggleNavCollapsed}
         onSetTabsEnabled={setTabsEnabled}
         onOpenMobileNav={() => setMobileNavOpen(true)}
+        onSelectSpace={handleSelectSpace}
         onSignOut={handleSignOut}
       />
 
       <div className={styles.body} style={shellMotionStyle}>
         <aside className={styles.sidebar} style={shellMotionStyle}>
           <SideNav
-            items={filteredNavigation}
+            items={navigationItemsQuery.items}
             collapsed={navRenderCollapsed}
             contentVisible={navContentVisible}
             mobileOpen={mobileNavOpen}

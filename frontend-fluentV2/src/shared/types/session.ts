@@ -1,10 +1,3 @@
-import type { SpaceKey } from '@/shared/types/navigation'
+import type { CurrentUser } from '@/shared/types/auth'
 
-export interface SessionUser {
-  id: string
-  displayName: string
-  title: string
-  email: string
-  primarySpaceKey: SpaceKey
-  badges: string[]
-}
+export type SessionUser = CurrentUser
