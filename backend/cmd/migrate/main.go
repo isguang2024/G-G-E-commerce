@@ -536,6 +536,22 @@ func runNamedMigrations(logger *zap.Logger) error {
 			},
 		},
 		{
+			Name: "20260402_message_more_page_seed",
+			Run: func(logger *zap.Logger) error {
+				targetPages := []string{
+					"system.message.more",
+					"team.message.more",
+				}
+				for _, pageKey := range targetPages {
+					if _, err := syncDefaultPageSeedByKey(pageKey); err != nil {
+						return err
+					}
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260402_message_more_page_seed"))
+				return nil
+			},
+		},
+		{
 			Name: "20260329_message_send_navigation_realign",
 			Run: func(logger *zap.Logger) error {
 				deprecatedMenus := []string{

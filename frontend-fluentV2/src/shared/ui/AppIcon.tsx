@@ -15,7 +15,7 @@ function strokeIcon(children: ReactNode) {
   )
 }
 
-export function AppIcon({ icon }: { icon: NavIconKey }) {
+export function AppIcon({ icon }: { icon?: NavIconKey }) {
   switch (icon) {
     case 'home':
       return strokeIcon(<path d="M4 11.5 12 5l8 6.5V20H4z" />)

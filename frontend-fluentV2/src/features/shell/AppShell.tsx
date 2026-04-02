@@ -1,14 +1,17 @@
 import { type CSSProperties, useEffect, useMemo, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { MessageBar, MessageBarBody, Spinner, makeStyles, tokens } from '@fluentui/react-components'
+import { Spinner, makeStyles, tokens } from '@fluentui/react-components'
 import { useAuthStore } from '@/features/auth/auth.store'
 import { useNavigationItems, useRouteContext, useRuntimeNavigationManifestQuery, useMenuSpacesQuery } from '@/features/navigation/navigation.service'
-import { getLocalRouteDefinitionByPath } from '@/features/navigation/route-registry'
+import { getLocalRouteDefinitionByPath, getNavigationGroupLabel } from '@/features/navigation/route-registry'
 import { HeaderBar } from '@/features/shell/components/HeaderBar'
 import { OpenTabsBar } from '@/features/shell/components/OpenTabsBar'
 import { SideNav } from '@/features/shell/components/SideNav'
 import { useShellStore } from '@/features/shell/store/useShellStore'
+import { invalidateSpaceScopedQueries } from '@/shared/api/query-client'
 import { appConfig } from '@/shared/config/app-config'
+import { PageStatusBanner } from '@/shared/ui/PageStatusBanner'
+import type { SessionUser } from '@/shared/types/session'
 
 const useStyles = makeStyles({
   app: {
@@ -23,7 +26,7 @@ const useStyles = makeStyles({
     gridTemplateColumns: 'var(--shell-sidebar-width) minmax(0, 1fr)',
     willChange: 'grid-template-columns',
     transitionProperty: 'grid-template-columns',
-    transitionDuration: tokens.durationFast,
+    transitionDuration: '180ms',
     transitionTimingFunction: tokens.curveEasyEase,
     '@media (max-width: 960px)': {
       gridTemplateColumns: '1fr',
@@ -38,7 +41,7 @@ const useStyles = makeStyles({
     contain: 'layout paint',
     willChange: 'padding',
     transitionProperty: 'padding',
-    transitionDuration: tokens.durationFast,
+    transitionDuration: '180ms',
     transitionTimingFunction: tokens.curveEasyEase,
     '@media (max-width: 960px)': {
       display: 'none',
@@ -69,6 +72,7 @@ const useStyles = makeStyles({
 
 const NAV_CONTENT_APPEAR_DELAY_MS = 42
 const NAV_COLLAPSE_SWAP_DELAY_MS = 68
+const EXPANDED_NAV_BASE_WIDTH = 252
 
 export function AppShell() {
   const styles = useStyles()
@@ -90,6 +94,7 @@ export function AppShell() {
     setCurrentSpaceKey,
     setActiveTopContext,
     registerTab,
+    replaceTabs,
     closeTab,
     clearTabs,
     toggleTabPinned,
@@ -98,12 +103,28 @@ export function AppShell() {
     closeTabsToRight,
     reorderTabs,
   } = useShellStore()
-  const spacesQuery = useMenuSpacesQuery()
-  const navigationItemsQuery = useNavigationItems()
-  const manifestQuery = useRuntimeNavigationManifestQuery(currentSpaceKey)
-  const routeContextQuery = useRouteContext()
+  const shellUser: SessionUser = currentUser || {
+    id: 'shell-reset',
+    username: 'shell-reset',
+    displayName: '壳层重置',
+    email: '',
+    avatarUrl: '',
+    phone: '',
+    status: 'inactive',
+    isSuperAdmin: false,
+    currentTenantId: null,
+    roles: [],
+    actions: [],
+    badges: [],
+  }
+  const runtimeEnabled = Boolean(currentUser)
+  const spacesQuery = useMenuSpacesQuery({ enabled: runtimeEnabled })
+  const navigationItemsQuery = useNavigationItems({ enabled: runtimeEnabled })
+  const manifestQuery = useRuntimeNavigationManifestQuery(currentSpaceKey, { enabled: runtimeEnabled })
+  const routeContextQuery = useRouteContext(undefined, { enabled: runtimeEnabled })
   const [navRenderCollapsed, setNavRenderCollapsed] = useState(navCollapsed)
   const [navContentVisible, setNavContentVisible] = useState(!navCollapsed)
+  const [navExpandedWidth, setNavExpandedWidth] = useState(EXPANDED_NAV_BASE_WIDTH)
 
   useEffect(() => {
     if (navCollapsed) {
@@ -129,6 +150,40 @@ export function AppShell() {
       setCurrentSpaceKey(serverSpaceKey)
     }
   }, [currentSpaceKey, manifestQuery.data?.currentSpace?.space.key, setCurrentSpaceKey])
+
+  useEffect(() => {
+    if (!openTabs.length) {
+      return
+    }
+
+    let hasChanged = false
+    const nextTabs = openTabs.map((tab) => {
+      const localRoute = getLocalRouteDefinitionByPath(tab.path)
+      if (!localRoute) {
+        return tab
+      }
+
+      const nextLabel = localRoute.shellTitle
+      const nextGroup = localRoute.group
+      const nextGroupLabel = getNavigationGroupLabel(localRoute.group)
+
+      if (tab.label === nextLabel && tab.group === nextGroup && tab.groupLabel === nextGroupLabel) {
+        return tab
+      }
+
+      hasChanged = true
+      return {
+        ...tab,
+        label: nextLabel,
+        group: nextGroup,
+        groupLabel: nextGroupLabel,
+      }
+    })
+
+    if (hasChanged) {
+      replaceTabs(nextTabs)
+    }
+  }, [openTabs, replaceTabs])
 
   useEffect(() => {
     if (!routeContextQuery.context) {
@@ -157,7 +212,7 @@ export function AppShell() {
   )
   const activeTab = openTabs.find((item) => item.path === location.pathname)
 
-  if (!currentUser || spacesQuery.isLoading || manifestQuery.isLoading || navigationItemsQuery.isLoading) {
+  if (spacesQuery.isLoading || manifestQuery.isLoading || navigationItemsQuery.isLoading) {
     return (
       <div className={styles.loading}>
         <Spinner label="正在初始化壳层" />
@@ -168,15 +223,17 @@ export function AppShell() {
   if (spacesQuery.isError || manifestQuery.isError || navigationItemsQuery.isError) {
     return (
       <div className={styles.content}>
-        <MessageBar intent="error">
-          <MessageBarBody>运行时初始化失败，请检查登录态、菜单空间接口和导航接口。</MessageBarBody>
-        </MessageBar>
+        <PageStatusBanner
+          intent="error"
+          title="运行时初始化失败"
+          description="请检查登录态、菜单空间接口和导航接口。"
+        />
       </div>
     )
   }
 
   const shellMotionStyle = {
-    '--shell-sidebar-width': navCollapsed ? '72px' : '252px',
+    '--shell-sidebar-width': navCollapsed ? '72px' : `${navExpandedWidth}px`,
     '--shell-sidebar-padding-x': navCollapsed ? '8px' : '10px',
   } as CSSProperties
 
@@ -241,7 +298,7 @@ export function AppShell() {
   function handleSignOut() {
     clearTabs()
     clearAuth()
-    navigate('/login', { replace: true })
+    navigate('/', { replace: true })
   }
 
   function handleSelectSpace(spaceKey: string) {
@@ -253,6 +310,7 @@ export function AppShell() {
     const targetFallback =
       spacesQuery.data?.find((item) => item.key === spaceKey)?.defaultLandingRoute || appConfig.defaultRoute
     setCurrentSpaceKey(spaceKey)
+    void invalidateSpaceScopedQueries(spaceKey)
 
     if (!currentPathIsLocal) {
       navigate(targetFallback, { replace: true })
@@ -263,12 +321,12 @@ export function AppShell() {
     <div className={styles.app}>
       <HeaderBar
         navigationItems={navigationItemsQuery.items}
-        currentUser={currentUser}
+        currentUser={shellUser}
         darkMode={themeMode === 'dark'}
         navCollapsed={navCollapsed}
         tabsEnabled={tabsEnabled}
-        currentSpace={currentSpace}
-        spaces={spacesQuery.data || []}
+        currentSpace={runtimeEnabled ? currentSpace : null}
+        spaces={runtimeEnabled ? spacesQuery.data || [] : []}
         onToggleTheme={toggleTheme}
         onToggleNav={toggleNavCollapsed}
         onSetTabsEnabled={setTabsEnabled}
@@ -284,6 +342,8 @@ export function AppShell() {
             collapsed={navRenderCollapsed}
             contentVisible={navContentVisible}
             mobileOpen={mobileNavOpen}
+            currentSpaceKey={currentSpaceKey}
+            onExpandedWidthChange={setNavExpandedWidth}
             onCloseMobile={() => setMobileNavOpen(false)}
           />
         </aside>
@@ -305,7 +365,15 @@ export function AppShell() {
             </div>
           ) : null}
           <div className={styles.outlet}>
-            <Outlet />
+            {currentUser ? (
+              <Outlet />
+            ) : (
+              <PageStatusBanner
+                intent="info"
+                title="页面已清空"
+                description="当前已删除所有页面实现，只保留壳层与导航骨架，便于重新重构。"
+              />
+            )}
           </div>
         </main>
       </div>

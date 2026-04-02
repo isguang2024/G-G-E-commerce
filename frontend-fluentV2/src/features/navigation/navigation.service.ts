@@ -11,27 +11,34 @@ import {
   getLocalRouteDefinitionByPath,
 } from '@/features/navigation/route-registry'
 
-export function useMenuSpacesQuery() {
+type QueryToggleOptions = {
+  enabled?: boolean
+}
+
+export function useMenuSpacesQuery(options?: QueryToggleOptions) {
   return useQuery({
-    queryKey: queryKeys.navigation.spaces,
+    queryKey: queryKeys.navigation.menuSpaces,
     queryFn: fetchMenuSpaces,
+    placeholderData: (previousData) => previousData,
+    enabled: options?.enabled ?? true,
   })
 }
 
-export function useRuntimeNavigationManifestQuery(spaceKey?: string) {
+export function useRuntimeNavigationManifestQuery(spaceKey?: string, options?: QueryToggleOptions) {
   const fallbackSpaceKey = useShellStore((state) => state.currentSpaceKey)
   const resolvedSpaceKey = spaceKey || fallbackSpaceKey
 
   return useQuery({
-    queryKey: queryKeys.navigation.manifest(resolvedSpaceKey),
+    queryKey: queryKeys.navigation.runtime(resolvedSpaceKey),
     queryFn: () => fetchRuntimeNavigationManifest(resolvedSpaceKey),
-    enabled: Boolean(resolvedSpaceKey),
+    enabled: Boolean(resolvedSpaceKey) && (options?.enabled ?? true),
+    placeholderData: (previousData) => previousData,
   })
 }
 
-export function useNavigationItems() {
+export function useNavigationItems(options?: QueryToggleOptions) {
   const currentSpaceKey = useShellStore((state) => state.currentSpaceKey)
-  const manifestQuery = useRuntimeNavigationManifestQuery(currentSpaceKey)
+  const manifestQuery = useRuntimeNavigationManifestQuery(currentSpaceKey, options)
 
   const items = useMemo(
     () => buildNavigationItems(manifestQuery.data?.menuTree || []),
@@ -44,10 +51,10 @@ export function useNavigationItems() {
   }
 }
 
-export function useRouteContext(routeId?: string) {
+export function useRouteContext(routeId?: string, options?: QueryToggleOptions) {
   const location = useLocation()
   const currentSpaceKey = useShellStore((state) => state.currentSpaceKey)
-  const manifestQuery = useRuntimeNavigationManifestQuery(currentSpaceKey)
+  const manifestQuery = useRuntimeNavigationManifestQuery(currentSpaceKey, options)
 
   const context = useMemo(() => {
     const pathname = location.pathname

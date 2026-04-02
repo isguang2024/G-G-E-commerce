@@ -1,3 +1,19 @@
+export type MenuNodeKind = 'directory' | 'entry' | 'external'
+
+export interface MenuNodeMeta extends Record<string, unknown> {
+  title?: string
+  icon?: string
+  link?: string
+  activePath?: string
+  accessMode?: string
+  isHide?: boolean
+  isIframe?: boolean
+  isHideTab?: boolean
+  keepAlive?: boolean
+  fixedTab?: boolean
+  isFullPage?: boolean
+}
+
 export interface MenuManageGroup {
   id: string
   name: string
@@ -11,7 +27,7 @@ export interface MenuNode {
   manageGroupId?: string
   manageGroup?: MenuManageGroup
   spaceKey: string
-  kind: string
+  kind: MenuNodeKind
   path: string
   name: string
   title: string
@@ -19,7 +35,7 @@ export interface MenuNode {
   icon: string
   sortOrder: number
   hidden: boolean
-  meta: Record<string, unknown>
+  meta: MenuNodeMeta
   children: MenuNode[]
 }
 
@@ -43,4 +59,32 @@ export interface MenuNodeDetail extends MenuNode {
   childCount: number
   linkedPages: MenuPageBinding[]
   permissionKeys: string[]
+}
+
+export interface MenuDeletePreview {
+  mode: 'single' | 'cascade' | 'promote_children'
+  menuCount: number
+  childCount: number
+  affectedPageCount: number
+  affectedRelationCount: number
+}
+
+export interface MenuMutationDraft {
+  parentId: string | null
+  manageGroupId: string | null
+  spaceKey: string
+  kind: MenuNodeKind
+  path: string
+  name: string
+  title: string
+  component: string
+  icon: string
+  sortOrder: number
+  hidden: boolean
+  accessMode: string
+  activePath: string
+  externalLink: string
+  keepAlive: boolean
+  fixedTab: boolean
+  isFullPage: boolean
 }

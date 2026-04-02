@@ -44,7 +44,7 @@ export interface RuntimeNavItem {
   path: string
   label: string
   title: string
-  icon: NavIconKey
+  icon?: NavIconKey
   group: NavigationGroupKey
   status: RouteStatus
   spaceKey: string
@@ -124,7 +124,7 @@ export interface NavigationItem {
   routeId: string
   path: string
   label: string
-  icon: NavIconKey
+  icon?: NavIconKey
   group: NavigationGroupKey
   status: RouteStatus
   spaceKey: string
@@ -138,6 +138,10 @@ export interface RouteDefinition {
   status: RouteStatus
   shellTitle: string
   subtitle: string
+  layoutVariant?: 'default' | 'overview' | 'settings' | 'collaboration' | 'status'
+  supportsContextPanel?: boolean
+  supportsSecondaryPane?: boolean
+  chunkGroup?: 'auth' | 'dashboard' | 'workspace' | 'message' | 'system' | 'team'
 }
 
 export interface ShellTab {

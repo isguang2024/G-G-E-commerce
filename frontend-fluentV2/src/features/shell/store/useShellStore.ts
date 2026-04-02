@@ -11,6 +11,8 @@ type StoredShellState = {
   themeMode: ThemeMode
   navCollapsed: boolean
   currentSpaceKey: string
+  navExpandedBySpace: Record<string, string[]>
+  navCollapsedBySpace: Record<string, string[]>
   openTabs: ShellTab[]
   tabsEnabled: boolean
 }
@@ -20,6 +22,8 @@ type ShellState = {
   navCollapsed: boolean
   mobileNavOpen: boolean
   currentSpaceKey: string
+  navExpandedBySpace: Record<string, string[]>
+  navCollapsedBySpace: Record<string, string[]>
   activeTopContext: string
   openTabs: ShellTab[]
   tabsEnabled: boolean
@@ -27,8 +31,15 @@ type ShellState = {
   toggleNavCollapsed: () => void
   setMobileNavOpen: (open: boolean) => void
   setCurrentSpaceKey: (spaceKey: string) => void
+  toggleNavItemExpanded: (spaceKey: string, itemId: string) => void
+  setNavExpandedForSpace: (spaceKey: string, itemIds: string[]) => void
+  pruneNavExpandedForSpace: (spaceKey: string, validItemIds: string[]) => void
+  toggleNavItemCollapsed: (spaceKey: string, itemId: string) => void
+  setNavCollapsedForSpace: (spaceKey: string, itemIds: string[]) => void
+  pruneNavCollapsedForSpace: (spaceKey: string, validItemIds: string[]) => void
   setActiveTopContext: (label: string) => void
   registerTab: (tab: ShellTab) => void
+  replaceTabs: (tabs: ShellTab[]) => void
   closeTab: (path: string) => void
   closeTabs: (paths: string[]) => void
   clearTabs: () => void
@@ -46,12 +57,34 @@ function sortTabsByPin(tabs: ShellTab[]) {
   return [...pinnedTabs, ...normalTabs]
 }
 
+function normalizeExpandedIds(itemIds: string[]) {
+  return [...new Set(itemIds.map((itemId) => `${itemId}`.trim()).filter(Boolean))]
+}
+
+function normalizeExpandedBySpace(navExpandedBySpace: Record<string, string[]>) {
+  return Object.fromEntries(
+    Object.entries(navExpandedBySpace)
+      .map(([spaceKey, itemIds]) => [spaceKey, normalizeExpandedIds(Array.isArray(itemIds) ? itemIds : [])])
+      .filter(([, itemIds]) => itemIds.length > 0),
+  )
+}
+
+function normalizeCollapsedBySpace(navCollapsedBySpace: Record<string, string[]>) {
+  return Object.fromEntries(
+    Object.entries(navCollapsedBySpace)
+      .map(([spaceKey, itemIds]) => [spaceKey, normalizeExpandedIds(Array.isArray(itemIds) ? itemIds : [])])
+      .filter(([, itemIds]) => itemIds.length > 0),
+  )
+}
+
 function readShellState(): StoredShellState {
   if (typeof window === 'undefined') {
     return {
       themeMode: 'light',
       navCollapsed: false,
       currentSpaceKey: appConfig.defaultSpaceKey,
+      navExpandedBySpace: {},
+      navCollapsedBySpace: {},
       openTabs: [],
       tabsEnabled: true,
     }
@@ -62,12 +95,24 @@ function readShellState(): StoredShellState {
     themeMode: stored?.themeMode === 'dark' ? 'dark' : 'light',
     navCollapsed: Boolean(stored?.navCollapsed),
     currentSpaceKey: `${stored?.currentSpaceKey || appConfig.defaultSpaceKey}`.trim() || appConfig.defaultSpaceKey,
+    navExpandedBySpace: normalizeExpandedBySpace(
+      stored?.navExpandedBySpace && typeof stored.navExpandedBySpace === 'object' ? stored.navExpandedBySpace : {},
+    ),
+    navCollapsedBySpace: normalizeCollapsedBySpace(
+      stored?.navCollapsedBySpace && typeof stored.navCollapsedBySpace === 'object' ? stored.navCollapsedBySpace : {},
+    ),
     openTabs: Array.isArray(stored?.openTabs) ? stored.openTabs : [],
     tabsEnabled: stored?.tabsEnabled !== false,
   }
 }
 
-function persistShellState(state: Pick<ShellState, 'themeMode' | 'navCollapsed' | 'currentSpaceKey' | 'openTabs' | 'tabsEnabled'>) {
+function persistShellState(
+  state: Pick<
+    ShellState,
+    'themeMode' | 'navCollapsed' | 'currentSpaceKey' | 'navExpandedBySpace' | 'openTabs' | 'tabsEnabled'
+  > &
+    Partial<Pick<ShellState, 'navCollapsedBySpace'>>,
+) {
   if (typeof window === 'undefined') {
     return
   }
@@ -76,6 +121,8 @@ function persistShellState(state: Pick<ShellState, 'themeMode' | 'navCollapsed' 
     themeMode: state.themeMode,
     navCollapsed: state.navCollapsed,
     currentSpaceKey: state.currentSpaceKey,
+    navExpandedBySpace: normalizeExpandedBySpace(state.navExpandedBySpace),
+    navCollapsedBySpace: normalizeCollapsedBySpace(state.navCollapsedBySpace || {}),
     openTabs: sortTabsByPin(state.openTabs),
     tabsEnabled: state.tabsEnabled,
   })
@@ -88,6 +135,8 @@ export const useShellStore = create<ShellState>((set) => ({
   navCollapsed: initialState.navCollapsed,
   mobileNavOpen: false,
   currentSpaceKey: initialState.currentSpaceKey,
+  navExpandedBySpace: initialState.navExpandedBySpace,
+  navCollapsedBySpace: initialState.navCollapsedBySpace,
   activeTopContext: '首页',
   openTabs: sortTabsByPin(initialState.openTabs),
   tabsEnabled: initialState.tabsEnabled,
@@ -98,6 +147,8 @@ export const useShellStore = create<ShellState>((set) => ({
         themeMode,
         navCollapsed: state.navCollapsed,
         currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace: state.navExpandedBySpace,
+        navCollapsedBySpace: state.navCollapsedBySpace,
         openTabs: state.openTabs,
         tabsEnabled: state.tabsEnabled,
       })
@@ -110,6 +161,8 @@ export const useShellStore = create<ShellState>((set) => ({
         themeMode: state.themeMode,
         navCollapsed,
         currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace: state.navExpandedBySpace,
+        navCollapsedBySpace: state.navCollapsedBySpace,
         openTabs: state.openTabs,
         tabsEnabled: state.tabsEnabled,
       })
@@ -122,10 +175,161 @@ export const useShellStore = create<ShellState>((set) => ({
         themeMode: state.themeMode,
         navCollapsed: state.navCollapsed,
         currentSpaceKey,
+        navExpandedBySpace: state.navExpandedBySpace,
+        navCollapsedBySpace: state.navCollapsedBySpace,
         openTabs: state.openTabs,
         tabsEnabled: state.tabsEnabled,
       })
       return { currentSpaceKey }
+    }),
+  toggleNavItemExpanded: (spaceKey, itemId) =>
+    set((state) => {
+      const expandedIds = new Set(state.navExpandedBySpace[spaceKey] || [])
+      if (expandedIds.has(itemId)) {
+        expandedIds.delete(itemId)
+      } else {
+        expandedIds.add(itemId)
+      }
+
+      const collapsedIds = new Set(state.navCollapsedBySpace[spaceKey] || [])
+      collapsedIds.delete(itemId)
+
+      const navExpandedBySpace = {
+        ...state.navExpandedBySpace,
+        [spaceKey]: normalizeExpandedIds([...expandedIds]),
+      }
+      const navCollapsedBySpace = {
+        ...state.navCollapsedBySpace,
+        [spaceKey]: normalizeExpandedIds([...collapsedIds]),
+      }
+      persistShellState({
+        themeMode: state.themeMode,
+        navCollapsed: state.navCollapsed,
+        currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace,
+        navCollapsedBySpace,
+        openTabs: state.openTabs,
+        tabsEnabled: state.tabsEnabled,
+      })
+      return { navExpandedBySpace, navCollapsedBySpace }
+    }),
+  setNavExpandedForSpace: (spaceKey, itemIds) =>
+    set((state) => {
+      const navExpandedBySpace = {
+        ...state.navExpandedBySpace,
+        [spaceKey]: normalizeExpandedIds(itemIds),
+      }
+      persistShellState({
+        themeMode: state.themeMode,
+        navCollapsed: state.navCollapsed,
+        currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace,
+        navCollapsedBySpace: state.navCollapsedBySpace,
+        openTabs: state.openTabs,
+        tabsEnabled: state.tabsEnabled,
+      })
+      return { navExpandedBySpace }
+    }),
+  pruneNavExpandedForSpace: (spaceKey, validItemIds) =>
+    set((state) => {
+      const validIdSet = new Set(normalizeExpandedIds(validItemIds))
+      const nextExpandedIds = normalizeExpandedIds(state.navExpandedBySpace[spaceKey] || []).filter((itemId) =>
+        validIdSet.has(itemId),
+      )
+
+      const currentExpandedIds = normalizeExpandedIds(state.navExpandedBySpace[spaceKey] || [])
+      if (
+        currentExpandedIds.length === nextExpandedIds.length &&
+        currentExpandedIds.every((itemId, index) => itemId === nextExpandedIds[index])
+      ) {
+        return state
+      }
+
+      const navExpandedBySpace = {
+        ...state.navExpandedBySpace,
+        [spaceKey]: nextExpandedIds,
+      }
+      persistShellState({
+        themeMode: state.themeMode,
+        navCollapsed: state.navCollapsed,
+        currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace,
+        navCollapsedBySpace: state.navCollapsedBySpace,
+        openTabs: state.openTabs,
+        tabsEnabled: state.tabsEnabled,
+      })
+      return { navExpandedBySpace }
+    }),
+  toggleNavItemCollapsed: (spaceKey, itemId) =>
+    set((state) => {
+      const collapsedIds = new Set(state.navCollapsedBySpace[spaceKey] || [])
+      if (collapsedIds.has(itemId)) {
+        collapsedIds.delete(itemId)
+      } else {
+        collapsedIds.add(itemId)
+      }
+
+      const navCollapsedBySpace = {
+        ...state.navCollapsedBySpace,
+        [spaceKey]: normalizeExpandedIds([...collapsedIds]),
+      }
+      persistShellState({
+        themeMode: state.themeMode,
+        navCollapsed: state.navCollapsed,
+        currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace: state.navExpandedBySpace,
+        navCollapsedBySpace,
+        openTabs: state.openTabs,
+        tabsEnabled: state.tabsEnabled,
+      })
+      return { navCollapsedBySpace }
+    }),
+  setNavCollapsedForSpace: (spaceKey, itemIds) =>
+    set((state) => {
+      const navCollapsedBySpace = {
+        ...state.navCollapsedBySpace,
+        [spaceKey]: normalizeExpandedIds(itemIds),
+      }
+      persistShellState({
+        themeMode: state.themeMode,
+        navCollapsed: state.navCollapsed,
+        currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace: state.navExpandedBySpace,
+        navCollapsedBySpace,
+        openTabs: state.openTabs,
+        tabsEnabled: state.tabsEnabled,
+      })
+      return { navCollapsedBySpace }
+    }),
+  pruneNavCollapsedForSpace: (spaceKey, validItemIds) =>
+    set((state) => {
+      const validIdSet = new Set(normalizeExpandedIds(validItemIds))
+      const nextCollapsedIds = normalizeExpandedIds(state.navCollapsedBySpace[spaceKey] || []).filter((itemId) =>
+        validIdSet.has(itemId),
+      )
+
+      const currentCollapsedIds = normalizeExpandedIds(state.navCollapsedBySpace[spaceKey] || [])
+      if (
+        currentCollapsedIds.length === nextCollapsedIds.length &&
+        currentCollapsedIds.every((itemId, index) => itemId === nextCollapsedIds[index])
+      ) {
+        return state
+      }
+
+      const navCollapsedBySpace = {
+        ...state.navCollapsedBySpace,
+        [spaceKey]: nextCollapsedIds,
+      }
+      persistShellState({
+        themeMode: state.themeMode,
+        navCollapsed: state.navCollapsed,
+        currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace: state.navExpandedBySpace,
+        navCollapsedBySpace,
+        openTabs: state.openTabs,
+        tabsEnabled: state.tabsEnabled,
+      })
+      return { navCollapsedBySpace }
     }),
   setActiveTopContext: (activeTopContext) => set({ activeTopContext }),
   registerTab: (tab) =>
@@ -148,10 +352,24 @@ export const useShellStore = create<ShellState>((set) => ({
         themeMode: state.themeMode,
         navCollapsed: state.navCollapsed,
         currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace: state.navExpandedBySpace,
         openTabs,
         tabsEnabled: state.tabsEnabled,
       })
       return { openTabs }
+    }),
+  replaceTabs: (openTabs) =>
+    set((state) => {
+      const normalizedTabs = sortTabsByPin(openTabs)
+      persistShellState({
+        themeMode: state.themeMode,
+        navCollapsed: state.navCollapsed,
+        currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace: state.navExpandedBySpace,
+        openTabs: normalizedTabs,
+        tabsEnabled: state.tabsEnabled,
+      })
+      return { openTabs: normalizedTabs }
     }),
   closeTab: (path) =>
     set((state) => {
@@ -160,6 +378,7 @@ export const useShellStore = create<ShellState>((set) => ({
         themeMode: state.themeMode,
         navCollapsed: state.navCollapsed,
         currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace: state.navExpandedBySpace,
         openTabs,
         tabsEnabled: state.tabsEnabled,
       })
@@ -177,6 +396,7 @@ export const useShellStore = create<ShellState>((set) => ({
         themeMode: state.themeMode,
         navCollapsed: state.navCollapsed,
         currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace: state.navExpandedBySpace,
         openTabs,
         tabsEnabled: state.tabsEnabled,
       })
@@ -189,6 +409,7 @@ export const useShellStore = create<ShellState>((set) => ({
         themeMode: state.themeMode,
         navCollapsed: state.navCollapsed,
         currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace: state.navExpandedBySpace,
         openTabs,
         tabsEnabled: state.tabsEnabled,
       })
@@ -208,6 +429,7 @@ export const useShellStore = create<ShellState>((set) => ({
         themeMode: state.themeMode,
         navCollapsed: state.navCollapsed,
         currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace: state.navExpandedBySpace,
         openTabs,
         tabsEnabled: state.tabsEnabled,
       })
@@ -220,6 +442,7 @@ export const useShellStore = create<ShellState>((set) => ({
         themeMode: state.themeMode,
         navCollapsed: state.navCollapsed,
         currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace: state.navExpandedBySpace,
         openTabs,
         tabsEnabled: state.tabsEnabled,
       })
@@ -237,6 +460,7 @@ export const useShellStore = create<ShellState>((set) => ({
         themeMode: state.themeMode,
         navCollapsed: state.navCollapsed,
         currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace: state.navExpandedBySpace,
         openTabs,
         tabsEnabled: state.tabsEnabled,
       })
@@ -254,6 +478,7 @@ export const useShellStore = create<ShellState>((set) => ({
         themeMode: state.themeMode,
         navCollapsed: state.navCollapsed,
         currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace: state.navExpandedBySpace,
         openTabs,
         tabsEnabled: state.tabsEnabled,
       })
@@ -279,6 +504,7 @@ export const useShellStore = create<ShellState>((set) => ({
         themeMode: state.themeMode,
         navCollapsed: state.navCollapsed,
         currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace: state.navExpandedBySpace,
         openTabs: nextTabs,
         tabsEnabled: state.tabsEnabled,
       })
@@ -290,6 +516,7 @@ export const useShellStore = create<ShellState>((set) => ({
         themeMode: state.themeMode,
         navCollapsed: state.navCollapsed,
         currentSpaceKey: state.currentSpaceKey,
+        navExpandedBySpace: state.navExpandedBySpace,
         openTabs: state.openTabs,
         tabsEnabled,
       })

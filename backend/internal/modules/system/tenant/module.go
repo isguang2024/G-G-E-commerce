@@ -93,6 +93,7 @@ func (m *TenantModule) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.GETAction("/my-team/roles", "获取当前团队可分配角色", "team.member.manage", authzService.RequireAction, tenantHandler.ListMyTeamRoles)
 		reg.POSTAction("/my-team/roles", "创建当前团队角色", "team.member.manage", authzService.RequireAction, tenantHandler.CreateMyTeamRole)
 		reg.GETAction("/my-team/boundary/roles", "获取当前团队边界可见角色", "team.boundary.manage", authzService.RequireAction, tenantHandler.ListMyTeamRoles)
+		reg.POSTAction("/my-team/boundary/roles", "创建当前团队角色(边界管理)", "team.boundary.manage", authzService.RequireAction, tenantHandler.CreateMyTeamRole)
 		reg.PUTAction("/my-team/boundary/roles/:roleId", "更新当前团队角色(边界管理)", "team.boundary.manage", authzService.RequireAction, tenantHandler.UpdateMyTeamRole)
 		reg.DELETEAction("/my-team/boundary/roles/:roleId", "删除当前团队角色(边界管理)", "team.boundary.manage", authzService.RequireAction, tenantHandler.DeleteMyTeamRole)
 		reg.GETAction("/my-team/boundary/roles/:roleId/packages", "获取当前团队角色功能包(边界管理)", "team.boundary.manage", authzService.RequireAction, tenantHandler.GetMyTeamRolePackages)

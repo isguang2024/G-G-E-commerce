@@ -10,6 +10,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
+	systemuser "github.com/gg-ecommerce/backend/internal/modules/system/user"
 )
 
 type AuthHandler struct {
@@ -17,15 +18,21 @@ type AuthHandler struct {
 	authzService interface {
 		GetUserActionSnapshot(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
 	}
+	tenantMemberRepo interface {
+		GetByUserID(userID uuid.UUID) (*systemuser.TenantMember, error)
+	}
 	logger *zap.Logger
 }
 
 func NewAuthHandler(authService AuthService, authzService interface {
 	GetUserActionSnapshot(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
+}, tenantMemberRepo interface {
+	GetByUserID(userID uuid.UUID) (*systemuser.TenantMember, error)
 }, logger *zap.Logger) *AuthHandler {
 	return &AuthHandler{
 		authService:  authService,
 		authzService: authzService,
+		tenantMemberRepo: tenantMemberRepo,
 		logger:       logger,
 	}
 }
@@ -174,6 +181,14 @@ func (h *AuthHandler) GetUserInfo(c *gin.Context) {
 	if tenantIDStr != "" {
 		if parsedTenantID, parseErr := uuid.Parse(tenantIDStr); parseErr == nil {
 			tenantID = &parsedTenantID
+		}
+	}
+	if tenantID == nil && h.tenantMemberRepo != nil {
+		if member, memberErr := h.tenantMemberRepo.GetByUserID(userID); memberErr == nil && member != nil {
+			fallbackTenantID := member.TenantID
+			if fallbackTenantID != uuid.Nil {
+				tenantID = &fallbackTenantID
+			}
 		}
 	}
 

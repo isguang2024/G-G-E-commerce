@@ -5,7 +5,7 @@ export interface MenuSearchEntry {
   routeId: string
   path: string
   label: string
-  icon: NavIconKey
+  icon?: NavIconKey
   group: NavigationGroupKey
   groupLabel: string
   status: RouteStatus

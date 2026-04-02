@@ -4,11 +4,12 @@ import { Body1, Body1Strong, Card, makeStyles, tokens } from '@fluentui/react-co
 const useStyles = makeStyles({
   card: {
     display: 'grid',
-    gap: '14px',
-    padding: '20px',
+    gap: '12px',
+    padding: '16px',
     borderRadius: tokens.borderRadiusXLarge,
     backgroundColor: tokens.colorNeutralBackground1,
-    boxShadow: tokens.shadow4,
+    border: `1px solid ${tokens.colorNeutralStroke2}`,
+    boxShadow: tokens.shadow2,
   },
   header: {
     display: 'grid',

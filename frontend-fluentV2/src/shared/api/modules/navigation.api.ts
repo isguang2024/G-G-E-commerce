@@ -2,7 +2,6 @@ import { requestData } from '@/shared/api/client'
 import type {
   MenuSpace,
   NavigationGroupKey,
-  NavIconKey,
   RuntimeCurrentSpace,
   RuntimeCurrentSpaceBinding,
   RuntimeManagedPage,
@@ -31,8 +30,12 @@ function inferGroup(path: string): NavigationGroupKey {
   return 'welcome'
 }
 
-function inferIcon(path: string, rawIcon: string, group: NavigationGroupKey): NavIconKey {
+function inferIcon(rawIcon: string) {
   const icon = rawIcon.trim().toLowerCase()
+  if (!icon) {
+    return undefined
+  }
+
   if (icon.includes('menu')) return 'menu'
   if (icon.includes('page')) return 'page'
   if (icon.includes('role')) return 'role'
@@ -42,12 +45,10 @@ function inferIcon(path: string, rawIcon: string, group: NavigationGroupKey): Na
   if (icon.includes('message')) return 'message'
   if (icon.includes('team')) return 'team'
   if (icon.includes('space')) return 'space'
-  if (path.includes('/inbox')) return 'inbox'
-  if (group === 'system') return 'system'
-  if (group === 'workspace') return 'workspace'
-  if (group === 'team') return 'team'
-  if (group === 'message') return 'message'
-  return 'home'
+  if (icon.includes('inbox')) return 'inbox'
+  if (icon.includes('workspace')) return 'workspace'
+  if (icon.includes('home') || icon.includes('dashboard') || icon.includes('console')) return 'home'
+  return undefined
 }
 
 function normalizeMenuSpace(input: Record<string, unknown>): MenuSpace {
@@ -117,7 +118,7 @@ function normalizeRuntimeNavItem(input: Record<string, unknown>): RuntimeNavItem
     path,
     label: `${meta.title || input.title || input.name || path}`.trim(),
     title: `${meta.title || input.title || input.name || path}`.trim(),
-    icon: inferIcon(path, rawIcon, group),
+    icon: inferIcon(rawIcon),
     group,
     status: 'placeholder',
     spaceKey: `${input.space_key || input.spaceKey || meta.spaceKey || 'default'}`.trim(),

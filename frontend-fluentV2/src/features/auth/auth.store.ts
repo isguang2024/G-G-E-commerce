@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import type { AuthSession, CurrentUser, TenantContext } from '@/shared/types/auth'
 import { clearStoredAuthSnapshot, persistAuthSnapshot, readStoredAuthSnapshot } from '@/features/auth/auth.storage'
 
-export type AuthStatus = 'idle' | 'restoring' | 'authenticated' | 'anonymous'
+export type AuthStatus = 'idle' | 'bootstrapping' | 'authenticated' | 'guest'
 
 type AuthState = {
   status: AuthStatus
@@ -10,8 +10,8 @@ type AuthState = {
   currentUser: CurrentUser | null
   tenantContext: TenantContext
   rememberMe: boolean
-  beginRestore: () => void
-  completeRestore: (payload: {
+  beginBootstrap: () => void
+  completeBootstrap: (payload: {
     session: AuthSession | null
     currentUser: CurrentUser | null
     rememberMe?: boolean
@@ -21,6 +21,7 @@ type AuthState = {
     currentUser: CurrentUser
     rememberMe: boolean
   }) => void
+  updateSession: (session: AuthSession, rememberMe?: boolean) => void
   updateCurrentUser: (currentUser: CurrentUser) => void
   clearAuth: () => void
 }
@@ -28,17 +29,17 @@ type AuthState = {
 const storedSnapshot = readStoredAuthSnapshot()
 
 export const useAuthStore = create<AuthState>((set) => ({
-  status: storedSnapshot?.session ? 'idle' : 'anonymous',
+  status: storedSnapshot?.session ? 'idle' : 'guest',
   session: storedSnapshot?.session || null,
   currentUser: null,
   tenantContext: {
     currentTenantId: null,
   },
   rememberMe: storedSnapshot?.rememberMe ?? true,
-  beginRestore: () => set({ status: 'restoring' }),
-  completeRestore: ({ session, currentUser, rememberMe }) =>
+  beginBootstrap: () => set({ status: 'bootstrapping' }),
+  completeBootstrap: ({ session, currentUser, rememberMe }) =>
     set({
-      status: session && currentUser ? 'authenticated' : 'anonymous',
+      status: session && currentUser ? 'authenticated' : 'guest',
       session,
       currentUser,
       rememberMe: rememberMe ?? false,
@@ -58,6 +59,16 @@ export const useAuthStore = create<AuthState>((set) => ({
       },
     })
   },
+  updateSession: (session, rememberMe) => {
+    const nextRememberMe = rememberMe ?? useAuthStore.getState().rememberMe
+    persistAuthSnapshot(session, nextRememberMe)
+    set((state) => ({
+      ...state,
+      session,
+      rememberMe: nextRememberMe,
+      status: state.currentUser ? 'authenticated' : state.status,
+    }))
+  },
   updateCurrentUser: (currentUser) =>
     set((state) => ({
       ...state,
@@ -70,7 +81,7 @@ export const useAuthStore = create<AuthState>((set) => ({
   clearAuth: () => {
     clearStoredAuthSnapshot()
     set({
-      status: 'anonymous',
+      status: 'guest',
       session: null,
       currentUser: null,
       rememberMe: false,

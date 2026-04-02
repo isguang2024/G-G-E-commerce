@@ -1960,6 +1960,8 @@ func (s *messageService) normalizeTargetTenants(audienceType string, tenantID *u
 			return nil, errors.New("请选择目标团队")
 		}
 		return targets, nil
+	case "specified_users", "recipient_group", "role", "feature_package":
+		return nil, nil
 	default:
 		return nil, errors.New("不支持的发送对象")
 	}

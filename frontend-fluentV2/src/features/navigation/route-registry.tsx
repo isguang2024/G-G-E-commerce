@@ -1,7 +1,7 @@
 import type { JSX } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Navigate, matchPath, useLocation } from 'react-router-dom'
-import { MessageBar, MessageBarBody, Spinner } from '@fluentui/react-components'
+import { Spinner } from '@fluentui/react-components'
 import { fetchRuntimeNavigationManifest } from '@/shared/api/modules/navigation.api'
 import { queryKeys } from '@/shared/api/query-keys'
 import type {
@@ -12,57 +12,13 @@ import type {
   RuntimeNavItem,
   RuntimeNavigationManifest,
 } from '@/shared/types/navigation'
-import { MigrationPlaceholderPage } from '@/pages/placeholder/MigrationPlaceholderPage'
-import { NotFoundPage } from '@/pages/not-found/NotFoundPage'
-import { SystemHomePage } from '@/pages/system/SystemHomePage'
-import { SystemMenuPage } from '@/pages/system/SystemMenuPage'
-import { WelcomePage } from '@/pages/welcome/WelcomePage'
-import { WorkspaceHomePage } from '@/pages/workspace/WorkspaceHomePage'
+import { PageStatusBanner } from '@/shared/ui/PageStatusBanner'
 import { useShellStore } from '@/features/shell/store/useShellStore'
 import { appConfig } from '@/shared/config/app-config'
 
-type LocalRouteEntry = RouteDefinition & {
-  element: JSX.Element
-}
+type LocalRouteEntry = RouteDefinition & { element: JSX.Element }
 
-const localRoutes: LocalRouteEntry[] = [
-  {
-    id: 'welcome',
-    path: '/welcome',
-    group: 'welcome',
-    status: 'implemented',
-    shellTitle: '首页',
-    subtitle: '真实登录、导航和空间切换已经接入，后续迁移从这里开始承接。',
-    element: <WelcomePage routeId="welcome" />,
-  },
-  {
-    id: 'workspace-home',
-    path: '/workspace',
-    group: 'workspace',
-    status: 'implemented',
-    shellTitle: '工作台',
-    subtitle: '当前保留为基础工作台入口，继续承接真实运行时上下文。',
-    element: <WorkspaceHomePage routeId="workspace-home" />,
-  },
-  {
-    id: 'system-home',
-    path: '/system',
-    group: 'system',
-    status: 'implemented',
-    shellTitle: '系统管理',
-    subtitle: '系统管理首页已经纳入真实认证与导航链路。',
-    element: <SystemHomePage routeId="system-home" />,
-  },
-  {
-    id: 'system-menu',
-    path: '/system/menu',
-    group: 'system',
-    status: 'implemented',
-    shellTitle: '菜单管理',
-    subtitle: '当前版本提供真实菜单树浏览、详情只读和空间联动。',
-    element: <SystemMenuPage routeId="system-menu" />,
-  },
-]
+const localRoutes: LocalRouteEntry[] = []
 
 const groupLabelMap: Record<NavigationGroupKey, string> = {
   welcome: '首页',
@@ -71,6 +27,25 @@ const groupLabelMap: Record<NavigationGroupKey, string> = {
   message: '消息中心',
   system: '系统管理',
 }
+
+export function getNavigationGroupLabel(group: NavigationGroupKey) {
+  return groupLabelMap[group]
+}
+
+const groupPathLabelMap: Record<string, string> = {
+  '/workspace': getNavigationGroupLabel('workspace'),
+  '/team': getNavigationGroupLabel('team'),
+  '/message': getNavigationGroupLabel('message'),
+  '/system': getNavigationGroupLabel('system'),
+}
+
+const runtimeRoutePathAliasMap: Record<string, string> = {
+  Dashboard: '/dashboard/console',
+  Console: '/dashboard/console',
+  PageManagement: '/system/page',
+}
+
+const runtimeDirectoryComponentSet = new Set(['/index/index'])
 
 function inferGroup(pathname: string): NavigationGroupKey {
   if (pathname.startsWith('/workspace')) return 'workspace'
@@ -91,6 +66,90 @@ function flattenRuntimeItems(items: RuntimeNavItem[], trail: RuntimeNavItem[] = 
   })
 }
 
+function joinRuntimePath(parentPath: string | undefined, currentPath: string) {
+  const normalizedCurrentPath = currentPath.trim().replace(/^#/, '')
+  if (!normalizedCurrentPath) {
+    return parentPath || '/'
+  }
+  if (normalizedCurrentPath.startsWith('/')) {
+    return normalizedCurrentPath
+  }
+  if (!parentPath) {
+    return `/${normalizedCurrentPath}`
+  }
+  return `${parentPath.replace(/\/+$/, '')}/${normalizedCurrentPath.replace(/^\/+/, '')}`
+}
+
+function normalizeComponentRoute(component: string) {
+  const normalizedComponent = component.trim().replace(/^#/, '')
+  if (!normalizedComponent.startsWith('/')) {
+    return ''
+  }
+
+  return normalizedComponent
+}
+
+function resolveRuntimePath(item: RuntimeNavItem, parentPath?: string) {
+  const componentRoute = normalizeComponentRoute(item.component)
+  if (
+    componentRoute &&
+    !runtimeDirectoryComponentSet.has(componentRoute) &&
+    isImplementedPath(componentRoute)
+  ) {
+    return componentRoute
+  }
+
+  const aliasedPath = runtimeRoutePathAliasMap[item.routeId]
+  if (aliasedPath) {
+    return aliasedPath
+  }
+  return joinRuntimePath(parentPath, item.path)
+}
+
+function resolveRuntimeTree(items: RuntimeNavItem[], parentPath?: string): RuntimeNavItem[] {
+  return items.map((item) => {
+    const resolvedPath = resolveRuntimePath(item, parentPath)
+    return {
+      ...item,
+      path: resolvedPath,
+      children: item.children?.length ? resolveRuntimeTree(item.children, resolvedPath) : undefined,
+    }
+  })
+}
+
+function pruneSelfDuplicateChildren(items: RuntimeNavItem[]): RuntimeNavItem[] {
+  return items.map((item) => {
+    const children = item.children?.length ? pruneSelfDuplicateChildren(item.children) : undefined
+    const nextChildren = children?.filter(
+      (child) => child.routeId !== item.routeId && child.path !== item.path && child.label !== item.label,
+    )
+
+    return {
+      ...item,
+      children: nextChildren?.length ? nextChildren : undefined,
+    }
+  })
+}
+
+function pruneSiblingDuplicates(items: RuntimeNavItem[]): RuntimeNavItem[] {
+  const seen = new Set<string>()
+
+  return items.flatMap((item) => {
+    const dedupKey = `${item.path}::${item.label}`.trim()
+    if (seen.has(dedupKey)) {
+      return []
+    }
+    seen.add(dedupKey)
+
+    return [
+      {
+        ...item,
+        children: item.children?.length ? pruneSiblingDuplicates(item.children) : undefined,
+      },
+    ]
+  })
+}
+
 export function getLocalRouteDefinitionByPath(pathname: string) {
   return localRoutes.find((item) => matchPath({ path: item.path, end: true }, pathname))
 }
@@ -103,14 +162,31 @@ export function isImplementedPath(pathname: string) {
   return Boolean(getLocalRouteDefinitionByPath(pathname))
 }
 
+function getPreferredRouteTitle(pathname: string, fallbackTitle: string) {
+  const localRoute = getLocalRouteDefinitionByPath(pathname)
+  if (localRoute?.shellTitle) {
+    return localRoute.shellTitle
+  }
+  if (`${fallbackTitle || ''}`.trim()) {
+    return fallbackTitle
+  }
+  const groupLabel = groupPathLabelMap[pathname]
+  if (groupLabel) {
+    return groupLabel
+  }
+  return fallbackTitle
+}
+
 export function buildNavigationItems(menuTree: RuntimeNavItem[]): NavigationItem[] {
-  return menuTree
+  const resolvedTree = pruneSiblingDuplicates(pruneSelfDuplicateChildren(resolveRuntimeTree(menuTree)))
+
+  return resolvedTree
     .filter((item) => !item.hidden)
     .map((item) => ({
       id: item.id,
       routeId: item.routeId,
       path: item.path,
-      label: item.label,
+      label: getPreferredRouteTitle(item.path, item.title || item.label),
       icon: item.icon,
       group: item.group,
       status: isImplementedPath(item.path) ? 'implemented' : 'placeholder',
@@ -125,7 +201,7 @@ export function buildRouteContext(
   fallbackLocalRoute?: RouteDefinition,
 ): RouteContext | null {
   const localRoute = getLocalRouteDefinitionByPath(pathname) || fallbackLocalRoute
-  const runtimeEntries = flattenRuntimeItems(manifest?.menuTree || [])
+  const runtimeEntries = flattenRuntimeItems(resolveRuntimeTree(manifest?.menuTree || []))
   const matchedRuntimeItem = runtimeEntries.find((entry) =>
     matchPath({ path: entry.item.path, end: true }, pathname),
   )
@@ -134,20 +210,20 @@ export function buildRouteContext(
   )
 
   if (localRoute) {
-    const runtimeTitle = matchedRuntimeItem?.item.title || matchedManagedPage?.name
+    const runtimeTitle = matchedRuntimeItem?.item.title || matchedManagedPage?.name || localRoute.shellTitle
     const trail = matchedRuntimeItem?.trail || []
     return {
       routeId: localRoute.id,
       path: pathname,
-      title: runtimeTitle || localRoute.shellTitle,
+      title: getPreferredRouteTitle(pathname, runtimeTitle),
       subtitle: localRoute.subtitle,
       group: localRoute.group,
-      groupLabel: groupLabelMap[localRoute.group],
+      groupLabel: getNavigationGroupLabel(localRoute.group),
       status: 'implemented',
       breadcrumbs:
         trail.length > 0
           ? trail.map((item, index) => ({
-              label: item.title,
+              label: getPreferredRouteTitle(item.path, item.title),
               path: index === trail.length - 1 ? undefined : item.path,
             }))
           : [{ label: localRoute.shellTitle }],
@@ -170,7 +246,7 @@ export function buildRouteContext(
       title: matchedRuntimeItem.item.title,
       subtitle: '该页面已进入真实运行时导航，但本地 React 页面尚未迁移，当前由统一占位页承接。',
       group: matchedRuntimeItem.item.group,
-      groupLabel: groupLabelMap[matchedRuntimeItem.item.group],
+      groupLabel: getNavigationGroupLabel(matchedRuntimeItem.item.group),
       status: 'placeholder',
       breadcrumbs: matchedRuntimeItem.trail.map((item, index) => ({
         label: item.title,
@@ -192,11 +268,11 @@ export function buildRouteContext(
       title: matchedManagedPage.name || matchedManagedPage.pageKey,
       subtitle: '该受管页面已进入后端运行时注册表，但本地实现尚未迁移，当前使用统一占位页展示上下文。',
       group,
-      groupLabel: groupLabelMap[group],
+      groupLabel: getNavigationGroupLabel(group),
       status: 'placeholder',
       breadcrumbs: [
         {
-          label: groupLabelMap[group],
+          label: getNavigationGroupLabel(group),
         },
         {
           label: matchedManagedPage.name || matchedManagedPage.pageKey,
@@ -217,9 +293,10 @@ export function RuntimePageOutlet() {
   const location = useLocation()
   const currentSpaceKey = useShellStore((state) => state.currentSpaceKey)
   const manifestQuery = useQuery({
-    queryKey: queryKeys.navigation.manifest(currentSpaceKey),
+    queryKey: queryKeys.navigation.runtime(currentSpaceKey),
     queryFn: () => fetchRuntimeNavigationManifest(currentSpaceKey),
     enabled: Boolean(currentSpaceKey),
+    placeholderData: (previousData) => previousData,
   })
   const pathname = location.pathname
 
@@ -235,9 +312,11 @@ export function RuntimePageOutlet() {
 
   if (manifestQuery.isError) {
     return (
-      <MessageBar>
-        <MessageBarBody>运行时导航加载失败，请检查后端服务或登录状态。</MessageBarBody>
-      </MessageBar>
+      <PageStatusBanner
+        intent="error"
+        title="运行时导航加载失败"
+        description="请检查后端服务、登录状态和菜单空间接口。"
+      />
     )
   }
 
@@ -248,8 +327,20 @@ export function RuntimePageOutlet() {
 
   const runtimeContext = buildRouteContext(pathname, manifestQuery.data)
   if (runtimeContext) {
-    return <MigrationPlaceholderPage routeContext={runtimeContext} />
+    return (
+      <PageStatusBanner
+        intent="info"
+        title={runtimeContext.title}
+        description={runtimeContext.subtitle || '当前只保留壳层，页面实现已清空，后续将重新重构。'}
+      />
+    )
   }
 
-  return <NotFoundPage />
+  return (
+    <PageStatusBanner
+      intent="warning"
+      title="页面已删除"
+      description="当前项目仅保留壳层，请重新接入页面实现。"
+    />
+  )
 }

@@ -385,8 +385,7 @@ func (h *TenantHandler) ListMyMembers(c *gin.Context) {
 	member, err := h.resolveTenantMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrTenantMemberNotFound {
-			status, resp := errcode.Response(errcode.ErrNoTeam)
-			c.JSON(status, resp)
+			c.JSON(http.StatusOK, dto.SuccessResponse([]gin.H{}))
 			return
 		}
 		h.logger.Error("Get my team member failed", zap.Error(err))
@@ -546,8 +545,9 @@ func (h *TenantHandler) GetMyTeamMemberRoles(c *gin.Context) {
 	member, err := h.resolveTenantMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrTenantMemberNotFound {
-			status, resp := errcode.Response(errcode.ErrNoTeam)
-			c.JSON(status, resp)
+			c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+				"role_ids": []string{},
+			}))
 			return
 		}
 		h.logger.Error("Get my team member failed", zap.Error(err))
@@ -711,8 +711,7 @@ func (h *TenantHandler) ListMyTeamRoles(c *gin.Context) {
 	member, err := h.resolveTenantMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrTenantMemberNotFound {
-			status, resp := errcode.Response(errcode.ErrNoTeam)
-			c.JSON(status, resp)
+			c.JSON(http.StatusOK, dto.SuccessResponse([]gin.H{}))
 			return
 		}
 		h.logger.Error("Get my team member failed", zap.Error(err))
@@ -1537,8 +1536,11 @@ func (h *TenantHandler) GetMyTeamActionOrigins(c *gin.Context) {
 	member, err := h.resolveTenantMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrTenantMemberNotFound {
-			status, resp := errcode.Response(errcode.ErrNoTeam)
-			c.JSON(status, resp)
+			c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+				"derived_action_ids": []string{},
+				"derived_sources":    []gin.H{},
+				"blocked_action_ids": []string{},
+			}))
 			return
 		}
 		h.logger.Error("Resolve my team failed", zap.Error(err))
@@ -1553,8 +1555,11 @@ func (h *TenantHandler) GetMyTeamMenuOrigins(c *gin.Context) {
 	member, err := h.resolveTenantMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrTenantMemberNotFound {
-			status, resp := errcode.Response(errcode.ErrNoTeam)
-			c.JSON(status, resp)
+			c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
+				"derived_menu_ids": []string{},
+				"derived_sources":  []gin.H{},
+				"blocked_menu_ids": []string{},
+			}))
 			return
 		}
 		h.logger.Error("Resolve my team failed", zap.Error(err))
@@ -1751,7 +1756,14 @@ func (h *TenantHandler) resolveTenantMember(c *gin.Context) (*user.TenantMember,
 		return member, nil
 	}
 
-	return nil, ErrTenantMemberNotFound
+	member, err := h.tenantMemberRepo.GetByUserID(userID)
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, ErrTenantMemberNotFound
+		}
+		return nil, err
+	}
+	return member, nil
 }
 
 func (h *TenantHandler) resolveMyTeamRole(c *gin.Context) (*user.TenantMember, *user.Role, error) {

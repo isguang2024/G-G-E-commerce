@@ -92,6 +92,24 @@ export async function loginWithPassword(payload: { username: string; password: s
   }
 }
 
+export async function registerWithPassword(payload: {
+  username: string
+  password: string
+  email?: string
+  nickname?: string
+}) {
+  const result = await requestData<BackendLoginResponse>({
+    method: 'POST',
+    url: '/api/v1/auth/register',
+    data: payload,
+  })
+
+  return {
+    session: normalizeSession(result),
+    loginUser: normalizeCurrentUser((result.user || {}) as BackendCurrentUser),
+  }
+}
+
 export async function fetchCurrentUser() {
   const result = await requestData<BackendCurrentUser>({
     method: 'GET',

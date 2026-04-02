@@ -11,10 +11,11 @@ const useStyles = makeStyles({
   header: {
     display: 'grid',
     gap: '12px',
-    padding: '24px 28px',
+    padding: '20px 24px',
     borderRadius: tokens.borderRadiusXLarge,
     backgroundColor: tokens.colorNeutralBackground1,
-    boxShadow: tokens.shadow8,
+    border: `1px solid ${tokens.colorNeutralStroke2}`,
+    boxShadow: tokens.shadow4,
   },
   titleRow: {
     display: 'flex',
@@ -31,8 +32,8 @@ const useStyles = makeStyles({
   title: {
     margin: 0,
     color: tokens.colorNeutralForeground1,
-    fontSize: tokens.fontSizeHero700,
-    lineHeight: tokens.lineHeightHero700,
+    fontSize: '30px',
+    lineHeight: '38px',
     fontWeight: tokens.fontWeightSemibold,
     letterSpacing: '-0.02em',
   },
@@ -54,6 +55,7 @@ const useStyles = makeStyles({
   content: {
     display: 'grid',
     gap: '18px',
+    minWidth: 0,
   },
   loading: {
     minHeight: '160px',

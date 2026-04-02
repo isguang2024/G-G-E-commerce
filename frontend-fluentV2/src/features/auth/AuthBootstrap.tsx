@@ -15,12 +15,8 @@ const useStyles = makeStyles({
 export function AuthBootstrap({ children }: PropsWithChildren) {
   const styles = useStyles()
   const startedRef = useRef(false)
-  const { status, session, beginRestore, completeRestore } = useAuthStore((state) => ({
-    status: state.status,
-    session: state.session,
-    beginRestore: state.beginRestore,
-    completeRestore: state.completeRestore,
-  }))
+  const status = useAuthStore((state) => state.status)
+  const session = useAuthStore((state) => state.session)
 
   useEffect(() => {
     if (startedRef.current || status !== 'idle') {
@@ -30,14 +26,14 @@ export function AuthBootstrap({ children }: PropsWithChildren) {
     startedRef.current = true
 
     if (!session?.accessToken) {
-      completeRestore({ session: null, currentUser: null })
+      useAuthStore.getState().completeBootstrap({ session: null, currentUser: null })
       return
     }
 
-    beginRestore()
+    useAuthStore.getState().beginBootstrap()
     fetchCurrentUser()
       .then((currentUser) => {
-        completeRestore({
+        useAuthStore.getState().completeBootstrap({
           session,
           currentUser,
           rememberMe: useAuthStore.getState().rememberMe,
@@ -46,12 +42,12 @@ export function AuthBootstrap({ children }: PropsWithChildren) {
       .catch(() => {
         useAuthStore.getState().clearAuth()
       })
-  }, [beginRestore, completeRestore, session, status])
+  }, [session, status])
 
-  if (status === 'idle' || status === 'restoring') {
+  if (status === 'idle' || status === 'bootstrapping') {
     return (
       <div className={styles.fallback}>
-        <Spinner label="正在恢复会话" />
+        <Spinner label="正在初始化登录态" />
       </div>
     )
   }

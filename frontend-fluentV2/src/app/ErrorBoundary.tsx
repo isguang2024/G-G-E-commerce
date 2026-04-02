@@ -37,10 +37,10 @@ function ErrorFallback() {
     <FluentProvider theme={appLightTheme}>
       <div className={styles.root}>
         <div className={styles.card}>
-          <Subtitle2>应用壳异常</Subtitle2>
-          <Title2>当前壳层暂时无法渲染</Title2>
+          <Subtitle2>系统提示</Subtitle2>
+          <Title2>当前页面暂时无法显示</Title2>
           <Body1>
-            当前已进入全局错误边界。请刷新页面重试；如果问题持续存在，再检查最近的壳层、路由或 mock 变更。
+            页面当前出现异常，请尝试刷新界面后重试；如问题仍然存在，请联系管理员处理。
           </Body1>
           <div className={styles.actions}>
             <Button appearance="primary" onClick={() => window.location.reload()}>

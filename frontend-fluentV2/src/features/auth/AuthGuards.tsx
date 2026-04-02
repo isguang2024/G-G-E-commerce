@@ -17,7 +17,7 @@ export function RequireAuth({ children }: PropsWithChildren) {
   const status = useAuthStore((state) => state.status)
   const location = useLocation()
 
-  if (status === 'idle' || status === 'restoring') {
+  if (status === 'idle' || status === 'bootstrapping') {
     return (
       <div className={styles.loading}>
         <Spinner label="正在校验登录状态" />
@@ -37,7 +37,7 @@ export function RedirectIfAuthenticated({ children }: PropsWithChildren) {
   const styles = useStyles()
   const status = useAuthStore((state) => state.status)
 
-  if (status === 'idle' || status === 'restoring') {
+  if (status === 'idle' || status === 'bootstrapping') {
     return (
       <div className={styles.loading}>
         <Spinner label="正在恢复登录状态" />
