@@ -35,7 +35,7 @@ call pnpm --version
 echo.
 echo 正在启动前端服务...
 echo 前端目录: %cd%
-echo 前端地址: http://localhost:5173
+echo 前端地址: http://localhost:5178
 echo.
 
 call pnpm dev

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Change Wrapup"
+  short_description: "总结代码咨询与大型改动，并自动追加写入docs/change-log.md"
+  default_prompt: "Use $change-wrapup to summarize this coding task in Chinese and include next-step guidance when the change is substantial."

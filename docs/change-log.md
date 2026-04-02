@@ -1,5 +1,144 @@
 # Change Log
 
+## 2026-04-03 调整 frontend 历史文档归档位置
+
+### 本次改动
+- 将 `frontend/docs/legacy/` 内的旧前端文档完整保留并迁移到仓库级归档目录 `docs/archive/frontend/`，避免当前 `frontend/docs/` 继续承担历史资料入口。
+- 同步更新 `AGENTS.md` 中的归档位置说明，使当前规范与实际目录结构一致。
+- 删除原 `frontend/docs/legacy/` 目录；归档文档内部的绝对链接前缀也已一并改到新位置。
+
+### 下次方向
+- 若后续要在 `frontend/` 内重新建立当前生效专题文档，可直接在 `frontend/docs/` 下按主题重建，不再混放旧资料。
+- 本轮未逐篇审校归档文档内容，仅完成目录迁移和链接前缀修正；如需进一步压缩历史包袱，可继续筛掉低价值草稿。
+
+## 2026-04-03 移除 frontend-shadcn React 重写线
+
+### 本次改动
+- 删除独立的 `frontend-shadcn/` React 重写工程及其根目录启动脚本 `start-frontend-shadcn.bat`，仓库前端主线收口回 `frontend/`。
+- 更新 `AGENTS.md`、`PROJECT_FRAMEWORK.md` 与 `FRONTEND_GUIDELINE.md`，移除“双前端线 / React 重写线”约束，改为只保留 `frontend/` 作为当前有效管理端主线。
+- 保留历史变更记录，不回写改动旧条目，避免破坏既有演进上下文。
+
+### 下次方向
+- 若后续仍需做管理端重构，建议直接在 `frontend/` 内按页面边界逐步演进，不再新开平行工程目录。
+- 下一轮可继续清理仓库中残留的历史实验线与失效脚本，但需先确认它们是否仍被外部流程引用。
+- 本轮未执行 `frontend` 的构建与运行验证，仅完成目录与文档收口。
+
+# 2026-04-03 frontend-shadcn clean-slate 主题收口与角色页紧凑基线
+
+### 本次改动
+- 参考 [clean-slate](https://21st.dev/community/themes/clean-slate) 的中性灰度方向，重写 `frontend-shadcn/src/index.css` 的全局 token，将主背景、前景、边框、侧栏与主色统一收口到低饱和黑白灰体系，并同步补齐暗色 token。
+- 收缩后台壳层密度：`app-shell` 顶栏、搜索框、快捷入口和主内容区的尺寸与留白整体下调，`page-header` 改为更轻的标题容器，减少大圆角、大面板和高噪声视觉块。
+- 将 `system/role` 从多块大面板重构为“紧凑指标条 + 单主工作面 + 侧边详情”的基线布局，保留筛选、列表、详情和操作反馈，但去掉高饱和强调块和重复卡片包装。
+- 已通过 `pnpm --dir frontend-shadcn build` 验证；本轮未补浏览器人工回归，当前仍有 Vite 默认的大 chunk 告警。
+
+### 下次方向
+- 继续沿这套紧凑基线改造 `system/user`，让用户页与角色页保持同一信息密度、筛选工具条和侧边详情语言。
+- 若这套灰度 token 确认可用，再把列表页、详情页和表单页中的局部强调色继续收口，避免旧页面残留更强的品牌色块。
+- 后续如需更贴近 `clean-slate`，优先细调字重、间距和控件半径，不直接再引入新的第三方整套 preset。
+
+### 继续收口
+- 进一步压低角色页顶部统计带的边界感，把原先的“白卡堆叠”再削薄一层，改成更轻的边框块。
+- 主标题区和筛选区也继续收紧间距，优先保留信息层级，不增加新的装饰层。
+- `pnpm --dir frontend-shadcn build` 仍然通过，当前只是继续做视觉密度收口，没有引入结构性风险。
+
+### 筛选收口
+- 将角色页顶部的作用域筛选和状态筛选从按钮组改为标准下拉框，横向占用更小，也更适合后续再加更多筛选项。
+- 通过 shadcn 官方 `select` 组件承接筛选交互，保留现有筛选逻辑与默认值，不改数据层。
+- 已再次通过 `pnpm --dir frontend-shadcn build` 验证。
+
+### 布局再压
+- 将筛选带继续压成更紧凑的三列布局，搜索框和两个下拉的横向节奏更一致，顶部占用更少。
+- 右侧详情栏再收窄到 320px，进一步减弱左右并排大面板感，让主列表成为视觉重心。
+- 已再次通过 `pnpm --dir frontend-shadcn build` 验证。
+
+### 详情抽屉
+- 角色详情不再以右侧常驻栏形式存在，改为点击列表行后从右侧弹出 `Sheet` 抽屉承接。
+- 主页面现在只保留列表与筛选，右侧信息、概览、继承和治理内容都转入抽屉，页面本体更清爽。
+- 已再次通过 `pnpm --dir frontend-shadcn build` 验证。
+
+# 2026-04-03 frontend-shadcn 切换到 preset b5JgLt8Ce
+
+### 本次改动
+- 在 `frontend-shadcn/` 执行 `pnpm dlx shadcn@latest init --preset b5JgLt8Ce --force --reinstall`，将当前主题预设切换到 `b5JgLt8Ce`。
+- `components.json` 随预设更新为 `style = radix-maia`、`iconLibrary = tabler`、`menuAccent = bold`，并同步重装覆盖现有 `ui` 基础件与 `src/index.css` 主题 token。
+- 预设切换后新增 `@fontsource-variable/noto-serif`、`@tabler/icons-react` 依赖，已通过 `pnpm --dir frontend-shadcn build` 验证；当前仍有 Vite 大 chunk 告警，但不影响本轮构建通过。
+
+### 下次方向
+- 回看 `frontend-shadcn` 现有页面，确认新的 serif heading、Tabler 图标和更强的 menu accent 是否符合后台产品气质；若不合适，再局部收口 token 而不是立即回退整套 preset。
+- 若后续继续新增官方组件，保持使用当前 preset 生成，避免新旧 `ui` 基础件混出两套视觉细节。
+
+# 2026-04-03 frontend-shadcn 用户页与角色页深化
+
+### 本次改动
+- 深化 `system/user` 工作面：新增风险筛选、功能包规模列，以及“概览 / 访问 / 诊断”三段式详情区，右侧可直接承接账号风险信号、访问快照和后续权限诊断。
+- 深化 `system/role` 工作面：新增状态筛选、继承规模列，以及“概览 / 继承 / 治理”三段式详情区，右侧统一承接角色继承来源、动作覆盖和治理摘要。
+- 两页仍保持 `React Query -> admin.adapter` 数据边界不变，只加强页面组织和治理信息密度，不把页面重新绑回静态占位数据。
+- 已通过 `pnpm --dir frontend-shadcn build` 验证；当前仍有 Vite 默认的大 chunk 告警。
+
+### 下次方向
+- 继续把用户页和角色页的右侧详情接到真实权限快照、菜单继承和动作差异接口，而不是继续停留在派生摘要。
+- 若下一轮要继续深化治理页，优先推进 `system/access-trace`、`system/feature-package`，并抽用户/角色共用的详情 tabs 片段。
+
+# 2026-04-03 frontend-shadcn 第二批治理页与 adapter 层收口
+
+### 本次改动
+- 新增 `admin.adapter` 稳定接口层，并把 `admin.service` 全部改为依赖 adapter，而不是直接引用 `admin.mock`，为后续切真实后端预留统一边界。
+- 补齐 `system/page`、`system/api-endpoint`、`system/menu-space`、`system/action-permission` 四个真实工作面，统一提供筛选、列表、右侧详情和 toast 操作反馈。
+- 扩充后台治理 mock 数据与 query keys，同步更新壳层路由分发和导航状态；这四页不再落回 `management-workspace-page`。
+- 已通过 `pnpm --dir frontend-shadcn build` 验证；当前仍保留 Vite 默认的大 chunk 告警。
+
+### 下次方向
+- 继续把 `system/access-trace`、`system/feature-package`、消息目录类页面从通用骨架推进到真实工作面。
+- 在 `admin.adapter` 上补真实后端实现或 adapter 工厂，再逐步替换当前 mock 默认实现。
+
+# 2026-04-03 frontend-shadcn 首批治理页接入 query/mock 工作面
+
+### 本次改动
+- 为 `frontend-shadcn` 接入 `React Query`，新增 `shared/api`、`shared/mock` 与 `features/admin` 结构，把用户、角色、菜单、团队成员、消息调度的页面数据统一收口到 mock / adapter 链路。
+- 新增 `system/user`、`system/role`、`system/menu`、`team/team-members`、`system/message` 五个真实工作面，补齐筛选、列表、详情区和操作反馈，不再继续停留在通用骨架页。
+- 更新 `app-shell` 页面分发与 `frontend-shadcn/docs/architecture.md`，明确这条新线当前采用“页面工作面 + query 层 + mock module”的组织方式。
+- 已通过 `pnpm --dir frontend-shadcn build` 验证；当前仍有 Vite 默认的大 chunk 告警，但不影响本轮交付。
+
+### 下次方向
+- 继续把 `system/page`、`system/api-endpoint`、`system/menu-space`、`system/action-permission` 等剩余治理页从通用骨架推进到真实工作面。
+- 把当前 mock module 再抽成稳定 adapter 接口，逐步替换 `navigation.tsx` 中残留的静态占位数据。
+
+# 2026-04-03 frontend-shadcn 新线起壳
+
+### 本次改动
+- 新建 `frontend-shadcn/`，以 React + Vite + shadcn/ui + 官方 `sidebar-07` blocks 作为新的管理端重写基座。
+- 落地新的后台壳层：可折叠侧栏、顶栏、面包屑、快捷入口、主题切换，以及控制台、收件箱、用户、角色、菜单、团队、消息等首批页面骨架。
+- 将新线主题收口到 CSS Variables，后续允许整体切换品牌色；同时补 `frontend-shadcn/docs/architecture.md`、`frontend-shadcn/README.md` 和 `start-frontend-shadcn.bat`。
+- 更新根目录协作文档，使 `frontend-shadcn/` 成为当前新的管理端重写线。
+
+### 下次方向
+- 继续把用户、角色、菜单、团队、消息主链从骨架页推进到真实工作面。
+- 补统一数据层与请求层，再逐步替换静态占位数据。
+
+# 2026-04-03 清理 Fluent 迁移线，准备重写管理端
+
+### 本次改动
+- 清理 `frontend-fluentV2/` 目录及其启动残留文件，结束上一条 Fluent 迁移线。
+- 清理根目录中与 Fluent 迁移线绑定的约束描述，将仓库状态重置为“保留 Vue 主线，新的重写线待建立”。
+- 保留 `frontend/`、`backend/` 与既有仓库级文档入口，为后续新的管理端重写线留出干净起点。
+
+### 下次方向
+- 新建新的管理端前端目录，并先确定组件体系、路由模式、状态边界和 mock 数据边界。
+- 在新的重写线建立完成后，再补对应目录下的专题文档与启动脚本。
+
+# 2026-04-02 frontend-fluentV2 路由全面接线与消息/收件箱首批迁移
+
+### 本次改动
+- `route-registry` 新增工作台收件箱、系统/团队消息调度、模板、发送人、收件组、记录、目录以及团队治理页的本地路由映射，动态导航命中这些路径时可直接进入 React 版页面，不再落到占位页。
+- 新增 `features/workspace/InboxPage`，结合收件箱列表、详情、已读/批量已读与待办处理主链，URL 记忆当前筛选与选中项。
+- 新增 `features/message/components/MessageDispatchWorkspace`，在系统域与团队域接入 `/api/v1/messages/dispatch` 真实调度链路，支持模板带入、发送人/受众/优先级选择与目标勾选。
+- 新增 `features/system/menu-space/MenuSpacePage`，支持菜单空间列表、创建/编辑、空间模式切换、默认菜单初始化与 Host 绑定管理，并在路由 `/system/menu-space` 接入。
+- 新增 `features/system/page/PageManagementPage` 与 `features/system/api/ApiEndpointPage`，分别承接页面治理与接口治理主链，并接入 `/system/page`、`/system/api-endpoint` 本地路由。
+
+### 下次方向
+- 继续迁移 `system/access-trace`、`system/fast-enter`、`system/feature-package` 等剩余治理页到 React，并补充相应路由注册。
+- 完成一轮 `frontend-fluentV2` 端到端自测（登录、导航、收件箱、消息调度、团队治理），将结果补充到 change-log。
+
 # 2026-04-02 frontend-fluentV2 全量页面收口范围表与壳层状态统一
 
 ### 本次改动
@@ -581,6 +720,28 @@
 
 ### 下次方向
 - 后续每轮完成时继续同步清理该文档中的已完成项，确保它只保留真实未完成事项。
+## 2026-04-03 frontend-shadcn UI 选型清单
+
+### 本次改动
+- 新增 `frontend-shadcn/docs/ui-stack-checklist.md`，明确新管理端重写线的 UI 选型顺序：页面优先消费 `src/components/ui/*`，必要时仅在 UI 封装层内部补 `Radix` primitive。
+- 同步更新 `frontend-shadcn/docs/architecture.md`，把这份清单挂入当前文档结构，后续可以作为页面开发和组件沉淀的统一入口。
+- 本次只调整文档约束，没有修改业务实现或组件代码。
+
+### 下次方向
+- 后续新增组件时，先按清单判断是复用现有 `shadcn/ui`、补官方组件，还是在 `src/components/ui/*` 内新增 `Radix` 封装。
+- 如果后面出现 2 到 3 个以上重复的高级交互场景，再考虑沉淀更细的组件分类清单和示例模板。
+
+## 2026-04-03 frontend-shadcn 常见组件对照表
+
+### 本次改动
+- 新增 `frontend-shadcn/docs/ui-component-mapping.md`，按页面结构、数据展示、表单、反馈、浮层、导航六类场景列出推荐组件，减少页面开发时临时判断成本。
+- 在 `frontend-shadcn/docs/ui-stack-checklist.md` 与 `frontend-shadcn/docs/architecture.md` 中补充对照表入口，让 UI 边界规则和具体落地映射形成一套可查文档。
+- 本次仍只更新文档，不涉及页面实现和依赖调整。
+
+### 下次方向
+- 后续如果新增 `Dialog`、`Popover`、`Combobox` 等常用封装，可以继续把文档里的“推荐方案”同步到实际组件清单。
+- 若页面里开始频繁出现高级交互，再补“已封装组件状态表”，区分已可直接用、待补齐、禁止页面直连三类状态。
+
 - 暂不把这条规则下沉到全局技能；如果后续多个仓库都需要同样机制，再考虑把它抽成技能行为。
 
 ## 2026-04-02 frontend-fluentV2 下次方向记录改为持续备案
@@ -647,3 +808,17 @@
 - 清空 `frontend-fluentV2/src/pages`，保留壳层与导航骨架，准备重新重构第 8 版页面体系。
 - 删除 `frontend-fluentV2/docs` 专题文档，重置为干净目录，后续只保留新的重构文档。
 - 清理了 `frontend-fluentV2/src/features/navigation/routes/core-routes.tsx`、`system-routes.tsx`、`team-routes.tsx` 的页面依赖，并将 `AppRouter` 收敛为壳层入口。
+- 恢复最小可用登录链路和受保护壳入口，新增 `features/auth/LoginPage.tsx` 与 `features/home/ShellHomePage.tsx`，重新打通登录、默认首页和运行时菜单加载。
+- `route-registry` 保留 `dashboard/console`、`system/menu`、`system/role`、`system/user` 作为本地已实现页，其余运行时页面继续由菜单承接并以占位提示显示。
+
+## 2026-04-02 frontend-fluentV2 用户管理页治理化重构
+
+### 本次改动
+- 重写 `frontend-fluentV2/src/features/system/user/UserManagementPage.tsx`，将用户页收口为 Fluent 2 治理页：顶部摘要、筛选工具区、DataGrid 主区与响应式详情抽屉统一成一套正式结构。
+- 详情抽屉改为 `概览 / 角色 / 菜单 / 功能包 / 权限诊断` 五个治理 Tabs，并接入 `features/access/access.service.ts` 里的真实用户治理 hooks，不再只停留在基础 CRUD。
+- 菜单页签默认按 `default` 空间加载菜单树，角色分配、菜单保存、功能包查看和权限快照刷新都已接到现有接口；同时补齐 `UserRecord.isSuperAdmin` 与 access 归一化，统一前端类型口径。
+- 已重新通过 `pnpm --dir frontend-fluentV2 build` 校验。
+
+### 下次方向
+- 继续把用户页中的角色分配与菜单编辑提炼成域级子组件，避免 `UserManagementPage` 再次膨胀成大文件。
+- 后续如果要继续提升治理能力，优先补用户页的功能包编辑与更完整的菜单继承/派生可视化，而不是再扩一层独立页面。

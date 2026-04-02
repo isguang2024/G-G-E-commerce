@@ -1,15 +1,14 @@
 # FRONTEND_GUIDELINE.md
 
-## React Fluent 2 前端规范
+## 管理端前端规范
 
-适用范围：`frontend-fluentV2/`
+适用范围：`frontend/`
 
 ## 视觉方向
 
-- Fluent 2 风格
-- 微软企业感
 - 克制、清晰、低噪
 - 先用留白、层级和排版组织信息，不靠旧卡片皮肤堆视觉
+- 保持后台场景的稳定感和可读性，不做营销化堆叠
 
 ## 壳层规范
 
@@ -22,25 +21,23 @@
 
 - 标题区、操作区、内容区分层明确
 - mock、样式、状态、布局不要揉在一个文件
-- 页面优先消费 Query 与 typed metadata，不直接读散落常量
+- 页面优先消费统一的数据层与 typed metadata，不直接读散落常量
 - 列表、设置、三栏工作区都要尽量复用统一容器
 
 ## 组件与样式
 
-- 优先使用 Fluent UI React v9 官方组件
-- 页面样式优先使用 `makeStyles + tokens`
-- 不引入 Tailwind
-- 不引入其他 UI 库
+- `frontend/` 内保持单一、可维护的后台 UI 体系，不混用多套设计语言
+- 样式、配色、圆角、间距与阴影都应通过统一 token 或主题层管理
+- 若引入 Tailwind 或其他样式机制，应把设计 token 和公共布局抽到统一层，不让页面散落魔法类名
+- 新增基础组件或页面骨架时，优先沉淀为可复用模块
 
 ## 动效规范
 
-- React Fluent 2 线的动效优先使用 Fluent 组件自带的 motion 行为，不额外手搓第二套交互节奏
-- 需要自定义过渡时，优先复用 Fluent token 中的时长与缓动，例如 `tokens.durationNormal`、`tokens.curveEasyEase`
-- 仅在 Fluent 组件现成能力无法覆盖时，才补最小范围的自定义 CSS transition / animation
-- 当前不要直接把 `@fluentui/react-motion` 当作生产基建；该包在当前版本中仍标注为非 production-ready，后续待官方稳定后再评估升级
+- 动效以最小必要为原则，优先服务导航切换、抽屉/弹层开合和状态反馈
+- 需要自定义过渡时，统一时长和缓动，不在不同页面各写一套节奏
+- 当前不要为了“显得高级”额外堆叠复杂动画
 
 ## 数据与状态
 
-- Zustand 只管理壳层状态
-- TanStack Query 管页面资源和 mock 查询
-- Axios 只做请求 client 和错误归一化骨架
+- 当前阶段先以本地 mock / 静态元数据驱动页面骨架
+- 后续接真实数据时，再补统一查询层和请求 client，不提前堆状态库
