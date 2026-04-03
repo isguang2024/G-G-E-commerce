@@ -341,6 +341,24 @@
     supports_external_link: true
   })
 
+  const normalizeDispatchOptions = (
+    payload?: Partial<Api.Message.DispatchOptions> | null
+  ): Api.Message.DispatchOptions => {
+    const base = createDefaultDispatchOptions()
+    return {
+      ...base,
+      ...(payload || {}),
+      sender_options: Array.isArray(payload?.sender_options) ? payload.sender_options : base.sender_options,
+      audience_options: Array.isArray(payload?.audience_options) ? payload.audience_options : base.audience_options,
+      template_options: Array.isArray(payload?.template_options) ? payload.template_options : base.template_options,
+      teams: Array.isArray(payload?.teams) ? payload.teams : base.teams,
+      users: Array.isArray(payload?.users) ? payload.users : base.users,
+      recipient_groups: Array.isArray(payload?.recipient_groups) ? payload.recipient_groups : base.recipient_groups,
+      roles: Array.isArray(payload?.roles) ? payload.roles : base.roles,
+      feature_packages: Array.isArray(payload?.feature_packages) ? payload.feature_packages : base.feature_packages
+    }
+  }
+
   const form = reactive<Api.Message.DispatchParams & {
     sender_id: string
     template_id: string
@@ -399,7 +417,7 @@
   })
 
   const filteredTemplateOptions = computed(() =>
-    options.template_options.filter((item) =>
+    (options.template_options || []).filter((item) =>
       isTeamScope.value ? item.owner_scope === 'team' : item.owner_scope === 'platform'
     )
   )
@@ -495,12 +513,12 @@
   })
 
   const heroMetrics = computed(() => [
-    { label: '可用发送人', value: options.sender_options.length },
-    { label: '可用模板', value: options.template_options.length },
-    { label: '可选对象', value: options.audience_options.length },
-    { label: isTeamScope.value ? '当前团队' : '目标团队', value: isTeamScope.value ? effectiveTeamName.value : options.teams.length }
+    { label: '可用发送人', value: (options.sender_options || []).length },
+    { label: '可用模板', value: (options.template_options || []).length },
+    { label: '可选对象', value: (options.audience_options || []).length },
+    { label: isTeamScope.value ? '当前团队' : '目标团队', value: isTeamScope.value ? effectiveTeamName.value : (options.teams || []).length }
   ])
-  const canDispatch = computed(() => !loadError.value && options.sender_options.length > 0)
+  const canDispatch = computed(() => !loadError.value && (options.sender_options || []).length > 0)
 
   const normalizeEditorValue = (value?: string) => {
     const target = `${value || ''}`.trim()
@@ -571,7 +589,7 @@
       const data = await fetchGetMessageDispatchOptions({
         skipTenantHeader: skipTenantHeader.value
       })
-      Object.assign(options, data || {})
+      Object.assign(options, normalizeDispatchOptions(data))
       if (form.template_id && !filteredTemplateOptions.value.some((item) => item.id === form.template_id)) {
         form.template_id = ''
       }
@@ -711,6 +729,7 @@
     grid-template-columns: minmax(0, 1.7fr) minmax(320px, 0.9fr);
     gap: 16px;
     margin-top: 0;
+    align-items: stretch;
   }
 
   .message-manage-nav {
@@ -723,6 +742,8 @@
 
   .message-manage-main,
   .message-manage-preview {
+    display: flex;
+    flex-direction: column;
     padding: 22px;
     border-radius: 20px;
     border: 1px solid var(--art-card-border);
@@ -915,6 +936,10 @@
     border-radius: 18px;
     border: 1px dashed color-mix(in srgb, var(--art-card-border) 92%, white);
     background: rgb(248 250 252 / 0.88);
+  }
+
+  .message-manage-preview__card {
+    flex: 1;
   }
 
   .message-manage-preview__template-title {

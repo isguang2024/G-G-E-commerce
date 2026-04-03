@@ -16,10 +16,30 @@
  */
 import { AppRouteRecord } from '@/types/router'
 import { router } from '@/router'
+import { useMenuSpaceStore } from '@/store/modules/menu-space'
 
 // 打开外部链接
 export const openExternalLink = (link: string) => {
   window.open(link, '_blank')
+}
+
+const resolveRouteSpaceKey = (item: AppRouteRecord): string | undefined => {
+  const target = `${item.spaceKey || item.meta?.spaceKey || ''}`.trim()
+  return target || undefined
+}
+
+const navigateToMenuRoute = (path: string, spaceKey?: string) => {
+  const targetPath = `${path || ''}`.trim()
+  if (!targetPath) {
+    return Promise.resolve()
+  }
+  const menuSpaceStore = useMenuSpaceStore()
+  const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(targetPath, spaceKey)
+  if (nextTarget.mode === 'router') {
+    return router.push(nextTarget.target)
+  }
+  window.location.assign(nextTarget.target)
+  return Promise.resolve()
 }
 
 /**
@@ -37,7 +57,7 @@ export const handleMenuJump = (item: AppRouteRecord, jumpToFirst: boolean = fals
 
   // 如果不需要跳转到第一个子菜单，或者没有子菜单，直接跳转当前路径
   if (!jumpToFirst || !item.children?.length) {
-    return router.push(item.path)
+    return navigateToMenuRoute(item.path, resolveRouteSpaceKey(item))
   }
 
   // 递归查找第一个可见的叶子节点菜单
@@ -58,5 +78,5 @@ export const handleMenuJump = (item: AppRouteRecord, jumpToFirst: boolean = fals
   }
 
   // 跳转到子菜单路径
-  router.push(firstChild.path)
+  return navigateToMenuRoute(firstChild.path, resolveRouteSpaceKey(firstChild))
 }

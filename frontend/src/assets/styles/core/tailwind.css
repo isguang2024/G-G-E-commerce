@@ -4,12 +4,12 @@
 /* ==================== Light Mode Variables ==================== */
 :root {
   /* Base Colors */
-  --art-color: #ffffff;
+  --art-color: #f8fafc;
   --theme-color: var(--main-color);
 
   /* Theme Colors - OKLCH Format */
-  --art-primary: oklch(0.7 0.23 260);
-  --art-secondary: oklch(0.72 0.19 231.6);
+  --art-primary: oklch(0.63 0.17 255);
+  --art-secondary: oklch(0.69 0.11 247);
   --art-error: oklch(0.73 0.15 25.3);
   --art-info: oklch(0.58 0.03 254.1);
   --art-success: oklch(0.78 0.17 166.1);
@@ -17,70 +17,72 @@
   --art-danger: oklch(0.68 0.22 25.3);
 
   /* Gray Scale - Light Mode */
-  --art-gray-100: #f9fafb;
-  --art-gray-200: #f2f4f5;
-  --art-gray-300: #e6eaeb;
-  --art-gray-400: #dbdfe1;
-  --art-gray-500: #949eb7;
-  --art-gray-600: #7987a1;
-  --art-gray-700: #4d5875;
-  --art-gray-800: #383853;
-  --art-gray-900: #323251;
+  --art-gray-100: #f6f8fb;
+  --art-gray-200: #eef2f6;
+  --art-gray-300: #e1e7ef;
+  --art-gray-400: #c9d2de;
+  --art-gray-500: #91a0b4;
+  --art-gray-600: #708399;
+  --art-gray-700: #4f5f72;
+  --art-gray-800: #334155;
+  --art-gray-900: #1f2937;
 
   /* Border Colors */
-  --art-card-border: rgba(0, 0, 0, 0.08);
+  --art-card-border: rgba(80, 103, 137, 0.14);
 
-  --default-border: #e2e8ee;
-  --default-border-dashed: #dbdfe9;
+  --default-border: #d9e0e9;
+  --default-border-dashed: #d3dbe5;
 
   /* Background Colors */
-  --default-bg-color: #fafbfc;
+  --default-bg-color: #f3f6fa;
   --default-box-color: #ffffff;
+  --header-surface-color: #f3f6fa;
 
   /* Hover Color */
-  --art-hover-color: #edeff0;
+  --art-hover-color: #e9f1fb;
 
   /* Active Color */
-  --art-active-color: #f2f4f5;
+  --art-active-color: #e2effd;
 
   /* Element Component Active Color */
-  --art-el-active-color: #f2f4f5;
+  --art-el-active-color: #e6f0fb;
 }
 
 /* ==================== Dark Mode Variables ==================== */
 .dark {
   /* Base Colors */
-  --art-color: #000000;
+  --art-color: #0b1220;
 
   /* Gray Scale - Dark Mode */
-  --art-gray-100: #110f0f;
-  --art-gray-200: #17171c;
-  --art-gray-300: #393946;
-  --art-gray-400: #505062;
-  --art-gray-500: #73738c;
-  --art-gray-600: #8f8fa3;
-  --art-gray-700: #ababba;
-  --art-gray-800: #c7c7d1;
-  --art-gray-900: #e3e3e8;
+  --art-gray-100: #0f172a;
+  --art-gray-200: #151d2f;
+  --art-gray-300: #243146;
+  --art-gray-400: #3b4b63;
+  --art-gray-500: #607089;
+  --art-gray-600: #8493a8;
+  --art-gray-700: #aab4c3;
+  --art-gray-800: #ced5df;
+  --art-gray-900: #e7ebf2;
 
   /* Border Colors */
   --art-card-border: rgba(255, 255, 255, 0.08);
 
-  --default-border: rgba(255, 255, 255, 0.1);
-  --default-border-dashed: #363843;
+  --default-border: rgba(255, 255, 255, 0.12);
+  --default-border-dashed: #2a3647;
 
   /* Background Colors */
-  --default-bg-color: #070707;
-  --default-box-color: #161618;
+  --default-bg-color: #08111f;
+  --default-box-color: #111a2c;
+  --header-surface-color: #0d1728;
 
   /* Hover Color */
-  --art-hover-color: #252530;
+  --art-hover-color: #17253a;
 
   /* Active Color */
-  --art-active-color: #202226;
+  --art-active-color: #1a2a42;
 
   /* Element Component Active Color */
-  --art-el-active-color: #2e2e38;
+  --art-el-active-color: #1d304a;
 }
 
 /* ==================== Tailwind Theme Configuration ==================== */

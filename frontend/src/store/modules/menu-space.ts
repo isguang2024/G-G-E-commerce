@@ -17,7 +17,8 @@ import {
   normalizeMenuSpaceKey,
   resolveMenuSpaceHostBinding,
   resolveMenuSpaceDefinition,
-  resolveMenuSpaceKeyByHost
+  resolveMenuSpaceKeyByHost,
+  shouldUseFullMenuSpaceNavigation
 } from '@/utils/navigation/menu-space'
 
 const runtimeMenuSpaceConfig = AppConfig.menuSpace || createFallbackMenuSpaceConfig()
@@ -271,20 +272,24 @@ export const useMenuSpaceStore = defineStore(
           target: targetUrl
         }
       }
-      const currentProtocol = window.location.protocol.replace(':', '')
-      const currentOriginHost = normalizeMenuHost(window.location.hostname)
-      const targetHost = normalizeMenuHost(binding.host)
-      const routePrefix = `${binding.routePrefix || ''}`.trim()
-      if (
-        targetHost === currentOriginHost &&
-        (!routePrefix || routePrefix === '/') &&
-        `${binding.scheme || 'https'}`.trim().toLowerCase() === currentProtocol
-      ) {
+      const shouldUseLocationNavigation = shouldUseFullMenuSpaceNavigation(
+        binding,
+        window.location.hostname,
+        window.location.protocol,
+        window.location.pathname
+      )
+      if (!shouldUseLocationNavigation) {
         return {
           mode: 'router' as const,
           target: normalizedPath
         }
       }
+      warnDev('[menu-space] 使用整页导航切换菜单空间', {
+        targetPath: normalizedPath,
+        targetUrl,
+        host: binding.host,
+        routePrefix: `${binding.routePrefix || ''}`.trim()
+      })
       return {
         mode: 'location' as const,
         target: targetUrl

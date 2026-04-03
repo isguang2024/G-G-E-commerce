@@ -121,11 +121,11 @@ export function useFastEnter() {
     if (routeTarget && router.hasRoute(routeTarget)) {
       const resolved = router.resolve({ name: routeTarget })
       const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
-        resolved.href,
+        resolved.fullPath || resolved.path,
         `${resolved.meta?.spaceKey || ''}`.trim() || undefined
       )
       if (nextTarget.mode === 'router') {
-        await router.push({ name: routeTarget })
+        await router.push(nextTarget.target)
       } else {
         window.location.assign(nextTarget.target)
       }

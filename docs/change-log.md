@@ -1,5 +1,28 @@
 # Change Log
 
+## 2026-04-03 Vue 消息发送页空数组兜底修复
+
+### 本次改动
+- 修复 [message-dispatch-console.vue](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/views/message/modules/message-dispatch-console.vue) 在消息发送配置接口返回 `null` 数组时的渲染报错，新增 `normalizeDispatchOptions()` 统一将 `sender_options`、`template_options`、`audience_options`、`teams`、`users`、`recipient_groups`、`roles`、`feature_packages` 归一为 `[]`。
+- 对模板筛选、顶部指标和发送按钮可用态增加空值兜底，避免再次出现 `filter` / `length` 读取 `null` 的运行时错误。
+- 已通过 `pnpm --dir frontend build` 验证。
+
+### 下次方向
+- 检查消息模板、发送人、收件组等相邻页面是否也存在接口返回 `null` 数组但前端直接按数组读取的情况，统一在入口层归一。
+- 若后端契约允许，后续可以把这些字段收紧为始终返回数组，减少前端到处做容错。
+
+## 2026-04-03 frontend 路由整页刷新判定收口
+
+### 本次改动
+- 收紧 `frontend` 菜单空间跳转判定：同 host、同协议且当前 pathname 已经处在目标 `routePrefix` 下时，不再把路由跳转降级为整页 `location.assign(...)`。
+- 将菜单点击统一接入菜单空间感知导航链路，侧栏和顶部菜单现在会结合 `spaceKey` 判断是走 `router.push(...)` 还是确实需要整页跳转。
+- 修复快速入口基于 `routeName` 导航时误把 `resolved.href` 当内部路径下传的问题，避免 hash 路由场景拼出异常目标地址。
+- 已通过 `pnpm --dir frontend build` 验证。
+
+### 下次方向
+- 若仍偶发整页刷新，可优先检查 `window.location.assign(...)` 的剩余入口：团队切换、用户菜单、通知中心、富文本内部链接和登录落地页。
+- 当前已在菜单空间整页导航分支补了 dev warning，后续如要继续深挖，可再给这些剩余入口统一加来源标识，便于直接从控制台判断是哪条链路触发。
+
 ## 2026-04-03 调整 frontend 历史文档归档位置
 
 ### 本次改动
@@ -822,3 +845,15 @@
 ### 下次方向
 - 继续把用户页中的角色分配与菜单编辑提炼成域级子组件，避免 `UserManagementPage` 再次膨胀成大文件。
 - 后续如果要继续提升治理能力，优先补用户页的功能包编辑与更完整的菜单继承/派生可视化，而不是再扩一层独立页面。
+
+## 2026-04-03 frontend Fluent 2 主题收敛
+
+### 本次改动
+- 调整 `frontend/src/assets/styles/core/tailwind.css` 的浅色与深色主题变量，统一页面底色、卡片底色、边框、hover/active 填充和主色强调，整体往 Fluent 2 的低噪、弱边框、单一强调色方向收敛。
+- 更新 `frontend/src/assets/styles/core/el-light.scss` 和 `frontend/src/assets/styles/core/el-ui.scss` 的 Element Plus 全局覆写，让按钮、弹层、消息、下拉、日期范围和树选择的视觉基线与新主题变量保持一致。
+- 微调 `frontend/src/assets/styles/core/app.scss` 的页面壳层阴影、侧栏分隔和徽标颜色，减少高亮白边和硬阴影带来的发亮感。
+- 已通过 `pnpm --dir frontend build` 验证，未改动页面模板与业务逻辑，仅影响全局样式层。
+
+### 下次方向
+- 下一轮优先继续细化首页、侧栏、卡片和标签页的颜色分层，重点看实际页面的层级感和信息密度是否还偏“白”。
+- 如果需要进一步贴近 Fluent 2，可以再补一轮状态色、空状态和表格斑马纹的统一规范，但不建议再引入第二套 UI 体系。

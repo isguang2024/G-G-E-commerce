@@ -2,9 +2,9 @@
 
 :root {
   // 系统主色
-  --main-color: var(--el-color-primary);
-  --el-color-white: white !important;
-  --el-color-black: white !important;
+  --main-color: #2563eb;
+  --el-color-white: #ffffff !important;
+  --el-color-black: #111827 !important;
   // 输入框边框颜色
   // --el-border-color: #E4E4E7 !important; // DCDFE6
   // 按钮粗度
@@ -20,6 +20,12 @@
   --el-border-radius-small: calc(var(--custom-radius) / 3 + 4px) !important;
   --el-messagebox-border-radius: calc(var(--custom-radius) / 3 + 4px) !important;
   --el-popover-border-radius: calc(var(--custom-radius) / 3 + 4px) !important;
+  --el-bg-color: var(--default-box-color) !important;
+  --el-bg-color-page: var(--default-bg-color) !important;
+  --el-fill-color-blank: var(--default-box-color) !important;
+  --el-fill-color-light: var(--art-gray-100) !important;
+  --el-border-color: var(--default-border) !important;
+  --el-border-color-light: var(--art-gray-300) !important;
 
   .region .el-radio-button__original-radio:checked + .el-radio-button__inner {
     color: var(--theme-color);
@@ -34,7 +40,7 @@
 
 // 日期选择器
 .el-date-range-picker {
-  --el-datepicker-inrange-bg-color: var(--art-gray-200) !important;
+  --el-datepicker-inrange-bg-color: var(--art-hover-color) !important;
 }
 
 // el-card 背景色跟系统背景色保持一致
@@ -163,9 +169,8 @@ html.dark .el-card {
   background-color: var(--default-box-color) !important;
   border: 0 !important;
   box-shadow:
-    0 6px 16px 0 rgba(0, 0, 0, 0.08),
-    0 3px 6px -4px rgba(0, 0, 0, 0.12),
-    0 9px 28px 8px rgba(0, 0, 0, 0.05) !important;
+    0 12px 24px -12px rgba(15, 23, 42, 0.28),
+    0 6px 14px -8px rgba(15, 23, 42, 0.16) !important;
 
   p {
     font-size: 13px;
@@ -176,7 +181,8 @@ html.dark .el-card {
 .el-dropdown-menu {
   padding: 6px !important;
   border-radius: 10px !important;
-  border: none !important;
+  border: 1px solid var(--default-border) !important;
+  box-shadow: 0 10px 30px -18px rgba(15, 23, 42, 0.22) !important;
 
   .el-dropdown-menu__item {
     padding: 6px 16px !important;
@@ -338,6 +344,7 @@ html.dark .el-card {
 
 .el-message-box {
   padding: 25px 20px !important;
+  border: 1px solid var(--default-border) !important;
 }
 
 .el-message-box__title {
@@ -455,16 +462,16 @@ html.dark .el-card {
   .el-select-dropdown__list {
     padding: 5px !important;
 
-    .el-tree-node {
-      .el-tree-node__content {
-        height: 36px !important;
-        border-radius: 6px !important;
+      .el-tree-node {
+        .el-tree-node__content {
+          height: 36px !important;
+          border-radius: 6px !important;
 
-        &:hover {
-          background-color: var(--art-gray-200) !important;
+          &:hover {
+            background-color: var(--art-hover-color) !important;
+          }
         }
       }
-    }
   }
 }
 

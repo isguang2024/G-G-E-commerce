@@ -36,7 +36,8 @@ export function normalizeMenuSpaceRoutePrefix(value?: unknown): string {
 export function shouldUseFullMenuSpaceNavigation(
   binding: MenuSpaceHostBinding | undefined,
   currentHost?: string,
-  currentProtocol?: string
+  currentProtocol?: string,
+  currentPathname?: string
 ): boolean {
   if (!binding?.host) {
     return false
@@ -46,13 +47,26 @@ export function shouldUseFullMenuSpaceNavigation(
     (typeof window !== 'undefined' ? normalizeMenuHost(window.location.hostname) : '')
   const normalizedCurrentProtocol =
     `${currentProtocol || (typeof window !== 'undefined' ? window.location.protocol : 'https:')}`.replace(/:$/, '')
-  if (normalizeMenuSpaceRoutePrefix(binding.routePrefix)) {
-    return true
-  }
   if (normalizeMenuHost(binding.host) !== normalizedCurrentHost) {
     return true
   }
-  return normalizeMenuSpaceScheme(binding.scheme) !== normalizeMenuSpaceScheme(normalizedCurrentProtocol)
+  if (normalizeMenuSpaceScheme(binding.scheme) !== normalizeMenuSpaceScheme(normalizedCurrentProtocol)) {
+    return true
+  }
+  const normalizedRoutePrefix = normalizeMenuSpaceRoutePrefix(binding.routePrefix)
+  if (!normalizedRoutePrefix) {
+    return false
+  }
+  const normalizedCurrentPathname =
+    normalizeMenuSpaceRoutePrefix(currentPathname) ||
+    (typeof window !== 'undefined' ? normalizeMenuSpaceRoutePrefix(window.location.pathname) : '')
+  if (!normalizedCurrentPathname) {
+    return true
+  }
+  return !(
+    normalizedCurrentPathname === normalizedRoutePrefix ||
+    normalizedCurrentPathname.startsWith(`${normalizedRoutePrefix}/`)
+  )
 }
 
 export function createFallbackMenuSpaceConfig(): MenuSpaceConfig {
