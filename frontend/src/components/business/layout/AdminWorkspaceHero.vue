@@ -63,6 +63,7 @@
 
   .workspace-hero__header {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: flex-start;
     gap: 18px;
@@ -71,10 +72,10 @@
   .workspace-hero__main {
     display: flex;
     min-width: 0;
-    flex: 1;
+    flex: 1 1 320px;
     flex-direction: column;
     gap: 12px;
-    max-width: 560px;
+    max-width: min(100%, 720px);
   }
 
   .workspace-hero__eyebrow:empty {
@@ -99,14 +100,17 @@
     line-height: 1.1;
     letter-spacing: -0.03em;
     color: var(--art-text-strong);
+    word-break: keep-all;
+    overflow-wrap: break-word;
   }
 
   .workspace-hero__description {
     margin: 0;
-    max-width: 720px;
+    max-width: 100%;
     font-size: 12px;
     line-height: 1.5;
     color: var(--art-text-muted);
+    word-break: break-word;
   }
 
   .workspace-hero__divider-wrap {
@@ -127,14 +131,17 @@
     justify-content: flex-end;
     gap: 10px;
     align-self: flex-start;
+    flex: 1 1 420px;
+    min-width: min(100%, 420px);
   }
 
   .workspace-metric {
     display: inline-flex;
     flex-direction: column;
     gap: 4px;
-    flex: 0 0 128px;
-    max-width: 128px;
+    flex: 1 1 112px;
+    max-width: 148px;
+    min-width: 112px;
     min-height: 46px;
   }
 
@@ -170,6 +177,7 @@
     .workspace-hero__metrics {
       justify-content: flex-start;
       align-self: stretch;
+      min-width: 0;
     }
 
     .workspace-hero__actions {
@@ -191,10 +199,12 @@
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
       justify-content: stretch;
+      width: 100%;
     }
 
     .workspace-metric {
       flex-basis: auto;
+      min-width: 0;
       max-width: none;
     }
   }
