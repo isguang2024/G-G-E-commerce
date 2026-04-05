@@ -42,7 +42,6 @@
 - `requesting-code-review`
 - `subagent-driven-development`
 - `systematic-debugging`
-- `test-driven-development`
 - `verification-before-completion`
 - `writing-plans`
 
@@ -74,10 +73,9 @@
 - `brainstorming`：只在跨模块方案设计、菜单 / 权限 / App 架构调整、复杂页面重组、跨前后端联动时触发。
 - `writing-plans`：只在多步、多文件、跨前后端或带迁移 / 接口契约变化时触发。
 - `executing-plans`：只在已经有计划文件，且需要按顺序内联执行或批量执行时触发。
-- `test-driven-development`：只在后端服务、核心 store / hook、已有测试邻近模块、明确回归 bug 时触发。
 - `using-git-worktrees`：只在需要独立分支长期开发、避免和当前脏工作区冲突、明确要 PR / 隔离验证时触发。
 - `finishing-a-development-branch`：只在用户明确要提交、开 PR、合并、清理分支时触发。
-- `systematic-debugging` 中的失败测试也按仓库现实条件触发：适合自动化回归时再走 failing test，不适合时至少保留可重复的最小复现和验证命令。
+- `systematic-debugging` 仍保留“先建立最强可行复现证据”的思路，但不会再单独调用 `test-driven-development` 技能。
 
 ### 默认不做硬触发
 
@@ -88,14 +86,13 @@
 
 ### 当前停用策略
 
-- 当前仓库直接停用了 `using-superpowers`、`using-git-worktrees`、`executing-plans`、`finishing-a-development-branch`、`writing-skills` 的技能发现入口。
+- 当前仓库直接停用了 `using-superpowers`、`using-git-worktrees`、`executing-plans`、`finishing-a-development-branch`、`test-driven-development`、`writing-skills` 的技能发现入口。
 - 停用方式是保留目录内容，但移除 `SKILL.md` 作为发现入口；如需恢复，只要把对应的 `SKILL.disabled.md` 改回 `SKILL.md`。
 
 ## 推荐触发条件
 
 - 触发 `brainstorming`：改信息架构、改菜单 / 权限 / App 模型、跨前后端联动、预计超过半天的任务。
 - 触发 `writing-plans`：涉及 3 个以上文件且跨模块，或包含数据库 / 迁移 / 接口契约变化。
-- 触发 `test-driven-development`：后端 service、公共工具、已有测试模块、明确回归 bug。
 - 触发 `requesting-code-review`：核心域改动、跨前后端改动、准备提交 PR。
 
 ## 适合当前仓库的使用方式
@@ -120,7 +117,7 @@
 ## 注意点
 
 - `superpowers` 会显著提高流程强度，尤其是设计、计划、TDD、review 和收尾步骤。
-- 当前 `frontend/package.json` 没有默认 `test` 脚本，因此涉及 `test-driven-development` 时，需要结合当前仓库实际能力执行，不能机械套用。
+- 当前 `frontend/package.json` 没有默认 `test` 脚本，因此测试相关验证需要结合当前仓库实际能力执行，不能机械套用。
 - 当前全局 Codex 配置已启用 `multi_agent = true`，因此需要子代理的技能具备运行前提。
 
 ## 后续更新

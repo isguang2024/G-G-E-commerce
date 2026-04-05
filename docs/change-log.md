@@ -1,5 +1,17 @@
 # Change Log
 
+## 2026-04-06 superpowers 测试技能停用
+
+### 本次改动
+- 停用了 [test-driven-development](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/test-driven-development) 的技能发现入口，把它从当前仓库的启用清单中移除。
+- 停用方式与之前几项一致，仍然是把目录内 `SKILL.md` 改名为 `SKILL.disabled.md`，保留内容以便以后恢复，不影响其他技能。
+- 同步更新 [docs/superpowers-integration.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/superpowers-integration.md) 和 [下次方向.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/下次方向.md)，把测试相关入口从当前启用清单和触发说明里移除。
+- 本轮没有改业务代码，也没有执行构建或测试。
+
+### 下次方向
+- 如果后续前端测试体系成熟，再决定是否恢复 `test-driven-development`，不要现在保留一个长期不用的入口。
+- 若还想继续减轻流程，下一步优先考虑 `brainstorming` 或 `writing-plans` 是否也要进一步缩减触发范围。
+
 ## 2026-04-06 superpowers 停用一批重流程技能
 
 ### 本次改动
