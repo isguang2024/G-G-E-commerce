@@ -119,6 +119,7 @@
     modelValue: boolean
     teamId: string
     teamName: string
+    appKey?: string
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -149,6 +150,7 @@
     current: 1,
     size: 10
   })
+  const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
 
   const filteredPackages = computed(() => {
     const currentKeyword = keyword.value.trim().toLowerCase()
@@ -195,13 +197,18 @@
   )
 
   async function loadData() {
-    if (!props.teamId) return
+    if (!props.teamId || !currentAppKey.value) {
+      if (!currentAppKey.value) {
+        ElMessage.warning('缺少 app 上下文')
+      }
+      return
+    }
     loading.value = true
     resetFilters()
     try {
       const [listRes, teamRes] = await Promise.all([
-        fetchGetFeaturePackageOptions({ contextType: 'team', status: 'normal' }),
-        fetchGetTeamFeaturePackages(props.teamId)
+        fetchGetFeaturePackageOptions({ contextType: 'team', status: 'normal', appKey: currentAppKey.value }),
+        fetchGetTeamFeaturePackages(props.teamId, currentAppKey.value)
       ])
       packages.value = listRes?.records || []
       selectedPackageIds.value = [...(teamRes?.package_ids || [])]
@@ -261,10 +268,15 @@
   }
 
   async function handleSave() {
-    if (!props.teamId) return
+    if (!props.teamId || !currentAppKey.value) {
+      if (!currentAppKey.value) {
+        ElMessage.warning('缺少 app 上下文')
+      }
+      return
+    }
     saving.value = true
     try {
-      const stats = await fetchSetTeamFeaturePackages(props.teamId, selectedPackageIds.value)
+      const stats = await fetchSetTeamFeaturePackages(props.teamId, selectedPackageIds.value, currentAppKey.value)
       ElMessage.success(formatRefreshMessage(stats))
       emit('success')
       visible.value = false

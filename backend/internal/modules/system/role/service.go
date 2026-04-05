@@ -12,6 +12,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/appscope"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
@@ -32,14 +33,14 @@ type RoleService interface {
 	Create(req *dto.RoleCreateRequest) (*user.Role, error)
 	Update(id uuid.UUID, req *dto.RoleUpdateRequest) error
 	Delete(id uuid.UUID) error
-	GetRolePackages(roleID uuid.UUID) ([]uuid.UUID, []user.FeaturePackage, error)
-	SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error
-	GetRoleMenuBoundary(roleID uuid.UUID) (*RoleMenuBoundary, error)
-	GetRoleMenuIDs(roleID uuid.UUID) ([]uuid.UUID, error)
-	SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error
-	GetRoleKeyBoundary(roleID uuid.UUID) (*RoleKeyBoundary, error)
-	GetRoleKeys(roleID uuid.UUID) ([]user.RoleKeyPermission, error)
-	SetRoleKeys(roleID uuid.UUID, keys []user.RoleKeyPermission) error
+	GetRolePackages(roleID uuid.UUID, appKey string) ([]uuid.UUID, []user.FeaturePackage, error)
+	SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) error
+	GetRoleMenuBoundary(roleID uuid.UUID, appKey string) (*RoleMenuBoundary, error)
+	GetRoleMenuIDs(roleID uuid.UUID, appKey string) ([]uuid.UUID, error)
+	SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID, appKey string) error
+	GetRoleKeyBoundary(roleID uuid.UUID, appKey string) (*RoleKeyBoundary, error)
+	GetRoleKeys(roleID uuid.UUID, appKey string) ([]user.RoleKeyPermission, error)
+	SetRoleKeys(roleID uuid.UUID, keys []user.RoleKeyPermission, appKey string) error
 	GetRoleDataPermissions(roleID uuid.UUID) ([]user.RoleDataPermission, []string, []DataPermissionScopeOption, error)
 	SetRoleDataPermissions(roleID uuid.UUID, permissions []user.RoleDataPermission) error
 }
@@ -278,7 +279,7 @@ func (s *roleService) Delete(id uuid.UUID) error {
 	return nil
 }
 
-func (s *roleService) GetRolePackages(roleID uuid.UUID) ([]uuid.UUID, []user.FeaturePackage, error) {
+func (s *roleService) GetRolePackages(roleID uuid.UUID, appKey string) ([]uuid.UUID, []user.FeaturePackage, error) {
 	role, err := s.roleRepo.GetByID(roleID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -289,7 +290,7 @@ func (s *roleService) GetRolePackages(roleID uuid.UUID) ([]uuid.UUID, []user.Fea
 	if role.TenantID != nil {
 		return nil, nil, ErrTenantRoleManagedByTeam
 	}
-	packageIDs, err := s.rolePackageRepo.GetPackageIDsByRoleID(roleID)
+	packageIDs, err := appscope.PackageIDsByRole(s.db, roleID, appKey)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -300,7 +301,7 @@ func (s *roleService) GetRolePackages(roleID uuid.UUID) ([]uuid.UUID, []user.Fea
 	return packageIDs, packages, nil
 }
 
-func (s *roleService) SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error {
+func (s *roleService) SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) error {
 	role, err := s.roleRepo.GetByID(roleID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -311,6 +312,7 @@ func (s *roleService) SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, 
 	if role.TenantID != nil {
 		return ErrTenantRoleManagedByTeam
 	}
+	normalizedAppKey := appscope.Normalize(appKey)
 	if len(packageIDs) > 0 {
 		packages, err := s.featurePkgRepo.GetByIDs(packageIDs)
 		if err != nil {
@@ -320,12 +322,15 @@ func (s *roleService) SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, 
 			return errors.New("invalid feature packages")
 		}
 		for _, pkg := range packages {
+			if appscope.Normalize(pkg.AppKey) != normalizedAppKey {
+				return errors.New("包含不属于当前应用的功能包")
+			}
 			if !supportsPlatformPackageContext(pkg.ContextType) {
 				return errors.New("包含不支持平台上下文的功能包")
 			}
 		}
 	}
-	if err := s.rolePackageRepo.ReplaceRolePackages(roleID, packageIDs, grantedBy); err != nil {
+	if err := appscope.ReplaceRolePackagesInApp(s.db, roleID, normalizedAppKey, packageIDs, grantedBy); err != nil {
 		return err
 	}
 	if s.refresher != nil {
@@ -343,15 +348,15 @@ func supportsPlatformPackageContext(contextType string) bool {
 	}
 }
 
-func (s *roleService) GetRoleMenuIDs(roleID uuid.UUID) ([]uuid.UUID, error) {
-	boundary, err := s.GetRoleMenuBoundary(roleID)
+func (s *roleService) GetRoleMenuIDs(roleID uuid.UUID, appKey string) ([]uuid.UUID, error) {
+	boundary, err := s.GetRoleMenuBoundary(roleID, appKey)
 	if err != nil {
 		return nil, err
 	}
 	return boundary.EffectiveMenuIDs, nil
 }
 
-func (s *roleService) SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error {
+func (s *roleService) SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID, appKey string) error {
 	role, err := s.roleRepo.GetByID(roleID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -362,7 +367,7 @@ func (s *roleService) SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error 
 	if role.TenantID != nil {
 		return ErrTenantRoleManagedByTeam
 	}
-	boundary, err := s.GetRoleMenuBoundary(roleID)
+	boundary, err := s.GetRoleMenuBoundary(roleID, appKey)
 	if err != nil {
 		return err
 	}
@@ -371,7 +376,7 @@ func (s *roleService) SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error 
 		return err
 	}
 	hiddenMenuIDs := subtractUUIDs(boundary.AvailableMenuIDs, selectedMenuIDs)
-	if err := s.roleHiddenMenuRepo.ReplaceRoleHiddenMenus(roleID, hiddenMenuIDs); err != nil {
+	if err := appscope.ReplaceRoleHiddenMenusInApp(s.db, roleID, appKey, hiddenMenuIDs); err != nil {
 		return err
 	}
 	if s.refresher != nil {
@@ -380,15 +385,15 @@ func (s *roleService) SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID) error 
 	return nil
 }
 
-func (s *roleService) GetRoleKeys(roleID uuid.UUID) ([]user.RoleKeyPermission, error) {
-	boundary, err := s.GetRoleKeyBoundary(roleID)
+func (s *roleService) GetRoleKeys(roleID uuid.UUID, appKey string) ([]user.RoleKeyPermission, error) {
+	boundary, err := s.GetRoleKeyBoundary(roleID, appKey)
 	if err != nil {
 		return nil, err
 	}
 	return buildRoleKeyPermissions(roleID, boundary.EffectiveKeyIDs), nil
 }
 
-func (s *roleService) SetRoleKeys(roleID uuid.UUID, keys []user.RoleKeyPermission) error {
+func (s *roleService) SetRoleKeys(roleID uuid.UUID, keys []user.RoleKeyPermission, appKey string) error {
 	role, err := s.roleRepo.GetByID(roleID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -419,7 +424,7 @@ func (s *roleService) SetRoleKeys(roleID uuid.UUID, keys []user.RoleKeyPermissio
 			return errors.New("功能权限不存在")
 		}
 	}
-	boundary, err := s.GetRoleKeyBoundary(roleID)
+	boundary, err := s.GetRoleKeyBoundary(roleID, appKey)
 	if err != nil {
 		return err
 	}
@@ -428,7 +433,7 @@ func (s *roleService) SetRoleKeys(roleID uuid.UUID, keys []user.RoleKeyPermissio
 		return err
 	}
 	disabledKeyIDs := subtractUUIDs(boundary.AvailableKeyIDs, selectedKeyIDs)
-	if err := s.roleDisabledActionRepo.ReplaceRoleDisabledActions(roleID, disabledKeyIDs); err != nil {
+	if err := appscope.ReplaceRoleDisabledActionsInScope(s.db, roleID, boundary.AvailableKeyIDs, disabledKeyIDs); err != nil {
 		return err
 	}
 	if s.refresher != nil {
@@ -514,7 +519,7 @@ func buildAvailableDataScopeOptions() []DataPermissionScopeOption {
 	}
 }
 
-func (s *roleService) GetRoleMenuBoundary(roleID uuid.UUID) (*RoleMenuBoundary, error) {
+func (s *roleService) GetRoleMenuBoundary(roleID uuid.UUID, appKey string) (*RoleMenuBoundary, error) {
 	role, err := s.roleRepo.GetByID(roleID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -526,7 +531,7 @@ func (s *roleService) GetRoleMenuBoundary(roleID uuid.UUID) (*RoleMenuBoundary, 
 		return nil, ErrTenantRoleManagedByTeam
 	}
 	if s.roleSnapshotService != nil {
-		snapshot, snapshotErr := s.roleSnapshotService.GetSnapshot(roleID)
+		snapshot, snapshotErr := s.roleSnapshotService.GetSnapshot(roleID, appscope.Normalize(appKey))
 		if snapshotErr != nil {
 			return nil, snapshotErr
 		}
@@ -542,7 +547,7 @@ func (s *roleService) GetRoleMenuBoundary(roleID uuid.UUID) (*RoleMenuBoundary, 
 	return &RoleMenuBoundary{PackageIDs: []uuid.UUID{}, ExpandedPackageIDs: []uuid.UUID{}, AvailableMenuIDs: []uuid.UUID{}, HiddenMenuIDs: []uuid.UUID{}, EffectiveMenuIDs: []uuid.UUID{}, MenuSourceMap: map[uuid.UUID][]uuid.UUID{}}, nil
 }
 
-func (s *roleService) GetRoleKeyBoundary(roleID uuid.UUID) (*RoleKeyBoundary, error) {
+func (s *roleService) GetRoleKeyBoundary(roleID uuid.UUID, appKey string) (*RoleKeyBoundary, error) {
 	role, err := s.roleRepo.GetByID(roleID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
@@ -554,7 +559,7 @@ func (s *roleService) GetRoleKeyBoundary(roleID uuid.UUID) (*RoleKeyBoundary, er
 		return nil, ErrTenantRoleManagedByTeam
 	}
 	if s.roleSnapshotService != nil {
-		snapshot, snapshotErr := s.roleSnapshotService.GetSnapshot(roleID)
+		snapshot, snapshotErr := s.roleSnapshotService.GetSnapshot(roleID, appscope.Normalize(appKey))
 		if snapshotErr != nil {
 			return nil, snapshotErr
 		}

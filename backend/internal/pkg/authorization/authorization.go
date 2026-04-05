@@ -11,6 +11,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
@@ -68,7 +69,7 @@ func (s *Service) RequireAnyAction(permissionKeys ...string) gin.HandlerFunc {
 			return
 		}
 
-		allowed, actionDef, matchedKey, authErr := s.AuthorizeAny(userID, tenantID, resolvedKeys...)
+		allowed, actionDef, matchedKey, authErr := s.AuthorizeAnyInApp(userID, tenantID, appctx.CurrentAppKey(c), resolvedKeys...)
 		targetKey := strings.Join(resolvedKeys, " | ")
 		if strings.TrimSpace(matchedKey) != "" {
 			targetKey = matchedKey
@@ -91,6 +92,10 @@ func (s *Service) RequireAnyAction(permissionKeys ...string) gin.HandlerFunc {
 }
 
 func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error) {
+	return s.AuthorizeInApp(userID, tenantID, models.DefaultAppKey, permissionKey, legacy...)
+}
+
+func (s *Service) AuthorizeInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error) {
 	var currentUser models.User
 	err := s.db.Where("id = ?", userID).First(&currentUser).Error
 	if err != nil {
@@ -120,14 +125,14 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey
 		if s.platformService == nil {
 			return false, &actionDef, nil
 		}
-		snapshot, err := s.platformService.GetSnapshot(userID)
+		snapshot, err := s.platformService.GetSnapshot(userID, appctx.NormalizeAppKey(appKey))
 		if err != nil {
 			return false, &actionDef, err
 		}
 		return containsUUID(snapshot.ActionIDs, actionDef.ID), &actionDef, nil
 	}
 
-	memberActive, boundaryConfigured, boundaryActionSet, ctxErr := s.resolveTenantActionContext(userID, tenantID)
+	memberActive, boundaryConfigured, boundaryActionSet, ctxErr := s.resolveTenantActionContext(userID, tenantID, appKey)
 	if ctxErr != nil {
 		return false, &actionDef, ctxErr
 	}
@@ -137,7 +142,7 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey
 	if boundaryConfigured && !boundaryActionSet[actionDef.ID] {
 		return false, &actionDef, ErrPermissionDenied
 	}
-	roleActionSet, err := s.getTeamRoleSnapshotActionSet(userID, *tenantID)
+	roleActionSet, err := s.getTeamRoleSnapshotActionSet(userID, *tenantID, appKey)
 	if err != nil {
 		return false, &actionDef, err
 	}
@@ -145,6 +150,10 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey
 }
 
 func (s *Service) AuthorizeAny(userID uuid.UUID, tenantID *uuid.UUID, permissionKeys ...string) (bool, *models.PermissionKey, string, error) {
+	return s.AuthorizeAnyInApp(userID, tenantID, models.DefaultAppKey, permissionKeys...)
+}
+
+func (s *Service) AuthorizeAnyInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string, permissionKeys ...string) (bool, *models.PermissionKey, string, error) {
 	resolvedKeys := resolvePermissionKeys(permissionKeys...)
 	if len(resolvedKeys) == 0 {
 		return false, nil, "", ErrPermissionKeyMissing
@@ -154,7 +163,7 @@ func (s *Service) AuthorizeAny(userID uuid.UUID, tenantID *uuid.UUID, permission
 	denied := false
 	var deniedAction *models.PermissionKey
 	for _, key := range resolvedKeys {
-		allowed, actionDef, err := s.Authorize(userID, tenantID, key)
+		allowed, actionDef, err := s.AuthorizeInApp(userID, tenantID, appKey, key)
 		if err == nil {
 			if allowed {
 				return true, actionDef, key, nil
@@ -189,7 +198,11 @@ func (s *Service) AuthorizeAny(userID uuid.UUID, tenantID *uuid.UUID, permission
 }
 
 func (s *Service) GetUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error) {
-	keys, _, err := s.collectUserActionKeys(userID, tenantID)
+	return s.GetUserActionKeysInApp(userID, tenantID, models.DefaultAppKey)
+}
+
+func (s *Service) GetUserActionKeysInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string) ([]string, error) {
+	keys, _, err := s.collectUserActionKeysInApp(userID, tenantID, appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +210,11 @@ func (s *Service) GetUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) ([]st
 }
 
 func (s *Service) GetUserActionSnapshot(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error) {
-	keys, _, err := s.collectUserActionKeys(userID, tenantID)
+	return s.GetUserActionSnapshotInApp(userID, tenantID, models.DefaultAppKey)
+}
+
+func (s *Service) GetUserActionSnapshotInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string) ([]string, error) {
+	keys, _, err := s.collectUserActionKeysInApp(userID, tenantID, appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -205,6 +222,10 @@ func (s *Service) GetUserActionSnapshot(userID uuid.UUID, tenantID *uuid.UUID) (
 }
 
 func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) ([]string, []string, error) {
+	return s.collectUserActionKeysInApp(userID, tenantID, models.DefaultAppKey)
+}
+
+func (s *Service) collectUserActionKeysInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string) ([]string, []string, error) {
 	var currentUser models.User
 	if err := s.db.Where("id = ?", userID).First(&currentUser).Error; err != nil {
 		return nil, nil, err
@@ -229,7 +250,7 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 		if s.platformService == nil {
 			return []string{}, []string{}, nil
 		}
-		snapshot, err := s.platformService.GetSnapshot(userID)
+		snapshot, err := s.platformService.GetSnapshot(userID, appctx.NormalizeAppKey(appKey))
 		if err != nil {
 			return nil, nil, err
 		}
@@ -238,7 +259,7 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 
 	memberActive := false
 	var ctxErr error
-	memberActive, _, _, ctxErr = s.resolveTenantActionContext(userID, tenantID)
+	memberActive, _, _, ctxErr = s.resolveTenantActionContext(userID, tenantID, appKey)
 	if ctxErr != nil {
 		if errors.Is(ctxErr, ErrTenantMemberInactive) {
 			return []string{}, []string{}, nil
@@ -248,7 +269,7 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 	if !memberActive {
 		return []string{}, []string{}, nil
 	}
-	roleActionIDs, roleErr := s.getTeamRoleSnapshotActionIDs(userID, *tenantID)
+	roleActionIDs, roleErr := s.getTeamRoleSnapshotActionIDsInApp(userID, *tenantID, appKey)
 	if roleErr != nil {
 		return nil, nil, roleErr
 	}
@@ -289,7 +310,11 @@ func containsUUID(ids []uuid.UUID, target uuid.UUID) bool {
 }
 
 func (s *Service) getTeamRoleSnapshotActionIDs(userID, teamID uuid.UUID) ([]uuid.UUID, error) {
-	actionSet, err := s.getTeamRoleSnapshotActionSet(userID, teamID)
+	return s.getTeamRoleSnapshotActionIDsInApp(userID, teamID, models.DefaultAppKey)
+}
+
+func (s *Service) getTeamRoleSnapshotActionIDsInApp(userID, teamID uuid.UUID, appKey string) ([]uuid.UUID, error) {
+	actionSet, err := s.getTeamRoleSnapshotActionSet(userID, teamID, appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -300,7 +325,7 @@ func (s *Service) getTeamRoleSnapshotActionIDs(userID, teamID uuid.UUID) ([]uuid
 	return actionIDs, nil
 }
 
-func (s *Service) getTeamRoleSnapshotActionSet(userID, teamID uuid.UUID) (map[uuid.UUID]bool, error) {
+func (s *Service) getTeamRoleSnapshotActionSet(userID, teamID uuid.UUID, appKey string) (map[uuid.UUID]bool, error) {
 	roleIDs, err := s.getEffectiveActiveRoleIDs(userID, &teamID)
 	if err != nil {
 		return nil, err
@@ -322,7 +347,7 @@ func (s *Service) getTeamRoleSnapshotActionSet(userID, teamID uuid.UUID) (map[uu
 		if !ok {
 			continue
 		}
-		snapshot, err := s.boundaryService.GetRoleSnapshot(teamID, roleID, role.TenantID == nil)
+		snapshot, err := s.boundaryService.GetRoleSnapshot(teamID, roleID, role.TenantID == nil, appctx.NormalizeAppKey(appKey))
 		if err != nil {
 			return nil, err
 		}
@@ -452,7 +477,7 @@ func (s *Service) getEffectiveActiveRoleIDs(userID uuid.UUID, tenantID *uuid.UUI
 	return roleIDs, err
 }
 
-func (s *Service) resolveTenantActionContext(userID uuid.UUID, tenantID *uuid.UUID) (bool, bool, map[uuid.UUID]bool, error) {
+func (s *Service) resolveTenantActionContext(userID uuid.UUID, tenantID *uuid.UUID, appKey string) (bool, bool, map[uuid.UUID]bool, error) {
 	boundaryActionSet := make(map[uuid.UUID]bool)
 	if tenantID == nil {
 		return false, false, boundaryActionSet, nil
@@ -470,7 +495,7 @@ func (s *Service) resolveTenantActionContext(userID uuid.UUID, tenantID *uuid.UU
 		return false, false, boundaryActionSet, ErrTenantMemberInactive
 	}
 
-	snapshot, err := s.boundaryService.GetSnapshot(*tenantID)
+	snapshot, err := s.boundaryService.GetSnapshot(*tenantID, appctx.NormalizeAppKey(appKey))
 	if err != nil {
 		return false, false, nil, err
 	}

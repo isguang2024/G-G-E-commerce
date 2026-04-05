@@ -339,9 +339,12 @@ export async function fetchGetTeamRoles(teamId: string) {
   }))
 }
 
-export async function fetchGetMyTeamBoundaryRoles() {
+export async function fetchGetMyTeamBoundaryRoles(appKey?: string) {
   const res = await request.get<any[]>({
-    url: MY_TEAM_BOUNDARY_ROLE_BASE
+    url: MY_TEAM_BOUNDARY_ROLE_BASE,
+    params: {
+      ...(appKey ? { app_key: appKey } : {})
+    }
   })
   return (res || []).map((item: any) => ({
     roleId: item?.id || '',
@@ -376,10 +379,13 @@ export function fetchDeleteMyTeamRole(roleId: string) {
   })
 }
 
-export function fetchGetMyTeamBoundaryRoleMenus(roleId: string) {
+export function fetchGetMyTeamBoundaryRoleMenus(roleId: string, appKey?: string) {
   return request
     .get<Api.SystemManage.RoleMenuBoundaryResponse>({
-      url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/menus`
+      url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/menus`,
+      params: {
+        ...(appKey ? { app_key: appKey } : {})
+      }
     })
     .then((res) => ({
       menu_ids: res?.menu_ids || [],
@@ -393,17 +399,23 @@ export function fetchGetMyTeamBoundaryRoleMenus(roleId: string) {
     }))
 }
 
-export function fetchSetMyTeamBoundaryRoleMenus(roleId: string, menuIds: string[]) {
+export function fetchSetMyTeamBoundaryRoleMenus(roleId: string, menuIds: string[], appKey?: string) {
   return request.put<void>({
     url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/menus`,
+    params: {
+      ...(appKey ? { app_key: appKey } : {})
+    },
     data: { menu_ids: menuIds }
   })
 }
 
-export function fetchGetMyTeamBoundaryRoleActions(roleId: string) {
+export function fetchGetMyTeamBoundaryRoleActions(roleId: string, appKey?: string) {
   return request
     .get<Api.SystemManage.RoleActionBoundaryResponse>({
-      url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/actions`
+      url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/actions`,
+      params: {
+        ...(appKey ? { app_key: appKey } : {})
+      }
     })
     .then((res) => ({
       action_ids: res?.action_ids || [],
@@ -418,17 +430,23 @@ export function fetchGetMyTeamBoundaryRoleActions(roleId: string) {
     }))
 }
 
-export function fetchSetMyTeamBoundaryRoleActions(roleId: string, actionIds: string[]) {
+export function fetchSetMyTeamBoundaryRoleActions(roleId: string, actionIds: string[], appKey?: string) {
   return request.put<void>({
     url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/actions`,
+    params: {
+      ...(appKey ? { app_key: appKey } : {})
+    },
     data: { action_ids: actionIds }
   })
 }
 
-export function fetchGetMyTeamBoundaryRolePackages(roleId: string) {
+export function fetchGetMyTeamBoundaryRolePackages(roleId: string, appKey?: string) {
   return request
     .get<Api.SystemManage.RoleFeaturePackageResponse>({
-      url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/packages`
+      url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/packages`,
+      params: {
+        ...(appKey ? { app_key: appKey } : {})
+      }
     })
     .then((res) => ({
       package_ids: res?.package_ids || [],
@@ -437,17 +455,23 @@ export function fetchGetMyTeamBoundaryRolePackages(roleId: string) {
     }))
 }
 
-export function fetchSetMyTeamBoundaryRolePackages(roleId: string, packageIds: string[]) {
+export function fetchSetMyTeamBoundaryRolePackages(roleId: string, packageIds: string[], appKey?: string) {
   return request.put<void>({
     url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/packages`,
+    params: {
+      ...(appKey ? { app_key: appKey } : {})
+    },
     data: { package_ids: packageIds }
   })
 }
 
-export function fetchGetMyTeamBoundaryPackages() {
+export function fetchGetMyTeamBoundaryPackages(appKey?: string) {
   return request
     .get<{ package_ids: string[]; packages: any[] }>({
-      url: `${TENANT_BASE}/my-team/boundary/packages`
+      url: `${TENANT_BASE}/my-team/boundary/packages`,
+      params: {
+        ...(appKey ? { app_key: appKey } : {})
+      }
     })
     .then((res) => ({
       package_ids: res?.package_ids || [],
@@ -455,9 +479,12 @@ export function fetchGetMyTeamBoundaryPackages() {
     }))
 }
 
-export async function fetchGetTeamActions(teamId: string) {
+export async function fetchGetTeamActions(teamId: string, appKey?: string) {
   const res = await request.get<{ action_ids: string[]; actions: any[] }>({
-    url: `${TENANT_BASE}/${teamId}/actions`
+    url: `${TENANT_BASE}/${teamId}/actions`,
+    params: {
+      ...(appKey ? { app_key: appKey } : {})
+    }
   })
   return {
     action_ids: res?.action_ids || [],
@@ -465,19 +492,25 @@ export async function fetchGetTeamActions(teamId: string) {
   }
 }
 
-export async function fetchGetTeamMenus(teamId: string) {
+export async function fetchGetTeamMenus(teamId: string, appKey?: string) {
   const res = await request.get<{ menu_ids: string[] }>({
-    url: `${TENANT_BASE}/${teamId}/menus`
+    url: `${TENANT_BASE}/${teamId}/menus`,
+    params: {
+      ...(appKey ? { app_key: appKey } : {})
+    }
   })
   return {
     menu_ids: res?.menu_ids || []
   }
 }
 
-export function fetchGetTeamActionOrigins(teamId: string) {
+export function fetchGetTeamActionOrigins(teamId: string, appKey?: string) {
   return request
     .get<Api.SystemManage.TeamActionOriginsResponse>({
-      url: `${TENANT_BASE}/${teamId}/action-origins`
+      url: `${TENANT_BASE}/${teamId}/action-origins`,
+      params: {
+        ...(appKey ? { app_key: appKey } : {})
+      }
     })
     .then((res) => ({
       derived_action_ids: res?.derived_action_ids || [],
@@ -489,14 +522,17 @@ export function fetchGetTeamActionOrigins(teamId: string) {
     }))
 }
 
-export function fetchGetTeamMenuOrigins(teamId: string) {
+export function fetchGetTeamMenuOrigins(teamId: string, appKey?: string) {
   return request
     .get<{
       derived_menu_ids: string[]
       derived_sources?: Array<{ menu_id: string; package_ids: string[] }>
       blocked_menu_ids: string[]
     }>({
-      url: `${TENANT_BASE}/${teamId}/menu-origins`
+      url: `${TENANT_BASE}/${teamId}/menu-origins`,
+      params: {
+        ...(appKey ? { app_key: appKey } : {})
+      }
     })
     .then((res) => ({
       derived_menu_ids: res?.derived_menu_ids || [],
@@ -508,16 +544,22 @@ export function fetchGetTeamMenuOrigins(teamId: string) {
     }))
 }
 
-export function fetchSetTeamActions(teamId: string, actionIds: string[]) {
+export function fetchSetTeamActions(teamId: string, actionIds: string[], appKey?: string) {
   return request.put<void>({
     url: `${TENANT_BASE}/${teamId}/actions`,
+    params: {
+      ...(appKey ? { app_key: appKey } : {})
+    },
     data: { action_ids: actionIds }
   })
 }
 
-export function fetchSetTeamMenus(teamId: string, menuIds: string[]) {
+export function fetchSetTeamMenus(teamId: string, menuIds: string[], appKey?: string) {
   return request.put<void>({
     url: `${TENANT_BASE}/${teamId}/menus`,
+    params: {
+      ...(appKey ? { app_key: appKey } : {})
+    },
     data: { menu_ids: menuIds }
   })
 }

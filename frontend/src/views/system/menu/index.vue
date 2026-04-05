@@ -12,8 +12,8 @@
 
       <AdminWorkspaceHero
         class="menu-hero"
-        title="菜单管理"
-        description="统一管理目录、入口路由与外链菜单；受管页面只在这里做只读关联查看。"
+        :title="menuPageTitle"
+        :description="menuPageDescription"
         :metrics="menuHeroMetrics"
       >
         <div class="menu-hero-actions">
@@ -36,8 +36,12 @@
             @click="handleAddMenu"
             v-ripple
           >
-            创建菜单
+            {{ isLayoutMode ? '创建布局菜单' : '创建菜单定义' }}
           </ElButton>
+          <ElButton v-if="isLayoutMode" @click="goToDefinitionManagement" v-ripple>
+            返回定义管理
+          </ElButton>
+          <ElButton v-else @click="goToSpaceLayout" v-ripple>进入空间布局</ElButton>
           <ElDropdown @command="handleMoreActionCommand">
             <ElButton v-ripple>更多操作</ElButton>
             <template #dropdown>
@@ -45,9 +49,14 @@
                 <ElDropdownItem command="manageGroup" :disabled="!groupingAvailable">
                   管理分组
                 </ElDropdownItem>
-                <ElDropdownItem command="backupSpace">备份当前空间</ElDropdownItem>
-                <ElDropdownItem command="backupGlobal">备份全部空间</ElDropdownItem>
-                <ElDropdownItem command="backupList">管理备份</ElDropdownItem>
+                <template v-if="isLayoutMode">
+                  <ElDropdownItem command="backupSpace">备份当前空间布局</ElDropdownItem>
+                  <ElDropdownItem command="backupList">管理空间备份</ElDropdownItem>
+                </template>
+                <template v-else>
+                  <ElDropdownItem command="backupGlobal">备份定义集</ElDropdownItem>
+                  <ElDropdownItem command="backupList">管理定义备份</ElDropdownItem>
+                </template>
               </ElDropdownMenu>
             </template>
           </ElDropdown>
@@ -79,7 +88,7 @@
           <div class="menu-toolbar">
             <div class="menu-toolbar-top">
               <div class="menu-toolbar-tip">
-                通过空间、分组与可见条件统一治理菜单树，入口菜单和受管页面的映射在这里集中确认。
+                {{ menuToolbarTip }}
               </div>
               <div v-if="menuGroupApiUnavailable" class="menu-inline-note">
                 菜单分组暂不可用，当前按普通菜单树显示
@@ -295,6 +304,7 @@
         :currentMenuPages="getLinkedPages(editData || {})"
         :editingMenuId="editData?.id"
         :initialParentId="String(parentRowForAdd?.id ?? '')"
+        :showSpaceField="isLayoutMode"
         @submit="handleSubmit"
       />
 
@@ -384,6 +394,7 @@
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
+  import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
   import type { AppRouteRecord } from '@/types/router'
   import MenuDialog from './modules/menu-dialog.vue'
   import MenuGroupDrawer from './modules/menu-group-drawer.vue'
@@ -446,6 +457,8 @@
   const activeSpaceKey = ref('default')
   const route = useRoute()
   const router = useRouter()
+  const { targetAppKey } = useManagedAppScope()
+  const isLayoutMode = computed(() => `${route.query.layout || ''}`.trim() === '1')
   const menuGroups = ref<Api.SystemManage.MenuManageGroupItem[]>([])
   const dataFromBackend = ref(false)
   const menuGroupApiUnavailable = ref(false)
@@ -557,10 +570,21 @@
   }
 
   const currentSpaceName = computed(() => getSpaceName(activeSpaceKey.value))
+  const menuPageTitle = computed(() => (isLayoutMode.value ? '空间布局' : '菜单定义管理'))
+  const menuPageDescription = computed(() =>
+    isLayoutMode.value
+      ? '维护当前 App 在不同空间下的菜单树摆放、排序与可见性；菜单定义本体仍由定义管理页统一维护。'
+      : '统一管理当前 App 的目录、入口路由与外链定义；空间差异化布局与 Host 绑定统一放到高级空间配置里。'
+  )
+  const menuToolbarTip = computed(() =>
+    isLayoutMode.value
+      ? '当前按空间查看菜单布局树；同一菜单定义在多个空间复用时，共享一份授权与裁剪状态。'
+      : '当前按 App 维护菜单定义；父级、排序和显示位置以当前查看空间做布局参考，不再把空间当成菜单主归属。'
+  )
 
   const getBackupScopeLabel = (item: Api.SystemManage.MenuBackupItem) => {
     if (`${item.scope_type || ''}`.trim() === 'global') {
-      return '全空间备份'
+      return isLayoutMode.value ? '全空间备份' : '定义备份'
     }
     return getSpaceName(item.space_key || activeSpaceKey.value)
   }
@@ -694,6 +718,8 @@
   })
 
   const menuHeroMetrics = computed(() => [
+    { label: '当前 App', value: targetAppKey.value },
+    { label: isLayoutMode.value ? '布局空间' : '参考空间', value: currentSpaceName.value },
     { label: '总数', value: menuStats.value.total },
     { label: '目录', value: menuStats.value.directory },
     { label: '入口', value: menuStats.value.entry },
@@ -707,8 +733,8 @@
     dataFromBackend.value = false
     try {
       const [list, pagesResult, groupsResult] = await Promise.all([
-        fetchGetMenuTreeAll(activeSpaceKey.value),
-        fetchGetPageOptions(activeSpaceKey.value).then((res) => res.records || []),
+        fetchGetMenuTreeAll(activeSpaceKey.value, targetAppKey.value),
+        fetchGetPageOptions(activeSpaceKey.value, targetAppKey.value).then((res) => res.records || []),
         fetchGetMenuManageGroups()
           .then((groups) => ({ ok: true as const, groups }))
           .catch((error) => ({
@@ -755,6 +781,13 @@
     { prop: 'type', label: '类型', width: 100, align: 'center', useSlot: true, slotName: 'type' },
     { prop: 'path', label: '路由', minWidth: 150, useSlot: true, slotName: 'path' },
     { prop: 'component', label: '组件路径', minWidth: 200, useSlot: true, slotName: 'component' },
+    {
+      prop: 'appKey',
+      label: 'App',
+      width: 150,
+      align: 'center',
+      formatter: (row: any) => row.appKey || targetAppKey.value
+    },
     {
       prop: 'space',
       label: '菜单空间',
@@ -871,12 +904,41 @@
     })
   }
 
+  const goToSpaceLayout = () => {
+    router.push({
+      path: '/system/menu-space',
+      query: {
+        ...route.query,
+        app_key: targetAppKey.value,
+        spaceKey: activeSpaceKey.value
+      }
+    })
+  }
+
+  const goToDefinitionManagement = () => {
+    router.push({
+      path: '/system/menu',
+      query: {
+        ...route.query,
+        app_key: targetAppKey.value,
+        spaceKey: activeSpaceKey.value,
+        layout: undefined
+      }
+    })
+  }
+
   const resolveInitialSpaceKey = () => {
     const requestedSpaceKey = `${route.query.spaceKey || ''}`.trim()
     if (requestedSpaceKey && menuSpaces.value.some((item) => item.spaceKey === requestedSpaceKey)) {
       return requestedSpaceKey
     }
     return menuSpaces.value.find((item) => item.isDefault)?.spaceKey || 'default'
+  }
+
+  const syncMenuSpaces = async () => {
+    const res = await fetchGetMenuSpaces(targetAppKey.value)
+    menuSpaces.value = res.records || []
+    activeSpaceKey.value = resolveInitialSpaceKey()
   }
 
   const handleRefresh = () => getMenuList()
@@ -1146,6 +1208,7 @@
   const buildMenuMetaFromForm = (formData: any) => {
     const isEntry = `${formData.kind || 'entry'}` === 'entry'
     const isExternal = `${formData.kind || ''}` === 'external'
+    const workingSpaceKey = `${formData.spaceKey || activeSpaceKey.value || 'default'}`.trim()
     const meta: Record<string, any> = {
       isEnable: formData.isEnable,
       keepAlive: isEntry ? formData.keepAlive : false,
@@ -1159,7 +1222,7 @@
       fixedTab: isEntry ? formData.fixedTab : false,
       isFullPage: isEntry ? formData.isFullPage : false,
       accessMode: formData.accessMode || 'permission',
-      spaceKey: `${formData.spaceKey || activeSpaceKey.value || 'default'}`.trim()
+      spaceKey: workingSpaceKey
     }
     if (isEntry && formData.customParent?.trim()) {
       meta.customParent = formData.customParent.trim()
@@ -1169,6 +1232,7 @@
   }
 
   const buildMenuRequestPayload = (formData: any, meta: Record<string, any>) => ({
+    app_key: targetAppKey.value,
     kind: formData.kind || 'entry',
     path: formData.path || '/',
     name: formData.label || '',
@@ -1303,6 +1367,7 @@
       await fetchUpdateMenu(
         String(row.id),
         {
+          app_key: targetAppKey.value,
           parent_id: row.parent_id ? String(row.parent_id) : null,
           kind: row.kind || 'directory',
           path: row.path || '',
@@ -1368,6 +1433,7 @@
     backupLoading.value = true
     try {
       const payload: Api.SystemManage.MenuBackupCreateParams = {
+        app_key: targetAppKey.value,
         name: formData.name,
         description: formData.description,
         // scope_type 显式声明是“当前空间备份”还是“全部空间备份”，
@@ -1390,8 +1456,14 @@
   const handleManageBackups = async () => {
     backupLoading.value = true
     try {
-      const list = await fetchGetMenuBackupList(activeSpaceKey.value)
-      backupList.value = (list || []).map((item) => ({
+      const list = await fetchGetMenuBackupList(
+        isLayoutMode.value ? activeSpaceKey.value : undefined,
+        targetAppKey.value
+      )
+      const filteredList = (list || []).filter((item) =>
+        isLayoutMode.value ? `${item.scope_type || ''}`.trim() !== 'global' : `${item.scope_type || ''}`.trim() === 'global'
+      )
+      backupList.value = filteredList.map((item) => ({
         ...item,
         // scope_origin 由后端显式区分正式全局备份和历史兼容备份，前端这里只负责映射清晰文案。
         space_name: getBackupScopeLabel(item)
@@ -1406,7 +1478,7 @@
 
   const buildBackupRestoreMessage = (item: Api.SystemManage.MenuBackupItem) => {
     if (item.scope_type === 'global') {
-      return '确定要恢复该备份吗？该备份会覆盖所有空间的菜单配置。'
+      return '确定要恢复该备份吗？该操作会覆盖当前 App 的菜单定义集合。'
     }
     return `确定要恢复该备份吗？恢复后会覆盖当前菜单空间“${getSpaceName(item.space_key || activeSpaceKey.value)}”的菜单配置。`
   }
@@ -1486,28 +1558,27 @@
   onMounted(() => {
     groupingEnabled.value = localStorage.getItem('system:menu:grouping-enabled') !== '0'
     groupedMenuVisible.value = localStorage.getItem('system:menu:grouped-visible') !== '0'
-    fetchGetMenuSpaces()
-      .then((res) => {
-        menuSpaces.value = res.records || []
-        activeSpaceKey.value = resolveInitialSpaceKey()
-      })
+    syncMenuSpaces()
       .finally(() => {
         getMenuList()
       })
   })
 
   watch(
-    () => route.query.spaceKey,
-    (value) => {
+    () => [route.query.app_key, route.query.spaceKey],
+    async ([, value]) => {
+      await syncMenuSpaces()
       const requestedSpaceKey = `${value || ''}`.trim()
       if (!requestedSpaceKey || requestedSpaceKey === activeSpaceKey.value) {
+        await getMenuList()
         return
       }
       if (!menuSpaces.value.some((item) => item.spaceKey === requestedSpaceKey)) {
+        await getMenuList()
         return
       }
       activeSpaceKey.value = requestedSpaceKey
-      getMenuList()
+      await getMenuList()
     }
   )
 </script>

@@ -484,6 +484,7 @@
     modelValue: boolean
     dialogType: 'add' | 'edit' | 'copy'
     pageData?: Partial<PageItem>
+    appKey?: string
     menuSpaces?: Api.SystemManage.MenuSpaceItem[]
     currentSpaceKey?: string
     initialParentPageKey?: string
@@ -1098,8 +1099,8 @@
   async function loadOptions() {
     const scopeKey = resolveSpaceScopeKey()
     const [menuRes, pageRes] = await Promise.all([
-      fetchGetPageMenuOptions(scopeKey),
-      fetchGetPageOptions(scopeKey)
+      fetchGetPageMenuOptions(scopeKey, props.appKey),
+      fetchGetPageOptions(scopeKey, props.appKey)
     ])
     menuOptions.value = menuRes.records || []
     allPages.value = pageRes.records || []
@@ -1280,6 +1281,7 @@
       if (!valid) return
       submitting.value = true
       const payload: Api.SystemManage.PageSaveParams = {
+        app_key: props.appKey,
         page_key: form.pageKey.trim(),
         name: form.name.trim(),
         route_name: form.routeName.trim() || form.pageKey.trim(),

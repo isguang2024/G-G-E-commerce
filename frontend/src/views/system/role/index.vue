@@ -56,12 +56,14 @@
     <RolePermissionDialog
       v-model="permissionDialog"
       :role-data="currentRoleData"
+      :app-key="targetAppKey"
       @success="handlePermissionSuccess"
     />
 
     <RolePackageDialog
       v-model="packageDialog"
       :role-data="currentRoleData"
+      :app-key="targetAppKey"
       @success="handlePermissionSuccess"
     />
   </div>
@@ -73,6 +75,7 @@ import { ElMessage, ElMessageBox, ElTag } from 'element-plus'
 import { useAuth } from '@/hooks/core/useAuth'
 import { useTable } from '@/hooks/core/useTable'
 import { fetchDeleteRole, fetchGetRoleList } from '@/api/system-manage'
+import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
 import { refreshUserMenus } from '@/router'
 import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
 import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
@@ -87,6 +90,7 @@ defineOptions({ name: 'Role' })
 type RoleListItem = Api.SystemManage.RoleListItem
 
 const { hasAction } = useAuth()
+const { targetAppKey } = useManagedAppScope()
 
 const showSearchBar = ref(false)
 const dialogVisible = ref(false)
@@ -95,6 +99,7 @@ const packageDialog = ref(false)
 const dialogType = ref<'add' | 'edit'>('add')
 const currentRoleData = ref<RoleListItem | undefined>()
 const heroMetrics = computed(() => [
+  { label: '当前 App', value: targetAppKey.value },
   { label: '角色总数', value: pagination.total || data.value.length || 0 },
   { label: '当前页', value: data.value.length || 0 },
   { label: '正常', value: data.value.filter((item) => item.status === 'normal').length || 0 }

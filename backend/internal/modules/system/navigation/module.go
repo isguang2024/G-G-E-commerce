@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/config"
+	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
 	menupkg "github.com/gg-ecommerce/backend/internal/modules/system/menu"
 	pagepkg "github.com/gg-ecommerce/backend/internal/modules/system/page"
 	spacepkg "github.com/gg-ecommerce/backend/internal/modules/system/space"
@@ -39,10 +40,11 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	platformService := platformaccess.NewService(m.db)
 	roleSnapshotService := platformroleaccess.NewService(m.db)
 	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
+	appService := apppkg.NewService(m.db)
 	menuService := menupkg.NewMenuService(m.db, menuRepo, refresher, m.logger)
-	pageService := pagepkg.NewService(m.db)
+	pageService := pagepkg.NewService(m.db, menuRepo)
 	spaceService := spacepkg.NewService(m.db, refresher, m.logger)
-	handler := NewHandler(m.logger, NewService(m.db, menuService, pageService, spaceService))
+	handler := NewHandler(m.logger, NewService(m.db, appService, menuService, pageService, spaceService))
 
 	group := rg.Group("/runtime")
 	reg := apiregistry.NewRegistrar(group, "navigation")

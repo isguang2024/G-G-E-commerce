@@ -9,6 +9,8 @@ const ACTION_PERMISSION_BASE = '/api/v1/permission-actions'
 const FEATURE_PACKAGE_BASE = '/api/v1/feature-packages'
 const TENANT_BASE = '/api/v1/tenants'
 const SYSTEM_BASE = '/api/v1/system'
+const APP_BASE = '/api/v1/system/apps'
+const APP_HOST_BINDING_BASE = '/api/v1/system/app-host-bindings'
 const API_ENDPOINT_BASE = '/api/v1/api-endpoints'
 const PAGE_BASE = '/api/v1/pages'
 const RUNTIME_BASE = '/api/v1/runtime'
@@ -153,6 +155,8 @@ function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
   return {
     id: item?.id || '',
     code: item?.code || '',
+    appKey: item?.app_key || item?.appKey || '',
+    appScope: item?.app_scope || item?.appScope || 'shared',
     method: item?.method || '',
     path: item?.path || '',
     spec: item?.spec || '',
@@ -209,6 +213,7 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
         : 'team')
   return {
     id: item?.id || '',
+    appKey: item?.app_key || item?.appKey || '',
     packageKey,
     packageType: item?.package_type || item?.packageType || 'base',
     name: item?.name || '',
@@ -259,6 +264,7 @@ function normalizePageItem(item: any): Api.SystemManage.PageItem {
   const hostKey = `${item?.host_key || item?.hostKey || meta?.hostKey || ''}`.trim()
   return {
     id: item?.id || '',
+    appKey: item?.app_key || item?.appKey || '',
     pageKey: item?.page_key || item?.pageKey || '',
     name: item?.name || '',
     routeName: item?.route_name || item?.routeName || '',
@@ -340,6 +346,7 @@ function normalizePageUnregisteredItem(item: any): Api.SystemManage.PageUnregist
 function normalizeMenuSpace(item: any): Api.SystemManage.MenuSpaceItem {
   return {
     id: item?.id || '',
+    appKey: item?.app_key || item?.appKey || '',
     spaceKey: normalizeMenuSpaceKey(item?.space_key || item?.spaceKey),
     name: item?.name || '',
     description: item?.description || '',
@@ -369,6 +376,8 @@ function normalizeMenuSpaceHostBinding(item: any): Api.SystemManage.MenuSpaceHos
   const meta = item?.meta || {}
   return {
     id: item?.id || '',
+    appKey: item?.app_key || item?.appKey || '',
+    appName: item?.app_name || item?.appName || '',
     host: `${item?.host || ''}`.trim(),
     spaceKey: normalizeMenuSpaceKey(item?.space_key || item?.spaceKey),
     spaceName: item?.space_name || item?.spaceName || '',
@@ -391,6 +400,49 @@ function normalizeMenuSpaceHostBinding(item: any): Api.SystemManage.MenuSpaceHos
     cookieDomain:
       `${item?.cookie_domain || item?.cookieDomain || meta?.cookie_domain || meta?.cookieDomain || ''}`.trim(),
     meta,
+    createdAt: item?.created_at || item?.createdAt || '',
+    updatedAt: item?.updated_at || item?.updatedAt || ''
+  }
+}
+
+function normalizeApp(item: any): Api.SystemManage.AppItem {
+  const primaryHosts = Array.isArray(item?.primary_hosts || item?.primaryHosts)
+    ? (item?.primary_hosts || item?.primaryHosts)
+        .map((value: any) => `${value || ''}`.trim())
+        .filter(Boolean)
+    : []
+  return {
+    id: item?.id || '',
+    appKey: item?.app_key || item?.appKey || '',
+    name: item?.name || '',
+    description: item?.description || '',
+    defaultSpaceKey: item?.default_space_key || item?.defaultSpaceKey || '',
+    isDefault: Boolean(item?.is_default ?? item?.isDefault ?? false),
+    status: item?.status || 'normal',
+    hostCount: Number(item?.host_count ?? item?.hostCount ?? 0),
+    primaryHost: item?.primary_host || item?.primaryHost || primaryHosts[0] || '',
+    menuSpaceCount: Number(
+      item?.menu_space_count ?? item?.menuSpaceCount ?? item?.space_count ?? item?.spaceCount ?? 0
+    ),
+    menuCount: Number(item?.menu_count ?? item?.menuCount ?? 0),
+    pageCount: Number(item?.page_count ?? item?.pageCount ?? 0),
+    meta: item?.meta || {},
+    createdAt: item?.created_at || item?.createdAt || '',
+    updatedAt: item?.updated_at || item?.updatedAt || ''
+  }
+}
+
+function normalizeAppHostBinding(item: any): Api.SystemManage.AppHostBindingItem {
+  return {
+    id: item?.id || '',
+    appKey: item?.app_key || item?.appKey || '',
+    appName: item?.app_name || item?.appName || '',
+    host: `${item?.host || ''}`.trim(),
+    defaultSpaceKey: item?.default_space_key || item?.defaultSpaceKey || '',
+    description: item?.description || '',
+    isPrimary: Boolean(item?.is_primary ?? item?.isPrimary ?? false),
+    status: item?.status || 'normal',
+    meta: item?.meta || {},
     createdAt: item?.created_at || item?.createdAt || '',
     updatedAt: item?.updated_at || item?.updatedAt || ''
   }
@@ -645,6 +697,7 @@ function normalizeRuntimeMenuTree(item: any): AppRouteRecord {
 }
 
 function normalizeRuntimeNavigationManifest(item: any): Api.SystemManage.RuntimeNavigationManifest {
+  const currentApp = item?.current_app || item?.currentApp
   const currentSpace = item?.current_space || item?.currentSpace || {}
   const space = currentSpace?.space ? normalizeMenuSpace(currentSpace.space) : undefined
   const binding = currentSpace?.binding
@@ -652,6 +705,16 @@ function normalizeRuntimeNavigationManifest(item: any): Api.SystemManage.Runtime
     : undefined
 
   return {
+    currentApp: currentApp
+      ? {
+          app: normalizeApp(currentApp?.app || {}),
+          binding: currentApp?.binding
+            ? normalizeAppHostBinding(currentApp.binding)
+            : undefined,
+          resolvedBy: currentApp?.resolved_by || currentApp?.resolvedBy || '',
+          requestHost: currentApp?.request_host || currentApp?.requestHost || ''
+        }
+      : undefined,
     // currentSpace 是后端对 Host / 显式 space_key 解析后的最终上下文，前端菜单树和受管页面都必须跟随它。
     currentSpace: {
       space,
@@ -662,6 +725,7 @@ function normalizeRuntimeNavigationManifest(item: any): Api.SystemManage.Runtime
     },
     context: {
       ...(item?.context || {}),
+      app_key: item?.context?.app_key || item?.context?.appKey || '',
       space_key: item?.context?.space_key || item?.context?.spaceKey || '',
       requested_space_key:
         item?.context?.requested_space_key || item?.context?.requestedSpaceKey || '',
@@ -692,10 +756,13 @@ export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
 }
 
 /** 获取用户平台功能包 */
-export function fetchGetUserPackages(userId: string) {
+export function fetchGetUserPackages(userId: string, appKey?: string) {
   return request
     .get<Api.SystemManage.UserFeaturePackageResponse>({
       url: `${USER_BASE}/${userId}/packages`,
+      params: {
+        ...(appKey ? { app_key: appKey } : {})
+      },
       skipTenantHeader: true
     })
     .then((res) => ({
@@ -705,9 +772,12 @@ export function fetchGetUserPackages(userId: string) {
 }
 
 /** 设置用户平台功能包 */
-export function fetchSetUserPackages(userId: string, packageIds: string[]) {
+export function fetchSetUserPackages(userId: string, packageIds: string[], appKey?: string) {
   return request.put<void>({
     url: `${USER_BASE}/${userId}/packages`,
+    params: {
+      ...(appKey ? { app_key: appKey } : {})
+    },
     skipTenantHeader: true,
     data: { package_ids: packageIds }
   })
@@ -783,9 +853,12 @@ export function fetchAssignUserRoles(id: string, roleIds: string[]) {
 }
 
 /** 获取平台用户菜单裁剪 */
-export async function fetchGetUserMenus(userId: string) {
+export async function fetchGetUserMenus(userId: string, appKey?: string) {
   const res = await request.get<Api.SystemManage.UserMenuBoundaryResponse>({
     url: `${USER_BASE}/${userId}/menus`,
+    params: {
+      ...(appKey ? { app_key: appKey } : {})
+    },
     skipTenantHeader: true
   })
   return {
@@ -802,9 +875,12 @@ export async function fetchGetUserMenus(userId: string) {
 }
 
 /** 设置平台用户菜单裁剪 */
-export function fetchSetUserMenus(userId: string, menuIds: string[]) {
+export function fetchSetUserMenus(userId: string, menuIds: string[], appKey?: string) {
   return request.put<void>({
     url: `${USER_BASE}/${userId}/menus`,
+    params: {
+      ...(appKey ? { app_key: appKey } : {})
+    },
     skipTenantHeader: true,
     data: { menu_ids: menuIds }
   })
@@ -1113,10 +1189,13 @@ export function fetchDeleteRole(id: string) {
 }
 
 /** 获取角色已分配的菜单 ID 列表（用于菜单权限配置） */
-export function fetchGetRoleMenus(roleId: string) {
+export function fetchGetRoleMenus(roleId: string, appKey?: string) {
   return request
     .get<Api.SystemManage.RoleMenuBoundaryResponse>({
-      url: `${ROLE_BASE}/${roleId}/menus`
+      url: `${ROLE_BASE}/${roleId}/menus`,
+      params: {
+        ...(appKey ? { app_key: appKey } : {})
+      }
     })
     .then((res) => ({
       menu_ids: res?.menu_ids || [],
@@ -1128,10 +1207,13 @@ export function fetchGetRoleMenus(roleId: string) {
 }
 
 /** 获取角色功能包 */
-export function fetchGetRolePackages(roleId: string) {
+export function fetchGetRolePackages(roleId: string, appKey?: string) {
   return request
     .get<Api.SystemManage.RoleFeaturePackageResponse>({
-      url: `${ROLE_BASE}/${roleId}/packages`
+      url: `${ROLE_BASE}/${roleId}/packages`,
+      params: {
+        ...(appKey ? { app_key: appKey } : {})
+      }
     })
     .then((res) => ({
       package_ids: res?.package_ids || [],
@@ -1140,26 +1222,33 @@ export function fetchGetRolePackages(roleId: string) {
 }
 
 /** 设置角色功能包 */
-export function fetchSetRolePackages(roleId: string, packageIds: string[]) {
+export function fetchSetRolePackages(roleId: string, packageIds: string[], appKey?: string) {
   return request.put<void>({
     url: `${ROLE_BASE}/${roleId}/packages`,
+    params: {
+      ...(appKey ? { app_key: appKey } : {})
+    },
     data: { package_ids: packageIds }
   })
 }
 
 /** 设置角色菜单权限 */
-export function fetchSetRoleMenus(roleId: string, menuIds: string[]) {
+export function fetchSetRoleMenus(roleId: string, menuIds: string[], appKey?: string) {
   return request.put<void>({
     url: `${ROLE_BASE}/${roleId}/menus`,
+    params: {
+      ...(appKey ? { app_key: appKey } : {})
+    },
     data: { menu_ids: menuIds }
   })
 }
 
 /** 获取角色功能权限 */
-export function fetchGetRoleActions(roleId: string) {
+export function fetchGetRoleActions(roleId: string, appKey?: string) {
   return request
     .get<Api.SystemManage.RoleActionBoundaryResponse>({
-      url: `${ROLE_BASE}/${roleId}/actions`
+      url: `${ROLE_BASE}/${roleId}/actions`,
+      params: appKey ? { app_key: appKey } : undefined
     })
     .then((res) => ({
       action_ids: res?.action_ids || [],
@@ -1172,10 +1261,13 @@ export function fetchGetRoleActions(roleId: string) {
 }
 
 /** 设置角色功能权限 */
-export function fetchSetRoleActions(roleId: string, actionIds: string[]) {
+export function fetchSetRoleActions(roleId: string, actionIds: string[], appKey?: string) {
   return request.put<void>({
     url: `${ROLE_BASE}/${roleId}/actions`,
-    data: { action_ids: actionIds }
+    data: {
+      action_ids: actionIds,
+      ...(appKey ? { app_key: appKey } : {})
+    }
   })
 }
 
@@ -1459,9 +1551,11 @@ export function fetchGetPermissionRiskAudits(params?: {
 export function fetchGetFeaturePackageList(params: Api.SystemManage.FeaturePackageSearchParams) {
   const normalizedParams = {
     ...params,
+    app_key: params?.appKey,
     package_key: params?.packageKey,
     package_type: params?.packageType,
     context_type: params?.contextType,
+    appKey: undefined,
     packageKey: undefined,
     packageType: undefined,
     contextType: undefined
@@ -1482,9 +1576,11 @@ export function fetchGetFeaturePackageOptions(
 ) {
   const normalizedParams = {
     ...params,
+    app_key: params?.appKey,
     package_key: params?.packageKey,
     package_type: params?.packageType,
     context_type: params?.contextType,
+    appKey: undefined,
     packageKey: undefined,
     packageType: undefined,
     contextType: undefined
@@ -1600,10 +1696,11 @@ export function fetchDeletePermissionGroup(id: string) {
 }
 
 /** 获取组合包基础包 */
-export function fetchGetFeaturePackageChildren(id: string) {
+export function fetchGetFeaturePackageChildren(id: string, appKey?: string) {
   return request
     .get<Api.SystemManage.FeaturePackageBundleResponse>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}/children`
+      url: `${FEATURE_PACKAGE_BASE}/${id}/children`,
+      params: appKey ? { app_key: appKey } : undefined
     })
     .then((res) => ({
       child_package_ids: res?.child_package_ids || [],
@@ -1614,11 +1711,15 @@ export function fetchGetFeaturePackageChildren(id: string) {
 /** 设置组合包基础包 */
 export function fetchSetFeaturePackageChildren(
   id: string,
-  childPackageIds: string[] | Api.SystemManage.FeaturePackageChildSetParams
+  childPackageIds: string[] | Api.SystemManage.FeaturePackageChildSetParams,
+  appKey?: string
 ) {
   const payload = Array.isArray(childPackageIds)
-    ? { child_package_ids: childPackageIds }
-    : childPackageIds
+    ? { child_package_ids: childPackageIds, ...(appKey ? { app_key: appKey } : {}) }
+    : {
+        ...childPackageIds,
+        ...(appKey && !childPackageIds.app_key ? { app_key: appKey } : {})
+      }
   return request
     .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
       url: `${FEATURE_PACKAGE_BASE}/${id}/children`,
@@ -1629,6 +1730,7 @@ export function fetchSetFeaturePackageChildren(
 
 /** 获取功能包包含关系树 */
 export function fetchGetFeaturePackageRelationTree(params?: {
+  appKey?: string
   contextType?: string
   keyword?: string
 }) {
@@ -1636,6 +1738,7 @@ export function fetchGetFeaturePackageRelationTree(params?: {
     .get<Api.SystemManage.FeaturePackageRelationTree>({
       url: `${FEATURE_PACKAGE_BASE}/relationship-tree`,
       params: {
+        app_key: params?.appKey,
         context_type: params?.contextType,
         keyword: params?.keyword
       }
@@ -1674,10 +1777,11 @@ export function fetchDeleteFeaturePackage(id: string) {
 }
 
 /** 获取功能包包含的功能权限 */
-export function fetchGetFeaturePackageActions(id: string) {
+export function fetchGetFeaturePackageActions(id: string, appKey?: string) {
   return request
     .get<Api.SystemManage.FeaturePackageActionResponse>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}/actions`
+      url: `${FEATURE_PACKAGE_BASE}/${id}/actions`,
+      params: appKey ? { app_key: appKey } : undefined
     })
     .then((res) => ({
       action_ids: res?.action_ids || [],
@@ -1688,9 +1792,15 @@ export function fetchGetFeaturePackageActions(id: string) {
 /** 设置功能包包含的功能权限 */
 export function fetchSetFeaturePackageActions(
   id: string,
-  actionIds: string[] | Api.SystemManage.FeaturePackageActionSetParams
+  actionIds: string[] | Api.SystemManage.FeaturePackageActionSetParams,
+  appKey?: string
 ) {
-  const payload = Array.isArray(actionIds) ? { action_ids: actionIds } : actionIds
+  const payload = Array.isArray(actionIds)
+    ? { action_ids: actionIds, ...(appKey ? { app_key: appKey } : {}) }
+    : {
+        ...actionIds,
+        ...(appKey && !actionIds.app_key ? { app_key: appKey } : {})
+      }
   return request
     .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
       url: `${FEATURE_PACKAGE_BASE}/${id}/actions`,
@@ -1700,10 +1810,11 @@ export function fetchSetFeaturePackageActions(
 }
 
 /** 获取功能包包含的菜单 */
-export function fetchGetFeaturePackageMenus(id: string) {
+export function fetchGetFeaturePackageMenus(id: string, appKey?: string) {
   return request
     .get<Api.SystemManage.FeaturePackageMenuResponse>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}/menus`
+      url: `${FEATURE_PACKAGE_BASE}/${id}/menus`,
+      params: appKey ? { app_key: appKey } : undefined
     })
     .then((res) => ({
       menu_ids: res?.menu_ids || [],
@@ -1712,11 +1823,14 @@ export function fetchGetFeaturePackageMenus(id: string) {
 }
 
 /** 设置功能包包含的菜单 */
-export function fetchSetFeaturePackageMenus(id: string, menuIds: string[]) {
+export function fetchSetFeaturePackageMenus(id: string, menuIds: string[], appKey?: string) {
   return request
     .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
       url: `${FEATURE_PACKAGE_BASE}/${id}/menus`,
-      data: { menu_ids: menuIds }
+      data: {
+        menu_ids: menuIds,
+        ...(appKey ? { app_key: appKey } : {})
+      }
     })
     .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
 }
@@ -1743,10 +1857,13 @@ export function fetchSetFeaturePackageTeams(
 }
 
 /** 获取团队已开通的功能包 */
-export function fetchGetTeamFeaturePackages(teamId: string) {
+export function fetchGetTeamFeaturePackages(teamId: string, appKey?: string) {
   return request
     .get<Api.SystemManage.TeamFeaturePackageResponse>({
-      url: `${FEATURE_PACKAGE_BASE}/teams/${teamId}`
+      url: `${FEATURE_PACKAGE_BASE}/teams/${teamId}`,
+      params: {
+        ...(appKey ? { app_key: appKey } : {})
+      }
     })
     .then((res) => ({
       package_ids: res?.package_ids || [],
@@ -1757,12 +1874,16 @@ export function fetchGetTeamFeaturePackages(teamId: string) {
 /** 设置团队功能包 */
 export function fetchSetTeamFeaturePackages(
   teamId: string,
-  packageIds: string[] | Api.SystemManage.TeamFeaturePackageSetParams
+  packageIds: string[] | Api.SystemManage.TeamFeaturePackageSetParams,
+  appKey?: string
 ) {
   const payload = Array.isArray(packageIds) ? { package_ids: packageIds } : packageIds
   return request
     .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
       url: `${FEATURE_PACKAGE_BASE}/teams/${teamId}`,
+      params: {
+        ...(appKey ? { app_key: appKey } : {})
+      },
       data: payload
     })
     .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
@@ -1830,6 +1951,7 @@ export function fetchGetPageList(params: Api.SystemManage.PageSearchParams) {
   const normalizedParams = {
     current: params?.current,
     size: params?.size,
+    app_key: params?.appKey,
     keyword: params?.keyword,
     page_type: params?.pageType,
     module_key: params?.moduleKey,
@@ -1850,11 +1972,17 @@ export function fetchGetPageList(params: Api.SystemManage.PageSearchParams) {
     }))
 }
 
-export function fetchGetPageOptions(spaceKey?: string) {
+export function fetchGetPageOptions(spaceKey?: string, appKey?: string) {
   return request
     .get<{ records: Api.SystemManage.PageItem[]; total: number }>({
       url: `${PAGE_BASE}/options`,
-      params: spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : undefined
+      params:
+        spaceKey || appKey
+          ? {
+              ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {}),
+              ...(appKey ? { app_key: appKey } : {})
+            }
+          : undefined
     })
     .then((res) => ({
       records: (res?.records || []).map(normalizePageItem),
@@ -1868,21 +1996,33 @@ export function fetchGetPageOptions(spaceKey?: string) {
  * 后端会在当前 user / team / space 上下文内一次性编译菜单树、菜单入口路由和受管页面，
  * 前端只做轻量归一化与动态路由注册，不再重复做导航显隐权限裁剪。
  */
-export function fetchGetRuntimeNavigation(spaceKey?: string) {
+export function fetchGetRuntimeNavigation(spaceKey?: string, appKey?: string) {
   return request
     .get<Api.SystemManage.RuntimeNavigationManifest>({
       url: `${RUNTIME_BASE}/navigation`,
-      params: spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : undefined
+      params:
+        spaceKey || appKey
+          ? {
+              ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {}),
+              ...(appKey ? { app_key: appKey } : {})
+            }
+          : undefined
     })
     .then((res) => normalizeRuntimeNavigationManifest(res))
 }
 
 /** 获取运行时页面注册表 */
-export function fetchGetRuntimePageList(spaceKey?: string) {
+export function fetchGetRuntimePageList(spaceKey?: string, appKey?: string) {
   return request
     .get<{ records: Api.SystemManage.PageItem[]; total: number }>({
       url: `${PAGE_BASE}/runtime`,
-      params: spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : undefined
+      params:
+        spaceKey || appKey
+          ? {
+              ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {}),
+              ...(appKey ? { app_key: appKey } : {})
+            }
+          : undefined
     })
     .then((res) => ({
       records: (res?.records || []).map(normalizePageItem),
@@ -1891,11 +2031,17 @@ export function fetchGetRuntimePageList(spaceKey?: string) {
 }
 
 /** 获取公开运行时页面注册表 */
-export function fetchGetRuntimePublicPageList(spaceKey?: string) {
+export function fetchGetRuntimePublicPageList(spaceKey?: string, appKey?: string) {
   return request
     .get<{ records: Api.SystemManage.PageItem[]; total: number }>({
       url: `${PAGE_BASE}/runtime/public`,
-      params: spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : undefined
+      params:
+        spaceKey || appKey
+          ? {
+              ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {}),
+              ...(appKey ? { app_key: appKey } : {})
+            }
+          : undefined
     })
     .then((res) => ({
       records: (res?.records || []).map(normalizePageItem),
@@ -1904,10 +2050,11 @@ export function fetchGetRuntimePublicPageList(spaceKey?: string) {
 }
 
 /** 获取未注册页面 */
-export function fetchGetPageUnregisteredList() {
+export function fetchGetPageUnregisteredList(appKey?: string) {
   return request
     .get<{ records: Api.SystemManage.PageUnregisteredItem[]; total: number }>({
-      url: `${PAGE_BASE}/unregistered`
+      url: `${PAGE_BASE}/unregistered`,
+      params: appKey ? { app_key: appKey } : undefined
     })
     .then((res) => ({
       records: (res?.records || []).map(normalizePageUnregisteredItem),
@@ -1916,7 +2063,7 @@ export function fetchGetPageUnregisteredList() {
 }
 
 /** 同步页面注册表 */
-export function fetchSyncPages() {
+export function fetchSyncPages(appKey?: string) {
   return request
     .post<
       Api.SystemManage.PageSyncResult & {
@@ -1925,7 +2072,8 @@ export function fetchSyncPages() {
         created_keys?: string[]
       }
     >({
-      url: `${PAGE_BASE}/sync`
+      url: `${PAGE_BASE}/sync`,
+      params: appKey ? { app_key: appKey } : undefined
     })
     .then((res) => ({
       createdCount: res?.createdCount ?? res?.created_count ?? 0,
@@ -1979,11 +2127,17 @@ export function fetchDeletePage(id: string) {
 }
 
 /** 获取页面上级菜单候选 */
-export function fetchGetPageMenuOptions(spaceKey?: string) {
+export function fetchGetPageMenuOptions(spaceKey?: string, appKey?: string) {
   return request
     .get<{ records: Api.SystemManage.PageMenuOptionItem[]; total: number }>({
       url: `${PAGE_BASE}/menu-options`,
-      params: spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : undefined
+      params:
+        spaceKey || appKey
+          ? {
+              ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {}),
+              ...(appKey ? { app_key: appKey } : {})
+            }
+          : undefined
     })
     .then((res) => ({
       records: (res?.records || []).map(normalizePageMenuOption),
@@ -1994,6 +2148,8 @@ export function fetchGetPageMenuOptions(spaceKey?: string) {
 /** 获取 API 注册表 */
 export function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpointSearchParams) {
   const normalizedParams = {
+    app_key: params?.appKey,
+    app_scope: params?.appScope,
     permission_key: params?.permissionKey,
     permission_pattern: params?.permissionPattern,
     keyword: params?.keyword,
@@ -2020,7 +2176,7 @@ export function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpointSear
     }))
 }
 
-export function fetchGetApiEndpointOverview() {
+export function fetchGetApiEndpointOverview(appKey?: string) {
   return request
     .get<
       Api.SystemManage.APIEndpointOverview & {
@@ -2033,7 +2189,8 @@ export function fetchGetApiEndpointOverview() {
         category_counts?: any[]
       }
     >({
-      url: `${API_ENDPOINT_BASE}/overview`
+      url: `${API_ENDPOINT_BASE}/overview`,
+      params: appKey ? { app_key: appKey } : undefined
     })
     .then((res) => ({
       totalCount: res?.totalCount ?? res?.total_count ?? 0,
@@ -2050,11 +2207,19 @@ export function fetchGetApiEndpointOverview() {
     }))
 }
 
-export function fetchGetStaleApiEndpointList(params: { current?: number; size?: number }) {
+export function fetchGetStaleApiEndpointList(params: {
+  current?: number
+  size?: number
+  appKey?: string
+}) {
   return request
     .get<Api.SystemManage.APIEndpointList>({
       url: `${API_ENDPOINT_BASE}/stale`,
-      params
+      params: {
+        current: params?.current,
+        size: params?.size,
+        app_key: params?.appKey
+      }
     })
     .then((res) => ({
       ...res,
@@ -2063,17 +2228,19 @@ export function fetchGetStaleApiEndpointList(params: { current?: number; size?: 
 }
 
 /** 同步 API 注册表 */
-export function fetchSyncApiEndpoints() {
+export function fetchSyncApiEndpoints(appKey?: string) {
   return request.post<void>({
-    url: `${API_ENDPOINT_BASE}/sync`
+    url: `${API_ENDPOINT_BASE}/sync`,
+    params: appKey ? { app_key: appKey } : undefined
   })
 }
 
-export function fetchCleanupStaleApiEndpoints(ids: string[]) {
+export function fetchCleanupStaleApiEndpoints(ids: string[], appKey?: string) {
   return request
     .post<{ deleted_count?: number; deletedCount?: number }>({
       url: `${API_ENDPOINT_BASE}/cleanup-stale`,
-      data: { ids }
+      data: { ids },
+      params: appKey ? { app_key: appKey } : undefined
     })
     .then((res) => ({
       deletedCount: res?.deletedCount ?? res?.deleted_count ?? 0
@@ -2118,6 +2285,7 @@ export function fetchGetApiEndpointCategories() {
 export function fetchGetUnregisteredApiRouteList(params: {
   current?: number
   size?: number
+  appKey?: string
   method?: string
   path?: string
   keyword?: string
@@ -2126,7 +2294,15 @@ export function fetchGetUnregisteredApiRouteList(params: {
   return request
     .get<Api.SystemManage.APIUnregisteredRouteList>({
       url: `${API_ENDPOINT_BASE}/unregistered`,
-      params
+      params: {
+        current: params?.current,
+        size: params?.size,
+        app_key: params?.appKey,
+        method: params?.method,
+        path: params?.path,
+        keyword: params?.keyword,
+        only_no_meta: params?.only_no_meta
+      }
     })
     .then((res) => ({
       ...res,
@@ -2186,23 +2362,30 @@ export function fetchUpdateApiEndpointCategory(
 const MENU_BASE = '/api/v1/menus'
 
 /** 获取菜单树（按当前用户角色过滤，用于侧栏；后端菜单模式时使用） */
-export function fetchGetMenuList(spaceKey?: string) {
+export function fetchGetMenuList(spaceKey?: string, appKey?: string) {
   return request
     .get<AppRouteRecord[]>({
       url: `${MENU_BASE}/tree`,
-      params: spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : undefined
+      params:
+        spaceKey || appKey
+          ? {
+              ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {}),
+              ...(appKey ? { app_key: appKey } : {})
+            }
+          : undefined
     })
     .then((res) => (res || []).map((item: any) => normalizeRuntimeMenuTree(item)))
 }
 
 /** 获取完整菜单树（不限角色，用于菜单管理页；需管理员） */
-export function fetchGetMenuTreeAll(spaceKey?: string) {
+export function fetchGetMenuTreeAll(spaceKey?: string, appKey?: string) {
   return request
     .get<AppRouteRecord[]>({
       url: `${MENU_BASE}/tree`,
       params: {
         all: 1,
-        ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {})
+        ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {}),
+        ...(appKey ? { app_key: appKey } : {})
       }
     })
     .then((res) => (res || []).map((item: any) => normalizeRuntimeMenuTree(item)))
@@ -2237,11 +2420,17 @@ export function fetchUpdateFastEnterConfig(data: Api.SystemManage.FastEnterConfi
     .then((res) => normalizeFastEnterConfig(res))
 }
 
-export function fetchGetCurrentMenuSpace(spaceKey?: string) {
+export function fetchGetCurrentMenuSpace(spaceKey?: string, appKey?: string) {
   return request
     .get<Api.SystemManage.CurrentMenuSpaceResponse>({
       url: `${SYSTEM_BASE}/menu-spaces/current`,
-      params: spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : undefined
+      params:
+        spaceKey || appKey
+          ? {
+              ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {}),
+              ...(appKey ? { app_key: appKey } : {})
+            }
+          : undefined
     })
     .then((res: any) => ({
       space: normalizeMenuSpace(res?.space || {}),
@@ -2273,10 +2462,66 @@ export function fetchUpdateMenuSpaceMode(mode: string) {
     }))
 }
 
-export function fetchGetMenuSpaces() {
+export function fetchGetApps() {
+  return request
+    .get<{ records: Api.SystemManage.AppItem[]; total: number }>({
+      url: APP_BASE
+    })
+    .then((res) => ({
+      records: (res?.records || []).map(normalizeApp),
+      total: Number(res?.total || 0)
+    }))
+}
+
+export function fetchSaveApp(data: Api.SystemManage.AppSaveParams) {
+  return request
+    .post<Api.SystemManage.AppItem>({
+      url: APP_BASE,
+      data
+    })
+    .then((res) => normalizeApp(res))
+}
+
+export function fetchGetCurrentApp(appKey?: string) {
+  return request
+    .get<Api.SystemManage.CurrentAppResponse>({
+      url: `${APP_BASE}/current`,
+      params: appKey ? { app_key: appKey } : undefined
+    })
+    .then((res: any) => ({
+      app: normalizeApp(res?.app || {}),
+      binding: res?.binding ? normalizeAppHostBinding(res.binding) : undefined,
+      resolvedBy: `${res?.resolved_by || res?.resolvedBy || ''}`.trim(),
+      requestHost: `${res?.request_host || res?.requestHost || ''}`.trim()
+    }))
+}
+
+export function fetchGetAppHostBindings(appKey?: string) {
+  return request
+    .get<{ records: Api.SystemManage.AppHostBindingItem[]; total: number }>({
+      url: APP_HOST_BINDING_BASE,
+      params: appKey ? { app_key: appKey } : undefined
+    })
+    .then((res) => ({
+      records: (res?.records || []).map(normalizeAppHostBinding),
+      total: Number(res?.total || 0)
+    }))
+}
+
+export function fetchSaveAppHostBinding(data: Api.SystemManage.AppHostBindingSaveParams) {
+  return request
+    .post<Api.SystemManage.AppHostBindingItem>({
+      url: APP_HOST_BINDING_BASE,
+      data
+    })
+    .then((res) => normalizeAppHostBinding(res))
+}
+
+export function fetchGetMenuSpaces(appKey?: string) {
   return request
     .get<{ records: Api.SystemManage.MenuSpaceItem[]; total: number }>({
-      url: `${SYSTEM_BASE}/menu-spaces`
+      url: `${SYSTEM_BASE}/menu-spaces`,
+      params: appKey ? { app_key: appKey } : undefined
     })
     .then((res) => ({
       records: (res?.records || []).map(normalizeMenuSpace),
@@ -2317,10 +2562,11 @@ export function fetchInitializeMenuSpaceFromDefault(spaceKey: string, force = fa
     }))
 }
 
-export function fetchGetMenuSpaceHostBindings() {
+export function fetchGetMenuSpaceHostBindings(appKey?: string) {
   return request
     .get<{ records: Api.SystemManage.MenuSpaceHostBindingItem[]; total: number }>({
-      url: `${SYSTEM_BASE}/menu-space-host-bindings`
+      url: `${SYSTEM_BASE}/menu-space-host-bindings`,
+      params: appKey ? { app_key: appKey } : undefined
     })
     .then((res) => ({
       records: (res?.records || []).map(normalizeMenuSpaceHostBinding),
@@ -2410,6 +2656,7 @@ export function fetchGetPageAccessTrace(params: Api.SystemManage.PageAccessTrace
     .get<Api.SystemManage.PageAccessTraceResult>({
       url: `${PAGE_BASE}/access-trace`,
       params: {
+        app_key: params.appKey,
         user_id: params.userId,
         tenant_id: params.tenantId,
         page_key: params.pageKey,
@@ -2474,11 +2721,17 @@ export function fetchCreateMenuBackup(data: Api.SystemManage.MenuBackupCreatePar
 }
 
 /** 获取菜单备份列表 */
-export function fetchGetMenuBackupList(spaceKey?: string) {
+export function fetchGetMenuBackupList(spaceKey?: string, appKey?: string) {
   return request
     .get<Api.SystemManage.MenuBackupItem[]>({
       url: MENU_BACKUP_BASE,
-      params: spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : undefined
+      params:
+        spaceKey || appKey
+          ? {
+              ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {}),
+              ...(appKey ? { app_key: appKey } : {})
+            }
+          : undefined
     })
     .then((res) => (res || []).map((item: any) => normalizeMenuBackupItem(item)))
 }

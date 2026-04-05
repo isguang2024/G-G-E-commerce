@@ -60,8 +60,16 @@ func (s *service) RefreshTeam(teamID uuid.UUID) error {
 	if teamID == uuid.Nil || s.boundaryService == nil {
 		return nil
 	}
-	_, err := s.boundaryService.RefreshSnapshot(teamID)
-	return err
+	appKeys, err := s.listAppKeys()
+	if err != nil {
+		return err
+	}
+	for _, appKey := range appKeys {
+		if _, refreshErr := s.boundaryService.RefreshSnapshot(teamID, appKey); refreshErr != nil {
+			return refreshErr
+		}
+	}
+	return nil
 }
 
 func (s *service) RefreshTeams(teamIDs []uuid.UUID) error {
@@ -101,8 +109,16 @@ func (s *service) RefreshPlatformUser(userID uuid.UUID) error {
 	if userID == uuid.Nil || s.platformService == nil {
 		return nil
 	}
-	_, err := s.platformService.RefreshSnapshot(userID)
-	return err
+	appKeys, err := s.listAppKeys()
+	if err != nil {
+		return err
+	}
+	for _, appKey := range appKeys {
+		if _, refreshErr := s.platformService.RefreshSnapshot(userID, appKey); refreshErr != nil {
+			return refreshErr
+		}
+	}
+	return nil
 }
 
 func (s *service) RefreshPlatformUsers(userIDs []uuid.UUID) error {
@@ -142,9 +158,15 @@ func (s *service) RefreshPlatformRole(roleID uuid.UUID) error {
 	if roleID == uuid.Nil {
 		return nil
 	}
+	appKeys, err := s.listAppKeys()
+	if err != nil {
+		return err
+	}
 	if s.roleService != nil {
-		if _, err := s.roleService.RefreshSnapshot(roleID); err != nil {
-			return err
+		for _, appKey := range appKeys {
+			if _, refreshErr := s.roleService.RefreshSnapshot(roleID, appKey); refreshErr != nil {
+				return refreshErr
+			}
 		}
 	}
 	userIDs, err := s.getPlatformUserIDsByRoleIDs([]uuid.UUID{roleID})
@@ -156,13 +178,19 @@ func (s *service) RefreshPlatformRole(roleID uuid.UUID) error {
 
 func (s *service) RefreshPlatformRoles(roleIDs []uuid.UUID) error {
 	dedupedRoleIDs := dedupeUUIDs(roleIDs)
+	appKeys, err := s.listAppKeys()
+	if err != nil {
+		return err
+	}
 	if s.roleService != nil {
-		for _, roleID := range dedupedRoleIDs {
-			if roleID == uuid.Nil {
-				continue
-			}
-			if _, err := s.roleService.RefreshSnapshot(roleID); err != nil {
-				return err
+		for _, appKey := range appKeys {
+			for _, roleID := range dedupedRoleIDs {
+				if roleID == uuid.Nil {
+					continue
+				}
+				if _, refreshErr := s.roleService.RefreshSnapshot(roleID, appKey); refreshErr != nil {
+					return refreshErr
+				}
 			}
 		}
 	}
@@ -409,11 +437,45 @@ func (s *service) getPackageIDsByMenuID(menuID uuid.UUID) ([]uuid.UUID, error) {
 	return packageIDs, err
 }
 
+func (s *service) listAppKeys() ([]string, error) {
+	if s.db == nil {
+		return []string{models.DefaultAppKey}, nil
+	}
+	var appKeys []string
+	if err := s.db.Model(&models.App{}).
+		Where("status = ? AND deleted_at IS NULL", "normal").
+		Order("is_default DESC, created_at ASC").
+		Pluck("app_key", &appKeys).Error; err != nil {
+		return nil, err
+	}
+	appKeys = dedupeStrings(appKeys)
+	if len(appKeys) == 0 {
+		return []string{models.DefaultAppKey}, nil
+	}
+	return appKeys, nil
+}
+
 func dedupeUUIDs(items []uuid.UUID) []uuid.UUID {
 	result := make([]uuid.UUID, 0, len(items))
 	seen := make(map[uuid.UUID]struct{}, len(items))
 	for _, item := range items {
 		if item == uuid.Nil {
+			continue
+		}
+		if _, ok := seen[item]; ok {
+			continue
+		}
+		seen[item] = struct{}{}
+		result = append(result, item)
+	}
+	return result
+}
+
+func dedupeStrings(items []string) []string {
+	result := make([]string, 0, len(items))
+	seen := make(map[string]struct{}, len(items))
+	for _, item := range items {
+		if item == "" {
 			continue
 		}
 		if _, ok := seen[item]; ok {

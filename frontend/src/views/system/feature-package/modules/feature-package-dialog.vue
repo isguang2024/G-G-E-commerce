@@ -59,6 +59,7 @@
     modelValue: boolean
     dialogType: 'add' | 'edit'
     packageData?: Partial<PackageItem>
+    appKey?: string
     defaultPackageType?: 'base' | 'bundle'
   }
 
@@ -76,6 +77,7 @@
 
   const emit = defineEmits<Emits>()
   const formRef = ref<FormInstance>()
+  const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
 
   const visible = computed({
     get: () => props.modelValue,
@@ -153,9 +155,14 @@
 
   async function handleSubmit() {
     if (!formRef.value) return
+    if (!currentAppKey.value) {
+      ElMessage.warning('缺少 app 上下文')
+      return
+    }
     await formRef.value.validate(async (valid) => {
       if (!valid) return
       const payload = {
+        app_key: currentAppKey.value,
         package_key: form.packageKey.trim(),
         package_type: form.packageType,
         name: form.name.trim(),

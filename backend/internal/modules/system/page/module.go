@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/config"
+	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 )
@@ -26,7 +27,8 @@ func (m *Module) Init() error {
 }
 
 func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
-	service := NewService(m.db)
+	menuRepo := user.NewMenuRepository(m.db)
+	service := NewService(m.db, menuRepo)
 	handler := NewHandler(service, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 
@@ -49,7 +51,8 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 }
 
 func (m *Module) RegisterPublicRoutes(rg *gin.RouterGroup) {
-	service := NewService(m.db)
+	menuRepo := user.NewMenuRepository(m.db)
+	service := NewService(m.db, menuRepo)
 	handler := NewHandler(service, m.logger)
 
 	group := rg.Group("/pages")

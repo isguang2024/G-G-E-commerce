@@ -12,6 +12,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/appctx"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 )
 
@@ -31,6 +32,13 @@ func (h *Handler) List(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	req.AppKey = resolvedAppKey
 	list, total, err := h.service.List(&req)
 	if err != nil {
 		h.logger.Error("List feature packages failed", zap.Error(err))
@@ -68,6 +76,13 @@ func (h *Handler) ListOptions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	req.AppKey = resolvedAppKey
 	list, err := h.service.ListOptions(&req)
 	if err != nil {
 		h.logger.Error("List feature package options failed", zap.Error(err))
@@ -89,7 +104,13 @@ func (h *Handler) ListOptions(c *gin.Context) {
 func (h *Handler) GetRelationTree(c *gin.Context) {
 	contextType := strings.TrimSpace(c.Query("context_type"))
 	keyword := strings.TrimSpace(c.Query("keyword"))
-	result, err := h.service.GetRelationTree(contextType, keyword)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	result, err := h.service.GetRelationTree(appKey, contextType, keyword)
 	if err != nil {
 		h.logger.Error("Get feature package relation tree failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包关系树失败")
@@ -276,6 +297,13 @@ func (h *Handler) Create(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	req.AppKey = resolvedAppKey
 	item, err := h.service.Create(&req)
 	if err != nil {
 		if err == ErrFeaturePackageExists {
@@ -304,6 +332,13 @@ func (h *Handler) Update(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	req.AppKey = resolvedAppKey
 	stats, err := h.service.Update(id, &req)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
@@ -362,7 +397,13 @@ func (h *Handler) GetPackageKeys(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	actionIDs, actions, err := h.service.GetPackageKeys(id)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	actionIDs, actions, err := h.service.GetPackageKeys(id, appKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
@@ -387,7 +428,13 @@ func (h *Handler) GetPackageChildren(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	childPackageIDs, packages, err := h.service.GetPackageChildren(id)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	childPackageIDs, packages, err := h.service.GetPackageChildren(id, appKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
@@ -429,7 +476,13 @@ func (h *Handler) SetPackageChildren(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	stats, err := h.service.SetPackageChildren(id, childPackageIDs)
+	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	stats, err := h.service.SetPackageChildren(id, childPackageIDs, resolvedAppKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
@@ -465,7 +518,13 @@ func (h *Handler) SetPackageKeys(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	stats, err := h.service.SetPackageKeys(id, actionIDs)
+	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	stats, err := h.service.SetPackageKeys(id, actionIDs, resolvedAppKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
@@ -489,7 +548,13 @@ func (h *Handler) GetPackageMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	menuIDs, menus, err := h.service.GetPackageMenus(id)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	menuIDs, menus, err := h.service.GetPackageMenus(id, appKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
@@ -526,7 +591,13 @@ func (h *Handler) SetPackageMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	stats, err := h.service.SetPackageMenus(id, menuIDs)
+	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	stats, err := h.service.SetPackageMenus(id, menuIDs, resolvedAppKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
@@ -550,7 +621,13 @@ func (h *Handler) GetPackageTeams(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	teamIDs, err := h.service.GetPackageTeams(id)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	teamIDs, err := h.service.GetPackageTeams(id, appKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
@@ -587,7 +664,13 @@ func (h *Handler) SetPackageTeams(c *gin.Context) {
 		return
 	}
 	grantedBy, _ := currentUserID(c)
-	stats, err := h.service.SetPackageTeams(id, teamIDs, grantedBy)
+	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	stats, err := h.service.SetPackageTeams(id, teamIDs, grantedBy, resolvedAppKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
@@ -611,7 +694,13 @@ func (h *Handler) GetTeamPackages(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	packageIDs, items, err := h.service.GetTeamPackages(teamID)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	packageIDs, items, err := h.service.GetTeamPackages(teamID, appKey)
 	if err != nil {
 		h.logger.Error("Get team packages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队功能包失败")
@@ -648,7 +737,13 @@ func (h *Handler) SetTeamPackages(c *gin.Context) {
 		return
 	}
 	grantedBy, _ := currentUserID(c)
-	stats, err := h.service.SetTeamPackages(teamID, packageIDs, grantedBy)
+	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	stats, err := h.service.SetTeamPackages(teamID, packageIDs, grantedBy, resolvedAppKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "存在无效的功能包")
@@ -668,6 +763,7 @@ func (h *Handler) SetTeamPackages(c *gin.Context) {
 func packageToMap(item *user.FeaturePackage) gin.H {
 	return gin.H{
 		"id":           item.ID.String(),
+		"app_key":      item.AppKey,
 		"package_key":  item.PackageKey,
 		"package_type": item.PackageType,
 		"name":         item.Name,
@@ -743,6 +839,7 @@ func menuListToMaps(menus []user.Menu) []gin.H {
 	for _, menu := range menus {
 		items = append(items, gin.H{
 			"id":         menu.ID.String(),
+			"app_key":    menu.AppKey,
 			"parent_id":  uuidPtrToString(menu.ParentID),
 			"path":       menu.Path,
 			"name":       menu.Name,
@@ -833,4 +930,13 @@ func refreshStatsToMap(stats *permissionrefresh.RefreshStats) gin.H {
 		"elapsed_milliseconds":    stats.ElapsedMilliseconds,
 		"finished_at":             stats.FinishedAt,
 	}
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if target := strings.TrimSpace(value); target != "" {
+			return target
+		}
+	}
+	return ""
 }

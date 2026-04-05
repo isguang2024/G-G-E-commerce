@@ -27,6 +27,7 @@
         title="功能包管理"
         description="维护基础包、组合包、上下文范围与菜单 / 功能 / 团队的绑定关系，统一收口功能赋权与影响范围。"
         :metrics="[
+        { label: '当前 App', value: targetAppKey },
         { label: '当前页功能包数', value: data.length },
         { label: '平台功能包', value: platformPackageCount },
         { label: '团队功能包', value: teamPackageCount },
@@ -93,6 +94,7 @@
       v-model="dialogVisible"
       :dialog-type="dialogType"
       :package-data="currentPackage"
+      :app-key="targetAppKey"
       :default-package-type="activePackageType"
       @success="handleRefresh"
     />
@@ -101,6 +103,7 @@
       v-model="bundlesDialogVisible"
       :package-id="currentPackage.id || ''"
       :package-name="currentPackage.name || ''"
+      :app-key="targetAppKey"
       :context-type="currentPackage.contextType || 'team'"
       @success="handleRefresh"
     />
@@ -117,6 +120,7 @@
       v-model="menusDialogVisible"
       :package-id="currentPackage.id || ''"
       :package-name="currentPackage.name || ''"
+      :app-key="targetAppKey"
       :context-type="currentPackage.contextType || 'team'"
       @success="handleRefresh"
     />
@@ -192,6 +196,7 @@
   import { computed, h, reactive, ref, watch } from 'vue'
   import { ElButton, ElCard, ElMessage, ElMessageBox, ElTag } from 'element-plus'
   import { useRoute } from 'vue-router'
+  import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
   import { useTable } from '@/hooks/core/useTable'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import {
@@ -222,6 +227,7 @@
   }
   const showSearchBar = ref(false)
   const route = useRoute()
+  const { targetAppKey } = useManagedAppScope()
   const activePackageType = ref<'base' | 'bundle'>('base')
   const dialogVisible = ref(false)
   const bundlesDialogVisible = ref(false)
@@ -324,11 +330,13 @@
       apiFn: fetchGetFeaturePackageList,
       apiParams: {
         current: 1,
-        size: 20
+        size: 20,
+        appKey: targetAppKey.value
       },
       columnsFactory: () => [
         { prop: 'packageKey', label: '功能包编码', minWidth: 220, showOverflowTooltip: true },
         { prop: 'name', label: '功能包名称', minWidth: 180, showOverflowTooltip: true },
+        { prop: 'appKey', label: 'App', width: 150, formatter: (row: PackageItem) => row.appKey || targetAppKey.value },
         {
           prop: 'packageType',
           label: '类型',
@@ -479,6 +487,7 @@
 
   function normalizeSearchParams() {
     return {
+      appKey: targetAppKey.value,
       keyword: searchForm.keyword.trim() || undefined,
       packageKey: searchForm.packageKey.trim() || undefined,
       name: searchForm.name.trim() || undefined,
@@ -518,6 +527,7 @@
     relationLoading.value = true
     try {
       const result = await fetchGetFeaturePackageRelationTree({
+        appKey: targetAppKey.value,
         contextType: searchForm.contextType || undefined,
         keyword: relationKeyword.value.trim() || undefined
       })

@@ -41,9 +41,24 @@
     </ElCard>
 
     <TeamRoleDialog v-model="roleDialog" :dialog-type="dialogType" :role-data="currentRoleData" @success="onSuccess" />
-    <TeamRolePackageDialog v-model="packageDialog" :role-data="currentRoleData" @success="onSuccess" />
-    <TeamRoleMenuDialog v-model="menuDialog" :role-data="currentRoleData" @success="onSuccess" />
-    <TeamRoleActionDialog v-model="actionDialog" :role-data="currentRoleData" @success="onSuccess" />
+    <TeamRolePackageDialog
+      v-model="packageDialog"
+      :role-data="currentRoleData"
+      :app-key="targetAppKey"
+      @success="onSuccess"
+    />
+    <TeamRoleMenuDialog
+      v-model="menuDialog"
+      :role-data="currentRoleData"
+      :app-key="targetAppKey"
+      @success="onSuccess"
+    />
+    <TeamRoleActionDialog
+      v-model="actionDialog"
+      :role-data="currentRoleData"
+      :app-key="targetAppKey"
+      @success="onSuccess"
+    />
   </div>
 </template>
 
@@ -55,6 +70,7 @@
   import { useAuth } from '@/hooks/core/useAuth'
   import { useTable } from '@/hooks/core/useTable'
   import { fetchDeleteMyTeamRole, fetchGetMyTeamBoundaryRoles } from '@/api/team'
+  import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import TeamRoleDialog from './modules/team-role-dialog.vue'
   import TeamRolePackageDialog from './modules/team-role-package-dialog.vue'
@@ -65,6 +81,7 @@
 
   type RoleListItem = Api.SystemManage.RoleListItem
   const { hasAction } = useAuth()
+  const { targetAppKey } = useManagedAppScope()
 
   const showSearchBar = ref(false)
   const roleDialog = ref(false)
@@ -74,6 +91,7 @@
   const dialogType = ref<'add' | 'edit'>('add')
   const currentRoleData = ref<RoleListItem | undefined>(undefined)
   const heroMetrics = computed(() => [
+    { label: '当前 App', value: targetAppKey.value },
     { label: '角色总数', value: data.value.length || 0 },
     { label: '基础角色', value: baseRoleCount.value },
     { label: '团队自定义', value: customRoleCount.value }
@@ -85,7 +103,7 @@
     useTable({
       core: {
         apiFn: async () => {
-          const list = await fetchGetMyTeamBoundaryRoles()
+          const list = await fetchGetMyTeamBoundaryRoles(targetAppKey.value)
           return {
             records: list,
             total: list.length,

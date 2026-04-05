@@ -57,6 +57,7 @@
         v-model="actionDialogVisible"
         :team-id="currentTeamId"
         :team-name="currentTeamName"
+        :app-key="targetAppKey"
         @success="refreshData"
       />
 
@@ -64,6 +65,7 @@
         v-model="menuDialogVisible"
         :team-id="currentTeamId"
         :team-name="currentTeamName"
+        :app-key="targetAppKey"
         @success="refreshData"
       />
 
@@ -71,6 +73,7 @@
         v-model="packageDialogVisible"
         :team-id="currentTeamId"
         :team-name="currentTeamName"
+        :app-key="targetAppKey"
         @success="refreshData"
       />
     </ElCard>
@@ -82,6 +85,7 @@
   import { useAuth } from '@/hooks/core/useAuth'
   import { useTable } from '@/hooks/core/useTable'
   import { fetchGetTeamList, fetchDeleteTeam, fetchCreateTeam, fetchUpdateTeam } from '@/api/team'
+  import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
   import TeamSearch from './modules/team-search.vue'
   import TeamDialog from './modules/team-dialog.vue'
   import TeamMembersDrawer from './modules/team-members-drawer.vue'
@@ -104,6 +108,7 @@
 
   type TeamListItem = Api.SystemManage.TeamListItem
   const { hasAction } = useAuth()
+  const { targetAppKey } = useManagedAppScope()
 
   const dialogType = ref<DialogType>('add')
   const dialogVisible = ref(false)
@@ -130,6 +135,7 @@
   }
 
   const heroMetrics = computed(() => [
+    { label: '当前 App', value: targetAppKey.value },
     { label: '团队总数', value: data.value.length },
     {
       label: '活跃团队',

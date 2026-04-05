@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
+	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
 	menupkg "github.com/gg-ecommerce/backend/internal/modules/system/menu"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	pagepkg "github.com/gg-ecommerce/backend/internal/modules/system/page"
@@ -18,51 +19,63 @@ import (
 )
 
 type Manifest struct {
-	CurrentSpace     *spacepkg.CurrentResponse `json:"current_space"`
-	Context          gin.H                    `json:"context"`
-	MenuTree         []gin.H                  `json:"menu_tree"`
-	EntryRoutes      []gin.H                  `json:"entry_routes"`
-	ManagedPages     []gin.H                  `json:"managed_pages"`
-	VersionStamp     string                   `json:"version_stamp"`
-	LegacyMenusTree  []gin.H                  `json:"legacy_menus_tree,omitempty"`
-	LegacyPages      []gin.H                  `json:"legacy_managed_pages,omitempty"`
+	CurrentApp      *apppkg.CurrentResponse   `json:"current_app"`
+	CurrentSpace    *spacepkg.CurrentResponse `json:"current_space"`
+	Context         gin.H                     `json:"context"`
+	MenuTree        []gin.H                   `json:"menu_tree"`
+	EntryRoutes     []gin.H                   `json:"entry_routes"`
+	ManagedPages    []gin.H                   `json:"managed_pages"`
+	VersionStamp    string                    `json:"version_stamp"`
+	LegacyMenusTree []gin.H                   `json:"legacy_menus_tree,omitempty"`
+	LegacyPages     []gin.H                   `json:"legacy_managed_pages,omitempty"`
 }
 
 type Compiler interface {
-	Compile(host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*Manifest, error)
+	Compile(appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*Manifest, error)
 }
 
 type menuTreeProvider interface {
-	GetTree(all bool, allowedMenuIDs []uuid.UUID, spaceKey string) ([]*user.Menu, error)
+	GetTree(all bool, allowedMenuIDs []uuid.UUID, appKey, spaceKey string) ([]*user.Menu, error)
 }
 
 type managedPageProvider interface {
-	ResolveCompiledAccessContext(spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*pagepkg.CompiledAccessContext, error)
-	ListRuntimeWithAccess(spaceKey string, accessCtx *pagepkg.CompiledAccessContext) ([]pagepkg.Record, error)
+	ResolveCompiledAccessContext(appKey, spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*pagepkg.CompiledAccessContext, error)
+	ListRuntimeWithAccess(appKey, spaceKey string, accessCtx *pagepkg.CompiledAccessContext) ([]pagepkg.Record, error)
 }
 
 type currentSpaceProvider interface {
-	GetCurrent(host string, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*spacepkg.CurrentResponse, error)
+	GetCurrent(appKey string, host string, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*spacepkg.CurrentResponse, error)
 }
 
 type service struct {
 	db          *gorm.DB
+	appService   apppkg.Service
 	menuService menuTreeProvider
 	pageService managedPageProvider
 	spaceSvc    currentSpaceProvider
 }
 
-func NewService(db *gorm.DB, menuService menupkg.MenuService, pageService pagepkg.Service, spaceSvc spacepkg.Service) Compiler {
+func NewService(db *gorm.DB, appService apppkg.Service, menuService menupkg.MenuService, pageService pagepkg.Service, spaceSvc spacepkg.Service) Compiler {
 	return &service{
 		db:          db,
+		appService:  appService,
 		menuService: menuService,
 		pageService: pageService,
 		spaceSvc:    spaceSvc,
 	}
 }
 
-func (s *service) Compile(host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*Manifest, error) {
-	current, err := s.spaceSvc.GetCurrent(host, requestedSpaceKey, userID, tenantID)
+func (s *service) Compile(appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*Manifest, error) {
+	normalizedAppKey := apppkg.NormalizeAppKey(appKey)
+	var currentApp *apppkg.CurrentResponse
+	var err error
+	if s.appService != nil {
+		currentApp, err = s.appService.GetCurrent(host, normalizedAppKey)
+		if err != nil {
+			return nil, err
+		}
+	}
+	current, err := s.spaceSvc.GetCurrent(normalizedAppKey, host, requestedSpaceKey, userID, tenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -71,26 +84,28 @@ func (s *service) Compile(host, requestedSpaceKey string, userID *uuid.UUID, ten
 		resolvedSpaceKey = spacepkg.NormalizeSpaceKey(current.Space.SpaceKey)
 	}
 
-	accessCtx, err := s.pageService.ResolveCompiledAccessContext(resolvedSpaceKey, userID, tenantID)
+	accessCtx, err := s.pageService.ResolveCompiledAccessContext(normalizedAppKey, resolvedSpaceKey, userID, tenantID)
 	if err != nil {
 		return nil, err
 	}
 
 	visibleMenuIDs := accessCtx.VisibleMenuIDList()
-	menuTree, err := s.menuService.GetTree(false, visibleMenuIDs, resolvedSpaceKey)
+	menuTree, err := s.menuService.GetTree(false, visibleMenuIDs, normalizedAppKey, resolvedSpaceKey)
 	if err != nil {
 		return nil, err
 	}
-	managedPages, err := s.pageService.ListRuntimeWithAccess(resolvedSpaceKey, accessCtx)
+	managedPages, err := s.pageService.ListRuntimeWithAccess(normalizedAppKey, resolvedSpaceKey, accessCtx)
 	if err != nil {
 		return nil, err
 	}
 
 	manifest := &Manifest{
+		CurrentApp:   currentApp,
 		CurrentSpace: current,
 		Context: gin.H{
-			"space_key":          resolvedSpaceKey,
-			"request_host":       strings.TrimSpace(host),
+			"app_key":             normalizedAppKey,
+			"space_key":           resolvedSpaceKey,
+			"request_host":        strings.TrimSpace(host),
 			"requested_space_key": strings.TrimSpace(requestedSpaceKey),
 			"authenticated":      accessCtx != nil && accessCtx.Authenticated,
 			"super_admin":        accessCtx != nil && accessCtx.SuperAdmin,
@@ -102,7 +117,7 @@ func (s *service) Compile(host, requestedSpaceKey string, userID *uuid.UUID, ten
 		MenuTree:     menupkg.BuildRuntimeTreeMaps(menuTree),
 		EntryRoutes:  extractEntryRouteMaps(menuTree),
 		ManagedPages: pagepkg.BuildRuntimePageMaps(managedPages),
-		VersionStamp: s.buildVersionStamp(resolvedSpaceKey, len(menuTree), len(managedPages)),
+		VersionStamp: s.buildVersionStamp(normalizedAppKey, resolvedSpaceKey, len(menuTree), len(managedPages)),
 	}
 	if userID != nil {
 		manifest.Context["user_id"] = userID.String()
@@ -143,9 +158,9 @@ func extractEntryRouteMaps(tree []*user.Menu) []gin.H {
 	return result
 }
 
-func (s *service) buildVersionStamp(spaceKey string, menuCount, managedPageCount int) string {
+func (s *service) buildVersionStamp(appKey, spaceKey string, menuCount, managedPageCount int) string {
 	if s == nil || s.db == nil {
-		return fmt.Sprintf("%s:%d:%d", spaceKey, menuCount, managedPageCount)
+		return fmt.Sprintf("%s:%s:%d:%d", appKey, spaceKey, menuCount, managedPageCount)
 	}
 	type stampRow struct {
 		UpdatedAt *time.Time
@@ -163,17 +178,19 @@ func (s *service) buildVersionStamp(spaceKey string, menuCount, managedPageCount
 		}
 	}
 
-	loadMax(&models.Menu{}, "COALESCE(NULLIF(space_key, ''), ?) = ?", models.DefaultMenuSpaceKey, spaceKey)
-	loadMax(&models.UIPage{}, "")
-	loadMax(&models.PageSpaceBinding{}, "")
-	loadMax(&models.MenuSpace{}, "space_key = ?", spaceKey)
-	loadMax(&models.MenuSpaceHostBinding{}, "space_key = ?", spaceKey)
+	loadMax(&models.App{}, "app_key = ?", appKey)
+	loadMax(&models.MenuDefinition{}, "app_key = ?", appKey)
+	loadMax(&models.SpaceMenuPlacement{}, "app_key = ? AND space_key = ?", appKey, spaceKey)
+	loadMax(&models.UIPage{}, "app_key = ?", appKey)
+	loadMax(&models.PageSpaceBinding{}, "app_key = ?", appKey)
+	loadMax(&models.MenuSpace{}, "app_key = ? AND space_key = ?", appKey, spaceKey)
+	loadMax(&models.AppHostBinding{}, "app_key = ? AND default_space_key = ?", appKey, spaceKey)
 
 	sort.Slice(candidates, func(i, j int) bool {
 		return candidates[i].After(candidates[j])
 	})
 	if len(candidates) == 0 {
-		return fmt.Sprintf("%s:%d:%d", spaceKey, menuCount, managedPageCount)
+		return fmt.Sprintf("%s:%s:%d:%d", appKey, spaceKey, menuCount, managedPageCount)
 	}
-	return fmt.Sprintf("%s:%d:%d:%d", spaceKey, menuCount, managedPageCount, candidates[0].Unix())
+	return fmt.Sprintf("%s:%s:%d:%d:%d", appKey, spaceKey, menuCount, managedPageCount, candidates[0].Unix())
 }

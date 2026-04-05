@@ -12,9 +12,11 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
+	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	spaceutil "github.com/gg-ecommerce/backend/internal/modules/system/space"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
@@ -59,6 +61,16 @@ func NewMenuHandler(db *gorm.DB, menuService MenuService, userRepo user.UserRepo
 
 func (h *MenuHandler) GetTree(c *gin.Context) {
 	all := c.Query("all") == "1" || c.Query("all") == "true"
+	appKey := apppkg.CurrentAppKey(c)
+	if all {
+		requiredAppKey, err := appctx.RequireRequestAppKey(c)
+		if err != nil {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+			c.JSON(status, resp)
+			return
+		}
+		appKey = requiredAppKey
+	}
 	spaceKey := ""
 	if all && h.authzService != nil {
 		userID, err := currentUserID(c)
@@ -98,7 +110,7 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 		}
 		spaceKey = spaceutil.ResolveSpaceKey(h.db, c)
 	}
-	tree, err := h.menuService.GetTree(all, allowedMenuIDs, spaceKey)
+	tree, err := h.menuService.GetTree(all, allowedMenuIDs, appKey, spaceKey)
 	if err != nil {
 		h.logger.Error("Menu tree failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取菜单失败")
@@ -187,6 +199,13 @@ func (h *MenuHandler) Create(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	req.AppKey = appKey
 	m, err := h.menuService.Create(&req)
 	if err != nil {
 		h.logger.Error("Menu create failed", zap.Error(err))
@@ -212,6 +231,13 @@ func (h *MenuHandler) Update(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	req.AppKey = appKey
 	if err := h.menuService.Update(id, &req); err != nil {
 		if err == ErrMenuNotFound {
 			status, resp := errcode.Response(errcode.ErrMenuNotFound)
@@ -232,6 +258,11 @@ func (h *MenuHandler) Update(c *gin.Context) {
 }
 
 func (h *MenuHandler) Delete(c *gin.Context) {
+	if _, err := appctx.RequireRequestAppKey(c); err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -276,6 +307,11 @@ func (h *MenuHandler) Delete(c *gin.Context) {
 }
 
 func (h *MenuHandler) DeletePreview(c *gin.Context) {
+	if _, err := appctx.RequireRequestAppKey(c); err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -427,6 +463,12 @@ func (h *MenuHandler) CreateBackup(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
 
 	// 获取当前用户ID
 	var createdBy *uuid.UUID
@@ -442,6 +484,7 @@ func (h *MenuHandler) CreateBackup(c *gin.Context) {
 		req.Name,
 		req.Description,
 		req.ScopeType,
+		appKey,
 		req.SpaceKey,
 		createdBy,
 	); err != nil {
@@ -455,8 +498,14 @@ func (h *MenuHandler) CreateBackup(c *gin.Context) {
 }
 
 func (h *MenuHandler) ListBackups(c *gin.Context) {
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
 	spaceKey := strings.TrimSpace(c.Query("space_key"))
-	backups, err := h.menuService.ListBackups(spaceKey)
+	backups, err := h.menuService.ListBackups(appKey, spaceKey)
 	if err != nil {
 		h.logger.Error("List backups failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取备份列表失败")
@@ -531,6 +580,7 @@ func menuToMap(m *user.Menu) gin.H {
 	}
 	node := gin.H{
 		"id":         m.ID.String(),
+		"app_key":    m.AppKey,
 		"space_key":  m.SpaceKey,
 		"kind":       m.Kind,
 		"path":       m.Path,
@@ -594,6 +644,7 @@ func menuToRuntimeMap(m *user.Menu) gin.H {
 
 	node := gin.H{
 		"id":         m.ID.String(),
+		"app_key":    m.AppKey,
 		"space_key":  m.SpaceKey,
 		"kind":       m.Kind,
 		"path":       m.Path,

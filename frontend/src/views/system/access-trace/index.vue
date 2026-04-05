@@ -138,12 +138,15 @@
 
 <script setup lang="ts">
   import { ElMessage } from 'element-plus'
+  import { useRoute } from 'vue-router'
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
+  import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
   import { fetchGetTeamMembers, fetchGetTeamRoles } from '@/api/team'
   import { fetchGetPageAccessTrace, fetchGetPageList, fetchGetRoleOptions, fetchGetTenantOptions, fetchGetUserList } from '@/api/system-manage'
 
   defineOptions({ name: 'SystemAccessTrace' })
 
+  const route = useRoute()
   const loading = ref(false)
   const result = ref<Api.SystemManage.PageAccessTraceResult | null>(null)
   const userOptions = ref<Api.SystemManage.UserListItem[]>([])
@@ -165,6 +168,7 @@
       ? roleOptions.value.filter((item) => item.source === 'team')
       : roleOptions.value.filter((item) => item.source === 'platform')
   )
+  const { targetAppKey } = useManagedAppScope()
   const roleRows = computed(() => result.value?.roles || [])
   const pageRows = computed(() => result.value?.pages || [])
   const pagedRoles = computed(() => {
@@ -257,7 +261,7 @@
 
   async function loadOptions() {
     const [pages, teams] = await Promise.all([
-      fetchGetPageList({ current: 1, size: 500 }),
+      fetchGetPageList({ current: 1, size: 500, appKey: targetAppKey.value }),
       fetchGetTenantOptions({ current: 1, size: 200 })
     ])
     pageOptions.value = pages.records || []
@@ -277,7 +281,10 @@
     }
     loading.value = true
     try {
-      result.value = await fetchGetPageAccessTrace(query)
+      result.value = await fetchGetPageAccessTrace({
+        ...query,
+        appKey: targetAppKey.value
+      })
       rolePagination.current = 1
       pagePagination.current = 1
     } finally {
@@ -290,6 +297,14 @@
       ElMessage.error('初始化测试数据失败')
     })
   })
+
+  watch(
+    () => route.query.app_key,
+    async () => {
+      result.value = null
+      await loadOptions()
+    }
+  )
 
   watch(
     () => query.tenantId,

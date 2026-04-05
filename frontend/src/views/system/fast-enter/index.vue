@@ -227,6 +227,7 @@
   import { storeToRefs } from 'pinia'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { fetchGetMenuTreeAll } from '@/api/system-manage'
+  import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
   import { getDefaultFastEnterConfig, useFastEnterStore } from '@/store/modules/fast-enter'
   import type { AppRouteRecord } from '@/types/router'
   import type { FastEnterApplication, FastEnterConfig, FastEnterQuickLink } from '@/types/config'
@@ -261,6 +262,7 @@
 
   const fastEnterStore = useFastEnterStore()
   const { config } = storeToRefs(fastEnterStore)
+  const { targetAppKey } = useManagedAppScope()
 
   const cloneConfig = (value: FastEnterConfig): FastEnterConfig =>
     JSON.parse(JSON.stringify(value)) as FastEnterConfig
@@ -293,10 +295,16 @@
   )
 
   const summaryMetrics = computed(() => [
+    { label: '当前 App', value: targetAppKey.value },
     { label: '快捷应用', value: draft.applications.length || 0 },
     { label: '快捷链接', value: draft.quickLinks.length || 0 },
     { label: '启用项', value: [...draft.applications, ...draft.quickLinks].filter((item) => item.enabled !== false).length }
   ])
+
+  const loadMenuRouteTree = async () => {
+    const menuTree = await fetchGetMenuTreeAll(undefined, targetAppKey.value)
+    menuRouteTree.value = buildRouteTree(menuTree || [])
+  }
 
   const drawerTitle = computed(() =>
     `${drawerEditing.value ? '编辑' : '新增'}${drawerMode.value === 'application' ? '快捷应用' : '快捷链接'}`
@@ -516,13 +524,21 @@
     await fastEnterStore.loadConfig(true)
     Object.assign(draft, cloneConfig(config.value))
     persistedConfig.value = cloneConfig(config.value)
-    const menuTree = await fetchGetMenuTreeAll()
-    menuRouteTree.value = buildRouteTree(menuTree || [])
+    await loadMenuRouteTree()
   })
 
   onUnmounted(() => {
     fastEnterStore.replaceConfig(cloneConfig(persistedConfig.value))
   })
+
+  watch(
+    targetAppKey,
+    () => {
+      loadMenuRouteTree().catch(() => {
+        ElMessage.error('刷新当前 App 菜单树失败')
+      })
+    }
+  )
 </script>
 
 <style scoped lang="scss">

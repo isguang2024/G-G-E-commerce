@@ -5,6 +5,7 @@
     :model-value="modelValue"
     :dialog-type="dialogType"
     :page-data="pageData"
+    :app-key="appKey"
     :menu-spaces="menuSpaces"
     :current-space-key="currentSpaceKey"
     :initial-parent-page-key="initialParentPageKey"
@@ -20,6 +21,7 @@
     :model-value="modelValue"
     :dialog-type="dialogType"
     :page-data="pageData"
+    :app-key="appKey"
     :menu-spaces="menuSpaces"
     :current-space-key="currentSpaceKey"
     :initial-parent-page-key="initialParentPageKey"
@@ -35,6 +37,7 @@
     :model-value="modelValue"
     :dialog-type="dialogType"
     :page-data="pageData"
+    :app-key="appKey"
     :menu-spaces="menuSpaces"
     :current-space-key="currentSpaceKey"
     :initial-parent-page-key="initialParentPageKey"
@@ -58,6 +61,7 @@
     modelValue: boolean
     dialogType: 'add' | 'edit' | 'copy'
     pageData?: Partial<PageItem>
+    appKey?: string
     menuSpaces?: Api.SystemManage.MenuSpaceItem[]
     // 当前仅作为独立页绑定辅助视角，用于加载菜单/父页候选，不作为页面主归属语义。
     currentSpaceKey?: string
@@ -94,6 +98,6 @@
     [props.dialogType, resolvedPageType.value, props.pageData?.id || '', props.defaultData?.pageKey || 'new'].join(':')
   )
 
-  const { modelValue, dialogType, pageData, initialParentPageKey, initialParentMenuId, initialPageType, defaultData } =
+  const { modelValue, dialogType, pageData, appKey, initialParentPageKey, initialParentMenuId, initialPageType, defaultData } =
     toRefs(props)
 </script>

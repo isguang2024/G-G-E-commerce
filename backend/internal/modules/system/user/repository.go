@@ -2,6 +2,7 @@ package user
 
 import (
 	"errors"
+	"sort"
 	"strings"
 	"time"
 
@@ -368,6 +369,7 @@ func (r *roleRepository) UpdateWithMap(id uuid.UUID, updates map[string]interfac
 type MenuRepository interface {
 	GetByID(id uuid.UUID) (*Menu, error)
 	GetChildren(parentID uuid.UUID) ([]Menu, error)
+	ListByAppAndSpace(appKey, spaceKey string) ([]Menu, error)
 	Create(menu *Menu) error
 	Update(menu *Menu, updateParent bool) error
 	Delete(id uuid.UUID) error
@@ -405,22 +407,353 @@ func (r *menuRepository) menuQuery() *gorm.DB {
 	return query
 }
 
-func (r *menuRepository) GetByID(id uuid.UUID) (*Menu, error) {
-	var menu Menu
-	err := r.menuQuery().Where("id = ?", id).First(&menu).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, gorm.ErrRecordNotFound
-		}
+func (r *menuRepository) loadDefinitionMenus(appKey string, ids []uuid.UUID) ([]Menu, error) {
+	if r.db == nil {
+		return []Menu{}, nil
+	}
+
+	query := r.db.Model(&MenuDefinition{})
+	normalizedAppKey := strings.TrimSpace(appKey)
+	if normalizedAppKey != "" {
+		query = query.Where("app_key = ?", normalizedAppKey)
+	}
+	if len(ids) > 0 {
+		query = query.Where("id IN ?", ids)
+	}
+
+	var definitions []MenuDefinition
+	if err := query.Order("created_at ASC").Find(&definitions).Error; err != nil {
 		return nil, err
 	}
+	if len(definitions) == 0 {
+		return []Menu{}, nil
+	}
+
+	appKeys := make([]string, 0, len(definitions))
+	menuKeys := make([]string, 0, len(definitions))
+	definitionIDs := make([]uuid.UUID, 0, len(definitions))
+	seenAppKeys := make(map[string]struct{}, len(definitions))
+	seenMenuKeys := make(map[string]struct{}, len(definitions))
+	for _, definition := range definitions {
+		definitionIDs = append(definitionIDs, definition.ID)
+		if _, ok := seenAppKeys[definition.AppKey]; !ok {
+			seenAppKeys[definition.AppKey] = struct{}{}
+			appKeys = append(appKeys, definition.AppKey)
+		}
+		compositeKey := definition.AppKey + "::" + definition.MenuKey
+		if _, ok := seenMenuKeys[compositeKey]; !ok {
+			seenMenuKeys[compositeKey] = struct{}{}
+			menuKeys = append(menuKeys, definition.MenuKey)
+		}
+	}
+
+	var placements []SpaceMenuPlacement
+	if err := r.db.Model(&SpaceMenuPlacement{}).
+		Where("app_key IN ?", appKeys).
+		Where("menu_key IN ?", menuKeys).
+		Order("sort_order ASC, created_at ASC").
+		Find(&placements).Error; err != nil {
+		return nil, err
+	}
+
+	defaultSpaceByApp, err := r.loadDefaultSpaceByApp(appKeys)
+	if err != nil {
+		return nil, err
+	}
+	groupMap, err := r.loadMenuManageGroupMap(placements)
+	if err != nil {
+		return nil, err
+	}
+
+	placementsByComposite := make(map[string][]SpaceMenuPlacement, len(definitions))
+	for _, placement := range placements {
+		compositeKey := placement.AppKey + "::" + placement.MenuKey
+		placementsByComposite[compositeKey] = append(placementsByComposite[compositeKey], placement)
+	}
+
+	result := make([]Menu, 0, len(definitions))
+	for _, definition := range definitions {
+		compositeKey := definition.AppKey + "::" + definition.MenuKey
+		preferred := pickPreferredPlacement(placementsByComposite[compositeKey], defaultSpaceByApp[definition.AppKey])
+		menu := materializeMenuDefinition(definition, preferred, groupMap)
+		result = append(result, menu)
+	}
+
+	order := make(map[uuid.UUID]int, len(definitionIDs))
+	for index, id := range definitionIDs {
+		order[id] = index
+	}
+	sort.SliceStable(result, func(i, j int) bool {
+		return order[result[i].ID] < order[result[j].ID]
+	})
+	return result, nil
+}
+
+func (r *menuRepository) loadPlacedMenus(appKey, spaceKey string) ([]Menu, error) {
+	if r.db == nil {
+		return []Menu{}, nil
+	}
+
+	query := r.db.Model(&SpaceMenuPlacement{})
+	normalizedAppKey := strings.TrimSpace(appKey)
+	if normalizedAppKey != "" {
+		query = query.Where("app_key = ?", normalizedAppKey)
+	}
+	normalizedSpaceKey := strings.TrimSpace(spaceKey)
+	if normalizedSpaceKey != "" {
+		query = query.Where("space_key = ?", normalizedSpaceKey)
+	}
+
+	var placements []SpaceMenuPlacement
+	if err := query.Order("sort_order ASC, created_at ASC").Find(&placements).Error; err != nil {
+		return nil, err
+	}
+	if len(placements) == 0 {
+		return []Menu{}, nil
+	}
+
+	appKeys := make([]string, 0, len(placements))
+	menuKeysByApp := make(map[string][]string)
+	seenAppKeys := make(map[string]struct{}, len(placements))
+	seenMenuKeys := make(map[string]map[string]struct{}, len(placements))
+	for _, placement := range placements {
+		if _, ok := seenAppKeys[placement.AppKey]; !ok {
+			seenAppKeys[placement.AppKey] = struct{}{}
+			appKeys = append(appKeys, placement.AppKey)
+		}
+		if seenMenuKeys[placement.AppKey] == nil {
+			seenMenuKeys[placement.AppKey] = make(map[string]struct{})
+		}
+		if _, ok := seenMenuKeys[placement.AppKey][placement.MenuKey]; ok {
+			continue
+		}
+		seenMenuKeys[placement.AppKey][placement.MenuKey] = struct{}{}
+		menuKeysByApp[placement.AppKey] = append(menuKeysByApp[placement.AppKey], placement.MenuKey)
+	}
+
+	var definitions []MenuDefinition
+	for _, currentAppKey := range appKeys {
+		keys := menuKeysByApp[currentAppKey]
+		if len(keys) == 0 {
+			continue
+		}
+		var chunk []MenuDefinition
+		if err := r.db.Model(&MenuDefinition{}).
+			Where("app_key = ? AND menu_key IN ?", currentAppKey, keys).
+			Find(&chunk).Error; err != nil {
+			return nil, err
+		}
+		definitions = append(definitions, chunk...)
+	}
+	if len(definitions) == 0 {
+		return []Menu{}, nil
+	}
+
+	definitionByComposite := make(map[string]MenuDefinition, len(definitions))
+	for _, definition := range definitions {
+		definitionByComposite[definition.AppKey+"::"+definition.MenuKey] = definition
+	}
+	groupMap, err := r.loadMenuManageGroupMap(placements)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]Menu, 0, len(placements))
+	for _, placement := range placements {
+		definition, ok := definitionByComposite[placement.AppKey+"::"+placement.MenuKey]
+		if !ok {
+			continue
+		}
+		menu := materializeMenuPlacement(definition, placement, definitionByComposite, groupMap)
+		result = append(result, menu)
+	}
+	return result, nil
+}
+
+func (r *menuRepository) loadDefaultSpaceByApp(appKeys []string) (map[string]string, error) {
+	if len(appKeys) == 0 {
+		return map[string]string{}, nil
+	}
+	var apps []App
+	if err := r.db.Model(&App{}).Where("app_key IN ?", appKeys).Find(&apps).Error; err != nil {
+		return nil, err
+	}
+	result := make(map[string]string, len(apps))
+	for _, app := range apps {
+		defaultSpaceKey := strings.TrimSpace(app.DefaultSpaceKey)
+		if defaultSpaceKey == "" {
+			defaultSpaceKey = models.DefaultMenuSpaceKey
+		}
+		result[app.AppKey] = defaultSpaceKey
+	}
+	return result, nil
+}
+
+func (r *menuRepository) loadMenuManageGroupMap(placements []SpaceMenuPlacement) (map[uuid.UUID]MenuManageGroup, error) {
+	groupIDs := make([]uuid.UUID, 0)
+	seen := make(map[uuid.UUID]struct{})
+	for _, placement := range placements {
+		if placement.ManageGroupID == nil || *placement.ManageGroupID == uuid.Nil {
+			continue
+		}
+		if _, ok := seen[*placement.ManageGroupID]; ok {
+			continue
+		}
+		seen[*placement.ManageGroupID] = struct{}{}
+		groupIDs = append(groupIDs, *placement.ManageGroupID)
+	}
+	if len(groupIDs) == 0 {
+		return map[uuid.UUID]MenuManageGroup{}, nil
+	}
+	var groups []MenuManageGroup
+	if err := r.db.Model(&MenuManageGroup{}).Where("id IN ?", groupIDs).Find(&groups).Error; err != nil {
+		return nil, err
+	}
+	result := make(map[uuid.UUID]MenuManageGroup, len(groups))
+	for _, group := range groups {
+		result[group.ID] = group
+	}
+	return result, nil
+}
+
+func pickPreferredPlacement(placements []SpaceMenuPlacement, defaultSpaceKey string) *SpaceMenuPlacement {
+	if len(placements) == 0 {
+		return nil
+	}
+	defaultSpaceKey = strings.TrimSpace(defaultSpaceKey)
+	if defaultSpaceKey == "" {
+		defaultSpaceKey = models.DefaultMenuSpaceKey
+	}
+	best := placements[0]
+	bestScore := preferredPlacementScore(best, defaultSpaceKey)
+	for _, placement := range placements[1:] {
+		score := preferredPlacementScore(placement, defaultSpaceKey)
+		if score < bestScore {
+			best = placement
+			bestScore = score
+			continue
+		}
+		if score == bestScore && placement.SortOrder < best.SortOrder {
+			best = placement
+		}
+	}
+	return &best
+}
+
+func preferredPlacementScore(placement SpaceMenuPlacement, defaultSpaceKey string) int {
+	switch strings.TrimSpace(placement.SpaceKey) {
+	case defaultSpaceKey:
+		return 0
+	case models.DefaultMenuSpaceKey:
+		return 1
+	default:
+		return 2
+	}
+}
+
+func materializeMenuDefinition(definition MenuDefinition, placement *SpaceMenuPlacement, groupMap map[uuid.UUID]MenuManageGroup) Menu {
+	menu := Menu{
+		ID:        definition.ID,
+		AppKey:    definition.AppKey,
+		Kind:      strings.TrimSpace(definition.Kind),
+		Path:      definition.Path,
+		Name:      definition.Name,
+		Component: definition.Component,
+		Title:     definition.DefaultTitle,
+		Icon:      definition.DefaultIcon,
+		Meta:      cloneMetaJSON(definition.Meta),
+	}
+	if menu.Name == "" {
+		menu.Name = definition.MenuKey
+	}
+	if placement == nil {
+		return menu
+	}
+	if title := strings.TrimSpace(placement.TitleOverride); title != "" {
+		menu.Title = title
+	}
+	if icon := strings.TrimSpace(placement.IconOverride); icon != "" {
+		menu.Icon = icon
+	}
+	menu.SpaceKey = placement.SpaceKey
+	menu.SortOrder = placement.SortOrder
+	menu.Hidden = placement.Hidden
+	menu.ManageGroupID = placement.ManageGroupID
+	if placement.MetaOverride != nil {
+		menu.Meta = mergeMenuMeta(menu.Meta, placement.MetaOverride)
+	}
+	if placement.ManageGroupID != nil {
+		if group, ok := groupMap[*placement.ManageGroupID]; ok {
+			groupCopy := group
+			menu.ManageGroup = &groupCopy
+		}
+	}
+	return menu
+}
+
+func materializeMenuPlacement(
+	definition MenuDefinition,
+	placement SpaceMenuPlacement,
+	definitionByComposite map[string]MenuDefinition,
+	groupMap map[uuid.UUID]MenuManageGroup,
+) Menu {
+	menu := materializeMenuDefinition(definition, &placement, groupMap)
+	if parentMenuKey := strings.TrimSpace(placement.ParentMenuKey); parentMenuKey != "" {
+		if parentDefinition, ok := definitionByComposite[placement.AppKey+"::"+parentMenuKey]; ok {
+			parentID := parentDefinition.ID
+			menu.ParentID = &parentID
+		}
+	}
+	return menu
+}
+
+func cloneMetaJSON(value MetaJSON) MetaJSON {
+	if value == nil {
+		return MetaJSON{}
+	}
+	cloned := make(MetaJSON, len(value))
+	for key, item := range value {
+		cloned[key] = item
+	}
+	return cloned
+}
+
+func mergeMenuMeta(base MetaJSON, override MetaJSON) MetaJSON {
+	result := cloneMetaJSON(base)
+	for key, value := range override {
+		result[key] = value
+	}
+	return result
+}
+
+func (r *menuRepository) GetByID(id uuid.UUID) (*Menu, error) {
+	menus, err := r.loadDefinitionMenus("", []uuid.UUID{id})
+	if err != nil {
+		return nil, err
+	}
+	if len(menus) == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+	menu := menus[0]
 	return &menu, nil
 }
 
 func (r *menuRepository) GetChildren(parentID uuid.UUID) ([]Menu, error) {
-	var menus []Menu
-	err := r.menuQuery().Where("parent_id = ?", parentID).Find(&menus).Error
-	return menus, err
+	menus, err := r.ListAll()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]Menu, 0)
+	for _, menu := range menus {
+		if menu.ParentID != nil && *menu.ParentID == parentID {
+			result = append(result, menu)
+		}
+	}
+	return result, nil
+}
+
+func (r *menuRepository) ListByAppAndSpace(appKey, spaceKey string) ([]Menu, error) {
+	return r.loadPlacedMenus(strings.TrimSpace(appKey), strings.TrimSpace(spaceKey))
 }
 
 func (r *menuRepository) Create(menu *Menu) error {
@@ -471,15 +804,14 @@ func (r *menuRepository) Delete(id uuid.UUID) error {
 }
 
 func (r *menuRepository) ListAll() ([]Menu, error) {
-	var menus []Menu
-	err := r.menuQuery().Order("sort_order ASC").Find(&menus).Error
-	return menus, err
+	return r.loadDefinitionMenus("", nil)
 }
 
 func (r *menuRepository) GetByIDs(ids []uuid.UUID) ([]Menu, error) {
-	var menus []Menu
-	err := r.menuQuery().Where("id IN ?", ids).Find(&menus).Error
-	return menus, err
+	if len(ids) == 0 {
+		return []Menu{}, nil
+	}
+	return r.loadDefinitionMenus("", ids)
 }
 
 // 菜单备份相关方法
@@ -1387,13 +1719,14 @@ type FeaturePackageRepository interface {
 	List(offset, limit int, params *FeaturePackageListParams) ([]FeaturePackage, int64, error)
 	GetByID(id uuid.UUID) (*FeaturePackage, error)
 	GetByIDs(ids []uuid.UUID) ([]FeaturePackage, error)
-	GetByPackageKey(packageKey string) (*FeaturePackage, error)
+	GetByPackageKey(packageKey string, appKey string) (*FeaturePackage, error)
 	Create(item *FeaturePackage) error
 	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
 	Delete(id uuid.UUID) error
 }
 
 type FeaturePackageListParams struct {
+	AppKey      string
 	Keyword     string
 	PackageKey  string
 	PackageType string
@@ -1413,6 +1746,9 @@ func NewFeaturePackageRepository(db *gorm.DB) FeaturePackageRepository {
 func (r *featurePackageRepository) List(offset, limit int, params *FeaturePackageListParams) ([]FeaturePackage, int64, error) {
 	query := r.db.Model(&FeaturePackage{})
 	if params != nil {
+		if params.AppKey != "" {
+			query = query.Where("app_key = ?", params.AppKey)
+		}
 		if params.Keyword != "" {
 			keyword := "%" + params.Keyword + "%"
 			query = query.Where("(package_key LIKE ? OR name LIKE ? OR description LIKE ?)", keyword, keyword, keyword)
@@ -1468,9 +1804,13 @@ func (r *featurePackageRepository) GetByIDs(ids []uuid.UUID) ([]FeaturePackage, 
 	return items, err
 }
 
-func (r *featurePackageRepository) GetByPackageKey(packageKey string) (*FeaturePackage, error) {
+func (r *featurePackageRepository) GetByPackageKey(packageKey string, appKey string) (*FeaturePackage, error) {
 	var item FeaturePackage
-	err := r.db.Where("package_key = ?", packageKey).First(&item).Error
+	query := r.db.Where("package_key = ?", packageKey)
+	if strings.TrimSpace(appKey) != "" {
+		query = query.Where("app_key = ?", strings.TrimSpace(appKey))
+	}
+	err := query.First(&item).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
@@ -2219,6 +2559,8 @@ func (r *userHiddenMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
 
 type APIEndpointListParams struct {
 	EndpointCodes     []string
+	AppKey            string
+	AppScope          string
 	Method            string
 	PermissionKey     string
 	PermissionPattern string
@@ -2246,6 +2588,12 @@ func (r *apiEndpointRepository) List(offset, limit int, params *APIEndpointListP
 	if params != nil {
 		if len(params.EndpointCodes) > 0 {
 			query = query.Where("code IN ?", params.EndpointCodes)
+		}
+		if params.AppScope != "" {
+			query = query.Where("app_scope = ?", params.AppScope)
+		}
+		if params.AppKey != "" {
+			query = query.Where("(app_scope = ? OR app_key = ?)", models.AppScopeShared, params.AppKey)
 		}
 		if params.Method != "" {
 			query = query.Where("method = ?", params.Method)

@@ -10,6 +10,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
+	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiendpointaccess"
@@ -24,6 +25,8 @@ var (
 type ListRequest struct {
 	Current           int
 	Size              int
+	AppKey            string
+	AppScope          string
 	PermissionKey     string
 	PermissionPattern string
 	Keyword           string
@@ -80,11 +83,12 @@ type EndpointOverview struct {
 type StaleListRequest struct {
 	Current int
 	Size    int
+	AppKey  string
 }
 
 type Service interface {
 	List(req *ListRequest) ([]user.APIEndpoint, int64, error)
-	Overview() (*EndpointOverview, error)
+	Overview(appKey string) (*EndpointOverview, error)
 	ListRuntimeStates(endpoints []user.APIEndpoint) map[uuid.UUID]EndpointRuntimeState
 	ListStale(req *StaleListRequest) ([]user.APIEndpoint, int64, error)
 	ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]UnregisteredRouteItem, int64, error)
@@ -93,11 +97,11 @@ type Service interface {
 	ListBindingsByEndpointCodes(endpointCodes []string) ([]user.APIEndpointPermissionBinding, error)
 	ListBindings(endpointCode string) ([]user.APIEndpointPermissionBinding, error)
 	ListCategories() ([]user.APIEndpointCategory, error)
-	Save(endpoint *user.APIEndpoint, permissionKeys []string) (*user.APIEndpoint, error)
+	Save(endpoint *user.APIEndpoint, permissionKeys []string, currentAppKey string) (*user.APIEndpoint, error)
 	SaveCategory(item *user.APIEndpointCategory) (*user.APIEndpointCategory, error)
 	UpdateContextScope(endpointID uuid.UUID, contextScope string) (*user.APIEndpoint, error)
 	Sync() error
-	CleanupStale(endpointIDs []uuid.UUID) (int, error)
+	CleanupStale(endpointIDs []uuid.UUID, appKey string) (int, error)
 }
 
 const unregisteredScanConfigSettingKey = "api.unregistered_scan_config"
@@ -142,6 +146,8 @@ func (s *service) List(req *ListRequest) ([]user.APIEndpoint, int64, error) {
 		req.Size = 20
 	}
 	params := &user.APIEndpointListParams{
+		AppKey:            normalizeAppKey(req.AppKey),
+		AppScope:          normalizeAppScope(req.AppScope),
 		Method:            strings.ToUpper(strings.TrimSpace(req.Method)),
 		PermissionKey:     strings.TrimSpace(req.PermissionKey),
 		PermissionPattern: strings.TrimSpace(req.PermissionPattern),
@@ -168,14 +174,16 @@ func (s *service) List(req *ListRequest) ([]user.APIEndpoint, int64, error) {
 	return s.repo.List((req.Current-1)*req.Size, req.Size, params)
 }
 
-func (s *service) Overview() (*EndpointOverview, error) {
+func (s *service) Overview(appKey string) (*EndpointOverview, error) {
+	normalizedAppKey := normalizeAppKey(appKey)
 	overview := &EndpointOverview{
 		CategoryCounts: make([]EndpointCategoryCount, 0),
 	}
-	if err := s.db.Model(&user.APIEndpoint{}).Count(&overview.TotalCount).Error; err != nil {
+	baseQuery := applyEndpointAppFilter(s.db.Model(&user.APIEndpoint{}), normalizedAppKey, "")
+	if err := baseQuery.Count(&overview.TotalCount).Error; err != nil {
 		return nil, err
 	}
-	if err := s.db.Model(&user.APIEndpoint{}).Where("category_id IS NULL").Count(&overview.UncategorizedCount).Error; err != nil {
+	if err := applyEndpointAppFilter(s.db.Model(&user.APIEndpoint{}), normalizedAppKey, "").Where("category_id IS NULL").Count(&overview.UncategorizedCount).Error; err != nil {
 		return nil, err
 	}
 
@@ -184,8 +192,7 @@ func (s *service) Overview() (*EndpointOverview, error) {
 		Count      int64      `gorm:"column:count"`
 	}
 	rows := make([]categoryCountRow, 0)
-	if err := s.db.
-		Model(&user.APIEndpoint{}).
+	if err := applyEndpointAppFilter(s.db.Model(&user.APIEndpoint{}), normalizedAppKey, "").
 		Select("category_id, COUNT(*) AS count").
 		Where("category_id IS NOT NULL").
 		Group("category_id").
@@ -202,7 +209,7 @@ func (s *service) Overview() (*EndpointOverview, error) {
 		})
 	}
 
-	syncCandidates, err := s.listSyncRuntimeCandidates()
+	syncCandidates, err := s.listSyncRuntimeCandidates(normalizedAppKey)
 	if err != nil {
 		return nil, err
 	}
@@ -210,7 +217,7 @@ func (s *service) Overview() (*EndpointOverview, error) {
 	overview.StaleCount = int64(len(filterStaleEndpoints(syncCandidates, runtimeStates)))
 
 	endpoints := make([]user.APIEndpoint, 0)
-	if err := s.db.Model(&user.APIEndpoint{}).Select("id", "code", "path").Find(&endpoints).Error; err != nil {
+	if err := applyEndpointAppFilter(s.db.Model(&user.APIEndpoint{}), normalizedAppKey, "").Select("id", "code", "path").Find(&endpoints).Error; err != nil {
 		return nil, err
 	}
 	endpointCodes := make([]string, 0, len(endpoints))
@@ -411,7 +418,7 @@ func (s *service) ListStale(req *StaleListRequest) ([]user.APIEndpoint, int64, e
 		req.Size = 20
 	}
 
-	syncCandidates, err := s.listSyncRuntimeCandidates()
+	syncCandidates, err := s.listSyncRuntimeCandidates(normalizeAppKey(req.AppKey))
 	if err != nil {
 		return nil, 0, err
 	}
@@ -439,7 +446,7 @@ func (s *service) Sync() error {
 	return s.refreshRuntimeCache()
 }
 
-func (s *service) CleanupStale(endpointIDs []uuid.UUID) (int, error) {
+func (s *service) CleanupStale(endpointIDs []uuid.UUID, appKey string) (int, error) {
 	if s.router == nil {
 		return 0, nil
 	}
@@ -447,7 +454,7 @@ func (s *service) CleanupStale(endpointIDs []uuid.UUID) (int, error) {
 		return 0, ErrNoStaleCleanupSelection
 	}
 
-	endpoints, err := s.listSyncRuntimeCandidates()
+	endpoints, err := s.listSyncRuntimeCandidates(normalizeAppKey(appKey))
 	if err != nil {
 		return 0, err
 	}
@@ -501,7 +508,7 @@ func (s *service) ListCategories() ([]user.APIEndpointCategory, error) {
 	return s.categoryRepo.List()
 }
 
-func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string) (*user.APIEndpoint, error) {
+func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string, currentAppKey string) (*user.APIEndpoint, error) {
 	if endpoint == nil {
 		return nil, errors.New("endpoint is nil")
 	}
@@ -536,6 +543,18 @@ func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string) (*us
 	}
 	if endpoint.Status == "" {
 		endpoint.Status = "normal"
+	}
+	endpoint.AppScope = normalizeAppScope(endpoint.AppScope)
+	if endpoint.AppScope == "" {
+		endpoint.AppScope = models.AppScopeShared
+	}
+	if endpoint.AppScope == models.AppScopeApp {
+		endpoint.AppKey = normalizeAppKey(firstNonEmpty(endpoint.AppKey, currentAppKey))
+		if endpoint.AppKey == "" {
+			return nil, errors.New("应用级 API 必须指定 app_key")
+		}
+	} else {
+		endpoint.AppKey = ""
 	}
 	if endpoint.CategoryID != nil && *endpoint.CategoryID != uuid.Nil {
 		if _, err := s.categoryRepo.GetByID(*endpoint.CategoryID); err != nil {
@@ -579,6 +598,11 @@ func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string) (*us
 			}
 			return nil, err
 		}
+		if strings.TrimSpace(current.AppScope) == models.AppScopeApp && normalizeAppKey(current.AppKey) != "" {
+			if requestedAppKey := normalizeAppKey(firstNonEmpty(endpoint.AppKey, currentAppKey)); requestedAppKey != "" && requestedAppKey != normalizeAppKey(current.AppKey) {
+				return nil, errors.New("不允许跨应用修改 API 归属")
+			}
+		}
 		endpoint.Code = resolveEndpointCodeForSave(endpoint, current)
 		oldMethod = current.Method
 		oldPath = current.Path
@@ -598,6 +622,8 @@ func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string) (*us
 		}
 		updates := map[string]interface{}{
 			"code":          endpoint.Code,
+			"app_scope":     endpoint.AppScope,
+			"app_key":       endpoint.AppKey,
 			"method":        endpoint.Method,
 			"path":          endpoint.Path,
 			"feature_kind":  endpoint.FeatureKind,
@@ -814,10 +840,9 @@ func filterStaleEndpoints(endpoints []user.APIEndpoint, runtimeStates map[uuid.U
 	return result
 }
 
-func (s *service) listSyncRuntimeCandidates() ([]user.APIEndpoint, error) {
+func (s *service) listSyncRuntimeCandidates(appKey string) ([]user.APIEndpoint, error) {
 	items := make([]user.APIEndpoint, 0)
-	err := s.db.
-		Model(&user.APIEndpoint{}).
+	err := applyEndpointAppFilter(s.db.Model(&user.APIEndpoint{}), normalizeAppKey(appKey), "").
 		Select("id", "code", "method", "path", "category_id", "status", "source").
 		Where("source = ?", "sync").
 		Order("path ASC, method ASC").
@@ -949,6 +974,38 @@ func defaultUnregisteredScanConfig() UnregisteredScanConfig {
 		DefaultCategoryID:    "",
 		DefaultPermissionKey: "",
 		MarkAsNoPermission:   false,
+	}
+}
+
+func applyEndpointAppFilter(query *gorm.DB, appKey string, appScope string) *gorm.DB {
+	if query == nil {
+		return query
+	}
+	if normalizedScope := normalizeAppScope(appScope); normalizedScope != "" {
+		query = query.Where("app_scope = ?", normalizedScope)
+	}
+	if normalizedAppKey := normalizeAppKey(appKey); normalizedAppKey != "" {
+		query = query.Where("(app_scope = ? OR app_key = ?)", models.AppScopeShared, normalizedAppKey)
+	}
+	return query
+}
+
+func normalizeAppKey(value string) string {
+	target := strings.TrimSpace(value)
+	if target == "" {
+		return ""
+	}
+	return apppkg.NormalizeAppKey(target)
+}
+
+func normalizeAppScope(value string) string {
+	switch strings.TrimSpace(value) {
+	case models.AppScopeApp:
+		return models.AppScopeApp
+	case models.AppScopeShared:
+		return models.AppScopeShared
+	default:
+		return ""
 	}
 }
 

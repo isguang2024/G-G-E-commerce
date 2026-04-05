@@ -2,6 +2,7 @@ package dto
 
 // MenuCreateRequest 创建菜单
 type MenuCreateRequest struct {
+	AppKey        string                 `json:"app_key"`
 	ParentID      *string                `json:"parent_id"`
 	ManageGroupID *string                `json:"manage_group_id"`
 	SpaceKey      string                 `json:"space_key"`
@@ -18,6 +19,7 @@ type MenuCreateRequest struct {
 
 // MenuUpdateRequest 更新菜单
 type MenuUpdateRequest struct {
+	AppKey        string                 `json:"app_key"`
 	ParentID      *string                `json:"parent_id"` // 空字符串表示移至顶级；省略字段表示保持不变
 	ManageGroupID *string                `json:"manage_group_id"`
 	SpaceKey      string                 `json:"space_key"`

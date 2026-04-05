@@ -84,6 +84,7 @@ interface Props {
   modelValue: boolean
   teamId: string
   teamName: string
+  appKey?: string
 }
 
 const props = defineProps<Props>()
@@ -110,6 +111,7 @@ const blockedMenuIds = ref<string[]>([])
 const derivedSourceMap = ref<Record<string, string[]>>({})
 const menuSourceList = ref<Array<{ id: string; label: string }>>([])
 const selectedDerivedPackageId = ref('')
+const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
 
 const defaultProps = {
   children: 'children',
@@ -146,14 +148,19 @@ watch(
 )
 
 async function loadData() {
-  if (!props.teamId) return
+  if (!props.teamId || !currentAppKey.value) {
+    if (!currentAppKey.value) {
+      ElMessage.warning('缺少 app 上下文')
+    }
+    return
+  }
   loading.value = true
   try {
     const [allMenus, currentRes, packageRes, originRes] = await Promise.all([
-      fetchGetMenuTreeAll(currentSpaceKey.value),
-      fetchGetTeamMenus(props.teamId),
-      fetchGetTeamFeaturePackages(props.teamId),
-      fetchGetTeamMenuOrigins(props.teamId)
+      fetchGetMenuTreeAll(currentSpaceKey.value, currentAppKey.value),
+      fetchGetTeamMenus(props.teamId, currentAppKey.value),
+      fetchGetTeamFeaturePackages(props.teamId, currentAppKey.value),
+      fetchGetTeamMenuOrigins(props.teamId, currentAppKey.value)
     ])
 
     featurePackages.value = packageRes?.packages || []
@@ -206,10 +213,19 @@ function clearAll() {
 }
 
 async function handleSave() {
-  if (!props.teamId) return
+  if (!props.teamId || !currentAppKey.value) {
+    if (!currentAppKey.value) {
+      ElMessage.warning('缺少 app 上下文')
+    }
+    return
+  }
   saving.value = true
   try {
-    await fetchSetTeamMenus(props.teamId, normalizeSelectedMenuIDs(selectedIds.value, candidateMenuIds.value))
+    await fetchSetTeamMenus(
+      props.teamId,
+      normalizeSelectedMenuIDs(selectedIds.value, candidateMenuIds.value),
+      currentAppKey.value
+    )
     ElMessage.success('团队菜单边界已保存')
     emit('success')
     visible.value = false
@@ -264,9 +280,11 @@ function filterMenuTreeByAllowedIDs(source: AppRouteRecord[], allowed: Set<strin
 }
 
 function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem) {
+  if (!currentAppKey.value) return
   router.push({
     name: 'FeaturePackage',
     query: {
+      app_key: currentAppKey.value,
       packageKey: item.packageKey,
       contextType: item.contextType || 'team',
       open: 'menus'

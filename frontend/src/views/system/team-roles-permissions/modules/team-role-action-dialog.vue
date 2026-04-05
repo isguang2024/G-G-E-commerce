@@ -72,6 +72,7 @@
   interface Props {
     modelValue: boolean
     roleData?: Api.SystemManage.RoleListItem
+    appKey?: string
   }
 
   const props = defineProps<Props>()
@@ -87,6 +88,7 @@
   const selectedDerivedPackageId = ref('')
   const candidateActionCount = ref(0)
   const inherited = ref(false)
+  const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
   const derivedActions = computed(() => {
     const idSet = new Set(candidateActionIds.value)
     return actions.value.filter((item) => idSet.has(item.id))
@@ -118,12 +120,17 @@
   watch(
     () => props.modelValue,
     async (open) => {
-      if (!open || !props.roleData?.roleId) return
+      if (!open || !props.roleData?.roleId || !currentAppKey.value) {
+        if (open && !currentAppKey.value) {
+          ElMessage.warning('缺少 app 上下文')
+        }
+        return
+      }
       loading.value = true
       try {
         const [packagesRes, selected] = await Promise.all([
-          fetchGetMyTeamBoundaryRolePackages(props.roleData.roleId),
-          fetchGetMyTeamBoundaryRoleActions(props.roleData.roleId)
+          fetchGetMyTeamBoundaryRolePackages(props.roleData.roleId, currentAppKey.value),
+          fetchGetMyTeamBoundaryRoleActions(props.roleData.roleId, currentAppKey.value)
         ])
         actions.value = selected?.actions || []
         selectedIds.value = [...(selected?.action_ids || [])]
@@ -144,10 +151,19 @@
   )
 
   async function handleSave() {
-    if (!props.roleData?.roleId) return
+    if (!props.roleData?.roleId || !currentAppKey.value) {
+      if (!currentAppKey.value) {
+        ElMessage.warning('缺少 app 上下文')
+      }
+      return
+    }
     saving.value = true
     try {
-      await fetchSetMyTeamBoundaryRoleActions(props.roleData.roleId, selectedIds.value)
+      await fetchSetMyTeamBoundaryRoleActions(
+        props.roleData.roleId,
+        selectedIds.value,
+        currentAppKey.value
+      )
       ElMessage.success('团队角色权限裁剪已保存')
       emit('success')
       visible.value = false

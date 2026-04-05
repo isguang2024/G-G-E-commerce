@@ -88,6 +88,7 @@ type Menu struct {
 	ID            uuid.UUID        `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	ParentID      *uuid.UUID       `gorm:"type:uuid" json:"parent_id"`
 	ManageGroupID *uuid.UUID       `gorm:"type:uuid;index" json:"manage_group_id"`
+	AppKey        string           `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
 	SpaceKey      string           `gorm:"type:varchar(100);not null;default:'default';index" json:"space_key"`
 	Kind          string           `gorm:"type:varchar(20);not null;default:'directory';index" json:"kind"`
 	Path          string           `gorm:"type:varchar(255)" json:"path"`
@@ -127,6 +128,7 @@ func (MenuManageGroup) TableName() string {
 
 type UIPage struct {
 	ID                uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	AppKey            string         `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
 	PageKey           string         `gorm:"type:varchar(150);not null" json:"page_key"`
 	Name              string         `gorm:"type:varchar(150);not null" json:"name"`
 	RouteName         string         `gorm:"type:varchar(150);not null" json:"route_name"`
@@ -188,6 +190,7 @@ func (UserRole) TableName() string {
 }
 
 type RoleHiddenMenu struct {
+	AppKey    string    `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
 	RoleID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"role_id"`
 	MenuID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"menu_id"`
 	CreatedAt time.Time `json:"created_at"`
@@ -225,6 +228,7 @@ func (PermissionKey) TableName() string {
 
 type FeaturePackage struct {
 	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	AppKey      string         `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
 	PackageKey  string         `gorm:"type:varchar(100);not null" json:"package_key"`
 	PackageType string         `gorm:"type:varchar(20);not null;default:'base'" json:"package_type"`
 	Name        string         `gorm:"type:varchar(150);not null" json:"name"`
@@ -274,6 +278,7 @@ func (FeaturePackageMenu) TableName() string {
 
 type TeamFeaturePackage struct {
 	ID        uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	AppKey    string     `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
 	TeamID    uuid.UUID  `gorm:"type:uuid;not null;index" json:"team_id"`
 	PackageID uuid.UUID  `gorm:"type:uuid;not null;index" json:"package_id"`
 	Enabled   bool       `gorm:"not null;default:true" json:"enabled"`
@@ -289,6 +294,7 @@ func (TeamFeaturePackage) TableName() string {
 
 type UserFeaturePackage struct {
 	ID        uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	AppKey    string     `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
 	UserID    uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
 	PackageID uuid.UUID  `gorm:"type:uuid;not null;index" json:"package_id"`
 	Enabled   bool       `gorm:"not null;default:true" json:"enabled"`
@@ -304,6 +310,7 @@ func (UserFeaturePackage) TableName() string {
 
 type RoleFeaturePackage struct {
 	ID        uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	AppKey    string     `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
 	RoleID    uuid.UUID  `gorm:"type:uuid;not null;index" json:"role_id"`
 	PackageID uuid.UUID  `gorm:"type:uuid;not null;index" json:"package_id"`
 	Enabled   bool       `gorm:"not null;default:true" json:"enabled"`
@@ -318,6 +325,7 @@ func (RoleFeaturePackage) TableName() string {
 }
 
 type RoleDisabledAction struct {
+	AppKey    string    `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
 	RoleID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"role_id"`
 	ActionID  uuid.UUID `gorm:"type:uuid;primaryKey" json:"action_id"`
 	CreatedAt time.Time `json:"created_at"`
@@ -340,6 +348,7 @@ func (RoleDataPermission) TableName() string {
 }
 
 type TeamBlockedMenu struct {
+	AppKey    string    `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
 	TeamID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"team_id"`
 	MenuID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"menu_id"`
 	CreatedAt time.Time `json:"created_at"`
@@ -351,6 +360,7 @@ func (TeamBlockedMenu) TableName() string {
 }
 
 type TeamBlockedAction struct {
+	AppKey    string    `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
 	TeamID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"team_id"`
 	ActionID  uuid.UUID `gorm:"type:uuid;primaryKey" json:"action_id"`
 	CreatedAt time.Time `json:"created_at"`
@@ -362,6 +372,7 @@ func (TeamBlockedAction) TableName() string {
 }
 
 type UserActionPermission struct {
+	AppKey    string     `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
 	UserID    uuid.UUID  `gorm:"type:uuid;primaryKey" json:"user_id"`
 	ActionID  uuid.UUID  `gorm:"type:uuid;primaryKey" json:"action_id"`
 	TenantID  *uuid.UUID `gorm:"type:uuid;primaryKey" json:"tenant_id"`
@@ -375,6 +386,7 @@ func (UserActionPermission) TableName() string {
 }
 
 type UserHiddenMenu struct {
+	AppKey    string    `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
 	UserID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"user_id"`
 	MenuID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"menu_id"`
 	CreatedAt time.Time `json:"created_at"`
@@ -386,6 +398,7 @@ func (UserHiddenMenu) TableName() string {
 }
 
 type PlatformUserAccessSnapshot struct {
+	AppKey             string              `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
 	UserID             uuid.UUID           `gorm:"type:uuid;primaryKey" json:"user_id"`
 	RoleIDs            []string            `gorm:"type:jsonb;serializer:json" json:"role_ids"`
 	RolePackageIDs     []string            `gorm:"type:jsonb;serializer:json" json:"role_package_ids"`
@@ -411,6 +424,7 @@ func (PlatformUserAccessSnapshot) TableName() string {
 }
 
 type PlatformRoleAccessSnapshot struct {
+	AppKey             string              `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
 	RoleID             uuid.UUID           `gorm:"type:uuid;primaryKey" json:"role_id"`
 	PackageIDs         []string            `gorm:"type:jsonb;serializer:json" json:"package_ids"`
 	ExpandedPackageIDs []string            `gorm:"type:jsonb;serializer:json" json:"expanded_package_ids"`
@@ -432,6 +446,7 @@ func (PlatformRoleAccessSnapshot) TableName() string {
 }
 
 type TeamAccessSnapshot struct {
+	AppKey             string              `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
 	TeamID             uuid.UUID           `gorm:"type:uuid;primaryKey" json:"team_id"`
 	PackageIDs         []string            `gorm:"type:jsonb;serializer:json" json:"package_ids"`
 	ExpandedPackageIDs []string            `gorm:"type:jsonb;serializer:json" json:"expanded_package_ids"`
@@ -453,6 +468,7 @@ func (TeamAccessSnapshot) TableName() string {
 }
 
 type TeamRoleAccessSnapshot struct {
+	AppKey             string              `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
 	TeamID             uuid.UUID           `gorm:"type:uuid;primaryKey" json:"team_id"`
 	RoleID             uuid.UUID           `gorm:"type:uuid;primaryKey" json:"role_id"`
 	PackageIDs         []string            `gorm:"type:jsonb;serializer:json" json:"package_ids"`
@@ -480,6 +496,8 @@ type APIEndpoint struct {
 	Code         string         `gorm:"type:varchar(36);uniqueIndex" json:"code"`
 	Method       string         `gorm:"type:varchar(10);not null" json:"method"`
 	Path         string         `gorm:"type:varchar(255);not null" json:"path"`
+	AppScope     string         `gorm:"type:varchar(20);not null;default:'shared';index" json:"app_scope"`
+	AppKey       string         `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
 	FeatureKind  string         `gorm:"type:varchar(20);not null;default:'system'" json:"feature_kind"`
 	Handler      string         `gorm:"type:varchar(255)" json:"handler"`
 	Summary      string         `gorm:"type:varchar(255)" json:"summary"`
@@ -608,6 +626,7 @@ type MenuBackup struct {
 	ID          uuid.UUID `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	Name        string    `gorm:"type:varchar(100);not null" json:"name"`
 	Description string    `gorm:"type:varchar(255)" json:"description"`
+	AppKey      string    `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
 	// SpaceKey 为空表示历史全局备份；非空表示该备份仅针对对应菜单空间。
 	SpaceKey  string         `gorm:"type:varchar(100);not null;default:'';index" json:"space_key"`
 	MenuData  string         `gorm:"type:text;not null" json:"menu_data"` // JSON 格式的菜单数据

@@ -12,7 +12,8 @@ const DefaultMenuSpaceKey = "default"
 // MenuSpace 菜单空间定义
 type MenuSpace struct {
 	ID              uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	SpaceKey        string         `gorm:"type:varchar(100);not null;uniqueIndex" json:"space_key"`
+	AppKey          string         `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
+	SpaceKey        string         `gorm:"type:varchar(100);not null;index" json:"space_key"`
 	Name            string         `gorm:"type:varchar(150);not null" json:"name"`
 	Description     string         `gorm:"type:text;not null;default:''" json:"description"`
 	DefaultHomePath string         `gorm:"type:varchar(255);not null;default:''" json:"default_home_path"`

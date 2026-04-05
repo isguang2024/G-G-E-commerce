@@ -84,18 +84,17 @@
 
 <script setup lang="ts">
   import { computed, nextTick, ref, watch } from 'vue'
-  import { storeToRefs } from 'pinia'
   import { Search } from '@element-plus/icons-vue'
   import { ElMessage } from 'element-plus'
   import type { CascaderOption, CascaderProps } from 'element-plus'
   import { fetchGetMenuTreeAll, fetchGetFeaturePackageMenus, fetchSetFeaturePackageMenus } from '@/api/system-manage'
-  import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import { formatMenuTitle } from '@/utils/router'
 
   interface Props {
     modelValue: boolean
     packageId: string
     packageName: string
+    appKey?: string
     contextType?: 'platform' | 'team' | 'common' | string
   }
 
@@ -143,8 +142,6 @@
   }
 
   const menuPanelRef = ref<any>()
-  const menuSpaceStore = useMenuSpaceStore()
-  const { currentSpaceKey } = storeToRefs(menuSpaceStore)
   const loading = ref(false)
   const saving = ref(false)
   const menuTreeData = ref<RawMenuNode[]>([])
@@ -154,6 +151,7 @@
   const showIframeMenus = ref(true)
   const showEnabledMenus = ref(true)
   const showMenuPath = ref(false)
+  const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
 
   const menuCascaderProps: CascaderProps = {
     multiple: true,
@@ -212,12 +210,17 @@
   )
 
   async function loadData() {
-    if (!props.packageId) return
+    if (!props.packageId || !currentAppKey.value) {
+      if (!currentAppKey.value) {
+        ElMessage.warning('缺少 app 上下文')
+      }
+      return
+    }
     loading.value = true
     try {
       const [menus, assigned] = await Promise.all([
-        fetchGetMenuTreeAll(currentSpaceKey.value),
-        fetchGetFeaturePackageMenus(props.packageId)
+        fetchGetMenuTreeAll(undefined, currentAppKey.value),
+        fetchGetFeaturePackageMenus(props.packageId, currentAppKey.value)
       ])
       menuTreeData.value = sanitizeMenuTree(menus)
       selectedMenuNodeValues.value = (assigned?.menu_ids || []).map((item: string | number) => `${item}`)
@@ -231,11 +234,16 @@
   }
 
   async function handleSave() {
-    if (!props.packageId) return
+    if (!props.packageId || !currentAppKey.value) {
+      if (!currentAppKey.value) {
+        ElMessage.warning('缺少 app 上下文')
+      }
+      return
+    }
     saving.value = true
     try {
       const menuIds = expandedSelectedMenuIds.value
-      const stats = await fetchSetFeaturePackageMenus(props.packageId, menuIds)
+      const stats = await fetchSetFeaturePackageMenus(props.packageId, menuIds, currentAppKey.value)
       ElMessage.success(formatRefreshMessage(stats))
       emit('success')
       visible.value = false

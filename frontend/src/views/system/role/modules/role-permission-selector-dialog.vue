@@ -235,7 +235,6 @@
 
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue'
-import { storeToRefs } from 'pinia'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { CascaderOption, CascaderProps } from 'element-plus'
@@ -287,6 +286,7 @@ interface DataRow {
 interface Props {
   modelValue: boolean
   roleData?: Api.SystemManage.RoleListItem
+  appKey?: string
 }
 
 const props = defineProps<Props>()
@@ -306,7 +306,6 @@ const loading = ref(false)
 const saving = ref(false)
 const activeTab = ref<'menus' | 'actions' | 'data'>('menus')
 const menuSpaceStore = useMenuSpaceStore()
-const { currentSpaceKey } = storeToRefs(menuSpaceStore)
 
 const menuPanelRef = ref<any>()
 const actionPanelRef = ref<any>()
@@ -334,6 +333,7 @@ const dataPagination = ref({
   size: 10
 })
 const dataScopeOptions = ref<Api.SystemManage.RoleDataPermissionScopeOption[]>([])
+const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
 
 const roleTitle = computed(() => props.roleData?.roleName || '')
 const summaryItems = computed(() => [
@@ -555,7 +555,12 @@ watch(
 )
 
 async function loadData() {
-  if (!props.roleData?.roleId) return
+  if (!props.roleData?.roleId || !currentAppKey.value) {
+    if (!currentAppKey.value) {
+      ElMessage.warning('缺少 app 上下文')
+    }
+    return
+  }
   loading.value = true
   activeTab.value = 'menus'
   menuKeyword.value = ''
@@ -564,10 +569,10 @@ async function loadData() {
 
   try {
     const [menuTree, roleMenus, rolePackages, roleActions, dataPermissionRes] = await Promise.all([
-      fetchGetMenuTreeAll(currentSpaceKey.value),
-      fetchGetRoleMenus(props.roleData.roleId),
-      fetchGetRolePackages(props.roleData.roleId),
-      fetchGetRoleActions(props.roleData.roleId),
+      fetchGetMenuTreeAll(menuSpaceStore.currentSpaceKey, currentAppKey.value),
+      fetchGetRoleMenus(props.roleData.roleId, currentAppKey.value),
+      fetchGetRolePackages(props.roleData.roleId, currentAppKey.value),
+      fetchGetRoleActions(props.roleData.roleId, currentAppKey.value),
       fetchGetRoleDataPermissions(props.roleData.roleId)
     ])
 
@@ -744,18 +749,25 @@ watch(
 )
 
 function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem, open?: 'menus' | 'actions') {
+  if (!currentAppKey.value) return
   router.push({
     name: 'FeaturePackage',
     query: {
       packageKey: item.packageKey,
       contextType: item.contextType || 'platform',
+      app_key: currentAppKey.value,
       ...(open ? { open } : {})
     }
   })
 }
 
 async function handleSave() {
-  if (!props.roleData?.roleId) return
+  if (!props.roleData?.roleId || !currentAppKey.value) {
+    if (!currentAppKey.value) {
+      ElMessage.warning('缺少 app 上下文')
+    }
+    return
+  }
   saving.value = true
   try {
     const dataPayload = dataRows.value
@@ -766,8 +778,8 @@ async function handleSave() {
       }))
 
     await Promise.all([
-      fetchSetRoleMenus(props.roleData.roleId, expandedSelectedMenuIds.value),
-      fetchSetRoleActions(props.roleData.roleId, expandedSelectedActionIds.value),
+      fetchSetRoleMenus(props.roleData.roleId, expandedSelectedMenuIds.value, currentAppKey.value),
+      fetchSetRoleActions(props.roleData.roleId, expandedSelectedActionIds.value, currentAppKey.value),
       fetchSetRoleDataPermissions(props.roleData.roleId, dataPayload)
     ])
 

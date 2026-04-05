@@ -10,7 +10,9 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
+	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/appscope"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
@@ -25,21 +27,21 @@ type Service interface {
 	List(req *dto.FeaturePackageListRequest) ([]user.FeaturePackage, int64, error)
 	ListOptions(req *dto.FeaturePackageListRequest) ([]user.FeaturePackage, error)
 	GetPackageStats(packageIDs []uuid.UUID) (map[uuid.UUID]int64, map[uuid.UUID]int64, map[uuid.UUID]int64, error)
-	GetRelationTree(contextType, keyword string) (*FeaturePackageRelationTree, error)
+	GetRelationTree(appKey, contextType, keyword string) (*FeaturePackageRelationTree, error)
 	Get(id uuid.UUID) (*user.FeaturePackage, error)
 	Create(req *dto.FeaturePackageCreateRequest) (*user.FeaturePackage, error)
 	Update(id uuid.UUID, req *dto.FeaturePackageUpdateRequest) (*permissionrefresh.RefreshStats, error)
 	Delete(id uuid.UUID) (*permissionrefresh.RefreshStats, error)
-	GetPackageChildren(id uuid.UUID) ([]uuid.UUID, []user.FeaturePackage, error)
-	SetPackageChildren(id uuid.UUID, childPackageIDs []uuid.UUID) (*permissionrefresh.RefreshStats, error)
-	GetPackageKeys(id uuid.UUID) ([]uuid.UUID, []user.PermissionKey, error)
-	SetPackageKeys(id uuid.UUID, actionIDs []uuid.UUID) (*permissionrefresh.RefreshStats, error)
-	GetPackageMenus(id uuid.UUID) ([]uuid.UUID, []user.Menu, error)
-	SetPackageMenus(id uuid.UUID, menuIDs []uuid.UUID) (*permissionrefresh.RefreshStats, error)
-	GetPackageTeams(id uuid.UUID) ([]uuid.UUID, error)
-	SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *uuid.UUID) (*permissionrefresh.RefreshStats, error)
-	GetTeamPackages(teamID uuid.UUID) ([]uuid.UUID, []user.FeaturePackage, error)
-	SetTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) (*permissionrefresh.RefreshStats, error)
+	GetPackageChildren(id uuid.UUID, appKey string) ([]uuid.UUID, []user.FeaturePackage, error)
+	SetPackageChildren(id uuid.UUID, childPackageIDs []uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error)
+	GetPackageKeys(id uuid.UUID, appKey string) ([]uuid.UUID, []user.PermissionKey, error)
+	SetPackageKeys(id uuid.UUID, actionIDs []uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error)
+	GetPackageMenus(id uuid.UUID, appKey string) ([]uuid.UUID, []user.Menu, error)
+	SetPackageMenus(id uuid.UUID, menuIDs []uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error)
+	GetPackageTeams(id uuid.UUID, appKey string) ([]uuid.UUID, error)
+	SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error)
+	GetTeamPackages(teamID uuid.UUID, appKey string) ([]uuid.UUID, []user.FeaturePackage, error)
+	SetTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error)
 	GetImpactPreview(id uuid.UUID) (*FeaturePackageImpactPreview, error)
 	ListVersions(id uuid.UUID, current, size int) ([]user.FeaturePackageVersion, int64, error)
 	Rollback(id uuid.UUID, versionID uuid.UUID, operatorID *uuid.UUID, requestID string) (*permissionrefresh.RefreshStats, error)
@@ -118,6 +120,7 @@ func NewService(
 }
 
 func (s *service) List(req *dto.FeaturePackageListRequest) ([]user.FeaturePackage, int64, error) {
+	appKey := normalizeAppKey(req.AppKey)
 	if req.Current <= 0 {
 		req.Current = 1
 	}
@@ -125,6 +128,7 @@ func (s *service) List(req *dto.FeaturePackageListRequest) ([]user.FeaturePackag
 		req.Size = 20
 	}
 	return s.packageRepo.List((req.Current-1)*req.Size, req.Size, &user.FeaturePackageListParams{
+		AppKey:      appKey,
 		Keyword:     strings.TrimSpace(req.Keyword),
 		PackageKey:  strings.TrimSpace(req.PackageKey),
 		PackageType: normalizePackageType(req.PackageType),
@@ -137,6 +141,9 @@ func (s *service) List(req *dto.FeaturePackageListRequest) ([]user.FeaturePackag
 func (s *service) ListOptions(req *dto.FeaturePackageListRequest) ([]user.FeaturePackage, error) {
 	query := s.db.Model(&user.FeaturePackage{})
 	if req != nil {
+		if appKey := normalizeAppKey(req.AppKey); appKey != "" {
+			query = query.Where("app_key = ?", appKey)
+		}
 		if keyword := strings.TrimSpace(req.Keyword); keyword != "" {
 			like := "%" + keyword + "%"
 			query = query.Where("(package_key LIKE ? OR name LIKE ? OR description LIKE ?)", like, like, like)
@@ -199,17 +206,19 @@ func (s *service) Get(id uuid.UUID) (*user.FeaturePackage, error) {
 }
 
 func (s *service) Create(req *dto.FeaturePackageCreateRequest) (*user.FeaturePackage, error) {
+	appKey := normalizeAppKey(req.AppKey)
 	packageKey := strings.TrimSpace(req.PackageKey)
 	if packageKey == "" {
 		return nil, errors.New("package_key 不能为空")
 	}
-	if _, err := s.packageRepo.GetByPackageKey(packageKey); err == nil {
+	if _, err := s.packageRepo.GetByPackageKey(packageKey, appKey); err == nil {
 		return nil, ErrFeaturePackageExists
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
 
 	item := &user.FeaturePackage{
+		AppKey:      appKey,
 		PackageKey:  packageKey,
 		PackageType: normalizePackageTypeDefault(req.PackageType, "base"),
 		Name:        strings.TrimSpace(req.Name),
@@ -232,12 +241,16 @@ func (s *service) Update(id uuid.UUID, req *dto.FeaturePackageUpdateRequest) (*p
 		}
 		return nil, err
 	}
+	appKey := normalizeAppKey(req.AppKey)
+	if !packageBelongsToApp(current, appKey) {
+		return nil, ErrFeaturePackageNotFound
+	}
 	updates := map[string]interface{}{
 		"updated_at": time.Now(),
 		"sort_order": req.SortOrder,
 	}
 	if packageKey := strings.TrimSpace(req.PackageKey); packageKey != "" && packageKey != current.PackageKey {
-		existing, getErr := s.packageRepo.GetByPackageKey(packageKey)
+		existing, getErr := s.packageRepo.GetByPackageKey(packageKey, appKey)
 		if getErr == nil && existing != nil && existing.ID != id {
 			return nil, ErrFeaturePackageExists
 		}
@@ -369,13 +382,16 @@ func (s *service) Delete(id uuid.UUID) (*permissionrefresh.RefreshStats, error) 
 	return nil, nil
 }
 
-func (s *service) GetPackageChildren(id uuid.UUID) ([]uuid.UUID, []user.FeaturePackage, error) {
+func (s *service) GetPackageChildren(id uuid.UUID, appKey string) ([]uuid.UUID, []user.FeaturePackage, error) {
 	item, err := s.packageRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil, ErrFeaturePackageNotFound
 		}
 		return nil, nil, err
+	}
+	if !packageBelongsToApp(item, appKey) {
+		return nil, nil, ErrFeaturePackageNotFound
 	}
 	if item.PackageType != "bundle" {
 		return []uuid.UUID{}, []user.FeaturePackage{}, nil
@@ -388,16 +404,19 @@ func (s *service) GetPackageChildren(id uuid.UUID) ([]uuid.UUID, []user.FeatureP
 	if err != nil {
 		return nil, nil, err
 	}
-	return childPackageIDs, items, nil
+	return filterPackagesForApp(childPackageIDs, items, normalizeAppKey(appKey))
 }
 
-func (s *service) SetPackageChildren(id uuid.UUID, childPackageIDs []uuid.UUID) (*permissionrefresh.RefreshStats, error) {
+func (s *service) SetPackageChildren(id uuid.UUID, childPackageIDs []uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error) {
 	item, err := s.packageRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrFeaturePackageNotFound
 		}
 		return nil, err
+	}
+	if !packageBelongsToApp(item, appKey) {
+		return nil, ErrFeaturePackageNotFound
 	}
 	if item.PackageType != "bundle" {
 		return nil, errors.New("仅组合包允许配置基础包集合")
@@ -413,6 +432,9 @@ func (s *service) SetPackageChildren(id uuid.UUID, childPackageIDs []uuid.UUID) 
 		child, ok := childMap[childPackageID]
 		if !ok {
 			return nil, ErrFeaturePackageNotFound
+		}
+		if !packageBelongsToApp(&child, appKey) {
+			return nil, errors.New("组合包与基础包必须属于同一应用")
 		}
 		if child.PackageType != "base" {
 			return nil, errors.New("组合包只能包含基础包")
@@ -437,12 +459,16 @@ func (s *service) SetPackageChildren(id uuid.UUID, childPackageIDs []uuid.UUID) 
 	return nil, nil
 }
 
-func (s *service) GetPackageKeys(id uuid.UUID) ([]uuid.UUID, []user.PermissionKey, error) {
-	if _, err := s.packageRepo.GetByID(id); err != nil {
+func (s *service) GetPackageKeys(id uuid.UUID, appKey string) ([]uuid.UUID, []user.PermissionKey, error) {
+	item, err := s.packageRepo.GetByID(id)
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil, ErrFeaturePackageNotFound
 		}
 		return nil, nil, err
+	}
+	if !packageBelongsToApp(item, appKey) {
+		return nil, nil, ErrFeaturePackageNotFound
 	}
 	actionIDs, err := s.packageActionRepo.GetKeyIDsByPackageID(id)
 	if err != nil {
@@ -455,13 +481,16 @@ func (s *service) GetPackageKeys(id uuid.UUID) ([]uuid.UUID, []user.PermissionKe
 	return actionIDs, actions, nil
 }
 
-func (s *service) SetPackageKeys(id uuid.UUID, actionIDs []uuid.UUID) (*permissionrefresh.RefreshStats, error) {
+func (s *service) SetPackageKeys(id uuid.UUID, actionIDs []uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error) {
 	item, err := s.packageRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrFeaturePackageNotFound
 		}
 		return nil, err
+	}
+	if !packageBelongsToApp(item, appKey) {
+		return nil, ErrFeaturePackageNotFound
 	}
 	if item.PackageType == "bundle" {
 		return nil, errors.New("组合包不允许直接绑定功能权限")
@@ -496,12 +525,16 @@ func (s *service) SetPackageKeys(id uuid.UUID, actionIDs []uuid.UUID) (*permissi
 	return nil, nil
 }
 
-func (s *service) GetPackageMenus(id uuid.UUID) ([]uuid.UUID, []user.Menu, error) {
-	if _, err := s.packageRepo.GetByID(id); err != nil {
+func (s *service) GetPackageMenus(id uuid.UUID, appKey string) ([]uuid.UUID, []user.Menu, error) {
+	item, err := s.packageRepo.GetByID(id)
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil, ErrFeaturePackageNotFound
 		}
 		return nil, nil, err
+	}
+	if !packageBelongsToApp(item, appKey) {
+		return nil, nil, ErrFeaturePackageNotFound
 	}
 	menuIDs, err := s.packageMenuRepo.GetMenuIDsByPackageID(id)
 	if err != nil {
@@ -511,16 +544,34 @@ func (s *service) GetPackageMenus(id uuid.UUID) ([]uuid.UUID, []user.Menu, error
 	if err != nil {
 		return nil, nil, err
 	}
-	return menuIDs, menus, nil
+	filteredMenus := make([]user.Menu, 0, len(menus))
+	allowedIDs := make(map[uuid.UUID]struct{}, len(menus))
+	for _, menu := range menus {
+		if strings.TrimSpace(menu.AppKey) != strings.TrimSpace(item.AppKey) {
+			continue
+		}
+		filteredMenus = append(filteredMenus, menu)
+		allowedIDs[menu.ID] = struct{}{}
+	}
+	filteredMenuIDs := make([]uuid.UUID, 0, len(menuIDs))
+	for _, menuID := range menuIDs {
+		if _, ok := allowedIDs[menuID]; ok {
+			filteredMenuIDs = append(filteredMenuIDs, menuID)
+		}
+	}
+	return filteredMenuIDs, filteredMenus, nil
 }
 
-func (s *service) SetPackageMenus(id uuid.UUID, menuIDs []uuid.UUID) (*permissionrefresh.RefreshStats, error) {
+func (s *service) SetPackageMenus(id uuid.UUID, menuIDs []uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error) {
 	item, err := s.packageRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrFeaturePackageNotFound
 		}
 		return nil, err
+	}
+	if !packageBelongsToApp(item, appKey) {
+		return nil, ErrFeaturePackageNotFound
 	}
 	if item.PackageType == "bundle" {
 		return nil, errors.New("组合包不允许直接绑定菜单")
@@ -535,6 +586,11 @@ func (s *service) SetPackageMenus(id uuid.UUID, menuIDs []uuid.UUID) (*permissio
 		}
 		if len(menus) != len(menuIDs) {
 			return nil, errors.New("存在无效的菜单")
+		}
+		for _, menu := range menus {
+			if strings.TrimSpace(menu.AppKey) != strings.TrimSpace(item.AppKey) {
+				return nil, errors.New("功能包与菜单必须属于同一应用")
+			}
 		}
 	}
 	if err := s.packageMenuRepo.ReplacePackageMenus(id, menuIDs); err != nil {
@@ -553,7 +609,7 @@ func (s *service) SetPackageMenus(id uuid.UUID, menuIDs []uuid.UUID) (*permissio
 	return nil, nil
 }
 
-func (s *service) GetTeamPackages(teamID uuid.UUID) ([]uuid.UUID, []user.FeaturePackage, error) {
+func (s *service) GetTeamPackages(teamID uuid.UUID, appKey string) ([]uuid.UUID, []user.FeaturePackage, error) {
 	packageIDs, err := s.teamPackageRepo.GetPackageIDsByTeamID(teamID)
 	if err != nil {
 		return nil, nil, err
@@ -562,16 +618,19 @@ func (s *service) GetTeamPackages(teamID uuid.UUID) ([]uuid.UUID, []user.Feature
 	if err != nil {
 		return nil, nil, err
 	}
-	return packageIDs, items, nil
+	return filterPackagesForApp(packageIDs, items, normalizeAppKey(appKey))
 }
 
-func (s *service) GetPackageTeams(id uuid.UUID) ([]uuid.UUID, error) {
+func (s *service) GetPackageTeams(id uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	item, err := s.packageRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrFeaturePackageNotFound
 		}
 		return nil, err
+	}
+	if !packageBelongsToApp(item, appKey) {
+		return nil, ErrFeaturePackageNotFound
 	}
 	if !supportsTeamContext(item.ContextType) {
 		return []uuid.UUID{}, nil
@@ -579,13 +638,16 @@ func (s *service) GetPackageTeams(id uuid.UUID) ([]uuid.UUID, error) {
 	return s.teamPackageRepo.GetTeamIDsByPackageID(id)
 }
 
-func (s *service) SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *uuid.UUID) (*permissionrefresh.RefreshStats, error) {
+func (s *service) SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error) {
 	item, err := s.packageRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrFeaturePackageNotFound
 		}
 		return nil, err
+	}
+	if !packageBelongsToApp(item, appKey) {
+		return nil, ErrFeaturePackageNotFound
 	}
 	if !supportsTeamContext(item.ContextType) {
 		return nil, errors.New("仅支持为团队功能包配置团队")
@@ -611,7 +673,7 @@ func (s *service) SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *
 		affected[teamID] = struct{}{}
 	}
 	for teamID := range affected {
-		packageIDs, err := s.teamPackageRepo.GetPackageIDsByTeamID(teamID)
+		packageIDs, err := appscope.PackageIDsByTeam(s.db, teamID, item.AppKey)
 		if err != nil {
 			return nil, err
 		}
@@ -632,7 +694,7 @@ func (s *service) SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *
 				nextPackageIDs = append(nextPackageIDs, id)
 			}
 		}
-		if err := s.teamPackageRepo.ReplaceTeamPackages(teamID, nextPackageIDs, grantedBy); err != nil {
+		if err := appscope.ReplaceTeamPackagesInApp(s.db, teamID, item.AppKey, nextPackageIDs, grantedBy); err != nil {
 			return nil, err
 		}
 		if s.refresher != nil {
@@ -641,7 +703,7 @@ func (s *service) SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *
 			}
 			continue
 		}
-		if _, err := s.boundaryService.RefreshSnapshot(teamID); err != nil {
+		if _, err := s.boundaryService.RefreshSnapshot(teamID, item.AppKey); err != nil {
 			return nil, err
 		}
 	}
@@ -653,7 +715,8 @@ func (s *service) SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *
 	return &stats, nil
 }
 
-func (s *service) SetTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) (*permissionrefresh.RefreshStats, error) {
+func (s *service) SetTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error) {
+	normalizedAppKey := normalizeAppKey(appKey)
 	packageMap, err := s.getPackageMap(packageIDs)
 	if err != nil {
 		return nil, err
@@ -663,11 +726,14 @@ func (s *service) SetTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, gran
 		if !ok {
 			return nil, ErrFeaturePackageNotFound
 		}
+		if strings.TrimSpace(item.AppKey) != normalizedAppKey {
+			return nil, errors.New("仅支持分配当前应用内的功能包")
+		}
 		if !supportsTeamContext(item.ContextType) {
 			return nil, errors.New("仅支持为团队分配团队功能包")
 		}
 	}
-	if err := s.teamPackageRepo.ReplaceTeamPackages(teamID, packageIDs, grantedBy); err != nil {
+	if err := appscope.ReplaceTeamPackagesInApp(s.db, teamID, normalizedAppKey, packageIDs, grantedBy); err != nil {
 		return nil, err
 	}
 	if s.refresher != nil {
@@ -687,8 +753,9 @@ func (s *service) SetTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, gran
 	return &stats, nil
 }
 
-func (s *service) GetRelationTree(contextType, keyword string) (*FeaturePackageRelationTree, error) {
+func (s *service) GetRelationTree(appKey, contextType, keyword string) (*FeaturePackageRelationTree, error) {
 	packages, err := s.ListOptions(&dto.FeaturePackageListRequest{
+		AppKey:      normalizeAppKey(appKey),
 		ContextType: normalizeContextType(contextType),
 		Keyword:     strings.TrimSpace(keyword),
 	})
@@ -1049,6 +1116,10 @@ func (s *service) syncPackageTeamsBySet(id uuid.UUID, teamIDs []uuid.UUID, grant
 	if err != nil {
 		return err
 	}
+	item, err := s.packageRepo.GetByID(id)
+	if err != nil {
+		return err
+	}
 	desired := make(map[uuid.UUID]struct{}, len(teamIDs))
 	affected := make(map[uuid.UUID]struct{}, len(currentTeamIDs)+len(teamIDs))
 	for _, teamID := range currentTeamIDs {
@@ -1059,7 +1130,7 @@ func (s *service) syncPackageTeamsBySet(id uuid.UUID, teamIDs []uuid.UUID, grant
 		affected[teamID] = struct{}{}
 	}
 	for teamID := range affected {
-		packageIDs, packageErr := s.teamPackageRepo.GetPackageIDsByTeamID(teamID)
+		packageIDs, packageErr := appscope.PackageIDsByTeam(s.db, teamID, item.AppKey)
 		if packageErr != nil {
 			return packageErr
 		}
@@ -1078,7 +1149,7 @@ func (s *service) syncPackageTeamsBySet(id uuid.UUID, teamIDs []uuid.UUID, grant
 		if _, ok := desired[teamID]; ok {
 			nextPackageIDs = append(nextPackageIDs, id)
 		}
-		if err := s.teamPackageRepo.ReplaceTeamPackages(teamID, nextPackageIDs, grantedBy); err != nil {
+		if err := appscope.ReplaceTeamPackagesInApp(s.db, teamID, item.AppKey, nextPackageIDs, grantedBy); err != nil {
 			return err
 		}
 	}
@@ -1215,6 +1286,36 @@ func (s *service) getPackageMap(packageIDs []uuid.UUID) (map[uuid.UUID]user.Feat
 		result[item.ID] = item
 	}
 	return result, nil
+}
+
+func filterPackagesForApp(packageIDs []uuid.UUID, items []user.FeaturePackage, appKey string) ([]uuid.UUID, []user.FeaturePackage, error) {
+	filteredItems := make([]user.FeaturePackage, 0, len(items))
+	allowedIDs := make(map[uuid.UUID]struct{}, len(items))
+	for _, item := range items {
+		if !packageBelongsToApp(&item, appKey) {
+			continue
+		}
+		filteredItems = append(filteredItems, item)
+		allowedIDs[item.ID] = struct{}{}
+	}
+	filteredIDs := make([]uuid.UUID, 0, len(packageIDs))
+	for _, packageID := range packageIDs {
+		if _, ok := allowedIDs[packageID]; ok {
+			filteredIDs = append(filteredIDs, packageID)
+		}
+	}
+	return filteredIDs, filteredItems, nil
+}
+
+func packageBelongsToApp(item *user.FeaturePackage, appKey string) bool {
+	if item == nil {
+		return false
+	}
+	return strings.TrimSpace(item.AppKey) == normalizeAppKey(appKey)
+}
+
+func normalizeAppKey(value string) string {
+	return apppkg.NormalizeAppKey(value)
 }
 
 func (s *service) getTeamMap(teamIDs []uuid.UUID) (map[uuid.UUID]struct{}, error) {

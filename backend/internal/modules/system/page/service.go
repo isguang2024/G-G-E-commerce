@@ -13,8 +13,10 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
+	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	spaceutil "github.com/gg-ecommerce/backend/internal/modules/system/space"
+	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 )
 
@@ -33,6 +35,7 @@ type ListRequest struct {
 	Current      int
 	Size         int
 	Keyword      string
+	AppKey       string `form:"app_key"`
 	SpaceKey     string `form:"space_key"`
 	PageType     string
 	ModuleKey    string
@@ -43,6 +46,7 @@ type ListRequest struct {
 }
 
 type SaveRequest struct {
+	AppKey            string                 `json:"app_key"`
 	PageKey           string                 `json:"page_key"`
 	Name              string                 `json:"name"`
 	RouteName         string                 `json:"route_name"`
@@ -121,6 +125,7 @@ type BreadcrumbPreviewItem struct {
 }
 
 type AccessTraceRequest struct {
+	AppKey    string `form:"app_key"`
 	UserID    string `form:"user_id"`
 	TenantID  string `form:"tenant_id"`
 	PageKey   string `form:"page_key"`
@@ -165,32 +170,34 @@ type AccessTraceResult struct {
 
 type Service interface {
 	List(req *ListRequest) ([]Record, int64, error)
-	ListOptions(spaceKey string) ([]models.UIPage, error)
-	ListRuntime(host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error)
-	ListRuntimePublic(host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error)
-	ResolveCompiledAccessContext(spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*CompiledAccessContext, error)
-	GetAccessTrace(req *AccessTraceRequest) (*AccessTraceResult, error)
-	ListRuntimeWithAccess(spaceKey string, accessCtx *CompiledAccessContext) ([]Record, error)
-	ListUnregistered() ([]UnregisteredRecord, error)
-	Sync() (*SyncResult, error)
-	PreviewBreadcrumb(id uuid.UUID) ([]BreadcrumbPreviewItem, error)
-	Get(id uuid.UUID) (*Record, error)
+	ListOptions(appKey, spaceKey string) ([]models.UIPage, error)
+	ListRuntime(appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error)
+	ListRuntimePublic(appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error)
+	ResolveCompiledAccessContext(appKey, spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*CompiledAccessContext, error)
+	GetAccessTrace(appKey string, req *AccessTraceRequest) (*AccessTraceResult, error)
+	ListRuntimeWithAccess(appKey, spaceKey string, accessCtx *CompiledAccessContext) ([]Record, error)
+	ListUnregistered(appKey string) ([]UnregisteredRecord, error)
+	Sync(appKey string) (*SyncResult, error)
+	PreviewBreadcrumb(id uuid.UUID, appKey string) ([]BreadcrumbPreviewItem, error)
+	Get(id uuid.UUID, appKey string) (*Record, error)
 	Create(req *SaveRequest) (*Record, error)
 	Update(id uuid.UUID, req *SaveRequest) (*Record, error)
-	Delete(id uuid.UUID) error
-	ListMenuOptions(spaceKey string) ([]MenuOption, error)
+	Delete(id uuid.UUID, appKey string) error
+	ListMenuOptions(appKey, spaceKey string) ([]MenuOption, error)
 }
 
 type service struct {
-	db *gorm.DB
+	db       *gorm.DB
+	menuRepo user.MenuRepository
 }
 
-func NewService(db *gorm.DB) Service {
-	return &service{db: db}
+func NewService(db *gorm.DB, menuRepo user.MenuRepository) Service {
+	return &service{db: db, menuRepo: menuRepo}
 }
 
 func (s *service) List(req *ListRequest) ([]Record, int64, error) {
-	query := s.db.Model(&models.UIPage{})
+	appKey := normalizeAppKey(req.AppKey)
+	query := s.db.Model(&models.UIPage{}).Where("app_key = ?", appKey)
 	if req != nil {
 		if keyword := strings.TrimSpace(req.Keyword); keyword != "" {
 			like := "%" + keyword + "%"
@@ -228,15 +235,15 @@ func (s *service) List(req *ListRequest) ([]Record, int64, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	menuMap, err := s.loadMenuMap()
+	menuMap, err := s.loadMenuMap(appKey)
 	if err != nil {
 		return nil, 0, err
 	}
-	pageMap, err := s.loadPageMap()
+	pageMap, err := s.loadPageMap(appKey)
 	if err != nil {
 		return nil, 0, err
 	}
-	bindingMap, err := loadPageSpaceBindingMap(s.db)
+	bindingMap, err := loadPageSpaceBindingMap(s.db, appKey)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -254,9 +261,9 @@ func (s *service) List(req *ListRequest) ([]Record, int64, error) {
 	return records[start:end], total, nil
 }
 
-func (s *service) ListOptions(spaceKey string) ([]models.UIPage, error) {
+func (s *service) ListOptions(appKey, spaceKey string) ([]models.UIPage, error) {
 	items := make([]models.UIPage, 0)
-	query := s.db.Model(&models.UIPage{})
+	query := s.db.Model(&models.UIPage{}).Where("app_key = ?", normalizeAppKey(appKey))
 	err := query.
 		Select(
 			"id",
@@ -282,15 +289,15 @@ func (s *service) ListOptions(spaceKey string) ([]models.UIPage, error) {
 	if err != nil {
 		return nil, err
 	}
-	menuMap, err := s.loadMenuMap()
+	menuMap, err := s.loadMenuMap(normalizeAppKey(appKey))
 	if err != nil {
 		return nil, err
 	}
-	pageMap, err := s.loadPageMap()
+	pageMap, err := s.loadPageMap(normalizeAppKey(appKey))
 	if err != nil {
 		return nil, err
 	}
-	bindingMap, err := loadPageSpaceBindingMap(s.db)
+	bindingMap, err := loadPageSpaceBindingMap(s.db, normalizeAppKey(appKey))
 	if err != nil {
 		return nil, err
 	}
@@ -302,22 +309,23 @@ func (s *service) ListOptions(spaceKey string) ([]models.UIPage, error) {
 	return result, nil
 }
 
-func (s *service) ListRuntime(host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error) {
-	return s.loadRuntimeRecords(host, requestedSpaceKey, userID, tenantID)
+func (s *service) ListRuntime(appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error) {
+	return s.loadRuntimeRecords(normalizeAppKey(appKey), host, requestedSpaceKey, userID, tenantID)
 }
 
-func (s *service) ListRuntimePublic(host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error) {
-	return s.loadPublicRuntimeRecords(host, requestedSpaceKey, userID, tenantID)
+func (s *service) ListRuntimePublic(appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error) {
+	return s.loadPublicRuntimeRecords(normalizeAppKey(appKey), host, requestedSpaceKey, userID, tenantID)
 }
 
-func (s *service) ResolveCompiledAccessContext(spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*CompiledAccessContext, error) {
-	return s.buildCompiledAccessContextForSpace(spaceKey, userID, tenantID)
+func (s *service) ResolveCompiledAccessContext(appKey, spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*CompiledAccessContext, error) {
+	return s.buildCompiledAccessContextForSpace(normalizeAppKey(appKey), spaceKey, userID, tenantID)
 }
 
-func (s *service) GetAccessTrace(req *AccessTraceRequest) (*AccessTraceResult, error) {
+func (s *service) GetAccessTrace(appKey string, req *AccessTraceRequest) (*AccessTraceResult, error) {
 	if req == nil {
 		return nil, fmt.Errorf("%w: request is required", ErrPageValidation)
 	}
+	appKey = normalizeAppKey(firstNonEmpty(req.AppKey, appKey))
 	userID, err := uuid.Parse(strings.TrimSpace(req.UserID))
 	if err != nil {
 		return nil, fmt.Errorf("%w: user_id is invalid", ErrPageValidation)
@@ -334,11 +342,11 @@ func (s *service) GetAccessTrace(req *AccessTraceRequest) (*AccessTraceResult, e
 	if spaceKey == "" {
 		spaceKey = spaceutil.DefaultMenuSpaceKey
 	}
-	accessCtx, err := s.ResolveCompiledAccessContext(spaceKey, &userID, tenantID)
+	accessCtx, err := s.ResolveCompiledAccessContext(appKey, spaceKey, &userID, tenantID)
 	if err != nil {
 		return nil, err
 	}
-	records, err := s.ListRuntimeWithAccess(spaceKey, accessCtx)
+	records, err := s.ListRuntimeWithAccess(appKey, spaceKey, accessCtx)
 	if err != nil {
 		return nil, err
 	}
@@ -350,7 +358,7 @@ func (s *service) GetAccessTrace(req *AccessTraceRequest) (*AccessTraceResult, e
 	requestedPageKeys := resolveRequestedPageKeys(req, records)
 	pageItems := make([]AccessTracePageItem, 0, len(requestedPageKeys))
 	for _, pageKey := range requestedPageKeys {
-		page, getErr := s.findPageByKey(pageKey)
+		page, getErr := s.findPageByKey(pageKey, appKey)
 		if getErr != nil {
 			continue
 		}
@@ -502,13 +510,13 @@ func (s *service) loadAccessTraceRoles(userID uuid.UUID, tenantID *uuid.UUID) ([
 	return items, nil
 }
 
-func (s *service) ListRuntimeWithAccess(spaceKey string, accessCtx *CompiledAccessContext) ([]Record, error) {
-	return s.loadRuntimeRecordsWithAccess(spaceKey, accessCtx)
+func (s *service) ListRuntimeWithAccess(appKey, spaceKey string, accessCtx *CompiledAccessContext) ([]Record, error) {
+	return s.loadRuntimeRecordsWithAccess(normalizeAppKey(appKey), spaceKey, accessCtx)
 }
 
-func (s *service) buildRuntimeRecords(spaceKey string) ([]Record, map[uuid.UUID]runtimeMenuNode, error) {
+func (s *service) buildRuntimeRecords(appKey, spaceKey string) ([]Record, map[uuid.UUID]runtimeMenuNode, error) {
 	var items []models.UIPage
-	if err := s.db.Where("status = ? AND page_type <> ?", "normal", "display_group").
+	if err := s.db.Where("app_key = ?", normalizeAppKey(appKey)).Where("status = ? AND page_type <> ?", "normal", "display_group").
 		Order("sort_order ASC, created_at ASC").
 		Find(&items).Error; err != nil {
 		return nil, nil, err
@@ -517,15 +525,15 @@ func (s *service) buildRuntimeRecords(spaceKey string) ([]Record, map[uuid.UUID]
 	if err != nil {
 		return nil, nil, err
 	}
-	menuMap, err := s.loadMenuMap()
+	menuMap, err := s.loadMenuMap(normalizeAppKey(appKey))
 	if err != nil {
 		return nil, nil, err
 	}
-	pageMap, err := s.loadPageMap()
+	pageMap, err := s.loadPageMap(normalizeAppKey(appKey))
 	if err != nil {
 		return nil, nil, err
 	}
-	bindingMap, err := loadPageSpaceBindingMap(s.db)
+	bindingMap, err := loadPageSpaceBindingMap(s.db, normalizeAppKey(appKey))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -562,12 +570,13 @@ func (s *service) applyManagedPageModel(
 	return filtered
 }
 
-func (s *service) ListUnregistered() ([]UnregisteredRecord, error) {
-	return s.buildUnregisteredRecords()
+func (s *service) ListUnregistered(appKey string) ([]UnregisteredRecord, error) {
+	return s.buildUnregisteredRecords(normalizeAppKey(appKey))
 }
 
-func (s *service) Sync() (*SyncResult, error) {
-	items, err := s.buildUnregisteredRecords()
+func (s *service) Sync(appKey string) (*SyncResult, error) {
+	normalizedAppKey := normalizeAppKey(appKey)
+	items, err := s.buildUnregisteredRecords(normalizedAppKey)
 	if err != nil {
 		return nil, err
 	}
@@ -576,6 +585,7 @@ func (s *service) Sync() (*SyncResult, error) {
 	}
 	for _, item := range items {
 		req := &SaveRequest{
+			AppKey:            normalizedAppKey,
 			PageKey:           item.PageKey,
 			Name:              item.Name,
 			RouteName:         item.RouteName,
@@ -604,16 +614,17 @@ func (s *service) Sync() (*SyncResult, error) {
 	return result, nil
 }
 
-func (s *service) PreviewBreadcrumb(id uuid.UUID) ([]BreadcrumbPreviewItem, error) {
-	page, err := s.findPageByID(id)
+func (s *service) PreviewBreadcrumb(id uuid.UUID, appKey string) ([]BreadcrumbPreviewItem, error) {
+	normalizedAppKey := normalizeAppKey(appKey)
+	page, err := s.findPageByID(id, normalizedAppKey)
 	if err != nil {
 		return nil, err
 	}
-	menuMap, err := s.loadMenuMap()
+	menuMap, err := s.loadMenuMap(normalizedAppKey)
 	if err != nil {
 		return nil, err
 	}
-	pageMap, err := s.loadPageMap()
+	pageMap, err := s.loadPageMap(normalizedAppKey)
 	if err != nil {
 		return nil, err
 	}
@@ -632,9 +643,10 @@ func (s *service) PreviewBreadcrumb(id uuid.UUID) ([]BreadcrumbPreviewItem, erro
 	return result, nil
 }
 
-func (s *service) Get(id uuid.UUID) (*Record, error) {
+func (s *service) Get(id uuid.UUID, appKey string) (*Record, error) {
 	var item models.UIPage
-	if err := s.db.Where("id = ?", id).First(&item).Error; err != nil {
+	normalizedAppKey := normalizeAppKey(appKey)
+	if err := s.db.Where("id = ? AND app_key = ?", id, normalizedAppKey).First(&item).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrPageNotFound
 		}
@@ -662,17 +674,18 @@ func (s *service) Create(req *SaveRequest) (*Record, error) {
 		if err := tx.Create(item).Error; err != nil {
 			return err
 		}
-		return syncPageSpaceBindings(tx, item.ID, req.SpaceKey, req.SpaceKeys, item.ParentMenuID, item.ParentPageKey)
+		return syncPageSpaceBindings(tx, item.AppKey, item.ID, req.SpaceKey, req.SpaceKeys, item.ParentMenuID, item.ParentPageKey)
 	}); err != nil {
 		return nil, err
 	}
 	InvalidateRuntimeCache()
-	return s.Get(item.ID)
+	return s.Get(item.ID, item.AppKey)
 }
 
 func (s *service) Update(id uuid.UUID, req *SaveRequest) (*Record, error) {
 	var existing models.UIPage
-	if err := s.db.Where("id = ?", id).First(&existing).Error; err != nil {
+	normalizedAppKey := normalizeAppKey(req.AppKey)
+	if err := s.db.Where("id = ? AND app_key = ?", id, normalizedAppKey).First(&existing).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrPageNotFound
 		}
@@ -686,12 +699,12 @@ func (s *service) Update(id uuid.UUID, req *SaveRequest) (*Record, error) {
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		if existing.PageKey != item.PageKey {
 			if err := tx.Model(&models.UIPage{}).
-				Where("parent_page_key = ?", existing.PageKey).
+				Where("app_key = ? AND parent_page_key = ?", existing.AppKey, existing.PageKey).
 				Update("parent_page_key", item.PageKey).Error; err != nil {
 				return err
 			}
 			if err := tx.Model(&models.UIPage{}).
-				Where("display_group_key = ?", existing.PageKey).
+				Where("app_key = ? AND display_group_key = ?", existing.AppKey, existing.PageKey).
 				Update("display_group_key", item.PageKey).Error; err != nil {
 				return err
 			}
@@ -699,17 +712,18 @@ func (s *service) Update(id uuid.UUID, req *SaveRequest) (*Record, error) {
 		if err := tx.Model(&existing).Updates(pageToUpdateMap(item)).Error; err != nil {
 			return err
 		}
-		return syncPageSpaceBindings(tx, existing.ID, req.SpaceKey, req.SpaceKeys, item.ParentMenuID, item.ParentPageKey)
+		return syncPageSpaceBindings(tx, existing.AppKey, existing.ID, req.SpaceKey, req.SpaceKeys, item.ParentMenuID, item.ParentPageKey)
 	}); err != nil {
 		return nil, err
 	}
 	InvalidateRuntimeCache()
-	return s.Get(id)
+	return s.Get(id, existing.AppKey)
 }
 
-func (s *service) Delete(id uuid.UUID) error {
+func (s *service) Delete(id uuid.UUID, appKey string) error {
 	var existing models.UIPage
-	if err := s.db.Where("id = ?", id).First(&existing).Error; err != nil {
+	normalizedAppKey := normalizeAppKey(appKey)
+	if err := s.db.Where("id = ? AND app_key = ?", id, normalizedAppKey).First(&existing).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrPageNotFound
 		}
@@ -717,7 +731,7 @@ func (s *service) Delete(id uuid.UUID) error {
 	}
 	var childCount int64
 	if err := s.db.Model(&models.UIPage{}).
-		Where("parent_page_key = ? OR display_group_key = ?", existing.PageKey, existing.PageKey).
+		Where("app_key = ? AND (parent_page_key = ? OR display_group_key = ?)", existing.AppKey, existing.PageKey, existing.PageKey).
 		Count(&childCount).Error; err != nil {
 		return err
 	}
@@ -725,10 +739,10 @@ func (s *service) Delete(id uuid.UUID) error {
 		return ErrPageHasChildren
 	}
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("page_id = ?", id).Delete(&models.PageSpaceBinding{}).Error; err != nil {
+		if err := tx.Where("app_key = ? AND page_id = ?", existing.AppKey, id).Delete(&models.PageSpaceBinding{}).Error; err != nil {
 			return err
 		}
-		result := tx.Delete(&models.UIPage{}, "id = ?", id)
+		result := tx.Delete(&models.UIPage{}, "id = ? AND app_key = ?", id, existing.AppKey)
 		if result.Error != nil {
 			return result.Error
 		}
@@ -743,18 +757,14 @@ func (s *service) Delete(id uuid.UUID) error {
 	return nil
 }
 
-func (s *service) ListMenuOptions(spaceKey string) ([]MenuOption, error) {
-	var menus []models.Menu
-	query := s.db.Order("sort_order ASC, created_at ASC")
-	if normalized := normalizeSpaceKey(spaceKey); normalized != "" {
-		query = query.Where("COALESCE(NULLIF(space_key, ''), ?) = ?", spaceutil.DefaultMenuSpaceKey, normalized)
-	}
-	if err := query.Find(&menus).Error; err != nil {
+func (s *service) ListMenuOptions(appKey, spaceKey string) ([]MenuOption, error) {
+	menus, err := s.menuRepo.ListByAppAndSpace(normalizeAppKey(appKey), normalizeSpaceKey(spaceKey))
+	if err != nil {
 		return nil, err
 	}
 
-	childrenMap := make(map[string][]models.Menu)
-	roots := make([]models.Menu, 0)
+	childrenMap := make(map[string][]user.Menu)
+	roots := make([]user.Menu, 0)
 	for _, menu := range menus {
 		if resolveMenuKind(menu) == models.MenuKindExternal {
 			continue
@@ -766,8 +776,8 @@ func (s *service) ListMenuOptions(spaceKey string) ([]MenuOption, error) {
 		childrenMap[menu.ParentID.String()] = append(childrenMap[menu.ParentID.String()], menu)
 	}
 
-	var build func(item models.Menu) MenuOption
-	build = func(item models.Menu) MenuOption {
+	var build func(item user.Menu) MenuOption
+	build = func(item user.Menu) MenuOption {
 		children := childrenMap[item.ID.String()]
 		node := MenuOption{
 			ID:    item.ID.String(),
@@ -795,6 +805,7 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 	if req == nil {
 		return nil, fmt.Errorf("%w: 请求体不能为空", ErrPageValidation)
 	}
+	appKey := normalizeAppKey(req.AppKey)
 
 	pageType := normalizePageType(req.PageType)
 	if pageType == "" {
@@ -908,17 +919,20 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 		activeMenuPath = ""
 	}
 	if parentMenuID != nil {
-		var menuCount int64
-		if err := s.db.Model(&models.Menu{}).Where("id = ?", *parentMenuID).Count(&menuCount).Error; err != nil {
+		parentMenu, err := s.menuRepo.GetByID(*parentMenuID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, ErrParentMenuInvalid
+			}
 			return nil, err
 		}
-		if menuCount == 0 {
+		if normalizeAppKey(parentMenu.AppKey) != appKey {
 			return nil, ErrParentMenuInvalid
 		}
 	}
 
 	if parentPageKey != "" {
-		parentPage, err := s.findPageByKey(parentPageKey)
+		parentPage, err := s.findPageByKey(parentPageKey, appKey)
 		if err != nil {
 			return nil, err
 		}
@@ -932,13 +946,13 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 			return nil, fmt.Errorf("%w: 上级页面不能指向自身", ErrPageValidation)
 		}
 		if existing != nil {
-			if err := s.ensureNoPageCycle(pageKey, parentPage.PageKey); err != nil {
+			if err := s.ensureNoPageCycle(pageKey, parentPage.PageKey, appKey); err != nil {
 				return nil, err
 			}
 		}
 	}
 	if displayGroupKey != "" {
-		displayGroup, err := s.findDisplayGroupByKey(displayGroupKey)
+		displayGroup, err := s.findDisplayGroupByKey(displayGroupKey, appKey)
 		if err != nil {
 			return nil, err
 		}
@@ -951,10 +965,10 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 	if existing != nil {
 		checkID = existing.ID
 	}
-	if err := s.ensureUnique("page_key", pageKey, checkID); err != nil {
+	if err := s.ensureUnique("page_key", pageKey, checkID, appKey); err != nil {
 		return nil, err
 	}
-	if err := s.ensureUnique("route_name", routeName, checkID); err != nil {
+	if err := s.ensureUnique("route_name", routeName, checkID, appKey); err != nil {
 		return nil, err
 	}
 
@@ -964,6 +978,7 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 	}
 
 	item := &models.UIPage{
+		AppKey:            appKey,
 		PageKey:           pageKey,
 		Name:              name,
 		RouteName:         routeName,
@@ -998,8 +1013,8 @@ func (s *service) generateDisplayGroupPageKey() string {
 	return "display-group." + uuid.NewString()
 }
 
-func (s *service) ensureUnique(field, value string, excludeID uuid.UUID) error {
-	query := s.db.Model(&models.UIPage{}).Where(field+" = ?", value)
+func (s *service) ensureUnique(field, value string, excludeID uuid.UUID, appKey string) error {
+	query := s.db.Model(&models.UIPage{}).Where("app_key = ?", normalizeAppKey(appKey)).Where(field+" = ?", value)
 	if excludeID != uuid.Nil {
 		query = query.Where("id <> ?", excludeID)
 	}
@@ -1024,6 +1039,7 @@ func (s *service) decorateRecords(items []models.UIPage) ([]Record, error) {
 	if len(items) == 0 {
 		return []Record{}, nil
 	}
+	appKey := normalizeAppKey(items[0].AppKey)
 
 	menuIDs := make([]uuid.UUID, 0, len(items))
 	parentPageKeys := make([]string, 0, len(items))
@@ -1055,8 +1071,8 @@ func (s *service) decorateRecords(items []models.UIPage) ([]Record, error) {
 
 	menuNameMap := map[uuid.UUID]string{}
 	if len(menuIDs) > 0 {
-		var menus []models.Menu
-		if err := s.db.Select("id", "name").Where("id IN ?", menuIDs).Find(&menus).Error; err != nil {
+		menus, err := s.menuRepo.GetByIDs(menuIDs)
+		if err != nil {
 			return nil, err
 		}
 		for _, menu := range menus {
@@ -1067,7 +1083,7 @@ func (s *service) decorateRecords(items []models.UIPage) ([]Record, error) {
 	parentPageNameMap := map[string]string{}
 	if len(parentPageKeys) > 0 {
 		var pages []models.UIPage
-		if err := s.db.Select("page_key", "name").Where("page_key IN ?", parentPageKeys).Find(&pages).Error; err != nil {
+		if err := s.db.Select("page_key", "name").Where("app_key = ? AND page_key IN ?", appKey, parentPageKeys).Find(&pages).Error; err != nil {
 			return nil, err
 		}
 		for _, page := range pages {
@@ -1078,7 +1094,7 @@ func (s *service) decorateRecords(items []models.UIPage) ([]Record, error) {
 	displayGroupNameMap := map[string]string{}
 	if len(displayGroupKeys) > 0 {
 		var groups []models.UIPage
-		if err := s.db.Select("page_key", "name").Where("page_key IN ?", displayGroupKeys).Find(&groups).Error; err != nil {
+		if err := s.db.Select("page_key", "name").Where("app_key = ? AND page_key IN ?", appKey, displayGroupKeys).Find(&groups).Error; err != nil {
 			return nil, err
 		}
 		for _, group := range groups {
@@ -1106,12 +1122,12 @@ func (s *service) decorateRecords(items []models.UIPage) ([]Record, error) {
 
 func pageToUpdateMap(item *models.UIPage) map[string]interface{} {
 	return map[string]interface{}{
+		"app_key":            item.AppKey,
 		"page_key":           item.PageKey,
 		"name":               item.Name,
 		"route_name":         item.RouteName,
 		"route_path":         item.RoutePath,
 		"component":          item.Component,
-		"space_key":          item.SpaceKey,
 		"page_type":          item.PageType,
 		"source":             item.Source,
 		"module_key":         item.ModuleKey,
@@ -1135,15 +1151,15 @@ func (s *service) hydrateManagedRecord(record *Record) error {
 	if record == nil {
 		return nil
 	}
-	menuMap, err := s.loadMenuMap()
+	menuMap, err := s.loadMenuMap(record.AppKey)
 	if err != nil {
 		return err
 	}
-	pageMap, err := s.loadPageMap()
+	pageMap, err := s.loadPageMap(record.AppKey)
 	if err != nil {
 		return err
 	}
-	bindingMap, err := loadPageSpaceBindingMap(s.db)
+	bindingMap, err := loadPageSpaceBindingMap(s.db, record.AppKey)
 	if err != nil {
 		return err
 	}
@@ -1160,6 +1176,7 @@ func (s *service) hydrateManagedRecord(record *Record) error {
 
 func syncPageSpaceBindings(
 	tx *gorm.DB,
+	appKey string,
 	pageID uuid.UUID,
 	spaceKey string,
 	spaceKeys []string,
@@ -1169,7 +1186,7 @@ func syncPageSpaceBindings(
 	if tx == nil || pageID == uuid.Nil {
 		return nil
 	}
-	if err := tx.Where("page_id = ?", pageID).Delete(&models.PageSpaceBinding{}).Error; err != nil {
+	if err := tx.Where("app_key = ? AND page_id = ?", normalizeAppKey(appKey), pageID).Delete(&models.PageSpaceBinding{}).Error; err != nil {
 		return err
 	}
 	bindingKeys := normalizeStandalonePageBindingKeys(spaceKey, spaceKeys, parentMenuID, parentPageKey)
@@ -1180,6 +1197,7 @@ func syncPageSpaceBindings(
 	for _, key := range bindingKeys {
 		rows = append(rows, models.PageSpaceBinding{
 			ID:       uuid.New(),
+			AppKey:   normalizeAppKey(appKey),
 			PageID:   pageID,
 			SpaceKey: key,
 		})
@@ -1187,9 +1205,9 @@ func syncPageSpaceBindings(
 	return tx.Create(&rows).Error
 }
 
-func (s *service) findPageByID(id uuid.UUID) (*models.UIPage, error) {
+func (s *service) findPageByID(id uuid.UUID, appKey string) (*models.UIPage, error) {
 	var item models.UIPage
-	if err := s.db.Where("id = ?", id).First(&item).Error; err != nil {
+	if err := s.db.Where("id = ? AND app_key = ?", id, normalizeAppKey(appKey)).First(&item).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrPageNotFound
 		}
@@ -1199,9 +1217,9 @@ func (s *service) findPageByID(id uuid.UUID) (*models.UIPage, error) {
 	return &normalized, nil
 }
 
-func (s *service) loadPageMap() (map[string]models.UIPage, error) {
+func (s *service) loadPageMap(appKey string) (map[string]models.UIPage, error) {
 	var items []models.UIPage
-	if err := s.db.Find(&items).Error; err != nil {
+	if err := s.db.Where("app_key = ?", normalizeAppKey(appKey)).Find(&items).Error; err != nil {
 		return nil, err
 	}
 	result := make(map[string]models.UIPage, len(items))
@@ -1212,9 +1230,9 @@ func (s *service) loadPageMap() (map[string]models.UIPage, error) {
 	return result, nil
 }
 
-func (s *service) loadMenuMap() (map[uuid.UUID]runtimeMenuNode, error) {
-	var menus []models.Menu
-	if err := s.db.Order("sort_order ASC, created_at ASC").Find(&menus).Error; err != nil {
+func (s *service) loadMenuMap(appKey string) (map[uuid.UUID]runtimeMenuNode, error) {
+	menus, err := s.menuRepo.ListByAppAndSpace(normalizeAppKey(appKey), "")
+	if err != nil {
 		return nil, err
 	}
 	menuMap := make(map[uuid.UUID]models.Menu, len(menus))
@@ -1391,14 +1409,14 @@ func resolveMenuBreadcrumbChain(activePath string, menuMap map[uuid.UUID]runtime
 	return chain
 }
 
-func (s *service) buildUnregisteredRecords() ([]UnregisteredRecord, error) {
+func (s *service) buildUnregisteredRecords(appKey string) ([]UnregisteredRecord, error) {
 	viewPages, err := enumerateManagedViewPages()
 	if err != nil {
 		return nil, err
 	}
 
 	var existingPages []models.UIPage
-	if err := s.db.Find(&existingPages).Error; err != nil {
+	if err := s.db.Where("app_key = ?", normalizeAppKey(appKey)).Find(&existingPages).Error; err != nil {
 		return nil, err
 	}
 	pageComponentSet := make(map[string]struct{}, len(existingPages))
@@ -1410,7 +1428,7 @@ func (s *service) buildUnregisteredRecords() ([]UnregisteredRecord, error) {
 		routeNameSet[strings.TrimSpace(item.RouteName)] = struct{}{}
 	}
 
-	menuMap, err := s.loadMenuMap()
+	menuMap, err := s.loadMenuMap(appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -1803,14 +1821,8 @@ func reverseBreadcrumbItems(items []BreadcrumbPreviewItem) {
 	}
 }
 
-func firstNonEmpty(values ...string) string {
-	for _, value := range values {
-		target := strings.TrimSpace(value)
-		if target != "" {
-			return target
-		}
-	}
-	return ""
+func normalizeAppKey(value string) string {
+	return apppkg.NormalizeAppKey(value)
 }
 
 func parseOptionalUUID(raw string) (*uuid.UUID, error) {
@@ -1943,9 +1955,9 @@ func normalizeStandalonePageBindingKeys(value string, values []string, parentMen
 	return uniqueSortedStrings(candidates)
 }
 
-func (s *service) findPageByKey(pageKey string) (*models.UIPage, error) {
+func (s *service) findPageByKey(pageKey string, appKey string) (*models.UIPage, error) {
 	var parentPage models.UIPage
-	err := s.db.Where("page_key = ?", pageKey).First(&parentPage).Error
+	err := s.db.Where("app_key = ? AND page_key = ?", normalizeAppKey(appKey), pageKey).First(&parentPage).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrParentPageInvalid
@@ -1955,8 +1967,8 @@ func (s *service) findPageByKey(pageKey string) (*models.UIPage, error) {
 	return &parentPage, nil
 }
 
-func (s *service) findDisplayGroupByKey(pageKey string) (*models.UIPage, error) {
-	group, err := s.findPageByKey(pageKey)
+func (s *service) findDisplayGroupByKey(pageKey string, appKey string) (*models.UIPage, error) {
+	group, err := s.findPageByKey(pageKey, appKey)
 	if err != nil {
 		if errors.Is(err, ErrParentPageInvalid) {
 			return nil, ErrDisplayGroupInvalid
@@ -1969,7 +1981,7 @@ func (s *service) findDisplayGroupByKey(pageKey string) (*models.UIPage, error) 
 	return group, nil
 }
 
-func (s *service) ensureNoPageCycle(currentPageKey, candidateParentKey string) error {
+func (s *service) ensureNoPageCycle(currentPageKey, candidateParentKey string, appKey string) error {
 	seen := map[string]struct{}{currentPageKey: {}}
 	nextKey := strings.TrimSpace(candidateParentKey)
 	for nextKey != "" {
@@ -1977,7 +1989,7 @@ func (s *service) ensureNoPageCycle(currentPageKey, candidateParentKey string) e
 			return fmt.Errorf("%w: 页面分组形成循环引用", ErrPageValidation)
 		}
 		seen[nextKey] = struct{}{}
-		parent, err := s.findPageByKey(nextKey)
+		parent, err := s.findPageByKey(nextKey, appKey)
 		if err != nil {
 			return err
 		}

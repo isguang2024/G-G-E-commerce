@@ -56,12 +56,14 @@
       <UserPackageDialog
         v-model="packageDialogVisible"
         :user-data="currentUserDataForAction"
+        :app-key="targetAppKey"
         @success="refreshData"
       />
 
       <UserMenuSelectorDialog
         v-model="menuDialogVisible"
         :user-data="currentUserDataForAction"
+        :app-key="targetAppKey"
         @success="refreshData"
         @open-packages="openCurrentUserPackagesFromMenu"
       />
@@ -91,6 +93,7 @@
   import UserMenuSelectorDialog from './modules/user-menu-selector-dialog.vue'
   import UserPermissionTestDrawer from './modules/user-permission-test-drawer.vue'
   import { ElTag, ElMessageBox, ElImage, ElMessage } from 'element-plus'
+  import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
   import { useUserStore } from '@/store/modules/user'
 
   defineOptions({ name: 'User' })
@@ -99,6 +102,7 @@
 
   type UserListItem = Api.SystemManage.UserListItem
   const userStore = useUserStore()
+  const { targetAppKey } = useManagedAppScope()
   const canViewSystemRemark = computed(() => {
     const roles = (userStore.info?.roles || []) as string[]
     return roles.includes('R_SUPER')
@@ -117,6 +121,7 @@
   // 选中行
   const selectedRows = ref<UserListItem[]>([])
   const summaryMetrics = computed(() => [
+    { label: '当前 App', value: targetAppKey.value },
     { label: '当前页', value: data.value.length || 0 },
     { label: '总用户', value: pagination.total || 0 },
     { label: '已选', value: selectedRows.value.length || 0 }

@@ -1,5 +1,30 @@
 # Change Log
 
+## 2026-04-05 shadcn 技能迁移到全局目录
+
+### 本次改动
+- 将仓库级 `shadcn` 技能从 [`.agents/skills/shadcn/`](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/shadcn) 迁移到全局目录 [C:/Users/Administrator/.codex/skills/shadcn](C:/Users/Administrator/.codex/skills/shadcn)，后续其他仓库也可以直接复用同一套技能。
+- 当前仓库内已删除项目级 `shadcn` 技能目录，避免项目级和全局级同时存在时出现重复发现或版本漂移。
+- 迁移过程中曾因为并行执行“复制”和“删除”导致源目录先被移除，随后已改为通过 `git archive` 从仓库 `HEAD` 导出完整目录重建全局技能，确保二进制资源和文本文件都完整保留。
+- 本轮未重启 Codex；全局技能在新会话或重启后生效。
+
+### 下次方向
+- 如后续仍需维护这套全局 `shadcn` 技能，建议以后直接在全局目录更新，避免再次在单仓库内保留副本。
+- 若未来需要项目定制版 `shadcn` 规则，再单独在仓库内新增覆盖层，而不是回到“全局一份 + 项目一份同名副本”的结构。
+
+## 2026-04-05 项目级接入 superpowers 技能集
+
+### 本次改动
+- 将 `obra/superpowers` 的技能快照以项目级方式接入到 [`.agents/skills/superpowers/`](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers)，并一并保留上游 `LICENSE` 与 `agents/code-reviewer.md`，让当前仓库可以直接发现并使用这套流程技能。
+- 更新 [AGENTS.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/AGENTS.md)，明确 `superpowers` 已接入当前仓库，且若技能流程与仓库级约束冲突，以仓库根文档为准，避免工作流反向覆盖当前前端主线规范。
+- 新增 [docs/superpowers-integration.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/superpowers-integration.md) 与 [UPSTREAM.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/UPSTREAM.md)，记录上游来源、当前快照 commit、使用方式和更新办法。
+- 同步移除本机全局 [AGENTS.md](C:/Users/Administrator/.codex/AGENTS.md) 中“最高智能、高速度、最少 token”约束，避免后续会话继续被该全局指令绑定。
+- 本轮未执行业务代码构建；技能发现需要新开 Codex 会话或重启应用后生效。
+
+### 下次方向
+- 如果后续确定 `superpowers` 的默认强流程过重，可以继续在当前仓库内做二次裁剪，例如只保留 debugging、verification、review、parallel-agents 等高收益技能。
+- 若要跟进上游版本，直接用新的 `skills/` 快照覆盖当前目录，并同步更新 `UPSTREAM.md` 的 commit hash。
+
 ## 2026-04-03 Vue 消息发送页空数组兜底修复
 
 ### 本次改动
@@ -737,6 +762,20 @@
 
 ## 2026-04-02 frontend-fluentV2 增补下次方向记录文档
 
+## 2026-04-05 后台 App 维度一期接入
+
+### 本次改动
+- 后端新增 `App`、`AppHostBinding`、`AppContextMiddleware`，把导航运行时从“按菜单空间主导”调整为“按 App 解析、空间辅助”的上下文模型，默认内置 `platform-admin` 平台管理后台。
+- 为 `menu_spaces`、`menus`、`ui_pages`、`page_space_bindings`、`feature_packages`、`menu_backups`、`api_endpoints` 等资源补齐 `app_key`，并让运行时导航、菜单、页面、功能包、接口注册查询全面支持 `app_key` 过滤与回填兼容。
+- 前端新增“应用管理”页 `frontend/src/views/system/app/index.vue`，同时把菜单管理、页面管理、功能包管理、API 注册页全部切到当前 `App` 视角，默认锁定 `platform-admin`，菜单空间退居为 App 下的高级配置入口。
+- `API 管理` 页补齐 `app_scope/app_key` 的表单保存、同步、未注册扫描、失效清理和概览统计透传；功能包、页面、菜单相关弹窗和列表统一按当前 `app_key` 加载候选资源，避免跨 App 混用。
+- 继续把 `访问链路测试`、`团队管理`、`团队角色与权限`、`角色管理`、`用户管理` 相关弹窗切到当前 `app_key` 视角：页面候选、菜单树、功能包候选、团队边界与团队角色边界接口都开始显式透传 `app_key`，避免同 Host 下切换应用时回落到默认 App。
+- 补齐 `frontend/src/api/system-manage.ts` 与 `frontend/src/api/team.ts` 中角色、用户、团队、团队角色的菜单/功能包/边界 helper，使这些请求在 GET/PUT 场景下都能稳定把 `app_key` 带给后端 `AppContextMiddleware`。
+- 已完成验证：`pnpm --dir frontend build` 通过；`go test ./...` 已在 `backend/` 模块目录执行并通过。
+
+### 下次方向
+- 第二期优先把“菜单定义”和“空间布局”进一步解耦，避免多空间场景下继续依赖单表 `menus + space_key` 承担全部语义。
+- 继续把角色、团队、用户的功能包与菜单裁剪页显式补出 App 维度筛选，并考虑把菜单空间页完全降级为应用管理内的次级配置。
 ### 本次改动
 - 新增 `frontend-fluentV2/docs/下次方向记录.md`，专门承接当前迁移线尚未完成的后续方向，避免未来继续推进时只依赖对话上下文。
 - 在 `AGENTS.md` 中补充了维护规则：该文档存在时持续更新，全部完成后直接删除，不长期保留空文件。
@@ -857,3 +896,39 @@
 ### 下次方向
 - 下一轮优先继续细化首页、侧栏、卡片和标签页的颜色分层，重点看实际页面的层级感和信息密度是否还偏“白”。
 - 如果需要进一步贴近 Fluent 2，可以再补一轮状态色、空状态和表格斑马纹的统一规范，但不建议再引入第二套 UI 体系。
+
+## 2026-04-05 后台 App 维度后端主链收口
+
+### 本次改动
+- 抽出 `backend/internal/pkg/appctx` 统一处理 `app_key` 归一化与请求读取，打断 `app / space / permissionrefresh / teamboundary` 之间的低层循环依赖，并让中间件、授权、作用域工具共用同一套 App 上下文入口。
+- 将平台用户、平台角色、团队边界三条快照服务改为 App-aware，快照缓存、菜单展开、功能包过滤、隐藏菜单过滤和快照落库都按 `app_key` 分桶；同时保留变参兼容入口，避免旧调用一次性全部重写。
+- 授权主链、权限刷新、页面运行时缓存和用户治理链路已经接入当前 App，上下文会沿 `Host -> App -> Space` 解析结果继续向下传，用户菜单树、权限诊断和运行时页面可见性都会限定到当前 App。
+- 数据库自动迁移与 `backend/cmd/migrate` 都补了快照表 `app_key` 回填和复合主键修正，已重新通过 `go test ./...` 与 `pnpm --dir frontend build` 验证。
+
+### 下次方向
+- 继续把角色、团队、功能包管理页剩余仍走“默认 App 兼容调用”的保存链路改成显式 `app_key`，让前后端的保存与刷新语义彻底一致。
+- 继续收口 `Menu Space` 的日常入口，只保留在 App 管理里的高级配置，并开始评估“菜单定义”和“空间布局”拆模，避免长期依赖 `menus + space_key` 混合承载两层职责。
+
+## 2026-04-05 App 维度前后端继续收口与空间布局切换
+
+### 本次改动
+- 前端新增统一 `app-context` 运行时状态后，继续把 `system/app`、`system/role`、`system/user`、`system/team-roles-permissions`、`team/team`、`system/fast-enter` 等管理页切到 `managedApp` 主线；路由缺少 `app_key` 时优先由统一 hook 回填，不再在页内硬编码默认 `platform-admin`。
+- 角色、用户、团队、团队角色、功能包相关的主要授权弹窗都清掉了 `props.appKey || 'platform-admin'` 兜底，缺少 App 上下文时会直接阻断并提示；同时 `frontend/src/api/team.ts` 与 `frontend/src/types/api/api.d.ts` 也补齐了显式 `app_key` 透传所需的 helper 和类型。
+- 后端继续把 App 作用域菜单读链收口到新模型：`appscope`、平台用户/角色快照、团队边界服务、App 统计与运行时导航版本戳已改读 `menu_definitions` / `space_menu_placements`，避免授权快照和运行时版本继续依赖旧 `menus` 主表。
+- `space/service.go` 中空间菜单数量统计与“从默认空间初始化”已切到 `space_menu_placements`，空间初始化只复制布局记录，不再按空间复制菜单定义和功能包菜单关联；已重新通过 `go test ./...` 与 `pnpm --dir frontend build` 验证。
+
+### 下次方向
+- 继续把 `backend/internal/modules/system/menu`、`backend/internal/modules/system/page` 等仍直接写旧 `menus` 的服务切到“双表语义”或补齐双写，否则后续菜单编辑后的定义/布局数据仍可能出现主链和运行时不同步。
+- 继续清理 `ui_pages.space_key` 的残余读写路径，并把页面候选、菜单候选和空间高级配置进一步统一到 `App -> Space -> Definition/Placement` 的稳定模型上。
+
+## 2026-04-05 App 维度菜单定义页与空间布局页收尾
+
+### 本次改动
+- 修正 `backend/internal/modules/system/navigation/service_test.go` 的 `MenuService` 测试桩签名，并在 `backend/internal/modules/system/menu/service.go` 补上空间布局更新的 upsert 逻辑，保证菜单定义更新时，当前空间缺少 placement 记录也会直接落库，不再静默失败。
+- 前端将 `system/menu` 明确收口为“菜单定义管理”主语义，新增定义页与布局页的文案区分、上下文切换入口，以及菜单备份按 App 过滤的逻辑；`menu-dialog` 默认不再暴露空间字段，只有从布局链路进入时才显示空间编辑。
+- `system/menu-space` 进一步收口为“空间布局高级配置”，从这里进入菜单页时会显式带上 `app_key + spaceKey + layout=1`，页面管理页的提示语也同步改为“菜单定义/空间布局”双入口口径。
+- 已重新通过 `go test ./...` 与 `pnpm --dir frontend build` 验证。
+
+### 下次方向
+- 继续把菜单页里仍偏“单页双职责”的部分拆干净，例如把空间级备份/恢复入口完全沉到 `system/menu-space`，让 `system/menu` 只保留定义管理和 App 级备份。
+- 继续推进页面管理相关弹窗，把 `parent_menu_id`、空间暴露和 breadcrumb 预览全部显式解释成“菜单定义 + 空间布局”的语义，进一步减少旧 `menus/ui_pages.space_key` 兼容字段对前端表单的影响。

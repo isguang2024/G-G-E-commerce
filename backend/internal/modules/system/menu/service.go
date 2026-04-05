@@ -13,6 +13,7 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
+	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	page "github.com/gg-ecommerce/backend/internal/modules/system/page"
 	spaceutil "github.com/gg-ecommerce/backend/internal/modules/system/space"
@@ -32,7 +33,7 @@ var (
 )
 
 type MenuService interface {
-	GetTree(all bool, allowedMenuIDs []uuid.UUID, spaceKey string) ([]*user.Menu, error)
+	GetTree(all bool, allowedMenuIDs []uuid.UUID, appKey, spaceKey string) ([]*user.Menu, error)
 	Create(req *dto.MenuCreateRequest) (*user.Menu, error)
 	Update(id uuid.UUID, req *dto.MenuUpdateRequest) error
 	DeletePreview(id uuid.UUID, mode string, targetParentID *uuid.UUID) (*MenuDeletePreview, error)
@@ -42,8 +43,8 @@ type MenuService interface {
 	UpdateGroup(id uuid.UUID, req *dto.MenuManageGroupUpdateRequest) error
 	DeleteGroup(id uuid.UUID) error
 	// 菜单备份相关方法
-	CreateBackup(name, description, scopeType, spaceKey string, createdBy *uuid.UUID) error
-	ListBackups(spaceKey string) ([]*user.MenuBackup, error)
+	CreateBackup(name, description, scopeType, appKey, spaceKey string, createdBy *uuid.UUID) error
+	ListBackups(appKey, spaceKey string) ([]*user.MenuBackup, error)
 	DeleteBackup(id uuid.UUID) error
 	RestoreBackup(id uuid.UUID) error
 }
@@ -67,16 +68,12 @@ func NewMenuService(db *gorm.DB, menuRepo user.MenuRepository, refresher permiss
 	return &menuService{db: db, menuRepo: menuRepo, refresher: refresher, logger: logger}
 }
 
-func (s *menuService) GetTree(all bool, allowedMenuIDs []uuid.UUID, spaceKey string) ([]*user.Menu, error) {
-	flat, err := s.menuRepo.ListAll()
+func (s *menuService) GetTree(all bool, allowedMenuIDs []uuid.UUID, appKey, spaceKey string) ([]*user.Menu, error) {
+	flat, err := s.menuRepo.ListByAppAndSpace(normalizeMenuAppKey(appKey), normalizeMenuSpaceKey(spaceKey))
 	if err != nil {
 		return nil, err
 	}
 	normalizeMenuListKinds(flat)
-	if strings.TrimSpace(spaceKey) != "" {
-		normalized := spaceutil.NormalizeSpaceKey(spaceKey)
-		flat = filterMenusBySpace(flat, normalized)
-	}
 	tree := user.BuildTree(flat, nil)
 	if all {
 		return tree, nil
@@ -143,6 +140,21 @@ func filterMenusBySpace(flat []user.Menu, spaceKey string) []user.Menu {
 	return result
 }
 
+func filterMenusByApp(flat []user.Menu, appKey string) []user.Menu {
+	target := normalizeMenuAppKey(appKey)
+	if target == "" {
+		return flat
+	}
+	result := make([]user.Menu, 0, len(flat))
+	for _, menu := range flat {
+		if normalizeMenuAppKey(menu.AppKey) != target {
+			continue
+		}
+		result = append(result, menu)
+	}
+	return result
+}
+
 func (s *menuService) visibleMenuIDs(flat []user.Menu, allowed []uuid.UUID) map[uuid.UUID]struct{} {
 	idToParent := make(map[uuid.UUID]*uuid.UUID)
 	for i := range flat {
@@ -182,6 +194,9 @@ func (s *menuService) filterTreeByMenuIDs(nodes []*user.Menu, visible map[uuid.U
 }
 
 func (s *menuService) Create(req *dto.MenuCreateRequest) (*user.Menu, error) {
+	if req == nil {
+		return nil, ErrMenuNotFound
+	}
 	var parentID *uuid.UUID
 	if req.ParentID != nil && *req.ParentID != "" {
 		pid, err := uuid.Parse(*req.ParentID)
@@ -195,21 +210,57 @@ func (s *menuService) Create(req *dto.MenuCreateRequest) (*user.Menu, error) {
 		return nil, err
 	}
 	kind, component, meta := sanitizeMenuPayloadByKind(req.Kind, req.Component, req.Meta)
-	m := &user.Menu{
-		ParentID:      parentID,
-		ManageGroupID: manageGroupID,
-		SpaceKey:      normalizeMenuSpaceKey(req.SpaceKey),
-		Kind:          kind,
-		Path:          req.Path,
-		Name:          req.Name,
-		Component:     component,
-		Title:         req.Title,
-		Icon:          req.Icon,
-		SortOrder:     req.SortOrder,
-		Meta:          meta,
-		Hidden:        req.Hidden,
+	appKey := normalizeMenuAppKey(req.AppKey)
+	spaceKey := strings.TrimSpace(req.SpaceKey)
+	menuKey := strings.TrimSpace(req.Name)
+	if menuKey == "" {
+		return nil, fmt.Errorf("menu_key is required")
 	}
-	if err := s.menuRepo.Create(m); err != nil {
+	menuID := uuid.New()
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		var duplicateCount int64
+		if err := tx.Model(&models.MenuDefinition{}).
+			Where("app_key = ? AND menu_key = ? AND deleted_at IS NULL", appKey, menuKey).
+			Count(&duplicateCount).Error; err != nil {
+			return err
+		}
+		if duplicateCount > 0 {
+			return fmt.Errorf("menu_key already exists")
+		}
+		definition := &models.MenuDefinition{
+			ID:           menuID,
+			AppKey:       appKey,
+			MenuKey:      menuKey,
+			Kind:         kind,
+			Path:         req.Path,
+			Name:         req.Name,
+			Component:    component,
+			DefaultTitle: req.Title,
+			DefaultIcon:  req.Icon,
+			Status:       "normal",
+			Meta:         models.MetaJSON(meta),
+		}
+		if err := tx.Create(definition).Error; err != nil {
+			return err
+		}
+		if strings.TrimSpace(spaceKey) == "" {
+			return nil
+		}
+		parentMenuKey, err := s.resolveParentMenuKey(tx, appKey, spaceKey, parentID)
+		if err != nil {
+			return err
+		}
+		placement := &models.SpaceMenuPlacement{
+			AppKey:        appKey,
+			SpaceKey:      normalizeMenuSpaceKey(spaceKey),
+			MenuKey:       menuKey,
+			ParentMenuKey: parentMenuKey,
+			ManageGroupID: manageGroupID,
+			SortOrder:     req.SortOrder,
+			Hidden:        req.Hidden,
+		}
+		return tx.Create(placement).Error
+	}); err != nil {
 		return nil, err
 	}
 	page.InvalidateRuntimeCache()
@@ -217,59 +268,129 @@ func (s *menuService) Create(req *dto.MenuCreateRequest) (*user.Menu, error) {
 	if err := s.refreshAllMenuSnapshots(); err != nil {
 		return nil, err
 	}
-	return s.menuRepo.GetByID(m.ID)
+	return s.menuRepo.GetByID(menuID)
 }
 
 func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
-	m, err := s.menuRepo.GetByID(id)
+	if req == nil {
+		return ErrMenuNotFound
+	}
+	definition, err := s.loadMenuDefinitionByID(id, normalizeMenuAppKey(req.AppKey))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrMenuNotFound
 		}
 		return err
 	}
-	shouldUpdateParent := false
-	if req.ParentID != nil {
-		shouldUpdateParent = true
-		if *req.ParentID == "" {
-			m.ParentID = nil
-			s.logger.Info("Menu parent cleared", zap.String("menu_id", id.String()))
-		} else {
-			pid, err := uuid.Parse(*req.ParentID)
-			if err != nil {
-				s.logger.Error("Invalid parent_id", zap.String("parent_id", *req.ParentID), zap.Error(err))
-				return err
-			}
-			if pid == id {
-				return errors.New("不能将上级设为自己")
-			}
-			flat, _ := s.menuRepo.ListAll()
-			if s.isDescendant(flat, id, pid) {
-				return errors.New("不能将上级设为自身子级（会造成循环）")
-			}
-			m.ParentID = &pid
-			s.logger.Info("Menu parent updated", zap.String("menu_id", id.String()), zap.String("parent_id", pid.String()))
-		}
+	if normalizeMenuAppKey(req.AppKey) != normalizeMenuAppKey(definition.AppKey) {
+		return ErrMenuNotFound
 	}
 	manageGroupID, err := parseOptionalUUID(req.ManageGroupID)
 	if err != nil {
 		return err
 	}
-	m.ManageGroupID = manageGroupID
-	m.SpaceKey = normalizeMenuSpaceKey(req.SpaceKey)
 	kind, component, meta := sanitizeMenuPayloadByKind(req.Kind, req.Component, req.Meta)
-	m.Kind = kind
-	m.Path = req.Path
-	m.Name = req.Name
-	m.Component = component
-	m.Title = req.Title
-	m.Icon = req.Icon
-	m.SortOrder = req.SortOrder
-	if req.Meta != nil {
-		m.Meta = meta
+	oldMenuKey := strings.TrimSpace(definition.MenuKey)
+	nextMenuKey := oldMenuKey
+	if strings.TrimSpace(req.Name) != "" {
+		nextMenuKey = strings.TrimSpace(req.Name)
 	}
-	m.Hidden = req.Hidden
-	if err := s.menuRepo.Update(m, shouldUpdateParent); err != nil {
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		if nextMenuKey != oldMenuKey {
+			var duplicateCount int64
+			if err := tx.Model(&models.MenuDefinition{}).
+				Where("app_key = ? AND menu_key = ? AND id <> ? AND deleted_at IS NULL", definition.AppKey, nextMenuKey, definition.ID).
+				Count(&duplicateCount).Error; err != nil {
+				return err
+			}
+			if duplicateCount > 0 {
+				return fmt.Errorf("menu_key already exists")
+			}
+		}
+
+		updates := map[string]interface{}{
+			"menu_key":      nextMenuKey,
+			"kind":          kind,
+			"path":          req.Path,
+			"name":          req.Name,
+			"component":     component,
+			"default_title": req.Title,
+			"default_icon":  req.Icon,
+		}
+		if req.Meta != nil {
+			updates["meta"] = models.MetaJSON(meta)
+		}
+		if err := tx.Model(&models.MenuDefinition{}).
+			Where("id = ? AND app_key = ?", definition.ID, definition.AppKey).
+			Updates(updates).Error; err != nil {
+			return err
+		}
+		if nextMenuKey != oldMenuKey {
+			if err := tx.Model(&models.SpaceMenuPlacement{}).
+				Where("app_key = ? AND menu_key = ?", definition.AppKey, oldMenuKey).
+				Update("menu_key", nextMenuKey).Error; err != nil {
+				return err
+			}
+			if err := tx.Model(&models.SpaceMenuPlacement{}).
+				Where("app_key = ? AND parent_menu_key = ?", definition.AppKey, oldMenuKey).
+				Update("parent_menu_key", nextMenuKey).Error; err != nil {
+				return err
+			}
+		}
+		if req.ManageGroupID != nil {
+			if err := tx.Model(&models.SpaceMenuPlacement{}).
+				Where("app_key = ? AND menu_key = ?", definition.AppKey, nextMenuKey).
+				Update("manage_group_id", manageGroupID).Error; err != nil {
+				return err
+			}
+		}
+		if strings.TrimSpace(req.SpaceKey) == "" {
+			return nil
+		}
+
+		parentID, err := parseOptionalUUID(req.ParentID)
+		if err != nil {
+			return err
+		}
+		if parentID != nil && *parentID == id {
+			return errors.New("不能将上级设为自己")
+		}
+		layoutMenus, err := s.menuRepo.ListByAppAndSpace(definition.AppKey, normalizeMenuSpaceKey(req.SpaceKey))
+		if err != nil {
+			return err
+		}
+		if parentID != nil && s.isDescendant(layoutMenus, id, *parentID) {
+			return errors.New("不能将上级设为自身子级（会造成循环）")
+		}
+		parentMenuKey, err := s.resolveParentMenuKey(tx, definition.AppKey, req.SpaceKey, parentID)
+		if err != nil {
+			return err
+		}
+		placement := &models.SpaceMenuPlacement{
+			AppKey:        definition.AppKey,
+			SpaceKey:      normalizeMenuSpaceKey(req.SpaceKey),
+			MenuKey:       nextMenuKey,
+			ParentMenuKey: parentMenuKey,
+			ManageGroupID: manageGroupID,
+			SortOrder:     req.SortOrder,
+			Hidden:        req.Hidden,
+		}
+		return tx.Unscoped().Clauses(clause.OnConflict{
+			Columns: []clause.Column{
+				{Name: "app_key"},
+				{Name: "space_key"},
+				{Name: "menu_key"},
+			},
+			DoUpdates: clause.Assignments(map[string]interface{}{
+				"parent_menu_key": parentMenuKey,
+				"sort_order":      req.SortOrder,
+				"hidden":          req.Hidden,
+				"manage_group_id": manageGroupID,
+				"updated_at":      time.Now(),
+				"deleted_at":      nil,
+			}),
+		}).Create(placement).Error
+	}); err != nil {
 		return err
 	}
 	page.InvalidateRuntimeCache()
@@ -320,7 +441,7 @@ func (s *menuService) DeleteGroup(id uuid.UUID) error {
 	}
 
 	var count int64
-	if err := s.db.Model(&models.Menu{}).Where("manage_group_id = ?", id).Count(&count).Error; err != nil {
+	if err := s.db.Model(&models.SpaceMenuPlacement{}).Where("manage_group_id = ?", id).Count(&count).Error; err != nil {
 		return err
 	}
 	if count > 0 {
@@ -362,7 +483,7 @@ func (s *menuService) Delete(id uuid.UUID, mode string, targetParentID *uuid.UUI
 		return ErrMenuDeleteModeInvalid
 	}
 
-	flatMenus, err := s.menuRepo.ListAll()
+	flatMenus, err := s.menuRepo.ListByAppAndSpace(targetMenu.AppKey, "")
 	if err != nil {
 		return err
 	}
@@ -381,6 +502,27 @@ func (s *menuService) Delete(id uuid.UUID, mode string, targetParentID *uuid.UUI
 	affectedIDs := make([]uuid.UUID, 0, len(affectedMenus))
 	for _, item := range affectedMenus {
 		affectedIDs = append(affectedIDs, item.ID)
+	}
+	menuKeyMap, err := s.loadMenuKeyMapByIDs(targetMenu.AppKey, affectedIDs)
+	if err != nil {
+		return err
+	}
+	affectedMenuKeys := make([]string, 0, len(menuKeyMap))
+	for _, menuID := range affectedIDs {
+		if menuKey := strings.TrimSpace(menuKeyMap[menuID]); menuKey != "" {
+			affectedMenuKeys = append(affectedMenuKeys, menuKey)
+		}
+	}
+	targetParentMenuKey := ""
+	if targetParentID != nil {
+		targetParent, parentErr := s.loadMenuDefinitionByID(*targetParentID, targetMenu.AppKey)
+		if parentErr != nil {
+			if errors.Is(parentErr, gorm.ErrRecordNotFound) {
+				return ErrMenuNotFound
+			}
+			return parentErr
+		}
+		targetParentMenuKey = strings.TrimSpace(targetParent.MenuKey)
 	}
 
 	oldPathMap := buildMenuFullPathMap(flatMenus)
@@ -404,10 +546,15 @@ func (s *menuService) Delete(id uuid.UUID, mode string, targetParentID *uuid.UUI
 			if err := clearPageActiveMenuPaths(tx, oldAffectedPaths); err != nil {
 				return err
 			}
-			for index := len(affectedIDs) - 1; index >= 0; index-- {
-				if err := tx.Delete(&models.Menu{}, "id = ?", affectedIDs[index]).Error; err != nil {
+			if len(affectedMenuKeys) > 0 {
+				if err := tx.Where("app_key = ? AND menu_key IN ?", targetMenu.AppKey, affectedMenuKeys).
+					Delete(&models.SpaceMenuPlacement{}).Error; err != nil {
 					return err
 				}
+			}
+			if err := tx.Where("app_key = ? AND id IN ?", targetMenu.AppKey, affectedIDs).
+				Delete(&models.MenuDefinition{}).Error; err != nil {
+				return err
 			}
 		case menuDeleteModePromoteChildren:
 			if err := s.cleanupMenuRelationsByIDs(tx, []uuid.UUID{id}); err != nil {
@@ -426,12 +573,17 @@ func (s *menuService) Delete(id uuid.UUID, mode string, targetParentID *uuid.UUI
 			if err := remapPageActiveMenuPaths(tx, oldPathMap, newPathMap); err != nil {
 				return err
 			}
-			if err := tx.Model(&models.Menu{}).
-				Where("parent_id = ?", id).
-				Update("parent_id", targetParentID).Error; err != nil {
+			if err := tx.Model(&models.SpaceMenuPlacement{}).
+				Where("app_key = ? AND parent_menu_key = ?", targetMenu.AppKey, menuKeyMap[id]).
+				Update("parent_menu_key", targetParentMenuKey).Error; err != nil {
 				return err
 			}
-			if err := tx.Delete(&models.Menu{}, "id = ?", id).Error; err != nil {
+			if err := tx.Where("app_key = ? AND menu_key = ?", targetMenu.AppKey, menuKeyMap[id]).
+				Delete(&models.SpaceMenuPlacement{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("app_key = ? AND id = ?", targetMenu.AppKey, id).
+				Delete(&models.MenuDefinition{}).Error; err != nil {
 				return err
 			}
 		default:
@@ -446,7 +598,12 @@ func (s *menuService) Delete(id uuid.UUID, mode string, targetParentID *uuid.UUI
 			if err := clearPageActiveMenuPaths(tx, oldAffectedPaths); err != nil {
 				return err
 			}
-			if err := tx.Delete(&models.Menu{}, "id = ?", id).Error; err != nil {
+			if err := tx.Where("app_key = ? AND menu_key = ?", targetMenu.AppKey, menuKeyMap[id]).
+				Delete(&models.SpaceMenuPlacement{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("app_key = ? AND id = ?", targetMenu.AppKey, id).
+				Delete(&models.MenuDefinition{}).Error; err != nil {
 				return err
 			}
 		}
@@ -468,7 +625,7 @@ func (s *menuService) Delete(id uuid.UUID, mode string, targetParentID *uuid.UUI
 }
 
 func (s *menuService) DeletePreview(id uuid.UUID, mode string, targetParentID *uuid.UUID) (*MenuDeletePreview, error) {
-	_, err := s.menuRepo.GetByID(id)
+	targetMenu, err := s.menuRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrMenuNotFound
@@ -481,7 +638,7 @@ func (s *menuService) DeletePreview(id uuid.UUID, mode string, targetParentID *u
 		return nil, ErrMenuDeleteModeInvalid
 	}
 
-	flatMenus, err := s.menuRepo.ListAll()
+	flatMenus, err := s.menuRepo.ListByAppAndSpace(targetMenu.AppKey, "")
 	if err != nil {
 		return nil, err
 	}
@@ -585,45 +742,49 @@ func (s *menuService) countAffectedMenuRelations(menuIDs []uuid.UUID) (int, erro
 }
 
 // 菜单备份相关方法
-func (s *menuService) CreateBackup(name, description, scopeType, spaceKey string, createdBy *uuid.UUID) error {
+func (s *menuService) CreateBackup(name, description, scopeType, appKey, spaceKey string, createdBy *uuid.UUID) error {
+	appKey = normalizeMenuAppKey(appKey)
 	normalizedScopeType := normalizeBackupScopeType(scopeType, spaceKey)
 	backupSpaceKey := resolveBackupSpaceKey(normalizedScopeType, spaceKey)
 
-	// 新接口优先按 scope_type 明确创建空间备份或全局备份；
-	// 只有旧调用未传 scope_type 时，才沿用“缺省 space_key=全局”的兼容语义。
-	menus, err := s.menuRepo.ListAll()
+	definitions, err := s.loadMenuDefinitions(appKey)
 	if err != nil {
-		s.logger.Error("Failed to list menus for backup", zap.Error(err))
+		s.logger.Error("Failed to list menu definitions for backup", zap.Error(err))
 		return err
 	}
-
+	placements, err := s.loadMenuPlacements(appKey, backupSpaceKey)
+	if err != nil {
+		s.logger.Error("Failed to list menu placements for backup", zap.Error(err))
+		return err
+	}
 	if backupSpaceKey != "" {
-		menus = filterMenusBySpace(menus, backupSpaceKey)
+		definitions = filterMenuDefinitionsByPlacements(definitions, placements)
 	}
 
-	groups, err := s.loadBackupGroups(menus, backupSpaceKey)
+	groups, err := s.loadBackupGroupsByPlacements(placements)
 	if err != nil {
 		s.logger.Error("Failed to list menu groups for backup", zap.Error(err))
 		return err
 	}
 
-	// 将菜单数据转换为JSON
 	menuData, err := json.Marshal(ginMenuBackupPayload{
-		Version:   menuBackupPayloadVersion,
-		ScopeType: normalizedScopeType,
-		SpaceKey:  backupSpaceKey,
-		Groups:    groups,
-		Menus:     menus,
+		Version:     menuBackupPayloadVersion,
+		AppKey:      appKey,
+		ScopeType:   normalizedScopeType,
+		SpaceKey:    backupSpaceKey,
+		Groups:      groups,
+		Definitions: definitions,
+		Placements:  placements,
 	})
 	if err != nil {
 		s.logger.Error("Failed to marshal menu data", zap.Error(err))
 		return err
 	}
 
-	// 创建备份
 	backup := &user.MenuBackup{
 		Name:        name,
 		Description: description,
+		AppKey:      appKey,
 		SpaceKey:    backupSpaceKey,
 		MenuData:    string(menuData),
 		CreatedBy:   createdBy,
@@ -638,13 +799,14 @@ func (s *menuService) CreateBackup(name, description, scopeType, spaceKey string
 	return nil
 }
 
-func (s *menuService) ListBackups(spaceKey string) ([]*user.MenuBackup, error) {
+func (s *menuService) ListBackups(appKey, spaceKey string) ([]*user.MenuBackup, error) {
 	backups, err := s.menuRepo.ListBackups()
 	if err != nil {
 		s.logger.Error("Failed to list menu backups", zap.Error(err))
 		return nil, err
 	}
 
+	backups = filterBackupsByApp(backups, appKey)
 	backups = filterBackupsBySpace(backups, spaceKey)
 
 	// 转换为指针切片
@@ -693,7 +855,11 @@ func (s *menuService) RestoreBackup(id uuid.UUID) error {
 		return err
 	}
 	groups := payload.Groups
-	menus := payload.Menus
+	definitions := payload.Definitions
+	placements := payload.Placements
+	if len(definitions) == 0 && len(placements) == 0 && len(payload.Menus) > 0 {
+		definitions, placements = convertLegacyMenusToDefinitions(payload.Menus)
+	}
 
 	backupSpaceKey := normalizeBackupSpaceKey(backup.SpaceKey)
 	if backupSpaceKey == "" {
@@ -702,11 +868,10 @@ func (s *menuService) RestoreBackup(id uuid.UUID) error {
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
 		if backupSpaceKey == "" {
-			return s.restoreGlobalMenuBackup(tx, groups, menus)
+			return s.restoreGlobalMenuBackup(tx, backup.AppKey, groups, definitions, placements)
 		}
-
-		spaceMenus := filterMenusBySpace(menus, backupSpaceKey)
-		return s.restoreSpaceMenuBackup(tx, backupSpaceKey, groups, spaceMenus)
+		spacePlacements := filterPlacementsBySpace(placements, backupSpaceKey)
+		return s.restoreSpaceMenuBackup(tx, backup.AppKey, backupSpaceKey, groups, definitions, spacePlacements)
 	}); err != nil {
 		s.logger.Error("Failed to restore menu backup", zap.Error(err))
 		return err
@@ -731,11 +896,11 @@ func (s *menuService) cleanupInvalidMenuRelations() error {
 		return nil
 	}
 	statements := []string{
-		"DELETE FROM feature_package_menus WHERE menu_id NOT IN (SELECT id FROM menus)",
-		"DELETE FROM role_hidden_menus WHERE menu_id NOT IN (SELECT id FROM menus)",
-		"DELETE FROM team_blocked_menus WHERE menu_id NOT IN (SELECT id FROM menus)",
-		"DELETE FROM user_hidden_menus WHERE menu_id NOT IN (SELECT id FROM menus)",
-		"UPDATE ui_pages SET parent_menu_id = NULL WHERE parent_menu_id IS NOT NULL AND parent_menu_id NOT IN (SELECT id FROM menus)",
+		"DELETE FROM feature_package_menus WHERE menu_id NOT IN (SELECT id FROM menu_definitions)",
+		"DELETE FROM role_hidden_menus WHERE menu_id NOT IN (SELECT id FROM menu_definitions)",
+		"DELETE FROM team_blocked_menus WHERE menu_id NOT IN (SELECT id FROM menu_definitions)",
+		"DELETE FROM user_hidden_menus WHERE menu_id NOT IN (SELECT id FROM menu_definitions)",
+		"UPDATE ui_pages SET parent_menu_id = NULL WHERE parent_menu_id IS NOT NULL AND parent_menu_id NOT IN (SELECT id FROM menu_definitions)",
 	}
 	for _, statement := range statements {
 		if err := s.db.Exec(statement).Error; err != nil {
@@ -759,11 +924,14 @@ func (s *menuService) refreshAllMenuSnapshots() error {
 }
 
 type ginMenuBackupPayload struct {
-	Version   string                 `json:"version,omitempty"`
-	ScopeType string                 `json:"scope_type,omitempty"`
-	SpaceKey  string                 `json:"space_key,omitempty"`
-	Groups    []user.MenuManageGroup `json:"groups"`
-	Menus     []user.Menu            `json:"menus"`
+	Version     string                    `json:"version,omitempty"`
+	AppKey      string                    `json:"app_key,omitempty"`
+	ScopeType   string                    `json:"scope_type,omitempty"`
+	SpaceKey    string                    `json:"space_key,omitempty"`
+	Groups      []user.MenuManageGroup    `json:"groups"`
+	Definitions []models.MenuDefinition   `json:"definitions,omitempty"`
+	Placements  []models.SpaceMenuPlacement `json:"placements,omitempty"`
+	Menus       []user.Menu               `json:"menus,omitempty"`
 }
 
 type menuBackupScopeInfo struct {
@@ -854,10 +1022,24 @@ func filterBackupsBySpace(backups []user.MenuBackup, spaceKey string) []user.Men
 	return filtered
 }
 
+func filterBackupsByApp(backups []user.MenuBackup, appKey string) []user.MenuBackup {
+	targetAppKey := normalizeMenuAppKey(appKey)
+	if targetAppKey == "" {
+		return backups
+	}
+	filtered := make([]user.MenuBackup, 0, len(backups))
+	for _, backup := range backups {
+		if normalizeMenuAppKey(backup.AppKey) == targetAppKey {
+			filtered = append(filtered, backup)
+		}
+	}
+	return filtered
+}
+
 func parseMenuBackupPayload(raw string) (ginMenuBackupPayload, error) {
 	var payload ginMenuBackupPayload
 	if err := json.Unmarshal([]byte(raw), &payload); err == nil {
-		if payload.Version != "" || payload.SpaceKey != "" || payload.Groups != nil || payload.Menus != nil {
+		if payload.Version != "" || payload.SpaceKey != "" || payload.Groups != nil || payload.Menus != nil || payload.Definitions != nil || payload.Placements != nil {
 			payload.ScopeType = normalizeBackupScopeType(payload.ScopeType, payload.SpaceKey)
 			return payload, nil
 		}
@@ -865,65 +1047,66 @@ func parseMenuBackupPayload(raw string) (ginMenuBackupPayload, error) {
 	return ginMenuBackupPayload{}, fmt.Errorf("invalid menu backup payload")
 }
 
-func (s *menuService) loadBackupGroups(menus []user.Menu, spaceKey string) ([]user.MenuManageGroup, error) {
+func (s *menuService) loadBackupGroupsByPlacements(placements []models.SpaceMenuPlacement) ([]user.MenuManageGroup, error) {
 	if s.db == nil {
 		return nil, nil
 	}
 
-	backupSpaceKey := normalizeBackupSpaceKey(spaceKey)
 	var groups []user.MenuManageGroup
-	query := s.db.Order("sort_order ASC, created_at ASC")
-	if backupSpaceKey == "" {
-		if err := query.Find(&groups).Error; err != nil {
-			return nil, err
-		}
-		return groups, nil
-	}
-
-	groupIDs := collectMenuManageGroupIDs(menus)
+	groupIDs := collectPlacementManageGroupIDs(placements)
 	if len(groupIDs) == 0 {
 		return []user.MenuManageGroup{}, nil
 	}
-	if err := query.Where("id IN ?", groupIDs).Find(&groups).Error; err != nil {
+	if err := s.db.Order("sort_order ASC, created_at ASC").Where("id IN ?", groupIDs).Find(&groups).Error; err != nil {
 		return nil, err
 	}
 	return groups, nil
 }
 
-func collectMenuManageGroupIDs(menus []user.Menu) []uuid.UUID {
+func collectPlacementManageGroupIDs(placements []models.SpaceMenuPlacement) []uuid.UUID {
 	seen := make(map[uuid.UUID]struct{})
 	ids := make([]uuid.UUID, 0)
-	for _, menu := range menus {
-		if menu.ManageGroupID == nil || *menu.ManageGroupID == uuid.Nil {
+	for _, placement := range placements {
+		if placement.ManageGroupID == nil || *placement.ManageGroupID == uuid.Nil {
 			continue
 		}
-		if _, exists := seen[*menu.ManageGroupID]; exists {
+		if _, exists := seen[*placement.ManageGroupID]; exists {
 			continue
 		}
-		seen[*menu.ManageGroupID] = struct{}{}
-		ids = append(ids, *menu.ManageGroupID)
+		seen[*placement.ManageGroupID] = struct{}{}
+		ids = append(ids, *placement.ManageGroupID)
 	}
 	return ids
 }
 
-func (s *menuService) restoreGlobalMenuBackup(tx *gorm.DB, groups []user.MenuManageGroup, menus []user.Menu) error {
-	if err := tx.Exec("DELETE FROM menus").Error; err != nil {
+func (s *menuService) restoreGlobalMenuBackup(
+	tx *gorm.DB,
+	appKey string,
+	groups []user.MenuManageGroup,
+	definitions []models.MenuDefinition,
+	placements []models.SpaceMenuPlacement,
+) error {
+	if err := tx.Where("app_key = ?", normalizeMenuAppKey(appKey)).Delete(&models.SpaceMenuPlacement{}).Error; err != nil {
 		return err
 	}
-	if err := tx.Exec("DELETE FROM menu_manage_groups").Error; err != nil {
+	if err := tx.Where("app_key = ?", normalizeMenuAppKey(appKey)).Delete(&models.MenuDefinition{}).Error; err != nil {
 		return err
 	}
-	for i := range groups {
-		groups[i].Status = normalizeMenuGroupStatus(groups[i].Status)
-		if err := tx.Create(&groups[i]).Error; err != nil {
+	if err := s.upsertMenuManageGroups(tx, groups); err != nil {
+		return err
+	}
+	for i := range definitions {
+		definitions[i].AppKey = normalizeMenuAppKey(definitions[i].AppKey)
+		definitions[i].Kind = normalizeMenuKind(definitions[i].Kind, definitions[i].Component, definitions[i].Meta)
+		definitions[i].Meta = sanitizeMenuMeta(definitions[i].Meta)
+		if err := tx.Create(&definitions[i]).Error; err != nil {
 			return err
 		}
 	}
-	for i := range menus {
-		menus[i].SpaceKey = normalizeMenuSpaceKey(menus[i].SpaceKey)
-		menus[i].Kind = normalizeMenuKind(menus[i].Kind, menus[i].Component, menus[i].Meta)
-		menus[i].Meta = sanitizeMenuMeta(menus[i].Meta)
-		if err := tx.Create(&menus[i]).Error; err != nil {
+	for i := range placements {
+		placements[i].AppKey = normalizeMenuAppKey(placements[i].AppKey)
+		placements[i].SpaceKey = normalizeMenuSpaceKey(placements[i].SpaceKey)
+		if err := tx.Create(&placements[i]).Error; err != nil {
 			return err
 		}
 	}
@@ -932,21 +1115,46 @@ func (s *menuService) restoreGlobalMenuBackup(tx *gorm.DB, groups []user.MenuMan
 
 func (s *menuService) restoreSpaceMenuBackup(
 	tx *gorm.DB,
+	appKey string,
 	spaceKey string,
 	groups []user.MenuManageGroup,
-	menus []user.Menu,
+	definitions []models.MenuDefinition,
+	placements []models.SpaceMenuPlacement,
 ) error {
 	if err := s.upsertMenuManageGroups(tx, groups); err != nil {
 		return err
 	}
-	if err := s.deleteMenusBySpace(tx, spaceKey); err != nil {
+	for i := range definitions {
+		definitions[i].AppKey = normalizeMenuAppKey(definitions[i].AppKey)
+		definitions[i].Kind = normalizeMenuKind(definitions[i].Kind, definitions[i].Component, definitions[i].Meta)
+		definitions[i].Meta = sanitizeMenuMeta(definitions[i].Meta)
+		if err := tx.Unscoped().Clauses(clause.OnConflict{
+			Columns: []clause.Column{{Name: "id"}},
+			DoUpdates: clause.Assignments(map[string]interface{}{
+				"app_key":       definitions[i].AppKey,
+				"menu_key":      definitions[i].MenuKey,
+				"kind":          definitions[i].Kind,
+				"path":          definitions[i].Path,
+				"name":          definitions[i].Name,
+				"component":     definitions[i].Component,
+				"default_title": definitions[i].DefaultTitle,
+				"default_icon":  definitions[i].DefaultIcon,
+				"status":        definitions[i].Status,
+				"meta":          definitions[i].Meta,
+				"updated_at":    time.Now(),
+				"deleted_at":    nil,
+			}),
+		}).Create(&definitions[i]).Error; err != nil {
+			return err
+		}
+	}
+	if err := s.deleteMenusBySpace(tx, appKey, spaceKey); err != nil {
 		return err
 	}
-	for i := range menus {
-		menus[i].SpaceKey = normalizeMenuSpaceKey(spaceKey)
-		menus[i].Kind = normalizeMenuKind(menus[i].Kind, menus[i].Component, menus[i].Meta)
-		menus[i].Meta = sanitizeMenuMeta(menus[i].Meta)
-		if err := tx.Create(&menus[i]).Error; err != nil {
+	for i := range placements {
+		placements[i].AppKey = normalizeMenuAppKey(appKey)
+		placements[i].SpaceKey = normalizeMenuSpaceKey(spaceKey)
+		if err := tx.Create(&placements[i]).Error; err != nil {
 			return err
 		}
 	}
@@ -976,12 +1184,192 @@ func (s *menuService) upsertMenuManageGroups(tx *gorm.DB, groups []user.MenuMana
 	return nil
 }
 
-func (s *menuService) deleteMenusBySpace(tx *gorm.DB, spaceKey string) error {
+func (s *menuService) deleteMenusBySpace(tx *gorm.DB, appKey, spaceKey string) error {
 	normalizedSpaceKey := normalizeMenuSpaceKey(spaceKey)
-	if normalizedSpaceKey == spaceutil.DefaultMenuSpaceKey {
-		return tx.Exec("DELETE FROM menus WHERE space_key = ? OR COALESCE(space_key, '') = ''", normalizedSpaceKey).Error
+	return tx.Where("app_key = ? AND space_key = ?", normalizeMenuAppKey(appKey), normalizedSpaceKey).
+		Delete(&models.SpaceMenuPlacement{}).Error
+}
+
+func (s *menuService) loadMenuDefinitions(appKey string) ([]models.MenuDefinition, error) {
+	var definitions []models.MenuDefinition
+	if err := s.db.Where("app_key = ?", normalizeMenuAppKey(appKey)).
+		Order("created_at ASC").
+		Find(&definitions).Error; err != nil {
+		return nil, err
 	}
-	return tx.Exec("DELETE FROM menus WHERE space_key = ?", normalizedSpaceKey).Error
+	return definitions, nil
+}
+
+func (s *menuService) loadMenuPlacements(appKey, spaceKey string) ([]models.SpaceMenuPlacement, error) {
+	query := s.db.Where("app_key = ?", normalizeMenuAppKey(appKey)).Order("sort_order ASC, created_at ASC")
+	if strings.TrimSpace(spaceKey) != "" {
+		query = query.Where("space_key = ?", normalizeMenuSpaceKey(spaceKey))
+	}
+	var placements []models.SpaceMenuPlacement
+	if err := query.Find(&placements).Error; err != nil {
+		return nil, err
+	}
+	return placements, nil
+}
+
+func (s *menuService) loadMenuDefinitionByID(id uuid.UUID, appKey string) (*models.MenuDefinition, error) {
+	var definition models.MenuDefinition
+	if err := s.db.Where("id = ? AND app_key = ?", id, normalizeMenuAppKey(appKey)).First(&definition).Error; err != nil {
+		return nil, err
+	}
+	return &definition, nil
+}
+
+func (s *menuService) loadMenuKeyMapByIDs(appKey string, ids []uuid.UUID) (map[uuid.UUID]string, error) {
+	if len(ids) == 0 {
+		return map[uuid.UUID]string{}, nil
+	}
+	var definitions []models.MenuDefinition
+	if err := s.db.Select("id", "menu_key").
+		Where("app_key = ? AND id IN ?", normalizeMenuAppKey(appKey), ids).
+		Find(&definitions).Error; err != nil {
+		return nil, err
+	}
+	result := make(map[uuid.UUID]string, len(definitions))
+	for _, definition := range definitions {
+		result[definition.ID] = strings.TrimSpace(definition.MenuKey)
+	}
+	return result, nil
+}
+
+func (s *menuService) resolveParentMenuKey(tx *gorm.DB, appKey, spaceKey string, parentID *uuid.UUID) (string, error) {
+	if parentID == nil || *parentID == uuid.Nil {
+		return "", nil
+	}
+	db := s.db
+	if tx != nil {
+		db = tx
+	}
+	var parent models.MenuDefinition
+	if err := db.Where("id = ? AND app_key = ?", *parentID, normalizeMenuAppKey(appKey)).First(&parent).Error; err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(spaceKey) != "" {
+		var placementCount int64
+		if err := db.Model(&models.SpaceMenuPlacement{}).
+			Where("app_key = ? AND space_key = ? AND menu_key = ?", normalizeMenuAppKey(appKey), normalizeMenuSpaceKey(spaceKey), parent.MenuKey).
+			Count(&placementCount).Error; err != nil {
+			return "", err
+		}
+		if placementCount == 0 {
+			return "", fmt.Errorf("上级菜单未放入当前空间")
+		}
+	}
+	return strings.TrimSpace(parent.MenuKey), nil
+}
+
+func filterMenuDefinitionsByPlacements(
+	definitions []models.MenuDefinition,
+	placements []models.SpaceMenuPlacement,
+) []models.MenuDefinition {
+	if len(definitions) == 0 || len(placements) == 0 {
+		return []models.MenuDefinition{}
+	}
+	allowed := make(map[string]struct{}, len(placements))
+	for _, placement := range placements {
+		allowed[normalizeMenuAppKey(placement.AppKey)+"::"+strings.TrimSpace(placement.MenuKey)] = struct{}{}
+	}
+	result := make([]models.MenuDefinition, 0, len(definitions))
+	for _, definition := range definitions {
+		if _, ok := allowed[normalizeMenuAppKey(definition.AppKey)+"::"+strings.TrimSpace(definition.MenuKey)]; ok {
+			result = append(result, definition)
+		}
+	}
+	return result
+}
+
+func filterPlacementsBySpace(
+	placements []models.SpaceMenuPlacement,
+	spaceKey string,
+) []models.SpaceMenuPlacement {
+	target := normalizeMenuSpaceKey(spaceKey)
+	result := make([]models.SpaceMenuPlacement, 0, len(placements))
+	for _, placement := range placements {
+		if normalizeMenuSpaceKey(placement.SpaceKey) != target {
+			continue
+		}
+		result = append(result, placement)
+	}
+	return result
+}
+
+func convertLegacyMenusToDefinitions(
+	menus []user.Menu,
+) ([]models.MenuDefinition, []models.SpaceMenuPlacement) {
+	if len(menus) == 0 {
+		return []models.MenuDefinition{}, []models.SpaceMenuPlacement{}
+	}
+
+	keyByLegacyID := make(map[uuid.UUID]string, len(menus))
+	usedKeys := make(map[string]int)
+	for _, item := range menus {
+		appKey := normalizeMenuAppKey(item.AppKey)
+		baseKey := strings.TrimSpace(item.Name)
+		if baseKey == "" {
+			baseKey = "legacy-" + strings.ToLower(strings.ReplaceAll(item.ID.String(), "-", ""))
+		}
+		baseKey = strings.ToLower(strings.TrimSpace(baseKey))
+		if baseKey == "" {
+			baseKey = "legacy-" + strings.ToLower(strings.ReplaceAll(item.ID.String(), "-", ""))
+		}
+		composite := appKey + "::" + baseKey
+		if seen, ok := usedKeys[composite]; ok {
+			seen++
+			usedKeys[composite] = seen
+			baseKey = fmt.Sprintf("%s-%d", baseKey, seen)
+		} else {
+			usedKeys[composite] = 1
+		}
+		keyByLegacyID[item.ID] = baseKey
+	}
+
+	definitions := make([]models.MenuDefinition, 0, len(menus))
+	seenDefinitions := make(map[string]struct{}, len(menus))
+	for _, item := range menus {
+		appKey := normalizeMenuAppKey(item.AppKey)
+		menuKey := keyByLegacyID[item.ID]
+		composite := appKey + "::" + menuKey
+		if _, ok := seenDefinitions[composite]; ok {
+			continue
+		}
+		seenDefinitions[composite] = struct{}{}
+		definitions = append(definitions, models.MenuDefinition{
+			ID:           item.ID,
+			AppKey:       appKey,
+			MenuKey:      menuKey,
+			Kind:         normalizeMenuKind(item.Kind, item.Component, item.Meta),
+			Path:         item.Path,
+			Name:         item.Name,
+			Component:    item.Component,
+			DefaultTitle: item.Title,
+			DefaultIcon:  item.Icon,
+			Status:       "normal",
+			Meta:         models.MetaJSON(sanitizeMenuMeta(item.Meta)),
+		})
+	}
+
+	placements := make([]models.SpaceMenuPlacement, 0, len(menus))
+	for _, item := range menus {
+		parentMenuKey := ""
+		if item.ParentID != nil {
+			parentMenuKey = keyByLegacyID[*item.ParentID]
+		}
+		placements = append(placements, models.SpaceMenuPlacement{
+			AppKey:        normalizeMenuAppKey(item.AppKey),
+			SpaceKey:      normalizeMenuSpaceKey(item.SpaceKey),
+			MenuKey:       keyByLegacyID[item.ID],
+			ParentMenuKey: parentMenuKey,
+			ManageGroupID: item.ManageGroupID,
+			SortOrder:     item.SortOrder,
+			Hidden:        item.Hidden,
+		})
+	}
+	return definitions, placements
 }
 
 func parseOptionalUUID(value *string) (*uuid.UUID, error) {
@@ -1064,6 +1452,10 @@ func normalizeMenuSpaceKey(value string) string {
 		return spaceutil.DefaultMenuSpaceKey
 	}
 	return target
+}
+
+func normalizeMenuAppKey(value string) string {
+	return apppkg.NormalizeAppKey(value)
 }
 
 func normalizeMenuGroupStatus(value string) string {

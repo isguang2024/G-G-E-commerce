@@ -118,6 +118,7 @@
   interface Props {
     modelValue: boolean
     roleData?: Api.SystemManage.RoleListItem
+    appKey?: string
   }
 
   const props = defineProps<Props>()
@@ -145,6 +146,7 @@
   })
 
   const roleTitle = computed(() => props.roleData?.roleName || '')
+  const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
 
   const filteredPackages = computed(() => {
     const currentKeyword = keyword.value.trim().toLowerCase()
@@ -191,13 +193,20 @@
   )
 
   async function loadData() {
-    if (!props.roleData?.roleId) return
+    if (!props.roleData?.roleId || !currentAppKey.value) {
+      if (!currentAppKey.value) {
+        ElMessage.warning('缺少 app 上下文')
+      }
+      return
+    }
     loading.value = true
     resetFilters()
     try {
       const [listRes, roleRes] = await Promise.all([
-        fetchGetFeaturePackageOptions(),
-        fetchGetRolePackages(props.roleData.roleId)
+        fetchGetFeaturePackageOptions({
+          appKey: currentAppKey.value
+        }),
+        fetchGetRolePackages(props.roleData.roleId, currentAppKey.value)
       ])
       packages.value = listRes?.records || []
       selectedPackageIds.value = [...(roleRes?.package_ids || [])]
@@ -261,10 +270,15 @@
   })
 
   async function handleSave() {
-    if (!props.roleData?.roleId) return
+    if (!props.roleData?.roleId || !currentAppKey.value) {
+      if (!currentAppKey.value) {
+        ElMessage.warning('缺少 app 上下文')
+      }
+      return
+    }
     saving.value = true
     try {
-      await fetchSetRolePackages(props.roleData.roleId, selectedPackageIds.value)
+      await fetchSetRolePackages(props.roleData.roleId, selectedPackageIds.value, currentAppKey.value)
       ElMessage.success('角色功能包已保存')
       emit('success')
       visible.value = false

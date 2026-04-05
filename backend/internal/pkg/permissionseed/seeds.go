@@ -441,7 +441,7 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      1,
-			MenuNames:      []string{"System", "SystemAccess", "Role", "User", "ActionPermission", "FeaturePackage", "TeamRoot", "TeamManage", "TeamRolesAndPermissions", "SystemNavigation", "PageManagement", "FastEnterManage", "MenuSpaceManage", "SystemIntegration", "MessageManage"},
+			MenuNames:      []string{"System", "SystemAccess", "Role", "User", "ActionPermission", "FeaturePackage", "TeamRoot", "TeamManage", "TeamRolesAndPermissions", "SystemNavigation", "AppManage", "PageManagement", "FastEnterManage", "MenuSpaceManage", "SystemIntegration", "MessageManage"},
 			PermissionKeys: []string{"system.user.manage", "system.role.manage", "system.permission.manage", "system.page.manage", "system.page.sync", "system.fast_enter.manage", "message.manage", "tenant.manage"},
 		},
 		{
@@ -453,7 +453,7 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      2,
-			MenuNames:      []string{"System", "SystemNavigation", "Menus", "MenuSpaceManage"},
+			MenuNames:      []string{"System", "SystemNavigation", "AppManage", "Menus", "MenuSpaceManage"},
 			PermissionKeys: []string{"system.menu.manage", "system.menu.backup"},
 		},
 		{
@@ -523,15 +523,16 @@ func DefaultMenus() []MenuSeed {
 		{Name: "User", ParentName: "SystemAccess", Path: "/system/user", Component: "/system/user", Title: "menus.system.user", SortOrder: 2, Meta: metaSuperAdminAndAdmin},
 		{Name: "TeamManage", ParentName: "TeamRoot", Path: "team", Component: "/team/team", Title: "menus.system.teamAll", SortOrder: 1, Meta: usermodel.MetaJSON{"keepAlive": true, "accessMode": "permission", "requiredAction": "tenant.manage"}},
 		{Name: "TeamRolesAndPermissions", ParentName: "TeamRoot", Path: "roles", Component: "/system/team-roles-permissions", Title: "menus.system.teamRolesAndPermissions", SortOrder: 3, Meta: metaTeamAccessOnly},
-		{Name: "Menus", ParentName: "SystemNavigation", Path: "/system/menu", Component: "/system/menu", Title: "menus.system.menu", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "AppManage", ParentName: "SystemNavigation", Path: "/system/app", Component: "/system/app", Title: "应用管理", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "Menus", ParentName: "SystemNavigation", Path: "/system/menu", Component: "/system/menu", Title: "menus.system.menu", SortOrder: 2, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "ActionPermission", ParentName: "SystemAccess", Path: "/system/action-permission", Component: "/system/action-permission", Title: "功能权限", SortOrder: 3, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "ApiEndpoint", ParentName: "SystemIntegration", Path: "/system/api-endpoint", Component: "/system/api-endpoint", Title: "API管理", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "MessageManage", ParentName: "SystemIntegration", Path: "/system/message", Component: "/system/message", Title: "消息发送", SortOrder: 2, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "TeamMessageManage", ParentName: "TeamRoot", Path: "message", Component: "/team/message", Title: "团队消息发送", SortOrder: 4, Meta: metaTeamAccessOnly},
 		{Name: "FeaturePackage", ParentName: "SystemAccess", Path: "/system/feature-package", Component: "/system/feature-package", Title: "功能包管理", SortOrder: 4, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
-		{Name: "PageManagement", ParentName: "SystemNavigation", Path: "/system/page", Component: "/system/page", Title: "页面管理", SortOrder: 2, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
-		{Name: "FastEnterManage", ParentName: "SystemNavigation", Path: "/system/fast-enter", Component: "/system/fast-enter", Title: "快捷应用管理", SortOrder: 3, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
-		{Name: "MenuSpaceManage", ParentName: "SystemNavigation", Path: "/system/menu-space", Component: "/system/menu-space", Title: "菜单空间", SortOrder: 4, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "PageManagement", ParentName: "SystemNavigation", Path: "/system/page", Component: "/system/page", Title: "页面管理", SortOrder: 3, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "FastEnterManage", ParentName: "SystemNavigation", Path: "/system/fast-enter", Component: "/system/fast-enter", Title: "快捷应用管理", SortOrder: 4, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
+		{Name: "MenuSpaceManage", ParentName: "SystemNavigation", Path: "/system/menu-space", Component: "/system/menu-space", Title: "高级空间配置", SortOrder: 90, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true, "isHide": true}},
 		{Name: "TeamMembers", ParentName: "TeamRoot", Path: "members", Component: "/team/team-members", Title: "menus.system.teamMembers", SortOrder: 2, Meta: metaTeamAccessOnly},
 	}
 	for i := range items {

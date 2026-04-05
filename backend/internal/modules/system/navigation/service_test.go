@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
+	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
 	menupkg "github.com/gg-ecommerce/backend/internal/modules/system/menu"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	pagepkg "github.com/gg-ecommerce/backend/internal/modules/system/page"
@@ -37,10 +38,14 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 	var listRuntimeSpaceKey string
 	compiler := NewService(
 		nil,
+		&stubAppService{},
 		&stubMenuService{
-			getTreeFn: func(all bool, allowedMenuIDs []uuid.UUID, spaceKey string) ([]*user.Menu, error) {
+			getTreeFn: func(all bool, allowedMenuIDs []uuid.UUID, appKey, spaceKey string) ([]*user.Menu, error) {
 				if all {
 					t.Fatalf("GetTree all = true, want false")
+				}
+				if appKey != models.DefaultAppKey {
+					t.Fatalf("GetTree appKey = %q, want %q", appKey, models.DefaultAppKey)
 				}
 				receivedMenuIDs = append([]uuid.UUID(nil), allowedMenuIDs...)
 				receivedSpaceKey = spaceKey
@@ -71,7 +76,10 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 			},
 		},
 		&stubPageService{
-			resolveCompiledAccessContextFn: func(spaceKey string, gotUserID *uuid.UUID, gotTenantID *uuid.UUID) (*pagepkg.CompiledAccessContext, error) {
+			resolveCompiledAccessContextFn: func(appKey string, spaceKey string, gotUserID *uuid.UUID, gotTenantID *uuid.UUID) (*pagepkg.CompiledAccessContext, error) {
+				if appKey != models.DefaultAppKey {
+					t.Fatalf("ResolveCompiledAccessContext appKey = %q, want %q", appKey, models.DefaultAppKey)
+				}
 				if spaceKey != "ops" {
 					t.Fatalf("ResolveCompiledAccessContext spaceKey = %q, want ops", spaceKey)
 				}
@@ -83,7 +91,10 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 				}
 				return accessCtx, nil
 			},
-			listRuntimeWithAccessFn: func(spaceKey string, ctx *pagepkg.CompiledAccessContext) ([]pagepkg.Record, error) {
+			listRuntimeWithAccessFn: func(appKey string, spaceKey string, ctx *pagepkg.CompiledAccessContext) ([]pagepkg.Record, error) {
+				if appKey != models.DefaultAppKey {
+					t.Fatalf("ListRuntimeWithAccess appKey = %q, want %q", appKey, models.DefaultAppKey)
+				}
 				listRuntimeSpaceKey = spaceKey
 				if ctx != accessCtx {
 					t.Fatalf("ListRuntimeWithAccess received unexpected access context pointer")
@@ -106,7 +117,10 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 			},
 		},
 		&stubSpaceService{
-			getCurrentFn: func(host string, requestedSpaceKey string, gotUserID *uuid.UUID, gotTenantID *uuid.UUID) (*spacepkg.CurrentResponse, error) {
+			getCurrentFn: func(appKey string, host string, requestedSpaceKey string, gotUserID *uuid.UUID, gotTenantID *uuid.UUID) (*spacepkg.CurrentResponse, error) {
+				if appKey != models.DefaultAppKey {
+					t.Fatalf("GetCurrent appKey = %q, want %q", appKey, models.DefaultAppKey)
+				}
 				if host != " ops.example.com " {
 					t.Fatalf("GetCurrent host = %q, want original request host", host)
 				}
@@ -134,7 +148,7 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 		},
 	)
 
-	manifest, err := compiler.Compile(" ops.example.com ", " ops ", &userID, &tenantID)
+	manifest, err := compiler.Compile(models.DefaultAppKey, " ops.example.com ", " ops ", &userID, &tenantID)
 	if err != nil {
 		t.Fatalf("Compile() error = %v", err)
 	}
@@ -194,8 +208,8 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 	if got := manifest.ManagedPages[0]["page_key"]; got != "team.detail" {
 		t.Fatalf("managed page key = %#v, want team.detail", got)
 	}
-	if manifest.VersionStamp != "ops:1:1" {
-		t.Fatalf("manifest.VersionStamp = %q, want ops:1:1", manifest.VersionStamp)
+	if manifest.VersionStamp != "platform-admin:ops:1:1" {
+		t.Fatalf("manifest.VersionStamp = %q, want platform-admin:ops:1:1", manifest.VersionStamp)
 	}
 }
 
@@ -222,14 +236,14 @@ func sameUUIDSet(left, right []uuid.UUID) bool {
 }
 
 type stubMenuService struct {
-	getTreeFn func(all bool, allowedMenuIDs []uuid.UUID, spaceKey string) ([]*user.Menu, error)
+	getTreeFn func(all bool, allowedMenuIDs []uuid.UUID, appKey, spaceKey string) ([]*user.Menu, error)
 }
 
-func (s *stubMenuService) GetTree(all bool, allowedMenuIDs []uuid.UUID, spaceKey string) ([]*user.Menu, error) {
+func (s *stubMenuService) GetTree(all bool, allowedMenuIDs []uuid.UUID, appKey, spaceKey string) ([]*user.Menu, error) {
 	if s.getTreeFn == nil {
 		return nil, fmt.Errorf("unexpected GetTree call")
 	}
-	return s.getTreeFn(all, allowedMenuIDs, spaceKey)
+	return s.getTreeFn(all, allowedMenuIDs, appKey, spaceKey)
 }
 
 func (s *stubMenuService) Create(req *dto.MenuCreateRequest) (*user.Menu, error) {
@@ -264,11 +278,11 @@ func (s *stubMenuService) DeleteGroup(id uuid.UUID) error {
 	return fmt.Errorf("unexpected DeleteGroup call")
 }
 
-func (s *stubMenuService) CreateBackup(name, description, scopeType, spaceKey string, createdBy *uuid.UUID) error {
+func (s *stubMenuService) CreateBackup(name, description, scopeType, appKey, spaceKey string, createdBy *uuid.UUID) error {
 	return fmt.Errorf("unexpected CreateBackup call")
 }
 
-func (s *stubMenuService) ListBackups(spaceKey string) ([]*user.MenuBackup, error) {
+func (s *stubMenuService) ListBackups(appKey, spaceKey string) ([]*user.MenuBackup, error) {
 	return nil, fmt.Errorf("unexpected ListBackups call")
 }
 
@@ -281,57 +295,57 @@ func (s *stubMenuService) RestoreBackup(id uuid.UUID) error {
 }
 
 type stubPageService struct {
-	resolveCompiledAccessContextFn func(spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*pagepkg.CompiledAccessContext, error)
-	listRuntimeWithAccessFn        func(spaceKey string, accessCtx *pagepkg.CompiledAccessContext) ([]pagepkg.Record, error)
+	resolveCompiledAccessContextFn func(appKey, spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*pagepkg.CompiledAccessContext, error)
+	listRuntimeWithAccessFn        func(appKey, spaceKey string, accessCtx *pagepkg.CompiledAccessContext) ([]pagepkg.Record, error)
 }
 
 func (s *stubPageService) List(req *pagepkg.ListRequest) ([]pagepkg.Record, int64, error) {
 	return nil, 0, fmt.Errorf("unexpected List call")
 }
 
-func (s *stubPageService) ListOptions(spaceKey string) ([]models.UIPage, error) {
+func (s *stubPageService) ListOptions(appKey, spaceKey string) ([]models.UIPage, error) {
 	return nil, fmt.Errorf("unexpected ListOptions call")
 }
 
-func (s *stubPageService) ListRuntime(host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]pagepkg.Record, error) {
+func (s *stubPageService) ListRuntime(appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]pagepkg.Record, error) {
 	return nil, fmt.Errorf("unexpected ListRuntime call")
 }
 
-func (s *stubPageService) ListRuntimePublic(host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]pagepkg.Record, error) {
+func (s *stubPageService) ListRuntimePublic(appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]pagepkg.Record, error) {
 	return nil, fmt.Errorf("unexpected ListRuntimePublic call")
 }
 
-func (s *stubPageService) ResolveCompiledAccessContext(spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*pagepkg.CompiledAccessContext, error) {
+func (s *stubPageService) ResolveCompiledAccessContext(appKey, spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*pagepkg.CompiledAccessContext, error) {
 	if s.resolveCompiledAccessContextFn == nil {
 		return nil, fmt.Errorf("unexpected ResolveCompiledAccessContext call")
 	}
-	return s.resolveCompiledAccessContextFn(spaceKey, userID, tenantID)
+	return s.resolveCompiledAccessContextFn(appKey, spaceKey, userID, tenantID)
 }
 
-func (s *stubPageService) GetAccessTrace(req *pagepkg.AccessTraceRequest) (*pagepkg.AccessTraceResult, error) {
+func (s *stubPageService) GetAccessTrace(appKey string, req *pagepkg.AccessTraceRequest) (*pagepkg.AccessTraceResult, error) {
 	return nil, fmt.Errorf("unexpected GetAccessTrace call")
 }
 
-func (s *stubPageService) ListRuntimeWithAccess(spaceKey string, accessCtx *pagepkg.CompiledAccessContext) ([]pagepkg.Record, error) {
+func (s *stubPageService) ListRuntimeWithAccess(appKey, spaceKey string, accessCtx *pagepkg.CompiledAccessContext) ([]pagepkg.Record, error) {
 	if s.listRuntimeWithAccessFn == nil {
 		return nil, fmt.Errorf("unexpected ListRuntimeWithAccess call")
 	}
-	return s.listRuntimeWithAccessFn(spaceKey, accessCtx)
+	return s.listRuntimeWithAccessFn(appKey, spaceKey, accessCtx)
 }
 
-func (s *stubPageService) ListUnregistered() ([]pagepkg.UnregisteredRecord, error) {
+func (s *stubPageService) ListUnregistered(appKey string) ([]pagepkg.UnregisteredRecord, error) {
 	return nil, fmt.Errorf("unexpected ListUnregistered call")
 }
 
-func (s *stubPageService) Sync() (*pagepkg.SyncResult, error) {
+func (s *stubPageService) Sync(appKey string) (*pagepkg.SyncResult, error) {
 	return nil, fmt.Errorf("unexpected Sync call")
 }
 
-func (s *stubPageService) PreviewBreadcrumb(id uuid.UUID) ([]pagepkg.BreadcrumbPreviewItem, error) {
+func (s *stubPageService) PreviewBreadcrumb(id uuid.UUID, appKey string) ([]pagepkg.BreadcrumbPreviewItem, error) {
 	return nil, fmt.Errorf("unexpected PreviewBreadcrumb call")
 }
 
-func (s *stubPageService) Get(id uuid.UUID) (*pagepkg.Record, error) {
+func (s *stubPageService) Get(id uuid.UUID, appKey string) (*pagepkg.Record, error) {
 	return nil, fmt.Errorf("unexpected Get call")
 }
 
@@ -343,30 +357,60 @@ func (s *stubPageService) Update(id uuid.UUID, req *pagepkg.SaveRequest) (*pagep
 	return nil, fmt.Errorf("unexpected Update call")
 }
 
-func (s *stubPageService) Delete(id uuid.UUID) error {
+func (s *stubPageService) Delete(id uuid.UUID, appKey string) error {
 	return fmt.Errorf("unexpected Delete call")
 }
 
-func (s *stubPageService) ListMenuOptions(spaceKey string) ([]pagepkg.MenuOption, error) {
+func (s *stubPageService) ListMenuOptions(appKey, spaceKey string) ([]pagepkg.MenuOption, error) {
 	return nil, fmt.Errorf("unexpected ListMenuOptions call")
 }
 
 type stubSpaceService struct {
-	getCurrentFn func(host string, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*spacepkg.CurrentResponse, error)
+	getCurrentFn func(appKey string, host string, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*spacepkg.CurrentResponse, error)
 }
 
-func (s *stubSpaceService) ListSpaces() ([]spacepkg.SpaceRecord, error) {
+type stubAppService struct{}
+
+func (s *stubAppService) ListApps() ([]apppkg.AppRecord, error) {
+	return []apppkg.AppRecord{{
+		App: models.App{AppKey: models.DefaultAppKey, Name: models.DefaultAppName, DefaultSpaceKey: models.DefaultMenuSpaceKey},
+	}}, nil
+}
+
+func (s *stubAppService) GetCurrent(host, requestedAppKey string) (*apppkg.CurrentResponse, error) {
+	return &apppkg.CurrentResponse{
+		App: apppkg.AppRecord{
+			App: models.App{AppKey: apppkg.NormalizeAppKey(requestedAppKey), Name: models.DefaultAppName, DefaultSpaceKey: models.DefaultMenuSpaceKey},
+		},
+		ResolvedBy: "explicit",
+		RequestHost: host,
+	}, nil
+}
+
+func (s *stubAppService) SaveApp(req *apppkg.SaveAppRequest) (*apppkg.AppRecord, error) {
+	return nil, fmt.Errorf("unexpected SaveApp call")
+}
+
+func (s *stubAppService) ListHostBindings(appKey string) ([]apppkg.HostBindingRecord, error) {
+	return nil, fmt.Errorf("unexpected ListHostBindings call")
+}
+
+func (s *stubAppService) SaveHostBinding(req *apppkg.SaveHostBindingRequest) (*apppkg.HostBindingRecord, error) {
+	return nil, fmt.Errorf("unexpected SaveHostBinding call")
+}
+
+func (s *stubSpaceService) ListSpaces(appKey string) ([]spacepkg.SpaceRecord, error) {
 	return nil, fmt.Errorf("unexpected ListSpaces call")
 }
 
-func (s *stubSpaceService) GetCurrent(host string, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*spacepkg.CurrentResponse, error) {
+func (s *stubSpaceService) GetCurrent(appKey string, host string, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*spacepkg.CurrentResponse, error) {
 	if s.getCurrentFn == nil {
 		return nil, fmt.Errorf("unexpected GetCurrent call")
 	}
-	return s.getCurrentFn(host, requestedSpaceKey, userID, tenantID)
+	return s.getCurrentFn(appKey, host, requestedSpaceKey, userID, tenantID)
 }
 
-func (s *stubSpaceService) ListHostBindings() ([]spacepkg.HostBindingRecord, error) {
+func (s *stubSpaceService) ListHostBindings(appKey string) ([]spacepkg.HostBindingRecord, error) {
 	return nil, fmt.Errorf("unexpected ListHostBindings call")
 }
 
@@ -378,15 +422,15 @@ func (s *stubSpaceService) SaveMode(mode string) (string, error) {
 	return "", fmt.Errorf("unexpected SaveMode call")
 }
 
-func (s *stubSpaceService) SaveSpace(req *spacepkg.SaveSpaceRequest) (*spacepkg.SpaceRecord, error) {
+func (s *stubSpaceService) SaveSpace(appKey string, req *spacepkg.SaveSpaceRequest) (*spacepkg.SpaceRecord, error) {
 	return nil, fmt.Errorf("unexpected SaveSpace call")
 }
 
-func (s *stubSpaceService) SaveHostBinding(req *spacepkg.SaveHostBindingRequest) (*spacepkg.HostBindingRecord, error) {
+func (s *stubSpaceService) SaveHostBinding(appKey string, req *spacepkg.SaveHostBindingRequest) (*spacepkg.HostBindingRecord, error) {
 	return nil, fmt.Errorf("unexpected SaveHostBinding call")
 }
 
-func (s *stubSpaceService) InitializeFromDefault(targetSpaceKey string, force bool, actorUserID *uuid.UUID) (*spacepkg.InitializeResult, error) {
+func (s *stubSpaceService) InitializeFromDefault(appKey string, targetSpaceKey string, force bool, actorUserID *uuid.UUID) (*spacepkg.InitializeResult, error) {
 	return nil, fmt.Errorf("unexpected InitializeFromDefault call")
 }
 

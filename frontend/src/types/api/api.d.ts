@@ -141,6 +141,7 @@ declare namespace Api {
 
     interface MenuSpaceItem {
       id?: string
+      appKey?: string
       spaceKey: string
       name: string
       description?: string
@@ -160,6 +161,8 @@ declare namespace Api {
 
     interface MenuSpaceHostBindingItem {
       id?: string
+      appKey?: string
+      appName?: string
       host: string
       spaceKey: string
       spaceName?: string
@@ -190,6 +193,65 @@ declare namespace Api {
       mode: 'single' | 'multi' | string
     }
 
+    interface AppItem {
+      id?: string
+      appKey: string
+      name: string
+      description?: string
+      defaultSpaceKey?: string
+      isDefault?: boolean
+      status?: 'normal' | 'disabled' | string
+      hostCount?: number
+      primaryHost?: string
+      menuSpaceCount?: number
+      menuCount?: number
+      pageCount?: number
+      meta?: Record<string, any>
+      createdAt?: string
+      updatedAt?: string
+    }
+
+    interface AppSaveParams {
+      app_key: string
+      name: string
+      description?: string
+      default_space_key?: string
+      is_default?: boolean
+      status?: 'normal' | 'disabled' | string
+      meta?: Record<string, any>
+    }
+
+    interface AppHostBindingItem {
+      id?: string
+      appKey: string
+      appName?: string
+      host: string
+      defaultSpaceKey?: string
+      description?: string
+      isPrimary?: boolean
+      status?: 'normal' | 'disabled' | string
+      meta?: Record<string, any>
+      createdAt?: string
+      updatedAt?: string
+    }
+
+    interface AppHostBindingSaveParams {
+      app_key: string
+      host: string
+      default_space_key?: string
+      description?: string
+      is_primary?: boolean
+      status?: 'normal' | 'disabled' | string
+      meta?: Record<string, any>
+    }
+
+    interface CurrentAppResponse {
+      app: AppItem
+      binding?: AppHostBindingItem
+      resolvedBy?: string
+      requestHost?: string
+    }
+
     interface MenuSpaceInitializeResult {
       sourceSpaceKey: string
       targetSpaceKey: string
@@ -203,6 +265,7 @@ declare namespace Api {
     }
 
     interface MenuSpaceSaveParams {
+      app_key?: string
       space_key: string
       name: string
       description?: string
@@ -215,6 +278,7 @@ declare namespace Api {
     }
 
     interface MenuSpaceHostBindingSaveParams {
+      app_key?: string
       host: string
       space_key: string
       description?: string
@@ -230,6 +294,44 @@ declare namespace Api {
         cookie_domain?: string
         [key: string]: any
       }
+    }
+
+    interface AppContext {
+      runtimeAppKey?: string
+      managedAppKey?: string
+      currentSpaceKey?: string
+    }
+
+    interface ManagedAppScope {
+      appKey: string
+      currentSpaceKey?: string
+    }
+
+    interface MenuDefinition {
+      id: string
+      appKey?: string
+      menuKey?: string
+      kind?: 'directory' | 'entry' | 'external' | string
+      path?: string
+      name?: string
+      component?: string
+      defaultTitle?: string
+      defaultIcon?: string
+      status?: string
+      meta?: Record<string, any>
+    }
+
+    interface SpaceMenuPlacement {
+      id?: string
+      appKey?: string
+      spaceKey: string
+      menuKey: string
+      parentMenuKey?: string
+      sortOrder?: number
+      hidden?: boolean
+      titleOverride?: string
+      iconOverride?: string
+      metaOverride?: Record<string, any>
     }
 
     /** 用户列表 */
@@ -558,6 +660,7 @@ declare namespace Api {
 
     interface FeaturePackageItem {
       id: string
+      appKey?: string
       packageKey: string
       packageType?: 'base' | 'bundle' | string
       name: string
@@ -609,6 +712,7 @@ declare namespace Api {
     type FeaturePackageSearchParams = Partial<
       Pick<FeaturePackageItem, 'name' | 'status'> &
         Api.Common.CommonSearchParams & {
+          appKey?: string
           keyword?: string
           packageKey?: string
           packageType?: string
@@ -617,6 +721,7 @@ declare namespace Api {
     >
 
     interface FeaturePackageCreateParams {
+      app_key?: string
       package_key: string
       package_type?: 'base' | 'bundle' | string
       name: string
@@ -627,6 +732,7 @@ declare namespace Api {
     }
 
     interface FeaturePackageUpdateParams {
+      app_key?: string
       package_key?: string
       package_type?: 'base' | 'bundle' | string
       name?: string
@@ -731,6 +837,7 @@ declare namespace Api {
 
     interface PageItem {
       id: string
+      appKey?: string
       pageKey: string
       name: string
       routeName: string
@@ -803,6 +910,7 @@ declare namespace Api {
     }
 
     interface PageAccessTraceParams {
+      appKey?: string
       userId: string
       tenantId?: string
       pageKey?: string
@@ -850,6 +958,7 @@ declare namespace Api {
     type PageSearchParams = Partial<
       Pick<PageItem, 'pageType' | 'moduleKey' | 'accessMode' | 'source' | 'status'> &
         Api.Common.CommonSearchParams & {
+          appKey?: string
           keyword?: string
           parentMenuId?: string
           spaceKey?: string
@@ -857,6 +966,7 @@ declare namespace Api {
     >
 
     interface PageSaveParams {
+      app_key?: string
       page_key: string
       name: string
       route_name: string
@@ -886,6 +996,7 @@ declare namespace Api {
     }
 
     interface RuntimeNavigationManifest {
+      currentApp?: CurrentAppResponse
       currentSpace?: {
         space?: MenuSpaceItem
         binding?: MenuSpaceHostBindingItem
@@ -894,6 +1005,8 @@ declare namespace Api {
         accessGranted?: boolean
       }
       context?: {
+        app_key?: string
+        appKey?: string
         space_key?: string
         requested_space_key?: string
         request_host?: string
@@ -974,6 +1087,8 @@ declare namespace Api {
     interface APIEndpointItem {
       id: string
       code: string
+      appKey?: string
+      appScope?: 'shared' | 'app' | string
       method: string
       path: string
       spec?: string
@@ -1061,6 +1176,8 @@ declare namespace Api {
     type APIEndpointSearchParams = Partial<
       Pick<APIEndpointItem, 'method' | 'path' | 'status'> &
         Api.Common.CommonSearchParams & {
+          appKey?: string
+          appScope?: string
           keyword?: string
           permissionKey?: string
           featureKind?: string
@@ -1250,10 +1367,12 @@ declare namespace Api {
 
     interface FeaturePackageActionSetParams {
       action_ids: string[]
+      app_key?: string
     }
 
     interface FeaturePackageChildSetParams {
       child_package_ids: string[]
+      app_key?: string
     }
 
     interface TeamFeaturePackageSetParams {
@@ -1285,6 +1404,7 @@ declare namespace Api {
 
     /** 创建菜单参数（与后端 MenuCreateRequest 一致） */
     interface MenuCreateParams {
+      app_key?: string
       parent_id: string | null
       manage_group_id?: string | null
       // directory 只做分组；entry 直接作为页面入口；external 只维护外链展示。
@@ -1304,6 +1424,7 @@ declare namespace Api {
 
     /** 更新菜单参数（与后端 MenuUpdateRequest 一致） */
     interface MenuUpdateParams {
+      app_key?: string
       parent_id: string | null
       manage_group_id?: string | null
       kind?: 'directory' | 'entry' | 'external' | string
@@ -1361,6 +1482,7 @@ declare namespace Api {
     }
 
     interface MenuBackupCreateParams {
+      app_key?: string
       name: string
       description?: string
       // scope_type 显式声明要备份当前空间还是全部空间，避免再依赖省略 space_key 推断语义。

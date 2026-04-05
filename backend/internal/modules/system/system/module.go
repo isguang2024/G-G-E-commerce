@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/config"
+	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
 	space "github.com/gg-ecommerce/backend/internal/modules/system/space"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
@@ -51,6 +52,8 @@ func (m *SystemModule) RegisterRoutes(rg *gin.RouterGroup) {
 	fastEnterService := NewFastEnterService(m.db)
 	messageService := NewMessageService(m.db, m.logger)
 	systemHandler := NewSystemHandler(m.logger, systemCache, fastEnterService, messageService)
+	appService := apppkg.NewService(m.db)
+	appHandler := apppkg.NewHandler(m.logger, appService)
 	boundaryService := teamboundary.NewService(m.db)
 	platformService := platformaccess.NewService(m.db)
 	roleSnapshotService := platformroleaccess.NewService(m.db)
@@ -65,6 +68,11 @@ func (m *SystemModule) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.GETProtected("/view-pages", reg.Meta("获取页面文件映射").BindPermissionKey("system.page_catalog.view").Build(), "system.page_catalog.view", authzService.RequireAction, systemHandler.GetViewPages)
 		reg.GET("/fast-enter", reg.Meta("获取快捷入口配置").BindGroup("system").Build(), systemHandler.GetFastEnterConfig)
 		reg.PUTProtected("/fast-enter", reg.Meta("更新快捷入口配置").BindGroup("system").BindPermissionKey("system.fast_enter.manage").Build(), "system.fast_enter.manage", authzService.RequireAction, systemHandler.UpdateFastEnterConfig)
+		reg.GETProtected("/apps", reg.Meta("获取应用列表").BindGroup("system").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, appHandler.List)
+		reg.POSTProtected("/apps", reg.Meta("保存应用").BindGroup("system").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, appHandler.SaveApp)
+		reg.GET("/apps/current", reg.Meta("获取当前应用").BindGroup("system").Build(), appHandler.GetCurrent)
+		reg.GETProtected("/app-host-bindings", reg.Meta("获取应用 Host 绑定").BindGroup("system").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, appHandler.ListHostBindings)
+		reg.POSTProtected("/app-host-bindings", reg.Meta("保存应用 Host 绑定").BindGroup("system").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, appHandler.SaveHostBinding)
 		reg.GET("/menu-spaces/current", reg.Meta("获取当前菜单空间").BindGroup("system").Build(), menuSpaceHandler.GetCurrent)
 		reg.GETProtected("/menu-space-mode", reg.Meta("获取菜单空间模式").BindGroup("system").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuSpaceHandler.GetMode)
 		reg.PUTProtected("/menu-space-mode", reg.Meta("保存菜单空间模式").BindGroup("system").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuSpaceHandler.SaveMode)

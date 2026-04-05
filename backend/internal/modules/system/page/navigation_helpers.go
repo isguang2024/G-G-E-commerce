@@ -10,9 +10,9 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 )
 
-func loadPageSpaceBindingMap(dbQuery *gorm.DB) (map[uuid.UUID][]string, error) {
+func loadPageSpaceBindingMap(dbQuery *gorm.DB, appKey string) (map[uuid.UUID][]string, error) {
 	var bindings []models.PageSpaceBinding
-	if err := dbQuery.Find(&bindings).Error; err != nil {
+	if err := dbQuery.Where("app_key = ?", normalizeAppKey(appKey)).Find(&bindings).Error; err != nil {
 		return nil, err
 	}
 	result := make(map[uuid.UUID][]string, len(bindings))

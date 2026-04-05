@@ -5,6 +5,7 @@
 - 使用中文沟通。
 - 仓库当前前端主线为 `frontend/`。
 - 默认在 `frontend/` 内延续现有信息架构、路由职责与页面边界，不额外新开第二条管理端重写线。
+- 仓库已接入项目级 `superpowers` 技能集，路径为 `.agents/skills/superpowers/`；若技能流程与本仓库约束冲突，以本文件及根目录规范为准。
 - 通过 Shell 读写文本时必须显式使用 UTF-8 编码，避免乱码。
 - 前端壳层与页面调整默认遵循根目录 `PROJECT_FRAMEWORK.md` 与 `FRONTEND_GUIDELINE.md`。
 - 大型改动收尾时需要同步更新 `docs/change-log.md`。

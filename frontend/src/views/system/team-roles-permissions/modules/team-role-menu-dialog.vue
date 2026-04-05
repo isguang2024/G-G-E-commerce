@@ -69,6 +69,7 @@
   interface Props {
     modelValue: boolean
     roleData?: Api.SystemManage.RoleListItem
+    appKey?: string
   }
 
   const props = defineProps<Props>()
@@ -87,6 +88,7 @@
   const derivedSourceMap = ref<Record<string, string[]>>({})
   const selectedDerivedPackageId = ref('')
   const inherited = ref(false)
+  const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
   const roleTitle = computed(() => props.roleData?.roleName || '')
   const checkedCount = computed(() => selectedMenuIds.value.length)
   const blockedCount = computed(() => Math.max(availableMenuIds.value.length - checkedCount.value, 0))
@@ -118,12 +120,17 @@
   watch(
     () => props.modelValue,
     async (open) => {
-      if (!open || !props.roleData?.roleId) return
+      if (!open || !props.roleData?.roleId || !currentAppKey.value) {
+        if (open && !currentAppKey.value) {
+          ElMessage.warning('缺少 app 上下文')
+        }
+        return
+      }
       try {
         const [menus, assigned, packagesRes] = await Promise.all([
-          fetchGetMenuTreeAll(currentSpaceKey.value),
-          fetchGetMyTeamBoundaryRoleMenus(props.roleData.roleId),
-          fetchGetMyTeamBoundaryRolePackages(props.roleData.roleId)
+          fetchGetMenuTreeAll(currentSpaceKey.value, currentAppKey.value),
+          fetchGetMyTeamBoundaryRoleMenus(props.roleData.roleId, currentAppKey.value),
+          fetchGetMyTeamBoundaryRolePackages(props.roleData.roleId, currentAppKey.value)
         ])
         availableMenuIds.value = assigned?.available_menu_ids || []
         featurePackages.value = packagesRes?.packages || []
@@ -174,10 +181,19 @@
   }
 
   async function handleSave() {
-    if (!props.roleData?.roleId) return
+    if (!props.roleData?.roleId || !currentAppKey.value) {
+      if (!currentAppKey.value) {
+        ElMessage.warning('缺少 app 上下文')
+      }
+      return
+    }
     saving.value = true
     try {
-      await fetchSetMyTeamBoundaryRoleMenus(props.roleData.roleId, selectedMenuIds.value)
+      await fetchSetMyTeamBoundaryRoleMenus(
+        props.roleData.roleId,
+        selectedMenuIds.value,
+        currentAppKey.value
+      )
       ElMessage.success('团队角色菜单裁剪已保存')
       emit('success')
       handleClose()

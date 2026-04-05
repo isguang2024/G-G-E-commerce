@@ -10,12 +10,13 @@ import (
 	"gorm.io/gorm/clause"
 
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
 )
 
 var (
 	platformPublicMenuCacheMu        sync.RWMutex
-	platformPublicMenuCacheIDs       []uuid.UUID
-	platformPublicMenuCacheExpiresAt time.Time
+	platformPublicMenuCacheIDs       = map[string][]uuid.UUID{}
+	platformPublicMenuCacheExpiresAt = map[string]time.Time{}
 )
 
 type Snapshot struct {
@@ -36,8 +37,8 @@ type Snapshot struct {
 }
 
 type Service interface {
-	GetSnapshot(userID uuid.UUID) (*Snapshot, error)
-	RefreshSnapshot(userID uuid.UUID) (*Snapshot, error)
+	GetSnapshot(userID uuid.UUID, appKey ...string) (*Snapshot, error)
+	RefreshSnapshot(userID uuid.UUID, appKey ...string) (*Snapshot, error)
 }
 
 type service struct {
@@ -51,47 +52,49 @@ func NewService(db *gorm.DB) Service {
 func InvalidatePublicMenuCache() {
 	platformPublicMenuCacheMu.Lock()
 	defer platformPublicMenuCacheMu.Unlock()
-	platformPublicMenuCacheIDs = nil
-	platformPublicMenuCacheExpiresAt = time.Time{}
+	platformPublicMenuCacheIDs = map[string][]uuid.UUID{}
+	platformPublicMenuCacheExpiresAt = map[string]time.Time{}
 }
 
-func (s *service) GetSnapshot(userID uuid.UUID) (*Snapshot, error) {
-	snapshot, err := s.loadSnapshot(userID)
+func (s *service) GetSnapshot(userID uuid.UUID, appKey ...string) (*Snapshot, error) {
+	resolvedAppKey := resolveAppKey(appKey...)
+	snapshot, err := s.loadSnapshot(userID, resolvedAppKey)
 	if err != nil {
 		return nil, err
 	}
 	if snapshot != nil {
 		return snapshot, nil
 	}
-	return s.RefreshSnapshot(userID)
+	return s.RefreshSnapshot(userID, resolvedAppKey)
 }
 
-func (s *service) RefreshSnapshot(userID uuid.UUID) (*Snapshot, error) {
-	snapshot, err := s.calculateSnapshot(userID)
+func (s *service) RefreshSnapshot(userID uuid.UUID, appKey ...string) (*Snapshot, error) {
+	resolvedAppKey := resolveAppKey(appKey...)
+	snapshot, err := s.calculateSnapshot(userID, resolvedAppKey)
 	if err != nil {
 		return nil, err
 	}
-	if err := s.saveSnapshot(userID, snapshot); err != nil {
+	if err := s.saveSnapshot(userID, resolvedAppKey, snapshot); err != nil {
 		return nil, err
 	}
 	return snapshot, nil
 }
 
-func (s *service) calculateSnapshot(userID uuid.UUID) (*Snapshot, error) {
+func (s *service) calculateSnapshot(userID uuid.UUID, appKey string) (*Snapshot, error) {
 	roleIDs, err := s.getGlobalRoleIDsByUserID(userID)
 	if err != nil {
 		return nil, err
 	}
-	rolePackageIDs, err := s.getPackageIDsByRoleIDs(roleIDs)
+	rolePackageIDs, err := s.getPackageIDsByRoleIDs(roleIDs, appKey)
 	if err != nil {
 		return nil, err
 	}
-	userPackageIDs, err := s.getPackageIDsByUserID(userID)
+	userPackageIDs, err := s.getPackageIDsByUserID(userID, appKey)
 	if err != nil {
 		return nil, err
 	}
 	directPackageIDs := mergeUUIDs(rolePackageIDs, userPackageIDs)
-	expandedPackageIDs, err := s.expandPackageIDs(directPackageIDs, "platform")
+	expandedPackageIDs, err := s.expandPackageIDs(directPackageIDs, "platform", appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -106,28 +109,28 @@ func (s *service) calculateSnapshot(userID uuid.UUID) (*Snapshot, error) {
 	actionIDs = subtractUUIDs(actionIDs, disabledActionIDs)
 	actionSourceMap = filterSourceMap(actionSourceMap, actionIDs)
 
-	menuIDs, menuSourceMap, err := s.getEffectiveMenuContributionByRoleIDs(roleIDs)
+	menuIDs, menuSourceMap, err := s.getEffectiveMenuContributionByRoleIDs(roleIDs, appKey)
 	if err != nil {
 		return nil, err
 	}
-	userExpandedPackageIDs, err := s.expandPackageIDs(userPackageIDs, "platform")
+	userExpandedPackageIDs, err := s.expandPackageIDs(userPackageIDs, "platform", appKey)
 	if err != nil {
 		return nil, err
 	}
-	userMenuIDs, userMenuSourceMap, err := s.getMenuIDsByPackageIDs(userExpandedPackageIDs)
+	userMenuIDs, userMenuSourceMap, err := s.getMenuIDsByPackageIDs(userExpandedPackageIDs, appKey)
 	if err != nil {
 		return nil, err
 	}
 	menuIDs = mergeUUIDs(menuIDs, userMenuIDs)
 	menuSourceMap = mergeSourceMaps(menuSourceMap, userMenuSourceMap)
-	publicMenuIDs, err := s.getPublicMenuIDs()
+	publicMenuIDs, err := s.getPublicMenuIDs(appKey)
 	if err != nil {
 		return nil, err
 	}
 	menuIDs = mergeUUIDs(menuIDs, publicMenuIDs)
 	availableMenuIDs := append([]uuid.UUID{}, menuIDs...)
 	availableMenuMap := filterSourceMap(menuSourceMap, availableMenuIDs)
-	hiddenMenuIDs, err := s.getUserHiddenMenuIDs(userID)
+	hiddenMenuIDs, err := s.getUserHiddenMenuIDs(userID, appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -152,9 +155,9 @@ func (s *service) calculateSnapshot(userID uuid.UUID) (*Snapshot, error) {
 	}, nil
 }
 
-func (s *service) loadSnapshot(userID uuid.UUID) (*Snapshot, error) {
+func (s *service) loadSnapshot(userID uuid.UUID, appKey string) (*Snapshot, error) {
 	var record models.PlatformUserAccessSnapshot
-	if err := s.db.Where("user_id = ?", userID).First(&record).Error; err != nil {
+	if err := s.db.Where("app_key = ? AND user_id = ?", appctx.NormalizeAppKey(appKey), userID).First(&record).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
@@ -178,8 +181,9 @@ func (s *service) loadSnapshot(userID uuid.UUID) (*Snapshot, error) {
 	}, nil
 }
 
-func (s *service) saveSnapshot(userID uuid.UUID, snapshot *Snapshot) error {
+func (s *service) saveSnapshot(userID uuid.UUID, appKey string, snapshot *Snapshot) error {
 	record := models.PlatformUserAccessSnapshot{
+		AppKey:             appctx.NormalizeAppKey(appKey),
 		UserID:             userID,
 		RoleIDs:            idsToUUIDStrings(snapshot.RoleIDs),
 		RolePackageIDs:     idsToUUIDStrings(snapshot.RolePackageIDs),
@@ -197,7 +201,7 @@ func (s *service) saveSnapshot(userID uuid.UUID, snapshot *Snapshot) error {
 		HasPackageConfig:   snapshot.HasPackageConfig,
 	}
 	return s.db.Clauses(clause.OnConflict{
-		Columns:   []clause.Column{{Name: "user_id"}},
+		Columns:   []clause.Column{{Name: "app_key"}, {Name: "user_id"}},
 		UpdateAll: true,
 	}).Create(&record).Error
 }
@@ -214,32 +218,36 @@ func (s *service) getGlobalRoleIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error
 	return roleIDs, err
 }
 
-func (s *service) getPackageIDsByRoleIDs(roleIDs []uuid.UUID) ([]uuid.UUID, error) {
+func (s *service) getPackageIDsByRoleIDs(roleIDs []uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	if len(roleIDs) == 0 {
 		return []uuid.UUID{}, nil
 	}
 	var packageIDs []uuid.UUID
 	err := s.db.Model(&models.RoleFeaturePackage{}).
+		Joins("JOIN feature_packages ON feature_packages.id = role_feature_packages.package_id").
 		Where("role_id IN ? AND enabled = ?", roleIDs, true).
+		Where("feature_packages.app_key = ? AND feature_packages.deleted_at IS NULL", appctx.NormalizeAppKey(appKey)).
 		Distinct("package_id").
 		Pluck("package_id", &packageIDs).Error
 	return packageIDs, err
 }
 
-func (s *service) getPackageIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error) {
+func (s *service) getPackageIDsByUserID(userID uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	var packageIDs []uuid.UUID
 	err := s.db.Model(&models.UserFeaturePackage{}).
+		Joins("JOIN feature_packages ON feature_packages.id = user_feature_packages.package_id").
 		Where("user_id = ? AND enabled = ?", userID, true).
+		Where("feature_packages.app_key = ? AND feature_packages.deleted_at IS NULL", appctx.NormalizeAppKey(appKey)).
 		Distinct("package_id").
 		Pluck("package_id", &packageIDs).Error
 	return packageIDs, err
 }
 
-func (s *service) expandPackageIDs(packageIDs []uuid.UUID, context string) ([]uuid.UUID, error) {
+func (s *service) expandPackageIDs(packageIDs []uuid.UUID, context string, appKey string) ([]uuid.UUID, error) {
 	if len(packageIDs) == 0 {
 		return []uuid.UUID{}, nil
 	}
-	packageMap, bundleChildrenMap, err := s.loadPackageGraph(packageIDs)
+	packageMap, bundleChildrenMap, err := s.loadPackageGraph(packageIDs, appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -274,7 +282,7 @@ func (s *service) getActionIDsByPackageIDs(packageIDs []uuid.UUID) ([]uuid.UUID,
 	return result, sourceMap, nil
 }
 
-func (s *service) getMenuIDsByPackageIDs(packageIDs []uuid.UUID) ([]uuid.UUID, map[uuid.UUID][]uuid.UUID, error) {
+func (s *service) getMenuIDsByPackageIDs(packageIDs []uuid.UUID, appKey string) ([]uuid.UUID, map[uuid.UUID][]uuid.UUID, error) {
 	if len(packageIDs) == 0 {
 		return []uuid.UUID{}, map[uuid.UUID][]uuid.UUID{}, nil
 	}
@@ -283,8 +291,10 @@ func (s *service) getMenuIDsByPackageIDs(packageIDs []uuid.UUID) ([]uuid.UUID, m
 		MenuID    uuid.UUID
 	}
 	if err := s.db.Model(&models.FeaturePackageMenu{}).
-		Select("package_id, menu_id").
-		Where("package_id IN ?", packageIDs).
+		Select("feature_package_menus.package_id, feature_package_menus.menu_id").
+		Joins("JOIN menu_definitions ON menu_definitions.id = feature_package_menus.menu_id").
+		Where("feature_package_menus.package_id IN ?", packageIDs).
+		Where("menu_definitions.app_key = ? AND menu_definitions.deleted_at IS NULL", appctx.NormalizeAppKey(appKey)).
 		Scan(&rows).Error; err != nil {
 		return nil, nil, err
 	}
@@ -314,15 +324,15 @@ func (s *service) getDisabledActionIDsByRoleIDs(roleIDs []uuid.UUID) ([]uuid.UUI
 	return actionIDs, err
 }
 
-func (s *service) getEffectiveMenuContributionByRoleIDs(roleIDs []uuid.UUID) ([]uuid.UUID, map[uuid.UUID][]uuid.UUID, error) {
+func (s *service) getEffectiveMenuContributionByRoleIDs(roleIDs []uuid.UUID, appKey string) ([]uuid.UUID, map[uuid.UUID][]uuid.UUID, error) {
 	if len(roleIDs) == 0 {
 		return []uuid.UUID{}, map[uuid.UUID][]uuid.UUID{}, nil
 	}
-	rolePackageMap, allPackageIDs, err := s.getPackageIDsByRoleIDsMap(roleIDs)
+	rolePackageMap, allPackageIDs, err := s.getPackageIDsByRoleIDsMap(roleIDs, appKey)
 	if err != nil {
 		return nil, nil, err
 	}
-	packageMap, bundleChildrenMap, err := s.loadPackageGraph(allPackageIDs)
+	packageMap, bundleChildrenMap, err := s.loadPackageGraph(allPackageIDs, appKey)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -340,11 +350,11 @@ func (s *service) getEffectiveMenuContributionByRoleIDs(roleIDs []uuid.UUID) ([]
 			allExpandedPackageIDs = append(allExpandedPackageIDs, packageID)
 		}
 	}
-	packageMenuMap, err := s.getPackageMenuMapByPackageIDs(allExpandedPackageIDs)
+	packageMenuMap, err := s.getPackageMenuMapByPackageIDs(allExpandedPackageIDs, appKey)
 	if err != nil {
 		return nil, nil, err
 	}
-	roleHiddenMenuMap, err := s.getHiddenMenuIDsByRoleIDsMap(roleIDs)
+	roleHiddenMenuMap, err := s.getHiddenMenuIDsByRoleIDsMap(roleIDs, appKey)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -367,16 +377,18 @@ func (s *service) getEffectiveMenuContributionByRoleIDs(roleIDs []uuid.UUID) ([]
 	return menuIDs, sourceMap, nil
 }
 
-func (s *service) getPackageIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error) {
+func (s *service) getPackageIDsByRoleID(roleID uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	var packageIDs []uuid.UUID
 	err := s.db.Model(&models.RoleFeaturePackage{}).
+		Joins("JOIN feature_packages ON feature_packages.id = role_feature_packages.package_id").
 		Where("role_id = ? AND enabled = ?", roleID, true).
+		Where("feature_packages.app_key = ? AND feature_packages.deleted_at IS NULL", appctx.NormalizeAppKey(appKey)).
 		Distinct("package_id").
 		Pluck("package_id", &packageIDs).Error
 	return packageIDs, err
 }
 
-func (s *service) getPackageIDsByRoleIDsMap(roleIDs []uuid.UUID) (map[uuid.UUID][]uuid.UUID, []uuid.UUID, error) {
+func (s *service) getPackageIDsByRoleIDsMap(roleIDs []uuid.UUID, appKey string) (map[uuid.UUID][]uuid.UUID, []uuid.UUID, error) {
 	result := make(map[uuid.UUID][]uuid.UUID, len(roleIDs))
 	if len(roleIDs) == 0 {
 		return result, []uuid.UUID{}, nil
@@ -386,8 +398,10 @@ func (s *service) getPackageIDsByRoleIDsMap(roleIDs []uuid.UUID) (map[uuid.UUID]
 		PackageID uuid.UUID
 	}
 	if err := s.db.Model(&models.RoleFeaturePackage{}).
-		Select("role_id, package_id").
-		Where("role_id IN ? AND enabled = ?", roleIDs, true).
+		Select("role_feature_packages.role_id, role_feature_packages.package_id").
+		Joins("JOIN feature_packages ON feature_packages.id = role_feature_packages.package_id").
+		Where("role_feature_packages.role_id IN ? AND role_feature_packages.enabled = ?", roleIDs, true).
+		Where("feature_packages.app_key = ? AND feature_packages.deleted_at IS NULL", appctx.NormalizeAppKey(appKey)).
 		Scan(&rows).Error; err != nil {
 		return nil, nil, err
 	}
@@ -407,16 +421,18 @@ func (s *service) getPackageIDsByRoleIDsMap(roleIDs []uuid.UUID) (map[uuid.UUID]
 	return result, allPackageIDs, nil
 }
 
-func (s *service) getHiddenMenuIDsByRoleID(roleID uuid.UUID) ([]uuid.UUID, error) {
+func (s *service) getHiddenMenuIDsByRoleID(roleID uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	var menuIDs []uuid.UUID
 	err := s.db.Model(&models.RoleHiddenMenu{}).
-		Where("role_id = ?", roleID).
+		Joins("JOIN menu_definitions ON menu_definitions.id = role_hidden_menus.menu_id").
+		Where("role_hidden_menus.role_id = ?", roleID).
+		Where("menu_definitions.app_key = ? AND menu_definitions.deleted_at IS NULL", appctx.NormalizeAppKey(appKey)).
 		Distinct("menu_id").
-		Pluck("menu_id", &menuIDs).Error
+		Pluck("role_hidden_menus.menu_id", &menuIDs).Error
 	return menuIDs, err
 }
 
-func (s *service) getHiddenMenuIDsByRoleIDsMap(roleIDs []uuid.UUID) (map[uuid.UUID][]uuid.UUID, error) {
+func (s *service) getHiddenMenuIDsByRoleIDsMap(roleIDs []uuid.UUID, appKey string) (map[uuid.UUID][]uuid.UUID, error) {
 	result := make(map[uuid.UUID][]uuid.UUID, len(roleIDs))
 	if len(roleIDs) == 0 {
 		return result, nil
@@ -426,8 +442,10 @@ func (s *service) getHiddenMenuIDsByRoleIDsMap(roleIDs []uuid.UUID) (map[uuid.UU
 		MenuID uuid.UUID
 	}
 	if err := s.db.Model(&models.RoleHiddenMenu{}).
-		Select("role_id, menu_id").
-		Where("role_id IN ?", roleIDs).
+		Select("role_hidden_menus.role_id, role_hidden_menus.menu_id").
+		Joins("JOIN menu_definitions ON menu_definitions.id = role_hidden_menus.menu_id").
+		Where("role_hidden_menus.role_id IN ?", roleIDs).
+		Where("menu_definitions.app_key = ? AND menu_definitions.deleted_at IS NULL", appctx.NormalizeAppKey(appKey)).
 		Scan(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -440,28 +458,31 @@ func (s *service) getHiddenMenuIDsByRoleIDsMap(roleIDs []uuid.UUID) (map[uuid.UU
 	return result, nil
 }
 
-func (s *service) getUserHiddenMenuIDs(userID uuid.UUID) ([]uuid.UUID, error) {
+func (s *service) getUserHiddenMenuIDs(userID uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	var userHidden []uuid.UUID
 	if err := s.db.Model(&models.UserHiddenMenu{}).
-		Where("user_id = ?", userID).
+		Joins("JOIN menu_definitions ON menu_definitions.id = user_hidden_menus.menu_id").
+		Where("user_hidden_menus.user_id = ?", userID).
+		Where("menu_definitions.app_key = ? AND menu_definitions.deleted_at IS NULL", appctx.NormalizeAppKey(appKey)).
 		Distinct("menu_id").
-		Pluck("menu_id", &userHidden).Error; err != nil {
+		Pluck("user_hidden_menus.menu_id", &userHidden).Error; err != nil {
 		return nil, err
 	}
 	return userHidden, nil
 }
 
-func (s *service) getPublicMenuIDs() ([]uuid.UUID, error) {
+func (s *service) getPublicMenuIDs(appKey string) ([]uuid.UUID, error) {
+	normalizedAppKey := appctx.NormalizeAppKey(appKey)
 	platformPublicMenuCacheMu.RLock()
-	if time.Now().Before(platformPublicMenuCacheExpiresAt) {
-		cached := append([]uuid.UUID{}, platformPublicMenuCacheIDs...)
+	if expiresAt, ok := platformPublicMenuCacheExpiresAt[normalizedAppKey]; ok && time.Now().Before(expiresAt) {
+		cached := append([]uuid.UUID{}, platformPublicMenuCacheIDs[normalizedAppKey]...)
 		platformPublicMenuCacheMu.RUnlock()
 		return cached, nil
 	}
 	platformPublicMenuCacheMu.RUnlock()
 
-	var menus []models.Menu
-	if err := s.db.Select("id", "meta").Find(&menus).Error; err != nil {
+	var menus []models.MenuDefinition
+	if err := s.db.Select("id", "meta").Where("app_key = ? AND deleted_at IS NULL", normalizedAppKey).Find(&menus).Error; err != nil {
 		return nil, err
 	}
 	result := make([]uuid.UUID, 0)
@@ -474,13 +495,13 @@ func (s *service) getPublicMenuIDs() ([]uuid.UUID, error) {
 		}
 	}
 	platformPublicMenuCacheMu.Lock()
-	platformPublicMenuCacheIDs = append([]uuid.UUID{}, result...)
-	platformPublicMenuCacheExpiresAt = time.Now().Add(30 * time.Second)
+	platformPublicMenuCacheIDs[normalizedAppKey] = append([]uuid.UUID{}, result...)
+	platformPublicMenuCacheExpiresAt[normalizedAppKey] = time.Now().Add(30 * time.Second)
 	platformPublicMenuCacheMu.Unlock()
 	return result, nil
 }
 
-func (s *service) getPackageMenuMapByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID][]uuid.UUID, error) {
+func (s *service) getPackageMenuMapByPackageIDs(packageIDs []uuid.UUID, appKey string) (map[uuid.UUID][]uuid.UUID, error) {
 	result := make(map[uuid.UUID][]uuid.UUID)
 	if len(packageIDs) == 0 {
 		return result, nil
@@ -490,8 +511,10 @@ func (s *service) getPackageMenuMapByPackageIDs(packageIDs []uuid.UUID) (map[uui
 		MenuID    uuid.UUID
 	}
 	if err := s.db.Model(&models.FeaturePackageMenu{}).
-		Select("package_id, menu_id").
-		Where("package_id IN ?", packageIDs).
+		Select("feature_package_menus.package_id, feature_package_menus.menu_id").
+		Joins("JOIN menu_definitions ON menu_definitions.id = feature_package_menus.menu_id").
+		Where("feature_package_menus.package_id IN ?", packageIDs).
+		Where("menu_definitions.app_key = ? AND menu_definitions.deleted_at IS NULL", appctx.NormalizeAppKey(appKey)).
 		Scan(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -501,7 +524,7 @@ func (s *service) getPackageMenuMapByPackageIDs(packageIDs []uuid.UUID) (map[uui
 	return result, nil
 }
 
-func (s *service) loadPackageGraph(seedIDs []uuid.UUID) (map[uuid.UUID]models.FeaturePackage, map[uuid.UUID][]uuid.UUID, error) {
+func (s *service) loadPackageGraph(seedIDs []uuid.UUID, appKey string) (map[uuid.UUID]models.FeaturePackage, map[uuid.UUID][]uuid.UUID, error) {
 	packageMap := make(map[uuid.UUID]models.FeaturePackage)
 	if len(seedIDs) == 0 {
 		return packageMap, map[uuid.UUID][]uuid.UUID{}, nil
@@ -540,7 +563,7 @@ func (s *service) loadPackageGraph(seedIDs []uuid.UUID) (map[uuid.UUID]models.Fe
 		}
 	}
 	var packages []models.FeaturePackage
-	if err := s.db.Where("id IN ? AND status = ?", queue, "normal").Find(&packages).Error; err != nil {
+	if err := s.db.Where("app_key = ? AND id IN ? AND status = ?", appctx.NormalizeAppKey(appKey), queue, "normal").Find(&packages).Error; err != nil {
 		return nil, nil, err
 	}
 	for _, item := range packages {
@@ -812,4 +835,11 @@ func sourceMapStringsToUUIDs(sourceMap map[string][]string) map[uuid.UUID][]uuid
 		result[id] = uuidStringsToIDs(packageIDs)
 	}
 	return result
+}
+
+func resolveAppKey(appKey ...string) string {
+	if len(appKey) == 0 {
+		return appctx.NormalizeAppKey("")
+	}
+	return appctx.NormalizeAppKey(appKey[0])
 }

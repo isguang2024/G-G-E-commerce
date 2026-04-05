@@ -216,6 +216,29 @@
             <div class="form-section__title">归属与运行时</div>
             <div class="form-section__desc">分类影响管理归档，团队上下文和状态影响运行时访问与诊断结果。</div>
           </div>
+          <ElRow :gutter="12">
+            <ElCol :span="12">
+              <ElFormItem label="应用范围" prop="appScope">
+                <ElSelect
+                  v-model="formState.appScope"
+                  placeholder="请选择"
+                  popper-class="api-endpoint-select-popper"
+                >
+                  <ElOption label="共享接口" value="shared" />
+                  <ElOption label="当前 App" value="app" />
+                </ElSelect>
+              </ElFormItem>
+            </ElCol>
+            <ElCol :span="12">
+              <ElFormItem label="App 归属">
+                <ElInput
+                  :model-value="targetAppKey"
+                  :disabled="formState.appScope !== 'app'"
+                  placeholder="共享接口无需指定 App"
+                />
+              </ElFormItem>
+            </ElCol>
+          </ElRow>
           <ElFormItem label="分类" prop="categoryId">
             <div class="category-input-wrap">
               <ElSelect
@@ -622,7 +645,8 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, h, nextTick, onMounted, reactive, ref } from 'vue'
+  import { computed, h, nextTick, onMounted, reactive, ref, watch } from 'vue'
+  import { useRoute } from 'vue-router'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { useTable } from '@/hooks/core/useTable'
   import { useAuth } from '@/hooks/core/useAuth'
@@ -663,6 +687,7 @@
   } from 'element-plus'
   import { QuestionFilled } from '@element-plus/icons-vue'
   import ApiEndpointSearch from './modules/api-endpoint-search.vue'
+  import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
 
   defineOptions({ name: 'ApiEndpoint' })
 
@@ -696,6 +721,8 @@
 
   const methodOptions = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
   const { hasAction } = useAuth()
+  const route = useRoute()
+  const { targetAppKey } = useManagedAppScope()
   const API_ENDPOINT_TABLE_STATE_KEY = 'system:api-endpoint:table-state'
   const staleTableRef = ref<any>(null)
   const syncing = ref(false)
@@ -757,6 +784,7 @@
   })
 
   const formState = reactive({
+    appScope: 'app',
     method: 'GET',
     path: '',
     summary: '',
@@ -871,6 +899,7 @@
   ])
 
   const summaryMetrics = computed(() => [
+    { label: '当前 App', value: targetAppKey.value },
     { label: '注册总量', value: totalCount.value || 0 },
     { label: '无权限键', value: noPermissionCount.value || 0 },
     { label: '共享接口', value: sharedPermissionCount.value || 0 },
@@ -897,7 +926,8 @@
       apiParams: {
         current: 1,
         size: 20,
-        source: ''
+        source: '',
+        appKey: targetAppKey.value
       },
       columnsFactory: () => [
         {
@@ -922,6 +952,23 @@
           showOverflowTooltip: true,
           formatter: (row: APIEndpointItem) =>
             h('div', { class: 'path-cell' }, [h('div', { class: 'path-main' }, row.path)])
+        },
+        {
+          prop: 'appScope',
+          label: '范围',
+          width: 90,
+          formatter: (row: APIEndpointItem) =>
+            h(
+              ElTag,
+              { type: row.appScope === 'app' ? 'warning' : 'info', effect: 'plain' },
+              () => (row.appScope === 'app' ? 'App' : '共享')
+            )
+        },
+        {
+          prop: 'appKey',
+          label: 'App',
+          width: 140,
+          formatter: (row: APIEndpointItem) => row.appKey || '-'
         },
         {
           prop: 'summary',
@@ -1297,7 +1344,7 @@
   async function handleSync() {
     syncing.value = true
     try {
-      await fetchSyncApiEndpoints()
+      await fetchSyncApiEndpoints(targetAppKey.value)
       ElMessage.success('同步成功')
       await refreshData()
       await loadCategorySummary()
@@ -1363,7 +1410,7 @@
     }
     cleaningStale.value = true
     try {
-      const res = await fetchCleanupStaleApiEndpoints(selectedStaleIds.value)
+      const res = await fetchCleanupStaleApiEndpoints(selectedStaleIds.value, targetAppKey.value)
       closeStaleDialog()
       await Promise.all([refreshData(), loadCategorySummary(), loadUnregisteredCount()])
       if (shouldRefreshUnregistered.value) {
@@ -1390,6 +1437,7 @@
   function resetForm() {
     editingId.value = ''
     pendingLocateRoute.value = null
+    formState.appScope = 'app'
     formState.method = 'GET'
     formState.path = ''
     formState.summary = ''
@@ -1429,6 +1477,7 @@
   function openEditDialog(row: APIEndpointItem) {
     editingId.value = row.id
     pendingLocateRoute.value = null
+    formState.appScope = row.appScope === 'shared' ? 'shared' : 'app'
     formState.method = (row.method || 'GET').toUpperCase()
     formState.path = row.path || ''
     formState.summary = row.summary || ''
@@ -1495,6 +1544,7 @@
     unregisteredLoading.value = true
     try {
       const res = await fetchGetUnregisteredApiRouteList({
+        appKey: targetAppKey.value,
         current: unregisteredPagination.current,
         size: unregisteredPagination.size,
         method: unregisteredQuery.method || undefined,
@@ -1515,6 +1565,7 @@
   async function loadUnregisteredCount() {
     try {
       const res = await fetchGetUnregisteredApiRouteList({
+        appKey: targetAppKey.value,
         current: 1,
         size: 1
       })
@@ -1526,6 +1577,7 @@
 
   async function loadStaleCandidates() {
     const res = await fetchGetStaleApiEndpointList({
+      appKey: targetAppKey.value,
       current: stalePagination.current,
       size: stalePagination.size
     })
@@ -1621,6 +1673,7 @@
 
   function handleUseUnregisteredRoute(route: APIUnregisteredRouteItem) {
     resetForm()
+    formState.appScope = 'app'
     formState.method = (route.method || 'GET').toUpperCase()
     formState.path = route.path || ''
     formState.summary = route.meta?.summary || ''
@@ -1708,6 +1761,8 @@
   async function submitForm() {
     const isEditing = !!editingId.value
     const payload = {
+      app_scope: formState.appScope,
+      app_key: formState.appScope === 'app' ? targetAppKey.value : '',
       method: formState.method,
       path: formState.path,
       summary: formState.summary,
@@ -1757,7 +1812,7 @@
   }
 
   async function loadCategorySummary() {
-    const res = await fetchGetApiEndpointOverview()
+    const res = await fetchGetApiEndpointOverview(targetAppKey.value)
     totalCount.value = res.totalCount || 0
     noPermissionCount.value = res.noPermissionCount || 0
     sharedPermissionCount.value = res.sharedPermissionCount || 0
@@ -1771,6 +1826,7 @@
 
   async function applyTableFilters() {
     Object.assign(searchParams, {
+      appKey: targetAppKey.value,
       source: selectedSource.value || undefined,
       method: tableQuery.method || undefined,
       path: tableQuery.path || undefined,
@@ -1817,10 +1873,22 @@
     restoreTableState()
     await Promise.all([loadCategories(), loadCategorySummary(), loadUnregisteredCount()])
     syncCategoryFilterFromTree()
-    if (selectedSource.value || Object.values(tableQuery).some((item) => item)) {
+    await applyTableFilters()
+  })
+
+  watch(
+    () => route.query.app_key,
+    async () => {
+      await Promise.all([loadCategorySummary(), loadUnregisteredCount()])
+      if (unregisteredVisible.value) {
+        await loadUnregisteredRoutes()
+      }
+      if (staleDialogVisible.value) {
+        await loadStaleCandidates()
+      }
       await applyTableFilters()
     }
-  })
+  )
 </script>
 
 <style scoped>

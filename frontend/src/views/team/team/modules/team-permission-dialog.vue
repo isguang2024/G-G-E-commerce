@@ -73,6 +73,7 @@
     modelValue: boolean
     teamId: string
     teamName: string
+    appKey?: string
   }
 
   const props = defineProps<Props>()
@@ -95,6 +96,7 @@
   const blockedActionIds = ref<string[]>([])
   const derivedSourceMap = ref<Record<string, string[]>>({})
   const selectedDerivedPackageId = ref('')
+  const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
   const derivedActions = computed(() => {
     const idSet = new Set(candidateActionIds.value)
     return permissionActions.value.filter((item) => idSet.has(item.id))
@@ -129,14 +131,19 @@
   )
 
   async function loadData() {
-    if (!props.teamId) return
+    if (!props.teamId || !currentAppKey.value) {
+      if (!currentAppKey.value) {
+        ElMessage.warning('缺少 app 上下文')
+      }
+      return
+    }
     loading.value = true
     try {
       const [actionsRes, currentRes, packageRes, originsRes] = await Promise.all([
         fetchGetPermissionActionOptions({ status: 'normal', contextType: 'team' }),
-        fetchGetTeamActions(props.teamId),
-        fetchGetTeamFeaturePackages(props.teamId),
-        fetchGetTeamActionOrigins(props.teamId)
+        fetchGetTeamActions(props.teamId, currentAppKey.value),
+        fetchGetTeamFeaturePackages(props.teamId, currentAppKey.value),
+        fetchGetTeamActionOrigins(props.teamId, currentAppKey.value)
       ])
 
       permissionActions.value = actionsRes?.records || []
@@ -160,12 +167,18 @@
   }
 
   async function handleSave() {
-    if (!props.teamId) return
+    if (!props.teamId || !currentAppKey.value) {
+      if (!currentAppKey.value) {
+        ElMessage.warning('缺少 app 上下文')
+      }
+      return
+    }
     saving.value = true
     try {
       await fetchSetTeamActions(
         props.teamId,
-        expandSelectedValues(selectedIds.value, permissionActions.value)
+        expandSelectedValues(selectedIds.value, permissionActions.value),
+        currentAppKey.value
       )
       ElMessage.success('团队边界已保存')
       emit('success')

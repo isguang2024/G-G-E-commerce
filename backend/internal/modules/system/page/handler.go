@@ -10,7 +10,9 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
+	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
 	spaceutil "github.com/gg-ecommerce/backend/internal/modules/system/space"
+	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
 )
 
 type Handler struct {
@@ -29,6 +31,13 @@ func (h *Handler) List(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	appKey, appErr := appctx.RequireRequestAppKey(c)
+	if appErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	req.AppKey = appKey
 	list, total, err := h.service.List(&req)
 	if err != nil {
 		h.logger.Error("List pages failed", zap.Error(err))
@@ -46,7 +55,7 @@ func (h *Handler) List(c *gin.Context) {
 }
 
 func (h *Handler) ListRuntime(c *gin.Context) {
-	list, err := h.service.ListRuntime(spaceutil.RequestHost(c), spaceutil.RequestSpaceKey(c), pageContextUserID(c), pageContextTenantID(c))
+	list, err := h.service.ListRuntime(apppkg.CurrentAppKey(c), spaceutil.RequestHost(c), spaceutil.RequestSpaceKey(c), pageContextUserID(c), pageContextTenantID(c))
 	if err != nil {
 		h.logger.Error("List runtime pages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取运行时页面注册表失败")
@@ -61,7 +70,7 @@ func (h *Handler) ListRuntime(c *gin.Context) {
 }
 
 func (h *Handler) ListRuntimePublic(c *gin.Context) {
-	list, err := h.service.ListRuntimePublic(spaceutil.RequestHost(c), spaceutil.RequestSpaceKey(c), pageContextUserID(c), pageContextTenantID(c))
+	list, err := h.service.ListRuntimePublic(apppkg.CurrentAppKey(c), spaceutil.RequestHost(c), spaceutil.RequestSpaceKey(c), pageContextUserID(c), pageContextTenantID(c))
 	if err != nil {
 		h.logger.Error("List public runtime pages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取公开运行时页面注册表失败")
@@ -76,7 +85,13 @@ func (h *Handler) ListRuntimePublic(c *gin.Context) {
 }
 
 func (h *Handler) ListUnregistered(c *gin.Context) {
-	items, err := h.service.ListUnregistered()
+	appKey, appErr := appctx.RequireRequestAppKey(c)
+	if appErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	items, err := h.service.ListUnregistered(appKey)
 	if err != nil {
 		h.logger.Error("List unregistered pages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取未注册页面失败")
@@ -90,7 +105,13 @@ func (h *Handler) ListUnregistered(c *gin.Context) {
 }
 
 func (h *Handler) Sync(c *gin.Context) {
-	result, err := h.service.Sync()
+	appKey, appErr := appctx.RequireRequestAppKey(c)
+	if appErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	result, err := h.service.Sync(appKey)
 	if err != nil {
 		h.respondServiceError(c, err, "同步页面注册表失败")
 		return
@@ -99,7 +120,13 @@ func (h *Handler) Sync(c *gin.Context) {
 }
 
 func (h *Handler) ListMenuOptions(c *gin.Context) {
-	items, err := h.service.ListMenuOptions(spaceutil.RequestSpaceKey(c))
+	appKey, appErr := appctx.RequireRequestAppKey(c)
+	if appErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	items, err := h.service.ListMenuOptions(appKey, spaceutil.RequestSpaceKey(c))
 	if err != nil {
 		h.logger.Error("List page menu options failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取上级菜单候选失败")
@@ -113,7 +140,13 @@ func (h *Handler) ListMenuOptions(c *gin.Context) {
 }
 
 func (h *Handler) ListPageOptions(c *gin.Context) {
-	items, err := h.service.ListOptions(spaceutil.RequestSpaceKey(c))
+	appKey, appErr := appctx.RequireRequestAppKey(c)
+	if appErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	items, err := h.service.ListOptions(appKey, spaceutil.RequestSpaceKey(c))
 	if err != nil {
 		h.logger.Error("List page options failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取页面候选失败")
@@ -133,7 +166,14 @@ func (h *Handler) GetAccessTrace(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	result, err := h.service.GetAccessTrace(&req)
+	appKey, appErr := appctx.RequireRequestAppKey(c)
+	if appErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	req.AppKey = appKey
+	result, err := h.service.GetAccessTrace(req.AppKey, &req)
 	if err != nil {
 		h.respondServiceError(c, err, "鑾峰彇椤甸潰璁块棶閾捐矾澶辫触")
 		return
@@ -148,7 +188,13 @@ func (h *Handler) Get(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	item, getErr := h.service.Get(id)
+	appKey, appErr := appctx.RequireRequestAppKey(c)
+	if appErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	item, getErr := h.service.Get(id, appKey)
 	if getErr != nil {
 		h.respondServiceError(c, getErr, "获取页面详情失败")
 		return
@@ -163,7 +209,13 @@ func (h *Handler) PreviewBreadcrumb(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	items, previewErr := h.service.PreviewBreadcrumb(id)
+	appKey, appErr := appctx.RequireRequestAppKey(c)
+	if appErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	items, previewErr := h.service.PreviewBreadcrumb(id, appKey)
 	if previewErr != nil {
 		h.respondServiceError(c, previewErr, "预览页面面包屑失败")
 		return
@@ -181,6 +233,13 @@ func (h *Handler) Create(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	appKey, appErr := appctx.RequireRequestAppKey(c)
+	if appErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	req.AppKey = appKey
 	item, createErr := h.service.Create(&req)
 	if createErr != nil {
 		h.respondServiceError(c, createErr, "创建页面失败")
@@ -202,6 +261,13 @@ func (h *Handler) Update(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	appKey, appErr := appctx.RequireRequestAppKey(c)
+	if appErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	req.AppKey = appKey
 	item, updateErr := h.service.Update(id, &req)
 	if updateErr != nil {
 		h.respondServiceError(c, updateErr, "更新页面失败")
@@ -217,7 +283,13 @@ func (h *Handler) Delete(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	if deleteErr := h.service.Delete(id); deleteErr != nil {
+	appKey, appErr := appctx.RequireRequestAppKey(c)
+	if appErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	if deleteErr := h.service.Delete(id, appKey); deleteErr != nil {
 		h.respondServiceError(c, deleteErr, "删除页面失败")
 		return
 	}
@@ -318,6 +390,15 @@ func buildRuntimePageRecords(items []Record) []gin.H {
 		result = append(result, buildRuntimePageRecord(flattenRuntimePageRecord(item, pageMap)))
 	}
 	return result
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if target := strings.TrimSpace(value); target != "" {
+			return target
+		}
+	}
+	return ""
 }
 
 func buildRuntimePageRecord(item Record) gin.H {

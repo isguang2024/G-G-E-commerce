@@ -1,8 +1,8 @@
 ﻿<template>
   <div class="menu-space-page art-full-height" v-loading="loading">
     <AdminWorkspaceHero
-      title="菜单空间"
-      description="先定义菜单空间，再按需绑定 Host。默认空间继续兼容当前单域单菜单模式，新增空间后也可以先在单域里逐步接入。"
+      title="空间布局高级配置"
+      description="菜单定义与空间布局已经分层：这里负责空间列表、默认空间、Host 绑定与布局树入口，不再承担菜单定义本体维护。"
       :metrics="summaryMetrics"
     >
       <div class="menu-space-hero-actions">
@@ -32,7 +32,7 @@
           <div class="menu-space-panel__header">
             <div>
               <div class="menu-space-panel__title">菜单空间</div>
-              <div class="menu-space-panel__desc">默认空间始终兜底存在；新增空间后，只复制菜单树与空间配置，受管页面默认继续全局复用。</div>
+              <div class="menu-space-panel__desc">默认空间始终兜底存在；新增空间后，只复制菜单布局与空间配置，菜单定义和受管页面定义继续按 App 统一维护。</div>
             </div>
           </div>
         </template>
@@ -87,7 +87,7 @@
             </div>
               <div class="menu-space-item__actions">
                 <ElButton text type="primary" @click.stop="openSpaceDrawer(item)">编辑</ElButton>
-                <ElButton text @click.stop="goToMenuManagement(item.spaceKey)">菜单管理</ElButton>
+                <ElButton text @click.stop="goToMenuManagement(item.spaceKey)">空间布局</ElButton>
                 <ElButton text @click.stop="goToPageManagement(item.spaceKey)">受管页面</ElButton>
                 <ElButton
                   v-if="!item.isDefault && !isSpaceInitialized(item)"
@@ -115,7 +115,7 @@
           <div class="menu-space-panel__header">
             <div>
               <div class="menu-space-panel__title">Host 绑定</div>
-              <div class="menu-space-panel__desc">可选配置。未命中任何 Host 时，系统会自动退回默认菜单空间。</div>
+              <div class="menu-space-panel__desc">可选配置。先解析 App，再决定默认空间；未命中任何 Host 时，系统会自动退回当前 App 的默认空间。</div>
             </div>
             <div class="menu-space-panel__status">
               <ElTag effect="plain" type="info">当前解析 {{ currentSpaceLabel }}</ElTag>
@@ -157,7 +157,7 @@
             </div>
           </div>
           <div class="menu-space-overview__actions">
-            <ElButton text @click="goToMenuManagement(currentSpace.spaceKey)">进入菜单管理</ElButton>
+            <ElButton text @click="goToMenuManagement(currentSpace.spaceKey)">进入空间布局</ElButton>
             <ElButton text @click="goToPageManagement(currentSpace.spaceKey)">进入受管页面</ElButton>
             <ElButton
               v-if="!currentSpace.isDefault && isSpaceInitialized(currentSpace)"
@@ -354,7 +354,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref, watch } from 'vue'
-  import { useRouter } from 'vue-router'
+  import { useRoute, useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import type { AppRouteRecord } from '@/types/router'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
@@ -369,10 +369,13 @@
     fetchSaveMenuSpaceHostBinding,
     fetchUpdateMenuSpaceMode
   } from '@/api/system-manage'
+  import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
   import { normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
 
   defineOptions({ name: 'MenuSpaceManage' })
+  const route = useRoute()
   const router = useRouter()
+  const { targetAppKey } = useManagedAppScope()
 
   const loading = ref(false)
   const loadError = ref('')
@@ -470,6 +473,7 @@
   })
 
   const summaryMetrics = computed(() => [
+    { label: '当前 App', value: targetAppKey.value },
     { label: '菜单空间', value: spaces.value.length || 0 },
     { label: 'Host 绑定', value: hostBindings.value.length || 0 },
     { label: '已初始化', value: spaces.value.filter((item) => isSpaceInitialized(item)).length || 0 },
@@ -568,9 +572,9 @@
     loadError.value = ''
     try {
       const [spaceRes, hostRes, currentRes, modeRes] = await Promise.all([
-        fetchGetMenuSpaces(),
-        fetchGetMenuSpaceHostBindings(),
-        fetchGetCurrentMenuSpace().catch(() => undefined),
+        fetchGetMenuSpaces(targetAppKey.value),
+        fetchGetMenuSpaceHostBindings(targetAppKey.value),
+        fetchGetCurrentMenuSpace(undefined, targetAppKey.value).catch(() => undefined),
         fetchGetMenuSpaceMode().catch(() => ({ mode: 'single' }))
       ])
       spaces.value = spaceRes.records || []
@@ -644,7 +648,7 @@
     const normalizedSpaceKey = normalizeMenuSpaceKey(spaceKey) || 'default'
     loadingLandingPaths.value = true
     try {
-      const manifest = await fetchGetRuntimeNavigation(normalizedSpaceKey)
+      const manifest = await fetchGetRuntimeNavigation(normalizedSpaceKey, targetAppKey.value)
       const pagePaths = (manifest.managedPages || [])
         .filter(
           (item) =>
@@ -769,6 +773,7 @@
       }
       await fetchSaveMenuSpace({
         ...spaceForm,
+        app_key: targetAppKey.value,
         space_key: normalizeMenuSpaceKey(spaceForm.space_key),
         name: spaceForm.name.trim(),
         description: spaceForm.description?.trim() || '',
@@ -805,6 +810,7 @@
     try {
       await fetchSaveMenuSpaceHostBinding({
         ...hostForm,
+        app_key: targetAppKey.value,
         host: hostForm.host.trim(),
         space_key: normalizeMenuSpaceKey(hostForm.space_key),
         description: hostForm.description?.trim() || '',
@@ -888,20 +894,34 @@
   function goToMenuManagement(spaceKey: string) {
     router.push({
       path: '/system/menu',
-      query: { spaceKey: normalizeMenuSpaceKey(spaceKey) }
+      query: {
+        app_key: targetAppKey.value,
+        spaceKey: normalizeMenuSpaceKey(spaceKey),
+        layout: '1'
+      }
     })
   }
 
   function goToPageManagement(spaceKey: string) {
     router.push({
       path: '/system/page',
-      query: { spaceKey: normalizeMenuSpaceKey(spaceKey) }
+      query: {
+        app_key: targetAppKey.value,
+        spaceKey: normalizeMenuSpaceKey(spaceKey)
+      }
     })
   }
 
   onMounted(() => {
     loadData()
   })
+
+  watch(
+    () => route.query.app_key,
+    () => {
+      loadData()
+    }
+  )
 
   watch(
     () => spaceForm.space_key,

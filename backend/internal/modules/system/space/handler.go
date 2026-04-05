@@ -34,7 +34,7 @@ func (h *Handler) GetCurrent(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	current, err := h.service.GetCurrent(RequestHost(c), RequestSpaceKey(c), currentContextUserID(c), currentContextTenantID(c))
+	current, err := h.service.GetCurrent(currentContextAppKey(c), RequestHost(c), RequestSpaceKey(c), currentContextUserID(c), currentContextTenantID(c))
 	if err != nil {
 		h.logger.Error("Get current menu space failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取当前空间失败")
@@ -50,7 +50,7 @@ func (h *Handler) List(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	items, err := h.service.ListSpaces()
+	items, err := h.service.ListSpaces(currentContextAppKey(c))
 	if err != nil {
 		h.logger.Error("List menu spaces failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取空间列表失败")
@@ -107,7 +107,7 @@ func (h *Handler) ListHostBindings(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	items, err := h.service.ListHostBindings()
+	items, err := h.service.ListHostBindings(currentContextAppKey(c))
 	if err != nil {
 		h.logger.Error("List menu space host bindings failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取 Host 绑定失败")
@@ -132,7 +132,7 @@ func (h *Handler) SaveSpace(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	item, err := h.service.SaveSpace(&req)
+	item, err := h.service.SaveSpace(currentContextAppKey(c), &req)
 	if err != nil {
 		h.logger.Error("Save menu space failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, err.Error())
@@ -154,7 +154,7 @@ func (h *Handler) SaveHostBinding(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	item, err := h.service.SaveHostBinding(&req)
+	item, err := h.service.SaveHostBinding(currentContextAppKey(c), &req)
 	if err != nil {
 		h.logger.Error("Save menu space host binding failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, err.Error())
@@ -178,7 +178,7 @@ func (h *Handler) InitializeFromDefault(c *gin.Context) {
 			actorUserID = &parsedID
 		}
 	}
-	item, err := h.service.InitializeFromDefault(spaceKey, force, actorUserID)
+	item, err := h.service.InitializeFromDefault(currentContextAppKey(c), spaceKey, force, actorUserID)
 	if err != nil {
 		h.logger.Error("Initialize menu space from default failed", zap.String("space_key", spaceKey), zap.Bool("force", force), zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, err.Error())

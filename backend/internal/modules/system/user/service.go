@@ -10,6 +10,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
 	"github.com/gg-ecommerce/backend/internal/pkg/password"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
@@ -253,6 +254,7 @@ func replaceGlobalUserRoles(tx *gorm.DB, userID uuid.UUID, roleIDs []uuid.UUID) 
 
 type PermissionService interface {
 	GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
+	GetUserMenuIDsInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string) ([]uuid.UUID, error)
 }
 
 type permissionService struct {
@@ -304,6 +306,10 @@ func NewPermissionService(
 }
 
 func (s *permissionService) GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {
+	return s.GetUserMenuIDsInApp(userID, tenantID, models.DefaultAppKey)
+}
+
+func (s *permissionService) GetUserMenuIDsInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	user, err := s.userRepo.GetByID(userID)
 	if err != nil {
 		return nil, err
@@ -313,29 +319,29 @@ func (s *permissionService) GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID
 		return []uuid.UUID{}, nil
 	}
 	if tenantID != nil {
-		return s.getTeamUserMenuIDs(userID, *tenantID)
+		return s.getTeamUserMenuIDs(userID, *tenantID, appKey)
 	}
-	return s.getPlatformUserMenuIDs(userID)
+	return s.getPlatformUserMenuIDs(userID, appKey)
 }
 
-func (s *permissionService) getPlatformUserMenuIDs(userID uuid.UUID) ([]uuid.UUID, error) {
+func (s *permissionService) getPlatformUserMenuIDs(userID uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	if s.platformService != nil {
-		snapshot, err := s.platformService.GetSnapshot(userID)
+		snapshot, err := s.platformService.GetSnapshot(userID, appctx.NormalizeAppKey(appKey))
 		if err != nil {
 			return nil, err
 		}
-		return s.finalizeMenuIDs(snapshot.MenuIDs)
+		return s.finalizeMenuIDs(snapshot.MenuIDs, appKey)
 	}
-	return s.finalizeMenuIDs(nil)
+	return s.finalizeMenuIDs(nil, appKey)
 }
 
-func (s *permissionService) getTeamUserMenuIDs(userID, teamID uuid.UUID) ([]uuid.UUID, error) {
+func (s *permissionService) getTeamUserMenuIDs(userID, teamID uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	roleIDs, err := s.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndTenant(userID, &teamID)
 	if err != nil {
 		return nil, err
 	}
 	if len(roleIDs) == 0 {
-		return s.finalizeMenuIDs(nil)
+		return s.finalizeMenuIDs(nil, appKey)
 	}
 	roles, err := s.roleRepo.GetByIDs(roleIDs)
 	if err != nil {
@@ -351,7 +357,7 @@ func (s *permissionService) getTeamUserMenuIDs(userID, teamID uuid.UUID) ([]uuid
 		if !ok {
 			continue
 		}
-		snapshot, snapshotErr := s.boundaryService.GetRoleSnapshot(teamID, roleID, role.TenantID == nil)
+		snapshot, snapshotErr := s.boundaryService.GetRoleSnapshot(teamID, roleID, role.TenantID == nil, appctx.NormalizeAppKey(appKey))
 		if snapshotErr != nil {
 			return nil, snapshotErr
 		}
@@ -363,7 +369,7 @@ func (s *permissionService) getTeamUserMenuIDs(userID, teamID uuid.UUID) ([]uuid
 	for menuID := range menuSet {
 		menuIDs = append(menuIDs, menuID)
 	}
-	return s.finalizeMenuIDs(menuIDs)
+	return s.finalizeMenuIDs(menuIDs, appKey)
 }
 
 func (s *permissionService) getPlatformPackageMenuIDs(packageIDs []uuid.UUID) ([]uuid.UUID, error) {
@@ -459,7 +465,7 @@ func (s *permissionService) expandPackageID(packageID uuid.UUID, context string,
 	return nil
 }
 
-func (s *permissionService) finalizeMenuIDs(menuIDs []uuid.UUID) ([]uuid.UUID, error) {
+func (s *permissionService) finalizeMenuIDs(menuIDs []uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	allMenus, err := s.menuRepo.ListAll()
 	if err != nil {
 		return nil, err
@@ -467,6 +473,9 @@ func (s *permissionService) finalizeMenuIDs(menuIDs []uuid.UUID) ([]uuid.UUID, e
 	enabledSet := make(map[uuid.UUID]struct{}, len(allMenus))
 	publicIDs := make([]uuid.UUID, 0)
 	for _, menu := range allMenus {
+		if appctx.NormalizeAppKey(menu.AppKey) != appctx.NormalizeAppKey(appKey) {
+			continue
+		}
 		if !isMenuEnabled(menu) {
 			continue
 		}

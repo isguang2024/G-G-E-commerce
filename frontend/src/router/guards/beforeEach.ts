@@ -51,6 +51,7 @@ import { useCommon } from '@/hooks/core/useCommon'
 import { useWorktabStore } from '@/store/modules/worktab'
 import { hasPlatformAccessByUserInfo, useTenantStore } from '@/store/modules/tenant'
 import { useMenuSpaceStore } from '@/store/modules/menu-space'
+import { useAppContextStore } from '@/store/modules/app-context'
 import { fetchGetUserInfo } from '@/api/auth'
 import {
   fetchGetRuntimeNavigation,
@@ -91,9 +92,14 @@ async function buildRegisteredRoutesFromManifest(preferredSpaceKey = ''): Promis
   manifest: Api.SystemManage.RuntimeNavigationManifest
 }> {
   const menuSpaceStore = useMenuSpaceStore()
+  const appContextStore = useAppContextStore()
   const userStore = useUserStore()
   const requestedSpaceKey = normalizeMenuSpaceKey(preferredSpaceKey || menuSpaceStore.currentSpaceKey)
   const manifest = await fetchGetRuntimeNavigation(requestedSpaceKey)
+  const resolvedAppKey = `${manifest.currentApp?.app?.appKey || manifest.context?.app_key || ''}`.trim()
+  if (resolvedAppKey) {
+    appContextStore.setRuntimeAppKey(resolvedAppKey)
+  }
   const resolvedSpaceKey = normalizeMenuSpaceKey(
     manifest.currentSpace?.space?.spaceKey || manifest.context?.space_key || requestedSpaceKey
   )

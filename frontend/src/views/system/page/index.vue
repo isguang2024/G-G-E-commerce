@@ -16,7 +16,7 @@
 
       <AdminWorkspaceHero
         title="受管页面"
-        description="只管理非菜单直达页、逻辑分组与普通分组；菜单入口页直接回到菜单管理维护。"
+        description="只管理非菜单直达页、逻辑分组与普通分组；菜单入口页回到菜单定义或空间布局维护。"
         :metrics="summaryStats"
       >
         <div class="page-hero-actions">
@@ -212,6 +212,7 @@
       :dialog-type="dialogType"
       :page-data="currentPage"
       :default-data="defaultPageData"
+      :app-key="targetAppKey"
       :menu-spaces="menuSpaces"
       :current-space-key="activeSpaceKey"
       :initial-parent-page-key="initialParentPageKey"
@@ -221,6 +222,7 @@
     />
     <PageUnregisteredDialog
       v-model="unregisteredDialogVisible"
+      :app-key="targetAppKey"
       @synced="handleRefresh"
       @create-candidate="handleCreateFromCandidate"
     />
@@ -228,11 +230,13 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, reactive, ref, nextTick, onMounted } from 'vue'
+  import { computed, reactive, ref, nextTick, onMounted, watch } from 'vue'
+  import { useRoute } from 'vue-router'
   import { ElButton, ElInput, ElMessage, ElMessageBox, ElTag } from 'element-plus'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import type { FormItem } from '@/components/core/forms/art-form/index.vue'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
+  import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import {
@@ -255,6 +259,8 @@
 
   const loading = ref(false)
   const loadError = ref('')
+  const route = useRoute()
+  const { targetAppKey } = useManagedAppScope()
   const showSearchBar = ref(false)
   const isExpanded = ref(false)
   const syncing = ref(false)
@@ -401,6 +407,7 @@
     const logicGroupCount = rawPages.value.filter((item) => item.pageType === 'group').length
     const displayGroupCount = rawPages.value.filter((item) => item.pageType === 'display_group').length
     return [
+      { label: '当前 App', value: targetAppKey.value },
       { label: '当前显示', value: visibleCount.value },
       { label: '受管页面', value: managedEntryCount || 0 },
       { label: '逻辑分组', value: logicGroupCount || 0 },
@@ -530,8 +537,13 @@
     loadError.value = ''
     try {
       const [pageResponse, menuResponse] = await Promise.all([
-        fetchGetPageList({ current: 1, size: 1000, spaceKey: activeSpaceKey.value }),
-        fetchGetPageMenuOptions(activeSpaceKey.value)
+        fetchGetPageList({
+          current: 1,
+          size: 1000,
+          appKey: targetAppKey.value,
+          spaceKey: activeSpaceKey.value
+        }),
+        fetchGetPageMenuOptions(activeSpaceKey.value, targetAppKey.value)
         ])
         rawPages.value = pageResponse.records || []
         Object.keys(sortDraftMap).forEach((key) => delete sortDraftMap[key])
@@ -1027,14 +1039,35 @@
   const rowKey = (row: PageItem) => String(row.id || row.pageKey)
 
   onMounted(() => {
-    fetchGetMenuSpaces()
+    fetchGetMenuSpaces(targetAppKey.value)
       .then((res) => {
         menuSpaces.value = res.records || []
+        if (!menuSpaces.value.some((item) => item.spaceKey === activeSpaceKey.value)) {
+          activeSpaceKey.value =
+            menuSpaces.value.find((item) => item.isDefault)?.spaceKey ||
+            menuSpaces.value[0]?.spaceKey ||
+            'default'
+        }
       })
       .finally(() => {
         getPageList()
       })
   })
+
+  watch(
+    () => route.query.app_key,
+    async () => {
+      const spacesRes = await fetchGetMenuSpaces(targetAppKey.value)
+      menuSpaces.value = spacesRes.records || []
+      if (!menuSpaces.value.some((item) => item.spaceKey === activeSpaceKey.value)) {
+        activeSpaceKey.value =
+          menuSpaces.value.find((item) => item.isDefault)?.spaceKey ||
+          menuSpaces.value[0]?.spaceKey ||
+          'default'
+      }
+      await getPageList()
+    }
+  )
 </script>
 
 <style lang="scss" scoped>

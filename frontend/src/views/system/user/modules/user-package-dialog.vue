@@ -118,6 +118,7 @@
   interface Props {
     modelValue: boolean
     userData?: Api.SystemManage.UserListItem
+    appKey?: string
   }
 
   const props = defineProps<Props>()
@@ -147,6 +148,7 @@
   const userTitle = computed(
     () => props.userData?.nickName || props.userData?.userName || props.userData?.id || ''
   )
+  const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
 
   const filteredPackages = computed(() => {
     const currentKeyword = keyword.value.trim().toLowerCase()
@@ -194,13 +196,21 @@
 
   async function loadData() {
     const userId = props.userData?.id
-    if (!userId) return
+    if (!userId || !currentAppKey.value) {
+      if (!currentAppKey.value) {
+        ElMessage.warning('缺少 app 上下文')
+      }
+      return
+    }
     loading.value = true
     resetFilters()
     try {
       const [listRes, userRes] = await Promise.all([
-        fetchGetFeaturePackageOptions({ contextType: 'platform' }),
-        fetchGetUserPackages(userId)
+        fetchGetFeaturePackageOptions({
+          contextType: 'platform',
+          appKey: currentAppKey.value
+        }),
+        fetchGetUserPackages(userId, currentAppKey.value)
       ])
       packages.value = listRes?.records || []
       selectedPackageIds.value = [...(userRes?.package_ids || [])]
@@ -265,10 +275,15 @@
 
   async function handleSave() {
     const userId = props.userData?.id
-    if (!userId) return
+    if (!userId || !currentAppKey.value) {
+      if (!currentAppKey.value) {
+        ElMessage.warning('缺少 app 上下文')
+      }
+      return
+    }
     saving.value = true
     try {
-      await fetchSetUserPackages(userId, selectedPackageIds.value)
+      await fetchSetUserPackages(userId, selectedPackageIds.value, currentAppKey.value)
       ElMessage.success('用户功能包已保存')
       emit('success')
       visible.value = false

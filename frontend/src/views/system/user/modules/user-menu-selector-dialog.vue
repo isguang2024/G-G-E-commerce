@@ -90,6 +90,7 @@ import PermissionSummaryTags from '@/components/business/permission/PermissionSu
 interface Props {
   modelValue: boolean
   userData?: Api.SystemManage.UserListItem
+  appKey?: string
 }
 
 const props = defineProps<Props>()
@@ -117,6 +118,7 @@ const featurePackages = ref<Api.SystemManage.FeaturePackageItem[]>([])
 const candidateMenuIds = ref<string[]>([])
 const hiddenMenuIds = ref<string[]>([])
 const hasPackageConfig = ref(false)
+const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
 
 const userTitle = computed(() => props.userData?.nickName || props.userData?.userName || '')
 const summaryItems = computed(() => [
@@ -143,13 +145,18 @@ watch(
 
 async function loadData() {
   const userId = props.userData?.id
-  if (!userId) return
+  if (!userId || !currentAppKey.value) {
+    if (!currentAppKey.value) {
+      ElMessage.warning('缺少 app 上下文')
+    }
+    return
+  }
   loading.value = true
   try {
     const [allMenus, menuRes, packageRes] = await Promise.all([
-      fetchGetMenuTreeAll(currentSpaceKey.value),
-      fetchGetUserMenus(userId),
-      fetchGetUserPackages(userId)
+      fetchGetMenuTreeAll(currentSpaceKey.value, currentAppKey.value),
+      fetchGetUserMenus(userId, currentAppKey.value),
+      fetchGetUserPackages(userId, currentAppKey.value)
     ])
 
     featurePackages.value = packageRes?.packages || []
@@ -199,10 +206,19 @@ function clearAll() {
 
 async function handleSave() {
   const userId = props.userData?.id
-  if (!userId || !hasPackageConfig.value) return
+  if (!userId || !hasPackageConfig.value || !currentAppKey.value) {
+    if (!currentAppKey.value) {
+      ElMessage.warning('缺少 app 上下文')
+    }
+    return
+  }
   saving.value = true
   try {
-    await fetchSetUserMenus(userId, normalizeSelectedMenuIDs(selectedIds.value, candidateMenuIds.value))
+    await fetchSetUserMenus(
+      userId,
+      normalizeSelectedMenuIDs(selectedIds.value, candidateMenuIds.value),
+      currentAppKey.value
+    )
     ElMessage.success('用户菜单裁剪已保存')
     emit('success')
     visible.value = false
@@ -240,11 +256,13 @@ function filterMenuTreeByAllowedIDs(source: AppRouteRecord[], allowed: Set<strin
 }
 
 function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem) {
+  if (!currentAppKey.value) return
   router.push({
     name: 'FeaturePackage',
     query: {
       packageKey: item.packageKey,
       contextType: item.contextType || 'platform',
+      app_key: currentAppKey.value,
       open: 'menus'
     }
   })

@@ -66,18 +66,22 @@ type PermissionGroupSaveRequest struct {
 }
 
 type RoleKeyPermissionsRequest struct {
+	AppKey string   `json:"app_key" binding:"max=100"`
 	KeyIDs []string `json:"action_ids"`
 }
 
 type RoleFeaturePackagesRequest struct {
+	AppKey     string   `json:"app_key" binding:"max=100"`
 	PackageIDs []string `json:"package_ids"`
 }
 
 type TenantKeyPermissionsRequest struct {
+	AppKey string   `json:"app_key" binding:"max=100"`
 	KeyIDs []string `json:"action_ids"`
 }
 
 type TenantMenuPermissionsRequest struct {
+	AppKey  string   `json:"app_key" binding:"max=100"`
 	MenuIDs []string `json:"menu_ids"`
 }
 
@@ -87,12 +91,14 @@ type UserKeyPermissionItem struct {
 }
 
 type UserKeyPermissionsRequest struct {
+	AppKey  string                  `json:"app_key" binding:"max=100"`
 	Actions []UserKeyPermissionItem `json:"actions"`
 }
 
 type FeaturePackageListRequest struct {
 	Current     int    `form:"current"`
 	Size        int    `form:"size"`
+	AppKey      string `form:"app_key"`
 	Keyword     string `form:"keyword"`
 	PackageKey  string `form:"package_key"`
 	PackageType string `form:"package_type"`
@@ -102,6 +108,7 @@ type FeaturePackageListRequest struct {
 }
 
 type FeaturePackageCreateRequest struct {
+	AppKey      string `json:"app_key" binding:"max=100"`
 	PackageKey  string `json:"package_key" binding:"required,max=100"`
 	PackageType string `json:"package_type" binding:"max=20"`
 	Name        string `json:"name" binding:"required,max=150"`
@@ -112,6 +119,7 @@ type FeaturePackageCreateRequest struct {
 }
 
 type FeaturePackageUpdateRequest struct {
+	AppKey      string `json:"app_key" binding:"max=100"`
 	PackageKey  string `json:"package_key" binding:"max=100"`
 	PackageType string `json:"package_type" binding:"max=20"`
 	Name        string `json:"name" binding:"max=150"`
@@ -122,21 +130,26 @@ type FeaturePackageUpdateRequest struct {
 }
 
 type FeaturePackageKeySetRequest struct {
+	AppKey    string   `json:"app_key" binding:"max=100"`
 	ActionIDs []string `json:"action_ids"`
 }
 
 type FeaturePackageMenuSetRequest struct {
+	AppKey  string   `json:"app_key" binding:"max=100"`
 	MenuIDs []string `json:"menu_ids"`
 }
 
 type TeamFeaturePackageSetRequest struct {
+	AppKey     string   `json:"app_key" binding:"max=100"`
 	PackageIDs []string `json:"package_ids"`
 }
 
 type FeaturePackageTeamSetRequest struct {
+	AppKey  string   `json:"app_key" binding:"max=100"`
 	TeamIDs []string `json:"team_ids"`
 }
 
 type FeaturePackageChildSetRequest struct {
+	AppKey          string   `json:"app_key" binding:"max=100"`
 	ChildPackageIDs []string `json:"child_package_ids"`
 }

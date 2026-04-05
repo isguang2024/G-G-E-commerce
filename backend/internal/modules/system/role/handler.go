@@ -10,6 +10,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/appctx"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 )
 
@@ -224,7 +225,13 @@ func (h *RoleHandler) GetRolePackages(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	packageIDs, packages, err := h.roleService.GetRolePackages(id)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	packageIDs, packages, err := h.roleService.GetRolePackages(id, appKey)
 	if err != nil {
 		if err == ErrRoleNotFound {
 			status, resp := errcode.Response(errcode.ErrRoleNotFound)
@@ -260,6 +267,12 @@ func (h *RoleHandler) SetRolePackages(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
 	packageIDs := make([]uuid.UUID, 0, len(req.PackageIDs))
 	for _, item := range req.PackageIDs {
 		packageID, parseErr := uuid.Parse(item)
@@ -278,7 +291,7 @@ func (h *RoleHandler) SetRolePackages(c *gin.Context) {
 			}
 		}
 	}
-	if err := h.roleService.SetRolePackages(id, packageIDs, grantedBy); err != nil {
+	if err := h.roleService.SetRolePackages(id, packageIDs, grantedBy, appKey); err != nil {
 		if err == ErrRoleNotFound {
 			status, resp := errcode.Response(errcode.ErrRoleNotFound)
 			c.JSON(status, resp)
@@ -304,7 +317,13 @@ func (h *RoleHandler) GetRoleMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	boundary, err := h.roleService.GetRoleMenuBoundary(id)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	boundary, err := h.roleService.GetRoleMenuBoundary(id, appKey)
 	if err != nil {
 		if err == ErrRoleNotFound {
 			status, resp := errcode.Response(errcode.ErrRoleNotFound)
@@ -397,6 +416,12 @@ func (h *RoleHandler) SetRoleMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
 	menuIDs := make([]uuid.UUID, 0, len(req.MenuIDs))
 	for _, item := range req.MenuIDs {
 		menuID, parseErr := uuid.Parse(item)
@@ -407,7 +432,7 @@ func (h *RoleHandler) SetRoleMenus(c *gin.Context) {
 		}
 		menuIDs = append(menuIDs, menuID)
 	}
-	if err := h.roleService.SetRoleMenus(id, menuIDs); err != nil {
+	if err := h.roleService.SetRoleMenus(id, menuIDs, appKey); err != nil {
 		if err == ErrRoleNotFound {
 			status, resp := errcode.Response(errcode.ErrRoleNotFound)
 			c.JSON(status, resp)
@@ -433,7 +458,13 @@ func (h *RoleHandler) GetRoleKeys(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	boundary, err := h.roleService.GetRoleKeyBoundary(id)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	boundary, err := h.roleService.GetRoleKeyBoundary(id, appKey)
 	if err != nil {
 		if err == ErrRoleNotFound {
 			status, resp := errcode.Response(errcode.ErrRoleNotFound)
@@ -486,6 +517,12 @@ func (h *RoleHandler) SetRoleKeys(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
 	keys := make([]user.RoleKeyPermission, 0, len(req.KeyIDs))
 	for _, item := range req.KeyIDs {
 		keyID, parseErr := uuid.Parse(item)
@@ -499,7 +536,7 @@ func (h *RoleHandler) SetRoleKeys(c *gin.Context) {
 			KeyID:  keyID,
 		})
 	}
-	if err := h.roleService.SetRoleKeys(id, keys); err != nil {
+	if err := h.roleService.SetRoleKeys(id, keys, appKey); err != nil {
 		if err == ErrRoleNotFound {
 			status, resp := errcode.Response(errcode.ErrRoleNotFound)
 			c.JSON(status, resp)

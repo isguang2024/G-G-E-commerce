@@ -14,6 +14,8 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
+	"github.com/gg-ecommerce/backend/internal/pkg/appscope"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
@@ -965,7 +967,13 @@ func (h *TenantHandler) GetMyTeamRolePackages(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := h.getRoleSnapshot(member.TenantID, role)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	snapshot, err := h.getRoleSnapshot(member.TenantID, role, appKey)
 	if err != nil {
 		h.logger.Error("Get team role packages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队角色功能包失败")
@@ -996,6 +1004,12 @@ func (h *TenantHandler) SetMyTeamRolePackages(c *gin.Context) {
 	var req dto.RoleFeaturePackagesRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
+		c.JSON(status, resp)
+		return
+	}
+	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)
 		return
 	}
@@ -1032,6 +1046,11 @@ func (h *TenantHandler) SetMyTeamRolePackages(c *gin.Context) {
 			return
 		}
 		for _, item := range packages {
+			if appctx.NormalizeAppKey(item.AppKey) != appctx.NormalizeAppKey(appKey) {
+				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "仅支持绑定当前应用内的功能包")
+				c.JSON(status, resp)
+				return
+			}
 			if item.ContextType != "" && item.ContextType != "team" && item.ContextType != "common" {
 				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "仅支持绑定团队上下文可用的功能包")
 				c.JSON(status, resp)
@@ -1048,7 +1067,7 @@ func (h *TenantHandler) SetMyTeamRolePackages(c *gin.Context) {
 	}
 
 	userID, _ := h.mustUserID(c)
-	if err := h.rolePackageRepo.ReplaceRolePackages(role.ID, packageIDs, &userID); err != nil {
+	if err := appscope.ReplaceRolePackagesInApp(database.DB, role.ID, appKey, packageIDs, &userID); err != nil {
 		h.logger.Error("Set team role packages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存团队角色功能包失败")
 		c.JSON(status, resp)
@@ -1073,7 +1092,13 @@ func (h *TenantHandler) GetMyTeamRoleMenus(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := h.getRoleSnapshot(member.TenantID, role)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	snapshot, err := h.getRoleSnapshot(member.TenantID, role, appKey)
 	if err != nil {
 		h.logger.Error("Get role menu boundary failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队角色菜单范围失败")
@@ -1103,6 +1128,12 @@ func (h *TenantHandler) SetMyTeamRoleMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
 
 	menuIDs, parseErr := parseUUIDSlice(req.MenuIDs)
 	if parseErr != nil {
@@ -1111,7 +1142,7 @@ func (h *TenantHandler) SetMyTeamRoleMenus(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := h.getRoleSnapshot(member.TenantID, role)
+	snapshot, err := h.getRoleSnapshot(member.TenantID, role, appKey)
 	if err != nil {
 		h.logger.Error("Get role menu boundary failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队角色菜单范围失败")
@@ -1128,7 +1159,7 @@ func (h *TenantHandler) SetMyTeamRoleMenus(c *gin.Context) {
 	}
 
 	hiddenMenuIDs := excludeActionIDs(snapshot.AvailableMenuIDs, menuIDs)
-	if err := h.roleHiddenMenuRepo.ReplaceRoleHiddenMenus(role.ID, hiddenMenuIDs); err != nil {
+	if err := appscope.ReplaceRoleHiddenMenusInApp(database.DB, role.ID, appKey, hiddenMenuIDs); err != nil {
 		h.logger.Error("Set team role hidden menus failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存团队角色菜单权限失败")
 		c.JSON(status, resp)
@@ -1153,7 +1184,13 @@ func (h *TenantHandler) GetMyTeamRoleActions(c *gin.Context) {
 		return
 	}
 
-	snapshot, err := h.getRoleSnapshot(member.TenantID, role)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	snapshot, err := h.getRoleSnapshot(member.TenantID, role, appKey)
 	if err != nil {
 		h.logger.Error("Get role action boundary failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队角色功能范围失败")
@@ -1190,6 +1227,12 @@ func (h *TenantHandler) SetMyTeamRoleActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
 
 	actionIDs, parseErr := parseUUIDSlice(req.KeyIDs)
 	if parseErr != nil {
@@ -1212,7 +1255,7 @@ func (h *TenantHandler) SetMyTeamRoleActions(c *gin.Context) {
 		}
 	}
 
-	snapshot, err := h.getRoleSnapshot(member.TenantID, role)
+	snapshot, err := h.getRoleSnapshot(member.TenantID, role, appKey)
 	if err != nil {
 		h.logger.Error("Get role action boundary failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队角色功能范围失败")
@@ -1229,7 +1272,7 @@ func (h *TenantHandler) SetMyTeamRoleActions(c *gin.Context) {
 	}
 
 	disabledActionIDs := excludeActionIDs(snapshot.AvailableActionIDs, actionIDs)
-	if err := h.roleDisabledActionRepo.ReplaceRoleDisabledActions(role.ID, disabledActionIDs); err != nil {
+	if err := appscope.ReplaceRoleDisabledActionsInScope(database.DB, role.ID, snapshot.AvailableActionIDs, disabledActionIDs); err != nil {
 		h.logger.Error("Set team role disabled actions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存团队角色功能权限失败")
 		c.JSON(status, resp)
@@ -1254,7 +1297,13 @@ func (h *TenantHandler) GetTenantActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	snapshot, err := h.boundaryService.GetSnapshot(tenantID)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	snapshot, err := h.boundaryService.GetSnapshot(tenantID, appKey)
 	if err != nil {
 		h.logger.Error("Get tenant actions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队功能权限失败")
@@ -1281,7 +1330,13 @@ func (h *TenantHandler) GetTenantMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	snapshot, err := h.boundaryService.GetMenuSnapshot(tenantID)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	snapshot, err := h.boundaryService.GetMenuSnapshot(tenantID, appKey)
 	if err != nil {
 		h.logger.Error("Get tenant menus failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队菜单边界失败")
@@ -1326,6 +1381,12 @@ func (h *TenantHandler) SetTenantActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
 	actionIDs, parseErr := parseUUIDSlice(req.KeyIDs)
 	if parseErr != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能权限ID")
@@ -1346,7 +1407,7 @@ func (h *TenantHandler) SetTenantActions(c *gin.Context) {
 			return
 		}
 	}
-	snapshot, err := h.boundaryService.GetSnapshot(tenantID)
+	snapshot, err := h.boundaryService.GetSnapshot(tenantID, appKey)
 	if err != nil {
 		h.logger.Error("Get derived team actions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包展开权限失败")
@@ -1354,7 +1415,7 @@ func (h *TenantHandler) SetTenantActions(c *gin.Context) {
 		return
 	}
 	blockedIDs := excludeActionIDs(snapshot.DerivedIDs, actionIDs)
-	if err := h.blockedActionRepo.ReplaceTeamBlockedActions(tenantID, blockedIDs); err != nil {
+	if err := appscope.ReplaceTeamBlockedActionsInScope(database.DB, tenantID, snapshot.DerivedIDs, blockedIDs); err != nil {
 		h.logger.Error("Set team blocked actions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存团队功能边界失败")
 		c.JSON(status, resp)
@@ -1367,7 +1428,7 @@ func (h *TenantHandler) SetTenantActions(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
-	} else if _, err := h.boundaryService.RefreshSnapshot(tenantID); err != nil {
+	} else if _, err := h.boundaryService.RefreshSnapshot(tenantID, appKey); err != nil {
 		h.logger.Error("Set tenant actions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存团队功能权限失败")
 		c.JSON(status, resp)
@@ -1389,13 +1450,19 @@ func (h *TenantHandler) SetTenantMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
 	menuIDs, parseErr := parseUUIDSlice(req.MenuIDs)
 	if parseErr != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的菜单ID")
 		c.JSON(status, resp)
 		return
 	}
-	snapshot, err := h.boundaryService.GetMenuSnapshot(tenantID)
+	snapshot, err := h.boundaryService.GetMenuSnapshot(tenantID, appKey)
 	if err != nil {
 		h.logger.Error("Get derived team menus failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包展开菜单失败")
@@ -1403,7 +1470,7 @@ func (h *TenantHandler) SetTenantMenus(c *gin.Context) {
 		return
 	}
 	blockedIDs := excludeActionIDs(snapshot.DerivedIDs, menuIDs)
-	if err := h.blockedMenuRepo.ReplaceTeamBlockedMenus(tenantID, blockedIDs); err != nil {
+	if err := appscope.ReplaceTeamBlockedMenusInApp(database.DB, tenantID, appKey, blockedIDs); err != nil {
 		h.logger.Error("Set team blocked menus failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存团队菜单边界失败")
 		c.JSON(status, resp)
@@ -1434,7 +1501,13 @@ func (h *TenantHandler) GetMyTeamBoundaryPackages(c *gin.Context) {
 		return
 	}
 
-	packageIDs, err := h.teamPackageRepo.GetPackageIDsByTeamID(member.TenantID)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	packageIDs, err := appscope.PackageIDsByTeam(database.DB, member.TenantID, appKey)
 	if err != nil {
 		h.logger.Error("Get my team packages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队功能包失败")
@@ -1487,7 +1560,13 @@ func (h *TenantHandler) GetMyTeamActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	snapshot, err := h.boundaryService.GetSnapshot(member.TenantID)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	snapshot, err := h.boundaryService.GetSnapshot(member.TenantID, appKey)
 	if err != nil {
 		h.logger.Error("Get my team actions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队功能权限失败")
@@ -1520,7 +1599,13 @@ func (h *TenantHandler) GetMyTeamMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	snapshot, err := h.boundaryService.GetMenuSnapshot(member.TenantID)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	snapshot, err := h.boundaryService.GetMenuSnapshot(member.TenantID, appKey)
 	if err != nil {
 		h.logger.Error("Get my team menus failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队菜单边界失败")
@@ -1662,7 +1747,7 @@ func (h *TenantHandler) getTenantEnabledMenuSet(tenantID uuid.UUID) (map[uuid.UU
 	return result, true, nil
 }
 
-func (h *TenantHandler) getRoleSnapshot(teamID uuid.UUID, role *user.Role) (*teamboundary.RoleSnapshot, error) {
+func (h *TenantHandler) getRoleSnapshot(teamID uuid.UUID, role *user.Role, appKey string) (*teamboundary.RoleSnapshot, error) {
 	if role == nil {
 		return &teamboundary.RoleSnapshot{
 			PackageIDs:         []uuid.UUID{},
@@ -1678,7 +1763,7 @@ func (h *TenantHandler) getRoleSnapshot(teamID uuid.UUID, role *user.Role) (*tea
 		}, nil
 	}
 	inheritAll := role.TenantID == nil
-	return h.boundaryService.GetRoleSnapshot(teamID, role.ID, inheritAll)
+	return h.boundaryService.GetRoleSnapshot(teamID, role.ID, inheritAll, appKey)
 }
 
 func uuidSliceToSet(ids []uuid.UUID) map[uuid.UUID]bool {

@@ -13,6 +13,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
 )
 
 type Handler struct {
@@ -28,6 +29,8 @@ func (h *Handler) List(c *gin.Context) {
 	var req struct {
 		Current           int    `form:"current"`
 		Size              int    `form:"size"`
+		AppKey            string `form:"app_key"`
+		AppScope          string `form:"app_scope"`
 		PermissionKey     string `form:"permission_key"`
 		PermissionPattern string `form:"permission_pattern"`
 		Keyword           string `form:"keyword"`
@@ -46,9 +49,17 @@ func (h *Handler) List(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	appKey, appErr := appctx.RequireRequestAppKey(c)
+	if appErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
 	list, total, err := h.service.List(&ListRequest{
 		Current:           req.Current,
 		Size:              req.Size,
+		AppKey:            appKey,
+		AppScope:          req.AppScope,
 		PermissionKey:     req.PermissionKey,
 		PermissionPattern: req.PermissionPattern,
 		Keyword:           req.Keyword,
@@ -98,7 +109,13 @@ func (h *Handler) List(c *gin.Context) {
 }
 
 func (h *Handler) Overview(c *gin.Context) {
-	overview, err := h.service.Overview()
+	appKey, appErr := appctx.RequireRequestAppKey(c)
+	if appErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	overview, err := h.service.Overview(appKey)
 	if err != nil {
 		h.logger.Error("Get api endpoint overview failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取 API 概览失败")
@@ -112,15 +129,23 @@ func (h *Handler) ListStale(c *gin.Context) {
 	var req struct {
 		Current int `form:"current"`
 		Size    int `form:"size"`
+		AppKey  string `form:"app_key"`
 	}
 	if err := c.ShouldBindQuery(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
 		return
 	}
+	appKey, appErr := appctx.RequireRequestAppKey(c)
+	if appErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
 	list, total, err := h.service.ListStale(&StaleListRequest{
 		Current: req.Current,
 		Size:    req.Size,
+		AppKey:  appKey,
 	})
 	if err != nil {
 		h.logger.Error("List stale api endpoints failed", zap.Error(err))
@@ -297,7 +322,13 @@ func (h *Handler) CleanupStale(c *gin.Context) {
 		endpointIDs = append(endpointIDs, endpointID)
 	}
 
-	deletedCount, err := h.service.CleanupStale(endpointIDs)
+	appKey, appErr := appctx.RequireRequestAppKey(c)
+	if appErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	deletedCount, err := h.service.CleanupStale(endpointIDs, appKey)
 	if err != nil {
 		if errors.Is(err, ErrNoStaleCleanupSelection) || errors.Is(err, ErrStaleCleanupTargetGone) {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, err.Error())
@@ -317,6 +348,8 @@ func (h *Handler) CleanupStale(c *gin.Context) {
 func (h *Handler) Create(c *gin.Context) {
 	var req struct {
 		Code           string   `json:"code"`
+		AppKey         string   `json:"app_key"`
+		AppScope       string   `json:"app_scope"`
 		Method         string   `json:"method" binding:"required"`
 		Path           string   `json:"path" binding:"required"`
 		Summary        string   `json:"summary"`
@@ -341,6 +374,8 @@ func (h *Handler) Create(c *gin.Context) {
 	}
 	endpoint := &user.APIEndpoint{
 		Code:         strings.TrimSpace(req.Code),
+		AppKey:       strings.TrimSpace(req.AppKey),
+		AppScope:     strings.TrimSpace(req.AppScope),
 		Method:       strings.TrimSpace(req.Method),
 		Path:         strings.TrimSpace(req.Path),
 		Summary:      strings.TrimSpace(req.Summary),
@@ -351,7 +386,13 @@ func (h *Handler) Create(c *gin.Context) {
 		Status:       strings.TrimSpace(req.Status),
 		Handler:      strings.TrimSpace(req.Handler),
 	}
-	saved, err := h.service.Save(endpoint, req.PermissionKeys)
+	appKey, appErr := appctx.RequireRequestAppKey(c)
+	if appErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	saved, err := h.service.Save(endpoint, req.PermissionKeys, appKey)
 	if err != nil {
 		h.logger.Error("Create api endpoint failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, err.Error())
@@ -376,6 +417,8 @@ func (h *Handler) Update(c *gin.Context) {
 	}
 	var req struct {
 		Code           string   `json:"code"`
+		AppKey         string   `json:"app_key"`
+		AppScope       string   `json:"app_scope"`
 		Method         string   `json:"method" binding:"required"`
 		Path           string   `json:"path" binding:"required"`
 		Summary        string   `json:"summary"`
@@ -401,6 +444,8 @@ func (h *Handler) Update(c *gin.Context) {
 	endpoint := &user.APIEndpoint{
 		ID:           id,
 		Code:         strings.TrimSpace(req.Code),
+		AppKey:       strings.TrimSpace(req.AppKey),
+		AppScope:     strings.TrimSpace(req.AppScope),
 		Method:       strings.TrimSpace(req.Method),
 		Path:         strings.TrimSpace(req.Path),
 		Summary:      strings.TrimSpace(req.Summary),
@@ -411,7 +456,13 @@ func (h *Handler) Update(c *gin.Context) {
 		Status:       strings.TrimSpace(req.Status),
 		Handler:      strings.TrimSpace(req.Handler),
 	}
-	saved, saveErr := h.service.Save(endpoint, req.PermissionKeys)
+	appKey, appErr := appctx.RequireRequestAppKey(c)
+	if appErr != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	saved, saveErr := h.service.Save(endpoint, req.PermissionKeys, appKey)
 	if saveErr != nil {
 		h.logger.Error("Update api endpoint failed", zap.Error(saveErr))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, saveErr.Error())
@@ -541,6 +592,8 @@ func endpointToMap(endpoint *user.APIEndpoint, bindings []user.APIEndpointPermis
 	return gin.H{
 		"id":                      endpoint.ID.String(),
 		"code":                    endpoint.Code,
+		"app_key":                 endpoint.AppKey,
+		"app_scope":               endpoint.AppScope,
 		"method":                  endpoint.Method,
 		"path":                    endpoint.Path,
 		"spec":                    endpoint.Method + " " + endpoint.Path,
@@ -605,4 +658,13 @@ func maxInt(value, fallback int) int {
 		return value
 	}
 	return fallback
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if target := strings.TrimSpace(value); target != "" {
+			return target
+		}
+	}
+	return ""
 }

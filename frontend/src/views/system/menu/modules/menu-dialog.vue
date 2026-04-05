@@ -11,12 +11,8 @@
   >
     <div class="menu-dialog-intro">
       <div class="menu-dialog-intro__title">{{ isEdit ? '编辑菜单节点' : '创建菜单节点' }}</div>
-      <div class="menu-dialog-intro__text">
-        菜单层只维护导航结构、入口路由与可见性。常规菜单页直接在菜单里配置，详情页和流程页交给受管页面中心维护。
-      </div>
-      <div class="menu-dialog-intro__tip">
-        目录只负责分组；入口菜单直接持有 path / component；外链菜单只维护 link。
-      </div>
+      <div class="menu-dialog-intro__text">{{ modeIntroText }}</div>
+      <div class="menu-dialog-intro__tip">{{ modeIntroTip }}</div>
     </div>
 
     <div v-if="currentMenuPageSummary" class="menu-dialog-link-summary">
@@ -42,7 +38,7 @@
       </div>
 
       <ElRow :gutter="16">
-        <ElCol :span="12">
+        <ElCol :span="showSpaceField ? 12 : 24">
           <ElFormItem label="上级菜单" prop="parentId">
             <ElSelect
               v-model="form.parentId"
@@ -61,7 +57,7 @@
             <div class="field-hint">目录与入口都按菜单树层级组织；需要隐藏详情页时请改到受管页面中心。</div>
           </ElFormItem>
         </ElCol>
-        <ElCol :span="12">
+        <ElCol v-if="showSpaceField" :span="12">
           <ElFormItem label="菜单空间" prop="spaceKey">
             <ElSelect v-model="form.spaceKey" style="width: 100%">
               <ElOption
@@ -298,6 +294,7 @@
     currentMenuPages?: Api.SystemManage.PageItem[]
     editingMenuId?: string
     initialParentId?: string
+    showSpaceField?: boolean
   }
 
   interface Emits {
@@ -313,7 +310,8 @@
     currentSpaceKey: 'default',
     currentMenuPages: () => [],
     editingMenuId: '',
-    initialParentId: ''
+    initialParentId: '',
+    showSpaceField: false
   })
 
   const emit = defineEmits<Emits>()
@@ -406,10 +404,21 @@
       value: item.spaceKey
     }))
   )
+  const showSpaceField = computed(() => props.showSpaceField)
 
   const isEntryKind = computed(() => form.kind === 'entry')
   const isExternalKind = computed(() => form.kind === 'external')
   const dialogTitle = computed(() => (isEdit.value ? '编辑菜单' : '新建菜单'))
+  const modeIntroText = computed(() =>
+    showSpaceField.value
+      ? '当前正在维护指定空间下的布局树，菜单定义会同步更新，父级、排序和可见性只作用于当前空间。'
+      : '当前按菜单定义管理 App 级资源，空间只负责摆放布局；详情页和流程页继续交给受管页面中心维护。'
+  )
+  const modeIntroTip = computed(() =>
+    showSpaceField.value
+      ? '目录只负责分组；入口菜单直接持有 path / component；外链菜单只维护 link。'
+      : '目录只负责分组；定义保存后会按当前查看空间自动补齐一条布局记录，后续空间差异在高级布局页维护。'
+  )
 
   const kindDescription = computed(() => {
     if (form.kind === 'directory') {

@@ -34,6 +34,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 	r.Use(middleware.Logger(logger))
 	r.Use(middleware.Recovery(logger))
 	r.Use(middleware.CORS())
+	r.Use(middleware.AppContext(db))
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
@@ -68,7 +69,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		pageModule.RegisterPublicRoutes(v1)
 
 		authenticated := v1.Group("")
-		authenticated.Use(auth.JWTAuth(cfg.JWT.Secret))
+		authenticated.Use(auth.JWTAuth(cfg.JWT.Secret), middleware.AppContext(db))
 		{
 			userModule.RegisterRoutes(authenticated)
 			menuModule.RegisterRoutes(authenticated)

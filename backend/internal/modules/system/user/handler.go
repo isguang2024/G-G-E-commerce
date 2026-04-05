@@ -13,6 +13,8 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
+	"github.com/gg-ecommerce/backend/internal/pkg/appscope"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
@@ -34,6 +36,7 @@ type UserHandler struct {
 	boundaryService teamboundary.Service
 	authzService    interface {
 		Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
+		AuthorizeInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
 	}
 	roleRepo interface {
 		GetByIDs(ids []uuid.UUID) ([]Role, error)
@@ -71,6 +74,7 @@ func NewUserHandler(db *gorm.DB, userService UserService, featurePkgRepo interfa
 	GetByIDs(ids []uuid.UUID) ([]Role, error)
 }, authzService interface {
 	Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
+	AuthorizeInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
 }, userRoleRepo interface {
 	GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
 }, tenantMemberRepo interface {
@@ -435,7 +439,13 @@ func (h *UserHandler) GetMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	snapshot, err := h.getPlatformSnapshot(id)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	snapshot, err := h.getPlatformSnapshot(id, appKey)
 	if err != nil {
 		h.logger.Error("Get user platform snapshot for menus failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户功能包范围失败")
@@ -485,7 +495,13 @@ func (h *UserHandler) SetMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	snapshot, err := h.getPlatformSnapshot(id)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	snapshot, err := h.getPlatformSnapshot(id, appKey)
 	if err != nil {
 		h.logger.Error("Get user platform snapshot for setting menus failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户功能包范围失败")
@@ -522,7 +538,7 @@ func (h *UserHandler) SetMenus(c *gin.Context) {
 		menuIDs = append(menuIDs, menuID)
 	}
 	blockedMenuIDs := excludeUUIDs(snapshot.AvailableMenuIDs, menuIDs)
-	if err := h.userHiddenMenuRepo.ReplaceUserHiddenMenus(id, blockedMenuIDs); err != nil {
+	if err := appscope.ReplaceUserHiddenMenusInApp(h.db, id, appKey, blockedMenuIDs); err != nil {
 		h.logger.Error("Set user hidden menus failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存用户菜单裁剪失败")
 		c.JSON(status, resp)
@@ -539,7 +555,7 @@ func (h *UserHandler) SetMenus(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
-func (h *UserHandler) getPlatformSnapshot(userID uuid.UUID) (*platformaccess.Snapshot, error) {
+func (h *UserHandler) getPlatformSnapshot(userID uuid.UUID, appKey string) (*platformaccess.Snapshot, error) {
 	if h.platformService == nil {
 		return &platformaccess.Snapshot{
 			DirectPackageIDs:   []uuid.UUID{},
@@ -553,7 +569,7 @@ func (h *UserHandler) getPlatformSnapshot(userID uuid.UUID) (*platformaccess.Sna
 			HasPackageConfig:   false,
 		}, nil
 	}
-	snapshot, err := h.platformService.GetSnapshot(userID)
+	snapshot, err := h.platformService.GetSnapshot(userID, appctx.NormalizeAppKey(appKey))
 	if err != nil {
 		return nil, err
 	}
@@ -627,7 +643,8 @@ func (h *UserHandler) GetPermissions(c *gin.Context) {
 		}
 	}
 
-	menuIDs, err := h.getPermissionMenuIDs(id, tenantID)
+	currentAppKey := appctx.CurrentAppKey(c)
+	menuIDs, err := h.getPermissionMenuIDs(id, tenantID, currentAppKey)
 	if err != nil {
 		h.logger.Error("Get user permissions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户权限失败")
@@ -648,7 +665,7 @@ func (h *UserHandler) GetPermissions(c *gin.Context) {
 		menuIDSet[mid] = true
 	}
 
-	menuTree := buildMenuTree(allMenus, menuIDSet)
+	menuTree := buildMenuTree(filterMenusByApp(allMenus, currentAppKey), menuIDSet)
 
 	c.JSON(http.StatusOK, dto.SuccessResponse(menuTree))
 }
@@ -676,7 +693,7 @@ func (h *UserHandler) GetPermissionDiagnosis(c *gin.Context) {
 		return
 	}
 
-	payload, err := h.buildPermissionDiagnosis(id, tenantID, req.PermissionKey)
+	payload, err := h.buildPermissionDiagnosis(id, tenantID, req.PermissionKey, appctx.CurrentAppKey(c))
 	if err != nil {
 		if err == ErrUserNotFound {
 			status, resp := errcode.Response(errcode.ErrUserNotFound)
@@ -745,7 +762,7 @@ func (h *UserHandler) RefreshPermissionSnapshot(c *gin.Context) {
 		}
 	}
 
-	payload, err := h.buildPermissionDiagnosis(id, tenantID, "")
+	payload, err := h.buildPermissionDiagnosis(id, tenantID, "", appctx.CurrentAppKey(c))
 	if err != nil {
 		h.logger.Error("Build permission diagnosis after refresh failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新权限快照后读取失败")
@@ -756,7 +773,7 @@ func (h *UserHandler) RefreshPermissionSnapshot(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(payload))
 }
 
-func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.UUID, rawPermissionKey string) (gin.H, error) {
+func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.UUID, rawPermissionKey string, appKey string) (gin.H, error) {
 	userEntity, err := h.userService.Get(userID)
 	if err != nil {
 		return nil, err
@@ -772,11 +789,11 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.
 	}
 
 	if tenantID == nil {
-		snapshot, err := h.getPlatformSnapshot(userID)
+		snapshot, err := h.getPlatformSnapshot(userID, appKey)
 		if err != nil {
 			return nil, err
 		}
-		meta, err := h.getPlatformSnapshotRecord(userID)
+		meta, err := h.getPlatformSnapshotRecord(userID, appKey)
 		if err != nil {
 			return nil, err
 		}
@@ -788,7 +805,7 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.
 			"diagnosis": nil,
 		}
 		if permissionKeyValue != "" {
-			diagnosis, err := h.buildPlatformPermissionDiagnosis(userEntity, snapshot, permissionKeyValue)
+			diagnosis, err := h.buildPlatformPermissionDiagnosis(userEntity, snapshot, permissionKeyValue, appKey)
 			if err != nil {
 				return nil, err
 			}
@@ -797,15 +814,15 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.
 		return payload, nil
 	}
 
-	teamSnapshot, err := h.boundaryService.GetSnapshot(*tenantID)
+	teamSnapshot, err := h.boundaryService.GetSnapshot(*tenantID, appctx.NormalizeAppKey(appKey))
 	if err != nil {
 		return nil, err
 	}
-	teamMeta, err := h.getTeamSnapshotRecord(*tenantID)
+	teamMeta, err := h.getTeamSnapshotRecord(*tenantID, appKey)
 	if err != nil {
 		return nil, err
 	}
-	roleStates, err := h.buildTeamRoleStates(userID, *tenantID, permissionKeyValue)
+	roleStates, err := h.buildTeamRoleStates(userID, *tenantID, permissionKeyValue, appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -823,7 +840,7 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.
 		"diagnosis":     nil,
 	}
 	if permissionKeyValue != "" {
-		diagnosis, err := h.buildTeamPermissionDiagnosis(userEntity, *tenantID, teamSnapshot, roleStates, permissionKeyValue)
+			diagnosis, err := h.buildTeamPermissionDiagnosis(userEntity, *tenantID, teamSnapshot, roleStates, permissionKeyValue, appKey)
 		if err != nil {
 			return nil, err
 		}
@@ -832,8 +849,8 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.
 	return payload, nil
 }
 
-func (h *UserHandler) buildPlatformPermissionDiagnosis(userEntity *User, snapshot *platformaccess.Snapshot, permissionKeyValue string) (gin.H, error) {
-	allowed, actionDef, authErr := h.authzService.Authorize(userEntity.ID, nil, permissionKeyValue)
+func (h *UserHandler) buildPlatformPermissionDiagnosis(userEntity *User, snapshot *platformaccess.Snapshot, permissionKeyValue string, appKey string) (gin.H, error) {
+	allowed, actionDef, authErr := h.authzService.AuthorizeInApp(userEntity.ID, nil, appctx.NormalizeAppKey(appKey), permissionKeyValue)
 	actionDetail, err := h.loadPermissionKeyDetail(permissionKeyValue)
 	if err != nil {
 		return nil, err
@@ -863,8 +880,8 @@ func (h *UserHandler) buildPlatformPermissionDiagnosis(userEntity *User, snapsho
 	}, nil
 }
 
-func (h *UserHandler) buildTeamPermissionDiagnosis(userEntity *User, teamID uuid.UUID, teamSnapshot *teamboundary.Snapshot, roleStates []gin.H, permissionKeyValue string) (gin.H, error) {
-	allowed, actionDef, authErr := h.authzService.Authorize(userEntity.ID, &teamID, permissionKeyValue)
+func (h *UserHandler) buildTeamPermissionDiagnosis(userEntity *User, teamID uuid.UUID, teamSnapshot *teamboundary.Snapshot, roleStates []gin.H, permissionKeyValue string, appKey string) (gin.H, error) {
+	allowed, actionDef, authErr := h.authzService.AuthorizeInApp(userEntity.ID, &teamID, appctx.NormalizeAppKey(appKey), permissionKeyValue)
 	actionDetail, err := h.loadPermissionKeyDetail(permissionKeyValue)
 	if err != nil {
 		return nil, err
@@ -916,7 +933,7 @@ func (h *UserHandler) buildTeamPermissionDiagnosis(userEntity *User, teamID uuid
 	}, nil
 }
 
-func (h *UserHandler) buildTeamRoleStates(userID, teamID uuid.UUID, permissionKeyValue string) ([]gin.H, error) {
+func (h *UserHandler) buildTeamRoleStates(userID, teamID uuid.UUID, permissionKeyValue string, appKey string) ([]gin.H, error) {
 	if h.userRoleRepo == nil || h.roleRepo == nil || h.boundaryService == nil {
 		return []gin.H{}, nil
 	}
@@ -940,11 +957,11 @@ func (h *UserHandler) buildTeamRoleStates(userID, teamID uuid.UUID, permissionKe
 	roleStates := make([]gin.H, 0, len(roles))
 	for _, role := range roles {
 		inheritAll := role.TenantID == nil
-		snapshot, err := h.boundaryService.GetRoleSnapshot(teamID, role.ID, inheritAll)
+		snapshot, err := h.boundaryService.GetRoleSnapshot(teamID, role.ID, inheritAll, appctx.NormalizeAppKey(appKey))
 		if err != nil {
 			return nil, err
 		}
-		meta, err := h.getTeamRoleSnapshotRecord(teamID, role.ID)
+		meta, err := h.getTeamRoleSnapshotRecord(teamID, role.ID, appKey)
 		if err != nil {
 			return nil, err
 		}
@@ -1092,12 +1109,12 @@ func (h *UserHandler) buildTeamMemberMap(userID, teamID uuid.UUID) gin.H {
 	}
 }
 
-func (h *UserHandler) getPlatformSnapshotRecord(userID uuid.UUID) (*models.PlatformUserAccessSnapshot, error) {
+func (h *UserHandler) getPlatformSnapshotRecord(userID uuid.UUID, appKey string) (*models.PlatformUserAccessSnapshot, error) {
 	if h.db == nil {
 		return nil, nil
 	}
 	var record models.PlatformUserAccessSnapshot
-	if err := h.db.Where("user_id = ?", userID).First(&record).Error; err != nil {
+	if err := h.db.Where("app_key = ? AND user_id = ?", appctx.NormalizeAppKey(appKey), userID).First(&record).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
@@ -1106,12 +1123,12 @@ func (h *UserHandler) getPlatformSnapshotRecord(userID uuid.UUID) (*models.Platf
 	return &record, nil
 }
 
-func (h *UserHandler) getTeamSnapshotRecord(teamID uuid.UUID) (*models.TeamAccessSnapshot, error) {
+func (h *UserHandler) getTeamSnapshotRecord(teamID uuid.UUID, appKey string) (*models.TeamAccessSnapshot, error) {
 	if h.db == nil {
 		return nil, nil
 	}
 	var record models.TeamAccessSnapshot
-	if err := h.db.Where("team_id = ?", teamID).First(&record).Error; err != nil {
+	if err := h.db.Where("app_key = ? AND team_id = ?", appctx.NormalizeAppKey(appKey), teamID).First(&record).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
@@ -1120,12 +1137,12 @@ func (h *UserHandler) getTeamSnapshotRecord(teamID uuid.UUID) (*models.TeamAcces
 	return &record, nil
 }
 
-func (h *UserHandler) getTeamRoleSnapshotRecord(teamID, roleID uuid.UUID) (*models.TeamRoleAccessSnapshot, error) {
+func (h *UserHandler) getTeamRoleSnapshotRecord(teamID, roleID uuid.UUID, appKey string) (*models.TeamRoleAccessSnapshot, error) {
 	if h.db == nil {
 		return nil, nil
 	}
 	var record models.TeamRoleAccessSnapshot
-	if err := h.db.Where("team_id = ? AND role_id = ?", teamID, roleID).First(&record).Error; err != nil {
+	if err := h.db.Where("app_key = ? AND team_id = ? AND role_id = ?", appctx.NormalizeAppKey(appKey), teamID, roleID).First(&record).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
@@ -1310,34 +1327,34 @@ func timeValue[T any](item *T, getter func(*T) time.Time) time.Time {
 	return getter(item)
 }
 
-func (h *UserHandler) getPermissionMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {
+func (h *UserHandler) getPermissionMenuIDs(userID uuid.UUID, tenantID *uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	userEntity, err := h.userService.Get(userID)
 	if err != nil {
 		return nil, err
 	}
 	if tenantID == nil {
 		if userEntity.IsSuperAdmin {
-			return h.listEnabledMenuIDs()
+			return h.listEnabledMenuIDs(appKey)
 		}
-		snapshot, err := h.getPlatformSnapshot(userID)
+		snapshot, err := h.getPlatformSnapshot(userID, appKey)
 		if err != nil {
 			return nil, err
 		}
 		return snapshot.MenuIDs, nil
 	}
-	return h.getTeamPermissionMenuIDs(userID, *tenantID)
+	return h.getTeamPermissionMenuIDs(userID, *tenantID, appKey)
 }
 
-func (h *UserHandler) getTeamPermissionMenuIDs(userID, teamID uuid.UUID) ([]uuid.UUID, error) {
+func (h *UserHandler) getTeamPermissionMenuIDs(userID, teamID uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	if h.userRoleRepo == nil || h.roleRepo == nil || h.boundaryService == nil {
-		return h.finalizePermissionMenuIDs(nil)
+		return h.finalizePermissionMenuIDs(nil, appKey)
 	}
 	roleIDs, err := h.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndTenant(userID, &teamID)
 	if err != nil {
 		return nil, err
 	}
 	if len(roleIDs) == 0 {
-		return h.finalizePermissionMenuIDs(nil)
+		return h.finalizePermissionMenuIDs(nil, appKey)
 	}
 	roles, err := h.roleRepo.GetByIDs(roleIDs)
 	if err != nil {
@@ -1353,7 +1370,7 @@ func (h *UserHandler) getTeamPermissionMenuIDs(userID, teamID uuid.UUID) ([]uuid
 		if !ok {
 			continue
 		}
-		snapshot, snapshotErr := h.boundaryService.GetRoleSnapshot(teamID, roleID, role.TenantID == nil)
+		snapshot, snapshotErr := h.boundaryService.GetRoleSnapshot(teamID, roleID, role.TenantID == nil, appctx.NormalizeAppKey(appKey))
 		if snapshotErr != nil {
 			return nil, snapshotErr
 		}
@@ -1365,10 +1382,10 @@ func (h *UserHandler) getTeamPermissionMenuIDs(userID, teamID uuid.UUID) ([]uuid
 	for menuID := range menuSet {
 		menuIDs = append(menuIDs, menuID)
 	}
-	return h.finalizePermissionMenuIDs(menuIDs)
+	return h.finalizePermissionMenuIDs(menuIDs, appKey)
 }
 
-func (h *UserHandler) finalizePermissionMenuIDs(menuIDs []uuid.UUID) ([]uuid.UUID, error) {
+func (h *UserHandler) finalizePermissionMenuIDs(menuIDs []uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	allMenus, err := h.menuRepo.ListAll()
 	if err != nil {
 		return nil, err
@@ -1376,6 +1393,9 @@ func (h *UserHandler) finalizePermissionMenuIDs(menuIDs []uuid.UUID) ([]uuid.UUI
 	enabledSet := make(map[uuid.UUID]struct{}, len(allMenus))
 	publicIDs := make([]uuid.UUID, 0)
 	for _, menu := range allMenus {
+		if appctx.NormalizeAppKey(menu.AppKey) != appctx.NormalizeAppKey(appKey) {
+			continue
+		}
 		if !isMenuEnabled(menu) {
 			continue
 		}
@@ -1399,19 +1419,36 @@ func (h *UserHandler) finalizePermissionMenuIDs(menuIDs []uuid.UUID) ([]uuid.UUI
 	return result, nil
 }
 
-func (h *UserHandler) listEnabledMenuIDs() ([]uuid.UUID, error) {
+func (h *UserHandler) listEnabledMenuIDs(appKey string) ([]uuid.UUID, error) {
 	allMenus, err := h.menuRepo.ListAll()
 	if err != nil {
 		return nil, err
 	}
 	result := make([]uuid.UUID, 0, len(allMenus))
 	for _, menu := range allMenus {
+		if appctx.NormalizeAppKey(menu.AppKey) != appctx.NormalizeAppKey(appKey) {
+			continue
+		}
 		if !isMenuEnabled(menu) {
 			continue
 		}
 		result = append(result, menu.ID)
 	}
 	return result, nil
+}
+
+func filterMenusByApp(allMenus []Menu, appKey string) []Menu {
+	if len(allMenus) == 0 {
+		return []Menu{}
+	}
+	result := make([]Menu, 0, len(allMenus))
+	for _, menu := range allMenus {
+		if appctx.NormalizeAppKey(menu.AppKey) != appctx.NormalizeAppKey(appKey) {
+			continue
+		}
+		result = append(result, menu)
+	}
+	return result
 }
 
 func intersectUUIDSlices(left []uuid.UUID, right []uuid.UUID) []uuid.UUID {
@@ -1455,7 +1492,13 @@ func (h *UserHandler) GetPackages(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	packageIDs, err := h.userPackageRepo.GetPackageIDsByUserID(id)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
+	packageIDs, err := appscope.PackageIDsByUser(h.db, id, appKey)
 	if err != nil {
 		h.logger.Error("Get user packages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户功能包失败")
@@ -1500,6 +1543,12 @@ func (h *UserHandler) SetPackages(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
+		c.JSON(status, resp)
+		return
+	}
 	packageIDs := make([]uuid.UUID, 0, len(req.PackageIDs))
 	for _, item := range req.PackageIDs {
 		packageID, parseErr := uuid.Parse(item)
@@ -1524,6 +1573,11 @@ func (h *UserHandler) SetPackages(c *gin.Context) {
 			return
 		}
 		for _, item := range packages {
+			if appctx.NormalizeAppKey(item.AppKey) != appctx.NormalizeAppKey(appKey) {
+				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "仅支持绑定当前应用内的功能包")
+				c.JSON(status, resp)
+				return
+			}
 			if !supportsPlatformContext(item.ContextType) {
 				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "仅支持绑定平台功能包")
 				c.JSON(status, resp)
@@ -1539,7 +1593,7 @@ func (h *UserHandler) SetPackages(c *gin.Context) {
 			}
 		}
 	}
-	if err := h.userPackageRepo.ReplaceUserPackages(id, packageIDs, grantedBy); err != nil {
+	if err := appscope.ReplaceUserPackagesInApp(h.db, id, appKey, packageIDs, grantedBy); err != nil {
 		h.logger.Error("Set user packages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存用户功能包失败")
 		c.JSON(status, resp)

@@ -114,6 +114,7 @@
     modelValue: boolean
     dialogType: 'add' | 'edit' | 'copy'
     pageData?: Partial<PageItem>
+    appKey?: string
     menuSpaces?: Api.SystemManage.MenuSpaceItem[]
     // 仅作为当前编辑视角使用，驱动候选加载与兼容提交，不代表页面必须绑定该空间。
     currentSpaceKey?: string
@@ -265,6 +266,7 @@
       if (!valid) return
       submitting.value = true
       const payload: Api.SystemManage.PageSaveParams = {
+        app_key: props.appKey,
         page_key: props.dialogType === 'edit' ? form.pageKey.trim() : '',
         name: form.name.trim(),
         route_name: props.dialogType === 'edit' ? form.pageKey.trim() : '',

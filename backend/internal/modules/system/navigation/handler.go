@@ -10,6 +10,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
+	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
 	spacepkg "github.com/gg-ecommerce/backend/internal/modules/system/space"
 )
 
@@ -24,6 +25,7 @@ func NewHandler(logger *zap.Logger, compiler Compiler) *Handler {
 
 func (h *Handler) GetNavigation(c *gin.Context) {
 	manifest, err := h.compiler.Compile(
+		apppkg.CurrentAppKey(c),
 		spacepkg.RequestHost(c),
 		spacepkg.RequestSpaceKey(c),
 		currentUserID(c),

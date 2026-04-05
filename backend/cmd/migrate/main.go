@@ -228,10 +228,20 @@ func runNamedMigrations(logger *zap.Logger) error {
 						return err
 					}
 				}
-				if err := space.EnsureDefaultMenuSpace(database.DB); err != nil {
+				if err := space.EnsureDefaultMenuSpace(database.DB, systemmodels.DefaultAppKey); err != nil {
 					return err
 				}
 				logger.Info("Named migration applied", zap.String("name", "20260330_menu_space_foundation"))
+				return nil
+			},
+		},
+		{
+			Name: "20260405_app_scope_access_snapshots",
+			Run: func(logger *zap.Logger) error {
+				if err := ensureAppScopedSnapshotPrimaryKeysMigration(); err != nil {
+					return err
+				}
+				logger.Info("Named migration applied", zap.String("name", "20260405_app_scope_access_snapshots"))
 				return nil
 			},
 		},
@@ -2924,7 +2934,7 @@ func initDefaultMenuSpaces(logger *zap.Logger) error {
 			return err
 		}
 	}
-	if err := space.EnsureDefaultMenuSpace(database.DB); err != nil {
+	if err := space.EnsureDefaultMenuSpace(database.DB, systemmodels.DefaultAppKey); err != nil {
 		return err
 	}
 	logger.Info("Default menu spaces ensured")
@@ -3863,6 +3873,47 @@ func refreshDefaultAccessSnapshots(logger *zap.Logger) error {
 	}
 
 	logger.Info("Default access snapshots refreshed", zap.Int("roles", len(roleIDs)), zap.Int("packages", len(packageIDs)))
+	return nil
+}
+
+func ensureAppScopedSnapshotPrimaryKeysMigration() error {
+	if database.DB == nil {
+		return fmt.Errorf("database not initialized")
+	}
+
+	type snapshotSpec struct {
+		table string
+		cols  []string
+	}
+
+	specs := []snapshotSpec{
+		{table: "platform_user_access_snapshots", cols: []string{"app_key", "user_id"}},
+		{table: "platform_role_access_snapshots", cols: []string{"app_key", "role_id"}},
+		{table: "team_access_snapshots", cols: []string{"app_key", "team_id"}},
+		{table: "team_role_access_snapshots", cols: []string{"app_key", "team_id", "role_id"}},
+	}
+
+	for _, spec := range specs {
+		if err := database.DB.Exec(
+			"ALTER TABLE " + spec.table + " ADD COLUMN IF NOT EXISTS app_key varchar(100) NOT NULL DEFAULT '" + systemmodels.DefaultAppKey + "'",
+		).Error; err != nil {
+			return err
+		}
+		if err := database.DB.Exec(
+			"UPDATE " + spec.table + " SET app_key = '" + systemmodels.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
+		).Error; err != nil {
+			return err
+		}
+		if err := database.DB.Exec("ALTER TABLE " + spec.table + " DROP CONSTRAINT IF EXISTS " + spec.table + "_pkey").Error; err != nil {
+			return err
+		}
+		if err := database.DB.Exec(
+			"ALTER TABLE " + spec.table + " ADD PRIMARY KEY (" + strings.Join(spec.cols, ", ") + ")",
+		).Error; err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

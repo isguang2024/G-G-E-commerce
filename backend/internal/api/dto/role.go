@@ -36,6 +36,7 @@ type RoleUpdateRequest struct {
 
 // RoleMenusRequest 角色菜单权限请求
 type RoleMenusRequest struct {
+	AppKey  string   `json:"app_key" binding:"max=100"`
 	MenuIDs []string `json:"menu_ids"`
 }
 

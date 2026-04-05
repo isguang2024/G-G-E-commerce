@@ -64,6 +64,7 @@
   const props = withDefaults(
     defineProps<{
       modelValue: boolean
+      appKey?: string
     }>(),
     {
       modelValue: false
@@ -81,6 +82,7 @@
   const syncing = ref(false)
   const records = ref<PageUnregisteredItem[]>([])
   const keyword = ref('')
+  const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
   const pageState = reactive({
     current: 1,
     size: 20
@@ -111,9 +113,13 @@
 
   async function loadData() {
     if (loading.value) return
+    if (!currentAppKey.value) {
+      ElMessage.warning('缺少 app 上下文')
+      return
+    }
     loading.value = true
     try {
-      const res = await fetchGetPageUnregisteredList()
+      const res = await fetchGetPageUnregisteredList(currentAppKey.value)
       records.value = res.records || []
       pageState.current = 1
     } catch (error: any) {
@@ -125,9 +131,13 @@
 
   async function handleSync() {
     if (syncing.value) return
+    if (!currentAppKey.value) {
+      ElMessage.warning('缺少 app 上下文')
+      return
+    }
     syncing.value = true
     try {
-      const res = await fetchSyncPages()
+      const res = await fetchSyncPages(currentAppKey.value)
       ElMessage.success(`同步完成：新增 ${res.createdCount}，跳过 ${res.skippedCount}`)
       emit('synced')
       await loadData()

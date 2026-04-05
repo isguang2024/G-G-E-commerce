@@ -91,6 +91,7 @@
     modelValue: boolean
     packageId: string
     packageName: string
+    appKey?: string
     contextType?: 'platform' | 'team' | 'common' | string
   }
 
@@ -144,6 +145,7 @@
   })
 
   const contextLabel = computed(() => formatContextType(props.contextType))
+  const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
 
   watch(
     () => props.modelValue,
@@ -153,15 +155,21 @@
   )
 
   async function loadData() {
-    if (!props.packageId) return
+    if (!props.packageId || !currentAppKey.value) {
+      if (!currentAppKey.value) {
+        ElMessage.warning('缺少 app 上下文')
+      }
+      return
+    }
     loading.value = true
     keyword.value = ''
     try {
       const [packageRes, bundleRes] = await Promise.all([
         fetchGetFeaturePackageOptions({
+          appKey: currentAppKey.value,
           packageType: 'base'
         }),
-        fetchGetFeaturePackageChildren(props.packageId)
+        fetchGetFeaturePackageChildren(props.packageId, currentAppKey.value)
       ])
       basePackages.value = packageRes?.records || []
       selectedPackageIds.value = [...(bundleRes?.child_package_ids || [])]
@@ -184,10 +192,15 @@
   }
 
   async function handleSave() {
-    if (!props.packageId) return
+    if (!props.packageId || !currentAppKey.value) {
+      if (!currentAppKey.value) {
+        ElMessage.warning('缺少 app 上下文')
+      }
+      return
+    }
     saving.value = true
     try {
-      const stats = await fetchSetFeaturePackageChildren(props.packageId, selectedPackageIds.value)
+      const stats = await fetchSetFeaturePackageChildren(props.packageId, selectedPackageIds.value, currentAppKey.value)
       ElMessage.success(formatRefreshMessage(stats))
       emit('success')
       visible.value = false
