@@ -13,6 +13,12 @@
         <ElButton :loading="savingSpaceMode" @click="saveSpaceMode" v-ripple>保存模式</ElButton>
         <ElButton type="primary" @click="openSpaceDrawer()" v-ripple>新增空间</ElButton>
         <ElButton @click="openHostDrawer()" v-ripple>新增 Host 绑定</ElButton>
+        <ElButton :disabled="!currentSpace" @click="openSpaceBackupDialog" v-ripple>
+          备份当前空间
+        </ElButton>
+        <ElButton :disabled="!currentSpace" @click="handleManageSpaceBackups" v-ripple>
+          空间备份
+        </ElButton>
         <ElButton @click="loadData" v-ripple>刷新</ElButton>
       </div>
     </AdminWorkspaceHero>
@@ -32,7 +38,7 @@
           <div class="menu-space-panel__header">
             <div>
               <div class="menu-space-panel__title">菜单空间</div>
-              <div class="menu-space-panel__desc">默认空间始终兜底存在；新增空间后，只复制菜单布局与空间配置，菜单定义和受管页面定义继续按 App 统一维护。</div>
+              <div class="menu-space-panel__desc">这里负责当前 App 的空间列表、Host 绑定、默认空间与布局入口，菜单定义本体不在此维护。</div>
             </div>
           </div>
         </template>
@@ -115,10 +121,10 @@
           <div class="menu-space-panel__header">
             <div>
               <div class="menu-space-panel__title">Host 绑定</div>
-              <div class="menu-space-panel__desc">可选配置。先解析 App，再决定默认空间；未命中任何 Host 时，系统会自动退回当前 App 的默认空间。</div>
+              <div class="menu-space-panel__desc">可选配置。先解析 App，再决定空间绑定；未命中 Host 时，不再额外兜底到固定默认空间。</div>
             </div>
             <div class="menu-space-panel__status">
-              <ElTag effect="plain" type="info">当前解析 {{ currentSpaceLabel }}</ElTag>
+          <ElTag effect="plain" type="info">当前解析 {{ currentSpaceLabel }}</ElTag>
               <ElTag effect="plain" :type="spaceModeTagType">模式 {{ spaceModeLabel }}</ElTag>
               <ElTag v-if="resolveByLabel" effect="plain" type="warning">来源 {{ resolveByLabel }}</ElTag>
             </div>
@@ -157,7 +163,7 @@
             </div>
           </div>
           <div class="menu-space-overview__actions">
-            <ElButton text @click="goToMenuManagement(currentSpace.spaceKey)">进入空间布局</ElButton>
+            <ElButton text @click="goToMenuManagement(currentSpace.spaceKey)">编辑当前空间布局</ElButton>
             <ElButton text @click="goToPageManagement(currentSpace.spaceKey)">进入受管页面</ElButton>
             <ElButton
               v-if="!currentSpace.isDefault && isSpaceInitialized(currentSpace)"
@@ -349,6 +355,27 @@
         </div>
       </template>
     </ElDrawer>
+
+    <MenuBackupDialog
+      v-model="backupDialogVisible"
+      :loading="backupLoading"
+      scope-type="space"
+      :current-space-name="currentSpaceLabel"
+      dialog-title="备份当前空间布局"
+      :alert-title="`当前将备份空间布局：${currentSpaceLabel}`"
+      :alert-description="`该备份只保存当前 App 下空间“${currentSpaceLabel}”的布局树和相关菜单分组，用于后续覆盖恢复当前空间。`"
+      @submit="handleCreateSpaceBackup"
+    />
+
+    <MenuBackupListDialog
+      v-model="backupListDialogVisible"
+      :loading="backupLoading"
+      :items="backupList"
+      title="管理空间布局备份"
+      alert-description="这里只展示当前 App 下当前空间的布局备份，不包含 App 级菜单定义备份。"
+      empty-description="当前空间暂无布局备份"
+      @action="handleBackupListAction"
+    />
   </div>
 </template>
 
@@ -358,12 +385,18 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import type { AppRouteRecord } from '@/types/router'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
+  import MenuBackupDialog from '../menu/modules/menu-backup-dialog.vue'
+  import MenuBackupListDialog from '../menu/modules/menu-backup-list-dialog.vue'
   import {
+    fetchCreateMenuBackup,
+    fetchDeleteMenuBackup,
     fetchGetCurrentMenuSpace,
+    fetchGetMenuBackupList,
     fetchGetMenuSpaceMode,
     fetchInitializeMenuSpaceFromDefault,
     fetchGetMenuSpaceHostBindings,
     fetchGetMenuSpaces,
+    fetchRestoreMenuBackup,
     fetchGetRuntimeNavigation,
     fetchSaveMenuSpace,
     fetchSaveMenuSpaceHostBinding,
@@ -376,6 +409,7 @@
   const route = useRoute()
   const router = useRouter()
   const { targetAppKey } = useManagedAppScope()
+  const managedAppMissingText = '缺少 app 上下文，请先从应用管理选择 App'
 
   const loading = ref(false)
   const loadError = ref('')
@@ -385,13 +419,17 @@
   const initializingSpaceKey = ref('')
   const spaces = ref<Api.SystemManage.MenuSpaceItem[]>([])
   const hostBindings = ref<Api.SystemManage.MenuSpaceHostBindingItem[]>([])
-  const currentSpaceKey = ref('default')
+  const currentSpaceKey = ref('')
   const spaceMode = ref<'single' | 'multi'>('single')
   const currentResolvedBy = ref('')
   const currentRequestHost = ref('')
   const currentAccessGranted = ref(true)
   const loadingLandingPaths = ref(false)
   const landingPathOptions = ref<string[]>([])
+  const backupLoading = ref(false)
+  const backupDialogVisible = ref(false)
+  const backupListDialogVisible = ref(false)
+  const backupList = ref<Api.SystemManage.MenuBackupItem[]>([])
   const warnDev = (...args: any[]) => {
     if (import.meta.env.DEV) {
       console.warn(...args)
@@ -411,7 +449,8 @@
   }
 
   const spaceForm = reactive<Api.SystemManage.MenuSpaceSaveParams>({
-    space_key: 'default',
+    app_key: '',
+    space_key: '',
     name: '',
     description: '',
     default_home_path: '/dashboard/console',
@@ -424,8 +463,9 @@
   const allowedRoleCodesText = ref('')
 
   const hostForm = reactive<HostBindingSaveForm>({
+    app_key: '',
     host: '',
-    space_key: 'default',
+    space_key: '',
     description: '',
     is_default: false,
     status: 'normal',
@@ -440,11 +480,11 @@
     }
   })
 
-  const currentSpace = computed(
-    () => spaces.value.find((item) => item.spaceKey === currentSpaceKey.value) || spaces.value[0]
+  const currentSpace = computed(() =>
+    spaces.value.find((item) => item.spaceKey === currentSpaceKey.value)
   )
 
-  const currentSpaceLabel = computed(() => currentSpace.value?.name || currentSpace.value?.spaceKey || '默认菜单空间')
+  const currentSpaceLabel = computed(() => currentSpace.value?.name || currentSpace.value?.spaceKey || '未选择空间')
   const spaceModeLabel = computed(() => {
     if (spaceMode.value === 'single') {
       return '单空间'
@@ -477,7 +517,7 @@
     { label: '菜单空间', value: spaces.value.length || 0 },
     { label: 'Host 绑定', value: hostBindings.value.length || 0 },
     { label: '已初始化', value: spaces.value.filter((item) => isSpaceInitialized(item)).length || 0 },
-    { label: '当前解析', value: currentSpace.value?.spaceKey || 'default' }
+    { label: '当前解析', value: currentSpace.value?.spaceKey || '未选择' }
   ])
 
   const spaceOptions = computed(() =>
@@ -495,7 +535,7 @@
     }
     const value = `${spaceForm.default_home_path || ''}`.trim()
     if (!value) {
-      return '未填写时，系统会退回当前菜单空间下首个可进入页面。'
+      return '未填写时，系统不会自动补默认首页，需要在后续显式配置。'
     }
     if (!value.startsWith('/')) {
       return '默认首页必须是以 / 开头的站内路径，例如 /dashboard/console。'
@@ -570,6 +610,14 @@
   async function loadData() {
     loading.value = true
     loadError.value = ''
+    if (!targetAppKey.value) {
+      spaces.value = []
+      hostBindings.value = []
+      currentSpaceKey.value = ''
+      loadError.value = managedAppMissingText
+      loading.value = false
+      return
+    }
     try {
       const [spaceRes, hostRes, currentRes, modeRes] = await Promise.all([
         fetchGetMenuSpaces(targetAppKey.value),
@@ -579,8 +627,7 @@
       ])
       spaces.value = spaceRes.records || []
       hostBindings.value = hostRes.records || []
-      currentSpaceKey.value =
-        currentRes?.space?.spaceKey || spaces.value.find((item) => item.isDefault)?.spaceKey || 'default'
+      currentSpaceKey.value = currentRes?.space?.spaceKey || ''
       spaceMode.value = `${modeRes?.mode || 'single'}`.trim() === 'multi' ? 'multi' : 'single'
       currentResolvedBy.value = `${currentRes?.resolvedBy || ''}`.trim()
       currentRequestHost.value = `${currentRes?.requestHost || ''}`.trim()
@@ -588,7 +635,7 @@
     } catch (error: any) {
       spaces.value = []
       hostBindings.value = []
-      currentSpaceKey.value = 'default'
+      currentSpaceKey.value = ''
       spaceMode.value = 'single'
       currentResolvedBy.value = ''
       currentRequestHost.value = ''
@@ -600,6 +647,11 @@
   }
 
   async function saveSpaceMode() {
+    if (!targetAppKey.value) {
+      loadError.value = managedAppMissingText
+      ElMessage.warning(managedAppMissingText)
+      return
+    }
     savingSpaceMode.value = true
     try {
       const res = await fetchUpdateMenuSpaceMode(spaceMode.value)
@@ -645,7 +697,11 @@
   }
 
   async function loadLandingPathCandidates(spaceKey: string) {
-    const normalizedSpaceKey = normalizeMenuSpaceKey(spaceKey) || 'default'
+    const normalizedSpaceKey = normalizeMenuSpaceKey(spaceKey)
+    if (!normalizedSpaceKey) {
+      landingPathOptions.value = []
+      return
+    }
     loadingLandingPaths.value = true
     try {
       const manifest = await fetchGetRuntimeNavigation(normalizedSpaceKey, targetAppKey.value)
@@ -671,7 +727,7 @@
 
   function resetSpaceForm() {
     editingSpaceKey.value = ''
-    spaceForm.space_key = 'default'
+    spaceForm.space_key = ''
     spaceForm.name = ''
     spaceForm.description = ''
     spaceForm.default_home_path = '/dashboard/console'
@@ -686,7 +742,7 @@
   function resetHostForm() {
     editingHost.value = ''
     hostForm.host = ''
-    hostForm.space_key = currentSpaceKey.value || 'default'
+    hostForm.space_key = currentSpaceKey.value || ''
     hostForm.description = ''
     hostForm.is_default = false
     hostForm.status = 'normal'
@@ -750,6 +806,10 @@
       ElMessage.warning('请输入空间名称')
       return
     }
+    if (!`${spaceForm.space_key || ''}`.trim()) {
+      ElMessage.warning('请输入空间标识')
+      return
+    }
     const normalizedHomePath = normalizeInternalPath(spaceForm.default_home_path || '')
     if (spaceForm.default_home_path?.trim() && !normalizedHomePath) {
       ElMessage.warning('默认首页必须是以 / 开头的站内路径')
@@ -796,6 +856,10 @@
       ElMessage.warning('请输入 Host')
       return
     }
+    if (!`${hostForm.space_key || ''}`.trim()) {
+      ElMessage.warning('请选择菜单空间')
+      return
+    }
     const normalizedHost = `${hostForm.host || ''}`.trim().toLowerCase()
     const duplicatedBinding = hostBindings.value.find(
       (item) =>
@@ -835,6 +899,114 @@
     }
   }
 
+  function openSpaceBackupDialog() {
+    if (!currentSpace.value?.spaceKey) {
+      ElMessage.warning('当前没有可备份的空间')
+      return
+    }
+    backupDialogVisible.value = true
+  }
+
+  async function handleCreateSpaceBackup(formData: { name: string; description: string }) {
+    if (!currentSpace.value?.spaceKey) {
+      ElMessage.warning('当前没有可备份的空间')
+      return
+    }
+    backupLoading.value = true
+    try {
+      await fetchCreateMenuBackup({
+        app_key: targetAppKey.value,
+        name: formData.name,
+        description: formData.description,
+        scope_type: 'space',
+        space_key: normalizeMenuSpaceKey(currentSpace.value.spaceKey)
+      })
+      ElMessage.success('空间布局备份已创建')
+      backupDialogVisible.value = false
+    } catch (error: any) {
+      ElMessage.error(error?.message || '空间布局备份失败')
+    } finally {
+      backupLoading.value = false
+    }
+  }
+
+  async function handleManageSpaceBackups() {
+    if (!currentSpace.value?.spaceKey) {
+      ElMessage.warning('当前没有可管理的空间')
+      return
+    }
+    backupLoading.value = true
+    try {
+      const list = await fetchGetMenuBackupList(currentSpace.value.spaceKey, targetAppKey.value)
+      backupList.value = (list || [])
+        .filter((item) => `${item.scope_type || ''}`.trim() !== 'global')
+        .map((item) => ({
+          ...item,
+          space_name: item.space_name || currentSpaceLabel.value
+        }))
+      backupListDialogVisible.value = true
+    } catch (error: any) {
+      ElMessage.error(error?.message || '获取空间布局备份失败')
+    } finally {
+      backupLoading.value = false
+    }
+  }
+
+  function handleBackupListAction(action: string, row: Api.SystemManage.MenuBackupItem) {
+    if (action === 'restore') {
+      void handleRestoreBackup(row)
+      return
+    }
+    if (action === 'delete') {
+      void handleDeleteBackup(row.id)
+    }
+  }
+
+  function buildSpaceBackupRestoreMessage(item: Api.SystemManage.MenuBackupItem) {
+    return `确定要恢复空间“${currentSpaceLabel.value}”的布局备份吗？恢复后会覆盖当前空间的菜单布局树和相关菜单分组。`
+  }
+
+  async function handleRestoreBackup(item: Api.SystemManage.MenuBackupItem) {
+    try {
+      await ElMessageBox.confirm(buildSpaceBackupRestoreMessage(item), '提示', {
+        type: 'warning',
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      })
+      backupLoading.value = true
+      await fetchRestoreMenuBackup(item.id, targetAppKey.value)
+      ElMessage.success('空间布局恢复成功')
+      backupListDialogVisible.value = false
+      await loadData()
+    } catch (error: any) {
+      if (error !== 'cancel') {
+        ElMessage.error(error?.message || '空间布局恢复失败')
+      }
+    } finally {
+      backupLoading.value = false
+    }
+  }
+
+  async function handleDeleteBackup(id: string) {
+    try {
+      await ElMessageBox.confirm('确定要删除这条空间布局备份吗？', '提示', {
+        type: 'warning',
+        confirmButtonText: '确定',
+        cancelButtonText: '取消'
+      })
+      backupLoading.value = true
+      await fetchDeleteMenuBackup(id, targetAppKey.value)
+      ElMessage.success('空间布局备份已删除')
+      await handleManageSpaceBackups()
+    } catch (error: any) {
+      if (error !== 'cancel') {
+        ElMessage.error(error?.message || '删除空间布局备份失败')
+      }
+    } finally {
+      backupLoading.value = false
+    }
+  }
+
   async function initializeSpace(item: Api.SystemManage.MenuSpaceItem) {
     if (!item?.spaceKey || item.isDefault) {
       return
@@ -845,7 +1017,7 @@
     }
     initializingSpaceKey.value = item.spaceKey
     try {
-      const result = await fetchInitializeMenuSpaceFromDefault(item.spaceKey)
+      const result = await fetchInitializeMenuSpaceFromDefault(targetAppKey.value, item.spaceKey)
       ElMessage.success(
         `已完成初始化：复制 ${result.createdMenuCount} 个菜单、同步 ${result.createdPackageMenuLinkCount} 条功能包菜单关联，独立页暴露 ${result.createdPageCount || 0} 项`
       )
@@ -878,7 +1050,11 @@
     }
     initializingSpaceKey.value = item.spaceKey
     try {
-      const result = await fetchInitializeMenuSpaceFromDefault(item.spaceKey, true)
+      const result = await fetchInitializeMenuSpaceFromDefault(
+        targetAppKey.value,
+        item.spaceKey,
+        true
+      )
       ElMessage.success(
         `已重新初始化：清空 ${result.clearedMenuCount || 0} 个菜单、${result.clearedPageCount || 0} 项独立页暴露、${result.clearedPackageMenuLinkCount || 0} 条功能包菜单关联，并重新复制 ${result.createdMenuCount} 个菜单`
       )
@@ -913,12 +1089,23 @@
   }
 
   onMounted(() => {
+    if (!targetAppKey.value) {
+      loadError.value = managedAppMissingText
+      return
+    }
     loadData()
   })
 
   watch(
     () => route.query.app_key,
     () => {
+      if (!targetAppKey.value) {
+        spaces.value = []
+        hostBindings.value = []
+        currentSpaceKey.value = ''
+        loadError.value = managedAppMissingText
+        return
+      }
       loadData()
     }
   )

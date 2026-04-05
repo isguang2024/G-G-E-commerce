@@ -932,3 +932,107 @@
 ### 下次方向
 - 继续把菜单页里仍偏“单页双职责”的部分拆干净，例如把空间级备份/恢复入口完全沉到 `system/menu-space`，让 `system/menu` 只保留定义管理和 App 级备份。
 - 继续推进页面管理相关弹窗，把 `parent_menu_id`、空间暴露和 breadcrumb 预览全部显式解释成“菜单定义 + 空间布局”的语义，进一步减少旧 `menus/ui_pages.space_key` 兼容字段对前端表单的影响。
+
+## 2026-04-05 App 维度空间布局备份职责回归
+
+### 本次改动
+- 将 `system/menu-space` 页补成“空间布局高级配置”的完整入口，新增当前空间布局的创建备份、查看备份、恢复备份和删除备份能力，并统一透传当前 `app_key + space_key`。
+- `system/menu` 继续收口为菜单定义管理页，更多操作里移除了已不可达的空间备份分支，只保留 App 级定义备份与定义备份列表入口。
+- 复用菜单备份弹窗组件时补充了可配置标题和提示文案，使定义备份与空间布局备份可以共用同一套组件而不混淆作用范围。
+- 已重新通过 `pnpm --dir frontend build` 验证。
+
+### 下次方向
+- 继续把页面管理、breadcrumb 预览和父菜单候选统一解释成“菜单定义 + 空间布局”的模型，减少对旧 `menus` 和 `ui_pages.space_key` 兼容语义的依赖。
+- 如果下一轮继续做彻底收尾，优先清理菜单与页面服务里仍残留的旧字段桥接逻辑，把前后端读写链完全锁到 `menu_definitions + space_menu_placements`。
+
+## 2026-04-05 后端管理契约显式 app_key 收口
+
+### 本次改动
+- 将 `backend/internal/modules/system/space/handler.go` 与 `space/service.go` 的管理入口统一改为显式 `app_key`，`GetCurrent/List/ListHostBindings/SaveSpace/SaveHostBinding/InitializeFromDefault` 不再从上下文默认值或请求体覆盖里回退，缺失或不一致直接报错。
+- 将 `backend/internal/modules/system/menu/handler.go`、`menu/service.go` 的备份链路补齐 App 边界校验，`list/detail/delete/restore` 统一依赖显式 `app_key`，并在返回中补充 `app_key` 与 `scope_origin`，防止跨 App 误操作。
+- 将 `featurepackage/role/tenant/user` 等管理侧保存与列表链路里仍存在的 `ResolveManagedAppKey` 依赖替换为显式 `RequireRequestAppKey`，同时把功能包与页面 service 层的默认 App 兜底一并收紧。
+- 同步修正了相关测试桩和菜单备份 scope 断言，`go test ./...` 已通过，后端契约硬化的主链已闭合。
+
+### 下次方向
+- 下一轮如果还要继续收尾，优先扫描 `apiendpoint` 和 `app` 这类仍保留默认 App 兼容的模块，判断是否也需要统一成显式 `app_key`。
+- 如果要继续推进 App 体系最终收口，可以再做一轮只读审计，确认运行时路径与管理路径各自的 `app_key` 来源已经完全分离，没有遗留的静默默认值。
+
+## 2026-04-05 前端 managedApp 强显式与页面/空间语义收口
+
+### 本次改动
+- `frontend/src/store/modules/app-context.ts`、`frontend/src/hooks/business/useManagedAppScope.ts` 与新增的 `frontend/src/hooks/business/managed-app-scope.ts` 已把 `runtimeApp` 和 `managedApp` 彻底拆开：管理态不再自动继承壳体运行时 App，只有显式路由参数或已选择的管理 App 才会进入管理链路。
+- `system/api-endpoint` 页把“同步接口 / 未注册扫描 / 失效清理”明确按 shared/global 语义工作，不再向这些全局治理动作透传伪 `app_key`；应用级列表和保存仍继续按 `app_scope/app_key` 过滤。
+- `system/menu`、`system/menu-space` 与菜单备份 helper 一起补齐了显式 App 边界：空间初始化、备份恢复、备份删除都显式透传 `app_key`，菜单定义页与空间布局页的职责也继续拉开。
+- `system/page` 及 `page-entry/page-group/page-display-group` 三个弹窗去掉了 `currentSpaceKey: 'default'` 一类默认主归属语义，页面保存统一显式带 `app_key`，空间只保留为页面暴露范围与当前空间视角下的菜单/父页候选。
+- 角色、团队、用户菜单授权相关弹窗继续收口为显式 App/Space 输入，避免再隐式读取全局 `currentSpaceKey` 串上下文；同时补了一条 `frontend/tests/managed-app-scope.test.ts` 作为 managedApp 解析的最小回归样例。
+- 已重新通过 `pnpm --dir frontend build` 与 `go test ./...` 验证。
+
+### 下次方向
+- 如果还要继续压缩兼容层，优先评估是否彻底移除未被主页面引用的旧菜单权限弹窗，以及是否把页面管理页里的“当前空间视角”再抽成更明确的高级筛选器。
+- 后续如果继续推多 App，可再补一轮围绕 `managedApp` 的交互细化，例如统一 App 选择器的空态提示、切换确认和跨页保持策略，但不建议再恢复任何默认 App 静默兜底。
+
+## 2026-04-05 后端 app 管理契约最后收口
+
+### 本次改动
+- 将 `backend/internal/modules/system/app/service.go` 的 Host 绑定保存和列表改成显式 `app_key` 契约，空 `app_key` 直接报错，不再回落到默认 `platform-admin`；同时保留对请求体 `app_key` 的一致性校验，避免 body 偷换应用归属。
+- `backend/internal/modules/system/app/handler.go` 统一改为从请求上下文显式读取 `app_key` 后再进入 Host 绑定读写链，管理侧 app 入口不再依赖默认 App。
+- 重新检查了 `menu`、`page`、`space` 等管理入口，确认需要保留的显式 App 注入路径仍然稳定，空间布局与页面/菜单管理没有再引入新的默认 App 兜底。
+- 已重新通过 `go test ./...` 验证。
+
+### 下次方向
+- 如果后续还要继续收口，优先再扫一遍 `apiendpoint` 和 `app` 以外的管理模块，确认是否还有类似“显式 app_key + body 兼容值”并存的入口。
+- 如需进一步压缩兼容层，可以继续评估是否把当前保留的 App 选择器和空间高级配置入口再做一层更严格的显式跳转校验。
+
+## 2026-04-05 前端最后一轮 App 收口
+
+### 本次改动
+- `frontend/src/store/modules/app-context.ts` 与 `frontend/src/hooks/business/useManagedAppScope.ts` 继续保持强显式语义，管理态不再从 runtime/default/first app 自动兜底；补充了 `frontend/tests/app-context-store.test.ts` 作为最小回归样例。
+- `system/menu` 收成菜单定义管理主入口，移除了直接跳去“空间布局”的平级按钮，并清理了 `default` 作为表单/请求默认值的隐式 fallback；`system/menu-space` 则收成空间布局高级配置页，Host 绑定和空间保存都要求显式空间标识。
+- `system/page` 的页面弹窗与 `page-entry/page-group/page-display-group` 三个子弹窗去掉了 `currentSpaceKey` 参与的默认回填语义，`space_key` 只保留为显式提交字段，不再作为隐式主归属来源。
+- 删除了未再被主链使用的旧角色菜单弹窗 `frontend/src/views/system/role/modules/role-permission-dialog.vue`，避免后续误接回旧兼容链路；已重新通过 `pnpm --dir frontend build` 与 `pnpm exec node --import tsx --test tests/app-context-store.test.ts` 验证。
+
+### 下次方向
+- 如果还要继续压缩兼容层，建议下一轮只做只读审计，确认菜单页、空间页、页面页里是否还有残留的“当前空间视角”文案需要继续降级为高级配置说明。
+- 后续若继续推进多 App，可再评估 App 选择器的空态交互和跨页保持策略，但不建议再恢复任何默认 App 静默兜底行为。
+
+## 2026-04-05 App 收口补完与 global/shared API 语义校正
+
+### 本次改动
+- `backend/internal/modules/system/apiendpoint/handler.go` 与 `service.go` 将“失效 API 列表 / 失效清理”收回到 global/shared 维护语义：不再要求显式 `app_key`，空 `app_key` 时按全局同步源做失效诊断，应用级 API 列表与保存仍保留 `app_scope/app_key` 约束。
+- `frontend/src/api/system-manage.ts`、`frontend/src/views/system/api-endpoint/index.vue` 同步改成全局治理口径，去掉失效 API 列表的伪 `appKey` 入参，并把“同步 API / 未注册 API / 清理失效 API”文案明确成全局维护动作。
+- `system/menu`、`system/menu-space`、`system/page` 继续补齐显式 `app_key` 守卫；当管理页缺失 App 上下文时，页面不再偷偷回落到默认 App，而是直接阻断加载并提示先从应用管理选择 App。
+- 菜单定义页和空间高级配置页剩余的 `default` 隐式空间兜底继续清理，`menu-dialog`、`page/index`、`api-endpoint/index` 的保存与加载链已统一到“显式 App + 显式空间视角”的语义。
+- `frontend/src/views/system/app/index.vue` 继续去掉应用管理页里的默认空间硬编码：列表、概览和 Host 绑定展示在未配置时统一显示“未设置”，表单默认值改成显式解析当前 App / 当前空间结果，不再把 `'default'` 静默写回管理请求。
+- `frontend/src/api/system-manage.ts` 与 `frontend/src/components/business/layout/AppContextBadge.vue` 的剩余显示层兜底也同步收紧：空间初始化返回不再假设 `sourceSpaceKey=default`，上下文徽章在无空间时统一显示“未选择空间”。
+- `backend/internal/modules/system/app/service.go` 将 `SaveApp` / `SaveHostBinding` 的 `default_space_key` 改为显式必填，空值直接报错，不再在管理链路里静默回落到默认空间；`frontend/src/views/system/app/index.vue` 也同步增加了保存前校验。
+
+### 下次方向
+- 如果还要继续做最终审计，建议重点扫一遍 `app/service.go`、`user/service.go` 和页面 breadcrumb/active menu 推导链，确认剩余默认 App 仅存在于运行时兼容而不再泄漏到管理契约。
+- 当前这轮已经把 App 管理、菜单定义、空间布局、页面管理和 API 注册的主链收口到统一语义，后续更适合做只读核查和细节润色，而不是继续扩散结构性改动。
+
+## 2026-04-05 API 注册链 app_scope 缺列修复
+
+### 本次改动
+- `backend/internal/pkg/database/database.go` 在启动自动迁移链路中补上了 `api_endpoints.app_scope` 与 `api_endpoints.app_key` 的显式补列和回填，不再只依赖模型自动迁移命中最新字段，避免现网库在 API 注册同步阶段因缺列直接失败。
+- `backend/cmd/migrate/main.go` 的 `finalizeAPIEndpointSchema` 同步加入相同的补列与回填逻辑，确保手工执行迁移命令时也能把 `api_endpoints` 升级到支持 App 作用域的结构。
+- `backend/internal/pkg/apiregistry/registry.go` 将 upsert 探测里的 `First` 改成 `Find + RowsAffected`，避免同步注册时把“未找到旧记录”的正常分支刷成 `record not found` 噪音日志。
+
+### 下次方向
+- 建议继续观察一次真实启动日志，确认 API 注册链现在只剩真正的 schema/数据错误，不再混入“未命中旧记录”的探测噪音。
+- 如果后续还要继续强化初始化鲁棒性，可以把类似的关键新增列补齐逻辑统一抽到 schema finalize 层，避免字段升级只分散在回填函数里。
+## 2026-04-05 运行时菜单空间初始化补齐 app 上下文
+
+- 前端 `menu-space` store 在登录后首轮 `fetchUserInfo -> refreshRuntimeConfig` 阶段，先于 `runtime/navigation` 建立 `runtimeAppKey`，导致运行时菜单空间配置同步直接报“缺少 app 上下文”，进而连带动态路由注册失败。
+- 在 `frontend/src/store/modules/menu-space.ts` 增加运行时 App 自举：当 `runtimeAppKey` 为空时，先调用 `fetchGetCurrentApp()` 按当前 Host 解析运行时 App，并写回 `appContextStore.setRuntimeAppKey(...)`，再继续拉取菜单空间列表、Host 绑定和当前空间解析。
+- 这次修复只作用于运行时初始化链路，不回退前面已经收口好的管理态显式 `app_key` 语义；`managedApp` 与 `runtimeApp` 仍保持分离。
+- 已通过 `pnpm --dir frontend build` 验证。
+## 2026-04-05 管理页缺失 app_key 自动继承当前管理 App
+
+- 运行时数据库已执行一次最新迁移：在 `backend/` 下运行 `go run ./cmd/migrate`，把当前测试库升级到包含 `apps`、`app_host_bindings`、菜单定义/空间布局以及最新 API 注册结构的状态。
+- 前端管理页继续报 `app_key is required` 的根因，不是后端缺数据，而是 `useManagedAppScope` 过度只信路由 `app_key`。当系统管理页 URL 没带 `app_key` 时，它会把 `managedApp` 清空，导致菜单、页面、功能包等页面发出 `app_key=` 的空请求。
+- 在 `frontend/src/hooks/business/useManagedAppScope.ts` 调整为优先解析：
+  - 路由 `app_key`
+  - 已选的 `managedAppKey`
+  - 当前运行时 `runtimeAppKey`
+- 当管理页 URL 未携带 `app_key` 但本地已有管理 App 或运行时 App 时，自动把该 `app_key` 写回当前路由，避免继续出现空 `app_key` 请求。
+- 已通过 `pnpm --dir frontend build` 验证。

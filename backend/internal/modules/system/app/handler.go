@@ -9,6 +9,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	spacepkg "github.com/gg-ecommerce/backend/internal/modules/system/space"
+	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
 )
 
 type Handler struct {
@@ -63,7 +64,13 @@ func (h *Handler) SaveApp(c *gin.Context) {
 }
 
 func (h *Handler) ListHostBindings(c *gin.Context) {
-	items, err := h.service.ListHostBindings(RequestAppKey(c))
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	items, err := h.service.ListHostBindings(appKey)
 	if err != nil {
 		h.logger.Error("List app host bindings failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取应用 Host 绑定失败")
@@ -83,7 +90,13 @@ func (h *Handler) SaveHostBinding(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	saved, err := h.service.SaveHostBinding(&req)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	saved, err := h.service.SaveHostBinding(appKey, &req)
 	if err != nil {
 		h.logger.Error("Save app host binding failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, err.Error())

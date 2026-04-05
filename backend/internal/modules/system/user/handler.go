@@ -840,7 +840,7 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.
 		"diagnosis":     nil,
 	}
 	if permissionKeyValue != "" {
-			diagnosis, err := h.buildTeamPermissionDiagnosis(userEntity, *tenantID, teamSnapshot, roleStates, permissionKeyValue, appKey)
+		diagnosis, err := h.buildTeamPermissionDiagnosis(userEntity, *tenantID, teamSnapshot, roleStates, permissionKeyValue, appKey)
 		if err != nil {
 			return nil, err
 		}
@@ -1543,7 +1543,7 @@ func (h *UserHandler) SetPackages(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	appKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)

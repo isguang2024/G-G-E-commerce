@@ -129,23 +129,15 @@ func (h *Handler) ListStale(c *gin.Context) {
 	var req struct {
 		Current int `form:"current"`
 		Size    int `form:"size"`
-		AppKey  string `form:"app_key"`
 	}
 	if err := c.ShouldBindQuery(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
 		return
 	}
-	appKey, appErr := appctx.RequireRequestAppKey(c)
-	if appErr != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
-		c.JSON(status, resp)
-		return
-	}
 	list, total, err := h.service.ListStale(&StaleListRequest{
 		Current: req.Current,
 		Size:    req.Size,
-		AppKey:  appKey,
 	})
 	if err != nil {
 		h.logger.Error("List stale api endpoints failed", zap.Error(err))
@@ -171,6 +163,7 @@ func (h *Handler) ListStale(c *gin.Context) {
 	}))
 }
 
+// ListUnregistered is a global/shared operation and does not scope itself by app.
 func (h *Handler) ListUnregistered(c *gin.Context) {
 	var req struct {
 		Current    int    `form:"current"`
@@ -207,6 +200,7 @@ func (h *Handler) ListUnregistered(c *gin.Context) {
 	}))
 }
 
+// GetUnregisteredScanConfig is a global/shared maintenance read and does not scope itself by app.
 func (h *Handler) GetUnregisteredScanConfig(c *gin.Context) {
 	config, err := h.service.GetUnregisteredScanConfig()
 	if err != nil {
@@ -282,6 +276,7 @@ func (h *Handler) ListCategories(c *gin.Context) {
 	}))
 }
 
+// Sync is a global/shared maintenance action and does not scope itself by app.
 func (h *Handler) Sync(c *gin.Context) {
 	if err := h.service.Sync(); err != nil {
 		h.logger.Error("Sync api endpoints failed", zap.Error(err))
@@ -292,6 +287,7 @@ func (h *Handler) Sync(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
+// CleanupStale is a global/shared maintenance action and only deletes explicitly selected stale sync endpoints.
 func (h *Handler) CleanupStale(c *gin.Context) {
 	var req struct {
 		IDs []string `json:"ids"`
@@ -322,13 +318,7 @@ func (h *Handler) CleanupStale(c *gin.Context) {
 		endpointIDs = append(endpointIDs, endpointID)
 	}
 
-	appKey, appErr := appctx.RequireRequestAppKey(c)
-	if appErr != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
-		c.JSON(status, resp)
-		return
-	}
-	deletedCount, err := h.service.CleanupStale(endpointIDs, appKey)
+	deletedCount, err := h.service.CleanupStale(endpointIDs, "")
 	if err != nil {
 		if errors.Is(err, ErrNoStaleCleanupSelection) || errors.Is(err, ErrStaleCleanupTargetGone) {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, err.Error())

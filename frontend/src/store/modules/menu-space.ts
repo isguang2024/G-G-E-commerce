@@ -1,9 +1,12 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import AppConfig from '@/config'
+import { normalizeManagedAppKey } from '@/hooks/business/managed-app-scope'
+import { useAppContextStore } from '@/store/modules/app-context'
 import { useUserStore } from '@/store/modules/user'
 import { hasPlatformAccessByUserInfo } from '@/store/modules/tenant'
 import {
+  fetchGetCurrentApp,
   fetchGetCurrentMenuSpace,
   fetchGetMenuSpaces,
   fetchGetMenuSpaceHostBindings
@@ -81,16 +84,20 @@ function buildRuntimeMenuSpaceConfig(
 export const useMenuSpaceStore = defineStore(
   'menuSpaceStore',
   () => {
+    const appContextStore = useAppContextStore()
     const menuSpaceConfig = ref(runtimeMenuSpaceConfig)
     const overrideSpaceKey = ref('')
     const runtimeHost = ref('')
     const loading = ref(false)
     const loaded = ref(false)
+    const runtimeAppLoading = ref<Promise<string> | null>(null)
 
     const currentHost = computed(() => {
       const host = runtimeHost.value || (typeof window !== 'undefined' ? window.location.hostname : '')
       return normalizeMenuHost(host)
     })
+
+    const currentAppKey = computed(() => normalizeManagedAppKey(appContextStore.runtimeAppKey))
 
     const defaultSpaceKey = computed(() => {
       const key = normalizeMenuSpaceKey(menuSpaceConfig.value.defaultSpaceKey)
@@ -121,6 +128,33 @@ export const useMenuSpaceStore = defineStore(
       menuSpaceConfig.value = config || createFallbackMenuSpaceConfig()
     }
 
+    const ensureRuntimeAppKey = async () => {
+      const existingAppKey = normalizeManagedAppKey(appContextStore.runtimeAppKey)
+      if (existingAppKey) {
+        return existingAppKey
+      }
+
+      if (runtimeAppLoading.value) {
+        return runtimeAppLoading.value
+      }
+
+      const pending = fetchGetCurrentApp()
+        .then((response) => {
+          const resolvedAppKey = normalizeManagedAppKey(response?.app?.appKey)
+          if (!resolvedAppKey) {
+            throw new Error('缺少运行时 app 上下文')
+          }
+          appContextStore.setRuntimeAppKey(resolvedAppKey)
+          return resolvedAppKey
+        })
+        .finally(() => {
+          runtimeAppLoading.value = null
+        })
+
+      runtimeAppLoading.value = pending
+      return pending
+    }
+
     const refreshRuntimeConfig = async (force = false) => {
       if (loading.value) {
         return menuSpaceConfig.value
@@ -137,9 +171,10 @@ export const useMenuSpaceStore = defineStore(
       }
       loading.value = true
       try {
+        const appKey = await ensureRuntimeAppKey()
         const [spacesRes, hostBindingsRes] = await Promise.all([
-          fetchGetMenuSpaces(),
-          fetchGetMenuSpaceHostBindings()
+          fetchGetMenuSpaces(appKey),
+          fetchGetMenuSpaceHostBindings(appKey)
         ])
         menuSpaceConfig.value = buildRuntimeMenuSpaceConfig(
           spacesRes.records || [],
@@ -160,7 +195,8 @@ export const useMenuSpaceStore = defineStore(
       const requestedSpaceKey = normalizeMenuSpaceKey(preferredSpaceKey || overrideSpaceKey.value || currentSpaceKey.value)
       const hostResolvedSpaceKey = resolveMenuSpaceKeyByHost(currentHost.value, menuSpaceConfig.value, defaultSpaceKey.value)
       try {
-        const response = await fetchGetCurrentMenuSpace(requestedSpaceKey || undefined)
+        const appKey = await ensureRuntimeAppKey()
+        const response = await fetchGetCurrentMenuSpace(requestedSpaceKey || undefined, appKey)
         const resolvedSpaceKey = normalizeMenuSpaceKey(response?.space?.spaceKey)
         if (!resolvedSpaceKey) {
           overrideSpaceKey.value = ''

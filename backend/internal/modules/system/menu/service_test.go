@@ -141,8 +141,10 @@ func TestResolveMenuBackupScopeInfoDistinguishesOrigins(t *testing.T) {
 				MenuData: string(spacePayload),
 			},
 			want: menuBackupScopeInfo{
-				ScopeType: "space",
-				SpaceKey:  "ops",
+				ScopeType:   "space",
+				ScopeOrigin: "menu_backup",
+				AppKey:      "platform-admin",
+				SpaceKey:    "ops",
 			},
 		},
 		{
@@ -151,7 +153,9 @@ func TestResolveMenuBackupScopeInfoDistinguishesOrigins(t *testing.T) {
 				MenuData: string(globalPayload),
 			},
 			want: menuBackupScopeInfo{
-				ScopeType: "global",
+				ScopeType:   "global",
+				ScopeOrigin: "menu_backup",
+				AppKey:      "platform-admin",
 			},
 		},
 		{
@@ -160,7 +164,9 @@ func TestResolveMenuBackupScopeInfoDistinguishesOrigins(t *testing.T) {
 				MenuData: string(legacyPayload),
 			},
 			want: menuBackupScopeInfo{
-				ScopeType: "global",
+				ScopeType:   "global",
+				ScopeOrigin: "menu_backup",
+				AppKey:      "platform-admin",
 			},
 		},
 	}
@@ -292,9 +298,9 @@ func TestResolveBackupSpaceKeyDefaultsToDefaultSpace(t *testing.T) {
 	if got := resolveBackupSpaceKey("space", ""); got != spaceutil.DefaultMenuSpaceKey {
 		t.Fatalf(
 			"resolveBackupSpaceKey(space, empty) = %q, want %q",
-		got,
-		spaceutil.DefaultMenuSpaceKey,
-	)
+			got,
+			spaceutil.DefaultMenuSpaceKey,
+		)
 	}
 }
 

@@ -1007,7 +1007,7 @@ func (h *TenantHandler) SetMyTeamRolePackages(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	appKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)
@@ -1128,7 +1128,7 @@ func (h *TenantHandler) SetMyTeamRoleMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	appKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)
@@ -1227,7 +1227,7 @@ func (h *TenantHandler) SetMyTeamRoleActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	appKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)
@@ -1381,7 +1381,7 @@ func (h *TenantHandler) SetTenantActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	appKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)
@@ -1450,7 +1450,7 @@ func (h *TenantHandler) SetTenantMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	appKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)

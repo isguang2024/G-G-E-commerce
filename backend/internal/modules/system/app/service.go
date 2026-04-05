@@ -8,16 +8,16 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
-	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
 	spacepkg "github.com/gg-ecommerce/backend/internal/modules/system/space"
+	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
 )
 
 type AppRecord struct {
 	models.App
-	HostCount   int      `json:"host_count"`
-	SpaceCount  int      `json:"space_count"`
-	MenuCount   int      `json:"menu_count"`
-	PageCount   int      `json:"page_count"`
+	HostCount    int      `json:"host_count"`
+	SpaceCount   int      `json:"space_count"`
+	MenuCount    int      `json:"menu_count"`
+	PageCount    int      `json:"page_count"`
 	PrimaryHosts []string `json:"primary_hosts,omitempty"`
 }
 
@@ -27,10 +27,10 @@ type HostBindingRecord struct {
 }
 
 type CurrentResponse struct {
-	App        AppRecord          `json:"app"`
-	Binding    *HostBindingRecord `json:"binding,omitempty"`
-	ResolvedBy string             `json:"resolved_by"`
-	RequestHost string            `json:"request_host"`
+	App         AppRecord          `json:"app"`
+	Binding     *HostBindingRecord `json:"binding,omitempty"`
+	ResolvedBy  string             `json:"resolved_by"`
+	RequestHost string             `json:"request_host"`
 }
 
 type SaveAppRequest struct {
@@ -59,7 +59,7 @@ type Service interface {
 	GetCurrent(host, requestedAppKey string) (*CurrentResponse, error)
 	SaveApp(req *SaveAppRequest) (*AppRecord, error)
 	ListHostBindings(appKey string) ([]HostBindingRecord, error)
-	SaveHostBinding(req *SaveHostBindingRequest) (*HostBindingRecord, error)
+	SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*HostBindingRecord, error)
 }
 
 type service struct {
@@ -235,7 +235,7 @@ func (s *service) SaveApp(req *SaveAppRequest) (*AppRecord, error) {
 	}
 	defaultSpaceKey := spacepkg.NormalizeSpaceKey(req.DefaultSpaceKey)
 	if defaultSpaceKey == "" {
-		defaultSpaceKey = models.DefaultMenuSpaceKey
+		return nil, errors.New("default_space_key is required")
 	}
 	status := strings.TrimSpace(req.Status)
 	if status == "" {
@@ -296,14 +296,14 @@ func (s *service) SaveApp(req *SaveAppRequest) (*AppRecord, error) {
 }
 
 func (s *service) ListHostBindings(appKey string) ([]HostBindingRecord, error) {
+	normalizedAppKey := appctx.NormalizeExplicitAppKey(appKey)
+	if normalizedAppKey == "" {
+		return nil, errors.New("app_key is required")
+	}
 	if err := ensureDefaultApp(s.db); err != nil {
 		return nil, err
 	}
-	query := s.db.Model(&models.AppHostBinding{}).Where("deleted_at IS NULL")
-	normalizedAppKey := NormalizeAppKey(appKey)
-	if normalizedAppKey != "" {
-		query = query.Where("app_key = ?", normalizedAppKey)
-	}
+	query := s.db.Model(&models.AppHostBinding{}).Where("deleted_at IS NULL").Where("app_key = ?", normalizedAppKey)
 	var items []models.AppHostBinding
 	if err := query.Order("is_primary DESC, created_at ASC").Find(&items).Error; err != nil {
 		return nil, err
@@ -326,18 +326,21 @@ func (s *service) ListHostBindings(appKey string) ([]HostBindingRecord, error) {
 	return records, nil
 }
 
-func (s *service) SaveHostBinding(req *SaveHostBindingRequest) (*HostBindingRecord, error) {
+func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*HostBindingRecord, error) {
 	if req == nil {
 		return nil, errors.New("Host 绑定参数不能为空")
+	}
+	normalizedAppKey := appctx.NormalizeExplicitAppKey(appKey)
+	if normalizedAppKey == "" {
+		return nil, errors.New("app_key is required")
+	}
+	if requestAppKey := appctx.NormalizeExplicitAppKey(req.AppKey); requestAppKey != "" && requestAppKey != normalizedAppKey {
+		return nil, errors.New("app_key mismatch")
 	}
 	if err := ensureDefaultApp(s.db); err != nil {
 		return nil, err
 	}
-	appKey := NormalizeAppKey(req.AppKey)
-	if appKey == "" {
-		appKey = models.DefaultAppKey
-	}
-	if ok, err := appExists(s.db, appKey); err != nil {
+	if ok, err := appExists(s.db, normalizedAppKey); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, errors.New("应用不存在")
@@ -348,7 +351,7 @@ func (s *service) SaveHostBinding(req *SaveHostBindingRequest) (*HostBindingReco
 	}
 	defaultSpaceKey := spacepkg.NormalizeSpaceKey(req.DefaultSpaceKey)
 	if defaultSpaceKey == "" {
-		defaultSpaceKey = models.DefaultMenuSpaceKey
+		return nil, errors.New("default_space_key is required")
 	}
 	status := strings.TrimSpace(req.Status)
 	if status == "" {
@@ -356,7 +359,7 @@ func (s *service) SaveHostBinding(req *SaveHostBindingRequest) (*HostBindingReco
 	}
 
 	binding := models.AppHostBinding{
-		AppKey:          appKey,
+		AppKey:          normalizedAppKey,
 		Host:            host,
 		Description:     strings.TrimSpace(req.Description),
 		IsPrimary:       req.IsPrimary,
@@ -399,7 +402,7 @@ func (s *service) SaveHostBinding(req *SaveHostBindingRequest) (*HostBindingReco
 		return nil, err
 	}
 
-	items, err := s.ListHostBindings(appKey)
+	items, err := s.ListHostBindings(normalizedAppKey)
 	if err != nil {
 		return nil, err
 	}
@@ -489,7 +492,7 @@ func loadStringCounts(db *gorm.DB, model interface{}, keyColumn string) (map[str
 	}
 	rows := make([]countRow, 0)
 	if err := db.Model(model).
-		Select(keyColumn+" AS key, COUNT(*) AS total").
+		Select(keyColumn + " AS key, COUNT(*) AS total").
 		Where("deleted_at IS NULL").
 		Group(keyColumn).
 		Scan(&rows).Error; err != nil {
@@ -513,7 +516,7 @@ func loadStringCountAndHosts(db *gorm.DB, model interface{}, keyColumn string, h
 	}
 	rows := make([]hostRow, 0)
 	query := db.Model(model).
-		Select(keyColumn+" AS key, "+hostColumn+" AS host").
+		Select(keyColumn + " AS key, " + hostColumn + " AS host").
 		Where("deleted_at IS NULL")
 	if strings.TrimSpace(primaryFilter) != "" {
 		query = query.Where(primaryFilter)

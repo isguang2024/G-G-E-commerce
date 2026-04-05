@@ -2120,24 +2120,22 @@ export function fetchUpdatePage(id: string, data: Api.SystemManage.PageSaveParam
 }
 
 /** 删除页面 */
-export function fetchDeletePage(id: string) {
+export function fetchDeletePage(id: string, appKey: string) {
   return request.del<void>({
-    url: `${PAGE_BASE}/${id}`
+    url: `${PAGE_BASE}/${id}`,
+    params: { app_key: appKey }
   })
 }
 
 /** 获取页面上级菜单候选 */
-export function fetchGetPageMenuOptions(spaceKey?: string, appKey?: string) {
+export function fetchGetPageMenuOptions(spaceKey: string | undefined, appKey: string) {
   return request
     .get<{ records: Api.SystemManage.PageMenuOptionItem[]; total: number }>({
       url: `${PAGE_BASE}/menu-options`,
-      params:
-        spaceKey || appKey
-          ? {
-              ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {}),
-              ...(appKey ? { app_key: appKey } : {})
-            }
-          : undefined
+      params: {
+        app_key: appKey,
+        ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {})
+      }
     })
     .then((res) => ({
       records: (res?.records || []).map(normalizePageMenuOption),
@@ -2210,15 +2208,13 @@ export function fetchGetApiEndpointOverview(appKey?: string) {
 export function fetchGetStaleApiEndpointList(params: {
   current?: number
   size?: number
-  appKey?: string
 }) {
   return request
     .get<Api.SystemManage.APIEndpointList>({
       url: `${API_ENDPOINT_BASE}/stale`,
       params: {
         current: params?.current,
-        size: params?.size,
-        app_key: params?.appKey
+        size: params?.size
       }
     })
     .then((res) => ({
@@ -2228,19 +2224,17 @@ export function fetchGetStaleApiEndpointList(params: {
 }
 
 /** 同步 API 注册表 */
-export function fetchSyncApiEndpoints(appKey?: string) {
+export function fetchSyncApiEndpoints() {
   return request.post<void>({
-    url: `${API_ENDPOINT_BASE}/sync`,
-    params: appKey ? { app_key: appKey } : undefined
+    url: `${API_ENDPOINT_BASE}/sync`
   })
 }
 
-export function fetchCleanupStaleApiEndpoints(ids: string[], appKey?: string) {
+export function fetchCleanupStaleApiEndpoints(ids: string[]) {
   return request
     .post<{ deleted_count?: number; deletedCount?: number }>({
       url: `${API_ENDPOINT_BASE}/cleanup-stale`,
-      data: { ids },
-      params: appKey ? { app_key: appKey } : undefined
+      data: { ids }
     })
     .then((res) => ({
       deletedCount: res?.deletedCount ?? res?.deleted_count ?? 0
@@ -2285,7 +2279,6 @@ export function fetchGetApiEndpointCategories() {
 export function fetchGetUnregisteredApiRouteList(params: {
   current?: number
   size?: number
-  appKey?: string
   method?: string
   path?: string
   keyword?: string
@@ -2297,7 +2290,6 @@ export function fetchGetUnregisteredApiRouteList(params: {
       params: {
         current: params?.current,
         size: params?.size,
-        app_key: params?.appKey,
         method: params?.method,
         path: params?.path,
         keyword: params?.keyword,
@@ -2420,7 +2412,7 @@ export function fetchUpdateFastEnterConfig(data: Api.SystemManage.FastEnterConfi
     .then((res) => normalizeFastEnterConfig(res))
 }
 
-export function fetchGetCurrentMenuSpace(spaceKey?: string, appKey?: string) {
+export function fetchGetCurrentMenuSpace(spaceKey: string | undefined, appKey: string) {
   return request
     .get<Api.SystemManage.CurrentMenuSpaceResponse>({
       url: `${SYSTEM_BASE}/menu-spaces/current`,
@@ -2517,7 +2509,7 @@ export function fetchSaveAppHostBinding(data: Api.SystemManage.AppHostBindingSav
     .then((res) => normalizeAppHostBinding(res))
 }
 
-export function fetchGetMenuSpaces(appKey?: string) {
+export function fetchGetMenuSpaces(appKey: string) {
   return request
     .get<{ records: Api.SystemManage.MenuSpaceItem[]; total: number }>({
       url: `${SYSTEM_BASE}/menu-spaces`,
@@ -2538,14 +2530,14 @@ export function fetchSaveMenuSpace(data: Api.SystemManage.MenuSpaceSaveParams) {
     .then((res) => normalizeMenuSpace(res))
 }
 
-export function fetchInitializeMenuSpaceFromDefault(spaceKey: string, force = false) {
+export function fetchInitializeMenuSpaceFromDefault(appKey: string, spaceKey: string, force = false) {
   return request
     .post<Api.SystemManage.MenuSpaceInitializeResult>({
       url: `${SYSTEM_BASE}/menu-spaces/${normalizeMenuSpaceKey(spaceKey)}/initialize-default`,
-      params: force ? { force: true } : undefined
+      params: force ? { app_key: appKey, force: true } : { app_key: appKey }
     })
     .then((res: any) => ({
-      sourceSpaceKey: res?.source_space_key || res?.sourceSpaceKey || 'default',
+      sourceSpaceKey: res?.source_space_key || res?.sourceSpaceKey || '',
       targetSpaceKey:
         res?.target_space_key || res?.targetSpaceKey || normalizeMenuSpaceKey(spaceKey),
       forceReinitialized: Boolean(res?.force_reinitialized ?? res?.forceReinitialized ?? false),
@@ -2562,7 +2554,7 @@ export function fetchInitializeMenuSpaceFromDefault(spaceKey: string, force = fa
     }))
 }
 
-export function fetchGetMenuSpaceHostBindings(appKey?: string) {
+export function fetchGetMenuSpaceHostBindings(appKey: string) {
   return request
     .get<{ records: Api.SystemManage.MenuSpaceHostBindingItem[]; total: number }>({
       url: `${SYSTEM_BASE}/menu-space-host-bindings`,
@@ -2737,15 +2729,17 @@ export function fetchGetMenuBackupList(spaceKey?: string, appKey?: string) {
 }
 
 /** 删除菜单备份 */
-export function fetchDeleteMenuBackup(id: string) {
+export function fetchDeleteMenuBackup(id: string, appKey: string) {
   return request.del<void>({
-    url: `${MENU_BACKUP_BASE}/${id}`
+    url: `${MENU_BACKUP_BASE}/${id}`,
+    params: { app_key: appKey }
   })
 }
 
 /** 恢复菜单备份 */
-export function fetchRestoreMenuBackup(id: string) {
+export function fetchRestoreMenuBackup(id: string, appKey: string) {
   return request.post<void>({
-    url: `${MENU_BACKUP_BASE}/${id}/restore`
+    url: `${MENU_BACKUP_BASE}/${id}/restore`,
+    params: { app_key: appKey }
   })
 }

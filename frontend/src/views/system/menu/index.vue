@@ -18,6 +18,7 @@
       >
         <div class="menu-hero-actions">
           <ElSelect
+            v-if="isLayoutMode"
             v-model="activeSpaceKey"
             class="menu-space-select"
             filterable
@@ -41,7 +42,6 @@
           <ElButton v-if="isLayoutMode" @click="goToDefinitionManagement" v-ripple>
             返回定义管理
           </ElButton>
-          <ElButton v-else @click="goToSpaceLayout" v-ripple>进入空间布局</ElButton>
           <ElDropdown @command="handleMoreActionCommand">
             <ElButton v-ripple>更多操作</ElButton>
             <template #dropdown>
@@ -49,11 +49,7 @@
                 <ElDropdownItem command="manageGroup" :disabled="!groupingAvailable">
                   管理分组
                 </ElDropdownItem>
-                <template v-if="isLayoutMode">
-                  <ElDropdownItem command="backupSpace">备份当前空间布局</ElDropdownItem>
-                  <ElDropdownItem command="backupList">管理空间备份</ElDropdownItem>
-                </template>
-                <template v-else>
+                <template v-if="!isLayoutMode">
                   <ElDropdownItem command="backupGlobal">备份定义集</ElDropdownItem>
                   <ElDropdownItem command="backupList">管理定义备份</ElDropdownItem>
                 </template>
@@ -328,6 +324,9 @@
         :loading="backupLoading"
         :scopeType="backupScopeType"
         :currentSpaceName="currentSpaceName"
+        :dialog-title="backupDialogTitle"
+        :alert-title="backupAlertTitle"
+        :alert-description="backupAlertDescription"
         @submit="handleCreateBackup"
       />
 
@@ -335,6 +334,9 @@
         v-model="backupListDialogVisible"
         :loading="backupLoading"
         :items="backupList"
+        :title="backupListTitle"
+        :alert-description="backupListAlertDescription"
+        :empty-description="backupListEmptyDescription"
         @action="handleBackupListAction"
       />
 
@@ -454,10 +456,11 @@
   const rawMenuTree = ref<AppRouteRecord[]>([])
   const rawPages = ref<Api.SystemManage.PageItem[]>([])
   const menuSpaces = ref<Api.SystemManage.MenuSpaceItem[]>([])
-  const activeSpaceKey = ref('default')
+  const activeSpaceKey = ref('')
   const route = useRoute()
   const router = useRouter()
   const { targetAppKey } = useManagedAppScope()
+  const managedAppMissingText = '缺少 app 上下文，请先从应用管理选择 App'
   const isLayoutMode = computed(() => `${route.query.layout || ''}`.trim() === '1')
   const menuGroups = ref<Api.SystemManage.MenuManageGroupItem[]>([])
   const dataFromBackend = ref(false)
@@ -565,7 +568,8 @@
   const getLinkedPages = (item: any) => linkedPagesByMenuId.value.get(String(item?.id || '')) || []
 
   const getSpaceName = (spaceKey?: string) => {
-    const normalized = `${spaceKey || ''}`.trim() || 'default'
+    const normalized = `${spaceKey || ''}`.trim()
+    if (!normalized) return '未选择空间'
     return menuSpaceMap.value.get(normalized)?.name || normalized
   }
 
@@ -580,6 +584,30 @@
     isLayoutMode.value
       ? '当前按空间查看菜单布局树；同一菜单定义在多个空间复用时，共享一份授权与裁剪状态。'
       : '当前按 App 维护菜单定义；父级、排序和显示位置以当前查看空间做布局参考，不再把空间当成菜单主归属。'
+  )
+  const backupDialogTitle = computed(() =>
+    isLayoutMode.value ? '备份当前空间布局' : '备份菜单定义'
+  )
+  const backupAlertTitle = computed(() =>
+    isLayoutMode.value
+      ? `当前将备份空间布局：${currentSpaceName.value}`
+      : `当前将创建 App 级定义备份：${targetAppKey.value}`
+  )
+  const backupAlertDescription = computed(() =>
+    isLayoutMode.value
+      ? '该备份只保存当前 App 下当前空间的布局树和相关菜单分组，用于后续覆盖恢复当前空间。'
+      : '该备份只保存当前 App 的菜单定义集合，不含各空间的父级、排序和显隐差异；空间级恢复请到高级空间配置页处理。'
+  )
+  const backupListTitle = computed(() =>
+    isLayoutMode.value ? '管理空间布局备份' : '管理定义备份'
+  )
+  const backupListAlertDescription = computed(() =>
+    isLayoutMode.value
+      ? '这里只展示当前 App 下当前空间的布局备份，不包含 App 级菜单定义备份。'
+      : '这里只展示当前 App 的定义备份；空间级布局备份请到空间高级配置页管理。'
+  )
+  const backupListEmptyDescription = computed(() =>
+    isLayoutMode.value ? '当前空间暂无布局备份' : '当前 App 暂无定义备份'
   )
 
   const getBackupScopeLabel = (item: Api.SystemManage.MenuBackupItem) => {
@@ -731,6 +759,15 @@
     loading.value = true
     loadError.value = ''
     dataFromBackend.value = false
+    if (!targetAppKey.value) {
+      rawMenuTree.value = []
+      rawPages.value = []
+      menuGroups.value = []
+      activeSpaceKey.value = ''
+      loadError.value = managedAppMissingText
+      loading.value = false
+      return
+    }
     try {
       const [list, pagesResult, groupsResult] = await Promise.all([
         fetchGetMenuTreeAll(activeSpaceKey.value, targetAppKey.value),
@@ -904,24 +941,13 @@
     })
   }
 
-  const goToSpaceLayout = () => {
-    router.push({
-      path: '/system/menu-space',
-      query: {
-        ...route.query,
-        app_key: targetAppKey.value,
-        spaceKey: activeSpaceKey.value
-      }
-    })
-  }
-
   const goToDefinitionManagement = () => {
     router.push({
       path: '/system/menu',
       query: {
         ...route.query,
         app_key: targetAppKey.value,
-        spaceKey: activeSpaceKey.value,
+        spaceKey: activeSpaceKey.value || undefined,
         layout: undefined
       }
     })
@@ -932,10 +958,15 @@
     if (requestedSpaceKey && menuSpaces.value.some((item) => item.spaceKey === requestedSpaceKey)) {
       return requestedSpaceKey
     }
-    return menuSpaces.value.find((item) => item.isDefault)?.spaceKey || 'default'
+    return menuSpaces.value.find((item) => item.isDefault)?.spaceKey || menuSpaces.value[0]?.spaceKey || ''
   }
 
   const syncMenuSpaces = async () => {
+    if (!targetAppKey.value) {
+      menuSpaces.value = []
+      activeSpaceKey.value = ''
+      return
+    }
     const res = await fetchGetMenuSpaces(targetAppKey.value)
     menuSpaces.value = res.records || []
     activeSpaceKey.value = resolveInitialSpaceKey()
@@ -1035,10 +1066,6 @@
       manageGroupDrawerVisible.value = true
       return
     }
-    if (command === 'backupSpace') {
-      handleBackupMenu('space')
-      return
-    }
     if (command === 'backupGlobal') {
       handleBackupMenu('global')
       return
@@ -1061,8 +1088,7 @@
       title: row.meta?.title || '',
       icon: row.meta?.icon || '',
       sort_order: Number(row.sort_order ?? 0),
-      space_key:
-        `${row.spaceKey || row.space_key || row.meta?.spaceKey || activeSpaceKey.value || 'default'}`.trim(),
+      space_key: `${row.spaceKey || row.space_key || row.meta?.spaceKey || activeSpaceKey.value || ''}`.trim(),
       manage_group_id: manageGroupID,
       meta
     }
@@ -1208,7 +1234,7 @@
   const buildMenuMetaFromForm = (formData: any) => {
     const isEntry = `${formData.kind || 'entry'}` === 'entry'
     const isExternal = `${formData.kind || ''}` === 'external'
-    const workingSpaceKey = `${formData.spaceKey || activeSpaceKey.value || 'default'}`.trim()
+    const workingSpaceKey = `${formData.spaceKey || activeSpaceKey.value || ''}`.trim()
     const meta: Record<string, any> = {
       isEnable: formData.isEnable,
       keepAlive: isEntry ? formData.keepAlive : false,
@@ -1240,7 +1266,7 @@
     title: formData.name || '',
     icon: formData.icon || '',
     sort_order: Number(formData.sort ?? 0),
-    space_key: `${formData.spaceKey || activeSpaceKey.value || 'default'}`.trim(),
+    space_key: `${formData.spaceKey || activeSpaceKey.value || ''}`.trim(),
     manage_group_id: formData.manageGroupId?.trim() || null,
     meta
   })
@@ -1377,7 +1403,7 @@
           icon: row.meta?.icon || '',
           sort_order: Number(row.sort_order ?? 0),
           space_key:
-            `${row.spaceKey || row.space_key || row.meta?.spaceKey || activeSpaceKey.value || 'default'}`.trim(),
+            `${row.spaceKey || row.space_key || row.meta?.spaceKey || activeSpaceKey.value || ''}`.trim(),
           meta
         },
         { showErrorMessage: false }
@@ -1491,7 +1517,7 @@
         cancelButtonText: '取消'
       })
       backupLoading.value = true
-      await fetchRestoreMenuBackup(item.id)
+      await fetchRestoreMenuBackup(item.id, targetAppKey.value)
       ElMessage.success('恢复成功')
       backupListDialogVisible.value = false
       getMenuList()
@@ -1512,7 +1538,7 @@
         cancelButtonText: '取消'
       })
       backupLoading.value = true
-      await fetchDeleteMenuBackup(id)
+      await fetchDeleteMenuBackup(id, targetAppKey.value)
       ElMessage.success('删除成功')
       handleManageBackups()
     } catch (e: any) {
@@ -1558,6 +1584,10 @@
   onMounted(() => {
     groupingEnabled.value = localStorage.getItem('system:menu:grouping-enabled') !== '0'
     groupedMenuVisible.value = localStorage.getItem('system:menu:grouped-visible') !== '0'
+    if (!targetAppKey.value) {
+      loadError.value = managedAppMissingText
+      return
+    }
     syncMenuSpaces()
       .finally(() => {
         getMenuList()
@@ -1567,6 +1597,14 @@
   watch(
     () => [route.query.app_key, route.query.spaceKey],
     async ([, value]) => {
+      if (!targetAppKey.value) {
+        rawMenuTree.value = []
+        rawPages.value = []
+        menuSpaces.value = []
+        activeSpaceKey.value = ''
+        loadError.value = managedAppMissingText
+        return
+      }
       await syncMenuSpaces()
       const requestedSpaceKey = `${value || ''}`.trim()
       if (!requestedSpaceKey || requestedSpaceKey === activeSpaceKey.value) {

@@ -30,6 +30,7 @@ var (
 	ErrMenuGroupInUse        = errors.New("menu group in use")
 	ErrMenuDeleteModeInvalid = errors.New("无效的菜单删除方式")
 	ErrMenuHasChildren       = errors.New("该菜单存在子菜单，请选择删除策略")
+	ErrMenuBackupAppMismatch = errors.New("menu backup app mismatch")
 )
 
 type MenuService interface {
@@ -45,8 +46,8 @@ type MenuService interface {
 	// 菜单备份相关方法
 	CreateBackup(name, description, scopeType, appKey, spaceKey string, createdBy *uuid.UUID) error
 	ListBackups(appKey, spaceKey string) ([]*user.MenuBackup, error)
-	DeleteBackup(id uuid.UUID) error
-	RestoreBackup(id uuid.UUID) error
+	DeleteBackup(id uuid.UUID, appKey string) error
+	RestoreBackup(id uuid.UUID, appKey string) error
 }
 
 type menuService struct {
@@ -743,6 +744,10 @@ func (s *menuService) countAffectedMenuRelations(menuIDs []uuid.UUID) (int, erro
 
 // 菜单备份相关方法
 func (s *menuService) CreateBackup(name, description, scopeType, appKey, spaceKey string, createdBy *uuid.UUID) error {
+	appKey = strings.TrimSpace(appKey)
+	if appKey == "" {
+		return errors.New("app_key is required")
+	}
 	appKey = normalizeMenuAppKey(appKey)
 	normalizedScopeType := normalizeBackupScopeType(scopeType, spaceKey)
 	backupSpaceKey := resolveBackupSpaceKey(normalizedScopeType, spaceKey)
@@ -800,6 +805,10 @@ func (s *menuService) CreateBackup(name, description, scopeType, appKey, spaceKe
 }
 
 func (s *menuService) ListBackups(appKey, spaceKey string) ([]*user.MenuBackup, error) {
+	appKey = strings.TrimSpace(appKey)
+	if appKey == "" {
+		return nil, errors.New("app_key is required")
+	}
 	backups, err := s.menuRepo.ListBackups()
 	if err != nil {
 		s.logger.Error("Failed to list menu backups", zap.Error(err))
@@ -819,14 +828,21 @@ func (s *menuService) ListBackups(appKey, spaceKey string) ([]*user.MenuBackup, 
 	return backupPtrs, nil
 }
 
-func (s *menuService) DeleteBackup(id uuid.UUID) error {
+func (s *menuService) DeleteBackup(id uuid.UUID, appKey string) error {
 	// 检查备份是否存在
-	_, err := s.menuRepo.GetBackupByID(id)
+	backup, err := s.menuRepo.GetBackupByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return errors.New("备份不存在")
 		}
 		return err
+	}
+	appKey = strings.TrimSpace(appKey)
+	if appKey == "" {
+		return errors.New("app_key is required")
+	}
+	if normalizeMenuAppKey(backup.AppKey) != normalizeMenuAppKey(appKey) {
+		return ErrMenuBackupAppMismatch
 	}
 
 	if err := s.menuRepo.DeleteBackup(id); err != nil {
@@ -838,7 +854,7 @@ func (s *menuService) DeleteBackup(id uuid.UUID) error {
 	return nil
 }
 
-func (s *menuService) RestoreBackup(id uuid.UUID) error {
+func (s *menuService) RestoreBackup(id uuid.UUID, appKey string) error {
 	// 检查备份是否存在
 	backup, err := s.menuRepo.GetBackupByID(id)
 	if err != nil {
@@ -846,6 +862,13 @@ func (s *menuService) RestoreBackup(id uuid.UUID) error {
 			return errors.New("备份不存在")
 		}
 		return err
+	}
+	appKey = strings.TrimSpace(appKey)
+	if appKey == "" {
+		return errors.New("app_key is required")
+	}
+	if normalizeMenuAppKey(backup.AppKey) != normalizeMenuAppKey(appKey) {
+		return ErrMenuBackupAppMismatch
 	}
 
 	// 解析备份的菜单数据
@@ -924,19 +947,21 @@ func (s *menuService) refreshAllMenuSnapshots() error {
 }
 
 type ginMenuBackupPayload struct {
-	Version     string                    `json:"version,omitempty"`
-	AppKey      string                    `json:"app_key,omitempty"`
-	ScopeType   string                    `json:"scope_type,omitempty"`
-	SpaceKey    string                    `json:"space_key,omitempty"`
-	Groups      []user.MenuManageGroup    `json:"groups"`
-	Definitions []models.MenuDefinition   `json:"definitions,omitempty"`
+	Version     string                      `json:"version,omitempty"`
+	AppKey      string                      `json:"app_key,omitempty"`
+	ScopeType   string                      `json:"scope_type,omitempty"`
+	SpaceKey    string                      `json:"space_key,omitempty"`
+	Groups      []user.MenuManageGroup      `json:"groups"`
+	Definitions []models.MenuDefinition     `json:"definitions,omitempty"`
 	Placements  []models.SpaceMenuPlacement `json:"placements,omitempty"`
-	Menus       []user.Menu               `json:"menus,omitempty"`
+	Menus       []user.Menu                 `json:"menus,omitempty"`
 }
 
 type menuBackupScopeInfo struct {
-	ScopeType string
-	SpaceKey  string
+	ScopeType   string
+	ScopeOrigin string
+	AppKey      string
+	SpaceKey    string
 }
 
 const menuBackupPayloadVersion = "menu_backup.v2"
@@ -980,30 +1005,39 @@ func resolveBackupSpaceKey(scopeType string, spaceKey string) string {
 }
 
 func resolveMenuBackupScopeInfo(backup user.MenuBackup) menuBackupScopeInfo {
+	scopeOrigin := "menu_backup"
 	if backupSpaceKey := normalizeBackupSpaceKey(backup.SpaceKey); backupSpaceKey != "" {
 		return menuBackupScopeInfo{
-			ScopeType: "space",
-			SpaceKey:  backupSpaceKey,
+			ScopeType:   "space",
+			ScopeOrigin: scopeOrigin,
+			AppKey:      normalizeMenuAppKey(backup.AppKey),
+			SpaceKey:    backupSpaceKey,
 		}
 	}
 
 	payload, err := parseMenuBackupPayload(backup.MenuData)
 	if err != nil {
 		return menuBackupScopeInfo{
-			ScopeType: "global",
+			ScopeType:   "global",
+			ScopeOrigin: scopeOrigin,
+			AppKey:      normalizeMenuAppKey(backup.AppKey),
 		}
 	}
 
 	resolvedScopeType := normalizeBackupScopeType(payload.ScopeType, payload.SpaceKey)
 	if resolvedScopeType == "space" {
 		return menuBackupScopeInfo{
-			ScopeType: "space",
-			SpaceKey:  resolveBackupSpaceKey(resolvedScopeType, payload.SpaceKey),
+			ScopeType:   "space",
+			ScopeOrigin: scopeOrigin,
+			AppKey:      normalizeMenuAppKey(backup.AppKey),
+			SpaceKey:    resolveBackupSpaceKey(resolvedScopeType, payload.SpaceKey),
 		}
 	}
 
 	return menuBackupScopeInfo{
-		ScopeType: "global",
+		ScopeType:   "global",
+		ScopeOrigin: scopeOrigin,
+		AppKey:      normalizeMenuAppKey(backup.AppKey),
 	}
 }
 

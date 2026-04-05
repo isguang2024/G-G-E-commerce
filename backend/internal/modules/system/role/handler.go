@@ -267,7 +267,7 @@ func (h *RoleHandler) SetRolePackages(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	appKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)
@@ -416,7 +416,7 @@ func (h *RoleHandler) SetRoleMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	appKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)
@@ -517,7 +517,7 @@ func (h *RoleHandler) SetRoleKeys(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	appKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	appKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)

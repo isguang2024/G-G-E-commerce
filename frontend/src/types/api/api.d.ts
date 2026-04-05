@@ -265,7 +265,7 @@ declare namespace Api {
     }
 
     interface MenuSpaceSaveParams {
-      app_key?: string
+      app_key: string
       space_key: string
       name: string
       description?: string
@@ -278,7 +278,7 @@ declare namespace Api {
     }
 
     interface MenuSpaceHostBindingSaveParams {
-      app_key?: string
+      app_key: string
       host: string
       space_key: string
       description?: string
@@ -966,7 +966,7 @@ declare namespace Api {
     >
 
     interface PageSaveParams {
-      app_key?: string
+      app_key: string
       page_key: string
       name: string
       route_name: string
@@ -1482,7 +1482,7 @@ declare namespace Api {
     }
 
     interface MenuBackupCreateParams {
-      app_key?: string
+      app_key: string
       name: string
       description?: string
       // scope_type 显式声明要备份当前空间还是全部空间，避免再依赖省略 space_key 推断语义。

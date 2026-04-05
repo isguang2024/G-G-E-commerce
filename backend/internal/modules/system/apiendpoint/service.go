@@ -418,7 +418,7 @@ func (s *service) ListStale(req *StaleListRequest) ([]user.APIEndpoint, int64, e
 		req.Size = 20
 	}
 
-	syncCandidates, err := s.listSyncRuntimeCandidates(normalizeAppKey(req.AppKey))
+	syncCandidates, err := s.listSyncRuntimeCandidates(req.AppKey)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -454,7 +454,7 @@ func (s *service) CleanupStale(endpointIDs []uuid.UUID, appKey string) (int, err
 		return 0, ErrNoStaleCleanupSelection
 	}
 
-	endpoints, err := s.listSyncRuntimeCandidates(normalizeAppKey(appKey))
+	endpoints, err := s.listSyncRuntimeCandidates(appKey)
 	if err != nil {
 		return 0, err
 	}
@@ -842,7 +842,11 @@ func filterStaleEndpoints(endpoints []user.APIEndpoint, runtimeStates map[uuid.U
 
 func (s *service) listSyncRuntimeCandidates(appKey string) ([]user.APIEndpoint, error) {
 	items := make([]user.APIEndpoint, 0)
-	err := applyEndpointAppFilter(s.db.Model(&user.APIEndpoint{}), normalizeAppKey(appKey), "").
+	query := s.db.Model(&user.APIEndpoint{})
+	if normalizedAppKey := strings.TrimSpace(appKey); normalizedAppKey != "" {
+		query = applyEndpointAppFilter(query, normalizeAppKey(normalizedAppKey), "")
+	}
+	err := query.
 		Select("id", "code", "method", "path", "category_id", "status", "source").
 		Where("source = ?", "sync").
 		Order("path ASC, method ASC").

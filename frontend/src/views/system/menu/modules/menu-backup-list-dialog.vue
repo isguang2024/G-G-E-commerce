@@ -1,11 +1,11 @@
 ﻿<template>
-  <ElDialog v-model="visible" title="管理备份" width="800px" class="backup-dialog" destroy-on-close>
+  <ElDialog v-model="visible" :title="dialogTitle" width="800px" class="backup-dialog" destroy-on-close>
     <div class="backup-list-container">
       <ElAlert
         class="mb-4"
         type="info"
         :closable="false"
-        description="列表展示当前空间备份与全空间备份。恢复前请先核对作用范围。"
+        :description="alertDescription"
       />
       <ElTable v-loading="loading" :data="pagedItems" style="width: 100%" border stripe>
         <ElTableColumn prop="name" label="备份名称" width="200">
@@ -49,7 +49,7 @@
       />
 
       <div v-if="items.length === 0" class="empty-backup">
-        <ElEmpty description="暂无备份数据" />
+        <ElEmpty :description="emptyDescription" />
       </div>
     </div>
   </ElDialog>
@@ -76,6 +76,9 @@
     modelValue: boolean
     loading?: boolean
     items?: MenuBackupItem[]
+    title?: string
+    alertDescription?: string
+    emptyDescription?: string
   }
 
   interface Emits {
@@ -95,6 +98,11 @@
     get: () => props.modelValue,
     set: (value) => emit('update:modelValue', value)
   })
+  const dialogTitle = computed(() => props.title || '管理备份')
+  const alertDescription = computed(
+    () => props.alertDescription || '列表展示当前空间备份与全空间备份。恢复前请先核对作用范围。'
+  )
+  const emptyDescription = computed(() => props.emptyDescription || '暂无备份数据')
 
   const pagination = reactive({
     current: 1,

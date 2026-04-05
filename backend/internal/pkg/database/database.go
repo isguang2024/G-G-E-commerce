@@ -176,6 +176,9 @@ func AutoMigrate() error {
 	if err := ensureAppBootstrap(); err != nil {
 		return fmt.Errorf("failed to bootstrap default app data: %w", err)
 	}
+	if err := ensureAPIEndpointAppColumns(DB); err != nil {
+		return fmt.Errorf("failed to finalize api endpoint app columns: %w", err)
+	}
 	// 创建唯一索引（AutoMigrate 不会自动创建唯一索引）
 	if err := createUniqueIndexes(); err != nil {
 		return fmt.Errorf("failed to create unique indexes: %w", err)
@@ -911,17 +914,17 @@ func backfillMenuDefinitionsAndPlacements() error {
 			continue
 		}
 		definition := models.MenuDefinition{
-			ID:            uuid.MustParse(item.ID),
-			AppKey:        appKey,
-			MenuKey:       menuKey,
-			Kind:          item.Kind,
-			Path:          item.Path,
-			Name:          item.Name,
-			Component:     item.Component,
-			DefaultTitle:  item.Title,
-			DefaultIcon:   item.Icon,
-			Status:        "normal",
-			Meta:          item.Meta,
+			ID:           uuid.MustParse(item.ID),
+			AppKey:       appKey,
+			MenuKey:      menuKey,
+			Kind:         item.Kind,
+			Path:         item.Path,
+			Name:         item.Name,
+			Component:    item.Component,
+			DefaultTitle: item.Title,
+			DefaultIcon:  item.Icon,
+			Status:       "normal",
+			Meta:         item.Meta,
 		}
 		if err := DB.
 			Where("app_key = ? AND menu_key = ? AND deleted_at IS NULL", definition.AppKey, definition.MenuKey).
@@ -1054,5 +1057,24 @@ func enableExtensions() error {
 		}
 	}
 
+	return nil
+}
+
+func ensureAPIEndpointAppColumns(db *gorm.DB) error {
+	if db == nil {
+		return fmt.Errorf("database not initialized")
+	}
+	statements := []string{
+		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS app_scope varchar(20) NOT NULL DEFAULT 'shared'`,
+		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS app_key varchar(100) NOT NULL DEFAULT '` + models.DefaultAppKey + `'`,
+		`UPDATE api_endpoints SET app_key = '` + models.DefaultAppKey + `' WHERE COALESCE(TRIM(app_key), '') = ''`,
+		`UPDATE api_endpoints SET app_scope = '` + models.AppScopeShared + `' WHERE COALESCE(TRIM(app_scope), '') = '' AND (path LIKE '/api/v1/auth/%' OR path = '/api/v1/pages/runtime/public' OR path LIKE '/open/v1/%' OR path = '/health')`,
+		`UPDATE api_endpoints SET app_scope = '` + models.AppScopeApp + `' WHERE COALESCE(TRIM(app_scope), '') = ''`,
+	}
+	for _, statement := range statements {
+		if err := db.Exec(statement).Error; err != nil {
+			return err
+		}
+	}
 	return nil
 }

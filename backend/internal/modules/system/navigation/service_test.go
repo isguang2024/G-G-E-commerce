@@ -286,11 +286,11 @@ func (s *stubMenuService) ListBackups(appKey, spaceKey string) ([]*user.MenuBack
 	return nil, fmt.Errorf("unexpected ListBackups call")
 }
 
-func (s *stubMenuService) DeleteBackup(id uuid.UUID) error {
+func (s *stubMenuService) DeleteBackup(id uuid.UUID, appKey string) error {
 	return fmt.Errorf("unexpected DeleteBackup call")
 }
 
-func (s *stubMenuService) RestoreBackup(id uuid.UUID) error {
+func (s *stubMenuService) RestoreBackup(id uuid.UUID, appKey string) error {
 	return fmt.Errorf("unexpected RestoreBackup call")
 }
 
@@ -382,7 +382,7 @@ func (s *stubAppService) GetCurrent(host, requestedAppKey string) (*apppkg.Curre
 		App: apppkg.AppRecord{
 			App: models.App{AppKey: apppkg.NormalizeAppKey(requestedAppKey), Name: models.DefaultAppName, DefaultSpaceKey: models.DefaultMenuSpaceKey},
 		},
-		ResolvedBy: "explicit",
+		ResolvedBy:  "explicit",
 		RequestHost: host,
 	}, nil
 }
@@ -395,7 +395,7 @@ func (s *stubAppService) ListHostBindings(appKey string) ([]apppkg.HostBindingRe
 	return nil, fmt.Errorf("unexpected ListHostBindings call")
 }
 
-func (s *stubAppService) SaveHostBinding(req *apppkg.SaveHostBindingRequest) (*apppkg.HostBindingRecord, error) {
+func (s *stubAppService) SaveHostBinding(appKey string, req *apppkg.SaveHostBindingRequest) (*apppkg.HostBindingRecord, error) {
 	return nil, fmt.Errorf("unexpected SaveHostBinding call")
 }
 

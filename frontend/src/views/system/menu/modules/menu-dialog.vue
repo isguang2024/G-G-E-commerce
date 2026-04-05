@@ -307,7 +307,7 @@
     menuTree: () => [],
     manageGroups: () => [],
     menuSpaces: () => [],
-    currentSpaceKey: 'default',
+    currentSpaceKey: '',
     currentMenuPages: () => [],
     editingMenuId: '',
     initialParentId: '',
@@ -342,7 +342,7 @@
     accessMode: 'permission',
     isFullPage: false,
     manageGroupId: '',
-    spaceKey: 'default'
+    spaceKey: ''
   })
 
   function collectIds(node: AppRouteRecord & { id?: string; children?: any[] }): string[] {
@@ -403,6 +403,10 @@
       label: item.isDefault ? `${item.name}（默认）` : item.name,
       value: item.spaceKey
     }))
+  )
+  const resolvedFallbackSpaceKey = computed(
+    () =>
+      props.currentSpaceKey || props.menuSpaces?.find((item) => item.isDefault)?.spaceKey || ''
   )
   const showSpaceField = computed(() => props.showSpaceField)
 
@@ -551,7 +555,7 @@
     form.accessMode = 'permission'
     form.isFullPage = false
     form.manageGroupId = ''
-    form.spaceKey = props.currentSpaceKey || props.menuSpaces?.find((item) => item.isDefault)?.spaceKey || 'default'
+    form.spaceKey = resolvedFallbackSpaceKey.value
     formRef.value?.clearValidate?.()
   }
 
@@ -585,7 +589,7 @@
     form.accessMode = row.meta?.accessMode || 'permission'
     form.isFullPage = row.meta?.isFullPage === true
     form.manageGroupId = `${row.manage_group_id || row.manageGroupId || row.manage_group?.id || ''}`.trim()
-    form.spaceKey = `${row.spaceKey || row.space_key || row.meta?.spaceKey || props.currentSpaceKey || props.menuSpaces?.find((item) => item.isDefault)?.spaceKey || 'default'}`.trim()
+    form.spaceKey = `${row.spaceKey || row.space_key || row.meta?.spaceKey || resolvedFallbackSpaceKey.value || ''}`.trim()
   }
 
   function applyKindSideEffects(kind: MenuKind) {

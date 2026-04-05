@@ -32,7 +32,7 @@ func (h *Handler) List(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	resolvedAppKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)
@@ -76,7 +76,7 @@ func (h *Handler) ListOptions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	resolvedAppKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)
@@ -297,7 +297,7 @@ func (h *Handler) Create(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	resolvedAppKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)
@@ -332,7 +332,7 @@ func (h *Handler) Update(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	resolvedAppKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)
@@ -476,7 +476,7 @@ func (h *Handler) SetPackageChildren(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	resolvedAppKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)
@@ -518,7 +518,7 @@ func (h *Handler) SetPackageKeys(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	resolvedAppKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)
@@ -591,7 +591,7 @@ func (h *Handler) SetPackageMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	resolvedAppKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)
@@ -664,7 +664,7 @@ func (h *Handler) SetPackageTeams(c *gin.Context) {
 		return
 	}
 	grantedBy, _ := currentUserID(c)
-	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	resolvedAppKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)
@@ -737,13 +737,13 @@ func (h *Handler) SetTeamPackages(c *gin.Context) {
 		return
 	}
 	grantedBy, _ := currentUserID(c)
-	resolvedAppKey, err := appctx.ResolveManagedAppKey(req.AppKey, c)
+	appKey, err := appctx.RequireRequestAppKey(c)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
 		c.JSON(status, resp)
 		return
 	}
-	stats, err := h.service.SetTeamPackages(teamID, packageIDs, grantedBy, resolvedAppKey)
+	stats, err := h.service.SetTeamPackages(teamID, packageIDs, grantedBy, appKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "存在无效的功能包")

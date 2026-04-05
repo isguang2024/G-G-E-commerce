@@ -308,7 +308,36 @@ func SyncRoutes(db *gorm.DB, logger *zap.Logger, routes []gin.RouteInfo) error {
 	if db == nil {
 		return errors.New("database is nil")
 	}
+	if err := ensureManagedEndpointColumns(db); err != nil {
+		return err
+	}
 	return syncRoutesInternal(db, logger, routes)
+}
+
+func ensureManagedEndpointColumns(db *gorm.DB) error {
+	if db == nil {
+		return nil
+	}
+	statements := []string{
+		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS app_scope varchar(20) NOT NULL DEFAULT 'shared'`,
+		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS app_key varchar(100) NOT NULL DEFAULT 'platform-admin'`,
+		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS feature_kind varchar(20) NOT NULL DEFAULT 'system'`,
+		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS handler varchar(255)`,
+		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS summary varchar(255)`,
+		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS category_id uuid`,
+		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS context_scope varchar(20) NOT NULL DEFAULT 'optional'`,
+		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS source varchar(20) NOT NULL DEFAULT 'sync'`,
+		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS status varchar(20) NOT NULL DEFAULT 'normal'`,
+		`UPDATE api_endpoints SET app_key = 'platform-admin' WHERE COALESCE(TRIM(app_key), '') = ''`,
+		`UPDATE api_endpoints SET app_scope = 'shared' WHERE COALESCE(TRIM(app_scope), '') = '' AND (path LIKE '/api/v1/auth/%' OR path = '/api/v1/pages/runtime/public' OR path LIKE '/open/v1/%' OR path = '/health')`,
+		`UPDATE api_endpoints SET app_scope = 'app' WHERE COALESCE(TRIM(app_scope), '') = ''`,
+	}
+	for _, statement := range statements {
+		if err := db.Exec(statement).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func CollectRuntimeRoutes(routes []gin.RouteInfo) []RuntimeRoute {
@@ -421,12 +450,12 @@ func findEndpointByCode(db *gorm.DB, code string) (*models.APIEndpoint, error) {
 		return nil, nil
 	}
 	var endpoint models.APIEndpoint
-	err := db.Where("code = ?", target).First(&endpoint).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, err
+	result := db.Where("code = ?", target).Limit(1).Find(&endpoint)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	if result.RowsAffected == 0 {
+		return nil, nil
 	}
 	return &endpoint, nil
 }
@@ -436,12 +465,12 @@ func findEndpointByMethodAndPath(db *gorm.DB, method, path string) (*models.APIE
 		return nil, nil
 	}
 	var endpoint models.APIEndpoint
-	err := db.Where("method = ? AND path = ?", strings.ToUpper(strings.TrimSpace(method)), strings.TrimSpace(path)).First(&endpoint).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, err
+	result := db.Where("method = ? AND path = ?", strings.ToUpper(strings.TrimSpace(method)), strings.TrimSpace(path)).Limit(1).Find(&endpoint)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	if result.RowsAffected == 0 {
+		return nil, nil
 	}
 	return &endpoint, nil
 }

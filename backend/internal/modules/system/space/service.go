@@ -19,9 +19,9 @@ import (
 
 type SpaceRecord struct {
 	models.MenuSpace
-	HostCount        int      `json:"host_count"`
-	Hosts            []string `json:"hosts,omitempty"`
-	MenuCount        int      `json:"menu_count"`
+	HostCount int      `json:"host_count"`
+	Hosts     []string `json:"hosts,omitempty"`
+	MenuCount int      `json:"menu_count"`
 	// PageCount 统计的是独立页暴露数量，不再代表“复制到该空间的页面定义数量”。
 	PageCount        int      `json:"page_count"`
 	AccessMode       string   `json:"access_mode"`
@@ -51,20 +51,20 @@ type CurrentResponse struct {
 }
 
 type InitializeResult struct {
-	SourceSpaceKey         string `json:"source_space_key"`
-	TargetSpaceKey         string `json:"target_space_key"`
-	ForceReinitialized     bool   `json:"force_reinitialized"`
-	ClearedMenuCount       int    `json:"cleared_menu_count"`
+	SourceSpaceKey     string `json:"source_space_key"`
+	TargetSpaceKey     string `json:"target_space_key"`
+	ForceReinitialized bool   `json:"force_reinitialized"`
+	ClearedMenuCount   int    `json:"cleared_menu_count"`
 	// ClearedPageCount / CreatedPageCount 仅表示独立页暴露绑定数量，兼容旧接口命名保留。
-	ClearedPageCount       int    `json:"cleared_page_count"`
-	ClearedPackageMenuLink int    `json:"cleared_package_menu_link_count"`
-	CreatedMenuCount       int    `json:"created_menu_count"`
-	CreatedPageCount       int    `json:"created_page_count"`
-	CreatedPackageMenuLink int    `json:"created_package_menu_link_count"`
+	ClearedPageCount       int `json:"cleared_page_count"`
+	ClearedPackageMenuLink int `json:"cleared_package_menu_link_count"`
+	CreatedMenuCount       int `json:"created_menu_count"`
+	CreatedPageCount       int `json:"created_page_count"`
+	CreatedPackageMenuLink int `json:"created_package_menu_link_count"`
 }
 
 type SaveSpaceRequest struct {
-	AppKey            string                 `json:"app_key"`
+	AppKey           string                 `json:"app_key"`
 	SpaceKey         string                 `json:"space_key"`
 	Name             string                 `json:"name"`
 	Description      string                 `json:"description"`
@@ -272,7 +272,13 @@ func (s *service) SaveSpace(appKey string, req *SaveSpaceRequest) (*SpaceRecord,
 	if req == nil {
 		return nil, fmt.Errorf("space request is required")
 	}
-	normalizedAppKey := normalizeAppKey(firstNonEmptyString(req.AppKey, appKey))
+	normalizedAppKey := normalizeAppKey(strings.TrimSpace(appKey))
+	if normalizedAppKey == "" {
+		return nil, fmt.Errorf("app_key is required")
+	}
+	if requestAppKey := normalizeAppKey(strings.TrimSpace(req.AppKey)); requestAppKey != "" && requestAppKey != normalizedAppKey {
+		return nil, fmt.Errorf("app_key mismatch")
+	}
 	key := NormalizeSpaceKey(req.SpaceKey)
 	if key == "" {
 		key = DefaultMenuSpaceKey
@@ -362,7 +368,13 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 	if req == nil {
 		return nil, fmt.Errorf("host binding request is required")
 	}
-	normalizedAppKey := normalizeAppKey(firstNonEmptyString(req.AppKey, appKey))
+	normalizedAppKey := normalizeAppKey(strings.TrimSpace(appKey))
+	if normalizedAppKey == "" {
+		return nil, fmt.Errorf("app_key is required")
+	}
+	if requestAppKey := normalizeAppKey(strings.TrimSpace(req.AppKey)); requestAppKey != "" && requestAppKey != normalizedAppKey {
+		return nil, fmt.Errorf("app_key mismatch")
+	}
 	host := NormalizeHost(req.Host)
 	if host == "" {
 		return nil, fmt.Errorf("host is required")
@@ -470,6 +482,9 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 
 func (s *service) InitializeFromDefault(appKey string, targetSpaceKey string, force bool, actorUserID *uuid.UUID) (*InitializeResult, error) {
 	normalizedAppKey := normalizeAppKey(appKey)
+	if normalizedAppKey == "" {
+		return nil, fmt.Errorf("app_key is required")
+	}
 	targetKey := NormalizeSpaceKey(targetSpaceKey)
 	if targetKey == "" {
 		return nil, fmt.Errorf("target space is required")

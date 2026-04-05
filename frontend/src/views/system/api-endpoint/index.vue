@@ -82,7 +82,7 @@
                     @click="handleSync"
                     v-ripple
                   >
-                    同步 API
+                    全局同步 API
                   </ElButton>
                 </div>
 
@@ -101,7 +101,7 @@
                     @click="openUnregisteredDialog"
                     v-ripple
                   >
-                    未注册 API
+                    全局未注册 API
                     <span v-if="unregisteredCount > 0" class="toolbar-count">
                       ({{ unregisteredCount }})
                     </span>
@@ -114,12 +114,21 @@
                     @click="handleCleanupStale"
                     v-ripple
                   >
-                    清理失效 API
+                    全局清理失效 API
                     <span v-if="staleCount > 0" class="toolbar-count">({{ staleCount }})</span>
                   </ElButton>
                 </div>
               </div>
             </AdminWorkspaceHero>
+
+            <ElAlert
+              v-if="loadError"
+              class="api-inline-alert"
+              type="info"
+              :closable="false"
+              show-icon
+              :title="loadError"
+            />
 
             <ArtTableHeader
               v-model:columns="columnChecks"
@@ -723,10 +732,12 @@
   const { hasAction } = useAuth()
   const route = useRoute()
   const { targetAppKey } = useManagedAppScope()
+  const managedAppMissingText = '缺少 app 上下文，请先从应用管理选择 App'
   const API_ENDPOINT_TABLE_STATE_KEY = 'system:api-endpoint:table-state'
   const staleTableRef = ref<any>(null)
   const syncing = ref(false)
   const cleaningStale = ref(false)
+  const loadError = ref('')
   const showSearchBar = ref(false)
   const saving = ref(false)
   const categorySaving = ref(false)
@@ -899,7 +910,7 @@
   ])
 
   const summaryMetrics = computed(() => [
-    { label: '当前 App', value: targetAppKey.value },
+    { label: '管理 App', value: targetAppKey.value || '-' },
     { label: '注册总量', value: totalCount.value || 0 },
     { label: '无权限键', value: noPermissionCount.value || 0 },
     { label: '共享接口', value: sharedPermissionCount.value || 0 },
@@ -1336,6 +1347,41 @@
     }
   }
 
+  function ensureManagedAppReady(showMessage = false) {
+    if (targetAppKey.value) {
+      loadError.value = ''
+      return true
+    }
+    loadError.value = managedAppMissingText
+    data.value = []
+    staleCandidates.value = []
+    categories.value = []
+    totalCount.value = 0
+    noPermissionCount.value = 0
+    sharedPermissionCount.value = 0
+    crossContextSharedCount.value = 0
+    uncategorizedCount.value = 0
+    staleCount.value = 0
+    unregisteredCount.value = 0
+    categoryCountMap.value = {}
+    if (showMessage) {
+      ElMessage.warning(managedAppMissingText)
+    }
+    return false
+  }
+
+  function resetScopedState(message = managedAppMissingText) {
+    loadError.value = message
+    data.value = []
+    totalCount.value = 0
+    noPermissionCount.value = 0
+    sharedPermissionCount.value = 0
+    crossContextSharedCount.value = 0
+    uncategorizedCount.value = 0
+    staleCount.value = 0
+    categoryCountMap.value = {}
+  }
+
   async function loadCategories() {
     const res = await fetchGetApiEndpointCategories()
     categories.value = [...(res.records || [])]
@@ -1344,11 +1390,14 @@
   async function handleSync() {
     syncing.value = true
     try {
-      await fetchSyncApiEndpoints(targetAppKey.value)
+      await fetchSyncApiEndpoints()
       ElMessage.success('同步成功')
-      await refreshData()
-      await loadCategorySummary()
       await loadUnregisteredCount()
+      if (targetAppKey.value) {
+        await Promise.all([refreshData(), loadCategorySummary()])
+      } else {
+        resetScopedState()
+      }
     } catch (error: any) {
       ElMessage.error(error?.message || '同步失败')
     } finally {
@@ -1357,20 +1406,19 @@
   }
 
   async function handleCleanupStale() {
+    stalePagination.current = 1
+    selectedStaleIds.value = []
     try {
-      await loadCategorySummary()
+      await loadStaleCandidates()
     } catch (error: any) {
       ElMessage.error(error?.message || '获取失效 API 列表失败')
       return
     }
-    if (!staleCount.value) {
+    if (!stalePagination.total) {
       ElMessage.info('当前没有可清理的失效 API')
       return
     }
-    stalePagination.current = 1
-    selectedStaleIds.value = []
     staleDialogVisible.value = true
-    await loadStaleCandidates()
   }
 
   function closeStaleDialog() {
@@ -1410,9 +1458,14 @@
     }
     cleaningStale.value = true
     try {
-      const res = await fetchCleanupStaleApiEndpoints(selectedStaleIds.value, targetAppKey.value)
+      const res = await fetchCleanupStaleApiEndpoints(selectedStaleIds.value)
       closeStaleDialog()
-      await Promise.all([refreshData(), loadCategorySummary(), loadUnregisteredCount()])
+      await loadUnregisteredCount()
+      if (targetAppKey.value) {
+        await Promise.all([refreshData(), loadCategorySummary()])
+      } else {
+        resetScopedState()
+      }
       if (shouldRefreshUnregistered.value) {
         await loadUnregisteredRoutes()
       }
@@ -1544,7 +1597,6 @@
     unregisteredLoading.value = true
     try {
       const res = await fetchGetUnregisteredApiRouteList({
-        appKey: targetAppKey.value,
         current: unregisteredPagination.current,
         size: unregisteredPagination.size,
         method: unregisteredQuery.method || undefined,
@@ -1565,7 +1617,6 @@
   async function loadUnregisteredCount() {
     try {
       const res = await fetchGetUnregisteredApiRouteList({
-        appKey: targetAppKey.value,
         current: 1,
         size: 1
       })
@@ -1577,7 +1628,6 @@
 
   async function loadStaleCandidates() {
     const res = await fetchGetStaleApiEndpointList({
-      appKey: targetAppKey.value,
       current: stalePagination.current,
       size: stalePagination.size
     })
@@ -1759,6 +1809,9 @@
   }
 
   async function submitForm() {
+    if (!ensureManagedAppReady(true)) {
+      return
+    }
     const isEditing = !!editingId.value
     const payload = {
       app_scope: formState.appScope,
@@ -1812,6 +1865,9 @@
   }
 
   async function loadCategorySummary() {
+    if (!ensureManagedAppReady()) {
+      return
+    }
     const res = await fetchGetApiEndpointOverview(targetAppKey.value)
     totalCount.value = res.totalCount || 0
     noPermissionCount.value = res.noPermissionCount || 0
@@ -1825,6 +1881,9 @@
   }
 
   async function applyTableFilters() {
+    if (!ensureManagedAppReady()) {
+      return
+    }
     Object.assign(searchParams, {
       appKey: targetAppKey.value,
       source: selectedSource.value || undefined,
@@ -1871,7 +1930,12 @@
 
   onMounted(async () => {
     restoreTableState()
-    await Promise.all([loadCategories(), loadCategorySummary(), loadUnregisteredCount()])
+    await Promise.all([loadCategories(), loadUnregisteredCount()])
+    if (!targetAppKey.value) {
+      resetScopedState()
+      return
+    }
+    await loadCategorySummary()
     syncCategoryFilterFromTree()
     await applyTableFilters()
   })
@@ -1879,6 +1943,17 @@
   watch(
     () => route.query.app_key,
     async () => {
+      if (!targetAppKey.value) {
+        resetScopedState()
+        if (unregisteredVisible.value) {
+          await loadUnregisteredRoutes()
+        }
+        if (staleDialogVisible.value) {
+          await loadStaleCandidates()
+        }
+        return
+      }
+      loadError.value = ''
       await Promise.all([loadCategorySummary(), loadUnregisteredCount()])
       if (unregisteredVisible.value) {
         await loadUnregisteredRoutes()
@@ -1892,6 +1967,10 @@
 </script>
 
 <style scoped>
+  .api-inline-alert {
+    margin-bottom: 12px;
+  }
+
   .module-card {
     margin-bottom: 12px;
   }

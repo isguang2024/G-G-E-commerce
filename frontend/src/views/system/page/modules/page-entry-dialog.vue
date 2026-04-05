@@ -503,7 +503,7 @@
     dialogType: 'add',
     pageData: undefined,
     menuSpaces: () => [],
-    currentSpaceKey: 'default',
+    currentSpaceKey: '',
     initialParentPageKey: '',
     initialParentMenuId: '',
     initialPageType: 'inner',
@@ -551,7 +551,7 @@
     component: '',
     pageType: 'inner',
     moduleKey: '',
-    spaceKey: 'default',
+    spaceKey: '',
     spaceKeys: [] as string[],
     sortOrder: 0,
     parentMenuId: '',
@@ -601,7 +601,7 @@
   }
   const resolveSpaceScopeKey = () => {
     const values = resolveSpaceBindingKeys().filter((item) => item !== '__all__')
-    return values[0] || form.spaceKey || props.currentSpaceKey || 'default'
+    return values[0] || form.spaceKey || ''
   }
   const menuCascaderProps = {
     checkStrictly: true,
@@ -1016,15 +1016,15 @@
         component: props.pageData.component || '',
         pageType: props.pageData.pageType === 'global' ? 'global' : 'inner',
         moduleKey: props.pageData.moduleKey || '',
-        spaceKey: props.pageData.spaceKey || props.currentSpaceKey || 'default',
+        spaceKey: props.pageData.spaceKey || '',
         spaceKeys:
           props.pageData.pageType === 'global'
             ? ['__all__']
-            : spaceKeys.length > 0
-              ? spaceKeys
-              : props.pageData.spaceKey
+          : spaceKeys.length > 0
+            ? spaceKeys
+            : props.pageData.spaceKey
                 ? [props.pageData.spaceKey]
-                : [props.currentSpaceKey || 'default'],
+                : [],
         sortOrder: props.pageData.sortOrder ?? 0,
         parentMenuId: props.pageData.parentMenuId || '',
         parentPageKey: props.pageData.parentPageKey || '',
@@ -1063,17 +1063,13 @@
           ? 'global'
           : 'inner',
       moduleKey: props.defaultData?.moduleKey || '',
-      spaceKey:
-        props.defaultData?.spaceKey ||
-        props.currentSpaceKey ||
-        props.menuSpaces?.find((item) => item.isDefault)?.spaceKey ||
-        'default',
+      spaceKey: props.defaultData?.spaceKey || '',
       spaceKeys:
         props.defaultData?.pageType === 'global' || props.initialPageType === 'global'
           ? ['__all__']
           : props.defaultData?.spaceKey
             ? [props.defaultData.spaceKey]
-            : [props.currentSpaceKey || props.menuSpaces?.find((item) => item.isDefault)?.spaceKey || 'default'],
+            : [],
       sortOrder: props.defaultData?.sortOrder ?? 0,
       parentMenuId: props.defaultData?.parentMenuId || props.initialParentMenuId || '',
       parentPageKey: props.defaultData?.parentPageKey || props.initialParentPageKey || '',
@@ -1098,9 +1094,10 @@
 
   async function loadOptions() {
     const scopeKey = resolveSpaceScopeKey()
+    const appKey = `${props.appKey || ''}`.trim()
     const [menuRes, pageRes] = await Promise.all([
-      fetchGetPageMenuOptions(scopeKey, props.appKey),
-      fetchGetPageOptions(scopeKey, props.appKey)
+      fetchGetPageMenuOptions(scopeKey || undefined, appKey),
+      fetchGetPageOptions(scopeKey || undefined, appKey)
     ])
     menuOptions.value = menuRes.records || []
     allPages.value = pageRes.records || []
@@ -1280,8 +1277,9 @@
       const valid = await formRef.value.validate().catch(() => false)
       if (!valid) return
       submitting.value = true
+      const nextSpaceKey = `${resolveSpaceScopeKey() || ''}`.trim()
       const payload: Api.SystemManage.PageSaveParams = {
-        app_key: props.appKey,
+        app_key: `${props.appKey || ''}`.trim(),
         page_key: form.pageKey.trim(),
         name: form.name.trim(),
         route_name: form.routeName.trim() || form.pageKey.trim(),
@@ -1289,11 +1287,11 @@
         component: form.isIframe ? '/outside/Iframe' : form.component.trim(),
         page_type: form.pageType,
           source:
-            props.dialogType === 'edit'
-              ? `${props.pageData?.source || 'manual'}`
-              : `${props.defaultData?.source || 'manual'}`,
+          props.dialogType === 'edit'
+            ? `${props.pageData?.source || 'manual'}`
+            : `${props.defaultData?.source || 'manual'}`,
           module_key: form.moduleKey.trim(),
-          space_key: resolveSpaceScopeKey(),
+          space_key: nextSpaceKey,
           space_keys:
             resolveSpaceBindingKeys().includes('__all__')
               ? []

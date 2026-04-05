@@ -241,7 +241,6 @@ import type { CascaderOption, CascaderProps } from 'element-plus'
 import { useRouter } from 'vue-router'
 import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
 import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
-import { useMenuSpaceStore } from '@/store/modules/menu-space'
 import {
   fetchGetMenuTreeAll,
   fetchGetRoleActions,
@@ -305,7 +304,6 @@ const visible = computed({
 const loading = ref(false)
 const saving = ref(false)
 const activeTab = ref<'menus' | 'actions' | 'data'>('menus')
-const menuSpaceStore = useMenuSpaceStore()
 
 const menuPanelRef = ref<any>()
 const actionPanelRef = ref<any>()
@@ -569,7 +567,7 @@ async function loadData() {
 
   try {
     const [menuTree, roleMenus, rolePackages, roleActions, dataPermissionRes] = await Promise.all([
-      fetchGetMenuTreeAll(menuSpaceStore.currentSpaceKey, currentAppKey.value),
+      fetchGetMenuTreeAll(undefined, currentAppKey.value),
       fetchGetRoleMenus(props.roleData.roleId, currentAppKey.value),
       fetchGetRolePackages(props.roleData.roleId, currentAppKey.value),
       fetchGetRoleActions(props.roleData.roleId, currentAppKey.value),

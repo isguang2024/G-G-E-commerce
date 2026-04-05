@@ -3926,6 +3926,21 @@ func initDefaultAPIEndpointCategories(logger *zap.Logger) error {
 }
 
 func finalizeAPIEndpointSchema(logger *zap.Logger) error {
+	if err := database.DB.Exec(`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS app_scope varchar(20) NOT NULL DEFAULT 'shared'`).Error; err != nil {
+		return err
+	}
+	if err := database.DB.Exec(`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS app_key varchar(100) NOT NULL DEFAULT '` + systemmodels.DefaultAppKey + `'`).Error; err != nil {
+		return err
+	}
+	if err := database.DB.Exec(`UPDATE api_endpoints SET app_key = '` + systemmodels.DefaultAppKey + `' WHERE COALESCE(TRIM(app_key), '') = ''`).Error; err != nil {
+		return err
+	}
+	if err := database.DB.Exec(`UPDATE api_endpoints SET app_scope = '` + systemmodels.AppScopeShared + `' WHERE COALESCE(TRIM(app_scope), '') = '' AND (path LIKE '/api/v1/auth/%' OR path = '/api/v1/pages/runtime/public' OR path LIKE '/open/v1/%' OR path = '/health')`).Error; err != nil {
+		return err
+	}
+	if err := database.DB.Exec(`UPDATE api_endpoints SET app_scope = '` + systemmodels.AppScopeApp + `' WHERE COALESCE(TRIM(app_scope), '') = ''`).Error; err != nil {
+		return err
+	}
 	if err := database.DB.Exec(`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS category_id uuid`).Error; err != nil {
 		return err
 	}

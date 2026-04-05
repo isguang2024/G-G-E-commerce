@@ -120,7 +120,13 @@ func NewService(
 }
 
 func (s *service) List(req *dto.FeaturePackageListRequest) ([]user.FeaturePackage, int64, error) {
-	appKey := normalizeAppKey(req.AppKey)
+	if req == nil {
+		return nil, 0, errors.New("app_key is required")
+	}
+	appKey := strings.TrimSpace(req.AppKey)
+	if appKey == "" {
+		return nil, 0, errors.New("app_key is required")
+	}
 	if req.Current <= 0 {
 		req.Current = 1
 	}
@@ -139,11 +145,12 @@ func (s *service) List(req *dto.FeaturePackageListRequest) ([]user.FeaturePackag
 }
 
 func (s *service) ListOptions(req *dto.FeaturePackageListRequest) ([]user.FeaturePackage, error) {
+	if req == nil || strings.TrimSpace(req.AppKey) == "" {
+		return nil, errors.New("app_key is required")
+	}
 	query := s.db.Model(&user.FeaturePackage{})
 	if req != nil {
-		if appKey := normalizeAppKey(req.AppKey); appKey != "" {
-			query = query.Where("app_key = ?", appKey)
-		}
+		query = query.Where("app_key = ?", strings.TrimSpace(req.AppKey))
 		if keyword := strings.TrimSpace(req.Keyword); keyword != "" {
 			like := "%" + keyword + "%"
 			query = query.Where("(package_key LIKE ? OR name LIKE ? OR description LIKE ?)", like, like, like)
@@ -206,7 +213,10 @@ func (s *service) Get(id uuid.UUID) (*user.FeaturePackage, error) {
 }
 
 func (s *service) Create(req *dto.FeaturePackageCreateRequest) (*user.FeaturePackage, error) {
-	appKey := normalizeAppKey(req.AppKey)
+	appKey := strings.TrimSpace(req.AppKey)
+	if appKey == "" {
+		return nil, errors.New("app_key is required")
+	}
 	packageKey := strings.TrimSpace(req.PackageKey)
 	if packageKey == "" {
 		return nil, errors.New("package_key 不能为空")
@@ -241,7 +251,10 @@ func (s *service) Update(id uuid.UUID, req *dto.FeaturePackageUpdateRequest) (*p
 		}
 		return nil, err
 	}
-	appKey := normalizeAppKey(req.AppKey)
+	appKey := strings.TrimSpace(req.AppKey)
+	if appKey == "" {
+		return nil, errors.New("app_key is required")
+	}
 	if !packageBelongsToApp(current, appKey) {
 		return nil, ErrFeaturePackageNotFound
 	}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
+	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
 )
 
 type Handler struct {
@@ -34,7 +35,13 @@ func (h *Handler) GetCurrent(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	current, err := h.service.GetCurrent(currentContextAppKey(c), RequestHost(c), RequestSpaceKey(c), currentContextUserID(c), currentContextTenantID(c))
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	current, err := h.service.GetCurrent(appKey, RequestHost(c), RequestSpaceKey(c), currentContextUserID(c), currentContextTenantID(c))
 	if err != nil {
 		h.logger.Error("Get current menu space failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取当前空间失败")
@@ -50,7 +57,13 @@ func (h *Handler) List(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	items, err := h.service.ListSpaces(currentContextAppKey(c))
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	items, err := h.service.ListSpaces(appKey)
 	if err != nil {
 		h.logger.Error("List menu spaces failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取空间列表失败")
@@ -107,7 +120,13 @@ func (h *Handler) ListHostBindings(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	items, err := h.service.ListHostBindings(currentContextAppKey(c))
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	items, err := h.service.ListHostBindings(appKey)
 	if err != nil {
 		h.logger.Error("List menu space host bindings failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取 Host 绑定失败")
@@ -132,7 +151,13 @@ func (h *Handler) SaveSpace(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	item, err := h.service.SaveSpace(currentContextAppKey(c), &req)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	item, err := h.service.SaveSpace(appKey, &req)
 	if err != nil {
 		h.logger.Error("Save menu space failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, err.Error())
@@ -154,7 +179,13 @@ func (h *Handler) SaveHostBinding(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	item, err := h.service.SaveHostBinding(currentContextAppKey(c), &req)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	item, err := h.service.SaveHostBinding(appKey, &req)
 	if err != nil {
 		h.logger.Error("Save menu space host binding failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, err.Error())
@@ -172,13 +203,19 @@ func (h *Handler) InitializeFromDefault(c *gin.Context) {
 	}
 	spaceKey := c.Param("spaceKey")
 	force := strings.EqualFold(strings.TrimSpace(c.Query("force")), "true")
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
 	var actorUserID *uuid.UUID
 	if value := strings.TrimSpace(c.GetString("user_id")); value != "" {
 		if parsedID, parseErr := uuid.Parse(value); parseErr == nil {
 			actorUserID = &parsedID
 		}
 	}
-	item, err := h.service.InitializeFromDefault(currentContextAppKey(c), spaceKey, force, actorUserID)
+	item, err := h.service.InitializeFromDefault(appKey, spaceKey, force, actorUserID)
 	if err != nil {
 		h.logger.Error("Initialize menu space from default failed", zap.String("space_key", spaceKey), zap.Bool("force", force), zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, err.Error())

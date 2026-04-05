@@ -196,7 +196,11 @@ func NewService(db *gorm.DB, menuRepo user.MenuRepository) Service {
 }
 
 func (s *service) List(req *ListRequest) ([]Record, int64, error) {
-	appKey := normalizeAppKey(req.AppKey)
+	appKey := strings.TrimSpace(req.AppKey)
+	if appKey == "" {
+		return nil, 0, fmt.Errorf("%w: app_key is required", ErrPageValidation)
+	}
+	appKey = normalizeAppKey(appKey)
 	query := s.db.Model(&models.UIPage{}).Where("app_key = ?", appKey)
 	if req != nil {
 		if keyword := strings.TrimSpace(req.Keyword); keyword != "" {
@@ -262,6 +266,9 @@ func (s *service) List(req *ListRequest) ([]Record, int64, error) {
 }
 
 func (s *service) ListOptions(appKey, spaceKey string) ([]models.UIPage, error) {
+	if strings.TrimSpace(appKey) == "" {
+		return nil, fmt.Errorf("%w: app_key is required", ErrPageValidation)
+	}
 	items := make([]models.UIPage, 0)
 	query := s.db.Model(&models.UIPage{}).Where("app_key = ?", normalizeAppKey(appKey))
 	err := query.
@@ -325,7 +332,11 @@ func (s *service) GetAccessTrace(appKey string, req *AccessTraceRequest) (*Acces
 	if req == nil {
 		return nil, fmt.Errorf("%w: request is required", ErrPageValidation)
 	}
-	appKey = normalizeAppKey(firstNonEmpty(req.AppKey, appKey))
+	reqAppKey := strings.TrimSpace(req.AppKey)
+	if reqAppKey == "" {
+		return nil, fmt.Errorf("%w: app_key is required", ErrPageValidation)
+	}
+	appKey = normalizeAppKey(reqAppKey)
 	userID, err := uuid.Parse(strings.TrimSpace(req.UserID))
 	if err != nil {
 		return nil, fmt.Errorf("%w: user_id is invalid", ErrPageValidation)
@@ -684,7 +695,10 @@ func (s *service) Create(req *SaveRequest) (*Record, error) {
 
 func (s *service) Update(id uuid.UUID, req *SaveRequest) (*Record, error) {
 	var existing models.UIPage
-	normalizedAppKey := normalizeAppKey(req.AppKey)
+	normalizedAppKey := strings.TrimSpace(req.AppKey)
+	if normalizedAppKey == "" {
+		return nil, fmt.Errorf("%w: app_key is required", ErrPageValidation)
+	}
 	if err := s.db.Where("id = ? AND app_key = ?", id, normalizedAppKey).First(&existing).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrPageNotFound
@@ -805,7 +819,11 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 	if req == nil {
 		return nil, fmt.Errorf("%w: 请求体不能为空", ErrPageValidation)
 	}
-	appKey := normalizeAppKey(req.AppKey)
+	appKey := strings.TrimSpace(req.AppKey)
+	if appKey == "" {
+		return nil, fmt.Errorf("%w: app_key is required", ErrPageValidation)
+	}
+	appKey = normalizeAppKey(appKey)
 
 	pageType := normalizePageType(req.PageType)
 	if pageType == "" {

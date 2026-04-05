@@ -81,7 +81,7 @@
     dialogType: 'add',
     pageData: undefined,
     menuSpaces: () => [],
-    currentSpaceKey: 'default',
+    currentSpaceKey: '',
     initialParentPageKey: '',
     initialParentMenuId: '',
     initialPageType: 'inner',

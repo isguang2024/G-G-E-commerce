@@ -116,7 +116,7 @@
     pageData?: Partial<PageItem>
     appKey?: string
     menuSpaces?: Api.SystemManage.MenuSpaceItem[]
-    // 仅作为当前编辑视角使用，驱动候选加载与兼容提交，不代表页面必须绑定该空间。
+    // 仅作为可见性/候选加载视角使用，不代表页面必须绑定该空间。
     currentSpaceKey?: string
     initialParentPageKey?: string
     initialParentMenuId?: string
@@ -134,7 +134,7 @@
     dialogType: 'add',
     pageData: undefined,
     menuSpaces: () => [],
-    currentSpaceKey: 'default',
+    currentSpaceKey: '',
     initialParentPageKey: '',
     initialParentMenuId: '',
     initialPageType: 'display_group',
@@ -160,8 +160,8 @@
     id: '',
     pageKey: '',
     name: '',
-    // 兼容旧接口保留的视角字段：用于列表归类视角，不是页面主语义。
-    spaceKey: 'default',
+    // 兼容旧接口保留的视角字段：仅用于列表归类视角，不是页面主语义。
+    spaceKey: '',
     spaceKeys: [] as string[],
     sortOrder: 0,
     status: 'normal'
@@ -195,7 +195,7 @@
         id: props.pageData.id || '',
         pageKey: props.pageData.pageKey || '',
         name: props.pageData.name || '',
-        spaceKey: props.pageData.spaceKey || props.currentSpaceKey || 'default',
+        spaceKey: props.pageData.spaceKey || '',
         spaceKeys:
           props.pageData.pageType === 'global'
             ? ['__all__']
@@ -203,7 +203,7 @@
               ? spaceKeys
               : props.pageData.spaceKey
                 ? [props.pageData.spaceKey]
-                : [props.currentSpaceKey || 'default'],
+                : [],
         sortOrder: props.pageData.sortOrder ?? 0,
         status: props.pageData.status || 'normal'
       })
@@ -214,13 +214,13 @@
       id: '',
       pageKey: props.defaultData?.pageKey || '',
       name: props.defaultData?.name || '',
-      spaceKey: props.defaultData?.spaceKey || props.currentSpaceKey || 'default',
+      spaceKey: props.defaultData?.spaceKey || '',
       spaceKeys:
         props.defaultData?.pageType === 'global' || props.initialPageType === 'global'
           ? ['__all__']
           : props.defaultData?.spaceKey
             ? [props.defaultData.spaceKey]
-            : [props.currentSpaceKey || 'default'],
+            : [],
       sortOrder: props.defaultData?.sortOrder ?? 0,
       status: props.defaultData?.status || 'normal'
     })
@@ -265,8 +265,9 @@
       const valid = await formRef.value.validate().catch(() => false)
       if (!valid) return
       submitting.value = true
+      const nextSpaceKey = `${form.spaceKeys.includes('__all__') ? '' : form.spaceKeys[0] || form.spaceKey || ''}`.trim()
       const payload: Api.SystemManage.PageSaveParams = {
-        app_key: props.appKey,
+        app_key: `${props.appKey || ''}`.trim(),
         page_key: props.dialogType === 'edit' ? form.pageKey.trim() : '',
         name: form.name.trim(),
         route_name: props.dialogType === 'edit' ? form.pageKey.trim() : '',
@@ -279,9 +280,7 @@
             : `${props.defaultData?.source || 'manual'}`,
         module_key: '',
         // 兼容后端当前写接口；真正的空间暴露由后端统一返回 spaceKeys / spaceScope。
-        space_key: form.spaceKeys.includes('__all__')
-          ? (props.currentSpaceKey || 'default')
-          : (form.spaceKeys[0] || form.spaceKey),
+        space_key: nextSpaceKey,
         space_keys: form.spaceKeys.includes('__all__')
           ? []
           : form.spaceKeys.filter((item) => item !== '__all__'),

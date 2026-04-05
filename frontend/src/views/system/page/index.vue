@@ -261,6 +261,7 @@
   const loadError = ref('')
   const route = useRoute()
   const { targetAppKey } = useManagedAppScope()
+  const managedAppMissingText = '缺少 app 上下文，请先从应用管理选择 App'
   const showSearchBar = ref(false)
   const isExpanded = ref(false)
   const syncing = ref(false)
@@ -272,7 +273,7 @@
   const rawPages = ref<PageItem[]>([])
   const menuPathMap = ref(new Map<string, string>())
   const menuSpaces = ref<Api.SystemManage.MenuSpaceItem[]>([])
-  const activeSpaceKey = ref('default')
+  const activeSpaceKey = ref('')
   const menuSpaceStore = useMenuSpaceStore()
 
   const dialogVisible = ref(false)
@@ -535,31 +536,40 @@
   async function getPageList() {
     loading.value = true
     loadError.value = ''
+    if (!targetAppKey.value) {
+      rawPages.value = []
+      menuPathMap.value = new Map()
+      activeSpaceKey.value = ''
+      loadError.value = managedAppMissingText
+      loading.value = false
+      return
+    }
     try {
+      const scopeSpaceKey = activeSpaceKey.value || undefined
       const [pageResponse, menuResponse] = await Promise.all([
         fetchGetPageList({
           current: 1,
           size: 1000,
           appKey: targetAppKey.value,
-          spaceKey: activeSpaceKey.value
+          spaceKey: scopeSpaceKey
         }),
-        fetchGetPageMenuOptions(activeSpaceKey.value, targetAppKey.value)
-        ])
-        rawPages.value = pageResponse.records || []
-        Object.keys(sortDraftMap).forEach((key) => delete sortDraftMap[key])
-        editingSortId.value = ''
-        rawPages.value.forEach((item) => {
-          if (item.id) {
-            sortDraftMap[item.id] = `${Number(item.sortOrder || 0)}`
-          }
-        })
-        menuPathMap.value = buildMenuPathMap(menuResponse.records || [])
-      } catch (error: any) {
-        rawPages.value = []
-        Object.keys(sortDraftMap).forEach((key) => delete sortDraftMap[key])
-        editingSortId.value = ''
-        menuPathMap.value = new Map()
-        loadError.value = error?.message || '页面数据暂时不可用，稍后重试或刷新状态。'
+        fetchGetPageMenuOptions(scopeSpaceKey, targetAppKey.value)
+      ])
+      rawPages.value = pageResponse.records || []
+      Object.keys(sortDraftMap).forEach((key) => delete sortDraftMap[key])
+      editingSortId.value = ''
+      rawPages.value.forEach((item) => {
+        if (item.id) {
+          sortDraftMap[item.id] = `${Number(item.sortOrder || 0)}`
+        }
+      })
+      menuPathMap.value = buildMenuPathMap(menuResponse.records || [])
+    } catch (error: any) {
+      rawPages.value = []
+      Object.keys(sortDraftMap).forEach((key) => delete sortDraftMap[key])
+      editingSortId.value = ''
+      menuPathMap.value = new Map()
+      loadError.value = error?.message || '页面数据暂时不可用，稍后重试或刷新状态。'
     } finally {
       loading.value = false
     }
@@ -598,7 +608,7 @@
     dialogType.value = type
     currentPage.value = type === 'edit' && row ? { ...row } : {}
     defaultPageData.value = {
-      spaceKey: type === 'edit' && row ? row.spaceKey : activeSpaceKey.value,
+      spaceKey: type === 'edit' && row ? row.spaceKey || '' : activeSpaceKey.value || '',
       ...(options?.defaultData ? { ...options.defaultData } : {})
     }
     initialParentPageKey.value = options?.parentPageKey || ''
@@ -858,7 +868,7 @@
         '删除确认',
         { type: 'warning' }
       )
-      await fetchDeletePage(row.id)
+      await fetchDeletePage(row.id, targetAppKey.value)
       ElMessage.success('删除成功')
       getPageList()
     } catch (error: any) {
@@ -950,6 +960,7 @@
 
   function toPageSaveParams(row: PageItem, nextSortOrder: number): Api.SystemManage.PageSaveParams {
     return {
+      app_key: targetAppKey.value,
       page_key: row.pageKey,
       name: row.name,
       route_name: row.routeName || row.pageKey,
@@ -1039,6 +1050,10 @@
   const rowKey = (row: PageItem) => String(row.id || row.pageKey)
 
   onMounted(() => {
+    if (!targetAppKey.value) {
+      loadError.value = managedAppMissingText
+      return
+    }
     fetchGetMenuSpaces(targetAppKey.value)
       .then((res) => {
         menuSpaces.value = res.records || []
@@ -1046,7 +1061,7 @@
           activeSpaceKey.value =
             menuSpaces.value.find((item) => item.isDefault)?.spaceKey ||
             menuSpaces.value[0]?.spaceKey ||
-            'default'
+            ''
         }
       })
       .finally(() => {
@@ -1057,13 +1072,21 @@
   watch(
     () => route.query.app_key,
     async () => {
+      if (!targetAppKey.value) {
+        menuSpaces.value = []
+        rawPages.value = []
+        menuPathMap.value = new Map()
+        activeSpaceKey.value = ''
+        loadError.value = managedAppMissingText
+        return
+      }
       const spacesRes = await fetchGetMenuSpaces(targetAppKey.value)
       menuSpaces.value = spacesRes.records || []
       if (!menuSpaces.value.some((item) => item.spaceKey === activeSpaceKey.value)) {
         activeSpaceKey.value =
           menuSpaces.value.find((item) => item.isDefault)?.spaceKey ||
           menuSpaces.value[0]?.spaceKey ||
-          'default'
+          ''
       }
       await getPageList()
     }

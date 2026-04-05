@@ -6,8 +6,11 @@
       :metrics="summaryMetrics"
     >
       <div class="app-manage-hero-actions">
-        <ElButton type="primary" @click="openAppDrawer(currentAppRecord || selectedAppRecord)" v-ripple>
-          编辑当前 App
+        <ElButton type="primary" @click="openAppDrawer()" v-ripple>
+          新增 App
+        </ElButton>
+        <ElButton :disabled="!selectedAppRecord" @click="openAppDrawer(selectedAppRecord)" v-ripple>
+          编辑选中 App
         </ElButton>
         <ElButton :disabled="!selectedAppKey" @click="openHostDrawer()" v-ripple>
           新增 Host 绑定
@@ -75,7 +78,7 @@
               </div>
               <div class="app-manage-item__meta">
                 <span>标识 {{ item.appKey }}</span>
-                <span>默认空间 {{ item.defaultSpaceKey || 'default' }}</span>
+                <span>默认空间 {{ displaySpaceLabel(item.defaultSpaceKey) }}</span>
                 <span>空间 {{ item.menuSpaceCount || 0 }}</span>
                 <span>菜单 {{ item.menuCount || 0 }}</span>
                 <span>页面 {{ item.pageCount || 0 }}</span>
@@ -117,7 +120,7 @@
             </div>
             <div class="app-overview__item">
               <span class="app-overview__label">默认空间</span>
-              <strong>{{ selectedAppRecord.defaultSpaceKey || 'default' }}</strong>
+              <strong>{{ displaySpaceLabel(selectedAppRecord.defaultSpaceKey) }}</strong>
             </div>
             <div class="app-overview__item">
               <span class="app-overview__label">主 Host</span>
@@ -168,7 +171,7 @@
                 </ElTag>
               </div>
               <div class="app-binding-item__meta">
-                <span>默认空间 {{ item.defaultSpaceKey || selectedAppRecord?.defaultSpaceKey || 'default' }}</span>
+                <span>默认空间 {{ displaySpaceLabel(item.defaultSpaceKey, selectedAppRecord?.defaultSpaceKey) }}</span>
                 <span v-if="item.description">{{ item.description }}</span>
               </div>
             </div>
@@ -292,6 +295,7 @@
   const router = useRouter()
   const appContextStore = useAppContextStore()
   const { targetAppKey, setManagedAppKey } = useManagedAppScope()
+  const managedAppMissingText = '请先从 App 列表选择要管理的应用'
   const loading = ref(false)
   const loadError = ref('')
   const savingApp = ref(false)
@@ -311,7 +315,7 @@
     app_key: '',
     name: '',
     description: '',
-    default_space_key: 'default',
+    default_space_key: '',
     is_default: false,
     status: 'normal',
     meta: {}
@@ -320,7 +324,7 @@
   const hostForm = reactive<Api.SystemManage.AppHostBindingSaveParams>({
     app_key: '',
     host: '',
-    default_space_key: 'default',
+    default_space_key: '',
     description: '',
     is_primary: false,
     status: 'normal',
@@ -329,9 +333,7 @@
 
   const currentAppRecord = computed(() => currentApp.value?.app)
   const currentAppRequestHost = computed(() => `${currentApp.value?.requestHost || ''}`.trim())
-  const selectedAppRecord = computed(
-    () => apps.value.find((item) => item.appKey === selectedAppKey.value) || currentAppRecord.value
-  )
+  const selectedAppRecord = computed(() => apps.value.find((item) => item.appKey === selectedAppKey.value))
   const currentAppResolvedLabel = computed(() => {
     switch (`${currentApp.value?.resolvedBy || ''}`.trim()) {
       case 'host_binding':
@@ -350,7 +352,7 @@
   const hostDrawerTitle = computed(() => (editingHost.value ? '编辑 Host 绑定' : '新增 Host 绑定'))
   const summaryMetrics = computed(() => [
     { label: '应用数', value: apps.value.length || 0 },
-    { label: '当前 App', value: currentAppRecord.value?.appKey || selectedAppKey.value || '-' },
+    { label: '管理 App', value: selectedAppKey.value || '未选择' },
     { label: '空间数', value: selectedAppRecord.value?.menuSpaceCount || 0 },
     { label: '菜单数', value: selectedAppRecord.value?.menuCount || 0 },
     { label: '页面数', value: selectedAppRecord.value?.pageCount || 0 },
@@ -365,6 +367,20 @@
       }
     }
     return ''
+  }
+
+  function resolveSpaceKey(...candidates: Array<string | undefined | null>) {
+    for (const candidate of candidates) {
+      const normalized = `${candidate || ''}`.trim()
+      if (normalized) {
+        return normalized
+      }
+    }
+    return ''
+  }
+
+  function displaySpaceLabel(...candidates: Array<string | undefined | null>) {
+    return resolveSpaceKey(...candidates) || '未设置'
   }
 
   async function loadSelectedAppContext(appKey: string) {
@@ -410,7 +426,7 @@
     appForm.app_key = resolveAppKey(selectedAppKey.value, currentAppRecord.value?.appKey)
     appForm.name = ''
     appForm.description = ''
-    appForm.default_space_key = selectedAppRecord.value?.defaultSpaceKey || spaces.value[0]?.spaceKey || 'default'
+    appForm.default_space_key = resolveSpaceKey(selectedAppRecord.value?.defaultSpaceKey, spaces.value[0]?.spaceKey)
     appForm.is_default = false
     appForm.status = 'normal'
     appForm.meta = {}
@@ -420,7 +436,7 @@
     editingHost.value = ''
     hostForm.app_key = resolveAppKey(selectedAppKey.value, currentAppRecord.value?.appKey)
     hostForm.host = ''
-    hostForm.default_space_key = selectedAppRecord.value?.defaultSpaceKey || spaces.value[0]?.spaceKey || 'default'
+    hostForm.default_space_key = resolveSpaceKey(selectedAppRecord.value?.defaultSpaceKey, spaces.value[0]?.spaceKey)
     hostForm.description = ''
     hostForm.is_primary = false
     hostForm.status = 'normal'
@@ -434,7 +450,7 @@
       appForm.app_key = item.appKey
       appForm.name = item.name
       appForm.description = item.description || ''
-      appForm.default_space_key = item.defaultSpaceKey || 'default'
+      appForm.default_space_key = resolveSpaceKey(item.defaultSpaceKey)
       appForm.is_default = Boolean(item.isDefault)
       appForm.status = item.status || 'normal'
       appForm.meta = item.meta || {}
@@ -448,7 +464,7 @@
       editingHost.value = item.host
       hostForm.app_key = item.appKey || selectedAppKey.value
       hostForm.host = item.host
-      hostForm.default_space_key = item.defaultSpaceKey || selectedAppRecord.value?.defaultSpaceKey || 'default'
+      hostForm.default_space_key = resolveSpaceKey(item.defaultSpaceKey, selectedAppRecord.value?.defaultSpaceKey)
       hostForm.description = item.description || ''
       hostForm.is_primary = Boolean(item.isPrimary)
       hostForm.status = item.status || 'normal'
@@ -466,6 +482,10 @@
       ElMessage.warning('请输入应用名称')
       return
     }
+    if (!resolveSpaceKey(appForm.default_space_key)) {
+      ElMessage.warning('请选择或填写默认空间')
+      return
+    }
     savingApp.value = true
     try {
       const saved = await fetchSaveApp({
@@ -473,7 +493,7 @@
         app_key: appForm.app_key.trim(),
         name: appForm.name.trim(),
         description: appForm.description?.trim() || '',
-        default_space_key: `${appForm.default_space_key || 'default'}`.trim() || 'default'
+        default_space_key: resolveSpaceKey(appForm.default_space_key)
       })
       ElMessage.success('应用已保存')
       appDrawerVisible.value = false
@@ -496,13 +516,17 @@
       ElMessage.warning('请输入 Host')
       return
     }
+    if (!resolveSpaceKey(hostForm.default_space_key, selectedAppRecord.value?.defaultSpaceKey)) {
+      ElMessage.warning('请选择或填写默认空间')
+      return
+    }
     savingHost.value = true
     try {
       await fetchSaveAppHostBinding({
         ...hostForm,
         app_key: selectedAppKey.value,
         host: hostForm.host.trim().toLowerCase(),
-        default_space_key: `${hostForm.default_space_key || selectedAppRecord.value?.defaultSpaceKey || 'default'}`.trim() || 'default',
+        default_space_key: resolveSpaceKey(hostForm.default_space_key, selectedAppRecord.value?.defaultSpaceKey),
         description: hostForm.description?.trim() || ''
       })
       ElMessage.success('Host 绑定已保存')
@@ -524,15 +548,20 @@
   }
 
   function goToMenuManagement() {
-    router.push({ path: '/system/menu', query: { app_key: selectedAppKey.value } })
+    router.push({ path: '/system/menu' })
   }
 
   function goToPageManagement() {
-    router.push({ path: '/system/page', query: { app_key: selectedAppKey.value } })
+    router.push({ path: '/system/page' })
   }
 
   function goToSpaceManagement(appKey?: string) {
-    router.push({ path: '/system/menu-space', query: { app_key: appKey || selectedAppKey.value } })
+    if (appKey && appKey !== selectedAppKey.value) {
+      loadSelectedAppContext(appKey).catch((error: any) => {
+        ElMessage.error(error?.message || '切换应用失败')
+      })
+    }
+    router.push({ path: '/system/menu-space' })
   }
 
   onMounted(() => {

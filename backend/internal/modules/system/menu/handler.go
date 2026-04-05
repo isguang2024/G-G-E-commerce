@@ -517,13 +517,15 @@ func (h *MenuHandler) ListBackups(c *gin.Context) {
 	for _, backup := range backups {
 		scopeInfo := resolveMenuBackupScopeInfo(*backup)
 		out = append(out, gin.H{
-			"id":          backup.ID.String(),
-			"name":        backup.Name,
-			"description": backup.Description,
-			"space_key":   scopeInfo.SpaceKey,
-			"scope_type":  scopeInfo.ScopeType,
-			"created_at":  backup.CreatedAt,
-			"created_by":  backup.CreatedBy,
+			"id":           backup.ID.String(),
+			"name":         backup.Name,
+			"description":  backup.Description,
+			"app_key":      scopeInfo.AppKey,
+			"space_key":    scopeInfo.SpaceKey,
+			"scope_type":   scopeInfo.ScopeType,
+			"scope_origin": scopeInfo.ScopeOrigin,
+			"created_at":   backup.CreatedAt,
+			"created_by":   backup.CreatedBy,
 		})
 	}
 
@@ -531,6 +533,12 @@ func (h *MenuHandler) ListBackups(c *gin.Context) {
 }
 
 func (h *MenuHandler) DeleteBackup(c *gin.Context) {
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -539,7 +547,12 @@ func (h *MenuHandler) DeleteBackup(c *gin.Context) {
 		return
 	}
 
-	if err := h.menuService.DeleteBackup(id); err != nil {
+	if err := h.menuService.DeleteBackup(id, appKey); err != nil {
+		if errors.Is(err, ErrMenuBackupAppMismatch) {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrConflict, "备份不属于当前应用")
+			c.JSON(status, resp)
+			return
+		}
 		h.logger.Error("Delete backup failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "删除备份失败: "+err.Error())
 		c.JSON(status, resp)
@@ -550,6 +563,12 @@ func (h *MenuHandler) DeleteBackup(c *gin.Context) {
 }
 
 func (h *MenuHandler) RestoreBackup(c *gin.Context) {
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
 	idStr := c.Param("id")
 	id, err := uuid.Parse(idStr)
 	if err != nil {
@@ -558,7 +577,12 @@ func (h *MenuHandler) RestoreBackup(c *gin.Context) {
 		return
 	}
 
-	if err := h.menuService.RestoreBackup(id); err != nil {
+	if err := h.menuService.RestoreBackup(id, appKey); err != nil {
+		if errors.Is(err, ErrMenuBackupAppMismatch) {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrConflict, "备份不属于当前应用")
+			c.JSON(status, resp)
+			return
+		}
 		h.logger.Error("Restore backup failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "恢复备份失败: "+err.Error())
 		c.JSON(status, resp)

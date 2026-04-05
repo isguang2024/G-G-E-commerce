@@ -52,15 +52,13 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, nextTick, ref, watch } from 'vue'
-  import { storeToRefs } from 'pinia'
-  import { ElButton, ElMessage } from 'element-plus'
+import { computed, nextTick, ref, watch } from 'vue'
+import { ElButton, ElMessage } from 'element-plus'
   import PermissionSourcePanels from '@/components/business/permission/PermissionSourcePanels.vue'
-  import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
-  import { fetchGetMenuTreeAll } from '@/api/system-manage'
-  import { useMenuSpaceStore } from '@/store/modules/menu-space'
-  import {
-    fetchGetMyTeamBoundaryRoleMenus,
+import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
+import { fetchGetMenuTreeAll } from '@/api/system-manage'
+import {
+  fetchGetMyTeamBoundaryRoleMenus,
     fetchGetMyTeamBoundaryRolePackages,
     fetchSetMyTeamBoundaryRoleMenus
   } from '@/api/team'
@@ -75,10 +73,8 @@
   const props = defineProps<Props>()
   const emit = defineEmits<{ (e: 'update:modelValue', value: boolean): void; (e: 'success'): void }>()
 
-  const treeRef = ref()
-  const menuSpaceStore = useMenuSpaceStore()
-  const { currentSpaceKey } = storeToRefs(menuSpaceStore)
-  const expandAll = ref(true)
+const treeRef = ref()
+const expandAll = ref(true)
   const saving = ref(false)
   const menuList = ref<any[]>([])
   const menuSourceList = ref<Array<{ id: string; label: string }>>([])
@@ -128,7 +124,7 @@
       }
       try {
         const [menus, assigned, packagesRes] = await Promise.all([
-          fetchGetMenuTreeAll(currentSpaceKey.value, currentAppKey.value),
+          fetchGetMenuTreeAll(undefined, currentAppKey.value),
           fetchGetMyTeamBoundaryRoleMenus(props.roleData.roleId, currentAppKey.value),
           fetchGetMyTeamBoundaryRolePackages(props.roleData.roleId, currentAppKey.value)
         ])

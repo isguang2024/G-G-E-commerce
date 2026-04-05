@@ -40,7 +40,7 @@
   )
   const tagType = computed(() => (currentContextMode.value === 'platform' ? 'success' : 'warning'))
   const showSpaceLabel = computed(() => shouldShowSpaceBadge.value && !isDefaultSpace.value)
-  const spaceName = computed(() => currentSpace.value?.spaceName || currentSpace.value?.spaceKey || '默认菜单空间')
+  const spaceName = computed(() => currentSpace.value?.spaceName || currentSpace.value?.spaceKey || '未选择空间')
 </script>
 
 <style scoped lang="scss">

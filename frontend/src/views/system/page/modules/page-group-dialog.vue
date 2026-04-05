@@ -296,7 +296,7 @@
     pageData?: Partial<PageItem>
     appKey?: string
     menuSpaces?: Api.SystemManage.MenuSpaceItem[]
-    // 仅作为当前编辑视角使用，驱动候选加载与兼容提交，不代表页面必须绑定该空间。
+    // 仅作为可见性/候选加载视角使用，不代表页面必须绑定该空间。
     currentSpaceKey?: string
     initialParentPageKey?: string
     initialParentMenuId?: string
@@ -314,7 +314,7 @@
     dialogType: 'add',
     pageData: undefined,
     menuSpaces: () => [],
-    currentSpaceKey: 'default',
+    currentSpaceKey: '',
     initialParentPageKey: '',
     initialParentMenuId: '',
     initialPageType: 'group',
@@ -355,8 +355,8 @@
     accessMode: 'inherit',
     permissionKey: '',
     moduleKey: '',
-    // 兼容旧接口保留的视角字段：用于加载当前空间菜单/父分组选项，不是页面主语义。
-    spaceKey: 'default',
+    // 兼容旧接口保留的视角字段：仅用于加载候选，不是页面主语义。
+    spaceKey: '',
     spaceKeys: [] as string[],
     sortOrder: 0,
     parentMenuId: '',
@@ -523,7 +523,7 @@
         accessMode: props.pageData.accessMode || 'inherit',
         permissionKey: props.pageData.permissionKey || '',
         moduleKey: props.pageData.moduleKey || '',
-        spaceKey: props.pageData.spaceKey || props.currentSpaceKey || 'default',
+        spaceKey: props.pageData.spaceKey || '',
         spaceKeys:
           props.pageData.pageType === 'global'
             ? ['__all__']
@@ -531,7 +531,7 @@
               ? spaceKeys
               : props.pageData.spaceKey
                 ? [props.pageData.spaceKey]
-                : [props.currentSpaceKey || 'default'],
+                : [],
         sortOrder: props.pageData.sortOrder ?? 0,
         parentMenuId: props.pageData.parentMenuId || '',
         parentPageKey: props.pageData.parentPageKey || '',
@@ -550,13 +550,13 @@
         accessMode: props.defaultData?.accessMode || 'inherit',
         permissionKey: props.defaultData?.permissionKey || '',
       moduleKey: props.defaultData?.moduleKey || '',
-      spaceKey: props.defaultData?.spaceKey || props.currentSpaceKey || 'default',
+      spaceKey: props.defaultData?.spaceKey || '',
       spaceKeys:
         props.defaultData?.pageType === 'global' || props.initialPageType === 'global'
           ? ['__all__']
           : props.defaultData?.spaceKey
             ? [props.defaultData.spaceKey]
-            : [props.currentSpaceKey || 'default'],
+            : [],
         sortOrder: props.defaultData?.sortOrder ?? 0,
       parentMenuId: props.defaultData?.parentMenuId || props.initialParentMenuId || '',
       parentPageKey: props.defaultData?.parentPageKey || props.initialParentPageKey || '',
@@ -580,11 +580,11 @@
 
   async function loadOptions() {
     // 页面中心仍按“当前空间视角”返回可挂接菜单与父分组选项，避免跨空间候选串线。
-    const scopeKey =
-      (form.spaceKeys.find((item) => item !== '__all__') || form.spaceKey || props.currentSpaceKey || 'default')
+    const scopeKey = (form.spaceKeys.find((item) => item !== '__all__') || form.spaceKey || '')
+    const appKey = `${props.appKey || ''}`.trim()
     const [menuRes, pageRes] = await Promise.all([
-      fetchGetPageMenuOptions(scopeKey, props.appKey),
-      fetchGetPageOptions(scopeKey, props.appKey)
+      fetchGetPageMenuOptions(scopeKey || undefined, appKey),
+      fetchGetPageOptions(scopeKey || undefined, appKey)
     ])
     menuOptions.value = menuRes.records || []
     allPages.value = pageRes.records || []
@@ -681,8 +681,9 @@
       const valid = await formRef.value.validate().catch(() => false)
       if (!valid) return
       submitting.value = true
+      const nextSpaceKey = `${form.spaceKeys.includes('__all__') ? '' : form.spaceKeys[0] || form.spaceKey || ''}`.trim()
       const payload: Api.SystemManage.PageSaveParams = {
-        app_key: props.appKey,
+        app_key: `${props.appKey || ''}`.trim(),
         page_key: props.dialogType === 'edit' ? form.pageKey.trim() : '',
         name: form.name.trim(),
         route_name: props.dialogType === 'edit' ? form.pageKey.trim() : '',
@@ -695,9 +696,7 @@
             : `${props.defaultData?.source || 'manual'}`,
         module_key: resolvedModuleKey.value,
         // 兼容后端当前写接口；真正的空间暴露归属由后端统一编译，不在这里直接复制页面定义。
-        space_key: form.spaceKeys.includes('__all__')
-          ? (props.currentSpaceKey || 'default')
-          : (form.spaceKeys[0] || form.spaceKey),
+        space_key: nextSpaceKey,
         space_keys: form.spaceKeys.includes('__all__')
           ? []
           : form.spaceKeys.filter((item) => item !== '__all__'),
