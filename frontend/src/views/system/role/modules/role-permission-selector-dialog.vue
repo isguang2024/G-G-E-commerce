@@ -753,7 +753,6 @@ function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem, open?
     query: {
       packageKey: item.packageKey,
       contextType: item.contextType || 'platform',
-      app_key: currentAppKey.value,
       ...(open ? { open } : {})
     }
   })

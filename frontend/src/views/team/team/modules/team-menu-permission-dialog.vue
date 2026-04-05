@@ -280,7 +280,6 @@ function goToFeaturePackagePage(item: Api.SystemManage.FeaturePackageItem) {
   router.push({
     name: 'FeaturePackage',
     query: {
-      app_key: currentAppKey.value,
       packageKey: item.packageKey,
       contextType: item.contextType || 'team',
       open: 'menus'

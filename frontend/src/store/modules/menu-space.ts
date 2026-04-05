@@ -85,11 +85,11 @@ export const useMenuSpaceStore = defineStore(
   'menuSpaceStore',
   () => {
     const appContextStore = useAppContextStore()
-    const menuSpaceConfig = ref(runtimeMenuSpaceConfig)
-    const overrideSpaceKey = ref('')
+    const menuSpaceConfigMap = ref<Record<string, MenuSpaceConfig>>({})
+    const overrideSpaceKeyMap = ref<Record<string, string>>({})
     const runtimeHost = ref('')
-    const loading = ref(false)
-    const loaded = ref(false)
+    const loadingAppKeys = ref<Record<string, boolean>>({})
+    const loadedAppKeys = ref<Record<string, boolean>>({})
     const runtimeAppLoading = ref<Promise<string> | null>(null)
 
     const currentHost = computed(() => {
@@ -98,34 +98,103 @@ export const useMenuSpaceStore = defineStore(
     })
 
     const currentAppKey = computed(() => normalizeManagedAppKey(appContextStore.runtimeAppKey))
+    const currentMenuSpaceConfig = computed(() => {
+      const appKey = currentAppKey.value
+      if (!appKey) {
+        return runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig()
+      }
+      return (
+        menuSpaceConfigMap.value[appKey] ||
+        runtimeMenuSpaceConfig ||
+        createFallbackMenuSpaceConfig()
+      )
+    })
+    const currentOverrideSpaceKey = computed(() => {
+      const appKey = currentAppKey.value
+      if (!appKey) {
+        return ''
+      }
+      return normalizeMenuSpaceKey(overrideSpaceKeyMap.value[appKey])
+    })
+    const loading = computed(() => Boolean(loadingAppKeys.value[currentAppKey.value]))
+    const loaded = computed(() => Boolean(loadedAppKeys.value[currentAppKey.value]))
 
     const defaultSpaceKey = computed(() => {
-      const key = normalizeMenuSpaceKey(menuSpaceConfig.value.defaultSpaceKey)
+      const key = normalizeMenuSpaceKey(currentMenuSpaceConfig.value.defaultSpaceKey)
       return key || DEFAULT_MENU_SPACE_KEY
     })
 
     const currentSpaceKey = computed(() => {
-      const forcedKey = normalizeMenuSpaceKey(overrideSpaceKey.value)
+      const forcedKey = currentOverrideSpaceKey.value
       if (forcedKey) {
         return forcedKey
       }
-      return resolveMenuSpaceKeyByHost(currentHost.value, menuSpaceConfig.value, defaultSpaceKey.value)
+      return resolveMenuSpaceKeyByHost(
+        currentHost.value,
+        currentMenuSpaceConfig.value,
+        defaultSpaceKey.value
+      )
     })
 
     const currentSpace = computed(() =>
-      resolveMenuSpaceDefinition(currentSpaceKey.value, menuSpaceConfig.value) ||
-      resolveMenuSpaceDefinition(defaultSpaceKey.value, menuSpaceConfig.value) ||
-      menuSpaceConfig.value.spaces[0] ||
+      resolveMenuSpaceDefinition(currentSpaceKey.value, currentMenuSpaceConfig.value) ||
+      resolveMenuSpaceDefinition(defaultSpaceKey.value, currentMenuSpaceConfig.value) ||
+      currentMenuSpaceConfig.value.spaces[0] ||
       null
     )
 
-    const hasMultiSpace = computed(() => (menuSpaceConfig.value.spaces || []).length > 1)
-    const hasHostBinding = computed(() => (menuSpaceConfig.value.hostBindings || []).some((item) => Boolean(item?.enabled ?? true)))
+    const hasMultiSpace = computed(() => (currentMenuSpaceConfig.value.spaces || []).length > 1)
+    const hasHostBinding = computed(() =>
+      (currentMenuSpaceConfig.value.hostBindings || []).some((item) => Boolean(item?.enabled ?? true))
+    )
 
     const isDefaultSpace = computed(() => currentSpaceKey.value === defaultSpaceKey.value)
 
-    const setMenuSpaceConfig = (config: typeof menuSpaceConfig.value) => {
-      menuSpaceConfig.value = config || createFallbackMenuSpaceConfig()
+    const setMenuSpaceConfig = (config: MenuSpaceConfig, appKey = currentAppKey.value) => {
+      const normalizedAppKey = normalizeManagedAppKey(appKey)
+      if (!normalizedAppKey) {
+        return
+      }
+      menuSpaceConfigMap.value = {
+        ...menuSpaceConfigMap.value,
+        [normalizedAppKey]: config || createFallbackMenuSpaceConfig()
+      }
+      loadedAppKeys.value = {
+        ...loadedAppKeys.value,
+        [normalizedAppKey]: true
+      }
+    }
+
+    const setOverrideSpaceKey = (spaceKey: string, appKey = currentAppKey.value) => {
+      const normalizedAppKey = normalizeManagedAppKey(appKey)
+      if (!normalizedAppKey) {
+        return
+      }
+      overrideSpaceKeyMap.value = {
+        ...overrideSpaceKeyMap.value,
+        [normalizedAppKey]: normalizeMenuSpaceKey(spaceKey)
+      }
+    }
+
+    const clearOverrideSpaceKey = (appKey = currentAppKey.value) => {
+      const normalizedAppKey = normalizeManagedAppKey(appKey)
+      if (!normalizedAppKey) {
+        return
+      }
+      const nextMap = { ...overrideSpaceKeyMap.value }
+      delete nextMap[normalizedAppKey]
+      overrideSpaceKeyMap.value = nextMap
+    }
+
+    const setLoadingState = (appKey: string, value: boolean) => {
+      const normalizedAppKey = normalizeManagedAppKey(appKey)
+      if (!normalizedAppKey) {
+        return
+      }
+      loadingAppKeys.value = {
+        ...loadingAppKeys.value,
+        [normalizedAppKey]: value
+      }
     }
 
     const ensureRuntimeAppKey = async () => {
@@ -156,53 +225,64 @@ export const useMenuSpaceStore = defineStore(
     }
 
     const refreshRuntimeConfig = async (force = false) => {
-      if (loading.value) {
-        return menuSpaceConfig.value
-      }
-      if (loaded.value && !force) {
-        return menuSpaceConfig.value
-      }
       const userStore = useUserStore()
       const currentUserInfo = userStore.getUserInfo as Api.Auth.UserInfo
-      if (!hasPlatformAccessByUserInfo(currentUserInfo)) {
-        menuSpaceConfig.value = runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig()
-        loaded.value = true
-        return menuSpaceConfig.value
+      const appKey = await ensureRuntimeAppKey()
+      if (loadingAppKeys.value[appKey]) {
+        return menuSpaceConfigMap.value[appKey] || runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig()
       }
-      loading.value = true
+      if (loadedAppKeys.value[appKey] && !force) {
+        return menuSpaceConfigMap.value[appKey] || runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig()
+      }
+      if (!hasPlatformAccessByUserInfo(currentUserInfo)) {
+        setMenuSpaceConfig(runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig(), appKey)
+        return menuSpaceConfigMap.value[appKey] || runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig()
+      }
+      setLoadingState(appKey, true)
       try {
-        const appKey = await ensureRuntimeAppKey()
         const [spacesRes, hostBindingsRes] = await Promise.all([
           fetchGetMenuSpaces(appKey),
           fetchGetMenuSpaceHostBindings(appKey)
         ])
-        menuSpaceConfig.value = buildRuntimeMenuSpaceConfig(
-          spacesRes.records || [],
-          hostBindingsRes.records || [],
-          runtimeMenuSpaceConfig
+        setMenuSpaceConfig(
+          buildRuntimeMenuSpaceConfig(
+            spacesRes.records || [],
+            hostBindingsRes.records || [],
+            runtimeMenuSpaceConfig
+          ),
+          appKey
         )
-        loaded.value = true
       } catch (error) {
         warnDev('[menu-space] 同步后端菜单空间配置失败，已回退静态配置', error)
-        menuSpaceConfig.value = runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig()
+        setMenuSpaceConfig(runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig(), appKey)
       } finally {
-        loading.value = false
+        setLoadingState(appKey, false)
       }
-      return menuSpaceConfig.value
+      return menuSpaceConfigMap.value[appKey] || runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig()
     }
 
     const syncResolvedCurrentSpace = async (preferredSpaceKey = '') => {
-      const requestedSpaceKey = normalizeMenuSpaceKey(preferredSpaceKey || overrideSpaceKey.value || currentSpaceKey.value)
-      const hostResolvedSpaceKey = resolveMenuSpaceKeyByHost(currentHost.value, menuSpaceConfig.value, defaultSpaceKey.value)
+      const appKey = await ensureRuntimeAppKey()
+      const requestedSpaceKey = normalizeMenuSpaceKey(
+        preferredSpaceKey || currentOverrideSpaceKey.value || currentSpaceKey.value
+      )
+      const hostResolvedSpaceKey = resolveMenuSpaceKeyByHost(
+        currentHost.value,
+        currentMenuSpaceConfig.value,
+        defaultSpaceKey.value
+      )
       try {
-        const appKey = await ensureRuntimeAppKey()
         const response = await fetchGetCurrentMenuSpace(requestedSpaceKey || undefined, appKey)
         const resolvedSpaceKey = normalizeMenuSpaceKey(response?.space?.spaceKey)
         if (!resolvedSpaceKey) {
-          overrideSpaceKey.value = ''
+          clearOverrideSpaceKey(appKey)
           return null
         }
-        overrideSpaceKey.value = resolvedSpaceKey === hostResolvedSpaceKey ? '' : resolvedSpaceKey
+        if (resolvedSpaceKey === hostResolvedSpaceKey) {
+          clearOverrideSpaceKey(appKey)
+        } else {
+          setOverrideSpaceKey(resolvedSpaceKey, appKey)
+        }
         return response
       } catch (error) {
         warnDev('[menu-space] 同步当前空间解析失败，已保留本地结果', error)
@@ -211,11 +291,11 @@ export const useMenuSpaceStore = defineStore(
     }
 
     const setActiveSpaceKey = (spaceKey: string) => {
-      overrideSpaceKey.value = normalizeMenuSpaceKey(spaceKey)
+      setOverrideSpaceKey(spaceKey)
     }
 
     const clearActiveSpaceKey = () => {
-      overrideSpaceKey.value = ''
+      clearOverrideSpaceKey()
     }
 
     const syncRuntimeHost = () => {
@@ -250,7 +330,10 @@ export const useMenuSpaceStore = defineStore(
           return configuredLandingPath
         }
       }
-      const defaultSpaceDefinition = resolveMenuSpaceDefinition(defaultSpaceKey.value, menuSpaceConfig.value)
+      const defaultSpaceDefinition = resolveMenuSpaceDefinition(
+        defaultSpaceKey.value,
+        currentMenuSpaceConfig.value
+      )
       const defaultSpaceLandingPath = `${defaultSpaceDefinition?.defaultLandingRoute || ''}`.trim()
       if (
         defaultSpaceLandingPath &&
@@ -284,7 +367,7 @@ export const useMenuSpaceStore = defineStore(
     const resolveHostBinding = (spaceKey?: string) => {
       return resolveMenuSpaceHostBinding(
         normalizeMenuSpaceKey(spaceKey) || currentSpaceKey.value,
-        menuSpaceConfig.value
+        currentMenuSpaceConfig.value
       )
     }
 
@@ -335,7 +418,7 @@ export const useMenuSpaceStore = defineStore(
     syncRuntimeHost()
 
     return {
-      menuSpaceConfig,
+      menuSpaceConfig: currentMenuSpaceConfig,
       runtimeHost,
       loading,
       loaded,

@@ -171,12 +171,12 @@ You MUST complete each phase before proceeding to the next.
 
 **Fix the root cause, not the symptom:**
 
-1. **Create Failing Test Case**
-   - Simplest possible reproduction
-   - Automated test if possible
-   - One-off test script if no framework
-   - MUST have before fixing
-   - Use the `superpowers:test-driven-development` skill for writing proper failing tests
+1. **Create the Strongest Feasible Reproduction Proof**
+   - Simplest possible reproduction of the bug
+   - Automated failing test when the repository context supports it
+   - One-off script, targeted command, or exact manual reproduction when an automated test is not proportionate
+   - The point is to prove the bug and later prove the fix, not to force synthetic tests where they do not fit
+   - Use the `superpowers:test-driven-development` skill when failing-test-first is appropriate for this code path
 
 2. **Implement Single Fix**
    - Address the root cause identified
@@ -218,7 +218,7 @@ If you catch yourself thinking:
 - "Quick fix for now, investigate later"
 - "Just try changing X and see if it works"
 - "Add multiple changes, run tests"
-- "Skip the test, I'll manually verify"
+- "Skip the reproducible check, I'll eyeball it"
 - "It's probably X, let me fix that"
 - "I don't fully understand but this might work"
 - "Pattern says X but I'll adapt it differently"
@@ -249,7 +249,7 @@ If you catch yourself thinking:
 | "Issue is simple, don't need process" | Simple issues have root causes too. Process is fast for simple bugs. |
 | "Emergency, no time for process" | Systematic debugging is FASTER than guess-and-check thrashing. |
 | "Just try this first, then investigate" | First fix sets the pattern. Do it right from the start. |
-| "I'll write test after confirming fix works" | Untested fixes don't stick. Test first proves it. |
+| "I'll add verification after confirming fix works" | You still need pre-fix proof of the bug. Post-fix verification alone is weaker. |
 | "Multiple fixes at once saves time" | Can't isolate what worked. Causes new bugs. |
 | "Reference too long, I'll adapt the pattern" | Partial understanding guarantees bugs. Read it completely. |
 | "I see the problem, let me fix it" | Seeing symptoms ≠ understanding root cause. |
@@ -262,7 +262,7 @@ If you catch yourself thinking:
 | **1. Root Cause** | Read errors, reproduce, check changes, gather evidence | Understand WHAT and WHY |
 | **2. Pattern** | Find working examples, compare | Identify differences |
 | **3. Hypothesis** | Form theory, test minimally | Confirmed or new hypothesis |
-| **4. Implementation** | Create test, fix, verify | Bug resolved, tests pass |
+| **4. Implementation** | Create proof, fix, verify | Bug resolved, verification passes |
 
 ## When Process Reveals "No Root Cause"
 
@@ -284,7 +284,7 @@ These techniques are part of systematic debugging and available in this director
 - **`condition-based-waiting.md`** - Replace arbitrary timeouts with condition polling
 
 **Related skills:**
-- **superpowers:test-driven-development** - For creating failing test case (Phase 4, Step 1)
+- **superpowers:test-driven-development** - For failing-test-first fixes when automated regression coverage is the right tool
 - **superpowers:verification-before-completion** - Verify fix worked before claiming success
 
 ## Real-World Impact

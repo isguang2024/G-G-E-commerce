@@ -67,7 +67,7 @@ func (s *service) loadPublicRuntimeRecords(appKey, host, requestedSpaceKey strin
 
 func (s *service) buildCompiledAccessContextForSpace(appKey, spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*CompiledAccessContext, error) {
 	resolvedSpaceKey := normalizeSpaceKey(spaceKey)
-	menuMap, err := s.loadMenuMap(normalizeAppKey(appKey))
+	menuMap, err := s.loadMenuMap(normalizeAppKey(appKey), resolvedSpaceKey)
 	if err != nil {
 		return nil, err
 	}
@@ -948,7 +948,7 @@ func normalizeSpaceKey(value string) string {
 }
 
 func resolveSpaceKeyForRuntime(s *service, appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) string {
-	if spaceutil.IsSingleSpaceMode(s.db) {
+	if spaceutil.IsSingleSpaceMode(s.db, normalizeAppKey(appKey)) {
 		explicit := normalizeSpaceKey(requestedSpaceKey)
 		if explicit != "" && explicit != spaceutil.DefaultMenuSpaceKey && s != nil && s.db != nil {
 			if allowed, accessErr := spaceutil.CanAccessSpace(s.db, userID, tenantID, explicit); accessErr == nil && allowed {

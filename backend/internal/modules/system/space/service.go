@@ -103,8 +103,8 @@ type Service interface {
 	ListSpaces(appKey string) ([]SpaceRecord, error)
 	GetCurrent(appKey string, host string, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*CurrentResponse, error)
 	ListHostBindings(appKey string) ([]HostBindingRecord, error)
-	GetMode() (string, error)
-	SaveMode(mode string) (string, error)
+	GetMode(appKey string) (string, error)
+	SaveMode(appKey, mode string) (string, error)
 	SaveSpace(appKey string, req *SaveSpaceRequest) (*SpaceRecord, error)
 	SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*HostBindingRecord, error)
 	InitializeFromDefault(appKey string, targetSpaceKey string, force bool, actorUserID *uuid.UUID) (*InitializeResult, error)
@@ -228,12 +228,16 @@ func (s *service) GetCurrent(appKey string, host string, requestedSpaceKey strin
 	}, nil
 }
 
-func (s *service) GetMode() (string, error) {
-	return CurrentSpaceMode(s.db), nil
+func (s *service) GetMode(appKey string) (string, error) {
+	return CurrentSpaceMode(s.db, normalizeAppKey(appKey)), nil
 }
 
-func (s *service) SaveMode(mode string) (string, error) {
-	return SaveCurrentSpaceMode(s.db, mode)
+func (s *service) SaveMode(appKey, mode string) (string, error) {
+	normalizedAppKey := normalizeAppKey(appKey)
+	if normalizedAppKey == "" {
+		return spaceModeSingle, fmt.Errorf("app_key is required")
+	}
+	return SaveCurrentSpaceMode(s.db, normalizedAppKey, mode)
 }
 
 func (s *service) ListHostBindings(appKey string) ([]HostBindingRecord, error) {
@@ -282,6 +286,9 @@ func (s *service) SaveSpace(appKey string, req *SaveSpaceRequest) (*SpaceRecord,
 	key := NormalizeSpaceKey(req.SpaceKey)
 	if key == "" {
 		key = DefaultMenuSpaceKey
+	}
+	if IsSingleSpaceMode(s.db, normalizedAppKey) && key != DefaultMenuSpaceKey {
+		return nil, fmt.Errorf("当前 App 为单空间模式，只允许维护默认空间")
 	}
 	name := strings.TrimSpace(req.Name)
 	if key == DefaultMenuSpaceKey && name == "" {

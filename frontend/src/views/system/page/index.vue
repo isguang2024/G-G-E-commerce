@@ -20,6 +20,21 @@
         :metrics="summaryStats"
       >
         <div class="page-hero-actions">
+        <ElSelect
+          v-model="selectedAppKey"
+          clearable
+          filterable
+          placeholder="选择 App"
+          class="page-app-select"
+          @change="handleManagedAppChange"
+        >
+          <ElOption
+            v-for="item in appOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </ElSelect>
         <ElDropdown trigger="click" @command="handleCreateCommand">
           <ElButton v-action="'system.page.manage'" type="primary" v-ripple>
             新增
@@ -68,6 +83,24 @@
               页面挂载关系、访问方式和父链路在这里集中治理，避免菜单入口页与受管页重复维护。
             </div>
             <div class="page-toolbar-actions">
+              <div v-if="menuSpaces.length > 1" class="page-space-filter">
+                <span class="page-space-filter__label">配置空间</span>
+                <ElSelect
+                  v-model="activeSpaceKey"
+                  clearable
+                  placeholder="全部空间"
+                  style="width: 180px"
+                  @change="handleSpaceScopeChange"
+                >
+                  <ElOption label="全部空间" value="" />
+                  <ElOption
+                    v-for="item in menuSpaces"
+                    :key="item.spaceKey"
+                    :label="item.isDefault ? `${item.name}（默认）` : item.name"
+                    :value="item.spaceKey"
+                  />
+                </ElSelect>
+              </div>
               <div class="page-switch">
                 <span class="page-switch__label">展开分组</span>
                 <ElSwitch v-model="isExpanded" @change="handleExpandSwitchChange" />
@@ -214,7 +247,6 @@
       :default-data="defaultPageData"
       :app-key="targetAppKey"
       :menu-spaces="menuSpaces"
-      :current-space-key="activeSpaceKey"
       :initial-parent-page-key="initialParentPageKey"
       :initial-parent-menu-id="initialParentMenuId"
       :initial-page-type="initialPageType"
@@ -232,7 +264,7 @@
 <script setup lang="ts">
   import { computed, reactive, ref, nextTick, onMounted, watch } from 'vue'
   import { useRoute } from 'vue-router'
-  import { ElButton, ElInput, ElMessage, ElMessageBox, ElTag } from 'element-plus'
+  import { ElButton, ElInput, ElMessage, ElMessageBox, ElOption, ElSelect, ElTag } from 'element-plus'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import type { FormItem } from '@/components/core/forms/art-form/index.vue'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
@@ -241,6 +273,7 @@
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import {
     fetchDeletePage,
+    fetchGetApps,
     fetchGetMenuSpaces,
     fetchGetPageList,
     fetchGetPageMenuOptions,
@@ -260,8 +293,8 @@
   const loading = ref(false)
   const loadError = ref('')
   const route = useRoute()
-  const { targetAppKey } = useManagedAppScope()
-  const managedAppMissingText = '缺少 app 上下文，请先从应用管理选择 App'
+  const { targetAppKey, setManagedAppKey } = useManagedAppScope()
+  const managedAppMissingText = '请选择当前要管理的 App'
   const showSearchBar = ref(false)
   const isExpanded = ref(false)
   const syncing = ref(false)
@@ -271,6 +304,8 @@
   const editingSortId = ref('')
   const tableRef = ref()
   const rawPages = ref<PageItem[]>([])
+  const appList = ref<Api.SystemManage.AppItem[]>([])
+  const selectedAppKey = ref('')
   const menuPathMap = ref(new Map<string, string>())
   const menuSpaces = ref<Api.SystemManage.MenuSpaceItem[]>([])
   const activeSpaceKey = ref('')
@@ -310,7 +345,8 @@
           { label: '逻辑分组', value: 'group' },
           { label: '普通分组', value: 'display_group' },
           { label: '内页', value: 'inner' },
-          { label: '全局页', value: 'global' }
+          { label: '全局页', value: 'global' },
+          { label: '独立页', value: 'standalone' }
         ],
         clearable: true
       }
@@ -403,7 +439,7 @@
   const summaryStats = computed(() => {
     const suspendedCount = rawPages.value.filter((item) => item.status !== 'normal').length
     const managedEntryCount = rawPages.value.filter((item) =>
-      item.pageType === 'inner' || item.pageType === 'global'
+      item.pageType === 'inner' || item.pageType === 'global' || item.pageType === 'standalone'
     ).length
     const logicGroupCount = rawPages.value.filter((item) => item.pageType === 'group').length
     const displayGroupCount = rawPages.value.filter((item) => item.pageType === 'display_group').length
@@ -417,6 +453,12 @@
       { label: '总条目', value: rawPages.value.length }
     ]
   })
+  const appOptions = computed(() =>
+    appList.value.map((item) => ({
+      label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
+      value: item.appKey
+    }))
+  )
 
   function buildPageTree(items: PageItem[]): TreePageItem[] {
     const logicNodeMap = new Map<string, TreePageItem>()
@@ -584,6 +626,18 @@
     })
   }
 
+  function handleSpaceScopeChange() {
+    getPageList()
+  }
+  async function loadAppOptions() {
+    const res = await fetchGetApps()
+    appList.value = res.records || []
+  }
+  async function handleManagedAppChange(value?: string) {
+    await setManagedAppKey(`${value || ''}`.trim())
+    activeSpaceKey.value = ''
+  }
+
   function handleReset() {
     Object.assign(searchForm, initialSearchState)
     Object.assign(appliedFilters, initialSearchState)
@@ -608,18 +662,17 @@
     dialogType.value = type
     currentPage.value = type === 'edit' && row ? { ...row } : {}
     defaultPageData.value = {
-      spaceKey: type === 'edit' && row ? row.spaceKey || '' : activeSpaceKey.value || '',
       ...(options?.defaultData ? { ...options.defaultData } : {})
     }
     initialParentPageKey.value = options?.parentPageKey || ''
     initialParentMenuId.value = options?.parentMenuId || ''
-    initialPageType.value = options?.pageType || 'inner'
+    initialPageType.value = options?.pageType || 'standalone'
     await nextTick()
     dialogVisible.value = true
   }
 
   function handleAddPage() {
-    openDialog('add', undefined, { pageType: 'inner' })
+    openDialog('add', undefined, { pageType: 'standalone' })
   }
 
   function handleAddLogicGroup() {
@@ -762,7 +815,14 @@
       return '仅列表归类'
     }
     if (row.pageType === 'global') {
-      return '独立页面'
+      return row.visibilityScope === 'spaces' || row.spaceScope === 'spaces'
+        ? '全局页 · 指定空间'
+        : '全局页 · App 全局'
+    }
+    if (row.pageType === 'standalone') {
+      return row.visibilityScope === 'spaces' || row.spaceScope === 'spaces'
+        ? '独立页 · 指定空间'
+        : '独立页 · App 全局'
     }
     const parentPageName = `${row.parentPageName || ''}`.trim()
     if (parentPageName) {
@@ -776,19 +836,28 @@
     if (displayGroupName) {
       return `普通分组：${displayGroupName}`
     }
-    return '独立内页'
+    return '未挂载内页'
   }
 
   function getMountTargetText(row: PageItem) {
     if (row.pageType === 'display_group') return '普通分组'
-    if (row.pageType === 'global') return '独立页面'
+    if (row.pageType === 'global') {
+      return row.visibilityScope === 'spaces' || row.spaceScope === 'spaces'
+        ? '全局页 · 指定空间'
+        : '全局页'
+    }
+    if (row.pageType === 'standalone') {
+      return row.visibilityScope === 'spaces' || row.spaceScope === 'spaces'
+        ? '独立页 · 指定空间'
+        : '独立页'
+    }
     if (row.pageType === 'group') {
       return row.displayGroupName ? `逻辑分组 · ${row.displayGroupName}` : '逻辑分组'
     }
     if (row.parentMenuName) return `挂到菜单 · ${row.parentMenuName}`
     if (row.parentPageName) return `挂到页面 · ${row.parentPageName}`
     if (row.displayGroupName) return `列表分组 · ${row.displayGroupName}`
-    return row.pageType === 'global' ? '独立页面' : '独立内页'
+    return row.pageType === 'global' ? '独立页面' : '未挂载内页'
   }
 
   function formatUpdatedAt(value?: string) {
@@ -812,9 +881,10 @@
     const link = `${row.link || ''}`.trim()
     if (link) return link
     const resolvedPath = getResolvedRoutePath(row)
+    const targetSpaceKey = `${row.spaceKeys?.[0] || menuSpaceStore.currentSpaceKey || ''}`.trim()
     const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
       resolvedPath,
-      row.spaceKey || activeSpaceKey.value
+      targetSpaceKey
     )
     if (nextTarget.mode === 'location') {
       return nextTarget.target
@@ -834,9 +904,13 @@
 
   async function handleSyncPages() {
     if (syncing.value) return
+    if (!targetAppKey.value) {
+      ElMessage.warning(managedAppMissingText)
+      return
+    }
     syncing.value = true
     try {
-      const res = await fetchSyncPages()
+      const res = await fetchSyncPages(targetAppKey.value)
       ElMessage.success(`同步完成：新增 ${res.createdCount}，跳过 ${res.skippedCount}`)
       await getPageList()
     } catch (error: any) {
@@ -850,7 +924,7 @@
     openDialog('add', undefined, {
       parentPageKey: candidate.parentPageKey || '',
       parentMenuId: candidate.parentMenuId || '',
-      pageType: candidate.pageType || 'inner',
+        pageType: candidate.pageType || 'standalone',
       defaultData: {
         ...candidate,
         meta: {
@@ -881,6 +955,7 @@
     if (row.pageType === 'group') return '逻辑分组'
     if (row.pageType === 'display_group') return '普通分组'
     if (row.pageType === 'global') return '全局页'
+    if (row.pageType === 'standalone') return '独立页'
     return '内页'
   }
 
@@ -912,15 +987,27 @@
   }
 
   function getMountModeText(row: PageItem) {
-    if (row.pageType === 'global') return '独立页面'
+    if (row.pageType === 'global') {
+      return row.visibilityScope === 'spaces' || row.spaceScope === 'spaces'
+        ? '全局页（指定空间）'
+        : '全局页'
+    }
+    if (row.pageType === 'standalone') {
+      return row.visibilityScope === 'spaces' || row.spaceScope === 'spaces'
+        ? '独立页（指定空间）'
+        : '独立页'
+    }
     if (row.parentPageKey) return '挂到页面'
     if (row.parentMenuId) return '挂到菜单'
-    return '独立内页'
+    return '未挂载内页'
   }
 
   function getEffectiveChainText(row: PageItem) {
     if (row.pageType === 'display_group') return '仅分组展示'
     if (row.pageType === 'global') {
+      if (row.visibilityScope === 'spaces' || row.spaceScope === 'spaces') {
+        return '自身生效（全局页 · 指定空间）'
+      }
       if (row.accessMode && row.accessMode !== 'inherit') {
         return `自身生效（${getAccessModeText(row.accessMode)}）`
       }
@@ -1050,6 +1137,10 @@
   const rowKey = (row: PageItem) => String(row.id || row.pageKey)
 
   onMounted(() => {
+    selectedAppKey.value = targetAppKey.value
+    loadAppOptions().catch(() => {
+      appList.value = []
+    })
     if (!targetAppKey.value) {
       loadError.value = managedAppMissingText
       return
@@ -1057,12 +1148,6 @@
     fetchGetMenuSpaces(targetAppKey.value)
       .then((res) => {
         menuSpaces.value = res.records || []
-        if (!menuSpaces.value.some((item) => item.spaceKey === activeSpaceKey.value)) {
-          activeSpaceKey.value =
-            menuSpaces.value.find((item) => item.isDefault)?.spaceKey ||
-            menuSpaces.value[0]?.spaceKey ||
-            ''
-        }
       })
       .finally(() => {
         getPageList()
@@ -1070,7 +1155,7 @@
   })
 
   watch(
-    () => route.query.app_key,
+    () => targetAppKey.value,
     async () => {
       if (!targetAppKey.value) {
         menuSpaces.value = []
@@ -1082,14 +1167,16 @@
       }
       const spacesRes = await fetchGetMenuSpaces(targetAppKey.value)
       menuSpaces.value = spacesRes.records || []
-      if (!menuSpaces.value.some((item) => item.spaceKey === activeSpaceKey.value)) {
-        activeSpaceKey.value =
-          menuSpaces.value.find((item) => item.isDefault)?.spaceKey ||
-          menuSpaces.value[0]?.spaceKey ||
-          ''
-      }
       await getPageList()
     }
+  )
+
+  watch(
+    () => targetAppKey.value,
+    (value) => {
+      selectedAppKey.value = value || ''
+    },
+    { immediate: true }
   )
 </script>
 
@@ -1098,6 +1185,10 @@
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
+  }
+
+  .page-app-select {
+    width: 240px;
   }
 
   .page-toolbar {
@@ -1125,6 +1216,18 @@
     flex-wrap: wrap;
     gap: 8px;
     justify-content: flex-start;
+  }
+
+  .page-space-filter {
+    align-items: center;
+    display: inline-flex;
+    gap: 8px;
+  }
+
+  .page-space-filter__label {
+    color: var(--art-text-muted);
+    font-size: 12px;
+    white-space: nowrap;
   }
 
   .page-switch {

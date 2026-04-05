@@ -1,6 +1,6 @@
 ---
 name: requesting-code-review
-description: Use when completing tasks, implementing major features, or before merging to verify work meets requirements
+description: Use in this repository for major features, cross-frontend-backend changes, permission/menu/App context work, or before PR/merge; do not default to review after every tiny task
 ---
 
 # Requesting Code Review
@@ -11,15 +11,17 @@ Dispatch superpowers:code-reviewer subagent to catch issues before they cascade.
 
 ## When to Request Review
 
-**Mandatory:**
-- After each task in subagent-driven development
-- After completing major feature
-- Before merge to main
+**Strongly recommended:**
+- After completing a major feature
+- Before merge / PR to main
+- After cross-frontend-backend work
+- After permission / menu / role / App context changes
+- After risky refactors or complex bug fixes
 
 **Optional but valuable:**
 - When stuck (fresh perspective)
 - Before refactoring (baseline check)
-- After fixing complex bug
+- After fixing a complex bug
 
 ## How to Request
 
@@ -77,17 +79,18 @@ You: [Fix progress indicators]
 ## Integration with Workflows
 
 **Subagent-Driven Development:**
-- Review after EACH task
-- Catch issues before they compound
-- Fix before moving to next task
+- Review after meaningful milestones or risky/core tasks
+- Review before handing off a broad batch of changes
+- Do not force review after every trivial step
 
 **Executing Plans:**
-- Review after each batch (3 tasks)
+- Review after each meaningful batch or before PR
 - Get feedback, apply, continue
 
 **Ad-Hoc Development:**
 - Review before merge
 - Review when stuck
+- Review when the touched area is a core domain even if the diff is not huge
 
 ## Red Flags
 
@@ -96,6 +99,9 @@ You: [Fix progress indicators]
 - Ignore Critical issues
 - Proceed with unfixed Important issues
 - Argue with valid technical feedback
+
+**Repository note:**
+- Truly small, local, low-risk changes do not need mandatory code review before continuing.
 
 **If reviewer wrong:**
 - Push back with technical reasoning

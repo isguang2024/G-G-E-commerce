@@ -10,6 +10,12 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 )
 
+const (
+	pageVisibilityScopeInherit = "inherit"
+	pageVisibilityScopeApp     = "app"
+	pageVisibilityScopeSpaces  = "spaces"
+)
+
 func loadPageSpaceBindingMap(dbQuery *gorm.DB, appKey string) (map[uuid.UUID][]string, error) {
 	var bindings []models.PageSpaceBinding
 	if err := dbQuery.Where("app_key = ?", normalizeAppKey(appKey)).Find(&bindings).Error; err != nil {
@@ -55,13 +61,13 @@ func resolvePageSpaceKeys(
 	if keys := uniqueSortedStrings(bindingMap[page.ID]); len(keys) > 0 {
 		return keys
 	}
-	if legacy := normalizeSpaceKey(page.SpaceKey); legacy != "" && legacy != models.DefaultMenuSpaceKey {
-		return []string{legacy}
-	}
 	return []string{}
 }
 
 func isPageVisibleInSpace(item models.UIPage, targetSpaceKey string) bool {
+	if readPageVisibilityScope(item) == pageVisibilityScopeApp {
+		return true
+	}
 	keys := readPageSpaceKeys(item)
 	if len(keys) == 0 {
 		return true
@@ -75,7 +81,59 @@ func isPageVisibleInSpace(item models.UIPage, targetSpaceKey string) bool {
 	return false
 }
 
+func resolvePageVisibilityScope(item models.UIPage, keys []string) string {
+	if item.ParentMenuID != nil || strings.TrimSpace(item.ParentPageKey) != "" {
+		return pageVisibilityScopeInherit
+	}
+	if len(uniqueSortedStrings(keys)) > 0 {
+		return pageVisibilityScopeSpaces
+	}
+	return pageVisibilityScopeApp
+}
+
+func readPageVisibilityScope(item models.UIPage) string {
+	switch strings.TrimSpace(item.VisibilityScope) {
+	case pageVisibilityScopeInherit, pageVisibilityScopeApp, pageVisibilityScopeSpaces:
+		return strings.TrimSpace(item.VisibilityScope)
+	}
+	if item.Meta != nil {
+		if scope, ok := item.Meta["spaceScope"].(string); ok {
+			switch strings.TrimSpace(scope) {
+			case "bound":
+				return pageVisibilityScopeSpaces
+			case "global":
+				return pageVisibilityScopeApp
+			case pageVisibilityScopeInherit, pageVisibilityScopeApp, pageVisibilityScopeSpaces:
+				return strings.TrimSpace(scope)
+			}
+		}
+	}
+	if item.ParentMenuID != nil || strings.TrimSpace(item.ParentPageKey) != "" {
+		return pageVisibilityScopeInherit
+	}
+	if item.Meta != nil {
+		if values, ok := item.Meta["spaceKeys"].([]string); ok && len(uniqueSortedStrings(values)) > 0 {
+			return pageVisibilityScopeSpaces
+		}
+		if values, ok := item.Meta["spaceKeys"].([]interface{}); ok {
+			result := make([]string, 0, len(values))
+			for _, value := range values {
+				if text, ok := value.(string); ok {
+					result = append(result, normalizeSpaceKey(text))
+				}
+			}
+			if len(uniqueSortedStrings(result)) > 0 {
+				return pageVisibilityScopeSpaces
+			}
+		}
+	}
+	return pageVisibilityScopeApp
+}
+
 func readPageSpaceKeys(item models.UIPage) []string {
+	if readPageVisibilityScope(item) == pageVisibilityScopeApp {
+		return []string{}
+	}
 	if item.Meta != nil {
 		if values, ok := item.Meta["spaceKeys"].([]string); ok {
 			return uniqueSortedStrings(values)
@@ -90,9 +148,6 @@ func readPageSpaceKeys(item models.UIPage) []string {
 			return uniqueSortedStrings(result)
 		}
 	}
-	if legacy := normalizeSpaceKey(item.SpaceKey); legacy != "" && legacy != models.DefaultMenuSpaceKey {
-		return []string{legacy}
-	}
 	return []string{}
 }
 
@@ -101,23 +156,27 @@ func applyResolvedPageSpace(item *models.UIPage, keys []string) {
 		return
 	}
 	keys = uniqueSortedStrings(keys)
+	visibilityScope := resolvePageVisibilityScope(*item, keys)
+	item.VisibilityScope = visibilityScope
 	if item.Meta == nil {
 		item.Meta = models.MetaJSON{}
 	}
 	delete(item.Meta, "spaceKeys")
 	delete(item.Meta, "spaceScope")
-	switch len(keys) {
-	case 0:
+	switch visibilityScope {
+	case pageVisibilityScopeInherit:
 		item.SpaceKey = ""
-		item.Meta["spaceScope"] = "global"
-	case 1:
-		item.SpaceKey = keys[0]
-		item.Meta["spaceKeys"] = []string{keys[0]}
-		item.Meta["spaceScope"] = "bound"
-	default:
+		if len(keys) > 0 {
+			item.Meta["spaceKeys"] = keys
+		}
+		item.Meta["spaceScope"] = pageVisibilityScopeInherit
+	case pageVisibilityScopeSpaces:
 		item.SpaceKey = ""
 		item.Meta["spaceKeys"] = keys
-		item.Meta["spaceScope"] = "bound"
+		item.Meta["spaceScope"] = pageVisibilityScopeSpaces
+	default:
+		item.SpaceKey = ""
+		item.Meta["spaceScope"] = pageVisibilityScopeApp
 	}
 }
 

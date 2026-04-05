@@ -414,11 +414,11 @@ func (s *stubSpaceService) ListHostBindings(appKey string) ([]spacepkg.HostBindi
 	return nil, fmt.Errorf("unexpected ListHostBindings call")
 }
 
-func (s *stubSpaceService) GetMode() (string, error) {
+func (s *stubSpaceService) GetMode(appKey string) (string, error) {
 	return "", fmt.Errorf("unexpected GetMode call")
 }
 
-func (s *stubSpaceService) SaveMode(mode string) (string, error) {
+func (s *stubSpaceService) SaveMode(appKey, mode string) (string, error) {
 	return "", fmt.Errorf("unexpected SaveMode call")
 }
 

@@ -5,7 +5,7 @@
         v-show="showSearchBar"
         v-model="searchForm"
         @search="handleSearch"
-        @reset="resetSearchParams"
+        @reset="handleResetSearch"
       />
 
       <AdminWorkspaceHero
@@ -14,6 +14,21 @@
         :metrics="summaryMetrics"
       >
         <div class="user-hero-actions">
+          <ElSelect
+            v-model="selectedAppKey"
+            clearable
+            filterable
+            placeholder="选择 App"
+            class="user-app-select"
+            @change="handleManagedAppChange"
+          >
+            <ElOption
+              v-for="item in appOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </ElSelect>
           <ElButton v-action="'system.user.manage'" type="primary" @click="showDialog('add')" v-ripple>
             新增用户
           </ElButton>
@@ -77,6 +92,7 @@
 </template>
 
 <script setup lang="ts">
+  import { onMounted, watch } from 'vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
@@ -85,6 +101,7 @@
     fetchGetUserList,
     fetchDeleteUser,
     fetchCreateUser,
+    fetchGetApps,
     fetchUpdateUser
   } from '@/api/system-manage'
   import UserSearch from './modules/user-search.vue'
@@ -102,7 +119,7 @@
 
   type UserListItem = Api.SystemManage.UserListItem
   const userStore = useUserStore()
-  const { targetAppKey } = useManagedAppScope()
+  const { targetAppKey, setManagedAppKey } = useManagedAppScope()
   const canViewSystemRemark = computed(() => {
     const roles = (userStore.info?.roles || []) as string[]
     return roles.includes('R_SUPER')
@@ -111,6 +128,8 @@
   // 弹窗相关
   const dialogType = ref<DialogType>('add')
   const showSearchBar = ref(false)
+  const appList = ref<Api.SystemManage.AppItem[]>([])
+  const selectedAppKey = ref('')
   const dialogVisible = ref(false)
   const currentUserData = ref<Partial<UserListItem>>({})
   const packageDialogVisible = ref(false)
@@ -126,6 +145,12 @@
     { label: '总用户', value: pagination.total || 0 },
     { label: '已选', value: selectedRows.value.length || 0 }
   ])
+  const appOptions = computed(() =>
+    appList.value.map((item) => ({
+      label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
+      value: item.appKey
+    }))
+  )
 
   // 搜索表单（与后端 status: active/inactive 一致）
   const searchForm = ref({
@@ -160,10 +185,21 @@
   } = useTable({
     // 核心配置
     core: {
-      apiFn: fetchGetUserList,
+      apiFn: async (params) => {
+        if (!targetAppKey.value) {
+          return {
+            records: [],
+            total: 0,
+            current: Number((params as any)?.current || 1),
+            size: Number((params as any)?.size || 20)
+          }
+        }
+        return fetchGetUserList(params as Api.SystemManage.UserSearchParams)
+      },
       apiParams: {
         current: 1,
         size: 20,
+        appKey: targetAppKey.value,
         ...searchForm.value
       },
       // 自定义分页字段映射，未设置时将使用全局配置 tableConfig.ts 中的 paginationKey
@@ -342,7 +378,22 @@
    */
   const handleSearch = () => {
     // 搜索参数赋值
-    Object.assign(searchParams, searchForm.value)
+    Object.assign(searchParams, { ...searchForm.value, appKey: targetAppKey.value || '' })
+    getData()
+  }
+
+  async function loadAppOptions() {
+    const res = await fetchGetApps()
+    appList.value = res.records || []
+  }
+
+  async function handleManagedAppChange(value?: string) {
+    await setManagedAppKey(`${value || ''}`.trim())
+  }
+
+  function handleResetSearch() {
+    resetSearchParams()
+    Object.assign(searchParams, { current: 1, size: pagination.size, appKey: targetAppKey.value || '' })
     getData()
   }
 
@@ -471,6 +522,22 @@
   const handleSelectionChange = (selection: UserListItem[]): void => {
     selectedRows.value = selection
   }
+
+  onMounted(() => {
+    selectedAppKey.value = targetAppKey.value
+    loadAppOptions().catch(() => {
+      appList.value = []
+    })
+  })
+
+  watch(
+    () => targetAppKey.value,
+    (value) => {
+      selectedAppKey.value = value || ''
+      Object.assign(searchParams, { appKey: value || '' })
+      refreshData()
+    }
+  )
 </script>
 
 <style scoped lang="scss">
@@ -483,6 +550,10 @@
   .user-toolbar-tip {
     font-size: 13px;
     color: var(--el-text-color-secondary);
+  }
+
+  .user-app-select {
+    width: 240px;
   }
 </style>
 

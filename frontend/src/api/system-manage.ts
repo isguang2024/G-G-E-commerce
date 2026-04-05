@@ -251,8 +251,7 @@ function normalizeTeam(item: any): Api.SystemManage.TeamListItem {
 
 function normalizePageItem(item: any): Api.SystemManage.PageItem {
   const meta = item?.meta || {}
-  // spaceKey 继续保留给旧表格与表单做兼容显示；新模型下真正的空间暴露优先看 spaceKeys / spaceScope。
-  const spaceKey = normalizeMenuSpaceKey(item?.space_key || item?.spaceKey || meta?.spaceKey)
+  const rawVisibilityScope = `${item?.visibility_scope || item?.visibilityScope || meta?.visibilityScope || ''}`.trim()
   const rawSpaceKeys = Array.isArray(item?.space_keys || item?.spaceKeys || meta?.spaceKeys)
     ? item?.space_keys || item?.spaceKeys || meta?.spaceKeys
     : []
@@ -271,6 +270,7 @@ function normalizePageItem(item: any): Api.SystemManage.PageItem {
     routePath: item?.route_path || item?.routePath || '',
     component: item?.component || '',
     pageType: item?.page_type || item?.pageType || 'inner',
+    visibilityScope: rawVisibilityScope || undefined,
     source: item?.source || 'manual',
     moduleKey: item?.module_key || item?.moduleKey || '',
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
@@ -290,7 +290,6 @@ function normalizePageItem(item: any): Api.SystemManage.PageItem {
     isIframe: Boolean(meta?.isIframe ?? item?.is_iframe ?? item?.isIframe ?? false),
     isHideTab: Boolean(meta?.isHideTab ?? item?.is_hide_tab ?? item?.isHideTab ?? false),
     link: `${meta?.link || item?.link || ''}`.trim(),
-    spaceKey,
     spaceKeys,
     spaceScope:
       `${item?.space_scope || item?.spaceScope || meta?.spaceScope || ''}`.trim() || undefined,
@@ -299,8 +298,8 @@ function normalizePageItem(item: any): Api.SystemManage.PageItem {
     status: item?.status || 'normal',
     meta: {
       ...meta,
-      ...(spaceKey ? { spaceKey } : {}),
       ...(spaceKeys.length ? { spaceKeys } : {}),
+      ...(rawVisibilityScope ? { visibilityScope: rawVisibilityScope } : {}),
       ...(`${item?.space_scope || item?.spaceScope || meta?.spaceScope || ''}`.trim()
         ? {
             spaceScope: `${item?.space_scope || item?.spaceScope || meta?.spaceScope || ''}`.trim()
@@ -417,6 +416,7 @@ function normalizeApp(item: any): Api.SystemManage.AppItem {
     name: item?.name || '',
     description: item?.description || '',
     defaultSpaceKey: item?.default_space_key || item?.defaultSpaceKey || '',
+    spaceMode: item?.space_mode || item?.spaceMode || 'single',
     isDefault: Boolean(item?.is_default ?? item?.isDefault ?? false),
     status: item?.status || 'normal',
     hostCount: Number(item?.host_count ?? item?.hostCount ?? 0),
@@ -2050,11 +2050,11 @@ export function fetchGetRuntimePublicPageList(spaceKey?: string, appKey?: string
 }
 
 /** 获取未注册页面 */
-export function fetchGetPageUnregisteredList(appKey?: string) {
+export function fetchGetPageUnregisteredList(appKey: string) {
   return request
     .get<{ records: Api.SystemManage.PageUnregisteredItem[]; total: number }>({
       url: `${PAGE_BASE}/unregistered`,
-      params: appKey ? { app_key: appKey } : undefined
+      params: { app_key: appKey }
     })
     .then((res) => ({
       records: (res?.records || []).map(normalizePageUnregisteredItem),
@@ -2063,7 +2063,7 @@ export function fetchGetPageUnregisteredList(appKey?: string) {
 }
 
 /** 同步页面注册表 */
-export function fetchSyncPages(appKey?: string) {
+export function fetchSyncPages(appKey: string) {
   return request
     .post<
       Api.SystemManage.PageSyncResult & {
@@ -2073,7 +2073,7 @@ export function fetchSyncPages(appKey?: string) {
       }
     >({
       url: `${PAGE_BASE}/sync`,
-      params: appKey ? { app_key: appKey } : undefined
+      params: { app_key: appKey }
     })
     .then((res) => ({
       createdCount: res?.createdCount ?? res?.created_count ?? 0,
@@ -2433,21 +2433,22 @@ export function fetchGetCurrentMenuSpace(spaceKey: string | undefined, appKey: s
     }))
 }
 
-export function fetchGetMenuSpaceMode() {
+export function fetchGetMenuSpaceMode(appKey: string) {
   return request
     .get<Api.SystemManage.MenuSpaceModeResponse>({
-      url: `${SYSTEM_BASE}/menu-space-mode`
+      url: `${SYSTEM_BASE}/menu-space-mode`,
+      params: { app_key: appKey }
     })
     .then((res: any) => ({
       mode: `${res?.mode || 'single'}`.trim() || 'single'
     }))
 }
 
-export function fetchUpdateMenuSpaceMode(mode: string) {
+export function fetchUpdateMenuSpaceMode(appKey: string, mode: string) {
   return request
     .put<Api.SystemManage.MenuSpaceModeResponse>({
       url: `${SYSTEM_BASE}/menu-space-mode`,
-      data: { mode }
+      data: { app_key: appKey, mode }
     })
     .then((res: any) => ({
       mode: `${res?.mode || 'single'}`.trim() || 'single'

@@ -65,12 +65,13 @@
               <template #label>
                 <PageFieldLabel
                   label="页面类型"
-                  help="内页会继承菜单或上级页面链路；全局页独立存在，不要求挂到菜单。"
+                  help="内页必须继承菜单或上级页面；全局页与独立页都可选择当前 App 全局可见，或只对指定空间开放。"
                 />
               </template>
               <ElSelect v-model="form.pageType" style="width: 100%">
                 <ElOption label="内页" value="inner" />
                 <ElOption label="全局页" value="global" />
+                <ElOption label="独立页" value="standalone" />
               </ElSelect>
             </ElFormItem>
           </ElCol>
@@ -96,12 +97,29 @@
               <ElInput v-model="form.moduleKey" placeholder="例如 system / order" />
             </ElFormItem>
           </ElCol>
-          <ElCol :span="12">
-            <ElFormItem label="空间可见" prop="spaceKey">
+          <ElCol v-if="showVisibilityScopeField" :span="12">
+            <ElFormItem label="可见范围" prop="visibilityScope">
               <template #label>
                 <PageFieldLabel
-                  label="空间可见"
-                  help="仅控制这个页面在哪个菜单空间里可见，不改变页面类型、路径、权限或菜单挂载。"
+                  label="可见范围"
+                  help="全局页与独立页可在当前 App 下全局可见，或只在指定菜单空间开放；内页不单独配置这里。"
+                />
+              </template>
+              <ElSelect v-model="form.visibilityScope" style="width: 100%">
+                <ElOption label="当前 App 全局可见" value="app" />
+                <ElOption label="仅指定空间可见" value="spaces" />
+              </ElSelect>
+            </ElFormItem>
+          </ElCol>
+        </ElRow>
+
+        <ElRow v-if="showSpaceBindingField" :gutter="14">
+          <ElCol :span="12">
+            <ElFormItem label="开放空间" prop="spaceKeys">
+              <template #label>
+                <PageFieldLabel
+                  label="开放空间"
+                  help="仅在选中的菜单空间暴露该独立页；不再使用“全空间可见”占位值。"
                 />
               </template>
               <ElSelect
@@ -113,12 +131,7 @@
                 filterable
                 style="width: 100%"
               >
-                <ElOption
-                  v-for="item in menuSpaceOptions"
-                  :key="item.value"
-                  :label="item.label"
-                  :value="item.value"
-                />
+                <ElOption v-for="item in menuSpaceOptions" :key="item.value" :label="item.label" :value="item.value" />
               </ElSelect>
             </ElFormItem>
           </ElCol>
@@ -245,7 +258,7 @@
           </div>
         </div>
 
-        <ElRow v-if="form.pageType !== 'global'" :gutter="14">
+        <ElRow v-if="showMountSection" :gutter="14">
           <ElCol :span="24">
             <ElFormItem label="挂载方式" prop="mountMode">
               <template #label>
@@ -267,7 +280,7 @@
           </ElCol>
         </ElRow>
 
-        <ElRow v-if="form.pageType !== 'global' && mountMode === 'menu'" :gutter="14">
+        <ElRow v-if="showMountSection && mountMode === 'menu'" :gutter="14">
           <ElCol :span="24">
             <ElFormItem label="上级菜单" prop="parentMenuId">
               <template #label>
@@ -298,7 +311,7 @@
           </ElCol>
         </ElRow>
 
-        <ElRow v-if="form.pageType !== 'global' && mountMode === 'page'" :gutter="14">
+        <ElRow v-if="showMountSection && mountMode === 'page'" :gutter="14">
           <ElCol :span="24">
             <ElFormItem label="上级页面" prop="parentPageKey">
               <template #label>
@@ -325,7 +338,7 @@
           </ElCol>
         </ElRow>
 
-        <ElRow v-if="form.pageType === 'global' || mountMode !== 'page'" :gutter="14">
+        <ElRow v-if="form.pageType !== 'standalone' && (form.pageType === 'global' || mountMode !== 'page')" :gutter="14">
           <ElCol :span="24">
             <ElFormItem label="普通分组" prop="displayGroupKey">
               <template #label>
@@ -358,7 +371,7 @@
           <div>
             <div class="form-section__title">访问与行为</div>
           </div>
-        <ElButton text type="primary" v-if="form.pageType !== 'global'" @click="showAdvanced = !showAdvanced">
+        <ElButton text type="primary" v-if="showMountSection" @click="showAdvanced = !showAdvanced">
           {{ showAdvanced ? '收起高级配置' : '展开高级配置' }}
         </ElButton>
         </div>
@@ -419,7 +432,7 @@
           </ElCol>
         </ElRow>
 
-        <ElRow v-if="showAdvanced && form.pageType !== 'global'" :gutter="14" class="advanced-grid">
+        <ElRow v-if="showAdvanced && showMountSection" :gutter="14" class="advanced-grid">
           <ElCol :span="12">
             <ElFormItem label="面包屑模式" prop="breadcrumbMode">
               <template #label>
@@ -486,7 +499,6 @@
     pageData?: Partial<PageItem>
     appKey?: string
     menuSpaces?: Api.SystemManage.MenuSpaceItem[]
-    currentSpaceKey?: string
     initialParentPageKey?: string
     initialParentMenuId?: string
     initialPageType?: PageItem['pageType']
@@ -503,10 +515,9 @@
     dialogType: 'add',
     pageData: undefined,
     menuSpaces: () => [],
-    currentSpaceKey: '',
     initialParentPageKey: '',
     initialParentMenuId: '',
-    initialPageType: 'inner',
+    initialPageType: 'standalone',
     defaultData: undefined
   })
 
@@ -539,7 +550,9 @@
       return '复制页面'
     }
     const actionText = props.dialogType === 'add' ? '新增' : '编辑'
-    return form.pageType === 'global' ? `${actionText}全局页` : `${actionText}页面`
+    if (form.pageType === 'global') return `${actionText}全局页`
+    if (form.pageType === 'standalone') return `${actionText}独立页`
+    return `${actionText}页面`
   })
 
   const form = reactive({
@@ -549,9 +562,9 @@
     routeName: '',
     routePath: '',
     component: '',
-    pageType: 'inner',
+    pageType: 'standalone',
+    visibilityScope: 'app' as 'inherit' | 'app' | 'spaces',
     moduleKey: '',
-    spaceKey: '',
     spaceKeys: [] as string[],
     sortOrder: 0,
     parentMenuId: '',
@@ -582,26 +595,25 @@
 
   const menuTreeOptions = computed(() => menuOptions.value.map(toTreeSelectNode))
   const menuSpaceOptions = computed(() =>
-    [
-      { label: '全空间可见', value: '__all__' },
-      ...(props.menuSpaces || []).map((item) => ({
-        label: item.isDefault ? `${item.name}（默认）` : item.name,
-        value: item.spaceKey
-      }))
-    ]
+    (props.menuSpaces || []).map((item) => ({
+      label: item.isDefault ? `${item.name}（默认）` : item.name,
+      value: item.spaceKey
+    }))
+  )
+  const showMountSection = computed(() => form.pageType === 'inner')
+  const showVisibilityScopeField = computed(
+    () => form.pageType === 'standalone' || form.pageType === 'global'
+  )
+  const showSpaceBindingField = computed(
+    () => showVisibilityScopeField.value && form.visibilityScope === 'spaces'
   )
   const resolveSpaceBindingKeys = () => {
-    const values = form.spaceKeys
-      .map((item) => `${item || ''}`.trim())
-      .filter(Boolean)
-    if (values.includes('__all__')) {
-      return ['__all__']
-    }
-    return values
+    if (!showSpaceBindingField.value) return []
+    return form.spaceKeys.map((item) => `${item || ''}`.trim()).filter(Boolean)
   }
   const resolveSpaceScopeKey = () => {
-    const values = resolveSpaceBindingKeys().filter((item) => item !== '__all__')
-    return values[0] || form.spaceKey || ''
+    const values = resolveSpaceBindingKeys()
+    return values[0] || ''
   }
   const menuCascaderProps = {
     checkStrictly: true,
@@ -666,7 +678,11 @@
   })
 
   const configHintTitle = computed(() =>
-    form.pageType === 'global' ? '全局页配置说明' : '页面配置说明'
+    form.pageType === 'global'
+      ? '全局页配置说明'
+      : form.pageType === 'standalone'
+        ? '独立页配置说明'
+        : '页面配置说明'
   )
   const isUnregisteredCandidate = computed(
     () => props.dialogType === 'add' && Boolean(props.defaultData?.meta?.fromUnregistered)
@@ -678,14 +694,24 @@
 
   const configHintDescription = computed(() => {
     if (form.pageType === 'global') {
-      return '全局页属于独立页面，不依赖菜单归属，适合登录后直达或公开访问的页面。'
+      return '全局页属于独立页面，不依赖菜单归属，可在当前 App 下全局可见，也可以只对指定空间开放。'
     }
-    return '普通页面可以挂到菜单、挂到上级页面，也可以作为独立内页存在；系统会自动推导最终访问路径、菜单高亮与权限继承。'
+    if (form.pageType === 'standalone') {
+      return '独立页不挂菜单也不挂父页面，可在当前 App 全局开放，或只向选定菜单空间暴露。'
+    }
+    return '内页必须挂到菜单或上级页面，并自动继承其路径链、菜单高亮与默认准入。'
   })
 
   const mountOwnershipSummary = computed(() => {
     if (form.pageType === 'global') {
-      return '当前页面属于独立页面，只在页面管理中维护，不占用左侧菜单入口。'
+      return form.visibilityScope === 'spaces'
+        ? '当前页面属于全局页，仅在选定菜单空间开放，不占用左侧菜单入口。'
+        : '当前页面属于全局页，在当前 App 下全局可见，不占用左侧菜单入口。'
+    }
+    if (form.pageType === 'standalone') {
+      return form.visibilityScope === 'spaces'
+        ? '当前页面是独立页，仅在选定菜单空间开放。'
+        : '当前页面是独立页，在当前 App 下全局可见。'
     }
     if (mountMode.value === 'menu') {
       return '当前页面会挂到菜单下，菜单负责入口可见、默认高亮和默认准入。'
@@ -693,7 +719,7 @@
     if (mountMode.value === 'page') {
       return '当前页面会挂到上级页面或逻辑分组下，优先继承其路径链、菜单链和默认面包屑。'
     }
-    return '当前页面作为独立内页存在，不挂菜单，也不挂到其他页面；适合个人中心、结果页、隐式工作流页这类页面。'
+    return '当前页面会作为内页存在，必须通过菜单或父页面进入，运行时默认继承上级链路。'
   })
 
   const accessModeOptions = computed(() => {
@@ -706,12 +732,18 @@
     if (form.pageType === 'global') {
       return options.filter((item) => item.value !== 'inherit')
     }
+    if (form.pageType === 'standalone') {
+      return options.filter((item) => item.value !== 'inherit')
+    }
     return options
   })
 
   const routePathPlaceholder = computed(() => {
     if (form.pageType === 'global') {
       return '例如 /store-management'
+    }
+    if (form.pageType === 'standalone') {
+      return '例如 /workspace/profile 或 /report/detail/:id'
     }
     if (mountMode.value === 'none') {
       return '例如 /dashboard/example-page 或 /detail/:id'
@@ -779,9 +811,16 @@
   const pageExamples = computed(() => {
     if (form.pageType === 'global') {
       return [
-        '例 1：页面类型=全局页，路由路径=/workspace/overview。适合登录后可直达页面。',
-        '例 2：全局页不需要选择上级菜单或上级页面，最终路径就是你填写的完整路径。',
+        '例 1：页面类型=全局页，可见范围=当前 App 全局，路由路径=/workspace/overview。适合登录后可直达页面。',
+        '例 2：页面类型=全局页，可见范围=指定空间，勾选 ops / finance 后，仅这些空间下会暴露该页面。',
         '例 3：如果是外部系统页，可开启“是否内嵌”，外链地址填 https://example.com。'
+      ]
+    }
+    if (form.pageType === 'standalone') {
+      return [
+        '例 1：页面类型=独立页，可见范围=当前 App 全局，路由路径=/workspace/profile。适合个人设置、消息中心等公共页。',
+        '例 2：页面类型=独立页，可见范围=指定空间，勾选 ops / finance 后，仅这些空间下会暴露该页面。',
+        '例 3：独立页不挂菜单也不挂父页面，路径就是你填写的完整路径。'
       ]
     }
     if (mountMode.value === 'none') {
@@ -971,12 +1010,12 @@
   }
 
   function validateParentBinding(_: unknown, __: string, callback: (error?: Error) => void) {
-    if (form.pageType === 'global') {
+    if (form.pageType === 'global' || form.pageType === 'standalone') {
       callback()
       return
     }
     if (mountMode.value === 'none') {
-      callback()
+      callback(new Error('内页必须挂到菜单或上级页面'))
       return
     }
     if (mountMode.value === 'menu' && !normalizeMenuId(form.parentMenuId)) {
@@ -1004,8 +1043,8 @@
 
   function initForm() {
     if (props.dialogType === 'edit' && props.pageData) {
-      const spaceKeys = Array.isArray(props.pageData.meta?.spaceKeys)
-        ? props.pageData.meta?.spaceKeys
+      const spaceKeys = Array.isArray(props.pageData.spaceKeys)
+        ? props.pageData.spaceKeys
         : []
       Object.assign(form, {
         id: props.pageData.id || '',
@@ -1014,17 +1053,20 @@
         routeName: props.pageData.routeName || '',
         routePath: props.pageData.routePath || '',
         component: props.pageData.component || '',
-        pageType: props.pageData.pageType === 'global' ? 'global' : 'inner',
-        moduleKey: props.pageData.moduleKey || '',
-        spaceKey: props.pageData.spaceKey || '',
-        spaceKeys:
+        pageType:
           props.pageData.pageType === 'global'
-            ? ['__all__']
-          : spaceKeys.length > 0
-            ? spaceKeys
-            : props.pageData.spaceKey
-                ? [props.pageData.spaceKey]
-                : [],
+            ? 'global'
+            : props.pageData.pageType === 'standalone'
+              ? 'standalone'
+              : 'inner',
+        visibilityScope:
+          `${props.pageData.visibilityScope || props.pageData.spaceScope || ''}`.trim() === 'spaces'
+            ? 'spaces'
+            : props.pageData.pageType === 'inner'
+              ? 'inherit'
+              : 'app',
+        moduleKey: props.pageData.moduleKey || '',
+        spaceKeys: spaceKeys,
         sortOrder: props.pageData.sortOrder ?? 0,
         parentMenuId: props.pageData.parentMenuId || '',
         parentPageKey: props.pageData.parentPageKey || '',
@@ -1040,16 +1082,17 @@
         link: `${props.pageData.meta?.link || props.pageData.link || ''}`.trim(),
         status: props.pageData.status || 'normal'
       })
-      mountMode.value = form.parentPageKey ? 'page' : form.parentMenuId ? 'menu' : 'none'
-    if (form.pageType === 'global') {
-      form.accessMode = form.accessMode === 'inherit' ? 'jwt' : form.accessMode
-      showAdvanced.value = false
-      mountMode.value = 'none'
+      mountMode.value =
+        form.pageType === 'inner' ? (form.parentPageKey ? 'page' : form.parentMenuId ? 'menu' : 'none') : 'none'
+      if (form.pageType === 'global' || form.pageType === 'standalone') {
+        form.accessMode = form.accessMode === 'inherit' ? 'jwt' : form.accessMode
+        showAdvanced.value = false
+        mountMode.value = 'none'
+      } else {
+        showAdvanced.value = Boolean(form.activeMenuPath) || form.breadcrumbMode !== defaultBreadcrumbMode()
+      }
       return
     }
-    showAdvanced.value = Boolean(form.activeMenuPath) || form.breadcrumbMode !== defaultBreadcrumbMode()
-    return
-  }
 
     Object.assign(form, {
       id: '',
@@ -1061,25 +1104,29 @@
       pageType:
         props.defaultData?.pageType === 'global' || props.initialPageType === 'global'
           ? 'global'
-          : 'inner',
+          : props.defaultData?.pageType === 'standalone' || props.initialPageType === 'standalone'
+            ? 'standalone'
+            : 'inner',
+      visibilityScope:
+        props.defaultData?.visibilityScope === 'spaces'
+          ? 'spaces'
+          : props.defaultData?.pageType === 'global' || props.initialPageType === 'global'
+            ? 'app'
+            : props.defaultData?.pageType === 'standalone' || props.initialPageType === 'standalone'
+              ? 'app'
+              : 'inherit',
       moduleKey: props.defaultData?.moduleKey || '',
-      spaceKey: props.defaultData?.spaceKey || '',
-      spaceKeys:
-        props.defaultData?.pageType === 'global' || props.initialPageType === 'global'
-          ? ['__all__']
-          : props.defaultData?.spaceKey
-            ? [props.defaultData.spaceKey]
-            : [],
+      spaceKeys: props.defaultData?.spaceKeys || [],
       sortOrder: props.defaultData?.sortOrder ?? 0,
       parentMenuId: props.defaultData?.parentMenuId || props.initialParentMenuId || '',
       parentPageKey: props.defaultData?.parentPageKey || props.initialParentPageKey || '',
       displayGroupKey: props.defaultData?.displayGroupKey || '',
       activeMenuPath: props.defaultData?.activeMenuPath || '',
       breadcrumbMode: 'inherit_menu',
-        accessMode:
-          props.defaultData?.pageType === 'global' || props.initialPageType === 'global'
-            ? props.defaultData?.accessMode || 'jwt'
-            : props.defaultData?.accessMode || 'inherit',
+      accessMode:
+        props.defaultData?.pageType === 'global' || props.initialPageType === 'global'
+          ? props.defaultData?.accessMode || 'jwt'
+          : props.defaultData?.accessMode || 'inherit',
       permissionKey: props.defaultData?.permissionKey || '',
       keepAlive: props.defaultData?.keepAlive ?? false,
       isFullPage: props.defaultData?.isFullPage ?? false,
@@ -1087,13 +1134,21 @@
       link: `${props.defaultData?.meta?.link || props.defaultData?.link || ''}`.trim(),
       status: props.defaultData?.status || 'normal'
     })
-    mountMode.value = form.pageType === 'global' ? 'none' : form.parentPageKey ? 'page' : form.parentMenuId ? 'menu' : 'none'
+    mountMode.value =
+      form.pageType === 'inner' ? (form.parentPageKey ? 'page' : form.parentMenuId ? 'menu' : 'none') : 'none'
     form.breadcrumbMode = defaultBreadcrumbMode()
-    showAdvanced.value = Boolean(form.activeMenuPath)
+    showAdvanced.value =
+      form.pageType === 'inner'
+        ? Boolean(form.activeMenuPath)
+        : false
   }
 
   async function loadOptions() {
-    const scopeKey = resolveSpaceScopeKey()
+    const scopeKey =
+      form.pageType === 'inner' ||
+      ((form.pageType === 'standalone' || form.pageType === 'global') && form.visibilityScope === 'spaces')
+        ? resolveSpaceScopeKey()
+        : ''
     const appKey = `${props.appKey || ''}`.trim()
     const [menuRes, pageRes] = await Promise.all([
       fetchGetPageMenuOptions(scopeKey || undefined, appKey),
@@ -1161,7 +1216,10 @@
   watch(
     () => mountMode.value,
     () => {
-      if (mountMode.value === 'menu') {
+      if (form.pageType !== 'inner') {
+        form.parentMenuId = ''
+        form.parentPageKey = ''
+      } else if (mountMode.value === 'menu') {
         form.parentPageKey = ''
       } else if (mountMode.value === 'page') {
         form.parentMenuId = ''
@@ -1207,7 +1265,7 @@
   watch(
     () => form.pageType,
     (pageType) => {
-      if (pageType === 'global') {
+      if (pageType === 'global' || pageType === 'standalone') {
         mountMode.value = 'none'
         form.parentMenuId = ''
         form.parentPageKey = ''
@@ -1216,7 +1274,11 @@
         if (form.accessMode === 'inherit') {
           form.accessMode = 'jwt'
         }
+        if (pageType === 'global') {
+          form.visibilityScope = form.visibilityScope === 'spaces' ? 'spaces' : 'app'
+        }
       } else {
+        form.visibilityScope = 'inherit'
         if (!showAdvanced.value) {
           form.breadcrumbMode = defaultBreadcrumbMode()
         }
@@ -1246,8 +1308,7 @@
       form.parentPageKey = ''
       form.displayGroupKey = ''
       await loadOptions()
-    }
-    ,
+    },
     { deep: true }
   )
 
@@ -1277,7 +1338,10 @@
       const valid = await formRef.value.validate().catch(() => false)
       if (!valid) return
       submitting.value = true
-      const nextSpaceKey = `${resolveSpaceScopeKey() || ''}`.trim()
+      const visibilityScope =
+        form.pageType === 'global' || form.pageType === 'standalone'
+          ? form.visibilityScope
+          : 'inherit'
       const payload: Api.SystemManage.PageSaveParams = {
         app_key: `${props.appKey || ''}`.trim(),
         page_key: form.pageKey.trim(),
@@ -1286,23 +1350,18 @@
         route_path: form.routePath.trim(),
         component: form.isIframe ? '/outside/Iframe' : form.component.trim(),
         page_type: form.pageType,
-          source:
+        visibility_scope: visibilityScope,
+        source:
           props.dialogType === 'edit'
             ? `${props.pageData?.source || 'manual'}`
             : `${props.defaultData?.source || 'manual'}`,
-          module_key: form.moduleKey.trim(),
-          space_key: nextSpaceKey,
-          space_keys:
-            resolveSpaceBindingKeys().includes('__all__')
-              ? []
-              : resolveSpaceBindingKeys().filter((item) => item !== '__all__'),
-          sort_order: form.sortOrder,
+        module_key: form.moduleKey.trim(),
+        space_keys: visibilityScope === 'spaces' ? resolveSpaceBindingKeys() : [],
+        sort_order: form.sortOrder,
         parent_menu_id:
-          form.pageType === 'global' || mountMode.value !== 'menu'
-            ? ''
-            : normalizeMenuId(form.parentMenuId),
+          form.pageType !== 'inner' || mountMode.value !== 'menu' ? '' : normalizeMenuId(form.parentMenuId),
         parent_page_key:
-          form.pageType === 'global' || mountMode.value !== 'page' ? '' : form.parentPageKey || '',
+          form.pageType !== 'inner' || mountMode.value !== 'page' ? '' : form.parentPageKey || '',
         display_group_key: mountMode.value === 'page' ? '' : form.displayGroupKey || '',
         active_menu_path: showAdvanced.value ? form.activeMenuPath.trim() : '',
         breadcrumb_mode: showAdvanced.value
@@ -1310,7 +1369,10 @@
           : form.pageType === 'global'
             ? 'inherit_menu'
             : defaultBreadcrumbMode(),
-        access_mode: form.pageType === 'global' && form.accessMode === 'inherit' ? 'jwt' : form.accessMode,
+        access_mode:
+          (form.pageType === 'global' || form.pageType === 'standalone') && form.accessMode === 'inherit'
+            ? 'jwt'
+            : form.accessMode,
         permission_key: form.accessMode === 'permission' ? form.permissionKey.trim() : '',
         keep_alive: form.isIframe ? false : form.keepAlive,
         is_full_page: form.isFullPage,

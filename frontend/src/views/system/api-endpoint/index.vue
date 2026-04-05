@@ -1941,7 +1941,7 @@
   })
 
   watch(
-    () => route.query.app_key,
+    () => targetAppKey.value,
     async () => {
       if (!targetAppKey.value) {
         resetScopedState()

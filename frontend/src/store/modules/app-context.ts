@@ -10,6 +10,7 @@ export const useAppContextStore = defineStore(
 
     const currentRuntimeAppKey = computed(() => normalizeManagedAppKey(runtimeAppKey.value))
     const currentManagedAppKey = computed(() => normalizeManagedAppKey(managedAppKey.value))
+    const effectiveManagedAppKey = computed(() => currentManagedAppKey.value)
 
     const setRuntimeAppKey = (value?: string | null) => {
       runtimeAppKey.value = normalizeManagedAppKey(value)
@@ -31,6 +32,7 @@ export const useAppContextStore = defineStore(
     return {
       runtimeAppKey: currentRuntimeAppKey,
       managedAppKey: currentManagedAppKey,
+      effectiveManagedAppKey,
       setRuntimeAppKey,
       setManagedAppKey,
       ensureManagedAppKey,

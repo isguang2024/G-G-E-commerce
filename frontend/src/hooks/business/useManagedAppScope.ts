@@ -1,76 +1,48 @@
-import { computed, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAppContextStore } from '@/store/modules/app-context'
 import {
   normalizeManagedAppKey,
-  resolveManagedAppKey
+  resolveManagedAppKey,
+  resolveManagedAppStorageKey
 } from '@/hooks/business/managed-app-scope'
 
-export function useManagedAppScope(options?: { syncRoute?: boolean }) {
+export function useManagedAppScope(options?: { syncRoute?: boolean; storageKey?: string }) {
   const route = useRoute()
-  const router = useRouter()
   const appContextStore = useAppContextStore()
-  const syncRoute = options?.syncRoute === true
+  const storageKey = resolveManagedAppStorageKey(options?.storageKey, route.name, route.path)
+  const initialAppKey = resolveManagedAppKey(
+    typeof window !== 'undefined' ? window.localStorage.getItem(storageKey) : '',
+    appContextStore.runtimeAppKey
+  )
+  const localManagedAppKey = ref(initialAppKey)
 
-  const targetAppKey = computed(() => {
-    return resolveManagedAppKey(
-      route.query.app_key as string | undefined,
-      appContextStore.managedAppKey || appContextStore.runtimeAppKey
-    )
-  })
+  const targetAppKey = computed(() => resolveManagedAppKey(localManagedAppKey.value))
 
   const ensureManagedAppRoute = async () => {
-    const routeAppKey = normalizeManagedAppKey(route.query.app_key as string | undefined)
-    if (routeAppKey) {
-      appContextStore.setManagedAppKey(routeAppKey)
-      return routeAppKey
-    }
-    const fallbackAppKey = resolveManagedAppKey(
-      '',
-      appContextStore.managedAppKey || appContextStore.runtimeAppKey
-    )
+    const fallbackAppKey = resolveManagedAppKey(localManagedAppKey.value, appContextStore.runtimeAppKey)
     if (!fallbackAppKey) {
       return ''
     }
-    appContextStore.setManagedAppKey(fallbackAppKey)
+    localManagedAppKey.value = fallbackAppKey
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(storageKey, fallbackAppKey)
+    }
     return fallbackAppKey
   }
 
   const setManagedAppKey = async (value?: string | null) => {
     const nextAppKey = normalizeManagedAppKey(value)
-    appContextStore.setManagedAppKey(nextAppKey)
-    if (!syncRoute || !nextAppKey || route.query.app_key === nextAppKey) {
-      return nextAppKey
+    localManagedAppKey.value = nextAppKey
+    if (typeof window !== 'undefined') {
+      if (nextAppKey) {
+        window.localStorage.setItem(storageKey, nextAppKey)
+      } else {
+        window.localStorage.removeItem(storageKey)
+      }
     }
-    await router.replace({
-      path: route.path,
-      query: {
-        ...route.query,
-        app_key: nextAppKey
-      },
-      hash: route.hash
-    })
     return nextAppKey
   }
-
-  watch(
-    () => `${route.query.app_key || ''}`,
-    (value) => {
-      const normalized = normalizeManagedAppKey(value)
-      if (normalized) {
-        appContextStore.setManagedAppKey(normalized)
-        return
-      }
-      const fallbackAppKey = resolveManagedAppKey(
-        '',
-        appContextStore.managedAppKey || appContextStore.runtimeAppKey
-      )
-      if (fallbackAppKey) {
-        appContextStore.setManagedAppKey(fallbackAppKey)
-      }
-    },
-    { immediate: true }
-  )
 
   return {
     targetAppKey,

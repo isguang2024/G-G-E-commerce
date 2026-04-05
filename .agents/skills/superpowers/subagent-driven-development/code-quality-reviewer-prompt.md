@@ -3,8 +3,9 @@
 Use this template when dispatching a code quality reviewer subagent.
 
 **Purpose:** Verify implementation is well-built (clean, tested, maintainable)
+**Codex default:** Use `gpt-5.4` with `medium` reasoning for routine review; raise to `high` only for broad architecture, security, or performance-sensitive changes.
 
-**Only dispatch after spec compliance review passes.**
+**If spec compliance review is part of the chosen review path, dispatch this only after spec compliance review passes.**
 
 ```
 Task tool (superpowers:code-reviewer):

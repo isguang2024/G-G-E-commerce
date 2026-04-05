@@ -20,6 +20,7 @@ type App struct {
 	AppKey          string         `gorm:"type:varchar(100);not null;uniqueIndex" json:"app_key"`
 	Name            string         `gorm:"type:varchar(150);not null" json:"name"`
 	Description     string         `gorm:"type:text;not null;default:''" json:"description"`
+	SpaceMode       string         `gorm:"type:varchar(20);not null;default:'single'" json:"space_mode"`
 	DefaultSpaceKey string         `gorm:"type:varchar(100);not null;default:'default'" json:"default_space_key"`
 	AuthMode        string         `gorm:"type:varchar(30);not null;default:'inherit_host'" json:"auth_mode"`
 	Status          string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`

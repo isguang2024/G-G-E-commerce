@@ -3,6 +3,7 @@
 Use this template when dispatching a spec compliance reviewer subagent.
 
 **Purpose:** Verify implementer built what was requested (nothing more, nothing less)
+**Codex default:** Start with `gpt-5.4-mini` and `low` reasoning for narrow task checks; use `gpt-5.4` and `medium` only when the task spans many files or the requirements are ambiguous.
 
 ```
 Task tool (general-purpose):

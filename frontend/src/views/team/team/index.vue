@@ -6,11 +6,26 @@
         v-model="searchForm"
         :showExpand="true"
         @search="handleSearch"
-        @reset="resetSearchParams"
+        @reset="handleResetSearch"
       />
 
       <AdminWorkspaceHero :title="'团队管理'" :description="'统一管理团队边界、管理员与授权入口。'" :metrics="heroMetrics">
         <div class="team-hero-actions">
+          <ElSelect
+            v-model="selectedAppKey"
+            clearable
+            filterable
+            placeholder="选择 App"
+            class="team-app-select"
+            @change="handleManagedAppChange"
+          >
+            <ElOption
+              v-for="item in appOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </ElSelect>
           <ElButton v-action="'tenant.manage'" type="primary" @click="showDialog('add')" v-ripple>
             新增团队
           </ElButton>
@@ -81,10 +96,12 @@
 </template>
 
 <script setup lang="ts">
+  import { onMounted, watch } from 'vue'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { useAuth } from '@/hooks/core/useAuth'
   import { useTable } from '@/hooks/core/useTable'
   import { fetchGetTeamList, fetchDeleteTeam, fetchCreateTeam, fetchUpdateTeam } from '@/api/team'
+  import { fetchGetApps } from '@/api/system-manage'
   import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
   import TeamSearch from './modules/team-search.vue'
   import TeamDialog from './modules/team-dialog.vue'
@@ -108,9 +125,11 @@
 
   type TeamListItem = Api.SystemManage.TeamListItem
   const { hasAction } = useAuth()
-  const { targetAppKey } = useManagedAppScope()
+  const { targetAppKey, setManagedAppKey } = useManagedAppScope()
 
   const dialogType = ref<DialogType>('add')
+  const appList = ref<Api.SystemManage.AppItem[]>([])
+  const selectedAppKey = ref('')
   const dialogVisible = ref(false)
   const currentTeamData = ref<Partial<TeamListItem>>({})
   const showSearchBar = ref(false)
@@ -153,6 +172,12 @@
       )
     }
   ])
+  const appOptions = computed(() =>
+    appList.value.map((item) => ({
+      label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
+      value: item.appKey
+    }))
+  )
 
   const {
     columns,
@@ -168,10 +193,21 @@
     refreshData
   } = useTable({
     core: {
-      apiFn: fetchGetTeamList,
+      apiFn: async (params) => {
+        if (!targetAppKey.value) {
+          return {
+            records: [],
+            total: 0,
+            current: Number((params as any)?.current || 1),
+            size: Number((params as any)?.size || 20)
+          }
+        }
+        return fetchGetTeamList(params as Api.SystemManage.TeamSearchParams)
+      },
       apiParams: {
         current: 1,
         size: 20,
+        appKey: targetAppKey.value,
         ...searchForm.value
       },
       columnsFactory: () => [
@@ -279,7 +315,22 @@
   })
 
   const handleSearch = (params: Record<string, any>) => {
-    Object.assign(searchParams, params)
+    Object.assign(searchParams, { ...params, appKey: targetAppKey.value || '' })
+    getData()
+  }
+
+  async function loadAppOptions() {
+    const res = await fetchGetApps()
+    appList.value = res.records || []
+  }
+
+  async function handleManagedAppChange(value?: string) {
+    await setManagedAppKey(`${value || ''}`.trim())
+  }
+
+  const handleResetSearch = () => {
+    resetSearchParams()
+    Object.assign(searchParams, { current: 1, size: pagination.size, appKey: targetAppKey.value || '' })
     getData()
   }
 
@@ -373,6 +424,22 @@
       ElMessage.error(e?.message || (isAdd ? '添加失败' : '更新失败'))
     }
   }
+
+  onMounted(() => {
+    selectedAppKey.value = targetAppKey.value
+    loadAppOptions().catch(() => {
+      appList.value = []
+    })
+  })
+
+  watch(
+    () => targetAppKey.value,
+    (value) => {
+      selectedAppKey.value = value || ''
+      Object.assign(searchParams, { appKey: value || '' })
+      refreshData()
+    }
+  )
 </script>
 
 <style lang="scss" scoped>
@@ -386,6 +453,10 @@
     color: var(--art-text-muted);
     font-size: 13px;
     line-height: 1.6;
+  }
+
+  .team-app-select {
+    width: 240px;
   }
 </style>
 

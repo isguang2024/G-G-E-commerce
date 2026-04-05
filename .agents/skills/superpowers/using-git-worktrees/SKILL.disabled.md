@@ -1,6 +1,6 @@
 ---
 name: using-git-worktrees
-description: Use when starting feature work that needs isolation from current workspace or before executing implementation plans - creates isolated git worktrees with smart directory selection and safety verification
+description: Use in this repository only when work needs isolation from the current workspace: long-lived branch work, dirty-worktree conflict avoidance, explicit PR flow, or isolated verification needs
 ---
 
 # Using Git Worktrees
@@ -12,6 +12,19 @@ Git worktrees create isolated workspaces sharing the same repository, allowing w
 **Core principle:** Systematic directory selection + safety verification = reliable isolation.
 
 **Announce at start:** "I'm using the using-git-worktrees skill to set up an isolated workspace."
+
+## When to Use
+
+Use this skill when:
+- The task will live on an independent branch for a while
+- The current workspace is dirty and likely to conflict with the new work
+- The user explicitly wants isolated implementation or PR preparation
+- Parallel efforts would interfere with each other in one working tree
+
+Do **not** use this skill by default for:
+- Small local fixes
+- Short tasks that can safely run in the current workspace
+- Routine single-thread implementation with no branch-isolation need
 
 ## Directory Selection Process
 
@@ -119,19 +132,20 @@ if [ -f go.mod ]; then go mod download; fi
 
 ### 4. Verify Clean Baseline
 
-Run tests to ensure worktree starts clean:
+Run the best available clean baseline verification for this repository:
 
 ```bash
 # Examples - use project-appropriate command
-npm test
-cargo test
-pytest
+pnpm --dir frontend build
+pnpm --dir frontend lint
 go test ./...
 ```
 
-**If tests fail:** Report failures, ask whether to proceed or investigate.
+If the repository area you're changing has a more appropriate baseline check, use that instead.
 
-**If tests pass:** Report ready.
+**If baseline verification fails:** Report failures, ask whether to proceed or investigate.
+
+**If baseline verification passes:** Report ready.
 
 ### 5. Report Location
 
@@ -150,7 +164,7 @@ Ready to implement <feature-name>
 | Both exist | Use `.worktrees/` |
 | Neither exists | Check CLAUDE.md → Ask user |
 | Directory not ignored | Add to .gitignore + commit |
-| Tests fail during baseline | Report failures + ask |
+| Baseline verification fails | Report failures + ask |
 | No package.json/Cargo.toml | Skip dependency install |
 
 ## Common Mistakes
@@ -165,7 +179,7 @@ Ready to implement <feature-name>
 - **Problem:** Creates inconsistency, violates project conventions
 - **Fix:** Follow priority: existing > CLAUDE.md > ask
 
-### Proceeding with failing tests
+### Proceeding with failing baseline verification
 
 - **Problem:** Can't distinguish new bugs from pre-existing issues
 - **Fix:** Report failures, get explicit permission to proceed
@@ -209,10 +223,10 @@ Ready to implement auth feature
 ## Integration
 
 **Called by:**
-- **brainstorming** (Phase 4) - REQUIRED when design is approved and implementation follows
-- **subagent-driven-development** - REQUIRED before executing any tasks
-- **executing-plans** - REQUIRED before executing any tasks
-- Any skill needing isolated workspace
+- Large planned implementation that benefits from branch isolation
+- `subagent-driven-development` when the current workspace is likely to conflict
+- `executing-plans` when the user explicitly wants isolated execution
+- Any task that clearly benefits from separate workspace state
 
 **Pairs with:**
-- **finishing-a-development-branch** - REQUIRED for cleanup after work complete
+- **finishing-a-development-branch** - Useful for cleanup after isolated branch work

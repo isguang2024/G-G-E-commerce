@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 
+	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
 	usermodel "github.com/gg-ecommerce/backend/internal/modules/system/user"
 )
 
@@ -144,6 +145,7 @@ func EnsureDefaultFeaturePackages(db *gorm.DB) error {
 	for _, seed := range DefaultFeaturePackages() {
 		item := usermodel.FeaturePackage{
 			ID:          seed.ID,
+			AppKey:      systemmodels.DefaultAppKey,
 			PackageKey:  seed.PackageKey,
 			PackageType: seed.PackageType,
 			Name:        seed.Name,
@@ -155,7 +157,7 @@ func EnsureDefaultFeaturePackages(db *gorm.DB) error {
 		}
 
 		var existing usermodel.FeaturePackage
-		result := db.Where("package_key = ?", item.PackageKey).First(&existing)
+		result := db.Where("app_key = ? AND package_key = ?", item.AppKey, item.PackageKey).First(&existing)
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				if err := db.Create(&item).Error; err != nil {
@@ -192,8 +194,8 @@ func EnsureDefaultFeaturePackages(db *gorm.DB) error {
 
 		menuIDs := make([]uuid.UUID, 0, len(seed.MenuNames))
 		for _, menuName := range seed.MenuNames {
-			var menu usermodel.Menu
-			if err := db.Where("name = ?", menuName).First(&menu).Error; err != nil {
+			var menu systemmodels.MenuDefinition
+			if err := db.Where("app_key = ? AND name = ?", item.AppKey, menuName).First(&menu).Error; err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
 					continue
 				}

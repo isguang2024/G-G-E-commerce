@@ -5,7 +5,7 @@
         v-show="showSearchBar"
         v-model="searchForm"
         @search="handleSearch"
-        @reset="resetSearchParams"
+        @reset="handleResetSearch"
       />
 
       <AdminWorkspaceHero
@@ -14,6 +14,21 @@
         :metrics="heroMetrics"
       >
         <div class="role-hero-actions">
+          <ElSelect
+            v-model="selectedAppKey"
+            clearable
+            filterable
+            placeholder="选择 App"
+            class="role-app-select"
+            @change="handleManagedAppChange"
+          >
+            <ElOption
+              v-for="item in appOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </ElSelect>
           <ElButton v-action="'system.role.manage'" type="primary" @click="showDialog('add')" v-ripple>
             新增角色
           </ElButton>
@@ -70,11 +85,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, h, ref } from 'vue'
+import { computed, h, onMounted, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox, ElTag } from 'element-plus'
 import { useAuth } from '@/hooks/core/useAuth'
 import { useTable } from '@/hooks/core/useTable'
-import { fetchDeleteRole, fetchGetRoleList } from '@/api/system-manage'
+import { fetchDeleteRole, fetchGetApps, fetchGetRoleList } from '@/api/system-manage'
 import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
 import { refreshUserMenus } from '@/router'
 import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
@@ -90,9 +105,11 @@ defineOptions({ name: 'Role' })
 type RoleListItem = Api.SystemManage.RoleListItem
 
 const { hasAction } = useAuth()
-const { targetAppKey } = useManagedAppScope()
+const { targetAppKey, setManagedAppKey } = useManagedAppScope()
 
 const showSearchBar = ref(false)
+const appList = ref<Api.SystemManage.AppItem[]>([])
+const selectedAppKey = ref('')
 const dialogVisible = ref(false)
 const permissionDialog = ref(false)
 const packageDialog = ref(false)
@@ -104,6 +121,12 @@ const heroMetrics = computed(() => [
   { label: '当前页', value: data.value.length || 0 },
   { label: '正常', value: data.value.filter((item) => item.status === 'normal').length || 0 }
 ])
+const appOptions = computed(() =>
+  appList.value.map((item) => ({
+    label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
+    value: item.appKey
+  }))
+)
 
 const searchForm = ref({
   roleName: undefined,
@@ -112,6 +135,21 @@ const searchForm = ref({
   enabled: undefined,
   daterange: undefined
 })
+
+const fetchRoleListByApp: typeof fetchGetRoleList = async (params) => {
+  if (!targetAppKey.value) {
+    return {
+      records: [],
+      total: 0,
+      current: Number((params as any)?.current || 1),
+      size: Number((params as any)?.size || 20)
+    }
+  }
+  return fetchGetRoleList({
+    ...(params || {}),
+    appKey: targetAppKey.value
+  } as Api.SystemManage.RoleSearchParams)
+}
 
 const {
   columns,
@@ -125,9 +163,9 @@ const {
   handleSizeChange,
   handleCurrentChange,
   refreshData
-} = useTable({
+  } = useTable({
   core: {
-    apiFn: fetchGetRoleList,
+    apiFn: fetchRoleListByApp,
     apiParams: {
       current: 1,
       size: 20
@@ -248,6 +286,21 @@ function handleSearch() {
   getData()
 }
 
+async function loadAppOptions() {
+  const res = await fetchGetApps()
+  appList.value = res.records || []
+}
+
+async function handleManagedAppChange(value?: string) {
+  await setManagedAppKey(`${value || ''}`.trim())
+}
+
+function handleResetSearch() {
+  resetSearchParams()
+  Object.assign(searchParams, { current: 1, size: pagination.size })
+  getData()
+}
+
 function handleActionClick(item: ButtonMoreItem, row: RoleListItem) {
   if (item.key === 'packages') {
     showPackageDialog(row)
@@ -291,6 +344,21 @@ function deleteRole(row: RoleListItem) {
       }
     })
 }
+
+onMounted(() => {
+  selectedAppKey.value = targetAppKey.value
+  loadAppOptions().catch(() => {
+    appList.value = []
+  })
+})
+
+watch(
+  () => targetAppKey.value,
+    (value) => {
+      selectedAppKey.value = value || ''
+      refreshData()
+    }
+  )
 </script>
 
 <style scoped lang="scss">
@@ -303,6 +371,10 @@ function deleteRole(row: RoleListItem) {
   .role-toolbar-tip {
     font-size: 13px;
     color: var(--art-text-muted);
+  }
+
+  .role-app-select {
+    width: 240px;
   }
 </style>
 

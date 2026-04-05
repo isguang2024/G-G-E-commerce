@@ -7,7 +7,6 @@
     :page-data="pageData"
     :app-key="appKey"
     :menu-spaces="menuSpaces"
-    :current-space-key="currentSpaceKey"
     :initial-parent-page-key="initialParentPageKey"
     :initial-parent-menu-id="initialParentMenuId"
     :initial-page-type="initialPageType"
@@ -23,7 +22,6 @@
     :page-data="pageData"
     :app-key="appKey"
     :menu-spaces="menuSpaces"
-    :current-space-key="currentSpaceKey"
     :initial-parent-page-key="initialParentPageKey"
     :initial-parent-menu-id="initialParentMenuId"
     :initial-page-type="initialPageType"
@@ -39,7 +37,6 @@
     :page-data="pageData"
     :app-key="appKey"
     :menu-spaces="menuSpaces"
-    :current-space-key="currentSpaceKey"
     :initial-parent-page-key="initialParentPageKey"
     :initial-parent-menu-id="initialParentMenuId"
     :initial-page-type="initialPageType"
@@ -63,8 +60,6 @@
     pageData?: Partial<PageItem>
     appKey?: string
     menuSpaces?: Api.SystemManage.MenuSpaceItem[]
-    // 当前仅作为独立页绑定辅助视角，用于加载菜单/父页候选，不作为页面主归属语义。
-    currentSpaceKey?: string
     initialParentPageKey?: string
     initialParentMenuId?: string
     initialPageType?: PageItem['pageType']
@@ -81,7 +76,6 @@
     dialogType: 'add',
     pageData: undefined,
     menuSpaces: () => [],
-    currentSpaceKey: '',
     initialParentPageKey: '',
     initialParentMenuId: '',
     initialPageType: 'inner',

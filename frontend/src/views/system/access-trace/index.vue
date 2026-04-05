@@ -9,6 +9,40 @@
       </template>
 
       <ElForm class="trace-form">
+        <ElFormItem label="App">
+          <ElSelect
+            v-model="selectedAppKey"
+            filterable
+            clearable
+            placeholder="选择 App"
+            class="trace-field"
+            @change="handleManagedAppChange"
+          >
+            <ElOption
+              v-for="item in appOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="空间(可选)">
+          <ElSelect
+            v-model="query.spaceKey"
+            filterable
+            clearable
+            placeholder="全部空间"
+            class="trace-field"
+          >
+            <ElOption label="全部空间" value="" />
+            <ElOption
+              v-for="item in spaceOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </ElSelect>
+        </ElFormItem>
         <ElFormItem label="用户">
           <ElSelect
             v-model="query.userId"
@@ -137,22 +171,34 @@
 </template>
 
 <script setup lang="ts">
+  import { computed, onMounted, reactive, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import { useRoute } from 'vue-router'
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
   import { fetchGetTeamMembers, fetchGetTeamRoles } from '@/api/team'
-  import { fetchGetPageAccessTrace, fetchGetPageList, fetchGetRoleOptions, fetchGetTenantOptions, fetchGetUserList } from '@/api/system-manage'
+  import {
+    fetchGetApps,
+    fetchGetMenuSpaces,
+    fetchGetPageAccessTrace,
+    fetchGetPageList,
+    fetchGetRoleOptions,
+    fetchGetTenantOptions,
+    fetchGetUserList
+  } from '@/api/system-manage'
 
   defineOptions({ name: 'SystemAccessTrace' })
 
   const route = useRoute()
   const loading = ref(false)
   const result = ref<Api.SystemManage.PageAccessTraceResult | null>(null)
+  const appList = ref<Api.SystemManage.AppItem[]>([])
   const userOptions = ref<Api.SystemManage.UserListItem[]>([])
   const pageOptions = ref<Api.SystemManage.PageItem[]>([])
+  const menuSpaces = ref<Api.SystemManage.MenuSpaceItem[]>([])
   const teamOptions = ref<Api.SystemManage.TeamListItem[]>([])
   const roleOptions = ref<Array<{ label: string; value: string; source: 'platform' | 'team' }>>([])
+  const selectedAppKey = ref('')
   const rolePagination = reactive({
     current: 1,
     size: 10
@@ -168,7 +214,19 @@
       ? roleOptions.value.filter((item) => item.source === 'team')
       : roleOptions.value.filter((item) => item.source === 'platform')
   )
-  const { targetAppKey } = useManagedAppScope()
+  const { targetAppKey, setManagedAppKey } = useManagedAppScope()
+  const appOptions = computed(() =>
+    appList.value.map((item) => ({
+      label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
+      value: item.appKey
+    }))
+  )
+  const spaceOptions = computed(() =>
+    menuSpaces.value.map((item) => ({
+      label: item.isDefault ? `${item.name}（默认）` : item.name,
+      value: item.spaceKey
+    }))
+  )
   const roleRows = computed(() => result.value?.roles || [])
   const pageRows = computed(() => result.value?.pages || [])
   const pagedRoles = computed(() => {
@@ -183,8 +241,14 @@
   const query = reactive<Api.SystemManage.PageAccessTraceParams>({
     userId: '',
     tenantId: '',
-    pageKey: ''
+    pageKey: '',
+    spaceKey: ''
   })
+
+  async function loadAppOptions() {
+    const res = await fetchGetApps()
+    appList.value = res.records || []
+  }
 
   function formatUserLabel(user: Api.SystemManage.UserListItem) {
     const userName = `${user.userName || ''}`.trim()
@@ -196,6 +260,10 @@
   }
 
   async function loadUserOptions() {
+    if (!targetAppKey.value) {
+      userOptions.value = []
+      return
+    }
     const useTeamMembers = Boolean(query.tenantId) && (onlyTeamUsers.value || Boolean(roleCodeFilter.value))
     if (useTeamMembers && query.tenantId) {
       const teamMembers = await fetchGetTeamMembers(query.tenantId, {
@@ -234,6 +302,10 @@
   }
 
   async function loadRoleOptions() {
+    if (!targetAppKey.value) {
+      roleOptions.value = []
+      return
+    }
     if (query.tenantId) {
       const teamRoles = await fetchGetTeamRoles(query.tenantId)
       roleOptions.value = (teamRoles || [])
@@ -260,17 +332,43 @@
   }
 
   async function loadOptions() {
-    const [pages, teams] = await Promise.all([
+    if (!targetAppKey.value) {
+      result.value = null
+      userOptions.value = []
+      pageOptions.value = []
+      menuSpaces.value = []
+      teamOptions.value = []
+      roleOptions.value = []
+      return
+    }
+    const [pages, teams, spaces] = await Promise.all([
       fetchGetPageList({ current: 1, size: 500, appKey: targetAppKey.value }),
-      fetchGetTenantOptions({ current: 1, size: 200 })
+      fetchGetTenantOptions({ current: 1, size: 200 }),
+      fetchGetMenuSpaces(targetAppKey.value)
     ])
     pageOptions.value = pages.records || []
     teamOptions.value = teams.records || []
+    menuSpaces.value = spaces.records || []
     await loadRoleOptions()
     await loadUserOptions()
   }
 
+  async function handleManagedAppChange(value?: string) {
+    await setManagedAppKey(`${value || ''}`.trim())
+    query.pageKey = ''
+    query.spaceKey = ''
+    query.userId = ''
+    query.tenantId = ''
+    roleCodeFilter.value = ''
+    onlyTeamUsers.value = false
+    result.value = null
+  }
+
   async function handleQuery() {
+    if (!targetAppKey.value) {
+      ElMessage.warning('请先选择 App')
+      return
+    }
     if (!query.userId) {
       ElMessage.warning('请先选择用户')
       return
@@ -293,14 +391,19 @@
   }
 
   onMounted(() => {
+    selectedAppKey.value = targetAppKey.value
+    loadAppOptions().catch(() => {
+      appList.value = []
+    })
     loadOptions().catch(() => {
       ElMessage.error('初始化测试数据失败')
     })
   })
 
   watch(
-    () => route.query.app_key,
+    () => targetAppKey.value,
     async () => {
+      selectedAppKey.value = targetAppKey.value || ''
       result.value = null
       await loadOptions()
     }

@@ -162,6 +162,9 @@ func AutoMigrate() error {
 		&models.MenuBackup{},
 		&models.SystemSetting{},
 		&models.MessageTemplate{},
+		&models.MessageSender{},
+		&models.MessageRecipientGroup{},
+		&models.MessageRecipientGroupTarget{},
 		&models.Message{},
 		&models.MessageDelivery{},
 		&models.RiskOperationAudit{},
@@ -178,6 +181,9 @@ func AutoMigrate() error {
 	}
 	if err := ensureAPIEndpointAppColumns(DB); err != nil {
 		return fmt.Errorf("failed to finalize api endpoint app columns: %w", err)
+	}
+	if err := ensureUIPageLegacySpaceKeyCompatibility(DB); err != nil {
+		return fmt.Errorf("failed to finalize ui_pages legacy space_key compatibility: %w", err)
 	}
 	// 创建唯一索引（AutoMigrate 不会自动创建唯一索引）
 	if err := createUniqueIndexes(); err != nil {
@@ -710,6 +716,7 @@ func ensureAppBootstrap() error {
 		AppKey:          models.DefaultAppKey,
 		Name:            models.DefaultAppName,
 		Description:     "当前内置管理员后台应用",
+		SpaceMode:       "single",
 		DefaultSpaceKey: models.DefaultMenuSpaceKey,
 		AuthMode:        "inherit_host",
 		Status:          "normal",
@@ -724,6 +731,7 @@ func ensureAppBootstrap() error {
 		if updateErr := DB.Model(&existing).Updates(map[string]interface{}{
 			"name":              defaultApp.Name,
 			"description":       defaultApp.Description,
+			"space_mode":        defaultApp.SpaceMode,
 			"default_space_key": defaultApp.DefaultSpaceKey,
 			"auth_mode":         defaultApp.AuthMode,
 			"status":            "normal",
@@ -1002,6 +1010,10 @@ func backfillMenuDefinitionsAndPlacements() error {
 	return nil
 }
 
+func RefreshNavigationDefinitionsFromLegacyMenus() error {
+	return backfillMenuDefinitionsAndPlacements()
+}
+
 func ensureAppScopedSnapshotPrimaryKeys() error {
 	if DB == nil {
 		return fmt.Errorf("database not initialized")
@@ -1070,6 +1082,36 @@ func ensureAPIEndpointAppColumns(db *gorm.DB) error {
 		`UPDATE api_endpoints SET app_key = '` + models.DefaultAppKey + `' WHERE COALESCE(TRIM(app_key), '') = ''`,
 		`UPDATE api_endpoints SET app_scope = '` + models.AppScopeShared + `' WHERE COALESCE(TRIM(app_scope), '') = '' AND (path LIKE '/api/v1/auth/%' OR path = '/api/v1/pages/runtime/public' OR path LIKE '/open/v1/%' OR path = '/health')`,
 		`UPDATE api_endpoints SET app_scope = '` + models.AppScopeApp + `' WHERE COALESCE(TRIM(app_scope), '') = ''`,
+	}
+	for _, statement := range statements {
+		if err := db.Exec(statement).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func ensureUIPageLegacySpaceKeyCompatibility(db *gorm.DB) error {
+	if db == nil {
+		return fmt.Errorf("database not initialized")
+	}
+	statements := []string{
+		`ALTER TABLE ui_pages ALTER COLUMN space_key SET DEFAULT ''`,
+		`UPDATE ui_pages
+		 SET space_key = ''
+		 WHERE COALESCE(TRIM(space_key), '') <> ''
+		   AND (
+		     COALESCE(NULLIF(TRIM(visibility_scope), ''), 'app') IN ('app', 'inherit')
+		     OR (
+		       COALESCE(NULLIF(TRIM(visibility_scope), ''), 'app') = 'spaces'
+		       AND EXISTS (
+		         SELECT 1
+		         FROM page_space_bindings bindings
+		         WHERE bindings.page_id = ui_pages.id
+		           AND bindings.deleted_at IS NULL
+		       )
+		     )
+		   )`,
 	}
 	for _, statement := range statements {
 		if err := db.Exec(statement).Error; err != nil {

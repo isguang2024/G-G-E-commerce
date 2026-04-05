@@ -29,3 +29,62 @@ Never parallelize a move operation that reads and deletes the same directory; co
 
 ---
 
+## [ERR-20260406-001] rg-access-denied-backend-audit
+
+**Logged**: 2026-04-06T00:00:00+08:00
+**Priority**: medium
+**Status**: pending
+**Area**: docs
+
+### Summary
+`rg.exe` again failed with `Access is denied` during backend audit, so source scanning had to fall back to PowerShell primitives.
+
+### Error
+```text
+Program 'rg.exe' failed to run: Access is denied
+```
+
+### Context
+- Operation attempted: recursive source search under `backend/` for `menus`, `ui_pages.space_key`, `visibility_scope`, and page-space binding references
+- Impact: default fast search path is unreliable in this Windows workspace session
+- Workaround used: `Get-ChildItem -Recurse -File` plus `Select-String -Encoding UTF8`, with later narrowing to source extensions only
+
+### Suggested Fix
+Treat `rg.exe` as optional in this environment and prefer a documented PowerShell fallback for Windows audits unless executable permissions are fixed.
+
+### Metadata
+- Reproducible: yes
+- Related Files: backend
+- See Also: ERR-20260405-002
+
+---
+
+## [ERR-20260405-002] rg-access-denied
+
+**Logged**: 2026-04-05T00:00:00+08:00
+**Priority**: medium
+**Status**: pending
+**Area**: docs
+
+### Summary
+`rg.exe` is present in the environment but cannot be executed because PowerShell returns `Access is denied`.
+
+### Error
+```text
+Program 'rg.exe' failed to run: Access is denied
+```
+
+### Context
+- Operation attempted: recursive code search under `frontend/src`
+- Impact: normal `rg`-based search workflow is unavailable in this workspace session
+- Workaround used: PowerShell `Get-ChildItem -Recurse` plus `Select-String -Encoding UTF8`
+- Observed again on 2026-04-06 while verifying `docs/superpowers-integration.md` and `docs/change-log.md`
+
+### Suggested Fix
+If this environment is expected to support `rg`, verify execution policy or binary permissions; otherwise prefer documenting PowerShell search as the fallback path for Windows sessions.
+
+### Metadata
+- Reproducible: yes
+- Related Files: frontend/src
+
+---

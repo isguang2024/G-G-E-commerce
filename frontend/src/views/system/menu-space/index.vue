@@ -6,6 +6,21 @@
       :metrics="summaryMetrics"
     >
       <div class="menu-space-hero-actions">
+        <ElSelect
+          v-model="selectedAppKey"
+          clearable
+          filterable
+          placeholder="选择 App"
+          class="menu-space-app-select"
+          @change="handleManagedAppChange"
+        >
+          <ElOption
+            v-for="item in appOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </ElSelect>
         <ElSelect v-model="spaceMode" class="menu-space-mode-select">
           <ElOption label="单空间模式" value="single" />
           <ElOption label="多空间模式" value="multi" />
@@ -389,6 +404,7 @@
   import MenuBackupListDialog from '../menu/modules/menu-backup-list-dialog.vue'
   import {
     fetchCreateMenuBackup,
+    fetchGetApps,
     fetchDeleteMenuBackup,
     fetchGetCurrentMenuSpace,
     fetchGetMenuBackupList,
@@ -408,11 +424,13 @@
   defineOptions({ name: 'MenuSpaceManage' })
   const route = useRoute()
   const router = useRouter()
-  const { targetAppKey } = useManagedAppScope()
-  const managedAppMissingText = '缺少 app 上下文，请先从应用管理选择 App'
+  const { targetAppKey, setManagedAppKey } = useManagedAppScope()
+  const managedAppMissingText = '请选择当前要管理的 App'
 
   const loading = ref(false)
   const loadError = ref('')
+  const appList = ref<Api.SystemManage.AppItem[]>([])
+  const selectedAppKey = ref('')
   const savingSpace = ref(false)
   const savingHost = ref(false)
   const savingSpaceMode = ref(false)
@@ -520,6 +538,13 @@
     { label: '当前解析', value: currentSpace.value?.spaceKey || '未选择' }
   ])
 
+  const appOptions = computed(() =>
+    appList.value.map((item) => ({
+      label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
+      value: item.appKey
+    }))
+  )
+
   const spaceOptions = computed(() =>
     spaces.value.map((item) => ({
       label: item.isDefault ? `${item.name}（默认）` : item.name,
@@ -623,7 +648,7 @@
         fetchGetMenuSpaces(targetAppKey.value),
         fetchGetMenuSpaceHostBindings(targetAppKey.value),
         fetchGetCurrentMenuSpace(undefined, targetAppKey.value).catch(() => undefined),
-        fetchGetMenuSpaceMode().catch(() => ({ mode: 'single' }))
+        fetchGetMenuSpaceMode(targetAppKey.value).catch(() => ({ mode: 'single' }))
       ])
       spaces.value = spaceRes.records || []
       hostBindings.value = hostRes.records || []
@@ -654,7 +679,7 @@
     }
     savingSpaceMode.value = true
     try {
-      const res = await fetchUpdateMenuSpaceMode(spaceMode.value)
+      const res = await fetchUpdateMenuSpaceMode(targetAppKey.value, spaceMode.value)
       spaceMode.value = `${res?.mode || 'single'}`.trim() === 'multi' ? 'multi' : 'single'
       ElMessage.success(`菜单空间模式已更新为${spaceModeLabel.value}`)
       await loadData()
@@ -899,6 +924,16 @@
     }
   }
 
+  async function loadAppOptions() {
+    const res = await fetchGetApps()
+    appList.value = res.records || []
+  }
+
+  async function handleManagedAppChange(value?: string) {
+    await setManagedAppKey(`${value || ''}`.trim())
+    currentSpaceKey.value = ''
+  }
+
   function openSpaceBackupDialog() {
     if (!currentSpace.value?.spaceKey) {
       ElMessage.warning('当前没有可备份的空间')
@@ -1071,7 +1106,6 @@
     router.push({
       path: '/system/menu',
       query: {
-        app_key: targetAppKey.value,
         spaceKey: normalizeMenuSpaceKey(spaceKey),
         layout: '1'
       }
@@ -1082,13 +1116,16 @@
     router.push({
       path: '/system/page',
       query: {
-        app_key: targetAppKey.value,
         spaceKey: normalizeMenuSpaceKey(spaceKey)
       }
     })
   }
 
   onMounted(() => {
+    selectedAppKey.value = targetAppKey.value
+    loadAppOptions().catch(() => {
+      appList.value = []
+    })
     if (!targetAppKey.value) {
       loadError.value = managedAppMissingText
       return
@@ -1097,8 +1134,9 @@
   })
 
   watch(
-    () => route.query.app_key,
-    () => {
+    () => targetAppKey.value,
+    (value) => {
+      selectedAppKey.value = value || ''
       if (!targetAppKey.value) {
         spaces.value = []
         hostBindings.value = []
@@ -1161,6 +1199,10 @@
 
   .menu-space-mode-select {
     width: clamp(132px, 18vw, 168px);
+  }
+
+  .menu-space-app-select {
+    width: 240px;
   }
 
   .menu-space-inline-alert {

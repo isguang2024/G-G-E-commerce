@@ -6,6 +6,21 @@
       :metrics="heroMetrics"
     >
       <div class="team-role-hero-actions">
+        <ElSelect
+          v-model="selectedAppKey"
+          clearable
+          filterable
+          placeholder="选择 App"
+          class="team-role-app-select"
+          @change="handleManagedAppChange"
+        >
+          <ElOption
+            v-for="item in appOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </ElSelect>
         <ElButton v-if="hasAction('team.member.manage')" type="primary" @click="openAddDialog">新增团队角色</ElButton>
       </div>
     </AdminWorkspaceHero>
@@ -63,7 +78,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, h, ref } from 'vue'
+  import { computed, h, onMounted, ref, watch } from 'vue'
   import { ElMessageBox, ElTag } from 'element-plus'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
@@ -71,6 +86,7 @@
   import { useTable } from '@/hooks/core/useTable'
   import { fetchDeleteMyTeamRole, fetchGetMyTeamBoundaryRoles } from '@/api/team'
   import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
+  import { fetchGetApps } from '@/api/system-manage'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import TeamRoleDialog from './modules/team-role-dialog.vue'
   import TeamRolePackageDialog from './modules/team-role-package-dialog.vue'
@@ -81,9 +97,11 @@
 
   type RoleListItem = Api.SystemManage.RoleListItem
   const { hasAction } = useAuth()
-  const { targetAppKey } = useManagedAppScope()
+  const { targetAppKey, setManagedAppKey } = useManagedAppScope()
 
   const showSearchBar = ref(false)
+  const appList = ref<Api.SystemManage.AppItem[]>([])
+  const selectedAppKey = ref('')
   const roleDialog = ref(false)
   const packageDialog = ref(false)
   const menuDialog = ref(false)
@@ -98,11 +116,25 @@
   ])
   const baseRoleCount = computed(() => data.value.filter((item) => item.isGlobal).length)
   const customRoleCount = computed(() => data.value.filter((item) => !item.isGlobal).length)
+  const appOptions = computed(() =>
+    appList.value.map((item) => ({
+      label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
+      value: item.appKey
+    }))
+  )
 
   const { columns, columnChecks, data, loading, pagination, handleSizeChange, handleCurrentChange, refreshData } =
     useTable({
       core: {
         apiFn: async () => {
+          if (!targetAppKey.value) {
+            return {
+              records: [],
+              total: 0,
+              current: 1,
+              size: 20
+            }
+          }
           const list = await fetchGetMyTeamBoundaryRoles(targetAppKey.value)
           return {
             records: list,
@@ -191,6 +223,30 @@
   function onSuccess() {
     refreshData()
   }
+
+  async function loadAppOptions() {
+    const res = await fetchGetApps()
+    appList.value = res.records || []
+  }
+
+  async function handleManagedAppChange(value?: string) {
+    await setManagedAppKey(`${value || ''}`.trim())
+  }
+
+  onMounted(() => {
+    selectedAppKey.value = targetAppKey.value
+    loadAppOptions().catch(() => {
+      appList.value = []
+    })
+  })
+
+  watch(
+    () => targetAppKey.value,
+    (value) => {
+      selectedAppKey.value = value || ''
+      refreshData()
+    }
+  )
 </script>
 
 <style scoped lang="scss">
@@ -198,6 +254,10 @@
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
+  }
+
+  .team-role-app-select {
+    width: 240px;
   }
 
   .header-row {

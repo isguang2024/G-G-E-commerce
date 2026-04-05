@@ -134,8 +134,9 @@ type UIPage struct {
 	RouteName         string         `gorm:"type:varchar(150);not null" json:"route_name"`
 	RoutePath         string         `gorm:"type:varchar(255);not null" json:"route_path"`
 	Component         string         `gorm:"type:varchar(255);not null" json:"component"`
-	SpaceKey          string         `gorm:"type:varchar(100);not null;default:'default';index" json:"space_key"`
+	SpaceKey          string         `gorm:"type:varchar(100);not null;default:'';index" json:"space_key,omitempty"`
 	PageType          string         `gorm:"type:varchar(20);not null;default:'inner'" json:"page_type"`
+	VisibilityScope   string         `gorm:"type:varchar(20);not null;default:'inherit'" json:"visibility_scope"`
 	Source            string         `gorm:"type:varchar(20);not null;default:'manual'" json:"source"`
 	ModuleKey         string         `gorm:"type:varchar(100);not null;default:''" json:"module_key"`
 	SortOrder         int            `gorm:"not null;default:0" json:"sort_order"`
@@ -796,17 +797,17 @@ func (MessageRecipientGroupTarget) TableName() string {
 }
 
 type RiskOperationAudit struct {
-	ID             uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	OperatorID     *uuid.UUID     `gorm:"type:uuid;index" json:"operator_id"`
-	ObjectType     string         `gorm:"type:varchar(80);not null;index" json:"object_type"`
-	ObjectID       string         `gorm:"type:varchar(120);not null;index" json:"object_id"`
-	OperationType  string         `gorm:"type:varchar(80);not null;index" json:"operation_type"`
-	BeforeSummary  MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"before_summary"`
-	AfterSummary   MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"after_summary"`
-	ImpactSummary  MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"impact_summary"`
-	RequestID      string         `gorm:"type:varchar(120);not null;default:'';index" json:"request_id"`
-	CreatedAt      time.Time      `gorm:"not null;default:CURRENT_TIMESTAMP;index" json:"created_at"`
-	DeletedAt      gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID            uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	OperatorID    *uuid.UUID     `gorm:"type:uuid;index" json:"operator_id"`
+	ObjectType    string         `gorm:"type:varchar(80);not null;index" json:"object_type"`
+	ObjectID      string         `gorm:"type:varchar(120);not null;index" json:"object_id"`
+	OperationType string         `gorm:"type:varchar(80);not null;index" json:"operation_type"`
+	BeforeSummary MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"before_summary"`
+	AfterSummary  MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"after_summary"`
+	ImpactSummary MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"impact_summary"`
+	RequestID     string         `gorm:"type:varchar(120);not null;default:'';index" json:"request_id"`
+	CreatedAt     time.Time      `gorm:"not null;default:CURRENT_TIMESTAMP;index" json:"created_at"`
+	DeletedAt     gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (RiskOperationAudit) TableName() string {
@@ -814,15 +815,15 @@ func (RiskOperationAudit) TableName() string {
 }
 
 type FeaturePackageVersion struct {
-	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	PackageID   uuid.UUID      `gorm:"type:uuid;not null;index" json:"package_id"`
-	VersionNo   int            `gorm:"not null;default:1" json:"version_no"`
-	ChangeType  string         `gorm:"type:varchar(50);not null;default:'update'" json:"change_type"`
-	Snapshot    MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"snapshot"`
-	OperatorID  *uuid.UUID     `gorm:"type:uuid;index" json:"operator_id"`
-	RequestID   string         `gorm:"type:varchar(120);not null;default:'';index" json:"request_id"`
-	CreatedAt   time.Time      `gorm:"not null;default:CURRENT_TIMESTAMP;index" json:"created_at"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID         uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	PackageID  uuid.UUID      `gorm:"type:uuid;not null;index" json:"package_id"`
+	VersionNo  int            `gorm:"not null;default:1" json:"version_no"`
+	ChangeType string         `gorm:"type:varchar(50);not null;default:'update'" json:"change_type"`
+	Snapshot   MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"snapshot"`
+	OperatorID *uuid.UUID     `gorm:"type:uuid;index" json:"operator_id"`
+	RequestID  string         `gorm:"type:varchar(120);not null;default:'';index" json:"request_id"`
+	CreatedAt  time.Time      `gorm:"not null;default:CURRENT_TIMESTAMP;index" json:"created_at"`
+	DeletedAt  gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (FeaturePackageVersion) TableName() string {

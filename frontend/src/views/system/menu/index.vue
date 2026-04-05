@@ -18,12 +18,30 @@
       >
         <div class="menu-hero-actions">
           <ElSelect
+            v-model="selectedAppKey"
+            class="menu-app-select"
+            clearable
+            filterable
+            placeholder="选择 App"
+            @change="handleManagedAppChange"
+          >
+            <ElOption
+              v-for="item in appOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </ElSelect>
+          <ElSelect
             v-if="isLayoutMode"
             v-model="activeSpaceKey"
             class="menu-space-select"
+            clearable
             filterable
+            placeholder="选择空间"
             @change="handleSpaceChange"
           >
+            <ElOption label="请选择空间" value="" />
             <ElOption
               v-for="item in menuSpaceOptions"
               :key="item.value"
@@ -417,6 +435,7 @@
     fetchDeleteMenuManageGroup,
     fetchGetPageOptions,
     fetchGetMenuSpaces,
+    fetchGetApps,
     fetchCreateMenuBackup,
     fetchGetMenuBackupList,
     fetchDeleteMenuBackup,
@@ -459,9 +478,11 @@
   const activeSpaceKey = ref('')
   const route = useRoute()
   const router = useRouter()
-  const { targetAppKey } = useManagedAppScope()
-  const managedAppMissingText = '缺少 app 上下文，请先从应用管理选择 App'
+  const { targetAppKey, setManagedAppKey } = useManagedAppScope()
+  const managedAppMissingText = '请选择当前要管理的 App'
   const isLayoutMode = computed(() => `${route.query.layout || ''}`.trim() === '1')
+  const appList = ref<Api.SystemManage.AppItem[]>([])
+  const selectedAppKey = ref('')
   const menuGroups = ref<Api.SystemManage.MenuManageGroupItem[]>([])
   const dataFromBackend = ref(false)
   const menuGroupApiUnavailable = ref(false)
@@ -536,6 +557,12 @@
     menuSpaces.value.map((item) => ({
       label: item.isDefault ? `${item.name}（默认）` : item.name,
       value: item.spaceKey
+    }))
+  )
+  const appOptions = computed(() =>
+    appList.value.map((item) => ({
+      label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
+      value: item.appKey
     }))
   )
 
@@ -768,6 +795,13 @@
       loading.value = false
       return
     }
+    if (isLayoutMode.value && !activeSpaceKey.value) {
+      rawMenuTree.value = []
+      rawPages.value = []
+      loadError.value = '请选择当前要配置的菜单空间'
+      loading.value = false
+      return
+    }
     try {
       const [list, pagesResult, groupsResult] = await Promise.all([
         fetchGetMenuTreeAll(activeSpaceKey.value, targetAppKey.value),
@@ -936,7 +970,7 @@
     router.replace({
       query: {
         ...route.query,
-        spaceKey
+        spaceKey: spaceKey || undefined
       }
     })
   }
@@ -946,7 +980,6 @@
       path: '/system/menu',
       query: {
         ...route.query,
-        app_key: targetAppKey.value,
         spaceKey: activeSpaceKey.value || undefined,
         layout: undefined
       }
@@ -957,6 +990,9 @@
     const requestedSpaceKey = `${route.query.spaceKey || ''}`.trim()
     if (requestedSpaceKey && menuSpaces.value.some((item) => item.spaceKey === requestedSpaceKey)) {
       return requestedSpaceKey
+    }
+    if (isLayoutMode.value) {
+      return ''
     }
     return menuSpaces.value.find((item) => item.isDefault)?.spaceKey || menuSpaces.value[0]?.spaceKey || ''
   }
@@ -976,6 +1012,20 @@
   const handleSpaceChange = () => {
     syncRouteSpaceKey(activeSpaceKey.value)
     getMenuList()
+  }
+  const loadAppOptions = async () => {
+    const res = await fetchGetApps()
+    appList.value = res.records || []
+  }
+  const handleManagedAppChange = async (value?: string) => {
+    await setManagedAppKey(`${value || ''}`.trim())
+    activeSpaceKey.value = ''
+    await router.replace({
+      query: {
+        ...route.query,
+        spaceKey: undefined
+      }
+    })
   }
   const rowKey = (row: any) => String(row.id || row.path)
 
@@ -1584,6 +1634,11 @@
   onMounted(() => {
     groupingEnabled.value = localStorage.getItem('system:menu:grouping-enabled') !== '0'
     groupedMenuVisible.value = localStorage.getItem('system:menu:grouped-visible') !== '0'
+    selectedAppKey.value = targetAppKey.value
+    loadAppOptions().catch((error) => {
+      warnDev('[Menus] 加载 App 列表失败', error)
+      appList.value = []
+    })
     if (!targetAppKey.value) {
       loadError.value = managedAppMissingText
       return
@@ -1595,8 +1650,8 @@
   })
 
   watch(
-    () => [route.query.app_key, route.query.spaceKey],
-    async ([, value]) => {
+    () => [targetAppKey.value, route.query.spaceKey],
+    async ([appKey, value]) => {
       if (!targetAppKey.value) {
         rawMenuTree.value = []
         rawPages.value = []
@@ -1605,6 +1660,7 @@
         loadError.value = managedAppMissingText
         return
       }
+      if (!appKey) return
       await syncMenuSpaces()
       const requestedSpaceKey = `${value || ''}`.trim()
       if (!requestedSpaceKey || requestedSpaceKey === activeSpaceKey.value) {
@@ -1618,6 +1674,14 @@
       activeSpaceKey.value = requestedSpaceKey
       await getMenuList()
     }
+  )
+
+  watch(
+    () => targetAppKey.value,
+    (value) => {
+      selectedAppKey.value = value || ''
+    },
+    { immediate: true }
   )
 </script>
 
@@ -1792,6 +1856,10 @@
 
   .menu-space-select {
     width: 220px;
+  }
+
+  .menu-app-select {
+    width: 240px;
   }
 
   .menu-toolbar-batch {

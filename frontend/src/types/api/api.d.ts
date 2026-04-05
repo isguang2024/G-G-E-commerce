@@ -198,6 +198,7 @@ declare namespace Api {
       appKey: string
       name: string
       description?: string
+      spaceMode?: 'single' | 'multi' | string
       defaultSpaceKey?: string
       isDefault?: boolean
       status?: 'normal' | 'disabled' | string
@@ -215,6 +216,8 @@ declare namespace Api {
       app_key: string
       name: string
       description?: string
+      space_mode?: 'single' | 'multi' | string
+      // 创建 App 时由服务端自动创建当前 App 自己的 default 空间；编辑时才需要显式修改默认空间。
       default_space_key?: string
       is_default?: boolean
       status?: 'normal' | 'disabled' | string
@@ -843,7 +846,7 @@ declare namespace Api {
       routeName: string
       routePath: string
       component: string
-      pageType: 'group' | 'display_group' | 'inner' | 'global' | string
+      pageType: 'group' | 'display_group' | 'inner' | 'global' | 'standalone' | string
       source: 'seed' | 'sync' | 'manual' | string
       moduleKey?: string
       sortOrder?: number
@@ -863,12 +866,13 @@ declare namespace Api {
       isIframe?: boolean
       isHideTab?: boolean
       link?: string
-      // spaceKey 仅作为兼容展示字段；真正的空间归属优先看 spaceKeys / spaceScope。
+      // 仅保留少量运行时桥接语义；管理态主语义统一看 visibilityScope + spaceKeys。
       spaceKey?: string
       // 后端会把独立页的空间暴露编译成显式列表；为空表示默认全局共享或从父链继承。
       spaceKeys?: string[]
-      // global 表示全局共享；bound 表示通过 page_space_bindings 或兼容字段显式约束。
-      spaceScope?: 'global' | 'bound' | string
+      visibilityScope?: 'inherit' | 'app' | 'spaces' | string
+      // inherit=继承父菜单/父页面；app=当前 App 全局；spaces=仅在绑定空间可见。
+      spaceScope?: 'inherit' | 'app' | 'spaces' | string
       spaceType?: string
       hostKey?: string
       status: 'normal' | 'suspended' | string
@@ -884,14 +888,14 @@ declare namespace Api {
       name: string
       routeName: string
       routePath: string
-      pageType: 'group' | 'display_group' | 'inner' | 'global' | string
+      pageType: 'group' | 'display_group' | 'inner' | 'global' | 'standalone' | string
       moduleKey?: string
       parentMenuId?: string
       parentMenuName?: string
       activeMenuPath?: string
       spaceKey?: string
       spaceKeys?: string[]
-      spaceScope?: 'global' | 'bound' | string
+      spaceScope?: 'inherit' | 'app' | 'spaces' | string
       spaceType?: string
       hostKey?: string
     }
@@ -972,7 +976,7 @@ declare namespace Api {
       route_name: string
       route_path: string
       component: string
-      page_type?: 'group' | 'display_group' | 'inner' | 'global' | string
+      page_type?: 'group' | 'display_group' | 'inner' | 'global' | 'standalone' | string
       source?: 'seed' | 'sync' | 'manual' | string
       module_key?: string
       sort_order?: number
@@ -986,9 +990,8 @@ declare namespace Api {
       inherit_permission?: boolean
       keep_alive?: boolean
       is_full_page?: boolean
-      // 仅少量独立页会继续显式写入 space_key；挂到菜单/父页的页面由后端自动忽略该值。
-      space_key?: string
       space_keys?: string[]
+      visibility_scope?: 'inherit' | 'app' | 'spaces' | string
       space_type?: string
       host_key?: string
       status?: 'normal' | 'suspended' | string

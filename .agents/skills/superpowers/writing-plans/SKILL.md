@@ -1,30 +1,46 @@
 ---
 name: writing-plans
-description: Use when you have a spec or requirements for a multi-step task, before touching code
+description: Use when a task in this repository is multi-step, spans multiple files or modules, changes frontend-backend contracts, or includes migrations and needs a written implementation plan before coding
 ---
 
 # Writing Plans
 
 ## Overview
 
-Write comprehensive implementation plans assuming the engineer has zero context for our codebase and questionable taste. Document everything they need to know: which files to touch for each task, code, testing, docs they might need to check, how to test it. Give them the whole plan as bite-sized tasks. DRY. YAGNI. TDD. Frequent commits.
+Write implementation plans only when the work is large enough to benefit from explicit sequencing. In this repository, plans are for non-trivial work: cross-module changes, frontend-backend contract updates, migrations, or tasks that will take sustained effort across multiple steps.
 
-Assume they are a skilled developer, but know almost nothing about our toolset or problem domain. Assume they don't know good test design very well.
+The plan should make execution safer and easier, not turn every small task into process theater. Prefer clear decomposition, exact file paths, verification points, and dependency ordering over exhaustive prose.
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
-**Context:** This should be run in a dedicated worktree (created by brainstorming skill).
+**Repository policy:** Do not require this skill for single-page tweaks, isolated component fixes, copy updates, style cleanup, or single-endpoint adjustments.
 
 **Save plans to:** `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md`
 - (User preferences for plan location override this default)
 
+## When to Use
+
+Use this skill when one or more of these are true:
+
+- The task spans 3 or more files and crosses module boundaries.
+- The change touches both `frontend/` and `backend/`.
+- The task changes API contracts, data shape, migrations, or seed behavior.
+- The task needs staged rollout or ordered checkpoints.
+- The task is large enough that losing the execution order would create rework.
+
+Do not use this skill when:
+
+- The change is local and obvious.
+- The work can be completed safely in one short implementation pass.
+- A brief execution note in the conversation is enough.
+
 ## Scope Check
 
-If the spec covers multiple independent subsystems, it should have been broken into sub-project specs during brainstorming. If it wasn't, suggest breaking this into separate plans — one per subsystem. Each plan should produce working, testable software on its own.
+If the request actually contains multiple independent workstreams, split them into separate plans or plan sections with explicit boundaries. Each section should produce testable progress on its own.
 
 ## File Structure
 
-Before defining tasks, map out which files will be created or modified and what each one is responsible for. This is where decomposition decisions get locked in.
+Before defining tasks, map out which files will be created or modified and what each one is responsible for. This is where the decomposition gets locked in.
 
 - Design units with clear boundaries and well-defined interfaces. Each file should have one clear responsibility.
 - You reason best about code you can hold in context at once, and your edits are more reliable when files are focused. Prefer smaller, focused files over large ones that do too much.
@@ -33,23 +49,26 @@ Before defining tasks, map out which files will be created or modified and what 
 
 This structure informs the task decomposition. Each task should produce self-contained changes that make sense independently.
 
-## Bite-Sized Task Granularity
+## Task Granularity
 
-**Each step is one action (2-5 minutes):**
-- "Write the failing test" - step
-- "Run it to make sure it fails" - step
-- "Implement the minimal code to make the test pass" - step
-- "Run the tests and make sure they pass" - step
-- "Commit" - step
+Default to task-level decomposition, not ultra-granular ceremony. A task should usually be 10-30 minutes of coherent work, with explicit verification.
+
+Break work down further when:
+
+- The change is risky or easy to regress.
+- The task has a hard dependency chain.
+- The repository already has nearby tests worth preserving through smaller increments.
+
+Avoid forcing every plan into "test, fail, code, pass, commit" micro-steps when the repository context does not support it.
 
 ## Plan Document Header
 
-**Every plan MUST start with this header:**
+Every plan should start with this header:
 
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Execution note:** Use superpowers:subagent-driven-development when tasks are independent, or superpowers:executing-plans when this plan should be executed inline in a controlled sequence.
 
 **Goal:** [One sentence describing what this builds]
 
@@ -70,54 +89,40 @@ This structure informs the task decomposition. Each task should produce self-con
 - Modify: `exact/path/to/existing.py:123-145`
 - Test: `tests/exact/path/to/test.py`
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Implement**
 
 ```python
-def test_specific_behavior():
-    result = function(input)
-    assert result == expected
+# Exact code or structured change description needed for this task
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [ ] **Verify**
 
-Run: `pytest tests/path/test.py::test_name -v`
-Expected: FAIL with "function not defined"
+Run: `exact command`
+Expected: `specific success signal`
 
-- [ ] **Step 3: Write minimal implementation**
+- [ ] **Notes**
 
-```python
-def function(input):
-    return expected
-```
-
-- [ ] **Step 4: Run test to verify it passes**
-
-Run: `pytest tests/path/test.py::test_name -v`
-Expected: PASS
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add tests/path/test.py src/path/file.py
-git commit -m "feat: add specific feature"
-```
+- Risks, follow-up checks, or contract assumptions for this task
 ````
+
+If TDD is appropriate for this repository context, explicitly say so inside the task and reference superpowers:test-driven-development. Do not assume TDD is mandatory for every task.
 
 ## No Placeholders
 
 Every step must contain the actual content an engineer needs. These are **plan failures** — never write them:
 - "TBD", "TODO", "implement later", "fill in details"
 - "Add appropriate error handling" / "add validation" / "handle edge cases"
-- "Write tests for the above" (without actual test code)
+- "Write tests for the above" (without exact files or commands)
 - "Similar to Task N" (repeat the code — the engineer may be reading tasks out of order)
-- Steps that describe what to do without showing how (code blocks required for code steps)
+- Steps that describe what to do without giving file paths, commands, or enough structure to execute safely
 - References to types, functions, or methods not defined in any task
 
 ## Remember
 - Exact file paths always
-- Complete code in every step — if a step changes code, show the code
-- Exact commands with expected output
-- DRY, YAGNI, TDD, frequent commits
+- Give enough detail to execute without rediscovering the design
+- Include exact verification commands with expected success signals
+- Keep plans pragmatic and proportionate to task size
+- Do not silently assume worktrees, TDD, or PR flow unless the task actually needs them
 
 ## Self-Review
 
@@ -150,3 +155,5 @@ After saving the plan, offer execution choice:
 **If Inline Execution chosen:**
 - **REQUIRED SUB-SKILL:** Use superpowers:executing-plans
 - Batch execution with checkpoints for review
+
+If the task is still small after review, say so explicitly and skip the plan execution workflow.

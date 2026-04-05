@@ -1,6 +1,6 @@
 ---
 name: test-driven-development
-description: Use when implementing any feature or bugfix, before writing implementation code
+description: Use in this repository for backend services, shared utilities, core store/hook logic, modules that already have nearby tests, or explicit regression fixes that need a failing test first
 ---
 
 # Test-Driven Development (TDD)
@@ -15,24 +15,28 @@ Write the test first. Watch it fail. Write minimal code to pass.
 
 ## When to Use
 
-**Always:**
-- New features
-- Bug fixes
-- Refactoring
-- Behavior changes
+**Default use in this repository:**
+- Backend service logic
+- Shared utilities and helpers
+- Core store / hook / state logic
+- Existing test-adjacent modules
+- Bug fixes with a clear reproducible regression
 
-**Exceptions (ask your human partner):**
-- Throwaway prototypes
-- Generated code
-- Configuration files
+**Usually do NOT use as the default path for:**
+- Vue page-only rendering adjustments
+- Style, spacing, copy, and layout tweaks
+- One-off config or documentation edits
+- Simple integration wiring where build/lint/manual verification is the more realistic safety net
 
-Thinking "skip TDD just this once"? Stop. That's rationalization.
+Thinking "every task must force TDD" in this repository is the wrong default. Use TDD where it creates real leverage.
 
 ## The Iron Law
 
 ```
 NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
 ```
+
+This rule applies **after you decide TDD is the right workflow for the task**.
 
 Write code before the test? Delete it. Start over.
 

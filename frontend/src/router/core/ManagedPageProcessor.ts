@@ -150,8 +150,8 @@ export class ManagedPageProcessor {
         customParent,
         breadcrumbChain,
         spaceKey: resolvedSpaceKey,
-        spaceType: this.normalizeValue(page.spaceType || (page.meta as any)?.spaceType),
-        hostKey: this.normalizeValue(page.hostKey || (page.meta as any)?.hostKey)
+        spaceType: this.normalizeValue(page.spaceType),
+        hostKey: this.normalizeValue(page.hostKey)
       }
       resolving.delete(normalizedKey)
       resolvedCache.set(normalizedKey, resolved)
@@ -161,43 +161,54 @@ export class ManagedPageProcessor {
     const resolvePageSpaceKey = (pageKey: string): string => {
       const normalizedKey = this.normalizeValue(pageKey)
       if (!normalizedKey) {
-        return defaultSpaceKey
+        return currentSpaceKey || defaultSpaceKey
       }
       const cached = spaceCache.get(normalizedKey)
       if (cached !== undefined) {
         return cached
       }
       if (spaceResolving.has(normalizedKey)) {
-        return defaultSpaceKey
+        return currentSpaceKey || defaultSpaceKey
       }
 
       const page = pageMap.get(normalizedKey)
       if (!page) {
-        return defaultSpaceKey
+        return currentSpaceKey || defaultSpaceKey
       }
 
       spaceResolving.add(normalizedKey)
-      const explicit = this.normalizeValue(
-        page.spaceKey || (page.meta as any)?.spaceKey || (page.meta as any)?.space_key
-      )
-      let resolved = explicit
-      if (!resolved) {
+      const visibilityScope = this.normalizeValue(page.visibilityScope || page.spaceScope)
+      const rawSpaceKeys = Array.isArray(page.spaceKeys) ? page.spaceKeys : []
+      const resolvedSpaceKeys = rawSpaceKeys
+        .map((item: unknown) => normalizeMenuSpaceKey(`${item || ''}`))
+        .filter(Boolean)
+
+      let resolved = ''
+      if (visibilityScope === 'app') {
+        resolved = currentSpaceKey || defaultSpaceKey
+      } else if (visibilityScope === 'spaces') {
+        resolved =
+          resolvedSpaceKeys.find((item: string) => item === currentSpaceKey) ||
+          resolvedSpaceKeys[0] ||
+          currentSpaceKey ||
+          defaultSpaceKey
+      } else {
         const parentPageKey = this.normalizeValue(page.parentPageKey)
         if (parentPageKey) {
           resolved = resolvePageSpaceKey(parentPageKey)
         }
-      }
-      if (!resolved) {
-        const parentMenuId = this.normalizeValue(page.parentMenuId)
-        if (parentMenuId) {
-          const parentMenu = indexedMenus.byId.get(parentMenuId)
-          resolved = this.normalizeValue(
-            parentMenu?.spaceKey || parentMenu?.meta?.spaceKey || parentMenu?.meta?.space_key
-          )
+        if (!resolved) {
+          const parentMenuId = this.normalizeValue(page.parentMenuId)
+          if (parentMenuId) {
+            const parentMenu = indexedMenus.byId.get(parentMenuId)
+            resolved = this.normalizeValue(
+              parentMenu?.spaceKey || parentMenu?.meta?.spaceKey || parentMenu?.meta?.space_key
+            )
+          }
         }
       }
       if (!resolved) {
-        resolved = defaultSpaceKey
+        resolved = currentSpaceKey || defaultSpaceKey
       }
       spaceResolving.delete(normalizedKey)
       spaceCache.set(normalizedKey, resolved)

@@ -37,6 +37,7 @@ type SaveAppRequest struct {
 	AppKey          string                 `json:"app_key"`
 	Name            string                 `json:"name"`
 	Description     string                 `json:"description"`
+	SpaceMode       string                 `json:"space_mode"`
 	DefaultSpaceKey string                 `json:"default_space_key"`
 	AuthMode        string                 `json:"auth_mode"`
 	Status          string                 `json:"status"`
@@ -72,6 +73,15 @@ func NewService(db *gorm.DB) Service {
 
 func NormalizeAppKey(value string) string {
 	return appctx.NormalizeAppKey(value)
+}
+
+func normalizeAppSpaceMode(value string) string {
+	switch strings.TrimSpace(value) {
+	case "multiple", "multi":
+		return "multi"
+	default:
+		return "single"
+	}
 }
 
 func RequestAppKey(c *gin.Context) string {
@@ -234,9 +244,6 @@ func (s *service) SaveApp(req *SaveAppRequest) (*AppRecord, error) {
 		return nil, errors.New("应用名称不能为空")
 	}
 	defaultSpaceKey := spacepkg.NormalizeSpaceKey(req.DefaultSpaceKey)
-	if defaultSpaceKey == "" {
-		return nil, errors.New("default_space_key is required")
-	}
 	status := strings.TrimSpace(req.Status)
 	if status == "" {
 		status = "normal"
@@ -250,6 +257,7 @@ func (s *service) SaveApp(req *SaveAppRequest) (*AppRecord, error) {
 		AppKey:          appKey,
 		Name:            name,
 		Description:     strings.TrimSpace(req.Description),
+		SpaceMode:       normalizeAppSpaceMode(req.SpaceMode),
 		DefaultSpaceKey: defaultSpaceKey,
 		AuthMode:        authMode,
 		Status:          status,
@@ -262,9 +270,19 @@ func (s *service) SaveApp(req *SaveAppRequest) (*AppRecord, error) {
 		err := tx.Where("app_key = ? AND deleted_at IS NULL", appKey).First(&existing).Error
 		switch {
 		case err == nil:
+			if payload.DefaultSpaceKey == "" {
+				payload.DefaultSpaceKey = spacepkg.NormalizeSpaceKey(existing.DefaultSpaceKey)
+			}
+			if payload.DefaultSpaceKey == "" {
+				payload.DefaultSpaceKey = models.DefaultMenuSpaceKey
+			}
+			if err := ensureSpaceExistsForApp(tx, appKey, payload.DefaultSpaceKey); err != nil {
+				return err
+			}
 			if updateErr := tx.Model(&existing).Updates(map[string]interface{}{
 				"name":              payload.Name,
 				"description":       payload.Description,
+				"space_mode":        payload.SpaceMode,
 				"default_space_key": payload.DefaultSpaceKey,
 				"auth_mode":         payload.AuthMode,
 				"status":            payload.Status,
@@ -274,11 +292,25 @@ func (s *service) SaveApp(req *SaveAppRequest) (*AppRecord, error) {
 				return updateErr
 			}
 		case errors.Is(err, gorm.ErrRecordNotFound):
+			payload.DefaultSpaceKey = models.DefaultMenuSpaceKey
 			if createErr := tx.Create(&payload).Error; createErr != nil {
 				return createErr
 			}
 		default:
 			return err
+		}
+		if err := spacepkg.EnsureDefaultMenuSpace(tx, appKey); err != nil {
+			return err
+		}
+		if payload.DefaultSpaceKey == models.DefaultMenuSpaceKey {
+			if err := tx.Model(&models.MenuSpace{}).
+				Where("app_key = ? AND space_key = ? AND deleted_at IS NULL", appKey, models.DefaultMenuSpaceKey).
+				Updates(map[string]interface{}{
+					"is_default": true,
+					"status":     "normal",
+				}).Error; err != nil {
+				return err
+			}
 		}
 		if payload.IsDefault {
 			if err := tx.Model(&models.App{}).
@@ -369,6 +401,9 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 	}
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := ensureSpaceExistsForApp(tx, normalizedAppKey, defaultSpaceKey); err != nil {
+			return err
+		}
 		var existing models.AppHostBinding
 		err := tx.Where("host = ? AND deleted_at IS NULL", host).First(&existing).Error
 		switch {
@@ -414,6 +449,30 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 	return nil, errors.New("保存 Host 绑定后读取失败")
 }
 
+func ensureSpaceExistsForApp(db *gorm.DB, appKey string, spaceKey string) error {
+	normalizedAppKey := NormalizeAppKey(appKey)
+	normalizedSpaceKey := spacepkg.NormalizeSpaceKey(spaceKey)
+	if normalizedAppKey == "" {
+		return errors.New("app_key is required")
+	}
+	if normalizedSpaceKey == "" {
+		return errors.New("default_space_key is required")
+	}
+	if normalizedSpaceKey == models.DefaultMenuSpaceKey {
+		return spacepkg.EnsureDefaultMenuSpace(db, normalizedAppKey)
+	}
+	var count int64
+	if err := db.Model(&models.MenuSpace{}).
+		Where("app_key = ? AND space_key = ? AND deleted_at IS NULL", normalizedAppKey, normalizedSpaceKey).
+		Count(&count).Error; err != nil {
+		return err
+	}
+	if count == 0 {
+		return errors.New("默认空间不存在，请先在高级空间配置中创建")
+	}
+	return nil
+}
+
 func (s *service) getAppRecord(appKey string) (*AppRecord, error) {
 	records, err := s.ListApps()
 	if err != nil {
@@ -439,6 +498,7 @@ func ensureDefaultApp(db *gorm.DB) error {
 	case err == nil:
 		return db.Model(&existing).Updates(map[string]interface{}{
 			"name":              models.DefaultAppName,
+			"space_mode":        "multi",
 			"default_space_key": models.DefaultMenuSpaceKey,
 			"status":            "normal",
 			"is_default":        true,
@@ -448,6 +508,7 @@ func ensureDefaultApp(db *gorm.DB) error {
 			AppKey:          models.DefaultAppKey,
 			Name:            models.DefaultAppName,
 			Description:     "当前内置管理员后台应用",
+			SpaceMode:       "multi",
 			DefaultSpaceKey: models.DefaultMenuSpaceKey,
 			AuthMode:        "inherit_host",
 			Status:          "normal",

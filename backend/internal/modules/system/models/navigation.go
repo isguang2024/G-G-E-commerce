@@ -14,6 +14,7 @@ const (
 
 	PageTypeInner        = "inner"
 	PageTypeGlobal       = "global"
+	PageTypeStandalone   = "standalone"
 	PageTypeGroup        = "group"
 	PageTypeDisplayGroup = "display_group"
 )

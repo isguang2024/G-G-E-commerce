@@ -97,12 +97,14 @@ type APIEndpointCategorySeed struct {
 
 type PageSeed struct {
 	SpaceKey          string
+	SpaceKeys         []string
 	PageKey           string
 	Name              string
 	RouteName         string
 	RoutePath         string
 	Component         string
 	PageType          string
+	VisibilityScope   string
 	Source            string
 	ModuleKey         string
 	SortOrder         int
@@ -532,7 +534,7 @@ func DefaultMenus() []MenuSeed {
 		{Name: "FeaturePackage", ParentName: "SystemAccess", Path: "/system/feature-package", Component: "/system/feature-package", Title: "功能包管理", SortOrder: 4, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "PageManagement", ParentName: "SystemNavigation", Path: "/system/page", Component: "/system/page", Title: "页面管理", SortOrder: 3, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "FastEnterManage", ParentName: "SystemNavigation", Path: "/system/fast-enter", Component: "/system/fast-enter", Title: "快捷应用管理", SortOrder: 4, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
-		{Name: "MenuSpaceManage", ParentName: "SystemNavigation", Path: "/system/menu-space", Component: "/system/menu-space", Title: "高级空间配置", SortOrder: 90, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true, "isHide": true}},
+		{Name: "MenuSpaceManage", ParentName: "SystemNavigation", Path: "/system/menu-space", Component: "/system/menu-space", Title: "高级空间配置", SortOrder: 90, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "TeamMembers", ParentName: "TeamRoot", Path: "members", Component: "/team/team-members", Title: "menus.system.teamMembers", SortOrder: 2, Meta: metaTeamAccessOnly},
 	}
 	for i := range items {
@@ -571,6 +573,15 @@ func DefaultMenuSpaces() []MenuSpaceSeed {
 			Description:     "兼容当前单域单菜单运行模式",
 			DefaultHomePath: "/dashboard/console",
 			IsDefault:       true,
+			Status:          "normal",
+			Meta:            usermodel.MetaJSON{},
+		},
+		{
+			SpaceKey:        "ops",
+			Name:            "运营空间",
+			Description:     "用于验证多空间导航与空间级页面可见性。",
+			DefaultHomePath: "/dashboard/console",
+			IsDefault:       false,
 			Status:          "normal",
 			Meta:            usermodel.MetaJSON{},
 		},
@@ -624,11 +635,11 @@ func DefaultPages() []PageSeed {
 	// 常规入口页直接由 DefaultMenus 维护，避免菜单和 ui_pages 双写同一路由。
 	items := []PageSeed{
 		{
-			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
 			PageKey:           "display.system_pages",
 			Name:              "系统页面",
 			RouteName:         "display.system_pages",
 			PageType:          "display_group",
+			VisibilityScope:   "app",
 			Source:            "manual",
 			SortOrder:         10,
 			BreadcrumbMode:    "inherit_menu",
@@ -638,25 +649,44 @@ func DefaultPages() []PageSeed {
 			Meta:              usermodel.MetaJSON{},
 		},
 		{
-			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
 			PageKey:           "workspace.user_center",
 			Name:              "个人中心",
 			RouteName:         "UserCenter",
 			RoutePath:         "/user-center",
 			Component:         "/system/user-center",
 			PageType:          "global",
+			VisibilityScope:   "app",
 			Source:            "manual",
 			ModuleKey:         "account",
 			SortOrder:         15,
-			ParentMenuName:    "Dashboard",
 			DisplayGroupKey:   "display.system_pages",
-			ActiveMenuPath:    "/dashboard/console",
 			BreadcrumbMode:    "inherit_menu",
 			AccessMode:        "jwt",
 			InheritPermission: true,
 			KeepAlive:         true,
 			Status:            "normal",
 			Meta:              usermodel.MetaJSON{"isHideTab": true},
+		},
+		{
+			PageKey:           "workspace.ops_console",
+			Name:              "运营空间控制台",
+			RouteName:         "WorkspaceOpsConsole",
+			RoutePath:         "/workspace/ops-console",
+			Component:         "/system/access-trace",
+			PageType:          "standalone",
+			VisibilityScope:   "spaces",
+			SpaceKeys:         []string{"ops"},
+			Source:            "manual",
+			ModuleKey:         "system",
+			SortOrder:         18,
+			DisplayGroupKey:   "display.system_pages",
+			BreadcrumbMode:    "inherit_menu",
+			AccessMode:        "permission",
+			PermissionKey:     "page.list",
+			InheritPermission: false,
+			KeepAlive:         true,
+			Status:            "normal",
+			Meta:              usermodel.MetaJSON{},
 		},
 		{
 			PageKey:           "system.message.template.manage",
@@ -868,11 +898,6 @@ func DefaultPages() []PageSeed {
 			Status:            "normal",
 			Meta:              usermodel.MetaJSON{},
 		},
-	}
-	for i := range items {
-		if strings.TrimSpace(items[i].SpaceKey) == "" {
-			items[i].SpaceKey = systemmodels.DefaultMenuSpaceKey
-		}
 	}
 	return items
 }

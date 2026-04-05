@@ -73,6 +73,16 @@ Task("Fix tool-approval-race-conditions.test.ts failures")
 // All three run concurrently
 ```
 
+### 3.5 Model Defaults for Parallel Agents
+
+When dispatching multiple agents at once, cost and latency multiply quickly. Default to the smallest model that can plausibly solve each isolated task.
+
+- Narrow investigation or mechanical fix in one file: `gpt-5.4-mini` + `low`
+- Multi-file debugging or integration concern: `gpt-5.4` + `medium`
+- Architecture-heavy or reviewer-style parallel task: `gpt-5.4` + `high`
+
+Do not launch several parallel agents at `high` or `xhigh` by default. Escalate only the one that proves it needs more reasoning.
+
 ### 4. Review and Integrate
 
 When agents return:

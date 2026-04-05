@@ -407,9 +407,6 @@ func buildRuntimePageRecord(item Record) gin.H {
 		"name":       item.Name,
 		"route_path": item.RoutePath,
 	}
-	if spaceKey := strings.TrimSpace(item.SpaceKey); spaceKey != "" {
-		node["space_key"] = spaceKey
-	}
 	if item.Meta != nil {
 		if values, ok := item.Meta["spaceKeys"].([]string); ok && len(values) > 0 {
 			node["space_keys"] = values
@@ -419,6 +416,9 @@ func buildRuntimePageRecord(item Record) gin.H {
 		if scope, ok := item.Meta["spaceScope"].(string); ok && strings.TrimSpace(scope) != "" {
 			node["space_scope"] = scope
 		}
+	}
+	if scope := strings.TrimSpace(item.VisibilityScope); scope != "" && scope != "inherit" {
+		node["visibility_scope"] = scope
 	}
 
 	if routeName := strings.TrimSpace(item.RouteName); routeName != "" && routeName != strings.TrimSpace(item.PageKey) {

@@ -1,5 +1,70 @@
 # Change Log
 
+## 2026-04-06 superpowers 停用一批重流程技能
+
+### 本次改动
+- 直接停用了 [using-superpowers](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/using-superpowers)、[using-git-worktrees](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/using-git-worktrees)、[executing-plans](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/executing-plans)、[finishing-a-development-branch](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/finishing-a-development-branch)、[writing-skills](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/writing-skills) 的技能发现入口。
+- 停用方式不是删除目录，而是把各目录下的 `SKILL.md` 改名为 `SKILL.disabled.md`，保留原始内容和恢复路径，同时让新会话不再发现这些技能。
+- 更新 [docs/superpowers-integration.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/superpowers-integration.md)，把当前仍启用的技能、已停用的技能，以及最新的仓库精简流程写清楚。
+- 更新 [下次方向.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/下次方向.md)，把下一步可能继续停用 `brainstorming` / `writing-plans` 的方向记下来。
+- 本轮没有改业务代码，也没有执行构建或测试。
+
+### 下次方向
+- 如果后续觉得流程还是偏重，优先考虑继续停用 `brainstorming` 或 `writing-plans`，把剩余技能进一步压缩。
+- 如果未来又需要恢复某个停用技能，直接把对应目录里的 `SKILL.disabled.md` 改回 `SKILL.md` 即可。
+
+## 2026-04-06 superpowers 子代理执行链与调试链继续收轻
+
+### 本次改动
+- 调整 [subagent-driven-development/SKILL.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/subagent-driven-development/SKILL.md)，把原版“每个任务都默认实现 + 双 review + 最终分支收尾”的固定链路改成按任务风险选择 review 深度，并明确任务完成后默认停在“已验证结果”，不自动进入 branch finish。
+- 更新 [implementer-prompt.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/subagent-driven-development/implementer-prompt.md) 与 [code-quality-reviewer-prompt.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/subagent-driven-development/code-quality-reviewer-prompt.md)，去掉实现子代理的默认 commit 要求，并把 code quality review 调整为“若当前任务路径包含 spec review，则在其通过后再进入”。
+- 调整 [systematic-debugging/SKILL.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/systematic-debugging/SKILL.md)，把“先写失败测试”收口为“先建立最强可行复现证据”：适合自动化回归时再走 failing test，不适合时至少保留可重复的最小复现和验证命令。
+- 更新 [docs/superpowers-integration.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/superpowers-integration.md) 与 [下次方向.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/下次方向.md)，补齐当前仓库对子代理 review 深度、commit 节奏和调试验证方式的本地化约束。
+- 这轮仍然只改技能说明、模板和仓库文档，没有改业务代码，也未执行构建或测试。
+
+### 下次方向
+- 如果后续发现 `subagent-driven-development` 对小任务仍然偏重，可以继续把“单 reviewer”场景再细分成更轻的默认路径。
+- 如果未来前端可自动化回归的页面越来越多，再评估是否把 `systematic-debugging` 里“失败测试优先”的适用范围向部分前端主链扩大。
+
+## 2026-04-06 superpowers 计划链与收尾链继续收轻
+
+### 本次改动
+- 继续定制 [writing-plans/SKILL.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/writing-plans/SKILL.md)，把“默认写成零上下文超细计划”的原版要求收口为“只在多步、多文件、跨模块、迁移或接口契约变化时写计划”，并把任务粒度从机械 2-5 分钟微步骤放宽到按仓库实际风险拆分。
+- 调整 [executing-plans/SKILL.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/executing-plans/SKILL.md)，明确它只在已有计划且需要顺序执行时触发；执行结束后默认停在“已验证的实现结果”，不再自动串到分支收尾技能。
+- 调整 [finishing-a-development-branch/SKILL.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/finishing-a-development-branch/SKILL.md)，把适用条件改成用户显式要求 commit / PR / merge / cleanup 时再进入，不再作为任何完成态的固定尾闸。
+- 更新 [docs/superpowers-integration.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/superpowers-integration.md)，把 `executing-plans` 的条件触发和 `finishing-a-development-branch` 的非默认化一并写入当前仓库精简流程。
+- 本轮只修改本地 superpowers 技能说明与仓库文档，没有改业务代码，也未执行构建或测试。
+
+### 下次方向
+- 如果后续还觉得计划文档偏重，可以继续把 `writing-plans` 的任务模板再向“任务 + 验证 + 风险说明”压缩，减少不必要的示例代码块。
+- 如果未来仓库的分支协作方式更固定，再决定是否为 `finishing-a-development-branch` 增加更贴近当前团队习惯的中文选项模板。
+
+## 2026-04-06 superpowers 重流程入口继续收轻
+
+### 本次改动
+- 继续定制 [using-superpowers/SKILL.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/using-superpowers/SKILL.md)，不再把它当作“每次开口前必须触发”的总入口，而是改成按任务收益判断是否启用 superpowers 工作流。
+- 调整 [brainstorming/SKILL.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/brainstorming/SKILL.md)、[test-driven-development/SKILL.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/test-driven-development/SKILL.md)、[using-git-worktrees/SKILL.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/using-git-worktrees/SKILL.md)、[requesting-code-review/SKILL.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/requesting-code-review/SKILL.md)，把原版“默认强制”收口为“按仓库实际场景条件触发”。
+- 在 [docs/superpowers-integration.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/superpowers-integration.md) 明确记录当前仓库的精简流程：小改动直接实现并验证，中改动写简短执行思路，大改动再条件触发 brainstorming / plans / subagent，Bug 统一走 debugging，交付前再走 review 和 branch finish。
+- 同步更新 [下次方向.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/下次方向.md)，后续重点观察收轻后的触发效果和前端测试能力是否变化。
+- 本轮只修改本地 superpowers 技能说明与文档，没有改业务代码，也未执行构建或测试。
+
+### 下次方向
+- 如果后续发现 `writing-plans` 或 `executing-plans` 仍然过重，可以继续把它们的默认适用范围再收窄一层。
+- 如果未来前端测试体系逐步成形，再决定是否把 `test-driven-development` 从“条件触发”重新提升到某些前端核心模块的默认流程。
+
+## 2026-04-06 superpowers 子代理模型策略本地化
+
+### 本次改动
+- 调整 [subagent-driven-development/SKILL.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/subagent-driven-development/SKILL.md) 的模型选择策略，明确当前仓库默认采用“轻模型优先、按复杂度逐级升级”的子代理策略。
+- 为实现子代理、规格审查子代理、代码审查子代理分别补了默认档位：实现和规格审查默认走 `gpt-5.4-mini + low`，代码审查默认走 `gpt-5.4 + medium`，只在复杂集成、架构判断或高风险 review 时才升到更高档位。
+- 更新 [dispatching-parallel-agents/SKILL.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills/superpowers/dispatching-parallel-agents/SKILL.md) 与三个 prompt template，避免并行代理和 reviewer 默认开高推理导致成本、时延成倍放大。
+- 在 [docs/superpowers-integration.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/superpowers-integration.md) 记录了当前仓库的子代理默认档位，方便后续新会话直接沿用。
+- 本轮只调整本地技能说明和模板，没有改业务代码，也未执行构建或测试。
+
+### 下次方向
+- 后续如果还要继续收轻 `superpowers`，优先处理 `using-superpowers`、`brainstorming`、`using-git-worktrees` 这几个仍然偏重的硬流程入口。
+- 如果未来发现 `gpt-5.4-mini + low` 对某些规格审查过轻，可以把规格审查默认档位提升到 `gpt-5.4 + medium`，但不建议直接回到全量高推理。
+
 ## 2026-04-05 shadcn 技能迁移到全局目录
 
 ### 本次改动
@@ -1036,3 +1101,183 @@
   - 当前运行时 `runtimeAppKey`
 - 当管理页 URL 未携带 `app_key` 但本地已有管理 App 或运行时 App 时，自动把该 `app_key` 写回当前路由，避免继续出现空 `app_key` 请求。
 - 已通过 `pnpm --dir frontend build` 验证。
+
+## 2026-04-05 管理态 App 去 URL 与 fresh 重建核验
+
+### 本次改动
+- `frontend/src/store/modules/app-context.ts`、`frontend/src/hooks/business/useManagedAppScope.ts` 改成纯 store/persist 驱动的管理态 App 上下文：`effectiveManagedAppKey = managedAppKey || runtimeAppKey`，`ensureManagedAppKey()` 会把运行时 App 提升为管理态 App，系统管理页不再依赖 URL 里的 `app_key`。
+- `frontend/src/store/modules/menu-space.ts` 改成按 App 分片持久化运行时菜单空间配置和当前空间覆盖值，不再用一份全局 `currentSpaceKey` 复用所有 App；后续即使多个子域名 / 多个 App 共用同一后台壳，也不会把空间状态串到别的 App。
+- 重新执行了 `go run ./cmd/migrate --fresh`，测试库按“当前 schema + 当前 seed”重建，不再回放历史 named migrations；重建后已抽查确认：
+  - `apps` 仅存在默认 `platform-admin`
+  - `menu_spaces` 仅存在 `platform-admin/default`
+  - `menu_definitions = 24`
+  - `space_menu_placements = 24`
+  - `ui_pages = 13`
+  - `feature_packages = 5`
+  - `message_templates = 3`
+  - `访问链路测试` 菜单、`system.access_trace.manage` 页面、`ui.fast_enter` 配置都已存在
+- 已通过 `pnpm --dir frontend exec node --import tsx --test tests/app-context-store.test.ts`、`pnpm --dir frontend build`、`go test ./...` 验证。
+
+### 下次方向
+- 如果下一轮继续“彻底不留历史中间层”，优先把默认菜单 seed 从旧 `menus` 改成直接写 `menu_definitions + space_menu_placements`，不再依赖 `RefreshNavigationDefinitionsFromLegacyMenus()` 作为 fresh 初始化中间桥。
+- 运行时 `App` 仍建议长期坚持 `Host -> App -> Space` 解析，管理态 `App` 则继续只存在于 store / storage 或 cookie，不再恢复任何 URL `app_key` 兼容入口。
+## 2026-04-05 默认菜单 seed 直写新表
+
+### 本次改动
+- `backend/cmd/migrate/main.go` 的默认菜单初始化已从“先写旧 `menus`，再 `RefreshNavigationDefinitionsFromLegacyMenus()` 回填”改成直接写 `menu_definitions + space_menu_placements`。`ensureDefaultMenuSeedByName / syncDefaultMenuSeedByName / ensureMenuSeed / syncMenuSeed` 现在全部以 `MenuDefinition` 为核心，不再把 fresh 默认菜单落到旧表。
+- 初始化主链不再在 fresh 过程中调用 `RefreshNavigationDefinitionsFromLegacyMenus()`；访问链路测试菜单 `ensureAccessTraceNavigationSeed()` 也同步切到新模型，菜单定义、空间布局、页面父菜单和功能包菜单绑定都直接引用菜单定义 ID。
+- `backend/internal/pkg/permissionseed/ensure.go` 的默认功能包菜单绑定已改成查询 `menu_definitions`，不再通过旧 `menus` 按名称找菜单。
+- 重新执行 `go run ./cmd/migrate --fresh` 后抽查确认：
+  - `menus = 0`
+  - `menu_definitions = 24`
+  - `space_menu_placements = 24`
+  - `feature_package_menus = 32`
+  - 默认 seed 已完全由新表承接
+- 已通过 `go test ./...` 与 fresh 重建验证。
+
+### 下次方向
+- 旧 `menus` 表现在只剩历史审计/回滚参考用途；如果后续确认不再需要 legacy 菜单备份恢复，可继续把 `RefreshNavigationDefinitionsFromLegacyMenus()` 和相关 legacy 转换 helper 下沉为纯维护工具，进一步收缩主代码面。
+- 页面 seed 目前已经通过菜单定义 ID 建立父菜单，但 `ui_pages.space_key` 仍作为历史字段存在；后续如要继续收口，可把 seed 写入时对该字段的依赖进一步降到最低。
+
+## 2026-04-06 页面可见性模型继续收口
+
+### 本次改动
+- `backend/internal/modules/system/page/service.go` 将页面管理与运行时菜单映射进一步收口到“当前 App + 当前空间”的菜单视图：`List`、`ListOptions`、运行时访问上下文、页面 hydrate 和未注册页面推断现在都会显式按空间读取 `menu_definitions + space_menu_placements` 物化后的菜单，避免同一菜单定义在多个空间下被默认映射覆盖。
+- 页面同步推断规则继续贴近新模型：未注册页面如果推断到父菜单，会生成 `inner + inherit`；否则默认生成 `standalone + app`，不再把无父菜单页面回退成旧式全局页语义。
+- `frontend/src/views/system/page/modules/page-group-dialog.vue` 与 `page-display-group-dialog.vue` 已显式引入 `visibilityScope`：
+  - 逻辑分组在未挂载时可选 `App 全局 / 指定空间`
+  - 挂到菜单或父分组后自动继承上级空间
+  - 普通分组默认 `App 全局`，只有切到指定空间时才保存 `space_keys`
+- `frontend/src/views/system/page/index.vue` 的页面类型筛选与统计口径已纳入 `standalone`，`fetchSyncPages` 也改成显式传 `app_key`，不再留空请求。
+- `frontend/src/api/system-manage.ts` 的页面同步与未注册页面 helper 改成必填 `appKey`，继续压缩管理态的隐式默认 App 行为。
+
+### 验证
+- `go test ./...`
+- `pnpm --dir frontend build`
+- 后续执行 `go run ./cmd/migrate --fresh` 时，应按最新页面可见性模型直接写入 fresh 数据，不再依赖旧 `menus` 或页面 `space_key` 主归属语义。
+
+### 下次方向
+- 如果要继续把旧兼容层压到最低，优先再审一轮 `page/runtime_cache.go` 与运行时 breadcrumb 推导，确认它们只认“页面定义 + 当前空间布局”而不再假设单一默认空间。
+- 页面 seed 目前已经进入“App 归属 + visibility_scope + page_space_bindings”模型，后续可继续减少 `ui_pages.space_key` 在审计和返回结构中的存在感。
+
+## 2026-04-06 页面种子直写 visibility_scope 与 page_space_bindings
+
+### 本次改动
+- `backend/internal/pkg/permissionseed/seeds.go` 的 `PageSeed` 新增 `VisibilityScope`、`SpaceKeys`，默认页面种子不再隐含依赖历史 `space_key` 语义；`display.system_pages` 与 `workspace.user_center` 已改成明确的 App 级页面。
+- `backend/cmd/migrate/main.go` 的 `syncUIPageSeed(...)` 已直接按新模型写入：
+  - 页面固定归属 `platform-admin`
+  - `visibility_scope` 按 `page_type + 父菜单/父页面` 归一化
+  - `ui_pages.space_key` 不再作为 seed 主字段写入
+  - `page_space_bindings` 仅在 `visibility_scope = spaces` 时生成
+  - `global` 页种子会自动清理父菜单、父页面与 `active_menu_path`
+- `frontend/src/router/core/ManagedPageProcessor.ts` 的运行时空间解析已改成优先读取 `visibilityScope + spaceKeys`，不再让旧 `page.spaceKey/meta.spaceKey` 抢主语义；`global/app` 页面统一跟随当前运行时空间，`spaces` 页面按已绑定空间解析，`inherit` 页面继续走父页面/父菜单链。
+- `frontend/src/views/system/page/index.vue` 不再在页面管理页加载后自动选中某个菜单空间作为主视角；页面列表默认按 App 管理，空间仅保留为次级筛选与访问辅助，不再隐式绑到默认空间。
+
+### fresh 数据核对
+- 已重新执行 `go run ./cmd/migrate --fresh`，并抽查确认：
+  - `platform-admin/default` 正常存在
+  - `ui_pages` 当前为 `display_group(app) = 1`、`global(app) = 1`、`inner(inherit) = 11`
+  - `page_space_bindings = 0`
+  - `workspace.user_center` 已不再挂父菜单
+  - `display.system_pages` 已改为 App 级可见
+
+### 验证
+- `go test ./...`
+- `pnpm --dir frontend build`
+- `go run ./cmd/migrate --fresh`
+
+### 下次方向
+- 如果后续要继续压缩历史字段，可以把 `ui_pages.space_key` 在返回结构里的兼容展示也继续降权，只保留 `visibility_scope + space_keys` 作为页面主语义。
+- 当前默认 seed 里还没有 `standalone + spaces` 示例页；如果后续要联调空间独立页，可以补一条最小示例 seed，专门验证 `page_space_bindings` 链路。
+
+## 2026-04-06 App 默认空间自动生成与页面主语义继续收口
+
+### 本次改动
+- `frontend/src/views/system/app/index.vue` 的 App 新建流程继续收口：创建时不再携带空的 `default_space_key`，并在表单里明确提示“系统会自动创建当前 App 自己的默认空间 `default`”；编辑态才允许手动切换默认空间。
+- `frontend/src/types/api/api.d.ts` 同步更新说明：
+  - `AppSaveParams.default_space_key` 只在编辑 App 时有意义，创建由服务端自动生成默认空间。
+  - 页面 `space_key` 明确降级为历史兼容字段，管理端主语义统一看 `visibility_scope + space_keys`。
+- 重新执行 fresh 后核查默认数据，确认当前主链已经符合最终模型：
+  - `apps` 中 `platform-admin` 为 `multi + default`
+  - `menu_spaces` 中同时存在 `platform-admin/default` 与 `platform-admin/ops`
+  - `ui_pages` 中 `workspace.ops_console` 为 `standalone + spaces`
+  - `page_space_bindings` 中存在 `workspace.ops_console -> ops`
+  - `ui_pages.space_key` 对现有 fresh 页面已经全部为空，仅保留历史兼容字段语义
+
+### 验证
+- `go test ./...`
+- `go run ./cmd/migrate --fresh`
+- `pnpm --dir frontend build`
+- fresh 后抽查：
+  - `select app_key, space_mode, default_space_key from apps`
+  - `select app_key, space_key, is_default from menu_spaces`
+  - `select page_key, page_type, visibility_scope, space_key from ui_pages`
+  - `select p.page_key, b.space_key from page_space_bindings ...`
+
+### 下次方向
+- 如果后续还要继续压缩历史字段，可继续降低 `UIPage.SpaceKey` 在后端 DTO 和管理端类型中的可见性，只在内部兼容桥接保留。
+- 当前运行时已不提供空间切换入口；后续若需要多空间站点联调，优先验证 `Host -> App -> Space` 的解析与菜单/页面加载，不再往壳层回塞空间选择逻辑。
+
+## 2026-04-06 根文档收紧为单前端主线
+
+### 本次改动
+- 整理了根目录三份当前生效文档：
+  - `AGENTS.md`
+  - `PROJECT_FRAMEWORK.md`
+  - `FRONTEND_GUIDELINE.md`
+- 删除了 `AGENTS.md` 中混入的无关英文定位文本，并统一了排版、缩进和措辞。
+- 三份文档都进一步明确：仓库当前只保留 `frontend/` 这一条有效前端主线，后续后台页面、壳层、组件、路由、状态与样式演进都以 `frontend/` 为唯一落点，不再并行发展第二套后台前端工程或 UI 体系。
+- 同时补强了“单主线、不并行孵化第二套后台设计语言、不用临时新工程绕开现有主线约束”的书面说明，避免后续协作时再次分叉。
+
+### 验证
+- 本次仅调整文档与约束说明，未改动业务代码或构建配置，因此未额外执行构建与测试。
+
+### 下次方向
+- 如果后续还要继续收紧协作边界，可以把 App/菜单空间/页面模型的最新约束再补一份精简版总览文档，放在根目录或 `docs/` 下，供多人协作时快速对齐。
+- 2026-04-06：补完中断前遗留的页面管理收口改动，修正 [page-entry-dialog.vue](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/views/system/page/modules/page-entry-dialog.vue)、[page-group-dialog.vue](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/views/system/page/modules/page-group-dialog.vue)、[page-display-group-dialog.vue](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/views/system/page/modules/page-display-group-dialog.vue) 的 `visibilityScope + spaceKeys` 表单逻辑与提交流程，移除 [api.d.ts](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/types/api/api.d.ts) 中 `PageSaveParams.space_key` 的管理态主语义；已重新执行 `pnpm --dir frontend build` 验证通过。
+
+## 2026-04-06 页面运行时空间桥接继续降权
+
+### 本次改动
+- `frontend/src/router/core/ManagedPageProcessor.ts` 继续降低旧页面空间兼容字段的优先级：运行时页面空间解析现在优先只读取后端显式返回的 `visibilityScope + spaceKeys`，不再把 `page.meta.visibilityScope / page.meta.spaceKeys` 当主语义来源；运行时 `meta.spaceKey` 仍保留为桥接结果，供现有跳转与通知组件继续消费。
+- `backend/internal/modules/system/page/service.go` 的访问追踪链不再把“未显式传空间”硬编码回退到固定 `default`，而是按当前 App 的默认空间解析；页面水合链在页面自身没有显式空间绑定时，也不再让页面记录主动宣称 `default` 空间。
+
+### 验证
+- `go test ./...`
+- `pnpm --dir frontend build`
+
+### 下次方向
+- 如果继续收尾，可再审一轮运行时消费 `route.meta.spaceKey` 的组件，确认它们只把该字段当桥接结果，而不是反向推导页面主语义。
+- `UIPage.SpaceKey` 目前已基本退出 fresh 数据与管理态主视图；后续可继续压低它在后端返回结构中的存在感，只保留内部兼容桥接。
+
+## 2026-04-06 菜单与页面管理改为页内独立切换 App
+
+### 本次改动
+- `frontend/src/views/system/menu/index.vue` 新增页内 `App` 选择器；菜单定义管理不再依赖“先去应用管理选 App”。切到空间布局模式后，还可以继续选择当前 `App` 下的菜单空间；如果未选空间，则菜单树和页面候选保持空结果，并明确提示“请选择当前要配置的菜单空间”。
+- `frontend/src/views/system/page/index.vue` 新增页内 `App` 选择器；页面管理现在先按 `App` 管理，再按空间做二级筛选与预览，不再依赖全局已选 `App`。同时补了独立页 `standalone` 的展示文案与空间筛选逻辑。
+- `frontend/src/views/system/menu-space/index.vue` 新增页内 `App` 选择器；“高级空间配置”不再隐藏在应用管理后的隐式上下文里，而是可以直接在页面内切换 `App`，分别查看和维护该 `App` 下的空间、Host 绑定和空间模式。
+- `backend/internal/pkg/permissionseed/seeds.go` 去掉了 `MenuSpaceManage` 默认菜单上的 `isHide` 元信息，让“高级空间配置”重新作为正常系统菜单可见。
+- `backend/cmd/migrate/main.go` 修复旧命名迁移 `20260330_menu_space_foundation` 里对 `menu_spaces(space_key)` 全局唯一的过时假设；原先的 `ON CONFLICT (space_key)` 已改成 `WHERE NOT EXISTS`，兼容当前 `app_key + space_key` 模型，避免现网库在执行 `go run ./cmd/migrate` 时再次卡死。
+
+### 验证
+- `go run ./cmd/migrate`
+- `go test ./...`
+- `pnpm --dir frontend build`
+
+### 下次方向
+- 如果后续继续优化交互，可再把菜单管理与高级空间配置页之间的入口关系做得更清晰，例如在菜单页布局模式下补充更明确的“当前 App / 当前空间”状态提示。
+- 若需要继续收紧历史兼容层，优先只读审计页面运行时仍消费 `spaceKey` 的组件，确认它们仅把该字段当桥接结果，不再作为页面主语义来源。
+
+## 2026-04-06 管理页 App 选择改为页面内独立记忆
+
+### 本次改动
+- `frontend/src/hooks/business/useManagedAppScope.ts` 不再把管理态 `App` 选择写入全局 `appContextStore.managedAppKey`。当前实现改为按页面独立持久化：每个管理页都会使用自己的本地存储键记住最近一次选择的 `App`，页面之间不再互相联动。
+- `frontend/src/hooks/business/managed-app-scope.ts` 新增页面级存储键解析逻辑，优先使用显式键，其次使用当前路由名/路径生成稳定键名，确保菜单管理、页面管理、角色管理、团队管理等页面各自记住自己的 `App` 选择。
+- `frontend/src/views/system/app/index.vue` 去掉了从应用管理页直接写全局 `managedAppKey` 的逻辑。现在在应用管理页选择某个 `App`，只影响当前页自身的详情、Host 绑定和空间配置视图，不会把其它系统管理页一起切到相同 `App`。
+
+### 验证
+- `pnpm --dir frontend build`
+
+### 页面规则
+- 只需要 `App` 选择、不需要 `Space` 选择：角色管理、用户管理、团队管理、团队角色与权限、功能包管理、快捷应用管理。这些页面主语义是 `App` 级资源或授权边界，不是空间级布局。
+- 需要 `App` 选择，并按需再加 `Space` 选择：菜单管理、页面管理、高级空间配置、访问链路测试。因为这些页面会直接受菜单布局或页面空间可见性影响，空间筛选对结果有实质作用。

@@ -6,6 +6,21 @@
       :metrics="summaryMetrics"
     >
       <div class="fast-enter-hero-actions">
+        <ElSelect
+          v-model="selectedAppKey"
+          clearable
+          filterable
+          placeholder="选择 App"
+          class="fast-enter-app-select"
+          @change="handleManagedAppChange"
+        >
+          <ElOption
+            v-for="item in appOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </ElSelect>
         <ElButton type="primary" @click="saveConfig" v-ripple>保存配置</ElButton>
         <ElButton @click="restoreDraft" v-ripple>撤销未保存修改</ElButton>
         <ElButton type="danger" plain @click="resetToDefault" v-ripple>恢复默认</ElButton>
@@ -226,7 +241,7 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { storeToRefs } from 'pinia'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
-  import { fetchGetMenuTreeAll } from '@/api/system-manage'
+  import { fetchGetApps, fetchGetMenuTreeAll } from '@/api/system-manage'
   import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
   import { getDefaultFastEnterConfig, useFastEnterStore } from '@/store/modules/fast-enter'
   import type { AppRouteRecord } from '@/types/router'
@@ -262,7 +277,15 @@
 
   const fastEnterStore = useFastEnterStore()
   const { config } = storeToRefs(fastEnterStore)
-  const { targetAppKey } = useManagedAppScope()
+  const { targetAppKey, setManagedAppKey } = useManagedAppScope()
+  const appList = ref<Api.SystemManage.AppItem[]>([])
+  const selectedAppKey = ref('')
+  const appOptions = computed(() =>
+    appList.value.map((item) => ({
+      label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
+      value: item.appKey
+    }))
+  )
 
   const cloneConfig = (value: FastEnterConfig): FastEnterConfig =>
     JSON.parse(JSON.stringify(value)) as FastEnterConfig
@@ -302,8 +325,21 @@
   ])
 
   const loadMenuRouteTree = async () => {
+    if (!targetAppKey.value) {
+      menuRouteTree.value = []
+      return
+    }
     const menuTree = await fetchGetMenuTreeAll(undefined, targetAppKey.value)
     menuRouteTree.value = buildRouteTree(menuTree || [])
+  }
+
+  const loadAppOptions = async () => {
+    const res = await fetchGetApps()
+    appList.value = res.records || []
+  }
+
+  const handleManagedAppChange = async (value?: string) => {
+    await setManagedAppKey(`${value || ''}`.trim())
   }
 
   const drawerTitle = computed(() =>
@@ -521,6 +557,10 @@
   }
 
   onMounted(async () => {
+    selectedAppKey.value = targetAppKey.value
+    await loadAppOptions().catch(() => {
+      appList.value = []
+    })
     await fastEnterStore.loadConfig(true)
     Object.assign(draft, cloneConfig(config.value))
     persistedConfig.value = cloneConfig(config.value)
@@ -534,6 +574,7 @@
   watch(
     targetAppKey,
     () => {
+      selectedAppKey.value = targetAppKey.value || ''
       loadMenuRouteTree().catch(() => {
         ElMessage.error('刷新当前 App 菜单树失败')
       })
@@ -552,6 +593,10 @@
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
+  }
+
+  .fast-enter-app-select {
+    width: 240px;
   }
 
   .fast-enter-shell {

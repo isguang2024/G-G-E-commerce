@@ -82,7 +82,13 @@ func (h *Handler) GetMode(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	mode, err := h.service.GetMode()
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	mode, err := h.service.GetMode(appKey)
 	if err != nil {
 		h.logger.Error("Get menu space mode failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取菜单空间模式失败")
@@ -104,7 +110,13 @@ func (h *Handler) SaveMode(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	mode, err := h.service.SaveMode(req.Mode)
+	appKey, err := appctx.RequireRequestAppKey(c)
+	if err != nil {
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key is required")
+		c.JSON(status, resp)
+		return
+	}
+	mode, err := h.service.SaveMode(appKey, req.Mode)
 	if err != nil {
 		h.logger.Error("Save menu space mode failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存菜单空间模式失败")

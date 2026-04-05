@@ -1,17 +1,33 @@
 ---
 name: finishing-a-development-branch
-description: Use when implementation is complete, all tests pass, and you need to decide how to integrate the work - guides completion of development work by presenting structured options for merge, PR, or cleanup
+description: Use when implementation is complete and the user explicitly wants to commit, merge, create a PR, keep a branch, discard work, or clean up an isolated branch in this repository
 ---
 
 # Finishing a Development Branch
 
 ## Overview
 
-Guide completion of development work by presenting clear options and handling chosen workflow.
+Guide completion of development work only when the user actually wants branch integration or cleanup. This skill is not the automatic ending for every completed coding task.
 
 **Core principle:** Verify tests → Present options → Execute choice → Clean up.
 
 **Announce at start:** "I'm using the finishing-a-development-branch skill to complete this work."
+
+## When to Use
+
+Use this skill when the user explicitly asks to:
+
+- commit or prepare a branch for commit
+- merge locally
+- push and create a PR
+- keep or discard the current branch/worktree
+- clean up an isolated branch after verified work
+
+Do not use this skill when:
+
+- The task is merely "implemented and verified"
+- The user only asked for code changes or debugging
+- No branch, PR, merge, or cleanup action is being requested
 
 ## The Process
 
@@ -48,7 +64,7 @@ Or ask: "This branch split from main - is that correct?"
 
 ### Step 3: Present Options
 
-Present exactly these 4 options:
+Present the relevant options concisely. Use the full four-option menu when the user has not already chosen a path.
 
 ```
 Implementation complete. What would you like to do?
@@ -183,18 +199,19 @@ git worktree remove <worktree-path>
 - Merge without verifying tests on result
 - Delete work without confirmation
 - Force-push without explicit request
+- Invoke this skill automatically just because implementation ended
 
 **Always:**
 - Verify tests before offering options
-- Present exactly 4 options
+- Present only the options relevant to the user's stated goal
 - Get typed confirmation for Option 4
 - Clean up worktree for Options 1 & 4 only
 
 ## Integration
 
-**Called by:**
-- **subagent-driven-development** (Step 7) - After all tasks complete
-- **executing-plans** (Step 5) - After all batches complete
+**Common entry points:**
+- User asks for commit / PR / merge / branch cleanup
+- A prior workflow has completed and the user wants integration handled
 
 **Pairs with:**
 - **using-git-worktrees** - Cleans up worktree created by that skill

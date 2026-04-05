@@ -78,6 +78,7 @@
               </div>
               <div class="app-manage-item__meta">
                 <span>标识 {{ item.appKey }}</span>
+                <span>模式 {{ item.spaceMode === 'multi' ? '多空间' : '单空间' }}</span>
                 <span>默认空间 {{ displaySpaceLabel(item.defaultSpaceKey) }}</span>
                 <span>空间 {{ item.menuSpaceCount || 0 }}</span>
                 <span>菜单 {{ item.menuCount || 0 }}</span>
@@ -117,6 +118,10 @@
             <div class="app-overview__item">
               <span class="app-overview__label">App 标识</span>
               <strong>{{ selectedAppRecord.appKey }}</strong>
+            </div>
+            <div class="app-overview__item">
+              <span class="app-overview__label">空间模式</span>
+              <strong>{{ selectedAppRecord.spaceMode === 'multi' ? '多空间' : '单空间' }}</strong>
             </div>
             <div class="app-overview__item">
               <span class="app-overview__label">默认空间</span>
@@ -201,7 +206,10 @@
         <ElFormItem label="应用标识">
           <ElInput v-model="appForm.app_key" :disabled="Boolean(editingAppKey)" placeholder="例如 platform-admin" />
         </ElFormItem>
-        <ElFormItem label="默认空间">
+        <div v-if="!editingAppKey" class="app-form-hint">
+          新建 App 时系统会自动创建当前 App 自己的默认空间 `default`，无需手动选择。
+        </div>
+        <ElFormItem v-if="editingAppKey" label="默认空间">
           <ElSelect v-model="appForm.default_space_key" filterable allow-create default-first-option style="width: 100%">
             <ElOption
               v-for="item in spaces"
@@ -209,6 +217,12 @@
               :label="`${item.name} · ${item.spaceKey}`"
               :value="item.spaceKey"
             />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="空间模式">
+          <ElSelect v-model="appForm.space_mode" style="width: 100%">
+            <ElOption label="单空间" value="single" />
+            <ElOption label="多空间" value="multi" />
           </ElSelect>
         </ElFormItem>
         <ElFormItem label="说明">
@@ -280,7 +294,6 @@
   import { ElMessage } from 'element-plus'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
-  import { useAppContextStore } from '@/store/modules/app-context'
   import {
     fetchGetApps,
     fetchGetAppHostBindings,
@@ -293,7 +306,6 @@
   defineOptions({ name: 'AppManage' })
 
   const router = useRouter()
-  const appContextStore = useAppContextStore()
   const { targetAppKey, setManagedAppKey } = useManagedAppScope()
   const managedAppMissingText = '请先从 App 列表选择要管理的应用'
   const loading = ref(false)
@@ -315,6 +327,7 @@
     app_key: '',
     name: '',
     description: '',
+    space_mode: 'single',
     default_space_key: '',
     is_default: false,
     status: 'normal',
@@ -389,7 +402,6 @@
       throw new Error('缺少 app 上下文')
     }
     selectedAppKey.value = normalizedAppKey
-    appContextStore.setManagedAppKey(normalizedAppKey)
     await setManagedAppKey(normalizedAppKey)
     const [hostRes, spaceRes] = await Promise.all([
       fetchGetAppHostBindings(normalizedAppKey),
@@ -406,9 +418,13 @@
       const [appsRes, currentRes] = await Promise.all([fetchGetApps(), fetchGetCurrentApp()])
       apps.value = appsRes.records || []
       currentApp.value = currentRes
-      const nextAppKey = resolveAppKey(targetAppKey.value, selectedAppKey.value, currentRes?.app?.appKey, apps.value[0]?.appKey)
+      const nextAppKey = resolveAppKey(targetAppKey.value, selectedAppKey.value)
       if (!nextAppKey) {
-        throw new Error('未找到可管理的 App')
+        selectedAppKey.value = ''
+        hostBindings.value = []
+        spaces.value = []
+        loadError.value = managedAppMissingText
+        return
       }
       await loadSelectedAppContext(nextAppKey)
     } catch (error: any) {
@@ -423,10 +439,11 @@
 
   function resetAppForm() {
     editingAppKey.value = ''
-    appForm.app_key = resolveAppKey(selectedAppKey.value, currentAppRecord.value?.appKey)
+    appForm.app_key = ''
     appForm.name = ''
     appForm.description = ''
-    appForm.default_space_key = resolveSpaceKey(selectedAppRecord.value?.defaultSpaceKey, spaces.value[0]?.spaceKey)
+    appForm.space_mode = 'single'
+    appForm.default_space_key = ''
     appForm.is_default = false
     appForm.status = 'normal'
     appForm.meta = {}
@@ -434,9 +451,9 @@
 
   function resetHostForm() {
     editingHost.value = ''
-    hostForm.app_key = resolveAppKey(selectedAppKey.value, currentAppRecord.value?.appKey)
+    hostForm.app_key = resolveAppKey(selectedAppKey.value)
     hostForm.host = ''
-    hostForm.default_space_key = resolveSpaceKey(selectedAppRecord.value?.defaultSpaceKey, spaces.value[0]?.spaceKey)
+    hostForm.default_space_key = resolveSpaceKey(selectedAppRecord.value?.defaultSpaceKey)
     hostForm.description = ''
     hostForm.is_primary = false
     hostForm.status = 'normal'
@@ -450,6 +467,7 @@
       appForm.app_key = item.appKey
       appForm.name = item.name
       appForm.description = item.description || ''
+      appForm.space_mode = item.spaceMode === 'multi' ? 'multi' : 'single'
       appForm.default_space_key = resolveSpaceKey(item.defaultSpaceKey)
       appForm.is_default = Boolean(item.isDefault)
       appForm.status = item.status || 'normal'
@@ -482,18 +500,23 @@
       ElMessage.warning('请输入应用名称')
       return
     }
-    if (!resolveSpaceKey(appForm.default_space_key)) {
-      ElMessage.warning('请选择或填写默认空间')
-      return
-    }
     savingApp.value = true
     try {
-      const saved = await fetchSaveApp({
+      const payload: Api.SystemManage.AppSaveParams = {
         ...appForm,
         app_key: appForm.app_key.trim(),
         name: appForm.name.trim(),
         description: appForm.description?.trim() || '',
-        default_space_key: resolveSpaceKey(appForm.default_space_key)
+        space_mode: appForm.space_mode === 'multi' ? 'multi' : 'single'
+      }
+      const nextDefaultSpaceKey = resolveSpaceKey(appForm.default_space_key)
+      if (editingAppKey.value && nextDefaultSpaceKey) {
+        payload.default_space_key = nextDefaultSpaceKey
+      } else {
+        delete payload.default_space_key
+      }
+      const saved = await fetchSaveApp({
+        ...payload
       })
       ElMessage.success('应用已保存')
       appDrawerVisible.value = false
@@ -547,19 +570,29 @@
     })
   }
 
-  function goToMenuManagement() {
+  async function goToMenuManagement() {
+    if (selectedAppKey.value) {
+      await loadSelectedAppContext(selectedAppKey.value)
+    }
     router.push({ path: '/system/menu' })
   }
 
-  function goToPageManagement() {
+  async function goToPageManagement() {
+    if (selectedAppKey.value) {
+      await loadSelectedAppContext(selectedAppKey.value)
+    }
     router.push({ path: '/system/page' })
   }
 
-  function goToSpaceManagement(appKey?: string) {
-    if (appKey && appKey !== selectedAppKey.value) {
-      loadSelectedAppContext(appKey).catch((error: any) => {
+  async function goToSpaceManagement(appKey?: string) {
+    const targetKey = appKey || selectedAppKey.value
+    if (targetKey) {
+      try {
+        await loadSelectedAppContext(targetKey)
+      } catch (error: any) {
         ElMessage.error(error?.message || '切换应用失败')
-      })
+        return
+      }
     }
     router.push({ path: '/system/menu-space' })
   }
@@ -573,6 +606,8 @@
     (value) => {
       if (value && value !== selectedAppKey.value) {
         selectedAppKey.value = value
+      } else if (!value) {
+        selectedAppKey.value = ''
       }
     }
   )
@@ -583,6 +618,13 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+  }
+
+  .app-form-hint {
+    margin: -2px 0 14px;
+    color: var(--art-text-gray-600);
+    font-size: 12px;
+    line-height: 1.6;
   }
 
   .app-manage-hero-actions {

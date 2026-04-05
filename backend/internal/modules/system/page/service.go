@@ -52,9 +52,9 @@ type SaveRequest struct {
 	RouteName         string                 `json:"route_name"`
 	RoutePath         string                 `json:"route_path"`
 	Component         string                 `json:"component"`
-	SpaceKey          string                 `json:"space_key"`
 	SpaceKeys         []string               `json:"space_keys"`
 	PageType          string                 `json:"page_type"`
+	VisibilityScope   string                 `json:"visibility_scope"`
 	Source            string                 `json:"source"`
 	ModuleKey         string                 `json:"module_key"`
 	SortOrder         int                    `json:"sort_order"`
@@ -95,6 +95,7 @@ type UnregisteredRecord struct {
 	RouteName      string `json:"route_name"`
 	RoutePath      string `json:"route_path"`
 	PageType       string `json:"page_type"`
+	VisibilityScope string `json:"visibility_scope"`
 	ModuleKey      string `json:"module_key"`
 	ParentMenuID   string `json:"parent_menu_id"`
 	ParentMenuName string `json:"parent_menu_name"`
@@ -239,7 +240,7 @@ func (s *service) List(req *ListRequest) ([]Record, int64, error) {
 	if err != nil {
 		return nil, 0, err
 	}
-	menuMap, err := s.loadMenuMap(appKey)
+	menuMap, err := s.loadMenuMap(appKey, req.SpaceKey)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -281,6 +282,7 @@ func (s *service) ListOptions(appKey, spaceKey string) ([]models.UIPage, error) 
 			"component",
 			"space_key",
 			"page_type",
+			"visibility_scope",
 			"module_key",
 			"parent_menu_id",
 			"parent_page_key",
@@ -296,7 +298,7 @@ func (s *service) ListOptions(appKey, spaceKey string) ([]models.UIPage, error) 
 	if err != nil {
 		return nil, err
 	}
-	menuMap, err := s.loadMenuMap(normalizeAppKey(appKey))
+	menuMap, err := s.loadMenuMap(normalizeAppKey(appKey), spaceKey)
 	if err != nil {
 		return nil, err
 	}
@@ -351,7 +353,14 @@ func (s *service) GetAccessTrace(appKey string, req *AccessTraceRequest) (*Acces
 	}
 	spaceKey := normalizeSpaceKey(req.SpaceKey)
 	if spaceKey == "" {
-		spaceKey = spaceutil.DefaultMenuSpaceKey
+		resolvedSpaceKey, _, resolveErr := spaceutil.ResolveCurrentSpaceKey(s.db, appKey, "", "", nil, nil)
+		if resolveErr != nil {
+			return nil, resolveErr
+		}
+		spaceKey = normalizeSpaceKey(resolvedSpaceKey)
+		if spaceKey == "" {
+			spaceKey = spaceutil.DefaultMenuSpaceKey
+		}
 	}
 	accessCtx, err := s.ResolveCompiledAccessContext(appKey, spaceKey, &userID, tenantID)
 	if err != nil {
@@ -536,7 +545,7 @@ func (s *service) buildRuntimeRecords(appKey, spaceKey string) ([]Record, map[uu
 	if err != nil {
 		return nil, nil, err
 	}
-	menuMap, err := s.loadMenuMap(normalizeAppKey(appKey))
+	menuMap, err := s.loadMenuMap(normalizeAppKey(appKey), spaceKey)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -603,6 +612,7 @@ func (s *service) Sync(appKey string) (*SyncResult, error) {
 			RoutePath:         item.RoutePath,
 			Component:         item.Component,
 			PageType:          item.PageType,
+			VisibilityScope:   item.VisibilityScope,
 			Source:            "sync",
 			ModuleKey:         item.ModuleKey,
 			ParentMenuID:      item.ParentMenuID,
@@ -631,7 +641,7 @@ func (s *service) PreviewBreadcrumb(id uuid.UUID, appKey string) ([]BreadcrumbPr
 	if err != nil {
 		return nil, err
 	}
-	menuMap, err := s.loadMenuMap(normalizedAppKey)
+	menuMap, err := s.loadMenuMap(normalizedAppKey, "")
 	if err != nil {
 		return nil, err
 	}
@@ -685,7 +695,7 @@ func (s *service) Create(req *SaveRequest) (*Record, error) {
 		if err := tx.Create(item).Error; err != nil {
 			return err
 		}
-		return syncPageSpaceBindings(tx, item.AppKey, item.ID, req.SpaceKey, req.SpaceKeys, item.ParentMenuID, item.ParentPageKey)
+		return syncPageSpaceBindings(tx, item.AppKey, item.ID, req.SpaceKeys, item.PageType, item.VisibilityScope, item.ParentMenuID, item.ParentPageKey)
 	}); err != nil {
 		return nil, err
 	}
@@ -726,7 +736,7 @@ func (s *service) Update(id uuid.UUID, req *SaveRequest) (*Record, error) {
 		if err := tx.Model(&existing).Updates(pageToUpdateMap(item)).Error; err != nil {
 			return err
 		}
-		return syncPageSpaceBindings(tx, existing.AppKey, existing.ID, req.SpaceKey, req.SpaceKeys, item.ParentMenuID, item.ParentPageKey)
+		return syncPageSpaceBindings(tx, existing.AppKey, existing.ID, req.SpaceKeys, item.PageType, item.VisibilityScope, item.ParentMenuID, item.ParentPageKey)
 	}); err != nil {
 		return nil, err
 	}
@@ -827,7 +837,7 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 
 	pageType := normalizePageType(req.PageType)
 	if pageType == "" {
-		pageType = "inner"
+		pageType = "standalone"
 	}
 	source := normalizeSource(req.Source)
 	if source == "" {
@@ -936,6 +946,12 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 		parentPageKey = ""
 		activeMenuPath = ""
 	}
+	if pageType == models.PageTypeInner && parentMenuID == nil && parentPageKey == "" {
+		return nil, fmt.Errorf("%w: 内页必须挂到菜单或上级页面", ErrPageValidation)
+	}
+	if pageType == models.PageTypeStandalone && (parentMenuID != nil || parentPageKey != "") {
+		return nil, fmt.Errorf("%w: 独立页不能挂到菜单或上级页面", ErrPageValidation)
+	}
 	if parentMenuID != nil {
 		parentMenu, err := s.menuRepo.GetByID(*parentMenuID)
 		if err != nil {
@@ -1002,8 +1018,9 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 		RouteName:         routeName,
 		RoutePath:         routePath,
 		Component:         component,
-		SpaceKey:          normalizeStandalonePageSpaceKey(req.SpaceKey, parentMenuID, parentPageKey),
+		SpaceKey:          "",
 		PageType:          pageType,
+		VisibilityScope:   normalizePageVisibilityScopeForSave(pageType, req.VisibilityScope, parentMenuID, parentPageKey),
 		Source:            source,
 		ModuleKey:         moduleKey,
 		SortOrder:         req.SortOrder,
@@ -1146,7 +1163,9 @@ func pageToUpdateMap(item *models.UIPage) map[string]interface{} {
 		"route_name":         item.RouteName,
 		"route_path":         item.RoutePath,
 		"component":          item.Component,
+		"space_key":          "",
 		"page_type":          item.PageType,
+		"visibility_scope":   item.VisibilityScope,
 		"source":             item.Source,
 		"module_key":         item.ModuleKey,
 		"sort_order":         item.SortOrder,
@@ -1169,7 +1188,7 @@ func (s *service) hydrateManagedRecord(record *Record) error {
 	if record == nil {
 		return nil
 	}
-	menuMap, err := s.loadMenuMap(record.AppKey)
+	menuMap, err := s.loadMenuMap(record.AppKey, firstResolvedPageSpaceKey(record.UIPage))
 	if err != nil {
 		return err
 	}
@@ -1196,8 +1215,9 @@ func syncPageSpaceBindings(
 	tx *gorm.DB,
 	appKey string,
 	pageID uuid.UUID,
-	spaceKey string,
 	spaceKeys []string,
+	pageType string,
+	visibilityScope string,
 	parentMenuID *uuid.UUID,
 	parentPageKey string,
 ) error {
@@ -1207,7 +1227,7 @@ func syncPageSpaceBindings(
 	if err := tx.Where("app_key = ? AND page_id = ?", normalizeAppKey(appKey), pageID).Delete(&models.PageSpaceBinding{}).Error; err != nil {
 		return err
 	}
-	bindingKeys := normalizeStandalonePageBindingKeys(spaceKey, spaceKeys, parentMenuID, parentPageKey)
+	bindingKeys := normalizeStandalonePageBindingKeys(spaceKeys, pageType, visibilityScope, parentMenuID, parentPageKey)
 	if len(bindingKeys) == 0 {
 		return nil
 	}
@@ -1248,8 +1268,15 @@ func (s *service) loadPageMap(appKey string) (map[string]models.UIPage, error) {
 	return result, nil
 }
 
-func (s *service) loadMenuMap(appKey string) (map[uuid.UUID]runtimeMenuNode, error) {
-	menus, err := s.menuRepo.ListByAppAndSpace(normalizeAppKey(appKey), "")
+func (s *service) loadMenuMap(appKey string, spaceKey string) (map[uuid.UUID]runtimeMenuNode, error) {
+	normalizedAppKey := normalizeAppKey(appKey)
+	normalizedSpaceKey := normalizeSpaceKey(spaceKey)
+	if strings.TrimSpace(spaceKey) == "" {
+		if resolvedSpaceKey, _, err := spaceutil.ResolveSpaceKeyByHost(s.db, normalizedAppKey, ""); err == nil {
+			normalizedSpaceKey = normalizeSpaceKey(resolvedSpaceKey)
+		}
+	}
+	menus, err := s.menuRepo.ListByAppAndSpace(normalizedAppKey, normalizedSpaceKey)
 	if err != nil {
 		return nil, err
 	}
@@ -1446,7 +1473,7 @@ func (s *service) buildUnregisteredRecords(appKey string) ([]UnregisteredRecord,
 		routeNameSet[strings.TrimSpace(item.RouteName)] = struct{}{}
 	}
 
-	menuMap, err := s.loadMenuMap(appKey)
+	menuMap, err := s.loadMenuMap(appKey, "")
 	if err != nil {
 		return nil, err
 	}
@@ -1538,9 +1565,11 @@ func deriveUnregisteredRecord(
 	}
 
 	parentMenuID, parentMenuName, activeMenuPath := guessParentMenu(routePath, menuMap)
-	pageType := "global"
+	pageType := models.PageTypeStandalone
+	visibilityScope := pageVisibilityScopeApp
 	if parentMenuID != "" {
-		pageType = "inner"
+		pageType = models.PageTypeInner
+		visibilityScope = pageVisibilityScopeInherit
 	}
 
 	return UnregisteredRecord{
@@ -1551,6 +1580,7 @@ func deriveUnregisteredRecord(
 		RouteName:      routeName,
 		RoutePath:      routePath,
 		PageType:       pageType,
+		VisibilityScope: visibilityScope,
 		ModuleKey:      moduleKey,
 		ParentMenuID:   parentMenuID,
 		ParentMenuName: parentMenuName,
@@ -1592,6 +1622,14 @@ func deriveSyncedPageAccessMode(pageType string) string {
 		return "inherit"
 	}
 	return "jwt"
+}
+
+func firstResolvedPageSpaceKey(item models.UIPage) string {
+	keys := readPageSpaceKeys(item)
+	if len(keys) > 0 {
+		return keys[0]
+	}
+	return ""
 }
 
 func boolPtr(value bool) *bool {
@@ -1872,7 +1910,7 @@ func normalizePageAndSize(req *ListRequest) (int, int) {
 
 func normalizePageType(value string) string {
 	switch strings.TrimSpace(value) {
-	case "group", "display_group", "inner", "global":
+	case "group", "display_group", "inner", "global", "standalone":
 		return strings.TrimSpace(value)
 	default:
 		return ""
@@ -1886,6 +1924,9 @@ func normalizeLegacyGlobalPage(item models.UIPage) models.UIPage {
 	item.ParentMenuID = nil
 	item.ParentPageKey = ""
 	item.ActiveMenuPath = ""
+	if strings.TrimSpace(item.VisibilityScope) == "" {
+		item.VisibilityScope = pageVisibilityScopeApp
+	}
 	return item
 }
 
@@ -1934,39 +1975,35 @@ func normalizeStatus(value string) string {
 	}
 }
 
-func normalizeStandalonePageSpaceKey(value string, parentMenuID *uuid.UUID, parentPageKey string) string {
-	// 新模型下页面主表不再承担空间归属语义：
-	// - 常规页面从菜单或父页面继承空间
-	// - 少量独立页通过 page_space_bindings 控制暴露范围
-	// 因此新写入统一清空主表 space_key，仅保留旧数据兼容读取。
-	_ = value
-	if parentMenuID != nil || strings.TrimSpace(parentPageKey) != "" {
-		return ""
+func normalizePageVisibilityScopeForSave(pageType string, value string, parentMenuID *uuid.UUID, parentPageKey string) string {
+	switch normalizePageType(pageType) {
+	case models.PageTypeGlobal:
+		if strings.TrimSpace(value) == pageVisibilityScopeSpaces {
+			return pageVisibilityScopeSpaces
+		}
+		return pageVisibilityScopeApp
+	case models.PageTypeInner:
+		return pageVisibilityScopeInherit
+	case models.PageTypeStandalone, "group", "display_group":
+		if parentMenuID != nil || strings.TrimSpace(parentPageKey) != "" {
+			return pageVisibilityScopeInherit
+		}
+		if strings.TrimSpace(value) == pageVisibilityScopeSpaces {
+			return pageVisibilityScopeSpaces
+		}
+		return pageVisibilityScopeApp
+	default:
+		return pageVisibilityScopeApp
 	}
-	return ""
 }
 
-func normalizeStandalonePageBindingKeys(value string, values []string, parentMenuID *uuid.UUID, parentPageKey string) []string {
-	if parentMenuID != nil || strings.TrimSpace(parentPageKey) != "" {
+func normalizeStandalonePageBindingKeys(values []string, pageType string, visibilityScope string, parentMenuID *uuid.UUID, parentPageKey string) []string {
+	if normalizePageVisibilityScopeForSave(pageType, visibilityScope, parentMenuID, parentPageKey) != pageVisibilityScopeSpaces {
 		return []string{}
 	}
-	if values != nil {
-		candidates := make([]string, 0, len(values))
-		for _, item := range values {
-			if target := normalizeSpaceKey(item); target != "" {
-				candidates = append(candidates, target)
-			}
-		}
-		return uniqueSortedStrings(candidates)
-	}
-	candidates := make([]string, 0, len(values)+1)
+	candidates := make([]string, 0, len(values))
 	for _, item := range values {
 		if target := normalizeSpaceKey(item); target != "" {
-			candidates = append(candidates, target)
-		}
-	}
-	if len(candidates) == 0 {
-		if target := normalizeSpaceKey(value); target != "" {
 			candidates = append(candidates, target)
 		}
 	}

@@ -39,11 +39,25 @@
         </ElRow>
 
         <ElRow :gutter="14">
-          <ElCol :span="24">
-        <ElFormItem label="空间可见" prop="spaceKey">
+          <ElCol :span="12">
+            <ElFormItem label="可见范围" prop="visibilityScope">
+              <template #label>
+                <PageFieldLabel
+                  label="可见范围"
+                  help="普通分组默认在当前 App 下全局可见；只有切到指定空间时才写入空间绑定。"
+                />
+              </template>
+              <ElRadioGroup v-model="form.visibilityScope">
+                <ElRadioButton label="app">App 全局</ElRadioButton>
+                <ElRadioButton label="spaces">指定空间</ElRadioButton>
+              </ElRadioGroup>
+            </ElFormItem>
+          </ElCol>
+          <ElCol v-if="form.visibilityScope === 'spaces'" :span="12">
+        <ElFormItem label="开放空间" prop="spaceKeys">
           <template #label>
             <PageFieldLabel
-              label="空间可见"
+              label="开放空间"
               help="只控制这个普通分组在哪些菜单空间里可见，不改变普通分组本身的定义。"
             />
           </template>
@@ -117,7 +131,6 @@
     appKey?: string
     menuSpaces?: Api.SystemManage.MenuSpaceItem[]
     // 仅作为可见性/候选加载视角使用，不代表页面必须绑定该空间。
-    currentSpaceKey?: string
     initialParentPageKey?: string
     initialParentMenuId?: string
     initialPageType?: PageItem['pageType']
@@ -134,7 +147,6 @@
     dialogType: 'add',
     pageData: undefined,
     menuSpaces: () => [],
-    currentSpaceKey: '',
     initialParentPageKey: '',
     initialParentMenuId: '',
     initialPageType: 'display_group',
@@ -160,8 +172,7 @@
     id: '',
     pageKey: '',
     name: '',
-    // 兼容旧接口保留的视角字段：仅用于列表归类视角，不是页面主语义。
-    spaceKey: '',
+    visibilityScope: 'app',
     spaceKeys: [] as string[],
     sortOrder: 0,
     status: 'normal'
@@ -177,33 +188,24 @@
     '例 3：停用普通分组后页面数据保留，只是不再作为有效归类节点显示。'
   ]
   const menuSpaceOptions = computed(() =>
-    [
-      { label: '全空间可见', value: '__all__' },
-      ...(props.menuSpaces || []).map((item) => ({
-        label: item.isDefault ? `${item.name}（默认）` : item.name,
-        value: item.spaceKey
-      }))
-    ]
+    (props.menuSpaces || []).map((item) => ({
+      label: item.isDefault ? `${item.name}（默认）` : item.name,
+      value: item.spaceKey
+    }))
   )
 
   function initForm() {
     if (props.dialogType === 'edit' && props.pageData) {
-      const spaceKeys = Array.isArray(props.pageData.meta?.spaceKeys)
-        ? props.pageData.meta?.spaceKeys
+      const spaceKeys = Array.isArray(props.pageData.spaceKeys)
+        ? props.pageData.spaceKeys
         : []
       Object.assign(form, {
         id: props.pageData.id || '',
         pageKey: props.pageData.pageKey || '',
         name: props.pageData.name || '',
-        spaceKey: props.pageData.spaceKey || '',
-        spaceKeys:
-          props.pageData.pageType === 'global'
-            ? ['__all__']
-            : spaceKeys.length > 0
-              ? spaceKeys
-              : props.pageData.spaceKey
-                ? [props.pageData.spaceKey]
-                : [],
+        visibilityScope:
+          `${props.pageData.visibilityScope || props.pageData.spaceScope || ''}`.trim() || 'app',
+        spaceKeys: spaceKeys,
         sortOrder: props.pageData.sortOrder ?? 0,
         status: props.pageData.status || 'normal'
       })
@@ -214,17 +216,23 @@
       id: '',
       pageKey: props.defaultData?.pageKey || '',
       name: props.defaultData?.name || '',
-      spaceKey: props.defaultData?.spaceKey || '',
-      spaceKeys:
-        props.defaultData?.pageType === 'global' || props.initialPageType === 'global'
-          ? ['__all__']
-          : props.defaultData?.spaceKey
-            ? [props.defaultData.spaceKey]
-            : [],
+      visibilityScope:
+        `${props.defaultData?.visibilityScope || props.defaultData?.spaceScope || ''}`.trim() ||
+        'app',
+      spaceKeys: props.defaultData?.spaceKeys || [],
       sortOrder: props.defaultData?.sortOrder ?? 0,
       status: props.defaultData?.status || 'normal'
     })
   }
+
+  watch(
+    () => form.visibilityScope,
+    (value) => {
+      if (value !== 'spaces') {
+        form.spaceKeys = []
+      }
+    }
+  )
 
   async function prepareDialog() {
     await nextTick()
@@ -265,7 +273,7 @@
       const valid = await formRef.value.validate().catch(() => false)
       if (!valid) return
       submitting.value = true
-      const nextSpaceKey = `${form.spaceKeys.includes('__all__') ? '' : form.spaceKeys[0] || form.spaceKey || ''}`.trim()
+      const visibilityScope = form.visibilityScope === 'spaces' ? 'spaces' : 'app'
       const payload: Api.SystemManage.PageSaveParams = {
         app_key: `${props.appKey || ''}`.trim(),
         page_key: props.dialogType === 'edit' ? form.pageKey.trim() : '',
@@ -279,11 +287,8 @@
             ? `${props.pageData?.source || 'manual'}`
             : `${props.defaultData?.source || 'manual'}`,
         module_key: '',
-        // 兼容后端当前写接口；真正的空间暴露由后端统一返回 spaceKeys / spaceScope。
-        space_key: nextSpaceKey,
-        space_keys: form.spaceKeys.includes('__all__')
-          ? []
-          : form.spaceKeys.filter((item) => item !== '__all__'),
+        visibility_scope: visibilityScope,
+        space_keys: visibilityScope === 'spaces' ? form.spaceKeys : [],
         sort_order: form.sortOrder,
         parent_menu_id: '',
         parent_page_key: '',

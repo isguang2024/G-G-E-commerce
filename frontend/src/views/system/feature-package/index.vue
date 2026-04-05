@@ -44,6 +44,21 @@
       ]"
     >
       <div class="feature-package-hero-actions">
+        <ElSelect
+          v-model="selectedAppKey"
+          clearable
+          filterable
+          placeholder="选择 App"
+          class="feature-package-app-select"
+          @change="handleManagedAppChange"
+        >
+          <ElOption
+            v-for="item in appOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </ElSelect>
         <ElButton
           v-action="'platform.package.manage'"
           @click="openRelationDialog"
@@ -193,7 +208,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, h, reactive, ref, watch } from 'vue'
+  import { computed, h, onMounted, reactive, ref, watch } from 'vue'
   import { ElButton, ElCard, ElMessage, ElMessageBox, ElTag } from 'element-plus'
   import { useRoute } from 'vue-router'
   import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
@@ -201,6 +216,7 @@
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import {
     fetchDeleteFeaturePackage,
+    fetchGetApps,
     fetchGetFeaturePackageImpactPreview,
     fetchGetFeaturePackageList,
     fetchGetFeaturePackageRelationTree
@@ -227,8 +243,10 @@
   }
   const showSearchBar = ref(false)
   const route = useRoute()
-  const { targetAppKey } = useManagedAppScope()
+  const { targetAppKey, setManagedAppKey } = useManagedAppScope()
   const activePackageType = ref<'base' | 'bundle'>('base')
+  const appList = ref<Api.SystemManage.AppItem[]>([])
+  const selectedAppKey = ref('')
   const dialogVisible = ref(false)
   const bundlesDialogVisible = ref(false)
   const actionsDialogVisible = ref(false)
@@ -268,6 +286,12 @@
   )
   const disabledPackageCount = computed(
     () => data.value.filter((item) => item.status === 'disabled').length
+  )
+  const appOptions = computed(() =>
+    appList.value.map((item) => ({
+      label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
+      value: item.appKey
+    }))
   )
 
   const searchForm = reactive<SearchForm>({
@@ -314,6 +338,18 @@
     }
   ])
 
+  const fetchFeaturePackageListByApp: typeof fetchGetFeaturePackageList = async (params) => {
+    if (!targetAppKey.value) {
+      return {
+        records: [],
+        total: 0,
+        current: Number((params as any)?.current || 1),
+        size: Number((params as any)?.size || 20)
+      }
+    }
+    return fetchGetFeaturePackageList(params)
+  }
+
   const {
     columns,
     columnChecks,
@@ -327,7 +363,7 @@
     refreshData
   } = useTable({
     core: {
-      apiFn: fetchGetFeaturePackageList,
+      apiFn: fetchFeaturePackageListByApp,
       apiParams: {
         current: 1,
         size: 20,
@@ -518,12 +554,31 @@
     await refreshData()
   }
 
+  async function loadAppOptions() {
+    const res = await fetchGetApps()
+    appList.value = res.records || []
+  }
+
+  async function handleManagedAppChange(value?: string) {
+    await setManagedAppKey(`${value || ''}`.trim())
+  }
+
   async function openRelationDialog() {
+    if (!targetAppKey.value) {
+      ElMessage.warning('请选择当前要管理的 App')
+      return
+    }
     relationDialogVisible.value = true
     await loadRelationTree()
   }
 
   async function loadRelationTree() {
+    if (!targetAppKey.value) {
+      relationTree.roots = []
+      relationTree.cycleDependencies = []
+      relationTree.isolatedBaseKeys = []
+      return
+    }
     relationLoading.value = true
     try {
       const result = await fetchGetFeaturePackageRelationTree({
@@ -670,6 +725,22 @@
     { immediate: true }
   )
 
+  watch(
+    () => targetAppKey.value,
+    () => {
+      selectedAppKey.value = targetAppKey.value || ''
+      routeOpenSignature.value = ''
+      syncRouteFilters()
+    }
+  )
+
+  onMounted(() => {
+    selectedAppKey.value = targetAppKey.value
+    loadAppOptions().catch(() => {
+      appList.value = []
+    })
+  })
+
   function supportsPlatform(contextType?: string) {
     return contextType === 'platform' || contextType === 'common'
   }
@@ -701,6 +772,10 @@
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+  }
+
+  .feature-package-app-select {
+    width: 240px;
   }
 
   .package-tabs {
