@@ -21,22 +21,22 @@ type messageTodoActionRequest struct {
 }
 
 type messageDispatchRequest struct {
-	SenderID        string   `json:"sender_id"`
-	TemplateID      string   `json:"template_id"`
-	TemplateKey     string   `json:"template_key"`
-	MessageType     string   `json:"message_type"`
-	AudienceType    string   `json:"audience_type"`
-	TargetTenantIDs []string `json:"target_tenant_ids"`
-	TargetUserIDs   []string `json:"target_user_ids"`
-	TargetGroupIDs  []string `json:"target_group_ids"`
-	Title           string   `json:"title"`
-	Summary         string   `json:"summary"`
-	Content         string   `json:"content"`
-	Priority        string   `json:"priority"`
-	ActionType      string   `json:"action_type"`
-	ActionTarget    string   `json:"action_target"`
-	BizType         string   `json:"biz_type"`
-	ExpiredAt       string   `json:"expired_at"`
+	SenderID                        string   `json:"sender_id"`
+	TemplateID                      string   `json:"template_id"`
+	TemplateKey                     string   `json:"template_key"`
+	MessageType                     string   `json:"message_type"`
+	AudienceType                    string   `json:"audience_type"`
+	TargetCollaborationWorkspaceIDs []string `json:"target_collaboration_workspace_ids"`
+	TargetUserIDs                   []string `json:"target_user_ids"`
+	TargetGroupIDs                  []string `json:"target_group_ids"`
+	Title                           string   `json:"title"`
+	Summary                         string   `json:"summary"`
+	Content                         string   `json:"content"`
+	Priority                        string   `json:"priority"`
+	ActionType                      string   `json:"action_type"`
+	ActionTarget                    string   `json:"action_target"`
+	BizType                         string   `json:"biz_type"`
+	ExpiredAt                       string   `json:"expired_at"`
 }
 
 type messageTemplateSaveRequest struct {
@@ -61,13 +61,13 @@ type messageSenderSavePayload struct {
 }
 
 type messageRecipientGroupTargetPayload struct {
-	TargetType string          `json:"target_type"`
-	UserID     string          `json:"user_id"`
-	TenantID   string          `json:"tenant_id"`
-	RoleCode   string          `json:"role_code"`
-	PackageKey string          `json:"package_key"`
-	SortOrder  int             `json:"sort_order"`
-	Meta       models.MetaJSON `json:"meta"`
+	TargetType               string          `json:"target_type"`
+	UserID                   string          `json:"user_id"`
+	CollaborationWorkspaceID string          `json:"collaboration_workspace_id"`
+	RoleCode                 string          `json:"role_code"`
+	PackageKey               string          `json:"package_key"`
+	SortOrder                int             `json:"sort_order"`
+	Meta                     models.MetaJSON `json:"meta"`
 }
 
 type messageRecipientGroupSavePayload struct {
@@ -241,7 +241,7 @@ func (h *SystemHandler) GetMessageDispatchOptions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	tenantID, err := currentTenantID(c)
+	tenantID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -264,7 +264,7 @@ func (h *SystemHandler) DispatchMessage(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	tenantID, err := currentTenantID(c)
+	tenantID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -277,22 +277,22 @@ func (h *SystemHandler) DispatchMessage(c *gin.Context) {
 		return
 	}
 	result, err := h.messageService.DispatchMessage(userID, tenantID, dispatchRequest{
-		SenderID:        req.SenderID,
-		TemplateID:      req.TemplateID,
-		TemplateKey:     req.TemplateKey,
-		MessageType:     req.MessageType,
-		AudienceType:    req.AudienceType,
-		TargetTenantIDs: req.TargetTenantIDs,
-		TargetUserIDs:   req.TargetUserIDs,
-		TargetGroupIDs:  req.TargetGroupIDs,
-		Title:           req.Title,
-		Summary:         req.Summary,
-		Content:         req.Content,
-		Priority:        req.Priority,
-		ActionType:      req.ActionType,
-		ActionTarget:    req.ActionTarget,
-		BizType:         req.BizType,
-		ExpiredAt:       req.ExpiredAt,
+		SenderID:                        req.SenderID,
+		TemplateID:                      req.TemplateID,
+		TemplateKey:                     req.TemplateKey,
+		MessageType:                     req.MessageType,
+		AudienceType:                    req.AudienceType,
+		TargetCollaborationWorkspaceIDs: coalesceStringSlice(req.TargetCollaborationWorkspaceIDs, req.TargetCollaborationWorkspaceIDs),
+		TargetUserIDs:                   req.TargetUserIDs,
+		TargetGroupIDs:                  req.TargetGroupIDs,
+		Title:                           req.Title,
+		Summary:                         req.Summary,
+		Content:                         req.Content,
+		Priority:                        req.Priority,
+		ActionType:                      req.ActionType,
+		ActionTarget:                    req.ActionTarget,
+		BizType:                         req.BizType,
+		ExpiredAt:                       req.ExpiredAt,
 	})
 	if err != nil {
 		if strings.Contains(err.Error(), "不能为空") ||
@@ -313,7 +313,7 @@ func (h *SystemHandler) DispatchMessage(c *gin.Context) {
 }
 
 func (h *SystemHandler) ListMessageTemplates(c *gin.Context) {
-	tenantID, err := currentTenantID(c)
+	tenantID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -341,7 +341,7 @@ func (h *SystemHandler) ListMessageTemplates(c *gin.Context) {
 }
 
 func (h *SystemHandler) SaveMessageTemplate(c *gin.Context) {
-	tenantID, err := currentTenantID(c)
+	tenantID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -385,7 +385,7 @@ func (h *SystemHandler) SaveMessageTemplate(c *gin.Context) {
 }
 
 func (h *SystemHandler) ListMessageSenders(c *gin.Context) {
-	tenantID, err := currentTenantID(c)
+	tenantID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -404,7 +404,7 @@ func (h *SystemHandler) ListMessageSenders(c *gin.Context) {
 }
 
 func (h *SystemHandler) SaveMessageSender(c *gin.Context) {
-	tenantID, err := currentTenantID(c)
+	tenantID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -443,7 +443,7 @@ func (h *SystemHandler) SaveMessageSender(c *gin.Context) {
 }
 
 func (h *SystemHandler) ListDispatchRecords(c *gin.Context) {
-	tenantID, err := currentTenantID(c)
+	tenantID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -474,7 +474,7 @@ func (h *SystemHandler) ListDispatchRecords(c *gin.Context) {
 }
 
 func (h *SystemHandler) GetDispatchRecordDetail(c *gin.Context) {
-	tenantID, err := currentTenantID(c)
+	tenantID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -501,7 +501,7 @@ func (h *SystemHandler) GetDispatchRecordDetail(c *gin.Context) {
 }
 
 func (h *SystemHandler) ListMessageRecipientGroups(c *gin.Context) {
-	tenantID, err := currentTenantID(c)
+	tenantID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -518,7 +518,7 @@ func (h *SystemHandler) ListMessageRecipientGroups(c *gin.Context) {
 }
 
 func (h *SystemHandler) SaveMessageRecipientGroup(c *gin.Context) {
-	tenantID, err := currentTenantID(c)
+	tenantID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -532,14 +532,20 @@ func (h *SystemHandler) SaveMessageRecipientGroup(c *gin.Context) {
 	}
 	targets := make([]messageRecipientGroupTargetSaveRequest, 0, len(req.Targets))
 	for _, item := range req.Targets {
+		resolvedLegacyCollaborationWorkspaceID, resolveErr := h.messageService.resolveLegacyCollaborationWorkspaceIDString(firstNonEmptyString(item.CollaborationWorkspaceID, item.CollaborationWorkspaceID))
+		if resolveErr != nil {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, resolveErr.Error())
+			c.JSON(status, resp)
+			return
+		}
 		targets = append(targets, messageRecipientGroupTargetSaveRequest{
-			TargetType: item.TargetType,
-			UserID:     item.UserID,
-			TenantID:   item.TenantID,
-			RoleCode:   item.RoleCode,
-			PackageKey: item.PackageKey,
-			SortOrder:  item.SortOrder,
-			Meta:       item.Meta,
+			TargetType:               item.TargetType,
+			UserID:                   item.UserID,
+			CollaborationWorkspaceID: resolvedLegacyCollaborationWorkspaceID,
+			RoleCode:                 item.RoleCode,
+			PackageKey:               item.PackageKey,
+			SortOrder:                item.SortOrder,
+			Meta:                     item.Meta,
 		})
 	}
 	groupID := strings.TrimSpace(c.Param("groupId"))
@@ -581,8 +587,19 @@ func currentAuthUserID(c *gin.Context) (uuid.UUID, error) {
 	return uuid.Parse(userIDStr)
 }
 
-func currentTenantID(c *gin.Context) (*uuid.UUID, error) {
-	raw, ok := c.Get("tenant_id")
+func currentCollaborationWorkspaceID(c *gin.Context) (*uuid.UUID, error) {
+	raw, ok := c.Get("collaboration_workspace_id")
+	if ok {
+		value, ok := raw.(string)
+		if ok && strings.TrimSpace(value) != "" {
+			parsedID, parseErr := uuid.Parse(strings.TrimSpace(value))
+			if parseErr != nil {
+				return nil, parseErr
+			}
+			return &parsedID, nil
+		}
+	}
+	raw, ok = c.Get("collaboration_workspace_id")
 	if ok {
 		value, ok := raw.(string)
 		if !ok {
@@ -597,13 +614,29 @@ func currentTenantID(c *gin.Context) (*uuid.UUID, error) {
 			return &id, nil
 		}
 	}
-	target := strings.TrimSpace(c.GetHeader("X-Tenant-ID"))
+	target := strings.TrimSpace(c.GetHeader("X-Collaboration-Workspace-Id"))
 	if target == "" {
 		return nil, nil
 	}
-	id, err := uuid.Parse(target)
-	if err != nil {
-		return nil, err
+	parsedID, parseErr := uuid.Parse(target)
+	if parseErr != nil {
+		return nil, parseErr
 	}
-	return &id, nil
+	return &parsedID, nil
+}
+
+func coalesceStringSlice(primary, fallback []string) []string {
+	if len(primary) > 0 {
+		return primary
+	}
+	return fallback
+}
+
+func firstNonEmptyString(values ...string) string {
+	for _, item := range values {
+		if strings.TrimSpace(item) != "" {
+			return strings.TrimSpace(item)
+		}
+	}
+	return ""
 }

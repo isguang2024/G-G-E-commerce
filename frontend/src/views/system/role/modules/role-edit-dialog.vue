@@ -5,7 +5,8 @@
     size="36%"
     @close="handleClose"
     direction="rtl"
-    class="config-drawer">
+    class="config-drawer"
+  >
     <ElForm ref="formRef" :model="form" :rules="rules" label-width="120px">
       <ElFormItem label="角色名称" prop="roleName">
         <ElInput v-model="form.roleName" placeholder="请输入角色名称" />
@@ -218,7 +219,8 @@
       if (props.dialogType === 'add') {
         await fetchCreateRole(payload as any)
       } else {
-        const roleId = typeof form.roleId === 'string' ? form.roleId : (form.roleId as any)?.toString?.() || ''
+        const roleId =
+          typeof form.roleId === 'string' ? form.roleId : (form.roleId as any)?.toString?.() || ''
         if (!roleId) {
           ElMessage.error('缺少角色ID')
           return

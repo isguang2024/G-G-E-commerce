@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HTTP 请求封装模块
  * 基于 Axios 封装的 HTTP 请求工具，提供统一的请求/响应处理
  *
@@ -17,6 +17,7 @@
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { useUserStore } from '@/store/modules/user'
 import { useTenantStore } from '@/store/modules/tenant'
+import { useWorkspaceStore } from '@/store/modules/workspace'
 import { ApiStatus } from './status'
 import { HttpError, handleError, showError, showSuccess } from './error'
 import { $t } from '@/locales'
@@ -38,6 +39,8 @@ interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
   showErrorMessage?: boolean
   showSuccessMessage?: boolean
   skipTenantHeader?: boolean
+  skipCollaborationWorkspaceHeader?: boolean
+  skipWorkspaceHeader?: boolean
 }
 
 const { VITE_API_URL, VITE_WITH_CREDENTIALS } = import.meta.env
@@ -65,17 +68,32 @@ const axiosInstance = axios.create({
 
 /** 请求拦截器 */
 axiosInstance.interceptors.request.use(
-  (request: InternalAxiosRequestConfig & { skipTenantHeader?: boolean }) => {
+  (
+    request: InternalAxiosRequestConfig & {
+      skipTenantHeader?: boolean
+      skipCollaborationWorkspaceHeader?: boolean
+      skipWorkspaceHeader?: boolean
+    }
+  ) => {
     const { accessToken } = useUserStore()
-    const { currentTenantId, currentContextMode } = useTenantStore()
+    const { currentCollaborationWorkspaceId, currentContextMode } = useTenantStore()
+    const { currentAuthWorkspaceId } = useWorkspaceStore()
     if (accessToken) {
       // 添加 Bearer 前缀（如果还没有）
       const token = accessToken.startsWith('Bearer ') ? accessToken : `Bearer ${accessToken}`
       request.headers.set('Authorization', token)
     }
 
-    if (!request.skipTenantHeader && currentContextMode === 'team' && currentTenantId) {
-      request.headers.set('X-Tenant-ID', currentTenantId)
+    if (!request.skipWorkspaceHeader && currentAuthWorkspaceId) {
+      request.headers.set('X-Auth-Workspace-Id', currentAuthWorkspaceId)
+    }
+
+    const skipCollaborationHeader =
+      Boolean(request.skipCollaborationWorkspaceHeader) || Boolean(request.skipTenantHeader)
+    if (!skipCollaborationHeader && currentContextMode === 'collaboration') {
+      if (currentCollaborationWorkspaceId) {
+        request.headers.set('X-Collaboration-Workspace-Id', currentCollaborationWorkspaceId)
+      }
     }
 
     if (request.data && !(request.data instanceof FormData) && !request.headers['Content-Type']) {
@@ -233,3 +251,4 @@ const api = {
 }
 
 export default api
+

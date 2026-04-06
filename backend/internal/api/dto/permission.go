@@ -139,14 +139,14 @@ type FeaturePackageMenuSetRequest struct {
 	MenuIDs []string `json:"menu_ids"`
 }
 
-type TeamFeaturePackageSetRequest struct {
+type CollaborationWorkspaceFeaturePackageSetRequest struct {
 	AppKey     string   `json:"app_key" binding:"max=100"`
 	PackageIDs []string `json:"package_ids"`
 }
 
 type FeaturePackageTeamSetRequest struct {
-	AppKey  string   `json:"app_key" binding:"max=100"`
-	TeamIDs []string `json:"team_ids"`
+	AppKey                    string   `json:"app_key" binding:"max=100"`
+	CollaborationWorkspaceIDs []string `json:"collaboration_workspace_ids"`
 }
 
 type FeaturePackageChildSetRequest struct {

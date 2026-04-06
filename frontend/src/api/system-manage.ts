@@ -1,4 +1,4 @@
-import request from '@/utils/http'
+﻿import request from '@/utils/http'
 import { AppRouteRecord } from '@/types/router'
 import type { FastEnterApplication, FastEnterQuickLink } from '@/types/config'
 import { normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
@@ -7,7 +7,7 @@ const USER_BASE = '/api/v1/users'
 const ROLE_BASE = '/api/v1/roles'
 const ACTION_PERMISSION_BASE = '/api/v1/permission-actions'
 const FEATURE_PACKAGE_BASE = '/api/v1/feature-packages'
-const TENANT_BASE = '/api/v1/tenants'
+const TENANT_BASE = '/api/v1/collaboration-workspaces'
 const SYSTEM_BASE = '/api/v1/system'
 const APP_BASE = '/api/v1/system/apps'
 const APP_HOST_BINDING_BASE = '/api/v1/system/app-host-bindings'
@@ -44,9 +44,9 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
   const module = `${moduleCode || ''}`.trim()
   if (
     key.startsWith('system.') ||
-    key.startsWith('tenant.') ||
+    key.startsWith('collaboration_workspace.') ||
     key.startsWith('platform.') ||
-    key === 'tenant.manage' ||
+    key === 'collaboration_workspace.manage' ||
     module === 'role' ||
     module === 'user' ||
     module === 'menu' ||
@@ -81,10 +81,13 @@ function normalizePermissionAction(item: any): Api.SystemManage.PermissionAction
   const permissionKey = normalizePermissionKey(item?.permission_key || item?.permissionKey)
   const legacy = derivePermissionSegments(permissionKey)
   const moduleCode = item?.module_code || item?.moduleCode || legacy.resourceCode || ''
+  const consumerTypes = item?.consumer_types || item?.consumerTypes || []
+  const duplicateKeys = item?.duplicate_keys || item?.duplicateKeys || []
   const moduleGroup = normalizePermissionGroup(item?.module_group || item?.moduleGroup)
   const featureGroup = normalizePermissionGroup(item?.feature_group || item?.featureGroup)
   return {
     id: item?.id || '',
+    appKey: item?.app_key || item?.appKey || '',
     resourceCode: legacy.resourceCode,
     actionCode: legacy.actionCode,
     moduleCode: moduleGroup?.code || moduleCode,
@@ -96,6 +99,8 @@ function normalizePermissionAction(item: any): Api.SystemManage.PermissionAction
       item?.context_type || item?.contextType || deriveContextType(permissionKey, moduleCode),
     permissionKey,
     featureKind: featureGroup?.code || item?.feature_kind || item?.featureKind || 'system',
+    dataPolicy: item?.data_policy || item?.dataPolicy || '',
+    allowedWorkspaceTypes: item?.allowed_workspace_types || item?.allowedWorkspaceTypes || '',
     name: item?.name || '',
     description: item?.description || '',
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
@@ -103,19 +108,15 @@ function normalizePermissionAction(item: any): Api.SystemManage.PermissionAction
     apiCount: Number(item?.api_count ?? item?.apiCount ?? 0),
     pageCount: Number(item?.page_count ?? item?.pageCount ?? 0),
     packageCount: Number(item?.package_count ?? item?.packageCount ?? 0),
-    consumerTypes: Array.isArray(item?.consumer_types || item?.consumerTypes)
-      ? (item?.consumer_types || item?.consumerTypes)
-          .map((value: any) => `${value || ''}`.trim())
-          .filter(Boolean)
+    consumerTypes: Array.isArray(consumerTypes)
+      ? consumerTypes.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
       : [],
     usagePattern: item?.usage_pattern || item?.usagePattern || 'unused',
     usageNote: item?.usage_note || item?.usageNote || '',
     duplicatePattern: item?.duplicate_pattern || item?.duplicatePattern || 'none',
     duplicateGroup: item?.duplicate_group || item?.duplicateGroup || '',
-    duplicateKeys: Array.isArray(item?.duplicate_keys || item?.duplicateKeys)
-      ? (item?.duplicate_keys || item?.duplicateKeys)
-          .map((value: any) => `${value || ''}`.trim())
-          .filter(Boolean)
+    duplicateKeys: Array.isArray(duplicateKeys)
+      ? duplicateKeys.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
       : [],
     duplicateNote: item?.duplicate_note || item?.duplicateNote || '',
     status: item?.status || 'normal',
@@ -126,9 +127,7 @@ function normalizePermissionAction(item: any): Api.SystemManage.PermissionAction
   }
 }
 
-function normalizePermissionAuditSummary(
-  item: any
-): Api.SystemManage.PermissionActionAuditSummary {
+function normalizePermissionAuditSummary(item: any): Api.SystemManage.PermissionActionAuditSummary {
   return {
     totalCount: Number(item?.total_count ?? item?.totalCount ?? 0),
     unusedCount: Number(item?.unused_count ?? item?.unusedCount ?? 0),
@@ -147,6 +146,7 @@ function normalizePermissionAuditSummary(
 
 function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
   const permissionKeysRaw = item?.permission_keys || item?.permissionKeys || []
+  const permissionContextsRaw = item?.permission_contexts || item?.permissionContexts || []
   const permissionKeys = Array.isArray(permissionKeysRaw)
     ? permissionKeysRaw.map((v: any) => `${v || ''}`.trim()).filter(Boolean)
     : []
@@ -165,10 +165,8 @@ function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
     summary: item?.summary || '',
     permissionKey,
     permissionKeys,
-    permissionContexts: Array.isArray(item?.permission_contexts || item?.permissionContexts)
-      ? (item?.permission_contexts || item?.permissionContexts)
-          .map((v: any) => `${v || ''}`.trim())
-          .filter(Boolean)
+    permissionContexts: Array.isArray(permissionContextsRaw)
+      ? permissionContextsRaw.map((v: any) => `${v || ''}`.trim()).filter(Boolean)
       : [],
     permissionBindingMode:
       item?.permission_binding_mode ||
@@ -251,7 +249,8 @@ function normalizeTeam(item: any): Api.SystemManage.TeamListItem {
 
 function normalizePageItem(item: any): Api.SystemManage.PageItem {
   const meta = item?.meta || {}
-  const rawVisibilityScope = `${item?.visibility_scope || item?.visibilityScope || meta?.visibilityScope || ''}`.trim()
+  const rawVisibilityScope =
+    `${item?.visibility_scope || item?.visibilityScope || meta?.visibilityScope || ''}`.trim()
   const rawSpaceKeys = Array.isArray(item?.space_keys || item?.spaceKeys || meta?.spaceKeys)
     ? item?.space_keys || item?.spaceKeys || meta?.spaceKeys
     : []
@@ -343,6 +342,7 @@ function normalizePageUnregisteredItem(item: any): Api.SystemManage.PageUnregist
 }
 
 function normalizeMenuSpace(item: any): Api.SystemManage.MenuSpaceItem {
+  const allowedRoleCodes = item?.allowed_role_codes ?? item?.allowedRoleCodes ?? []
   return {
     id: item?.id || '',
     appKey: item?.app_key || item?.appKey || '',
@@ -360,10 +360,8 @@ function normalizeMenuSpace(item: any): Api.SystemManage.MenuSpaceItem {
     pageCount: Number(item?.page_count ?? item?.pageCount ?? 0),
     accessMode:
       `${item?.access_mode || item?.accessMode || item?.meta?.access_mode || item?.meta?.accessMode || 'all'}`.trim(),
-    allowedRoleCodes: Array.isArray(item?.allowed_role_codes ?? item?.allowedRoleCodes)
-      ? (item?.allowed_role_codes ?? item?.allowedRoleCodes)
-          .map((value: any) => `${value || ''}`.trim())
-          .filter(Boolean)
+    allowedRoleCodes: Array.isArray(allowedRoleCodes)
+      ? allowedRoleCodes.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
       : [],
     meta: item?.meta || {},
     createdAt: item?.created_at || item?.createdAt || '',
@@ -405,10 +403,9 @@ function normalizeMenuSpaceHostBinding(item: any): Api.SystemManage.MenuSpaceHos
 }
 
 function normalizeApp(item: any): Api.SystemManage.AppItem {
-  const primaryHosts = Array.isArray(item?.primary_hosts || item?.primaryHosts)
-    ? (item?.primary_hosts || item?.primaryHosts)
-        .map((value: any) => `${value || ''}`.trim())
-        .filter(Boolean)
+  const primaryHostsRaw = item?.primary_hosts || item?.primaryHosts || []
+  const primaryHosts = Array.isArray(primaryHostsRaw)
+    ? primaryHostsRaw.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
     : []
   return {
     id: item?.id || '',
@@ -466,9 +463,7 @@ function normalizeRefreshStats(item: any): Api.SystemManage.RefreshStats {
     roleCount: Number(item?.roleCount ?? item?.role_count ?? 0),
     teamCount: Number(item?.teamCount ?? item?.team_count ?? 0),
     userCount: Number(item?.userCount ?? item?.user_count ?? 0),
-    elapsedMilliseconds: Number(
-      item?.elapsedMilliseconds ?? item?.elapsed_milliseconds ?? 0
-    ),
+    elapsedMilliseconds: Number(item?.elapsedMilliseconds ?? item?.elapsed_milliseconds ?? 0),
     finishedAt: item?.finishedAt || item?.finished_at || ''
   }
 }
@@ -488,7 +483,9 @@ function normalizeRiskAudit(item: any): Api.SystemManage.RiskAuditItem {
   }
 }
 
-function normalizeFeaturePackageRelationNode(item: any): Api.SystemManage.FeaturePackageRelationNode {
+function normalizeFeaturePackageRelationNode(
+  item: any
+): Api.SystemManage.FeaturePackageRelationNode {
   return {
     id: item?.id || '',
     packageKey: item?.package_key || item?.packageKey || '',
@@ -503,22 +500,24 @@ function normalizeFeaturePackageRelationNode(item: any): Api.SystemManage.Featur
   }
 }
 
-function normalizeFeaturePackageRelationTree(item: any): Api.SystemManage.FeaturePackageRelationTree {
+function normalizeFeaturePackageRelationTree(
+  item: any
+): Api.SystemManage.FeaturePackageRelationTree {
+  const cycleDependencies = item?.cycle_dependencies || item?.cycleDependencies || []
+  const isolatedBaseKeys = item?.isolated_base_keys || item?.isolatedBaseKeys || []
   return {
     roots: Array.isArray(item?.roots)
       ? item.roots.map((node: any) => normalizeFeaturePackageRelationNode(node))
       : [],
-    cycleDependencies: Array.isArray(item?.cycle_dependencies || item?.cycleDependencies)
-      ? (item?.cycle_dependencies || item?.cycleDependencies).map((cycle: any) =>
+    cycleDependencies: Array.isArray(cycleDependencies)
+      ? cycleDependencies.map((cycle: any) =>
           Array.isArray(cycle)
             ? cycle.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
             : []
         )
       : [],
-    isolatedBaseKeys: Array.isArray(item?.isolated_base_keys || item?.isolatedBaseKeys)
-      ? (item?.isolated_base_keys || item?.isolatedBaseKeys)
-          .map((value: any) => `${value || ''}`.trim())
-          .filter(Boolean)
+    isolatedBaseKeys: Array.isArray(isolatedBaseKeys)
+      ? isolatedBaseKeys.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
       : []
   }
 }
@@ -526,6 +525,7 @@ function normalizeFeaturePackageRelationTree(item: any): Api.SystemManage.Featur
 function normalizePermissionActionConsumers(
   item: any
 ): Api.SystemManage.PermissionActionConsumerDetails {
+  const featurePackages = item?.feature_packages || item?.featurePackages || []
   return {
     permissionKey: item?.permission_key || item?.permissionKey || '',
     apis: Array.isArray(item?.apis)
@@ -544,8 +544,8 @@ function normalizePermissionActionConsumers(
           accessMode: page?.access_mode || page?.accessMode || ''
         }))
       : [],
-    featurePackages: Array.isArray(item?.feature_packages || item?.featurePackages)
-      ? (item?.feature_packages || item?.featurePackages).map((pkg: any) => ({
+    featurePackages: Array.isArray(featurePackages)
+      ? featurePackages.map((pkg: any) => ({
           id: pkg?.id || '',
           packageKey: pkg?.package_key || pkg?.packageKey || '',
           name: pkg?.name || '',
@@ -564,9 +564,7 @@ function normalizePermissionActionConsumers(
   }
 }
 
-function normalizeUnregisteredApiScanConfig(
-  item: any
-): Api.SystemManage.APIUnregisteredScanConfig {
+function normalizeUnregisteredApiScanConfig(item: any): Api.SystemManage.APIUnregisteredScanConfig {
   return {
     enabled: Boolean(item?.enabled),
     frequencyMinutes: Number(item?.frequency_minutes ?? item?.frequencyMinutes ?? 60),
@@ -577,17 +575,17 @@ function normalizeUnregisteredApiScanConfig(
 }
 
 function normalizePageAccessTraceResult(item: any): Api.SystemManage.PageAccessTraceResult {
+  const visibleMenuIds = item?.visible_menu_ids || item?.visibleMenuIds || []
   return {
     userId: item?.user_id || item?.userId || '',
-    tenantId: item?.tenant_id || item?.tenantId || '',
+    collaborationWorkspaceId:
+      item?.collaboration_workspace_id || item?.collaborationWorkspaceId || '',
     spaceKey: item?.space_key || item?.spaceKey || '',
     authenticated: Boolean(item?.authenticated),
     superAdmin: Boolean(item?.super_admin ?? item?.superAdmin),
     actionKeyCount: Number(item?.action_key_count ?? item?.actionKeyCount ?? 0),
-    visibleMenuIds: Array.isArray(item?.visible_menu_ids || item?.visibleMenuIds)
-      ? (item?.visible_menu_ids || item?.visibleMenuIds)
-          .map((value: any) => `${value || ''}`.trim())
-          .filter(Boolean)
+    visibleMenuIds: Array.isArray(visibleMenuIds)
+      ? visibleMenuIds.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
       : [],
     roles: Array.isArray(item?.roles)
       ? item.roles.map((role: any) => ({
@@ -699,6 +697,9 @@ function normalizeRuntimeMenuTree(item: any): AppRouteRecord {
 function normalizeRuntimeNavigationManifest(item: any): Api.SystemManage.RuntimeNavigationManifest {
   const currentApp = item?.current_app || item?.currentApp
   const currentSpace = item?.current_space || item?.currentSpace || {}
+  const menuTree = item?.menu_tree || item?.menuTree || []
+  const entryRoutes = item?.entry_routes || item?.entryRoutes || []
+  const managedPages = item?.managed_pages || item?.managedPages || []
   const space = currentSpace?.space ? normalizeMenuSpace(currentSpace.space) : undefined
   const binding = currentSpace?.binding
     ? normalizeMenuSpaceHostBinding(currentSpace.binding)
@@ -708,9 +709,7 @@ function normalizeRuntimeNavigationManifest(item: any): Api.SystemManage.Runtime
     currentApp: currentApp
       ? {
           app: normalizeApp(currentApp?.app || {}),
-          binding: currentApp?.binding
-            ? normalizeAppHostBinding(currentApp.binding)
-            : undefined,
+          binding: currentApp?.binding ? normalizeAppHostBinding(currentApp.binding) : undefined,
           resolvedBy: currentApp?.resolved_by || currentApp?.resolvedBy || '',
           requestHost: currentApp?.request_host || currentApp?.requestHost || ''
         }
@@ -732,16 +731,14 @@ function normalizeRuntimeNavigationManifest(item: any): Api.SystemManage.Runtime
       request_host: item?.context?.request_host || item?.context?.requestHost || ''
     },
     // menuTree 已经完成启用态、空间和权限裁剪；前端这里只做归一化与动态注册。
-    menuTree: Array.isArray(item?.menu_tree || item?.menuTree)
-      ? (item?.menu_tree || item?.menuTree).map((entry: any) => normalizeRuntimeMenuTree(entry))
+    menuTree: Array.isArray(menuTree)
+      ? menuTree.map((entry: any) => normalizeRuntimeMenuTree(entry))
       : [],
-    entryRoutes: Array.isArray(item?.entry_routes || item?.entryRoutes)
-      ? (item?.entry_routes || item?.entryRoutes).map((entry: any) =>
-          normalizeRuntimeMenuTree(entry)
-        )
+    entryRoutes: Array.isArray(entryRoutes)
+      ? entryRoutes.map((entry: any) => normalizeRuntimeMenuTree(entry))
       : [],
-    managedPages: Array.isArray(item?.managed_pages || item?.managedPages)
-      ? (item?.managed_pages || item?.managedPages).map((entry: any) => normalizePageItem(entry))
+    managedPages: Array.isArray(managedPages)
+      ? managedPages.map((entry: any) => normalizePageItem(entry))
       : [],
     versionStamp: item?.version_stamp || item?.versionStamp || ''
   }
@@ -767,7 +764,10 @@ export function fetchGetUserPackages(userId: string, appKey?: string) {
     })
     .then((res) => ({
       package_ids: res?.package_ids || [],
-      packages: (res?.packages || []).map(normalizeFeaturePackage)
+      packages: (res?.packages || []).map(normalizeFeaturePackage),
+      binding_workspace_id: res?.binding_workspace_id || '',
+      binding_workspace_type: res?.binding_workspace_type || 'personal',
+      binding_workspace_label: res?.binding_workspace_label || 'personal_workspace'
     }))
 }
 
@@ -844,7 +844,7 @@ export function fetchDeleteUser(id: string) {
   })
 }
 
-// 分配用户角色
+// 分配平台角色（实际绑定到目标用户的个人工作空间）
 export function fetchAssignUserRoles(id: string, roleIds: string[]) {
   return request.post<void>({
     url: `${USER_BASE}/${id}/roles`,
@@ -999,7 +999,8 @@ function normalizeUserPermissionDiagnosisResponse(
     },
     context: {
       type: item?.context?.type || 'platform',
-      tenantId: item?.context?.tenant_id || item?.context?.tenantId || '',
+      collaborationWorkspaceId:
+        item?.context?.collaboration_workspace_id || item?.context?.collaborationWorkspaceId || '',
       tenantName: item?.context?.tenant_name || item?.context?.tenantName || ''
     },
     snapshot: {
@@ -1042,7 +1043,10 @@ function normalizeUserPermissionDiagnosisResponse(
       item?.team_member || item?.teamMember
         ? {
             id: item?.team_member?.id || item?.teamMember?.id || '',
-            tenantId: item?.team_member?.tenant_id || item?.teamMember?.tenantId || '',
+            collaborationWorkspaceId:
+              item?.team_member?.collaboration_workspace_id ||
+              item?.teamMember?.collaborationWorkspaceId ||
+              '',
             userId: item?.team_member?.user_id || item?.teamMember?.userId || '',
             roleCode: item?.team_member?.role_code || item?.teamMember?.roleCode || '',
             status: item?.team_member?.status || item?.teamMember?.status || '',
@@ -1103,7 +1107,7 @@ export async function fetchGetUserPermissionDiagnosis(
     url: `${USER_BASE}/${userId}/permission-diagnosis`,
     skipTenantHeader: true,
     params: {
-      tenant_id: params?.tenantId,
+      collaboration_workspace_id: params?.collaborationWorkspaceId,
       permission_key: params?.permissionKey
     }
   })
@@ -1111,24 +1115,30 @@ export async function fetchGetUserPermissionDiagnosis(
 }
 
 /** 刷新用户权限快照 */
-export async function fetchRefreshUserPermissionSnapshot(userId: string, tenantId?: string) {
+export async function fetchRefreshUserPermissionSnapshot(
+  userId: string,
+  collaborationWorkspaceId?: string
+) {
   const res = await request.post<Api.SystemManage.UserPermissionDiagnosisResponse>({
     url: `${USER_BASE}/${userId}/permission-refresh`,
     skipTenantHeader: true,
     data: {
-      tenant_id: tenantId
+      collaboration_workspace_id: collaborationWorkspaceId
     }
   })
   return normalizeUserPermissionDiagnosisResponse(res)
 }
 
 /** 获取用户当前上下文可见菜单 */
-export async function fetchGetUserPermissionMenus(userId: string, tenantId?: string) {
+export async function fetchGetUserPermissionMenus(
+  userId: string,
+  collaborationWorkspaceId?: string
+) {
   const res = await request.get<Api.SystemManage.UserPermissionMenuNode[]>({
     url: `${USER_BASE}/${userId}/permissions`,
     skipTenantHeader: true,
     params: {
-      tenant_id: tenantId
+      collaboration_workspace_id: collaborationWorkspaceId
     }
   })
   return (res || []).map((item: any) => normalizeUserPermissionMenuTree(item))
@@ -1326,7 +1336,9 @@ export function fetchGetPermissionActionList(
     .then((res) => ({
       ...res,
       records: (res?.records || []).map(normalizePermissionAction),
-      auditSummary: normalizePermissionAuditSummary((res as any)?.audit_summary || res?.auditSummary || {})
+      auditSummary: normalizePermissionAuditSummary(
+        (res as any)?.audit_summary || res?.auditSummary || {}
+      )
     }))
 }
 
@@ -1408,13 +1420,18 @@ export function fetchDeletePermissionActionEndpoint(id: string, endpointCode: st
 
 export function fetchCleanupUnusedPermissionActions() {
   return request
-    .post<Api.SystemManage.PermissionActionCleanupResult & { deleted_count?: number; deleted_keys?: string[] }>({
+    .post<
+      Api.SystemManage.PermissionActionCleanupResult & {
+        deleted_count?: number
+        deleted_keys?: string[]
+      }
+    >({
       url: `${ACTION_PERMISSION_BASE}/cleanup-unused`
     })
     .then((res) => ({
       deletedCount: Number(res?.deletedCount ?? res?.deleted_count ?? 0),
-      deletedKeys: Array.isArray(res?.deletedKeys || res?.deleted_keys)
-        ? (res?.deletedKeys || res?.deleted_keys)
+      deletedKeys: Array.isArray(res?.deletedKeys || res?.deleted_keys || [])
+        ? (res?.deletedKeys || res?.deleted_keys || [])
             .map((value: any) => `${value || ''}`.trim())
             .filter(Boolean)
         : []
@@ -1480,7 +1497,7 @@ export function fetchBatchUpdatePermissionActions(
     .then((res: any) => ({
       updatedCount: Number(res?.updatedCount ?? res?.updated_count ?? 0),
       skippedIds: Array.isArray(res?.skippedIds || res?.skipped_ids)
-        ? (res?.skippedIds || res?.skipped_ids)
+        ? res?.skippedIds || res?.skipped_ids
         : []
     }))
 }
@@ -1835,19 +1852,21 @@ export function fetchSetFeaturePackageMenus(id: string, menuIds: string[], appKe
     .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
 }
 
-/** 获取已开通当前功能包的团队 */
+/** 获取已开通当前功能包的协作空间 */
 export function fetchGetFeaturePackageTeams(id: string) {
   return request.get<Api.SystemManage.FeaturePackageTeamBinding>({
     url: `${FEATURE_PACKAGE_BASE}/${id}/teams`
   })
 }
 
-/** 配置功能包开通团队 */
+/** 配置功能包开通协作空间 */
 export function fetchSetFeaturePackageTeams(
   id: string,
-  teamIds: string[] | Api.SystemManage.FeaturePackageTeamSetParams
+  collaborationWorkspaceIds: string[] | Api.SystemManage.FeaturePackageTeamSetParams
 ) {
-  const payload = Array.isArray(teamIds) ? { team_ids: teamIds } : teamIds
+  const payload = Array.isArray(collaborationWorkspaceIds)
+    ? { collaboration_workspace_ids: collaborationWorkspaceIds }
+    : collaborationWorkspaceIds
   return request
     .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
       url: `${FEATURE_PACKAGE_BASE}/${id}/teams`,
@@ -1856,11 +1875,14 @@ export function fetchSetFeaturePackageTeams(
     .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
 }
 
-/** 获取团队已开通的功能包 */
-export function fetchGetTeamFeaturePackages(teamId: string, appKey?: string) {
+/** 获取协作空间已开通的功能包 */
+export function fetchGetCollaborationWorkspaceFeaturePackages(
+  collaborationWorkspaceId: string,
+  appKey?: string
+) {
   return request
-    .get<Api.SystemManage.TeamFeaturePackageResponse>({
-      url: `${FEATURE_PACKAGE_BASE}/teams/${teamId}`,
+    .get<Api.SystemManage.CollaborationWorkspaceFeaturePackageResponse>({
+      url: `${FEATURE_PACKAGE_BASE}/teams/${collaborationWorkspaceId}`,
       params: {
         ...(appKey ? { app_key: appKey } : {})
       }
@@ -1871,16 +1893,16 @@ export function fetchGetTeamFeaturePackages(teamId: string, appKey?: string) {
     }))
 }
 
-/** 设置团队功能包 */
-export function fetchSetTeamFeaturePackages(
-  teamId: string,
-  packageIds: string[] | Api.SystemManage.TeamFeaturePackageSetParams,
+/** 设置协作空间功能包 */
+export function fetchSetCollaborationWorkspaceFeaturePackages(
+  collaborationWorkspaceId: string,
+  packageIds: string[] | Api.SystemManage.CollaborationWorkspaceFeaturePackageSetParams,
   appKey?: string
 ) {
   const payload = Array.isArray(packageIds) ? { package_ids: packageIds } : packageIds
   return request
     .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
-      url: `${FEATURE_PACKAGE_BASE}/teams/${teamId}`,
+      url: `${FEATURE_PACKAGE_BASE}/teams/${collaborationWorkspaceId}`,
       params: {
         ...(appKey ? { app_key: appKey } : {})
       },
@@ -2196,8 +2218,7 @@ export function fetchGetApiEndpointOverview(appKey?: string) {
       staleCount: res?.staleCount ?? res?.stale_count ?? 0,
       noPermissionCount: res?.noPermissionCount ?? res?.no_permission_count ?? 0,
       sharedPermissionCount: res?.sharedPermissionCount ?? res?.shared_permission_count ?? 0,
-      crossContextSharedCount:
-        res?.crossContextSharedCount ?? res?.cross_context_shared_count ?? 0,
+      crossContextSharedCount: res?.crossContextSharedCount ?? res?.cross_context_shared_count ?? 0,
       categoryCounts: (res?.categoryCounts || res?.category_counts || []).map((item: any) => ({
         categoryId: item?.categoryId || item?.category_id || '',
         count: item?.count || 0
@@ -2205,10 +2226,7 @@ export function fetchGetApiEndpointOverview(appKey?: string) {
     }))
 }
 
-export function fetchGetStaleApiEndpointList(params: {
-  current?: number
-  size?: number
-}) {
+export function fetchGetStaleApiEndpointList(params: { current?: number; size?: number }) {
   return request
     .get<Api.SystemManage.APIEndpointList>({
       url: `${API_ENDPOINT_BASE}/stale`,
@@ -2531,7 +2549,11 @@ export function fetchSaveMenuSpace(data: Api.SystemManage.MenuSpaceSaveParams) {
     .then((res) => normalizeMenuSpace(res))
 }
 
-export function fetchInitializeMenuSpaceFromDefault(appKey: string, spaceKey: string, force = false) {
+export function fetchInitializeMenuSpaceFromDefault(
+  appKey: string,
+  spaceKey: string,
+  force = false
+) {
   return request
     .post<Api.SystemManage.MenuSpaceInitializeResult>({
       url: `${SYSTEM_BASE}/menu-spaces/${normalizeMenuSpaceKey(spaceKey)}/initialize-default`,
@@ -2651,7 +2673,7 @@ export function fetchGetPageAccessTrace(params: Api.SystemManage.PageAccessTrace
       params: {
         app_key: params.appKey,
         user_id: params.userId,
-        tenant_id: params.tenantId,
+        collaboration_workspace_id: params.collaborationWorkspaceId,
         page_key: params.pageKey,
         page_keys: params.pageKeys,
         route_path: params.routePath,
@@ -2677,9 +2699,7 @@ export function fetchGetMenuDeletePreview(id: string, params?: Api.SystemManage.
       menuCount: Number(res?.menuCount ?? res?.menu_count ?? 0),
       childCount: Number(res?.childCount ?? res?.child_count ?? 0),
       affectedPageCount: Number(res?.affectedPageCount ?? res?.affected_page_count ?? 0),
-      affectedRelationCount: Number(
-        res?.affectedRelationCount ?? res?.affected_relation_count ?? 0
-      )
+      affectedRelationCount: Number(res?.affectedRelationCount ?? res?.affected_relation_count ?? 0)
     }))
 }
 

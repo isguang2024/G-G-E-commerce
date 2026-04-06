@@ -15,6 +15,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
+	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
 )
 
 var (
@@ -228,7 +229,10 @@ func parseUUIDs(ids []string) ([]uuid.UUID, error) {
 }
 
 func replaceGlobalUserRoles(tx *gorm.DB, userID uuid.UUID, roleIDs []uuid.UUID) error {
-	if err := tx.Where("user_id = ? AND tenant_id IS NULL", userID).Delete(&models.UserRole{}).Error; err != nil {
+	if err := workspacerolebinding.ReplacePersonalRoleBindings(tx, userID, roleIDs); err != nil {
+		return err
+	}
+	if err := tx.Where("user_id = ? AND collaboration_workspace_id IS NULL", userID).Delete(&models.UserRole{}).Error; err != nil {
 		return err
 	}
 	if len(roleIDs) == 0 {
@@ -357,7 +361,7 @@ func (s *permissionService) getTeamUserMenuIDs(userID, teamID uuid.UUID, appKey 
 		if !ok {
 			continue
 		}
-		snapshot, snapshotErr := s.boundaryService.GetRoleSnapshot(teamID, roleID, role.TenantID == nil, appctx.NormalizeAppKey(appKey))
+		snapshot, snapshotErr := s.boundaryService.GetRoleSnapshot(teamID, roleID, role.CollaborationWorkspaceID == nil, appctx.NormalizeAppKey(appKey))
 		if snapshotErr != nil {
 			return nil, snapshotErr
 		}

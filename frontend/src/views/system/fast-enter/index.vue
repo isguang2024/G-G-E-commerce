@@ -31,7 +31,9 @@
       <div class="fast-enter-shell__toolbar">
         <div class="fast-enter-shell__toolbar-main">
           <div class="fast-enter-shell__title">顶部展示控制</div>
-          <p class="fast-enter-shell__note">配置尽量贴近实际展示，不在这里堆大表单。点击条目后再在抽屉里编辑细节。</p>
+          <p class="fast-enter-shell__note"
+            >配置尽量贴近实际展示，不在这里堆大表单。点击条目后再在抽屉里编辑细节。</p
+          >
         </div>
       </div>
 
@@ -44,7 +46,9 @@
               <div class="fast-enter-panel__title">快捷应用</div>
               <p class="fast-enter-panel__desc">左侧卡片区，适合放高频后台入口和外部工具。</p>
             </div>
-            <ElButton type="primary" plain @click="openCreateDrawer('application')">新增应用</ElButton>
+            <ElButton type="primary" plain @click="openCreateDrawer('application')"
+              >新增应用</ElButton
+            >
           </header>
 
           <div class="fast-enter-preview fast-enter-preview--apps">
@@ -56,7 +60,10 @@
               @click="openEditDrawer('application', index)"
             >
               <div class="fast-enter-preview-card__icon">
-                <ArtSvgIcon :icon="item.icon || 'ri:apps-2-line'" :style="{ color: item.iconColor || '#377dff' }" />
+                <ArtSvgIcon
+                  :icon="item.icon || 'ri:apps-2-line'"
+                  :style="{ color: item.iconColor || '#377dff' }"
+                />
               </div>
               <div class="fast-enter-preview-card__content">
                 <div class="fast-enter-preview-card__head">
@@ -85,7 +92,9 @@
               <div class="fast-enter-panel__title">快捷链接</div>
               <p class="fast-enter-panel__desc">右侧轻量链接区，适合放帮助页、个人页或外部文档。</p>
             </div>
-            <ElButton type="primary" plain @click="openCreateDrawer('quickLink')">新增链接</ElButton>
+            <ElButton type="primary" plain @click="openCreateDrawer('quickLink')"
+              >新增链接</ElButton
+            >
           </header>
 
           <div class="fast-enter-preview fast-enter-preview--links">
@@ -101,7 +110,9 @@
                 <span class="fast-enter-link-row__target">{{ resolveTargetLabel(item) }}</span>
               </div>
               <div class="fast-enter-link-row__side">
-                <span class="fast-enter-link-row__status">{{ item.enabled === false ? '停用' : '启用' }}</span>
+                <span class="fast-enter-link-row__status">{{
+                  item.enabled === false ? '停用' : '启用'
+                }}</span>
                 <ArtSvgIcon icon="ri:arrow-right-s-line" />
               </div>
             </button>
@@ -127,7 +138,9 @@
             />
           </div>
           <div class="fast-enter-drawer__summary-body">
-            <div class="fast-enter-drawer__summary-title">{{ drawerDraft.name || '未命名入口' }}</div>
+            <div class="fast-enter-drawer__summary-title">{{
+              drawerDraft.name || '未命名入口'
+            }}</div>
             <div class="fast-enter-drawer__summary-text">
               {{ drawerMode === 'application' ? '用于顶部左侧卡片区' : '用于顶部右侧轻量链接区' }}
             </div>
@@ -144,7 +157,12 @@
           </ElFormItem>
 
           <ElFormItem label="启用状态">
-            <ElSwitch v-model="drawerDraft.enabled" inline-prompt active-text="开" inactive-text="关" />
+            <ElSwitch
+              v-model="drawerDraft.enabled"
+              inline-prompt
+              active-text="开"
+              inactive-text="关"
+            />
           </ElFormItem>
 
           <ElFormItem v-if="applicationDrawerDraft" label="描述">
@@ -216,16 +234,22 @@
           </div>
 
           <div class="fast-enter-drawer__hint">
-            <span>当前支持 3 种写法：菜单树路由名、以 `/` 开头的内部路径、`http/https` 外部链接。</span>
+            <span
+              >当前支持 3 种写法：菜单树路由名、以 `/` 开头的内部路径、`http/https` 外部链接。</span
+            >
             <span>内部跳转会跟随当前菜单权限和页面可访问结果自动过滤；外链不受菜单权限裁剪。</span>
-            <span>消息模块建议只保留消息发送主入口和消息中心，模板、发送人、接收组、发送记录统一从消息页内导航进入。</span>
+            <span
+              >消息模块建议只保留消息发送主入口和消息中心，模板、发送人、接收组、发送记录统一从消息页内导航进入。</span
+            >
           </div>
         </div>
       </template>
 
       <template #footer>
         <div class="fast-enter-drawer__footer">
-          <ElButton v-if="drawerEditing" type="danger" plain @click="removeCurrentItem">删除</ElButton>
+          <ElButton v-if="drawerEditing" type="danger" plain @click="removeCurrentItem"
+            >删除</ElButton
+          >
           <div class="fast-enter-drawer__footer-actions">
             <ElButton @click="drawerVisible = false">取消</ElButton>
             <ElButton type="primary" @click="applyDrawer">确定</ElButton>
@@ -321,7 +345,11 @@
     { label: '当前 App', value: targetAppKey.value },
     { label: '快捷应用', value: draft.applications.length || 0 },
     { label: '快捷链接', value: draft.quickLinks.length || 0 },
-    { label: '启用项', value: [...draft.applications, ...draft.quickLinks].filter((item) => item.enabled !== false).length }
+    {
+      label: '启用项',
+      value: [...draft.applications, ...draft.quickLinks].filter((item) => item.enabled !== false)
+        .length
+    }
   ])
 
   const loadMenuRouteTree = async () => {
@@ -342,12 +370,15 @@
     await setManagedAppKey(`${value || ''}`.trim())
   }
 
-  const drawerTitle = computed(() =>
-    `${drawerEditing.value ? '编辑' : '新增'}${drawerMode.value === 'application' ? '快捷应用' : '快捷链接'}`
+  const drawerTitle = computed(
+    () =>
+      `${drawerEditing.value ? '编辑' : '新增'}${drawerMode.value === 'application' ? '快捷应用' : '快捷链接'}`
   )
 
   const applicationDrawerDraft = computed(() =>
-    drawerMode.value === 'application' && drawerDraft.value ? (drawerDraft.value as DrawerApplicationDraft) : null
+    drawerMode.value === 'application' && drawerDraft.value
+      ? (drawerDraft.value as DrawerApplicationDraft)
+      : null
   )
 
   const buildRouteTree = (menus: AppRouteRecord[]): RouteTreeOption[] => {
@@ -355,7 +386,11 @@
 
     for (const item of menus) {
       const routeName = typeof item.name === 'string' ? item.name : ''
-      const titleSource = item.meta?.title ?? (typeof item.name === 'symbol' ? String(item.name) : item.name) ?? item.path ?? '未命名路由'
+      const titleSource =
+        item.meta?.title ??
+        (typeof item.name === 'symbol' ? String(item.name) : item.name) ??
+        item.path ??
+        '未命名路由'
       const title = String(titleSource)
       const path = `${item.path || ''}`.trim()
       const children = Array.isArray(item.children) ? buildRouteTree(item.children) : []
@@ -430,9 +465,13 @@
   }
 
   const resetToDefault = async () => {
-    await ElMessageBox.confirm('恢复默认后会覆盖当前快捷应用和快捷链接配置，是否继续？', '恢复默认', {
-      type: 'warning'
-    })
+    await ElMessageBox.confirm(
+      '恢复默认后会覆盖当前快捷应用和快捷链接配置，是否继续？',
+      '恢复默认',
+      {
+        type: 'warning'
+      }
+    )
     Object.assign(draft, getDefaultFastEnterConfig())
     await fastEnterStore.saveConfig(cloneConfig(draft))
     persistedConfig.value = cloneConfig(config.value)
@@ -457,9 +496,14 @@
     drawerMode.value = mode
     drawerEditing.value = true
     drawerIndex.value = index
-    const source = mode === 'application' ? sortedApplications.value[index] : sortedQuickLinks.value[index]
+    const source =
+      mode === 'application' ? sortedApplications.value[index] : sortedQuickLinks.value[index]
     drawerDraft.value = cloneDrawerDraft(source as DrawerDraft)
-    drawerTargetType.value = source?.routeName ? 'route' : source?.link?.startsWith('/') ? 'path' : 'link'
+    drawerTargetType.value = source?.routeName
+      ? 'route'
+      : source?.link?.startsWith('/')
+        ? 'path'
+        : 'link'
     drawerVisible.value = true
   }
 
@@ -571,15 +615,12 @@
     fastEnterStore.replaceConfig(cloneConfig(persistedConfig.value))
   })
 
-  watch(
-    targetAppKey,
-    () => {
-      selectedAppKey.value = targetAppKey.value || ''
-      loadMenuRouteTree().catch(() => {
-        ElMessage.error('刷新当前 App 菜单树失败')
-      })
-    }
-  )
+  watch(targetAppKey, () => {
+    selectedAppKey.value = targetAppKey.value || ''
+    loadMenuRouteTree().catch(() => {
+      ElMessage.error('刷新当前 App 菜单树失败')
+    })
+  })
 </script>
 
 <style scoped lang="scss">
@@ -926,4 +967,3 @@
     }
   }
 </style>
-

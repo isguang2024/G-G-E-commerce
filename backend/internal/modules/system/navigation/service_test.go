@@ -56,7 +56,7 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 						Kind:     models.MenuKindDirectory,
 						Path:     "team",
 						Name:     "TeamRoot",
-						Title:    "团队管理",
+						Title:    "协作空间管理",
 						Meta:     models.MetaJSON{"isEnable": true},
 						Children: []*user.Menu{
 							{
@@ -66,7 +66,7 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 								Kind:      models.MenuKindEntry,
 								Path:      "all",
 								Name:      "TeamAll",
-								Title:     "所有团队",
+								Title:     "所有协作空间",
 								Component: "/team/team",
 								Meta:      models.MetaJSON{"accessMode": "permission", "isEnable": true},
 							},
@@ -76,7 +76,7 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 			},
 		},
 		&stubPageService{
-			resolveCompiledAccessContextFn: func(appKey string, spaceKey string, gotUserID *uuid.UUID, gotTenantID *uuid.UUID) (*pagepkg.CompiledAccessContext, error) {
+			resolveCompiledAccessContextFn: func(appKey string, spaceKey string, gotUserID *uuid.UUID, gotCollaborationWorkspaceID *uuid.UUID) (*pagepkg.CompiledAccessContext, error) {
 				if appKey != models.DefaultAppKey {
 					t.Fatalf("ResolveCompiledAccessContext appKey = %q, want %q", appKey, models.DefaultAppKey)
 				}
@@ -86,8 +86,8 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 				if gotUserID == nil || *gotUserID != userID {
 					t.Fatalf("ResolveCompiledAccessContext userID = %v, want %s", gotUserID, userID)
 				}
-				if gotTenantID == nil || *gotTenantID != tenantID {
-					t.Fatalf("ResolveCompiledAccessContext tenantID = %v, want %s", gotTenantID, tenantID)
+				if gotCollaborationWorkspaceID == nil || *gotCollaborationWorkspaceID != tenantID {
+					t.Fatalf("ResolveCompiledAccessContext tenantID = %v, want %s", gotCollaborationWorkspaceID, tenantID)
 				}
 				return accessCtx, nil
 			},
@@ -103,7 +103,7 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 					{
 						UIPage: models.UIPage{
 							PageKey:        "team.detail",
-							Name:           "团队详情",
+							Name:           "协作空间详情",
 							RouteName:      "TeamDetail",
 							RoutePath:      "/detail/:id",
 							Component:      "/team/detail",
@@ -117,7 +117,7 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 			},
 		},
 		&stubSpaceService{
-			getCurrentFn: func(appKey string, host string, requestedSpaceKey string, gotUserID *uuid.UUID, gotTenantID *uuid.UUID) (*spacepkg.CurrentResponse, error) {
+			getCurrentFn: func(appKey string, host string, requestedSpaceKey string, gotUserID *uuid.UUID, gotCollaborationWorkspaceID *uuid.UUID) (*spacepkg.CurrentResponse, error) {
 				if appKey != models.DefaultAppKey {
 					t.Fatalf("GetCurrent appKey = %q, want %q", appKey, models.DefaultAppKey)
 				}
@@ -130,8 +130,8 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 				if gotUserID == nil || *gotUserID != userID {
 					t.Fatalf("GetCurrent userID = %v, want %s", gotUserID, userID)
 				}
-				if gotTenantID == nil || *gotTenantID != tenantID {
-					t.Fatalf("GetCurrent tenantID = %v, want %s", gotTenantID, tenantID)
+				if gotCollaborationWorkspaceID == nil || *gotCollaborationWorkspaceID != tenantID {
+					t.Fatalf("GetCurrent tenantID = %v, want %s", gotCollaborationWorkspaceID, tenantID)
 				}
 				return &spacepkg.CurrentResponse{
 					Space: spacepkg.SpaceRecord{
@@ -190,8 +190,8 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 	if got := manifest.Context["user_id"]; got != userID.String() {
 		t.Fatalf("context.user_id = %#v, want %s", got, userID)
 	}
-	if got := manifest.Context["tenant_id"]; got != tenantID.String() {
-		t.Fatalf("context.tenant_id = %#v, want %s", got, tenantID)
+	if got := manifest.Context["collaboration_workspace_id"]; got != tenantID.String() {
+		t.Fatalf("context.collaboration_workspace_id = %#v, want %s", got, tenantID)
 	}
 	if len(manifest.MenuTree) != 1 {
 		t.Fatalf("len(manifest.MenuTree) = %d, want 1", len(manifest.MenuTree))

@@ -49,7 +49,7 @@ type currentSpaceProvider interface {
 
 type service struct {
 	db          *gorm.DB
-	appService   apppkg.Service
+	appService  apppkg.Service
 	menuService menuTreeProvider
 	pageService managedPageProvider
 	spaceSvc    currentSpaceProvider
@@ -107,11 +107,11 @@ func (s *service) Compile(appKey, host, requestedSpaceKey string, userID *uuid.U
 			"space_key":           resolvedSpaceKey,
 			"request_host":        strings.TrimSpace(host),
 			"requested_space_key": strings.TrimSpace(requestedSpaceKey),
-			"authenticated":      accessCtx != nil && accessCtx.Authenticated,
-			"super_admin":        accessCtx != nil && accessCtx.SuperAdmin,
-			"visible_menu_count": len(visibleMenuIDs),
-			"managed_page_count": len(managedPages),
-			"action_key_count":   accessContextActionKeyCount(accessCtx),
+			"authenticated":       accessCtx != nil && accessCtx.Authenticated,
+			"super_admin":         accessCtx != nil && accessCtx.SuperAdmin,
+			"visible_menu_count":  len(visibleMenuIDs),
+			"managed_page_count":  len(managedPages),
+			"action_key_count":    accessContextActionKeyCount(accessCtx),
 		},
 		// MenuTree / ManagedPages 都来自同一份已编译访问上下文，前端不需要再重复做显隐裁剪。
 		MenuTree:     menupkg.BuildRuntimeTreeMaps(menuTree),
@@ -123,7 +123,7 @@ func (s *service) Compile(appKey, host, requestedSpaceKey string, userID *uuid.U
 		manifest.Context["user_id"] = userID.String()
 	}
 	if tenantID != nil {
-		manifest.Context["tenant_id"] = tenantID.String()
+		manifest.Context["collaboration_workspace_id"] = tenantID.String()
 	}
 	return manifest, nil
 }

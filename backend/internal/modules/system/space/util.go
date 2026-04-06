@@ -11,6 +11,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
 )
 
 const (
@@ -132,7 +133,7 @@ func ResolveSpaceKey(db *gorm.DB, c *gin.Context) string {
 	}
 	appKey := currentContextAppKey(c)
 	userID := currentContextUserID(c)
-	tenantID := currentContextTenantID(c)
+	tenantID := currentContextCollaborationWorkspaceID(c)
 	key, _, err := ResolveCurrentSpaceKey(db, appKey, RequestHost(c), RequestSpaceKey(c), userID, tenantID)
 	if err == nil && strings.TrimSpace(key) != "" {
 		return key
@@ -226,11 +227,11 @@ func currentContextUserID(c *gin.Context) *uuid.UUID {
 	return &id
 }
 
-func currentContextTenantID(c *gin.Context) *uuid.UUID {
+func currentContextCollaborationWorkspaceID(c *gin.Context) *uuid.UUID {
 	if c == nil {
 		return nil
 	}
-	raw, ok := c.Get("tenant_id")
+	raw, ok := c.Get("collaboration_workspace_id")
 	if !ok {
 		return nil
 	}
@@ -299,24 +300,34 @@ func CanAccessSpace(db *gorm.DB, userID *uuid.UUID, tenantID *uuid.UUID, spaceKe
 }
 
 func hasPlatformRoleCode(db *gorm.DB, userID uuid.UUID, roleCodes []string) (bool, error) {
+	matched, err := workspacerolebinding.HasPersonalRoleCodesByUserID(db, userID, roleCodes, true)
+	if err != nil || matched {
+		return matched, err
+	}
+	return hasLegacyPlatformRoleCode(db, userID, roleCodes)
+}
+
+func hasLegacyPlatformRoleCode(db *gorm.DB, userID uuid.UUID, roleCodes []string) (bool, error) {
 	var count int64
 	err := db.Table("user_roles").
 		Joins("JOIN roles ON roles.id = user_roles.role_id").
 		Where("user_roles.user_id = ?", userID).
-		Where("user_roles.tenant_id IS NULL").
+		Where("user_roles.collaboration_workspace_id IS NULL").
+		Where("roles.collaboration_workspace_id IS NULL").
 		Where("roles.code IN ?", roleCodes).
 		Where("roles.status = ?", "normal").
+		Where("roles.deleted_at IS NULL").
 		Count(&count).Error
 	return count > 0, err
 }
 
 func hasTeamAdminRole(db *gorm.DB, userID uuid.UUID, tenantID *uuid.UUID) (bool, error) {
-	query := db.Table("tenant_members").
+	query := db.Table("collaboration_workspace_members").
 		Where("user_id = ?", userID).
 		Where("status = ?", "active").
 		Where("role_code = ?", "team_admin")
 	if tenantID != nil {
-		query = query.Where("tenant_id = ?", *tenantID)
+		query = query.Where("collaboration_workspace_id = ?", *tenantID)
 	}
 	var count int64
 	err := query.Count(&count).Error
@@ -333,29 +344,37 @@ func hasAnyRoleCode(db *gorm.DB, userID uuid.UUID, tenantID *uuid.UUID, roleCode
 		return platformMatched, err
 	}
 	if tenantID != nil {
-		var teamCount int64
-		if err := db.Table("tenant_members").
-			Where("user_id = ?", userID).
-			Where("tenant_id = ?", *tenantID).
-			Where("status = ?", "active").
-			Where("role_code IN ?", normalized).
-			Count(&teamCount).Error; err != nil {
+		workspaceMatched, err := workspacerolebinding.HasTeamRoleCodesByTenantAndUser(db, *tenantID, userID, normalized, true)
+		if err != nil {
 			return false, err
 		}
-		if teamCount > 0 {
+		if workspaceMatched {
 			return true, nil
 		}
 		var attachedRoleCount int64
 		if err := db.Table("user_roles").
 			Joins("JOIN roles ON roles.id = user_roles.role_id").
 			Where("user_roles.user_id = ?", userID).
-			Where("user_roles.tenant_id = ?", *tenantID).
+			Where("user_roles.collaboration_workspace_id = ?", *tenantID).
 			Where("roles.code IN ?", normalized).
 			Where("roles.status = ?", "normal").
+			Where("roles.deleted_at IS NULL").
 			Count(&attachedRoleCount).Error; err != nil {
 			return false, err
 		}
 		if attachedRoleCount > 0 {
+			return true, nil
+		}
+		var teamCount int64
+		if err := db.Table("collaboration_workspace_members").
+			Where("user_id = ?", userID).
+			Where("collaboration_workspace_id = ?", *tenantID).
+			Where("status = ?", "active").
+			Where("role_code IN ?", normalized).
+			Count(&teamCount).Error; err != nil {
+			return false, err
+		}
+		if teamCount > 0 {
 			return true, nil
 		}
 	}

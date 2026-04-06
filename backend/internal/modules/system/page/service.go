@@ -18,6 +18,7 @@ import (
 	spaceutil "github.com/gg-ecommerce/backend/internal/modules/system/space"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
+	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
 )
 
 var (
@@ -88,18 +89,18 @@ type MenuOption struct {
 }
 
 type UnregisteredRecord struct {
-	FilePath       string `json:"file_path"`
-	Component      string `json:"component"`
-	PageKey        string `json:"page_key"`
-	Name           string `json:"name"`
-	RouteName      string `json:"route_name"`
-	RoutePath      string `json:"route_path"`
-	PageType       string `json:"page_type"`
+	FilePath        string `json:"file_path"`
+	Component       string `json:"component"`
+	PageKey         string `json:"page_key"`
+	Name            string `json:"name"`
+	RouteName       string `json:"route_name"`
+	RoutePath       string `json:"route_path"`
+	PageType        string `json:"page_type"`
 	VisibilityScope string `json:"visibility_scope"`
-	ModuleKey      string `json:"module_key"`
-	ParentMenuID   string `json:"parent_menu_id"`
-	ParentMenuName string `json:"parent_menu_name"`
-	ActiveMenuPath string `json:"active_menu_path"`
+	ModuleKey       string `json:"module_key"`
+	ParentMenuID    string `json:"parent_menu_id"`
+	ParentMenuName  string `json:"parent_menu_name"`
+	ActiveMenuPath  string `json:"active_menu_path"`
 }
 
 type SyncResult struct {
@@ -126,13 +127,13 @@ type BreadcrumbPreviewItem struct {
 }
 
 type AccessTraceRequest struct {
-	AppKey    string `form:"app_key"`
-	UserID    string `form:"user_id"`
-	TenantID  string `form:"tenant_id"`
-	PageKey   string `form:"page_key"`
-	SpaceKey  string `form:"space_key"`
-	PageKeys  string `form:"page_keys"`
-	RoutePath string `form:"route_path"`
+	AppKey                   string `form:"app_key"`
+	UserID                   string `form:"user_id"`
+	CollaborationWorkspaceID string `form:"collaboration_workspace_id"`
+	PageKey                  string `form:"page_key"`
+	SpaceKey                 string `form:"space_key"`
+	PageKeys                 string `form:"page_keys"`
+	RoutePath                string `form:"route_path"`
 }
 
 type AccessTraceRoleItem struct {
@@ -158,15 +159,15 @@ type AccessTracePageItem struct {
 }
 
 type AccessTraceResult struct {
-	UserID         string                `json:"user_id"`
-	TenantID       string                `json:"tenant_id,omitempty"`
-	SpaceKey       string                `json:"space_key"`
-	Authenticated  bool                  `json:"authenticated"`
-	SuperAdmin     bool                  `json:"super_admin"`
-	ActionKeyCount int                   `json:"action_key_count"`
-	VisibleMenuIDs []string              `json:"visible_menu_ids"`
-	Roles          []AccessTraceRoleItem `json:"roles"`
-	Pages          []AccessTracePageItem `json:"pages"`
+	UserID                   string                `json:"user_id"`
+	CollaborationWorkspaceID string                `json:"collaboration_workspace_id,omitempty"`
+	SpaceKey                 string                `json:"space_key"`
+	Authenticated            bool                  `json:"authenticated"`
+	SuperAdmin               bool                  `json:"super_admin"`
+	ActionKeyCount           int                   `json:"action_key_count"`
+	VisibleMenuIDs           []string              `json:"visible_menu_ids"`
+	Roles                    []AccessTraceRoleItem `json:"roles"`
+	Pages                    []AccessTracePageItem `json:"pages"`
 }
 
 type Service interface {
@@ -344,10 +345,10 @@ func (s *service) GetAccessTrace(appKey string, req *AccessTraceRequest) (*Acces
 		return nil, fmt.Errorf("%w: user_id is invalid", ErrPageValidation)
 	}
 	var tenantID *uuid.UUID
-	if rawTenantID := strings.TrimSpace(req.TenantID); rawTenantID != "" {
-		parsed, parseErr := uuid.Parse(rawTenantID)
+	if rawCollaborationWorkspaceID := strings.TrimSpace(req.CollaborationWorkspaceID); rawCollaborationWorkspaceID != "" {
+		parsed, parseErr := uuid.Parse(rawCollaborationWorkspaceID)
 		if parseErr != nil {
-			return nil, fmt.Errorf("%w: tenant_id is invalid", ErrPageValidation)
+			return nil, fmt.Errorf("%w: collaboration_workspace_id is invalid", ErrPageValidation)
 		}
 		tenantID = &parsed
 	}
@@ -409,7 +410,7 @@ func (s *service) GetAccessTrace(appKey string, req *AccessTraceRequest) (*Acces
 		Pages:          pageItems,
 	}
 	if tenantID != nil {
-		result.TenantID = tenantID.String()
+		result.CollaborationWorkspaceID = tenantID.String()
 	}
 	return result, nil
 }
@@ -503,13 +504,30 @@ func (s *service) loadAccessTraceRoles(userID uuid.UUID, tenantID *uuid.UUID) ([
 		}
 		roles = effective
 	} else {
-		if err := s.db.Model(&models.Role{}).
-			Joins("JOIN user_roles ON user_roles.role_id = roles.id").
-			Where("user_roles.user_id = ?", userID).
-			Where("roles.status = ?", "normal").
-			Distinct("roles.*").
-			Find(&roles).Error; err != nil {
+		roleIDs, err := workspacerolebinding.ListPersonalRoleIDsByUserID(s.db, userID, true)
+		if err != nil {
 			return nil, err
+		}
+		if len(roleIDs) > 0 {
+			if err := s.db.Model(&models.Role{}).
+				Where("id IN ?", roleIDs).
+				Where("collaboration_workspace_id IS NULL").
+				Where("status = ?", "normal").
+				Find(&roles).Error; err != nil {
+				return nil, err
+			}
+		} else {
+			if err := s.db.Model(&models.Role{}).
+				Joins("JOIN user_roles ON user_roles.role_id = roles.id").
+				Where("user_roles.user_id = ?", userID).
+				Where("user_roles.collaboration_workspace_id IS NULL").
+				Where("roles.collaboration_workspace_id IS NULL").
+				Where("roles.status = ?", "normal").
+				Where("roles.deleted_at IS NULL").
+				Distinct("roles.*").
+				Find(&roles).Error; err != nil {
+				return nil, err
+			}
 		}
 	}
 	sort.Slice(roles, func(i, j int) bool {
@@ -1573,18 +1591,18 @@ func deriveUnregisteredRecord(
 	}
 
 	return UnregisteredRecord{
-		FilePath:       item.FilePath,
-		Component:      item.Component,
-		PageKey:        pageKey,
-		Name:           name,
-		RouteName:      routeName,
-		RoutePath:      routePath,
-		PageType:       pageType,
+		FilePath:        item.FilePath,
+		Component:       item.Component,
+		PageKey:         pageKey,
+		Name:            name,
+		RouteName:       routeName,
+		RoutePath:       routePath,
+		PageType:        pageType,
 		VisibilityScope: visibilityScope,
-		ModuleKey:      moduleKey,
-		ParentMenuID:   parentMenuID,
-		ParentMenuName: parentMenuName,
-		ActiveMenuPath: activeMenuPath,
+		ModuleKey:       moduleKey,
+		ParentMenuID:    parentMenuID,
+		ParentMenuName:  parentMenuName,
+		ActiveMenuPath:  activeMenuPath,
 	}
 }
 

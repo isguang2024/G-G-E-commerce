@@ -41,7 +41,7 @@ func (h *Handler) GetCurrent(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	current, err := h.service.GetCurrent(appKey, RequestHost(c), RequestSpaceKey(c), currentContextUserID(c), currentContextTenantID(c))
+	current, err := h.service.GetCurrent(appKey, RequestHost(c), RequestSpaceKey(c), currentContextUserID(c), currentContextCollaborationWorkspaceID(c))
 	if err != nil {
 		h.logger.Error("Get current menu space failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取当前空间失败")

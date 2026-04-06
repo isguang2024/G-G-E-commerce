@@ -40,8 +40,14 @@
               <p>{{ item.description || '未填写接收组说明' }}</p>
             </div>
             <div class="message-group-card__tags">
-              <ElTag effect="plain" size="small">{{ item.match_mode === 'manual' ? '手动组' : item.match_mode }}</ElTag>
-              <ElTag size="small" :type="item.status === 'disabled' ? 'info' : 'success'" effect="plain">
+              <ElTag effect="plain" size="small">{{
+                item.match_mode === 'manual' ? '手动组' : item.match_mode
+              }}</ElTag>
+              <ElTag
+                size="small"
+                :type="item.status === 'disabled' ? 'info' : 'success'"
+                effect="plain"
+              >
                 {{ item.status === 'disabled' ? '停用' : '正常' }}
               </ElTag>
             </div>
@@ -64,7 +70,7 @@
           </div>
 
           <div class="message-group-card__meta">
-            <span>{{ item.scope_type === 'team' ? '团队接收组' : '平台接收组' }}</span>
+            <span>{{ item.scope_type === 'team' ? '协作空间接收组' : '平台接收组' }}</span>
             <span>{{ formatTime(item.updated_at || item.created_at) }}</span>
           </div>
         </button>
@@ -94,7 +100,7 @@
             <div class="message-group-drawer__text">{{ drawerSummary }}</div>
           </div>
           <div class="message-group-drawer__summary-tags">
-            <ElTag effect="plain">{{ isTeamScope ? '团队接收组' : '平台接收组' }}</ElTag>
+            <ElTag effect="plain">{{ isTeamScope ? '协作空间接收组' : '平台接收组' }}</ElTag>
             <ElTag effect="plain" type="info">预估 {{ estimatedRecipients }} 人</ElTag>
           </div>
         </div>
@@ -106,7 +112,7 @@
                 v-model="drawerModel.name"
                 maxlength="60"
                 show-word-limit
-                placeholder="例如：平台重点关注用户 / 当前团队管理员"
+                placeholder="例如：平台重点关注用户 / 当前协作空间管理员"
               />
             </ElFormItem>
 
@@ -131,7 +137,9 @@
             <header class="message-group-drawer__rules-header">
               <div>
                 <div class="message-group-drawer__rules-title">接收规则</div>
-                <p>当前支持指定用户、团队成员、团队管理员、角色、功能包五类规则。后续标签和组合条件仍然继续收口到接收组。</p>
+                <p
+                  >当前支持指定用户、协作空间成员、协作空间管理员、角色、功能包五类规则。后续标签和组合条件仍然继续收口到接收组。</p
+                >
               </div>
               <ElButton @click="appendTarget" v-ripple>新增规则</ElButton>
             </header>
@@ -151,45 +159,66 @@
                   <ElFormItem label="规则类型">
                     <ElSelect v-model="item.target_type" @change="handleTargetTypeChange(item)">
                       <ElOption value="user" label="指定用户" />
-                      <ElOption value="tenant_users" :label="isTeamScope ? '当前团队成员' : '指定团队成员'" />
-                      <ElOption value="tenant_admins" :label="isTeamScope ? '当前团队管理员' : '指定团队管理员'" />
+                      <ElOption
+                        value="tenant_users"
+                        :label="isTeamScope ? '当前协作空间成员' : '指定协作空间成员'"
+                      />
+                      <ElOption
+                        value="tenant_admins"
+                        :label="isTeamScope ? '当前协作空间管理员' : '指定协作空间管理员'"
+                      />
                       <ElOption value="role" label="按角色命中" />
                       <ElOption value="feature_package" label="按功能包命中" />
                     </ElSelect>
                   </ElFormItem>
 
                   <ElFormItem label="排序">
-                    <ElInputNumber v-model="item.sort_order" :min="1" :max="999" controls-position="right" />
+                    <ElInputNumber
+                      v-model="item.sort_order"
+                      :min="1"
+                      :max="999"
+                      controls-position="right"
+                    />
                   </ElFormItem>
                 </div>
 
                 <ElFormItem v-if="item.target_type === 'user'" label="接收用户">
-                  <ElSelect
-                    v-model="item.user_id"
-                    filterable
-                    placeholder="请选择用户"
-                  >
+                  <ElSelect v-model="item.user_id" filterable placeholder="请选择用户">
                     <ElOption
                       v-for="user in userOptions"
                       :key="user.id"
-                      :label="user.team_name ? `${user.display_name} · ${user.team_name}` : user.display_name"
+                      :label="
+                        user.team_name
+                          ? `${user.display_name} · ${user.team_name}`
+                          : user.display_name
+                      "
                       :value="user.id"
                     />
                   </ElSelect>
                 </ElFormItem>
 
-                <ElFormItem v-else-if="item.target_type === 'tenant_users' || item.target_type === 'tenant_admins'" label="目标团队">
+                <ElFormItem
+                  v-else-if="
+                    item.target_type === 'tenant_users' || item.target_type === 'tenant_admins'
+                  "
+                  label="目标协作空间"
+                >
                   <div v-if="isTeamScope" class="message-group-fixed-target">
                     <strong>{{ currentTeamName }}</strong>
-                    <span>团队侧规则固定作用于当前团队。</span>
+                    <span>协作空间侧规则固定作用于当前协作空间。</span>
                   </div>
                   <ElSelect
                     v-else
-                    v-model="item.tenant_id"
+                    v-model="item.collaborationWorkspaceId"
                     filterable
-                    placeholder="请选择团队"
+                    placeholder="请选择协作空间"
                   >
-                    <ElOption v-for="team in teamOptions" :key="team.id" :label="team.name" :value="team.id" />
+                    <ElOption
+                      v-for="team in teamOptions"
+                      :key="team.id"
+                      :label="team.name"
+                      :value="team.id"
+                    />
                   </ElSelect>
                 </ElFormItem>
 
@@ -222,7 +251,9 @@
 
           <div class="message-group-drawer__reserved">
             <div class="message-group-drawer__rules-title">预留能力</div>
-            <p>下一阶段继续在接收组里扩标签、组合条件和更复杂的命中规则，发送页只负责选择对象，不再承担规则编辑。</p>
+            <p
+              >下一阶段继续在接收组里扩标签、组合条件和更复杂的命中规则，发送页只负责选择对象，不再承担规则编辑。</p
+            >
           </div>
         </div>
       </template>
@@ -261,7 +292,7 @@
     local_id: string
     target_type: 'user' | 'tenant_users' | 'tenant_admins' | 'role' | 'feature_package' | string
     user_id: string
-    tenant_id: string
+    collaborationWorkspaceId: string
     role_code: string
     package_key: string
     sort_order: number
@@ -274,8 +305,16 @@
     targets: DrawerTargetModel[]
   }
 
-  const { tenantStore, isTeamScope, skipTenantHeader, currentTeamName, ensureTeamContext, formatTime } =
-    useMessageWorkspace(props.scope)
+  const {
+    isTeamScope,
+    skipTenantHeader,
+    currentCollaborationWorkspaceId,
+    currentTeamName,
+    currentWorkspaceName,
+    currentWorkspaceLabel,
+    ensureTeamContext,
+    formatTime
+  } = useMessageWorkspace(props.scope)
 
   const loading = ref(false)
   const loadError = ref('')
@@ -294,28 +333,33 @@
   const roleOptions = ref<Api.Message.DispatchRoleOption[]>([])
   const featurePackageOptions = ref<Api.Message.DispatchFeaturePackageOption[]>([])
 
-  const pageTitle = computed(() => (isTeamScope.value ? '团队接收组' : '接收组管理'))
+  const pageTitle = computed(() => (isTeamScope.value ? '协作空间接收组' : '接收组管理'))
   const pageDescription = computed(() =>
     isTeamScope.value
-      ? `维护 ${currentTeamName.value} 的消息接收组，用于团队管理员快速向固定成员组合发送消息。`
-      : '维护平台消息接收组，把指定用户、指定团队成员和指定团队管理员收口到统一的发送对象配置里。'
+      ? `维护 ${currentWorkspaceName.value} 下 ${currentTeamName.value} 的消息接收组，用于协作空间管理员快速向固定成员组合发送消息。`
+      : '维护平台消息接收组，把指定用户、指定协作空间成员和指定协作空间管理员收口到统一的发送对象配置里。'
   )
   const toolbarDescription = computed(() =>
     isTeamScope.value
-      ? '团队接收组只作用于当前团队消息发送页。'
+      ? `协作空间接收组只作用于当前协作空间消息发送页（${currentWorkspaceLabel.value}）。`
       : '平台接收组可给平台发信台直接复用，也为后续角色、功能包等条件匹配预留统一扩展位。'
   )
   const heroMetrics = computed(() => [
     { label: '接收组总数', value: list.value.length },
     { label: '正常状态', value: list.value.filter((item) => item.status === 'normal').length },
-    { label: '手动规则', value: list.value.reduce((sum, item) => sum + (item.targets?.length || 0), 0) }
+    {
+      label: '手动规则',
+      value: list.value.reduce((sum, item) => sum + (item.targets?.length || 0), 0)
+    }
   ])
   const drawerSummary = computed(() =>
     isTeamScope.value
-      ? `保存后会作为 ${currentTeamName.value} 的可选接收组。`
+      ? `保存后会作为 ${currentTeamName.value}（${currentWorkspaceName.value}）的可选接收组。`
       : '保存后会作为平台消息发送页的可选接收组。'
   )
-  const estimatedRecipients = computed(() => estimateDrawerRecipients(drawerModel.value?.targets || []))
+  const estimatedRecipients = computed(() =>
+    estimateDrawerRecipients(drawerModel.value?.targets || [])
+  )
 
   const nextLocalId = () => {
     const value = sequence.value
@@ -329,7 +373,10 @@
     local_id: nextLocalId(),
     target_type: target?.target_type || 'user',
     user_id: target?.user_id || '',
-    tenant_id: target?.tenant_id || (isTeamScope.value ? tenantStore.currentTenantId || '' : ''),
+    collaborationWorkspaceId:
+      target?.collaboration_workspace_id ||
+      target?.collaboration_workspace_id ||
+      (isTeamScope.value ? currentCollaborationWorkspaceId.value || '' : ''),
     role_code: target?.role_code || '',
     package_key: target?.package_key || '',
     sort_order: target?.sort_order || sequence.value
@@ -342,7 +389,17 @@
     targets: [createTarget()]
   })
 
-  const summarizeTarget = (item?: Api.Message.MessageRecipientGroupTargetItem | DrawerTargetModel) => {
+  const resolveTargetCollaborationWorkspaceId = (
+    item?: Api.Message.MessageRecipientGroupTargetItem | DrawerTargetModel
+  ) => {
+    if (!item) return ''
+    if ('collaborationWorkspaceId' in item) return item.collaborationWorkspaceId || ''
+    return item.collaboration_workspace_id || item.collaboration_workspace_id || ''
+  }
+
+  const summarizeTarget = (
+    item?: Api.Message.MessageRecipientGroupTargetItem | DrawerTargetModel
+  ) => {
     if (!item) return '未配置'
     if (item.target_type === 'user') {
       const name =
@@ -368,16 +425,20 @@
     const teamName =
       'tenant_name' in item && item.tenant_name
         ? item.tenant_name
-        : teamOptions.value.find((team) => team.id === item.tenant_id)?.name || currentTeamName.value
+        : teamOptions.value.find((team) => team.id === resolveTargetCollaborationWorkspaceId(item))?.name ||
+          currentTeamName.value
     if (item.target_type === 'tenant_admins') {
-      return `${teamName} · 团队管理员`
+      return `${teamName} · 协作空间管理员`
     }
-    return `${teamName} · 团队成员`
+    return `${teamName} · 协作空间成员`
   }
 
   const summarizeTargets = (targets?: Api.Message.MessageRecipientGroupTargetItem[]) => {
     if (!targets?.length) return '尚未配置接收规则'
-    return targets.slice(0, 3).map((item) => summarizeTarget(item)).join('、')
+    return targets
+      .slice(0, 3)
+      .map((item) => summarizeTarget(item))
+      .join('、')
   }
 
   const estimateDrawerRecipients = (targets: DrawerTargetModel[]) => {
@@ -431,7 +492,7 @@
       })
       list.value = result.records || []
       pagination.current = 1
-    } catch (error) {
+    } catch {
       list.value = []
       loadError.value = '接收组暂时不可用，稍后重试或刷新状态。'
       pagination.current = 1
@@ -480,7 +541,7 @@
 
   const handleTargetTypeChange = (item: DrawerTargetModel) => {
     item.user_id = ''
-    item.tenant_id = isTeamScope.value ? tenantStore.currentTenantId || '' : ''
+    item.collaborationWorkspaceId = isTeamScope.value ? currentCollaborationWorkspaceId.value || '' : ''
     item.role_code = ''
     item.package_key = ''
   }
@@ -503,9 +564,9 @@
       if (
         !isTeamScope.value &&
         (item.target_type === 'tenant_users' || item.target_type === 'tenant_admins') &&
-        !item.tenant_id
+        !item.collaborationWorkspaceId
       ) {
-        ElMessage.warning('团队规则必须选择目标团队')
+        ElMessage.warning('协作空间规则必须选择目标协作空间')
         return
       }
       if (item.target_type === 'role' && !item.role_code) {
@@ -527,14 +588,15 @@
         targets: drawerModel.value.targets.map((item, index) => ({
           target_type: item.target_type,
           user_id: item.target_type === 'user' ? item.user_id || undefined : undefined,
-          tenant_id:
+          collaboration_workspace_id:
             item.target_type === 'tenant_users' || item.target_type === 'tenant_admins'
               ? isTeamScope.value
-                ? tenantStore.currentTenantId || undefined
-                : item.tenant_id || undefined
+                ? currentCollaborationWorkspaceId.value || undefined
+                : item.collaborationWorkspaceId || undefined
               : undefined,
           role_code: item.target_type === 'role' ? item.role_code || undefined : undefined,
-          package_key: item.target_type === 'feature_package' ? item.package_key || undefined : undefined,
+          package_key:
+            item.target_type === 'feature_package' ? item.package_key || undefined : undefined,
           sort_order: item.sort_order || index + 1
         }))
       }
@@ -549,7 +611,7 @@
       }
       drawerVisible.value = false
       await loadGroups()
-    } catch (error) {
+    } catch {
       ElMessage.error('保存接收组失败')
     } finally {
       saving.value = false

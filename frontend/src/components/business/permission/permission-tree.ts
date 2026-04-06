@@ -2,11 +2,11 @@ export type PermissionActionItem = Api.SystemManage.PermissionActionItem
 export type TreeNodeType = 'feature' | 'module' | 'action'
 
 export interface ModuleGroup {
-	key: string
-	label: string
-	count: number
-	actionIds: string[]
-	actions: PermissionActionItem[]
+  key: string
+  label: string
+  count: number
+  actionIds: string[]
+  actions: PermissionActionItem[]
 }
 
 export interface FeatureGroup {
@@ -32,7 +32,8 @@ export function buildPermissionGroups(actions: PermissionActionItem[]): FeatureG
 
   actions.forEach((action) => {
     const featureKey = action.featureGroup?.id || action.featureKind || 'system'
-    const featureLabel = action.featureGroup?.name || (action.featureKind === 'business' ? '业务功能' : '系统功能')
+    const featureLabel =
+      action.featureGroup?.name || (action.featureKind === 'business' ? '业务功能' : '系统功能')
     let featureGroup = featureMap.get(featureKey)
     if (!featureGroup) {
       featureGroup = {
@@ -45,16 +46,17 @@ export function buildPermissionGroups(actions: PermissionActionItem[]): FeatureG
       featureMap.set(featureKey, featureGroup)
     }
 
-    const moduleCode = action.moduleGroup?.name || action.moduleCode || action.resourceCode || 'common'
+    const moduleCode =
+      action.moduleGroup?.name || action.moduleCode || action.resourceCode || 'common'
     const moduleKey = `${featureKey}:${moduleCode}`
     let moduleGroup = featureGroup.modules.find((item) => item.key === moduleKey)
-		if (!moduleGroup) {
-			moduleGroup = {
-				key: moduleKey,
-				label: moduleCode,
-				count: 0,
-				actionIds: [],
-				actions: []
+    if (!moduleGroup) {
+      moduleGroup = {
+        key: moduleKey,
+        label: moduleCode,
+        count: 0,
+        actionIds: [],
+        actions: []
       }
       featureGroup.modules.push(moduleGroup)
     }
@@ -87,19 +89,19 @@ export function buildPermissionTree<TLeaf extends { meta: string } & Record<stri
   groups: FeatureGroup[],
   mapLeaf: (action: PermissionActionItem) => TLeaf
 ): Array<PermissionTreeNodeBase & Record<string, unknown>> {
-	return groups.map((featureGroup) => ({
+  return groups.map((featureGroup) => ({
     key: featureGroup.key,
     label: featureGroup.label,
     nodeType: 'feature',
     meta: `${featureGroup.modules.length} 个模块，${featureGroup.count} 条权限`,
     actionIds: featureGroup.actionIds,
-		children: featureGroup.modules.map((moduleGroup) => ({
-			key: moduleGroup.key,
-			label: moduleGroup.label,
-			nodeType: 'module',
-			meta: `${moduleGroup.count} 条权限`,
-			actionIds: moduleGroup.actionIds,
-			children: moduleGroup.actions.map((action) => ({
+    children: featureGroup.modules.map((moduleGroup) => ({
+      key: moduleGroup.key,
+      label: moduleGroup.label,
+      nodeType: 'module',
+      meta: `${moduleGroup.count} 条权限`,
+      actionIds: moduleGroup.actionIds,
+      children: moduleGroup.actions.map((action) => ({
         key: action.id,
         label: action.name,
         nodeType: 'action',
@@ -114,13 +116,16 @@ export function buildPermissionTree<TLeaf extends { meta: string } & Record<stri
 export function buildDefaultExpandedKeys(treeData: Array<PermissionTreeNodeBase>): string[] {
   return treeData.flatMap((featureGroup, index) => {
     if (index > 0) return []
-    return [featureGroup.key, ...((featureGroup.children || []).map((moduleGroup) => moduleGroup.key))]
+    return [
+      featureGroup.key,
+      ...(featureGroup.children || []).map((moduleGroup) => moduleGroup.key)
+    ]
   })
 }
 
 export function buildAllExpandedKeys(treeData: Array<PermissionTreeNodeBase>): string[] {
   return treeData.flatMap((featureGroup) => [
     featureGroup.key,
-    ...((featureGroup.children || []).map((moduleGroup) => moduleGroup.key))
+    ...(featureGroup.children || []).map((moduleGroup) => moduleGroup.key)
   ])
 }

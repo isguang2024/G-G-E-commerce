@@ -107,7 +107,10 @@ export class RoutePermissionValidator {
     if (normalizedTarget === normalizedRoute) {
       return true
     }
-    if (!this.hasDynamicSegment(normalizedRoute) && normalizedTarget.startsWith(`${normalizedRoute}/`)) {
+    if (
+      !this.hasDynamicSegment(normalizedRoute) &&
+      normalizedTarget.startsWith(`${normalizedRoute}/`)
+    ) {
       return true
     }
     if (!this.hasDynamicSegment(normalizedRoute)) {

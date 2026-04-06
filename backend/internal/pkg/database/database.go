@@ -130,20 +130,20 @@ func AutoMigrate() error {
 		&models.FeaturePackageBundle{},
 		&models.FeaturePackageKey{},
 		&models.FeaturePackageMenu{},
-		&models.TeamFeaturePackage{},
+		&models.CollaborationWorkspaceFeaturePackage{},
 		&models.UserFeaturePackage{},
 		&models.RoleFeaturePackage{},
 		&models.RoleHiddenMenu{},
 		&models.RoleDisabledAction{},
 		&models.RoleDataPermission{},
-		&models.TeamBlockedMenu{},
-		&models.TeamBlockedAction{},
+		&models.CollaborationWorkspaceBlockedMenu{},
+		&models.CollaborationWorkspaceBlockedAction{},
 		&models.UserActionPermission{},
 		&models.UserHiddenMenu{},
 		&models.PlatformUserAccessSnapshot{},
 		&models.PlatformRoleAccessSnapshot{},
-		&models.TeamAccessSnapshot{},
-		&models.TeamRoleAccessSnapshot{},
+		&models.CollaborationWorkspaceAccessSnapshot{},
+		&models.CollaborationWorkspaceRoleAccessSnapshot{},
 		&models.APIEndpointCategory{},
 		&models.APIEndpoint{},
 		&models.APIEndpointPermissionBinding{},
@@ -157,6 +157,10 @@ func AutoMigrate() error {
 		&models.PageSpaceBinding{},
 		&models.Tenant{},
 		&models.TenantMember{},
+		&models.Workspace{},
+		&models.WorkspaceMember{},
+		&models.WorkspaceRoleBinding{},
+		&models.WorkspaceFeaturePackage{},
 		&models.APIKey{},
 		&models.MediaAsset{},
 		&models.MenuBackup{},
@@ -195,12 +199,15 @@ func AutoMigrate() error {
 
 // createUniqueIndexes 创建唯一索引
 func createUniqueIndexes() error {
-	// tenant_members 表的 (tenant_id, user_id) 唯一索引
-	indexName := "idx_tenant_members_tenant_user_unique"
+	// collaboration_workspace_members 表的 (collaboration_workspace_id, user_id) 唯一索引
+	indexName := "idx_collaboration_workspace_members_user_unique"
 	var count int64
+	if err := DB.Exec("DROP INDEX IF EXISTS idx_collaboration_workspace_members_tenant_user_unique").Error; err != nil {
+		return err
+	}
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", indexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + indexName + " ON tenant_members (tenant_id, user_id)").Error; err != nil {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + indexName + " ON collaboration_workspace_members (collaboration_workspace_id, user_id)").Error; err != nil {
 			return err
 		}
 	}
@@ -216,15 +223,69 @@ func createUniqueIndexes() error {
 	globalIndexName := "idx_user_roles_global_unique"
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", globalIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + globalIndexName + " ON user_roles (user_id, role_id) WHERE tenant_id IS NULL").Error; err != nil {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + globalIndexName + " ON user_roles (user_id, role_id) WHERE collaboration_workspace_id IS NULL").Error; err != nil {
 			return err
 		}
 	}
 
-	tenantIndexName := "idx_user_roles_tenant_unique"
-	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", tenantIndexName).Scan(&count)
+	collaborationWorkspaceIndexName := "idx_user_roles_collaboration_workspace_unique"
+	if err := DB.Exec("DROP INDEX IF EXISTS idx_user_roles_tenant_unique").Error; err != nil {
+		return err
+	}
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", collaborationWorkspaceIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + tenantIndexName + " ON user_roles (user_id, role_id, tenant_id) WHERE tenant_id IS NOT NULL").Error; err != nil {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + collaborationWorkspaceIndexName + " ON user_roles (user_id, role_id, collaboration_workspace_id) WHERE collaboration_workspace_id IS NOT NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	workspaceCodeIndexName := "idx_workspaces_code_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", workspaceCodeIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + workspaceCodeIndexName + " ON workspaces (code) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	personalWorkspaceOwnerIndexName := "idx_workspaces_personal_owner_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", personalWorkspaceOwnerIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + personalWorkspaceOwnerIndexName + " ON workspaces (owner_user_id) WHERE workspace_type = 'personal' AND owner_user_id IS NOT NULL AND deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	collaborationWorkspaceIndexNameOnWorkspace := "idx_workspaces_collaboration_workspace_unique"
+	if err := DB.Exec("DROP INDEX IF EXISTS idx_workspaces_team_tenant_unique").Error; err != nil {
+		return err
+	}
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", collaborationWorkspaceIndexNameOnWorkspace).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + collaborationWorkspaceIndexNameOnWorkspace + " ON workspaces (collaboration_workspace_id) WHERE workspace_type = 'collaboration' AND collaboration_workspace_id IS NOT NULL AND deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	workspaceMemberIndexName := "idx_workspace_members_workspace_user_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", workspaceMemberIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + workspaceMemberIndexName + " ON workspace_members (workspace_id, user_id) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	workspaceRoleBindingIndexName := "idx_workspace_role_bindings_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", workspaceRoleBindingIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + workspaceRoleBindingIndexName + " ON workspace_role_bindings (workspace_id, user_id, role_id) WHERE deleted_at IS NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	workspaceFeaturePackageIndexName := "idx_workspace_feature_packages_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", workspaceFeaturePackageIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + workspaceFeaturePackageIndexName + " ON workspace_feature_packages (workspace_id, package_id) WHERE deleted_at IS NULL").Error; err != nil {
 			return err
 		}
 	}
@@ -249,18 +310,21 @@ func createUniqueIndexes() error {
 	}
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", userActionGlobalIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + userActionGlobalIndexName + " ON user_action_permissions (app_key, user_id, action_id) WHERE tenant_id IS NULL").Error; err != nil {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + userActionGlobalIndexName + " ON user_action_permissions (app_key, user_id, action_id) WHERE collaboration_workspace_id IS NULL").Error; err != nil {
 			return err
 		}
 	}
 
-	userActionTenantIndexName := "idx_user_action_permissions_tenant_unique"
-	if err := DB.Exec("DROP INDEX IF EXISTS " + userActionTenantIndexName).Error; err != nil {
+	userActionCollaborationWorkspaceIndexName := "idx_user_action_permissions_collaboration_workspace_unique"
+	if err := DB.Exec("DROP INDEX IF EXISTS idx_user_action_permissions_tenant_unique").Error; err != nil {
 		return err
 	}
-	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", userActionTenantIndexName).Scan(&count)
+	if err := DB.Exec("DROP INDEX IF EXISTS " + userActionCollaborationWorkspaceIndexName).Error; err != nil {
+		return err
+	}
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", userActionCollaborationWorkspaceIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + userActionTenantIndexName + " ON user_action_permissions (app_key, user_id, action_id, tenant_id) WHERE tenant_id IS NOT NULL").Error; err != nil {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + userActionCollaborationWorkspaceIndexName + " ON user_action_permissions (app_key, user_id, action_id, collaboration_workspace_id) WHERE collaboration_workspace_id IS NOT NULL").Error; err != nil {
 			return err
 		}
 	}
@@ -462,13 +526,13 @@ func createUniqueIndexes() error {
 		}
 	}
 
-	teamFeaturePackageIndexName := "idx_team_feature_packages_unique"
+	teamFeaturePackageIndexName := "idx_collaboration_workspace_feature_packages_unique"
 	if err := DB.Exec("DROP INDEX IF EXISTS " + teamFeaturePackageIndexName).Error; err != nil {
 		return err
 	}
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", teamFeaturePackageIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + teamFeaturePackageIndexName + " ON team_feature_packages (app_key, team_id, package_id)").Error; err != nil {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + teamFeaturePackageIndexName + " ON collaboration_workspace_feature_packages (app_key, collaboration_workspace_id, package_id)").Error; err != nil {
 			return err
 		}
 	}
@@ -517,24 +581,24 @@ func createUniqueIndexes() error {
 		}
 	}
 
-	teamBlockedMenuIndexName := "idx_team_blocked_menus_unique"
+	teamBlockedMenuIndexName := "idx_collaboration_workspace_blocked_menus_unique"
 	if err := DB.Exec("DROP INDEX IF EXISTS " + teamBlockedMenuIndexName).Error; err != nil {
 		return err
 	}
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", teamBlockedMenuIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + teamBlockedMenuIndexName + " ON team_blocked_menus (app_key, team_id, menu_id)").Error; err != nil {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + teamBlockedMenuIndexName + " ON collaboration_workspace_blocked_menus (app_key, collaboration_workspace_id, menu_id)").Error; err != nil {
 			return err
 		}
 	}
 
-	teamBlockedActionIndexName := "idx_team_blocked_actions_unique"
+	teamBlockedActionIndexName := "idx_collaboration_workspace_blocked_actions_unique"
 	if err := DB.Exec("DROP INDEX IF EXISTS " + teamBlockedActionIndexName).Error; err != nil {
 		return err
 	}
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", teamBlockedActionIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + teamBlockedActionIndexName + " ON team_blocked_actions (app_key, team_id, action_id)").Error; err != nil {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + teamBlockedActionIndexName + " ON collaboration_workspace_blocked_actions (app_key, collaboration_workspace_id, action_id)").Error; err != nil {
 			return err
 		}
 	}
@@ -777,8 +841,8 @@ func backfillDefaultAppKey() error {
 		"UPDATE api_endpoints SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
 		"UPDATE platform_user_access_snapshots SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
 		"UPDATE platform_role_access_snapshots SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE team_access_snapshots SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE team_role_access_snapshots SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
+		"UPDATE collaboration_workspace_access_snapshots SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
+		"UPDATE collaboration_workspace_role_access_snapshots SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
 		"UPDATE api_endpoints SET app_scope = '" + models.AppScopeShared + "' WHERE COALESCE(TRIM(app_scope), '') = '' AND (path LIKE '/api/v1/auth/%' OR path = '/api/v1/pages/runtime/public' OR path LIKE '/open/v1/%' OR path = '/health')",
 		"UPDATE api_endpoints SET app_scope = '" + models.AppScopeApp + "' WHERE COALESCE(TRIM(app_scope), '') = ''",
 	}
@@ -808,13 +872,13 @@ func backfillAppScopedRelations() error {
 
 	statements := []string{
 		"UPDATE role_feature_packages SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE team_feature_packages SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
+		"UPDATE collaboration_workspace_feature_packages SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
 		"UPDATE user_feature_packages SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
 		"UPDATE role_hidden_menus SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE team_blocked_menus SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
+		"UPDATE collaboration_workspace_blocked_menus SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
 		"UPDATE user_hidden_menus SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
 		"UPDATE role_disabled_actions SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE team_blocked_actions SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
+		"UPDATE collaboration_workspace_blocked_actions SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
 		"UPDATE user_action_permissions SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
 	}
 	for _, statement := range statements {
@@ -1027,8 +1091,8 @@ func ensureAppScopedSnapshotPrimaryKeys() error {
 	specs := []snapshotSpec{
 		{table: "platform_user_access_snapshots", cols: []string{"app_key", "user_id"}},
 		{table: "platform_role_access_snapshots", cols: []string{"app_key", "role_id"}},
-		{table: "team_access_snapshots", cols: []string{"app_key", "team_id"}},
-		{table: "team_role_access_snapshots", cols: []string{"app_key", "team_id", "role_id"}},
+		{table: "collaboration_workspace_access_snapshots", cols: []string{"app_key", "collaboration_workspace_id"}},
+		{table: "collaboration_workspace_role_access_snapshots", cols: []string{"app_key", "collaboration_workspace_id", "role_id"}},
 	}
 
 	for _, spec := range specs {

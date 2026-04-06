@@ -18,7 +18,7 @@ const __dirname = dirname(__filename)
 export default ({ mode }: { mode: string }) => {
   const root = process.cwd()
   const env = loadEnv(mode, root)
-  const { VITE_VERSION, VITE_PORT, VITE_BASE_URL, VITE_API_URL, VITE_API_PROXY_URL } = env
+  const { VITE_VERSION, VITE_PORT, VITE_BASE_URL, VITE_API_PROXY_URL } = env
   const apiProxyTarget = VITE_API_PROXY_URL || 'http://localhost:8080'
 
   return defineConfig({

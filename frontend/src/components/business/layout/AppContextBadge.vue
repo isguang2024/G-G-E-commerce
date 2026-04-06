@@ -1,15 +1,14 @@
-<template>
+﻿<template>
   <div class="context-badge" :class="[`context-badge--${variant}`]">
-    <span class="context-badge__eyebrow">当前作用域</span>
+    <span class="context-badge__eyebrow">当前授权工作空间</span>
     <div class="context-badge__main">
       <ElTag :type="tagType" effect="plain" round size="small">
         {{ modeLabel }}
       </ElTag>
       <span class="context-badge__name">{{ scopeName }}</span>
     </div>
-    <div v-if="showSpaceLabel" class="context-badge__space">
-      菜单空间 · {{ spaceName }}
-    </div>
+    <div class="context-badge__space"> 当前协作空间视图 · {{ teamViewName }} </div>
+    <div v-if="showSpaceLabel" class="context-badge__space"> 菜单空间 · {{ spaceName }} </div>
   </div>
 </template>
 
@@ -29,18 +28,30 @@
     }
   )
 
-  const tenantStore = useTenantStore()
+  const collaborationWorkspaceStore = useTenantStore()
   const menuSpaceStore = useMenuSpaceStore()
-  const { currentContextMode, currentTeam } = storeToRefs(tenantStore)
+  const { currentContextMode, currentTeam, currentAuthWorkspace, currentAuthWorkspaceType } =
+    storeToRefs(collaborationWorkspaceStore)
   const { currentSpace, shouldShowSpaceBadge, isDefaultSpace } = storeToRefs(menuSpaceStore)
 
-  const modeLabel = computed(() => (currentContextMode.value === 'platform' ? '平台' : '团队'))
+  const modeLabel = computed(() =>
+    currentAuthWorkspaceType.value === 'personal' ? '个人工作空间' : '协作空间'
+  )
   const scopeName = computed(() =>
-    currentContextMode.value === 'platform' ? '平台管理空间' : currentTeam.value?.name || '未选择团队'
+    currentContextMode.value === 'platform'
+      ? currentAuthWorkspace.value?.name || '当前个人工作空间'
+      : currentTeam.value?.name || currentAuthWorkspace.value?.name || '未启用协作空间视图'
   )
   const tagType = computed(() => (currentContextMode.value === 'platform' ? 'success' : 'warning'))
+  const teamViewName = computed(() =>
+    currentAuthWorkspaceType.value === 'collaboration'
+      ? currentTeam.value?.name || currentAuthWorkspace.value?.name || '当前协作空间'
+      : '未启用协作空间视图'
+  )
   const showSpaceLabel = computed(() => shouldShowSpaceBadge.value && !isDefaultSpace.value)
-  const spaceName = computed(() => currentSpace.value?.spaceName || currentSpace.value?.spaceKey || '未选择空间')
+  const spaceName = computed(
+    () => currentSpace.value?.spaceName || currentSpace.value?.spaceKey || '未选择空间'
+  )
 </script>
 
 <style scoped lang="scss">

@@ -18,6 +18,7 @@ import (
 	space "github.com/gg-ecommerce/backend/internal/modules/system/space"
 	systemservice "github.com/gg-ecommerce/backend/internal/modules/system/system"
 	usermodel "github.com/gg-ecommerce/backend/internal/modules/system/user"
+	workspace "github.com/gg-ecommerce/backend/internal/modules/system/workspace"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/logger"
@@ -69,6 +70,9 @@ func main() {
 		if err := preparePermissionTableRenames(logger); err != nil {
 			logger.Fatal("Failed to prepare permission table renames", zap.Error(err))
 		}
+		if err := prepareCollaborationWorkspaceRenames(logger); err != nil {
+			logger.Fatal("Failed to prepare collaboration workspace renames", zap.Error(err))
+		}
 	}
 
 	// 自动迁移数据库表结构
@@ -99,6 +103,12 @@ func main() {
 		logger.Warn("Failed to initialize default admin", zap.Error(err))
 	} else {
 		logger.Info("Default admin initialized successfully")
+	}
+
+	if err := initWorkspaceBaseline(logger); err != nil {
+		logger.Warn("Failed to initialize workspace baseline", zap.Error(err))
+	} else {
+		logger.Info("Workspace baseline initialized successfully")
 	}
 
 	// 初始化默认菜单空间
@@ -477,12 +487,12 @@ func runNamedMigrations(logger *zap.Logger) error {
 			},
 		},
 		{
-			Name: "20260329_team_message_manage_menu_seed",
+			Name: "20260329_collaboration_workspace_message_manage_menu_seed",
 			Run: func(logger *zap.Logger) error {
 				if _, err := syncDefaultMenuSeedByName("TeamMessageManage"); err != nil {
 					return err
 				}
-				logger.Info("Named migration applied", zap.String("name", "20260329_team_message_manage_menu_seed"))
+				logger.Info("Named migration applied", zap.String("name", "20260329_collaboration_workspace_message_manage_menu_seed"))
 				return nil
 			},
 		},
@@ -516,11 +526,11 @@ func runNamedMigrations(logger *zap.Logger) error {
 					"system.message.sender.manage",
 					"system.message.template.manage",
 					"system.message.record.manage",
-					"team.message.manage",
-					"team.message.recipient_group.manage",
-					"team.message.sender.manage",
-					"team.message.template.manage",
-					"team.message.record.manage",
+					"collaboration_workspace.message.manage",
+					"collaboration_workspace.message.recipient_group.manage",
+					"collaboration_workspace.message.sender.manage",
+					"collaboration_workspace.message.template.manage",
+					"collaboration_workspace.message.record.manage",
 				}
 				for _, pageKey := range targetPages {
 					if _, err := syncDefaultPageSeedByKey(pageKey); err != nil {
@@ -552,12 +562,12 @@ func runNamedMigrations(logger *zap.Logger) error {
 			},
 		},
 		{
-			Name: "20260329_team_message_manage_page_seed",
+			Name: "20260329_collaboration_workspace_message_manage_page_seed",
 			Run: func(logger *zap.Logger) error {
-				if _, err := syncDefaultPageSeedByKey("team.message.manage"); err != nil {
+				if _, err := syncDefaultPageSeedByKey("collaboration_workspace.message.manage"); err != nil {
 					return err
 				}
-				logger.Info("Named migration applied", zap.String("name", "20260329_team_message_manage_page_seed"))
+				logger.Info("Named migration applied", zap.String("name", "20260329_collaboration_workspace_message_manage_page_seed"))
 				return nil
 			},
 		},
@@ -569,10 +579,10 @@ func runNamedMigrations(logger *zap.Logger) error {
 					"system.message.sender.manage",
 					"system.message.template.manage",
 					"system.message.record.manage",
-					"team.message.recipient_group.manage",
-					"team.message.sender.manage",
-					"team.message.template.manage",
-					"team.message.record.manage",
+					"collaboration_workspace.message.recipient_group.manage",
+					"collaboration_workspace.message.sender.manage",
+					"collaboration_workspace.message.template.manage",
+					"collaboration_workspace.message.record.manage",
 				}
 				for _, pageKey := range targetPages {
 					if _, err := syncDefaultPageSeedByKey(pageKey); err != nil {
@@ -588,7 +598,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 			Run: func(logger *zap.Logger) error {
 				targetPages := []string{
 					"system.message.sender.manage",
-					"team.message.sender.manage",
+					"collaboration_workspace.message.sender.manage",
 				}
 				for _, pageKey := range targetPages {
 					if _, err := syncDefaultPageSeedByKey(pageKey); err != nil {
@@ -604,7 +614,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 			Run: func(logger *zap.Logger) error {
 				targetPages := []string{
 					"system.message.recipient_group.manage",
-					"team.message.recipient_group.manage",
+					"collaboration_workspace.message.recipient_group.manage",
 				}
 				for _, pageKey := range targetPages {
 					if _, err := syncDefaultPageSeedByKey(pageKey); err != nil {
@@ -620,7 +630,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 			Run: func(logger *zap.Logger) error {
 				targetPages := []string{
 					"system.message.more",
-					"team.message.more",
+					"collaboration_workspace.message.more",
 				}
 				for _, pageKey := range targetPages {
 					if _, err := syncDefaultPageSeedByKey(pageKey); err != nil {
@@ -665,9 +675,9 @@ func runNamedMigrations(logger *zap.Logger) error {
 					"system.message.manage",
 					"system.message.template.manage",
 					"system.message.record.manage",
-					"team.message.manage",
-					"team.message.template.manage",
-					"team.message.record.manage",
+					"collaboration_workspace.message.manage",
+					"collaboration_workspace.message.template.manage",
+					"collaboration_workspace.message.record.manage",
 				}
 				for _, pageKey := range targetPages {
 					if _, err := syncDefaultPageSeedByKey(pageKey); err != nil {
@@ -702,7 +712,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 						group_id uuid NOT NULL,
 						target_type varchar(30) NOT NULL,
 						user_id uuid NULL,
-						tenant_id uuid NULL,
+						collaboration_workspace_id uuid NULL,
 						role_code varchar(80) NOT NULL DEFAULT '',
 						package_key varchar(120) NOT NULL DEFAULT '',
 						sort_order integer NOT NULL DEFAULT 0,
@@ -718,7 +728,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 					`CREATE UNIQUE INDEX IF NOT EXISTS idx_message_recipient_groups_scope_name_unique ON message_recipient_groups (scope_type, COALESCE(scope_id, '00000000-0000-0000-0000-000000000000'::uuid), name) WHERE deleted_at IS NULL`,
 					`CREATE INDEX IF NOT EXISTS idx_message_recipient_group_targets_group_id ON message_recipient_group_targets (group_id)`,
 					`CREATE INDEX IF NOT EXISTS idx_message_recipient_group_targets_user_id ON message_recipient_group_targets (user_id)`,
-					`CREATE INDEX IF NOT EXISTS idx_message_recipient_group_targets_tenant_id ON message_recipient_group_targets (tenant_id)`,
+					`CREATE INDEX IF NOT EXISTS idx_message_recipient_group_targets_collaboration_workspace_id ON message_recipient_group_targets (collaboration_workspace_id)`,
 					`CREATE INDEX IF NOT EXISTS idx_message_recipient_group_targets_deleted_at ON message_recipient_group_targets (deleted_at)`,
 				}
 				for _, statement := range statements {
@@ -925,11 +935,11 @@ func runNamedMigrations(logger *zap.Logger) error {
 					"system.message.recipient_group.manage",
 					"system.message.template.manage",
 					"system.message.record.manage",
-					"team.message.manage",
-					"team.message.sender.manage",
-					"team.message.recipient_group.manage",
-					"team.message.template.manage",
-					"team.message.record.manage",
+					"collaboration_workspace.message.manage",
+					"collaboration_workspace.message.sender.manage",
+					"collaboration_workspace.message.recipient_group.manage",
+					"collaboration_workspace.message.template.manage",
+					"collaboration_workspace.message.record.manage",
 				}
 				for _, pageKey := range targetPages {
 					if _, err := syncDefaultPageSeedByKey(pageKey); err != nil {
@@ -1108,7 +1118,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 				}
 
 				var teamMembers usermodel.Menu
-				if err := database.DB.Where("name = ?", "TeamMembers").First(&teamMembers).Error; err == nil {
+				if err := database.DB.Where("name = ?", "CollaborationWorkspaceMembers").First(&teamMembers).Error; err == nil {
 					if err := database.DB.Model(&usermodel.Menu{}).
 						Where("id = ?", teamMembers.ID).
 						Updates(map[string]interface{}{
@@ -1160,7 +1170,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 			Name: "20260324_drop_legacy_permission_tables",
 			Run: func(logger *zap.Logger) error {
 				statements := []string{
-					`ALTER TABLE team_access_snapshots DROP COLUMN IF EXISTS manual_action_ids`,
+					`ALTER TABLE collaboration_workspace_access_snapshots DROP COLUMN IF EXISTS manual_action_ids`,
 					`DROP INDEX IF EXISTS idx_team_manual_action_permissions_unique`,
 					`DROP TABLE IF EXISTS team_manual_action_permissions`,
 					`DROP TABLE IF EXISTS tenant_action_permissions`,
@@ -1340,7 +1350,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 
 				statements := []string{
 					`UPDATE permission_keys SET context_type = 'platform' WHERE permission_key LIKE 'system.%'`,
-					`UPDATE permission_keys SET context_type = 'platform' WHERE permission_key LIKE 'tenant.%'`,
+					`UPDATE permission_keys SET context_type = 'platform' WHERE permission_key LIKE 'collaboration_workspace.%'`,
 					`UPDATE permission_keys SET context_type = 'platform' WHERE permission_key LIKE 'platform.%'`,
 					`UPDATE permission_keys SET context_type = 'team' WHERE permission_key LIKE 'team.%'`,
 					`UPDATE permission_keys SET permission_key = 'system.permission.manage', context_type = 'platform' WHERE permission_key IN ('system_permission.manage_action_registry', 'permission_action.manage')`,
@@ -1363,9 +1373,9 @@ func runNamedMigrations(logger *zap.Logger) error {
 			Name: "20260325_legacy_user_roles_backfill",
 			Run: func(logger *zap.Logger) error {
 				statements := []string{
-					`INSERT INTO user_roles (user_id, role_id, tenant_id)
-					SELECT tm.user_id, r.id, tm.tenant_id
-					FROM tenant_members tm
+					`INSERT INTO user_roles (user_id, role_id, collaboration_workspace_id)
+					SELECT tm.user_id, r.id, tm.collaboration_workspace_id
+					FROM collaboration_workspace_members tm
 					JOIN roles r ON r.code = tm.role_code
 					WHERE tm.role_code IN ('team_admin', 'team_member')
 					  AND NOT EXISTS (
@@ -1373,32 +1383,32 @@ func runNamedMigrations(logger *zap.Logger) error {
 					    FROM user_roles ur
 					    WHERE ur.user_id = tm.user_id
 					      AND ur.role_id = r.id
-					      AND ur.tenant_id = tm.tenant_id
+					      AND ur.collaboration_workspace_id = tm.collaboration_workspace_id
 					  )`,
 					`UPDATE user_roles ur
-					SET tenant_id = tm.tenant_id
+					SET collaboration_workspace_id = tm.collaboration_workspace_id
 					FROM (
-					  SELECT user_id, MAX(tenant_id::text)::uuid AS tenant_id
-					  FROM tenant_members
+					  SELECT user_id, MAX(collaboration_workspace_id::text)::uuid AS collaboration_workspace_id
+					  FROM collaboration_workspace_members
 					  GROUP BY user_id
-					  HAVING COUNT(DISTINCT tenant_id) = 1
+					  HAVING COUNT(DISTINCT collaboration_workspace_id) = 1
 					) tm,
 					roles r
 					WHERE ur.user_id = tm.user_id
 					  AND r.id = ur.role_id
-					  AND ur.tenant_id IS NULL
+					  AND ur.collaboration_workspace_id IS NULL
 					  AND r.code IN ('team_admin', 'team_member')
 					  AND NOT EXISTS (
 					    SELECT 1
 					    FROM user_roles existing
 					    WHERE existing.user_id = ur.user_id
 					      AND existing.role_id = ur.role_id
-					      AND existing.tenant_id = tm.tenant_id
+					      AND existing.collaboration_workspace_id = tm.collaboration_workspace_id
 					  )`,
 					`DELETE FROM user_roles ur
 					USING roles r
 					WHERE ur.role_id = r.id
-					  AND ur.tenant_id IS NULL
+					  AND ur.collaboration_workspace_id IS NULL
 					  AND r.code IN ('team_admin', 'team_member')`,
 				}
 				for _, statement := range statements {
@@ -1417,7 +1427,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 					`UPDATE permission_keys SET status = 'normal' WHERE COALESCE(status, '') = ''`,
 					`UPDATE user_action_permissions SET effect = 'allow' WHERE COALESCE(effect, '') = ''`,
 					`ALTER TABLE permission_keys ADD COLUMN IF NOT EXISTS context_type varchar(20)`,
-					`UPDATE permission_keys SET context_type = 'platform' WHERE COALESCE(context_type, '') = '' AND (permission_key LIKE 'system.%' OR permission_key LIKE 'tenant.%' OR permission_key LIKE 'platform.%')`,
+					`UPDATE permission_keys SET context_type = 'platform' WHERE COALESCE(context_type, '') = '' AND (permission_key LIKE 'system.%' OR permission_key LIKE 'collaboration_workspace.%' OR permission_key LIKE 'platform.%')`,
 					`UPDATE permission_keys SET context_type = 'team' WHERE COALESCE(context_type, '') = ''`,
 					`UPDATE permission_keys SET feature_kind = 'system' WHERE COALESCE(feature_kind, '') = ''`,
 					`UPDATE api_endpoints SET feature_kind = 'system' WHERE COALESCE(feature_kind, '') = ''`,
@@ -1537,9 +1547,9 @@ func runNamedMigrations(logger *zap.Logger) error {
 						menu_id uuid NOT NULL,
 						created_at timestamptz NOT NULL DEFAULT NOW()
 					)`,
-					`CREATE TABLE IF NOT EXISTS team_feature_packages (
+					`CREATE TABLE IF NOT EXISTS collaboration_workspace_feature_packages (
 						id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-						team_id uuid NOT NULL,
+						collaboration_workspace_id uuid NOT NULL,
 						package_id uuid NOT NULL,
 						enabled boolean NOT NULL DEFAULT TRUE,
 						granted_by uuid,
@@ -1550,7 +1560,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 					`CREATE UNIQUE INDEX IF NOT EXISTS idx_feature_packages_key_unique ON feature_packages (package_key) WHERE deleted_at IS NULL`,
 					`CREATE UNIQUE INDEX IF NOT EXISTS idx_feature_package_keys_unique ON feature_package_keys (package_id, action_id)`,
 					`CREATE UNIQUE INDEX IF NOT EXISTS idx_feature_package_menus_unique ON feature_package_menus (package_id, menu_id)`,
-					`CREATE UNIQUE INDEX IF NOT EXISTS idx_team_feature_packages_unique ON team_feature_packages (team_id, package_id)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_collaboration_workspace_feature_packages_unique ON collaboration_workspace_feature_packages (collaboration_workspace_id, package_id)`,
 				}
 				for _, statement := range statements {
 					if err := database.DB.Exec(statement).Error; err != nil {
@@ -1618,14 +1628,14 @@ func runNamedMigrations(logger *zap.Logger) error {
 						action_id uuid NOT NULL,
 						created_at timestamptz NOT NULL DEFAULT NOW()
 					)`,
-					`CREATE TABLE IF NOT EXISTS team_blocked_menus (
-						team_id uuid NOT NULL,
+					`CREATE TABLE IF NOT EXISTS collaboration_workspace_blocked_menus (
+						collaboration_workspace_id uuid NOT NULL,
 						menu_id uuid NOT NULL,
 						created_at timestamptz NOT NULL DEFAULT NOW(),
 						updated_at timestamptz NOT NULL DEFAULT NOW()
 					)`,
-					`CREATE TABLE IF NOT EXISTS team_blocked_actions (
-						team_id uuid NOT NULL,
+					`CREATE TABLE IF NOT EXISTS collaboration_workspace_blocked_actions (
+						collaboration_workspace_id uuid NOT NULL,
 						action_id uuid NOT NULL,
 						created_at timestamptz NOT NULL DEFAULT NOW(),
 						updated_at timestamptz NOT NULL DEFAULT NOW()
@@ -1640,8 +1650,8 @@ func runNamedMigrations(logger *zap.Logger) error {
 					`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_feature_packages_unique ON user_feature_packages (user_id, package_id)`,
 					`CREATE UNIQUE INDEX IF NOT EXISTS idx_role_hidden_menus_unique ON role_hidden_menus (role_id, menu_id)`,
 					`CREATE UNIQUE INDEX IF NOT EXISTS idx_role_disabled_actions_unique ON role_disabled_actions (role_id, action_id)`,
-					`CREATE UNIQUE INDEX IF NOT EXISTS idx_team_blocked_menus_unique ON team_blocked_menus (team_id, menu_id)`,
-					`CREATE UNIQUE INDEX IF NOT EXISTS idx_team_blocked_actions_unique ON team_blocked_actions (team_id, action_id)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_collaboration_workspace_blocked_menus_unique ON collaboration_workspace_blocked_menus (collaboration_workspace_id, menu_id)`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_collaboration_workspace_blocked_actions_unique ON collaboration_workspace_blocked_actions (collaboration_workspace_id, action_id)`,
 					`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_hidden_menus_unique ON user_hidden_menus (user_id, menu_id)`,
 				}
 				for _, statement := range statements {
@@ -1677,8 +1687,8 @@ func runNamedMigrations(logger *zap.Logger) error {
 						created_at timestamptz NOT NULL DEFAULT NOW(),
 						updated_at timestamptz NOT NULL DEFAULT NOW()
 					)`,
-					`CREATE TABLE IF NOT EXISTS team_access_snapshots (
-						team_id uuid PRIMARY KEY,
+					`CREATE TABLE IF NOT EXISTS collaboration_workspace_access_snapshots (
+						collaboration_workspace_id uuid PRIMARY KEY,
 						package_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
 						expanded_package_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
 						derived_action_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
@@ -1707,8 +1717,8 @@ func runNamedMigrations(logger *zap.Logger) error {
 			Name: "20260324_team_role_access_snapshot_boundary_fields",
 			Run: func(logger *zap.Logger) error {
 				statements := []string{
-					`CREATE TABLE IF NOT EXISTS team_role_access_snapshots (
-						team_id uuid NOT NULL,
+					`CREATE TABLE IF NOT EXISTS collaboration_workspace_role_access_snapshots (
+						collaboration_workspace_id uuid NOT NULL,
 						role_id uuid NOT NULL,
 						package_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
 						expanded_package_ids jsonb NOT NULL DEFAULT '[]'::jsonb,
@@ -1724,12 +1734,12 @@ func runNamedMigrations(logger *zap.Logger) error {
 						refreshed_at timestamptz NOT NULL DEFAULT NOW(),
 						created_at timestamptz NOT NULL DEFAULT NOW(),
 						updated_at timestamptz NOT NULL DEFAULT NOW(),
-						PRIMARY KEY (team_id, role_id)
+						PRIMARY KEY (collaboration_workspace_id, role_id)
 					)`,
-					`ALTER TABLE team_role_access_snapshots ADD COLUMN IF NOT EXISTS available_action_ids jsonb NOT NULL DEFAULT '[]'::jsonb`,
-					`ALTER TABLE team_role_access_snapshots ADD COLUMN IF NOT EXISTS disabled_action_ids jsonb NOT NULL DEFAULT '[]'::jsonb`,
-					`ALTER TABLE team_role_access_snapshots ADD COLUMN IF NOT EXISTS available_menu_ids jsonb NOT NULL DEFAULT '[]'::jsonb`,
-					`ALTER TABLE team_role_access_snapshots ADD COLUMN IF NOT EXISTS hidden_menu_ids jsonb NOT NULL DEFAULT '[]'::jsonb`,
+					`ALTER TABLE collaboration_workspace_role_access_snapshots ADD COLUMN IF NOT EXISTS available_action_ids jsonb NOT NULL DEFAULT '[]'::jsonb`,
+					`ALTER TABLE collaboration_workspace_role_access_snapshots ADD COLUMN IF NOT EXISTS disabled_action_ids jsonb NOT NULL DEFAULT '[]'::jsonb`,
+					`ALTER TABLE collaboration_workspace_role_access_snapshots ADD COLUMN IF NOT EXISTS available_menu_ids jsonb NOT NULL DEFAULT '[]'::jsonb`,
+					`ALTER TABLE collaboration_workspace_role_access_snapshots ADD COLUMN IF NOT EXISTS hidden_menu_ids jsonb NOT NULL DEFAULT '[]'::jsonb`,
 				}
 				for _, statement := range statements {
 					if err := database.DB.Exec(statement).Error; err != nil {
@@ -1761,7 +1771,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 			Run: func(logger *zap.Logger) error {
 				statements := []string{
 					`ALTER TABLE platform_role_access_snapshots DROP COLUMN IF EXISTS has_package_config`,
-					`ALTER TABLE team_role_access_snapshots DROP COLUMN IF EXISTS has_menu_boundary`,
+					`ALTER TABLE collaboration_workspace_role_access_snapshots DROP COLUMN IF EXISTS has_menu_boundary`,
 				}
 				for _, statement := range statements {
 					if err := database.DB.Exec(statement).Error; err != nil {
@@ -1819,12 +1829,12 @@ func runNamedMigrations(logger *zap.Logger) error {
 			Name: "20260323_role_tenant_schema",
 			Run: func(logger *zap.Logger) error {
 				statements := []string{
-					`ALTER TABLE roles ADD COLUMN IF NOT EXISTS tenant_id uuid`,
+					`ALTER TABLE roles ADD COLUMN IF NOT EXISTS collaboration_workspace_id uuid`,
 					`DROP INDEX IF EXISTS roles_code_key`,
 					`DROP INDEX IF EXISTS idx_roles_code`,
 					`DROP INDEX IF EXISTS idx_roles_code_unique`,
-					`CREATE UNIQUE INDEX IF NOT EXISTS idx_roles_global_code_unique ON roles (code) WHERE tenant_id IS NULL AND deleted_at IS NULL`,
-					`CREATE UNIQUE INDEX IF NOT EXISTS idx_roles_tenant_code_unique ON roles (tenant_id, code) WHERE tenant_id IS NOT NULL AND deleted_at IS NULL`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_roles_global_code_unique ON roles (code) WHERE collaboration_workspace_id IS NULL AND deleted_at IS NULL`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_roles_tenant_code_unique ON roles (collaboration_workspace_id, code) WHERE collaboration_workspace_id IS NOT NULL AND deleted_at IS NULL`,
 				}
 				for _, statement := range statements {
 					if err := database.DB.Exec(statement).Error; err != nil {
@@ -1843,34 +1853,34 @@ func runNamedMigrations(logger *zap.Logger) error {
 					return err
 				} else if hasScopeTargetID {
 					statements = append(statements, `UPDATE user_roles
-					  SET tenant_id = COALESCE(tenant_id, scope_target_id)
-					  WHERE tenant_id IS NULL AND scope_target_id IS NOT NULL`)
+					  SET collaboration_workspace_id = COALESCE(collaboration_workspace_id, scope_target_id)
+					  WHERE collaboration_workspace_id IS NULL AND scope_target_id IS NOT NULL`)
 				}
 				if hasScopeTargetID, err := hasColumn("user_action_permissions", "scope_target_id"); err != nil {
 					return err
 				} else if hasScopeTargetID {
 					statements = append(statements, `UPDATE user_action_permissions
-					  SET tenant_id = COALESCE(tenant_id, scope_target_id)
-					  WHERE tenant_id IS NULL AND scope_target_id IS NOT NULL`)
+					  SET collaboration_workspace_id = COALESCE(collaboration_workspace_id, scope_target_id)
+					  WHERE collaboration_workspace_id IS NULL AND scope_target_id IS NOT NULL`)
 				}
 				statements = append(statements,
 					`ALTER TABLE user_action_permissions DROP CONSTRAINT IF EXISTS user_action_permissions_pkey`,
-					`ALTER TABLE user_action_permissions ALTER COLUMN tenant_id DROP NOT NULL`,
+					`ALTER TABLE user_action_permissions ALTER COLUMN collaboration_workspace_id DROP NOT NULL`,
 					`DROP INDEX IF EXISTS idx_user_action_permissions_global_unique`,
 					`DROP INDEX IF EXISTS idx_user_action_permissions_tenant_unique`,
 					`DROP INDEX IF EXISTS idx_user_action_permissions_scope_global_unique`,
 					`DROP INDEX IF EXISTS idx_user_action_permissions_scope_tenant_unique`,
 					`DROP INDEX IF EXISTS idx_user_action_permissions_scope_id`,
 					`DROP INDEX IF EXISTS idx_user_action_permissions_scope_target_id`,
-					`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_action_permissions_global_unique ON user_action_permissions (user_id, action_id) WHERE tenant_id IS NULL`,
-					`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_action_permissions_tenant_unique ON user_action_permissions (user_id, action_id, tenant_id) WHERE tenant_id IS NOT NULL`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_action_permissions_global_unique ON user_action_permissions (user_id, action_id) WHERE collaboration_workspace_id IS NULL`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_action_permissions_tenant_unique ON user_action_permissions (user_id, action_id, collaboration_workspace_id) WHERE collaboration_workspace_id IS NOT NULL`,
 					`DROP INDEX IF EXISTS idx_user_roles_scope_global_unique`,
 					`DROP INDEX IF EXISTS idx_user_roles_scope_target_unique`,
 					`DROP INDEX IF EXISTS idx_user_roles_scope_id`,
 					`DROP INDEX IF EXISTS idx_user_roles_scope_target_id`,
 					`DROP INDEX IF EXISTS idx_user_roles_deleted_at`,
-					`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_roles_global_unique ON user_roles (user_id, role_id) WHERE tenant_id IS NULL`,
-					`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_roles_tenant_unique ON user_roles (user_id, role_id, tenant_id) WHERE tenant_id IS NOT NULL`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_roles_global_unique ON user_roles (user_id, role_id) WHERE collaboration_workspace_id IS NULL`,
+					`CREATE UNIQUE INDEX IF NOT EXISTS idx_user_roles_tenant_unique ON user_roles (user_id, role_id, collaboration_workspace_id) WHERE collaboration_workspace_id IS NOT NULL`,
 					`ALTER TABLE user_roles DROP COLUMN IF EXISTS scope_id`,
 					`ALTER TABLE user_roles DROP COLUMN IF EXISTS scope_target_id`,
 					`ALTER TABLE user_roles DROP COLUMN IF EXISTS created_at`,
@@ -2091,7 +2101,7 @@ func removePermissionSimulatorNavigation(logger *zap.Logger) error {
 			tables := []string{
 				"feature_package_menus",
 				"role_hidden_menus",
-				"team_blocked_menus",
+				"collaboration_workspace_blocked_menus",
 				"user_hidden_menus",
 			}
 			for _, table := range tables {
@@ -2266,6 +2276,140 @@ func preparePermissionTableRenames(logger *zap.Logger) error {
 	return nil
 }
 
+func prepareCollaborationWorkspaceRenames(logger *zap.Logger) error {
+	tableRenames := []struct {
+		oldName string
+		newName string
+	}{
+		{oldName: "tenants", newName: "collaboration_workspaces"},
+		{oldName: "tenant_members", newName: "collaboration_workspace_members"},
+		{oldName: "team_feature_packages", newName: "collaboration_workspace_feature_packages"},
+		{oldName: "team_blocked_menus", newName: "collaboration_workspace_blocked_menus"},
+		{oldName: "team_blocked_actions", newName: "collaboration_workspace_blocked_actions"},
+		{oldName: "team_access_snapshots", newName: "collaboration_workspace_access_snapshots"},
+		{oldName: "team_role_access_snapshots", newName: "collaboration_workspace_role_access_snapshots"},
+	}
+	for _, item := range tableRenames {
+		if err := renameTableIfNeeded(item.oldName, item.newName, logger); err != nil {
+			return err
+		}
+	}
+
+	columnRenames := []struct {
+		tableName string
+		oldName   string
+		newName   string
+	}{
+		{tableName: "workspaces", oldName: "source_tenant_id", newName: "collaboration_workspace_id"},
+		{tableName: "workspace_members", oldName: "source_tenant_member_id", newName: "collaboration_workspace_member_id"},
+		{tableName: "roles", oldName: "tenant_id", newName: "collaboration_workspace_id"},
+		{tableName: "user_roles", oldName: "tenant_id", newName: "collaboration_workspace_id"},
+		{tableName: "user_action_permissions", oldName: "tenant_id", newName: "collaboration_workspace_id"},
+		{tableName: "user_hidden_menus", oldName: "tenant_id", newName: "collaboration_workspace_id"},
+		{tableName: "api_keys", oldName: "tenant_id", newName: "collaboration_workspace_id"},
+		{tableName: "media_assets", oldName: "tenant_id", newName: "collaboration_workspace_id"},
+		{tableName: "message_recipient_group_targets", oldName: "tenant_id", newName: "collaboration_workspace_id"},
+		{tableName: "messages", oldName: "target_tenant_id", newName: "target_collaboration_workspace_id"},
+		{tableName: "message_templates", oldName: "owner_tenant_id", newName: "owner_collaboration_workspace_id"},
+		{tableName: "collaboration_workspace_members", oldName: "tenant_id", newName: "collaboration_workspace_id"},
+		{tableName: "collaboration_workspace_feature_packages", oldName: "team_id", newName: "collaboration_workspace_id"},
+		{tableName: "collaboration_workspace_blocked_menus", oldName: "team_id", newName: "collaboration_workspace_id"},
+		{tableName: "collaboration_workspace_blocked_actions", oldName: "team_id", newName: "collaboration_workspace_id"},
+		{tableName: "collaboration_workspace_access_snapshots", oldName: "team_id", newName: "collaboration_workspace_id"},
+		{tableName: "collaboration_workspace_role_access_snapshots", oldName: "team_id", newName: "collaboration_workspace_id"},
+	}
+	for _, item := range columnRenames {
+		if err := renameColumnIfNeeded(item.tableName, item.oldName, item.newName, logger); err != nil {
+			return err
+		}
+	}
+
+	indexRenames := []struct {
+		oldName string
+		newName string
+	}{
+		{oldName: "idx_collaboration_workspace_members_tenant_user_unique", newName: "idx_collaboration_workspace_members_user_unique"},
+		{oldName: "idx_user_roles_tenant_unique", newName: "idx_user_roles_collaboration_workspace_unique"},
+		{oldName: "idx_workspaces_team_tenant_unique", newName: "idx_workspaces_collaboration_workspace_unique"},
+		{oldName: "idx_user_action_permissions_tenant_unique", newName: "idx_user_action_permissions_collaboration_workspace_unique"},
+	}
+	for _, item := range indexRenames {
+		if err := renameIndexIfNeeded(item.oldName, item.newName, logger); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func renameTableIfNeeded(oldName, newName string, logger *zap.Logger) error {
+	oldExists, err := hasTable(oldName)
+	if err != nil {
+		return err
+	}
+	newExists, err := hasTable(newName)
+	if err != nil {
+		return err
+	}
+	if !oldExists || newExists {
+		return nil
+	}
+	if err := database.DB.Exec(fmt.Sprintf("ALTER TABLE %s RENAME TO %s", oldName, newName)).Error; err != nil {
+		return err
+	}
+	logger.Info("Renamed collaboration workspace table", zap.String("from", oldName), zap.String("to", newName))
+	return nil
+}
+
+func renameColumnIfNeeded(tableName, oldName, newName string, logger *zap.Logger) error {
+	tableExists, err := hasTable(tableName)
+	if err != nil {
+		return err
+	}
+	if !tableExists {
+		return nil
+	}
+	oldExists, err := hasColumn(tableName, oldName)
+	if err != nil {
+		return err
+	}
+	newExists, err := hasColumn(tableName, newName)
+	if err != nil {
+		return err
+	}
+	if !oldExists || newExists {
+		return nil
+	}
+	if err := database.DB.Exec(fmt.Sprintf("ALTER TABLE %s RENAME COLUMN %s TO %s", tableName, oldName, newName)).Error; err != nil {
+		return err
+	}
+	logger.Info("Renamed collaboration workspace column",
+		zap.String("table", tableName),
+		zap.String("from", oldName),
+		zap.String("to", newName),
+	)
+	return nil
+}
+
+func renameIndexIfNeeded(oldName, newName string, logger *zap.Logger) error {
+	oldExists, err := hasIndex(oldName)
+	if err != nil {
+		return err
+	}
+	newExists, err := hasIndex(newName)
+	if err != nil {
+		return err
+	}
+	if !oldExists || newExists {
+		return nil
+	}
+	if err := database.DB.Exec(fmt.Sprintf("ALTER INDEX %s RENAME TO %s", oldName, newName)).Error; err != nil {
+		return err
+	}
+	logger.Info("Renamed collaboration workspace index", zap.String("from", oldName), zap.String("to", newName))
+	return nil
+}
+
 func ensureMigrationHistoryTable() error {
 	return database.DB.Exec(`
 		CREATE TABLE IF NOT EXISTS app_migrations (
@@ -2318,6 +2462,20 @@ func hasColumn(tableName, columnName string) (bool, error) {
 	return count > 0, nil
 }
 
+func hasIndex(indexName string) (bool, error) {
+	var count int64
+	err := database.DB.Raw(`
+		SELECT COUNT(*)
+		FROM pg_indexes
+		WHERE schemaname = CURRENT_SCHEMA()
+		  AND indexname = ?
+	`, indexName).Scan(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
 func buildRoleDataScopeUpdateStatement() (string, error) {
 	candidates := make([]string, 0, 3)
 	if hasDataScope, err := hasColumn("role_data_permissions", "data_scope"); err != nil {
@@ -2361,8 +2519,8 @@ func rebindPermissionKeyReferences(fromID, toID uuid.UUID) error {
 				      WHERE existing.user_id = target.user_id
 				        AND existing.action_id = ?
 				        AND (
-				          (existing.tenant_id IS NULL AND target.tenant_id IS NULL) OR
-				          existing.tenant_id = target.tenant_id
+				          (existing.collaboration_workspace_id IS NULL AND target.collaboration_workspace_id IS NULL) OR
+				          existing.collaboration_workspace_id = target.collaboration_workspace_id
 				        )
 				    )`,
 			args: []interface{}{toID, fromID, toID},
@@ -2402,18 +2560,18 @@ func rebindPermissionKeyReferences(fromID, toID uuid.UUID) error {
 			args: []interface{}{fromID},
 		},
 		{
-			sql: `UPDATE team_blocked_actions target
+			sql: `UPDATE collaboration_workspace_blocked_actions target
 				    SET action_id = ?
 				  WHERE action_id = ?
 				    AND NOT EXISTS (
-				      SELECT 1 FROM team_blocked_actions existing
-				      WHERE existing.team_id = target.team_id
+				      SELECT 1 FROM collaboration_workspace_blocked_actions existing
+				      WHERE existing.collaboration_workspace_id = target.collaboration_workspace_id
 				        AND existing.action_id = ?
 				    )`,
 			args: []interface{}{toID, fromID, toID},
 		},
 		{
-			sql:  `DELETE FROM team_blocked_actions WHERE action_id = ?`,
+			sql:  `DELETE FROM collaboration_workspace_blocked_actions WHERE action_id = ?`,
 			args: []interface{}{fromID},
 		},
 	}
@@ -2430,13 +2588,13 @@ func mergeDeprecatedTeamPermissionKeys(logger *zap.Logger) error {
 		From string
 		To   string
 	}{
-		{From: "tenant.member.manage", To: "tenant.manage"},
-		{From: "tenant.boundary.manage", To: "tenant.manage"},
-		{From: "tenant.configure_menu_boundary", To: "tenant.manage"},
+		{From: "collaboration_workspace.member.manage", To: "collaboration_workspace.manage"},
+		{From: "collaboration_workspace.boundary.manage", To: "collaboration_workspace.manage"},
+		{From: "collaboration_workspace.configure_menu_boundary", To: "collaboration_workspace.manage"},
 		{From: "user.assign_menu", To: "system.user.manage"},
-		{From: "team.member.assign_role", To: "team.member.manage"},
-		{From: "team.member.assign_action", To: "team.member.manage"},
-		{From: "team.configure_menu_boundary", To: "team.boundary.manage"},
+		{From: "team.member.assign_role", To: "collaboration_workspace.member.manage"},
+		{From: "team.member.assign_action", To: "collaboration_workspace.member.manage"},
+		{From: "team.configure_menu_boundary", To: "collaboration_workspace.boundary.manage"},
 		{From: "feature_package.assign_menu", To: "platform.package.manage"},
 	}
 
@@ -2627,7 +2785,7 @@ func countPermissionKeyReferences(actionID uuid.UUID, permissionKey string) (int
 			SELECT COUNT(*) FROM role_disabled_actions WHERE action_id = ?
 		), 0) +
 		COALESCE((
-			SELECT COUNT(*) FROM team_blocked_actions WHERE action_id = ?
+			SELECT COUNT(*) FROM collaboration_workspace_blocked_actions WHERE action_id = ?
 		), 0) +
 		COALESCE((
 			SELECT COUNT(*) FROM ui_pages WHERE permission_key = ? AND deleted_at IS NULL
@@ -2675,15 +2833,15 @@ func deduplicateAPIEndpointPermissionBindings(logger *zap.Logger) error {
 
 func backfillTenantIdentityUserRoles(logger *zap.Logger) error {
 	type tenantMemberRow struct {
-		TenantID uuid.UUID
-		UserID   uuid.UUID
-		RoleCode string
-		Status   string
+		CollaborationWorkspaceID uuid.UUID
+		UserID                   uuid.UUID
+		RoleCode                 string
+		Status                   string
 	}
 
 	var members []tenantMemberRow
 	if err := database.DB.Model(&usermodel.TenantMember{}).
-		Select("tenant_id, user_id, role_code, status").
+		Select("collaboration_workspace_id, user_id, role_code, status").
 		Where("status = ?", "active").
 		Find(&members).Error; err != nil {
 		return err
@@ -2712,7 +2870,7 @@ func backfillTenantIdentityUserRoles(logger *zap.Logger) error {
 	}
 
 	var roles []usermodel.Role
-	if err := database.DB.Where("tenant_id IS NULL AND code IN ?", roleCodes).Find(&roles).Error; err != nil {
+	if err := database.DB.Where("collaboration_workspace_id IS NULL AND code IN ?", roleCodes).Find(&roles).Error; err != nil {
 		return err
 	}
 	roleIDByCode := make(map[string]uuid.UUID, len(roles))
@@ -2739,22 +2897,22 @@ func backfillTenantIdentityUserRoles(logger *zap.Logger) error {
 			if !ok {
 				continue
 			}
-			if err := tx.Where("user_id = ? AND tenant_id = ? AND role_id IN ?", member.UserID, member.TenantID, identityRoleIDs).
+			if err := tx.Where("user_id = ? AND collaboration_workspace_id = ? AND role_id IN ?", member.UserID, member.CollaborationWorkspaceID, identityRoleIDs).
 				Delete(&usermodel.UserRole{}).Error; err != nil {
 				return err
 			}
 			record := usermodel.UserRole{
-				UserID:   member.UserID,
-				RoleID:   roleID,
-				TenantID: &member.TenantID,
+				UserID:                   member.UserID,
+				RoleID:                   roleID,
+				CollaborationWorkspaceID: &member.CollaborationWorkspaceID,
 			}
 			if err := tx.Create(&record).Error; err != nil {
 				return err
 			}
 			reboundCount++
-			if _, exists := seenTeams[member.TenantID]; !exists {
-				seenTeams[member.TenantID] = struct{}{}
-				touchedTeams = append(touchedTeams, member.TenantID)
+			if _, exists := seenTeams[member.CollaborationWorkspaceID]; !exists {
+				seenTeams[member.CollaborationWorkspaceID] = struct{}{}
+				touchedTeams = append(touchedTeams, member.CollaborationWorkspaceID)
 			}
 		}
 		return nil
@@ -2785,13 +2943,13 @@ func initDefaultRolesNoScope(logger *zap.Logger) error {
 		SortOrder   int
 	}{
 		{"admin", "管理员", "系统管理员，拥有所有权限", 1},
-		{"team_admin", "团队管理员", "团队管理员，可以管理团队成员和团队内容", 2},
-		{"team_member", "团队成员", "团队成员，可以查看和编辑团队内容", 3},
+		{"team_admin", "协作空间管理员", "协作空间管理员，可以管理协作空间成员和协作空间内容", 2},
+		{"team_member", "协作空间成员", "协作空间成员，可以查看和编辑协作空间内容", 3},
 	}
 
 	for _, roleData := range roles {
 		var role usermodel.Role
-		result := database.DB.Where("code = ? AND tenant_id IS NULL", roleData.Code).First(&role)
+		result := database.DB.Where("code = ? AND collaboration_workspace_id IS NULL", roleData.Code).First(&role)
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				role = usermodel.Role{
@@ -2892,19 +3050,19 @@ func initDefaultAdmin(logger *zap.Logger) error {
 
 func assignAdminRole(userID uuid.UUID, logger *zap.Logger) error {
 	var adminRole usermodel.Role
-	if err := database.DB.Where("code = ? AND tenant_id IS NULL", "admin").First(&adminRole).Error; err != nil {
+	if err := database.DB.Where("code = ? AND collaboration_workspace_id IS NULL", "admin").First(&adminRole).Error; err != nil {
 		logger.Error("Failed to find admin role", zap.Error(err))
 		return err
 	}
 
 	var userRole usermodel.UserRole
-	result := database.DB.Where("user_id = ? AND role_id = ? AND tenant_id IS NULL", userID, adminRole.ID).First(&userRole)
+	result := database.DB.Where("user_id = ? AND role_id = ? AND collaboration_workspace_id IS NULL", userID, adminRole.ID).First(&userRole)
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			userRole = usermodel.UserRole{
-				UserID:   userID,
-				RoleID:   adminRole.ID,
-				TenantID: nil,
+				UserID:                   userID,
+				RoleID:                   adminRole.ID,
+				CollaborationWorkspaceID: nil,
 			}
 			if err := database.DB.Create(&userRole).Error; err != nil {
 				logger.Error("Failed to assign admin role", zap.Error(err))
@@ -3425,7 +3583,7 @@ func cleanupLegacyOpsSpace(logger *zap.Logger) error {
 			if err := tx.Exec("DELETE FROM role_hidden_menus WHERE menu_id IN ?", menuIDs).Error; err != nil {
 				return err
 			}
-			if err := tx.Exec("DELETE FROM team_blocked_menus WHERE menu_id IN ?", menuIDs).Error; err != nil {
+			if err := tx.Exec("DELETE FROM collaboration_workspace_blocked_menus WHERE menu_id IN ?", menuIDs).Error; err != nil {
 				return err
 			}
 			if err := tx.Exec("DELETE FROM user_hidden_menus WHERE menu_id IN ?", menuIDs).Error; err != nil {
@@ -3800,8 +3958,8 @@ func seedDefaultMessageTemplates(logger *zap.Logger) error {
 		},
 		{
 			TemplateKey:     "platform.notice.tenant_admins",
-			Name:            "平台团队管理员提醒",
-			Description:     "平台向团队管理员发送治理提醒",
+			Name:            "平台协作空间管理员提醒",
+			Description:     "平台向协作空间管理员发送治理提醒",
 			MessageType:     "message",
 			OwnerScope:      "platform",
 			AudienceType:    "tenant_admins",
@@ -3813,9 +3971,9 @@ func seedDefaultMessageTemplates(logger *zap.Logger) error {
 			Meta:            systemmodels.MetaJSON{"builtin": true},
 		},
 		{
-			TemplateKey:     "tenant.notice.team_members",
-			Name:            "团队公告模板",
-			Description:     "团队管理员向指定团队发送公告或待办",
+			TemplateKey:     "collaboration_workspace.notice.team_members",
+			Name:            "协作空间公告模板",
+			Description:     "协作空间管理员向指定协作空间发送公告或待办",
 			MessageType:     "todo",
 			OwnerScope:      "tenant",
 			AudienceType:    "tenant_users",
@@ -4033,7 +4191,7 @@ func refreshDefaultAccessSnapshots(logger *zap.Logger) error {
 
 	defaultRoleCodes := permissionseed.DefaultRoleCodes()
 	var roles []usermodel.Role
-	if err := database.DB.Where("tenant_id IS NULL AND code IN ?", defaultRoleCodes).Find(&roles).Error; err != nil {
+	if err := database.DB.Where("collaboration_workspace_id IS NULL AND code IN ?", defaultRoleCodes).Find(&roles).Error; err != nil {
 		return err
 	}
 	roleIDs := make([]uuid.UUID, 0, len(roles))
@@ -4074,8 +4232,8 @@ func ensureAppScopedSnapshotPrimaryKeysMigration() error {
 	specs := []snapshotSpec{
 		{table: "platform_user_access_snapshots", cols: []string{"app_key", "user_id"}},
 		{table: "platform_role_access_snapshots", cols: []string{"app_key", "role_id"}},
-		{table: "team_access_snapshots", cols: []string{"app_key", "team_id"}},
-		{table: "team_role_access_snapshots", cols: []string{"app_key", "team_id", "role_id"}},
+		{table: "collaboration_workspace_access_snapshots", cols: []string{"app_key", "collaboration_workspace_id"}},
+		{table: "collaboration_workspace_role_access_snapshots", cols: []string{"app_key", "collaboration_workspace_id", "role_id"}},
 	}
 
 	for _, spec := range specs {
@@ -4099,6 +4257,15 @@ func ensureAppScopedSnapshotPrimaryKeysMigration() error {
 		}
 	}
 
+	return nil
+}
+
+func initWorkspaceBaseline(logger *zap.Logger) error {
+	service := workspace.NewService(database.DB, logger)
+	if err := service.EnsureWorkspaceBackfill(); err != nil {
+		return err
+	}
+	logger.Info("Workspace baseline backfilled")
 	return nil
 }
 
@@ -4342,10 +4509,10 @@ func transferMenuReferences(tx *gorm.DB, sourceMenuID, targetMenuID uuid.UUID) e
 		 SELECT role_id, ?, created_at FROM role_hidden_menus WHERE menu_id = ?
 		 ON CONFLICT DO NOTHING`,
 		`DELETE FROM role_hidden_menus WHERE menu_id = ?`,
-		`INSERT INTO team_blocked_menus (team_id, menu_id, created_at, updated_at)
-		 SELECT team_id, ?, created_at, updated_at FROM team_blocked_menus WHERE menu_id = ?
+		`INSERT INTO collaboration_workspace_blocked_menus (collaboration_workspace_id, menu_id, created_at, updated_at)
+		 SELECT collaboration_workspace_id, ?, created_at, updated_at FROM collaboration_workspace_blocked_menus WHERE menu_id = ?
 		 ON CONFLICT DO NOTHING`,
-		`DELETE FROM team_blocked_menus WHERE menu_id = ?`,
+		`DELETE FROM collaboration_workspace_blocked_menus WHERE menu_id = ?`,
 		`INSERT INTO user_hidden_menus (user_id, menu_id, created_at, updated_at)
 		 SELECT user_id, ?, created_at, updated_at FROM user_hidden_menus WHERE menu_id = ?
 		 ON CONFLICT DO NOTHING`,

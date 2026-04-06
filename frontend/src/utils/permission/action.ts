@@ -20,7 +20,10 @@ export function buildScopedActionKey(action: string): string {
   return resolveActionKey(action).key
 }
 
-export function hasScopedActionPermission(userInfo: UserActionInfo, action: ActionRequirement): boolean {
+export function hasScopedActionPermission(
+  userInfo: UserActionInfo,
+  action: ActionRequirement
+): boolean {
   if (userInfo?.is_super_admin) {
     return true
   }

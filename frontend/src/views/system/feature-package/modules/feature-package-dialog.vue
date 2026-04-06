@@ -1,11 +1,12 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
     :title="dialogType === 'add' ? '新增功能包' : '编辑功能包'"
     size="36%"
     @close="handleClose"
     direction="rtl"
-    class="config-drawer">
+    class="config-drawer"
+  >
     <ElForm ref="formRef" :model="form" :rules="rules" label-width="110px">
       <ElFormItem label="功能包编码" prop="packageKey">
         <ElInput v-model="form.packageKey" placeholder="例如 platform.system_admin" />
@@ -28,7 +29,7 @@
       <ElFormItem label="上下文类型" prop="contextType">
         <ElSelect v-model="form.contextType" placeholder="请选择上下文类型" style="width: 100%">
           <ElOption label="平台" value="platform" />
-          <ElOption label="团队" value="team" />
+          <ElOption label="协作空间" value="team" />
           <ElOption label="通用" value="common" />
         </ElSelect>
       </ElFormItem>
@@ -108,7 +109,8 @@
       Object.assign(form, {
         id: props.packageData.id || '',
         packageKey: props.packageData.packageKey || '',
-        packageType: (props.packageData.packageType as 'base' | 'bundle') || props.defaultPackageType,
+        packageType:
+          (props.packageData.packageType as 'base' | 'bundle') || props.defaultPackageType,
         name: props.packageData.name || '',
         description: props.packageData.description || '',
         contextType: props.packageData.contextType || 'team',
@@ -188,7 +190,7 @@
   }
 
   function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
-    return `本次增量刷新：角色 ${stats?.roleCount || 0}、团队 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
+    return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 </script>
 
@@ -199,3 +201,4 @@
     line-height: 1.6;
   }
 </style>
+

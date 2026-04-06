@@ -29,17 +29,19 @@
               :value="item.value"
             />
           </ElSelect>
-          <ElButton v-action="'system.user.manage'" type="primary" @click="showDialog('add')" v-ripple>
+          <ElButton
+            v-action="'system.user.manage'"
+            type="primary"
+            @click="showDialog('add')"
+            v-ripple
+          >
             新增用户
           </ElButton>
         </div>
       </AdminWorkspaceHero>
     </div>
 
-    <ElCard
-      class="art-table-card"
-      shadow="never"
-    >
+    <ElCard class="art-table-card" shadow="never">
       <ArtTableHeader
         v-model:columns="columnChecks"
         v-model:showSearchBar="showSearchBar"
@@ -347,7 +349,12 @@
                 icon: 'ri:shield-keyhole-line',
                 auth: 'system.user.manage'
               },
-              { key: 'edit', label: '编辑用户', icon: 'ri:edit-2-line', auth: 'system.user.manage' },
+              {
+                key: 'edit',
+                label: '编辑用户',
+                icon: 'ri:edit-2-line',
+                auth: 'system.user.manage'
+              },
               {
                 key: 'delete',
                 label: '删除用户',
@@ -393,7 +400,11 @@
 
   function handleResetSearch() {
     resetSearchParams()
-    Object.assign(searchParams, { current: 1, size: pagination.size, appKey: targetAppKey.value || '' })
+    Object.assign(searchParams, {
+      current: 1,
+      size: pagination.size,
+      appKey: targetAppKey.value || ''
+    })
     getData()
   }
 
@@ -556,4 +567,3 @@
     width: 240px;
   }
 </style>
-

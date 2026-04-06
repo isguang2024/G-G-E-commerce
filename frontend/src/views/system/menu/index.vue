@@ -49,12 +49,7 @@
               :value="item.value"
             />
           </ElSelect>
-          <ElButton
-            v-action="'system.menu.manage'"
-            type="primary"
-            @click="handleAddMenu"
-            v-ripple
-          >
+          <ElButton v-action="'system.menu.manage'" type="primary" @click="handleAddMenu" v-ripple>
             {{ isLayoutMode ? '创建布局菜单' : '创建菜单定义' }}
           </ElButton>
           <ElButton v-if="isLayoutMode" @click="goToDefinitionManagement" v-ripple>
@@ -78,10 +73,7 @@
       </AdminWorkspaceHero>
     </div>
 
-    <ElCard
-      class="art-table-card"
-      shadow="never"
-    >
+    <ElCard class="art-table-card" shadow="never">
       <ElAlert
         v-if="loadError"
         class="menu-inline-alert"
@@ -236,7 +228,13 @@
             <ElTag v-if="row.meta?.isHide" size="small" effect="light" type="warning" class="mr-2">
               隐藏
             </ElTag>
-            <ElTag v-if="!isDirectoryMenuRow(row) && row.meta?.isIframe" size="small" effect="light" type="info" class="mr-2">
+            <ElTag
+              v-if="!isDirectoryMenuRow(row) && row.meta?.isIframe"
+              size="small"
+              effect="light"
+              type="info"
+              class="mr-2"
+            >
               内嵌
             </ElTag>
             <ElTag
@@ -248,7 +246,13 @@
             >
               徽章
             </ElTag>
-            <ElTag v-if="isEntryMenuRow(row) && row.meta?.fixedTab" size="small" effect="light" type="danger" class="mr-2">
+            <ElTag
+              v-if="isEntryMenuRow(row) && row.meta?.fixedTab"
+              size="small"
+              effect="light"
+              type="danger"
+              class="mr-2"
+            >
               固定
             </ElTag>
             <ElTag
@@ -625,9 +629,7 @@
       ? '该备份只保存当前 App 下当前空间的布局树和相关菜单分组，用于后续覆盖恢复当前空间。'
       : '该备份只保存当前 App 的菜单定义集合，不含各空间的父级、排序和显隐差异；空间级恢复请到高级空间配置页处理。'
   )
-  const backupListTitle = computed(() =>
-    isLayoutMode.value ? '管理空间布局备份' : '管理定义备份'
-  )
+  const backupListTitle = computed(() => (isLayoutMode.value ? '管理空间布局备份' : '管理定义备份'))
   const backupListAlertDescription = computed(() =>
     isLayoutMode.value
       ? '这里只展示当前 App 下当前空间的布局备份，不包含 App 级菜单定义备份。'
@@ -805,7 +807,9 @@
     try {
       const [list, pagesResult, groupsResult] = await Promise.all([
         fetchGetMenuTreeAll(activeSpaceKey.value, targetAppKey.value),
-        fetchGetPageOptions(activeSpaceKey.value, targetAppKey.value).then((res) => res.records || []),
+        fetchGetPageOptions(activeSpaceKey.value, targetAppKey.value).then(
+          (res) => res.records || []
+        ),
         fetchGetMenuManageGroups()
           .then((groups) => ({ ok: true as const, groups }))
           .catch((error) => ({
@@ -994,7 +998,11 @@
     if (isLayoutMode.value) {
       return ''
     }
-    return menuSpaces.value.find((item) => item.isDefault)?.spaceKey || menuSpaces.value[0]?.spaceKey || ''
+    return (
+      menuSpaces.value.find((item) => item.isDefault)?.spaceKey ||
+      menuSpaces.value[0]?.spaceKey ||
+      ''
+    )
   }
 
   const syncMenuSpaces = async () => {
@@ -1008,7 +1016,6 @@
     activeSpaceKey.value = resolveInitialSpaceKey()
   }
 
-  const handleRefresh = () => getMenuList()
   const handleSpaceChange = () => {
     syncRouteSpaceKey(activeSpaceKey.value)
     getMenuList()
@@ -1057,7 +1064,8 @@
     return result
   }
 
-  const getMenuChildCount = (row: any) => ((row?.children || []).filter((item: any) => !isManageGroupRow(item))).length
+  const getMenuChildCount = (row: any) =>
+    (row?.children || []).filter((item: any) => !isManageGroupRow(item)).length
 
   const getMenuDescendantCount = (row: any) => {
     if (!row) return 0
@@ -1096,9 +1104,7 @@
         if (isManageGroupRow(item)) return acc
         const key = String(item.id || '')
         if (!key || excluded.has(key)) return acc
-        const children = item.children
-          ? walk(item.children as AppRouteRecord[])
-          : []
+        const children = item.children ? walk(item.children as AppRouteRecord[]) : []
         acc.push({
           label: formatMenuTitle(item.meta?.title) || String(item.name || key),
           value: key,
@@ -1138,7 +1144,8 @@
       title: row.meta?.title || '',
       icon: row.meta?.icon || '',
       sort_order: Number(row.sort_order ?? 0),
-      space_key: `${row.spaceKey || row.space_key || row.meta?.spaceKey || activeSpaceKey.value || ''}`.trim(),
+      space_key:
+        `${row.spaceKey || row.space_key || row.meta?.spaceKey || activeSpaceKey.value || ''}`.trim(),
       manage_group_id: manageGroupID,
       meta
     }
@@ -1537,7 +1544,9 @@
         targetAppKey.value
       )
       const filteredList = (list || []).filter((item) =>
-        isLayoutMode.value ? `${item.scope_type || ''}`.trim() !== 'global' : `${item.scope_type || ''}`.trim() === 'global'
+        isLayoutMode.value
+          ? `${item.scope_type || ''}`.trim() !== 'global'
+          : `${item.scope_type || ''}`.trim() === 'global'
       )
       backupList.value = filteredList.map((item) => ({
         ...item,
@@ -1643,10 +1652,9 @@
       loadError.value = managedAppMissingText
       return
     }
-    syncMenuSpaces()
-      .finally(() => {
-        getMenuList()
-      })
+    syncMenuSpaces().finally(() => {
+      getMenuList()
+    })
   })
 
   watch(
@@ -2029,4 +2037,3 @@
     }
   }
 </style>
-

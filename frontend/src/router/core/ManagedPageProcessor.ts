@@ -129,7 +129,10 @@ export class ManagedPageProcessor {
       const breadcrumbChain = this.resolveBreadcrumbChain(page, indexedMenus, pageMap, resolvePage)
       const customParent = activePath
       const resolvedSpaceKey = resolvePageSpaceKey(pageKey)
-      if (!options.trustBackend && !isMenuSpaceVisible(resolvedSpaceKey, currentSpaceKey, defaultSpaceKey)) {
+      if (
+        !options.trustBackend &&
+        !isMenuSpaceVisible(resolvedSpaceKey, currentSpaceKey, defaultSpaceKey)
+      ) {
         resolving.delete(normalizedKey)
         resolvedCache.set(normalizedKey, { ...this.createDefaultResolvedConfig(), allowed: false })
         return { ...this.createDefaultResolvedConfig(), allowed: false }
@@ -261,14 +264,20 @@ export class ManagedPageProcessor {
         continue
       }
 
-      if (indexedMenus.names.has(routeName) || runtimeRoutes.some((item) => item.name === routeName)) {
+      if (
+        indexedMenus.names.has(routeName) ||
+        runtimeRoutes.some((item) => item.name === routeName)
+      ) {
         if (this.isExpectedMenuBackedDuplicate(page, routeName, routePath, indexedMenus)) {
           continue
         }
         this.warnDuplicate('name', routeName, pageKey)
         continue
       }
-      if (indexedMenus.paths.has(routePath) || runtimeRoutes.some((item) => item.path === routePath)) {
+      if (
+        indexedMenus.paths.has(routePath) ||
+        runtimeRoutes.some((item) => item.path === routePath)
+      ) {
         if (this.isExpectedMenuBackedDuplicate(page, routeName, routePath, indexedMenus)) {
           continue
         }
@@ -349,7 +358,13 @@ export class ManagedPageProcessor {
     if (trustBackend) {
       // runtime/navigation 与 /pages/runtime 已经在后端完成 AccessGraph 编译，
       // 这里不再重复做菜单/页面权限裁剪，只负责把显式结果映射成路由 meta。
-      return this.resolveCompiledPermissionConfig(page, indexedMenus, pageMap, resolvePage, activePath)
+      return this.resolveCompiledPermissionConfig(
+        page,
+        indexedMenus,
+        pageMap,
+        resolvePage,
+        activePath
+      )
     }
 
     const isAuthenticated = this.isAuthenticated(userInfo)
@@ -425,7 +440,8 @@ export class ManagedPageProcessor {
 
     return {
       allowed:
-        hasMenuActionAccess(userInfo, parentMenu.meta) || !shouldHideMenuWhenActionDenied(parentMenu.meta),
+        hasMenuActionAccess(userInfo, parentMenu.meta) ||
+        !shouldHideMenuWhenActionDenied(parentMenu.meta),
       activePath: '',
       breadcrumbChain: [],
       customParent: '',
@@ -481,7 +497,10 @@ export class ManagedPageProcessor {
         return chain
       }
     }
-    return this.resolveMenuBreadcrumbChain(this.resolveActiveMenuPath(page, indexedMenus, pageMap, resolvePage), indexedMenus)
+    return this.resolveMenuBreadcrumbChain(
+      this.resolveActiveMenuPath(page, indexedMenus, pageMap, resolvePage),
+      indexedMenus
+    )
   }
 
   private resolveParentPageBreadcrumbChain(
@@ -520,7 +539,9 @@ export class ManagedPageProcessor {
 
     chain.reverse()
     const firstParentKey = this.normalizeValue(page.parentPageKey)
-    const firstResolved = firstParentKey ? resolvePage(firstParentKey) : this.createDefaultResolvedConfig()
+    const firstResolved = firstParentKey
+      ? resolvePage(firstParentKey)
+      : this.createDefaultResolvedConfig()
     const menuChain = this.resolveMenuBreadcrumbChain(firstResolved.activePath, indexedMenus)
     if (!menuChain.length) {
       return chain
@@ -703,7 +724,12 @@ export class ManagedPageProcessor {
 
   private normalizeAccessMode(value?: string): string {
     const target = this.normalizeValue(value)
-    if (target === 'public' || target === 'jwt' || target === 'permission' || target === 'inherit') {
+    if (
+      target === 'public' ||
+      target === 'jwt' ||
+      target === 'permission' ||
+      target === 'inherit'
+    ) {
       return target
     }
     return 'inherit'
@@ -769,6 +795,8 @@ export class ManagedPageProcessor {
     if (!import.meta.env.DEV) {
       return
     }
-    console.warn(`[ManagedPageProcessor] 页面 ${pageKey} 的${field}(${value}) 与现有动态路由重复，已跳过注册`)
+    console.warn(
+      `[ManagedPageProcessor] 页面 ${pageKey} 的${field}(${value}) 与现有动态路由重复，已跳过注册`
+    )
   }
 }

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="team-members-page art-full-height">
     <template v-if="!team">
       <NoTeamState v-if="teamLoadDone" />
@@ -11,24 +11,34 @@
 
     <template v-else>
       <AdminWorkspaceHero
-        :title="`团队成员（${team.name}）`"
-        description="当前团队成员与角色变更均会影响权限快照，请按实际管理员配置执行操作。"
+        :title="heroTitle"
+        description="这里区分成员身份与协作空间内部角色：成员身份决定协作空间关系边界，协作空间内部角色决定当前协作空间内的权限。"
         :metrics="heroMetrics"
       >
         <div class="team-members-hero-actions">
-          <ElButton v-if="hasAction('team.member.manage')" type="primary" :loading="addLoading" @click="handleAddMember">
+          <ElButton
+            v-if="hasAction('collaboration_workspace.member.manage')"
+            type="primary"
+            :loading="addLoading"
+            @click="handleAddMember"
+          >
             添加成员
           </ElButton>
         </div>
       </AdminWorkspaceHero>
 
       <ElCard shadow="never" class="art-table-card team-members-main">
-        <section v-if="hasAction('team.member.manage')" class="team-members-add art-card">
+        <section v-if="hasAction('collaboration_workspace.member.manage')" class="team-members-add art-card">
           <header class="team-members-add__header">
             <h3>快速添加</h3>
-            <p>可直接录入用户 ID 分配团队角色。</p>
+            <p>可直接录入用户 ID 设置成员身份。</p>
           </header>
-          <ElForm :model="addForm" label-width="80px" label-position="top" class="team-members-add__form">
+          <ElForm
+            :model="addForm"
+            label-width="80px"
+            label-position="top"
+            class="team-members-add__form"
+          >
             <ElFormItem label="用户 ID" class="mb-0">
               <ElInput
                 v-model="addForm.user_id"
@@ -37,10 +47,10 @@
                 @keyup.enter="handleAddMember"
               />
             </ElFormItem>
-            <ElFormItem label="团队角色" class="mb-0">
+            <ElFormItem label="成员身份" class="mb-0">
               <ElSelect v-model="addForm.role_code" placeholder="请选择角色">
-                <ElOption label="团队管理员" value="team_admin" />
-                <ElOption label="团队成员" value="team_member" />
+                <ElOption label="协作空间管理员" value="team_admin" />
+                <ElOption label="协作空间成员" value="team_member" />
               </ElSelect>
             </ElFormItem>
             <ElFormItem class="mb-0">
@@ -52,15 +62,11 @@
         </section>
 
         <section class="team-members-table art-card">
-          <ArtTableHeader
-            layout="refresh"
-            :loading="loading"
-            @refresh="loadMembers"
-          >
+          <ArtTableHeader layout="refresh" :loading="loading" @refresh="loadMembers">
             <template #left>
               <div class="team-members-table-summary">
                 <strong>成员列表</strong>
-                <span>成员角色调整会直接影响当前团队权限快照。</span>
+                <span>成员身份变化会影响协作空间边界；协作空间内部角色变化会影响当前协作空间权限快照。</span>
               </div>
             </template>
             <template #right>
@@ -68,53 +74,55 @@
             </template>
           </ArtTableHeader>
           <ElTable v-loading="loading" :data="pagedMembers" stripe>
-              <ElTableColumn prop="userName" label="用户名" min-width="100" />
-              <ElTableColumn prop="nickName" label="昵称" width="100" />
-              <ElTableColumn prop="userEmail" label="邮箱" min-width="140" show-overflow-tooltip />
-              <ElTableColumn label="团队身份" min-width="200">
-                <template #default="{ row }">
-                  <div class="flex flex-wrap gap-1">
-                    <ElTag
-                      v-for="(role, index) in row.roles || [formatRoleLabel(row.roleCode || row.role)]"
-                      :key="index"
-                      :type="role === '团队管理员' ? 'success' : 'info'"
-                      size="small"
-                    >
-                      {{ role }}
-                    </ElTag>
-                  </div>
-                </template>
-              </ElTableColumn>
-              <ElTableColumn prop="joinedAt" label="加入时间" width="170" />
-              <ElTableColumn label="操作" width="60" fixed="right">
-                <template #default="{ row }">
-                  <ElDropdown
-                    v-if="hasMemberOperationPermission"
-                    trigger="click"
-                    @command="(cmd: string) => handleCommand(cmd, row)"
+            <ElTableColumn prop="userName" label="用户名" min-width="100" />
+            <ElTableColumn prop="nickName" label="昵称" width="100" />
+            <ElTableColumn prop="userEmail" label="邮箱" min-width="140" show-overflow-tooltip />
+            <ElTableColumn label="协作空间身份" min-width="200">
+              <template #default="{ row }">
+                <div class="flex flex-wrap gap-1">
+                  <ElTag
+                    v-for="(role, index) in row.roles || [
+                      formatRoleLabel(row.roleCode || row.role)
+                    ]"
+                    :key="index"
+                    :type="role === '协作空间管理员' ? 'success' : 'info'"
+                    size="small"
                   >
-                    <ElButton :icon="MoreFilled" circle size="small" />
-                    <template #dropdown>
-                      <ElDropdownMenu>
-                        <ElDropdownItem v-if="hasAction('team.member.manage')" command="assign">
-                          <ElIcon><UserFilled /></ElIcon>
-                          分配角色
-                        </ElDropdownItem>
-                        <ElDropdownItem
-                          v-if="hasAction('team.member.manage')"
-                          command="delete"
-                          :disabled="isAdmin(row)"
-                          divided
-                        >
-                          <ElIcon><Delete /></ElIcon>
-                          删除
-                        </ElDropdownItem>
-                      </ElDropdownMenu>
-                    </template>
-                  </ElDropdown>
-                </template>
-              </ElTableColumn>
-            </ElTable>
+                    {{ role }}
+                  </ElTag>
+                </div>
+              </template>
+            </ElTableColumn>
+            <ElTableColumn prop="joinedAt" label="加入时间" width="170" />
+            <ElTableColumn label="操作" width="60" fixed="right">
+              <template #default="{ row }">
+                <ElDropdown
+                  v-if="hasMemberOperationPermission"
+                  trigger="click"
+                  @command="(cmd: string) => handleCommand(cmd, row)"
+                >
+                  <ElButton :icon="MoreFilled" circle size="small" />
+                  <template #dropdown>
+                    <ElDropdownMenu>
+                      <ElDropdownItem v-if="hasAction('collaboration_workspace.member.manage')" command="assign">
+                        <ElIcon><UserFilled /></ElIcon>
+                        配置协作空间内部角色
+                      </ElDropdownItem>
+                      <ElDropdownItem
+                        v-if="hasAction('collaboration_workspace.member.manage')"
+                        command="delete"
+                        :disabled="isAdmin(row)"
+                        divided
+                      >
+                        <ElIcon><Delete /></ElIcon>
+                        删除
+                      </ElDropdownItem>
+                    </ElDropdownMenu>
+                  </template>
+                </ElDropdown>
+              </template>
+            </ElTableColumn>
+          </ElTable>
           <WorkspacePagination
             v-model:current-page="pagination.current"
             v-model:page-size="pagination.size"
@@ -137,29 +145,31 @@
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import {
     fetchGetMyTeam,
-    fetchGetMyTeamMembers,
-    fetchAddMyTeamMember,
-    fetchRemoveMyTeamMember
+    fetchGetMyCollaborationWorkspaceMembers,
+    fetchAddMyCollaborationWorkspaceMember,
+    fetchRemoveMyCollaborationWorkspaceMember
   } from '@/api/team'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useTenantStore } from '@/store/modules/tenant'
+  import { useWorkspaceStore } from '@/store/modules/workspace'
   import NoTeamState from '@/components/business/team/NoTeamState.vue'
   import MemberRoleDialog from './modules/member-role-dialog.vue'
 
-  defineOptions({ name: 'TeamMembers' })
+  defineOptions({ name: 'CollaborationWorkspaceMembers' })
 
   const roleDialogRef = ref()
-  const currentMember = ref<Api.SystemManage.TeamMemberItem | null>(null)
-  const tenantStore = useTenantStore()
+  const currentMember = ref<Api.SystemManage.CollaborationWorkspaceMemberItem | null>(null)
+  const collaborationWorkspaceStore = useTenantStore()
+  const workspaceStore = useWorkspaceStore()
   const { hasAction } = useAuth()
-  const { currentTenantId, hasTeams } = storeToRefs(tenantStore)
+  const { hasTeams } = storeToRefs(collaborationWorkspaceStore)
+  const { currentAuthWorkspace, currentAuthWorkspaceId, currentAuthWorkspaceType } =
+    storeToRefs(workspaceStore)
 
   const team = ref<Api.SystemManage.TeamListItem | null>(null)
   const teamLoadDone = ref(false)
-  const members = ref<Api.SystemManage.TeamMemberItem[]>([])
-  const hasMemberOperationPermission = computed(
-    () => hasAction('team.member.manage')
-  )
+  const members = ref<Api.SystemManage.CollaborationWorkspaceMemberItem[]>([])
+  const hasMemberOperationPermission = computed(() => hasAction('collaboration_workspace.member.manage'))
   const loading = ref(false)
   const addLoading = ref(false)
   const pagination = reactive({
@@ -168,9 +178,24 @@
   })
   const heroMetrics = computed(() => [
     { label: '成员总数', value: members.value.length },
-    { label: '管理员', value: members.value.filter((item) => item.roleCode === 'team_admin' || item.role === 'team_admin').length },
-    { label: '普通成员', value: members.value.filter((item) => item.roleCode !== 'team_admin' && item.role !== 'team_admin').length }
+    {
+      label: '管理员',
+      value: members.value.filter(
+        (item) => item.roleCode === 'team_admin' || item.role === 'team_admin'
+      ).length
+    },
+    {
+      label: '普通成员',
+      value: members.value.filter(
+        (item) => item.roleCode !== 'team_admin' && item.role !== 'team_admin'
+      ).length
+    }
   ])
+  const heroTitle = computed(() => {
+    const workspaceName = currentAuthWorkspace.value?.name || team.value?.name || '当前协作空间'
+    const teamName = team.value?.name || workspaceName
+    return `协作空间成员（${teamName}） · ${workspaceName}`
+  })
 
   const addForm = reactive({
     user_id: '',
@@ -182,12 +207,12 @@
     return members.value.slice(start, start + pagination.size)
   })
 
-  function isAdmin(row: Api.SystemManage.TeamMemberItem): boolean {
+  function isAdmin(row: Api.SystemManage.CollaborationWorkspaceMemberItem): boolean {
     return row.roleCode === 'team_admin' || row.role === 'team_admin'
   }
 
   function formatRoleLabel(roleCode?: string) {
-    return roleCode === 'team_admin' ? '团队管理员' : '团队成员'
+    return roleCode === 'team_admin' ? '协作空间管理员' : '协作空间成员'
   }
 
   async function loadMyTeam() {
@@ -207,7 +232,7 @@
       if ([400, 404, 3006].includes(e?.response?.status) || [400, 404, 3006].includes(e?.code)) {
         team.value = null
       } else {
-        ElMessage.error(e?.message || '获取团队信息失败')
+        ElMessage.error(e?.message || '获取协作空间信息失败')
       }
     } finally {
       teamLoadDone.value = true
@@ -218,7 +243,7 @@
     if (!team.value) return
     loading.value = true
     try {
-      members.value = await fetchGetMyTeamMembers()
+      members.value = await fetchGetMyCollaborationWorkspaceMembers()
       pagination.current = 1
     } catch (e: any) {
       ElMessage.error(e?.message || '获取成员列表失败')
@@ -229,14 +254,14 @@
     }
   }
 
-  function handleAssignRoles(member: Api.SystemManage.TeamMemberItem) {
+  function handleAssignRoles(member: Api.SystemManage.CollaborationWorkspaceMemberItem) {
     currentMember.value = member
     nextTick(() => {
       roleDialogRef.value?.open()
     })
   }
 
-  function handleCommand(command: string, member: Api.SystemManage.TeamMemberItem) {
+  function handleCommand(command: string, member: Api.SystemManage.CollaborationWorkspaceMemberItem) {
     if (command === 'assign') {
       handleAssignRoles(member)
     } else if (command === 'delete') {
@@ -244,18 +269,18 @@
     }
   }
 
-  function removeMember(row: Api.SystemManage.TeamMemberItem) {
+  function removeMember(row: Api.SystemManage.CollaborationWorkspaceMemberItem) {
     if (isAdmin(row)) {
-      ElMessage.warning('团队管理员不能被移除')
+      ElMessage.warning('协作空间管理员不能被移除')
       return
     }
 
-    ElMessageBox.confirm(`确定将“${row.userName}”移出团队吗？`, '移除成员', {
+    ElMessageBox.confirm(`确定将“${row.userName}”移出协作空间吗？`, '移除成员', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
-      .then(() => fetchRemoveMyTeamMember(row.userId))
+      .then(() => fetchRemoveMyCollaborationWorkspaceMember(row.userId))
       .then(() => {
         ElMessage.success('已移除')
         loadMembers()
@@ -274,7 +299,7 @@
 
     addLoading.value = true
     try {
-      await fetchAddMyTeamMember({ user_id: uid, role_code: addForm.role_code })
+      await fetchAddMyCollaborationWorkspaceMember({ user_id: uid, role_code: addForm.role_code })
       ElMessage.success('添加成功')
       addForm.user_id = ''
       await loadMembers()
@@ -289,10 +314,13 @@
     loadMyTeam()
   })
 
-  watch(currentTenantId, (tenantId, oldTenantId) => {
-    if (tenantId === oldTenantId) return
-    loadMyTeam()
-  })
+  watch(
+    [currentAuthWorkspaceId, currentAuthWorkspaceType],
+    ([workspaceId, workspaceType], [oldWorkspaceId, oldWorkspaceType]) => {
+      if (workspaceId === oldWorkspaceId && workspaceType === oldWorkspaceType) return
+      loadMyTeam()
+    }
+  )
 </script>
 
 <style scoped>
@@ -390,3 +418,4 @@
     }
   }
 </style>
+

@@ -25,63 +25,56 @@
 
       <AdminWorkspaceHero
         title="功能包管理"
-        description="维护基础包、组合包、上下文范围与菜单 / 功能 / 团队的绑定关系，统一收口功能赋权与影响范围。"
+        description="维护基础包、组合包、上下文范围与菜单 / 功能 / 协作空间的绑定关系，统一收口功能赋权与影响范围。"
         :metrics="[
-        { label: '当前 App', value: targetAppKey },
-        { label: '当前页功能包数', value: data.length },
-        { label: '平台功能包', value: platformPackageCount },
-        { label: '团队功能包', value: teamPackageCount },
-        { label: '双上下文功能包', value: sharedPackageCount },
-        {
-          label: activePackageType === 'base' ? '已组合功能范围数' : '组合包数量',
-          value: activePackageType === 'base' ? totalActionCount : bundleCount
-        },
-        {
-          label: activePackageType === 'base' ? '已绑定菜单数' : '团队开通数',
-          value: activePackageType === 'base' ? totalMenuCount : totalTeamCount
-        },
-        { label: '停用功能包', value: disabledPackageCount }
-      ]"
-    >
-      <div class="feature-package-hero-actions">
-        <ElSelect
-          v-model="selectedAppKey"
-          clearable
-          filterable
-          placeholder="选择 App"
-          class="feature-package-app-select"
-          @change="handleManagedAppChange"
-        >
-          <ElOption
-            v-for="item in appOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </ElSelect>
-        <ElButton
-          v-action="'platform.package.manage'"
-          @click="openRelationDialog"
-          v-ripple
-        >
-          包关系树
-        </ElButton>
-        <ElButton
-          v-action="'platform.package.manage'"
-          type="primary"
-          @click="openDialog('add')"
-          v-ripple
-        >
-          新增{{ activePackageType === 'base' ? '基础包' : '组合包' }}
-        </ElButton>
-      </div>
-    </AdminWorkspaceHero>
+          { label: '当前 App', value: targetAppKey },
+          { label: '当前页功能包数', value: data.length },
+          { label: '平台功能包', value: platformPackageCount },
+          { label: '协作空间功能包', value: teamPackageCount },
+          { label: '双上下文功能包', value: sharedPackageCount },
+          {
+            label: activePackageType === 'base' ? '已组合功能范围数' : '组合包数量',
+            value: activePackageType === 'base' ? totalActionCount : bundleCount
+          },
+          {
+            label: activePackageType === 'base' ? '已绑定菜单数' : '协作空间开通数',
+            value: activePackageType === 'base' ? totalMenuCount : totalTeamCount
+          },
+          { label: '停用功能包', value: disabledPackageCount }
+        ]"
+      >
+        <div class="feature-package-hero-actions">
+          <ElSelect
+            v-model="selectedAppKey"
+            clearable
+            filterable
+            placeholder="选择 App"
+            class="feature-package-app-select"
+            @change="handleManagedAppChange"
+          >
+            <ElOption
+              v-for="item in appOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </ElSelect>
+          <ElButton v-action="'platform.package.manage'" @click="openRelationDialog" v-ripple>
+            包关系树
+          </ElButton>
+          <ElButton
+            v-action="'platform.package.manage'"
+            type="primary"
+            @click="openDialog('add')"
+            v-ripple
+          >
+            新增{{ activePackageType === 'base' ? '基础包' : '组合包' }}
+          </ElButton>
+        </div>
+      </AdminWorkspaceHero>
     </div>
 
-    <ElCard
-      class="art-table-card"
-      shadow="never"
-    >
+    <ElCard class="art-table-card" shadow="never">
       <ArtTableHeader
         v-model:columns="columnChecks"
         v-model:showSearchBar="showSearchBar"
@@ -90,7 +83,7 @@
       >
         <template #left>
           <div class="feature-package-toolbar-tip">
-            包关系、菜单、功能范围和团队开通统一从操作菜单进入。
+            包关系、菜单、功能范围和协作空间开通统一从操作菜单进入。
           </div>
         </template>
       </ArtTableHeader>
@@ -192,13 +185,35 @@
           <template #default="{ data: node }">
             <div class="relation-node">
               <span class="relation-node-name">{{ node.name }}</span>
-              <ElTag size="small" effect="plain" :type="node.packageType === 'bundle' ? 'warning' : 'success'">
+              <ElTag
+                size="small"
+                effect="plain"
+                :type="node.packageType === 'bundle' ? 'warning' : 'success'"
+              >
                 {{ node.packageType === 'bundle' ? '组合包' : '基础包' }}
               </ElTag>
-              <ElTag size="small" effect="plain" :type="node.contextType === 'platform' ? 'warning' : node.contextType === 'team' ? 'primary' : 'info'">
-                {{ node.contextType === 'platform' ? '平台' : node.contextType === 'team' ? '团队' : '通用' }}
+              <ElTag
+                size="small"
+                effect="plain"
+                :type="
+                  node.contextType === 'platform'
+                    ? 'warning'
+                    : node.contextType === 'team'
+                      ? 'primary'
+                      : 'info'
+                "
+              >
+                {{
+                  node.contextType === 'platform'
+                    ? '平台'
+                    : node.contextType === 'team'
+                      ? '协作空间'
+                      : '通用'
+                }}
               </ElTag>
-              <ElTag size="small" effect="plain" type="info">被引用 {{ node.referenceCount }}</ElTag>
+              <ElTag size="small" effect="plain" type="info"
+                >被引用 {{ node.referenceCount }}</ElTag
+              >
             </div>
           </template>
         </ElTree>
@@ -305,7 +320,7 @@
   const contextTypeOptions = [
     { label: '全部上下文', value: '' },
     { label: '平台功能包', value: 'platform' },
-    { label: '团队功能包', value: 'team' },
+    { label: '协作空间功能包', value: 'team' },
     { label: '通用功能包', value: 'common' }
   ]
 
@@ -372,7 +387,12 @@
       columnsFactory: () => [
         { prop: 'packageKey', label: '功能包编码', minWidth: 220, showOverflowTooltip: true },
         { prop: 'name', label: '功能包名称', minWidth: 180, showOverflowTooltip: true },
-        { prop: 'appKey', label: 'App', width: 150, formatter: (row: PackageItem) => row.appKey || targetAppKey.value },
+        {
+          prop: 'appKey',
+          label: 'App',
+          width: 150,
+          formatter: (row: PackageItem) => row.appKey || targetAppKey.value
+        },
         {
           prop: 'packageType',
           label: '类型',
@@ -423,7 +443,7 @@
         },
         {
           prop: 'teamCount',
-          label: '团队数',
+          label: '协作空间数',
           width: 90,
           formatter: (row: PackageItem) => row.teamCount ?? 0
         },
@@ -460,7 +480,7 @@
                     },
                     {
                       key: 'teams',
-                      label: '开通团队',
+                      label: '开通协作空间',
                       icon: 'ri:team-line',
                       auth: 'platform.package.assign',
                       disabled: !supportsTeam(row.contextType)
@@ -493,7 +513,7 @@
                     },
                     {
                       key: 'teams',
-                      label: '开通团队',
+                      label: '开通协作空间',
                       icon: 'ri:team-line',
                       auth: 'platform.package.assign',
                       disabled: !supportsTeam(row.contextType)
@@ -694,7 +714,7 @@
       fetchGetFeaturePackageImpactPreview(row.id)
         .then((impact) =>
           ElMessageBox.confirm(
-            `删除后影响：角色 ${impact.roleCount}、团队 ${impact.teamCount}、用户 ${impact.userCount}。确认删除功能包「${row.name}」？`,
+            `删除后影响：角色 ${impact.roleCount}、协作空间 ${impact.teamCount}、用户 ${impact.userCount}。确认删除功能包「${row.name}」？`,
             '删除确认',
             {
               confirmButtonText: '确认删除',
@@ -706,7 +726,7 @@
         .then(() => fetchDeleteFeaturePackage(row.id))
         .then((stats) => {
           ElMessage.success(
-            `本次增量刷新：角色 ${stats?.roleCount || 0}、团队 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
+            `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
           )
           handleRefresh()
         })
@@ -751,7 +771,7 @@
 
   function formatContextType(contextType?: string) {
     if (contextType === 'platform') return '平台'
-    if (contextType === 'team') return '团队'
+    if (contextType === 'team') return '协作空间'
     if (contextType === 'common') return '通用'
     return contextType || '-'
   }
@@ -851,6 +871,5 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-
 </style>
 

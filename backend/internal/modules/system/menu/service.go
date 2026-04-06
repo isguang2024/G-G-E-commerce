@@ -729,7 +729,7 @@ func (s *menuService) countAffectedMenuRelations(menuIDs []uuid.UUID) (int, erro
 	tables := []string{
 		"feature_package_menus",
 		"role_hidden_menus",
-		"team_blocked_menus",
+		"collaboration_workspace_blocked_menus",
 		"user_hidden_menus",
 	}
 	for _, table := range tables {
@@ -921,7 +921,7 @@ func (s *menuService) cleanupInvalidMenuRelations() error {
 	statements := []string{
 		"DELETE FROM feature_package_menus WHERE menu_id NOT IN (SELECT id FROM menu_definitions)",
 		"DELETE FROM role_hidden_menus WHERE menu_id NOT IN (SELECT id FROM menu_definitions)",
-		"DELETE FROM team_blocked_menus WHERE menu_id NOT IN (SELECT id FROM menu_definitions)",
+		"DELETE FROM collaboration_workspace_blocked_menus WHERE menu_id NOT IN (SELECT id FROM menu_definitions)",
 		"DELETE FROM user_hidden_menus WHERE menu_id NOT IN (SELECT id FROM menu_definitions)",
 		"UPDATE ui_pages SET parent_menu_id = NULL WHERE parent_menu_id IS NOT NULL AND parent_menu_id NOT IN (SELECT id FROM menu_definitions)",
 	}
@@ -1563,7 +1563,7 @@ func (s *menuService) cleanupMenuRelationsByIDs(tx *gorm.DB, menuIDs []uuid.UUID
 	statements := []string{
 		"DELETE FROM feature_package_menus WHERE menu_id IN ?",
 		"DELETE FROM role_hidden_menus WHERE menu_id IN ?",
-		"DELETE FROM team_blocked_menus WHERE menu_id IN ?",
+		"DELETE FROM collaboration_workspace_blocked_menus WHERE menu_id IN ?",
 		"DELETE FROM user_hidden_menus WHERE menu_id IN ?",
 	}
 	for _, statement := range statements {

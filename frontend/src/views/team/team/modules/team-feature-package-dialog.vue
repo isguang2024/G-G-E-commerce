@@ -1,7 +1,7 @@
 ﻿<template>
   <ElDrawer
     v-model="visible"
-    :title="`团队功能包 - ${teamName}`"
+    :title="`协作空间功能包 - ${teamName}`"
     size="1280px"
     destroy-on-close
     class="business-dialog config-drawer"
@@ -9,11 +9,11 @@
   >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        团队功能包由平台统一开通。保存后会同步刷新该团队的功能权限边界和菜单边界。
+        协作空间功能包由平台统一开通。保存后会同步刷新该协作空间的功能权限边界和菜单边界。
       </div>
 
       <div class="summary-card">
-        <ElTag type="primary" effect="light" round>团队 {{ teamName }}</ElTag>
+        <ElTag type="primary" effect="light" round>协作空间 {{ teamName }}</ElTag>
         <ElTag type="info" effect="light" round>已开通 {{ selectedPackageIds.length }}</ElTag>
         <ElTag type="info" effect="light" round>当前筛选 {{ filteredPackages.length }}</ElTag>
         <ElTag type="info" effect="light" round>全部 {{ packages.length }}</ElTag>
@@ -29,7 +29,7 @@
         <ElSelect v-model="contextFilter" class="toolbar-select">
           <ElOption label="全部上下文" value="" />
           <ElOption label="平台" value="platform" />
-          <ElOption label="团队" value="team" />
+          <ElOption label="协作空间" value="team" />
           <ElOption label="通用" value="common" />
         </ElSelect>
         <ElSelect v-model="selectionFilter" class="toolbar-select">
@@ -111,20 +111,20 @@
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import {
     fetchGetFeaturePackageOptions,
-    fetchGetTeamFeaturePackages,
-    fetchSetTeamFeaturePackages
+    fetchGetCollaborationWorkspaceFeaturePackages,
+    fetchSetCollaborationWorkspaceFeaturePackages
   } from '@/api/system-manage'
 
   interface Props {
     modelValue: boolean
-    teamId: string
+    collaborationWorkspaceId: string
     teamName: string
     appKey?: string
   }
 
   const props = withDefaults(defineProps<Props>(), {
     modelValue: false,
-    teamId: '',
+    collaborationWorkspaceId: '',
     teamName: ''
   })
 
@@ -197,7 +197,7 @@
   )
 
   async function loadData() {
-    if (!props.teamId || !currentAppKey.value) {
+    if (!props.collaborationWorkspaceId || !currentAppKey.value) {
       if (!currentAppKey.value) {
         ElMessage.warning('缺少 app 上下文')
       }
@@ -207,8 +207,12 @@
     resetFilters()
     try {
       const [listRes, teamRes] = await Promise.all([
-        fetchGetFeaturePackageOptions({ contextType: 'team', status: 'normal', appKey: currentAppKey.value }),
-        fetchGetTeamFeaturePackages(props.teamId, currentAppKey.value)
+        fetchGetFeaturePackageOptions({
+          contextType: 'team',
+          status: 'normal',
+          appKey: currentAppKey.value
+        }),
+        fetchGetCollaborationWorkspaceFeaturePackages(props.collaborationWorkspaceId, currentAppKey.value)
       ])
       packages.value = listRes?.records || []
       selectedPackageIds.value = [...(teamRes?.package_ids || [])]
@@ -217,7 +221,7 @@
         selectionFilter.value = 'all'
       }
     } catch (error: any) {
-      ElMessage.error(error?.message || '加载团队功能包失败')
+      ElMessage.error(error?.message || '加载协作空间功能包失败')
     } finally {
       loading.value = false
     }
@@ -252,7 +256,7 @@
   function formatContext(contextType?: string) {
     if (contextType === 'common') return '通用'
     if (contextType === 'platform') return '平台'
-    return '团队'
+    return '协作空间'
   }
 
   function getContextTagType(contextType?: string) {
@@ -268,7 +272,7 @@
   }
 
   async function handleSave() {
-    if (!props.teamId || !currentAppKey.value) {
+    if (!props.collaborationWorkspaceId || !currentAppKey.value) {
       if (!currentAppKey.value) {
         ElMessage.warning('缺少 app 上下文')
       }
@@ -276,12 +280,16 @@
     }
     saving.value = true
     try {
-      const stats = await fetchSetTeamFeaturePackages(props.teamId, selectedPackageIds.value, currentAppKey.value)
+      const stats = await fetchSetCollaborationWorkspaceFeaturePackages(
+        props.collaborationWorkspaceId,
+        selectedPackageIds.value,
+        currentAppKey.value
+      )
       ElMessage.success(formatRefreshMessage(stats))
       emit('success')
       visible.value = false
     } catch (error: any) {
-      ElMessage.error(error?.message || '保存团队功能包失败')
+      ElMessage.error(error?.message || '保存协作空间功能包失败')
     } finally {
       saving.value = false
     }
@@ -292,7 +300,7 @@
   })
 
   function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
-    return `本次增量刷新：角色 ${stats?.roleCount || 0}、团队 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
+    return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 </script>
 

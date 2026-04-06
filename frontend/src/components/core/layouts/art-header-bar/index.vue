@@ -58,10 +58,10 @@
 
         <!-- 混合菜单-顶部 -->
         <ArtMixedMenu v-if="isTopLeftMenu" :list="menuList" />
-        </div>
+      </div>
 
-        <div class="flex-c gap-2.5">
-          <ArtTenantSwitcher class="max-lg:!hidden" />
+      <div class="flex-c gap-2.5">
+        <ArtTenantSwitcher class="max-lg:!hidden" />
 
         <!-- 搜索 -->
         <div
@@ -170,8 +170,8 @@
   import { LanguageEnum, MenuTypeEnum } from '@/enums/appEnum'
   import { useSettingStore } from '@/store/modules/setting'
   import { useUserStore } from '@/store/modules/user'
-    import { useMenuStore } from '@/store/modules/menu'
-    import { useMessageStore } from '@/store/modules/message'
+  import { useMenuStore } from '@/store/modules/menu'
+  import { useMessageStore } from '@/store/modules/message'
   import AppConfig from '@/config'
   import { languageOptions } from '@/locales'
   import { mittBus } from '@/utils/sys'
@@ -192,8 +192,8 @@
 
   const settingStore = useSettingStore()
   const userStore = useUserStore()
-    const menuStore = useMenuStore()
-    const messageStore = useMessageStore()
+  const menuStore = useMenuStore()
+  const messageStore = useMessageStore()
 
   // 顶部栏功能配置
   const {
@@ -214,8 +214,8 @@
     storeToRefs(settingStore)
 
   const { language } = storeToRefs(userStore)
-    const { menuList } = storeToRefs(menuStore)
-    const { hasUnread } = storeToRefs(messageStore)
+  const { menuList } = storeToRefs(menuStore)
+  const { hasUnread } = storeToRefs(messageStore)
 
   const showNotice = ref(false)
   const notice = ref(null)
@@ -333,7 +333,6 @@
   const visibleNotice = (): void => {
     showNotice.value = !showNotice.value
   }
-
 </script>
 
 <style lang="scss" scoped>

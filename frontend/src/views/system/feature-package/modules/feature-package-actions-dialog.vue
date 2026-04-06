@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
     :title="drawerTitle"
@@ -193,22 +193,22 @@
 
   function formatContextType(contextType?: string) {
     if (contextType === 'platform') return '平台'
-    if (contextType === 'team') return '团队'
+    if (contextType === 'team') return '协作空间'
     if (contextType === 'common') return '通用'
-    if (contextType === 'platform,team' || contextType === 'team,platform') return '平台/团队'
+    if (contextType === 'platform,team' || contextType === 'team,platform') return '平台/协作空间'
     return contextType || '-'
   }
 
   function getScopeLabel(contextType?: string) {
     if (contextType === 'platform') return '平台'
-    if (contextType === 'team') return '团队'
-    if (contextType === 'common') return '平台或团队'
-    if (contextType === 'platform,team' || contextType === 'team,platform') return '平台或团队'
+    if (contextType === 'team') return '协作空间'
+    if (contextType === 'common') return '平台或协作空间'
+    if (contextType === 'platform,team' || contextType === 'team,platform') return '平台或协作空间'
     return '当前上下文'
   }
 
   function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
-    return `本次增量刷新：角色 ${stats?.roleCount || 0}、团队 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
+    return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 </script>
 
@@ -230,3 +230,4 @@
     gap: 8px;
   }
 </style>
+

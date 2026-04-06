@@ -1,19 +1,33 @@
-import { computed } from 'vue'
+﻿import { computed } from 'vue'
 import { useTenantStore } from '@/store/modules/tenant'
+import { useWorkspaceStore } from '@/store/modules/workspace'
 
-export function useMessageWorkspace(scope: 'platform' | 'team') {
-  const tenantStore = useTenantStore()
+export function useMessageWorkspace(scope: 'platform' | 'collaboration' | 'team') {
+  const collaborationWorkspaceStore = useTenantStore()
+  const workspaceStore = useWorkspaceStore()
 
-  const isTeamScope = computed(() => scope === 'team')
+  const isTeamScope = computed(() => scope === 'collaboration' || scope === 'team')
   const skipTenantHeader = computed(() => !isTeamScope.value)
-  const currentTeamName = computed(() => tenantStore.currentTeam?.name || '当前团队')
+  const currentCollaborationWorkspaceId = computed(() => collaborationWorkspaceStore.currentCollaborationWorkspaceId || '')
+  const currentTeamName = computed(
+    () =>
+      collaborationWorkspaceStore.currentTeam?.name ||
+      workspaceStore.currentAuthWorkspace?.name ||
+      '当前协作空间'
+  )
+  const currentWorkspaceName = computed(
+    () => workspaceStore.currentAuthWorkspace?.name || '当前授权工作空间'
+  )
+  const currentWorkspaceLabel = computed(() =>
+    workspaceStore.currentAuthWorkspaceType === 'collaboration' ? '协作空间' : '个人工作空间'
+  )
 
   const ensureTeamContext = () => {
     if (!isTeamScope.value) return
-    if (tenantStore.currentTenantId) return
-    const fallbackTeamId = tenantStore.teamList[0]?.id || ''
-    if (fallbackTeamId) {
-      tenantStore.enterTeamContext(fallbackTeamId)
+    if (collaborationWorkspaceStore.currentCollaborationWorkspaceId) return
+    const fallbackCollaborationWorkspaceId = collaborationWorkspaceStore.teamList[0]?.id || ''
+    if (fallbackCollaborationWorkspaceId) {
+      collaborationWorkspaceStore.enterTeamContext(fallbackCollaborationWorkspaceId)
     }
   }
 
@@ -33,7 +47,11 @@ export function useMessageWorkspace(scope: 'platform' | 'team') {
     const target = `${value || ''}`.trim()
     if (!target) return ''
     if (typeof window === 'undefined') {
-      return target.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+      return target
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
     }
     const parser = new DOMParser()
     const doc = parser.parseFromString(target, 'text/html')
@@ -41,12 +59,17 @@ export function useMessageWorkspace(scope: 'platform' | 'team') {
   }
 
   return {
-    tenantStore,
+    collaborationWorkspaceStore,
+    workspaceStore,
     isTeamScope,
     skipTenantHeader,
+    currentCollaborationWorkspaceId,
     currentTeamName,
+    currentWorkspaceName,
+    currentWorkspaceLabel,
     ensureTeamContext,
     formatTime,
     plainTextFromHtml
   }
 }
+

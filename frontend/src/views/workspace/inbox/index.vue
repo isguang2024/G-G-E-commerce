@@ -1,9 +1,19 @@
 ﻿<template>
   <div class="message-center-page art-full-height">
-    <AdminWorkspaceHero title="消息中心" description="统一查看平台通知、直接消息和待处理事项。发送对象、模板归属和待办状态都从这里进入同一条收件链路。" :metrics="heroMetrics">
+    <AdminWorkspaceHero
+      :title="`消息中心 · ${workspaceName}`"
+      description="统一查看平台通知、直接消息和待处理事项。当前授权工作空间决定权限来源，协作空间视图只作为协作空间边界的兼容派生。"
+      :metrics="heroMetrics"
+    >
       <div class="message-center-hero__actions">
         <ElButton @click="reloadData" :loading="loading" v-ripple>刷新</ElButton>
-        <ElButton type="primary" plain @click="markCurrentBoxRead" :disabled="activeBoxType === 'todo'" v-ripple>
+        <ElButton
+          type="primary"
+          plain
+          @click="markCurrentBoxRead"
+          :disabled="activeBoxType === 'todo'"
+          v-ripple
+        >
           当前分类全部已读
         </ElButton>
       </div>
@@ -43,7 +53,11 @@
         <header class="message-center-list__toolbar">
           <div>
             <h3>{{ activeBoxLabel }}</h3>
-            <p>{{ filters.unreadOnly ? '当前只显示未读内容' : '按时间倒序显示最近消息' }}</p>
+            <p>{{
+              filters.unreadOnly
+                ? `当前只显示 ${workspaceLabel} 下的未读内容`
+                : `按时间倒序显示 ${workspaceLabel} 下的最近消息`
+            }}</p>
           </div>
           <span class="message-center-list__count">共 {{ pagination.total }} 条</span>
         </header>
@@ -63,14 +77,21 @@
             <div class="message-center-item__top">
               <div class="message-center-item__title-wrap">
                 <span class="message-center-item__title">{{ item.title }}</span>
-                <span v-if="item.delivery_status === 'unread'" class="message-center-item__dot"></span>
+                <span
+                  v-if="item.delivery_status === 'unread'"
+                  class="message-center-item__dot"
+                ></span>
               </div>
-              <span class="message-center-item__time">{{ formatTime(item.last_action_at || item.published_at || item.created_at) }}</span>
+              <span class="message-center-item__time">{{
+                formatTime(item.last_action_at || item.published_at || item.created_at)
+              }}</span>
             </div>
             <p class="message-center-item__summary">{{ resolveSummary(item) }}</p>
             <div class="message-center-item__meta">
               <span class="message-center-chip">{{ resolveSender(item) }}</span>
-              <span v-if="resolveTeamTag(item)" class="message-center-chip is-team">{{ resolveTeamTag(item) }}</span>
+              <span v-if="resolveTeamTag(item)" class="message-center-chip is-team">{{
+                resolveTeamTag(item)
+              }}</span>
               <span class="message-center-chip is-soft">{{ resolveTypeLabel(item) }}</span>
             </div>
           </button>
@@ -95,11 +116,18 @@
             <div>
               <div class="message-center-detail__eyebrow">{{ resolveTypeLabel(detail) }}</div>
               <h2>{{ detail.title }}</h2>
-              <p>{{ resolveSender(detail) }} · {{ formatTime(detail.published_at || detail.created_at) }}</p>
+              <p
+                >{{ resolveSender(detail) }} ·
+                {{ formatTime(detail.published_at || detail.created_at) }}</p
+              >
             </div>
             <div class="message-center-detail__status">
-              <span v-if="resolveTeamTag(detail)" class="message-center-chip is-team">{{ resolveTeamTag(detail) }}</span>
-              <span class="message-center-chip">{{ detail.delivery_status === 'unread' ? '未读' : '已读' }}</span>
+              <span v-if="resolveTeamTag(detail)" class="message-center-chip is-team">{{
+                resolveTeamTag(detail)
+              }}</span>
+              <span class="message-center-chip">{{
+                detail.delivery_status === 'unread' ? '未读' : '已读'
+              }}</span>
               <span v-if="detail.box_type === 'todo'" class="message-center-chip is-danger">
                 {{ resolveTodoStatus(detail.todo_status) }}
               </span>
@@ -161,6 +189,7 @@
   import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import { useMessageStore } from '@/store/modules/message'
   import { useTenantStore } from '@/store/modules/tenant'
+  import { useWorkspaceStore } from '@/store/modules/workspace'
   import { handleRichTextLinkNavigation } from '@/utils/navigation/rich-text'
 
   defineOptions({ name: 'WorkspaceInbox' })
@@ -171,7 +200,8 @@
   const router = useRouter()
   const menuSpaceStore = useMenuSpaceStore()
   const messageStore = useMessageStore()
-  const tenantStore = useTenantStore()
+  const collaborationWorkspaceStore = useTenantStore()
+  const workspaceStore = useWorkspaceStore()
 
   const loading = ref(false)
   const loadError = ref('')
@@ -200,7 +230,9 @@
   ])
 
   const activeBoxType = computed(() => filters.boxType)
-  const activeBoxLabel = computed(() => boxOptions.value.find((item) => item.value === filters.boxType)?.label || '全部')
+  const activeBoxLabel = computed(
+    () => boxOptions.value.find((item) => item.value === filters.boxType)?.label || '全部'
+  )
 
   const heroMetrics = computed(() => [
     { label: '未读总数', value: messageStore.summary.unread_total },
@@ -208,6 +240,12 @@
     { label: '消息', value: messageStore.summary.message_count },
     { label: '待办', value: messageStore.summary.todo_count }
   ])
+  const workspaceLabel = computed(() =>
+    workspaceStore.currentAuthWorkspaceType === 'collaboration' ? '协作空间' : '个人工作空间'
+  )
+  const workspaceName = computed(
+    () => workspaceStore.currentAuthWorkspace?.name || '当前授权工作空间'
+  )
 
   const formatTime = (value?: string) => {
     if (!value) return '刚刚'
@@ -240,7 +278,11 @@
     const target = `${value || ''}`.trim()
     if (!target) return ''
     if (typeof window === 'undefined') {
-      return target.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+      return target
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
     }
     const parser = new DOMParser()
     const doc = parser.parseFromString(target, 'text/html')
@@ -257,16 +299,26 @@
   }
 
   const resolveTeamName = (item: Api.Message.InboxItem) => {
-    const teamId = item.scope_type === 'team'
-      ? (item.scope_id || item.recipient_team_id || item.target_tenant_id)
-      : (item.recipient_team_id || item.target_tenant_id || item.scope_id)
-    if (!teamId) return ''
-    return tenantStore.teamList.find((team) => team.id === teamId)?.name || ''
+    const collaborationWorkspaceId =
+      item.scope_type === 'team'
+        ? item.scope_id ||
+          item.recipient_collaboration_workspace_id ||
+          item.target_collaboration_workspace_id ||
+          item.target_collaboration_workspace_id
+        : item.recipient_collaboration_workspace_id ||
+          item.target_collaboration_workspace_id ||
+          item.target_collaboration_workspace_id ||
+          item.scope_id
+    if (!collaborationWorkspaceId) return ''
+    return (
+      collaborationWorkspaceStore.teamList.find((team) => team.id === collaborationWorkspaceId)
+        ?.name || ''
+    )
   }
 
   const resolveTeamTag = (item: Api.Message.InboxItem) => {
     const teamName = resolveTeamName(item)
-    return teamName ? `团队 · ${teamName}` : ''
+    return teamName ? `协作空间视图 · ${teamName}` : ''
   }
 
   const resolveTodoStatus = (value?: string) => {
@@ -301,15 +353,19 @@
 
       const queryDeliveryId = `${route.query.deliveryId || ''}`.trim()
       const nextSelectedId =
-        (queryDeliveryId && list.value.some((item) => item.id === queryDeliveryId) && queryDeliveryId) ||
-        (selectedId.value && list.value.some((item) => item.id === selectedId.value) && selectedId.value) ||
+        (queryDeliveryId &&
+          list.value.some((item) => item.id === queryDeliveryId) &&
+          queryDeliveryId) ||
+        (selectedId.value &&
+          list.value.some((item) => item.id === selectedId.value) &&
+          selectedId.value) ||
         list.value[0]?.id ||
         ''
 
       if (nextSelectedId) {
         try {
           await loadDetail(nextSelectedId, false)
-        } catch (error) {
+        } catch {
           const fallbackId = list.value[0]?.id || ''
           if (fallbackId && fallbackId !== nextSelectedId) {
             await loadDetail(fallbackId, false)
@@ -324,7 +380,7 @@
         detail.value = null
         syncRouteQuery()
       }
-    } catch (error) {
+    } catch {
       list.value = []
       pagination.total = 0
       selectedId.value = ''
@@ -381,7 +437,7 @@
   const selectMessage = async (item: Api.Message.InboxItem) => {
     try {
       await loadDetail(item.id, true)
-    } catch (error) {
+    } catch {
       return
     }
   }
@@ -392,7 +448,7 @@
       await messageStore.markReadAll(filters.boxType || undefined)
       await reloadData()
       ElMessage.success('当前分类已全部标记为已读')
-    } catch (error) {
+    } catch {
       ElMessage.error('批量已读失败')
     }
   }
@@ -404,7 +460,7 @@
       await reloadData()
       await loadDetail(detail.value.id, false)
       ElMessage.success(action === 'done' ? '待办已完成' : '待办已忽略')
-    } catch (error) {
+    } catch {
       ElMessage.error('处理待办失败')
     }
   }
@@ -744,4 +800,3 @@
     }
   }
 </style>
-

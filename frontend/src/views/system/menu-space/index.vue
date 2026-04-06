@@ -53,7 +53,10 @@
           <div class="menu-space-panel__header">
             <div>
               <div class="menu-space-panel__title">菜单空间</div>
-              <div class="menu-space-panel__desc">这里负责当前 App 的空间列表、Host 绑定、默认空间与布局入口，菜单定义本体不在此维护。</div>
+              <div class="menu-space-panel__desc"
+                >这里负责当前 App 的空间列表、Host
+                绑定、默认空间与布局入口，菜单定义本体不在此维护。</div
+              >
             </div>
           </div>
         </template>
@@ -94,11 +97,7 @@
                 <span class="menu-space-chip" :class="{ 'is-soft': !isSpaceInitialized(item) }">
                   {{ isSpaceInitialized(item) ? '已初始化' : '待初始化' }}
                 </span>
-                <span
-                  v-for="host in item.hosts?.slice(0, 3)"
-                  :key="host"
-                  class="menu-space-chip"
-                >
+                <span v-for="host in item.hosts?.slice(0, 3)" :key="host" class="menu-space-chip">
                   {{ host }}
                 </span>
                 <span v-if="(item.hosts?.length || 0) > 3" class="menu-space-chip is-soft">
@@ -106,27 +105,23 @@
                 </span>
               </div>
             </div>
-              <div class="menu-space-item__actions">
-                <ElButton text type="primary" @click.stop="openSpaceDrawer(item)">编辑</ElButton>
-                <ElButton text @click.stop="goToMenuManagement(item.spaceKey)">空间布局</ElButton>
-                <ElButton text @click.stop="goToPageManagement(item.spaceKey)">受管页面</ElButton>
-                <ElButton
-                  v-if="!item.isDefault && !isSpaceInitialized(item)"
-                  text
-                  :loading="initializingSpaceKey === item.spaceKey"
-                  @click.stop="initializeSpace(item)"
-                >
-                  初始化菜单树
-                </ElButton>
-                <ElButton
-                  v-else-if="!item.isDefault"
-                  text
-                  disabled
-                >
-                  已初始化
-                </ElButton>
-                <ElButton text @click.stop="openHostDrawer(undefined, item.spaceKey)">绑定 Host</ElButton>
-              </div>
+            <div class="menu-space-item__actions">
+              <ElButton text type="primary" @click.stop="openSpaceDrawer(item)">编辑</ElButton>
+              <ElButton text @click.stop="goToMenuManagement(item.spaceKey)">空间布局</ElButton>
+              <ElButton text @click.stop="goToPageManagement(item.spaceKey)">受管页面</ElButton>
+              <ElButton
+                v-if="!item.isDefault && !isSpaceInitialized(item)"
+                text
+                :loading="initializingSpaceKey === item.spaceKey"
+                @click.stop="initializeSpace(item)"
+              >
+                初始化菜单树
+              </ElButton>
+              <ElButton v-else-if="!item.isDefault" text disabled> 已初始化 </ElButton>
+              <ElButton text @click.stop="openHostDrawer(undefined, item.spaceKey)"
+                >绑定 Host</ElButton
+              >
+            </div>
           </button>
         </div>
       </ElCard>
@@ -136,12 +131,17 @@
           <div class="menu-space-panel__header">
             <div>
               <div class="menu-space-panel__title">Host 绑定</div>
-              <div class="menu-space-panel__desc">可选配置。先解析 App，再决定空间绑定；未命中 Host 时，不再额外兜底到固定默认空间。</div>
+              <div class="menu-space-panel__desc"
+                >可选配置。先解析 App，再决定空间绑定；未命中 Host
+                时，不再额外兜底到固定默认空间。</div
+              >
             </div>
             <div class="menu-space-panel__status">
-          <ElTag effect="plain" type="info">当前解析 {{ currentSpaceLabel }}</ElTag>
+              <ElTag effect="plain" type="info">当前解析 {{ currentSpaceLabel }}</ElTag>
               <ElTag effect="plain" :type="spaceModeTagType">模式 {{ spaceModeLabel }}</ElTag>
-              <ElTag v-if="resolveByLabel" effect="plain" type="warning">来源 {{ resolveByLabel }}</ElTag>
+              <ElTag v-if="resolveByLabel" effect="plain" type="warning"
+                >来源 {{ resolveByLabel }}</ElTag
+              >
             </div>
           </div>
         </template>
@@ -178,8 +178,12 @@
             </div>
           </div>
           <div class="menu-space-overview__actions">
-            <ElButton text @click="goToMenuManagement(currentSpace.spaceKey)">编辑当前空间布局</ElButton>
-            <ElButton text @click="goToPageManagement(currentSpace.spaceKey)">进入受管页面</ElButton>
+            <ElButton text @click="goToMenuManagement(currentSpace.spaceKey)"
+              >编辑当前空间布局</ElButton
+            >
+            <ElButton text @click="goToPageManagement(currentSpace.spaceKey)"
+              >进入受管页面</ElButton
+            >
             <ElButton
               v-if="!currentSpace.isDefault && isSpaceInitialized(currentSpace)"
               text
@@ -250,28 +254,30 @@
             style="width: 100%"
             placeholder="请选择或输入空间默认落地页"
           >
-            <ElOption
-              v-for="item in landingPathOptions"
-              :key="item"
-              :label="item"
-              :value="item"
-            />
+            <ElOption v-for="item in landingPathOptions" :key="item" :label="item" :value="item" />
           </ElSelect>
           <div class="field-hint">
             {{ landingPathHint }}
           </div>
         </ElFormItem>
         <ElFormItem label="说明">
-          <ElInput v-model="spaceForm.description" type="textarea" :rows="3" placeholder="说明这个菜单空间承载什么菜单树、默认入口与 Host 边界" />
+          <ElInput
+            v-model="spaceForm.description"
+            type="textarea"
+            :rows="3"
+            placeholder="说明这个菜单空间承载什么菜单树、默认入口与 Host 边界"
+          />
         </ElFormItem>
         <ElFormItem label="空间准入">
           <ElSelect v-model="spaceForm.access_mode" style="width: 100%">
             <ElOption label="全部可进" value="all" />
             <ElOption label="仅平台管理员" value="platform_admin" />
-            <ElOption label="仅团队管理员" value="team_admin" />
+            <ElOption label="仅协作空间管理员" value="team_admin" />
             <ElOption label="指定角色码" value="role_codes" />
           </ElSelect>
-          <div class="field-hint">先决定谁有资格进入这个菜单空间，进入后菜单入口与受管页面都统一复用后端访问编译结果。</div>
+          <div class="field-hint"
+            >先决定谁有资格进入这个菜单空间，进入后菜单入口与受管页面都统一复用后端访问编译结果。</div
+          >
         </ElFormItem>
         <ElFormItem v-if="spaceForm.access_mode === 'role_codes'" label="允许角色码">
           <ElInput
@@ -304,11 +310,19 @@
     <ElDrawer v-model="hostDrawerVisible" :title="hostDrawerTitle" size="520px" destroy-on-close>
       <ElForm ref="hostFormRef" :model="hostForm" label-position="top">
         <ElFormItem label="Host / 子域名">
-          <ElInput v-model="hostForm.host" placeholder="例如 admin.example.com 或 team.example.com" />
+          <ElInput
+            v-model="hostForm.host"
+            placeholder="例如 admin.example.com 或 team.example.com"
+          />
         </ElFormItem>
         <ElFormItem label="菜单空间">
           <ElSelect v-model="hostForm.space_key" filterable style="width: 100%">
-            <ElOption v-for="item in spaceOptions" :key="item.value" :label="item.label" :value="item.value" />
+            <ElOption
+              v-for="item in spaceOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
           </ElSelect>
         </ElFormItem>
         <div class="menu-space-drawer-grid">
@@ -328,14 +342,19 @@
             <ElOption label="统一登录 Host" value="centralized_login" />
             <ElOption label="共享 Cookie 域" value="shared_cookie" />
           </ElSelect>
-          <div class="field-hint">默认沿用当前 Host。后续真正启用多 Host 时，再按这里的策略决定登录入口和回跳方式。</div>
+          <div class="field-hint"
+            >默认沿用当前 Host。后续真正启用多 Host 时，再按这里的策略决定登录入口和回跳方式。</div
+          >
         </ElFormItem>
         <div v-if="hostForm.meta.auth_mode === 'centralized_login'" class="menu-space-drawer-grid">
           <ElFormItem label="统一登录 Host">
             <ElInput v-model="hostForm.meta.login_host" placeholder="例如 auth.example.com" />
           </ElFormItem>
           <ElFormItem label="登录回调 Host">
-            <ElInput v-model="hostForm.meta.callback_host" placeholder="例如 admin.example.com，可留空默认当前 Host" />
+            <ElInput
+              v-model="hostForm.meta.callback_host"
+              placeholder="例如 admin.example.com，可留空默认当前 Host"
+            />
           </ElFormItem>
         </div>
         <div v-if="hostForm.meta.auth_mode === 'shared_cookie'" class="menu-space-drawer-grid">
@@ -347,11 +366,19 @@
             </ElSelect>
           </ElFormItem>
           <ElFormItem label="Cookie 域">
-            <ElInput v-model="hostForm.meta.cookie_domain" placeholder="例如 .example.com，可留空" />
+            <ElInput
+              v-model="hostForm.meta.cookie_domain"
+              placeholder="例如 .example.com，可留空"
+            />
           </ElFormItem>
         </div>
         <ElFormItem label="说明">
-          <ElInput v-model="hostForm.description" type="textarea" :rows="3" placeholder="例如 平台治理入口 / 团队工作区入口" />
+          <ElInput
+            v-model="hostForm.description"
+            type="textarea"
+            :rows="3"
+            placeholder="例如 平台治理入口 / 协作空间工作区入口"
+          />
         </ElFormItem>
         <ElFormItem label="主绑定">
           <ElSwitch v-model="hostForm.is_default" />
@@ -396,7 +423,7 @@
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref, watch } from 'vue'
-  import { useRoute, useRouter } from 'vue-router'
+  import { useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import type { AppRouteRecord } from '@/types/router'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
@@ -422,7 +449,6 @@
   import { normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
 
   defineOptions({ name: 'MenuSpaceManage' })
-  const route = useRoute()
   const router = useRouter()
   const { targetAppKey, setManagedAppKey } = useManagedAppScope()
   const managedAppMissingText = '请选择当前要管理的 App'
@@ -502,14 +528,18 @@
     spaces.value.find((item) => item.spaceKey === currentSpaceKey.value)
   )
 
-  const currentSpaceLabel = computed(() => currentSpace.value?.name || currentSpace.value?.spaceKey || '未选择空间')
+  const currentSpaceLabel = computed(
+    () => currentSpace.value?.name || currentSpace.value?.spaceKey || '未选择空间'
+  )
   const spaceModeLabel = computed(() => {
     if (spaceMode.value === 'single') {
       return '单空间'
     }
     return '多空间'
   })
-  const spaceModeTagType = computed(() => (spaceModeLabel.value === '单空间' ? 'success' : 'warning'))
+  const spaceModeTagType = computed(() =>
+    spaceModeLabel.value === '单空间' ? 'success' : 'warning'
+  )
   const resolveByLabel = computed(() => {
     const value = `${currentResolvedBy.value || ''}`.trim()
     switch (value) {
@@ -534,7 +564,10 @@
     { label: '当前 App', value: targetAppKey.value },
     { label: '菜单空间', value: spaces.value.length || 0 },
     { label: 'Host 绑定', value: hostBindings.value.length || 0 },
-    { label: '已初始化', value: spaces.value.filter((item) => isSpaceInitialized(item)).length || 0 },
+    {
+      label: '已初始化',
+      value: spaces.value.filter((item) => isSpaceInitialized(item)).length || 0
+    },
     { label: '当前解析', value: currentSpace.value?.spaceKey || '未选择' }
   ])
 
@@ -595,7 +628,7 @@
       case 'platform_admin':
         return '仅平台管理员'
       case 'team_admin':
-        return '仅团队管理员'
+        return '仅协作空间管理员'
       case 'role_codes':
         return '指定角色码'
       default:
@@ -705,11 +738,7 @@
     const walk = (list: AppRouteRecord[], parentPath = '') => {
       ;(list || []).forEach((item) => {
         const normalizedPath = joinMenuPath(parentPath, `${item.path || ''}`)
-        if (
-          normalizedPath &&
-          !item.children?.length &&
-          item.meta?.isEnable !== false
-        ) {
+        if (normalizedPath && !item.children?.length && item.meta?.isEnable !== false) {
           result.push(normalizedPath)
         }
         if (item.children?.length) {
@@ -801,7 +830,10 @@
     loadLandingPathCandidates(spaceForm.space_key)
   }
 
-  function openHostDrawer(item?: Api.SystemManage.MenuSpaceHostBindingItem, preferredSpaceKey?: string) {
+  function openHostDrawer(
+    item?: Api.SystemManage.MenuSpaceHostBindingItem,
+    preferredSpaceKey?: string
+  ) {
     resetHostForm()
     if (item) {
       editingHost.value = item.host
@@ -892,7 +924,9 @@
         normalizeMenuSpaceKey(item.spaceKey) !== normalizeMenuSpaceKey(hostForm.space_key)
     )
     if (duplicatedBinding) {
-      ElMessage.warning(`该 Host 已绑定到菜单空间 ${duplicatedBinding.spaceName || duplicatedBinding.spaceKey}`)
+      ElMessage.warning(
+        `该 Host 已绑定到菜单空间 ${duplicatedBinding.spaceName || duplicatedBinding.spaceKey}`
+      )
       return
     }
     savingHost.value = true
@@ -997,13 +1031,13 @@
     }
   }
 
-  function buildSpaceBackupRestoreMessage(item: Api.SystemManage.MenuBackupItem) {
+  function buildSpaceBackupRestoreMessage() {
     return `确定要恢复空间“${currentSpaceLabel.value}”的布局备份吗？恢复后会覆盖当前空间的菜单布局树和相关菜单分组。`
   }
 
   async function handleRestoreBackup(item: Api.SystemManage.MenuBackupItem) {
     try {
-      await ElMessageBox.confirm(buildSpaceBackupRestoreMessage(item), '提示', {
+      await ElMessageBox.confirm(buildSpaceBackupRestoreMessage(), '提示', {
         type: 'warning',
         confirmButtonText: '确定',
         cancelButtonText: '取消'
@@ -1153,7 +1187,10 @@
     (value, previousValue) => {
       if (!spaceDrawerVisible.value) return
       if (!`${value || ''}`.trim() || value === previousValue) return
-      if (spaceForm.default_home_path && !landingPathOptions.value.includes(spaceForm.default_home_path)) {
+      if (
+        spaceForm.default_home_path &&
+        !landingPathOptions.value.includes(spaceForm.default_home_path)
+      ) {
         spaceForm.default_home_path = ''
       }
       loadLandingPathCandidates(value)

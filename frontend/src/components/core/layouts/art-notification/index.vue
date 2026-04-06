@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div
     class="art-notification-panel art-card-sm !shadow-xl"
     :style="{
@@ -59,9 +59,13 @@
               <div class="message-row__meta">
                 <div class="message-row__meta-tags">
                   <span class="message-chip">{{ resolveSourceLabel(item) }}</span>
-                  <span v-if="resolveTeamTag(item)" class="message-chip is-team">{{ resolveTeamTag(item) }}</span>
+                  <span v-if="resolveWorkspaceTag(item)" class="message-chip is-team">{{
+                    resolveWorkspaceTag(item)
+                  }}</span>
                 </div>
-                <span class="message-row__time">{{ formatTime(item.last_action_at || item.published_at || item.created_at) }}</span>
+                <span class="message-row__time">{{
+                  formatTime(item.last_action_at || item.published_at || item.created_at)
+                }}</span>
               </div>
 
               <div v-if="item.box_type === 'todo'" class="message-row__todo-actions">
@@ -99,6 +103,7 @@
   import { useMessageStore } from '@/store/modules/message'
   import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import { useTenantStore } from '@/store/modules/tenant'
+  import { useWorkspaceStore } from '@/store/modules/workspace'
 
   defineOptions({ name: 'ArtNotification' })
 
@@ -113,7 +118,8 @@
   const router = useRouter()
   const messageStore = useMessageStore()
   const menuSpaceStore = useMenuSpaceStore()
-  const tenantStore = useTenantStore()
+  const collaborationWorkspaceStore = useTenantStore()
+  const workspaceStore = useWorkspaceStore()
   const { previewMap } = storeToRefs(messageStore)
 
   const show = ref(false)
@@ -186,7 +192,8 @@
 
   const resolveItemIcon = (item: Api.Message.InboxItem) => {
     if (item.box_type === 'todo') return 'ri:task-line'
-    if (item.sender_type === 'service' || item.sender_type === 'automation') return 'ri:robot-2-line'
+    if (item.sender_type === 'service' || item.sender_type === 'automation')
+      return 'ri:robot-2-line'
     if (item.box_type === 'message') return 'ri:message-2-line'
     return 'ri:notification-3-line'
   }
@@ -209,7 +216,11 @@
     const target = `${value || ''}`.trim()
     if (!target) return ''
     if (typeof window === 'undefined') {
-      return target.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
+      return target
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
     }
     const parser = new DOMParser()
     const doc = parser.parseFromString(target, 'text/html')
@@ -221,12 +232,26 @@
   }
 
   const resolveTeamTag = (item: Api.Message.InboxItem) => {
-    const teamId = item.scope_type === 'team'
-      ? (item.scope_id || item.recipient_team_id || item.target_tenant_id)
-      : (item.recipient_team_id || item.target_tenant_id || item.scope_id)
-    if (!teamId) return ''
-    const teamName = tenantStore.teamList.find((team) => team.id === teamId)?.name || ''
-    return teamName ? `团队 · ${teamName}` : ''
+    const collaborationWorkspaceId =
+      item.scope_type === 'team'
+        ? item.scope_id ||
+          item.recipient_collaboration_workspace_id ||
+          item.target_collaboration_workspace_id ||
+          item.target_collaboration_workspace_id
+        : item.recipient_collaboration_workspace_id ||
+          item.target_collaboration_workspace_id ||
+          item.target_collaboration_workspace_id ||
+          item.scope_id
+    if (!collaborationWorkspaceId) return ''
+    const teamName = collaborationWorkspaceStore.teamList.find((team) => team.id === collaborationWorkspaceId)?.name || ''
+    return teamName ? `协作空间 · ${teamName}` : ''
+  }
+
+  const resolveWorkspaceTag = (item: Api.Message.InboxItem) => {
+    if (item.scope_type === 'team') {
+      return resolveTeamTag(item)
+    }
+    return `工作空间 · ${workspaceStore.currentAuthWorkspace?.name || '当前授权工作空间'}`
   }
 
   const openInbox = async (query?: Record<string, string | undefined>) => {
@@ -268,7 +293,7 @@
       }
       emit('update:value', false)
       await navigateByItem(item)
-    } catch (error) {
+    } catch {
       ElMessage.error('打开消息失败')
     }
   }
@@ -282,7 +307,7 @@
     try {
       await messageStore.markReadAll(activeBoxType.value)
       ElMessage.success('已标记当前分类为已读')
-    } catch (error) {
+    } catch {
       ElMessage.error('批量已读失败')
     }
   }
@@ -291,7 +316,7 @@
     try {
       await messageStore.handleTodo(item.id, action)
       ElMessage.success(action === 'done' ? '待办已完成' : '待办已忽略')
-    } catch (error) {
+    } catch {
       ElMessage.error('处理待办失败')
     }
   }
@@ -490,3 +515,4 @@
     background-color: #222 !important;
   }
 </style>
+

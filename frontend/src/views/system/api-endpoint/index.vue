@@ -56,10 +56,7 @@
             @reset="resetTableQuery"
           />
 
-          <ElCard
-            class="flex flex-col flex-1 min-h-0 art-table-card api-table-card"
-            shadow="never"
-          >
+          <ElCard class="flex flex-col flex-1 min-h-0 art-table-card api-table-card" shadow="never">
             <AdminWorkspaceHero
               title="API 管理"
               description="维护接口注册、分类、权限键与运行时状态，未注册和失效接口也在同一页诊断。"
@@ -165,14 +162,16 @@
         <div class="form-intro">
           <div class="form-intro__title">{{ editingId ? '调整接口元数据' : '新增接口注册项' }}</div>
           <div class="form-intro__text">
-            先明确接口身份，再配置分类、团队上下文和权限键。这里保存的是正式注册信息，不是临时调试项。
+            先明确接口身份，再配置分类、协作空间上下文和权限键。这里保存的是正式注册信息，不是临时调试项。
           </div>
         </div>
 
         <div class="form-section">
           <div class="form-section__header">
             <div class="form-section__title">接口身份</div>
-            <div class="form-section__desc">Method、路径、来源和功能归属决定这条接口如何进入正式注册表。</div>
+            <div class="form-section__desc"
+              >Method、路径、来源和功能归属决定这条接口如何进入正式注册表。</div
+            >
           </div>
           <ElRow :gutter="12">
             <ElCol :span="8">
@@ -223,7 +222,9 @@
         <div class="form-section">
           <div class="form-section__header">
             <div class="form-section__title">归属与运行时</div>
-            <div class="form-section__desc">分类影响管理归档，团队上下文和状态影响运行时访问与诊断结果。</div>
+            <div class="form-section__desc"
+              >分类影响管理归档，协作空间上下文和状态影响运行时访问与诊断结果。</div
+            >
           </div>
           <ElRow :gutter="12">
             <ElCol :span="12">
@@ -271,7 +272,7 @@
 
           <ElRow :gutter="12">
             <ElCol :span="12">
-              <ElFormItem label="团队上下文" prop="contextScope">
+              <ElFormItem label="协作空间上下文" prop="contextScope">
                 <ElSelect
                   v-model="formState.contextScope"
                   placeholder="请选择"
@@ -309,7 +310,9 @@
         <div class="form-section">
           <div class="form-section__header">
             <div class="form-section__title">权限绑定</div>
-            <div class="form-section__desc">权限键决定这条接口会被哪条能力链消费，没有权限键时会更接近基础接口。</div>
+            <div class="form-section__desc"
+              >权限键决定这条接口会被哪条能力链消费，没有权限键时会更接近基础接口。</div
+            >
           </div>
           <ElFormItem label="权限键">
             <ElSelect
@@ -571,7 +574,12 @@
       </div>
     </ElDialog>
 
-    <ElDialog v-model="scanConfigVisible" title="未注册 API 扫描配置（实验功能）" width="560px" destroy-on-close>
+    <ElDialog
+      v-model="scanConfigVisible"
+      title="未注册 API 扫描配置（实验功能）"
+      width="560px"
+      destroy-on-close
+    >
       <ElForm label-width="140px">
         <ElAlert
           type="warning"
@@ -592,7 +600,12 @@
           style="margin-bottom: 12px"
         />
         <ElFormItem label="扫描频率（分钟）">
-          <ElInputNumber v-model="scanConfig.frequencyMinutes" :min="5" :max="1440" style="width: 100%" />
+          <ElInputNumber
+            v-model="scanConfig.frequencyMinutes"
+            :min="5"
+            :max="1440"
+            style="width: 100%"
+          />
         </ElFormItem>
         <ElFormItem label="默认分类ID">
           <ElInput v-model="scanConfig.defaultCategoryId" placeholder="可选，自动归类" />
@@ -655,7 +668,6 @@
 
 <script setup lang="ts">
   import { computed, h, nextTick, onMounted, reactive, ref, watch } from 'vue'
-  import { useRoute } from 'vue-router'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { useTable } from '@/hooks/core/useTable'
   import { useAuth } from '@/hooks/core/useAuth'
@@ -730,7 +742,6 @@
 
   const methodOptions = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
   const { hasAction } = useAuth()
-  const route = useRoute()
   const { targetAppKey } = useManagedAppScope()
   const managedAppMissingText = '缺少 app 上下文，请先从应用管理选择 App'
   const API_ENDPOINT_TABLE_STATE_KEY = 'system:api-endpoint:table-state'
@@ -969,10 +980,8 @@
           label: '范围',
           width: 90,
           formatter: (row: APIEndpointItem) =>
-            h(
-              ElTag,
-              { type: row.appScope === 'app' ? 'warning' : 'info', effect: 'plain' },
-              () => (row.appScope === 'app' ? 'App' : '共享')
+            h(ElTag, { type: row.appScope === 'app' ? 'warning' : 'info', effect: 'plain' }, () =>
+              row.appScope === 'app' ? 'App' : '共享'
             )
         },
         {
@@ -1029,7 +1038,7 @@
         },
         {
           prop: 'contextScope',
-          label: '团队上下文',
+          label: '协作空间上下文',
           width: 140,
           formatter: (row: APIEndpointItem) =>
             h(
@@ -1294,7 +1303,7 @@
       case 'platform':
         return '平台'
       case 'team':
-        return '团队'
+        return '协作空间'
       case 'common':
         return '通用'
       default:
@@ -1481,7 +1490,7 @@
     try {
       await fetchUpdateApiEndpointContextScope(row.id, value)
       row.contextScope = value
-      ElMessage.success('团队上下文已更新')
+      ElMessage.success('协作空间上下文已更新')
     } catch (error: any) {
       ElMessage.error(error?.message || '更新失败')
     }

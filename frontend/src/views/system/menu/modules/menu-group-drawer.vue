@@ -5,8 +5,8 @@
     size="720px"
     direction="rtl"
     @update:model-value="handleClose"
-  
-    class="config-drawer">
+    class="config-drawer"
+  >
     <div class="group-drawer">
       <div class="group-form-card">
         <div class="group-form-title">{{ editingId ? '编辑分组' : '新增分组' }}</div>
@@ -19,7 +19,12 @@
             </ElCol>
             <ElCol :span="8">
               <ElFormItem label="排序" prop="sortOrder">
-                <ElInputNumber v-model="form.sortOrder" :min="0" controls-position="right" class="w-full" />
+                <ElInputNumber
+                  v-model="form.sortOrder"
+                  :min="0"
+                  controls-position="right"
+                  class="w-full"
+                />
               </ElFormItem>
             </ElCol>
           </ElRow>

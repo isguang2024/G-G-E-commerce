@@ -92,7 +92,7 @@ func (m *SystemModule) RegisterRoutes(rg *gin.RouterGroup) {
 		messageReg.POST("/inbox/:deliveryId/read", messageReg.Meta("标记消息已读").Build(), systemHandler.MarkInboxRead)
 		messageReg.POST("/inbox/read-all", messageReg.Meta("批量标记消息已读").Build(), systemHandler.MarkInboxReadAll)
 		messageReg.POST("/inbox/:deliveryId/todo-action", messageReg.Meta("处理待办消息").Build(), systemHandler.HandleInboxTodo)
-		messageDispatchKeys := []string{"message.manage", "team.message.manage"}
+		messageDispatchKeys := []string{"message.manage", "collaboration_workspace.message.manage"}
 		messageReg.GETActions("/dispatch/options", "获取消息发送配置", messageDispatchKeys, authzService.RequireAnyAction, systemHandler.GetMessageDispatchOptions)
 		messageReg.POSTActions("/dispatch", "发送站内消息", messageDispatchKeys, authzService.RequireAnyAction, systemHandler.DispatchMessage)
 		messageReg.GETActions("/templates", "获取消息模板", messageDispatchKeys, authzService.RequireAnyAction, systemHandler.ListMessageTemplates)

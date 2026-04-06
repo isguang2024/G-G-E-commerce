@@ -21,7 +21,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
-const tenantContextHeader = "X-Tenant-ID"
+const tenantContextHeader = "X-Collaboration-Workspace-Id"
 
 type MenuHandler struct {
 	db          *gorm.DB
@@ -79,9 +79,9 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
-		tenantID, err := currentTenantID(c)
+		tenantID, err := currentCollaborationWorkspaceID(c)
 		if err != nil {
-			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 			c.JSON(status, resp)
 			return
 		}
@@ -103,7 +103,7 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 	if !all {
 		userID, err := currentUserID(c)
 		if err == nil {
-			tenantID, tenantErr := currentTenantID(c)
+			tenantID, tenantErr := currentCollaborationWorkspaceID(c)
 			if tenantErr == nil {
 				allowedMenuIDs, _ = h.getAllowedMenuIDs(userID, tenantID)
 			}
@@ -174,7 +174,7 @@ func (h *MenuHandler) getTeamContextAllowedMenuIDs(teamID uuid.UUID, roleIDs []u
 		if !ok {
 			continue
 		}
-		snapshot, snapshotErr := h.boundaryService.GetRoleSnapshot(teamID, role.ID, role.TenantID == nil)
+		snapshot, snapshotErr := h.boundaryService.GetRoleSnapshot(teamID, role.ID, role.CollaborationWorkspaceID == nil)
 		if snapshotErr != nil {
 			return nil, snapshotErr
 		}
@@ -746,8 +746,8 @@ func currentUserID(c *gin.Context) (uuid.UUID, error) {
 	return uuid.Parse(userIDStr)
 }
 
-func currentTenantID(c *gin.Context) (*uuid.UUID, error) {
-	tenantIDStr := strings.TrimSpace(c.Query("tenant_id"))
+func currentCollaborationWorkspaceID(c *gin.Context) (*uuid.UUID, error) {
+	tenantIDStr := strings.TrimSpace(c.Query("collaboration_workspace_id"))
 	if tenantIDStr == "" {
 		tenantIDStr = strings.TrimSpace(c.GetHeader(tenantContextHeader))
 	}

@@ -16,7 +16,9 @@
         <header class="console-panel__header">
           <div>
             <div class="console-panel__title">当前工作面</div>
-            <p class="console-panel__desc">根据当前团队或管理入口，优先进入对应的治理链路。</p>
+            <p class="console-panel__desc"
+              >根据当前授权工作空间和协作空间视图，优先进入对应的治理链路。</p
+            >
           </div>
         </header>
         <div class="console-focus-list">
@@ -38,11 +40,13 @@
         <header class="console-panel__header">
           <div>
             <div class="console-panel__title">当前概览</div>
-            <p class="console-panel__desc">把当前团队和当前入口状态收在一张卡片里，不额外强调空间模型。</p>
+            <p class="console-panel__desc"
+              >把当前授权工作空间、当前协作空间视图和当前入口状态收在一张卡片里。</p
+            >
           </div>
         </header>
         <div class="console-scope-card">
-          <div class="console-scope-card__label">当前入口</div>
+          <div class="console-scope-card__label">当前授权工作空间</div>
           <div class="console-scope-card__name">{{ currentScopeName }}</div>
           <p class="console-scope-card__text">{{ currentScopeDescription }}</p>
         </div>
@@ -72,22 +76,30 @@
   defineOptions({ name: 'Console' })
 
   const router = useRouter()
-  const tenantStore = useTenantStore()
-  const { currentContextMode, currentTeam, teamList, hasPlatformAccess } = storeToRefs(tenantStore)
+  const collaborationWorkspaceStore = useTenantStore()
+  const { currentContextMode, currentTeam, currentAuthWorkspace, teamList } =
+    storeToRefs(collaborationWorkspaceStore)
 
   const heroMetrics = computed(() => [
-    { label: '团队数量', value: teamList.value.length || 0 },
-    { label: '当前团队', value: currentTeam.value?.name || '未选择团队' },
-    { label: '管理入口', value: currentContextMode.value === 'platform' ? '平台管理' : '团队工作台' }
+    { label: '协作空间数量', value: teamList.value.length || 0 },
+    { label: '当前协作空间视图', value: currentTeam.value?.name || '未启用协作空间视图' },
+    {
+      label: '授权工作空间',
+      value:
+        currentAuthWorkspace.value?.name ||
+        (currentContextMode.value === 'platform' ? '个人工作空间' : '协作空间')
+    }
   ])
 
   const currentScopeName = computed(() =>
-    currentContextMode.value === 'platform' ? '平台管理' : currentTeam.value?.name || '未选择团队'
+    currentContextMode.value === 'platform'
+      ? currentAuthWorkspace.value?.name || '个人工作空间'
+      : currentTeam.value?.name || currentAuthWorkspace.value?.name || '未选择协作空间'
   )
   const currentScopeDescription = computed(() =>
     currentContextMode.value === 'platform'
-      ? '这里用于处理菜单、页面、权限键、API 元数据和平台角色等平台治理能力。'
-      : '这里用于处理团队成员、团队角色、边界和已开通功能包等日常团队能力。'
+      ? '当前以个人工作空间承载平台治理权限，可在这里处理菜单、页面、权限键、API 元数据和平台角色。'
+      : '当前以协作空间承载业务权限，可在这里处理协作空间成员、协作空间角色、边界和已开通功能包。'
   )
 
   const focusItems = computed(() =>
@@ -111,18 +123,18 @@
         ]
       : [
           {
-            title: '团队成员',
-            text: '先确认当前团队成员、角色和菜单边界是否生效。',
+            title: '协作空间成员',
+            text: '先确认当前协作空间成员、角色和菜单边界是否生效。',
             path: '/team/team-members'
           },
           {
-            title: '团队角色边界',
-            text: '统一查看团队角色、功能包、菜单和功能权限。',
+            title: '协作空间角色边界',
+            text: '统一查看协作空间角色、功能包、菜单和功能权限。',
             path: '/system/team-roles-permissions'
           },
           {
-            title: '团队总览',
-            text: '检查团队资料、功能包和成员入口是否可用。',
+            title: '协作空间总览',
+            text: '检查协作空间资料、功能包和成员入口是否可用。',
             path: '/team/team'
           }
         ]

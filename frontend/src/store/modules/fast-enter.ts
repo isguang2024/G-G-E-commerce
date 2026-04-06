@@ -71,7 +71,13 @@ function writeFastEnterCache(userScope: string, config: FastEnterConfig) {
 }
 
 export function getDefaultFastEnterConfig(): FastEnterConfig {
-  const base = cloneConfig(AppConfig.fastEnter || { applications: [], quickLinks: [], minWidth: FAST_ENTER_DEFAULT_MIN_WIDTH })
+  const base = cloneConfig(
+    AppConfig.fastEnter || {
+      applications: [],
+      quickLinks: [],
+      minWidth: FAST_ENTER_DEFAULT_MIN_WIDTH
+    }
+  )
   return normalizeConfig(base)
 }
 

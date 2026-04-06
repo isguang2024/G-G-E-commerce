@@ -1,4 +1,4 @@
-<!-- 用户菜单 -->
+﻿<!-- 用户菜单 -->
 <template>
   <ElPopover
     ref="userMenuPopover"
@@ -32,13 +32,19 @@
             <span class="block mt-0.5 text-xs text-g-500 truncate">{{ userInfo.email }}</span>
           </div>
         </div>
-        <div v-if="teamList.length" class="team-switcher-wrap">
+        <div v-if="workspaceList.length" class="team-switcher-wrap">
           <ArtTenantSwitcher compact />
         </div>
         <ul class="py-4 mt-3 border-t border-g-300/80">
-          <li v-if="hasPlatformAccess" class="btn-item" @click="enterPlatformManagement">
+          <li
+            v-if="
+              hasPlatformAccess && currentAuthWorkspaceType !== 'personal' && personalWorkspace?.id
+            "
+            class="btn-item"
+            @click="enterPlatformManagement"
+          >
             <ArtSvgIcon icon="ri:building-line" />
-            <span>进入平台管理</span>
+            <span>切换到个人工作空间</span>
           </li>
           <li class="btn-item" @click="goPage('/user-center')">
             <ArtSvgIcon icon="ri:user-3-line" />
@@ -47,6 +53,16 @@
           <li class="btn-item" @click="refreshPermissionsAndMenus">
             <ArtSvgIcon icon="ri:refresh-line" />
             <span>刷新状态</span>
+          </li>
+          <li class="btn-item btn-item--context">
+            <ArtSvgIcon icon="ri:briefcase-4-line" />
+            <span>
+              {{
+                currentAuthWorkspaceType === 'collaboration'
+                  ? '当前授权工作空间：协作空间'
+                  : '当前授权工作空间：个人工作空间'
+              }}
+            </span>
           </li>
           <div class="w-full h-px my-2 bg-g-300/80"></div>
           <div class="log-out c-p" @click="loginOut">
@@ -64,9 +80,14 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
   import { useTenantStore } from '@/store/modules/tenant'
+  import { useWorkspaceStore } from '@/store/modules/workspace'
   import { useMenuStore } from '@/store/modules/menu'
   import { useMenuSpaceStore } from '@/store/modules/menu-space'
-  import { refreshCurrentUserInfoContext, refreshUserMenus, refreshUserAccessAndMenus } from '@/router'
+  import {
+    refreshCurrentUserInfoContext,
+    refreshUserMenus,
+    refreshUserAccessAndMenus
+  } from '@/router'
   import ArtTenantSwitcher from './ArtTenantSwitcher.vue'
   import { findRegisteredRouteByPath } from '@/utils/router'
 
@@ -75,16 +96,23 @@
   const router = useRouter()
   const { t } = useI18n()
   const userStore = useUserStore()
-  const tenantStore = useTenantStore()
+  const collaborationWorkspaceStore = useTenantStore()
+  const workspaceStore = useWorkspaceStore()
   const menuStore = useMenuStore()
   const menuSpaceStore = useMenuSpaceStore()
 
   const { getUserInfo: userInfo } = storeToRefs(userStore)
-  const { teamList, hasPlatformAccess, currentContextMode } = storeToRefs(tenantStore)
+  const { hasPlatformAccess } = storeToRefs(collaborationWorkspaceStore)
+  const { workspaceList, personalWorkspace, currentAuthWorkspaceType } = storeToRefs(workspaceStore)
   const userMenuPopover = ref()
 
-  const resolveNavigationTarget = (path: string, routeCandidates: string[] = []): { mode: 'router' | 'location', target: string } => {
-    const targetCandidates = Array.from(new Set([path, ...routeCandidates].filter((item) => `${item || ''}`.trim())))
+  const resolveNavigationTarget = (
+    path: string,
+    routeCandidates: string[] = []
+  ): { mode: 'router' | 'location'; target: string } => {
+    const targetCandidates = Array.from(
+      new Set([path, ...routeCandidates].filter((item) => `${item || ''}`.trim()))
+    )
     for (const candidate of targetCandidates) {
       const routeRecord = findRegisteredRouteByPath(router, candidate)
       if (routeRecord) {
@@ -109,7 +137,7 @@
     return fallbackTarget
   }
 
-  const resolveUserCenterNavigationTarget = (): { mode: 'router' | 'location', target: string } => {
+  const resolveUserCenterNavigationTarget = (): { mode: 'router' | 'location'; target: string } => {
     const candidatePath = '/dashboard/console/user-center'
     const routeRecord = findRegisteredRouteByPath(router, candidatePath)
     if (routeRecord) {
@@ -131,7 +159,7 @@
     return menuSpaceStore.resolveSpaceNavigationTarget(candidatePath)
   }
 
-  const navigateByTarget = (target: { mode: 'router' | 'location', target: string }): void => {
+  const navigateByTarget = (target: { mode: 'router' | 'location'; target: string }): void => {
     if (target.mode === 'router') {
       router.push(target.target)
       return
@@ -153,14 +181,18 @@
   const enterPlatformManagement = async (): Promise<void> => {
     const resolveLandingTarget = () => {
       const landingPath = menuStore.getHomePath() || '/'
-      const target = resolveNavigationTarget(landingPath, ['/dashboard/console', '/workspace/inbox', '/'])
+      const target = resolveNavigationTarget(landingPath, [
+        '/dashboard/console',
+        '/workspace/inbox',
+        '/'
+      ])
       if (target) {
         return target
       }
       return menuSpaceStore.resolveSpaceNavigationTarget('/')
     }
 
-    if (currentContextMode.value === 'platform') {
+    if (currentAuthWorkspaceType.value === 'personal') {
       closeUserMenu()
       const nextTarget = resolveLandingTarget()
       if (nextTarget.mode === 'router') {
@@ -171,7 +203,8 @@
       return
     }
     closeUserMenu()
-    tenantStore.enterPlatformContext()
+    if (!personalWorkspace.value?.id) return
+    await workspaceStore.switchWorkspace(personalWorkspace.value.id)
     await refreshCurrentUserInfoContext()
     await refreshUserMenus()
     const nextTarget = resolveLandingTarget()
@@ -192,7 +225,7 @@
         hash: router.currentRoute.value.hash
       })
       ElMessage.success('状态已刷新')
-    } catch (_error) {
+    } catch {
       ElMessage.error('刷新状态失败')
     }
   }
@@ -262,4 +295,14 @@
     margin-top: 12px;
     border-top: 1px solid rgb(209 213 219 / 0.8);
   }
+
+  .btn-item--context {
+    cursor: default;
+    color: var(--art-text-muted);
+  }
+
+  .btn-item--context:hover {
+    background-color: transparent;
+  }
 </style>
+

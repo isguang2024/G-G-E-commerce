@@ -1,0 +1,505 @@
+给 Codex 的任务单：G-G-E-commerce 4.5 分支权限主语义迁移
+
+项目背景
+当前 4.5 分支已经有 backend / frontend / docs；后端 system 模块把 auth / user / role / menu / permission / apiendpoint / scope / tenant 都当成核心模块，tenant/README 也明确把“团队”定义为租户上下文，并区分平台侧接口和当前团队接口；permission/service.go 仍通过 role.TenantID 推导 platform/team 上下文，featurepackage/service.go 仍按 context_type 查询；同时 App 模型已有 SpaceMode 和 DefaultSpaceKey，MenuSpace 模型已有 AppKey 和 SpaceKey，说明当前仓库里“space”已经被用于 APP 内菜单/宿主空间；前端也已经有 store/modules/tenant.ts、menu-space.ts、app-context.ts、router/guards/beforeEach.ts、api/team.ts、api/system-manage.ts 这些运行时入口文件。
+
+总目标
+不是重写系统，而是把现在“平台/团队 + tenant + menu-space + app”并存的状态，收敛成：
+- 权限主体 = workspace
+- workspace 类型 = personal | team
+- APP = 业务域
+- menu-space = APP 内导航/宿主空间
+- 权限基层链 = API / 页面 / APP入口 → 权限键 → 功能包 → 角色 → Workspace
+- 账号只做身份，不直接持有业务权限
+- 平台后台权限也由 personal workspace 承载，不再引入账号级全局业务角色
+
+绝对约束
+1. 不要再引入“账号级全局业务角色”。
+2. 不要把 menu-space 改造成权限空间。
+3. 不要把 tenant 直接删掉。先做兼容层，把它逐步收敛到 team workspace。
+4. 不要靠 if admin return true 这种 bypass 继续扩散。
+5. 不要把所有表都强行加 workspace_id。
+6. 每个阶段做完就停，输出变更说明、影响范围、下一阶段风险。不要一口气大改到底。
+
+Phase 0：先补设计文档和迁移基线，不动行为
+目标
+在真正改代码之前，先把“现在是什么、要变成什么、哪些概念不能混”写死。
+
+要做
+新增文档：
+- docs/workspace-permission-migration.md
+- docs/workspace-glossary.md
+
+文档必须明确：
+
+当前旧语义
+- tenant = 团队/租户上下文
+- platform/team/common 或 platform/team 是旧上下文分类
+- menu-space 是 APP 内菜单/宿主空间
+- app 是业务域
+- role.TenantID != nil / context_type 是旧判断线
+
+新语义
+- workspace 是唯一业务权限主体
+- workspace.type = personal | team
+- tenant 是旧词，逐步映射为 team workspace
+- menu-space 保留为 APP 内导航空间
+- auth_workspace_id = 当前授权来源空间
+- target_workspace_id = 当前操作目标空间
+- permission.data_policy 决定是否按空间数据域约束
+
+权限链
+- 资源：API / 页面 / 按钮 / APP入口
+- 授权单位：permission_key
+- 开通上限：feature_package
+- 分配裁剪：role
+- 最终承载：workspace
+
+验收
+- 文档明确写出 workspace ≠ menu-space
+- 文档明确写出 平台后台权限也来自 personal workspace
+- 文档明确写出 不要再用账号级全局业务角色
+
+Phase 1：引入 Workspace 领域模型，但先兼容旧 tenant
+目标
+在后端正式补出 workspace 主语义，同时不破坏当前 tenant 逻辑。
+
+目标文件
+- backend/internal/modules/system/models/
+- backend/internal/modules/system/tenant/
+- 新增 backend/internal/modules/system/workspace/
+
+要做
+新增模型与迁移：
+
+1. workspaces
+建议字段：
+- id
+- workspace_type：personal | team
+- name
+- code
+- owner_user_id
+- source_tenant_id 可空（兼容旧 tenant）
+- status
+- meta
+- created_at
+- updated_at
+- deleted_at
+
+2. workspace_members
+建议字段：
+- id
+- workspace_id
+- user_id
+- member_type：owner | admin | member | viewer
+- status
+- source_tenant_member_id 可空
+- created_at
+- updated_at
+
+3. workspace_role_bindings
+建议字段：
+- id
+- workspace_id
+- user_id
+- role_id
+- enabled
+- created_at
+- updated_at
+
+4. workspace_feature_packages
+建议字段：
+- id
+- workspace_id
+- package_id
+- enabled
+- created_at
+- updated_at
+
+兼容规则
+- 每个现有用户自动生成一个 personal workspace
+- 每个现有 tenant 自动生成一个 team workspace
+- tenant 暂时不删，作为 team workspace 的兼容入口
+- 旧 tenant_members 不立即删除，逐步映射到 workspace_members
+
+验收
+- 启动后自动存在 personal workspace
+- 旧 tenant 数据可映射出 team workspace
+- 不改前端时，现有 tenant 功能不直接炸
+
+Phase 2：把“权限来源”从账号/tenant 混合，改成 workspace
+目标
+开始让运行时权限真正按 workspace 生效。
+
+目标文件
+- backend/internal/modules/system/auth/middleware.go
+- backend/internal/modules/system/permission/service.go
+- backend/internal/modules/system/featurepackage/service.go
+- backend/internal/modules/system/role/service.go
+
+要做
+1. 中间件新增授权上下文
+在 Gin context 中建立统一对象，例如：
+
+type AuthorizationContext struct {
+    UserID            uuid.UUID
+    AuthWorkspaceID   uuid.UUID
+    AuthWorkspaceType string // personal | team
+    TargetWorkspaceID *uuid.UUID
+    AppKey            string
+}
+
+2. 解析 auth_workspace_id
+来源优先级建议：
+1. Header：X-Auth-Workspace-Id
+2. Query / path（仅兼容）
+3. 默认回落到用户 personal workspace
+
+3. 解析 target_workspace_id
+来源：
+- path params
+- query
+- request body
+- DTO 中显式字段
+
+4. 不再把账号当业务权限主体
+- 账号只提供 user_id
+- 所有业务权限都从 AuthWorkspaceID 推导
+- 平台后台权限同样如此：通常来自 personal workspace
+
+验收
+- 当前请求一定能解析出 AuthWorkspaceID
+- 普通业务接口可以在 team workspace 下跑
+- 没显式指定时，默认回落 personal workspace，而不是回落“账号自己有权限”
+
+Phase 3：把权限基层链真正收口到 Workspace
+目标
+把权限模型从旧 context_type / tenant_id 线，迁到真正的 workspace 线。
+
+要做
+1. 保留 permission_key
+不要重造轮子。现有 permission 模块保留，但补字段：
+
+建议新增：
+- app_key
+- data_policy
+- allowed_workspace_types
+
+2. data_policy 定义
+建议枚举：
+- none
+  - 不按任何业务 workspace 数据域过滤
+  - 典型：平台菜单模板、平台 APP 配置、平台字典等
+
+- auth_workspace_required
+  - 必须按当前授权空间校验，且目标就是当前空间
+  - 典型：团队业务、个人业务
+
+- explicit_target_workspace
+  - 允许显式指定 target_workspace_id
+  - 典型：从 personal workspace 的后台权限去管理别的 team workspace
+
+3. 功能包改成空间能力上限
+当前 featurepackage 还按 context_type 工作，要逐步改成：
+- 功能包不是给账号
+- 功能包也不是直接给 tenant/global 分类
+- 功能包是给 workspace 的
+
+4. 角色改成空间内裁剪器
+- 角色仍保留
+- 角色不再是账号级业务角色
+- 角色只在某个 workspace 中分配给成员
+
+5. 最终有效权限公式
+在代码里收敛成：
+有效能力
+= 当前 workspace 已开通功能包中的权限键
+∩ 当前 workspace 内分配给该用户的角色权限键
+∩ 当前 APP 入口与动作约束
+
+验收
+- permission_key 仍是一等对象
+- feature_package 明确是 workspace 能力上限
+- role 明确是 workspace 内成员裁剪
+- 运行时不再依赖 role.TenantID != nil 来判断“平台/团队是不是能操作”
+
+Phase 4：平台后台 APP 也要纳入 personal workspace，不再有账号级全局业务角色
+目标
+实现关键要求：
+平台后台 APP 也是空间权限，不是账号全局业务角色。
+
+要做
+1. 平台后台 APP 入口权限键化
+新增或规范化：
+- app.platform-admin.enter
+- platform.user.manage
+- platform.app.manage
+- platform.feature-package.manage
+- platform.workspace.manage
+- platform.navigation.manage
+
+2. 这些权限键由 personal workspace 承载
+不要再搞：
+- 账号级 platform role
+- 账号级全局业务权限
+
+而是：
+- 账号 A 默认有 personal workspace A
+- 如果 personal workspace A 上有相应功能包/角色
+- 则 A 可进入 platform-admin APP
+
+3. 平台后台里“管理其他团队”
+这类接口的规则必须是：
+- auth_workspace_id = personal workspace
+- target_workspace_id = 指定的 team workspace
+- 由 permission.data_policy = explicit_target_workspace 控制
+
+不要要求“当前就在那个团队上下文里”。
+
+验收
+- 用户可以仅靠 personal workspace 进入平台后台
+- 进入平台后台不要求 team workspace
+- 管理别的团队时，不需要切到对方团队才能操作
+- 但仍必须显式携带 target_workspace_id
+
+Phase 5：Tenant 逐步退场，但暂时保留兼容 API
+目标
+不直接删 tenant，而是让 tenant 变成 team workspace 的旧壳。
+
+要做
+1. 后端 tenant service 做适配
+- tenant 模块内部开始调用 workspace service
+- tenant = workspace where workspace_type=team 的适配关系固化下来
+
+2. 保持旧 API 可用
+例如原有：
+- /api/v1/tenants
+- /api/v1/tenants/my-teams
+- /api/v1/tenants/current
+
+可以暂时保留，但内部返回结构逐渐补充 workspace 语义：
+- workspace_id
+- workspace_type
+- source_tenant_id
+
+3. 新增 workspace API
+新增更正统的接口：
+- /api/v1/workspaces/my
+- /api/v1/workspaces/current
+- /api/v1/workspaces/:id
+- /api/v1/workspaces/switch（如果决定显式切换）
+
+验收
+- 旧 team/tenant 页面还能跑
+- 新前端可以优先使用 workspace API
+- tenant 模块逐步降级为兼容层
+
+Phase 6：前端把“当前权限来源”改成 workspace，但保留 menu-space
+目标
+前端不能再把 tenant 和 menu-space 混着当上下文。
+
+目标文件
+- frontend/src/store/modules/tenant.ts
+- 新增 frontend/src/store/modules/workspace.ts
+- frontend/src/store/modules/menu-space.ts
+- frontend/src/store/modules/app-context.ts
+- frontend/src/router/guards/beforeEach.ts
+- frontend/src/api/team.ts
+- frontend/src/api/system-manage.ts
+
+要做
+1. 新建 workspace.ts
+职责：
+- 当前授权空间
+- 我的空间列表
+- 默认 personal workspace
+- 团队 workspace 列表
+- 切换当前授权空间
+
+2. tenant.ts 先不删
+改成兼容层：
+- 内部逐渐代理到 workspace.ts
+- 旧页面仍可取到团队列表
+- 但新逻辑不要再往 tenant.ts 上长
+
+3. menu-space.ts 保留原语义
+它继续只做：
+- 当前 APP 下的菜单空间
+- host/app/space 解析
+- 默认菜单空间
+- 菜单宿主切换
+
+不要把 workspace 切换写到这里。
+
+4. beforeEach.ts 重写判定顺序
+路由守卫统一顺序改成：
+1. 确定当前 APP
+2. 确定当前授权 workspace
+3. 确定当前 menu-space
+4. 拉当前 workspace 在当前 APP 下的有效权限
+5. 再生成菜单和放行动作
+
+5. 请求头统一透传
+新增统一 header：
+- X-Auth-Workspace-Id
+
+而：
+- target_workspace_id 继续放 path/query/body
+- 不要混成一个字段
+
+6. 平台后台 APP 页面
+进入平台后台 APP 时：
+- 当前授权 workspace 应允许是 personal workspace
+- 不再要求“必须选中某个团队”
+
+验收
+- 前端可以在不选团队的情况下进入平台后台（前提是 personal workspace 有权限）
+- 同一用户可切换 personal workspace / team workspace
+- 切换 menu-space 不会切换 workspace
+- 切换 workspace 不会把 menu-space 的业务意义弄脏
+
+Phase 7：菜单、运行时导航、APP 入口统一改成“按 workspace 产出”
+目标
+让菜单系统与权限系统真正一致。
+
+要做
+1. 菜单不是权限真相
+- 菜单项绑定 permission_key
+- 页面路由绑定 permission_key
+- APP 入口绑定 permission_key
+
+2. 菜单生成依赖
+菜单生成必须依赖：
+- current_app
+- current_auth_workspace
+- current_menu_space
+- 当前 workspace 有效权限键集合
+
+3. system-manage.ts 与运行时导航
+把 runtime navigation 的输入明确拆成：
+- app
+- menu-space
+- workspace
+- permission keys
+
+不要再让 runtime navigation 把 menu-space 当权限空间。
+
+验收
+- 当前 APP 下不同 workspace 可以产出不同菜单
+- 同一 workspace 下不同 menu-space 可以只影响导航视图，不影响权限来源
+- 菜单隐藏不再作为唯一授权手段，后端 API 判权仍然独立
+
+Phase 8：补种子、迁移脚本、回填策略
+目标
+让老数据能迁过来，而不是只跑新建用户。
+
+要做
+1. 迁移脚本
+- 为每个 user 创建 personal workspace
+- 为每个 tenant 创建 team workspace
+- 回填 workspace members
+- 回填 workspace feature packages
+- 回填 workspace role bindings
+
+2. 旧账号业务权限迁移
+如果仓库里还有账号直挂的业务权限、平台业务能力，统一迁到：
+- 该账号的 personal workspace
+
+3. 种子脚本
+更新 seed：
+- personal workspace 默认创建
+- team workspace 默认创建规则
+- 平台后台 APP 入口权限键
+- 典型 data_policy
+- 默认角色/功能包映射
+
+验收
+- 老用户升级后自动拥有 personal workspace
+- 老团队升级后自动成为 team workspace
+- 迁移可重复执行，不产生脏重复数据
+
+Phase 9：测试
+后端至少覆盖这些用例
+
+1. personal workspace 进入平台后台
+- 用户账号本身没业务权限
+- personal workspace 有相关功能包/角色
+- 进入 platform-admin 成功
+
+2. 同一账号管理多个 team workspace
+- 在 team A 是管理员
+- 在 team B 是成员
+- 切换 workspace 后权限集不同
+
+3. 个人空间代管团队
+- auth_workspace_id = personal
+- target_workspace_id = team
+- 权限键 data_policy = explicit_target_workspace
+- 可成功
+
+4. 个人空间不能直接当团队业务权限
+- personal workspace 有平台后台权限
+- team workspace 没商品管理权限
+- 在 team 业务接口里必须拒绝
+
+5. menu-space 不影响权限来源
+- 切换同一 APP 下不同 menu-space
+- 只影响菜单表现
+- 不改变 auth_workspace_id
+
+前端至少覆盖这些用例
+1. 默认进入 personal workspace
+2. 切换到 team workspace 后菜单变化
+3. 平台后台 APP 可在 personal workspace 下进入
+4. 切换 menu-space 不应切换当前 workspace
+5. 请求头总能带上 X-Auth-Workspace-Id
+
+Phase 10：文档和清理
+要做
+更新：
+- docs/change-log.md
+- 相关 md
+- 新增最终术语表
+
+必须写清：
+- workspace
+- personal workspace
+- team workspace
+- app
+- menu-space
+- permission key
+- feature package
+- role
+- auth_workspace_id
+- target_workspace_id
+
+可以清理，但暂时不要做的事
+- 不要立刻删 tenant.ts
+- 不要立刻删 tenant API
+- 不要立刻删 context_type
+- 不要立刻删 tenant_id
+- 先让它们变成兼容层或冗余字段，再逐步退场
+
+每一阶段的输出要求
+每做完一个阶段，必须输出：
+1. 改了哪些文件
+2. 新增了哪些表/字段/DTO
+3. 哪些旧逻辑还保留兼容
+4. 哪些行为已切到 workspace 主线
+5. 风险点
+6. 下一阶段建议
+
+不要静默跨阶段批量改。
+
+最终验收标准
+做到下面这些，才算这轮迁移成功：
+1. 账号本身不再直接持有业务权限
+2. personal workspace 与 team workspace 都能承载权限
+3. 平台后台 APP 也由 personal workspace 承载权限
+4. tenant 被兼容映射为 team workspace，而不是继续当长期主语义
+5. menu-space 保持 APP 内导航空间语义，不与权限空间混用
+6. 权限链稳定为 API / 页面 / APP入口 → 权限键 → 功能包 → 角色 → Workspace
+7. 是否按 workspace 数据域约束，由权限键策略决定
+8. 一个账号可以管理多个 team workspace，依赖当前激活 workspace 区分
+9. 前后端都能显式区分 auth_workspace_id 与 target_workspace_id
+10. 没有新增账号级全局业务角色

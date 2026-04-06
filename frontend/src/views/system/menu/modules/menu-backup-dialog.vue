@@ -63,23 +63,25 @@
     set: (value) => emit('update:modelValue', value)
   })
 
-  const dialogTitle = computed(() =>
-    props.dialogTitle ||
-    (props.scopeType === 'global' ? '备份全部空间菜单' : '备份当前空间菜单')
+  const dialogTitle = computed(
+    () =>
+      props.dialogTitle || (props.scopeType === 'global' ? '备份全部空间菜单' : '备份当前空间菜单')
   )
 
-  const alertTitle = computed(() =>
-    props.alertTitle ||
-    (props.scopeType === 'global'
-      ? '当前将创建全局菜单备份'
-      : `当前将备份菜单空间：${props.currentSpaceName}`)
+  const alertTitle = computed(
+    () =>
+      props.alertTitle ||
+      (props.scopeType === 'global'
+        ? '当前将创建全局菜单备份'
+        : `当前将备份菜单空间：${props.currentSpaceName}`)
   )
 
-  const alertDescription = computed(() =>
-    props.alertDescription ||
-    (props.scopeType === 'global'
-      ? '该备份会保存全部空间的菜单树与菜单分组，恢复时会覆盖所有空间菜单。该入口用于正式全局备份，不再依赖省略 space_key 的兼容语义。'
-      : '该备份只保存当前空间菜单树及其引用的菜单分组，避免多空间场景下一次备份覆盖所有空间。')
+  const alertDescription = computed(
+    () =>
+      props.alertDescription ||
+      (props.scopeType === 'global'
+        ? '该备份会保存全部空间的菜单树与菜单分组，恢复时会覆盖所有空间菜单。该入口用于正式全局备份，不再依赖省略 space_key 的兼容语义。'
+        : '该备份只保存当前空间菜单树及其引用的菜单分组，避免多空间场景下一次备份覆盖所有空间。')
   )
 
   const form = reactive({

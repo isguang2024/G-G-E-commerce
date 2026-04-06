@@ -1,16 +1,17 @@
 ﻿<template>
   <ElDrawer
     v-model="visible"
-    :title="`团队角色权限裁剪 - ${roleTitle}`"
+    :title="`协作空间角色权限裁剪 - ${roleTitle}`"
     size="980px"
     destroy-on-close
     direction="rtl"
-    class="config-drawer">
+    class="config-drawer"
+  >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
         {{
           props.roleData?.isGlobal
-            ? '基础团队角色默认继承当前团队已开通功能包，这里只读展示最终可用角色权限结果。'
+            ? '基础协作空间角色默认继承当前协作空间已开通功能包，这里只读展示最终可用角色权限结果。'
             : '请先为角色绑定功能包，再在角色功能包展开范围内配置权限裁剪。'
         }}
       </div>
@@ -37,7 +38,7 @@
         open="actions"
         filtered-blocked-empty-text="当前筛选下暂无角色显式关闭能力"
         empty-title="当前暂无角色能力来源"
-        empty-text="请先为角色绑定功能包，或检查当前团队快照是否已经刷新。"
+        empty-text="请先为角色绑定功能包，或检查当前协作空间快照是否已经刷新。"
       />
 
       <PermissionActionCascaderPanel
@@ -52,7 +53,13 @@
       <ElButton v-if="!props.roleData?.isGlobal" @click="keepAll">全部保留</ElButton>
       <ElButton v-if="!props.roleData?.isGlobal" @click="blockAll">全部屏蔽</ElButton>
       <ElButton @click="visible = false">取消</ElButton>
-      <ElButton v-if="!props.roleData?.isGlobal" type="primary" :loading="saving" @click="handleSave">保存</ElButton>
+      <ElButton
+        v-if="!props.roleData?.isGlobal"
+        type="primary"
+        :loading="saving"
+        @click="handleSave"
+        >保存</ElButton
+      >
     </template>
   </ElDrawer>
 </template>
@@ -76,7 +83,10 @@
   }
 
   const props = defineProps<Props>()
-  const emit = defineEmits<{ (e: 'update:modelValue', value: boolean): void; (e: 'success'): void }>()
+  const emit = defineEmits<{
+    (e: 'update:modelValue', value: boolean): void
+    (e: 'success'): void
+  }>()
 
   const loading = ref(false)
   const saving = ref(false)
@@ -97,8 +107,12 @@
     const selectedIdSet = new Set(selectedIds.value)
     return actions.value.filter((item) => !selectedIdSet.has(item.id))
   })
-  const derivedActionItems = computed(() => derivedActions.value.map((item) => ({ id: item.id, label: item.name })))
-  const blockedActionItems = computed(() => blockedActions.value.map((item) => ({ id: item.id, label: item.name })))
+  const derivedActionItems = computed(() =>
+    derivedActions.value.map((item) => ({ id: item.id, label: item.name }))
+  )
+  const blockedActionItems = computed(() =>
+    blockedActions.value.map((item) => ({ id: item.id, label: item.name }))
+  )
 
   const visible = computed({
     get: () => props.modelValue,
@@ -108,13 +122,21 @@
   const blockedCount = computed(() => Math.max(actions.value.length - selectedIds.value.length, 0))
   const summaryItems = computed(() => [
     { label: '角色', value: roleTitle.value || '-' },
-    { label: '类型', value: props.roleData?.isGlobal ? '基础角色' : '团队自定义', type: props.roleData?.isGlobal ? 'info' as const : 'success' as const },
+    {
+      label: '类型',
+      value: props.roleData?.isGlobal ? '基础角色' : '协作空间自定义',
+      type: props.roleData?.isGlobal ? ('info' as const) : ('success' as const)
+    },
     { label: '角色功能包', value: featurePackages.value.length, type: 'warning' as const },
-    { label: '继承模式', value: inherited.value ? '继承团队功能包' : '角色独立功能包', type: 'primary' as const },
+    {
+      label: '继承模式',
+      value: inherited.value ? '继承协作空间功能包' : '角色独立功能包',
+      type: 'primary' as const
+    },
     { label: '功能包展开', value: candidateActionCount.value, type: 'warning' as const },
     { label: '可裁剪', value: actions.value.length, type: 'success' as const },
     { label: '已保留', value: selectedIds.value.length, type: 'success' as const },
-      { label: '已关闭', value: blockedCount.value, type: 'danger' as const }
+    { label: '已关闭', value: blockedCount.value, type: 'danger' as const }
   ])
 
   watch(
@@ -143,7 +165,7 @@
         inherited.value = Boolean(packagesRes?.inherited)
         candidateActionCount.value = selected?.available_action_ids?.length || 0
       } catch (error: any) {
-        ElMessage.error(error?.message || '加载团队角色权限裁剪失败')
+        ElMessage.error(error?.message || '加载协作空间角色权限裁剪失败')
       } finally {
         loading.value = false
       }
@@ -164,11 +186,11 @@
         selectedIds.value,
         currentAppKey.value
       )
-      ElMessage.success('团队角色权限裁剪已保存')
+      ElMessage.success('协作空间角色权限裁剪已保存')
       emit('success')
       visible.value = false
     } catch (error: any) {
-      ElMessage.error(error?.message || '保存团队角色权限裁剪失败')
+      ElMessage.error(error?.message || '保存协作空间角色权限裁剪失败')
     } finally {
       saving.value = false
     }

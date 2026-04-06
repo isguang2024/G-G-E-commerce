@@ -16,6 +16,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
+	"github.com/gg-ecommerce/backend/internal/pkg/workspacefeaturebinding"
 )
 
 var (
@@ -127,9 +128,9 @@ type permissionService struct {
 	apiEndpointRepo        user.APIEndpointRepository
 	apiEndpointBindingRepo user.APIEndpointPermissionBindingRepository
 	packageKeyRepo         user.FeaturePackageKeyRepository
-	teamPackageRepo        user.TeamFeaturePackageRepository
+	teamPackageRepo        user.CollaborationWorkspaceFeaturePackageRepository
 	roleDisabledActionRepo user.RoleDisabledActionRepository
-	teamBlockedActionRepo  user.TeamBlockedActionRepository
+	teamBlockedActionRepo  user.CollaborationWorkspaceBlockedActionRepository
 	userActionRepo         user.UserActionPermissionRepository
 	boundaryService        teamboundary.Service
 	refresher              permissionrefresh.Service
@@ -142,9 +143,9 @@ func NewPermissionService(
 	apiEndpointRepo user.APIEndpointRepository,
 	apiEndpointBindingRepo user.APIEndpointPermissionBindingRepository,
 	packageKeyRepo user.FeaturePackageKeyRepository,
-	teamPackageRepo user.TeamFeaturePackageRepository,
+	teamPackageRepo user.CollaborationWorkspaceFeaturePackageRepository,
 	roleDisabledActionRepo user.RoleDisabledActionRepository,
-	teamBlockedActionRepo user.TeamBlockedActionRepository,
+	teamBlockedActionRepo user.CollaborationWorkspaceBlockedActionRepository,
 	userActionRepo user.UserActionPermissionRepository,
 	boundaryService teamboundary.Service,
 	refresher permissionrefresh.Service,
@@ -262,14 +263,14 @@ func (s *permissionService) GetConsumerDetails(id uuid.UUID) (*PermissionConsume
 		}
 
 		type roleRow struct {
-			ID       uuid.UUID
-			Code     string
-			Name     string
-			TenantID *uuid.UUID
+			ID                       uuid.UUID
+			Code                     string
+			Name                     string
+			CollaborationWorkspaceID *uuid.UUID
 		}
 		var roleRows []roleRow
 		if err := s.db.Model(&user.RoleFeaturePackage{}).
-			Select("roles.id", "roles.code", "roles.name", "roles.tenant_id").
+			Select("roles.id", "roles.code", "roles.name", "roles.collaboration_workspace_id").
 			Joins("JOIN roles ON roles.id = role_feature_packages.role_id").
 			Where("role_feature_packages.package_id IN ? AND role_feature_packages.enabled = ?", packageIDs, true).
 			Where("roles.deleted_at IS NULL").
@@ -279,7 +280,7 @@ func (s *permissionService) GetConsumerDetails(id uuid.UUID) (*PermissionConsume
 		}
 		for _, role := range roleRows {
 			contextType := "platform"
-			if role.TenantID != nil {
+			if role.CollaborationWorkspaceID != nil {
 				contextType = "team"
 			}
 			details.Roles = append(details.Roles, PermissionConsumerRoleItem{
@@ -322,12 +323,24 @@ func (s *permissionService) GetImpactPreview(id uuid.UUID) (*PermissionImpactPre
 		if err := s.db.Model(&user.RoleFeaturePackage{}).Where("package_id IN ? AND enabled = ?", packageIDs, true).Distinct("role_id").Count(&result.RoleCount).Error; err != nil {
 			return nil, err
 		}
-		if err := s.db.Model(&user.TeamFeaturePackage{}).Where("package_id IN ? AND enabled = ?", packageIDs, true).Distinct("team_id").Count(&result.TeamCount).Error; err != nil {
+		workspaceCollaborationWorkspaceIDs, err := workspacefeaturebinding.ListCollaborationWorkspaceIDsByPackageIDs(s.db, packageIDs, "")
+		if err != nil {
 			return nil, err
 		}
-		if err := s.db.Model(&user.UserFeaturePackage{}).Where("package_id IN ? AND enabled = ?", packageIDs, true).Distinct("user_id").Count(&result.UserCount).Error; err != nil {
+		var legacyCollaborationWorkspaceIDs []uuid.UUID
+		if err := s.db.Model(&user.CollaborationWorkspaceFeaturePackage{}).Where("package_id IN ? AND enabled = ?", packageIDs, true).Distinct("collaboration_workspace_id").Pluck("collaboration_workspace_id", &legacyCollaborationWorkspaceIDs).Error; err != nil {
 			return nil, err
 		}
+		result.TeamCount = int64(len(mergeUUIDs(workspaceCollaborationWorkspaceIDs, legacyCollaborationWorkspaceIDs)))
+		workspaceUserIDs, err := workspacefeaturebinding.ListPlatformUserIDsByPackageIDs(s.db, packageIDs, "")
+		if err != nil {
+			return nil, err
+		}
+		var legacyUserIDs []uuid.UUID
+		if err := s.db.Model(&user.UserFeaturePackage{}).Where("package_id IN ? AND enabled = ?", packageIDs, true).Distinct("user_id").Pluck("user_id", &legacyUserIDs).Error; err != nil {
+			return nil, err
+		}
+		result.UserCount = int64(len(mergeUUIDs(workspaceUserIDs, legacyUserIDs)))
 	}
 	return result, nil
 }
@@ -957,17 +970,20 @@ func (s *permissionService) Create(req *dto.PermissionKeyCreateRequest) (*user.P
 		return nil, err
 	}
 	item := &user.PermissionKey{
-		PermissionKey:  permissionKey,
-		ModuleCode:     moduleCode,
-		ModuleGroupID:  &moduleGroup.ID,
-		FeatureGroupID: &featureGroup.ID,
-		ContextType:    contextType,
-		FeatureKind:    featureKind,
-		Name:           strings.TrimSpace(req.Name),
-		Description:    strings.TrimSpace(req.Description),
-		Status:         status,
-		SortOrder:      req.SortOrder,
-		IsBuiltin:      false,
+		PermissionKey:         permissionKey,
+		AppKey:                derivePermissionAppKey(permissionKey, moduleCode, contextType),
+		ModuleCode:            moduleCode,
+		ModuleGroupID:         &moduleGroup.ID,
+		FeatureGroupID:        &featureGroup.ID,
+		ContextType:           contextType,
+		FeatureKind:           featureKind,
+		DataPolicy:            derivePermissionDataPolicy(permissionKey, moduleCode, contextType),
+		AllowedWorkspaceTypes: deriveAllowedWorkspaceTypes(contextType),
+		Name:                  strings.TrimSpace(req.Name),
+		Description:           strings.TrimSpace(req.Description),
+		Status:                status,
+		SortOrder:             req.SortOrder,
+		IsBuiltin:             false,
 	}
 	if err := s.keyRepo.Create(item); err != nil {
 		return nil, err
@@ -1037,6 +1053,9 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionKeyUpdateReq
 	if err := validatePermissionContext(targetPermissionKey, targetModuleCode, targetContextType); err != nil {
 		return err
 	}
+	updates["app_key"] = derivePermissionAppKey(targetPermissionKey, targetModuleCode, targetContextType)
+	updates["data_policy"] = derivePermissionDataPolicy(targetPermissionKey, targetModuleCode, targetContextType)
+	updates["allowed_workspace_types"] = deriveAllowedWorkspaceTypes(targetContextType)
 	if targetPermissionKey != current.PermissionKey {
 		existing, getErr := s.keyRepo.GetByPermissionKey(targetPermissionKey)
 		if getErr == nil && existing != nil && existing.ID != id {
@@ -1170,14 +1189,67 @@ func normalizeContextType(value, fallback string) string {
 	}
 }
 
+func derivePermissionAppKey(permissionKey, moduleCode, contextType string) string {
+	targetKey := canonicalPermissionKey(permissionKey)
+	if targetKey != "" {
+		segments := strings.Split(targetKey, ".")
+		if len(segments) > 0 {
+			switch segments[0] {
+			case "system", "platform", "tenant", "team", "common":
+				return models.DefaultAppKey
+			default:
+				if strings.TrimSpace(segments[0]) != "" {
+					return strings.TrimSpace(segments[0])
+				}
+			}
+		}
+	}
+
+	switch strings.TrimSpace(moduleCode) {
+	case "", "role", "user", "tenant", "menu", "menu_backup", "permission_action", "permission_key", "api_endpoint", "feature_package", "workspace", "navigation", "page", "app":
+		return models.DefaultAppKey
+	default:
+		return strings.TrimSpace(moduleCode)
+	}
+}
+
+func derivePermissionDataPolicy(permissionKey, moduleCode, contextType string) string {
+	targetKey := canonicalPermissionKey(permissionKey)
+	switch normalizeContextType(contextType, deriveContextType(targetKey, moduleCodeFromPermissionKey(targetKey, moduleCode))) {
+	case "team", "common":
+		return "auth_workspace"
+	default:
+		return "none"
+	}
+}
+
+func deriveAllowedWorkspaceTypes(contextType string) string {
+	switch normalizeContextType(contextType, "team") {
+	case "platform":
+		return "personal"
+	case "common":
+		return "personal,team"
+	default:
+		return "team"
+	}
+}
+
+func moduleCodeFromPermissionKey(permissionKey, fallback string) string {
+	if strings.TrimSpace(fallback) != "" {
+		return strings.TrimSpace(fallback)
+	}
+	mapping := permissionkey.FromKey(permissionKey)
+	return strings.TrimSpace(mapping.ResourceCode)
+}
+
 func deriveContextType(permissionKey, moduleCode string) string {
 	targetKey := strings.TrimSpace(permissionKey)
 	targetModule := strings.TrimSpace(moduleCode)
 	switch {
 	case strings.HasPrefix(targetKey, "system."),
-		strings.HasPrefix(targetKey, "tenant."),
+		strings.HasPrefix(targetKey, "collaboration_workspace."),
 		strings.HasPrefix(targetKey, "platform."),
-		targetKey == "tenant.manage":
+		targetKey == "collaboration_workspace.manage":
 		return "platform"
 	case strings.HasPrefix(targetKey, "team."):
 		return "team"
@@ -1215,15 +1287,15 @@ func validatePermissionContext(permissionKey, moduleCode, contextType string) er
 	switch targetContext {
 	case "platform":
 		if !hasPlatformPermissionNamespace(targetKey) && deriveModuleContextBoundary(targetModule) == "" {
-			return fmt.Errorf("%w: 平台自定义权限键请使用 system.、platform. 或 tenant. 前缀，或归入平台模块分组", ErrPermissionContextInvalid)
+			return fmt.Errorf("%w: 平台自定义权限键请使用 system.、platform. 或 collaboration_workspace. 前缀，或归入平台模块分组", ErrPermissionContextInvalid)
 		}
 	case "team":
 		if !hasTeamPermissionNamespace(targetKey) && deriveModuleContextBoundary(targetModule) == "" {
-			return fmt.Errorf("%w: 团队自定义权限键请使用 team. 前缀，或归入团队模块分组", ErrPermissionContextInvalid)
+			return fmt.Errorf("%w: 协作空间自定义权限键请使用 team. 前缀，或归入协作空间模块分组", ErrPermissionContextInvalid)
 		}
 	case "common":
 		if deriveReservedContextType(targetKey) != "" || deriveModuleContextBoundary(targetModule) != "" {
-			return fmt.Errorf("%w: 平台/团队专属权限键不能标记为 common", ErrPermissionContextInvalid)
+			return fmt.Errorf("%w: 平台/协作空间专属权限键不能标记为 common", ErrPermissionContextInvalid)
 		}
 	}
 
@@ -1259,7 +1331,7 @@ func hasPlatformPermissionNamespace(permissionKey string) bool {
 	targetKey := canonicalPermissionKey(permissionKey)
 	return strings.HasPrefix(targetKey, "system.") ||
 		strings.HasPrefix(targetKey, "platform.") ||
-		strings.HasPrefix(targetKey, "tenant.")
+		strings.HasPrefix(targetKey, "collaboration_workspace.")
 }
 
 func hasTeamPermissionNamespace(permissionKey string) bool {
@@ -1271,10 +1343,10 @@ func deriveModuleContextBoundary(moduleCode string) string {
 	targetModule := strings.TrimSpace(moduleCode)
 	switch targetModule {
 	case "role", "permission_key", "user", "menu", "menu_backup", "system", "tenant",
-		"tenant_member_admin", "api_endpoint", "page", "fast_enter", "message",
+		"collaboration_workspace_member_admin", "api_endpoint", "page", "fast_enter", "message",
 		"feature_package", "system_permission", "menu_space", "navigation":
 		return "platform"
-	case "team_member", "team", "team_message":
+	case "team_member", "team", "collaboration_workspace_message":
 		return "team"
 	default:
 		return ""
@@ -1305,11 +1377,11 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 	}
 	affectedTeams := make(map[uuid.UUID]struct{})
 	for _, packageID := range packageIDs {
-		teamIDs, teamErr := s.teamPackageRepo.GetTeamIDsByPackageID(packageID)
+		collaborationWorkspaceIDs, teamErr := s.teamPackageRepo.GetCollaborationWorkspaceIDsByPackageID(packageID)
 		if teamErr != nil {
 			return teamErr
 		}
-		for _, teamID := range teamIDs {
+		for _, teamID := range collaborationWorkspaceIDs {
 			affectedTeams[teamID] = struct{}{}
 		}
 	}
@@ -1363,11 +1435,11 @@ func (s *permissionService) refreshByPermissionKeyID(keyID uuid.UUID) error {
 	}
 	affectedTeams := make(map[uuid.UUID]struct{})
 	for _, packageID := range packageIDs {
-		teamIDs, teamErr := s.teamPackageRepo.GetTeamIDsByPackageID(packageID)
+		collaborationWorkspaceIDs, teamErr := s.teamPackageRepo.GetCollaborationWorkspaceIDsByPackageID(packageID)
 		if teamErr != nil {
 			return teamErr
 		}
-		for _, teamID := range teamIDs {
+		for _, teamID := range collaborationWorkspaceIDs {
 			affectedTeams[teamID] = struct{}{}
 		}
 	}
@@ -1400,4 +1472,22 @@ func (s *permissionService) recordRiskAudit(
 		RequestID:     strings.TrimSpace(requestID),
 	}
 	return s.db.Create(item).Error
+}
+
+func mergeUUIDs(groups ...[]uuid.UUID) []uuid.UUID {
+	result := make([]uuid.UUID, 0)
+	seen := make(map[uuid.UUID]struct{})
+	for _, group := range groups {
+		for _, id := range group {
+			if id == uuid.Nil {
+				continue
+			}
+			if _, ok := seen[id]; ok {
+				continue
+			}
+			seen[id] = struct{}{}
+			result = append(result, id)
+		}
+	}
+	return result
 }

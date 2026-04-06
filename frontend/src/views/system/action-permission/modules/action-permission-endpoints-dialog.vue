@@ -5,7 +5,8 @@
     size="1080px"
     destroy-on-close
     direction="rtl"
-    class="config-drawer">
+    class="config-drawer"
+  >
     <div class="toolbar">
       <ElSelect
         v-model="selectedEndpointCode"
@@ -26,14 +27,17 @@
           :value="item.code"
         >
           <div class="candidate-option">
-            <span class="candidate-option-spec">{{ item.spec || `${item.method} ${item.path}` }}</span>
+            <span class="candidate-option-spec">{{
+              item.spec || `${item.method} ${item.path}`
+            }}</span>
             <span v-if="item.summary" class="candidate-option-summary">{{ item.summary }}</span>
           </div>
         </ElOption>
         <template #footer>
           <div class="candidate-dropdown-footer">
             <span class="candidate-pagination-text">
-              共 {{ candidateTotal }} 条，可选第 {{ candidateCurrent }} / {{ candidatePageCount }} 页
+              共 {{ candidateTotal }} 条，可选第 {{ candidateCurrent }} /
+              {{ candidatePageCount }} 页
             </span>
             <ElButton text :disabled="candidateCurrent <= 1" @click="changeCandidatePage(-1)">
               上一页
@@ -237,7 +241,9 @@
       })
       const linked = new Set((data.value || []).map((item) => item.code))
       candidateTotal.value = res.total || 0
-      candidateEndpoints.value = (res.records || []).filter((item) => item.code && !linked.has(item.code))
+      candidateEndpoints.value = (res.records || []).filter(
+        (item) => item.code && !linked.has(item.code)
+      )
       candidateLastLoadedKey.value = requestKey
     } catch (error: any) {
       ElMessage.error(error?.message || '加载可关联接口失败')
@@ -293,11 +299,15 @@
       ElMessage.warning('当前接口缺少固定编码，请先重建 API 注册表')
       return
     }
-    ElMessageBox.confirm(`确定移除接口「${row.spec || `${row.method} ${row.path}`}」吗？`, '移除确认', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
+    ElMessageBox.confirm(
+      `确定移除接口「${row.spec || `${row.method} ${row.path}`}」吗？`,
+      '移除确认',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
       .then(() => fetchDeletePermissionActionEndpoint(props.permissionId, row.code))
       .then(async () => {
         ElMessage.success('移除成功')
@@ -368,4 +378,3 @@
     }
   }
 </style>
-

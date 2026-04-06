@@ -1,7 +1,12 @@
 <template>
   <span class="page-field-label">
     <span>{{ label }}</span>
-    <ElTooltip :content="help" placement="top" :show-after="120" popper-class="page-field-label-tooltip">
+    <ElTooltip
+      :content="help"
+      placement="top"
+      :show-after="120"
+      popper-class="page-field-label-tooltip"
+    >
       <span class="page-field-label-icon">
         <ElIcon><QuestionFilled /></ElIcon>
       </span>

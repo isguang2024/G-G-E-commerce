@@ -12,7 +12,9 @@
       <div class="dialog-intro">
         <div class="dialog-intro__main">
           <div class="dialog-intro__title">普通分组配置说明</div>
-          <div class="dialog-intro__desc">普通分组只用于页面管理列表归类，不参与路径、权限、菜单高亮和面包屑继承。</div>
+          <div class="dialog-intro__desc"
+            >普通分组只用于页面管理列表归类，不参与路径、权限、菜单高亮和面包屑继承。</div
+          >
         </div>
         <ElButton text type="primary" @click="showExamples = !showExamples">
           {{ showExamples ? '收起示例' : '查看示例' }}
@@ -31,7 +33,10 @@
           <ElCol :span="24">
             <ElFormItem label="分组名称" prop="name">
               <template #label>
-                <PageFieldLabel label="分组名称" help="给人看的普通分组名称，只显示在页面管理列表和普通分组选择器里。" />
+                <PageFieldLabel
+                  label="分组名称"
+                  help="给人看的普通分组名称，只显示在页面管理列表和普通分组选择器里。"
+                />
               </template>
               <ElInput v-model="form.name" placeholder="请输入普通分组名称" />
             </ElFormItem>
@@ -54,13 +59,13 @@
             </ElFormItem>
           </ElCol>
           <ElCol v-if="form.visibilityScope === 'spaces'" :span="12">
-        <ElFormItem label="开放空间" prop="spaceKeys">
-          <template #label>
-            <PageFieldLabel
-              label="开放空间"
-              help="只控制这个普通分组在哪些菜单空间里可见，不改变普通分组本身的定义。"
-            />
-          </template>
+            <ElFormItem label="开放空间" prop="spaceKeys">
+              <template #label>
+                <PageFieldLabel
+                  label="开放空间"
+                  help="只控制这个普通分组在哪些菜单空间里可见，不改变普通分组本身的定义。"
+                />
+              </template>
               <ElSelect
                 v-model="form.spaceKeys"
                 multiple
@@ -85,7 +90,10 @@
           <ElCol :span="12">
             <ElFormItem label="排序" prop="sortOrder">
               <template #label>
-                <PageFieldLabel label="排序" help="普通分组在页面列表里的展示顺序，数字越小越靠前。" />
+                <PageFieldLabel
+                  label="排序"
+                  help="普通分组在页面列表里的展示顺序，数字越小越靠前。"
+                />
               </template>
               <ElInputNumber v-model="form.sortOrder" :min="0" :step="1" style="width: 100%" />
             </ElFormItem>
@@ -93,7 +101,10 @@
           <ElCol :span="12">
             <ElFormItem label="状态" prop="status">
               <template #label>
-                <PageFieldLabel label="状态" help="停用后普通分组保留数据，但不会再作为页面管理列表里的有效归类节点。" />
+                <PageFieldLabel
+                  label="状态"
+                  help="停用后普通分组保留数据，但不会再作为页面管理列表里的有效归类节点。"
+                />
               </template>
               <div class="inline-flex items-center gap-2">
                 <ElSwitch v-model="form.status" active-value="normal" inactive-value="suspended" />
@@ -196,9 +207,7 @@
 
   function initForm() {
     if (props.dialogType === 'edit' && props.pageData) {
-      const spaceKeys = Array.isArray(props.pageData.spaceKeys)
-        ? props.pageData.spaceKeys
-        : []
+      const spaceKeys = Array.isArray(props.pageData.spaceKeys) ? props.pageData.spaceKeys : []
       Object.assign(form, {
         id: props.pageData.id || '',
         pageKey: props.pageData.pageKey || '',
@@ -307,7 +316,13 @@
       } else {
         await fetchCreatePage(payload)
       }
-      ElMessage.success(props.dialogType === 'edit' ? '修改成功' : props.dialogType === 'copy' ? '复制成功' : '新增成功')
+      ElMessage.success(
+        props.dialogType === 'edit'
+          ? '修改成功'
+          : props.dialogType === 'copy'
+            ? '复制成功'
+            : '新增成功'
+      )
       emit('success')
       handleClose()
     } catch (error: any) {
@@ -320,7 +335,11 @@
 
 <style scoped lang="scss">
   .dialog-intro {
-    background: linear-gradient(180deg, var(--el-fill-color-light) 0%, color-mix(in srgb, var(--el-fill-color-light) 72%, white) 100%);
+    background: linear-gradient(
+      180deg,
+      var(--el-fill-color-light) 0%,
+      color-mix(in srgb, var(--el-fill-color-light) 72%, white) 100%
+    );
     border: 1px solid var(--el-border-color-lighter);
     border-radius: 14px;
     margin-bottom: 18px;
@@ -391,4 +410,3 @@
     padding: 14px 20px 18px;
   }
 </style>
-

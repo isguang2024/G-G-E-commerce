@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 用户状态管理模块
  *
  * 提供用户相关的状态管理
@@ -187,7 +187,7 @@ export const useUserStore = defineStore(
       sessionStorage.removeItem('iframeRoutes')
       // 清空主页路径
       useMenuStore().setHomePath('')
-      // 清空当前团队上下文
+      // 清空当前协作空间上下文
       useTenantStore().clearTenantContext()
       // 重置路由状态
       resetRouterState(500)
@@ -257,3 +257,4 @@ export const useUserStore = defineStore(
     }
   }
 )
+

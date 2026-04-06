@@ -20,7 +20,7 @@ const routes = [
   { key: 'system_message', path: '/system/message' },
   { key: 'team_team', path: '/team/team' },
   { key: 'team_roles_permissions', path: '/system/team-roles-permissions' },
-  { key: 'team_message', path: '/team/message' }
+  { key: 'collaboration_workspace_message', path: '/team/message' }
 ];
 
 async function login() {
@@ -165,3 +165,4 @@ async function login() {
 
   await context.close();
 })();
+

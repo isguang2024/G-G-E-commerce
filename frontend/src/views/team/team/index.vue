@@ -9,7 +9,11 @@
         @reset="handleResetSearch"
       />
 
-      <AdminWorkspaceHero :title="'团队管理'" :description="'统一管理团队边界、管理员与授权入口。'" :metrics="heroMetrics">
+      <AdminWorkspaceHero
+        :title="'协作空间管理'"
+        :description="'统一管理协作空间边界、管理员与授权入口。'"
+        :metrics="heroMetrics"
+      >
         <div class="team-hero-actions">
           <ElSelect
             v-model="selectedAppKey"
@@ -26,8 +30,13 @@
               :value="item.value"
             />
           </ElSelect>
-          <ElButton v-action="'tenant.manage'" type="primary" @click="showDialog('add')" v-ripple>
-            新增团队
+          <ElButton
+            v-action="'collaboration_workspace.manage'"
+            type="primary"
+            @click="showDialog('add')"
+            v-ripple
+          >
+            新增协作空间
           </ElButton>
         </div>
       </AdminWorkspaceHero>
@@ -41,7 +50,9 @@
         @refresh="refreshData"
       >
         <template #left>
-          <div class="team-toolbar-tip">团队管理同步菜单与成员边界，建议优先从主账号确认管理员后再开通功能包。</div>
+          <div class="team-toolbar-tip"
+            >协作空间管理同步菜单与成员边界，建议优先从主账号确认管理员后再开通功能包。</div
+          >
         </template>
       </ArtTableHeader>
 
@@ -61,16 +72,16 @@
         @submit="handleDialogSubmit"
       />
 
-      <TeamMembersDrawer
+      <CollaborationWorkspaceMembersDrawer
         v-model:visible="membersDrawerVisible"
-        :team-id="currentTeamId"
+        :collaboration-workspace-id="currentCollaborationWorkspaceId"
         :team-name="currentTeamName"
         @refresh="refreshData"
       />
 
       <TeamActionPermissionDialog
         v-model="actionDialogVisible"
-        :team-id="currentTeamId"
+        :collaboration-workspace-id="currentCollaborationWorkspaceId"
         :team-name="currentTeamName"
         :app-key="targetAppKey"
         @success="refreshData"
@@ -78,15 +89,15 @@
 
       <TeamMenuPermissionDialog
         v-model="menuDialogVisible"
-        :team-id="currentTeamId"
+        :collaboration-workspace-id="currentCollaborationWorkspaceId"
         :team-name="currentTeamName"
         :app-key="targetAppKey"
         @success="refreshData"
       />
 
-      <TeamFeaturePackageDialog
+      <CollaborationWorkspaceFeaturePackageDialog
         v-model="packageDialogVisible"
-        :team-id="currentTeamId"
+        :collaboration-workspace-id="currentCollaborationWorkspaceId"
         :team-name="currentTeamName"
         :app-key="targetAppKey"
         @success="refreshData"
@@ -105,10 +116,10 @@
   import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
   import TeamSearch from './modules/team-search.vue'
   import TeamDialog from './modules/team-dialog.vue'
-  import TeamMembersDrawer from './modules/team-members-drawer.vue'
+  import CollaborationWorkspaceMembersDrawer from './modules/team-members-drawer.vue'
   import TeamActionPermissionDialog from './modules/team-permission-dialog.vue'
   import TeamMenuPermissionDialog from './modules/team-menu-permission-dialog.vue'
-  import TeamFeaturePackageDialog from './modules/team-feature-package-dialog.vue'
+  import CollaborationWorkspaceFeaturePackageDialog from './modules/team-feature-package-dialog.vue'
   import {
     ElTag,
     ElMessageBox,
@@ -137,7 +148,7 @@
   const actionDialogVisible = ref(false)
   const menuDialogVisible = ref(false)
   const packageDialogVisible = ref(false)
-  const currentTeamId = ref('')
+  const currentCollaborationWorkspaceId = ref('')
   const currentTeamName = ref('')
 
   const searchForm = ref({
@@ -155,19 +166,20 @@
 
   const heroMetrics = computed(() => [
     { label: '当前 App', value: targetAppKey.value },
-    { label: '团队总数', value: data.value.length },
+    { label: '协作空间总数', value: data.value.length },
     {
-      label: '活跃团队',
+      label: '活跃协作空间',
       value: data.value.filter((item) => item.status === 'active').length
     },
     {
-      label: '停用团队',
+      label: '停用协作空间',
       value: data.value.filter((item) => item.status === 'inactive').length
     },
     {
       label: '管理员覆盖',
       value: data.value.reduce(
-        (total, item) => total + (((item as any).adminUsers || (item as any).admin_users || []).length || 0),
+        (total, item) =>
+          total + (((item as any).adminUsers || (item as any).admin_users || []).length || 0),
         0
       )
     }
@@ -212,8 +224,8 @@
       },
       columnsFactory: () => [
         { type: 'index', width: 60, label: '序号' },
-        { prop: 'name', label: '团队名称', minWidth: 140 },
-        { prop: 'remark', label: '团队备注', width: 140 },
+        { prop: 'name', label: '协作空间名称', minWidth: 140 },
+        { prop: 'remark', label: '协作空间备注', width: 140 },
         {
           prop: 'adminUsers',
           label: '管理员',
@@ -265,28 +277,28 @@
                 default: () => h(ElButton, { icon: MoreFilled, circle: true, size: 'small' }),
                 dropdown: () =>
                   h(ElDropdownMenu, {}, () => [
-                    hasAction('tenant.manage')
+                    hasAction('collaboration_workspace.manage')
                       ? h(ElDropdownItem, { command: 'edit' }, () => [
                           h(ElIcon, {}, () => h(Edit)),
                           '编辑'
                         ])
                       : null,
-                    hasAction('tenant.manage')
+                    hasAction('collaboration_workspace.manage')
                       ? h(ElDropdownItem, { command: 'view' }, () => [
                           h(ElIcon, {}, () => h(UserFilled)),
                           '查看人员'
                         ])
                       : null,
-                    hasAction('tenant.manage')
+                    hasAction('collaboration_workspace.manage')
                       ? h(ElDropdownItem, { command: 'menu' }, () => [
                           h(ElIcon, {}, () => h(UserFilled)),
                           '菜单边界'
                         ])
                       : null,
-                    hasAction('tenant.manage')
+                    hasAction('collaboration_workspace.manage')
                       ? h(ElDropdownItem, { command: 'action' }, () => [
                           h(ElIcon, {}, () => h(UserFilled)),
-                          '团队边界'
+                          '协作空间边界'
                         ])
                       : null,
                     hasAction('platform.package.assign')
@@ -295,7 +307,7 @@
                           '开通功能包'
                         ])
                       : null,
-                    hasAction('tenant.manage')
+                    hasAction('collaboration_workspace.manage')
                       ? h(ElDropdownItem, { command: 'delete' }, () => [
                           h(ElIcon, {}, () => h(Delete)),
                           '删除'
@@ -330,7 +342,11 @@
 
   const handleResetSearch = () => {
     resetSearchParams()
-    Object.assign(searchParams, { current: 1, size: pagination.size, appKey: targetAppKey.value || '' })
+    Object.assign(searchParams, {
+      current: 1,
+      size: pagination.size,
+      appKey: targetAppKey.value || ''
+    })
     getData()
   }
 
@@ -359,31 +375,31 @@
   }
 
   const showMembers = (row: TeamListItem) => {
-    currentTeamId.value = row.id
+    currentCollaborationWorkspaceId.value = row.id
     currentTeamName.value = row.name
     membersDrawerVisible.value = true
   }
 
   const showActionPermissions = (row: TeamListItem) => {
-    currentTeamId.value = row.id
+    currentCollaborationWorkspaceId.value = row.id
     currentTeamName.value = row.name
     actionDialogVisible.value = true
   }
 
   const showMenuPermissions = (row: TeamListItem) => {
-    currentTeamId.value = row.id
+    currentCollaborationWorkspaceId.value = row.id
     currentTeamName.value = row.name
     menuDialogVisible.value = true
   }
 
   const showFeaturePackages = (row: TeamListItem) => {
-    currentTeamId.value = row.id
+    currentCollaborationWorkspaceId.value = row.id
     currentTeamName.value = row.name
     packageDialogVisible.value = true
   }
 
   const deleteTeam = (row: TeamListItem) => {
-    ElMessageBox.confirm(`确定要删除团队「${row.name}」吗？`, '删除团队', {
+    ElMessageBox.confirm(`确定要删除协作空间「${row.name}」吗？`, '删除协作空间', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
@@ -459,4 +475,3 @@
     width: 240px;
   }
 </style>
-

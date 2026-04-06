@@ -54,8 +54,14 @@
             </div>
             <div class="message-template-card__tags">
               <ElTag size="small" effect="plain">{{ resolveScopeLabel(item) }}</ElTag>
-              <ElTag size="small" effect="plain">{{ resolveMessageTypeLabel(item.message_type) }}</ElTag>
-              <ElTag size="small" :type="item.status === 'disabled' ? 'info' : 'success'" effect="plain">
+              <ElTag size="small" effect="plain">{{
+                resolveMessageTypeLabel(item.message_type)
+              }}</ElTag>
+              <ElTag
+                size="small"
+                :type="item.status === 'disabled' ? 'info' : 'success'"
+                effect="plain"
+              >
                 {{ item.status === 'disabled' ? '停用' : '正常' }}
               </ElTag>
             </div>
@@ -70,8 +76,13 @@
           </div>
 
           <div class="message-template-card__preview">
-            <div class="message-template-card__preview-title">{{ item.title_template || '未填写标题模板' }}</div>
-            <div class="message-template-card__preview-text">{{ plainTextFromHtml(item.summary_template || item.content_template) || '未填写摘要或正文模板' }}</div>
+            <div class="message-template-card__preview-title">{{
+              item.title_template || '未填写标题模板'
+            }}</div>
+            <div class="message-template-card__preview-text">{{
+              plainTextFromHtml(item.summary_template || item.content_template) ||
+              '未填写摘要或正文模板'
+            }}</div>
           </div>
         </button>
 
@@ -99,7 +110,9 @@
       <template v-if="drawerModel">
         <div class="message-template-drawer__summary">
           <div>
-            <div class="message-template-drawer__summary-title">{{ drawerModel.name || '未命名模板' }}</div>
+            <div class="message-template-drawer__summary-title">{{
+              drawerModel.name || '未命名模板'
+            }}</div>
             <div class="message-template-drawer__summary-text">
               {{ drawerReadOnly ? '当前模板为继承只读模板，只能查看不能修改。' : drawerScopeText }}
             </div>
@@ -115,18 +128,32 @@
             </div>
 
             <ElFormItem label="模板名称">
-              <ElInput v-model="drawerModel.name" :disabled="drawerReadOnly" placeholder="例如：平台公告模板" />
+              <ElInput
+                v-model="drawerModel.name"
+                :disabled="drawerReadOnly"
+                placeholder="例如：平台公告模板"
+              />
             </ElFormItem>
 
             <ElFormItem label="模板标识">
-              <ElInput v-model="drawerModel.template_key" :disabled="drawerReadOnly" placeholder="例如：announcement-default" />
-              <div class="field-hint">保存时会按作用域自动补平台或团队前缀，不需要手动写完整前缀。</div>
+              <ElInput
+                v-model="drawerModel.template_key"
+                :disabled="drawerReadOnly"
+                placeholder="例如：announcement-default"
+              />
+              <div class="field-hint"
+                >保存时会按作用域自动补平台或协作空间前缀，不需要手动写完整前缀。</div
+              >
             </ElFormItem>
 
             <div class="message-template-drawer__grid">
               <ElFormItem label="消息类型">
                 <ElRadioGroup v-model="drawerModel.message_type" :disabled="drawerReadOnly">
-                  <ElRadioButton v-for="item in messageTypeOptions" :key="item.value" :value="item.value">
+                  <ElRadioButton
+                    v-for="item in messageTypeOptions"
+                    :key="item.value"
+                    :value="item.value"
+                  >
                     {{ item.label }}
                   </ElRadioButton>
                 </ElRadioGroup>
@@ -183,7 +210,9 @@
                 resize="vertical"
                 placeholder="顶部消息面板和列表摘要优先展示这里，建议一句话说清重点。"
               />
-              <div class="field-hint">摘要只保留纯文本，更适合消息中心列表、副标题和顶部预览展示。</div>
+              <div class="field-hint"
+                >摘要只保留纯文本，更适合消息中心列表、副标题和顶部预览展示。</div
+              >
             </ElFormItem>
 
             <ElFormItem label="正文模板">
@@ -208,7 +237,9 @@
       <template #footer>
         <div class="message-template-drawer__footer">
           <ElButton @click="drawerVisible = false">关闭</ElButton>
-          <ElButton v-if="!drawerReadOnly" type="primary" :loading="saving" @click="saveTemplate">保存模板</ElButton>
+          <ElButton v-if="!drawerReadOnly" type="primary" :loading="saving" @click="saveTemplate"
+            >保存模板</ElButton
+          >
         </div>
       </template>
     </ElDrawer>
@@ -265,33 +296,48 @@
 
   const drawerModel = ref<TemplateDrawerModel | null>(null)
 
-  const { isTeamScope, skipTenantHeader, currentTeamName, ensureTeamContext, plainTextFromHtml, formatTime } =
-    useMessageWorkspace(props.scope)
+  const {
+    isTeamScope,
+    skipTenantHeader,
+    currentTeamName,
+    currentWorkspaceName,
+    currentWorkspaceLabel,
+    ensureTeamContext,
+    plainTextFromHtml,
+    formatTime
+  } = useMessageWorkspace(props.scope)
 
-  const pageTitle = computed(() => (isTeamScope.value ? '团队消息模板' : '消息模板'))
+  const pageTitle = computed(() => (isTeamScope.value ? '协作空间消息模板' : '消息模板'))
   const pageDescription = computed(() =>
     isTeamScope.value
-      ? '查看平台模板并维护当前团队可复用的消息模板，发送页会直接复用这里的标题、摘要和正文。'
+      ? '查看平台模板并维护当前协作空间可复用的消息模板，发送页会直接复用这里的标题、摘要和正文。'
       : '统一维护平台消息模板，供平台发信页复用；标题、摘要和正文都在模板层准备好。'
   )
   const toolbarDescription = computed(() =>
     isTeamScope.value
-      ? `平台模板会以只读方式展示；当前团队 ${currentTeamName.value} 可维护自己的团队模板。`
+      ? `平台模板会以只读方式展示；当前 ${currentWorkspaceLabel.value} 下的协作空间视图 ${currentTeamName.value} 可维护自己的协作空间模板。`
       : '平台模板会直接出现在平台消息发送页中，建议用少量稳定模板覆盖高频场景。'
   )
   const heroMetrics = computed(() => [
     { label: '模板总数', value: pagination.total },
-    { label: isTeamScope.value ? '团队模板' : '平台模板', value: list.value.filter((item) => item.owner_scope === (isTeamScope.value ? 'team' : 'platform')).length },
+    {
+      label: isTeamScope.value ? '协作空间模板' : '平台模板',
+      value: list.value.filter(
+        (item) => item.owner_scope === (isTeamScope.value ? 'team' : 'platform')
+      ).length
+    },
     { label: '可编辑', value: list.value.filter((item) => item.editable).length }
   ])
 
-  const drawerTitle = computed(() => `${drawerEditingId.value ? '编辑' : '新建'}${isTeamScope.value ? '团队' : '平台'}模板`)
+  const drawerTitle = computed(
+    () => `${drawerEditingId.value ? '编辑' : '新建'}${isTeamScope.value ? '协作空间' : '平台'}模板`
+  )
   const drawerScopeText = computed(() =>
     isTeamScope.value
-      ? `保存后该模板只属于当前团队 ${currentTeamName.value}，不会影响平台模板。`
+      ? `保存后该模板只属于 ${currentWorkspaceName.value} 下的协作空间视图 ${currentTeamName.value}，不会影响平台模板。`
       : '保存后该模板会作为平台模板供平台消息发送页统一复用。'
   )
-  const drawerScopeBadge = computed(() => (isTeamScope.value ? '团队模板' : '平台模板'))
+  const drawerScopeBadge = computed(() => (isTeamScope.value ? '协作空间模板' : '平台模板'))
 
   const messageTypeOptions = [
     { label: '通知', value: 'notice' },
@@ -301,11 +347,11 @@
 
   const availableAudienceOptions = computed(() =>
     isTeamScope.value
-      ? [{ label: '当前团队成员', value: 'tenant_users' as Api.Message.AudienceType }]
+      ? [{ label: '当前协作空间成员', value: 'tenant_users' as Api.Message.AudienceType }]
       : [
           { label: '所有用户', value: 'all_users' as Api.Message.AudienceType },
-          { label: '团队管理员', value: 'tenant_admins' as Api.Message.AudienceType },
-          { label: '指定团队成员', value: 'tenant_users' as Api.Message.AudienceType }
+          { label: '协作空间管理员', value: 'tenant_admins' as Api.Message.AudienceType },
+          { label: '指定协作空间成员', value: 'tenant_users' as Api.Message.AudienceType }
         ]
   )
 
@@ -323,7 +369,8 @@
 
   const resolveScopeLabel = (item: Api.Message.MessageTemplateItem) => {
     if (item.owner_scope === 'team') {
-      return item.owner_tenant_name ? `团队 · ${item.owner_tenant_name}` : '团队模板'
+      const teamName = item.owner_collaboration_workspace_name || item.owner_tenant_name
+      return teamName ? `协作空间 · ${teamName}` : '协作空间模板'
     }
     return '平台模板'
   }
@@ -333,8 +380,8 @@
 
   const resolveAudienceLabel = (value: Api.Message.AudienceType) => {
     if (value === 'all_users') return '所有用户'
-    if (value === 'tenant_admins') return '团队管理员'
-    return '团队成员'
+    if (value === 'tenant_admins') return '协作空间管理员'
+    return '协作空间成员'
   }
 
   const loadTemplates = async () => {
@@ -352,7 +399,7 @@
       )
       list.value = result.records || []
       pagination.total = result.total || 0
-    } catch (error) {
+    } catch {
       list.value = []
       pagination.total = 0
       loadError.value = '消息模板暂时不可用，稍后重试或刷新状态。'
@@ -409,7 +456,7 @@
       }
       drawerVisible.value = false
       await loadTemplates()
-    } catch (error) {
+    } catch {
       ElMessage.error('保存消息模板失败')
     } finally {
       saving.value = false

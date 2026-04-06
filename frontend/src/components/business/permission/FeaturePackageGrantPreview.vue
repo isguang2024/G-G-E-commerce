@@ -4,7 +4,12 @@
       <div class="single-header">
         <div class="single-title">
           <span>{{ activePackage?.name || '功能包详情' }}</span>
-          <ElTag v-if="activePackage" :type="getPackageTypeTagType(activePackage.packageType)" effect="light" round>
+          <ElTag
+            v-if="activePackage"
+            :type="getPackageTypeTagType(activePackage.packageType)"
+            effect="light"
+            round
+          >
             {{ formatPackageType(activePackage.packageType) }}
           </ElTag>
         </div>
@@ -14,27 +19,28 @@
       </div>
 
       <div class="summary-card">
-          <ElTag type="info" effect="light" round>
-            {{ activePackage?.packageKey || '-' }}
-          </ElTag>
-          <ElTag type="info" effect="light" round>
-            展开基础包 {{ expandedBasePackages.length }}
-          </ElTag>
-          <ElTag type="info" effect="light" round>
-            权限 {{ actionPreviewItems.length }}
-          </ElTag>
-          <ElTag type="info" effect="light" round>
-            菜单 {{ menuPreviewItems.length }}
-          </ElTag>
+        <ElTag type="info" effect="light" round>
+          {{ activePackage?.packageKey || '-' }}
+        </ElTag>
+        <ElTag type="info" effect="light" round>
+          展开基础包 {{ expandedBasePackages.length }}
+        </ElTag>
+        <ElTag type="info" effect="light" round> 权限 {{ actionPreviewItems.length }} </ElTag>
+        <ElTag type="info" effect="light" round> 菜单 {{ menuPreviewItems.length }} </ElTag>
       </div>
 
       <div class="preview-grid">
         <div class="preview-card">
           <div class="preview-title">当前功能包</div>
           <div class="preview-tags">
-              <ElTag v-if="activePackage" :type="getPackageTypeTagType(activePackage.packageType)" effect="light" round>
-                {{ activePackage.name }}
-              </ElTag>
+            <ElTag
+              v-if="activePackage"
+              :type="getPackageTypeTagType(activePackage.packageType)"
+              effect="light"
+              round
+            >
+              {{ activePackage.name }}
+            </ElTag>
           </div>
         </div>
 
@@ -44,49 +50,45 @@
             <ElTag
               v-for="item in expandedBasePackages"
               :key="item.id"
-                type="info"
-                effect="light"
-                round
-                :title="buildBasePackageTitle(item.id)"
-              >
+              type="info"
+              effect="light"
+              round
+              :title="buildBasePackageTitle(item.id)"
+            >
               {{ item.name }}
             </ElTag>
           </div>
-          <div v-if="!expandedBasePackages.length" class="preview-empty">当前没有展开出的基础包。</div>
+          <div v-if="!expandedBasePackages.length" class="preview-empty"
+            >当前没有展开出的基础包。</div
+          >
         </div>
       </div>
     </template>
 
     <template v-else>
       <div class="summary-card">
-          <ElTag type="info" effect="light" round>
-            直绑 {{ selectedPackages.length }}
-          </ElTag>
-          <ElTag type="info" effect="light" round>
-            展开基础包 {{ expandedBasePackages.length }}
-          </ElTag>
-          <ElTag type="info" effect="light" round>
-            展开权限 {{ actionPreviewItems.length }}
-          </ElTag>
-          <ElTag type="info" effect="light" round>
-            展开菜单 {{ menuPreviewItems.length }}
-          </ElTag>
+        <ElTag type="info" effect="light" round> 直绑 {{ selectedPackages.length }} </ElTag>
+        <ElTag type="info" effect="light" round>
+          展开基础包 {{ expandedBasePackages.length }}
+        </ElTag>
+        <ElTag type="info" effect="light" round> 展开权限 {{ actionPreviewItems.length }} </ElTag>
+        <ElTag type="info" effect="light" round> 展开菜单 {{ menuPreviewItems.length }} </ElTag>
       </div>
 
       <div class="preview-grid">
         <div class="preview-card">
           <div class="preview-title">当前授予包</div>
           <div class="preview-tags">
-              <ElTag
-                v-for="item in selectedPackages"
-                :key="item.id"
-                :type="getPackageTypeTagType(item.packageType)"
-                effect="light"
-                round
-                :title="`${formatPackageType(item.packageType)} · ${item.packageKey}`"
-              >
-                {{ item.name }}
-              </ElTag>
+            <ElTag
+              v-for="item in selectedPackages"
+              :key="item.id"
+              :type="getPackageTypeTagType(item.packageType)"
+              effect="light"
+              round
+              :title="`${formatPackageType(item.packageType)} · ${item.packageKey}`"
+            >
+              {{ item.name }}
+            </ElTag>
           </div>
           <div v-if="!selectedPackages.length" class="preview-empty">当前尚未选择功能包。</div>
         </div>
@@ -97,15 +99,17 @@
             <ElTag
               v-for="item in expandedBasePackages"
               :key="item.id"
-                type="info"
-                effect="light"
-                round
-                :title="buildBasePackageTitle(item.id)"
-              >
+              type="info"
+              effect="light"
+              round
+              :title="buildBasePackageTitle(item.id)"
+            >
               {{ item.name }}
             </ElTag>
           </div>
-          <div v-if="!expandedBasePackages.length" class="preview-empty">当前没有展开出的基础包。</div>
+          <div v-if="!expandedBasePackages.length" class="preview-empty"
+            >当前没有展开出的基础包。</div
+          >
         </div>
       </div>
     </template>
@@ -170,7 +174,10 @@
   })
 
   const expandedBasePackageEntries = computed(() => {
-    const map = new Map<string, { item: Api.SystemManage.FeaturePackageItem; sourceNames: string[] }>()
+    const map = new Map<
+      string,
+      { item: Api.SystemManage.FeaturePackageItem; sourceNames: string[] }
+    >()
     selectedPackages.value.forEach((item) => {
       if (item.packageType === 'bundle') {
         const detail = detailMap.value[item.id]
@@ -188,14 +195,20 @@
     return Array.from(map.values())
   })
 
-  const expandedBasePackages = computed(() => expandedBasePackageEntries.value.map((item) => item.item))
+  const expandedBasePackages = computed(() =>
+    expandedBasePackageEntries.value.map((item) => item.item)
+  )
 
   const actionPreviewEntries = computed(() => {
     const map = new Map<string, { id: string; label: string; sourceNames: string[] }>()
     expandedBasePackageEntries.value.forEach((entry) => {
       const detail = detailMap.value[entry.item.id]
       ;(detail?.actionItems || []).forEach((action) => {
-        const current = map.get(action.id) || { id: action.id, label: action.label, sourceNames: [] }
+        const current = map.get(action.id) || {
+          id: action.id,
+          label: action.label,
+          sourceNames: []
+        }
         entry.sourceNames.forEach((name) => {
           if (!current.sourceNames.includes(name)) current.sourceNames.push(name)
         })
@@ -220,8 +233,12 @@
     return Array.from(map.values())
   })
 
-  const actionPreviewItems = computed(() => actionPreviewEntries.value.map(({ id, label }) => ({ id, label })))
-  const menuPreviewItems = computed(() => menuPreviewEntries.value.map(({ id, label }) => ({ id, label })))
+  const actionPreviewItems = computed(() =>
+    actionPreviewEntries.value.map(({ id, label }) => ({ id, label }))
+  )
+  const menuPreviewItems = computed(() =>
+    menuPreviewEntries.value.map(({ id, label }) => ({ id, label }))
+  )
 
   watch(
     () => [
@@ -376,8 +393,7 @@
     padding: 16px 18px;
     border-radius: 16px;
     border: 1px solid color-mix(in srgb, var(--default-border) 82%, white);
-    background:
-      linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(248 250 252 / 0.94));
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.98), rgb(248 250 252 / 0.94));
     box-shadow: var(--art-shadow-sm);
   }
 

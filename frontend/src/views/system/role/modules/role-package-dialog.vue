@@ -9,7 +9,7 @@
   >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        角色只负责绑定功能包。绑定后，角色菜单和权限会以功能包展开结果为基础继续裁剪，这里不再区分平台或团队语义。
+        这里维护的是平台角色目录的功能包范围。协作空间内部角色仍需在协作空间内维护，不通过这个平台角色配置入口生效。
       </div>
 
       <div class="summary-card">
@@ -29,7 +29,7 @@
         <ElSelect v-model="contextFilter" class="toolbar-select">
           <ElOption label="全部上下文" value="" />
           <ElOption label="平台" value="platform" />
-          <ElOption label="团队" value="team" />
+          <ElOption label="协作空间" value="team" />
           <ElOption label="通用" value="common" />
         </ElSelect>
         <ElSelect v-model="selectionFilter" class="toolbar-select">
@@ -250,7 +250,7 @@
   function formatContext(contextType?: string) {
     if (contextType === 'common') return '通用'
     if (contextType === 'platform') return '平台'
-    return '团队'
+    return '协作空间'
   }
 
   function getContextTagType(contextType?: string) {
@@ -278,7 +278,11 @@
     }
     saving.value = true
     try {
-      await fetchSetRolePackages(props.roleData.roleId, selectedPackageIds.value, currentAppKey.value)
+      await fetchSetRolePackages(
+        props.roleData.roleId,
+        selectedPackageIds.value,
+        currentAppKey.value
+      )
       ElMessage.success('角色功能包已保存')
       emit('success')
       visible.value = false

@@ -1,12 +1,13 @@
 ﻿<template>
-  <ElDialog v-model="visible" :title="dialogTitle" width="800px" class="backup-dialog" destroy-on-close>
+  <ElDialog
+    v-model="visible"
+    :title="dialogTitle"
+    width="800px"
+    class="backup-dialog"
+    destroy-on-close
+  >
     <div class="backup-list-container">
-      <ElAlert
-        class="mb-4"
-        type="info"
-        :closable="false"
-        :description="alertDescription"
-      />
+      <ElAlert class="mb-4" type="info" :closable="false" :description="alertDescription" />
       <ElTable v-loading="loading" :data="pagedItems" style="width: 100%" border stripe>
         <ElTableColumn prop="name" label="备份名称" width="200">
           <template #default="{ row }">
@@ -172,4 +173,3 @@
     }
   }
 </style>
-

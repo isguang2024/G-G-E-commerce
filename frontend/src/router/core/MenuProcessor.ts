@@ -41,7 +41,9 @@ export class MenuProcessor {
         return result
       }
 
-      const children = item.children?.length ? this.filterDisabledMenus(item.children) : item.children
+      const children = item.children?.length
+        ? this.filterDisabledMenus(item.children)
+        : item.children
       result.push({
         ...item,
         children
@@ -134,7 +136,7 @@ export class MenuProcessor {
 
         // 检测非法的绝对路径
         if (childPath.startsWith('/')) {
-          this.logPathError(child, childPath, parentName, level)
+          this.logPathError(child, childPath, parentName)
         }
       })
 
@@ -158,12 +160,7 @@ export class MenuProcessor {
   /**
    * 输出路径配置错误日志
    */
-  private logPathError(
-    route: AppRouteRecord,
-    path: string,
-    parentName: string,
-    level: number
-  ): void {
+  private logPathError(route: AppRouteRecord, path: string, parentName: string): void {
     const routeName = String(route.name || path || '未知路由')
     const menuTitle = route.meta?.title || routeName
     const suggestedPath = path.split('/').pop() || path.slice(1)

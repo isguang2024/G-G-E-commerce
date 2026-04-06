@@ -1,13 +1,16 @@
 ﻿<template>
   <div class="message-manage-page art-full-height">
-    <AdminWorkspaceHero
-      :title="pageTitle"
-      :description="pageDescription"
-      :metrics="heroMetrics"
-    >
+    <AdminWorkspaceHero :title="pageTitle" :description="pageDescription" :metrics="heroMetrics">
       <div class="message-manage-hero__actions">
         <ElButton @click="loadOptions" :loading="loading" v-ripple>刷新配置</ElButton>
-        <ElButton type="primary" @click="submitDispatch" :loading="submitting" :disabled="!canDispatch" v-ripple>发送消息</ElButton>
+        <ElButton
+          type="primary"
+          @click="submitDispatch"
+          :loading="submitting"
+          :disabled="!canDispatch"
+          v-ripple
+          >发送消息</ElButton
+        >
       </div>
     </AdminWorkspaceHero>
 
@@ -41,60 +44,72 @@
               <p>先确定模板、发送人、消息类型和优先级，再进入发送对象和内容配置。</p>
             </div>
             <div class="message-manage-grid">
-            <ElFormItem label="消息模板">
-              <ElSelect
-                v-model="form.template_id"
-                clearable
-                filterable
-                placeholder="可选，选择后带入默认标题和富文本内容"
-                @change="handleTemplateChange"
-              >
-                <ElOption
-                  v-for="item in filteredTemplateOptions"
-                  :key="item.id"
-                  :label="templateOptionLabel(item)"
-                  :value="item.id"
-                />
-              </ElSelect>
-              <div class="field-hint">
-                {{ isTeamScope ? '仅展示当前团队创建的模板，团队页不会混入平台模板。' : '仅展示平台模板。' }}
-              </div>
-            </ElFormItem>
+              <ElFormItem label="消息模板">
+                <ElSelect
+                  v-model="form.template_id"
+                  clearable
+                  filterable
+                  placeholder="可选，选择后带入默认标题和富文本内容"
+                  @change="handleTemplateChange"
+                >
+                  <ElOption
+                    v-for="item in filteredTemplateOptions"
+                    :key="item.id"
+                    :label="templateOptionLabel(item)"
+                    :value="item.id"
+                  />
+                </ElSelect>
+                <div class="field-hint">
+                  {{
+                    isTeamScope
+                      ? '仅展示当前协作空间创建的模板，协作空间页不会混入平台模板。'
+                      : '仅展示平台模板。'
+                  }}
+                </div>
+              </ElFormItem>
 
-            <ElFormItem label="发送人" prop="sender_id">
-              <ElSelect v-model="form.sender_id" placeholder="请选择发送人">
-                <ElOption
-                  v-for="item in options.sender_options"
-                  :key="item.id"
-                  :label="item.is_default ? `${item.name} · 默认` : item.name"
-                  :value="item.id"
-                />
-              </ElSelect>
-              <div class="field-hint">{{ activeSenderDescription }}</div>
-            </ElFormItem>
+              <ElFormItem label="发送人" prop="sender_id">
+                <ElSelect v-model="form.sender_id" placeholder="请选择发送人">
+                  <ElOption
+                    v-for="item in options.sender_options"
+                    :key="item.id"
+                    :label="item.is_default ? `${item.name} · 默认` : item.name"
+                    :value="item.id"
+                  />
+                </ElSelect>
+                <div class="field-hint">{{ activeSenderDescription }}</div>
+              </ElFormItem>
 
-            <ElFormItem label="消息类型" prop="message_type">
-              <ElRadioGroup v-model="form.message_type" class="message-manage-inline-options">
-                <ElRadioButton v-for="item in messageTypeOptions" :key="item.value" :value="item.value">
-                  {{ item.label }}
-                </ElRadioButton>
-              </ElRadioGroup>
-            </ElFormItem>
+              <ElFormItem label="消息类型" prop="message_type">
+                <ElRadioGroup v-model="form.message_type" class="message-manage-inline-options">
+                  <ElRadioButton
+                    v-for="item in messageTypeOptions"
+                    :key="item.value"
+                    :value="item.value"
+                  >
+                    {{ item.label }}
+                  </ElRadioButton>
+                </ElRadioGroup>
+              </ElFormItem>
 
-            <ElFormItem label="消息优先级">
-              <ElRadioGroup v-model="form.priority" class="message-manage-inline-options">
-                <ElRadioButton v-for="item in priorityOptions" :key="item.value" :value="item.value">
-                  {{ item.label }}
-                </ElRadioButton>
-              </ElRadioGroup>
-            </ElFormItem>
+              <ElFormItem label="消息优先级">
+                <ElRadioGroup v-model="form.priority" class="message-manage-inline-options">
+                  <ElRadioButton
+                    v-for="item in priorityOptions"
+                    :key="item.value"
+                    :value="item.value"
+                  >
+                    {{ item.label }}
+                  </ElRadioButton>
+                </ElRadioGroup>
+              </ElFormItem>
             </div>
           </section>
 
           <section class="message-manage-block">
             <div class="message-manage-block__header">
               <h4>接收对象</h4>
-              <p>按主流消息公告后台习惯，先选对象，再补具体团队、用户或接收组。</p>
+              <p>按主流消息公告后台习惯，先选对象，再补具体协作空间、用户或接收组。</p>
             </div>
 
             <ElFormItem label="发送对象" prop="audience_type">
@@ -110,77 +125,100 @@
             </ElFormItem>
 
             <div class="message-manage-target-layout">
-          <ElFormItem v-if="showTargetTeams" :label="targetTeamsLabel">
-            <ElSelect
-              v-if="!isTeamScope"
-              v-model="form.target_tenant_ids"
-              multiple
-              filterable
-              collapse-tags
-              collapse-tags-tooltip
-              placeholder="选择一个或多个团队"
-            >
-              <ElOption v-for="item in options.teams" :key="item.id" :label="item.name" :value="item.id" />
-            </ElSelect>
-            <div v-else class="message-manage-fixed-target">
-              <strong>{{ options.current_tenant_name || '当前团队' }}</strong>
-              <span>团队上下文只允许向当前团队发送。</span>
-            </div>
-            <div class="field-hint">
-              {{ isTeamScope ? '发送对象会自动绑定到当前团队，无需再额外选择。' : '平台可选择多个目标团队，系统会按对象类型自动匹配成员。' }}
-            </div>
-          </ElFormItem>
+              <ElFormItem v-if="showTargetTeams" :label="targetTeamsLabel">
+                <ElSelect
+                  v-if="!isTeamScope"
+                  v-model="form.targetCollaborationWorkspaceIds"
+                  multiple
+                  filterable
+                  collapse-tags
+                  collapse-tags-tooltip
+                  placeholder="选择一个或多个协作空间"
+                >
+                  <ElOption
+                    v-for="item in options.teams"
+                    :key="item.id"
+                    :label="item.name"
+                    :value="item.id"
+                  />
+                </ElSelect>
+                <div v-else class="message-manage-fixed-target">
+                  <strong>{{ options.current_collaboration_workspace_name || currentTeamName }}</strong>
+                  <span>协作空间上下文只允许向当前协作空间发送。</span>
+                </div>
+                <div class="field-hint">
+                  {{
+                    isTeamScope
+                      ? '发送对象会自动绑定到当前协作空间，无需再额外选择。'
+                      : '平台可选择多个目标协作空间，系统会按对象类型自动匹配成员。'
+                  }}
+                </div>
+              </ElFormItem>
 
-          <ElFormItem v-if="showTargetUsers" :label="targetUsersLabel">
-            <ElSelect
-              v-model="form.target_user_ids"
-              multiple
-              filterable
-              collapse-tags
-              collapse-tags-tooltip
-              placeholder="选择一个或多个用户"
-            >
-              <ElOption
-                v-for="item in options.users"
-                :key="item.id"
-                :label="item.display_name"
-                :value="item.id"
-              />
-            </ElSelect>
-            <div class="field-hint">
-              {{ isTeamScope ? '团队侧只会列出当前团队成员。' : '平台侧可以直接按用户维度精确发送。' }}
-            </div>
-          </ElFormItem>
+              <ElFormItem v-if="showTargetUsers" :label="targetUsersLabel">
+                <ElSelect
+                  v-model="form.target_user_ids"
+                  multiple
+                  filterable
+                  collapse-tags
+                  collapse-tags-tooltip
+                  placeholder="选择一个或多个用户"
+                >
+                  <ElOption
+                    v-for="item in options.users"
+                    :key="item.id"
+                    :label="item.display_name"
+                    :value="item.id"
+                  />
+                </ElSelect>
+                <div class="field-hint">
+                  {{
+                    isTeamScope
+                      ? '协作空间侧只会列出当前协作空间成员。'
+                      : '平台侧可以直接按用户维度精确发送。'
+                  }}
+                </div>
+              </ElFormItem>
 
-          <ElFormItem
-            v-if="showRecipientGroups"
-            :label="form.audience_type === 'role' ? '角色接收组' : form.audience_type === 'feature_package' ? '功能包接收组' : '接收组'"
-          >
-            <ElSelect
-              v-model="form.target_group_ids"
-              multiple
-              filterable
-              collapse-tags
-              collapse-tags-tooltip
-              placeholder="选择一个或多个接收组"
-            >
-              <ElOption
-                v-for="item in options.recipient_groups"
-                :key="item.id"
-                :label="item.estimated_count ? `${item.name} · 约 ${item.estimated_count} 人` : item.name"
-                :value="item.id"
-              />
-            </ElSelect>
-            <div class="field-hint">
-              {{
-                form.audience_type === 'role'
-                  ? '只会展开接收组里的角色规则，适合按平台角色或团队角色精准发送。'
-                  : form.audience_type === 'feature_package'
-                    ? '只会展开接收组里的功能包规则，适合按有效功能包命中成员。'
-                : '接收组可混合配置指定用户、团队成员、团队管理员、角色和功能包规则。'
-              }}
-            </div>
-          </ElFormItem>
+              <ElFormItem
+                v-if="showRecipientGroups"
+                :label="
+                  form.audience_type === 'role'
+                    ? '角色接收组'
+                    : form.audience_type === 'feature_package'
+                      ? '功能包接收组'
+                      : '接收组'
+                "
+              >
+                <ElSelect
+                  v-model="form.target_group_ids"
+                  multiple
+                  filterable
+                  collapse-tags
+                  collapse-tags-tooltip
+                  placeholder="选择一个或多个接收组"
+                >
+                  <ElOption
+                    v-for="item in options.recipient_groups"
+                    :key="item.id"
+                    :label="
+                      item.estimated_count
+                        ? `${item.name} · 约 ${item.estimated_count} 人`
+                        : item.name
+                    "
+                    :value="item.id"
+                  />
+                </ElSelect>
+                <div class="field-hint">
+                  {{
+                    form.audience_type === 'role'
+                      ? '只会展开接收组里的角色规则，适合按平台角色或协作空间角色精准发送。'
+                      : form.audience_type === 'feature_package'
+                        ? '只会展开接收组里的功能包规则，适合按有效功能包命中成员。'
+                        : '接收组可混合配置指定用户、协作空间成员、协作空间管理员、角色和功能包规则。'
+                  }}
+                </div>
+              </ElFormItem>
             </div>
           </section>
 
@@ -189,9 +227,14 @@
               <h4>内容编辑</h4>
               <p>摘要使用普通文本输入，正文保留富文本，更符合公告和站内信后台的常见做法。</p>
             </div>
-          <ElFormItem label="消息标题" prop="title">
-            <ElInput v-model="form.title" maxlength="120" show-word-limit placeholder="例如：平台维护通知 / 团队待处理提醒" />
-          </ElFormItem>
+            <ElFormItem label="消息标题" prop="title">
+              <ElInput
+                v-model="form.title"
+                maxlength="120"
+                show-word-limit
+                placeholder="例如：平台维护通知 / 协作空间待处理提醒"
+              />
+            </ElFormItem>
 
             <ElFormItem label="摘要">
               <ElInput
@@ -215,20 +258,24 @@
               <div class="field-hint">内部链接、外部链接都放在正文里，不再单独配置动作按钮。</div>
             </ElFormItem>
 
-          <div class="message-manage-grid">
-            <ElFormItem label="业务分类">
-              <ElInput v-model="form.biz_type" maxlength="80" placeholder="例如：platform_announcement / team_notice" />
-            </ElFormItem>
+            <div class="message-manage-grid">
+              <ElFormItem label="业务分类">
+                <ElInput
+                  v-model="form.biz_type"
+                  maxlength="80"
+                  placeholder="例如：platform_announcement / team_notice"
+                />
+              </ElFormItem>
 
-            <ElFormItem label="失效时间">
-              <ElDatePicker
-                v-model="expiredAtValue"
-                type="datetime"
-                value-format="YYYY-MM-DDTHH:mm:ssZ"
-                placeholder="可选，过期后不再展示"
-              />
-            </ElFormItem>
-          </div>
+              <ElFormItem label="失效时间">
+                <ElDatePicker
+                  v-model="expiredAtValue"
+                  type="datetime"
+                  value-format="YYYY-MM-DDTHH:mm:ssZ"
+                  placeholder="可选，过期后不再展示"
+                />
+              </ElFormItem>
+            </div>
           </section>
         </ElForm>
       </div>
@@ -283,7 +330,6 @@
   import MessageWorkspaceNav from '@/views/message/modules/message-workspace-nav.vue'
   import { fetchDispatchMessage, fetchGetMessageDispatchOptions } from '@/api/message'
   import { useMenuSpaceStore } from '@/store/modules/menu-space'
-  import { useTenantStore } from '@/store/modules/tenant'
   import { handleRichTextLinkNavigation } from '@/utils/navigation/rich-text'
   import { useMessageWorkspace } from '@/views/message/modules/useMessageWorkspace'
 
@@ -295,18 +341,26 @@
 
   const router = useRouter()
   const menuSpaceStore = useMenuSpaceStore()
-  const tenantStore = useTenantStore()
   const loading = ref(false)
   const loadError = ref('')
   const submitting = ref(false)
   const formRef = ref()
-  const { isTeamScope, skipTenantHeader, currentTeamName, ensureTeamContext, plainTextFromHtml } =
-    useMessageWorkspace(props.scope)
+  const {
+    collaborationWorkspaceStore,
+    isTeamScope,
+    skipTenantHeader,
+    currentCollaborationWorkspaceId,
+    currentTeamName,
+    currentWorkspaceName,
+    currentWorkspaceLabel,
+    ensureTeamContext,
+    plainTextFromHtml
+  } = useMessageWorkspace(props.scope)
 
   const options = reactive<Api.Message.DispatchOptions>({
     sender_scope: 'platform',
-    current_tenant_id: '',
-    current_tenant_name: '',
+    current_collaboration_workspace_id: '',
+    current_collaboration_workspace_name: '',
     sender_options: [],
     default_sender_id: '',
     audience_options: [],
@@ -324,8 +378,8 @@
 
   const createDefaultDispatchOptions = (): Api.Message.DispatchOptions => ({
     sender_scope: isTeamScope.value ? 'team' : 'platform',
-    current_tenant_id: '',
-    current_tenant_name: '',
+    current_collaboration_workspace_id: '',
+    current_collaboration_workspace_name: '',
     sender_options: [],
     default_sender_id: '',
     audience_options: [],
@@ -348,33 +402,45 @@
     return {
       ...base,
       ...(payload || {}),
-      sender_options: Array.isArray(payload?.sender_options) ? payload.sender_options : base.sender_options,
-      audience_options: Array.isArray(payload?.audience_options) ? payload.audience_options : base.audience_options,
-      template_options: Array.isArray(payload?.template_options) ? payload.template_options : base.template_options,
+      sender_options: Array.isArray(payload?.sender_options)
+        ? payload.sender_options
+        : base.sender_options,
+      audience_options: Array.isArray(payload?.audience_options)
+        ? payload.audience_options
+        : base.audience_options,
+      template_options: Array.isArray(payload?.template_options)
+        ? payload.template_options
+        : base.template_options,
       teams: Array.isArray(payload?.teams) ? payload.teams : base.teams,
       users: Array.isArray(payload?.users) ? payload.users : base.users,
-      recipient_groups: Array.isArray(payload?.recipient_groups) ? payload.recipient_groups : base.recipient_groups,
+      recipient_groups: Array.isArray(payload?.recipient_groups)
+        ? payload.recipient_groups
+        : base.recipient_groups,
       roles: Array.isArray(payload?.roles) ? payload.roles : base.roles,
-      feature_packages: Array.isArray(payload?.feature_packages) ? payload.feature_packages : base.feature_packages
+      feature_packages: Array.isArray(payload?.feature_packages)
+        ? payload.feature_packages
+        : base.feature_packages
     }
   }
 
-  const form = reactive<Api.Message.DispatchParams & {
-    sender_id: string
-    template_id: string
-    summary: string
-    content: string
-    action_type: string
-    action_target: string
-    biz_type: string
-    expired_at: string
-    target_tenant_ids: string[]
-  }>({
+  const form = reactive<
+    Api.Message.DispatchParams & {
+      sender_id: string
+      template_id: string
+      summary: string
+      content: string
+      action_type: string
+      action_target: string
+      biz_type: string
+      expired_at: string
+      targetCollaborationWorkspaceIds: string[]
+    }
+  >({
     sender_id: '',
     template_id: '',
     message_type: 'notice',
     audience_type: 'all_users',
-    target_tenant_ids: [],
+    targetCollaborationWorkspaceIds: [],
     target_user_ids: [],
     target_group_ids: [],
     title: '',
@@ -387,13 +453,15 @@
     expired_at: ''
   })
 
-  const effectiveTeamName = computed(() => options.current_tenant_name || currentTeamName.value)
+  const effectiveTeamName = computed(
+    () => options.current_collaboration_workspace_name || currentTeamName.value
+  )
 
-  const pageTitle = computed(() => (isTeamScope.value ? '团队消息发送' : '消息发送'))
+  const pageTitle = computed(() => (isTeamScope.value ? '协作空间消息发送' : '消息发送'))
   const pageDescription = computed(() =>
     isTeamScope.value
-      ? '以当前团队管理员身份给本团队成员发送通知、消息和待办，模板与发送记录都从这里进入。'
-      : '统一给所有用户、团队管理员或指定团队成员发送站内通知、消息和待办，模板与发送记录都从这里进入。'
+      ? `以 ${currentWorkspaceLabel.value} 视角给 ${effectiveTeamName.value} 发送通知、消息和待办，模板与发送记录都从这里进入。`
+      : '统一给所有用户、协作空间管理员或指定协作空间成员发送站内通知、消息和待办，模板与发送记录都从这里进入。'
   )
 
   const messageTypeOptions = [
@@ -422,27 +490,31 @@
     )
   )
 
-  const activeTemplate = computed(() =>
-    filteredTemplateOptions.value.find((item) => item.id === form.template_id) || null
+  const activeTemplate = computed(
+    () => filteredTemplateOptions.value.find((item) => item.id === form.template_id) || null
   )
 
-  const activeSender = computed(() =>
-    options.sender_options.find((item) => item.id === form.sender_id) || null
+  const activeSender = computed(
+    () => options.sender_options.find((item) => item.id === form.sender_id) || null
   )
 
   const activeSenderDescription = computed(() => {
     if (activeSender.value?.description) return activeSender.value.description
     return isTeamScope.value
-      ? '团队默认发送人为“团队”，也可以改成更具体的团队身份。'
+      ? '协作空间默认发送人为“协作空间”，也可以改成更具体的协作空间身份。'
       : '平台默认发送人为“平台”，也可以改成平台管理、平台空间等发信身份。'
   })
 
   const activeAudienceDescription = computed(
-    () => options.audience_options.find((item) => item.value === form.audience_type)?.description || '请选择发送对象。'
+    () =>
+      options.audience_options.find((item) => item.value === form.audience_type)?.description ||
+      '请选择发送对象。'
   )
 
   const selectedAudienceLabel = computed(
-    () => options.audience_options.find((item) => item.value === form.audience_type)?.label || '未选择对象'
+    () =>
+      options.audience_options.find((item) => item.value === form.audience_type)?.label ||
+      '未选择对象'
   )
 
   const selectedSenderLabel = computed(() => activeSender.value?.name || '未选择发送人')
@@ -457,20 +529,20 @@
 
   const senderScopeText = computed(() => {
     if (isTeamScope.value) {
-      return `当前以团队管理员身份发送，默认团队为 ${effectiveTeamName.value}。`
+      return `当前授权工作空间为 ${currentWorkspaceName.value}，默认协作空间视图为 ${effectiveTeamName.value}。`
     }
-    return '当前以平台管理身份发送，可按所有用户、团队管理员或指定团队成员分发。'
+    return '当前以平台管理身份发送，可按所有用户、协作空间管理员或指定协作空间成员分发。'
   })
 
-  const senderScopeBadge = computed(() => (isTeamScope.value ? '团队发信' : '平台发信'))
+  const senderScopeBadge = computed(() => (isTeamScope.value ? '协作空间发信' : '平台发信'))
 
   const showTargetTeams = computed(() => form.audience_type !== 'all_users')
   const showTargetUsers = computed(() => form.audience_type === 'specified_users')
   const showRecipientGroups = computed(() =>
     ['recipient_group', 'role', 'feature_package'].includes(form.audience_type)
   )
-  const targetTeamsLabel = computed(() => (isTeamScope.value ? '目标团队' : '目标团队'))
-  const targetUsersLabel = computed(() => (isTeamScope.value ? '团队成员' : '目标用户'))
+  const targetTeamsLabel = computed(() => (isTeamScope.value ? '目标协作空间' : '目标协作空间'))
+  const targetUsersLabel = computed(() => (isTeamScope.value ? '协作空间成员' : '目标用户'))
 
   const receiverSummary = computed(() => {
     if (form.audience_type === 'all_users') return '全部有效用户'
@@ -505,18 +577,21 @@
     if (isTeamScope.value) {
       return effectiveTeamName.value
     }
-    if (!form.target_tenant_ids?.length) return '待选择团队'
+    if (!form.targetCollaborationWorkspaceIds?.length) return '待选择协作空间'
     const names = options.teams
-      .filter((item) => form.target_tenant_ids?.includes(item.id))
+      .filter((item) => form.targetCollaborationWorkspaceIds?.includes(item.id))
       .map((item) => item.name)
-    return names.join('、') || '待选择团队'
+    return names.join('、') || '待选择协作空间'
   })
 
   const heroMetrics = computed(() => [
     { label: '可用发送人', value: (options.sender_options || []).length },
     { label: '可用模板', value: (options.template_options || []).length },
     { label: '可选对象', value: (options.audience_options || []).length },
-    { label: isTeamScope.value ? '当前团队' : '目标团队', value: isTeamScope.value ? effectiveTeamName.value : (options.teams || []).length }
+    {
+      label: isTeamScope.value ? '当前协作空间' : '目标协作空间',
+      value: isTeamScope.value ? effectiveTeamName.value : (options.teams || []).length
+    }
   ])
   const canDispatch = computed(() => !loadError.value && (options.sender_options || []).length > 0)
 
@@ -532,7 +607,7 @@
     return normalized || `<p>${fallback}</p>`
   }
   const templateOptionLabel = (template: Api.Message.DispatchTemplateOption) => {
-    if (isTeamScope.value) return `${template.name} · 团队模板`
+    if (isTeamScope.value) return `${template.name} · 协作空间模板`
     return `${template.name} · 平台模板`
   }
 
@@ -549,9 +624,13 @@
   const resetFormDefaults = () => {
     form.sender_id = options.default_sender_id || options.sender_options[0]?.id || ''
     form.message_type = options.default_message_type || 'notice'
-    form.audience_type = options.default_audience_type || (isTeamScope.value ? 'tenant_users' : 'all_users')
+    form.audience_type =
+      options.default_audience_type || (isTeamScope.value ? 'tenant_users' : 'all_users')
     form.priority = options.default_priority || 'normal'
-    form.target_tenant_ids = isTeamScope.value && options.current_tenant_id ? [options.current_tenant_id] : []
+    form.targetCollaborationWorkspaceIds =
+      isTeamScope.value && options.current_collaboration_workspace_id
+        ? [options.current_collaboration_workspace_id]
+        : []
     form.target_user_ids = []
     form.target_group_ids = []
     form.action_type = 'none'
@@ -581,8 +660,8 @@
     try {
       ensureTeamContext()
       if (isTeamScope.value) {
-        await tenantStore.loadMyTeams({
-          preferredTenantId: tenantStore.currentTenantId || undefined
+        await collaborationWorkspaceStore.loadMyTeams({
+          preferredCollaborationWorkspaceId: currentCollaborationWorkspaceId.value || undefined
         })
       }
       Object.assign(options, createDefaultDispatchOptions())
@@ -590,11 +669,14 @@
         skipTenantHeader: skipTenantHeader.value
       })
       Object.assign(options, normalizeDispatchOptions(data))
-      if (form.template_id && !filteredTemplateOptions.value.some((item) => item.id === form.template_id)) {
+      if (
+        form.template_id &&
+        !filteredTemplateOptions.value.some((item) => item.id === form.template_id)
+      ) {
         form.template_id = ''
       }
       resetFormDefaults()
-    } catch (error) {
+    } catch {
       Object.assign(options, createDefaultDispatchOptions())
       resetFormDefaults()
       loadError.value = '发信配置暂时不可用，稍后重试或刷新状态。'
@@ -609,32 +691,36 @@
 
   const handleAudienceChange = () => {
     if (form.audience_type === 'all_users') {
-      form.target_tenant_ids = []
+      form.targetCollaborationWorkspaceIds = []
       form.target_user_ids = []
       form.target_group_ids = []
       return
     }
     if (form.audience_type === 'specified_users') {
-      form.target_tenant_ids = []
+      form.targetCollaborationWorkspaceIds = []
       form.target_group_ids = []
       return
     }
-    if (form.audience_type === 'recipient_group' || form.audience_type === 'role' || form.audience_type === 'feature_package') {
-      form.target_tenant_ids = []
+    if (
+      form.audience_type === 'recipient_group' ||
+      form.audience_type === 'role' ||
+      form.audience_type === 'feature_package'
+    ) {
+      form.targetCollaborationWorkspaceIds = []
       form.target_user_ids = []
       return
     }
-    if (isTeamScope.value && options.current_tenant_id) {
-      form.target_tenant_ids = [options.current_tenant_id]
+    if (isTeamScope.value && options.current_collaboration_workspace_id) {
+      form.targetCollaborationWorkspaceIds = [options.current_collaboration_workspace_id]
     }
     form.target_user_ids = []
     form.target_group_ids = []
   }
 
   const submitDispatch = async () => {
-    if (isTeamScope.value && !tenantStore.currentTenantId) {
-      await tenantStore.loadMyTeams({
-        preferredTenantId: tenantStore.currentTenantId || undefined
+    if (isTeamScope.value && !currentCollaborationWorkspaceId.value) {
+      await collaborationWorkspaceStore.loadMyTeams({
+        preferredCollaborationWorkspaceId: currentCollaborationWorkspaceId.value || undefined
       })
     }
     if (!form.title.trim()) {
@@ -650,9 +736,9 @@
       showTargetTeams.value &&
       !showTargetUsers.value &&
       !showRecipientGroups.value &&
-      !form.target_tenant_ids?.length
+      !form.targetCollaborationWorkspaceIds?.length
     ) {
-      ElMessage.warning('请选择目标团队')
+      ElMessage.warning('请选择目标协作空间')
       return
     }
     if (showTargetUsers.value && !form.target_user_ids?.length) {
@@ -680,9 +766,9 @@
           content: normalizeEditorValue(form.content),
           action_type: 'none',
           action_target: '',
-          target_tenant_ids:
+          target_collaboration_workspace_ids:
             showTargetTeams.value && !showTargetUsers.value && !showRecipientGroups.value
-              ? form.target_tenant_ids
+              ? form.targetCollaborationWorkspaceIds
               : [],
           target_user_ids: showTargetUsers.value ? form.target_user_ids : [],
           target_group_ids: showRecipientGroups.value ? form.target_group_ids : []
@@ -691,7 +777,11 @@
           skipTenantHeader: skipTenantHeader.value
         }
       )
-      ElMessage.success(result.dispatch_status === 'queued' ? '消息已进入发送队列' : `发送成功，已投递 ${result.delivery_count} 人`)
+      ElMessage.success(
+        result.dispatch_status === 'queued'
+          ? '消息已进入发送队列'
+          : `发送成功，已投递 ${result.delivery_count} 人`
+      )
       form.title = ''
       form.summary = ''
       form.content = ''
@@ -699,12 +789,12 @@
       form.expired_at = ''
       form.template_id = ''
       if (!isTeamScope.value) {
-        form.target_tenant_ids = []
+        form.targetCollaborationWorkspaceIds = []
       }
       form.target_user_ids = []
       form.target_group_ids = []
       resetFormDefaults()
-    } catch (error) {
+    } catch {
       ElMessage.error('发送消息失败')
     } finally {
       submitting.value = false

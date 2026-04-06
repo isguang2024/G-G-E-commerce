@@ -1,4 +1,4 @@
-/**
+﻿/**
  * HTTP 错误处理模块
  *
  * 提供统一的 HTTP 请求错误处理机制
@@ -200,9 +200,9 @@ function shouldShowErrorMessage(code: number): boolean {
     2005, // Token 格式错误
 
     // 3xxxx 业务/资源错误 - 选择性显示
-    3006, // 您暂无管理的团队
+    3006, // 您暂无管理的协作空间
     3007, // 角色编码已存在
-    3008, // 该用户已在团队中
+    3008, // 该用户已在协作空间中
     3011, // 系统默认菜单不可删除
     3012, // 无效的上级
     3013, // 业务冲突
@@ -219,11 +219,11 @@ function shouldShowErrorMessage(code: number): boolean {
   const hideCodes = [
     3001, // 资源不存在（通常业务代码会自行处理）
     3002, // 用户不存在
-    3003, // 团队不存在
+    3003, // 协作空间不存在
     3004, // 菜单不存在
     3005, // 角色不存在
-    3009, // 成员不在团队中
-    3010 // 团队角色不存在或无权操作
+    3009, // 成员不在协作空间中
+    3010 // 协作空间角色不存在或无权操作
   ]
 
   if (showCodes.includes(code)) {
@@ -256,3 +256,4 @@ export function showSuccess(message: string, showMessage: boolean = true): void 
 export const isHttpError = (error: unknown): error is HttpError => {
   return error instanceof HttpError
 }
+

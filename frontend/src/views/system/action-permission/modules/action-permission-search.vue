@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ArtSearchBar
     v-model="formData"
     :items="formItems"
@@ -89,7 +89,7 @@
         placeholder: '请选择上下文',
         options: [
           { label: '平台', value: 'platform' },
-          { label: '团队', value: 'team' },
+          { label: '协作空间', value: 'team' },
           { label: '通用', value: 'common' }
         ]
       }
@@ -155,3 +155,4 @@
 
   const handleReset = () => emit('reset')
 </script>
+

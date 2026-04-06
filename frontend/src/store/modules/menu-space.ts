@@ -71,7 +71,9 @@ function buildRuntimeMenuSpaceConfig(
 
   const defaultSpace =
     normalizedSpaces.find((item) => item.isDefault) ||
-    normalizedSpaces.find((item) => normalizeMenuSpaceKey(item.spaceKey) === DEFAULT_MENU_SPACE_KEY) ||
+    normalizedSpaces.find(
+      (item) => normalizeMenuSpaceKey(item.spaceKey) === DEFAULT_MENU_SPACE_KEY
+    ) ||
     normalizedSpaces[0]
 
   return {
@@ -93,7 +95,8 @@ export const useMenuSpaceStore = defineStore(
     const runtimeAppLoading = ref<Promise<string> | null>(null)
 
     const currentHost = computed(() => {
-      const host = runtimeHost.value || (typeof window !== 'undefined' ? window.location.hostname : '')
+      const host =
+        runtimeHost.value || (typeof window !== 'undefined' ? window.location.hostname : '')
       return normalizeMenuHost(host)
     })
 
@@ -136,16 +139,19 @@ export const useMenuSpaceStore = defineStore(
       )
     })
 
-    const currentSpace = computed(() =>
-      resolveMenuSpaceDefinition(currentSpaceKey.value, currentMenuSpaceConfig.value) ||
-      resolveMenuSpaceDefinition(defaultSpaceKey.value, currentMenuSpaceConfig.value) ||
-      currentMenuSpaceConfig.value.spaces[0] ||
-      null
+    const currentSpace = computed(
+      () =>
+        resolveMenuSpaceDefinition(currentSpaceKey.value, currentMenuSpaceConfig.value) ||
+        resolveMenuSpaceDefinition(defaultSpaceKey.value, currentMenuSpaceConfig.value) ||
+        currentMenuSpaceConfig.value.spaces[0] ||
+        null
     )
 
     const hasMultiSpace = computed(() => (currentMenuSpaceConfig.value.spaces || []).length > 1)
     const hasHostBinding = computed(() =>
-      (currentMenuSpaceConfig.value.hostBindings || []).some((item) => Boolean(item?.enabled ?? true))
+      (currentMenuSpaceConfig.value.hostBindings || []).some((item) =>
+        Boolean(item?.enabled ?? true)
+      )
     )
 
     const isDefaultSpace = computed(() => currentSpaceKey.value === defaultSpaceKey.value)
@@ -229,14 +235,26 @@ export const useMenuSpaceStore = defineStore(
       const currentUserInfo = userStore.getUserInfo as Api.Auth.UserInfo
       const appKey = await ensureRuntimeAppKey()
       if (loadingAppKeys.value[appKey]) {
-        return menuSpaceConfigMap.value[appKey] || runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig()
+        return (
+          menuSpaceConfigMap.value[appKey] ||
+          runtimeMenuSpaceConfig ||
+          createFallbackMenuSpaceConfig()
+        )
       }
       if (loadedAppKeys.value[appKey] && !force) {
-        return menuSpaceConfigMap.value[appKey] || runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig()
+        return (
+          menuSpaceConfigMap.value[appKey] ||
+          runtimeMenuSpaceConfig ||
+          createFallbackMenuSpaceConfig()
+        )
       }
       if (!hasPlatformAccessByUserInfo(currentUserInfo)) {
         setMenuSpaceConfig(runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig(), appKey)
-        return menuSpaceConfigMap.value[appKey] || runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig()
+        return (
+          menuSpaceConfigMap.value[appKey] ||
+          runtimeMenuSpaceConfig ||
+          createFallbackMenuSpaceConfig()
+        )
       }
       setLoadingState(appKey, true)
       try {
@@ -258,7 +276,11 @@ export const useMenuSpaceStore = defineStore(
       } finally {
         setLoadingState(appKey, false)
       }
-      return menuSpaceConfigMap.value[appKey] || runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig()
+      return (
+        menuSpaceConfigMap.value[appKey] ||
+        runtimeMenuSpaceConfig ||
+        createFallbackMenuSpaceConfig()
+      )
     }
 
     const syncResolvedCurrentSpace = async (preferredSpaceKey = '') => {
@@ -302,7 +324,9 @@ export const useMenuSpaceStore = defineStore(
       runtimeHost.value = typeof window !== 'undefined' ? window.location.hostname : ''
     }
 
-    const shouldShowSpaceBadge = computed(() => hasMultiSpace.value || hasHostBinding.value || !isDefaultSpace.value)
+    const shouldShowSpaceBadge = computed(
+      () => hasMultiSpace.value || hasHostBinding.value || !isDefaultSpace.value
+    )
 
     const resolveSpaceLandingPath = (availablePaths: string[] = []) => {
       const normalizedAvailablePaths = (availablePaths || [])
@@ -337,7 +361,8 @@ export const useMenuSpaceStore = defineStore(
       const defaultSpaceLandingPath = `${defaultSpaceDefinition?.defaultLandingRoute || ''}`.trim()
       if (
         defaultSpaceLandingPath &&
-        (!normalizedAvailablePaths.length || normalizedAvailablePaths.includes(defaultSpaceLandingPath))
+        (!normalizedAvailablePaths.length ||
+          normalizedAvailablePaths.includes(defaultSpaceLandingPath))
       ) {
         return defaultSpaceLandingPath
       }
@@ -347,7 +372,10 @@ export const useMenuSpaceStore = defineStore(
       ) {
         return '/workspace/inbox'
       }
-      if (!normalizedAvailablePaths.length || normalizedAvailablePaths.includes('/dashboard/console')) {
+      if (
+        !normalizedAvailablePaths.length ||
+        normalizedAvailablePaths.includes('/dashboard/console')
+      ) {
         return '/dashboard/console'
       }
       return normalizedAvailablePaths[0] || '/'

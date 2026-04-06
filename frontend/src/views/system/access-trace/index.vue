@@ -1,10 +1,10 @@
-<template>
+﻿<template>
   <div class="access-trace-page art-full-height">
     <ElCard shadow="never" class="art-table-card">
       <template #header>
         <div class="trace-header">
           <div class="trace-title">访问链路测试</div>
-          <div class="trace-subtitle">用户 -> 角色/团队 -> 菜单可见 -> 页面可见性</div>
+          <div class="trace-subtitle">用户 -> 角色/协作空间 -> 菜单可见 -> 页面可见性</div>
         </div>
       </template>
 
@@ -59,12 +59,12 @@
             />
           </ElSelect>
         </ElFormItem>
-        <ElFormItem label="团队(可选)">
+        <ElFormItem label="协作空间(可选)">
           <ElSelect
-            v-model="query.tenantId"
+            v-model="query.collaborationWorkspaceId"
             filterable
             clearable
-            placeholder="选择团队"
+            placeholder="选择协作空间"
             class="trace-field"
           >
             <ElOption
@@ -75,16 +75,11 @@
             />
           </ElSelect>
         </ElFormItem>
-        <ElFormItem label="仅团队用户">
-          <ElSwitch v-model="onlyTeamUsers" :disabled="!query.tenantId" />
+        <ElFormItem label="仅协作空间用户">
+          <ElSwitch v-model="onlyTeamUsers" :disabled="!query.collaborationWorkspaceId" />
         </ElFormItem>
         <ElFormItem label="角色筛选">
-          <ElSelect
-            v-model="roleCodeFilter"
-            clearable
-            placeholder="全部角色"
-            class="trace-field"
-          >
+          <ElSelect v-model="roleCodeFilter" clearable placeholder="全部角色" class="trace-field">
             <ElOption
               v-for="role in displayRoleOptions"
               :key="role.value"
@@ -116,10 +111,14 @@
 
       <ElDescriptions v-if="result" :column="2" border class="trace-summary">
         <ElDescriptionsItem label="用户ID">{{ result.userId }}</ElDescriptionsItem>
-        <ElDescriptionsItem label="团队ID">{{ result.tenantId || '-' }}</ElDescriptionsItem>
+        <ElDescriptionsItem label="协作空间ID">{{ result.collaborationWorkspaceId || '-' }}</ElDescriptionsItem>
         <ElDescriptionsItem label="空间">{{ result.spaceKey }}</ElDescriptionsItem>
-        <ElDescriptionsItem label="登录态">{{ result.authenticated ? '已认证' : '未认证' }}</ElDescriptionsItem>
-        <ElDescriptionsItem label="超级管理员">{{ result.superAdmin ? '是' : '否' }}</ElDescriptionsItem>
+        <ElDescriptionsItem label="登录态">{{
+          result.authenticated ? '已认证' : '未认证'
+        }}</ElDescriptionsItem>
+        <ElDescriptionsItem label="超级管理员">{{
+          result.superAdmin ? '是' : '否'
+        }}</ElDescriptionsItem>
         <ElDescriptionsItem label="动作权限数">{{ result.actionKeyCount }}</ElDescriptionsItem>
       </ElDescriptions>
 
@@ -173,10 +172,9 @@
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
-  import { useRoute } from 'vue-router'
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
-  import { fetchGetTeamMembers, fetchGetTeamRoles } from '@/api/team'
+  import { fetchGetCollaborationWorkspaceMembers, fetchGetTeamRoles } from '@/api/team'
   import {
     fetchGetApps,
     fetchGetMenuSpaces,
@@ -189,7 +187,6 @@
 
   defineOptions({ name: 'SystemAccessTrace' })
 
-  const route = useRoute()
   const loading = ref(false)
   const result = ref<Api.SystemManage.PageAccessTraceResult | null>(null)
   const appList = ref<Api.SystemManage.AppItem[]>([])
@@ -210,7 +207,7 @@
   const onlyTeamUsers = ref(false)
   const roleCodeFilter = ref('')
   const displayRoleOptions = computed(() =>
-    query.tenantId
+    query.collaborationWorkspaceId
       ? roleOptions.value.filter((item) => item.source === 'team')
       : roleOptions.value.filter((item) => item.source === 'platform')
   )
@@ -240,7 +237,7 @@
 
   const query = reactive<Api.SystemManage.PageAccessTraceParams>({
     userId: '',
-    tenantId: '',
+    collaborationWorkspaceId: '',
     pageKey: '',
     spaceKey: ''
   })
@@ -264,9 +261,10 @@
       userOptions.value = []
       return
     }
-    const useTeamMembers = Boolean(query.tenantId) && (onlyTeamUsers.value || Boolean(roleCodeFilter.value))
-    if (useTeamMembers && query.tenantId) {
-      const teamMembers = await fetchGetTeamMembers(query.tenantId, {
+    const useCollaborationWorkspaceMembers =
+      Boolean(query.collaborationWorkspaceId) && (onlyTeamUsers.value || Boolean(roleCodeFilter.value))
+    if (useCollaborationWorkspaceMembers && query.collaborationWorkspaceId) {
+      const teamMembers = await fetchGetCollaborationWorkspaceMembers(query.collaborationWorkspaceId, {
         role_code: roleCodeFilter.value || undefined
       })
       userOptions.value = (teamMembers || []).map((item) => ({
@@ -306,14 +304,14 @@
       roleOptions.value = []
       return
     }
-    if (query.tenantId) {
-      const teamRoles = await fetchGetTeamRoles(query.tenantId)
+    if (query.collaborationWorkspaceId) {
+      const teamRoles = await fetchGetTeamRoles(query.collaborationWorkspaceId)
       roleOptions.value = (teamRoles || [])
         .filter((role) => {
           const code = `${role.roleCode || ''}`.trim()
           if (!code || code === 'admin') return false
           if (code === 'team_admin' || code === 'team_member') return true
-          return Boolean(role.tenantId)
+          return Boolean(role.collaborationWorkspaceId)
         })
         .map((role) => ({
           label: role.roleName || role.roleCode,
@@ -358,7 +356,7 @@
     query.pageKey = ''
     query.spaceKey = ''
     query.userId = ''
-    query.tenantId = ''
+    query.collaborationWorkspaceId = ''
     roleCodeFilter.value = ''
     onlyTeamUsers.value = false
     result.value = null
@@ -373,8 +371,8 @@
       ElMessage.warning('请先选择用户')
       return
     }
-    if (query.tenantId && query.tenantId === query.userId) {
-      ElMessage.warning('团队 ID 不能与用户 ID 相同，请重新选择团队')
+    if (query.collaborationWorkspaceId && query.collaborationWorkspaceId === query.userId) {
+      ElMessage.warning('协作空间 ID 不能与用户 ID 相同，请重新选择协作空间')
       return
     }
     loading.value = true
@@ -410,12 +408,12 @@
   )
 
   watch(
-    () => query.tenantId,
-    async (tenantId, oldTenantId) => {
-      if (tenantId !== oldTenantId) {
+    () => query.collaborationWorkspaceId,
+    async (collaborationWorkspaceId, oldTenantId) => {
+      if (collaborationWorkspaceId !== oldTenantId) {
         roleCodeFilter.value = ''
       }
-      if (!tenantId && onlyTeamUsers.value) {
+      if (!collaborationWorkspaceId && onlyTeamUsers.value) {
         onlyTeamUsers.value = false
       }
       await loadRoleOptions()
@@ -495,3 +493,4 @@
     }
   }
 </style>
+

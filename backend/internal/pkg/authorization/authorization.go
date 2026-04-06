@@ -15,18 +15,25 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
+	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
 )
 
-const tenantContextHeader = "X-Tenant-ID"
+const (
+	tenantContextHeader                 = "X-Collaboration-Workspace-Id"
+	collaborationWorkspaceContextHeader = "X-Collaboration-Workspace-Id"
+)
 
 var (
-	ErrUnauthorized          = errors.New("unauthorized")
-	ErrUserInactive          = errors.New("user inactive")
-	ErrPermissionKeyMissing  = errors.New("permission action missing")
-	ErrTenantContextRequired = errors.New("tenant context required")
-	ErrTenantMemberNotFound  = errors.New("tenant member not found")
-	ErrTenantMemberInactive  = errors.New("tenant member inactive")
-	ErrPermissionDenied      = errors.New("permission denied")
+	ErrUnauthorized             = errors.New("unauthorized")
+	ErrUserInactive             = errors.New("user inactive")
+	ErrPermissionKeyMissing     = errors.New("permission action missing")
+	ErrTenantContextRequired    = errors.New("tenant context required")
+	ErrWorkspaceTypeForbidden   = errors.New("workspace type forbidden")
+	ErrTargetWorkspaceRequired  = errors.New("target workspace required")
+	ErrTargetWorkspaceForbidden = errors.New("target workspace forbidden")
+	ErrTenantMemberNotFound     = errors.New("tenant member not found")
+	ErrTenantMemberInactive     = errors.New("tenant member inactive")
+	ErrPermissionDenied         = errors.New("permission denied")
 )
 
 type Service struct {
@@ -53,7 +60,7 @@ func (s *Service) RequireAction(permissionKey string, legacy ...string) gin.Hand
 func (s *Service) RequireAnyAction(permissionKeys ...string) gin.HandlerFunc {
 	resolvedKeys := resolvePermissionKeys(permissionKeys...)
 	return func(c *gin.Context) {
-		userID, err := userIDFromContext(c)
+		authCtx, err := ResolveContext(c)
 		if err != nil {
 			status, resp := errcode.Response(errcode.ErrUnauthorized)
 			c.JSON(status, resp)
@@ -61,15 +68,14 @@ func (s *Service) RequireAnyAction(permissionKeys ...string) gin.HandlerFunc {
 			return
 		}
 
-		tenantID, err := resolveTenantID(c)
-		if err != nil {
-			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		if _, parseErr := parseOptionalUUID(c.GetString("auth_workspace_id")); parseErr != nil {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 			c.JSON(status, resp)
 			c.Abort()
 			return
 		}
 
-		allowed, actionDef, matchedKey, authErr := s.AuthorizeAnyInApp(userID, tenantID, appctx.CurrentAppKey(c), resolvedKeys...)
+		allowed, actionDef, matchedKey, authErr := s.AuthorizeAnyInWorkspace(authCtx, resolvedKeys...)
 		targetKey := strings.Join(resolvedKeys, " | ")
 		if strings.TrimSpace(matchedKey) != "" {
 			targetKey = matchedKey
@@ -96,8 +102,21 @@ func (s *Service) Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey
 }
 
 func (s *Service) AuthorizeInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error) {
+	return s.AuthorizeInWorkspace(&AuthorizationContext{
+		UserID:                   userID,
+		CollaborationWorkspaceID: tenantID,
+		AuthWorkspaceType:        normalizeWorkspaceType("", tenantID),
+		AppKey:                   appctx.NormalizeAppKey(appKey),
+	}, permissionKey, legacy...)
+}
+
+func (s *Service) AuthorizeInWorkspace(authCtx *AuthorizationContext, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error) {
+	if err := ensureWorkspaceContext(authCtx); err != nil {
+		return false, nil, err
+	}
+
 	var currentUser models.User
-	err := s.db.Where("id = ?", userID).First(&currentUser).Error
+	err := s.db.Where("id = ?", authCtx.UserID).First(&currentUser).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil, ErrUnauthorized
@@ -121,18 +140,32 @@ func (s *Service) AuthorizeInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey s
 	if currentUser.IsSuperAdmin {
 		return true, &actionDef, nil
 	}
-	if tenantID == nil {
+	if !permissionSupportsWorkspaceType(&actionDef, authCtx.AuthWorkspaceType) {
+		return false, &actionDef, ErrWorkspaceTypeForbidden
+	}
+	if err := s.validateDataPolicy(&actionDef, authCtx); err != nil {
+		return false, &actionDef, err
+	}
+
+	switch authCtx.AuthWorkspaceType {
+	case "personal":
 		if s.platformService == nil {
 			return false, &actionDef, nil
 		}
-		snapshot, err := s.platformService.GetSnapshot(userID, appctx.NormalizeAppKey(appKey))
+		snapshot, err := s.platformService.GetSnapshot(authCtx.UserID, appctx.NormalizeAppKey(authCtx.AppKey))
 		if err != nil {
 			return false, &actionDef, err
 		}
 		return containsUUID(snapshot.ActionIDs, actionDef.ID), &actionDef, nil
+	case models.WorkspaceTypeCollaboration:
+		if authCtx.CollaborationWorkspaceID == nil {
+			return false, &actionDef, ErrTenantContextRequired
+		}
+	default:
+		return false, &actionDef, ErrWorkspaceTypeForbidden
 	}
 
-	memberActive, boundaryConfigured, boundaryActionSet, ctxErr := s.resolveTenantActionContext(userID, tenantID, appKey)
+	memberActive, boundaryConfigured, boundaryActionSet, ctxErr := s.resolveTenantActionContext(authCtx.UserID, authCtx.CollaborationWorkspaceID, authCtx.AppKey)
 	if ctxErr != nil {
 		return false, &actionDef, ctxErr
 	}
@@ -142,7 +175,7 @@ func (s *Service) AuthorizeInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey s
 	if boundaryConfigured && !boundaryActionSet[actionDef.ID] {
 		return false, &actionDef, ErrPermissionDenied
 	}
-	roleActionSet, err := s.getTeamRoleSnapshotActionSet(userID, *tenantID, appKey)
+	roleActionSet, err := s.getTeamRoleSnapshotActionSet(authCtx.UserID, *authCtx.CollaborationWorkspaceID, authCtx.AppKey)
 	if err != nil {
 		return false, &actionDef, err
 	}
@@ -154,6 +187,15 @@ func (s *Service) AuthorizeAny(userID uuid.UUID, tenantID *uuid.UUID, permission
 }
 
 func (s *Service) AuthorizeAnyInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string, permissionKeys ...string) (bool, *models.PermissionKey, string, error) {
+	return s.AuthorizeAnyInWorkspace(&AuthorizationContext{
+		UserID:                   userID,
+		CollaborationWorkspaceID: tenantID,
+		AuthWorkspaceType:        normalizeWorkspaceType("", tenantID),
+		AppKey:                   appctx.NormalizeAppKey(appKey),
+	}, permissionKeys...)
+}
+
+func (s *Service) AuthorizeAnyInWorkspace(authCtx *AuthorizationContext, permissionKeys ...string) (bool, *models.PermissionKey, string, error) {
 	resolvedKeys := resolvePermissionKeys(permissionKeys...)
 	if len(resolvedKeys) == 0 {
 		return false, nil, "", ErrPermissionKeyMissing
@@ -163,7 +205,7 @@ func (s *Service) AuthorizeAnyInApp(userID uuid.UUID, tenantID *uuid.UUID, appKe
 	denied := false
 	var deniedAction *models.PermissionKey
 	for _, key := range resolvedKeys {
-		allowed, actionDef, err := s.AuthorizeInApp(userID, tenantID, appKey, key)
+		allowed, actionDef, err := s.AuthorizeInWorkspace(authCtx, key)
 		if err == nil {
 			if allowed {
 				return true, actionDef, key, nil
@@ -202,7 +244,7 @@ func (s *Service) GetUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) ([]st
 }
 
 func (s *Service) GetUserActionKeysInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string) ([]string, error) {
-	keys, _, err := s.collectUserActionKeysInApp(userID, tenantID, appKey)
+	keys, _, err := s.collectUserActionKeysInAppForWorkspace(userID, tenantID, normalizeWorkspaceType("", tenantID), appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -214,7 +256,15 @@ func (s *Service) GetUserActionSnapshot(userID uuid.UUID, tenantID *uuid.UUID) (
 }
 
 func (s *Service) GetUserActionSnapshotInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string) ([]string, error) {
-	keys, _, err := s.collectUserActionKeysInApp(userID, tenantID, appKey)
+	keys, _, err := s.collectUserActionKeysInAppForWorkspace(userID, tenantID, normalizeWorkspaceType("", tenantID), appKey)
+	if err != nil {
+		return nil, err
+	}
+	return keys, nil
+}
+
+func (s *Service) GetUserActionSnapshotForWorkspace(userID uuid.UUID, authWorkspaceType string, tenantID *uuid.UUID, appKey string) ([]string, error) {
+	keys, _, err := s.collectUserActionKeysInAppForWorkspace(userID, tenantID, normalizeWorkspaceType(authWorkspaceType, tenantID), appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -226,6 +276,10 @@ func (s *Service) collectUserActionKeys(userID uuid.UUID, tenantID *uuid.UUID) (
 }
 
 func (s *Service) collectUserActionKeysInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string) ([]string, []string, error) {
+	return s.collectUserActionKeysInAppForWorkspace(userID, tenantID, normalizeWorkspaceType("", tenantID), appKey)
+}
+
+func (s *Service) collectUserActionKeysInAppForWorkspace(userID uuid.UUID, tenantID *uuid.UUID, authWorkspaceType string, appKey string) ([]string, []string, error) {
 	var currentUser models.User
 	if err := s.db.Where("id = ?", userID).First(&currentUser).Error; err != nil {
 		return nil, nil, err
@@ -246,7 +300,7 @@ func (s *Service) collectUserActionKeysInApp(userID uuid.UUID, tenantID *uuid.UU
 		}
 		return keys, []string{}, nil
 	}
-	if tenantID == nil {
+	if authWorkspaceType == "personal" {
 		if s.platformService == nil {
 			return []string{}, []string{}, nil
 		}
@@ -254,7 +308,10 @@ func (s *Service) collectUserActionKeysInApp(userID uuid.UUID, tenantID *uuid.UU
 		if err != nil {
 			return nil, nil, err
 		}
-		return buildActionKeysFromIDs(actions, snapshot.ActionIDs), []string{}, nil
+		return buildActionKeysFromIDsForWorkspace(actions, snapshot.ActionIDs, authWorkspaceType), []string{}, nil
+	}
+	if tenantID == nil {
+		return []string{}, []string{}, nil
 	}
 
 	memberActive := false
@@ -273,7 +330,7 @@ func (s *Service) collectUserActionKeysInApp(userID uuid.UUID, tenantID *uuid.UU
 	if roleErr != nil {
 		return nil, nil, roleErr
 	}
-	return buildActionKeysFromIDs(actions, roleActionIDs), []string{}, nil
+	return buildActionKeysFromIDsForWorkspace(actions, roleActionIDs, authWorkspaceType), []string{}, nil
 }
 
 func appendActionKeys(keys *[]string, keySet map[string]struct{}, action models.PermissionKey) {
@@ -285,6 +342,10 @@ func appendActionKeys(keys *[]string, keySet map[string]struct{}, action models.
 }
 
 func buildActionKeysFromIDs(actions []models.PermissionKey, allowedActionIDs []uuid.UUID) []string {
+	return buildActionKeysFromIDsForWorkspace(actions, allowedActionIDs, "")
+}
+
+func buildActionKeysFromIDsForWorkspace(actions []models.PermissionKey, allowedActionIDs []uuid.UUID, authWorkspaceType string) []string {
 	allowedSet := make(map[uuid.UUID]struct{}, len(allowedActionIDs))
 	for _, actionID := range allowedActionIDs {
 		allowedSet[actionID] = struct{}{}
@@ -293,6 +354,9 @@ func buildActionKeysFromIDs(actions []models.PermissionKey, allowedActionIDs []u
 	keySet := make(map[string]struct{}, len(allowedSet))
 	for _, action := range actions {
 		if _, ok := allowedSet[action.ID]; !ok {
+			continue
+		}
+		if authWorkspaceType != "" && !permissionSupportsWorkspaceType(&action, authWorkspaceType) {
 			continue
 		}
 		appendActionKeys(&keys, keySet, action)
@@ -326,7 +390,7 @@ func (s *Service) getTeamRoleSnapshotActionIDsInApp(userID, teamID uuid.UUID, ap
 }
 
 func (s *Service) getTeamRoleSnapshotActionSet(userID, teamID uuid.UUID, appKey string) (map[uuid.UUID]bool, error) {
-	roleIDs, err := s.getEffectiveActiveRoleIDs(userID, &teamID)
+	roleIDs, err := s.getWorkspaceAwareRoleIDs(userID, teamID)
 	if err != nil {
 		return nil, err
 	}
@@ -347,7 +411,7 @@ func (s *Service) getTeamRoleSnapshotActionSet(userID, teamID uuid.UUID, appKey 
 		if !ok {
 			continue
 		}
-		snapshot, err := s.boundaryService.GetRoleSnapshot(teamID, roleID, role.TenantID == nil, appctx.NormalizeAppKey(appKey))
+		snapshot, err := s.boundaryService.GetRoleSnapshot(teamID, roleID, role.CollaborationWorkspaceID == nil, appctx.NormalizeAppKey(appKey))
 		if err != nil {
 			return nil, err
 		}
@@ -356,6 +420,109 @@ func (s *Service) getTeamRoleSnapshotActionSet(userID, teamID uuid.UUID, appKey 
 		}
 	}
 	return result, nil
+}
+
+func (s *Service) getWorkspaceAwareRoleIDs(userID, teamID uuid.UUID) ([]uuid.UUID, error) {
+	workspaceRoleIDs, err := s.getWorkspaceRoleBindingIDs(userID, teamID)
+	if err != nil {
+		return nil, err
+	}
+	if len(workspaceRoleIDs) > 0 {
+		return workspaceRoleIDs, nil
+	}
+	return s.getEffectiveActiveRoleIDs(userID, &teamID)
+}
+
+func (s *Service) getWorkspaceRoleBindingIDs(userID, teamID uuid.UUID) ([]uuid.UUID, error) {
+	var workspace models.Workspace
+	if err := s.db.
+		Where("workspace_type = ? AND collaboration_workspace_id = ? AND deleted_at IS NULL", models.WorkspaceTypeCollaboration, teamID).
+		First(&workspace).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []uuid.UUID{}, nil
+		}
+		return nil, err
+	}
+
+	var roleIDs []uuid.UUID
+	if err := s.db.Model(&models.WorkspaceRoleBinding{}).
+		Where("workspace_id = ? AND user_id = ? AND enabled = ? AND deleted_at IS NULL", workspace.ID, userID, true).
+		Distinct("role_id").
+		Pluck("role_id", &roleIDs).Error; err != nil {
+		return nil, err
+	}
+	return roleIDs, nil
+}
+
+func (s *Service) validateDataPolicy(actionDef *models.PermissionKey, authCtx *AuthorizationContext) error {
+	if actionDef == nil || authCtx == nil {
+		return ErrPermissionDenied
+	}
+
+	switch resolveDataPolicy(actionDef) {
+	case "", "none", "auth_workspace":
+		return nil
+	case "explicit_target_workspace":
+		if authCtx.AuthWorkspaceType != models.WorkspaceTypePersonal {
+			return ErrTargetWorkspaceForbidden
+		}
+		if authCtx.TargetWorkspaceID == nil || *authCtx.TargetWorkspaceID == uuid.Nil {
+			return ErrTargetWorkspaceRequired
+		}
+
+		var workspace models.Workspace
+		if err := s.db.
+			Where("id = ? AND deleted_at IS NULL", *authCtx.TargetWorkspaceID).
+			First(&workspace).Error; err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return ErrTargetWorkspaceForbidden
+			}
+			return err
+		}
+		if workspace.WorkspaceType != models.WorkspaceTypeCollaboration || workspace.Status != models.WorkspaceStatusActive {
+			return ErrTargetWorkspaceForbidden
+		}
+
+		var membershipCount int64
+		if err := s.db.Model(&models.WorkspaceMember{}).
+			Where("workspace_id = ? AND user_id = ? AND status = ? AND deleted_at IS NULL", workspace.ID, authCtx.UserID, models.WorkspaceStatusActive).
+			Count(&membershipCount).Error; err != nil {
+			return err
+		}
+		if membershipCount == 0 {
+			return ErrTargetWorkspaceForbidden
+		}
+		return nil
+	default:
+		return nil
+	}
+}
+
+func resolveDataPolicy(actionDef *models.PermissionKey) string {
+	if actionDef == nil {
+		return ""
+	}
+	permissionKey := strings.TrimSpace(actionDef.PermissionKey)
+	if policy := strings.TrimSpace(actionDef.DataPolicy); policy != "" {
+		if policy == "explicit_target_workspace" && isLegacyCoarseTargetPolicyKey(permissionKey) {
+			return ""
+		}
+		return policy
+	}
+	return ""
+}
+
+func isLegacyCoarseTargetPolicyKey(permissionKey string) bool {
+	switch strings.TrimSpace(permissionKey) {
+	case "platform.user.manage",
+		"platform.app.manage",
+		"platform.feature-package.manage",
+		"platform.workspace.manage",
+		"platform.navigation.manage":
+		return true
+	default:
+		return false
+	}
 }
 
 func (s *Service) respondAuthError(c *gin.Context, authErr error, permissionKey string) {
@@ -373,6 +540,15 @@ func (s *Service) respondAuthError(c *gin.Context, authErr error, permissionKey 
 	case errors.Is(authErr, ErrTenantContextRequired), errors.Is(authErr, ErrTenantMemberNotFound):
 		status, resp := errcode.Response(errcode.ErrNoTeam)
 		c.JSON(status, resp)
+	case errors.Is(authErr, ErrWorkspaceTypeForbidden):
+		status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "当前工作空间类型不允许执行该操作")
+		c.JSON(status, resp)
+	case errors.Is(authErr, ErrTargetWorkspaceRequired):
+		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "该操作必须显式提供 target_workspace_id")
+		c.JSON(status, resp)
+	case errors.Is(authErr, ErrTargetWorkspaceForbidden):
+		status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "当前工作空间无权操作目标工作空间")
+		c.JSON(status, resp)
 	case errors.Is(authErr, ErrTenantMemberInactive), errors.Is(authErr, ErrUserInactive):
 		status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "当前账号状态不可用")
 		c.JSON(status, resp)
@@ -387,6 +563,10 @@ func (s *Service) respondAuthError(c *gin.Context, authErr error, permissionKey 
 		c.JSON(status, resp)
 	}
 	c.Abort()
+}
+
+func (s *Service) RespondAuthError(c *gin.Context, authErr error, permissionKey string) {
+	s.respondAuthError(c, authErr, permissionKey)
 }
 
 func resolvePermissionKey(permissionKey string, legacy ...string) string {
@@ -444,9 +624,11 @@ func userIDFromContext(c *gin.Context) (uuid.UUID, error) {
 	return userID, nil
 }
 
-func resolveTenantID(c *gin.Context) (*uuid.UUID, error) {
+func resolveCollaborationWorkspaceID(c *gin.Context) (*uuid.UUID, error) {
 	candidates := []string{
-		strings.TrimSpace(c.Query("tenant_id")),
+		strings.TrimSpace(c.GetString("collaboration_workspace_id")),
+		strings.TrimSpace(c.GetString("legacy_collaboration_workspace_id")),
+		strings.TrimSpace(c.Query("collaboration_workspace_id")),
 		strings.TrimSpace(c.GetHeader(tenantContextHeader)),
 	}
 	for _, candidate := range candidates {
@@ -462,16 +644,81 @@ func resolveTenantID(c *gin.Context) (*uuid.UUID, error) {
 	return nil, nil
 }
 
+func permissionSupportsWorkspaceType(action *models.PermissionKey, authWorkspaceType string) bool {
+	targetType := normalizeWorkspaceType(authWorkspaceType, nil)
+	if action == nil {
+		return false
+	}
+	allowedTypes := parseAllowedWorkspaceTypes(action.AllowedWorkspaceTypes)
+	if len(allowedTypes) == 0 {
+		allowedTypes = defaultAllowedWorkspaceTypes(action.ContextType)
+	}
+	for _, item := range allowedTypes {
+		if item == targetType {
+			return true
+		}
+	}
+	return false
+}
+
+func parseAllowedWorkspaceTypes(value string) []string {
+	parts := strings.Split(strings.TrimSpace(value), ",")
+	result := make([]string, 0, len(parts))
+	seen := make(map[string]struct{}, len(parts))
+	for _, part := range parts {
+		item := strings.TrimSpace(part)
+		if item != "personal" && item != "collaboration" {
+			continue
+		}
+		if _, ok := seen[item]; ok {
+			continue
+		}
+		seen[item] = struct{}{}
+		result = append(result, item)
+	}
+	return result
+}
+
+func defaultAllowedWorkspaceTypes(contextType string) []string {
+	switch strings.TrimSpace(contextType) {
+	case "platform":
+		return []string{"personal"}
+	case "common":
+		return []string{"personal", "collaboration"}
+	default:
+		return []string{"collaboration"}
+	}
+}
+
 func (s *Service) getEffectiveActiveRoleIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {
+	if tenantID == nil {
+		workspaceRoleIDs, err := workspacerolebinding.ListPersonalRoleIDsByUserID(s.db, userID, true)
+		if err != nil {
+			return nil, err
+		}
+		if len(workspaceRoleIDs) > 0 {
+			return workspaceRoleIDs, nil
+		}
+	} else {
+		workspaceRoleIDs, err := workspacerolebinding.ListTeamRoleIDsByTenantAndUser(s.db, *tenantID, userID, true)
+		if err != nil {
+			return nil, err
+		}
+		if len(workspaceRoleIDs) > 0 {
+			return workspaceRoleIDs, nil
+		}
+	}
+
 	var roleIDs []uuid.UUID
 	query := s.db.Model(&models.UserRole{}).
 		Joins("JOIN roles ON roles.id = user_roles.role_id").
 		Where("user_roles.user_id = ?", userID).
-		Where("roles.status = ?", "normal")
+		Where("roles.status = ?", "normal").
+		Where("roles.deleted_at IS NULL")
 	if tenantID == nil {
-		query = query.Where("user_roles.tenant_id IS NULL")
+		query = query.Where("user_roles.collaboration_workspace_id IS NULL").Where("roles.collaboration_workspace_id IS NULL")
 	} else {
-		query = query.Where("user_roles.tenant_id = ?", *tenantID)
+		query = query.Where("user_roles.collaboration_workspace_id = ?", *tenantID)
 	}
 	err := query.Distinct("user_roles.role_id").Pluck("user_roles.role_id", &roleIDs).Error
 	return roleIDs, err
@@ -484,7 +731,7 @@ func (s *Service) resolveTenantActionContext(userID uuid.UUID, tenantID *uuid.UU
 	}
 
 	var member models.TenantMember
-	err := s.db.Where("user_id = ? AND tenant_id = ?", userID, *tenantID).First(&member).Error
+	err := s.db.Where("user_id = ? AND collaboration_workspace_id = ?", userID, *tenantID).First(&member).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, false, boundaryActionSet, nil

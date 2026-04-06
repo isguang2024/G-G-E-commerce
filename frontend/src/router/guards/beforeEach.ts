@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 路由全局前置守卫模块
  *
  * 提供完整的路由导航守卫功能
@@ -50,21 +50,14 @@ import { loadingService } from '@/utils/ui'
 import { useCommon } from '@/hooks/core/useCommon'
 import { useWorktabStore } from '@/store/modules/worktab'
 import { hasPlatformAccessByUserInfo, useTenantStore } from '@/store/modules/tenant'
+import { useWorkspaceStore } from '@/store/modules/workspace'
 import { useMenuSpaceStore } from '@/store/modules/menu-space'
 import { useAppContextStore } from '@/store/modules/app-context'
 import { fetchGetUserInfo } from '@/api/auth'
-import {
-  fetchGetRuntimeNavigation,
-  fetchGetRuntimePublicPageList
-} from '@/api/system-manage'
+import { fetchGetRuntimeNavigation, fetchGetRuntimePublicPageList } from '@/api/system-manage'
 import { ApiStatus } from '@/utils/http/status'
 import { isHttpError } from '@/utils/http/error'
-import {
-  RouteRegistry,
-  MenuProcessor,
-  IframeRouteManager,
-  ManagedPageProcessor
-} from '../core'
+import { RouteRegistry, MenuProcessor, IframeRouteManager, ManagedPageProcessor } from '../core'
 import { normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
 
 // 路由注册器实例
@@ -94,9 +87,12 @@ async function buildRegisteredRoutesFromManifest(preferredSpaceKey = ''): Promis
   const menuSpaceStore = useMenuSpaceStore()
   const appContextStore = useAppContextStore()
   const userStore = useUserStore()
-  const requestedSpaceKey = normalizeMenuSpaceKey(preferredSpaceKey || menuSpaceStore.currentSpaceKey)
+  const requestedSpaceKey = normalizeMenuSpaceKey(
+    preferredSpaceKey || menuSpaceStore.currentSpaceKey
+  )
   const manifest = await fetchGetRuntimeNavigation(requestedSpaceKey)
-  const resolvedAppKey = `${manifest.currentApp?.app?.appKey || manifest.context?.app_key || ''}`.trim()
+  const resolvedAppKey =
+    `${manifest.currentApp?.app?.appKey || manifest.context?.app_key || ''}`.trim()
   if (resolvedAppKey) {
     appContextStore.setRuntimeAppKey(resolvedAppKey)
   }
@@ -104,7 +100,10 @@ async function buildRegisteredRoutesFromManifest(preferredSpaceKey = ''): Promis
     manifest.currentSpace?.space?.spaceKey || manifest.context?.space_key || requestedSpaceKey
   )
 
-  if (resolvedSpaceKey && resolvedSpaceKey !== normalizeMenuSpaceKey(menuSpaceStore.currentSpaceKey)) {
+  if (
+    resolvedSpaceKey &&
+    resolvedSpaceKey !== normalizeMenuSpaceKey(menuSpaceStore.currentSpaceKey)
+  ) {
     menuSpaceStore.setActiveSpaceKey(resolvedSpaceKey)
   }
 
@@ -232,7 +231,8 @@ function buildFrontendUserInfo(data: Api.Auth.UserInfo): Api.Auth.UserInfo {
 
 export async function refreshCurrentUserInfoContext(): Promise<void> {
   const userStore = useUserStore()
-  const tenantStore = useTenantStore()
+  const collaborationWorkspaceStore = useTenantStore()
+  const workspaceStore = useWorkspaceStore()
   const menuSpaceStore = useMenuSpaceStore()
   const data = await fetchGetUserInfo()
   const mergedInfo: Api.Auth.UserInfo = {
@@ -240,7 +240,16 @@ export async function refreshCurrentUserInfoContext(): Promise<void> {
     ...buildFrontendUserInfo(data)
   }
   userStore.setUserInfo(mergedInfo)
-  tenantStore.setPlatformAccess(hasPlatformAccessByUserInfo(mergedInfo))
+  collaborationWorkspaceStore.setPlatformAccess(hasPlatformAccessByUserInfo(mergedInfo))
+  await collaborationWorkspaceStore.loadMyTeams({
+    preferredCollaborationWorkspaceId: data.current_collaboration_workspace_id || '',
+    preferredLegacyCollaborationWorkspaceId: data.collaboration_workspace_id || data.current_collaboration_workspace_id || '',
+    preferredWorkspaceId:
+      workspaceStore.currentAuthWorkspaceId || data.current_auth_workspace_id || '',
+    preferredWorkspaceType:
+      workspaceStore.currentAuthWorkspaceType || data.current_auth_workspace_type || '',
+    preferPlatform: hasPlatformAccessByUserInfo(mergedInfo)
+  })
   menuSpaceStore.syncRuntimeHost()
   await menuSpaceStore.refreshRuntimeConfig(true)
   await menuSpaceStore.syncResolvedCurrentSpace()
@@ -444,7 +453,8 @@ async function ensurePublicRuntimeRoutes(
       hash: to.hash
     })
     return resolved.matched.some(
-      (record) => Boolean(record.meta?.isInnerPage) && `${record.meta?.accessMode || ''}`.trim() === 'public'
+      (record) =>
+        Boolean(record.meta?.isInnerPage) && `${record.meta?.accessMode || ''}`.trim() === 'public'
     )
   } catch (error) {
     console.error('[RouteGuard] 注册公开运行时页面失败:', error)
@@ -456,7 +466,8 @@ async function ensurePublicRuntimeRoutes(
 
 function isPublicRuntimeRoute(to: RouteLocationNormalized): boolean {
   return to.matched.some(
-    (record) => Boolean(record.meta?.isInnerPage) && `${record.meta?.accessMode || ''}`.trim() === 'public'
+    (record) =>
+      Boolean(record.meta?.isInnerPage) && `${record.meta?.accessMode || ''}`.trim() === 'public'
   )
 }
 
@@ -601,23 +612,29 @@ function mapBackendRolesToFrontend(data: {
  */
 async function fetchUserInfo(preferredSpaceKey = ''): Promise<void> {
   const userStore = useUserStore()
-  const tenantStore = useTenantStore()
+  const collaborationWorkspaceStore = useTenantStore()
+  const workspaceStore = useWorkspaceStore()
   const menuSpaceStore = useMenuSpaceStore()
   const data = await fetchGetUserInfo()
   const frontendUserInfo = buildFrontendUserInfo(data)
-  userStore.syncLoginUserIdentity(
-    `${frontendUserInfo.userId || frontendUserInfo.id || ''}`.trim()
-  )
+  userStore.syncLoginUserIdentity(`${frontendUserInfo.userId || frontendUserInfo.id || ''}`.trim())
   userStore.setUserInfo(frontendUserInfo)
   userStore.checkAndClearWorktabs()
-  tenantStore.setPlatformAccess(hasPlatformAccessByUserInfo(frontendUserInfo))
+  collaborationWorkspaceStore.setPlatformAccess(hasPlatformAccessByUserInfo(frontendUserInfo))
   menuSpaceStore.syncRuntimeHost()
   await menuSpaceStore.refreshRuntimeConfig(true)
   await menuSpaceStore.syncResolvedCurrentSpace(preferredSpaceKey)
-  await tenantStore.loadMyTeams({
-    preferredTenantId: data.current_tenant_id || ''
+  await collaborationWorkspaceStore.loadMyTeams({
+    preferredCollaborationWorkspaceId: data.current_collaboration_workspace_id || '',
+    preferredLegacyCollaborationWorkspaceId: data.collaboration_workspace_id || data.current_collaboration_workspace_id || '',
+    preferredWorkspaceId: data.current_auth_workspace_id || '',
+    preferredWorkspaceType: data.current_auth_workspace_type || '',
+    preferPlatform: hasPlatformAccessByUserInfo(frontendUserInfo)
   })
-  if (tenantStore.currentContextMode === 'team' && tenantStore.currentTenantId !== (data.current_tenant_id || '')) {
+  if (
+    workspaceStore.currentAuthWorkspaceType !== (data.current_auth_workspace_type || 'personal') ||
+    workspaceStore.currentAuthWorkspaceId !== (data.current_auth_workspace_id || '')
+  ) {
     await refreshCurrentUserInfoContext()
   }
 }
@@ -709,3 +726,4 @@ async function tryRefreshMissingDynamicRoute(
     return false
   }
 }
+

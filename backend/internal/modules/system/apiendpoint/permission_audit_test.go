@@ -23,7 +23,7 @@ func TestBuildPermissionProfileForGlobalJWTEndpoint(t *testing.T) {
 }
 
 func TestBuildPermissionProfileForCrossContextSharedEndpoint(t *testing.T) {
-	profile := buildPermissionProfile("/api/v1/messages/dispatch", []string{"message.manage", "team.message.manage"})
+	profile := buildPermissionProfile("/api/v1/messages/dispatch", []string{"message.manage", "collaboration_workspace.message.manage"})
 	if profile.BindingMode != permissionPatternCrossContextShared {
 		t.Fatalf("binding mode = %q, want %q", profile.BindingMode, permissionPatternCrossContextShared)
 	}

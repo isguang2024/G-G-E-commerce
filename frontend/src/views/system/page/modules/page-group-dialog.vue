@@ -533,9 +533,7 @@
 
   function initForm() {
     if (props.dialogType === 'edit' && props.pageData) {
-      const spaceKeys = Array.isArray(props.pageData.spaceKeys)
-        ? props.pageData.spaceKeys
-        : []
+      const spaceKeys = Array.isArray(props.pageData.spaceKeys) ? props.pageData.spaceKeys : []
       Object.assign(form, {
         id: props.pageData.id || '',
         pageKey: props.pageData.pageKey || '',
@@ -875,4 +873,3 @@
     min-width: 96px;
   }
 </style>
-

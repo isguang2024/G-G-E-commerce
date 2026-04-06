@@ -1,4 +1,4 @@
-/**
+﻿/**
  * 快速入口配置
  * 包含：应用列表、快速链接等配置
  */
@@ -92,10 +92,10 @@ const fastEnterConfig: FastEnterConfig = {
     },
     {
       id: 'team-members',
-      name: '团队成员',
+      name: '协作空间成员',
       enabled: true,
       order: 2,
-      routeName: 'TeamMembers'
+      routeName: 'CollaborationWorkspaceMembers'
     },
     {
       id: 'feature-package',
@@ -115,3 +115,4 @@ const fastEnterConfig: FastEnterConfig = {
 }
 
 export default Object.freeze(fastEnterConfig)
+

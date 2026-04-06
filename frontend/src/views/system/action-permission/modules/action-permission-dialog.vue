@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
     :title="dialogType === 'add' ? '新增功能权限' : '编辑功能权限'"
@@ -6,7 +6,8 @@
     destroy-on-close
     @close="handleClose"
     direction="rtl"
-    class="config-drawer">
+    class="config-drawer"
+  >
     <ElForm ref="formRef" :model="form" :rules="rules" label-width="110px">
       <ElFormItem label="权限键" prop="permissionKey">
         <ElInput v-model="form.permissionKey" placeholder="例如 system.role.manage" />
@@ -52,14 +53,14 @@
       <ElFormItem label="上下文" prop="contextType">
         <ElSelect v-model="form.contextType" style="width: 100%">
           <ElOption label="平台" value="platform" />
-          <ElOption label="团队" value="team" />
+          <ElOption label="协作空间" value="team" />
           <ElOption label="通用" value="common" />
         </ElSelect>
       </ElFormItem>
       <div class="context-hint">
-        <span>平台：系统治理和平台后台能力，建议使用 `system.`、`platform.`、`tenant.` 前缀。</span>
-        <span>团队：团队内授权能力，建议使用 `team.` 前缀或团队模块分组。</span>
-        <span>通用：跨上下文业务能力，不要复用平台/团队专属前缀。</span>
+        <span>平台：系统治理和平台后台能力，建议使用 `system.`、`platform.`、`collaboration_workspace.` 前缀。</span>
+        <span>协作空间：协作空间内授权能力，建议使用 `team.` 前缀或协作空间模块分组。</span>
+        <span>通用：跨上下文业务能力，不要复用平台/协作空间专属前缀。</span>
       </div>
       <ElFormItem label="权限名称" prop="name">
         <ElInput v-model="form.name" placeholder="请输入名称" />
@@ -71,7 +72,10 @@
         <template #label>
           <span class="label-help">
             <span>状态</span>
-            <ElTooltip content="功能权限状态参与权限判断；停用后该权限键不再作为可用权限生效。" placement="top">
+            <ElTooltip
+              content="功能权限状态参与权限判断；停用后该权限键不再作为可用权限生效。"
+              placement="top"
+            >
               <ElIcon class="label-help-icon"><QuestionFilled /></ElIcon>
             </ElTooltip>
           </span>
@@ -208,7 +212,8 @@
         feature_group_id: form.featureGroupId,
         context_type: form.contextType,
         feature_kind:
-          props.featureGroups?.find((item) => item.id === form.featureGroupId)?.code || form.featureKind,
+          props.featureGroups?.find((item) => item.id === form.featureGroupId)?.code ||
+          form.featureKind,
         name: form.name.trim(),
         description: form.description.trim(),
         status: form.status,
@@ -259,3 +264,4 @@
     line-height: 1.5;
   }
 </style>
+

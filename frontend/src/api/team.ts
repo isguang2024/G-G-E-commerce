@@ -1,7 +1,8 @@
-import request from '@/utils/http'
+﻿import request from '@/utils/http'
 
-const TENANT_BASE = '/api/v1/tenants'
-const MY_TEAM_BOUNDARY_ROLE_BASE = `${TENANT_BASE}/my-team/boundary/roles`
+const COLLABORATION_WORKSPACE_BASE = '/api/v1/collaboration-workspaces'
+const CURRENT_COLLABORATION_BASE = `${COLLABORATION_WORKSPACE_BASE}/current`
+const CURRENT_BOUNDARY_ROLE_BASE = `${CURRENT_COLLABORATION_BASE}/boundary/roles`
 
 function normalizePermissionKey(value?: string) {
   const target = `${value || ''}`.trim()
@@ -32,9 +33,9 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
   const module = `${moduleCode || ''}`.trim()
   if (
     key.startsWith('system.') ||
-    key.startsWith('tenant.') ||
+    key.startsWith('collaboration_workspace.') ||
     key.startsWith('platform.') ||
-    key === 'tenant.manage' ||
+    key === 'collaboration_workspace.manage' ||
     module === 'role' ||
     module === 'user' ||
     module === 'menu' ||
@@ -46,7 +47,7 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
   ) {
     return 'platform'
   }
-  return 'team'
+  return 'collaboration'
 }
 
 function normalizeTeam(item: any): Api.SystemManage.TeamListItem {
@@ -62,6 +63,20 @@ function normalizeTeam(item: any): Api.SystemManage.TeamListItem {
     updateTime: item?.updated_at || item?.updateTime || '',
     adminUsers: item?.admin_users || item?.adminUsers || [],
     adminUserIds: item?.admin_user_ids || item?.adminUserIds || [],
+    collaborationWorkspaceId:
+      item?.collaboration_workspace_id ||
+      item?.collaborationWorkspaceId ||
+      item?.workspace_id ||
+      item?.workspaceId ||
+      '',
+    workspaceId: item?.workspace_id || item?.workspaceId || '',
+    workspaceType: item?.workspace_type || item?.workspaceType || 'collaboration',
+    legacyCollaborationWorkspaceId:
+      item?.legacy_collaboration_workspace_id ||
+      item?.legacyCollaborationWorkspaceId ||
+      item?.collaboration_workspace_id ||
+      item?.id ||
+      '',
     currentRoleCode: item?.current_role_code || item?.currentRoleCode || '',
     memberStatus: item?.member_status || item?.memberStatus || ''
   }
@@ -121,7 +136,7 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
       ? 'platform'
       : packageKey.startsWith('common.')
         ? 'common'
-        : 'team')
+        : 'collaboration')
   return {
     id: item?.id || '',
     packageKey,
@@ -141,17 +156,28 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
 }
 
 function normalizeRoleLabel(roleCode?: string) {
-  return roleCode === 'team_admin' ? '团队管理员' : '团队成员'
+  return roleCode === 'team_admin' ? '协作空间管理员' : '协作空间成员'
 }
 
-function normalizeTeamMember(item: any): Api.SystemManage.TeamMemberItem {
+function normalizeCollaborationWorkspaceMember(
+  item: any
+): Api.SystemManage.CollaborationWorkspaceMemberItem {
   const roleCode = item?.role_code || item?.roleCode || ''
   return {
     id: item?.id || '',
-    tenantId: item?.tenant_id || item?.tenantId || '',
+    collaborationWorkspaceId:
+      item?.collaboration_workspace_id || item?.collaborationWorkspaceId || '',
+    legacyCollaborationWorkspaceId:
+      item?.legacy_collaboration_workspace_id ||
+      item?.legacyCollaborationWorkspaceId ||
+      item?.id ||
+      '',
+    workspaceId: item?.workspace_id || item?.workspaceId || '',
+    workspaceType: item?.workspace_type || item?.workspaceType || 'collaboration',
     userId: item?.user_id || item?.userId || '',
     roleCode,
     role: normalizeRoleLabel(roleCode),
+    memberType: item?.member_type || item?.memberType || '',
     status: item?.status || 'active',
     joinedAt: item?.joined_at || item?.joinedAt || '',
     userName: item?.user_name || item?.userName || '',
@@ -212,100 +238,133 @@ export function fetchDeleteTeam(id: string) {
   })
 }
 
-export async function fetchGetTeamMembers(
-  teamId: string,
+export async function fetchGetCollaborationWorkspaceMembers(
+  collaborationWorkspaceId: string,
   params?: { user_id?: string; user_name?: string; role_code?: string }
 ) {
   const res = await request.get<any[]>({
-    url: `${TENANT_BASE}/${teamId}/members`,
+    url: `${TENANT_BASE}/${collaborationWorkspaceId}/members`,
     params
   })
-  return (res || []).map(normalizeTeamMember)
+  return (res || []).map(normalizeCollaborationWorkspaceMember)
 }
 
-export function fetchAddTeamMember(teamId: string, data: { user_id: string; role_code?: string }) {
+export function fetchAddCollaborationWorkspaceMember(
+  collaborationWorkspaceId: string,
+  data: { user_id: string; role_code?: string }
+) {
   return request.post<void>({
-    url: `${TENANT_BASE}/${teamId}/members`,
+    url: `${TENANT_BASE}/${collaborationWorkspaceId}/members`,
     data: { user_id: data.user_id, role_code: data.role_code || 'team_member' }
   })
 }
 
-export function fetchRemoveTeamMember(teamId: string, userId: string) {
+export function fetchRemoveCollaborationWorkspaceMember(
+  collaborationWorkspaceId: string,
+  userId: string
+) {
   return request.del<void>({
-    url: `${TENANT_BASE}/${teamId}/members/${userId}`
+    url: `${TENANT_BASE}/${collaborationWorkspaceId}/members/${userId}`
   })
 }
 
-export function fetchUpdateTeamMemberRole(teamId: string, userId: string, roleCode: string) {
+export function fetchUpdateCollaborationWorkspaceMemberRole(
+  collaborationWorkspaceId: string,
+  userId: string,
+  roleCode: string
+) {
   return request.put<void>({
-    url: `${TENANT_BASE}/${teamId}/members/${userId}/role`,
+    url: `${TENANT_BASE}/${collaborationWorkspaceId}/members/${userId}/role`,
     data: { role_code: roleCode }
   })
 }
 
 export async function fetchGetMyTeam() {
   const res = await request.get<Api.SystemManage.TeamListItem>({
-    url: `${TENANT_BASE}/my-team`
+    url: CURRENT_COLLABORATION_BASE
   })
   return normalizeTeam(res)
 }
 
 export async function fetchGetMyTeams() {
   const res = await request.get<any[]>({
-    url: `${TENANT_BASE}/my-teams`,
-    skipTenantHeader: true,
+    url: `${TENANT_BASE}/mine`,
+    skipCollaborationWorkspaceHeader: true,
     showErrorMessage: false
   })
   return (res || []).map(normalizeTeam)
 }
 
-export async function fetchGetMyTeamMembers() {
+export async function fetchGetMyCollaborationWorkspaceMembers() {
   const res = await request.get<any[]>({
-    url: `${TENANT_BASE}/my-team/members`
+    url: `${CURRENT_COLLABORATION_BASE}/members`
   })
-  return (res || []).map(normalizeTeamMember)
+  return (res || []).map(normalizeCollaborationWorkspaceMember)
 }
 
-export function fetchAddMyTeamMember(data: { user_id: string; role_code?: string }) {
+export function fetchAddMyCollaborationWorkspaceMember(data: {
+  user_id: string
+  role_code?: string
+}) {
   return request.post<void>({
-    url: `${TENANT_BASE}/my-team/members`,
+    url: `${CURRENT_COLLABORATION_BASE}/members`,
     data: { user_id: data.user_id, role_code: data.role_code || 'team_member' }
   })
 }
 
-export function fetchRemoveMyTeamMember(userId: string) {
+export function fetchRemoveMyCollaborationWorkspaceMember(userId: string) {
   return request.del<void>({
-    url: `${TENANT_BASE}/my-team/members/${userId}`
+    url: `${CURRENT_COLLABORATION_BASE}/members/${userId}`
   })
 }
 
-export function fetchUpdateMyTeamMemberRole(userId: string, roleCode: string) {
+export function fetchUpdateMyCollaborationWorkspaceMemberRole(userId: string, roleCode: string) {
   return request.put<void>({
-    url: `${TENANT_BASE}/my-team/members/${userId}/role`,
+    url: `${CURRENT_COLLABORATION_BASE}/members/${userId}/role`,
     data: { role_code: roleCode }
   })
 }
 
-export function fetchGetMyTeamMemberRoles(userId: string) {
-  return request.get<{
-    role_ids: string[]
-    global_role_ids?: string[]
-    team_role_ids?: string[]
-  }>({
-    url: `${TENANT_BASE}/my-team/members/${userId}/roles`
-  })
+export function fetchGetMyCollaborationWorkspaceMemberRoles(userId: string) {
+  return request
+    .get<any>({
+      url: `${CURRENT_COLLABORATION_BASE}/members/${userId}/roles`
+    })
+    .then(
+      (res) =>
+        ({
+          role_ids: res?.role_ids || [],
+          roles: (res?.roles || []).map((item: any) => ({
+            id: item?.id || '',
+            code: item?.code || '',
+            name: item?.name || ''
+          })),
+          global_role_ids: res?.global_role_ids || [],
+          team_role_ids: res?.team_role_ids || [],
+          bindingWorkspaceId: res?.binding_workspace_id || res?.bindingWorkspaceId || '',
+          collaborationWorkspaceId:
+            res?.collaboration_workspace_id ||
+            res?.collaborationWorkspaceId ||
+            res?.binding_workspace_id ||
+            res?.bindingWorkspaceId ||
+            '',
+          bindingWorkspaceType:
+            res?.binding_workspace_type || res?.bindingWorkspaceType || 'collaboration',
+          memberType: res?.member_type || res?.memberType || ''
+        }) satisfies Api.SystemManage.CollaborationWorkspaceMemberRoleBindingResponse
+    )
 }
 
-export function fetchSetMyTeamMemberRoles(userId: string, roleIds: string[]) {
+export function fetchSetMyCollaborationWorkspaceMemberRoles(userId: string, roleIds: string[]) {
   return request.put<void>({
-    url: `${TENANT_BASE}/my-team/members/${userId}/roles`,
+    url: `${CURRENT_COLLABORATION_BASE}/members/${userId}/roles`,
     data: { role_ids: roleIds }
   })
 }
 
 export async function fetchGetMyTeamRoles() {
   const res = await request.get<any[]>({
-    url: `${TENANT_BASE}/my-team/roles`
+    url: `${CURRENT_COLLABORATION_BASE}/roles`
   })
 
   return (res || []).map((item: any) => ({
@@ -315,15 +374,16 @@ export async function fetchGetMyTeamRoles() {
     description: item?.description || '',
     status: item?.status || 'normal',
     isSystem: Boolean(item?.is_system ?? item?.isSystem ?? false),
-    tenantId: item?.tenant_id || item?.tenantId || '',
+    collaborationWorkspaceId:
+      item?.collaboration_workspace_id || item?.collaborationWorkspaceId || '',
     isGlobal: Boolean(item?.is_global ?? item?.isGlobal ?? false),
     createTime: item?.create_time || item?.created_at || ''
   }))
 }
 
-export async function fetchGetTeamRoles(teamId: string) {
+export async function fetchGetTeamRoles(collaborationWorkspaceId: string) {
   const res = await request.get<any[]>({
-    url: `${TENANT_BASE}/${teamId}/roles`
+    url: `${TENANT_BASE}/${collaborationWorkspaceId}/roles`
   })
 
   return (res || []).map((item: any) => ({
@@ -333,7 +393,8 @@ export async function fetchGetTeamRoles(teamId: string) {
     description: item?.description || '',
     status: item?.status || 'normal',
     isSystem: Boolean(item?.is_system ?? item?.isSystem ?? false),
-    tenantId: item?.tenant_id || item?.tenantId || '',
+    collaborationWorkspaceId:
+      item?.collaboration_workspace_id || item?.collaborationWorkspaceId || '',
     isGlobal: Boolean(item?.is_global ?? item?.isGlobal ?? false),
     createTime: item?.create_time || item?.created_at || ''
   }))
@@ -341,7 +402,7 @@ export async function fetchGetTeamRoles(teamId: string) {
 
 export async function fetchGetMyTeamBoundaryRoles(appKey?: string) {
   const res = await request.get<any[]>({
-    url: MY_TEAM_BOUNDARY_ROLE_BASE,
+    url: CURRENT_BOUNDARY_ROLE_BASE,
     params: {
       ...(appKey ? { app_key: appKey } : {})
     }
@@ -353,7 +414,8 @@ export async function fetchGetMyTeamBoundaryRoles(appKey?: string) {
     description: item?.description || '',
     status: item?.status || 'normal',
     isSystem: Boolean(item?.is_system ?? item?.isSystem ?? false),
-    tenantId: item?.tenant_id || item?.tenantId || '',
+    collaborationWorkspaceId:
+      item?.collaboration_workspace_id || item?.collaborationWorkspaceId || '',
     isGlobal: Boolean(item?.is_global ?? item?.isGlobal ?? false),
     createTime: item?.create_time || item?.created_at || ''
   }))
@@ -361,28 +423,28 @@ export async function fetchGetMyTeamBoundaryRoles(appKey?: string) {
 
 export function fetchCreateMyTeamRole(data: Api.SystemManage.RoleCreateParams) {
   return request.post<{ roleId: string }>({
-    url: `${TENANT_BASE}/my-team/roles`,
+    url: `${CURRENT_COLLABORATION_BASE}/roles`,
     data
   })
 }
 
 export function fetchUpdateMyTeamRole(roleId: string, data: Api.SystemManage.RoleUpdateParams) {
   return request.put<void>({
-    url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}`,
+    url: `${CURRENT_BOUNDARY_ROLE_BASE}/${roleId}`,
     data
   })
 }
 
 export function fetchDeleteMyTeamRole(roleId: string) {
   return request.del<void>({
-    url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}`
+    url: `${CURRENT_BOUNDARY_ROLE_BASE}/${roleId}`
   })
 }
 
 export function fetchGetMyTeamBoundaryRoleMenus(roleId: string, appKey?: string) {
   return request
     .get<Api.SystemManage.RoleMenuBoundaryResponse>({
-      url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/menus`,
+      url: `${CURRENT_BOUNDARY_ROLE_BASE}/${roleId}/menus`,
       params: {
         ...(appKey ? { app_key: appKey } : {})
       }
@@ -399,9 +461,13 @@ export function fetchGetMyTeamBoundaryRoleMenus(roleId: string, appKey?: string)
     }))
 }
 
-export function fetchSetMyTeamBoundaryRoleMenus(roleId: string, menuIds: string[], appKey?: string) {
+export function fetchSetMyTeamBoundaryRoleMenus(
+  roleId: string,
+  menuIds: string[],
+  appKey?: string
+) {
   return request.put<void>({
-    url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/menus`,
+    url: `${CURRENT_BOUNDARY_ROLE_BASE}/${roleId}/menus`,
     params: {
       ...(appKey ? { app_key: appKey } : {})
     },
@@ -412,7 +478,7 @@ export function fetchSetMyTeamBoundaryRoleMenus(roleId: string, menuIds: string[
 export function fetchGetMyTeamBoundaryRoleActions(roleId: string, appKey?: string) {
   return request
     .get<Api.SystemManage.RoleActionBoundaryResponse>({
-      url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/actions`,
+      url: `${CURRENT_BOUNDARY_ROLE_BASE}/${roleId}/actions`,
       params: {
         ...(appKey ? { app_key: appKey } : {})
       }
@@ -430,9 +496,13 @@ export function fetchGetMyTeamBoundaryRoleActions(roleId: string, appKey?: strin
     }))
 }
 
-export function fetchSetMyTeamBoundaryRoleActions(roleId: string, actionIds: string[], appKey?: string) {
+export function fetchSetMyTeamBoundaryRoleActions(
+  roleId: string,
+  actionIds: string[],
+  appKey?: string
+) {
   return request.put<void>({
-    url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/actions`,
+    url: `${CURRENT_BOUNDARY_ROLE_BASE}/${roleId}/actions`,
     params: {
       ...(appKey ? { app_key: appKey } : {})
     },
@@ -443,7 +513,7 @@ export function fetchSetMyTeamBoundaryRoleActions(roleId: string, actionIds: str
 export function fetchGetMyTeamBoundaryRolePackages(roleId: string, appKey?: string) {
   return request
     .get<Api.SystemManage.RoleFeaturePackageResponse>({
-      url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/packages`,
+      url: `${CURRENT_BOUNDARY_ROLE_BASE}/${roleId}/packages`,
       params: {
         ...(appKey ? { app_key: appKey } : {})
       }
@@ -455,9 +525,13 @@ export function fetchGetMyTeamBoundaryRolePackages(roleId: string, appKey?: stri
     }))
 }
 
-export function fetchSetMyTeamBoundaryRolePackages(roleId: string, packageIds: string[], appKey?: string) {
+export function fetchSetMyTeamBoundaryRolePackages(
+  roleId: string,
+  packageIds: string[],
+  appKey?: string
+) {
   return request.put<void>({
-    url: `${MY_TEAM_BOUNDARY_ROLE_BASE}/${roleId}/packages`,
+    url: `${CURRENT_BOUNDARY_ROLE_BASE}/${roleId}/packages`,
     params: {
       ...(appKey ? { app_key: appKey } : {})
     },
@@ -468,7 +542,7 @@ export function fetchSetMyTeamBoundaryRolePackages(roleId: string, packageIds: s
 export function fetchGetMyTeamBoundaryPackages(appKey?: string) {
   return request
     .get<{ package_ids: string[]; packages: any[] }>({
-      url: `${TENANT_BASE}/my-team/boundary/packages`,
+      url: `${CURRENT_COLLABORATION_BASE}/boundary/packages`,
       params: {
         ...(appKey ? { app_key: appKey } : {})
       }
@@ -479,9 +553,9 @@ export function fetchGetMyTeamBoundaryPackages(appKey?: string) {
     }))
 }
 
-export async function fetchGetTeamActions(teamId: string, appKey?: string) {
+export async function fetchGetTeamActions(collaborationWorkspaceId: string, appKey?: string) {
   const res = await request.get<{ action_ids: string[]; actions: any[] }>({
-    url: `${TENANT_BASE}/${teamId}/actions`,
+    url: `${TENANT_BASE}/${collaborationWorkspaceId}/actions`,
     params: {
       ...(appKey ? { app_key: appKey } : {})
     }
@@ -492,9 +566,9 @@ export async function fetchGetTeamActions(teamId: string, appKey?: string) {
   }
 }
 
-export async function fetchGetTeamMenus(teamId: string, appKey?: string) {
+export async function fetchGetTeamMenus(collaborationWorkspaceId: string, appKey?: string) {
   const res = await request.get<{ menu_ids: string[] }>({
-    url: `${TENANT_BASE}/${teamId}/menus`,
+    url: `${TENANT_BASE}/${collaborationWorkspaceId}/menus`,
     params: {
       ...(appKey ? { app_key: appKey } : {})
     }
@@ -504,10 +578,10 @@ export async function fetchGetTeamMenus(teamId: string, appKey?: string) {
   }
 }
 
-export function fetchGetTeamActionOrigins(teamId: string, appKey?: string) {
+export function fetchGetTeamActionOrigins(collaborationWorkspaceId: string, appKey?: string) {
   return request
     .get<Api.SystemManage.TeamActionOriginsResponse>({
-      url: `${TENANT_BASE}/${teamId}/action-origins`,
+      url: `${TENANT_BASE}/${collaborationWorkspaceId}/action-origins`,
       params: {
         ...(appKey ? { app_key: appKey } : {})
       }
@@ -522,14 +596,14 @@ export function fetchGetTeamActionOrigins(teamId: string, appKey?: string) {
     }))
 }
 
-export function fetchGetTeamMenuOrigins(teamId: string, appKey?: string) {
+export function fetchGetTeamMenuOrigins(collaborationWorkspaceId: string, appKey?: string) {
   return request
     .get<{
       derived_menu_ids: string[]
       derived_sources?: Array<{ menu_id: string; package_ids: string[] }>
       blocked_menu_ids: string[]
     }>({
-      url: `${TENANT_BASE}/${teamId}/menu-origins`,
+      url: `${TENANT_BASE}/${collaborationWorkspaceId}/menu-origins`,
       params: {
         ...(appKey ? { app_key: appKey } : {})
       }
@@ -544,9 +618,13 @@ export function fetchGetTeamMenuOrigins(teamId: string, appKey?: string) {
     }))
 }
 
-export function fetchSetTeamActions(teamId: string, actionIds: string[], appKey?: string) {
+export function fetchSetTeamActions(
+  collaborationWorkspaceId: string,
+  actionIds: string[],
+  appKey?: string
+) {
   return request.put<void>({
-    url: `${TENANT_BASE}/${teamId}/actions`,
+    url: `${TENANT_BASE}/${collaborationWorkspaceId}/actions`,
     params: {
       ...(appKey ? { app_key: appKey } : {})
     },
@@ -554,9 +632,13 @@ export function fetchSetTeamActions(teamId: string, actionIds: string[], appKey?
   })
 }
 
-export function fetchSetTeamMenus(teamId: string, menuIds: string[], appKey?: string) {
+export function fetchSetTeamMenus(
+  collaborationWorkspaceId: string,
+  menuIds: string[],
+  appKey?: string
+) {
   return request.put<void>({
-    url: `${TENANT_BASE}/${teamId}/menus`,
+    url: `${TENANT_BASE}/${collaborationWorkspaceId}/menus`,
     params: {
       ...(appKey ? { app_key: appKey } : {})
     },
@@ -566,7 +648,7 @@ export function fetchSetTeamMenus(teamId: string, menuIds: string[], appKey?: st
 
 export async function fetchGetMyTeamActions() {
   const res = await request.get<{ action_ids: string[]; actions: any[] }>({
-    url: `${TENANT_BASE}/my-team/actions`
+    url: `${CURRENT_COLLABORATION_BASE}/actions`
   })
   return {
     action_ids: res?.action_ids || [],
@@ -577,7 +659,7 @@ export async function fetchGetMyTeamActions() {
 export function fetchGetMyTeamActionOrigins() {
   return request
     .get<Api.SystemManage.TeamActionOriginsResponse>({
-      url: `${TENANT_BASE}/my-team/action-origins`
+      url: `${CURRENT_COLLABORATION_BASE}/action-origins`
     })
     .then((res) => ({
       derived_action_ids: res?.derived_action_ids || [],

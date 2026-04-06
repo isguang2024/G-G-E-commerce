@@ -30,11 +30,36 @@
   const navItems = computed(() => {
     const prefix = props.scope === 'team' ? '/team' : '/system'
     return [
-      { key: 'dispatch', label: '消息发送', description: '编辑并发出消息', path: `${prefix}/message` },
-      { key: 'template', label: '消息模板', description: '维护摘要与正文模板', path: `${prefix}/message-template` },
-      { key: 'sender', label: '发送人', description: '管理发信身份', path: `${prefix}/message-sender` },
-      { key: 'group', label: '接收组', description: '管理固定接收规则', path: `${prefix}/message-recipient-group` },
-      { key: 'record', label: '发送记录', description: '查看投递与审计', path: `${prefix}/message-record` }
+      {
+        key: 'dispatch',
+        label: '消息发送',
+        description: '编辑并发出消息',
+        path: `${prefix}/message`
+      },
+      {
+        key: 'template',
+        label: '消息模板',
+        description: '维护摘要与正文模板',
+        path: `${prefix}/message-template`
+      },
+      {
+        key: 'sender',
+        label: '发送人',
+        description: '管理发信身份',
+        path: `${prefix}/message-sender`
+      },
+      {
+        key: 'group',
+        label: '接收组',
+        description: '管理固定接收规则',
+        path: `${prefix}/message-recipient-group`
+      },
+      {
+        key: 'record',
+        label: '发送记录',
+        description: '查看投递与审计',
+        path: `${prefix}/message-record`
+      }
     ]
   })
 
@@ -107,4 +132,3 @@
     }
   }
 </style>
-

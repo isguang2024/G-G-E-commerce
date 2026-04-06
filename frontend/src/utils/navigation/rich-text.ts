@@ -35,7 +35,7 @@ export function resolveRichTextInternalPath(href?: string) {
       return url.hash.slice(1)
     }
     return `${url.pathname || '/'}${url.search || ''}${url.hash || ''}`
-  } catch (error) {
+  } catch {
     return ''
   }
 }
@@ -65,7 +65,10 @@ export async function handleRichTextLinkNavigation(
     event.shiftKey ||
     event.button === 1
 
-  const nextTarget = options.spaceResolver.resolveSpaceNavigationTarget(internalPath, options.spaceKey)
+  const nextTarget = options.spaceResolver.resolveSpaceNavigationTarget(
+    internalPath,
+    options.spaceKey
+  )
   event.preventDefault()
 
   if (nextTarget.mode === 'router' && !openInNewTab) {

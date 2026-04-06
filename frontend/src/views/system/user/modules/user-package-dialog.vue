@@ -9,7 +9,7 @@
   >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        这里配置的是平台上下文功能包。用户直绑功能包会与其全局角色功能包做并集生效，只影响平台侧权限与平台菜单，不直接决定团队内权限。
+        这里维护的是该用户个人工作空间上的平台功能包绑定。它会与个人工作空间中的平台角色功能包做并集生效，只影响平台侧权限与平台菜单，不直接决定协作空间内权限。
       </div>
 
       <div class="summary-card">
@@ -29,7 +29,7 @@
         <ElSelect v-model="contextFilter" class="toolbar-select">
           <ElOption label="全部上下文" value="" />
           <ElOption label="平台" value="platform" />
-          <ElOption label="团队" value="team" />
+          <ElOption label="协作空间" value="team" />
           <ElOption label="通用" value="common" />
         </ElSelect>
         <ElSelect v-model="selectionFilter" class="toolbar-select">
@@ -254,7 +254,7 @@
   function formatContext(contextType?: string) {
     if (contextType === 'common') return '通用'
     if (contextType === 'platform') return '平台'
-    return '团队'
+    return '协作空间'
   }
 
   function getContextTagType(contextType?: string) {

@@ -20,7 +20,10 @@ export function useManagedAppScope(options?: { syncRoute?: boolean; storageKey?:
   const targetAppKey = computed(() => resolveManagedAppKey(localManagedAppKey.value))
 
   const ensureManagedAppRoute = async () => {
-    const fallbackAppKey = resolveManagedAppKey(localManagedAppKey.value, appContextStore.runtimeAppKey)
+    const fallbackAppKey = resolveManagedAppKey(
+      localManagedAppKey.value,
+      appContextStore.runtimeAppKey
+    )
     if (!fallbackAppKey) {
       return ''
     }

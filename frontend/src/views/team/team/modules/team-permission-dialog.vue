@@ -1,7 +1,7 @@
 ﻿<template>
   <ElDrawer
     v-model="visible"
-    :title="`团队边界 - ${teamName}`"
+    :title="`协作空间边界 - ${teamName}`"
     size="960px"
     destroy-on-close
     class="team-permission-dialog config-drawer"
@@ -9,7 +9,7 @@
   >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        这里配置的是团队边界减法。正式开通能力请通过功能包完成；这里保存的内容只会从功能包展开结果中屏蔽个别权限，不会额外开通新能力。
+        这里配置的是协作空间边界减法。正式开通能力请通过功能包完成；这里保存的内容只会从功能包展开结果中屏蔽个别权限，不会额外开通新能力。
       </div>
 
       <PermissionSummaryTags :items="summaryItems" />
@@ -17,7 +17,7 @@
       <div v-if="featurePackages.length" class="package-card">
         <div class="package-title">已开通功能包</div>
         <div class="package-help"
-          >功能包决定团队正式开通的基础能力；当前弹窗只负责从这些能力中屏蔽个别权限。</div
+          >功能包决定协作空间正式开通的基础能力；当前弹窗只负责从这些能力中屏蔽个别权限。</div
         >
         <div class="package-tags">
           <ElTag v-for="item in featurePackages" :key="item.id" type="success" effect="plain" round>
@@ -27,7 +27,7 @@
       </div>
 
       <div class="source-note">
-        <span>黄色统计表示来自功能包展开的基础能力，蓝色统计表示当前团队边界已屏蔽的权限。</span>
+        <span>黄色统计表示来自功能包展开的基础能力，蓝色统计表示当前协作空间边界已屏蔽的权限。</span>
       </div>
 
       <PermissionSourcePanels
@@ -37,18 +37,18 @@
         :derived-items="derivedActionItems"
         :blocked-items="blockedActionItems"
         derived-title="功能包展开明细"
-        blocked-title="团队边界屏蔽明细"
+        blocked-title="协作空间边界屏蔽明细"
         open="actions"
         blocked-tag-type="primary"
-        filtered-blocked-empty-text="当前筛选下暂无团队边界屏蔽项"
-        empty-title="当前暂无团队边界来源"
-        empty-text="请先检查团队功能包、团队上下文或团队边界快照是否已经生成。"
+        filtered-blocked-empty-text="当前筛选下暂无协作空间边界屏蔽项"
+        empty-title="当前暂无协作空间边界来源"
+        empty-text="请先检查协作空间功能包、协作空间上下文或协作空间边界快照是否已经生成。"
       />
 
       <PermissionActionCascaderPanel
         :actions="permissionActions"
         :selected-ids="selectedIds"
-        footer-text="这里只保存团队边界结果；提交时会自动反推出需要屏蔽的权限，最终团队权限 = 功能包展开 - 团队屏蔽。提交前会自动展开父级选择。"
+        footer-text="这里只保存协作空间边界结果；提交时会自动反推出需要屏蔽的权限，最终协作空间权限 = 功能包展开 - 协作空间屏蔽。提交前会自动展开父级选择。"
         @update:selected-ids="selectedIds = $event"
       />
     </div>
@@ -67,11 +67,11 @@
   import PermissionActionCascaderPanel from '@/components/business/permission/PermissionActionCascaderPanel.vue'
   import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
   import { fetchGetTeamActions, fetchGetTeamActionOrigins, fetchSetTeamActions } from '@/api/team'
-  import { fetchGetPermissionActionOptions, fetchGetTeamFeaturePackages } from '@/api/system-manage'
+  import { fetchGetPermissionActionOptions, fetchGetCollaborationWorkspaceFeaturePackages } from '@/api/system-manage'
 
   interface Props {
     modelValue: boolean
-    teamId: string
+    collaborationWorkspaceId: string
     teamName: string
     appKey?: string
   }
@@ -107,7 +107,7 @@
   })
   const blockedActionCount = computed(() => blockedActions.value.length)
   const summaryItems = computed(() => [
-    { label: '团队', value: props.teamName || '-' },
+    { label: '协作空间', value: props.teamName || '-' },
     { label: '边界结果', value: selectedIds.value.length, type: 'success' as const },
     { label: '候选', value: candidateActionIds.value.length, type: 'info' as const },
     { label: '功能包', value: featurePackages.value.length },
@@ -131,7 +131,7 @@
   )
 
   async function loadData() {
-    if (!props.teamId || !currentAppKey.value) {
+    if (!props.collaborationWorkspaceId || !currentAppKey.value) {
       if (!currentAppKey.value) {
         ElMessage.warning('缺少 app 上下文')
       }
@@ -141,9 +141,9 @@
     try {
       const [actionsRes, currentRes, packageRes, originsRes] = await Promise.all([
         fetchGetPermissionActionOptions({ status: 'normal', contextType: 'team' }),
-        fetchGetTeamActions(props.teamId, currentAppKey.value),
-        fetchGetTeamFeaturePackages(props.teamId, currentAppKey.value),
-        fetchGetTeamActionOrigins(props.teamId, currentAppKey.value)
+        fetchGetTeamActions(props.collaborationWorkspaceId, currentAppKey.value),
+        fetchGetCollaborationWorkspaceFeaturePackages(props.collaborationWorkspaceId, currentAppKey.value),
+        fetchGetTeamActionOrigins(props.collaborationWorkspaceId, currentAppKey.value)
       ])
 
       permissionActions.value = actionsRes?.records || []
@@ -156,7 +156,7 @@
       )
       selectedDerivedPackageId.value = ''
     } catch (error: any) {
-      ElMessage.error(error?.message || '加载团队边界失败')
+      ElMessage.error(error?.message || '加载协作空间边界失败')
     } finally {
       loading.value = false
     }
@@ -167,7 +167,7 @@
   }
 
   async function handleSave() {
-    if (!props.teamId || !currentAppKey.value) {
+    if (!props.collaborationWorkspaceId || !currentAppKey.value) {
       if (!currentAppKey.value) {
         ElMessage.warning('缺少 app 上下文')
       }
@@ -176,15 +176,15 @@
     saving.value = true
     try {
       await fetchSetTeamActions(
-        props.teamId,
+        props.collaborationWorkspaceId,
         expandSelectedValues(selectedIds.value, permissionActions.value),
         currentAppKey.value
       )
-      ElMessage.success('团队边界已保存')
+      ElMessage.success('协作空间边界已保存')
       emit('success')
       visible.value = false
     } catch (error: any) {
-      ElMessage.error(error?.message || '保存团队边界失败')
+      ElMessage.error(error?.message || '保存协作空间边界失败')
     } finally {
       saving.value = false
     }

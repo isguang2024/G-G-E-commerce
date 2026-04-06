@@ -42,10 +42,10 @@ type UserAssignRolesRequest struct {
 }
 
 type UserPermissionDiagnosisRequest struct {
-	TenantID      string `form:"tenant_id"`
-	PermissionKey string `form:"permission_key"`
+	CollaborationWorkspaceID string `form:"collaboration_workspace_id"`
+	PermissionKey            string `form:"permission_key"`
 }
 
 type UserPermissionRefreshRequest struct {
-	TenantID string `json:"tenant_id"`
+	CollaborationWorkspaceID string `json:"collaboration_workspace_id"`
 }

@@ -19,14 +19,14 @@ const (
 	// --- 3xxxx 业务/资源 ---
 	ErrNotFound                     = 3001 // 资源不存在（通用）
 	ErrUserNotFound                 = 3002 // 用户不存在
-	ErrTenantNotFound               = 3003 // 团队不存在
+	ErrTenantNotFound               = 3003 // 协作空间不存在
 	ErrMenuNotFound                 = 3004 // 菜单不存在
 	ErrRoleNotFound                 = 3005 // 角色不存在
-	ErrNoManagedTeam                = 3006 // 您暂无管理的团队
+	ErrNoManagedTeam                = 3006 // 您暂无管理的协作空间
 	ErrRoleCodeExists               = 3007 // 角色编码已存在
-	ErrMemberExists                 = 3008 // 该用户已在团队中
-	ErrMemberNotFound               = 3009 // 成员不在团队中
-	ErrTeamRoleNotFound             = 3010 // 团队角色不存在或无权操作
+	ErrMemberExists                 = 3008 // 该用户已在协作空间中
+	ErrMemberNotFound               = 3009 // 成员不在协作空间中
+	ErrTeamRoleNotFound             = 3010 // 协作空间角色不存在或无权操作
 	ErrMenuSystemProtected          = 3011 // 系统默认菜单不可删除
 	ErrInvalidParent                = 3012 // 无效的上级（如不能将上级设为自己或子级）
 	ErrConflict                     = 3013 // 业务冲突（通用，如重复创建）
@@ -35,9 +35,9 @@ const (
 	ErrSystemRoleProtected          = 3016 // 系统角色不可删除
 	ErrProductNotFound              = 3017 // 商品不存在
 	ErrGlobalRolePermissionReadOnly = 3018 // 全局角色权限不可在此修改
-	ErrTenantMemberExists           = 3019 // 该用户已在团队中
-	ErrTenantMemberNotFound         = 3020 // 成员不在团队中
-	ErrNoTeam                       = 3021 // 您暂无团队
+	ErrTenantMemberExists           = 3019 // 该用户已在协作空间中
+	ErrTenantMemberNotFound         = 3020 // 成员不在协作空间中
+	ErrNoTeam                       = 3021 // 您暂无协作空间
 
 	// --- 5xxxx 服务端 ---
 	ErrInternal = 5001 // 内部错误（通用）
@@ -58,13 +58,13 @@ var defaultMessages = map[int]string{
 	ErrTokenBadFormat:               "Token 格式错误",
 	ErrNotFound:                     "资源不存在",
 	ErrUserNotFound:                 "用户不存在",
-	ErrTenantNotFound:               "团队不存在",
+	ErrTenantNotFound:               "协作空间不存在",
 	ErrMenuNotFound:                 "菜单不存在",
 	ErrRoleNotFound:                 "角色不存在",
-	ErrNoManagedTeam:                "您暂无管理的团队",
+	ErrNoManagedTeam:                "您暂无管理的协作空间",
 	ErrRoleCodeExists:               "角色编码已存在",
-	ErrMemberExists:                 "该用户已在团队中",
-	ErrMemberNotFound:               "成员不在团队中",
+	ErrMemberExists:                 "该用户已在协作空间中",
+	ErrMemberNotFound:               "成员不在协作空间中",
 	ErrTeamRoleNotFound:             "角色不存在或无权操作",
 	ErrMenuSystemProtected:          "系统默认菜单不可删除",
 	ErrInvalidParent:                "无效的上级",
@@ -74,9 +74,9 @@ var defaultMessages = map[int]string{
 	ErrSystemRoleProtected:          "系统角色不可删除",
 	ErrProductNotFound:              "商品不存在",
 	ErrGlobalRolePermissionReadOnly: "全局角色权限不可在此修改",
-	ErrTenantMemberExists:           "该用户已在团队中",
-	ErrTenantMemberNotFound:         "成员不在团队中",
-	ErrNoTeam:                       "您暂无团队",
+	ErrTenantMemberExists:           "该用户已在协作空间中",
+	ErrTenantMemberNotFound:         "成员不在协作空间中",
+	ErrNoTeam:                       "您暂无协作空间",
 	ErrInternal:                     "服务器内部错误，请稍后重试",
 	ErrDatabase:                     "数据库错误",
 	ErrExternal:                     "外部服务错误",

@@ -96,10 +96,13 @@
 
   const emit = defineEmits<{
     (e: 'update:visible', value: boolean): void
-    (e: 'confirm', payload: {
-      mode: 'single' | 'cascade' | 'promote_children'
-      targetParentId?: string | null
-    }): void
+    (
+      e: 'confirm',
+      payload: {
+        mode: 'single' | 'cascade' | 'promote_children'
+        targetParentId?: string | null
+      }
+    ): void
   }>()
 
   const selectedMode = ref<'single' | 'cascade' | 'promote_children'>('single')
@@ -135,16 +138,13 @@
       {
         value: 'single' as const,
         label: '删除当前菜单',
-        description: hasChildren.value
-          ? '当前菜单存在子菜单，请先处理子菜单'
-          : '只删除当前菜单',
+        description: hasChildren.value ? '当前菜单存在子菜单，请先处理子菜单' : '只删除当前菜单',
         disabled: hasChildren.value
       },
       {
         value: 'promote_children' as const,
         label: '删除当前菜单，子菜单提到指定父菜单',
-        description:
-          '删除当前菜单后，把其直接子菜单提到指定父菜单；若不选择父菜单，将默认挂到顶级',
+        description: '删除当前菜单后，把其直接子菜单提到指定父菜单；若不选择父菜单，将默认挂到顶级',
         disabled: !hasChildren.value
       },
       {
@@ -291,4 +291,3 @@
     width: 100%;
   }
 </style>
-

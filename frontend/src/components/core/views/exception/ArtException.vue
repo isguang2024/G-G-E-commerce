@@ -8,9 +8,7 @@
           <ElButton type="primary" size="large" @click="backHome" v-ripple>
             {{ data.btnText }}
           </ElButton>
-          <ElButton size="large" @click="backPrevious" v-ripple>
-            返回上一层
-          </ElButton>
+          <ElButton size="large" @click="backPrevious" v-ripple> 返回上一层 </ElButton>
         </div>
       </div>
     </div>

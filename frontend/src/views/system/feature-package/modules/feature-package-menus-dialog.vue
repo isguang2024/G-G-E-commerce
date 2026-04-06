@@ -5,12 +5,17 @@
     size="1100px"
     direction="rtl"
     destroy-on-close
-    class="config-drawer">
+    class="config-drawer"
+  >
     <div class="dialog-shell" v-loading="loading">
       <div class="summary-tags">
         <ElTag effect="plain" round>功能包 {{ packageName }}</ElTag>
-        <ElTag type="warning" effect="plain" round>上下文 {{ formatContextType(contextType) }}</ElTag>
-        <ElTag type="success" effect="plain" round>已保留 {{ expandedSelectedMenuIds.length }}</ElTag>
+        <ElTag type="warning" effect="plain" round
+          >上下文 {{ formatContextType(contextType) }}</ElTag
+        >
+        <ElTag type="success" effect="plain" round
+          >已保留 {{ expandedSelectedMenuIds.length }}</ElTag
+        >
         <ElTag type="info" effect="plain" round>树节点 {{ menuNodeCount }}</ElTag>
       </div>
 
@@ -52,7 +57,9 @@
             <div class="panel-node" :class="{ 'is-leaf': node.isLeaf }">
               <div class="panel-node__main">
                 <span class="panel-node__label">{{ data.label }}</span>
-                <span v-if="showMenuPath && data.path" class="panel-node__meta">{{ data.path }}</span>
+                <span v-if="showMenuPath && data.path" class="panel-node__meta">{{
+                  data.path
+                }}</span>
               </div>
               <ElTag
                 v-if="!node.isLeaf"
@@ -70,7 +77,9 @@
       </div>
 
       <div class="cascader-footer">
-        <span class="footer-note">功能包菜单权限决定该功能包在当前上下文中的菜单入口可见范围。</span>
+        <span class="footer-note"
+          >功能包菜单权限决定该功能包在当前上下文中的菜单入口可见范围。</span
+        >
         <ElButton text @click="clearMenuSelection">清空选择</ElButton>
       </div>
     </div>
@@ -87,7 +96,11 @@
   import { Search } from '@element-plus/icons-vue'
   import { ElMessage } from 'element-plus'
   import type { CascaderOption, CascaderProps } from 'element-plus'
-  import { fetchGetMenuTreeAll, fetchGetFeaturePackageMenus, fetchSetFeaturePackageMenus } from '@/api/system-manage'
+  import {
+    fetchGetMenuTreeAll,
+    fetchGetFeaturePackageMenus,
+    fetchSetFeaturePackageMenus
+  } from '@/api/system-manage'
   import { formatMenuTitle } from '@/utils/router'
 
   interface Props {
@@ -163,9 +176,13 @@
     showPrefix: true
   }
 
-  const selectedMenuIdSet = computed(() => new Set(selectedMenuNodeValues.value.map((item) => `${item}`)))
+  const selectedMenuIdSet = computed(
+    () => new Set(selectedMenuNodeValues.value.map((item) => `${item}`))
+  )
 
-  const menuOptions = computed<MenuOption[]>(() => normalizeMenuOptions(menuTreeData.value, selectedMenuIdSet.value))
+  const menuOptions = computed<MenuOption[]>(() =>
+    normalizeMenuOptions(menuTreeData.value, selectedMenuIdSet.value)
+  )
 
   const menuBranchMap = computed(() => {
     const map = new Map<string, string[]>()
@@ -184,7 +201,9 @@
     return map
   })
 
-  const expandedSelectedMenuIds = computed(() => expandSelectedValues(selectedMenuNodeValues.value, menuBranchMap.value))
+  const expandedSelectedMenuIds = computed(() =>
+    expandSelectedValues(selectedMenuNodeValues.value, menuBranchMap.value)
+  )
 
   const filteredMenuOptions = computed(() => {
     const keyword = menuKeyword.value.trim().toLowerCase()
@@ -193,7 +212,8 @@
       if (!showHiddenMenus.value && node.isHide) return false
       if (!showIframeMenus.value && node.isIframe) return false
       if (!showEnabledMenus.value && node.isEnable !== false) return false
-      if (keyword && !`${node.label || ''} ${node.path || ''}`.toLowerCase().includes(keyword)) return false
+      if (keyword && !`${node.label || ''} ${node.path || ''}`.toLowerCase().includes(keyword))
+        return false
       return true
     })
   })
@@ -223,7 +243,9 @@
         fetchGetFeaturePackageMenus(props.packageId, currentAppKey.value)
       ])
       menuTreeData.value = sanitizeMenuTree(menus)
-      selectedMenuNodeValues.value = (assigned?.menu_ids || []).map((item: string | number) => `${item}`)
+      selectedMenuNodeValues.value = (assigned?.menu_ids || []).map(
+        (item: string | number) => `${item}`
+      )
       await nextTick()
       ensureExpandedMenus(menuPanelRef.value, selectedMenuNodeValues.value)
     } catch (error: any) {
@@ -256,7 +278,7 @@
 
   function formatContextType(contextType?: string) {
     if (contextType === 'platform') return '平台'
-    if (contextType === 'team') return '团队'
+    if (contextType === 'team') return '协作空间'
     if (contextType === 'common') return '通用'
     return contextType || '-'
   }
@@ -266,7 +288,7 @@
   }
 
   function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
-    return `本次增量刷新：角色 ${stats?.roleCount || 0}、团队 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
+    return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 
   function normalizeMenuOptions(items: RawMenuNode[], selectedSet: Set<string>): MenuOption[] {
@@ -295,10 +317,16 @@
 
   function countSelectedMenuLeaves(node: RawMenuNode, selectedSet: Set<string>): number {
     if (!node.children?.length) return selectedSet.has(`${node.id}`) ? 1 : 0
-    return node.children.reduce((sum, child) => sum + countSelectedMenuLeaves(child, selectedSet), 0)
+    return node.children.reduce(
+      (sum, child) => sum + countSelectedMenuLeaves(child, selectedSet),
+      0
+    )
   }
 
-  function filterNestedOptions<T extends CascaderOption>(items: T[], predicate: (node: T) => boolean): T[] {
+  function filterNestedOptions<T extends CascaderOption>(
+    items: T[],
+    predicate: (node: T) => boolean
+  ): T[] {
     return items
       .map((item) => {
         const children = filterNestedOptions(((item.children || []) as T[]) || [], predicate)
@@ -313,7 +341,10 @@
   }
 
   function flattenMenuOptionIds(items: MenuOption[]): string[] {
-    return items.flatMap((item) => [`${item.value}`, ...flattenMenuOptionIds((item.children || []) as MenuOption[])])
+    return items.flatMap((item) => [
+      `${item.value}`,
+      ...flattenMenuOptionIds((item.children || []) as MenuOption[])
+    ])
   }
 
   function expandSelectedValues(values: string[], branchMap: Map<string, string[]>) {
@@ -337,7 +368,9 @@
     let rootNode = rootMenus[0]
     let childNode = rootNode?.children?.[0]
     if (firstValue) {
-      const matchedNode = panel.getFlattedNodes?.(false)?.find((node: any) => `${node?.value}` === `${firstValue}`)
+      const matchedNode = panel
+        .getFlattedNodes?.(false)
+        ?.find((node: any) => `${node?.value}` === `${firstValue}`)
       const pathNodes = matchedNode?.pathNodes || []
       if (pathNodes[0]) rootNode = pathNodes[0]
       if (pathNodes[1]) childNode = pathNodes[1]

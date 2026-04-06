@@ -9,22 +9,22 @@
   >
     <div class="permission-shell" v-loading="loading">
       <div class="dialog-note">
-        这里用于诊断用户在平台或团队上下文中的功能权限生效情况。平台功能包只影响平台权限与平台菜单；团队内权限仍由团队成员身份、团队边界和团队角色共同决定。
+        这里用于诊断用户在平台或协作空间上下文中的功能权限生效情况。平台角色通过个人工作空间生效；协作空间内权限则由成员身份、协作空间边界和协作空间内部角色共同决定。
       </div>
 
       <div class="toolbar-row">
         <ElSelect v-model="contextType" class="toolbar-select">
           <ElOption label="平台上下文" value="platform" />
-          <ElOption label="团队上下文" value="team" />
+          <ElOption label="协作空间上下文" value="team" />
         </ElSelect>
 
         <ElSelect
           v-if="contextType === 'team'"
-          v-model="selectedTeamId"
+          v-model="selectedCollaborationWorkspaceId"
           filterable
           clearable
           class="toolbar-select toolbar-select--team"
-          placeholder="请选择团队"
+          placeholder="请选择协作空间"
         >
           <ElOption
             v-for="team in teamOptions"
@@ -56,7 +56,9 @@
               <div class="kv-grid">
                 <div class="kv-item">
                   <span class="kv-label">上下文</span>
-                  <span class="kv-value">{{ contextType === 'platform' ? '平台' : selectedTeamName || '未选择团队' }}</span>
+                  <span class="kv-value">{{
+                    contextType === 'platform' ? '平台' : selectedTeamName || '未选择协作空间'
+                  }}</span>
                 </div>
                 <div class="kv-item">
                   <span class="kv-label">刷新时间</span>
@@ -69,22 +71,27 @@
                 <div class="kv-item">
                   <span class="kv-label">用户状态</span>
                   <span class="kv-value">
-                    <ElTag :type="diagnosisData?.user?.status === 'active' ? 'success' : 'danger'" effect="plain">
+                    <ElTag
+                      :type="diagnosisData?.user?.status === 'active' ? 'success' : 'danger'"
+                      effect="plain"
+                    >
                       {{ diagnosisData?.user?.status === 'active' ? '正常' : '停用' }}
                     </ElTag>
                   </span>
                 </div>
                 <div class="kv-item">
                   <span class="kv-label">角色数量</span>
-                  <span class="kv-value">{{ diagnosisData?.snapshot?.roleCount ?? diagnosisData?.roles?.length ?? 0 }}</span>
+                  <span class="kv-value">{{
+                    diagnosisData?.snapshot?.roleCount ?? diagnosisData?.roles?.length ?? 0
+                  }}</span>
                 </div>
                 <div class="kv-item">
                   <span class="kv-label">权限数量</span>
                   <span class="kv-value">
                     {{
                       contextType === 'platform'
-                        ? diagnosisData?.snapshot?.actionCount ?? 0
-                        : diagnosisData?.snapshot?.effectiveActionCount ?? 0
+                        ? (diagnosisData?.snapshot?.actionCount ?? 0)
+                        : (diagnosisData?.snapshot?.effectiveActionCount ?? 0)
                     }}
                   </span>
                 </div>
@@ -96,7 +103,11 @@
               <div v-if="diagnosisData?.diagnosis" class="result-shell">
                 <div
                   class="result-banner"
-                  :class="diagnosisData.diagnosis.allowed ? 'result-banner--success' : 'result-banner--danger'"
+                  :class="
+                    diagnosisData.diagnosis.allowed
+                      ? 'result-banner--success'
+                      : 'result-banner--danger'
+                  "
                 >
                   <div class="result-title">
                     {{ diagnosisData.diagnosis.allowed ? '权限通过' : '权限未通过' }}
@@ -108,7 +119,9 @@
                     当前结果来自超级管理员直通，不代表快照内已实际命中该权限。
                   </div>
                   <div
-                    v-else-if="diagnosisData.diagnosis.denialStage || diagnosisData.diagnosis.denialReason"
+                    v-else-if="
+                      diagnosisData.diagnosis.denialStage || diagnosisData.diagnosis.denialReason
+                    "
                     class="result-hint"
                   >
                     {{
@@ -134,7 +147,10 @@
                   <div class="kv-item">
                     <span class="kv-label">快照命中</span>
                     <span class="kv-value">
-                      <ElTag :type="diagnosisData.diagnosis.matchedInSnapshot ? 'success' : 'info'" effect="plain">
+                      <ElTag
+                        :type="diagnosisData.diagnosis.matchedInSnapshot ? 'success' : 'info'"
+                        effect="plain"
+                      >
                         {{ diagnosisData.diagnosis.matchedInSnapshot ? '已命中' : '未命中' }}
                       </ElTag>
                     </span>
@@ -245,32 +261,43 @@
                     >
                       {{ item.name }}
                     </ElTag>
-                    <span v-if="!(diagnosisData.diagnosis.sourcePackages || []).length" class="empty-text">未命中来源功能包</span>
+                    <span
+                      v-if="!(diagnosisData.diagnosis.sourcePackages || []).length"
+                      class="empty-text"
+                      >未命中来源功能包</span
+                    >
                   </div>
                 </div>
                 <div v-if="contextType === 'team'" class="source-panel">
-                  <div class="source-title">当前团队成员记录</div>
+                  <div class="source-title">当前协作空间成员记录</div>
                   <div class="kv-grid">
                     <div class="kv-item">
                       <span class="kv-label">成员命中</span>
                       <span class="kv-value">
-                        <ElTag :type="diagnosisData.teamMember?.matched ? 'success' : 'warning'" effect="plain">
-                          {{ diagnosisData.teamMember?.matched ? '已加入团队' : '未加入团队' }}
+                        <ElTag
+                          :type="diagnosisData.teamMember?.matched ? 'success' : 'warning'"
+                          effect="plain"
+                        >
+                          {{ diagnosisData.teamMember?.matched ? '已加入协作空间' : '未加入协作空间' }}
                         </ElTag>
                       </span>
                     </div>
                     <div class="kv-item">
                       <span class="kv-label">成员状态</span>
-                      <span class="kv-value">{{ formatMemberStatus(diagnosisData.teamMember?.status) }}</span>
+                      <span class="kv-value">{{
+                        formatMemberStatus(diagnosisData.teamMember?.status)
+                      }}</span>
                     </div>
                     <div class="kv-item">
                       <span class="kv-label">成员身份</span>
-                      <span class="kv-value">{{ formatRoleCode(diagnosisData.teamMember?.roleCode) }}</span>
+                      <span class="kv-value">{{
+                        formatRoleCode(diagnosisData.teamMember?.roleCode)
+                      }}</span>
                     </div>
                   </div>
                 </div>
                 <div v-if="contextType === 'team'" class="source-panel">
-                  <div class="source-title">当前团队功能包</div>
+                  <div class="source-title">当前协作空间功能包</div>
                   <div class="source-tags">
                     <ElTag
                       v-for="item in diagnosisData.teamPackages || []"
@@ -281,12 +308,17 @@
                     >
                       {{ item.name }}
                     </ElTag>
-                    <span v-if="!(diagnosisData.teamPackages || []).length" class="empty-text">当前团队未开通功能包</span>
+                    <span v-if="!(diagnosisData.teamPackages || []).length" class="empty-text"
+                      >当前协作空间未开通功能包</span
+                    >
                   </div>
                 </div>
               </div>
 
-              <ElEmpty v-else description="输入权限键后可直接测试当前用户在所选上下文中的权限结果" />
+              <ElEmpty
+                v-else
+                description="输入权限键后可直接测试当前用户在所选上下文中的权限结果"
+              />
             </section>
           </div>
         </ElTabPane>
@@ -331,7 +363,9 @@
                   <div class="panel-node" :class="{ 'is-leaf': node.isLeaf }">
                     <div class="panel-node__main">
                       <span class="panel-node__label">{{ data.label }}</span>
-                      <span v-if="showMenuPath && data.path" class="panel-node__meta">{{ data.path }}</span>
+                      <span v-if="showMenuPath && data.path" class="panel-node__meta">{{
+                        data.path
+                      }}</span>
                     </div>
                     <ElTag
                       v-if="!node.isLeaf"
@@ -349,7 +383,9 @@
             </div>
 
             <div class="menu-footer">
-              <span class="empty-text">这里只展示当前用户在所选上下文下最终可见的菜单，不参与编辑。</span>
+              <span class="empty-text"
+                >这里只展示当前用户在所选上下文下最终可见的菜单，不参与编辑。</span
+              >
               <ElButton text @click="selectedMenuPath = []">清空浏览</ElButton>
             </div>
           </section>
@@ -359,41 +395,54 @@
           <section class="role-panel">
             <div class="panel-title">角色链路</div>
             <ElTable :data="pagedRoleRows" border max-height="320">
-          <ElTableColumn prop="roleCode" label="角色编码" min-width="140" show-overflow-tooltip />
-          <ElTableColumn prop="roleName" label="角色名称" min-width="140" show-overflow-tooltip />
-          <ElTableColumn label="继承团队" width="100">
-            <template #default="{ row }">
-              <ElTag :type="row.inherited ? 'warning' : 'info'" effect="plain">
-                {{ row.inherited ? '是' : '否' }}
-              </ElTag>
-            </template>
-          </ElTableColumn>
-          <ElTableColumn label="命中结果" width="110">
-            <template #default="{ row }">
-              <ElTag :type="row.matched ? 'success' : row.disabled ? 'danger' : 'info'" effect="plain">
-                {{ row.matched ? '生效' : row.disabled ? '角色禁用' : '未命中' }}
-              </ElTag>
-            </template>
-          </ElTableColumn>
-          <ElTableColumn label="快照时间" min-width="160">
-            <template #default="{ row }">{{ row.refreshedAt || '-' }}</template>
-          </ElTableColumn>
-          <ElTableColumn label="来源功能包" min-width="240" show-overflow-tooltip>
-            <template #default="{ row }">
-              <div class="inline-tags">
-                <ElTag
-                  v-for="item in row.sourcePackages || []"
-                  :key="item.id"
-                  size="small"
-                  effect="plain"
-                  round
-                >
-                  {{ item.name }}
-                </ElTag>
-                <span v-if="!(row.sourcePackages || []).length" class="empty-text">-</span>
-              </div>
-            </template>
-          </ElTableColumn>
+              <ElTableColumn
+                prop="roleCode"
+                label="角色编码"
+                min-width="140"
+                show-overflow-tooltip
+              />
+              <ElTableColumn
+                prop="roleName"
+                label="角色名称"
+                min-width="140"
+                show-overflow-tooltip
+              />
+              <ElTableColumn label="继承协作空间" width="100">
+                <template #default="{ row }">
+                  <ElTag :type="row.inherited ? 'warning' : 'info'" effect="plain">
+                    {{ row.inherited ? '是' : '否' }}
+                  </ElTag>
+                </template>
+              </ElTableColumn>
+              <ElTableColumn label="命中结果" width="110">
+                <template #default="{ row }">
+                  <ElTag
+                    :type="row.matched ? 'success' : row.disabled ? 'danger' : 'info'"
+                    effect="plain"
+                  >
+                    {{ row.matched ? '生效' : row.disabled ? '角色禁用' : '未命中' }}
+                  </ElTag>
+                </template>
+              </ElTableColumn>
+              <ElTableColumn label="快照时间" min-width="160">
+                <template #default="{ row }">{{ row.refreshedAt || '-' }}</template>
+              </ElTableColumn>
+              <ElTableColumn label="来源功能包" min-width="240" show-overflow-tooltip>
+                <template #default="{ row }">
+                  <div class="inline-tags">
+                    <ElTag
+                      v-for="item in row.sourcePackages || []"
+                      :key="item.id"
+                      size="small"
+                      effect="plain"
+                      round
+                    >
+                      {{ item.name }}
+                    </ElTag>
+                    <span v-if="!(row.sourcePackages || []).length" class="empty-text">-</span>
+                  </div>
+                </template>
+              </ElTableColumn>
             </ElTable>
             <WorkspacePagination
               v-if="roleRows.length > 0"
@@ -448,7 +497,7 @@
   const refreshing = ref(false)
   const contextType = ref<'platform' | 'team'>('platform')
   const activeTab = ref<'permission' | 'menus' | 'roles'>('permission')
-  const selectedTeamId = ref('')
+  const selectedCollaborationWorkspaceId = ref('')
   const permissionKey = ref('')
   const diagnosisData = ref<Api.SystemManage.UserPermissionDiagnosisResponse>()
   const teamOptions = ref<Api.SystemManage.TeamListItem[]>([])
@@ -486,7 +535,7 @@
   )
 
   const selectedTeamName = computed(
-    () => teamOptions.value.find((item) => item.id === selectedTeamId.value)?.name || ''
+    () => teamOptions.value.find((item) => item.id === selectedCollaborationWorkspaceId.value)?.name || ''
   )
 
   const summaryItems = computed(() => {
@@ -501,7 +550,7 @@
         {
           label: '快照',
           value: '未加载',
-          type: 'info' as 'info'
+          type: 'info' as const
         }
       ]
     }
@@ -510,15 +559,15 @@
         label: '功能包',
         value:
           contextType.value === 'platform'
-            ? snapshot.expandedPackageCount ?? 0
-            : snapshot.expandedPackageCount ?? 0
+            ? (snapshot.expandedPackageCount ?? 0)
+            : (snapshot.expandedPackageCount ?? 0)
       },
       {
-        label: contextType.value === 'platform' ? '权限数' : '团队生效权限',
+        label: contextType.value === 'platform' ? '权限数' : '协作空间生效权限',
         value:
           contextType.value === 'platform'
-            ? snapshot.actionCount ?? 0
-            : snapshot.effectiveActionCount ?? 0,
+            ? (snapshot.actionCount ?? 0)
+            : (snapshot.effectiveActionCount ?? 0),
         type: 'success'
       },
       {
@@ -535,7 +584,7 @@
       })
     } else {
       items.push({
-        label: '团队屏蔽',
+        label: '协作空间屏蔽',
         value: snapshot.blockedActionCount ?? 0,
         type: 'warning'
       })
@@ -564,13 +613,13 @@
   watch(contextType, async (value) => {
     if (!visible.value) return
     if (value === 'platform') {
-      selectedTeamId.value = ''
+      selectedCollaborationWorkspaceId.value = ''
       if (activeTab.value === 'roles') activeTab.value = 'permission'
     }
     await loadDiagnosis()
   })
 
-  watch(selectedTeamId, async () => {
+  watch(selectedCollaborationWorkspaceId, async () => {
     if (!visible.value || contextType.value !== 'team') return
     await loadDiagnosis()
   })
@@ -591,13 +640,13 @@
       teamOptions.value = await fetchGetUserTeams(userId)
       if (
         contextType.value === 'team' &&
-        selectedTeamId.value &&
-        !teamOptions.value.some((item) => item.id === selectedTeamId.value)
+        selectedCollaborationWorkspaceId.value &&
+        !teamOptions.value.some((item) => item.id === selectedCollaborationWorkspaceId.value)
       ) {
-        selectedTeamId.value = ''
+        selectedCollaborationWorkspaceId.value = ''
       }
-      if (contextType.value === 'team' && !selectedTeamId.value && teamOptions.value.length === 1) {
-        selectedTeamId.value = teamOptions.value[0].id
+      if (contextType.value === 'team' && !selectedCollaborationWorkspaceId.value && teamOptions.value.length === 1) {
+        selectedCollaborationWorkspaceId.value = teamOptions.value[0].id
       }
     } catch {
       teamOptions.value = []
@@ -607,20 +656,20 @@
   async function loadDiagnosis() {
     const userId = props.userData?.id
     if (!userId) return
-    if (contextType.value === 'team' && !selectedTeamId.value) {
+    if (contextType.value === 'team' && !selectedCollaborationWorkspaceId.value) {
       diagnosisData.value = undefined
       permissionMenus.value = []
       return
     }
     loading.value = true
     try {
-      const tenantId = contextType.value === 'team' ? selectedTeamId.value : undefined
+      const collaborationWorkspaceId = contextType.value === 'team' ? selectedCollaborationWorkspaceId.value : undefined
       const [diagnosis, menus] = await Promise.all([
         fetchGetUserPermissionDiagnosis(userId, {
-          tenantId,
+          collaborationWorkspaceId,
           permissionKey: permissionKey.value || undefined
         }),
-        fetchGetUserPermissionMenus(userId, tenantId)
+        fetchGetUserPermissionMenus(userId, collaborationWorkspaceId)
       ])
       diagnosisData.value = diagnosis
       permissionMenus.value = menus
@@ -641,19 +690,19 @@
       ElMessage.warning('请输入权限键')
       return
     }
-    if (contextType.value === 'team' && !selectedTeamId.value) {
-      ElMessage.warning('请选择团队')
+    if (contextType.value === 'team' && !selectedCollaborationWorkspaceId.value) {
+      ElMessage.warning('请选择协作空间')
       return
     }
     testing.value = true
     try {
-      const tenantId = contextType.value === 'team' ? selectedTeamId.value : undefined
+      const collaborationWorkspaceId = contextType.value === 'team' ? selectedCollaborationWorkspaceId.value : undefined
       const [diagnosis, menus] = await Promise.all([
         fetchGetUserPermissionDiagnosis(props.userData?.id || '', {
-          tenantId,
+          collaborationWorkspaceId,
           permissionKey: permissionKey.value.trim()
         }),
-        fetchGetUserPermissionMenus(props.userData?.id || '', tenantId)
+        fetchGetUserPermissionMenus(props.userData?.id || '', collaborationWorkspaceId)
       ])
       diagnosisData.value = diagnosis
       permissionMenus.value = menus
@@ -668,16 +717,16 @@
   async function handleRefresh() {
     const userId = props.userData?.id
     if (!userId) return
-    if (contextType.value === 'team' && !selectedTeamId.value) {
-      ElMessage.warning('请选择团队')
+    if (contextType.value === 'team' && !selectedCollaborationWorkspaceId.value) {
+      ElMessage.warning('请选择协作空间')
       return
     }
     refreshing.value = true
     try {
-      const tenantId = contextType.value === 'team' ? selectedTeamId.value : undefined
+      const collaborationWorkspaceId = contextType.value === 'team' ? selectedCollaborationWorkspaceId.value : undefined
       const [diagnosis, menus] = await Promise.all([
-        fetchRefreshUserPermissionSnapshot(userId, tenantId),
-        fetchGetUserPermissionMenus(userId, tenantId)
+        fetchRefreshUserPermissionSnapshot(userId, collaborationWorkspaceId),
+        fetchGetUserPermissionMenus(userId, collaborationWorkspaceId)
       ])
       diagnosisData.value = diagnosis
       permissionMenus.value = menus
@@ -702,7 +751,7 @@
       case 'inactive':
         return '成员停用'
       case 'missing':
-        return '未加入团队'
+        return '未加入协作空间'
       default:
         return '-'
     }
@@ -711,9 +760,9 @@
   function formatRoleCode(roleCode?: string) {
     switch (roleCode) {
       case 'team_admin':
-        return '团队管理员'
+        return '协作空间管理员'
       case 'team_member':
-        return '团队成员'
+        return '协作空间成员'
       default:
         return roleCode || '-'
     }
@@ -764,7 +813,9 @@
     }
   }
 
-  const menuOptions = computed<MenuOption[]>(() => normalizePermissionMenuOptions(permissionMenus.value))
+  const menuOptions = computed<MenuOption[]>(() =>
+    normalizePermissionMenuOptions(permissionMenus.value)
+  )
 
   const filteredMenuOptions = computed(() => {
     const keyword = menuKeyword.value.trim().toLowerCase()
@@ -773,7 +824,8 @@
       if (!showHiddenMenus.value && node.hidden) return false
       if (!showIframeMenus.value && node.isIframe) return false
       if (!showEnabledMenus.value && node.isEnable !== false) return false
-      if (keyword && !`${node.label || ''} ${node.path || ''}`.toLowerCase().includes(keyword)) return false
+      if (keyword && !`${node.label || ''} ${node.path || ''}`.toLowerCase().includes(keyword))
+        return false
       return true
     })
   })
@@ -815,7 +867,10 @@
     }, 0)
   }
 
-  function filterNestedOptions<T extends CascaderOption>(items: T[], predicate: (node: T) => boolean): T[] {
+  function filterNestedOptions<T extends CascaderOption>(
+    items: T[],
+    predicate: (node: T) => boolean
+  ): T[] {
     return items
       .map((item) => {
         const children = filterNestedOptions(((item.children || []) as T[]) || [], predicate)
@@ -836,7 +891,9 @@
     let rootNode = rootMenus[0]
     let childNode = rootNode?.children?.[0]
     if (firstValue) {
-      const matchedNode = panel.getFlattedNodes?.(false)?.find((node: any) => `${node?.value}` === `${firstValue}`)
+      const matchedNode = panel
+        .getFlattedNodes?.(false)
+        ?.find((node: any) => `${node?.value}` === `${firstValue}`)
       const pathNodes = matchedNode?.pathNodes || []
       if (pathNodes[0]) rootNode = pathNodes[0]
       if (pathNodes[1]) childNode = pathNodes[1]

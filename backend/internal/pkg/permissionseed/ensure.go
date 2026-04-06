@@ -270,7 +270,7 @@ func EnsureDefaultRoleFeaturePackages(db *gorm.DB) error {
 	packageKeys = uniqueStrings(packageKeys)
 
 	var roles []usermodel.Role
-	if err := db.Where("tenant_id IS NULL AND code IN ?", roleCodes).Find(&roles).Error; err != nil {
+	if err := db.Where("collaboration_workspace_id IS NULL AND code IN ?", roleCodes).Find(&roles).Error; err != nil {
 		return err
 	}
 	roleByCode := make(map[string]usermodel.Role, len(roles))

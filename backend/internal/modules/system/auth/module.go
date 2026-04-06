@@ -7,6 +7,7 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/config"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	workspacepkg "github.com/gg-ecommerce/backend/internal/modules/system/workspace"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
@@ -34,9 +35,10 @@ func (m *AuthModule) Init() error {
 func (m *AuthModule) RegisterRoutes(rg *gin.RouterGroup) {
 	userRepo := user.NewUserRepository(m.db)
 	tenantMemberRepo := user.NewTenantMemberRepository(m.db)
+	workspaceService := workspacepkg.NewService(m.db, m.logger)
 	authService := NewAuthService(userRepo, &m.config.JWT, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
-	authHandler := NewAuthHandler(authService, authzService, tenantMemberRepo, m.logger)
+	authHandler := NewAuthHandler(authService, authzService, tenantMemberRepo, workspaceService, m.logger)
 
 	auth := rg.Group("/auth")
 	authReg := apiregistry.NewRegistrar(auth, "auth")
@@ -47,7 +49,7 @@ func (m *AuthModule) RegisterRoutes(rg *gin.RouterGroup) {
 	}
 
 	authenticated := rg.Group("")
-	authenticated.Use(JWTAuth(m.config.JWT.Secret))
+	authenticated.Use(JWTAuth(m.config.JWT.Secret, m.db))
 	authenticatedReg := apiregistry.NewRegistrar(authenticated, "auth")
 	{
 		authenticatedReg.GET("/user/info", authenticatedReg.Meta("获取当前登录用户信息").Build(), authHandler.GetUserInfo)

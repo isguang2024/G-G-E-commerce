@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElCard shadow="never" class="empty-card">
     <ElEmpty :description="title">
       <template #description>
@@ -17,9 +17,9 @@
       tip?: string
     }>(),
     {
-      title: '您当前还未加入团队',
-      description: '请先加入团队，或联系管理员为您创建团队后再进行团队管理。',
-      tip: '加入团队后，您可以在这里查看成员并按权限执行操作。'
+      title: '您当前还未加入协作空间',
+      description: '请先加入协作空间，或联系管理员为您创建协作空间后再进行协作空间管理。',
+      tip: '加入协作空间后，您可以在这里查看成员并按权限执行操作。'
     }
   )
 </script>
@@ -32,3 +32,4 @@
     justify-content: center;
   }
 </style>
+

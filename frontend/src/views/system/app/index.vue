@@ -6,9 +6,7 @@
       :metrics="summaryMetrics"
     >
       <div class="app-manage-hero-actions">
-        <ElButton type="primary" @click="openAppDrawer()" v-ripple>
-          新增 App
-        </ElButton>
+        <ElButton type="primary" @click="openAppDrawer()" v-ripple> 新增 App </ElButton>
         <ElButton :disabled="!selectedAppRecord" @click="openAppDrawer(selectedAppRecord)" v-ripple>
           编辑选中 App
         </ElButton>
@@ -42,7 +40,10 @@
           <div class="app-manage-panel__header">
             <div>
               <div class="app-manage-panel__title">App 列表</div>
-              <div class="app-manage-panel__desc">默认内置 App 为平台管理后台；后续多前端产品继续沿用同一套用户、权限和导航体系。</div>
+              <div class="app-manage-panel__desc"
+                >默认内置 App
+                为平台管理后台；后续多前端产品继续沿用同一套用户、权限和导航体系。</div
+              >
             </div>
           </div>
         </template>
@@ -86,7 +87,9 @@
                 <span>Host {{ item.hostCount || 0 }}</span>
               </div>
               <p class="app-manage-item__desc">
-                {{ item.description || '当前 App 未填写说明，建议补充站点职责、登录策略或业务边界。' }}
+                {{
+                  item.description || '当前 App 未填写说明，建议补充站点职责、登录策略或业务边界。'
+                }}
               </p>
             </div>
             <div class="app-manage-item__actions">
@@ -102,10 +105,15 @@
           <div class="app-manage-panel__header">
             <div>
               <div class="app-manage-panel__title">当前 App 概览</div>
-              <div class="app-manage-panel__desc">Host 命中和默认空间都会影响运行时导航编译结果，下面只展示当前选中 App 的有效配置。</div>
+              <div class="app-manage-panel__desc"
+                >Host 命中和默认空间都会影响运行时导航编译结果，下面只展示当前选中 App
+                的有效配置。</div
+              >
             </div>
             <div class="app-manage-panel__status">
-              <ElTag effect="plain" type="info">当前查看 {{ selectedAppRecord?.name || selectedAppKey || '-' }}</ElTag>
+              <ElTag effect="plain" type="info"
+                >当前查看 {{ selectedAppRecord?.name || selectedAppKey || '-' }}</ElTag
+              >
               <ElTag v-if="currentAppRecord" effect="plain" type="warning">
                 解析来源 {{ currentAppResolvedLabel }}
               </ElTag>
@@ -133,7 +141,11 @@
             </div>
             <div class="app-overview__item">
               <span class="app-overview__label">空间 / 菜单 / 页面</span>
-              <strong>{{ selectedAppRecord.menuSpaceCount || 0 }} / {{ selectedAppRecord.menuCount || 0 }} / {{ selectedAppRecord.pageCount || 0 }}</strong>
+              <strong
+                >{{ selectedAppRecord.menuSpaceCount || 0 }} /
+                {{ selectedAppRecord.menuCount || 0 }} /
+                {{ selectedAppRecord.pageCount || 0 }}</strong
+              >
             </div>
             <div class="app-overview__item">
               <span class="app-overview__label">请求 Host</span>
@@ -166,7 +178,9 @@
             <div class="app-binding-item__main">
               <div class="app-binding-item__title-row">
                 <span class="app-binding-item__host">{{ item.host }}</span>
-                <ElTag v-if="item.isPrimary" size="small" type="success" effect="plain">主绑定</ElTag>
+                <ElTag v-if="item.isPrimary" size="small" type="success" effect="plain"
+                  >主绑定</ElTag
+                >
                 <ElTag
                   size="small"
                   :type="item.status === 'normal' ? 'info' : 'danger'"
@@ -176,7 +190,12 @@
                 </ElTag>
               </div>
               <div class="app-binding-item__meta">
-                <span>默认空间 {{ displaySpaceLabel(item.defaultSpaceKey, selectedAppRecord?.defaultSpaceKey) }}</span>
+                <span
+                  >默认空间
+                  {{
+                    displaySpaceLabel(item.defaultSpaceKey, selectedAppRecord?.defaultSpaceKey)
+                  }}</span
+                >
                 <span v-if="item.description">{{ item.description }}</span>
               </div>
             </div>
@@ -186,11 +205,7 @@
 
         <div class="app-space-pills">
           <span class="app-space-pills__label">空间配置</span>
-          <span
-            v-for="item in spaces"
-            :key="item.spaceKey"
-            class="app-space-pill"
-          >
+          <span v-for="item in spaces" :key="item.spaceKey" class="app-space-pill">
             {{ item.name }} · {{ item.spaceKey }}
           </span>
           <span v-if="!spaces.length" class="app-space-pill is-soft">当前 App 暂无空间配置</span>
@@ -204,13 +219,23 @@
           <ElInput v-model="appForm.name" placeholder="例如 平台管理后台" />
         </ElFormItem>
         <ElFormItem label="应用标识">
-          <ElInput v-model="appForm.app_key" :disabled="Boolean(editingAppKey)" placeholder="例如 platform-admin" />
+          <ElInput
+            v-model="appForm.app_key"
+            :disabled="Boolean(editingAppKey)"
+            placeholder="例如 platform-admin"
+          />
         </ElFormItem>
         <div v-if="!editingAppKey" class="app-form-hint">
           新建 App 时系统会自动创建当前 App 自己的默认空间 `default`，无需手动选择。
         </div>
         <ElFormItem v-if="editingAppKey" label="默认空间">
-          <ElSelect v-model="appForm.default_space_key" filterable allow-create default-first-option style="width: 100%">
+          <ElSelect
+            v-model="appForm.default_space_key"
+            filterable
+            allow-create
+            default-first-option
+            style="width: 100%"
+          >
             <ElOption
               v-for="item in spaces"
               :key="item.spaceKey"
@@ -226,7 +251,12 @@
           </ElSelect>
         </ElFormItem>
         <ElFormItem label="说明">
-          <ElInput v-model="appForm.description" type="textarea" :rows="3" placeholder="说明这个 App 面向哪个站点或后台产品" />
+          <ElInput
+            v-model="appForm.description"
+            type="textarea"
+            :rows="3"
+            placeholder="说明这个 App 面向哪个站点或后台产品"
+          />
         </ElFormItem>
         <div class="app-drawer-grid">
           <ElFormItem label="默认 App">
@@ -254,7 +284,13 @@
           <ElInput v-model="hostForm.host" placeholder="例如 admin.example.com" />
         </ElFormItem>
         <ElFormItem label="默认空间">
-          <ElSelect v-model="hostForm.default_space_key" filterable allow-create default-first-option style="width: 100%">
+          <ElSelect
+            v-model="hostForm.default_space_key"
+            filterable
+            allow-create
+            default-first-option
+            style="width: 100%"
+          >
             <ElOption
               v-for="item in spaces"
               :key="item.spaceKey"
@@ -264,7 +300,12 @@
           </ElSelect>
         </ElFormItem>
         <ElFormItem label="说明">
-          <ElInput v-model="hostForm.description" type="textarea" :rows="3" placeholder="例如 平台治理入口 / 商家后台入口" />
+          <ElInput
+            v-model="hostForm.description"
+            type="textarea"
+            :rows="3"
+            placeholder="例如 平台治理入口 / 商家后台入口"
+          />
         </ElFormItem>
         <div class="app-drawer-grid">
           <ElFormItem label="主绑定">
@@ -346,7 +387,9 @@
 
   const currentAppRecord = computed(() => currentApp.value?.app)
   const currentAppRequestHost = computed(() => `${currentApp.value?.requestHost || ''}`.trim())
-  const selectedAppRecord = computed(() => apps.value.find((item) => item.appKey === selectedAppKey.value))
+  const selectedAppRecord = computed(() =>
+    apps.value.find((item) => item.appKey === selectedAppKey.value)
+  )
   const currentAppResolvedLabel = computed(() => {
     switch (`${currentApp.value?.resolvedBy || ''}`.trim()) {
       case 'host_binding':
@@ -482,7 +525,10 @@
       editingHost.value = item.host
       hostForm.app_key = item.appKey || selectedAppKey.value
       hostForm.host = item.host
-      hostForm.default_space_key = resolveSpaceKey(item.defaultSpaceKey, selectedAppRecord.value?.defaultSpaceKey)
+      hostForm.default_space_key = resolveSpaceKey(
+        item.defaultSpaceKey,
+        selectedAppRecord.value?.defaultSpaceKey
+      )
       hostForm.description = item.description || ''
       hostForm.is_primary = Boolean(item.isPrimary)
       hostForm.status = item.status || 'normal'
@@ -549,7 +595,10 @@
         ...hostForm,
         app_key: selectedAppKey.value,
         host: hostForm.host.trim().toLowerCase(),
-        default_space_key: resolveSpaceKey(hostForm.default_space_key, selectedAppRecord.value?.defaultSpaceKey),
+        default_space_key: resolveSpaceKey(
+          hostForm.default_space_key,
+          selectedAppRecord.value?.defaultSpaceKey
+        ),
         description: hostForm.description?.trim() || ''
       })
       ElMessage.success('Host 绑定已保存')
@@ -601,16 +650,13 @@
     loadData()
   })
 
-  watch(
-    targetAppKey,
-    (value) => {
-      if (value && value !== selectedAppKey.value) {
-        selectedAppKey.value = value
-      } else if (!value) {
-        selectedAppKey.value = ''
-      }
+  watch(targetAppKey, (value) => {
+    if (value && value !== selectedAppKey.value) {
+      selectedAppKey.value = value
+    } else if (!value) {
+      selectedAppKey.value = ''
     }
-  )
+  })
 </script>
 
 <style scoped lang="scss">
@@ -693,7 +739,10 @@
     background: var(--art-main-bg-color);
     padding: 16px;
     text-align: left;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.2s ease;
   }
 
   .app-manage-item:hover,

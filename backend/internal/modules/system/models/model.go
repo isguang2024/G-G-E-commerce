@@ -65,19 +65,19 @@ func (User) TableName() string {
 }
 
 type Role struct {
-	ID           uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	TenantID     *uuid.UUID     `gorm:"type:uuid;index" json:"tenant_id"`
-	Code         string         `gorm:"type:varchar(50);not null" json:"code"`
-	Name         string         `gorm:"type:varchar(100);not null" json:"name"`
-	Description  string         `gorm:"type:varchar(255)" json:"description"`
-	Priority     int            `gorm:"default:0" json:"priority"`
-	SortOrder    int            `gorm:"default:0" json:"sort_order"`
-	CustomParams MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"custom_params"`
-	Status       string         `gorm:"type:varchar(20);default:'normal'" json:"status"`
-	IsSystem     bool           `gorm:"default:false" json:"is_system"`
-	CreatedAt    time.Time      `json:"created_at"`
-	UpdatedAt    time.Time      `json:"updated_at"`
-	DeletedAt    gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID                       uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	CollaborationWorkspaceID *uuid.UUID     `gorm:"type:uuid;index" json:"collaboration_workspace_id"`
+	Code                     string         `gorm:"type:varchar(50);not null" json:"code"`
+	Name                     string         `gorm:"type:varchar(100);not null" json:"name"`
+	Description              string         `gorm:"type:varchar(255)" json:"description"`
+	Priority                 int            `gorm:"default:0" json:"priority"`
+	SortOrder                int            `gorm:"default:0" json:"sort_order"`
+	CustomParams             MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"custom_params"`
+	Status                   string         `gorm:"type:varchar(20);default:'normal'" json:"status"`
+	IsSystem                 bool           `gorm:"default:false" json:"is_system"`
+	CreatedAt                time.Time      `json:"created_at"`
+	UpdatedAt                time.Time      `json:"updated_at"`
+	DeletedAt                gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (Role) TableName() string {
@@ -181,9 +181,9 @@ func (PermissionGroup) TableName() string {
 }
 
 type UserRole struct {
-	UserID   uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
-	RoleID   uuid.UUID  `gorm:"type:uuid;not null;index" json:"role_id"`
-	TenantID *uuid.UUID `gorm:"type:uuid;index" json:"tenant_id"`
+	UserID                   uuid.UUID  `gorm:"type:uuid;not null;index" json:"user_id"`
+	RoleID                   uuid.UUID  `gorm:"type:uuid;not null;index" json:"role_id"`
+	CollaborationWorkspaceID *uuid.UUID `gorm:"type:uuid;index" json:"collaboration_workspace_id"`
 }
 
 func (UserRole) TableName() string {
@@ -202,25 +202,28 @@ func (RoleHiddenMenu) TableName() string {
 }
 
 type PermissionKey struct {
-	ID              uuid.UUID        `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	Code            string           `gorm:"type:varchar(36);uniqueIndex" json:"code"`
-	APIEndpointCode string           `gorm:"type:varchar(36)" json:"api_endpoint_code"`
-	PermissionKey   string           `gorm:"type:varchar(150);index:idx_permission_keys_permission_key" json:"permission_key"`
-	ModuleCode      string           `gorm:"type:varchar(100);not null;default:''" json:"module_code"`
-	ModuleGroupID   *uuid.UUID       `gorm:"type:uuid;index" json:"module_group_id"`
-	FeatureGroupID  *uuid.UUID       `gorm:"type:uuid;index" json:"feature_group_id"`
-	ContextType     string           `gorm:"type:varchar(20);not null;default:'team'" json:"context_type"`
-	FeatureKind     string           `gorm:"type:varchar(20);not null;default:'system'" json:"feature_kind"`
-	Name            string           `gorm:"type:varchar(150);not null" json:"name"`
-	Description     string           `gorm:"type:varchar(255)" json:"description"`
-	Status          string           `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
-	SortOrder       int              `gorm:"default:0" json:"sort_order"`
-	IsBuiltin       bool             `gorm:"not null;default:false" json:"is_builtin"`
-	ModuleGroup     *PermissionGroup `gorm:"foreignKey:ModuleGroupID" json:"module_group,omitempty"`
-	FeatureGroup    *PermissionGroup `gorm:"foreignKey:FeatureGroupID" json:"feature_group,omitempty"`
-	CreatedAt       time.Time        `json:"created_at"`
-	UpdatedAt       time.Time        `json:"updated_at"`
-	DeletedAt       gorm.DeletedAt   `gorm:"index" json:"deleted_at,omitempty"`
+	ID                    uuid.UUID        `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	Code                  string           `gorm:"type:varchar(36);uniqueIndex" json:"code"`
+	APIEndpointCode       string           `gorm:"type:varchar(36)" json:"api_endpoint_code"`
+	PermissionKey         string           `gorm:"type:varchar(150);index:idx_permission_keys_permission_key" json:"permission_key"`
+	AppKey                string           `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
+	ModuleCode            string           `gorm:"type:varchar(100);not null;default:''" json:"module_code"`
+	ModuleGroupID         *uuid.UUID       `gorm:"type:uuid;index" json:"module_group_id"`
+	FeatureGroupID        *uuid.UUID       `gorm:"type:uuid;index" json:"feature_group_id"`
+	ContextType           string           `gorm:"type:varchar(20);not null;default:'team'" json:"context_type"`
+	FeatureKind           string           `gorm:"type:varchar(20);not null;default:'system'" json:"feature_kind"`
+	DataPolicy            string           `gorm:"type:varchar(50);not null;default:'none'" json:"data_policy"`
+	AllowedWorkspaceTypes string           `gorm:"type:varchar(50);not null;default:'team'" json:"allowed_workspace_types"`
+	Name                  string           `gorm:"type:varchar(150);not null" json:"name"`
+	Description           string           `gorm:"type:varchar(255)" json:"description"`
+	Status                string           `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	SortOrder             int              `gorm:"default:0" json:"sort_order"`
+	IsBuiltin             bool             `gorm:"not null;default:false" json:"is_builtin"`
+	ModuleGroup           *PermissionGroup `gorm:"foreignKey:ModuleGroupID" json:"module_group,omitempty"`
+	FeatureGroup          *PermissionGroup `gorm:"foreignKey:FeatureGroupID" json:"feature_group,omitempty"`
+	CreatedAt             time.Time        `json:"created_at"`
+	UpdatedAt             time.Time        `json:"updated_at"`
+	DeletedAt             gorm.DeletedAt   `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (PermissionKey) TableName() string {
@@ -277,20 +280,20 @@ func (FeaturePackageMenu) TableName() string {
 	return "feature_package_menus"
 }
 
-type TeamFeaturePackage struct {
-	ID        uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	AppKey    string     `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
-	TeamID    uuid.UUID  `gorm:"type:uuid;not null;index" json:"team_id"`
-	PackageID uuid.UUID  `gorm:"type:uuid;not null;index" json:"package_id"`
-	Enabled   bool       `gorm:"not null;default:true" json:"enabled"`
-	GrantedBy *uuid.UUID `gorm:"type:uuid" json:"granted_by"`
-	GrantedAt *time.Time `json:"granted_at"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
+type CollaborationWorkspaceFeaturePackage struct {
+	ID                       uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	AppKey                   string     `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
+	CollaborationWorkspaceID uuid.UUID  `gorm:"type:uuid;not null;index" json:"collaboration_workspace_id"`
+	PackageID                uuid.UUID  `gorm:"type:uuid;not null;index" json:"package_id"`
+	Enabled                  bool       `gorm:"not null;default:true" json:"enabled"`
+	GrantedBy                *uuid.UUID `gorm:"type:uuid" json:"granted_by"`
+	GrantedAt                *time.Time `json:"granted_at"`
+	CreatedAt                time.Time  `json:"created_at"`
+	UpdatedAt                time.Time  `json:"updated_at"`
 }
 
-func (TeamFeaturePackage) TableName() string {
-	return "team_feature_packages"
+func (CollaborationWorkspaceFeaturePackage) TableName() string {
+	return "collaboration_workspace_feature_packages"
 }
 
 type UserFeaturePackage struct {
@@ -348,38 +351,38 @@ func (RoleDataPermission) TableName() string {
 	return "role_data_permissions"
 }
 
-type TeamBlockedMenu struct {
-	AppKey    string    `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
-	TeamID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"team_id"`
-	MenuID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"menu_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+type CollaborationWorkspaceBlockedMenu struct {
+	AppKey                   string    `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
+	CollaborationWorkspaceID uuid.UUID `gorm:"type:uuid;primaryKey" json:"collaboration_workspace_id"`
+	MenuID                   uuid.UUID `gorm:"type:uuid;primaryKey" json:"menu_id"`
+	CreatedAt                time.Time `json:"created_at"`
+	UpdatedAt                time.Time `json:"updated_at"`
 }
 
-func (TeamBlockedMenu) TableName() string {
-	return "team_blocked_menus"
+func (CollaborationWorkspaceBlockedMenu) TableName() string {
+	return "collaboration_workspace_blocked_menus"
 }
 
-type TeamBlockedAction struct {
-	AppKey    string    `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
-	TeamID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"team_id"`
-	ActionID  uuid.UUID `gorm:"type:uuid;primaryKey" json:"action_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+type CollaborationWorkspaceBlockedAction struct {
+	AppKey                   string    `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
+	CollaborationWorkspaceID uuid.UUID `gorm:"type:uuid;primaryKey" json:"collaboration_workspace_id"`
+	ActionID                 uuid.UUID `gorm:"type:uuid;primaryKey" json:"action_id"`
+	CreatedAt                time.Time `json:"created_at"`
+	UpdatedAt                time.Time `json:"updated_at"`
 }
 
-func (TeamBlockedAction) TableName() string {
-	return "team_blocked_actions"
+func (CollaborationWorkspaceBlockedAction) TableName() string {
+	return "collaboration_workspace_blocked_actions"
 }
 
 type UserActionPermission struct {
-	AppKey    string     `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
-	UserID    uuid.UUID  `gorm:"type:uuid;primaryKey" json:"user_id"`
-	ActionID  uuid.UUID  `gorm:"type:uuid;primaryKey" json:"action_id"`
-	TenantID  *uuid.UUID `gorm:"type:uuid;primaryKey" json:"tenant_id"`
-	Effect    string     `gorm:"type:varchar(20);not null;default:'allow'" json:"effect"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt time.Time  `json:"updated_at"`
+	AppKey                   string     `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
+	UserID                   uuid.UUID  `gorm:"type:uuid;primaryKey" json:"user_id"`
+	ActionID                 uuid.UUID  `gorm:"type:uuid;primaryKey" json:"action_id"`
+	CollaborationWorkspaceID *uuid.UUID `gorm:"type:uuid;primaryKey" json:"collaboration_workspace_id"`
+	Effect                   string     `gorm:"type:varchar(20);not null;default:'allow'" json:"effect"`
+	CreatedAt                time.Time  `json:"created_at"`
+	UpdatedAt                time.Time  `json:"updated_at"`
 }
 
 func (UserActionPermission) TableName() string {
@@ -446,50 +449,50 @@ func (PlatformRoleAccessSnapshot) TableName() string {
 	return "platform_role_access_snapshots"
 }
 
-type TeamAccessSnapshot struct {
-	AppKey             string              `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
-	TeamID             uuid.UUID           `gorm:"type:uuid;primaryKey" json:"team_id"`
-	PackageIDs         []string            `gorm:"type:jsonb;serializer:json" json:"package_ids"`
-	ExpandedPackageIDs []string            `gorm:"type:jsonb;serializer:json" json:"expanded_package_ids"`
-	DerivedActionIDs   []string            `gorm:"type:jsonb;serializer:json" json:"derived_action_ids"`
-	DerivedActionMap   map[string][]string `gorm:"type:jsonb;serializer:json" json:"derived_action_map"`
-	BlockedActionIDs   []string            `gorm:"type:jsonb;serializer:json" json:"blocked_action_ids"`
-	EffectiveActionIDs []string            `gorm:"type:jsonb;serializer:json" json:"effective_action_ids"`
-	DerivedMenuIDs     []string            `gorm:"type:jsonb;serializer:json" json:"derived_menu_ids"`
-	DerivedMenuMap     map[string][]string `gorm:"type:jsonb;serializer:json" json:"derived_menu_map"`
-	BlockedMenuIDs     []string            `gorm:"type:jsonb;serializer:json" json:"blocked_menu_ids"`
-	EffectiveMenuIDs   []string            `gorm:"type:jsonb;serializer:json" json:"effective_menu_ids"`
-	RefreshedAt        time.Time           `gorm:"not null;default:CURRENT_TIMESTAMP" json:"refreshed_at"`
-	CreatedAt          time.Time           `json:"created_at"`
-	UpdatedAt          time.Time           `json:"updated_at"`
+type CollaborationWorkspaceAccessSnapshot struct {
+	AppKey                   string              `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
+	CollaborationWorkspaceID uuid.UUID           `gorm:"type:uuid;primaryKey" json:"collaboration_workspace_id"`
+	PackageIDs               []string            `gorm:"type:jsonb;serializer:json" json:"package_ids"`
+	ExpandedPackageIDs       []string            `gorm:"type:jsonb;serializer:json" json:"expanded_package_ids"`
+	DerivedActionIDs         []string            `gorm:"type:jsonb;serializer:json" json:"derived_action_ids"`
+	DerivedActionMap         map[string][]string `gorm:"type:jsonb;serializer:json" json:"derived_action_map"`
+	BlockedActionIDs         []string            `gorm:"type:jsonb;serializer:json" json:"blocked_action_ids"`
+	EffectiveActionIDs       []string            `gorm:"type:jsonb;serializer:json" json:"effective_action_ids"`
+	DerivedMenuIDs           []string            `gorm:"type:jsonb;serializer:json" json:"derived_menu_ids"`
+	DerivedMenuMap           map[string][]string `gorm:"type:jsonb;serializer:json" json:"derived_menu_map"`
+	BlockedMenuIDs           []string            `gorm:"type:jsonb;serializer:json" json:"blocked_menu_ids"`
+	EffectiveMenuIDs         []string            `gorm:"type:jsonb;serializer:json" json:"effective_menu_ids"`
+	RefreshedAt              time.Time           `gorm:"not null;default:CURRENT_TIMESTAMP" json:"refreshed_at"`
+	CreatedAt                time.Time           `json:"created_at"`
+	UpdatedAt                time.Time           `json:"updated_at"`
 }
 
-func (TeamAccessSnapshot) TableName() string {
-	return "team_access_snapshots"
+func (CollaborationWorkspaceAccessSnapshot) TableName() string {
+	return "collaboration_workspace_access_snapshots"
 }
 
-type TeamRoleAccessSnapshot struct {
-	AppKey             string              `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
-	TeamID             uuid.UUID           `gorm:"type:uuid;primaryKey" json:"team_id"`
-	RoleID             uuid.UUID           `gorm:"type:uuid;primaryKey" json:"role_id"`
-	PackageIDs         []string            `gorm:"type:jsonb;serializer:json" json:"package_ids"`
-	ExpandedPackageIDs []string            `gorm:"type:jsonb;serializer:json" json:"expanded_package_ids"`
-	AvailableActionIDs []string            `gorm:"type:jsonb;serializer:json" json:"available_action_ids"`
-	DisabledActionIDs  []string            `gorm:"type:jsonb;serializer:json" json:"disabled_action_ids"`
-	ActionIDs          []string            `gorm:"type:jsonb;serializer:json" json:"action_ids"`
-	ActionSourceMap    map[string][]string `gorm:"type:jsonb;serializer:json" json:"action_source_map"`
-	AvailableMenuIDs   []string            `gorm:"type:jsonb;serializer:json" json:"available_menu_ids"`
-	HiddenMenuIDs      []string            `gorm:"type:jsonb;serializer:json" json:"hidden_menu_ids"`
-	MenuIDs            []string            `gorm:"type:jsonb;serializer:json" json:"menu_ids"`
-	MenuSourceMap      map[string][]string `gorm:"type:jsonb;serializer:json" json:"menu_source_map"`
-	Inherited          bool                `gorm:"not null;default:false" json:"inherited"`
-	RefreshedAt        time.Time           `gorm:"not null;default:CURRENT_TIMESTAMP" json:"refreshed_at"`
-	CreatedAt          time.Time           `json:"created_at"`
-	UpdatedAt          time.Time           `json:"updated_at"`
+type CollaborationWorkspaceRoleAccessSnapshot struct {
+	AppKey                   string              `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
+	CollaborationWorkspaceID uuid.UUID           `gorm:"type:uuid;primaryKey" json:"collaboration_workspace_id"`
+	RoleID                   uuid.UUID           `gorm:"type:uuid;primaryKey" json:"role_id"`
+	PackageIDs               []string            `gorm:"type:jsonb;serializer:json" json:"package_ids"`
+	ExpandedPackageIDs       []string            `gorm:"type:jsonb;serializer:json" json:"expanded_package_ids"`
+	AvailableActionIDs       []string            `gorm:"type:jsonb;serializer:json" json:"available_action_ids"`
+	DisabledActionIDs        []string            `gorm:"type:jsonb;serializer:json" json:"disabled_action_ids"`
+	ActionIDs                []string            `gorm:"type:jsonb;serializer:json" json:"action_ids"`
+	ActionSourceMap          map[string][]string `gorm:"type:jsonb;serializer:json" json:"action_source_map"`
+	AvailableMenuIDs         []string            `gorm:"type:jsonb;serializer:json" json:"available_menu_ids"`
+	HiddenMenuIDs            []string            `gorm:"type:jsonb;serializer:json" json:"hidden_menu_ids"`
+	MenuIDs                  []string            `gorm:"type:jsonb;serializer:json" json:"menu_ids"`
+	MenuSourceMap            map[string][]string `gorm:"type:jsonb;serializer:json" json:"menu_source_map"`
+	Inherited                bool                `gorm:"not null;default:false" json:"inherited"`
+	RefreshedAt              time.Time           `gorm:"not null;default:CURRENT_TIMESTAMP" json:"refreshed_at"`
+	CreatedAt                time.Time           `json:"created_at"`
+	UpdatedAt                time.Time           `json:"updated_at"`
 }
 
-func (TeamRoleAccessSnapshot) TableName() string {
-	return "team_role_access_snapshots"
+func (CollaborationWorkspaceRoleAccessSnapshot) TableName() string {
+	return "collaboration_workspace_role_access_snapshots"
 }
 
 type APIEndpoint struct {
@@ -561,25 +564,25 @@ type Tenant struct {
 }
 
 func (Tenant) TableName() string {
-	return "tenants"
+	return "collaboration_workspaces"
 }
 
 type TenantMember struct {
-	ID        uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	TenantID  uuid.UUID      `gorm:"type:uuid;not null" json:"tenant_id"`
-	UserID    uuid.UUID      `gorm:"type:uuid;not null" json:"user_id"`
-	RoleCode  string         `gorm:"type:varchar(50);default:'member'" json:"role_code"`
-	RoleID    *uuid.UUID     `gorm:"type:uuid" json:"role_id"`
-	Status    string         `gorm:"type:varchar(20);default:'active'" json:"status"`
-	JoinedAt  time.Time      `json:"joined_at"`
-	InvitedBy *uuid.UUID     `gorm:"type:uuid" json:"invited_by"`
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID                       uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	CollaborationWorkspaceID uuid.UUID      `gorm:"type:uuid;not null" json:"collaboration_workspace_id"`
+	UserID                   uuid.UUID      `gorm:"type:uuid;not null" json:"user_id"`
+	RoleCode                 string         `gorm:"type:varchar(50);default:'member'" json:"role_code"`
+	RoleID                   *uuid.UUID     `gorm:"type:uuid" json:"role_id"`
+	Status                   string         `gorm:"type:varchar(20);default:'active'" json:"status"`
+	JoinedAt                 time.Time      `json:"joined_at"`
+	InvitedBy                *uuid.UUID     `gorm:"type:uuid" json:"invited_by"`
+	CreatedAt                time.Time      `json:"created_at"`
+	UpdatedAt                time.Time      `json:"updated_at"`
+	DeletedAt                gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (TenantMember) TableName() string {
-	return "tenant_members"
+	return "collaboration_workspace_members"
 }
 
 type MemberSearchParams struct {
@@ -589,14 +592,14 @@ type MemberSearchParams struct {
 }
 
 type APIKey struct {
-	ID         uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	TenantID   uuid.UUID  `gorm:"type:uuid;not null;index" json:"tenant_id"`
-	CreatedBy  *uuid.UUID `gorm:"type:uuid" json:"created_by"`
-	Name       string     `gorm:"type:varchar(200);not null" json:"name"`
-	KeyHash    string     `gorm:"type:varchar(255);uniqueIndex;not null" json:"-"`
-	LastUsedAt *time.Time `json:"last_used_at"`
-	ExpiresAt  *time.Time `json:"expires_at"`
-	CreatedAt  time.Time  `json:"created_at"`
+	ID                       uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	CollaborationWorkspaceID uuid.UUID  `gorm:"type:uuid;not null;index" json:"collaboration_workspace_id"`
+	CreatedBy                *uuid.UUID `gorm:"type:uuid" json:"created_by"`
+	Name                     string     `gorm:"type:varchar(200);not null" json:"name"`
+	KeyHash                  string     `gorm:"type:varchar(255);uniqueIndex;not null" json:"-"`
+	LastUsedAt               *time.Time `json:"last_used_at"`
+	ExpiresAt                *time.Time `json:"expires_at"`
+	CreatedAt                time.Time  `json:"created_at"`
 }
 
 func (APIKey) TableName() string {
@@ -604,19 +607,19 @@ func (APIKey) TableName() string {
 }
 
 type MediaAsset struct {
-	ID         uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	TenantID   uuid.UUID  `gorm:"type:uuid;not null;index" json:"tenant_id"`
-	UploadedBy *uuid.UUID `gorm:"type:uuid" json:"uploaded_by"`
-	Filename   string     `gorm:"type:varchar(500);not null" json:"filename"`
-	StorageKey string     `gorm:"type:varchar(1000);not null" json:"storage_key"`
-	URL        string     `gorm:"type:varchar(1000);not null" json:"url"`
-	MimeType   string     `gorm:"type:varchar(100)" json:"mime_type"`
-	Size       int64      `json:"size"`
-	Width      int        `json:"width"`
-	Height     int        `json:"height"`
-	AltText    string     `gorm:"type:varchar(500)" json:"alt_text"`
-	Hash       string     `gorm:"type:varchar(64);index" json:"hash"`
-	CreatedAt  time.Time  `json:"created_at"`
+	ID                       uuid.UUID  `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	CollaborationWorkspaceID uuid.UUID  `gorm:"type:uuid;not null;index" json:"collaboration_workspace_id"`
+	UploadedBy               *uuid.UUID `gorm:"type:uuid" json:"uploaded_by"`
+	Filename                 string     `gorm:"type:varchar(500);not null" json:"filename"`
+	StorageKey               string     `gorm:"type:varchar(1000);not null" json:"storage_key"`
+	URL                      string     `gorm:"type:varchar(1000);not null" json:"url"`
+	MimeType                 string     `gorm:"type:varchar(100)" json:"mime_type"`
+	Size                     int64      `json:"size"`
+	Width                    int        `json:"width"`
+	Height                   int        `json:"height"`
+	AltText                  string     `gorm:"type:varchar(500)" json:"alt_text"`
+	Hash                     string     `gorm:"type:varchar(64);index" json:"hash"`
+	CreatedAt                time.Time  `json:"created_at"`
 }
 
 func (MediaAsset) TableName() string {
@@ -656,37 +659,37 @@ func (SystemSetting) TableName() string {
 }
 
 type Message struct {
-	ID                   uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	MessageType          string         `gorm:"type:varchar(20);not null;default:'notice'" json:"message_type"`
-	BizType              string         `gorm:"type:varchar(100);not null;default:''" json:"biz_type"`
-	ScopeType            string         `gorm:"type:varchar(20);not null;default:'platform'" json:"scope_type"`
-	ScopeID              *uuid.UUID     `gorm:"type:uuid;index" json:"scope_id"`
-	SenderID             *uuid.UUID     `gorm:"type:uuid;index" json:"sender_id"`
-	SenderType           string         `gorm:"type:varchar(30);not null;default:'system'" json:"sender_type"`
-	SenderUserID         *uuid.UUID     `gorm:"type:uuid;index" json:"sender_user_id"`
-	SenderNameSnapshot   string         `gorm:"type:varchar(150);not null;default:''" json:"sender_name_snapshot"`
-	SenderAvatarSnapshot string         `gorm:"type:varchar(500);not null;default:''" json:"sender_avatar_snapshot"`
-	SenderServiceKey     string         `gorm:"type:varchar(100);not null;default:''" json:"sender_service_key"`
-	AudienceType         string         `gorm:"type:varchar(30);not null;default:'specified_users'" json:"audience_type"`
-	AudienceScope        string         `gorm:"type:varchar(20);not null;default:'platform'" json:"audience_scope"`
-	TargetTenantID       *uuid.UUID     `gorm:"type:uuid;index" json:"target_tenant_id"`
-	TargetRoleCodes      []string       `gorm:"type:jsonb;serializer:json" json:"target_role_codes"`
-	TargetUserIDs        []string       `gorm:"type:jsonb;serializer:json" json:"target_user_ids"`
-	TargetGroupIDs       []string       `gorm:"type:jsonb;serializer:json" json:"target_group_ids"`
-	TemplateID           *uuid.UUID     `gorm:"type:uuid;index" json:"template_id"`
-	Title                string         `gorm:"type:varchar(255);not null" json:"title"`
-	Summary              string         `gorm:"type:text;not null;default:''" json:"summary"`
-	Content              string         `gorm:"type:text;not null;default:''" json:"content"`
-	Priority             string         `gorm:"type:varchar(20);not null;default:'normal'" json:"priority"`
-	ActionType           string         `gorm:"type:varchar(20);not null;default:'none'" json:"action_type"`
-	ActionTarget         string         `gorm:"type:varchar(500);not null;default:''" json:"action_target"`
-	Status               string         `gorm:"type:varchar(20);not null;default:'published'" json:"status"`
-	PublishedAt          *time.Time     `json:"published_at"`
-	ExpiredAt            *time.Time     `json:"expired_at"`
-	Meta                 MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"meta"`
-	CreatedAt            time.Time      `json:"created_at"`
-	UpdatedAt            time.Time      `json:"updated_at"`
-	DeletedAt            gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID                             uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	MessageType                    string         `gorm:"type:varchar(20);not null;default:'notice'" json:"message_type"`
+	BizType                        string         `gorm:"type:varchar(100);not null;default:''" json:"biz_type"`
+	ScopeType                      string         `gorm:"type:varchar(20);not null;default:'platform'" json:"scope_type"`
+	ScopeID                        *uuid.UUID     `gorm:"type:uuid;index" json:"scope_id"`
+	SenderID                       *uuid.UUID     `gorm:"type:uuid;index" json:"sender_id"`
+	SenderType                     string         `gorm:"type:varchar(30);not null;default:'system'" json:"sender_type"`
+	SenderUserID                   *uuid.UUID     `gorm:"type:uuid;index" json:"sender_user_id"`
+	SenderNameSnapshot             string         `gorm:"type:varchar(150);not null;default:''" json:"sender_name_snapshot"`
+	SenderAvatarSnapshot           string         `gorm:"type:varchar(500);not null;default:''" json:"sender_avatar_snapshot"`
+	SenderServiceKey               string         `gorm:"type:varchar(100);not null;default:''" json:"sender_service_key"`
+	AudienceType                   string         `gorm:"type:varchar(30);not null;default:'specified_users'" json:"audience_type"`
+	AudienceScope                  string         `gorm:"type:varchar(20);not null;default:'platform'" json:"audience_scope"`
+	TargetCollaborationWorkspaceID *uuid.UUID     `gorm:"type:uuid;index" json:"target_collaboration_workspace_id"`
+	TargetRoleCodes                []string       `gorm:"type:jsonb;serializer:json" json:"target_role_codes"`
+	TargetUserIDs                  []string       `gorm:"type:jsonb;serializer:json" json:"target_user_ids"`
+	TargetGroupIDs                 []string       `gorm:"type:jsonb;serializer:json" json:"target_group_ids"`
+	TemplateID                     *uuid.UUID     `gorm:"type:uuid;index" json:"template_id"`
+	Title                          string         `gorm:"type:varchar(255);not null" json:"title"`
+	Summary                        string         `gorm:"type:text;not null;default:''" json:"summary"`
+	Content                        string         `gorm:"type:text;not null;default:''" json:"content"`
+	Priority                       string         `gorm:"type:varchar(20);not null;default:'normal'" json:"priority"`
+	ActionType                     string         `gorm:"type:varchar(20);not null;default:'none'" json:"action_type"`
+	ActionTarget                   string         `gorm:"type:varchar(500);not null;default:''" json:"action_target"`
+	Status                         string         `gorm:"type:varchar(20);not null;default:'published'" json:"status"`
+	PublishedAt                    *time.Time     `json:"published_at"`
+	ExpiredAt                      *time.Time     `json:"expired_at"`
+	Meta                           MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"meta"`
+	CreatedAt                      time.Time      `json:"created_at"`
+	UpdatedAt                      time.Time      `json:"updated_at"`
+	DeletedAt                      gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (Message) TableName() string {
@@ -694,21 +697,21 @@ func (Message) TableName() string {
 }
 
 type MessageDelivery struct {
-	ID              uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	MessageID       uuid.UUID      `gorm:"type:uuid;not null;index" json:"message_id"`
-	RecipientUserID uuid.UUID      `gorm:"type:uuid;not null;index" json:"recipient_user_id"`
-	RecipientTeamID *uuid.UUID     `gorm:"type:uuid;index" json:"recipient_team_id"`
-	BoxType         string         `gorm:"type:varchar(20);not null;default:'notice'" json:"box_type"`
-	DeliveryStatus  string         `gorm:"type:varchar(20);not null;default:'unread'" json:"delivery_status"`
-	TodoStatus      string         `gorm:"type:varchar(20);not null;default:''" json:"todo_status"`
-	ReadAt          *time.Time     `json:"read_at"`
-	ArchivedAt      *time.Time     `json:"archived_at"`
-	DoneAt          *time.Time     `json:"done_at"`
-	LastActionAt    *time.Time     `json:"last_action_at"`
-	Meta            MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"meta"`
-	CreatedAt       time.Time      `json:"created_at"`
-	UpdatedAt       time.Time      `json:"updated_at"`
-	DeletedAt       gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID                                uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	MessageID                         uuid.UUID      `gorm:"type:uuid;not null;index" json:"message_id"`
+	RecipientUserID                   uuid.UUID      `gorm:"type:uuid;not null;index" json:"recipient_user_id"`
+	RecipientCollaborationWorkspaceID *uuid.UUID     `gorm:"type:uuid;index" json:"recipient_collaboration_workspace_id"`
+	BoxType                           string         `gorm:"type:varchar(20);not null;default:'notice'" json:"box_type"`
+	DeliveryStatus                    string         `gorm:"type:varchar(20);not null;default:'unread'" json:"delivery_status"`
+	TodoStatus                        string         `gorm:"type:varchar(20);not null;default:''" json:"todo_status"`
+	ReadAt                            *time.Time     `json:"read_at"`
+	ArchivedAt                        *time.Time     `json:"archived_at"`
+	DoneAt                            *time.Time     `json:"done_at"`
+	LastActionAt                      *time.Time     `json:"last_action_at"`
+	Meta                              MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"meta"`
+	CreatedAt                         time.Time      `json:"created_at"`
+	UpdatedAt                         time.Time      `json:"updated_at"`
+	DeletedAt                         gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (MessageDelivery) TableName() string {
@@ -716,24 +719,24 @@ func (MessageDelivery) TableName() string {
 }
 
 type MessageTemplate struct {
-	ID                   uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	TemplateKey          string         `gorm:"type:varchar(120);not null;uniqueIndex" json:"template_key"`
-	Name                 string         `gorm:"type:varchar(150);not null" json:"name"`
-	Description          string         `gorm:"type:text;not null;default:''" json:"description"`
-	MessageType          string         `gorm:"type:varchar(20);not null;default:'notice'" json:"message_type"`
-	OwnerScope           string         `gorm:"type:varchar(20);not null;default:'platform'" json:"owner_scope"`
-	OwnerTenantID        *uuid.UUID     `gorm:"type:uuid;index" json:"owner_tenant_id"`
-	AudienceType         string         `gorm:"type:varchar(30);not null;default:'specified_users'" json:"audience_type"`
-	TitleTemplate        string         `gorm:"type:text;not null;default:''" json:"title_template"`
-	SummaryTemplate      string         `gorm:"type:text;not null;default:''" json:"summary_template"`
-	ContentTemplate      string         `gorm:"type:text;not null;default:''" json:"content_template"`
-	ActionType           string         `gorm:"type:varchar(20);not null;default:'none'" json:"action_type"`
-	ActionTargetTemplate string         `gorm:"type:text;not null;default:''" json:"action_target_template"`
-	Status               string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
-	Meta                 MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"meta"`
-	CreatedAt            time.Time      `json:"created_at"`
-	UpdatedAt            time.Time      `json:"updated_at"`
-	DeletedAt            gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID                            uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	TemplateKey                   string         `gorm:"type:varchar(120);not null;uniqueIndex" json:"template_key"`
+	Name                          string         `gorm:"type:varchar(150);not null" json:"name"`
+	Description                   string         `gorm:"type:text;not null;default:''" json:"description"`
+	MessageType                   string         `gorm:"type:varchar(20);not null;default:'notice'" json:"message_type"`
+	OwnerScope                    string         `gorm:"type:varchar(20);not null;default:'platform'" json:"owner_scope"`
+	OwnerCollaborationWorkspaceID *uuid.UUID     `gorm:"type:uuid;index" json:"owner_collaboration_workspace_id"`
+	AudienceType                  string         `gorm:"type:varchar(30);not null;default:'specified_users'" json:"audience_type"`
+	TitleTemplate                 string         `gorm:"type:text;not null;default:''" json:"title_template"`
+	SummaryTemplate               string         `gorm:"type:text;not null;default:''" json:"summary_template"`
+	ContentTemplate               string         `gorm:"type:text;not null;default:''" json:"content_template"`
+	ActionType                    string         `gorm:"type:varchar(20);not null;default:'none'" json:"action_type"`
+	ActionTargetTemplate          string         `gorm:"type:text;not null;default:''" json:"action_target_template"`
+	Status                        string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	Meta                          MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"meta"`
+	CreatedAt                     time.Time      `json:"created_at"`
+	UpdatedAt                     time.Time      `json:"updated_at"`
+	DeletedAt                     gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (MessageTemplate) TableName() string {
@@ -778,18 +781,18 @@ func (MessageRecipientGroup) TableName() string {
 }
 
 type MessageRecipientGroupTarget struct {
-	ID         uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	GroupID    uuid.UUID      `gorm:"type:uuid;not null;index" json:"group_id"`
-	TargetType string         `gorm:"type:varchar(30);not null" json:"target_type"`
-	UserID     *uuid.UUID     `gorm:"type:uuid;index" json:"user_id"`
-	TenantID   *uuid.UUID     `gorm:"type:uuid;index" json:"tenant_id"`
-	RoleCode   string         `gorm:"type:varchar(80);not null;default:''" json:"role_code"`
-	PackageKey string         `gorm:"type:varchar(120);not null;default:''" json:"package_key"`
-	SortOrder  int            `gorm:"not null;default:0" json:"sort_order"`
-	Meta       MetaJSON       `gorm:"type:jsonb;serializer:json" json:"meta"`
-	CreatedAt  time.Time      `json:"created_at"`
-	UpdatedAt  time.Time      `json:"updated_at"`
-	DeletedAt  gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID                       uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	GroupID                  uuid.UUID      `gorm:"type:uuid;not null;index" json:"group_id"`
+	TargetType               string         `gorm:"type:varchar(30);not null" json:"target_type"`
+	UserID                   *uuid.UUID     `gorm:"type:uuid;index" json:"user_id"`
+	CollaborationWorkspaceID *uuid.UUID     `gorm:"type:uuid;index" json:"collaboration_workspace_id"`
+	RoleCode                 string         `gorm:"type:varchar(80);not null;default:''" json:"role_code"`
+	PackageKey               string         `gorm:"type:varchar(120);not null;default:''" json:"package_key"`
+	SortOrder                int            `gorm:"not null;default:0" json:"sort_order"`
+	Meta                     MetaJSON       `gorm:"type:jsonb;serializer:json" json:"meta"`
+	CreatedAt                time.Time      `json:"created_at"`
+	UpdatedAt                time.Time      `json:"updated_at"`
+	DeletedAt                gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (MessageRecipientGroupTarget) TableName() string {

@@ -228,39 +228,39 @@ func (s *tenantService) Delete(id uuid.UUID) error {
 
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		var roleIDs []uuid.UUID
-		if err := tx.Model(&user.Role{}).Where("tenant_id = ?", id).Pluck("id", &roleIDs).Error; err != nil {
+		if err := tx.Model(&user.Role{}).Where("collaboration_workspace_id = ?", id).Pluck("id", &roleIDs).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Where("tenant_id = ?", id).Delete(&user.UserActionPermission{}).Error; err != nil {
+		if err := tx.Where("collaboration_workspace_id = ?", id).Delete(&user.UserActionPermission{}).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Where("team_id = ?", id).Delete(&user.TeamFeaturePackage{}).Error; err != nil {
+		if err := tx.Where("collaboration_workspace_id = ?", id).Delete(&user.CollaborationWorkspaceFeaturePackage{}).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Where("team_id = ?", id).Delete(&user.TeamBlockedMenu{}).Error; err != nil {
+		if err := tx.Where("collaboration_workspace_id = ?", id).Delete(&user.CollaborationWorkspaceBlockedMenu{}).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Where("team_id = ?", id).Delete(&user.TeamBlockedAction{}).Error; err != nil {
+		if err := tx.Where("collaboration_workspace_id = ?", id).Delete(&user.CollaborationWorkspaceBlockedAction{}).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Where("tenant_id = ?", id).Delete(&user.APIKey{}).Error; err != nil {
+		if err := tx.Where("collaboration_workspace_id = ?", id).Delete(&user.APIKey{}).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Where("tenant_id = ?", id).Delete(&user.MediaAsset{}).Error; err != nil {
+		if err := tx.Where("collaboration_workspace_id = ?", id).Delete(&user.MediaAsset{}).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Where("tenant_id = ?", id).Delete(&user.UserRole{}).Error; err != nil {
+		if err := tx.Where("collaboration_workspace_id = ?", id).Delete(&user.UserRole{}).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Where("tenant_id = ?", id).Delete(&user.TenantMember{}).Error; err != nil {
+		if err := tx.Where("collaboration_workspace_id = ?", id).Delete(&user.TenantMember{}).Error; err != nil {
 			return err
 		}
 
@@ -277,7 +277,7 @@ func (s *tenantService) Delete(id uuid.UUID) error {
 			if err := tx.Where("role_id IN ?", roleIDs).Delete(&user.RoleDataPermission{}).Error; err != nil {
 				return err
 			}
-			if err := tx.Where("role_id IN ?", roleIDs).Delete(&models.TeamRoleAccessSnapshot{}).Error; err != nil {
+			if err := tx.Where("role_id IN ?", roleIDs).Delete(&models.CollaborationWorkspaceRoleAccessSnapshot{}).Error; err != nil {
 				return err
 			}
 			if err := tx.Where("id IN ?", roleIDs).Delete(&user.Role{}).Error; err != nil {
@@ -285,7 +285,7 @@ func (s *tenantService) Delete(id uuid.UUID) error {
 			}
 		}
 
-		if err := tx.Where("team_id = ?", id).Delete(&models.TeamAccessSnapshot{}).Error; err != nil {
+		if err := tx.Where("collaboration_workspace_id = ?", id).Delete(&models.CollaborationWorkspaceAccessSnapshot{}).Error; err != nil {
 			return err
 		}
 
@@ -318,10 +318,10 @@ func (s *tenantService) AddMember(tenantID uuid.UUID, req *dto.TenantAddMemberRe
 	roleCode := normalizeTenantRoleCode(req.RoleCode)
 
 	member := &user.TenantMember{
-		TenantID: tenantID,
-		UserID:   userID,
-		RoleCode: roleCode,
-		JoinedAt: time.Now(),
+		CollaborationWorkspaceID: tenantID,
+		UserID:                   userID,
+		RoleCode:                 roleCode,
+		JoinedAt:                 time.Now(),
 	}
 	if invitedBy != nil {
 		member.InvitedBy = invitedBy
@@ -354,11 +354,11 @@ func (s *tenantService) RemoveMember(tenantID, userID uuid.UUID) error {
 	}
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("user_id = ? AND tenant_id = ?", userID, tenantID).Delete(&user.UserActionPermission{}).Error; err != nil {
+		if err := tx.Where("user_id = ? AND collaboration_workspace_id = ?", userID, tenantID).Delete(&user.UserActionPermission{}).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Where("user_id = ? AND tenant_id = ?", userID, tenantID).Delete(&user.UserRole{}).Error; err != nil {
+		if err := tx.Where("user_id = ? AND collaboration_workspace_id = ?", userID, tenantID).Delete(&user.UserRole{}).Error; err != nil {
 			return err
 		}
 
@@ -417,7 +417,7 @@ func (s *tenantService) syncTenantAdminsTx(tx *gorm.DB, tenantID uuid.UUID, admi
 	}
 	adminIDs = appendIfMissingUUID(adminIDs, tenant.OwnerID)
 	var currentMembers []user.TenantMember
-	if err := tx.Where("tenant_id = ?", tenantID).Find(&currentMembers).Error; err != nil {
+	if err := tx.Where("collaboration_workspace_id = ?", tenantID).Find(&currentMembers).Error; err != nil {
 		return err
 	}
 
@@ -454,10 +454,10 @@ func (s *tenantService) syncTenantAdminsTx(tx *gorm.DB, tenantID uuid.UUID, admi
 		}
 
 		member = &user.TenantMember{
-			TenantID: tenantID,
-			UserID:   adminID,
-			RoleCode: defaultTeamRoleAdminCode,
-			JoinedAt: time.Now(),
+			CollaborationWorkspaceID: tenantID,
+			UserID:                   adminID,
+			RoleCode:                 defaultTeamRoleAdminCode,
+			JoinedAt:                 time.Now(),
 		}
 		if invitedBy != nil {
 			member.InvitedBy = invitedBy
@@ -529,23 +529,23 @@ func (s *tenantService) syncTenantIdentityRoleTx(tx *gorm.DB, userID, tenantID u
 	roleCode = normalizeTenantRoleCode(roleCode)
 	var roleIDs []uuid.UUID
 	if err := tx.Model(&user.Role{}).
-		Where("tenant_id IS NULL AND code IN ?", []string{defaultTeamRoleAdminCode, defaultTeamRoleMemberCode}).
+		Where("collaboration_workspace_id IS NULL AND code IN ?", []string{defaultTeamRoleAdminCode, defaultTeamRoleMemberCode}).
 		Pluck("id", &roleIDs).Error; err != nil {
 		return err
 	}
 	if len(roleIDs) > 0 {
-		if err := tx.Where("user_id = ? AND tenant_id = ? AND role_id IN ?", userID, tenantID, roleIDs).Delete(&user.UserRole{}).Error; err != nil {
+		if err := tx.Where("user_id = ? AND collaboration_workspace_id = ? AND role_id IN ?", userID, tenantID, roleIDs).Delete(&user.UserRole{}).Error; err != nil {
 			return err
 		}
 	}
 
 	var roles []user.Role
-	if err := tx.Where("code = ? AND tenant_id IS NULL", roleCode).Find(&roles).Error; err != nil {
+	if err := tx.Where("code = ? AND collaboration_workspace_id IS NULL", roleCode).Find(&roles).Error; err != nil {
 		return err
 	}
 	if len(roles) == 0 {
 		return nil
 	}
 
-	return tx.Create(&user.UserRole{UserID: userID, RoleID: roles[0].ID, TenantID: &tenantID}).Error
+	return tx.Create(&user.UserRole{UserID: userID, RoleID: roles[0].ID, CollaborationWorkspaceID: &tenantID}).Error
 }

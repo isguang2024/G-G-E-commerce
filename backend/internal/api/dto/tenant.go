@@ -1,6 +1,6 @@
 package dto
 
-// TenantListRequest 团队列表请求
+// TenantListRequest 协作空间列表请求
 type TenantListRequest struct {
 	Current int    `form:"current"`
 	Size    int    `form:"size"`
@@ -8,7 +8,7 @@ type TenantListRequest struct {
 	Status  string `form:"status"`
 }
 
-// TenantCreateRequest 创建团队请求
+// TenantCreateRequest 创建协作空间请求
 type TenantCreateRequest struct {
 	Name         string   `json:"name" binding:"required,max=200"`
 	Remark       string   `json:"remark" binding:"max=500"`
@@ -19,7 +19,7 @@ type TenantCreateRequest struct {
 	AdminUserIDs []string `json:"admin_user_ids"`
 }
 
-// TenantUpdateRequest 更新团队请求
+// TenantUpdateRequest 更新协作空间请求
 type TenantUpdateRequest struct {
 	Name         string   `json:"name" binding:"max=200"`
 	Remark       string   `json:"remark" binding:"max=500"`
@@ -30,7 +30,7 @@ type TenantUpdateRequest struct {
 	AdminUserIDs []string `json:"admin_user_ids"`
 }
 
-// TenantAddMemberRequest 添加团队成员请求
+// TenantAddMemberRequest 添加协作空间成员请求
 type TenantAddMemberRequest struct {
 	UserID   string `json:"user_id" binding:"required"`
 	RoleCode string `json:"role_code"`

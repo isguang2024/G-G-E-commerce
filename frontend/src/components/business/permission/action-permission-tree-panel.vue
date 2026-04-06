@@ -90,8 +90,11 @@
   .tree-wrapper {
     border: 1px solid #e5ebf3;
     border-radius: 16px;
-    background:
-      linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(249, 251, 254, 0.96) 100%);
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.98) 0%,
+      rgba(249, 251, 254, 0.96) 100%
+    );
     padding: 10px;
     max-height: 60vh;
     overflow: auto;

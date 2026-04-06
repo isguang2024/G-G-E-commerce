@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ArtSearchBar
     v-model="formData"
     :items="formItems"
@@ -106,7 +106,7 @@
       }
     },
     {
-      label: '团队上下文',
+      label: '协作空间上下文',
       key: 'contextScope',
       type: 'select',
       props: {
@@ -160,3 +160,4 @@
 
   const handleReset = () => emit('reset')
 </script>
+

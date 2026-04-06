@@ -31,14 +31,29 @@
           </template>
         </ElInput>
 
-        <ElSelect v-model="filters.messageType" clearable placeholder="消息类型" @change="handleFilterChange">
+        <ElSelect
+          v-model="filters.messageType"
+          clearable
+          placeholder="消息类型"
+          @change="handleFilterChange"
+        >
           <ElOption label="通知" value="notice" />
           <ElOption label="消息" value="message" />
           <ElOption label="待办" value="todo" />
         </ElSelect>
 
-        <ElSelect v-model="filters.audienceType" clearable placeholder="发送对象" @change="handleFilterChange">
-          <ElOption v-for="item in audienceOptions" :key="item.value" :label="item.label" :value="item.value" />
+        <ElSelect
+          v-model="filters.audienceType"
+          clearable
+          placeholder="发送对象"
+          @change="handleFilterChange"
+        >
+          <ElOption
+            v-for="item in audienceOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
         </ElSelect>
       </header>
 
@@ -67,7 +82,9 @@
           <template #default="{ row }">
             <div class="message-record-simple-cell">
               <span>{{ resolveAudienceLabel(row.audience_type) }}</span>
-              <small>{{ row.target_tenant_name || '全局范围' }}</small>
+              <small>{{
+                row.target_collaboration_workspace_name || row.target_tenant_name || '全局范围'
+              }}</small>
             </div>
           </template>
         </ElTableColumn>
@@ -98,7 +115,7 @@
           <template #default="{ row }">
             <div class="message-record-simple-cell">
               <span>{{ formatTime(row.published_at || row.created_at) }}</span>
-              <small>{{ row.scope_type === 'team' ? '团队发送' : '平台发送' }}</small>
+              <small>{{ row.scope_type === 'team' ? '协作空间发送' : '平台发送' }}</small>
             </div>
           </template>
         </ElTableColumn>
@@ -129,10 +146,16 @@
             <div class="message-record-drawer__meta">
               <span>{{ resolveMessageTypeLabel(activeRecord.message_type) }}</span>
               <span>{{ resolveAudienceLabel(activeRecord.audience_type) }}</span>
-              <span>{{ activeRecord.target_tenant_name || (activeRecord.scope_type === 'team' ? currentTeamName : '平台范围') }}</span>
+              <span>{{
+                activeRecord.target_collaboration_workspace_name ||
+                activeRecord.target_tenant_name ||
+                (activeRecord.scope_type === 'team' ? currentTeamName : '平台范围')
+              }}</span>
             </div>
           </div>
-          <ElTag effect="plain">{{ activeRecord.scope_type === 'team' ? '团队发送' : '平台发送' }}</ElTag>
+          <ElTag effect="plain">{{
+            activeRecord.scope_type === 'team' ? '协作空间发送' : '平台发送'
+          }}</ElTag>
         </div>
 
         <div class="message-record-drawer__stats">
@@ -179,16 +202,25 @@
                   <strong>{{ delivery.recipient_name || '未命名用户' }}</strong>
                   <p>{{ delivery.recipient_team_name || '平台用户' }}</p>
                 </div>
-                <ElTag size="small" effect="plain">{{ resolveDeliveryStatusLabel(delivery.delivery_status) }}</ElTag>
+                <ElTag size="small" effect="plain">{{
+                  resolveDeliveryStatusLabel(delivery.delivery_status)
+                }}</ElTag>
               </div>
               <div class="message-record-delivery-card__meta">
                 <span>来源组：{{ delivery.source_group_name || '直接命中' }}</span>
                 <span>规则：{{ resolveSourceRuleLabel(delivery) }}</span>
                 <span>目标项：{{ resolveSourceTargetLabel(delivery) }}</span>
+                <span v-if="resolveSourceOriginLabel(delivery)"
+                  >来源链：{{ resolveSourceOriginLabel(delivery) }}</span
+                >
                 <span v-if="delivery.todo_status && delivery.todo_status !== 'pending'">
                   待办：{{ resolveTodoStatusLabel(delivery.todo_status) }}
                 </span>
-                <span>最近动作：{{ formatTime(delivery.last_action_at || delivery.done_at || delivery.read_at) }}</span>
+                <span
+                  >最近动作：{{
+                    formatTime(delivery.last_action_at || delivery.done_at || delivery.read_at)
+                  }}</span
+                >
               </div>
             </article>
           </div>
@@ -219,7 +251,6 @@
 
 <script setup lang="ts">
   import { computed, onMounted, reactive, ref, watch } from 'vue'
-  import { ElMessage } from 'element-plus'
   import { useRouter } from 'vue-router'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
@@ -237,8 +268,14 @@
 
   const router = useRouter()
   const menuSpaceStore = useMenuSpaceStore()
-  const { isTeamScope, skipTenantHeader, currentTeamName, ensureTeamContext, plainTextFromHtml, formatTime } =
-    useMessageWorkspace(props.scope)
+  const {
+    isTeamScope,
+    skipTenantHeader,
+    currentTeamName,
+    ensureTeamContext,
+    plainTextFromHtml,
+    formatTime
+  } = useMessageWorkspace(props.scope)
   const loading = ref(false)
   const loadError = ref('')
   const detailLoading = ref(false)
@@ -263,17 +300,17 @@
     total: 0
   })
 
-  const pageTitle = computed(() => (isTeamScope.value ? '团队发送记录' : '消息发送记录'))
+  const pageTitle = computed(() => (isTeamScope.value ? '协作空间发送记录' : '消息发送记录'))
   const pageDescription = computed(() =>
     isTeamScope.value
-      ? '查看当前团队发出的通知、消息和待办投递情况，重点看已读率和待处理数量。'
+      ? '查看当前协作空间发出的通知、消息和待办投递情况，重点看已读率和待处理数量。'
       : '查看平台侧消息发送结果和投递情况，判断哪些消息已读、未读或仍处于待处理状态。'
   )
 
   const audienceOptions = computed(() =>
     isTeamScope.value
       ? [
-          { label: '当前团队成员', value: 'tenant_users' as Api.Message.AudienceType },
+          { label: '当前协作空间成员', value: 'tenant_users' as Api.Message.AudienceType },
           { label: '指定成员', value: 'specified_users' as Api.Message.AudienceType },
           { label: '接收组', value: 'recipient_group' as Api.Message.AudienceType },
           { label: '角色规则', value: 'role' as Api.Message.AudienceType },
@@ -281,8 +318,8 @@
         ]
       : [
           { label: '所有用户', value: 'all_users' as Api.Message.AudienceType },
-          { label: '团队管理员', value: 'tenant_admins' as Api.Message.AudienceType },
-          { label: '指定团队成员', value: 'tenant_users' as Api.Message.AudienceType },
+          { label: '协作空间管理员', value: 'tenant_admins' as Api.Message.AudienceType },
+          { label: '指定协作空间成员', value: 'tenant_users' as Api.Message.AudienceType },
           { label: '指定用户', value: 'specified_users' as Api.Message.AudienceType },
           { label: '接收组', value: 'recipient_group' as Api.Message.AudienceType },
           { label: '角色规则', value: 'role' as Api.Message.AudienceType },
@@ -310,12 +347,12 @@
 
   const resolveAudienceLabel = (value: Api.Message.AudienceType) => {
     if (value === 'all_users') return '所有用户'
-    if (value === 'tenant_admins') return '团队管理员'
+    if (value === 'tenant_admins') return '协作空间管理员'
     if (value === 'specified_users') return '指定用户'
     if (value === 'recipient_group') return '接收组'
     if (value === 'role') return '角色规则'
     if (value === 'feature_package') return '功能包规则'
-    return '团队成员'
+    return '协作空间成员'
   }
 
   const resolveDeliveryStatusLabel = (value?: string) => {
@@ -343,10 +380,15 @@
   }
 
   const resolveSourceRuleLabel = (delivery: Api.Message.DispatchRecordDeliveryItem) => {
-    if (delivery.source_rule_label) return delivery.source_rule_label
+    if (delivery.source_rule_label) {
+      return delivery.source_rule_label.replace(
+        /\s*·\s*(workspace_role_binding|legacy_user_role|membership_identity)\s*$/u,
+        ''
+      )
+    }
     if (delivery.source_rule_type === 'all_users') return '所有用户'
-    if (delivery.source_rule_type === 'tenant_admins') return '团队管理员'
-    if (delivery.source_rule_type === 'tenant_users') return '团队成员'
+    if (delivery.source_rule_type === 'tenant_admins') return '协作空间管理员'
+    if (delivery.source_rule_type === 'tenant_users') return '协作空间成员'
     if (delivery.source_rule_type === 'specified_users') return '指定用户'
     if (delivery.source_rule_type === 'recipient_group') return '接收组'
     if (delivery.source_rule_type === 'feature_package') return '功能包规则'
@@ -355,13 +397,25 @@
   }
 
   const resolveSourceTargetLabel = (delivery: Api.Message.DispatchRecordDeliveryItem) => {
-    if (delivery.source_target_type === 'user') return delivery.source_target_value || delivery.recipient_user_id
-    if (delivery.source_target_type === 'tenant_users') return delivery.recipient_team_name || currentTeamName.value
-    if (delivery.source_target_type === 'tenant_admins') return delivery.recipient_team_name || currentTeamName.value
+    if (delivery.source_target_type === 'user')
+      return delivery.source_target_value || delivery.recipient_user_id
+    if (delivery.source_target_type === 'tenant_users')
+      return delivery.recipient_team_name || currentTeamName.value
+    if (delivery.source_target_type === 'tenant_admins')
+      return delivery.recipient_team_name || currentTeamName.value
     if (delivery.source_target_type === 'role') return delivery.source_target_value || '角色规则'
-    if (delivery.source_target_type === 'feature_package') return delivery.source_target_value || '功能包规则'
+    if (delivery.source_target_type === 'feature_package')
+      return delivery.source_target_value || '功能包规则'
     if (delivery.source_target_type === 'all_users') return '所有用户'
     return delivery.source_target_value || '直接命中'
+  }
+
+  const resolveSourceOriginLabel = (delivery: Api.Message.DispatchRecordDeliveryItem) => {
+    const label = delivery.source_rule_label || ''
+    if (label.includes('workspace_role_binding')) return 'workspace_role_binding'
+    if (label.includes('legacy_user_role')) return 'legacy_user_role'
+    if (label.includes('membership_identity')) return 'membership_identity'
+    return ''
   }
 
   const loadRecords = async () => {
@@ -382,7 +436,7 @@
       list.value = result.records || []
       pagination.total = result.total || 0
       Object.assign(summary, result.summary || {})
-    } catch (error) {
+    } catch {
       list.value = []
       pagination.total = 0
       Object.assign(summary, {
@@ -414,7 +468,7 @@
       activeRecord.value = await fetchGetDispatchRecordDetail(row.id, {
         skipTenantHeader: skipTenantHeader.value
       })
-    } catch (error) {
+    } catch {
       detailError.value = '发送详情暂时不可用，稍后重试。'
     } finally {
       detailLoading.value = false

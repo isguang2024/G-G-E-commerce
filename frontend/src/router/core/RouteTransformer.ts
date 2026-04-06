@@ -38,7 +38,7 @@ export class RouteTransformer {
   ): ConvertedRoute {
     const { component, children, ...routeConfig } = route
 
-    let componentPath = typeof component === 'string' ? component : ''
+    const componentPath = typeof component === 'string' ? component : ''
 
     // 若当前 name 与某祖先重复，改为唯一名，避免 Vue Router 报错
     let uniqueName = route.name

@@ -1,13 +1,13 @@
 ---
 name: brainstorming
-description: "Use for cross-module design work in this repository: information architecture changes, menu/permission/App model changes, complex page restructuring, cross-frontend-backend coordination, or tasks likely to take more than half a day."
+description: "Use when a task has meaningful design ambiguity, crosses boundaries, changes information architecture or runtime contracts, or needs a few architectural options before coding."
 ---
 
 # Brainstorming Ideas Into Designs
 
-Help turn ideas into fully formed designs and specs through natural collaborative dialogue.
+Help turn ideas into a workable design only when the task actually needs design help. Keep it lightweight for moderate tasks and only expand into a fuller design flow when the scope justifies it.
 
-Start by understanding the current project context, then ask questions one at a time to refine the idea. Once you understand what you're building, present the design and get user approval.
+Start by understanding the current project context, then ask questions one at a time only when the design choice is genuinely unclear. Once you understand what you're building, present the design and get user approval.
 
 <HARD-GATE>
 When this skill is invoked, do NOT start implementation until you have presented the design and the user has approved it.
@@ -21,17 +21,18 @@ Do **not** invoke brainstorming for:
 - One-field API payload changes
 - Straightforward implementation where requirements are already concrete
 - Small tasks that can be completed safely with direct coding and verification
+- Tasks where the only question is implementation detail, not product shape
 
 Those tasks should usually proceed directly or with a short inline execution note, not a full design workflow.
 
 ## Repository Trigger Guidance
 
 Use brainstorming when one or more of these are true:
-- Information architecture or routing responsibilities are changing
-- Menu, permission, role, App context, or space model is changing
-- The task crosses frontend and backend boundaries with design choices to make
-- A page or workspace is being reorganized in a non-trivial way
-- The work is large enough that unclear design would likely cause rework
+- The request leaves multiple valid design choices and the choice changes the product shape
+- Information architecture or routing responsibilities may need to move
+- Menu, permission, role, App context, or space semantics are unclear or changing
+- The task crosses frontend and backend boundaries and the contract shape still needs agreement
+- A page or workspace is being reorganized enough that an early design decision would prevent rework
 
 ## Checklist
 
@@ -42,10 +43,10 @@ You MUST create a task for each of these items and complete them in order:
 3. **Ask clarifying questions** — one at a time, understand purpose/constraints/success criteria
 4. **Propose 2-3 approaches** — with trade-offs and your recommendation
 5. **Present design** — in sections scaled to their complexity, get user approval after each section
-6. **Write design doc** — save to `docs/superpowers/specs/YYYY-MM-DD-<topic>-design.md` and commit
+6. **Write design doc** — only for work that is actually broad or risky enough to need a persisted spec
 7. **Spec self-review** — quick inline check for placeholders, contradictions, ambiguity, scope (see below)
 8. **User reviews written spec** — ask user to review the spec file before proceeding
-9. **Transition to implementation** — invoke writing-plans skill to create implementation plan when the approved design still needs multi-step execution planning
+9. **Transition to implementation** — invoke writing-plans skill only when the approved design still needs multi-step execution planning
 
 ## Process Flow
 
@@ -79,7 +80,7 @@ digraph brainstorming {
 }
 ```
 
-**The normal terminal state is invoking writing-plans.** Do NOT jump straight into implementation from brainstorming. If the approved design turns out to be small enough for direct execution, briefly confirm that and proceed without forcing a long plan document.
+**The normal terminal state is a decision, not a document.** If the approved design turns out to be small enough for direct execution, briefly confirm that and proceed without forcing a long design doc or plan document.
 
 ## The Process
 
@@ -87,7 +88,7 @@ digraph brainstorming {
 
 - Check out the current project state first (files, docs, recent commits)
 - Before asking detailed questions, assess scope: if the request describes multiple independent subsystems (e.g., "build a platform with chat, file storage, billing, and analytics"), flag this immediately. Don't spend questions refining details of a project that needs to be decomposed first.
-- If the project is too large for a single spec, help the user decompose into sub-projects: what are the independent pieces, how do they relate, what order should they be built? Then brainstorm the first sub-project through the normal design flow. Each sub-project gets its own spec → plan → implementation cycle.
+- If the project is too large for a single design pass, help the user decompose into sub-projects: what are the independent pieces, how do they relate, what order should they be built? Then brainstorm the first sub-project through the normal design flow. Each sub-project gets its own spec → plan → implementation cycle only if that sub-project actually needs the structure.
 - For appropriately-scoped projects, ask questions one at a time to refine the idea
 - Prefer multiple choice questions when possible, but open-ended is fine too
 - Only one question per message - if a topic needs more exploration, break it into multiple questions

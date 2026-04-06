@@ -13,16 +13,18 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/appctx"
+	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 )
 
 type Handler struct {
 	service Service
+	authz   *authorization.Service
 	logger  *zap.Logger
 }
 
-func NewHandler(service Service, logger *zap.Logger) *Handler {
-	return &Handler{service: service, logger: logger}
+func NewHandler(service Service, authz *authorization.Service, logger *zap.Logger) *Handler {
+	return &Handler{service: service, authz: authz, logger: logger}
 }
 
 func (h *Handler) List(c *gin.Context) {
@@ -627,7 +629,7 @@ func (h *Handler) GetPackageTeams(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	teamIDs, err := h.service.GetPackageTeams(id, appKey)
+	collaborationWorkspaceIDs, err := h.service.GetPackageTeams(id, appKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
@@ -635,12 +637,16 @@ func (h *Handler) GetPackageTeams(c *gin.Context) {
 			return
 		}
 		h.logger.Error("Get package teams failed", zap.Error(err))
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包团队失败")
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包协作空间失败")
 		c.JSON(status, resp)
 		return
 	}
+	collaborationWorkspaceIDs, err = h.filterAccessiblePackageTeams(c, collaborationWorkspaceIDs)
+	if err != nil {
+		return
+	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
-		"team_ids": uuidListToStrings(teamIDs),
+		"collaboration_workspace_ids": uuidListToStrings(collaborationWorkspaceIDs),
 	}))
 }
 
@@ -657,10 +663,13 @@ func (h *Handler) SetPackageTeams(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	teamIDs, err := parseUUIDSlice(req.TeamIDs)
+	collaborationWorkspaceIDs, err := parseUUIDSlice(req.CollaborationWorkspaceIDs)
 	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
+		return
+	}
+	if err := h.requireTargetTeams(c, collaborationWorkspaceIDs); err != nil {
 		return
 	}
 	grantedBy, _ := currentUserID(c)
@@ -670,7 +679,7 @@ func (h *Handler) SetPackageTeams(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	stats, err := h.service.SetPackageTeams(id, teamIDs, grantedBy, resolvedAppKey)
+	stats, err := h.service.SetPackageTeams(id, collaborationWorkspaceIDs, grantedBy, resolvedAppKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrNotFound, "功能包不存在")
@@ -678,7 +687,7 @@ func (h *Handler) SetPackageTeams(c *gin.Context) {
 			return
 		}
 		h.logger.Error("Set package teams failed", zap.Error(err))
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存功能包团队失败: "+err.Error())
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存功能包协作空间失败: "+err.Error())
 		c.JSON(status, resp)
 		return
 	}
@@ -688,10 +697,13 @@ func (h *Handler) SetPackageTeams(c *gin.Context) {
 }
 
 func (h *Handler) GetTeamPackages(c *gin.Context) {
-	teamID, err := uuid.Parse(c.Param("teamId"))
+	teamID, err := uuid.Parse(c.Param("collaborationWorkspaceId"))
 	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
+		return
+	}
+	if err := h.requireTargetTeam(c, teamID); err != nil {
 		return
 	}
 	appKey, err := appctx.RequireRequestAppKey(c)
@@ -703,7 +715,7 @@ func (h *Handler) GetTeamPackages(c *gin.Context) {
 	packageIDs, items, err := h.service.GetTeamPackages(teamID, appKey)
 	if err != nil {
 		h.logger.Error("Get team packages failed", zap.Error(err))
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取团队功能包失败")
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取协作空间功能包失败")
 		c.JSON(status, resp)
 		return
 	}
@@ -718,13 +730,13 @@ func (h *Handler) GetTeamPackages(c *gin.Context) {
 }
 
 func (h *Handler) SetTeamPackages(c *gin.Context) {
-	teamID, err := uuid.Parse(c.Param("teamId"))
+	teamID, err := uuid.Parse(c.Param("collaborationWorkspaceId"))
 	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
 		return
 	}
-	var req dto.TeamFeaturePackageSetRequest
+	var req dto.CollaborationWorkspaceFeaturePackageSetRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -734,6 +746,9 @@ func (h *Handler) SetTeamPackages(c *gin.Context) {
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的功能包ID")
 		c.JSON(status, resp)
+		return
+	}
+	if err := h.requireTargetTeam(c, teamID); err != nil {
 		return
 	}
 	grantedBy, _ := currentUserID(c)
@@ -751,7 +766,7 @@ func (h *Handler) SetTeamPackages(c *gin.Context) {
 			return
 		}
 		h.logger.Error("Set team packages failed", zap.Error(err))
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存团队功能包失败: "+err.Error())
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存协作空间功能包失败: "+err.Error())
 		c.JSON(status, resp)
 		return
 	}
@@ -915,6 +930,60 @@ func currentUserID(c *gin.Context) (*uuid.UUID, bool) {
 		return nil, false
 	}
 	return &userID, true
+}
+
+func (h *Handler) requireTargetTeam(c *gin.Context, teamID uuid.UUID) error {
+	if h.authz == nil {
+		return nil
+	}
+	authCtx, err := authorization.ResolveContext(c)
+	if err != nil {
+		h.authz.RespondAuthError(c, err, "platform.package.assign")
+		return err
+	}
+	if _, err := h.authz.RequirePersonalWorkspaceTargetTeam(authCtx, teamID); err != nil {
+		h.authz.RespondAuthError(c, err, "platform.package.assign")
+		return err
+	}
+	return nil
+}
+
+func (h *Handler) requireTargetTeams(c *gin.Context, collaborationWorkspaceIDs []uuid.UUID) error {
+	if h.authz == nil || len(collaborationWorkspaceIDs) == 0 {
+		return nil
+	}
+	authCtx, err := authorization.ResolveContext(c)
+	if err != nil {
+		h.authz.RespondAuthError(c, err, "platform.package.assign")
+		return err
+	}
+	if _, err := h.authz.RequirePersonalWorkspaceTargetTeams(authCtx, collaborationWorkspaceIDs); err != nil {
+		h.authz.RespondAuthError(c, err, "platform.package.assign")
+		return err
+	}
+	return nil
+}
+
+func (h *Handler) filterAccessiblePackageTeams(c *gin.Context, collaborationWorkspaceIDs []uuid.UUID) ([]uuid.UUID, error) {
+	if h.authz == nil || len(collaborationWorkspaceIDs) == 0 {
+		return collaborationWorkspaceIDs, nil
+	}
+	authCtx, err := authorization.ResolveContext(c)
+	if err != nil {
+		h.authz.RespondAuthError(c, err, "platform.package.assign")
+		return nil, err
+	}
+	if authCtx.AuthWorkspaceType != "personal" {
+		h.authz.RespondAuthError(c, authorization.ErrTargetWorkspaceForbidden, "platform.package.assign")
+		return nil, authorization.ErrTargetWorkspaceForbidden
+	}
+	filtered := make([]uuid.UUID, 0, len(collaborationWorkspaceIDs))
+	for _, teamID := range collaborationWorkspaceIDs {
+		if _, err := h.authz.RequirePersonalWorkspaceTargetTeam(authCtx, teamID); err == nil {
+			filtered = append(filtered, teamID)
+		}
+	}
+	return filtered, nil
 }
 
 func refreshStatsToMap(stats *permissionrefresh.RefreshStats) gin.H {

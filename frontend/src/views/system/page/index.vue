@@ -20,49 +20,44 @@
         :metrics="summaryStats"
       >
         <div class="page-hero-actions">
-        <ElSelect
-          v-model="selectedAppKey"
-          clearable
-          filterable
-          placeholder="选择 App"
-          class="page-app-select"
-          @change="handleManagedAppChange"
-        >
-          <ElOption
-            v-for="item in appOptions"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </ElSelect>
-        <ElDropdown trigger="click" @command="handleCreateCommand">
-          <ElButton v-action="'system.page.manage'" type="primary" v-ripple>
-            新增
+          <ElSelect
+            v-model="selectedAppKey"
+            clearable
+            filterable
+            placeholder="选择 App"
+            class="page-app-select"
+            @change="handleManagedAppChange"
+          >
+            <ElOption
+              v-for="item in appOptions"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </ElSelect>
+          <ElDropdown trigger="click" @command="handleCreateCommand">
+            <ElButton v-action="'system.page.manage'" type="primary" v-ripple> 新增 </ElButton>
+            <template #dropdown>
+              <ElDropdownMenu>
+                <ElDropdownItem command="page">新增受管页面</ElDropdownItem>
+                <ElDropdownItem command="group">新增逻辑分组</ElDropdownItem>
+                <ElDropdownItem command="display_group">新增普通分组</ElDropdownItem>
+              </ElDropdownMenu>
+            </template>
+          </ElDropdown>
+          <ElButton
+            v-action="'system.page.sync'"
+            :loading="syncing"
+            @click="unregisteredDialogVisible = true"
+            v-ripple
+          >
+            扫描未注册受管页
           </ElButton>
-          <template #dropdown>
-            <ElDropdownMenu>
-              <ElDropdownItem command="page">新增受管页面</ElDropdownItem>
-              <ElDropdownItem command="group">新增逻辑分组</ElDropdownItem>
-              <ElDropdownItem command="display_group">新增普通分组</ElDropdownItem>
-            </ElDropdownMenu>
-          </template>
-        </ElDropdown>
-        <ElButton
-          v-action="'system.page.sync'"
-          :loading="syncing"
-          @click="unregisteredDialogVisible = true"
-          v-ripple
-        >
-          扫描未注册受管页
-        </ElButton>
         </div>
       </AdminWorkspaceHero>
     </div>
 
-    <ElCard
-      class="art-table-card"
-      shadow="never"
-    >
+    <ElCard class="art-table-card" shadow="never">
       <ElAlert
         v-if="loadError"
         class="page-inline-alert"
@@ -156,7 +151,11 @@
         <template #component="{ row }">
           <div class="page-component-cell">
             <span class="page-muted-text">
-              {{ row.pageType === 'group' || row.pageType === 'display_group' ? '不需要组件' : row.component || '-' }}
+              {{
+                row.pageType === 'group' || row.pageType === 'display_group'
+                  ? '不需要组件'
+                  : row.component || '-'
+              }}
             </span>
           </div>
         </template>
@@ -186,7 +185,13 @@
             <template v-else>
               <div class="page-sort-view">
                 <span class="page-sort-value">{{ row.sortOrder ?? 0 }}</span>
-                <ElButton type="primary" link size="small" class="page-sort-edit-btn" @click="startSortEdit(row)">
+                <ElButton
+                  type="primary"
+                  link
+                  size="small"
+                  class="page-sort-edit-btn"
+                  @click="startSortEdit(row)"
+                >
                   编辑
                 </ElButton>
               </div>
@@ -199,7 +204,11 @@
             <ElTag effect="plain" size="small" type="info">
               {{ getMountModeText(row) }}
             </ElTag>
-            <ElTag v-if="row.pageType !== 'display_group'" :effect="'plain'" :type="getAccessModeTag(row.accessMode)">
+            <ElTag
+              v-if="row.pageType !== 'display_group'"
+              :effect="'plain'"
+              :type="getAccessModeTag(row.accessMode)"
+            >
               {{ getAccessModeText(row.accessMode) }}
             </ElTag>
             <span v-else class="page-muted-text">-</span>
@@ -234,7 +243,10 @@
 
         <template #operation="{ row }">
           <div class="flex items-center justify-center gap-2">
-            <ArtButtonMore :list="getOperationList(row)" @click="(item) => handleOperation(item, row)" />
+            <ArtButtonMore
+              :list="getOperationList(row)"
+              @click="(item) => handleOperation(item, row)"
+            />
           </div>
         </template>
       </ArtTable>
@@ -263,8 +275,15 @@
 
 <script setup lang="ts">
   import { computed, reactive, ref, nextTick, onMounted, watch } from 'vue'
-  import { useRoute } from 'vue-router'
-  import { ElButton, ElInput, ElMessage, ElMessageBox, ElOption, ElSelect, ElTag } from 'element-plus'
+  import {
+    ElButton,
+    ElInput,
+    ElMessage,
+    ElMessageBox,
+    ElOption,
+    ElSelect,
+    ElTag
+  } from 'element-plus'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import type { FormItem } from '@/components/core/forms/art-form/index.vue'
   import { useTableColumns } from '@/hooks/core/useTableColumns'
@@ -277,7 +296,6 @@
     fetchGetMenuSpaces,
     fetchGetPageList,
     fetchGetPageMenuOptions,
-    fetchSyncPages,
     fetchUpdatePage
   } from '@/api/system-manage'
   import { joinManagedPagePath, resolveManagedPageRoutePath } from '@/utils/navigation/managed-page'
@@ -292,7 +310,6 @@
 
   const loading = ref(false)
   const loadError = ref('')
-  const route = useRoute()
   const { targetAppKey, setManagedAppKey } = useManagedAppScope()
   const managedAppMissingText = '请选择当前要管理的 App'
   const showSearchBar = ref(false)
@@ -385,9 +402,27 @@
     { prop: 'name', label: '页面', minWidth: 300, useSlot: true, slotName: 'name' },
     { prop: 'route', label: '最终路径', minWidth: 220, useSlot: true, slotName: 'route' },
     { prop: 'component', label: '组件入口', minWidth: 180, useSlot: true, slotName: 'component' },
-    { prop: 'mountTarget', label: '挂接对象', minWidth: 180, useSlot: true, slotName: 'mountTarget' },
-    { prop: 'effectiveChain', label: '归属链路', minWidth: 150, useSlot: true, slotName: 'effectiveChain' },
-    { prop: 'parentChainStatus', label: '链路状态', minWidth: 130, useSlot: true, slotName: 'parentChainStatus' },
+    {
+      prop: 'mountTarget',
+      label: '挂接对象',
+      minWidth: 180,
+      useSlot: true,
+      slotName: 'mountTarget'
+    },
+    {
+      prop: 'effectiveChain',
+      label: '归属链路',
+      minWidth: 150,
+      useSlot: true,
+      slotName: 'effectiveChain'
+    },
+    {
+      prop: 'parentChainStatus',
+      label: '链路状态',
+      minWidth: 130,
+      useSlot: true,
+      slotName: 'parentChainStatus'
+    },
     {
       prop: 'sortOrder',
       label: '排序',
@@ -421,7 +456,10 @@
   const comparePages = (left: PageItem, right: PageItem) => {
     const sortDiff = Number(left.sortOrder || 0) - Number(right.sortOrder || 0)
     if (sortDiff !== 0) return sortDiff
-    return `${left.name || ''}${left.pageKey || ''}`.localeCompare(`${right.name || ''}${right.pageKey || ''}`, 'zh-Hans-CN')
+    return `${left.name || ''}${left.pageKey || ''}`.localeCompare(
+      `${right.name || ''}${right.pageKey || ''}`,
+      'zh-Hans-CN'
+    )
   }
 
   const pageTree = computed<TreePageItem[]>(() => buildPageTree(rawPages.value))
@@ -438,11 +476,14 @@
   const visibleCount = computed(() => countTreeNodes(tableData.value))
   const summaryStats = computed(() => {
     const suspendedCount = rawPages.value.filter((item) => item.status !== 'normal').length
-    const managedEntryCount = rawPages.value.filter((item) =>
-      item.pageType === 'inner' || item.pageType === 'global' || item.pageType === 'standalone'
+    const managedEntryCount = rawPages.value.filter(
+      (item) =>
+        item.pageType === 'inner' || item.pageType === 'global' || item.pageType === 'standalone'
     ).length
     const logicGroupCount = rawPages.value.filter((item) => item.pageType === 'group').length
-    const displayGroupCount = rawPages.value.filter((item) => item.pageType === 'display_group').length
+    const displayGroupCount = rawPages.value.filter(
+      (item) => item.pageType === 'display_group'
+    ).length
     return [
       { label: '当前 App', value: targetAppKey.value },
       { label: '当前显示', value: visibleCount.value },
@@ -704,9 +745,13 @@
   ) {
     openDialog('add', undefined, {
       pageType,
-      parentPageKey: options?.parentPageKey ?? (row.pageType === 'display_group' ? '' : row.pageKey),
-      parentMenuId: options?.parentMenuId ?? (row.pageType === 'display_group' ? '' : row.parentMenuId || ''),
-      defaultData: options?.displayGroupKey ? { displayGroupKey: options.displayGroupKey } : undefined
+      parentPageKey:
+        options?.parentPageKey ?? (row.pageType === 'display_group' ? '' : row.pageKey),
+      parentMenuId:
+        options?.parentMenuId ?? (row.pageType === 'display_group' ? '' : row.parentMenuId || ''),
+      defaultData: options?.displayGroupKey
+        ? { displayGroupKey: options.displayGroupKey }
+        : undefined
     })
   }
 
@@ -762,7 +807,7 @@
       handleVisit(row)
       return
     }
-  if (item.key === 'delete') {
+    if (item.key === 'delete') {
       handleDelete(row)
     }
   }
@@ -770,20 +815,57 @@
   function getOperationList(row: PageItem): ButtonMoreItem[] {
     if (row.pageType === 'display_group') {
       return [
-        { key: 'add-group', label: '新增组内逻辑分组', icon: 'ri:folder-add-line', auth: 'system.page.manage' },
-        { key: 'add-page', label: '新增组内页面', icon: 'ri:file-add-line', auth: 'system.page.manage' },
+        {
+          key: 'add-group',
+          label: '新增组内逻辑分组',
+          icon: 'ri:folder-add-line',
+          auth: 'system.page.manage'
+        },
+        {
+          key: 'add-page',
+          label: '新增组内页面',
+          icon: 'ri:file-add-line',
+          auth: 'system.page.manage'
+        },
         { key: 'edit', label: '编辑', icon: 'ri:edit-2-line', auth: 'system.page.manage' },
-        { key: 'delete', label: '删除', icon: 'ri:delete-bin-4-line', auth: 'system.page.manage', color: '#f56c6c' }
+        {
+          key: 'delete',
+          label: '删除',
+          icon: 'ri:delete-bin-4-line',
+          auth: 'system.page.manage',
+          color: '#f56c6c'
+        }
       ]
     }
     const list: ButtonMoreItem[] = [
-      { key: 'add-group', label: '新增子逻辑分组', icon: 'ri:folder-add-line', auth: 'system.page.manage' },
-      { key: 'add-page', label: '新增子页面', icon: 'ri:file-add-line', auth: 'system.page.manage' },
+      {
+        key: 'add-group',
+        label: '新增子逻辑分组',
+        icon: 'ri:folder-add-line',
+        auth: 'system.page.manage'
+      },
+      {
+        key: 'add-page',
+        label: '新增子页面',
+        icon: 'ri:file-add-line',
+        auth: 'system.page.manage'
+      },
       { key: 'edit', label: '编辑', icon: 'ri:edit-2-line', auth: 'system.page.manage' },
-      { key: 'delete', label: '删除', icon: 'ri:delete-bin-4-line', auth: 'system.page.manage', color: '#f56c6c' }
+      {
+        key: 'delete',
+        label: '删除',
+        icon: 'ri:delete-bin-4-line',
+        auth: 'system.page.manage',
+        color: '#f56c6c'
+      }
     ]
     if (row.pageType === 'inner' || row.pageType === 'global') {
-      list.splice(3, 0, { key: 'copy', label: '复制页面', icon: 'ri:file-copy-line', auth: 'system.page.manage' })
+      list.splice(3, 0, {
+        key: 'copy',
+        label: '复制页面',
+        icon: 'ri:file-copy-line',
+        auth: 'system.page.manage'
+      })
       list.splice(3, 0, { key: 'visit', label: '访问', icon: 'ri:external-link-line' })
     }
     return list
@@ -882,10 +964,7 @@
     if (link) return link
     const resolvedPath = getResolvedRoutePath(row)
     const targetSpaceKey = `${row.spaceKeys?.[0] || menuSpaceStore.currentSpaceKey || ''}`.trim()
-    const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
-      resolvedPath,
-      targetSpaceKey
-    )
+    const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(resolvedPath, targetSpaceKey)
     if (nextTarget.mode === 'location') {
       return nextTarget.target
     }
@@ -902,29 +981,11 @@
     window.open(target, '_blank')
   }
 
-  async function handleSyncPages() {
-    if (syncing.value) return
-    if (!targetAppKey.value) {
-      ElMessage.warning(managedAppMissingText)
-      return
-    }
-    syncing.value = true
-    try {
-      const res = await fetchSyncPages(targetAppKey.value)
-      ElMessage.success(`同步完成：新增 ${res.createdCount}，跳过 ${res.skippedCount}`)
-      await getPageList()
-    } catch (error: any) {
-      ElMessage.error(error?.message || '同步页面失败')
-    } finally {
-      syncing.value = false
-    }
-  }
-
   function handleCreateFromCandidate(candidate: Partial<PageItem>) {
     openDialog('add', undefined, {
       parentPageKey: candidate.parentPageKey || '',
       parentMenuId: candidate.parentMenuId || '',
-        pageType: candidate.pageType || 'standalone',
+      pageType: candidate.pageType || 'standalone',
       defaultData: {
         ...candidate,
         meta: {
@@ -1020,7 +1081,8 @@
       }
       return '默认继承菜单权限'
     }
-    if (row.accessMode && row.accessMode !== 'inherit') return `自身（${getAccessModeText(row.accessMode)}）`
+    if (row.accessMode && row.accessMode !== 'inherit')
+      return `自身（${getAccessModeText(row.accessMode)}）`
     if (row.parentPageKey) {
       const parent = pageMap.value.get(row.parentPageKey)
       return parent ? `继承页面（${parent.name}）` : '继承页面（父级缺失）'
@@ -1434,4 +1496,3 @@
     }
   }
 </style>
-

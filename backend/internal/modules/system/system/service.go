@@ -109,7 +109,7 @@ func defaultFastEnterConfig() FastEnterConfig {
 		},
 		QuickLinks: []FastEnterQuickLink{
 			{ID: "user-center", Name: "个人中心", Enabled: true, Order: 1, RouteName: "UserCenter"},
-			{ID: "team-members", Name: "团队成员", Enabled: true, Order: 2, RouteName: "TeamMembers"},
+			{ID: "team-members", Name: "协作空间成员", Enabled: true, Order: 2, RouteName: "CollaborationWorkspaceMembers"},
 			{ID: "feature-package", Name: "功能包管理", Enabled: true, Order: 3, RouteName: "FeaturePackage"},
 			{ID: "support", Name: "技术支持", Enabled: true, Order: 4, Link: "https://www.artd.pro/docs/zh/community/communicate.html"},
 		},

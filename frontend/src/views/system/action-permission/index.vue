@@ -16,48 +16,45 @@
         :metrics="summaryMetrics"
       >
         <div class="permission-hero-actions">
-        <ElButton
-          v-action="'system.permission.manage'"
-          type="primary"
-          @click="openDialog('add')"
-          v-ripple
-        >
-          新增功能权限
-        </ElButton>
-        <ElButton
-          v-action="'system.permission.manage'"
-          @click="openGroupDialog('module')"
-          v-ripple
-        >
-          管理模块分组
-        </ElButton>
-        <ElButton
-          v-action="'system.permission.manage'"
-          type="primary"
-          plain
-          @click="openGroupDialog('feature')"
-          v-ripple
-        >
-          管理功能分组
-        </ElButton>
-        <ElButton
-          v-action="'system.permission.manage'"
-          plain
-          type="danger"
-          :loading="cleaningUnused"
-          @click="handleCleanupUnused"
-          v-ripple
-        >
-          清理未消费自定义权限
-        </ElButton>
+          <ElButton
+            v-action="'system.permission.manage'"
+            type="primary"
+            @click="openDialog('add')"
+            v-ripple
+          >
+            新增功能权限
+          </ElButton>
+          <ElButton
+            v-action="'system.permission.manage'"
+            @click="openGroupDialog('module')"
+            v-ripple
+          >
+            管理模块分组
+          </ElButton>
+          <ElButton
+            v-action="'system.permission.manage'"
+            type="primary"
+            plain
+            @click="openGroupDialog('feature')"
+            v-ripple
+          >
+            管理功能分组
+          </ElButton>
+          <ElButton
+            v-action="'system.permission.manage'"
+            plain
+            type="danger"
+            :loading="cleaningUnused"
+            @click="handleCleanupUnused"
+            v-ripple
+          >
+            清理未消费自定义权限
+          </ElButton>
         </div>
       </AdminWorkspaceHero>
     </div>
 
-    <ElCard
-      class="art-table-card permission-table-card"
-      shadow="never"
-    >
+    <ElCard class="art-table-card permission-table-card" shadow="never">
       <ArtTableHeader
         v-model:columns="columnChecks"
         v-model:showSearchBar="showSearchBar"
@@ -259,7 +256,7 @@
 
   function renderContextType(row: PermissionActionItem) {
     if (row.contextType === 'platform') return h(ElTag, { type: 'warning' }, () => '平台')
-    if (row.contextType === 'team') return h(ElTag, { type: 'primary' }, () => '团队')
+    if (row.contextType === 'team') return h(ElTag, { type: 'primary' }, () => '协作空间')
     return h(ElTag, { type: 'info' }, () => '通用')
   }
 
@@ -309,9 +306,9 @@
     return h('div', { class: 'permission-audit-cell' }, [
       h('div', { class: 'permission-audit-cell__tags' }, [
         h(ElTag, { type: tagType, effect: 'plain', size: 'small' }, () => tagLabel),
-        ...relatedKeys.slice(0, 2).map((key) =>
-          h(ElTag, { type: 'info', effect: 'plain', size: 'small' }, () => key)
-        )
+        ...relatedKeys
+          .slice(0, 2)
+          .map((key) => h(ElTag, { type: 'info', effect: 'plain', size: 'small' }, () => key))
       ]),
       h(
         'div',
@@ -585,7 +582,7 @@
       fetchGetPermissionActionImpactPreview(row.id)
         .then((impact) =>
           ElMessageBox.confirm(
-            `${actionText}影响：API ${impact.apiCount}、页面 ${impact.pageCount}、功能包 ${impact.packageCount}、角色 ${impact.roleCount}、团队 ${impact.teamCount}、用户 ${impact.userCount}。确定继续？`,
+            `${actionText}影响：API ${impact.apiCount}、页面 ${impact.pageCount}、功能包 ${impact.packageCount}、角色 ${impact.roleCount}、协作空间 ${impact.teamCount}、用户 ${impact.userCount}。确定继续？`,
             `${actionText}确认`,
             {
               confirmButtonText: '确定',
@@ -607,7 +604,7 @@
     fetchGetPermissionActionImpactPreview(row.id)
       .then((impact) =>
         ElMessageBox.confirm(
-          `删除影响：API ${impact.apiCount}、页面 ${impact.pageCount}、功能包 ${impact.packageCount}、角色 ${impact.roleCount}、团队 ${impact.teamCount}、用户 ${impact.userCount}。确定删除「${row.name}」？`,
+          `删除影响：API ${impact.apiCount}、页面 ${impact.pageCount}、功能包 ${impact.packageCount}、角色 ${impact.roleCount}、协作空间 ${impact.teamCount}、用户 ${impact.userCount}。确定删除「${row.name}」？`,
           '删除确认',
           {
             confirmButtonText: '确定',

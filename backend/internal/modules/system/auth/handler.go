@@ -10,30 +10,37 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
+	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	systemuser "github.com/gg-ecommerce/backend/internal/modules/system/user"
+	workspacepkg "github.com/gg-ecommerce/backend/internal/modules/system/workspace"
+	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
 )
 
 type AuthHandler struct {
 	authService  AuthService
 	authzService interface {
 		GetUserActionSnapshot(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
+		GetUserActionSnapshotForWorkspace(userID uuid.UUID, authWorkspaceType string, tenantID *uuid.UUID, appKey string) ([]string, error)
 	}
 	tenantMemberRepo interface {
 		GetByUserID(userID uuid.UUID) (*systemuser.TenantMember, error)
 	}
-	logger *zap.Logger
+	workspaceService workspacepkg.Service
+	logger           *zap.Logger
 }
 
 func NewAuthHandler(authService AuthService, authzService interface {
 	GetUserActionSnapshot(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
+	GetUserActionSnapshotForWorkspace(userID uuid.UUID, authWorkspaceType string, tenantID *uuid.UUID, appKey string) ([]string, error)
 }, tenantMemberRepo interface {
 	GetByUserID(userID uuid.UUID) (*systemuser.TenantMember, error)
-}, logger *zap.Logger) *AuthHandler {
+}, workspaceService workspacepkg.Service, logger *zap.Logger) *AuthHandler {
 	return &AuthHandler{
-		authService:  authService,
-		authzService: authzService,
+		authService:      authService,
+		authzService:     authzService,
 		tenantMemberRepo: tenantMemberRepo,
-		logger:       logger,
+		workspaceService: workspaceService,
+		logger:           logger,
 	}
 }
 
@@ -173,28 +180,74 @@ func (h *AuthHandler) GetUserInfo(c *gin.Context) {
 		}
 	}
 
-	var tenantID *uuid.UUID
-	tenantIDStr := strings.TrimSpace(c.Query("tenant_id"))
-	if tenantIDStr == "" {
-		tenantIDStr = strings.TrimSpace(c.GetHeader("X-Tenant-ID"))
-	}
-	if tenantIDStr != "" {
-		if parsedTenantID, parseErr := uuid.Parse(tenantIDStr); parseErr == nil {
-			tenantID = &parsedTenantID
+	var legacyCollaborationWorkspaceID *uuid.UUID
+	var currentCollaborationWorkspaceID *uuid.UUID
+	var authWorkspaceID *uuid.UUID
+	authWorkspaceIDStr := strings.TrimSpace(c.GetString("auth_workspace_id"))
+	authWorkspaceType := strings.TrimSpace(c.GetString("auth_workspace_type"))
+	if authWorkspaceIDStr != "" {
+		if parsedWorkspaceID, parseErr := uuid.Parse(authWorkspaceIDStr); parseErr == nil {
+			authWorkspaceID = &parsedWorkspaceID
 		}
 	}
-	if tenantID == nil && h.tenantMemberRepo != nil {
+	if strings.TrimSpace(c.GetString("collaboration_workspace_id")) != "" {
+		if parsedCollaborationWorkspaceID, parseErr := uuid.Parse(strings.TrimSpace(c.GetString("collaboration_workspace_id"))); parseErr == nil {
+			currentCollaborationWorkspaceID = &parsedCollaborationWorkspaceID
+		}
+	}
+
+	legacyCollaborationWorkspaceIDStr := strings.TrimSpace(c.GetString("legacy_collaboration_workspace_id"))
+	if legacyCollaborationWorkspaceIDStr == "" {
+		legacyCollaborationWorkspaceIDStr = strings.TrimSpace(c.Query("collaboration_workspace_id"))
+	}
+	if legacyCollaborationWorkspaceIDStr == "" {
+		legacyCollaborationWorkspaceIDStr = strings.TrimSpace(c.GetHeader("X-Collaboration-Workspace-Id"))
+	}
+	if legacyCollaborationWorkspaceIDStr != "" {
+		if parsedCollaborationWorkspaceID, parseErr := uuid.Parse(legacyCollaborationWorkspaceIDStr); parseErr == nil {
+			legacyCollaborationWorkspaceID = &parsedCollaborationWorkspaceID
+		}
+	}
+	if legacyCollaborationWorkspaceID == nil && h.tenantMemberRepo != nil {
 		if member, memberErr := h.tenantMemberRepo.GetByUserID(userID); memberErr == nil && member != nil {
-			fallbackTenantID := member.TenantID
-			if fallbackTenantID != uuid.Nil {
-				tenantID = &fallbackTenantID
+			fallbackCollaborationWorkspaceID := member.CollaborationWorkspaceID
+			if fallbackCollaborationWorkspaceID != uuid.Nil {
+				legacyCollaborationWorkspaceID = &fallbackCollaborationWorkspaceID
 			}
 		}
+	}
+	if authWorkspaceID == nil && h.workspaceService != nil {
+		if workspace, workspaceErr := h.workspaceService.EnsurePersonalWorkspaceForUser(userID); workspaceErr == nil && workspace != nil {
+			authWorkspaceID = &workspace.ID
+			authWorkspaceType = workspace.WorkspaceType
+			if legacyCollaborationWorkspaceID == nil && workspace.CollaborationWorkspaceID != nil {
+				legacyCollaborationWorkspaceID = workspace.CollaborationWorkspaceID
+			}
+		}
+	}
+	if authWorkspaceType == "" && legacyCollaborationWorkspaceID != nil && h.workspaceService != nil {
+		if workspace, workspaceErr := h.workspaceService.GetCollaborationWorkspaceByCollaborationWorkspaceID(*legacyCollaborationWorkspaceID); workspaceErr == nil && workspace != nil {
+			authWorkspaceID = &workspace.ID
+			authWorkspaceType = models.WorkspaceTypeCollaboration
+		}
+	}
+	if authWorkspaceType == "" && authWorkspaceID != nil && h.workspaceService != nil {
+		if workspace, workspaceErr := h.workspaceService.GetByID(*authWorkspaceID); workspaceErr == nil && workspace != nil {
+			authWorkspaceType = workspace.WorkspaceType
+		}
+	}
+	if currentCollaborationWorkspaceID == nil && authWorkspaceType == models.WorkspaceTypeCollaboration && authWorkspaceID != nil {
+		currentCollaborationWorkspaceID = authWorkspaceID
 	}
 
 	actionKeys := make([]string, 0)
 	if h.authzService != nil {
-		if keys, snapErr := h.authzService.GetUserActionSnapshot(userID, tenantID); snapErr != nil {
+		if keys, snapErr := h.authzService.GetUserActionSnapshotForWorkspace(
+			userID,
+			authWorkspaceType,
+			legacyCollaborationWorkspaceID,
+			appctx.CurrentAppKey(c),
+		); snapErr != nil {
 			h.logger.Warn("Failed to resolve user actions", zap.Error(snapErr), zap.String("user_id", userID.String()))
 		} else {
 			actionKeys = keys
@@ -215,8 +268,18 @@ func (h *AuthHandler) GetUserInfo(c *gin.Context) {
 		"created_at":     user.CreatedAt,
 		"updated_at":     user.UpdatedAt,
 	}
-	if tenantID != nil {
-		userInfo["current_tenant_id"] = tenantID.String()
+	if currentCollaborationWorkspaceID != nil {
+		userInfo["current_collaboration_workspace_id"] = currentCollaborationWorkspaceID.String()
+	}
+	if legacyCollaborationWorkspaceID != nil {
+		userInfo["collaboration_workspace_id"] = legacyCollaborationWorkspaceID.String()
+		userInfo["current_collaboration_workspace_id"] = legacyCollaborationWorkspaceID.String()
+	}
+	if authWorkspaceID != nil {
+		userInfo["current_auth_workspace_id"] = authWorkspaceID.String()
+	}
+	if authWorkspaceType != "" {
+		userInfo["current_auth_workspace_type"] = authWorkspaceType
 	}
 
 	c.JSON(http.StatusOK, dto.SuccessResponse(userInfo))

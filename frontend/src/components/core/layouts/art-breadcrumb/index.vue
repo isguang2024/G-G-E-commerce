@@ -194,7 +194,11 @@
     return []
   }
 
-  const findMenuTitle = (menus: AppRouteRecord[], path: string, parentPath = ''): string | undefined => {
+  const findMenuTitle = (
+    menus: AppRouteRecord[],
+    path: string,
+    parentPath = ''
+  ): string | undefined => {
     for (const menu of menus) {
       const currentPath = normalizeMenuResolvedPath(String(menu.path || ''), parentPath)
       if (currentPath === path) {

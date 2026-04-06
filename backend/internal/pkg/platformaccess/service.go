@@ -11,6 +11,8 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
+	"github.com/gg-ecommerce/backend/internal/pkg/appscope"
+	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
 )
 
 var (
@@ -207,15 +209,25 @@ func (s *service) saveSnapshot(userID uuid.UUID, appKey string, snapshot *Snapsh
 }
 
 func (s *service) getGlobalRoleIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error) {
-	var roleIDs []uuid.UUID
-	err := s.db.Model(&models.UserRole{}).
+	roleIDs, err := workspacerolebinding.ListPersonalRoleIDsByUserID(s.db, userID, true)
+	if err != nil {
+		return nil, err
+	}
+	if len(roleIDs) > 0 {
+		return roleIDs, nil
+	}
+
+	var legacyRoleIDs []uuid.UUID
+	err = s.db.Model(&models.UserRole{}).
 		Joins("JOIN roles ON roles.id = user_roles.role_id").
 		Where("user_roles.user_id = ?", userID).
-		Where("user_roles.tenant_id IS NULL").
+		Where("user_roles.collaboration_workspace_id IS NULL").
+		Where("roles.collaboration_workspace_id IS NULL").
 		Where("roles.status = ?", "normal").
+		Where("roles.deleted_at IS NULL").
 		Distinct("user_roles.role_id").
-		Pluck("user_roles.role_id", &roleIDs).Error
-	return roleIDs, err
+		Pluck("user_roles.role_id", &legacyRoleIDs).Error
+	return legacyRoleIDs, err
 }
 
 func (s *service) getPackageIDsByRoleIDs(roleIDs []uuid.UUID, appKey string) ([]uuid.UUID, error) {
@@ -233,14 +245,7 @@ func (s *service) getPackageIDsByRoleIDs(roleIDs []uuid.UUID, appKey string) ([]
 }
 
 func (s *service) getPackageIDsByUserID(userID uuid.UUID, appKey string) ([]uuid.UUID, error) {
-	var packageIDs []uuid.UUID
-	err := s.db.Model(&models.UserFeaturePackage{}).
-		Joins("JOIN feature_packages ON feature_packages.id = user_feature_packages.package_id").
-		Where("user_id = ? AND enabled = ?", userID, true).
-		Where("feature_packages.app_key = ? AND feature_packages.deleted_at IS NULL", appctx.NormalizeAppKey(appKey)).
-		Distinct("package_id").
-		Pluck("package_id", &packageIDs).Error
-	return packageIDs, err
+	return appscope.PackageIDsByUser(s.db, userID, appKey)
 }
 
 func (s *service) expandPackageIDs(packageIDs []uuid.UUID, context string, appKey string) ([]uuid.UUID, error) {

@@ -69,20 +69,20 @@ func TestRegistrarActionRoutesInheritCategoryHint(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()
-	reg := NewRegistrar(router.Group("/api/v1/tenants"), "tenant")
-	reg.GETAction("", "获取团队列表", "tenant.manage", nil, func(c *gin.Context) {})
+	reg := NewRegistrar(router.Group("/api/v1/collaboration-workspaces"), "collaboration_workspace")
+	reg.GETAction("", "获取协作空间列表", "collaboration_workspace.manage", nil, func(c *gin.Context) {})
 
-	meta, ok := Lookup(http.MethodGet, "/api/v1/tenants")
+	meta, ok := Lookup(http.MethodGet, "/api/v1/collaboration-workspaces")
 	if !ok {
 		t.Fatalf("expected route meta to be annotated")
 	}
-	if meta.CategoryCode != "tenant" {
-		t.Fatalf("annotated meta category = %q, want %q", meta.CategoryCode, "tenant")
+	if meta.CategoryCode != "collaboration_workspace" {
+		t.Fatalf("annotated meta category = %q, want %q", meta.CategoryCode, "collaboration_workspace")
 	}
 }
 
 func TestMetaWithPermissionAllowsUncategorizedByDefault(t *testing.T) {
-	meta := MetaWithPermission("获取团队列表", "tenant.manage")
+	meta := MetaWithPermission("获取协作空间列表", "collaboration_workspace.manage")
 	if meta == nil {
 		t.Fatalf("expected meta")
 	}
@@ -95,15 +95,15 @@ func TestRegistrarRawMetaInheritsCategoryHint(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()
-	reg := NewRegistrar(router.Group("/api/v1/tenants"), "tenant")
-	reg.GET("/my-teams", &RouteMeta{Summary: "获取我的团队列表"}, func(c *gin.Context) {})
+	reg := NewRegistrar(router.Group("/api/v1/collaboration-workspaces"), "collaboration_workspace")
+	reg.GET("/mine", &RouteMeta{Summary: "获取我的协作空间列表"}, func(c *gin.Context) {})
 
-	meta, ok := Lookup(http.MethodGet, "/api/v1/tenants/my-teams")
+	meta, ok := Lookup(http.MethodGet, "/api/v1/collaboration-workspaces/mine")
 	if !ok {
 		t.Fatalf("expected route meta to be annotated")
 	}
-	if meta.CategoryCode != "tenant" {
-		t.Fatalf("annotated meta category = %q, want %q", meta.CategoryCode, "tenant")
+	if meta.CategoryCode != "collaboration_workspace" {
+		t.Fatalf("annotated meta category = %q, want %q", meta.CategoryCode, "collaboration_workspace")
 	}
 }
 

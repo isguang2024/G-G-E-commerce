@@ -85,13 +85,27 @@
   const emit = defineEmits<Emits>()
 
   const resolvedPageType = computed(
-    () => props.pageData?.pageType || props.defaultData?.pageType || props.initialPageType || 'inner'
+    () =>
+      props.pageData?.pageType || props.defaultData?.pageType || props.initialPageType || 'inner'
   )
 
   const dialogKey = computed(() =>
-    [props.dialogType, resolvedPageType.value, props.pageData?.id || '', props.defaultData?.pageKey || 'new'].join(':')
+    [
+      props.dialogType,
+      resolvedPageType.value,
+      props.pageData?.id || '',
+      props.defaultData?.pageKey || 'new'
+    ].join(':')
   )
 
-  const { modelValue, dialogType, pageData, appKey, initialParentPageKey, initialParentMenuId, initialPageType, defaultData } =
-    toRefs(props)
+  const {
+    modelValue,
+    dialogType,
+    pageData,
+    appKey,
+    initialParentPageKey,
+    initialParentMenuId,
+    initialPageType,
+    defaultData
+  } = toRefs(props)
 </script>

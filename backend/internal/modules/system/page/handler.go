@@ -55,7 +55,7 @@ func (h *Handler) List(c *gin.Context) {
 }
 
 func (h *Handler) ListRuntime(c *gin.Context) {
-	list, err := h.service.ListRuntime(apppkg.CurrentAppKey(c), spaceutil.RequestHost(c), spaceutil.RequestSpaceKey(c), pageContextUserID(c), pageContextTenantID(c))
+	list, err := h.service.ListRuntime(apppkg.CurrentAppKey(c), spaceutil.RequestHost(c), spaceutil.RequestSpaceKey(c), pageContextUserID(c), pageContextCollaborationWorkspaceID(c))
 	if err != nil {
 		h.logger.Error("List runtime pages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取运行时页面注册表失败")
@@ -70,7 +70,7 @@ func (h *Handler) ListRuntime(c *gin.Context) {
 }
 
 func (h *Handler) ListRuntimePublic(c *gin.Context) {
-	list, err := h.service.ListRuntimePublic(apppkg.CurrentAppKey(c), spaceutil.RequestHost(c), spaceutil.RequestSpaceKey(c), pageContextUserID(c), pageContextTenantID(c))
+	list, err := h.service.ListRuntimePublic(apppkg.CurrentAppKey(c), spaceutil.RequestHost(c), spaceutil.RequestSpaceKey(c), pageContextUserID(c), pageContextCollaborationWorkspaceID(c))
 	if err != nil {
 		h.logger.Error("List public runtime pages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取公开运行时页面注册表失败")
@@ -347,8 +347,8 @@ func pageContextUserID(c *gin.Context) *uuid.UUID {
 	return &id
 }
 
-func pageContextTenantID(c *gin.Context) *uuid.UUID {
-	raw, ok := c.Get("tenant_id")
+func pageContextCollaborationWorkspaceID(c *gin.Context) *uuid.UUID {
+	raw, ok := c.Get("collaboration_workspace_id")
 	if ok {
 		value, ok := raw.(string)
 		if ok && strings.TrimSpace(value) != "" {
@@ -358,7 +358,7 @@ func pageContextTenantID(c *gin.Context) *uuid.UUID {
 			}
 		}
 	}
-	headerValue := strings.TrimSpace(c.GetHeader("X-Tenant-ID"))
+	headerValue := strings.TrimSpace(c.GetHeader("X-Collaboration-Workspace-Id"))
 	if headerValue == "" {
 		return nil
 	}

@@ -1,12 +1,12 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="drawerVisible"
-    :title="`团队人员：${teamName || '-'}`"
+    :title="`协作空间人员：${teamName || '-'}`"
     size="800px"
     destroy-on-close
     @open="onOpen"
-  
-    class="config-drawer">
+    class="config-drawer"
+  >
     <!-- 搜索和筛选 -->
     <div class="search-container mb-4">
       <ElRow :gutter="12">
@@ -27,7 +27,7 @@
           />
         </ElCol>
         <ElCol :span="8">
-          <ElSelect v-model="searchForm.role" placeholder="团队身份" clearable filterable>
+          <ElSelect v-model="searchForm.role" placeholder="协作空间身份" clearable filterable>
             <ElOption v-for="role in teamRoles" :key="role" :label="role" :value="role" />
           </ElSelect>
         </ElCol>
@@ -46,13 +46,13 @@
         <ElTableColumn prop="userName" label="用户名" min-width="100" />
         <ElTableColumn prop="nickName" label="昵称" width="100" />
         <ElTableColumn prop="userEmail" label="邮箱" min-width="140" show-overflow-tooltip />
-        <ElTableColumn label="团队身份" min-width="200">
+        <ElTableColumn label="协作空间身份" min-width="200">
           <template #default="{ row }">
             <div class="flex flex-wrap gap-1">
               <ElTag
                 v-for="(role, index) in row.roles || [row.role]"
                 :key="index"
-                :type="role === '团队管理员' ? 'success' : 'info'"
+                :type="role === '协作空间管理员' ? 'success' : 'info'"
                 size="small"
               >
                 {{ role }}
@@ -74,13 +74,13 @@
 
 <script setup lang="ts">
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
-  import { fetchGetTeamMembers, fetchGetMyTeamRoles } from '@/api/team'
+  import { fetchGetCollaborationWorkspaceMembers, fetchGetMyTeamRoles } from '@/api/team'
   import { ElMessage } from 'element-plus'
   import { ref, computed, reactive } from 'vue'
 
   interface Props {
     visible: boolean
-    teamId: string
+    collaborationWorkspaceId: string
     teamName?: string
   }
 
@@ -98,7 +98,7 @@
   })
 
   const teamName = computed(() => props.teamName)
-  const members = ref<Api.SystemManage.TeamMemberItem[]>([])
+  const members = ref<Api.SystemManage.CollaborationWorkspaceMemberItem[]>([])
   const loading = ref(false)
   const teamRoles = ref<string[]>([])
   const pagination = reactive({
@@ -119,13 +119,13 @@
     role: searchForm.role || undefined
   }))
 
-  // 获取团队角色
+  // 获取协作空间角色
   async function loadTeamRoles() {
     try {
       const res = await fetchGetMyTeamRoles()
       teamRoles.value = (res || []).map((r: any) => r.roleCode || r.roleName).filter(Boolean)
     } catch (e) {
-      console.error('获取团队角色失败:', e)
+      console.error('获取协作空间角色失败:', e)
     }
   }
 
@@ -138,10 +138,10 @@
   })
 
   async function loadMembers() {
-    if (!props.teamId) return
+    if (!props.collaborationWorkspaceId) return
     loading.value = true
     try {
-      const res = await fetchGetTeamMembers(props.teamId, searchParams.value)
+      const res = await fetchGetCollaborationWorkspaceMembers(props.collaborationWorkspaceId, searchParams.value)
       members.value = res ?? []
       pagination.current = 1
     } catch (e: any) {
@@ -166,3 +166,4 @@
     loadMembers()
   }
 </script>
+

@@ -1,7 +1,7 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
-    :title="`开通团队 - ${packageName}`"
+    :title="`开通协作空间 - ${packageName}`"
     size="920px"
     destroy-on-close
     direction="rtl"
@@ -9,19 +9,19 @@
   >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        平台为团队开通功能包后，团队功能边界会自动同步；这里支持团队包和平台/团队共享包。
+        平台为协作空间开通功能包后，协作空间功能边界会自动同步；这里支持协作空间包和平台/协作空间共享包。
       </div>
 
       <div class="summary-card">
         <ElTag effect="plain" round>功能包 {{ packageName }}</ElTag>
-        <ElTag type="success" effect="plain" round>已开通 {{ selectedTeamIds.length }}</ElTag>
-        <ElTag type="info" effect="plain" round>团队总数 {{ teams.length }}</ElTag>
+        <ElTag type="success" effect="plain" round>已开通 {{ selectedCollaborationWorkspaceIds.length }}</ElTag>
+        <ElTag type="info" effect="plain" round>协作空间总数 {{ teams.length }}</ElTag>
       </div>
 
       <ElInput
         v-model="keyword"
         clearable
-        placeholder="搜索团队名称或备注"
+        placeholder="搜索协作空间名称或备注"
         class="toolbar-search"
       />
 
@@ -29,12 +29,12 @@
         <ElTableColumn width="60">
           <template #default="{ row }">
             <ElCheckbox
-              :model-value="selectedTeamIds.includes(row.id)"
+              :model-value="selectedCollaborationWorkspaceIds.includes(row.id)"
               @change="toggleSelection(row.id, $event)"
             />
           </template>
         </ElTableColumn>
-        <ElTableColumn prop="name" label="团队名称" min-width="180" show-overflow-tooltip />
+        <ElTableColumn prop="name" label="协作空间名称" min-width="180" show-overflow-tooltip />
         <ElTableColumn prop="remark" label="备注" min-width="180" show-overflow-tooltip />
         <ElTableColumn prop="plan" label="套餐" width="100" />
         <ElTableColumn label="状态" width="100">
@@ -98,7 +98,7 @@
   const saving = ref(false)
   const keyword = ref('')
   const teams = ref<Api.SystemManage.TeamListItem[]>([])
-  const selectedTeamIds = ref<string[]>([])
+  const selectedCollaborationWorkspaceIds = ref<string[]>([])
   const pagination = ref({
     current: 1,
     size: 10
@@ -133,39 +133,39 @@
         fetchGetFeaturePackageTeams(props.packageId)
       ])
       teams.value = teamRes?.records || []
-      selectedTeamIds.value = [...(bindingRes?.team_ids || [])]
+      selectedCollaborationWorkspaceIds.value = [...(bindingRes?.collaboration_workspace_ids || [])]
       pagination.value.current = 1
     } catch (error: any) {
-      ElMessage.error(error?.message || '加载功能包团队失败')
+      ElMessage.error(error?.message || '加载功能包协作空间失败')
     } finally {
       loading.value = false
     }
   }
 
-  function toggleSelection(teamId: string, checked: boolean | string | number) {
+  function toggleSelection(collaborationWorkspaceId: string, checked: boolean | string | number) {
     if (checked) {
-      if (!selectedTeamIds.value.includes(teamId)) {
-        selectedTeamIds.value = [...selectedTeamIds.value, teamId]
+      if (!selectedCollaborationWorkspaceIds.value.includes(collaborationWorkspaceId)) {
+        selectedCollaborationWorkspaceIds.value = [...selectedCollaborationWorkspaceIds.value, collaborationWorkspaceId]
       }
       return
     }
-    selectedTeamIds.value = selectedTeamIds.value.filter((item) => item !== teamId)
+    selectedCollaborationWorkspaceIds.value = selectedCollaborationWorkspaceIds.value.filter((item) => item !== collaborationWorkspaceId)
   }
 
   async function handleSave() {
     if (!props.packageId) return
     if (!supportsTeamContext(props.contextType)) {
-      ElMessage.warning('仅团队侧可生效的功能包支持开通团队')
+      ElMessage.warning('仅协作空间侧可生效的功能包支持开通协作空间')
       return
     }
     saving.value = true
     try {
-      const stats = await fetchSetFeaturePackageTeams(props.packageId, selectedTeamIds.value)
+      const stats = await fetchSetFeaturePackageTeams(props.packageId, selectedCollaborationWorkspaceIds.value)
       ElMessage.success(formatRefreshMessage(stats))
       emit('success')
       visible.value = false
     } catch (error: any) {
-      ElMessage.error(error?.message || '保存功能包团队失败')
+      ElMessage.error(error?.message || '保存功能包协作空间失败')
     } finally {
       saving.value = false
     }
@@ -180,7 +180,7 @@
   })
 
   function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
-    return `本次增量刷新：角色 ${stats?.roleCount || 0}、团队 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
+    return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 </script>
 
@@ -206,3 +206,4 @@
     width: 320px;
   }
 </style>
+

@@ -19,9 +19,10 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
+	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
 )
 
-const tenantContextHeader = "X-Tenant-ID"
+const tenantContextHeader = "X-Collaboration-Workspace-Id"
 
 type UserHandler struct {
 	db             *gorm.DB
@@ -132,15 +133,15 @@ func (h *UserHandler) GetTeams(c *gin.Context) {
 		c.JSON(http.StatusOK, dto.SuccessResponse([]gin.H{}))
 		return
 	}
-	tenants, err := h.tenantMemberRepo.GetTenantsByUserID(id)
+	collaboration_workspaces, err := h.tenantMemberRepo.GetTenantsByUserID(id)
 	if err != nil {
 		h.logger.Error("Get user teams failed", zap.Error(err))
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户所在团队失败")
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户所在协作空间失败")
 		c.JSON(status, resp)
 		return
 	}
-	result := make([]gin.H, 0, len(tenants))
-	for _, item := range tenants {
+	result := make([]gin.H, 0, len(collaboration_workspaces))
+	for _, item := range collaboration_workspaces {
 		result = append(result, gin.H{
 			"id":     item.ID.String(),
 			"name":   item.Name,
@@ -633,7 +634,7 @@ func (h *UserHandler) GetPermissions(c *gin.Context) {
 	}
 
 	var tenantID *uuid.UUID
-	tenantIDStr := strings.TrimSpace(c.Query("tenant_id"))
+	tenantIDStr := strings.TrimSpace(c.Query("collaboration_workspace_id"))
 	if tenantIDStr == "" {
 		tenantIDStr = strings.TrimSpace(c.GetHeader(tenantContextHeader))
 	}
@@ -686,9 +687,9 @@ func (h *UserHandler) GetPermissionDiagnosis(c *gin.Context) {
 		return
 	}
 
-	tenantID, parseErr := parseTenantContextID(req.TenantID, c.GetHeader(tenantContextHeader))
+	tenantID, parseErr := parseTenantContextID(req.CollaborationWorkspaceID, c.GetHeader(tenantContextHeader))
 	if parseErr != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
 		return
 	}
@@ -737,9 +738,9 @@ func (h *UserHandler) RefreshPermissionSnapshot(c *gin.Context) {
 		return
 	}
 
-	tenantID, parseErr := parseTenantContextID(req.TenantID, c.GetHeader(tenantContextHeader))
+	tenantID, parseErr := parseTenantContextID(req.CollaborationWorkspaceID, c.GetHeader(tenantContextHeader))
 	if parseErr != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的团队ID")
+		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
 		return
 	}
@@ -756,7 +757,7 @@ func (h *UserHandler) RefreshPermissionSnapshot(c *gin.Context) {
 	} else if h.refresher != nil {
 		if err := h.refresher.RefreshTeam(*tenantID); err != nil {
 			h.logger.Error("Refresh team permission snapshot failed", zap.Error(err))
-			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新团队权限快照失败")
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新协作空间权限快照失败")
 			c.JSON(status, resp)
 			return
 		}
@@ -799,7 +800,7 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.
 		}
 		payload := gin.H{
 			"user":      userInfo,
-			"context":   gin.H{"type": "platform", "tenant_id": "", "tenant_name": ""},
+			"context":   gin.H{"type": "platform", "binding_workspace_id": "", "current_collaboration_workspace_id": "", "current_collaboration_workspace_name": ""},
 			"snapshot":  buildPlatformSnapshotSummary(snapshot, meta),
 			"roles":     []gin.H{},
 			"diagnosis": nil,
@@ -818,6 +819,10 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.
 	if err != nil {
 		return nil, err
 	}
+	currentCollaborationWorkspaceID := ""
+	if workspace, workspaceErr := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(h.db, *tenantID); workspaceErr == nil && workspace != nil {
+		currentCollaborationWorkspaceID = workspace.ID.String()
+	}
 	teamMeta, err := h.getTeamSnapshotRecord(*tenantID, appKey)
 	if err != nil {
 		return nil, err
@@ -829,13 +834,14 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.
 	payload := gin.H{
 		"user": userInfo,
 		"context": gin.H{
-			"type":        "team",
-			"tenant_id":   tenantID.String(),
-			"tenant_name": "",
+			"type":                                 "collaboration",
+			"binding_workspace_id":                 currentCollaborationWorkspaceID,
+			"current_collaboration_workspace_id":   tenantID.String(),
+			"current_collaboration_workspace_name": "",
 		},
 		"snapshot":      buildTeamSnapshotSummary(teamSnapshot, teamMeta),
 		"roles":         roleStates,
-		"team_member":   h.buildTeamMemberMap(userID, *tenantID),
+		"team_member":   h.buildCollaborationWorkspaceMemberMap(userID, *tenantID),
 		"team_packages": h.buildPackageMapsByIDs(teamSnapshot.ExpandedPackageIDs),
 		"diagnosis":     nil,
 	}
@@ -956,7 +962,7 @@ func (h *UserHandler) buildTeamRoleStates(userID, teamID uuid.UUID, permissionKe
 
 	roleStates := make([]gin.H, 0, len(roles))
 	for _, role := range roles {
-		inheritAll := role.TenantID == nil
+		inheritAll := role.CollaborationWorkspaceID == nil
 		snapshot, err := h.boundaryService.GetRoleSnapshot(teamID, role.ID, inheritAll, appctx.NormalizeAppKey(appKey))
 		if err != nil {
 			return nil, err
@@ -1015,26 +1021,32 @@ func buildPermissionActionMap(detail *PermissionKey, runtime *models.PermissionK
 	}
 	if target == nil && detail != nil {
 		target = &models.PermissionKey{
-			ID:            detail.ID,
-			PermissionKey: detail.PermissionKey,
-			Name:          detail.Name,
-			Description:   detail.Description,
-			Status:        detail.Status,
-			ContextType:   detail.ContextType,
-			FeatureKind:   detail.FeatureKind,
-			ModuleCode:    detail.ModuleCode,
+			ID:                    detail.ID,
+			PermissionKey:         detail.PermissionKey,
+			AppKey:                detail.AppKey,
+			Name:                  detail.Name,
+			Description:           detail.Description,
+			Status:                detail.Status,
+			ContextType:           detail.ContextType,
+			FeatureKind:           detail.FeatureKind,
+			DataPolicy:            detail.DataPolicy,
+			AllowedWorkspaceTypes: detail.AllowedWorkspaceTypes,
+			ModuleCode:            detail.ModuleCode,
 		}
 	}
 
 	result := gin.H{
-		"id":             target.ID.String(),
-		"permission_key": target.PermissionKey,
-		"name":           target.Name,
-		"description":    target.Description,
-		"status":         target.Status,
-		"context_type":   target.ContextType,
-		"feature_kind":   target.FeatureKind,
-		"module_code":    target.ModuleCode,
+		"id":                      target.ID.String(),
+		"permission_key":          target.PermissionKey,
+		"app_key":                 target.AppKey,
+		"name":                    target.Name,
+		"description":             target.Description,
+		"status":                  target.Status,
+		"context_type":            target.ContextType,
+		"feature_kind":            target.FeatureKind,
+		"data_policy":             target.DataPolicy,
+		"allowed_workspace_types": target.AllowedWorkspaceTypes,
+		"module_code":             target.ModuleCode,
 	}
 	if detail != nil {
 		result["self_status"] = detail.Status
@@ -1060,10 +1072,10 @@ func buildPlatformSnapshotSummary(snapshot *platformaccess.Snapshot, meta *model
 	}
 }
 
-func buildTeamSnapshotSummary(snapshot *teamboundary.Snapshot, meta *models.TeamAccessSnapshot) gin.H {
+func buildTeamSnapshotSummary(snapshot *teamboundary.Snapshot, meta *models.CollaborationWorkspaceAccessSnapshot) gin.H {
 	return gin.H{
-		"refreshed_at":           formatTimeValue(timeValue(meta, func(item *models.TeamAccessSnapshot) time.Time { return item.RefreshedAt })),
-		"updated_at":             formatTimeValue(timeValue(meta, func(item *models.TeamAccessSnapshot) time.Time { return item.UpdatedAt })),
+		"refreshed_at":           formatTimeValue(timeValue(meta, func(item *models.CollaborationWorkspaceAccessSnapshot) time.Time { return item.RefreshedAt })),
+		"updated_at":             formatTimeValue(timeValue(meta, func(item *models.CollaborationWorkspaceAccessSnapshot) time.Time { return item.UpdatedAt })),
 		"direct_package_count":   len(snapshot.PackageIDs),
 		"expanded_package_count": len(snapshot.ExpandedPackageIDs),
 		"derived_action_count":   len(snapshot.DerivedIDs),
@@ -1084,7 +1096,7 @@ func (h *UserHandler) buildPackageMapsByIDs(ids []uuid.UUID) []gin.H {
 	return featurePackageListToMaps(items)
 }
 
-func (h *UserHandler) buildTeamMemberMap(userID, teamID uuid.UUID) gin.H {
+func (h *UserHandler) buildCollaborationWorkspaceMemberMap(userID, teamID uuid.UUID) gin.H {
 	if h.tenantMemberRepo == nil {
 		return nil
 	}
@@ -1099,13 +1111,42 @@ func (h *UserHandler) buildTeamMemberMap(userID, teamID uuid.UUID) gin.H {
 		h.logger.Warn("Load team member for permission diagnosis failed", zap.Error(err))
 		return nil
 	}
+	memberType := mapRoleCodeToMemberType(member.RoleCode)
+	workspaceID := ""
+	workspaceType := ""
+	if workspace, err := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(h.db, teamID); err == nil && workspace != nil {
+		workspaceID = workspace.ID.String()
+		workspaceType = workspace.WorkspaceType
+		var workspaceMember models.WorkspaceMember
+		if err := h.db.Where("workspace_id = ? AND user_id = ? AND deleted_at IS NULL", workspace.ID, userID).First(&workspaceMember).Error; err == nil {
+			if strings.TrimSpace(workspaceMember.MemberType) != "" {
+				memberType = workspaceMember.MemberType
+			}
+		}
+	}
 	return gin.H{
-		"id":        member.ID.String(),
-		"tenant_id": member.TenantID.String(),
-		"user_id":   member.UserID.String(),
-		"role_code": member.RoleCode,
-		"status":    member.Status,
-		"matched":   true,
+		"id":                                 member.ID.String(),
+		"current_collaboration_workspace_id": member.CollaborationWorkspaceID.String(),
+		"user_id":                            member.UserID.String(),
+		"role_code":                          member.RoleCode,
+		"member_type":                        memberType,
+		"binding_workspace_id":               workspaceID,
+		"binding_workspace_type":             workspaceType,
+		"status":                             member.Status,
+		"matched":                            true,
+	}
+}
+
+func mapRoleCodeToMemberType(roleCode string) string {
+	switch strings.ToLower(strings.TrimSpace(roleCode)) {
+	case "owner":
+		return models.WorkspaceMemberOwner
+	case "team_admin", "admin":
+		return models.WorkspaceMemberAdmin
+	case "viewer":
+		return models.WorkspaceMemberViewer
+	default:
+		return models.WorkspaceMemberMember
 	}
 }
 
@@ -1123,12 +1164,12 @@ func (h *UserHandler) getPlatformSnapshotRecord(userID uuid.UUID, appKey string)
 	return &record, nil
 }
 
-func (h *UserHandler) getTeamSnapshotRecord(teamID uuid.UUID, appKey string) (*models.TeamAccessSnapshot, error) {
+func (h *UserHandler) getTeamSnapshotRecord(teamID uuid.UUID, appKey string) (*models.CollaborationWorkspaceAccessSnapshot, error) {
 	if h.db == nil {
 		return nil, nil
 	}
-	var record models.TeamAccessSnapshot
-	if err := h.db.Where("app_key = ? AND team_id = ?", appctx.NormalizeAppKey(appKey), teamID).First(&record).Error; err != nil {
+	var record models.CollaborationWorkspaceAccessSnapshot
+	if err := h.db.Where("app_key = ? AND collaboration_workspace_id = ?", appctx.NormalizeAppKey(appKey), teamID).First(&record).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
@@ -1137,12 +1178,12 @@ func (h *UserHandler) getTeamSnapshotRecord(teamID uuid.UUID, appKey string) (*m
 	return &record, nil
 }
 
-func (h *UserHandler) getTeamRoleSnapshotRecord(teamID, roleID uuid.UUID, appKey string) (*models.TeamRoleAccessSnapshot, error) {
+func (h *UserHandler) getTeamRoleSnapshotRecord(teamID, roleID uuid.UUID, appKey string) (*models.CollaborationWorkspaceRoleAccessSnapshot, error) {
 	if h.db == nil {
 		return nil, nil
 	}
-	var record models.TeamRoleAccessSnapshot
-	if err := h.db.Where("app_key = ? AND team_id = ? AND role_id = ?", appctx.NormalizeAppKey(appKey), teamID, roleID).First(&record).Error; err != nil {
+	var record models.CollaborationWorkspaceRoleAccessSnapshot
+	if err := h.db.Where("app_key = ? AND collaboration_workspace_id = ? AND role_id = ?", appctx.NormalizeAppKey(appKey), teamID, roleID).First(&record).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
@@ -1181,12 +1222,12 @@ func buildPermissionDiagnosisReasons(err error, allowed bool, context string, by
 	case err == authorization.ErrUserInactive:
 		return []string{"用户已停用"}
 	case err == authorization.ErrTenantMemberNotFound:
-		return []string{"当前团队下无有效成员或角色"}
+		return []string{"当前协作空间下无有效成员或角色"}
 	case err == authorization.ErrTenantContextRequired:
-		return []string{"当前权限需要团队上下文"}
+		return []string{"当前权限需要协作空间上下文"}
 	case err == authorization.ErrPermissionDenied:
 		if context == "team" {
-			return []string{"当前团队上下文下未生效此权限"}
+			return []string{"当前协作空间上下文下未生效此权限"}
 		}
 		return []string{"平台上下文下未生效此权限"}
 	default:
@@ -1199,7 +1240,7 @@ func (h *UserHandler) getTenantMemberDiagnosis(userID, teamID uuid.UUID) (string
 		return "", false, nil
 	}
 	var member models.TenantMember
-	if err := h.db.Where("user_id = ? AND tenant_id = ?", userID, teamID).First(&member).Error; err != nil {
+	if err := h.db.Where("user_id = ? AND collaboration_workspace_id = ?", userID, teamID).First(&member).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return "missing", false, nil
 		}
@@ -1230,7 +1271,7 @@ func buildTeamDiagnosisDecision(authErr error, allowed bool, blockedByTeam bool,
 	if allowed && authErr == nil {
 		switch {
 		case blockedByTeam:
-			return "拦截", "团队边界校验", "团队边界已屏蔽该权限"
+			return "拦截", "协作空间边界校验", "协作空间边界已屏蔽该权限"
 		case inSnapshot:
 			return "命中", "", ""
 		case !boundaryConfigured:
@@ -1244,21 +1285,21 @@ func buildTeamDiagnosisDecision(authErr error, allowed bool, blockedByTeam bool,
 	case authorization.ErrUserInactive:
 		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "用户状态校验", "当前用户已停用"
 	case authorization.ErrTenantMemberNotFound:
-		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "团队成员校验", "当前用户不是该团队有效成员"
+		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "协作空间成员校验", "当前用户不是该协作空间有效成员"
 	case authorization.ErrTenantMemberInactive:
-		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "团队成员校验", "团队成员状态不是 active"
+		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "协作空间成员校验", "协作空间成员状态不是 active"
 	case authorization.ErrTenantContextRequired:
-		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "团队上下文校验", "当前权限需要团队上下文"
+		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "协作空间上下文校验", "当前权限需要协作空间上下文"
 	case authorization.ErrPermissionKeyMissing:
 		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "权限键校验", "权限键未注册或未找到"
 	case authorization.ErrPermissionDenied:
 		switch {
 		case blockedByTeam:
-			return "拦截", "团队边界校验", "团队边界未开通或已屏蔽该权限"
+			return "拦截", "协作空间边界校验", "协作空间边界未开通或已屏蔽该权限"
 		case !memberMatched || memberStatus == "missing":
-			return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "团队成员校验", "当前用户不是该团队有效成员"
+			return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "协作空间成员校验", "当前用户不是该协作空间有效成员"
 		case memberStatus != "" && memberStatus != "active":
-			return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "团队成员校验", "团队成员状态不是 active"
+			return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "协作空间成员校验", "协作空间成员状态不是 active"
 		case roleMatched:
 			return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "角色权限校验", "角色链路命中，但最终权限未通过"
 		case roleDisabled:
@@ -1266,7 +1307,7 @@ func buildTeamDiagnosisDecision(authErr error, allowed bool, blockedByTeam bool,
 		case roleAvailable:
 			return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "角色权限校验", "角色链路可用，但最终未生效为可执行权限"
 		default:
-			return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "角色权限校验", "当前团队角色未最终授予该权限"
+			return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "角色权限校验", "当前协作空间角色未最终授予该权限"
 		}
 	default:
 		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "", ""
@@ -1370,7 +1411,7 @@ func (h *UserHandler) getTeamPermissionMenuIDs(userID, teamID uuid.UUID, appKey 
 		if !ok {
 			continue
 		}
-		snapshot, snapshotErr := h.boundaryService.GetRoleSnapshot(teamID, roleID, role.TenantID == nil, appctx.NormalizeAppKey(appKey))
+		snapshot, snapshotErr := h.boundaryService.GetRoleSnapshot(teamID, roleID, role.CollaborationWorkspaceID == nil, appctx.NormalizeAppKey(appKey))
 		if snapshotErr != nil {
 			return nil, snapshotErr
 		}
@@ -1512,9 +1553,18 @@ func (h *UserHandler) GetPackages(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
+	bindingWorkspaceID := ""
+	bindingWorkspaceType := models.WorkspaceTypePersonal
+	if workspace, workspaceErr := workspacerolebinding.GetPersonalWorkspaceByUserID(h.db, id); workspaceErr == nil && workspace != nil {
+		bindingWorkspaceID = workspace.ID.String()
+		bindingWorkspaceType = workspace.WorkspaceType
+	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
-		"package_ids": packageIDsToStrings(packageIDs),
-		"packages":    featurePackageListToMaps(packages),
+		"package_ids":             packageIDsToStrings(packageIDs),
+		"packages":                featurePackageListToMaps(packages),
+		"binding_workspace_id":    bindingWorkspaceID,
+		"binding_workspace_type":  bindingWorkspaceType,
+		"binding_workspace_label": "personal_workspace",
 	}))
 }
 

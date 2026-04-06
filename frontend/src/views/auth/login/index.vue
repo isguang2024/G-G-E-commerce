@@ -1,4 +1,4 @@
-<!-- 登录页面 -->
+﻿<!-- 登录页面 -->
 <template>
   <div class="flex w-full h-screen">
     <LoginLeftView />
@@ -124,7 +124,7 @@
   const dragVerify = ref()
 
   const userStore = useUserStore()
-  const tenantStore = useTenantStore()
+  const collaborationWorkspaceStore = useTenantStore()
   const menuSpaceStore = useMenuSpaceStore()
   const router = useRouter()
   const route = useRoute()
@@ -190,7 +190,7 @@
     const decodeOnce = (value: string) => {
       try {
         return decodeURIComponent(value)
-      } catch (_error) {
+      } catch {
         return value
       }
     }
@@ -245,10 +245,17 @@
     }
   }
 
-  const safeInitLoginContext = async (preferredTenantId: string) => {
+  const safeInitLoginContext = async (
+    preferredCollaborationWorkspaceId: string,
+    preferredLegacyCollaborationWorkspaceId: string
+  ) => {
     try {
-      await tenantStore.loadMyTeams({
-        preferredTenantId
+      await collaborationWorkspaceStore.loadMyTeams({
+        preferredCollaborationWorkspaceId,
+        preferredLegacyCollaborationWorkspaceId,
+        preferredWorkspaceId: `${userStore.getUserInfo.current_auth_workspace_id || ''}`,
+        preferredWorkspaceType: `${userStore.getUserInfo.current_auth_workspace_type || ''}`,
+        preferPlatform: collaborationWorkspaceStore.hasPlatformAccess
       })
       menuSpaceStore.syncRuntimeHost()
       await menuSpaceStore.refreshRuntimeConfig(true)
@@ -299,7 +306,7 @@
           actions: response.user.actions || []
         }
         userStore.setUserInfo(userInfo)
-        tenantStore.setPlatformAccess(hasPlatformAccessByUserInfo(userInfo))
+        collaborationWorkspaceStore.setPlatformAccess(hasPlatformAccessByUserInfo(userInfo))
       }
 
       persistRememberedCredentials()
@@ -307,7 +314,10 @@
         response.user?.nickname || response.user?.username || response.user?.email || systemName
       showLoginSuccessNotice(displayName)
 
-      await safeInitLoginContext(response.user?.current_tenant_id || '')
+      await safeInitLoginContext(
+        response.user?.current_collaboration_workspace_id || '',
+        response.user?.collaboration_workspace_id || response.user?.current_collaboration_workspace_id || ''
+      )
       const landingPath = normalizeRedirect(route.query.redirect as string)
       await gotoAfterLogin(landingPath)
     } catch (error) {
@@ -356,3 +366,4 @@
     height: 40px !important;
   }
 </style>
+

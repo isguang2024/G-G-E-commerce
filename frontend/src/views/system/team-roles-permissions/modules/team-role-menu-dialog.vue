@@ -1,12 +1,17 @@
-<template>
-  <ElDrawer v-model="visible" :title="`团队角色菜单裁剪 - ${roleTitle}`" size="620px" @close="handleClose"
+﻿<template>
+  <ElDrawer
+    v-model="visible"
+    :title="`协作空间角色菜单裁剪 - ${roleTitle}`"
+    size="620px"
+    @close="handleClose"
     direction="rtl"
-    class="config-drawer">
+    class="config-drawer"
+  >
     <div class="dialog-shell">
       <div class="dialog-note">
         {{
           props.roleData?.isGlobal
-            ? '基础团队角色默认继承当前团队功能包的菜单范围，这里只读查看最终角色菜单结果。'
+            ? '基础协作空间角色默认继承当前协作空间功能包的菜单范围，这里只读查看最终角色菜单结果。'
             : '请先绑定角色功能包。这里只展示当前角色功能包展开范围内可裁剪的菜单结果。'
         }}
       </div>
@@ -27,18 +32,18 @@
         open="menus"
         filtered-blocked-empty-text="当前筛选下暂无角色显式屏蔽菜单"
         empty-title="当前暂无角色菜单来源"
-        empty-text="请先为角色绑定功能包，或检查当前团队快照是否已经刷新。"
+        empty-text="请先为角色绑定功能包，或检查当前协作空间快照是否已经刷新。"
       />
       <ElScrollbar height="70vh">
-      <ElTree
-        ref="treeRef"
-        :data="menuList"
-        show-checkbox
-        node-key="id"
-        :default-expand-all="expandAll"
-        :props="defaultProps"
-        @check="handleCheck"
-      />
+        <ElTree
+          ref="treeRef"
+          :data="menuList"
+          show-checkbox
+          node-key="id"
+          :default-expand-all="expandAll"
+          :props="defaultProps"
+          @check="handleCheck"
+        />
       </ElScrollbar>
     </div>
     <template #footer>
@@ -46,19 +51,25 @@
       <ElButton v-if="!props.roleData?.isGlobal" @click="checkAll">全部保留</ElButton>
       <ElButton v-if="!props.roleData?.isGlobal" @click="clearAll">全部屏蔽</ElButton>
       <ElButton @click="handleClose">取消</ElButton>
-      <ElButton v-if="!props.roleData?.isGlobal" type="primary" :loading="saving" @click="handleSave">保存</ElButton>
+      <ElButton
+        v-if="!props.roleData?.isGlobal"
+        type="primary"
+        :loading="saving"
+        @click="handleSave"
+        >保存</ElButton
+      >
     </template>
   </ElDrawer>
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
-import { ElButton, ElMessage } from 'element-plus'
+  import { computed, nextTick, ref, watch } from 'vue'
+  import { ElButton, ElMessage } from 'element-plus'
   import PermissionSourcePanels from '@/components/business/permission/PermissionSourcePanels.vue'
-import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
-import { fetchGetMenuTreeAll } from '@/api/system-manage'
-import {
-  fetchGetMyTeamBoundaryRoleMenus,
+  import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
+  import { fetchGetMenuTreeAll } from '@/api/system-manage'
+  import {
+    fetchGetMyTeamBoundaryRoleMenus,
     fetchGetMyTeamBoundaryRolePackages,
     fetchSetMyTeamBoundaryRoleMenus
   } from '@/api/team'
@@ -71,10 +82,13 @@ import {
   }
 
   const props = defineProps<Props>()
-  const emit = defineEmits<{ (e: 'update:modelValue', value: boolean): void; (e: 'success'): void }>()
+  const emit = defineEmits<{
+    (e: 'update:modelValue', value: boolean): void
+    (e: 'success'): void
+  }>()
 
-const treeRef = ref()
-const expandAll = ref(true)
+  const treeRef = ref()
+  const expandAll = ref(true)
   const saving = ref(false)
   const menuList = ref<any[]>([])
   const menuSourceList = ref<Array<{ id: string; label: string }>>([])
@@ -87,11 +101,17 @@ const expandAll = ref(true)
   const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
   const roleTitle = computed(() => props.roleData?.roleName || '')
   const checkedCount = computed(() => selectedMenuIds.value.length)
-  const blockedCount = computed(() => Math.max(availableMenuIds.value.length - checkedCount.value, 0))
+  const blockedCount = computed(() =>
+    Math.max(availableMenuIds.value.length - checkedCount.value, 0)
+  )
   const summaryItems = computed(() => [
     { label: '角色', value: roleTitle.value || '-' },
     { label: '功能包', value: featurePackages.value.length, type: 'success' as const },
-    { label: '继承模式', value: inherited.value ? '继承团队功能包' : '角色独立功能包', type: 'primary' as const },
+    {
+      label: '继承模式',
+      value: inherited.value ? '继承协作空间功能包' : '角色独立功能包',
+      type: 'primary' as const
+    },
     { label: '可裁剪菜单', value: availableMenuIds.value.length, type: 'warning' as const },
     { label: '已保留', value: checkedCount.value, type: 'success' as const },
     { label: '已屏蔽', value: blockedCount.value, type: 'danger' as const }
@@ -135,13 +155,19 @@ const expandAll = ref(true)
         )
         selectedDerivedPackageId.value = ''
         inherited.value = Boolean(packagesRes?.inherited)
-        menuSourceList.value = buildMenuSourceList(Array.isArray(menus) ? menus : [], availableMenuIds.value)
-        menuList.value = filterMenuTreeByAllowedIds(Array.isArray(menus) ? menus : [], new Set(availableMenuIds.value))
+        menuSourceList.value = buildMenuSourceList(
+          Array.isArray(menus) ? menus : [],
+          availableMenuIds.value
+        )
+        menuList.value = filterMenuTreeByAllowedIds(
+          Array.isArray(menus) ? menus : [],
+          new Set(availableMenuIds.value)
+        )
         await nextTick()
         selectedMenuIds.value = [...(assigned?.menu_ids || [])]
         treeRef.value?.setCheckedKeys(selectedMenuIds.value)
       } catch (error: any) {
-        ElMessage.error(error?.message || '加载团队角色菜单裁剪失败')
+        ElMessage.error(error?.message || '加载协作空间角色菜单裁剪失败')
       }
     }
   )
@@ -163,7 +189,9 @@ const expandAll = ref(true)
   }
 
   function handleCheck(_: any, checkedState: any) {
-    selectedMenuIds.value = (checkedState?.checkedKeys || []).map((key: string | number) => String(key))
+    selectedMenuIds.value = (checkedState?.checkedKeys || []).map((key: string | number) =>
+      String(key)
+    )
   }
 
   function checkAll() {
@@ -190,11 +218,11 @@ const expandAll = ref(true)
         selectedMenuIds.value,
         currentAppKey.value
       )
-      ElMessage.success('团队角色菜单裁剪已保存')
+      ElMessage.success('协作空间角色菜单裁剪已保存')
       emit('success')
       handleClose()
     } catch (error: any) {
-      ElMessage.error(error?.message || '保存团队角色菜单裁剪失败')
+      ElMessage.error(error?.message || '保存协作空间角色菜单裁剪失败')
     } finally {
       saving.value = false
     }
@@ -220,7 +248,8 @@ const expandAll = ref(true)
       items.forEach((item) => {
         indexMap[item.id] = {
           id: item.id,
-          label: formatMenuTitle(item.meta?.title) || item.label || item.name || item.path || item.id
+          label:
+            formatMenuTitle(item.meta?.title) || item.label || item.name || item.path || item.id
         }
         if (Array.isArray(item.children) && item.children.length) {
           walk(item.children)
@@ -257,3 +286,4 @@ const expandAll = ref(true)
     gap: 8px;
   }
 </style>
+

@@ -12,7 +12,10 @@ import (
 	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
 )
 
-const tenantHeader = "X-Tenant-ID"
+const (
+	legacyCollaborationWorkspaceHeader = "X-Collaboration-Workspace-Id"
+	collaborationWorkspaceHeader       = "X-Collaboration-Workspace-Id"
+)
 
 func AppContext(db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -33,9 +36,13 @@ func AppContext(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		userID := contextUUID(c, "user_id")
-		tenantID := contextUUID(c, "tenant_id")
-		if tenantID == nil {
-			tenantID = headerUUID(c.GetHeader(tenantHeader))
+		currentCollaborationWorkspaceID := contextUUID(c, "collaboration_workspace_id")
+		if currentCollaborationWorkspaceID == nil {
+			currentCollaborationWorkspaceID = headerUUID(c.GetHeader(collaborationWorkspaceHeader))
+		}
+		legacyCollaborationWorkspaceID := contextUUID(c, "legacy_collaboration_workspace_id")
+		if legacyCollaborationWorkspaceID == nil {
+			legacyCollaborationWorkspaceID = headerUUID(c.GetHeader(legacyCollaborationWorkspaceHeader))
 		}
 
 		spaceKey, spaceResolvedBy, resolveErr := spacepkg.ResolveCurrentSpaceKey(
@@ -44,7 +51,7 @@ func AppContext(db *gorm.DB) gin.HandlerFunc {
 			host,
 			spacepkg.RequestSpaceKey(c),
 			userID,
-			tenantID,
+			legacyCollaborationWorkspaceID,
 		)
 		if resolveErr != nil {
 			spaceKey = spacepkg.DefaultMenuSpaceKey
@@ -56,8 +63,11 @@ func AppContext(db *gorm.DB) gin.HandlerFunc {
 		c.Set("app_resolved_by", appResolvedBy)
 		c.Set("space_key", spaceKey)
 		c.Set("resolved_by", spaceResolvedBy)
-		if tenantID != nil {
-			c.Set("tenant_id", tenantID.String())
+		if currentCollaborationWorkspaceID != nil {
+			c.Set("collaboration_workspace_id", currentCollaborationWorkspaceID.String())
+		}
+		if legacyCollaborationWorkspaceID != nil {
+			c.Set("legacy_collaboration_workspace_id", legacyCollaborationWorkspaceID.String())
 		}
 
 		c.Next()

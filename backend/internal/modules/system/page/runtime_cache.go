@@ -16,6 +16,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
+	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
 )
 
 const runtimePageCacheTTL = 24 * time.Hour
@@ -635,7 +636,7 @@ func (s *service) resolveRuntimeVisibleMenuIDs(
 	boundaryService := teamboundary.NewService(s.db)
 	menuSet := make([]uuid.UUID, 0, len(roles))
 	for _, role := range roles {
-		snapshot, err := boundaryService.GetRoleSnapshot(*tenantID, role.ID, role.TenantID == nil, normalizeAppKey(appKey))
+		snapshot, err := boundaryService.GetRoleSnapshot(*tenantID, role.ID, role.CollaborationWorkspaceID == nil, normalizeAppKey(appKey))
 		if err != nil {
 			return nil, err
 		}
@@ -645,12 +646,30 @@ func (s *service) resolveRuntimeVisibleMenuIDs(
 }
 
 func (s *service) loadRuntimeEffectiveActiveRoles(userID, tenantID uuid.UUID) ([]models.Role, error) {
+	workspaceRoleIDs, err := workspacerolebinding.ListTeamRoleIDsByTenantAndUser(s.db, tenantID, userID, true)
+	if err != nil {
+		return nil, err
+	}
+	if len(workspaceRoleIDs) > 0 {
+		var roles []models.Role
+		if err := s.db.Model(&models.Role{}).
+			Where("id IN ? AND status = ? AND deleted_at IS NULL", workspaceRoleIDs, "normal").
+			Distinct("roles.*").
+			Find(&roles).Error; err != nil {
+			return nil, err
+		}
+		if len(roles) > 0 {
+			return roles, nil
+		}
+	}
+
 	var roles []models.Role
 	if err := s.db.Model(&models.Role{}).
 		Joins("JOIN user_roles ON user_roles.role_id = roles.id").
 		Where("user_roles.user_id = ?", userID).
-		Where("user_roles.tenant_id = ?", tenantID).
+		Where("user_roles.collaboration_workspace_id = ?", tenantID).
 		Where("roles.status = ?", "normal").
+		Where("roles.deleted_at IS NULL").
 		Distinct("roles.*").
 		Find(&roles).Error; err != nil {
 		return nil, err
@@ -660,7 +679,7 @@ func (s *service) loadRuntimeEffectiveActiveRoles(userID, tenantID uuid.UUID) ([
 	}
 
 	var member models.TenantMember
-	if err := s.db.Where("user_id = ? AND tenant_id = ?", userID, tenantID).First(&member).Error; err != nil {
+	if err := s.db.Where("user_id = ? AND collaboration_workspace_id = ?", userID, tenantID).First(&member).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return []models.Role{}, nil
 		}
@@ -671,7 +690,7 @@ func (s *service) loadRuntimeEffectiveActiveRoles(userID, tenantID uuid.UUID) ([
 	}
 
 	var identityRoles []models.Role
-	if err := s.db.Where("code = ? AND tenant_id IS NULL AND status = ?", member.RoleCode, "normal").
+	if err := s.db.Where("code = ? AND collaboration_workspace_id IS NULL AND status = ? AND deleted_at IS NULL", member.RoleCode, "normal").
 		Order("sort_order ASC, created_at DESC").
 		Find(&identityRoles).Error; err != nil {
 		return nil, err

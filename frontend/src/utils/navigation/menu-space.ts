@@ -46,11 +46,16 @@ export function shouldUseFullMenuSpaceNavigation(
     normalizeMenuHost(currentHost) ||
     (typeof window !== 'undefined' ? normalizeMenuHost(window.location.hostname) : '')
   const normalizedCurrentProtocol =
-    `${currentProtocol || (typeof window !== 'undefined' ? window.location.protocol : 'https:')}`.replace(/:$/, '')
+    `${currentProtocol || (typeof window !== 'undefined' ? window.location.protocol : 'https:')}`.replace(
+      /:$/,
+      ''
+    )
   if (normalizeMenuHost(binding.host) !== normalizedCurrentHost) {
     return true
   }
-  if (normalizeMenuSpaceScheme(binding.scheme) !== normalizeMenuSpaceScheme(normalizedCurrentProtocol)) {
+  if (
+    normalizeMenuSpaceScheme(binding.scheme) !== normalizeMenuSpaceScheme(normalizedCurrentProtocol)
+  ) {
     return true
   }
   const normalizedRoutePrefix = normalizeMenuSpaceRoutePrefix(binding.routePrefix)
@@ -117,7 +122,9 @@ export function resolveMenuSpaceDefinition(
   if (!normalizedKey) {
     return undefined
   }
-  return (config.spaces || []).find((item) => normalizeMenuSpaceKey(item.spaceKey) === normalizedKey)
+  return (config.spaces || []).find(
+    (item) => normalizeMenuSpaceKey(item.spaceKey) === normalizedKey
+  )
 }
 
 export function resolveMenuSpaceHostBinding(

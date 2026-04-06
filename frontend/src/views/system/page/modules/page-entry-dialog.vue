@@ -131,7 +131,12 @@
                 filterable
                 style="width: 100%"
               >
-                <ElOption v-for="item in menuSpaceOptions" :key="item.value" :label="item.label" :value="item.value" />
+                <ElOption
+                  v-for="item in menuSpaceOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
               </ElSelect>
             </ElFormItem>
           </ElCol>
@@ -338,7 +343,12 @@
           </ElCol>
         </ElRow>
 
-        <ElRow v-if="form.pageType !== 'standalone' && (form.pageType === 'global' || mountMode !== 'page')" :gutter="14">
+        <ElRow
+          v-if="
+            form.pageType !== 'standalone' && (form.pageType === 'global' || mountMode !== 'page')
+          "
+          :gutter="14"
+        >
           <ElCol :span="24">
             <ElFormItem label="普通分组" prop="displayGroupKey">
               <template #label>
@@ -371,22 +381,32 @@
           <div>
             <div class="form-section__title">访问与行为</div>
           </div>
-        <ElButton text type="primary" v-if="showMountSection" @click="showAdvanced = !showAdvanced">
-          {{ showAdvanced ? '收起高级配置' : '展开高级配置' }}
-        </ElButton>
+          <ElButton
+            text
+            type="primary"
+            v-if="showMountSection"
+            @click="showAdvanced = !showAdvanced"
+          >
+            {{ showAdvanced ? '收起高级配置' : '展开高级配置' }}
+          </ElButton>
         </div>
 
         <ElRow :gutter="14">
           <ElCol :span="12">
             <ElFormItem label="访问模式" prop="accessMode">
-            <template #label>
-              <PageFieldLabel
+              <template #label>
+                <PageFieldLabel
                   label="访问模式"
                   help="继承表示跟随上级菜单或页面；登录表示只验登录；权限表示还需校验权限键。挂到菜单时，继承即默认跟菜单权限走；若改成权限模式，则在菜单准入基础上再校验页面权限。"
                 />
               </template>
               <ElSelect v-model="form.accessMode" style="width: 100%">
-                <ElOption v-for="item in accessModeOptions" :key="item.value" :label="item.label" :value="item.value" />
+                <ElOption
+                  v-for="item in accessModeOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
               </ElSelect>
             </ElFormItem>
           </ElCol>
@@ -1043,9 +1063,7 @@
 
   function initForm() {
     if (props.dialogType === 'edit' && props.pageData) {
-      const spaceKeys = Array.isArray(props.pageData.spaceKeys)
-        ? props.pageData.spaceKeys
-        : []
+      const spaceKeys = Array.isArray(props.pageData.spaceKeys) ? props.pageData.spaceKeys : []
       Object.assign(form, {
         id: props.pageData.id || '',
         pageKey: props.pageData.pageKey || '',
@@ -1074,7 +1092,9 @@
         activeMenuPath: props.pageData.activeMenuPath || '',
         breadcrumbMode: props.pageData.breadcrumbMode || 'inherit_menu',
         accessMode:
-          props.pageData.pageType === 'global' ? props.pageData.accessMode || 'jwt' : props.pageData.accessMode || 'inherit',
+          props.pageData.pageType === 'global'
+            ? props.pageData.accessMode || 'jwt'
+            : props.pageData.accessMode || 'inherit',
         permissionKey: props.pageData.permissionKey || '',
         keepAlive: props.pageData.keepAlive ?? false,
         isFullPage: props.pageData.isFullPage ?? false,
@@ -1083,13 +1103,20 @@
         status: props.pageData.status || 'normal'
       })
       mountMode.value =
-        form.pageType === 'inner' ? (form.parentPageKey ? 'page' : form.parentMenuId ? 'menu' : 'none') : 'none'
+        form.pageType === 'inner'
+          ? form.parentPageKey
+            ? 'page'
+            : form.parentMenuId
+              ? 'menu'
+              : 'none'
+          : 'none'
       if (form.pageType === 'global' || form.pageType === 'standalone') {
         form.accessMode = form.accessMode === 'inherit' ? 'jwt' : form.accessMode
         showAdvanced.value = false
         mountMode.value = 'none'
       } else {
-        showAdvanced.value = Boolean(form.activeMenuPath) || form.breadcrumbMode !== defaultBreadcrumbMode()
+        showAdvanced.value =
+          Boolean(form.activeMenuPath) || form.breadcrumbMode !== defaultBreadcrumbMode()
       }
       return
     }
@@ -1135,18 +1162,22 @@
       status: props.defaultData?.status || 'normal'
     })
     mountMode.value =
-      form.pageType === 'inner' ? (form.parentPageKey ? 'page' : form.parentMenuId ? 'menu' : 'none') : 'none'
-    form.breadcrumbMode = defaultBreadcrumbMode()
-    showAdvanced.value =
       form.pageType === 'inner'
-        ? Boolean(form.activeMenuPath)
-        : false
+        ? form.parentPageKey
+          ? 'page'
+          : form.parentMenuId
+            ? 'menu'
+            : 'none'
+        : 'none'
+    form.breadcrumbMode = defaultBreadcrumbMode()
+    showAdvanced.value = form.pageType === 'inner' ? Boolean(form.activeMenuPath) : false
   }
 
   async function loadOptions() {
     const scopeKey =
       form.pageType === 'inner' ||
-      ((form.pageType === 'standalone' || form.pageType === 'global') && form.visibilityScope === 'spaces')
+      ((form.pageType === 'standalone' || form.pageType === 'global') &&
+        form.visibilityScope === 'spaces')
         ? resolveSpaceScopeKey()
         : ''
     const appKey = `${props.appKey || ''}`.trim()
@@ -1359,7 +1390,9 @@
         space_keys: visibilityScope === 'spaces' ? resolveSpaceBindingKeys() : [],
         sort_order: form.sortOrder,
         parent_menu_id:
-          form.pageType !== 'inner' || mountMode.value !== 'menu' ? '' : normalizeMenuId(form.parentMenuId),
+          form.pageType !== 'inner' || mountMode.value !== 'menu'
+            ? ''
+            : normalizeMenuId(form.parentMenuId),
         parent_page_key:
           form.pageType !== 'inner' || mountMode.value !== 'page' ? '' : form.parentPageKey || '',
         display_group_key: mountMode.value === 'page' ? '' : form.displayGroupKey || '',
@@ -1370,7 +1403,8 @@
             ? 'inherit_menu'
             : defaultBreadcrumbMode(),
         access_mode:
-          (form.pageType === 'global' || form.pageType === 'standalone') && form.accessMode === 'inherit'
+          (form.pageType === 'global' || form.pageType === 'standalone') &&
+          form.accessMode === 'inherit'
             ? 'jwt'
             : form.accessMode,
         permission_key: form.accessMode === 'permission' ? form.permissionKey.trim() : '',
@@ -1570,4 +1604,3 @@
     justify-content: flex-end;
   }
 </style>
-

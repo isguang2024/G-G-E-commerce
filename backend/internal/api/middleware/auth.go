@@ -49,7 +49,7 @@ func JWTAuth(secret string) gin.HandlerFunc {
 		}
 
 		c.Set("user_id", claims.UserID)
-		c.Set("tenant_id", claims.TenantID)
+		c.Set("collaboration_workspace_id", claims.CollaborationWorkspaceID)
 		c.Set("email", claims.Email)
 		c.Next()
 	}
@@ -94,21 +94,21 @@ func APIKeyAuth(db *gorm.DB) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		var tenant models.Tenant
-		if err := db.Select("id", "status").Where("id = ?", record.TenantID).First(&tenant).Error; err != nil {
+		var collaborationWorkspace models.Tenant
+		if err := db.Select("id", "status").Where("id = ?", record.CollaborationWorkspaceID).First(&collaborationWorkspace).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				status, resp := errcode.ResponseWithMsg(errcode.ErrUnauthorized, "API Key 所属团队不存在")
+				status, resp := errcode.ResponseWithMsg(errcode.ErrUnauthorized, "API Key 所属协作空间不存在")
 				c.JSON(status, resp)
 				c.Abort()
 				return
 			}
-			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "API Key 租户校验失败")
+			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "API Key 协作空间校验失败")
 			c.JSON(status, resp)
 			c.Abort()
 			return
 		}
-		if strings.TrimSpace(tenant.Status) != "" && tenant.Status != "active" {
-			status, resp := errcode.ResponseWithMsg(errcode.ErrUnauthorized, "API Key 所属团队不可用")
+		if strings.TrimSpace(collaborationWorkspace.Status) != "" && collaborationWorkspace.Status != "active" {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrUnauthorized, "API Key 所属协作空间不可用")
 			c.JSON(status, resp)
 			c.Abort()
 			return
@@ -119,7 +119,7 @@ func APIKeyAuth(db *gorm.DB) gin.HandlerFunc {
 
 		c.Set("api_key", apiKey)
 		c.Set("api_key_id", record.ID.String())
-		c.Set("tenant_id", record.TenantID.String())
+		c.Set("collaboration_workspace_id", record.CollaborationWorkspaceID.String())
 		c.Next()
 	}
 }

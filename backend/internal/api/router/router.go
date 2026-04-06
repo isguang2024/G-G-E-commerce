@@ -17,8 +17,9 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/permission"
 	"github.com/gg-ecommerce/backend/internal/modules/system/role"
 	"github.com/gg-ecommerce/backend/internal/modules/system/system"
-	"github.com/gg-ecommerce/backend/internal/modules/system/tenant"
+	collaborationworkspace "github.com/gg-ecommerce/backend/internal/modules/system/tenant"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/modules/system/workspace"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiendpointaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
@@ -50,7 +51,8 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 	permissionModule := permission.NewPermissionModule(db, cfg, logger)
 	featurePackageModule := featurepackage.NewModule(db, cfg, logger)
 	roleModule := role.NewRoleModule(db, cfg, logger)
-	tenantModule := tenant.NewTenantModule(db, cfg, logger)
+	tenantModule := collaborationworkspace.NewTenantModule(db, cfg, logger)
+	workspaceModule := workspace.NewModule(db, cfg, logger)
 	mediaModule := media.NewMediaModule(db, cfg, logger)
 	systemModule := system.NewSystemModule(db, cfg, logger)
 	apiEndpointModule := apiendpoint.NewModule(db, cfg, logger, r, endpointAccessService)
@@ -69,7 +71,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		pageModule.RegisterPublicRoutes(v1)
 
 		authenticated := v1.Group("")
-		authenticated.Use(auth.JWTAuth(cfg.JWT.Secret), middleware.AppContext(db))
+		authenticated.Use(auth.JWTAuth(cfg.JWT.Secret, db), middleware.AppContext(db))
 		{
 			userModule.RegisterRoutes(authenticated)
 			menuModule.RegisterRoutes(authenticated)
@@ -79,6 +81,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			featurePackageModule.RegisterRoutes(authenticated)
 			roleModule.RegisterRoutes(authenticated)
 			tenantModule.RegisterRoutes(authenticated)
+			workspaceModule.RegisterRoutes(authenticated)
 			mediaModule.RegisterRoutes(authenticated)
 			systemModule.RegisterRoutes(authenticated)
 			apiEndpointModule.RegisterRoutes(authenticated)

@@ -54,7 +54,9 @@
                 :value="item.value"
               />
             </ElSelect>
-            <div class="field-hint">目录与入口都按菜单树层级组织；需要隐藏详情页时请改到受管页面中心。</div>
+            <div class="field-hint"
+              >目录与入口都按菜单树层级组织；需要隐藏详情页时请改到受管页面中心。</div
+            >
           </ElFormItem>
         </ElCol>
         <ElCol v-if="showSpaceField" :span="12">
@@ -75,7 +77,7 @@
       <ElRow :gutter="16">
         <ElCol :span="12">
           <ElFormItem label="菜单标题" prop="name">
-            <ElInput v-model="form.name" placeholder="例如 团队管理 / 菜单空间" />
+            <ElInput v-model="form.name" placeholder="例如 协作空间管理 / 菜单空间" />
           </ElFormItem>
         </ElCol>
         <ElCol :span="12">
@@ -113,7 +115,9 @@
               <ElOption label="登录可见" value="jwt" />
               <ElOption label="公开可见" value="public" />
             </ElSelect>
-            <div class="field-hint">前端只消费后端编译后的可见结果，这里的配置会进入统一 AccessGraph。</div>
+            <div class="field-hint"
+              >前端只消费后端编译后的可见结果，这里的配置会进入统一 AccessGraph。</div
+            >
           </ElFormItem>
         </ElCol>
       </ElRow>
@@ -382,7 +386,7 @@
           options.push({ label: `${prefix}${title}`, value: id })
         }
         if (node.children?.length) {
-          walk(node.children, `${prefix}　`)
+          walk(node.children, `${prefix}  `)
         }
       })
     }
@@ -405,8 +409,7 @@
     }))
   )
   const resolvedFallbackSpaceKey = computed(
-    () =>
-      props.currentSpaceKey || props.menuSpaces?.find((item) => item.isDefault)?.spaceKey || ''
+    () => props.currentSpaceKey || props.menuSpaces?.find((item) => item.isDefault)?.spaceKey || ''
   )
   const showSpaceField = computed(() => props.showSpaceField)
 
@@ -588,8 +591,10 @@
     form.customParent = row.meta?.customParent || ''
     form.accessMode = row.meta?.accessMode || 'permission'
     form.isFullPage = row.meta?.isFullPage === true
-    form.manageGroupId = `${row.manage_group_id || row.manageGroupId || row.manage_group?.id || ''}`.trim()
-    form.spaceKey = `${row.spaceKey || row.space_key || row.meta?.spaceKey || resolvedFallbackSpaceKey.value || ''}`.trim()
+    form.manageGroupId =
+      `${row.manage_group_id || row.manageGroupId || row.manage_group?.id || ''}`.trim()
+    form.spaceKey =
+      `${row.spaceKey || row.space_key || row.meta?.spaceKey || resolvedFallbackSpaceKey.value || ''}`.trim()
   }
 
   function applyKindSideEffects(kind: MenuKind) {

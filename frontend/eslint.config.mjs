@@ -72,6 +72,7 @@ export default [
     ignores: [
       'node_modules',
       'dist',
+      '.codex-tmp/**',
       'public',
       '.vscode/**',
       'src/assets/**',

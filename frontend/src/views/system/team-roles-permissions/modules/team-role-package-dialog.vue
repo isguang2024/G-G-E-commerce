@@ -1,27 +1,28 @@
 ﻿<template>
   <ElDrawer
     v-model="visible"
-    :title="`团队角色功能包 - ${roleTitle}`"
+    :title="`协作空间角色功能包 - ${roleTitle}`"
     size="1280px"
     destroy-on-close
     class="business-dialog config-drawer"
-    direction="rtl">
+    direction="rtl"
+  >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
         {{
           props.roleData?.isGlobal
-            ? '基础团队角色默认继承当前团队已开通的功能包，这里展示完整功能包列表和继承结果。'
-            : '角色功能包是当前团队角色的主配置入口。后续菜单权限和角色权限都会在这里已绑定的功能包范围内继续配置。'
+            ? '基础协作空间角色默认继承当前协作空间已开通的功能包，这里展示完整功能包列表和继承结果。'
+            : '角色功能包是当前协作空间角色的主配置入口。后续菜单权限和角色权限都会在这里已绑定的功能包范围内继续配置。'
         }}
       </div>
 
       <div class="summary-card">
         <ElTag type="primary" effect="light" round>角色 {{ roleTitle }}</ElTag>
         <ElTag type="info" effect="light" round>
-          {{ props.roleData?.isGlobal ? '基础角色' : '团队自定义' }}
+          {{ props.roleData?.isGlobal ? '基础角色' : '协作空间自定义' }}
         </ElTag>
         <ElTag type="info" effect="light" round>
-          {{ inherited ? '继承团队功能包' : '角色独立功能包' }}
+          {{ inherited ? '继承协作空间功能包' : '角色独立功能包' }}
         </ElTag>
         <ElTag type="info" effect="light" round>已选 {{ selectedPackageIds.length }}</ElTag>
         <ElTag type="info" effect="light" round>当前筛选 {{ filteredPackages.length }}</ElTag>
@@ -37,7 +38,7 @@
         <ElSelect v-model="contextFilter" class="toolbar-select">
           <ElOption label="全部上下文" value="" />
           <ElOption label="平台" value="platform" />
-          <ElOption label="团队" value="team" />
+          <ElOption label="协作空间" value="team" />
           <ElOption label="通用" value="common" />
         </ElSelect>
         <ElSelect v-model="selectionFilter" class="toolbar-select">
@@ -56,7 +57,11 @@
         <ElTableColumn type="expand" width="56">
           <template #default="{ row }">
             <div class="expand-panel">
-              <FeaturePackageGrantPreview :package-id="row.id" :package-item="row" :packages="packages" />
+              <FeaturePackageGrantPreview
+                :package-id="row.id"
+                :package-item="row"
+                :packages="packages"
+              />
             </div>
           </template>
         </ElTableColumn>
@@ -226,7 +231,7 @@
         selectionFilter.value = 'all'
       }
     } catch (error: any) {
-      ElMessage.error(error?.message || '加载团队角色功能包失败')
+      ElMessage.error(error?.message || '加载协作空间角色功能包失败')
     } finally {
       loading.value = false
     }
@@ -261,7 +266,7 @@
   function formatContext(contextType?: string) {
     if (contextType === 'common') return '通用'
     if (contextType === 'platform') return '平台'
-    return '团队'
+    return '协作空间'
   }
 
   function getContextTagType(contextType?: string) {
@@ -294,11 +299,11 @@
         selectedPackageIds.value,
         currentAppKey.value
       )
-      ElMessage.success('团队角色功能包已保存')
+      ElMessage.success('协作空间角色功能包已保存')
       emit('success')
       visible.value = false
     } catch (error: any) {
-      ElMessage.error(error?.message || '保存团队角色功能包失败')
+      ElMessage.error(error?.message || '保存协作空间角色功能包失败')
     } finally {
       saving.value = false
     }

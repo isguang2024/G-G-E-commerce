@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div
     v-if="shouldShowSwitcher"
     class="tenant-switcher"
@@ -9,16 +9,25 @@
       :model-value="selectedValue"
       class="tenant-select"
       size="default"
-      placeholder="切换团队"
+      placeholder="切换工作空间"
       :loading="loading"
       @change="handleChange"
     >
-      <ElOption
-        v-for="team in teamList"
-        :key="team.id"
-        :label="buildTeamLabel(team)"
-        :value="team.id"
-      />
+      <ElOptionGroup v-if="personalWorkspace" label="个人工作空间">
+        <ElOption
+          :key="personalWorkspace.id"
+          :label="buildWorkspaceLabel(personalWorkspace)"
+          :value="personalWorkspace.id"
+        />
+      </ElOptionGroup>
+      <ElOptionGroup v-if="collaborationWorkspaces.length" label="协作空间">
+        <ElOption
+          v-for="workspace in collaborationWorkspaces"
+          :key="workspace.id"
+          :label="buildWorkspaceLabel(workspace)"
+          :value="workspace.id"
+        />
+      </ElOptionGroup>
     </ElSelect>
   </div>
 </template>
@@ -27,9 +36,10 @@
   import { ElMessage } from 'element-plus'
   import { computed } from 'vue'
   import { useRouter } from 'vue-router'
-  import { useTenantStore } from '@/store/modules/tenant'
   import { useMenuStore } from '@/store/modules/menu'
   import { useMenuSpaceStore } from '@/store/modules/menu-space'
+  import { useTenantStore } from '@/store/modules/tenant'
+  import { useWorkspaceStore } from '@/store/modules/workspace'
   import { refreshCurrentUserInfoContext, refreshUserMenus } from '@/router'
   import { findRegisteredRouteByPath } from '@/utils/router'
 
@@ -39,29 +49,48 @@
   })
 
   const router = useRouter()
-  const tenantStore = useTenantStore()
   const menuStore = useMenuStore()
+  const collaborationWorkspaceStore = useTenantStore()
+  const workspaceStore = useWorkspaceStore()
   const menuSpaceStore = useMenuSpaceStore()
-  const { currentTenantId, teamList, loading, shouldShowSwitcher, currentTeam } = storeToRefs(tenantStore)
 
-  const selectedValue = computed(() => currentTenantId.value)
-  const currentContextLabel = computed(() => currentTeam.value?.name || '当前团队')
+  const { teamList } = storeToRefs(collaborationWorkspaceStore)
+  const {
+    workspaceList,
+    personalWorkspace,
+    collaborationWorkspaces,
+    currentAuthWorkspace,
+    currentAuthWorkspaceId,
+    loading
+  } = storeToRefs(workspaceStore)
 
-  const buildTeamLabel = (team: Api.SystemManage.TeamListItem) => {
-    const suffix = team.currentRoleCode === 'team_admin' ? '管理员' : '成员'
-    return `${team.name} · ${suffix}`
+  const shouldShowSwitcher = computed(() => workspaceList.value.length > 0)
+  const selectedValue = computed(() => currentAuthWorkspaceId.value)
+  const currentContextLabel = computed(() => {
+    if (!currentAuthWorkspace.value) return '当前工作空间'
+    const typeLabel =
+      currentAuthWorkspace.value.workspaceType === 'team' ? '协作空间' : '个人工作空间'
+    return `${currentAuthWorkspace.value.name} · ${typeLabel}`
+  })
+
+  const buildWorkspaceLabel = (workspace: Api.SystemManage.WorkspaceItem) => {
+    if (workspace.workspaceType === 'personal') {
+      return `${workspace.name} · 个人工作空间`
+    }
+    const matchedTeam = teamList.value.find((item) => item.workspaceId === workspace.id)
+    const roleLabel = matchedTeam?.currentRoleCode === 'team_admin' ? '管理员视图' : '成员视图'
+    return `${workspace.name} · 协作空间 · ${roleLabel}`
   }
 
   const handleChange = async (value: string) => {
-    if (!value) return
-    if (value === currentTenantId.value) return
+    const workspaceId = `${value || ''}`.trim()
+    if (!workspaceId || workspaceId === currentAuthWorkspaceId.value) return
 
     try {
-      tenantStore.enterTeamContext(value)
+      await workspaceStore.switchWorkspace(workspaceId)
       await refreshCurrentUserInfoContext()
       await refreshUserMenus()
-      // 首页始终读取 refreshUserMenus 刚刚写入的已注册入口，
-      // 不再回退到空间配置里的裸 defaultLandingRoute，避免它指向已禁用菜单。
+
       const landingPath = menuStore.getHomePath() || '/'
       const resolvedRoute = findRegisteredRouteByPath(router, landingPath)
       const nextTarget = menuSpaceStore.resolveSpaceNavigationTarget(
@@ -74,13 +103,16 @@
         window.location.assign(nextTarget.target)
         return
       }
-      ElMessage.success('已切换团队')
+
+      const workspaceTypeLabel =
+        currentAuthWorkspace.value?.workspaceType === 'team' ? '协作空间' : '个人工作空间'
+      ElMessage.success(`已切换到${workspaceTypeLabel}`)
     } catch (error) {
-      console.error('[TenantSwitcher] 切换团队失败:', error)
-      await tenantStore.loadMyTeams({
-        preferredTenantId: currentTenantId.value || ''
+      console.error('[WorkspaceSwitcher] 切换工作空间失败:', error)
+      await collaborationWorkspaceStore.loadMyTeams({
+        preferredWorkspaceId: currentAuthWorkspaceId.value
       })
-      ElMessage.error('切换团队失败')
+      ElMessage.error('切换工作空间失败')
     }
   }
 </script>

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ArtSearchBar
     ref="searchBarRef"
     v-model="formData"
@@ -37,10 +37,10 @@
 
   const formItems = computed(() => [
     {
-      label: '团队名称',
+      label: '协作空间名称',
       key: 'name',
       type: 'input',
-      placeholder: '请输入团队名称',
+      placeholder: '请输入协作空间名称',
       clearable: true
     },
     {
@@ -64,3 +64,4 @@
     emit('search', formData.value)
   }
 </script>
+

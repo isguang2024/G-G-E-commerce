@@ -144,7 +144,7 @@ func (s *roleService) ListOptions() ([]user.Role, error) {
 	err := s.db.
 		Model(&user.Role{}).
 		Select("id", "code", "name", "description", "priority", "sort_order", "custom_params", "status", "created_at", "updated_at").
-		Where("tenant_id IS NULL").
+		Where("collaboration_workspace_id IS NULL").
 		Order("sort_order ASC, created_at DESC").
 		Find(&items).Error
 	return items, err
@@ -188,7 +188,7 @@ func (s *roleService) Update(id uuid.UUID, req *dto.RoleUpdateRequest) error {
 		}
 		return err
 	}
-	if role.TenantID != nil {
+	if role.CollaborationWorkspaceID != nil {
 		return ErrTenantRoleManagedByTeam
 	}
 	updates := make(map[string]interface{})
@@ -237,7 +237,7 @@ func (s *roleService) Delete(id uuid.UUID) error {
 		}
 		return err
 	}
-	if role.TenantID != nil {
+	if role.CollaborationWorkspaceID != nil {
 		return ErrTenantRoleManagedByTeam
 	}
 	if role.Code == "admin" || role.Code == "team_admin" || role.Code == "team_member" {
@@ -245,7 +245,7 @@ func (s *roleService) Delete(id uuid.UUID) error {
 	}
 	var affectedUserIDs []uuid.UUID
 	if err := database.DB.Model(&user.UserRole{}).
-		Where("role_id = ? AND tenant_id IS NULL", id).
+		Where("role_id = ? AND collaboration_workspace_id IS NULL", id).
 		Distinct("user_id").
 		Pluck("user_id", &affectedUserIDs).Error; err != nil {
 		return err
@@ -287,7 +287,7 @@ func (s *roleService) GetRolePackages(roleID uuid.UUID, appKey string) ([]uuid.U
 		}
 		return nil, nil, err
 	}
-	if role.TenantID != nil {
+	if role.CollaborationWorkspaceID != nil {
 		return nil, nil, ErrTenantRoleManagedByTeam
 	}
 	packageIDs, err := appscope.PackageIDsByRole(s.db, roleID, appKey)
@@ -309,7 +309,7 @@ func (s *roleService) SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, 
 		}
 		return err
 	}
-	if role.TenantID != nil {
+	if role.CollaborationWorkspaceID != nil {
 		return ErrTenantRoleManagedByTeam
 	}
 	normalizedAppKey := appscope.Normalize(appKey)
@@ -364,7 +364,7 @@ func (s *roleService) SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID, appKey
 		}
 		return err
 	}
-	if role.TenantID != nil {
+	if role.CollaborationWorkspaceID != nil {
 		return ErrTenantRoleManagedByTeam
 	}
 	boundary, err := s.GetRoleMenuBoundary(roleID, appKey)
@@ -401,7 +401,7 @@ func (s *roleService) SetRoleKeys(roleID uuid.UUID, keys []user.RoleKeyPermissio
 		}
 		return err
 	}
-	if role.TenantID != nil {
+	if role.CollaborationWorkspaceID != nil {
 		return ErrTenantRoleManagedByTeam
 	}
 	if role.Code == "team_admin" || role.Code == "team_member" {
@@ -468,7 +468,7 @@ func (s *roleService) SetRoleDataPermissions(roleID uuid.UUID, permissions []use
 		}
 		return err
 	}
-	if role.TenantID != nil {
+	if role.CollaborationWorkspaceID != nil {
 		return ErrTenantRoleManagedByTeam
 	}
 	resourceCodes, err := s.keyRepo.ListDistinctModuleCodes()
@@ -514,7 +514,7 @@ func (s *roleService) SetRoleDataPermissions(roleID uuid.UUID, permissions []use
 func buildAvailableDataScopeOptions() []DataPermissionScopeOption {
 	return []DataPermissionScopeOption{
 		{Code: "self", Name: "仅自己"},
-		{Code: "team", Name: "当前团队"},
+		{Code: "team", Name: "当前协作空间"},
 		{Code: "all", Name: "全部数据"},
 	}
 }
@@ -527,7 +527,7 @@ func (s *roleService) GetRoleMenuBoundary(roleID uuid.UUID, appKey string) (*Rol
 		}
 		return nil, err
 	}
-	if role.TenantID != nil {
+	if role.CollaborationWorkspaceID != nil {
 		return nil, ErrTenantRoleManagedByTeam
 	}
 	if s.roleSnapshotService != nil {
@@ -555,7 +555,7 @@ func (s *roleService) GetRoleKeyBoundary(roleID uuid.UUID, appKey string) (*Role
 		}
 		return nil, err
 	}
-	if role.TenantID != nil {
+	if role.CollaborationWorkspaceID != nil {
 		return nil, ErrTenantRoleManagedByTeam
 	}
 	if s.roleSnapshotService != nil {

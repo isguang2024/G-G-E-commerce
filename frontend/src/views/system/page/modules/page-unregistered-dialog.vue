@@ -9,7 +9,9 @@
     <div class="unregistered-toolbar">
       <div class="unregistered-toolbar-summary">
         <span>共 {{ records.length }} 项候选受管页面</span>
-        <span class="unregistered-toolbar-note">菜单入口组件已自动排除，这里只显示非菜单直达页候选</span>
+        <span class="unregistered-toolbar-note"
+          >菜单入口组件已自动排除，这里只显示非菜单直达页候选</span
+        >
       </div>
       <div class="unregistered-toolbar-actions">
         <ElInput
@@ -30,7 +32,9 @@
       <ElTableColumn prop="parentMenuName" label="推测入口菜单" min-width="120" />
       <ElTableColumn label="操作" width="120" align="center">
         <template #default="{ row }">
-          <ElButton type="primary" link @click="handleCreateFromCandidate(row)">创建受管页</ElButton>
+          <ElButton type="primary" link @click="handleCreateFromCandidate(row)"
+            >创建受管页</ElButton
+          >
         </template>
       </ElTableColumn>
     </ElTable>
@@ -228,6 +232,4 @@
       min-width: 0;
     }
   }
-
 </style>
-

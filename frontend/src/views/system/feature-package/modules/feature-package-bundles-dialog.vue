@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
     :title="`组合包基础包配置 - ${packageName}`"
@@ -200,7 +200,11 @@
     }
     saving.value = true
     try {
-      const stats = await fetchSetFeaturePackageChildren(props.packageId, selectedPackageIds.value, currentAppKey.value)
+      const stats = await fetchSetFeaturePackageChildren(
+        props.packageId,
+        selectedPackageIds.value,
+        currentAppKey.value
+      )
       ElMessage.success(formatRefreshMessage(stats))
       emit('success')
       visible.value = false
@@ -226,7 +230,7 @@
 
   function formatContextType(contextType?: string) {
     if (contextType === 'platform') return '平台'
-    if (contextType === 'team') return '团队'
+    if (contextType === 'team') return '协作空间'
     if (contextType === 'common') return '通用'
     return contextType || '-'
   }
@@ -236,7 +240,7 @@
   })
 
   function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
-    return `本次增量刷新：角色 ${stats?.roleCount || 0}、团队 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
+    return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 </script>
 
@@ -262,3 +266,4 @@
     width: 320px;
   }
 </style>
+

@@ -1,21 +1,22 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="dialogVisible"
-    :title="type === 'add' ? '新增团队' : '编辑团队'"
+    :title="type === 'add' ? '新增协作空间' : '编辑协作空间'"
     size="500px"
     direction="rtl"
-    class="config-drawer">
+    class="config-drawer"
+  >
     <ElForm ref="formRef" :model="formData" :rules="rules" label-width="100px">
-      <ElFormItem label="团队名称" prop="name">
+      <ElFormItem label="协作空间名称" prop="name">
         <ElInput
           v-model="formData.name"
-          placeholder="请输入团队名称"
+          placeholder="请输入协作空间名称"
           maxlength="200"
           show-word-limit
         />
       </ElFormItem>
-      <ElFormItem label="团队备注" prop="remark">
-        <ElInput v-model="formData.remark" placeholder="请输入团队备注" maxlength="500" />
+      <ElFormItem label="协作空间备注" prop="remark">
+        <ElInput v-model="formData.remark" placeholder="请输入协作空间备注" maxlength="500" />
       </ElFormItem>
       <ElFormItem label="管理员配置" prop="admin_user_ids">
         <div class="admin-tags-container">
@@ -39,7 +40,7 @@
           @blur="handleInputConfirm"
         />
         <ElButton v-else class="button-new-tag" @click="showInput"> + 添加管理员 </ElButton>
-        <div class="text-gray-400 text-xs mt-1">输入用户ID后回车确认，添加后将被设为团队管理员</div>
+        <div class="text-gray-400 text-xs mt-1">输入用户ID后回车确认，添加后将被设为协作空间管理员</div>
       </ElFormItem>
       <ElFormItem label="Logo URL" prop="logo_url">
         <ElInput v-model="formData.logo_url" placeholder="选填" clearable />
@@ -119,7 +120,7 @@
   })
 
   const rules = computed<FormRules>(() => ({
-    name: [{ required: true, message: '请输入团队名称', trigger: 'blur' }]
+    name: [{ required: true, message: '请输入协作空间名称', trigger: 'blur' }]
   }))
 
   // 加载管理员信息
@@ -171,7 +172,7 @@
       const name = user.nickName || user.userName || user.userEmail || user.email || '未知用户'
       adminList.value.push({ id: value, name })
       formData.admin_user_ids = adminList.value.map((a) => a.id)
-      ElMessage.success(`已成功添加用户 [${name}] 为团队管理员`)
+      ElMessage.success(`已成功添加用户 [${name}] 为协作空间管理员`)
     } catch {
       ElMessage.error('用户不存在，请检查用户ID')
       return
@@ -266,3 +267,4 @@
     padding-bottom: 0;
   }
 </style>
+

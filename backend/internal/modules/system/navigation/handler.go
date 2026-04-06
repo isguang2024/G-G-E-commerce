@@ -29,7 +29,7 @@ func (h *Handler) GetNavigation(c *gin.Context) {
 		spacepkg.RequestHost(c),
 		spacepkg.RequestSpaceKey(c),
 		currentUserID(c),
-		currentTenantID(c),
+		currentCollaborationWorkspaceID(c),
 	)
 	if err != nil {
 		h.logger.Error("Compile runtime navigation failed", zap.Error(err))
@@ -56,13 +56,13 @@ func currentUserID(c *gin.Context) *uuid.UUID {
 	return &parsedID
 }
 
-func currentTenantID(c *gin.Context) *uuid.UUID {
-	if value := strings.TrimSpace(c.GetString("tenant_id")); value != "" {
+func currentCollaborationWorkspaceID(c *gin.Context) *uuid.UUID {
+	if value := strings.TrimSpace(c.GetString("collaboration_workspace_id")); value != "" {
 		if parsedID, err := uuid.Parse(value); err == nil {
 			return &parsedID
 		}
 	}
-	if headerValue := strings.TrimSpace(c.GetHeader("X-Tenant-ID")); headerValue != "" {
+	if headerValue := strings.TrimSpace(c.GetHeader("X-Collaboration-Workspace-Id")); headerValue != "" {
 		if parsedID, err := uuid.Parse(headerValue); err == nil {
 			return &parsedID
 		}

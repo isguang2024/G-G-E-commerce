@@ -11,10 +11,12 @@ import (
 
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
+	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/appscope"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
+	"github.com/gg-ecommerce/backend/internal/pkg/workspacefeaturebinding"
 )
 
 var (
@@ -39,7 +41,7 @@ type Service interface {
 	GetPackageMenus(id uuid.UUID, appKey string) ([]uuid.UUID, []user.Menu, error)
 	SetPackageMenus(id uuid.UUID, menuIDs []uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error)
 	GetPackageTeams(id uuid.UUID, appKey string) ([]uuid.UUID, error)
-	SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error)
+	SetPackageTeams(id uuid.UUID, collaborationWorkspaceIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error)
 	GetTeamPackages(teamID uuid.UUID, appKey string) ([]uuid.UUID, []user.FeaturePackage, error)
 	SetTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error)
 	GetImpactPreview(id uuid.UUID) (*FeaturePackageImpactPreview, error)
@@ -80,7 +82,7 @@ type service struct {
 	packageBundleRepo user.FeaturePackageBundleRepository
 	packageActionRepo user.FeaturePackageKeyRepository
 	packageMenuRepo   user.FeaturePackageMenuRepository
-	teamPackageRepo   user.TeamFeaturePackageRepository
+	teamPackageRepo   user.CollaborationWorkspaceFeaturePackageRepository
 	rolePackageRepo   user.RoleFeaturePackageRepository
 	actionRepo        user.PermissionKeyRepository
 	menuRepo          user.MenuRepository
@@ -95,7 +97,7 @@ func NewService(
 	packageBundleRepo user.FeaturePackageBundleRepository,
 	packageActionRepo user.FeaturePackageKeyRepository,
 	packageMenuRepo user.FeaturePackageMenuRepository,
-	teamPackageRepo user.TeamFeaturePackageRepository,
+	teamPackageRepo user.CollaborationWorkspaceFeaturePackageRepository,
 	rolePackageRepo user.RoleFeaturePackageRepository,
 	actionRepo user.PermissionKeyRepository,
 	menuRepo user.MenuRepository,
@@ -342,7 +344,7 @@ func (s *service) Delete(id uuid.UUID) (*permissionrefresh.RefreshStats, error) 
 	if item.IsBuiltin {
 		return nil, ErrFeaturePackageBuiltin
 	}
-	teamIDs, err := s.teamPackageRepo.GetTeamIDsByPackageID(id)
+	collaborationWorkspaceIDs, err := s.teamPackageRepo.GetCollaborationWorkspaceIDsByPackageID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -357,6 +359,9 @@ func (s *service) Delete(id uuid.UUID) (*permissionrefresh.RefreshStats, error) 
 		return nil, err
 	}
 	if err := s.teamPackageRepo.DeleteByPackageID(id); err != nil {
+		return nil, err
+	}
+	if err := s.db.Where("package_id = ?", id).Delete(&models.WorkspaceFeaturePackage{}).Error; err != nil {
 		return nil, err
 	}
 	if err := s.rolePackageRepo.DeleteByPackageID(id); err != nil {
@@ -380,13 +385,13 @@ func (s *service) Delete(id uuid.UUID) (*permissionrefresh.RefreshStats, error) 
 			}
 			acc = mergeRefreshStats(acc, stats)
 		}
-		if refreshErr := s.refresher.RefreshTeams(teamIDs); refreshErr != nil {
+		if refreshErr := s.refresher.RefreshTeams(collaborationWorkspaceIDs); refreshErr != nil {
 			return nil, refreshErr
 		}
 		_ = s.recordRiskAudit("feature_package", id.String(), "delete", packageSummary(item), nil, refreshStatsSummary(acc), nil, "")
 		return &acc, nil
 	}
-	for _, teamID := range teamIDs {
+	for _, teamID := range collaborationWorkspaceIDs {
 		if _, err := s.boundaryService.RefreshSnapshot(teamID); err != nil {
 			return nil, err
 		}
@@ -623,7 +628,7 @@ func (s *service) SetPackageMenus(id uuid.UUID, menuIDs []uuid.UUID, appKey stri
 }
 
 func (s *service) GetTeamPackages(teamID uuid.UUID, appKey string) ([]uuid.UUID, []user.FeaturePackage, error) {
-	packageIDs, err := s.teamPackageRepo.GetPackageIDsByTeamID(teamID)
+	packageIDs, err := appscope.PackageIDsByTeam(s.db, teamID, appKey)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -648,10 +653,18 @@ func (s *service) GetPackageTeams(id uuid.UUID, appKey string) ([]uuid.UUID, err
 	if !supportsTeamContext(item.ContextType) {
 		return []uuid.UUID{}, nil
 	}
-	return s.teamPackageRepo.GetTeamIDsByPackageID(id)
+	workspaceCollaborationWorkspaceIDs, err := s.getWorkspaceCollaborationWorkspaceIDsByPackageID(id, appKey)
+	if err != nil {
+		return nil, err
+	}
+	legacyCollaborationWorkspaceIDs, err := s.teamPackageRepo.GetCollaborationWorkspaceIDsByPackageID(id)
+	if err != nil {
+		return nil, err
+	}
+	return mergeUUIDSlice(workspaceCollaborationWorkspaceIDs, legacyCollaborationWorkspaceIDs), nil
 }
 
-func (s *service) SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error) {
+func (s *service) SetPackageTeams(id uuid.UUID, collaborationWorkspaceIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error) {
 	item, err := s.packageRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -663,24 +676,24 @@ func (s *service) SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *
 		return nil, ErrFeaturePackageNotFound
 	}
 	if !supportsTeamContext(item.ContextType) {
-		return nil, errors.New("仅支持为团队功能包配置团队")
+		return nil, errors.New("仅支持为协作空间功能包配置协作空间")
 	}
-	currentTeamIDs, err := s.teamPackageRepo.GetTeamIDsByPackageID(id)
+	currentCollaborationWorkspaceIDs, err := s.GetPackageTeams(id, appKey)
 	if err != nil {
 		return nil, err
 	}
-	desired := make(map[uuid.UUID]struct{}, len(teamIDs))
-	affected := make(map[uuid.UUID]struct{}, len(currentTeamIDs)+len(teamIDs))
-	for _, teamID := range currentTeamIDs {
+	desired := make(map[uuid.UUID]struct{}, len(collaborationWorkspaceIDs))
+	affected := make(map[uuid.UUID]struct{}, len(currentCollaborationWorkspaceIDs)+len(collaborationWorkspaceIDs))
+	for _, teamID := range currentCollaborationWorkspaceIDs {
 		affected[teamID] = struct{}{}
 	}
-	teamMap, err := s.getTeamMap(teamIDs)
+	teamMap, err := s.getTeamMap(collaborationWorkspaceIDs)
 	if err != nil {
 		return nil, err
 	}
-	for _, teamID := range teamIDs {
+	for _, teamID := range collaborationWorkspaceIDs {
 		if _, ok := teamMap[teamID]; !ok {
-			return nil, errors.New("存在无效的团队")
+			return nil, errors.New("存在无效的协作空间")
 		}
 		desired[teamID] = struct{}{}
 		affected[teamID] = struct{}{}
@@ -710,6 +723,9 @@ func (s *service) SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *
 		if err := appscope.ReplaceTeamPackagesInApp(s.db, teamID, item.AppKey, nextPackageIDs, grantedBy); err != nil {
 			return nil, err
 		}
+		if err := s.replaceWorkspacePackagesForCollaborationWorkspaceID(teamID, item.AppKey, nextPackageIDs); err != nil {
+			return nil, err
+		}
 		if s.refresher != nil {
 			if err := s.refresher.RefreshTeam(teamID); err != nil {
 				return nil, err
@@ -724,7 +740,7 @@ func (s *service) SetPackageTeams(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *
 		TeamCount: len(affected),
 	}
 	_ = s.saveVersionSnapshot(id, "set_teams", grantedBy, "")
-	_ = s.recordRiskAudit("feature_package", id.String(), "set_teams", nil, ginLikeMap("team_ids", teamIDs), refreshStatsSummary(stats), grantedBy, "")
+	_ = s.recordRiskAudit("feature_package", id.String(), "set_teams", nil, ginLikeMap("collaboration_workspace_ids", collaborationWorkspaceIDs), refreshStatsSummary(stats), grantedBy, "")
 	return &stats, nil
 }
 
@@ -743,10 +759,13 @@ func (s *service) SetTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, gran
 			return nil, errors.New("仅支持分配当前应用内的功能包")
 		}
 		if !supportsTeamContext(item.ContextType) {
-			return nil, errors.New("仅支持为团队分配团队功能包")
+			return nil, errors.New("仅支持为协作空间分配协作空间功能包")
 		}
 	}
 	if err := appscope.ReplaceTeamPackagesInApp(s.db, teamID, normalizedAppKey, packageIDs, grantedBy); err != nil {
+		return nil, err
+	}
+	if err := s.replaceWorkspacePackagesForCollaborationWorkspaceID(teamID, normalizedAppKey, packageIDs); err != nil {
 		return nil, err
 	}
 	if s.refresher != nil {
@@ -764,6 +783,95 @@ func (s *service) SetTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, gran
 	stats := permissionrefresh.RefreshStats{TeamCount: 1}
 	_ = s.recordRiskAudit("team_feature_package", teamID.String(), "set_team_packages", nil, ginLikeMap("package_ids", packageIDs), refreshStatsSummary(stats), grantedBy, "")
 	return &stats, nil
+}
+
+func (s *service) getWorkspacePackageIDsByCollaborationWorkspaceID(teamID uuid.UUID, appKey string) ([]uuid.UUID, error) {
+	var workspace models.Workspace
+	if err := s.db.
+		Where("workspace_type = ? AND collaboration_workspace_id = ? AND deleted_at IS NULL", models.WorkspaceTypeCollaboration, teamID).
+		First(&workspace).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return []uuid.UUID{}, nil
+		}
+		return nil, err
+	}
+
+	var packageIDs []uuid.UUID
+	if err := s.db.Model(&models.WorkspaceFeaturePackage{}).
+		Joins("JOIN feature_packages ON feature_packages.id = workspace_feature_packages.package_id").
+		Where("workspace_feature_packages.workspace_id = ? AND workspace_feature_packages.enabled = ? AND workspace_feature_packages.deleted_at IS NULL", workspace.ID, true).
+		Where("feature_packages.app_key = ? AND feature_packages.deleted_at IS NULL", normalizeAppKey(appKey)).
+		Distinct("workspace_feature_packages.package_id").
+		Pluck("package_id", &packageIDs).Error; err != nil {
+		return nil, err
+	}
+	return packageIDs, nil
+}
+
+func (s *service) getWorkspaceCollaborationWorkspaceIDsByPackageID(packageID uuid.UUID, appKey string) ([]uuid.UUID, error) {
+	type row struct {
+		SourceCollaborationWorkspaceID *uuid.UUID `gorm:"column:collaboration_workspace_id"`
+	}
+	rows := make([]row, 0)
+	if err := s.db.Model(&models.WorkspaceFeaturePackage{}).
+		Select("workspaces.collaboration_workspace_id").
+		Joins("JOIN workspaces ON workspaces.id = workspace_feature_packages.workspace_id").
+		Joins("JOIN feature_packages ON feature_packages.id = workspace_feature_packages.package_id").
+		Where("workspace_feature_packages.package_id = ? AND workspace_feature_packages.enabled = ? AND workspace_feature_packages.deleted_at IS NULL", packageID, true).
+		Where("workspaces.workspace_type = ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypeCollaboration).
+		Where("feature_packages.app_key = ? AND feature_packages.deleted_at IS NULL", normalizeAppKey(appKey)).
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+
+	collaborationWorkspaceIDs := make([]uuid.UUID, 0, len(rows))
+	seen := make(map[uuid.UUID]struct{}, len(rows))
+	for _, item := range rows {
+		if item.SourceCollaborationWorkspaceID == nil || *item.SourceCollaborationWorkspaceID == uuid.Nil {
+			continue
+		}
+		if _, exists := seen[*item.SourceCollaborationWorkspaceID]; exists {
+			continue
+		}
+		seen[*item.SourceCollaborationWorkspaceID] = struct{}{}
+		collaborationWorkspaceIDs = append(collaborationWorkspaceIDs, *item.SourceCollaborationWorkspaceID)
+	}
+	return collaborationWorkspaceIDs, nil
+}
+
+func (s *service) replaceWorkspacePackagesForCollaborationWorkspaceID(teamID uuid.UUID, appKey string, packageIDs []uuid.UUID) error {
+	var workspace models.Workspace
+	if err := s.db.
+		Where("workspace_type = ? AND collaboration_workspace_id = ? AND deleted_at IS NULL", models.WorkspaceTypeCollaboration, teamID).
+		First(&workspace).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+
+	scopedIDs, err := appscope.FilterPackageIDs(s.db, appKey, packageIDs)
+	if err != nil {
+		return err
+	}
+
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("workspace_id = ?", workspace.ID).Delete(&models.WorkspaceFeaturePackage{}).Error; err != nil {
+			return err
+		}
+		if len(scopedIDs) == 0 {
+			return nil
+		}
+		items := make([]models.WorkspaceFeaturePackage, 0, len(scopedIDs))
+		for _, packageID := range scopedIDs {
+			items = append(items, models.WorkspaceFeaturePackage{
+				WorkspaceID: workspace.ID,
+				PackageID:   packageID,
+				Enabled:     true,
+			})
+		}
+		return tx.Create(&items).Error
+	})
 }
 
 func (s *service) GetRelationTree(appKey, contextType, keyword string) (*FeaturePackageRelationTree, error) {
@@ -896,7 +1004,8 @@ func (s *service) GetRelationTree(appKey, contextType, keyword string) (*Feature
 }
 
 func (s *service) GetImpactPreview(id uuid.UUID) (*FeaturePackageImpactPreview, error) {
-	if _, err := s.packageRepo.GetByID(id); err != nil {
+	item, err := s.packageRepo.GetByID(id)
+	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrFeaturePackageNotFound
 		}
@@ -913,14 +1022,24 @@ func (s *service) GetImpactPreview(id uuid.UUID) (*FeaturePackageImpactPreview, 
 		return nil, err
 	}
 	result.RoleCount = row.Total
-	if err := s.db.Model(&user.TeamFeaturePackage{}).Where("package_id = ? AND enabled = ?", id, true).Distinct("team_id").Count(&row.Total).Error; err != nil {
+	workspaceCollaborationWorkspaceIDs, err := workspacefeaturebinding.ListCollaborationWorkspaceIDsByPackageIDs(s.db, []uuid.UUID{id}, item.AppKey)
+	if err != nil {
 		return nil, err
 	}
-	result.TeamCount = row.Total
-	if err := s.db.Model(&user.UserFeaturePackage{}).Where("package_id = ? AND enabled = ?", id, true).Distinct("user_id").Count(&row.Total).Error; err != nil {
+	var legacyCollaborationWorkspaceIDs []uuid.UUID
+	if err := s.db.Model(&user.CollaborationWorkspaceFeaturePackage{}).Where("package_id = ? AND enabled = ?", id, true).Distinct("collaboration_workspace_id").Pluck("collaboration_workspace_id", &legacyCollaborationWorkspaceIDs).Error; err != nil {
 		return nil, err
 	}
-	result.UserCount = row.Total
+	result.TeamCount = int64(len(mergeUUIDSlice(workspaceCollaborationWorkspaceIDs, legacyCollaborationWorkspaceIDs)))
+	workspaceUserIDs, err := workspacefeaturebinding.ListPlatformUserIDsByPackageIDs(s.db, []uuid.UUID{id}, item.AppKey)
+	if err != nil {
+		return nil, err
+	}
+	var legacyUserIDs []uuid.UUID
+	if err := s.db.Model(&user.UserFeaturePackage{}).Where("package_id = ? AND enabled = ?", id, true).Distinct("user_id").Pluck("user_id", &legacyUserIDs).Error; err != nil {
+		return nil, err
+	}
+	result.UserCount = int64(len(mergeUUIDSlice(workspaceUserIDs, legacyUserIDs)))
 	if err := s.db.Model(&user.FeaturePackageMenu{}).Where("package_id = ?", id).Count(&row.Total).Error; err != nil {
 		return nil, err
 	}
@@ -1005,7 +1124,7 @@ func (s *service) Rollback(id uuid.UUID, versionID uuid.UUID, operatorID *uuid.U
 	childIDs := parseUUIDList("child_package_ids")
 	actionIDs := parseUUIDList("action_ids")
 	menuIDs := parseUUIDList("menu_ids")
-	teamIDs := parseUUIDList("team_ids")
+	collaborationWorkspaceIDs := parseUUIDList("collaboration_workspace_ids")
 	updates := map[string]interface{}{
 		"package_key":  strings.TrimSpace(fmt.Sprint(snapshot["package_key"])),
 		"package_type": normalizePackageTypeDefault(fmt.Sprint(snapshot["package_type"]), pkg.PackageType),
@@ -1029,7 +1148,7 @@ func (s *service) Rollback(id uuid.UUID, versionID uuid.UUID, operatorID *uuid.U
 		return nil, err
 	}
 	if supportsTeamContext(normalizeContextTypeDefault(fmt.Sprint(snapshot["context_type"]), pkg.ContextType)) {
-		if err := s.syncPackageTeamsBySet(id, teamIDs, operatorID); err != nil {
+		if err := s.syncPackageTeamsBySet(id, collaborationWorkspaceIDs, operatorID); err != nil {
 			return nil, err
 		}
 	}
@@ -1087,9 +1206,9 @@ func (s *service) saveVersionSnapshot(packageID uuid.UUID, changeType string, op
 	if err != nil {
 		return err
 	}
-	teamIDs := []uuid.UUID{}
+	collaborationWorkspaceIDs := []uuid.UUID{}
 	if supportsTeamContext(pkg.ContextType) {
-		teamIDs, err = s.teamPackageRepo.GetTeamIDsByPackageID(packageID)
+		collaborationWorkspaceIDs, err = s.teamPackageRepo.GetCollaborationWorkspaceIDsByPackageID(packageID)
 		if err != nil {
 			return err
 		}
@@ -1104,19 +1223,19 @@ func (s *service) saveVersionSnapshot(packageID uuid.UUID, changeType string, op
 		VersionNo:  int(maxVersion) + 1,
 		ChangeType: strings.TrimSpace(changeType),
 		Snapshot: map[string]interface{}{
-			"package_id":         packageID.String(),
-			"package_key":        pkg.PackageKey,
-			"package_type":       pkg.PackageType,
-			"name":               pkg.Name,
-			"description":        pkg.Description,
-			"context_type":       pkg.ContextType,
-			"status":             pkg.Status,
-			"sort_order":         pkg.SortOrder,
-			"child_package_ids":  uuidSliceToStrings(childIDs),
-			"action_ids":         uuidSliceToStrings(actionIDs),
-			"menu_ids":           uuidSliceToStrings(menuIDs),
-			"team_ids":           uuidSliceToStrings(teamIDs),
-			"snapshot_createdAt": time.Now().Format(time.RFC3339),
+			"package_id":                  packageID.String(),
+			"package_key":                 pkg.PackageKey,
+			"package_type":                pkg.PackageType,
+			"name":                        pkg.Name,
+			"description":                 pkg.Description,
+			"context_type":                pkg.ContextType,
+			"status":                      pkg.Status,
+			"sort_order":                  pkg.SortOrder,
+			"child_package_ids":           uuidSliceToStrings(childIDs),
+			"action_ids":                  uuidSliceToStrings(actionIDs),
+			"menu_ids":                    uuidSliceToStrings(menuIDs),
+			"collaboration_workspace_ids": uuidSliceToStrings(collaborationWorkspaceIDs),
+			"snapshot_createdAt":          time.Now().Format(time.RFC3339),
 		},
 		OperatorID: operatorID,
 		RequestID:  strings.TrimSpace(requestID),
@@ -1124,8 +1243,8 @@ func (s *service) saveVersionSnapshot(packageID uuid.UUID, changeType string, op
 	return s.db.Create(item).Error
 }
 
-func (s *service) syncPackageTeamsBySet(id uuid.UUID, teamIDs []uuid.UUID, grantedBy *uuid.UUID) error {
-	currentTeamIDs, err := s.teamPackageRepo.GetTeamIDsByPackageID(id)
+func (s *service) syncPackageTeamsBySet(id uuid.UUID, collaborationWorkspaceIDs []uuid.UUID, grantedBy *uuid.UUID) error {
+	currentCollaborationWorkspaceIDs, err := s.teamPackageRepo.GetCollaborationWorkspaceIDsByPackageID(id)
 	if err != nil {
 		return err
 	}
@@ -1133,12 +1252,12 @@ func (s *service) syncPackageTeamsBySet(id uuid.UUID, teamIDs []uuid.UUID, grant
 	if err != nil {
 		return err
 	}
-	desired := make(map[uuid.UUID]struct{}, len(teamIDs))
-	affected := make(map[uuid.UUID]struct{}, len(currentTeamIDs)+len(teamIDs))
-	for _, teamID := range currentTeamIDs {
+	desired := make(map[uuid.UUID]struct{}, len(collaborationWorkspaceIDs))
+	affected := make(map[uuid.UUID]struct{}, len(currentCollaborationWorkspaceIDs)+len(collaborationWorkspaceIDs))
+	for _, teamID := range currentCollaborationWorkspaceIDs {
 		affected[teamID] = struct{}{}
 	}
-	for _, teamID := range teamIDs {
+	for _, teamID := range collaborationWorkspaceIDs {
 		desired[teamID] = struct{}{}
 		affected[teamID] = struct{}{}
 	}
@@ -1331,8 +1450,8 @@ func normalizeAppKey(value string) string {
 	return apppkg.NormalizeAppKey(value)
 }
 
-func (s *service) getTeamMap(teamIDs []uuid.UUID) (map[uuid.UUID]struct{}, error) {
-	items, err := s.tenantRepo.GetByIDs(teamIDs)
+func (s *service) getTeamMap(collaborationWorkspaceIDs []uuid.UUID) (map[uuid.UUID]struct{}, error) {
+	items, err := s.tenantRepo.GetByIDs(collaborationWorkspaceIDs)
 	if err != nil {
 		return nil, err
 	}
@@ -1406,4 +1525,22 @@ func contextSupportsChildPackage(bundleContextType, childContextType string) boo
 	default:
 		return false
 	}
+}
+
+func mergeUUIDSlice(groups ...[]uuid.UUID) []uuid.UUID {
+	result := make([]uuid.UUID, 0)
+	seen := make(map[uuid.UUID]struct{})
+	for _, group := range groups {
+		for _, id := range group {
+			if id == uuid.Nil {
+				continue
+			}
+			if _, ok := seen[id]; ok {
+				continue
+			}
+			seen[id] = struct{}{}
+			result = append(result, id)
+		}
+	}
+	return result
 }

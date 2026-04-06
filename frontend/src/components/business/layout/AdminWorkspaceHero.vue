@@ -122,7 +122,12 @@
   .workspace-hero__divider {
     width: 100%;
     height: 1px;
-    background: linear-gradient(90deg, rgb(226 232 240 / 0.95), rgb(226 232 240 / 0.55), rgb(226 232 240 / 0.95));
+    background: linear-gradient(
+      90deg,
+      rgb(226 232 240 / 0.95),
+      rgb(226 232 240 / 0.55),
+      rgb(226 232 240 / 0.95)
+    );
   }
 
   .workspace-hero__metrics {

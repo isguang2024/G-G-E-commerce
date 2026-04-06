@@ -14,9 +14,9 @@ var (
 
 // Claims JWT 声明
 type Claims struct {
-	UserID   string `json:"user_id"`
-	TenantID string `json:"tenant_id"`
-	Email    string `json:"email"`
+	UserID                   string `json:"user_id"`
+	CollaborationWorkspaceID string `json:"collaboration_workspace_id"`
+	Email                    string `json:"email"`
 	jwt.RegisteredClaims
 }
 
@@ -25,9 +25,9 @@ func GenerateToken(secret string, userID, tenantID, email string, expiresInMinut
 	expiresAt := time.Now().Add(time.Duration(expiresInMinutes) * time.Minute)
 
 	claims := &Claims{
-		UserID:   userID,
-		TenantID: tenantID,
-		Email:    email,
+		UserID:                   userID,
+		CollaborationWorkspaceID: tenantID,
+		Email:                    email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -71,5 +71,5 @@ func RefreshToken(tokenString, secret string, expiresInMinutes int) (string, err
 	}
 
 	// 生成新的 Token
-	return GenerateToken(secret, claims.UserID, claims.TenantID, claims.Email, expiresInMinutes)
+	return GenerateToken(secret, claims.UserID, claims.CollaborationWorkspaceID, claims.Email, expiresInMinutes)
 }

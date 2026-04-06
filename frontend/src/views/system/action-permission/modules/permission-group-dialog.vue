@@ -6,7 +6,8 @@
     destroy-on-close
     @open="handleDialogOpen"
     direction="rtl"
-    class="config-drawer">
+    class="config-drawer"
+  >
     <div class="group-dialog-body">
       <ElCard shadow="never" class="group-list-card">
         <template #header>
@@ -44,7 +45,10 @@
           </ElTableColumn>
           <ElTableColumn label="操作" width="72" fixed="right" align="center">
             <template #default="{ row }">
-              <ArtButtonMore :list="buildOperationList(row)" @click="(item) => handleOperation(item, row)" />
+              <ArtButtonMore
+                :list="buildOperationList(row)"
+                @click="(item) => handleOperation(item, row)"
+              />
             </template>
           </ElTableColumn>
         </ElTable>
@@ -77,7 +81,10 @@
             <template #label>
               <span class="label-help">
                 <span>状态</span>
-                <ElTooltip content="仅影响分组管理，不影响鉴权判断；权限是否可用以权限键状态为准。" placement="top">
+                <ElTooltip
+                  content="仅影响分组管理，不影响鉴权判断；权限是否可用以权限键状态为准。"
+                  placement="top"
+                >
                   <ElIcon class="label-help-icon"><QuestionFilled /></ElIcon>
                 </ElTooltip>
               </span>
@@ -197,9 +204,7 @@
   }
 
   function buildOperationList(row: Api.SystemManage.PermissionGroupItem): ButtonMoreItem[] {
-    const list: ButtonMoreItem[] = [
-      { key: 'edit', label: '编辑', icon: 'ri:edit-2-line' }
-    ]
+    const list: ButtonMoreItem[] = [{ key: 'edit', label: '编辑', icon: 'ri:edit-2-line' }]
     list.push({
       key: 'delete',
       label: '删除',
@@ -404,5 +409,4 @@
       min-height: 420px;
     }
   }
-
 </style>

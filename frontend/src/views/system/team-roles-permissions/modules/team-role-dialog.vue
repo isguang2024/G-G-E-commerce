@@ -1,20 +1,30 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
-    :title="dialogType === 'add' ? '新增团队角色' : '编辑团队角色'"
+    :title="dialogType === 'add' ? '新增协作空间角色' : '编辑协作空间角色'"
     size="520px"
     @close="handleClose"
     direction="rtl"
-    class="config-drawer">
+    class="config-drawer"
+  >
     <ElForm ref="formRef" :model="form" :rules="rules" label-width="110px">
       <ElFormItem label="角色名称" prop="roleName">
         <ElInput v-model="form.roleName" placeholder="请输入角色名称" />
       </ElFormItem>
       <ElFormItem label="角色编码" prop="roleCode">
-        <ElInput v-model="form.roleCode" :disabled="dialogType === 'edit'" placeholder="请输入角色编码" />
+        <ElInput
+          v-model="form.roleCode"
+          :disabled="dialogType === 'edit'"
+          placeholder="请输入角色编码"
+        />
       </ElFormItem>
       <ElFormItem label="描述" prop="description">
-        <ElInput v-model="form.description" type="textarea" :rows="3" placeholder="请输入角色描述" />
+        <ElInput
+          v-model="form.description"
+          type="textarea"
+          :rows="3"
+          placeholder="请输入角色描述"
+        />
       </ElFormItem>
       <ElFormItem label="状态">
         <ElSelect v-model="form.status" style="width: 100%">
@@ -139,13 +149,14 @@
       } else {
         await fetchUpdateMyTeamRole(form.roleId, payload)
       }
-      ElMessage.success(props.dialogType === 'add' ? '团队角色已创建' : '团队角色已更新')
+      ElMessage.success(props.dialogType === 'add' ? '协作空间角色已创建' : '协作空间角色已更新')
       emit('success')
       handleClose()
     } catch (error: any) {
-      ElMessage.error(error?.message || '保存团队角色失败')
+      ElMessage.error(error?.message || '保存协作空间角色失败')
     } finally {
       saving.value = false
     }
   }
 </script>
+

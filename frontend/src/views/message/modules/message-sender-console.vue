@@ -41,7 +41,11 @@
             </div>
             <div class="message-sender-card__tags">
               <ElTag v-if="item.is_default" type="success" effect="plain" size="small">默认</ElTag>
-              <ElTag size="small" :type="item.status === 'disabled' ? 'info' : 'primary'" effect="plain">
+              <ElTag
+                size="small"
+                :type="item.status === 'disabled' ? 'info' : 'primary'"
+                effect="plain"
+              >
                 {{ item.status === 'disabled' ? '停用' : '正常' }}
               </ElTag>
             </div>
@@ -53,7 +57,7 @@
           </div>
 
           <div class="message-sender-card__meta">
-            <span>{{ item.scope_type === 'team' ? '团队发送人' : '平台发送人' }}</span>
+            <span>{{ item.scope_type === 'team' ? '协作空间发送人' : '平台发送人' }}</span>
             <span>{{ formatTime(item.updated_at || item.created_at) }}</span>
           </div>
         </button>
@@ -82,12 +86,17 @@
             <div class="message-sender-drawer__title">{{ drawerModel.name || '未命名发送人' }}</div>
             <div class="message-sender-drawer__text">{{ drawerSummary }}</div>
           </div>
-          <ElTag effect="plain">{{ isTeamScope ? '团队发送人' : '平台发送人' }}</ElTag>
+          <ElTag effect="plain">{{ isTeamScope ? '协作空间发送人' : '平台发送人' }}</ElTag>
         </div>
 
         <div class="message-sender-drawer__form">
           <ElFormItem label="发送人名称">
-            <ElInput v-model="drawerModel.name" maxlength="40" show-word-limit placeholder="例如：平台 / 平台管理 / 平台空间 / 团队" />
+            <ElInput
+              v-model="drawerModel.name"
+              maxlength="40"
+              show-word-limit
+              placeholder="例如：平台 / 平台管理 / 平台空间 / 协作空间"
+            />
             <div class="field-hint">消息中心和右上角消息面板都会展示这个发送人名称。</div>
           </ElFormItem>
 
@@ -101,7 +110,10 @@
           </ElFormItem>
 
           <ElFormItem label="头像地址">
-            <ElInput v-model="drawerModel.avatar_url" placeholder="可选，后续消息头像展示可直接复用" />
+            <ElInput
+              v-model="drawerModel.avatar_url"
+              placeholder="可选，后续消息头像展示可直接复用"
+            />
           </ElFormItem>
 
           <div class="message-sender-drawer__grid">
@@ -156,8 +168,15 @@
     status: 'normal' | 'disabled' | string
   }
 
-  const { isTeamScope, skipTenantHeader, currentTeamName, ensureTeamContext, formatTime } =
-    useMessageWorkspace(props.scope)
+  const {
+    isTeamScope,
+    skipTenantHeader,
+    currentTeamName,
+    currentWorkspaceName,
+    currentWorkspaceLabel,
+    ensureTeamContext,
+    formatTime
+  } = useMessageWorkspace(props.scope)
 
   const loading = ref(false)
   const loadError = ref('')
@@ -171,15 +190,15 @@
   const drawerEditingId = ref('')
   const drawerModel = ref<SenderDrawerModel | null>(null)
 
-  const pageTitle = computed(() => (isTeamScope.value ? '团队发送人' : '发送人管理'))
+  const pageTitle = computed(() => (isTeamScope.value ? '协作空间发送人' : '发送人管理'))
   const pageDescription = computed(() =>
     isTeamScope.value
-      ? `维护 ${currentTeamName.value} 使用的团队消息发送人，默认发送人建议保持“团队”或更具体的团队身份。`
+      ? `维护 ${currentWorkspaceName.value} 下 ${currentTeamName.value} 使用的协作空间消息发送人，默认发送人建议保持“协作空间”或更具体的协作空间身份。`
       : '维护平台消息发送人，默认发送人为“平台”，也可以扩展为平台管理、平台空间等发送身份。'
   )
   const toolbarDescription = computed(() =>
     isTeamScope.value
-      ? '团队侧发送人只作用于当前团队消息发送页。'
+      ? '协作空间侧发送人只作用于当前协作空间消息发送页。'
       : '平台侧发送人只作用于平台消息发送页。'
   )
   const heroMetrics = computed(() => [
@@ -189,12 +208,12 @@
   ])
   const drawerSummary = computed(() =>
     isTeamScope.value
-      ? `保存后会作为 ${currentTeamName.value} 的可选发送人。`
+      ? `保存后会作为 ${currentWorkspaceLabel.value} 下 ${currentTeamName.value} 的可选发送人。`
       : '保存后会作为平台消息发送页的可选发送人。'
   )
 
   const createDefaultModel = (): SenderDrawerModel => ({
-    name: isTeamScope.value ? '团队' : '平台',
+    name: isTeamScope.value ? '协作空间' : '平台',
     description: '',
     avatar_url: '',
     is_default: list.value.length === 0,
@@ -211,7 +230,7 @@
       })
       list.value = result.records || []
       pagination.current = 1
-    } catch (error) {
+    } catch {
       list.value = []
       loadError.value = '发送人列表暂时不可用，稍后重试或刷新状态。'
       pagination.current = 1
@@ -262,7 +281,7 @@
       }
       drawerVisible.value = false
       await loadSenders()
-    } catch (error) {
+    } catch {
       ElMessage.error('保存发送人失败')
     } finally {
       saving.value = false

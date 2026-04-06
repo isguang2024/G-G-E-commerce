@@ -79,7 +79,10 @@ export const useMessageStore = defineStore('messageStore', () => {
   }
 
   const loadPanelData = async (force = false) => {
-    await Promise.all([loadSummary(force), ...boxTypes.map((boxType) => loadPreview(boxType, force))])
+    await Promise.all([
+      loadSummary(force),
+      ...boxTypes.map((boxType) => loadPreview(boxType, force))
+    ])
   }
 
   const markRead = async (deliveryId: string) => {
