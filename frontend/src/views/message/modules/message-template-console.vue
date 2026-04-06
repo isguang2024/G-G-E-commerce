@@ -263,7 +263,7 @@
   defineOptions({ name: 'MessageTemplateConsole' })
 
   const props = defineProps<{
-    scope: 'platform' | 'collaboration'
+    scope: 'personal' | 'collaboration'
   }>()
 
   const loading = ref(false)
@@ -321,9 +321,9 @@
   const heroMetrics = computed(() => [
     { label: '模板总数', value: pagination.total },
     {
-      label: isCollaborationScope.value ? '协作空间模板' : '平台模板',
+      label: isCollaborationScope.value ? '协作空间模板' : '个人空间模板',
       value: list.value.filter(
-        (item) => item.owner_scope === (isCollaborationScope.value ? 'collaboration' : 'platform')
+        (item) => item.owner_scope === (isCollaborationScope.value ? 'collaboration' : 'personal')
       ).length
     },
     { label: '可编辑', value: list.value.filter((item) => item.editable).length }
@@ -331,15 +331,15 @@
 
   const drawerTitle = computed(
     () =>
-      `${drawerEditingId.value ? '编辑' : '新建'}${isCollaborationScope.value ? '协作空间' : '平台'}模板`
+      `${drawerEditingId.value ? '编辑' : '新建'}${isCollaborationScope.value ? '协作空间' : '个人空间'}模板`
   )
   const drawerScopeText = computed(() =>
     isCollaborationScope.value
-      ? `保存后该模板只属于 ${currentWorkspaceName.value} 下的协作空间视图 ${currentCollaborationWorkspaceName.value}，不会影响平台模板。`
-      : '保存后该模板会作为平台模板供平台消息发送页统一复用。'
+      ? `保存后该模板只属于 ${currentWorkspaceName.value} 下的协作空间视图 ${currentCollaborationWorkspaceName.value}，不会影响个人空间模板。`
+      : '保存后该模板会作为个人空间模板在当前个人空间内复用。'
   )
   const drawerCollaborationWorkspaceBadge = computed(() =>
-    isCollaborationScope.value ? '协作空间模板' : '平台模板'
+    isCollaborationScope.value ? '协作空间模板' : '个人空间模板'
   )
 
   const messageTypeOptions = [
@@ -388,7 +388,7 @@
         ? `协作空间 · ${collaborationWorkspaceName}`
         : '协作空间模板'
     }
-    return '平台模板'
+    return '个人空间模板'
   }
 
   const resolveMessageTypeLabel = (value: Api.Message.BoxType) =>
@@ -443,7 +443,7 @@
       template_key: item.template_key
         .replace(/^platform\./, '')
         .replace(/^collaboration_workspace\.[^.]+\./, '')
-        .replace(/^team\.[^.]+\./, ''),
+        .replace(/^collaboration\.[^.]+\./, ''),
       name: item.name,
       description: item.description || '',
       message_type: item.message_type,

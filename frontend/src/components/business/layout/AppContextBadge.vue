@@ -7,7 +7,9 @@
       </ElTag>
       <span class="context-badge__name">{{ scopeName }}</span>
     </div>
-    <div class="context-badge__space"> 当前协作空间视图 · {{ teamViewName }} </div>
+    <div class="context-badge__space">
+      当前协作空间视图 · {{ collaborationWorkspaceViewName }}
+    </div>
     <div v-if="showSpaceLabel" class="context-badge__space"> 菜单空间 · {{ spaceName }} </div>
   </div>
 </template>
@@ -49,7 +51,7 @@
         '未启用协作空间视图'
   )
   const tagType = computed(() => (currentContextMode.value === 'personal' ? 'success' : 'warning'))
-  const teamViewName = computed(() =>
+  const collaborationWorkspaceViewName = computed(() =>
     currentAuthWorkspaceType.value === 'collaboration'
       ? currentCollaborationWorkspace.value?.name ||
         currentAuthWorkspace.value?.name ||

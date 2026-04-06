@@ -262,7 +262,7 @@
   defineOptions({ name: 'MessageRecordConsole' })
 
   const props = defineProps<{
-    scope: 'platform' | 'collaboration'
+    scope: 'personal' | 'collaboration'
   }>()
 
   const router = useRouter()

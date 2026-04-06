@@ -44,12 +44,6 @@ type Service interface {
 	SetPackageCollaborationWorkspaces(id uuid.UUID, collaborationWorkspaceIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error)
 	GetCollaborationWorkspacePackages(collaborationWorkspaceID uuid.UUID, appKey string) ([]uuid.UUID, []user.FeaturePackage, error)
 	SetCollaborationWorkspacePackages(collaborationWorkspaceID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error)
-
-	// 兼容旧命名，后续删除。
-	GetPackageTeams(id uuid.UUID, appKey string) ([]uuid.UUID, error)
-	SetPackageTeams(id uuid.UUID, collaborationWorkspaceIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error)
-	GetTeamPackages(collaborationWorkspaceID uuid.UUID, appKey string) ([]uuid.UUID, []user.FeaturePackage, error)
-	SetTeamPackages(collaborationWorkspaceID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error)
 	GetImpactPreview(id uuid.UUID) (*FeaturePackageImpactPreview, error)
 	ListVersions(id uuid.UUID, current, size int) ([]user.FeaturePackageVersion, int64, error)
 	Rollback(id uuid.UUID, versionID uuid.UUID, operatorID *uuid.UUID, requestID string) (*permissionrefresh.RefreshStats, error)
@@ -92,7 +86,7 @@ type service struct {
 	rolePackageRepo                          user.RoleFeaturePackageRepository
 	actionRepo                               user.PermissionKeyRepository
 	menuRepo                                 user.MenuRepository
-	collaborationWorkspaceRepo               user.TenantRepository
+	collaborationWorkspaceRepo               user.CollaborationWorkspaceRepository
 	boundaryService                          collaborationworkspaceboundary.Service
 	refresher                                permissionrefresh.Service
 }
@@ -107,7 +101,7 @@ func NewService(
 	rolePackageRepo user.RoleFeaturePackageRepository,
 	actionRepo user.PermissionKeyRepository,
 	menuRepo user.MenuRepository,
-	collaborationWorkspaceRepo user.TenantRepository,
+	collaborationWorkspaceRepo user.CollaborationWorkspaceRepository,
 	boundaryService collaborationworkspaceboundary.Service,
 	refresher permissionrefresh.Service,
 ) Service {
@@ -202,11 +196,11 @@ func (s *service) GetPackageStats(packageIDs []uuid.UUID) (map[uuid.UUID]int64, 
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	teamCounts, err := s.collaborationWorkspaceFeaturePackageRepo.CountByPackageIDs(packageIDs)
+	collaborationWorkspaceCounts, err := s.collaborationWorkspaceFeaturePackageRepo.CountByPackageIDs(packageIDs)
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	return actionCounts, menuCounts, teamCounts, nil
+	return actionCounts, menuCounts, collaborationWorkspaceCounts, nil
 }
 
 func (s *service) Get(id uuid.UUID) (*user.FeaturePackage, error) {
@@ -634,7 +628,7 @@ func (s *service) SetPackageMenus(id uuid.UUID, menuIDs []uuid.UUID, appKey stri
 }
 
 func (s *service) GetCollaborationWorkspacePackages(collaborationWorkspaceID uuid.UUID, appKey string) ([]uuid.UUID, []user.FeaturePackage, error) {
-	packageIDs, err := appscope.PackageIDsByTeam(s.db, collaborationWorkspaceID, appKey)
+	packageIDs, err := appscope.PackageIDsByCollaborationWorkspace(s.db, collaborationWorkspaceID, appKey)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -705,7 +699,7 @@ func (s *service) SetPackageCollaborationWorkspaces(id uuid.UUID, collaborationW
 		affected[collaborationWorkspaceID] = struct{}{}
 	}
 	for collaborationWorkspaceID := range affected {
-		packageIDs, err := appscope.PackageIDsByTeam(s.db, collaborationWorkspaceID, item.AppKey)
+		packageIDs, err := appscope.PackageIDsByCollaborationWorkspace(s.db, collaborationWorkspaceID, item.AppKey)
 		if err != nil {
 			return nil, err
 		}
@@ -726,7 +720,7 @@ func (s *service) SetPackageCollaborationWorkspaces(id uuid.UUID, collaborationW
 				nextPackageIDs = append(nextPackageIDs, id)
 			}
 		}
-		if err := appscope.ReplaceTeamPackagesInApp(s.db, collaborationWorkspaceID, item.AppKey, nextPackageIDs, grantedBy); err != nil {
+		if err := appscope.ReplaceCollaborationWorkspacePackagesInApp(s.db, collaborationWorkspaceID, item.AppKey, nextPackageIDs, grantedBy); err != nil {
 			return nil, err
 		}
 		if err := s.replaceWorkspacePackagesForCollaborationWorkspaceID(collaborationWorkspaceID, item.AppKey, nextPackageIDs); err != nil {
@@ -768,7 +762,7 @@ func (s *service) SetCollaborationWorkspacePackages(collaborationWorkspaceID uui
 			return nil, errors.New("仅支持为协作空间分配协作空间功能包")
 		}
 	}
-	if err := appscope.ReplaceTeamPackagesInApp(s.db, collaborationWorkspaceID, normalizedAppKey, packageIDs, grantedBy); err != nil {
+	if err := appscope.ReplaceCollaborationWorkspacePackagesInApp(s.db, collaborationWorkspaceID, normalizedAppKey, packageIDs, grantedBy); err != nil {
 		return nil, err
 	}
 	if err := s.replaceWorkspacePackagesForCollaborationWorkspaceID(collaborationWorkspaceID, normalizedAppKey, packageIDs); err != nil {
@@ -789,22 +783,6 @@ func (s *service) SetCollaborationWorkspacePackages(collaborationWorkspaceID uui
 	stats := permissionrefresh.RefreshStats{CollaborationWorkspaceCount: 1}
 	_ = s.recordRiskAudit("collaboration_workspace_feature_package", collaborationWorkspaceID.String(), "set_collaboration_workspace_packages", nil, ginLikeMap("package_ids", packageIDs), refreshStatsSummary(stats), grantedBy, "")
 	return &stats, nil
-}
-
-func (s *service) GetPackageTeams(id uuid.UUID, appKey string) ([]uuid.UUID, error) {
-	return s.GetPackageCollaborationWorkspaces(id, appKey)
-}
-
-func (s *service) SetPackageTeams(id uuid.UUID, collaborationWorkspaceIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error) {
-	return s.SetPackageCollaborationWorkspaces(id, collaborationWorkspaceIDs, grantedBy, appKey)
-}
-
-func (s *service) GetTeamPackages(collaborationWorkspaceID uuid.UUID, appKey string) ([]uuid.UUID, []user.FeaturePackage, error) {
-	return s.GetCollaborationWorkspacePackages(collaborationWorkspaceID, appKey)
-}
-
-func (s *service) SetTeamPackages(collaborationWorkspaceID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID, appKey string) (*permissionrefresh.RefreshStats, error) {
-	return s.SetCollaborationWorkspacePackages(collaborationWorkspaceID, packageIDs, grantedBy, appKey)
 }
 
 func (s *service) getWorkspacePackageIDsByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID, appKey string) ([]uuid.UUID, error) {
@@ -1284,7 +1262,7 @@ func (s *service) syncPackageCollaborationWorkspacesBySet(id uuid.UUID, collabor
 		affected[collaborationWorkspaceID] = struct{}{}
 	}
 	for collaborationWorkspaceID := range affected {
-		packageIDs, packageErr := appscope.PackageIDsByTeam(s.db, collaborationWorkspaceID, item.AppKey)
+			packageIDs, packageErr := appscope.PackageIDsByCollaborationWorkspace(s.db, collaborationWorkspaceID, item.AppKey)
 		if packageErr != nil {
 			return packageErr
 		}
@@ -1303,7 +1281,7 @@ func (s *service) syncPackageCollaborationWorkspacesBySet(id uuid.UUID, collabor
 		if _, ok := desired[collaborationWorkspaceID]; ok {
 			nextPackageIDs = append(nextPackageIDs, id)
 		}
-		if err := appscope.ReplaceTeamPackagesInApp(s.db, collaborationWorkspaceID, item.AppKey, nextPackageIDs, grantedBy); err != nil {
+		if err := appscope.ReplaceCollaborationWorkspacePackagesInApp(s.db, collaborationWorkspaceID, item.AppKey, nextPackageIDs, grantedBy); err != nil {
 			return err
 		}
 	}
@@ -1486,10 +1464,8 @@ func (s *service) getCollaborationWorkspaceMap(collaborationWorkspaceIDs []uuid.
 
 func normalizeContextType(value string) string {
 	switch strings.ReplaceAll(strings.TrimSpace(value), " ", "") {
-	case "platform", "collaboration", "common":
+	case "personal", "collaboration", "common":
 		return strings.ReplaceAll(strings.TrimSpace(value), " ", "")
-	case "team":
-		return "collaboration"
 	default:
 		return ""
 	}
@@ -1529,10 +1505,6 @@ func normalizePackageTypeDefault(value, fallback string) string {
 
 func supportsCollaborationWorkspaceContext(contextType string) bool {
 	return contextType == "collaboration" || contextType == "common"
-}
-
-func supportsTeamContext(contextType string) bool {
-	return supportsCollaborationWorkspaceContext(contextType)
 }
 
 func contextSupportsAction(packageContextType, actionContextType string) bool {

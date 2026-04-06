@@ -255,7 +255,7 @@
   ])
 
   function renderContextType(row: PermissionActionItem) {
-    if (row.contextType === 'platform') return h(ElTag, { type: 'warning' }, () => '平台')
+    if (row.contextType === 'personal') return h(ElTag, { type: 'warning' }, () => '个人空间')
     if (row.contextType === 'collaboration') return h(ElTag, { type: 'primary' }, () => '协作空间')
     return h(ElTag, { type: 'info' }, () => '通用')
   }

@@ -19,11 +19,11 @@ import (
 )
 
 var (
-	ErrRoleNotFound            = errors.New("role not found")
-	ErrRoleCodeExists          = errors.New("role code already exists")
-	ErrSystemRoleCannotDelete  = errors.New("system role cannot be deleted")
-	ErrTeamRoleKeyReadonly     = errors.New("team role permission keys are managed by team boundary")
-	ErrTenantRoleManagedByTeam = errors.New("tenant role is managed in team context")
+	ErrRoleNotFound                          = errors.New("role not found")
+	ErrRoleCodeExists                        = errors.New("role code already exists")
+	ErrSystemRoleCannotDelete                = errors.New("system role cannot be deleted")
+	ErrCollaborationWorkspaceRoleKeyReadonly = errors.New("collaboration workspace role permission keys are managed by workspace boundary")
+	ErrCollaborationWorkspaceRoleManaged     = errors.New("collaboration workspace role is managed in collaboration workspace context")
 )
 
 type RoleService interface {
@@ -189,7 +189,7 @@ func (s *roleService) Update(id uuid.UUID, req *dto.RoleUpdateRequest) error {
 		return err
 	}
 	if role.CollaborationWorkspaceID != nil {
-		return ErrTenantRoleManagedByTeam
+		return ErrCollaborationWorkspaceRoleManaged
 	}
 	updates := make(map[string]interface{})
 	if req.Code != "" && req.Code != role.Code {
@@ -238,7 +238,7 @@ func (s *roleService) Delete(id uuid.UUID) error {
 		return err
 	}
 	if role.CollaborationWorkspaceID != nil {
-		return ErrTenantRoleManagedByTeam
+		return ErrCollaborationWorkspaceRoleManaged
 	}
 	if role.Code == "admin" || role.Code == "collaboration_workspace_admin" || role.Code == "collaboration_workspace_member" {
 		return ErrSystemRoleCannotDelete
@@ -266,7 +266,7 @@ func (s *roleService) Delete(id uuid.UUID) error {
 		if err := tx.Where("role_id = ?", id).Delete(&user.RoleDataPermission{}).Error; err != nil {
 			return err
 		}
-		if err := tx.Where("role_id = ?", id).Delete(&models.PlatformRoleAccessSnapshot{}).Error; err != nil {
+		if err := tx.Where("role_id = ?", id).Delete(&models.PersonalWorkspaceRoleAccessSnapshot{}).Error; err != nil {
 			return err
 		}
 		return tx.Delete(&user.Role{}, id).Error
@@ -288,7 +288,7 @@ func (s *roleService) GetRolePackages(roleID uuid.UUID, appKey string) ([]uuid.U
 		return nil, nil, err
 	}
 	if role.CollaborationWorkspaceID != nil {
-		return nil, nil, ErrTenantRoleManagedByTeam
+		return nil, nil, ErrCollaborationWorkspaceRoleManaged
 	}
 	packageIDs, err := appscope.PackageIDsByRole(s.db, roleID, appKey)
 	if err != nil {
@@ -310,7 +310,7 @@ func (s *roleService) SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, 
 		return err
 	}
 	if role.CollaborationWorkspaceID != nil {
-		return ErrTenantRoleManagedByTeam
+		return ErrCollaborationWorkspaceRoleManaged
 	}
 	normalizedAppKey := appscope.Normalize(appKey)
 	if len(packageIDs) > 0 {
@@ -341,7 +341,7 @@ func (s *roleService) SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, 
 
 func supportsPersonalWorkspacePackageContext(contextType string) bool {
 	switch strings.TrimSpace(contextType) {
-	case "platform", "common", "platform,team", "team,platform":
+	case "personal", "common", "personal,collaboration", "collaboration,personal":
 		return true
 	default:
 		return false
@@ -365,7 +365,7 @@ func (s *roleService) SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID, appKey
 		return err
 	}
 	if role.CollaborationWorkspaceID != nil {
-		return ErrTenantRoleManagedByTeam
+		return ErrCollaborationWorkspaceRoleManaged
 	}
 	boundary, err := s.GetRoleMenuBoundary(roleID, appKey)
 	if err != nil {
@@ -402,10 +402,10 @@ func (s *roleService) SetRoleKeys(roleID uuid.UUID, keys []user.RoleKeyPermissio
 		return err
 	}
 	if role.CollaborationWorkspaceID != nil {
-		return ErrTenantRoleManagedByTeam
+		return ErrCollaborationWorkspaceRoleManaged
 	}
 	if role.Code == "collaboration_workspace_admin" || role.Code == "collaboration_workspace_member" {
-		return ErrTeamRoleKeyReadonly
+		return ErrCollaborationWorkspaceRoleKeyReadonly
 	}
 	keyIDs := make([]uuid.UUID, 0, len(keys))
 	for _, item := range keys {
@@ -469,7 +469,7 @@ func (s *roleService) SetRoleDataPermissions(roleID uuid.UUID, permissions []use
 		return err
 	}
 	if role.CollaborationWorkspaceID != nil {
-		return ErrTenantRoleManagedByTeam
+		return ErrCollaborationWorkspaceRoleManaged
 	}
 	resourceCodes, err := s.keyRepo.ListDistinctModuleCodes()
 	if err != nil {
@@ -514,7 +514,7 @@ func (s *roleService) SetRoleDataPermissions(roleID uuid.UUID, permissions []use
 func buildAvailableDataScopeOptions() []DataPermissionScopeOption {
 	return []DataPermissionScopeOption{
 		{Code: "self", Name: "仅自己"},
-		{Code: "team", Name: "当前协作空间"},
+		{Code: "collaboration", Name: "当前协作空间"},
 		{Code: "all", Name: "全部数据"},
 	}
 }
@@ -528,7 +528,7 @@ func (s *roleService) GetRoleMenuBoundary(roleID uuid.UUID, appKey string) (*Rol
 		return nil, err
 	}
 	if role.CollaborationWorkspaceID != nil {
-		return nil, ErrTenantRoleManagedByTeam
+		return nil, ErrCollaborationWorkspaceRoleManaged
 	}
 	if s.roleSnapshotService != nil {
 		snapshot, snapshotErr := s.roleSnapshotService.GetSnapshot(roleID, appscope.Normalize(appKey))
@@ -556,7 +556,7 @@ func (s *roleService) GetRoleKeyBoundary(roleID uuid.UUID, appKey string) (*Role
 		return nil, err
 	}
 	if role.CollaborationWorkspaceID != nil {
-		return nil, ErrTenantRoleManagedByTeam
+		return nil, ErrCollaborationWorkspaceRoleManaged
 	}
 	if s.roleSnapshotService != nil {
 		snapshot, snapshotErr := s.roleSnapshotService.GetSnapshot(roleID, appscope.Normalize(appKey))

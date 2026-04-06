@@ -45,15 +45,7 @@ func (s *Service) RequirePersonalWorkspaceTargetWorkspace(authCtx *Authorization
 	return &workspace, nil
 }
 
-func (s *Service) RequirePersonalWorkspaceTargetTeam(authCtx *AuthorizationContext, collaborationWorkspaceID uuid.UUID) (*models.Workspace, error) {
-	workspaces, err := s.RequirePersonalWorkspaceTargetTeams(authCtx, []uuid.UUID{collaborationWorkspaceID})
-	if err != nil {
-		return nil, err
-	}
-	return workspaces[collaborationWorkspaceID], nil
-}
-
-func (s *Service) RequirePersonalWorkspaceTargetTeams(authCtx *AuthorizationContext, collaborationWorkspaceIDs []uuid.UUID) (map[uuid.UUID]*models.Workspace, error) {
+func (s *Service) RequirePersonalWorkspaceTargetWorkspaces(authCtx *AuthorizationContext, collaborationWorkspaceIDs []uuid.UUID) (map[uuid.UUID]*models.Workspace, error) {
 	if err := ensureWorkspaceContext(authCtx); err != nil {
 		return nil, err
 	}

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="visible"
     :title="`协作空间功能包 - ${collaborationWorkspaceName}`"
@@ -9,7 +9,7 @@
   >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        协作空间功能包由平台统一开通。保存后会同步刷新该协作空间的功能权限边界和菜单边界。
+        协作空间功能包由个人空间统一开通。保存后会同步刷新该协作空间的功能权限边界和菜单边界。
       </div>
 
       <div class="summary-card">
@@ -28,7 +28,7 @@
         />
         <ElSelect v-model="contextFilter" class="toolbar-select">
           <ElOption label="全部上下文" value="" />
-          <ElOption label="平台" value="platform" />
+          <ElOption label="个人空间" value="personal" />
           <ElOption label="协作空间" value="collaboration" />
           <ElOption label="通用" value="common" />
         </ElSelect>
@@ -259,13 +259,13 @@
 
   function formatContext(contextType?: string) {
     if (contextType === 'common') return '通用'
-    if (contextType === 'platform') return '平台'
+    if (contextType === 'personal') return '个人空间'
     return '协作空间'
   }
 
   function getContextTagType(contextType?: string) {
     if (contextType === 'common') return 'primary'
-    if (contextType === 'platform') return 'success'
+    if (contextType === 'personal') return 'success'
     return 'warning'
   }
 

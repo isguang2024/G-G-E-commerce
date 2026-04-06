@@ -42,11 +42,24 @@ function derivePermissionSegments(permissionKey?: string) {
 function deriveContextType(permissionKey?: string, moduleCode?: string) {
   const key = `${permissionKey || ''}`.trim()
   const module = `${moduleCode || ''}`.trim()
+  if (key === 'collaboration_workspace.manage' || module === 'collaboration_workspace') {
+    return 'personal'
+  }
+  if (
+    key.startsWith('collaboration_workspace.member.') ||
+    key.startsWith('collaboration_workspace.boundary.') ||
+    key.startsWith('collaboration_workspace.message.') ||
+    module === 'collaboration_workspace_member' ||
+    module === 'collaboration_workspace_boundary' ||
+    module === 'collaboration_workspace_message'
+  ) {
+    return 'collaboration'
+  }
   if (
     key.startsWith('system.') ||
-    key.startsWith('collaboration_workspace.') ||
-    key.startsWith('platform.') ||
-    key === 'collaboration_workspace.manage' ||
+    key.startsWith('feature_package.') ||
+    key.startsWith('message.') ||
+    key.startsWith('personal.') ||
     module === 'role' ||
     module === 'user' ||
     module === 'menu' ||
@@ -55,11 +68,23 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
     module === 'permission_key' ||
     module === 'api_endpoint' ||
     module === 'feature_package' ||
-    module === 'page'
+    module === 'page' ||
+    module === 'collaboration_workspace_member_admin'
   ) {
-    return 'platform'
+    return 'personal'
   }
-  return 'collaboration'
+  return 'common'
+}
+
+function deriveFeaturePackageContextType(packageKey?: string) {
+  const key = `${packageKey || ''}`.trim()
+  if (key.startsWith('personal.')) {
+    return 'personal'
+  }
+  if (key.startsWith('collaboration_workspace.')) {
+    return 'collaboration'
+  }
+  return 'common'
 }
 
 function normalizePermissionGroup(value: any): Api.SystemManage.PermissionGroupItem | undefined {
@@ -202,13 +227,7 @@ function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
 function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem {
   const packageKey = item?.package_key || item?.packageKey || ''
   const contextType =
-    item?.context_type ||
-    item?.contextType ||
-    (packageKey.startsWith('platform.')
-      ? 'platform'
-      : packageKey.startsWith('common.')
-        ? 'common'
-        : 'collaboration')
+    item?.context_type || item?.contextType || deriveFeaturePackageContextType(packageKey)
   return {
     id: item?.id || '',
     appKey: item?.app_key || item?.appKey || '',
@@ -220,7 +239,7 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
     isBuiltin: Boolean(item?.is_builtin ?? item?.isBuiltin ?? false),
     actionCount: item?.action_count ?? item?.actionCount ?? 0,
     menuCount: item?.menu_count ?? item?.menuCount ?? 0,
-    collaborationWorkspaceCount: item?.team_count ?? item?.collaborationWorkspaceCount ?? 0,
+    collaborationWorkspaceCount: item?.collaborationWorkspaceCount ?? 0,
     status: item?.status || 'normal',
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
     createdAt: item?.created_at || item?.createdAt || '',
@@ -345,6 +364,13 @@ function normalizePageUnregisteredItem(item: any): Api.SystemManage.PageUnregist
 
 function normalizeMenuSpace(item: any): Api.SystemManage.MenuSpaceItem {
   const allowedRoleCodes = item?.allowed_role_codes ?? item?.allowedRoleCodes ?? []
+  const rawAccessMode =
+    item?.access_mode ||
+    item?.accessMode ||
+    item?.meta?.access_mode ||
+    item?.meta?.accessMode ||
+    'all'
+  const accessMode = `${rawAccessMode}`.trim()
   return {
     id: item?.id || '',
     appKey: item?.app_key || item?.appKey || '',
@@ -360,8 +386,7 @@ function normalizeMenuSpace(item: any): Api.SystemManage.MenuSpaceItem {
       : [],
     menuCount: Number(item?.menu_count ?? item?.menuCount ?? 0),
     pageCount: Number(item?.page_count ?? item?.pageCount ?? 0),
-    accessMode:
-      `${item?.access_mode || item?.accessMode || item?.meta?.access_mode || item?.meta?.accessMode || 'all'}`.trim(),
+    accessMode,
     allowedRoleCodes: Array.isArray(allowedRoleCodes)
       ? allowedRoleCodes.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
       : [],
@@ -463,7 +488,7 @@ function normalizeRefreshStats(item: any): Api.SystemManage.RefreshStats {
     ),
     impactedPackageCount: Number(item?.impactedPackageCount ?? item?.impacted_package_count ?? 0),
     roleCount: Number(item?.roleCount ?? item?.role_count ?? 0),
-    collaborationWorkspaceCount: Number(item?.collaborationWorkspaceCount ?? item?.team_count ?? 0),
+    collaborationWorkspaceCount: Number(item?.collaborationWorkspaceCount ?? 0),
     userCount: Number(item?.userCount ?? item?.user_count ?? 0),
     elapsedMilliseconds: Number(item?.elapsedMilliseconds ?? item?.elapsed_milliseconds ?? 0),
     finishedAt: item?.finishedAt || item?.finished_at || ''
@@ -488,12 +513,14 @@ function normalizeRiskAudit(item: any): Api.SystemManage.RiskAuditItem {
 function normalizeFeaturePackageRelationNode(
   item: any
 ): Api.SystemManage.FeaturePackageRelationNode {
+  const packageKey = item?.package_key || item?.packageKey || ''
   return {
     id: item?.id || '',
-    packageKey: item?.package_key || item?.packageKey || '',
+    packageKey,
     name: item?.name || '',
     packageType: item?.package_type || item?.packageType || 'base',
-    contextType: item?.context_type || item?.contextType || 'collaboration',
+    contextType:
+      item?.context_type || item?.contextType || deriveFeaturePackageContextType(packageKey),
     status: item?.status || 'normal',
     referenceCount: Number(item?.reference_count ?? item?.referenceCount ?? 0),
     children: Array.isArray(item?.children)
@@ -552,7 +579,10 @@ function normalizePermissionActionConsumers(
           packageKey: pkg?.package_key || pkg?.packageKey || '',
           name: pkg?.name || '',
           packageType: pkg?.package_type || pkg?.packageType || '',
-          contextType: pkg?.context_type || pkg?.contextType || ''
+          contextType:
+            pkg?.context_type ||
+            pkg?.contextType ||
+            deriveFeaturePackageContextType(pkg?.package_key || pkg?.packageKey)
         }))
       : [],
     roles: Array.isArray(item?.roles)
@@ -921,11 +951,8 @@ function normalizeUserPermissionDiagnosisResponse(
         ),
         blockedByCollaborationWorkspace: Boolean(
           item.diagnosis?.blocked_by_collaboration_workspace ??
-          item.diagnosis?.blockedByCollaborationWorkspace ??
-          item.diagnosis?.blocked_by_team ??
-          item.diagnosis?.blockedByTeam
+          item.diagnosis?.blockedByCollaborationWorkspace
         ),
-        blockedByTeam: Boolean(item.diagnosis?.blocked_by_team ?? item.diagnosis?.blockedByTeam),
         denialStage: item.diagnosis?.denial_stage || item.diagnosis?.denialStage || '',
         denialReason: item.diagnosis?.denial_reason || item.diagnosis?.denialReason || '',
         memberStatus: item.diagnosis?.member_status || item.diagnosis?.memberStatus || '',
@@ -998,7 +1025,7 @@ function normalizeUserPermissionDiagnosisResponse(
     : null
 
   const context = {
-    type: item?.context?.type || 'platform',
+    type: item?.context?.type || 'personal',
     collaborationWorkspaceId:
       item?.context?.collaboration_workspace_id || item?.context?.collaborationWorkspaceId || '',
     collaborationWorkspaceName:
@@ -1052,26 +1079,18 @@ function normalizeUserPermissionDiagnosisResponse(
       available: Boolean(role?.available),
       sourcePackages: normalizePackages(role?.source_packages || role?.sourcePackages)
     })),
-    collaborationWorkspaceMember:
-      item?.collaboration_workspace_member || item?.teamMember
-        ? {
-            id: item?.collaboration_workspace_member?.id || item?.teamMember?.id || '',
-            collaborationWorkspaceId:
-              item?.collaboration_workspace_member?.collaboration_workspace_id ||
-              item?.teamMember?.collaborationWorkspaceId ||
-              '',
-            userId: item?.collaboration_workspace_member?.user_id || item?.teamMember?.userId || '',
-            roleCode:
-              item?.collaboration_workspace_member?.role_code || item?.teamMember?.roleCode || '',
-            status: item?.collaboration_workspace_member?.status || item?.teamMember?.status || '',
-            matched: Boolean(
-              item?.collaboration_workspace_member?.matched ?? item?.teamMember?.matched
-            )
-          }
-        : null,
-    collaborationWorkspacePackages: normalizePackages(
-      item?.collaboration_workspace_packages || item?.team_packages || item?.teamPackages
-    ),
+    collaborationWorkspaceMember: item?.collaboration_workspace_member
+      ? {
+          id: item?.collaboration_workspace_member?.id || '',
+          collaborationWorkspaceId:
+            item?.collaboration_workspace_member?.collaboration_workspace_id || '',
+          userId: item?.collaboration_workspace_member?.user_id || '',
+          roleCode: item?.collaboration_workspace_member?.role_code || '',
+          status: item?.collaboration_workspace_member?.status || '',
+          matched: Boolean(item?.collaboration_workspace_member?.matched)
+        }
+      : null,
+    collaborationWorkspacePackages: normalizePackages(item?.collaboration_workspace_packages),
     diagnosis,
     menus: (item?.menus || []).map((menu: any) => normalizeUserPermissionMenuTree(menu))
   }
@@ -1082,7 +1101,7 @@ export async function fetchGetUserCollaborationWorkspaces(userId: string) {
     url: `${USER_BASE}/${userId}/collaboration-workspaces`,
     skipCollaborationWorkspaceHeader: true
   })
-  return (res || []).map((item: any) => normalizeUserTeamItem(item))
+  return (res || []).map((item: any) => normalizeUserCollaborationWorkspaceItem(item))
 }
 
 function normalizeUserPermissionMenuTree(item: any): Api.SystemManage.UserPermissionMenuNode {
@@ -1098,7 +1117,9 @@ function normalizeUserPermissionMenuTree(item: any): Api.SystemManage.UserPermis
   }
 }
 
-function normalizeUserTeamItem(item: any): Api.SystemManage.CollaborationWorkspaceListItem {
+function normalizeUserCollaborationWorkspaceItem(
+  item: any
+): Api.SystemManage.CollaborationWorkspaceListItem {
   return {
     id: item?.id || '',
     name: item?.name || '',
@@ -1493,7 +1514,7 @@ export function fetchGetPermissionActionImpactPreview(id: string) {
       pageCount: Number(res?.pageCount ?? res?.page_count ?? 0),
       packageCount: Number(res?.packageCount ?? res?.package_count ?? 0),
       roleCount: Number(res?.roleCount ?? res?.role_count ?? 0),
-      collaborationWorkspaceCount: Number(res?.collaborationWorkspaceCount ?? res?.team_count ?? 0),
+      collaborationWorkspaceCount: Number(res?.collaborationWorkspaceCount ?? 0),
       userCount: Number(res?.userCount ?? res?.user_count ?? 0)
     }))
 }
@@ -1680,8 +1701,6 @@ export function fetchGetCollaborationWorkspaceOptions(
       total: res?.total || 0
     }))
 }
-
-export const fetchGetTenantOptions = fetchGetCollaborationWorkspaceOptions
 
 /** 获取功能包详情 */
 export function fetchGetFeaturePackage(id: string) {
@@ -1943,7 +1962,7 @@ export function fetchGetFeaturePackageImpactPreview(id: string) {
     .then((res: any) => ({
       packageId: res?.package_id || res?.packageId || '',
       roleCount: Number(res?.role_count ?? res?.roleCount ?? 0),
-      collaborationWorkspaceCount: Number(res?.team_count ?? res?.collaborationWorkspaceCount ?? 0),
+      collaborationWorkspaceCount: Number(res?.collaborationWorkspaceCount ?? 0),
       userCount: Number(res?.user_count ?? res?.userCount ?? 0),
       menuCount: Number(res?.menu_count ?? res?.menuCount ?? 0),
       actionCount: Number(res?.action_count ?? res?.actionCount ?? 0)

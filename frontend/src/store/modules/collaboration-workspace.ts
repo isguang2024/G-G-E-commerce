@@ -17,13 +17,13 @@ export function hasPersonalWorkspaceAccessByUserInfo(
     const key = `${item || ''}`.trim()
     return (
       key.startsWith('system.') ||
-      key.startsWith('platform.') ||
-      key.startsWith('collaboration_workspace.')
+      key.startsWith('feature_package.') ||
+      key.startsWith('message.') ||
+      key.startsWith('personal.') ||
+      key === 'collaboration_workspace.manage'
     )
   })
 }
-
-export const hasPlatformAccessByUserInfo = hasPersonalWorkspaceAccessByUserInfo
 
 export const useCollaborationWorkspaceStore = defineStore(
   'collaborationWorkspaceStore',
@@ -32,7 +32,6 @@ export const useCollaborationWorkspaceStore = defineStore(
     const collaborationWorkspaceList = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
     const loading = ref(false)
     const hasPersonalWorkspaceAccess = ref(false)
-    const legacyCollaborationWorkspaceId = ref('')
 
     const currentContextMode = computed<WorkspaceContextMode>(() =>
       workspaceStore.currentAuthWorkspaceType === 'collaboration' ? 'collaboration' : 'personal'
@@ -48,7 +47,6 @@ export const useCollaborationWorkspaceStore = defineStore(
       return (
         matched?.collaborationWorkspaceId ||
         matched?.workspaceId ||
-        legacyCollaborationWorkspaceId.value ||
         workspaceStore.currentAuthWorkspaceId
       )
     })
@@ -68,19 +66,6 @@ export const useCollaborationWorkspaceStore = defineStore(
     const hasCollaborationWorkspaces = computed(() => collaborationWorkspaceList.value.length > 0)
     const isPersonalWorkspaceContext = computed(() => currentContextMode.value === 'personal')
     const shouldShowSwitcher = computed(() => collaborationWorkspaceList.value.length > 1)
-
-    const syncLegacyCollaborationWorkspaceId = (preferredId = '') => {
-      if (workspaceStore.currentAuthWorkspaceType !== 'collaboration') {
-        legacyCollaborationWorkspaceId.value = ''
-        return
-      }
-      const matched = collaborationWorkspaceList.value.find(
-        (item) =>
-          item.collaborationWorkspaceId === workspaceStore.currentAuthWorkspaceId ||
-          item.workspaceId === workspaceStore.currentAuthWorkspaceId
-      )
-      legacyCollaborationWorkspaceId.value = matched?.id || preferredId || ''
-    }
 
     const setCurrentCollaborationWorkspaceId = (collaborationWorkspaceId: string) => {
       if (!collaborationWorkspaceId) {
@@ -121,7 +106,6 @@ export const useCollaborationWorkspaceStore = defineStore(
     }
 
     const enterPersonalWorkspaceContext = () => {
-      legacyCollaborationWorkspaceId.value = ''
       workspaceStore.enterPersonalWorkspace()
     }
 
@@ -137,7 +121,6 @@ export const useCollaborationWorkspaceStore = defineStore(
           item.workspaceId === normalizedId ||
           item.id === normalizedId
       )
-      legacyCollaborationWorkspaceId.value = matched?.id || legacyCollaborationWorkspaceId.value
       workspaceStore.enterWorkspaceById(
         matched?.workspaceId || matched?.collaborationWorkspaceId || normalizedId,
         matched?.workspaceType || 'collaboration'
@@ -148,7 +131,6 @@ export const useCollaborationWorkspaceStore = defineStore(
       items: Api.SystemManage.CollaborationWorkspaceListItem[]
     ) => {
       collaborationWorkspaceList.value = items || []
-      syncLegacyCollaborationWorkspaceId()
     }
 
     const ensureCurrentCollaborationWorkspace = (options?: {
@@ -157,36 +139,33 @@ export const useCollaborationWorkspaceStore = defineStore(
       preferredWorkspaceId?: string
       preferredWorkspaceType?: string
       preferPersonalWorkspace?: boolean
-      preferPlatform?: boolean
     }) => {
       if (collaborationWorkspaceList.value.length === 0) {
-        legacyCollaborationWorkspaceId.value = ''
         workspaceStore.ensureCurrentWorkspace({
-          preferredWorkspaceId: options?.preferredWorkspaceId,
+          preferredWorkspaceId:
+            options?.preferredCollaborationWorkspaceId ||
+            options?.preferredLegacyCollaborationWorkspaceId ||
+            options?.preferredWorkspaceId,
           preferredWorkspaceType: options?.preferredWorkspaceType,
-          preferredCollaborationWorkspaceId: options?.preferredCollaborationWorkspaceId,
-          preferredCollaborationWorkspaceIdFromRecord:
+          preferredCollaborationWorkspaceId:
+            options?.preferredCollaborationWorkspaceId ||
             options?.preferredLegacyCollaborationWorkspaceId,
-          preferPersonal:
-            options?.preferPersonalWorkspace ??
-            options?.preferPlatform ??
-            hasPersonalWorkspaceAccess.value
+          preferPersonal: options?.preferPersonalWorkspace ?? hasPersonalWorkspaceAccess.value
         })
         return
       }
 
       workspaceStore.ensureCurrentWorkspace({
-        preferredWorkspaceId: options?.preferredWorkspaceId,
+        preferredWorkspaceId:
+          options?.preferredCollaborationWorkspaceId ||
+          options?.preferredLegacyCollaborationWorkspaceId ||
+          options?.preferredWorkspaceId,
         preferredWorkspaceType: options?.preferredWorkspaceType,
-        preferredCollaborationWorkspaceId: options?.preferredCollaborationWorkspaceId,
-        preferredCollaborationWorkspaceIdFromRecord:
+        preferredCollaborationWorkspaceId:
+          options?.preferredCollaborationWorkspaceId ||
           options?.preferredLegacyCollaborationWorkspaceId,
-        preferPersonal:
-          options?.preferPersonalWorkspace ??
-          options?.preferPlatform ??
-          hasPersonalWorkspaceAccess.value
+        preferPersonal: options?.preferPersonalWorkspace ?? hasPersonalWorkspaceAccess.value
       })
-      syncLegacyCollaborationWorkspaceId(options?.preferredLegacyCollaborationWorkspaceId || '')
     }
 
     const loadMyCollaborationWorkspaces = async (options?: {
@@ -195,27 +174,26 @@ export const useCollaborationWorkspaceStore = defineStore(
       preferredWorkspaceId?: string
       preferredWorkspaceType?: string
       preferPersonalWorkspace?: boolean
-      preferPlatform?: boolean
     }) => {
       loading.value = true
       try {
-        const [teams] = await Promise.all([
+        const [collaborationWorkspaces] = await Promise.all([
           fetchGetMyCollaborationWorkspaces(),
           workspaceStore.loadMyWorkspaces({
-            preferredWorkspaceId: options?.preferredWorkspaceId,
+            preferredWorkspaceId:
+              options?.preferredCollaborationWorkspaceId ||
+              options?.preferredLegacyCollaborationWorkspaceId ||
+              options?.preferredWorkspaceId,
             preferredWorkspaceType: options?.preferredWorkspaceType,
-            preferredCollaborationWorkspaceId: options?.preferredCollaborationWorkspaceId,
-            preferredCollaborationWorkspaceIdFromRecord:
+            preferredCollaborationWorkspaceId:
+              options?.preferredCollaborationWorkspaceId ||
               options?.preferredLegacyCollaborationWorkspaceId,
-            preferPersonal:
-              options?.preferPersonalWorkspace ??
-              options?.preferPlatform ??
-              hasPersonalWorkspaceAccess.value
+            preferPersonal: options?.preferPersonalWorkspace ?? hasPersonalWorkspaceAccess.value
           })
         ])
-        collaborationWorkspaceList.value = teams
+        collaborationWorkspaceList.value = collaborationWorkspaces
         ensureCurrentCollaborationWorkspace(options)
-        return teams
+        return collaborationWorkspaces
       } catch (error) {
         clearCollaborationWorkspaceContext()
         if (error instanceof HttpError && [400, 404, 3006].includes(error.code)) {
@@ -228,7 +206,6 @@ export const useCollaborationWorkspaceStore = defineStore(
     }
 
     const clearCollaborationWorkspaceContext = () => {
-      legacyCollaborationWorkspaceId.value = ''
       collaborationWorkspaceList.value = []
       hasPersonalWorkspaceAccess.value = false
       loading.value = false
@@ -249,10 +226,6 @@ export const useCollaborationWorkspaceStore = defineStore(
       setCurrentContextMode,
       setPersonalWorkspaceAccess,
       enterPersonalWorkspaceContext,
-      hasPlatformAccess: hasPersonalWorkspaceAccess,
-      isPlatformContext: isPersonalWorkspaceContext,
-      setPlatformAccess: setPersonalWorkspaceAccess,
-      enterPlatformContext: enterPersonalWorkspaceContext,
       enterCollaborationContext,
       setCollaborationWorkspaceList,
       ensureCurrentCollaborationWorkspace,

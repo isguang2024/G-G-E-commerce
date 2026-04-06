@@ -33,7 +33,7 @@ const fastEnterConfig: FastEnterConfig = {
     {
       id: 'user',
       name: '用户管理',
-      description: '查看平台账号、角色归属和权限诊断',
+      description: '查看空间账号、角色归属和权限诊断',
       icon: 'ri:user-settings-line',
       iconColor: '#2563eb',
       enabled: true,

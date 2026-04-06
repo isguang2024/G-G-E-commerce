@@ -51,7 +51,7 @@
           v-model="form.customParamsText"
           type="textarea"
           :rows="6"
-          placeholder='请输入 JSON 对象，例如：{"dataScope":"team","editable":true}'
+          placeholder='请输入 JSON 对象，例如：{"dataScope":"collaboration","editable":true}'
         />
       </ElFormItem>
     </ElForm>

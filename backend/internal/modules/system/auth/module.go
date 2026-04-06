@@ -34,11 +34,11 @@ func (m *AuthModule) Init() error {
 
 func (m *AuthModule) RegisterRoutes(rg *gin.RouterGroup) {
 	userRepo := user.NewUserRepository(m.db)
-	tenantMemberRepo := user.NewTenantMemberRepository(m.db)
+	collaborationWorkspaceMemberRepo := user.NewCollaborationWorkspaceMemberRepository(m.db)
 	workspaceService := workspacepkg.NewService(m.db, m.logger)
 	authService := NewAuthService(userRepo, &m.config.JWT, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
-	authHandler := NewAuthHandler(authService, authzService, tenantMemberRepo, workspaceService, m.logger)
+	authHandler := NewAuthHandler(authService, authzService, collaborationWorkspaceMemberRepo, workspaceService, m.logger)
 
 	auth := rg.Group("/auth")
 	authReg := apiregistry.NewRegistrar(auth, "auth")

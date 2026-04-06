@@ -401,7 +401,7 @@ func (UserHiddenMenu) TableName() string {
 	return "user_hidden_menus"
 }
 
-type PlatformUserAccessSnapshot struct {
+type PersonalWorkspaceAccessSnapshot struct {
 	AppKey             string              `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
 	UserID             uuid.UUID           `gorm:"type:uuid;primaryKey" json:"user_id"`
 	RoleIDs            []string            `gorm:"type:jsonb;serializer:json" json:"role_ids"`
@@ -423,11 +423,11 @@ type PlatformUserAccessSnapshot struct {
 	UpdatedAt          time.Time           `json:"updated_at"`
 }
 
-func (PlatformUserAccessSnapshot) TableName() string {
-	return "platform_user_access_snapshots"
+func (PersonalWorkspaceAccessSnapshot) TableName() string {
+	return "personal_workspace_access_snapshots"
 }
 
-type PlatformRoleAccessSnapshot struct {
+type PersonalWorkspaceRoleAccessSnapshot struct {
 	AppKey             string              `gorm:"type:varchar(100);not null;default:'platform-admin';primaryKey" json:"app_key"`
 	RoleID             uuid.UUID           `gorm:"type:uuid;primaryKey" json:"role_id"`
 	PackageIDs         []string            `gorm:"type:jsonb;serializer:json" json:"package_ids"`
@@ -445,8 +445,8 @@ type PlatformRoleAccessSnapshot struct {
 	UpdatedAt          time.Time           `json:"updated_at"`
 }
 
-func (PlatformRoleAccessSnapshot) TableName() string {
-	return "platform_role_access_snapshots"
+func (PersonalWorkspaceRoleAccessSnapshot) TableName() string {
+	return "personal_workspace_role_access_snapshots"
 }
 
 type CollaborationWorkspaceAccessSnapshot struct {
@@ -549,7 +549,7 @@ func (APIEndpointPermissionBinding) TableName() string {
 	return "api_endpoint_permission_bindings"
 }
 
-type Tenant struct {
+type CollaborationWorkspace struct {
 	ID         uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	Name       string         `gorm:"type:varchar(100);not null" json:"name"`
 	Remark     string         `gorm:"type:text" json:"remark"`
@@ -563,11 +563,11 @@ type Tenant struct {
 	DeletedAt  gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
-func (Tenant) TableName() string {
+func (CollaborationWorkspace) TableName() string {
 	return "collaboration_workspaces"
 }
 
-type TenantMember struct {
+type CollaborationWorkspaceMember struct {
 	ID                       uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	CollaborationWorkspaceID uuid.UUID      `gorm:"type:uuid;not null" json:"collaboration_workspace_id"`
 	UserID                   uuid.UUID      `gorm:"type:uuid;not null" json:"user_id"`
@@ -581,7 +581,7 @@ type TenantMember struct {
 	DeletedAt                gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
-func (TenantMember) TableName() string {
+func (CollaborationWorkspaceMember) TableName() string {
 	return "collaboration_workspace_members"
 }
 
@@ -662,7 +662,7 @@ type Message struct {
 	ID                             uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
 	MessageType                    string         `gorm:"type:varchar(20);not null;default:'notice'" json:"message_type"`
 	BizType                        string         `gorm:"type:varchar(100);not null;default:''" json:"biz_type"`
-	ScopeType                      string         `gorm:"type:varchar(20);not null;default:'platform'" json:"scope_type"`
+	ScopeType                      string         `gorm:"type:varchar(20);not null;default:'personal'" json:"scope_type"`
 	ScopeID                        *uuid.UUID     `gorm:"type:uuid;index" json:"scope_id"`
 	SenderID                       *uuid.UUID     `gorm:"type:uuid;index" json:"sender_id"`
 	SenderType                     string         `gorm:"type:varchar(30);not null;default:'system'" json:"sender_type"`
@@ -671,7 +671,7 @@ type Message struct {
 	SenderAvatarSnapshot           string         `gorm:"type:varchar(500);not null;default:''" json:"sender_avatar_snapshot"`
 	SenderServiceKey               string         `gorm:"type:varchar(100);not null;default:''" json:"sender_service_key"`
 	AudienceType                   string         `gorm:"type:varchar(30);not null;default:'specified_users'" json:"audience_type"`
-	AudienceScope                  string         `gorm:"type:varchar(20);not null;default:'platform'" json:"audience_scope"`
+	AudienceScope                  string         `gorm:"type:varchar(20);not null;default:'personal'" json:"audience_scope"`
 	TargetCollaborationWorkspaceID *uuid.UUID     `gorm:"type:uuid;index" json:"target_collaboration_workspace_id"`
 	TargetRoleCodes                []string       `gorm:"type:jsonb;serializer:json" json:"target_role_codes"`
 	TargetUserIDs                  []string       `gorm:"type:jsonb;serializer:json" json:"target_user_ids"`
@@ -724,7 +724,7 @@ type MessageTemplate struct {
 	Name                          string         `gorm:"type:varchar(150);not null" json:"name"`
 	Description                   string         `gorm:"type:text;not null;default:''" json:"description"`
 	MessageType                   string         `gorm:"type:varchar(20);not null;default:'notice'" json:"message_type"`
-	OwnerScope                    string         `gorm:"type:varchar(20);not null;default:'platform'" json:"owner_scope"`
+	OwnerScope                    string         `gorm:"type:varchar(20);not null;default:'personal'" json:"owner_scope"`
 	OwnerCollaborationWorkspaceID *uuid.UUID     `gorm:"type:uuid;index" json:"owner_collaboration_workspace_id"`
 	AudienceType                  string         `gorm:"type:varchar(30);not null;default:'specified_users'" json:"audience_type"`
 	TitleTemplate                 string         `gorm:"type:text;not null;default:''" json:"title_template"`
@@ -745,7 +745,7 @@ func (MessageTemplate) TableName() string {
 
 type MessageSender struct {
 	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	ScopeType   string         `gorm:"type:varchar(20);not null;default:'platform';index" json:"scope_type"`
+	ScopeType   string         `gorm:"type:varchar(20);not null;default:'personal';index" json:"scope_type"`
 	ScopeID     *uuid.UUID     `gorm:"type:uuid;index" json:"scope_id"`
 	Name        string         `gorm:"type:varchar(120);not null" json:"name"`
 	Description string         `gorm:"type:text;not null;default:''" json:"description"`
@@ -764,7 +764,7 @@ func (MessageSender) TableName() string {
 
 type MessageRecipientGroup struct {
 	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	ScopeType   string         `gorm:"type:varchar(20);not null;default:'platform';index" json:"scope_type"`
+	ScopeType   string         `gorm:"type:varchar(20);not null;default:'personal';index" json:"scope_type"`
 	ScopeID     *uuid.UUID     `gorm:"type:uuid;index" json:"scope_id"`
 	Name        string         `gorm:"type:varchar(120);not null" json:"name"`
 	Description string         `gorm:"type:text;not null;default:''" json:"description"`

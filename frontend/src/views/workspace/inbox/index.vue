@@ -91,7 +91,7 @@
               <span class="message-center-chip">{{ resolveSender(item) }}</span>
               <span
                 v-if="resolveCollaborationWorkspaceTag(item)"
-                class="message-center-chip is-team"
+                class="message-center-chip is-collaboration-workspace"
                 >{{ resolveCollaborationWorkspaceTag(item) }}</span
               >
               <span class="message-center-chip is-soft">{{ resolveTypeLabel(item) }}</span>
@@ -126,7 +126,7 @@
             <div class="message-center-detail__status">
               <span
                 v-if="resolveCollaborationWorkspaceTag(detail)"
-                class="message-center-chip is-team"
+                class="message-center-chip is-collaboration-workspace"
                 >{{ resolveCollaborationWorkspaceTag(detail) }}</span
               >
               <span class="message-center-chip">{{
@@ -699,7 +699,7 @@
     background: rgb(241 245 249 / 0.95);
   }
 
-  .message-center-chip.is-team {
+  .message-center-chip.is-collaboration-workspace {
     background: rgb(219 234 254 / 0.9);
     color: #1d4ed8;
   }

@@ -21,12 +21,12 @@ type Claims struct {
 }
 
 // GenerateToken 生成 Token
-func GenerateToken(secret string, userID, tenantID, email string, expiresInMinutes int) (string, error) {
+func GenerateToken(secret string, userID, collaborationWorkspaceID, email string, expiresInMinutes int) (string, error) {
 	expiresAt := time.Now().Add(time.Duration(expiresInMinutes) * time.Minute)
 
-	claims := &Claims{
+		claims := &Claims{
 		UserID:                   userID,
-		CollaborationWorkspaceID: tenantID,
+		CollaborationWorkspaceID: collaborationWorkspaceID,
 		Email:                    email,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(expiresAt),

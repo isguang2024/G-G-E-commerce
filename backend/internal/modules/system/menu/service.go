@@ -937,13 +937,13 @@ func (s *menuService) refreshAllMenuSnapshots() error {
 	if s.refresher == nil || s.db == nil {
 		return nil
 	}
-	if err := s.refresher.RefreshAllTeams(); err != nil {
+	if err := s.refresher.RefreshAllCollaborationWorkspaces(); err != nil {
 		return err
 	}
-	if err := s.refresher.RefreshAllPlatformRoles(); err != nil {
+	if err := s.refresher.RefreshAllPersonalWorkspaceRoles(); err != nil {
 		return err
 	}
-	return s.refresher.RefreshAllPlatformUsers()
+	return s.refresher.RefreshAllPersonalWorkspaceUsers()
 }
 
 type ginMenuBackupPayload struct {

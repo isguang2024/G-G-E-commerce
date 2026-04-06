@@ -1,5 +1,5 @@
-﻿<template>
-  <div class="team-more-page art-full-height">
+<template>
+  <div class="collaboration-workspace-more-page art-full-height">
     <router-view />
   </div>
 </template>

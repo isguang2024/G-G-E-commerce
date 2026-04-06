@@ -174,7 +174,7 @@ func (h *RoleHandler) Update(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
-		if err == ErrTenantRoleManagedByTeam {
+		if err == ErrCollaborationWorkspaceRoleManaged {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "协作空间自定义角色需要在协作空间上下文中维护")
 			c.JSON(status, resp)
 			return
@@ -200,7 +200,7 @@ func (h *RoleHandler) Delete(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
-		if err == ErrTenantRoleManagedByTeam {
+		if err == ErrCollaborationWorkspaceRoleManaged {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "协作空间自定义角色需要在协作空间上下文中维护")
 			c.JSON(status, resp)
 			return
@@ -238,7 +238,7 @@ func (h *RoleHandler) GetRolePackages(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
-		if err == ErrTenantRoleManagedByTeam {
+		if err == ErrCollaborationWorkspaceRoleManaged {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "协作空间自定义角色需要在协作空间上下文中维护")
 			c.JSON(status, resp)
 			return
@@ -297,7 +297,7 @@ func (h *RoleHandler) SetRolePackages(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
-		if err == ErrTenantRoleManagedByTeam {
+		if err == ErrCollaborationWorkspaceRoleManaged {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "协作空间自定义角色需要在协作空间上下文中维护")
 			c.JSON(status, resp)
 			return
@@ -330,7 +330,7 @@ func (h *RoleHandler) GetRoleMenus(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
-		if err == ErrTenantRoleManagedByTeam {
+		if err == ErrCollaborationWorkspaceRoleManaged {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "协作空间自定义角色需要在协作空间上下文中维护")
 			c.JSON(status, resp)
 			return
@@ -438,7 +438,7 @@ func (h *RoleHandler) SetRoleMenus(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
-		if err == ErrTenantRoleManagedByTeam {
+		if err == ErrCollaborationWorkspaceRoleManaged {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "协作空间自定义角色需要在协作空间上下文中维护")
 			c.JSON(status, resp)
 			return
@@ -471,7 +471,7 @@ func (h *RoleHandler) GetRoleKeys(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
-		if err == ErrTenantRoleManagedByTeam {
+		if err == ErrCollaborationWorkspaceRoleManaged {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "协作空间自定义角色需要在协作空间上下文中维护")
 			c.JSON(status, resp)
 			return
@@ -542,12 +542,12 @@ func (h *RoleHandler) SetRoleKeys(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
-		if err == ErrTenantRoleManagedByTeam {
+		if err == ErrCollaborationWorkspaceRoleManaged {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "协作空间自定义角色需要在协作空间上下文中维护")
 			c.JSON(status, resp)
 			return
 		}
-		if err == ErrTeamRoleKeyReadonly {
+		if err == ErrCollaborationWorkspaceRoleKeyReadonly {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "协作空间角色功能权限由协作空间能力边界控制，不支持在系统角色页直接修改")
 			c.JSON(status, resp)
 			return
@@ -639,7 +639,7 @@ func (h *RoleHandler) SetRoleDataPermissions(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
-		if err == ErrTenantRoleManagedByTeam {
+		if err == ErrCollaborationWorkspaceRoleManaged {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "协作空间自定义角色需要在协作空间上下文中维护")
 			c.JSON(status, resp)
 			return
@@ -660,10 +660,10 @@ func formatRoleDataResourceName(resourceCode string) string {
 		"menu":                                 "菜单",
 		"menu_backup":                          "菜单备份",
 		"permission_key":                       "功能权限",
-		"tenant":                               "协作空间",
+		"collaboration_workspace":              "协作空间",
 		"collaboration_workspace_member_admin": "协作空间成员（系统）",
-		"team":                                 "当前协作空间",
-		"collaboration_workspace_member":                          "当前协作空间成员",
+		"collaboration":                        "当前协作空间",
+		"collaboration_workspace_member":       "当前协作空间成员",
 		"api_endpoint":                         "API 注册表",
 		"system":                               "系统",
 	}

@@ -29,7 +29,7 @@
         :metrics="[
           { label: '当前 App', value: targetAppKey },
           { label: '当前页功能包数', value: data.length },
-          { label: '个人空间功能包', value: platformPackageCount },
+          { label: '个人空间功能包', value: personalPackageCount },
           { label: '协作空间功能包', value: collaborationPackageCount },
           { label: '双上下文功能包', value: sharedPackageCount },
           {
@@ -59,11 +59,11 @@
               :value="item.value"
             />
           </ElSelect>
-          <ElButton v-action="'platform.package.manage'" @click="openRelationDialog" v-ripple>
+          <ElButton v-action="'feature_package.manage'" @click="openRelationDialog" v-ripple>
             包关系树
           </ElButton>
           <ElButton
-            v-action="'platform.package.manage'"
+            v-action="'feature_package.manage'"
             type="primary"
             @click="openDialog('add')"
             v-ripple
@@ -134,7 +134,7 @@
     />
 
     <FeaturePackageCollaborationWorkspacesDialog
-      v-model="teamsDialogVisible"
+      v-model="collaborationWorkspacesDialogVisible"
       :package-id="currentPackage.id || ''"
       :package-name="currentPackage.name || ''"
       :context-type="currentPackage.contextType || 'collaboration'"
@@ -196,7 +196,7 @@
                 size="small"
                 effect="plain"
                 :type="
-                  node.contextType === 'platform'
+                  node.contextType === 'personal'
                     ? 'warning'
                     : node.contextType === 'collaboration'
                       ? 'primary'
@@ -204,8 +204,8 @@
                 "
               >
                 {{
-                  node.contextType === 'platform'
-                    ? '平台'
+                  node.contextType === 'personal'
+                    ? '个人空间'
                     : node.contextType === 'collaboration'
                       ? '协作空间'
                       : '通用'
@@ -243,7 +243,7 @@
   import FeaturePackageBundlesDialog from './modules/feature-package-bundles-dialog.vue'
   import FeaturePackageActionsDialog from './modules/feature-package-actions-dialog.vue'
   import FeaturePackageMenusDialog from './modules/feature-package-menus-dialog.vue'
-  import FeaturePackageCollaborationWorkspacesDialog from './modules/feature-package-teams-dialog.vue'
+  import FeaturePackageCollaborationWorkspacesDialog from './modules/feature-package-collaboration-workspaces-dialog.vue'
 
   defineOptions({ name: 'FeaturePackage' })
 
@@ -266,7 +266,7 @@
   const bundlesDialogVisible = ref(false)
   const actionsDialogVisible = ref(false)
   const menusDialogVisible = ref(false)
-  const teamsDialogVisible = ref(false)
+  const collaborationWorkspacesDialogVisible = ref(false)
   const dialogType = ref<'add' | 'edit'>('add')
   const relationDialogVisible = ref(false)
   const relationLoading = ref(false)
@@ -278,11 +278,12 @@
   })
   const currentPackage = ref<Partial<PackageItem>>({})
   const routeOpenSignature = ref('')
-  const platformPackageCount = computed(
-    () => data.value.filter((item) => supportsPlatform(item.contextType)).length
+  const personalPackageCount = computed(
+    () => data.value.filter((item) => supportsPersonalWorkspaceContext(item.contextType)).length
   )
   const collaborationPackageCount = computed(
-    () => data.value.filter((item) => supportsTeam(item.contextType)).length
+    () =>
+      data.value.filter((item) => supportsCollaborationWorkspaceContext(item.contextType)).length
   )
   const sharedPackageCount = computed(
     () => data.value.filter((item) => item.contextType === 'common').length
@@ -319,7 +320,7 @@
 
   const contextTypeOptions = [
     { label: '全部上下文', value: '' },
-    { label: '个人空间功能包', value: 'platform' },
+    { label: '个人空间功能包', value: 'personal' },
     { label: '协作空间功能包', value: 'collaboration' },
     { label: '通用功能包', value: 'common' }
   ]
@@ -411,7 +412,7 @@
               ElTag,
               {
                 type:
-                  row.contextType === 'platform'
+                  row.contextType === 'personal'
                     ? 'success'
                     : row.contextType === 'collaboration'
                       ? 'info'
@@ -476,26 +477,26 @@
                       key: 'bundles',
                       label: '配置基础包',
                       icon: 'ri:stack-line',
-                      auth: 'platform.package.manage'
+                      auth: 'feature_package.manage'
                     },
                     {
-                      key: 'teams',
+                      key: 'collaborationWorkspaces',
                       label: '开通协作空间',
-                      icon: 'ri:team-line',
-                      auth: 'platform.package.assign',
-                      disabled: !supportsTeam(row.contextType)
+                      icon: 'ri:group-line',
+                      auth: 'feature_package.assign_collaboration_workspace',
+                      disabled: !supportsCollaborationWorkspaceContext(row.contextType)
                     },
                     {
                       key: 'edit',
                       label: '编辑',
                       icon: 'ri:edit-2-line',
-                      auth: 'platform.package.manage'
+                      auth: 'feature_package.manage'
                     },
                     {
                       key: 'delete',
                       label: '删除',
                       icon: 'ri:delete-bin-4-line',
-                      auth: 'platform.package.manage'
+                      auth: 'feature_package.manage'
                     }
                   ]
                 : [
@@ -503,32 +504,32 @@
                       key: 'actions',
                       label: '配置功能范围',
                       icon: 'ri:key-2-line',
-                      auth: 'platform.package.manage'
+                      auth: 'feature_package.manage'
                     },
                     {
                       key: 'menus',
                       label: '绑定菜单',
                       icon: 'ri:menu-line',
-                      auth: 'platform.package.manage'
+                      auth: 'feature_package.manage'
                     },
                     {
-                      key: 'teams',
+                      key: 'collaborationWorkspaces',
                       label: '开通协作空间',
-                      icon: 'ri:team-line',
-                      auth: 'platform.package.assign',
-                      disabled: !supportsTeam(row.contextType)
+                      icon: 'ri:group-line',
+                      auth: 'feature_package.assign_collaboration_workspace',
+                      disabled: !supportsCollaborationWorkspaceContext(row.contextType)
                     },
                     {
                       key: 'edit',
                       label: '编辑',
                       icon: 'ri:edit-2-line',
-                      auth: 'platform.package.manage'
+                      auth: 'feature_package.manage'
                     },
                     {
                       key: 'delete',
                       label: '删除',
                       icon: 'ri:delete-bin-4-line',
-                      auth: 'platform.package.manage'
+                      auth: 'feature_package.manage'
                     }
                   ]
             return h(ArtButtonMore, {
@@ -664,8 +665,8 @@
       menusDialogVisible.value = true
       return
     }
-    if (openMode === 'teams') {
-      teamsDialogVisible.value = true
+    if (openMode === 'collaborationWorkspaces') {
+      collaborationWorkspacesDialogVisible.value = true
       return
     }
     if (openMode === 'edit') {
@@ -701,9 +702,9 @@
       menusDialogVisible.value = true
       return
     }
-    if (command === 'teams') {
+    if (command === 'collaborationWorkspaces') {
       currentPackage.value = { ...row }
-      teamsDialogVisible.value = true
+      collaborationWorkspacesDialogVisible.value = true
       return
     }
     if (command === 'edit') {
@@ -761,16 +762,16 @@
     })
   })
 
-  function supportsPlatform(contextType?: string) {
-    return contextType === 'platform' || contextType === 'common'
+  function supportsPersonalWorkspaceContext(contextType?: string) {
+    return contextType === 'personal' || contextType === 'common'
   }
 
-  function supportsTeam(contextType?: string) {
+  function supportsCollaborationWorkspaceContext(contextType?: string) {
     return contextType === 'collaboration' || contextType === 'common'
   }
 
   function formatContextType(contextType?: string) {
-    if (contextType === 'platform') return '个人空间'
+    if (contextType === 'personal') return '个人空间'
     if (contextType === 'collaboration') return '协作空间'
     if (contextType === 'common') return '通用'
     return contextType || '-'

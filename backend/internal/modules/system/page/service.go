@@ -173,9 +173,9 @@ type AccessTraceResult struct {
 type Service interface {
 	List(req *ListRequest) ([]Record, int64, error)
 	ListOptions(appKey, spaceKey string) ([]models.UIPage, error)
-	ListRuntime(appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error)
-	ListRuntimePublic(appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error)
-	ResolveCompiledAccessContext(appKey, spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*CompiledAccessContext, error)
+	ListRuntime(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error)
+	ListRuntimePublic(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error)
+	ResolveCompiledAccessContext(appKey, spaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*CompiledAccessContext, error)
 	GetAccessTrace(appKey string, req *AccessTraceRequest) (*AccessTraceResult, error)
 	ListRuntimeWithAccess(appKey, spaceKey string, accessCtx *CompiledAccessContext) ([]Record, error)
 	ListUnregistered(appKey string) ([]UnregisteredRecord, error)
@@ -319,16 +319,16 @@ func (s *service) ListOptions(appKey, spaceKey string) ([]models.UIPage, error) 
 	return result, nil
 }
 
-func (s *service) ListRuntime(appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error) {
-	return s.loadRuntimeRecords(normalizeAppKey(appKey), host, requestedSpaceKey, userID, tenantID)
+func (s *service) ListRuntime(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error) {
+	return s.loadRuntimeRecords(normalizeAppKey(appKey), host, requestedSpaceKey, userID, collaborationWorkspaceID)
 }
 
-func (s *service) ListRuntimePublic(appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error) {
-	return s.loadPublicRuntimeRecords(normalizeAppKey(appKey), host, requestedSpaceKey, userID, tenantID)
+func (s *service) ListRuntimePublic(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error) {
+	return s.loadPublicRuntimeRecords(normalizeAppKey(appKey), host, requestedSpaceKey, userID, collaborationWorkspaceID)
 }
 
-func (s *service) ResolveCompiledAccessContext(appKey, spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*CompiledAccessContext, error) {
-	return s.buildCompiledAccessContextForSpace(normalizeAppKey(appKey), spaceKey, userID, tenantID)
+func (s *service) ResolveCompiledAccessContext(appKey, spaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*CompiledAccessContext, error) {
+	return s.buildCompiledAccessContextForSpace(normalizeAppKey(appKey), spaceKey, userID, collaborationWorkspaceID)
 }
 
 func (s *service) GetAccessTrace(appKey string, req *AccessTraceRequest) (*AccessTraceResult, error) {
@@ -344,13 +344,13 @@ func (s *service) GetAccessTrace(appKey string, req *AccessTraceRequest) (*Acces
 	if err != nil {
 		return nil, fmt.Errorf("%w: user_id is invalid", ErrPageValidation)
 	}
-	var tenantID *uuid.UUID
+	var collaborationWorkspaceID *uuid.UUID
 	if rawCollaborationWorkspaceID := strings.TrimSpace(req.CollaborationWorkspaceID); rawCollaborationWorkspaceID != "" {
 		parsed, parseErr := uuid.Parse(rawCollaborationWorkspaceID)
 		if parseErr != nil {
 			return nil, fmt.Errorf("%w: collaboration_workspace_id is invalid", ErrPageValidation)
 		}
-		tenantID = &parsed
+		collaborationWorkspaceID = &parsed
 	}
 	spaceKey := normalizeSpaceKey(req.SpaceKey)
 	if spaceKey == "" {
@@ -363,7 +363,7 @@ func (s *service) GetAccessTrace(appKey string, req *AccessTraceRequest) (*Acces
 			spaceKey = spaceutil.DefaultMenuSpaceKey
 		}
 	}
-	accessCtx, err := s.ResolveCompiledAccessContext(appKey, spaceKey, &userID, tenantID)
+	accessCtx, err := s.ResolveCompiledAccessContext(appKey, spaceKey, &userID, collaborationWorkspaceID)
 	if err != nil {
 		return nil, err
 	}
@@ -386,7 +386,7 @@ func (s *service) GetAccessTrace(appKey string, req *AccessTraceRequest) (*Acces
 		pageItems = append(pageItems, buildAccessTracePageItem(page, visiblePages, accessCtx))
 	}
 
-	roleItems, err := s.loadAccessTraceRoles(userID, tenantID)
+	roleItems, err := s.loadAccessTraceRoles(userID, collaborationWorkspaceID)
 	if err != nil {
 		return nil, err
 	}
@@ -409,8 +409,8 @@ func (s *service) GetAccessTrace(appKey string, req *AccessTraceRequest) (*Acces
 		Roles:          roleItems,
 		Pages:          pageItems,
 	}
-	if tenantID != nil {
-		result.CollaborationWorkspaceID = tenantID.String()
+	if collaborationWorkspaceID != nil {
+		result.CollaborationWorkspaceID = collaborationWorkspaceID.String()
 	}
 	return result, nil
 }
@@ -495,10 +495,10 @@ func buildAccessTraceChain(page *models.UIPage) []string {
 	return chain
 }
 
-func (s *service) loadAccessTraceRoles(userID uuid.UUID, tenantID *uuid.UUID) ([]AccessTraceRoleItem, error) {
+func (s *service) loadAccessTraceRoles(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]AccessTraceRoleItem, error) {
 	roles := make([]models.Role, 0)
-	if tenantID != nil {
-		effective, err := s.loadRuntimeEffectiveActiveRoles(userID, *tenantID)
+	if collaborationWorkspaceID != nil {
+		effective, err := s.loadRuntimeEffectiveActiveRoles(userID, *collaborationWorkspaceID)
 		if err != nil {
 			return nil, err
 		}

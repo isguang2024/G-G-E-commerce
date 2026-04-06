@@ -1,7 +1,7 @@
 ﻿<template>
   <ElDrawer
     v-model="visible"
-    :title="`协作空间功能包 - ${collaborationWorkspaceName}`"
+    :title="`协作空间角色功能包 - ${roleTitle}`"
     size="1280px"
     destroy-on-close
     class="business-dialog config-drawer"
@@ -9,14 +9,23 @@
   >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        协作空间功能包由平台统一开通。保存后会同步刷新该协作空间的功能权限边界和菜单边界。
+        {{
+          props.roleData?.isGlobal
+            ? '基础协作空间角色默认继承当前协作空间已开通的功能包，这里展示完整功能包列表和继承结果。'
+            : '角色功能包是当前协作空间角色的主配置入口。后续菜单权限和角色权限都会在这里已绑定的功能包范围内继续配置。'
+        }}
       </div>
 
       <div class="summary-card">
-        <ElTag type="primary" effect="light" round>协作空间 {{ collaborationWorkspaceName }}</ElTag>
-        <ElTag type="info" effect="light" round>已开通 {{ selectedPackageIds.length }}</ElTag>
+        <ElTag type="primary" effect="light" round>角色 {{ roleTitle }}</ElTag>
+        <ElTag type="info" effect="light" round>
+          {{ props.roleData?.isGlobal ? '基础角色' : '协作空间自定义' }}
+        </ElTag>
+        <ElTag type="info" effect="light" round>
+          {{ inherited ? '继承协作空间功能包' : '角色独立功能包' }}
+        </ElTag>
+        <ElTag type="info" effect="light" round>已选 {{ selectedPackageIds.length }}</ElTag>
         <ElTag type="info" effect="light" round>当前筛选 {{ filteredPackages.length }}</ElTag>
-        <ElTag type="info" effect="light" round>全部 {{ packages.length }}</ElTag>
       </div>
 
       <div class="toolbar-row">
@@ -28,7 +37,7 @@
         />
         <ElSelect v-model="contextFilter" class="toolbar-select">
           <ElOption label="全部上下文" value="" />
-          <ElOption label="平台" value="platform" />
+          <ElOption label="个人空间" value="personal" />
           <ElOption label="协作空间" value="collaboration" />
           <ElOption label="通用" value="common" />
         </ElSelect>
@@ -60,6 +69,7 @@
           <template #default="{ row }">
             <ElCheckbox
               :model-value="selectedPackageIds.includes(row.id)"
+              :disabled="Boolean(props.roleData?.isGlobal)"
               @change="toggleSelection(row.id, $event)"
             />
           </template>
@@ -99,7 +109,14 @@
 
     <template #footer>
       <ElButton @click="visible = false">取消</ElButton>
-      <ElButton type="primary" :loading="saving" @click="handleSave"> 保存 </ElButton>
+      <ElButton
+        v-if="!props.roleData?.isGlobal"
+        type="primary"
+        :loading="saving"
+        @click="handleSave"
+      >
+        保存
+      </ElButton>
     </template>
   </ElDrawer>
 </template>
@@ -110,24 +127,18 @@
   import FeaturePackageGrantPreview from '@/components/business/permission/FeaturePackageGrantPreview.vue'
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import {
-    fetchGetFeaturePackageOptions,
-    fetchGetCollaborationWorkspaceFeaturePackages,
-    fetchSetCollaborationWorkspaceFeaturePackages
-  } from '@/api/system-manage'
+    fetchGetMyCollaborationWorkspaceBoundaryPackages,
+    fetchGetMyCollaborationWorkspaceBoundaryRolePackages,
+    fetchSetMyCollaborationWorkspaceBoundaryRolePackages
+  } from '@/api/collaboration-workspace'
 
   interface Props {
     modelValue: boolean
-    collaborationWorkspaceId: string
-    collaborationWorkspaceName: string
+    roleData?: Api.SystemManage.RoleListItem
     appKey?: string
   }
 
-  const props = withDefaults(defineProps<Props>(), {
-    modelValue: false,
-    collaborationWorkspaceId: '',
-    collaborationWorkspaceName: ''
-  })
-
+  const props = defineProps<Props>()
   const emit = defineEmits<{
     (e: 'update:modelValue', value: boolean): void
     (e: 'success'): void
@@ -144,14 +155,15 @@
   const contextFilter = ref('')
   const selectionFilter = ref<'all' | 'selected' | 'unselected'>('selected')
   const statusFilter = ref('normal')
+  const inherited = ref(false)
   const packages = ref<Api.SystemManage.FeaturePackageItem[]>([])
   const selectedPackageIds = ref<string[]>([])
   const pagination = ref({
     current: 1,
     size: 10
   })
+  const roleTitle = computed(() => props.roleData?.roleName || '')
   const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
-  const collaborationWorkspaceName = computed(() => props.collaborationWorkspaceName || '')
 
   const filteredPackages = computed(() => {
     const currentKeyword = keyword.value.trim().toLowerCase()
@@ -198,7 +210,7 @@
   )
 
   async function loadData() {
-    if (!props.collaborationWorkspaceId || !currentAppKey.value) {
+    if (!props.roleData?.roleId || !currentAppKey.value) {
       if (!currentAppKey.value) {
         ElMessage.warning('缺少 app 上下文')
       }
@@ -207,25 +219,22 @@
     loading.value = true
     resetFilters()
     try {
-      const [listRes, collaborationWorkspaceRes] = await Promise.all([
-        fetchGetFeaturePackageOptions({
-          contextType: 'collaboration',
-          status: 'normal',
-          appKey: currentAppKey.value
-        }),
-        fetchGetCollaborationWorkspaceFeaturePackages(
-          props.collaborationWorkspaceId,
+      const [listRes, roleRes] = await Promise.all([
+        fetchGetMyCollaborationWorkspaceBoundaryPackages(currentAppKey.value),
+        fetchGetMyCollaborationWorkspaceBoundaryRolePackages(
+          props.roleData.roleId,
           currentAppKey.value
         )
       ])
-      packages.value = listRes?.records || []
-      selectedPackageIds.value = [...(collaborationWorkspaceRes?.package_ids || [])]
+      packages.value = listRes?.packages || []
+      selectedPackageIds.value = [...(roleRes?.package_ids || [])]
+      inherited.value = Boolean(roleRes?.inherited)
       pagination.value.current = 1
       if (!selectedPackageIds.value.length) {
         selectionFilter.value = 'all'
       }
     } catch (error: any) {
-      ElMessage.error(error?.message || '加载协作空间功能包失败')
+      ElMessage.error(error?.message || '加载协作空间角色功能包失败')
     } finally {
       loading.value = false
     }
@@ -275,8 +284,12 @@
     return 'danger'
   }
 
+  watch([keyword, contextFilter, selectionFilter, statusFilter], () => {
+    pagination.value.current = 1
+  })
+
   async function handleSave() {
-    if (!props.collaborationWorkspaceId || !currentAppKey.value) {
+    if (!props.roleData?.roleId || !currentAppKey.value) {
       if (!currentAppKey.value) {
         ElMessage.warning('缺少 app 上下文')
       }
@@ -284,27 +297,19 @@
     }
     saving.value = true
     try {
-      const stats = await fetchSetCollaborationWorkspaceFeaturePackages(
-        props.collaborationWorkspaceId,
+      await fetchSetMyCollaborationWorkspaceBoundaryRolePackages(
+        props.roleData.roleId,
         selectedPackageIds.value,
         currentAppKey.value
       )
-      ElMessage.success(formatRefreshMessage(stats))
+      ElMessage.success('协作空间角色功能包已保存')
       emit('success')
       visible.value = false
     } catch (error: any) {
-      ElMessage.error(error?.message || '保存协作空间功能包失败')
+      ElMessage.error(error?.message || '保存协作空间角色功能包失败')
     } finally {
       saving.value = false
     }
-  }
-
-  watch([keyword, contextFilter, selectionFilter, statusFilter], () => {
-    pagination.value.current = 1
-  })
-
-  function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
-    return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.collaborationWorkspaceCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 </script>
 

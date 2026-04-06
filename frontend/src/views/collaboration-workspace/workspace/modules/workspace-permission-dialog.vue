@@ -1,10 +1,10 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="visible"
     :title="`协作空间边界 - ${props.collaborationWorkspaceName}`"
     size="960px"
     destroy-on-close
-    class="team-permission-dialog config-drawer"
+    class="collaboration-workspace-permission-dialog config-drawer"
     direction="rtl"
   >
     <div class="dialog-shell" v-loading="loading">

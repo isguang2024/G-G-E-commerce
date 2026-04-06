@@ -87,7 +87,7 @@
                 <span>首页 {{ item.defaultHomePath || '-' }}</span>
                 <span>菜单 {{ item.menuCount || 0 }}</span>
                 <span>独立页暴露 {{ item.pageCount || 0 }}</span>
-                <span>准入 {{ getAccessModeLabel(item.accessMode) }}</span>
+                <span>空间权限 {{ getAccessModeLabel(item.accessMode) }}</span>
                 <span>Host {{ item.hostCount || 0 }}</span>
               </div>
               <p class="menu-space-item__desc">
@@ -241,7 +241,7 @@
           <ElInput
             v-model="spaceForm.space_key"
             :disabled="spaceForm.is_default"
-            placeholder="例如 default / platform / crm"
+            placeholder="例如 default / personal / crm"
           />
         </ElFormItem>
         <ElFormItem label="默认首页">
@@ -268,18 +268,18 @@
             placeholder="说明这个菜单空间承载什么菜单树、默认入口与 Host 边界"
           />
         </ElFormItem>
-        <ElFormItem label="空间准入">
+        <ElFormItem label="空间权限">
           <ElSelect v-model="spaceForm.access_mode" style="width: 100%">
             <ElOption label="全部可进" value="all" />
-            <ElOption label="仅平台管理员" value="platform_admin" />
+            <ElOption label="仅个人空间管理员" value="personal_workspace_admin" />
             <ElOption label="仅协作空间管理员" value="collaboration_workspace_admin" />
-            <ElOption label="指定角色码" value="role_codes" />
+            <ElOption label="指定空间角色码" value="role_codes" />
           </ElSelect>
           <div class="field-hint"
             >先决定谁有资格进入这个菜单空间，进入后菜单入口与受管页面都统一复用后端访问编译结果。</div
           >
         </ElFormItem>
-        <ElFormItem v-if="spaceForm.access_mode === 'role_codes'" label="允许角色码">
+        <ElFormItem v-if="spaceForm.access_mode === 'role_codes'" label="允许空间角色码">
           <ElInput
             v-model="allowedRoleCodesText"
             type="textarea"
@@ -377,7 +377,7 @@
             v-model="hostForm.description"
             type="textarea"
             :rows="3"
-            placeholder="例如 平台治理入口 / 协作空间工作区入口"
+            placeholder="例如 个人空间治理入口 / 协作空间工作区入口"
           />
         </ElFormItem>
         <ElFormItem label="主绑定">
@@ -625,12 +625,12 @@
 
   function getAccessModeLabel(value?: string) {
     switch (`${value || 'all'}`.trim()) {
-      case 'platform_admin':
-        return '仅平台管理员'
+      case 'personal_workspace_admin':
+        return '仅个人空间管理员'
       case 'collaboration_workspace_admin':
         return '仅协作空间管理员'
       case 'role_codes':
-        return '指定角色码'
+        return '指定空间角色码'
       default:
         return '全部可进'
     }
@@ -642,7 +642,7 @@
       return getAccessModeLabel(item.accessMode)
     }
     const codes = item.allowedRoleCodes || []
-    return codes.length ? `指定角色码 · ${codes.join(' / ')}` : '指定角色码'
+    return codes.length ? `指定空间角色码 · ${codes.join(' / ')}` : '指定空间角色码'
   }
 
   function getHostAuthModeLabel(value?: string) {

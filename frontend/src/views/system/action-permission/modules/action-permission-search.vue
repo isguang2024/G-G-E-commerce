@@ -88,8 +88,8 @@
         clearable: true,
         placeholder: '请选择上下文',
         options: [
-          { label: '平台', value: 'platform' },
-          { label: '协作空间', value: 'team' },
+          { label: '个人空间', value: 'personal' },
+          { label: '协作空间', value: 'collaboration' },
           { label: '通用', value: 'common' }
         ]
       }

@@ -115,16 +115,8 @@ func ListCollaborationWorkspaceIDsByPackageIDs(db *gorm.DB, packageIDs []uuid.UU
 	return collaborationWorkspaceIDs, nil
 }
 
-func ListTeamPackageIDsByTenantID(db *gorm.DB, tenantID uuid.UUID, appKey string) ([]uuid.UUID, error) {
-	return ListCollaborationWorkspacePackageIDsByCollaborationWorkspaceID(db, tenantID, appKey)
-}
-
-func ListTeamPackageIDsByCollaborationWorkspaceID(db *gorm.DB, collaborationWorkspaceID uuid.UUID, appKey string) ([]uuid.UUID, error) {
+func ListPackageIDsByCollaborationWorkspaceID(db *gorm.DB, collaborationWorkspaceID uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	return ListCollaborationWorkspacePackageIDsByCollaborationWorkspaceID(db, collaborationWorkspaceID, appKey)
-}
-
-func ListTeamIDsByPackageIDs(db *gorm.DB, packageIDs []uuid.UUID, appKey string) ([]uuid.UUID, error) {
-	return ListCollaborationWorkspaceIDsByPackageIDs(db, packageIDs, appKey)
 }
 
 func listPackageIDsByWorkspaceID(db *gorm.DB, workspaceID uuid.UUID, appKey string) ([]uuid.UUID, error) {

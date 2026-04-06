@@ -42,7 +42,7 @@
             <ElTag
               effect="plain"
               :type="
-                row.contextType === 'platform'
+                row.contextType === 'personal'
                   ? 'success'
                   : row.contextType === 'collaboration'
                     ? 'info'
@@ -92,7 +92,7 @@
     packageId: string
     packageName: string
     appKey?: string
-    contextType?: 'platform' | 'collaboration' | 'common' | string
+    contextType?: 'personal' | 'collaboration' | 'common' | string
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -219,20 +219,20 @@
   }
 
   function supportsChildPackage(bundleContextType: string, childContextType: string) {
-    if (bundleContextType === 'platform') {
-      return childContextType === 'platform' || childContextType === 'common'
+    if (bundleContextType === 'personal') {
+      return childContextType === 'personal' || childContextType === 'common'
     }
     if (bundleContextType === 'collaboration') {
       return childContextType === 'collaboration' || childContextType === 'common'
     }
     if (bundleContextType === 'common') {
-      return ['platform', 'team', 'common'].includes(childContextType)
+      return ['personal', 'collaboration', 'common'].includes(childContextType)
     }
     return false
   }
 
   function formatContextType(contextType?: string) {
-    if (contextType === 'platform') return '平台'
+    if (contextType === 'personal') return '个人空间'
     if (contextType === 'collaboration') return '协作空间'
     if (contextType === 'common') return '通用'
     return contextType || '-'

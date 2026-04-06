@@ -158,7 +158,7 @@ func (s *service) calculateSnapshot(userID uuid.UUID, appKey string) (*Snapshot,
 }
 
 func (s *service) loadSnapshot(userID uuid.UUID, appKey string) (*Snapshot, error) {
-	var record models.PlatformUserAccessSnapshot
+	var record models.PersonalWorkspaceAccessSnapshot
 	if err := s.db.Where("app_key = ? AND user_id = ?", appctx.NormalizeAppKey(appKey), userID).First(&record).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
@@ -184,7 +184,7 @@ func (s *service) loadSnapshot(userID uuid.UUID, appKey string) (*Snapshot, erro
 }
 
 func (s *service) saveSnapshot(userID uuid.UUID, appKey string, snapshot *Snapshot) error {
-	record := models.PlatformUserAccessSnapshot{
+	record := models.PersonalWorkspaceAccessSnapshot{
 		AppKey:             appctx.NormalizeAppKey(appKey),
 		UserID:             userID,
 		RoleIDs:            idsToUUIDStrings(snapshot.RoleIDs),
@@ -765,10 +765,10 @@ func contextAllowsPackage(targetContext, packageContext string) bool {
 		return true
 	}
 	switch targetContext {
-	case "platform":
-		return packageContext == "platform" || packageContext == "common"
-	case "team":
-		return packageContext == "team" || packageContext == "common"
+	case "personal":
+		return packageContext == "personal" || packageContext == "common"
+	case "collaboration":
+		return packageContext == "collaboration" || packageContext == "common"
 	default:
 		return false
 	}

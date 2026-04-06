@@ -12,9 +12,9 @@ import (
 func TestMenuToRuntimeMapPreservesFalseIsEnable(t *testing.T) {
 	node := menuToRuntimeMap(&user.Menu{
 		ID:        uuid.New(),
-		Path:      "team",
+		Path:      "collaboration",
 		Name:      "TeamManage",
-		Component: "/collaboration/workspaces",
+		Component: "/collaboration-workspace/workspaces",
 		Title:     "所有协作空间",
 		Meta: map[string]interface{}{
 			"isEnable": false,

@@ -257,8 +257,8 @@ func replaceGlobalUserRoles(tx *gorm.DB, userID uuid.UUID, roleIDs []uuid.UUID) 
 }
 
 type PermissionService interface {
-	GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
-	GetUserMenuIDsInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string) ([]uuid.UUID, error)
+	GetUserMenuIDs(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]uuid.UUID, error)
+	GetUserMenuIDsInApp(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, appKey string) ([]uuid.UUID, error)
 }
 
 type permissionService struct {
@@ -309,11 +309,11 @@ func NewPermissionService(
 	}
 }
 
-func (s *permissionService) GetUserMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {
-	return s.GetUserMenuIDsInApp(userID, tenantID, models.DefaultAppKey)
+func (s *permissionService) GetUserMenuIDs(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]uuid.UUID, error) {
+	return s.GetUserMenuIDsInApp(userID, collaborationWorkspaceID, models.DefaultAppKey)
 }
 
-func (s *permissionService) GetUserMenuIDsInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string) ([]uuid.UUID, error) {
+func (s *permissionService) GetUserMenuIDsInApp(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	user, err := s.userRepo.GetByID(userID)
 	if err != nil {
 		return nil, err
@@ -322,8 +322,8 @@ func (s *permissionService) GetUserMenuIDsInApp(userID uuid.UUID, tenantID *uuid
 	if user.Status != "active" {
 		return []uuid.UUID{}, nil
 	}
-	if tenantID != nil {
-		return s.getTeamUserMenuIDs(userID, *tenantID, appKey)
+	if collaborationWorkspaceID != nil {
+		return s.getCollaborationWorkspaceUserMenuIDs(userID, *collaborationWorkspaceID, appKey)
 	}
 	return s.getPlatformUserMenuIDs(userID, appKey)
 }
@@ -339,8 +339,8 @@ func (s *permissionService) getPlatformUserMenuIDs(userID uuid.UUID, appKey stri
 	return s.finalizeMenuIDs(nil, appKey)
 }
 
-func (s *permissionService) getTeamUserMenuIDs(userID, teamID uuid.UUID, appKey string) ([]uuid.UUID, error) {
-	roleIDs, err := s.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndTenant(userID, &teamID)
+func (s *permissionService) getCollaborationWorkspaceUserMenuIDs(userID, collaborationWorkspaceID uuid.UUID, appKey string) ([]uuid.UUID, error) {
+	roleIDs, err := s.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndCollaborationWorkspace(userID, &collaborationWorkspaceID)
 	if err != nil {
 		return nil, err
 	}
@@ -361,7 +361,7 @@ func (s *permissionService) getTeamUserMenuIDs(userID, teamID uuid.UUID, appKey 
 		if !ok {
 			continue
 		}
-		snapshot, snapshotErr := s.boundaryService.GetRoleSnapshot(teamID, roleID, role.CollaborationWorkspaceID == nil, appctx.NormalizeAppKey(appKey))
+		snapshot, snapshotErr := s.boundaryService.GetRoleSnapshot(collaborationWorkspaceID, roleID, role.CollaborationWorkspaceID == nil, appctx.NormalizeAppKey(appKey))
 		if snapshotErr != nil {
 			return nil, snapshotErr
 		}

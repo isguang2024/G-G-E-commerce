@@ -21,7 +21,10 @@
 
       <ElCheckboxGroup v-model="selectedRoleIds" class="flex flex-col gap-2">
         <div v-for="role in allRoles" :key="role.roleId" class="role-item">
-          <ElCheckbox :value="role.roleId" :disabled="isTeamAdminRole(role.roleCode)">
+          <ElCheckbox
+            :value="role.roleId"
+            :disabled="isCollaborationWorkspaceAdminRole(role.roleCode)"
+          >
             <div class="flex items-center gap-2">
               <span class="font-medium">{{ role.roleName }}</span>
               <ElTag :type="role.isGlobal ? 'info' : 'success'" size="small">
@@ -67,7 +70,7 @@
   const globalRoleCount = computed(() => allRoles.value.filter((role) => role.isGlobal).length)
   const customRoleCount = computed(() => allRoles.value.filter((role) => !role.isGlobal).length)
 
-  function isTeamAdminRole(roleCode: string): boolean {
+  function isCollaborationWorkspaceAdminRole(roleCode: string): boolean {
     // 如果成员已经是协作空间管理员，则禁用 collaboration_workspace_admin 角色的选择
     // 协作空间管理员角色不能被移除
     return (

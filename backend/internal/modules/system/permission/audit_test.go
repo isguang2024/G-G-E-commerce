@@ -44,7 +44,7 @@ func TestBuildPermissionAuditProfileForMultiConsumerKey(t *testing.T) {
 func TestBuildPermissionDuplicateProfilesForCrossContextMirror(t *testing.T) {
 	profiles := buildPermissionDuplicateProfiles([]permissionDuplicateSource{
 		{ID: uuid.New(), PermissionKey: "message.manage", ContextType: "platform"},
-		{ID: uuid.New(), PermissionKey: "collaboration_workspace.message.manage", ContextType: "team"},
+		{ID: uuid.New(), PermissionKey: "collaboration_workspace.message.manage", ContextType: "collaboration"},
 	})
 
 	profile, ok := profiles["message.manage"]
@@ -59,7 +59,7 @@ func TestBuildPermissionDuplicateProfilesForCrossContextMirror(t *testing.T) {
 func TestBuildPermissionDuplicateProfilesForSameContextDuplicate(t *testing.T) {
 	profiles := buildPermissionDuplicateProfiles([]permissionDuplicateSource{
 		{ID: uuid.New(), PermissionKey: "system.report.manage", ContextType: "platform"},
-		{ID: uuid.New(), PermissionKey: "platform.report.manage", ContextType: "platform"},
+		{ID: uuid.New(), PermissionKey: "personal.report.manage", ContextType: "personal"},
 	})
 
 	profile, ok := profiles["system.report.manage"]

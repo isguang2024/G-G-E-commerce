@@ -94,7 +94,7 @@ func APIKeyAuth(db *gorm.DB) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		var collaborationWorkspace models.Tenant
+		var collaborationWorkspace models.CollaborationWorkspace
 		if err := db.Select("id", "status").Where("id = ?", record.CollaborationWorkspaceID).First(&collaborationWorkspace).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				status, resp := errcode.ResponseWithMsg(errcode.ErrUnauthorized, "API Key 所属协作空间不存在")

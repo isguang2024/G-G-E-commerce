@@ -12,6 +12,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
 )
 
 var ErrCollaborationWorkspaceNotFound = errors.New("collaboration workspace not found")
@@ -19,43 +20,43 @@ var ErrCollaborationWorkspaceMemberExists = errors.New("user already in collabor
 var ErrCollaborationWorkspaceMemberNotFound = errors.New("member not in collaboration workspace")
 
 type CollaborationWorkspaceService interface {
-	List(req *dto.CollaborationWorkspaceListRequest) ([]user.Tenant, int64, error)
-	ListOptions(req *dto.CollaborationWorkspaceListRequest) ([]user.Tenant, error)
-	Get(id uuid.UUID) (*user.Tenant, error)
-	Create(req *dto.CollaborationWorkspaceCreateRequest, ownerID *uuid.UUID) (*user.Tenant, error)
+	List(req *dto.CollaborationWorkspaceListRequest) ([]user.CollaborationWorkspace, int64, error)
+	ListOptions(req *dto.CollaborationWorkspaceListRequest) ([]user.CollaborationWorkspace, error)
+	Get(id uuid.UUID) (*user.CollaborationWorkspace, error)
+	Create(req *dto.CollaborationWorkspaceCreateRequest, ownerID *uuid.UUID) (*user.CollaborationWorkspace, error)
 	Update(id uuid.UUID, req *dto.CollaborationWorkspaceUpdateRequest) error
 	Delete(id uuid.UUID) error
-	ListMembers(tenantID uuid.UUID, searchParams *user.MemberSearchParams) ([]user.TenantMember, error)
-	AddMember(tenantID uuid.UUID, req *dto.CollaborationWorkspaceAddMemberRequest, invitedBy *uuid.UUID) error
-	RemoveMember(tenantID, userID uuid.UUID) error
-	UpdateMemberRole(tenantID, userID uuid.UUID, roleCode string) error
+	ListMembers(collaborationWorkspaceID uuid.UUID, searchParams *user.MemberSearchParams) ([]user.CollaborationWorkspaceMember, error)
+	AddMember(collaborationWorkspaceID uuid.UUID, req *dto.CollaborationWorkspaceAddMemberRequest, invitedBy *uuid.UUID) error
+	RemoveMember(collaborationWorkspaceID, userID uuid.UUID) error
+	UpdateMemberRole(collaborationWorkspaceID, userID uuid.UUID, roleCode string) error
 }
 
-const defaultTeamRoleAdminCode = "collaboration_workspace_admin"
-const defaultTeamRoleMemberCode = "collaboration_workspace_member"
+const defaultCollaborationWorkspaceRoleAdminCode = "collaboration_workspace_admin"
+const defaultCollaborationWorkspaceRoleMemberCode = "collaboration_workspace_member"
 
 type collaborationWorkspaceService struct {
 	db                               *gorm.DB
-	collaborationWorkspaceRepo       user.TenantRepository
-	collaborationWorkspaceMemberRepo user.TenantMemberRepository
+	collaborationWorkspaceRepo       user.CollaborationWorkspaceRepository
+	collaborationWorkspaceMemberRepo user.CollaborationWorkspaceMemberRepository
 	userRepo                         user.UserRepository
 	roleRepo                         user.RoleRepository
 	userRoleRepo                     user.UserRoleRepository
 	refresher                        interface {
-		RefreshTeam(teamID uuid.UUID) error
+		RefreshCollaborationWorkspace(collaborationWorkspaceID uuid.UUID) error
 	}
 	logger *zap.Logger
 }
 
 func NewCollaborationWorkspaceService(
 	db *gorm.DB,
-	collaborationWorkspaceRepo user.TenantRepository,
-	collaborationWorkspaceMemberRepo user.TenantMemberRepository,
+	collaborationWorkspaceRepo user.CollaborationWorkspaceRepository,
+	collaborationWorkspaceMemberRepo user.CollaborationWorkspaceMemberRepository,
 	userRepo user.UserRepository,
 	roleRepo user.RoleRepository,
 	userRoleRepo user.UserRoleRepository,
 	refresher interface {
-		RefreshTeam(teamID uuid.UUID) error
+		RefreshCollaborationWorkspace(collaborationWorkspaceID uuid.UUID) error
 	},
 	logger *zap.Logger,
 ) CollaborationWorkspaceService {
@@ -71,7 +72,7 @@ func NewCollaborationWorkspaceService(
 	}
 }
 
-func (s *collaborationWorkspaceService) List(req *dto.CollaborationWorkspaceListRequest) ([]user.Tenant, int64, error) {
+func (s *collaborationWorkspaceService) List(req *dto.CollaborationWorkspaceListRequest) ([]user.CollaborationWorkspace, int64, error) {
 	if req.Current <= 0 {
 		req.Current = 1
 	}
@@ -82,8 +83,8 @@ func (s *collaborationWorkspaceService) List(req *dto.CollaborationWorkspaceList
 	return s.collaborationWorkspaceRepo.List(offset, req.Size, req.Name, req.Status)
 }
 
-func (s *collaborationWorkspaceService) ListOptions(req *dto.CollaborationWorkspaceListRequest) ([]user.Tenant, error) {
-	query := s.db.Model(&user.Tenant{})
+func (s *collaborationWorkspaceService) ListOptions(req *dto.CollaborationWorkspaceListRequest) ([]user.CollaborationWorkspace, error) {
+	query := s.db.Model(&user.CollaborationWorkspace{})
 	if req != nil {
 		if name := strings.TrimSpace(req.Name); name != "" {
 			query = query.Where("name LIKE ?", "%"+name+"%")
@@ -93,7 +94,7 @@ func (s *collaborationWorkspaceService) ListOptions(req *dto.CollaborationWorksp
 		}
 	}
 
-	items := make([]user.Tenant, 0)
+	items := make([]user.CollaborationWorkspace, 0)
 	err := query.
 		Select("id", "name", "remark", "logo_url", "plan", "owner_id", "max_members", "status", "created_at", "updated_at").
 		Order("created_at DESC").
@@ -101,7 +102,7 @@ func (s *collaborationWorkspaceService) ListOptions(req *dto.CollaborationWorksp
 	return items, err
 }
 
-func (s *collaborationWorkspaceService) Get(id uuid.UUID) (*user.Tenant, error) {
+func (s *collaborationWorkspaceService) Get(id uuid.UUID) (*user.CollaborationWorkspace, error) {
 	t, err := s.collaborationWorkspaceRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -112,7 +113,7 @@ func (s *collaborationWorkspaceService) Get(id uuid.UUID) (*user.Tenant, error) 
 	return t, nil
 }
 
-func (s *collaborationWorkspaceService) Create(req *dto.CollaborationWorkspaceCreateRequest, ownerID *uuid.UUID) (*user.Tenant, error) {
+func (s *collaborationWorkspaceService) Create(req *dto.CollaborationWorkspaceCreateRequest, ownerID *uuid.UUID) (*user.CollaborationWorkspace, error) {
 	if ownerID == nil || *ownerID == uuid.Nil {
 		return nil, errors.New("invalid owner id")
 	}
@@ -129,7 +130,7 @@ func (s *collaborationWorkspaceService) Create(req *dto.CollaborationWorkspaceCr
 	if maxMembers <= 0 {
 		maxMembers = 5
 	}
-	t := &user.Tenant{
+	t := &user.CollaborationWorkspace{
 		Name:       req.Name,
 		Remark:     req.Remark,
 		LogoURL:    req.LogoURL,
@@ -146,12 +147,15 @@ func (s *collaborationWorkspaceService) Create(req *dto.CollaborationWorkspaceCr
 		if err := tx.Create(t).Error; err != nil {
 			return err
 		}
-		return s.syncTenantAdminsTx(tx, t.ID, adminIDs, ownerID)
+		if err := ensureCollaborationWorkspaceWorkspaceTx(tx, t); err != nil {
+			return err
+		}
+		return s.syncCollaborationWorkspaceAdminsTx(tx, t.ID, adminIDs, ownerID)
 	}); err != nil {
 		return nil, err
 	}
 	if s.refresher != nil {
-		if err := s.refresher.RefreshTeam(t.ID); err != nil {
+		if err := s.refresher.RefreshCollaborationWorkspace(t.ID); err != nil {
 			return nil, err
 		}
 	}
@@ -191,17 +195,17 @@ func (s *collaborationWorkspaceService) Update(id uuid.UUID, req *dto.Collaborat
 		return nil
 	}
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		var tenant user.Tenant
-		if err := tx.Where("id = ?", id).First(&tenant).Error; err != nil {
+		var collaborationWorkspace user.CollaborationWorkspace
+		if err := tx.Where("id = ?", id).First(&collaborationWorkspace).Error; err != nil {
 			return err
 		}
 		if len(updates) > 0 {
-			if err := tx.Model(&tenant).Updates(updates).Error; err != nil {
+			if err := tx.Model(&collaborationWorkspace).Updates(updates).Error; err != nil {
 				return err
 			}
 		}
 		if req.AdminUserIDs != nil {
-			return s.syncTenantAdminsTx(tx, id, adminIDs, nil)
+			return s.syncCollaborationWorkspaceAdminsTx(tx, id, adminIDs, nil)
 		}
 		return nil
 	}); err != nil {
@@ -211,7 +215,7 @@ func (s *collaborationWorkspaceService) Update(id uuid.UUID, req *dto.Collaborat
 		return err
 	}
 	if req.AdminUserIDs != nil && s.refresher != nil {
-		if err := s.refresher.RefreshTeam(id); err != nil {
+		if err := s.refresher.RefreshCollaborationWorkspace(id); err != nil {
 			return err
 		}
 	}
@@ -260,7 +264,26 @@ func (s *collaborationWorkspaceService) Delete(id uuid.UUID) error {
 			return err
 		}
 
-		if err := tx.Where("collaboration_workspace_id = ?", id).Delete(&user.TenantMember{}).Error; err != nil {
+		workspace, err := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(tx, id)
+		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+			return err
+		}
+		if err == nil && workspace != nil {
+			if err := tx.Where("workspace_id = ?", workspace.ID).Delete(&models.WorkspaceRoleBinding{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("workspace_id = ?", workspace.ID).Delete(&models.WorkspaceFeaturePackage{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("workspace_id = ?", workspace.ID).Delete(&models.WorkspaceMember{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Delete(&models.Workspace{}, "id = ?", workspace.ID).Error; err != nil {
+				return err
+			}
+		}
+
+		if err := tx.Where("collaboration_workspace_id = ?", id).Delete(&user.CollaborationWorkspaceMember{}).Error; err != nil {
 			return err
 		}
 
@@ -289,7 +312,7 @@ func (s *collaborationWorkspaceService) Delete(id uuid.UUID) error {
 			return err
 		}
 
-		if err := tx.Delete(&user.Tenant{}, "id = ?", id).Error; err != nil {
+		if err := tx.Delete(&user.CollaborationWorkspace{}, "id = ?", id).Error; err != nil {
 			return err
 		}
 
@@ -297,17 +320,17 @@ func (s *collaborationWorkspaceService) Delete(id uuid.UUID) error {
 	})
 }
 
-func (s *collaborationWorkspaceService) ListMembers(tenantID uuid.UUID, searchParams *user.MemberSearchParams) ([]user.TenantMember, error) {
-	return s.collaborationWorkspaceMemberRepo.List(tenantID, searchParams)
+func (s *collaborationWorkspaceService) ListMembers(collaborationWorkspaceID uuid.UUID, searchParams *user.MemberSearchParams) ([]user.CollaborationWorkspaceMember, error) {
+	return s.collaborationWorkspaceMemberRepo.List(collaborationWorkspaceID, searchParams)
 }
 
-func (s *collaborationWorkspaceService) AddMember(tenantID uuid.UUID, req *dto.CollaborationWorkspaceAddMemberRequest, invitedBy *uuid.UUID) error {
+func (s *collaborationWorkspaceService) AddMember(collaborationWorkspaceID uuid.UUID, req *dto.CollaborationWorkspaceAddMemberRequest, invitedBy *uuid.UUID) error {
 	userID, err := uuid.Parse(req.UserID)
 	if err != nil {
 		return errors.New("invalid user id")
 	}
 
-	existing, err := s.collaborationWorkspaceMemberRepo.GetByUserAndTenant(userID, tenantID)
+	existing, err := s.collaborationWorkspaceMemberRepo.GetByUserAndCollaborationWorkspace(userID, collaborationWorkspaceID)
 	if err == nil && existing != nil {
 		return ErrCollaborationWorkspaceMemberExists
 	}
@@ -315,10 +338,10 @@ func (s *collaborationWorkspaceService) AddMember(tenantID uuid.UUID, req *dto.C
 		return err
 	}
 
-	roleCode := normalizeTenantRoleCode(req.RoleCode)
+	roleCode := normalizeCollaborationWorkspaceRoleCode(req.RoleCode)
 
-	member := &user.TenantMember{
-		CollaborationWorkspaceID: tenantID,
+	member := &user.CollaborationWorkspaceMember{
+		CollaborationWorkspaceID: collaborationWorkspaceID,
 		UserID:                   userID,
 		RoleCode:                 roleCode,
 		JoinedAt:                 time.Now(),
@@ -331,12 +354,15 @@ func (s *collaborationWorkspaceService) AddMember(tenantID uuid.UUID, req *dto.C
 		if err := tx.Create(member).Error; err != nil {
 			return err
 		}
-		return s.syncTenantIdentityRoleTx(tx, userID, tenantID, roleCode)
+		if err := s.syncCollaborationWorkspaceIdentityRoleTx(tx, userID, collaborationWorkspaceID, roleCode); err != nil {
+			return err
+		}
+		return s.syncCollaborationWorkspaceCanonicalAccessTx(tx, userID, collaborationWorkspaceID, roleCode, member.ID, member.Status)
 	}); err != nil {
 		return err
 	}
 	if s.refresher != nil {
-		if err := s.refresher.RefreshTeam(tenantID); err != nil {
+		if err := s.refresher.RefreshCollaborationWorkspace(collaborationWorkspaceID); err != nil {
 			return err
 		}
 	}
@@ -344,8 +370,8 @@ func (s *collaborationWorkspaceService) AddMember(tenantID uuid.UUID, req *dto.C
 	return nil
 }
 
-func (s *collaborationWorkspaceService) RemoveMember(tenantID, userID uuid.UUID) error {
-	member, err := s.collaborationWorkspaceMemberRepo.GetByUserAndTenant(userID, tenantID)
+func (s *collaborationWorkspaceService) RemoveMember(collaborationWorkspaceID, userID uuid.UUID) error {
+	member, err := s.collaborationWorkspaceMemberRepo.GetByUserAndCollaborationWorkspace(userID, collaborationWorkspaceID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrCollaborationWorkspaceMemberNotFound
@@ -354,15 +380,19 @@ func (s *collaborationWorkspaceService) RemoveMember(tenantID, userID uuid.UUID)
 	}
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("user_id = ? AND collaboration_workspace_id = ?", userID, tenantID).Delete(&user.UserActionPermission{}).Error; err != nil {
+		if err := tx.Where("user_id = ? AND collaboration_workspace_id = ?", userID, collaborationWorkspaceID).Delete(&user.UserActionPermission{}).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Where("user_id = ? AND collaboration_workspace_id = ?", userID, tenantID).Delete(&user.UserRole{}).Error; err != nil {
+		if err := tx.Where("user_id = ? AND collaboration_workspace_id = ?", userID, collaborationWorkspaceID).Delete(&user.UserRole{}).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Delete(&user.TenantMember{}, "id = ?", member.ID).Error; err != nil {
+		if err := s.clearCollaborationWorkspaceCanonicalAccessTx(tx, userID, collaborationWorkspaceID); err != nil {
+			return err
+		}
+
+		if err := tx.Delete(&user.CollaborationWorkspaceMember{}, "id = ?", member.ID).Error; err != nil {
 			return err
 		}
 
@@ -371,15 +401,15 @@ func (s *collaborationWorkspaceService) RemoveMember(tenantID, userID uuid.UUID)
 		return err
 	}
 	if s.refresher != nil {
-		if err := s.refresher.RefreshTeam(tenantID); err != nil {
+		if err := s.refresher.RefreshCollaborationWorkspace(collaborationWorkspaceID); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *collaborationWorkspaceService) UpdateMemberRole(tenantID, userID uuid.UUID, roleCode string) error {
-	member, err := s.collaborationWorkspaceMemberRepo.GetByUserAndTenant(userID, tenantID)
+func (s *collaborationWorkspaceService) UpdateMemberRole(collaborationWorkspaceID, userID uuid.UUID, roleCode string) error {
+	member, err := s.collaborationWorkspaceMemberRepo.GetByUserAndCollaborationWorkspace(userID, collaborationWorkspaceID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrCollaborationWorkspaceMemberNotFound
@@ -388,15 +418,19 @@ func (s *collaborationWorkspaceService) UpdateMemberRole(tenantID, userID uuid.U
 	}
 
 	if err := s.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Model(&user.TenantMember{}).Where("id = ?", member.ID).Update("role_code", normalizeTenantRoleCode(roleCode)).Error; err != nil {
+		normalizedRoleCode := normalizeCollaborationWorkspaceRoleCode(roleCode)
+		if err := tx.Model(&user.CollaborationWorkspaceMember{}).Where("id = ?", member.ID).Update("role_code", normalizedRoleCode).Error; err != nil {
 			return err
 		}
-		return s.syncTenantIdentityRoleTx(tx, userID, tenantID, roleCode)
+		if err := s.syncCollaborationWorkspaceIdentityRoleTx(tx, userID, collaborationWorkspaceID, normalizedRoleCode); err != nil {
+			return err
+		}
+		return s.syncCollaborationWorkspaceCanonicalAccessTx(tx, userID, collaborationWorkspaceID, normalizedRoleCode, member.ID, member.Status)
 	}); err != nil {
 		return err
 	}
 	if s.refresher != nil {
-		if err := s.refresher.RefreshTeam(tenantID); err != nil {
+		if err := s.refresher.RefreshCollaborationWorkspace(collaborationWorkspaceID); err != nil {
 			return err
 		}
 	}
@@ -404,24 +438,24 @@ func (s *collaborationWorkspaceService) UpdateMemberRole(tenantID, userID uuid.U
 	return nil
 }
 
-func (s *collaborationWorkspaceService) syncTenantAdmins(tenantID uuid.UUID, adminIDs []uuid.UUID, invitedBy *uuid.UUID) error {
+func (s *collaborationWorkspaceService) syncCollaborationWorkspaceAdmins(collaborationWorkspaceID uuid.UUID, adminIDs []uuid.UUID, invitedBy *uuid.UUID) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		return s.syncTenantAdminsTx(tx, tenantID, adminIDs, invitedBy)
+		return s.syncCollaborationWorkspaceAdminsTx(tx, collaborationWorkspaceID, adminIDs, invitedBy)
 	})
 }
 
-func (s *collaborationWorkspaceService) syncTenantAdminsTx(tx *gorm.DB, tenantID uuid.UUID, adminIDs []uuid.UUID, invitedBy *uuid.UUID) error {
-	var tenant user.Tenant
-	if err := tx.Select("id", "owner_id").Where("id = ?", tenantID).First(&tenant).Error; err != nil {
+func (s *collaborationWorkspaceService) syncCollaborationWorkspaceAdminsTx(tx *gorm.DB, collaborationWorkspaceID uuid.UUID, adminIDs []uuid.UUID, invitedBy *uuid.UUID) error {
+	var collaborationWorkspace user.CollaborationWorkspace
+	if err := tx.Select("id", "owner_id").Where("id = ?", collaborationWorkspaceID).First(&collaborationWorkspace).Error; err != nil {
 		return err
 	}
-	adminIDs = appendIfMissingUUID(adminIDs, tenant.OwnerID)
-	var currentMembers []user.TenantMember
-	if err := tx.Where("collaboration_workspace_id = ?", tenantID).Find(&currentMembers).Error; err != nil {
+	adminIDs = appendIfMissingUUID(adminIDs, collaborationWorkspace.OwnerID)
+	var currentMembers []user.CollaborationWorkspaceMember
+	if err := tx.Where("collaboration_workspace_id = ?", collaborationWorkspaceID).Find(&currentMembers).Error; err != nil {
 		return err
 	}
 
-	existingByUser := make(map[uuid.UUID]*user.TenantMember, len(currentMembers))
+	existingByUser := make(map[uuid.UUID]*user.CollaborationWorkspaceMember, len(currentMembers))
 	for i := range currentMembers {
 		existingByUser[currentMembers[i].UserID] = &currentMembers[i]
 	}
@@ -434,11 +468,14 @@ func (s *collaborationWorkspaceService) syncTenantAdminsTx(tx *gorm.DB, tenantID
 	for _, adminID := range adminIDs {
 		member, exists := existingByUser[adminID]
 		if exists {
-			if member.RoleCode != defaultTeamRoleAdminCode {
-				if err := tx.Model(&user.TenantMember{}).Where("id = ?", member.ID).Update("role_code", defaultTeamRoleAdminCode).Error; err != nil {
+			if member.RoleCode != defaultCollaborationWorkspaceRoleAdminCode {
+				if err := tx.Model(&user.CollaborationWorkspaceMember{}).Where("id = ?", member.ID).Update("role_code", defaultCollaborationWorkspaceRoleAdminCode).Error; err != nil {
 					return err
 				}
-				if err := s.syncTenantIdentityRoleTx(tx, adminID, tenantID, defaultTeamRoleAdminCode); err != nil {
+				if err := s.syncCollaborationWorkspaceIdentityRoleTx(tx, adminID, collaborationWorkspaceID, defaultCollaborationWorkspaceRoleAdminCode); err != nil {
+					return err
+				}
+				if err := s.syncCollaborationWorkspaceCanonicalAccessTx(tx, adminID, collaborationWorkspaceID, defaultCollaborationWorkspaceRoleAdminCode, member.ID, member.Status); err != nil {
 					return err
 				}
 			}
@@ -453,10 +490,10 @@ func (s *collaborationWorkspaceService) syncTenantAdminsTx(tx *gorm.DB, tenantID
 			return err
 		}
 
-		member = &user.TenantMember{
-			CollaborationWorkspaceID: tenantID,
+		member = &user.CollaborationWorkspaceMember{
+			CollaborationWorkspaceID: collaborationWorkspaceID,
 			UserID:                   adminID,
-			RoleCode:                 defaultTeamRoleAdminCode,
+			RoleCode:                 defaultCollaborationWorkspaceRoleAdminCode,
 			JoinedAt:                 time.Now(),
 		}
 		if invitedBy != nil {
@@ -465,20 +502,26 @@ func (s *collaborationWorkspaceService) syncTenantAdminsTx(tx *gorm.DB, tenantID
 		if err := tx.Create(member).Error; err != nil {
 			return err
 		}
-		if err := s.syncTenantIdentityRoleTx(tx, adminID, tenantID, defaultTeamRoleAdminCode); err != nil {
+		if err := s.syncCollaborationWorkspaceIdentityRoleTx(tx, adminID, collaborationWorkspaceID, defaultCollaborationWorkspaceRoleAdminCode); err != nil {
+			return err
+		}
+		if err := s.syncCollaborationWorkspaceCanonicalAccessTx(tx, adminID, collaborationWorkspaceID, defaultCollaborationWorkspaceRoleAdminCode, member.ID, member.Status); err != nil {
 			return err
 		}
 	}
 
 	for _, member := range currentMembers {
-		if member.RoleCode != defaultTeamRoleAdminCode {
+		if member.RoleCode != defaultCollaborationWorkspaceRoleAdminCode {
 			continue
 		}
 		if _, keep := adminSet[member.UserID]; !keep {
-			if err := tx.Model(&user.TenantMember{}).Where("id = ?", member.ID).Update("role_code", defaultTeamRoleMemberCode).Error; err != nil {
+			if err := tx.Model(&user.CollaborationWorkspaceMember{}).Where("id = ?", member.ID).Update("role_code", defaultCollaborationWorkspaceRoleMemberCode).Error; err != nil {
 				return err
 			}
-			if err := s.syncTenantIdentityRoleTx(tx, member.UserID, tenantID, defaultTeamRoleMemberCode); err != nil {
+			if err := s.syncCollaborationWorkspaceIdentityRoleTx(tx, member.UserID, collaborationWorkspaceID, defaultCollaborationWorkspaceRoleMemberCode); err != nil {
+				return err
+			}
+			if err := s.syncCollaborationWorkspaceCanonicalAccessTx(tx, member.UserID, collaborationWorkspaceID, defaultCollaborationWorkspaceRoleMemberCode, member.ID, member.Status); err != nil {
 				return err
 			}
 		}
@@ -512,29 +555,29 @@ func appendIfMissingUUID(items []uuid.UUID, id uuid.UUID) []uuid.UUID {
 	return append(items, id)
 }
 
-func normalizeTenantRoleCode(roleCode string) string {
+func normalizeCollaborationWorkspaceRoleCode(roleCode string) string {
 	if strings.TrimSpace(roleCode) != "" {
 		return roleCode
 	}
-	return defaultTeamRoleMemberCode
+	return defaultCollaborationWorkspaceRoleMemberCode
 }
 
-func (s *collaborationWorkspaceService) syncTenantIdentityRole(userID, tenantID uuid.UUID, roleCode string) error {
+func (s *collaborationWorkspaceService) syncCollaborationWorkspaceIdentityRole(userID, collaborationWorkspaceID uuid.UUID, roleCode string) error {
 	return s.db.Transaction(func(tx *gorm.DB) error {
-		return s.syncTenantIdentityRoleTx(tx, userID, tenantID, roleCode)
+		return s.syncCollaborationWorkspaceIdentityRoleTx(tx, userID, collaborationWorkspaceID, roleCode)
 	})
 }
 
-func (s *collaborationWorkspaceService) syncTenantIdentityRoleTx(tx *gorm.DB, userID, tenantID uuid.UUID, roleCode string) error {
-	roleCode = normalizeTenantRoleCode(roleCode)
+func (s *collaborationWorkspaceService) syncCollaborationWorkspaceIdentityRoleTx(tx *gorm.DB, userID, collaborationWorkspaceID uuid.UUID, roleCode string) error {
+	roleCode = normalizeCollaborationWorkspaceRoleCode(roleCode)
 	var roleIDs []uuid.UUID
 	if err := tx.Model(&user.Role{}).
-		Where("collaboration_workspace_id IS NULL AND code IN ?", []string{defaultTeamRoleAdminCode, defaultTeamRoleMemberCode}).
+		Where("collaboration_workspace_id IS NULL AND code IN ?", []string{defaultCollaborationWorkspaceRoleAdminCode, defaultCollaborationWorkspaceRoleMemberCode}).
 		Pluck("id", &roleIDs).Error; err != nil {
 		return err
 	}
 	if len(roleIDs) > 0 {
-		if err := tx.Where("user_id = ? AND collaboration_workspace_id = ? AND role_id IN ?", userID, tenantID, roleIDs).Delete(&user.UserRole{}).Error; err != nil {
+		if err := tx.Where("user_id = ? AND collaboration_workspace_id = ? AND role_id IN ?", userID, collaborationWorkspaceID, roleIDs).Delete(&user.UserRole{}).Error; err != nil {
 			return err
 		}
 	}
@@ -547,5 +590,157 @@ func (s *collaborationWorkspaceService) syncTenantIdentityRoleTx(tx *gorm.DB, us
 		return nil
 	}
 
-	return tx.Create(&user.UserRole{UserID: userID, RoleID: roles[0].ID, CollaborationWorkspaceID: &tenantID}).Error
+	return tx.Create(&user.UserRole{UserID: userID, RoleID: roles[0].ID, CollaborationWorkspaceID: &collaborationWorkspaceID}).Error
+}
+
+func (s *collaborationWorkspaceService) syncCollaborationWorkspaceCanonicalAccessTx(tx *gorm.DB, userID, collaborationWorkspaceID uuid.UUID, roleCode string, memberID uuid.UUID, memberStatus string) error {
+	var collaborationWorkspace user.CollaborationWorkspace
+	if err := tx.Select("id", "name", "plan", "owner_id", "status").Where("id = ?", collaborationWorkspaceID).First(&collaborationWorkspace).Error; err != nil {
+		return err
+	}
+	if err := ensureCollaborationWorkspaceWorkspaceTx(tx, &collaborationWorkspace); err != nil {
+		return err
+	}
+	workspace, err := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(tx, collaborationWorkspaceID)
+	if err != nil {
+		return err
+	}
+	if err := ensureCollaborationWorkspaceWorkspaceMemberTx(tx, workspace.ID, userID, memberID, memberStatus, roleCode); err != nil {
+		return err
+	}
+
+	var roleIDs []uuid.UUID
+	if roleCode != "" {
+		if err := tx.Model(&user.Role{}).
+			Where("code = ? AND collaboration_workspace_id IS NULL AND deleted_at IS NULL", roleCode).
+			Pluck("id", &roleIDs).Error; err != nil {
+			return err
+		}
+	}
+	return workspacerolebinding.ReplaceCollaborationWorkspaceRoleBindings(tx, collaborationWorkspaceID, userID, roleIDs)
+}
+
+func (s *collaborationWorkspaceService) clearCollaborationWorkspaceCanonicalAccessTx(tx *gorm.DB, userID, collaborationWorkspaceID uuid.UUID) error {
+	workspace, err := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(tx, collaborationWorkspaceID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return err
+	}
+	if err := workspacerolebinding.ReplaceCollaborationWorkspaceRoleBindings(tx, collaborationWorkspaceID, userID, nil); err != nil {
+		return err
+	}
+	return tx.Where("workspace_id = ? AND user_id = ?", workspace.ID, userID).Delete(&models.WorkspaceMember{}).Error
+}
+
+func ensureCollaborationWorkspaceWorkspaceTx(tx *gorm.DB, item *user.CollaborationWorkspace) error {
+	if tx == nil || item == nil || item.ID == uuid.Nil {
+		return nil
+	}
+	var existing models.Workspace
+	err := tx.Where("workspace_type = ? AND collaboration_workspace_id = ? AND deleted_at IS NULL", models.WorkspaceTypeCollaboration, item.ID).First(&existing).Error
+	if err == nil {
+		return tx.Model(&existing).Updates(map[string]interface{}{
+			"name":        strings.TrimSpace(item.Name),
+			"owner_user_id": item.OwnerID,
+			"status":      normalizeWorkspaceStatus(item.Status),
+			"updated_at":  tx.NowFunc(),
+			"meta": models.MetaJSON{
+				"legacy_source":                "collaboration_workspace",
+				"collaboration_workspace_plan": item.Plan,
+			},
+		}).Error
+	}
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+	ownerID := item.OwnerID
+	workspace := models.Workspace{
+		WorkspaceType:            models.WorkspaceTypeCollaboration,
+		Name:                     strings.TrimSpace(item.Name),
+		Code:                     buildCollaborationWorkspaceCode(*item),
+		OwnerUserID:              &ownerID,
+		CollaborationWorkspaceID: &item.ID,
+		Status:                   normalizeWorkspaceStatus(item.Status),
+		Meta: models.MetaJSON{
+			"legacy_source":                "collaboration_workspace",
+			"collaboration_workspace_plan": item.Plan,
+		},
+	}
+	return tx.Create(&workspace).Error
+}
+
+func ensureCollaborationWorkspaceWorkspaceMemberTx(tx *gorm.DB, workspaceID, userID, collaborationWorkspaceMemberID uuid.UUID, memberStatus, roleCode string) error {
+	if tx == nil || workspaceID == uuid.Nil || userID == uuid.Nil {
+		return nil
+	}
+	memberType := mapCollaborationWorkspaceRoleToWorkspaceMemberType(roleCode)
+	status := normalizeWorkspaceStatus(memberStatus)
+	var existing models.WorkspaceMember
+	err := tx.Where("workspace_id = ? AND user_id = ? AND deleted_at IS NULL", workspaceID, userID).First(&existing).Error
+	if err == nil {
+		return tx.Model(&existing).Updates(map[string]interface{}{
+			"member_type":                       memberType,
+			"status":                            status,
+			"collaboration_workspace_member_id": collaborationWorkspaceMemberID,
+			"updated_at":                        tx.NowFunc(),
+		}).Error
+	}
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return err
+	}
+	return tx.Create(&models.WorkspaceMember{
+		WorkspaceID:                    workspaceID,
+		UserID:                         userID,
+		MemberType:                     memberType,
+		Status:                         status,
+		CollaborationWorkspaceMemberID: &collaborationWorkspaceMemberID,
+	}).Error
+}
+
+func mapCollaborationWorkspaceRoleToWorkspaceMemberType(roleCode string) string {
+	switch normalizeCollaborationWorkspaceRoleCode(roleCode) {
+	case defaultCollaborationWorkspaceRoleAdminCode:
+		return models.WorkspaceMemberAdmin
+	default:
+		return models.WorkspaceMemberMember
+	}
+}
+
+func normalizeWorkspaceStatus(status string) string {
+	if strings.EqualFold(strings.TrimSpace(status), models.WorkspaceStatusActive) {
+		return models.WorkspaceStatusActive
+	}
+	return models.WorkspaceStatusActive
+}
+
+func buildCollaborationWorkspaceCode(collaborationWorkspace user.CollaborationWorkspace) string {
+	base := normalizeWorkspaceCodeComponent(strings.TrimSpace(collaborationWorkspace.Name))
+	if base == "" {
+		base = collaborationWorkspace.ID.String()
+	}
+	return "collaboration-" + base
+}
+
+func normalizeWorkspaceCodeComponent(value string) string {
+	target := strings.ToLower(strings.TrimSpace(value))
+	if target == "" {
+		return ""
+	}
+	var builder strings.Builder
+	lastDash := false
+	for _, r := range target {
+		isAlphaNum := (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9')
+		if isAlphaNum {
+			builder.WriteRune(r)
+			lastDash = false
+			continue
+		}
+		if !lastDash {
+			builder.WriteByte('-')
+			lastDash = true
+		}
+	}
+	return strings.Trim(builder.String(), "-")
 }

@@ -31,7 +31,7 @@ type Manifest struct {
 }
 
 type Compiler interface {
-	Compile(appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*Manifest, error)
+	Compile(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*Manifest, error)
 }
 
 type menuTreeProvider interface {
@@ -39,12 +39,12 @@ type menuTreeProvider interface {
 }
 
 type managedPageProvider interface {
-	ResolveCompiledAccessContext(appKey, spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*pagepkg.CompiledAccessContext, error)
+	ResolveCompiledAccessContext(appKey, spaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*pagepkg.CompiledAccessContext, error)
 	ListRuntimeWithAccess(appKey, spaceKey string, accessCtx *pagepkg.CompiledAccessContext) ([]pagepkg.Record, error)
 }
 
 type currentSpaceProvider interface {
-	GetCurrent(appKey string, host string, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*spacepkg.CurrentResponse, error)
+	GetCurrent(appKey string, host string, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*spacepkg.CurrentResponse, error)
 }
 
 type service struct {
@@ -65,7 +65,7 @@ func NewService(db *gorm.DB, appService apppkg.Service, menuService menupkg.Menu
 	}
 }
 
-func (s *service) Compile(appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*Manifest, error) {
+func (s *service) Compile(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*Manifest, error) {
 	normalizedAppKey := apppkg.NormalizeAppKey(appKey)
 	var currentApp *apppkg.CurrentResponse
 	var err error
@@ -75,7 +75,7 @@ func (s *service) Compile(appKey, host, requestedSpaceKey string, userID *uuid.U
 			return nil, err
 		}
 	}
-	current, err := s.spaceSvc.GetCurrent(normalizedAppKey, host, requestedSpaceKey, userID, tenantID)
+	current, err := s.spaceSvc.GetCurrent(normalizedAppKey, host, requestedSpaceKey, userID, collaborationWorkspaceID)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (s *service) Compile(appKey, host, requestedSpaceKey string, userID *uuid.U
 		resolvedSpaceKey = spacepkg.NormalizeSpaceKey(current.Space.SpaceKey)
 	}
 
-	accessCtx, err := s.pageService.ResolveCompiledAccessContext(normalizedAppKey, resolvedSpaceKey, userID, tenantID)
+	accessCtx, err := s.pageService.ResolveCompiledAccessContext(normalizedAppKey, resolvedSpaceKey, userID, collaborationWorkspaceID)
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +122,8 @@ func (s *service) Compile(appKey, host, requestedSpaceKey string, userID *uuid.U
 	if userID != nil {
 		manifest.Context["user_id"] = userID.String()
 	}
-	if tenantID != nil {
-		manifest.Context["collaboration_workspace_id"] = tenantID.String()
+	if collaborationWorkspaceID != nil {
+		manifest.Context["collaboration_workspace_id"] = collaborationWorkspaceID.String()
 	}
 	return manifest, nil
 }

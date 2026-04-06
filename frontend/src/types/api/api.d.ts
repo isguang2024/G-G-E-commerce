@@ -125,7 +125,6 @@ declare namespace Api {
       current_collaboration_workspace_id?: string
       currentCollaborationWorkspaceName?: string
       current_collaboration_workspace_name?: string
-      legacyCollaborationWorkspaceId?: string
       status: string
     }
 
@@ -173,7 +172,7 @@ declare namespace Api {
       pageCount?: number
       accessMode?:
         | 'all'
-        | 'platform_admin'
+        | 'personal_workspace_admin'
         | 'collaboration_workspace_admin'
         | 'role_codes'
         | string
@@ -301,7 +300,7 @@ declare namespace Api {
       status?: 'normal' | 'disabled' | string
       access_mode?:
         | 'all'
-        | 'platform_admin'
+        | 'personal_workspace_admin'
         | 'collaboration_workspace_admin'
         | 'role_codes'
         | string
@@ -427,7 +426,7 @@ declare namespace Api {
     }
 
     interface UserPermissionContext {
-      type: 'platform' | 'collaboration' | string
+      type: 'personal' | 'collaboration' | string
       collaborationWorkspaceId?: string
       collaborationWorkspaceName?: string
     }
@@ -486,8 +485,6 @@ declare namespace Api {
       matchedInSnapshot?: boolean
       bypassedBySuperAdmin?: boolean
       blockedByCollaborationWorkspace?: boolean
-      /** 兼容旧字段 */
-      blockedByTeam?: boolean
       denialStage?: string
       denialReason?: string
       memberStatus?: string
@@ -614,7 +611,7 @@ declare namespace Api {
       featureGroupId?: string
       moduleGroup?: PermissionGroupItem
       featureGroup?: PermissionGroupItem
-      contextType?: 'platform' | 'collaboration' | 'common' | string
+      contextType?: 'personal' | 'collaboration' | 'common' | string
       permissionKey?: string
       featureKind?: 'system' | 'business' | string
       dataPolicy?: string
@@ -681,14 +678,14 @@ declare namespace Api {
       packageKey: string
       name: string
       packageType?: string
-      contextType?: string
+      contextType?: 'personal' | 'collaboration' | 'common' | string
     }
 
     interface PermissionActionConsumerRoleItem {
       id: string
       code: string
       name: string
-      contextType?: string
+      contextType?: 'personal' | 'collaboration' | string
     }
 
     interface PermissionActionConsumerDetails {
@@ -711,7 +708,7 @@ declare namespace Api {
       packageType?: 'base' | 'bundle' | string
       name: string
       description?: string
-      contextType?: 'platform' | 'collaboration' | 'common' | string
+      contextType?: 'personal' | 'collaboration' | 'common' | string
       isBuiltin?: boolean
       actionCount?: number
       menuCount?: number
@@ -741,7 +738,7 @@ declare namespace Api {
       packageKey: string
       name: string
       packageType: 'base' | 'bundle' | string
-      contextType: 'platform' | 'collaboration' | 'common' | string
+      contextType: 'personal' | 'collaboration' | 'common' | string
       status: string
       referenceCount: number
       children?: FeaturePackageRelationNode[]
@@ -762,7 +759,7 @@ declare namespace Api {
           keyword?: string
           packageKey?: string
           packageType?: string
-          contextType?: string
+          contextType?: 'personal' | 'collaboration' | 'common' | string
         }
     >
 
@@ -772,7 +769,7 @@ declare namespace Api {
       package_type?: 'base' | 'bundle' | string
       name: string
       description?: string
-      context_type?: 'platform' | 'collaboration' | 'common' | string
+      context_type?: 'personal' | 'collaboration' | 'common' | string
       status?: string
       sort_order?: number
     }
@@ -783,7 +780,7 @@ declare namespace Api {
       package_type?: 'base' | 'bundle' | string
       name?: string
       description?: string
-      context_type?: 'platform' | 'collaboration' | 'common' | string
+      context_type?: 'personal' | 'collaboration' | 'common' | string
       status?: string
       sort_order?: number
     }
@@ -1259,7 +1256,7 @@ declare namespace Api {
       module_code?: string
       module_group_id?: string
       feature_group_id?: string
-      context_type?: 'platform' | 'collaboration' | 'common' | string
+      context_type?: 'personal' | 'collaboration' | 'common' | string
       feature_kind?: 'system' | 'business' | string
       name: string
       description?: string
@@ -1272,7 +1269,7 @@ declare namespace Api {
       module_code?: string
       module_group_id?: string
       feature_group_id?: string
-      context_type?: 'platform' | 'collaboration' | 'common' | string
+      context_type?: 'personal' | 'collaboration' | 'common' | string
       feature_kind?: 'system' | 'business' | string
       name?: string
       description?: string
@@ -1370,7 +1367,6 @@ declare namespace Api {
       collaborationWorkspaceId?: string
       workspaceId?: string
       workspaceType?: 'personal' | 'collaboration' | string
-      legacyCollaborationWorkspaceId?: string
       currentRoleCode?: string
       memberStatus?: string
     }
@@ -1406,7 +1402,6 @@ declare namespace Api {
     /** 协作空间成员项（与后端 ListMembers 返回一致） */
     interface CollaborationWorkspaceMemberItem {
       id: string
-      legacyCollaborationWorkspaceId?: string
       collaborationWorkspaceId?: string
       workspaceId?: string
       workspaceType?: 'personal' | 'collaboration' | string
@@ -1426,7 +1421,7 @@ declare namespace Api {
       role_ids: string[]
       roles?: Array<{ id: string; code: string; name: string }>
       global_role_ids?: string[]
-      team_role_ids?: string[]
+      collaboration_workspace_role_ids?: string[]
       bindingWorkspaceId?: string
       collaborationWorkspaceId?: string
       bindingWorkspaceType?: 'personal' | 'collaboration' | string
@@ -1564,7 +1559,13 @@ declare namespace Api {
     type BoxType = 'notice' | 'message' | 'todo'
     type DeliveryStatus = 'unread' | 'read' | string
     type TodoStatus = 'pending' | 'done' | 'ignored' | string
-    type SenderType = 'system' | 'platform_user' | 'team_user' | 'service' | 'automation' | string
+    type SenderType =
+      | 'system'
+      | 'personal_workspace_user'
+      | 'collaboration_workspace_user'
+      | 'service'
+      | 'automation'
+      | string
     type ActionType = 'route' | 'external_link' | 'api' | 'none' | string
     type AudienceType =
       | 'all_users'
@@ -1641,7 +1642,7 @@ declare namespace Api {
       name: string
       description: string
       message_type: BoxType
-      owner_scope: 'platform' | 'collaboration' | string
+      owner_scope: 'personal' | 'collaboration' | string
       audience_type: AudienceType
       title_template?: string
       summary_template?: string
@@ -1652,9 +1653,6 @@ declare namespace Api {
       id: string
       name: string
     }
-
-    type DispatchTeamOption = DispatchCollaborationWorkspaceOption
-
     interface DispatchUserOption {
       id: string
       name: string
@@ -1664,7 +1662,7 @@ declare namespace Api {
       collaboration_workspace_name?: string
       current_collaboration_workspace_id?: string
       current_collaboration_workspace_name?: string
-      team_name?: string
+      collaboration_workspace_name?: string
     }
 
     interface DispatchRecipientGroupOption {
@@ -1690,7 +1688,7 @@ declare namespace Api {
     }
 
     interface DispatchOptions {
-      sender_scope: 'platform' | 'collaboration' | string
+      sender_scope: 'personal' | 'collaboration' | string
       current_collaboration_workspace_id?: string
       current_collaboration_workspace_name?: string
       sender_options: DispatchSenderOption[]
@@ -1698,7 +1696,7 @@ declare namespace Api {
       audience_options: DispatchAudienceOption[]
       template_options: DispatchTemplateOption[]
       collaboration_workspaces: DispatchCollaborationWorkspaceOption[]
-      teams?: DispatchCollaborationWorkspaceOption[]
+      collaborationWorkspaces?: DispatchCollaborationWorkspaceOption[]
       users: DispatchUserOption[]
       recipient_groups: DispatchRecipientGroupOption[]
       roles: DispatchRoleOption[]
@@ -1752,10 +1750,9 @@ declare namespace Api {
       name: string
       description?: string
       message_type: BoxType
-      owner_scope: 'platform' | 'collaboration' | string
+      owner_scope: 'personal' | 'collaboration' | string
       owner_collaboration_workspace_id?: string
       owner_collaboration_workspace_name?: string
-      owner_tenant_name?: string
       audience_type: AudienceType
       title_template?: string
       summary_template?: string
@@ -1783,7 +1780,7 @@ declare namespace Api {
 
     interface MessageSenderItem {
       id: string
-      scope_type: 'platform' | 'collaboration' | string
+      scope_type: 'personal' | 'collaboration' | string
       scope_id?: string
       name: string
       description?: string
@@ -1820,7 +1817,6 @@ declare namespace Api {
       user_name?: string
       collaboration_workspace_id?: string
       collaboration_workspace_name?: string
-      tenant_name?: string
       role_code?: string
       role_name?: string
       package_key?: string
@@ -1831,7 +1827,7 @@ declare namespace Api {
 
     interface MessageRecipientGroupItem {
       id: string
-      scope_type: 'platform' | 'collaboration' | string
+      scope_type: 'personal' | 'collaboration' | string
       scope_id?: string
       name: string
       description?: string
@@ -1895,11 +1891,10 @@ declare namespace Api {
       content?: string
       message_type: BoxType
       audience_type: AudienceType
-      scope_type: 'platform' | 'collaboration' | string
+      scope_type: 'personal' | 'collaboration' | string
       scope_id?: string
       target_collaboration_workspace_id?: string
       target_collaboration_workspace_name?: string
-      target_tenant_name?: string
       sender_name?: string
       template_name?: string
       priority?: string
@@ -1918,7 +1913,6 @@ declare namespace Api {
       recipient_name: string
       recipient_collaboration_workspace_id?: string
       recipient_collaboration_workspace_name?: string
-      recipient_team_name?: string
       delivery_status: DeliveryStatus
       todo_status?: TodoStatus
       read_at?: string

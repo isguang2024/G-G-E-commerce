@@ -48,7 +48,7 @@
     modelValue: boolean
     packageId: string
     packageName: string
-    contextType?: 'platform' | 'collaboration' | 'common' | string
+    contextType?: 'personal' | 'collaboration' | 'common' | string
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -180,17 +180,17 @@
   function supportsActionContext(packageContextType: string, actionContextType: string) {
     if (packageContextType === 'common') {
       return (
-        actionContextType === 'platform' ||
+        actionContextType === 'personal' ||
         actionContextType === 'collaboration' ||
         actionContextType === 'common'
       )
     }
     if (
-      packageContextType === 'platform,collaboration' ||
-      packageContextType === 'collaboration,platform'
+      packageContextType === 'personal,collaboration' ||
+      packageContextType === 'collaboration,personal'
     ) {
       return (
-        actionContextType === 'platform' ||
+        actionContextType === 'personal' ||
         actionContextType === 'collaboration' ||
         actionContextType === 'common'
       )
@@ -199,20 +199,20 @@
   }
 
   function formatContextType(contextType?: string) {
-    if (contextType === 'platform') return '平台'
+    if (contextType === 'personal') return '个人空间'
     if (contextType === 'collaboration') return '协作空间'
     if (contextType === 'common') return '通用'
-    if (contextType === 'platform,collaboration' || contextType === 'collaboration,platform')
-      return '平台/协作空间'
+    if (contextType === 'personal,collaboration' || contextType === 'collaboration,personal')
+      return '个人空间/协作空间'
     return contextType || '-'
   }
 
   function getScopeLabel(contextType?: string) {
-    if (contextType === 'platform') return '平台'
+    if (contextType === 'personal') return '个人空间'
     if (contextType === 'collaboration') return '协作空间'
-    if (contextType === 'common') return '平台或协作空间'
-    if (contextType === 'platform,collaboration' || contextType === 'collaboration,platform')
-      return '平台或协作空间'
+    if (contextType === 'common') return '个人空间或协作空间'
+    if (contextType === 'personal,collaboration' || contextType === 'collaboration,personal')
+      return '个人空间或协作空间'
     return '当前上下文'
   }
 

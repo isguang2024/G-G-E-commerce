@@ -1,4 +1,4 @@
-﻿{
+{
   "httpMsg": {
     "unauthorized": "未授权访问，请重新登录",
     "forbidden": "禁止访问该资源",
@@ -262,12 +262,12 @@
       "user": "用户管理",
       "role": "角色管理",
       "scope": "作用域管理",
-      "teamRolesAndPermissions": "协作空间角色及权限",
-      "team": "协作空间管理",
-      "teamAll": "所有协作空间",
-      "teamMembers": "协作空间成员",
-      "teamMore": "协作空间更多",
-      "teamRoles": "协作空间角色",
+      "collaborationWorkspaceRolesAndPermissions": "协作空间角色及权限",
+      "collaborationWorkspace": "协作空间管理",
+      "collaborationWorkspaceAll": "所有协作空间",
+      "collaborationWorkspaceMembers": "协作空间成员",
+      "collaborationWorkspaceMore": "协作空间更多",
+      "collaborationWorkspaceRoles": "协作空间角色",
       "more": "更多",
       "userCenter": "个人中心",
       "menu": "菜单管理",

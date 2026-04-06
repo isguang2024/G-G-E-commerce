@@ -64,8 +64,8 @@ func PackageIDsByUser(db *gorm.DB, userID uuid.UUID, appKey string) ([]uuid.UUID
 	return dedupeUUIDs(packageIDs), err
 }
 
-func PackageIDsByTeam(db *gorm.DB, teamID uuid.UUID, appKey string) ([]uuid.UUID, error) {
-	workspacePackageIDs, err := workspacefeaturebinding.ListTeamPackageIDsByCollaborationWorkspaceID(db, teamID, appKey)
+func PackageIDsByCollaborationWorkspace(db *gorm.DB, collaborationWorkspaceID uuid.UUID, appKey string) ([]uuid.UUID, error) {
+	workspacePackageIDs, err := workspacefeaturebinding.ListPackageIDsByCollaborationWorkspaceID(db, collaborationWorkspaceID, appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ func PackageIDsByTeam(db *gorm.DB, teamID uuid.UUID, appKey string) ([]uuid.UUID
 	var packageIDs []uuid.UUID
 	err = db.Model(&models.CollaborationWorkspaceFeaturePackage{}).
 		Joins("JOIN feature_packages ON feature_packages.id = collaboration_workspace_feature_packages.package_id").
-		Where("collaboration_workspace_feature_packages.collaboration_workspace_id = ? AND collaboration_workspace_feature_packages.enabled = ?", teamID, true).
+		Where("collaboration_workspace_feature_packages.collaboration_workspace_id = ? AND collaboration_workspace_feature_packages.enabled = ?", collaborationWorkspaceID, true).
 		Where("feature_packages.app_key = ? AND feature_packages.deleted_at IS NULL", Normalize(appKey)).
 		Pluck("collaboration_workspace_feature_packages.package_id", &packageIDs).Error
 	return dedupeUUIDs(packageIDs), err
@@ -101,11 +101,11 @@ func HiddenMenuIDsByUser(db *gorm.DB, userID uuid.UUID, appKey string) ([]uuid.U
 	return dedupeUUIDs(menuIDs), err
 }
 
-func BlockedMenuIDsByTeam(db *gorm.DB, teamID uuid.UUID, appKey string) ([]uuid.UUID, error) {
+func BlockedMenuIDsByCollaborationWorkspace(db *gorm.DB, collaborationWorkspaceID uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	var menuIDs []uuid.UUID
 	err := db.Model(&models.CollaborationWorkspaceBlockedMenu{}).
 		Joins("JOIN menu_definitions ON menu_definitions.id = collaboration_workspace_blocked_menus.menu_id").
-		Where("collaboration_workspace_blocked_menus.collaboration_workspace_id = ?", teamID).
+		Where("collaboration_workspace_blocked_menus.collaboration_workspace_id = ?", collaborationWorkspaceID).
 		Where("menu_definitions.app_key = ? AND menu_definitions.deleted_at IS NULL", Normalize(appKey)).
 		Pluck("collaboration_workspace_blocked_menus.menu_id", &menuIDs).Error
 	return dedupeUUIDs(menuIDs), err
@@ -180,18 +180,18 @@ func ReplaceUserPackagesInApp(db *gorm.DB, userID uuid.UUID, appKey string, pack
 	})
 }
 
-func ReplaceTeamPackagesInApp(db *gorm.DB, teamID uuid.UUID, appKey string, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error {
+func ReplaceCollaborationWorkspacePackagesInApp(db *gorm.DB, collaborationWorkspaceID uuid.UUID, appKey string, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error {
 	scopedIDs, err := FilterPackageIDs(db, appKey, packageIDs)
 	if err != nil {
 		return err
 	}
 	return db.Transaction(func(tx *gorm.DB) error {
-		existingIDs, err := legacyPackageIDsByTeam(tx, teamID, appKey)
+		existingIDs, err := legacyPackageIDsByCollaborationWorkspace(tx, collaborationWorkspaceID, appKey)
 		if err != nil {
 			return err
 		}
 		if len(existingIDs) > 0 {
-			if err := tx.Where("collaboration_workspace_id = ? AND package_id IN ?", teamID, existingIDs).Delete(&models.CollaborationWorkspaceFeaturePackage{}).Error; err != nil {
+			if err := tx.Where("collaboration_workspace_id = ? AND package_id IN ?", collaborationWorkspaceID, existingIDs).Delete(&models.CollaborationWorkspaceFeaturePackage{}).Error; err != nil {
 				return err
 			}
 		}
@@ -202,7 +202,7 @@ func ReplaceTeamPackagesInApp(db *gorm.DB, teamID uuid.UUID, appKey string, pack
 		items := make([]models.CollaborationWorkspaceFeaturePackage, 0, len(scopedIDs))
 		for _, packageID := range scopedIDs {
 			items = append(items, models.CollaborationWorkspaceFeaturePackage{
-				CollaborationWorkspaceID: teamID,
+				CollaborationWorkspaceID: collaborationWorkspaceID,
 				PackageID:                packageID,
 				Enabled:                  true,
 				GrantedBy:                grantedBy,
@@ -265,18 +265,18 @@ func ReplaceUserHiddenMenusInApp(db *gorm.DB, userID uuid.UUID, appKey string, h
 	})
 }
 
-func ReplaceCollaborationWorkspaceBlockedMenusInApp(db *gorm.DB, teamID uuid.UUID, appKey string, blockedMenuIDs []uuid.UUID) error {
+func ReplaceCollaborationWorkspaceBlockedMenusInApp(db *gorm.DB, collaborationWorkspaceID uuid.UUID, appKey string, blockedMenuIDs []uuid.UUID) error {
 	scopedIDs, err := FilterMenuIDs(db, appKey, blockedMenuIDs)
 	if err != nil {
 		return err
 	}
 	return db.Transaction(func(tx *gorm.DB) error {
-		existingIDs, err := BlockedMenuIDsByTeam(tx, teamID, appKey)
+		existingIDs, err := BlockedMenuIDsByCollaborationWorkspace(tx, collaborationWorkspaceID, appKey)
 		if err != nil {
 			return err
 		}
 		if len(existingIDs) > 0 {
-			if err := tx.Where("collaboration_workspace_id = ? AND menu_id IN ?", teamID, existingIDs).Delete(&models.CollaborationWorkspaceBlockedMenu{}).Error; err != nil {
+			if err := tx.Where("collaboration_workspace_id = ? AND menu_id IN ?", collaborationWorkspaceID, existingIDs).Delete(&models.CollaborationWorkspaceBlockedMenu{}).Error; err != nil {
 				return err
 			}
 		}
@@ -285,7 +285,7 @@ func ReplaceCollaborationWorkspaceBlockedMenusInApp(db *gorm.DB, teamID uuid.UUI
 		}
 		items := make([]models.CollaborationWorkspaceBlockedMenu, 0, len(scopedIDs))
 		for _, menuID := range scopedIDs {
-			items = append(items, models.CollaborationWorkspaceBlockedMenu{CollaborationWorkspaceID: teamID, MenuID: menuID})
+			items = append(items, models.CollaborationWorkspaceBlockedMenu{CollaborationWorkspaceID: collaborationWorkspaceID, MenuID: menuID})
 		}
 		return tx.Create(&items).Error
 	})
@@ -295,8 +295,8 @@ func ReplaceRoleDisabledActionsInScope(db *gorm.DB, roleID uuid.UUID, scopedActi
 	return replaceRoleActionsInScope(db, roleID, scopedActionIDs, disabledActionIDs)
 }
 
-func ReplaceCollaborationWorkspaceBlockedActionsInScope(db *gorm.DB, teamID uuid.UUID, scopedActionIDs []uuid.UUID, blockedActionIDs []uuid.UUID) error {
-	return replaceTeamActionsInScope(db, teamID, scopedActionIDs, blockedActionIDs)
+func ReplaceCollaborationWorkspaceBlockedActionsInScope(db *gorm.DB, collaborationWorkspaceID uuid.UUID, scopedActionIDs []uuid.UUID, blockedActionIDs []uuid.UUID) error {
+	return replaceCollaborationWorkspaceActionsInScope(db, collaborationWorkspaceID, scopedActionIDs, blockedActionIDs)
 }
 
 func replaceRoleActionsInScope(db *gorm.DB, roleID uuid.UUID, scopedActionIDs []uuid.UUID, targetActionIDs []uuid.UUID) error {
@@ -319,12 +319,12 @@ func replaceRoleActionsInScope(db *gorm.DB, roleID uuid.UUID, scopedActionIDs []
 	})
 }
 
-func replaceTeamActionsInScope(db *gorm.DB, teamID uuid.UUID, scopedActionIDs []uuid.UUID, targetActionIDs []uuid.UUID) error {
+func replaceCollaborationWorkspaceActionsInScope(db *gorm.DB, collaborationWorkspaceID uuid.UUID, scopedActionIDs []uuid.UUID, targetActionIDs []uuid.UUID) error {
 	scoped := dedupeUUIDs(scopedActionIDs)
 	target := intersectUUIDs(dedupeUUIDs(targetActionIDs), scoped)
 	return db.Transaction(func(tx *gorm.DB) error {
 		if len(scoped) > 0 {
-			if err := tx.Where("collaboration_workspace_id = ? AND action_id IN ?", teamID, scoped).Delete(&models.CollaborationWorkspaceBlockedAction{}).Error; err != nil {
+			if err := tx.Where("collaboration_workspace_id = ? AND action_id IN ?", collaborationWorkspaceID, scoped).Delete(&models.CollaborationWorkspaceBlockedAction{}).Error; err != nil {
 				return err
 			}
 		}
@@ -333,7 +333,7 @@ func replaceTeamActionsInScope(db *gorm.DB, teamID uuid.UUID, scopedActionIDs []
 		}
 		items := make([]models.CollaborationWorkspaceBlockedAction, 0, len(target))
 		for _, actionID := range target {
-			items = append(items, models.CollaborationWorkspaceBlockedAction{CollaborationWorkspaceID: teamID, ActionID: actionID})
+			items = append(items, models.CollaborationWorkspaceBlockedAction{CollaborationWorkspaceID: collaborationWorkspaceID, ActionID: actionID})
 		}
 		return tx.Create(&items).Error
 	})
@@ -365,11 +365,11 @@ func legacyPackageIDsByUser(db *gorm.DB, userID uuid.UUID, appKey string) ([]uui
 	return dedupeUUIDs(packageIDs), err
 }
 
-func legacyPackageIDsByTeam(db *gorm.DB, teamID uuid.UUID, appKey string) ([]uuid.UUID, error) {
+func legacyPackageIDsByCollaborationWorkspace(db *gorm.DB, collaborationWorkspaceID uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	var packageIDs []uuid.UUID
 	err := db.Model(&models.CollaborationWorkspaceFeaturePackage{}).
 		Joins("JOIN feature_packages ON feature_packages.id = collaboration_workspace_feature_packages.package_id").
-		Where("collaboration_workspace_feature_packages.collaboration_workspace_id = ? AND collaboration_workspace_feature_packages.enabled = ?", teamID, true).
+		Where("collaboration_workspace_feature_packages.collaboration_workspace_id = ? AND collaboration_workspace_feature_packages.enabled = ?", collaborationWorkspaceID, true).
 		Where("feature_packages.app_key = ? AND feature_packages.deleted_at IS NULL", Normalize(appKey)).
 		Pluck("collaboration_workspace_feature_packages.package_id", &packageIDs).Error
 	return dedupeUUIDs(packageIDs), err

@@ -15,18 +15,18 @@ import (
 )
 
 const (
-	DefaultMenuSpaceKey        = models.DefaultMenuSpaceKey
-	requestSpaceKeyQuery       = "space_key"
-	requestSpaceKeyHeader      = "X-Space-Key"
-	requestSpaceAltHeader      = "X-Menu-Space"
-	requestForwardedHostHeader = "X-Forwarded-Host"
-	requestRealHostHeader      = "X-Real-Host"
-	spaceAccessModeAll         = "all"
-	spaceAccessModePlatform    = "platform_admin"
-	spaceAccessModeTeam        = "collaboration_workspace_admin"
-	spaceAccessModeRoleCodes   = "role_codes"
-	spaceModeSingle            = "single"
-	spaceModeMulti             = "multi"
+	DefaultMenuSpaceKey          = models.DefaultMenuSpaceKey
+	requestSpaceKeyQuery         = "space_key"
+	requestSpaceKeyHeader        = "X-Space-Key"
+	requestSpaceAltHeader        = "X-Menu-Space"
+	requestForwardedHostHeader   = "X-Forwarded-Host"
+	requestRealHostHeader        = "X-Real-Host"
+	spaceAccessModeAll           = "all"
+	spaceAccessModePersonal      = "personal_workspace_admin"
+	spaceAccessModeCollaboration = "collaboration_workspace_admin"
+	spaceAccessModeRoleCodes     = "role_codes"
+	spaceModeSingle              = "single"
+	spaceModeMulti               = "multi"
 )
 
 type SpaceAccessProfile struct {
@@ -133,15 +133,15 @@ func ResolveSpaceKey(db *gorm.DB, c *gin.Context) string {
 	}
 	appKey := currentContextAppKey(c)
 	userID := currentContextUserID(c)
-	tenantID := currentContextCollaborationWorkspaceID(c)
-	key, _, err := ResolveCurrentSpaceKey(db, appKey, RequestHost(c), RequestSpaceKey(c), userID, tenantID)
+	collaborationWorkspaceID := currentContextCollaborationWorkspaceID(c)
+	key, _, err := ResolveCurrentSpaceKey(db, appKey, RequestHost(c), RequestSpaceKey(c), userID, collaborationWorkspaceID)
 	if err == nil && strings.TrimSpace(key) != "" {
 		return key
 	}
 	return DefaultMenuSpaceKey
 }
 
-func ResolveCurrentSpaceKey(db *gorm.DB, appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (string, string, error) {
+func ResolveCurrentSpaceKey(db *gorm.DB, appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (string, string, error) {
 	normalizedAppKey := normalizeAppKey(appKey)
 	defaultSpaceKey, err := loadAppDefaultSpaceKey(db, normalizedAppKey)
 	if err != nil {
@@ -159,7 +159,7 @@ func ResolveCurrentSpaceKey(db *gorm.DB, appKey, host, requestedSpaceKey string,
 				return defaultSpaceKey, "", existsErr
 			}
 			if ok {
-				allowed, accessErr := CanAccessSpace(db, userID, tenantID, explicit)
+				allowed, accessErr := CanAccessSpace(db, userID, collaborationWorkspaceID, explicit)
 				if accessErr != nil {
 					return defaultSpaceKey, "", accessErr
 				}
@@ -177,7 +177,7 @@ func ResolveCurrentSpaceKey(db *gorm.DB, appKey, host, requestedSpaceKey string,
 			return defaultSpaceKey, "", existsErr
 		}
 		if ok {
-			allowed, accessErr := CanAccessSpace(db, userID, tenantID, explicit)
+			allowed, accessErr := CanAccessSpace(db, userID, collaborationWorkspaceID, explicit)
 			if accessErr != nil {
 				return defaultSpaceKey, "", accessErr
 			}
@@ -192,7 +192,7 @@ func ResolveCurrentSpaceKey(db *gorm.DB, appKey, host, requestedSpaceKey string,
 		return defaultSpaceKey, "", hostErr
 	}
 	if strings.TrimSpace(resolvedByHost) != "" {
-		allowed, accessErr := CanAccessSpace(db, userID, tenantID, resolvedByHost)
+		allowed, accessErr := CanAccessSpace(db, userID, collaborationWorkspaceID, resolvedByHost)
 		if accessErr != nil {
 			return defaultSpaceKey, "", accessErr
 		}
@@ -201,7 +201,7 @@ func ResolveCurrentSpaceKey(db *gorm.DB, appKey, host, requestedSpaceKey string,
 		}
 	}
 
-	if allowed, accessErr := CanAccessSpace(db, userID, tenantID, defaultSpaceKey); accessErr == nil && allowed {
+	if allowed, accessErr := CanAccessSpace(db, userID, collaborationWorkspaceID, defaultSpaceKey); accessErr == nil && allowed {
 		return defaultSpaceKey, "app_default", nil
 	}
 
@@ -249,7 +249,7 @@ func currentContextCollaborationWorkspaceID(c *gin.Context) *uuid.UUID {
 func ExtractSpaceAccessProfile(meta models.MetaJSON) SpaceAccessProfile {
 	mode := strings.TrimSpace(toMetaString(meta, "access_mode", "accessMode"))
 	switch mode {
-	case spaceAccessModePlatform, spaceAccessModeTeam, spaceAccessModeRoleCodes:
+	case spaceAccessModePersonal, spaceAccessModeCollaboration, spaceAccessModeRoleCodes:
 	default:
 		mode = spaceAccessModeAll
 	}
@@ -259,7 +259,7 @@ func ExtractSpaceAccessProfile(meta models.MetaJSON) SpaceAccessProfile {
 	}
 }
 
-func CanAccessSpace(db *gorm.DB, userID *uuid.UUID, tenantID *uuid.UUID, spaceKey string) (bool, error) {
+func CanAccessSpace(db *gorm.DB, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID, spaceKey string) (bool, error) {
 	if db == nil {
 		return NormalizeSpaceKey(spaceKey) == DefaultMenuSpaceKey, nil
 	}
@@ -279,35 +279,35 @@ func CanAccessSpace(db *gorm.DB, userID *uuid.UUID, tenantID *uuid.UUID, spaceKe
 	switch profile.Mode {
 	case spaceAccessModeAll:
 		return true, nil
-	case spaceAccessModePlatform:
+	case spaceAccessModePersonal:
 		if userID == nil {
 			return false, nil
 		}
-		return hasPlatformRoleCode(db, *userID, []string{"admin"})
-	case spaceAccessModeTeam:
+		return hasPersonalWorkspaceRoleCode(db, *userID, []string{"admin"})
+	case spaceAccessModeCollaboration:
 		if userID == nil {
 			return false, nil
 		}
-		return hasTeamAdminRole(db, *userID, tenantID)
+		return hasCollaborationWorkspaceAdminRole(db, *userID, collaborationWorkspaceID)
 	case spaceAccessModeRoleCodes:
 		if userID == nil || len(profile.AllowedRoleCodes) == 0 {
 			return false, nil
 		}
-		return hasAnyRoleCode(db, *userID, tenantID, profile.AllowedRoleCodes)
+		return hasAnyRoleCode(db, *userID, collaborationWorkspaceID, profile.AllowedRoleCodes)
 	default:
 		return true, nil
 	}
 }
 
-func hasPlatformRoleCode(db *gorm.DB, userID uuid.UUID, roleCodes []string) (bool, error) {
+func hasPersonalWorkspaceRoleCode(db *gorm.DB, userID uuid.UUID, roleCodes []string) (bool, error) {
 	matched, err := workspacerolebinding.HasPersonalRoleCodesByUserID(db, userID, roleCodes, true)
 	if err != nil || matched {
 		return matched, err
 	}
-	return hasLegacyPlatformRoleCode(db, userID, roleCodes)
+	return hasLegacyPersonalWorkspaceRoleCode(db, userID, roleCodes)
 }
 
-func hasLegacyPlatformRoleCode(db *gorm.DB, userID uuid.UUID, roleCodes []string) (bool, error) {
+func hasLegacyPersonalWorkspaceRoleCode(db *gorm.DB, userID uuid.UUID, roleCodes []string) (bool, error) {
 	var count int64
 	err := db.Table("user_roles").
 		Joins("JOIN roles ON roles.id = user_roles.role_id").
@@ -321,30 +321,30 @@ func hasLegacyPlatformRoleCode(db *gorm.DB, userID uuid.UUID, roleCodes []string
 	return count > 0, err
 }
 
-func hasTeamAdminRole(db *gorm.DB, userID uuid.UUID, tenantID *uuid.UUID) (bool, error) {
+func hasCollaborationWorkspaceAdminRole(db *gorm.DB, userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) (bool, error) {
 	query := db.Table("collaboration_workspace_members").
 		Where("user_id = ?", userID).
 		Where("status = ?", "active").
 		Where("role_code = ?", "collaboration_workspace_admin")
-	if tenantID != nil {
-		query = query.Where("collaboration_workspace_id = ?", *tenantID)
+	if collaborationWorkspaceID != nil {
+		query = query.Where("collaboration_workspace_id = ?", *collaborationWorkspaceID)
 	}
 	var count int64
 	err := query.Count(&count).Error
 	return count > 0, err
 }
 
-func hasAnyRoleCode(db *gorm.DB, userID uuid.UUID, tenantID *uuid.UUID, roleCodes []string) (bool, error) {
+func hasAnyRoleCode(db *gorm.DB, userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, roleCodes []string) (bool, error) {
 	normalized := normalizeStringSlice(roleCodes)
 	if len(normalized) == 0 {
 		return false, nil
 	}
-	platformMatched, err := hasPlatformRoleCode(db, userID, normalized)
-	if err != nil || platformMatched {
-		return platformMatched, err
+	personalMatched, err := hasPersonalWorkspaceRoleCode(db, userID, normalized)
+	if err != nil || personalMatched {
+		return personalMatched, err
 	}
-	if tenantID != nil {
-		workspaceMatched, err := workspacerolebinding.HasTeamRoleCodesByTenantAndUser(db, *tenantID, userID, normalized, true)
+	if collaborationWorkspaceID != nil {
+		workspaceMatched, err := workspacerolebinding.HasCollaborationWorkspaceRoleCodesByUser(db, *collaborationWorkspaceID, userID, normalized, true)
 		if err != nil {
 			return false, err
 		}
@@ -355,7 +355,7 @@ func hasAnyRoleCode(db *gorm.DB, userID uuid.UUID, tenantID *uuid.UUID, roleCode
 		if err := db.Table("user_roles").
 			Joins("JOIN roles ON roles.id = user_roles.role_id").
 			Where("user_roles.user_id = ?", userID).
-			Where("user_roles.collaboration_workspace_id = ?", *tenantID).
+			Where("user_roles.collaboration_workspace_id = ?", *collaborationWorkspaceID).
 			Where("roles.code IN ?", normalized).
 			Where("roles.status = ?", "normal").
 			Where("roles.deleted_at IS NULL").
@@ -365,16 +365,16 @@ func hasAnyRoleCode(db *gorm.DB, userID uuid.UUID, tenantID *uuid.UUID, roleCode
 		if attachedRoleCount > 0 {
 			return true, nil
 		}
-		var teamCount int64
+		var collaborationWorkspaceCount int64
 		if err := db.Table("collaboration_workspace_members").
 			Where("user_id = ?", userID).
-			Where("collaboration_workspace_id = ?", *tenantID).
+			Where("collaboration_workspace_id = ?", *collaborationWorkspaceID).
 			Where("status = ?", "active").
 			Where("role_code IN ?", normalized).
-			Count(&teamCount).Error; err != nil {
+			Count(&collaborationWorkspaceCount).Error; err != nil {
 			return false, err
 		}
-		if teamCount > 0 {
+		if collaborationWorkspaceCount > 0 {
 			return true, nil
 		}
 	}

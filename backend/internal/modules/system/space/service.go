@@ -101,7 +101,7 @@ const (
 
 type Service interface {
 	ListSpaces(appKey string) ([]SpaceRecord, error)
-	GetCurrent(appKey string, host string, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*CurrentResponse, error)
+	GetCurrent(appKey string, host string, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*CurrentResponse, error)
 	ListHostBindings(appKey string) ([]HostBindingRecord, error)
 	GetMode(appKey string) (string, error)
 	SaveMode(appKey, mode string) (string, error)
@@ -196,16 +196,16 @@ func (s *service) ListSpaces(appKey string) ([]SpaceRecord, error) {
 	return records, nil
 }
 
-func (s *service) GetCurrent(appKey string, host string, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*CurrentResponse, error) {
+func (s *service) GetCurrent(appKey string, host string, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*CurrentResponse, error) {
 	normalizedAppKey := normalizeAppKey(appKey)
 	if err := EnsureDefaultMenuSpace(s.db, normalizedAppKey); err != nil {
 		return nil, err
 	}
-	resolvedKey, resolvedBy, err := ResolveCurrentSpaceKey(s.db, normalizedAppKey, host, requestedSpaceKey, userID, tenantID)
+	resolvedKey, resolvedBy, err := ResolveCurrentSpaceKey(s.db, normalizedAppKey, host, requestedSpaceKey, userID, collaborationWorkspaceID)
 	if err != nil {
 		return nil, err
 	}
-	accessGranted, accessErr := CanAccessSpace(s.db, userID, tenantID, resolvedKey)
+	accessGranted, accessErr := CanAccessSpace(s.db, userID, collaborationWorkspaceID, resolvedKey)
 	if accessErr != nil {
 		return nil, accessErr
 	}
@@ -318,7 +318,7 @@ func (s *service) SaveSpace(appKey string, req *SaveSpaceRequest) (*SpaceRecord,
 	}
 	accessMode := strings.TrimSpace(req.AccessMode)
 	switch accessMode {
-	case spaceAccessModePlatform, spaceAccessModeTeam, spaceAccessModeRoleCodes:
+	case spaceAccessModePersonal, spaceAccessModeCollaboration, spaceAccessModeRoleCodes:
 	default:
 		accessMode = spaceAccessModeAll
 	}
@@ -579,13 +579,13 @@ func (s *service) InitializeFromDefault(appKey string, targetSpaceKey string, fo
 	}
 
 	if s.refresher != nil {
-		if err := s.refresher.RefreshAllTeams(); err != nil {
+		if err := s.refresher.RefreshAllCollaborationWorkspaces(); err != nil {
 			return nil, err
 		}
-		if err := s.refresher.RefreshAllPlatformRoles(); err != nil {
+		if err := s.refresher.RefreshAllPersonalWorkspaceRoles(); err != nil {
 			return nil, err
 		}
-		if err := s.refresher.RefreshAllPlatformUsers(); err != nil {
+		if err := s.refresher.RefreshAllPersonalWorkspaceUsers(); err != nil {
 			return nil, err
 		}
 	}

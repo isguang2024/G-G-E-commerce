@@ -52,7 +52,7 @@ func (h *Handler) List(c *gin.Context) {
 	for _, item := range list {
 		packageIDs = append(packageIDs, item.ID)
 	}
-	actionCounts, menuCounts, teamCounts, err := h.service.GetPackageStats(packageIDs)
+	actionCounts, menuCounts, collaborationWorkspaceCounts, err := h.service.GetPackageStats(packageIDs)
 	if err != nil {
 		h.logger.Error("Get feature package stats failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包统计失败")
@@ -61,7 +61,7 @@ func (h *Handler) List(c *gin.Context) {
 	}
 	records := make([]gin.H, 0, len(list))
 	for _, item := range list {
-		records = append(records, packageToMapWithStats(&item, actionCounts[item.ID], menuCounts[item.ID], teamCounts[item.ID]))
+		records = append(records, packageToMapWithStats(&item, actionCounts[item.ID], menuCounts[item.ID], collaborationWorkspaceCounts[item.ID]))
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
 		"records": records,
@@ -657,7 +657,7 @@ func (h *Handler) SetPackageCollaborationWorkspaces(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	var req dto.FeaturePackageTeamSetRequest
+	var req dto.FeaturePackageCollaborationWorkspaceSetRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -792,11 +792,11 @@ func packageToMap(item *user.FeaturePackage) gin.H {
 	}
 }
 
-func packageToMapWithStats(item *user.FeaturePackage, actionCount, menuCount, teamCount int64) gin.H {
+func packageToMapWithStats(item *user.FeaturePackage, actionCount, menuCount, collaborationWorkspaceCount int64) gin.H {
 	result := packageToMap(item)
 	result["action_count"] = actionCount
 	result["menu_count"] = menuCount
-	result["collaboration_workspace_count"] = teamCount
+	result["collaboration_workspace_count"] = collaborationWorkspaceCount
 	return result
 }
 
@@ -938,11 +938,11 @@ func (h *Handler) requireTargetCollaborationWorkspace(c *gin.Context, collaborat
 	}
 	authCtx, err := authorization.ResolveContext(c)
 	if err != nil {
-		h.authz.RespondAuthError(c, err, "platform.package.assign")
+		h.authz.RespondAuthError(c, err, "feature_package.assign_collaboration_workspace")
 		return err
 	}
-	if _, err := h.authz.RequirePersonalWorkspaceTargetTeam(authCtx, collaborationWorkspaceID); err != nil {
-		h.authz.RespondAuthError(c, err, "platform.package.assign")
+	if _, err := h.authz.RequirePersonalWorkspaceTargetWorkspace(authCtx, collaborationWorkspaceID); err != nil {
+		h.authz.RespondAuthError(c, err, "feature_package.assign_collaboration_workspace")
 		return err
 	}
 	return nil
@@ -954,11 +954,11 @@ func (h *Handler) requireTargetCollaborationWorkspaces(c *gin.Context, collabora
 	}
 	authCtx, err := authorization.ResolveContext(c)
 	if err != nil {
-		h.authz.RespondAuthError(c, err, "platform.package.assign")
+		h.authz.RespondAuthError(c, err, "feature_package.assign_collaboration_workspace")
 		return err
 	}
-	if _, err := h.authz.RequirePersonalWorkspaceTargetTeams(authCtx, collaborationWorkspaceIDs); err != nil {
-		h.authz.RespondAuthError(c, err, "platform.package.assign")
+	if _, err := h.authz.RequirePersonalWorkspaceTargetWorkspaces(authCtx, collaborationWorkspaceIDs); err != nil {
+		h.authz.RespondAuthError(c, err, "feature_package.assign_collaboration_workspace")
 		return err
 	}
 	return nil
@@ -970,32 +970,20 @@ func (h *Handler) filterAccessiblePackageCollaborationWorkspaces(c *gin.Context,
 	}
 	authCtx, err := authorization.ResolveContext(c)
 	if err != nil {
-		h.authz.RespondAuthError(c, err, "platform.package.assign")
+		h.authz.RespondAuthError(c, err, "feature_package.assign_collaboration_workspace")
 		return nil, err
 	}
 	if authCtx.AuthWorkspaceType != "personal" {
-		h.authz.RespondAuthError(c, authorization.ErrTargetWorkspaceForbidden, "platform.package.assign")
+		h.authz.RespondAuthError(c, authorization.ErrTargetWorkspaceForbidden, "feature_package.assign_collaboration_workspace")
 		return nil, authorization.ErrTargetWorkspaceForbidden
 	}
 	filtered := make([]uuid.UUID, 0, len(collaborationWorkspaceIDs))
 	for _, collaborationWorkspaceID := range collaborationWorkspaceIDs {
-		if _, err := h.authz.RequirePersonalWorkspaceTargetTeam(authCtx, collaborationWorkspaceID); err == nil {
+		if _, err := h.authz.RequirePersonalWorkspaceTargetWorkspace(authCtx, collaborationWorkspaceID); err == nil {
 			filtered = append(filtered, collaborationWorkspaceID)
 		}
 	}
 	return filtered, nil
-}
-
-func (h *Handler) requireTargetTeam(c *gin.Context, collaborationWorkspaceID uuid.UUID) error {
-	return h.requireTargetCollaborationWorkspace(c, collaborationWorkspaceID)
-}
-
-func (h *Handler) requireTargetTeams(c *gin.Context, collaborationWorkspaceIDs []uuid.UUID) error {
-	return h.requireTargetCollaborationWorkspaces(c, collaborationWorkspaceIDs)
-}
-
-func (h *Handler) filterAccessiblePackageTeams(c *gin.Context, collaborationWorkspaceIDs []uuid.UUID) ([]uuid.UUID, error) {
-	return h.filterAccessiblePackageCollaborationWorkspaces(c, collaborationWorkspaceIDs)
 }
 
 func refreshStatsToMap(stats *permissionrefresh.RefreshStats) gin.H {

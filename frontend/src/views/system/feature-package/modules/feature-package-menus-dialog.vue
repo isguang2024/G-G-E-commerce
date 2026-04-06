@@ -108,7 +108,7 @@
     packageId: string
     packageName: string
     appKey?: string
-    contextType?: 'platform' | 'collaboration' | 'common' | string
+    contextType?: 'personal' | 'collaboration' | 'common' | string
   }
 
   const props = withDefaults(defineProps<Props>(), {
@@ -277,7 +277,7 @@
   }
 
   function formatContextType(contextType?: string) {
-    if (contextType === 'platform') return '平台'
+    if (contextType === 'personal') return '个人空间'
     if (contextType === 'collaboration') return '协作空间'
     if (contextType === 'common') return '通用'
     return contextType || '-'

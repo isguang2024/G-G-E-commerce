@@ -681,7 +681,7 @@ func normalizeCategoryCode(value string) string {
 	switch strings.TrimSpace(value) {
 	case "permission_action", "system_permission":
 		return "permission_key"
-	case "team", "collaboration_workspace_member", "collaboration_workspace_member_admin", "tenant":
+	case "collaboration", "collaboration_workspace_member", "collaboration_workspace_member_admin", "collaboration_workspace":
 		return "collaboration_workspace"
 	default:
 		return strings.TrimSpace(value)

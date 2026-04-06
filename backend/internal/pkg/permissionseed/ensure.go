@@ -339,15 +339,15 @@ func EnsureDefaultRoleFeaturePackages(db *gorm.DB) error {
 
 	adminRole, ok := roleByCode["admin"]
 	if ok {
-		legacyKeys := []string{"platform.system_admin", "platform.menu_admin", "platform.api_admin"}
-		legacyIDs := make([]uuid.UUID, 0, len(legacyKeys))
-		for _, packageKey := range legacyKeys {
+		adminPackageKeys := []string{"personal.system_admin", "personal.menu_admin", "personal.api_admin"}
+		adminPackageIDs := make([]uuid.UUID, 0, len(adminPackageKeys))
+		for _, packageKey := range adminPackageKeys {
 			if pkg, exists := packageByKey[packageKey]; exists {
-				legacyIDs = append(legacyIDs, pkg.ID)
+				adminPackageIDs = append(adminPackageIDs, pkg.ID)
 			}
 		}
-		if len(legacyIDs) > 0 {
-			if err := db.Where("role_id = ? AND package_id IN ?", adminRole.ID, legacyIDs).Delete(&usermodel.RoleFeaturePackage{}).Error; err != nil {
+		if len(adminPackageIDs) > 0 {
+			if err := db.Where("role_id = ? AND package_id IN ?", adminRole.ID, adminPackageIDs).Delete(&usermodel.RoleFeaturePackage{}).Error; err != nil {
 				return err
 			}
 		}

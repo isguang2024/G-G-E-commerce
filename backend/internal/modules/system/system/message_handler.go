@@ -241,13 +241,13 @@ func (h *SystemHandler) GetMessageDispatchOptions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	tenantID, err := currentCollaborationWorkspaceID(c)
+	collaborationWorkspaceID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
 		return
 	}
-	options, err := h.messageService.GetDispatchOptions(userID, tenantID)
+	options, err := h.messageService.GetDispatchOptions(userID, collaborationWorkspaceID)
 	if err != nil {
 		h.logger.Error("Get message dispatch options failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取发信配置失败")
@@ -264,7 +264,7 @@ func (h *SystemHandler) DispatchMessage(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	tenantID, err := currentCollaborationWorkspaceID(c)
+	collaborationWorkspaceID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -276,7 +276,7 @@ func (h *SystemHandler) DispatchMessage(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	result, err := h.messageService.DispatchMessage(userID, tenantID, dispatchRequest{
+	result, err := h.messageService.DispatchMessage(userID, collaborationWorkspaceID, dispatchRequest{
 		SenderID:                        req.SenderID,
 		TemplateID:                      req.TemplateID,
 		TemplateKey:                     req.TemplateKey,
@@ -313,7 +313,7 @@ func (h *SystemHandler) DispatchMessage(c *gin.Context) {
 }
 
 func (h *SystemHandler) ListMessageTemplates(c *gin.Context) {
-	tenantID, err := currentCollaborationWorkspaceID(c)
+	collaborationWorkspaceID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -321,7 +321,7 @@ func (h *SystemHandler) ListMessageTemplates(c *gin.Context) {
 	}
 	current, _ := strconv.Atoi(strings.TrimSpace(c.DefaultQuery("current", "1")))
 	size, _ := strconv.Atoi(strings.TrimSpace(c.DefaultQuery("size", "20")))
-	result, err := h.messageService.ListTemplates(tenantID, messageTemplateQuery{
+	result, err := h.messageService.ListTemplates(collaborationWorkspaceID, messageTemplateQuery{
 		Keyword: strings.TrimSpace(c.Query("keyword")),
 		Current: current,
 		Size:    size,
@@ -341,7 +341,7 @@ func (h *SystemHandler) ListMessageTemplates(c *gin.Context) {
 }
 
 func (h *SystemHandler) SaveMessageTemplate(c *gin.Context) {
-	tenantID, err := currentCollaborationWorkspaceID(c)
+	collaborationWorkspaceID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -356,7 +356,7 @@ func (h *SystemHandler) SaveMessageTemplate(c *gin.Context) {
 	}
 
 	templateID := strings.TrimSpace(c.Param("templateId"))
-	result, err := h.messageService.SaveTemplate(templateID, tenantID, messageTemplateUpsertRequest{
+	result, err := h.messageService.SaveTemplate(templateID, collaborationWorkspaceID, messageTemplateUpsertRequest{
 		TemplateKey:     req.TemplateKey,
 		Name:            req.Name,
 		Description:     req.Description,
@@ -385,13 +385,13 @@ func (h *SystemHandler) SaveMessageTemplate(c *gin.Context) {
 }
 
 func (h *SystemHandler) ListMessageSenders(c *gin.Context) {
-	tenantID, err := currentCollaborationWorkspaceID(c)
+	collaborationWorkspaceID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
 		return
 	}
-	result, err := h.messageService.ListSenders(tenantID)
+	result, err := h.messageService.ListSenders(collaborationWorkspaceID)
 	if err != nil {
 		h.logger.Error("List message senders failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取发送人失败")
@@ -404,7 +404,7 @@ func (h *SystemHandler) ListMessageSenders(c *gin.Context) {
 }
 
 func (h *SystemHandler) SaveMessageSender(c *gin.Context) {
-	tenantID, err := currentCollaborationWorkspaceID(c)
+	collaborationWorkspaceID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -417,7 +417,7 @@ func (h *SystemHandler) SaveMessageSender(c *gin.Context) {
 		return
 	}
 	senderID := strings.TrimSpace(c.Param("senderId"))
-	result, err := h.messageService.SaveSender(senderID, tenantID, messageSenderSaveRequest{
+	result, err := h.messageService.SaveSender(senderID, collaborationWorkspaceID, messageSenderSaveRequest{
 		Name:        req.Name,
 		Description: req.Description,
 		AvatarURL:   req.AvatarURL,
@@ -443,7 +443,7 @@ func (h *SystemHandler) SaveMessageSender(c *gin.Context) {
 }
 
 func (h *SystemHandler) ListDispatchRecords(c *gin.Context) {
-	tenantID, err := currentCollaborationWorkspaceID(c)
+	collaborationWorkspaceID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -451,7 +451,7 @@ func (h *SystemHandler) ListDispatchRecords(c *gin.Context) {
 	}
 	current, _ := strconv.Atoi(strings.TrimSpace(c.DefaultQuery("current", "1")))
 	size, _ := strconv.Atoi(strings.TrimSpace(c.DefaultQuery("size", "20")))
-	result, err := h.messageService.ListDispatchRecords(tenantID, dispatchRecordQuery{
+	result, err := h.messageService.ListDispatchRecords(collaborationWorkspaceID, dispatchRecordQuery{
 		Keyword:      strings.TrimSpace(c.Query("keyword")),
 		MessageType:  strings.TrimSpace(c.Query("message_type")),
 		AudienceType: strings.TrimSpace(c.Query("audience_type")),
@@ -474,13 +474,13 @@ func (h *SystemHandler) ListDispatchRecords(c *gin.Context) {
 }
 
 func (h *SystemHandler) GetDispatchRecordDetail(c *gin.Context) {
-	tenantID, err := currentCollaborationWorkspaceID(c)
+	collaborationWorkspaceID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
 		return
 	}
-	result, err := h.messageService.GetDispatchRecordDetail(tenantID, strings.TrimSpace(c.Param("recordId")))
+	result, err := h.messageService.GetDispatchRecordDetail(collaborationWorkspaceID, strings.TrimSpace(c.Param("recordId")))
 	if err != nil {
 		if strings.Contains(err.Error(), "标识无效") {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, err.Error())
@@ -501,13 +501,13 @@ func (h *SystemHandler) GetDispatchRecordDetail(c *gin.Context) {
 }
 
 func (h *SystemHandler) ListMessageRecipientGroups(c *gin.Context) {
-	tenantID, err := currentCollaborationWorkspaceID(c)
+	collaborationWorkspaceID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
 		return
 	}
-	result, err := h.messageService.ListRecipientGroups(tenantID)
+	result, err := h.messageService.ListRecipientGroups(collaborationWorkspaceID)
 	if err != nil {
 		h.logger.Error("List message recipient groups failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取接收组失败")
@@ -518,7 +518,7 @@ func (h *SystemHandler) ListMessageRecipientGroups(c *gin.Context) {
 }
 
 func (h *SystemHandler) SaveMessageRecipientGroup(c *gin.Context) {
-	tenantID, err := currentCollaborationWorkspaceID(c)
+	collaborationWorkspaceID, err := currentCollaborationWorkspaceID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -549,7 +549,7 @@ func (h *SystemHandler) SaveMessageRecipientGroup(c *gin.Context) {
 		})
 	}
 	groupID := strings.TrimSpace(c.Param("groupId"))
-	result, err := h.messageService.SaveRecipientGroup(groupID, tenantID, messageRecipientGroupSaveRequest{
+	result, err := h.messageService.SaveRecipientGroup(groupID, collaborationWorkspaceID, messageRecipientGroupSaveRequest{
 		Name:        req.Name,
 		Description: req.Description,
 		MatchMode:   req.MatchMode,
@@ -603,7 +603,7 @@ func currentCollaborationWorkspaceID(c *gin.Context) (*uuid.UUID, error) {
 	if ok {
 		value, ok := raw.(string)
 		if !ok {
-			return nil, errors.New("invalid tenant context")
+			return nil, errors.New("invalid collaboration workspace context")
 		}
 		target := strings.TrimSpace(value)
 		if target != "" {

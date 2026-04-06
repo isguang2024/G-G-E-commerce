@@ -61,7 +61,7 @@ func main() {
 	} else {
 		fmt.Printf("✅ 角色表存在，当前有 %d 个角色\n", roleCount)
 
-		defaultRoles := []string{"admin", "team_admin", "team_member"}
+		defaultRoles := []string{"admin", "collaboration_workspace_admin", "collaboration_workspace_member"}
 		for _, roleCode := range defaultRoles {
 			var role user.Role
 			if err := db.Where("code = ?", roleCode).First(&role).Error; err != nil {

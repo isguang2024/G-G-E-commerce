@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="visible"
     :title="`角色功能包 - ${roleTitle}`"
@@ -28,7 +28,7 @@
         />
         <ElSelect v-model="contextFilter" class="toolbar-select">
           <ElOption label="全部上下文" value="" />
-          <ElOption label="个人空间" value="platform" />
+          <ElOption label="个人空间" value="personal" />
           <ElOption label="协作空间" value="collaboration" />
           <ElOption label="通用" value="common" />
         </ElSelect>
@@ -204,6 +204,7 @@
     try {
       const [listRes, roleRes] = await Promise.all([
         fetchGetFeaturePackageOptions({
+          contextType: 'personal',
           appKey: currentAppKey.value
         }),
         fetchGetRolePackages(props.roleData.roleId, currentAppKey.value)
@@ -249,13 +250,13 @@
 
   function formatContext(contextType?: string) {
     if (contextType === 'common') return '通用'
-    if (contextType === 'platform') return '个人空间'
+    if (contextType === 'personal') return '个人空间'
     return '协作空间'
   }
 
   function getContextTagType(contextType?: string) {
     if (contextType === 'common') return 'primary'
-    if (contextType === 'platform') return 'success'
+    if (contextType === 'personal') return 'success'
     return 'warning'
   }
 

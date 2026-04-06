@@ -50,23 +50,24 @@
           <ElButton text type="primary" @click="emit('open-group', 'feature')">新建分组</ElButton>
         </div>
       </ElFormItem>
-      <ElFormItem label="上下文" prop="contextType">
+      <ElFormItem label="空间范围" prop="contextType">
         <ElSelect v-model="form.contextType" style="width: 100%">
-          <ElOption label="平台" value="platform" />
-          <ElOption label="协作空间" value="team" />
+          <ElOption label="个人空间" value="personal" />
+          <ElOption label="协作空间" value="collaboration" />
           <ElOption label="通用" value="common" />
         </ElSelect>
       </ElFormItem>
       <div class="context-hint">
         <span
-          >平台：系统治理和平台后台能力，建议使用 `system.`、`platform.`、`collaboration_workspace.`
-          前缀。</span
+          >个人空间：个人空间内的治理与系统能力，也包含协作空间治理入口，建议使用 `system.` 或
+          `feature_package.` 前缀。</span
         >
         <span
-          >协作空间：协作空间内授权能力，建议使用 `collaboration_workspace.`
-          前缀或协作空间模块分组。</span
+          >协作空间：协作空间内成员、边界和消息能力，建议使用
+          `collaboration_workspace.member.`、`collaboration_workspace.boundary.`、`collaboration_workspace.message.`
+          前缀。</span
         >
-        <span>通用：跨上下文业务能力，不要复用平台/协作空间专属前缀。</span>
+        <span>通用：跨空间业务能力，不要复用个人空间/协作空间专属前缀。</span>
       </div>
       <ElFormItem label="权限名称" prop="name">
         <ElInput v-model="form.name" placeholder="请输入名称" />

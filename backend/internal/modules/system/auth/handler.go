@@ -19,26 +19,26 @@ import (
 type AuthHandler struct {
 	authService  AuthService
 	authzService interface {
-		GetUserActionSnapshot(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
-		GetUserActionSnapshotForWorkspace(userID uuid.UUID, authWorkspaceType string, tenantID *uuid.UUID, appKey string) ([]string, error)
+		GetUserActionSnapshot(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]string, error)
+		GetUserActionSnapshotForWorkspace(userID uuid.UUID, authWorkspaceType string, collaborationWorkspaceID *uuid.UUID, appKey string) ([]string, error)
 	}
-	tenantMemberRepo interface {
-		GetByUserID(userID uuid.UUID) (*systemuser.TenantMember, error)
+	collaborationWorkspaceMemberRepo interface {
+		GetByUserID(userID uuid.UUID) (*systemuser.CollaborationWorkspaceMember, error)
 	}
 	workspaceService workspacepkg.Service
 	logger           *zap.Logger
 }
 
 func NewAuthHandler(authService AuthService, authzService interface {
-	GetUserActionSnapshot(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
-	GetUserActionSnapshotForWorkspace(userID uuid.UUID, authWorkspaceType string, tenantID *uuid.UUID, appKey string) ([]string, error)
-}, tenantMemberRepo interface {
-	GetByUserID(userID uuid.UUID) (*systemuser.TenantMember, error)
+	GetUserActionSnapshot(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]string, error)
+	GetUserActionSnapshotForWorkspace(userID uuid.UUID, authWorkspaceType string, collaborationWorkspaceID *uuid.UUID, appKey string) ([]string, error)
+}, collaborationWorkspaceMemberRepo interface {
+	GetByUserID(userID uuid.UUID) (*systemuser.CollaborationWorkspaceMember, error)
 }, workspaceService workspacepkg.Service, logger *zap.Logger) *AuthHandler {
 	return &AuthHandler{
 		authService:      authService,
 		authzService:     authzService,
-		tenantMemberRepo: tenantMemberRepo,
+		collaborationWorkspaceMemberRepo: collaborationWorkspaceMemberRepo,
 		workspaceService: workspaceService,
 		logger:           logger,
 	}
@@ -210,8 +210,8 @@ func (h *AuthHandler) GetUserInfo(c *gin.Context) {
 			}
 		}
 	}
-	if collaborationWorkspaceID == nil && h.tenantMemberRepo != nil {
-		if member, memberErr := h.tenantMemberRepo.GetByUserID(userID); memberErr == nil && member != nil {
+	if collaborationWorkspaceID == nil && h.collaborationWorkspaceMemberRepo != nil {
+		if member, memberErr := h.collaborationWorkspaceMemberRepo.GetByUserID(userID); memberErr == nil && member != nil {
 			fallbackCollaborationWorkspaceID := member.CollaborationWorkspaceID
 			if fallbackCollaborationWorkspaceID != uuid.Nil {
 				collaborationWorkspaceID = &fallbackCollaborationWorkspaceID

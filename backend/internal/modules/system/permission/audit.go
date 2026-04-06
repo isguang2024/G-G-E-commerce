@@ -198,12 +198,10 @@ func buildPermissionDuplicateFamilyKey(permissionKey string) string {
 func normalizePermissionAuditResource(value string) string {
 	target := strings.Trim(strings.ReplaceAll(strings.TrimSpace(value), ".", "_"), "_")
 	switch {
-	case strings.HasPrefix(target, "team_"):
-		target = strings.TrimPrefix(target, "team_")
 	case strings.HasPrefix(target, "system_"):
 		target = strings.TrimPrefix(target, "system_")
-	case strings.HasPrefix(target, "platform_"):
-		target = strings.TrimPrefix(target, "platform_")
+	case strings.HasPrefix(target, "personal_"):
+		target = strings.TrimPrefix(target, "personal_")
 	}
 	return target
 }
@@ -217,7 +215,7 @@ func normalizePermissionAuditContext(contextType, permissionKey string) string {
 	if strings.TrimSpace(mapping.ContextType) != "" {
 		return strings.TrimSpace(mapping.ContextType)
 	}
-	return "team"
+	return "collaboration"
 }
 
 func filterPermissionRelatedKeys(keys []string, currentKey string) []string {

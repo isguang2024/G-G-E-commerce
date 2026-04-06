@@ -22,24 +22,24 @@ func TestValidatePermissionContext(t *testing.T) {
 		wantErr       bool
 	}{
 		{
-			name:          "builtin platform key rejects team context",
+			name:          "builtin personal key rejects collaboration context",
 			permissionKey: "message.manage",
 			moduleCode:    "message",
-			contextType:   "team",
+			contextType:   "collaboration",
 			wantErr:       true,
 		},
 		{
 			name:          "platform custom key with reserved prefix passes",
-			permissionKey: "platform.notice.dispatch",
+			permissionKey: "personal.notice.dispatch",
 			moduleCode:    "notice",
 			contextType:   "platform",
 			wantErr:       false,
 		},
 		{
-			name:          "team custom key with reserved prefix passes",
+			name:          "collaboration custom key with reserved prefix passes",
 			permissionKey: "collaboration_workspace.notice.dispatch",
 			moduleCode:    "notice",
-			contextType:   "team",
+			contextType:   "collaboration",
 			wantErr:       false,
 		},
 		{
@@ -58,7 +58,7 @@ func TestValidatePermissionContext(t *testing.T) {
 		},
 		{
 			name:          "platform module cannot use common",
-			permissionKey: "platform.menu.audit",
+			permissionKey: "personal.menu.audit",
 			moduleCode:    "menu",
 			contextType:   "common",
 			wantErr:       true,

@@ -1,5 +1,40 @@
 # Change Log
 
+## 2026-04-07 空间权限最终态代码回写
+
+### 本次改动
+- backend 继续清理 active 运行时里的旧 `team / tenant` 业务语义：`permissionrefresh`、`featurepackage`、`authorization`、`collaborationworkspaceboundary`、`collaborationworkspace` 等主链只保留 `workspace / personal / collaboration` 的 canonical 方法和上下文字段，旧 `RefreshTeam / GetMyTeam / ListTenantRoles / tenantToMap / requireTargetTenant` 等主语义入口已不再出现在 active 主链扫描结果里。
+- `backend/cmd/migrate/main.go` 已收成当前本地空项目最终态路径：迁移入口不再执行历史 rename/backfill 兼容链，并补齐“直接使用最终 workspace schema”的收口说明；协作空间相关 seed、权限刷新和边界快照逻辑继续对齐到 `personal / collaboration`。
+- frontend 继续完成目录级和 public type 收口：`team.ts` 已删除，`views/team/**` 与 `system/team-roles-permissions/**` 已让位给 `collaboration-workspace/**` 与 `system/collaboration-workspace-roles-permissions/**`；`feature-package-teams-dialog.vue` 已物理改名为 `feature-package-collaboration-workspaces-dialog.vue`，active import 全部切到新路径。
+- frontend 页面和类型继续去掉最后一批 `team/platform` 作为空间语义的表达：`AppContextBadge`、`message-dispatch-console`、`access-trace`、`feature-package`、`user-permission-test-drawer`、`collaboration-workspace` 页面主变量和提示文案统一改成“个人空间 / 协作空间 / 空间权限”；`api.d.ts`、`system-manage.ts` 和 `collaboration-workspace.ts` 不再暴露 `blockedByTeam / DispatchTeamOption / owner_tenant_name / tenant_name` 这类 public type 或 normalize 结果。
+- 本轮对 active 代码再次做了 grep 收口，`backend` 和 `frontend/src` 中已不再命中以下高价值旧主契约或旧主语义：`/api/v1/tenants/*`、`X-Tenant-ID`、`X-Team-Workspace-Id`、`@/api/team`、页面层 `tenantStore`、`blockedByTeam`、`DispatchTeamOption`、`showTargetTeams`、`onlyTeamUsers`、`平台上下文 / 团队上下文 / 平台权限 / 团队权限`。
+- 本轮已执行并通过：
+  - `go test ./... -run '^$'`
+  - `pnpm --dir frontend lint`
+  - `pnpm --dir frontend build`
+
+### 下次方向
+- 如果还要继续抠到更高洁净度，优先处理模型层和数据库层仍保留的 `Tenant / TenantMember` 结构名，以及极少量历史注释、README 和作者标识里的 `team / tenant` 字样；这些已不影响当前运行时主语义和对外契约。
+- 未来如果要真正引入多租户 `tenant` 领域，应另起独立模型、schema 和 API，不再回头复用当前协作空间实现。
+
+## 2026-04-07 空间权限语义最终收口
+
+### 本次改动
+- 后端运行时继续硬切到 `workspace / personal / collaboration` 主语义：`role/service` 删除了协作空间角色上的旧 `ErrTenantRoleManagedByTeam / ErrTeamRoleKeyReadonly` 引用，`api/errcode` 将 `ErrCollaborationWorkspace*` 和 `ErrNoCurrentCollaborationWorkspace` 设为唯一主错误码，旧 `ErrTenant* / ErrNoTeam / ErrTeamRoleNotFound` alias 已从 active 源码中移除。
+- `appscope`、`featurepackage`、`user/repository` 已把协作空间功能包主操作名统一成 `ReplaceCollaborationWorkspacePackagesInApp / ReplaceCollaborationWorkspacePackages`，不再以 `ReplaceTeamPackages*` 作为 active 主接口；`featurepackage` 的上下文归一化只接受 `personal | collaboration | common`。
+- `permission/service` 修正了空间上下文判断：`normalizeContextType` 不再接受旧 `platform/team` 作为主上下文，`deriveContextType` 不再把 `collaboration_workspace.*` 错归到个人空间，`deriveModuleContextBoundary` 与 `platformroleaccess` 的上下文判断也统一到了 `personal / collaboration`。
+- `collaborationworkspace/handler`、`user/handler`、`message_service`、`role/handler`、`apiendpoint/permission_audit` 等运行时代码已继续清掉旧 `my-team / team context / blocked_by_team / Refresh team` 等对外语义，协作空间诊断输出主字段已统一为 `blocked_by_collaboration_workspace`，默认上下文值也改成 `collaboration`。
+- 前端 public type 和 normalize 继续收口：`system-manage.ts` 不再读取 `teamMember / blocked_by_team` fallback，权限诊断、角色功能包对话框、消息模板、菜单表单、角色编辑表单等活跃页面与组件统一改成 `personal / collaboration` 语义，示例占位文案和上下文筛选值不再使用 `team`。
+- active 代码扫描结果已清空以下旧主契约与旧顶层术语：`/api/v1/tenants/*`、`X-Tenant-ID`、`X-Team-Workspace-Id`、`current_tenant_id / target_tenant_id / source_tenant_id`、`平台上下文 / 团队上下文 / 平台权限 / 团队权限`、`@/api/team`、页面层 `tenantStore`。
+- 本轮已执行并通过：
+  - `Set-Location backend; go test ./... -run '^$'`
+  - `pnpm --dir frontend lint`
+  - `pnpm --dir frontend build`
+
+### 下次方向
+- 如果继续追求代码洁净度，优先处理测试名、README、作者注释、图标名和少量局部变量中的 `team` 字样；这些已经不影响当前运行时语义和对外契约。
+- 如果后续真的引入多租户 `tenant` 领域，应从零设计独立 schema、DTO 和 API，不再复用当前协作空间模型。
+
 ## 2026-04-07 空间权限语义代码回写
 
 ### 本次改动
@@ -1725,4 +1760,27 @@
 ### 下次方向
 - `team.ts`、`tenant.ts`、`fetchGetTenantOptions`、`useTenantStore` 等兼容名称可以继续保留到历史桥接完全稳定，但不建议再新增任何新的 active 依赖。
 - 后续若继续清理，可以优先从 `frontend/src/views/team/**` 迁移到 `frontend/src/views/collaboration-workspace/**` 的路由与目录引用入手，只保留旧目录作为兼容壳。
+
+## 2026-04-07 协作空间最终体验收尾与浏览器烟测
+
+### 本次改动
+- `workspace` 统一权限主体、`workspace_type = personal | collaboration`、`auth_workspace_id + auth_workspace_type` 作为运行时权限上下文这条主线，已在当前前后端代码、迁移入口、seed 和 public API 上继续收口。
+- backend 重新执行了 `backend/cmd/migrate/main.go -fresh`，并再次执行 `backend/cmd/init-admin/main.go`，本地开发库已按最终态 schema 与 seed 重建。
+- 通过真实浏览器完成了登录、创建协作空间、切换到协作空间、打开协作空间消息页和关键接口断言的自动化烟测，当前主线已能按 `workspace_type = personal | collaboration` 运行。
+
+### 验证
+- `go test ./... -run '^$'`
+- `pnpm --dir frontend lint`
+- `pnpm --dir frontend build`
+- 浏览器自动化验证：
+  - 登录页使用 `admin / admin123456`
+  - 新建协作空间 `自动化验证协作空间`
+  - 调用 `/api/v1/workspaces/switch` 成功切换到 `auth_workspace_type = collaboration`
+  - 打开 `#/collaboration-workspace/message`
+  - 断言 `GET /api/v1/messages/dispatch/options => 200`
+  - 断言当前页面标题为 `协作空间消息发送 - G&G-E`
+
+### 下次方向
+- 若继续追求完全最终体，可继续清持久层结构名和少量历史符号名中的 `Tenant / Team` 词形，但这已经不再影响当前运行时主语义。
+- 协作空间消息发送页当前会在无发信配置时给出明确告警，可后续再补默认发信配置 seed，让空项目初始化后直接具备完整发信能力。
 

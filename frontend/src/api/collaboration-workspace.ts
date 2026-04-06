@@ -30,11 +30,24 @@ function derivePermissionSegments(permissionKey?: string) {
 function deriveContextType(permissionKey?: string, moduleCode?: string) {
   const key = `${permissionKey || ''}`.trim()
   const module = `${moduleCode || ''}`.trim()
+  if (key === 'collaboration_workspace.manage' || module === 'collaboration_workspace') {
+    return 'personal'
+  }
+  if (
+    key.startsWith('collaboration_workspace.member.') ||
+    key.startsWith('collaboration_workspace.boundary.') ||
+    key.startsWith('collaboration_workspace.message.') ||
+    module === 'collaboration_workspace_member' ||
+    module === 'collaboration_workspace_boundary' ||
+    module === 'collaboration_workspace_message'
+  ) {
+    return 'collaboration'
+  }
   if (
     key.startsWith('system.') ||
-    key.startsWith('collaboration_workspace.') ||
-    key.startsWith('platform.') ||
-    key === 'collaboration_workspace.manage' ||
+    key.startsWith('feature_package.') ||
+    key.startsWith('message.') ||
+    key.startsWith('personal.') ||
     module === 'role' ||
     module === 'user' ||
     module === 'menu' ||
@@ -42,11 +55,23 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
     module === 'permission_action' ||
     module === 'permission_key' ||
     module === 'api_endpoint' ||
-    module === 'feature_package'
+    module === 'feature_package' ||
+    module === 'collaboration_workspace_member_admin'
   ) {
-    return 'platform'
+    return 'personal'
   }
-  return 'collaboration'
+  return 'common'
+}
+
+function deriveFeaturePackageContextType(packageKey?: string) {
+  const key = `${packageKey || ''}`.trim()
+  if (key.startsWith('personal.')) {
+    return 'personal'
+  }
+  if (key.startsWith('collaboration_workspace.')) {
+    return 'collaboration'
+  }
+  return 'common'
 }
 
 function normalizeCollaborationWorkspace(
@@ -72,12 +97,6 @@ function normalizeCollaborationWorkspace(
       '',
     workspaceId: item?.workspace_id || item?.workspaceId || '',
     workspaceType: item?.workspace_type || item?.workspaceType || 'collaboration',
-    legacyCollaborationWorkspaceId:
-      item?.legacy_collaboration_workspace_id ||
-      item?.legacyCollaborationWorkspaceId ||
-      item?.collaboration_workspace_id ||
-      item?.id ||
-      '',
     currentRoleCode: item?.current_role_code || item?.currentRoleCode || '',
     memberStatus: item?.member_status || item?.memberStatus || ''
   }
@@ -131,13 +150,7 @@ function normalizeAction(item: any): Api.SystemManage.PermissionActionItem {
 function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem {
   const packageKey = item?.package_key || item?.packageKey || ''
   const contextType =
-    item?.context_type ||
-    item?.contextType ||
-    (packageKey.startsWith('platform.')
-      ? 'platform'
-      : packageKey.startsWith('common.')
-        ? 'common'
-        : 'collaboration')
+    item?.context_type || item?.contextType || deriveFeaturePackageContextType(packageKey)
   return {
     id: item?.id || '',
     packageKey,
@@ -148,7 +161,7 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
     isBuiltin: Boolean(item?.is_builtin ?? item?.isBuiltin ?? false),
     actionCount: item?.action_count ?? item?.actionCount ?? 0,
     menuCount: item?.menu_count ?? item?.menuCount ?? 0,
-    collaborationWorkspaceCount: item?.team_count ?? item?.collaborationWorkspaceCount ?? 0,
+    collaborationWorkspaceCount: item?.collaborationWorkspaceCount ?? 0,
     status: item?.status || 'normal',
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
     createdAt: item?.created_at || item?.createdAt || '',
@@ -168,11 +181,6 @@ function normalizeCollaborationWorkspaceMember(
     id: item?.id || '',
     collaborationWorkspaceId:
       item?.collaboration_workspace_id || item?.collaborationWorkspaceId || '',
-    legacyCollaborationWorkspaceId:
-      item?.legacy_collaboration_workspace_id ||
-      item?.legacyCollaborationWorkspaceId ||
-      item?.id ||
-      '',
     workspaceId: item?.workspace_id || item?.workspaceId || '',
     workspaceType: item?.workspace_type || item?.workspaceType || 'collaboration',
     userId: item?.user_id || item?.userId || '',
@@ -353,7 +361,7 @@ export function fetchGetMyCollaborationWorkspaceMemberRoles(userId: string) {
             name: item?.name || ''
           })),
           global_role_ids: res?.global_role_ids || [],
-          team_role_ids: res?.team_role_ids || [],
+          collaboration_workspace_role_ids: res?.collaboration_workspace_role_ids || [],
           bindingWorkspaceId: res?.binding_workspace_id || res?.bindingWorkspaceId || '',
           collaborationWorkspaceId:
             res?.collaboration_workspace_id ||

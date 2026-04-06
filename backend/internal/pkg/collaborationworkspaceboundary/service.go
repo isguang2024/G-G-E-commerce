@@ -42,11 +42,11 @@ type RoleSnapshot struct {
 }
 
 type Service interface {
-	GetSnapshot(teamID uuid.UUID, appKey ...string) (*Snapshot, error)
-	GetMenuSnapshot(teamID uuid.UUID, appKey ...string) (*MenuSnapshot, error)
-	GetEffectiveActionSet(teamID uuid.UUID, appKey ...string) (map[uuid.UUID]bool, error)
-	GetRoleSnapshot(teamID, roleID uuid.UUID, inheritAll bool, appKey ...string) (*RoleSnapshot, error)
-	RefreshSnapshot(teamID uuid.UUID, appKey ...string) (*Snapshot, error)
+	GetSnapshot(collaborationWorkspaceID uuid.UUID, appKey ...string) (*Snapshot, error)
+	GetMenuSnapshot(collaborationWorkspaceID uuid.UUID, appKey ...string) (*MenuSnapshot, error)
+	GetEffectiveActionSet(collaborationWorkspaceID uuid.UUID, appKey ...string) (map[uuid.UUID]bool, error)
+	GetRoleSnapshot(collaborationWorkspaceID, roleID uuid.UUID, inheritAll bool, appKey ...string) (*RoleSnapshot, error)
+	RefreshSnapshot(collaborationWorkspaceID uuid.UUID, appKey ...string) (*Snapshot, error)
 }
 
 type service struct {
@@ -59,24 +59,24 @@ func NewService(db *gorm.DB) Service {
 	}
 }
 
-func (s *service) GetSnapshot(teamID uuid.UUID, appKey ...string) (*Snapshot, error) {
+func (s *service) GetSnapshot(collaborationWorkspaceID uuid.UUID, appKey ...string) (*Snapshot, error) {
 	resolvedAppKey := resolveAppKey(appKey...)
-	snapshot, err := s.loadActionSnapshot(teamID, resolvedAppKey)
+	snapshot, err := s.loadActionSnapshot(collaborationWorkspaceID, resolvedAppKey)
 	if err != nil {
 		return nil, err
 	}
 	if snapshot != nil {
 		return snapshot, nil
 	}
-	return s.RefreshSnapshot(teamID, resolvedAppKey)
+	return s.RefreshSnapshot(collaborationWorkspaceID, resolvedAppKey)
 }
 
-func (s *service) calculateActionSnapshot(teamID uuid.UUID, appKey string) (*Snapshot, error) {
-	directPackageIDs, err := s.getPackageIDsByCollaborationWorkspaceID(teamID, appKey)
+func (s *service) calculateActionSnapshot(collaborationWorkspaceID uuid.UUID, appKey string) (*Snapshot, error) {
+	directPackageIDs, err := s.getPackageIDsByCollaborationWorkspaceID(collaborationWorkspaceID, appKey)
 	if err != nil {
 		return nil, err
 	}
-	packageIDs, expandedPackageIDs, err := s.resolvePackageSet(directPackageIDs, "team", appKey)
+	packageIDs, expandedPackageIDs, err := s.resolvePackageSet(directPackageIDs, "collaboration", appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func (s *service) calculateActionSnapshot(teamID uuid.UUID, appKey string) (*Sna
 	if err != nil {
 		return nil, err
 	}
-	blockedIDs, err := s.getBlockedActionIDsByCollaborationWorkspaceID(teamID)
+	blockedIDs, err := s.getBlockedActionIDsByCollaborationWorkspaceID(collaborationWorkspaceID)
 	if err != nil {
 		return nil, err
 	}
@@ -100,9 +100,9 @@ func (s *service) calculateActionSnapshot(teamID uuid.UUID, appKey string) (*Sna
 	}, nil
 }
 
-func (s *service) GetEffectiveActionSet(teamID uuid.UUID, appKey ...string) (map[uuid.UUID]bool, error) {
+func (s *service) GetEffectiveActionSet(collaborationWorkspaceID uuid.UUID, appKey ...string) (map[uuid.UUID]bool, error) {
 	resolvedAppKey := resolveAppKey(appKey...)
-	snapshot, err := s.GetSnapshot(teamID, resolvedAppKey)
+	snapshot, err := s.GetSnapshot(collaborationWorkspaceID, resolvedAppKey)
 	if err != nil {
 		return nil, err
 	}
@@ -113,19 +113,19 @@ func (s *service) GetEffectiveActionSet(teamID uuid.UUID, appKey ...string) (map
 	return result, nil
 }
 
-func (s *service) GetMenuSnapshot(teamID uuid.UUID, appKey ...string) (*MenuSnapshot, error) {
+func (s *service) GetMenuSnapshot(collaborationWorkspaceID uuid.UUID, appKey ...string) (*MenuSnapshot, error) {
 	resolvedAppKey := resolveAppKey(appKey...)
-	snapshot, err := s.loadMenuSnapshot(teamID, resolvedAppKey)
+	snapshot, err := s.loadMenuSnapshot(collaborationWorkspaceID, resolvedAppKey)
 	if err != nil {
 		return nil, err
 	}
 	if snapshot != nil {
 		return snapshot, nil
 	}
-	if _, err := s.RefreshSnapshot(teamID, resolvedAppKey); err != nil {
+	if _, err := s.RefreshSnapshot(collaborationWorkspaceID, resolvedAppKey); err != nil {
 		return nil, err
 	}
-	snapshot, err = s.loadMenuSnapshot(teamID, resolvedAppKey)
+	snapshot, err = s.loadMenuSnapshot(collaborationWorkspaceID, resolvedAppKey)
 	if err != nil {
 		return nil, err
 	}
@@ -135,12 +135,12 @@ func (s *service) GetMenuSnapshot(teamID uuid.UUID, appKey ...string) (*MenuSnap
 	return emptyMenuSnapshot(), nil
 }
 
-func (s *service) calculateMenuSnapshot(teamID uuid.UUID, appKey string) (*MenuSnapshot, error) {
-	directPackageIDs, err := s.getPackageIDsByCollaborationWorkspaceID(teamID, appKey)
+func (s *service) calculateMenuSnapshot(collaborationWorkspaceID uuid.UUID, appKey string) (*MenuSnapshot, error) {
+	directPackageIDs, err := s.getPackageIDsByCollaborationWorkspaceID(collaborationWorkspaceID, appKey)
 	if err != nil {
 		return nil, err
 	}
-	packageIDs, expandedPackageIDs, err := s.resolvePackageSet(directPackageIDs, "team", appKey)
+	packageIDs, expandedPackageIDs, err := s.resolvePackageSet(directPackageIDs, "collaboration", appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +148,7 @@ func (s *service) calculateMenuSnapshot(teamID uuid.UUID, appKey string) (*MenuS
 	if err != nil {
 		return nil, err
 	}
-	blockedIDs, err := s.getBlockedMenuIDsByCollaborationWorkspaceID(teamID, appKey)
+	blockedIDs, err := s.getBlockedMenuIDsByCollaborationWorkspaceID(collaborationWorkspaceID, appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -163,49 +163,49 @@ func (s *service) calculateMenuSnapshot(teamID uuid.UUID, appKey string) (*MenuS
 	}, nil
 }
 
-func (s *service) GetRoleSnapshot(teamID, roleID uuid.UUID, inheritAll bool, appKey ...string) (*RoleSnapshot, error) {
+func (s *service) GetRoleSnapshot(collaborationWorkspaceID, roleID uuid.UUID, inheritAll bool, appKey ...string) (*RoleSnapshot, error) {
 	resolvedAppKey := resolveAppKey(appKey...)
-	snapshot, err := s.loadRoleSnapshot(teamID, roleID, resolvedAppKey)
+	snapshot, err := s.loadRoleSnapshot(collaborationWorkspaceID, roleID, resolvedAppKey)
 	if err != nil {
 		return nil, err
 	}
 	if snapshot != nil {
 		return snapshot, nil
 	}
-	snapshot, err = s.calculateRoleSnapshot(teamID, roleID, inheritAll, resolvedAppKey)
+	snapshot, err = s.calculateRoleSnapshot(collaborationWorkspaceID, roleID, inheritAll, resolvedAppKey)
 	if err != nil {
 		return nil, err
 	}
-	if err := s.saveRoleSnapshot(teamID, roleID, resolvedAppKey, snapshot); err != nil {
+	if err := s.saveRoleSnapshot(collaborationWorkspaceID, roleID, resolvedAppKey, snapshot); err != nil {
 		return nil, err
 	}
 	return snapshot, nil
 }
 
-func (s *service) calculateRoleSnapshot(teamID, roleID uuid.UUID, inheritAll bool, appKey string) (*RoleSnapshot, error) {
-	directTeamPackageIDs, err := s.getPackageIDsByCollaborationWorkspaceID(teamID, appKey)
+func (s *service) calculateRoleSnapshot(collaborationWorkspaceID, roleID uuid.UUID, inheritAll bool, appKey string) (*RoleSnapshot, error) {
+	directCollaborationWorkspacePackageIDs, err := s.getPackageIDsByCollaborationWorkspaceID(collaborationWorkspaceID, appKey)
 	if err != nil {
 		return nil, err
 	}
-	collaborationWorkspaceFeaturePackageIDs, expandedTeamPackageIDs, err := s.resolvePackageSet(directTeamPackageIDs, "team", appKey)
+	collaborationWorkspaceFeaturePackageIDs, expandedCollaborationWorkspacePackageIDs, err := s.resolvePackageSet(directCollaborationWorkspacePackageIDs, "collaboration", appKey)
 	if err != nil {
 		return nil, err
 	}
 	effectivePackageIDs := collaborationWorkspaceFeaturePackageIDs
-	effectiveExpandedPackageIDs := expandedTeamPackageIDs
+	effectiveExpandedPackageIDs := expandedCollaborationWorkspacePackageIDs
 	inherited := inheritAll
 	if !inheritAll {
 		directRolePackageIDs, directRoleErr := s.getPackageIDsByRoleID(roleID, appKey)
 		if directRoleErr != nil {
 			return nil, directRoleErr
 		}
-		rolePackageIDs, expandedRolePackageIDs, roleErr := s.resolvePackageSet(directRolePackageIDs, "team", appKey)
+		rolePackageIDs, expandedRolePackageIDs, roleErr := s.resolvePackageSet(directRolePackageIDs, "collaboration", appKey)
 		if roleErr != nil {
 			return nil, roleErr
 		}
 		if len(rolePackageIDs) > 0 {
 			effectivePackageIDs = intersectIDs(collaborationWorkspaceFeaturePackageIDs, rolePackageIDs)
-			effectiveExpandedPackageIDs = intersectIDs(expandedTeamPackageIDs, expandedRolePackageIDs)
+			effectiveExpandedPackageIDs = intersectIDs(expandedCollaborationWorkspacePackageIDs, expandedRolePackageIDs)
 			inherited = false
 		} else {
 			inherited = true
@@ -215,11 +215,11 @@ func (s *service) calculateRoleSnapshot(teamID, roleID uuid.UUID, inheritAll boo
 	if err != nil {
 		return nil, err
 	}
-	teamBlockedActionIDs, err := s.getBlockedActionIDsByCollaborationWorkspaceID(teamID)
+	collaborationWorkspaceBlockedActionIDs, err := s.getBlockedActionIDsByCollaborationWorkspaceID(collaborationWorkspaceID)
 	if err != nil {
 		return nil, err
 	}
-	availableActionIDs = subtractIDs(availableActionIDs, teamBlockedActionIDs)
+	availableActionIDs = subtractIDs(availableActionIDs, collaborationWorkspaceBlockedActionIDs)
 	actionSourceMap = filterSourceMap(actionSourceMap, availableActionIDs)
 
 	roleDisabledActionIDs, err := s.getDisabledActionIDsByRoleID(roleID)
@@ -233,11 +233,11 @@ func (s *service) calculateRoleSnapshot(teamID, roleID uuid.UUID, inheritAll boo
 	if err != nil {
 		return nil, err
 	}
-	teamBlockedMenuIDs, err := s.getBlockedMenuIDsByCollaborationWorkspaceID(teamID, appKey)
+	collaborationWorkspaceBlockedMenuIDs, err := s.getBlockedMenuIDsByCollaborationWorkspaceID(collaborationWorkspaceID, appKey)
 	if err != nil {
 		return nil, err
 	}
-	availableMenuIDs = subtractIDs(availableMenuIDs, teamBlockedMenuIDs)
+	availableMenuIDs = subtractIDs(availableMenuIDs, collaborationWorkspaceBlockedMenuIDs)
 	menuSourceMap = filterSourceMap(menuSourceMap, availableMenuIDs)
 
 	roleHiddenMenuIDs, err := s.getHiddenMenuIDsByRoleID(roleID, appKey)
@@ -262,28 +262,28 @@ func (s *service) calculateRoleSnapshot(teamID, roleID uuid.UUID, inheritAll boo
 	}, nil
 }
 
-func (s *service) RefreshSnapshot(teamID uuid.UUID, appKey ...string) (*Snapshot, error) {
+func (s *service) RefreshSnapshot(collaborationWorkspaceID uuid.UUID, appKey ...string) (*Snapshot, error) {
 	resolvedAppKey := resolveAppKey(appKey...)
-	actionSnapshot, err := s.calculateActionSnapshot(teamID, resolvedAppKey)
+	actionSnapshot, err := s.calculateActionSnapshot(collaborationWorkspaceID, resolvedAppKey)
 	if err != nil {
 		return nil, err
 	}
-	menuSnapshot, err := s.calculateMenuSnapshot(teamID, resolvedAppKey)
+	menuSnapshot, err := s.calculateMenuSnapshot(collaborationWorkspaceID, resolvedAppKey)
 	if err != nil {
 		return nil, err
 	}
-	if err := s.saveSnapshot(teamID, resolvedAppKey, actionSnapshot, menuSnapshot); err != nil {
+	if err := s.saveSnapshot(collaborationWorkspaceID, resolvedAppKey, actionSnapshot, menuSnapshot); err != nil {
 		return nil, err
 	}
-	if err := s.refreshRoleSnapshots(teamID, resolvedAppKey); err != nil {
+	if err := s.refreshRoleSnapshots(collaborationWorkspaceID, resolvedAppKey); err != nil {
 		return nil, err
 	}
 	return actionSnapshot, nil
 }
 
-func (s *service) loadActionSnapshot(teamID uuid.UUID, appKey string) (*Snapshot, error) {
+func (s *service) loadActionSnapshot(collaborationWorkspaceID uuid.UUID, appKey string) (*Snapshot, error) {
 	var record models.CollaborationWorkspaceAccessSnapshot
-	if err := s.db.Where("app_key = ? AND collaboration_workspace_id = ?", appctx.NormalizeAppKey(appKey), teamID).First(&record).Error; err != nil {
+	if err := s.db.Where("app_key = ? AND collaboration_workspace_id = ?", appctx.NormalizeAppKey(appKey), collaborationWorkspaceID).First(&record).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
@@ -299,9 +299,9 @@ func (s *service) loadActionSnapshot(teamID uuid.UUID, appKey string) (*Snapshot
 	}, nil
 }
 
-func (s *service) loadMenuSnapshot(teamID uuid.UUID, appKey string) (*MenuSnapshot, error) {
+func (s *service) loadMenuSnapshot(collaborationWorkspaceID uuid.UUID, appKey string) (*MenuSnapshot, error) {
 	var record models.CollaborationWorkspaceAccessSnapshot
-	if err := s.db.Where("app_key = ? AND collaboration_workspace_id = ?", appctx.NormalizeAppKey(appKey), teamID).First(&record).Error; err != nil {
+	if err := s.db.Where("app_key = ? AND collaboration_workspace_id = ?", appctx.NormalizeAppKey(appKey), collaborationWorkspaceID).First(&record).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
@@ -317,10 +317,10 @@ func (s *service) loadMenuSnapshot(teamID uuid.UUID, appKey string) (*MenuSnapsh
 	}, nil
 }
 
-func (s *service) saveSnapshot(teamID uuid.UUID, appKey string, actionSnapshot *Snapshot, menuSnapshot *MenuSnapshot) error {
+func (s *service) saveSnapshot(collaborationWorkspaceID uuid.UUID, appKey string, actionSnapshot *Snapshot, menuSnapshot *MenuSnapshot) error {
 	record := models.CollaborationWorkspaceAccessSnapshot{
 		AppKey:                   appctx.NormalizeAppKey(appKey),
-		CollaborationWorkspaceID: teamID,
+		CollaborationWorkspaceID: collaborationWorkspaceID,
 		PackageIDs:               idsToUUIDStrings(actionSnapshot.PackageIDs),
 		ExpandedPackageIDs:       idsToUUIDStrings(actionSnapshot.ExpandedPackageIDs),
 		DerivedActionIDs:         idsToUUIDStrings(actionSnapshot.DerivedIDs),
@@ -338,9 +338,9 @@ func (s *service) saveSnapshot(teamID uuid.UUID, appKey string, actionSnapshot *
 	}).Create(&record).Error
 }
 
-func (s *service) loadRoleSnapshot(teamID, roleID uuid.UUID, appKey string) (*RoleSnapshot, error) {
+func (s *service) loadRoleSnapshot(collaborationWorkspaceID, roleID uuid.UUID, appKey string) (*RoleSnapshot, error) {
 	var record models.CollaborationWorkspaceRoleAccessSnapshot
-	if err := s.db.Where("app_key = ? AND collaboration_workspace_id = ? AND role_id = ?", appctx.NormalizeAppKey(appKey), teamID, roleID).First(&record).Error; err != nil {
+	if err := s.db.Where("app_key = ? AND collaboration_workspace_id = ? AND role_id = ?", appctx.NormalizeAppKey(appKey), collaborationWorkspaceID, roleID).First(&record).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, nil
 		}
@@ -361,10 +361,10 @@ func (s *service) loadRoleSnapshot(teamID, roleID uuid.UUID, appKey string) (*Ro
 	}, nil
 }
 
-func (s *service) saveRoleSnapshot(teamID, roleID uuid.UUID, appKey string, snapshot *RoleSnapshot) error {
+func (s *service) saveRoleSnapshot(collaborationWorkspaceID, roleID uuid.UUID, appKey string, snapshot *RoleSnapshot) error {
 	record := models.CollaborationWorkspaceRoleAccessSnapshot{
 		AppKey:                   appctx.NormalizeAppKey(appKey),
-		CollaborationWorkspaceID: teamID,
+		CollaborationWorkspaceID: collaborationWorkspaceID,
 		RoleID:                   roleID,
 		PackageIDs:               idsToUUIDStrings(snapshot.PackageIDs),
 		ExpandedPackageIDs:       idsToUUIDStrings(snapshot.ExpandedPackageIDs),
@@ -384,8 +384,8 @@ func (s *service) saveRoleSnapshot(teamID, roleID uuid.UUID, appKey string, snap
 	}).Create(&record).Error
 }
 
-func (s *service) refreshRoleSnapshots(teamID uuid.UUID, appKey string) error {
-	roleIDs, err := s.getRelevantRoleIDs(teamID)
+func (s *service) refreshRoleSnapshots(collaborationWorkspaceID uuid.UUID, appKey string) error {
+	roleIDs, err := s.getRelevantRoleIDs(collaborationWorkspaceID)
 	if err != nil {
 		return err
 	}
@@ -395,18 +395,18 @@ func (s *service) refreshRoleSnapshots(teamID uuid.UUID, appKey string) error {
 	}
 	for _, roleID := range roleIDs {
 		inheritAll := inheritMap[roleID]
-		snapshot, snapshotErr := s.calculateRoleSnapshot(teamID, roleID, inheritAll, appKey)
+		snapshot, snapshotErr := s.calculateRoleSnapshot(collaborationWorkspaceID, roleID, inheritAll, appKey)
 		if snapshotErr != nil {
 			return snapshotErr
 		}
-		if err := s.saveRoleSnapshot(teamID, roleID, appKey, snapshot); err != nil {
+		if err := s.saveRoleSnapshot(collaborationWorkspaceID, roleID, appKey, snapshot); err != nil {
 			return err
 		}
 	}
 	if len(roleIDs) == 0 {
-		return s.db.Where("app_key = ? AND collaboration_workspace_id = ?", appctx.NormalizeAppKey(appKey), teamID).Delete(&models.CollaborationWorkspaceRoleAccessSnapshot{}).Error
+		return s.db.Where("app_key = ? AND collaboration_workspace_id = ?", appctx.NormalizeAppKey(appKey), collaborationWorkspaceID).Delete(&models.CollaborationWorkspaceRoleAccessSnapshot{}).Error
 	}
-	return s.db.Where("app_key = ? AND collaboration_workspace_id = ? AND role_id NOT IN ?", appctx.NormalizeAppKey(appKey), teamID, roleIDs).Delete(&models.CollaborationWorkspaceRoleAccessSnapshot{}).Error
+	return s.db.Where("app_key = ? AND collaboration_workspace_id = ? AND role_id NOT IN ?", appctx.NormalizeAppKey(appKey), collaborationWorkspaceID, roleIDs).Delete(&models.CollaborationWorkspaceRoleAccessSnapshot{}).Error
 }
 
 func (s *service) getDerivedActionIDs(packageIDs []uuid.UUID) ([]uuid.UUID, map[uuid.UUID][]uuid.UUID, error) {
@@ -439,10 +439,10 @@ func (s *service) getDerivedActionIDs(packageIDs []uuid.UUID) ([]uuid.UUID, map[
 	return result, derivedMap, nil
 }
 
-func (s *service) getPackageIDsByCollaborationWorkspaceID(teamID uuid.UUID, appKey string) ([]uuid.UUID, error) {
+func (s *service) getPackageIDsByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	var workspace models.Workspace
 	if err := s.db.
-		Where("workspace_type = ? AND collaboration_workspace_id = ? AND deleted_at IS NULL", models.WorkspaceTypeCollaboration, teamID).
+		Where("workspace_type = ? AND collaboration_workspace_id = ? AND deleted_at IS NULL", models.WorkspaceTypeCollaboration, collaborationWorkspaceID).
 		First(&workspace).Error; err != nil && err != gorm.ErrRecordNotFound {
 		return nil, err
 	} else if err == nil {
@@ -463,14 +463,14 @@ func (s *service) getPackageIDsByCollaborationWorkspaceID(teamID uuid.UUID, appK
 	var packageIDs []uuid.UUID
 	err := s.db.Model(&models.CollaborationWorkspaceFeaturePackage{}).
 		Joins("JOIN feature_packages ON feature_packages.id = collaboration_workspace_feature_packages.package_id").
-		Where("collaboration_workspace_id = ? AND enabled = ?", teamID, true).
+		Where("collaboration_workspace_id = ? AND enabled = ?", collaborationWorkspaceID, true).
 		Where("feature_packages.app_key = ? AND feature_packages.deleted_at IS NULL", appctx.NormalizeAppKey(appKey)).
 		Distinct("collaboration_workspace_feature_packages.package_id").
 		Pluck("package_id", &packageIDs).Error
 	return packageIDs, err
 }
 
-func (s *service) resolvePackageSet(ids []uuid.UUID, context string, appKey string) ([]uuid.UUID, []uuid.UUID, error) {
+func (s *service) resolvePackageSet(ids []uuid.UUID, workspaceContext string, appKey string) ([]uuid.UUID, []uuid.UUID, error) {
 	if len(ids) == 0 {
 		return []uuid.UUID{}, []uuid.UUID{}, nil
 	}
@@ -493,32 +493,32 @@ func (s *service) resolvePackageSet(ids []uuid.UUID, context string, appKey stri
 	visited := make(map[uuid.UUID]struct{}, len(ids))
 	for _, id := range ids {
 		pkg, ok := packageMap[id]
-		if !ok || !contextAllowsPackage(context, pkg.ContextType) {
+		if !ok || !workspaceContextAllowsPackage(workspaceContext, pkg.ContextType) {
 			continue
 		}
 		if _, ok := seenDirect[id]; !ok {
 			seenDirect[id] = struct{}{}
 			validDirect = append(validDirect, id)
 		}
-		if err := s.expandPackageID(id, context, packageMap, bundleChildrenMap, visited, seenExpanded, &expanded); err != nil {
+		if err := s.expandPackageID(id, workspaceContext, packageMap, bundleChildrenMap, visited, seenExpanded, &expanded); err != nil {
 			return nil, nil, err
 		}
 	}
 	return validDirect, expanded, nil
 }
 
-func (s *service) expandPackageID(packageID uuid.UUID, context string, packageMap map[uuid.UUID]models.FeaturePackage, bundleChildrenMap map[uuid.UUID][]uuid.UUID, visited map[uuid.UUID]struct{}, seenExpanded map[uuid.UUID]struct{}, expanded *[]uuid.UUID) error {
+func (s *service) expandPackageID(packageID uuid.UUID, workspaceContext string, packageMap map[uuid.UUID]models.FeaturePackage, bundleChildrenMap map[uuid.UUID][]uuid.UUID, visited map[uuid.UUID]struct{}, seenExpanded map[uuid.UUID]struct{}, expanded *[]uuid.UUID) error {
 	if _, ok := visited[packageID]; ok {
 		return nil
 	}
 	visited[packageID] = struct{}{}
 	pkg, ok := packageMap[packageID]
-	if !ok || !contextAllowsPackage(context, pkg.ContextType) {
+	if !ok || !workspaceContextAllowsPackage(workspaceContext, pkg.ContextType) {
 		return nil
 	}
 	if pkg.PackageType == "bundle" {
 		for _, childID := range bundleChildrenMap[packageID] {
-			if err := s.expandPackageID(childID, context, packageMap, bundleChildrenMap, visited, seenExpanded, expanded); err != nil {
+			if err := s.expandPackageID(childID, workspaceContext, packageMap, bundleChildrenMap, visited, seenExpanded, expanded); err != nil {
 				return err
 			}
 		}
@@ -575,11 +575,11 @@ func (s *service) getPackageIDsByRoleID(roleID uuid.UUID, appKey string) ([]uuid
 	return packageIDs, err
 }
 
-func (s *service) getRelevantRoleIDs(teamID uuid.UUID) ([]uuid.UUID, error) {
+func (s *service) getRelevantRoleIDs(collaborationWorkspaceID uuid.UUID) ([]uuid.UUID, error) {
 	roleIDs := make([]uuid.UUID, 0)
 	var directRoleIDs []uuid.UUID
 	if err := s.db.Model(&models.Role{}).
-		Where("collaboration_workspace_id = ? AND status = ?", teamID, "normal").
+		Where("collaboration_workspace_id = ? AND status = ?", collaborationWorkspaceID, "normal").
 		Distinct("id").
 		Pluck("id", &directRoleIDs).Error; err != nil {
 		return nil, err
@@ -587,22 +587,22 @@ func (s *service) getRelevantRoleIDs(teamID uuid.UUID) ([]uuid.UUID, error) {
 	roleIDs = append(roleIDs, directRoleIDs...)
 	var assignedRoleIDs []uuid.UUID
 	if err := s.db.Model(&models.UserRole{}).
-		Where("collaboration_workspace_id = ?", teamID).
+		Where("collaboration_workspace_id = ?", collaborationWorkspaceID).
 		Distinct("role_id").
 		Pluck("role_id", &assignedRoleIDs).Error; err != nil {
 		return nil, err
 	}
-	identityRoleIDs, err := s.getTenantIdentityRoleIDs(teamID)
+	identityRoleIDs, err := s.getCollaborationWorkspaceIdentityRoleIDs(collaborationWorkspaceID)
 	if err != nil {
 		return nil, err
 	}
 	return mergeActionIDs(roleIDs, assignedRoleIDs, identityRoleIDs), nil
 }
 
-func (s *service) getTenantIdentityRoleIDs(teamID uuid.UUID) ([]uuid.UUID, error) {
+func (s *service) getCollaborationWorkspaceIdentityRoleIDs(collaborationWorkspaceID uuid.UUID) ([]uuid.UUID, error) {
 	var roleCodes []string
-	if err := s.db.Model(&models.TenantMember{}).
-		Where("collaboration_workspace_id = ? AND status = ?", teamID, "active").
+	if err := s.db.Model(&models.CollaborationWorkspaceMember{}).
+		Where("collaboration_workspace_id = ? AND status = ?", collaborationWorkspaceID, "active").
 		Distinct("role_code").
 		Pluck("role_code", &roleCodes).Error; err != nil {
 		return nil, err
@@ -624,11 +624,11 @@ func (s *service) getInheritedRoleMap(roleIDs []uuid.UUID) (map[uuid.UUID]bool, 
 	if len(roleIDs) == 0 {
 		return result, nil
 	}
-	type roleTenantRow struct {
+	type roleCollaborationWorkspaceRow struct {
 		ID                       uuid.UUID
 		CollaborationWorkspaceID *uuid.UUID
 	}
-	var rows []roleTenantRow
+	var rows []roleCollaborationWorkspaceRow
 	if err := s.db.Model(&models.Role{}).
 		Select("id", "collaboration_workspace_id").
 		Where("id IN ?", roleIDs).
@@ -728,19 +728,19 @@ func emptyRoleSnapshot(inherited bool) *RoleSnapshot {
 	}
 }
 
-func (s *service) getBlockedActionIDsByCollaborationWorkspaceID(teamID uuid.UUID) ([]uuid.UUID, error) {
+func (s *service) getBlockedActionIDsByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) ([]uuid.UUID, error) {
 	var actionIDs []uuid.UUID
 	err := s.db.Model(&models.CollaborationWorkspaceBlockedAction{}).
-		Where("collaboration_workspace_id = ?", teamID).
+		Where("collaboration_workspace_id = ?", collaborationWorkspaceID).
 		Pluck("action_id", &actionIDs).Error
 	return actionIDs, err
 }
 
-func (s *service) getBlockedMenuIDsByCollaborationWorkspaceID(teamID uuid.UUID, appKey string) ([]uuid.UUID, error) {
+func (s *service) getBlockedMenuIDsByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	var menuIDs []uuid.UUID
 	err := s.db.Model(&models.CollaborationWorkspaceBlockedMenu{}).
 		Joins("JOIN menu_definitions ON menu_definitions.id = collaboration_workspace_blocked_menus.menu_id").
-		Where("collaboration_workspace_id = ?", teamID).
+		Where("collaboration_workspace_id = ?", collaborationWorkspaceID).
 		Where("menu_definitions.app_key = ? AND menu_definitions.deleted_at IS NULL", appctx.NormalizeAppKey(appKey)).
 		Distinct("collaboration_workspace_blocked_menus.menu_id").
 		Pluck("menu_id", &menuIDs).Error
@@ -857,15 +857,15 @@ func intersectIDs(primary, boundary []uuid.UUID) []uuid.UUID {
 	return result
 }
 
-func contextAllowsPackage(targetContext, packageContext string) bool {
+func workspaceContextAllowsPackage(workspaceContext, packageContext string) bool {
 	if packageContext == "" {
 		return true
 	}
-	switch targetContext {
-	case "team":
-		return packageContext == "team" || packageContext == "common"
-	case "platform":
-		return packageContext == "platform" || packageContext == "common"
+	switch workspaceContext {
+	case "collaboration":
+		return packageContext == "collaboration" || packageContext == "common"
+	case "personal":
+		return packageContext == "personal" || packageContext == "common"
 	default:
 		return false
 	}

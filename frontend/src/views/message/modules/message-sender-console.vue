@@ -157,7 +157,7 @@
   defineOptions({ name: 'MessageSenderConsole' })
 
   const props = defineProps<{
-    scope: 'platform' | 'collaboration'
+    scope: 'personal' | 'collaboration'
   }>()
 
   interface SenderDrawerModel {

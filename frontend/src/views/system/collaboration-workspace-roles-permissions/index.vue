@@ -1,17 +1,17 @@
-﻿<template>
+<template>
   <div class="art-full-height">
     <AdminWorkspaceHero
       title="协作空间角色与权限"
       description="这里维护协作空间内的角色目录、功能包与权限裁剪。协作空间内部角色只在当前协作空间生效。"
       :metrics="heroMetrics"
     >
-      <div class="team-role-hero-actions">
+      <div class="collaboration-workspace-role-hero-actions">
         <ElSelect
           v-model="selectedAppKey"
           clearable
           filterable
           placeholder="选择 App"
-          class="team-role-app-select"
+          class="collaboration-workspace-role-app-select"
           @change="handleManagedAppChange"
         >
           <ElOption
@@ -106,10 +106,10 @@
   import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
   import { fetchGetApps } from '@/api/system-manage'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
-  import CollaborationWorkspaceRoleDialog from './modules/team-role-dialog.vue'
-  import CollaborationWorkspaceRolePackageDialog from './modules/team-role-package-dialog.vue'
-  import CollaborationWorkspaceRoleMenuDialog from './modules/team-role-menu-dialog.vue'
-  import CollaborationWorkspaceRoleActionDialog from './modules/team-role-action-dialog.vue'
+  import CollaborationWorkspaceRoleDialog from './modules/collaboration-workspace-role-dialog.vue'
+  import CollaborationWorkspaceRolePackageDialog from './modules/collaboration-workspace-role-package-dialog.vue'
+  import CollaborationWorkspaceRoleMenuDialog from './modules/collaboration-workspace-role-menu-dialog.vue'
+  import CollaborationWorkspaceRoleActionDialog from './modules/collaboration-workspace-role-action-dialog.vue'
 
   defineOptions({ name: 'CollaborationWorkspaceRolesAndPermissions' })
 
@@ -290,13 +290,13 @@
 </script>
 
 <style scoped lang="scss">
-  .team-role-hero-actions {
+  .collaboration-workspace-role-hero-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 12px;
   }
 
-  .team-role-app-select {
+  .collaboration-workspace-role-app-select {
     width: 240px;
   }
 

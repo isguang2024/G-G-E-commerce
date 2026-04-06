@@ -59,9 +59,11 @@
               <div class="message-row__meta">
                 <div class="message-row__meta-tags">
                   <span class="message-chip">{{ resolveSourceLabel(item) }}</span>
-                  <span v-if="resolveWorkspaceTag(item)" class="message-chip is-team">{{
-                    resolveWorkspaceTag(item)
-                  }}</span>
+                  <span
+                    v-if="resolveWorkspaceTag(item)"
+                    class="message-chip is-collaboration-workspace"
+                    >{{ resolveWorkspaceTag(item) }}</span
+                  >
                 </div>
                 <span class="message-row__time">{{
                   formatTime(item.last_action_at || item.published_at || item.created_at)
@@ -482,7 +484,7 @@
     color: #475569;
   }
 
-  .message-chip.is-team {
+  .message-chip.is-collaboration-workspace {
     background: rgb(219 234 254 / 0.9);
     color: #1d4ed8;
   }

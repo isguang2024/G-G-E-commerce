@@ -103,8 +103,8 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 	if !all {
 		userID, err := currentUserID(c)
 		if err == nil {
-			collaborationWorkspaceID, tenantErr := currentCollaborationWorkspaceID(c)
-			if tenantErr == nil {
+			collaborationWorkspaceID, collaborationWorkspaceErr := currentCollaborationWorkspaceID(c)
+			if collaborationWorkspaceErr == nil {
 				allowedMenuIDs, _ = h.getAllowedMenuIDs(userID, collaborationWorkspaceID)
 			}
 		}
@@ -130,11 +130,11 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 
 func (h *MenuHandler) getAllowedMenuIDs(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]uuid.UUID, error) {
 	if collaborationWorkspaceID != nil && h.userRoleRepo != nil {
-		roleIDs, err := h.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndTenant(userID, collaborationWorkspaceID)
+		roleIDs, err := h.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndCollaborationWorkspace(userID, collaborationWorkspaceID)
 		if err != nil {
 			return nil, err
 		}
-		return h.getTeamContextAllowedMenuIDs(*collaborationWorkspaceID, roleIDs)
+			return h.getCollaborationWorkspaceContextAllowedMenuIDs(*collaborationWorkspaceID, roleIDs)
 	}
 	if collaborationWorkspaceID == nil && h.platformService != nil {
 		snapshot, err := h.platformService.GetSnapshot(userID)
@@ -156,7 +156,7 @@ func isMenuEnabled(menu user.Menu) bool {
 	return true
 }
 
-func (h *MenuHandler) getTeamContextAllowedMenuIDs(teamID uuid.UUID, roleIDs []uuid.UUID) ([]uuid.UUID, error) {
+func (h *MenuHandler) getCollaborationWorkspaceContextAllowedMenuIDs(collaborationWorkspaceID uuid.UUID, roleIDs []uuid.UUID) ([]uuid.UUID, error) {
 	if len(roleIDs) == 0 || h.roleRepo == nil || h.boundaryService == nil {
 		return []uuid.UUID{}, nil
 	}
@@ -174,7 +174,7 @@ func (h *MenuHandler) getTeamContextAllowedMenuIDs(teamID uuid.UUID, roleIDs []u
 		if !ok {
 			continue
 		}
-		snapshot, snapshotErr := h.boundaryService.GetRoleSnapshot(teamID, role.ID, role.CollaborationWorkspaceID == nil)
+		snapshot, snapshotErr := h.boundaryService.GetRoleSnapshot(collaborationWorkspaceID, role.ID, role.CollaborationWorkspaceID == nil)
 		if snapshotErr != nil {
 			return nil, snapshotErr
 		}

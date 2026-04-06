@@ -10,10 +10,11 @@
 
 功能权限以 `resource_code` + `action_code` + `scope_id` 作为唯一标识，同一动作在不同作用域下应拆成不同权限定义。
 
-## 作用域
+## 上下文
 
-- 只保留 `global` 与 `team`
-- 同一功能同时支持平台和协作空间时，权限定义拆成两条，业务实现复用同一套 service
+- 统一使用 `workspace`
+- `workspace_type` 只保留 `personal` 与 `collaboration`
+- 同一功能在个人空间和协作空间下生效时，权限定义可以复用同一条 key，由运行时按空间类型判断
 
 ## 权限来源
 

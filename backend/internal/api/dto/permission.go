@@ -75,12 +75,12 @@ type RoleFeaturePackagesRequest struct {
 	PackageIDs []string `json:"package_ids"`
 }
 
-type TenantKeyPermissionsRequest struct {
+type CollaborationWorkspaceKeyPermissionsRequest struct {
 	AppKey string   `json:"app_key" binding:"max=100"`
 	KeyIDs []string `json:"action_ids"`
 }
 
-type TenantMenuPermissionsRequest struct {
+type CollaborationWorkspaceMenuPermissionsRequest struct {
 	AppKey  string   `json:"app_key" binding:"max=100"`
 	MenuIDs []string `json:"menu_ids"`
 }
@@ -144,7 +144,7 @@ type CollaborationWorkspaceFeaturePackageSetRequest struct {
 	PackageIDs []string `json:"package_ids"`
 }
 
-type FeaturePackageTeamSetRequest struct {
+type FeaturePackageCollaborationWorkspaceSetRequest struct {
 	AppKey                    string   `json:"app_key" binding:"max=100"`
 	CollaborationWorkspaceIDs []string `json:"collaboration_workspace_ids"`
 }

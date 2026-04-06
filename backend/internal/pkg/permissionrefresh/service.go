@@ -25,17 +25,6 @@ type Service interface {
 	RefreshPersonalWorkspaceRole(roleID uuid.UUID) error
 	RefreshPersonalWorkspaceRoles(roleIDs []uuid.UUID) error
 	RefreshAllPersonalWorkspaceRoles() error
-
-	// 兼容旧命名，后续删除。
-	RefreshTeam(teamID uuid.UUID) error
-	RefreshTeams(collaborationWorkspaceIDs []uuid.UUID) error
-	RefreshAllTeams() error
-	RefreshPlatformUser(userID uuid.UUID) error
-	RefreshPlatformUsers(userIDs []uuid.UUID) error
-	RefreshAllPlatformUsers() error
-	RefreshPlatformRole(roleID uuid.UUID) error
-	RefreshPlatformRoles(roleIDs []uuid.UUID) error
-	RefreshAllPlatformRoles() error
 	RefreshByPackage(packageID uuid.UUID) error
 	RefreshByPackages(packageIDs []uuid.UUID) error
 	RefreshByPackageWithStats(packageID uuid.UUID) (RefreshStats, error)
@@ -101,7 +90,7 @@ func (s *service) RefreshAllCollaborationWorkspaces() error {
 	type collaborationWorkspaceIDOnly struct {
 		ID uuid.UUID
 	}
-	return s.db.Model(&models.Tenant{}).
+	return s.db.Model(&models.CollaborationWorkspace{}).
 		Select("id").
 		FindInBatches(&[]collaborationWorkspaceIDOnly{}, 200, func(tx *gorm.DB, _ int) error {
 			rows, ok := tx.Statement.Dest.(*[]collaborationWorkspaceIDOnly)
@@ -438,42 +427,6 @@ func (s *service) getPlatformUserIDsByPackageIDs(packageIDs []uuid.UUID) ([]uuid
 		return nil, err
 	}
 	return dedupeUUIDs(append(workspaceUserIDs, userIDs...)), nil
-}
-
-func (s *service) RefreshTeam(teamID uuid.UUID) error {
-	return s.RefreshCollaborationWorkspace(teamID)
-}
-
-func (s *service) RefreshTeams(collaborationWorkspaceIDs []uuid.UUID) error {
-	return s.RefreshCollaborationWorkspaces(collaborationWorkspaceIDs)
-}
-
-func (s *service) RefreshAllTeams() error {
-	return s.RefreshAllCollaborationWorkspaces()
-}
-
-func (s *service) RefreshPlatformUser(userID uuid.UUID) error {
-	return s.RefreshPersonalWorkspaceUser(userID)
-}
-
-func (s *service) RefreshPlatformUsers(userIDs []uuid.UUID) error {
-	return s.RefreshPersonalWorkspaceUsers(userIDs)
-}
-
-func (s *service) RefreshAllPlatformUsers() error {
-	return s.RefreshAllPersonalWorkspaceUsers()
-}
-
-func (s *service) RefreshPlatformRole(roleID uuid.UUID) error {
-	return s.RefreshPersonalWorkspaceRole(roleID)
-}
-
-func (s *service) RefreshPlatformRoles(roleIDs []uuid.UUID) error {
-	return s.RefreshPersonalWorkspaceRoles(roleIDs)
-}
-
-func (s *service) RefreshAllPlatformRoles() error {
-	return s.RefreshAllPersonalWorkspaceRoles()
 }
 
 func (s *service) getPlatformUserIDsByRoleIDs(roleIDs []uuid.UUID) ([]uuid.UUID, error) {

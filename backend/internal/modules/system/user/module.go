@@ -8,11 +8,11 @@ import (
 	"github.com/gg-ecommerce/backend/internal/config"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
+	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 )
 
 type UserModule struct {
@@ -43,23 +43,23 @@ func (m *UserModule) RegisterRoutes(rg *gin.RouterGroup) {
 	packageRepo := NewFeaturePackageRepository(m.db)
 	userHiddenMenuRepo := NewUserHiddenMenuRepository(m.db)
 	keyRepo := NewPermissionKeyRepository(m.db)
-	tenantMemberRepo := NewTenantMemberRepository(m.db)
+	collaborationWorkspaceMemberRepo := NewCollaborationWorkspaceMemberRepository(m.db)
 	boundaryService := collaborationworkspaceboundary.NewService(m.db)
 	platformService := platformaccess.NewService(m.db)
 	roleSnapshotService := platformroleaccess.NewService(m.db)
 	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
 	userService := NewUserService(m.db, userRepo, roleRepo, refresher, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
-	userHandler := NewUserHandler(m.db, userService, packageRepo, keyRepo, platformService, boundaryService, roleRepo, authzService, userRoleRepo, tenantMemberRepo, userPackageRepo, userHiddenMenuRepo, menuRepo, refresher, m.logger)
+	userHandler := NewUserHandler(m.db, userService, packageRepo, keyRepo, platformService, boundaryService, roleRepo, authzService, userRoleRepo, collaborationWorkspaceMemberRepo, userPackageRepo, userHiddenMenuRepo, menuRepo, refresher, m.logger)
 
 	users := rg.Group("/users")
 	reg := apiregistry.NewRegistrar(users, "user")
 	{
 		reg.GETProtected("", reg.Meta("获取用户列表").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.List)
 		reg.GETProtected("/:id", reg.Meta("获取用户详情").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.Get)
-		reg.GETProtected("/:id/collaboration-workspaces", reg.Meta("获取用户所在协作空间").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.GetTeams)
-		reg.GETAction("/:id/packages", "获取用户功能包", "platform.package.assign", authzService.RequireAction, userHandler.GetPackages)
-		reg.PUTAction("/:id/packages", "配置用户功能包", "platform.package.assign", authzService.RequireAction, userHandler.SetPackages)
+		reg.GETProtected("/:id/collaboration-workspaces", reg.Meta("获取用户所在协作空间").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.GetCollaborationWorkspaces)
+		reg.GETAction("/:id/packages", "获取用户功能包", "feature_package.assign_collaboration_workspace", authzService.RequireAction, userHandler.GetPackages)
+		reg.PUTAction("/:id/packages", "配置用户功能包", "feature_package.assign_collaboration_workspace", authzService.RequireAction, userHandler.SetPackages)
 		reg.GETProtected("/:id/menus", reg.Meta("获取用户菜单裁剪").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.GetMenus)
 		reg.PUTProtected("/:id/menus", reg.Meta("配置用户菜单裁剪").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.SetMenus)
 		reg.GETProtected("/:id/permissions", reg.Meta("获取用户菜单权限").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.GetPermissions)

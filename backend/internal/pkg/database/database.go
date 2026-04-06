@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	gormlogger "gorm.io/gorm/logger"
@@ -140,8 +139,8 @@ func AutoMigrate() error {
 		&models.CollaborationWorkspaceBlockedAction{},
 		&models.UserActionPermission{},
 		&models.UserHiddenMenu{},
-		&models.PlatformUserAccessSnapshot{},
-		&models.PlatformRoleAccessSnapshot{},
+		&models.PersonalWorkspaceAccessSnapshot{},
+		&models.PersonalWorkspaceRoleAccessSnapshot{},
 		&models.CollaborationWorkspaceAccessSnapshot{},
 		&models.CollaborationWorkspaceRoleAccessSnapshot{},
 		&models.APIEndpointCategory{},
@@ -155,8 +154,8 @@ func AutoMigrate() error {
 		&models.Menu{},
 		&models.UIPage{},
 		&models.PageSpaceBinding{},
-		&models.Tenant{},
-		&models.TenantMember{},
+		&models.CollaborationWorkspace{},
+		&models.CollaborationWorkspaceMember{},
 		&models.Workspace{},
 		&models.WorkspaceMember{},
 		&models.WorkspaceRoleBinding{},
@@ -183,12 +182,6 @@ func AutoMigrate() error {
 	if err := ensureAppBootstrap(); err != nil {
 		return fmt.Errorf("failed to bootstrap default app data: %w", err)
 	}
-	if err := ensureAPIEndpointAppColumns(DB); err != nil {
-		return fmt.Errorf("failed to finalize api endpoint app columns: %w", err)
-	}
-	if err := ensureUIPageLegacySpaceKeyCompatibility(DB); err != nil {
-		return fmt.Errorf("failed to finalize ui_pages legacy space_key compatibility: %w", err)
-	}
 	// 创建唯一索引（AutoMigrate 不会自动创建唯一索引）
 	if err := createUniqueIndexes(); err != nil {
 		return fmt.Errorf("failed to create unique indexes: %w", err)
@@ -202,20 +195,9 @@ func createUniqueIndexes() error {
 	// collaboration_workspace_members 表的 (collaboration_workspace_id, user_id) 唯一索引
 	indexName := "idx_collaboration_workspace_members_user_unique"
 	var count int64
-	if err := DB.Exec("DROP INDEX IF EXISTS idx_collaboration_workspace_members_tenant_user_unique").Error; err != nil {
-		return err
-	}
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", indexName).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE UNIQUE INDEX " + indexName + " ON collaboration_workspace_members (collaboration_workspace_id, user_id)").Error; err != nil {
-			return err
-		}
-	}
-
-	legacyIndexName := "idx_user_role"
-	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", legacyIndexName).Scan(&count)
-	if count > 0 {
-		if err := DB.Exec("DROP INDEX IF EXISTS " + legacyIndexName).Error; err != nil {
 			return err
 		}
 	}
@@ -229,9 +211,6 @@ func createUniqueIndexes() error {
 	}
 
 	collaborationWorkspaceIndexName := "idx_user_roles_collaboration_workspace_unique"
-	if err := DB.Exec("DROP INDEX IF EXISTS idx_user_roles_tenant_unique").Error; err != nil {
-		return err
-	}
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", collaborationWorkspaceIndexName).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE UNIQUE INDEX " + collaborationWorkspaceIndexName + " ON user_roles (user_id, role_id, collaboration_workspace_id) WHERE collaboration_workspace_id IS NOT NULL").Error; err != nil {
@@ -256,9 +235,6 @@ func createUniqueIndexes() error {
 	}
 
 	collaborationWorkspaceIndexNameOnWorkspace := "idx_workspaces_collaboration_workspace_unique"
-	if err := DB.Exec("DROP INDEX IF EXISTS idx_workspaces_team_tenant_unique").Error; err != nil {
-		return err
-	}
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", collaborationWorkspaceIndexNameOnWorkspace).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE UNIQUE INDEX " + collaborationWorkspaceIndexNameOnWorkspace + " ON workspaces (collaboration_workspace_id) WHERE workspace_type = 'collaboration' AND collaboration_workspace_id IS NOT NULL AND deleted_at IS NULL").Error; err != nil {
@@ -316,9 +292,6 @@ func createUniqueIndexes() error {
 	}
 
 	userActionCollaborationWorkspaceIndexName := "idx_user_action_permissions_collaboration_workspace_unique"
-	if err := DB.Exec("DROP INDEX IF EXISTS idx_user_action_permissions_tenant_unique").Error; err != nil {
-		return err
-	}
 	if err := DB.Exec("DROP INDEX IF EXISTS " + userActionCollaborationWorkspaceIndexName).Error; err != nil {
 		return err
 	}
@@ -426,14 +399,6 @@ func createUniqueIndexes() error {
 		}
 	}
 
-	menuDefinitionLegacyNameIndex := "idx_menu_definitions_app_name"
-	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", menuDefinitionLegacyNameIndex).Scan(&count)
-	if count == 0 {
-		if err := DB.Exec("CREATE INDEX " + menuDefinitionLegacyNameIndex + " ON menu_definitions (app_key, name)").Error; err != nil {
-			return err
-		}
-	}
-
 	spaceMenuPlacementIndexName := "idx_space_menu_placements_unique"
 	if err := DB.Exec("DROP INDEX IF EXISTS " + spaceMenuPlacementIndexName).Error; err != nil {
 		return err
@@ -526,13 +491,13 @@ func createUniqueIndexes() error {
 		}
 	}
 
-	teamFeaturePackageIndexName := "idx_collaboration_workspace_feature_packages_unique"
-	if err := DB.Exec("DROP INDEX IF EXISTS " + teamFeaturePackageIndexName).Error; err != nil {
+	collaborationWorkspaceFeaturePackageIndexName := "idx_collaboration_workspace_feature_packages_unique"
+	if err := DB.Exec("DROP INDEX IF EXISTS " + collaborationWorkspaceFeaturePackageIndexName).Error; err != nil {
 		return err
 	}
-	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", teamFeaturePackageIndexName).Scan(&count)
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", collaborationWorkspaceFeaturePackageIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + teamFeaturePackageIndexName + " ON collaboration_workspace_feature_packages (app_key, collaboration_workspace_id, package_id)").Error; err != nil {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + collaborationWorkspaceFeaturePackageIndexName + " ON collaboration_workspace_feature_packages (app_key, collaboration_workspace_id, package_id)").Error; err != nil {
 			return err
 		}
 	}
@@ -581,24 +546,24 @@ func createUniqueIndexes() error {
 		}
 	}
 
-	teamBlockedMenuIndexName := "idx_collaboration_workspace_blocked_menus_unique"
-	if err := DB.Exec("DROP INDEX IF EXISTS " + teamBlockedMenuIndexName).Error; err != nil {
+	collaborationWorkspaceBlockedMenuIndexName := "idx_collaboration_workspace_blocked_menus_unique"
+	if err := DB.Exec("DROP INDEX IF EXISTS " + collaborationWorkspaceBlockedMenuIndexName).Error; err != nil {
 		return err
 	}
-	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", teamBlockedMenuIndexName).Scan(&count)
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", collaborationWorkspaceBlockedMenuIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + teamBlockedMenuIndexName + " ON collaboration_workspace_blocked_menus (app_key, collaboration_workspace_id, menu_id)").Error; err != nil {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + collaborationWorkspaceBlockedMenuIndexName + " ON collaboration_workspace_blocked_menus (app_key, collaboration_workspace_id, menu_id)").Error; err != nil {
 			return err
 		}
 	}
 
-	teamBlockedActionIndexName := "idx_collaboration_workspace_blocked_actions_unique"
-	if err := DB.Exec("DROP INDEX IF EXISTS " + teamBlockedActionIndexName).Error; err != nil {
+	collaborationWorkspaceBlockedActionIndexName := "idx_collaboration_workspace_blocked_actions_unique"
+	if err := DB.Exec("DROP INDEX IF EXISTS " + collaborationWorkspaceBlockedActionIndexName).Error; err != nil {
 		return err
 	}
-	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", teamBlockedActionIndexName).Scan(&count)
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", collaborationWorkspaceBlockedActionIndexName).Scan(&count)
 	if count == 0 {
-		if err := DB.Exec("CREATE UNIQUE INDEX " + teamBlockedActionIndexName + " ON collaboration_workspace_blocked_actions (app_key, collaboration_workspace_id, action_id)").Error; err != nil {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + collaborationWorkspaceBlockedActionIndexName + " ON collaboration_workspace_blocked_actions (app_key, collaboration_workspace_id, action_id)").Error; err != nil {
 			return err
 		}
 	}
@@ -764,10 +729,6 @@ func createUniqueIndexes() error {
 		}
 	}
 
-	if err := ensureAppScopedSnapshotPrimaryKeys(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -811,311 +772,6 @@ func ensureAppBootstrap() error {
 		return err
 	}
 
-	if err := backfillDefaultAppKey(); err != nil {
-		return err
-	}
-	if err := backfillAppScopedRelations(); err != nil {
-		return err
-	}
-	if err := backfillMenuDefinitionsAndPlacements(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func backfillDefaultAppKey() error {
-	if DB == nil {
-		return fmt.Errorf("database not initialized")
-	}
-
-	statements := []string{
-		"UPDATE menu_spaces SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE menus SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE menu_definitions SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE space_menu_placements SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE ui_pages SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE page_space_bindings SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE feature_packages SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE menu_backups SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE api_endpoints SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE platform_user_access_snapshots SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE platform_role_access_snapshots SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE collaboration_workspace_access_snapshots SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE collaboration_workspace_role_access_snapshots SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE api_endpoints SET app_scope = '" + models.AppScopeShared + "' WHERE COALESCE(TRIM(app_scope), '') = '' AND (path LIKE '/api/v1/auth/%' OR path = '/api/v1/pages/runtime/public' OR path LIKE '/open/v1/%' OR path = '/health')",
-		"UPDATE api_endpoints SET app_scope = '" + models.AppScopeApp + "' WHERE COALESCE(TRIM(app_scope), '') = ''",
-	}
-	for _, statement := range statements {
-		if err := DB.Exec(statement).Error; err != nil {
-			return err
-		}
-	}
-
-	if err := DB.Model(&models.MenuSpace{}).
-		Where("space_key = ? AND deleted_at IS NULL", models.DefaultMenuSpaceKey).
-		Updates(map[string]interface{}{
-			"app_key":    models.DefaultAppKey,
-			"is_default": true,
-			"status":     "normal",
-		}).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func backfillAppScopedRelations() error {
-	if DB == nil {
-		return fmt.Errorf("database not initialized")
-	}
-
-	statements := []string{
-		"UPDATE role_feature_packages SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE collaboration_workspace_feature_packages SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE user_feature_packages SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE role_hidden_menus SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE collaboration_workspace_blocked_menus SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE user_hidden_menus SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE role_disabled_actions SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE collaboration_workspace_blocked_actions SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		"UPDATE user_action_permissions SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-	}
-	for _, statement := range statements {
-		if err := DB.Exec(statement).Error; err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func backfillMenuDefinitionsAndPlacements() error {
-	if DB == nil {
-		return fmt.Errorf("database not initialized")
-	}
-
-	type legacyMenu struct {
-		ID            string
-		AppKey        string
-		SpaceKey      string
-		ParentID      *string
-		ManageGroupID *string
-		Kind          string
-		Path          string
-		Name          string
-		Component     string
-		Title         string
-		Icon          string
-		SortOrder     int
-		Hidden        bool
-		Meta          models.MetaJSON
-	}
-
-	menus := make([]legacyMenu, 0)
-	if err := DB.Raw(`
-		SELECT
-			id::text AS id,
-			app_key,
-			COALESCE(NULLIF(space_key, ''), ?) AS space_key,
-			CASE WHEN parent_id IS NULL THEN NULL ELSE parent_id::text END AS parent_id,
-			CASE WHEN manage_group_id IS NULL THEN NULL ELSE manage_group_id::text END AS manage_group_id,
-			kind,
-			path,
-			name,
-			component,
-			title,
-			icon,
-			sort_order,
-			hidden,
-			meta
-		FROM menus
-		WHERE deleted_at IS NULL
-		ORDER BY app_key ASC, sort_order ASC, created_at ASC
-	`, models.DefaultMenuSpaceKey).Scan(&menus).Error; err != nil {
-		return err
-	}
-	if len(menus) == 0 {
-		return nil
-	}
-
-	type menuKeyEntry struct {
-		ID      string
-		AppKey  string
-		MenuKey string
-	}
-
-	keyEntries := make([]menuKeyEntry, 0, len(menus))
-	keyByLegacyID := make(map[string]string, len(menus))
-	usedKeys := make(map[string]int)
-	for _, item := range menus {
-		appKey := strings.TrimSpace(item.AppKey)
-		if appKey == "" {
-			appKey = models.DefaultAppKey
-		}
-		baseKey := strings.TrimSpace(item.Name)
-		if baseKey == "" {
-			baseKey = "legacy-" + strings.ToLower(strings.ReplaceAll(item.ID, "-", ""))
-		}
-		baseKey = strings.ToLower(strings.TrimSpace(baseKey))
-		if baseKey == "" {
-			baseKey = "legacy-" + strings.ToLower(strings.ReplaceAll(item.ID, "-", ""))
-		}
-		composite := appKey + "::" + baseKey
-		if seen, ok := usedKeys[composite]; ok {
-			seen++
-			usedKeys[composite] = seen
-			baseKey = fmt.Sprintf("%s-%d", baseKey, seen)
-		} else {
-			usedKeys[composite] = 1
-		}
-		keyByLegacyID[item.ID] = baseKey
-		keyEntries = append(keyEntries, menuKeyEntry{
-			ID:      item.ID,
-			AppKey:  appKey,
-			MenuKey: baseKey,
-		})
-	}
-
-	for _, item := range menus {
-		appKey := strings.TrimSpace(item.AppKey)
-		if appKey == "" {
-			appKey = models.DefaultAppKey
-		}
-		menuKey := keyByLegacyID[item.ID]
-		if menuKey == "" {
-			continue
-		}
-		definition := models.MenuDefinition{
-			ID:           uuid.MustParse(item.ID),
-			AppKey:       appKey,
-			MenuKey:      menuKey,
-			Kind:         item.Kind,
-			Path:         item.Path,
-			Name:         item.Name,
-			Component:    item.Component,
-			DefaultTitle: item.Title,
-			DefaultIcon:  item.Icon,
-			Status:       "normal",
-			Meta:         item.Meta,
-		}
-		if err := DB.
-			Where("app_key = ? AND menu_key = ? AND deleted_at IS NULL", definition.AppKey, definition.MenuKey).
-			Assign(map[string]interface{}{
-				"path":          definition.Path,
-				"name":          definition.Name,
-				"kind":          definition.Kind,
-				"component":     definition.Component,
-				"default_title": definition.DefaultTitle,
-				"default_icon":  definition.DefaultIcon,
-				"status":        definition.Status,
-				"meta":          definition.Meta,
-			}).
-			FirstOrCreate(&definition).Error; err != nil {
-			return err
-		}
-	}
-
-	type parentRow struct {
-		ID           string
-		ParentMenuID *string
-	}
-	parentRows := make([]parentRow, 0, len(menus))
-	for _, item := range menus {
-		parentRows = append(parentRows, parentRow{
-			ID:           item.ID,
-			ParentMenuID: item.ParentID,
-		})
-	}
-
-	for _, item := range menus {
-		appKey := strings.TrimSpace(item.AppKey)
-		if appKey == "" {
-			appKey = models.DefaultAppKey
-		}
-		spaceKey := strings.TrimSpace(item.SpaceKey)
-		if spaceKey == "" {
-			spaceKey = models.DefaultMenuSpaceKey
-		}
-		parentMenuKey := ""
-		if item.ParentID != nil {
-			parentMenuKey = keyByLegacyID[strings.TrimSpace(*item.ParentID)]
-		}
-		placement := models.SpaceMenuPlacement{
-			AppKey:        appKey,
-			SpaceKey:      spaceKey,
-			MenuKey:       keyByLegacyID[item.ID],
-			ParentMenuKey: parentMenuKey,
-			SortOrder:     item.SortOrder,
-			Hidden:        item.Hidden,
-			MetaOverride:  models.MetaJSON{},
-		}
-		if item.ManageGroupID != nil {
-			parsed, err := uuid.Parse(strings.TrimSpace(*item.ManageGroupID))
-			if err == nil {
-				placement.ManageGroupID = &parsed
-			}
-		}
-		if err := DB.
-			Where("app_key = ? AND space_key = ? AND menu_key = ? AND deleted_at IS NULL", placement.AppKey, placement.SpaceKey, placement.MenuKey).
-			Assign(map[string]interface{}{
-				"parent_menu_key": placement.ParentMenuKey,
-				"manage_group_id": placement.ManageGroupID,
-				"sort_order":      placement.SortOrder,
-				"hidden":          placement.Hidden,
-				"title_override":  placement.TitleOverride,
-				"icon_override":   placement.IconOverride,
-				"meta_override":   placement.MetaOverride,
-			}).
-			FirstOrCreate(&placement).Error; err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func RefreshNavigationDefinitionsFromLegacyMenus() error {
-	return backfillMenuDefinitionsAndPlacements()
-}
-
-func ensureAppScopedSnapshotPrimaryKeys() error {
-	if DB == nil {
-		return fmt.Errorf("database not initialized")
-	}
-
-	type snapshotSpec struct {
-		table string
-		cols  []string
-	}
-
-	specs := []snapshotSpec{
-		{table: "platform_user_access_snapshots", cols: []string{"app_key", "user_id"}},
-		{table: "platform_role_access_snapshots", cols: []string{"app_key", "role_id"}},
-		{table: "collaboration_workspace_access_snapshots", cols: []string{"app_key", "collaboration_workspace_id"}},
-		{table: "collaboration_workspace_role_access_snapshots", cols: []string{"app_key", "collaboration_workspace_id", "role_id"}},
-	}
-
-	for _, spec := range specs {
-		if err := DB.Exec(
-			"ALTER TABLE " + spec.table + " ADD COLUMN IF NOT EXISTS app_key varchar(100) NOT NULL DEFAULT '" + models.DefaultAppKey + "'",
-		).Error; err != nil {
-			return err
-		}
-		if err := DB.Exec(
-			"UPDATE " + spec.table + " SET app_key = '" + models.DefaultAppKey + "' WHERE COALESCE(TRIM(app_key), '') = ''",
-		).Error; err != nil {
-			return err
-		}
-		if err := DB.Exec("ALTER TABLE " + spec.table + " DROP CONSTRAINT IF EXISTS " + spec.table + "_pkey").Error; err != nil {
-			return err
-		}
-		if err := DB.Exec(
-			"ALTER TABLE " + spec.table + " ADD PRIMARY KEY (" + strings.Join(spec.cols, ", ") + ")",
-		).Error; err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
@@ -1146,36 +802,6 @@ func ensureAPIEndpointAppColumns(db *gorm.DB) error {
 		`UPDATE api_endpoints SET app_key = '` + models.DefaultAppKey + `' WHERE COALESCE(TRIM(app_key), '') = ''`,
 		`UPDATE api_endpoints SET app_scope = '` + models.AppScopeShared + `' WHERE COALESCE(TRIM(app_scope), '') = '' AND (path LIKE '/api/v1/auth/%' OR path = '/api/v1/pages/runtime/public' OR path LIKE '/open/v1/%' OR path = '/health')`,
 		`UPDATE api_endpoints SET app_scope = '` + models.AppScopeApp + `' WHERE COALESCE(TRIM(app_scope), '') = ''`,
-	}
-	for _, statement := range statements {
-		if err := db.Exec(statement).Error; err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func ensureUIPageLegacySpaceKeyCompatibility(db *gorm.DB) error {
-	if db == nil {
-		return fmt.Errorf("database not initialized")
-	}
-	statements := []string{
-		`ALTER TABLE ui_pages ALTER COLUMN space_key SET DEFAULT ''`,
-		`UPDATE ui_pages
-		 SET space_key = ''
-		 WHERE COALESCE(TRIM(space_key), '') <> ''
-		   AND (
-		     COALESCE(NULLIF(TRIM(visibility_scope), ''), 'app') IN ('app', 'inherit')
-		     OR (
-		       COALESCE(NULLIF(TRIM(visibility_scope), ''), 'app') = 'spaces'
-		       AND EXISTS (
-		         SELECT 1
-		         FROM page_space_bindings bindings
-		         WHERE bindings.page_id = ui_pages.id
-		           AND bindings.deleted_at IS NULL
-		       )
-		     )
-		   )`,
 	}
 	for _, statement := range statements {
 		if err := db.Exec(statement).Error; err != nil {

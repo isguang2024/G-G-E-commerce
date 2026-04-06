@@ -115,10 +115,10 @@ func (r *userRepository) Delete(id uuid.UUID) error {
 		if err := tx.Where("user_id = ?", id).Delete(&UserHiddenMenu{}).Error; err != nil {
 			return err
 		}
-		if err := tx.Where("user_id = ?", id).Delete(&TenantMember{}).Error; err != nil {
+		if err := tx.Where("user_id = ?", id).Delete(&CollaborationWorkspaceMember{}).Error; err != nil {
 			return err
 		}
-		if err := tx.Where("user_id = ?", id).Delete(&models.PlatformUserAccessSnapshot{}).Error; err != nil {
+		if err := tx.Where("user_id = ?", id).Delete(&models.PersonalWorkspaceAccessSnapshot{}).Error; err != nil {
 			return err
 		}
 		return tx.Delete(&User{}, id).Error
@@ -246,7 +246,7 @@ type RoleRepository interface {
 	GetByCode(code string) (*Role, error)
 	FindByCode(code string) ([]Role, error)
 	GetByIDs(ids []uuid.UUID) ([]Role, error)
-	ListTeamRoles(tenantID uuid.UUID) ([]Role, error)
+	ListCollaborationWorkspaceRoles(collaborationWorkspaceID uuid.UUID) ([]Role, error)
 	Create(role *Role) error
 	Update(role *Role) error
 	Delete(id uuid.UUID) error
@@ -306,10 +306,10 @@ func (r *roleRepository) List() ([]Role, error) {
 	return roles, err
 }
 
-func (r *roleRepository) ListTeamRoles(tenantID uuid.UUID) ([]Role, error) {
+func (r *roleRepository) ListCollaborationWorkspaceRoles(collaborationWorkspaceID uuid.UUID) ([]Role, error) {
 	var roles []Role
 	err := r.db.
-		Where("(collaboration_workspace_id IS NULL AND code IN ?) OR collaboration_workspace_id = ?", []string{"collaboration_workspace_admin", "collaboration_workspace_member"}, tenantID).
+		Where("(collaboration_workspace_id IS NULL AND code IN ?) OR collaboration_workspace_id = ?", []string{"collaboration_workspace_admin", "collaboration_workspace_member"}, collaborationWorkspaceID).
 		Order("collaboration_workspace_id IS NULL DESC, sort_order ASC, created_at DESC").
 		Find(&roles).Error
 	return roles, err
@@ -865,38 +865,38 @@ func BuildTree(menus []Menu, parentID *uuid.UUID) []*Menu {
 	return tree
 }
 
-type TenantRepository interface {
-	GetByID(id uuid.UUID) (*Tenant, error)
-	GetByIDs(ids []uuid.UUID) ([]Tenant, error)
-	Create(tenant *Tenant) error
-	Update(tenant *Tenant) error
+type CollaborationWorkspaceRepository interface {
+	GetByID(id uuid.UUID) (*CollaborationWorkspace, error)
+	GetByIDs(ids []uuid.UUID) ([]CollaborationWorkspace, error)
+	Create(collaborationWorkspace *CollaborationWorkspace) error
+	Update(collaborationWorkspace *CollaborationWorkspace) error
 	Delete(id uuid.UUID) error
-	List(offset, limit int, name, status string) ([]Tenant, int64, error)
+	List(offset, limit int, name, status string) ([]CollaborationWorkspace, int64, error)
 	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
 }
 
-type tenantRepository struct {
+type collaborationWorkspaceRepository struct {
 	db *gorm.DB
 }
 
-func NewTenantRepository(db *gorm.DB) TenantRepository {
-	return &tenantRepository{db: db}
+func NewCollaborationWorkspaceRepository(db *gorm.DB) CollaborationWorkspaceRepository {
+	return &collaborationWorkspaceRepository{db: db}
 }
 
-func (r *tenantRepository) GetByID(id uuid.UUID) (*Tenant, error) {
-	var tenant Tenant
-	err := r.db.Where("id = ?", id).First(&tenant).Error
+func (r *collaborationWorkspaceRepository) GetByID(id uuid.UUID) (*CollaborationWorkspace, error) {
+	var collaborationWorkspace CollaborationWorkspace
+	err := r.db.Where("id = ?", id).First(&collaborationWorkspace).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
 		}
 		return nil, err
 	}
-	return &tenant, nil
+	return &collaborationWorkspace, nil
 }
 
-func (r *tenantRepository) GetByIDs(ids []uuid.UUID) ([]Tenant, error) {
-	var collaboration_workspaces []Tenant
+func (r *collaborationWorkspaceRepository) GetByIDs(ids []uuid.UUID) ([]CollaborationWorkspace, error) {
+	var collaboration_workspaces []CollaborationWorkspace
 	if len(ids) == 0 {
 		return collaboration_workspaces, nil
 	}
@@ -904,21 +904,21 @@ func (r *tenantRepository) GetByIDs(ids []uuid.UUID) ([]Tenant, error) {
 	return collaboration_workspaces, err
 }
 
-func (r *tenantRepository) Create(tenant *Tenant) error {
-	return r.db.Create(tenant).Error
+func (r *collaborationWorkspaceRepository) Create(collaborationWorkspace *CollaborationWorkspace) error {
+	return r.db.Create(collaborationWorkspace).Error
 }
 
-func (r *tenantRepository) Update(tenant *Tenant) error {
-	return r.db.Model(tenant).Updates(tenant).Error
+func (r *collaborationWorkspaceRepository) Update(collaborationWorkspace *CollaborationWorkspace) error {
+	return r.db.Model(collaborationWorkspace).Updates(collaborationWorkspace).Error
 }
 
-func (r *tenantRepository) Delete(id uuid.UUID) error {
-	return r.db.Delete(&Tenant{}, id).Error
+func (r *collaborationWorkspaceRepository) Delete(id uuid.UUID) error {
+	return r.db.Delete(&CollaborationWorkspace{}, id).Error
 }
 
-func (r *tenantRepository) List(offset, limit int, name, status string) ([]Tenant, int64, error) {
+func (r *collaborationWorkspaceRepository) List(offset, limit int, name, status string) ([]CollaborationWorkspace, int64, error) {
 	var total int64
-	query := r.db.Model(&Tenant{})
+	query := r.db.Model(&CollaborationWorkspace{})
 	if name != "" {
 		query = query.Where("name LIKE ?", "%"+name+"%")
 	}
@@ -929,38 +929,38 @@ func (r *tenantRepository) List(offset, limit int, name, status string) ([]Tenan
 		return nil, 0, err
 	}
 
-	var collaboration_workspaces []Tenant
+	var collaboration_workspaces []CollaborationWorkspace
 	err := query.Offset(offset).Limit(limit).Order("created_at DESC").Find(&collaboration_workspaces).Error
 	return collaboration_workspaces, total, err
 }
 
-func (r *tenantRepository) UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error {
-	return r.db.Model(&Tenant{}).Where("id = ?", id).Updates(updates).Error
+func (r *collaborationWorkspaceRepository) UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error {
+	return r.db.Model(&CollaborationWorkspace{}).Where("id = ?", id).Updates(updates).Error
 }
 
-type TenantMemberRepository interface {
-	GetByUserAndTenant(userID, tenantID uuid.UUID) (*TenantMember, error)
-	GetByUserID(userID uuid.UUID) (*TenantMember, error)
-	GetTenantsByUserID(userID uuid.UUID) ([]Tenant, error)
-	GetAdminUsersByCollaborationWorkspaceID(tenantID uuid.UUID) ([]User, error)
-	List(tenantID uuid.UUID, params *MemberSearchParams) ([]TenantMember, error)
-	Create(member *TenantMember) error
+type CollaborationWorkspaceMemberRepository interface {
+	GetByUserAndCollaborationWorkspace(userID, collaborationWorkspaceID uuid.UUID) (*CollaborationWorkspaceMember, error)
+	GetByUserID(userID uuid.UUID) (*CollaborationWorkspaceMember, error)
+	GetCollaborationWorkspacesByUserID(userID uuid.UUID) ([]CollaborationWorkspace, error)
+	GetAdminUsersByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) ([]User, error)
+	List(collaborationWorkspaceID uuid.UUID, params *MemberSearchParams) ([]CollaborationWorkspaceMember, error)
+	Create(member *CollaborationWorkspaceMember) error
 	Delete(id uuid.UUID) error
-	DeleteByUserAndTenant(userID, tenantID uuid.UUID) error
+	DeleteByUserAndCollaborationWorkspace(userID, collaborationWorkspaceID uuid.UUID) error
 	UpdateRole(id uuid.UUID, roleCode string) error
 }
 
-type tenantMemberRepository struct {
+type collaborationWorkspaceMemberRepository struct {
 	db *gorm.DB
 }
 
-func NewTenantMemberRepository(db *gorm.DB) TenantMemberRepository {
-	return &tenantMemberRepository{db: db}
+func NewCollaborationWorkspaceMemberRepository(db *gorm.DB) CollaborationWorkspaceMemberRepository {
+	return &collaborationWorkspaceMemberRepository{db: db}
 }
 
-func (r *tenantMemberRepository) GetByUserAndTenant(userID, tenantID uuid.UUID) (*TenantMember, error) {
-	var member TenantMember
-	err := r.db.Where("user_id = ? AND collaboration_workspace_id = ?", userID, tenantID).First(&member).Error
+func (r *collaborationWorkspaceMemberRepository) GetByUserAndCollaborationWorkspace(userID, collaborationWorkspaceID uuid.UUID) (*CollaborationWorkspaceMember, error) {
+	var member CollaborationWorkspaceMember
+	err := r.db.Where("user_id = ? AND collaboration_workspace_id = ?", userID, collaborationWorkspaceID).First(&member).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
@@ -970,28 +970,28 @@ func (r *tenantMemberRepository) GetByUserAndTenant(userID, tenantID uuid.UUID) 
 	return &member, nil
 }
 
-func (r *tenantMemberRepository) GetTenantsByUserID(userID uuid.UUID) ([]Tenant, error) {
-	var collaboration_workspaces []Tenant
+func (r *collaborationWorkspaceMemberRepository) GetCollaborationWorkspacesByUserID(userID uuid.UUID) ([]CollaborationWorkspace, error) {
+	var collaboration_workspaces []CollaborationWorkspace
 	err := r.db.Joins("JOIN collaboration_workspace_members ON collaboration_workspaces.id = collaboration_workspace_members.collaboration_workspace_id").
 		Where("collaboration_workspace_members.user_id = ? AND collaboration_workspace_members.deleted_at IS NULL", userID).
 		Find(&collaboration_workspaces).Error
 	return collaboration_workspaces, err
 }
 
-func (r *tenantMemberRepository) GetAdminUsersByCollaborationWorkspaceID(tenantID uuid.UUID) ([]User, error) {
+func (r *collaborationWorkspaceMemberRepository) GetAdminUsersByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) ([]User, error) {
 	var users []User
 	err := r.db.Joins("JOIN collaboration_workspace_members ON users.id = collaboration_workspace_members.user_id").
 		Where(
 			"collaboration_workspace_members.collaboration_workspace_id = ? AND collaboration_workspace_members.role_code = ? AND collaboration_workspace_members.deleted_at IS NULL",
-			tenantID,
+			collaborationWorkspaceID,
 			"collaboration_workspace_admin",
 		).
 		Find(&users).Error
 	return users, err
 }
 
-func (r *tenantMemberRepository) GetByUserID(userID uuid.UUID) (*TenantMember, error) {
-	var member TenantMember
+func (r *collaborationWorkspaceMemberRepository) GetByUserID(userID uuid.UUID) (*CollaborationWorkspaceMember, error) {
+	var member CollaborationWorkspaceMember
 	err := r.db.Where("user_id = ?", userID).First(&member).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -1002,8 +1002,8 @@ func (r *tenantMemberRepository) GetByUserID(userID uuid.UUID) (*TenantMember, e
 	return &member, nil
 }
 
-func (r *tenantMemberRepository) List(tenantID uuid.UUID, params *MemberSearchParams) ([]TenantMember, error) {
-	query := r.db.Where("collaboration_workspace_id = ?", tenantID)
+func (r *collaborationWorkspaceMemberRepository) List(collaborationWorkspaceID uuid.UUID, params *MemberSearchParams) ([]CollaborationWorkspaceMember, error) {
+	query := r.db.Where("collaboration_workspace_id = ?", collaborationWorkspaceID)
 	if params != nil {
 		if params.UserID != "" {
 			query = query.Where("user_id = ?", params.UserID)
@@ -1023,38 +1023,38 @@ func (r *tenantMemberRepository) List(tenantID uuid.UUID, params *MemberSearchPa
 			query = query.Where("role_code = ?", params.RoleCode)
 		}
 	}
-	var members []TenantMember
+	var members []CollaborationWorkspaceMember
 	err := query.Find(&members).Error
 	return members, err
 }
 
-func (r *tenantMemberRepository) Create(member *TenantMember) error {
+func (r *collaborationWorkspaceMemberRepository) Create(member *CollaborationWorkspaceMember) error {
 	return r.db.Create(member).Error
 }
 
-func (r *tenantMemberRepository) Delete(id uuid.UUID) error {
-	return r.db.Delete(&TenantMember{}, "id = ?", id).Error
+func (r *collaborationWorkspaceMemberRepository) Delete(id uuid.UUID) error {
+	return r.db.Delete(&CollaborationWorkspaceMember{}, "id = ?", id).Error
 }
 
-func (r *tenantMemberRepository) DeleteByUserAndTenant(userID, tenantID uuid.UUID) error {
-	return r.db.Where("user_id = ? AND collaboration_workspace_id = ?", userID, tenantID).Delete(&TenantMember{}).Error
+func (r *collaborationWorkspaceMemberRepository) DeleteByUserAndCollaborationWorkspace(userID, collaborationWorkspaceID uuid.UUID) error {
+	return r.db.Where("user_id = ? AND collaboration_workspace_id = ?", userID, collaborationWorkspaceID).Delete(&CollaborationWorkspaceMember{}).Error
 }
 
-func (r *tenantMemberRepository) UpdateRole(id uuid.UUID, roleCode string) error {
-	return r.db.Model(&TenantMember{}).Where("id = ?", id).Update("role_code", roleCode).Error
+func (r *collaborationWorkspaceMemberRepository) UpdateRole(id uuid.UUID, roleCode string) error {
+	return r.db.Model(&CollaborationWorkspaceMember{}).Where("id = ?", id).Update("role_code", roleCode).Error
 }
 
 type UserRoleRepository interface {
-	GetRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID, tenantMemberRepo TenantMemberRepository) ([]uuid.UUID, error)
-	GetRoleCodesByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
-	GetEffectiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
-	GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
-	GetEffectiveRoleCodesByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error)
-	ReplaceUserRoles(userID uuid.UUID, tenantID *uuid.UUID, roleIDs []uuid.UUID) error
-	AssignRole(userID, roleID uuid.UUID, tenantID *uuid.UUID) error
-	SetUserRoles(userID uuid.UUID, roleIDs []uuid.UUID, tenantID *uuid.UUID) error
-	RemoveUserRole(userID uuid.UUID, tenantID *uuid.UUID) error
-	RemoveRolesByCodes(userID uuid.UUID, tenantID *uuid.UUID, roleCodes []string) error
+	GetRoleIDsByUserAndCollaborationWorkspace(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, collaborationWorkspaceMemberRepo CollaborationWorkspaceMemberRepository) ([]uuid.UUID, error)
+	GetRoleCodesByUserAndCollaborationWorkspace(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]string, error)
+	GetEffectiveRoleIDsByUserAndCollaborationWorkspace(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]uuid.UUID, error)
+	GetEffectiveActiveRoleIDsByUserAndCollaborationWorkspace(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]uuid.UUID, error)
+	GetEffectiveRoleCodesByUserAndCollaborationWorkspace(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]string, error)
+	ReplaceUserRoles(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, roleIDs []uuid.UUID) error
+	AssignRole(userID, roleID uuid.UUID, collaborationWorkspaceID *uuid.UUID) error
+	SetUserRoles(userID uuid.UUID, roleIDs []uuid.UUID, collaborationWorkspaceID *uuid.UUID) error
+	RemoveUserRole(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) error
+	RemoveRolesByCodes(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, roleCodes []string) error
 }
 
 type userRoleRepository struct {
@@ -1065,8 +1065,8 @@ func NewUserRoleRepository(db *gorm.DB) UserRoleRepository {
 	return &userRoleRepository{db: db}
 }
 
-func (r *userRoleRepository) GetRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID, tenantMemberRepo TenantMemberRepository) ([]uuid.UUID, error) {
-	if roleIDs, err := r.getWorkspaceAwareRoleIDs(userID, tenantID, false); err != nil {
+func (r *userRoleRepository) GetRoleIDsByUserAndCollaborationWorkspace(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, collaborationWorkspaceMemberRepo CollaborationWorkspaceMemberRepository) ([]uuid.UUID, error) {
+	if roleIDs, err := r.getWorkspaceAwareRoleIDs(userID, collaborationWorkspaceID, false); err != nil {
 		return nil, err
 	} else if len(roleIDs) > 0 {
 		return roleIDs, nil
@@ -1074,23 +1074,23 @@ func (r *userRoleRepository) GetRoleIDsByUserAndTenant(userID uuid.UUID, tenantI
 
 	var roleIDs []uuid.UUID
 	query := r.db.Model(&UserRole{}).Where("user_id = ?", userID)
-	if tenantID == nil {
+	if collaborationWorkspaceID == nil {
 		query = query.Where("collaboration_workspace_id IS NULL")
 	} else {
-		query = query.Where("collaboration_workspace_id = ?", *tenantID)
+		query = query.Where("collaboration_workspace_id = ?", *collaborationWorkspaceID)
 	}
 	err := query.Pluck("role_id", &roleIDs).Error
 	if err != nil {
 		return nil, err
 	}
-	if tenantID != nil && len(roleIDs) == 0 {
-		return r.getTenantIdentityRoleIDs(userID, *tenantID, false)
+	if collaborationWorkspaceID != nil && len(roleIDs) == 0 {
+		return r.getCollaborationWorkspaceIdentityRoleIDs(userID, *collaborationWorkspaceID, false)
 	}
 	return roleIDs, nil
 }
 
-func (r *userRoleRepository) GetRoleCodesByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error) {
-	if codes, err := r.getWorkspaceAwareRoleCodes(userID, tenantID, false); err != nil {
+func (r *userRoleRepository) GetRoleCodesByUserAndCollaborationWorkspace(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]string, error) {
+	if codes, err := r.getWorkspaceAwareRoleCodes(userID, collaborationWorkspaceID, false); err != nil {
 		return nil, err
 	} else if len(codes) > 0 {
 		return codes, nil
@@ -1101,23 +1101,23 @@ func (r *userRoleRepository) GetRoleCodesByUserAndTenant(userID uuid.UUID, tenan
 		Joins("JOIN roles ON user_roles.role_id = roles.id").
 		Where("user_roles.user_id = ?", userID).
 		Where("roles.deleted_at IS NULL")
-	if tenantID == nil {
+	if collaborationWorkspaceID == nil {
 		query = query.Where("user_roles.collaboration_workspace_id IS NULL").Where("roles.collaboration_workspace_id IS NULL")
 	} else {
-		query = query.Where("user_roles.collaboration_workspace_id = ?", *tenantID)
+		query = query.Where("user_roles.collaboration_workspace_id = ?", *collaborationWorkspaceID)
 	}
 	err := query.Pluck("roles.code", &codes).Error
 	if err != nil {
 		return nil, err
 	}
-	if tenantID != nil && len(codes) == 0 {
-		return r.getTenantIdentityRoleCodes(userID, *tenantID, false)
+	if collaborationWorkspaceID != nil && len(codes) == 0 {
+		return r.getCollaborationWorkspaceIdentityRoleCodes(userID, *collaborationWorkspaceID, false)
 	}
 	return codes, nil
 }
 
-func (r *userRoleRepository) GetEffectiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {
-	if roleIDs, err := r.getWorkspaceAwareRoleIDs(userID, tenantID, false); err != nil {
+func (r *userRoleRepository) GetEffectiveRoleIDsByUserAndCollaborationWorkspace(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]uuid.UUID, error) {
+	if roleIDs, err := r.getWorkspaceAwareRoleIDs(userID, collaborationWorkspaceID, false); err != nil {
 		return nil, err
 	} else if len(roleIDs) > 0 {
 		return roleIDs, nil
@@ -1125,23 +1125,23 @@ func (r *userRoleRepository) GetEffectiveRoleIDsByUserAndTenant(userID uuid.UUID
 
 	var roleIDs []uuid.UUID
 	query := r.db.Model(&UserRole{}).Where("user_id = ?", userID)
-	if tenantID == nil {
+	if collaborationWorkspaceID == nil {
 		query = query.Where("collaboration_workspace_id IS NULL")
 	} else {
-		query = query.Where("collaboration_workspace_id = ?", *tenantID)
+		query = query.Where("collaboration_workspace_id = ?", *collaborationWorkspaceID)
 	}
 	err := query.Pluck("role_id", &roleIDs).Error
 	if err != nil {
 		return nil, err
 	}
-	if tenantID != nil && len(roleIDs) == 0 {
-		return r.getTenantIdentityRoleIDs(userID, *tenantID, false)
+	if collaborationWorkspaceID != nil && len(roleIDs) == 0 {
+		return r.getCollaborationWorkspaceIdentityRoleIDs(userID, *collaborationWorkspaceID, false)
 	}
 	return roleIDs, nil
 }
 
-func (r *userRoleRepository) GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {
-	if roleIDs, err := r.getWorkspaceAwareRoleIDs(userID, tenantID, true); err != nil {
+func (r *userRoleRepository) GetEffectiveActiveRoleIDsByUserAndCollaborationWorkspace(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]uuid.UUID, error) {
+	if roleIDs, err := r.getWorkspaceAwareRoleIDs(userID, collaborationWorkspaceID, true); err != nil {
 		return nil, err
 	} else if len(roleIDs) > 0 {
 		return roleIDs, nil
@@ -1153,23 +1153,23 @@ func (r *userRoleRepository) GetEffectiveActiveRoleIDsByUserAndTenant(userID uui
 		Where("user_roles.user_id = ?", userID).
 		Where("roles.status = ?", "normal").
 		Where("roles.deleted_at IS NULL")
-	if tenantID == nil {
+	if collaborationWorkspaceID == nil {
 		query = query.Where("user_roles.collaboration_workspace_id IS NULL").Where("roles.collaboration_workspace_id IS NULL")
 	} else {
-		query = query.Where("user_roles.collaboration_workspace_id = ?", *tenantID)
+		query = query.Where("user_roles.collaboration_workspace_id = ?", *collaborationWorkspaceID)
 	}
 	err := query.Distinct("user_roles.role_id").Pluck("user_roles.role_id", &roleIDs).Error
 	if err != nil {
 		return nil, err
 	}
-	if tenantID != nil && len(roleIDs) == 0 {
-		return r.getTenantIdentityRoleIDs(userID, *tenantID, true)
+	if collaborationWorkspaceID != nil && len(roleIDs) == 0 {
+		return r.getCollaborationWorkspaceIdentityRoleIDs(userID, *collaborationWorkspaceID, true)
 	}
 	return roleIDs, nil
 }
 
-func (r *userRoleRepository) GetEffectiveRoleCodesByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]string, error) {
-	if codes, err := r.getWorkspaceAwareRoleCodes(userID, tenantID, false); err != nil {
+func (r *userRoleRepository) GetEffectiveRoleCodesByUserAndCollaborationWorkspace(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]string, error) {
+	if codes, err := r.getWorkspaceAwareRoleCodes(userID, collaborationWorkspaceID, false); err != nil {
 		return nil, err
 	} else if len(codes) > 0 {
 		return codes, nil
@@ -1180,23 +1180,23 @@ func (r *userRoleRepository) GetEffectiveRoleCodesByUserAndTenant(userID uuid.UU
 		Joins("JOIN roles ON user_roles.role_id = roles.id").
 		Where("user_roles.user_id = ?", userID).
 		Where("roles.deleted_at IS NULL")
-	if tenantID == nil {
+	if collaborationWorkspaceID == nil {
 		query = query.Where("user_roles.collaboration_workspace_id IS NULL").Where("roles.collaboration_workspace_id IS NULL")
 	} else {
-		query = query.Where("user_roles.collaboration_workspace_id = ?", *tenantID)
+		query = query.Where("user_roles.collaboration_workspace_id = ?", *collaborationWorkspaceID)
 	}
 	err := query.Pluck("roles.code", &codes).Error
 	if err != nil {
 		return nil, err
 	}
-	if tenantID != nil && len(codes) == 0 {
-		return r.getTenantIdentityRoleCodes(userID, *tenantID, false)
+	if collaborationWorkspaceID != nil && len(codes) == 0 {
+		return r.getCollaborationWorkspaceIdentityRoleCodes(userID, *collaborationWorkspaceID, false)
 	}
 	return codes, nil
 }
 
-func (r *userRoleRepository) getTenantIdentityRoleIDs(userID, tenantID uuid.UUID, onlyActive bool) ([]uuid.UUID, error) {
-	roles, err := r.getTenantIdentityRoles(userID, tenantID, onlyActive)
+func (r *userRoleRepository) getCollaborationWorkspaceIdentityRoleIDs(userID, collaborationWorkspaceID uuid.UUID, onlyActive bool) ([]uuid.UUID, error) {
+	roles, err := r.getCollaborationWorkspaceIdentityRoles(userID, collaborationWorkspaceID, onlyActive)
 	if err != nil {
 		return nil, err
 	}
@@ -1207,8 +1207,8 @@ func (r *userRoleRepository) getTenantIdentityRoleIDs(userID, tenantID uuid.UUID
 	return roleIDs, nil
 }
 
-func (r *userRoleRepository) getTenantIdentityRoleCodes(userID, tenantID uuid.UUID, onlyActive bool) ([]string, error) {
-	roles, err := r.getTenantIdentityRoles(userID, tenantID, onlyActive)
+func (r *userRoleRepository) getCollaborationWorkspaceIdentityRoleCodes(userID, collaborationWorkspaceID uuid.UUID, onlyActive bool) ([]string, error) {
+	roles, err := r.getCollaborationWorkspaceIdentityRoles(userID, collaborationWorkspaceID, onlyActive)
 	if err != nil {
 		return nil, err
 	}
@@ -1219,9 +1219,9 @@ func (r *userRoleRepository) getTenantIdentityRoleCodes(userID, tenantID uuid.UU
 	return codes, nil
 }
 
-func (r *userRoleRepository) getTenantIdentityRoles(userID, tenantID uuid.UUID, onlyActive bool) ([]Role, error) {
-	var member TenantMember
-	err := r.db.Where("user_id = ? AND collaboration_workspace_id = ?", userID, tenantID).First(&member).Error
+func (r *userRoleRepository) getCollaborationWorkspaceIdentityRoles(userID, collaborationWorkspaceID uuid.UUID, onlyActive bool) ([]Role, error) {
+	var member CollaborationWorkspaceMember
+	err := r.db.Where("user_id = ? AND collaboration_workspace_id = ?", userID, collaborationWorkspaceID).First(&member).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return []Role{}, nil
@@ -1241,24 +1241,24 @@ func (r *userRoleRepository) getTenantIdentityRoles(userID, tenantID uuid.UUID, 
 	return roles, err
 }
 
-func (r *userRoleRepository) ReplaceUserRoles(userID uuid.UUID, tenantID *uuid.UUID, roleIDs []uuid.UUID) error {
+func (r *userRoleRepository) ReplaceUserRoles(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, roleIDs []uuid.UUID) error {
 	tx := r.db.Begin()
-	if tenantID == nil {
+	if collaborationWorkspaceID == nil {
 		if err := workspacerolebinding.ReplacePersonalRoleBindings(tx, userID, roleIDs); err != nil {
 			tx.Rollback()
 			return err
 		}
 	} else {
-		if err := workspacerolebinding.ReplaceTeamRoleBindings(tx, *tenantID, userID, roleIDs); err != nil {
+		if err := workspacerolebinding.ReplaceCollaborationWorkspaceRoleBindings(tx, *collaborationWorkspaceID, userID, roleIDs); err != nil {
 			tx.Rollback()
 			return err
 		}
 	}
 	deleteQuery := tx.Where("user_id = ?", userID)
-	if tenantID == nil {
+	if collaborationWorkspaceID == nil {
 		deleteQuery = deleteQuery.Where("collaboration_workspace_id IS NULL")
 	} else {
-		deleteQuery = deleteQuery.Where("collaboration_workspace_id = ?", *tenantID)
+		deleteQuery = deleteQuery.Where("collaboration_workspace_id = ?", *collaborationWorkspaceID)
 	}
 	if err := deleteQuery.Delete(&UserRole{}).Error; err != nil {
 		tx.Rollback()
@@ -1266,7 +1266,7 @@ func (r *userRoleRepository) ReplaceUserRoles(userID uuid.UUID, tenantID *uuid.U
 	}
 	userRoles := make([]UserRole, 0, len(roleIDs))
 	for _, roleID := range roleIDs {
-		userRoles = append(userRoles, UserRole{UserID: userID, RoleID: roleID, CollaborationWorkspaceID: tenantID})
+		userRoles = append(userRoles, UserRole{UserID: userID, RoleID: roleID, CollaborationWorkspaceID: collaborationWorkspaceID})
 	}
 	if len(userRoles) == 0 {
 		return tx.Commit().Error
@@ -1278,35 +1278,35 @@ func (r *userRoleRepository) ReplaceUserRoles(userID uuid.UUID, tenantID *uuid.U
 	return tx.Commit().Error
 }
 
-func (r *userRoleRepository) AssignRole(userID, roleID uuid.UUID, tenantID *uuid.UUID) error {
+func (r *userRoleRepository) AssignRole(userID, roleID uuid.UUID, collaborationWorkspaceID *uuid.UUID) error {
 	var roleIDs []uuid.UUID
 	query := r.db.Model(&UserRole{}).Where("user_id = ?", userID)
-	if tenantID == nil {
+	if collaborationWorkspaceID == nil {
 		query = query.Where("collaboration_workspace_id IS NULL")
 	} else {
-		query = query.Where("collaboration_workspace_id = ?", *tenantID)
+		query = query.Where("collaboration_workspace_id = ?", *collaborationWorkspaceID)
 	}
 	if err := query.Pluck("role_id", &roleIDs).Error; err != nil {
 		return err
 	}
 	for _, existing := range roleIDs {
 		if existing == roleID {
-			return r.ReplaceUserRoles(userID, tenantID, roleIDs)
+			return r.ReplaceUserRoles(userID, collaborationWorkspaceID, roleIDs)
 		}
 	}
 	roleIDs = append(roleIDs, roleID)
-	return r.ReplaceUserRoles(userID, tenantID, roleIDs)
+	return r.ReplaceUserRoles(userID, collaborationWorkspaceID, roleIDs)
 }
 
-func (r *userRoleRepository) SetUserRoles(userID uuid.UUID, roleIDs []uuid.UUID, tenantID *uuid.UUID) error {
-	return r.ReplaceUserRoles(userID, tenantID, roleIDs)
+func (r *userRoleRepository) SetUserRoles(userID uuid.UUID, roleIDs []uuid.UUID, collaborationWorkspaceID *uuid.UUID) error {
+	return r.ReplaceUserRoles(userID, collaborationWorkspaceID, roleIDs)
 }
 
-func (r *userRoleRepository) RemoveUserRole(userID uuid.UUID, tenantID *uuid.UUID) error {
-	return r.ReplaceUserRoles(userID, tenantID, nil)
+func (r *userRoleRepository) RemoveUserRole(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) error {
+	return r.ReplaceUserRoles(userID, collaborationWorkspaceID, nil)
 }
 
-func (r *userRoleRepository) RemoveRolesByCodes(userID uuid.UUID, tenantID *uuid.UUID, roleCodes []string) error {
+func (r *userRoleRepository) RemoveRolesByCodes(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, roleCodes []string) error {
 	if len(roleCodes) == 0 {
 		return nil
 	}
@@ -1316,26 +1316,26 @@ func (r *userRoleRepository) RemoveRolesByCodes(userID uuid.UUID, tenantID *uuid
 		Where("role_id NOT IN (?)",
 			r.db.Model(&Role{}).Select("id").Where("code IN ?", roleCodes),
 		)
-	if tenantID == nil {
+	if collaborationWorkspaceID == nil {
 		query = query.Where("collaboration_workspace_id IS NULL")
 	} else {
-		query = query.Where("collaboration_workspace_id = ?", *tenantID)
+		query = query.Where("collaboration_workspace_id = ?", *collaborationWorkspaceID)
 	}
 	if err := query.Pluck("role_id", &remainingRoleIDs).Error; err != nil {
 		return err
 	}
-	return r.ReplaceUserRoles(userID, tenantID, remainingRoleIDs)
+	return r.ReplaceUserRoles(userID, collaborationWorkspaceID, remainingRoleIDs)
 }
 
-func (r *userRoleRepository) getWorkspaceAwareRoleIDs(userID uuid.UUID, tenantID *uuid.UUID, onlyActive bool) ([]uuid.UUID, error) {
-	if tenantID == nil {
+func (r *userRoleRepository) getWorkspaceAwareRoleIDs(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, onlyActive bool) ([]uuid.UUID, error) {
+	if collaborationWorkspaceID == nil {
 		return workspacerolebinding.ListPersonalRoleIDsByUserID(r.db, userID, onlyActive)
 	}
-	return workspacerolebinding.ListTeamRoleIDsByTenantAndUser(r.db, *tenantID, userID, onlyActive)
+	return workspacerolebinding.ListCollaborationWorkspaceRoleIDsByUser(r.db, *collaborationWorkspaceID, userID, onlyActive)
 }
 
-func (r *userRoleRepository) getWorkspaceAwareRoleCodes(userID uuid.UUID, tenantID *uuid.UUID, onlyActive bool) ([]string, error) {
-	roleIDs, err := r.getWorkspaceAwareRoleIDs(userID, tenantID, onlyActive)
+func (r *userRoleRepository) getWorkspaceAwareRoleCodes(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, onlyActive bool) ([]string, error) {
+	roleIDs, err := r.getWorkspaceAwareRoleIDs(userID, collaborationWorkspaceID, onlyActive)
 	if err != nil || len(roleIDs) == 0 {
 		return []string{}, err
 	}
@@ -1759,9 +1759,9 @@ func (r *roleDataPermissionRepository) DeleteByRoleID(roleID uuid.UUID) error {
 }
 
 type UserActionPermissionRepository interface {
-	GetByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]UserActionPermission, error)
-	GetEffectiveByUserAndAction(userID uuid.UUID, tenantID *uuid.UUID, actionID uuid.UUID) ([]UserActionPermission, error)
-	ReplaceUserActions(userID uuid.UUID, tenantID *uuid.UUID, actions []UserActionPermission) error
+	GetByUserAndCollaborationWorkspace(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]UserActionPermission, error)
+	GetEffectiveByUserAndAction(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, actionID uuid.UUID) ([]UserActionPermission, error)
+	ReplaceUserActions(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, actions []UserActionPermission) error
 	DeleteByKeyID(actionID uuid.UUID) error
 }
 
@@ -1773,37 +1773,37 @@ func NewUserActionPermissionRepository(db *gorm.DB) UserActionPermissionReposito
 	return &userActionPermissionRepository{db: db}
 }
 
-func (r *userActionPermissionRepository) GetByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]UserActionPermission, error) {
+func (r *userActionPermissionRepository) GetByUserAndCollaborationWorkspace(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]UserActionPermission, error) {
 	var records []UserActionPermission
 	query := r.db.Where("user_id = ?", userID)
-	if tenantID == nil {
+	if collaborationWorkspaceID == nil {
 		query = query.Where("collaboration_workspace_id IS NULL")
 	} else {
-		query = query.Where("collaboration_workspace_id = ?", *tenantID)
+		query = query.Where("collaboration_workspace_id = ?", *collaborationWorkspaceID)
 	}
 	err := query.Find(&records).Error
 	return records, err
 }
 
-func (r *userActionPermissionRepository) GetEffectiveByUserAndAction(userID uuid.UUID, tenantID *uuid.UUID, actionID uuid.UUID) ([]UserActionPermission, error) {
+func (r *userActionPermissionRepository) GetEffectiveByUserAndAction(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, actionID uuid.UUID) ([]UserActionPermission, error) {
 	var records []UserActionPermission
 	query := r.db.Where("user_id = ? AND action_id = ?", userID, actionID)
-	if tenantID == nil {
+	if collaborationWorkspaceID == nil {
 		query = query.Where("collaboration_workspace_id IS NULL")
 	} else {
-		query = query.Where("collaboration_workspace_id IS NULL OR collaboration_workspace_id = ?", *tenantID)
+		query = query.Where("collaboration_workspace_id IS NULL OR collaboration_workspace_id = ?", *collaborationWorkspaceID)
 	}
 	err := query.Find(&records).Error
 	return records, err
 }
 
-func (r *userActionPermissionRepository) ReplaceUserActions(userID uuid.UUID, tenantID *uuid.UUID, actions []UserActionPermission) error {
+func (r *userActionPermissionRepository) ReplaceUserActions(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, actions []UserActionPermission) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		query := tx.Where("user_id = ?", userID)
-		if tenantID == nil {
+		if collaborationWorkspaceID == nil {
 			query = query.Where("collaboration_workspace_id IS NULL")
 		} else {
-			query = query.Where("collaboration_workspace_id = ?", *tenantID)
+			query = query.Where("collaboration_workspace_id = ?", *collaborationWorkspaceID)
 		}
 		if err := query.Delete(&UserActionPermission{}).Error; err != nil {
 			return err
@@ -1888,7 +1888,7 @@ func (r *featurePackageRepository) List(offset, limit int, params *FeaturePackag
 		}
 		if params.ContextType != "" {
 			switch params.ContextType {
-			case "platform", "team":
+			case "personal", "collaboration":
 				query = query.Where("(context_type = ? OR context_type = ?)", params.ContextType, "common")
 			default:
 				query = query.Where("context_type = ?", params.ContextType)
@@ -2128,30 +2128,30 @@ func (r *featurePackageMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
 }
 
 type CollaborationWorkspaceFeaturePackageRepository interface {
-	GetPackageIDsByCollaborationWorkspaceID(teamID uuid.UUID) ([]uuid.UUID, error)
+	GetPackageIDsByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) ([]uuid.UUID, error)
 	GetCollaborationWorkspaceIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error)
 	CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error)
-	ReplaceTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error
+	ReplaceCollaborationWorkspacePackages(collaborationWorkspaceID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error
 	DeleteByPackageID(packageID uuid.UUID) error
 }
 
-type teamFeaturePackageRepository struct {
+type collaborationWorkspaceFeaturePackageRepository struct {
 	db *gorm.DB
 }
 
 func NewCollaborationWorkspaceFeaturePackageRepository(db *gorm.DB) CollaborationWorkspaceFeaturePackageRepository {
-	return &teamFeaturePackageRepository{db: db}
+	return &collaborationWorkspaceFeaturePackageRepository{db: db}
 }
 
-func (r *teamFeaturePackageRepository) GetPackageIDsByCollaborationWorkspaceID(teamID uuid.UUID) ([]uuid.UUID, error) {
+func (r *collaborationWorkspaceFeaturePackageRepository) GetPackageIDsByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) ([]uuid.UUID, error) {
 	var packageIDs []uuid.UUID
 	err := r.db.Model(&CollaborationWorkspaceFeaturePackage{}).
-		Where("collaboration_workspace_id = ? AND enabled = ?", teamID, true).
+		Where("collaboration_workspace_id = ? AND enabled = ?", collaborationWorkspaceID, true).
 		Pluck("package_id", &packageIDs).Error
 	return packageIDs, err
 }
 
-func (r *teamFeaturePackageRepository) GetCollaborationWorkspaceIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error) {
+func (r *collaborationWorkspaceFeaturePackageRepository) GetCollaborationWorkspaceIDsByPackageID(packageID uuid.UUID) ([]uuid.UUID, error) {
 	var collaborationWorkspaceIDs []uuid.UUID
 	err := r.db.Model(&CollaborationWorkspaceFeaturePackage{}).
 		Where("package_id = ? AND enabled = ?", packageID, true).
@@ -2159,7 +2159,7 @@ func (r *teamFeaturePackageRepository) GetCollaborationWorkspaceIDsByPackageID(p
 	return collaborationWorkspaceIDs, err
 }
 
-func (r *teamFeaturePackageRepository) CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
+func (r *collaborationWorkspaceFeaturePackageRepository) CountByPackageIDs(packageIDs []uuid.UUID) (map[uuid.UUID]int64, error) {
 	result := make(map[uuid.UUID]int64, len(packageIDs))
 	if len(packageIDs) == 0 {
 		return result, nil
@@ -2182,9 +2182,9 @@ func (r *teamFeaturePackageRepository) CountByPackageIDs(packageIDs []uuid.UUID)
 	return result, nil
 }
 
-func (r *teamFeaturePackageRepository) ReplaceTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error {
+func (r *collaborationWorkspaceFeaturePackageRepository) ReplaceCollaborationWorkspacePackages(collaborationWorkspaceID uuid.UUID, packageIDs []uuid.UUID, grantedBy *uuid.UUID) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("collaboration_workspace_id = ?", teamID).Delete(&CollaborationWorkspaceFeaturePackage{}).Error; err != nil {
+		if err := tx.Where("collaboration_workspace_id = ?", collaborationWorkspaceID).Delete(&CollaborationWorkspaceFeaturePackage{}).Error; err != nil {
 			return err
 		}
 		if len(packageIDs) == 0 {
@@ -2199,7 +2199,7 @@ func (r *teamFeaturePackageRepository) ReplaceTeamPackages(teamID uuid.UUID, pac
 			}
 			seen[packageID] = struct{}{}
 			items = append(items, CollaborationWorkspaceFeaturePackage{
-				CollaborationWorkspaceID: teamID,
+				CollaborationWorkspaceID: collaborationWorkspaceID,
 				PackageID:                packageID,
 				Enabled:                  true,
 				GrantedBy:                grantedBy,
@@ -2213,7 +2213,7 @@ func (r *teamFeaturePackageRepository) ReplaceTeamPackages(teamID uuid.UUID, pac
 	})
 }
 
-func (r *teamFeaturePackageRepository) DeleteByPackageID(packageID uuid.UUID) error {
+func (r *collaborationWorkspaceFeaturePackageRepository) DeleteByPackageID(packageID uuid.UUID) error {
 	return r.db.Where("package_id = ?", packageID).Delete(&CollaborationWorkspaceFeaturePackage{}).Error
 }
 
@@ -2514,29 +2514,29 @@ func (r *roleDisabledActionRepository) DeleteByKeyID(actionID uuid.UUID) error {
 }
 
 type CollaborationWorkspaceBlockedMenuRepository interface {
-	GetMenuIDsByCollaborationWorkspaceID(teamID uuid.UUID) ([]uuid.UUID, error)
-	ReplaceCollaborationWorkspaceBlockedMenus(teamID uuid.UUID, menuIDs []uuid.UUID) error
-	DeleteByCollaborationWorkspaceID(teamID uuid.UUID) error
+	GetMenuIDsByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceCollaborationWorkspaceBlockedMenus(collaborationWorkspaceID uuid.UUID, menuIDs []uuid.UUID) error
+	DeleteByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) error
 	DeleteByMenuID(menuID uuid.UUID) error
 }
 
-type teamBlockedMenuRepository struct {
+type collaborationWorkspaceBlockedMenuRepository struct {
 	db *gorm.DB
 }
 
 func NewCollaborationWorkspaceBlockedMenuRepository(db *gorm.DB) CollaborationWorkspaceBlockedMenuRepository {
-	return &teamBlockedMenuRepository{db: db}
+	return &collaborationWorkspaceBlockedMenuRepository{db: db}
 }
 
-func (r *teamBlockedMenuRepository) GetMenuIDsByCollaborationWorkspaceID(teamID uuid.UUID) ([]uuid.UUID, error) {
+func (r *collaborationWorkspaceBlockedMenuRepository) GetMenuIDsByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) ([]uuid.UUID, error) {
 	var menuIDs []uuid.UUID
-	err := r.db.Model(&CollaborationWorkspaceBlockedMenu{}).Where("collaboration_workspace_id = ?", teamID).Pluck("menu_id", &menuIDs).Error
+	err := r.db.Model(&CollaborationWorkspaceBlockedMenu{}).Where("collaboration_workspace_id = ?", collaborationWorkspaceID).Pluck("menu_id", &menuIDs).Error
 	return menuIDs, err
 }
 
-func (r *teamBlockedMenuRepository) ReplaceCollaborationWorkspaceBlockedMenus(teamID uuid.UUID, menuIDs []uuid.UUID) error {
+func (r *collaborationWorkspaceBlockedMenuRepository) ReplaceCollaborationWorkspaceBlockedMenus(collaborationWorkspaceID uuid.UUID, menuIDs []uuid.UUID) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("collaboration_workspace_id = ?", teamID).Delete(&CollaborationWorkspaceBlockedMenu{}).Error; err != nil {
+		if err := tx.Where("collaboration_workspace_id = ?", collaborationWorkspaceID).Delete(&CollaborationWorkspaceBlockedMenu{}).Error; err != nil {
 			return err
 		}
 		if len(menuIDs) == 0 {
@@ -2552,7 +2552,7 @@ func (r *teamBlockedMenuRepository) ReplaceCollaborationWorkspaceBlockedMenus(te
 				continue
 			}
 			seen[menuID] = struct{}{}
-			items = append(items, CollaborationWorkspaceBlockedMenu{CollaborationWorkspaceID: teamID, MenuID: menuID})
+			items = append(items, CollaborationWorkspaceBlockedMenu{CollaborationWorkspaceID: collaborationWorkspaceID, MenuID: menuID})
 		}
 		if len(items) == 0 {
 			return nil
@@ -2561,38 +2561,38 @@ func (r *teamBlockedMenuRepository) ReplaceCollaborationWorkspaceBlockedMenus(te
 	})
 }
 
-func (r *teamBlockedMenuRepository) DeleteByCollaborationWorkspaceID(teamID uuid.UUID) error {
-	return r.db.Where("collaboration_workspace_id = ?", teamID).Delete(&CollaborationWorkspaceBlockedMenu{}).Error
+func (r *collaborationWorkspaceBlockedMenuRepository) DeleteByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) error {
+	return r.db.Where("collaboration_workspace_id = ?", collaborationWorkspaceID).Delete(&CollaborationWorkspaceBlockedMenu{}).Error
 }
 
-func (r *teamBlockedMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
+func (r *collaborationWorkspaceBlockedMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
 	return r.db.Where("menu_id = ?", menuID).Delete(&CollaborationWorkspaceBlockedMenu{}).Error
 }
 
 type CollaborationWorkspaceBlockedActionRepository interface {
-	GetActionIDsByCollaborationWorkspaceID(teamID uuid.UUID) ([]uuid.UUID, error)
-	ReplaceCollaborationWorkspaceBlockedActions(teamID uuid.UUID, actionIDs []uuid.UUID) error
-	DeleteByCollaborationWorkspaceID(teamID uuid.UUID) error
+	GetActionIDsByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) ([]uuid.UUID, error)
+	ReplaceCollaborationWorkspaceBlockedActions(collaborationWorkspaceID uuid.UUID, actionIDs []uuid.UUID) error
+	DeleteByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) error
 	DeleteByKeyID(actionID uuid.UUID) error
 }
 
-type teamBlockedActionRepository struct {
+type collaborationWorkspaceBlockedActionRepository struct {
 	db *gorm.DB
 }
 
 func NewCollaborationWorkspaceBlockedActionRepository(db *gorm.DB) CollaborationWorkspaceBlockedActionRepository {
-	return &teamBlockedActionRepository{db: db}
+	return &collaborationWorkspaceBlockedActionRepository{db: db}
 }
 
-func (r *teamBlockedActionRepository) GetActionIDsByCollaborationWorkspaceID(teamID uuid.UUID) ([]uuid.UUID, error) {
+func (r *collaborationWorkspaceBlockedActionRepository) GetActionIDsByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) ([]uuid.UUID, error) {
 	var actionIDs []uuid.UUID
-	err := r.db.Model(&CollaborationWorkspaceBlockedAction{}).Where("collaboration_workspace_id = ?", teamID).Pluck("action_id", &actionIDs).Error
+	err := r.db.Model(&CollaborationWorkspaceBlockedAction{}).Where("collaboration_workspace_id = ?", collaborationWorkspaceID).Pluck("action_id", &actionIDs).Error
 	return actionIDs, err
 }
 
-func (r *teamBlockedActionRepository) ReplaceCollaborationWorkspaceBlockedActions(teamID uuid.UUID, actionIDs []uuid.UUID) error {
+func (r *collaborationWorkspaceBlockedActionRepository) ReplaceCollaborationWorkspaceBlockedActions(collaborationWorkspaceID uuid.UUID, actionIDs []uuid.UUID) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Where("collaboration_workspace_id = ?", teamID).Delete(&CollaborationWorkspaceBlockedAction{}).Error; err != nil {
+		if err := tx.Where("collaboration_workspace_id = ?", collaborationWorkspaceID).Delete(&CollaborationWorkspaceBlockedAction{}).Error; err != nil {
 			return err
 		}
 		if len(actionIDs) == 0 {
@@ -2608,7 +2608,7 @@ func (r *teamBlockedActionRepository) ReplaceCollaborationWorkspaceBlockedAction
 				continue
 			}
 			seen[actionID] = struct{}{}
-			items = append(items, CollaborationWorkspaceBlockedAction{CollaborationWorkspaceID: teamID, ActionID: actionID})
+			items = append(items, CollaborationWorkspaceBlockedAction{CollaborationWorkspaceID: collaborationWorkspaceID, ActionID: actionID})
 		}
 		if len(items) == 0 {
 			return nil
@@ -2617,11 +2617,11 @@ func (r *teamBlockedActionRepository) ReplaceCollaborationWorkspaceBlockedAction
 	})
 }
 
-func (r *teamBlockedActionRepository) DeleteByCollaborationWorkspaceID(teamID uuid.UUID) error {
-	return r.db.Where("collaboration_workspace_id = ?", teamID).Delete(&CollaborationWorkspaceBlockedAction{}).Error
+func (r *collaborationWorkspaceBlockedActionRepository) DeleteByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) error {
+	return r.db.Where("collaboration_workspace_id = ?", collaborationWorkspaceID).Delete(&CollaborationWorkspaceBlockedAction{}).Error
 }
 
-func (r *teamBlockedActionRepository) DeleteByKeyID(actionID uuid.UUID) error {
+func (r *collaborationWorkspaceBlockedActionRepository) DeleteByKeyID(actionID uuid.UUID) error {
 	return r.db.Where("action_id = ?", actionID).Delete(&CollaborationWorkspaceBlockedAction{}).Error
 }
 

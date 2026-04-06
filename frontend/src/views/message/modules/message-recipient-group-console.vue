@@ -289,7 +289,7 @@
   defineOptions({ name: 'MessageRecipientGroupConsole' })
 
   const props = defineProps<{
-    scope: 'platform' | 'collaboration'
+    scope: 'personal' | 'collaboration'
   }>()
 
   interface DrawerTargetModel {
@@ -491,7 +491,7 @@
       skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
     })
     userOptions.value = data.users || []
-    collaborationWorkspaceOptions.value = data.collaboration_workspaces || data.teams || []
+    collaborationWorkspaceOptions.value = data.collaboration_workspaces || []
     roleOptions.value = data.roles || []
     featurePackageOptions.value = data.feature_packages || []
   }

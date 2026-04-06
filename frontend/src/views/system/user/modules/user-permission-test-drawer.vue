@@ -641,11 +641,11 @@
 
   async function initialize() {
     activeTab.value = 'permission'
-    await loadTeams()
+    await loadCollaborationWorkspaces()
     await loadDiagnosis()
   }
 
-  async function loadTeams() {
+  async function loadCollaborationWorkspaces() {
     const userId = props.userData?.id
     if (!userId) {
       collaborationWorkspaceOptions.value = []

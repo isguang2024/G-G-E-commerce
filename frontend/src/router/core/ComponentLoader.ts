@@ -11,6 +11,7 @@ import { h } from 'vue'
 
 export class ComponentLoader {
   private modules: Record<string, () => Promise<any>>
+  private readonly componentPathAliases: Array<[string, string]> = []
 
   constructor() {
     // 动态导入 views 目录下所有 .vue 组件
@@ -25,14 +26,15 @@ export class ComponentLoader {
       return this.createEmptyComponent()
     }
 
-    const { fullPath, fullPathWithIndex } = this.buildCandidatePaths(componentPath)
+    const resolvedPath = this.resolveComponentPath(componentPath)
+    const { fullPath, fullPathWithIndex } = this.buildCandidatePaths(resolvedPath)
 
     // 先尝试直接路径，再尝试添加/index的路径
     const module = this.modules[fullPath] || this.modules[fullPathWithIndex]
 
     if (!module) {
       console.error(
-        `[ComponentLoader] 未找到组件: ${componentPath}，尝试过的路径: ${fullPath} 和 ${fullPathWithIndex}`
+        `[ComponentLoader] 未找到组件: ${componentPath}（解析后: ${resolvedPath}），尝试过的路径: ${fullPath} 和 ${fullPathWithIndex}`
       )
       return this.createErrorComponent(componentPath)
     }
@@ -45,7 +47,8 @@ export class ComponentLoader {
    */
   exists(componentPath: string): boolean {
     if (!componentPath) return false
-    const { fullPath, fullPathWithIndex } = this.buildCandidatePaths(componentPath)
+    const resolvedPath = this.resolveComponentPath(componentPath)
+    const { fullPath, fullPathWithIndex } = this.buildCandidatePaths(resolvedPath)
     return !!(this.modules[fullPath] || this.modules[fullPathWithIndex])
   }
 
@@ -99,5 +102,15 @@ export class ComponentLoader {
       fullPath: `../../views${normalizedPath}.vue`,
       fullPathWithIndex: `../../views${normalizedPath}/index.vue`
     }
+  }
+
+  private resolveComponentPath(componentPath: string): string {
+    const normalizedPath = componentPath.startsWith('/') ? componentPath : `/${componentPath}`
+    const matchedAlias = this.componentPathAliases.find(([from]) => {
+      return normalizedPath === from || normalizedPath.startsWith(`${from}/`)
+    })
+    if (!matchedAlias) return normalizedPath
+    const [from, to] = matchedAlias
+    return `${to}${normalizedPath.slice(from.length)}`
   }
 }

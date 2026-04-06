@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="access-trace-page art-full-height">
     <ElCard shadow="never" class="art-table-card">
       <template #header>
@@ -68,15 +68,18 @@
             class="trace-field"
           >
             <ElOption
-              v-for="team in collaborationWorkspaceOptions"
-              :key="team.id"
-              :label="team.name"
-              :value="team.id"
+              v-for="collaborationWorkspace in collaborationWorkspaceOptions"
+              :key="collaborationWorkspace.id"
+              :label="collaborationWorkspace.name"
+              :value="collaborationWorkspace.id"
             />
           </ElSelect>
         </ElFormItem>
-        <ElFormItem label="仅协作空间用户">
-          <ElSwitch v-model="onlyTeamUsers" :disabled="!query.collaborationWorkspaceId" />
+        <ElFormItem label="仅协作空间成员">
+          <ElSwitch
+            v-model="onlyCollaborationWorkspaceUsers"
+            :disabled="!query.collaborationWorkspaceId"
+          />
         </ElFormItem>
         <ElFormItem label="角色筛选">
           <ElSelect v-model="roleCodeFilter" clearable placeholder="全部角色" class="trace-field">
@@ -200,7 +203,7 @@
   const menuSpaces = ref<Api.SystemManage.MenuSpaceItem[]>([])
   const collaborationWorkspaceOptions = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
   const roleOptions = ref<
-    Array<{ label: string; value: string; source: 'platform' | 'collaboration' }>
+    Array<{ label: string; value: string; source: 'personal' | 'collaboration' }>
   >([])
   const selectedAppKey = ref('')
   const rolePagination = reactive({
@@ -211,12 +214,12 @@
     current: 1,
     size: 10
   })
-  const onlyTeamUsers = ref(false)
+  const onlyCollaborationWorkspaceUsers = ref(false)
   const roleCodeFilter = ref('')
   const displayRoleOptions = computed(() =>
     query.collaborationWorkspaceId
       ? roleOptions.value.filter((item) => item.source === 'collaboration')
-      : roleOptions.value.filter((item) => item.source === 'platform')
+      : roleOptions.value.filter((item) => item.source === 'personal')
   )
   const { targetAppKey, setManagedAppKey } = useManagedAppScope()
   const appOptions = computed(() =>
@@ -270,7 +273,7 @@
     }
     const useCollaborationWorkspaceMembers =
       Boolean(query.collaborationWorkspaceId) &&
-      (onlyTeamUsers.value || Boolean(roleCodeFilter.value))
+      (onlyCollaborationWorkspaceUsers.value || Boolean(roleCodeFilter.value))
     if (useCollaborationWorkspaceMembers && query.collaborationWorkspaceId) {
       const collaborationWorkspaceMembers = await fetchGetCollaborationWorkspaceMembers(
         query.collaborationWorkspaceId,
@@ -339,7 +342,7 @@
     roleOptions.value = (roleRes.records || []).map((role) => ({
       label: role.roleName || role.roleCode,
       value: role.roleId,
-      source: 'platform' as const
+      source: 'personal' as const
     }))
   }
 
@@ -372,7 +375,7 @@
     query.userId = ''
     query.collaborationWorkspaceId = ''
     roleCodeFilter.value = ''
-    onlyTeamUsers.value = false
+    onlyCollaborationWorkspaceUsers.value = false
     result.value = null
   }
 
@@ -423,12 +426,12 @@
 
   watch(
     () => query.collaborationWorkspaceId,
-    async (collaborationWorkspaceId, oldTenantId) => {
-      if (collaborationWorkspaceId !== oldTenantId) {
+    async (collaborationWorkspaceId, previousCollaborationWorkspaceId) => {
+      if (collaborationWorkspaceId !== previousCollaborationWorkspaceId) {
         roleCodeFilter.value = ''
       }
-      if (!collaborationWorkspaceId && onlyTeamUsers.value) {
-        onlyTeamUsers.value = false
+      if (!collaborationWorkspaceId && onlyCollaborationWorkspaceUsers.value) {
+        onlyCollaborationWorkspaceUsers.value = false
       }
       await loadRoleOptions()
       await loadUserOptions()
@@ -436,7 +439,7 @@
   )
 
   watch(
-    () => [onlyTeamUsers.value, roleCodeFilter.value],
+    () => [onlyCollaborationWorkspaceUsers.value, roleCodeFilter.value],
     async () => {
       await loadUserOptions()
     }

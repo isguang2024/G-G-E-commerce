@@ -96,7 +96,7 @@
         </ElCol>
         <ElCol :span="12">
           <ElFormItem label="图标">
-            <ElInput v-model="form.icon" placeholder="例如 ri:team-line" />
+            <ElInput v-model="form.icon" placeholder="例如 ri:group-line" />
           </ElFormItem>
         </ElCol>
       </ElRow>
@@ -104,7 +104,10 @@
       <ElRow v-if="isEntryKind" :gutter="16">
         <ElCol :span="12">
           <ElFormItem label="组件路径" prop="component">
-            <ElInput v-model="form.component" placeholder="例如 /collaboration/workspaces" />
+            <ElInput
+              v-model="form.component"
+              placeholder="例如 /collaboration-workspace/workspace"
+            />
             <div class="field-hint">入口菜单直接注册为页面入口，不再额外创建同路径页面记录。</div>
           </ElFormItem>
         </ElCol>
@@ -441,7 +444,7 @@
   const pathPlaceholder = computed(() => {
     if (form.kind === 'directory') return '例如 navigation 或 /system'
     if (form.kind === 'external') return '例如 /docs 或 /outside/manual'
-    return '例如 team 或 /collaboration/workspaces'
+    return '例如 collaboration-workspace 或 /collaboration-workspace/workspaces'
   })
   const pathHint = computed(() => {
     if (form.kind === 'directory') {

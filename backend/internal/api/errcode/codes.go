@@ -19,15 +19,14 @@ const (
 	// --- 3xxxx 业务/资源 ---
 	ErrNotFound                             = 3001 // 资源不存在（通用）
 	ErrUserNotFound                         = 3002 // 用户不存在
-	ErrTenantNotFound                       = 3003 // 协作空间不存在
-	ErrCollaborationWorkspaceNotFound       = ErrTenantNotFound
+	ErrCollaborationWorkspaceNotFound       = 3003 // 协作空间不存在
 	ErrMenuNotFound                         = 3004 // 菜单不存在
 	ErrRoleNotFound                         = 3005 // 角色不存在
-	ErrNoManagedTeam                        = 3006 // 您暂无管理的协作空间
+	ErrNoManagedCollaborationWorkspace      = 3006 // 您暂无管理的协作空间
 	ErrRoleCodeExists                       = 3007 // 角色编码已存在
 	ErrMemberExists                         = 3008 // 该用户已在协作空间中
 	ErrMemberNotFound                       = 3009 // 成员不在协作空间中
-	ErrTeamRoleNotFound                     = 3010 // 协作空间角色不存在或无权操作
+	ErrCollaborationWorkspaceRoleNotFound   = 3010 // 协作空间角色不存在或无权操作
 	ErrMenuSystemProtected                  = 3011 // 系统默认菜单不可删除
 	ErrInvalidParent                        = 3012 // 无效的上级（如不能将上级设为自己或子级）
 	ErrConflict                             = 3013 // 业务冲突（通用，如重复创建）
@@ -36,11 +35,9 @@ const (
 	ErrSystemRoleProtected                  = 3016 // 系统角色不可删除
 	ErrProductNotFound                      = 3017 // 商品不存在
 	ErrGlobalRolePermissionReadOnly         = 3018 // 全局角色权限不可在此修改
-	ErrTenantMemberExists                   = 3019 // 该用户已在协作空间中
-	ErrTenantMemberNotFound                 = 3020 // 成员不在协作空间中
-	ErrCollaborationWorkspaceMemberExists   = ErrTenantMemberExists
-	ErrCollaborationWorkspaceMemberNotFound = ErrTenantMemberNotFound
-	ErrNoTeam                               = 3021 // 您暂无协作空间
+	ErrCollaborationWorkspaceMemberExists   = 3019 // 该用户已在协作空间中
+	ErrCollaborationWorkspaceMemberNotFound = 3020 // 成员不在协作空间中
+	ErrNoCurrentCollaborationWorkspace      = 3021 // 您暂无协作空间
 
 	// --- 5xxxx 服务端 ---
 	ErrInternal = 5001 // 内部错误（通用）
@@ -50,76 +47,76 @@ const (
 
 // defaultMessages 错误码默认说明（可被 Handler 层覆盖为更具体文案）
 var defaultMessages = map[int]string{
-	ErrParamInvalid:                 "参数错误",
-	ErrParamMissing:                 "参数缺失",
-	ErrParamFormat:                  "参数格式错误",
-	ErrInvalidID:                    "无效的 ID",
-	ErrUnauthorized:                 "未登录或 token 无效",
-	ErrTokenExpired:                 "token 已过期",
-	ErrForbidden:                    "无权限",
-	ErrAPIKeyMissing:                "缺少 API Key",
-	ErrTokenBadFormat:               "Token 格式错误",
-	ErrNotFound:                     "资源不存在",
-	ErrUserNotFound:                 "用户不存在",
-	ErrTenantNotFound:               "协作空间不存在",
-	ErrMenuNotFound:                 "菜单不存在",
-	ErrRoleNotFound:                 "角色不存在",
-	ErrNoManagedTeam:                "您暂无管理的协作空间",
-	ErrRoleCodeExists:               "角色编码已存在",
-	ErrMemberExists:                 "该用户已在协作空间中",
-	ErrMemberNotFound:               "成员不在协作空间中",
-	ErrTeamRoleNotFound:             "角色不存在或无权操作",
-	ErrMenuSystemProtected:          "系统默认菜单不可删除",
-	ErrInvalidParent:                "无效的上级",
-	ErrConflict:                     "业务冲突",
-	ErrUsernameExists:               "用户名已存在",
-	ErrEmailExists:                  "邮箱已存在",
-	ErrSystemRoleProtected:          "系统角色不可删除",
-	ErrProductNotFound:              "商品不存在",
-	ErrGlobalRolePermissionReadOnly: "全局角色权限不可在此修改",
-	ErrTenantMemberExists:           "该用户已在协作空间中",
-	ErrTenantMemberNotFound:         "成员不在协作空间中",
-	ErrNoTeam:                       "您暂无协作空间",
-	ErrInternal:                     "服务器内部错误，请稍后重试",
-	ErrDatabase:                     "数据库错误",
-	ErrExternal:                     "外部服务错误",
+	ErrParamInvalid:                         "参数错误",
+	ErrParamMissing:                         "参数缺失",
+	ErrParamFormat:                          "参数格式错误",
+	ErrInvalidID:                            "无效的 ID",
+	ErrUnauthorized:                         "未登录或 token 无效",
+	ErrTokenExpired:                         "token 已过期",
+	ErrForbidden:                            "无权限",
+	ErrAPIKeyMissing:                        "缺少 API Key",
+	ErrTokenBadFormat:                       "Token 格式错误",
+	ErrNotFound:                             "资源不存在",
+	ErrUserNotFound:                         "用户不存在",
+	ErrCollaborationWorkspaceNotFound:       "协作空间不存在",
+	ErrMenuNotFound:                         "菜单不存在",
+	ErrRoleNotFound:                         "角色不存在",
+	ErrNoManagedCollaborationWorkspace:      "您暂无管理的协作空间",
+	ErrRoleCodeExists:                       "角色编码已存在",
+	ErrMemberExists:                         "该用户已在协作空间中",
+	ErrMemberNotFound:                       "成员不在协作空间中",
+	ErrCollaborationWorkspaceRoleNotFound:   "角色不存在或无权操作",
+	ErrMenuSystemProtected:                  "系统默认菜单不可删除",
+	ErrInvalidParent:                        "无效的上级",
+	ErrConflict:                             "业务冲突",
+	ErrUsernameExists:                       "用户名已存在",
+	ErrEmailExists:                          "邮箱已存在",
+	ErrSystemRoleProtected:                  "系统角色不可删除",
+	ErrProductNotFound:                      "商品不存在",
+	ErrGlobalRolePermissionReadOnly:         "全局角色权限不可在此修改",
+	ErrCollaborationWorkspaceMemberExists:   "该用户已在协作空间中",
+	ErrCollaborationWorkspaceMemberNotFound: "成员不在协作空间中",
+	ErrNoCurrentCollaborationWorkspace:      "您暂无协作空间",
+	ErrInternal:                             "服务器内部错误，请稍后重试",
+	ErrDatabase:                             "数据库错误",
+	ErrExternal:                             "外部服务错误",
 }
 
 // defaultHTTPStatus 错误码建议的 HTTP 状态码（用于 Handler 设置 c.JSON(status, body)）
 var defaultHTTPStatus = map[int]int{
-	ErrParamInvalid:                 400,
-	ErrParamMissing:                 400,
-	ErrParamFormat:                  400,
-	ErrInvalidID:                    400,
-	ErrUnauthorized:                 401,
-	ErrTokenExpired:                 401,
-	ErrAPIKeyMissing:                401,
-	ErrTokenBadFormat:               401,
-	ErrForbidden:                    403,
-	ErrNotFound:                     404,
-	ErrUserNotFound:                 404,
-	ErrTenantNotFound:               404,
-	ErrMenuNotFound:                 404,
-	ErrRoleNotFound:                 404,
-	ErrNoManagedTeam:                404,
-	ErrRoleCodeExists:               409,
-	ErrMemberExists:                 409,
-	ErrMemberNotFound:               404,
-	ErrTeamRoleNotFound:             404,
-	ErrMenuSystemProtected:          403,
-	ErrInvalidParent:                400,
-	ErrConflict:                     409,
-	ErrUsernameExists:               409,
-	ErrEmailExists:                  409,
-	ErrSystemRoleProtected:          403,
-	ErrProductNotFound:              404,
-	ErrGlobalRolePermissionReadOnly: 403,
-	ErrTenantMemberExists:           409,
-	ErrTenantMemberNotFound:         404,
-	ErrNoTeam:                       404,
-	ErrInternal:                     500,
-	ErrDatabase:                     500,
-	ErrExternal:                     500,
+	ErrParamInvalid:                         400,
+	ErrParamMissing:                         400,
+	ErrParamFormat:                          400,
+	ErrInvalidID:                            400,
+	ErrUnauthorized:                         401,
+	ErrTokenExpired:                         401,
+	ErrAPIKeyMissing:                        401,
+	ErrTokenBadFormat:                       401,
+	ErrForbidden:                            403,
+	ErrNotFound:                             404,
+	ErrUserNotFound:                         404,
+	ErrCollaborationWorkspaceNotFound:       404,
+	ErrMenuNotFound:                         404,
+	ErrRoleNotFound:                         404,
+	ErrNoManagedCollaborationWorkspace:      404,
+	ErrRoleCodeExists:                       409,
+	ErrMemberExists:                         409,
+	ErrMemberNotFound:                       404,
+	ErrCollaborationWorkspaceRoleNotFound:   404,
+	ErrMenuSystemProtected:                  403,
+	ErrInvalidParent:                        400,
+	ErrConflict:                             409,
+	ErrUsernameExists:                       409,
+	ErrEmailExists:                          409,
+	ErrSystemRoleProtected:                  403,
+	ErrProductNotFound:                      404,
+	ErrGlobalRolePermissionReadOnly:         403,
+	ErrCollaborationWorkspaceMemberExists:   409,
+	ErrCollaborationWorkspaceMemberNotFound: 404,
+	ErrNoCurrentCollaborationWorkspace:      404,
+	ErrInternal:                             500,
+	ErrDatabase:                             500,
+	ErrExternal:                             500,
 }
 
 // Message 返回错误码对应的默认说明

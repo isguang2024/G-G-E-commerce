@@ -100,8 +100,8 @@ func GetCollaborationWorkspaceByCollaborationWorkspaceID(db *gorm.DB, collaborat
 	return &workspace, nil
 }
 
-func GetTeamWorkspaceByTenantID(db *gorm.DB, tenantID uuid.UUID) (*models.Workspace, error) {
-	return GetCollaborationWorkspaceByCollaborationWorkspaceID(db, tenantID)
+func GetWorkspaceByCollaborationWorkspaceID(db *gorm.DB, collaborationWorkspaceID uuid.UUID) (*models.Workspace, error) {
+	return GetCollaborationWorkspaceByCollaborationWorkspaceID(db, collaborationWorkspaceID)
 }
 
 func EnsurePersonalWorkspace(tx *gorm.DB, userID uuid.UUID) (*models.Workspace, error) {
@@ -178,10 +178,6 @@ func ListCollaborationWorkspaceRoleIDsByCollaborationWorkspaceAndUser(db *gorm.D
 	return listRoleIDsByWorkspaceAndUser(db, workspace.ID, userID, onlyActive)
 }
 
-func ListTeamRoleIDsByTenantAndUser(db *gorm.DB, tenantID, userID uuid.UUID, onlyActive bool) ([]uuid.UUID, error) {
-	return ListCollaborationWorkspaceRoleIDsByCollaborationWorkspaceAndUser(db, tenantID, userID, onlyActive)
-}
-
 func ReplacePersonalRoleBindings(tx *gorm.DB, userID uuid.UUID, roleIDs []uuid.UUID) error {
 	if tx == nil || userID == uuid.Nil {
 		return nil
@@ -207,12 +203,12 @@ func ReplaceCollaborationWorkspaceRoleBindings(tx *gorm.DB, collaborationWorkspa
 	return replaceRoleBindingsByWorkspaceAndUser(tx, workspace.ID, userID, roleIDs)
 }
 
-func ReplaceTeamRoleBindings(tx *gorm.DB, tenantID, userID uuid.UUID, roleIDs []uuid.UUID) error {
-	return ReplaceCollaborationWorkspaceRoleBindings(tx, tenantID, userID, roleIDs)
+func ListCollaborationWorkspaceRoleIDsByUser(db *gorm.DB, collaborationWorkspaceID, userID uuid.UUID, onlyActive bool) ([]uuid.UUID, error) {
+	return ListCollaborationWorkspaceRoleIDsByCollaborationWorkspaceAndUser(db, collaborationWorkspaceID, userID, onlyActive)
 }
 
-func HasTeamRoleCodesByTenantAndUser(db *gorm.DB, tenantID, userID uuid.UUID, roleCodes []string, onlyActive bool) (bool, error) {
-	return HasCollaborationWorkspaceRoleCodesByCollaborationWorkspaceAndUser(db, tenantID, userID, roleCodes, onlyActive)
+func HasCollaborationWorkspaceRoleCodesByUser(db *gorm.DB, collaborationWorkspaceID, userID uuid.UUID, roleCodes []string, onlyActive bool) (bool, error) {
+	return HasCollaborationWorkspaceRoleCodesByCollaborationWorkspaceAndUser(db, collaborationWorkspaceID, userID, roleCodes, onlyActive)
 }
 
 func LoadPersonalRoleRows(db *gorm.DB, userIDs []uuid.UUID, onlyActive bool) ([]PersonalRoleRow, error) {
@@ -333,11 +329,11 @@ func ListPlatformUserIDsByRoleCodes(db *gorm.DB, roleCodes []string, onlyActive 
 	return dedupeUUIDs(userIDs), nil
 }
 
-func ListTeamUserIDsByRoleCodes(db *gorm.DB, tenantID uuid.UUID, roleCodes []string, onlyActive bool) ([]uuid.UUID, error) {
-	if db == nil || tenantID == uuid.Nil {
+func ListUserIDsByCollaborationWorkspaceRoleCodes(db *gorm.DB, collaborationWorkspaceID uuid.UUID, roleCodes []string, onlyActive bool) ([]uuid.UUID, error) {
+	if db == nil || collaborationWorkspaceID == uuid.Nil {
 		return []uuid.UUID{}, nil
 	}
-	workspace, err := GetTeamWorkspaceByTenantID(db, tenantID)
+	workspace, err := GetWorkspaceByCollaborationWorkspaceID(db, collaborationWorkspaceID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return []uuid.UUID{}, nil
@@ -364,11 +360,11 @@ func ListTeamUserIDsByRoleCodes(db *gorm.DB, tenantID uuid.UUID, roleCodes []str
 	return dedupeUUIDs(userIDs), nil
 }
 
-func ListTeamUserIDsByRoleIDs(db *gorm.DB, tenantID uuid.UUID, roleIDs []uuid.UUID, onlyActive bool) ([]uuid.UUID, error) {
-	if db == nil || tenantID == uuid.Nil || len(roleIDs) == 0 {
+func ListUserIDsByCollaborationWorkspaceRoleIDs(db *gorm.DB, collaborationWorkspaceID uuid.UUID, roleIDs []uuid.UUID, onlyActive bool) ([]uuid.UUID, error) {
+	if db == nil || collaborationWorkspaceID == uuid.Nil || len(roleIDs) == 0 {
 		return []uuid.UUID{}, nil
 	}
-	workspace, err := GetTeamWorkspaceByTenantID(db, tenantID)
+	workspace, err := GetWorkspaceByCollaborationWorkspaceID(db, collaborationWorkspaceID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return []uuid.UUID{}, nil

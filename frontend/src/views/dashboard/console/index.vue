@@ -134,17 +134,17 @@
           {
             title: '协作空间成员',
             text: '先确认当前协作空间成员、角色和菜单边界是否生效。',
-            path: '/collaboration/members'
+            path: '/collaboration-workspace/members'
           },
           {
             title: '协作空间角色边界',
             text: '统一查看协作空间角色、功能包、菜单和功能权限。',
-            path: '/system/collaboration-workspace-roles-permissions'
+            path: '/collaboration-workspace/roles'
           },
           {
             title: '协作空间总览',
             text: '检查协作空间资料、功能包和成员入口是否可用。',
-            path: '/collaboration/workspaces'
+            path: '/collaboration-workspace/workspaces'
           }
         ]
   )

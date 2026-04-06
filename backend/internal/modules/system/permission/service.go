@@ -12,10 +12,10 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
-	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/workspacefeaturebinding"
 )
 
@@ -130,7 +130,7 @@ type permissionService struct {
 	packageKeyRepo                           user.FeaturePackageKeyRepository
 	collaborationWorkspaceFeaturePackageRepo user.CollaborationWorkspaceFeaturePackageRepository
 	roleDisabledActionRepo                   user.RoleDisabledActionRepository
-	teamBlockedActionRepo                    user.CollaborationWorkspaceBlockedActionRepository
+	collaborationWorkspaceBlockedActionRepo  user.CollaborationWorkspaceBlockedActionRepository
 	userActionRepo                           user.UserActionPermissionRepository
 	boundaryService                          collaborationworkspaceboundary.Service
 	refresher                                permissionrefresh.Service
@@ -145,7 +145,7 @@ func NewPermissionService(
 	packageKeyRepo user.FeaturePackageKeyRepository,
 	collaborationWorkspaceFeaturePackageRepo user.CollaborationWorkspaceFeaturePackageRepository,
 	roleDisabledActionRepo user.RoleDisabledActionRepository,
-	teamBlockedActionRepo user.CollaborationWorkspaceBlockedActionRepository,
+	collaborationWorkspaceBlockedActionRepo user.CollaborationWorkspaceBlockedActionRepository,
 	userActionRepo user.UserActionPermissionRepository,
 	boundaryService collaborationworkspaceboundary.Service,
 	refresher permissionrefresh.Service,
@@ -159,7 +159,7 @@ func NewPermissionService(
 		packageKeyRepo:                           packageKeyRepo,
 		collaborationWorkspaceFeaturePackageRepo: collaborationWorkspaceFeaturePackageRepo,
 		roleDisabledActionRepo:                   roleDisabledActionRepo,
-		teamBlockedActionRepo:                    teamBlockedActionRepo,
+		collaborationWorkspaceBlockedActionRepo:  collaborationWorkspaceBlockedActionRepo,
 		userActionRepo:                           userActionRepo,
 		boundaryService:                          boundaryService,
 		refresher:                                refresher,
@@ -279,9 +279,9 @@ func (s *permissionService) GetConsumerDetails(id uuid.UUID) (*PermissionConsume
 			return nil, err
 		}
 		for _, role := range roleRows {
-			contextType := "platform"
+			contextType := "personal"
 			if role.CollaborationWorkspaceID != nil {
-				contextType = "team"
+				contextType = "collaboration"
 			}
 			details.Roles = append(details.Roles, PermissionConsumerRoleItem{
 				ID:          role.ID,
@@ -1180,10 +1180,8 @@ func normalizeModuleCode(value, fallbackResource string) string {
 
 func normalizeContextType(value, fallback string) string {
 	switch strings.TrimSpace(value) {
-	case "platform", "collaboration", "common":
+	case "personal", "collaboration", "common":
 		return strings.TrimSpace(value)
-	case "team":
-		return "collaboration"
 	case "":
 		return fallback
 	default:
@@ -1197,7 +1195,7 @@ func derivePermissionAppKey(permissionKey, moduleCode, contextType string) strin
 		segments := strings.Split(targetKey, ".")
 		if len(segments) > 0 {
 			switch segments[0] {
-			case "system", "platform", "tenant", "team", "common", "collaboration_workspace":
+			case "system", "platform", "common", "collaboration_workspace":
 				return models.DefaultAppKey
 			default:
 				if strings.TrimSpace(segments[0]) != "" {
@@ -1208,7 +1206,7 @@ func derivePermissionAppKey(permissionKey, moduleCode, contextType string) strin
 	}
 
 	switch strings.TrimSpace(moduleCode) {
-	case "", "role", "user", "tenant", "menu", "menu_backup", "permission_action", "permission_key", "api_endpoint", "feature_package", "workspace", "navigation", "page", "app":
+	case "", "role", "user", "menu", "menu_backup", "permission_action", "permission_key", "api_endpoint", "feature_package", "workspace", "navigation", "page", "app":
 		return models.DefaultAppKey
 	default:
 		return strings.TrimSpace(moduleCode)
@@ -1227,7 +1225,7 @@ func derivePermissionDataPolicy(permissionKey, moduleCode, contextType string) s
 
 func deriveAllowedWorkspaceTypes(contextType string) string {
 	switch normalizeContextType(contextType, "collaboration") {
-	case "platform":
+	case "personal":
 		return "personal"
 	case "common":
 		return "personal,collaboration"
@@ -1249,14 +1247,14 @@ func deriveContextType(permissionKey, moduleCode string) string {
 	targetModule := strings.TrimSpace(moduleCode)
 	switch {
 	case strings.HasPrefix(targetKey, "system."),
-		strings.HasPrefix(targetKey, "collaboration_workspace."),
-		strings.HasPrefix(targetKey, "platform."),
+		strings.HasPrefix(targetKey, "personal."),
+		strings.HasPrefix(targetKey, "feature_package."),
 		targetKey == "collaboration_workspace.manage":
-		return "platform"
+		return "personal"
 	case strings.HasPrefix(targetKey, "collaboration_workspace."):
 		return "collaboration"
-	case targetModule == "tenant" || targetModule == "role" || targetModule == "user" || targetModule == "menu" || targetModule == "permission_key" || targetModule == "api_endpoint":
-		return "platform"
+	case targetModule == "role" || targetModule == "user" || targetModule == "menu" || targetModule == "permission_key" || targetModule == "api_endpoint":
+		return "personal"
 	default:
 		return "common"
 	}
@@ -1267,7 +1265,7 @@ func validatePermissionContext(permissionKey, moduleCode, contextType string) er
 	targetModule := strings.TrimSpace(moduleCode)
 	targetContext := normalizeContextType(contextType, deriveContextType(targetKey, targetModule))
 	if targetContext == "" {
-		return fmt.Errorf("%w: context_type 仅支持 platform、collaboration、common", ErrPermissionContextInvalid)
+		return fmt.Errorf("%w: context_type 仅支持 personal、collaboration、common", ErrPermissionContextInvalid)
 	}
 
 	if mapping, ok := findCanonicalPermissionMapping(targetKey); ok {
@@ -1282,22 +1280,22 @@ func validatePermissionContext(permissionKey, moduleCode, contextType string) er
 		return fmt.Errorf("%w: 权限键 %s 必须使用 %s 上下文", ErrPermissionContextInvalid, targetKey, expectedContext)
 	}
 
-	if moduleContext := deriveModuleContextBoundary(targetModule); moduleContext != "" && targetContext != moduleContext {
+	if moduleContext := deriveModuleWorkspaceBoundary(targetModule); moduleContext != "" && targetContext != moduleContext {
 		return fmt.Errorf("%w: 模块 %s 仅允许使用 %s 上下文", ErrPermissionContextInvalid, targetModule, moduleContext)
 	}
 
 	switch targetContext {
-	case "platform":
-		if !hasPlatformPermissionNamespace(targetKey) && deriveModuleContextBoundary(targetModule) == "" {
-			return fmt.Errorf("%w: 平台自定义权限键请使用 system.、platform. 或 collaboration_workspace. 前缀，或归入平台模块分组", ErrPermissionContextInvalid)
+	case "personal":
+		if !hasPersonalWorkspacePermissionNamespace(targetKey) && deriveModuleWorkspaceBoundary(targetModule) == "" {
+			return fmt.Errorf("%w: 个人空间自定义权限键请使用 system.、personal. 或 feature_package. 前缀，或归入个人空间模块分组", ErrPermissionContextInvalid)
 		}
 	case "collaboration":
-		if !hasTeamPermissionNamespace(targetKey) && deriveModuleContextBoundary(targetModule) == "" {
+		if !hasCollaborationWorkspacePermissionNamespace(targetKey) && deriveModuleWorkspaceBoundary(targetModule) == "" {
 			return fmt.Errorf("%w: 协作空间自定义权限键请使用 collaboration_workspace. 前缀，或归入协作空间模块分组", ErrPermissionContextInvalid)
 		}
 	case "common":
-		if deriveReservedContextType(targetKey) != "" || deriveModuleContextBoundary(targetModule) != "" {
-			return fmt.Errorf("%w: 平台/协作空间专属权限键不能标记为 common", ErrPermissionContextInvalid)
+		if deriveReservedContextType(targetKey) != "" || deriveModuleWorkspaceBoundary(targetModule) != "" {
+			return fmt.Errorf("%w: 个人工作空间/协作空间专属权限键不能标记为 common", ErrPermissionContextInvalid)
 		}
 	}
 
@@ -1320,36 +1318,35 @@ func findCanonicalPermissionMapping(permissionKey string) (permissionkey.Mapping
 func deriveReservedContextType(permissionKey string) string {
 	targetKey := canonicalPermissionKey(permissionKey)
 	switch {
-	case hasPlatformPermissionNamespace(targetKey):
-		return "platform"
-	case hasTeamPermissionNamespace(targetKey):
+	case hasPersonalWorkspacePermissionNamespace(targetKey):
+		return "personal"
+	case hasCollaborationWorkspacePermissionNamespace(targetKey):
 		return "collaboration"
 	default:
 		return ""
 	}
 }
 
-func hasPlatformPermissionNamespace(permissionKey string) bool {
+func hasPersonalWorkspacePermissionNamespace(permissionKey string) bool {
 	targetKey := canonicalPermissionKey(permissionKey)
 	return strings.HasPrefix(targetKey, "system.") ||
-		strings.HasPrefix(targetKey, "platform.") ||
-		strings.HasPrefix(targetKey, "collaboration_workspace.")
+		strings.HasPrefix(targetKey, "personal.") ||
+		strings.HasPrefix(targetKey, "feature_package.")
 }
 
-func hasTeamPermissionNamespace(permissionKey string) bool {
+func hasCollaborationWorkspacePermissionNamespace(permissionKey string) bool {
 	targetKey := canonicalPermissionKey(permissionKey)
-	return strings.HasPrefix(targetKey, "collaboration_workspace.") ||
-		strings.HasPrefix(targetKey, "collaboration_workspace.")
+	return strings.HasPrefix(targetKey, "collaboration_workspace.")
 }
 
-func deriveModuleContextBoundary(moduleCode string) string {
+func deriveModuleWorkspaceBoundary(moduleCode string) string {
 	targetModule := strings.TrimSpace(moduleCode)
 	switch targetModule {
-	case "role", "permission_key", "user", "menu", "menu_backup", "system", "tenant",
+	case "role", "permission_key", "user", "menu", "menu_backup", "system",
 		"collaboration_workspace_member_admin", "api_endpoint", "page", "fast_enter", "message",
 		"feature_package", "system_permission", "menu_space", "navigation":
-		return "platform"
-	case "collaboration_workspace_member", "team", "collaboration_workspace_message", "collaboration_workspace_boundary":
+		return "personal"
+	case "collaboration_workspace_member", "collaboration_workspace_message", "collaboration_workspace_boundary":
 		return "collaboration"
 	default:
 		return ""
@@ -1378,14 +1375,14 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-	affectedTeams := make(map[uuid.UUID]struct{})
+	affectedCollaborationWorkspaces := make(map[uuid.UUID]struct{})
 	for _, packageID := range packageIDs {
-		collaborationWorkspaceIDs, teamErr := s.collaborationWorkspaceFeaturePackageRepo.GetCollaborationWorkspaceIDsByPackageID(packageID)
-		if teamErr != nil {
-			return teamErr
+		collaborationWorkspaceIDs, collaborationWorkspaceErr := s.collaborationWorkspaceFeaturePackageRepo.GetCollaborationWorkspaceIDsByPackageID(packageID)
+		if collaborationWorkspaceErr != nil {
+			return collaborationWorkspaceErr
 		}
-		for _, teamID := range collaborationWorkspaceIDs {
-			affectedTeams[teamID] = struct{}{}
+		for _, collaborationWorkspaceID := range collaborationWorkspaceIDs {
+			affectedCollaborationWorkspaces[collaborationWorkspaceID] = struct{}{}
 		}
 	}
 	if err := s.packageKeyRepo.DeleteByKeyID(id); err != nil {
@@ -1394,7 +1391,7 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 	if err := s.roleDisabledActionRepo.DeleteByKeyID(id); err != nil {
 		return err
 	}
-	if err := s.teamBlockedActionRepo.DeleteByKeyID(id); err != nil {
+	if err := s.collaborationWorkspaceBlockedActionRepo.DeleteByKeyID(id); err != nil {
 		return err
 	}
 	if err := s.userActionRepo.DeleteByKeyID(id); err != nil {
@@ -1413,15 +1410,15 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 		}, nil, map[string]interface{}{"package_count": len(packageIDs)}, nil, "")
 		return nil
 	}
-	for teamID := range affectedTeams {
-		if _, err := s.boundaryService.RefreshSnapshot(teamID); err != nil {
+	for collaborationWorkspaceID := range affectedCollaborationWorkspaces {
+		if _, err := s.boundaryService.RefreshSnapshot(collaborationWorkspaceID); err != nil {
 			return err
 		}
 	}
 	_ = s.recordRiskAudit("permission_action", id.String(), "delete", map[string]interface{}{
 		"permission_key": item.PermissionKey,
 		"context_type":   item.ContextType,
-	}, nil, map[string]interface{}{"collaboration_workspace_count": len(affectedTeams)}, nil, "")
+	}, nil, map[string]interface{}{"collaboration_workspace_count": len(affectedCollaborationWorkspaces)}, nil, "")
 	return nil
 }
 
@@ -1436,18 +1433,18 @@ func (s *permissionService) refreshByPermissionKeyID(keyID uuid.UUID) error {
 	if s.refresher != nil {
 		return s.refresher.RefreshByPackages(packageIDs)
 	}
-	affectedTeams := make(map[uuid.UUID]struct{})
+	affectedCollaborationWorkspaces := make(map[uuid.UUID]struct{})
 	for _, packageID := range packageIDs {
-		collaborationWorkspaceIDs, teamErr := s.collaborationWorkspaceFeaturePackageRepo.GetCollaborationWorkspaceIDsByPackageID(packageID)
-		if teamErr != nil {
-			return teamErr
+		collaborationWorkspaceIDs, collaborationWorkspaceErr := s.collaborationWorkspaceFeaturePackageRepo.GetCollaborationWorkspaceIDsByPackageID(packageID)
+		if collaborationWorkspaceErr != nil {
+			return collaborationWorkspaceErr
 		}
-		for _, teamID := range collaborationWorkspaceIDs {
-			affectedTeams[teamID] = struct{}{}
+		for _, collaborationWorkspaceID := range collaborationWorkspaceIDs {
+			affectedCollaborationWorkspaces[collaborationWorkspaceID] = struct{}{}
 		}
 	}
-	for teamID := range affectedTeams {
-		if _, refreshErr := s.boundaryService.RefreshSnapshot(teamID); refreshErr != nil {
+	for collaborationWorkspaceID := range affectedCollaborationWorkspaces {
+		if _, refreshErr := s.boundaryService.RefreshSnapshot(collaborationWorkspaceID); refreshErr != nil {
 			return refreshErr
 		}
 	}

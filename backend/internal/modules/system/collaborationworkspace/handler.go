@@ -18,18 +18,18 @@ import (
 	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
 	"github.com/gg-ecommerce/backend/internal/pkg/appscope"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
-	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
+	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
 )
 
 const collaborationWorkspaceContextHeader = "X-Collaboration-Workspace-Id"
 
-var ErrMyTeamRoleForbidden = errors.New("collaboration workspace role forbidden")
+var ErrCurrentCollaborationWorkspaceRoleForbidden = errors.New("collaboration workspace role forbidden")
 
 type CollaborationWorkspaceHandler struct {
 	collaborationWorkspaceService            CollaborationWorkspaceService
-	collaborationWorkspaceMemberRepo         user.TenantMemberRepository
+	collaborationWorkspaceMemberRepo         user.CollaborationWorkspaceMemberRepository
 	userRepo                                 user.UserRepository
 	roleRepo                                 user.RoleRepository
 	roleHiddenMenuRepo                       user.RoleHiddenMenuRepository
@@ -45,15 +45,15 @@ type CollaborationWorkspaceHandler struct {
 	packageMenuRepo                          user.FeaturePackageMenuRepository
 	boundaryService                          collaborationworkspaceboundary.Service
 	refresher                                interface {
-		RefreshTeam(teamID uuid.UUID) error
+		RefreshCollaborationWorkspace(collaborationWorkspaceID uuid.UUID) error
 	}
 	workspaceService workspacepkg.Service
 	authz            *authorization.Service
 	logger           *zap.Logger
 }
 
-func NewCollaborationWorkspaceHandler(collaborationWorkspaceService CollaborationWorkspaceService, collaborationWorkspaceMemberRepo user.TenantMemberRepository, userRepo user.UserRepository, roleRepo user.RoleRepository, roleHiddenMenuRepo user.RoleHiddenMenuRepository, roleDisabledActionRepo user.RoleDisabledActionRepository, userRoleRepo user.UserRoleRepository, actionRepo user.PermissionKeyRepository, blockedMenuRepo user.CollaborationWorkspaceBlockedMenuRepository, blockedActionRepo user.CollaborationWorkspaceBlockedActionRepository, collaborationWorkspaceFeaturePackageRepo user.CollaborationWorkspaceFeaturePackageRepository, rolePackageRepo user.RoleFeaturePackageRepository, featurePkgRepo user.FeaturePackageRepository, packageActionRepo user.FeaturePackageKeyRepository, packageMenuRepo user.FeaturePackageMenuRepository, boundaryService collaborationworkspaceboundary.Service, refresher interface {
-	RefreshTeam(teamID uuid.UUID) error
+func NewCollaborationWorkspaceHandler(collaborationWorkspaceService CollaborationWorkspaceService, collaborationWorkspaceMemberRepo user.CollaborationWorkspaceMemberRepository, userRepo user.UserRepository, roleRepo user.RoleRepository, roleHiddenMenuRepo user.RoleHiddenMenuRepository, roleDisabledActionRepo user.RoleDisabledActionRepository, userRoleRepo user.UserRoleRepository, actionRepo user.PermissionKeyRepository, blockedMenuRepo user.CollaborationWorkspaceBlockedMenuRepository, blockedActionRepo user.CollaborationWorkspaceBlockedActionRepository, collaborationWorkspaceFeaturePackageRepo user.CollaborationWorkspaceFeaturePackageRepository, rolePackageRepo user.RoleFeaturePackageRepository, featurePkgRepo user.FeaturePackageRepository, packageActionRepo user.FeaturePackageKeyRepository, packageMenuRepo user.FeaturePackageMenuRepository, boundaryService collaborationworkspaceboundary.Service, refresher interface {
+	RefreshCollaborationWorkspace(collaborationWorkspaceID uuid.UUID) error
 }, workspaceService workspacepkg.Service, authz *authorization.Service, logger *zap.Logger) *CollaborationWorkspaceHandler {
 	return &CollaborationWorkspaceHandler{
 		collaborationWorkspaceService:            collaborationWorkspaceService,
@@ -96,7 +96,7 @@ func (h *CollaborationWorkspaceHandler) List(c *gin.Context) {
 	records := make([]gin.H, 0, len(list))
 	for _, t := range list {
 		adminUsers, _ := h.collaborationWorkspaceMemberRepo.GetAdminUsersByCollaborationWorkspaceID(t.ID)
-		records = append(records, h.tenantToMap(&t, adminUsers))
+		records = append(records, h.collaborationWorkspaceToMap(&t, adminUsers))
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
 		"records": records,
@@ -122,8 +122,8 @@ func (h *CollaborationWorkspaceHandler) ListOptions(c *gin.Context) {
 	}
 	records := make([]gin.H, 0, len(list))
 	for _, t := range list {
-		tenant := t
-		records = append(records, h.tenantToMap(&tenant, nil))
+		collaborationWorkspace := t
+		records = append(records, h.collaborationWorkspaceToMap(&collaborationWorkspace, nil))
 	}
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
 		"records": records,
@@ -133,8 +133,8 @@ func (h *CollaborationWorkspaceHandler) ListOptions(c *gin.Context) {
 
 func (h *CollaborationWorkspaceHandler) Get(c *gin.Context) {
 	idStr := c.Param("id")
-	if normalized := strings.TrimSpace(strings.ToLower(idStr)); normalized == "current" || normalized == "my-team" {
-		h.GetMyTeam(c)
+	if normalized := strings.TrimSpace(strings.ToLower(idStr)); normalized == "current" {
+		h.GetCurrentCollaborationWorkspace(c)
 		return
 	}
 	id, err := uuid.Parse(idStr)
@@ -143,7 +143,7 @@ func (h *CollaborationWorkspaceHandler) Get(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.requireTargetTenant(c, id); err != nil {
+	if err := h.requireTargetCollaborationWorkspace(c, id); err != nil {
 		return
 	}
 	t, err := h.collaborationWorkspaceService.Get(id)
@@ -158,7 +158,7 @@ func (h *CollaborationWorkspaceHandler) Get(c *gin.Context) {
 		return
 	}
 	adminUsers, _ := h.collaborationWorkspaceMemberRepo.GetAdminUsersByCollaborationWorkspaceID(id)
-	c.JSON(http.StatusOK, dto.SuccessResponse(h.tenantToMap(t, adminUsers)))
+	c.JSON(http.StatusOK, dto.SuccessResponse(h.collaborationWorkspaceToMap(t, adminUsers)))
 }
 
 func (h *CollaborationWorkspaceHandler) Create(c *gin.Context) {
@@ -194,7 +194,7 @@ func (h *CollaborationWorkspaceHandler) Update(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.requireTargetTenant(c, id); err != nil {
+	if err := h.requireTargetCollaborationWorkspace(c, id); err != nil {
 		return
 	}
 	var req dto.CollaborationWorkspaceUpdateRequest
@@ -224,7 +224,7 @@ func (h *CollaborationWorkspaceHandler) Delete(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.requireTargetTenant(c, id); err != nil {
+	if err := h.requireTargetCollaborationWorkspace(c, id); err != nil {
 		return
 	}
 	if err := h.collaborationWorkspaceService.Delete(id); err != nil {
@@ -242,14 +242,14 @@ func (h *CollaborationWorkspaceHandler) Delete(c *gin.Context) {
 }
 
 func (h *CollaborationWorkspaceHandler) ListMembers(c *gin.Context) {
-	tenantIDStr := c.Param("id")
-	tenantID, err := uuid.Parse(tenantIDStr)
+	collaborationWorkspaceIDStr := c.Param("id")
+	collaborationWorkspaceID, err := uuid.Parse(collaborationWorkspaceIDStr)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.requireTargetTenant(c, tenantID); err != nil {
+	if err := h.requireTargetCollaborationWorkspace(c, collaborationWorkspaceID); err != nil {
 		return
 	}
 	searchParams := &user.MemberSearchParams{}
@@ -262,7 +262,7 @@ func (h *CollaborationWorkspaceHandler) ListMembers(c *gin.Context) {
 	if v := c.Query("role_code"); v != "" {
 		searchParams.RoleCode = v
 	}
-	members, err := h.collaborationWorkspaceService.ListMembers(tenantID, searchParams)
+	members, err := h.collaborationWorkspaceService.ListMembers(collaborationWorkspaceID, searchParams)
 	if err != nil {
 		h.logger.Error("List members failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取成员列表失败")
@@ -278,14 +278,14 @@ func (h *CollaborationWorkspaceHandler) ListMembers(c *gin.Context) {
 }
 
 func (h *CollaborationWorkspaceHandler) AddMember(c *gin.Context) {
-	tenantIDStr := c.Param("id")
-	tenantID, err := uuid.Parse(tenantIDStr)
+	collaborationWorkspaceIDStr := c.Param("id")
+	collaborationWorkspaceID, err := uuid.Parse(collaborationWorkspaceIDStr)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.requireTargetTenant(c, tenantID); err != nil {
+	if err := h.requireTargetCollaborationWorkspace(c, collaborationWorkspaceID); err != nil {
 		return
 	}
 	var req dto.CollaborationWorkspaceAddMemberRequest
@@ -302,7 +302,7 @@ func (h *CollaborationWorkspaceHandler) AddMember(c *gin.Context) {
 			}
 		}
 	}
-	if err := h.collaborationWorkspaceService.AddMember(tenantID, &req, invitedBy); err != nil {
+	if err := h.collaborationWorkspaceService.AddMember(collaborationWorkspaceID, &req, invitedBy); err != nil {
 		if err == ErrCollaborationWorkspaceMemberExists {
 			status, resp := errcode.Response(errcode.ErrCollaborationWorkspaceMemberExists)
 			c.JSON(status, resp)
@@ -317,14 +317,14 @@ func (h *CollaborationWorkspaceHandler) AddMember(c *gin.Context) {
 }
 
 func (h *CollaborationWorkspaceHandler) RemoveMember(c *gin.Context) {
-	tenantIDStr := c.Param("id")
-	tenantID, err := uuid.Parse(tenantIDStr)
+	collaborationWorkspaceIDStr := c.Param("id")
+	collaborationWorkspaceID, err := uuid.Parse(collaborationWorkspaceIDStr)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.requireTargetTenant(c, tenantID); err != nil {
+	if err := h.requireTargetCollaborationWorkspace(c, collaborationWorkspaceID); err != nil {
 		return
 	}
 	userIDStr := c.Param("userId")
@@ -334,7 +334,7 @@ func (h *CollaborationWorkspaceHandler) RemoveMember(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.collaborationWorkspaceService.RemoveMember(tenantID, userID); err != nil {
+	if err := h.collaborationWorkspaceService.RemoveMember(collaborationWorkspaceID, userID); err != nil {
 		if err == ErrCollaborationWorkspaceMemberNotFound {
 			status, resp := errcode.Response(errcode.ErrCollaborationWorkspaceMemberNotFound)
 			c.JSON(status, resp)
@@ -349,14 +349,14 @@ func (h *CollaborationWorkspaceHandler) RemoveMember(c *gin.Context) {
 }
 
 func (h *CollaborationWorkspaceHandler) UpdateMemberRole(c *gin.Context) {
-	tenantIDStr := c.Param("id")
-	tenantID, err := uuid.Parse(tenantIDStr)
+	collaborationWorkspaceIDStr := c.Param("id")
+	collaborationWorkspaceID, err := uuid.Parse(collaborationWorkspaceIDStr)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.requireTargetTenant(c, tenantID); err != nil {
+	if err := h.requireTargetCollaborationWorkspace(c, collaborationWorkspaceID); err != nil {
 		return
 	}
 	userIDStr := c.Param("userId")
@@ -373,7 +373,7 @@ func (h *CollaborationWorkspaceHandler) UpdateMemberRole(c *gin.Context) {
 		return
 	}
 	roleCode := strings.TrimSpace(req.RoleCode)
-	if err := h.collaborationWorkspaceService.UpdateMemberRole(tenantID, userID, roleCode); err != nil {
+	if err := h.collaborationWorkspaceService.UpdateMemberRole(collaborationWorkspaceID, userID, roleCode); err != nil {
 		if err == ErrCollaborationWorkspaceMemberNotFound {
 			status, resp := errcode.Response(errcode.ErrCollaborationWorkspaceMemberNotFound)
 			c.JSON(status, resp)
@@ -387,38 +387,38 @@ func (h *CollaborationWorkspaceHandler) UpdateMemberRole(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
-func (h *CollaborationWorkspaceHandler) GetMyTeam(c *gin.Context) {
-	member, err := h.resolveTenantMember(c)
+func (h *CollaborationWorkspaceHandler) GetCurrentCollaborationWorkspace(c *gin.Context) {
+	member, err := h.resolveCollaborationWorkspaceMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrCollaborationWorkspaceMemberNotFound {
-			status, resp := errcode.Response(errcode.ErrNoTeam)
+			status, resp := errcode.Response(errcode.ErrNoCurrentCollaborationWorkspace)
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Get my team failed", zap.Error(err))
+		h.logger.Error("Get current collaboration workspace failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的协作空间失败")
 		c.JSON(status, resp)
 		return
 	}
 
-	tenant, err := h.collaborationWorkspaceService.Get(member.CollaborationWorkspaceID)
+	collaborationWorkspace, err := h.collaborationWorkspaceService.Get(member.CollaborationWorkspaceID)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取协作空间信息失败")
 		c.JSON(status, resp)
 		return
 	}
-	adminUsers, _ := h.collaborationWorkspaceMemberRepo.GetAdminUsersByCollaborationWorkspaceID(tenant.ID)
-	c.JSON(http.StatusOK, dto.SuccessResponse(h.tenantToMap(tenant, adminUsers)))
+	adminUsers, _ := h.collaborationWorkspaceMemberRepo.GetAdminUsersByCollaborationWorkspaceID(collaborationWorkspace.ID)
+	c.JSON(http.StatusOK, dto.SuccessResponse(h.collaborationWorkspaceToMap(collaborationWorkspace, adminUsers)))
 }
 
 func (h *CollaborationWorkspaceHandler) ListMyMembers(c *gin.Context) {
-	member, err := h.resolveTenantMember(c)
+	member, err := h.resolveCollaborationWorkspaceMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrCollaborationWorkspaceMemberNotFound {
 			c.JSON(http.StatusOK, dto.SuccessResponse([]gin.H{}))
 			return
 		}
-		h.logger.Error("Get my team member failed", zap.Error(err))
+		h.logger.Error("Get current collaboration workspace member failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的协作空间成员失败")
 		c.JSON(status, resp)
 		return
@@ -458,14 +458,14 @@ func (h *CollaborationWorkspaceHandler) AddMyMember(c *gin.Context) {
 		return
 	}
 
-	member, err := h.resolveTenantMember(c)
+	member, err := h.resolveCollaborationWorkspaceMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrCollaborationWorkspaceMemberNotFound {
-			status, resp := errcode.Response(errcode.ErrNoTeam)
+			status, resp := errcode.Response(errcode.ErrNoCurrentCollaborationWorkspace)
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Get my team member failed", zap.Error(err))
+		h.logger.Error("Get current collaboration workspace member failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的协作空间失败")
 		c.JSON(status, resp)
 		return
@@ -493,14 +493,14 @@ func (h *CollaborationWorkspaceHandler) AddMyMember(c *gin.Context) {
 }
 
 func (h *CollaborationWorkspaceHandler) RemoveMyMember(c *gin.Context) {
-	member, err := h.resolveTenantMember(c)
+	member, err := h.resolveCollaborationWorkspaceMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrCollaborationWorkspaceMemberNotFound {
-			status, resp := errcode.Response(errcode.ErrNoTeam)
+			status, resp := errcode.Response(errcode.ErrNoCurrentCollaborationWorkspace)
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Get my team member failed", zap.Error(err))
+		h.logger.Error("Get current collaboration workspace member failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的协作空间失败")
 		c.JSON(status, resp)
 		return
@@ -529,14 +529,14 @@ func (h *CollaborationWorkspaceHandler) RemoveMyMember(c *gin.Context) {
 }
 
 func (h *CollaborationWorkspaceHandler) UpdateMyMemberRole(c *gin.Context) {
-	member, err := h.resolveTenantMember(c)
+	member, err := h.resolveCollaborationWorkspaceMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrCollaborationWorkspaceMemberNotFound {
-			status, resp := errcode.Response(errcode.ErrNoTeam)
+			status, resp := errcode.Response(errcode.ErrNoCurrentCollaborationWorkspace)
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Get my team member failed", zap.Error(err))
+		h.logger.Error("Get current collaboration workspace member failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的协作空间失败")
 		c.JSON(status, resp)
 		return
@@ -572,7 +572,7 @@ func (h *CollaborationWorkspaceHandler) UpdateMyMemberRole(c *gin.Context) {
 }
 
 func (h *CollaborationWorkspaceHandler) GetMyCollaborationWorkspaceMemberRoles(c *gin.Context) {
-	member, err := h.resolveTenantMember(c)
+	member, err := h.resolveCollaborationWorkspaceMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrCollaborationWorkspaceMemberNotFound {
 			c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
@@ -580,7 +580,7 @@ func (h *CollaborationWorkspaceHandler) GetMyCollaborationWorkspaceMemberRoles(c
 			}))
 			return
 		}
-		h.logger.Error("Get my team member failed", zap.Error(err))
+		h.logger.Error("Get current collaboration workspace member failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的协作空间失败")
 		c.JSON(status, resp)
 		return
@@ -593,7 +593,7 @@ func (h *CollaborationWorkspaceHandler) GetMyCollaborationWorkspaceMemberRoles(c
 		c.JSON(status, resp)
 		return
 	}
-	targetMember, err := h.collaborationWorkspaceMemberRepo.GetByUserAndTenant(targetUserID, member.CollaborationWorkspaceID)
+	targetMember, err := h.collaborationWorkspaceMemberRepo.GetByUserAndCollaborationWorkspace(targetUserID, member.CollaborationWorkspaceID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			status, resp := errcode.Response(errcode.ErrCollaborationWorkspaceMemberNotFound)
@@ -630,7 +630,7 @@ func (h *CollaborationWorkspaceHandler) GetMyCollaborationWorkspaceMemberRoles(c
 	for _, r := range roles {
 		roleIDsStr = append(roleIDsStr, r.ID.String())
 	}
-	bindingWorkspaceID, bindingWorkspaceType, memberType := h.resolveTeamRoleBindingMeta(member.CollaborationWorkspaceID, targetUserID, targetMember)
+	bindingWorkspaceID, bindingWorkspaceType, memberType := h.resolveCollaborationWorkspaceRoleBindingMeta(member.CollaborationWorkspaceID, targetUserID, targetMember)
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
 		"role_ids":               roleIDsStr,
 		"roles":                  roleList,
@@ -641,14 +641,14 @@ func (h *CollaborationWorkspaceHandler) GetMyCollaborationWorkspaceMemberRoles(c
 }
 
 func (h *CollaborationWorkspaceHandler) SetMyCollaborationWorkspaceMemberRoles(c *gin.Context) {
-	member, err := h.resolveTenantMember(c)
+	member, err := h.resolveCollaborationWorkspaceMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrCollaborationWorkspaceMemberNotFound {
-			status, resp := errcode.Response(errcode.ErrNoTeam)
+			status, resp := errcode.Response(errcode.ErrNoCurrentCollaborationWorkspace)
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Get my team member failed", zap.Error(err))
+		h.logger.Error("Get current collaboration workspace member failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的协作空间失败")
 		c.JSON(status, resp)
 		return
@@ -676,7 +676,7 @@ func (h *CollaborationWorkspaceHandler) SetMyCollaborationWorkspaceMemberRoles(c
 		}
 	}
 
-	memberRecord, err := h.collaborationWorkspaceMemberRepo.GetByUserAndTenant(targetUserID, member.CollaborationWorkspaceID)
+	memberRecord, err := h.collaborationWorkspaceMemberRepo.GetByUserAndCollaborationWorkspace(targetUserID, member.CollaborationWorkspaceID)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			status, resp := errcode.Response(errcode.ErrCollaborationWorkspaceMemberNotFound)
@@ -689,9 +689,9 @@ func (h *CollaborationWorkspaceHandler) SetMyCollaborationWorkspaceMemberRoles(c
 		return
 	}
 
-	allRoles, err := h.roleRepo.ListTeamRoles(member.CollaborationWorkspaceID)
+	allRoles, err := h.roleRepo.ListCollaborationWorkspaceRoles(member.CollaborationWorkspaceID)
 	if err != nil {
-		h.logger.Error("Get team roles failed", zap.Error(err))
+		h.logger.Error("Get collaboration workspace roles failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取协作空间角色失败")
 		c.JSON(status, resp)
 		return
@@ -737,8 +737,8 @@ func (h *CollaborationWorkspaceHandler) SetMyCollaborationWorkspaceMemberRoles(c
 		return
 	}
 	if h.refresher != nil {
-		if err := h.refresher.RefreshTeam(member.CollaborationWorkspaceID); err != nil {
-			h.logger.Error("Refresh team after setting member roles failed", zap.Error(err))
+		if err := h.refresher.RefreshCollaborationWorkspace(member.CollaborationWorkspaceID); err != nil {
+			h.logger.Error("Refresh collaboration workspace after setting member roles failed", zap.Error(err))
 			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新协作空间权限快照失败")
 			c.JSON(status, resp)
 			return
@@ -748,38 +748,38 @@ func (h *CollaborationWorkspaceHandler) SetMyCollaborationWorkspaceMemberRoles(c
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
-func (h *CollaborationWorkspaceHandler) getWorkspaceAwareTeamRoleIDs(userID, tenantID uuid.UUID) ([]uuid.UUID, error) {
-	roleIDs, err := workspacerolebinding.ListTeamRoleIDsByTenantAndUser(database.DB, tenantID, userID, false)
+func (h *CollaborationWorkspaceHandler) getWorkspaceAwareTeamRoleIDs(userID, collaborationWorkspaceID uuid.UUID) ([]uuid.UUID, error) {
+	roleIDs, err := workspacerolebinding.ListCollaborationWorkspaceRoleIDsByUser(database.DB, collaborationWorkspaceID, userID, false)
 	if err != nil {
 		return nil, err
 	}
 	if len(roleIDs) > 0 {
 		return roleIDs, nil
 	}
-	return h.userRoleRepo.GetRoleIDsByUserAndTenant(userID, &tenantID, h.collaborationWorkspaceMemberRepo)
+	return h.userRoleRepo.GetRoleIDsByUserAndCollaborationWorkspace(userID, &collaborationWorkspaceID, h.collaborationWorkspaceMemberRepo)
 }
 
-func (h *CollaborationWorkspaceHandler) syncWorkspaceRoleBindings(tenantID, userID uuid.UUID, roleIDs []uuid.UUID) error {
+func (h *CollaborationWorkspaceHandler) syncWorkspaceRoleBindings(collaborationWorkspaceID, userID uuid.UUID, roleIDs []uuid.UUID) error {
 	return database.DB.Transaction(func(tx *gorm.DB) error {
-		return workspacerolebinding.ReplaceTeamRoleBindings(tx, tenantID, userID, roleIDs)
+		return workspacerolebinding.ReplaceCollaborationWorkspaceRoleBindings(tx, collaborationWorkspaceID, userID, roleIDs)
 	})
 }
 
-func (h *CollaborationWorkspaceHandler) ListMyTeamRoles(c *gin.Context) {
-	member, err := h.resolveTenantMember(c)
+func (h *CollaborationWorkspaceHandler) ListCurrentCollaborationWorkspaceRoles(c *gin.Context) {
+	member, err := h.resolveCollaborationWorkspaceMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrCollaborationWorkspaceMemberNotFound {
 			c.JSON(http.StatusOK, dto.SuccessResponse([]gin.H{}))
 			return
 		}
-		h.logger.Error("Get my team member failed", zap.Error(err))
+		h.logger.Error("Get current collaboration workspace member failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的协作空间失败")
 		c.JSON(status, resp)
 		return
 	}
 
 	_ = member.CollaborationWorkspaceID
-	allRoles, err := h.roleRepo.ListTeamRoles(member.CollaborationWorkspaceID)
+	allRoles, err := h.roleRepo.ListCollaborationWorkspaceRoles(member.CollaborationWorkspaceID)
 	if err != nil {
 		h.logger.Error("List roles failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取角色列表失败")
@@ -804,19 +804,19 @@ func (h *CollaborationWorkspaceHandler) ListMyTeamRoles(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(roleList))
 }
 
-func (h *CollaborationWorkspaceHandler) ListTenantRoles(c *gin.Context) {
-	tenantIDStr := c.Param("id")
-	tenantID, err := uuid.Parse(tenantIDStr)
+func (h *CollaborationWorkspaceHandler) ListCollaborationWorkspaceRoles(c *gin.Context) {
+	collaborationWorkspaceIDStr := c.Param("id")
+	collaborationWorkspaceID, err := uuid.Parse(collaborationWorkspaceIDStr)
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.requireTargetTenant(c, tenantID); err != nil {
+	if err := h.requireTargetCollaborationWorkspace(c, collaborationWorkspaceID); err != nil {
 		return
 	}
 
-	if _, err := h.collaborationWorkspaceService.Get(tenantID); err != nil {
+	if _, err := h.collaborationWorkspaceService.Get(collaborationWorkspaceID); err != nil {
 		if err == ErrCollaborationWorkspaceNotFound {
 			status, resp := errcode.Response(errcode.ErrCollaborationWorkspaceNotFound)
 			c.JSON(status, resp)
@@ -828,7 +828,7 @@ func (h *CollaborationWorkspaceHandler) ListTenantRoles(c *gin.Context) {
 		return
 	}
 
-	allRoles, err := h.roleRepo.ListTeamRoles(tenantID)
+	allRoles, err := h.roleRepo.ListCollaborationWorkspaceRoles(collaborationWorkspaceID)
 	if err != nil {
 		h.logger.Error("List collaboration workspace roles failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取协作空间角色失败")
@@ -853,15 +853,15 @@ func (h *CollaborationWorkspaceHandler) ListTenantRoles(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(roleList))
 }
 
-func (h *CollaborationWorkspaceHandler) CreateMyTeamRole(c *gin.Context) {
-	member, err := h.resolveTenantMember(c)
+func (h *CollaborationWorkspaceHandler) CreateCurrentCollaborationWorkspaceRole(c *gin.Context) {
+	member, err := h.resolveCollaborationWorkspaceMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrCollaborationWorkspaceMemberNotFound {
-			status, resp := errcode.Response(errcode.ErrNoTeam)
+			status, resp := errcode.Response(errcode.ErrNoCurrentCollaborationWorkspace)
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Get my team member failed", zap.Error(err))
+		h.logger.Error("Get current collaboration workspace member failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的协作空间失败")
 		c.JSON(status, resp)
 		return
@@ -882,7 +882,7 @@ func (h *CollaborationWorkspaceHandler) CreateMyTeamRole(c *gin.Context) {
 	}
 	existingRoles, err := h.roleRepo.FindByCode(code)
 	if err != nil {
-		h.logger.Error("Find team role code failed", zap.Error(err))
+		h.logger.Error("Find collaboration workspace role code failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "校验角色编码失败")
 		c.JSON(status, resp)
 		return
@@ -905,7 +905,7 @@ func (h *CollaborationWorkspaceHandler) CreateMyTeamRole(c *gin.Context) {
 		Status:                   normalizeRoleStatus(req.Status),
 	}
 	if err := h.roleRepo.Create(role); err != nil {
-		h.logger.Error("Create team role failed", zap.Error(err))
+		h.logger.Error("Create collaboration workspace role failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "创建协作空间角色失败")
 		c.JSON(status, resp)
 		return
@@ -914,10 +914,10 @@ func (h *CollaborationWorkspaceHandler) CreateMyTeamRole(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{"roleId": role.ID.String()}))
 }
 
-func (h *CollaborationWorkspaceHandler) UpdateMyTeamRole(c *gin.Context) {
-	member, role, err := h.resolveEditableMyTeamRole(c)
+func (h *CollaborationWorkspaceHandler) UpdateCurrentCollaborationWorkspaceRole(c *gin.Context) {
+	member, role, err := h.resolveEditableCurrentCollaborationWorkspaceRole(c)
 	if err != nil {
-		h.respondMyTeamRoleError(c, err)
+		h.respondCurrentCollaborationWorkspaceRoleError(c, err)
 		return
 	}
 
@@ -938,7 +938,7 @@ func (h *CollaborationWorkspaceHandler) UpdateMyTeamRole(c *gin.Context) {
 	if code := strings.TrimSpace(req.Code); code != "" && code != role.Code {
 		existingRoles, findErr := h.roleRepo.FindByCode(code)
 		if findErr != nil {
-			h.logger.Error("Find team role code failed", zap.Error(findErr))
+			h.logger.Error("Find collaboration workspace role code failed", zap.Error(findErr))
 			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "校验角色编码失败")
 			c.JSON(status, resp)
 			return
@@ -957,14 +957,14 @@ func (h *CollaborationWorkspaceHandler) UpdateMyTeamRole(c *gin.Context) {
 	}
 
 	if err := h.roleRepo.UpdateWithMap(role.ID, updates); err != nil {
-		h.logger.Error("Update team role failed", zap.Error(err))
+		h.logger.Error("Update collaboration workspace role failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "更新协作空间角色失败")
 		c.JSON(status, resp)
 		return
 	}
 	if h.refresher != nil {
-		if err := h.refresher.RefreshTeam(member.CollaborationWorkspaceID); err != nil {
-			h.logger.Error("Refresh team after updating role failed", zap.Error(err))
+		if err := h.refresher.RefreshCollaborationWorkspace(member.CollaborationWorkspaceID); err != nil {
+			h.logger.Error("Refresh collaboration workspace after updating role failed", zap.Error(err))
 			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新协作空间权限快照失败")
 			c.JSON(status, resp)
 			return
@@ -974,10 +974,10 @@ func (h *CollaborationWorkspaceHandler) UpdateMyTeamRole(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
-func (h *CollaborationWorkspaceHandler) DeleteMyTeamRole(c *gin.Context) {
-	member, role, err := h.resolveEditableMyTeamRole(c)
+func (h *CollaborationWorkspaceHandler) DeleteCurrentCollaborationWorkspaceRole(c *gin.Context) {
+	member, role, err := h.resolveEditableCurrentCollaborationWorkspaceRole(c)
 	if err != nil {
-		h.respondMyTeamRoleError(c, err)
+		h.respondCurrentCollaborationWorkspaceRoleError(c, err)
 		return
 	}
 
@@ -1002,14 +1002,14 @@ func (h *CollaborationWorkspaceHandler) DeleteMyTeamRole(c *gin.Context) {
 		}
 		return tx.Delete(&user.Role{}, role.ID).Error
 	}); err != nil {
-		h.logger.Error("Delete team role failed", zap.Error(err))
+		h.logger.Error("Delete collaboration workspace role failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "删除协作空间角色失败")
 		c.JSON(status, resp)
 		return
 	}
 	if h.refresher != nil {
-		if err := h.refresher.RefreshTeam(member.CollaborationWorkspaceID); err != nil {
-			h.logger.Error("Refresh team after deleting role failed", zap.Error(err))
+		if err := h.refresher.RefreshCollaborationWorkspace(member.CollaborationWorkspaceID); err != nil {
+			h.logger.Error("Refresh collaboration workspace after deleting role failed", zap.Error(err))
 			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新协作空间权限快照失败")
 			c.JSON(status, resp)
 			return
@@ -1019,10 +1019,10 @@ func (h *CollaborationWorkspaceHandler) DeleteMyTeamRole(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
-func (h *CollaborationWorkspaceHandler) GetMyTeamRolePackages(c *gin.Context) {
-	member, role, err := h.resolveMyTeamRole(c)
+func (h *CollaborationWorkspaceHandler) GetCurrentCollaborationWorkspaceRolePackages(c *gin.Context) {
+	member, role, err := h.resolveCurrentCollaborationWorkspaceRole(c)
 	if err != nil {
-		h.respondMyTeamRoleError(c, err)
+		h.respondCurrentCollaborationWorkspaceRoleError(c, err)
 		return
 	}
 
@@ -1034,7 +1034,7 @@ func (h *CollaborationWorkspaceHandler) GetMyTeamRolePackages(c *gin.Context) {
 	}
 	snapshot, err := h.getRoleSnapshot(member.CollaborationWorkspaceID, role, appKey)
 	if err != nil {
-		h.logger.Error("Get team role packages failed", zap.Error(err))
+		h.logger.Error("Get collaboration workspace role packages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取协作空间角色功能包失败")
 		c.JSON(status, resp)
 		return
@@ -1053,10 +1053,10 @@ func (h *CollaborationWorkspaceHandler) GetMyTeamRolePackages(c *gin.Context) {
 	}))
 }
 
-func (h *CollaborationWorkspaceHandler) SetMyTeamRolePackages(c *gin.Context) {
-	member, role, err := h.resolveEditableMyTeamRole(c)
+func (h *CollaborationWorkspaceHandler) SetCurrentCollaborationWorkspaceRolePackages(c *gin.Context) {
+	member, role, err := h.resolveEditableCurrentCollaborationWorkspaceRole(c)
 	if err != nil {
-		h.respondMyTeamRoleError(c, err)
+		h.respondCurrentCollaborationWorkspaceRoleError(c, err)
 		return
 	}
 
@@ -1082,7 +1082,7 @@ func (h *CollaborationWorkspaceHandler) SetMyTeamRolePackages(c *gin.Context) {
 
 	collaborationWorkspaceFeaturePackageIDs, err := h.collaborationWorkspaceFeaturePackageRepo.GetPackageIDsByCollaborationWorkspaceID(member.CollaborationWorkspaceID)
 	if err != nil {
-		h.logger.Error("Get team feature packages failed", zap.Error(err))
+		h.logger.Error("Get collaboration workspace feature packages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取协作空间功能包失败")
 		c.JSON(status, resp)
 		return
@@ -1110,7 +1110,7 @@ func (h *CollaborationWorkspaceHandler) SetMyTeamRolePackages(c *gin.Context) {
 				c.JSON(status, resp)
 				return
 			}
-			if item.ContextType != "" && item.ContextType != "team" && item.ContextType != "common" {
+			if item.ContextType != "" && item.ContextType != "collaboration" && item.ContextType != "common" {
 				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "仅支持绑定协作空间上下文可用的功能包")
 				c.JSON(status, resp)
 				return
@@ -1127,14 +1127,14 @@ func (h *CollaborationWorkspaceHandler) SetMyTeamRolePackages(c *gin.Context) {
 
 	userID, _ := h.mustUserID(c)
 	if err := appscope.ReplaceRolePackagesInApp(database.DB, role.ID, appKey, packageIDs, &userID); err != nil {
-		h.logger.Error("Set team role packages failed", zap.Error(err))
+		h.logger.Error("Set collaboration workspace role packages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存协作空间角色功能包失败")
 		c.JSON(status, resp)
 		return
 	}
 	if h.refresher != nil {
-		if err := h.refresher.RefreshTeam(member.CollaborationWorkspaceID); err != nil {
-			h.logger.Error("Refresh team after setting role packages failed", zap.Error(err))
+		if err := h.refresher.RefreshCollaborationWorkspace(member.CollaborationWorkspaceID); err != nil {
+			h.logger.Error("Refresh collaboration workspace after setting role packages failed", zap.Error(err))
 			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新协作空间权限快照失败")
 			c.JSON(status, resp)
 			return
@@ -1144,10 +1144,10 @@ func (h *CollaborationWorkspaceHandler) SetMyTeamRolePackages(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
-func (h *CollaborationWorkspaceHandler) GetMyTeamRoleMenus(c *gin.Context) {
-	member, role, err := h.resolveMyTeamRole(c)
+func (h *CollaborationWorkspaceHandler) GetCurrentCollaborationWorkspaceRoleMenus(c *gin.Context) {
+	member, role, err := h.resolveCurrentCollaborationWorkspaceRole(c)
 	if err != nil {
-		h.respondMyTeamRoleError(c, err)
+		h.respondCurrentCollaborationWorkspaceRoleError(c, err)
 		return
 	}
 
@@ -1174,10 +1174,10 @@ func (h *CollaborationWorkspaceHandler) GetMyTeamRoleMenus(c *gin.Context) {
 	}))
 }
 
-func (h *CollaborationWorkspaceHandler) SetMyTeamRoleMenus(c *gin.Context) {
-	member, role, err := h.resolveEditableMyTeamRole(c)
+func (h *CollaborationWorkspaceHandler) SetCurrentCollaborationWorkspaceRoleMenus(c *gin.Context) {
+	member, role, err := h.resolveEditableCurrentCollaborationWorkspaceRole(c)
 	if err != nil {
-		h.respondMyTeamRoleError(c, err)
+		h.respondCurrentCollaborationWorkspaceRoleError(c, err)
 		return
 	}
 
@@ -1219,14 +1219,14 @@ func (h *CollaborationWorkspaceHandler) SetMyTeamRoleMenus(c *gin.Context) {
 
 	hiddenMenuIDs := excludeActionIDs(snapshot.AvailableMenuIDs, menuIDs)
 	if err := appscope.ReplaceRoleHiddenMenusInApp(database.DB, role.ID, appKey, hiddenMenuIDs); err != nil {
-		h.logger.Error("Set team role hidden menus failed", zap.Error(err))
+		h.logger.Error("Set collaboration workspace role hidden menus failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存协作空间角色菜单权限失败")
 		c.JSON(status, resp)
 		return
 	}
 	if h.refresher != nil {
-		if err := h.refresher.RefreshTeam(member.CollaborationWorkspaceID); err != nil {
-			h.logger.Error("Refresh team after setting role menus failed", zap.Error(err))
+		if err := h.refresher.RefreshCollaborationWorkspace(member.CollaborationWorkspaceID); err != nil {
+			h.logger.Error("Refresh collaboration workspace after setting role menus failed", zap.Error(err))
 			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新协作空间权限快照失败")
 			c.JSON(status, resp)
 			return
@@ -1236,10 +1236,10 @@ func (h *CollaborationWorkspaceHandler) SetMyTeamRoleMenus(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
-func (h *CollaborationWorkspaceHandler) GetMyTeamRoleActions(c *gin.Context) {
-	member, role, err := h.resolveMyTeamRole(c)
+func (h *CollaborationWorkspaceHandler) GetCurrentCollaborationWorkspaceRoleActions(c *gin.Context) {
+	member, role, err := h.resolveCurrentCollaborationWorkspaceRole(c)
 	if err != nil {
-		h.respondMyTeamRoleError(c, err)
+		h.respondCurrentCollaborationWorkspaceRoleError(c, err)
 		return
 	}
 
@@ -1273,10 +1273,10 @@ func (h *CollaborationWorkspaceHandler) GetMyTeamRoleActions(c *gin.Context) {
 	}))
 }
 
-func (h *CollaborationWorkspaceHandler) SetMyTeamRoleActions(c *gin.Context) {
-	member, role, err := h.resolveEditableMyTeamRole(c)
+func (h *CollaborationWorkspaceHandler) SetCurrentCollaborationWorkspaceRoleActions(c *gin.Context) {
+	member, role, err := h.resolveEditableCurrentCollaborationWorkspaceRole(c)
 	if err != nil {
-		h.respondMyTeamRoleError(c, err)
+		h.respondCurrentCollaborationWorkspaceRoleError(c, err)
 		return
 	}
 
@@ -1332,14 +1332,14 @@ func (h *CollaborationWorkspaceHandler) SetMyTeamRoleActions(c *gin.Context) {
 
 	disabledActionIDs := excludeActionIDs(snapshot.AvailableActionIDs, actionIDs)
 	if err := appscope.ReplaceRoleDisabledActionsInScope(database.DB, role.ID, snapshot.AvailableActionIDs, disabledActionIDs); err != nil {
-		h.logger.Error("Set team role disabled actions failed", zap.Error(err))
+		h.logger.Error("Set collaboration workspace role disabled actions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存协作空间角色功能权限失败")
 		c.JSON(status, resp)
 		return
 	}
 	if h.refresher != nil {
-		if err := h.refresher.RefreshTeam(member.CollaborationWorkspaceID); err != nil {
-			h.logger.Error("Refresh team after setting role actions failed", zap.Error(err))
+		if err := h.refresher.RefreshCollaborationWorkspace(member.CollaborationWorkspaceID); err != nil {
+			h.logger.Error("Refresh collaboration workspace after setting role actions failed", zap.Error(err))
 			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新协作空间权限快照失败")
 			c.JSON(status, resp)
 			return
@@ -1349,14 +1349,14 @@ func (h *CollaborationWorkspaceHandler) SetMyTeamRoleActions(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
-func (h *CollaborationWorkspaceHandler) GetTenantActions(c *gin.Context) {
-	tenantID, err := uuid.Parse(c.Param("id"))
+func (h *CollaborationWorkspaceHandler) GetCollaborationWorkspaceActions(c *gin.Context) {
+	collaborationWorkspaceID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.requireTargetTenant(c, tenantID); err != nil {
+	if err := h.requireTargetCollaborationWorkspace(c, collaborationWorkspaceID); err != nil {
 		return
 	}
 	appKey, err := appctx.RequireRequestAppKey(c)
@@ -1365,7 +1365,7 @@ func (h *CollaborationWorkspaceHandler) GetTenantActions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	snapshot, err := h.boundaryService.GetSnapshot(tenantID, appKey)
+	snapshot, err := h.boundaryService.GetSnapshot(collaborationWorkspaceID, appKey)
 	if err != nil {
 		h.logger.Error("Get collaboration workspace actions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取协作空间功能权限失败")
@@ -1385,14 +1385,14 @@ func (h *CollaborationWorkspaceHandler) GetTenantActions(c *gin.Context) {
 	}))
 }
 
-func (h *CollaborationWorkspaceHandler) GetTenantMenus(c *gin.Context) {
-	tenantID, err := uuid.Parse(c.Param("id"))
+func (h *CollaborationWorkspaceHandler) GetCollaborationWorkspaceMenus(c *gin.Context) {
+	collaborationWorkspaceID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.requireTargetTenant(c, tenantID); err != nil {
+	if err := h.requireTargetCollaborationWorkspace(c, collaborationWorkspaceID); err != nil {
 		return
 	}
 	appKey, err := appctx.RequireRequestAppKey(c)
@@ -1401,7 +1401,7 @@ func (h *CollaborationWorkspaceHandler) GetTenantMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	snapshot, err := h.boundaryService.GetMenuSnapshot(tenantID, appKey)
+	snapshot, err := h.boundaryService.GetMenuSnapshot(collaborationWorkspaceID, appKey)
 	if err != nil {
 		h.logger.Error("Get collaboration workspace menus failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取协作空间菜单边界失败")
@@ -1413,40 +1413,40 @@ func (h *CollaborationWorkspaceHandler) GetTenantMenus(c *gin.Context) {
 	}))
 }
 
-func (h *CollaborationWorkspaceHandler) GetTenantActionOrigins(c *gin.Context) {
-	tenantID, err := uuid.Parse(c.Param("id"))
+func (h *CollaborationWorkspaceHandler) GetCollaborationWorkspaceActionOrigins(c *gin.Context) {
+	collaborationWorkspaceID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.requireTargetTenant(c, tenantID); err != nil {
+	if err := h.requireTargetCollaborationWorkspace(c, collaborationWorkspaceID); err != nil {
 		return
 	}
-	h.respondTenantActionOrigins(c, tenantID)
+	h.respondCollaborationWorkspaceActionOrigins(c, collaborationWorkspaceID)
 }
 
-func (h *CollaborationWorkspaceHandler) GetTenantMenuOrigins(c *gin.Context) {
-	tenantID, err := uuid.Parse(c.Param("id"))
+func (h *CollaborationWorkspaceHandler) GetCollaborationWorkspaceMenuOrigins(c *gin.Context) {
+	collaborationWorkspaceID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.requireTargetTenant(c, tenantID); err != nil {
+	if err := h.requireTargetCollaborationWorkspace(c, collaborationWorkspaceID); err != nil {
 		return
 	}
-	h.respondTenantMenuOrigins(c, tenantID)
+	h.respondCollaborationWorkspaceMenuOrigins(c, collaborationWorkspaceID)
 }
 
-func (h *CollaborationWorkspaceHandler) SetTenantActions(c *gin.Context) {
-	tenantID, err := uuid.Parse(c.Param("id"))
+func (h *CollaborationWorkspaceHandler) SetCollaborationWorkspaceActions(c *gin.Context) {
+	collaborationWorkspaceID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.requireTargetTenant(c, tenantID); err != nil {
+	if err := h.requireTargetCollaborationWorkspace(c, collaborationWorkspaceID); err != nil {
 		return
 	}
 	var req dto.RoleKeyPermissionsRequest
@@ -1481,28 +1481,28 @@ func (h *CollaborationWorkspaceHandler) SetTenantActions(c *gin.Context) {
 			return
 		}
 	}
-	snapshot, err := h.boundaryService.GetSnapshot(tenantID, appKey)
+	snapshot, err := h.boundaryService.GetSnapshot(collaborationWorkspaceID, appKey)
 	if err != nil {
-		h.logger.Error("Get derived team actions failed", zap.Error(err))
+		h.logger.Error("Get derived collaboration workspace actions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包展开权限失败")
 		c.JSON(status, resp)
 		return
 	}
 	blockedIDs := excludeActionIDs(snapshot.DerivedIDs, actionIDs)
-	if err := appscope.ReplaceCollaborationWorkspaceBlockedActionsInScope(database.DB, tenantID, snapshot.DerivedIDs, blockedIDs); err != nil {
-		h.logger.Error("Set team blocked actions failed", zap.Error(err))
+	if err := appscope.ReplaceCollaborationWorkspaceBlockedActionsInScope(database.DB, collaborationWorkspaceID, snapshot.DerivedIDs, blockedIDs); err != nil {
+		h.logger.Error("Set collaboration workspace blocked actions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存协作空间功能边界失败")
 		c.JSON(status, resp)
 		return
 	}
 	if h.refresher != nil {
-		if err := h.refresher.RefreshTeam(tenantID); err != nil {
+		if err := h.refresher.RefreshCollaborationWorkspace(collaborationWorkspaceID); err != nil {
 			h.logger.Error("Set collaboration workspace actions failed", zap.Error(err))
 			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存协作空间功能权限失败")
 			c.JSON(status, resp)
 			return
 		}
-	} else if _, err := h.boundaryService.RefreshSnapshot(tenantID, appKey); err != nil {
+	} else if _, err := h.boundaryService.RefreshSnapshot(collaborationWorkspaceID, appKey); err != nil {
 		h.logger.Error("Set collaboration workspace actions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存协作空间功能权限失败")
 		c.JSON(status, resp)
@@ -1511,17 +1511,17 @@ func (h *CollaborationWorkspaceHandler) SetTenantActions(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
-func (h *CollaborationWorkspaceHandler) SetTenantMenus(c *gin.Context) {
-	tenantID, err := uuid.Parse(c.Param("id"))
+func (h *CollaborationWorkspaceHandler) SetCollaborationWorkspaceMenus(c *gin.Context) {
+	collaborationWorkspaceID, err := uuid.Parse(c.Param("id"))
 	if err != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
 		return
 	}
-	if err := h.requireTargetTenant(c, tenantID); err != nil {
+	if err := h.requireTargetCollaborationWorkspace(c, collaborationWorkspaceID); err != nil {
 		return
 	}
-	var req dto.TenantMenuPermissionsRequest
+	var req dto.CollaborationWorkspaceMenuPermissionsRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -1539,22 +1539,22 @@ func (h *CollaborationWorkspaceHandler) SetTenantMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	snapshot, err := h.boundaryService.GetMenuSnapshot(tenantID, appKey)
+	snapshot, err := h.boundaryService.GetMenuSnapshot(collaborationWorkspaceID, appKey)
 	if err != nil {
-		h.logger.Error("Get derived team menus failed", zap.Error(err))
+		h.logger.Error("Get derived collaboration workspace menus failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包展开菜单失败")
 		c.JSON(status, resp)
 		return
 	}
 	blockedIDs := excludeActionIDs(snapshot.DerivedIDs, menuIDs)
-	if err := appscope.ReplaceCollaborationWorkspaceBlockedMenusInApp(database.DB, tenantID, appKey, blockedIDs); err != nil {
-		h.logger.Error("Set team blocked menus failed", zap.Error(err))
+	if err := appscope.ReplaceCollaborationWorkspaceBlockedMenusInApp(database.DB, collaborationWorkspaceID, appKey, blockedIDs); err != nil {
+		h.logger.Error("Set collaboration workspace blocked menus failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存协作空间菜单边界失败")
 		c.JSON(status, resp)
 		return
 	}
 	if h.refresher != nil {
-		if err := h.refresher.RefreshTeam(tenantID); err != nil {
+		if err := h.refresher.RefreshCollaborationWorkspace(collaborationWorkspaceID); err != nil {
 			h.logger.Error("Set collaboration workspace menus failed", zap.Error(err))
 			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存协作空间菜单边界失败")
 			c.JSON(status, resp)
@@ -1564,15 +1564,15 @@ func (h *CollaborationWorkspaceHandler) SetTenantMenus(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
-func (h *CollaborationWorkspaceHandler) GetMyTeamBoundaryPackages(c *gin.Context) {
-	member, err := h.resolveTenantMember(c)
+func (h *CollaborationWorkspaceHandler) GetCurrentCollaborationWorkspaceBoundaryPackages(c *gin.Context) {
+	member, err := h.resolveCollaborationWorkspaceMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrCollaborationWorkspaceMemberNotFound {
-			status, resp := errcode.Response(errcode.ErrNoTeam)
+			status, resp := errcode.Response(errcode.ErrNoCurrentCollaborationWorkspace)
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Resolve my team failed", zap.Error(err))
+		h.logger.Error("Resolve current collaboration workspace failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的协作空间失败")
 		c.JSON(status, resp)
 		return
@@ -1584,9 +1584,9 @@ func (h *CollaborationWorkspaceHandler) GetMyTeamBoundaryPackages(c *gin.Context
 		c.JSON(status, resp)
 		return
 	}
-	packageIDs, err := appscope.PackageIDsByTeam(database.DB, member.CollaborationWorkspaceID, appKey)
+	packageIDs, err := appscope.PackageIDsByCollaborationWorkspace(database.DB, member.CollaborationWorkspaceID, appKey)
 	if err != nil {
-		h.logger.Error("Get my team packages failed", zap.Error(err))
+		h.logger.Error("Get current collaboration workspace packages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取协作空间功能包失败")
 		c.JSON(status, resp)
 		return
@@ -1601,7 +1601,7 @@ func (h *CollaborationWorkspaceHandler) GetMyTeamBoundaryPackages(c *gin.Context
 
 	packages, err := h.featurePkgRepo.GetByIDs(packageIDs)
 	if err != nil {
-		h.logger.Error("Get my team package details failed", zap.Error(err))
+		h.logger.Error("Get current collaboration workspace package details failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包详情失败")
 		c.JSON(status, resp)
 		return
@@ -1612,7 +1612,7 @@ func (h *CollaborationWorkspaceHandler) GetMyTeamBoundaryPackages(c *gin.Context
 		if strings.TrimSpace(item.Status) != "" && item.Status != "normal" {
 			continue
 		}
-		if item.ContextType != "" && item.ContextType != "team" && item.ContextType != "common" {
+		if item.ContextType != "" && item.ContextType != "collaboration" && item.ContextType != "common" {
 			continue
 		}
 		filtered = append(filtered, item)
@@ -1624,15 +1624,15 @@ func (h *CollaborationWorkspaceHandler) GetMyTeamBoundaryPackages(c *gin.Context
 	}))
 }
 
-func (h *CollaborationWorkspaceHandler) GetMyTeamActions(c *gin.Context) {
-	member, err := h.resolveTenantMember(c)
+func (h *CollaborationWorkspaceHandler) GetCurrentCollaborationWorkspaceActions(c *gin.Context) {
+	member, err := h.resolveCollaborationWorkspaceMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrCollaborationWorkspaceMemberNotFound {
-			status, resp := errcode.Response(errcode.ErrNoTeam)
+			status, resp := errcode.Response(errcode.ErrNoCurrentCollaborationWorkspace)
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Resolve my team failed", zap.Error(err))
+		h.logger.Error("Resolve current collaboration workspace failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的协作空间失败")
 		c.JSON(status, resp)
 		return
@@ -1645,14 +1645,14 @@ func (h *CollaborationWorkspaceHandler) GetMyTeamActions(c *gin.Context) {
 	}
 	snapshot, err := h.boundaryService.GetSnapshot(member.CollaborationWorkspaceID, appKey)
 	if err != nil {
-		h.logger.Error("Get my team actions failed", zap.Error(err))
+		h.logger.Error("Get current collaboration workspace actions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取协作空间功能权限失败")
 		c.JSON(status, resp)
 		return
 	}
 	actions, err := h.actionRepo.GetByIDs(snapshot.EffectiveIDs)
 	if err != nil {
-		h.logger.Error("Get my team permission actions failed", zap.Error(err))
+		h.logger.Error("Get current collaboration workspace permission actions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能权限失败")
 		c.JSON(status, resp)
 		return
@@ -1663,15 +1663,15 @@ func (h *CollaborationWorkspaceHandler) GetMyTeamActions(c *gin.Context) {
 	}))
 }
 
-func (h *CollaborationWorkspaceHandler) GetMyTeamMenus(c *gin.Context) {
-	member, err := h.resolveTenantMember(c)
+func (h *CollaborationWorkspaceHandler) GetCurrentCollaborationWorkspaceMenus(c *gin.Context) {
+	member, err := h.resolveCollaborationWorkspaceMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrCollaborationWorkspaceMemberNotFound {
-			status, resp := errcode.Response(errcode.ErrNoTeam)
+			status, resp := errcode.Response(errcode.ErrNoCurrentCollaborationWorkspace)
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Resolve my team failed", zap.Error(err))
+		h.logger.Error("Resolve current collaboration workspace failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的协作空间失败")
 		c.JSON(status, resp)
 		return
@@ -1684,7 +1684,7 @@ func (h *CollaborationWorkspaceHandler) GetMyTeamMenus(c *gin.Context) {
 	}
 	snapshot, err := h.boundaryService.GetMenuSnapshot(member.CollaborationWorkspaceID, appKey)
 	if err != nil {
-		h.logger.Error("Get my team menus failed", zap.Error(err))
+		h.logger.Error("Get current collaboration workspace menus failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取协作空间菜单边界失败")
 		c.JSON(status, resp)
 		return
@@ -1694,8 +1694,8 @@ func (h *CollaborationWorkspaceHandler) GetMyTeamMenus(c *gin.Context) {
 	}))
 }
 
-func (h *CollaborationWorkspaceHandler) GetMyTeamActionOrigins(c *gin.Context) {
-	member, err := h.resolveTenantMember(c)
+func (h *CollaborationWorkspaceHandler) GetCurrentCollaborationWorkspaceActionOrigins(c *gin.Context) {
+	member, err := h.resolveCollaborationWorkspaceMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrCollaborationWorkspaceMemberNotFound {
 			c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
@@ -1705,16 +1705,16 @@ func (h *CollaborationWorkspaceHandler) GetMyTeamActionOrigins(c *gin.Context) {
 			}))
 			return
 		}
-		h.logger.Error("Resolve my team failed", zap.Error(err))
+		h.logger.Error("Resolve current collaboration workspace failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的协作空间失败")
 		c.JSON(status, resp)
 		return
 	}
-	h.respondTenantActionOrigins(c, member.CollaborationWorkspaceID)
+	h.respondCollaborationWorkspaceActionOrigins(c, member.CollaborationWorkspaceID)
 }
 
-func (h *CollaborationWorkspaceHandler) GetMyTeamMenuOrigins(c *gin.Context) {
-	member, err := h.resolveTenantMember(c)
+func (h *CollaborationWorkspaceHandler) GetCurrentCollaborationWorkspaceMenuOrigins(c *gin.Context) {
+	member, err := h.resolveCollaborationWorkspaceMember(c)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound || err == ErrCollaborationWorkspaceMemberNotFound {
 			c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
@@ -1724,18 +1724,18 @@ func (h *CollaborationWorkspaceHandler) GetMyTeamMenuOrigins(c *gin.Context) {
 			}))
 			return
 		}
-		h.logger.Error("Resolve my team failed", zap.Error(err))
+		h.logger.Error("Resolve current collaboration workspace failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的协作空间失败")
 		c.JSON(status, resp)
 		return
 	}
-	h.respondTenantMenuOrigins(c, member.CollaborationWorkspaceID)
+	h.respondCollaborationWorkspaceMenuOrigins(c, member.CollaborationWorkspaceID)
 }
 
-func (h *CollaborationWorkspaceHandler) respondTenantActionOrigins(c *gin.Context, tenantID uuid.UUID) {
-	snapshot, err := h.boundaryService.GetSnapshot(tenantID)
+func (h *CollaborationWorkspaceHandler) respondCollaborationWorkspaceActionOrigins(c *gin.Context, collaborationWorkspaceID uuid.UUID) {
+	snapshot, err := h.boundaryService.GetSnapshot(collaborationWorkspaceID)
 	if err != nil {
-		h.logger.Error("Get tenant action origins failed", zap.Error(err))
+		h.logger.Error("Get collaboration workspace action origins failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取协作空间功能权限来源失败")
 		c.JSON(status, resp)
 		return
@@ -1747,10 +1747,10 @@ func (h *CollaborationWorkspaceHandler) respondTenantActionOrigins(c *gin.Contex
 	}))
 }
 
-func (h *CollaborationWorkspaceHandler) respondTenantMenuOrigins(c *gin.Context, tenantID uuid.UUID) {
-	snapshot, err := h.boundaryService.GetMenuSnapshot(tenantID)
+func (h *CollaborationWorkspaceHandler) respondCollaborationWorkspaceMenuOrigins(c *gin.Context, collaborationWorkspaceID uuid.UUID) {
+	snapshot, err := h.boundaryService.GetMenuSnapshot(collaborationWorkspaceID)
 	if err != nil {
-		h.logger.Error("Get tenant menu origins failed", zap.Error(err))
+		h.logger.Error("Get collaboration workspace menu origins failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取协作空间菜单来源失败")
 		c.JSON(status, resp)
 		return
@@ -1797,8 +1797,8 @@ func mergeActionIDs(groups ...[]uuid.UUID) []uuid.UUID {
 	return result
 }
 
-func (h *CollaborationWorkspaceHandler) getTenantEnabledActionSet(tenantID uuid.UUID) (map[uuid.UUID]bool, error) {
-	snapshot, err := h.boundaryService.GetSnapshot(tenantID)
+func (h *CollaborationWorkspaceHandler) getCollaborationWorkspaceEnabledActionSet(collaborationWorkspaceID uuid.UUID) (map[uuid.UUID]bool, error) {
+	snapshot, err := h.boundaryService.GetSnapshot(collaborationWorkspaceID)
 	if err != nil {
 		return nil, err
 	}
@@ -1809,8 +1809,8 @@ func (h *CollaborationWorkspaceHandler) getTenantEnabledActionSet(tenantID uuid.
 	return result, nil
 }
 
-func (h *CollaborationWorkspaceHandler) getTenantEnabledMenuSet(tenantID uuid.UUID) (map[uuid.UUID]bool, bool, error) {
-	snapshot, err := h.boundaryService.GetMenuSnapshot(tenantID)
+func (h *CollaborationWorkspaceHandler) getCollaborationWorkspaceEnabledMenuSet(collaborationWorkspaceID uuid.UUID) (map[uuid.UUID]bool, bool, error) {
+	snapshot, err := h.boundaryService.GetMenuSnapshot(collaborationWorkspaceID)
 	if err != nil {
 		return nil, false, err
 	}
@@ -1824,7 +1824,7 @@ func (h *CollaborationWorkspaceHandler) getTenantEnabledMenuSet(tenantID uuid.UU
 	return result, true, nil
 }
 
-func (h *CollaborationWorkspaceHandler) getRoleSnapshot(teamID uuid.UUID, role *user.Role, appKey string) (*collaborationworkspaceboundary.RoleSnapshot, error) {
+func (h *CollaborationWorkspaceHandler) getRoleSnapshot(collaborationWorkspaceID uuid.UUID, role *user.Role, appKey string) (*collaborationworkspaceboundary.RoleSnapshot, error) {
 	if role == nil {
 		return &collaborationworkspaceboundary.RoleSnapshot{
 			PackageIDs:         []uuid.UUID{},
@@ -1840,7 +1840,7 @@ func (h *CollaborationWorkspaceHandler) getRoleSnapshot(teamID uuid.UUID, role *
 		}, nil
 	}
 	inheritAll := role.CollaborationWorkspaceID == nil
-	return h.boundaryService.GetRoleSnapshot(teamID, role.ID, inheritAll, appKey)
+	return h.boundaryService.GetRoleSnapshot(collaborationWorkspaceID, role.ID, inheritAll, appKey)
 }
 
 func uuidSliceToSet(ids []uuid.UUID) map[uuid.UUID]bool {
@@ -1851,14 +1851,14 @@ func uuidSliceToSet(ids []uuid.UUID) map[uuid.UUID]bool {
 	return result
 }
 
-func isAssignableTeamRoleForTenant(role user.Role, tenantID uuid.UUID) bool {
+func isAssignableRoleForCollaborationWorkspace(role user.Role, collaborationWorkspaceID uuid.UUID) bool {
 	if role.CollaborationWorkspaceID != nil {
-		return *role.CollaborationWorkspaceID == tenantID
+		return *role.CollaborationWorkspaceID == collaborationWorkspaceID
 	}
 	return role.Code == "collaboration_workspace_admin" || role.Code == "collaboration_workspace_member"
 }
 
-func (h *CollaborationWorkspaceHandler) ListMyTeams(c *gin.Context) {
+func (h *CollaborationWorkspaceHandler) ListMyCollaborationWorkspaces(c *gin.Context) {
 	userID, err := h.mustUserID(c)
 	if err != nil {
 		status, resp := errcode.Response(errcode.ErrUnauthorized)
@@ -1866,9 +1866,9 @@ func (h *CollaborationWorkspaceHandler) ListMyTeams(c *gin.Context) {
 		return
 	}
 
-	collaboration_workspaces, err := h.collaborationWorkspaceMemberRepo.GetTenantsByUserID(userID)
+	collaboration_workspaces, err := h.collaborationWorkspaceMemberRepo.GetCollaborationWorkspacesByUserID(userID)
 	if err != nil {
-		h.logger.Error("List my teams failed", zap.Error(err))
+		h.logger.Error("List my collaboration workspaces failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取我的协作空间列表失败")
 		c.JSON(status, resp)
 		return
@@ -1877,8 +1877,8 @@ func (h *CollaborationWorkspaceHandler) ListMyTeams(c *gin.Context) {
 	records := make([]gin.H, 0, len(collaboration_workspaces))
 	for _, t := range collaboration_workspaces {
 		adminUsers, _ := h.collaborationWorkspaceMemberRepo.GetAdminUsersByCollaborationWorkspaceID(t.ID)
-		member, memberErr := h.collaborationWorkspaceMemberRepo.GetByUserAndTenant(userID, t.ID)
-		record := h.tenantToMap(&t, adminUsers)
+		member, memberErr := h.collaborationWorkspaceMemberRepo.GetByUserAndCollaborationWorkspace(userID, t.ID)
+		record := h.collaborationWorkspaceToMap(&t, adminUsers)
 		if memberErr == nil {
 			record["current_role_code"] = member.RoleCode
 			record["member_status"] = member.Status
@@ -1901,14 +1901,14 @@ func (h *CollaborationWorkspaceHandler) mustUserID(c *gin.Context) (uuid.UUID, e
 	return uuid.Parse(userIDStr)
 }
 
-func (h *CollaborationWorkspaceHandler) resolveTenantMember(c *gin.Context) (*user.TenantMember, error) {
+func (h *CollaborationWorkspaceHandler) resolveCollaborationWorkspaceMember(c *gin.Context) (*user.CollaborationWorkspaceMember, error) {
 	userID, err := h.mustUserID(c)
 	if err != nil {
 		return nil, err
 	}
 
-	if tenantID, ok := parseCollaborationWorkspaceIDFromContext(c); ok {
-		member, memberErr := h.collaborationWorkspaceMemberRepo.GetByUserAndTenant(userID, tenantID)
+	if collaborationWorkspaceID, ok := parseCollaborationWorkspaceIDFromContext(c); ok {
+		member, memberErr := h.collaborationWorkspaceMemberRepo.GetByUserAndCollaborationWorkspace(userID, collaborationWorkspaceID)
 		if memberErr != nil {
 			if memberErr == gorm.ErrRecordNotFound {
 				return nil, ErrCollaborationWorkspaceMemberNotFound
@@ -1928,8 +1928,8 @@ func (h *CollaborationWorkspaceHandler) resolveTenantMember(c *gin.Context) (*us
 	return member, nil
 }
 
-func (h *CollaborationWorkspaceHandler) resolveMyTeamRole(c *gin.Context) (*user.TenantMember, *user.Role, error) {
-	member, err := h.resolveTenantMember(c)
+func (h *CollaborationWorkspaceHandler) resolveCurrentCollaborationWorkspaceRole(c *gin.Context) (*user.CollaborationWorkspaceMember, *user.Role, error) {
+	member, err := h.resolveCollaborationWorkspaceMember(c)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1941,32 +1941,32 @@ func (h *CollaborationWorkspaceHandler) resolveMyTeamRole(c *gin.Context) (*user
 	if err != nil {
 		return member, nil, err
 	}
-	if !isAssignableTeamRoleForTenant(*role, member.CollaborationWorkspaceID) {
-		return member, nil, ErrMyTeamRoleForbidden
+	if !isAssignableRoleForCollaborationWorkspace(*role, member.CollaborationWorkspaceID) {
+		return member, nil, ErrCurrentCollaborationWorkspaceRoleForbidden
 	}
 	return member, role, nil
 }
 
-func (h *CollaborationWorkspaceHandler) resolveEditableMyTeamRole(c *gin.Context) (*user.TenantMember, *user.Role, error) {
-	member, role, err := h.resolveMyTeamRole(c)
+func (h *CollaborationWorkspaceHandler) resolveEditableCurrentCollaborationWorkspaceRole(c *gin.Context) (*user.CollaborationWorkspaceMember, *user.Role, error) {
+	member, role, err := h.resolveCurrentCollaborationWorkspaceRole(c)
 	if err != nil {
 		return member, role, err
 	}
 	if role.CollaborationWorkspaceID == nil {
-		return member, role, ErrMyTeamRoleForbidden
+		return member, role, ErrCurrentCollaborationWorkspaceRoleForbidden
 	}
 	return member, role, nil
 }
 
-func (h *CollaborationWorkspaceHandler) respondMyTeamRoleError(c *gin.Context, err error) {
+func (h *CollaborationWorkspaceHandler) respondCurrentCollaborationWorkspaceRoleError(c *gin.Context, err error) {
 	switch {
 	case err == gorm.ErrRecordNotFound:
 		status, resp := errcode.Response(errcode.ErrRoleNotFound)
 		c.JSON(status, resp)
 	case err == ErrCollaborationWorkspaceMemberNotFound:
-		status, resp := errcode.Response(errcode.ErrNoTeam)
+		status, resp := errcode.Response(errcode.ErrNoCurrentCollaborationWorkspace)
 		c.JSON(status, resp)
-	case errors.Is(err, ErrMyTeamRoleForbidden):
+	case errors.Is(err, ErrCurrentCollaborationWorkspaceRoleForbidden):
 		status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "仅支持操作当前协作空间自定义角色")
 		c.JSON(status, resp)
 	default:
@@ -1975,7 +1975,7 @@ func (h *CollaborationWorkspaceHandler) respondMyTeamRoleError(c *gin.Context, e
 			c.JSON(status, resp)
 			return
 		}
-		h.logger.Error("Resolve my team role failed", zap.Error(err))
+		h.logger.Error("Resolve current collaboration workspace role failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取协作空间角色失败")
 		c.JSON(status, resp)
 	}
@@ -2007,8 +2007,8 @@ func parseCollaborationWorkspaceIDFromContext(c *gin.Context) (uuid.UUID, bool) 
 	if value, ok := c.Get("collaboration_workspace_id"); ok {
 		switch typed := value.(type) {
 		case string:
-			if tenantID, err := uuid.Parse(strings.TrimSpace(typed)); err == nil {
-				return tenantID, true
+			if collaborationWorkspaceID, err := uuid.Parse(strings.TrimSpace(typed)); err == nil {
+				return collaborationWorkspaceID, true
 			}
 		case uuid.UUID:
 			if typed != uuid.Nil {
@@ -2025,14 +2025,14 @@ func parseCollaborationWorkspaceIDFromContext(c *gin.Context) (uuid.UUID, bool) 
 		if candidate == "" {
 			continue
 		}
-		if tenantID, err := uuid.Parse(candidate); err == nil {
-			return tenantID, true
+		if collaborationWorkspaceID, err := uuid.Parse(candidate); err == nil {
+			return collaborationWorkspaceID, true
 		}
 	}
 	return uuid.Nil, false
 }
 
-func (h *CollaborationWorkspaceHandler) requireTargetTenant(c *gin.Context, tenantID uuid.UUID) error {
+func (h *CollaborationWorkspaceHandler) requireTargetCollaborationWorkspace(c *gin.Context, collaborationWorkspaceID uuid.UUID) error {
 	if h.authz == nil {
 		return nil
 	}
@@ -2041,14 +2041,14 @@ func (h *CollaborationWorkspaceHandler) requireTargetTenant(c *gin.Context, tena
 		h.authz.RespondAuthError(c, err, "collaboration_workspace.manage")
 		return err
 	}
-	if _, err := h.authz.RequirePersonalWorkspaceTargetTeam(authCtx, tenantID); err != nil {
+	if _, err := h.authz.RequirePersonalWorkspaceTargetWorkspace(authCtx, collaborationWorkspaceID); err != nil {
 		h.authz.RespondAuthError(c, err, "collaboration_workspace.manage")
 		return err
 	}
 	return nil
 }
 
-func (h *CollaborationWorkspaceHandler) tenantToMap(t *user.Tenant, ownerUsers []user.User) gin.H {
+func (h *CollaborationWorkspaceHandler) collaborationWorkspaceToMap(t *user.CollaborationWorkspace, ownerUsers []user.User) gin.H {
 	m := gin.H{
 		"id":          t.ID.String(),
 		"name":        t.Name,
@@ -2082,7 +2082,7 @@ func (h *CollaborationWorkspaceHandler) tenantToMap(t *user.Tenant, ownerUsers [
 	return m
 }
 
-func (h *CollaborationWorkspaceHandler) memberToMap(m *user.TenantMember, userInfo *user.User) gin.H {
+func (h *CollaborationWorkspaceHandler) memberToMap(m *user.CollaborationWorkspaceMember, userInfo *user.User) gin.H {
 	result := gin.H{
 		"id":                         m.ID.String(),
 		"collaboration_workspace_id": m.CollaborationWorkspaceID.String(),
@@ -2112,30 +2112,30 @@ func (h *CollaborationWorkspaceHandler) memberToMap(m *user.TenantMember, userIn
 	return result
 }
 
-func (h *CollaborationWorkspaceHandler) resolveTeamRoleBindingMeta(tenantID, userID uuid.UUID, tenantMember *user.TenantMember) (string, string, string) {
-	memberType := h.resolveCollaborationWorkspaceMemberType(tenantID, userID, tenantMember)
+func (h *CollaborationWorkspaceHandler) resolveCollaborationWorkspaceRoleBindingMeta(collaborationWorkspaceID, userID uuid.UUID, collaborationWorkspaceMember *user.CollaborationWorkspaceMember) (string, string, string) {
+	memberType := h.resolveCollaborationWorkspaceMemberType(collaborationWorkspaceID, userID, collaborationWorkspaceMember)
 	if h.workspaceService == nil {
 		return "", "", memberType
 	}
-	workspace, err := h.workspaceService.GetCollaborationWorkspaceByCollaborationWorkspaceID(tenantID)
+	workspace, err := h.workspaceService.GetCollaborationWorkspaceByCollaborationWorkspaceID(collaborationWorkspaceID)
 	if err != nil || workspace == nil {
 		return "", "", memberType
 	}
 	return workspace.ID.String(), workspace.WorkspaceType, memberType
 }
 
-func (h *CollaborationWorkspaceHandler) resolveCollaborationWorkspaceMemberType(tenantID, userID uuid.UUID, tenantMember *user.TenantMember) string {
+func (h *CollaborationWorkspaceHandler) resolveCollaborationWorkspaceMemberType(collaborationWorkspaceID, userID uuid.UUID, collaborationWorkspaceMember *user.CollaborationWorkspaceMember) string {
 	if h.workspaceService != nil {
-		if workspace, err := h.workspaceService.GetCollaborationWorkspaceByCollaborationWorkspaceID(tenantID); err == nil && workspace != nil {
+		if workspace, err := h.workspaceService.GetCollaborationWorkspaceByCollaborationWorkspaceID(collaborationWorkspaceID); err == nil && workspace != nil {
 			if member, err := h.workspaceService.GetMember(workspace.ID, userID); err == nil && member != nil && strings.TrimSpace(member.MemberType) != "" {
 				return member.MemberType
 			}
 		}
 	}
-	if tenantMember == nil {
+	if collaborationWorkspaceMember == nil {
 		return ""
 	}
-	switch strings.ToLower(strings.TrimSpace(tenantMember.RoleCode)) {
+	switch strings.ToLower(strings.TrimSpace(collaborationWorkspaceMember.RoleCode)) {
 	case "owner":
 		return models.WorkspaceMemberOwner
 	case "collaboration_workspace_admin", "admin":

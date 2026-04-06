@@ -1300,9 +1300,9 @@
 
   function formatPermissionContext(value?: string) {
     switch (`${value || ''}`.trim()) {
-      case 'platform':
-        return '平台'
-      case 'team':
+      case 'personal':
+        return '个人空间'
+      case 'collaboration':
         return '协作空间'
       case 'common':
         return '通用'

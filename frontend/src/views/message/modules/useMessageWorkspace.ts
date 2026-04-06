@@ -2,7 +2,7 @@
 import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
 import { useWorkspaceStore } from '@/store/modules/workspace'
 
-export function useMessageWorkspace(scope: 'platform' | 'collaboration') {
+export function useMessageWorkspace(scope: 'personal' | 'collaboration') {
   const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
   const workspaceStore = useWorkspaceStore()
 

@@ -9,7 +9,7 @@
   >
     <ElForm ref="formRef" :model="form" :rules="rules" label-width="110px">
       <ElFormItem label="功能包编码" prop="packageKey">
-        <ElInput v-model="form.packageKey" placeholder="例如 platform.system_admin" />
+        <ElInput v-model="form.packageKey" placeholder="例如 personal.system_admin" />
       </ElFormItem>
       <ElFormItem label="功能包类型" prop="packageType">
         <ElSelect v-model="form.packageType" placeholder="请选择功能包类型" style="width: 100%">
@@ -28,8 +28,8 @@
       </ElFormItem>
       <ElFormItem label="上下文类型" prop="contextType">
         <ElSelect v-model="form.contextType" placeholder="请选择上下文类型" style="width: 100%">
-          <ElOption label="平台" value="platform" />
-          <ElOption label="协作空间" value="team" />
+          <ElOption label="个人空间" value="personal" />
+          <ElOption label="协作空间" value="collaboration" />
           <ElOption label="通用" value="common" />
         </ElSelect>
       </ElFormItem>

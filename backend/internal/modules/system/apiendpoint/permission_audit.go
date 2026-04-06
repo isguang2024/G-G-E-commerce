@@ -33,7 +33,7 @@ func buildPermissionProfile(endpointPath string, permissionKeys []string) permis
 	for _, key := range keys {
 		context := strings.TrimSpace(permissionkey.FromKey(key).ContextType)
 		if context == "" {
-			context = "team"
+			context = "collaboration"
 		}
 		if _, ok := seenContexts[context]; ok {
 			continue

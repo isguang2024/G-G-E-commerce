@@ -1,5 +1,5 @@
-﻿<template>
-  <div class="team-page art-full-height">
+<template>
+  <div class="collaboration-workspace-page art-full-height">
     <div class="page-top-stack">
       <CollaborationWorkspaceSearch
         v-show="showSearchBar"
@@ -14,13 +14,13 @@
         :description="'统一管理协作空间边界、管理员与授权入口。'"
         :metrics="heroMetrics"
       >
-        <div class="team-hero-actions">
+        <div class="collaboration-workspace-hero-actions">
           <ElSelect
             v-model="selectedAppKey"
             clearable
             filterable
             placeholder="选择 App"
-            class="team-app-select"
+            class="collaboration-workspace-app-select"
             @change="handleManagedAppChange"
           >
             <ElOption
@@ -50,7 +50,7 @@
         @refresh="refreshData"
       >
         <template #left>
-          <div class="team-toolbar-tip"
+          <div class="collaboration-workspace-toolbar-tip"
             >协作空间管理同步菜单与成员边界，建议优先从主账号确认管理员后再开通功能包。</div
           >
         </template>
@@ -119,12 +119,14 @@
   } from '@/api/collaboration-workspace'
   import { fetchGetApps } from '@/api/system-manage'
   import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
-  import CollaborationWorkspaceSearch from './modules/team-search.vue'
-  import CollaborationWorkspaceDialog from './modules/team-dialog.vue'
-  import CollaborationWorkspaceMembersDrawer from './modules/team-members-drawer.vue'
-  import CollaborationWorkspaceActionPermissionDialog from './modules/team-permission-dialog.vue'
-  import CollaborationWorkspaceMenuPermissionDialog from './modules/team-menu-permission-dialog.vue'
-  import CollaborationWorkspaceFeaturePackageDialog from './modules/team-feature-package-dialog.vue'
+  import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
+  import { useWorkspaceStore } from '@/store/modules/workspace'
+  import CollaborationWorkspaceSearch from './modules/workspace-search.vue'
+  import CollaborationWorkspaceDialog from './modules/workspace-dialog.vue'
+  import CollaborationWorkspaceMembersDrawer from './modules/workspace-members-drawer.vue'
+  import CollaborationWorkspaceActionPermissionDialog from './modules/workspace-permission-dialog.vue'
+  import CollaborationWorkspaceMenuPermissionDialog from './modules/workspace-menu-permission-dialog.vue'
+  import CollaborationWorkspaceFeaturePackageDialog from './modules/workspace-feature-package-dialog.vue'
   import {
     ElButton,
     ElTag,
@@ -143,6 +145,8 @@
   type CollaborationWorkspaceListItem = Api.SystemManage.CollaborationWorkspaceListItem
   const { hasAction } = useAuth()
   const { targetAppKey, setManagedAppKey } = useManagedAppScope()
+  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
+  const workspaceStore = useWorkspaceStore()
 
   const dialogType = ref<DialogType>('add')
   const appList = ref<Api.SystemManage.AppItem[]>([])
@@ -358,6 +362,14 @@
     getData()
   }
 
+  const refreshWorkspaceContexts = async (preferredWorkspaceId?: string) => {
+    await collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
+      preferredWorkspaceId: preferredWorkspaceId || workspaceStore.currentAuthWorkspaceId,
+      preferredWorkspaceType: workspaceStore.currentAuthWorkspaceType,
+      preferPersonalWorkspace: true
+    })
+  }
+
   const showDialog = (type: DialogType, row?: CollaborationWorkspaceListItem) => {
     dialogType.value = type
     currentCollaborationWorkspaceData.value = row ? { ...row } : {}
@@ -378,7 +390,7 @@
     } else if (command === 'package') {
       showFeaturePackages(row)
     } else if (command === 'delete') {
-      deleteTeam(row)
+      deleteCollaborationWorkspace(row)
     }
   }
 
@@ -406,14 +418,15 @@
     packageDialogVisible.value = true
   }
 
-  const deleteTeam = (row: CollaborationWorkspaceListItem) => {
+  const deleteCollaborationWorkspace = (row: CollaborationWorkspaceListItem) => {
     ElMessageBox.confirm(`确定要删除协作空间「${row.name}」吗？`, '删除协作空间', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
       .then(() => fetchDeleteCollaborationWorkspace(row.id))
-      .then(() => {
+      .then(async () => {
+        await refreshWorkspaceContexts()
         ElMessage.success('删除成功')
         refreshData()
       })
@@ -435,9 +448,10 @@
     const isAdd = dialogType.value === 'add'
     try {
       if (isAdd) {
-        await fetchCreateCollaborationWorkspace(
+        const created = await fetchCreateCollaborationWorkspace(
           payload as Api.SystemManage.CollaborationWorkspaceCreateParams
         )
+        await refreshWorkspaceContexts(created?.id)
         ElMessage.success('添加成功')
       } else {
         const id = (currentCollaborationWorkspaceData.value as CollaborationWorkspaceListItem).id
@@ -446,6 +460,7 @@
           id,
           payload as Api.SystemManage.CollaborationWorkspaceUpdateParams
         )
+        await refreshWorkspaceContexts(id)
         ElMessage.success('更新成功')
       }
       dialogVisible.value = false
@@ -474,19 +489,19 @@
 </script>
 
 <style lang="scss" scoped>
-  .team-hero-actions {
+  .collaboration-workspace-hero-actions {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
   }
 
-  .team-toolbar-tip {
+  .collaboration-workspace-toolbar-tip {
     color: var(--art-text-muted);
     font-size: 13px;
     line-height: 1.6;
   }
 
-  .team-app-select {
+  .collaboration-workspace-app-select {
     width: 240px;
   }
 </style>

@@ -13,9 +13,9 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	spaceutil "github.com/gg-ecommerce/backend/internal/modules/system/space"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
+	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
 )
 
@@ -58,21 +58,21 @@ func InvalidateRuntimeCache() {
 	globalRuntimePageCache.invalidate()
 }
 
-func (s *service) loadRuntimeRecords(appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error) {
-	return globalRuntimePageCache.get(s, normalizeAppKey(appKey), false, host, requestedSpaceKey, userID, tenantID)
+func (s *service) loadRuntimeRecords(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error) {
+	return globalRuntimePageCache.get(s, normalizeAppKey(appKey), false, host, requestedSpaceKey, userID, collaborationWorkspaceID)
 }
 
-func (s *service) loadPublicRuntimeRecords(appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error) {
-	return globalRuntimePageCache.get(s, normalizeAppKey(appKey), true, host, requestedSpaceKey, userID, tenantID)
+func (s *service) loadPublicRuntimeRecords(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error) {
+	return globalRuntimePageCache.get(s, normalizeAppKey(appKey), true, host, requestedSpaceKey, userID, collaborationWorkspaceID)
 }
 
-func (s *service) buildCompiledAccessContextForSpace(appKey, spaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) (*CompiledAccessContext, error) {
+func (s *service) buildCompiledAccessContextForSpace(appKey, spaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*CompiledAccessContext, error) {
 	resolvedSpaceKey := normalizeSpaceKey(spaceKey)
 	menuMap, err := s.loadMenuMap(normalizeAppKey(appKey), resolvedSpaceKey)
 	if err != nil {
 		return nil, err
 	}
-	return s.buildRuntimeAccessContext(normalizeAppKey(appKey), userID, tenantID, menuMap, resolvedSpaceKey)
+	return s.buildRuntimeAccessContext(normalizeAppKey(appKey), userID, collaborationWorkspaceID, menuMap, resolvedSpaceKey)
 }
 
 func (s *service) loadRuntimeRecordsWithAccess(appKey, spaceKey string, accessCtx *CompiledAccessContext) ([]Record, error) {
@@ -91,9 +91,9 @@ func (s *service) loadRuntimeRecordsWithAccess(appKey, spaceKey string, accessCt
 	return mergeRuntimeRecordsByOrder(snapshot.all, filtered, snapshot.public), nil
 }
 
-func (c *runtimePageCacheStore) get(s *service, appKey string, publicOnly bool, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) ([]Record, error) {
+func (c *runtimePageCacheStore) get(s *service, appKey string, publicOnly bool, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error) {
 	now := time.Now()
-	resolvedSpaceKey := resolveSpaceKeyForRuntime(s, appKey, host, requestedSpaceKey, userID, tenantID)
+	resolvedSpaceKey := resolveSpaceKeyForRuntime(s, appKey, host, requestedSpaceKey, userID, collaborationWorkspaceID)
 	cacheKey := runtimePageCacheKey(appKey, resolvedSpaceKey)
 
 	c.mu.RLock()
@@ -107,7 +107,7 @@ func (c *runtimePageCacheStore) get(s *service, appKey string, publicOnly bool, 
 		if publicOnly {
 			return cloneRuntimeRecords(records), nil
 		}
-		filtered, err := filterRuntimeRecordsForContext(s, appKey, records, snapshot.menuMap, userID, tenantID, resolvedSpaceKey)
+		filtered, err := filterRuntimeRecordsForContext(s, appKey, records, snapshot.menuMap, userID, collaborationWorkspaceID, resolvedSpaceKey)
 		if err != nil {
 			return nil, err
 		}
@@ -130,7 +130,7 @@ func (c *runtimePageCacheStore) get(s *service, appKey string, publicOnly bool, 
 		if publicOnly {
 			return cloneRuntimeRecords(records), nil
 		}
-		filtered, err := filterRuntimeRecordsForContext(s, appKey, records, snapshot.menuMap, userID, tenantID, resolvedSpaceKey)
+		filtered, err := filterRuntimeRecordsForContext(s, appKey, records, snapshot.menuMap, userID, collaborationWorkspaceID, resolvedSpaceKey)
 		if err != nil {
 			return nil, err
 		}
@@ -152,7 +152,7 @@ func (c *runtimePageCacheStore) get(s *service, appKey string, publicOnly bool, 
 	if publicOnly {
 		return cloneRuntimeRecords(publicRecords), nil
 	}
-	filtered, err := filterRuntimeRecordsForContext(s, appKey, all, menuMap, userID, tenantID, resolvedSpaceKey)
+	filtered, err := filterRuntimeRecordsForContext(s, appKey, all, menuMap, userID, collaborationWorkspaceID, resolvedSpaceKey)
 	if err != nil {
 		return nil, err
 	}
@@ -376,10 +376,10 @@ func filterRuntimeRecordsForContext(
 	all []Record,
 	menuMap map[uuid.UUID]runtimeMenuNode,
 	userID *uuid.UUID,
-	tenantID *uuid.UUID,
+	collaborationWorkspaceID *uuid.UUID,
 	spaceKey string,
 ) ([]Record, error) {
-	accessCtx, err := s.buildRuntimeAccessContext(normalizeAppKey(appKey), userID, tenantID, menuMap, spaceKey)
+	accessCtx, err := s.buildRuntimeAccessContext(normalizeAppKey(appKey), userID, collaborationWorkspaceID, menuMap, spaceKey)
 	if err != nil {
 		return nil, err
 	}
@@ -529,7 +529,7 @@ func filterRuntimeRecordsWithAccess(
 func (s *service) buildRuntimeAccessContext(
 	appKey string,
 	userID *uuid.UUID,
-	tenantID *uuid.UUID,
+	collaborationWorkspaceID *uuid.UUID,
 	menuMap map[uuid.UUID]runtimeMenuNode,
 	spaceKey string,
 ) (*runtimeAccessContext, error) {
@@ -571,7 +571,7 @@ func (s *service) buildRuntimeAccessContext(
 	}
 
 	authzService := authorization.NewService(s.db, zap.NewNop())
-	actionKeys, err := authzService.GetUserActionKeysInApp(*userID, tenantID, normalizeAppKey(appKey))
+	actionKeys, err := authzService.GetUserActionKeysInApp(*userID, collaborationWorkspaceID, normalizeAppKey(appKey))
 	if err != nil {
 		return nil, err
 	}
@@ -583,7 +583,7 @@ func (s *service) buildRuntimeAccessContext(
 		ctx.ActionKeys[normalized] = struct{}{}
 	}
 
-	visibleMenuIDs, err := s.resolveRuntimeVisibleMenuIDs(normalizeAppKey(appKey), *userID, tenantID, menuMap, spaceKey)
+	visibleMenuIDs, err := s.resolveRuntimeVisibleMenuIDs(normalizeAppKey(appKey), *userID, collaborationWorkspaceID, menuMap, spaceKey)
 	if err != nil {
 		return nil, err
 	}
@@ -608,12 +608,12 @@ func (ctx *runtimeAccessContext) hasAction(permissionKey string) bool {
 func (s *service) resolveRuntimeVisibleMenuIDs(
 	appKey string,
 	userID uuid.UUID,
-	tenantID *uuid.UUID,
+	collaborationWorkspaceID *uuid.UUID,
 	menuMap map[uuid.UUID]runtimeMenuNode,
 	spaceKey string,
 ) ([]uuid.UUID, error) {
 	enabledPublicMenuIDs := collectRuntimePublicMenuIDs(menuMap, spaceKey)
-	if tenantID == nil {
+	if collaborationWorkspaceID == nil {
 		snapshot, err := platformaccess.NewService(s.db).GetSnapshot(userID, normalizeAppKey(appKey))
 		if err != nil {
 			return nil, err
@@ -621,7 +621,7 @@ func (s *service) resolveRuntimeVisibleMenuIDs(
 		return finalizeRuntimeVisibleMenuIDs(menuMap, spaceKey, mergeRuntimeUUIDs(snapshot.MenuIDs, enabledPublicMenuIDs)), nil
 	}
 
-	roles, err := s.loadRuntimeEffectiveActiveRoles(userID, *tenantID)
+	roles, err := s.loadRuntimeEffectiveActiveRoles(userID, *collaborationWorkspaceID)
 	if err != nil {
 		return nil, err
 	}
@@ -636,7 +636,7 @@ func (s *service) resolveRuntimeVisibleMenuIDs(
 	boundaryService := collaborationworkspaceboundary.NewService(s.db)
 	menuSet := make([]uuid.UUID, 0, len(roles))
 	for _, role := range roles {
-		snapshot, err := boundaryService.GetRoleSnapshot(*tenantID, role.ID, role.CollaborationWorkspaceID == nil, normalizeAppKey(appKey))
+		snapshot, err := boundaryService.GetRoleSnapshot(*collaborationWorkspaceID, role.ID, role.CollaborationWorkspaceID == nil, normalizeAppKey(appKey))
 		if err != nil {
 			return nil, err
 		}
@@ -645,8 +645,8 @@ func (s *service) resolveRuntimeVisibleMenuIDs(
 	return finalizeRuntimeVisibleMenuIDs(menuMap, spaceKey, mergeRuntimeUUIDs(menuSet, enabledPublicMenuIDs)), nil
 }
 
-func (s *service) loadRuntimeEffectiveActiveRoles(userID, tenantID uuid.UUID) ([]models.Role, error) {
-	workspaceRoleIDs, err := workspacerolebinding.ListTeamRoleIDsByTenantAndUser(s.db, tenantID, userID, true)
+func (s *service) loadRuntimeEffectiveActiveRoles(userID, collaborationWorkspaceID uuid.UUID) ([]models.Role, error) {
+	workspaceRoleIDs, err := workspacerolebinding.ListCollaborationWorkspaceRoleIDsByUser(s.db, collaborationWorkspaceID, userID, true)
 	if err != nil {
 		return nil, err
 	}
@@ -667,7 +667,7 @@ func (s *service) loadRuntimeEffectiveActiveRoles(userID, tenantID uuid.UUID) ([
 	if err := s.db.Model(&models.Role{}).
 		Joins("JOIN user_roles ON user_roles.role_id = roles.id").
 		Where("user_roles.user_id = ?", userID).
-		Where("user_roles.collaboration_workspace_id = ?", tenantID).
+		Where("user_roles.collaboration_workspace_id = ?", collaborationWorkspaceID).
 		Where("roles.status = ?", "normal").
 		Where("roles.deleted_at IS NULL").
 		Distinct("roles.*").
@@ -678,8 +678,8 @@ func (s *service) loadRuntimeEffectiveActiveRoles(userID, tenantID uuid.UUID) ([
 		return roles, nil
 	}
 
-	var member models.TenantMember
-	if err := s.db.Where("user_id = ? AND collaboration_workspace_id = ?", userID, tenantID).First(&member).Error; err != nil {
+	var member models.CollaborationWorkspaceMember
+	if err := s.db.Where("user_id = ? AND collaboration_workspace_id = ?", userID, collaborationWorkspaceID).First(&member).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return []models.Role{}, nil
 		}
@@ -966,11 +966,11 @@ func normalizeSpaceKey(value string) string {
 	return target
 }
 
-func resolveSpaceKeyForRuntime(s *service, appKey, host, requestedSpaceKey string, userID *uuid.UUID, tenantID *uuid.UUID) string {
+func resolveSpaceKeyForRuntime(s *service, appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) string {
 	if spaceutil.IsSingleSpaceMode(s.db, normalizeAppKey(appKey)) {
 		explicit := normalizeSpaceKey(requestedSpaceKey)
 		if explicit != "" && explicit != spaceutil.DefaultMenuSpaceKey && s != nil && s.db != nil {
-			if allowed, accessErr := spaceutil.CanAccessSpace(s.db, userID, tenantID, explicit); accessErr == nil && allowed {
+			if allowed, accessErr := spaceutil.CanAccessSpace(s.db, userID, collaborationWorkspaceID, explicit); accessErr == nil && allowed {
 				return explicit
 			}
 		}
@@ -985,7 +985,7 @@ func resolveSpaceKeyForRuntime(s *service, appKey, host, requestedSpaceKey strin
 	}
 	trimmed := strings.TrimSpace(requestedSpaceKey)
 	if trimmed == "" {
-		if allowed, accessErr := spaceutil.CanAccessSpace(s.db, userID, tenantID, resolved); accessErr == nil && allowed {
+		if allowed, accessErr := spaceutil.CanAccessSpace(s.db, userID, collaborationWorkspaceID, resolved); accessErr == nil && allowed {
 			return resolved
 		}
 		return spaceutil.DefaultMenuSpaceKey
@@ -994,15 +994,15 @@ func resolveSpaceKeyForRuntime(s *service, appKey, host, requestedSpaceKey strin
 		return explicit
 	}
 	if explicit := normalizeSpaceKey(trimmed); explicit != spaceutil.DefaultMenuSpaceKey {
-		if allowed, accessErr := spaceutil.CanAccessSpace(s.db, userID, tenantID, explicit); accessErr == nil && allowed {
+		if allowed, accessErr := spaceutil.CanAccessSpace(s.db, userID, collaborationWorkspaceID, explicit); accessErr == nil && allowed {
 			return explicit
 		}
-		if allowed, accessErr := spaceutil.CanAccessSpace(s.db, userID, tenantID, resolved); accessErr == nil && allowed {
+		if allowed, accessErr := spaceutil.CanAccessSpace(s.db, userID, collaborationWorkspaceID, resolved); accessErr == nil && allowed {
 			return resolved
 		}
 		return spaceutil.DefaultMenuSpaceKey
 	}
-	if allowed, accessErr := spaceutil.CanAccessSpace(s.db, userID, tenantID, resolved); accessErr == nil && allowed {
+	if allowed, accessErr := spaceutil.CanAccessSpace(s.db, userID, collaborationWorkspaceID, resolved); accessErr == nil && allowed {
 		return resolved
 	}
 	return spaceutil.DefaultMenuSpaceKey

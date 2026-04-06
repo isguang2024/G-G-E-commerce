@@ -29,7 +29,7 @@ type Service interface {
 	GetMember(workspaceID, userID uuid.UUID) (*models.WorkspaceMember, error)
 	GetPersonalWorkspaceByUserID(userID uuid.UUID) (*models.Workspace, error)
 	GetCollaborationWorkspaceByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) (*models.Workspace, error)
-	GetTeamWorkspaceByTenantID(tenantID uuid.UUID) (*models.Workspace, error)
+	GetWorkspaceByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) (*models.Workspace, error)
 	ListByUserID(userID uuid.UUID) ([]Summary, error)
 }
 
@@ -103,8 +103,8 @@ func (s *service) GetCollaborationWorkspaceByCollaborationWorkspaceID(collaborat
 	return &workspace, nil
 }
 
-func (s *service) GetTeamWorkspaceByTenantID(tenantID uuid.UUID) (*models.Workspace, error) {
-	return s.GetCollaborationWorkspaceByCollaborationWorkspaceID(tenantID)
+func (s *service) GetWorkspaceByCollaborationWorkspaceID(collaborationWorkspaceID uuid.UUID) (*models.Workspace, error) {
+	return s.GetCollaborationWorkspaceByCollaborationWorkspaceID(collaborationWorkspaceID)
 }
 
 func (s *service) ListByUserID(userID uuid.UUID) ([]Summary, error) {
@@ -189,11 +189,11 @@ func ensurePersonalWorkspacesTx(tx *gorm.DB) error {
 }
 
 func ensureCollaborationWorkspacesTx(tx *gorm.DB) error {
-	var tenants []models.Tenant
-	if err := tx.Where("deleted_at IS NULL").Find(&tenants).Error; err != nil {
+	var collaborationWorkspaces []models.CollaborationWorkspace
+	if err := tx.Where("deleted_at IS NULL").Find(&collaborationWorkspaces).Error; err != nil {
 		return err
 	}
-	for _, item := range tenants {
+	for _, item := range collaborationWorkspaces {
 		if item.ID == uuid.Nil {
 			continue
 		}
@@ -239,7 +239,7 @@ func ensureWorkspaceMembersTx(tx *gorm.DB) error {
 		}
 	}
 
-	var collaborationWorkspaceMembers []models.TenantMember
+	var collaborationWorkspaceMembers []models.CollaborationWorkspaceMember
 	if err := tx.Where("deleted_at IS NULL").Find(&collaborationWorkspaceMembers).Error; err != nil {
 		return err
 	}
@@ -248,7 +248,7 @@ func ensureWorkspaceMembersTx(tx *gorm.DB) error {
 		if err := tx.Where("workspace_type = ? AND collaboration_workspace_id = ? AND deleted_at IS NULL", models.WorkspaceTypeCollaboration, item.CollaborationWorkspaceID).First(&workspace).Error; err != nil {
 			return err
 		}
-		if err := ensureWorkspaceMemberTx(tx, workspace.ID, item.UserID, mapTenantRoleToWorkspaceMemberType(item.RoleCode), normalizeWorkspaceStatus(item.Status), uuidPtr(item.ID)); err != nil {
+		if err := ensureWorkspaceMemberTx(tx, workspace.ID, item.UserID, mapCollaborationWorkspaceRoleToWorkspaceMemberType(item.RoleCode), normalizeWorkspaceStatus(item.Status), uuidPtr(item.ID)); err != nil {
 			return err
 		}
 	}
@@ -307,7 +307,7 @@ func buildPersonalWorkspaceCode(user models.User) string {
 	return "personal-" + base
 }
 
-func buildCollaborationWorkspaceCode(collaborationWorkspace models.Tenant) string {
+func buildCollaborationWorkspaceCode(collaborationWorkspace models.CollaborationWorkspace) string {
 	base := normalizeWorkspaceCodeComponent(strings.TrimSpace(collaborationWorkspace.Name))
 	if base == "" {
 		base = collaborationWorkspace.ID.String()
@@ -334,7 +334,7 @@ func normalizeWorkspaceStatus(value string) string {
 	}
 }
 
-func mapTenantRoleToWorkspaceMemberType(roleCode string) string {
+func mapCollaborationWorkspaceRoleToWorkspaceMemberType(roleCode string) string {
 	switch strings.ToLower(strings.TrimSpace(roleCode)) {
 	case "owner":
 		return models.WorkspaceMemberOwner

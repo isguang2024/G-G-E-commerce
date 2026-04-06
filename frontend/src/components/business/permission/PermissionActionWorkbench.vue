@@ -197,7 +197,7 @@
   import { computed, ref, watch } from 'vue'
   import { ArrowDown, Search } from '@element-plus/icons-vue'
 
-  type WorkbenchMode = 'menu' | 'collaboration' | 'team' | 'role' | 'user'
+  type WorkbenchMode = 'menu' | 'collaboration' | 'role' | 'user'
   type DecisionValue = '' | 'allow' | 'deny'
 
   interface WorkbenchActionItem extends Partial<Api.SystemManage.PermissionActionItem> {

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="collaborationWorkspace-members-page art-full-height">
     <template v-if="!collaborationWorkspace">
       <NoCollaborationWorkspaceState v-if="collaborationWorkspaceLoadDone" />
@@ -160,8 +160,8 @@
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
   import { useWorkspaceStore } from '@/store/modules/workspace'
-  import NoCollaborationWorkspaceState from '@/components/business/team/NoCollaborationWorkspaceState.vue'
-  import MemberRoleDialog from './modules/member-role-dialog.vue'
+  import NoCollaborationWorkspaceState from '@/components/business/collaboration-workspace/NoCollaborationWorkspaceState.vue'
+  import MemberRoleDialog from './modules/collaboration-workspace-member-role-dialog.vue'
 
   defineOptions({ name: 'CollaborationWorkspaceMembers' })
 

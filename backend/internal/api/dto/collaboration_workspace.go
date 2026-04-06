@@ -45,10 +45,3 @@ type CollaborationWorkspaceUpdateMemberRoleRequest struct {
 type CollaborationWorkspaceSetMemberRolesRequest struct {
 	RoleIDs []string `json:"role_ids" binding:"required"`
 }
-
-type TenantListRequest = CollaborationWorkspaceListRequest
-type TenantCreateRequest = CollaborationWorkspaceCreateRequest
-type TenantUpdateRequest = CollaborationWorkspaceUpdateRequest
-type TenantAddMemberRequest = CollaborationWorkspaceAddMemberRequest
-type TenantUpdateMemberRoleRequest = CollaborationWorkspaceUpdateMemberRoleRequest
-type TenantSetMemberRolesRequest = CollaborationWorkspaceSetMemberRolesRequest
