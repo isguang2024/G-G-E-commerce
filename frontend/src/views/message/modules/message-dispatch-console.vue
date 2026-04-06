@@ -62,8 +62,8 @@
                 <div class="field-hint">
                   {{
                     isCollaborationScope
-                      ? '仅展示当前协作空间创建的模板，协作空间页不会混入平台模板。'
-                      : '仅展示平台模板。'
+                      ? '仅展示当前协作空间创建的模板，协作空间页不会混入个人空间模板。'
+                      : '仅展示当前个人空间模板。'
                   }}
                 </div>
               </ElFormItem>
@@ -156,7 +156,7 @@
                   {{
                     isCollaborationScope
                       ? '发送对象会自动绑定到当前协作空间，无需再额外选择。'
-                      : '平台可选择多个目标协作空间，系统会按对象类型自动匹配成员。'
+                      : '个人空间可选择多个目标协作空间，系统会按对象类型自动匹配成员。'
                   }}
                 </div>
               </ElFormItem>
@@ -181,7 +181,7 @@
                   {{
                     isCollaborationScope
                       ? '协作空间侧只会列出当前协作空间成员。'
-                      : '平台侧可以直接按用户维度精确发送。'
+                      : '个人空间侧可以直接按用户维度精确发送。'
                   }}
                 </div>
               </ElFormItem>
@@ -238,7 +238,7 @@
                 v-model="form.title"
                 maxlength="120"
                 show-word-limit
-                placeholder="例如：平台维护通知 / 协作空间待处理提醒"
+                placeholder="例如：个人空间维护通知 / 协作空间待处理提醒"
               />
             </ElFormItem>
 

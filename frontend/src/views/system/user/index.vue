@@ -10,7 +10,7 @@
 
       <AdminWorkspaceHero
         title="用户管理"
-        description="管理平台账号、角色归属、菜单裁剪和权限测试，先在这里确认平台身份链路。"
+        description="管理个人空间账号、角色归属、菜单裁剪和权限测试，先在这里确认个人空间身份链路。"
         :metrics="summaryMetrics"
       >
         <div class="user-hero-actions">

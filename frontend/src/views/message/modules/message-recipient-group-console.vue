@@ -70,7 +70,9 @@
           </div>
 
           <div class="message-group-card__meta">
-            <span>{{ item.scope_type === 'collaboration' ? '协作空间接收组' : '平台接收组' }}</span>
+            <span>{{
+              item.scope_type === 'collaboration' ? '协作空间接收组' : '个人空间接收组'
+            }}</span>
             <span>{{ formatTime(item.updated_at || item.created_at) }}</span>
           </div>
         </button>
@@ -101,7 +103,7 @@
           </div>
           <div class="message-group-drawer__summary-tags">
             <ElTag effect="plain">{{
-              isCollaborationScope ? '协作空间接收组' : '平台接收组'
+              isCollaborationScope ? '协作空间接收组' : '个人空间接收组'
             }}</ElTag>
             <ElTag effect="plain" type="info">预估 {{ estimatedRecipients }} 人</ElTag>
           </div>
@@ -114,7 +116,7 @@
                 v-model="drawerModel.name"
                 maxlength="60"
                 show-word-limit
-                placeholder="例如：平台重点关注用户 / 当前协作空间管理员"
+                placeholder="例如：个人空间重点关注用户 / 当前协作空间管理员"
               />
             </ElFormItem>
 
@@ -347,12 +349,12 @@
   const pageDescription = computed(() =>
     isCollaborationScope.value
       ? `维护 ${currentWorkspaceName.value} 下 ${currentCollaborationWorkspaceName.value} 的消息接收组，用于协作空间管理员快速向固定成员组合发送消息。`
-      : '维护平台消息接收组，把指定用户、指定协作空间成员和指定协作空间管理员收口到统一的发送对象配置里。'
+      : '维护个人空间消息接收组，把指定用户、指定协作空间成员和指定协作空间管理员收口到统一的发送对象配置里。'
   )
   const toolbarDescription = computed(() =>
     isCollaborationScope.value
       ? `协作空间接收组只作用于当前协作空间消息发送页（${currentWorkspaceLabel.value}）。`
-      : '平台接收组可给平台发信台直接复用，也为后续角色、功能包等条件匹配预留统一扩展位。'
+      : '个人空间接收组可给个人空间发送页直接复用，也为后续角色、功能包等条件匹配预留统一扩展位。'
   )
   const heroMetrics = computed(() => [
     { label: '接收组总数', value: list.value.length },
@@ -365,7 +367,7 @@
   const drawerSummary = computed(() =>
     isCollaborationScope.value
       ? `保存后会作为 ${currentCollaborationWorkspaceName.value}（${currentWorkspaceName.value}）的可选接收组。`
-      : '保存后会作为平台消息发送页的可选接收组。'
+      : '保存后会作为个人空间消息发送页的可选接收组。'
   )
   const estimatedRecipients = computed(() =>
     estimateDrawerRecipients(drawerModel.value?.targets || [])

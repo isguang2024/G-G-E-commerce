@@ -876,7 +876,7 @@ export function fetchDeleteUser(id: string) {
   })
 }
 
-// 分配个人空间角色（实际绑定到目标用户的个人工作空间）
+// 分配个人空间角色（实际绑定到目标用户的个人空间）
 export function fetchAssignUserRoles(id: string, roleIds: string[]) {
   return request.post<void>({
     url: `${USER_BASE}/${id}/roles`,

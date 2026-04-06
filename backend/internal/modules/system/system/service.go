@@ -101,7 +101,7 @@ func defaultFastEnterConfig() FastEnterConfig {
 		Applications: []FastEnterApplication{
 			{ID: "console", Name: "工作台", Description: "系统概览与数据统计", Icon: "ri:pie-chart-line", IconColor: "#377dff", Enabled: true, Order: 1, RouteName: "Console"},
 			{ID: "role", Name: "角色管理", Description: "维护个人空间角色与空间权限", Icon: "ri:shield-user-line", IconColor: "#0f766e", Enabled: true, Order: 2, RouteName: "Role"},
-			{ID: "user", Name: "用户管理", Description: "查看平台账号、角色归属和权限诊断", Icon: "ri:user-settings-line", IconColor: "#2563eb", Enabled: true, Order: 3, RouteName: "User"},
+			{ID: "user", Name: "用户管理", Description: "查看个人空间账号、角色归属和权限诊断", Icon: "ri:user-settings-line", IconColor: "#2563eb", Enabled: true, Order: 3, RouteName: "User"},
 			{ID: "menu", Name: "菜单管理", Description: "维护菜单树、菜单分组和备份", Icon: "ri:menu-line", IconColor: "#f97316", Enabled: true, Order: 4, RouteName: "Menus"},
 			{ID: "page", Name: "页面管理", Description: "维护页面注册表和运行时页面", Icon: "ri:layout-4-line", IconColor: "#7c3aed", Enabled: true, Order: 5, RouteName: "PageManagement"},
 			{ID: "api-endpoint", Name: "API 管理", Description: "同步 API 注册表与诊断未注册接口", Icon: "ri:route-line", IconColor: "#dc2626", Enabled: true, Order: 6, RouteName: "ApiEndpoint"},

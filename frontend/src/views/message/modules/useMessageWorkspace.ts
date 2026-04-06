@@ -21,7 +21,7 @@ export function useMessageWorkspace(scope: 'personal' | 'collaboration') {
     () => workspaceStore.currentAuthWorkspace?.name || '当前授权工作空间'
   )
   const currentWorkspaceLabel = computed(() =>
-    workspaceStore.currentAuthWorkspaceType === 'collaboration' ? '协作空间' : '个人工作空间'
+    workspaceStore.currentAuthWorkspaceType === 'collaboration' ? '协作空间' : '个人空间'
   )
 
   const ensureCollaborationWorkspaceContext = () => {

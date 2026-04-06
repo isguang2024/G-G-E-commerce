@@ -53,9 +53,9 @@ func (m *CollaborationWorkspaceModule) RegisterRoutes(rg *gin.RouterGroup) {
 	packageActionRepo := user.NewFeaturePackageKeyRepository(m.db)
 	packageMenuRepo := user.NewFeaturePackageMenuRepository(m.db)
 	boundaryService := collaborationworkspaceboundary.NewService(m.db)
-	platformService := platformaccess.NewService(m.db)
+	personalWorkspaceAccessService := platformaccess.NewService(m.db)
 	roleSnapshotService := platformroleaccess.NewService(m.db)
-	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
+	refresher := permissionrefresh.NewService(m.db, boundaryService, personalWorkspaceAccessService, roleSnapshotService)
 	workspaceService := workspacepkg.NewService(m.db, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 

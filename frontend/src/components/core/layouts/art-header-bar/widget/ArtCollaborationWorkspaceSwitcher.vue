@@ -13,7 +13,7 @@
       :loading="loading"
       @change="handleChange"
     >
-      <ElOptionGroup v-if="personalWorkspace" label="个人工作空间">
+      <ElOptionGroup v-if="personalWorkspace" label="个人空间">
         <ElOption
           :key="personalWorkspace.id"
           :label="buildWorkspaceLabel(personalWorkspace)"
@@ -69,13 +69,13 @@
   const currentContextLabel = computed(() => {
     if (!currentAuthWorkspace.value) return '当前工作空间'
     const typeLabel =
-      currentAuthWorkspace.value.workspaceType === 'collaboration' ? '协作空间' : '个人工作空间'
+      currentAuthWorkspace.value.workspaceType === 'collaboration' ? '协作空间' : '个人空间'
     return `${currentAuthWorkspace.value.name} · ${typeLabel}`
   })
 
   const buildWorkspaceLabel = (workspace: Api.SystemManage.WorkspaceItem) => {
     if (workspace.workspaceType === 'personal') {
-      return `${workspace.name} · 个人工作空间`
+      return `${workspace.name} · 个人空间`
     }
     const matchedCollaborationWorkspace = collaborationWorkspaceList.value.find(
       (item) => item.workspaceId === workspace.id
@@ -110,7 +110,7 @@
       }
 
       const workspaceTypeLabel =
-        currentAuthWorkspace.value?.workspaceType === 'collaboration' ? '协作空间' : '个人工作空间'
+        currentAuthWorkspace.value?.workspaceType === 'collaboration' ? '协作空间' : '个人空间'
       ElMessage.success(`已切换到${workspaceTypeLabel}`)
     } catch (error) {
       console.error('[WorkspaceSwitcher] 切换工作空间失败:', error)

@@ -49,11 +49,11 @@ type service struct {
 	personalWorkspaceRoleService platformroleaccess.Service
 }
 
-func NewService(db *gorm.DB, boundaryService collaborationworkspaceboundary.Service, platformService platformaccess.Service, roleService platformroleaccess.Service) Service {
+func NewService(db *gorm.DB, boundaryService collaborationworkspaceboundary.Service, personalWorkspaceService platformaccess.Service, roleService platformroleaccess.Service) Service {
 	return &service{
 		db:                           db,
 		boundaryService:              boundaryService,
-		personalWorkspaceService:     platformService,
+		personalWorkspaceService:     personalWorkspaceService,
 		personalWorkspaceRoleService: roleService,
 	}
 }

@@ -24,8 +24,6 @@ const (
 	ErrRoleNotFound                         = 3005 // 角色不存在
 	ErrNoManagedCollaborationWorkspace      = 3006 // 您暂无管理的协作空间
 	ErrRoleCodeExists                       = 3007 // 角色编码已存在
-	ErrMemberExists                         = 3008 // 该用户已在协作空间中
-	ErrMemberNotFound                       = 3009 // 成员不在协作空间中
 	ErrCollaborationWorkspaceRoleNotFound   = 3010 // 协作空间角色不存在或无权操作
 	ErrMenuSystemProtected                  = 3011 // 系统默认菜单不可删除
 	ErrInvalidParent                        = 3012 // 无效的上级（如不能将上级设为自己或子级）
@@ -43,6 +41,11 @@ const (
 	ErrInternal = 5001 // 内部错误（通用）
 	ErrDatabase = 5002 // 数据库错误
 	ErrExternal = 5003 // 外部服务错误
+)
+
+const (
+	ErrMemberExists   = ErrCollaborationWorkspaceMemberExists
+	ErrMemberNotFound = ErrCollaborationWorkspaceMemberNotFound
 )
 
 // defaultMessages 错误码默认说明（可被 Handler 层覆盖为更具体文案）
@@ -63,8 +66,6 @@ var defaultMessages = map[int]string{
 	ErrRoleNotFound:                         "角色不存在",
 	ErrNoManagedCollaborationWorkspace:      "您暂无管理的协作空间",
 	ErrRoleCodeExists:                       "角色编码已存在",
-	ErrMemberExists:                         "该用户已在协作空间中",
-	ErrMemberNotFound:                       "成员不在协作空间中",
 	ErrCollaborationWorkspaceRoleNotFound:   "角色不存在或无权操作",
 	ErrMenuSystemProtected:                  "系统默认菜单不可删除",
 	ErrInvalidParent:                        "无效的上级",
@@ -100,8 +101,6 @@ var defaultHTTPStatus = map[int]int{
 	ErrRoleNotFound:                         404,
 	ErrNoManagedCollaborationWorkspace:      404,
 	ErrRoleCodeExists:                       409,
-	ErrMemberExists:                         409,
-	ErrMemberNotFound:                       404,
 	ErrCollaborationWorkspaceRoleNotFound:   404,
 	ErrMenuSystemProtected:                  403,
 	ErrInvalidParent:                        400,

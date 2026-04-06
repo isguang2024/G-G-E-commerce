@@ -33,9 +33,9 @@ type UserHandler struct {
 	keyRepo interface {
 		GetByPermissionKey(permissionKey string) (*PermissionKey, error)
 	}
-	platformService platformaccess.Service
-	boundaryService collaborationworkspaceboundary.Service
-	authzService    interface {
+	personalWorkspaceAccessService platformaccess.Service
+	boundaryService                collaborationworkspaceboundary.Service
+	authzService                   interface {
 		Authorize(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
 		AuthorizeInApp(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, appKey string, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
 	}
@@ -71,7 +71,7 @@ func NewUserHandler(db *gorm.DB, userService UserService, featurePkgRepo interfa
 	GetByIDs(ids []uuid.UUID) ([]FeaturePackage, error)
 }, keyRepo interface {
 	GetByPermissionKey(permissionKey string) (*PermissionKey, error)
-}, platformService platformaccess.Service, boundaryService collaborationworkspaceboundary.Service, roleRepo interface {
+}, personalWorkspaceAccessService platformaccess.Service, boundaryService collaborationworkspaceboundary.Service, roleRepo interface {
 	GetByIDs(ids []uuid.UUID) ([]Role, error)
 }, authzService interface {
 	Authorize(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
@@ -98,7 +98,7 @@ func NewUserHandler(db *gorm.DB, userService UserService, featurePkgRepo interfa
 		userService:                      userService,
 		featurePkgRepo:                   featurePkgRepo,
 		keyRepo:                          keyRepo,
-		platformService:                  platformService,
+		personalWorkspaceAccessService:   personalWorkspaceAccessService,
 		boundaryService:                  boundaryService,
 		authzService:                     authzService,
 		roleRepo:                         roleRepo,
@@ -446,7 +446,7 @@ func (h *UserHandler) GetMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	snapshot, err := h.getPlatformSnapshot(id, appKey)
+		snapshot, err := h.getPersonalWorkspaceSnapshot(id, appKey)
 	if err != nil {
 		h.logger.Error("Get user personal workspace snapshot for menus failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户功能包范围失败")
@@ -502,7 +502,7 @@ func (h *UserHandler) SetMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	snapshot, err := h.getPlatformSnapshot(id, appKey)
+		snapshot, err := h.getPersonalWorkspaceSnapshot(id, appKey)
 	if err != nil {
 		h.logger.Error("Get user personal workspace snapshot for setting menus failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户功能包范围失败")
@@ -556,8 +556,8 @@ func (h *UserHandler) SetMenus(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(nil))
 }
 
-func (h *UserHandler) getPlatformSnapshot(userID uuid.UUID, appKey string) (*platformaccess.Snapshot, error) {
-	if h.platformService == nil {
+func (h *UserHandler) getPersonalWorkspaceSnapshot(userID uuid.UUID, appKey string) (*platformaccess.Snapshot, error) {
+	if h.personalWorkspaceAccessService == nil {
 		return &platformaccess.Snapshot{
 			DirectPackageIDs:   []uuid.UUID{},
 			ExpandedPackageIDs: []uuid.UUID{},
@@ -570,7 +570,7 @@ func (h *UserHandler) getPlatformSnapshot(userID uuid.UUID, appKey string) (*pla
 			HasPackageConfig:   false,
 		}, nil
 	}
-	snapshot, err := h.platformService.GetSnapshot(userID, appctx.NormalizeAppKey(appKey))
+	snapshot, err := h.personalWorkspaceAccessService.GetSnapshot(userID, appctx.NormalizeAppKey(appKey))
 	if err != nil {
 		return nil, err
 	}
@@ -790,7 +790,7 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, collaborationWo
 	}
 
 	if collaborationWorkspaceID == nil {
-		snapshot, err := h.getPlatformSnapshot(userID, appKey)
+	snapshot, err := h.getPersonalWorkspaceSnapshot(userID, appKey)
 		if err != nil {
 			return nil, err
 		}
@@ -827,7 +827,7 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, collaborationWo
 	if err != nil {
 		return nil, err
 	}
-	roleStates, err := h.buildTeamRoleStates(userID, *collaborationWorkspaceID, permissionKeyValue, appKey)
+	roleStates, err := h.buildCollaborationWorkspaceRoleStates(userID, *collaborationWorkspaceID, permissionKeyValue, appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -939,7 +939,7 @@ func (h *UserHandler) buildCollaborationWorkspacePermissionDiagnosis(userEntity 
 	}, nil
 }
 
-func (h *UserHandler) buildTeamRoleStates(userID, collaborationWorkspaceID uuid.UUID, permissionKeyValue string, appKey string) ([]gin.H, error) {
+func (h *UserHandler) buildCollaborationWorkspaceRoleStates(userID, collaborationWorkspaceID uuid.UUID, permissionKeyValue string, appKey string) ([]gin.H, error) {
 	if h.userRoleRepo == nil || h.roleRepo == nil || h.boundaryService == nil {
 		return []gin.H{}, nil
 	}
@@ -1377,7 +1377,7 @@ func (h *UserHandler) getPermissionMenuIDs(userID uuid.UUID, collaborationWorksp
 		if userEntity.IsSuperAdmin {
 			return h.listEnabledMenuIDs(appKey)
 		}
-		snapshot, err := h.getPlatformSnapshot(userID, appKey)
+	snapshot, err := h.getPersonalWorkspaceSnapshot(userID, appKey)
 		if err != nil {
 			return nil, err
 		}
@@ -1717,7 +1717,7 @@ func featurePackageListToMaps(items []FeaturePackage) []gin.H {
 }
 
 func supportsPersonalWorkspaceContext(contextType string) bool {
-	return contextType == "" || contextType == "platform" || contextType == "common"
+	return contextType == "" || contextType == "personal" || contextType == "common"
 }
 
 func roleInfos(roles []Role) []gin.H {

@@ -37,8 +37,21 @@ export const useCollaborationWorkspaceStore = defineStore(
       workspaceStore.currentAuthWorkspaceType === 'collaboration' ? 'collaboration' : 'personal'
     )
 
+    const currentAuthWorkspaceCollaborationWorkspaceId = computed(() => {
+      const currentWorkspace = workspaceStore.currentAuthWorkspace
+      if (!currentWorkspace) return ''
+      return (
+        `${currentWorkspace.currentCollaborationWorkspaceId || ''}`.trim() ||
+        `${currentWorkspace.current_collaboration_workspace_id || ''}`.trim() ||
+        `${currentWorkspace.collaborationWorkspaceId || ''}`.trim()
+      )
+    })
+
     const currentCollaborationWorkspaceId = computed(() => {
       if (workspaceStore.currentAuthWorkspaceType !== 'collaboration') return ''
+      if (currentAuthWorkspaceCollaborationWorkspaceId.value) {
+        return currentAuthWorkspaceCollaborationWorkspaceId.value
+      }
       const matched = collaborationWorkspaceList.value.find(
         (item) =>
           item.collaborationWorkspaceId === workspaceStore.currentAuthWorkspaceId ||
@@ -234,13 +247,13 @@ export const useCollaborationWorkspaceStore = defineStore(
       currentAuthWorkspaceId: computed(() => workspaceStore.currentAuthWorkspaceId),
       currentAuthWorkspaceType: computed(() => workspaceStore.currentAuthWorkspaceType),
       currentAuthWorkspace: computed(() => workspaceStore.currentAuthWorkspace),
+      currentAuthWorkspaceCollaborationWorkspaceId,
       personalWorkspace: computed(() => workspaceStore.personalWorkspace),
       workspaceList: computed(() => workspaceStore.workspaceList)
     }
   },
   {
     persist: {
-      key: 'collaboration-workspace-adapter',
       storage: localStorage
     }
   }

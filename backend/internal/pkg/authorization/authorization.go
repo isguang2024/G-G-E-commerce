@@ -36,18 +36,18 @@ var (
 )
 
 type Service struct {
-	db              *gorm.DB
-	logger          *zap.Logger
-	boundaryService collaborationworkspaceboundary.Service
-	platformService platformaccess.Service
+	db                             *gorm.DB
+	logger                         *zap.Logger
+	boundaryService                collaborationworkspaceboundary.Service
+	personalWorkspaceAccessService platformaccess.Service
 }
 
 func NewService(db *gorm.DB, logger *zap.Logger) *Service {
 	return &Service{
-		db:              db,
-		logger:          logger,
-		boundaryService: collaborationworkspaceboundary.NewService(db),
-		platformService: platformaccess.NewService(db),
+		db:                             db,
+		logger:                         logger,
+		boundaryService:                collaborationworkspaceboundary.NewService(db),
+		personalWorkspaceAccessService: platformaccess.NewService(db),
 	}
 }
 
@@ -148,10 +148,10 @@ func (s *Service) AuthorizeInWorkspace(authCtx *AuthorizationContext, permission
 
 	switch authCtx.AuthWorkspaceType {
 	case "personal":
-		if s.platformService == nil {
+		if s.personalWorkspaceAccessService == nil {
 			return false, &actionDef, nil
 		}
-		snapshot, err := s.platformService.GetSnapshot(authCtx.UserID, appctx.NormalizeAppKey(authCtx.AppKey))
+		snapshot, err := s.personalWorkspaceAccessService.GetSnapshot(authCtx.UserID, appctx.NormalizeAppKey(authCtx.AppKey))
 		if err != nil {
 			return false, &actionDef, err
 		}
@@ -300,10 +300,10 @@ func (s *Service) collectUserActionKeysInAppForWorkspace(userID uuid.UUID, colla
 		return keys, []string{}, nil
 	}
 	if authWorkspaceType == "personal" {
-		if s.platformService == nil {
+		if s.personalWorkspaceAccessService == nil {
 			return []string{}, []string{}, nil
 		}
-		snapshot, err := s.platformService.GetSnapshot(userID, appctx.NormalizeAppKey(appKey))
+		snapshot, err := s.personalWorkspaceAccessService.GetSnapshot(userID, appctx.NormalizeAppKey(appKey))
 		if err != nil {
 			return nil, nil, err
 		}

@@ -131,7 +131,7 @@
               <ElInput
                 v-model="drawerModel.name"
                 :disabled="drawerReadOnly"
-                placeholder="例如：平台公告模板"
+                placeholder="例如：个人空间公告模板"
               />
             </ElFormItem>
 
@@ -142,7 +142,7 @@
                 placeholder="例如：announcement-default"
               />
               <div class="field-hint"
-                >保存时会按作用域自动补平台或协作空间前缀，不需要手动写完整前缀。</div
+                >保存时会按作用域自动补个人空间或协作空间前缀，不需要手动写完整前缀。</div
               >
             </ElFormItem>
 
@@ -195,7 +195,7 @@
                 :disabled="drawerReadOnly"
                 maxlength="120"
                 show-word-limit
-                placeholder="例如：平台维护通知"
+                placeholder="例如：个人空间维护通知"
               />
             </ElFormItem>
 
@@ -310,13 +310,13 @@
   const pageTitle = computed(() => (isCollaborationScope.value ? '协作空间消息模板' : '消息模板'))
   const pageDescription = computed(() =>
     isCollaborationScope.value
-      ? '查看平台模板并维护当前协作空间可复用的消息模板，发送页会直接复用这里的标题、摘要和正文。'
-      : '统一维护平台消息模板，供平台发信页复用；标题、摘要和正文都在模板层准备好。'
+      ? '查看个人空间模板并维护当前协作空间可复用的消息模板，发送页会直接复用这里的标题、摘要和正文。'
+      : '统一维护个人空间消息模板，供个人空间发信页复用；标题、摘要和正文都在模板层准备好。'
   )
   const toolbarDescription = computed(() =>
     isCollaborationScope.value
-      ? `平台模板会以只读方式展示；当前 ${currentWorkspaceLabel.value} 下的协作空间视图 ${currentCollaborationWorkspaceName.value} 可维护自己的协作空间模板。`
-      : '平台模板会直接出现在平台消息发送页中，建议用少量稳定模板覆盖高频场景。'
+      ? `个人空间模板会以只读方式展示；当前 ${currentWorkspaceLabel.value} 下的协作空间视图 ${currentCollaborationWorkspaceName.value} 可维护自己的协作空间模板。`
+      : '个人空间模板会直接出现在个人空间消息发送页中，建议用少量稳定模板覆盖高频场景。'
   )
   const heroMetrics = computed(() => [
     { label: '模板总数', value: pagination.total },

@@ -28,7 +28,8 @@
  */
 export class StorageConfig {
   /** 当前应用版本 */
-  static readonly CURRENT_VERSION = __APP_VERSION__
+  static readonly CURRENT_VERSION =
+    typeof __APP_VERSION__ === 'string' && __APP_VERSION__.trim() ? __APP_VERSION__.trim() : '0.0.0'
 
   /** 存储键前缀 */
   static readonly STORAGE_PREFIX = 'sys-v'

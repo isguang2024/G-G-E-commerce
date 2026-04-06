@@ -96,7 +96,7 @@ func (s *service) calculateSnapshot(userID uuid.UUID, appKey string) (*Snapshot,
 		return nil, err
 	}
 	directPackageIDs := mergeUUIDs(rolePackageIDs, userPackageIDs)
-	expandedPackageIDs, err := s.expandPackageIDs(directPackageIDs, "platform", appKey)
+	expandedPackageIDs, err := s.expandPackageIDs(directPackageIDs, "personal", appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (s *service) calculateSnapshot(userID uuid.UUID, appKey string) (*Snapshot,
 	if err != nil {
 		return nil, err
 	}
-	userExpandedPackageIDs, err := s.expandPackageIDs(userPackageIDs, "platform", appKey)
+	userExpandedPackageIDs, err := s.expandPackageIDs(userPackageIDs, "personal", appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -345,7 +345,7 @@ func (s *service) getEffectiveMenuContributionByRoleIDs(roleIDs []uuid.UUID, app
 	allExpandedPackageIDs := make([]uuid.UUID, 0, len(allPackageIDs))
 	expandedSeen := make(map[uuid.UUID]struct{}, len(allPackageIDs))
 	for _, roleID := range roleIDs {
-		expandedPackageIDs := expandPackageIDsFromGraph(rolePackageMap[roleID], "platform", packageMap, bundleChildrenMap)
+		expandedPackageIDs := expandPackageIDsFromGraph(rolePackageMap[roleID], "personal", packageMap, bundleChildrenMap)
 		roleExpandedPackageMap[roleID] = expandedPackageIDs
 		for _, packageID := range expandedPackageIDs {
 			if _, ok := expandedSeen[packageID]; ok {

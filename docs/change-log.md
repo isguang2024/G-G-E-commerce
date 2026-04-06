@@ -1706,6 +1706,23 @@
 - 视本地空项目策略决定是否直接删除 `backend/cmd/migrate/main.go` 中未再执行的历史 rename/backfill helper，实现迁移文件层面的完全最终态。
 - 继续把前端目录名、组件文件名和 locale key 里的 `team` 残留压到更低，只保留历史归档或兼容壳。
 
+## 2026-04-07 协作空间最终体验补完
+
+### 本次改动
+- `frontend/src/api/collaboration-workspace.ts` 修正了协作空间列表归一化顺序：当 `/api/v1/collaboration-workspaces/mine` 同时返回 `id` 与 `workspace_id` 时，`collaborationWorkspaceId` 现在优先取真实的协作空间 ID，不再错误回落为 workspace ID。
+- `frontend/src/utils/storage/storage-key-manager.ts` 增加了一次性本地存储清理逻辑：自动删除 `sys-vundefined-* / sys-vnull-* / sys-vNaN-*` 这类无效版本 key，并清理已废弃的 `tenant / workspace / collaboration-workspace-adapter` 旧 store key。
+- 同一 store 在迁移到当前版本后，会自动清除旧版本 key，避免本地开发环境长期残留 `sys-v3.0.1-*` 等历史缓存干扰当前 `workspace / collaboration` 语义。
+
+### 验证
+- `go test ./... -run '^$'`
+- `pnpm --dir frontend lint`
+- `pnpm --dir frontend build`
+- 浏览器自动化验证：
+  - 清理旧 localStorage 后重新登录 `admin / admin123456`
+  - 切换到协作空间上下文
+  - 访问 `#/collaboration-workspace/message`
+  - 校验协作空间 store 中 `currentCollaborationWorkspaceId` 与 `/mine` 列表项中的 `collaborationWorkspaceId` 一致
+
 ## 2026-04-06 Tenant 语义回收与 Phase 9/10 收尾
 
 ### 本次改动
@@ -1783,4 +1800,21 @@
 ### 下次方向
 - 若继续追求完全最终体，可继续清持久层结构名和少量历史符号名中的 `Tenant / Team` 词形，但这已经不再影响当前运行时主语义。
 - 协作空间消息发送页当前会在无发信配置时给出明确告警，可后续再补默认发信配置 seed，让空项目初始化后直接具备完整发信能力。
+
+## 2026-04-07 空间权限最终体清理与协作空间同步修复
+
+### 本次改动
+- `frontend/src/store/modules/collaboration-workspace.ts` 增强了与 `workspaceStore` 的同步：当前授权空间切换后，`currentCollaborationWorkspaceId` 现在会优先从当前授权 workspace 上的协作空间标识派生，避免切换到协作空间后 store 残留旧值。
+- `frontend/src/components/business/layout/AppContextBadge.vue`、`frontend/src/components/core/layouts/art-header-bar/widget/ArtCollaborationWorkspaceSwitcher.vue`、`frontend/src/components/core/layouts/art-header-bar/widget/ArtUserMenu.vue`、`frontend/src/components/core/layouts/art-notification/index.vue`、`frontend/src/views/dashboard/console/index.vue`、`frontend/src/views/workspace/inbox/index.vue`、`frontend/src/views/message/modules/useMessageWorkspace.ts`、`frontend/src/views/message/modules/message-record-console.vue`、`frontend/src/views/message/modules/message-sender-console.vue`、`backend/internal/modules/system/permission/service.go`、`backend/internal/pkg/permissionseed/seeds.go` 已把“个人工作空间 / 平台发送 / 平台用户 / 平台侧”这类旧文案继续收口为“个人空间 / 个人空间发送 / 个人空间用户 / 空间权限”。
+- 已删除空置旧目录 `backend/internal/modules/system/tenant` 与 `backend/internal/pkg/teamboundary`，active 代码层不再保留这两个历史模块入口。
+- `frontend/src/utils/storage/storage-config.ts` 维持了 `sys-v${CURRENT_VERSION}` 的稳定版本前缀，当前 active 代码不会再生成 `sys-vundefined-*` 的 localStorage 键。
+
+### 验证
+- `go test ./... -run '^$'`
+- `pnpm --dir frontend lint`
+- `pnpm --dir frontend build`
+
+### 下次方向
+- 若继续追求符号级最终体，可继续清持久层结构名和极少量历史注释中的 `Tenant / Team` 词形。
+- 当前主链已统一到 `workspace / personal / collaboration`，后续优化重点应转到默认 seed 丰富度与协作空间业务体验，而不是继续调整权限主语义。
 

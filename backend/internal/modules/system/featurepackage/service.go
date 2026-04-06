@@ -168,7 +168,7 @@ func (s *service) ListOptions(req *dto.FeaturePackageListRequest) ([]user.Featur
 		}
 		if contextType := normalizeContextType(req.ContextType); contextType != "" {
 			switch contextType {
-			case "platform", "collaboration":
+			case "personal", "collaboration":
 				query = query.Where("(context_type = ? OR context_type = ?)", contextType, "common")
 			default:
 				query = query.Where("context_type = ?", contextType)
@@ -1509,19 +1509,19 @@ func supportsCollaborationWorkspaceContext(contextType string) bool {
 
 func contextSupportsAction(packageContextType, actionContextType string) bool {
 	if packageContextType == "common" {
-		return actionContextType == "platform" || actionContextType == "collaboration"
+		return actionContextType == "personal" || actionContextType == "collaboration"
 	}
 	return packageContextType == actionContextType
 }
 
 func contextSupportsChildPackage(bundleContextType, childContextType string) bool {
 	switch bundleContextType {
-	case "platform":
-		return childContextType == "platform" || childContextType == "common"
+	case "personal", "platform":
+		return childContextType == "personal" || childContextType == "common"
 	case "collaboration":
 		return childContextType == "collaboration" || childContextType == "common"
 	case "common":
-		return childContextType == "platform" || childContextType == "collaboration" || childContextType == "common"
+		return childContextType == "personal" || childContextType == "collaboration" || childContextType == "common"
 	default:
 		return false
 	}

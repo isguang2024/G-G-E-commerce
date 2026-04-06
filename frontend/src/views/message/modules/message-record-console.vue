@@ -113,7 +113,9 @@
           <template #default="{ row }">
             <div class="message-record-simple-cell">
               <span>{{ formatTime(row.published_at || row.created_at) }}</span>
-              <small>{{ row.scope_type === 'collaboration' ? '协作空间发送' : '平台发送' }}</small>
+              <small>{{
+                row.scope_type === 'collaboration' ? '协作空间发送' : '个人空间发送'
+              }}</small>
             </div>
           </template>
         </ElTableColumn>
@@ -148,12 +150,12 @@
                 activeRecord.target_collaboration_workspace_name ||
                 (activeRecord.scope_type === 'collaboration'
                   ? currentCollaborationWorkspaceName
-                  : '个人工作空间范围')
+                  : '个人空间范围')
               }}</span>
             </div>
           </div>
           <ElTag effect="plain">{{
-            activeRecord.scope_type === 'collaboration' ? '协作空间发送' : '平台发送'
+            activeRecord.scope_type === 'collaboration' ? '协作空间发送' : '个人空间发送'
           }}</ElTag>
         </div>
 
@@ -199,7 +201,7 @@
               <div class="message-record-delivery-card__top">
                 <div>
                   <strong>{{ delivery.recipient_name || '未命名用户' }}</strong>
-                  <p>{{ delivery.recipient_collaboration_workspace_name || '平台用户' }}</p>
+                  <p>{{ delivery.recipient_collaboration_workspace_name || '个人空间用户' }}</p>
                 </div>
                 <ElTag size="small" effect="plain">{{
                   resolveDeliveryStatusLabel(delivery.delivery_status)
@@ -305,7 +307,7 @@
   const pageDescription = computed(() =>
     isCollaborationScope.value
       ? '查看当前协作空间发出的通知、消息和待办投递情况，重点看已读率和待处理数量。'
-      : '查看平台侧消息发送结果和投递情况，判断哪些消息已读、未读或仍处于待处理状态。'
+      : '查看个人空间消息发送结果和投递情况，判断哪些消息已读、未读或仍处于待处理状态。'
   )
 
   const audienceOptions = computed(() =>

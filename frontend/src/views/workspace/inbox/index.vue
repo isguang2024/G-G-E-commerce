@@ -2,7 +2,7 @@
   <div class="message-center-page art-full-height">
     <AdminWorkspaceHero
       :title="`消息中心 · ${workspaceName}`"
-      description="统一查看平台通知、直接消息和待处理事项。当前授权工作空间决定权限来源，协作空间视图只作为协作空间边界的兼容派生。"
+      description="统一查看当前空间通知、直接消息和待处理事项。当前授权工作空间决定权限来源，协作空间视图只作为协作空间边界的兼容派生。"
       :metrics="heroMetrics"
     >
       <div class="message-center-hero__actions">
@@ -245,7 +245,7 @@
     { label: '待办', value: messageStore.summary.todo_count }
   ])
   const workspaceLabel = computed(() =>
-    workspaceStore.currentAuthWorkspaceType === 'collaboration' ? '协作空间' : '个人工作空间'
+    workspaceStore.currentAuthWorkspaceType === 'collaboration' ? '协作空间' : '个人空间'
   )
   const workspaceName = computed(
     () => workspaceStore.currentAuthWorkspace?.name || '当前授权工作空间'

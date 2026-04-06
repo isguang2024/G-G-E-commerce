@@ -46,7 +46,7 @@
             @click="enterPlatformManagement"
           >
             <ArtSvgIcon icon="ri:building-line" />
-            <span>切换到个人工作空间</span>
+            <span>切换到个人空间</span>
           </li>
           <li class="btn-item" @click="goPage('/user-center')">
             <ArtSvgIcon icon="ri:user-3-line" />
@@ -62,7 +62,7 @@
               {{
                 currentAuthWorkspaceType === 'collaboration'
                   ? '当前授权工作空间：协作空间'
-                  : '当前授权工作空间：个人工作空间'
+                  : '当前授权工作空间：个人空间'
               }}
             </span>
           </li>

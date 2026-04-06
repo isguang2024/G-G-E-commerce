@@ -274,7 +274,7 @@ type permissionService struct {
 	userHiddenMenuRepo UserHiddenMenuRepository
 	menuRepo           MenuRepository
 	boundaryService    collaborationworkspaceboundary.Service
-	platformService    platformaccess.Service
+	personalWorkspaceAccessService platformaccess.Service
 }
 
 func NewPermissionService(
@@ -290,7 +290,7 @@ func NewPermissionService(
 	userHiddenMenuRepo UserHiddenMenuRepository,
 	menuRepo MenuRepository,
 	boundaryService collaborationworkspaceboundary.Service,
-	platformService platformaccess.Service,
+	personalWorkspaceAccessService platformaccess.Service,
 ) PermissionService {
 	return &permissionService{
 		userRepo:           userRepo,
@@ -303,9 +303,9 @@ func NewPermissionService(
 		packageBundleRepo:  packageBundleRepo,
 		roleHiddenMenuRepo: roleHiddenMenuRepo,
 		userHiddenMenuRepo: userHiddenMenuRepo,
-		menuRepo:           menuRepo,
-		boundaryService:    boundaryService,
-		platformService:    platformService,
+		menuRepo:                       menuRepo,
+		boundaryService:                boundaryService,
+		personalWorkspaceAccessService: personalWorkspaceAccessService,
 	}
 }
 
@@ -325,12 +325,12 @@ func (s *permissionService) GetUserMenuIDsInApp(userID uuid.UUID, collaborationW
 	if collaborationWorkspaceID != nil {
 		return s.getCollaborationWorkspaceUserMenuIDs(userID, *collaborationWorkspaceID, appKey)
 	}
-	return s.getPlatformUserMenuIDs(userID, appKey)
+	return s.getPersonalWorkspaceMenuIDs(userID, appKey)
 }
 
-func (s *permissionService) getPlatformUserMenuIDs(userID uuid.UUID, appKey string) ([]uuid.UUID, error) {
-	if s.platformService != nil {
-		snapshot, err := s.platformService.GetSnapshot(userID, appctx.NormalizeAppKey(appKey))
+func (s *permissionService) getPersonalWorkspaceMenuIDs(userID uuid.UUID, appKey string) ([]uuid.UUID, error) {
+	if s.personalWorkspaceAccessService != nil {
+		snapshot, err := s.personalWorkspaceAccessService.GetSnapshot(userID, appctx.NormalizeAppKey(appKey))
 		if err != nil {
 			return nil, err
 		}
@@ -376,8 +376,8 @@ func (s *permissionService) getCollaborationWorkspaceUserMenuIDs(userID, collabo
 	return s.finalizeMenuIDs(menuIDs, appKey)
 }
 
-func (s *permissionService) getPlatformPackageMenuIDs(packageIDs []uuid.UUID) ([]uuid.UUID, error) {
-	expandedIDs, err := s.expandPackageIDs(packageIDs, "platform")
+func (s *permissionService) getPersonalWorkspacePackageMenuIDs(packageIDs []uuid.UUID) ([]uuid.UUID, error) {
+	expandedIDs, err := s.expandPackageIDs(packageIDs, "personal")
 	if err != nil {
 		return nil, err
 	}

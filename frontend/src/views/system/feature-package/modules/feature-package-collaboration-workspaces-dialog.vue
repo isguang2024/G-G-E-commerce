@@ -9,7 +9,7 @@
   >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        平台为协作空间开通功能包后，协作空间功能边界会自动同步；这里支持协作空间包和平台/协作空间共享包。
+        个人空间为协作空间开通功能包后，协作空间功能边界会自动同步；这里支持协作空间包和个人空间/协作空间共享包。
       </div>
 
       <div class="summary-card">

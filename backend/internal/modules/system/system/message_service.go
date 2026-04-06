@@ -755,18 +755,10 @@ func (s *messageService) GetDispatchOptions(userID uuid.UUID, collaborationWorks
 		result.DefaultAudienceType = "collaboration_workspace_users"
 		var currentCollaborationWorkspace models.CollaborationWorkspace
 		if err := s.db.Select("id", "name").Where("id = ?", *collaborationWorkspaceID).First(&currentCollaborationWorkspace).Error; err == nil {
-			if currentCollaborationWorkspaceID := s.resolveCollaborationWorkspaceID(currentCollaborationWorkspace.ID); currentCollaborationWorkspaceID != nil {
-				result.CurrentCollaborationWorkspaceID = currentCollaborationWorkspaceID.String()
-			} else {
-				result.CurrentCollaborationWorkspaceID = currentCollaborationWorkspace.ID.String()
-			}
+			result.CurrentCollaborationWorkspaceID = currentCollaborationWorkspace.ID.String()
 			result.CurrentCollaborationWorkspaceName = currentCollaborationWorkspace.Name
-			collaborationWorkspaceRef := currentCollaborationWorkspace.ID
-			if currentCollaborationWorkspaceID := s.resolveCollaborationWorkspaceID(currentCollaborationWorkspace.ID); currentCollaborationWorkspaceID != nil {
-				collaborationWorkspaceRef = *currentCollaborationWorkspaceID
-			}
 			result.CollaborationWorkspaces = append(result.CollaborationWorkspaces, dispatchCollaborationWorkspaceOption{
-				ID:   collaborationWorkspaceRef,
+				ID:   currentCollaborationWorkspace.ID,
 				Name: currentCollaborationWorkspace.Name,
 			})
 		}
@@ -803,27 +795,27 @@ func (s *messageService) GetDispatchOptions(userID uuid.UUID, collaborationWorks
 			dispatchAudienceOption{
 				Value:       "all_users",
 				Label:       "所有用户",
-				Description: "平台统一给全部有效用户发送。",
+				Description: "当前个人空间向全部有效用户发送。",
 			},
 			dispatchAudienceOption{
 				Value:       "collaboration_workspace_admins",
 				Label:       "协作空间管理员",
-				Description: "平台给选定协作空间的管理员发送。",
+				Description: "当前个人空间给选定协作空间的管理员发送。",
 			},
 			dispatchAudienceOption{
 				Value:       "collaboration_workspace_users",
 				Label:       "指定协作空间成员",
-				Description: "平台给选定协作空间的全部有效成员发送。",
+				Description: "当前个人空间给选定协作空间的全部有效成员发送。",
 			},
 			dispatchAudienceOption{
 				Value:       "specified_users",
 				Label:       "指定用户",
-				Description: "平台直接给一个或多个指定用户发送。",
+				Description: "当前个人空间直接给一个或多个指定用户发送。",
 			},
 			dispatchAudienceOption{
 				Value:       "recipient_group",
 				Label:       "接收组",
-				Description: "按平台或协作空间预设的接收组展开成员并发送。",
+				Description: "按个人空间或协作空间预设的接收组展开成员并发送。",
 			},
 			dispatchAudienceOption{
 				Value:       "role",
@@ -845,11 +837,7 @@ func (s *messageService) GetDispatchOptions(userID uuid.UUID, collaborationWorks
 			return dispatchOptions{}, err
 		}
 		for _, item := range collaborationWorkspaces {
-			collaborationWorkspaceRef := item.ID
-			if collaborationWorkspaceID := s.resolveCollaborationWorkspaceID(item.ID); collaborationWorkspaceID != nil {
-				collaborationWorkspaceRef = *collaborationWorkspaceID
-			}
-			result.CollaborationWorkspaces = append(result.CollaborationWorkspaces, dispatchCollaborationWorkspaceOption{ID: collaborationWorkspaceRef, Name: item.Name})
+			result.CollaborationWorkspaces = append(result.CollaborationWorkspaces, dispatchCollaborationWorkspaceOption{ID: item.ID, Name: item.Name})
 		}
 	}
 
@@ -1427,9 +1415,6 @@ func (s *messageService) ListDispatchRecords(collaborationWorkspaceID *uuid.UUID
 	if err != nil {
 		return dispatchRecordListResult{}, err
 	}
-	for index := range records {
-		records[index].TargetCollaborationWorkspaceID = s.resolveCollaborationWorkspaceIDPtr(records[index].TargetCollaborationWorkspaceID)
-	}
 
 	return dispatchRecordListResult{
 		Records: records,
@@ -1516,7 +1501,7 @@ func (s *messageService) GetDispatchRecordDetail(collaborationWorkspaceID *uuid.
 			AudienceType:                     row.AudienceType,
 			ScopeType:                        row.ScopeType,
 			ScopeID:                          row.ScopeID,
-			TargetCollaborationWorkspaceID:   s.resolveCollaborationWorkspaceIDPtr(row.TargetCollaborationWorkspaceID),
+			TargetCollaborationWorkspaceID:   row.TargetCollaborationWorkspaceID,
 			TargetCollaborationWorkspaceName: row.TargetCollaborationWorkspaceName,
 			SenderName:                       row.SenderName,
 			TemplateName:                     row.TemplateName,
@@ -1760,8 +1745,8 @@ func (s *messageService) listSenderOptions(collaborationWorkspaceID *uuid.UUID) 
 
 func (s *messageService) ensureSenderOptions(collaborationWorkspaceID *uuid.UUID) ([]models.MessageSender, error) {
 	scopeType := "personal"
-	defaultName := "平台"
-	defaultDescription := "平台默认发送人"
+	defaultName := "个人空间"
+	defaultDescription := "个人空间默认发送人"
 	var scopeID *uuid.UUID
 	if collaborationWorkspaceID != nil {
 		scopeType = "collaboration"
@@ -2701,7 +2686,7 @@ func (s *messageService) listDispatchUsers(collaborationWorkspaceID *uuid.UUID) 
 			ID:          user.ID,
 			Name:        user.Username,
 			DisplayName: displayName,
-			Description: "平台用户",
+			Description: "个人空间用户",
 		})
 	}
 	return result, nil
@@ -2971,7 +2956,7 @@ func (s *messageService) loadRecipientGroupTargetItems(groupID uuid.UUID) ([]mes
 			TargetType:                 row.TargetType,
 			UserID:                     row.UserID,
 			UserName:                   row.UserName,
-			CollaborationWorkspaceID:   s.resolveCollaborationWorkspaceIDPtr(row.CollaborationWorkspaceID),
+			CollaborationWorkspaceID:   row.CollaborationWorkspaceID,
 			CollaborationWorkspaceName: row.CollaborationWorkspaceName,
 			RoleCode:                   row.RoleCode,
 			RoleName:                   s.lookupRoleName(row.RoleCode, row.CollaborationWorkspaceID),
@@ -3222,7 +3207,7 @@ func (s *messageService) buildTemplateListItem(template models.MessageTemplate, 
 		Description:                     template.Description,
 		MessageType:                     template.MessageType,
 		OwnerScope:                      template.OwnerScope,
-		OwnerCollaborationWorkspaceID:   s.resolveCollaborationWorkspaceIDPtr(template.OwnerCollaborationWorkspaceID),
+		OwnerCollaborationWorkspaceID:   template.OwnerCollaborationWorkspaceID,
 		OwnerCollaborationWorkspaceName: ownerCollaborationWorkspaceName,
 		AudienceType:                    template.AudienceType,
 		TitleTemplate:                   template.TitleTemplate,
@@ -3322,27 +3307,6 @@ func (s *messageService) resolveLegacyCollaborationWorkspaceID(reference uuid.UU
 		return reference, nil
 	}
 	return *workspace.CollaborationWorkspaceID, nil
-}
-
-func (s *messageService) resolveCollaborationWorkspaceID(legacyCollaborationWorkspaceID uuid.UUID) *uuid.UUID {
-	if legacyCollaborationWorkspaceID == uuid.Nil {
-		return nil
-	}
-	var workspace models.Workspace
-	err := s.db.Select("id").
-		Where("workspace_type = ? AND collaboration_workspace_id = ? AND deleted_at IS NULL", models.WorkspaceTypeCollaboration, legacyCollaborationWorkspaceID).
-		First(&workspace).Error
-	if err != nil {
-		return nil
-	}
-	return &workspace.ID
-}
-
-func (s *messageService) resolveCollaborationWorkspaceIDPtr(legacyCollaborationWorkspaceID *uuid.UUID) *uuid.UUID {
-	if legacyCollaborationWorkspaceID == nil {
-		return nil
-	}
-	return s.resolveCollaborationWorkspaceID(*legacyCollaborationWorkspaceID)
 }
 
 func convertTemplatePersistenceError(err error) error {

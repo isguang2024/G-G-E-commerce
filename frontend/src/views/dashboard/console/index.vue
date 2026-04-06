@@ -93,14 +93,15 @@
     {
       label: '授权工作空间',
       value:
-        currentAuthWorkspace.value?.name ||
-        (currentContextMode.value === 'personal' ? '个人工作空间' : '协作空间')
+        currentAuthWorkspace.value?.name || currentContextMode.value === 'personal'
+          ? '个人空间'
+          : '协作空间'
     }
   ])
 
   const currentScopeName = computed(() =>
     currentContextMode.value === 'personal'
-      ? currentAuthWorkspace.value?.name || '个人工作空间'
+      ? currentAuthWorkspace.value?.name || '个人空间'
       : currentCollaborationWorkspace.value?.name ||
         currentAuthWorkspace.value?.name ||
         '未选择协作空间'

@@ -268,13 +268,13 @@
 
   function formatContext(contextType?: string) {
     if (contextType === 'common') return '通用'
-    if (contextType === 'platform') return '平台'
+    if (contextType === 'personal' || contextType === 'platform') return '个人空间'
     return '协作空间'
   }
 
   function getContextTagType(contextType?: string) {
     if (contextType === 'common') return 'primary'
-    if (contextType === 'platform') return 'success'
+    if (contextType === 'personal' || contextType === 'platform') return 'success'
     return 'warning'
   }
 

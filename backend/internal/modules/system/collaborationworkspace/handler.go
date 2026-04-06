@@ -2064,7 +2064,7 @@ func (h *CollaborationWorkspaceHandler) collaborationWorkspaceToMap(t *user.Coll
 	if h.workspaceService != nil {
 		if workspace, err := h.workspaceService.GetCollaborationWorkspaceByCollaborationWorkspaceID(t.ID); err == nil && workspace != nil {
 			m["workspace_id"] = workspace.ID.String()
-			m["collaboration_workspace_id"] = workspace.ID.String()
+			m["collaboration_workspace_id"] = t.ID.String()
 			m["workspace_type"] = workspace.WorkspaceType
 		}
 	}
@@ -2095,7 +2095,7 @@ func (h *CollaborationWorkspaceHandler) memberToMap(m *user.CollaborationWorkspa
 	if h.workspaceService != nil {
 		if workspace, err := h.workspaceService.GetCollaborationWorkspaceByCollaborationWorkspaceID(m.CollaborationWorkspaceID); err == nil && workspace != nil {
 			result["workspace_id"] = workspace.ID.String()
-			result["collaboration_workspace_id"] = workspace.ID.String()
+			result["collaboration_workspace_id"] = m.CollaborationWorkspaceID.String()
 			result["workspace_type"] = workspace.WorkspaceType
 		}
 	}

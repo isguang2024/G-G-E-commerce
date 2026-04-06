@@ -36,6 +36,16 @@ import { StorageConfig } from '@/utils/storage'
  * 负责处理版本化的存储键名生成和数据迁移
  */
 export class StorageKeyManager {
+  private static hasCleanedLegacyKeys = false
+
+  private static readonly INVALID_VERSION_PREFIXES = ['sys-vundefined-', 'sys-vnull-', 'sys-vNaN-']
+
+  private static readonly DEPRECATED_STORE_IDS = [
+    'tenant',
+    'workspace',
+    'collaboration-workspace-adapter'
+  ]
+
   /**
    * 获取当前版本的存储键名
    */
@@ -48,6 +58,27 @@ export class StorageKeyManager {
    */
   private hasCurrentVersionData(key: string): boolean {
     return localStorage.getItem(key) !== null
+  }
+
+  /**
+   * 一次性清理已经废弃的旧 key 和无效版本 key
+   */
+  private cleanupLegacyKeysOnce(): void {
+    if (StorageKeyManager.hasCleanedLegacyKeys) {
+      return
+    }
+
+    const storageKeys = Object.keys(localStorage)
+    for (const key of storageKeys) {
+      if (
+        StorageKeyManager.INVALID_VERSION_PREFIXES.some((prefix) => key.startsWith(prefix)) ||
+        StorageKeyManager.DEPRECATED_STORE_IDS.some((storeId) => key.endsWith(`-${storeId}`))
+      ) {
+        localStorage.removeItem(key)
+      }
+    }
+
+    StorageKeyManager.hasCleanedLegacyKeys = true
   }
 
   /**
@@ -76,13 +107,33 @@ export class StorageKeyManager {
   }
 
   /**
+   * 清理同一 store 的旧版本键，避免旧版本垃圾持续滞留
+   */
+  private pruneLegacyStoreKeys(storeId: string, currentKey: string): void {
+    const storageKeys = Object.keys(localStorage)
+    const pattern = StorageConfig.createKeyPattern(storeId)
+
+    for (const key of storageKeys) {
+      if (key === currentKey) {
+        continue
+      }
+      if (pattern.test(key)) {
+        localStorage.removeItem(key)
+      }
+    }
+  }
+
+  /**
    * 获取持久化存储的键名（支持自动数据迁移）
    */
   getStorageKey(storeId: string): string {
+    this.cleanupLegacyKeysOnce()
+
     const currentKey = this.getCurrentVersionKey(storeId)
 
     // 优先使用当前版本的数据
     if (this.hasCurrentVersionData(currentKey)) {
+      this.pruneLegacyStoreKeys(storeId, currentKey)
       return currentKey
     }
 
@@ -91,6 +142,8 @@ export class StorageKeyManager {
     if (existingKey) {
       this.migrateData(existingKey, currentKey)
     }
+
+    this.pruneLegacyStoreKeys(storeId, currentKey)
 
     return currentKey
   }

@@ -41,11 +41,11 @@
   const { currentSpace, shouldShowSpaceBadge, isDefaultSpace } = storeToRefs(menuSpaceStore)
 
   const modeLabel = computed(() =>
-    currentAuthWorkspaceType.value === 'personal' ? '个人工作空间' : '协作空间'
+    currentAuthWorkspaceType.value === 'personal' ? '个人空间' : '协作空间'
   )
   const scopeName = computed(() =>
     currentContextMode.value === 'personal'
-      ? currentAuthWorkspace.value?.name || '当前个人工作空间'
+      ? currentAuthWorkspace.value?.name || '当前个人空间'
       : currentCollaborationWorkspace.value?.name ||
         currentAuthWorkspace.value?.name ||
         '未启用协作空间视图'

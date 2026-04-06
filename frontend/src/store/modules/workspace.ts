@@ -227,7 +227,6 @@ export const useWorkspaceStore = defineStore(
   },
   {
     persist: {
-      key: 'workspace',
       storage: localStorage
     }
   }

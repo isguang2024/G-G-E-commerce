@@ -77,6 +77,13 @@ function deriveFeaturePackageContextType(packageKey?: string) {
 function normalizeCollaborationWorkspace(
   item: any
 ): Api.SystemManage.CollaborationWorkspaceListItem {
+  const collaborationWorkspaceId =
+    item?.collaboration_workspace_id ||
+    item?.collaborationWorkspaceId ||
+    item?.id ||
+    item?.workspace_id ||
+    item?.workspaceId ||
+    ''
   return {
     id: item?.id || '',
     name: item?.name || '',
@@ -89,12 +96,7 @@ function normalizeCollaborationWorkspace(
     updateTime: item?.updated_at || item?.updateTime || '',
     adminUsers: item?.admin_users || item?.adminUsers || [],
     adminUserIds: item?.admin_user_ids || item?.adminUserIds || [],
-    collaborationWorkspaceId:
-      item?.collaboration_workspace_id ||
-      item?.collaborationWorkspaceId ||
-      item?.workspace_id ||
-      item?.workspaceId ||
-      '',
+    collaborationWorkspaceId,
     workspaceId: item?.workspace_id || item?.workspaceId || '',
     workspaceType: item?.workspace_type || item?.workspaceType || 'collaboration',
     currentRoleCode: item?.current_role_code || item?.currentRoleCode || '',

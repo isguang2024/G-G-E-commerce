@@ -32,10 +32,10 @@ type MenuHandler struct {
 	}
 	roleRepo        user.RoleRepository
 	userRoleRepo    user.UserRoleRepository
-	platformService platformaccess.Service
-	boundaryService collaborationworkspaceboundary.Service
-	authzService    menuAuthzService
-	logger          *zap.Logger
+	personalWorkspaceAccessService platformaccess.Service
+	boundaryService                collaborationworkspaceboundary.Service
+	authzService                   menuAuthzService
+	logger                         *zap.Logger
 }
 
 type menuAuthzService interface {
@@ -44,18 +44,18 @@ type menuAuthzService interface {
 
 func NewMenuHandler(db *gorm.DB, menuService MenuService, userRepo user.UserRepository, menuRepo interface {
 	ListAll() ([]user.Menu, error)
-}, roleRepo user.RoleRepository, userRoleRepo user.UserRoleRepository, boundaryService collaborationworkspaceboundary.Service, authzService menuAuthzService, platformService platformaccess.Service, logger *zap.Logger) *MenuHandler {
+}, roleRepo user.RoleRepository, userRoleRepo user.UserRoleRepository, boundaryService collaborationworkspaceboundary.Service, authzService menuAuthzService, personalWorkspaceAccessService platformaccess.Service, logger *zap.Logger) *MenuHandler {
 	return &MenuHandler{
-		db:              db,
-		menuService:     menuService,
-		userRepo:        userRepo,
-		menuRepo:        menuRepo,
-		roleRepo:        roleRepo,
-		userRoleRepo:    userRoleRepo,
-		platformService: platformService,
-		boundaryService: boundaryService,
-		authzService:    authzService,
-		logger:          logger,
+		db:                             db,
+		menuService:                    menuService,
+		userRepo:                       userRepo,
+		menuRepo:                       menuRepo,
+		roleRepo:                       roleRepo,
+		userRoleRepo:                   userRoleRepo,
+		personalWorkspaceAccessService: personalWorkspaceAccessService,
+		boundaryService:                boundaryService,
+		authzService:                   authzService,
+		logger:                         logger,
 	}
 }
 
@@ -136,8 +136,8 @@ func (h *MenuHandler) getAllowedMenuIDs(userID uuid.UUID, collaborationWorkspace
 		}
 			return h.getCollaborationWorkspaceContextAllowedMenuIDs(*collaborationWorkspaceID, roleIDs)
 	}
-	if collaborationWorkspaceID == nil && h.platformService != nil {
-		snapshot, err := h.platformService.GetSnapshot(userID)
+	if collaborationWorkspaceID == nil && h.personalWorkspaceAccessService != nil {
+		snapshot, err := h.personalWorkspaceAccessService.GetSnapshot(userID)
 		if err != nil {
 			return nil, err
 		}

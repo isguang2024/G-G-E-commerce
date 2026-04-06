@@ -1195,7 +1195,7 @@ func derivePermissionAppKey(permissionKey, moduleCode, contextType string) strin
 		segments := strings.Split(targetKey, ".")
 		if len(segments) > 0 {
 			switch segments[0] {
-			case "system", "platform", "common", "collaboration_workspace":
+			case "system", "personal", "common", "collaboration_workspace":
 				return models.DefaultAppKey
 			default:
 				if strings.TrimSpace(segments[0]) != "" {
@@ -1295,7 +1295,7 @@ func validatePermissionContext(permissionKey, moduleCode, contextType string) er
 		}
 	case "common":
 		if deriveReservedContextType(targetKey) != "" || deriveModuleWorkspaceBoundary(targetModule) != "" {
-			return fmt.Errorf("%w: 个人工作空间/协作空间专属权限键不能标记为 common", ErrPermissionContextInvalid)
+			return fmt.Errorf("%w: 个人空间/协作空间专属权限键不能标记为 common", ErrPermissionContextInvalid)
 		}
 	}
 

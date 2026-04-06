@@ -256,7 +256,7 @@
     if (item.scope_type === 'collaboration') {
       return resolveCollaborationWorkspaceTag(item)
     }
-    return `个人工作空间 · ${workspaceStore.currentAuthWorkspace?.name || '当前授权工作空间'}`
+    return `个人空间 · ${workspaceStore.currentAuthWorkspace?.name || '当前授权工作空间'}`
   }
 
   const openInbox = async (query?: Record<string, string | undefined>) => {

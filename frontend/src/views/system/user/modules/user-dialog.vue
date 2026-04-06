@@ -9,10 +9,10 @@
     <ElForm ref="formRef" :model="formData" :rules="rules" label-width="80px">
       <div class="form-intro">
         <div class="form-intro__title">{{
-          dialogType === 'add' ? '创建平台账号' : '更新账号信息'
+          dialogType === 'add' ? '创建个人空间账号' : '更新账号信息'
         }}</div>
         <div class="form-intro__text">
-          先确定账号基础信息，再配置状态和角色。角色会决定平台侧可见能力，协作空间侧生效请在权限测试里核对。
+          先确定账号基础信息，再配置状态和角色。角色会决定个人空间侧可见能力，协作空间侧生效请在权限测试里核对。
         </div>
       </div>
 
