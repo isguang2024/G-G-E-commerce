@@ -94,25 +94,25 @@
       label: '授权工作空间',
       value:
         currentAuthWorkspace.value?.name ||
-        (currentContextMode.value === 'platform' ? '个人工作空间' : '协作空间')
+        (currentContextMode.value === 'personal' ? '个人工作空间' : '协作空间')
     }
   ])
 
   const currentScopeName = computed(() =>
-    currentContextMode.value === 'platform'
+    currentContextMode.value === 'personal'
       ? currentAuthWorkspace.value?.name || '个人工作空间'
       : currentCollaborationWorkspace.value?.name ||
         currentAuthWorkspace.value?.name ||
         '未选择协作空间'
   )
   const currentScopeDescription = computed(() =>
-    currentContextMode.value === 'platform'
-      ? '当前以个人工作空间承载平台治理权限，可在这里处理菜单、页面、权限键、API 元数据和平台角色。'
+    currentContextMode.value === 'personal'
+      ? '当前以个人空间承载空间治理权限，可在这里处理菜单、页面、权限键、API 元数据和个人空间角色。'
       : '当前以协作空间承载业务权限，可在这里处理协作空间成员、协作空间角色、边界和已开通功能包。'
   )
 
   const focusItems = computed(() =>
-    currentContextMode.value === 'platform'
+    currentContextMode.value === 'personal'
       ? [
           {
             title: '页面与菜单主链',
@@ -126,7 +126,7 @@
           },
           {
             title: '用户与角色治理',
-            text: '处理平台身份、功能包与权限测试链路。',
+            text: '处理个人空间身份、功能包与权限测试链路。',
             path: '/system/user'
           }
         ]
@@ -139,7 +139,7 @@
           {
             title: '协作空间角色边界',
             text: '统一查看协作空间角色、功能包、菜单和功能权限。',
-            path: '/system/team-roles-permissions'
+            path: '/system/collaboration-workspace-roles-permissions'
           },
           {
             title: '协作空间总览',

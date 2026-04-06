@@ -18,10 +18,10 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
+	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 )
 
-const tenantContextHeader = "X-Collaboration-Workspace-Id"
+const collaborationWorkspaceContextHeader = "X-Collaboration-Workspace-Id"
 
 type MenuHandler struct {
 	db          *gorm.DB
@@ -33,18 +33,18 @@ type MenuHandler struct {
 	roleRepo        user.RoleRepository
 	userRoleRepo    user.UserRoleRepository
 	platformService platformaccess.Service
-	boundaryService teamboundary.Service
+	boundaryService collaborationworkspaceboundary.Service
 	authzService    menuAuthzService
 	logger          *zap.Logger
 }
 
 type menuAuthzService interface {
-	Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
+	Authorize(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
 }
 
 func NewMenuHandler(db *gorm.DB, menuService MenuService, userRepo user.UserRepository, menuRepo interface {
 	ListAll() ([]user.Menu, error)
-}, roleRepo user.RoleRepository, userRoleRepo user.UserRoleRepository, boundaryService teamboundary.Service, authzService menuAuthzService, platformService platformaccess.Service, logger *zap.Logger) *MenuHandler {
+}, roleRepo user.RoleRepository, userRoleRepo user.UserRoleRepository, boundaryService collaborationworkspaceboundary.Service, authzService menuAuthzService, platformService platformaccess.Service, logger *zap.Logger) *MenuHandler {
 	return &MenuHandler{
 		db:              db,
 		menuService:     menuService,
@@ -79,13 +79,13 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
-		tenantID, err := currentCollaborationWorkspaceID(c)
+		collaborationWorkspaceID, err := currentCollaborationWorkspaceID(c)
 		if err != nil {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 			c.JSON(status, resp)
 			return
 		}
-		allowed, _, authErr := h.authzService.Authorize(userID, tenantID, "system.menu.manage")
+		allowed, _, authErr := h.authzService.Authorize(userID, collaborationWorkspaceID, "system.menu.manage")
 		if authErr != nil || !allowed {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "无权限查看全部菜单")
 			c.JSON(status, resp)
@@ -103,9 +103,9 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 	if !all {
 		userID, err := currentUserID(c)
 		if err == nil {
-			tenantID, tenantErr := currentCollaborationWorkspaceID(c)
+			collaborationWorkspaceID, tenantErr := currentCollaborationWorkspaceID(c)
 			if tenantErr == nil {
-				allowedMenuIDs, _ = h.getAllowedMenuIDs(userID, tenantID)
+				allowedMenuIDs, _ = h.getAllowedMenuIDs(userID, collaborationWorkspaceID)
 			}
 		}
 		spaceKey = spaceutil.ResolveSpaceKey(h.db, c)
@@ -128,15 +128,15 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(out))
 }
 
-func (h *MenuHandler) getAllowedMenuIDs(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error) {
-	if tenantID != nil && h.userRoleRepo != nil {
-		roleIDs, err := h.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndTenant(userID, tenantID)
+func (h *MenuHandler) getAllowedMenuIDs(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]uuid.UUID, error) {
+	if collaborationWorkspaceID != nil && h.userRoleRepo != nil {
+		roleIDs, err := h.userRoleRepo.GetEffectiveActiveRoleIDsByUserAndTenant(userID, collaborationWorkspaceID)
 		if err != nil {
 			return nil, err
 		}
-		return h.getTeamContextAllowedMenuIDs(*tenantID, roleIDs)
+		return h.getTeamContextAllowedMenuIDs(*collaborationWorkspaceID, roleIDs)
 	}
-	if tenantID == nil && h.platformService != nil {
+	if collaborationWorkspaceID == nil && h.platformService != nil {
 		snapshot, err := h.platformService.GetSnapshot(userID)
 		if err != nil {
 			return nil, err
@@ -747,16 +747,16 @@ func currentUserID(c *gin.Context) (uuid.UUID, error) {
 }
 
 func currentCollaborationWorkspaceID(c *gin.Context) (*uuid.UUID, error) {
-	tenantIDStr := strings.TrimSpace(c.Query("collaboration_workspace_id"))
-	if tenantIDStr == "" {
-		tenantIDStr = strings.TrimSpace(c.GetHeader(tenantContextHeader))
+	collaborationWorkspaceIDStr := strings.TrimSpace(c.Query("collaboration_workspace_id"))
+	if collaborationWorkspaceIDStr == "" {
+		collaborationWorkspaceIDStr = strings.TrimSpace(c.GetHeader(collaborationWorkspaceContextHeader))
 	}
-	if tenantIDStr == "" {
+	if collaborationWorkspaceIDStr == "" {
 		return nil, nil
 	}
-	tenantID, err := uuid.Parse(tenantIDStr)
+	collaborationWorkspaceID, err := uuid.Parse(collaborationWorkspaceIDStr)
 	if err != nil {
 		return nil, err
 	}
-	return &tenantID, nil
+	return &collaborationWorkspaceID, nil
 }

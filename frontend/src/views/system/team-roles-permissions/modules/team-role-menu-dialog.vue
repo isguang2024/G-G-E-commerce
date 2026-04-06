@@ -69,10 +69,10 @@
   import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
   import { fetchGetMenuTreeAll } from '@/api/system-manage'
   import {
-    fetchGetMyTeamBoundaryRoleMenus,
-    fetchGetMyTeamBoundaryRolePackages,
-    fetchSetMyTeamBoundaryRoleMenus
-  } from '@/api/team'
+    fetchGetMyCollaborationWorkspaceBoundaryRoleMenus,
+    fetchGetMyCollaborationWorkspaceBoundaryRolePackages,
+    fetchSetMyCollaborationWorkspaceBoundaryRoleMenus
+  } from '@/api/collaboration-workspace'
   import { formatMenuTitle } from '@/utils/router'
 
   interface Props {
@@ -145,8 +145,14 @@
       try {
         const [menus, assigned, packagesRes] = await Promise.all([
           fetchGetMenuTreeAll(undefined, currentAppKey.value),
-          fetchGetMyTeamBoundaryRoleMenus(props.roleData.roleId, currentAppKey.value),
-          fetchGetMyTeamBoundaryRolePackages(props.roleData.roleId, currentAppKey.value)
+          fetchGetMyCollaborationWorkspaceBoundaryRoleMenus(
+            props.roleData.roleId,
+            currentAppKey.value
+          ),
+          fetchGetMyCollaborationWorkspaceBoundaryRolePackages(
+            props.roleData.roleId,
+            currentAppKey.value
+          )
         ])
         availableMenuIds.value = assigned?.available_menu_ids || []
         featurePackages.value = packagesRes?.packages || []
@@ -213,7 +219,7 @@
     }
     saving.value = true
     try {
-      await fetchSetMyTeamBoundaryRoleMenus(
+      await fetchSetMyCollaborationWorkspaceBoundaryRoleMenus(
         props.roleData.roleId,
         selectedMenuIds.value,
         currentAppKey.value

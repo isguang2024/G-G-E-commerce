@@ -50,7 +50,10 @@
   import { computed, reactive, ref, watch } from 'vue'
   import type { FormInstance, FormRules } from 'element-plus'
   import { ElMessage } from 'element-plus'
-  import { fetchCreateMyTeamRole, fetchUpdateMyTeamRole } from '@/api/team'
+  import {
+    fetchCreateMyCollaborationWorkspaceRole,
+    fetchUpdateMyCollaborationWorkspaceRole
+  } from '@/api/collaboration-workspace'
 
   interface Props {
     modelValue: boolean
@@ -145,9 +148,9 @@
         status: form.status
       }
       if (props.dialogType === 'add') {
-        await fetchCreateMyTeamRole(payload)
+        await fetchCreateMyCollaborationWorkspaceRole(payload)
       } else {
-        await fetchUpdateMyTeamRole(form.roleId, payload)
+        await fetchUpdateMyCollaborationWorkspaceRole(form.roleId, payload)
       }
       ElMessage.success(props.dialogType === 'add' ? '协作空间角色已创建' : '协作空间角色已更新')
       emit('success')

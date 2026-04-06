@@ -8,7 +8,8 @@ const MESSAGE_RECIPIENT_GROUP_BASE = '/api/v1/messages/recipient-groups'
 const MESSAGE_RECORD_BASE = '/api/v1/messages/records'
 
 interface MessageRequestOptions {
-  skipTenantHeader?: boolean
+  skipAuthWorkspaceHeader?: boolean
+  skipCollaborationWorkspaceHeader?: boolean
 }
 
 export function fetchGetInboxSummary() {
@@ -55,7 +56,8 @@ export function fetchHandleInboxTodo(deliveryId: string, params: Api.Message.Tod
 export function fetchGetMessageDispatchOptions(options?: MessageRequestOptions) {
   return request.get<Api.Message.DispatchOptions>({
     url: `${MESSAGE_DISPATCH_BASE}/options`,
-    skipTenantHeader: options?.skipTenantHeader
+    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
+    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader
   })
 }
 
@@ -66,7 +68,8 @@ export function fetchDispatchMessage(
   return request.post<Api.Message.DispatchResult>({
     url: MESSAGE_DISPATCH_BASE,
     data: params,
-    skipTenantHeader: options?.skipTenantHeader,
+    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
+    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader,
     showSuccessMessage: true
   })
 }
@@ -78,7 +81,8 @@ export function fetchGetMessageTemplateList(
   return request.get<Api.Message.MessageTemplateListResponse>({
     url: MESSAGE_TEMPLATE_BASE,
     params,
-    skipTenantHeader: options?.skipTenantHeader
+    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
+    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader
   })
 }
 
@@ -89,7 +93,8 @@ export function fetchCreateMessageTemplate(
   return request.post<Api.Message.MessageTemplateItem>({
     url: MESSAGE_TEMPLATE_BASE,
     data: params,
-    skipTenantHeader: options?.skipTenantHeader,
+    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
+    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader,
     showSuccessMessage: true
   })
 }
@@ -102,7 +107,8 @@ export function fetchUpdateMessageTemplate(
   return request.put<Api.Message.MessageTemplateItem>({
     url: `${MESSAGE_TEMPLATE_BASE}/${templateId}`,
     data: params,
-    skipTenantHeader: options?.skipTenantHeader,
+    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
+    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader,
     showSuccessMessage: true
   })
 }
@@ -114,21 +120,24 @@ export function fetchGetDispatchRecordList(
   return request.get<Api.Message.DispatchRecordListResponse>({
     url: MESSAGE_RECORD_BASE,
     params,
-    skipTenantHeader: options?.skipTenantHeader
+    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
+    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader
   })
 }
 
 export function fetchGetDispatchRecordDetail(recordId: string, options?: MessageRequestOptions) {
   return request.get<Api.Message.DispatchRecordDetail>({
     url: `${MESSAGE_RECORD_BASE}/${recordId}`,
-    skipTenantHeader: options?.skipTenantHeader
+    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
+    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader
   })
 }
 
 export function fetchGetMessageSenderList(options?: MessageRequestOptions) {
   return request.get<Api.Message.MessageSenderListResponse>({
     url: MESSAGE_SENDER_BASE,
-    skipTenantHeader: options?.skipTenantHeader
+    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
+    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader
   })
 }
 
@@ -139,7 +148,8 @@ export function fetchCreateMessageSender(
   return request.post<Api.Message.MessageSenderItem>({
     url: MESSAGE_SENDER_BASE,
     data: params,
-    skipTenantHeader: options?.skipTenantHeader,
+    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
+    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader,
     showSuccessMessage: true
   })
 }
@@ -152,7 +162,8 @@ export function fetchUpdateMessageSender(
   return request.put<Api.Message.MessageSenderItem>({
     url: `${MESSAGE_SENDER_BASE}/${senderId}`,
     data: params,
-    skipTenantHeader: options?.skipTenantHeader,
+    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
+    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader,
     showSuccessMessage: true
   })
 }
@@ -160,7 +171,8 @@ export function fetchUpdateMessageSender(
 export function fetchGetMessageRecipientGroupList(options?: MessageRequestOptions) {
   return request.get<Api.Message.MessageRecipientGroupListResponse>({
     url: MESSAGE_RECIPIENT_GROUP_BASE,
-    skipTenantHeader: options?.skipTenantHeader
+    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
+    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader
   })
 }
 
@@ -171,7 +183,8 @@ export function fetchCreateMessageRecipientGroup(
   return request.post<Api.Message.MessageRecipientGroupItem>({
     url: MESSAGE_RECIPIENT_GROUP_BASE,
     data: params,
-    skipTenantHeader: options?.skipTenantHeader,
+    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
+    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader,
     showSuccessMessage: true
   })
 }
@@ -184,7 +197,8 @@ export function fetchUpdateMessageRecipientGroup(
   return request.put<Api.Message.MessageRecipientGroupItem>({
     url: `${MESSAGE_RECIPIENT_GROUP_BASE}/${groupId}`,
     data: params,
-    skipTenantHeader: options?.skipTenantHeader,
+    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
+    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader,
     showSuccessMessage: true
   })
 }

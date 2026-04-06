@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div
     class="art-notification-panel art-card-sm !shadow-xl"
     :style="{
@@ -231,30 +231,30 @@
     return plainTextFromHtml(item.summary) || plainTextFromHtml(item.content) || '点击查看消息详情'
   }
 
-  const resolveTeamTag = (item: Api.Message.InboxItem) => {
+  const resolveCollaborationWorkspaceTag = (item: Api.Message.InboxItem) => {
     const collaborationWorkspaceId =
-      item.scope_type === 'collaboration' || item.scope_type === 'collaboration'
+      item.scope_type === 'collaboration'
         ? item.scope_id ||
           item.recipient_collaboration_workspace_id ||
           item.target_collaboration_workspace_id ||
-          item.target_collaboration_workspace_id
+          item.recipient_collaboration_workspace_id
         : item.recipient_collaboration_workspace_id ||
           item.target_collaboration_workspace_id ||
-          item.target_collaboration_workspace_id ||
+          item.recipient_collaboration_workspace_id ||
           item.scope_id
     if (!collaborationWorkspaceId) return ''
-    const teamName =
+    const collaborationWorkspaceName =
       collaborationWorkspaceStore.collaborationWorkspaceList.find(
         (workspace) => workspace.id === collaborationWorkspaceId
       )?.name || ''
-    return teamName ? `协作空间 · ${teamName}` : ''
+    return collaborationWorkspaceName ? `协作空间 · ${collaborationWorkspaceName}` : ''
   }
 
   const resolveWorkspaceTag = (item: Api.Message.InboxItem) => {
-    if (item.scope_type === 'collaboration' || item.scope_type === 'collaboration') {
-      return resolveTeamTag(item)
+    if (item.scope_type === 'collaboration') {
+      return resolveCollaborationWorkspaceTag(item)
     }
-    return `工作空间 · ${workspaceStore.currentAuthWorkspace?.name || '当前授权工作空间'}`
+    return `个人工作空间 · ${workspaceStore.currentAuthWorkspace?.name || '当前授权工作空间'}`
   }
 
   const openInbox = async (query?: Record<string, string | undefined>) => {

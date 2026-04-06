@@ -42,7 +42,7 @@ import { setPageTitle } from '@/utils/router'
 import { resetRouterState } from '@/router/guards/beforeEach'
 import { useMenuStore } from './menu'
 import { StorageConfig } from '@/utils/storage/storage-config'
-import { useCollaborationWorkspaceStore } from './tenant'
+import { useCollaborationWorkspaceStore } from './collaboration-workspace'
 
 /**
  * 用户状态管理

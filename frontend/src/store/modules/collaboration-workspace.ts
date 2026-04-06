@@ -1,12 +1,15 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import { fetchGetMyCollaborationWorkspaces } from '@/api/team'
+import { fetchGetMyCollaborationWorkspaces } from '@/api/collaboration-workspace'
 import { HttpError } from '@/utils/http/error'
 import { useWorkspaceStore } from './workspace'
 
-export type AppContextMode = 'platform' | 'collaboration'
+export type WorkspaceContextMode = 'personal' | 'collaboration'
+export type AppContextMode = WorkspaceContextMode
 
-export function hasPlatformAccessByUserInfo(userInfo?: Partial<Api.Auth.UserInfo> | null): boolean {
+export function hasPersonalWorkspaceAccessByUserInfo(
+  userInfo?: Partial<Api.Auth.UserInfo> | null
+): boolean {
   if (!userInfo) return false
   if (userInfo.is_super_admin) return true
   if (!Array.isArray(userInfo.actions)) return false
@@ -20,17 +23,19 @@ export function hasPlatformAccessByUserInfo(userInfo?: Partial<Api.Auth.UserInfo
   })
 }
 
+export const hasPlatformAccessByUserInfo = hasPersonalWorkspaceAccessByUserInfo
+
 export const useCollaborationWorkspaceStore = defineStore(
   'collaborationWorkspaceStore',
   () => {
     const workspaceStore = useWorkspaceStore()
     const collaborationWorkspaceList = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
     const loading = ref(false)
-    const hasPlatformAccess = ref(false)
+    const hasPersonalWorkspaceAccess = ref(false)
     const legacyCollaborationWorkspaceId = ref('')
 
-    const currentContextMode = computed<AppContextMode>(() =>
-      workspaceStore.currentAuthWorkspaceType === 'collaboration' ? 'collaboration' : 'platform'
+    const currentContextMode = computed<WorkspaceContextMode>(() =>
+      workspaceStore.currentAuthWorkspaceType === 'collaboration' ? 'collaboration' : 'personal'
     )
 
     const currentCollaborationWorkspaceId = computed(() => {
@@ -61,7 +66,7 @@ export const useCollaborationWorkspaceStore = defineStore(
     })
 
     const hasCollaborationWorkspaces = computed(() => collaborationWorkspaceList.value.length > 0)
-    const isPlatformContext = computed(() => currentContextMode.value === 'platform')
+    const isPersonalWorkspaceContext = computed(() => currentContextMode.value === 'personal')
     const shouldShowSwitcher = computed(() => collaborationWorkspaceList.value.length > 1)
 
     const syncLegacyCollaborationWorkspaceId = (preferredId = '') => {
@@ -79,7 +84,7 @@ export const useCollaborationWorkspaceStore = defineStore(
 
     const setCurrentCollaborationWorkspaceId = (collaborationWorkspaceId: string) => {
       if (!collaborationWorkspaceId) {
-        enterPlatformContext()
+        enterPersonalWorkspaceContext()
         return
       }
       enterCollaborationContext(collaborationWorkspaceId)
@@ -87,7 +92,7 @@ export const useCollaborationWorkspaceStore = defineStore(
 
     const setCurrentContextMode = (mode: AppContextMode) => {
       if (mode !== 'collaboration') {
-        enterPlatformContext()
+        enterPersonalWorkspaceContext()
         return
       }
       if (currentCollaborationWorkspaceId.value) return
@@ -98,11 +103,11 @@ export const useCollaborationWorkspaceStore = defineStore(
       if (firstId) enterCollaborationContext(firstId)
     }
 
-    const setPlatformAccess = (enabled: boolean) => {
-      hasPlatformAccess.value = enabled
+    const setPersonalWorkspaceAccess = (enabled: boolean) => {
+      hasPersonalWorkspaceAccess.value = enabled
       if (
         !enabled &&
-        currentContextMode.value === 'platform' &&
+        currentContextMode.value === 'personal' &&
         collaborationWorkspaceList.value.length > 0
       ) {
         const firstId =
@@ -115,7 +120,7 @@ export const useCollaborationWorkspaceStore = defineStore(
       }
     }
 
-    const enterPlatformContext = () => {
+    const enterPersonalWorkspaceContext = () => {
       legacyCollaborationWorkspaceId.value = ''
       workspaceStore.enterPersonalWorkspace()
     }
@@ -151,6 +156,7 @@ export const useCollaborationWorkspaceStore = defineStore(
       preferredLegacyCollaborationWorkspaceId?: string
       preferredWorkspaceId?: string
       preferredWorkspaceType?: string
+      preferPersonalWorkspace?: boolean
       preferPlatform?: boolean
     }) => {
       if (collaborationWorkspaceList.value.length === 0) {
@@ -161,7 +167,10 @@ export const useCollaborationWorkspaceStore = defineStore(
           preferredCollaborationWorkspaceId: options?.preferredCollaborationWorkspaceId,
           preferredCollaborationWorkspaceIdFromRecord:
             options?.preferredLegacyCollaborationWorkspaceId,
-          preferPersonal: options?.preferPlatform ?? hasPlatformAccess.value
+          preferPersonal:
+            options?.preferPersonalWorkspace ??
+            options?.preferPlatform ??
+            hasPersonalWorkspaceAccess.value
         })
         return
       }
@@ -172,7 +181,10 @@ export const useCollaborationWorkspaceStore = defineStore(
         preferredCollaborationWorkspaceId: options?.preferredCollaborationWorkspaceId,
         preferredCollaborationWorkspaceIdFromRecord:
           options?.preferredLegacyCollaborationWorkspaceId,
-        preferPersonal: options?.preferPlatform ?? hasPlatformAccess.value
+        preferPersonal:
+          options?.preferPersonalWorkspace ??
+          options?.preferPlatform ??
+          hasPersonalWorkspaceAccess.value
       })
       syncLegacyCollaborationWorkspaceId(options?.preferredLegacyCollaborationWorkspaceId || '')
     }
@@ -182,6 +194,7 @@ export const useCollaborationWorkspaceStore = defineStore(
       preferredLegacyCollaborationWorkspaceId?: string
       preferredWorkspaceId?: string
       preferredWorkspaceType?: string
+      preferPersonalWorkspace?: boolean
       preferPlatform?: boolean
     }) => {
       loading.value = true
@@ -194,7 +207,10 @@ export const useCollaborationWorkspaceStore = defineStore(
             preferredCollaborationWorkspaceId: options?.preferredCollaborationWorkspaceId,
             preferredCollaborationWorkspaceIdFromRecord:
               options?.preferredLegacyCollaborationWorkspaceId,
-            preferPersonal: options?.preferPlatform ?? hasPlatformAccess.value
+            preferPersonal:
+              options?.preferPersonalWorkspace ??
+              options?.preferPlatform ??
+              hasPersonalWorkspaceAccess.value
           })
         ])
         collaborationWorkspaceList.value = teams
@@ -214,7 +230,7 @@ export const useCollaborationWorkspaceStore = defineStore(
     const clearCollaborationWorkspaceContext = () => {
       legacyCollaborationWorkspaceId.value = ''
       collaborationWorkspaceList.value = []
-      hasPlatformAccess.value = false
+      hasPersonalWorkspaceAccess.value = false
       loading.value = false
       workspaceStore.clearWorkspaceContext()
     }
@@ -222,18 +238,21 @@ export const useCollaborationWorkspaceStore = defineStore(
     return {
       currentContextMode,
       currentCollaborationWorkspaceId,
-      teamList: collaborationWorkspaceList,
       collaborationWorkspaceList,
       loading,
-      hasPlatformAccess,
+      hasPersonalWorkspaceAccess,
       currentCollaborationWorkspace,
       hasCollaborationWorkspaces,
-      isPlatformContext,
+      isPersonalWorkspaceContext,
       shouldShowSwitcher,
       setCurrentCollaborationWorkspaceId,
       setCurrentContextMode,
-      setPlatformAccess,
-      enterPlatformContext,
+      setPersonalWorkspaceAccess,
+      enterPersonalWorkspaceContext,
+      hasPlatformAccess: hasPersonalWorkspaceAccess,
+      isPlatformContext: isPersonalWorkspaceContext,
+      setPlatformAccess: setPersonalWorkspaceAccess,
+      enterPlatformContext: enterPersonalWorkspaceContext,
       enterCollaborationContext,
       setCollaborationWorkspaceList,
       ensureCurrentCollaborationWorkspace,
@@ -253,5 +272,3 @@ export const useCollaborationWorkspaceStore = defineStore(
     }
   }
 )
-
-export const useTenantStore = useCollaborationWorkspaceStore

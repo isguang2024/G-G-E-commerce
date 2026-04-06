@@ -61,7 +61,7 @@
                 </ElSelect>
                 <div class="field-hint">
                   {{
-                    isTeamScope
+                    isCollaborationScope
                       ? '仅展示当前协作空间创建的模板，协作空间页不会混入平台模板。'
                       : '仅展示平台模板。'
                   }}
@@ -127,7 +127,7 @@
             <div class="message-manage-target-layout">
               <ElFormItem v-if="showTargetTeams" :label="targetTeamsLabel">
                 <ElSelect
-                  v-if="!isTeamScope"
+                  v-if="!isCollaborationScope"
                   v-model="form.targetCollaborationWorkspaceIds"
                   multiple
                   filterable
@@ -144,13 +144,14 @@
                 </ElSelect>
                 <div v-else class="message-manage-fixed-target">
                   <strong>{{
-                    options.current_collaboration_workspace_name || currentTeamName
+                    options.current_collaboration_workspace_name ||
+                    currentCollaborationWorkspaceName
                   }}</strong>
                   <span>协作空间上下文只允许向当前协作空间发送。</span>
                 </div>
                 <div class="field-hint">
                   {{
-                    isTeamScope
+                    isCollaborationScope
                       ? '发送对象会自动绑定到当前协作空间，无需再额外选择。'
                       : '平台可选择多个目标协作空间，系统会按对象类型自动匹配成员。'
                   }}
@@ -175,7 +176,7 @@
                 </ElSelect>
                 <div class="field-hint">
                   {{
-                    isTeamScope
+                    isCollaborationScope
                       ? '协作空间侧只会列出当前协作空间成员。'
                       : '平台侧可以直接按用户维度精确发送。'
                   }}
@@ -214,7 +215,7 @@
                 <div class="field-hint">
                   {{
                     form.audience_type === 'role'
-                      ? '只会展开接收组里的角色规则，适合按平台角色或协作空间角色精准发送。'
+                      ? '只会展开接收组里的角色规则，适合按个人空间角色或协作空间角色精准发送。'
                       : form.audience_type === 'feature_package'
                         ? '只会展开接收组里的功能包规则，适合按有效功能包命中成员。'
                         : '接收组可混合配置指定用户、协作空间成员、协作空间管理员、角色和功能包规则。'
@@ -349,13 +350,13 @@
   const formRef = ref()
   const {
     collaborationWorkspaceStore,
-    isTeamScope,
-    skipTenantHeader,
+    isCollaborationScope,
+    skipCollaborationWorkspaceHeader,
     currentCollaborationWorkspaceId,
-    currentTeamName,
+    currentCollaborationWorkspaceName,
     currentWorkspaceName,
     currentWorkspaceLabel,
-    ensureTeamContext,
+    ensureCollaborationWorkspaceContext,
     plainTextFromHtml
   } = useMessageWorkspace(props.scope)
 
@@ -379,7 +380,7 @@
   })
 
   const createDefaultDispatchOptions = (): Api.Message.DispatchOptions => ({
-    sender_scope: isTeamScope.value ? 'collaboration' : 'platform',
+    sender_scope: isCollaborationScope.value ? 'collaboration' : 'platform',
     current_collaboration_workspace_id: '',
     current_collaboration_workspace_name: '',
     sender_options: [],
@@ -392,7 +393,9 @@
     roles: [],
     feature_packages: [],
     default_message_type: 'notice',
-    default_audience_type: isTeamScope.value ? 'collaboration_workspace_users' : 'all_users',
+    default_audience_type: isCollaborationScope.value
+      ? 'collaboration_workspace_users'
+      : 'all_users',
     default_priority: 'normal',
     supports_external_link: true
   })
@@ -459,14 +462,14 @@
     expired_at: ''
   })
 
-  const effectiveTeamName = computed(
-    () => options.current_collaboration_workspace_name || currentTeamName.value
+  const effectiveCollaborationWorkspaceName = computed(
+    () => options.current_collaboration_workspace_name || currentCollaborationWorkspaceName.value
   )
 
-  const pageTitle = computed(() => (isTeamScope.value ? '协作空间消息发送' : '消息发送'))
+  const pageTitle = computed(() => (isCollaborationScope.value ? '协作空间消息发送' : '消息发送'))
   const pageDescription = computed(() =>
-    isTeamScope.value
-      ? `以 ${currentWorkspaceLabel.value} 视角给 ${effectiveTeamName.value} 发送通知、消息和待办，模板与发送记录都从这里进入。`
+    isCollaborationScope.value
+      ? `以 ${currentWorkspaceLabel.value} 视角给 ${effectiveCollaborationWorkspaceName.value} 发送通知、消息和待办，模板与发送记录都从这里进入。`
       : '统一给所有用户、协作空间管理员或指定协作空间成员发送站内通知、消息和待办，模板与发送记录都从这里进入。'
   )
 
@@ -492,7 +495,9 @@
 
   const filteredTemplateOptions = computed(() =>
     (options.template_options || []).filter((item) =>
-      isTeamScope.value ? item.owner_scope === 'collaboration' : item.owner_scope === 'platform'
+      isCollaborationScope.value
+        ? item.owner_scope === 'collaboration'
+        : item.owner_scope === 'platform'
     )
   )
 
@@ -506,7 +511,7 @@
 
   const activeSenderDescription = computed(() => {
     if (activeSender.value?.description) return activeSender.value.description
-    return isTeamScope.value
+    return isCollaborationScope.value
       ? '协作空间默认发送人为“协作空间”，也可以改成更具体的协作空间身份。'
       : '平台默认发送人为“平台”，也可以改成平台管理、平台空间等发信身份。'
   })
@@ -534,21 +539,27 @@
   )
 
   const senderScopeText = computed(() => {
-    if (isTeamScope.value) {
-      return `当前授权工作空间为 ${currentWorkspaceName.value}，默认协作空间视图为 ${effectiveTeamName.value}。`
+    if (isCollaborationScope.value) {
+      return `当前授权工作空间为 ${currentWorkspaceName.value}，默认协作空间视图为 ${effectiveCollaborationWorkspaceName.value}。`
     }
     return '当前以平台管理身份发送，可按所有用户、协作空间管理员或指定协作空间成员分发。'
   })
 
-  const senderScopeBadge = computed(() => (isTeamScope.value ? '协作空间发信' : '平台发信'))
+  const senderScopeBadge = computed(() =>
+    isCollaborationScope.value ? '协作空间发信' : '平台发信'
+  )
 
   const showTargetTeams = computed(() => form.audience_type !== 'all_users')
   const showTargetUsers = computed(() => form.audience_type === 'specified_users')
   const showRecipientGroups = computed(() =>
     ['recipient_group', 'role', 'feature_package'].includes(form.audience_type)
   )
-  const targetTeamsLabel = computed(() => (isTeamScope.value ? '目标协作空间' : '目标协作空间'))
-  const targetUsersLabel = computed(() => (isTeamScope.value ? '协作空间成员' : '目标用户'))
+  const targetTeamsLabel = computed(() =>
+    isCollaborationScope.value ? '目标协作空间' : '目标协作空间'
+  )
+  const targetUsersLabel = computed(() =>
+    isCollaborationScope.value ? '协作空间成员' : '目标用户'
+  )
 
   const receiverSummary = computed(() => {
     if (form.audience_type === 'all_users') return '全部有效用户'
@@ -580,8 +591,8 @@
         .map((item) => item.name)
       return names.join('、') || '待选择含功能包规则的接收组'
     }
-    if (isTeamScope.value) {
-      return effectiveTeamName.value
+    if (isCollaborationScope.value) {
+      return effectiveCollaborationWorkspaceName.value
     }
     if (!form.targetCollaborationWorkspaceIds?.length) return '待选择协作空间'
     const names = options.collaboration_workspaces
@@ -595,8 +606,10 @@
     { label: '可用模板', value: (options.template_options || []).length },
     { label: '可选对象', value: (options.audience_options || []).length },
     {
-      label: isTeamScope.value ? '当前协作空间' : '目标协作空间',
-      value: isTeamScope.value ? effectiveTeamName.value : options.collaboration_workspaces.length
+      label: isCollaborationScope.value ? '当前协作空间' : '目标协作空间',
+      value: isCollaborationScope.value
+        ? effectiveCollaborationWorkspaceName.value
+        : options.collaboration_workspaces.length
     }
   ])
   const canDispatch = computed(() => !loadError.value && (options.sender_options || []).length > 0)
@@ -613,7 +626,7 @@
     return normalized || `<p>${fallback}</p>`
   }
   const templateOptionLabel = (template: Api.Message.DispatchTemplateOption) => {
-    if (isTeamScope.value) return `${template.name} · 协作空间模板`
+    if (isCollaborationScope.value) return `${template.name} · 协作空间模板`
     return `${template.name} · 平台模板`
   }
 
@@ -632,10 +645,10 @@
     form.message_type = options.default_message_type || 'notice'
     form.audience_type =
       options.default_audience_type ||
-      (isTeamScope.value ? 'collaboration_workspace_users' : 'all_users')
+      (isCollaborationScope.value ? 'collaboration_workspace_users' : 'all_users')
     form.priority = options.default_priority || 'normal'
     form.targetCollaborationWorkspaceIds =
-      isTeamScope.value && options.current_collaboration_workspace_id
+      isCollaborationScope.value && options.current_collaboration_workspace_id
         ? [options.current_collaboration_workspace_id]
         : []
     form.target_user_ids = []
@@ -665,15 +678,15 @@
     loading.value = true
     loadError.value = ''
     try {
-      ensureTeamContext()
-      if (isTeamScope.value) {
+      ensureCollaborationWorkspaceContext()
+      if (isCollaborationScope.value) {
         await collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
           preferredCollaborationWorkspaceId: currentCollaborationWorkspaceId.value || undefined
         })
       }
       Object.assign(options, createDefaultDispatchOptions())
       const data = await fetchGetMessageDispatchOptions({
-        skipTenantHeader: skipTenantHeader.value
+        skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
       })
       Object.assign(options, normalizeDispatchOptions(data))
       if (
@@ -717,7 +730,7 @@
       form.target_user_ids = []
       return
     }
-    if (isTeamScope.value && options.current_collaboration_workspace_id) {
+    if (isCollaborationScope.value && options.current_collaboration_workspace_id) {
       form.targetCollaborationWorkspaceIds = [options.current_collaboration_workspace_id]
     }
     form.target_user_ids = []
@@ -725,7 +738,7 @@
   }
 
   const submitDispatch = async () => {
-    if (isTeamScope.value && !currentCollaborationWorkspaceId.value) {
+    if (isCollaborationScope.value && !currentCollaborationWorkspaceId.value) {
       await collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
         preferredCollaborationWorkspaceId: currentCollaborationWorkspaceId.value || undefined
       })
@@ -739,7 +752,7 @@
       return
     }
     if (
-      !isTeamScope.value &&
+      !isCollaborationScope.value &&
       showTargetTeams.value &&
       !showTargetUsers.value &&
       !showRecipientGroups.value &&
@@ -781,7 +794,7 @@
           target_group_ids: showRecipientGroups.value ? form.target_group_ids : []
         },
         {
-          skipTenantHeader: skipTenantHeader.value
+          skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
         }
       )
       ElMessage.success(
@@ -795,7 +808,7 @@
       form.biz_type = ''
       form.expired_at = ''
       form.template_id = ''
-      if (!isTeamScope.value) {
+      if (!isCollaborationScope.value) {
         form.targetCollaborationWorkspaceIds = []
       }
       form.target_user_ids = []

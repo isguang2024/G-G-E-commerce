@@ -38,7 +38,7 @@ let unauthorizedTimer: NodeJS.Timeout | null = null
 interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
   showErrorMessage?: boolean
   showSuccessMessage?: boolean
-  skipTenantHeader?: boolean
+  skipAuthWorkspaceHeader?: boolean
   skipCollaborationWorkspaceHeader?: boolean
   skipWorkspaceHeader?: boolean
 }
@@ -70,7 +70,7 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (
     request: InternalAxiosRequestConfig & {
-      skipTenantHeader?: boolean
+      skipAuthWorkspaceHeader?: boolean
       skipCollaborationWorkspaceHeader?: boolean
       skipWorkspaceHeader?: boolean
     }
@@ -84,13 +84,12 @@ axiosInstance.interceptors.request.use(
       request.headers.set('Authorization', token)
     }
 
-    if (!request.skipWorkspaceHeader && currentAuthWorkspaceId) {
+    const skipAuthWorkspaceHeader = Boolean(request.skipAuthWorkspaceHeader)
+    if (!request.skipWorkspaceHeader && !skipAuthWorkspaceHeader && currentAuthWorkspaceId) {
       request.headers.set('X-Auth-Workspace-Id', currentAuthWorkspaceId)
     }
 
-    const skipCollaborationHeader =
-      Boolean(request.skipCollaborationWorkspaceHeader) || Boolean(request.skipTenantHeader)
-    if (!skipCollaborationHeader && currentContextMode === 'collaboration') {
+    if (!request.skipCollaborationWorkspaceHeader && currentContextMode === 'collaboration') {
       if (currentCollaborationWorkspaceId) {
         request.headers.set('X-Collaboration-Workspace-Id', currentCollaborationWorkspaceId)
       }

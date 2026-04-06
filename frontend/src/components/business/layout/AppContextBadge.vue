@@ -42,13 +42,13 @@
     currentAuthWorkspaceType.value === 'personal' ? '个人工作空间' : '协作空间'
   )
   const scopeName = computed(() =>
-    currentContextMode.value === 'platform'
+    currentContextMode.value === 'personal'
       ? currentAuthWorkspace.value?.name || '当前个人工作空间'
       : currentCollaborationWorkspace.value?.name ||
         currentAuthWorkspace.value?.name ||
         '未启用协作空间视图'
   )
-  const tagType = computed(() => (currentContextMode.value === 'platform' ? 'success' : 'warning'))
+  const tagType = computed(() => (currentContextMode.value === 'personal' ? 'success' : 'warning'))
   const teamViewName = computed(() =>
     currentAuthWorkspaceType.value === 'collaboration'
       ? currentCollaborationWorkspace.value?.name ||

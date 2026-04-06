@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
     :title="`权限测试 - ${userTitle}`"
@@ -9,13 +9,13 @@
   >
     <div class="permission-shell" v-loading="loading">
       <div class="dialog-note">
-        这里用于诊断用户在平台或协作空间上下文中的功能权限生效情况。平台角色通过个人工作空间生效；协作空间内权限则由成员身份、协作空间边界和协作空间内部角色共同决定。
+        这里用于诊断用户在个人空间或协作空间中的空间权限生效情况。所有权限都绑定在工作空间上；个人空间和协作空间只表示空间类型，不表示两套不同的权限系统。
       </div>
 
       <div class="toolbar-row">
         <ElSelect v-model="contextType" class="toolbar-select">
-          <ElOption label="平台上下文" value="platform" />
-          <ElOption label="协作空间上下文" value="collaboration" />
+          <ElOption label="个人空间" value="personal" />
+          <ElOption label="协作空间" value="collaboration" />
         </ElSelect>
 
         <ElSelect
@@ -23,14 +23,14 @@
           v-model="selectedCollaborationWorkspaceId"
           filterable
           clearable
-          class="toolbar-select toolbar-select--team"
+          class="toolbar-select toolbar-select--collaborationWorkspace"
           placeholder="请选择协作空间"
         >
           <ElOption
-            v-for="team in teamOptions"
-            :key="team.id"
-            :label="team.name"
-            :value="team.id"
+            v-for="collaborationWorkspace in collaborationWorkspaceOptions"
+            :key="collaborationWorkspace.id"
+            :label="collaborationWorkspace.name"
+            :value="collaborationWorkspace.id"
           />
         </ElSelect>
 
@@ -57,7 +57,9 @@
                 <div class="kv-item">
                   <span class="kv-label">上下文</span>
                   <span class="kv-value">{{
-                    contextType === 'platform' ? '平台' : selectedTeamName || '未选择协作空间'
+                    contextType === 'personal'
+                      ? '个人空间'
+                      : selectedCollaborationWorkspaceName || '未选择协作空间'
                   }}</span>
                 </div>
                 <div class="kv-item">
@@ -89,7 +91,7 @@
                   <span class="kv-label">权限数量</span>
                   <span class="kv-value">
                     {{
-                      contextType === 'platform'
+                      contextType === 'personal'
                         ? (diagnosisData?.snapshot?.actionCount ?? 0)
                         : (diagnosisData?.snapshot?.effectiveActionCount ?? 0)
                     }}
@@ -275,11 +277,17 @@
                       <span class="kv-label">成员命中</span>
                       <span class="kv-value">
                         <ElTag
-                          :type="diagnosisData.teamMember?.matched ? 'success' : 'warning'"
+                          :type="
+                            diagnosisData.collaborationWorkspaceMember?.matched
+                              ? 'success'
+                              : 'warning'
+                          "
                           effect="plain"
                         >
                           {{
-                            diagnosisData.teamMember?.matched ? '已加入协作空间' : '未加入协作空间'
+                            diagnosisData.collaborationWorkspaceMember?.matched
+                              ? '已加入协作空间'
+                              : '未加入协作空间'
                           }}
                         </ElTag>
                       </span>
@@ -287,13 +295,13 @@
                     <div class="kv-item">
                       <span class="kv-label">成员状态</span>
                       <span class="kv-value">{{
-                        formatMemberStatus(diagnosisData.teamMember?.status)
+                        formatMemberStatus(diagnosisData.collaborationWorkspaceMember?.status)
                       }}</span>
                     </div>
                     <div class="kv-item">
                       <span class="kv-label">成员身份</span>
                       <span class="kv-value">{{
-                        formatRoleCode(diagnosisData.teamMember?.roleCode)
+                        formatRoleCode(diagnosisData.collaborationWorkspaceMember?.roleCode)
                       }}</span>
                     </div>
                   </div>
@@ -302,7 +310,7 @@
                   <div class="source-title">当前协作空间功能包</div>
                   <div class="source-tags">
                     <ElTag
-                      v-for="item in diagnosisData.teamPackages || []"
+                      v-for="item in diagnosisData.collaborationWorkspacePackages || []"
                       :key="item.id"
                       effect="plain"
                       type="success"
@@ -310,7 +318,9 @@
                     >
                       {{ item.name }}
                     </ElTag>
-                    <span v-if="!(diagnosisData.teamPackages || []).length" class="empty-text"
+                    <span
+                      v-if="!(diagnosisData.collaborationWorkspacePackages || []).length"
+                      class="empty-text"
                       >当前协作空间未开通功能包</span
                     >
                   </div>
@@ -497,12 +507,12 @@
   const loading = ref(false)
   const testing = ref(false)
   const refreshing = ref(false)
-  const contextType = ref<'platform' | 'collaboration'>('platform')
+  const contextType = ref<'personal' | 'collaboration'>('personal')
   const activeTab = ref<'permission' | 'menus' | 'roles'>('permission')
   const selectedCollaborationWorkspaceId = ref('')
   const permissionKey = ref('')
   const diagnosisData = ref<Api.SystemManage.UserPermissionDiagnosisResponse>()
-  const teamOptions = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
+  const collaborationWorkspaceOptions = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
   const permissionMenus = ref<Api.SystemManage.UserPermissionMenuNode[]>([])
   const menuKeyword = ref('')
   const showHiddenMenus = ref(true)
@@ -536,10 +546,11 @@
     () => props.userData?.nickName || props.userData?.userName || props.userData?.id || ''
   )
 
-  const selectedTeamName = computed(
+  const selectedCollaborationWorkspaceName = computed(
     () =>
-      teamOptions.value.find((item) => item.id === selectedCollaborationWorkspaceId.value)?.name ||
-      ''
+      collaborationWorkspaceOptions.value.find(
+        (item) => item.id === selectedCollaborationWorkspaceId.value
+      )?.name || ''
   )
 
   const summaryItems = computed(() => {
@@ -562,14 +573,14 @@
       {
         label: '功能包',
         value:
-          contextType.value === 'platform'
+          contextType.value === 'personal'
             ? (snapshot.expandedPackageCount ?? 0)
             : (snapshot.expandedPackageCount ?? 0)
       },
       {
-        label: contextType.value === 'platform' ? '权限数' : '协作空间生效权限',
+        label: contextType.value === 'personal' ? '个人空间权限' : '协作空间生效权限',
         value:
-          contextType.value === 'platform'
+          contextType.value === 'personal'
             ? (snapshot.actionCount ?? 0)
             : (snapshot.effectiveActionCount ?? 0),
         type: 'success'
@@ -580,7 +591,7 @@
         type: 'primary'
       }
     )
-    if (contextType.value === 'platform') {
+    if (contextType.value === 'personal') {
       items.push({
         label: '已禁用',
         value: snapshot.disabledActionCount ?? 0,
@@ -616,7 +627,7 @@
 
   watch(contextType, async (value) => {
     if (!visible.value) return
-    if (value === 'platform') {
+    if (value === 'personal') {
       selectedCollaborationWorkspaceId.value = ''
       if (activeTab.value === 'roles') activeTab.value = 'permission'
     }
@@ -637,27 +648,29 @@
   async function loadTeams() {
     const userId = props.userData?.id
     if (!userId) {
-      teamOptions.value = []
+      collaborationWorkspaceOptions.value = []
       return
     }
     try {
-      teamOptions.value = await fetchGetUserCollaborationWorkspaces(userId)
+      collaborationWorkspaceOptions.value = await fetchGetUserCollaborationWorkspaces(userId)
       if (
         contextType.value === 'collaboration' &&
         selectedCollaborationWorkspaceId.value &&
-        !teamOptions.value.some((item) => item.id === selectedCollaborationWorkspaceId.value)
+        !collaborationWorkspaceOptions.value.some(
+          (item) => item.id === selectedCollaborationWorkspaceId.value
+        )
       ) {
         selectedCollaborationWorkspaceId.value = ''
       }
       if (
         contextType.value === 'collaboration' &&
         !selectedCollaborationWorkspaceId.value &&
-        teamOptions.value.length === 1
+        collaborationWorkspaceOptions.value.length === 1
       ) {
-        selectedCollaborationWorkspaceId.value = teamOptions.value[0].id
+        selectedCollaborationWorkspaceId.value = collaborationWorkspaceOptions.value[0].id
       }
     } catch {
-      teamOptions.value = []
+      collaborationWorkspaceOptions.value = []
     }
   }
 
@@ -950,7 +963,7 @@
     width: 160px;
   }
 
-  .toolbar-select--team {
+  .toolbar-select--collaborationWorkspace {
     width: 260px;
   }
 

@@ -18,6 +18,7 @@
   import { SETTING_DEFAULT_CONFIG } from '@/config/setting'
   import { useClipboard } from '@vueuse/core'
   import { useI18n } from 'vue-i18n'
+  import { ElMessage } from 'element-plus'
   import { MenuThemeEnum } from '@/enums/appEnum'
   import { useTheme } from '@/hooks/core/useTheme'
 

@@ -21,6 +21,7 @@
   import '@wangeditor/editor/dist/css/style.css'
   import { onBeforeUnmount, onMounted, shallowRef, computed } from 'vue'
   import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
+  import { ElMessage } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
   import EmojiText from '@/utils/ui/emojo'
   import { IDomEditor, IToolbarConfig, IEditorConfig } from '@wangeditor/editor'

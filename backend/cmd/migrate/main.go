@@ -20,6 +20,7 @@ import (
 	usermodel "github.com/gg-ecommerce/backend/internal/modules/system/user"
 	workspace "github.com/gg-ecommerce/backend/internal/modules/system/workspace"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
+	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/database"
 	"github.com/gg-ecommerce/backend/internal/pkg/logger"
 	"github.com/gg-ecommerce/backend/internal/pkg/password"
@@ -28,7 +29,6 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
 func main() {
@@ -64,17 +64,6 @@ func main() {
 		logger.Info("Public schema reset completed")
 	}
 
-	if *freshMode {
-		logger.Info("Skip legacy permission table rename checks in fresh mode")
-	} else {
-		if err := preparePermissionTableRenames(logger); err != nil {
-			logger.Fatal("Failed to prepare permission table renames", zap.Error(err))
-		}
-		if err := prepareCollaborationWorkspaceRenames(logger); err != nil {
-			logger.Fatal("Failed to prepare collaboration workspace renames", zap.Error(err))
-		}
-	}
-
 	// 自动迁移数据库表结构
 	if err := database.AutoMigrate(); err != nil {
 		logger.Fatal("Migration failed", zap.Error(err))
@@ -82,14 +71,7 @@ func main() {
 
 	logger.Info("Database migration completed successfully!")
 
-	// 历史 named migration 仅用于升级旧库；fresh 重建直接走当前 schema 和默认种子。
-	if *freshMode {
-		logger.Info("Skip historical named migrations in fresh mode")
-	} else {
-		if err := runNamedMigrations(logger); err != nil {
-			logger.Fatal("Named migrations failed", zap.Error(err))
-		}
-	}
+	logger.Info("Historical rename/backfill migrations are disabled; using final workspace schema directly")
 
 	// 初始化默认角色
 	if err := initDefaultRolesNoScope(logger); err != nil {
@@ -209,12 +191,6 @@ func main() {
 		logger.Warn("Failed to sync canonical permission keys", zap.Error(err))
 	} else {
 		logger.Info("Canonical permission keys synchronized successfully")
-	}
-
-	if err := backfillTenantIdentityUserRoles(logger); err != nil {
-		logger.Warn("Failed to backfill tenant identity user roles", zap.Error(err))
-	} else {
-		logger.Info("Tenant identity user roles backfilled successfully")
 	}
 
 	if err := refreshDefaultAccessSnapshots(logger); err != nil {
@@ -2944,7 +2920,7 @@ func backfillTenantIdentityUserRoles(logger *zap.Logger) error {
 		return err
 	}
 
-	boundaryService := teamboundary.NewService(database.DB)
+	boundaryService := collaborationworkspaceboundary.NewService(database.DB)
 	for _, teamID := range touchedTeams {
 		if _, err := boundaryService.RefreshSnapshot(teamID); err != nil {
 			return err
@@ -4208,7 +4184,7 @@ func initDefaultRoleFeaturePackages(logger *zap.Logger) error {
 }
 
 func refreshDefaultAccessSnapshots(logger *zap.Logger) error {
-	boundaryService := teamboundary.NewService(database.DB)
+	boundaryService := collaborationworkspaceboundary.NewService(database.DB)
 	platformService := platformaccess.NewService(database.DB)
 	roleSnapshotService := platformroleaccess.NewService(database.DB)
 	refresher := permissionrefresh.NewService(database.DB, boundaryService, platformService, roleSnapshotService)
@@ -4222,7 +4198,7 @@ func refreshDefaultAccessSnapshots(logger *zap.Logger) error {
 	for _, role := range roles {
 		roleIDs = append(roleIDs, role.ID)
 	}
-	if err := refresher.RefreshPlatformRoles(roleIDs); err != nil {
+	if err := refresher.RefreshPersonalWorkspaceRoles(roleIDs); err != nil {
 		return err
 	}
 

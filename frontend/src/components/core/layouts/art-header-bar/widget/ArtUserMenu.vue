@@ -1,4 +1,4 @@
-<!-- 用户菜单 -->
+﻿<!-- 用户菜单 -->
 <template>
   <ElPopover
     ref="userMenuPopover"
@@ -32,13 +32,15 @@
             <span class="block mt-0.5 text-xs text-g-500 truncate">{{ userInfo.email }}</span>
           </div>
         </div>
-        <div v-if="workspaceList.length" class="team-switcher-wrap">
-          <ArtTenantSwitcher compact />
+        <div v-if="workspaceList.length" class="workspace-switcher-wrap">
+          <ArtCollaborationWorkspaceSwitcher compact />
         </div>
         <ul class="py-4 mt-3 border-t border-g-300/80">
           <li
             v-if="
-              hasPlatformAccess && currentAuthWorkspaceType !== 'personal' && personalWorkspace?.id
+              hasPersonalWorkspaceAccess &&
+              currentAuthWorkspaceType !== 'personal' &&
+              personalWorkspace?.id
             "
             class="btn-item"
             @click="enterPlatformManagement"
@@ -88,7 +90,7 @@
     refreshUserMenus,
     refreshUserAccessAndMenus
   } from '@/router'
-  import ArtTenantSwitcher from './ArtTenantSwitcher.vue'
+  import ArtCollaborationWorkspaceSwitcher from './ArtCollaborationWorkspaceSwitcher.vue'
   import { findRegisteredRouteByPath } from '@/utils/router'
 
   defineOptions({ name: 'ArtUserMenu' })
@@ -102,7 +104,7 @@
   const menuSpaceStore = useMenuSpaceStore()
 
   const { getUserInfo: userInfo } = storeToRefs(userStore)
-  const { hasPlatformAccess } = storeToRefs(collaborationWorkspaceStore)
+  const { hasPersonalWorkspaceAccess } = storeToRefs(collaborationWorkspaceStore)
   const { workspaceList, personalWorkspace, currentAuthWorkspaceType } = storeToRefs(workspaceStore)
   const userMenuPopover = ref()
 
@@ -290,7 +292,7 @@
     hover:shadow-xl;
   }
 
-  .team-switcher-wrap {
+  .workspace-switcher-wrap {
     padding-top: 14px;
     margin-top: 12px;
     border-top: 1px solid rgb(209 213 219 / 0.8);

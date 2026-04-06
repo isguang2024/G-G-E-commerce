@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="message-center-page art-full-height">
     <AdminWorkspaceHero
       :title="`消息中心 · ${workspaceName}`"
@@ -89,9 +89,11 @@
             <p class="message-center-item__summary">{{ resolveSummary(item) }}</p>
             <div class="message-center-item__meta">
               <span class="message-center-chip">{{ resolveSender(item) }}</span>
-              <span v-if="resolveTeamTag(item)" class="message-center-chip is-team">{{
-                resolveTeamTag(item)
-              }}</span>
+              <span
+                v-if="resolveCollaborationWorkspaceTag(item)"
+                class="message-center-chip is-team"
+                >{{ resolveCollaborationWorkspaceTag(item) }}</span
+              >
               <span class="message-center-chip is-soft">{{ resolveTypeLabel(item) }}</span>
             </div>
           </button>
@@ -122,9 +124,11 @@
               >
             </div>
             <div class="message-center-detail__status">
-              <span v-if="resolveTeamTag(detail)" class="message-center-chip is-team">{{
-                resolveTeamTag(detail)
-              }}</span>
+              <span
+                v-if="resolveCollaborationWorkspaceTag(detail)"
+                class="message-center-chip is-team"
+                >{{ resolveCollaborationWorkspaceTag(detail) }}</span
+              >
               <span class="message-center-chip">{{
                 detail.delivery_status === 'unread' ? '未读' : '已读'
               }}</span>
@@ -298,16 +302,16 @@
     return plainTextFromHtml(item.summary) || plainTextFromHtml(item.content) || '点击查看详情'
   }
 
-  const resolveTeamName = (item: Api.Message.InboxItem) => {
+  const resolveCollaborationWorkspaceName = (item: Api.Message.InboxItem) => {
     const collaborationWorkspaceId =
-      item.scope_type === 'collaboration' || item.scope_type === 'collaboration'
+      item.scope_type === 'collaboration'
         ? item.scope_id ||
           item.recipient_collaboration_workspace_id ||
           item.target_collaboration_workspace_id ||
-          item.target_collaboration_workspace_id
+          item.recipient_collaboration_workspace_id
         : item.recipient_collaboration_workspace_id ||
           item.target_collaboration_workspace_id ||
-          item.target_collaboration_workspace_id ||
+          item.recipient_collaboration_workspace_id ||
           item.scope_id
     if (!collaborationWorkspaceId) return ''
     return (
@@ -317,9 +321,9 @@
     )
   }
 
-  const resolveTeamTag = (item: Api.Message.InboxItem) => {
-    const teamName = resolveTeamName(item)
-    return teamName ? `协作空间视图 · ${teamName}` : ''
+  const resolveCollaborationWorkspaceTag = (item: Api.Message.InboxItem) => {
+    const collaborationWorkspaceName = resolveCollaborationWorkspaceName(item)
+    return collaborationWorkspaceName ? `协作空间视图 · ${collaborationWorkspaceName}` : ''
   }
 
   const resolveTodoStatus = (value?: string) => {

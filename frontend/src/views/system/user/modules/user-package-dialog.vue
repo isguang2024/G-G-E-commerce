@@ -9,7 +9,7 @@
   >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        这里维护的是该用户个人工作空间上的平台功能包绑定。它会与个人工作空间中的平台角色功能包做并集生效，只影响平台侧权限与平台菜单，不直接决定协作空间内权限。
+        这里维护的是该用户个人空间上的功能包绑定。它会与个人空间中的角色功能包做并集生效，只影响个人空间下的权限与菜单，不直接决定协作空间内权限。
       </div>
 
       <div class="summary-card">
@@ -28,8 +28,8 @@
         />
         <ElSelect v-model="contextFilter" class="toolbar-select">
           <ElOption label="全部上下文" value="" />
-          <ElOption label="平台" value="platform" />
-          <ElOption label="协作空间" value="team" />
+          <ElOption label="个人空间" value="platform" />
+          <ElOption label="协作空间" value="collaboration" />
           <ElOption label="通用" value="common" />
         </ElSelect>
         <ElSelect v-model="selectionFilter" class="toolbar-select">
@@ -253,7 +253,7 @@
 
   function formatContext(contextType?: string) {
     if (contextType === 'common') return '通用'
-    if (contextType === 'platform') return '平台'
+    if (contextType === 'platform') return '个人空间'
     return '协作空间'
   }
 

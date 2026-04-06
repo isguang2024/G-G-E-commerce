@@ -127,10 +127,10 @@
   import FeaturePackageGrantPreview from '@/components/business/permission/FeaturePackageGrantPreview.vue'
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import {
-    fetchGetMyTeamBoundaryPackages,
-    fetchGetMyTeamBoundaryRolePackages,
-    fetchSetMyTeamBoundaryRolePackages
-  } from '@/api/team'
+    fetchGetMyCollaborationWorkspaceBoundaryPackages,
+    fetchGetMyCollaborationWorkspaceBoundaryRolePackages,
+    fetchSetMyCollaborationWorkspaceBoundaryRolePackages
+  } from '@/api/collaboration-workspace'
 
   interface Props {
     modelValue: boolean
@@ -220,8 +220,11 @@
     resetFilters()
     try {
       const [listRes, roleRes] = await Promise.all([
-        fetchGetMyTeamBoundaryPackages(currentAppKey.value),
-        fetchGetMyTeamBoundaryRolePackages(props.roleData.roleId, currentAppKey.value)
+        fetchGetMyCollaborationWorkspaceBoundaryPackages(currentAppKey.value),
+        fetchGetMyCollaborationWorkspaceBoundaryRolePackages(
+          props.roleData.roleId,
+          currentAppKey.value
+        )
       ])
       packages.value = listRes?.packages || []
       selectedPackageIds.value = [...(roleRes?.package_ids || [])]
@@ -294,7 +297,7 @@
     }
     saving.value = true
     try {
-      await fetchSetMyTeamBoundaryRolePackages(
+      await fetchSetMyCollaborationWorkspaceBoundaryRolePackages(
         props.roleData.roleId,
         selectedPackageIds.value,
         currentAppKey.value

@@ -23,6 +23,7 @@
   import FileSaver from 'file-saver'
   import { ref, computed, nextTick } from 'vue'
   import { Loading } from '@element-plus/icons-vue'
+  import { ElMessage } from 'element-plus'
   import type { ButtonType } from 'element-plus'
   import { useThrottleFn } from '@vueuse/core'
 

@@ -1,4 +1,4 @@
-<!-- 顶部栏 -->
+﻿<!-- 顶部栏 -->
 <template>
   <div
     class="w-full bg-[var(--default-bg-color)]"
@@ -61,7 +61,7 @@
       </div>
 
       <div class="flex-c gap-2.5">
-        <ArtTenantSwitcher class="max-lg:!hidden" />
+        <ArtCollaborationWorkspaceSwitcher class="max-lg:!hidden" />
 
         <!-- 搜索 -->
         <div
@@ -178,7 +178,7 @@
   import { themeAnimation } from '@/utils/ui/animation'
   import { useCommon } from '@/hooks/core/useCommon'
   import { useHeaderBar } from '@/hooks/core/useHeaderBar'
-  import ArtTenantSwitcher from './widget/ArtTenantSwitcher.vue'
+  import ArtCollaborationWorkspaceSwitcher from './widget/ArtCollaborationWorkspaceSwitcher.vue'
   import ArtUserMenu from './widget/ArtUserMenu.vue'
 
   defineOptions({ name: 'ArtHeaderBar' })

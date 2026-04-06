@@ -103,12 +103,12 @@ type dispatchSenderOption struct {
 }
 
 type dispatchUserOption struct {
-	ID                           uuid.UUID  `json:"id"`
-	Name                         string     `json:"name"`
-	DisplayName                  string     `json:"display_name"`
-	Description                  string     `json:"description"`
-	CollaborationWorkspaceID     *uuid.UUID `json:"collaboration_workspace_id"`
-	CollaborationWorkspaceName   string     `json:"collaboration_workspace_name"`
+	ID                         uuid.UUID  `json:"id"`
+	Name                       string     `json:"name"`
+	DisplayName                string     `json:"display_name"`
+	Description                string     `json:"description"`
+	CollaborationWorkspaceID   *uuid.UUID `json:"collaboration_workspace_id"`
+	CollaborationWorkspaceName string     `json:"collaboration_workspace_name"`
 }
 
 type dispatchRecipientGroupOption struct {
@@ -134,22 +134,22 @@ type dispatchFeaturePackageOption struct {
 }
 
 type dispatchOptions struct {
-	SenderScope                        string                               `json:"sender_scope"`
-	CurrentCollaborationWorkspaceID    string                               `json:"current_collaboration_workspace_id"`
-	CurrentCollaborationWorkspaceName  string                               `json:"current_collaboration_workspace_name"`
-	SenderOptions                      []dispatchSenderOption               `json:"sender_options"`
-	DefaultSenderID                    string                               `json:"default_sender_id"`
-	AudienceOptions                    []dispatchAudienceOption             `json:"audience_options"`
-	TemplateOptions                    []dispatchTemplateOption             `json:"template_options"`
-	CollaborationWorkspaces            []dispatchCollaborationWorkspaceOption `json:"collaboration_workspaces"`
-	Users                              []dispatchUserOption                 `json:"users"`
-	RecipientGroups                    []dispatchRecipientGroupOption       `json:"recipient_groups"`
-	Roles                              []dispatchRoleOption                 `json:"roles"`
-	FeaturePackages                    []dispatchFeaturePackageOption       `json:"feature_packages"`
-	DefaultMessageType                 string                               `json:"default_message_type"`
-	DefaultAudienceType                string                               `json:"default_audience_type"`
-	DefaultPriority                    string                               `json:"default_priority"`
-	SupportsExternalLink               bool                                 `json:"supports_external_link"`
+	SenderScope                       string                                 `json:"sender_scope"`
+	CurrentCollaborationWorkspaceID   string                                 `json:"current_collaboration_workspace_id"`
+	CurrentCollaborationWorkspaceName string                                 `json:"current_collaboration_workspace_name"`
+	SenderOptions                     []dispatchSenderOption                 `json:"sender_options"`
+	DefaultSenderID                   string                                 `json:"default_sender_id"`
+	AudienceOptions                   []dispatchAudienceOption               `json:"audience_options"`
+	TemplateOptions                   []dispatchTemplateOption               `json:"template_options"`
+	CollaborationWorkspaces           []dispatchCollaborationWorkspaceOption `json:"collaboration_workspaces"`
+	Users                             []dispatchUserOption                   `json:"users"`
+	RecipientGroups                   []dispatchRecipientGroupOption         `json:"recipient_groups"`
+	Roles                             []dispatchRoleOption                   `json:"roles"`
+	FeaturePackages                   []dispatchFeaturePackageOption         `json:"feature_packages"`
+	DefaultMessageType                string                                 `json:"default_message_type"`
+	DefaultAudienceType               string                                 `json:"default_audience_type"`
+	DefaultPriority                   string                                 `json:"default_priority"`
+	SupportsExternalLink              bool                                   `json:"supports_external_link"`
 }
 
 type dispatchRequest struct {
@@ -339,26 +339,26 @@ type dispatchRecordListResult struct {
 }
 
 type dispatchRecordListItem struct {
-	ID                             uuid.UUID  `json:"id"`
-	Title                          string     `json:"title"`
-	Summary                        string     `json:"summary"`
-	Content                        string     `json:"content"`
-	MessageType                    string     `json:"message_type"`
-	AudienceType                   string     `json:"audience_type"`
-	ScopeType                      string     `json:"scope_type"`
-	ScopeID                        *uuid.UUID `json:"scope_id"`
-	TargetCollaborationWorkspaceID *uuid.UUID `json:"target_collaboration_workspace_id"`
+	ID                               uuid.UUID  `json:"id"`
+	Title                            string     `json:"title"`
+	Summary                          string     `json:"summary"`
+	Content                          string     `json:"content"`
+	MessageType                      string     `json:"message_type"`
+	AudienceType                     string     `json:"audience_type"`
+	ScopeType                        string     `json:"scope_type"`
+	ScopeID                          *uuid.UUID `json:"scope_id"`
+	TargetCollaborationWorkspaceID   *uuid.UUID `json:"target_collaboration_workspace_id"`
 	TargetCollaborationWorkspaceName string     `json:"target_collaboration_workspace_name"`
-	SenderName                     string     `json:"sender_name"`
-	TemplateName                   string     `json:"template_name"`
-	Priority                       string     `json:"priority"`
-	Status                         string     `json:"status"`
-	PublishedAt                    *time.Time `json:"published_at"`
-	CreatedAt                      time.Time  `json:"created_at"`
-	DeliveryCount                  int64      `json:"delivery_count"`
-	ReadCount                      int64      `json:"read_count"`
-	UnreadCount                    int64      `json:"unread_count"`
-	PendingTodoCount               int64      `json:"pending_todo_count"`
+	SenderName                       string     `json:"sender_name"`
+	TemplateName                     string     `json:"template_name"`
+	Priority                         string     `json:"priority"`
+	Status                           string     `json:"status"`
+	PublishedAt                      *time.Time `json:"published_at"`
+	CreatedAt                        time.Time  `json:"created_at"`
+	DeliveryCount                    int64      `json:"delivery_count"`
+	ReadCount                        int64      `json:"read_count"`
+	UnreadCount                      int64      `json:"unread_count"`
+	PendingTodoCount                 int64      `json:"pending_todo_count"`
 }
 
 type dispatchRecordDeliveryItem struct {
@@ -1447,26 +1447,26 @@ func (s *messageService) GetDispatchRecordDetail(tenantID *uuid.UUID, recordID s
 	}
 
 	type dispatchRecordDetailRow struct {
-		ID                             uuid.UUID  `gorm:"column:id"`
-		Title                          string     `gorm:"column:title"`
-		Summary                        string     `gorm:"column:summary"`
-		Content                        string     `gorm:"column:content"`
-		MessageType                    string     `gorm:"column:message_type"`
-		AudienceType                   string     `gorm:"column:audience_type"`
-		ScopeType                      string     `gorm:"column:scope_type"`
-		ScopeID                        *uuid.UUID `gorm:"column:scope_id"`
-		TargetCollaborationWorkspaceID *uuid.UUID `gorm:"column:target_collaboration_workspace_id"`
-		TargetCollaborationWorkspaceName string   `gorm:"column:target_collaboration_workspace_name"`
-		SenderName                     string     `gorm:"column:sender_name"`
-		TemplateName                   string     `gorm:"column:template_name"`
-		Priority                       string     `gorm:"column:priority"`
-		Status                         string     `gorm:"column:status"`
-		PublishedAt                    *time.Time `gorm:"column:published_at"`
-		CreatedAt                      time.Time  `gorm:"column:created_at"`
-		DeliveryCount                  int64      `gorm:"column:delivery_count"`
-		ReadCount                      int64      `gorm:"column:read_count"`
-		UnreadCount                    int64      `gorm:"column:unread_count"`
-		PendingTodoCount               int64      `gorm:"column:pending_todo_count"`
+		ID                               uuid.UUID  `gorm:"column:id"`
+		Title                            string     `gorm:"column:title"`
+		Summary                          string     `gorm:"column:summary"`
+		Content                          string     `gorm:"column:content"`
+		MessageType                      string     `gorm:"column:message_type"`
+		AudienceType                     string     `gorm:"column:audience_type"`
+		ScopeType                        string     `gorm:"column:scope_type"`
+		ScopeID                          *uuid.UUID `gorm:"column:scope_id"`
+		TargetCollaborationWorkspaceID   *uuid.UUID `gorm:"column:target_collaboration_workspace_id"`
+		TargetCollaborationWorkspaceName string     `gorm:"column:target_collaboration_workspace_name"`
+		SenderName                       string     `gorm:"column:sender_name"`
+		TemplateName                     string     `gorm:"column:template_name"`
+		Priority                         string     `gorm:"column:priority"`
+		Status                           string     `gorm:"column:status"`
+		PublishedAt                      *time.Time `gorm:"column:published_at"`
+		CreatedAt                        time.Time  `gorm:"column:created_at"`
+		DeliveryCount                    int64      `gorm:"column:delivery_count"`
+		ReadCount                        int64      `gorm:"column:read_count"`
+		UnreadCount                      int64      `gorm:"column:unread_count"`
+		PendingTodoCount                 int64      `gorm:"column:pending_todo_count"`
 	}
 
 	var row dispatchRecordDetailRow
@@ -1508,26 +1508,26 @@ func (s *messageService) GetDispatchRecordDetail(tenantID *uuid.UUID, recordID s
 
 	detail := dispatchRecordDetail{
 		dispatchRecordListItem: dispatchRecordListItem{
-			ID:                             row.ID,
-			Title:                          row.Title,
-			Summary:                        row.Summary,
-			Content:                        row.Content,
-			MessageType:                    row.MessageType,
-			AudienceType:                   row.AudienceType,
-			ScopeType:                      row.ScopeType,
-			ScopeID:                        row.ScopeID,
-			TargetCollaborationWorkspaceID: s.resolveCollaborationWorkspaceIDPtr(row.TargetCollaborationWorkspaceID),
+			ID:                               row.ID,
+			Title:                            row.Title,
+			Summary:                          row.Summary,
+			Content:                          row.Content,
+			MessageType:                      row.MessageType,
+			AudienceType:                     row.AudienceType,
+			ScopeType:                        row.ScopeType,
+			ScopeID:                          row.ScopeID,
+			TargetCollaborationWorkspaceID:   s.resolveCollaborationWorkspaceIDPtr(row.TargetCollaborationWorkspaceID),
 			TargetCollaborationWorkspaceName: row.TargetCollaborationWorkspaceName,
-			SenderName:                     row.SenderName,
-			TemplateName:                   row.TemplateName,
-			Priority:                       row.Priority,
-			Status:                         row.Status,
-			PublishedAt:                    row.PublishedAt,
-			CreatedAt:                      row.CreatedAt,
-			DeliveryCount:                  row.DeliveryCount,
-			ReadCount:                      row.ReadCount,
-			UnreadCount:                    row.UnreadCount,
-			PendingTodoCount:               row.PendingTodoCount,
+			SenderName:                       row.SenderName,
+			TemplateName:                     row.TemplateName,
+			Priority:                         row.Priority,
+			Status:                           row.Status,
+			PublishedAt:                      row.PublishedAt,
+			CreatedAt:                        row.CreatedAt,
+			DeliveryCount:                    row.DeliveryCount,
+			ReadCount:                        row.ReadCount,
+			UnreadCount:                      row.UnreadCount,
+			PendingTodoCount:                 row.PendingTodoCount,
 		},
 		Deliveries: make([]dispatchRecordDeliveryItem, 0),
 	}
@@ -2651,11 +2651,11 @@ func (s *messageService) loadGroupRecipientsByRuleType(groupIDs []uuid.UUID, ten
 func (s *messageService) listDispatchUsers(tenantID *uuid.UUID) ([]dispatchUserOption, error) {
 	if tenantID != nil {
 		type row struct {
-			UserID                   uuid.UUID `gorm:"column:user_id"`
-			Username                 string    `gorm:"column:username"`
-			Nickname                 string    `gorm:"column:nickname"`
-			CollaborationWorkspaceID uuid.UUID `gorm:"column:collaboration_workspace_id"`
-			CollaborationWorkspaceName string  `gorm:"column:collaboration_workspace_name"`
+			UserID                     uuid.UUID `gorm:"column:user_id"`
+			Username                   string    `gorm:"column:username"`
+			Nickname                   string    `gorm:"column:nickname"`
+			CollaborationWorkspaceID   uuid.UUID `gorm:"column:collaboration_workspace_id"`
+			CollaborationWorkspaceName string    `gorm:"column:collaboration_workspace_name"`
 		}
 		var rows []row
 		if err := s.db.Table("collaboration_workspace_members").
@@ -2677,11 +2677,11 @@ func (s *messageService) listDispatchUsers(tenantID *uuid.UUID) ([]dispatchUserO
 			}
 			team := row.CollaborationWorkspaceID
 			result = append(result, dispatchUserOption{
-				ID:                       row.UserID,
-				Name:                     row.Username,
-				DisplayName:              name,
-				Description:              row.CollaborationWorkspaceName,
-				CollaborationWorkspaceID: &team,
+				ID:                         row.UserID,
+				Name:                       row.Username,
+				DisplayName:                name,
+				Description:                row.CollaborationWorkspaceName,
+				CollaborationWorkspaceID:   &team,
 				CollaborationWorkspaceName: row.CollaborationWorkspaceName,
 			})
 		}
@@ -2950,7 +2950,7 @@ func (s *messageService) loadRecipientGroupTargets(groupID uuid.UUID) ([]models.
 func (s *messageService) loadRecipientGroupTargetItems(groupID uuid.UUID) ([]messageRecipientGroupTargetItem, error) {
 	type row struct {
 		models.MessageRecipientGroupTarget
-		UserName   string `gorm:"column:user_name"`
+		UserName                   string `gorm:"column:user_name"`
 		CollaborationWorkspaceName string `gorm:"column:collaboration_workspace_name"`
 	}
 	var rows []row

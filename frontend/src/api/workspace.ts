@@ -11,6 +11,18 @@ function normalizeWorkspace(item: any): Api.SystemManage.WorkspaceItem {
     ownerUserId: item?.owner_user_id || item?.ownerUserId || '',
     collaborationWorkspaceId:
       item?.collaboration_workspace_id || item?.collaborationWorkspaceId || '',
+    currentCollaborationWorkspaceId:
+      item?.current_collaboration_workspace_id ||
+      item?.currentCollaborationWorkspaceId ||
+      item?.collaboration_workspace_id ||
+      item?.collaborationWorkspaceId ||
+      '',
+    currentCollaborationWorkspaceName:
+      item?.current_collaboration_workspace_name ||
+      item?.currentCollaborationWorkspaceName ||
+      item?.collaboration_workspace_name ||
+      item?.collaborationWorkspaceName ||
+      '',
     status: item?.status || 'active'
   }
 }
@@ -18,6 +30,7 @@ function normalizeWorkspace(item: any): Api.SystemManage.WorkspaceItem {
 export async function fetchGetMyWorkspaces() {
   const res = await request.get<{ records: any[]; total: number }>({
     url: `${WORKSPACE_BASE}/my`,
+    skipAuthWorkspaceHeader: true,
     skipCollaborationWorkspaceHeader: true,
     showErrorMessage: false
   })
@@ -31,6 +44,7 @@ export async function fetchGetMyWorkspaces() {
 export async function fetchGetCurrentWorkspace() {
   const res = await request.get<any>({
     url: `${WORKSPACE_BASE}/current`,
+    skipAuthWorkspaceHeader: true,
     skipCollaborationWorkspaceHeader: true,
     showErrorMessage: false
   })
@@ -40,6 +54,7 @@ export async function fetchGetCurrentWorkspace() {
 export async function fetchGetWorkspace(workspaceId: string) {
   const res = await request.get<any>({
     url: `${WORKSPACE_BASE}/${workspaceId}`,
+    skipAuthWorkspaceHeader: true,
     skipCollaborationWorkspaceHeader: true,
     showErrorMessage: false
   })
@@ -55,6 +70,7 @@ export function fetchSwitchWorkspace(workspaceId: string) {
     workspace: Api.SystemManage.WorkspaceItem
   }>({
     url: `${WORKSPACE_BASE}/switch`,
+    skipAuthWorkspaceHeader: true,
     skipCollaborationWorkspaceHeader: true,
     data: {
       workspace_id: workspaceId

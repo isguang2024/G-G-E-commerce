@@ -224,7 +224,7 @@ func (s *roleService) Update(id uuid.UUID, req *dto.RoleUpdateRequest) error {
 		return err
 	}
 	if s.refresher != nil {
-		return s.refresher.RefreshPlatformRole(id)
+		return s.refresher.RefreshPersonalWorkspaceRole(id)
 	}
 	return nil
 }
@@ -274,7 +274,7 @@ func (s *roleService) Delete(id uuid.UUID) error {
 		return err
 	}
 	if s.refresher != nil {
-		return s.refresher.RefreshPlatformUsers(affectedUserIDs)
+		return s.refresher.RefreshPersonalWorkspaceUsers(affectedUserIDs)
 	}
 	return nil
 }
@@ -325,8 +325,8 @@ func (s *roleService) SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, 
 			if appscope.Normalize(pkg.AppKey) != normalizedAppKey {
 				return errors.New("包含不属于当前应用的功能包")
 			}
-			if !supportsPlatformPackageContext(pkg.ContextType) {
-				return errors.New("包含不支持平台上下文的功能包")
+			if !supportsPersonalWorkspacePackageContext(pkg.ContextType) {
+				return errors.New("包含不支持个人空间权限的功能包")
 			}
 		}
 	}
@@ -334,12 +334,12 @@ func (s *roleService) SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, 
 		return err
 	}
 	if s.refresher != nil {
-		return s.refresher.RefreshPlatformRole(roleID)
+		return s.refresher.RefreshPersonalWorkspaceRole(roleID)
 	}
 	return nil
 }
 
-func supportsPlatformPackageContext(contextType string) bool {
+func supportsPersonalWorkspacePackageContext(contextType string) bool {
 	switch strings.TrimSpace(contextType) {
 	case "platform", "common", "platform,team", "team,platform":
 		return true
@@ -380,7 +380,7 @@ func (s *roleService) SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID, appKey
 		return err
 	}
 	if s.refresher != nil {
-		return s.refresher.RefreshPlatformRole(roleID)
+		return s.refresher.RefreshPersonalWorkspaceRole(roleID)
 	}
 	return nil
 }
@@ -437,7 +437,7 @@ func (s *roleService) SetRoleKeys(roleID uuid.UUID, keys []user.RoleKeyPermissio
 		return err
 	}
 	if s.refresher != nil {
-		return s.refresher.RefreshPlatformRole(roleID)
+		return s.refresher.RefreshPersonalWorkspaceRole(roleID)
 	}
 	return nil
 }

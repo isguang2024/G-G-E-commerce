@@ -109,6 +109,7 @@
 <script setup lang="ts">
   import { Lock, Unlock } from '@element-plus/icons-vue'
   import type { FormInstance, FormRules } from 'element-plus'
+  import { ElMessage } from 'element-plus'
   import { useI18n } from 'vue-i18n'
   import CryptoJS from 'crypto-js'
   import { useUserStore } from '@/store/modules/user'

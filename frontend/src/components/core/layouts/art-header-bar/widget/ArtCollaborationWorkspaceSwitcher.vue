@@ -1,13 +1,13 @@
-<template>
+﻿<template>
   <div
     v-if="shouldShowSwitcher"
-    class="tenant-switcher"
-    :class="{ 'max-md:!hidden': !compact, 'tenant-switcher-compact': compact }"
+    class="collaboration-workspace-switcher"
+    :class="{ 'max-md:!hidden': !compact, 'collaboration-workspace-switcher-compact': compact }"
   >
-    <div v-if="compact" class="tenant-label">{{ currentContextLabel }}</div>
+    <div v-if="compact" class="collaboration-workspace-label">{{ currentContextLabel }}</div>
     <ElSelect
       :model-value="selectedValue"
-      class="tenant-select"
+      class="collaboration-workspace-select"
       size="default"
       placeholder="切换工作空间"
       :loading="loading"
@@ -43,7 +43,7 @@
   import { refreshCurrentUserInfoContext, refreshUserMenus } from '@/router'
   import { findRegisteredRouteByPath } from '@/utils/router'
 
-  defineOptions({ name: 'ArtTenantSwitcher' })
+  defineOptions({ name: 'ArtCollaborationWorkspaceSwitcher' })
   withDefaults(defineProps<{ compact?: boolean }>(), {
     compact: false
   })
@@ -123,24 +123,24 @@
 </script>
 
 <style scoped lang="scss">
-  .tenant-switcher {
+  .collaboration-workspace-switcher {
     min-width: 210px;
     margin-right: 6px;
   }
 
-  .tenant-switcher-compact {
+  .collaboration-workspace-switcher-compact {
     width: 100%;
     min-width: 0;
     margin-right: 0;
   }
 
-  .tenant-label {
+  .collaboration-workspace-label {
     margin-bottom: 8px;
     font-size: 12px;
     color: var(--art-text-gray-600);
   }
 
-  .tenant-select {
+  .collaboration-workspace-select {
     width: 100%;
   }
 
@@ -153,7 +153,7 @@
     box-shadow: inset 0 0 0 1px rgb(226 232 240 / 0.95);
   }
 
-  .tenant-switcher-compact :deep(.el-select__wrapper) {
+  .collaboration-workspace-switcher-compact :deep(.el-select__wrapper) {
     min-height: 40px;
     background:
       radial-gradient(circle at top left, rgb(255 255 255 / 0.96), transparent 58%),

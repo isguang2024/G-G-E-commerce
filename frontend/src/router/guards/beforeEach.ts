@@ -50,7 +50,7 @@ import { loadingService } from '@/utils/ui'
 import { useCommon } from '@/hooks/core/useCommon'
 import { useWorktabStore } from '@/store/modules/worktab'
 import {
-  hasPlatformAccessByUserInfo,
+  hasPersonalWorkspaceAccessByUserInfo,
   useCollaborationWorkspaceStore
 } from '@/store/modules/collaboration-workspace'
 import { useWorkspaceStore } from '@/store/modules/workspace'
@@ -243,7 +243,9 @@ export async function refreshCurrentUserInfoContext(): Promise<void> {
     ...buildFrontendUserInfo(data)
   }
   userStore.setUserInfo(mergedInfo)
-  collaborationWorkspaceStore.setPlatformAccess(hasPlatformAccessByUserInfo(mergedInfo))
+  collaborationWorkspaceStore.setPersonalWorkspaceAccess(
+    hasPersonalWorkspaceAccessByUserInfo(mergedInfo)
+  )
   await collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
     preferredCollaborationWorkspaceId: data.current_collaboration_workspace_id || '',
     preferredLegacyCollaborationWorkspaceId:
@@ -252,7 +254,7 @@ export async function refreshCurrentUserInfoContext(): Promise<void> {
       workspaceStore.currentAuthWorkspaceId || data.current_auth_workspace_id || '',
     preferredWorkspaceType:
       workspaceStore.currentAuthWorkspaceType || data.current_auth_workspace_type || '',
-    preferPlatform: hasPlatformAccessByUserInfo(mergedInfo)
+    preferPersonalWorkspace: hasPersonalWorkspaceAccessByUserInfo(mergedInfo)
   })
   menuSpaceStore.syncRuntimeHost()
   await menuSpaceStore.refreshRuntimeConfig(true)
@@ -624,7 +626,9 @@ async function fetchUserInfo(preferredSpaceKey = ''): Promise<void> {
   userStore.syncLoginUserIdentity(`${frontendUserInfo.userId || frontendUserInfo.id || ''}`.trim())
   userStore.setUserInfo(frontendUserInfo)
   userStore.checkAndClearWorktabs()
-  collaborationWorkspaceStore.setPlatformAccess(hasPlatformAccessByUserInfo(frontendUserInfo))
+  collaborationWorkspaceStore.setPersonalWorkspaceAccess(
+    hasPersonalWorkspaceAccessByUserInfo(frontendUserInfo)
+  )
   menuSpaceStore.syncRuntimeHost()
   await menuSpaceStore.refreshRuntimeConfig(true)
   await menuSpaceStore.syncResolvedCurrentSpace(preferredSpaceKey)
@@ -634,7 +638,7 @@ async function fetchUserInfo(preferredSpaceKey = ''): Promise<void> {
       data.collaboration_workspace_id || data.current_collaboration_workspace_id || '',
     preferredWorkspaceId: data.current_auth_workspace_id || '',
     preferredWorkspaceType: data.current_auth_workspace_type || '',
-    preferPlatform: hasPlatformAccessByUserInfo(frontendUserInfo)
+    preferPersonalWorkspace: hasPersonalWorkspaceAccessByUserInfo(frontendUserInfo)
   })
   if (
     workspaceStore.currentAuthWorkspaceType !== (data.current_auth_workspace_type || 'personal') ||

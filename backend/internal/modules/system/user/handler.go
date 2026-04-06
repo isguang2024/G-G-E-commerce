@@ -16,13 +16,13 @@ import (
 	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
 	"github.com/gg-ecommerce/backend/internal/pkg/appscope"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
+	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
 )
 
-const tenantContextHeader = "X-Collaboration-Workspace-Id"
+const collaborationWorkspaceContextHeader = "X-Collaboration-Workspace-Id"
 
 type UserHandler struct {
 	db             *gorm.DB
@@ -34,19 +34,19 @@ type UserHandler struct {
 		GetByPermissionKey(permissionKey string) (*PermissionKey, error)
 	}
 	platformService platformaccess.Service
-	boundaryService teamboundary.Service
+	boundaryService collaborationworkspaceboundary.Service
 	authzService    interface {
-		Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
-		AuthorizeInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
+		Authorize(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
+		AuthorizeInApp(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, appKey string, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
 	}
 	roleRepo interface {
 		GetByIDs(ids []uuid.UUID) ([]Role, error)
 	}
 	userRoleRepo interface {
-		GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
+		GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]uuid.UUID, error)
 	}
 	tenantMemberRepo interface {
-		GetByUserAndTenant(userID, tenantID uuid.UUID) (*TenantMember, error)
+		GetByUserAndTenant(userID, collaborationWorkspaceID uuid.UUID) (*TenantMember, error)
 		GetTenantsByUserID(userID uuid.UUID) ([]Tenant, error)
 	}
 	userPackageRepo interface {
@@ -61,8 +61,8 @@ type UserHandler struct {
 		ListAll() ([]Menu, error)
 	}
 	refresher interface {
-		RefreshPlatformUser(userID uuid.UUID) error
-		RefreshTeam(teamID uuid.UUID) error
+		RefreshPersonalWorkspaceUser(userID uuid.UUID) error
+		RefreshCollaborationWorkspace(collaborationWorkspaceID uuid.UUID) error
 	}
 	logger *zap.Logger
 }
@@ -71,15 +71,15 @@ func NewUserHandler(db *gorm.DB, userService UserService, featurePkgRepo interfa
 	GetByIDs(ids []uuid.UUID) ([]FeaturePackage, error)
 }, keyRepo interface {
 	GetByPermissionKey(permissionKey string) (*PermissionKey, error)
-}, platformService platformaccess.Service, boundaryService teamboundary.Service, roleRepo interface {
+}, platformService platformaccess.Service, boundaryService collaborationworkspaceboundary.Service, roleRepo interface {
 	GetByIDs(ids []uuid.UUID) ([]Role, error)
 }, authzService interface {
-	Authorize(userID uuid.UUID, tenantID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
-	AuthorizeInApp(userID uuid.UUID, tenantID *uuid.UUID, appKey string, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
+	Authorize(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
+	AuthorizeInApp(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, appKey string, permissionKey string, legacy ...string) (bool, *models.PermissionKey, error)
 }, userRoleRepo interface {
-	GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, tenantID *uuid.UUID) ([]uuid.UUID, error)
+	GetEffectiveActiveRoleIDsByUserAndTenant(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]uuid.UUID, error)
 }, tenantMemberRepo interface {
-	GetByUserAndTenant(userID, tenantID uuid.UUID) (*TenantMember, error)
+	GetByUserAndTenant(userID, collaborationWorkspaceID uuid.UUID) (*TenantMember, error)
 	GetTenantsByUserID(userID uuid.UUID) ([]Tenant, error)
 }, userPackageRepo interface {
 	GetPackageIDsByUserID(userID uuid.UUID) ([]uuid.UUID, error)
@@ -90,8 +90,8 @@ func NewUserHandler(db *gorm.DB, userService UserService, featurePkgRepo interfa
 }, menuRepo interface {
 	ListAll() ([]Menu, error)
 }, refresher interface {
-	RefreshPlatformUser(userID uuid.UUID) error
-	RefreshTeam(teamID uuid.UUID) error
+	RefreshPersonalWorkspaceUser(userID uuid.UUID) error
+	RefreshCollaborationWorkspace(collaborationWorkspaceID uuid.UUID) error
 }, logger *zap.Logger) *UserHandler {
 	return &UserHandler{
 		db:                 db,
@@ -411,7 +411,7 @@ func (h *UserHandler) AssignRoles(c *gin.Context) {
 		return
 	}
 	if h.refresher != nil {
-		if err := h.refresher.RefreshPlatformUser(id); err != nil {
+		if err := h.refresher.RefreshPersonalWorkspaceUser(id); err != nil {
 			h.logger.Error("Refresh platform user after assigning roles failed", zap.Error(err))
 			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新用户权限快照失败")
 			c.JSON(status, resp)
@@ -546,7 +546,7 @@ func (h *UserHandler) SetMenus(c *gin.Context) {
 		return
 	}
 	if h.refresher != nil {
-		if err := h.refresher.RefreshPlatformUser(id); err != nil {
+		if err := h.refresher.RefreshPersonalWorkspaceUser(id); err != nil {
 			h.logger.Error("Refresh platform user after setting menus failed", zap.Error(err))
 			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新用户权限快照失败")
 			c.JSON(status, resp)
@@ -633,19 +633,19 @@ func (h *UserHandler) GetPermissions(c *gin.Context) {
 		return
 	}
 
-	var tenantID *uuid.UUID
-	tenantIDStr := strings.TrimSpace(c.Query("collaboration_workspace_id"))
-	if tenantIDStr == "" {
-		tenantIDStr = strings.TrimSpace(c.GetHeader(tenantContextHeader))
+	var collaborationWorkspaceID *uuid.UUID
+	collaborationWorkspaceIDStr := strings.TrimSpace(c.Query("collaboration_workspace_id"))
+	if collaborationWorkspaceIDStr == "" {
+		collaborationWorkspaceIDStr = strings.TrimSpace(c.GetHeader(collaborationWorkspaceContextHeader))
 	}
-	if tenantIDStr != "" {
-		if parsed, parseErr := uuid.Parse(tenantIDStr); parseErr == nil {
-			tenantID = &parsed
+	if collaborationWorkspaceIDStr != "" {
+		if parsed, parseErr := uuid.Parse(collaborationWorkspaceIDStr); parseErr == nil {
+			collaborationWorkspaceID = &parsed
 		}
 	}
 
 	currentAppKey := appctx.CurrentAppKey(c)
-	menuIDs, err := h.getPermissionMenuIDs(id, tenantID, currentAppKey)
+	menuIDs, err := h.getPermissionMenuIDs(id, collaborationWorkspaceID, currentAppKey)
 	if err != nil {
 		h.logger.Error("Get user permissions failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取用户权限失败")
@@ -687,14 +687,14 @@ func (h *UserHandler) GetPermissionDiagnosis(c *gin.Context) {
 		return
 	}
 
-	tenantID, parseErr := parseTenantContextID(req.CollaborationWorkspaceID, c.GetHeader(tenantContextHeader))
+	collaborationWorkspaceID, parseErr := parseCollaborationWorkspaceContextID(req.CollaborationWorkspaceID, c.GetHeader(collaborationWorkspaceContextHeader))
 	if parseErr != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
 		return
 	}
 
-	payload, err := h.buildPermissionDiagnosis(id, tenantID, req.PermissionKey, appctx.CurrentAppKey(c))
+	payload, err := h.buildPermissionDiagnosis(id, collaborationWorkspaceID, req.PermissionKey, appctx.CurrentAppKey(c))
 	if err != nil {
 		if err == ErrUserNotFound {
 			status, resp := errcode.Response(errcode.ErrUserNotFound)
@@ -738,24 +738,24 @@ func (h *UserHandler) RefreshPermissionSnapshot(c *gin.Context) {
 		return
 	}
 
-	tenantID, parseErr := parseTenantContextID(req.CollaborationWorkspaceID, c.GetHeader(tenantContextHeader))
+	collaborationWorkspaceID, parseErr := parseCollaborationWorkspaceContextID(req.CollaborationWorkspaceID, c.GetHeader(collaborationWorkspaceContextHeader))
 	if parseErr != nil {
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInvalidID, "无效的协作空间ID")
 		c.JSON(status, resp)
 		return
 	}
 
-	if tenantID == nil {
+	if collaborationWorkspaceID == nil {
 		if h.refresher != nil {
-			if err := h.refresher.RefreshPlatformUser(id); err != nil {
+			if err := h.refresher.RefreshPersonalWorkspaceUser(id); err != nil {
 				h.logger.Error("Refresh platform permission snapshot failed", zap.Error(err))
-				status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新平台权限快照失败")
+				status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新个人空间权限快照失败")
 				c.JSON(status, resp)
 				return
 			}
 		}
 	} else if h.refresher != nil {
-		if err := h.refresher.RefreshTeam(*tenantID); err != nil {
+		if err := h.refresher.RefreshCollaborationWorkspace(*collaborationWorkspaceID); err != nil {
 			h.logger.Error("Refresh team permission snapshot failed", zap.Error(err))
 			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新协作空间权限快照失败")
 			c.JSON(status, resp)
@@ -763,7 +763,7 @@ func (h *UserHandler) RefreshPermissionSnapshot(c *gin.Context) {
 		}
 	}
 
-	payload, err := h.buildPermissionDiagnosis(id, tenantID, "", appctx.CurrentAppKey(c))
+	payload, err := h.buildPermissionDiagnosis(id, collaborationWorkspaceID, "", appctx.CurrentAppKey(c))
 	if err != nil {
 		h.logger.Error("Build permission diagnosis after refresh failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新权限快照后读取失败")
@@ -774,7 +774,7 @@ func (h *UserHandler) RefreshPermissionSnapshot(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(payload))
 }
 
-func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.UUID, rawPermissionKey string, appKey string) (gin.H, error) {
+func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, rawPermissionKey string, appKey string) (gin.H, error) {
 	userEntity, err := h.userService.Get(userID)
 	if err != nil {
 		return nil, err
@@ -789,7 +789,7 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.
 		"is_super_admin": userEntity.IsSuperAdmin,
 	}
 
-	if tenantID == nil {
+	if collaborationWorkspaceID == nil {
 		snapshot, err := h.getPlatformSnapshot(userID, appKey)
 		if err != nil {
 			return nil, err
@@ -800,13 +800,13 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.
 		}
 		payload := gin.H{
 			"user":      userInfo,
-			"context":   gin.H{"type": "platform", "binding_workspace_id": "", "current_collaboration_workspace_id": "", "current_collaboration_workspace_name": ""},
+			"context":   gin.H{"type": "personal", "binding_workspace_id": "", "current_collaboration_workspace_id": "", "current_collaboration_workspace_name": ""},
 			"snapshot":  buildPlatformSnapshotSummary(snapshot, meta),
 			"roles":     []gin.H{},
 			"diagnosis": nil,
 		}
 		if permissionKeyValue != "" {
-			diagnosis, err := h.buildPlatformPermissionDiagnosis(userEntity, snapshot, permissionKeyValue, appKey)
+			diagnosis, err := h.buildPersonalWorkspacePermissionDiagnosis(userEntity, snapshot, permissionKeyValue, appKey)
 			if err != nil {
 				return nil, err
 			}
@@ -815,19 +815,19 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.
 		return payload, nil
 	}
 
-	teamSnapshot, err := h.boundaryService.GetSnapshot(*tenantID, appctx.NormalizeAppKey(appKey))
+	teamSnapshot, err := h.boundaryService.GetSnapshot(*collaborationWorkspaceID, appctx.NormalizeAppKey(appKey))
 	if err != nil {
 		return nil, err
 	}
 	currentCollaborationWorkspaceID := ""
-	if workspace, workspaceErr := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(h.db, *tenantID); workspaceErr == nil && workspace != nil {
+	if workspace, workspaceErr := workspacerolebinding.GetCollaborationWorkspaceByCollaborationWorkspaceID(h.db, *collaborationWorkspaceID); workspaceErr == nil && workspace != nil {
 		currentCollaborationWorkspaceID = workspace.ID.String()
 	}
-	teamMeta, err := h.getTeamSnapshotRecord(*tenantID, appKey)
+	teamMeta, err := h.getTeamSnapshotRecord(*collaborationWorkspaceID, appKey)
 	if err != nil {
 		return nil, err
 	}
-	roleStates, err := h.buildTeamRoleStates(userID, *tenantID, permissionKeyValue, appKey)
+	roleStates, err := h.buildTeamRoleStates(userID, *collaborationWorkspaceID, permissionKeyValue, appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -836,17 +836,17 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.
 		"context": gin.H{
 			"type":                                 "collaboration",
 			"binding_workspace_id":                 currentCollaborationWorkspaceID,
-			"current_collaboration_workspace_id":   tenantID.String(),
+			"current_collaboration_workspace_id":   collaborationWorkspaceID.String(),
 			"current_collaboration_workspace_name": "",
 		},
-		"snapshot":      buildTeamSnapshotSummary(teamSnapshot, teamMeta),
-		"roles":         roleStates,
-		"collaboration_workspace_member":   h.buildCollaborationWorkspaceMemberMap(userID, *tenantID),
-		"team_packages": h.buildPackageMapsByIDs(teamSnapshot.ExpandedPackageIDs),
-		"diagnosis":     nil,
+		"snapshot":                       buildTeamSnapshotSummary(teamSnapshot, teamMeta),
+		"roles":                          roleStates,
+		"collaboration_workspace_member": h.buildCollaborationWorkspaceMemberMap(userID, *collaborationWorkspaceID),
+		"team_packages":                  h.buildPackageMapsByIDs(teamSnapshot.ExpandedPackageIDs),
+		"diagnosis":                      nil,
 	}
 	if permissionKeyValue != "" {
-		diagnosis, err := h.buildTeamPermissionDiagnosis(userEntity, *tenantID, teamSnapshot, roleStates, permissionKeyValue, appKey)
+		diagnosis, err := h.buildCollaborationWorkspacePermissionDiagnosis(userEntity, *collaborationWorkspaceID, teamSnapshot, roleStates, permissionKeyValue, appKey)
 		if err != nil {
 			return nil, err
 		}
@@ -855,7 +855,7 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.
 	return payload, nil
 }
 
-func (h *UserHandler) buildPlatformPermissionDiagnosis(userEntity *User, snapshot *platformaccess.Snapshot, permissionKeyValue string, appKey string) (gin.H, error) {
+func (h *UserHandler) buildPersonalWorkspacePermissionDiagnosis(userEntity *User, snapshot *platformaccess.Snapshot, permissionKeyValue string, appKey string) (gin.H, error) {
 	allowed, actionDef, authErr := h.authzService.AuthorizeInApp(userEntity.ID, nil, appctx.NormalizeAppKey(appKey), permissionKeyValue)
 	actionDetail, err := h.loadPermissionKeyDetail(permissionKeyValue)
 	if err != nil {
@@ -871,7 +871,7 @@ func (h *UserHandler) buildPlatformPermissionDiagnosis(userEntity *User, snapsho
 		sourcePackageIDs = append(sourcePackageIDs, snapshot.ActionSourceMap[actionID]...)
 	}
 	bypassedBySuperAdmin := userEntity.IsSuperAdmin && authErr == nil && allowed && !inSnapshot
-	reasons := buildPermissionDiagnosisReasons(authErr, allowed, "platform", bypassedBySuperAdmin)
+	reasons := buildPermissionDiagnosisReasons(authErr, allowed, "personal", bypassedBySuperAdmin)
 
 	return gin.H{
 		"permission_key":          permissionKeyValue,
@@ -886,7 +886,7 @@ func (h *UserHandler) buildPlatformPermissionDiagnosis(userEntity *User, snapsho
 	}, nil
 }
 
-func (h *UserHandler) buildTeamPermissionDiagnosis(userEntity *User, teamID uuid.UUID, teamSnapshot *teamboundary.Snapshot, roleStates []gin.H, permissionKeyValue string, appKey string) (gin.H, error) {
+func (h *UserHandler) buildCollaborationWorkspacePermissionDiagnosis(userEntity *User, teamID uuid.UUID, teamSnapshot *collaborationworkspaceboundary.Snapshot, roleStates []gin.H, permissionKeyValue string, appKey string) (gin.H, error) {
 	allowed, actionDef, authErr := h.authzService.AuthorizeInApp(userEntity.ID, &teamID, appctx.NormalizeAppKey(appKey), permissionKeyValue)
 	actionDetail, err := h.loadPermissionKeyDetail(permissionKeyValue)
 	if err != nil {
@@ -907,7 +907,7 @@ func (h *UserHandler) buildTeamPermissionDiagnosis(userEntity *User, teamID uuid
 	}
 	inSnapshot := actionDef != nil && containsUUID(teamSnapshot.EffectiveIDs, actionID)
 	bypassedBySuperAdmin := userEntity.IsSuperAdmin && authErr == nil && allowed && !inSnapshot
-	reasons := buildPermissionDiagnosisReasons(authErr, allowed, "team", bypassedBySuperAdmin)
+	reasons := buildPermissionDiagnosisReasons(authErr, allowed, "collaboration", bypassedBySuperAdmin)
 	memberStatus, memberMatched, err := h.getTenantMemberDiagnosis(userEntity.ID, teamID)
 	if err != nil {
 		return nil, err
@@ -1072,7 +1072,7 @@ func buildPlatformSnapshotSummary(snapshot *platformaccess.Snapshot, meta *model
 	}
 }
 
-func buildTeamSnapshotSummary(snapshot *teamboundary.Snapshot, meta *models.CollaborationWorkspaceAccessSnapshot) gin.H {
+func buildTeamSnapshotSummary(snapshot *collaborationworkspaceboundary.Snapshot, meta *models.CollaborationWorkspaceAccessSnapshot) gin.H {
 	return gin.H{
 		"refreshed_at":           formatTimeValue(timeValue(meta, func(item *models.CollaborationWorkspaceAccessSnapshot) time.Time { return item.RefreshedAt })),
 		"updated_at":             formatTimeValue(timeValue(meta, func(item *models.CollaborationWorkspaceAccessSnapshot) time.Time { return item.UpdatedAt })),
@@ -1223,13 +1223,13 @@ func buildPermissionDiagnosisReasons(err error, allowed bool, context string, by
 		return []string{"用户已停用"}
 	case err == authorization.ErrTenantMemberNotFound:
 		return []string{"当前协作空间下无有效成员或角色"}
-	case err == authorization.ErrTenantContextRequired:
+	case err == authorization.ErrCollaborationWorkspaceContextRequired:
 		return []string{"当前权限需要协作空间上下文"}
 	case err == authorization.ErrPermissionDenied:
-		if context == "team" {
+		if context == "collaboration" {
 			return []string{"当前协作空间上下文下未生效此权限"}
 		}
-		return []string{"平台上下文下未生效此权限"}
+		return []string{"当前个人空间下未生效此权限"}
 	default:
 		return []string{"权限未通过"}
 	}
@@ -1288,7 +1288,7 @@ func buildTeamDiagnosisDecision(authErr error, allowed bool, blockedByTeam bool,
 		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "协作空间成员校验", "当前用户不是该协作空间有效成员"
 	case authorization.ErrTenantMemberInactive:
 		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "协作空间成员校验", "协作空间成员状态不是 active"
-	case authorization.ErrTenantContextRequired:
+	case authorization.ErrCollaborationWorkspaceContextRequired:
 		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "协作空间上下文校验", "当前权限需要协作空间上下文"
 	case authorization.ErrPermissionKeyMissing:
 		return currentBoundaryState(boundaryConfigured, blockedByTeam, inSnapshot), "权限键校验", "权限键未注册或未找到"
@@ -1327,7 +1327,7 @@ func currentBoundaryState(boundaryConfigured bool, blockedByTeam bool, inSnapsho
 	}
 }
 
-func parseTenantContextID(values ...string) (*uuid.UUID, error) {
+func parseCollaborationWorkspaceContextID(values ...string) (*uuid.UUID, error) {
 	for _, value := range values {
 		target := strings.TrimSpace(value)
 		if target == "" {
@@ -1368,12 +1368,12 @@ func timeValue[T any](item *T, getter func(*T) time.Time) time.Time {
 	return getter(item)
 }
 
-func (h *UserHandler) getPermissionMenuIDs(userID uuid.UUID, tenantID *uuid.UUID, appKey string) ([]uuid.UUID, error) {
+func (h *UserHandler) getPermissionMenuIDs(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, appKey string) ([]uuid.UUID, error) {
 	userEntity, err := h.userService.Get(userID)
 	if err != nil {
 		return nil, err
 	}
-	if tenantID == nil {
+	if collaborationWorkspaceID == nil {
 		if userEntity.IsSuperAdmin {
 			return h.listEnabledMenuIDs(appKey)
 		}
@@ -1383,7 +1383,7 @@ func (h *UserHandler) getPermissionMenuIDs(userID uuid.UUID, tenantID *uuid.UUID
 		}
 		return snapshot.MenuIDs, nil
 	}
-	return h.getTeamPermissionMenuIDs(userID, *tenantID, appKey)
+	return h.getTeamPermissionMenuIDs(userID, *collaborationWorkspaceID, appKey)
 }
 
 func (h *UserHandler) getTeamPermissionMenuIDs(userID, teamID uuid.UUID, appKey string) ([]uuid.UUID, error) {
@@ -1628,8 +1628,8 @@ func (h *UserHandler) SetPackages(c *gin.Context) {
 				c.JSON(status, resp)
 				return
 			}
-			if !supportsPlatformContext(item.ContextType) {
-				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "仅支持绑定平台功能包")
+			if !supportsPersonalWorkspaceContext(item.ContextType) {
+				status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "仅支持绑定个人空间功能包")
 				c.JSON(status, resp)
 				return
 			}
@@ -1650,7 +1650,7 @@ func (h *UserHandler) SetPackages(c *gin.Context) {
 		return
 	}
 	if h.refresher != nil {
-		if err := h.refresher.RefreshPlatformUser(id); err != nil {
+		if err := h.refresher.RefreshPersonalWorkspaceUser(id); err != nil {
 			h.logger.Error("Refresh platform user after setting packages failed", zap.Error(err))
 			status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "刷新用户权限快照失败")
 			c.JSON(status, resp)
@@ -1716,7 +1716,7 @@ func featurePackageListToMaps(items []FeaturePackage) []gin.H {
 	return result
 }
 
-func supportsPlatformContext(contextType string) bool {
+func supportsPersonalWorkspaceContext(contextType string) bool {
 	return contextType == "" || contextType == "platform" || contextType == "common"
 }
 

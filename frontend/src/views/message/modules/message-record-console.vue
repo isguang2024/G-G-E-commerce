@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="message-record-page art-full-height">
     <AdminWorkspaceHero :title="pageTitle" :description="pageDescription" :metrics="heroMetrics">
       <div class="message-record-hero__actions">
@@ -82,9 +82,7 @@
           <template #default="{ row }">
             <div class="message-record-simple-cell">
               <span>{{ resolveAudienceLabel(row.audience_type) }}</span>
-              <small>{{
-                row.target_collaboration_workspace_name || row.target_tenant_name || '全局范围'
-              }}</small>
+              <small>{{ row.target_collaboration_workspace_name || '全局范围' }}</small>
             </div>
           </template>
         </ElTableColumn>
@@ -148,8 +146,9 @@
               <span>{{ resolveAudienceLabel(activeRecord.audience_type) }}</span>
               <span>{{
                 activeRecord.target_collaboration_workspace_name ||
-                activeRecord.target_tenant_name ||
-                (activeRecord.scope_type === 'collaboration' ? currentTeamName : '平台范围')
+                (activeRecord.scope_type === 'collaboration'
+                  ? currentCollaborationWorkspaceName
+                  : '个人工作空间范围')
               }}</span>
             </div>
           </div>
@@ -200,11 +199,7 @@
               <div class="message-record-delivery-card__top">
                 <div>
                   <strong>{{ delivery.recipient_name || '未命名用户' }}</strong>
-                  <p>{{
-                    delivery.recipient_collaboration_workspace_name ||
-                    delivery.recipient_team_name ||
-                    '平台用户'
-                  }}</p>
+                  <p>{{ delivery.recipient_collaboration_workspace_name || '平台用户' }}</p>
                 </div>
                 <ElTag size="small" effect="plain">{{
                   resolveDeliveryStatusLabel(delivery.delivery_status)
@@ -273,10 +268,10 @@
   const router = useRouter()
   const menuSpaceStore = useMenuSpaceStore()
   const {
-    isTeamScope,
-    skipTenantHeader,
-    currentTeamName,
-    ensureTeamContext,
+    isCollaborationScope,
+    skipCollaborationWorkspaceHeader,
+    currentCollaborationWorkspaceName,
+    ensureCollaborationWorkspaceContext,
     plainTextFromHtml,
     formatTime
   } = useMessageWorkspace(props.scope)
@@ -304,15 +299,17 @@
     total: 0
   })
 
-  const pageTitle = computed(() => (isTeamScope.value ? '协作空间发送记录' : '消息发送记录'))
+  const pageTitle = computed(() =>
+    isCollaborationScope.value ? '协作空间发送记录' : '消息发送记录'
+  )
   const pageDescription = computed(() =>
-    isTeamScope.value
+    isCollaborationScope.value
       ? '查看当前协作空间发出的通知、消息和待办投递情况，重点看已读率和待处理数量。'
       : '查看平台侧消息发送结果和投递情况，判断哪些消息已读、未读或仍处于待处理状态。'
   )
 
   const audienceOptions = computed(() =>
-    isTeamScope.value
+    isCollaborationScope.value
       ? [
           {
             label: '当前协作空间成员',
@@ -414,15 +411,11 @@
       return delivery.source_target_value || delivery.recipient_user_id
     if (delivery.source_target_type === 'collaboration_workspace_users')
       return (
-        delivery.recipient_collaboration_workspace_name ||
-        delivery.recipient_team_name ||
-        currentTeamName.value
+        delivery.recipient_collaboration_workspace_name || currentCollaborationWorkspaceName.value
       )
     if (delivery.source_target_type === 'collaboration_workspace_admins')
       return (
-        delivery.recipient_collaboration_workspace_name ||
-        delivery.recipient_team_name ||
-        currentTeamName.value
+        delivery.recipient_collaboration_workspace_name || currentCollaborationWorkspaceName.value
       )
     if (delivery.source_target_type === 'role') return delivery.source_target_value || '角色规则'
     if (delivery.source_target_type === 'feature_package')
@@ -443,7 +436,7 @@
     loading.value = true
     loadError.value = ''
     try {
-      ensureTeamContext()
+      ensureCollaborationWorkspaceContext()
       const result = await fetchGetDispatchRecordList(
         {
           keyword: filters.keyword || undefined,
@@ -452,7 +445,7 @@
           current: pagination.current,
           size: pagination.size
         },
-        { skipTenantHeader: skipTenantHeader.value }
+        { skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value }
       )
       list.value = result.records || []
       pagination.total = result.total || 0
@@ -487,7 +480,7 @@
     }
     try {
       activeRecord.value = await fetchGetDispatchRecordDetail(row.id, {
-        skipTenantHeader: skipTenantHeader.value
+        skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
       })
     } catch {
       detailError.value = '发送详情暂时不可用，稍后重试。'

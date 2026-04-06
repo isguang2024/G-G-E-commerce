@@ -4,7 +4,7 @@ import AppConfig from '@/config'
 import { normalizeManagedAppKey } from '@/hooks/business/managed-app-scope'
 import { useAppContextStore } from '@/store/modules/app-context'
 import { useUserStore } from '@/store/modules/user'
-import { hasPlatformAccessByUserInfo } from '@/store/modules/collaboration-workspace'
+import { hasPersonalWorkspaceAccessByUserInfo } from '@/store/modules/collaboration-workspace'
 import {
   fetchGetCurrentApp,
   fetchGetCurrentMenuSpace,
@@ -248,7 +248,7 @@ export const useMenuSpaceStore = defineStore(
           createFallbackMenuSpaceConfig()
         )
       }
-      if (!hasPlatformAccessByUserInfo(currentUserInfo)) {
+      if (!hasPersonalWorkspaceAccessByUserInfo(currentUserInfo)) {
         setMenuSpaceConfig(runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig(), appKey)
         return (
           menuSpaceConfigMap.value[appKey] ||

@@ -117,7 +117,7 @@
               {{ drawerReadOnly ? '当前模板为继承只读模板，只能查看不能修改。' : drawerScopeText }}
             </div>
           </div>
-          <ElTag effect="plain">{{ drawerScopeBadge }}</ElTag>
+          <ElTag effect="plain">{{ drawerCollaborationWorkspaceBadge }}</ElTag>
         </div>
 
         <div class="message-template-drawer__form">
@@ -297,47 +297,50 @@
   const drawerModel = ref<TemplateDrawerModel | null>(null)
 
   const {
-    isTeamScope,
-    skipTenantHeader,
-    currentTeamName,
+    isCollaborationScope,
+    skipCollaborationWorkspaceHeader,
+    currentCollaborationWorkspaceName,
     currentWorkspaceName,
     currentWorkspaceLabel,
-    ensureTeamContext,
+    ensureCollaborationWorkspaceContext,
     plainTextFromHtml,
     formatTime
   } = useMessageWorkspace(props.scope)
 
-  const pageTitle = computed(() => (isTeamScope.value ? '协作空间消息模板' : '消息模板'))
+  const pageTitle = computed(() => (isCollaborationScope.value ? '协作空间消息模板' : '消息模板'))
   const pageDescription = computed(() =>
-    isTeamScope.value
+    isCollaborationScope.value
       ? '查看平台模板并维护当前协作空间可复用的消息模板，发送页会直接复用这里的标题、摘要和正文。'
       : '统一维护平台消息模板，供平台发信页复用；标题、摘要和正文都在模板层准备好。'
   )
   const toolbarDescription = computed(() =>
-    isTeamScope.value
-      ? `平台模板会以只读方式展示；当前 ${currentWorkspaceLabel.value} 下的协作空间视图 ${currentTeamName.value} 可维护自己的协作空间模板。`
+    isCollaborationScope.value
+      ? `平台模板会以只读方式展示；当前 ${currentWorkspaceLabel.value} 下的协作空间视图 ${currentCollaborationWorkspaceName.value} 可维护自己的协作空间模板。`
       : '平台模板会直接出现在平台消息发送页中，建议用少量稳定模板覆盖高频场景。'
   )
   const heroMetrics = computed(() => [
     { label: '模板总数', value: pagination.total },
     {
-      label: isTeamScope.value ? '协作空间模板' : '平台模板',
+      label: isCollaborationScope.value ? '协作空间模板' : '平台模板',
       value: list.value.filter(
-        (item) => item.owner_scope === (isTeamScope.value ? 'collaboration' : 'platform')
+        (item) => item.owner_scope === (isCollaborationScope.value ? 'collaboration' : 'platform')
       ).length
     },
     { label: '可编辑', value: list.value.filter((item) => item.editable).length }
   ])
 
   const drawerTitle = computed(
-    () => `${drawerEditingId.value ? '编辑' : '新建'}${isTeamScope.value ? '协作空间' : '平台'}模板`
+    () =>
+      `${drawerEditingId.value ? '编辑' : '新建'}${isCollaborationScope.value ? '协作空间' : '平台'}模板`
   )
   const drawerScopeText = computed(() =>
-    isTeamScope.value
-      ? `保存后该模板只属于 ${currentWorkspaceName.value} 下的协作空间视图 ${currentTeamName.value}，不会影响平台模板。`
+    isCollaborationScope.value
+      ? `保存后该模板只属于 ${currentWorkspaceName.value} 下的协作空间视图 ${currentCollaborationWorkspaceName.value}，不会影响平台模板。`
       : '保存后该模板会作为平台模板供平台消息发送页统一复用。'
   )
-  const drawerScopeBadge = computed(() => (isTeamScope.value ? '协作空间模板' : '平台模板'))
+  const drawerCollaborationWorkspaceBadge = computed(() =>
+    isCollaborationScope.value ? '协作空间模板' : '平台模板'
+  )
 
   const messageTypeOptions = [
     { label: '通知', value: 'notice' },
@@ -346,7 +349,7 @@
   ]
 
   const availableAudienceOptions = computed(() =>
-    isTeamScope.value
+    isCollaborationScope.value
       ? [
           {
             label: '当前协作空间成员',
@@ -371,7 +374,7 @@
     name: '',
     description: '',
     message_type: 'notice',
-    audience_type: isTeamScope.value ? 'collaboration_workspace_users' : 'all_users',
+    audience_type: isCollaborationScope.value ? 'collaboration_workspace_users' : 'all_users',
     title_template: '',
     summary_template: '',
     content_template: '',
@@ -380,8 +383,10 @@
 
   const resolveScopeLabel = (item: Api.Message.MessageTemplateItem) => {
     if (item.owner_scope === 'collaboration') {
-      const teamName = item.owner_collaboration_workspace_name || item.owner_tenant_name
-      return teamName ? `协作空间 · ${teamName}` : '协作空间模板'
+      const collaborationWorkspaceName = item.owner_collaboration_workspace_name
+      return collaborationWorkspaceName
+        ? `协作空间 · ${collaborationWorkspaceName}`
+        : '协作空间模板'
     }
     return '平台模板'
   }
@@ -399,14 +404,14 @@
     loading.value = true
     loadError.value = ''
     try {
-      ensureTeamContext()
+      ensureCollaborationWorkspaceContext()
       const result = await fetchGetMessageTemplateList(
         {
           keyword: filters.keyword || undefined,
           current: pagination.current,
           size: pagination.size
         },
-        { skipTenantHeader: skipTenantHeader.value }
+        { skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value }
       )
       list.value = result.records || []
       pagination.total = result.total || 0
@@ -461,11 +466,11 @@
     try {
       if (drawerEditingId.value) {
         await fetchUpdateMessageTemplate(drawerEditingId.value, drawerModel.value, {
-          skipTenantHeader: skipTenantHeader.value
+          skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
         })
       } else {
         await fetchCreateMessageTemplate(drawerModel.value, {
-          skipTenantHeader: skipTenantHeader.value
+          skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
         })
       }
       drawerVisible.value = false

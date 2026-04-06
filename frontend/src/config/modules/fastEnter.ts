@@ -23,7 +23,7 @@ const fastEnterConfig: FastEnterConfig = {
     {
       id: 'role',
       name: '角色管理',
-      description: '维护平台角色与角色权限',
+      description: '维护个人空间角色与空间权限',
       icon: 'ri:shield-user-line',
       iconColor: '#0f766e',
       enabled: true,
@@ -91,7 +91,7 @@ const fastEnterConfig: FastEnterConfig = {
       routeName: 'UserCenter'
     },
     {
-      id: 'team-members',
+      id: 'collaboration-workspace-members',
       name: '协作空间成员',
       enabled: true,
       order: 2,

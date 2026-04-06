@@ -299,7 +299,7 @@ func ListPlatformUserIDsByRoleIDs(db *gorm.DB, roleIDs []uuid.UUID) ([]uuid.UUID
 		Where("workspace_role_bindings.role_id IN ?", roleIDs).
 		Where("workspace_role_bindings.enabled = ? AND workspace_role_bindings.deleted_at IS NULL", true).
 		Where("workspaces.workspace_type = ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypePersonal).
-		Where("roles.tenant_id IS NULL AND roles.deleted_at IS NULL").
+		Where("roles.collaboration_workspace_id IS NULL AND roles.deleted_at IS NULL").
 		Distinct("workspaces.owner_user_id").
 		Pluck("workspaces.owner_user_id", &userIDs).Error
 	if err != nil {
@@ -322,7 +322,7 @@ func ListPlatformUserIDsByRoleCodes(db *gorm.DB, roleCodes []string, onlyActive 
 		Joins("JOIN roles ON roles.id = workspace_role_bindings.role_id").
 		Where("workspace_role_bindings.enabled = ? AND workspace_role_bindings.deleted_at IS NULL", true).
 		Where("workspaces.workspace_type = ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypePersonal).
-		Where("roles.code IN ? AND roles.tenant_id IS NULL AND roles.deleted_at IS NULL", normalized)
+		Where("roles.code IN ? AND roles.collaboration_workspace_id IS NULL AND roles.deleted_at IS NULL", normalized)
 	if onlyActive {
 		query = query.Where("roles.status = ?", "normal")
 	}

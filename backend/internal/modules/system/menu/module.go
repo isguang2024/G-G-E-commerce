@@ -13,7 +13,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
+	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 )
 
 type MenuModule struct {
@@ -40,7 +40,7 @@ func (m *MenuModule) RegisterRoutes(rg *gin.RouterGroup) {
 	userRepo := user.NewUserRepository(m.db)
 	roleRepo := user.NewRoleRepository(m.db)
 	userRoleRepo := user.NewUserRoleRepository(m.db)
-	boundaryService := teamboundary.NewService(m.db)
+	boundaryService := collaborationworkspaceboundary.NewService(m.db)
 	platformService := platformaccess.NewService(m.db)
 	roleSnapshotService := platformroleaccess.NewService(m.db)
 	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)

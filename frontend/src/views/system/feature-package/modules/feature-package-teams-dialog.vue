@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <ElDrawer
     v-model="visible"
     :title="`开通协作空间 - ${packageName}`"
@@ -17,7 +17,9 @@
         <ElTag type="success" effect="plain" round
           >已开通 {{ selectedCollaborationWorkspaceIds.length }}</ElTag
         >
-        <ElTag type="info" effect="plain" round>协作空间总数 {{ teams.length }}</ElTag>
+        <ElTag type="info" effect="plain" round
+          >协作空间总数 {{ collaborationWorkspaces.length }}</ElTag
+        >
       </div>
 
       <ElInput
@@ -27,7 +29,7 @@
         class="toolbar-search"
       />
 
-      <ElTable :data="pagedTeams" border max-height="420">
+      <ElTable :data="pagedCollaborationWorkspaces" border max-height="420">
         <ElTableColumn width="60">
           <template #default="{ row }">
             <ElCheckbox
@@ -50,7 +52,7 @@
       <WorkspacePagination
         v-model:current-page="pagination.current"
         v-model:page-size="pagination.size"
-        :total="filteredTeams.length"
+        :total="filteredCollaborationWorkspaces.length"
         compact
       />
     </div>
@@ -68,8 +70,8 @@
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import {
     fetchGetFeaturePackageCollaborationWorkspaces,
-    fetchGetTenantOptions,
-    fetchSetFeaturePackageTeams
+    fetchGetCollaborationWorkspaceOptions,
+    fetchSetFeaturePackageCollaborationWorkspaces
   } from '@/api/system-manage'
 
   interface Props {
@@ -99,24 +101,24 @@
   const loading = ref(false)
   const saving = ref(false)
   const keyword = ref('')
-  const teams = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
+  const collaborationWorkspaces = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
   const selectedCollaborationWorkspaceIds = ref<string[]>([])
   const pagination = ref({
     current: 1,
     size: 10
   })
 
-  const filteredTeams = computed(() => {
+  const filteredCollaborationWorkspaces = computed(() => {
     const currentKeyword = keyword.value.trim().toLowerCase()
-    if (!currentKeyword) return teams.value
-    return teams.value.filter((item) =>
+    if (!currentKeyword) return collaborationWorkspaces.value
+    return collaborationWorkspaces.value.filter((item) =>
       [item.name, item.remark].filter(Boolean).join(' ').toLowerCase().includes(currentKeyword)
     )
   })
 
-  const pagedTeams = computed(() => {
+  const pagedCollaborationWorkspaces = computed(() => {
     const start = (pagination.value.current - 1) * pagination.value.size
-    return filteredTeams.value.slice(start, start + pagination.value.size)
+    return filteredCollaborationWorkspaces.value.slice(start, start + pagination.value.size)
   })
 
   watch(
@@ -130,11 +132,11 @@
     if (!props.packageId) return
     loading.value = true
     try {
-      const [teamRes, bindingRes] = await Promise.all([
-        fetchGetTenantOptions(),
+      const [collaborationWorkspaceRes, bindingRes] = await Promise.all([
+        fetchGetCollaborationWorkspaceOptions(),
         fetchGetFeaturePackageCollaborationWorkspaces(props.packageId)
       ])
-      teams.value = teamRes?.records || []
+      collaborationWorkspaces.value = collaborationWorkspaceRes?.records || []
       selectedCollaborationWorkspaceIds.value = [...(bindingRes?.collaboration_workspace_ids || [])]
       pagination.value.current = 1
     } catch (error: any) {
@@ -161,13 +163,13 @@
 
   async function handleSave() {
     if (!props.packageId) return
-    if (!supportsTeamContext(props.contextType)) {
+    if (!supportsCollaborationWorkspaceContext(props.contextType)) {
       ElMessage.warning('仅协作空间侧可生效的功能包支持开通协作空间')
       return
     }
     saving.value = true
     try {
-      const stats = await fetchSetFeaturePackageTeams(
+      const stats = await fetchSetFeaturePackageCollaborationWorkspaces(
         props.packageId,
         selectedCollaborationWorkspaceIds.value
       )
@@ -181,7 +183,7 @@
     }
   }
 
-  function supportsTeamContext(contextType?: string) {
+  function supportsCollaborationWorkspaceContext(contextType?: string) {
     return contextType === 'collaboration' || contextType === 'common'
   }
 

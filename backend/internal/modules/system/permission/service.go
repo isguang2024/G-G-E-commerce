@@ -15,7 +15,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
-	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
+	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/workspacefeaturebinding"
 )
 
@@ -93,13 +93,13 @@ type PermissionConsumerRoleItem struct {
 }
 
 type PermissionImpactPreview struct {
-	PermissionKey string `json:"permission_key"`
-	APICount      int64  `json:"api_count"`
-	PageCount     int64  `json:"page_count"`
-	PackageCount  int64  `json:"package_count"`
-	RoleCount     int64  `json:"role_count"`
-	CollaborationWorkspaceCount     int64  `json:"collaboration_workspace_count"`
-	UserCount     int64  `json:"user_count"`
+	PermissionKey               string `json:"permission_key"`
+	APICount                    int64  `json:"api_count"`
+	PageCount                   int64  `json:"page_count"`
+	PackageCount                int64  `json:"package_count"`
+	RoleCount                   int64  `json:"role_count"`
+	CollaborationWorkspaceCount int64  `json:"collaboration_workspace_count"`
+	UserCount                   int64  `json:"user_count"`
 }
 
 type PermissionBatchUpdateRequest struct {
@@ -122,18 +122,18 @@ type PermissionBatchTemplateSaveRequest struct {
 }
 
 type permissionService struct {
-	db                     *gorm.DB
-	groupRepo              user.PermissionGroupRepository
-	keyRepo                user.PermissionKeyRepository
-	apiEndpointRepo        user.APIEndpointRepository
-	apiEndpointBindingRepo user.APIEndpointPermissionBindingRepository
-	packageKeyRepo         user.FeaturePackageKeyRepository
-	teamPackageRepo        user.CollaborationWorkspaceFeaturePackageRepository
-	roleDisabledActionRepo user.RoleDisabledActionRepository
-	teamBlockedActionRepo  user.CollaborationWorkspaceBlockedActionRepository
-	userActionRepo         user.UserActionPermissionRepository
-	boundaryService        teamboundary.Service
-	refresher              permissionrefresh.Service
+	db                                       *gorm.DB
+	groupRepo                                user.PermissionGroupRepository
+	keyRepo                                  user.PermissionKeyRepository
+	apiEndpointRepo                          user.APIEndpointRepository
+	apiEndpointBindingRepo                   user.APIEndpointPermissionBindingRepository
+	packageKeyRepo                           user.FeaturePackageKeyRepository
+	collaborationWorkspaceFeaturePackageRepo user.CollaborationWorkspaceFeaturePackageRepository
+	roleDisabledActionRepo                   user.RoleDisabledActionRepository
+	teamBlockedActionRepo                    user.CollaborationWorkspaceBlockedActionRepository
+	userActionRepo                           user.UserActionPermissionRepository
+	boundaryService                          collaborationworkspaceboundary.Service
+	refresher                                permissionrefresh.Service
 }
 
 func NewPermissionService(
@@ -143,26 +143,26 @@ func NewPermissionService(
 	apiEndpointRepo user.APIEndpointRepository,
 	apiEndpointBindingRepo user.APIEndpointPermissionBindingRepository,
 	packageKeyRepo user.FeaturePackageKeyRepository,
-	teamPackageRepo user.CollaborationWorkspaceFeaturePackageRepository,
+	collaborationWorkspaceFeaturePackageRepo user.CollaborationWorkspaceFeaturePackageRepository,
 	roleDisabledActionRepo user.RoleDisabledActionRepository,
 	teamBlockedActionRepo user.CollaborationWorkspaceBlockedActionRepository,
 	userActionRepo user.UserActionPermissionRepository,
-	boundaryService teamboundary.Service,
+	boundaryService collaborationworkspaceboundary.Service,
 	refresher permissionrefresh.Service,
 ) PermissionService {
 	return &permissionService{
-		db:                     db,
-		groupRepo:              groupRepo,
-		keyRepo:                keyRepo,
-		apiEndpointRepo:        apiEndpointRepo,
-		apiEndpointBindingRepo: apiEndpointBindingRepo,
-		packageKeyRepo:         packageKeyRepo,
-		teamPackageRepo:        teamPackageRepo,
-		roleDisabledActionRepo: roleDisabledActionRepo,
-		teamBlockedActionRepo:  teamBlockedActionRepo,
-		userActionRepo:         userActionRepo,
-		boundaryService:        boundaryService,
-		refresher:              refresher,
+		db:                                       db,
+		groupRepo:                                groupRepo,
+		keyRepo:                                  keyRepo,
+		apiEndpointRepo:                          apiEndpointRepo,
+		apiEndpointBindingRepo:                   apiEndpointBindingRepo,
+		packageKeyRepo:                           packageKeyRepo,
+		collaborationWorkspaceFeaturePackageRepo: collaborationWorkspaceFeaturePackageRepo,
+		roleDisabledActionRepo:                   roleDisabledActionRepo,
+		teamBlockedActionRepo:                    teamBlockedActionRepo,
+		userActionRepo:                           userActionRepo,
+		boundaryService:                          boundaryService,
+		refresher:                                refresher,
 	}
 }
 
@@ -1380,7 +1380,7 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 	}
 	affectedTeams := make(map[uuid.UUID]struct{})
 	for _, packageID := range packageIDs {
-		collaborationWorkspaceIDs, teamErr := s.teamPackageRepo.GetCollaborationWorkspaceIDsByPackageID(packageID)
+		collaborationWorkspaceIDs, teamErr := s.collaborationWorkspaceFeaturePackageRepo.GetCollaborationWorkspaceIDsByPackageID(packageID)
 		if teamErr != nil {
 			return teamErr
 		}
@@ -1438,7 +1438,7 @@ func (s *permissionService) refreshByPermissionKeyID(keyID uuid.UUID) error {
 	}
 	affectedTeams := make(map[uuid.UUID]struct{})
 	for _, packageID := range packageIDs {
-		collaborationWorkspaceIDs, teamErr := s.teamPackageRepo.GetCollaborationWorkspaceIDsByPackageID(packageID)
+		collaborationWorkspaceIDs, teamErr := s.collaborationWorkspaceFeaturePackageRepo.GetCollaborationWorkspaceIDsByPackageID(packageID)
 		if teamErr != nil {
 			return teamErr
 		}

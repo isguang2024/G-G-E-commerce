@@ -100,7 +100,7 @@
   import AppConfig from '@/config'
   import { useUserStore } from '@/store/modules/user'
   import {
-    hasPlatformAccessByUserInfo,
+    hasPersonalWorkspaceAccessByUserInfo,
     useCollaborationWorkspaceStore
   } from '@/store/modules/collaboration-workspace'
   import { useMenuSpaceStore } from '@/store/modules/menu-space'
@@ -258,7 +258,7 @@
         preferredLegacyCollaborationWorkspaceId,
         preferredWorkspaceId: `${userStore.getUserInfo.current_auth_workspace_id || ''}`,
         preferredWorkspaceType: `${userStore.getUserInfo.current_auth_workspace_type || ''}`,
-        preferPlatform: collaborationWorkspaceStore.hasPlatformAccess
+        preferPersonalWorkspace: collaborationWorkspaceStore.hasPersonalWorkspaceAccess
       })
       menuSpaceStore.syncRuntimeHost()
       await menuSpaceStore.refreshRuntimeConfig(true)
@@ -309,7 +309,9 @@
           actions: response.user.actions || []
         }
         userStore.setUserInfo(userInfo)
-        collaborationWorkspaceStore.setPlatformAccess(hasPlatformAccessByUserInfo(userInfo))
+        collaborationWorkspaceStore.setPersonalWorkspaceAccess(
+          hasPersonalWorkspaceAccessByUserInfo(userInfo)
+        )
       }
 
       persistRememberedCredentials()

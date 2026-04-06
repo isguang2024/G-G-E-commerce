@@ -8,14 +8,25 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/workspacefeaturebinding"
 	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
 )
 
 type Service interface {
+	RefreshCollaborationWorkspace(collaborationWorkspaceID uuid.UUID) error
+	RefreshCollaborationWorkspaces(collaborationWorkspaceIDs []uuid.UUID) error
+	RefreshAllCollaborationWorkspaces() error
+	RefreshPersonalWorkspaceUser(userID uuid.UUID) error
+	RefreshPersonalWorkspaceUsers(userIDs []uuid.UUID) error
+	RefreshAllPersonalWorkspaceUsers() error
+	RefreshPersonalWorkspaceRole(roleID uuid.UUID) error
+	RefreshPersonalWorkspaceRoles(roleIDs []uuid.UUID) error
+	RefreshAllPersonalWorkspaceRoles() error
+
+	// 兼容旧命名，后续删除。
 	RefreshTeam(teamID uuid.UUID) error
 	RefreshTeams(collaborationWorkspaceIDs []uuid.UUID) error
 	RefreshAllTeams() error
@@ -33,33 +44,33 @@ type Service interface {
 }
 
 type RefreshStats struct {
-	RequestedPackageCount int       `json:"requested_package_count"`
-	ImpactedPackageCount  int       `json:"impacted_package_count"`
-	RoleCount             int       `json:"role_count"`
-	CollaborationWorkspaceCount             int       `json:"collaboration_workspace_count"`
-	UserCount             int       `json:"user_count"`
-	ElapsedMilliseconds   int64     `json:"elapsed_milliseconds"`
-	FinishedAt            time.Time `json:"finished_at"`
+	RequestedPackageCount       int       `json:"requested_package_count"`
+	ImpactedPackageCount        int       `json:"impacted_package_count"`
+	RoleCount                   int       `json:"role_count"`
+	CollaborationWorkspaceCount int       `json:"collaboration_workspace_count"`
+	UserCount                   int       `json:"user_count"`
+	ElapsedMilliseconds         int64     `json:"elapsed_milliseconds"`
+	FinishedAt                  time.Time `json:"finished_at"`
 }
 
 type service struct {
-	db              *gorm.DB
-	boundaryService teamboundary.Service
-	platformService platformaccess.Service
-	roleService     platformroleaccess.Service
+	db                           *gorm.DB
+	boundaryService              collaborationworkspaceboundary.Service
+	personalWorkspaceService     platformaccess.Service
+	personalWorkspaceRoleService platformroleaccess.Service
 }
 
-func NewService(db *gorm.DB, boundaryService teamboundary.Service, platformService platformaccess.Service, roleService platformroleaccess.Service) Service {
+func NewService(db *gorm.DB, boundaryService collaborationworkspaceboundary.Service, platformService platformaccess.Service, roleService platformroleaccess.Service) Service {
 	return &service{
-		db:              db,
-		boundaryService: boundaryService,
-		platformService: platformService,
-		roleService:     roleService,
+		db:                           db,
+		boundaryService:              boundaryService,
+		personalWorkspaceService:     platformService,
+		personalWorkspaceRoleService: roleService,
 	}
 }
 
-func (s *service) RefreshTeam(teamID uuid.UUID) error {
-	if teamID == uuid.Nil || s.boundaryService == nil {
+func (s *service) RefreshCollaborationWorkspace(collaborationWorkspaceID uuid.UUID) error {
+	if collaborationWorkspaceID == uuid.Nil || s.boundaryService == nil {
 		return nil
 	}
 	appKeys, err := s.listAppKeys()
@@ -67,33 +78,33 @@ func (s *service) RefreshTeam(teamID uuid.UUID) error {
 		return err
 	}
 	for _, appKey := range appKeys {
-		if _, refreshErr := s.boundaryService.RefreshSnapshot(teamID, appKey); refreshErr != nil {
+		if _, refreshErr := s.boundaryService.RefreshSnapshot(collaborationWorkspaceID, appKey); refreshErr != nil {
 			return refreshErr
 		}
 	}
 	return nil
 }
 
-func (s *service) RefreshTeams(collaborationWorkspaceIDs []uuid.UUID) error {
-	for _, teamID := range dedupeUUIDs(collaborationWorkspaceIDs) {
-		if err := s.RefreshTeam(teamID); err != nil {
+func (s *service) RefreshCollaborationWorkspaces(collaborationWorkspaceIDs []uuid.UUID) error {
+	for _, collaborationWorkspaceID := range dedupeUUIDs(collaborationWorkspaceIDs) {
+		if err := s.RefreshCollaborationWorkspace(collaborationWorkspaceID); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *service) RefreshAllTeams() error {
+func (s *service) RefreshAllCollaborationWorkspaces() error {
 	if s.db == nil {
 		return nil
 	}
-	type tenantIDOnly struct {
+	type collaborationWorkspaceIDOnly struct {
 		ID uuid.UUID
 	}
 	return s.db.Model(&models.Tenant{}).
 		Select("id").
-		FindInBatches(&[]tenantIDOnly{}, 200, func(tx *gorm.DB, _ int) error {
-			rows, ok := tx.Statement.Dest.(*[]tenantIDOnly)
+		FindInBatches(&[]collaborationWorkspaceIDOnly{}, 200, func(tx *gorm.DB, _ int) error {
+			rows, ok := tx.Statement.Dest.(*[]collaborationWorkspaceIDOnly)
 			if !ok || len(*rows) == 0 {
 				return nil
 			}
@@ -103,12 +114,12 @@ func (s *service) RefreshAllTeams() error {
 					collaborationWorkspaceIDs = append(collaborationWorkspaceIDs, row.ID)
 				}
 			}
-			return s.RefreshTeams(collaborationWorkspaceIDs)
+			return s.RefreshCollaborationWorkspaces(collaborationWorkspaceIDs)
 		}).Error
 }
 
-func (s *service) RefreshPlatformUser(userID uuid.UUID) error {
-	if userID == uuid.Nil || s.platformService == nil {
+func (s *service) RefreshPersonalWorkspaceUser(userID uuid.UUID) error {
+	if userID == uuid.Nil || s.personalWorkspaceService == nil {
 		return nil
 	}
 	appKeys, err := s.listAppKeys()
@@ -116,23 +127,23 @@ func (s *service) RefreshPlatformUser(userID uuid.UUID) error {
 		return err
 	}
 	for _, appKey := range appKeys {
-		if _, refreshErr := s.platformService.RefreshSnapshot(userID, appKey); refreshErr != nil {
+		if _, refreshErr := s.personalWorkspaceService.RefreshSnapshot(userID, appKey); refreshErr != nil {
 			return refreshErr
 		}
 	}
 	return nil
 }
 
-func (s *service) RefreshPlatformUsers(userIDs []uuid.UUID) error {
+func (s *service) RefreshPersonalWorkspaceUsers(userIDs []uuid.UUID) error {
 	for _, userID := range dedupeUUIDs(userIDs) {
-		if err := s.RefreshPlatformUser(userID); err != nil {
+		if err := s.RefreshPersonalWorkspaceUser(userID); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (s *service) RefreshAllPlatformUsers() error {
+func (s *service) RefreshAllPersonalWorkspaceUsers() error {
 	if s.db == nil {
 		return nil
 	}
@@ -152,11 +163,11 @@ func (s *service) RefreshAllPlatformUsers() error {
 					userIDs = append(userIDs, row.ID)
 				}
 			}
-			return s.RefreshPlatformUsers(userIDs)
+			return s.RefreshPersonalWorkspaceUsers(userIDs)
 		}).Error
 }
 
-func (s *service) RefreshPlatformRole(roleID uuid.UUID) error {
+func (s *service) RefreshPersonalWorkspaceRole(roleID uuid.UUID) error {
 	if roleID == uuid.Nil {
 		return nil
 	}
@@ -164,9 +175,9 @@ func (s *service) RefreshPlatformRole(roleID uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-	if s.roleService != nil {
+	if s.personalWorkspaceRoleService != nil {
 		for _, appKey := range appKeys {
-			if _, refreshErr := s.roleService.RefreshSnapshot(roleID, appKey); refreshErr != nil {
+			if _, refreshErr := s.personalWorkspaceRoleService.RefreshSnapshot(roleID, appKey); refreshErr != nil {
 				return refreshErr
 			}
 		}
@@ -175,22 +186,22 @@ func (s *service) RefreshPlatformRole(roleID uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-	return s.RefreshPlatformUsers(userIDs)
+	return s.RefreshPersonalWorkspaceUsers(userIDs)
 }
 
-func (s *service) RefreshPlatformRoles(roleIDs []uuid.UUID) error {
+func (s *service) RefreshPersonalWorkspaceRoles(roleIDs []uuid.UUID) error {
 	dedupedRoleIDs := dedupeUUIDs(roleIDs)
 	appKeys, err := s.listAppKeys()
 	if err != nil {
 		return err
 	}
-	if s.roleService != nil {
+	if s.personalWorkspaceRoleService != nil {
 		for _, appKey := range appKeys {
 			for _, roleID := range dedupedRoleIDs {
 				if roleID == uuid.Nil {
 					continue
 				}
-				if _, refreshErr := s.roleService.RefreshSnapshot(roleID, appKey); refreshErr != nil {
+				if _, refreshErr := s.personalWorkspaceRoleService.RefreshSnapshot(roleID, appKey); refreshErr != nil {
 					return refreshErr
 				}
 			}
@@ -200,10 +211,10 @@ func (s *service) RefreshPlatformRoles(roleIDs []uuid.UUID) error {
 	if err != nil {
 		return err
 	}
-	return s.RefreshPlatformUsers(userIDs)
+	return s.RefreshPersonalWorkspaceUsers(userIDs)
 }
 
-func (s *service) RefreshAllPlatformRoles() error {
+func (s *service) RefreshAllPersonalWorkspaceRoles() error {
 	if s.db == nil {
 		return nil
 	}
@@ -224,7 +235,7 @@ func (s *service) RefreshAllPlatformRoles() error {
 					roleIDs = append(roleIDs, row.ID)
 				}
 			}
-			return s.RefreshPlatformRoles(roleIDs)
+			return s.RefreshPersonalWorkspaceRoles(roleIDs)
 		}).Error
 }
 
@@ -290,13 +301,13 @@ func (s *service) RefreshByPackagesWithStats(packageIDs []uuid.UUID) (RefreshSta
 	stats.RoleCount = len(dedupedRoleIDs)
 	stats.UserCount = len(dedupedUserIDs)
 
-	if err := s.RefreshPlatformRoles(dedupedRoleIDs); err != nil {
+	if err := s.RefreshPersonalWorkspaceRoles(dedupedRoleIDs); err != nil {
 		return stats, err
 	}
-	if err := s.RefreshTeams(dedupedCollaborationWorkspaceIDs); err != nil {
+	if err := s.RefreshCollaborationWorkspaces(dedupedCollaborationWorkspaceIDs); err != nil {
 		return stats, err
 	}
-	if err := s.RefreshPlatformUsers(dedupedUserIDs); err != nil {
+	if err := s.RefreshPersonalWorkspaceUsers(dedupedUserIDs); err != nil {
 		return stats, err
 	}
 
@@ -399,11 +410,11 @@ func (s *service) getRoleBindingsByPackageIDs(packageIDs []uuid.UUID) ([]roleBin
 	for _, row := range rows {
 		binding := roleBinding{RoleID: row.RoleID}
 		if row.CollaborationWorkspaceID.Valid && row.CollaborationWorkspaceID.String != "" {
-			tenantID, parseErr := uuid.Parse(row.CollaborationWorkspaceID.String)
+			collaborationWorkspaceID, parseErr := uuid.Parse(row.CollaborationWorkspaceID.String)
 			if parseErr != nil {
 				return nil, parseErr
 			}
-			binding.CollaborationWorkspaceID = &tenantID
+			binding.CollaborationWorkspaceID = &collaborationWorkspaceID
 		}
 		result = append(result, binding)
 	}
@@ -427,6 +438,42 @@ func (s *service) getPlatformUserIDsByPackageIDs(packageIDs []uuid.UUID) ([]uuid
 		return nil, err
 	}
 	return dedupeUUIDs(append(workspaceUserIDs, userIDs...)), nil
+}
+
+func (s *service) RefreshTeam(teamID uuid.UUID) error {
+	return s.RefreshCollaborationWorkspace(teamID)
+}
+
+func (s *service) RefreshTeams(collaborationWorkspaceIDs []uuid.UUID) error {
+	return s.RefreshCollaborationWorkspaces(collaborationWorkspaceIDs)
+}
+
+func (s *service) RefreshAllTeams() error {
+	return s.RefreshAllCollaborationWorkspaces()
+}
+
+func (s *service) RefreshPlatformUser(userID uuid.UUID) error {
+	return s.RefreshPersonalWorkspaceUser(userID)
+}
+
+func (s *service) RefreshPlatformUsers(userIDs []uuid.UUID) error {
+	return s.RefreshPersonalWorkspaceUsers(userIDs)
+}
+
+func (s *service) RefreshAllPlatformUsers() error {
+	return s.RefreshAllPersonalWorkspaceUsers()
+}
+
+func (s *service) RefreshPlatformRole(roleID uuid.UUID) error {
+	return s.RefreshPersonalWorkspaceRole(roleID)
+}
+
+func (s *service) RefreshPlatformRoles(roleIDs []uuid.UUID) error {
+	return s.RefreshPersonalWorkspaceRoles(roleIDs)
+}
+
+func (s *service) RefreshAllPlatformRoles() error {
+	return s.RefreshAllPersonalWorkspaceRoles()
 }
 
 func (s *service) getPlatformUserIDsByRoleIDs(roleIDs []uuid.UUID) ([]uuid.UUID, error) {

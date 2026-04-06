@@ -65,25 +65,25 @@
       />
     </ElCard>
 
-    <TeamRoleDialog
+    <CollaborationWorkspaceRoleDialog
       v-model="roleDialog"
       :dialog-type="dialogType"
       :role-data="currentRoleData"
       @success="onSuccess"
     />
-    <TeamRolePackageDialog
+    <CollaborationWorkspaceRolePackageDialog
       v-model="packageDialog"
       :role-data="currentRoleData"
       :app-key="targetAppKey"
       @success="onSuccess"
     />
-    <TeamRoleMenuDialog
+    <CollaborationWorkspaceRoleMenuDialog
       v-model="menuDialog"
       :role-data="currentRoleData"
       :app-key="targetAppKey"
       @success="onSuccess"
     />
-    <TeamRoleActionDialog
+    <CollaborationWorkspaceRoleActionDialog
       v-model="actionDialog"
       :role-data="currentRoleData"
       :app-key="targetAppKey"
@@ -99,16 +99,19 @@
   import { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import { useAuth } from '@/hooks/core/useAuth'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchDeleteMyTeamRole, fetchGetMyTeamBoundaryRoles } from '@/api/team'
+  import {
+    fetchDeleteMyCollaborationWorkspaceRole,
+    fetchGetMyCollaborationWorkspaceBoundaryRoles
+  } from '@/api/collaboration-workspace'
   import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
   import { fetchGetApps } from '@/api/system-manage'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
-  import TeamRoleDialog from './modules/team-role-dialog.vue'
-  import TeamRolePackageDialog from './modules/team-role-package-dialog.vue'
-  import TeamRoleMenuDialog from './modules/team-role-menu-dialog.vue'
-  import TeamRoleActionDialog from './modules/team-role-action-dialog.vue'
+  import CollaborationWorkspaceRoleDialog from './modules/team-role-dialog.vue'
+  import CollaborationWorkspaceRolePackageDialog from './modules/team-role-package-dialog.vue'
+  import CollaborationWorkspaceRoleMenuDialog from './modules/team-role-menu-dialog.vue'
+  import CollaborationWorkspaceRoleActionDialog from './modules/team-role-action-dialog.vue'
 
-  defineOptions({ name: 'TeamRolesAndPermissions' })
+  defineOptions({ name: 'CollaborationWorkspaceRolesAndPermissions' })
 
   type RoleListItem = Api.SystemManage.RoleListItem
   const { hasAction } = useAuth()
@@ -158,7 +161,9 @@
             size: 20
           }
         }
-        const list = await fetchGetMyTeamBoundaryRoles(targetAppKey.value)
+        const list = (await fetchGetMyCollaborationWorkspaceBoundaryRoles(
+          targetAppKey.value
+        )) as RoleListItem[]
         return {
           records: list,
           total: list.length,
@@ -211,7 +216,7 @@
             }
             return h('div', [
               h(ArtButtonMore, {
-                list,
+                list: list as ButtonMoreItem[],
                 onClick: (item: ButtonMoreItem) => buttonMoreClick(item, row)
               })
             ])
@@ -250,7 +255,7 @@
       await ElMessageBox.confirm(`确认删除协作空间角色“${row.roleName}”吗？`, '删除确认', {
         type: 'warning'
       })
-      await fetchDeleteMyTeamRole(row.roleId)
+      await fetchDeleteMyCollaborationWorkspaceRole(row.roleId)
       onSuccess()
     }
   }

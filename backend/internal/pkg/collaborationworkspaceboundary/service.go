@@ -1,4 +1,4 @@
-package teamboundary
+package collaborationworkspaceboundary
 
 import (
 	"github.com/google/uuid"
@@ -187,11 +187,11 @@ func (s *service) calculateRoleSnapshot(teamID, roleID uuid.UUID, inheritAll boo
 	if err != nil {
 		return nil, err
 	}
-	teamPackageIDs, expandedTeamPackageIDs, err := s.resolvePackageSet(directTeamPackageIDs, "team", appKey)
+	collaborationWorkspaceFeaturePackageIDs, expandedTeamPackageIDs, err := s.resolvePackageSet(directTeamPackageIDs, "team", appKey)
 	if err != nil {
 		return nil, err
 	}
-	effectivePackageIDs := teamPackageIDs
+	effectivePackageIDs := collaborationWorkspaceFeaturePackageIDs
 	effectiveExpandedPackageIDs := expandedTeamPackageIDs
 	inherited := inheritAll
 	if !inheritAll {
@@ -204,7 +204,7 @@ func (s *service) calculateRoleSnapshot(teamID, roleID uuid.UUID, inheritAll boo
 			return nil, roleErr
 		}
 		if len(rolePackageIDs) > 0 {
-			effectivePackageIDs = intersectIDs(teamPackageIDs, rolePackageIDs)
+			effectivePackageIDs = intersectIDs(collaborationWorkspaceFeaturePackageIDs, rolePackageIDs)
 			effectiveExpandedPackageIDs = intersectIDs(expandedTeamPackageIDs, expandedRolePackageIDs)
 			inherited = false
 		} else {

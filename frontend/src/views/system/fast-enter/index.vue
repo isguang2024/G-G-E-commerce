@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="fast-enter-page art-full-height">
     <AdminWorkspaceHero
       title="快捷应用管理"
@@ -291,11 +291,11 @@
     'MessageRecordManage',
     'MessageSenderManage',
     'MessageRecipientGroupManage',
-    'TeamMessageManage',
-    'TeamMessageTemplateManage',
-    'TeamMessageRecordManage',
-    'TeamMessageSenderManage',
-    'TeamMessageRecipientGroupManage'
+    'CollaborationWorkspaceMessageManage',
+    'CollaborationWorkspaceMessageTemplateManage',
+    'CollaborationWorkspaceMessageRecordManage',
+    'CollaborationWorkspaceMessageSenderManage',
+    'CollaborationWorkspaceMessageRecipientGroupManage'
   ])
 
   type DrawerApplicationDraft = FastEnterApplication & { id: string }

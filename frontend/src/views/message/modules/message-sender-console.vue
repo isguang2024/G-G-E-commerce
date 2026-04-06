@@ -86,7 +86,7 @@
             <div class="message-sender-drawer__title">{{ drawerModel.name || '未命名发送人' }}</div>
             <div class="message-sender-drawer__text">{{ drawerSummary }}</div>
           </div>
-          <ElTag effect="plain">{{ isTeamScope ? '协作空间发送人' : '平台发送人' }}</ElTag>
+          <ElTag effect="plain">{{ isCollaborationScope ? '协作空间发送人' : '平台发送人' }}</ElTag>
         </div>
 
         <div class="message-sender-drawer__form">
@@ -169,12 +169,12 @@
   }
 
   const {
-    isTeamScope,
-    skipTenantHeader,
-    currentTeamName,
+    isCollaborationScope,
+    skipCollaborationWorkspaceHeader,
+    currentCollaborationWorkspaceName,
     currentWorkspaceName,
     currentWorkspaceLabel,
-    ensureTeamContext,
+    ensureCollaborationWorkspaceContext,
     formatTime
   } = useMessageWorkspace(props.scope)
 
@@ -190,14 +190,14 @@
   const drawerEditingId = ref('')
   const drawerModel = ref<SenderDrawerModel | null>(null)
 
-  const pageTitle = computed(() => (isTeamScope.value ? '协作空间发送人' : '发送人管理'))
+  const pageTitle = computed(() => (isCollaborationScope.value ? '协作空间发送人' : '发送人管理'))
   const pageDescription = computed(() =>
-    isTeamScope.value
-      ? `维护 ${currentWorkspaceName.value} 下 ${currentTeamName.value} 使用的协作空间消息发送人，默认发送人建议保持“协作空间”或更具体的协作空间身份。`
+    isCollaborationScope.value
+      ? `维护 ${currentWorkspaceName.value} 下 ${currentCollaborationWorkspaceName.value} 使用的协作空间消息发送人，默认发送人建议保持“协作空间”或更具体的协作空间身份。`
       : '维护平台消息发送人，默认发送人为“平台”，也可以扩展为平台管理、平台空间等发送身份。'
   )
   const toolbarDescription = computed(() =>
-    isTeamScope.value
+    isCollaborationScope.value
       ? '协作空间侧发送人只作用于当前协作空间消息发送页。'
       : '平台侧发送人只作用于平台消息发送页。'
   )
@@ -207,13 +207,13 @@
     { label: '正常状态', value: list.value.filter((item) => item.status === 'normal').length }
   ])
   const drawerSummary = computed(() =>
-    isTeamScope.value
-      ? `保存后会作为 ${currentWorkspaceLabel.value} 下 ${currentTeamName.value} 的可选发送人。`
+    isCollaborationScope.value
+      ? `保存后会作为 ${currentWorkspaceLabel.value} 下 ${currentCollaborationWorkspaceName.value} 的可选发送人。`
       : '保存后会作为平台消息发送页的可选发送人。'
   )
 
   const createDefaultModel = (): SenderDrawerModel => ({
-    name: isTeamScope.value ? '协作空间' : '平台',
+    name: isCollaborationScope.value ? '协作空间' : '平台',
     description: '',
     avatar_url: '',
     is_default: list.value.length === 0,
@@ -224,9 +224,9 @@
     loading.value = true
     loadError.value = ''
     try {
-      ensureTeamContext()
+      ensureCollaborationWorkspaceContext()
       const result = await fetchGetMessageSenderList({
-        skipTenantHeader: skipTenantHeader.value
+        skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
       })
       list.value = result.records || []
       pagination.current = 1
@@ -272,11 +272,11 @@
     try {
       if (drawerEditingId.value) {
         await fetchUpdateMessageSender(drawerEditingId.value, drawerModel.value, {
-          skipTenantHeader: skipTenantHeader.value
+          skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
         })
       } else {
         await fetchCreateMessageSender(drawerModel.value, {
-          skipTenantHeader: skipTenantHeader.value
+          skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
         })
       }
       drawerVisible.value = false

@@ -152,7 +152,7 @@ func resolveContextCollaborationWorkspaceID(c *gin.Context) (*uuid.UUID, error) 
 	} else if parsed != nil {
 		return parsed, nil
 	}
-	return parseOptionalUUID(c.GetString("legacy_collaboration_workspace_id"))
+	return nil, nil
 }
 
 func normalizeWorkspaceType(value string, collaborationWorkspaceID *uuid.UUID) string {

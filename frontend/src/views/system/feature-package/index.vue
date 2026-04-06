@@ -29,8 +29,8 @@
         :metrics="[
           { label: '当前 App', value: targetAppKey },
           { label: '当前页功能包数', value: data.length },
-          { label: '平台功能包', value: platformPackageCount },
-          { label: '协作空间功能包', value: teamPackageCount },
+          { label: '个人空间功能包', value: platformPackageCount },
+          { label: '协作空间功能包', value: collaborationPackageCount },
           { label: '双上下文功能包', value: sharedPackageCount },
           {
             label: activePackageType === 'base' ? '已组合功能范围数' : '组合包数量',
@@ -133,7 +133,7 @@
       @success="handleRefresh"
     />
 
-    <FeaturePackageTeamsDialog
+    <FeaturePackageCollaborationWorkspacesDialog
       v-model="teamsDialogVisible"
       :package-id="currentPackage.id || ''"
       :package-name="currentPackage.name || ''"
@@ -243,7 +243,7 @@
   import FeaturePackageBundlesDialog from './modules/feature-package-bundles-dialog.vue'
   import FeaturePackageActionsDialog from './modules/feature-package-actions-dialog.vue'
   import FeaturePackageMenusDialog from './modules/feature-package-menus-dialog.vue'
-  import FeaturePackageTeamsDialog from './modules/feature-package-teams-dialog.vue'
+  import FeaturePackageCollaborationWorkspacesDialog from './modules/feature-package-teams-dialog.vue'
 
   defineOptions({ name: 'FeaturePackage' })
 
@@ -281,7 +281,7 @@
   const platformPackageCount = computed(
     () => data.value.filter((item) => supportsPlatform(item.contextType)).length
   )
-  const teamPackageCount = computed(
+  const collaborationPackageCount = computed(
     () => data.value.filter((item) => supportsTeam(item.contextType)).length
   )
   const sharedPackageCount = computed(
@@ -319,8 +319,8 @@
 
   const contextTypeOptions = [
     { label: '全部上下文', value: '' },
-    { label: '平台功能包', value: 'platform' },
-    { label: '协作空间功能包', value: 'team' },
+    { label: '个人空间功能包', value: 'platform' },
+    { label: '协作空间功能包', value: 'collaboration' },
     { label: '通用功能包', value: 'common' }
   ]
 
@@ -770,7 +770,7 @@
   }
 
   function formatContextType(contextType?: string) {
-    if (contextType === 'platform') return '平台'
+    if (contextType === 'platform') return '个人空间'
     if (contextType === 'collaboration') return '协作空间'
     if (contextType === 'common') return '通用'
     return contextType || '-'

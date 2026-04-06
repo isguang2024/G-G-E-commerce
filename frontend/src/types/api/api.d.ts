@@ -98,6 +98,7 @@ declare namespace Api {
       collaboration_workspace_id?: string
       current_auth_workspace_id?: string
       current_auth_workspace_type?: 'personal' | 'collaboration' | string
+      current_collaboration_workspace_name?: string
       actions?: string[]
       created_at: string
       updated_at?: string
@@ -120,6 +121,10 @@ declare namespace Api {
       code: string
       ownerUserId?: string
       collaborationWorkspaceId?: string
+      currentCollaborationWorkspaceId?: string
+      current_collaboration_workspace_id?: string
+      currentCollaborationWorkspaceName?: string
+      current_collaboration_workspace_name?: string
       legacyCollaborationWorkspaceId?: string
       status: string
     }
@@ -425,7 +430,6 @@ declare namespace Api {
       type: 'platform' | 'collaboration' | string
       collaborationWorkspaceId?: string
       collaborationWorkspaceName?: string
-      tenantName?: string
     }
 
     interface UserPermissionSnapshotSummary {
@@ -481,6 +485,8 @@ declare namespace Api {
       reasons: string[]
       matchedInSnapshot?: boolean
       bypassedBySuperAdmin?: boolean
+      blockedByCollaborationWorkspace?: boolean
+      /** 兼容旧字段 */
       blockedByTeam?: boolean
       denialStage?: string
       denialReason?: string
@@ -518,7 +524,7 @@ declare namespace Api {
       context: UserPermissionContext
       snapshot: UserPermissionSnapshotSummary
       roles: UserPermissionRoleResult[]
-      teamMember?: {
+      collaborationWorkspaceMember?: {
         id?: string
         collaborationWorkspaceId?: string
         userId?: string
@@ -529,7 +535,7 @@ declare namespace Api {
         status?: string
         matched?: boolean
       } | null
-      teamPackages?: FeaturePackageItem[]
+      collaborationWorkspacePackages?: FeaturePackageItem[]
       diagnosis?: UserPermissionDiagnosisResult | null
       menus?: UserPermissionMenuNode[]
     }
@@ -716,7 +722,7 @@ declare namespace Api {
       updatedAt?: string
     }
 
-    interface FeaturePackageTeamBinding {
+    interface FeaturePackageCollaborationWorkspaceBinding {
       collaboration_workspace_ids: string[]
     }
 
@@ -797,7 +803,7 @@ declare namespace Api {
       menus: AppRouteRecord[]
     }
 
-    interface FeaturePackageTeamSetParams {
+    interface FeaturePackageCollaborationWorkspaceSetParams {
       collaboration_workspace_ids: string[]
     }
 
@@ -1109,7 +1115,7 @@ declare namespace Api {
       }>
     }
 
-    interface TeamActionOriginsResponse {
+    interface CollaborationWorkspaceActionOriginsResponse {
       derived_action_ids: string[]
       derived_sources?: Array<{
         action_id: string
@@ -1118,7 +1124,7 @@ declare namespace Api {
       blocked_action_ids?: string[]
     }
 
-    interface TeamMenuOriginsResponse {
+    interface CollaborationWorkspaceMenuOriginsResponse {
       derived_menu_ids: string[]
       derived_sources?: Array<{
         menu_id: string
@@ -1397,12 +1403,6 @@ declare namespace Api {
       admin_user_ids?: string[]
     }
 
-    type TeamList = CollaborationWorkspaceList
-    type TeamListItem = CollaborationWorkspaceListItem
-    type TeamSearchParams = CollaborationWorkspaceSearchParams
-    type TeamCreateParams = CollaborationWorkspaceCreateParams
-    type TeamUpdateParams = CollaborationWorkspaceUpdateParams
-
     /** 协作空间成员项（与后端 ListMembers 返回一致） */
     interface CollaborationWorkspaceMemberItem {
       id: string
@@ -1662,6 +1662,8 @@ declare namespace Api {
       description?: string
       collaboration_workspace_id?: string
       collaboration_workspace_name?: string
+      current_collaboration_workspace_id?: string
+      current_collaboration_workspace_name?: string
       team_name?: string
     }
 
@@ -1817,8 +1819,6 @@ declare namespace Api {
       user_id?: string
       user_name?: string
       collaboration_workspace_id?: string
-      collaboration_workspace_id?: string
-      collaboration_workspace_name?: string
       collaboration_workspace_name?: string
       tenant_name?: string
       role_code?: string
@@ -1859,7 +1859,7 @@ declare namespace Api {
         | string
       user_id?: string
       collaboration_workspace_id?: string
-      collaboration_workspace_id?: string
+      collaboration_workspace_name?: string
       role_code?: string
       package_key?: string
       sort_order?: number

@@ -13,8 +13,7 @@ import (
 )
 
 const (
-	legacyCollaborationWorkspaceHeader = "X-Collaboration-Workspace-Id"
-	collaborationWorkspaceHeader       = "X-Collaboration-Workspace-Id"
+	collaborationWorkspaceHeader = "X-Collaboration-Workspace-Id"
 )
 
 func AppContext(db *gorm.DB) gin.HandlerFunc {
@@ -36,13 +35,9 @@ func AppContext(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		userID := contextUUID(c, "user_id")
-		currentCollaborationWorkspaceID := contextUUID(c, "collaboration_workspace_id")
-		if currentCollaborationWorkspaceID == nil {
-			currentCollaborationWorkspaceID = headerUUID(c.GetHeader(collaborationWorkspaceHeader))
-		}
-		legacyCollaborationWorkspaceID := contextUUID(c, "legacy_collaboration_workspace_id")
-		if legacyCollaborationWorkspaceID == nil {
-			legacyCollaborationWorkspaceID = headerUUID(c.GetHeader(legacyCollaborationWorkspaceHeader))
+		collaborationWorkspaceID := contextUUID(c, "collaboration_workspace_id")
+		if collaborationWorkspaceID == nil {
+			collaborationWorkspaceID = headerUUID(c.GetHeader(collaborationWorkspaceHeader))
 		}
 
 		spaceKey, spaceResolvedBy, resolveErr := spacepkg.ResolveCurrentSpaceKey(
@@ -51,7 +46,7 @@ func AppContext(db *gorm.DB) gin.HandlerFunc {
 			host,
 			spacepkg.RequestSpaceKey(c),
 			userID,
-			legacyCollaborationWorkspaceID,
+			collaborationWorkspaceID,
 		)
 		if resolveErr != nil {
 			spaceKey = spacepkg.DefaultMenuSpaceKey
@@ -63,11 +58,8 @@ func AppContext(db *gorm.DB) gin.HandlerFunc {
 		c.Set("app_resolved_by", appResolvedBy)
 		c.Set("space_key", spaceKey)
 		c.Set("resolved_by", spaceResolvedBy)
-		if currentCollaborationWorkspaceID != nil {
-			c.Set("collaboration_workspace_id", currentCollaborationWorkspaceID.String())
-		}
-		if legacyCollaborationWorkspaceID != nil {
-			c.Set("legacy_collaboration_workspace_id", legacyCollaborationWorkspaceID.String())
+		if collaborationWorkspaceID != nil {
+			c.Set("collaboration_workspace_id", collaborationWorkspaceID.String())
 		}
 
 		c.Next()

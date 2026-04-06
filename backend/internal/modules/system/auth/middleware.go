@@ -102,9 +102,7 @@ func applyAuthorizationContext(c *gin.Context, claims *jwt.Claims, db *gorm.DB) 
 	c.Set("auth_workspace_type", authWorkspace.WorkspaceType)
 	if authWorkspace.CollaborationWorkspaceID != nil && *authWorkspace.CollaborationWorkspaceID != uuid.Nil {
 		c.Set("collaboration_workspace_id", authWorkspace.CollaborationWorkspaceID.String())
-		c.Set("legacy_collaboration_workspace_id", authWorkspace.CollaborationWorkspaceID.String())
 		return
 	}
 	c.Set("collaboration_workspace_id", "")
-	c.Set("legacy_collaboration_workspace_id", "")
 }

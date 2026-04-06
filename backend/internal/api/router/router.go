@@ -17,7 +17,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/permission"
 	"github.com/gg-ecommerce/backend/internal/modules/system/role"
 	"github.com/gg-ecommerce/backend/internal/modules/system/system"
-	collaborationworkspace "github.com/gg-ecommerce/backend/internal/modules/system/tenant"
+	collaborationworkspace "github.com/gg-ecommerce/backend/internal/modules/system/collaborationworkspace"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/modules/system/workspace"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiendpointaccess"
@@ -51,7 +51,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 	permissionModule := permission.NewPermissionModule(db, cfg, logger)
 	featurePackageModule := featurepackage.NewModule(db, cfg, logger)
 	roleModule := role.NewRoleModule(db, cfg, logger)
-	tenantModule := collaborationworkspace.NewTenantModule(db, cfg, logger)
+	collaborationWorkspaceModule := collaborationworkspace.NewCollaborationWorkspaceModule(db, cfg, logger)
 	workspaceModule := workspace.NewModule(db, cfg, logger)
 	mediaModule := media.NewMediaModule(db, cfg, logger)
 	systemModule := system.NewSystemModule(db, cfg, logger)
@@ -80,7 +80,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			permissionModule.RegisterRoutes(authenticated)
 			featurePackageModule.RegisterRoutes(authenticated)
 			roleModule.RegisterRoutes(authenticated)
-			tenantModule.RegisterRoutes(authenticated)
+			collaborationWorkspaceModule.RegisterRoutes(authenticated)
 			workspaceModule.RegisterRoutes(authenticated)
 			mediaModule.RegisterRoutes(authenticated)
 			systemModule.RegisterRoutes(authenticated)

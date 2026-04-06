@@ -116,7 +116,7 @@
               open="actions"
               filtered-blocked-empty-text="当前筛选下暂无角色显式关闭能力"
               empty-title="当前暂无角色能力来源"
-              empty-text="请先为角色绑定功能包，或检查平台角色快照是否已经刷新。"
+              empty-text="请先为角色绑定功能包，或检查个人空间角色快照是否已经刷新。"
             />
 
             <div class="cascader-toolbar">

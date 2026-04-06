@@ -7,7 +7,7 @@ const USER_BASE = '/api/v1/users'
 const ROLE_BASE = '/api/v1/roles'
 const ACTION_PERMISSION_BASE = '/api/v1/permission-actions'
 const FEATURE_PACKAGE_BASE = '/api/v1/feature-packages'
-const TENANT_BASE = '/api/v1/collaboration-workspaces'
+const COLLABORATION_WORKSPACE_BASE = '/api/v1/collaboration-workspaces'
 const SYSTEM_BASE = '/api/v1/system'
 const APP_BASE = '/api/v1/system/apps'
 const APP_HOST_BINDING_BASE = '/api/v1/system/app-host-bindings'
@@ -228,7 +228,9 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
   }
 }
 
-function normalizeTeam(item: any): Api.SystemManage.CollaborationWorkspaceListItem {
+function normalizeCollaborationWorkspace(
+  item: any
+): Api.SystemManage.CollaborationWorkspaceListItem {
   return {
     id: item?.id || '',
     name: item?.name || '',
@@ -752,7 +754,7 @@ export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
   })
 }
 
-/** 获取用户平台功能包 */
+/** 获取用户个人空间功能包 */
 export function fetchGetUserPackages(userId: string, appKey?: string) {
   return request
     .get<Api.SystemManage.UserFeaturePackageResponse>({
@@ -760,7 +762,7 @@ export function fetchGetUserPackages(userId: string, appKey?: string) {
       params: {
         ...(appKey ? { app_key: appKey } : {})
       },
-      skipTenantHeader: true
+      skipCollaborationWorkspaceHeader: true
     })
     .then((res) => ({
       package_ids: res?.package_ids || [],
@@ -771,14 +773,14 @@ export function fetchGetUserPackages(userId: string, appKey?: string) {
     }))
 }
 
-/** 设置用户平台功能包 */
+/** 设置用户个人空间功能包 */
 export function fetchSetUserPackages(userId: string, packageIds: string[], appKey?: string) {
   return request.put<void>({
     url: `${USER_BASE}/${userId}/packages`,
     params: {
       ...(appKey ? { app_key: appKey } : {})
     },
-    skipTenantHeader: true,
+    skipCollaborationWorkspaceHeader: true,
     data: { package_ids: packageIds }
   })
 }
@@ -844,7 +846,7 @@ export function fetchDeleteUser(id: string) {
   })
 }
 
-// 分配平台角色（实际绑定到目标用户的个人工作空间）
+// 分配个人空间角色（实际绑定到目标用户的个人工作空间）
 export function fetchAssignUserRoles(id: string, roleIds: string[]) {
   return request.post<void>({
     url: `${USER_BASE}/${id}/roles`,
@@ -852,14 +854,14 @@ export function fetchAssignUserRoles(id: string, roleIds: string[]) {
   })
 }
 
-/** 获取平台用户菜单裁剪 */
+/** 获取用户个人空间菜单裁剪 */
 export async function fetchGetUserMenus(userId: string, appKey?: string) {
   const res = await request.get<Api.SystemManage.UserMenuBoundaryResponse>({
     url: `${USER_BASE}/${userId}/menus`,
     params: {
       ...(appKey ? { app_key: appKey } : {})
     },
-    skipTenantHeader: true
+    skipCollaborationWorkspaceHeader: true
   })
   return {
     menu_ids: res?.menu_ids || [],
@@ -874,14 +876,14 @@ export async function fetchGetUserMenus(userId: string, appKey?: string) {
   }
 }
 
-/** 设置平台用户菜单裁剪 */
+/** 设置用户个人空间菜单裁剪 */
 export function fetchSetUserMenus(userId: string, menuIds: string[], appKey?: string) {
   return request.put<void>({
     url: `${USER_BASE}/${userId}/menus`,
     params: {
       ...(appKey ? { app_key: appKey } : {})
     },
-    skipTenantHeader: true,
+    skipCollaborationWorkspaceHeader: true,
     data: { menu_ids: menuIds }
   })
 }
@@ -916,6 +918,12 @@ function normalizeUserPermissionDiagnosisResponse(
         ),
         bypassedBySuperAdmin: Boolean(
           item.diagnosis?.bypassed_by_super_admin ?? item.diagnosis?.bypassedBySuperAdmin
+        ),
+        blockedByCollaborationWorkspace: Boolean(
+          item.diagnosis?.blocked_by_collaboration_workspace ??
+          item.diagnosis?.blockedByCollaborationWorkspace ??
+          item.diagnosis?.blocked_by_team ??
+          item.diagnosis?.blockedByTeam
         ),
         blockedByTeam: Boolean(item.diagnosis?.blocked_by_team ?? item.diagnosis?.blockedByTeam),
         denialStage: item.diagnosis?.denial_stage || item.diagnosis?.denialStage || '',
@@ -994,11 +1002,7 @@ function normalizeUserPermissionDiagnosisResponse(
     collaborationWorkspaceId:
       item?.context?.collaboration_workspace_id || item?.context?.collaborationWorkspaceId || '',
     collaborationWorkspaceName:
-      item?.context?.collaboration_workspace_name ||
-      item?.context?.collaborationWorkspaceName ||
-      item?.context?.tenant_name ||
-      item?.context?.tenantName ||
-      ''
+      item?.context?.collaboration_workspace_name || item?.context?.collaborationWorkspaceName || ''
   } as Api.SystemManage.UserPermissionContext & {
     collaborationWorkspaceName?: string
   }
@@ -1048,7 +1052,7 @@ function normalizeUserPermissionDiagnosisResponse(
       available: Boolean(role?.available),
       sourcePackages: normalizePackages(role?.source_packages || role?.sourcePackages)
     })),
-    teamMember:
+    collaborationWorkspaceMember:
       item?.collaboration_workspace_member || item?.teamMember
         ? {
             id: item?.collaboration_workspace_member?.id || item?.teamMember?.id || '',
@@ -1065,7 +1069,9 @@ function normalizeUserPermissionDiagnosisResponse(
             )
           }
         : null,
-    teamPackages: normalizePackages(item?.team_packages || item?.teamPackages),
+    collaborationWorkspacePackages: normalizePackages(
+      item?.collaboration_workspace_packages || item?.team_packages || item?.teamPackages
+    ),
     diagnosis,
     menus: (item?.menus || []).map((menu: any) => normalizeUserPermissionMenuTree(menu))
   }
@@ -1074,7 +1080,7 @@ function normalizeUserPermissionDiagnosisResponse(
 export async function fetchGetUserCollaborationWorkspaces(userId: string) {
   const res = await request.get<Api.SystemManage.CollaborationWorkspaceListItem[]>({
     url: `${USER_BASE}/${userId}/collaboration-workspaces`,
-    skipTenantHeader: true
+    skipCollaborationWorkspaceHeader: true
   })
   return (res || []).map((item: any) => normalizeUserTeamItem(item))
 }
@@ -1117,7 +1123,7 @@ export async function fetchGetUserPermissionDiagnosis(
 ) {
   const res = await request.get<Api.SystemManage.UserPermissionDiagnosisResponse>({
     url: `${USER_BASE}/${userId}/permission-diagnosis`,
-    skipTenantHeader: true,
+    skipCollaborationWorkspaceHeader: true,
     params: {
       collaboration_workspace_id: params?.collaborationWorkspaceId,
       permission_key: params?.permissionKey
@@ -1133,7 +1139,7 @@ export async function fetchRefreshUserPermissionSnapshot(
 ) {
   const res = await request.post<Api.SystemManage.UserPermissionDiagnosisResponse>({
     url: `${USER_BASE}/${userId}/permission-refresh`,
-    skipTenantHeader: true,
+    skipCollaborationWorkspaceHeader: true,
     data: {
       collaboration_workspace_id: collaborationWorkspaceId
     }
@@ -1148,7 +1154,7 @@ export async function fetchGetUserPermissionMenus(
 ) {
   const res = await request.get<Api.SystemManage.UserPermissionMenuNode[]>({
     url: `${USER_BASE}/${userId}/permissions`,
-    skipTenantHeader: true,
+    skipCollaborationWorkspaceHeader: true,
     params: {
       collaboration_workspace_id: collaborationWorkspaceId
     }
@@ -1661,19 +1667,21 @@ function normalizeFastEnterConfig(item: any): Api.SystemManage.FastEnterConfig {
   }
 }
 
-export function fetchGetTenantOptions(
+export function fetchGetCollaborationWorkspaceOptions(
   params?: Partial<Api.SystemManage.CollaborationWorkspaceSearchParams>
 ) {
   return request
     .get<{ records: Api.SystemManage.CollaborationWorkspaceListItem[]; total: number }>({
-      url: `${TENANT_BASE}/options`,
+      url: `${COLLABORATION_WORKSPACE_BASE}/options`,
       params
     })
     .then((res) => ({
-      records: (res?.records || []).map(normalizeTeam),
+      records: (res?.records || []).map(normalizeCollaborationWorkspace),
       total: res?.total || 0
     }))
 }
+
+export const fetchGetTenantOptions = fetchGetCollaborationWorkspaceOptions
 
 /** 获取功能包详情 */
 export function fetchGetFeaturePackage(id: string) {
@@ -1868,7 +1876,7 @@ export function fetchSetFeaturePackageMenus(id: string, menuIds: string[], appKe
 
 /** 获取已开通当前功能包的协作空间 */
 export function fetchGetFeaturePackageCollaborationWorkspaces(id: string) {
-  return request.get<Api.SystemManage.FeaturePackageTeamBinding>({
+  return request.get<Api.SystemManage.FeaturePackageCollaborationWorkspaceBinding>({
     url: `${FEATURE_PACKAGE_BASE}/${id}/collaboration-workspaces`
   })
 }
@@ -1876,7 +1884,9 @@ export function fetchGetFeaturePackageCollaborationWorkspaces(id: string) {
 /** 配置功能包开通协作空间 */
 export function fetchSetFeaturePackageCollaborationWorkspaces(
   id: string,
-  collaborationWorkspaceIds: string[] | Api.SystemManage.FeaturePackageTeamSetParams
+  collaborationWorkspaceIds:
+    | string[]
+    | Api.SystemManage.FeaturePackageCollaborationWorkspaceSetParams
 ) {
   const payload = Array.isArray(collaborationWorkspaceIds)
     ? { collaboration_workspace_ids: collaborationWorkspaceIds }
@@ -1888,10 +1898,6 @@ export function fetchSetFeaturePackageCollaborationWorkspaces(
     })
     .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
 }
-
-export const fetchGetUserTeams = fetchGetUserCollaborationWorkspaces
-export const fetchGetFeaturePackageTeams = fetchGetFeaturePackageCollaborationWorkspaces
-export const fetchSetFeaturePackageTeams = fetchSetFeaturePackageCollaborationWorkspaces
 
 /** 获取协作空间已开通的功能包 */
 export function fetchGetCollaborationWorkspaceFeaturePackages(

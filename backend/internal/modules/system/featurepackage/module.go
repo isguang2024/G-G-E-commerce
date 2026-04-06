@@ -9,10 +9,10 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
+	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 )
 
 type Module struct {
@@ -35,16 +35,16 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	packageBundleRepo := user.NewFeaturePackageBundleRepository(m.db)
 	packageActionRepo := user.NewFeaturePackageKeyRepository(m.db)
 	packageMenuRepo := user.NewFeaturePackageMenuRepository(m.db)
-	teamPackageRepo := user.NewCollaborationWorkspaceFeaturePackageRepository(m.db)
+	collaborationWorkspaceFeaturePackageRepo := user.NewCollaborationWorkspaceFeaturePackageRepository(m.db)
 	rolePackageRepo := user.NewRoleFeaturePackageRepository(m.db)
 	actionRepo := user.NewPermissionKeyRepository(m.db)
 	menuRepo := user.NewMenuRepository(m.db)
 	tenantRepo := user.NewTenantRepository(m.db)
-	boundaryService := teamboundary.NewService(m.db)
+	boundaryService := collaborationworkspaceboundary.NewService(m.db)
 	platformService := platformaccess.NewService(m.db)
 	roleSnapshotService := platformroleaccess.NewService(m.db)
 	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
-	service := NewService(m.db, packageRepo, packageBundleRepo, packageActionRepo, packageMenuRepo, teamPackageRepo, rolePackageRepo, actionRepo, menuRepo, tenantRepo, boundaryService, refresher)
+	service := NewService(m.db, packageRepo, packageBundleRepo, packageActionRepo, packageMenuRepo, collaborationWorkspaceFeaturePackageRepo, rolePackageRepo, actionRepo, menuRepo, tenantRepo, boundaryService, refresher)
 	authzService := authorization.NewService(m.db, m.logger)
 	handler := NewHandler(service, authzService, m.logger)
 
@@ -68,9 +68,9 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.PUTProtected("/:id/actions", reg.Meta("配置功能包权限").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.SetPackageKeys)
 		reg.GETProtected("/:id/menus", reg.Meta("获取功能包菜单").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.GetPackageMenus)
 		reg.PUTProtected("/:id/menus", reg.Meta("配置功能包菜单").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.SetPackageMenus)
-		reg.GETProtected("/:id/collaboration-workspaces", reg.Meta("获取功能包协作空间").BindPermissionKey("platform.package.assign").Build(), "platform.package.assign", authzService.RequireAction, handler.GetPackageTeams)
-		reg.PUTProtected("/:id/collaboration-workspaces", reg.Meta("配置功能包协作空间").BindPermissionKey("platform.package.assign").Build(), "platform.package.assign", authzService.RequireAction, handler.SetPackageTeams)
-		reg.GETProtected("/collaboration-workspaces/:collaborationWorkspaceId", reg.Meta("获取协作空间功能包").BindPermissionKey("platform.package.assign").Build(), "platform.package.assign", authzService.RequireAction, handler.GetTeamPackages)
-		reg.PUTProtected("/collaboration-workspaces/:collaborationWorkspaceId", reg.Meta("配置协作空间功能包").BindPermissionKey("platform.package.assign").Build(), "platform.package.assign", authzService.RequireAction, handler.SetTeamPackages)
+		reg.GETProtected("/:id/collaboration-workspaces", reg.Meta("获取功能包协作空间").BindPermissionKey("platform.package.assign").Build(), "platform.package.assign", authzService.RequireAction, handler.GetPackageCollaborationWorkspaces)
+		reg.PUTProtected("/:id/collaboration-workspaces", reg.Meta("配置功能包协作空间").BindPermissionKey("platform.package.assign").Build(), "platform.package.assign", authzService.RequireAction, handler.SetPackageCollaborationWorkspaces)
+		reg.GETProtected("/collaboration-workspaces/:collaborationWorkspaceId", reg.Meta("获取协作空间功能包").BindPermissionKey("platform.package.assign").Build(), "platform.package.assign", authzService.RequireAction, handler.GetCollaborationWorkspacePackages)
+		reg.PUTProtected("/collaboration-workspaces/:collaborationWorkspaceId", reg.Meta("配置协作空间功能包").BindPermissionKey("platform.package.assign").Build(), "platform.package.assign", authzService.RequireAction, handler.SetCollaborationWorkspacePackages)
 	}
 }

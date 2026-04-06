@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="access-trace-page art-full-height">
     <ElCard shadow="never" class="art-table-card">
       <template #header>
@@ -68,7 +68,7 @@
             class="trace-field"
           >
             <ElOption
-              v-for="team in teamOptions"
+              v-for="team in collaborationWorkspaceOptions"
               :key="team.id"
               :label="team.name"
               :value="team.id"
@@ -176,14 +176,17 @@
   import { ElMessage } from 'element-plus'
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
-  import { fetchGetCollaborationWorkspaceMembers, fetchGetTeamRoles } from '@/api/team'
+  import {
+    fetchGetCollaborationWorkspaceMembers,
+    fetchGetCollaborationWorkspaceRoles
+  } from '@/api/collaboration-workspace'
   import {
     fetchGetApps,
     fetchGetMenuSpaces,
     fetchGetPageAccessTrace,
     fetchGetPageList,
     fetchGetRoleOptions,
-    fetchGetTenantOptions,
+    fetchGetCollaborationWorkspaceOptions,
     fetchGetUserList
   } from '@/api/system-manage'
 
@@ -195,7 +198,7 @@
   const userOptions = ref<Api.SystemManage.UserListItem[]>([])
   const pageOptions = ref<Api.SystemManage.PageItem[]>([])
   const menuSpaces = ref<Api.SystemManage.MenuSpaceItem[]>([])
-  const teamOptions = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
+  const collaborationWorkspaceOptions = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
   const roleOptions = ref<
     Array<{ label: string; value: string; source: 'platform' | 'collaboration' }>
   >([])
@@ -269,13 +272,13 @@
       Boolean(query.collaborationWorkspaceId) &&
       (onlyTeamUsers.value || Boolean(roleCodeFilter.value))
     if (useCollaborationWorkspaceMembers && query.collaborationWorkspaceId) {
-      const teamMembers = await fetchGetCollaborationWorkspaceMembers(
+      const collaborationWorkspaceMembers = await fetchGetCollaborationWorkspaceMembers(
         query.collaborationWorkspaceId,
         {
           role_code: roleCodeFilter.value || undefined
         }
       )
-      userOptions.value = (teamMembers || []).map((item) => ({
+      userOptions.value = (collaborationWorkspaceMembers || []).map((item) => ({
         id: item.userId,
         userName: item.userName,
         nickName: item.nickName,
@@ -313,8 +316,10 @@
       return
     }
     if (query.collaborationWorkspaceId) {
-      const teamRoles = await fetchGetTeamRoles(query.collaborationWorkspaceId)
-      roleOptions.value = (teamRoles || [])
+      const collaborationWorkspaceRoles = await fetchGetCollaborationWorkspaceRoles(
+        query.collaborationWorkspaceId
+      )
+      roleOptions.value = (collaborationWorkspaceRoles || [])
         .filter((role) => {
           const code = `${role.roleCode || ''}`.trim()
           if (!code || code === 'admin') return false
@@ -344,17 +349,17 @@
       userOptions.value = []
       pageOptions.value = []
       menuSpaces.value = []
-      teamOptions.value = []
+      collaborationWorkspaceOptions.value = []
       roleOptions.value = []
       return
     }
-    const [pages, teams, spaces] = await Promise.all([
+    const [pages, collaborationWorkspacePage, spaces] = await Promise.all([
       fetchGetPageList({ current: 1, size: 500, appKey: targetAppKey.value }),
-      fetchGetTenantOptions({ current: 1, size: 200 }),
+      fetchGetCollaborationWorkspaceOptions({ current: 1, size: 200 }),
       fetchGetMenuSpaces(targetAppKey.value)
     ])
     pageOptions.value = pages.records || []
-    teamOptions.value = teams.records || []
+    collaborationWorkspaceOptions.value = collaborationWorkspacePage.records || []
     menuSpaces.value = spaces.records || []
     await loadRoleOptions()
     await loadUserOptions()

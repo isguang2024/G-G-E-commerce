@@ -71,10 +71,10 @@
   import PermissionActionCascaderPanel from '@/components/business/permission/PermissionActionCascaderPanel.vue'
   import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
   import {
-    fetchGetMyTeamBoundaryRoleActions,
-    fetchGetMyTeamBoundaryRolePackages,
-    fetchSetMyTeamBoundaryRoleActions
-  } from '@/api/team'
+    fetchGetMyCollaborationWorkspaceBoundaryRoleActions,
+    fetchGetMyCollaborationWorkspaceBoundaryRolePackages,
+    fetchSetMyCollaborationWorkspaceBoundaryRoleActions
+  } from '@/api/collaboration-workspace'
 
   interface Props {
     modelValue: boolean
@@ -151,8 +151,14 @@
       loading.value = true
       try {
         const [packagesRes, selected] = await Promise.all([
-          fetchGetMyTeamBoundaryRolePackages(props.roleData.roleId, currentAppKey.value),
-          fetchGetMyTeamBoundaryRoleActions(props.roleData.roleId, currentAppKey.value)
+          fetchGetMyCollaborationWorkspaceBoundaryRolePackages(
+            props.roleData.roleId,
+            currentAppKey.value
+          ),
+          fetchGetMyCollaborationWorkspaceBoundaryRoleActions(
+            props.roleData.roleId,
+            currentAppKey.value
+          )
         ])
         actions.value = selected?.actions || []
         selectedIds.value = [...(selected?.action_ids || [])]
@@ -181,7 +187,7 @@
     }
     saving.value = true
     try {
-      await fetchSetMyTeamBoundaryRoleActions(
+      await fetchSetMyCollaborationWorkspaceBoundaryRoleActions(
         props.roleData.roleId,
         selectedIds.value,
         currentAppKey.value

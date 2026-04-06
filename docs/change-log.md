@@ -1,5 +1,46 @@
 # Change Log
 
+## 2026-04-07 空间权限语义代码回写
+
+### 本次改动
+- 后端权限诊断和角色功能包校验已改成“个人空间 / 协作空间 / 空间权限”语义：`role/service` 不再返回“平台上下文”文案，`user/handler` 的权限诊断上下文类型已从 `platform` 收口为 `personal`，并统一使用“当前个人空间下未生效此权限”“仅支持绑定个人空间功能包”“刷新个人空间权限快照失败”等表述。
+- 前端空间上下文适配层已开始脱离 `platform = personal` 的旧表达：`frontend/src/store/modules/collaboration-workspace.ts` 现在以 `personal | collaboration` 作为上下文模式，新增 `hasPersonalWorkspaceAccessByUserInfo`、`hasPersonalWorkspaceAccess`、`setPersonalWorkspaceAccess`、`enterPersonalWorkspaceContext` 等主语义接口，同时保留旧别名仅作兼容。
+- 前端权限诊断、用户菜单裁剪、角色功能包、用户功能包、工作台等核心页面已统一改写为“个人空间 / 协作空间 / 空间权限”文案，不再把“平台上下文 / 团队上下文”当成一级模型。
+- 用户可见的角色、功能包和快捷入口说明已同步收口：个人空间角色、个人空间功能包、个人空间菜单裁剪等说法替换了旧的“平台角色 / 平台功能包 / 平台用户菜单”表述；权限键元数据中的功能包管理名称和说明也已同步改成个人空间语义。
+- 本轮已执行并通过：
+  - `Set-Location backend; go test ./... -run '^$'`
+  - `pnpm --dir frontend lint`
+  - `pnpm --dir frontend build`
+
+### 下次方向
+- 继续清 backend/frontend 活跃实现中的 `tenant/team` 内部命名，尤其是 `RefreshPlatform* / RefreshTeam* / supportsTeam / TeamList` 这类历史实现名，进一步贴近 `workspace / personal / collaboration` 最终模型。
+- 继续收口迁移、模型、种子和 public type，把仍然承载旧兼容语义的字段和别名降到最薄。
+
+## 2026-04-07 空间权限术语基线重置
+
+### 本次改动
+- 重写 `docs/workspace-permission-migration.md`，将当前目标语义正式收口为：`workspace` 是唯一权限主体，`workspace_type = personal | collaboration`，运行时权限上下文固定为 `auth_workspace_id + auth_workspace_type`。
+- 重写 `docs/workspace-glossary.md`，明确 `personal workspace` 是个人空间、`collaboration workspace` 是协作空间，`platform` 只是业务域 / app，`tenant` 只保留为未来多租户保留名词。
+- 重写 `docs/workspace-permission-stage-log.md`，把当前阶段改成“文档先定死术语，后续再回写前后端、迁移、种子和 API”，不再把旧的“平台上下文 / 团队上下文”叙述继续当作有效基线。
+- 明确本轮不再接受以下旧主语义继续扩散：`workspace_type = team`、`X-Tenant-ID`、`/api/v1/tenants/*`、`current_tenant_id`、`平台权限 / 团队权限` 顶层术语。
+
+### 下次方向
+- 按文档基线继续回写后端运行时、迁移、模型、种子和 API，把“平台上下文 / 团队上下文”彻底替换为“个人空间 / 协作空间 / 空间权限”。
+- 同步回写前端页面、路由、文案、权限诊断和组件说明，确保活跃 UI 不再把 `personal` 误写成“平台上下文”。
+
+## 2026-04-06 协作空间全量改名落地 - 后端迁移收口
+
+### 本次改动
+- 在 [backend/cmd/migrate/main.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/cmd/migrate/main.go) 中补齐协作空间预迁移，旧库升级会先原地重命名 `tenants / tenant_members / team_*` 相关表、列和索引，再进入 `AutoMigrate`；`fresh` 模式直接跳过旧 schema 兼容步骤，确保只产出新 schema。
+- 将后端协作空间主模块迁到 [backend/internal/modules/system/collaborationworkspace](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/collaborationworkspace)，并把边界服务迁到 [backend/internal/pkg/collaborationworkspaceboundary](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/collaborationworkspaceboundary)，同步更新路由挂载和 import 路径。
+- 收口协作空间上下文：`X-Auth-Workspace-Id` 与 `X-Collaboration-Workspace-Id` 作为主头部，`legacy_collaboration_workspace_id` 已从中间件和响应体移除，授权上下文统一读取 `collaboration_workspace_id`。
+- 同步清理了协作空间模块内对外日志和错误文案中的 `Tenant / team` 残留，避免新主线继续暴露旧命名。
+- 已执行 `go test ./... -run '^$'`，结果通过。
+
+### 下次方向
+- 继续收敛 `tenantID / teamID` 这类内部参数名和辅助函数名，逐步把残留旧命名从实现细节中清掉。
+- 如果后续继续做 schema 迁移，优先补一轮旧库回放验证，确认重命名表、列、索引在真实历史库上都能稳定执行。
+
 ## 2026-04-06 tenant 语义回收为未来多租户，当前主线切到协作空间
 
 ### 本次改动
@@ -7,6 +48,8 @@
 - 完成数据库与迁移链的正式收口：协作空间核心表、活跃列、索引和枚举值已切到 collaboration 命名，并在 [backend/cmd/migrate/main.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/cmd/migrate/main.go) 中通过预重命名 + value backfill 保证旧库升级和 `fresh` 初始化都直接落在新 schema 上。
 - 完成后端主契约收口：当前主请求头为 `X-Auth-Workspace-Id` 与 `X-Collaboration-Workspace-Id`，主接口为 `/api/v1/workspaces/*` 与 `/api/v1/collaboration-workspaces/*`，平台能力通过 `personal workspace` 生效，协作能力通过 `collaboration workspace` 生效。
 - 完成前端主语义收口：`workspaceStore` 仍是唯一授权上下文源，协作空间适配层与消息域 helper 已切到 `currentCollaborationWorkspaceId / collaborationWorkspaceList / loadMyCollaborationWorkspaces` 等命名，不再继续把 `currentTeam / teamList / loadMyTeams` 当成当前业务主语义。
+- 补齐 canonical 代码入口路径：新增 [frontend/src/api/collaboration-workspace.ts](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/api/collaboration-workspace.ts) 作为前端协作空间 API 主入口，新增 [backend/internal/modules/system/collaborationworkspace/module.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/collaborationworkspace/module.go) 作为后端协作空间模块主入口；active imports 已不再直接依赖旧 `@/api/team` 与 `internal/modules/system/tenant` 路径。
+- 继续清理活跃页面和内部变量里的历史 `team / tenant` 命名：协作空间管理页及其成员、菜单、功能包、权限对话框统一改成 `collaborationWorkspaceName / collaborationWorkspaceId` 语义；消息域请求选项补齐 `skipCollaborationWorkspaceHeader`，权限诊断返回结构补齐 `collaborationWorkspaceMember / collaborationWorkspacePackages` 主字段，同时保留 `team*` 兼容别名；当前 `frontend` 的 `lint` 与 `build` 以及 `backend` 的空测编译均已恢复绿色。
 - 重写 [docs/workspace-glossary.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/workspace-glossary.md)、[docs/workspace-permission-migration.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/workspace-permission-migration.md)、[docs/workspace-permission-stage-log.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/workspace-permission-stage-log.md)，把最终状态收口成：当前主线使用 `workspace / personal workspace / collaboration workspace`，`tenant` 仅作为未来多租户保留名词。
 - 本轮已执行并通过：
   - `go test ./... -run '^$'`
@@ -1608,6 +1651,26 @@
 - `frontend/src/views/message/modules/useMessageWorkspace.ts`：保留消息域 `currentCollaborationWorkspaceId` 兼容派生。
 - `frontend/src/router/guards/beforeEach.ts`、`frontend/src/views/auth/login/index.vue`、`frontend/src/types/api/api.d.ts`：仍读取/承载 `current_collaboration_workspace_id` 兼容字段，但它只作为旧 team 视图初始化提示，不再是授权源。
 
+## 2026-04-07 空间权限主链继续收口
+
+### 本次改动
+- `backend/internal/pkg/permissionrefresh/service.go` 已补齐 `RefreshCollaborationWorkspace* / RefreshPersonalWorkspace*` canonical 方法，并把服务内部字段与调用点收口到个人空间 / 协作空间语义；旧 `RefreshTeam / RefreshPlatform*` 仅作为兼容壳保留。
+- `backend/internal/modules/system/featurepackage/service.go`、`backend/internal/modules/system/featurepackage/handler.go`、`backend/internal/modules/system/featurepackage/module.go` 已把 active service/handler surface 切到 `GetPackageCollaborationWorkspaces / SetPackageCollaborationWorkspaces / GetCollaborationWorkspacePackages / SetCollaborationWorkspacePackages`，并把刷新调用统一改到 `RefreshCollaborationWorkspace(s)`。
+- `backend/internal/pkg/authorization/authorization.go` 已新增 `ErrCollaborationWorkspaceMemberNotFound / ErrCollaborationWorkspaceMemberInactive` 和协作空间角色快照 helper 的 canonical 名称；旧 `ErrTenant*` 与 `getTeam*` 仅保留薄兼容别名。
+- `backend/cmd/migrate/main.go` 已继续保持“本地空项目最终态”入口：历史 rename/backfill 逻辑不再执行，迁移入口直接落到最终 schema 路径。
+- `frontend/src/types/api/api.d.ts`、`frontend/src/api/system-manage.ts`、`frontend/src/api/collaboration-workspace.ts` 已去掉 `TeamList / FeaturePackageTeam* / TeamActionOriginsResponse / TeamMenuOriginsResponse` 等 public type 和 canonical API 暴露，旧 team 命名不再作为前端主契约。
+- `frontend/src/views/system/feature-package/index.vue`、`frontend/src/views/system/feature-package/modules/feature-package-teams-dialog.vue`、`frontend/src/views/system/team-roles-permissions/index.vue` 已切到 collaboration canonical API，并修掉由旧命名导致的类型与构建断点。
+
+### 验证
+- `go test ./... -run '^$'`
+- `pnpm --dir frontend lint`
+- `pnpm --dir frontend build`
+
+### 下次方向
+- 继续删除 backend 中仅剩的兼容壳方法和旧 `team/tenant` helper 名，重点仍是 `permissionrefresh / featurepackage / authorization`。
+- 视本地空项目策略决定是否直接删除 `backend/cmd/migrate/main.go` 中未再执行的历史 rename/backfill helper，实现迁移文件层面的完全最终态。
+- 继续把前端目录名、组件文件名和 locale key 里的 `team` 残留压到更低，只保留历史归档或兼容壳。
+
 ## 2026-04-06 Tenant 语义回收与 Phase 9/10 收尾
 
 ### 本次改动
@@ -1638,4 +1701,28 @@
 
 ### 下次方向
 - 继续只把 `tenant` 保留在后端 persistence、legacy route 和兼容 bridge 中，前端页面级状态不再继续扩散 tenant 命名。
+
+## 2026-04-06 协作空间全量改名落地
+
+### 本次改动
+- `frontend/src/api/collaboration-workspace.ts` 现在是唯一 active 协作空间 API 入口，`frontend/src/api/team.ts` 已降级为纯兼容 re-export 壳，避免了 `team -> collaboration-workspace` 的循环依赖。
+- `frontend/src/utils/http/index.ts`、`frontend/src/api/message.ts`、`frontend/src/api/workspace.ts` 已把请求头主线收敛到 `X-Auth-Workspace-Id` + `X-Collaboration-Workspace-Id`，并补齐 `current_collaboration_workspace_id / current_collaboration_workspace_name` 等 snake_case 兼容字段。
+- `frontend/src/views/collaboration-workspace/**` 已成为协作空间相关页面的主目录，消息中心、收件箱、顶部 header / badge、消息模板和成员页都已切换到“个人工作空间 / 协作空间”命名，旧 `team` 术语仅保留在兼容字段和少数内部别名里。
+- 已完成 `pnpm --dir frontend lint` 和 `pnpm --dir frontend build` 验证，当前前端可正常编译。
+
+### 下次方向
+- 如果后端后续同步完成页面键、菜单键和路由键的正式切换，可以继续收紧前端里残留的 `team` 兼容别名和旧目录壳。
+- 后续若要进一步统一命名，可继续把系统管理页、功能包页里少量 `team` 兼容标签压到更窄的读写边界，只保留历史数据映射，不再参与 UI 展示。
+
+## 2026-04-06 前端协作空间目录命名收口
+
+### 本次改动
+- `frontend/src/views/team/**` 内部变量、组件名和 `defineOptions` 已继续收口为 `collaboration` / `collaborationWorkspace` 语义，并新增 `frontend/src/views/collaboration-workspace/**` 作为协作空间页面的 canonical 目录。
+- `frontend/src/api/collaboration-workspace.ts` 已成为协作空间 API 的 canonical 入口，`frontend/src/api/team.ts` 已退化为纯兼容壳；`frontend/src/store/modules/tenant.ts` 仍仅作为兼容别名，不再承担主语义。
+- `frontend/src/components/core/layouts/art-header-bar/widget/ArtCollaborationWorkspaceSwitcher.vue`、`frontend/src/components/business/team/NoCollaborationWorkspaceState.vue` 已替换旧的 tenant/team 组件命名，相关 imports 与页面引用已同步修复。
+- 本批修复了由于文件移动和换行差异导致的前端 lint/build 问题，最终 `pnpm --dir frontend lint` 与 `pnpm --dir frontend build` 均通过。
+
+### 下次方向
+- `team.ts`、`tenant.ts`、`fetchGetTenantOptions`、`useTenantStore` 等兼容名称可以继续保留到历史桥接完全稳定，但不建议再新增任何新的 active 依赖。
+- 后续若继续清理，可以优先从 `frontend/src/views/team/**` 迁移到 `frontend/src/views/collaboration-workspace/**` 的路由与目录引用入手，只保留旧目录作为兼容壳。
 

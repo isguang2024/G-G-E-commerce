@@ -15,7 +15,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
+	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
 )
 
@@ -633,7 +633,7 @@ func (s *service) resolveRuntimeVisibleMenuIDs(
 	for _, role := range roles {
 		roleMap[role.ID] = role
 	}
-	boundaryService := teamboundary.NewService(s.db)
+	boundaryService := collaborationworkspaceboundary.NewService(s.db)
 	menuSet := make([]uuid.UUID, 0, len(roles))
 	for _, role := range roles {
 		snapshot, err := boundaryService.GetRoleSnapshot(*tenantID, role.ID, role.CollaborationWorkspaceID == nil, normalizeAppKey(appKey))

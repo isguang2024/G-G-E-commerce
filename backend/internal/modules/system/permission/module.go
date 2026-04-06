@@ -13,7 +13,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
+	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 )
 
 type PermissionModule struct {
@@ -37,15 +37,15 @@ func (m *PermissionModule) RegisterRoutes(rg *gin.RouterGroup) {
 	apiEndpointRepo := user.NewAPIEndpointRepository(m.db)
 	apiEndpointBindingRepo := user.NewAPIEndpointPermissionBindingRepository(m.db)
 	packageActionRepo := user.NewFeaturePackageKeyRepository(m.db)
-	teamPackageRepo := user.NewCollaborationWorkspaceFeaturePackageRepository(m.db)
+	collaborationWorkspaceFeaturePackageRepo := user.NewCollaborationWorkspaceFeaturePackageRepository(m.db)
 	roleDisabledActionRepo := user.NewRoleDisabledActionRepository(m.db)
 	teamBlockedActionRepo := user.NewCollaborationWorkspaceBlockedActionRepository(m.db)
 	userActionRepo := user.NewUserActionPermissionRepository(m.db)
-	boundaryService := teamboundary.NewService(m.db)
+	boundaryService := collaborationworkspaceboundary.NewService(m.db)
 	platformService := platformaccess.NewService(m.db)
 	roleSnapshotService := platformroleaccess.NewService(m.db)
 	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
-	service := NewPermissionService(m.db, groupRepo, actionRepo, apiEndpointRepo, apiEndpointBindingRepo, packageActionRepo, teamPackageRepo, roleDisabledActionRepo, teamBlockedActionRepo, userActionRepo, boundaryService, refresher)
+	service := NewPermissionService(m.db, groupRepo, actionRepo, apiEndpointRepo, apiEndpointBindingRepo, packageActionRepo, collaborationWorkspaceFeaturePackageRepo, roleDisabledActionRepo, teamBlockedActionRepo, userActionRepo, boundaryService, refresher)
 	handler := NewPermissionHandler(service, m.logger)
 	authzService := authorization.NewService(m.db, m.logger)
 

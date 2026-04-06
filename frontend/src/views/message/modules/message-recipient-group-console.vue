@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="message-group-page art-full-height">
     <AdminWorkspaceHero :title="pageTitle" :description="pageDescription" :metrics="heroMetrics">
       <div class="message-group-hero__actions">
@@ -100,7 +100,9 @@
             <div class="message-group-drawer__text">{{ drawerSummary }}</div>
           </div>
           <div class="message-group-drawer__summary-tags">
-            <ElTag effect="plain">{{ isTeamScope ? '协作空间接收组' : '平台接收组' }}</ElTag>
+            <ElTag effect="plain">{{
+              isCollaborationScope ? '协作空间接收组' : '平台接收组'
+            }}</ElTag>
             <ElTag effect="plain" type="info">预估 {{ estimatedRecipients }} 人</ElTag>
           </div>
         </div>
@@ -161,11 +163,11 @@
                       <ElOption value="user" label="指定用户" />
                       <ElOption
                         value="collaboration_workspace_users"
-                        :label="isTeamScope ? '当前协作空间成员' : '指定协作空间成员'"
+                        :label="isCollaborationScope ? '当前协作空间成员' : '指定协作空间成员'"
                       />
                       <ElOption
                         value="collaboration_workspace_admins"
-                        :label="isTeamScope ? '当前协作空间管理员' : '指定协作空间管理员'"
+                        :label="isCollaborationScope ? '当前协作空间管理员' : '指定协作空间管理员'"
                       />
                       <ElOption value="role" label="按角色命中" />
                       <ElOption value="feature_package" label="按功能包命中" />
@@ -188,8 +190,9 @@
                       v-for="user in userOptions"
                       :key="user.id"
                       :label="
-                        user.collaboration_workspace_name || user.team_name
-                          ? `${user.display_name} · ${user.collaboration_workspace_name || user.team_name}`
+                        user.collaboration_workspace_name ||
+                        user.current_collaboration_workspace_name
+                          ? `${user.display_name} · ${user.collaboration_workspace_name || user.current_collaboration_workspace_name}`
                           : user.display_name
                       "
                       :value="user.id"
@@ -204,8 +207,8 @@
                   "
                   label="目标协作空间"
                 >
-                  <div v-if="isTeamScope" class="message-group-fixed-target">
-                    <strong>{{ currentTeamName }}</strong>
+                  <div v-if="isCollaborationScope" class="message-group-fixed-target">
+                    <strong>{{ currentCollaborationWorkspaceName }}</strong>
                     <span>协作空间侧规则固定作用于当前协作空间。</span>
                   </div>
                   <ElSelect
@@ -215,10 +218,10 @@
                     placeholder="请选择协作空间"
                   >
                     <ElOption
-                      v-for="team in teamOptions"
-                      :key="team.id"
-                      :label="team.name"
-                      :value="team.id"
+                      v-for="workspace in collaborationWorkspaceOptions"
+                      :key="workspace.id"
+                      :label="workspace.name"
+                      :value="workspace.id"
                     />
                   </ElSelect>
                 </ElFormItem>
@@ -313,13 +316,13 @@
   }
 
   const {
-    isTeamScope,
-    skipTenantHeader,
+    isCollaborationScope,
+    skipCollaborationWorkspaceHeader,
     currentCollaborationWorkspaceId,
-    currentTeamName,
+    currentCollaborationWorkspaceName,
     currentWorkspaceName,
     currentWorkspaceLabel,
-    ensureTeamContext,
+    ensureCollaborationWorkspaceContext,
     formatTime
   } = useMessageWorkspace(props.scope)
 
@@ -336,18 +339,18 @@
   const drawerEditingId = ref('')
   const drawerModel = ref<DrawerGroupModel | null>(null)
   const userOptions = ref<Api.Message.DispatchUserOption[]>([])
-  const teamOptions = ref<Api.Message.DispatchCollaborationWorkspaceOption[]>([])
+  const collaborationWorkspaceOptions = ref<Api.Message.DispatchCollaborationWorkspaceOption[]>([])
   const roleOptions = ref<Api.Message.DispatchRoleOption[]>([])
   const featurePackageOptions = ref<Api.Message.DispatchFeaturePackageOption[]>([])
 
-  const pageTitle = computed(() => (isTeamScope.value ? '协作空间接收组' : '接收组管理'))
+  const pageTitle = computed(() => (isCollaborationScope.value ? '协作空间接收组' : '接收组管理'))
   const pageDescription = computed(() =>
-    isTeamScope.value
-      ? `维护 ${currentWorkspaceName.value} 下 ${currentTeamName.value} 的消息接收组，用于协作空间管理员快速向固定成员组合发送消息。`
+    isCollaborationScope.value
+      ? `维护 ${currentWorkspaceName.value} 下 ${currentCollaborationWorkspaceName.value} 的消息接收组，用于协作空间管理员快速向固定成员组合发送消息。`
       : '维护平台消息接收组，把指定用户、指定协作空间成员和指定协作空间管理员收口到统一的发送对象配置里。'
   )
   const toolbarDescription = computed(() =>
-    isTeamScope.value
+    isCollaborationScope.value
       ? `协作空间接收组只作用于当前协作空间消息发送页（${currentWorkspaceLabel.value}）。`
       : '平台接收组可给平台发信台直接复用，也为后续角色、功能包等条件匹配预留统一扩展位。'
   )
@@ -360,8 +363,8 @@
     }
   ])
   const drawerSummary = computed(() =>
-    isTeamScope.value
-      ? `保存后会作为 ${currentTeamName.value}（${currentWorkspaceName.value}）的可选接收组。`
+    isCollaborationScope.value
+      ? `保存后会作为 ${currentCollaborationWorkspaceName.value}（${currentWorkspaceName.value}）的可选接收组。`
       : '保存后会作为平台消息发送页的可选接收组。'
   )
   const estimatedRecipients = computed(() =>
@@ -383,7 +386,7 @@
     collaborationWorkspaceId:
       target?.collaboration_workspace_id ||
       target?.collaboration_workspace_id ||
-      (isTeamScope.value ? currentCollaborationWorkspaceId.value || '' : ''),
+      (isCollaborationScope.value ? currentCollaborationWorkspaceId.value || '' : ''),
     role_code: target?.role_code || '',
     package_key: target?.package_key || '',
     sort_order: target?.sort_order || sequence.value
@@ -429,15 +432,16 @@
           : featurePackageOptions.value.find((pkg) => pkg.package_key === item.package_key)?.name
       return name ? `功能包规则 · ${name}` : '功能包规则'
     }
-    const teamName =
-      'tenant_name' in item && item.tenant_name
-        ? item.tenant_name
-        : teamOptions.value.find((team) => team.id === resolveTargetCollaborationWorkspaceId(item))
-            ?.name || currentTeamName.value
+    const collaborationWorkspaceName =
+      'collaboration_workspace_name' in item && item.collaboration_workspace_name
+        ? item.collaboration_workspace_name
+        : collaborationWorkspaceOptions.value.find(
+            (workspace) => workspace.id === resolveTargetCollaborationWorkspaceId(item)
+          )?.name || currentCollaborationWorkspaceName.value
     if (item.target_type === 'collaboration_workspace_admins') {
-      return `${teamName} · 协作空间管理员`
+      return `${collaborationWorkspaceName} · 协作空间管理员`
     }
-    return `${teamName} · 协作空间成员`
+    return `${collaborationWorkspaceName} · 协作空间成员`
   }
 
   const summarizeTargets = (targets?: Api.Message.MessageRecipientGroupTargetItem[]) => {
@@ -464,12 +468,13 @@
         seen.add(`package:${item.package_key}`)
         return
       }
-      if (!isTeamScope.value) return
+      if (!isCollaborationScope.value) return
       if (item.target_type === 'collaboration_workspace_admins') {
         userOptions.value
           .filter(
             (user) =>
-              (user.collaboration_workspace_name || user.team_name) === currentTeamName.value
+              (user.collaboration_workspace_name || user.current_collaboration_workspace_name) ===
+              currentCollaborationWorkspaceName.value
           )
           .forEach((user) => seen.add(user.id))
         return
@@ -483,10 +488,10 @@
 
   const loadDispatchHelpers = async () => {
     const data = await fetchGetMessageDispatchOptions({
-      skipTenantHeader: skipTenantHeader.value
+      skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
     })
     userOptions.value = data.users || []
-    teamOptions.value = data.collaboration_workspaces || data.teams || []
+    collaborationWorkspaceOptions.value = data.collaboration_workspaces || data.teams || []
     roleOptions.value = data.roles || []
     featurePackageOptions.value = data.feature_packages || []
   }
@@ -495,10 +500,10 @@
     loading.value = true
     loadError.value = ''
     try {
-      ensureTeamContext()
+      ensureCollaborationWorkspaceContext()
       await loadDispatchHelpers()
       const result = await fetchGetMessageRecipientGroupList({
-        skipTenantHeader: skipTenantHeader.value
+        skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
       })
       list.value = result.records || []
       pagination.current = 1
@@ -551,7 +556,7 @@
 
   const handleTargetTypeChange = (item: DrawerTargetModel) => {
     item.user_id = ''
-    item.collaborationWorkspaceId = isTeamScope.value
+    item.collaborationWorkspaceId = isCollaborationScope.value
       ? currentCollaborationWorkspaceId.value || ''
       : ''
     item.role_code = ''
@@ -574,7 +579,7 @@
         return
       }
       if (
-        !isTeamScope.value &&
+        !isCollaborationScope.value &&
         (item.target_type === 'collaboration_workspace_users' ||
           item.target_type === 'collaboration_workspace_admins') &&
         !item.collaborationWorkspaceId
@@ -604,7 +609,7 @@
           collaboration_workspace_id:
             item.target_type === 'collaboration_workspace_users' ||
             item.target_type === 'collaboration_workspace_admins'
-              ? isTeamScope.value
+              ? isCollaborationScope.value
                 ? currentCollaborationWorkspaceId.value || undefined
                 : item.collaborationWorkspaceId || undefined
               : undefined,
@@ -616,11 +621,11 @@
       }
       if (drawerEditingId.value) {
         await fetchUpdateMessageRecipientGroup(drawerEditingId.value, payload, {
-          skipTenantHeader: skipTenantHeader.value
+          skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
         })
       } else {
         await fetchCreateMessageRecipientGroup(payload, {
-          skipTenantHeader: skipTenantHeader.value
+          skipCollaborationWorkspaceHeader: skipCollaborationWorkspaceHeader.value
         })
       }
       drawerVisible.value = false

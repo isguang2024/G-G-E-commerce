@@ -1,17 +1,17 @@
-import { computed } from 'vue'
+﻿import { computed } from 'vue'
 import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
 import { useWorkspaceStore } from '@/store/modules/workspace'
 
-export function useMessageWorkspace(scope: 'platform' | 'collaboration' | 'team') {
+export function useMessageWorkspace(scope: 'platform' | 'collaboration') {
   const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
   const workspaceStore = useWorkspaceStore()
 
-  const isTeamScope = computed(() => scope === 'collaboration' || scope === 'team')
-  const skipTenantHeader = computed(() => !isTeamScope.value)
+  const isCollaborationScope = computed(() => scope === 'collaboration')
+  const skipCollaborationWorkspaceHeader = computed(() => !isCollaborationScope.value)
   const currentCollaborationWorkspaceId = computed(
     () => collaborationWorkspaceStore.currentCollaborationWorkspaceId || ''
   )
-  const currentTeamName = computed(
+  const currentCollaborationWorkspaceName = computed(
     () =>
       collaborationWorkspaceStore.currentCollaborationWorkspace?.name ||
       workspaceStore.currentAuthWorkspace?.name ||
@@ -24,8 +24,8 @@ export function useMessageWorkspace(scope: 'platform' | 'collaboration' | 'team'
     workspaceStore.currentAuthWorkspaceType === 'collaboration' ? '协作空间' : '个人工作空间'
   )
 
-  const ensureTeamContext = () => {
-    if (!isTeamScope.value) return
+  const ensureCollaborationWorkspaceContext = () => {
+    if (!isCollaborationScope.value) return
     if (collaborationWorkspaceStore.currentCollaborationWorkspaceId) return
     const fallbackCollaborationWorkspaceId =
       collaborationWorkspaceStore.collaborationWorkspaceList[0]?.id || ''
@@ -64,13 +64,13 @@ export function useMessageWorkspace(scope: 'platform' | 'collaboration' | 'team'
   return {
     collaborationWorkspaceStore,
     workspaceStore,
-    isTeamScope,
-    skipTenantHeader,
+    isCollaborationScope,
+    skipCollaborationWorkspaceHeader,
     currentCollaborationWorkspaceId,
-    currentTeamName,
+    currentCollaborationWorkspaceName,
     currentWorkspaceName,
     currentWorkspaceLabel,
-    ensureTeamContext,
+    ensureCollaborationWorkspaceContext,
     formatTime,
     plainTextFromHtml
   }

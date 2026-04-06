@@ -11,10 +11,10 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
+	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/password"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/teamboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
 )
 
@@ -125,7 +125,7 @@ func (s *userService) Create(req *dto.UserCreateRequest) (*User, error) {
 		return nil, err
 	}
 	if s.refresher != nil {
-		if err := s.refresher.RefreshPlatformUser(user.ID); err != nil {
+		if err := s.refresher.RefreshPersonalWorkspaceUser(user.ID); err != nil {
 			return nil, err
 		}
 	}
@@ -182,7 +182,7 @@ func (s *userService) Update(id uuid.UUID, req *dto.UserUpdateRequest) error {
 		return err
 	}
 	if s.refresher != nil {
-		return s.refresher.RefreshPlatformUser(id)
+		return s.refresher.RefreshPersonalWorkspaceUser(id)
 	}
 	return nil
 }
@@ -273,7 +273,7 @@ type permissionService struct {
 	roleHiddenMenuRepo RoleHiddenMenuRepository
 	userHiddenMenuRepo UserHiddenMenuRepository
 	menuRepo           MenuRepository
-	boundaryService    teamboundary.Service
+	boundaryService    collaborationworkspaceboundary.Service
 	platformService    platformaccess.Service
 }
 
@@ -289,7 +289,7 @@ func NewPermissionService(
 	roleHiddenMenuRepo RoleHiddenMenuRepository,
 	userHiddenMenuRepo UserHiddenMenuRepository,
 	menuRepo MenuRepository,
-	boundaryService teamboundary.Service,
+	boundaryService collaborationworkspaceboundary.Service,
 	platformService platformaccess.Service,
 ) PermissionService {
 	return &permissionService{

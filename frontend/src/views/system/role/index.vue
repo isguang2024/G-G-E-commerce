@@ -9,8 +9,8 @@
       />
 
       <AdminWorkspaceHero
-        title="平台角色管理"
-        description="这里维护平台角色目录。平台角色通过个人工作空间生效，只承载平台治理能力，不直接替代协作空间业务权限。"
+        title="个人空间角色管理"
+        description="这里维护个人空间角色目录。个人空间角色绑定到个人空间，用于个人空间下的治理与菜单裁剪，不直接替代协作空间业务权限。"
         :metrics="heroMetrics"
       >
         <div class="role-hero-actions">
@@ -50,7 +50,7 @@
       >
         <template #left>
           <div class="role-toolbar-tip"
-            >平台角色的功能包、权限和菜单裁剪都会绑定到个人工作空间。</div
+            >个人空间角色的功能包、权限和菜单裁剪都会绑定到个人空间。</div
           >
         </template>
       </ArtTableHeader>
