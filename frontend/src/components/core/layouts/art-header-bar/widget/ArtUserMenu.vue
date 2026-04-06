@@ -1,4 +1,4 @@
-﻿<!-- 用户菜单 -->
+<!-- 用户菜单 -->
 <template>
   <ElPopover
     ref="userMenuPopover"
@@ -79,7 +79,7 @@
   import { useRouter } from 'vue-router'
   import { ElMessage, ElMessageBox } from 'element-plus'
   import { useUserStore } from '@/store/modules/user'
-  import { useTenantStore } from '@/store/modules/tenant'
+  import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
   import { useWorkspaceStore } from '@/store/modules/workspace'
   import { useMenuStore } from '@/store/modules/menu'
   import { useMenuSpaceStore } from '@/store/modules/menu-space'
@@ -96,7 +96,7 @@
   const router = useRouter()
   const { t } = useI18n()
   const userStore = useUserStore()
-  const collaborationWorkspaceStore = useTenantStore()
+  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
   const workspaceStore = useWorkspaceStore()
   const menuStore = useMenuStore()
   const menuSpaceStore = useMenuSpaceStore()
@@ -305,4 +305,3 @@
     background-color: transparent;
   }
 </style>
-

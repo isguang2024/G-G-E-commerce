@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="visible"
     :title="dialogType === 'add' ? '新增功能包' : '编辑功能包'"
@@ -91,7 +91,7 @@
     packageType: 'base' as 'base' | 'bundle',
     name: '',
     description: '',
-    contextType: 'team',
+    contextType: 'collaboration',
     status: 'normal',
     sortOrder: 0
   })
@@ -113,7 +113,7 @@
           (props.packageData.packageType as 'base' | 'bundle') || props.defaultPackageType,
         name: props.packageData.name || '',
         description: props.packageData.description || '',
-        contextType: props.packageData.contextType || 'team',
+        contextType: props.packageData.contextType || 'collaboration',
         status: props.packageData.status || 'normal',
         sortOrder: props.packageData.sortOrder ?? 0
       })
@@ -125,7 +125,7 @@
       packageType: props.defaultPackageType,
       name: '',
       description: '',
-      contextType: 'team',
+      contextType: 'collaboration',
       status: 'normal',
       sortOrder: 0
     })
@@ -190,7 +190,7 @@
   }
 
   function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
-    return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
+    return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.collaborationWorkspaceCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 </script>
 
@@ -201,4 +201,3 @@
     line-height: 1.6;
   }
 </style>
-

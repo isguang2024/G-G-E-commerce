@@ -80,7 +80,7 @@ func NewTenantHandler(tenantService TenantService, tenantMemberRepo user.TenantM
 }
 
 func (h *TenantHandler) List(c *gin.Context) {
-	var req dto.TenantListRequest
+	var req dto.CollaborationWorkspaceListRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -107,7 +107,7 @@ func (h *TenantHandler) List(c *gin.Context) {
 }
 
 func (h *TenantHandler) ListOptions(c *gin.Context) {
-	var req dto.TenantListRequest
+	var req dto.CollaborationWorkspaceListRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -133,7 +133,7 @@ func (h *TenantHandler) ListOptions(c *gin.Context) {
 
 func (h *TenantHandler) Get(c *gin.Context) {
 	idStr := c.Param("id")
-	if strings.TrimSpace(strings.ToLower(idStr)) == "my-team" {
+	if normalized := strings.TrimSpace(strings.ToLower(idStr)); normalized == "current" || normalized == "my-team" {
 		h.GetMyTeam(c)
 		return
 	}
@@ -162,7 +162,7 @@ func (h *TenantHandler) Get(c *gin.Context) {
 }
 
 func (h *TenantHandler) Create(c *gin.Context) {
-	var req dto.TenantCreateRequest
+	var req dto.CollaborationWorkspaceCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -197,7 +197,7 @@ func (h *TenantHandler) Update(c *gin.Context) {
 	if err := h.requireTargetTenant(c, id); err != nil {
 		return
 	}
-	var req dto.TenantUpdateRequest
+	var req dto.CollaborationWorkspaceUpdateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -288,7 +288,7 @@ func (h *TenantHandler) AddMember(c *gin.Context) {
 	if err := h.requireTargetTenant(c, tenantID); err != nil {
 		return
 	}
-	var req dto.TenantAddMemberRequest
+	var req dto.CollaborationWorkspaceAddMemberRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -366,7 +366,7 @@ func (h *TenantHandler) UpdateMemberRole(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	var req dto.TenantUpdateMemberRoleRequest
+	var req dto.CollaborationWorkspaceUpdateMemberRoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -471,7 +471,7 @@ func (h *TenantHandler) AddMyMember(c *gin.Context) {
 		return
 	}
 
-	var req dto.TenantAddMemberRequest
+	var req dto.CollaborationWorkspaceAddMemberRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -550,7 +550,7 @@ func (h *TenantHandler) UpdateMyMemberRole(c *gin.Context) {
 		return
 	}
 
-	var req dto.TenantUpdateMemberRoleRequest
+	var req dto.CollaborationWorkspaceUpdateMemberRoleRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -662,7 +662,7 @@ func (h *TenantHandler) SetMyCollaborationWorkspaceMemberRoles(c *gin.Context) {
 		return
 	}
 
-	var req dto.TenantSetMemberRolesRequest
+	var req dto.CollaborationWorkspaceSetMemberRolesRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		status, resp := errcode.Response(errcode.ErrParamInvalid)
 		c.JSON(status, resp)
@@ -1855,7 +1855,7 @@ func isAssignableTeamRoleForTenant(role user.Role, tenantID uuid.UUID) bool {
 	if role.CollaborationWorkspaceID != nil {
 		return *role.CollaborationWorkspaceID == tenantID
 	}
-	return role.Code == "team_admin" || role.Code == "team_member"
+	return role.Code == "collaboration_workspace_admin" || role.Code == "collaboration_workspace_member"
 }
 
 func (h *TenantHandler) ListMyTeams(c *gin.Context) {
@@ -2140,7 +2140,7 @@ func (h *TenantHandler) resolveCollaborationWorkspaceMemberType(tenantID, userID
 	switch strings.ToLower(strings.TrimSpace(tenantMember.RoleCode)) {
 	case "owner":
 		return models.WorkspaceMemberOwner
-	case "team_admin", "admin":
+	case "collaboration_workspace_admin", "admin":
 		return models.WorkspaceMemberAdmin
 	case "viewer":
 		return models.WorkspaceMemberViewer

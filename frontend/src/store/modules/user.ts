@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 用户状态管理模块
  *
  * 提供用户相关的状态管理
@@ -42,7 +42,7 @@ import { setPageTitle } from '@/utils/router'
 import { resetRouterState } from '@/router/guards/beforeEach'
 import { useMenuStore } from './menu'
 import { StorageConfig } from '@/utils/storage/storage-config'
-import { useTenantStore } from './tenant'
+import { useCollaborationWorkspaceStore } from './tenant'
 
 /**
  * 用户状态管理
@@ -188,7 +188,7 @@ export const useUserStore = defineStore(
       // 清空主页路径
       useMenuStore().setHomePath('')
       // 清空当前协作空间上下文
-      useTenantStore().clearTenantContext()
+      useCollaborationWorkspaceStore().clearCollaborationWorkspaceContext()
       // 重置路由状态
       resetRouterState(500)
       // 跳转到登录页，携带当前路由作为 redirect 参数
@@ -257,4 +257,3 @@ export const useUserStore = defineStore(
     }
   }
 )
-

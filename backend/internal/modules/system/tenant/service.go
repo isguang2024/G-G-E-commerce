@@ -19,20 +19,20 @@ var ErrTenantMemberExists = errors.New("user already in team")
 var ErrTenantMemberNotFound = errors.New("member not in team")
 
 type TenantService interface {
-	List(req *dto.TenantListRequest) ([]user.Tenant, int64, error)
-	ListOptions(req *dto.TenantListRequest) ([]user.Tenant, error)
+	List(req *dto.CollaborationWorkspaceListRequest) ([]user.Tenant, int64, error)
+	ListOptions(req *dto.CollaborationWorkspaceListRequest) ([]user.Tenant, error)
 	Get(id uuid.UUID) (*user.Tenant, error)
-	Create(req *dto.TenantCreateRequest, ownerID *uuid.UUID) (*user.Tenant, error)
-	Update(id uuid.UUID, req *dto.TenantUpdateRequest) error
+	Create(req *dto.CollaborationWorkspaceCreateRequest, ownerID *uuid.UUID) (*user.Tenant, error)
+	Update(id uuid.UUID, req *dto.CollaborationWorkspaceUpdateRequest) error
 	Delete(id uuid.UUID) error
 	ListMembers(tenantID uuid.UUID, searchParams *user.MemberSearchParams) ([]user.TenantMember, error)
-	AddMember(tenantID uuid.UUID, req *dto.TenantAddMemberRequest, invitedBy *uuid.UUID) error
+	AddMember(tenantID uuid.UUID, req *dto.CollaborationWorkspaceAddMemberRequest, invitedBy *uuid.UUID) error
 	RemoveMember(tenantID, userID uuid.UUID) error
 	UpdateMemberRole(tenantID, userID uuid.UUID, roleCode string) error
 }
 
-const defaultTeamRoleAdminCode = "team_admin"
-const defaultTeamRoleMemberCode = "team_member"
+const defaultTeamRoleAdminCode = "collaboration_workspace_admin"
+const defaultTeamRoleMemberCode = "collaboration_workspace_member"
 
 type tenantService struct {
 	db               *gorm.DB
@@ -71,7 +71,7 @@ func NewTenantService(
 	}
 }
 
-func (s *tenantService) List(req *dto.TenantListRequest) ([]user.Tenant, int64, error) {
+func (s *tenantService) List(req *dto.CollaborationWorkspaceListRequest) ([]user.Tenant, int64, error) {
 	if req.Current <= 0 {
 		req.Current = 1
 	}
@@ -82,7 +82,7 @@ func (s *tenantService) List(req *dto.TenantListRequest) ([]user.Tenant, int64, 
 	return s.tenantRepo.List(offset, req.Size, req.Name, req.Status)
 }
 
-func (s *tenantService) ListOptions(req *dto.TenantListRequest) ([]user.Tenant, error) {
+func (s *tenantService) ListOptions(req *dto.CollaborationWorkspaceListRequest) ([]user.Tenant, error) {
 	query := s.db.Model(&user.Tenant{})
 	if req != nil {
 		if name := strings.TrimSpace(req.Name); name != "" {
@@ -112,7 +112,7 @@ func (s *tenantService) Get(id uuid.UUID) (*user.Tenant, error) {
 	return t, nil
 }
 
-func (s *tenantService) Create(req *dto.TenantCreateRequest, ownerID *uuid.UUID) (*user.Tenant, error) {
+func (s *tenantService) Create(req *dto.CollaborationWorkspaceCreateRequest, ownerID *uuid.UUID) (*user.Tenant, error) {
 	if ownerID == nil || *ownerID == uuid.Nil {
 		return nil, errors.New("invalid owner id")
 	}
@@ -159,7 +159,7 @@ func (s *tenantService) Create(req *dto.TenantCreateRequest, ownerID *uuid.UUID)
 	return t, nil
 }
 
-func (s *tenantService) Update(id uuid.UUID, req *dto.TenantUpdateRequest) error {
+func (s *tenantService) Update(id uuid.UUID, req *dto.CollaborationWorkspaceUpdateRequest) error {
 	updates := map[string]interface{}{}
 	if req.Name != "" {
 		updates["name"] = req.Name
@@ -301,7 +301,7 @@ func (s *tenantService) ListMembers(tenantID uuid.UUID, searchParams *user.Membe
 	return s.tenantMemberRepo.List(tenantID, searchParams)
 }
 
-func (s *tenantService) AddMember(tenantID uuid.UUID, req *dto.TenantAddMemberRequest, invitedBy *uuid.UUID) error {
+func (s *tenantService) AddMember(tenantID uuid.UUID, req *dto.CollaborationWorkspaceAddMemberRequest, invitedBy *uuid.UUID) error {
 	userID, err := uuid.Parse(req.UserID)
 	if err != nil {
 		return errors.New("invalid user id")

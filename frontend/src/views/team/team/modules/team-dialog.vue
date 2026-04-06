@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="dialogVisible"
     :title="type === 'add' ? '新增协作空间' : '编辑协作空间'"
@@ -40,7 +40,9 @@
           @blur="handleInputConfirm"
         />
         <ElButton v-else class="button-new-tag" @click="showInput"> + 添加管理员 </ElButton>
-        <div class="text-gray-400 text-xs mt-1">输入用户ID后回车确认，添加后将被设为协作空间管理员</div>
+        <div class="text-gray-400 text-xs mt-1"
+          >输入用户ID后回车确认，添加后将被设为协作空间管理员</div
+        >
       </ElFormItem>
       <ElFormItem label="Logo URL" prop="logo_url">
         <ElInput v-model="formData.logo_url" placeholder="选填" clearable />
@@ -84,14 +86,16 @@
   interface Props {
     visible: boolean
     type: 'add' | 'edit'
-    teamData?: Partial<Api.SystemManage.TeamListItem>
+    teamData?: Partial<Api.SystemManage.CollaborationWorkspaceListItem>
   }
 
   interface Emits {
     (e: 'update:visible', value: boolean): void
     (
       e: 'submit',
-      payload?: Api.SystemManage.TeamCreateParams | Api.SystemManage.TeamUpdateParams
+      payload?:
+        | Api.SystemManage.CollaborationWorkspaceCreateParams
+        | Api.SystemManage.CollaborationWorkspaceUpdateParams
     ): void
   }
 
@@ -267,4 +271,3 @@
     padding-bottom: 0;
   }
 </style>
-

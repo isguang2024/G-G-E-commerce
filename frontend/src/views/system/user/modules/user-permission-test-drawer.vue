@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="visible"
     :title="`权限测试 - ${userTitle}`"
@@ -15,11 +15,11 @@
       <div class="toolbar-row">
         <ElSelect v-model="contextType" class="toolbar-select">
           <ElOption label="平台上下文" value="platform" />
-          <ElOption label="协作空间上下文" value="team" />
+          <ElOption label="协作空间上下文" value="collaboration" />
         </ElSelect>
 
         <ElSelect
-          v-if="contextType === 'team'"
+          v-if="contextType === 'collaboration'"
           v-model="selectedCollaborationWorkspaceId"
           filterable
           clearable
@@ -155,7 +155,7 @@
                       </ElTag>
                     </span>
                   </div>
-                  <div v-if="contextType === 'team'" class="kv-item">
+                  <div v-if="contextType === 'collaboration'" class="kv-item">
                     <span class="kv-label">成员状态</span>
                     <span class="kv-value">
                       <ElTag
@@ -166,7 +166,7 @@
                       </ElTag>
                     </span>
                   </div>
-                  <div v-if="contextType === 'team'" class="kv-item">
+                  <div v-if="contextType === 'collaboration'" class="kv-item">
                     <span class="kv-label">边界链路</span>
                     <span class="kv-value">
                       <ElTag
@@ -177,7 +177,7 @@
                       </ElTag>
                     </span>
                   </div>
-                  <div v-if="contextType === 'team'" class="kv-item">
+                  <div v-if="contextType === 'collaboration'" class="kv-item">
                     <span class="kv-label">角色链路</span>
                     <span class="kv-value">
                       <ElTag
@@ -196,7 +196,7 @@
                       </ElTag>
                     </span>
                   </div>
-                  <div v-if="contextType === 'team'" class="kv-item">
+                  <div v-if="contextType === 'collaboration'" class="kv-item">
                     <span class="kv-label">拒绝层级</span>
                     <span class="kv-value">{{ diagnosisData.diagnosis.denialStage || '-' }}</span>
                   </div>
@@ -268,7 +268,7 @@
                     >
                   </div>
                 </div>
-                <div v-if="contextType === 'team'" class="source-panel">
+                <div v-if="contextType === 'collaboration'" class="source-panel">
                   <div class="source-title">当前协作空间成员记录</div>
                   <div class="kv-grid">
                     <div class="kv-item">
@@ -278,7 +278,9 @@
                           :type="diagnosisData.teamMember?.matched ? 'success' : 'warning'"
                           effect="plain"
                         >
-                          {{ diagnosisData.teamMember?.matched ? '已加入协作空间' : '未加入协作空间' }}
+                          {{
+                            diagnosisData.teamMember?.matched ? '已加入协作空间' : '未加入协作空间'
+                          }}
                         </ElTag>
                       </span>
                     </div>
@@ -296,7 +298,7 @@
                     </div>
                   </div>
                 </div>
-                <div v-if="contextType === 'team'" class="source-panel">
+                <div v-if="contextType === 'collaboration'" class="source-panel">
                   <div class="source-title">当前协作空间功能包</div>
                   <div class="source-tags">
                     <ElTag
@@ -391,7 +393,7 @@
           </section>
         </ElTabPane>
 
-        <ElTabPane :disabled="contextType !== 'team'" label="角色链路" name="roles">
+        <ElTabPane :disabled="contextType !== 'collaboration'" label="角色链路" name="roles">
           <section class="role-panel">
             <div class="panel-title">角色链路</div>
             <ElTable :data="pagedRoleRows" border max-height="320">
@@ -472,7 +474,7 @@
   import {
     fetchGetUserPermissionDiagnosis,
     fetchGetUserPermissionMenus,
-    fetchGetUserTeams,
+    fetchGetUserCollaborationWorkspaces,
     fetchRefreshUserPermissionSnapshot
   } from '@/api/system-manage'
   import { formatMenuTitle } from '@/utils/router'
@@ -495,12 +497,12 @@
   const loading = ref(false)
   const testing = ref(false)
   const refreshing = ref(false)
-  const contextType = ref<'platform' | 'team'>('platform')
+  const contextType = ref<'platform' | 'collaboration'>('platform')
   const activeTab = ref<'permission' | 'menus' | 'roles'>('permission')
   const selectedCollaborationWorkspaceId = ref('')
   const permissionKey = ref('')
   const diagnosisData = ref<Api.SystemManage.UserPermissionDiagnosisResponse>()
-  const teamOptions = ref<Api.SystemManage.TeamListItem[]>([])
+  const teamOptions = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
   const permissionMenus = ref<Api.SystemManage.UserPermissionMenuNode[]>([])
   const menuKeyword = ref('')
   const showHiddenMenus = ref(true)
@@ -535,7 +537,9 @@
   )
 
   const selectedTeamName = computed(
-    () => teamOptions.value.find((item) => item.id === selectedCollaborationWorkspaceId.value)?.name || ''
+    () =>
+      teamOptions.value.find((item) => item.id === selectedCollaborationWorkspaceId.value)?.name ||
+      ''
   )
 
   const summaryItems = computed(() => {
@@ -620,7 +624,7 @@
   })
 
   watch(selectedCollaborationWorkspaceId, async () => {
-    if (!visible.value || contextType.value !== 'team') return
+    if (!visible.value || contextType.value !== 'collaboration') return
     await loadDiagnosis()
   })
 
@@ -637,15 +641,19 @@
       return
     }
     try {
-      teamOptions.value = await fetchGetUserTeams(userId)
+      teamOptions.value = await fetchGetUserCollaborationWorkspaces(userId)
       if (
-        contextType.value === 'team' &&
+        contextType.value === 'collaboration' &&
         selectedCollaborationWorkspaceId.value &&
         !teamOptions.value.some((item) => item.id === selectedCollaborationWorkspaceId.value)
       ) {
         selectedCollaborationWorkspaceId.value = ''
       }
-      if (contextType.value === 'team' && !selectedCollaborationWorkspaceId.value && teamOptions.value.length === 1) {
+      if (
+        contextType.value === 'collaboration' &&
+        !selectedCollaborationWorkspaceId.value &&
+        teamOptions.value.length === 1
+      ) {
         selectedCollaborationWorkspaceId.value = teamOptions.value[0].id
       }
     } catch {
@@ -656,14 +664,15 @@
   async function loadDiagnosis() {
     const userId = props.userData?.id
     if (!userId) return
-    if (contextType.value === 'team' && !selectedCollaborationWorkspaceId.value) {
+    if (contextType.value === 'collaboration' && !selectedCollaborationWorkspaceId.value) {
       diagnosisData.value = undefined
       permissionMenus.value = []
       return
     }
     loading.value = true
     try {
-      const collaborationWorkspaceId = contextType.value === 'team' ? selectedCollaborationWorkspaceId.value : undefined
+      const collaborationWorkspaceId =
+        contextType.value === 'collaboration' ? selectedCollaborationWorkspaceId.value : undefined
       const [diagnosis, menus] = await Promise.all([
         fetchGetUserPermissionDiagnosis(userId, {
           collaborationWorkspaceId,
@@ -690,13 +699,14 @@
       ElMessage.warning('请输入权限键')
       return
     }
-    if (contextType.value === 'team' && !selectedCollaborationWorkspaceId.value) {
+    if (contextType.value === 'collaboration' && !selectedCollaborationWorkspaceId.value) {
       ElMessage.warning('请选择协作空间')
       return
     }
     testing.value = true
     try {
-      const collaborationWorkspaceId = contextType.value === 'team' ? selectedCollaborationWorkspaceId.value : undefined
+      const collaborationWorkspaceId =
+        contextType.value === 'collaboration' ? selectedCollaborationWorkspaceId.value : undefined
       const [diagnosis, menus] = await Promise.all([
         fetchGetUserPermissionDiagnosis(props.userData?.id || '', {
           collaborationWorkspaceId,
@@ -717,13 +727,14 @@
   async function handleRefresh() {
     const userId = props.userData?.id
     if (!userId) return
-    if (contextType.value === 'team' && !selectedCollaborationWorkspaceId.value) {
+    if (contextType.value === 'collaboration' && !selectedCollaborationWorkspaceId.value) {
       ElMessage.warning('请选择协作空间')
       return
     }
     refreshing.value = true
     try {
-      const collaborationWorkspaceId = contextType.value === 'team' ? selectedCollaborationWorkspaceId.value : undefined
+      const collaborationWorkspaceId =
+        contextType.value === 'collaboration' ? selectedCollaborationWorkspaceId.value : undefined
       const [diagnosis, menus] = await Promise.all([
         fetchRefreshUserPermissionSnapshot(userId, collaborationWorkspaceId),
         fetchGetUserPermissionMenus(userId, collaborationWorkspaceId)
@@ -759,9 +770,9 @@
 
   function formatRoleCode(roleCode?: string) {
     switch (roleCode) {
-      case 'team_admin':
+      case 'collaboration_workspace_admin':
         return '协作空间管理员'
-      case 'team_member':
+      case 'collaboration_workspace_member':
         return '协作空间成员'
       default:
         return roleCode || '-'
@@ -1145,4 +1156,3 @@
     }
   }
 </style>
-

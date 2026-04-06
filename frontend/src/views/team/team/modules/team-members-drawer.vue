@@ -141,7 +141,10 @@
     if (!props.collaborationWorkspaceId) return
     loading.value = true
     try {
-      const res = await fetchGetCollaborationWorkspaceMembers(props.collaborationWorkspaceId, searchParams.value)
+      const res = await fetchGetCollaborationWorkspaceMembers(
+        props.collaborationWorkspaceId,
+        searchParams.value
+      )
       members.value = res ?? []
       pagination.current = 1
     } catch (e: any) {
@@ -166,4 +169,3 @@
     loadMembers()
   }
 </script>
-

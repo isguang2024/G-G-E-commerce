@@ -1,4 +1,4 @@
-﻿package permissionseed
+package permissionseed
 
 import (
 	"crypto/sha1"
@@ -341,7 +341,7 @@ func DefaultPermissionModuleGroups() []PermissionGroupSeed {
 		},
 		{
 			GroupType:   "module",
-			Code:        "team_member",
+			Code:        "collaboration_workspace_member",
 			Name:        "当前协作空间成员",
 			NameEn:      "Current Collaboration Workspace Members",
 			Description: "当前协作空间上下文内的成员管理与成员权限配置",
@@ -351,7 +351,7 @@ func DefaultPermissionModuleGroups() []PermissionGroupSeed {
 		},
 		{
 			GroupType:   "module",
-			Code:        "team",
+			Code:        "collaboration_workspace",
 			Name:        "协作空间边界",
 			NameEn:      "Collaboration Workspace Boundary",
 			Description: "当前协作空间功能边界与协作空间角色能力边界管理",
@@ -515,7 +515,7 @@ func DefaultMenus() []MenuSeed {
 	items := []MenuSeed{
 		{Name: "Dashboard", Path: "/dashboard", Component: "/index/index", Title: "menus.dashboard.title", Icon: "ri:pie-chart-line", SortOrder: 1, Meta: metaJWT},
 		{Name: "System", Path: "/system", Component: "/index/index", Title: "menus.system.title", Icon: "ri:user-3-line", SortOrder: 2, Meta: metaSuperAdminAndAdmin},
-		{Name: "CollaborationWorkspaceRoot", Path: "/team", Component: "/index/index", Title: "协作空间", Icon: "ri:team-line", SortOrder: 5, Meta: metaTeamAccessOnly},
+		{Name: "CollaborationWorkspaceRoot", Path: "/collaboration", Component: "/index/index", Title: "协作空间", Icon: "ri:team-line", SortOrder: 5, Meta: metaTeamAccessOnly},
 		{Name: "Console", ParentName: "Dashboard", Path: "console", Component: "/dashboard/console", Title: "menus.dashboard.console", SortOrder: 1, Meta: usermodel.MetaJSON{"keepAlive": false, "fixedTab": true}},
 		{Name: "WorkspaceInbox", ParentName: "Dashboard", Path: "/workspace/inbox", Component: "/workspace/inbox", Title: "消息中心", SortOrder: 3, Meta: usermodel.MetaJSON{"isHide": true, "keepAlive": true, "accessMode": "jwt"}},
 		{Name: "SystemAccess", ParentName: "System", Path: "access", Component: "", Title: "身份与权限", Icon: "ri:shield-user-line", SortOrder: 1, Meta: metaSuperAdminAndAdmin},
@@ -523,7 +523,7 @@ func DefaultMenus() []MenuSeed {
 		{Name: "SystemIntegration", ParentName: "System", Path: "integration", Component: "", Title: "接口与注册", Icon: "ri:link-m", SortOrder: 3, Meta: metaSuperAdmin},
 		{Name: "Role", ParentName: "SystemAccess", Path: "/system/role", Component: "/system/role", Title: "menus.system.role", SortOrder: 1, Meta: metaSuperAdmin},
 		{Name: "User", ParentName: "SystemAccess", Path: "/system/user", Component: "/system/user", Title: "menus.system.user", SortOrder: 2, Meta: metaSuperAdminAndAdmin},
-		{Name: "CollaborationWorkspaceManage", ParentName: "CollaborationWorkspaceRoot", Path: "team", Component: "/collaboration/team", Title: "协作空间管理", SortOrder: 1, Meta: usermodel.MetaJSON{"keepAlive": true, "accessMode": "permission", "requiredAction": "collaboration_workspace.manage"}},
+		{Name: "CollaborationWorkspaceManage", ParentName: "CollaborationWorkspaceRoot", Path: "manage", Component: "/collaboration/team", Title: "协作空间管理", SortOrder: 1, Meta: usermodel.MetaJSON{"keepAlive": true, "accessMode": "permission", "requiredAction": "collaboration_workspace.manage"}},
 		{Name: "CollaborationWorkspaceRolesAndPermissions", ParentName: "CollaborationWorkspaceRoot", Path: "roles", Component: "/system/team-roles-permissions", Title: "协作空间角色与权限", SortOrder: 3, Meta: metaTeamAccessOnly},
 		{Name: "AppManage", ParentName: "SystemNavigation", Path: "/system/app", Component: "/system/app", Title: "应用管理", SortOrder: 1, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
 		{Name: "Menus", ParentName: "SystemNavigation", Path: "/system/menu", Component: "/system/menu", Title: "menus.system.menu", SortOrder: 2, Meta: usermodel.MetaJSON{"roles": []interface{}{"R_SUPER"}, "keepAlive": true}},
@@ -595,7 +595,7 @@ func DeprecatedDefaultMenuNames() []string {
 func DefaultRolePackageBindings() []RolePackageBindingSeed {
 	items := []RolePackageBindingSeed{
 		{RoleCode: "admin", PackageKey: "platform.admin_bundle"},
-		{RoleCode: "team_admin", PackageKey: "team.member_admin"},
+		{RoleCode: "collaboration_workspace_admin", PackageKey: "collaboration_workspace.member_admin"},
 	}
 	for i := range items {
 		items[i].ID = StableID("role-package-binding", items[i].RoleCode+":"+items[i].PackageKey)
@@ -974,9 +974,9 @@ func LegacyMenuBackedPages() []PageSeed {
 		{
 			SpaceKey:          systemmodels.DefaultMenuSpaceKey,
 			PageKey:           "collaboration_workspace.index",
-			Name:              "Team",
+			Name:              "CollaborationWorkspace",
 			RouteName:         "CollaborationWorkspaceIndex",
-			RoutePath:         "/collaboration/team",
+			RoutePath:         "/collaboration/manage",
 			Component:         "/collaboration/team",
 			PageType:          "inner",
 			Source:            "manual",
@@ -984,7 +984,7 @@ func LegacyMenuBackedPages() []PageSeed {
 			SortOrder:         35,
 			ParentMenuName:    "CollaborationWorkspaceManage",
 			DisplayGroupKey:   "display.system_pages",
-			ActiveMenuPath:    "/collaboration/team",
+			ActiveMenuPath:    "/collaboration/manage",
 			BreadcrumbMode:    "inherit_menu",
 			AccessMode:        "permission",
 			PermissionKey:     "collaboration_workspace.manage",

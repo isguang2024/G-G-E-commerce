@@ -57,7 +57,7 @@
           </div>
 
           <div class="message-sender-card__meta">
-            <span>{{ item.scope_type === 'team' ? '协作空间发送人' : '平台发送人' }}</span>
+            <span>{{ item.scope_type === 'collaboration' ? '协作空间发送人' : '平台发送人' }}</span>
             <span>{{ formatTime(item.updated_at || item.created_at) }}</span>
           </div>
         </button>
@@ -157,7 +157,7 @@
   defineOptions({ name: 'MessageSenderConsole' })
 
   const props = defineProps<{
-    scope: 'platform' | 'team'
+    scope: 'platform' | 'collaboration'
   }>()
 
   interface SenderDrawerModel {
@@ -448,4 +448,3 @@
     }
   }
 </style>
-

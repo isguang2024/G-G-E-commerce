@@ -39,7 +39,7 @@
 
 ## 权限与接口
 
-- 消息管理相关权限以 `message.manage`、`team.message.manage` 为主。
+- 消息管理相关权限以 `message.manage`、`collaboration_workspace.message.manage` 为主。
 - 用户侧接口围绕收件箱摘要、列表、详情、已读和待办处理。
 - 管理侧接口围绕消息列表、创建、发布和撤销。
 

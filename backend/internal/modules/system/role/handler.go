@@ -663,7 +663,7 @@ func formatRoleDataResourceName(resourceCode string) string {
 		"tenant":                               "协作空间",
 		"collaboration_workspace_member_admin": "协作空间成员（系统）",
 		"team":                                 "当前协作空间",
-		"team_member":                          "当前协作空间成员",
+		"collaboration_workspace_member":                          "当前协作空间成员",
 		"api_endpoint":                         "API 注册表",
 		"system":                               "系统",
 	}

@@ -115,7 +115,7 @@
           <template #default="{ row }">
             <div class="message-record-simple-cell">
               <span>{{ formatTime(row.published_at || row.created_at) }}</span>
-              <small>{{ row.scope_type === 'team' ? '协作空间发送' : '平台发送' }}</small>
+              <small>{{ row.scope_type === 'collaboration' ? '协作空间发送' : '平台发送' }}</small>
             </div>
           </template>
         </ElTableColumn>
@@ -149,12 +149,12 @@
               <span>{{
                 activeRecord.target_collaboration_workspace_name ||
                 activeRecord.target_tenant_name ||
-                (activeRecord.scope_type === 'team' ? currentTeamName : '平台范围')
+                (activeRecord.scope_type === 'collaboration' ? currentTeamName : '平台范围')
               }}</span>
             </div>
           </div>
           <ElTag effect="plain">{{
-            activeRecord.scope_type === 'team' ? '协作空间发送' : '平台发送'
+            activeRecord.scope_type === 'collaboration' ? '协作空间发送' : '平台发送'
           }}</ElTag>
         </div>
 
@@ -200,7 +200,11 @@
               <div class="message-record-delivery-card__top">
                 <div>
                   <strong>{{ delivery.recipient_name || '未命名用户' }}</strong>
-                  <p>{{ delivery.recipient_team_name || '平台用户' }}</p>
+                  <p>{{
+                    delivery.recipient_collaboration_workspace_name ||
+                    delivery.recipient_team_name ||
+                    '平台用户'
+                  }}</p>
                 </div>
                 <ElTag size="small" effect="plain">{{
                   resolveDeliveryStatusLabel(delivery.delivery_status)
@@ -263,7 +267,7 @@
   defineOptions({ name: 'MessageRecordConsole' })
 
   const props = defineProps<{
-    scope: 'platform' | 'team'
+    scope: 'platform' | 'collaboration'
   }>()
 
   const router = useRouter()
@@ -310,7 +314,10 @@
   const audienceOptions = computed(() =>
     isTeamScope.value
       ? [
-          { label: '当前协作空间成员', value: 'tenant_users' as Api.Message.AudienceType },
+          {
+            label: '当前协作空间成员',
+            value: 'collaboration_workspace_users' as Api.Message.AudienceType
+          },
           { label: '指定成员', value: 'specified_users' as Api.Message.AudienceType },
           { label: '接收组', value: 'recipient_group' as Api.Message.AudienceType },
           { label: '角色规则', value: 'role' as Api.Message.AudienceType },
@@ -318,8 +325,14 @@
         ]
       : [
           { label: '所有用户', value: 'all_users' as Api.Message.AudienceType },
-          { label: '协作空间管理员', value: 'tenant_admins' as Api.Message.AudienceType },
-          { label: '指定协作空间成员', value: 'tenant_users' as Api.Message.AudienceType },
+          {
+            label: '协作空间管理员',
+            value: 'collaboration_workspace_admins' as Api.Message.AudienceType
+          },
+          {
+            label: '指定协作空间成员',
+            value: 'collaboration_workspace_users' as Api.Message.AudienceType
+          },
           { label: '指定用户', value: 'specified_users' as Api.Message.AudienceType },
           { label: '接收组', value: 'recipient_group' as Api.Message.AudienceType },
           { label: '角色规则', value: 'role' as Api.Message.AudienceType },
@@ -347,7 +360,7 @@
 
   const resolveAudienceLabel = (value: Api.Message.AudienceType) => {
     if (value === 'all_users') return '所有用户'
-    if (value === 'tenant_admins') return '协作空间管理员'
+    if (value === 'collaboration_workspace_admins') return '协作空间管理员'
     if (value === 'specified_users') return '指定用户'
     if (value === 'recipient_group') return '接收组'
     if (value === 'role') return '角色规则'
@@ -387,8 +400,8 @@
       )
     }
     if (delivery.source_rule_type === 'all_users') return '所有用户'
-    if (delivery.source_rule_type === 'tenant_admins') return '协作空间管理员'
-    if (delivery.source_rule_type === 'tenant_users') return '协作空间成员'
+    if (delivery.source_rule_type === 'collaboration_workspace_admins') return '协作空间管理员'
+    if (delivery.source_rule_type === 'collaboration_workspace_users') return '协作空间成员'
     if (delivery.source_rule_type === 'specified_users') return '指定用户'
     if (delivery.source_rule_type === 'recipient_group') return '接收组'
     if (delivery.source_rule_type === 'feature_package') return '功能包规则'
@@ -399,10 +412,18 @@
   const resolveSourceTargetLabel = (delivery: Api.Message.DispatchRecordDeliveryItem) => {
     if (delivery.source_target_type === 'user')
       return delivery.source_target_value || delivery.recipient_user_id
-    if (delivery.source_target_type === 'tenant_users')
-      return delivery.recipient_team_name || currentTeamName.value
-    if (delivery.source_target_type === 'tenant_admins')
-      return delivery.recipient_team_name || currentTeamName.value
+    if (delivery.source_target_type === 'collaboration_workspace_users')
+      return (
+        delivery.recipient_collaboration_workspace_name ||
+        delivery.recipient_team_name ||
+        currentTeamName.value
+      )
+    if (delivery.source_target_type === 'collaboration_workspace_admins')
+      return (
+        delivery.recipient_collaboration_workspace_name ||
+        delivery.recipient_team_name ||
+        currentTeamName.value
+      )
     if (delivery.source_target_type === 'role') return delivery.source_target_value || '角色规则'
     if (delivery.source_target_type === 'feature_package')
       return delivery.source_target_value || '功能包规则'
@@ -707,4 +728,3 @@
     }
   }
 </style>
-

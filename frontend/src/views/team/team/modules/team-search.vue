@@ -64,4 +64,3 @@
     emit('search', formData.value)
   }
 </script>
-

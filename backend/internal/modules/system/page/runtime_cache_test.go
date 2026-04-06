@@ -12,9 +12,9 @@ func TestResolveRuntimeMenuInheritedAccessDeniesWhenMountedMenuIsMissing(t *test
 	menuID := uuid.New()
 	page := Record{
 		UIPage: models.UIPage{
-			PageKey:        "team.detail",
+			PageKey:        "collaboration_workspace.detail",
 			ParentMenuID:   &menuID,
-			ActiveMenuPath: "/team/all",
+			ActiveMenuPath: "/collaboration/all",
 		},
 	}
 
@@ -34,9 +34,9 @@ func TestResolveRuntimeMenuInheritedAccessHonorsShowVisibilityMode(t *testing.T)
 	menuID := uuid.New()
 	page := Record{
 		UIPage: models.UIPage{
-			PageKey:        "team.detail",
+			PageKey:        "collaboration_workspace.detail",
 			ParentMenuID:   &menuID,
-			ActiveMenuPath: "/team/all",
+			ActiveMenuPath: "/collaboration/all",
 		},
 	}
 	ctx := &runtimeAccessContext{
@@ -49,18 +49,18 @@ func TestResolveRuntimeMenuInheritedAccessHonorsShowVisibilityMode(t *testing.T)
 			SpaceKey: "default",
 			Meta: models.MetaJSON{
 				"accessMode":           "permission",
-				"requiredAction":       "team.read",
+				"requiredAction":       "collaboration_workspace.read",
 				"actionVisibilityMode": "show",
 			},
 		},
-		FullPath: "/team/all",
+		FullPath: "/collaboration/all",
 	}
 
 	decision := resolveRuntimeMenuInheritedAccess(
 		page,
 		ctx,
 		map[uuid.UUID]runtimeMenuNode{menuID: node},
-		map[string]runtimeMenuNode{"/team/all": node},
+		map[string]runtimeMenuNode{"/collaboration/all": node},
 	)
 
 	if !decision.allowed {

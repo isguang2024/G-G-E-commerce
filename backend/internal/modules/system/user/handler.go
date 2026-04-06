@@ -841,7 +841,7 @@ func (h *UserHandler) buildPermissionDiagnosis(userID uuid.UUID, tenantID *uuid.
 		},
 		"snapshot":      buildTeamSnapshotSummary(teamSnapshot, teamMeta),
 		"roles":         roleStates,
-		"team_member":   h.buildCollaborationWorkspaceMemberMap(userID, *tenantID),
+		"collaboration_workspace_member":   h.buildCollaborationWorkspaceMemberMap(userID, *tenantID),
 		"team_packages": h.buildPackageMapsByIDs(teamSnapshot.ExpandedPackageIDs),
 		"diagnosis":     nil,
 	}
@@ -1141,7 +1141,7 @@ func mapRoleCodeToMemberType(roleCode string) string {
 	switch strings.ToLower(strings.TrimSpace(roleCode)) {
 	case "owner":
 		return models.WorkspaceMemberOwner
-	case "team_admin", "admin":
+	case "collaboration_workspace_admin", "admin":
 		return models.WorkspaceMemberAdmin
 	case "viewer":
 		return models.WorkspaceMemberViewer

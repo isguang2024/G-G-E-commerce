@@ -809,22 +809,22 @@ func runNamedMigrations(logger *zap.Logger) error {
 			},
 		},
 		{
-			Name: "20260331_team_manage_page_seed",
+			Name: "20260331_collaboration_workspace_manage_page_seed",
 			Run: func(logger *zap.Logger) error {
-				if _, err := syncDefaultPageSeedByKey("team.team"); err != nil {
+				if _, err := syncDefaultPageSeedByKey("collaboration_workspace.index"); err != nil {
 					return err
 				}
-				logger.Info("Named migration applied", zap.String("name", "20260331_team_manage_page_seed"))
+				logger.Info("Named migration applied", zap.String("name", "20260331_collaboration_workspace_manage_page_seed"))
 				return nil
 			},
 		},
 		{
-			Name: "20260331_team_manage_menu_binding_fix",
+			Name: "20260331_collaboration_workspace_manage_menu_binding_fix",
 			Run: func(logger *zap.Logger) error {
-				if _, err := syncDefaultMenuSeedByName("TeamManage"); err != nil {
+				if _, err := syncDefaultMenuSeedByName("CollaborationWorkspaceManage"); err != nil {
 					return err
 				}
-				if _, err := syncDefaultPageSeedByKey("team.team"); err != nil {
+				if _, err := syncDefaultPageSeedByKey("collaboration_workspace.index"); err != nil {
 					return err
 				}
 				if err := initDefaultFeaturePackages(logger); err != nil {
@@ -1107,9 +1107,9 @@ func runNamedMigrations(logger *zap.Logger) error {
 				if err := database.DB.Model(&usermodel.Menu{}).
 					Where("id = ?", teamRoot.ID).
 					Updates(map[string]interface{}{
-						"path":       "/team",
+						"path":       "/collaboration",
 						"component":  "/index/index",
-						"title":      "menus.system.team",
+						"title":      "协作空间",
 						"icon":       "ri:team-line",
 						"sort_order": 5,
 						"meta":       teamAccessMeta,
@@ -1124,8 +1124,8 @@ func runNamedMigrations(logger *zap.Logger) error {
 						Updates(map[string]interface{}{
 							"parent_id":  teamRoot.ID,
 							"path":       "members",
-							"component":  "/team/team-members",
-							"title":      "menus.system.teamMembers",
+							"component":  "/collaboration/team-members",
+							"title":      "协作空间成员",
 							"sort_order": 2,
 							"meta":       teamAccessMeta,
 						}).Error; err != nil {
@@ -1143,7 +1143,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 							"parent_id":  teamRoot.ID,
 							"path":       "roles",
 							"component":  "/system/team-roles-permissions",
-							"title":      "menus.system.teamRolesAndPermissions",
+							"title":      "协作空间角色与权限",
 							"sort_order": 3,
 							"meta":       teamAccessMeta,
 						}).Error; err != nil {
@@ -1352,12 +1352,12 @@ func runNamedMigrations(logger *zap.Logger) error {
 					`UPDATE permission_keys SET context_type = 'platform' WHERE permission_key LIKE 'system.%'`,
 					`UPDATE permission_keys SET context_type = 'platform' WHERE permission_key LIKE 'collaboration_workspace.%'`,
 					`UPDATE permission_keys SET context_type = 'platform' WHERE permission_key LIKE 'platform.%'`,
-					`UPDATE permission_keys SET context_type = 'team' WHERE permission_key LIKE 'team.%'`,
+					`UPDATE permission_keys SET context_type = 'collaboration' WHERE permission_key LIKE 'team.%'`,
 					`UPDATE permission_keys SET permission_key = 'system.permission.manage', context_type = 'platform' WHERE permission_key IN ('system_permission.manage_action_registry', 'permission_action.manage')`,
 					`UPDATE permission_keys SET permission_key = 'system.role.assign_action', context_type = 'platform' WHERE permission_key = 'system_permission.assign_role_action'`,
 					`UPDATE permission_keys SET context_type = 'platform' WHERE module_code IN ('role', 'user', 'menu', 'menu_backup', 'permission_action', 'permission_key', 'api_endpoint', 'feature_package')`,
 					`UPDATE permission_keys SET context_type = 'platform' WHERE permission_key IN ('feature_package.assign_action', 'feature_package.assign_menu', 'feature_package.assign_team')`,
-					`UPDATE permission_keys SET context_type = 'team' WHERE permission_key IN ('team.configure_action_boundary', 'team.configure_menu_boundary')`,
+					`UPDATE permission_keys SET context_type = 'collaboration' WHERE permission_key IN ('team.configure_action_boundary', 'team.configure_menu_boundary')`,
 				}
 				for _, statement := range statements {
 					if err := database.DB.Exec(statement).Error; err != nil {
@@ -1428,7 +1428,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 					`UPDATE user_action_permissions SET effect = 'allow' WHERE COALESCE(effect, '') = ''`,
 					`ALTER TABLE permission_keys ADD COLUMN IF NOT EXISTS context_type varchar(20)`,
 					`UPDATE permission_keys SET context_type = 'platform' WHERE COALESCE(context_type, '') = '' AND (permission_key LIKE 'system.%' OR permission_key LIKE 'collaboration_workspace.%' OR permission_key LIKE 'platform.%')`,
-					`UPDATE permission_keys SET context_type = 'team' WHERE COALESCE(context_type, '') = ''`,
+					`UPDATE permission_keys SET context_type = 'collaboration' WHERE COALESCE(context_type, '') = ''`,
 					`UPDATE permission_keys SET feature_kind = 'system' WHERE COALESCE(feature_kind, '') = ''`,
 					`UPDATE api_endpoints SET feature_kind = 'system' WHERE COALESCE(feature_kind, '') = ''`,
 				}
@@ -1530,7 +1530,7 @@ func runNamedMigrations(logger *zap.Logger) error {
 						package_key varchar(100) NOT NULL,
 						name varchar(150) NOT NULL,
 						description varchar(255),
-						context_type varchar(20) NOT NULL DEFAULT 'team',
+						context_type varchar(20) NOT NULL DEFAULT 'collaboration',
 						status varchar(20) NOT NULL DEFAULT 'normal',
 						sort_order integer NOT NULL DEFAULT 0,
 						created_at timestamptz NOT NULL DEFAULT NOW(),
@@ -2335,6 +2335,30 @@ func prepareCollaborationWorkspaceRenames(logger *zap.Logger) error {
 	}
 	for _, item := range indexRenames {
 		if err := renameIndexIfNeeded(item.oldName, item.newName, logger); err != nil {
+			return err
+		}
+	}
+
+	valueUpdateStatements := []string{
+		`UPDATE workspaces SET workspace_type = 'collaboration' WHERE workspace_type = 'team'`,
+		`UPDATE permission_keys SET context_type = 'collaboration' WHERE context_type = 'team'`,
+		`UPDATE permission_keys SET allowed_workspace_types = regexp_replace(COALESCE(allowed_workspace_types, ''), '(^|,)team(,|$)', '\1collaboration\2', 'g') WHERE COALESCE(allowed_workspace_types, '') LIKE '%team%'`,
+		`UPDATE feature_packages SET context_type = 'collaboration' WHERE context_type = 'team'`,
+		`UPDATE messages SET scope_type = 'collaboration' WHERE scope_type = 'team'`,
+		`UPDATE message_templates SET owner_scope = 'collaboration' WHERE owner_scope IN ('team', 'tenant')`,
+		`UPDATE message_senders SET scope_type = 'collaboration' WHERE scope_type = 'team'`,
+		`UPDATE message_recipient_groups SET scope_type = 'collaboration' WHERE scope_type = 'team'`,
+		`UPDATE message_templates SET audience_type = 'collaboration_workspace_admins' WHERE audience_type = 'tenant_admins'`,
+		`UPDATE message_templates SET audience_type = 'collaboration_workspace_users' WHERE audience_type = 'tenant_users'`,
+		`UPDATE messages SET audience_type = 'collaboration_workspace_admins' WHERE audience_type = 'tenant_admins'`,
+		`UPDATE messages SET audience_type = 'collaboration_workspace_users' WHERE audience_type = 'tenant_users'`,
+		`UPDATE message_recipient_group_targets SET target_type = 'collaboration_workspace_admins' WHERE target_type = 'tenant_admins'`,
+		`UPDATE message_recipient_group_targets SET target_type = 'collaboration_workspace_users' WHERE target_type = 'tenant_users'`,
+		`UPDATE message_templates SET template_key = 'platform.notice.collaboration_workspace_admins' WHERE template_key = 'platform.notice.tenant_admins'`,
+		`UPDATE message_templates SET template_key = 'collaboration_workspace.notice.collaboration_workspace_users' WHERE template_key = 'collaboration_workspace.notice.team_members'`,
+	}
+	for _, statement := range valueUpdateStatements {
+		if err := database.DB.Exec(statement).Error; err != nil {
 			return err
 		}
 	}
@@ -3957,12 +3981,12 @@ func seedDefaultMessageTemplates(logger *zap.Logger) error {
 			Meta:            systemmodels.MetaJSON{"builtin": true},
 		},
 		{
-			TemplateKey:     "platform.notice.tenant_admins",
+			TemplateKey:     "platform.notice.collaboration_workspace_admins",
 			Name:            "平台协作空间管理员提醒",
 			Description:     "平台向协作空间管理员发送治理提醒",
 			MessageType:     "message",
 			OwnerScope:      "platform",
-			AudienceType:    "tenant_admins",
+			AudienceType:    "collaboration_workspace_admins",
 			TitleTemplate:   "{{title}}",
 			SummaryTemplate: "{{summary}}",
 			ContentTemplate: "{{content}}",
@@ -3971,12 +3995,12 @@ func seedDefaultMessageTemplates(logger *zap.Logger) error {
 			Meta:            systemmodels.MetaJSON{"builtin": true},
 		},
 		{
-			TemplateKey:     "collaboration_workspace.notice.team_members",
+			TemplateKey:     "collaboration_workspace.notice.collaboration_workspace_users",
 			Name:            "协作空间公告模板",
 			Description:     "协作空间管理员向指定协作空间发送公告或待办",
 			MessageType:     "todo",
-			OwnerScope:      "tenant",
-			AudienceType:    "tenant_users",
+			OwnerScope:      "collaboration",
+			AudienceType:    "collaboration_workspace_users",
 			TitleTemplate:   "{{title}}",
 			SummaryTemplate: "{{summary}}",
 			ContentTemplate: "{{content}}",

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="message-group-page art-full-height">
     <AdminWorkspaceHero :title="pageTitle" :description="pageDescription" :metrics="heroMetrics">
       <div class="message-group-hero__actions">
@@ -70,7 +70,7 @@
           </div>
 
           <div class="message-group-card__meta">
-            <span>{{ item.scope_type === 'team' ? '协作空间接收组' : '平台接收组' }}</span>
+            <span>{{ item.scope_type === 'collaboration' ? '协作空间接收组' : '平台接收组' }}</span>
             <span>{{ formatTime(item.updated_at || item.created_at) }}</span>
           </div>
         </button>
@@ -160,11 +160,11 @@
                     <ElSelect v-model="item.target_type" @change="handleTargetTypeChange(item)">
                       <ElOption value="user" label="指定用户" />
                       <ElOption
-                        value="tenant_users"
+                        value="collaboration_workspace_users"
                         :label="isTeamScope ? '当前协作空间成员' : '指定协作空间成员'"
                       />
                       <ElOption
-                        value="tenant_admins"
+                        value="collaboration_workspace_admins"
                         :label="isTeamScope ? '当前协作空间管理员' : '指定协作空间管理员'"
                       />
                       <ElOption value="role" label="按角色命中" />
@@ -188,8 +188,8 @@
                       v-for="user in userOptions"
                       :key="user.id"
                       :label="
-                        user.team_name
-                          ? `${user.display_name} · ${user.team_name}`
+                        user.collaboration_workspace_name || user.team_name
+                          ? `${user.display_name} · ${user.collaboration_workspace_name || user.team_name}`
                           : user.display_name
                       "
                       :value="user.id"
@@ -199,7 +199,8 @@
 
                 <ElFormItem
                   v-else-if="
-                    item.target_type === 'tenant_users' || item.target_type === 'tenant_admins'
+                    item.target_type === 'collaboration_workspace_users' ||
+                    item.target_type === 'collaboration_workspace_admins'
                   "
                   label="目标协作空间"
                 >
@@ -285,12 +286,18 @@
   defineOptions({ name: 'MessageRecipientGroupConsole' })
 
   const props = defineProps<{
-    scope: 'platform' | 'team'
+    scope: 'platform' | 'collaboration'
   }>()
 
   interface DrawerTargetModel {
     local_id: string
-    target_type: 'user' | 'tenant_users' | 'tenant_admins' | 'role' | 'feature_package' | string
+    target_type:
+      | 'user'
+      | 'collaboration_workspace_users'
+      | 'collaboration_workspace_admins'
+      | 'role'
+      | 'feature_package'
+      | string
     user_id: string
     collaborationWorkspaceId: string
     role_code: string
@@ -329,7 +336,7 @@
   const drawerEditingId = ref('')
   const drawerModel = ref<DrawerGroupModel | null>(null)
   const userOptions = ref<Api.Message.DispatchUserOption[]>([])
-  const teamOptions = ref<Api.Message.DispatchTeamOption[]>([])
+  const teamOptions = ref<Api.Message.DispatchCollaborationWorkspaceOption[]>([])
   const roleOptions = ref<Api.Message.DispatchRoleOption[]>([])
   const featurePackageOptions = ref<Api.Message.DispatchFeaturePackageOption[]>([])
 
@@ -425,9 +432,9 @@
     const teamName =
       'tenant_name' in item && item.tenant_name
         ? item.tenant_name
-        : teamOptions.value.find((team) => team.id === resolveTargetCollaborationWorkspaceId(item))?.name ||
-          currentTeamName.value
-    if (item.target_type === 'tenant_admins') {
+        : teamOptions.value.find((team) => team.id === resolveTargetCollaborationWorkspaceId(item))
+            ?.name || currentTeamName.value
+    if (item.target_type === 'collaboration_workspace_admins') {
       return `${teamName} · 协作空间管理员`
     }
     return `${teamName} · 协作空间成员`
@@ -458,13 +465,16 @@
         return
       }
       if (!isTeamScope.value) return
-      if (item.target_type === 'tenant_admins') {
+      if (item.target_type === 'collaboration_workspace_admins') {
         userOptions.value
-          .filter((user) => user.team_name === currentTeamName.value)
+          .filter(
+            (user) =>
+              (user.collaboration_workspace_name || user.team_name) === currentTeamName.value
+          )
           .forEach((user) => seen.add(user.id))
         return
       }
-      if (item.target_type === 'tenant_users') {
+      if (item.target_type === 'collaboration_workspace_users') {
         userOptions.value.forEach((user) => seen.add(user.id))
       }
     })
@@ -476,7 +486,7 @@
       skipTenantHeader: skipTenantHeader.value
     })
     userOptions.value = data.users || []
-    teamOptions.value = data.teams || []
+    teamOptions.value = data.collaboration_workspaces || data.teams || []
     roleOptions.value = data.roles || []
     featurePackageOptions.value = data.feature_packages || []
   }
@@ -541,7 +551,9 @@
 
   const handleTargetTypeChange = (item: DrawerTargetModel) => {
     item.user_id = ''
-    item.collaborationWorkspaceId = isTeamScope.value ? currentCollaborationWorkspaceId.value || '' : ''
+    item.collaborationWorkspaceId = isTeamScope.value
+      ? currentCollaborationWorkspaceId.value || ''
+      : ''
     item.role_code = ''
     item.package_key = ''
   }
@@ -563,7 +575,8 @@
       }
       if (
         !isTeamScope.value &&
-        (item.target_type === 'tenant_users' || item.target_type === 'tenant_admins') &&
+        (item.target_type === 'collaboration_workspace_users' ||
+          item.target_type === 'collaboration_workspace_admins') &&
         !item.collaborationWorkspaceId
       ) {
         ElMessage.warning('协作空间规则必须选择目标协作空间')
@@ -589,7 +602,8 @@
           target_type: item.target_type,
           user_id: item.target_type === 'user' ? item.user_id || undefined : undefined,
           collaboration_workspace_id:
-            item.target_type === 'tenant_users' || item.target_type === 'tenant_admins'
+            item.target_type === 'collaboration_workspace_users' ||
+            item.target_type === 'collaboration_workspace_admins'
               ? isTeamScope.value
                 ? currentCollaborationWorkspaceId.value || undefined
                 : item.collaborationWorkspaceId || undefined
@@ -822,4 +836,3 @@
     }
   }
 </style>
-

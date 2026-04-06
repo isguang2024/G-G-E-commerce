@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="team-members-page art-full-height">
     <template v-if="!team">
       <NoTeamState v-if="teamLoadDone" />
@@ -28,7 +28,10 @@
       </AdminWorkspaceHero>
 
       <ElCard shadow="never" class="art-table-card team-members-main">
-        <section v-if="hasAction('collaboration_workspace.member.manage')" class="team-members-add art-card">
+        <section
+          v-if="hasAction('collaboration_workspace.member.manage')"
+          class="team-members-add art-card"
+        >
           <header class="team-members-add__header">
             <h3>快速添加</h3>
             <p>可直接录入用户 ID 设置成员身份。</p>
@@ -49,8 +52,8 @@
             </ElFormItem>
             <ElFormItem label="成员身份" class="mb-0">
               <ElSelect v-model="addForm.role_code" placeholder="请选择角色">
-                <ElOption label="协作空间管理员" value="team_admin" />
-                <ElOption label="协作空间成员" value="team_member" />
+                <ElOption label="协作空间管理员" value="collaboration_workspace_admin" />
+                <ElOption label="协作空间成员" value="collaboration_workspace_member" />
               </ElSelect>
             </ElFormItem>
             <ElFormItem class="mb-0">
@@ -66,7 +69,9 @@
             <template #left>
               <div class="team-members-table-summary">
                 <strong>成员列表</strong>
-                <span>成员身份变化会影响协作空间边界；协作空间内部角色变化会影响当前协作空间权限快照。</span>
+                <span
+                  >成员身份变化会影响协作空间边界；协作空间内部角色变化会影响当前协作空间权限快照。</span
+                >
               </div>
             </template>
             <template #right>
@@ -104,7 +109,10 @@
                   <ElButton :icon="MoreFilled" circle size="small" />
                   <template #dropdown>
                     <ElDropdownMenu>
-                      <ElDropdownItem v-if="hasAction('collaboration_workspace.member.manage')" command="assign">
+                      <ElDropdownItem
+                        v-if="hasAction('collaboration_workspace.member.manage')"
+                        command="assign"
+                      >
                         <ElIcon><UserFilled /></ElIcon>
                         配置协作空间内部角色
                       </ElDropdownItem>
@@ -144,13 +152,13 @@
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import {
-    fetchGetMyTeam,
+    fetchGetMyCollaborationWorkspace,
     fetchGetMyCollaborationWorkspaceMembers,
     fetchAddMyCollaborationWorkspaceMember,
     fetchRemoveMyCollaborationWorkspaceMember
   } from '@/api/team'
   import { ElMessage, ElMessageBox } from 'element-plus'
-  import { useTenantStore } from '@/store/modules/tenant'
+  import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
   import { useWorkspaceStore } from '@/store/modules/workspace'
   import NoTeamState from '@/components/business/team/NoTeamState.vue'
   import MemberRoleDialog from './modules/member-role-dialog.vue'
@@ -159,17 +167,19 @@
 
   const roleDialogRef = ref()
   const currentMember = ref<Api.SystemManage.CollaborationWorkspaceMemberItem | null>(null)
-  const collaborationWorkspaceStore = useTenantStore()
+  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
   const workspaceStore = useWorkspaceStore()
   const { hasAction } = useAuth()
-  const { hasTeams } = storeToRefs(collaborationWorkspaceStore)
+  const { hasCollaborationWorkspaces } = storeToRefs(collaborationWorkspaceStore)
   const { currentAuthWorkspace, currentAuthWorkspaceId, currentAuthWorkspaceType } =
     storeToRefs(workspaceStore)
 
-  const team = ref<Api.SystemManage.TeamListItem | null>(null)
+  const team = ref<Api.SystemManage.CollaborationWorkspaceListItem | null>(null)
   const teamLoadDone = ref(false)
   const members = ref<Api.SystemManage.CollaborationWorkspaceMemberItem[]>([])
-  const hasMemberOperationPermission = computed(() => hasAction('collaboration_workspace.member.manage'))
+  const hasMemberOperationPermission = computed(() =>
+    hasAction('collaboration_workspace.member.manage')
+  )
   const loading = ref(false)
   const addLoading = ref(false)
   const pagination = reactive({
@@ -181,13 +191,17 @@
     {
       label: '管理员',
       value: members.value.filter(
-        (item) => item.roleCode === 'team_admin' || item.role === 'team_admin'
+        (item) =>
+          item.roleCode === 'collaboration_workspace_admin' ||
+          item.role === 'collaboration_workspace_admin'
       ).length
     },
     {
       label: '普通成员',
       value: members.value.filter(
-        (item) => item.roleCode !== 'team_admin' && item.role !== 'team_admin'
+        (item) =>
+          item.roleCode !== 'collaboration_workspace_admin' &&
+          item.role !== 'collaboration_workspace_admin'
       ).length
     }
   ])
@@ -199,7 +213,7 @@
 
   const addForm = reactive({
     user_id: '',
-    role_code: 'team_member'
+    role_code: 'collaboration_workspace_member'
   })
 
   const pagedMembers = computed(() => {
@@ -208,11 +222,14 @@
   })
 
   function isAdmin(row: Api.SystemManage.CollaborationWorkspaceMemberItem): boolean {
-    return row.roleCode === 'team_admin' || row.role === 'team_admin'
+    return (
+      row.roleCode === 'collaboration_workspace_admin' ||
+      row.role === 'collaboration_workspace_admin'
+    )
   }
 
   function formatRoleLabel(roleCode?: string) {
-    return roleCode === 'team_admin' ? '协作空间管理员' : '协作空间成员'
+    return roleCode === 'collaboration_workspace_admin' ? '协作空间管理员' : '协作空间成员'
   }
 
   async function loadMyTeam() {
@@ -220,13 +237,13 @@
     team.value = null
     members.value = []
 
-    if (!hasTeams.value) {
+    if (!hasCollaborationWorkspaces.value) {
       teamLoadDone.value = true
       return
     }
 
     try {
-      team.value = await fetchGetMyTeam()
+      team.value = await fetchGetMyCollaborationWorkspace()
       await loadMembers()
     } catch (e: any) {
       if ([400, 404, 3006].includes(e?.response?.status) || [400, 404, 3006].includes(e?.code)) {
@@ -261,7 +278,10 @@
     })
   }
 
-  function handleCommand(command: string, member: Api.SystemManage.CollaborationWorkspaceMemberItem) {
+  function handleCommand(
+    command: string,
+    member: Api.SystemManage.CollaborationWorkspaceMemberItem
+  ) {
     if (command === 'assign') {
       handleAssignRoles(member)
     } else if (command === 'delete') {
@@ -418,4 +438,3 @@
     }
   }
 </style>
-

@@ -324,4 +324,3 @@
     border-radius: 12px;
   }
 </style>
-

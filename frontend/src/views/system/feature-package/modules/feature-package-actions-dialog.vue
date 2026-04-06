@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="visible"
     :title="drawerTitle"
@@ -48,14 +48,14 @@
     modelValue: boolean
     packageId: string
     packageName: string
-    contextType?: 'platform' | 'team' | 'common' | string
+    contextType?: 'platform' | 'collaboration' | 'common' | string
   }
 
   const props = withDefaults(defineProps<Props>(), {
     modelValue: false,
     packageId: '',
     packageName: '',
-    contextType: 'team'
+    contextType: 'collaboration'
   })
 
   const emit = defineEmits<{
@@ -75,7 +75,10 @@
 
   const filteredActions = computed(() =>
     allActions.value.filter((item) =>
-      supportsActionContext(props.contextType || 'team', item.contextType || 'team')
+      supportsActionContext(
+        props.contextType || 'collaboration',
+        item.contextType || 'collaboration'
+      )
     )
   )
 
@@ -104,7 +107,8 @@
       const [actionsRes, currentRes] = await Promise.all([
         fetchGetPermissionActionOptions({
           status: 'normal',
-          contextType: props.contextType === 'common' ? undefined : props.contextType || 'team'
+          contextType:
+            props.contextType === 'common' ? undefined : props.contextType || 'collaboration'
         }),
         fetchGetFeaturePackageActions(props.packageId)
       ])
@@ -177,14 +181,17 @@
     if (packageContextType === 'common') {
       return (
         actionContextType === 'platform' ||
-        actionContextType === 'team' ||
+        actionContextType === 'collaboration' ||
         actionContextType === 'common'
       )
     }
-    if (packageContextType === 'platform,team' || packageContextType === 'team,platform') {
+    if (
+      packageContextType === 'platform,collaboration' ||
+      packageContextType === 'collaboration,platform'
+    ) {
       return (
         actionContextType === 'platform' ||
-        actionContextType === 'team' ||
+        actionContextType === 'collaboration' ||
         actionContextType === 'common'
       )
     }
@@ -193,22 +200,24 @@
 
   function formatContextType(contextType?: string) {
     if (contextType === 'platform') return '平台'
-    if (contextType === 'team') return '协作空间'
+    if (contextType === 'collaboration') return '协作空间'
     if (contextType === 'common') return '通用'
-    if (contextType === 'platform,team' || contextType === 'team,platform') return '平台/协作空间'
+    if (contextType === 'platform,collaboration' || contextType === 'collaboration,platform')
+      return '平台/协作空间'
     return contextType || '-'
   }
 
   function getScopeLabel(contextType?: string) {
     if (contextType === 'platform') return '平台'
-    if (contextType === 'team') return '协作空间'
+    if (contextType === 'collaboration') return '协作空间'
     if (contextType === 'common') return '平台或协作空间'
-    if (contextType === 'platform,team' || contextType === 'team,platform') return '平台或协作空间'
+    if (contextType === 'platform,collaboration' || contextType === 'collaboration,platform')
+      return '平台或协作空间'
     return '当前上下文'
   }
 
   function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
-    return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
+    return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.collaborationWorkspaceCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 </script>
 
@@ -230,4 +239,3 @@
     gap: 8px;
   }
 </style>
-

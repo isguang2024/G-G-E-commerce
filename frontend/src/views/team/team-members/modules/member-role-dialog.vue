@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="visible"
     :title="`配置协作空间内部角色 - ${member?.userName || ''}`"
@@ -68,9 +68,12 @@
   const customRoleCount = computed(() => allRoles.value.filter((role) => !role.isGlobal).length)
 
   function isTeamAdminRole(roleCode: string): boolean {
-    // 如果成员已经是协作空间管理员，则禁用 team_admin 角色的选择
+    // 如果成员已经是协作空间管理员，则禁用 collaboration_workspace_admin 角色的选择
     // 协作空间管理员角色不能被移除
-    return memberRoleCodes.value.includes('team_admin') && roleCode === 'team_admin'
+    return (
+      memberRoleCodes.value.includes('collaboration_workspace_admin') &&
+      roleCode === 'collaboration_workspace_admin'
+    )
   }
 
   async function open() {
@@ -146,4 +149,3 @@
     padding-top: 2px;
   }
 </style>
-

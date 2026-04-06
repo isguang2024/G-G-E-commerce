@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="visible"
     :title="`功能包绑定菜单 - ${packageName}`"
@@ -108,14 +108,14 @@
     packageId: string
     packageName: string
     appKey?: string
-    contextType?: 'platform' | 'team' | 'common' | string
+    contextType?: 'platform' | 'collaboration' | 'common' | string
   }
 
   const props = withDefaults(defineProps<Props>(), {
     modelValue: false,
     packageId: '',
     packageName: '',
-    contextType: 'team'
+    contextType: 'collaboration'
   })
 
   const emit = defineEmits<{
@@ -278,7 +278,7 @@
 
   function formatContextType(contextType?: string) {
     if (contextType === 'platform') return '平台'
-    if (contextType === 'team') return '协作空间'
+    if (contextType === 'collaboration') return '协作空间'
     if (contextType === 'common') return '通用'
     return contextType || '-'
   }
@@ -288,7 +288,7 @@
   }
 
   function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
-    return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
+    return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.collaborationWorkspaceCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 
   function normalizeMenuOptions(items: RawMenuNode[], selectedSet: Set<string>): MenuOption[] {
@@ -499,4 +499,3 @@
     font-size: 13px;
   }
 </style>
-

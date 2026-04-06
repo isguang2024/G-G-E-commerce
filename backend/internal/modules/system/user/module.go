@@ -57,7 +57,7 @@ func (m *UserModule) RegisterRoutes(rg *gin.RouterGroup) {
 	{
 		reg.GETProtected("", reg.Meta("获取用户列表").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.List)
 		reg.GETProtected("/:id", reg.Meta("获取用户详情").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.Get)
-		reg.GETProtected("/:id/teams", reg.Meta("获取用户所在协作空间").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.GetTeams)
+		reg.GETProtected("/:id/collaboration-workspaces", reg.Meta("获取用户所在协作空间").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.GetTeams)
 		reg.GETAction("/:id/packages", "获取用户功能包", "platform.package.assign", authzService.RequireAction, userHandler.GetPackages)
 		reg.PUTAction("/:id/packages", "配置用户功能包", "platform.package.assign", authzService.RequireAction, userHandler.SetPackages)
 		reg.GETProtected("/:id/menus", reg.Meta("获取用户菜单裁剪").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.GetMenus)

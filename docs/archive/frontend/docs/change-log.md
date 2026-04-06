@@ -284,7 +284,7 @@
 ### 本次改动
 
 - 为 API 管理补充权限结构诊断：接口现在会明确区分 `公开接口`、`登录态全局接口`、`登录态自服务接口`、`开放 API Key 接口`、`单权限接口`、`多权限共享`、`跨上下文共享`，不再把“无权限键”一律当成缺陷。
-- 新增后端筛选能力，支持按权限结构过滤 API；`message.manage + team.message.manage` 这类消息接口会被标记为“跨上下文共享”，用于表达平台与团队共用同一接口而非错误重复。
+- 新增后端筛选能力，支持按权限结构过滤 API；`message.manage + collaboration_workspace.message.manage` 这类消息接口会被标记为“跨上下文共享”，用于表达平台与团队共用同一接口而非错误重复。
 - 前端 API 管理页新增权限结构列、权限结构筛选和概览指标（无权限键、共享接口、跨上下文共享），并通过 `go test ./internal/modules/system/apiendpoint/... ./internal/modules/system/user/... ./internal/pkg/apiregistry/...` 与 `pnpm exec vue-tsc --noEmit` 验证。
 
 ### 下次方向
@@ -297,7 +297,7 @@
 ### 本次改动
 
 - 为功能权限列表补充消费审计模型，后端现可聚合每个权限键被 `API / 页面 / 功能包` 消费的数量，并输出 `未被消费`、`仅 API`、`仅页面`、`仅功能包`、`多方复用` 等使用结构。
-- 新增重复判定能力：按权限语义族自动识别 `跨上下文镜像` 与 `疑似重复`；像 `message.manage` / `team.message.manage` 这类会明确标成镜像权限，而不是简单重复。
+- 新增重复判定能力：按权限语义族自动识别 `跨上下文镜像` 与 `疑似重复`；像 `message.manage` / `collaboration_workspace.message.manage` 这类会明确标成镜像权限，而不是简单重复。
 - 前端“功能权限”页新增审计摘要、消费结构列、重复检查列，以及 `消费情况 / 重复判定` 搜索筛选；同时补齐 `navigation` 测试桩缺失的 `GetAccessTrace`，并通过 `go test ./...`、`pnpm exec vue-tsc --noEmit` 验证。
 
 ### 下次方向

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div
     v-if="shouldShowSwitcher"
     class="tenant-switcher"
@@ -38,7 +38,7 @@
   import { useRouter } from 'vue-router'
   import { useMenuStore } from '@/store/modules/menu'
   import { useMenuSpaceStore } from '@/store/modules/menu-space'
-  import { useTenantStore } from '@/store/modules/tenant'
+  import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
   import { useWorkspaceStore } from '@/store/modules/workspace'
   import { refreshCurrentUserInfoContext, refreshUserMenus } from '@/router'
   import { findRegisteredRouteByPath } from '@/utils/router'
@@ -50,11 +50,11 @@
 
   const router = useRouter()
   const menuStore = useMenuStore()
-  const collaborationWorkspaceStore = useTenantStore()
+  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
   const workspaceStore = useWorkspaceStore()
   const menuSpaceStore = useMenuSpaceStore()
 
-  const { teamList } = storeToRefs(collaborationWorkspaceStore)
+  const { collaborationWorkspaceList } = storeToRefs(collaborationWorkspaceStore)
   const {
     workspaceList,
     personalWorkspace,
@@ -69,7 +69,7 @@
   const currentContextLabel = computed(() => {
     if (!currentAuthWorkspace.value) return '当前工作空间'
     const typeLabel =
-      currentAuthWorkspace.value.workspaceType === 'team' ? '协作空间' : '个人工作空间'
+      currentAuthWorkspace.value.workspaceType === 'collaboration' ? '协作空间' : '个人工作空间'
     return `${currentAuthWorkspace.value.name} · ${typeLabel}`
   })
 
@@ -77,8 +77,13 @@
     if (workspace.workspaceType === 'personal') {
       return `${workspace.name} · 个人工作空间`
     }
-    const matchedTeam = teamList.value.find((item) => item.workspaceId === workspace.id)
-    const roleLabel = matchedTeam?.currentRoleCode === 'team_admin' ? '管理员视图' : '成员视图'
+    const matchedCollaborationWorkspace = collaborationWorkspaceList.value.find(
+      (item) => item.workspaceId === workspace.id
+    )
+    const roleLabel =
+      matchedCollaborationWorkspace?.currentRoleCode === 'collaboration_workspace_admin'
+        ? '管理员视图'
+        : '成员视图'
     return `${workspace.name} · 协作空间 · ${roleLabel}`
   }
 
@@ -105,11 +110,11 @@
       }
 
       const workspaceTypeLabel =
-        currentAuthWorkspace.value?.workspaceType === 'team' ? '协作空间' : '个人工作空间'
+        currentAuthWorkspace.value?.workspaceType === 'collaboration' ? '协作空间' : '个人工作空间'
       ElMessage.success(`已切换到${workspaceTypeLabel}`)
     } catch (error) {
       console.error('[WorkspaceSwitcher] 切换工作空间失败:', error)
-      await collaborationWorkspaceStore.loadMyTeams({
+      await collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
         preferredWorkspaceId: currentAuthWorkspaceId.value
       })
       ElMessage.error('切换工作空间失败')

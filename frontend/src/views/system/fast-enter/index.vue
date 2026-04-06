@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="fast-enter-page art-full-height">
     <AdminWorkspaceHero
       title="快捷应用管理"
@@ -216,12 +216,15 @@
           </div>
 
           <ElFormItem v-else-if="drawerTargetType === 'path'" label="内部路径">
-            <ElInput v-model="drawerDraft.link" placeholder="/system/user 或 /team/members" />
+            <ElInput
+              v-model="drawerDraft.link"
+              placeholder="/system/user 或 /collaboration/members"
+            />
           </ElFormItem>
 
           <div v-if="drawerTargetType === 'path'" class="fast-enter-field-hint">
             <span>支持以 `/` 开头的站内路径。</span>
-            <span>例如 `/system/user`、`/system/api-endpoint`、`/team/members`。</span>
+            <span>例如 `/system/user`、`/system/api-endpoint`、`/collaboration/members`。</span>
           </div>
 
           <ElFormItem v-else label="外部链接">

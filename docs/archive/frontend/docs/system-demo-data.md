@@ -13,7 +13,7 @@
 ## 固定账号
 
 - `platform_admin_demo`：平台管理员
-- `team_admin_demo`：团队管理员
+- `collaboration_workspace_admin_demo`：团队管理员
 - `member_demo`：普通成员
 
 ## 固定团队与菜单空间
@@ -26,7 +26,7 @@
 ## 消息演示数据
 
 - 平台模板：`demo.wrapup.platform.notice`
-- 团队模板：`demo.wrapup.team.notice`
+- 团队模板：`demo.wrapup.collaboration_workspace.notice`
 - 平台接收组：`演示平台接收组`
 - 团队接收组：`演示团队接收组`
 - 平台消息：`demo.system_wrapup.platform`
@@ -35,7 +35,7 @@
 ## 最小联调顺序
 
 1. `platform_admin_demo`：菜单、页面、空间、消息中心
-2. `team_admin_demo`：团队消息
+2. `collaboration_workspace_admin_demo`：团队消息
 3. `member_demo`：菜单裁剪、平台收件、团队入口拦截
 
 ## 使用约束

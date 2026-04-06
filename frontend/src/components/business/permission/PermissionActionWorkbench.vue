@@ -127,7 +127,7 @@
                           @change="(value) => toggleSelection(action.id, Boolean(value))"
                         />
                         <ElSwitch
-                          v-else-if="mode === 'team'"
+                          v-else-if="mode === 'collaboration'"
                           :model-value="isSelected(action.id)"
                           size="small"
                           @change="(value) => toggleSelection(action.id, Boolean(value))"
@@ -144,7 +144,7 @@
                     </div>
 
                     <div class="action-side">
-                      <template v-if="mode === 'menu' || mode === 'team'">
+                      <template v-if="mode === 'menu' || mode === 'collaboration'">
                         <ElTag
                           :type="isSelected(action.id) ? 'success' : 'info'"
                           effect="plain"
@@ -197,7 +197,7 @@
   import { computed, ref, watch } from 'vue'
   import { ArrowDown, Search } from '@element-plus/icons-vue'
 
-  type WorkbenchMode = 'menu' | 'team' | 'role' | 'user'
+  type WorkbenchMode = 'menu' | 'collaboration' | 'team' | 'role' | 'user'
   type DecisionValue = '' | 'allow' | 'deny'
 
   interface WorkbenchActionItem extends Partial<Api.SystemManage.PermissionActionItem> {
@@ -361,12 +361,12 @@
   const selectedLabel = computed(() => {
     if (props.mode === 'user') return '例外'
     if (props.mode === 'role') return '已配置'
-    if (props.mode === 'team') return '已开通'
+    if (props.mode === 'collaboration') return '已开通'
     return '已选'
   })
 
-  const positiveText = computed(() => (props.mode === 'team' ? '已开通' : '已选'))
-  const neutralText = computed(() => (props.mode === 'team' ? '未开通' : '未选'))
+  const positiveText = computed(() => (props.mode === 'collaboration' ? '已开通' : '已选'))
+  const neutralText = computed(() => (props.mode === 'collaboration' ? '未开通' : '未选'))
 
   const decisionOptions = computed(() => {
     if (props.mode === 'user') {
@@ -393,7 +393,7 @@
       ]
     }
 
-    if (props.mode === 'team') {
+    if (props.mode === 'collaboration') {
       return [
         { value: 'all', label: '开通状态：全部' },
         { value: 'selected', label: '开通状态：已开通' },
@@ -421,15 +421,15 @@
   const stateFilterPlaceholder = computed(() => stateOptions.value[0]?.label || '状态')
 
   const batchCommands = computed(() => {
-    if (props.mode === 'menu' || props.mode === 'team') {
+    if (props.mode === 'menu' || props.mode === 'collaboration') {
       return [
         {
           command: 'select-visible',
-          label: props.mode === 'team' ? '批量开通当前结果' : '批量选中当前结果'
+          label: props.mode === 'collaboration' ? '批量开通当前结果' : '批量选中当前结果'
         },
         {
           command: 'clear-visible',
-          label: props.mode === 'team' ? '批量关闭当前结果' : '批量取消当前结果'
+          label: props.mode === 'collaboration' ? '批量关闭当前结果' : '批量取消当前结果'
         },
         { command: 'clear-all', label: '清空全部配置' }
       ]
@@ -490,7 +490,7 @@
   }
 
   function matchState(actionId: string) {
-    if (props.mode === 'menu' || props.mode === 'team') {
+    if (props.mode === 'menu' || props.mode === 'collaboration') {
       if (stateFilter.value === 'selected') return isSelected(actionId)
       if (stateFilter.value === 'unselected') return !isSelected(actionId)
       return true
@@ -511,7 +511,7 @@
   }
 
   function isActive(actionId: string) {
-    if (props.mode === 'menu' || props.mode === 'team') {
+    if (props.mode === 'menu' || props.mode === 'collaboration') {
       return isSelected(actionId)
     }
     return Boolean(getDecision(actionId))
@@ -573,7 +573,7 @@
     const visibleIds = filteredActions.value.map((item) => item.id)
     if (!visibleIds.length) return
 
-    if (props.mode === 'menu' || props.mode === 'team') {
+    if (props.mode === 'menu' || props.mode === 'collaboration') {
       const next = new Set(props.selectedIds)
       if (command === 'select-visible') {
         visibleIds.forEach((id) => next.add(id))

@@ -120,7 +120,7 @@ export type FastEnterQuickLink = FastEnterBaseItem
 export interface MenuSpaceDefinition {
   spaceKey: string
   spaceName: string
-  spaceType?: 'default' | 'platform' | 'team' | 'personal' | 'shared' | string
+  spaceType?: 'default' | 'platform' | 'collaboration' | 'personal' | 'shared' | string
   description?: string
   enabled?: boolean
   isDefault?: boolean

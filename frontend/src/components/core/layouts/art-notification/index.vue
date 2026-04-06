@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div
     class="art-notification-panel art-card-sm !shadow-xl"
     :style="{
@@ -102,7 +102,7 @@
   import { storeToRefs } from 'pinia'
   import { useMessageStore } from '@/store/modules/message'
   import { useMenuSpaceStore } from '@/store/modules/menu-space'
-  import { useTenantStore } from '@/store/modules/tenant'
+  import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
   import { useWorkspaceStore } from '@/store/modules/workspace'
 
   defineOptions({ name: 'ArtNotification' })
@@ -118,7 +118,7 @@
   const router = useRouter()
   const messageStore = useMessageStore()
   const menuSpaceStore = useMenuSpaceStore()
-  const collaborationWorkspaceStore = useTenantStore()
+  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
   const workspaceStore = useWorkspaceStore()
   const { previewMap } = storeToRefs(messageStore)
 
@@ -233,7 +233,7 @@
 
   const resolveTeamTag = (item: Api.Message.InboxItem) => {
     const collaborationWorkspaceId =
-      item.scope_type === 'team'
+      item.scope_type === 'collaboration' || item.scope_type === 'collaboration'
         ? item.scope_id ||
           item.recipient_collaboration_workspace_id ||
           item.target_collaboration_workspace_id ||
@@ -243,12 +243,15 @@
           item.target_collaboration_workspace_id ||
           item.scope_id
     if (!collaborationWorkspaceId) return ''
-    const teamName = collaborationWorkspaceStore.teamList.find((team) => team.id === collaborationWorkspaceId)?.name || ''
+    const teamName =
+      collaborationWorkspaceStore.collaborationWorkspaceList.find(
+        (workspace) => workspace.id === collaborationWorkspaceId
+      )?.name || ''
     return teamName ? `协作空间 · ${teamName}` : ''
   }
 
   const resolveWorkspaceTag = (item: Api.Message.InboxItem) => {
-    if (item.scope_type === 'team') {
+    if (item.scope_type === 'collaboration' || item.scope_type === 'collaboration') {
       return resolveTeamTag(item)
     }
     return `工作空间 · ${workspaceStore.currentAuthWorkspace?.name || '当前授权工作空间'}`
@@ -515,4 +518,3 @@
     background-color: #222 !important;
   }
 </style>
-

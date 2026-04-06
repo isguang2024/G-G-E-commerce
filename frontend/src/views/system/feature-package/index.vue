@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="feature-package-page art-full-height">
     <ElTabs
       v-model="activePackageType"
@@ -38,7 +38,7 @@
           },
           {
             label: activePackageType === 'base' ? '已绑定菜单数' : '协作空间开通数',
-            value: activePackageType === 'base' ? totalMenuCount : totalTeamCount
+            value: activePackageType === 'base' ? totalMenuCount : totalCollaborationWorkspaceCount
           },
           { label: '停用功能包', value: disabledPackageCount }
         ]"
@@ -112,7 +112,7 @@
       :package-id="currentPackage.id || ''"
       :package-name="currentPackage.name || ''"
       :app-key="targetAppKey"
-      :context-type="currentPackage.contextType || 'team'"
+      :context-type="currentPackage.contextType || 'collaboration'"
       @success="handleRefresh"
     />
 
@@ -120,7 +120,7 @@
       v-model="actionsDialogVisible"
       :package-id="currentPackage.id || ''"
       :package-name="currentPackage.name || ''"
-      :context-type="currentPackage.contextType || 'team'"
+      :context-type="currentPackage.contextType || 'collaboration'"
       @success="handleRefresh"
     />
 
@@ -129,7 +129,7 @@
       :package-id="currentPackage.id || ''"
       :package-name="currentPackage.name || ''"
       :app-key="targetAppKey"
-      :context-type="currentPackage.contextType || 'team'"
+      :context-type="currentPackage.contextType || 'collaboration'"
       @success="handleRefresh"
     />
 
@@ -137,7 +137,7 @@
       v-model="teamsDialogVisible"
       :package-id="currentPackage.id || ''"
       :package-name="currentPackage.name || ''"
-      :context-type="currentPackage.contextType || 'team'"
+      :context-type="currentPackage.contextType || 'collaboration'"
       @success="handleRefresh"
     />
 
@@ -198,7 +198,7 @@
                 :type="
                   node.contextType === 'platform'
                     ? 'warning'
-                    : node.contextType === 'team'
+                    : node.contextType === 'collaboration'
                       ? 'primary'
                       : 'info'
                 "
@@ -206,7 +206,7 @@
                 {{
                   node.contextType === 'platform'
                     ? '平台'
-                    : node.contextType === 'team'
+                    : node.contextType === 'collaboration'
                       ? '协作空间'
                       : '通用'
                 }}
@@ -296,8 +296,8 @@
   const totalMenuCount = computed(() =>
     data.value.reduce((sum, item) => sum + (item.menuCount || 0), 0)
   )
-  const totalTeamCount = computed(() =>
-    data.value.reduce((sum, item) => sum + (item.teamCount || 0), 0)
+  const totalCollaborationWorkspaceCount = computed(() =>
+    data.value.reduce((sum, item) => sum + (item.collaborationWorkspaceCount || 0), 0)
   )
   const disabledPackageCount = computed(
     () => data.value.filter((item) => item.status === 'disabled').length
@@ -413,7 +413,7 @@
                 type:
                   row.contextType === 'platform'
                     ? 'success'
-                    : row.contextType === 'team'
+                    : row.contextType === 'collaboration'
                       ? 'info'
                       : 'warning'
               },
@@ -442,10 +442,10 @@
             row.packageType === 'bundle' ? '-' : (row.menuCount ?? 0)
         },
         {
-          prop: 'teamCount',
+          prop: 'collaborationWorkspaceCount',
           label: '协作空间数',
           width: 90,
-          formatter: (row: PackageItem) => row.teamCount ?? 0
+          formatter: (row: PackageItem) => row.collaborationWorkspaceCount ?? 0
         },
         {
           prop: 'sortOrder',
@@ -714,7 +714,7 @@
       fetchGetFeaturePackageImpactPreview(row.id)
         .then((impact) =>
           ElMessageBox.confirm(
-            `删除后影响：角色 ${impact.roleCount}、协作空间 ${impact.teamCount}、用户 ${impact.userCount}。确认删除功能包「${row.name}」？`,
+            `删除后影响：角色 ${impact.roleCount}、协作空间 ${impact.collaborationWorkspaceCount}、用户 ${impact.userCount}。确认删除功能包「${row.name}」？`,
             '删除确认',
             {
               confirmButtonText: '确认删除',
@@ -726,7 +726,7 @@
         .then(() => fetchDeleteFeaturePackage(row.id))
         .then((stats) => {
           ElMessage.success(
-            `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
+            `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.collaborationWorkspaceCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
           )
           handleRefresh()
         })
@@ -766,12 +766,12 @@
   }
 
   function supportsTeam(contextType?: string) {
-    return contextType === 'team' || contextType === 'common'
+    return contextType === 'collaboration' || contextType === 'common'
   }
 
   function formatContextType(contextType?: string) {
     if (contextType === 'platform') return '平台'
-    if (contextType === 'team') return '协作空间'
+    if (contextType === 'collaboration') return '协作空间'
     if (contextType === 'common') return '通用'
     return contextType || '-'
   }
@@ -872,4 +872,3 @@
     white-space: nowrap;
   }
 </style>
-

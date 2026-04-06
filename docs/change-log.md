@@ -1,4 +1,21 @@
-﻿# Change Log
+# Change Log
+
+## 2026-04-06 tenant 语义回收为未来多租户，当前主线切到协作空间
+
+### 本次改动
+- 完成当前业务主语义切换：`workspace_type` 当前有效值统一为 `personal | collaboration`，中文统一为“个人空间 / 协作空间”，`tenant` 正式退出当前协作、权限、导航、消息主线，保留给未来真正的多租户系统。
+- 完成数据库与迁移链的正式收口：协作空间核心表、活跃列、索引和枚举值已切到 collaboration 命名，并在 [backend/cmd/migrate/main.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/cmd/migrate/main.go) 中通过预重命名 + value backfill 保证旧库升级和 `fresh` 初始化都直接落在新 schema 上。
+- 完成后端主契约收口：当前主请求头为 `X-Auth-Workspace-Id` 与 `X-Collaboration-Workspace-Id`，主接口为 `/api/v1/workspaces/*` 与 `/api/v1/collaboration-workspaces/*`，平台能力通过 `personal workspace` 生效，协作能力通过 `collaboration workspace` 生效。
+- 完成前端主语义收口：`workspaceStore` 仍是唯一授权上下文源，协作空间适配层与消息域 helper 已切到 `currentCollaborationWorkspaceId / collaborationWorkspaceList / loadMyCollaborationWorkspaces` 等命名，不再继续把 `currentTeam / teamList / loadMyTeams` 当成当前业务主语义。
+- 重写 [docs/workspace-glossary.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/workspace-glossary.md)、[docs/workspace-permission-migration.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/workspace-permission-migration.md)、[docs/workspace-permission-stage-log.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/workspace-permission-stage-log.md)，把最终状态收口成：当前主线使用 `workspace / personal workspace / collaboration workspace`，`tenant` 仅作为未来多租户保留名词。
+- 本轮已执行并通过：
+  - `go test ./... -run '^$'`
+  - `pnpm --dir frontend lint`
+  - `pnpm --dir frontend build`
+
+### 下次方向
+- 若继续推进，优先清理代码目录、内部变量和历史模块路径中残留的 `team / tenant` 命名，但这已经不影响当前运行时契约与对外语义。
+- 若未来引入真正的多租户系统，应新建独立 `tenant` 领域设计和 schema，不再复用当前协作空间模型。
 
 ## 2026-04-06 workspace 权限迁移继续推进七
 
@@ -68,7 +85,7 @@
 - 更新 [service.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/platformaccess/service.go) 与 [service.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/permissionrefresh/service.go)，让平台权限快照和平台角色刷新优先读取 personal workspace 角色绑定，而不是只看全局 `user_roles`。
 - 更新 [handler.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/tenant/handler.go)，让协作空间成员角色接口统一走 `workspace_role_bindings(team workspace)`，并补充 `binding_workspace_id`、`binding_workspace_type`、`member_type` 返回字段，明确成员身份与权限角色分离。
 - 更新 [authorization.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/authorization/authorization.go)，收窄 `explicit_target_workspace` 的统一兜底范围，避免误伤角色目录、功能包列表等非单目标 legacy 接口。
-- 更新 [team.ts](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/api/team.ts)、[system-manage.ts](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/api/system-manage.ts)、[api.d.ts](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/types/api/api.d.ts) 以及角色/协作空间成员相关页面文案，把“平台角色经个人工作空间生效、协作空间内部角色经协作空间生效、成员身份不等于权限角色”落到前端表达层。
+- 更新 [collaboration_workspace.ts](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/api/collaboration_workspace.ts)、[system-manage.ts](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/api/system-manage.ts)、[api.d.ts](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/types/api/api.d.ts) 以及角色/协作空间成员相关页面文案，把“平台角色经个人工作空间生效、协作空间内部角色经协作空间生效、成员身份不等于权限角色”落到前端表达层。
 
 ### 下次方向
 - 继续清理剩余仍直接从旧 `user_roles` 读取协作空间角色的零散链路，把 team runtime 全量收口到 workspace-aware helper。
@@ -107,7 +124,7 @@
 - 更新 [middleware.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/auth/middleware.go)、[handler.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/auth/handler.go)、[module.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/auth/module.go)、[authorization.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/pkg/authorization/authorization.go)，让请求上下文优先解析 `X-Auth-Workspace-Id`，并在兼容期继续回落 `collaboration_workspace_id`。
 - 新增 [handler.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/workspace/handler.go)，并更新 [module.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/workspace/module.go)、[router.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/api/router/router.go)，接入 `/api/v1/workspaces/my`、`/current`、`/:id`、`/switch` 四个基础接口。
 - 更新 [handler.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/tenant/handler.go) 和 [module.go](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/tenant/module.go)，在旧 tenant 返回结果中补齐 `workspace_id`、`workspace_type`、`collaboration_workspace_id`，把 tenant 进一步降级为 workspace 兼容壳。
-- 新增 [workspace.ts](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/api/workspace.ts)，并更新 [team.ts](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/api/team.ts) 与 [api.d.ts](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/types/api/api.d.ts)，把前端契约补到 workspace 基础类型和响应字段。
+- 新增 [workspace.ts](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/api/workspace.ts)，并更新 [collaboration_workspace.ts](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/api/collaboration_workspace.ts) 与 [api.d.ts](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/types/api/api.d.ts)，把前端契约补到 workspace 基础类型和响应字段。
 - 本轮已执行 `go test ./internal/modules/system/workspace ./internal/modules/system/tenant ./internal/modules/system/auth ./internal/pkg/authorization ./internal/api/router` 与 `pnpm build`，均通过。
 
 ### 下次方向
@@ -606,7 +623,7 @@
 
 ### 破坏性调整
 - `frontend-fluentV2` 的本地路由定义不再默认直接静态 import 页面组件，而是通过域级 lazy route 包装；后续新增页面时必须继续沿用 `createLazyRouteElement`，不要再把大批页面直接同步打进首包。
-- `message.api.ts`、`access.api.ts`、`system.api.ts`、`team.api.ts` 的 adapter 返回值已进一步稳定化，页面侧如果继续直接假定原始 DTO 结构，会和当前稳定内部类型脱节。
+- `message.api.ts`、`access.api.ts`、`system.api.ts`、`collaboration_workspace.api.ts` 的 adapter 返回值已进一步稳定化，页面侧如果继续直接假定原始 DTO 结构，会和当前稳定内部类型脱节。
 
 ### 需要人工回归验证
 - 当前运行中的后端实例对 `/api/v1/collaboration-workspaces/current/action-origins`、`/api/v1/collaboration-workspaces/current/menu-origins`、`/api/v1/collaboration-workspaces/current/boundary/roles` 返回了 404；仓库源码里这些路由存在，需确认联调环境是否已重启到最新后端。
@@ -1026,7 +1043,7 @@
 - 前端新增“应用管理”页 `frontend/src/views/system/app/index.vue`，同时把菜单管理、页面管理、功能包管理、API 注册页全部切到当前 `App` 视角，默认锁定 `platform-admin`，菜单空间退居为 App 下的高级配置入口。
 - `API 管理` 页补齐 `app_scope/app_key` 的表单保存、同步、未注册扫描、失效清理和概览统计透传；功能包、页面、菜单相关弹窗和列表统一按当前 `app_key` 加载候选资源，避免跨 App 混用。
 - 继续把 `访问链路测试`、`协作空间管理`、`协作空间角色与权限`、`角色管理`、`用户管理` 相关弹窗切到当前 `app_key` 视角：页面候选、菜单树、功能包候选、协作空间边界与协作空间角色边界接口都开始显式透传 `app_key`，避免同 Host 下切换应用时回落到默认 App。
-- 补齐 `frontend/src/api/system-manage.ts` 与 `frontend/src/api/team.ts` 中角色、用户、协作空间、协作空间角色的菜单/功能包/边界 helper，使这些请求在 GET/PUT 场景下都能稳定把 `app_key` 带给后端 `AppContextMiddleware`。
+- 补齐 `frontend/src/api/system-manage.ts` 与 `frontend/src/api/collaboration_workspace.ts` 中角色、用户、协作空间、协作空间角色的菜单/功能包/边界 helper，使这些请求在 GET/PUT 场景下都能稳定把 `app_key` 带给后端 `AppContextMiddleware`。
 - 已完成验证：`pnpm --dir frontend build` 通过；`go test ./...` 已在 `backend/` 模块目录执行并通过。
 
 ### 下次方向
@@ -1169,7 +1186,7 @@
 
 ### 本次改动
 - 前端新增统一 `app-context` 运行时状态后，继续把 `system/app`、`system/role`、`system/user`、`system/team-roles-permissions`、`team/team`、`system/fast-enter` 等管理页切到 `managedApp` 主线；路由缺少 `app_key` 时优先由统一 hook 回填，不再在页内硬编码默认 `platform-admin`。
-- 角色、用户、协作空间、协作空间角色、功能包相关的主要授权弹窗都清掉了 `props.appKey || 'platform-admin'` 兜底，缺少 App 上下文时会直接阻断并提示；同时 `frontend/src/api/team.ts` 与 `frontend/src/types/api/api.d.ts` 也补齐了显式 `app_key` 透传所需的 helper 和类型。
+- 角色、用户、协作空间、协作空间角色、功能包相关的主要授权弹窗都清掉了 `props.appKey || 'platform-admin'` 兜底，缺少 App 上下文时会直接阻断并提示；同时 `frontend/src/api/collaboration_workspace.ts` 与 `frontend/src/types/api/api.d.ts` 也补齐了显式 `app_key` 透传所需的 helper 和类型。
 - 后端继续把 App 作用域菜单读链收口到新模型：`appscope`、平台用户/角色快照、协作空间边界服务、App 统计与运行时导航版本戳已改读 `menu_definitions` / `space_menu_placements`，避免授权快照和运行时版本继续依赖旧 `menus` 主表。
 - `space/service.go` 中空间菜单数量统计与“从默认空间初始化”已切到 `space_menu_placements`，空间初始化只复制布局记录，不再按空间复制菜单定义和功能包菜单关联；已重新通过 `go test ./...` 与 `pnpm --dir frontend build` 验证。
 
@@ -1561,10 +1578,10 @@
 - `pnpm --dir frontend build`
 - `pnpm exec eslint eslint.config.mjs src/router/guards/beforeEach.ts src/components/business/layout/AppContextBadge.vue src/components/core/layouts/art-notification/index.vue src/views/message/modules/useMessageWorkspace.ts src/views/message/modules/message-dispatch-console.vue src/views/message/modules/message-recipient-group-console.vue src/views/message/modules/message-sender-console.vue src/views/message/modules/message-template-console.vue src/views/team/team-members/index.vue src/views/workspace/inbox/index.vue src/views/dashboard/console/index.vue`
 - `pnpm --dir frontend lint`
-  - 现在已经能正常执行，不再是依赖环境异常；当前失败点切换为仓库内既有的全量规则债，主要集中在 `frontend/src/api/system-manage.ts`、`frontend/src/api/team.ts`、若干系统管理页和历史组件中的 Prettier/`no-unsafe-optional-chaining` 旧问题。
+  - 现在已经能正常执行，不再是依赖环境异常；当前失败点切换为仓库内既有的全量规则债，主要集中在 `frontend/src/api/system-manage.ts`、`frontend/src/api/collaboration_workspace.ts`、若干系统管理页和历史组件中的 Prettier/`no-unsafe-optional-chaining` 旧问题。
 
 ### 下次方向
-- 继续清理全仓前端存量 lint 债务，优先处理 `frontend/src/api/system-manage.ts`、`frontend/src/api/team.ts` 与系统管理相关页面，争取把 `pnpm --dir frontend lint` 重新拉回正式硬门槛。
+- 继续清理全仓前端存量 lint 债务，优先处理 `frontend/src/api/system-manage.ts`、`frontend/src/api/collaboration_workspace.ts` 与系统管理相关页面，争取把 `pnpm --dir frontend lint` 重新拉回正式硬门槛。
 - 继续做 workspace 迁移的最后一轮全链路排查，只保留 `tenant` 在旧 team API 与 header 桥接层的兼容职责。
 
 ## 2026-04-06 Workspace 权限迁移一次性收口与通过性检查

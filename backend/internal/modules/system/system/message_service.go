@@ -89,7 +89,7 @@ type dispatchTemplateOption struct {
 	ContentTemplate string    `json:"content_template"`
 }
 
-type dispatchTeamOption struct {
+type dispatchCollaborationWorkspaceOption struct {
 	ID   uuid.UUID `json:"id"`
 	Name string    `json:"name"`
 }
@@ -103,12 +103,12 @@ type dispatchSenderOption struct {
 }
 
 type dispatchUserOption struct {
-	ID                       uuid.UUID  `json:"id"`
-	Name                     string     `json:"name"`
-	DisplayName              string     `json:"display_name"`
-	Description              string     `json:"description"`
-	CollaborationWorkspaceID *uuid.UUID `json:"collaboration_workspace_id"`
-	TeamName                 string     `json:"team_name"`
+	ID                           uuid.UUID  `json:"id"`
+	Name                         string     `json:"name"`
+	DisplayName                  string     `json:"display_name"`
+	Description                  string     `json:"description"`
+	CollaborationWorkspaceID     *uuid.UUID `json:"collaboration_workspace_id"`
+	CollaborationWorkspaceName   string     `json:"collaboration_workspace_name"`
 }
 
 type dispatchRecipientGroupOption struct {
@@ -134,22 +134,22 @@ type dispatchFeaturePackageOption struct {
 }
 
 type dispatchOptions struct {
-	SenderScope                     string                         `json:"sender_scope"`
-	CurrentCollaborationWorkspaceID string                         `json:"current_collaboration_workspace_id"`
-	CurrentTenantName               string                         `json:"current_collaboration_workspace_name"`
-	SenderOptions                   []dispatchSenderOption         `json:"sender_options"`
-	DefaultSenderID                 string                         `json:"default_sender_id"`
-	AudienceOptions                 []dispatchAudienceOption       `json:"audience_options"`
-	TemplateOptions                 []dispatchTemplateOption       `json:"template_options"`
-	Teams                           []dispatchTeamOption           `json:"teams"`
-	Users                           []dispatchUserOption           `json:"users"`
-	RecipientGroups                 []dispatchRecipientGroupOption `json:"recipient_groups"`
-	Roles                           []dispatchRoleOption           `json:"roles"`
-	FeaturePackages                 []dispatchFeaturePackageOption `json:"feature_packages"`
-	DefaultMessageType              string                         `json:"default_message_type"`
-	DefaultAudienceType             string                         `json:"default_audience_type"`
-	DefaultPriority                 string                         `json:"default_priority"`
-	SupportsExternalLink            bool                           `json:"supports_external_link"`
+	SenderScope                        string                               `json:"sender_scope"`
+	CurrentCollaborationWorkspaceID    string                               `json:"current_collaboration_workspace_id"`
+	CurrentCollaborationWorkspaceName  string                               `json:"current_collaboration_workspace_name"`
+	SenderOptions                      []dispatchSenderOption               `json:"sender_options"`
+	DefaultSenderID                    string                               `json:"default_sender_id"`
+	AudienceOptions                    []dispatchAudienceOption             `json:"audience_options"`
+	TemplateOptions                    []dispatchTemplateOption             `json:"template_options"`
+	CollaborationWorkspaces            []dispatchCollaborationWorkspaceOption `json:"collaboration_workspaces"`
+	Users                              []dispatchUserOption                 `json:"users"`
+	RecipientGroups                    []dispatchRecipientGroupOption       `json:"recipient_groups"`
+	Roles                              []dispatchRoleOption                 `json:"roles"`
+	FeaturePackages                    []dispatchFeaturePackageOption       `json:"feature_packages"`
+	DefaultMessageType                 string                               `json:"default_message_type"`
+	DefaultAudienceType                string                               `json:"default_audience_type"`
+	DefaultPriority                    string                               `json:"default_priority"`
+	SupportsExternalLink               bool                                 `json:"supports_external_link"`
 }
 
 type dispatchRequest struct {
@@ -348,7 +348,7 @@ type dispatchRecordListItem struct {
 	ScopeType                      string     `json:"scope_type"`
 	ScopeID                        *uuid.UUID `json:"scope_id"`
 	TargetCollaborationWorkspaceID *uuid.UUID `json:"target_collaboration_workspace_id"`
-	TargetTenantName               string     `json:"target_collaboration_workspace_name"`
+	TargetCollaborationWorkspaceName string     `json:"target_collaboration_workspace_name"`
 	SenderName                     string     `json:"sender_name"`
 	TemplateName                   string     `json:"template_name"`
 	Priority                       string     `json:"priority"`
@@ -366,7 +366,7 @@ type dispatchRecordDeliveryItem struct {
 	RecipientUserID                   uuid.UUID  `json:"recipient_user_id"`
 	RecipientName                     string     `json:"recipient_name"`
 	RecipientCollaborationWorkspaceID *uuid.UUID `json:"recipient_collaboration_workspace_id"`
-	RecipientTeam                     string     `json:"recipient_team_name"`
+	RecipientCollaborationWorkspace   string     `json:"recipient_collaboration_workspace_name"`
 	DeliveryStatus                    string     `json:"delivery_status"`
 	TodoStatus                        string     `json:"todo_status"`
 	ReadAt                            *time.Time `json:"read_at"`
@@ -472,7 +472,7 @@ func (s *messageService) processQueuedMessage(messageID uuid.UUID) {
 	}
 
 	var tenantID *uuid.UUID
-	if message.ScopeType == "team" && message.ScopeID != nil {
+	if (message.ScopeType == "collaboration" || message.ScopeType == "team") && message.ScopeID != nil {
 		tenantID = message.ScopeID
 	}
 	targetCollaborationWorkspaceIDs, err := parseMetaUUIDList(message.Meta["target_collaboration_workspace_ids"], "目标协作空间标识无效")
@@ -736,39 +736,42 @@ func (s *messageService) UpdateTodoStatus(userID, deliveryID uuid.UUID, action s
 
 func (s *messageService) GetDispatchOptions(userID uuid.UUID, tenantID *uuid.UUID) (dispatchOptions, error) {
 	result := dispatchOptions{
-		SenderOptions:        make([]dispatchSenderOption, 0, 4),
-		AudienceOptions:      make([]dispatchAudienceOption, 0, 3),
-		TemplateOptions:      make([]dispatchTemplateOption, 0),
-		Teams:                make([]dispatchTeamOption, 0),
-		Users:                make([]dispatchUserOption, 0),
-		RecipientGroups:      make([]dispatchRecipientGroupOption, 0),
-		Roles:                make([]dispatchRoleOption, 0),
-		FeaturePackages:      make([]dispatchFeaturePackageOption, 0),
-		DefaultMessageType:   "notice",
-		DefaultAudienceType:  "all_users",
-		DefaultPriority:      "normal",
-		SupportsExternalLink: true,
+		SenderOptions:           make([]dispatchSenderOption, 0, 4),
+		AudienceOptions:         make([]dispatchAudienceOption, 0, 3),
+		TemplateOptions:         make([]dispatchTemplateOption, 0),
+		CollaborationWorkspaces: make([]dispatchCollaborationWorkspaceOption, 0),
+		Users:                   make([]dispatchUserOption, 0),
+		RecipientGroups:         make([]dispatchRecipientGroupOption, 0),
+		Roles:                   make([]dispatchRoleOption, 0),
+		FeaturePackages:         make([]dispatchFeaturePackageOption, 0),
+		DefaultMessageType:      "notice",
+		DefaultAudienceType:     "all_users",
+		DefaultPriority:         "normal",
+		SupportsExternalLink:    true,
 	}
 
 	if tenantID != nil {
-		result.SenderScope = "team"
-		result.DefaultAudienceType = "tenant_users"
-		var currentTeam models.Tenant
-		if err := s.db.Select("id", "name").Where("id = ?", *tenantID).First(&currentTeam).Error; err == nil {
-			if currentCollaborationWorkspaceID := s.resolveCollaborationWorkspaceID(currentTeam.ID); currentCollaborationWorkspaceID != nil {
+		result.SenderScope = "collaboration"
+		result.DefaultAudienceType = "collaboration_workspace_users"
+		var currentCollaborationWorkspace models.Tenant
+		if err := s.db.Select("id", "name").Where("id = ?", *tenantID).First(&currentCollaborationWorkspace).Error; err == nil {
+			if currentCollaborationWorkspaceID := s.resolveCollaborationWorkspaceID(currentCollaborationWorkspace.ID); currentCollaborationWorkspaceID != nil {
 				result.CurrentCollaborationWorkspaceID = currentCollaborationWorkspaceID.String()
 			} else {
-				result.CurrentCollaborationWorkspaceID = currentTeam.ID.String()
+				result.CurrentCollaborationWorkspaceID = currentCollaborationWorkspace.ID.String()
 			}
-			result.CurrentTenantName = currentTeam.Name
-			teamRef := currentTeam.ID
-			if currentCollaborationWorkspaceID := s.resolveCollaborationWorkspaceID(currentTeam.ID); currentCollaborationWorkspaceID != nil {
-				teamRef = *currentCollaborationWorkspaceID
+			result.CurrentCollaborationWorkspaceName = currentCollaborationWorkspace.Name
+			collaborationWorkspaceRef := currentCollaborationWorkspace.ID
+			if currentCollaborationWorkspaceID := s.resolveCollaborationWorkspaceID(currentCollaborationWorkspace.ID); currentCollaborationWorkspaceID != nil {
+				collaborationWorkspaceRef = *currentCollaborationWorkspaceID
 			}
-			result.Teams = append(result.Teams, dispatchTeamOption{ID: teamRef, Name: currentTeam.Name})
+			result.CollaborationWorkspaces = append(result.CollaborationWorkspaces, dispatchCollaborationWorkspaceOption{
+				ID:   collaborationWorkspaceRef,
+				Name: currentCollaborationWorkspace.Name,
+			})
 		}
 		result.AudienceOptions = append(result.AudienceOptions, dispatchAudienceOption{
-			Value:       "tenant_users",
+			Value:       "collaboration_workspace_users",
 			Label:       "当前协作空间成员",
 			Description: "给当前协作空间的全部有效成员发送消息。",
 		})
@@ -803,12 +806,12 @@ func (s *messageService) GetDispatchOptions(userID uuid.UUID, tenantID *uuid.UUI
 				Description: "平台统一给全部有效用户发送。",
 			},
 			dispatchAudienceOption{
-				Value:       "tenant_admins",
+				Value:       "collaboration_workspace_admins",
 				Label:       "协作空间管理员",
 				Description: "平台给选定协作空间的管理员发送。",
 			},
 			dispatchAudienceOption{
-				Value:       "tenant_users",
+				Value:       "collaboration_workspace_users",
 				Label:       "指定协作空间成员",
 				Description: "平台给选定协作空间的全部有效成员发送。",
 			},
@@ -846,7 +849,7 @@ func (s *messageService) GetDispatchOptions(userID uuid.UUID, tenantID *uuid.UUI
 			if collaborationWorkspaceID := s.resolveCollaborationWorkspaceID(item.ID); collaborationWorkspaceID != nil {
 				teamRef = *collaborationWorkspaceID
 			}
-			result.Teams = append(result.Teams, dispatchTeamOption{ID: teamRef, Name: item.Name})
+			result.CollaborationWorkspaces = append(result.CollaborationWorkspaces, dispatchCollaborationWorkspaceOption{ID: teamRef, Name: item.Name})
 		}
 	}
 
@@ -869,7 +872,7 @@ func (s *messageService) GetDispatchOptions(userID uuid.UUID, tenantID *uuid.UUI
 		Select("id", "template_key", "name", "description", "message_type", "owner_scope", "audience_type", "title_template", "summary_template", "content_template").
 		Where("status = ?", "normal")
 	if tenantID != nil {
-		templateQuery = templateQuery.Where("owner_scope = ? AND owner_collaboration_workspace_id = ?", "team", *tenantID)
+		templateQuery = templateQuery.Where("(owner_scope = ? OR owner_scope = ?) AND owner_collaboration_workspace_id = ?", "collaboration", "team", *tenantID)
 	} else {
 		templateQuery = templateQuery.Where("owner_scope = ?", "platform")
 	}
@@ -932,7 +935,7 @@ func (s *messageService) DispatchMessage(userID uuid.UUID, tenantID *uuid.UUID, 
 	}
 	if audienceType == "" {
 		if tenantID != nil {
-			audienceType = "tenant_users"
+			audienceType = "collaboration_workspace_users"
 		} else {
 			audienceType = "all_users"
 		}
@@ -1013,9 +1016,9 @@ func (s *messageService) DispatchMessage(userID uuid.UUID, tenantID *uuid.UUID, 
 	senderType := "platform_sender"
 	senderName := strings.TrimSpace(sender.Name)
 	if tenantID != nil {
-		scopeType = "team"
+		scopeType = "collaboration"
 		scopeID = tenantID
-		audienceScope = "team"
+		audienceScope = "collaboration"
 		senderType = "team_sender"
 		targetCollaborationWorkspaceID = tenantID
 	}
@@ -1099,12 +1102,12 @@ func (s *messageService) ListTemplates(tenantID *uuid.UUID, query messageTemplat
 
 	var rows []struct {
 		models.MessageTemplate
-		OwnerTenantName string `gorm:"column:owner_tenant_name"`
+		OwnerCollaborationWorkspaceName string `gorm:"column:owner_collaboration_workspace_name"`
 	}
 	err := base.
-		Select("message_templates.*", "COALESCE(owner_collaboration_workspaces.name, '') AS owner_tenant_name").
+		Select("message_templates.*", "COALESCE(owner_collaboration_workspaces.name, '') AS owner_collaboration_workspace_name").
 		Joins("LEFT JOIN collaboration_workspaces AS owner_collaboration_workspaces ON owner_collaboration_workspaces.id = message_templates.owner_collaboration_workspace_id").
-		Order("CASE WHEN message_templates.owner_scope = 'team' THEN 0 ELSE 1 END").
+		Order("CASE WHEN message_templates.owner_scope IN ('collaboration', 'team') THEN 0 ELSE 1 END").
 		Order("message_templates.updated_at DESC").
 		Offset((current - 1) * size).
 		Limit(size).
@@ -1115,7 +1118,7 @@ func (s *messageService) ListTemplates(tenantID *uuid.UUID, query messageTemplat
 
 	records := make([]messageTemplateListItem, 0, len(rows))
 	for _, row := range rows {
-		records = append(records, s.buildTemplateListItem(row.MessageTemplate, row.OwnerTenantName, tenantID))
+		records = append(records, s.buildTemplateListItem(row.MessageTemplate, row.OwnerCollaborationWorkspaceName, tenantID))
 	}
 
 	return messageTemplateListResult{
@@ -1140,12 +1143,12 @@ func (s *messageService) SaveTemplate(templateID string, tenantID *uuid.UUID, re
 	audienceType := normalizeAudienceType(req.AudienceType)
 	if audienceType == "" {
 		if tenantID != nil {
-			audienceType = "tenant_users"
+			audienceType = "collaboration_workspace_users"
 		} else {
 			return messageTemplateListItem{}, errors.New("发送对象无效")
 		}
 	}
-	if tenantID != nil && audienceType != "tenant_users" {
+	if tenantID != nil && audienceType != "collaboration_workspace_users" {
 		return messageTemplateListItem{}, errors.New("协作空间模板只能面向当前协作空间成员")
 	}
 
@@ -1173,7 +1176,7 @@ func (s *messageService) SaveTemplate(templateID string, tenantID *uuid.UUID, re
 		} else {
 			target = models.MessageTemplate{}
 			if tenantID != nil {
-				target.OwnerScope = "team"
+				target.OwnerScope = "collaboration"
 				target.OwnerCollaborationWorkspaceID = tenantID
 			} else {
 				target.OwnerScope = "platform"
@@ -1265,7 +1268,7 @@ func (s *messageService) SaveSender(senderID string, tenantID *uuid.UUID, req me
 		scopeType := "platform"
 		var scopeID *uuid.UUID
 		if tenantID != nil {
-			scopeType = "team"
+			scopeType = "collaboration"
 			scopeID = tenantID
 		}
 
@@ -1277,7 +1280,7 @@ func (s *messageService) SaveSender(senderID string, tenantID *uuid.UUID, req me
 			}
 			query := tx.Model(&models.MessageSender{}).Where("id = ? AND deleted_at IS NULL", id)
 			if tenantID != nil {
-				query = query.Where("scope_type = ? AND scope_id = ?", "team", *tenantID)
+				query = query.Where("(scope_type = ? OR scope_type = ?) AND scope_id = ?", "collaboration", "team", *tenantID)
 			} else {
 				query = query.Where("scope_type = ? AND scope_id IS NULL", "platform")
 			}
@@ -1400,7 +1403,7 @@ func (s *messageService) ListDispatchRecords(tenantID *uuid.UUID, query dispatch
 			"messages.scope_type AS scope_type",
 			"messages.scope_id AS scope_id",
 			"messages.target_collaboration_workspace_id AS target_collaboration_workspace_id",
-			"COALESCE(target_collaboration_workspaces.name, '') AS target_tenant_name",
+			"COALESCE(target_collaboration_workspaces.name, '') AS target_collaboration_workspace_name",
 			"messages.sender_name_snapshot AS sender_name",
 			"COALESCE(message_templates.name, '') AS template_name",
 			"messages.priority AS priority",
@@ -1453,7 +1456,7 @@ func (s *messageService) GetDispatchRecordDetail(tenantID *uuid.UUID, recordID s
 		ScopeType                      string     `gorm:"column:scope_type"`
 		ScopeID                        *uuid.UUID `gorm:"column:scope_id"`
 		TargetCollaborationWorkspaceID *uuid.UUID `gorm:"column:target_collaboration_workspace_id"`
-		TargetTenantName               string     `gorm:"column:target_tenant_name"`
+		TargetCollaborationWorkspaceName string   `gorm:"column:target_collaboration_workspace_name"`
 		SenderName                     string     `gorm:"column:sender_name"`
 		TemplateName                   string     `gorm:"column:template_name"`
 		Priority                       string     `gorm:"column:priority"`
@@ -1479,7 +1482,7 @@ func (s *messageService) GetDispatchRecordDetail(tenantID *uuid.UUID, recordID s
 			"messages.scope_type AS scope_type",
 			"messages.scope_id AS scope_id",
 			"messages.target_collaboration_workspace_id AS target_collaboration_workspace_id",
-			"COALESCE(target_collaboration_workspaces.name, '') AS target_tenant_name",
+			"COALESCE(target_collaboration_workspaces.name, '') AS target_collaboration_workspace_name",
 			"messages.sender_name_snapshot AS sender_name",
 			"COALESCE(message_templates.name, '') AS template_name",
 			"messages.priority AS priority",
@@ -1514,7 +1517,7 @@ func (s *messageService) GetDispatchRecordDetail(tenantID *uuid.UUID, recordID s
 			ScopeType:                      row.ScopeType,
 			ScopeID:                        row.ScopeID,
 			TargetCollaborationWorkspaceID: s.resolveCollaborationWorkspaceIDPtr(row.TargetCollaborationWorkspaceID),
-			TargetTenantName:               row.TargetTenantName,
+			TargetCollaborationWorkspaceName: row.TargetCollaborationWorkspaceName,
 			SenderName:                     row.SenderName,
 			TemplateName:                   row.TemplateName,
 			Priority:                       row.Priority,
@@ -1534,7 +1537,7 @@ func (s *messageService) GetDispatchRecordDetail(tenantID *uuid.UUID, recordID s
 		RecipientUserID                   uuid.UUID  `gorm:"column:recipient_user_id"`
 		RecipientName                     string     `gorm:"column:recipient_name"`
 		RecipientCollaborationWorkspaceID *uuid.UUID `gorm:"column:recipient_collaboration_workspace_id"`
-		RecipientTeam                     string     `gorm:"column:recipient_team_name"`
+		RecipientCollaborationWorkspace   string     `gorm:"column:recipient_collaboration_workspace_name"`
 		DeliveryStatus                    string     `gorm:"column:delivery_status"`
 		TodoStatus                        string     `gorm:"column:todo_status"`
 		ReadAt                            *time.Time `gorm:"column:read_at"`
@@ -1556,7 +1559,7 @@ func (s *messageService) GetDispatchRecordDetail(tenantID *uuid.UUID, recordID s
 			"message_deliveries.recipient_user_id AS recipient_user_id",
 			"COALESCE(users.nickname, users.username, '') AS recipient_name",
 			"message_deliveries.recipient_collaboration_workspace_id AS recipient_collaboration_workspace_id",
-			"COALESCE(collaboration_workspaces.name, '') AS recipient_team_name",
+			"COALESCE(collaboration_workspaces.name, '') AS recipient_collaboration_workspace_name",
 			"message_deliveries.delivery_status AS delivery_status",
 			"message_deliveries.todo_status AS todo_status",
 			"message_deliveries.read_at AS read_at",
@@ -1586,7 +1589,7 @@ func (s *messageService) GetDispatchRecordDetail(tenantID *uuid.UUID, recordID s
 			RecipientUserID:                   row.RecipientUserID,
 			RecipientName:                     row.RecipientName,
 			RecipientCollaborationWorkspaceID: row.RecipientCollaborationWorkspaceID,
-			RecipientTeam:                     row.RecipientTeam,
+			RecipientCollaborationWorkspace:   row.RecipientCollaborationWorkspace,
 			DeliveryStatus:                    row.DeliveryStatus,
 			TodoStatus:                        row.TodoStatus,
 			ReadAt:                            row.ReadAt,
@@ -1628,7 +1631,7 @@ func (s *messageService) templateScopeQuery(tenantID *uuid.UUID) *gorm.DB {
 		return tx.Where(
 			"message_templates.owner_scope = ? OR (message_templates.owner_scope = ? AND message_templates.owner_collaboration_workspace_id = ?)",
 			"platform",
-			"team",
+			"collaboration",
 			*tenantID,
 		)
 	}
@@ -1638,7 +1641,7 @@ func (s *messageService) templateScopeQuery(tenantID *uuid.UUID) *gorm.DB {
 func (s *messageService) dispatchRecordBaseQuery(tenantID *uuid.UUID) *gorm.DB {
 	tx := s.db.Model(&models.Message{}).Where("messages.deleted_at IS NULL")
 	if tenantID != nil {
-		return tx.Where("messages.scope_type = ? AND messages.scope_id = ?", "team", *tenantID)
+		return tx.Where("(messages.scope_type = ? OR messages.scope_type = ?) AND messages.scope_id = ?", "collaboration", "team", *tenantID)
 	}
 	return tx.Where("messages.scope_type = ?", "platform")
 }
@@ -1666,7 +1669,7 @@ func (s *messageService) loadDispatchRecordSummary(tenantID *uuid.UUID) (dispatc
 		Where("messages.deleted_at IS NULL").
 		Scopes(func(tx *gorm.DB) *gorm.DB {
 			if tenantID != nil {
-				return tx.Where("messages.scope_type = ? AND messages.scope_id = ?", "team", *tenantID)
+				return tx.Where("(messages.scope_type = ? OR messages.scope_type = ?) AND messages.scope_id = ?", "collaboration", "team", *tenantID)
 			}
 			return tx.Where("messages.scope_type = ?", "platform")
 		}).
@@ -1761,7 +1764,7 @@ func (s *messageService) ensureSenderOptions(tenantID *uuid.UUID) ([]models.Mess
 	defaultDescription := "平台默认发送人"
 	var scopeID *uuid.UUID
 	if tenantID != nil {
-		scopeType = "team"
+		scopeType = "collaboration"
 		scopeID = tenantID
 		defaultName = "协作空间"
 		defaultDescription = "协作空间默认发送人"
@@ -1913,7 +1916,7 @@ func (s *messageService) resolveDispatchSender(tenantID *uuid.UUID, senderID str
 func (s *messageService) loadEditableTemplate(tx *gorm.DB, templateID uuid.UUID, tenantID *uuid.UUID) (models.MessageTemplate, error) {
 	query := tx.Model(&models.MessageTemplate{}).Where("id = ? AND deleted_at IS NULL", templateID)
 	if tenantID != nil {
-		query = query.Where("owner_scope = ? AND owner_collaboration_workspace_id = ?", "team", *tenantID)
+		query = query.Where("(owner_scope = ? OR owner_scope = ?) AND owner_collaboration_workspace_id = ?", "collaboration", "team", *tenantID)
 	} else {
 		query = query.Where("owner_scope = ?", "platform")
 	}
@@ -1937,7 +1940,7 @@ func (s *messageService) resolveTemplate(templateID, templateKey string, tenantI
 		query = query.Where(
 			"owner_scope = ? OR (owner_scope = ? AND owner_collaboration_workspace_id = ?)",
 			"platform",
-			"team",
+			"collaboration",
 			*tenantID,
 		)
 	} else {
@@ -1972,7 +1975,7 @@ func (s *messageService) normalizeTargetTenants(audienceType string, tenantID *u
 			return nil, errors.New("协作空间上下文不支持给所有用户发送")
 		}
 		return nil, nil
-	case "tenant_admins", "tenant_users":
+	case "collaboration_workspace_admins", "collaboration_workspace_users", "tenant_admins", "tenant_users":
 		if tenantID != nil {
 			if len(targets) == 0 {
 				return []uuid.UUID{*tenantID}, nil
@@ -2003,9 +2006,9 @@ func (s *messageService) resolveRecipients(
 	switch audienceType {
 	case "all_users":
 		return s.loadAllUsers()
-	case "tenant_admins":
+	case "collaboration_workspace_admins", "tenant_admins":
 		return s.loadTeamRecipients(targetCollaborationWorkspaceIDs, true)
-	case "tenant_users":
+	case "collaboration_workspace_users", "tenant_users":
 		return s.loadTeamRecipients(targetCollaborationWorkspaceIDs, false)
 	case "specified_users":
 		return s.loadSpecifiedUsers(targetUserIDs, tenantID)
@@ -2042,7 +2045,7 @@ func (s *messageService) normalizeAudienceTargets(
 			return nil, nil, errors.New("请至少选择一个包含规则的接收组")
 		}
 		return nil, targetGroupIDs, nil
-	case "all_users", "tenant_admins", "tenant_users":
+	case "all_users", "collaboration_workspace_admins", "collaboration_workspace_users", "tenant_admins", "tenant_users":
 		return nil, nil, nil
 	default:
 		if tenantID != nil {
@@ -2090,7 +2093,7 @@ func (s *messageService) loadTeamRecipients(targetCollaborationWorkspaceIDs []uu
 		Where("collaboration_workspace_members.status = ?", "active").
 		Where("users.status = ?", "active")
 	if adminOnly {
-		query = query.Where("collaboration_workspace_members.role_code = ?", "team_admin")
+		query = query.Where("collaboration_workspace_members.role_code = ?", "collaboration_workspace_admin")
 	}
 
 	var rows []teamRecipientRow
@@ -2114,9 +2117,9 @@ func (s *messageService) loadTeamRecipients(targetCollaborationWorkspaceIDs []uu
 			UserID:                   row.UserID,
 			CollaborationWorkspaceID: &teamID,
 			Username:                 username,
-			SourceRuleType:           map[bool]string{true: "tenant_admins", false: "tenant_users"}[adminOnly],
+			SourceRuleType:           map[bool]string{true: "collaboration_workspace_admins", false: "collaboration_workspace_users"}[adminOnly],
 			SourceRuleLabel:          membershipRecipientRuleLabel(map[bool]string{true: "协作空间管理员", false: "协作空间成员"}[adminOnly]),
-			SourceTargetType:         map[bool]string{true: "tenant_admins", false: "tenant_users"}[adminOnly],
+			SourceTargetType:         map[bool]string{true: "collaboration_workspace_admins", false: "collaboration_workspace_users"}[adminOnly],
 			SourceTargetValue:        teamID.String(),
 		})
 	}
@@ -2407,7 +2410,7 @@ func (s *messageService) loadPlatformRecipientsByPackageKey(packageKey string) (
 func (s *messageService) loadTeamRecipientsByPackageKey(teamID uuid.UUID, packageKey string) ([]dispatchRecipient, error) {
 	var pkg models.FeaturePackage
 	if err := s.db.Model(&models.FeaturePackage{}).
-		Where("package_key = ? AND context_type = ? AND status = ? AND deleted_at IS NULL", packageKey, "team", "normal").
+		Where("package_key = ? AND context_type IN ? AND status = ? AND deleted_at IS NULL", packageKey, []string{"collaboration", "team"}, "normal").
 		First(&pkg).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, nil
@@ -2527,12 +2530,12 @@ func (s *messageService) loadGroupRecipients(groupIDs []uuid.UUID, tenantID *uui
 					continue
 				}
 				groupRecipients, err = s.loadSpecifiedUsers([]uuid.UUID{*target.UserID}, tenantID)
-			case "tenant_users":
+			case "collaboration_workspace_users", "tenant_users":
 				if target.CollaborationWorkspaceID == nil {
 					continue
 				}
 				groupRecipients, err = s.loadTeamRecipients([]uuid.UUID{*target.CollaborationWorkspaceID}, false)
-			case "tenant_admins":
+			case "collaboration_workspace_admins", "tenant_admins":
 				if target.CollaborationWorkspaceID == nil {
 					continue
 				}
@@ -2652,11 +2655,11 @@ func (s *messageService) listDispatchUsers(tenantID *uuid.UUID) ([]dispatchUserO
 			Username                 string    `gorm:"column:username"`
 			Nickname                 string    `gorm:"column:nickname"`
 			CollaborationWorkspaceID uuid.UUID `gorm:"column:collaboration_workspace_id"`
-			TenantName               string    `gorm:"column:tenant_name"`
+			CollaborationWorkspaceName string  `gorm:"column:collaboration_workspace_name"`
 		}
 		var rows []row
 		if err := s.db.Table("collaboration_workspace_members").
-			Select("collaboration_workspace_members.user_id AS user_id", "users.username AS username", "users.nickname AS nickname", "collaboration_workspace_members.collaboration_workspace_id AS collaboration_workspace_id", "collaboration_workspaces.name AS tenant_name").
+			Select("collaboration_workspace_members.user_id AS user_id", "users.username AS username", "users.nickname AS nickname", "collaboration_workspace_members.collaboration_workspace_id AS collaboration_workspace_id", "collaboration_workspaces.name AS collaboration_workspace_name").
 			Joins("JOIN users ON users.id = collaboration_workspace_members.user_id").
 			Joins("JOIN collaboration_workspaces ON collaboration_workspaces.id = collaboration_workspace_members.collaboration_workspace_id").
 			Where("collaboration_workspace_members.collaboration_workspace_id = ?", *tenantID).
@@ -2677,9 +2680,9 @@ func (s *messageService) listDispatchUsers(tenantID *uuid.UUID) ([]dispatchUserO
 				ID:                       row.UserID,
 				Name:                     row.Username,
 				DisplayName:              name,
-				Description:              row.TenantName,
+				Description:              row.CollaborationWorkspaceName,
 				CollaborationWorkspaceID: &team,
-				TeamName:                 row.TenantName,
+				CollaborationWorkspaceName: row.CollaborationWorkspaceName,
 			})
 		}
 		return result, nil
@@ -2731,7 +2734,7 @@ func (s *messageService) listDispatchRoles(tenantID *uuid.UUID) ([]dispatchRoleO
 		Select("id", "code", "name", "description", "collaboration_workspace_id", "status").
 		Where("status = ? AND deleted_at IS NULL", "normal")
 	if tenantID != nil {
-		query = query.Where("(collaboration_workspace_id = ? OR (collaboration_workspace_id IS NULL AND code IN ?))", *tenantID, []string{"team_admin", "member"})
+		query = query.Where("(collaboration_workspace_id = ? OR (collaboration_workspace_id IS NULL AND code IN ?))", *tenantID, []string{"collaboration_workspace_admin", "member"})
 	} else {
 		query = query.Where("collaboration_workspace_id IS NULL")
 	}
@@ -2753,7 +2756,7 @@ func (s *messageService) listDispatchRoles(tenantID *uuid.UUID) ([]dispatchRoleO
 func (s *messageService) listDispatchFeaturePackages(tenantID *uuid.UUID) ([]dispatchFeaturePackageOption, error) {
 	contextType := "platform"
 	if tenantID != nil {
-		contextType = "team"
+		contextType = "collaboration"
 	}
 	var rows []models.FeaturePackage
 	if err := s.db.Model(&models.FeaturePackage{}).
@@ -2779,7 +2782,7 @@ func (s *messageService) ListRecipientGroups(tenantID *uuid.UUID) ([]messageReci
 	var groups []models.MessageRecipientGroup
 	query := s.db.Model(&models.MessageRecipientGroup{}).Where("deleted_at IS NULL")
 	if tenantID != nil {
-		query = query.Where("scope_type = ? AND scope_id = ?", "team", *tenantID)
+		query = query.Where("(scope_type = ? OR scope_type = ?) AND scope_id = ?", "collaboration", "team", *tenantID)
 	} else {
 		query = query.Where("scope_type = ? AND scope_id IS NULL", "platform")
 	}
@@ -2843,7 +2846,7 @@ func (s *messageService) SaveRecipientGroup(groupID string, tenantID *uuid.UUID,
 		scopeType := "platform"
 		var scopeID *uuid.UUID
 		if tenantID != nil {
-			scopeType = "team"
+			scopeType = "collaboration"
 			scopeID = tenantID
 		}
 		var target models.MessageRecipientGroup
@@ -2854,7 +2857,7 @@ func (s *messageService) SaveRecipientGroup(groupID string, tenantID *uuid.UUID,
 			}
 			query := tx.Model(&models.MessageRecipientGroup{}).Where("id = ? AND deleted_at IS NULL", id)
 			if tenantID != nil {
-				query = query.Where("scope_type = ? AND scope_id = ?", "team", *tenantID)
+				query = query.Where("(scope_type = ? OR scope_type = ?) AND scope_id = ?", "collaboration", "team", *tenantID)
 			} else {
 				query = query.Where("scope_type = ? AND scope_id IS NULL", "platform")
 			}
@@ -2918,7 +2921,7 @@ func (s *messageService) loadEditableRecipientGroups(groupIDs []uuid.UUID, tenan
 	query := s.db.Model(&models.MessageRecipientGroup{}).
 		Where("id IN ? AND deleted_at IS NULL AND status = ?", groupIDs, "normal")
 	if tenantID != nil {
-		query = query.Where("scope_type = ? AND scope_id = ?", "team", *tenantID)
+		query = query.Where("(scope_type = ? OR scope_type = ?) AND scope_id = ?", "collaboration", "team", *tenantID)
 	} else {
 		query = query.Where("scope_type = ? AND scope_id IS NULL", "platform")
 	}
@@ -2948,11 +2951,11 @@ func (s *messageService) loadRecipientGroupTargetItems(groupID uuid.UUID) ([]mes
 	type row struct {
 		models.MessageRecipientGroupTarget
 		UserName   string `gorm:"column:user_name"`
-		TenantName string `gorm:"column:tenant_name"`
+		CollaborationWorkspaceName string `gorm:"column:collaboration_workspace_name"`
 	}
 	var rows []row
 	if err := s.db.Model(&models.MessageRecipientGroupTarget{}).
-		Select("message_recipient_group_targets.*", "COALESCE(users.nickname, users.username, '') AS user_name", "COALESCE(collaboration_workspaces.name, '') AS tenant_name").
+		Select("message_recipient_group_targets.*", "COALESCE(users.nickname, users.username, '') AS user_name", "COALESCE(collaboration_workspaces.name, '') AS collaboration_workspace_name").
 		Joins("LEFT JOIN users ON users.id = message_recipient_group_targets.user_id").
 		Joins("LEFT JOIN collaboration_workspaces ON collaboration_workspaces.id = message_recipient_group_targets.collaboration_workspace_id").
 		Where("message_recipient_group_targets.group_id = ? AND message_recipient_group_targets.deleted_at IS NULL", groupID).
@@ -2969,7 +2972,7 @@ func (s *messageService) loadRecipientGroupTargetItems(groupID uuid.UUID) ([]mes
 			UserID:                     row.UserID,
 			UserName:                   row.UserName,
 			CollaborationWorkspaceID:   s.resolveCollaborationWorkspaceIDPtr(row.CollaborationWorkspaceID),
-			CollaborationWorkspaceName: row.TenantName,
+			CollaborationWorkspaceName: row.CollaborationWorkspaceName,
 			RoleCode:                   row.RoleCode,
 			RoleName:                   s.lookupRoleName(row.RoleCode, row.CollaborationWorkspaceID),
 			PackageKey:                 row.PackageKey,
@@ -3008,7 +3011,7 @@ func (s *messageService) lookupPackageName(packageKey string, tenantID *uuid.UUI
 	}
 	contextType := "platform"
 	if tenantID != nil {
-		contextType = "team"
+		contextType = "collaboration"
 	}
 	var pkg models.FeaturePackage
 	if err := s.db.Model(&models.FeaturePackage{}).
@@ -3024,9 +3027,9 @@ func (s *messageService) resolveRecipientRuleLabel(target models.MessageRecipien
 	switch target.TargetType {
 	case "user":
 		return "指定用户"
-	case "tenant_users":
+	case "collaboration_workspace_users", "tenant_users":
 		return "协作空间成员"
-	case "tenant_admins":
+	case "collaboration_workspace_admins", "tenant_admins":
 		return "协作空间管理员"
 	case "role":
 		name := s.lookupRoleName(target.RoleCode, tenantID)
@@ -3049,7 +3052,7 @@ func (s *messageService) resolveRecipientTargetValue(target models.MessageRecipi
 	switch target.TargetType {
 	case "user":
 		return uuidString(target.UserID)
-	case "tenant_users", "tenant_admins":
+	case "collaboration_workspace_users", "collaboration_workspace_admins", "tenant_users", "tenant_admins":
 		return uuidString(target.CollaborationWorkspaceID)
 	case "role":
 		return strings.TrimSpace(target.RoleCode)
@@ -3074,12 +3077,12 @@ func (s *messageService) estimateRecipientGroup(groupID uuid.UUID, tenantID *uui
 				continue
 			}
 			recipients, err = s.loadSpecifiedUsers([]uuid.UUID{*target.UserID}, tenantID)
-		case "tenant_users":
+		case "collaboration_workspace_users", "tenant_users":
 			if target.CollaborationWorkspaceID == nil {
 				continue
 			}
 			recipients, err = s.loadTeamRecipients([]uuid.UUID{*target.CollaborationWorkspaceID}, false)
-		case "tenant_admins":
+		case "collaboration_workspace_admins", "tenant_admins":
 			if target.CollaborationWorkspaceID == nil {
 				continue
 			}
@@ -3133,7 +3136,7 @@ func buildRecipientGroupTargets(
 				return nil, errors.New("接收组用户标识无效")
 			}
 			target.UserID = &id
-		case "tenant_users", "tenant_admins":
+		case "collaboration_workspace_users", "collaboration_workspace_admins", "tenant_users", "tenant_admins":
 			if tenantID != nil {
 				target.CollaborationWorkspaceID = tenantID
 			} else {
@@ -3173,8 +3176,12 @@ func normalizeMessageType(value string) string {
 
 func normalizeAudienceType(value string) string {
 	switch strings.TrimSpace(value) {
-	case "all_users", "tenant_admins", "tenant_users", "specified_users", "recipient_group", "role", "feature_package":
+	case "all_users", "collaboration_workspace_admins", "collaboration_workspace_users", "specified_users", "recipient_group", "role", "feature_package":
 		return strings.TrimSpace(value)
+	case "tenant_admins":
+		return "collaboration_workspace_admins"
+	case "tenant_users":
+		return "collaboration_workspace_users"
 	default:
 		return ""
 	}
@@ -3209,7 +3216,7 @@ func normalizeTemplateStatus(value string) string {
 
 func (s *messageService) buildTemplateListItem(template models.MessageTemplate, ownerTenantName string, tenantID *uuid.UUID) messageTemplateListItem {
 	editable := template.OwnerScope == "platform" && tenantID == nil
-	if tenantID != nil && template.OwnerScope == "team" && template.OwnerCollaborationWorkspaceID != nil && *template.OwnerCollaborationWorkspaceID == *tenantID {
+	if tenantID != nil && (template.OwnerScope == "collaboration" || template.OwnerScope == "team") && template.OwnerCollaborationWorkspaceID != nil && *template.OwnerCollaborationWorkspaceID == *tenantID {
 		editable = true
 	}
 	return messageTemplateListItem{
@@ -3253,7 +3260,7 @@ func buildTemplateKey(raw string, tenantID *uuid.UUID, nowUnix int64) string {
 		normalized = fmt.Sprintf("template-%d", nowUnix)
 	}
 	if tenantID != nil {
-		prefix := "team." + tenantID.String() + "."
+		prefix := "collaboration_workspace." + tenantID.String() + "."
 		if strings.HasPrefix(normalized, prefix) {
 			return normalized
 		}

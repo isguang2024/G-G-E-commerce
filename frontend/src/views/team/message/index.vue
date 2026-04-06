@@ -1,5 +1,5 @@
 <template>
-  <MessageDispatchConsole scope="team" />
+  <MessageDispatchConsole scope="collaboration" />
 </template>
 
 <script setup lang="ts">

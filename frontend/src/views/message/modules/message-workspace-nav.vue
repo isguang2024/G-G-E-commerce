@@ -21,14 +21,14 @@
   defineOptions({ name: 'MessageWorkspaceNav' })
 
   const props = defineProps<{
-    scope: 'platform' | 'team'
+    scope: 'platform' | 'collaboration'
     current: 'dispatch' | 'template' | 'sender' | 'group' | 'record'
   }>()
 
   const router = useRouter()
 
   const navItems = computed(() => {
-    const prefix = props.scope === 'team' ? '/team' : '/system'
+    const prefix = props.scope === 'collaboration' ? '/collaboration' : '/system'
     return [
       {
         key: 'dispatch',

@@ -1,17 +1,19 @@
-﻿import { computed } from 'vue'
-import { useTenantStore } from '@/store/modules/tenant'
+import { computed } from 'vue'
+import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
 import { useWorkspaceStore } from '@/store/modules/workspace'
 
 export function useMessageWorkspace(scope: 'platform' | 'collaboration' | 'team') {
-  const collaborationWorkspaceStore = useTenantStore()
+  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
   const workspaceStore = useWorkspaceStore()
 
   const isTeamScope = computed(() => scope === 'collaboration' || scope === 'team')
   const skipTenantHeader = computed(() => !isTeamScope.value)
-  const currentCollaborationWorkspaceId = computed(() => collaborationWorkspaceStore.currentCollaborationWorkspaceId || '')
+  const currentCollaborationWorkspaceId = computed(
+    () => collaborationWorkspaceStore.currentCollaborationWorkspaceId || ''
+  )
   const currentTeamName = computed(
     () =>
-      collaborationWorkspaceStore.currentTeam?.name ||
+      collaborationWorkspaceStore.currentCollaborationWorkspace?.name ||
       workspaceStore.currentAuthWorkspace?.name ||
       '当前协作空间'
   )
@@ -25,9 +27,10 @@ export function useMessageWorkspace(scope: 'platform' | 'collaboration' | 'team'
   const ensureTeamContext = () => {
     if (!isTeamScope.value) return
     if (collaborationWorkspaceStore.currentCollaborationWorkspaceId) return
-    const fallbackCollaborationWorkspaceId = collaborationWorkspaceStore.teamList[0]?.id || ''
+    const fallbackCollaborationWorkspaceId =
+      collaborationWorkspaceStore.collaborationWorkspaceList[0]?.id || ''
     if (fallbackCollaborationWorkspaceId) {
-      collaborationWorkspaceStore.enterTeamContext(fallbackCollaborationWorkspaceId)
+      collaborationWorkspaceStore.enterCollaborationContext(fallbackCollaborationWorkspaceId)
     }
   }
 
@@ -72,4 +75,3 @@ export function useMessageWorkspace(scope: 'platform' | 'collaboration' | 'team'
     plainTextFromHtml
   }
 }
-

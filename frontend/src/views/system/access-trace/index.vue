@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="access-trace-page art-full-height">
     <ElCard shadow="never" class="art-table-card">
       <template #header>
@@ -111,7 +111,9 @@
 
       <ElDescriptions v-if="result" :column="2" border class="trace-summary">
         <ElDescriptionsItem label="用户ID">{{ result.userId }}</ElDescriptionsItem>
-        <ElDescriptionsItem label="协作空间ID">{{ result.collaborationWorkspaceId || '-' }}</ElDescriptionsItem>
+        <ElDescriptionsItem label="协作空间ID">{{
+          result.collaborationWorkspaceId || '-'
+        }}</ElDescriptionsItem>
         <ElDescriptionsItem label="空间">{{ result.spaceKey }}</ElDescriptionsItem>
         <ElDescriptionsItem label="登录态">{{
           result.authenticated ? '已认证' : '未认证'
@@ -193,8 +195,10 @@
   const userOptions = ref<Api.SystemManage.UserListItem[]>([])
   const pageOptions = ref<Api.SystemManage.PageItem[]>([])
   const menuSpaces = ref<Api.SystemManage.MenuSpaceItem[]>([])
-  const teamOptions = ref<Api.SystemManage.TeamListItem[]>([])
-  const roleOptions = ref<Array<{ label: string; value: string; source: 'platform' | 'team' }>>([])
+  const teamOptions = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
+  const roleOptions = ref<
+    Array<{ label: string; value: string; source: 'platform' | 'collaboration' }>
+  >([])
   const selectedAppKey = ref('')
   const rolePagination = reactive({
     current: 1,
@@ -208,7 +212,7 @@
   const roleCodeFilter = ref('')
   const displayRoleOptions = computed(() =>
     query.collaborationWorkspaceId
-      ? roleOptions.value.filter((item) => item.source === 'team')
+      ? roleOptions.value.filter((item) => item.source === 'collaboration')
       : roleOptions.value.filter((item) => item.source === 'platform')
   )
   const { targetAppKey, setManagedAppKey } = useManagedAppScope()
@@ -262,11 +266,15 @@
       return
     }
     const useCollaborationWorkspaceMembers =
-      Boolean(query.collaborationWorkspaceId) && (onlyTeamUsers.value || Boolean(roleCodeFilter.value))
+      Boolean(query.collaborationWorkspaceId) &&
+      (onlyTeamUsers.value || Boolean(roleCodeFilter.value))
     if (useCollaborationWorkspaceMembers && query.collaborationWorkspaceId) {
-      const teamMembers = await fetchGetCollaborationWorkspaceMembers(query.collaborationWorkspaceId, {
-        role_code: roleCodeFilter.value || undefined
-      })
+      const teamMembers = await fetchGetCollaborationWorkspaceMembers(
+        query.collaborationWorkspaceId,
+        {
+          role_code: roleCodeFilter.value || undefined
+        }
+      )
       userOptions.value = (teamMembers || []).map((item) => ({
         id: item.userId,
         userName: item.userName,
@@ -310,13 +318,14 @@
         .filter((role) => {
           const code = `${role.roleCode || ''}`.trim()
           if (!code || code === 'admin') return false
-          if (code === 'team_admin' || code === 'team_member') return true
+          if (code === 'collaboration_workspace_admin' || code === 'collaboration_workspace_member')
+            return true
           return Boolean(role.collaborationWorkspaceId)
         })
         .map((role) => ({
           label: role.roleName || role.roleCode,
           value: role.roleCode,
-          source: 'team' as const
+          source: 'collaboration' as const
         }))
       return
     }
@@ -493,4 +502,3 @@
     }
   }
 </style>
-

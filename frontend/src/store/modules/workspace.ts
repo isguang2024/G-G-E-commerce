@@ -94,7 +94,8 @@ export const useWorkspaceStore = defineStore(
         }
       }
 
-      const preferredCollaborationWorkspaceId = `${options?.preferredCollaborationWorkspaceId || ''}`.trim()
+      const preferredCollaborationWorkspaceId =
+        `${options?.preferredCollaborationWorkspaceId || ''}`.trim()
       if (preferredCollaborationWorkspaceId) {
         const matchedByCollaborationWorkspaceId = workspaceList.value.find(
           (item) =>

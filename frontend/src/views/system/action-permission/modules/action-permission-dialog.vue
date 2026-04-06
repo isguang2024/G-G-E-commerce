@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="visible"
     :title="dialogType === 'add' ? '新增功能权限' : '编辑功能权限'"
@@ -58,8 +58,14 @@
         </ElSelect>
       </ElFormItem>
       <div class="context-hint">
-        <span>平台：系统治理和平台后台能力，建议使用 `system.`、`platform.`、`collaboration_workspace.` 前缀。</span>
-        <span>协作空间：协作空间内授权能力，建议使用 `team.` 前缀或协作空间模块分组。</span>
+        <span
+          >平台：系统治理和平台后台能力，建议使用 `system.`、`platform.`、`collaboration_workspace.`
+          前缀。</span
+        >
+        <span
+          >协作空间：协作空间内授权能力，建议使用 `collaboration_workspace.`
+          前缀或协作空间模块分组。</span
+        >
         <span>通用：跨上下文业务能力，不要复用平台/协作空间专属前缀。</span>
       </div>
       <ElFormItem label="权限名称" prop="name">
@@ -264,4 +270,3 @@
     line-height: 1.5;
   }
 </style>
-

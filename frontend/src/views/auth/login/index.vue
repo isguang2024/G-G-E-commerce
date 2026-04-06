@@ -1,4 +1,4 @@
-﻿<!-- 登录页面 -->
+<!-- 登录页面 -->
 <template>
   <div class="flex w-full h-screen">
     <LoginLeftView />
@@ -99,7 +99,10 @@
 <script setup lang="ts">
   import AppConfig from '@/config'
   import { useUserStore } from '@/store/modules/user'
-  import { hasPlatformAccessByUserInfo, useTenantStore } from '@/store/modules/tenant'
+  import {
+    hasPlatformAccessByUserInfo,
+    useCollaborationWorkspaceStore
+  } from '@/store/modules/collaboration-workspace'
   import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import { useI18n } from 'vue-i18n'
   import { HttpError } from '@/utils/http/error'
@@ -124,7 +127,7 @@
   const dragVerify = ref()
 
   const userStore = useUserStore()
-  const collaborationWorkspaceStore = useTenantStore()
+  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
   const menuSpaceStore = useMenuSpaceStore()
   const router = useRouter()
   const route = useRoute()
@@ -250,7 +253,7 @@
     preferredLegacyCollaborationWorkspaceId: string
   ) => {
     try {
-      await collaborationWorkspaceStore.loadMyTeams({
+      await collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
         preferredCollaborationWorkspaceId,
         preferredLegacyCollaborationWorkspaceId,
         preferredWorkspaceId: `${userStore.getUserInfo.current_auth_workspace_id || ''}`,
@@ -316,7 +319,9 @@
 
       await safeInitLoginContext(
         response.user?.current_collaboration_workspace_id || '',
-        response.user?.collaboration_workspace_id || response.user?.current_collaboration_workspace_id || ''
+        response.user?.collaboration_workspace_id ||
+          response.user?.current_collaboration_workspace_id ||
+          ''
       )
       const landingPath = normalizeRedirect(route.query.redirect as string)
       await gotoAfterLogin(landingPath)
@@ -366,4 +371,3 @@
     height: 40px !important;
   }
 </style>
-

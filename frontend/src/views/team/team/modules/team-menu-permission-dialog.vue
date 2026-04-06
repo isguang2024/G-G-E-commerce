@@ -68,7 +68,10 @@
   import { computed, nextTick, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import { formatMenuTitle } from '@/utils/router'
-  import { fetchGetMenuTreeAll, fetchGetCollaborationWorkspaceFeaturePackages } from '@/api/system-manage'
+  import {
+    fetchGetMenuTreeAll,
+    fetchGetCollaborationWorkspaceFeaturePackages
+  } from '@/api/system-manage'
   import { fetchGetTeamMenus, fetchGetTeamMenuOrigins, fetchSetTeamMenus } from '@/api/team'
   import type { AppRouteRecord } from '@/types/router'
   import PermissionSourcePanels from '@/components/business/permission/PermissionSourcePanels.vue'
@@ -150,7 +153,10 @@
       const [allMenus, currentRes, packageRes, originRes] = await Promise.all([
         fetchGetMenuTreeAll(undefined, currentAppKey.value),
         fetchGetTeamMenus(props.collaborationWorkspaceId, currentAppKey.value),
-        fetchGetCollaborationWorkspaceFeaturePackages(props.collaborationWorkspaceId, currentAppKey.value),
+        fetchGetCollaborationWorkspaceFeaturePackages(
+          props.collaborationWorkspaceId,
+          currentAppKey.value
+        ),
         fetchGetTeamMenuOrigins(props.collaborationWorkspaceId, currentAppKey.value)
       ])
 
@@ -324,4 +330,3 @@
     overflow: auto;
   }
 </style>
-

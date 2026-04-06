@@ -4,7 +4,7 @@ import AppConfig from '@/config'
 import { normalizeManagedAppKey } from '@/hooks/business/managed-app-scope'
 import { useAppContextStore } from '@/store/modules/app-context'
 import { useUserStore } from '@/store/modules/user'
-import { hasPlatformAccessByUserInfo } from '@/store/modules/tenant'
+import { hasPlatformAccessByUserInfo } from '@/store/modules/collaboration-workspace'
 import {
   fetchGetCurrentApp,
   fetchGetCurrentMenuSpace,

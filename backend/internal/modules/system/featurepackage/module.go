@@ -68,9 +68,9 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.PUTProtected("/:id/actions", reg.Meta("配置功能包权限").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.SetPackageKeys)
 		reg.GETProtected("/:id/menus", reg.Meta("获取功能包菜单").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.GetPackageMenus)
 		reg.PUTProtected("/:id/menus", reg.Meta("配置功能包菜单").BindPermissionKey("platform.package.manage").Build(), "platform.package.manage", authzService.RequireAction, handler.SetPackageMenus)
-		reg.GETProtected("/:id/teams", reg.Meta("获取功能包协作空间").BindPermissionKey("platform.package.assign").Build(), "platform.package.assign", authzService.RequireAction, handler.GetPackageTeams)
-		reg.PUTProtected("/:id/teams", reg.Meta("配置功能包协作空间").BindPermissionKey("platform.package.assign").Build(), "platform.package.assign", authzService.RequireAction, handler.SetPackageTeams)
-		reg.GETProtected("/teams/:collaborationWorkspaceId", reg.Meta("获取协作空间功能包").BindPermissionKey("platform.package.assign").Build(), "platform.package.assign", authzService.RequireAction, handler.GetTeamPackages)
-		reg.PUTProtected("/teams/:collaborationWorkspaceId", reg.Meta("配置协作空间功能包").BindPermissionKey("platform.package.assign").Build(), "platform.package.assign", authzService.RequireAction, handler.SetTeamPackages)
+		reg.GETProtected("/:id/collaboration-workspaces", reg.Meta("获取功能包协作空间").BindPermissionKey("platform.package.assign").Build(), "platform.package.assign", authzService.RequireAction, handler.GetPackageTeams)
+		reg.PUTProtected("/:id/collaboration-workspaces", reg.Meta("配置功能包协作空间").BindPermissionKey("platform.package.assign").Build(), "platform.package.assign", authzService.RequireAction, handler.SetPackageTeams)
+		reg.GETProtected("/collaboration-workspaces/:collaborationWorkspaceId", reg.Meta("获取协作空间功能包").BindPermissionKey("platform.package.assign").Build(), "platform.package.assign", authzService.RequireAction, handler.GetTeamPackages)
+		reg.PUTProtected("/collaboration-workspaces/:collaborationWorkspaceId", reg.Meta("配置协作空间功能包").BindPermissionKey("platform.package.assign").Build(), "platform.package.assign", authzService.RequireAction, handler.SetTeamPackages)
 	}
 }

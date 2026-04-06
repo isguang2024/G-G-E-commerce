@@ -144,7 +144,7 @@ func (h *Handler) GetImpactPreview(c *gin.Context) {
 	c.JSON(http.StatusOK, dto.SuccessResponse(gin.H{
 		"package_id":   result.PackageID.String(),
 		"role_count":   result.RoleCount,
-		"team_count":   result.TeamCount,
+		"collaboration_workspace_count":   result.CollaborationWorkspaceCount,
 		"user_count":   result.UserCount,
 		"menu_count":   result.MenuCount,
 		"action_count": result.ActionCount,
@@ -796,7 +796,7 @@ func packageToMapWithStats(item *user.FeaturePackage, actionCount, menuCount, te
 	result := packageToMap(item)
 	result["action_count"] = actionCount
 	result["menu_count"] = menuCount
-	result["team_count"] = teamCount
+	result["collaboration_workspace_count"] = teamCount
 	return result
 }
 
@@ -994,7 +994,7 @@ func refreshStatsToMap(stats *permissionrefresh.RefreshStats) gin.H {
 		"requested_package_count": stats.RequestedPackageCount,
 		"impacted_package_count":  stats.ImpactedPackageCount,
 		"role_count":              stats.RoleCount,
-		"team_count":              stats.TeamCount,
+		"collaboration_workspace_count":              stats.CollaborationWorkspaceCount,
 		"user_count":              stats.UserCount,
 		"elapsed_milliseconds":    stats.ElapsedMilliseconds,
 		"finished_at":             stats.FinishedAt,

@@ -14,7 +14,7 @@ func TestMenuToRuntimeMapPreservesFalseIsEnable(t *testing.T) {
 		ID:        uuid.New(),
 		Path:      "team",
 		Name:      "TeamManage",
-		Component: "/team/team",
+		Component: "/collaboration/workspaces",
 		Title:     "所有协作空间",
 		Meta: map[string]interface{}{
 			"isEnable": false,

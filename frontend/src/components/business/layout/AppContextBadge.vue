@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="context-badge" :class="[`context-badge--${variant}`]">
     <span class="context-badge__eyebrow">当前授权工作空间</span>
     <div class="context-badge__main">
@@ -14,7 +14,7 @@
 
 <script setup lang="ts">
   import { computed } from 'vue'
-  import { useTenantStore } from '@/store/modules/tenant'
+  import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
   import { useMenuSpaceStore } from '@/store/modules/menu-space'
 
   defineOptions({ name: 'AppContextBadge' })
@@ -28,10 +28,14 @@
     }
   )
 
-  const collaborationWorkspaceStore = useTenantStore()
+  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
   const menuSpaceStore = useMenuSpaceStore()
-  const { currentContextMode, currentTeam, currentAuthWorkspace, currentAuthWorkspaceType } =
-    storeToRefs(collaborationWorkspaceStore)
+  const {
+    currentContextMode,
+    currentCollaborationWorkspace,
+    currentAuthWorkspace,
+    currentAuthWorkspaceType
+  } = storeToRefs(collaborationWorkspaceStore)
   const { currentSpace, shouldShowSpaceBadge, isDefaultSpace } = storeToRefs(menuSpaceStore)
 
   const modeLabel = computed(() =>
@@ -40,12 +44,16 @@
   const scopeName = computed(() =>
     currentContextMode.value === 'platform'
       ? currentAuthWorkspace.value?.name || '当前个人工作空间'
-      : currentTeam.value?.name || currentAuthWorkspace.value?.name || '未启用协作空间视图'
+      : currentCollaborationWorkspace.value?.name ||
+        currentAuthWorkspace.value?.name ||
+        '未启用协作空间视图'
   )
   const tagType = computed(() => (currentContextMode.value === 'platform' ? 'success' : 'warning'))
   const teamViewName = computed(() =>
     currentAuthWorkspaceType.value === 'collaboration'
-      ? currentTeam.value?.name || currentAuthWorkspace.value?.name || '当前协作空间'
+      ? currentCollaborationWorkspace.value?.name ||
+        currentAuthWorkspace.value?.name ||
+        '当前协作空间'
       : '未启用协作空间视图'
   )
   const showSpaceLabel = computed(() => shouldShowSpaceBadge.value && !isDefaultSpace.value)

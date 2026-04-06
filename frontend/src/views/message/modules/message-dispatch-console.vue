@@ -136,14 +136,16 @@
                   placeholder="选择一个或多个协作空间"
                 >
                   <ElOption
-                    v-for="item in options.teams"
+                    v-for="item in options.collaboration_workspaces"
                     :key="item.id"
                     :label="item.name"
                     :value="item.id"
                   />
                 </ElSelect>
                 <div v-else class="message-manage-fixed-target">
-                  <strong>{{ options.current_collaboration_workspace_name || currentTeamName }}</strong>
+                  <strong>{{
+                    options.current_collaboration_workspace_name || currentTeamName
+                  }}</strong>
                   <span>协作空间上下文只允许向当前协作空间发送。</span>
                 </div>
                 <div class="field-hint">
@@ -336,7 +338,7 @@
   defineOptions({ name: 'MessageDispatchConsole' })
 
   const props = defineProps<{
-    scope: 'platform' | 'team'
+    scope: 'platform' | 'collaboration'
   }>()
 
   const router = useRouter()
@@ -365,7 +367,7 @@
     default_sender_id: '',
     audience_options: [],
     template_options: [],
-    teams: [],
+    collaboration_workspaces: [],
     users: [],
     recipient_groups: [],
     roles: [],
@@ -377,20 +379,20 @@
   })
 
   const createDefaultDispatchOptions = (): Api.Message.DispatchOptions => ({
-    sender_scope: isTeamScope.value ? 'team' : 'platform',
+    sender_scope: isTeamScope.value ? 'collaboration' : 'platform',
     current_collaboration_workspace_id: '',
     current_collaboration_workspace_name: '',
     sender_options: [],
     default_sender_id: '',
     audience_options: [],
     template_options: [],
-    teams: [],
+    collaboration_workspaces: [],
     users: [],
     recipient_groups: [],
     roles: [],
     feature_packages: [],
     default_message_type: 'notice',
-    default_audience_type: isTeamScope.value ? 'tenant_users' : 'all_users',
+    default_audience_type: isTeamScope.value ? 'collaboration_workspace_users' : 'all_users',
     default_priority: 'normal',
     supports_external_link: true
   })
@@ -411,7 +413,11 @@
       template_options: Array.isArray(payload?.template_options)
         ? payload.template_options
         : base.template_options,
-      teams: Array.isArray(payload?.teams) ? payload.teams : base.teams,
+      collaboration_workspaces: Array.isArray(payload?.collaboration_workspaces)
+        ? payload.collaboration_workspaces
+        : Array.isArray(payload?.teams)
+          ? payload.teams
+          : base.collaboration_workspaces,
       users: Array.isArray(payload?.users) ? payload.users : base.users,
       recipient_groups: Array.isArray(payload?.recipient_groups)
         ? payload.recipient_groups
@@ -486,7 +492,7 @@
 
   const filteredTemplateOptions = computed(() =>
     (options.template_options || []).filter((item) =>
-      isTeamScope.value ? item.owner_scope === 'team' : item.owner_scope === 'platform'
+      isTeamScope.value ? item.owner_scope === 'collaboration' : item.owner_scope === 'platform'
     )
   )
 
@@ -578,7 +584,7 @@
       return effectiveTeamName.value
     }
     if (!form.targetCollaborationWorkspaceIds?.length) return '待选择协作空间'
-    const names = options.teams
+    const names = options.collaboration_workspaces
       .filter((item) => form.targetCollaborationWorkspaceIds?.includes(item.id))
       .map((item) => item.name)
     return names.join('、') || '待选择协作空间'
@@ -590,7 +596,7 @@
     { label: '可选对象', value: (options.audience_options || []).length },
     {
       label: isTeamScope.value ? '当前协作空间' : '目标协作空间',
-      value: isTeamScope.value ? effectiveTeamName.value : (options.teams || []).length
+      value: isTeamScope.value ? effectiveTeamName.value : options.collaboration_workspaces.length
     }
   ])
   const canDispatch = computed(() => !loadError.value && (options.sender_options || []).length > 0)
@@ -625,7 +631,8 @@
     form.sender_id = options.default_sender_id || options.sender_options[0]?.id || ''
     form.message_type = options.default_message_type || 'notice'
     form.audience_type =
-      options.default_audience_type || (isTeamScope.value ? 'tenant_users' : 'all_users')
+      options.default_audience_type ||
+      (isTeamScope.value ? 'collaboration_workspace_users' : 'all_users')
     form.priority = options.default_priority || 'normal'
     form.targetCollaborationWorkspaceIds =
       isTeamScope.value && options.current_collaboration_workspace_id
@@ -660,7 +667,7 @@
     try {
       ensureTeamContext()
       if (isTeamScope.value) {
-        await collaborationWorkspaceStore.loadMyTeams({
+        await collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
           preferredCollaborationWorkspaceId: currentCollaborationWorkspaceId.value || undefined
         })
       }
@@ -719,7 +726,7 @@
 
   const submitDispatch = async () => {
     if (isTeamScope.value && !currentCollaborationWorkspaceId.value) {
-      await collaborationWorkspaceStore.loadMyTeams({
+      await collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
         preferredCollaborationWorkspaceId: currentCollaborationWorkspaceId.value || undefined
       })
     }
@@ -1072,4 +1079,3 @@
     }
   }
 </style>
-

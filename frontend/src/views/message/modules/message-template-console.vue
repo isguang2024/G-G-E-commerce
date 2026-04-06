@@ -263,7 +263,7 @@
   defineOptions({ name: 'MessageTemplateConsole' })
 
   const props = defineProps<{
-    scope: 'platform' | 'team'
+    scope: 'platform' | 'collaboration'
   }>()
 
   const loading = ref(false)
@@ -323,7 +323,7 @@
     {
       label: isTeamScope.value ? '协作空间模板' : '平台模板',
       value: list.value.filter(
-        (item) => item.owner_scope === (isTeamScope.value ? 'team' : 'platform')
+        (item) => item.owner_scope === (isTeamScope.value ? 'collaboration' : 'platform')
       ).length
     },
     { label: '可编辑', value: list.value.filter((item) => item.editable).length }
@@ -347,11 +347,22 @@
 
   const availableAudienceOptions = computed(() =>
     isTeamScope.value
-      ? [{ label: '当前协作空间成员', value: 'tenant_users' as Api.Message.AudienceType }]
+      ? [
+          {
+            label: '当前协作空间成员',
+            value: 'collaboration_workspace_users' as Api.Message.AudienceType
+          }
+        ]
       : [
           { label: '所有用户', value: 'all_users' as Api.Message.AudienceType },
-          { label: '协作空间管理员', value: 'tenant_admins' as Api.Message.AudienceType },
-          { label: '指定协作空间成员', value: 'tenant_users' as Api.Message.AudienceType }
+          {
+            label: '协作空间管理员',
+            value: 'collaboration_workspace_admins' as Api.Message.AudienceType
+          },
+          {
+            label: '指定协作空间成员',
+            value: 'collaboration_workspace_users' as Api.Message.AudienceType
+          }
         ]
   )
 
@@ -360,7 +371,7 @@
     name: '',
     description: '',
     message_type: 'notice',
-    audience_type: isTeamScope.value ? 'tenant_users' : 'all_users',
+    audience_type: isTeamScope.value ? 'collaboration_workspace_users' : 'all_users',
     title_template: '',
     summary_template: '',
     content_template: '',
@@ -368,7 +379,7 @@
   })
 
   const resolveScopeLabel = (item: Api.Message.MessageTemplateItem) => {
-    if (item.owner_scope === 'team') {
+    if (item.owner_scope === 'collaboration') {
       const teamName = item.owner_collaboration_workspace_name || item.owner_tenant_name
       return teamName ? `协作空间 · ${teamName}` : '协作空间模板'
     }
@@ -380,7 +391,7 @@
 
   const resolveAudienceLabel = (value: Api.Message.AudienceType) => {
     if (value === 'all_users') return '所有用户'
-    if (value === 'tenant_admins') return '协作空间管理员'
+    if (value === 'collaboration_workspace_admins') return '协作空间管理员'
     return '协作空间成员'
   }
 
@@ -424,7 +435,10 @@
     drawerEditingId.value = item.id
     drawerReadOnly.value = !item.editable
     drawerModel.value = {
-      template_key: item.template_key.replace(/^platform\./, '').replace(/^team\.[^.]+\./, ''),
+      template_key: item.template_key
+        .replace(/^platform\./, '')
+        .replace(/^collaboration_workspace\.[^.]+\./, '')
+        .replace(/^team\.[^.]+\./, ''),
       name: item.name,
       description: item.description || '',
       message_type: item.message_type,
@@ -720,4 +734,3 @@
     }
   }
 </style>
-

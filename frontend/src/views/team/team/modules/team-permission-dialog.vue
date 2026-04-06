@@ -27,7 +27,9 @@
       </div>
 
       <div class="source-note">
-        <span>黄色统计表示来自功能包展开的基础能力，蓝色统计表示当前协作空间边界已屏蔽的权限。</span>
+        <span
+          >黄色统计表示来自功能包展开的基础能力，蓝色统计表示当前协作空间边界已屏蔽的权限。</span
+        >
       </div>
 
       <PermissionSourcePanels
@@ -67,7 +69,10 @@
   import PermissionActionCascaderPanel from '@/components/business/permission/PermissionActionCascaderPanel.vue'
   import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
   import { fetchGetTeamActions, fetchGetTeamActionOrigins, fetchSetTeamActions } from '@/api/team'
-  import { fetchGetPermissionActionOptions, fetchGetCollaborationWorkspaceFeaturePackages } from '@/api/system-manage'
+  import {
+    fetchGetPermissionActionOptions,
+    fetchGetCollaborationWorkspaceFeaturePackages
+  } from '@/api/system-manage'
 
   interface Props {
     modelValue: boolean
@@ -140,9 +145,12 @@
     loading.value = true
     try {
       const [actionsRes, currentRes, packageRes, originsRes] = await Promise.all([
-        fetchGetPermissionActionOptions({ status: 'normal', contextType: 'team' }),
+        fetchGetPermissionActionOptions({ status: 'normal', contextType: 'collaboration' }),
         fetchGetTeamActions(props.collaborationWorkspaceId, currentAppKey.value),
-        fetchGetCollaborationWorkspaceFeaturePackages(props.collaborationWorkspaceId, currentAppKey.value),
+        fetchGetCollaborationWorkspaceFeaturePackages(
+          props.collaborationWorkspaceId,
+          currentAppKey.value
+        ),
         fetchGetTeamActionOrigins(props.collaborationWorkspaceId, currentAppKey.value)
       ])
 
@@ -272,4 +280,3 @@
     color: #64748b;
   }
 </style>
-

@@ -70,7 +70,7 @@ type FeaturePackageRelationTree struct {
 type FeaturePackageImpactPreview struct {
 	PackageID   uuid.UUID `json:"package_id"`
 	RoleCount   int64     `json:"role_count"`
-	TeamCount   int64     `json:"team_count"`
+	CollaborationWorkspaceCount   int64     `json:"collaboration_workspace_count"`
 	UserCount   int64     `json:"user_count"`
 	MenuCount   int64     `json:"menu_count"`
 	ActionCount int64     `json:"action_count"`
@@ -168,7 +168,7 @@ func (s *service) ListOptions(req *dto.FeaturePackageListRequest) ([]user.Featur
 		}
 		if contextType := normalizeContextType(req.ContextType); contextType != "" {
 			switch contextType {
-			case "platform", "team":
+			case "platform", "collaboration":
 				query = query.Where("(context_type = ? OR context_type = ?)", contextType, "common")
 			default:
 				query = query.Where("context_type = ?", contextType)
@@ -235,7 +235,7 @@ func (s *service) Create(req *dto.FeaturePackageCreateRequest) (*user.FeaturePac
 		PackageType: normalizePackageTypeDefault(req.PackageType, "base"),
 		Name:        strings.TrimSpace(req.Name),
 		Description: strings.TrimSpace(req.Description),
-		ContextType: normalizeContextTypeDefault(req.ContextType, "team"),
+		ContextType: normalizeContextTypeDefault(req.ContextType, "collaboration"),
 		Status:      normalizeStatus(req.Status),
 		SortOrder:   req.SortOrder,
 	}
@@ -737,7 +737,7 @@ func (s *service) SetPackageTeams(id uuid.UUID, collaborationWorkspaceIDs []uuid
 		}
 	}
 	stats := permissionrefresh.RefreshStats{
-		TeamCount: len(affected),
+		CollaborationWorkspaceCount: len(affected),
 	}
 	_ = s.saveVersionSnapshot(id, "set_teams", grantedBy, "")
 	_ = s.recordRiskAudit("feature_package", id.String(), "set_teams", nil, ginLikeMap("collaboration_workspace_ids", collaborationWorkspaceIDs), refreshStatsSummary(stats), grantedBy, "")
@@ -772,7 +772,7 @@ func (s *service) SetTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, gran
 		if err := s.refresher.RefreshTeam(teamID); err != nil {
 			return nil, err
 		}
-		stats := permissionrefresh.RefreshStats{TeamCount: 1}
+		stats := permissionrefresh.RefreshStats{CollaborationWorkspaceCount: 1}
 		_ = s.recordRiskAudit("team_feature_package", teamID.String(), "set_team_packages", nil, ginLikeMap("package_ids", packageIDs), refreshStatsSummary(stats), grantedBy, "")
 		return &stats, nil
 	}
@@ -780,7 +780,7 @@ func (s *service) SetTeamPackages(teamID uuid.UUID, packageIDs []uuid.UUID, gran
 	if err != nil {
 		return nil, err
 	}
-	stats := permissionrefresh.RefreshStats{TeamCount: 1}
+	stats := permissionrefresh.RefreshStats{CollaborationWorkspaceCount: 1}
 	_ = s.recordRiskAudit("team_feature_package", teamID.String(), "set_team_packages", nil, ginLikeMap("package_ids", packageIDs), refreshStatsSummary(stats), grantedBy, "")
 	return &stats, nil
 }
@@ -1030,7 +1030,7 @@ func (s *service) GetImpactPreview(id uuid.UUID) (*FeaturePackageImpactPreview, 
 	if err := s.db.Model(&user.CollaborationWorkspaceFeaturePackage{}).Where("package_id = ? AND enabled = ?", id, true).Distinct("collaboration_workspace_id").Pluck("collaboration_workspace_id", &legacyCollaborationWorkspaceIDs).Error; err != nil {
 		return nil, err
 	}
-	result.TeamCount = int64(len(mergeUUIDSlice(workspaceCollaborationWorkspaceIDs, legacyCollaborationWorkspaceIDs)))
+	result.CollaborationWorkspaceCount = int64(len(mergeUUIDSlice(workspaceCollaborationWorkspaceIDs, legacyCollaborationWorkspaceIDs)))
 	workspaceUserIDs, err := workspacefeaturebinding.ListPlatformUserIDsByPackageIDs(s.db, []uuid.UUID{id}, item.AppKey)
 	if err != nil {
 		return nil, err
@@ -1293,7 +1293,7 @@ func mergeRefreshStats(left, right permissionrefresh.RefreshStats) permissionref
 		RequestedPackageCount: left.RequestedPackageCount + right.RequestedPackageCount,
 		ImpactedPackageCount:  left.ImpactedPackageCount + right.ImpactedPackageCount,
 		RoleCount:             left.RoleCount + right.RoleCount,
-		TeamCount:             left.TeamCount + right.TeamCount,
+		CollaborationWorkspaceCount:             left.CollaborationWorkspaceCount + right.CollaborationWorkspaceCount,
 		UserCount:             left.UserCount + right.UserCount,
 		ElapsedMilliseconds:   left.ElapsedMilliseconds + right.ElapsedMilliseconds,
 	}
@@ -1339,7 +1339,7 @@ func refreshStatsSummary(stats permissionrefresh.RefreshStats) map[string]interf
 		"requested_package_count": stats.RequestedPackageCount,
 		"impacted_package_count":  stats.ImpactedPackageCount,
 		"role_count":              stats.RoleCount,
-		"team_count":              stats.TeamCount,
+		"collaboration_workspace_count":              stats.CollaborationWorkspaceCount,
 		"user_count":              stats.UserCount,
 		"elapsed_milliseconds":    stats.ElapsedMilliseconds,
 	}
@@ -1464,8 +1464,10 @@ func (s *service) getTeamMap(collaborationWorkspaceIDs []uuid.UUID) (map[uuid.UU
 
 func normalizeContextType(value string) string {
 	switch strings.ReplaceAll(strings.TrimSpace(value), " ", "") {
-	case "platform", "team", "common":
+	case "platform", "collaboration", "common":
 		return strings.ReplaceAll(strings.TrimSpace(value), " ", "")
+	case "team":
+		return "collaboration"
 	default:
 		return ""
 	}
@@ -1504,12 +1506,12 @@ func normalizePackageTypeDefault(value, fallback string) string {
 }
 
 func supportsTeamContext(contextType string) bool {
-	return contextType == "team" || contextType == "common"
+	return contextType == "collaboration" || contextType == "common"
 }
 
 func contextSupportsAction(packageContextType, actionContextType string) bool {
 	if packageContextType == "common" {
-		return actionContextType == "platform" || actionContextType == "team"
+		return actionContextType == "platform" || actionContextType == "collaboration"
 	}
 	return packageContextType == actionContextType
 }
@@ -1518,10 +1520,10 @@ func contextSupportsChildPackage(bundleContextType, childContextType string) boo
 	switch bundleContextType {
 	case "platform":
 		return childContextType == "platform" || childContextType == "common"
-	case "team":
-		return childContextType == "team" || childContextType == "common"
+	case "collaboration":
+		return childContextType == "collaboration" || childContextType == "common"
 	case "common":
-		return childContextType == "platform" || childContextType == "team" || childContextType == "common"
+		return childContextType == "platform" || childContextType == "collaboration" || childContextType == "common"
 	default:
 		return false
 	}

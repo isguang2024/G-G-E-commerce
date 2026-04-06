@@ -37,7 +37,7 @@ func TestValidatePermissionContext(t *testing.T) {
 		},
 		{
 			name:          "team custom key with reserved prefix passes",
-			permissionKey: "team.notice.dispatch",
+			permissionKey: "collaboration_workspace.notice.dispatch",
 			moduleCode:    "notice",
 			contextType:   "team",
 			wantErr:       false,

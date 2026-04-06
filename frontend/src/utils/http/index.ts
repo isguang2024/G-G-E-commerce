@@ -1,4 +1,4 @@
-﻿/**
+/**
  * HTTP 请求封装模块
  * 基于 Axios 封装的 HTTP 请求工具，提供统一的请求/响应处理
  *
@@ -16,7 +16,7 @@
 
 import axios, { AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
 import { useUserStore } from '@/store/modules/user'
-import { useTenantStore } from '@/store/modules/tenant'
+import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
 import { useWorkspaceStore } from '@/store/modules/workspace'
 import { ApiStatus } from './status'
 import { HttpError, handleError, showError, showSuccess } from './error'
@@ -76,7 +76,7 @@ axiosInstance.interceptors.request.use(
     }
   ) => {
     const { accessToken } = useUserStore()
-    const { currentCollaborationWorkspaceId, currentContextMode } = useTenantStore()
+    const { currentCollaborationWorkspaceId, currentContextMode } = useCollaborationWorkspaceStore()
     const { currentAuthWorkspaceId } = useWorkspaceStore()
     if (accessToken) {
       // 添加 Bearer 前缀（如果还没有）
@@ -251,4 +251,3 @@ const api = {
 }
 
 export default api
-

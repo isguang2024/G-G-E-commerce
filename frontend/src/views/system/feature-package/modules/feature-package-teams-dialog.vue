@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="visible"
     :title="`开通协作空间 - ${packageName}`"
@@ -14,7 +14,9 @@
 
       <div class="summary-card">
         <ElTag effect="plain" round>功能包 {{ packageName }}</ElTag>
-        <ElTag type="success" effect="plain" round>已开通 {{ selectedCollaborationWorkspaceIds.length }}</ElTag>
+        <ElTag type="success" effect="plain" round
+          >已开通 {{ selectedCollaborationWorkspaceIds.length }}</ElTag
+        >
         <ElTag type="info" effect="plain" round>协作空间总数 {{ teams.length }}</ElTag>
       </div>
 
@@ -65,7 +67,7 @@
   import { ElMessage } from 'element-plus'
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
   import {
-    fetchGetFeaturePackageTeams,
+    fetchGetFeaturePackageCollaborationWorkspaces,
     fetchGetTenantOptions,
     fetchSetFeaturePackageTeams
   } from '@/api/system-manage'
@@ -81,7 +83,7 @@
     modelValue: false,
     packageId: '',
     packageName: '',
-    contextType: 'team'
+    contextType: 'collaboration'
   })
 
   const emit = defineEmits<{
@@ -97,7 +99,7 @@
   const loading = ref(false)
   const saving = ref(false)
   const keyword = ref('')
-  const teams = ref<Api.SystemManage.TeamListItem[]>([])
+  const teams = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
   const selectedCollaborationWorkspaceIds = ref<string[]>([])
   const pagination = ref({
     current: 1,
@@ -130,7 +132,7 @@
     try {
       const [teamRes, bindingRes] = await Promise.all([
         fetchGetTenantOptions(),
-        fetchGetFeaturePackageTeams(props.packageId)
+        fetchGetFeaturePackageCollaborationWorkspaces(props.packageId)
       ])
       teams.value = teamRes?.records || []
       selectedCollaborationWorkspaceIds.value = [...(bindingRes?.collaboration_workspace_ids || [])]
@@ -145,11 +147,16 @@
   function toggleSelection(collaborationWorkspaceId: string, checked: boolean | string | number) {
     if (checked) {
       if (!selectedCollaborationWorkspaceIds.value.includes(collaborationWorkspaceId)) {
-        selectedCollaborationWorkspaceIds.value = [...selectedCollaborationWorkspaceIds.value, collaborationWorkspaceId]
+        selectedCollaborationWorkspaceIds.value = [
+          ...selectedCollaborationWorkspaceIds.value,
+          collaborationWorkspaceId
+        ]
       }
       return
     }
-    selectedCollaborationWorkspaceIds.value = selectedCollaborationWorkspaceIds.value.filter((item) => item !== collaborationWorkspaceId)
+    selectedCollaborationWorkspaceIds.value = selectedCollaborationWorkspaceIds.value.filter(
+      (item) => item !== collaborationWorkspaceId
+    )
   }
 
   async function handleSave() {
@@ -160,7 +167,10 @@
     }
     saving.value = true
     try {
-      const stats = await fetchSetFeaturePackageTeams(props.packageId, selectedCollaborationWorkspaceIds.value)
+      const stats = await fetchSetFeaturePackageTeams(
+        props.packageId,
+        selectedCollaborationWorkspaceIds.value
+      )
       ElMessage.success(formatRefreshMessage(stats))
       emit('success')
       visible.value = false
@@ -172,7 +182,7 @@
   }
 
   function supportsTeamContext(contextType?: string) {
-    return contextType === 'team' || contextType === 'common'
+    return contextType === 'collaboration' || contextType === 'common'
   }
 
   watch(keyword, () => {
@@ -180,7 +190,7 @@
   })
 
   function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
-    return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
+    return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.collaborationWorkspaceCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 </script>
 
@@ -206,4 +216,3 @@
     width: 320px;
   }
 </style>
-

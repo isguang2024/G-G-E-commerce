@@ -1,8 +1,9 @@
-﻿import request from '@/utils/http'
+import request from '@/utils/http'
 
 const COLLABORATION_WORKSPACE_BASE = '/api/v1/collaboration-workspaces'
 const CURRENT_COLLABORATION_BASE = `${COLLABORATION_WORKSPACE_BASE}/current`
 const CURRENT_BOUNDARY_ROLE_BASE = `${CURRENT_COLLABORATION_BASE}/boundary/roles`
+const TENANT_BASE = COLLABORATION_WORKSPACE_BASE
 
 function normalizePermissionKey(value?: string) {
   const target = `${value || ''}`.trim()
@@ -50,7 +51,9 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
   return 'collaboration'
 }
 
-function normalizeTeam(item: any): Api.SystemManage.TeamListItem {
+function normalizeCollaborationWorkspace(
+  item: any
+): Api.SystemManage.CollaborationWorkspaceListItem {
   return {
     id: item?.id || '',
     name: item?.name || '',
@@ -147,7 +150,7 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
     isBuiltin: Boolean(item?.is_builtin ?? item?.isBuiltin ?? false),
     actionCount: item?.action_count ?? item?.actionCount ?? 0,
     menuCount: item?.menu_count ?? item?.menuCount ?? 0,
-    teamCount: item?.team_count ?? item?.teamCount ?? 0,
+    collaborationWorkspaceCount: item?.team_count ?? item?.collaborationWorkspaceCount ?? 0,
     status: item?.status || 'normal',
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
     createdAt: item?.created_at || item?.createdAt || '',
@@ -156,7 +159,7 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
 }
 
 function normalizeRoleLabel(roleCode?: string) {
-  return roleCode === 'team_admin' ? '协作空间管理员' : '协作空间成员'
+  return roleCode === 'collaboration_workspace_admin' ? '协作空间管理员' : '协作空间成员'
 }
 
 function normalizeCollaborationWorkspaceMember(
@@ -187,52 +190,64 @@ function normalizeCollaborationWorkspaceMember(
   }
 }
 
-export async function fetchGetTeamList(params: Api.SystemManage.TeamSearchParams) {
-  const res = await request.get<Api.SystemManage.TeamList>({
+export async function fetchGetCollaborationWorkspaceList(
+  params: Api.SystemManage.CollaborationWorkspaceSearchParams
+) {
+  const res = await request.get<Api.SystemManage.CollaborationWorkspaceList>({
     url: TENANT_BASE,
     params
   })
 
   return {
     ...res,
-    records: (res?.records || []).map(normalizeTeam)
+    records: (res?.records || []).map(normalizeCollaborationWorkspace)
   }
 }
 
-export async function fetchGetTeamOptions(params?: Partial<Api.SystemManage.TeamSearchParams>) {
-  const res = await request.get<{ records: Api.SystemManage.TeamListItem[]; total: number }>({
+export async function fetchGetCollaborationWorkspaceOptions(
+  params?: Partial<Api.SystemManage.CollaborationWorkspaceSearchParams>
+) {
+  const res = await request.get<{
+    records: Api.SystemManage.CollaborationWorkspaceListItem[]
+    total: number
+  }>({
     url: `${TENANT_BASE}/options`,
     params
   })
 
   return {
-    records: (res?.records || []).map(normalizeTeam),
+    records: (res?.records || []).map(normalizeCollaborationWorkspace),
     total: res?.total || 0
   }
 }
 
-export async function fetchGetTeam(id: string) {
-  const res = await request.get<Api.SystemManage.TeamListItem>({
+export async function fetchGetCollaborationWorkspace(id: string) {
+  const res = await request.get<Api.SystemManage.CollaborationWorkspaceListItem>({
     url: `${TENANT_BASE}/${id}`
   })
-  return normalizeTeam(res)
+  return normalizeCollaborationWorkspace(res)
 }
 
-export function fetchCreateTeam(data: Api.SystemManage.TeamCreateParams) {
+export function fetchCreateCollaborationWorkspace(
+  data: Api.SystemManage.CollaborationWorkspaceCreateParams
+) {
   return request.post<{ id: string }>({
     url: TENANT_BASE,
     data
   })
 }
 
-export function fetchUpdateTeam(id: string, data: Api.SystemManage.TeamUpdateParams) {
+export function fetchUpdateCollaborationWorkspace(
+  id: string,
+  data: Api.SystemManage.CollaborationWorkspaceUpdateParams
+) {
   return request.put<void>({
     url: `${TENANT_BASE}/${id}`,
     data
   })
 }
 
-export function fetchDeleteTeam(id: string) {
+export function fetchDeleteCollaborationWorkspace(id: string) {
   return request.del<void>({
     url: `${TENANT_BASE}/${id}`
   })
@@ -255,7 +270,7 @@ export function fetchAddCollaborationWorkspaceMember(
 ) {
   return request.post<void>({
     url: `${TENANT_BASE}/${collaborationWorkspaceId}/members`,
-    data: { user_id: data.user_id, role_code: data.role_code || 'team_member' }
+    data: { user_id: data.user_id, role_code: data.role_code || 'collaboration_workspace_member' }
   })
 }
 
@@ -279,20 +294,20 @@ export function fetchUpdateCollaborationWorkspaceMemberRole(
   })
 }
 
-export async function fetchGetMyTeam() {
-  const res = await request.get<Api.SystemManage.TeamListItem>({
+export async function fetchGetMyCollaborationWorkspace() {
+  const res = await request.get<Api.SystemManage.CollaborationWorkspaceListItem>({
     url: CURRENT_COLLABORATION_BASE
   })
-  return normalizeTeam(res)
+  return normalizeCollaborationWorkspace(res)
 }
 
-export async function fetchGetMyTeams() {
+export async function fetchGetMyCollaborationWorkspaces() {
   const res = await request.get<any[]>({
     url: `${TENANT_BASE}/mine`,
     skipCollaborationWorkspaceHeader: true,
     showErrorMessage: false
   })
-  return (res || []).map(normalizeTeam)
+  return (res || []).map(normalizeCollaborationWorkspace)
 }
 
 export async function fetchGetMyCollaborationWorkspaceMembers() {
@@ -308,7 +323,7 @@ export function fetchAddMyCollaborationWorkspaceMember(data: {
 }) {
   return request.post<void>({
     url: `${CURRENT_COLLABORATION_BASE}/members`,
-    data: { user_id: data.user_id, role_code: data.role_code || 'team_member' }
+    data: { user_id: data.user_id, role_code: data.role_code || 'collaboration_workspace_member' }
   })
 }
 
@@ -670,3 +685,12 @@ export function fetchGetMyTeamActionOrigins() {
       blocked_action_ids: res?.blocked_action_ids || []
     }))
 }
+
+export const fetchGetTeamList = fetchGetCollaborationWorkspaceList
+export const fetchGetTeamOptions = fetchGetCollaborationWorkspaceOptions
+export const fetchGetTeam = fetchGetCollaborationWorkspace
+export const fetchCreateTeam = fetchCreateCollaborationWorkspace
+export const fetchUpdateTeam = fetchUpdateCollaborationWorkspace
+export const fetchDeleteTeam = fetchDeleteCollaborationWorkspace
+export const fetchGetMyTeam = fetchGetMyCollaborationWorkspace
+export const fetchGetMyTeams = fetchGetMyCollaborationWorkspaces

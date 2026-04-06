@@ -36,7 +36,7 @@ type RefreshStats struct {
 	RequestedPackageCount int       `json:"requested_package_count"`
 	ImpactedPackageCount  int       `json:"impacted_package_count"`
 	RoleCount             int       `json:"role_count"`
-	TeamCount             int       `json:"team_count"`
+	CollaborationWorkspaceCount             int       `json:"collaboration_workspace_count"`
 	UserCount             int       `json:"user_count"`
 	ElapsedMilliseconds   int64     `json:"elapsed_milliseconds"`
 	FinishedAt            time.Time `json:"finished_at"`
@@ -286,7 +286,7 @@ func (s *service) RefreshByPackagesWithStats(packageIDs []uuid.UUID) (RefreshSta
 		return stats, err
 	}
 	dedupedUserIDs := dedupeUUIDs(append(userIDs, roleUserIDs...))
-	stats.TeamCount = len(dedupedCollaborationWorkspaceIDs)
+	stats.CollaborationWorkspaceCount = len(dedupedCollaborationWorkspaceIDs)
 	stats.RoleCount = len(dedupedRoleIDs)
 	stats.UserCount = len(dedupedUserIDs)
 

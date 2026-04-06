@@ -98,7 +98,7 @@ type PermissionImpactPreview struct {
 	PageCount     int64  `json:"page_count"`
 	PackageCount  int64  `json:"package_count"`
 	RoleCount     int64  `json:"role_count"`
-	TeamCount     int64  `json:"team_count"`
+	CollaborationWorkspaceCount     int64  `json:"collaboration_workspace_count"`
 	UserCount     int64  `json:"user_count"`
 }
 
@@ -331,7 +331,7 @@ func (s *permissionService) GetImpactPreview(id uuid.UUID) (*PermissionImpactPre
 		if err := s.db.Model(&user.CollaborationWorkspaceFeaturePackage{}).Where("package_id IN ? AND enabled = ?", packageIDs, true).Distinct("collaboration_workspace_id").Pluck("collaboration_workspace_id", &legacyCollaborationWorkspaceIDs).Error; err != nil {
 			return nil, err
 		}
-		result.TeamCount = int64(len(mergeUUIDs(workspaceCollaborationWorkspaceIDs, legacyCollaborationWorkspaceIDs)))
+		result.CollaborationWorkspaceCount = int64(len(mergeUUIDs(workspaceCollaborationWorkspaceIDs, legacyCollaborationWorkspaceIDs)))
 		workspaceUserIDs, err := workspacefeaturebinding.ListPlatformUserIDsByPackageIDs(s.db, packageIDs, "")
 		if err != nil {
 			return nil, err
@@ -1180,8 +1180,10 @@ func normalizeModuleCode(value, fallbackResource string) string {
 
 func normalizeContextType(value, fallback string) string {
 	switch strings.TrimSpace(value) {
-	case "platform", "team", "common":
+	case "platform", "collaboration", "common":
 		return strings.TrimSpace(value)
+	case "team":
+		return "collaboration"
 	case "":
 		return fallback
 	default:
@@ -1195,7 +1197,7 @@ func derivePermissionAppKey(permissionKey, moduleCode, contextType string) strin
 		segments := strings.Split(targetKey, ".")
 		if len(segments) > 0 {
 			switch segments[0] {
-			case "system", "platform", "tenant", "team", "common":
+			case "system", "platform", "tenant", "team", "common", "collaboration_workspace":
 				return models.DefaultAppKey
 			default:
 				if strings.TrimSpace(segments[0]) != "" {
@@ -1216,7 +1218,7 @@ func derivePermissionAppKey(permissionKey, moduleCode, contextType string) strin
 func derivePermissionDataPolicy(permissionKey, moduleCode, contextType string) string {
 	targetKey := canonicalPermissionKey(permissionKey)
 	switch normalizeContextType(contextType, deriveContextType(targetKey, moduleCodeFromPermissionKey(targetKey, moduleCode))) {
-	case "team", "common":
+	case "collaboration", "common":
 		return "auth_workspace"
 	default:
 		return "none"
@@ -1224,13 +1226,13 @@ func derivePermissionDataPolicy(permissionKey, moduleCode, contextType string) s
 }
 
 func deriveAllowedWorkspaceTypes(contextType string) string {
-	switch normalizeContextType(contextType, "team") {
+	switch normalizeContextType(contextType, "collaboration") {
 	case "platform":
 		return "personal"
 	case "common":
-		return "personal,team"
+		return "personal,collaboration"
 	default:
-		return "team"
+		return "collaboration"
 	}
 }
 
@@ -1251,8 +1253,8 @@ func deriveContextType(permissionKey, moduleCode string) string {
 		strings.HasPrefix(targetKey, "platform."),
 		targetKey == "collaboration_workspace.manage":
 		return "platform"
-	case strings.HasPrefix(targetKey, "team."):
-		return "team"
+	case strings.HasPrefix(targetKey, "collaboration_workspace."):
+		return "collaboration"
 	case targetModule == "tenant" || targetModule == "role" || targetModule == "user" || targetModule == "menu" || targetModule == "permission_key" || targetModule == "api_endpoint":
 		return "platform"
 	default:
@@ -1265,7 +1267,7 @@ func validatePermissionContext(permissionKey, moduleCode, contextType string) er
 	targetModule := strings.TrimSpace(moduleCode)
 	targetContext := normalizeContextType(contextType, deriveContextType(targetKey, targetModule))
 	if targetContext == "" {
-		return fmt.Errorf("%w: context_type 仅支持 platform、team、common", ErrPermissionContextInvalid)
+		return fmt.Errorf("%w: context_type 仅支持 platform、collaboration、common", ErrPermissionContextInvalid)
 	}
 
 	if mapping, ok := findCanonicalPermissionMapping(targetKey); ok {
@@ -1289,9 +1291,9 @@ func validatePermissionContext(permissionKey, moduleCode, contextType string) er
 		if !hasPlatformPermissionNamespace(targetKey) && deriveModuleContextBoundary(targetModule) == "" {
 			return fmt.Errorf("%w: 平台自定义权限键请使用 system.、platform. 或 collaboration_workspace. 前缀，或归入平台模块分组", ErrPermissionContextInvalid)
 		}
-	case "team":
+	case "collaboration":
 		if !hasTeamPermissionNamespace(targetKey) && deriveModuleContextBoundary(targetModule) == "" {
-			return fmt.Errorf("%w: 协作空间自定义权限键请使用 team. 前缀，或归入协作空间模块分组", ErrPermissionContextInvalid)
+			return fmt.Errorf("%w: 协作空间自定义权限键请使用 collaboration_workspace. 前缀，或归入协作空间模块分组", ErrPermissionContextInvalid)
 		}
 	case "common":
 		if deriveReservedContextType(targetKey) != "" || deriveModuleContextBoundary(targetModule) != "" {
@@ -1321,7 +1323,7 @@ func deriveReservedContextType(permissionKey string) string {
 	case hasPlatformPermissionNamespace(targetKey):
 		return "platform"
 	case hasTeamPermissionNamespace(targetKey):
-		return "team"
+		return "collaboration"
 	default:
 		return ""
 	}
@@ -1336,7 +1338,8 @@ func hasPlatformPermissionNamespace(permissionKey string) bool {
 
 func hasTeamPermissionNamespace(permissionKey string) bool {
 	targetKey := canonicalPermissionKey(permissionKey)
-	return strings.HasPrefix(targetKey, "team.")
+	return strings.HasPrefix(targetKey, "collaboration_workspace.") ||
+		strings.HasPrefix(targetKey, "collaboration_workspace.")
 }
 
 func deriveModuleContextBoundary(moduleCode string) string {
@@ -1346,8 +1349,8 @@ func deriveModuleContextBoundary(moduleCode string) string {
 		"collaboration_workspace_member_admin", "api_endpoint", "page", "fast_enter", "message",
 		"feature_package", "system_permission", "menu_space", "navigation":
 		return "platform"
-	case "team_member", "team", "collaboration_workspace_message":
-		return "team"
+	case "collaboration_workspace_member", "team", "collaboration_workspace_message", "collaboration_workspace_boundary":
+		return "collaboration"
 	default:
 		return ""
 	}
@@ -1418,7 +1421,7 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 	_ = s.recordRiskAudit("permission_action", id.String(), "delete", map[string]interface{}{
 		"permission_key": item.PermissionKey,
 		"context_type":   item.ContextType,
-	}, nil, map[string]interface{}{"team_count": len(affectedTeams)}, nil, "")
+	}, nil, map[string]interface{}{"collaboration_workspace_count": len(affectedTeams)}, nil, "")
 	return nil
 }
 

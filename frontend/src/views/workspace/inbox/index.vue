@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="message-center-page art-full-height">
     <AdminWorkspaceHero
       :title="`消息中心 · ${workspaceName}`"
@@ -188,7 +188,7 @@
   import { fetchGetInboxList, fetchGetInboxDetail } from '@/api/message'
   import { useMenuSpaceStore } from '@/store/modules/menu-space'
   import { useMessageStore } from '@/store/modules/message'
-  import { useTenantStore } from '@/store/modules/tenant'
+  import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
   import { useWorkspaceStore } from '@/store/modules/workspace'
   import { handleRichTextLinkNavigation } from '@/utils/navigation/rich-text'
 
@@ -200,7 +200,7 @@
   const router = useRouter()
   const menuSpaceStore = useMenuSpaceStore()
   const messageStore = useMessageStore()
-  const collaborationWorkspaceStore = useTenantStore()
+  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
   const workspaceStore = useWorkspaceStore()
 
   const loading = ref(false)
@@ -300,7 +300,7 @@
 
   const resolveTeamName = (item: Api.Message.InboxItem) => {
     const collaborationWorkspaceId =
-      item.scope_type === 'team'
+      item.scope_type === 'collaboration' || item.scope_type === 'collaboration'
         ? item.scope_id ||
           item.recipient_collaboration_workspace_id ||
           item.target_collaboration_workspace_id ||
@@ -311,8 +311,9 @@
           item.scope_id
     if (!collaborationWorkspaceId) return ''
     return (
-      collaborationWorkspaceStore.teamList.find((team) => team.id === collaborationWorkspaceId)
-        ?.name || ''
+      collaborationWorkspaceStore.collaborationWorkspaceList.find(
+        (workspace) => workspace.id === collaborationWorkspaceId
+      )?.name || ''
     )
   }
 

@@ -25,7 +25,7 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 		SpaceKey:      "ops",
 		Authenticated: true,
 		ActionKeys: map[string]struct{}{
-			"team.read": {},
+			"collaboration_workspace.read": {},
 		},
 		VisibleMenuIDs: map[uuid.UUID]struct{}{
 			rootID:  {},
@@ -67,7 +67,7 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 								Path:      "all",
 								Name:      "TeamAll",
 								Title:     "所有协作空间",
-								Component: "/team/team",
+								Component: "/collaboration/workspaces",
 								Meta:      models.MetaJSON{"accessMode": "permission", "isEnable": true},
 							},
 						},
@@ -102,14 +102,14 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 				return []pagepkg.Record{
 					{
 						UIPage: models.UIPage{
-							PageKey:        "team.detail",
+							PageKey:        "collaboration_workspace.detail",
 							Name:           "协作空间详情",
 							RouteName:      "TeamDetail",
 							RoutePath:      "/detail/:id",
-							Component:      "/team/detail",
+							Component:      "/collaboration/detail",
 							PageType:       models.PageTypeInner,
 							ParentMenuID:   &entryID,
-							ActiveMenuPath: "/team/all",
+							ActiveMenuPath: "/collaboration/all",
 							Status:         "normal",
 						},
 					},
@@ -205,8 +205,8 @@ func TestCompileUsesResolvedSpaceAndCompiledAccessGraph(t *testing.T) {
 	if got := manifest.EntryRoutes[0]["name"]; got != "TeamAll" {
 		t.Fatalf("entry route name = %#v, want TeamAll", got)
 	}
-	if got := manifest.ManagedPages[0]["page_key"]; got != "team.detail" {
-		t.Fatalf("managed page key = %#v, want team.detail", got)
+	if got := manifest.ManagedPages[0]["page_key"]; got != "collaboration_workspace.detail" {
+		t.Fatalf("managed page key = %#v, want collaboration_workspace.detail", got)
 	}
 	if manifest.VersionStamp != "platform-admin:ops:1:1" {
 		t.Fatalf("manifest.VersionStamp = %q, want platform-admin:ops:1:1", manifest.VersionStamp)

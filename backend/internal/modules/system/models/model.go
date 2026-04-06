@@ -210,10 +210,10 @@ type PermissionKey struct {
 	ModuleCode            string           `gorm:"type:varchar(100);not null;default:''" json:"module_code"`
 	ModuleGroupID         *uuid.UUID       `gorm:"type:uuid;index" json:"module_group_id"`
 	FeatureGroupID        *uuid.UUID       `gorm:"type:uuid;index" json:"feature_group_id"`
-	ContextType           string           `gorm:"type:varchar(20);not null;default:'team'" json:"context_type"`
+	ContextType           string           `gorm:"type:varchar(20);not null;default:'collaboration'" json:"context_type"`
 	FeatureKind           string           `gorm:"type:varchar(20);not null;default:'system'" json:"feature_kind"`
 	DataPolicy            string           `gorm:"type:varchar(50);not null;default:'none'" json:"data_policy"`
-	AllowedWorkspaceTypes string           `gorm:"type:varchar(50);not null;default:'team'" json:"allowed_workspace_types"`
+	AllowedWorkspaceTypes string           `gorm:"type:varchar(50);not null;default:'collaboration'" json:"allowed_workspace_types"`
 	Name                  string           `gorm:"type:varchar(150);not null" json:"name"`
 	Description           string           `gorm:"type:varchar(255)" json:"description"`
 	Status                string           `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
@@ -237,7 +237,7 @@ type FeaturePackage struct {
 	PackageType string         `gorm:"type:varchar(20);not null;default:'base'" json:"package_type"`
 	Name        string         `gorm:"type:varchar(150);not null" json:"name"`
 	Description string         `gorm:"type:varchar(255)" json:"description"`
-	ContextType string         `gorm:"type:varchar(20);not null;default:'team'" json:"context_type"`
+	ContextType string         `gorm:"type:varchar(20);not null;default:'collaboration'" json:"context_type"`
 	IsBuiltin   bool           `gorm:"not null;default:false" json:"is_builtin"`
 	Status      string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
 	SortOrder   int            `gorm:"default:0" json:"sort_order"`

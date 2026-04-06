@@ -21,7 +21,10 @@
             :value="item.value"
           />
         </ElSelect>
-        <ElButton v-if="hasAction('collaboration_workspace.member.manage')" type="primary" @click="openAddDialog"
+        <ElButton
+          v-if="hasAction('collaboration_workspace.member.manage')"
+          type="primary"
+          @click="openAddDialog"
           >新增协作空间角色</ElButton
         >
       </div>
@@ -36,7 +39,10 @@
               协作空间成员身份由成员关系决定；这里配置的是协作空间内部权限角色。基础协作空间角色默认继承当前协作空间已开通功能包，协作空间自定义角色再在该范围内维护菜单权限和功能权限。
             </div>
           </div>
-          <ElButton v-if="hasAction('collaboration_workspace.member.manage')" type="primary" @click="openAddDialog"
+          <ElButton
+            v-if="hasAction('collaboration_workspace.member.manage')"
+            type="primary"
+            @click="openAddDialog"
             >新增协作空间角色</ElButton
           >
         </div>
@@ -296,4 +302,3 @@
     gap: 16px;
   }
 </style>
-

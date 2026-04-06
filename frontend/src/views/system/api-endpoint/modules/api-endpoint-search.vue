@@ -160,4 +160,3 @@
 
   const handleReset = () => emit('reset')
 </script>
-

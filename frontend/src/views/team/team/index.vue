@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="team-page art-full-height">
     <div class="page-top-stack">
       <TeamSearch
@@ -111,7 +111,12 @@
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import { useAuth } from '@/hooks/core/useAuth'
   import { useTable } from '@/hooks/core/useTable'
-  import { fetchGetTeamList, fetchDeleteTeam, fetchCreateTeam, fetchUpdateTeam } from '@/api/team'
+  import {
+    fetchGetCollaborationWorkspaceList,
+    fetchDeleteCollaborationWorkspace,
+    fetchCreateCollaborationWorkspace,
+    fetchUpdateCollaborationWorkspace
+  } from '@/api/team'
   import { fetchGetApps } from '@/api/system-manage'
   import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
   import TeamSearch from './modules/team-search.vue'
@@ -121,6 +126,7 @@
   import TeamMenuPermissionDialog from './modules/team-menu-permission-dialog.vue'
   import CollaborationWorkspaceFeaturePackageDialog from './modules/team-feature-package-dialog.vue'
   import {
+    ElButton,
     ElTag,
     ElMessageBox,
     ElMessage,
@@ -134,7 +140,7 @@
 
   defineOptions({ name: 'Team' })
 
-  type TeamListItem = Api.SystemManage.TeamListItem
+  type TeamListItem = Api.SystemManage.CollaborationWorkspaceListItem
   const { hasAction } = useAuth()
   const { targetAppKey, setManagedAppKey } = useManagedAppScope()
 
@@ -214,7 +220,9 @@
             size: Number((params as any)?.size || 20)
           }
         }
-        return fetchGetTeamList(params as Api.SystemManage.TeamSearchParams)
+        return fetchGetCollaborationWorkspaceList(
+          params as Api.SystemManage.CollaborationWorkspaceSearchParams
+        )
       },
       apiParams: {
         current: 1,
@@ -404,7 +412,7 @@
       cancelButtonText: '取消',
       type: 'warning'
     })
-      .then(() => fetchDeleteTeam(row.id))
+      .then(() => fetchDeleteCollaborationWorkspace(row.id))
       .then(() => {
         ElMessage.success('删除成功')
         refreshData()
@@ -415,7 +423,9 @@
   }
 
   const handleDialogSubmit = async (
-    payload?: Api.SystemManage.TeamCreateParams | Api.SystemManage.TeamUpdateParams
+    payload?:
+      | Api.SystemManage.CollaborationWorkspaceCreateParams
+      | Api.SystemManage.CollaborationWorkspaceUpdateParams
   ) => {
     if (!payload) {
       dialogVisible.value = false
@@ -425,12 +435,17 @@
     const isAdd = dialogType.value === 'add'
     try {
       if (isAdd) {
-        await fetchCreateTeam(payload as Api.SystemManage.TeamCreateParams)
+        await fetchCreateCollaborationWorkspace(
+          payload as Api.SystemManage.CollaborationWorkspaceCreateParams
+        )
         ElMessage.success('添加成功')
       } else {
         const id = (currentTeamData.value as TeamListItem).id
         if (!id) return
-        await fetchUpdateTeam(id, payload as Api.SystemManage.TeamUpdateParams)
+        await fetchUpdateCollaborationWorkspace(
+          id,
+          payload as Api.SystemManage.CollaborationWorkspaceUpdateParams
+        )
         ElMessage.success('更新成功')
       }
       dialogVisible.value = false

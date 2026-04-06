@@ -32,4 +32,3 @@
     justify-content: center;
   }
 </style>
-

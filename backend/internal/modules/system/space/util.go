@@ -23,7 +23,7 @@ const (
 	requestRealHostHeader      = "X-Real-Host"
 	spaceAccessModeAll         = "all"
 	spaceAccessModePlatform    = "platform_admin"
-	spaceAccessModeTeam        = "team_admin"
+	spaceAccessModeTeam        = "collaboration_workspace_admin"
 	spaceAccessModeRoleCodes   = "role_codes"
 	spaceModeSingle            = "single"
 	spaceModeMulti             = "multi"
@@ -325,7 +325,7 @@ func hasTeamAdminRole(db *gorm.DB, userID uuid.UUID, tenantID *uuid.UUID) (bool,
 	query := db.Table("collaboration_workspace_members").
 		Where("user_id = ?", userID).
 		Where("status = ?", "active").
-		Where("role_code = ?", "team_admin")
+		Where("role_code = ?", "collaboration_workspace_admin")
 	if tenantID != nil {
 		query = query.Where("collaboration_workspace_id = ?", *tenantID)
 	}

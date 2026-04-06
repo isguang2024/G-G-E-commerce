@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="art-full-height">
     <div class="page-top-stack">
       <RoleSearch
@@ -228,7 +228,11 @@
           width: 80,
           fixed: 'right',
           formatter: (row: RoleListItem) => {
-            const isDefaultRole = ['admin', 'team_admin', 'team_member'].includes(row.roleCode)
+            const isDefaultRole = [
+              'admin',
+              'collaboration_workspace_admin',
+              'collaboration_workspace_member'
+            ].includes(row.roleCode)
             const list: ButtonMoreItem[] = [
               {
                 key: 'packages',
@@ -382,4 +386,3 @@
     width: 240px;
   }
 </style>
-

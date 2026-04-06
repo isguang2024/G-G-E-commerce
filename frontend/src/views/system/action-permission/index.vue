@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="permission-page art-full-height">
     <div class="page-top-stack">
       <ActionPermissionSearch
@@ -172,7 +172,7 @@
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
-  import { ElMessage, ElMessageBox, ElTag } from 'element-plus'
+  import { ElButton, ElMessage, ElMessageBox, ElTag } from 'element-plus'
 
   defineOptions({ name: 'ActionPermission' })
 
@@ -256,7 +256,7 @@
 
   function renderContextType(row: PermissionActionItem) {
     if (row.contextType === 'platform') return h(ElTag, { type: 'warning' }, () => '平台')
-    if (row.contextType === 'team') return h(ElTag, { type: 'primary' }, () => '协作空间')
+    if (row.contextType === 'collaboration') return h(ElTag, { type: 'primary' }, () => '协作空间')
     return h(ElTag, { type: 'info' }, () => '通用')
   }
 
@@ -582,7 +582,7 @@
       fetchGetPermissionActionImpactPreview(row.id)
         .then((impact) =>
           ElMessageBox.confirm(
-            `${actionText}影响：API ${impact.apiCount}、页面 ${impact.pageCount}、功能包 ${impact.packageCount}、角色 ${impact.roleCount}、协作空间 ${impact.teamCount}、用户 ${impact.userCount}。确定继续？`,
+            `${actionText}影响：API ${impact.apiCount}、页面 ${impact.pageCount}、功能包 ${impact.packageCount}、角色 ${impact.roleCount}、协作空间 ${impact.collaborationWorkspaceCount}、用户 ${impact.userCount}。确定继续？`,
             `${actionText}确认`,
             {
               confirmButtonText: '确定',
@@ -604,7 +604,7 @@
     fetchGetPermissionActionImpactPreview(row.id)
       .then((impact) =>
         ElMessageBox.confirm(
-          `删除影响：API ${impact.apiCount}、页面 ${impact.pageCount}、功能包 ${impact.packageCount}、角色 ${impact.roleCount}、协作空间 ${impact.teamCount}、用户 ${impact.userCount}。确定删除「${row.name}」？`,
+          `删除影响：API ${impact.apiCount}、页面 ${impact.pageCount}、功能包 ${impact.packageCount}、角色 ${impact.roleCount}、协作空间 ${impact.collaborationWorkspaceCount}、用户 ${impact.userCount}。确定删除「${row.name}」？`,
           '删除确认',
           {
             confirmButtonText: '确定',
@@ -705,4 +705,3 @@
     row-gap: 8px;
   }
 </style>
-

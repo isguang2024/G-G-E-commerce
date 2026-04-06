@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="menu-space-page art-full-height" v-loading="loading">
     <AdminWorkspaceHero
       title="空间布局高级配置"
@@ -272,7 +272,7 @@
           <ElSelect v-model="spaceForm.access_mode" style="width: 100%">
             <ElOption label="全部可进" value="all" />
             <ElOption label="仅平台管理员" value="platform_admin" />
-            <ElOption label="仅协作空间管理员" value="team_admin" />
+            <ElOption label="仅协作空间管理员" value="collaboration_workspace_admin" />
             <ElOption label="指定角色码" value="role_codes" />
           </ElSelect>
           <div class="field-hint"
@@ -284,7 +284,7 @@
             v-model="allowedRoleCodesText"
             type="textarea"
             :rows="3"
-            placeholder="多个角色码用英文逗号分隔，例如 admin, team_admin, ops_manager"
+            placeholder="多个角色码用英文逗号分隔，例如 admin, collaboration_workspace_admin, ops_manager"
           />
         </ElFormItem>
         <div class="menu-space-drawer-grid">
@@ -312,7 +312,7 @@
         <ElFormItem label="Host / 子域名">
           <ElInput
             v-model="hostForm.host"
-            placeholder="例如 admin.example.com 或 team.example.com"
+            placeholder="例如 admin.example.com 或 collaboration_workspace.example.com"
           />
         </ElFormItem>
         <ElFormItem label="菜单空间">
@@ -627,7 +627,7 @@
     switch (`${value || 'all'}`.trim()) {
       case 'platform_admin':
         return '仅平台管理员'
-      case 'team_admin':
+      case 'collaboration_workspace_admin':
         return '仅协作空间管理员'
       case 'role_codes':
         return '指定角色码'
@@ -1462,4 +1462,3 @@
     }
   }
 </style>
-

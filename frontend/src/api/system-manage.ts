@@ -1,4 +1,4 @@
-﻿import request from '@/utils/http'
+import request from '@/utils/http'
 import { AppRouteRecord } from '@/types/router'
 import type { FastEnterApplication, FastEnterQuickLink } from '@/types/config'
 import { normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
@@ -59,7 +59,7 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
   ) {
     return 'platform'
   }
-  return 'team'
+  return 'collaboration'
 }
 
 function normalizePermissionGroup(value: any): Api.SystemManage.PermissionGroupItem | undefined {
@@ -208,7 +208,7 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
       ? 'platform'
       : packageKey.startsWith('common.')
         ? 'common'
-        : 'team')
+        : 'collaboration')
   return {
     id: item?.id || '',
     appKey: item?.app_key || item?.appKey || '',
@@ -220,7 +220,7 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
     isBuiltin: Boolean(item?.is_builtin ?? item?.isBuiltin ?? false),
     actionCount: item?.action_count ?? item?.actionCount ?? 0,
     menuCount: item?.menu_count ?? item?.menuCount ?? 0,
-    teamCount: item?.team_count ?? item?.teamCount ?? 0,
+    collaborationWorkspaceCount: item?.team_count ?? item?.collaborationWorkspaceCount ?? 0,
     status: item?.status || 'normal',
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
     createdAt: item?.created_at || item?.createdAt || '',
@@ -228,7 +228,7 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
   }
 }
 
-function normalizeTeam(item: any): Api.SystemManage.TeamListItem {
+function normalizeTeam(item: any): Api.SystemManage.CollaborationWorkspaceListItem {
   return {
     id: item?.id || '',
     name: item?.name || '',
@@ -461,7 +461,7 @@ function normalizeRefreshStats(item: any): Api.SystemManage.RefreshStats {
     ),
     impactedPackageCount: Number(item?.impactedPackageCount ?? item?.impacted_package_count ?? 0),
     roleCount: Number(item?.roleCount ?? item?.role_count ?? 0),
-    teamCount: Number(item?.teamCount ?? item?.team_count ?? 0),
+    collaborationWorkspaceCount: Number(item?.collaborationWorkspaceCount ?? item?.team_count ?? 0),
     userCount: Number(item?.userCount ?? item?.user_count ?? 0),
     elapsedMilliseconds: Number(item?.elapsedMilliseconds ?? item?.elapsed_milliseconds ?? 0),
     finishedAt: item?.finishedAt || item?.finished_at || ''
@@ -491,7 +491,7 @@ function normalizeFeaturePackageRelationNode(
     packageKey: item?.package_key || item?.packageKey || '',
     name: item?.name || '',
     packageType: item?.package_type || item?.packageType || 'base',
-    contextType: item?.context_type || item?.contextType || 'team',
+    contextType: item?.context_type || item?.contextType || 'collaboration',
     status: item?.status || 'normal',
     referenceCount: Number(item?.reference_count ?? item?.referenceCount ?? 0),
     children: Array.isArray(item?.children)
@@ -989,6 +989,20 @@ function normalizeUserPermissionDiagnosisResponse(
       }
     : null
 
+  const context = {
+    type: item?.context?.type || 'platform',
+    collaborationWorkspaceId:
+      item?.context?.collaboration_workspace_id || item?.context?.collaborationWorkspaceId || '',
+    collaborationWorkspaceName:
+      item?.context?.collaboration_workspace_name ||
+      item?.context?.collaborationWorkspaceName ||
+      item?.context?.tenant_name ||
+      item?.context?.tenantName ||
+      ''
+  } as Api.SystemManage.UserPermissionContext & {
+    collaborationWorkspaceName?: string
+  }
+
   return {
     user: {
       id: item?.user?.id || '',
@@ -997,12 +1011,7 @@ function normalizeUserPermissionDiagnosisResponse(
       status: item?.user?.status || 'inactive',
       isSuperAdmin: Boolean(item?.user?.is_super_admin ?? item?.user?.isSuperAdmin)
     },
-    context: {
-      type: item?.context?.type || 'platform',
-      collaborationWorkspaceId:
-        item?.context?.collaboration_workspace_id || item?.context?.collaborationWorkspaceId || '',
-      tenantName: item?.context?.tenant_name || item?.context?.tenantName || ''
-    },
+    context,
     snapshot: {
       refreshedAt: item?.snapshot?.refreshed_at || item?.snapshot?.refreshedAt || '',
       updatedAt: item?.snapshot?.updated_at || item?.snapshot?.updatedAt || '',
@@ -1040,17 +1049,20 @@ function normalizeUserPermissionDiagnosisResponse(
       sourcePackages: normalizePackages(role?.source_packages || role?.sourcePackages)
     })),
     teamMember:
-      item?.team_member || item?.teamMember
+      item?.collaboration_workspace_member || item?.teamMember
         ? {
-            id: item?.team_member?.id || item?.teamMember?.id || '',
+            id: item?.collaboration_workspace_member?.id || item?.teamMember?.id || '',
             collaborationWorkspaceId:
-              item?.team_member?.collaboration_workspace_id ||
+              item?.collaboration_workspace_member?.collaboration_workspace_id ||
               item?.teamMember?.collaborationWorkspaceId ||
               '',
-            userId: item?.team_member?.user_id || item?.teamMember?.userId || '',
-            roleCode: item?.team_member?.role_code || item?.teamMember?.roleCode || '',
-            status: item?.team_member?.status || item?.teamMember?.status || '',
-            matched: Boolean(item?.team_member?.matched ?? item?.teamMember?.matched)
+            userId: item?.collaboration_workspace_member?.user_id || item?.teamMember?.userId || '',
+            roleCode:
+              item?.collaboration_workspace_member?.role_code || item?.teamMember?.roleCode || '',
+            status: item?.collaboration_workspace_member?.status || item?.teamMember?.status || '',
+            matched: Boolean(
+              item?.collaboration_workspace_member?.matched ?? item?.teamMember?.matched
+            )
           }
         : null,
     teamPackages: normalizePackages(item?.team_packages || item?.teamPackages),
@@ -1059,9 +1071,9 @@ function normalizeUserPermissionDiagnosisResponse(
   }
 }
 
-export async function fetchGetUserTeams(userId: string) {
-  const res = await request.get<Api.SystemManage.TeamListItem[]>({
-    url: `${USER_BASE}/${userId}/teams`,
+export async function fetchGetUserCollaborationWorkspaces(userId: string) {
+  const res = await request.get<Api.SystemManage.CollaborationWorkspaceListItem[]>({
+    url: `${USER_BASE}/${userId}/collaboration-workspaces`,
     skipTenantHeader: true
   })
   return (res || []).map((item: any) => normalizeUserTeamItem(item))
@@ -1080,7 +1092,7 @@ function normalizeUserPermissionMenuTree(item: any): Api.SystemManage.UserPermis
   }
 }
 
-function normalizeUserTeamItem(item: any): Api.SystemManage.TeamListItem {
+function normalizeUserTeamItem(item: any): Api.SystemManage.CollaborationWorkspaceListItem {
   return {
     id: item?.id || '',
     name: item?.name || '',
@@ -1475,7 +1487,7 @@ export function fetchGetPermissionActionImpactPreview(id: string) {
       pageCount: Number(res?.pageCount ?? res?.page_count ?? 0),
       packageCount: Number(res?.packageCount ?? res?.package_count ?? 0),
       roleCount: Number(res?.roleCount ?? res?.role_count ?? 0),
-      teamCount: Number(res?.teamCount ?? res?.team_count ?? 0),
+      collaborationWorkspaceCount: Number(res?.collaborationWorkspaceCount ?? res?.team_count ?? 0),
       userCount: Number(res?.userCount ?? res?.user_count ?? 0)
     }))
 }
@@ -1649,9 +1661,11 @@ function normalizeFastEnterConfig(item: any): Api.SystemManage.FastEnterConfig {
   }
 }
 
-export function fetchGetTenantOptions(params?: Partial<Api.SystemManage.TeamSearchParams>) {
+export function fetchGetTenantOptions(
+  params?: Partial<Api.SystemManage.CollaborationWorkspaceSearchParams>
+) {
   return request
-    .get<{ records: Api.SystemManage.TeamListItem[]; total: number }>({
+    .get<{ records: Api.SystemManage.CollaborationWorkspaceListItem[]; total: number }>({
       url: `${TENANT_BASE}/options`,
       params
     })
@@ -1853,14 +1867,14 @@ export function fetchSetFeaturePackageMenus(id: string, menuIds: string[], appKe
 }
 
 /** 获取已开通当前功能包的协作空间 */
-export function fetchGetFeaturePackageTeams(id: string) {
+export function fetchGetFeaturePackageCollaborationWorkspaces(id: string) {
   return request.get<Api.SystemManage.FeaturePackageTeamBinding>({
-    url: `${FEATURE_PACKAGE_BASE}/${id}/teams`
+    url: `${FEATURE_PACKAGE_BASE}/${id}/collaboration-workspaces`
   })
 }
 
 /** 配置功能包开通协作空间 */
-export function fetchSetFeaturePackageTeams(
+export function fetchSetFeaturePackageCollaborationWorkspaces(
   id: string,
   collaborationWorkspaceIds: string[] | Api.SystemManage.FeaturePackageTeamSetParams
 ) {
@@ -1869,11 +1883,15 @@ export function fetchSetFeaturePackageTeams(
     : collaborationWorkspaceIds
   return request
     .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}/teams`,
+      url: `${FEATURE_PACKAGE_BASE}/${id}/collaboration-workspaces`,
       data: payload
     })
     .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
 }
+
+export const fetchGetUserTeams = fetchGetUserCollaborationWorkspaces
+export const fetchGetFeaturePackageTeams = fetchGetFeaturePackageCollaborationWorkspaces
+export const fetchSetFeaturePackageTeams = fetchSetFeaturePackageCollaborationWorkspaces
 
 /** 获取协作空间已开通的功能包 */
 export function fetchGetCollaborationWorkspaceFeaturePackages(
@@ -1882,7 +1900,7 @@ export function fetchGetCollaborationWorkspaceFeaturePackages(
 ) {
   return request
     .get<Api.SystemManage.CollaborationWorkspaceFeaturePackageResponse>({
-      url: `${FEATURE_PACKAGE_BASE}/teams/${collaborationWorkspaceId}`,
+      url: `${FEATURE_PACKAGE_BASE}/collaboration-workspaces/${collaborationWorkspaceId}`,
       params: {
         ...(appKey ? { app_key: appKey } : {})
       }
@@ -1902,7 +1920,7 @@ export function fetchSetCollaborationWorkspaceFeaturePackages(
   const payload = Array.isArray(packageIds) ? { package_ids: packageIds } : packageIds
   return request
     .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
-      url: `${FEATURE_PACKAGE_BASE}/teams/${collaborationWorkspaceId}`,
+      url: `${FEATURE_PACKAGE_BASE}/collaboration-workspaces/${collaborationWorkspaceId}`,
       params: {
         ...(appKey ? { app_key: appKey } : {})
       },
@@ -1919,7 +1937,7 @@ export function fetchGetFeaturePackageImpactPreview(id: string) {
     .then((res: any) => ({
       packageId: res?.package_id || res?.packageId || '',
       roleCount: Number(res?.role_count ?? res?.roleCount ?? 0),
-      teamCount: Number(res?.team_count ?? res?.teamCount ?? 0),
+      collaborationWorkspaceCount: Number(res?.team_count ?? res?.collaborationWorkspaceCount ?? 0),
       userCount: Number(res?.user_count ?? res?.userCount ?? 0),
       menuCount: Number(res?.menu_count ?? res?.menuCount ?? 0),
       actionCount: Number(res?.action_count ?? res?.actionCount ?? 0)
@@ -2015,7 +2033,7 @@ export function fetchGetPageOptions(spaceKey?: string, appKey?: string) {
 /**
  * 获取运行时导航清单。
  *
- * 后端会在当前 user / team / space 上下文内一次性编译菜单树、菜单入口路由和受管页面，
+ * 后端会在当前 user / collaboration / space 上下文内一次性编译菜单树、菜单入口路由和受管页面，
  * 前端只做轻量归一化与动态路由注册，不再重复做导航显隐权限裁剪。
  */
 export function fetchGetRuntimeNavigation(spaceKey?: string, appKey?: string) {

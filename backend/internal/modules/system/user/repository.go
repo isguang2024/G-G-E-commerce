@@ -309,7 +309,7 @@ func (r *roleRepository) List() ([]Role, error) {
 func (r *roleRepository) ListTeamRoles(tenantID uuid.UUID) ([]Role, error) {
 	var roles []Role
 	err := r.db.
-		Where("(collaboration_workspace_id IS NULL AND code IN ?) OR collaboration_workspace_id = ?", []string{"team_admin", "team_member"}, tenantID).
+		Where("(collaboration_workspace_id IS NULL AND code IN ?) OR collaboration_workspace_id = ?", []string{"collaboration_workspace_admin", "collaboration_workspace_member"}, tenantID).
 		Order("collaboration_workspace_id IS NULL DESC, sort_order ASC, created_at DESC").
 		Find(&roles).Error
 	return roles, err
@@ -984,7 +984,7 @@ func (r *tenantMemberRepository) GetAdminUsersByCollaborationWorkspaceID(tenantI
 		Where(
 			"collaboration_workspace_members.collaboration_workspace_id = ? AND collaboration_workspace_members.role_code = ? AND collaboration_workspace_members.deleted_at IS NULL",
 			tenantID,
-			"team_admin",
+			"collaboration_workspace_admin",
 		).
 		Find(&users).Error
 	return users, err

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="console-page art-full-height">
     <AdminWorkspaceHero
       title="后台工作台"
@@ -71,18 +71,25 @@
   import { computed } from 'vue'
   import { useRouter } from 'vue-router'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
-  import { useTenantStore } from '@/store/modules/tenant'
+  import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
 
   defineOptions({ name: 'Console' })
 
   const router = useRouter()
-  const collaborationWorkspaceStore = useTenantStore()
-  const { currentContextMode, currentTeam, currentAuthWorkspace, teamList } =
-    storeToRefs(collaborationWorkspaceStore)
+  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
+  const {
+    currentContextMode,
+    currentCollaborationWorkspace,
+    currentAuthWorkspace,
+    collaborationWorkspaceList
+  } = storeToRefs(collaborationWorkspaceStore)
 
   const heroMetrics = computed(() => [
-    { label: '协作空间数量', value: teamList.value.length || 0 },
-    { label: '当前协作空间视图', value: currentTeam.value?.name || '未启用协作空间视图' },
+    { label: '协作空间数量', value: collaborationWorkspaceList.value.length || 0 },
+    {
+      label: '当前协作空间视图',
+      value: currentCollaborationWorkspace.value?.name || '未启用协作空间视图'
+    },
     {
       label: '授权工作空间',
       value:
@@ -94,7 +101,9 @@
   const currentScopeName = computed(() =>
     currentContextMode.value === 'platform'
       ? currentAuthWorkspace.value?.name || '个人工作空间'
-      : currentTeam.value?.name || currentAuthWorkspace.value?.name || '未选择协作空间'
+      : currentCollaborationWorkspace.value?.name ||
+        currentAuthWorkspace.value?.name ||
+        '未选择协作空间'
   )
   const currentScopeDescription = computed(() =>
     currentContextMode.value === 'platform'
@@ -125,7 +134,7 @@
           {
             title: '协作空间成员',
             text: '先确认当前协作空间成员、角色和菜单边界是否生效。',
-            path: '/team/team-members'
+            path: '/collaboration/members'
           },
           {
             title: '协作空间角色边界',
@@ -135,7 +144,7 @@
           {
             title: '协作空间总览',
             text: '检查协作空间资料、功能包和成员入口是否可用。',
-            path: '/team/team'
+            path: '/collaboration/workspaces'
           }
         ]
   )
@@ -299,4 +308,3 @@
     }
   }
 </style>
-

@@ -7,7 +7,7 @@
 - 后端：`go test ./...`
 - 前端：`pnpm exec vue-tsc --noEmit`
 - 演示数据：`go run ./cmd/init-demo`
-- 固定账号：`platform_admin_demo`、`team_admin_demo`、`member_demo`
+- 固定账号：`platform_admin_demo`、`collaboration_workspace_admin_demo`、`member_demo`
 - 固定空间：`default`、`ops`
 
 ## 菜单管理

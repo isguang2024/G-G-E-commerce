@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ElDrawer
     v-model="visible"
     :title="`协作空间功能包 - ${teamName}`"
@@ -208,11 +208,14 @@
     try {
       const [listRes, teamRes] = await Promise.all([
         fetchGetFeaturePackageOptions({
-          contextType: 'team',
+          contextType: 'collaboration',
           status: 'normal',
           appKey: currentAppKey.value
         }),
-        fetchGetCollaborationWorkspaceFeaturePackages(props.collaborationWorkspaceId, currentAppKey.value)
+        fetchGetCollaborationWorkspaceFeaturePackages(
+          props.collaborationWorkspaceId,
+          currentAppKey.value
+        )
       ])
       packages.value = listRes?.records || []
       selectedPackageIds.value = [...(teamRes?.package_ids || [])]
@@ -300,7 +303,7 @@
   })
 
   function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
-    return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.teamCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
+    return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.collaborationWorkspaceCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`
   }
 </script>
 
@@ -395,4 +398,3 @@
     }
   }
 </style>
-

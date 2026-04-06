@@ -1,4 +1,4 @@
-﻿/**
+/**
  * 路由全局前置守卫模块
  *
  * 提供完整的路由导航守卫功能
@@ -49,7 +49,10 @@ import { staticRoutes } from '../routes/staticRoutes'
 import { loadingService } from '@/utils/ui'
 import { useCommon } from '@/hooks/core/useCommon'
 import { useWorktabStore } from '@/store/modules/worktab'
-import { hasPlatformAccessByUserInfo, useTenantStore } from '@/store/modules/tenant'
+import {
+  hasPlatformAccessByUserInfo,
+  useCollaborationWorkspaceStore
+} from '@/store/modules/collaboration-workspace'
 import { useWorkspaceStore } from '@/store/modules/workspace'
 import { useMenuSpaceStore } from '@/store/modules/menu-space'
 import { useAppContextStore } from '@/store/modules/app-context'
@@ -231,7 +234,7 @@ function buildFrontendUserInfo(data: Api.Auth.UserInfo): Api.Auth.UserInfo {
 
 export async function refreshCurrentUserInfoContext(): Promise<void> {
   const userStore = useUserStore()
-  const collaborationWorkspaceStore = useTenantStore()
+  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
   const workspaceStore = useWorkspaceStore()
   const menuSpaceStore = useMenuSpaceStore()
   const data = await fetchGetUserInfo()
@@ -241,9 +244,10 @@ export async function refreshCurrentUserInfoContext(): Promise<void> {
   }
   userStore.setUserInfo(mergedInfo)
   collaborationWorkspaceStore.setPlatformAccess(hasPlatformAccessByUserInfo(mergedInfo))
-  await collaborationWorkspaceStore.loadMyTeams({
+  await collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
     preferredCollaborationWorkspaceId: data.current_collaboration_workspace_id || '',
-    preferredLegacyCollaborationWorkspaceId: data.collaboration_workspace_id || data.current_collaboration_workspace_id || '',
+    preferredLegacyCollaborationWorkspaceId:
+      data.collaboration_workspace_id || data.current_collaboration_workspace_id || '',
     preferredWorkspaceId:
       workspaceStore.currentAuthWorkspaceId || data.current_auth_workspace_id || '',
     preferredWorkspaceType:
@@ -612,7 +616,7 @@ function mapBackendRolesToFrontend(data: {
  */
 async function fetchUserInfo(preferredSpaceKey = ''): Promise<void> {
   const userStore = useUserStore()
-  const collaborationWorkspaceStore = useTenantStore()
+  const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
   const workspaceStore = useWorkspaceStore()
   const menuSpaceStore = useMenuSpaceStore()
   const data = await fetchGetUserInfo()
@@ -624,9 +628,10 @@ async function fetchUserInfo(preferredSpaceKey = ''): Promise<void> {
   menuSpaceStore.syncRuntimeHost()
   await menuSpaceStore.refreshRuntimeConfig(true)
   await menuSpaceStore.syncResolvedCurrentSpace(preferredSpaceKey)
-  await collaborationWorkspaceStore.loadMyTeams({
+  await collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
     preferredCollaborationWorkspaceId: data.current_collaboration_workspace_id || '',
-    preferredLegacyCollaborationWorkspaceId: data.collaboration_workspace_id || data.current_collaboration_workspace_id || '',
+    preferredLegacyCollaborationWorkspaceId:
+      data.collaboration_workspace_id || data.current_collaboration_workspace_id || '',
     preferredWorkspaceId: data.current_auth_workspace_id || '',
     preferredWorkspaceType: data.current_auth_workspace_type || '',
     preferPlatform: hasPlatformAccessByUserInfo(frontendUserInfo)
@@ -726,4 +731,3 @@ async function tryRefreshMissingDynamicRoute(
     return false
   }
 }
-

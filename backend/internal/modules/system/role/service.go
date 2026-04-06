@@ -240,7 +240,7 @@ func (s *roleService) Delete(id uuid.UUID) error {
 	if role.CollaborationWorkspaceID != nil {
 		return ErrTenantRoleManagedByTeam
 	}
-	if role.Code == "admin" || role.Code == "team_admin" || role.Code == "team_member" {
+	if role.Code == "admin" || role.Code == "collaboration_workspace_admin" || role.Code == "collaboration_workspace_member" {
 		return ErrSystemRoleCannotDelete
 	}
 	var affectedUserIDs []uuid.UUID
@@ -404,7 +404,7 @@ func (s *roleService) SetRoleKeys(roleID uuid.UUID, keys []user.RoleKeyPermissio
 	if role.CollaborationWorkspaceID != nil {
 		return ErrTenantRoleManagedByTeam
 	}
-	if role.Code == "team_admin" || role.Code == "team_member" {
+	if role.Code == "collaboration_workspace_admin" || role.Code == "collaboration_workspace_member" {
 		return ErrTeamRoleKeyReadonly
 	}
 	keyIDs := make([]uuid.UUID, 0, len(keys))
