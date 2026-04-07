@@ -75,14 +75,38 @@ func (e *gormEvaluator) Resolve(ctx context.Context, accountID, workspaceID uuid
 	if e.db == nil {
 		return nil, errors.New("evaluator: database not initialized")
 	}
-	if workspaceID == uuid.Nil {
-		return nil, errors.New("evaluator: workspace id is required")
-	}
-
 	resolved := &ResolvedPermissions{
 		AccountID:   accountID,
 		WorkspaceID: workspaceID,
 		Keys:        make(map[string]struct{}),
+	}
+
+	// super_admin shortcut: returns every permission_key in the table.
+	isSuper, err := e.isSuperAdmin(ctx, accountID)
+	if err != nil {
+		return nil, fmt.Errorf("evaluator: super_admin check: %w", err)
+	}
+	if isSuper {
+		allKeys, err := e.queryAllPermissionKeys(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("evaluator: load all keys: %w", err)
+		}
+		for _, k := range allKeys {
+			resolved.Keys[k] = struct{}{}
+		}
+		return resolved, nil
+	}
+
+	// Account-only path: union across all workspaces the account is a member of.
+	if workspaceID == uuid.Nil {
+		keys, err := e.queryAccountUnionKeys(ctx, accountID)
+		if err != nil {
+			return nil, fmt.Errorf("evaluator: account union: %w", err)
+		}
+		for _, k := range keys {
+			resolved.Keys[k] = struct{}{}
+		}
+		return resolved, nil
 	}
 
 	// 1. Workspace (feature-package) side: the upper bound of what this
@@ -256,6 +280,55 @@ WHERE NOT EXISTS (
 	out := make(map[string][]uuid.UUID, len(rows))
 	for _, r := range rows {
 		out[r.PermissionKey] = append(out[r.PermissionKey], r.RoleID)
+	}
+	return out, nil
+}
+
+// isSuperAdmin reports whether the given user has the global super_admin flag.
+func (e *gormEvaluator) isSuperAdmin(ctx context.Context, accountID uuid.UUID) (bool, error) {
+	if accountID == uuid.Nil {
+		return false, nil
+	}
+	const q = `SELECT is_super_admin FROM users WHERE id = ? AND deleted_at IS NULL LIMIT 1`
+	var flag bool
+	if err := e.db.WithContext(ctx).Raw(q, accountID).Scan(&flag).Error; err != nil {
+		return false, err
+	}
+	return flag, nil
+}
+
+func (e *gormEvaluator) queryAllPermissionKeys(ctx context.Context) ([]string, error) {
+	const q = `SELECT permission_key FROM permission_keys WHERE deleted_at IS NULL AND permission_key <> ''`
+	var out []string
+	if err := e.db.WithContext(ctx).Raw(q).Scan(&out).Error; err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// queryAccountUnionKeys returns the union of resolved permission keys across
+// every workspace the account is a member of. Used for account-only ops where
+// no specific workspace is bound.
+func (e *gormEvaluator) queryAccountUnionKeys(ctx context.Context, accountID uuid.UUID) ([]string, error) {
+	var workspaceIDs []uuid.UUID
+	if err := e.db.WithContext(ctx).
+		Raw(`SELECT workspace_id FROM workspace_members WHERE user_id = ? AND deleted_at IS NULL`, accountID).
+		Scan(&workspaceIDs).Error; err != nil {
+		return nil, err
+	}
+	seen := make(map[string]struct{})
+	for _, wsID := range workspaceIDs {
+		r, err := e.Resolve(ctx, accountID, wsID)
+		if err != nil {
+			return nil, err
+		}
+		for k := range r.Keys {
+			seen[k] = struct{}{}
+		}
+	}
+	out := make([]string, 0, len(seen))
+	for k := range seen {
+		out = append(out, k)
 	}
 	return out, nil
 }

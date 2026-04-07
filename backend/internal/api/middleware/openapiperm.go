@@ -43,12 +43,10 @@ func OpenAPIPermission(eval evaluator.Evaluator, lookup map[string]string, logge
 			return next(req)
 		}
 
-		workspaceID, scoped := workspaceIDFromParams(req.Params)
-		if !scoped {
-			logger.Debug("openapi perm: no workspace param, skipping",
-				zap.String("op", req.OperationID), zap.String("key", key))
-			return next(req)
-		}
+		// Workspace-scoped op uses the path/query workspace UUID; account-only
+		// ops fall through to evaluator.Can with uuid.Nil and the evaluator is
+		// expected to union across all member workspaces.
+		workspaceID, _ := workspaceIDFromParams(req.Params)
 
 		allowed, err := eval.Can(req.Context, userID, workspaceID, key)
 		if err != nil {

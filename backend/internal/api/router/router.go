@@ -64,6 +64,16 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 	logger.Info("openapi seed loaded", zap.Int("operations", len(seed.Operations)))
 	permLookup := seed.PermissionKeyByOperationID()
 
+	// Phase 3 follow-up: consistency check. Every non-public/non-authenticated
+	// operation must resolve to a permission_keys row — otherwise the evaluator
+	// will silently deny at runtime. Warn-only so DB-less smoke boots keep
+	// working; prod boot treats count > 0 as a release blocker.
+	if missing := findMissingPermissionKeys(db, seed); len(missing) > 0 {
+		logger.Warn("openapi seed references permission_keys missing from DB",
+			zap.Strings("keys", missing),
+			zap.Int("count", len(missing)))
+	}
+
 	// Phase 3: build the permission evaluator once and share across handlers.
 	permEvaluator := evaluator.New(db, logger)
 
@@ -182,4 +192,46 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 	}
 
 	return r
+}
+
+// findMissingPermissionKeys returns permission_key strings referenced by
+// the OpenAPI seed but absent from the permission_keys table. Used by the
+// startup consistency check — warn-only, so DB-less unit/CI smoke boots
+// don't fail just because the seed row hasn't been inserted yet.
+func findMissingPermissionKeys(db *gorm.DB, seed *permissionseed.OpenAPISeed) []string {
+	if db == nil || seed == nil {
+		return nil
+	}
+	wanted := make(map[string]struct{})
+	for _, op := range seed.Operations {
+		if op.PermissionKey == "" {
+			continue
+		}
+		wanted[op.PermissionKey] = struct{}{}
+	}
+	if len(wanted) == 0 {
+		return nil
+	}
+	keys := make([]string, 0, len(wanted))
+	for k := range wanted {
+		keys = append(keys, k)
+	}
+	var existing []string
+	if err := db.Raw(
+		`SELECT permission_key FROM permission_keys WHERE permission_key IN ? AND deleted_at IS NULL`,
+		keys,
+	).Scan(&existing).Error; err != nil {
+		return nil
+	}
+	have := make(map[string]struct{}, len(existing))
+	for _, k := range existing {
+		have[k] = struct{}{}
+	}
+	missing := make([]string, 0)
+	for k := range wanted {
+		if _, ok := have[k]; !ok {
+			missing = append(missing, k)
+		}
+	}
+	return missing
 }
