@@ -58,14 +58,14 @@ func (m *UserModule) RegisterRoutes(rg *gin.RouterGroup) {
 		// Phase 4 slice 5: list/get/create/update/delete/assignRoles migrated
 		// to ogen handlers in internal/api/handlers/user.go. Only not-yet-migrated
 		// secondary routes remain wired here.
-		reg.GETProtected("/:id/collaboration-workspaces", reg.Meta("获取用户所在协作空间").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.GetCollaborationWorkspaces)
+		// Phase 4: /users/:id/collaboration-workspaces migrated to ogen.
 		reg.GETAction("/:id/packages", "获取用户功能包", "feature_package.assign_collaboration_workspace", authzService.RequireAction, userHandler.GetPackages)
 		reg.PUTAction("/:id/packages", "配置用户功能包", "feature_package.assign_collaboration_workspace", authzService.RequireAction, userHandler.SetPackages)
 		reg.GETProtected("/:id/menus", reg.Meta("获取用户菜单裁剪").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.GetMenus)
 		reg.PUTProtected("/:id/menus", reg.Meta("配置用户菜单裁剪").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.SetMenus)
 		reg.GETProtected("/:id/permissions", reg.Meta("获取用户菜单权限").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.GetPermissions)
 		reg.GETProtected("/:id/permission-diagnosis", reg.Meta("获取用户权限诊断").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.GetPermissionDiagnosis)
-		reg.POSTProtected("/:id/permission-refresh", reg.Meta("刷新用户权限快照").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.RefreshPermissionSnapshot)
+		// Phase 4: /users/:id/permission-refresh migrated to ogen.
 	}
 }
 

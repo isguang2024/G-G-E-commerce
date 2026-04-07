@@ -204,3 +204,27 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 **下次方向**
 - 在 `router.go` 批量补齐 featurepackage / permission / menu / page / collaborationworkspace 的 `ogenBridge` 入口，并在对应 legacy `module.go` 顶部早 return，让新 handler 真正生效后再次 `go build ./...`。
 - 收尾剩余 501 stub：user 子路由、system、message、CW boundary 复杂操作、menu backup restore、fp rollback、permission 批量更新等。
+
+### 2026-04-08 Phase 4 续推：28 ops 上线 + 路由桥接（Phase 4）
+
+**本次改动**
+- 新增 `handlers/extras.go`、`system.go`、`cwcurrent.go`，合计 28 个 ogen 操作（feature-package/permission/menu/page 尾部 + system apps/menu-spaces + cw current/my 基础）。
+- `router.go` 桥接全部 28 条新路径；对应 legacy module.go 删除冲突注册：featurepackage/permission/menu/page 的 RegisterRoutes 已整体早 return，system/collaborationworkspace 仅删除已迁移行，未动的路由保持 gin 服务。
+- `go build ./...` 通过；剩余 501 stub 56 个（user 子路由 8、message 16、system fast-enter/view-pages 3、CW boundary 复杂操作 ~29）。
+
+**下次方向**
+- message 域：导出 `internal/modules/system/system/message_service.go` 的请求/响应类型并在 `NewAPIHandler` 注入 messageSvc，然后落 16 个 ops。
+- user 子路由：把 UserHandler 内的 snapshot/diagnosis 逻辑下沉到 `user.UserService` 后再迁移 8 个 ops。
+- CW boundary 写操作：给 boundarySvc 增加 role/menu/action 栅格的写入入口或新建 cwroles 服务，再迁移剩余 ~24 个 ops。
+
+### 2026-04-08 Phase 4 CW boundary ogen 迁移 ~29 ops（Phase 4）
+
+**本次改动**
+- 新增 `handlers/cwboundary.go`（888 行，29 个 ogen 操作）：ListCurrentCWRoles、CreateCurrentCWRole/BoundaryRole、UpdateCurrentCWBoundaryRole、DeleteCurrentCWBoundaryRole、Get/SetCurrentCWBoundaryRole{Packages,Menus,Actions}、GetCurrentCWBoundaryPackages、GetCurrentCW{Menus,MenuOrigins,Actions,ActionOrigins}、Get/SetCurrentCWMemberRoles、GetCW{Menus,MenuOrigins,Actions,ActionOrigins}、SetCW{Menus,Actions}、ListCWRoles。
+- `workspace.go` 为 APIHandler 新增 `db`/`roleRepo`/`userRoleRepo`/`featurePkgRepo`/`cwFeaturePkgRepo`/`keyRepo` 字段并在 `NewAPIHandler` 中注入。
+- `router.go` 追加 29 条 `ogenBridge` 路径（`/current/roles`、`/current/boundary/…`、`/current/menus`、`/current/action-origins` 等及 `/:id/roles`、`/:id/menus`、`/:id/actions` 等）；`module.go` 同步删除对应 27 条 legacy gin 注册，`go build ./...` 通过。
+
+**下次方向**
+- message 域 16 ops：导出 messageSvc 后迁移。
+- user 子路由 8 ops（snapshot/diagnosis）：下沉到 UserService 后迁移。
+- system fast-enter/view-pages 3 ops 及剩余 stub 清零后可删除所有 legacy module RegisterRoutes 入口。

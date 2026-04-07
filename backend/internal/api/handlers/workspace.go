@@ -25,6 +25,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/permission"
 	"github.com/gg-ecommerce/backend/internal/modules/system/role"
 	"github.com/gg-ecommerce/backend/internal/modules/system/space"
+	systemmod "github.com/gg-ecommerce/backend/internal/modules/system/system"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/modules/system/workspace"
 	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
@@ -68,6 +69,8 @@ type APIHandler struct {
 	spaceSvc    space.Service
 	boundarySvc collaborationworkspaceboundary.Service
 	cwMemberRepo user.CollaborationWorkspaceMemberRepository
+	systemFacade *systemmod.Facade
+	refresher    permissionrefresh.Service
 }
 
 func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval evaluator.Evaluator) *APIHandler {
@@ -189,6 +192,8 @@ func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval eva
 		spaceSvc:      spaceSvc,
 		boundarySvc:   boundarySvc,
 		cwMemberRepo:  cwMemberRepo,
+		systemFacade:  systemmod.NewFacade(db, logger, nil),
+		refresher:     refresher,
 	}
 }
 

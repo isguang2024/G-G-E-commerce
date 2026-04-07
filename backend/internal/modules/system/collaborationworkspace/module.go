@@ -86,12 +86,6 @@ func (m *CollaborationWorkspaceModule) RegisterRoutes(rg *gin.RouterGroup) {
 	collaborationWorkspaces := rg.Group("/collaboration-workspaces")
 	reg := apiregistry.NewRegistrar(collaborationWorkspaces, "collaboration_workspace")
 	{
-		reg.GET("/mine", &apiregistry.RouteMeta{Summary: "获取我的协作空间列表"}, collaborationWorkspaceHandler.ListMyCollaborationWorkspaces)
-		reg.GET("/current", &apiregistry.RouteMeta{Summary: "获取当前协作空间详情"}, collaborationWorkspaceHandler.GetCurrentCollaborationWorkspace)
-		reg.GET("/current/members", &apiregistry.RouteMeta{Summary: "获取当前协作空间成员列表"}, collaborationWorkspaceHandler.ListMyMembers)
-		reg.POSTAction("/current/members", "添加当前协作空间成员", "collaboration_workspace.member.manage", authzService.RequireAction, collaborationWorkspaceHandler.AddMyMember)
-		reg.DELETEAction("/current/members/:userId", "移除当前协作空间成员", "collaboration_workspace.member.manage", authzService.RequireAction, collaborationWorkspaceHandler.RemoveMyMember)
-		reg.PUTAction("/current/members/:userId/role", "更新当前协作空间成员身份", "collaboration_workspace.member.manage", authzService.RequireAction, collaborationWorkspaceHandler.UpdateMyMemberRole)
 		reg.GETAction("/current/members/:userId/roles", "获取当前协作空间成员角色", "collaboration_workspace.member.manage", authzService.RequireAction, collaborationWorkspaceHandler.GetMyCollaborationWorkspaceMemberRoles)
 		reg.PUTAction("/current/members/:userId/roles", "配置当前协作空间成员角色", "collaboration_workspace.member.manage", authzService.RequireAction, collaborationWorkspaceHandler.SetMyCollaborationWorkspaceMemberRoles)
 		reg.GETAction("/current/roles", "获取当前协作空间可分配角色", "collaboration_workspace.member.manage", authzService.RequireAction, collaborationWorkspaceHandler.ListCurrentCollaborationWorkspaceRoles)

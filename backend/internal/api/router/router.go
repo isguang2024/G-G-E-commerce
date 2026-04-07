@@ -195,6 +195,8 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.GET("/runtime/navigation", ogenBridge)
 
 			// Phase 4: feature-package domain
+			authenticated.GET("/feature-packages/relationship-tree", ogenBridge)
+			authenticated.POST("/feature-packages/:id/rollback", ogenBridge)
 			authenticated.GET("/feature-packages", ogenBridge)
 			authenticated.GET("/feature-packages/options", ogenBridge)
 			authenticated.POST("/feature-packages", ogenBridge)
@@ -231,6 +233,10 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.PUT("/permission-actions/:id", ogenBridge)
 			authenticated.DELETE("/permission-actions/:id", ogenBridge)
 			authenticated.DELETE("/permission-actions/:id/endpoints/:endpointCode", ogenBridge)
+			authenticated.POST("/permission-actions/batch", ogenBridge)
+			authenticated.POST("/permission-actions/templates", ogenBridge)
+			authenticated.POST("/permission-actions/groups", ogenBridge)
+			authenticated.PUT("/permission-actions/groups/:id", ogenBridge)
 
 			// Phase 4: menu domain
 			authenticated.GET("/menus/tree", ogenBridge)
@@ -244,6 +250,8 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.GET("/menus/backups", ogenBridge)
 			authenticated.POST("/menus/backups", ogenBridge)
 			authenticated.DELETE("/menus/backups/:id", ogenBridge)
+			authenticated.GET("/menus/:id/delete-preview", ogenBridge)
+			authenticated.POST("/menus/backups/:id/restore", ogenBridge)
 
 			// Phase 4: page domain
 			authenticated.GET("/pages", ogenBridge)
@@ -257,6 +265,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.POST("/pages/sync", ogenBridge)
 			authenticated.PUT("/pages/:id", ogenBridge)
 			authenticated.DELETE("/pages/:id", ogenBridge)
+			authenticated.GET("/pages/access-trace", ogenBridge)
 
 			// Phase 4: collaboration-workspace domain
 			authenticated.GET("/collaboration-workspaces", ogenBridge)
@@ -269,6 +278,57 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.POST("/collaboration-workspaces/:id/members", ogenBridge)
 			authenticated.DELETE("/collaboration-workspaces/:id/members/:userId", ogenBridge)
 			authenticated.PUT("/collaboration-workspaces/:id/members/:userId/role", ogenBridge)
+			authenticated.GET("/collaboration-workspaces/mine", ogenBridge)
+			authenticated.GET("/collaboration-workspaces/current", ogenBridge)
+			authenticated.GET("/collaboration-workspaces/current/members", ogenBridge)
+			authenticated.POST("/collaboration-workspaces/current/members", ogenBridge)
+			authenticated.DELETE("/collaboration-workspaces/current/members/:userId", ogenBridge)
+			authenticated.PUT("/collaboration-workspaces/current/members/:userId/role", ogenBridge)
+
+			// Phase 4: system app + menu-space domain
+			authenticated.GET("/system/apps", ogenBridge)
+			authenticated.POST("/system/apps", ogenBridge)
+			authenticated.GET("/system/apps/current", ogenBridge)
+			authenticated.GET("/system/app-host-bindings", ogenBridge)
+			authenticated.POST("/system/app-host-bindings", ogenBridge)
+			authenticated.GET("/system/menu-spaces", ogenBridge)
+			authenticated.POST("/system/menu-spaces", ogenBridge)
+			authenticated.GET("/system/menu-spaces/current", ogenBridge)
+			authenticated.GET("/system/menu-space-mode", ogenBridge)
+			authenticated.PUT("/system/menu-space-mode", ogenBridge)
+			authenticated.POST("/system/menu-spaces/:spaceKey/initialize-default", ogenBridge)
+			authenticated.GET("/system/menu-space-host-bindings", ogenBridge)
+			authenticated.POST("/system/menu-space-host-bindings", ogenBridge)
+
+			// Phase 4: system fast-enter + view-pages migrated to ogen.
+			authenticated.GET("/system/view-pages", ogenBridge)
+			authenticated.GET("/system/fast-enter", ogenBridge)
+			authenticated.PUT("/system/fast-enter", ogenBridge)
+
+			// Phase 4: message domain migrated to ogen handlers.
+			authenticated.GET("/messages/inbox/summary", ogenBridge)
+			authenticated.GET("/messages/inbox", ogenBridge)
+			authenticated.GET("/messages/inbox/:deliveryId", ogenBridge)
+			authenticated.POST("/messages/inbox/:deliveryId/read", ogenBridge)
+			authenticated.POST("/messages/inbox/read-all", ogenBridge)
+			authenticated.POST("/messages/inbox/:deliveryId/todo-action", ogenBridge)
+			authenticated.GET("/messages/dispatch/options", ogenBridge)
+			authenticated.POST("/messages/dispatch", ogenBridge)
+			authenticated.GET("/messages/templates", ogenBridge)
+			authenticated.POST("/messages/templates", ogenBridge)
+			authenticated.PUT("/messages/templates/:templateId", ogenBridge)
+			authenticated.GET("/messages/senders", ogenBridge)
+			authenticated.POST("/messages/senders", ogenBridge)
+			authenticated.PUT("/messages/senders/:senderId", ogenBridge)
+			authenticated.GET("/messages/recipient-groups", ogenBridge)
+			authenticated.POST("/messages/recipient-groups", ogenBridge)
+			authenticated.PUT("/messages/recipient-groups/:groupId", ogenBridge)
+			authenticated.GET("/messages/records", ogenBridge)
+			authenticated.GET("/messages/records/:recordId", ogenBridge)
+
+			// Phase 4: user sub-routes (collaboration workspaces + refresh) migrated.
+			authenticated.GET("/users/:id/collaboration-workspaces", ogenBridge)
+			authenticated.POST("/users/:id/permission-refresh", ogenBridge)
 
 			userModule.RegisterRoutes(authenticated)
 			menuModule.RegisterRoutes(authenticated)
