@@ -26,7 +26,12 @@ import (
 // before handing the request to the generated server.
 type ctxKey string
 
-const CtxUserID ctxKey = "user_id"
+const (
+	CtxUserID                   ctxKey = "user_id"
+	CtxAuthWorkspaceID          ctxKey = "auth_workspace_id"
+	CtxAuthWorkspaceType        ctxKey = "auth_workspace_type"
+	CtxCollaborationWorkspaceID ctxKey = "collaboration_workspace_id"
+)
 
 // APIHandler implements gen.Handler. It deliberately embeds
 // gen.UnimplementedHandler so future operations compile without forcing us

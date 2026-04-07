@@ -105,10 +105,9 @@ paths:
       operationId: getAuthMe
       summary: 获取当前登录账户信息
       tags: [auth]
-      x-permission-key: auth.me
       x-tenant-scoped: false
       x-app-scope: none
-      x-access-mode: permission
+      x-access-mode: authenticated
       responses:
         '200':
           description: OK
@@ -388,7 +387,7 @@ components:
           type: integer
     AuthMe:
       type: object
-      required: [id, username]
+      required: [id, username, is_super_admin, actions, roles]
       properties:
         id:
           type: string
@@ -402,6 +401,57 @@ components:
           type: string
           nullable: true
         avatar:
+          type: string
+          nullable: true
+        avatar_url:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+        is_super_admin:
+          type: boolean
+        created_at:
+          type: string
+          nullable: true
+        current_auth_workspace_id:
+          type: string
+          format: uuid
+          nullable: true
+        current_auth_workspace_type:
+          type: string
+          nullable: true
+        collaboration_workspace_id:
+          type: string
+          format: uuid
+          nullable: true
+        current_collaboration_workspace_id:
+          type: string
+          format: uuid
+          nullable: true
+        actions:
+          type: array
+          items:
+            type: string
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthMeRole'
+    AuthMeRole:
+      type: object
+      required: [id, code, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
           type: string
           nullable: true
     WorkspaceSwitchRequest:

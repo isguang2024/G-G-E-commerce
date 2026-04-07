@@ -6,10 +6,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	workspacepkg "github.com/gg-ecommerce/backend/internal/modules/system/workspace"
-	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
-	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
 )
 
@@ -33,22 +29,9 @@ func (m *AuthModule) Init() error {
 }
 
 func (m *AuthModule) RegisterRoutes(rg *gin.RouterGroup) {
-	userRepo := user.NewUserRepository(m.db)
-	collaborationWorkspaceMemberRepo := user.NewCollaborationWorkspaceMemberRepository(m.db)
-	workspaceService := workspacepkg.NewService(m.db, m.logger)
-	authService := NewAuthService(userRepo, &m.config.JWT, m.logger)
-	authzService := authorization.NewService(m.db, m.logger)
-	authHandler := NewAuthHandler(authService, authzService, collaborationWorkspaceMemberRepo, workspaceService, m.logger)
-
-	// /auth/login、/auth/register、/auth/refresh 已全部迁移到 OpenAPI-first
-	// （router.go 中由 ogen handler 接管），不再在此挂载 public 路由组。
-
-	authenticated := rg.Group("")
-	authenticated.Use(JWTAuth(m.config.JWT.Secret, m.db))
-	authenticatedReg := apiregistry.NewRegistrar(authenticated, "auth")
-	{
-		authenticatedReg.GET("/user/info", authenticatedReg.Meta("获取当前登录用户信息").Build(), authHandler.GetUserInfo)
-	}
+	// Auth domain is fully OpenAPI-first: /auth/login, /auth/register,
+	// /auth/refresh, /auth/me are all served by handlers/auth.go via the
+	// ogen bridge in router.go. Nothing left to mount here.
 }
 
 func init() {

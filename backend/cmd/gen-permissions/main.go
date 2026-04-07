@@ -78,7 +78,7 @@ func main() {
 			if accessModeRaw == "" {
 				accessModeRaw = "permission"
 			}
-			if op.PermissionKey == "" && accessModeRaw != "public" {
+			if op.PermissionKey == "" && accessModeRaw != "public" && accessModeRaw != "authenticated" {
 				fail(fmt.Sprintf("operation %s %s is missing x-permission-key", method, path))
 			}
 			tenantScoped := true

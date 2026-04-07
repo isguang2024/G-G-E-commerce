@@ -10,11 +10,22 @@ import (
 
 // Ref: #/components/schemas/AuthMe
 type AuthMe struct {
-	ID       uuid.UUID    `json:"id"`
-	Username string       `json:"username"`
-	Nickname OptNilString `json:"nickname"`
-	Email    OptNilString `json:"email"`
-	Avatar   OptNilString `json:"avatar"`
+	ID                              uuid.UUID    `json:"id"`
+	Username                        string       `json:"username"`
+	Nickname                        OptNilString `json:"nickname"`
+	Email                           OptNilString `json:"email"`
+	Avatar                          OptNilString `json:"avatar"`
+	AvatarURL                       OptNilString `json:"avatar_url"`
+	Phone                           OptNilString `json:"phone"`
+	Status                          OptNilString `json:"status"`
+	IsSuperAdmin                    bool         `json:"is_super_admin"`
+	CreatedAt                       OptNilString `json:"created_at"`
+	CurrentAuthWorkspaceID          OptNilUUID   `json:"current_auth_workspace_id"`
+	CurrentAuthWorkspaceType        OptNilString `json:"current_auth_workspace_type"`
+	CollaborationWorkspaceID        OptNilUUID   `json:"collaboration_workspace_id"`
+	CurrentCollaborationWorkspaceID OptNilUUID   `json:"current_collaboration_workspace_id"`
+	Actions                         []string     `json:"actions"`
+	Roles                           []AuthMeRole `json:"roles"`
 }
 
 // GetID returns the value of ID.
@@ -42,6 +53,61 @@ func (s *AuthMe) GetAvatar() OptNilString {
 	return s.Avatar
 }
 
+// GetAvatarURL returns the value of AvatarURL.
+func (s *AuthMe) GetAvatarURL() OptNilString {
+	return s.AvatarURL
+}
+
+// GetPhone returns the value of Phone.
+func (s *AuthMe) GetPhone() OptNilString {
+	return s.Phone
+}
+
+// GetStatus returns the value of Status.
+func (s *AuthMe) GetStatus() OptNilString {
+	return s.Status
+}
+
+// GetIsSuperAdmin returns the value of IsSuperAdmin.
+func (s *AuthMe) GetIsSuperAdmin() bool {
+	return s.IsSuperAdmin
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *AuthMe) GetCreatedAt() OptNilString {
+	return s.CreatedAt
+}
+
+// GetCurrentAuthWorkspaceID returns the value of CurrentAuthWorkspaceID.
+func (s *AuthMe) GetCurrentAuthWorkspaceID() OptNilUUID {
+	return s.CurrentAuthWorkspaceID
+}
+
+// GetCurrentAuthWorkspaceType returns the value of CurrentAuthWorkspaceType.
+func (s *AuthMe) GetCurrentAuthWorkspaceType() OptNilString {
+	return s.CurrentAuthWorkspaceType
+}
+
+// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
+func (s *AuthMe) GetCollaborationWorkspaceID() OptNilUUID {
+	return s.CollaborationWorkspaceID
+}
+
+// GetCurrentCollaborationWorkspaceID returns the value of CurrentCollaborationWorkspaceID.
+func (s *AuthMe) GetCurrentCollaborationWorkspaceID() OptNilUUID {
+	return s.CurrentCollaborationWorkspaceID
+}
+
+// GetActions returns the value of Actions.
+func (s *AuthMe) GetActions() []string {
+	return s.Actions
+}
+
+// GetRoles returns the value of Roles.
+func (s *AuthMe) GetRoles() []AuthMeRole {
+	return s.Roles
+}
+
 // SetID sets the value of ID.
 func (s *AuthMe) SetID(val uuid.UUID) {
 	s.ID = val
@@ -67,7 +133,110 @@ func (s *AuthMe) SetAvatar(val OptNilString) {
 	s.Avatar = val
 }
 
+// SetAvatarURL sets the value of AvatarURL.
+func (s *AuthMe) SetAvatarURL(val OptNilString) {
+	s.AvatarURL = val
+}
+
+// SetPhone sets the value of Phone.
+func (s *AuthMe) SetPhone(val OptNilString) {
+	s.Phone = val
+}
+
+// SetStatus sets the value of Status.
+func (s *AuthMe) SetStatus(val OptNilString) {
+	s.Status = val
+}
+
+// SetIsSuperAdmin sets the value of IsSuperAdmin.
+func (s *AuthMe) SetIsSuperAdmin(val bool) {
+	s.IsSuperAdmin = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *AuthMe) SetCreatedAt(val OptNilString) {
+	s.CreatedAt = val
+}
+
+// SetCurrentAuthWorkspaceID sets the value of CurrentAuthWorkspaceID.
+func (s *AuthMe) SetCurrentAuthWorkspaceID(val OptNilUUID) {
+	s.CurrentAuthWorkspaceID = val
+}
+
+// SetCurrentAuthWorkspaceType sets the value of CurrentAuthWorkspaceType.
+func (s *AuthMe) SetCurrentAuthWorkspaceType(val OptNilString) {
+	s.CurrentAuthWorkspaceType = val
+}
+
+// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
+func (s *AuthMe) SetCollaborationWorkspaceID(val OptNilUUID) {
+	s.CollaborationWorkspaceID = val
+}
+
+// SetCurrentCollaborationWorkspaceID sets the value of CurrentCollaborationWorkspaceID.
+func (s *AuthMe) SetCurrentCollaborationWorkspaceID(val OptNilUUID) {
+	s.CurrentCollaborationWorkspaceID = val
+}
+
+// SetActions sets the value of Actions.
+func (s *AuthMe) SetActions(val []string) {
+	s.Actions = val
+}
+
+// SetRoles sets the value of Roles.
+func (s *AuthMe) SetRoles(val []AuthMeRole) {
+	s.Roles = val
+}
+
 func (*AuthMe) getAuthMeRes() {}
+
+// Ref: #/components/schemas/AuthMeRole
+type AuthMeRole struct {
+	ID          uuid.UUID    `json:"id"`
+	Code        string       `json:"code"`
+	Name        string       `json:"name"`
+	Description OptNilString `json:"description"`
+}
+
+// GetID returns the value of ID.
+func (s *AuthMeRole) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetCode returns the value of Code.
+func (s *AuthMeRole) GetCode() string {
+	return s.Code
+}
+
+// GetName returns the value of Name.
+func (s *AuthMeRole) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *AuthMeRole) GetDescription() OptNilString {
+	return s.Description
+}
+
+// SetID sets the value of ID.
+func (s *AuthMeRole) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetCode sets the value of Code.
+func (s *AuthMeRole) SetCode(val string) {
+	s.Code = val
+}
+
+// SetName sets the value of Name.
+func (s *AuthMeRole) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *AuthMeRole) SetDescription(val OptNilString) {
+	s.Description = val
+}
 
 // Ref: #/components/schemas/Error
 type Error struct {

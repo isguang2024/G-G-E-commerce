@@ -224,6 +224,27 @@ export interface components {
             nickname?: string | null;
             email?: string | null;
             avatar?: string | null;
+            avatar_url?: string | null;
+            phone?: string | null;
+            status?: string | null;
+            is_super_admin: boolean;
+            created_at?: string | null;
+            /** Format: uuid */
+            current_auth_workspace_id?: string | null;
+            current_auth_workspace_type?: string | null;
+            /** Format: uuid */
+            collaboration_workspace_id?: string | null;
+            /** Format: uuid */
+            current_collaboration_workspace_id?: string | null;
+            actions: string[];
+            roles: components["schemas"]["AuthMeRole"][];
+        };
+        AuthMeRole: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            description?: string | null;
         };
         WorkspaceSwitchRequest: {
             /** Format: uuid */

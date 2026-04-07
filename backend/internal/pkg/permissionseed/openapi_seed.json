@@ -15,11 +15,11 @@
       "operation_id": "getAuthMe",
       "method": "get",
       "path": "/auth/me",
-      "permission_key": "auth.me",
+      "permission_key": "",
       "summary": "获取当前登录账户信息",
       "tenant_scoped": false,
       "app_scope": "none",
-      "access_mode": "permission"
+      "access_mode": "authenticated"
     },
     {
       "operation_id": "refreshToken",

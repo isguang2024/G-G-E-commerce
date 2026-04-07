@@ -117,6 +117,9 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		ctx := c.Request.Context()
 		if withUser {
 			ctx = context.WithValue(ctx, handlers.CtxUserID, c.GetString("user_id"))
+			ctx = context.WithValue(ctx, handlers.CtxAuthWorkspaceID, c.GetString("auth_workspace_id"))
+			ctx = context.WithValue(ctx, handlers.CtxAuthWorkspaceType, c.GetString("auth_workspace_type"))
+			ctx = context.WithValue(ctx, handlers.CtxCollaborationWorkspaceID, c.GetString("collaboration_workspace_id"))
 		}
 		ctx = context.WithValue(ctx, handlers.CtxClientIP, c.ClientIP())
 		req := c.Request.Clone(ctx)
