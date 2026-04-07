@@ -3,7 +3,26 @@
     "allow": [
       "Bash(xargs wc:*)",
       "Bash(xargs ls:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(pandoc --track-changes=all \"C:\\\\Users\\\\Administrator\\\\Downloads\\\\GGE_5.0_初始化架构文档.docx\" -o /tmp/gge_doc.md)",
+      "Read(//tmp/**)",
+      "Bash(python \"C:\\\\Users\\\\Administrator\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\07cf43fa-9a86-4642-b5a4-231922f03c3b\\\\0f3adb45-2b75-4145-8b9a-7cbf32d72a0f\\\\skills\\\\docx\\\\scripts\\\\office\\\\unpack.py\" \"C:\\\\Users\\\\Administrator\\\\Downloads\\\\GGE_5.0_初始化架构文档.docx\" /tmp/gge_unpacked/)",
+      "Bash(python \"C:\\\\Users\\\\Administrator\\\\AppData\\\\Roaming\\\\Claude\\\\local-agent-mode-sessions\\\\skills-plugin\\\\07cf43fa-9a86-4642-b5a4-231922f03c3b\\\\0f3adb45-2b75-4145-8b9a-7cbf32d72a0f\\\\skills\\\\xlsx\\\\scripts\\\\office\\\\unpack.py\" \"C:\\\\Users\\\\Administrator\\\\Downloads\\\\GGE_5.0_初始化架构文档.docx\" /tmp/gge_unpacked/)",
+      "Bash(python \"/c/Users/Administrator/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/07cf43fa-9a86-4642-b5a4-231922f03c3b/0f3adb45-2b75-4145-8b9a-7cbf32d72a0f/skills/docx/scripts/office/unpack.py\" \"/c/Users/Administrator/Downloads/GGE_5.0_初始化架构文档.docx\" /tmp/gge_unpacked/)",
+      "Bash(mkdir -p /tmp/gge_unpacked)",
+      "Bash(unzip -o \"C:/Users/Administrator/Downloads/GGE_5.0_初始化架构文档.docx\")",
+      "Bash(echo $TEMP)",
+      "Bash(cygpath -w /tmp/gge_unpacked/word/document.xml)",
+      "Bash(python -c \":*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(python:*)",
+      "Bash(zip -r /tmp/GGE_5.0_updated.zip .)",
+      "Bash(cp /tmp/GGE_5.0_updated.zip \"C:/Users/Administrator/Downloads/GGE_5.0_初始化架构文档.docx\")",
+      "Read(//c/Users/Administrator/Documents/GitHub/G-G-E-commerce/.claude/**)",
+      "Read(//c/Users/Administrator/.codex/skills/**)",
+      "Bash(cmd //c 'mklink /J \"\"C:\\\\Users\\\\Administrator\\\\.codex\\\\skills\\\\gge\"\" \"\"C:\\\\Users\\\\Administrator\\\\Documents\\\\GitHub\\\\G-G-E-commerce\\\\.claude\\\\worktrees\\\\sleepy-blackburn\\\\.claude\\\\skills\"\"')",
+      "Bash(cmd //c \"mklink /J C:\\\\Users\\\\Administrator\\\\.codex\\\\skills\\\\gge C:\\\\Users\\\\Administrator\\\\Documents\\\\GitHub\\\\G-G-E-commerce\\\\.claude\\\\worktrees\\\\sleepy-blackburn\\\\.claude\\\\skills\")",
+      "Bash(grep -E \"AGENTS|PROJECT|FRONTEND|\\\\.claude$|docs\")"
     ]
   }
 }
