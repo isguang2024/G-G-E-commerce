@@ -46,7 +46,9 @@
       "Bash(make gen-permissions:*)",
       "Bash(go vet:*)",
       "Bash(npx --yes openapi-typescript@7 backend/api/openapi/openapi.yaml -o frontend/src/api/v5/schema.d.ts)",
-      "Bash(git -c core.autocrlf=false commit -m \"feat\\(v5\\): phase 5 — frontend openapi-fetch client + first slice\")"
+      "Bash(git -c core.autocrlf=false commit -m \"feat\\(v5\\): phase 5 — frontend openapi-fetch client + first slice\")",
+      "Read(//c/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/**)",
+      "Bash(pnpm install:*)"
     ]
   }
 }
