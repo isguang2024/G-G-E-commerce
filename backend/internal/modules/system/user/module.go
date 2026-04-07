@@ -55,8 +55,9 @@ func (m *UserModule) RegisterRoutes(rg *gin.RouterGroup) {
 	users := rg.Group("/users")
 	reg := apiregistry.NewRegistrar(users, "user")
 	{
-		reg.GETProtected("", reg.Meta("获取用户列表").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.List)
-		reg.GETProtected("/:id", reg.Meta("获取用户详情").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.Get)
+		// Phase 4 slice 5: list/get/create/update/delete/assignRoles migrated
+		// to ogen handlers in internal/api/handlers/user.go. Only not-yet-migrated
+		// secondary routes remain wired here.
 		reg.GETProtected("/:id/collaboration-workspaces", reg.Meta("获取用户所在协作空间").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.GetCollaborationWorkspaces)
 		reg.GETAction("/:id/packages", "获取用户功能包", "feature_package.assign_collaboration_workspace", authzService.RequireAction, userHandler.GetPackages)
 		reg.PUTAction("/:id/packages", "配置用户功能包", "feature_package.assign_collaboration_workspace", authzService.RequireAction, userHandler.SetPackages)
@@ -65,10 +66,6 @@ func (m *UserModule) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.GETProtected("/:id/permissions", reg.Meta("获取用户菜单权限").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.GetPermissions)
 		reg.GETProtected("/:id/permission-diagnosis", reg.Meta("获取用户权限诊断").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.GetPermissionDiagnosis)
 		reg.POSTProtected("/:id/permission-refresh", reg.Meta("刷新用户权限快照").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.RefreshPermissionSnapshot)
-		reg.POSTProtected("", reg.Meta("创建用户").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.Create)
-		reg.PUTProtected("/:id", reg.Meta("更新用户").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.Update)
-		reg.DELETEProtected("/:id", reg.Meta("删除用户").BindGroup("user").BindPermissionKey("system.user.manage").Build(), "system.user.manage", authzService.RequireAction, userHandler.Delete)
-		reg.POSTProtected("/:id/roles", reg.Meta("分配用户角色").BindGroup("user").BindPermissionKey("system.user.assign_role").Build(), "system.user.assign_role", authzService.RequireAction, userHandler.AssignRoles)
 	}
 }
 

@@ -13,6 +13,33 @@ type UnimplementedHandler struct{}
 
 var _ Handler = UnimplementedHandler{}
 
+// AssignUserRoles implements assignUserRoles operation.
+//
+// 分配用户角色.
+//
+// POST /users/{id}/roles
+func (UnimplementedHandler) AssignUserRoles(ctx context.Context, req *UserAssignRolesRequest, params AssignUserRolesParams) (r AssignUserRolesRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// CreateUser implements createUser operation.
+//
+// 创建用户.
+//
+// POST /users
+func (UnimplementedHandler) CreateUser(ctx context.Context, req *UserCreateRequest) (r CreateUserRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// DeleteUser implements deleteUser operation.
+//
+// 删除用户.
+//
+// DELETE /users/{id}
+func (UnimplementedHandler) DeleteUser(ctx context.Context, params DeleteUserParams) (r DeleteUserRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ExplainPermissions implements explainPermissions operation.
 //
 // 解释当前账号在指定工作空间内的最终权限及其来源.
@@ -40,6 +67,15 @@ func (UnimplementedHandler) GetCurrentWorkspace(ctx context.Context) (r GetCurre
 	return r, ht.ErrNotImplemented
 }
 
+// GetUser implements getUser operation.
+//
+// 获取用户详情.
+//
+// GET /users/{id}
+func (UnimplementedHandler) GetUser(ctx context.Context, params GetUserParams) (r GetUserRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // GetWorkspace implements getWorkspace operation.
 //
 // 获取工作空间详情.
@@ -55,6 +91,15 @@ func (UnimplementedHandler) GetWorkspace(ctx context.Context, params GetWorkspac
 //
 // GET /workspaces/my
 func (UnimplementedHandler) ListMyWorkspaces(ctx context.Context) (r ListMyWorkspacesRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ListUsers implements listUsers operation.
+//
+// 获取用户列表（分页 + 多条件筛选）.
+//
+// GET /users
+func (UnimplementedHandler) ListUsers(ctx context.Context, params ListUsersParams) (r ListUsersRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -91,5 +136,14 @@ func (UnimplementedHandler) Register(ctx context.Context, req *RegisterRequest) 
 //
 // POST /workspaces/switch
 func (UnimplementedHandler) SwitchWorkspace(ctx context.Context, req *WorkspaceSwitchRequest) (r SwitchWorkspaceRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpdateUser implements updateUser operation.
+//
+// 更新用户.
+//
+// PUT /users/{id}
+func (UnimplementedHandler) UpdateUser(ctx context.Context, req *UserUpdateRequest, params UpdateUserParams) (r UpdateUserRes, _ error) {
 	return r, ht.ErrNotImplemented
 }

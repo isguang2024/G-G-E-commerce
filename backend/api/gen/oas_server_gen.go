@@ -8,6 +8,24 @@ import (
 
 // Handler handles operations described by OpenAPI v3 specification.
 type Handler interface {
+	// AssignUserRoles implements assignUserRoles operation.
+	//
+	// 分配用户角色.
+	//
+	// POST /users/{id}/roles
+	AssignUserRoles(ctx context.Context, req *UserAssignRolesRequest, params AssignUserRolesParams) (AssignUserRolesRes, error)
+	// CreateUser implements createUser operation.
+	//
+	// 创建用户.
+	//
+	// POST /users
+	CreateUser(ctx context.Context, req *UserCreateRequest) (CreateUserRes, error)
+	// DeleteUser implements deleteUser operation.
+	//
+	// 删除用户.
+	//
+	// DELETE /users/{id}
+	DeleteUser(ctx context.Context, params DeleteUserParams) (DeleteUserRes, error)
 	// ExplainPermissions implements explainPermissions operation.
 	//
 	// 解释当前账号在指定工作空间内的最终权限及其来源.
@@ -26,6 +44,12 @@ type Handler interface {
 	//
 	// GET /workspaces/current
 	GetCurrentWorkspace(ctx context.Context) (GetCurrentWorkspaceRes, error)
+	// GetUser implements getUser operation.
+	//
+	// 获取用户详情.
+	//
+	// GET /users/{id}
+	GetUser(ctx context.Context, params GetUserParams) (GetUserRes, error)
 	// GetWorkspace implements getWorkspace operation.
 	//
 	// 获取工作空间详情.
@@ -38,6 +62,12 @@ type Handler interface {
 	//
 	// GET /workspaces/my
 	ListMyWorkspaces(ctx context.Context) (ListMyWorkspacesRes, error)
+	// ListUsers implements listUsers operation.
+	//
+	// 获取用户列表（分页 + 多条件筛选）.
+	//
+	// GET /users
+	ListUsers(ctx context.Context, params ListUsersParams) (ListUsersRes, error)
 	// Login implements login operation.
 	//
 	// 用户登录.
@@ -62,6 +92,12 @@ type Handler interface {
 	//
 	// POST /workspaces/switch
 	SwitchWorkspace(ctx context.Context, req *WorkspaceSwitchRequest) (SwitchWorkspaceRes, error)
+	// UpdateUser implements updateUser operation.
+	//
+	// 更新用户.
+	//
+	// PUT /users/{id}
+	UpdateUser(ctx context.Context, req *UserUpdateRequest, params UpdateUserParams) (UpdateUserRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and

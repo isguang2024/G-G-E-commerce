@@ -6,13 +6,19 @@ package gen
 type OperationName = string
 
 const (
+	AssignUserRolesOperation     OperationName = "AssignUserRoles"
+	CreateUserOperation          OperationName = "CreateUser"
+	DeleteUserOperation          OperationName = "DeleteUser"
 	ExplainPermissionsOperation  OperationName = "ExplainPermissions"
 	GetAuthMeOperation           OperationName = "GetAuthMe"
 	GetCurrentWorkspaceOperation OperationName = "GetCurrentWorkspace"
+	GetUserOperation             OperationName = "GetUser"
 	GetWorkspaceOperation        OperationName = "GetWorkspace"
 	ListMyWorkspacesOperation    OperationName = "ListMyWorkspaces"
+	ListUsersOperation           OperationName = "ListUsers"
 	LoginOperation               OperationName = "Login"
 	RefreshTokenOperation        OperationName = "RefreshToken"
 	RegisterOperation            OperationName = "Register"
 	SwitchWorkspaceOperation     OperationName = "SwitchWorkspace"
+	UpdateUserOperation          OperationName = "UpdateUser"
 )

@@ -1,7 +1,45 @@
 import request from '@/utils/http'
+import { v5Client } from '@/api/v5/client'
 import { AppRouteRecord } from '@/types/router'
 import type { FastEnterApplication, FastEnterQuickLink } from '@/types/config'
 import { normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
+
+// Phase 4 slice 5: 用户域 list/get/create/update/delete/assignRoles 走 v5Client。
+// ogen handler 返回 snake_case schema 原型，这里负责 camelCase 归一，
+// 保持 Api.SystemManage.UserListItem 等消费方契约不变。
+function normalizeUserSummary(item: any): Api.SystemManage.UserListItem {
+  const roleDetails = Array.isArray(item?.role_details)
+    ? item.role_details.map((r: any) => ({
+        code: r?.code || '',
+        name: r?.name || ''
+      }))
+    : Array.isArray(item?.roleDetails)
+      ? item.roleDetails
+      : []
+  return {
+    id: item?.id || '',
+    avatar: item?.avatar || item?.avatar_url || '',
+    status: item?.status || 'inactive',
+    userName: item?.user_name || item?.userName || '',
+    nickName: item?.nick_name || item?.nickName || '',
+    userPhone: item?.user_phone || item?.userPhone || '',
+    userEmail: item?.user_email || item?.userEmail || '',
+    systemRemark: item?.system_remark || item?.systemRemark || '',
+    lastLoginTime: item?.last_login_time || item?.lastLoginTime || '',
+    lastLoginIP: item?.last_login_ip || item?.lastLoginIP || '',
+    userRoles: Array.isArray(item?.user_roles)
+      ? item.user_roles
+      : Array.isArray(item?.userRoles)
+        ? item.userRoles
+        : [],
+    roleDetails,
+    registerSource: item?.register_source || item?.registerSource || '',
+    invitedBy: item?.invited_by || item?.invitedBy || '',
+    invitedByName: item?.invited_by_name || item?.invitedByName || '',
+    createTime: item?.create_time || item?.createTime || '',
+    updateTime: item?.update_time || item?.updateTime || ''
+  }
+}
 
 const USER_BASE = '/api/v1/users'
 const ROLE_BASE = '/api/v1/roles'
@@ -800,11 +838,30 @@ function normalizeRuntimeNavigationManifest(item: any): Api.SystemManage.Runtime
 }
 
 // 获取用户列表
-export function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
-  return request.get<Api.SystemManage.UserList>({
-    url: USER_BASE,
-    params
+export async function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
+  const query: Record<string, any> = {}
+  if (params?.current != null) query.current = params.current
+  if (params?.size != null) query.size = params.size
+  if (params?.id) query.id = params.id
+  if (params?.userName) query.user_name = params.userName
+  if (params?.userEmail) query.user_email = params.userEmail
+  if (params?.userPhone) query.user_phone = params.userPhone
+  if (params?.status) query.status = params.status
+  if ((params as any)?.roleId) query.role_id = (params as any).roleId
+  if (params?.registerSource) query.register_source = params.registerSource
+  if (params?.invitedBy) query.invited_by = params.invitedBy
+  const { data, error } = await v5Client.GET('/users', {
+    params: { query }
   })
+  if (error || !data) {
+    return { records: [], total: 0, current: params?.current ?? 1, size: params?.size ?? 20 }
+  }
+  return {
+    records: (data.records || []).map(normalizeUserSummary),
+    total: data.total || 0,
+    current: data.current,
+    size: data.size
+  } as Api.SystemManage.UserList
 }
 
 /** 获取用户个人空间功能包 */
@@ -869,42 +926,74 @@ function normalizeUnregisteredApiRoute(item: any): Api.SystemManage.APIUnregiste
   }
 }
 
-// 获取用户详情
-export function fetchGetUser(id: string) {
-  return request.get<Api.SystemManage.UserListItem>({
-    url: `${USER_BASE}/${id}`
+// 获取用户详情（Phase 4 slice 5: v5Client）
+export async function fetchGetUser(id: string) {
+  const { data, error } = await v5Client.GET('/users/{id}', {
+    params: { path: { id } }
   })
+  if (error || !data) {
+    return normalizeUserSummary({})
+  }
+  return normalizeUserSummary(data)
 }
 
-// 创建用户
-export function fetchCreateUser(data: Api.SystemManage.UserCreateParams) {
-  return request.post<{ id: string }>({
-    url: USER_BASE,
-    data
+// 创建用户（Phase 4 slice 5: v5Client）
+export async function fetchCreateUser(data: Api.SystemManage.UserCreateParams) {
+  const { data: out, error } = await v5Client.POST('/users', {
+    body: {
+      username: data.username,
+      password: data.password,
+      email: data.email,
+      nickname: data.nickname,
+      phone: data.phone,
+      system_remark: data.systemRemark,
+      status: data.status,
+      role_ids: data.roleIds
+    }
   })
+  if (error || !out) {
+    throw error || new Error('create user failed')
+  }
+  return { id: out.id }
 }
 
-// 更新用户
-export function fetchUpdateUser(id: string, data: Api.SystemManage.UserUpdateParams) {
-  return request.put<void>({
-    url: `${USER_BASE}/${id}`,
-    data
+// 更新用户（Phase 4 slice 5: v5Client）
+export async function fetchUpdateUser(id: string, data: Api.SystemManage.UserUpdateParams) {
+  const { error } = await v5Client.PUT('/users/{id}', {
+    params: { path: { id } },
+    body: {
+      email: data.email,
+      nickname: data.nickname,
+      phone: data.phone,
+      system_remark: data.systemRemark,
+      status: data.status,
+      role_ids: data.roleIds
+    }
   })
+  if (error) {
+    throw error
+  }
 }
 
-// 删除用户
-export function fetchDeleteUser(id: string) {
-  return request.del<void>({
-    url: `${USER_BASE}/${id}`
+// 删除用户（Phase 4 slice 5: v5Client）
+export async function fetchDeleteUser(id: string) {
+  const { error } = await v5Client.DELETE('/users/{id}', {
+    params: { path: { id } }
   })
+  if (error) {
+    throw error
+  }
 }
 
-// 分配个人空间角色（实际绑定到目标用户的个人空间）
-export function fetchAssignUserRoles(id: string, roleIds: string[]) {
-  return request.post<void>({
-    url: `${USER_BASE}/${id}/roles`,
-    data: { roleIds }
+// 分配个人空间角色（Phase 4 slice 5: v5Client）
+export async function fetchAssignUserRoles(id: string, roleIds: string[]) {
+  const { error } = await v5Client.POST('/users/{id}/roles', {
+    params: { path: { id } },
+    body: { role_ids: roleIds }
   })
+  if (error) {
+    throw error
+  }
 }
 
 /** 获取用户个人空间菜单裁剪 */

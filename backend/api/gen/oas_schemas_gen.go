@@ -8,6 +8,22 @@ import (
 	"github.com/google/uuid"
 )
 
+type AssignUserRolesBadRequest Error
+
+func (*AssignUserRolesBadRequest) assignUserRolesRes() {}
+
+type AssignUserRolesForbidden Error
+
+func (*AssignUserRolesForbidden) assignUserRolesRes() {}
+
+type AssignUserRolesNotFound Error
+
+func (*AssignUserRolesNotFound) assignUserRolesRes() {}
+
+type AssignUserRolesUnauthorized Error
+
+func (*AssignUserRolesUnauthorized) assignUserRolesRes() {}
+
 // Ref: #/components/schemas/AuthMe
 type AuthMe struct {
 	ID                              uuid.UUID    `json:"id"`
@@ -238,6 +254,30 @@ func (s *AuthMeRole) SetDescription(val OptNilString) {
 	s.Description = val
 }
 
+type CreateUserBadRequest Error
+
+func (*CreateUserBadRequest) createUserRes() {}
+
+type CreateUserForbidden Error
+
+func (*CreateUserForbidden) createUserRes() {}
+
+type CreateUserUnauthorized Error
+
+func (*CreateUserUnauthorized) createUserRes() {}
+
+type DeleteUserForbidden Error
+
+func (*DeleteUserForbidden) deleteUserRes() {}
+
+type DeleteUserNotFound Error
+
+func (*DeleteUserNotFound) deleteUserRes() {}
+
+type DeleteUserUnauthorized Error
+
+func (*DeleteUserUnauthorized) deleteUserRes() {}
+
 // Ref: #/components/schemas/Error
 type Error struct {
 	Code    int    `json:"code"`
@@ -271,6 +311,18 @@ func (*Error) listMyWorkspacesRes()    {}
 func (*Error) refreshTokenRes()        {}
 func (*Error) registerRes()            {}
 
+type GetUserForbidden Error
+
+func (*GetUserForbidden) getUserRes() {}
+
+type GetUserNotFound Error
+
+func (*GetUserNotFound) getUserRes() {}
+
+type GetUserUnauthorized Error
+
+func (*GetUserUnauthorized) getUserRes() {}
+
 type GetWorkspaceForbidden Error
 
 func (*GetWorkspaceForbidden) getWorkspaceRes() {}
@@ -278,6 +330,14 @@ func (*GetWorkspaceForbidden) getWorkspaceRes() {}
 type GetWorkspaceNotFound Error
 
 func (*GetWorkspaceNotFound) getWorkspaceRes() {}
+
+type ListUsersForbidden Error
+
+func (*ListUsersForbidden) listUsersRes() {}
+
+type ListUsersUnauthorized Error
+
+func (*ListUsersUnauthorized) listUsersRes() {}
 
 type LoginBadRequest Error
 
@@ -374,6 +434,52 @@ func (s *LoginResponseUser) init() LoginResponseUser {
 type LoginUnauthorized Error
 
 func (*LoginUnauthorized) loginRes() {}
+
+// NewOptInt returns new OptInt with value set to v.
+func NewOptInt(v int) OptInt {
+	return OptInt{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptInt is optional int.
+type OptInt struct {
+	Value int
+	Set   bool
+}
+
+// IsSet returns true if OptInt was set.
+func (o OptInt) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptInt) Reset() {
+	var v int
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptInt) SetTo(v int) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptInt) Get() (v int, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptInt) Or(d int) int {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
 
 // NewOptNilLoginResponseUser returns new OptNilLoginResponseUser with value set to v.
 func NewOptNilLoginResponseUser(v LoginResponseUser) OptNilLoginResponseUser {
@@ -894,6 +1000,684 @@ func (s *TokenResponse) SetExpiresIn(val int) {
 }
 
 func (*TokenResponse) refreshTokenRes() {}
+
+type UpdateUserBadRequest Error
+
+func (*UpdateUserBadRequest) updateUserRes() {}
+
+type UpdateUserForbidden Error
+
+func (*UpdateUserForbidden) updateUserRes() {}
+
+type UpdateUserNotFound Error
+
+func (*UpdateUserNotFound) updateUserRes() {}
+
+type UpdateUserUnauthorized Error
+
+func (*UpdateUserUnauthorized) updateUserRes() {}
+
+// Ref: #/components/schemas/UserAssignRolesRequest
+type UserAssignRolesRequest struct {
+	RoleIds []string `json:"role_ids"`
+}
+
+// GetRoleIds returns the value of RoleIds.
+func (s *UserAssignRolesRequest) GetRoleIds() []string {
+	return s.RoleIds
+}
+
+// SetRoleIds sets the value of RoleIds.
+func (s *UserAssignRolesRequest) SetRoleIds(val []string) {
+	s.RoleIds = val
+}
+
+// Ref: #/components/schemas/UserCreateRequest
+type UserCreateRequest struct {
+	Username     string    `json:"username"`
+	Password     string    `json:"password"`
+	Email        OptString `json:"email"`
+	Nickname     OptString `json:"nickname"`
+	Phone        OptString `json:"phone"`
+	SystemRemark OptString `json:"system_remark"`
+	Status       OptString `json:"status"`
+	RoleIds      []string  `json:"role_ids"`
+}
+
+// GetUsername returns the value of Username.
+func (s *UserCreateRequest) GetUsername() string {
+	return s.Username
+}
+
+// GetPassword returns the value of Password.
+func (s *UserCreateRequest) GetPassword() string {
+	return s.Password
+}
+
+// GetEmail returns the value of Email.
+func (s *UserCreateRequest) GetEmail() OptString {
+	return s.Email
+}
+
+// GetNickname returns the value of Nickname.
+func (s *UserCreateRequest) GetNickname() OptString {
+	return s.Nickname
+}
+
+// GetPhone returns the value of Phone.
+func (s *UserCreateRequest) GetPhone() OptString {
+	return s.Phone
+}
+
+// GetSystemRemark returns the value of SystemRemark.
+func (s *UserCreateRequest) GetSystemRemark() OptString {
+	return s.SystemRemark
+}
+
+// GetStatus returns the value of Status.
+func (s *UserCreateRequest) GetStatus() OptString {
+	return s.Status
+}
+
+// GetRoleIds returns the value of RoleIds.
+func (s *UserCreateRequest) GetRoleIds() []string {
+	return s.RoleIds
+}
+
+// SetUsername sets the value of Username.
+func (s *UserCreateRequest) SetUsername(val string) {
+	s.Username = val
+}
+
+// SetPassword sets the value of Password.
+func (s *UserCreateRequest) SetPassword(val string) {
+	s.Password = val
+}
+
+// SetEmail sets the value of Email.
+func (s *UserCreateRequest) SetEmail(val OptString) {
+	s.Email = val
+}
+
+// SetNickname sets the value of Nickname.
+func (s *UserCreateRequest) SetNickname(val OptString) {
+	s.Nickname = val
+}
+
+// SetPhone sets the value of Phone.
+func (s *UserCreateRequest) SetPhone(val OptString) {
+	s.Phone = val
+}
+
+// SetSystemRemark sets the value of SystemRemark.
+func (s *UserCreateRequest) SetSystemRemark(val OptString) {
+	s.SystemRemark = val
+}
+
+// SetStatus sets the value of Status.
+func (s *UserCreateRequest) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetRoleIds sets the value of RoleIds.
+func (s *UserCreateRequest) SetRoleIds(val []string) {
+	s.RoleIds = val
+}
+
+// Ref: #/components/schemas/UserCreateResult
+type UserCreateResult struct {
+	ID uuid.UUID `json:"id"`
+}
+
+// GetID returns the value of ID.
+func (s *UserCreateResult) GetID() uuid.UUID {
+	return s.ID
+}
+
+// SetID sets the value of ID.
+func (s *UserCreateResult) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+func (*UserCreateResult) createUserRes() {}
+
+// Ref: #/components/schemas/UserDetail
+type UserDetail struct {
+	ID            uuid.UUID     `json:"id"`
+	UserName      string        `json:"user_name"`
+	UserEmail     OptNilString  `json:"user_email"`
+	NickName      OptNilString  `json:"nick_name"`
+	UserPhone     OptNilString  `json:"user_phone"`
+	SystemRemark  OptNilString  `json:"system_remark"`
+	LastLoginTime OptNilString  `json:"last_login_time"`
+	LastLoginIP   OptNilString  `json:"last_login_ip"`
+	Status        string        `json:"status"`
+	Avatar        OptNilString  `json:"avatar"`
+	CreateTime    string        `json:"create_time"`
+	UpdateTime    string        `json:"update_time"`
+	Roles         []UserRoleRef `json:"roles"`
+	UserRoles     []string      `json:"user_roles"`
+	RoleDetails   []UserRoleRef `json:"role_details"`
+}
+
+// GetID returns the value of ID.
+func (s *UserDetail) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetUserName returns the value of UserName.
+func (s *UserDetail) GetUserName() string {
+	return s.UserName
+}
+
+// GetUserEmail returns the value of UserEmail.
+func (s *UserDetail) GetUserEmail() OptNilString {
+	return s.UserEmail
+}
+
+// GetNickName returns the value of NickName.
+func (s *UserDetail) GetNickName() OptNilString {
+	return s.NickName
+}
+
+// GetUserPhone returns the value of UserPhone.
+func (s *UserDetail) GetUserPhone() OptNilString {
+	return s.UserPhone
+}
+
+// GetSystemRemark returns the value of SystemRemark.
+func (s *UserDetail) GetSystemRemark() OptNilString {
+	return s.SystemRemark
+}
+
+// GetLastLoginTime returns the value of LastLoginTime.
+func (s *UserDetail) GetLastLoginTime() OptNilString {
+	return s.LastLoginTime
+}
+
+// GetLastLoginIP returns the value of LastLoginIP.
+func (s *UserDetail) GetLastLoginIP() OptNilString {
+	return s.LastLoginIP
+}
+
+// GetStatus returns the value of Status.
+func (s *UserDetail) GetStatus() string {
+	return s.Status
+}
+
+// GetAvatar returns the value of Avatar.
+func (s *UserDetail) GetAvatar() OptNilString {
+	return s.Avatar
+}
+
+// GetCreateTime returns the value of CreateTime.
+func (s *UserDetail) GetCreateTime() string {
+	return s.CreateTime
+}
+
+// GetUpdateTime returns the value of UpdateTime.
+func (s *UserDetail) GetUpdateTime() string {
+	return s.UpdateTime
+}
+
+// GetRoles returns the value of Roles.
+func (s *UserDetail) GetRoles() []UserRoleRef {
+	return s.Roles
+}
+
+// GetUserRoles returns the value of UserRoles.
+func (s *UserDetail) GetUserRoles() []string {
+	return s.UserRoles
+}
+
+// GetRoleDetails returns the value of RoleDetails.
+func (s *UserDetail) GetRoleDetails() []UserRoleRef {
+	return s.RoleDetails
+}
+
+// SetID sets the value of ID.
+func (s *UserDetail) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetUserName sets the value of UserName.
+func (s *UserDetail) SetUserName(val string) {
+	s.UserName = val
+}
+
+// SetUserEmail sets the value of UserEmail.
+func (s *UserDetail) SetUserEmail(val OptNilString) {
+	s.UserEmail = val
+}
+
+// SetNickName sets the value of NickName.
+func (s *UserDetail) SetNickName(val OptNilString) {
+	s.NickName = val
+}
+
+// SetUserPhone sets the value of UserPhone.
+func (s *UserDetail) SetUserPhone(val OptNilString) {
+	s.UserPhone = val
+}
+
+// SetSystemRemark sets the value of SystemRemark.
+func (s *UserDetail) SetSystemRemark(val OptNilString) {
+	s.SystemRemark = val
+}
+
+// SetLastLoginTime sets the value of LastLoginTime.
+func (s *UserDetail) SetLastLoginTime(val OptNilString) {
+	s.LastLoginTime = val
+}
+
+// SetLastLoginIP sets the value of LastLoginIP.
+func (s *UserDetail) SetLastLoginIP(val OptNilString) {
+	s.LastLoginIP = val
+}
+
+// SetStatus sets the value of Status.
+func (s *UserDetail) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetAvatar sets the value of Avatar.
+func (s *UserDetail) SetAvatar(val OptNilString) {
+	s.Avatar = val
+}
+
+// SetCreateTime sets the value of CreateTime.
+func (s *UserDetail) SetCreateTime(val string) {
+	s.CreateTime = val
+}
+
+// SetUpdateTime sets the value of UpdateTime.
+func (s *UserDetail) SetUpdateTime(val string) {
+	s.UpdateTime = val
+}
+
+// SetRoles sets the value of Roles.
+func (s *UserDetail) SetRoles(val []UserRoleRef) {
+	s.Roles = val
+}
+
+// SetUserRoles sets the value of UserRoles.
+func (s *UserDetail) SetUserRoles(val []string) {
+	s.UserRoles = val
+}
+
+// SetRoleDetails sets the value of RoleDetails.
+func (s *UserDetail) SetRoleDetails(val []UserRoleRef) {
+	s.RoleDetails = val
+}
+
+func (*UserDetail) getUserRes() {}
+
+// Ref: #/components/schemas/UserList
+type UserList struct {
+	Records []UserSummary `json:"records"`
+	Total   int64         `json:"total"`
+	Current int           `json:"current"`
+	Size    int           `json:"size"`
+}
+
+// GetRecords returns the value of Records.
+func (s *UserList) GetRecords() []UserSummary {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *UserList) GetTotal() int64 {
+	return s.Total
+}
+
+// GetCurrent returns the value of Current.
+func (s *UserList) GetCurrent() int {
+	return s.Current
+}
+
+// GetSize returns the value of Size.
+func (s *UserList) GetSize() int {
+	return s.Size
+}
+
+// SetRecords sets the value of Records.
+func (s *UserList) SetRecords(val []UserSummary) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *UserList) SetTotal(val int64) {
+	s.Total = val
+}
+
+// SetCurrent sets the value of Current.
+func (s *UserList) SetCurrent(val int) {
+	s.Current = val
+}
+
+// SetSize sets the value of Size.
+func (s *UserList) SetSize(val int) {
+	s.Size = val
+}
+
+func (*UserList) listUsersRes() {}
+
+// Ref: #/components/schemas/UserMutationResult
+type UserMutationResult struct {
+	Success bool `json:"success"`
+}
+
+// GetSuccess returns the value of Success.
+func (s *UserMutationResult) GetSuccess() bool {
+	return s.Success
+}
+
+// SetSuccess sets the value of Success.
+func (s *UserMutationResult) SetSuccess(val bool) {
+	s.Success = val
+}
+
+func (*UserMutationResult) assignUserRolesRes() {}
+func (*UserMutationResult) deleteUserRes()      {}
+func (*UserMutationResult) updateUserRes()      {}
+
+// Ref: #/components/schemas/UserRoleRef
+type UserRoleRef struct {
+	ID   uuid.UUID `json:"id"`
+	Code string    `json:"code"`
+	Name string    `json:"name"`
+}
+
+// GetID returns the value of ID.
+func (s *UserRoleRef) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetCode returns the value of Code.
+func (s *UserRoleRef) GetCode() string {
+	return s.Code
+}
+
+// GetName returns the value of Name.
+func (s *UserRoleRef) GetName() string {
+	return s.Name
+}
+
+// SetID sets the value of ID.
+func (s *UserRoleRef) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetCode sets the value of Code.
+func (s *UserRoleRef) SetCode(val string) {
+	s.Code = val
+}
+
+// SetName sets the value of Name.
+func (s *UserRoleRef) SetName(val string) {
+	s.Name = val
+}
+
+// Ref: #/components/schemas/UserSummary
+type UserSummary struct {
+	ID             uuid.UUID     `json:"id"`
+	UserName       string        `json:"user_name"`
+	UserEmail      OptNilString  `json:"user_email"`
+	NickName       OptNilString  `json:"nick_name"`
+	UserPhone      OptNilString  `json:"user_phone"`
+	SystemRemark   OptNilString  `json:"system_remark"`
+	LastLoginTime  OptNilString  `json:"last_login_time"`
+	LastLoginIP    OptNilString  `json:"last_login_ip"`
+	Status         string        `json:"status"`
+	Avatar         OptNilString  `json:"avatar"`
+	CreateTime     string        `json:"create_time"`
+	UpdateTime     string        `json:"update_time"`
+	UserRoles      []string      `json:"user_roles"`
+	RoleDetails    []UserRoleRef `json:"role_details"`
+	RegisterSource OptNilString  `json:"register_source"`
+	InvitedBy      OptNilUUID    `json:"invited_by"`
+	InvitedByName  OptNilString  `json:"invited_by_name"`
+}
+
+// GetID returns the value of ID.
+func (s *UserSummary) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetUserName returns the value of UserName.
+func (s *UserSummary) GetUserName() string {
+	return s.UserName
+}
+
+// GetUserEmail returns the value of UserEmail.
+func (s *UserSummary) GetUserEmail() OptNilString {
+	return s.UserEmail
+}
+
+// GetNickName returns the value of NickName.
+func (s *UserSummary) GetNickName() OptNilString {
+	return s.NickName
+}
+
+// GetUserPhone returns the value of UserPhone.
+func (s *UserSummary) GetUserPhone() OptNilString {
+	return s.UserPhone
+}
+
+// GetSystemRemark returns the value of SystemRemark.
+func (s *UserSummary) GetSystemRemark() OptNilString {
+	return s.SystemRemark
+}
+
+// GetLastLoginTime returns the value of LastLoginTime.
+func (s *UserSummary) GetLastLoginTime() OptNilString {
+	return s.LastLoginTime
+}
+
+// GetLastLoginIP returns the value of LastLoginIP.
+func (s *UserSummary) GetLastLoginIP() OptNilString {
+	return s.LastLoginIP
+}
+
+// GetStatus returns the value of Status.
+func (s *UserSummary) GetStatus() string {
+	return s.Status
+}
+
+// GetAvatar returns the value of Avatar.
+func (s *UserSummary) GetAvatar() OptNilString {
+	return s.Avatar
+}
+
+// GetCreateTime returns the value of CreateTime.
+func (s *UserSummary) GetCreateTime() string {
+	return s.CreateTime
+}
+
+// GetUpdateTime returns the value of UpdateTime.
+func (s *UserSummary) GetUpdateTime() string {
+	return s.UpdateTime
+}
+
+// GetUserRoles returns the value of UserRoles.
+func (s *UserSummary) GetUserRoles() []string {
+	return s.UserRoles
+}
+
+// GetRoleDetails returns the value of RoleDetails.
+func (s *UserSummary) GetRoleDetails() []UserRoleRef {
+	return s.RoleDetails
+}
+
+// GetRegisterSource returns the value of RegisterSource.
+func (s *UserSummary) GetRegisterSource() OptNilString {
+	return s.RegisterSource
+}
+
+// GetInvitedBy returns the value of InvitedBy.
+func (s *UserSummary) GetInvitedBy() OptNilUUID {
+	return s.InvitedBy
+}
+
+// GetInvitedByName returns the value of InvitedByName.
+func (s *UserSummary) GetInvitedByName() OptNilString {
+	return s.InvitedByName
+}
+
+// SetID sets the value of ID.
+func (s *UserSummary) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetUserName sets the value of UserName.
+func (s *UserSummary) SetUserName(val string) {
+	s.UserName = val
+}
+
+// SetUserEmail sets the value of UserEmail.
+func (s *UserSummary) SetUserEmail(val OptNilString) {
+	s.UserEmail = val
+}
+
+// SetNickName sets the value of NickName.
+func (s *UserSummary) SetNickName(val OptNilString) {
+	s.NickName = val
+}
+
+// SetUserPhone sets the value of UserPhone.
+func (s *UserSummary) SetUserPhone(val OptNilString) {
+	s.UserPhone = val
+}
+
+// SetSystemRemark sets the value of SystemRemark.
+func (s *UserSummary) SetSystemRemark(val OptNilString) {
+	s.SystemRemark = val
+}
+
+// SetLastLoginTime sets the value of LastLoginTime.
+func (s *UserSummary) SetLastLoginTime(val OptNilString) {
+	s.LastLoginTime = val
+}
+
+// SetLastLoginIP sets the value of LastLoginIP.
+func (s *UserSummary) SetLastLoginIP(val OptNilString) {
+	s.LastLoginIP = val
+}
+
+// SetStatus sets the value of Status.
+func (s *UserSummary) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetAvatar sets the value of Avatar.
+func (s *UserSummary) SetAvatar(val OptNilString) {
+	s.Avatar = val
+}
+
+// SetCreateTime sets the value of CreateTime.
+func (s *UserSummary) SetCreateTime(val string) {
+	s.CreateTime = val
+}
+
+// SetUpdateTime sets the value of UpdateTime.
+func (s *UserSummary) SetUpdateTime(val string) {
+	s.UpdateTime = val
+}
+
+// SetUserRoles sets the value of UserRoles.
+func (s *UserSummary) SetUserRoles(val []string) {
+	s.UserRoles = val
+}
+
+// SetRoleDetails sets the value of RoleDetails.
+func (s *UserSummary) SetRoleDetails(val []UserRoleRef) {
+	s.RoleDetails = val
+}
+
+// SetRegisterSource sets the value of RegisterSource.
+func (s *UserSummary) SetRegisterSource(val OptNilString) {
+	s.RegisterSource = val
+}
+
+// SetInvitedBy sets the value of InvitedBy.
+func (s *UserSummary) SetInvitedBy(val OptNilUUID) {
+	s.InvitedBy = val
+}
+
+// SetInvitedByName sets the value of InvitedByName.
+func (s *UserSummary) SetInvitedByName(val OptNilString) {
+	s.InvitedByName = val
+}
+
+// Ref: #/components/schemas/UserUpdateRequest
+type UserUpdateRequest struct {
+	Email        OptString `json:"email"`
+	Nickname     OptString `json:"nickname"`
+	Phone        OptString `json:"phone"`
+	SystemRemark OptString `json:"system_remark"`
+	Status       OptString `json:"status"`
+	RoleIds      []string  `json:"role_ids"`
+}
+
+// GetEmail returns the value of Email.
+func (s *UserUpdateRequest) GetEmail() OptString {
+	return s.Email
+}
+
+// GetNickname returns the value of Nickname.
+func (s *UserUpdateRequest) GetNickname() OptString {
+	return s.Nickname
+}
+
+// GetPhone returns the value of Phone.
+func (s *UserUpdateRequest) GetPhone() OptString {
+	return s.Phone
+}
+
+// GetSystemRemark returns the value of SystemRemark.
+func (s *UserUpdateRequest) GetSystemRemark() OptString {
+	return s.SystemRemark
+}
+
+// GetStatus returns the value of Status.
+func (s *UserUpdateRequest) GetStatus() OptString {
+	return s.Status
+}
+
+// GetRoleIds returns the value of RoleIds.
+func (s *UserUpdateRequest) GetRoleIds() []string {
+	return s.RoleIds
+}
+
+// SetEmail sets the value of Email.
+func (s *UserUpdateRequest) SetEmail(val OptString) {
+	s.Email = val
+}
+
+// SetNickname sets the value of Nickname.
+func (s *UserUpdateRequest) SetNickname(val OptString) {
+	s.Nickname = val
+}
+
+// SetPhone sets the value of Phone.
+func (s *UserUpdateRequest) SetPhone(val OptString) {
+	s.Phone = val
+}
+
+// SetSystemRemark sets the value of SystemRemark.
+func (s *UserUpdateRequest) SetSystemRemark(val OptString) {
+	s.SystemRemark = val
+}
+
+// SetStatus sets the value of Status.
+func (s *UserUpdateRequest) SetStatus(val OptString) {
+	s.Status = val
+}
+
+// SetRoleIds sets the value of RoleIds.
+func (s *UserUpdateRequest) SetRoleIds(val []string) {
+	s.RoleIds = val
+}
 
 // Ref: #/components/schemas/WorkspaceList
 type WorkspaceList struct {

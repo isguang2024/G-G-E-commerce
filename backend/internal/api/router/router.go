@@ -164,6 +164,16 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.GET("/workspaces/:id", ogenBridge)
 			authenticated.GET("/permissions/explain", ogenBridge)
 
+			// Phase 4 slice 5: /users/* read + write + role assignment migrated
+			// to ogen handlers. Legacy user module skips these routes to avoid
+			// duplicate gin registrations.
+			authenticated.GET("/users", ogenBridge)
+			authenticated.POST("/users", ogenBridge)
+			authenticated.GET("/users/:id", ogenBridge)
+			authenticated.PUT("/users/:id", ogenBridge)
+			authenticated.DELETE("/users/:id", ogenBridge)
+			authenticated.POST("/users/:id/roles", ogenBridge)
+
 			userModule.RegisterRoutes(authenticated)
 			menuModule.RegisterRoutes(authenticated)
 			navigationModule.RegisterRoutes(authenticated)

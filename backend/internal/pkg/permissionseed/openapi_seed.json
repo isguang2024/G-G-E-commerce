@@ -52,6 +52,66 @@
       "access_mode": "permission"
     },
     {
+      "operation_id": "listUsers",
+      "method": "get",
+      "path": "/users",
+      "permission_key": "user.list",
+      "summary": "获取用户列表（分页 + 多条件筛选）",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createUser",
+      "method": "post",
+      "path": "/users",
+      "permission_key": "user.create",
+      "summary": "创建用户",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteUser",
+      "method": "delete",
+      "path": "/users/{id}",
+      "permission_key": "user.delete",
+      "summary": "删除用户",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getUser",
+      "method": "get",
+      "path": "/users/{id}",
+      "permission_key": "user.read",
+      "summary": "获取用户详情",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateUser",
+      "method": "put",
+      "path": "/users/{id}",
+      "permission_key": "user.update",
+      "summary": "更新用户",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "assignUserRoles",
+      "method": "post",
+      "path": "/users/{id}/roles",
+      "permission_key": "user.assign_role",
+      "summary": "分配用户角色",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
       "operation_id": "getCurrentWorkspace",
       "method": "get",
       "path": "/workspaces/current",

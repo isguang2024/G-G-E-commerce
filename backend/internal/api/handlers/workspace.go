@@ -18,7 +18,11 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/modules/system/workspace"
+	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/permission/evaluator"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
+	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
 )
 
 // ctxKey is the request-scoped key carrying the authenticated account id
@@ -38,21 +42,29 @@ const (
 // to stub every method while migrating one domain at a time.
 type APIHandler struct {
 	gen.UnimplementedHandler
-	logger    *zap.Logger
-	service   workspace.Service
-	evaluator evaluator.Evaluator
-	authSvc   auth.AuthService
-	userRepo  user.UserRepository
+	logger      *zap.Logger
+	service     workspace.Service
+	evaluator   evaluator.Evaluator
+	authSvc     auth.AuthService
+	userRepo    user.UserRepository
+	userSvc     user.UserService
 }
 
 func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval evaluator.Evaluator) *APIHandler {
 	userRepo := user.NewUserRepository(db)
+	roleRepo := user.NewRoleRepository(db)
+	boundarySvc := collaborationworkspaceboundary.NewService(db)
+	personalAccess := platformaccess.NewService(db)
+	roleSnapshot := platformroleaccess.NewService(db)
+	refresher := permissionrefresh.NewService(db, boundarySvc, personalAccess, roleSnapshot)
+	userSvc := user.NewUserService(db, userRepo, roleRepo, refresher, logger)
 	return &APIHandler{
 		logger:    logger,
 		service:   workspace.NewService(db, logger),
 		evaluator: eval,
 		authSvc:   auth.NewAuthService(userRepo, &cfg.JWT, logger),
 		userRepo:  userRepo,
+		userSvc:   userSvc,
 	}
 }
 
