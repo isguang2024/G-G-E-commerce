@@ -42,13 +42,12 @@ function derivePermissionSegments(permissionKey?: string) {
 function deriveContextType(permissionKey?: string, moduleCode?: string) {
   const key = `${permissionKey || ''}`.trim()
   const module = `${moduleCode || ''}`.trim()
-  if (key === 'collaboration_workspace.manage' || module === 'collaboration_workspace') {
-    return 'personal'
-  }
   if (
+    key === 'collaboration_workspace.manage' ||
     key.startsWith('collaboration_workspace.member.') ||
     key.startsWith('collaboration_workspace.boundary.') ||
     key.startsWith('collaboration_workspace.message.') ||
+    module === 'collaboration_workspace' ||
     module === 'collaboration_workspace_member' ||
     module === 'collaboration_workspace_boundary' ||
     module === 'collaboration_workspace_message'
@@ -56,10 +55,16 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
     return 'collaboration'
   }
   if (
+    key.startsWith('personal.') ||
+    module === 'personal' ||
+    module === 'personal_workspace'
+  ) {
+    return 'personal'
+  }
+  if (
     key.startsWith('system.') ||
     key.startsWith('feature_package.') ||
     key.startsWith('message.') ||
-    key.startsWith('personal.') ||
     module === 'role' ||
     module === 'user' ||
     module === 'menu' ||
@@ -71,7 +76,7 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
     module === 'page' ||
     module === 'collaboration_workspace_member_admin'
   ) {
-    return 'personal'
+    return 'common'
   }
   return 'common'
 }
@@ -239,7 +244,8 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
     isBuiltin: Boolean(item?.is_builtin ?? item?.isBuiltin ?? false),
     actionCount: item?.action_count ?? item?.actionCount ?? 0,
     menuCount: item?.menu_count ?? item?.menuCount ?? 0,
-    collaborationWorkspaceCount: item?.collaborationWorkspaceCount ?? 0,
+    collaborationWorkspaceCount:
+      item?.collaborationWorkspaceCount ?? item?.collaboration_workspace_count ?? 0,
     status: item?.status || 'normal',
     sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
     createdAt: item?.created_at || item?.createdAt || '',
@@ -1642,7 +1648,7 @@ export function fetchGetPermissionRiskAudits(params?: {
 export function fetchGetFeaturePackageList(params: Api.SystemManage.FeaturePackageSearchParams) {
   const normalizedParams = {
     ...params,
-    app_key: params?.appKey,
+    // 功能包目录查询是全局视图，不按当前 App 过滤列表。
     package_key: params?.packageKey,
     package_type: params?.packageType,
     context_type: params?.contextType,
@@ -1667,7 +1673,7 @@ export function fetchGetFeaturePackageOptions(
 ) {
   const normalizedParams = {
     ...params,
-    app_key: params?.appKey,
+    ...(params?.appKey ? { app_key: params.appKey } : {}),
     package_key: params?.packageKey,
     package_type: params?.packageType,
     context_type: params?.contextType,

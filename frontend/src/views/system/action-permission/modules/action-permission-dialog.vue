@@ -58,16 +58,16 @@
         </ElSelect>
       </ElFormItem>
       <div class="context-hint">
-        <span
-          >个人空间：个人空间内的治理与系统能力，也包含协作空间治理入口，建议使用 `system.` 或
-          `feature_package.` 前缀。</span
-        >
+        <span>个人空间：仅用于明确绑定到个人空间的权限键，避免把通用治理能力归到个人空间。</span>
         <span
           >协作空间：协作空间内成员、边界和消息能力，建议使用
           `collaboration_workspace.member.`、`collaboration_workspace.boundary.`、`collaboration_workspace.message.`
           前缀。</span
         >
-        <span>通用：跨空间业务能力，不要复用个人空间/协作空间专属前缀。</span>
+        <span
+          >通用：平台管理 API、系统治理能力和跨空间业务能力默认归通用，建议使用 `system.`、
+          `feature_package.`、`message.` 等前缀。</span
+        >
       </div>
       <ElFormItem label="权限名称" prop="name">
         <ElInput v-model="form.name" placeholder="请输入名称" />
@@ -156,7 +156,7 @@
     permissionKey: [{ required: true, message: '请输入权限键', trigger: 'blur' }],
     moduleGroupId: [{ required: true, message: '请选择模块分组', trigger: 'change' }],
     featureGroupId: [{ required: true, message: '请选择功能分组', trigger: 'change' }],
-    contextType: [{ required: true, message: '请选择上下文', trigger: 'change' }],
+    contextType: [{ required: true, message: '请选择空间范围', trigger: 'change' }],
     name: [{ required: true, message: '请输入权限名称', trigger: 'blur' }],
     status: [{ required: true, message: '请选择状态', trigger: 'change' }]
   })

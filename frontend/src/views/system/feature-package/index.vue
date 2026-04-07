@@ -25,13 +25,13 @@
 
       <AdminWorkspaceHero
         title="功能包管理"
-        description="维护基础包、组合包、上下文范围与菜单 / 功能 / 协作空间的绑定关系，统一收口功能赋权与影响范围。"
+        description="功能包目录可全局查看，基础包 / 组合包按空间范围维护；菜单、功能和协作空间绑定仍然需要进入具体 App 上下文。"
         :metrics="[
-          { label: '当前 App', value: targetAppKey },
+          { label: '当前 App 上下文', value: targetAppKey || '全局目录' },
           { label: '当前页功能包数', value: data.length },
           { label: '个人空间功能包', value: personalPackageCount },
           { label: '协作空间功能包', value: collaborationPackageCount },
-          { label: '双上下文功能包', value: sharedPackageCount },
+          { label: '双空间范围功能包', value: sharedPackageCount },
           {
             label: activePackageType === 'base' ? '已组合功能范围数' : '组合包数量',
             value: activePackageType === 'base' ? totalActionCount : bundleCount
@@ -44,27 +44,18 @@
         ]"
       >
         <div class="feature-package-hero-actions">
-          <ElSelect
-            v-model="selectedAppKey"
-            clearable
-            filterable
-            placeholder="选择 App"
-            class="feature-package-app-select"
-            @change="handleManagedAppChange"
+          <ElButton
+            v-action="'feature_package.manage'"
+            :disabled="!targetAppKey"
+            @click="openRelationDialog"
+            v-ripple
           >
-            <ElOption
-              v-for="item in appOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </ElSelect>
-          <ElButton v-action="'feature_package.manage'" @click="openRelationDialog" v-ripple>
             包关系树
           </ElButton>
           <ElButton
             v-action="'feature_package.manage'"
             type="primary"
+            :disabled="!targetAppKey"
             @click="openDialog('add')"
             v-ripple
           >
@@ -75,6 +66,15 @@
     </div>
 
     <ElCard class="art-table-card" shadow="never">
+      <ElAlert
+        v-if="loadError"
+        :title="loadError"
+        type="error"
+        show-icon
+        :closable="false"
+        class="feature-package-error"
+      />
+
       <ArtTableHeader
         v-model:columns="columnChecks"
         v-model:showSearchBar="showSearchBar"
@@ -83,7 +83,7 @@
       >
         <template #left>
           <div class="feature-package-toolbar-tip">
-            包关系、菜单、功能范围和协作空间开通统一从操作菜单进入。
+            列表默认展示全部功能包。包关系、菜单、功能范围和协作空间开通统一从操作菜单进入；这些动作仍需具体 App 上下文。
           </div>
         </template>
       </ArtTableHeader>
@@ -102,7 +102,7 @@
       v-model="dialogVisible"
       :dialog-type="dialogType"
       :package-data="currentPackage"
-      :app-key="targetAppKey"
+      :app-key="resolvePackageAppKey(currentPackage)"
       :default-package-type="activePackageType"
       @success="handleRefresh"
     />
@@ -111,7 +111,7 @@
       v-model="bundlesDialogVisible"
       :package-id="currentPackage.id || ''"
       :package-name="currentPackage.name || ''"
-      :app-key="targetAppKey"
+      :app-key="resolvePackageAppKey(currentPackage)"
       :context-type="currentPackage.contextType || 'collaboration'"
       @success="handleRefresh"
     />
@@ -128,7 +128,7 @@
       v-model="menusDialogVisible"
       :package-id="currentPackage.id || ''"
       :package-name="currentPackage.name || ''"
-      :app-key="targetAppKey"
+      :app-key="resolvePackageAppKey(currentPackage)"
       :context-type="currentPackage.contextType || 'collaboration'"
       @success="handleRefresh"
     />
@@ -223,7 +223,7 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, h, onMounted, reactive, ref, watch } from 'vue'
+  import { computed, h, reactive, ref, watch } from 'vue'
   import { ElButton, ElCard, ElMessage, ElMessageBox, ElTag } from 'element-plus'
   import { useRoute } from 'vue-router'
   import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
@@ -231,7 +231,6 @@
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import {
     fetchDeleteFeaturePackage,
-    fetchGetApps,
     fetchGetFeaturePackageImpactPreview,
     fetchGetFeaturePackageList,
     fetchGetFeaturePackageRelationTree
@@ -258,10 +257,8 @@
   }
   const showSearchBar = ref(false)
   const route = useRoute()
-  const { targetAppKey, setManagedAppKey } = useManagedAppScope()
+  const { targetAppKey } = useManagedAppScope()
   const activePackageType = ref<'base' | 'bundle'>('base')
-  const appList = ref<Api.SystemManage.AppItem[]>([])
-  const selectedAppKey = ref('')
   const dialogVisible = ref(false)
   const bundlesDialogVisible = ref(false)
   const actionsDialogVisible = ref(false)
@@ -278,6 +275,7 @@
   })
   const currentPackage = ref<Partial<PackageItem>>({})
   const routeOpenSignature = ref('')
+  const loadError = ref('')
   const personalPackageCount = computed(
     () => data.value.filter((item) => supportsPersonalWorkspaceContext(item.contextType)).length
   )
@@ -303,13 +301,6 @@
   const disabledPackageCount = computed(
     () => data.value.filter((item) => item.status === 'disabled').length
   )
-  const appOptions = computed(() =>
-    appList.value.map((item) => ({
-      label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
-      value: item.appKey
-    }))
-  )
-
   const searchForm = reactive<SearchForm>({
     keyword: '',
     packageKey: '',
@@ -319,7 +310,7 @@
   })
 
   const contextTypeOptions = [
-    { label: '全部上下文', value: '' },
+    { label: '全部空间范围', value: '' },
     { label: '个人空间功能包', value: 'personal' },
     { label: '协作空间功能包', value: 'collaboration' },
     { label: '通用功能包', value: 'common' }
@@ -341,7 +332,7 @@
     },
     { label: '包名称', key: 'name', type: 'input', props: { placeholder: '请输入包名称' } },
     {
-      label: '上下文类型',
+      label: '空间范围',
       key: 'contextType',
       type: 'select',
       props: { options: contextTypeOptions, clearable: true }
@@ -353,18 +344,6 @@
       props: { options: statusOptions, clearable: true }
     }
   ])
-
-  const fetchFeaturePackageListByApp: typeof fetchGetFeaturePackageList = async (params) => {
-    if (!targetAppKey.value) {
-      return {
-        records: [],
-        total: 0,
-        current: Number((params as any)?.current || 1),
-        size: Number((params as any)?.size || 20)
-      }
-    }
-    return fetchGetFeaturePackageList(params)
-  }
 
   const {
     columns,
@@ -379,11 +358,10 @@
     refreshData
   } = useTable({
     core: {
-      apiFn: fetchFeaturePackageListByApp,
+      apiFn: fetchGetFeaturePackageList,
       apiParams: {
         current: 1,
-        size: 20,
-        appKey: targetAppKey.value
+        size: 20
       },
       columnsFactory: () => [
         { prop: 'packageKey', label: '功能包编码', minWidth: 220, showOverflowTooltip: true },
@@ -392,7 +370,7 @@
           prop: 'appKey',
           label: 'App',
           width: 150,
-          formatter: (row: PackageItem) => row.appKey || targetAppKey.value
+          formatter: (row: PackageItem) => row.appKey || '-'
         },
         {
           prop: 'packageType',
@@ -405,7 +383,7 @@
         },
         {
           prop: 'contextType',
-          label: '上下文',
+          label: '空间范围',
           width: 120,
           formatter: (row: PackageItem) =>
             h(
@@ -539,12 +517,20 @@
           }
         }
       ]
+    },
+    hooks: {
+      onSuccess: () => {
+        loadError.value = ''
+      },
+      onError: (error) => {
+        loadError.value = error?.message || '获取功能包列表失败'
+        ElMessage.error(loadError.value)
+      }
     }
   })
 
   function normalizeSearchParams() {
     return {
-      appKey: targetAppKey.value,
       keyword: searchForm.keyword.trim() || undefined,
       packageKey: searchForm.packageKey.trim() || undefined,
       name: searchForm.name.trim() || undefined,
@@ -575,20 +561,11 @@
     await refreshData()
   }
 
-  async function loadAppOptions() {
-    const res = await fetchGetApps()
-    appList.value = res.records || []
-  }
-
-  async function handleManagedAppChange(value?: string) {
-    await setManagedAppKey(`${value || ''}`.trim())
-  }
-
   async function openRelationDialog() {
-    if (!targetAppKey.value) {
-      ElMessage.warning('请选择当前要管理的 App')
-      return
-    }
+      if (!targetAppKey.value) {
+        ElMessage.warning('请先进入具体 App 上下文后再查看包关系树')
+        return
+      }
     relationDialogVisible.value = true
     await loadRelationTree()
   }
@@ -653,6 +630,11 @@
     routeOpenSignature.value = signature
     currentPackage.value = { ...target }
 
+    const requiresAppContext = ['bundles', 'menus', 'edit'].includes(openMode)
+    if (requiresAppContext && !resolvePackageAppKey(target)) {
+      return
+    }
+
     if (openMode === 'bundles') {
       bundlesDialogVisible.value = true
       return
@@ -676,7 +658,9 @@
 
   function openDialog(type: 'add' | 'edit', row?: PackageItem) {
     dialogType.value = type
-    currentPackage.value = row ? { ...row } : { packageType: activePackageType.value }
+    currentPackage.value = row
+      ? { ...row }
+      : { packageType: activePackageType.value, appKey: targetAppKey.value || '' }
     dialogVisible.value = true
   }
 
@@ -746,22 +730,6 @@
     { immediate: true }
   )
 
-  watch(
-    () => targetAppKey.value,
-    () => {
-      selectedAppKey.value = targetAppKey.value || ''
-      routeOpenSignature.value = ''
-      syncRouteFilters()
-    }
-  )
-
-  onMounted(() => {
-    selectedAppKey.value = targetAppKey.value
-    loadAppOptions().catch(() => {
-      appList.value = []
-    })
-  })
-
   function supportsPersonalWorkspaceContext(contextType?: string) {
     return contextType === 'personal' || contextType === 'common'
   }
@@ -779,6 +747,10 @@
 
   function normalizePackageType(value?: string) {
     return value === 'bundle' ? 'bundle' : value === 'base' ? 'base' : ''
+  }
+
+  function resolvePackageAppKey(row?: Partial<PackageItem>) {
+    return `${row?.appKey || targetAppKey.value || ''}`.trim()
   }
 </script>
 
@@ -846,6 +818,10 @@
   .feature-package-toolbar-tip {
     color: var(--el-text-color-secondary);
     font-size: 13px;
+  }
+
+  .feature-package-error {
+    margin-bottom: 12px;
   }
 
   .relation-toolbar {

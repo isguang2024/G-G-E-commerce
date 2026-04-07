@@ -14,7 +14,7 @@
 
       <div class="summary-card">
         <ElTag effect="plain" round>组合包 {{ packageName }}</ElTag>
-        <ElTag type="warning" effect="plain" round>上下文 {{ contextLabel }}</ElTag>
+        <ElTag type="warning" effect="plain" round>空间范围 {{ contextLabel }}</ElTag>
         <ElTag type="success" effect="plain" round>已选 {{ selectedPackageIds.length }}</ElTag>
         <ElTag type="info" effect="plain" round>可选 {{ filteredPackages.length }}</ElTag>
       </div>
@@ -37,7 +37,7 @@
         </ElTableColumn>
         <ElTableColumn prop="packageKey" label="基础包编码" min-width="220" show-overflow-tooltip />
         <ElTableColumn prop="name" label="基础包名称" min-width="180" show-overflow-tooltip />
-        <ElTableColumn label="上下文" width="120">
+        <ElTableColumn label="空间范围" width="120">
           <template #default="{ row }">
             <ElTag
               effect="plain"
@@ -160,7 +160,7 @@
   async function loadData() {
     if (!props.packageId || !currentAppKey.value) {
       if (!currentAppKey.value) {
-        ElMessage.warning('缺少 app 上下文')
+        ElMessage.warning('缺少 App 上下文')
       }
       return
     }
@@ -197,7 +197,7 @@
   async function handleSave() {
     if (!props.packageId || !currentAppKey.value) {
       if (!currentAppKey.value) {
-        ElMessage.warning('缺少 app 上下文')
+        ElMessage.warning('缺少 App 上下文')
       }
       return
     }

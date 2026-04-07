@@ -14,7 +14,7 @@
 
       <div class="summary-card">
         <ElTag effect="plain" round>功能包 {{ packageName }}</ElTag>
-        <ElTag type="warning" effect="plain" round>上下文 {{ contextLabel }}</ElTag>
+        <ElTag type="warning" effect="plain" round>空间范围 {{ contextLabel }}</ElTag>
         <ElTag type="success" effect="plain" round>已选 {{ selectedIds.length }}</ElTag>
         <ElTag type="info" effect="plain" round>总计 {{ filteredActions.length }}</ElTag>
       </div>
@@ -213,7 +213,7 @@
     if (contextType === 'common') return '个人空间或协作空间'
     if (contextType === 'personal,collaboration' || contextType === 'collaboration,personal')
       return '个人空间或协作空间'
-    return '当前上下文'
+    return '当前空间范围'
   }
 
   function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {

@@ -162,7 +162,7 @@
         <div class="form-intro">
           <div class="form-intro__title">{{ editingId ? '调整接口元数据' : '新增接口注册项' }}</div>
           <div class="form-intro__text">
-            先明确接口身份，再配置分类、协作空间上下文和权限键。这里保存的是正式注册信息，不是临时调试项。
+            先明确接口身份，再配置分类、协作空间要求和权限键。这里保存的是正式注册信息，不是临时调试项。
           </div>
         </div>
 
@@ -223,7 +223,7 @@
           <div class="form-section__header">
             <div class="form-section__title">归属与运行时</div>
             <div class="form-section__desc"
-              >分类影响管理归档，协作空间上下文和状态影响运行时访问与诊断结果。</div
+              >分类影响管理归档，协作空间要求和状态影响运行时访问与诊断结果。</div
             >
           </div>
           <ElRow :gutter="12">
@@ -272,7 +272,7 @@
 
           <ElRow :gutter="12">
             <ElCol :span="12">
-              <ElFormItem label="协作空间上下文" prop="contextScope">
+              <ElFormItem label="协作空间要求" prop="contextScope">
                 <ElSelect
                   v-model="formState.contextScope"
                   placeholder="请选择"
@@ -925,7 +925,7 @@
     { label: '注册总量', value: totalCount.value || 0 },
     { label: '无权限键', value: noPermissionCount.value || 0 },
     { label: '共享接口', value: sharedPermissionCount.value || 0 },
-    { label: '跨上下文共享', value: crossContextSharedCount.value || 0 },
+    { label: '跨空间共享', value: crossContextSharedCount.value || 0 },
     { label: '未分类', value: uncategorizedCount.value || 0 },
     { label: '失效', value: staleCount.value || 0 },
     { label: '未注册', value: unregisteredCount.value || 0 }
@@ -1038,7 +1038,7 @@
         },
         {
           prop: 'contextScope',
-          label: '协作空间上下文',
+          label: '协作空间要求',
           width: 140,
           formatter: (row: APIEndpointItem) =>
             h(
@@ -1271,7 +1271,7 @@
       case 'shared':
         return '多权限共享'
       case 'cross_context_shared':
-        return '跨上下文共享'
+        return '跨空间共享'
       default:
         return '无权限键'
     }
@@ -1490,7 +1490,7 @@
     try {
       await fetchUpdateApiEndpointContextScope(row.id, value)
       row.contextScope = value
-      ElMessage.success('协作空间上下文已更新')
+      ElMessage.success('协作空间要求已更新')
     } catch (error: any) {
       ElMessage.error(error?.message || '更新失败')
     }

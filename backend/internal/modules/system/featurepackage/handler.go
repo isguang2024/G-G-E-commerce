@@ -34,13 +34,8 @@ func (h *Handler) List(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	resolvedAppKey, err := appctx.RequireRequestAppKey(c)
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
-		c.JSON(status, resp)
-		return
-	}
-	req.AppKey = resolvedAppKey
+	// 功能包目录是全局查询视图，列表接口不按当前 App 过滤。
+	req.AppKey = ""
 	list, total, err := h.service.List(&req)
 	if err != nil {
 		h.logger.Error("List feature packages failed", zap.Error(err))
@@ -78,13 +73,6 @@ func (h *Handler) ListOptions(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	resolvedAppKey, err := appctx.RequireRequestAppKey(c)
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
-		c.JSON(status, resp)
-		return
-	}
-	req.AppKey = resolvedAppKey
 	list, err := h.service.ListOptions(&req)
 	if err != nil {
 		h.logger.Error("List feature package options failed", zap.Error(err))

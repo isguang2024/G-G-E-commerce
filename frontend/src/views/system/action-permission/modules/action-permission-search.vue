@@ -81,12 +81,12 @@
       }
     },
     {
-      label: '上下文',
+      label: '空间范围',
       key: 'contextType',
       type: 'select',
       props: {
         clearable: true,
-        placeholder: '请选择上下文',
+        placeholder: '请选择空间范围',
         options: [
           { label: '个人空间', value: 'personal' },
           { label: '协作空间', value: 'collaboration' },
@@ -131,7 +131,7 @@
         clearable: true,
         placeholder: '请选择重复判定',
         options: [
-          { label: '跨上下文镜像', value: 'cross_context_mirror' },
+          { label: '跨空间镜像', value: 'cross_context_mirror' },
           { label: '疑似重复', value: 'suspected_duplicate' }
         ]
       }

@@ -1801,6 +1801,17 @@
 - 若继续追求完全最终体，可继续清持久层结构名和少量历史符号名中的 `Tenant / Team` 词形，但这已经不再影响当前运行时主语义。
 - 协作空间消息发送页当前会在无发信配置时给出明确告警，可后续再补默认发信配置 seed，让空项目初始化后直接具备完整发信能力。
 
+## 2026-04-07 功能包目录与空间范围文案收口
+
+### 本次改动
+- `backend/internal/modules/system/featurepackage/service.go` 与 `backend/internal/modules/system/featurepackage/handler.go` 已将功能包列表与候选列表放宽为全局目录查询，不再强制要求 `app_key` 才能查看列表；App 仅在创建、编辑、关系树和绑定类动作中继续作为上下文约束。
+- `frontend/src/views/system/feature-package/index.vue` 去掉了顶部 App 选择器，改为直接展示全量功能包目录；页面中的创建、关系树与绑定动作仍会在缺少 App 上下文时给出提示，并继续按当前 App 约束执行。
+- `frontend/src/views/system/feature-package/modules/feature-package-dialog.vue`、`frontend/src/views/system/feature-package/modules/feature-package-bundles-dialog.vue`、`frontend/src/views/system/feature-package/modules/feature-package-menus-dialog.vue`、`frontend/src/views/system/feature-package/modules/feature-package-actions-dialog.vue`、`frontend/src/views/system/action-permission/index.vue`、`frontend/src/views/system/action-permission/modules/action-permission-search.vue` 统一把“上下文”相关文案收口为“空间范围 / 跨空间镜像”，减少 App 与空间语义的混淆。
+- `frontend/src/api/system-manage.ts` 对功能包列表与候选集请求做了空 `appKey` 收敛，避免把未选择 App 的空值当成噪声参数发送给后端。
+
+### 下次方向
+- 功能包目录当前已经可以全局浏览，后续若继续优化，重点应放在“绑定动作在缺少 App 上下文时的引导体验”，而不是再把列表层恢复成 App 前置。
+
 ## 2026-04-07 空间权限最终体清理与协作空间同步修复
 
 ### 本次改动
@@ -1838,4 +1849,21 @@
 ### 下次方向
 - 若后续继续优化，可补针对 `role_app_scopes` 的 focused tests，覆盖“全局通用角色”和“指定 App 生效角色”两类场景。
 - 目前用户与角色目录已经和“全局目录 + App 裁剪”的模型对齐，后续重点应放在默认 seed 和角色模板体验，而不是继续让列表层绑死 App。 
+
+## 2026-04-07 功能权限与 API 注册空间范围语义收口
+
+### 本次改动
+- `frontend/src/api/system-manage.ts` 调整了 `deriveContextType` 的默认映射：`system.*`、`feature_package.*`、`message.*` 以及角色、用户、菜单、页面、API 注册等治理能力现在默认归到 `common`，不再误判为 `personal`。
+- `frontend/src/views/system/action-permission/modules/action-permission-dialog.vue` 重写了“空间范围”提示文案：
+  - 个人空间只用于明确属于个人空间的权限键；
+  - 协作空间只用于成员、边界、协作消息等专属能力；
+  - 平台管理 API、系统治理能力和跨空间能力统一归 `通用`。
+- `frontend/src/views/system/api-endpoint/index.vue` 与 `frontend/src/views/system/api-endpoint/modules/api-endpoint-search.vue` 已把 `contextScope` 的展示文案从“协作空间上下文”统一改成“协作空间要求”，并把“跨上下文共享”改成“跨空间共享”，避免把 API 运行时要求和权限键空间范围混淆。
+
+### 验证
+- 本轮按当前协作约束未额外执行自动化验证；改动集中在前端映射与文案收口。
+
+### 下次方向
+- 若继续收口，可把 API 注册页中的 `App 上下文` 动作提示进一步改成“App 资源域”，继续降低 `app` 与 `workspace` 语义混淆。
+- 后续若补验证，优先检查功能权限列表里 `system.*`、`collaboration_workspace.*` 和 `personal.*` 三类权限键是否分别显示为 `通用 / 协作空间 / 个人空间`。
 

@@ -123,11 +123,7 @@ func NewService(
 
 func (s *service) List(req *dto.FeaturePackageListRequest) ([]user.FeaturePackage, int64, error) {
 	if req == nil {
-		return nil, 0, errors.New("app_key is required")
-	}
-	appKey := strings.TrimSpace(req.AppKey)
-	if appKey == "" {
-		return nil, 0, errors.New("app_key is required")
+		return nil, 0, errors.New("invalid request")
 	}
 	if req.Current <= 0 {
 		req.Current = 1
@@ -136,7 +132,6 @@ func (s *service) List(req *dto.FeaturePackageListRequest) ([]user.FeaturePackag
 		req.Size = 20
 	}
 	return s.packageRepo.List((req.Current-1)*req.Size, req.Size, &user.FeaturePackageListParams{
-		AppKey:      appKey,
 		Keyword:     strings.TrimSpace(req.Keyword),
 		PackageKey:  strings.TrimSpace(req.PackageKey),
 		PackageType: normalizePackageType(req.PackageType),
@@ -147,12 +142,14 @@ func (s *service) List(req *dto.FeaturePackageListRequest) ([]user.FeaturePackag
 }
 
 func (s *service) ListOptions(req *dto.FeaturePackageListRequest) ([]user.FeaturePackage, error) {
-	if req == nil || strings.TrimSpace(req.AppKey) == "" {
-		return nil, errors.New("app_key is required")
+	if req == nil {
+		return nil, errors.New("invalid request")
 	}
 	query := s.db.Model(&user.FeaturePackage{})
 	if req != nil {
-		query = query.Where("app_key = ?", strings.TrimSpace(req.AppKey))
+		if appKey := strings.TrimSpace(req.AppKey); appKey != "" {
+			query = query.Where("app_key = ?", appKey)
+		}
 		if keyword := strings.TrimSpace(req.Keyword); keyword != "" {
 			like := "%" + keyword + "%"
 			query = query.Where("(package_key LIKE ? OR name LIKE ? OR description LIKE ?)", like, like, like)

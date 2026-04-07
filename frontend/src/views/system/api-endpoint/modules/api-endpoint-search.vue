@@ -101,12 +101,12 @@
           { label: '开放 API Key 接口', value: 'api_key' },
           { label: '单权限接口', value: 'single' },
           { label: '多权限共享', value: 'shared' },
-          { label: '跨上下文共享', value: 'cross_context_shared' }
+          { label: '跨空间共享', value: 'cross_context_shared' }
         ]
       }
     },
     {
-      label: '协作空间上下文',
+      label: '协作空间要求',
       key: 'contextScope',
       type: 'select',
       props: {

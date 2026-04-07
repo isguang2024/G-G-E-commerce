@@ -12,7 +12,7 @@
 
       <AdminWorkspaceHero
         title="功能权限"
-        description="统一检查权限键被 API、页面和功能包消费的情况，并筛出跨上下文镜像与疑似重复键。"
+        description="统一检查权限键被 API、页面和功能包消费的情况，并筛出跨空间镜像与疑似重复键。"
         :metrics="summaryMetrics"
       >
         <div class="permission-hero-actions">
@@ -62,8 +62,8 @@
         @refresh="handleRefresh"
       >
         <template #left>
-          <div class="permission-toolbar-tip">
-            优先处理“未被消费”和“疑似重复”，跨上下文镜像键保留独立授权。
+      <div class="permission-toolbar-tip">
+            优先处理“未被消费”和“疑似重复”，跨空间镜像键保留独立授权。
           </div>
         </template>
       </ArtTableHeader>
@@ -136,7 +136,7 @@
             <ElTableColumn prop="packageKey" label="包编码" min-width="180" />
             <ElTableColumn prop="name" label="包名称" min-width="140" />
             <ElTableColumn prop="packageType" label="类型" width="100" />
-            <ElTableColumn prop="contextType" label="上下文" width="100" />
+            <ElTableColumn prop="contextType" label="空间范围" width="100" />
           </ElTable>
         </div>
 
@@ -145,7 +145,7 @@
           <ElTable :data="consumerDetail.roles" size="small" border max-height="180">
             <ElTableColumn prop="code" label="角色编码" min-width="160" />
             <ElTableColumn prop="name" label="角色名称" min-width="150" />
-            <ElTableColumn prop="contextType" label="上下文" width="100" />
+            <ElTableColumn prop="contextType" label="空间范围" width="100" />
           </ElTable>
         </div>
       </div>
@@ -250,7 +250,7 @@
     { label: '当前筛选', value: auditSummary.value.totalCount || pagination.total || 0 },
     { label: '未被消费', value: auditSummary.value.unusedCount || 0 },
     { label: '多方复用', value: auditSummary.value.multiConsumerCount || 0 },
-    { label: '跨上下文镜像', value: auditSummary.value.crossContextMirrorCount || 0 },
+    { label: '跨空间镜像', value: auditSummary.value.crossContextMirrorCount || 0 },
     { label: '疑似重复', value: auditSummary.value.suspectedDuplicateCount || 0 }
   ])
 
@@ -301,7 +301,7 @@
       ])
     }
     const tagType = row.duplicatePattern === 'cross_context_mirror' ? 'warning' : 'danger'
-    const tagLabel = row.duplicatePattern === 'cross_context_mirror' ? '跨上下文镜像' : '疑似重复'
+    const tagLabel = row.duplicatePattern === 'cross_context_mirror' ? '跨空间镜像' : '疑似重复'
     const relatedKeys = row.duplicateKeys || []
     return h('div', { class: 'permission-audit-cell' }, [
       h('div', { class: 'permission-audit-cell__tags' }, [
@@ -359,7 +359,7 @@
         },
         {
           prop: 'contextType',
-          label: '上下文',
+          label: '空间范围',
           width: 100,
           formatter: (row: PermissionActionItem) => renderContextType(row)
         },

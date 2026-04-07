@@ -26,8 +26,8 @@
       <ElFormItem label="描述" prop="description">
         <ElInput v-model="form.description" type="textarea" :rows="3" placeholder="请输入描述" />
       </ElFormItem>
-      <ElFormItem label="上下文类型" prop="contextType">
-        <ElSelect v-model="form.contextType" placeholder="请选择上下文类型" style="width: 100%">
+      <ElFormItem label="空间范围" prop="contextType">
+        <ElSelect v-model="form.contextType" placeholder="请选择空间范围" style="width: 100%">
           <ElOption label="个人空间" value="personal" />
           <ElOption label="协作空间" value="collaboration" />
           <ElOption label="通用" value="common" />
@@ -100,7 +100,7 @@
     packageKey: [{ required: true, message: '请输入功能包编码', trigger: 'blur' }],
     packageType: [{ required: true, message: '请选择功能包类型', trigger: 'change' }],
     name: [{ required: true, message: '请输入功能包名称', trigger: 'blur' }],
-    contextType: [{ required: true, message: '请选择上下文类型', trigger: 'change' }],
+    contextType: [{ required: true, message: '请选择空间范围', trigger: 'change' }],
     status: [{ required: true, message: '请选择状态', trigger: 'change' }]
   })
 
@@ -158,7 +158,7 @@
   async function handleSubmit() {
     if (!formRef.value) return
     if (!currentAppKey.value) {
-      ElMessage.warning('缺少 app 上下文')
+      ElMessage.warning('缺少 App 上下文')
       return
     }
     await formRef.value.validate(async (valid) => {

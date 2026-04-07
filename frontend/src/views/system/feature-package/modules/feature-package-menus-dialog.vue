@@ -11,7 +11,7 @@
       <div class="summary-tags">
         <ElTag effect="plain" round>功能包 {{ packageName }}</ElTag>
         <ElTag type="warning" effect="plain" round
-          >上下文 {{ formatContextType(contextType) }}</ElTag
+          >空间范围 {{ formatContextType(contextType) }}</ElTag
         >
         <ElTag type="success" effect="plain" round
           >已保留 {{ expandedSelectedMenuIds.length }}</ElTag
@@ -78,7 +78,7 @@
 
       <div class="cascader-footer">
         <span class="footer-note"
-          >功能包菜单权限决定该功能包在当前上下文中的菜单入口可见范围。</span
+          >功能包菜单权限决定该功能包在当前空间范围中的菜单入口可见范围。</span
         >
         <ElButton text @click="clearMenuSelection">清空选择</ElButton>
       </div>
@@ -232,7 +232,7 @@
   async function loadData() {
     if (!props.packageId || !currentAppKey.value) {
       if (!currentAppKey.value) {
-        ElMessage.warning('缺少 app 上下文')
+        ElMessage.warning('缺少 App 上下文')
       }
       return
     }
@@ -258,7 +258,7 @@
   async function handleSave() {
     if (!props.packageId || !currentAppKey.value) {
       if (!currentAppKey.value) {
-        ElMessage.warning('缺少 app 上下文')
+        ElMessage.warning('缺少 App 上下文')
       }
       return
     }
