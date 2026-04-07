@@ -37,3 +37,4 @@ output/
 **/.auto-import.json
 **/src/types/import/
 
+.claude/worktrees/
