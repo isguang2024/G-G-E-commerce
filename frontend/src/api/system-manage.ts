@@ -247,6 +247,29 @@ function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem
   }
 }
 
+function normalizeRole(item: any): Api.SystemManage.RoleListItem {
+  const appKeysRaw = item?.appKeys || item?.app_keys || []
+  const appKeys = Array.isArray(appKeysRaw)
+    ? appKeysRaw.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
+    : []
+  return {
+    roleId: item?.roleId || item?.role_id || item?.id || '',
+    roleName: item?.roleName || item?.role_name || item?.name || '',
+    roleCode: item?.roleCode || item?.role_code || item?.code || '',
+    description: item?.description || '',
+    appKeys,
+    sortOrder: item?.sortOrder ?? item?.sort_order ?? 0,
+    status: item?.status || 'normal',
+    priority: item?.priority ?? 0,
+    customParams: item?.customParams || item?.custom_params || {},
+    createTime: item?.createTime || item?.create_time || item?.created_at || '',
+    collaborationWorkspaceId:
+      item?.collaborationWorkspaceId || item?.collaboration_workspace_id || null,
+    isGlobal: Boolean(item?.isGlobal ?? item?.is_global ?? appKeys.length === 0),
+    canEditPermission: Boolean(item?.canEditPermission ?? item?.can_edit_permission ?? true)
+  }
+}
+
 function normalizeCollaborationWorkspace(
   item: any
 ): Api.SystemManage.CollaborationWorkspaceListItem {
@@ -1185,16 +1208,26 @@ export async function fetchGetUserPermissionMenus(
 
 // 获取角色列表
 export function fetchGetRoleList(params: Api.SystemManage.RoleSearchParams) {
-  return request.get<Api.SystemManage.RoleList>({
-    url: ROLE_BASE,
-    params
-  })
+  return request
+    .get<Api.SystemManage.RoleList>({
+      url: ROLE_BASE,
+      params
+    })
+    .then((res) => ({
+      ...res,
+      records: (res?.records || []).map(normalizeRole)
+    }))
 }
 
 export function fetchGetRoleOptions() {
-  return request.get<{ records: Api.SystemManage.RoleListItem[]; total: number }>({
-    url: `${ROLE_BASE}/options`
-  })
+  return request
+    .get<{ records: Api.SystemManage.RoleListItem[]; total: number }>({
+      url: `${ROLE_BASE}/options`
+    })
+    .then((res) => ({
+      records: (res?.records || []).map(normalizeRole),
+      total: Number(res?.total || 0)
+    }))
 }
 
 // 获取角色列表（简单列表，用于下拉等）
@@ -1209,9 +1242,11 @@ export function fetchGetRoleListSimple() {
 
 // 获取角色详情
 export function fetchGetRole(id: string) {
-  return request.get<Api.SystemManage.RoleListItem>({
-    url: `${ROLE_BASE}/${id}`
-  })
+  return request
+    .get<Api.SystemManage.RoleListItem>({
+      url: `${ROLE_BASE}/${id}`
+    })
+    .then((res) => normalizeRole(res))
 }
 
 // 创建角色

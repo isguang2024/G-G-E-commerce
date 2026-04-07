@@ -21,6 +21,7 @@ import (
 var (
 	ErrRoleNotFound                          = errors.New("role not found")
 	ErrRoleCodeExists                        = errors.New("role code already exists")
+	ErrRoleAppScopeMismatch                  = errors.New("role is not effective in current app")
 	ErrSystemRoleCannotDelete                = errors.New("system role cannot be deleted")
 	ErrCollaborationWorkspaceRoleKeyReadonly = errors.New("collaboration workspace role permission keys are managed by workspace boundary")
 	ErrCollaborationWorkspaceRoleManaged     = errors.New("collaboration workspace role is managed in collaboration workspace context")
@@ -133,21 +134,16 @@ func (s *roleService) List(req *dto.RoleListRequest) ([]user.Role, int64, error)
 		req.RoleCode,
 		req.RoleName,
 		req.Description,
+		req.AppKey,
 		req.StartTime,
 		req.EndTime,
 		req.Enabled,
+		req.GlobalOnly,
 	)
 }
 
 func (s *roleService) ListOptions() ([]user.Role, error) {
-	items := make([]user.Role, 0)
-	err := s.db.
-		Model(&user.Role{}).
-		Select("id", "code", "name", "description", "priority", "sort_order", "custom_params", "status", "created_at", "updated_at").
-		Where("collaboration_workspace_id IS NULL").
-		Order("sort_order ASC, created_at DESC").
-		Find(&items).Error
-	return items, err
+	return s.roleRepo.List()
 }
 
 func (s *roleService) Get(id uuid.UUID) (*user.Role, error) {
@@ -174,7 +170,12 @@ func (s *roleService) Create(req *dto.RoleCreateRequest) (*user.Role, error) {
 		CustomParams: user.MetaJSON(req.CustomParams),
 		Status:       status,
 	}
-	if err := database.DB.Create(role).Error; err != nil {
+	if err := database.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(role).Error; err != nil {
+			return err
+		}
+		return replaceRoleAppScopesTx(tx, role.ID, req.AppKeys)
+	}); err != nil {
 		return nil, err
 	}
 	return s.roleRepo.GetByID(role.ID)
@@ -214,19 +215,120 @@ func (s *roleService) Update(id uuid.UUID, req *dto.RoleUpdateRequest) error {
 	if req.Status != "" {
 		updates["status"] = req.Status
 	}
-	if len(updates) == 0 {
+	appScopesChanged := req.AppKeys != nil && !sameStringSet(role.AppKeys, req.AppKeys)
+	if len(updates) == 0 && !appScopesChanged {
 		s.logger.Info("无需更新角色", zap.String("roleId", id.String()))
 		return nil
 	}
-	updates["updated_at"] = time.Now()
-	s.logger.Info("更新角色字段", zap.String("roleId", id.String()), zap.Any("updates", updates))
-	if err := s.roleRepo.UpdateWithMap(id, updates); err != nil {
+	if len(updates) > 0 {
+		updates["updated_at"] = time.Now()
+	}
+	s.logger.Info("更新角色字段", zap.String("roleId", id.String()), zap.Any("updates", updates), zap.Any("appKeys", req.AppKeys))
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		if len(updates) > 0 {
+			if err := tx.Model(&user.Role{}).Where("id = ?", id).Updates(updates).Error; err != nil {
+				return err
+			}
+		}
+		if appScopesChanged {
+			if err := replaceRoleAppScopesTx(tx, id, req.AppKeys); err != nil {
+				return err
+			}
+			if err := cleanupRoleAppArtifactsTx(tx, id, req.AppKeys); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
 		return err
 	}
 	if s.refresher != nil {
 		return s.refresher.RefreshPersonalWorkspaceRole(id)
 	}
 	return nil
+}
+
+func cleanupRoleAppArtifactsTx(tx *gorm.DB, roleID uuid.UUID, appKeys []string) error {
+	if len(appKeys) == 0 {
+		return nil
+	}
+	normalized := normalizeAppKeys(appKeys)
+	if len(normalized) == 0 {
+		return nil
+	}
+	if err := tx.Where("role_id = ? AND app_key NOT IN ?", roleID, normalized).Delete(&user.RoleFeaturePackage{}).Error; err != nil {
+		return err
+	}
+	if err := tx.Where("role_id = ? AND app_key NOT IN ?", roleID, normalized).Delete(&user.RoleHiddenMenu{}).Error; err != nil {
+		return err
+	}
+	return tx.Where("role_id = ? AND app_key NOT IN ?", roleID, normalized).Delete(&user.RoleDisabledAction{}).Error
+}
+
+func replaceRoleAppScopesTx(tx *gorm.DB, roleID uuid.UUID, appKeys []string) error {
+	if err := tx.Where("role_id = ?", roleID).Delete(&user.RoleAppScope{}).Error; err != nil {
+		return err
+	}
+	normalized := normalizeAppKeys(appKeys)
+	if len(normalized) == 0 {
+		return nil
+	}
+	items := make([]user.RoleAppScope, 0, len(normalized))
+	for _, item := range normalized {
+		items = append(items, user.RoleAppScope{RoleID: roleID, AppKey: item})
+	}
+	return tx.Create(&items).Error
+}
+
+func (s *roleService) ensureRoleEffectiveInApp(role *user.Role, appKey string) error {
+	if role == nil {
+		return ErrRoleNotFound
+	}
+	if len(role.AppKeys) == 0 {
+		return nil
+	}
+	normalizedAppKey := appscope.Normalize(appKey)
+	for _, item := range role.AppKeys {
+		if appscope.Normalize(item) == normalizedAppKey {
+			return nil
+		}
+	}
+	return ErrRoleAppScopeMismatch
+}
+
+func normalizeAppKeys(items []string) []string {
+	result := make([]string, 0, len(items))
+	seen := make(map[string]struct{}, len(items))
+	for _, item := range items {
+		target := appscope.Normalize(item)
+		if target == "" {
+			continue
+		}
+		if _, ok := seen[target]; ok {
+			continue
+		}
+		seen[target] = struct{}{}
+		result = append(result, target)
+	}
+	return result
+}
+
+func sameStringSet(left []string, right []string) bool {
+	normalizedLeft := normalizeAppKeys(left)
+	normalizedRight := normalizeAppKeys(right)
+	if len(normalizedLeft) != len(normalizedRight) {
+		return false
+	}
+	seen := make(map[string]struct{}, len(normalizedLeft))
+	for _, item := range normalizedLeft {
+		seen[item] = struct{}{}
+	}
+	for _, item := range normalizedRight {
+		if _, ok := seen[item]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func (s *roleService) Delete(id uuid.UUID) error {
@@ -266,6 +368,9 @@ func (s *roleService) Delete(id uuid.UUID) error {
 		if err := tx.Where("role_id = ?", id).Delete(&user.RoleDataPermission{}).Error; err != nil {
 			return err
 		}
+		if err := tx.Where("role_id = ?", id).Delete(&user.RoleAppScope{}).Error; err != nil {
+			return err
+		}
 		if err := tx.Where("role_id = ?", id).Delete(&models.PersonalWorkspaceRoleAccessSnapshot{}).Error; err != nil {
 			return err
 		}
@@ -290,6 +395,9 @@ func (s *roleService) GetRolePackages(roleID uuid.UUID, appKey string) ([]uuid.U
 	if role.CollaborationWorkspaceID != nil {
 		return nil, nil, ErrCollaborationWorkspaceRoleManaged
 	}
+	if err := s.ensureRoleEffectiveInApp(role, appKey); err != nil {
+		return nil, nil, err
+	}
 	packageIDs, err := appscope.PackageIDsByRole(s.db, roleID, appKey)
 	if err != nil {
 		return nil, nil, err
@@ -311,6 +419,9 @@ func (s *roleService) SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, 
 	}
 	if role.CollaborationWorkspaceID != nil {
 		return ErrCollaborationWorkspaceRoleManaged
+	}
+	if err := s.ensureRoleEffectiveInApp(role, appKey); err != nil {
+		return err
 	}
 	normalizedAppKey := appscope.Normalize(appKey)
 	if len(packageIDs) > 0 {
@@ -367,6 +478,9 @@ func (s *roleService) SetRoleMenus(roleID uuid.UUID, menuIDs []uuid.UUID, appKey
 	if role.CollaborationWorkspaceID != nil {
 		return ErrCollaborationWorkspaceRoleManaged
 	}
+	if err := s.ensureRoleEffectiveInApp(role, appKey); err != nil {
+		return err
+	}
 	boundary, err := s.GetRoleMenuBoundary(roleID, appKey)
 	if err != nil {
 		return err
@@ -403,6 +517,9 @@ func (s *roleService) SetRoleKeys(roleID uuid.UUID, keys []user.RoleKeyPermissio
 	}
 	if role.CollaborationWorkspaceID != nil {
 		return ErrCollaborationWorkspaceRoleManaged
+	}
+	if err := s.ensureRoleEffectiveInApp(role, appKey); err != nil {
+		return err
 	}
 	if role.Code == "collaboration_workspace_admin" || role.Code == "collaboration_workspace_member" {
 		return ErrCollaborationWorkspaceRoleKeyReadonly
@@ -530,6 +647,9 @@ func (s *roleService) GetRoleMenuBoundary(roleID uuid.UUID, appKey string) (*Rol
 	if role.CollaborationWorkspaceID != nil {
 		return nil, ErrCollaborationWorkspaceRoleManaged
 	}
+	if err := s.ensureRoleEffectiveInApp(role, appKey); err != nil {
+		return nil, err
+	}
 	if s.roleSnapshotService != nil {
 		snapshot, snapshotErr := s.roleSnapshotService.GetSnapshot(roleID, appscope.Normalize(appKey))
 		if snapshotErr != nil {
@@ -557,6 +677,9 @@ func (s *roleService) GetRoleKeyBoundary(roleID uuid.UUID, appKey string) (*Role
 	}
 	if role.CollaborationWorkspaceID != nil {
 		return nil, ErrCollaborationWorkspaceRoleManaged
+	}
+	if err := s.ensureRoleEffectiveInApp(role, appKey); err != nil {
+		return nil, err
 	}
 	if s.roleSnapshotService != nil {
 		snapshot, snapshotErr := s.roleSnapshotService.GetSnapshot(roleID, appscope.Normalize(appKey))

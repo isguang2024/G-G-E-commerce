@@ -75,6 +75,7 @@ type Role struct {
 	CustomParams             MetaJSON       `gorm:"type:jsonb;default:'{}'::jsonb" json:"custom_params"`
 	Status                   string         `gorm:"type:varchar(20);default:'normal'" json:"status"`
 	IsSystem                 bool           `gorm:"default:false" json:"is_system"`
+	AppKeys                  []string       `gorm:"-" json:"app_keys,omitempty"`
 	CreatedAt                time.Time      `json:"created_at"`
 	UpdatedAt                time.Time      `json:"updated_at"`
 	DeletedAt                gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
@@ -82,6 +83,17 @@ type Role struct {
 
 func (Role) TableName() string {
 	return "roles"
+}
+
+type RoleAppScope struct {
+	RoleID    uuid.UUID `gorm:"type:uuid;primaryKey" json:"role_id"`
+	AppKey    string    `gorm:"type:varchar(100);primaryKey" json:"app_key"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+func (RoleAppScope) TableName() string {
+	return "role_app_scopes"
 }
 
 type Menu struct {

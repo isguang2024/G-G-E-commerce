@@ -252,8 +252,9 @@ type RoleRepository interface {
 	Delete(id uuid.UUID) error
 	GetAll() ([]Role, error)
 	List() ([]Role, error)
-	ListByPage(offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error)
+	ListByPage(offset, limit int, roleCode, roleName, description, appKey, startTime, endTime string, enabled, globalOnly *bool) ([]Role, int64, error)
 	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
+	ReplaceAppScopes(roleID uuid.UUID, appKeys []string) error
 }
 
 type roleRepository struct {
@@ -271,6 +272,9 @@ func (r *roleRepository) GetByID(id uuid.UUID) (*Role, error) {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, gorm.ErrRecordNotFound
 		}
+		return nil, err
+	}
+	if err := r.loadAppScopes([]*Role{&role}); err != nil {
 		return nil, err
 	}
 	return &role, nil
@@ -297,12 +301,24 @@ func (r *roleRepository) FindByCode(code string) ([]Role, error) {
 func (r *roleRepository) GetByIDs(ids []uuid.UUID) ([]Role, error) {
 	var roles []Role
 	err := r.db.Where("id IN ?", ids).Find(&roles).Error
+	if err != nil {
+		return nil, err
+	}
+	if err := r.loadAppScopes(roleSlicePointers(roles)); err != nil {
+		return nil, err
+	}
 	return roles, err
 }
 
 func (r *roleRepository) List() ([]Role, error) {
 	var roles []Role
 	err := r.db.Where("collaboration_workspace_id IS NULL").Find(&roles).Error
+	if err != nil {
+		return nil, err
+	}
+	if err := r.loadAppScopes(roleSlicePointers(roles)); err != nil {
+		return nil, err
+	}
 	return roles, err
 }
 
@@ -312,6 +328,12 @@ func (r *roleRepository) ListCollaborationWorkspaceRoles(collaborationWorkspaceI
 		Where("(collaboration_workspace_id IS NULL AND code IN ?) OR collaboration_workspace_id = ?", []string{"collaboration_workspace_admin", "collaboration_workspace_member"}, collaborationWorkspaceID).
 		Order("collaboration_workspace_id IS NULL DESC, sort_order ASC, created_at DESC").
 		Find(&roles).Error
+	if err != nil {
+		return nil, err
+	}
+	if err := r.loadAppScopes(roleSlicePointers(roles)); err != nil {
+		return nil, err
+	}
 	return roles, err
 }
 
@@ -330,10 +352,16 @@ func (r *roleRepository) Delete(id uuid.UUID) error {
 func (r *roleRepository) GetAll() ([]Role, error) {
 	var roles []Role
 	err := r.db.Where("collaboration_workspace_id IS NULL").Find(&roles).Error
+	if err != nil {
+		return nil, err
+	}
+	if err := r.loadAppScopes(roleSlicePointers(roles)); err != nil {
+		return nil, err
+	}
 	return roles, err
 }
 
-func (r *roleRepository) ListByPage(offset, limit int, roleCode, roleName, description, startTime, endTime string, enabled *bool) ([]Role, int64, error) {
+func (r *roleRepository) ListByPage(offset, limit int, roleCode, roleName, description, appKey, startTime, endTime string, enabled, globalOnly *bool) ([]Role, int64, error) {
 	baseQuery := r.db.Model(&Role{}).Where("collaboration_workspace_id IS NULL")
 	if roleCode != "" {
 		baseQuery = baseQuery.Where("code LIKE ?", "%"+roleCode+"%")
@@ -343,6 +371,22 @@ func (r *roleRepository) ListByPage(offset, limit int, roleCode, roleName, descr
 	}
 	if description != "" {
 		baseQuery = baseQuery.Where("description LIKE ?", "%"+description+"%")
+	}
+	normalizedAppKey := strings.TrimSpace(appKey)
+	if normalizedAppKey != "" {
+		baseQuery = baseQuery.Where(`
+			NOT EXISTS (
+				SELECT 1
+				FROM role_app_scopes
+				WHERE role_app_scopes.role_id = roles.id
+			)
+			OR EXISTS (
+				SELECT 1
+				FROM role_app_scopes
+				WHERE role_app_scopes.role_id = roles.id
+				  AND role_app_scopes.app_key = ?
+			)
+		`, normalizedAppKey)
 	}
 	if startTime != "" {
 		baseQuery = baseQuery.Where("created_at >= ?", startTime)
@@ -357,6 +401,13 @@ func (r *roleRepository) ListByPage(offset, limit int, roleCode, roleName, descr
 			baseQuery = baseQuery.Where("status = ?", "disabled")
 		}
 	}
+	if globalOnly != nil {
+		if *globalOnly {
+			baseQuery = baseQuery.Where("NOT EXISTS (SELECT 1 FROM role_app_scopes WHERE role_app_scopes.role_id = roles.id)")
+		} else {
+			baseQuery = baseQuery.Where("EXISTS (SELECT 1 FROM role_app_scopes WHERE role_app_scopes.role_id = roles.id)")
+		}
+	}
 	var total int64
 	if err := baseQuery.Count(&total).Error; err != nil {
 		return nil, 0, err
@@ -364,11 +415,82 @@ func (r *roleRepository) ListByPage(offset, limit int, roleCode, roleName, descr
 
 	var roles []Role
 	err := baseQuery.Offset(offset).Limit(limit).Order("sort_order ASC, created_at DESC").Find(&roles).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	if err := r.loadAppScopes(roleSlicePointers(roles)); err != nil {
+		return nil, 0, err
+	}
 	return roles, total, err
 }
 
 func (r *roleRepository) UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error {
 	return r.db.Model(&Role{}).Where("id = ?", id).Updates(updates).Error
+}
+
+func (r *roleRepository) ReplaceAppScopes(roleID uuid.UUID, appKeys []string) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("role_id = ?", roleID).Delete(&RoleAppScope{}).Error; err != nil {
+			return err
+		}
+		if len(appKeys) == 0 {
+			return nil
+		}
+		items := make([]RoleAppScope, 0, len(appKeys))
+		seen := make(map[string]struct{}, len(appKeys))
+		for _, item := range appKeys {
+			target := strings.TrimSpace(item)
+			if target == "" {
+				continue
+			}
+			if _, ok := seen[target]; ok {
+				continue
+			}
+			seen[target] = struct{}{}
+			items = append(items, RoleAppScope{RoleID: roleID, AppKey: target})
+		}
+		if len(items) == 0 {
+			return nil
+		}
+		return tx.Create(&items).Error
+	})
+}
+
+func (r *roleRepository) loadAppScopes(roles []*Role) error {
+	if len(roles) == 0 {
+		return nil
+	}
+	roleIDs := make([]uuid.UUID, 0, len(roles))
+	roleMap := make(map[uuid.UUID]*Role, len(roles))
+	for _, role := range roles {
+		if role == nil || role.ID == uuid.Nil {
+			continue
+		}
+		role.AppKeys = []string{}
+		roleIDs = append(roleIDs, role.ID)
+		roleMap[role.ID] = role
+	}
+	if len(roleIDs) == 0 {
+		return nil
+	}
+	var items []RoleAppScope
+	if err := r.db.Where("role_id IN ?", roleIDs).Order("app_key ASC").Find(&items).Error; err != nil {
+		return err
+	}
+	for _, item := range items {
+		if role, ok := roleMap[item.RoleID]; ok {
+			role.AppKeys = append(role.AppKeys, item.AppKey)
+		}
+	}
+	return nil
+}
+
+func roleSlicePointers(items []Role) []*Role {
+	result := make([]*Role, 0, len(items))
+	for index := range items {
+		result = append(result, &items[index])
+	}
+	return result
 }
 
 type MenuRepository interface {

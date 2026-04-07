@@ -1818,3 +1818,24 @@
 - 若继续追求符号级最终体，可继续清持久层结构名和极少量历史注释中的 `Tenant / Team` 词形。
 - 当前主链已统一到 `workspace / personal / collaboration`，后续优化重点应转到默认 seed 丰富度与协作空间业务体验，而不是继续调整权限主语义。
 
+## 2026-04-07 全局用户与角色 App 生效范围收口
+
+### 本次改动
+- 用户目录已明确收口为全局用户目录：`frontend/src/views/system/user/index.vue` 不再要求先选择 App 才加载用户列表，App 只在功能包、菜单裁剪和权限测试时参与裁剪。
+- 角色目录已明确收口为全局角色目录：`frontend/src/views/system/role/index.vue` 现在默认显示全部角色，并支持通过 `App` 过滤查看“全局通用角色 + 指定 App 生效角色”。
+- `backend/internal/modules/system/role/service.go`、`backend/internal/modules/system/role/handler.go`、`backend/internal/modules/system/user/repository.go`、`backend/internal/modules/system/models/model.go` 新增并启用了 `role_app_scopes` 主链：
+  - 角色可配置多个生效 App；
+  - 未配置生效 App 时视为全局通用；
+  - 在角色功能包、菜单和权限配置时会校验当前 App 是否落在角色生效范围内。
+- `frontend/src/views/system/role/modules/role-edit-dialog.vue` 已增加“生效 App”多选配置；`frontend/src/views/system/user/modules/user-dialog.vue` 会在角色选项中标明“全局通用”或具体 App 范围，避免误选。
+- `frontend/src/api/system-manage.ts` 与 `frontend/src/types/api/api.d.ts` 已把 `appKeys / isGlobal` 收为角色 public type 的一部分，不再让前端只能按旧的“先选 App 再看角色目录”方式工作。
+
+### 验证
+- `go test ./... -run '^$'`
+- `pnpm --dir frontend lint`
+- `pnpm --dir frontend build`
+
+### 下次方向
+- 若后续继续优化，可补针对 `role_app_scopes` 的 focused tests，覆盖“全局通用角色”和“指定 App 生效角色”两类场景。
+- 目前用户与角色目录已经和“全局目录 + App 裁剪”的模型对齐，后续重点应放在默认 seed 和角色模板体验，而不是继续让列表层绑死 App。 
+

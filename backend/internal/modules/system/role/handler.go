@@ -57,6 +57,8 @@ func (h *RoleHandler) List(c *gin.Context) {
 			"roleName":          r.Name,
 			"roleCode":          r.Code,
 			"description":       r.Description,
+			"appKeys":           r.AppKeys,
+			"isGlobal":          len(r.AppKeys) == 0,
 			"status":            r.Status,
 			"sortOrder":         r.SortOrder,
 			"priority":          r.Priority,
@@ -88,6 +90,8 @@ func (h *RoleHandler) ListOptions(c *gin.Context) {
 			"roleName":          r.Name,
 			"roleCode":          r.Code,
 			"description":       r.Description,
+			"appKeys":           r.AppKeys,
+			"isGlobal":          len(r.AppKeys) == 0,
 			"status":            r.Status,
 			"sortOrder":         r.SortOrder,
 			"priority":          r.Priority,
@@ -125,6 +129,8 @@ func (h *RoleHandler) Get(c *gin.Context) {
 		"roleName":     role.Name,
 		"roleCode":     role.Code,
 		"description":  role.Description,
+		"appKeys":      role.AppKeys,
+		"isGlobal":     len(role.AppKeys) == 0,
 		"status":       role.Status,
 		"sortOrder":    role.SortOrder,
 		"priority":     role.Priority,
@@ -243,6 +249,11 @@ func (h *RoleHandler) GetRolePackages(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
+		if err == ErrRoleAppScopeMismatch {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "当前 App 不在角色生效范围内")
+			c.JSON(status, resp)
+			return
+		}
 		h.logger.Error("Get role packages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取角色功能包失败")
 		c.JSON(status, resp)
@@ -302,6 +313,11 @@ func (h *RoleHandler) SetRolePackages(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
+		if err == ErrRoleAppScopeMismatch {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "当前 App 不在角色生效范围内")
+			c.JSON(status, resp)
+			return
+		}
 		h.logger.Error("Set role packages failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存角色功能包失败")
 		c.JSON(status, resp)
@@ -332,6 +348,11 @@ func (h *RoleHandler) GetRoleMenus(c *gin.Context) {
 		}
 		if err == ErrCollaborationWorkspaceRoleManaged {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "协作空间自定义角色需要在协作空间上下文中维护")
+			c.JSON(status, resp)
+			return
+		}
+		if err == ErrRoleAppScopeMismatch {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "当前 App 不在角色生效范围内")
 			c.JSON(status, resp)
 			return
 		}
@@ -443,6 +464,11 @@ func (h *RoleHandler) SetRoleMenus(c *gin.Context) {
 			c.JSON(status, resp)
 			return
 		}
+		if err == ErrRoleAppScopeMismatch {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "当前 App 不在角色生效范围内")
+			c.JSON(status, resp)
+			return
+		}
 		h.logger.Error("Set role menus failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "保存角色菜单失败")
 		c.JSON(status, resp)
@@ -473,6 +499,11 @@ func (h *RoleHandler) GetRoleKeys(c *gin.Context) {
 		}
 		if err == ErrCollaborationWorkspaceRoleManaged {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "协作空间自定义角色需要在协作空间上下文中维护")
+			c.JSON(status, resp)
+			return
+		}
+		if err == ErrRoleAppScopeMismatch {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "当前 App 不在角色生效范围内")
 			c.JSON(status, resp)
 			return
 		}
@@ -544,6 +575,11 @@ func (h *RoleHandler) SetRoleKeys(c *gin.Context) {
 		}
 		if err == ErrCollaborationWorkspaceRoleManaged {
 			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "协作空间自定义角色需要在协作空间上下文中维护")
+			c.JSON(status, resp)
+			return
+		}
+		if err == ErrRoleAppScopeMismatch {
+			status, resp := errcode.ResponseWithMsg(errcode.ErrForbidden, "当前 App 不在角色生效范围内")
 			c.JSON(status, resp)
 			return
 		}

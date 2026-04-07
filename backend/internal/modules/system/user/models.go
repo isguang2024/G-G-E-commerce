@@ -9,6 +9,7 @@ import (
 type MetaJSON = models.MetaJSON
 type User = models.User
 type Role = models.Role
+type RoleAppScope = models.RoleAppScope
 type App = models.App
 type AppHostBinding = models.AppHostBinding
 type Menu = models.Menu

@@ -7,7 +7,9 @@ type RoleListRequest struct {
 	RoleName    string `form:"roleName"`
 	RoleCode    string `form:"roleCode"`
 	Description string `form:"description"`
+	AppKey      string `form:"appKey"`
 	Enabled     *bool  `form:"enabled"`
+	GlobalOnly  *bool  `form:"globalOnly"`
 	StartTime   string `form:"startTime"`
 	EndTime     string `form:"endTime"`
 }
@@ -17,6 +19,7 @@ type RoleCreateRequest struct {
 	Code         string         `json:"code" binding:"required,max=50"`
 	Name         string         `json:"name" binding:"required,max=100"`
 	Description  string         `json:"description"`
+	AppKeys      []string       `json:"app_keys"`
 	SortOrder    int            `json:"sort_order"`
 	Priority     int            `json:"priority"`
 	CustomParams map[string]any `json:"custom_params"`
@@ -28,6 +31,7 @@ type RoleUpdateRequest struct {
 	Code         string         `json:"code" binding:"max=50"`
 	Name         string         `json:"name" binding:"max=100"`
 	Description  string         `json:"description"`
+	AppKeys      []string       `json:"app_keys"`
 	SortOrder    int            `json:"sort_order"`
 	Priority     int            `json:"priority"`
 	CustomParams map[string]any `json:"custom_params"`

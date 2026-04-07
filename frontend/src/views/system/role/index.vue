@@ -10,7 +10,7 @@
 
       <AdminWorkspaceHero
         title="个人空间角色管理"
-        description="这里维护个人空间角色目录。个人空间角色绑定到个人空间，用于个人空间下的治理与菜单裁剪，不直接替代协作空间业务权限。"
+        description="角色是全局角色目录；未配置 App 生效范围时全局通用，配置后仅在指定 App 下参与权限裁剪。"
         :metrics="heroMetrics"
       >
         <div class="role-hero-actions">
@@ -50,7 +50,7 @@
       >
         <template #left>
           <div class="role-toolbar-tip"
-            >个人空间角色的功能包、权限和菜单裁剪都会绑定到个人空间。</div
+            >角色目录本身不依赖 App 才能查看；功能包、权限和菜单裁剪仍按具体 App 配置。</div
           >
         </template>
       </ArtTableHeader>
@@ -120,10 +120,10 @@
   const dialogType = ref<'add' | 'edit'>('add')
   const currentRoleData = ref<RoleListItem | undefined>()
   const heroMetrics = computed(() => [
-    { label: '当前 App', value: targetAppKey.value },
+    { label: 'App 过滤', value: targetAppKey.value || '全部 App' },
     { label: '角色总数', value: pagination.total || data.value.length || 0 },
     { label: '当前页', value: data.value.length || 0 },
-    { label: '正常', value: data.value.filter((item) => item.status === 'normal').length || 0 }
+    { label: '全局通用', value: data.value.filter((item) => item.isGlobal).length || 0 }
   ])
   const appOptions = computed(() =>
     appList.value.map((item) => ({
@@ -140,20 +140,11 @@
     daterange: undefined
   })
 
-  const fetchRoleListByApp: typeof fetchGetRoleList = async (params) => {
-    if (!targetAppKey.value) {
-      return {
-        records: [],
-        total: 0,
-        current: Number((params as any)?.current || 1),
-        size: Number((params as any)?.size || 20)
-      }
-    }
-    return fetchGetRoleList({
+  const fetchRoleListByApp: typeof fetchGetRoleList = async (params) =>
+    fetchGetRoleList({
       ...(params || {}),
-      appKey: targetAppKey.value
+      ...(targetAppKey.value ? { appKey: targetAppKey.value } : {})
     } as Api.SystemManage.RoleSearchParams)
-  }
 
   const {
     columns,
@@ -197,6 +188,32 @@
           label: '描述',
           minWidth: 180,
           showOverflowTooltip: true
+        },
+        {
+          prop: 'appKeys',
+          label: '生效范围',
+          minWidth: 220,
+          formatter: (row: RoleListItem) => {
+            if (row.isGlobal || !row.appKeys?.length) {
+              return h(ElTag, { type: 'success', effect: 'plain' }, () => '全局通用')
+            }
+            return h(
+              'div',
+              { class: 'flex flex-wrap gap-1' },
+              row.appKeys.map((appKey) =>
+                h(
+                  ElTag,
+                  {
+                    key: appKey,
+                    size: 'small',
+                    type: 'info',
+                    effect: 'plain'
+                  },
+                  () => appKey
+                )
+              )
+            )
+          }
         },
         {
           prop: 'status',
@@ -312,11 +329,19 @@
 
   function handleActionClick(item: ButtonMoreItem, row: RoleListItem) {
     if (item.key === 'packages') {
+      if (!targetAppKey.value) {
+        ElMessage.warning('请先选择一个 App，再配置角色功能包范围')
+        return
+      }
       showPackageDialog(row)
       return
     }
 
     if (item.key === 'permission') {
+      if (!targetAppKey.value) {
+        ElMessage.warning('请先选择一个 App，再配置角色权限与菜单范围')
+        return
+      }
       showPermissionDialog(row)
       return
     }

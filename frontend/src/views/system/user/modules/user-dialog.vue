@@ -72,7 +72,11 @@
               v-for="role in roleList"
               :key="role.roleId"
               :value="role.roleId"
-              :label="role.roleName"
+              :label="
+                role.isGlobal || !role.appKeys?.length
+                  ? `${role.roleName}（全局通用）`
+                  : `${role.roleName}（${role.appKeys.join(' / ')}）`
+              "
             />
           </ElSelect>
         </ElFormItem>

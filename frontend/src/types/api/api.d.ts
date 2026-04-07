@@ -551,6 +551,7 @@ declare namespace Api {
       roleName: string
       roleCode: string
       description: string
+      appKeys?: string[]
       sortOrder?: number
       status?: string // normal/suspended
       priority?: number // 优先级
@@ -563,8 +564,8 @@ declare namespace Api {
 
     /** 角色搜索参数 */
     type RoleSearchParams = Partial<
-      Pick<RoleListItem, 'roleName' | 'roleCode' | 'description' | 'enabled'> &
-        Api.Common.CommonSearchParams & { globalOnly?: boolean }
+      Pick<RoleListItem, 'roleName' | 'roleCode' | 'description'> &
+        Api.Common.CommonSearchParams & { globalOnly?: boolean; appKey?: string }
     >
 
     /** 创建角色参数（与后端 code/name 对应） */
@@ -572,6 +573,7 @@ declare namespace Api {
       code: string
       name: string
       description?: string
+      app_keys?: string[]
       sort_order?: number
       priority?: number
       custom_params?: Record<string, any>
@@ -583,6 +585,7 @@ declare namespace Api {
       code?: string
       name?: string
       description?: string
+      app_keys?: string[]
       sort_order?: number
       priority?: number
       custom_params?: Record<string, any>

@@ -120,6 +120,7 @@ func AutoMigrate() error {
 		// 用户和角色相关
 		&models.User{},
 		&models.Role{},
+		&models.RoleAppScope{},
 		&models.App{},
 		&models.AppHostBinding{},
 		&models.UserRole{},
@@ -214,6 +215,14 @@ func createUniqueIndexes() error {
 	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", collaborationWorkspaceIndexName).Scan(&count)
 	if count == 0 {
 		if err := DB.Exec("CREATE UNIQUE INDEX " + collaborationWorkspaceIndexName + " ON user_roles (user_id, role_id, collaboration_workspace_id) WHERE collaboration_workspace_id IS NOT NULL").Error; err != nil {
+			return err
+		}
+	}
+
+	roleAppScopeIndexName := "idx_role_app_scopes_unique"
+	DB.Raw("SELECT COUNT(*) FROM pg_indexes WHERE indexname = ?", roleAppScopeIndexName).Scan(&count)
+	if count == 0 {
+		if err := DB.Exec("CREATE UNIQUE INDEX " + roleAppScopeIndexName + " ON role_app_scopes (role_id, app_key)").Error; err != nil {
 			return err
 		}
 	}

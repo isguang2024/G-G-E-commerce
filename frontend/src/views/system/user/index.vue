@@ -10,7 +10,7 @@
 
       <AdminWorkspaceHero
         title="用户管理"
-        description="管理个人空间账号、角色归属、菜单裁剪和权限测试，先在这里确认个人空间身份链路。"
+        description="用户是全局用户目录；角色归属不依赖 App，功能包、菜单裁剪和权限测试按具体 App 进行。"
         :metrics="summaryMetrics"
       >
         <div class="user-hero-actions">
@@ -49,7 +49,9 @@
         @refresh="refreshData"
       >
         <template #left>
-          <div class="user-toolbar-tip">角色、功能包、菜单裁剪和权限测试统一从操作菜单进入。</div>
+          <div class="user-toolbar-tip"
+            >用户列表始终全局可见；涉及功能包、菜单和权限裁剪时再选择 App。</div
+          >
         </template>
       </ArtTableHeader>
 
@@ -142,7 +144,7 @@
   // 选中行
   const selectedRows = ref<UserListItem[]>([])
   const summaryMetrics = computed(() => [
-    { label: '当前 App', value: targetAppKey.value },
+    { label: '权限裁剪 App', value: targetAppKey.value || '未选择' },
     { label: '当前页', value: data.value.length || 0 },
     { label: '总用户', value: pagination.total || 0 },
     { label: '已选', value: selectedRows.value.length || 0 }
@@ -187,21 +189,10 @@
   } = useTable({
     // 核心配置
     core: {
-      apiFn: async (params) => {
-        if (!targetAppKey.value) {
-          return {
-            records: [],
-            total: 0,
-            current: Number((params as any)?.current || 1),
-            size: Number((params as any)?.size || 20)
-          }
-        }
-        return fetchGetUserList(params as Api.SystemManage.UserSearchParams)
-      },
+      apiFn: async (params) => fetchGetUserList(params as Api.SystemManage.UserSearchParams),
       apiParams: {
         current: 1,
         size: 20,
-        appKey: targetAppKey.value,
         ...searchForm.value
       },
       // 自定义分页字段映射，未设置时将使用全局配置 tableConfig.ts 中的 paginationKey
@@ -385,7 +376,7 @@
    */
   const handleSearch = () => {
     // 搜索参数赋值
-    Object.assign(searchParams, { ...searchForm.value, appKey: targetAppKey.value || '' })
+    Object.assign(searchParams, { ...searchForm.value })
     getData()
   }
 
@@ -402,8 +393,7 @@
     resetSearchParams()
     Object.assign(searchParams, {
       current: 1,
-      size: pagination.size,
-      appKey: targetAppKey.value || ''
+      size: pagination.size
     })
     getData()
   }
@@ -459,11 +449,19 @@
   }
 
   const showPackageDialog = (row: UserListItem) => {
+    if (!targetAppKey.value) {
+      ElMessage.warning('请先选择一个 App，再配置用户功能包范围')
+      return
+    }
     currentUserDataForAction.value = row
     packageDialogVisible.value = true
   }
 
   const showMenuDialog = (row: UserListItem) => {
+    if (!targetAppKey.value) {
+      ElMessage.warning('请先选择一个 App，再配置用户菜单裁剪')
+      return
+    }
     currentUserDataForAction.value = row
     menuDialogVisible.value = true
   }
@@ -475,6 +473,10 @@
   }
 
   const showPermissionTestDialog = (row: UserListItem) => {
+    if (!targetAppKey.value) {
+      ElMessage.warning('请先选择一个 App，再执行权限测试')
+      return
+    }
     currentUserDataForAction.value = row
     permissionTestVisible.value = true
   }
@@ -545,8 +547,6 @@
     () => targetAppKey.value,
     (value) => {
       selectedAppKey.value = value || ''
-      Object.assign(searchParams, { appKey: value || '' })
-      refreshData()
     }
   )
 </script>

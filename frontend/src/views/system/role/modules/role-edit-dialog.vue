@@ -28,6 +28,27 @@
           <ElOption label="停用" value="suspended" />
         </ElSelect>
       </ElFormItem>
+      <ElFormItem label="生效 App">
+        <ElSelect
+          v-model="form.appKeys"
+          multiple
+          clearable
+          filterable
+          placeholder="留空表示全局通用"
+          style="width: 100%"
+          :loading="appLoading"
+        >
+          <ElOption
+            v-for="app in appOptions"
+            :key="app.value"
+            :label="app.label"
+            :value="app.value"
+          />
+        </ElSelect>
+        <div class="form-help-text"
+          >未配置 App 时角色对所有 App 通用；配置后仅在这些 App 下生效。</div
+        >
+      </ElFormItem>
       <ElFormItem label="排序">
         <ElInputNumber
           v-model="form.sortOrder"
@@ -64,7 +85,7 @@
 
 <script setup lang="ts">
   import type { FormInstance, FormRules } from 'element-plus'
-  import { fetchCreateRole, fetchUpdateRole } from '@/api/system-manage'
+  import { fetchCreateRole, fetchGetApps, fetchUpdateRole } from '@/api/system-manage'
   import { ElMessage } from 'element-plus'
 
   type RoleListItem = Api.SystemManage.RoleListItem
@@ -88,6 +109,8 @@
 
   const emit = defineEmits<Emits>()
   const formRef = ref<FormInstance>()
+  const appLoading = ref(false)
+  const appOptions = ref<Array<{ label: string; value: string }>>([])
 
   const visible = computed({
     get: () => props.modelValue,
@@ -133,6 +156,7 @@
     roleName: '',
     roleCode: '',
     description: '',
+    appKeys: [] as string[],
     createTime: '',
     sortOrder: 0,
     priority: 0,
@@ -153,6 +177,7 @@
         roleName: roleData.roleName,
         roleCode: roleData.roleCode,
         description: roleData.description || '',
+        appKeys: Array.isArray(roleData.appKeys) ? [...roleData.appKeys] : [],
         createTime: roleData.createTime || '',
         sortOrder: roleData.sortOrder ?? 0,
         priority: roleData.priority || 0,
@@ -167,6 +192,7 @@
       roleName: '',
       roleCode: '',
       description: '',
+      appKeys: [],
       createTime: '',
       sortOrder: 0,
       priority: 0,
@@ -179,10 +205,25 @@
     () => props.modelValue,
     (newVal) => {
       if (newVal) {
+        loadAppOptions()
         initForm()
       }
     }
   )
+
+  const loadAppOptions = async () => {
+    if (appOptions.value.length > 0 || appLoading.value) return
+    appLoading.value = true
+    try {
+      const res = await fetchGetApps()
+      appOptions.value = (res.records || []).map((item) => ({
+        label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
+        value: item.appKey
+      }))
+    } finally {
+      appLoading.value = false
+    }
+  }
 
   watch(
     () => props.roleData,
@@ -210,6 +251,7 @@
         code: form.roleCode,
         name: form.roleName,
         description: form.description || '',
+        app_keys: [...form.appKeys],
         sort_order: form.sortOrder ?? 0,
         priority: form.priority || 0,
         custom_params: parsedCustomParams,
@@ -236,3 +278,12 @@
     }
   }
 </script>
+
+<style scoped>
+  .form-help-text {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--el-text-color-secondary);
+  }
+</style>
