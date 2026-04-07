@@ -1,4 +1,5 @@
 import request from '@/utils/http'
+import { v5Client } from '@/api/v5/client'
 
 const WORKSPACE_BASE = '/api/v1/workspaces'
 
@@ -27,17 +28,17 @@ function normalizeWorkspace(item: any): Api.SystemManage.WorkspaceItem {
   }
 }
 
+// Phase 5 第一刀：走 v5 OpenAPI-first client，类型从生成的 schema 派生。
+// 注意 ogen handler 直接返回 schema 原型，没有 {code,data,message} 信封，
+// 所以这里不再过 src/utils/http 的响应拦截器。
 export async function fetchGetMyWorkspaces() {
-  const res = await request.get<{ records: any[]; total: number }>({
-    url: `${WORKSPACE_BASE}/my`,
-    skipAuthWorkspaceHeader: true,
-    skipCollaborationWorkspaceHeader: true,
-    showErrorMessage: false
-  })
-
+  const { data, error } = await v5Client.GET('/workspaces/my')
+  if (error || !data) {
+    return { records: [], total: 0 }
+  }
   return {
-    records: (res?.records || []).map(normalizeWorkspace),
-    total: res?.total || 0
+    records: (data.records || []).map(normalizeWorkspace),
+    total: data.total || 0
   }
 }
 

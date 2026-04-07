@@ -16,7 +16,8 @@
     "lint:stylelint": "stylelint  \"**/*.{css,scss,vue}\" --fix",
     "lint:lint-staged": "lint-staged",
     "prepare": "husky",
-    "commit": "git-cz"
+    "commit": "git-cz",
+    "gen:api": "openapi-typescript ../backend/api/openapi/openapi.yaml -o src/api/v5/schema.d.ts"
   },
   "config": {
     "commitizen": {
@@ -68,6 +69,7 @@
     "mitt": "^3.0.1",
     "nprogress": "^0.2.0",
     "ohash": "^2.0.11",
+    "openapi-fetch": "^0.13.5",
     "pinia": "^3.0.3",
     "pinia-plugin-persistedstate": "^4.3.0",
     "qrcode.vue": "^3.6.0",
@@ -80,6 +82,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "openapi-typescript": "^7.13.0",
     "@commitlint/cli": "^19.4.1",
     "@commitlint/config-conventional": "^19.4.1",
     "@eslint/js": "^9.9.1",
