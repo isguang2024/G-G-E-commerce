@@ -330,14 +330,6 @@ func uuidSliceToStrings(ids []uuid.UUID) []string {
 	return out
 }
 
-func uuidSetFromSlice(ids []uuid.UUID) map[uuid.UUID]bool {
-	m := make(map[uuid.UUID]bool, len(ids))
-	for _, id := range ids {
-		m[id] = true
-	}
-	return m
-}
-
 func excludeUUIDsFromSlice(source []uuid.UUID, selected []uuid.UUID) []uuid.UUID {
 	sel := uuidSetFromSlice(selected)
 	out := make([]uuid.UUID, 0, len(source))

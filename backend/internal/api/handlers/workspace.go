@@ -52,28 +52,33 @@ const (
 // to stub every method while migrating one domain at a time.
 type APIHandler struct {
 	gen.UnimplementedHandler
-	db            *gorm.DB
-	logger        *zap.Logger
-	service       workspace.Service
-	evaluator   evaluator.Evaluator
-	authSvc     auth.AuthService
-	userRepo    user.UserRepository
-	userSvc     user.UserService
-	roleSvc     role.RoleService
-	navSvc      navigation.Compiler
-	menuSvc     menu.MenuService
-	pageSvc     page.Service
+	db             *gorm.DB
+	logger         *zap.Logger
+	service        workspace.Service
+	evaluator      evaluator.Evaluator
+	authSvc        auth.AuthService
+	userRepo       user.UserRepository
+	userSvc        user.UserService
+	roleSvc        role.RoleService
+	navSvc         navigation.Compiler
+	menuSvc        menu.MenuService
+	pageSvc        page.Service
 	featurePkgSvc  featurepackage.Service
-	featurePkgRepo user.FeaturePackageRepository
 	permSvc        permission.PermissionService
-	cwSvc       collaborationworkspace.CollaborationWorkspaceService
-	appSvc      app.Service
-	spaceSvc    space.Service
-	boundarySvc   collaborationworkspaceboundary.Service
+	cwSvc          collaborationworkspace.CollaborationWorkspaceService
+	appSvc         app.Service
+	spaceSvc       space.Service
+	boundarySvc    collaborationworkspaceboundary.Service
 	personalAccess platformaccess.Service
-	cwMemberRepo  user.CollaborationWorkspaceMemberRepository
-	systemFacade *systemmod.Facade
-	refresher    permissionrefresh.Service
+	cwMemberRepo   user.CollaborationWorkspaceMemberRepository
+	systemFacade   *systemmod.Facade
+	refresher      permissionrefresh.Service
+	// Phase 4: CW boundary ops
+	roleRepo         user.RoleRepository
+	userRoleRepo     user.UserRoleRepository
+	featurePkgRepo   user.FeaturePackageRepository
+	cwFeaturePkgRepo user.CollaborationWorkspaceFeaturePackageRepository
+	keyRepo          user.PermissionKeyRepository
 }
 
 func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval evaluator.Evaluator) *APIHandler {
@@ -178,28 +183,32 @@ func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval eva
 	)
 
 	return &APIHandler{
-		db:            db,
-		logger:        logger,
-		service:       workspace.NewService(db, logger),
-		evaluator:     eval,
-		authSvc:       auth.NewAuthService(userRepo, &cfg.JWT, logger),
-		userRepo:      userRepo,
-		userSvc:       userSvc,
-		roleSvc:       roleSvc,
-		navSvc:        navSvc,
-		menuSvc:       menuSvc,
-		pageSvc:       pageSvc,
-		featurePkgSvc:  featurePkgSvc,
-		featurePkgRepo: featurePkgRepo,
-		permSvc:        permSvc,
-		cwSvc:         cwSvc,
-		appSvc:        appSvc,
-		spaceSvc:      spaceSvc,
-		boundarySvc:    boundarySvc,
-		personalAccess: personalAccess,
-		cwMemberRepo:   cwMemberRepo,
-		systemFacade:  systemmod.NewFacade(db, logger, nil),
-		refresher:     refresher,
+		db:               db,
+		logger:           logger,
+		service:          workspace.NewService(db, logger),
+		evaluator:        eval,
+		authSvc:          auth.NewAuthService(userRepo, &cfg.JWT, logger),
+		userRepo:         userRepo,
+		userSvc:          userSvc,
+		roleSvc:          roleSvc,
+		navSvc:           navSvc,
+		menuSvc:          menuSvc,
+		pageSvc:          pageSvc,
+		featurePkgSvc:    featurePkgSvc,
+		permSvc:          permSvc,
+		cwSvc:            cwSvc,
+		appSvc:           appSvc,
+		spaceSvc:         spaceSvc,
+		boundarySvc:      boundarySvc,
+		personalAccess:   personalAccess,
+		cwMemberRepo:     cwMemberRepo,
+		systemFacade:     systemmod.NewFacade(db, logger, nil),
+		refresher:        refresher,
+		roleRepo:         roleRepo,
+		userRoleRepo:     userRoleRepo,
+		featurePkgRepo:   featurePkgRepo,
+		cwFeaturePkgRepo: cwFeaturePkgRepo,
+		keyRepo:          keyRepo,
 	}
 }
 
