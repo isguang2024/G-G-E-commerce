@@ -191,7 +191,7 @@
       query: {
         packageKey: item.packageKey,
         packageType: item.packageType || 'base',
-        contextType: item.contextType || 'platform',
+        workspaceScope: item.workspaceScope || 'all',
         open: props.open
       }
     })

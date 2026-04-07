@@ -260,7 +260,7 @@
       name: 'FeaturePackage',
       query: {
         packageKey: item.packageKey,
-        contextType: item.contextType || 'platform',
+        workspaceScope: item.workspaceScope || 'all',
         open: 'menus'
       }
     })

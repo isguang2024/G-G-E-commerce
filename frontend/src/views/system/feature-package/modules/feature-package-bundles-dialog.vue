@@ -14,7 +14,7 @@
 
       <div class="summary-card">
         <ElTag effect="plain" round>组合包 {{ packageName }}</ElTag>
-        <ElTag type="warning" effect="plain" round>空间范围 {{ contextLabel }}</ElTag>
+        <ElTag type="warning" effect="plain" round>适用空间 {{ contextLabel }}</ElTag>
         <ElTag type="success" effect="plain" round>已选 {{ selectedPackageIds.length }}</ElTag>
         <ElTag type="info" effect="plain" round>可选 {{ filteredPackages.length }}</ElTag>
       </div>
@@ -37,19 +37,19 @@
         </ElTableColumn>
         <ElTableColumn prop="packageKey" label="基础包编码" min-width="220" show-overflow-tooltip />
         <ElTableColumn prop="name" label="基础包名称" min-width="180" show-overflow-tooltip />
-        <ElTableColumn label="空间范围" width="120">
+        <ElTableColumn label="适用空间" width="120">
           <template #default="{ row }">
             <ElTag
               effect="plain"
               :type="
-                row.contextType === 'personal'
-                  ? 'success'
-                  : row.contextType === 'collaboration'
-                    ? 'info'
-                    : 'warning'
+                row.workspaceScope === 'all'
+                  ? 'warning'
+                  : row.workspaceScope === 'personal'
+                    ? 'success'
+                    : 'info'
               "
             >
-              {{ formatContextType(row.contextType) }}
+              {{ formatWorkspaceScope(row.workspaceScope) }}
             </ElTag>
           </template>
         </ElTableColumn>
@@ -91,15 +91,14 @@
     modelValue: boolean
     packageId: string
     packageName: string
-    appKey?: string
-    contextType?: 'personal' | 'collaboration' | 'common' | string
+    workspaceScope?: 'all' | 'personal' | 'collaboration' | string
   }
 
   const props = withDefaults(defineProps<Props>(), {
     modelValue: false,
     packageId: '',
     packageName: '',
-    contextType: 'collaboration'
+    workspaceScope: 'all'
   })
 
   const emit = defineEmits<{
@@ -126,12 +125,6 @@
     const currentKeyword = keyword.value.trim().toLowerCase()
     return basePackages.value
       .filter((item) => item.id !== props.packageId)
-      .filter((item) =>
-        supportsChildPackage(
-          props.contextType || 'collaboration',
-          item.contextType || 'collaboration'
-        )
-      )
       .filter((item) => {
         if (!currentKeyword) return true
         return [item.packageKey, item.name, item.description]
@@ -147,8 +140,7 @@
     return filteredPackages.value.slice(start, start + pagination.value.size)
   })
 
-  const contextLabel = computed(() => formatContextType(props.contextType))
-  const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
+  const contextLabel = computed(() => formatWorkspaceScope(props.workspaceScope))
 
   watch(
     () => props.modelValue,
@@ -158,10 +150,7 @@
   )
 
   async function loadData() {
-    if (!props.packageId || !currentAppKey.value) {
-      if (!currentAppKey.value) {
-        ElMessage.warning('缺少 App 上下文')
-      }
+    if (!props.packageId) {
       return
     }
     loading.value = true
@@ -169,10 +158,10 @@
     try {
       const [packageRes, bundleRes] = await Promise.all([
         fetchGetFeaturePackageOptions({
-          appKey: currentAppKey.value,
-          packageType: 'base'
+          packageType: 'base',
+          workspaceScope: props.workspaceScope || undefined
         }),
-        fetchGetFeaturePackageChildren(props.packageId, currentAppKey.value)
+        fetchGetFeaturePackageChildren(props.packageId)
       ])
       basePackages.value = packageRes?.records || []
       selectedPackageIds.value = [...(bundleRes?.child_package_ids || [])]
@@ -195,19 +184,12 @@
   }
 
   async function handleSave() {
-    if (!props.packageId || !currentAppKey.value) {
-      if (!currentAppKey.value) {
-        ElMessage.warning('缺少 App 上下文')
-      }
+    if (!props.packageId) {
       return
     }
     saving.value = true
     try {
-      const stats = await fetchSetFeaturePackageChildren(
-        props.packageId,
-        selectedPackageIds.value,
-        currentAppKey.value
-      )
+      const stats = await fetchSetFeaturePackageChildren(props.packageId, selectedPackageIds.value)
       ElMessage.success(formatRefreshMessage(stats))
       emit('success')
       visible.value = false
@@ -218,24 +200,11 @@
     }
   }
 
-  function supportsChildPackage(bundleContextType: string, childContextType: string) {
-    if (bundleContextType === 'personal') {
-      return childContextType === 'personal' || childContextType === 'common'
-    }
-    if (bundleContextType === 'collaboration') {
-      return childContextType === 'collaboration' || childContextType === 'common'
-    }
-    if (bundleContextType === 'common') {
-      return ['personal', 'collaboration', 'common'].includes(childContextType)
-    }
-    return false
-  }
-
-  function formatContextType(contextType?: string) {
-    if (contextType === 'personal') return '个人空间'
-    if (contextType === 'collaboration') return '协作空间'
-    if (contextType === 'common') return '通用'
-    return contextType || '-'
+  function formatWorkspaceScope(workspaceScope?: string) {
+    if (workspaceScope === 'all' || workspaceScope === 'common') return '所有空间'
+    if (workspaceScope === 'personal') return '个人空间'
+    if (workspaceScope === 'collaboration') return '协作空间'
+    return workspaceScope || '-'
   }
 
   watch(keyword, () => {

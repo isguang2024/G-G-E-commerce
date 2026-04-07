@@ -103,28 +103,30 @@ type FeaturePackageListRequest struct {
 	PackageKey  string `form:"package_key"`
 	PackageType string `form:"package_type"`
 	Name        string `form:"name"`
-	ContextType string `form:"context_type"`
+	WorkspaceScope string `form:"workspace_scope"`
 	Status      string `form:"status"`
 }
 
 type FeaturePackageCreateRequest struct {
 	AppKey      string `json:"app_key" binding:"max=100"`
+	AppKeys     []string `json:"app_keys"`
 	PackageKey  string `json:"package_key" binding:"required,max=100"`
 	PackageType string `json:"package_type" binding:"max=20"`
 	Name        string `json:"name" binding:"required,max=150"`
 	Description string `json:"description"`
-	ContextType string `json:"context_type" binding:"max=20"`
+	WorkspaceScope string `json:"workspace_scope" binding:"max=20"`
 	Status      string `json:"status" binding:"max=20"`
 	SortOrder   int    `json:"sort_order"`
 }
 
 type FeaturePackageUpdateRequest struct {
 	AppKey      string `json:"app_key" binding:"max=100"`
+	AppKeys     []string `json:"app_keys"`
 	PackageKey  string `json:"package_key" binding:"max=100"`
 	PackageType string `json:"package_type" binding:"max=20"`
 	Name        string `json:"name" binding:"max=150"`
 	Description string `json:"description"`
-	ContextType string `json:"context_type" binding:"max=20"`
+	WorkspaceScope string `json:"workspace_scope" binding:"max=20"`
 	Status      string `json:"status" binding:"max=20"`
 	SortOrder   int    `json:"sort_order"`
 }

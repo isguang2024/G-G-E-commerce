@@ -27,7 +27,7 @@
           class="toolbar-search"
         />
         <ElSelect v-model="contextFilter" class="toolbar-select">
-          <ElOption label="全部上下文" value="" />
+          <ElOption label="全部适用空间" value="" />
           <ElOption label="个人空间" value="personal" />
           <ElOption label="协作空间" value="collaboration" />
           <ElOption label="通用" value="common" />
@@ -75,8 +75,8 @@
         </ElTableColumn>
         <ElTableColumn label="上下文" width="120">
           <template #default="{ row }">
-            <ElTag :type="getContextTagType(row.contextType)" effect="light" round>
-              {{ formatContext(row.contextType) }}
+            <ElTag :type="getContextTagType(row.workspaceScope)" effect="light" round>
+              {{ formatContext(row.workspaceScope) }}
             </ElTag>
           </template>
         </ElTableColumn>
@@ -167,7 +167,7 @@
       if (statusFilter.value && item.status !== statusFilter.value) {
         return false
       }
-      if (contextFilter.value && item.contextType !== contextFilter.value) {
+      if (contextFilter.value && item.workspaceScope !== contextFilter.value) {
         return false
       }
 
@@ -207,8 +207,7 @@
     try {
       const [listRes, userRes] = await Promise.all([
         fetchGetFeaturePackageOptions({
-          contextType: 'personal',
-          appKey: currentAppKey.value
+          workspaceScope: 'all'
         }),
         fetchGetUserPackages(userId, currentAppKey.value)
       ])
@@ -251,15 +250,15 @@
     return packageType === 'bundle' ? 'warning' : 'primary'
   }
 
-  function formatContext(contextType?: string) {
-    if (contextType === 'common') return '通用'
-    if (contextType === 'personal') return '个人空间'
+  function formatContext(workspaceScope?: string) {
+    if (workspaceScope === 'all' || workspaceScope === 'common') return '通用'
+    if (workspaceScope === 'personal') return '个人空间'
     return '协作空间'
   }
 
-  function getContextTagType(contextType?: string) {
-    if (contextType === 'common') return 'primary'
-    if (contextType === 'personal') return 'success'
+  function getContextTagType(workspaceScope?: string) {
+    if (workspaceScope === 'all' || workspaceScope === 'common') return 'primary'
+    if (workspaceScope === 'personal') return 'success'
     return 'warning'
   }
 

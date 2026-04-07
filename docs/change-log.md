@@ -1867,3 +1867,47 @@
 - 若继续收口，可把 API 注册页中的 `App 上下文` 动作提示进一步改成“App 资源域”，继续降低 `app` 与 `workspace` 语义混淆。
 - 后续若补验证，优先检查功能权限列表里 `system.*`、`collaboration_workspace.*` 和 `personal.*` 三类权限键是否分别显示为 `通用 / 协作空间 / 个人空间`。
 
+## 2026-04-07 功能包模型重构
+
+### 本次改动
+- 功能包管理收口为“绑定在空间上的能力集合”，列表页不再要求先选 App，查询接口也不再按当前 App 过滤。
+- 功能包主契约改为 `workspaceScope + appKeys`，`app_keys` 支持多 App 绑定，未绑定 App 时默认适用于所有 App。
+- 功能包页、基础包弹窗、功能范围弹窗、协作空间开通弹窗都统一改成“适用空间 / 适用 App”的展示语义，去掉了 `contextType` 作为功能包主字段的公开暴露。
+
+### 下次方向
+- 继续核对后端 `featurepackage` 相关快照、摘要和兼容字段，确保 `contextType` 不再参与主流程判断。
+- 如需继续收口体验层，再把功能包页中“适用空间 / 适用 App”的提示文案统一到最终版，减少兼容提示。
+
+## 2026-04-07 功能包适用空间与多 App 绑定收口
+
+### 本次改动
+- 功能包模型继续回写为“绑定在空间上的能力集合”，功能包列表查询保持全局目录，不再强制 App 前置；功能包生效改为同时看 `workspaceScope` 与 `appKeys`，其中 `appKeys` 允许多 App 绑定，未绑定 App 时默认适用于所有 App。
+- `backend/internal/modules/system/featurepackage/service.go`、`backend/internal/modules/system/featurepackage/handler.go`、`backend/internal/modules/system/models/model.go`、`backend/internal/api/dto/permission.go` 补齐了 `containsString`、`workspaceScope`、`appKeys` 相关收口，功能包公开返回不再继续把 `contextType` 当主字段。
+- `frontend/src/api/system-manage.ts`、`frontend/src/api/collaboration-workspace.ts`、`frontend/src/views/system/feature-package/**`、`frontend/src/views/system/role/modules/role-package-dialog.vue`、`frontend/src/views/system/user/modules/user-package-dialog.vue`、`frontend/src/views/system/collaboration-workspace-roles-permissions/modules/collaboration-workspace-role-package-dialog.vue`、`frontend/src/components/business/permission/PermissionSourcePanels.vue` 等页面和 API 已把功能包相关文案与交互统一为“适用空间 / 适用 App”，并把列表与绑定动作拆开。
+- 默认种子里的平台治理包名称已经收口为 `platform_admin.*`，协作空间成员包继续保留 `collaboration_workspace.member_admin`，避免再把平台治理能力误标为“个人空间功能包”。
+
+### 下次方向
+- 若继续收口，可把功能包相关的兼容字段再进一步削薄，只保留 `workspaceScope + appKeys` 作为前端主契约。
+- 后续若要继续优化体验，重点应放在功能包绑定、菜单裁剪和 App 资源域提示上，而不是再把列表层恢复成 App 前置。
+
+## 2026-04-07 功能包页面兼容文案继续收口
+
+### 本次改动
+- 功能包页面继续去掉与 App 前置相关的残余参数透传，`feature-package` 相关列表/候选查询不再携带 `appKey`，保持全局目录查询语义。
+- `frontend/src/components/business/permission/PermissionSourcePanels.vue` 以及功能包相关角色/用户/协作空间弹窗里，把跳转与筛选从旧 `contextType` 收口到 `workspaceScope`，避免页面层继续把功能包当成“平台/个人空间上下文”。
+- `frontend/src/views/system/feature-package/index.vue`、`frontend/src/views/system/feature-package/modules/*` 的说明与筛选文案继续收口，统一为“适用空间 / 适用 App”，并去掉“全部上下文”这类旧词形。
+
+### 下次方向
+- 若继续优化，下一步就是把功能包相关页面里还保留的少量兼容变量名再统一成 `workspaceScope` / `appKeys`，让前端主契约更干净。
+- 当前功能包主流程已经可用，后续重点应转向默认 seed 的体验细化，而不是再改查询主链。
+
+## 2026-04-07 功能包绑定菜单支持 App 选择与空菜单空间
+
+### 本次改动
+- 功能包绑定菜单抽屉新增 App 选择，并支持菜单空间留空；留空时默认查看当前 App 的全部菜单，不再强制回落到默认菜单空间。
+- 后端 `menu` 树查询在 `all=true` 场景下保留 `app_key` 必填，但不再把空菜单空间自动替换成默认菜单空间，避免绑定菜单时只能看到单一菜单空间。
+- 功能包菜单绑定保存时会随当前 App 一并提交，确保菜单裁剪与当前 App 资源域保持一致。
+
+### 下次方向
+- 若后续继续收口，可把功能包绑定菜单抽屉里的 App/菜单空间提示文案再统一到最终版，减少兼容说明。
+- 如还出现菜单为空或缺少 App 的报错，优先检查当前选中的 App 是否确实存在菜单空间绑定。

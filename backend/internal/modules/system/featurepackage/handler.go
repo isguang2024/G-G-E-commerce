@@ -12,7 +12,6 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	"github.com/gg-ecommerce/backend/internal/api/errcode"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/appctx"
 	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
 )
@@ -34,8 +33,6 @@ func (h *Handler) List(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	// 功能包目录是全局查询视图，列表接口不按当前 App 过滤。
-	req.AppKey = ""
 	list, total, err := h.service.List(&req)
 	if err != nil {
 		h.logger.Error("List feature packages failed", zap.Error(err))
@@ -92,15 +89,9 @@ func (h *Handler) ListOptions(c *gin.Context) {
 }
 
 func (h *Handler) GetRelationTree(c *gin.Context) {
-	contextType := strings.TrimSpace(c.Query("context_type"))
+	workspaceScope := strings.TrimSpace(c.Query("workspace_scope"))
 	keyword := strings.TrimSpace(c.Query("keyword"))
-	appKey, err := appctx.RequireRequestAppKey(c)
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
-		c.JSON(status, resp)
-		return
-	}
-	result, err := h.service.GetRelationTree(appKey, contextType, keyword)
+	result, err := h.service.GetRelationTree(workspaceScope, keyword)
 	if err != nil {
 		h.logger.Error("Get feature package relation tree failed", zap.Error(err))
 		status, resp := errcode.ResponseWithMsg(errcode.ErrInternal, "获取功能包关系树失败")
@@ -287,12 +278,7 @@ func (h *Handler) Create(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	resolvedAppKey, err := appctx.RequireRequestAppKey(c)
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
-		c.JSON(status, resp)
-		return
-	}
+	resolvedAppKey := strings.TrimSpace(c.Query("app_key"))
 	req.AppKey = resolvedAppKey
 	item, err := h.service.Create(&req)
 	if err != nil {
@@ -322,12 +308,7 @@ func (h *Handler) Update(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	resolvedAppKey, err := appctx.RequireRequestAppKey(c)
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
-		c.JSON(status, resp)
-		return
-	}
+	resolvedAppKey := strings.TrimSpace(c.Query("app_key"))
 	req.AppKey = resolvedAppKey
 	stats, err := h.service.Update(id, &req)
 	if err != nil {
@@ -387,12 +368,7 @@ func (h *Handler) GetPackageKeys(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	appKey, err := appctx.RequireRequestAppKey(c)
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
-		c.JSON(status, resp)
-		return
-	}
+	appKey := strings.TrimSpace(c.Query("app_key"))
 	actionIDs, actions, err := h.service.GetPackageKeys(id, appKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
@@ -418,12 +394,7 @@ func (h *Handler) GetPackageChildren(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	appKey, err := appctx.RequireRequestAppKey(c)
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
-		c.JSON(status, resp)
-		return
-	}
+	appKey := strings.TrimSpace(c.Query("app_key"))
 	childPackageIDs, packages, err := h.service.GetPackageChildren(id, appKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
@@ -466,12 +437,7 @@ func (h *Handler) SetPackageChildren(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	resolvedAppKey, err := appctx.RequireRequestAppKey(c)
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
-		c.JSON(status, resp)
-		return
-	}
+	resolvedAppKey := strings.TrimSpace(c.Query("app_key"))
 	stats, err := h.service.SetPackageChildren(id, childPackageIDs, resolvedAppKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
@@ -508,12 +474,7 @@ func (h *Handler) SetPackageKeys(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	resolvedAppKey, err := appctx.RequireRequestAppKey(c)
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
-		c.JSON(status, resp)
-		return
-	}
+	resolvedAppKey := strings.TrimSpace(c.Query("app_key"))
 	stats, err := h.service.SetPackageKeys(id, actionIDs, resolvedAppKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
@@ -538,12 +499,7 @@ func (h *Handler) GetPackageMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	appKey, err := appctx.RequireRequestAppKey(c)
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
-		c.JSON(status, resp)
-		return
-	}
+	appKey := strings.TrimSpace(c.Query("app_key"))
 	menuIDs, menus, err := h.service.GetPackageMenus(id, appKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
@@ -581,12 +537,7 @@ func (h *Handler) SetPackageMenus(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	resolvedAppKey, err := appctx.RequireRequestAppKey(c)
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
-		c.JSON(status, resp)
-		return
-	}
+	resolvedAppKey := strings.TrimSpace(c.Query("app_key"))
 	stats, err := h.service.SetPackageMenus(id, menuIDs, resolvedAppKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
@@ -611,12 +562,7 @@ func (h *Handler) GetPackageCollaborationWorkspaces(c *gin.Context) {
 		c.JSON(status, resp)
 		return
 	}
-	appKey, err := appctx.RequireRequestAppKey(c)
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
-		c.JSON(status, resp)
-		return
-	}
+	appKey := strings.TrimSpace(c.Query("app_key"))
 	collaborationWorkspaceIDs, err := h.service.GetPackageCollaborationWorkspaces(id, appKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
@@ -661,12 +607,7 @@ func (h *Handler) SetPackageCollaborationWorkspaces(c *gin.Context) {
 		return
 	}
 	grantedBy, _ := currentUserID(c)
-	resolvedAppKey, err := appctx.RequireRequestAppKey(c)
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
-		c.JSON(status, resp)
-		return
-	}
+	resolvedAppKey := strings.TrimSpace(c.Query("app_key"))
 	stats, err := h.service.SetPackageCollaborationWorkspaces(id, collaborationWorkspaceIDs, grantedBy, resolvedAppKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
@@ -694,12 +635,7 @@ func (h *Handler) GetCollaborationWorkspacePackages(c *gin.Context) {
 	if err := h.requireTargetCollaborationWorkspace(c, collaborationWorkspaceID); err != nil {
 		return
 	}
-	appKey, err := appctx.RequireRequestAppKey(c)
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
-		c.JSON(status, resp)
-		return
-	}
+	appKey := strings.TrimSpace(c.Query("app_key"))
 	packageIDs, items, err := h.service.GetCollaborationWorkspacePackages(collaborationWorkspaceID, appKey)
 	if err != nil {
 		h.logger.Error("Get collaboration workspace packages failed", zap.Error(err))
@@ -740,12 +676,7 @@ func (h *Handler) SetCollaborationWorkspacePackages(c *gin.Context) {
 		return
 	}
 	grantedBy, _ := currentUserID(c)
-	appKey, err := appctx.RequireRequestAppKey(c)
-	if err != nil {
-		status, resp := errcode.ResponseWithMsg(errcode.ErrParamInvalid, "app_key 为必填项")
-		c.JSON(status, resp)
-		return
-	}
+	appKey := strings.TrimSpace(c.Query("app_key"))
 	stats, err := h.service.SetCollaborationWorkspacePackages(collaborationWorkspaceID, packageIDs, grantedBy, appKey)
 	if err != nil {
 		if err == ErrFeaturePackageNotFound {
@@ -765,18 +696,19 @@ func (h *Handler) SetCollaborationWorkspacePackages(c *gin.Context) {
 
 func packageToMap(item *user.FeaturePackage) gin.H {
 	return gin.H{
-		"id":           item.ID.String(),
-		"app_key":      item.AppKey,
-		"package_key":  item.PackageKey,
-		"package_type": item.PackageType,
-		"name":         item.Name,
-		"description":  item.Description,
-		"context_type": item.ContextType,
-		"is_builtin":   item.IsBuiltin,
-		"status":       item.Status,
-		"sort_order":   item.SortOrder,
-		"created_at":   item.CreatedAt.Format("2006-01-02 15:04:05"),
-		"updated_at":   item.UpdatedAt.Format("2006-01-02 15:04:05"),
+		"id":              item.ID.String(),
+		"app_key":         item.AppKey,
+		"app_keys":        item.AppKeys,
+		"package_key":     item.PackageKey,
+		"package_type":    item.PackageType,
+		"name":            item.Name,
+		"description":     item.Description,
+		"workspace_scope": item.WorkspaceScope,
+		"is_builtin":      item.IsBuiltin,
+		"status":          item.Status,
+		"sort_order":      item.SortOrder,
+		"created_at":      item.CreatedAt.Format("2006-01-02 15:04:05"),
+		"updated_at":      item.UpdatedAt.Format("2006-01-02 15:04:05"),
 	}
 }
 

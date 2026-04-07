@@ -446,7 +446,7 @@ func (s *permissionService) expandPackageID(packageID uuid.UUID, context string,
 		}
 		return err
 	}
-	if pkg.Status != "normal" || !packageMatchesContext(pkg.ContextType, context) {
+	if pkg.Status != "normal" || !packageMatchesWorkspaceScope(pkg.WorkspaceScope, pkg.ContextType, context) {
 		return nil
 	}
 	if pkg.PackageType == "bundle" {
@@ -567,11 +567,18 @@ func intersectUUIDs(left []uuid.UUID, right []uuid.UUID) []uuid.UUID {
 	return result
 }
 
-func packageMatchesContext(packageContext, currentContext string) bool {
-	if packageContext == "" || packageContext == currentContext {
+func packageMatchesWorkspaceScope(packageWorkspaceScope, packageContext, currentContext string) bool {
+	scope := strings.TrimSpace(packageWorkspaceScope)
+	if scope == "" {
+		scope = strings.TrimSpace(packageContext)
+	}
+	if scope == "" || scope == "all" || scope == "common" {
 		return true
 	}
-	return packageContext == "common"
+	if scope == currentContext {
+		return true
+	}
+	return currentContext == "common"
 }
 
 func isMenuEnabled(menu Menu) bool {

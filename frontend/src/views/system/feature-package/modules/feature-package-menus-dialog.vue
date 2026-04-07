@@ -10,16 +10,42 @@
     <div class="dialog-shell" v-loading="loading">
       <div class="summary-tags">
         <ElTag effect="plain" round>功能包 {{ packageName }}</ElTag>
-        <ElTag type="warning" effect="plain" round
-          >空间范围 {{ formatContextType(contextType) }}</ElTag
-        >
-        <ElTag type="success" effect="plain" round
-          >已保留 {{ expandedSelectedMenuIds.length }}</ElTag
-        >
+        <ElTag type="warning" effect="plain" round>适用空间 {{ formatWorkspaceScope(workspaceScope) }}</ElTag>
+        <ElTag type="success" effect="plain" round>已保留 {{ expandedSelectedMenuIds.length }}</ElTag>
         <ElTag type="info" effect="plain" round>树节点 {{ menuNodeCount }}</ElTag>
       </div>
 
       <div class="cascader-toolbar">
+        <ElSelect
+          v-model="selectedAppKey"
+          filterable
+          placeholder="选择 App"
+          class="toolbar-select"
+          @change="handleAppChange"
+        >
+          <ElOption
+            v-for="app in appOptions"
+            :key="app.appKey"
+            :label="`${app.name} (${app.appKey})`"
+            :value="app.appKey"
+          />
+        </ElSelect>
+        <ElSelect
+          v-model="selectedMenuSpaceKey"
+          filterable
+          clearable
+          placeholder="全部菜单空间"
+          class="toolbar-select"
+          @change="handleMenuSpaceChange"
+        >
+          <ElOption label="全部菜单空间" value="" />
+          <ElOption
+            v-for="space in menuSpaceOptions"
+            :key="space.spaceKey"
+            :label="`${space.name} (${space.spaceKey})`"
+            :value="space.spaceKey"
+          />
+        </ElSelect>
         <ElInput
           v-model="menuKeyword"
           clearable
@@ -77,9 +103,9 @@
       </div>
 
       <div class="cascader-footer">
-        <span class="footer-note"
-          >功能包菜单权限决定该功能包在当前空间范围中的菜单入口可见范围。</span
-        >
+        <span class="footer-note">
+          菜单空间可为空，留空时默认显示当前 App 中的全部菜单；保存时按当前 App 与菜单选择共同生效。
+        </span>
         <ElButton text @click="clearMenuSelection">清空选择</ElButton>
       </div>
     </div>
@@ -97,6 +123,8 @@
   import { ElMessage } from 'element-plus'
   import type { CascaderOption, CascaderProps } from 'element-plus'
   import {
+    fetchGetApps,
+    fetchGetMenuSpaces,
     fetchGetMenuTreeAll,
     fetchGetFeaturePackageMenus,
     fetchSetFeaturePackageMenus
@@ -107,15 +135,18 @@
     modelValue: boolean
     packageId: string
     packageName: string
+    workspaceScope?: 'all' | 'personal' | 'collaboration' | string
     appKey?: string
-    contextType?: 'personal' | 'collaboration' | 'common' | string
+    appKeys?: string[]
   }
 
   const props = withDefaults(defineProps<Props>(), {
     modelValue: false,
     packageId: '',
     packageName: '',
-    contextType: 'collaboration'
+    workspaceScope: 'all',
+    appKey: '',
+    appKeys: () => []
   })
 
   const emit = defineEmits<{
@@ -157,6 +188,10 @@
   const menuPanelRef = ref<any>()
   const loading = ref(false)
   const saving = ref(false)
+  const appOptions = ref<Api.SystemManage.AppItem[]>([])
+  const menuSpaceOptions = ref<Api.SystemManage.MenuSpaceItem[]>([])
+  const selectedAppKey = ref('')
+  const selectedMenuSpaceKey = ref('')
   const menuTreeData = ref<RawMenuNode[]>([])
   const selectedMenuNodeValues = ref<string[]>([])
   const menuKeyword = ref('')
@@ -164,7 +199,6 @@
   const showIframeMenus = ref(true)
   const showEnabledMenus = ref(true)
   const showMenuPath = ref(false)
-  const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
 
   const menuCascaderProps: CascaderProps = {
     multiple: true,
@@ -212,8 +246,9 @@
       if (!showHiddenMenus.value && node.isHide) return false
       if (!showIframeMenus.value && node.isIframe) return false
       if (!showEnabledMenus.value && node.isEnable !== false) return false
-      if (keyword && !`${node.label || ''} ${node.path || ''}`.toLowerCase().includes(keyword))
+      if (keyword && !`${node.label || ''} ${node.path || ''}`.toLowerCase().includes(keyword)) {
         return false
+      }
       return true
     })
   })
@@ -224,23 +259,89 @@
     () => props.modelValue,
     async (open) => {
       if (open) {
+        await initializeContext()
         await loadData()
       }
     }
   )
 
-  async function loadData() {
-    if (!props.packageId || !currentAppKey.value) {
-      if (!currentAppKey.value) {
-        ElMessage.warning('缺少 App 上下文')
+  watch(
+    () => [props.appKey, props.appKeys],
+    async () => {
+      if (!visible.value) {
+        return
       }
+      await initializeContext(true)
+      await loadData()
+    },
+    { deep: true }
+  )
+
+  async function initializeContext(force = false) {
+    if (force) {
+      selectedAppKey.value = ''
+      selectedMenuSpaceKey.value = ''
+    }
+    if (appOptions.value.length === 0) {
+      await loadAppOptions()
+    }
+    if (!selectedAppKey.value) {
+      selectedAppKey.value = resolveInitialAppKey()
+    }
+    if (!selectedMenuSpaceKey.value) {
+      selectedMenuSpaceKey.value = ''
+    }
+    if (selectedAppKey.value) {
+      await loadMenuSpaces()
+    }
+  }
+
+  async function loadAppOptions() {
+    try {
+      const result = await fetchGetApps()
+      appOptions.value = result.records || []
+    } catch {
+      appOptions.value = []
+    }
+  }
+
+  function resolveInitialAppKey() {
+    const explicit = `${props.appKey || ''}`.trim()
+    if (explicit) return explicit
+    const scoped = props.appKeys?.map((item) => `${item || ''}`.trim()).filter(Boolean) || []
+    if (scoped.length > 0) return scoped[0]
+    return appOptions.value[0]?.appKey || ''
+  }
+
+  async function loadMenuSpaces() {
+    if (!selectedAppKey.value) {
+      menuSpaceOptions.value = []
+      return
+    }
+    try {
+      const result = await fetchGetMenuSpaces(selectedAppKey.value)
+      menuSpaceOptions.value = result.records || []
+    } catch {
+      menuSpaceOptions.value = []
+    }
+  }
+
+  async function loadData() {
+    if (!props.packageId) {
+      return
+    }
+    if (!selectedAppKey.value) {
+      await initializeContext()
+    }
+    if (!selectedAppKey.value) {
+      ElMessage.warning('请选择 App')
       return
     }
     loading.value = true
     try {
       const [menus, assigned] = await Promise.all([
-        fetchGetMenuTreeAll(undefined, currentAppKey.value),
-        fetchGetFeaturePackageMenus(props.packageId, currentAppKey.value)
+        fetchGetMenuTreeAll(selectedMenuSpaceKey.value || undefined, selectedAppKey.value),
+        fetchGetFeaturePackageMenus(props.packageId, selectedAppKey.value)
       ])
       menuTreeData.value = sanitizeMenuTree(menus)
       selectedMenuNodeValues.value = (assigned?.menu_ids || []).map(
@@ -256,16 +357,17 @@
   }
 
   async function handleSave() {
-    if (!props.packageId || !currentAppKey.value) {
-      if (!currentAppKey.value) {
-        ElMessage.warning('缺少 App 上下文')
-      }
+    if (!props.packageId) {
+      return
+    }
+    if (!selectedAppKey.value) {
+      ElMessage.warning('请选择 App')
       return
     }
     saving.value = true
     try {
       const menuIds = expandedSelectedMenuIds.value
-      const stats = await fetchSetFeaturePackageMenus(props.packageId, menuIds, currentAppKey.value)
+      const stats = await fetchSetFeaturePackageMenus(props.packageId, menuIds, selectedAppKey.value)
       ElMessage.success(formatRefreshMessage(stats))
       emit('success')
       visible.value = false
@@ -276,11 +378,21 @@
     }
   }
 
-  function formatContextType(contextType?: string) {
-    if (contextType === 'personal') return '个人空间'
-    if (contextType === 'collaboration') return '协作空间'
-    if (contextType === 'common') return '通用'
-    return contextType || '-'
+  async function handleAppChange() {
+    selectedMenuSpaceKey.value = ''
+    await loadMenuSpaces()
+    await loadData()
+  }
+
+  async function handleMenuSpaceChange() {
+    await loadData()
+  }
+
+  function formatWorkspaceScope(workspaceScope?: string) {
+    if (workspaceScope === 'all' || workspaceScope === 'common') return '所有空间'
+    if (workspaceScope === 'personal') return '个人空间'
+    if (workspaceScope === 'collaboration') return '协作空间'
+    return workspaceScope || '-'
   }
 
   function clearMenuSelection() {
@@ -421,6 +533,10 @@
     flex-wrap: wrap;
     align-items: center;
     gap: 12px;
+  }
+
+  .toolbar-select {
+    width: 260px;
   }
 
   .toolbar-search {

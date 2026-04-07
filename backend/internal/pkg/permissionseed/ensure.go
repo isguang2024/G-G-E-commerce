@@ -144,20 +144,22 @@ func EnsureDefaultPermissionKeys(db *gorm.DB) error {
 func EnsureDefaultFeaturePackages(db *gorm.DB) error {
 	for _, seed := range DefaultFeaturePackages() {
 		item := usermodel.FeaturePackage{
-			ID:          seed.ID,
-			AppKey:      systemmodels.DefaultAppKey,
-			PackageKey:  seed.PackageKey,
-			PackageType: seed.PackageType,
-			Name:        seed.Name,
-			Description: seed.Description,
-			ContextType: seed.ContextType,
-			IsBuiltin:   seed.IsBuiltin,
-			Status:      seed.Status,
-			SortOrder:   seed.SortOrder,
+			ID:            seed.ID,
+			AppKey:        systemmodels.DefaultAppKey,
+			AppKeys:       seed.AppKeys,
+			PackageKey:    seed.PackageKey,
+			PackageType:   seed.PackageType,
+			Name:          seed.Name,
+			Description:   seed.Description,
+			WorkspaceScope: seed.WorkspaceScope,
+			ContextType:   seed.ContextType,
+			IsBuiltin:     seed.IsBuiltin,
+			Status:        seed.Status,
+			SortOrder:     seed.SortOrder,
 		}
 
 		var existing usermodel.FeaturePackage
-		result := db.Where("app_key = ? AND package_key = ?", item.AppKey, item.PackageKey).First(&existing)
+		result := db.Where("package_key = ?", item.PackageKey).First(&existing)
 		if result.Error != nil {
 			if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 				if err := db.Create(&item).Error; err != nil {
@@ -339,7 +341,7 @@ func EnsureDefaultRoleFeaturePackages(db *gorm.DB) error {
 
 	adminRole, ok := roleByCode["admin"]
 	if ok {
-		adminPackageKeys := []string{"personal.system_admin", "personal.menu_admin", "personal.api_admin"}
+		adminPackageKeys := []string{"platform_admin.system_manage", "platform_admin.menu_manage", "platform_admin.api_manage"}
 		adminPackageIDs := make([]uuid.UUID, 0, len(adminPackageKeys))
 		for _, packageKey := range adminPackageKeys {
 			if pkg, exists := packageByKey[packageKey]; exists {

@@ -14,7 +14,7 @@
 
       <div class="summary-card">
         <ElTag effect="plain" round>功能包 {{ packageName }}</ElTag>
-        <ElTag type="warning" effect="plain" round>空间范围 {{ contextLabel }}</ElTag>
+        <ElTag type="warning" effect="plain" round>适用空间 {{ contextLabel }}</ElTag>
         <ElTag type="success" effect="plain" round>已选 {{ selectedIds.length }}</ElTag>
         <ElTag type="info" effect="plain" round>总计 {{ filteredActions.length }}</ElTag>
       </div>
@@ -48,14 +48,14 @@
     modelValue: boolean
     packageId: string
     packageName: string
-    contextType?: 'personal' | 'collaboration' | 'common' | string
+    workspaceScope?: 'all' | 'personal' | 'collaboration' | string
   }
 
   const props = withDefaults(defineProps<Props>(), {
     modelValue: false,
     packageId: '',
     packageName: '',
-    contextType: 'collaboration'
+    workspaceScope: 'all'
   })
 
   const emit = defineEmits<{
@@ -73,23 +73,16 @@
   const allActions = ref<Api.SystemManage.PermissionActionItem[]>([])
   const selectedIds = ref<string[]>([])
 
-  const filteredActions = computed(() =>
-    allActions.value.filter((item) =>
-      supportsActionContext(
-        props.contextType || 'collaboration',
-        item.contextType || 'collaboration'
-      )
-    )
-  )
+  const filteredActions = computed(() => allActions.value)
 
-  const contextLabel = computed(() => formatContextType(props.contextType))
+  const contextLabel = computed(() => formatWorkspaceScope(props.workspaceScope))
   const drawerTitle = computed(() => `功能包功能范围配置 - ${props.packageName}`)
   const noteText = computed(() => {
-    const scopeLabel = getScopeLabel(props.contextType)
+    const scopeLabel = getScopeLabel(props.workspaceScope)
     return `这里配置的是${scopeLabel}启用该功能包后可进入的功能范围，不是直接给角色或成员授予权限。后续角色和成员的权限分配，仍然只能在这批已开通范围内继续细分。`
   })
   const footerText = computed(() => {
-    const scopeLabel = getScopeLabel(props.contextType)
+    const scopeLabel = getScopeLabel(props.workspaceScope)
     return `这里保存的是${scopeLabel}可开放能力范围，角色和成员分配仍然基于基础功能权限。`
   })
 
@@ -105,11 +98,7 @@
     loading.value = true
     try {
       const [actionsRes, currentRes] = await Promise.all([
-        fetchGetPermissionActionOptions({
-          status: 'normal',
-          contextType:
-            props.contextType === 'common' ? undefined : props.contextType || 'collaboration'
-        }),
+        fetchGetPermissionActionOptions({ status: 'normal' }),
         fetchGetFeaturePackageActions(props.packageId)
       ])
       allActions.value = actionsRes?.records || []
@@ -177,43 +166,18 @@
     return Array.from(result)
   }
 
-  function supportsActionContext(packageContextType: string, actionContextType: string) {
-    if (packageContextType === 'common') {
-      return (
-        actionContextType === 'personal' ||
-        actionContextType === 'collaboration' ||
-        actionContextType === 'common'
-      )
-    }
-    if (
-      packageContextType === 'personal,collaboration' ||
-      packageContextType === 'collaboration,personal'
-    ) {
-      return (
-        actionContextType === 'personal' ||
-        actionContextType === 'collaboration' ||
-        actionContextType === 'common'
-      )
-    }
-    return packageContextType === actionContextType || actionContextType === 'common'
+  function formatWorkspaceScope(workspaceScope?: string) {
+    if (workspaceScope === 'all' || workspaceScope === 'common') return '所有空间'
+    if (workspaceScope === 'personal') return '个人空间'
+    if (workspaceScope === 'collaboration') return '协作空间'
+    return workspaceScope || '-'
   }
 
-  function formatContextType(contextType?: string) {
-    if (contextType === 'personal') return '个人空间'
-    if (contextType === 'collaboration') return '协作空间'
-    if (contextType === 'common') return '通用'
-    if (contextType === 'personal,collaboration' || contextType === 'collaboration,personal')
-      return '个人空间/协作空间'
-    return contextType || '-'
-  }
-
-  function getScopeLabel(contextType?: string) {
-    if (contextType === 'personal') return '个人空间'
-    if (contextType === 'collaboration') return '协作空间'
-    if (contextType === 'common') return '个人空间或协作空间'
-    if (contextType === 'personal,collaboration' || contextType === 'collaboration,personal')
-      return '个人空间或协作空间'
-    return '当前空间范围'
+  function getScopeLabel(workspaceScope?: string) {
+    if (workspaceScope === 'personal') return '个人空间'
+    if (workspaceScope === 'collaboration') return '协作空间'
+    if (workspaceScope === 'all' || workspaceScope === 'common') return '所有空间'
+    return '当前适用空间'
   }
 
   function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {

@@ -93,10 +93,7 @@ func (h *MenuHandler) GetTree(c *gin.Context) {
 		}
 	}
 	if all {
-		spaceKey = spaceutil.RequestSpaceKey(c)
-		if strings.TrimSpace(spaceKey) == "" {
-			spaceKey = spaceutil.DefaultMenuSpaceKey
-		}
+		spaceKey = strings.TrimSpace(spaceutil.RequestSpaceKey(c))
 	}
 
 	var allowedMenuIDs []uuid.UUID

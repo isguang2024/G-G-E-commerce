@@ -243,19 +243,21 @@ func (PermissionKey) TableName() string {
 }
 
 type FeaturePackage struct {
-	ID          uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	AppKey      string         `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
-	PackageKey  string         `gorm:"type:varchar(100);not null" json:"package_key"`
-	PackageType string         `gorm:"type:varchar(20);not null;default:'base'" json:"package_type"`
-	Name        string         `gorm:"type:varchar(150);not null" json:"name"`
-	Description string         `gorm:"type:varchar(255)" json:"description"`
-	ContextType string         `gorm:"type:varchar(20);not null;default:'collaboration'" json:"context_type"`
-	IsBuiltin   bool           `gorm:"not null;default:false" json:"is_builtin"`
-	Status      string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
-	SortOrder   int            `gorm:"default:0" json:"sort_order"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
-	DeletedAt   gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
+	ID            uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
+	AppKey        string         `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
+	AppKeys       []string       `gorm:"type:jsonb;serializer:json;not null;default:'[]'::jsonb" json:"app_keys,omitempty"`
+	PackageKey    string         `gorm:"type:varchar(100);not null" json:"package_key"`
+	PackageType   string         `gorm:"type:varchar(20);not null;default:'base'" json:"package_type"`
+	Name          string         `gorm:"type:varchar(150);not null" json:"name"`
+	Description   string         `gorm:"type:varchar(255)" json:"description"`
+	WorkspaceScope string        `gorm:"type:varchar(20);not null;default:'all'" json:"workspace_scope"`
+	ContextType   string         `gorm:"type:varchar(20);not null;default:'common'" json:"context_type"`
+	IsBuiltin     bool           `gorm:"not null;default:false" json:"is_builtin"`
+	Status        string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
+	SortOrder     int            `gorm:"default:0" json:"sort_order"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
+	DeletedAt     gorm.DeletedAt `gorm:"index" json:"deleted_at,omitempty"`
 }
 
 func (FeaturePackage) TableName() string {

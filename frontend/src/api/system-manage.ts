@@ -81,17 +81,6 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
   return 'common'
 }
 
-function deriveFeaturePackageContextType(packageKey?: string) {
-  const key = `${packageKey || ''}`.trim()
-  if (key.startsWith('personal.')) {
-    return 'personal'
-  }
-  if (key.startsWith('collaboration_workspace.')) {
-    return 'collaboration'
-  }
-  return 'common'
-}
-
 function normalizePermissionGroup(value: any): Api.SystemManage.PermissionGroupItem | undefined {
   if (!value) return undefined
   return {
@@ -231,16 +220,20 @@ function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
 
 function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem {
   const packageKey = item?.package_key || item?.packageKey || ''
-  const contextType =
-    item?.context_type || item?.contextType || deriveFeaturePackageContextType(packageKey)
+  const workspaceScope = item?.workspace_scope || item?.workspaceScope || 'all'
+  const appKeysRaw = item?.app_keys || item?.appKeys || []
+  const appKeys = Array.isArray(appKeysRaw)
+    ? appKeysRaw.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
+    : []
   return {
     id: item?.id || '',
     appKey: item?.app_key || item?.appKey || '',
+    appKeys,
     packageKey,
     packageType: item?.package_type || item?.packageType || 'base',
     name: item?.name || '',
     description: item?.description || '',
-    contextType,
+    workspaceScope,
     isBuiltin: Boolean(item?.is_builtin ?? item?.isBuiltin ?? false),
     actionCount: item?.action_count ?? item?.actionCount ?? 0,
     menuCount: item?.menu_count ?? item?.menuCount ?? 0,
@@ -543,13 +536,17 @@ function normalizeFeaturePackageRelationNode(
   item: any
 ): Api.SystemManage.FeaturePackageRelationNode {
   const packageKey = item?.package_key || item?.packageKey || ''
+  const appKeysRaw = item?.app_keys || item?.appKeys || []
+  const appKeys = Array.isArray(appKeysRaw)
+    ? appKeysRaw.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
+    : []
   return {
     id: item?.id || '',
     packageKey,
     name: item?.name || '',
     packageType: item?.package_type || item?.packageType || 'base',
-    contextType:
-      item?.context_type || item?.contextType || deriveFeaturePackageContextType(packageKey),
+    workspaceScope: item?.workspace_scope || item?.workspaceScope || 'all',
+    appKeys,
     status: item?.status || 'normal',
     referenceCount: Number(item?.reference_count ?? item?.referenceCount ?? 0),
     children: Array.isArray(item?.children)
@@ -608,10 +605,7 @@ function normalizePermissionActionConsumers(
           packageKey: pkg?.package_key || pkg?.packageKey || '',
           name: pkg?.name || '',
           packageType: pkg?.package_type || pkg?.packageType || '',
-          contextType:
-            pkg?.context_type ||
-            pkg?.contextType ||
-            deriveFeaturePackageContextType(pkg?.package_key || pkg?.packageKey)
+          contextType: pkg?.context_type || pkg?.contextType || 'common'
         }))
       : [],
     roles: Array.isArray(item?.roles)
@@ -1648,14 +1642,14 @@ export function fetchGetPermissionRiskAudits(params?: {
 export function fetchGetFeaturePackageList(params: Api.SystemManage.FeaturePackageSearchParams) {
   const normalizedParams = {
     ...params,
-    // 功能包目录查询是全局视图，不按当前 App 过滤列表。
+    app_key: params?.appKey,
     package_key: params?.packageKey,
     package_type: params?.packageType,
-    context_type: params?.contextType,
+    workspace_scope: params?.workspaceScope,
     appKey: undefined,
     packageKey: undefined,
     packageType: undefined,
-    contextType: undefined
+    workspaceScope: undefined
   }
   return request
     .get<Api.SystemManage.FeaturePackageList>({
@@ -1673,14 +1667,14 @@ export function fetchGetFeaturePackageOptions(
 ) {
   const normalizedParams = {
     ...params,
-    ...(params?.appKey ? { app_key: params.appKey } : {}),
+    app_key: params?.appKey,
     package_key: params?.packageKey,
     package_type: params?.packageType,
-    context_type: params?.contextType,
+    workspace_scope: params?.workspaceScope,
     appKey: undefined,
     packageKey: undefined,
     packageType: undefined,
-    contextType: undefined
+    workspaceScope: undefined
   }
   return request
     .get<{ records: Api.SystemManage.FeaturePackageItem[]; total: number }>({
@@ -1829,16 +1823,14 @@ export function fetchSetFeaturePackageChildren(
 
 /** 获取功能包包含关系树 */
 export function fetchGetFeaturePackageRelationTree(params?: {
-  appKey?: string
-  contextType?: string
+  workspaceScope?: string
   keyword?: string
 }) {
   return request
     .get<Api.SystemManage.FeaturePackageRelationTree>({
       url: `${FEATURE_PACKAGE_BASE}/relationship-tree`,
       params: {
-        app_key: params?.appKey,
-        context_type: params?.contextType,
+        workspace_scope: params?.workspaceScope,
         keyword: params?.keyword
       }
     })

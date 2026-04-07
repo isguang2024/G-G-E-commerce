@@ -12,6 +12,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	systemmodels "github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/appscope"
 	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
@@ -29,7 +30,7 @@ type Service interface {
 	List(req *dto.FeaturePackageListRequest) ([]user.FeaturePackage, int64, error)
 	ListOptions(req *dto.FeaturePackageListRequest) ([]user.FeaturePackage, error)
 	GetPackageStats(packageIDs []uuid.UUID) (map[uuid.UUID]int64, map[uuid.UUID]int64, map[uuid.UUID]int64, error)
-	GetRelationTree(appKey, contextType, keyword string) (*FeaturePackageRelationTree, error)
+	GetRelationTree(workspaceScope, keyword string) (*FeaturePackageRelationTree, error)
 	Get(id uuid.UUID) (*user.FeaturePackage, error)
 	Create(req *dto.FeaturePackageCreateRequest) (*user.FeaturePackage, error)
 	Update(id uuid.UUID, req *dto.FeaturePackageUpdateRequest) (*permissionrefresh.RefreshStats, error)
@@ -55,7 +56,8 @@ type FeaturePackageRelationNode struct {
 	PackageKey     string                       `json:"package_key"`
 	Name           string                       `json:"name"`
 	PackageType    string                       `json:"package_type"`
-	ContextType    string                       `json:"context_type"`
+	WorkspaceScope string                       `json:"workspace_scope"`
+	AppKeys        []string                     `json:"app_keys,omitempty"`
 	Status         string                       `json:"status"`
 	ReferenceCount int                          `json:"reference_count"`
 	Children       []FeaturePackageRelationNode `json:"children,omitempty"`
@@ -132,12 +134,13 @@ func (s *service) List(req *dto.FeaturePackageListRequest) ([]user.FeaturePackag
 		req.Size = 20
 	}
 	return s.packageRepo.List((req.Current-1)*req.Size, req.Size, &user.FeaturePackageListParams{
-		Keyword:     strings.TrimSpace(req.Keyword),
-		PackageKey:  strings.TrimSpace(req.PackageKey),
-		PackageType: normalizePackageType(req.PackageType),
-		Name:        strings.TrimSpace(req.Name),
-		ContextType: normalizeContextType(req.ContextType),
-		Status:      strings.TrimSpace(req.Status),
+		Keyword:        strings.TrimSpace(req.Keyword),
+		AppKey:         normalizeAppKey(req.AppKey),
+		PackageKey:     strings.TrimSpace(req.PackageKey),
+		PackageType:    normalizePackageType(req.PackageType),
+		Name:           strings.TrimSpace(req.Name),
+		WorkspaceScope: normalizeWorkspaceScope(req.WorkspaceScope),
+		Status:         strings.TrimSpace(req.Status),
 	})
 }
 
@@ -147,9 +150,6 @@ func (s *service) ListOptions(req *dto.FeaturePackageListRequest) ([]user.Featur
 	}
 	query := s.db.Model(&user.FeaturePackage{})
 	if req != nil {
-		if appKey := strings.TrimSpace(req.AppKey); appKey != "" {
-			query = query.Where("app_key = ?", appKey)
-		}
 		if keyword := strings.TrimSpace(req.Keyword); keyword != "" {
 			like := "%" + keyword + "%"
 			query = query.Where("(package_key LIKE ? OR name LIKE ? OR description LIKE ?)", like, like, like)
@@ -160,15 +160,28 @@ func (s *service) ListOptions(req *dto.FeaturePackageListRequest) ([]user.Featur
 		if packageType := normalizePackageType(req.PackageType); packageType != "" {
 			query = query.Where("package_type = ?", packageType)
 		}
+		if appKey := normalizeAppKey(req.AppKey); appKey != "" {
+			if s.db.Migrator().HasColumn(&user.FeaturePackage{}, "app_keys") {
+				query = query.Where(
+					"(app_key = ? OR COALESCE(jsonb_array_length(app_keys), 0) = 0 OR app_keys ? ?)",
+					appKey,
+					appKey,
+				)
+			} else {
+				query = query.Where("app_key = ?", appKey)
+			}
+		}
 		if name := strings.TrimSpace(req.Name); name != "" {
 			query = query.Where("name LIKE ?", "%"+name+"%")
 		}
-		if contextType := normalizeContextType(req.ContextType); contextType != "" {
-			switch contextType {
-			case "personal", "collaboration":
-				query = query.Where("(context_type = ? OR context_type = ?)", contextType, "common")
+		if workspaceScope := normalizeWorkspaceScope(req.WorkspaceScope); workspaceScope != "" {
+			switch workspaceScope {
+			case "all":
+				// 不过滤
+			case "personal", "collaboration", "common":
+				query = query.Where("(workspace_scope = ? OR workspace_scope = ?)", workspaceScope, "all")
 			default:
-				query = query.Where("context_type = ?", contextType)
+				query = query.Where("workspace_scope = ?", workspaceScope)
 			}
 		}
 		if status := strings.TrimSpace(req.Status); status != "" {
@@ -178,7 +191,7 @@ func (s *service) ListOptions(req *dto.FeaturePackageListRequest) ([]user.Featur
 
 	items := make([]user.FeaturePackage, 0)
 	err := query.
-		Select("id", "package_key", "package_type", "name", "description", "context_type", "is_builtin", "status", "sort_order", "created_at", "updated_at").
+		Select("id", "app_key", "app_keys", "package_key", "package_type", "name", "description", "workspace_scope", "context_type", "is_builtin", "status", "sort_order", "created_at", "updated_at").
 		Order("sort_order ASC, created_at DESC").
 		Find(&items).Error
 	return items, err
@@ -212,29 +225,33 @@ func (s *service) Get(id uuid.UUID) (*user.FeaturePackage, error) {
 }
 
 func (s *service) Create(req *dto.FeaturePackageCreateRequest) (*user.FeaturePackage, error) {
-	appKey := strings.TrimSpace(req.AppKey)
-	if appKey == "" {
-		return nil, errors.New("app_key is required")
-	}
 	packageKey := strings.TrimSpace(req.PackageKey)
 	if packageKey == "" {
 		return nil, errors.New("package_key 不能为空")
 	}
-	if _, err := s.packageRepo.GetByPackageKey(packageKey, appKey); err == nil {
+	if _, err := s.packageRepo.GetByPackageKey(packageKey); err == nil {
 		return nil, ErrFeaturePackageExists
 	} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
+	appKeys := normalizeAppKeys(append(req.AppKeys, req.AppKey))
+	workspaceScope := normalizeWorkspaceScope(req.WorkspaceScope)
+	if workspaceScope == "" {
+		workspaceScope = "all"
+	}
+	contextType := workspaceScopeToContextType(workspaceScope)
 
 	item := &user.FeaturePackage{
-		AppKey:      appKey,
-		PackageKey:  packageKey,
-		PackageType: normalizePackageTypeDefault(req.PackageType, "base"),
-		Name:        strings.TrimSpace(req.Name),
-		Description: strings.TrimSpace(req.Description),
-		ContextType: normalizeContextTypeDefault(req.ContextType, "collaboration"),
-		Status:      normalizeStatus(req.Status),
-		SortOrder:   req.SortOrder,
+		AppKey:         firstOrDefault(appKeys, systemmodels.DefaultAppKey),
+		AppKeys:        appKeys,
+		PackageKey:     packageKey,
+		PackageType:    normalizePackageTypeDefault(req.PackageType, "base"),
+		Name:           strings.TrimSpace(req.Name),
+		Description:    strings.TrimSpace(req.Description),
+		WorkspaceScope: workspaceScope,
+		ContextType:    contextType,
+		Status:         normalizeStatus(req.Status),
+		SortOrder:      req.SortOrder,
 	}
 	if err := s.packageRepo.Create(item); err != nil {
 		return nil, err
@@ -250,19 +267,12 @@ func (s *service) Update(id uuid.UUID, req *dto.FeaturePackageUpdateRequest) (*p
 		}
 		return nil, err
 	}
-	appKey := strings.TrimSpace(req.AppKey)
-	if appKey == "" {
-		return nil, errors.New("app_key is required")
-	}
-	if !packageBelongsToApp(current, appKey) {
-		return nil, ErrFeaturePackageNotFound
-	}
 	updates := map[string]interface{}{
 		"updated_at": time.Now(),
 		"sort_order": req.SortOrder,
 	}
 	if packageKey := strings.TrimSpace(req.PackageKey); packageKey != "" && packageKey != current.PackageKey {
-		existing, getErr := s.packageRepo.GetByPackageKey(packageKey, appKey)
+		existing, getErr := s.packageRepo.GetByPackageKey(packageKey)
 		if getErr == nil && existing != nil && existing.ID != id {
 			return nil, ErrFeaturePackageExists
 		}
@@ -307,8 +317,16 @@ func (s *service) Update(id uuid.UUID, req *dto.FeaturePackageUpdateRequest) (*p
 		}
 		updates["package_type"] = packageType
 	}
-	if contextType := normalizeContextType(req.ContextType); contextType != "" {
-		updates["context_type"] = contextType
+	if req.AppKeys != nil || strings.TrimSpace(req.AppKey) != "" {
+		appKeys := normalizeAppKeys(append(req.AppKeys, req.AppKey))
+		if len(appKeys) > 0 {
+			updates["app_key"] = firstOrDefault(appKeys, current.AppKey)
+		}
+		updates["app_keys"] = appKeys
+	}
+	if workspaceScope := normalizeWorkspaceScope(req.WorkspaceScope); workspaceScope != "" {
+		updates["workspace_scope"] = workspaceScope
+		updates["context_type"] = workspaceScopeToContextType(workspaceScope)
 	}
 	if status := strings.TrimSpace(req.Status); status != "" {
 		updates["status"] = normalizeStatus(status)
@@ -454,9 +472,6 @@ func (s *service) SetPackageChildren(id uuid.UUID, childPackageIDs []uuid.UUID, 
 		if child.PackageType != "base" {
 			return nil, errors.New("组合包只能包含基础包")
 		}
-		if !contextSupportsChildPackage(item.ContextType, child.ContextType) {
-			return nil, errors.New("组合包上下文与基础包上下文不兼容")
-		}
 	}
 	if err := s.packageBundleRepo.ReplaceChildPackages(id, childPackageIDs); err != nil {
 		return nil, err
@@ -518,10 +533,7 @@ func (s *service) SetPackageKeys(id uuid.UUID, actionIDs []uuid.UUID, appKey str
 		if len(actions) != len(actionIDs) {
 			return nil, errors.New("存在无效的功能权限")
 		}
-		for _, action := range actions {
-			if action.ContextType != "" && item.ContextType != "" && !contextSupportsAction(item.ContextType, action.ContextType) {
-				return nil, errors.New("功能包上下文与功能权限上下文不一致")
-			}
+		for range actions {
 		}
 	}
 	if err := s.packageActionRepo.ReplacePackageKeys(id, actionIDs); err != nil {
@@ -561,8 +573,14 @@ func (s *service) GetPackageMenus(id uuid.UUID, appKey string) ([]uuid.UUID, []u
 	}
 	filteredMenus := make([]user.Menu, 0, len(menus))
 	allowedIDs := make(map[uuid.UUID]struct{}, len(menus))
+	normalizedAppKey := normalizeAppKey(appKey)
+	allowedAppKeys := normalizeAppKeys(item.AppKeys)
 	for _, menu := range menus {
-		if strings.TrimSpace(menu.AppKey) != strings.TrimSpace(item.AppKey) {
+		menuAppKey := normalizeAppKey(menu.AppKey)
+		if normalizedAppKey != "" && menuAppKey != normalizedAppKey {
+			continue
+		}
+		if normalizedAppKey == "" && len(allowedAppKeys) > 0 && !containsString(allowedAppKeys, menuAppKey) {
 			continue
 		}
 		filteredMenus = append(filteredMenus, menu)
@@ -591,9 +609,6 @@ func (s *service) SetPackageMenus(id uuid.UUID, menuIDs []uuid.UUID, appKey stri
 	if item.PackageType == "bundle" {
 		return nil, errors.New("组合包不允许直接绑定菜单")
 	}
-	if item.ContextType == "" {
-		return nil, errors.New("功能包上下文无效")
-	}
 	if len(menuIDs) > 0 {
 		menus, getErr := s.menuRepo.GetByIDs(menuIDs)
 		if getErr != nil {
@@ -602,8 +617,14 @@ func (s *service) SetPackageMenus(id uuid.UUID, menuIDs []uuid.UUID, appKey stri
 		if len(menus) != len(menuIDs) {
 			return nil, errors.New("存在无效的菜单")
 		}
+		allowedAppKeys := normalizeAppKeys(item.AppKeys)
+		normalizedAppKey := normalizeAppKey(appKey)
 		for _, menu := range menus {
-			if strings.TrimSpace(menu.AppKey) != strings.TrimSpace(item.AppKey) {
+			menuAppKey := normalizeAppKey(menu.AppKey)
+			if normalizedAppKey != "" && menuAppKey != normalizedAppKey {
+				return nil, errors.New("功能包与菜单必须属于同一应用")
+			}
+			if normalizedAppKey == "" && len(allowedAppKeys) > 0 && !containsString(allowedAppKeys, menuAppKey) {
 				return nil, errors.New("功能包与菜单必须属于同一应用")
 			}
 		}
@@ -647,9 +668,6 @@ func (s *service) GetPackageCollaborationWorkspaces(id uuid.UUID, appKey string)
 	if !packageBelongsToApp(item, appKey) {
 		return nil, ErrFeaturePackageNotFound
 	}
-	if !supportsCollaborationWorkspaceContext(item.ContextType) {
-		return []uuid.UUID{}, nil
-	}
 	workspaceCollaborationWorkspaceIDs, err := s.getWorkspaceCollaborationWorkspaceIDsByPackageID(id, appKey)
 	if err != nil {
 		return nil, err
@@ -671,9 +689,6 @@ func (s *service) SetPackageCollaborationWorkspaces(id uuid.UUID, collaborationW
 	}
 	if !packageBelongsToApp(item, appKey) {
 		return nil, ErrFeaturePackageNotFound
-	}
-	if !supportsCollaborationWorkspaceContext(item.ContextType) {
-		return nil, errors.New("仅支持为协作空间功能包配置协作空间")
 	}
 	currentCollaborationWorkspaceIDs, err := s.GetPackageCollaborationWorkspaces(id, appKey)
 	if err != nil {
@@ -752,11 +767,8 @@ func (s *service) SetCollaborationWorkspacePackages(collaborationWorkspaceID uui
 		if !ok {
 			return nil, ErrFeaturePackageNotFound
 		}
-		if strings.TrimSpace(item.AppKey) != normalizedAppKey {
-			return nil, errors.New("仅支持分配当前应用内的功能包")
-		}
-		if !supportsCollaborationWorkspaceContext(item.ContextType) {
-			return nil, errors.New("仅支持为协作空间分配协作空间功能包")
+		if !packageBelongsToApp(&item, normalizedAppKey) {
+			return nil, errors.New("功能包不在当前 App 的适用范围内")
 		}
 	}
 	if err := appscope.ReplaceCollaborationWorkspacePackagesInApp(s.db, collaborationWorkspaceID, normalizedAppKey, packageIDs, grantedBy); err != nil {
@@ -797,7 +809,18 @@ func (s *service) getWorkspacePackageIDsByCollaborationWorkspaceID(collaboration
 	if err := s.db.Model(&models.WorkspaceFeaturePackage{}).
 		Joins("JOIN feature_packages ON feature_packages.id = workspace_feature_packages.package_id").
 		Where("workspace_feature_packages.workspace_id = ? AND workspace_feature_packages.enabled = ? AND workspace_feature_packages.deleted_at IS NULL", workspace.ID, true).
-		Where("feature_packages.app_key = ? AND feature_packages.deleted_at IS NULL", normalizeAppKey(appKey)).
+		Where("feature_packages.deleted_at IS NULL").
+		Where(func(tx *gorm.DB) *gorm.DB {
+			requestedAppKey := normalizeAppKey(appKey)
+			if requestedAppKey == "" {
+				return tx
+			}
+			return tx.Where(
+				"feature_packages.app_key = ? OR COALESCE(jsonb_array_length(feature_packages.app_keys), 0) = 0 OR feature_packages.app_keys ? ?",
+				requestedAppKey,
+				requestedAppKey,
+			)
+		}).
 		Distinct("workspace_feature_packages.package_id").
 		Pluck("package_id", &packageIDs).Error; err != nil {
 		return nil, err
@@ -816,7 +839,18 @@ func (s *service) getWorkspaceCollaborationWorkspaceIDsByPackageID(packageID uui
 		Joins("JOIN feature_packages ON feature_packages.id = workspace_feature_packages.package_id").
 		Where("workspace_feature_packages.package_id = ? AND workspace_feature_packages.enabled = ? AND workspace_feature_packages.deleted_at IS NULL", packageID, true).
 		Where("workspaces.workspace_type = ? AND workspaces.deleted_at IS NULL", models.WorkspaceTypeCollaboration).
-		Where("feature_packages.app_key = ? AND feature_packages.deleted_at IS NULL", normalizeAppKey(appKey)).
+		Where("feature_packages.deleted_at IS NULL").
+		Where(func(tx *gorm.DB) *gorm.DB {
+			requestedAppKey := normalizeAppKey(appKey)
+			if requestedAppKey == "" {
+				return tx
+			}
+			return tx.Where(
+				"feature_packages.app_key = ? OR COALESCE(jsonb_array_length(feature_packages.app_keys), 0) = 0 OR feature_packages.app_keys ? ?",
+				requestedAppKey,
+				requestedAppKey,
+			)
+		}).
 		Find(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -871,11 +905,10 @@ func (s *service) replaceWorkspacePackagesForCollaborationWorkspaceID(collaborat
 	})
 }
 
-func (s *service) GetRelationTree(appKey, contextType, keyword string) (*FeaturePackageRelationTree, error) {
+func (s *service) GetRelationTree(workspaceScope, keyword string) (*FeaturePackageRelationTree, error) {
 	packages, err := s.ListOptions(&dto.FeaturePackageListRequest{
-		AppKey:      normalizeAppKey(appKey),
-		ContextType: normalizeContextType(contextType),
-		Keyword:     strings.TrimSpace(keyword),
+		WorkspaceScope: normalizeWorkspaceScope(workspaceScope),
+		Keyword:        strings.TrimSpace(keyword),
 	})
 	if err != nil {
 		return nil, err
@@ -883,12 +916,13 @@ func (s *service) GetRelationTree(appKey, contextType, keyword string) (*Feature
 	nodes := make(map[uuid.UUID]FeaturePackageRelationNode, len(packages))
 	for _, pkg := range packages {
 		nodes[pkg.ID] = FeaturePackageRelationNode{
-			ID:          pkg.ID,
-			PackageKey:  pkg.PackageKey,
-			Name:        pkg.Name,
-			PackageType: pkg.PackageType,
-			ContextType: pkg.ContextType,
-			Status:      pkg.Status,
+			ID:             pkg.ID,
+			PackageKey:     pkg.PackageKey,
+			Name:           pkg.Name,
+			PackageType:    pkg.PackageType,
+			WorkspaceScope: pkg.WorkspaceScope,
+			AppKeys:        pkg.AppKeys,
+			Status:         pkg.Status,
 		}
 	}
 	if len(nodes) == 0 {
@@ -1123,14 +1157,16 @@ func (s *service) Rollback(id uuid.UUID, versionID uuid.UUID, operatorID *uuid.U
 	menuIDs := parseUUIDList("menu_ids")
 	collaborationWorkspaceIDs := parseUUIDList("collaboration_workspace_ids")
 	updates := map[string]interface{}{
-		"package_key":  strings.TrimSpace(fmt.Sprint(snapshot["package_key"])),
-		"package_type": normalizePackageTypeDefault(fmt.Sprint(snapshot["package_type"]), pkg.PackageType),
-		"name":         strings.TrimSpace(fmt.Sprint(snapshot["name"])),
-		"description":  strings.TrimSpace(fmt.Sprint(snapshot["description"])),
-		"context_type": normalizeContextTypeDefault(fmt.Sprint(snapshot["context_type"]), pkg.ContextType),
-		"status":       normalizeStatus(fmt.Sprint(snapshot["status"])),
-		"sort_order":   intFromSnapshot(snapshot["sort_order"], pkg.SortOrder),
-		"updated_at":   time.Now(),
+		"package_key":     strings.TrimSpace(fmt.Sprint(snapshot["package_key"])),
+		"package_type":    normalizePackageTypeDefault(fmt.Sprint(snapshot["package_type"]), pkg.PackageType),
+		"name":            strings.TrimSpace(fmt.Sprint(snapshot["name"])),
+		"description":     strings.TrimSpace(fmt.Sprint(snapshot["description"])),
+		"workspace_scope": normalizeWorkspaceScopeDefault(fmt.Sprint(snapshot["workspace_scope"]), pkg.WorkspaceScope),
+		"context_type":    normalizeContextTypeDefault(fmt.Sprint(snapshot["context_type"]), pkg.ContextType),
+		"app_keys":        snapshot["app_keys"],
+		"status":          normalizeStatus(fmt.Sprint(snapshot["status"])),
+		"sort_order":      intFromSnapshot(snapshot["sort_order"], pkg.SortOrder),
+		"updated_at":      time.Now(),
 	}
 	if err := s.packageRepo.UpdateWithMap(id, updates); err != nil {
 		return nil, err
@@ -1144,10 +1180,8 @@ func (s *service) Rollback(id uuid.UUID, versionID uuid.UUID, operatorID *uuid.U
 	if err := s.packageMenuRepo.ReplacePackageMenus(id, menuIDs); err != nil {
 		return nil, err
 	}
-	if supportsCollaborationWorkspaceContext(normalizeContextTypeDefault(fmt.Sprint(snapshot["context_type"]), pkg.ContextType)) {
-		if err := s.syncPackageCollaborationWorkspacesBySet(id, collaborationWorkspaceIDs, operatorID); err != nil {
-			return nil, err
-		}
+	if err := s.syncPackageCollaborationWorkspacesBySet(id, collaborationWorkspaceIDs, operatorID); err != nil {
+		return nil, err
 	}
 
 	var stats permissionrefresh.RefreshStats
@@ -1203,12 +1237,9 @@ func (s *service) saveVersionSnapshot(packageID uuid.UUID, changeType string, op
 	if err != nil {
 		return err
 	}
-	collaborationWorkspaceIDs := []uuid.UUID{}
-	if supportsCollaborationWorkspaceContext(pkg.ContextType) {
-		collaborationWorkspaceIDs, err = s.collaborationWorkspaceFeaturePackageRepo.GetCollaborationWorkspaceIDsByPackageID(packageID)
-		if err != nil {
-			return err
-		}
+	collaborationWorkspaceIDs, err := s.collaborationWorkspaceFeaturePackageRepo.GetCollaborationWorkspaceIDsByPackageID(packageID)
+	if err != nil {
+		return err
 	}
 
 	var maxVersion int64
@@ -1225,7 +1256,9 @@ func (s *service) saveVersionSnapshot(packageID uuid.UUID, changeType string, op
 			"package_type":                pkg.PackageType,
 			"name":                        pkg.Name,
 			"description":                 pkg.Description,
+			"workspace_scope":             pkg.WorkspaceScope,
 			"context_type":                pkg.ContextType,
+			"app_keys":                    pkg.AppKeys,
 			"status":                      pkg.Status,
 			"sort_order":                  pkg.SortOrder,
 			"child_package_ids":           uuidSliceToStrings(childIDs),
@@ -1259,7 +1292,7 @@ func (s *service) syncPackageCollaborationWorkspacesBySet(id uuid.UUID, collabor
 		affected[collaborationWorkspaceID] = struct{}{}
 	}
 	for collaborationWorkspaceID := range affected {
-			packageIDs, packageErr := appscope.PackageIDsByCollaborationWorkspace(s.db, collaborationWorkspaceID, item.AppKey)
+		packageIDs, packageErr := appscope.PackageIDsByCollaborationWorkspace(s.db, collaborationWorkspaceID, item.AppKey)
 		if packageErr != nil {
 			return packageErr
 		}
@@ -1307,13 +1340,15 @@ func packageSummary(item *user.FeaturePackage) map[string]interface{} {
 		return nil
 	}
 	return map[string]interface{}{
-		"id":           item.ID.String(),
-		"package_key":  item.PackageKey,
-		"package_type": item.PackageType,
-		"name":         item.Name,
-		"context_type": item.ContextType,
-		"status":       item.Status,
-		"sort_order":   item.SortOrder,
+		"id":              item.ID.String(),
+		"package_key":     item.PackageKey,
+		"package_type":    item.PackageType,
+		"name":            item.Name,
+		"workspace_scope": item.WorkspaceScope,
+		"context_type":    item.ContextType,
+		"app_keys":        item.AppKeys,
+		"status":          item.Status,
+		"sort_order":      item.SortOrder,
 	}
 }
 
@@ -1440,11 +1475,53 @@ func packageBelongsToApp(item *user.FeaturePackage, appKey string) bool {
 	if item == nil {
 		return false
 	}
-	return strings.TrimSpace(item.AppKey) == normalizeAppKey(appKey)
+	if len(normalizeAppKeys(item.AppKeys)) == 0 {
+		return true
+	}
+	requested := normalizeAppKey(appKey)
+	if requested == "" {
+		return true
+	}
+	appKeys := normalizeAppKeys(item.AppKeys)
+	if len(appKeys) > 0 {
+		for _, key := range appKeys {
+			if key == requested {
+				return true
+			}
+		}
+		return false
+	}
+	return normalizeAppKey(item.AppKey) == requested
 }
 
 func normalizeAppKey(value string) string {
 	return apppkg.NormalizeAppKey(value)
+}
+
+func normalizeAppKeys(values []string) []string {
+	seen := make(map[string]struct{}, len(values))
+	result := make([]string, 0, len(values))
+	for _, value := range values {
+		key := normalizeAppKey(value)
+		if key == "" {
+			continue
+		}
+		if _, exists := seen[key]; exists {
+			continue
+		}
+		seen[key] = struct{}{}
+		result = append(result, key)
+	}
+	return result
+}
+
+func firstOrDefault(values []string, fallback string) string {
+	for _, value := range values {
+		if key := normalizeAppKey(value); key != "" {
+			return key
+		}
+	}
+	return normalizeAppKey(fallback)
 }
 
 func (s *service) getCollaborationWorkspaceMap(collaborationWorkspaceIDs []uuid.UUID) (map[uuid.UUID]struct{}, error) {
@@ -1475,6 +1552,57 @@ func normalizeContextTypeDefault(value, fallback string) string {
 	return fallback
 }
 
+func normalizeWorkspaceScope(value string) string {
+	switch strings.ReplaceAll(strings.TrimSpace(value), " ", "") {
+	case "all", "personal", "collaboration":
+		return strings.ReplaceAll(strings.TrimSpace(value), " ", "")
+	case "common":
+		return "all"
+	default:
+		return ""
+	}
+}
+
+func normalizeWorkspaceScopeDefault(value, fallback string) string {
+	if normalized := normalizeWorkspaceScope(value); normalized != "" {
+		return normalized
+	}
+	switch strings.ReplaceAll(strings.TrimSpace(fallback), " ", "") {
+	case "personal", "collaboration", "all":
+		return strings.ReplaceAll(strings.TrimSpace(fallback), " ", "")
+	case "common":
+		return "all"
+	default:
+		return ""
+	}
+}
+
+func workspaceScopeFromContextType(contextType string) string {
+	switch normalizeContextType(contextType) {
+	case "personal":
+		return "personal"
+	case "collaboration":
+		return "collaboration"
+	case "common":
+		return "all"
+	default:
+		return ""
+	}
+}
+
+func workspaceScopeToContextType(workspaceScope string) string {
+	switch normalizeWorkspaceScope(workspaceScope) {
+	case "personal":
+		return "personal"
+	case "collaboration":
+		return "collaboration"
+	case "all":
+		return "common"
+	default:
+		return ""
+	}
+}
+
 func normalizeStatus(value string) string {
 	switch strings.TrimSpace(value) {
 	case "disabled":
@@ -1501,27 +1629,15 @@ func normalizePackageTypeDefault(value, fallback string) string {
 }
 
 func supportsCollaborationWorkspaceContext(contextType string) bool {
-	return contextType == "collaboration" || contextType == "common"
+	return true
 }
 
 func contextSupportsAction(packageContextType, actionContextType string) bool {
-	if packageContextType == "common" {
-		return actionContextType == "personal" || actionContextType == "collaboration"
-	}
-	return packageContextType == actionContextType
+	return true
 }
 
 func contextSupportsChildPackage(bundleContextType, childContextType string) bool {
-	switch bundleContextType {
-	case "personal", "platform":
-		return childContextType == "personal" || childContextType == "common"
-	case "collaboration":
-		return childContextType == "collaboration" || childContextType == "common"
-	case "common":
-		return childContextType == "personal" || childContextType == "collaboration" || childContextType == "common"
-	default:
-		return false
-	}
+	return true
 }
 
 func mergeUUIDSlice(groups ...[]uuid.UUID) []uuid.UUID {
@@ -1540,4 +1656,14 @@ func mergeUUIDSlice(groups ...[]uuid.UUID) []uuid.UUID {
 		}
 	}
 	return result
+}
+
+func containsString(values []string, target string) bool {
+	target = strings.TrimSpace(target)
+	for _, value := range values {
+		if strings.TrimSpace(value) == target {
+			return true
+		}
+	}
+	return false
 }

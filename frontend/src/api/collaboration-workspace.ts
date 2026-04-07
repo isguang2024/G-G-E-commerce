@@ -63,17 +63,6 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
   return 'common'
 }
 
-function deriveFeaturePackageContextType(packageKey?: string) {
-  const key = `${packageKey || ''}`.trim()
-  if (key.startsWith('personal.')) {
-    return 'personal'
-  }
-  if (key.startsWith('collaboration_workspace.')) {
-    return 'collaboration'
-  }
-  return 'common'
-}
-
 function normalizeCollaborationWorkspace(
   item: any
 ): Api.SystemManage.CollaborationWorkspaceListItem {
@@ -151,15 +140,19 @@ function normalizeAction(item: any): Api.SystemManage.PermissionActionItem {
 
 function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem {
   const packageKey = item?.package_key || item?.packageKey || ''
-  const contextType =
-    item?.context_type || item?.contextType || deriveFeaturePackageContextType(packageKey)
+  const appKeysRaw = item?.app_keys || item?.appKeys || []
+  const appKeys = Array.isArray(appKeysRaw)
+    ? appKeysRaw.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
+    : []
   return {
     id: item?.id || '',
     packageKey,
     packageType: item?.package_type || item?.packageType || 'base',
     name: item?.name || '',
     description: item?.description || '',
-    contextType,
+    workspaceScope: item?.workspace_scope || item?.workspaceScope || 'all',
+    appKey: item?.app_key || item?.appKey || '',
+    appKeys,
     isBuiltin: Boolean(item?.is_builtin ?? item?.isBuiltin ?? false),
     actionCount: item?.action_count ?? item?.actionCount ?? 0,
     menuCount: item?.menu_count ?? item?.menuCount ?? 0,

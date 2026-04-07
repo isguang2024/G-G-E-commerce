@@ -70,7 +70,12 @@ func NewMenuService(db *gorm.DB, menuRepo user.MenuRepository, refresher permiss
 }
 
 func (s *menuService) GetTree(all bool, allowedMenuIDs []uuid.UUID, appKey, spaceKey string) ([]*user.Menu, error) {
-	flat, err := s.menuRepo.ListByAppAndSpace(normalizeMenuAppKey(appKey), normalizeMenuSpaceKey(spaceKey))
+	normalizedAppKey := normalizeMenuAppKey(appKey)
+	normalizedSpaceKey := strings.TrimSpace(spaceKey)
+	if normalizedSpaceKey != "" {
+		normalizedSpaceKey = normalizeMenuSpaceKey(normalizedSpaceKey)
+	}
+	flat, err := s.menuRepo.ListByAppAndSpace(normalizedAppKey, normalizedSpaceKey)
 	if err != nil {
 		return nil, err
 	}

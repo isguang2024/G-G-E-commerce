@@ -707,11 +707,12 @@ declare namespace Api {
     interface FeaturePackageItem {
       id: string
       appKey?: string
+      appKeys?: string[]
       packageKey: string
       packageType?: 'base' | 'bundle' | string
       name: string
       description?: string
-      contextType?: 'personal' | 'collaboration' | 'common' | string
+      workspaceScope?: 'all' | 'personal' | 'collaboration' | string
       isBuiltin?: boolean
       actionCount?: number
       menuCount?: number
@@ -741,7 +742,8 @@ declare namespace Api {
       packageKey: string
       name: string
       packageType: 'base' | 'bundle' | string
-      contextType: 'personal' | 'collaboration' | 'common' | string
+      workspaceScope: 'all' | 'personal' | 'collaboration' | string
+      appKeys?: string[]
       status: string
       referenceCount: number
       children?: FeaturePackageRelationNode[]
@@ -762,28 +764,30 @@ declare namespace Api {
           keyword?: string
           packageKey?: string
           packageType?: string
-          contextType?: 'personal' | 'collaboration' | 'common' | string
+          workspaceScope?: 'all' | 'personal' | 'collaboration' | string
         }
     >
 
     interface FeaturePackageCreateParams {
       app_key?: string
+      app_keys?: string[]
       package_key: string
       package_type?: 'base' | 'bundle' | string
       name: string
       description?: string
-      context_type?: 'personal' | 'collaboration' | 'common' | string
+      workspace_scope?: 'all' | 'personal' | 'collaboration' | string
       status?: string
       sort_order?: number
     }
 
     interface FeaturePackageUpdateParams {
       app_key?: string
+      app_keys?: string[]
       package_key?: string
       package_type?: 'base' | 'bundle' | string
       name?: string
       description?: string
-      context_type?: 'personal' | 'collaboration' | 'common' | string
+      workspace_scope?: 'all' | 'personal' | 'collaboration' | string
       status?: string
       sort_order?: number
     }

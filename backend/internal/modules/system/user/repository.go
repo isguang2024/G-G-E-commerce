@@ -1965,20 +1965,20 @@ type FeaturePackageRepository interface {
 	List(offset, limit int, params *FeaturePackageListParams) ([]FeaturePackage, int64, error)
 	GetByID(id uuid.UUID) (*FeaturePackage, error)
 	GetByIDs(ids []uuid.UUID) ([]FeaturePackage, error)
-	GetByPackageKey(packageKey string, appKey string) (*FeaturePackage, error)
+	GetByPackageKey(packageKey string) (*FeaturePackage, error)
 	Create(item *FeaturePackage) error
 	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
 	Delete(id uuid.UUID) error
 }
 
 type FeaturePackageListParams struct {
-	AppKey      string
-	Keyword     string
-	PackageKey  string
-	PackageType string
-	Name        string
-	ContextType string
-	Status      string
+	Keyword        string
+	AppKey         string
+	PackageKey     string
+	PackageType    string
+	Name           string
+	WorkspaceScope string
+	Status         string
 }
 
 type featurePackageRepository struct {
@@ -1992,9 +1992,6 @@ func NewFeaturePackageRepository(db *gorm.DB) FeaturePackageRepository {
 func (r *featurePackageRepository) List(offset, limit int, params *FeaturePackageListParams) ([]FeaturePackage, int64, error) {
 	query := r.db.Model(&FeaturePackage{})
 	if params != nil {
-		if params.AppKey != "" {
-			query = query.Where("app_key = ?", params.AppKey)
-		}
 		if params.Keyword != "" {
 			keyword := "%" + params.Keyword + "%"
 			query = query.Where("(package_key LIKE ? OR name LIKE ? OR description LIKE ?)", keyword, keyword, keyword)
@@ -2005,15 +2002,28 @@ func (r *featurePackageRepository) List(offset, limit int, params *FeaturePackag
 		if params.PackageType != "" {
 			query = query.Where("package_type = ?", params.PackageType)
 		}
+		if params.AppKey != "" {
+			if r.db.Migrator().HasColumn(&FeaturePackage{}, "app_keys") {
+				query = query.Where(
+					"(app_key = ? OR COALESCE(jsonb_array_length(app_keys), 0) = 0 OR app_keys ? ?)",
+					params.AppKey,
+					params.AppKey,
+				)
+			} else {
+				query = query.Where("app_key = ?", params.AppKey)
+			}
+		}
 		if params.Name != "" {
 			query = query.Where("name LIKE ?", "%"+params.Name+"%")
 		}
-		if params.ContextType != "" {
-			switch params.ContextType {
-			case "personal", "collaboration":
-				query = query.Where("(context_type = ? OR context_type = ?)", params.ContextType, "common")
+		if params.WorkspaceScope != "" {
+			switch params.WorkspaceScope {
+			case "all":
+				// all 表示不过滤空间范围
+			case "personal", "collaboration", "common":
+				query = query.Where("(workspace_scope = ? OR workspace_scope = ?)", params.WorkspaceScope, "all")
 			default:
-				query = query.Where("context_type = ?", params.ContextType)
+				query = query.Where("workspace_scope = ?", params.WorkspaceScope)
 			}
 		}
 		if params.Status != "" {
@@ -2050,12 +2060,9 @@ func (r *featurePackageRepository) GetByIDs(ids []uuid.UUID) ([]FeaturePackage, 
 	return items, err
 }
 
-func (r *featurePackageRepository) GetByPackageKey(packageKey string, appKey string) (*FeaturePackage, error) {
+func (r *featurePackageRepository) GetByPackageKey(packageKey string) (*FeaturePackage, error) {
 	var item FeaturePackage
 	query := r.db.Where("package_key = ?", packageKey)
-	if strings.TrimSpace(appKey) != "" {
-		query = query.Where("app_key = ?", strings.TrimSpace(appKey))
-	}
 	err := query.First(&item).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

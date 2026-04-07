@@ -66,6 +66,9 @@ func main() {
 	if err := database.AutoMigrate(); err != nil {
 		logger.Fatal("Migration failed", zap.Error(err))
 	}
+	if err := ensureFeaturePackageAppKeysColumn(); err != nil {
+		logger.Fatal("Failed to ensure feature_packages app_keys column", zap.Error(err))
+	}
 
 	logger.Info("Database migration completed successfully!")
 
@@ -347,6 +350,28 @@ func ensureUserEmailPartialUniqueIndex() error {
 	})
 }
 
+func ensureFeaturePackageAppKeysColumn() error {
+	exists, err := hasColumn("feature_packages", "app_keys")
+	if err != nil {
+		return err
+	}
+	if !exists {
+		if err := database.DB.Exec(`ALTER TABLE feature_packages ADD COLUMN app_keys jsonb NOT NULL DEFAULT '[]'::jsonb`).Error; err != nil {
+			return err
+		}
+	}
+
+	// Ensure historical rows have canonical array values.
+	return database.DB.Exec(`
+		UPDATE feature_packages
+		SET app_keys = CASE
+			WHEN COALESCE(TRIM(app_key), '') = '' THEN '[]'::jsonb
+			ELSE jsonb_build_array(TRIM(app_key))
+		END
+		WHERE app_keys IS NULL OR jsonb_typeof(app_keys) <> 'array' OR jsonb_array_length(app_keys) = 0
+	`).Error
+}
+
 func normalizeAccessTraceNavigationSeed(spaceKey, path string) error {
 	const accessTraceName = "\u8bbf\u95ee\u94fe\u8def\u6d4b\u8bd5"
 	var primaryMenuID *uuid.UUID
@@ -436,9 +461,9 @@ func normalizeAccessTraceNavigationSeed(spaceKey, path string) error {
 }
 
 func ensureAccessTracePackageMenuBinding(menuID uuid.UUID) error {
-	packageKeys := []string{"personal.system_admin", "personal.menu_admin"}
+	packageKeys := []string{"platform_admin.system_manage", "platform_admin.menu_manage"}
 	var packages []systemmodels.FeaturePackage
-	if err := database.DB.Where("app_key = ? AND package_key IN ?", systemmodels.DefaultAppKey, packageKeys).Find(&packages).Error; err != nil {
+	if err := database.DB.Where("package_key IN ?", packageKeys).Find(&packages).Error; err != nil {
 		return err
 	}
 	for _, item := range packages {

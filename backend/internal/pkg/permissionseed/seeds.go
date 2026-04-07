@@ -44,7 +44,9 @@ type FeaturePackageSeed struct {
 	PackageType    string
 	Name           string
 	Description    string
+	WorkspaceScope string
 	ContextType    string
+	AppKeys        []string
 	IsBuiltin      bool
 	Status         string
 	SortOrder      int
@@ -430,11 +432,13 @@ func DefaultPermissionModuleGroups() []PermissionGroupSeed {
 func DefaultFeaturePackages() []FeaturePackageSeed {
 	items := []FeaturePackageSeed{
 		{
-			PackageKey:     "personal.system_admin",
+			PackageKey:     "platform_admin.system_manage",
 			PackageType:    "base",
-			Name:           "个人空间系统管理包",
-			Description:    "包含个人空间系统管理核心能力",
-			ContextType:    "personal",
+			Name:           "平台管理员系统管理包",
+			Description:    "包含平台管理员系统管理核心能力",
+			WorkspaceScope: "all",
+			ContextType:    "common",
+			AppKeys:        []string{systemmodels.DefaultAppKey},
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      1,
@@ -442,11 +446,13 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 			PermissionKeys: []string{"system.user.manage", "system.role.manage", "system.permission.manage", "system.page.manage", "system.page.sync", "system.fast_enter.manage", "message.manage", "collaboration_workspace.manage"},
 		},
 		{
-			PackageKey:     "personal.menu_admin",
+			PackageKey:     "platform_admin.menu_manage",
 			PackageType:    "base",
-			Name:           "个人空间菜单管理包",
-			Description:    "包含个人空间菜单管理与菜单备份能力",
-			ContextType:    "personal",
+			Name:           "平台管理员菜单管理包",
+			Description:    "包含平台管理员菜单管理与菜单备份能力",
+			WorkspaceScope: "all",
+			ContextType:    "common",
+			AppKeys:        []string{systemmodels.DefaultAppKey},
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      2,
@@ -454,11 +460,13 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 			PermissionKeys: []string{"system.menu.manage", "system.menu.backup"},
 		},
 		{
-			PackageKey:     "personal.api_admin",
+			PackageKey:     "platform_admin.api_manage",
 			PackageType:    "base",
-			Name:           "个人空间接口管理包",
-			Description:    "包含 API 注册表查看、同步与个人空间功能包治理能力",
-			ContextType:    "personal",
+			Name:           "平台管理员接口管理包",
+			Description:    "包含 API 注册表查看、同步与平台功能包治理能力",
+			WorkspaceScope: "all",
+			ContextType:    "common",
+			AppKeys:        []string{systemmodels.DefaultAppKey},
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      3,
@@ -470,7 +478,9 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 			PackageType:    "base",
 			Name:           "协作空间成员管理包",
 			Description:    "包含协作空间成员、角色和功能权限配置能力",
+			WorkspaceScope: "collaboration",
 			ContextType:    "collaboration",
+			AppKeys:        []string{systemmodels.DefaultAppKey},
 			IsBuiltin:      true,
 			Status:         "normal",
 			SortOrder:      10,
@@ -478,14 +488,16 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 			PermissionKeys: []string{"collaboration_workspace.member.manage", "collaboration_workspace.boundary.manage", "collaboration_workspace.message.manage"},
 		},
 		{
-			PackageKey:  "personal.admin_bundle",
-			PackageType: "bundle",
-			Name:        "个人空间管理员组合包",
-			Description: "统一聚合个人空间系统、菜单与接口管理基础包",
-			ContextType: "personal",
-			IsBuiltin:   true,
-			Status:      "normal",
-			SortOrder:   4,
+			PackageKey:     "platform_admin.admin_bundle",
+			PackageType:    "bundle",
+			Name:           "平台管理员组合包",
+			Description:    "统一聚合平台系统、菜单与接口管理基础包",
+			WorkspaceScope: "all",
+			ContextType:    "common",
+			AppKeys:        []string{systemmodels.DefaultAppKey},
+			IsBuiltin:      true,
+			Status:         "normal",
+			SortOrder:      4,
 		},
 	}
 	for i := range items {
@@ -496,9 +508,9 @@ func DefaultFeaturePackages() []FeaturePackageSeed {
 
 func DefaultFeaturePackageBundles() []FeaturePackageBundleSeed {
 	return []FeaturePackageBundleSeed{
-		{ParentPackageKey: "personal.admin_bundle", ChildPackageKey: "personal.system_admin"},
-		{ParentPackageKey: "personal.admin_bundle", ChildPackageKey: "personal.menu_admin"},
-		{ParentPackageKey: "personal.admin_bundle", ChildPackageKey: "personal.api_admin"},
+		{ParentPackageKey: "platform_admin.admin_bundle", ChildPackageKey: "platform_admin.system_manage"},
+		{ParentPackageKey: "platform_admin.admin_bundle", ChildPackageKey: "platform_admin.menu_manage"},
+		{ParentPackageKey: "platform_admin.admin_bundle", ChildPackageKey: "platform_admin.api_manage"},
 	}
 }
 
@@ -589,7 +601,7 @@ func DeprecatedDefaultMenuNames() []string {
 
 func DefaultRolePackageBindings() []RolePackageBindingSeed {
 	items := []RolePackageBindingSeed{
-		{RoleCode: "admin", PackageKey: "personal.admin_bundle"},
+		{RoleCode: "admin", PackageKey: "platform_admin.admin_bundle"},
 		{RoleCode: "collaboration_workspace_admin", PackageKey: "collaboration_workspace.member_admin"},
 	}
 	for i := range items {

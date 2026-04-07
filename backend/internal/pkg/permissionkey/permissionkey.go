@@ -126,6 +126,7 @@ func FromKey(key string) Mapping {
 	}
 	for _, mapping := range mappings {
 		if strings.TrimSpace(mapping.Key) == target {
+			mapping.ContextType = normalizeContextTypeForKey(mapping.Key, mapping.ContextType, mapping.ResourceCode)
 			return mapping
 		}
 	}
@@ -145,7 +146,7 @@ func FromKey(key string) Mapping {
 		Key:          target,
 		ResourceCode: strings.ReplaceAll(resource, ".", "_"),
 		ActionCode:   action,
-		ContextType:  deriveContextType(target),
+		ContextType:  normalizeContextTypeForKey(target, deriveContextType(target), resource),
 	}
 }
 
@@ -162,7 +163,7 @@ func FromLegacy(resourceCode, actionCode string) Mapping {
 		ResourceCode: resource,
 		ActionCode:   action,
 		Name:         key,
-		ContextType:  deriveContextType(key),
+		ContextType:  normalizeContextTypeForKey(key, deriveContextType(key), resource),
 	}
 }
 
@@ -184,11 +185,42 @@ func normalizeLegacyKey(resourceCode, actionCode string) string {
 func deriveContextType(permissionKey string) string {
 	target := strings.TrimSpace(permissionKey)
 	switch {
-	case strings.HasPrefix(target, "system."),
-		strings.HasPrefix(target, "feature_package."),
-		strings.HasPrefix(target, "collaboration_workspace."):
+	case strings.HasPrefix(target, "personal."):
 		return "personal"
-	default:
+	case strings.HasPrefix(target, "collaboration_workspace."):
 		return "collaboration"
+	default:
+		return "common"
+	}
+}
+
+func normalizeContextTypeForKey(permissionKey, contextType, moduleCode string) string {
+	key := strings.TrimSpace(permissionKey)
+	normalized := strings.TrimSpace(contextType)
+	switch {
+	case strings.HasPrefix(key, "personal."):
+		return "personal"
+	case strings.HasPrefix(key, "collaboration_workspace."):
+		return "collaboration"
+	case strings.HasPrefix(key, "system."),
+		strings.HasPrefix(key, "feature_package."),
+		strings.HasPrefix(key, "api_endpoint."),
+		strings.HasPrefix(key, "menu."),
+		strings.HasPrefix(key, "menu_backup."),
+		strings.HasPrefix(key, "page."),
+		strings.HasPrefix(key, "role."),
+		strings.HasPrefix(key, "user."),
+		key == "message.manage",
+		strings.HasPrefix(key, "fast_enter."),
+		strings.HasPrefix(key, "system_permission."),
+		strings.HasPrefix(key, "collaboration_workspace_member_admin."),
+		strings.HasPrefix(key, "collaboration_workspace_member."):
+		return "common"
+	case normalized != "":
+		return normalized
+	case strings.TrimSpace(moduleCode) != "":
+		return deriveContextType(key)
+	default:
+		return deriveContextType(key)
 	}
 }

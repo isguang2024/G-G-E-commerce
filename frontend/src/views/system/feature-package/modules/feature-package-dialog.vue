@@ -26,12 +26,32 @@
       <ElFormItem label="描述" prop="description">
         <ElInput v-model="form.description" type="textarea" :rows="3" placeholder="请输入描述" />
       </ElFormItem>
-      <ElFormItem label="空间范围" prop="contextType">
-        <ElSelect v-model="form.contextType" placeholder="请选择空间范围" style="width: 100%">
+      <ElFormItem label="适用空间" prop="workspaceScope">
+        <ElSelect v-model="form.workspaceScope" placeholder="请选择适用空间" style="width: 100%">
+          <ElOption label="所有空间" value="all" />
           <ElOption label="个人空间" value="personal" />
           <ElOption label="协作空间" value="collaboration" />
-          <ElOption label="通用" value="common" />
         </ElSelect>
+      </ElFormItem>
+      <ElFormItem label="适用 App" prop="appKeys">
+        <ElSelect
+          v-model="form.appKeys"
+          multiple
+          filterable
+          clearable
+          collapse-tags
+          collapse-tags-tooltip
+          placeholder="不绑定 App 时，对所有 App 生效"
+          style="width: 100%"
+        >
+          <ElOption
+            v-for="app in appOptions"
+            :key="app.appKey"
+            :label="`${app.name} (${app.appKey})`"
+            :value="app.appKey"
+          />
+        </ElSelect>
+        <div class="form-note">不绑定 App 时，对所有 App 生效。</div>
       </ElFormItem>
       <ElFormItem label="状态" prop="status">
         <ElSelect v-model="form.status" placeholder="请选择状态" style="width: 100%">
@@ -52,7 +72,7 @@
 
 <script setup lang="ts">
   import { ElMessage, type FormInstance, type FormRules } from 'element-plus'
-  import { fetchCreateFeaturePackage, fetchUpdateFeaturePackage } from '@/api/system-manage'
+  import { fetchCreateFeaturePackage, fetchGetApps, fetchUpdateFeaturePackage } from '@/api/system-manage'
 
   type PackageItem = Api.SystemManage.FeaturePackageItem
 
@@ -60,7 +80,6 @@
     modelValue: boolean
     dialogType: 'add' | 'edit'
     packageData?: Partial<PackageItem>
-    appKey?: string
     defaultPackageType?: 'base' | 'bundle'
   }
 
@@ -78,7 +97,7 @@
 
   const emit = defineEmits<Emits>()
   const formRef = ref<FormInstance>()
-  const currentAppKey = computed(() => `${props.appKey || ''}`.trim())
+  const appOptions = ref<Api.SystemManage.AppItem[]>([])
 
   const visible = computed({
     get: () => props.modelValue,
@@ -91,7 +110,8 @@
     packageType: 'base' as 'base' | 'bundle',
     name: '',
     description: '',
-    contextType: 'collaboration',
+    workspaceScope: 'all' as 'all' | 'personal' | 'collaboration',
+    appKeys: [] as string[],
     status: 'normal',
     sortOrder: 0
   })
@@ -100,7 +120,6 @@
     packageKey: [{ required: true, message: '请输入功能包编码', trigger: 'blur' }],
     packageType: [{ required: true, message: '请选择功能包类型', trigger: 'change' }],
     name: [{ required: true, message: '请输入功能包名称', trigger: 'blur' }],
-    contextType: [{ required: true, message: '请选择空间范围', trigger: 'change' }],
     status: [{ required: true, message: '请选择状态', trigger: 'change' }]
   })
 
@@ -113,7 +132,9 @@
           (props.packageData.packageType as 'base' | 'bundle') || props.defaultPackageType,
         name: props.packageData.name || '',
         description: props.packageData.description || '',
-        contextType: props.packageData.contextType || 'collaboration',
+        workspaceScope:
+          (props.packageData.workspaceScope as 'all' | 'personal' | 'collaboration') || 'all',
+        appKeys: [...(props.packageData.appKeys || [])],
         status: props.packageData.status || 'normal',
         sortOrder: props.packageData.sortOrder ?? 0
       })
@@ -125,7 +146,8 @@
       packageType: props.defaultPackageType,
       name: '',
       description: '',
-      contextType: 'collaboration',
+      workspaceScope: 'all',
+      appKeys: [],
       status: 'normal',
       sortOrder: 0
     })
@@ -157,19 +179,16 @@
 
   async function handleSubmit() {
     if (!formRef.value) return
-    if (!currentAppKey.value) {
-      ElMessage.warning('缺少 App 上下文')
-      return
-    }
     await formRef.value.validate(async (valid) => {
       if (!valid) return
       const payload = {
-        app_key: currentAppKey.value,
+        app_key: form.appKeys[0] || '',
+        app_keys: [...form.appKeys],
         package_key: form.packageKey.trim(),
         package_type: form.packageType,
         name: form.name.trim(),
         description: form.description.trim(),
-        context_type: form.contextType,
+        workspace_scope: form.workspaceScope,
         status: form.status,
         sort_order: Number(form.sortOrder || 0)
       }
@@ -188,6 +207,21 @@
       }
     })
   }
+
+  watch(
+    () => visible.value,
+    async (value) => {
+      if (value && appOptions.value.length === 0) {
+        try {
+          const result = await fetchGetApps()
+          appOptions.value = result.records || []
+        } catch {
+          appOptions.value = []
+        }
+      }
+    },
+    { immediate: true }
+  )
 
   function formatRefreshMessage(stats?: Api.SystemManage.RefreshStats) {
     return `本次增量刷新：角色 ${stats?.roleCount || 0}、协作空间 ${stats?.collaborationWorkspaceCount || 0}、用户 ${stats?.userCount || 0}、耗时 ${stats?.elapsedMilliseconds || 0} ms`

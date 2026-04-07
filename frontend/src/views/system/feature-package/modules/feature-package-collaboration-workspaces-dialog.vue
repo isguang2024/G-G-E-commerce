@@ -9,7 +9,7 @@
   >
     <div class="dialog-shell" v-loading="loading">
       <div class="dialog-note">
-        个人空间为协作空间开通功能包后，协作空间功能边界会自动同步；这里支持协作空间包和个人空间/协作空间共享包。
+        功能包可绑定多个 App；未绑定 App 时，对所有 App 生效。这里仅维护该功能包在协作空间侧的开通关系。
       </div>
 
       <div class="summary-card">
@@ -78,14 +78,14 @@
     modelValue: boolean
     packageId: string
     packageName: string
-    contextType?: string
+    workspaceScope?: 'all' | 'personal' | 'collaboration' | string
   }
 
   const props = withDefaults(defineProps<Props>(), {
     modelValue: false,
     packageId: '',
     packageName: '',
-    contextType: 'collaboration'
+    workspaceScope: 'all'
   })
 
   const emit = defineEmits<{
@@ -163,10 +163,6 @@
 
   async function handleSave() {
     if (!props.packageId) return
-    if (!supportsCollaborationWorkspaceContext(props.contextType)) {
-      ElMessage.warning('仅协作空间侧可生效的功能包支持开通协作空间')
-      return
-    }
     saving.value = true
     try {
       const stats = await fetchSetFeaturePackageCollaborationWorkspaces(
@@ -181,10 +177,6 @@
     } finally {
       saving.value = false
     }
-  }
-
-  function supportsCollaborationWorkspaceContext(contextType?: string) {
-    return contextType === 'collaboration' || contextType === 'common'
   }
 
   watch(keyword, () => {

@@ -25,13 +25,12 @@
 
       <AdminWorkspaceHero
         title="功能包管理"
-        description="功能包目录可全局查看，基础包 / 组合包按空间范围维护；菜单、功能和协作空间绑定仍然需要进入具体 App 上下文。"
+        description="功能包目录可全局查看，功能包支持多 App 适用绑定；不绑定 App 时，默认对所有 App 生效。"
         :metrics="[
-          { label: '当前 App 上下文', value: targetAppKey || '全局目录' },
           { label: '当前页功能包数', value: data.length },
-          { label: '个人空间功能包', value: personalPackageCount },
-          { label: '协作空间功能包', value: collaborationPackageCount },
-          { label: '双空间范围功能包', value: sharedPackageCount },
+          { label: '适用所有空间', value: sharedPackageCount },
+          { label: '适用个人空间', value: personalPackageCount },
+          { label: '适用协作空间', value: collaborationPackageCount },
           {
             label: activePackageType === 'base' ? '已组合功能范围数' : '组合包数量',
             value: activePackageType === 'base' ? totalActionCount : bundleCount
@@ -46,7 +45,6 @@
         <div class="feature-package-hero-actions">
           <ElButton
             v-action="'feature_package.manage'"
-            :disabled="!targetAppKey"
             @click="openRelationDialog"
             v-ripple
           >
@@ -55,7 +53,6 @@
           <ElButton
             v-action="'feature_package.manage'"
             type="primary"
-            :disabled="!targetAppKey"
             @click="openDialog('add')"
             v-ripple
           >
@@ -83,7 +80,7 @@
       >
         <template #left>
           <div class="feature-package-toolbar-tip">
-            列表默认展示全部功能包。包关系、菜单、功能范围和协作空间开通统一从操作菜单进入；这些动作仍需具体 App 上下文。
+            列表默认展示全部功能包。适用空间和适用 App 作为能力元数据展示；菜单、功能和协作空间开通仍在操作菜单里维护，但不再要求列表页先选 App。
           </div>
         </template>
       </ArtTableHeader>
@@ -102,7 +99,6 @@
       v-model="dialogVisible"
       :dialog-type="dialogType"
       :package-data="currentPackage"
-      :app-key="resolvePackageAppKey(currentPackage)"
       :default-package-type="activePackageType"
       @success="handleRefresh"
     />
@@ -111,8 +107,7 @@
       v-model="bundlesDialogVisible"
       :package-id="currentPackage.id || ''"
       :package-name="currentPackage.name || ''"
-      :app-key="resolvePackageAppKey(currentPackage)"
-      :context-type="currentPackage.contextType || 'collaboration'"
+      :workspace-scope="currentPackage.workspaceScope || 'all'"
       @success="handleRefresh"
     />
 
@@ -120,7 +115,7 @@
       v-model="actionsDialogVisible"
       :package-id="currentPackage.id || ''"
       :package-name="currentPackage.name || ''"
-      :context-type="currentPackage.contextType || 'collaboration'"
+      :workspace-scope="currentPackage.workspaceScope || 'all'"
       @success="handleRefresh"
     />
 
@@ -128,8 +123,9 @@
       v-model="menusDialogVisible"
       :package-id="currentPackage.id || ''"
       :package-name="currentPackage.name || ''"
-      :app-key="resolvePackageAppKey(currentPackage)"
-      :context-type="currentPackage.contextType || 'collaboration'"
+      :workspace-scope="currentPackage.workspaceScope || 'all'"
+      :app-key="currentPackage.appKey || ''"
+      :app-keys="currentPackage.appKeys || []"
       @success="handleRefresh"
     />
 
@@ -137,7 +133,7 @@
       v-model="collaborationWorkspacesDialogVisible"
       :package-id="currentPackage.id || ''"
       :package-name="currentPackage.name || ''"
-      :context-type="currentPackage.contextType || 'collaboration'"
+      :workspace-scope="currentPackage.workspaceScope || 'all'"
       @success="handleRefresh"
     />
 
@@ -196,19 +192,21 @@
                 size="small"
                 effect="plain"
                 :type="
-                  node.contextType === 'personal'
+                  node.workspaceScope === 'all'
                     ? 'warning'
-                    : node.contextType === 'collaboration'
-                      ? 'primary'
-                      : 'info'
+                    : node.workspaceScope === 'personal'
+                      ? 'success'
+                      : 'primary'
                 "
               >
                 {{
-                  node.contextType === 'personal'
-                    ? '个人空间'
-                    : node.contextType === 'collaboration'
-                      ? '协作空间'
-                      : '通用'
+                  node.workspaceScope === 'all'
+                    ? '所有空间'
+                    : node.workspaceScope === 'personal'
+                      ? '个人空间'
+                      : node.workspaceScope === 'collaboration'
+                        ? '协作空间'
+                        : node.workspaceScope || '-'
                 }}
               </ElTag>
               <ElTag size="small" effect="plain" type="info"
@@ -226,11 +224,11 @@
   import { computed, h, reactive, ref, watch } from 'vue'
   import { ElButton, ElCard, ElMessage, ElMessageBox, ElTag } from 'element-plus'
   import { useRoute } from 'vue-router'
-  import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
   import { useTable } from '@/hooks/core/useTable'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
   import {
     fetchDeleteFeaturePackage,
+    fetchGetApps,
     fetchGetFeaturePackageImpactPreview,
     fetchGetFeaturePackageList,
     fetchGetFeaturePackageRelationTree
@@ -249,15 +247,15 @@
   type PackageItem = Api.SystemManage.FeaturePackageItem
 
   type SearchForm = {
+    appKey: string
     keyword: string
     packageKey: string
     name: string
-    contextType: string
+    workspaceScope: string
     status: string
   }
   const showSearchBar = ref(false)
   const route = useRoute()
-  const { targetAppKey } = useManagedAppScope()
   const activePackageType = ref<'base' | 'bundle'>('base')
   const dialogVisible = ref(false)
   const bundlesDialogVisible = ref(false)
@@ -276,15 +274,15 @@
   const currentPackage = ref<Partial<PackageItem>>({})
   const routeOpenSignature = ref('')
   const loadError = ref('')
+  const appOptions = ref<Api.SystemManage.AppItem[]>([])
   const personalPackageCount = computed(
-    () => data.value.filter((item) => supportsPersonalWorkspaceContext(item.contextType)).length
+    () => data.value.filter((item) => item.workspaceScope === 'personal').length
   )
   const collaborationPackageCount = computed(
-    () =>
-      data.value.filter((item) => supportsCollaborationWorkspaceContext(item.contextType)).length
+    () => data.value.filter((item) => item.workspaceScope === 'collaboration').length
   )
   const sharedPackageCount = computed(
-    () => data.value.filter((item) => item.contextType === 'common').length
+    () => data.value.filter((item) => item.workspaceScope === 'all').length
   )
   const bundleCount = computed(
     () => data.value.filter((item) => item.packageType === 'bundle').length
@@ -302,18 +300,27 @@
     () => data.value.filter((item) => item.status === 'disabled').length
   )
   const searchForm = reactive<SearchForm>({
+    appKey: '',
     keyword: '',
     packageKey: '',
     name: '',
-    contextType: '',
+    workspaceScope: '',
     status: ''
   })
 
-  const contextTypeOptions = [
-    { label: '全部空间范围', value: '' },
-    { label: '个人空间功能包', value: 'personal' },
-    { label: '协作空间功能包', value: 'collaboration' },
-    { label: '通用功能包', value: 'common' }
+  const appFilterOptions = computed(() => [
+    { label: '全部 App', value: '' },
+    ...appOptions.value.map((item) => ({
+      label: `${item.name} (${item.appKey})`,
+      value: item.appKey
+    }))
+  ])
+
+  const workspaceScopeOptions = [
+    { label: '全部适用空间', value: '' },
+    { label: '适用所有空间', value: 'all' },
+    { label: '适用个人空间', value: 'personal' },
+    { label: '适用协作空间', value: 'collaboration' }
   ]
 
   const statusOptions = [
@@ -323,6 +330,17 @@
   ]
 
   const searchItems = computed<FormItem[]>(() => [
+    {
+      label: 'App',
+      key: 'appKey',
+      type: 'select',
+      props: {
+        options: appFilterOptions.value,
+        clearable: true,
+        filterable: true,
+        placeholder: '全部 App'
+      }
+    },
     { label: '关键词', key: 'keyword', type: 'input', props: { placeholder: '名称/编码/描述' } },
     {
       label: '包编码',
@@ -332,10 +350,10 @@
     },
     { label: '包名称', key: 'name', type: 'input', props: { placeholder: '请输入包名称' } },
     {
-      label: '空间范围',
-      key: 'contextType',
+      label: '适用空间',
+      key: 'workspaceScope',
       type: 'select',
-      props: { options: contextTypeOptions, clearable: true }
+      props: { options: workspaceScopeOptions, clearable: true }
     },
     {
       label: '状态',
@@ -367,12 +385,6 @@
         { prop: 'packageKey', label: '功能包编码', minWidth: 220, showOverflowTooltip: true },
         { prop: 'name', label: '功能包名称', minWidth: 180, showOverflowTooltip: true },
         {
-          prop: 'appKey',
-          label: 'App',
-          width: 150,
-          formatter: (row: PackageItem) => row.appKey || '-'
-        },
-        {
           prop: 'packageType',
           label: '类型',
           width: 100,
@@ -382,22 +394,25 @@
             )
         },
         {
-          prop: 'contextType',
-          label: '空间范围',
-          width: 120,
+          prop: 'workspaceScope',
+          label: '适用空间',
+          width: 140,
           formatter: (row: PackageItem) =>
             h(
               ElTag,
               {
-                type:
-                  row.contextType === 'personal'
-                    ? 'success'
-                    : row.contextType === 'collaboration'
-                      ? 'info'
-                      : 'warning'
+                type: row.workspaceScope === 'all' ? 'warning' : 'success'
               },
-              () => formatContextType(row.contextType)
+              () => formatWorkspaceScope(row.workspaceScope)
             )
+        },
+        {
+          prop: 'appKeys',
+          label: '适用 App',
+          minWidth: 180,
+          showOverflowTooltip: true,
+          formatter: (row: PackageItem) =>
+            row.appKeys && row.appKeys.length > 0 ? row.appKeys.join('、') : '所有 App'
         },
         {
           prop: 'description',
@@ -462,7 +477,6 @@
                       label: '开通协作空间',
                       icon: 'ri:group-line',
                       auth: 'feature_package.assign_collaboration_workspace',
-                      disabled: !supportsCollaborationWorkspaceContext(row.contextType)
                     },
                     {
                       key: 'edit',
@@ -495,7 +509,6 @@
                       label: '开通协作空间',
                       icon: 'ri:group-line',
                       auth: 'feature_package.assign_collaboration_workspace',
-                      disabled: !supportsCollaborationWorkspaceContext(row.contextType)
                     },
                     {
                       key: 'edit',
@@ -531,11 +544,12 @@
 
   function normalizeSearchParams() {
     return {
+      appKey: searchForm.appKey || undefined,
       keyword: searchForm.keyword.trim() || undefined,
       packageKey: searchForm.packageKey.trim() || undefined,
       name: searchForm.name.trim() || undefined,
       packageType: activePackageType.value,
-      contextType: searchForm.contextType || undefined,
+      workspaceScope: searchForm.workspaceScope || undefined,
       status: searchForm.status || undefined
     }
   }
@@ -547,10 +561,11 @@
 
   async function handleReset() {
     Object.assign(searchForm, {
+      appKey: '',
       keyword: '',
       packageKey: '',
       name: '',
-      contextType: '',
+      workspaceScope: '',
       status: ''
     })
     Object.assign(searchParams, normalizeSearchParams())
@@ -562,26 +577,15 @@
   }
 
   async function openRelationDialog() {
-      if (!targetAppKey.value) {
-        ElMessage.warning('请先进入具体 App 上下文后再查看包关系树')
-        return
-      }
     relationDialogVisible.value = true
     await loadRelationTree()
   }
 
   async function loadRelationTree() {
-    if (!targetAppKey.value) {
-      relationTree.roots = []
-      relationTree.cycleDependencies = []
-      relationTree.isolatedBaseKeys = []
-      return
-    }
     relationLoading.value = true
     try {
       const result = await fetchGetFeaturePackageRelationTree({
-        appKey: targetAppKey.value,
-        contextType: searchForm.contextType || undefined,
+        workspaceScope: searchForm.workspaceScope || undefined,
         keyword: relationKeyword.value.trim() || undefined
       })
       relationTree.roots = result.roots || []
@@ -597,10 +601,11 @@
   async function syncRouteFilters() {
     activePackageType.value =
       normalizePackageType(String(route.query.tab || route.query.packageType || '')) || 'base'
+    searchForm.appKey = String(route.query.appKey || '')
     searchForm.keyword = String(route.query.keyword || '')
     searchForm.packageKey = String(route.query.packageKey || '')
     searchForm.name = String(route.query.name || '')
-    searchForm.contextType = String(route.query.contextType || '')
+    searchForm.workspaceScope = String(route.query.workspaceScope || '')
     searchForm.status = String(route.query.status || '')
     Object.assign(searchParams, normalizeSearchParams())
     await getData()
@@ -610,30 +615,25 @@
   async function openRouteTargetIfNeeded() {
     const openMode = String(route.query.open || '')
     const packageKey = String(route.query.packageKey || '')
-    const contextType = String(route.query.contextType || '')
+    const workspaceScope = String(route.query.workspaceScope || '')
     const packageType = normalizePackageType(
       String(route.query.tab || route.query.packageType || '')
     )
     if (!openMode || !packageKey) return
 
-    const signature = `${openMode}|${packageKey}|${contextType}|${packageType}`
+    const signature = `${openMode}|${packageKey}|${workspaceScope}|${packageType}`
     if (routeOpenSignature.value === signature) return
 
     const target = data.value.find(
       (item) =>
         item.packageKey === packageKey &&
-        (!contextType || item.contextType === contextType) &&
+        (!workspaceScope || item.workspaceScope === workspaceScope) &&
         (!packageType || item.packageType === packageType)
     )
     if (!target) return
 
     routeOpenSignature.value = signature
     currentPackage.value = { ...target }
-
-    const requiresAppContext = ['bundles', 'menus', 'edit'].includes(openMode)
-    if (requiresAppContext && !resolvePackageAppKey(target)) {
-      return
-    }
 
     if (openMode === 'bundles') {
       bundlesDialogVisible.value = true
@@ -660,7 +660,7 @@
     dialogType.value = type
     currentPackage.value = row
       ? { ...row }
-      : { packageType: activePackageType.value, appKey: targetAppKey.value || '' }
+      : { packageType: activePackageType.value, workspaceScope: 'all', appKeys: [] }
     dialogVisible.value = true
   }
 
@@ -730,27 +730,24 @@
     { immediate: true }
   )
 
-  function supportsPersonalWorkspaceContext(contextType?: string) {
-    return contextType === 'personal' || contextType === 'common'
-  }
+  void (async () => {
+    try {
+      const result = await fetchGetApps()
+      appOptions.value = result.records || []
+    } catch {
+      appOptions.value = []
+    }
+  })()
 
-  function supportsCollaborationWorkspaceContext(contextType?: string) {
-    return contextType === 'collaboration' || contextType === 'common'
-  }
-
-  function formatContextType(contextType?: string) {
-    if (contextType === 'personal') return '个人空间'
-    if (contextType === 'collaboration') return '协作空间'
-    if (contextType === 'common') return '通用'
-    return contextType || '-'
+  function formatWorkspaceScope(workspaceScope?: string) {
+    if (workspaceScope === 'all' || workspaceScope === 'common') return '所有空间'
+    if (workspaceScope === 'personal') return '个人空间'
+    if (workspaceScope === 'collaboration') return '协作空间'
+    return workspaceScope || '-'
   }
 
   function normalizePackageType(value?: string) {
     return value === 'bundle' ? 'bundle' : value === 'base' ? 'base' : ''
-  }
-
-  function resolvePackageAppKey(row?: Partial<PackageItem>) {
-    return `${row?.appKey || targetAppKey.value || ''}`.trim()
   }
 </script>
 
