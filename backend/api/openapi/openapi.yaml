@@ -56,6 +56,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /workspaces/switch:
+    post:
+      operationId: switchWorkspace
+      summary: 切换当前授权工作空间
+      tags: [workspace]
+      x-permission-key: workspace.switch
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkspaceSwitchRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkspaceSwitchResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /workspaces/{id}:
     get:
       operationId: getWorkspace
@@ -186,6 +221,29 @@ components:
             items:
               type: string
               format: uuid
+    WorkspaceSwitchRequest:
+      type: object
+      required: [workspace_id]
+      properties:
+        workspace_id:
+          type: string
+          format: uuid
+    WorkspaceSwitchResponse:
+      type: object
+      required: [auth_workspace_id, auth_workspace_type, workspace]
+      properties:
+        auth_workspace_id:
+          type: string
+          format: uuid
+        auth_workspace_type:
+          type: string
+          enum: [personal, collaboration]
+        collaboration_workspace_id:
+          type: string
+          format: uuid
+          nullable: true
+        workspace:
+          $ref: '#/components/schemas/WorkspaceSummary'
     Error:
       type: object
       required: [code, message]

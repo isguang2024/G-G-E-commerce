@@ -48,3 +48,12 @@ func (UnimplementedHandler) GetWorkspace(ctx context.Context, params GetWorkspac
 func (UnimplementedHandler) ListMyWorkspaces(ctx context.Context) (r ListMyWorkspacesRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
+
+// SwitchWorkspace implements switchWorkspace operation.
+//
+// 切换当前授权工作空间.
+//
+// POST /workspaces/switch
+func (UnimplementedHandler) SwitchWorkspace(ctx context.Context, req *WorkspaceSwitchRequest) (r SwitchWorkspaceRes, _ error) {
+	return r, ht.ErrNotImplemented
+}

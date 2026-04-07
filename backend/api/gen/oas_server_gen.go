@@ -32,6 +32,12 @@ type Handler interface {
 	//
 	// GET /workspaces/my
 	ListMyWorkspaces(ctx context.Context) (ListMyWorkspacesRes, error)
+	// SwitchWorkspace implements switchWorkspace operation.
+	//
+	// 切换当前授权工作空间.
+	//
+	// POST /workspaces/switch
+	SwitchWorkspace(ctx context.Context, req *WorkspaceSwitchRequest) (SwitchWorkspaceRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and

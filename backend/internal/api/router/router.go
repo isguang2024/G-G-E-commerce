@@ -110,6 +110,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			}
 			// OpenAPI-first 路径：legacy /workspaces/{my,current,:id} 与
 			// /permissions/explain 全部由 ogen handler 接管。
+			authenticated.POST("/workspaces/switch", ogenBridge)
 			authenticated.GET("/workspaces/my", ogenBridge)
 			authenticated.GET("/workspaces/current", ogenBridge)
 			authenticated.GET("/workspaces/:id", ogenBridge)

@@ -10,6 +10,12 @@ import (
 	"github.com/ogen-go/ogen/uri"
 )
 
+var (
+	rn7AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+)
+
 func (s *Server) cutPrefix(path string) (string, bool) {
 	prefix := s.cfg.Prefix
 	if prefix == "" {
@@ -142,6 +148,32 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 								allowedMethods: "GET",
 								allowedHeaders: nil,
 								acceptPost:     "",
+								acceptPatch:    "",
+							})
+						}
+
+						return
+					}
+
+					elem = origElem
+				case 's': // Prefix: "switch"
+					origElem := elem
+					if l := len("switch"); len(elem) >= l && elem[0:l] == "switch" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						// Leaf node.
+						switch r.Method {
+						case "POST":
+							s.handleSwitchWorkspaceRequest([0]string{}, elemIsEscaped, w, r)
+						default:
+							s.notAllowed(w, r, notAllowedParams{
+								allowedMethods: "POST",
+								allowedHeaders: rn7AllowedHeaders,
+								acceptPost:     "application/json",
 								acceptPatch:    "",
 							})
 						}
@@ -359,6 +391,32 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 							r.operationID = "listMyWorkspaces"
 							r.operationGroup = ""
 							r.pathPattern = "/workspaces/my"
+							r.args = args
+							r.count = 0
+							return r, true
+						default:
+							return
+						}
+					}
+
+					elem = origElem
+				case 's': // Prefix: "switch"
+					origElem := elem
+					if l := len("switch"); len(elem) >= l && elem[0:l] == "switch" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						// Leaf node.
+						switch method {
+						case "POST":
+							r.name = SwitchWorkspaceOperation
+							r.summary = "切换当前授权工作空间"
+							r.operationID = "switchWorkspace"
+							r.operationGroup = ""
+							r.pathPattern = "/workspaces/switch"
 							r.args = args
 							r.count = 0
 							return r, true

@@ -6,7 +6,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
 )
 
@@ -26,16 +25,9 @@ func (m *Module) Init() error {
 }
 
 func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
-	service := NewService(m.db, m.logger)
-	handler := NewHandler(m.logger, service)
-
-	workspaces := rg.Group("/workspaces")
-	reg := apiregistry.NewRegistrar(workspaces, "workspace")
-	{
-		// GET /my、GET /current、GET /:id 已迁移到 OpenAPI-first 路径，
-		// 由 router.go 中挂载的 ogen handler 接管。
-		reg.POST("/switch", reg.Meta("切换当前授权工作空间").BindContextScope("optional").Build(), handler.Switch)
-	}
+	// 全部 workspace 路由已迁移到 OpenAPI-first（router.go 中由 ogen handler 接管）。
+	// 模块保留以参与 module.Registry 生命周期，未来本域新增的非 OpenAPI 端点可挂这里。
+	_ = rg
 }
 
 func init() {

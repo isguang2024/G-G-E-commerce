@@ -283,6 +283,14 @@ func (s *PermissionExplanationRoleSources) init() PermissionExplanationRoleSourc
 	return m
 }
 
+type SwitchWorkspaceBadRequest Error
+
+func (*SwitchWorkspaceBadRequest) switchWorkspaceRes() {}
+
+type SwitchWorkspaceForbidden Error
+
+func (*SwitchWorkspaceForbidden) switchWorkspaceRes() {}
+
 // Ref: #/components/schemas/WorkspaceList
 type WorkspaceList struct {
 	Records []WorkspaceSummary `json:"records"`
@@ -430,6 +438,112 @@ func (s *WorkspaceSummaryWorkspaceType) UnmarshalText(data []byte) error {
 		return nil
 	case WorkspaceSummaryWorkspaceTypeCollaboration:
 		*s = WorkspaceSummaryWorkspaceTypeCollaboration
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/WorkspaceSwitchRequest
+type WorkspaceSwitchRequest struct {
+	WorkspaceID uuid.UUID `json:"workspace_id"`
+}
+
+// GetWorkspaceID returns the value of WorkspaceID.
+func (s *WorkspaceSwitchRequest) GetWorkspaceID() uuid.UUID {
+	return s.WorkspaceID
+}
+
+// SetWorkspaceID sets the value of WorkspaceID.
+func (s *WorkspaceSwitchRequest) SetWorkspaceID(val uuid.UUID) {
+	s.WorkspaceID = val
+}
+
+// Ref: #/components/schemas/WorkspaceSwitchResponse
+type WorkspaceSwitchResponse struct {
+	AuthWorkspaceID          uuid.UUID                                `json:"auth_workspace_id"`
+	AuthWorkspaceType        WorkspaceSwitchResponseAuthWorkspaceType `json:"auth_workspace_type"`
+	CollaborationWorkspaceID OptNilUUID                               `json:"collaboration_workspace_id"`
+	Workspace                WorkspaceSummary                         `json:"workspace"`
+}
+
+// GetAuthWorkspaceID returns the value of AuthWorkspaceID.
+func (s *WorkspaceSwitchResponse) GetAuthWorkspaceID() uuid.UUID {
+	return s.AuthWorkspaceID
+}
+
+// GetAuthWorkspaceType returns the value of AuthWorkspaceType.
+func (s *WorkspaceSwitchResponse) GetAuthWorkspaceType() WorkspaceSwitchResponseAuthWorkspaceType {
+	return s.AuthWorkspaceType
+}
+
+// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
+func (s *WorkspaceSwitchResponse) GetCollaborationWorkspaceID() OptNilUUID {
+	return s.CollaborationWorkspaceID
+}
+
+// GetWorkspace returns the value of Workspace.
+func (s *WorkspaceSwitchResponse) GetWorkspace() WorkspaceSummary {
+	return s.Workspace
+}
+
+// SetAuthWorkspaceID sets the value of AuthWorkspaceID.
+func (s *WorkspaceSwitchResponse) SetAuthWorkspaceID(val uuid.UUID) {
+	s.AuthWorkspaceID = val
+}
+
+// SetAuthWorkspaceType sets the value of AuthWorkspaceType.
+func (s *WorkspaceSwitchResponse) SetAuthWorkspaceType(val WorkspaceSwitchResponseAuthWorkspaceType) {
+	s.AuthWorkspaceType = val
+}
+
+// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
+func (s *WorkspaceSwitchResponse) SetCollaborationWorkspaceID(val OptNilUUID) {
+	s.CollaborationWorkspaceID = val
+}
+
+// SetWorkspace sets the value of Workspace.
+func (s *WorkspaceSwitchResponse) SetWorkspace(val WorkspaceSummary) {
+	s.Workspace = val
+}
+
+func (*WorkspaceSwitchResponse) switchWorkspaceRes() {}
+
+type WorkspaceSwitchResponseAuthWorkspaceType string
+
+const (
+	WorkspaceSwitchResponseAuthWorkspaceTypePersonal      WorkspaceSwitchResponseAuthWorkspaceType = "personal"
+	WorkspaceSwitchResponseAuthWorkspaceTypeCollaboration WorkspaceSwitchResponseAuthWorkspaceType = "collaboration"
+)
+
+// AllValues returns all WorkspaceSwitchResponseAuthWorkspaceType values.
+func (WorkspaceSwitchResponseAuthWorkspaceType) AllValues() []WorkspaceSwitchResponseAuthWorkspaceType {
+	return []WorkspaceSwitchResponseAuthWorkspaceType{
+		WorkspaceSwitchResponseAuthWorkspaceTypePersonal,
+		WorkspaceSwitchResponseAuthWorkspaceTypeCollaboration,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s WorkspaceSwitchResponseAuthWorkspaceType) MarshalText() ([]byte, error) {
+	switch s {
+	case WorkspaceSwitchResponseAuthWorkspaceTypePersonal:
+		return []byte(s), nil
+	case WorkspaceSwitchResponseAuthWorkspaceTypeCollaboration:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *WorkspaceSwitchResponseAuthWorkspaceType) UnmarshalText(data []byte) error {
+	switch WorkspaceSwitchResponseAuthWorkspaceType(data) {
+	case WorkspaceSwitchResponseAuthWorkspaceTypePersonal:
+		*s = WorkspaceSwitchResponseAuthWorkspaceTypePersonal
+		return nil
+	case WorkspaceSwitchResponseAuthWorkspaceTypeCollaboration:
+		*s = WorkspaceSwitchResponseAuthWorkspaceTypeCollaboration
 		return nil
 	default:
 		return errors.Errorf("invalid value: %q", data)

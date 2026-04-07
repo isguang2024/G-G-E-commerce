@@ -32,6 +32,16 @@
       "access_mode": "permission"
     },
     {
+      "operation_id": "switchWorkspace",
+      "method": "post",
+      "path": "/workspaces/switch",
+      "permission_key": "workspace.switch",
+      "summary": "切换当前授权工作空间",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
       "operation_id": "getWorkspace",
       "method": "get",
       "path": "/workspaces/{id}",

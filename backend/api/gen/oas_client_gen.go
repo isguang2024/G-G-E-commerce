@@ -51,6 +51,12 @@ type Invoker interface {
 	//
 	// GET /workspaces/my
 	ListMyWorkspaces(ctx context.Context) (ListMyWorkspacesRes, error)
+	// SwitchWorkspace invokes switchWorkspace operation.
+	//
+	// 切换当前授权工作空间.
+	//
+	// POST /workspaces/switch
+	SwitchWorkspace(ctx context.Context, request *WorkspaceSwitchRequest) (SwitchWorkspaceRes, error)
 }
 
 // Client implements OAS client.
@@ -417,6 +423,83 @@ func (c *Client) sendListMyWorkspaces(ctx context.Context) (res ListMyWorkspaces
 
 	stage = "DecodeResponse"
 	result, err := decodeListMyWorkspacesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SwitchWorkspace invokes switchWorkspace operation.
+//
+// 切换当前授权工作空间.
+//
+// POST /workspaces/switch
+func (c *Client) SwitchWorkspace(ctx context.Context, request *WorkspaceSwitchRequest) (SwitchWorkspaceRes, error) {
+	res, err := c.sendSwitchWorkspace(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendSwitchWorkspace(ctx context.Context, request *WorkspaceSwitchRequest) (res SwitchWorkspaceRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("switchWorkspace"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/workspaces/switch"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SwitchWorkspaceOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/workspaces/switch"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSwitchWorkspaceRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSwitchWorkspaceResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

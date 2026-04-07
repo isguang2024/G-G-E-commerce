@@ -10,4 +10,5 @@ const (
 	GetCurrentWorkspaceOperation OperationName = "GetCurrentWorkspace"
 	GetWorkspaceOperation        OperationName = "GetWorkspace"
 	ListMyWorkspacesOperation    OperationName = "ListMyWorkspaces"
+	SwitchWorkspaceOperation     OperationName = "SwitchWorkspace"
 )

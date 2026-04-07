@@ -16,3 +16,7 @@ type GetWorkspaceRes interface {
 type ListMyWorkspacesRes interface {
 	listMyWorkspacesRes()
 }
+
+type SwitchWorkspaceRes interface {
+	switchWorkspaceRes()
+}

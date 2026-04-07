@@ -185,3 +185,48 @@ func (s WorkspaceSummaryWorkspaceType) Validate() error {
 		return errors.Errorf("invalid value: %v", s)
 	}
 }
+
+func (s *WorkspaceSwitchResponse) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.AuthWorkspaceType.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "auth_workspace_type",
+			Error: err,
+		})
+	}
+	if err := func() error {
+		if err := s.Workspace.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "workspace",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s WorkspaceSwitchResponseAuthWorkspaceType) Validate() error {
+	switch s {
+	case "personal":
+		return nil
+	case "collaboration":
+		return nil
+	default:
+		return errors.Errorf("invalid value: %v", s)
+	}
+}

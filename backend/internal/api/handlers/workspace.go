@@ -102,6 +102,40 @@ func (h *APIHandler) GetCurrentWorkspace(ctx context.Context) (gen.GetCurrentWor
 	return mapWorkspaceToSummary(ws), nil
 }
 
+func (h *APIHandler) SwitchWorkspace(ctx context.Context, req *gen.WorkspaceSwitchRequest) (gen.SwitchWorkspaceRes, error) {
+	userID, ok := userIDFromContext(ctx)
+	if !ok {
+		return &gen.SwitchWorkspaceForbidden{Code: 401, Message: "未认证"}, nil
+	}
+	if req == nil || req.WorkspaceID == uuid.Nil {
+		return &gen.SwitchWorkspaceBadRequest{Code: 400, Message: "无效的工作空间ID"}, nil
+	}
+	if _, err := h.service.GetMember(req.WorkspaceID, userID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &gen.SwitchWorkspaceForbidden{Code: 403, Message: "无权切换到该工作空间"}, nil
+		}
+		h.logger.Error("workspace member lookup failed", zap.Error(err))
+		return nil, err
+	}
+	ws, err := h.service.GetByID(req.WorkspaceID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return &gen.SwitchWorkspaceForbidden{Code: 403, Message: "工作空间不存在"}, nil
+		}
+		h.logger.Error("workspace lookup failed", zap.Error(err))
+		return nil, err
+	}
+	out := &gen.WorkspaceSwitchResponse{
+		AuthWorkspaceID:   ws.ID,
+		AuthWorkspaceType: gen.WorkspaceSwitchResponseAuthWorkspaceType(ws.WorkspaceType),
+		Workspace:         *mapWorkspaceToSummary(ws),
+	}
+	if ws.CollaborationWorkspaceID != nil {
+		out.CollaborationWorkspaceID = gen.NewOptNilUUID(*ws.CollaborationWorkspaceID)
+	}
+	return out, nil
+}
+
 func (h *APIHandler) ExplainPermissions(ctx context.Context, params gen.ExplainPermissionsParams) (gen.ExplainPermissionsRes, error) {
 	userID, ok := userIDFromContext(ctx)
 	if !ok {

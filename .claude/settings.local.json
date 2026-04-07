@@ -22,7 +22,29 @@
       "Read(//c/Users/Administrator/.codex/skills/**)",
       "Bash(cmd //c 'mklink /J \"\"C:\\\\Users\\\\Administrator\\\\.codex\\\\skills\\\\gge\"\" \"\"C:\\\\Users\\\\Administrator\\\\Documents\\\\GitHub\\\\G-G-E-commerce\\\\.claude\\\\worktrees\\\\sleepy-blackburn\\\\.claude\\\\skills\"\"')",
       "Bash(cmd //c \"mklink /J C:\\\\Users\\\\Administrator\\\\.codex\\\\skills\\\\gge C:\\\\Users\\\\Administrator\\\\Documents\\\\GitHub\\\\G-G-E-commerce\\\\.claude\\\\worktrees\\\\sleepy-blackburn\\\\.claude\\\\skills\")",
-      "Bash(grep -E \"AGENTS|PROJECT|FRONTEND|\\\\.claude$|docs\")"
+      "Bash(grep -E \"AGENTS|PROJECT|FRONTEND|\\\\.claude$|docs\")",
+      "Bash(go get:*)",
+      "Bash(go mod:*)",
+      "Bash(go build:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(where gh:*)",
+      "Bash(winget install:*)",
+      "Bash(export PATH=\"$PATH:/c/Program Files/GitHub CLI\")",
+      "Bash(gh --version)",
+      "Bash(gh auth:*)",
+      "Bash(git fetch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git merge:*)",
+      "Bash(git -C \"C:/Users/Administrator/Documents/GitHub/G-G-E-commerce\" pull --ff-only origin main)",
+      "Bash(rm -f api/gen/.gitkeep)",
+      "Bash(go run:*)",
+      "Bash(grep -n \"WorkspaceFeaturePackage\\\\|WorkspaceRoleBinding\\\\|FeaturePackageKey\" internal/modules/system/models/*.go)",
+      "Bash(git -C \"C:/Users/Administrator/Documents/GitHub/G-G-E-commerce\" log -1 --oneline)",
+      "Bash(make gen:*)",
+      "Bash(make gen-permissions:*)",
+      "Bash(go vet:*)"
     ]
   }
 }
