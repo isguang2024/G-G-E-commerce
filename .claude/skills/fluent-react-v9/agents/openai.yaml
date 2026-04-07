@@ -1,4 +1,0 @@
-interface:
-  display_name: "Fluent React v9"
-  short_description: "为 React 管理后台与工作台提供 Fluent UI v9 实现指导"
-  default_prompt: "Use $fluent-react-v9 为 React 或 Vite 项目搭建或重构符合 Fluent UI React v9 的后台、工作台和数据页界面。"

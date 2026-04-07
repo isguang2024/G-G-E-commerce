@@ -3,10 +3,9 @@
 ## 当前协作约束
 
 - 使用中文沟通。
-- 仓库已接入项目级 `superpowers` 技能集，路径为 `.agents/skills/superpowers/`；若技能流程与本仓库约束冲突，以本文件及根目录规范为准。
 - 通过 Shell 读写文本时必须显式使用 UTF-8 编码，避免乱码。
 - 前端壳层与页面调整默认遵循根目录 `PROJECT_FRAMEWORK.md` 与 `FRONTEND_GUIDELINE.md`。
-- 大型改动收尾时需要同步更新 `docs/change-log.md`。
+- 大型改动收尾默认遵循 `.claude/skills/change-wrapup/SKILL.md`，该文件是 `change-wrapup` 的唯一事实来源。
 
 ## 实施原则
 - 代码修改不使用rg
@@ -19,4 +18,5 @@
   - `AGENTS.md`
   - `PROJECT_FRAMEWORK.md`
   - `FRONTEND_GUIDELINE.md`
+- `.claude/skills/change-wrapup/SKILL.md` 作为大型改动收尾规则的唯一事实来源使用，但不计入根目录协作文档清单。
 - `docs/archive/frontend/` 仅作为 `frontend` 历史文档归档，不视为当前生效规范。

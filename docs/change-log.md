@@ -1,5 +1,93 @@
 # Change Log
 
+## 2026-04-07 删除技能锁文件
+
+### 本次改动
+- 删除根目录 [skills-lock.json](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/skills-lock.json)，该文件仅记录了 `shadcn/ui` 的技能锁缓存，而当前项目并不使用 shadcn 体系。
+- 这一步是前面清理本地技能目录后的进一步瘦身，避免仓库继续保留无用的技能缓存文件。
+- 本轮未修改业务代码，也未执行构建或测试。
+
+### 下次方向
+- 如果后续重新接入 shadcn 或其他技能锁，再按需生成即可；当前状态下无需恢复。
+- 也可以继续检查根目录是否还有类似的临时缓存或一次性调试文件需要清掉。
+
+## 2026-04-07 简化项目框架文档
+
+### 本次改动
+- 删除 [PROJECT_FRAMEWORK.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/PROJECT_FRAMEWORK.md) 中的“当前前端实施约束”整段，只保留项目主框架和实施顺序。
+- 这次收口的目的，是把重复于 [FRONTEND_GUIDELINE.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/FRONTEND_GUIDELINE.md) 的前端约束描述移除，减少文档重叠。
+- 本轮仅调整文档，不修改业务代码，也未执行构建或测试。
+
+### 下次方向
+- 如果还要继续简化，可以再检查 `PROJECT_FRAMEWORK.md` 和 `FRONTEND_GUIDELINE.md` 的职责边界，看看是否还能再合并一小部分表述。
+- 也可以把 `docs/change-log.md` 再压缩成更短的摘要结构，降低历史记录的体量。
+
+## 2026-04-07 清空失效本地技能目录
+
+### 本次改动
+- 清理空目录 [`.claude/skills`](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.claude/skills) 和 [`.agents/skills`](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.agents/skills)，仅保留还在用的 `.claude/settings.local.json` 之类本地配置。
+- 这一步是前面删除仓库内重复技能副本后的收尾，避免目录层面继续残留已失效的技能入口。
+- 本轮未修改业务代码，也未执行构建或测试。
+
+### 下次方向
+- 如果后续确认不再使用任何本地技能接入，可以继续评估 `.claude/` 和 `.agents/` 下是否还有其他可收口的配置。
+- 也可以保持当前状态，继续完全依赖全局技能版本。
+
+## 2026-04-07 删除 superpowers 接入说明
+
+### 本次改动
+- 删除 [docs/superpowers-integration.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/superpowers-integration.md)，不再把 superpowers 接入说明作为当前有效文档。
+- 同步从 [docs/project-structure.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/project-structure.md) 的“当前有效文档”列表中移除该入口，避免后续查阅时继续把它当作当前规范。
+- 本轮仅调整文档，不修改业务代码，也未执行构建或测试。
+
+### 下次方向
+- 如果后续确认仓库内不再使用任何 superpowers 相关过程文档，可以进一步检查 `.claude/`、`.agents/` 里是否还保留需要清掉的历史说明。
+- 也可以继续收口 `docs/change-log.md` 的体量，把历史记录再做一次摘要化处理。
+
+## 2026-04-07 仓库内重复技能清理
+
+### 本次改动
+- 删除仓库内重复的本地技能副本：[`.claude/skills/change-wrapup`](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.claude/skills/change-wrapup)、[`.claude/skills/fluent-react-v9`](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.claude/skills/fluent-react-v9)、[`.claude/skills/fluent2-frontend-style`](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/.claude/skills/fluent2-frontend-style)。
+- 保留全局技能版本，不再让仓库内维护同名重复内容；仓库只保留 `settings.local.json` 等本地配置，不再保留这些技能快照。
+- 本轮未执行构建或测试，改动范围仅限技能目录清理。
+
+### 下次方向
+- 如果后续还想进一步瘦身，可以检查 `docs/superpowers-integration.md` 是否还需要保留当前这么多流程说明。
+- 也可以继续评估是否需要在仓库内单独保留任何技能快照，默认建议继续只依赖全局技能。
+
+## 2026-04-07 docs 当前态结构重写
+
+### 本次改动
+- 重写 [docs/project-structure.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/project-structure.md)，改成只描述当前有效结构的索引文档，按权限、用户、空间、菜单、APP、功能包等主题重新分层。
+- 删除 [docs/workspace-glossary.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/workspace-glossary.md)、[docs/workspace-permission-migration.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/workspace-permission-migration.md)、[docs/workspace-permission-stage-log.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/workspace-permission-stage-log.md)，不再保留这组三份历史语义文档。
+- 本轮仅调整文档结构，没有修改业务代码，也没有执行构建或测试。
+
+### 下次方向
+- 如果还要继续收口，可以把 `docs/change-log.md` 再压缩成月度摘要，或者把它从当前有效文档索引里降级为纯历史记录。
+- 也可以继续检查 `docs/superpowers-integration.md` 是否还能进一步短化，避免文档入口过多。
+
+## 2026-04-07 docs 权限文档收口
+
+### 本次改动
+- 压缩 [docs/workspace-glossary.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/workspace-glossary.md)、[docs/workspace-permission-migration.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/workspace-permission-migration.md)、[docs/workspace-permission-stage-log.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/workspace-permission-stage-log.md) 的重复内容，三者分别只保留术语、唯一迁移基线和阶段进度。
+- 去掉三份文档之间反复出现的规则解释和禁止项展开，改为互相引用，降低后续查阅成本。
+- 本轮仅调整 Markdown 内容，未执行构建或测试。
+
+### 下次方向
+- 如果还要继续瘦身，可以把 `workspace-permission-stage-log.md` 再并入 `change-log.md`，让 `docs/` 里只留术语表和迁移说明。
+- 也可以继续检查 `superpowers-integration.md` 是否还能再压缩掉一层流程性描述。
+
+## 2026-04-07 项目结构文档简化
+
+### 本次改动
+- 新增 [docs/project-structure.md](C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/docs/project-structure.md)，把项目结构收敛为根目录、后端、前端正式页面、公共组件和目录边界五部分，只保留当前有效主线。
+- 新文档移除了历史迁移叙述、旧目录背景和大段术语展开，改为按“后端入口 - 前端入口 - 正式页面 - 边界约束”组织，便于后续修改时快速定位。
+- 当前未同步执行构建或测试，改动仅限 Markdown 文档。
+
+### 下次方向
+- 如果还要继续清理，可以把 `docs/workspace-glossary.md`、`docs/workspace-permission-migration.md`、`docs/workspace-permission-stage-log.md` 进一步压缩成更短的术语与迁移索引。
+- 也可以在根目录补一个更短的 `README`，把“去哪里改后端、去哪里改前端页面”再做一层入口导航。
+
 ## 2026-04-07 空间权限最终态代码回写
 
 ### 本次改动

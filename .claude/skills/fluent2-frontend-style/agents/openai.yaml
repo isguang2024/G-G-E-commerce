@@ -1,4 +1,0 @@
-interface:
-  display_name: "Fluent 2 Style"
-  short_description: "为产品界面与后台工作台提供 Fluent 2 设计风格指导"
-  default_prompt: "Use $fluent2-frontend-style 为产品界面或后台工作台制定并评审符合 Fluent 2 的视觉与交互方案。"
