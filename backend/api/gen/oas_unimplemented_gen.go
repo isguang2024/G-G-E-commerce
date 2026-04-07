@@ -13,11 +13,38 @@ type UnimplementedHandler struct{}
 
 var _ Handler = UnimplementedHandler{}
 
+// ExplainPermissions implements explainPermissions operation.
+//
+// 解释当前账号在指定工作空间内的最终权限及其来源.
+//
+// GET /permissions/explain
+func (UnimplementedHandler) ExplainPermissions(ctx context.Context, params ExplainPermissionsParams) (r ExplainPermissionsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// GetCurrentWorkspace implements getCurrentWorkspace operation.
+//
+// 获取当前授权工作空间.
+//
+// GET /workspaces/current
+func (UnimplementedHandler) GetCurrentWorkspace(ctx context.Context) (r GetCurrentWorkspaceRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // GetWorkspace implements getWorkspace operation.
 //
 // 获取工作空间详情.
 //
 // GET /workspaces/{id}
 func (UnimplementedHandler) GetWorkspace(ctx context.Context, params GetWorkspaceParams) (r GetWorkspaceRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ListMyWorkspaces implements listMyWorkspaces operation.
+//
+// 获取我的工作空间列表.
+//
+// GET /workspaces/my
+func (UnimplementedHandler) ListMyWorkspaces(ctx context.Context) (r ListMyWorkspacesRes, _ error) {
 	return r, ht.ErrNotImplemented
 }

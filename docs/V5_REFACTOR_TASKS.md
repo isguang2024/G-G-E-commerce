@@ -168,5 +168,26 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 - `collaborationworkspace` 模块暂未删除，沿用兼容字段；按计划在 Phase 4 各业务域迁到 OpenAPI 时随域清理。
 - `go build ./...` 通过；live DB 验证 (`make db-reset && make migrate`) 留给本地执行。
 
+### Phase 1 收尾 + Phase 3 + Phase 4 首刀 — 已完成（合并提交）
+
+**Phase 1 收尾**
+- `backend/api/openapi/embed.go`：把 `openapi.yaml` 通过 `//go:embed` 暴露给运行时（`SpecBytes`）。
+- `backend/internal/pkg/openapidocs`：`Mount(*gin.Engine)` 在根路由上挂 `/openapi.yaml` 与 `/swagger`（CDN 版 Swagger UI HTML 一页流，零额外资产）。
+- `backend/internal/pkg/permissionseed/openapi_loader.go`：embed `openapi_seed.json`，`LoadOpenAPISeed()` 在启动时校验所有 operation 必须带 `permission_key`，缺一即 fatal。`router.go` 启动时调用并日志输出 operation 数。
+
+**Phase 3：权限决策入口**
+- `backend/internal/pkg/permission/evaluator`：`Evaluator` 接口（`Resolve` / `Can` / `Explain`），`ResolvedPermissions` 与 `Explanation` 类型。
+- `gormEvaluator` 用 raw SQL 走 `workspace_feature_packages → feature_package_keys → permission_keys` 求 workspace 的功能包权限并集；按 package_id 出处为 `Explain` 的 `feature_package_sources` 赋值。
+- 角色侧的交集（`workspace_role_bindings → role permissions`）留 `TODO(phase-3-followup)`，因为角色目前用 action_id 模型，需要先与 permission_key 对齐；接口签名不会变。
+- casbin 暂未引入（现有 schema 直接 SQL 即可，引入 casbin 反而要先建 policy adapter）；接口预留，未来在 `gormEvaluator` 内部替换为 enforcer 不影响调用方。
+
+**Phase 4 首刀：workspace 域 + 新增 permission 域**
+- `api/openapi/openapi.yaml` 新增：`GET /workspaces/my`、`GET /workspaces/current`、`GET /permissions/explain`。每个 operation 都带 `x-permission-key` / `x-tenant-scoped` / `x-app-scope` / `x-access-mode`。
+- `make gen` 重跑，`api/gen/` 全量再生。`gen-permissions` 输出 4 条 operation 到 `openapi_seed.json`。
+- `internal/api/handlers/workspace.go` 重命名 `WorkspaceHandler` → `APIHandler`，新增 3 个 method：`ListMyWorkspaces`、`GetCurrentWorkspace`、`ExplainPermissions`。`APIHandler` 持有 `evaluator.Evaluator`，`/permissions/explain` 直接走它。
+- `router.go`：所有 OpenAPI 路径（`/workspaces/my`、`/workspaces/current`、`/workspaces/:id`、`/permissions/explain`）由同一个 ogen `*Server` 经 gin bridge 接管。`workspace/module.go` 中的 legacy `GET /my`、`GET /current` 路由已删除；`POST /switch` 仍保留，等下个 PR 一起迁。
+- `go build ./...` 通过。
+
+
 
 

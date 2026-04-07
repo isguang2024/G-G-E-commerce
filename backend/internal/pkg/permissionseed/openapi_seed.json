@@ -2,6 +2,36 @@
   "source": "api\\openapi\\openapi.yaml",
   "operations": [
     {
+      "operation_id": "explainPermissions",
+      "method": "get",
+      "path": "/permissions/explain",
+      "permission_key": "permission.explain",
+      "summary": "解释当前账号在指定工作空间内的最终权限及其来源",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCurrentWorkspace",
+      "method": "get",
+      "path": "/workspaces/current",
+      "permission_key": "workspace.read",
+      "summary": "获取当前授权工作空间",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listMyWorkspaces",
+      "method": "get",
+      "path": "/workspaces/my",
+      "permission_key": "workspace.list",
+      "summary": "获取我的工作空间列表",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
       "operation_id": "getWorkspace",
       "method": "get",
       "path": "/workspaces/{id}",

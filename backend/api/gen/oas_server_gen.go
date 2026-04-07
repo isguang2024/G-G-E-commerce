@@ -8,12 +8,30 @@ import (
 
 // Handler handles operations described by OpenAPI v3 specification.
 type Handler interface {
+	// ExplainPermissions implements explainPermissions operation.
+	//
+	// 解释当前账号在指定工作空间内的最终权限及其来源.
+	//
+	// GET /permissions/explain
+	ExplainPermissions(ctx context.Context, params ExplainPermissionsParams) (ExplainPermissionsRes, error)
+	// GetCurrentWorkspace implements getCurrentWorkspace operation.
+	//
+	// 获取当前授权工作空间.
+	//
+	// GET /workspaces/current
+	GetCurrentWorkspace(ctx context.Context) (GetCurrentWorkspaceRes, error)
 	// GetWorkspace implements getWorkspace operation.
 	//
 	// 获取工作空间详情.
 	//
 	// GET /workspaces/{id}
 	GetWorkspace(ctx context.Context, params GetWorkspaceParams) (GetWorkspaceRes, error)
+	// ListMyWorkspaces implements listMyWorkspaces operation.
+	//
+	// 获取我的工作空间列表.
+	//
+	// GET /workspaces/my
+	ListMyWorkspaces(ctx context.Context) (ListMyWorkspacesRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and

@@ -15,6 +15,63 @@ import (
 	"github.com/ogen-go/ogen/validate"
 )
 
+// ExplainPermissionsParams is parameters of explainPermissions operation.
+type ExplainPermissionsParams struct {
+	WorkspaceID uuid.UUID
+}
+
+func unpackExplainPermissionsParams(packed middleware.Parameters) (params ExplainPermissionsParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "workspace_id",
+			In:   "query",
+		}
+		params.WorkspaceID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeExplainPermissionsParams(args [0]string, argsEscaped bool, r *http.Request) (params ExplainPermissionsParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: workspace_id.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "workspace_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.WorkspaceID = c
+				return nil
+			}); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "workspace_id",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // GetWorkspaceParams is parameters of getWorkspace operation.
 type GetWorkspaceParams struct {
 	ID uuid.UUID

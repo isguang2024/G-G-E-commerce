@@ -28,6 +28,9 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/apiendpointaccess"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
+	"github.com/gg-ecommerce/backend/internal/pkg/openapidocs"
+	"github.com/gg-ecommerce/backend/internal/pkg/permission/evaluator"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
 )
 
 func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engine {
@@ -45,6 +48,20 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
 	})
+
+	// Phase 1 cleanup: serve the embedded OpenAPI spec + Swagger UI.
+	openapidocs.Mount(r)
+
+	// Phase 1 cleanup: validate the gen-permissions seed early so a missing
+	// or malformed permission key fails the boot rather than at first request.
+	if seed, err := permissionseed.LoadOpenAPISeed(); err != nil {
+		logger.Fatal("openapi seed validation failed", zap.Error(err))
+	} else {
+		logger.Info("openapi seed loaded", zap.Int("operations", len(seed.Operations)))
+	}
+
+	// Phase 3: build the permission evaluator once and share across handlers.
+	permEvaluator := evaluator.New(db, logger)
 
 	endpointAccessService := apiendpointaccess.NewService(db, logger)
 
@@ -81,7 +98,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			// OpenAPI-first 路径：由 ogen 生成的 server 直接处理。
 			// 入口在 Gin 中以普通路由声明，便于复用 JWT/AppContext 中间件，
 			// 之后再把请求 ctx 注入 user_id 后转交给 ogen handler。
-			ogenServer, err := apigen.NewServer(handlers.NewWorkspaceHandler(db, logger))
+			ogenServer, err := apigen.NewServer(handlers.NewAPIHandler(db, logger, permEvaluator))
 			if err != nil {
 				logger.Fatal("failed to build ogen server", zap.Error(err))
 			}
@@ -91,7 +108,12 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 				req.URL.Path = strings.TrimPrefix(req.URL.Path, "/api/v1")
 				ogenServer.ServeHTTP(c.Writer, req)
 			}
+			// OpenAPI-first 路径：legacy /workspaces/{my,current,:id} 与
+			// /permissions/explain 全部由 ogen handler 接管。
+			authenticated.GET("/workspaces/my", ogenBridge)
+			authenticated.GET("/workspaces/current", ogenBridge)
 			authenticated.GET("/workspaces/:id", ogenBridge)
+			authenticated.GET("/permissions/explain", ogenBridge)
 
 			userModule.RegisterRoutes(authenticated)
 			menuModule.RegisterRoutes(authenticated)

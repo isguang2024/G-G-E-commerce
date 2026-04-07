@@ -33,6 +33,10 @@ func (s *Error) SetMessage(val string) {
 	s.Message = val
 }
 
+func (*Error) explainPermissionsRes()  {}
+func (*Error) getCurrentWorkspaceRes() {}
+func (*Error) listMyWorkspacesRes()    {}
+
 type GetWorkspaceForbidden Error
 
 func (*GetWorkspaceForbidden) getWorkspaceRes() {}
@@ -103,6 +107,209 @@ func (o OptNilUUID) Or(d uuid.UUID) uuid.UUID {
 	}
 	return d
 }
+
+// NewOptPermissionExplanationFeaturePackageSources returns new OptPermissionExplanationFeaturePackageSources with value set to v.
+func NewOptPermissionExplanationFeaturePackageSources(v PermissionExplanationFeaturePackageSources) OptPermissionExplanationFeaturePackageSources {
+	return OptPermissionExplanationFeaturePackageSources{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptPermissionExplanationFeaturePackageSources is optional PermissionExplanationFeaturePackageSources.
+type OptPermissionExplanationFeaturePackageSources struct {
+	Value PermissionExplanationFeaturePackageSources
+	Set   bool
+}
+
+// IsSet returns true if OptPermissionExplanationFeaturePackageSources was set.
+func (o OptPermissionExplanationFeaturePackageSources) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptPermissionExplanationFeaturePackageSources) Reset() {
+	var v PermissionExplanationFeaturePackageSources
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptPermissionExplanationFeaturePackageSources) SetTo(v PermissionExplanationFeaturePackageSources) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptPermissionExplanationFeaturePackageSources) Get() (v PermissionExplanationFeaturePackageSources, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptPermissionExplanationFeaturePackageSources) Or(d PermissionExplanationFeaturePackageSources) PermissionExplanationFeaturePackageSources {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptPermissionExplanationRoleSources returns new OptPermissionExplanationRoleSources with value set to v.
+func NewOptPermissionExplanationRoleSources(v PermissionExplanationRoleSources) OptPermissionExplanationRoleSources {
+	return OptPermissionExplanationRoleSources{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptPermissionExplanationRoleSources is optional PermissionExplanationRoleSources.
+type OptPermissionExplanationRoleSources struct {
+	Value PermissionExplanationRoleSources
+	Set   bool
+}
+
+// IsSet returns true if OptPermissionExplanationRoleSources was set.
+func (o OptPermissionExplanationRoleSources) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptPermissionExplanationRoleSources) Reset() {
+	var v PermissionExplanationRoleSources
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptPermissionExplanationRoleSources) SetTo(v PermissionExplanationRoleSources) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptPermissionExplanationRoleSources) Get() (v PermissionExplanationRoleSources, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptPermissionExplanationRoleSources) Or(d PermissionExplanationRoleSources) PermissionExplanationRoleSources {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// Ref: #/components/schemas/PermissionExplanation
+type PermissionExplanation struct {
+	AccountID             uuid.UUID                                     `json:"account_id"`
+	WorkspaceID           uuid.UUID                                     `json:"workspace_id"`
+	Keys                  []string                                      `json:"keys"`
+	FeaturePackageSources OptPermissionExplanationFeaturePackageSources `json:"feature_package_sources"`
+	RoleSources           OptPermissionExplanationRoleSources           `json:"role_sources"`
+}
+
+// GetAccountID returns the value of AccountID.
+func (s *PermissionExplanation) GetAccountID() uuid.UUID {
+	return s.AccountID
+}
+
+// GetWorkspaceID returns the value of WorkspaceID.
+func (s *PermissionExplanation) GetWorkspaceID() uuid.UUID {
+	return s.WorkspaceID
+}
+
+// GetKeys returns the value of Keys.
+func (s *PermissionExplanation) GetKeys() []string {
+	return s.Keys
+}
+
+// GetFeaturePackageSources returns the value of FeaturePackageSources.
+func (s *PermissionExplanation) GetFeaturePackageSources() OptPermissionExplanationFeaturePackageSources {
+	return s.FeaturePackageSources
+}
+
+// GetRoleSources returns the value of RoleSources.
+func (s *PermissionExplanation) GetRoleSources() OptPermissionExplanationRoleSources {
+	return s.RoleSources
+}
+
+// SetAccountID sets the value of AccountID.
+func (s *PermissionExplanation) SetAccountID(val uuid.UUID) {
+	s.AccountID = val
+}
+
+// SetWorkspaceID sets the value of WorkspaceID.
+func (s *PermissionExplanation) SetWorkspaceID(val uuid.UUID) {
+	s.WorkspaceID = val
+}
+
+// SetKeys sets the value of Keys.
+func (s *PermissionExplanation) SetKeys(val []string) {
+	s.Keys = val
+}
+
+// SetFeaturePackageSources sets the value of FeaturePackageSources.
+func (s *PermissionExplanation) SetFeaturePackageSources(val OptPermissionExplanationFeaturePackageSources) {
+	s.FeaturePackageSources = val
+}
+
+// SetRoleSources sets the value of RoleSources.
+func (s *PermissionExplanation) SetRoleSources(val OptPermissionExplanationRoleSources) {
+	s.RoleSources = val
+}
+
+func (*PermissionExplanation) explainPermissionsRes() {}
+
+type PermissionExplanationFeaturePackageSources map[string][]uuid.UUID
+
+func (s *PermissionExplanationFeaturePackageSources) init() PermissionExplanationFeaturePackageSources {
+	m := *s
+	if m == nil {
+		m = map[string][]uuid.UUID{}
+		*s = m
+	}
+	return m
+}
+
+type PermissionExplanationRoleSources map[string][]uuid.UUID
+
+func (s *PermissionExplanationRoleSources) init() PermissionExplanationRoleSources {
+	m := *s
+	if m == nil {
+		m = map[string][]uuid.UUID{}
+		*s = m
+	}
+	return m
+}
+
+// Ref: #/components/schemas/WorkspaceList
+type WorkspaceList struct {
+	Records []WorkspaceSummary `json:"records"`
+	Total   int                `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *WorkspaceList) GetRecords() []WorkspaceSummary {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *WorkspaceList) GetTotal() int {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *WorkspaceList) SetRecords(val []WorkspaceSummary) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *WorkspaceList) SetTotal(val int) {
+	s.Total = val
+}
+
+func (*WorkspaceList) listMyWorkspacesRes() {}
 
 // Ref: #/components/schemas/WorkspaceSummary
 type WorkspaceSummary struct {
@@ -185,7 +392,8 @@ func (s *WorkspaceSummary) SetStatus(val string) {
 	s.Status = val
 }
 
-func (*WorkspaceSummary) getWorkspaceRes() {}
+func (*WorkspaceSummary) getCurrentWorkspaceRes() {}
+func (*WorkspaceSummary) getWorkspaceRes()        {}
 
 type WorkspaceSummaryWorkspaceType string
 

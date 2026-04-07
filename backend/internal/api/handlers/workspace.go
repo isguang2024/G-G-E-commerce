@@ -15,6 +15,7 @@ import (
 	"github.com/gg-ecommerce/backend/api/gen"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/workspace"
+	"github.com/gg-ecommerce/backend/internal/pkg/permission/evaluator"
 )
 
 // ctxKey is the request-scoped key carrying the authenticated account id
@@ -24,23 +25,25 @@ type ctxKey string
 
 const CtxUserID ctxKey = "user_id"
 
-// WorkspaceHandler implements gen.Handler. It deliberately embeds
+// APIHandler implements gen.Handler. It deliberately embeds
 // gen.UnimplementedHandler so future operations compile without forcing us
 // to stub every method while migrating one domain at a time.
-type WorkspaceHandler struct {
+type APIHandler struct {
 	gen.UnimplementedHandler
-	logger  *zap.Logger
-	service workspace.Service
+	logger    *zap.Logger
+	service   workspace.Service
+	evaluator evaluator.Evaluator
 }
 
-func NewWorkspaceHandler(db *gorm.DB, logger *zap.Logger) *WorkspaceHandler {
-	return &WorkspaceHandler{
-		logger:  logger,
-		service: workspace.NewService(db, logger),
+func NewAPIHandler(db *gorm.DB, logger *zap.Logger, eval evaluator.Evaluator) *APIHandler {
+	return &APIHandler{
+		logger:    logger,
+		service:   workspace.NewService(db, logger),
+		evaluator: eval,
 	}
 }
 
-func (h *WorkspaceHandler) GetWorkspace(ctx context.Context, params gen.GetWorkspaceParams) (gen.GetWorkspaceRes, error) {
+func (h *APIHandler) GetWorkspace(ctx context.Context, params gen.GetWorkspaceParams) (gen.GetWorkspaceRes, error) {
 	userID, ok := userIDFromContext(ctx)
 	if !ok {
 		return &gen.GetWorkspaceForbidden{Code: 401, Message: "未认证"}, nil
@@ -64,6 +67,71 @@ func (h *WorkspaceHandler) GetWorkspace(ctx context.Context, params gen.GetWorks
 	}
 
 	return mapWorkspaceToSummary(ws), nil
+}
+
+func (h *APIHandler) ListMyWorkspaces(ctx context.Context) (gen.ListMyWorkspacesRes, error) {
+	userID, ok := userIDFromContext(ctx)
+	if !ok {
+		return &gen.Error{Code: 401, Message: "未认证"}, nil
+	}
+	items, err := h.service.ListByUserID(userID)
+	if err != nil {
+		h.logger.Error("list workspaces failed", zap.Error(err))
+		return nil, err
+	}
+	records := make([]gen.WorkspaceSummary, 0, len(items))
+	for _, item := range items {
+		records = append(records, summaryFromService(item))
+	}
+	return &gen.WorkspaceList{Records: records, Total: len(records)}, nil
+}
+
+func (h *APIHandler) GetCurrentWorkspace(ctx context.Context) (gen.GetCurrentWorkspaceRes, error) {
+	userID, ok := userIDFromContext(ctx)
+	if !ok {
+		return &gen.Error{Code: 401, Message: "未认证"}, nil
+	}
+	// Phase 4 follow-up: respect the auth_workspace_id carried in the JWT
+	// claims. For now we fall back to the user's personal workspace, which
+	// matches the legacy behaviour for the common case.
+	ws, err := h.service.EnsurePersonalWorkspaceForUser(userID)
+	if err != nil {
+		h.logger.Error("get current workspace failed", zap.Error(err))
+		return nil, err
+	}
+	return mapWorkspaceToSummary(ws), nil
+}
+
+func (h *APIHandler) ExplainPermissions(ctx context.Context, params gen.ExplainPermissionsParams) (gen.ExplainPermissionsRes, error) {
+	userID, ok := userIDFromContext(ctx)
+	if !ok {
+		return &gen.Error{Code: 401, Message: "未认证"}, nil
+	}
+	if h.evaluator == nil {
+		return &gen.Error{Code: 500, Message: "evaluator 未初始化"}, nil
+	}
+	exp, err := h.evaluator.Explain(ctx, userID, params.WorkspaceID)
+	if err != nil {
+		h.logger.Error("explain permissions failed", zap.Error(err))
+		return nil, err
+	}
+	keys := make([]string, 0, len(exp.Resolved.Keys))
+	for k := range exp.Resolved.Keys {
+		keys = append(keys, k)
+	}
+	out := &gen.PermissionExplanation{
+		AccountID:   exp.Resolved.AccountID,
+		WorkspaceID: exp.Resolved.WorkspaceID,
+		Keys:        keys,
+	}
+	if len(exp.FeaturePackageKeys) > 0 {
+		fps := gen.PermissionExplanationFeaturePackageSources{}
+		for k, ids := range exp.FeaturePackageKeys {
+			fps[k] = ids
+		}
+		out.SetFeaturePackageSources(gen.NewOptPermissionExplanationFeaturePackageSources(fps))
+	}
+	return out, nil
 }
 
 func userIDFromContext(ctx context.Context) (uuid.UUID, bool) {
@@ -91,6 +159,23 @@ func mapWorkspaceToSummary(ws *models.Workspace) *gen.WorkspaceSummary {
 	}
 	if ws.CollaborationWorkspaceID != nil {
 		out.CollaborationWorkspaceID = gen.NewOptNilUUID(*ws.CollaborationWorkspaceID)
+	}
+	return out
+}
+
+func summaryFromService(item workspace.Summary) gen.WorkspaceSummary {
+	out := gen.WorkspaceSummary{
+		ID:            item.ID,
+		WorkspaceType: gen.WorkspaceSummaryWorkspaceType(item.WorkspaceType),
+		Name:          item.Name,
+		Code:          item.Code,
+		Status:        item.Status,
+	}
+	if item.OwnerUserID != nil {
+		out.OwnerUserID = gen.NewOptNilUUID(*item.OwnerUserID)
+	}
+	if item.CollaborationWorkspaceID != nil {
+		out.CollaborationWorkspaceID = gen.NewOptNilUUID(*item.CollaborationWorkspaceID)
 	}
 	return out
 }

@@ -27,12 +27,30 @@ func trimTrailingSlashes(u *url.URL) {
 
 // Invoker invokes operations described by OpenAPI v3 specification.
 type Invoker interface {
+	// ExplainPermissions invokes explainPermissions operation.
+	//
+	// 解释当前账号在指定工作空间内的最终权限及其来源.
+	//
+	// GET /permissions/explain
+	ExplainPermissions(ctx context.Context, params ExplainPermissionsParams) (ExplainPermissionsRes, error)
+	// GetCurrentWorkspace invokes getCurrentWorkspace operation.
+	//
+	// 获取当前授权工作空间.
+	//
+	// GET /workspaces/current
+	GetCurrentWorkspace(ctx context.Context) (GetCurrentWorkspaceRes, error)
 	// GetWorkspace invokes getWorkspace operation.
 	//
 	// 获取工作空间详情.
 	//
 	// GET /workspaces/{id}
 	GetWorkspace(ctx context.Context, params GetWorkspaceParams) (GetWorkspaceRes, error)
+	// ListMyWorkspaces invokes listMyWorkspaces operation.
+	//
+	// 获取我的工作空间列表.
+	//
+	// GET /workspaces/my
+	ListMyWorkspaces(ctx context.Context) (ListMyWorkspacesRes, error)
 }
 
 // Client implements OAS client.
@@ -72,6 +90,172 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 		return c.serverURL
 	}
 	return u
+}
+
+// ExplainPermissions invokes explainPermissions operation.
+//
+// 解释当前账号在指定工作空间内的最终权限及其来源.
+//
+// GET /permissions/explain
+func (c *Client) ExplainPermissions(ctx context.Context, params ExplainPermissionsParams) (ExplainPermissionsRes, error) {
+	res, err := c.sendExplainPermissions(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendExplainPermissions(ctx context.Context, params ExplainPermissionsParams) (res ExplainPermissionsRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("explainPermissions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/permissions/explain"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ExplainPermissionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/permissions/explain"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "workspace_id" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "workspace_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.UUIDToString(params.WorkspaceID))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeExplainPermissionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCurrentWorkspace invokes getCurrentWorkspace operation.
+//
+// 获取当前授权工作空间.
+//
+// GET /workspaces/current
+func (c *Client) GetCurrentWorkspace(ctx context.Context) (GetCurrentWorkspaceRes, error) {
+	res, err := c.sendGetCurrentWorkspace(ctx)
+	return res, err
+}
+
+func (c *Client) sendGetCurrentWorkspace(ctx context.Context) (res GetCurrentWorkspaceRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCurrentWorkspace"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/workspaces/current"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentWorkspaceOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/workspaces/current"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCurrentWorkspaceResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
 }
 
 // GetWorkspace invokes getWorkspace operation.
@@ -159,6 +343,80 @@ func (c *Client) sendGetWorkspace(ctx context.Context, params GetWorkspaceParams
 
 	stage = "DecodeResponse"
 	result, err := decodeGetWorkspaceResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListMyWorkspaces invokes listMyWorkspaces operation.
+//
+// 获取我的工作空间列表.
+//
+// GET /workspaces/my
+func (c *Client) ListMyWorkspaces(ctx context.Context) (ListMyWorkspacesRes, error) {
+	res, err := c.sendListMyWorkspaces(ctx)
+	return res, err
+}
+
+func (c *Client) sendListMyWorkspaces(ctx context.Context) (res ListMyWorkspacesRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listMyWorkspaces"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/workspaces/my"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListMyWorkspacesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/workspaces/my"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListMyWorkspacesResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

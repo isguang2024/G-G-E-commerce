@@ -32,9 +32,8 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	workspaces := rg.Group("/workspaces")
 	reg := apiregistry.NewRegistrar(workspaces, "workspace")
 	{
-		reg.GET("/my", reg.Meta("获取我的工作空间列表").BindContextScope("optional").Build(), handler.ListMine)
-		reg.GET("/current", reg.Meta("获取当前授权工作空间").BindContextScope("optional").Build(), handler.GetCurrent)
-		// GET /:id 已迁移到 OpenAPI-first 路径，由 router.go 中的 ogen handler 直接挂载。
+		// GET /my、GET /current、GET /:id 已迁移到 OpenAPI-first 路径，
+		// 由 router.go 中挂载的 ogen handler 接管。
 		reg.POST("/switch", reg.Meta("切换当前授权工作空间").BindContextScope("optional").Build(), handler.Switch)
 	}
 }

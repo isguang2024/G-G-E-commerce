@@ -6,5 +6,8 @@ package gen
 type OperationName = string
 
 const (
-	GetWorkspaceOperation OperationName = "GetWorkspace"
+	ExplainPermissionsOperation  OperationName = "ExplainPermissions"
+	GetCurrentWorkspaceOperation OperationName = "GetCurrentWorkspace"
+	GetWorkspaceOperation        OperationName = "GetWorkspace"
+	ListMyWorkspacesOperation    OperationName = "ListMyWorkspaces"
 )

@@ -49,40 +49,136 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		switch elem[0] {
-		case '/': // Prefix: "/workspaces/"
+		case '/': // Prefix: "/"
 
-			if l := len("/workspaces/"); len(elem) >= l && elem[0:l] == "/workspaces/" {
+			if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 				elem = elem[l:]
 			} else {
 				break
 			}
 
-			// Param: "id"
-			// Leaf parameter, slashes are prohibited
-			idx := strings.IndexByte(elem, '/')
-			if idx >= 0 {
+			if len(elem) == 0 {
 				break
 			}
-			args[0] = elem
-			elem = ""
+			switch elem[0] {
+			case 'p': // Prefix: "permissions/explain"
 
-			if len(elem) == 0 {
-				// Leaf node.
-				switch r.Method {
-				case "GET":
-					s.handleGetWorkspaceRequest([1]string{
-						args[0],
-					}, elemIsEscaped, w, r)
-				default:
-					s.notAllowed(w, r, notAllowedParams{
-						allowedMethods: "GET",
-						allowedHeaders: nil,
-						acceptPost:     "",
-						acceptPatch:    "",
-					})
+				if l := len("permissions/explain"); len(elem) >= l && elem[0:l] == "permissions/explain" {
+					elem = elem[l:]
+				} else {
+					break
 				}
 
-				return
+				if len(elem) == 0 {
+					// Leaf node.
+					switch r.Method {
+					case "GET":
+						s.handleExplainPermissionsRequest([0]string{}, elemIsEscaped, w, r)
+					default:
+						s.notAllowed(w, r, notAllowedParams{
+							allowedMethods: "GET",
+							allowedHeaders: nil,
+							acceptPost:     "",
+							acceptPatch:    "",
+						})
+					}
+
+					return
+				}
+
+			case 'w': // Prefix: "workspaces/"
+
+				if l := len("workspaces/"); len(elem) >= l && elem[0:l] == "workspaces/" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					break
+				}
+				switch elem[0] {
+				case 'c': // Prefix: "current"
+					origElem := elem
+					if l := len("current"); len(elem) >= l && elem[0:l] == "current" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						// Leaf node.
+						switch r.Method {
+						case "GET":
+							s.handleGetCurrentWorkspaceRequest([0]string{}, elemIsEscaped, w, r)
+						default:
+							s.notAllowed(w, r, notAllowedParams{
+								allowedMethods: "GET",
+								allowedHeaders: nil,
+								acceptPost:     "",
+								acceptPatch:    "",
+							})
+						}
+
+						return
+					}
+
+					elem = origElem
+				case 'm': // Prefix: "my"
+					origElem := elem
+					if l := len("my"); len(elem) >= l && elem[0:l] == "my" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						// Leaf node.
+						switch r.Method {
+						case "GET":
+							s.handleListMyWorkspacesRequest([0]string{}, elemIsEscaped, w, r)
+						default:
+							s.notAllowed(w, r, notAllowedParams{
+								allowedMethods: "GET",
+								allowedHeaders: nil,
+								acceptPost:     "",
+								acceptPatch:    "",
+							})
+						}
+
+						return
+					}
+
+					elem = origElem
+				}
+				// Param: "id"
+				// Leaf parameter, slashes are prohibited
+				idx := strings.IndexByte(elem, '/')
+				if idx >= 0 {
+					break
+				}
+				args[0] = elem
+				elem = ""
+
+				if len(elem) == 0 {
+					// Leaf node.
+					switch r.Method {
+					case "GET":
+						s.handleGetWorkspaceRequest([1]string{
+							args[0],
+						}, elemIsEscaped, w, r)
+					default:
+						s.notAllowed(w, r, notAllowedParams{
+							allowedMethods: "GET",
+							allowedHeaders: nil,
+							acceptPost:     "",
+							acceptPatch:    "",
+						})
+					}
+
+					return
+				}
+
 			}
 
 		}
@@ -171,38 +267,134 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 			break
 		}
 		switch elem[0] {
-		case '/': // Prefix: "/workspaces/"
+		case '/': // Prefix: "/"
 
-			if l := len("/workspaces/"); len(elem) >= l && elem[0:l] == "/workspaces/" {
+			if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 				elem = elem[l:]
 			} else {
 				break
 			}
 
-			// Param: "id"
-			// Leaf parameter, slashes are prohibited
-			idx := strings.IndexByte(elem, '/')
-			if idx >= 0 {
+			if len(elem) == 0 {
 				break
 			}
-			args[0] = elem
-			elem = ""
+			switch elem[0] {
+			case 'p': // Prefix: "permissions/explain"
 
-			if len(elem) == 0 {
-				// Leaf node.
-				switch method {
-				case "GET":
-					r.name = GetWorkspaceOperation
-					r.summary = "获取工作空间详情"
-					r.operationID = "getWorkspace"
-					r.operationGroup = ""
-					r.pathPattern = "/workspaces/{id}"
-					r.args = args
-					r.count = 1
-					return r, true
-				default:
-					return
+				if l := len("permissions/explain"); len(elem) >= l && elem[0:l] == "permissions/explain" {
+					elem = elem[l:]
+				} else {
+					break
 				}
+
+				if len(elem) == 0 {
+					// Leaf node.
+					switch method {
+					case "GET":
+						r.name = ExplainPermissionsOperation
+						r.summary = "解释当前账号在指定工作空间内的最终权限及其来源"
+						r.operationID = "explainPermissions"
+						r.operationGroup = ""
+						r.pathPattern = "/permissions/explain"
+						r.args = args
+						r.count = 0
+						return r, true
+					default:
+						return
+					}
+				}
+
+			case 'w': // Prefix: "workspaces/"
+
+				if l := len("workspaces/"); len(elem) >= l && elem[0:l] == "workspaces/" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					break
+				}
+				switch elem[0] {
+				case 'c': // Prefix: "current"
+					origElem := elem
+					if l := len("current"); len(elem) >= l && elem[0:l] == "current" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						// Leaf node.
+						switch method {
+						case "GET":
+							r.name = GetCurrentWorkspaceOperation
+							r.summary = "获取当前授权工作空间"
+							r.operationID = "getCurrentWorkspace"
+							r.operationGroup = ""
+							r.pathPattern = "/workspaces/current"
+							r.args = args
+							r.count = 0
+							return r, true
+						default:
+							return
+						}
+					}
+
+					elem = origElem
+				case 'm': // Prefix: "my"
+					origElem := elem
+					if l := len("my"); len(elem) >= l && elem[0:l] == "my" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						// Leaf node.
+						switch method {
+						case "GET":
+							r.name = ListMyWorkspacesOperation
+							r.summary = "获取我的工作空间列表"
+							r.operationID = "listMyWorkspaces"
+							r.operationGroup = ""
+							r.pathPattern = "/workspaces/my"
+							r.args = args
+							r.count = 0
+							return r, true
+						default:
+							return
+						}
+					}
+
+					elem = origElem
+				}
+				// Param: "id"
+				// Leaf parameter, slashes are prohibited
+				idx := strings.IndexByte(elem, '/')
+				if idx >= 0 {
+					break
+				}
+				args[0] = elem
+				elem = ""
+
+				if len(elem) == 0 {
+					// Leaf node.
+					switch method {
+					case "GET":
+						r.name = GetWorkspaceOperation
+						r.summary = "获取工作空间详情"
+						r.operationID = "getWorkspace"
+						r.operationGroup = ""
+						r.pathPattern = "/workspaces/{id}"
+						r.args = args
+						r.count = 1
+						return r, true
+					default:
+						return
+					}
+				}
+
 			}
 
 		}
