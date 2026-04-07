@@ -150,3 +150,13 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 - `backend/cmd/gen-permissions/main.go` 占位，Phase 1 同步实现解析逻辑。
 - 决策定锤：API 不并存 `/v2`，直接替换；前端走 `openapi-typescript + openapi-fetch`。
 
+### Phase 1 — 已完成（workspace 示例域）
+- `backend/api/openapi/openapi.yaml` 落 `GET /workspaces/{id}`，含 `x-permission-key: workspace.read`、`x-tenant-scoped: true`、`x-app-scope: optional`、`x-access-mode: permission`。
+- `make gen` 通过，`backend/api/gen/` 出 ogen server / schemas / router 全套（已纳入 git）。补齐 ogen runtime 依赖：`go-faster/errors`、`go-faster/jx`、`ogen-go/ogen`。
+- `backend/cmd/gen-permissions` 解析器实现：扫描所有 operation，校验 `x-permission-key`，输出 `internal/pkg/permissionseed/openapi_seed.json`。当前仅生成 1 条 `getWorkspace`。
+- `backend/internal/api/handlers/workspace.go` 实现 `gen.Handler`（嵌入 `UnimplementedHandler`），调用既有 `workspace.Service`，把 domain model 映射到生成的 `WorkspaceSummary`。用 `ctx` 传递 `user_id`。
+- `backend/internal/api/router/router.go`：在 authenticated 组里直接挂 ogen `*Server`，通过 gin bridge 注入 `user_id` 到 `r.Context()` 并 strip `/api/v1` 前缀。**直接替换**了旧的 `GET /workspaces/:id`（在 `workspace/module.go` 中删除）。其余 workspace 路由（`/my`、`/current`、`/switch`）暂保留旧 handler，等后续 PR 一起迁。
+- `go build ./...` 通过。
+- 后续 Phase 1 收尾项（留到 Phase 2 / 3 一起做）：启动时把 `openapi_seed.json` 与 DB 中 `permission_keys` 对账校验、`/swagger` UI 挂载、ogen 中间件接入 evaluator。
+
+

@@ -1,0 +1,15 @@
+{
+  "source": "api\\openapi\\openapi.yaml",
+  "operations": [
+    {
+      "operation_id": "getWorkspace",
+      "method": "get",
+      "path": "/workspaces/{id}",
+      "permission_key": "workspace.read",
+      "summary": "获取工作空间详情",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    }
+  ]
+}
