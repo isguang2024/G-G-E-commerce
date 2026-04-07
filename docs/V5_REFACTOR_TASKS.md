@@ -159,4 +159,14 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 - `go build ./...` 通过。
 - 后续 Phase 1 收尾项（留到 Phase 2 / 3 一起做）：启动时把 `openapi_seed.json` 与 DB 中 `permission_keys` 对账校验、`/swagger` UI 挂载、ogen 中间件接入 evaluator。
 
+### Phase 2a — 已完成（goose + 租户基线）
+- 引入 `pressly/goose/v3`，迁移文件落 `backend/internal/pkg/database/migrations/`，由 `database.RunGooseMigrations` 通过 `embed.FS` 加载。
+- 第 1 号迁移 `00001_tenants_baseline.sql`：启用 `uuid-ossp` / `pgcrypto`，建 `tenants` 表（含 `is_default` 部分唯一索引），并 seed 内置 `default` 租户。
+- 新增 `models.Tenant` 与 `models.TenantScoped` 嵌入结构 + `DefaultTenantCode` 常量。`Workspace` 与 `WorkspaceMember` 已嵌入 `TenantScoped`，AutoMigrate 同步建出 `tenant_id` 列。
+- `cmd/migrate` 增加：goose 先于 AutoMigrate 跑；`ensureDefaultTenantBackfill` 把存量 `workspaces` / `workspace_members` 行的 `tenant_id` 回填为默认租户。
+- 范围控制：本次只把 `tenant_id` 推到 v5 权限主轴的 2 张表（`workspaces`、`workspace_members`），其余表仍按旧结构跑。剩余 11 张目标表的 `tenant_id` 与 14 张 v5 baseline 重建留给 Phase 2b/Phase 4 各域迁移时同步落地，避免一次 PR 触动 60+ 文件。
+- `collaborationworkspace` 模块暂未删除，沿用兼容字段；按计划在 Phase 4 各业务域迁到 OpenAPI 时随域清理。
+- `go build ./...` 通过；live DB 验证 (`make db-reset && make migrate`) 留给本地执行。
+
+
 
