@@ -165,6 +165,13 @@ func (h *APIHandler) ExplainPermissions(ctx context.Context, params gen.ExplainP
 		}
 		out.SetFeaturePackageSources(gen.NewOptPermissionExplanationFeaturePackageSources(fps))
 	}
+	if len(exp.RoleKeys) > 0 {
+		rs := gen.PermissionExplanationRoleSources{}
+		for k, ids := range exp.RoleKeys {
+			rs[k] = ids
+		}
+		out.SetRoleSources(gen.NewOptPermissionExplanationRoleSources(rs))
+	}
 	return out, nil
 }
 
