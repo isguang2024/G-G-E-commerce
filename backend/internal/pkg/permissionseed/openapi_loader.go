@@ -45,3 +45,13 @@ func LoadOpenAPISeed() (*OpenAPISeed, error) {
 	}
 	return &seed, nil
 }
+
+// PermissionKeyByOperationID flattens the seed into the runtime lookup used
+// by the auto permission middleware: ogen operationID -> permission key.
+func (s *OpenAPISeed) PermissionKeyByOperationID() map[string]string {
+	out := make(map[string]string, len(s.Operations))
+	for _, op := range s.Operations {
+		out[op.OperationID] = op.PermissionKey
+	}
+	return out
+}

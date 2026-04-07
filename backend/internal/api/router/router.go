@@ -2,6 +2,9 @@ package router
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -54,11 +57,12 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 
 	// Phase 1 cleanup: validate the gen-permissions seed early so a missing
 	// or malformed permission key fails the boot rather than at first request.
-	if seed, err := permissionseed.LoadOpenAPISeed(); err != nil {
+	seed, err := permissionseed.LoadOpenAPISeed()
+	if err != nil {
 		logger.Fatal("openapi seed validation failed", zap.Error(err))
-	} else {
-		logger.Info("openapi seed loaded", zap.Int("operations", len(seed.Operations)))
 	}
+	logger.Info("openapi seed loaded", zap.Int("operations", len(seed.Operations)))
+	permLookup := seed.PermissionKeyByOperationID()
 
 	// Phase 3: build the permission evaluator once and share across handlers.
 	permEvaluator := evaluator.New(db, logger)
@@ -98,7 +102,23 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			// OpenAPI-first 路径：由 ogen 生成的 server 直接处理。
 			// 入口在 Gin 中以普通路由声明，便于复用 JWT/AppContext 中间件，
 			// 之后再把请求 ctx 注入 user_id 后转交给 ogen handler。
-			ogenServer, err := apigen.NewServer(handlers.NewAPIHandler(db, logger, permEvaluator))
+			permMW := middleware.OpenAPIPermission(permEvaluator, permLookup, logger)
+			openapiErrHandler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
+				if errors.Is(err, middleware.ErrPermissionDenied) {
+					w.Header().Set("Content-Type", "application/json")
+					w.WriteHeader(http.StatusForbidden)
+					_ = json.NewEncoder(w).Encode(map[string]any{"code": 403, "message": "无权访问"})
+					return
+				}
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusInternalServerError)
+				_ = json.NewEncoder(w).Encode(map[string]any{"code": 500, "message": err.Error()})
+			}
+			ogenServer, err := apigen.NewServer(
+				handlers.NewAPIHandler(db, logger, permEvaluator),
+				apigen.WithMiddleware(permMW),
+				apigen.WithErrorHandler(openapiErrHandler),
+			)
 			if err != nil {
 				logger.Fatal("failed to build ogen server", zap.Error(err))
 			}
