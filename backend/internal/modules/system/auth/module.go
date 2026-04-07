@@ -40,13 +40,8 @@ func (m *AuthModule) RegisterRoutes(rg *gin.RouterGroup) {
 	authzService := authorization.NewService(m.db, m.logger)
 	authHandler := NewAuthHandler(authService, authzService, collaborationWorkspaceMemberRepo, workspaceService, m.logger)
 
-	auth := rg.Group("/auth")
-	authReg := apiregistry.NewRegistrar(auth, "auth")
-	{
-		authReg.POST("/login", authReg.Meta("用户登录").Build(), authHandler.Login)
-		authReg.POST("/register", authReg.Meta("用户注册").Build(), authHandler.Register)
-		authReg.POST("/refresh", authReg.Meta("刷新访问令牌").Build(), authHandler.RefreshToken)
-	}
+	// /auth/login、/auth/register、/auth/refresh 已全部迁移到 OpenAPI-first
+	// （router.go 中由 ogen handler 接管），不再在此挂载 public 路由组。
 
 	authenticated := rg.Group("")
 	authenticated.Use(JWTAuth(m.config.JWT.Secret, m.db))

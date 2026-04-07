@@ -90,46 +90,61 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		}
 	}
 
+	// Build the ogen server once. It handles all OpenAPI-first operations
+	// (both public and authenticated). The Gin layer routes the public ones
+	// outside the JWT middleware and the rest inside.
+	permMW := middleware.OpenAPIPermission(permEvaluator, permLookup, logger)
+	openapiErrHandler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
+		if errors.Is(err, middleware.ErrPermissionDenied) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			_ = json.NewEncoder(w).Encode(map[string]any{"code": 403, "message": "无权访问"})
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]any{"code": 500, "message": err.Error()})
+	}
+	ogenServer, err := apigen.NewServer(
+		handlers.NewAPIHandler(db, cfg, logger, permEvaluator),
+		apigen.WithMiddleware(permMW),
+		apigen.WithErrorHandler(openapiErrHandler),
+	)
+	if err != nil {
+		logger.Fatal("failed to build ogen server", zap.Error(err))
+	}
+	ogenServeWith := func(c *gin.Context, withUser bool) {
+		ctx := c.Request.Context()
+		if withUser {
+			ctx = context.WithValue(ctx, handlers.CtxUserID, c.GetString("user_id"))
+		}
+		ctx = context.WithValue(ctx, handlers.CtxClientIP, c.ClientIP())
+		req := c.Request.Clone(ctx)
+		req.URL.Path = strings.TrimPrefix(req.URL.Path, "/api/v1")
+		ogenServer.ServeHTTP(c.Writer, req)
+	}
+	publicBridge := func(c *gin.Context) { ogenServeWith(c, false) }
+	ogenBridge := func(c *gin.Context) { ogenServeWith(c, true) }
+
 	v1 := r.Group("/api/v1")
 	v1.Use(endpointAccessService.RequireActiveEndpoint())
 	{
+		// OpenAPI-first public 路径：login 由 ogen handler 接管，
+		// 与 legacy auth.RegisterRoutes 中的 POST /auth/login 路径冲突，
+		// 故 authModule 在迁移完成前不再挂载 login。
+		v1.POST("/auth/login", publicBridge)
+		v1.POST("/auth/register", publicBridge)
+		v1.POST("/auth/refresh", publicBridge)
+
 		authModule.RegisterRoutes(v1)
 		pageModule.RegisterPublicRoutes(v1)
 
 		authenticated := v1.Group("")
 		authenticated.Use(auth.JWTAuth(cfg.JWT.Secret, db), middleware.AppContext(db))
 		{
-			// OpenAPI-first 路径：由 ogen 生成的 server 直接处理。
-			// 入口在 Gin 中以普通路由声明，便于复用 JWT/AppContext 中间件，
-			// 之后再把请求 ctx 注入 user_id 后转交给 ogen handler。
-			permMW := middleware.OpenAPIPermission(permEvaluator, permLookup, logger)
-			openapiErrHandler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
-				if errors.Is(err, middleware.ErrPermissionDenied) {
-					w.Header().Set("Content-Type", "application/json")
-					w.WriteHeader(http.StatusForbidden)
-					_ = json.NewEncoder(w).Encode(map[string]any{"code": 403, "message": "无权访问"})
-					return
-				}
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusInternalServerError)
-				_ = json.NewEncoder(w).Encode(map[string]any{"code": 500, "message": err.Error()})
-			}
-			ogenServer, err := apigen.NewServer(
-				handlers.NewAPIHandler(db, logger, permEvaluator),
-				apigen.WithMiddleware(permMW),
-				apigen.WithErrorHandler(openapiErrHandler),
-			)
-			if err != nil {
-				logger.Fatal("failed to build ogen server", zap.Error(err))
-			}
-			ogenBridge := func(c *gin.Context) {
-				userID := c.GetString("user_id")
-				req := c.Request.Clone(context.WithValue(c.Request.Context(), handlers.CtxUserID, userID))
-				req.URL.Path = strings.TrimPrefix(req.URL.Path, "/api/v1")
-				ogenServer.ServeHTTP(c.Writer, req)
-			}
 			// OpenAPI-first 路径：legacy /workspaces/{my,current,:id} 与
 			// /permissions/explain 全部由 ogen handler 接管。
+			authenticated.GET("/auth/me", ogenBridge)
 			authenticated.POST("/workspaces/switch", ogenBridge)
 			authenticated.GET("/workspaces/my", ogenBridge)
 			authenticated.GET("/workspaces/current", ogenBridge)

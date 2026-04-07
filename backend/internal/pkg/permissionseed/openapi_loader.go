@@ -39,7 +39,7 @@ func LoadOpenAPISeed() (*OpenAPISeed, error) {
 		return nil, fmt.Errorf("decode openapi_seed.json: %w", err)
 	}
 	for i, op := range seed.Operations {
-		if op.PermissionKey == "" {
+		if op.PermissionKey == "" && op.AccessMode != "public" {
 			return nil, fmt.Errorf("openapi_seed.json[%d] %s %s missing permission_key", i, op.Method, op.Path)
 		}
 	}

@@ -1,7 +1,4 @@
-import request from '@/utils/http'
 import { v5Client } from '@/api/v5/client'
-
-const WORKSPACE_BASE = '/api/v1/workspaces'
 
 function normalizeWorkspace(item: any): Api.SystemManage.WorkspaceItem {
   return {
@@ -43,38 +40,29 @@ export async function fetchGetMyWorkspaces() {
 }
 
 export async function fetchGetCurrentWorkspace() {
-  const res = await request.get<any>({
-    url: `${WORKSPACE_BASE}/current`,
-    skipAuthWorkspaceHeader: true,
-    skipCollaborationWorkspaceHeader: true,
-    showErrorMessage: false
-  })
-  return normalizeWorkspace(res)
+  const { data } = await v5Client.GET('/workspaces/current')
+  return data ? normalizeWorkspace(data) : normalizeWorkspace({})
 }
 
 export async function fetchGetWorkspace(workspaceId: string) {
-  const res = await request.get<any>({
-    url: `${WORKSPACE_BASE}/${workspaceId}`,
-    skipAuthWorkspaceHeader: true,
-    skipCollaborationWorkspaceHeader: true,
-    showErrorMessage: false
+  const { data } = await v5Client.GET('/workspaces/{id}', {
+    params: { path: { id: workspaceId } }
   })
-  return normalizeWorkspace(res)
+  return data ? normalizeWorkspace(data) : normalizeWorkspace({})
 }
 
-export function fetchSwitchWorkspace(workspaceId: string) {
-  return request.post<{
-    auth_workspace_id: string
-    auth_workspace_type: string
-    current_collaboration_workspace_id?: string
-    collaboration_workspace_id?: string
-    workspace: Api.SystemManage.WorkspaceItem
-  }>({
-    url: `${WORKSPACE_BASE}/switch`,
-    skipAuthWorkspaceHeader: true,
-    skipCollaborationWorkspaceHeader: true,
-    data: {
-      workspace_id: workspaceId
-    }
+export async function fetchSwitchWorkspace(workspaceId: string) {
+  const { data, error } = await v5Client.POST('/workspaces/switch', {
+    body: { workspace_id: workspaceId }
   })
+  if (error || !data) {
+    throw error || new Error('switch workspace failed')
+  }
+  return {
+    auth_workspace_id: data.auth_workspace_id,
+    auth_workspace_type: data.auth_workspace_type,
+    collaboration_workspace_id: data.collaboration_workspace_id ?? '',
+    current_collaboration_workspace_id: data.collaboration_workspace_id ?? '',
+    workspace: normalizeWorkspace(data.workspace)
+  }
 }

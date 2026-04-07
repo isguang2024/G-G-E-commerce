@@ -1,29 +1,32 @@
 import request from '@/utils/http'
+import { v5Client } from '@/api/v5/client'
 
 /**
- * 登录
- * @param params 登录参数
- * @returns 登录响应
+ * 登录 — 走 v5 OpenAPI client。后端 ogen handler 直接返回裸 schema
+ * （没有 {code,data,message} 信封），所以这里手动把响应映射回前端
+ * 既有的 Api.Auth.LoginResponse 形状，避免一次性改动整个登录流程。
  */
-export function fetchLogin(params: Api.Auth.LoginParams) {
-  return request.post<Api.Auth.LoginResponse>({
-    url: '/api/v1/auth/login',
-    params
-    // showSuccessMessage: true // 显示成功消息
-    // showErrorMessage: false // 不显示错误消息
+export async function fetchLogin(params: Api.Auth.LoginParams) {
+  const { data, error } = await v5Client.POST('/auth/login', {
+    body: { username: params.username, password: params.password }
   })
+  if (error || !data) {
+    throw error || new Error('login failed')
+  }
+  return data as unknown as Api.Auth.LoginResponse
 }
 
 /**
- * 刷新 Token
- * @param refreshToken 刷新令牌
- * @returns Token 响应
+ * 刷新 Token — v5 OpenAPI client。
  */
-export function fetchRefreshToken(refreshToken: string) {
-  return request.post<Api.Auth.LoginResponse>({
-    url: '/api/v1/auth/refresh',
-    params: { refresh_token: refreshToken }
+export async function fetchRefreshToken(refreshToken: string) {
+  const { data, error } = await v5Client.POST('/auth/refresh', {
+    body: { refresh_token: refreshToken }
   })
+  if (error || !data) {
+    throw error || new Error('refresh failed')
+  }
+  return data as unknown as Api.Auth.LoginResponse
 }
 
 /**

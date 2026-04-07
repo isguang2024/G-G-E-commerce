@@ -7,8 +7,12 @@ type OperationName = string
 
 const (
 	ExplainPermissionsOperation  OperationName = "ExplainPermissions"
+	GetAuthMeOperation           OperationName = "GetAuthMe"
 	GetCurrentWorkspaceOperation OperationName = "GetCurrentWorkspace"
 	GetWorkspaceOperation        OperationName = "GetWorkspace"
 	ListMyWorkspacesOperation    OperationName = "ListMyWorkspaces"
+	LoginOperation               OperationName = "Login"
+	RefreshTokenOperation        OperationName = "RefreshToken"
+	RegisterOperation            OperationName = "Register"
 	SwitchWorkspaceOperation     OperationName = "SwitchWorkspace"
 )

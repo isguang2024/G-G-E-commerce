@@ -32,7 +32,9 @@ func OpenAPIPermission(eval evaluator.Evaluator, lookup map[string]string, logge
 	return func(req ogenmw.Request, next ogenmw.Next) (ogenmw.Response, error) {
 		key, ok := lookup[req.OperationID]
 		if !ok || key == "" {
-			logger.Warn("openapi op missing permission key", zap.String("op", req.OperationID))
+			// Public op (x-access-mode: public) or unmapped operation —
+			// pass through without invoking the evaluator.
+			logger.Debug("openapi perm: pass-through", zap.String("op", req.OperationID))
 			return next(req)
 		}
 

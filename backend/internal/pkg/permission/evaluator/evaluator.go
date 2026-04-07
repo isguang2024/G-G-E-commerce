@@ -85,21 +85,41 @@ func (e *gormEvaluator) Resolve(ctx context.Context, accountID, workspaceID uuid
 		Keys:        make(map[string]struct{}),
 	}
 
-	// 1. Feature-package side of the intersection.
-	keys, err := e.queryFeaturePackageKeys(ctx, workspaceID)
+	// 1. Workspace (feature-package) side: the upper bound of what this
+	//    workspace as a tenant subject can possibly do.
+	wsKeys, err := e.queryFeaturePackageKeys(ctx, workspaceID)
 	if err != nil {
 		return nil, fmt.Errorf("evaluator: load feature package keys: %w", err)
 	}
-	for _, key := range keys {
-		resolved.Keys[key] = struct{}{}
+
+	// 2. Role side: what the *member* can do via assigned roles.
+	//    Owner/admin bypass: for workspace owners/admins we don't run a
+	//    role-based filter (their effective set is the workspace upper
+	//    bound). For everyone else we intersect with role-derived keys.
+	bypass, err := e.isOwnerOrAdmin(ctx, accountID, workspaceID)
+	if err != nil {
+		return nil, fmt.Errorf("evaluator: check member type: %w", err)
+	}
+	if bypass {
+		for _, key := range wsKeys {
+			resolved.Keys[key] = struct{}{}
+		}
+		return resolved, nil
 	}
 
-	// 2. Role side of the intersection.
-	// TODO(phase-3-followup): wire workspace_role_bindings → role permissions
-	// once roles consistently expose permission_key strings rather than
-	// action ids. For now we treat roles as "all-or-nothing" so the package
-	// surface returned above is the effective permission set.
-
+	roleKeys, err := e.queryRoleKeys(ctx, accountID, workspaceID)
+	if err != nil {
+		return nil, fmt.Errorf("evaluator: load role keys: %w", err)
+	}
+	roleSet := make(map[string]struct{}, len(roleKeys))
+	for _, key := range roleKeys {
+		roleSet[key] = struct{}{}
+	}
+	for _, key := range wsKeys {
+		if _, ok := roleSet[key]; ok {
+			resolved.Keys[key] = struct{}{}
+		}
+	}
 	return resolved, nil
 }
 
@@ -123,11 +143,121 @@ func (e *gormEvaluator) Explain(ctx context.Context, accountID, workspaceID uuid
 	if err != nil {
 		return nil, fmt.Errorf("evaluator: explain: %w", err)
 	}
+	roleSources, err := e.queryRoleKeysBySource(ctx, accountID, workspaceID)
+	if err != nil {
+		return nil, fmt.Errorf("evaluator: explain roles: %w", err)
+	}
 	return &Explanation{
 		Resolved:           resolved,
 		FeaturePackageKeys: bySource,
-		RoleKeys:           map[string][]uuid.UUID{},
+		RoleKeys:           roleSources,
 	}, nil
+}
+
+// isOwnerOrAdmin returns true if the account is a workspace_members row with
+// member_type owner or admin in the target workspace.
+func (e *gormEvaluator) isOwnerOrAdmin(ctx context.Context, accountID, workspaceID uuid.UUID) (bool, error) {
+	const q = `
+SELECT member_type FROM workspace_members
+WHERE workspace_id = ? AND user_id = ? AND deleted_at IS NULL
+LIMIT 1
+`
+	var memberType string
+	if err := e.db.WithContext(ctx).Raw(q, workspaceID, accountID).Scan(&memberType).Error; err != nil {
+		return false, err
+	}
+	return memberType == "owner" || memberType == "admin", nil
+}
+
+// queryRoleKeys returns permission_key strings derived from the user's roles
+// in the target workspace. Roles are joined via the legacy
+// workspaces.collaboration_workspace_id back-reference (which is the only
+// link we have until we introduce workspace_member_roles in a later phase).
+// For personal workspaces (no collaboration_workspace_id) we look for
+// account-level roles where user_roles.collaboration_workspace_id IS NULL.
+// role_disabled_actions are subtracted from the final set.
+func (e *gormEvaluator) queryRoleKeys(ctx context.Context, accountID, workspaceID uuid.UUID) ([]string, error) {
+	const q = `
+WITH ws AS (
+  SELECT collaboration_workspace_id FROM workspaces WHERE id = ? AND deleted_at IS NULL
+),
+user_role_ids AS (
+  SELECT ur.role_id
+  FROM user_roles ur, ws
+  WHERE ur.user_id = ?
+    AND (
+      (ws.collaboration_workspace_id IS NOT NULL AND ur.collaboration_workspace_id = ws.collaboration_workspace_id)
+      OR
+      (ws.collaboration_workspace_id IS NULL AND ur.collaboration_workspace_id IS NULL)
+    )
+),
+granted AS (
+  SELECT DISTINCT pk.permission_key, urr.role_id, fpk.action_id
+  FROM user_role_ids urr
+  JOIN role_feature_packages rfp ON rfp.role_id = urr.role_id AND rfp.enabled = true
+  JOIN feature_package_keys fpk  ON fpk.package_id = rfp.package_id
+  JOIN permission_keys pk        ON pk.id = fpk.action_id
+  WHERE pk.deleted_at IS NULL
+    AND pk.permission_key <> ''
+)
+SELECT DISTINCT g.permission_key
+FROM granted g
+WHERE NOT EXISTS (
+  SELECT 1 FROM role_disabled_actions rda
+  WHERE rda.role_id = g.role_id AND rda.action_id = g.action_id
+)
+`
+	var out []string
+	if err := e.db.WithContext(ctx).Raw(q, workspaceID, accountID).Scan(&out).Error; err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (e *gormEvaluator) queryRoleKeysBySource(ctx context.Context, accountID, workspaceID uuid.UUID) (map[string][]uuid.UUID, error) {
+	const q = `
+WITH ws AS (
+  SELECT collaboration_workspace_id FROM workspaces WHERE id = ? AND deleted_at IS NULL
+),
+user_role_ids AS (
+  SELECT ur.role_id
+  FROM user_roles ur, ws
+  WHERE ur.user_id = ?
+    AND (
+      (ws.collaboration_workspace_id IS NOT NULL AND ur.collaboration_workspace_id = ws.collaboration_workspace_id)
+      OR
+      (ws.collaboration_workspace_id IS NULL AND ur.collaboration_workspace_id IS NULL)
+    )
+),
+granted AS (
+  SELECT pk.permission_key, urr.role_id, fpk.action_id
+  FROM user_role_ids urr
+  JOIN role_feature_packages rfp ON rfp.role_id = urr.role_id AND rfp.enabled = true
+  JOIN feature_package_keys fpk  ON fpk.package_id = rfp.package_id
+  JOIN permission_keys pk        ON pk.id = fpk.action_id
+  WHERE pk.deleted_at IS NULL
+    AND pk.permission_key <> ''
+)
+SELECT DISTINCT g.permission_key, g.role_id
+FROM granted g
+WHERE NOT EXISTS (
+  SELECT 1 FROM role_disabled_actions rda
+  WHERE rda.role_id = g.role_id AND rda.action_id = g.action_id
+)
+`
+	type row struct {
+		PermissionKey string    `gorm:"column:permission_key"`
+		RoleID        uuid.UUID `gorm:"column:role_id"`
+	}
+	var rows []row
+	if err := e.db.WithContext(ctx).Raw(q, workspaceID, accountID).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	out := make(map[string][]uuid.UUID, len(rows))
+	for _, r := range rows {
+		out[r.PermissionKey] = append(out[r.PermissionKey], r.RoleID)
+	}
+	return out, nil
 }
 
 func (e *gormEvaluator) queryFeaturePackageKeys(ctx context.Context, workspaceID uuid.UUID) ([]string, error) {

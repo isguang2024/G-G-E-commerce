@@ -14,6 +14,12 @@ type Handler interface {
 	//
 	// GET /permissions/explain
 	ExplainPermissions(ctx context.Context, params ExplainPermissionsParams) (ExplainPermissionsRes, error)
+	// GetAuthMe implements getAuthMe operation.
+	//
+	// 获取当前登录账户信息.
+	//
+	// GET /auth/me
+	GetAuthMe(ctx context.Context) (GetAuthMeRes, error)
 	// GetCurrentWorkspace implements getCurrentWorkspace operation.
 	//
 	// 获取当前授权工作空间.
@@ -32,6 +38,24 @@ type Handler interface {
 	//
 	// GET /workspaces/my
 	ListMyWorkspaces(ctx context.Context) (ListMyWorkspacesRes, error)
+	// Login implements login operation.
+	//
+	// 用户登录.
+	//
+	// POST /auth/login
+	Login(ctx context.Context, req *LoginRequest) (LoginRes, error)
+	// RefreshToken implements refreshToken operation.
+	//
+	// 刷新访问令牌.
+	//
+	// POST /auth/refresh
+	RefreshToken(ctx context.Context, req *RefreshTokenRequest) (RefreshTokenRes, error)
+	// Register implements register operation.
+	//
+	// 用户注册.
+	//
+	// POST /auth/register
+	Register(ctx context.Context, req *RegisterRequest) (RegisterRes, error)
 	// SwitchWorkspace implements switchWorkspace operation.
 	//
 	// 切换当前授权工作空间.

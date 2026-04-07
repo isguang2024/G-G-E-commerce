@@ -22,6 +22,15 @@ func (UnimplementedHandler) ExplainPermissions(ctx context.Context, params Expla
 	return r, ht.ErrNotImplemented
 }
 
+// GetAuthMe implements getAuthMe operation.
+//
+// 获取当前登录账户信息.
+//
+// GET /auth/me
+func (UnimplementedHandler) GetAuthMe(ctx context.Context) (r GetAuthMeRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // GetCurrentWorkspace implements getCurrentWorkspace operation.
 //
 // 获取当前授权工作空间.
@@ -46,6 +55,33 @@ func (UnimplementedHandler) GetWorkspace(ctx context.Context, params GetWorkspac
 //
 // GET /workspaces/my
 func (UnimplementedHandler) ListMyWorkspaces(ctx context.Context) (r ListMyWorkspacesRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// Login implements login operation.
+//
+// 用户登录.
+//
+// POST /auth/login
+func (UnimplementedHandler) Login(ctx context.Context, req *LoginRequest) (r LoginRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// RefreshToken implements refreshToken operation.
+//
+// 刷新访问令牌.
+//
+// POST /auth/refresh
+func (UnimplementedHandler) RefreshToken(ctx context.Context, req *RefreshTokenRequest) (r RefreshTokenRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// Register implements register operation.
+//
+// 用户注册.
+//
+// POST /auth/register
+func (UnimplementedHandler) Register(ctx context.Context, req *RegisterRequest) (r RegisterRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

@@ -13,7 +13,10 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/api/gen"
+	"github.com/gg-ecommerce/backend/internal/config"
+	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
+	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/modules/system/workspace"
 	"github.com/gg-ecommerce/backend/internal/pkg/permission/evaluator"
 )
@@ -33,13 +36,18 @@ type APIHandler struct {
 	logger    *zap.Logger
 	service   workspace.Service
 	evaluator evaluator.Evaluator
+	authSvc   auth.AuthService
+	userRepo  user.UserRepository
 }
 
-func NewAPIHandler(db *gorm.DB, logger *zap.Logger, eval evaluator.Evaluator) *APIHandler {
+func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval evaluator.Evaluator) *APIHandler {
+	userRepo := user.NewUserRepository(db)
 	return &APIHandler{
 		logger:    logger,
 		service:   workspace.NewService(db, logger),
 		evaluator: eval,
+		authSvc:   auth.NewAuthService(userRepo, &cfg.JWT, logger),
+		userRepo:  userRepo,
 	}
 }
 
@@ -164,6 +172,13 @@ func (h *APIHandler) ExplainPermissions(ctx context.Context, params gen.ExplainP
 			fps[k] = ids
 		}
 		out.SetFeaturePackageSources(gen.NewOptPermissionExplanationFeaturePackageSources(fps))
+	}
+	if len(exp.RoleKeys) > 0 {
+		rs := gen.PermissionExplanationRoleSources{}
+		for k, ids := range exp.RoleKeys {
+			rs[k] = ids
+		}
+		out.SetRoleSources(gen.NewOptPermissionExplanationRoleSources(rs))
 	}
 	return out, nil
 }
