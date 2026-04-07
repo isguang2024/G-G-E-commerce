@@ -139,3 +139,14 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 `openapi.yaml → ogen 生成 → handler 实现 → permission_keys 自动 seed → /swagger 可访问 → 前端用生成 client 调一个接口`。
 
 跑通后再批量铺开 Phase 2–6。
+
+## 10. 阶段进度
+
+### Phase 0 — 已完成
+- 后端依赖引入：`ogen-go/ogen`、`casbin/v2`、`google/wire`、`pressly/goose/v3`、`cockroachdb/errors`、`eko/gocache/v4`、`testcontainers-go`（`go mod tidy` + `go build ./...` 通过）。
+- 骨架目录：`backend/api/openapi/{paths,components}`、`backend/api/gen/`、`backend/internal/api/{handlers,mapper}/`、`backend/internal/pkg/permission/evaluator/`、`backend/internal/pkg/tenantctx/`。
+- `backend/api/openapi/openapi.yaml` 主入口落档（空 paths，等 Phase 1 填充）。
+- `backend/Makefile` 新增 `make gen`（ogen 生成）与 `make gen-permissions`（占位）。
+- `backend/cmd/gen-permissions/main.go` 占位，Phase 1 同步实现解析逻辑。
+- 决策定锤：API 不并存 `/v2`，直接替换；前端走 `openapi-typescript + openapi-fetch`。
+

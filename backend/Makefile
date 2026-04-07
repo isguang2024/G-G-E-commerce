@@ -1,4 +1,4 @@
-.PHONY: help dev run build test lint clean migrate db-up db-down db-logs db-reset
+.PHONY: help dev run build test lint clean migrate db-up db-down db-logs db-reset gen gen-permissions
 
 help: ## 显示帮助信息
 	@echo "可用命令:"
@@ -28,6 +28,14 @@ clean: ## 清理构建文件
 migrate: ## 运行数据库迁移
 	@echo "运行数据库迁移..."
 	@go run cmd/migrate/main.go
+
+gen: ## 由 OpenAPI 生成 Go server/client 代码（ogen）
+	@echo "运行 ogen 代码生成..."
+	@go run github.com/ogen-go/ogen/cmd/ogen@latest --target api/gen --package gen --clean api/openapi/openapi.yaml
+
+gen-permissions: ## 由 OpenAPI 派生 permission_keys / api_endpoints seed
+	@echo "解析 OpenAPI 派生权限种子..."
+	@go run ./cmd/gen-permissions
 
 deps: ## 安装依赖
 	@go mod download

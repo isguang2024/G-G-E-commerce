@@ -1,0 +1,10 @@
+openapi: 3.0.3
+info:
+  title: GG E-commerce API
+  version: 5.0.0
+  description: |
+    GGE 5.0 API contract. OpenAPI-first: this spec is the single source of truth.
+    Code (Go server, TS client), permission_keys, and api_endpoints are derived from here.
+paths: {}
+components:
+  schemas: {}
