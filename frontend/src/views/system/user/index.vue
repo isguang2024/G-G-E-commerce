@@ -14,21 +14,6 @@
         :metrics="summaryMetrics"
       >
         <div class="user-hero-actions">
-          <ElSelect
-            v-model="selectedAppKey"
-            clearable
-            filterable
-            placeholder="选择 App"
-            class="user-app-select"
-            @change="handleManagedAppChange"
-          >
-            <ElOption
-              v-for="item in appOptions"
-              :key="item.value"
-              :label="item.label"
-              :value="item.value"
-            />
-          </ElSelect>
           <ElButton
             v-action="'system.user.manage'"
             type="primary"
@@ -96,7 +81,6 @@
 </template>
 
 <script setup lang="ts">
-  import { onMounted, watch } from 'vue'
   import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
   import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
@@ -105,7 +89,6 @@
     fetchGetUserList,
     fetchDeleteUser,
     fetchCreateUser,
-    fetchGetApps,
     fetchUpdateUser
   } from '@/api/system-manage'
   import UserSearch from './modules/user-search.vue'
@@ -123,7 +106,7 @@
 
   type UserListItem = Api.SystemManage.UserListItem
   const userStore = useUserStore()
-  const { targetAppKey, setManagedAppKey } = useManagedAppScope()
+  const { targetAppKey } = useManagedAppScope()
   const canViewSystemRemark = computed(() => {
     const roles = (userStore.info?.roles || []) as string[]
     return roles.includes('R_SUPER')
@@ -132,8 +115,6 @@
   // 弹窗相关
   const dialogType = ref<DialogType>('add')
   const showSearchBar = ref(false)
-  const appList = ref<Api.SystemManage.AppItem[]>([])
-  const selectedAppKey = ref('')
   const dialogVisible = ref(false)
   const currentUserData = ref<Partial<UserListItem>>({})
   const packageDialogVisible = ref(false)
@@ -149,12 +130,6 @@
     { label: '总用户', value: pagination.total || 0 },
     { label: '已选', value: selectedRows.value.length || 0 }
   ])
-  const appOptions = computed(() =>
-    appList.value.map((item) => ({
-      label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
-      value: item.appKey
-    }))
-  )
 
   // 搜索表单（与后端 status: active/inactive 一致）
   const searchForm = ref({
@@ -380,15 +355,6 @@
     getData()
   }
 
-  async function loadAppOptions() {
-    const res = await fetchGetApps()
-    appList.value = res.records || []
-  }
-
-  async function handleManagedAppChange(value?: string) {
-    await setManagedAppKey(`${value || ''}`.trim())
-  }
-
   function handleResetSearch() {
     resetSearchParams()
     Object.assign(searchParams, {
@@ -535,20 +501,6 @@
   const handleSelectionChange = (selection: UserListItem[]): void => {
     selectedRows.value = selection
   }
-
-  onMounted(() => {
-    selectedAppKey.value = targetAppKey.value
-    loadAppOptions().catch(() => {
-      appList.value = []
-    })
-  })
-
-  watch(
-    () => targetAppKey.value,
-    (value) => {
-      selectedAppKey.value = value || ''
-    }
-  )
 </script>
 
 <style scoped lang="scss">
@@ -561,9 +513,5 @@
   .user-toolbar-tip {
     font-size: 13px;
     color: var(--el-text-color-secondary);
-  }
-
-  .user-app-select {
-    width: 240px;
   }
 </style>
