@@ -25,6 +25,10 @@ type GetCurrentWorkspaceRes interface {
 	getCurrentWorkspaceRes()
 }
 
+type GetRoleRes interface {
+	getRoleRes()
+}
+
 type GetUserRes interface {
 	getUserRes()
 }

@@ -112,23 +112,13 @@ func (m *CollaborationWorkspaceModule) RegisterRoutes(rg *gin.RouterGroup) {
 		reg.GETAction("/current/actions", "获取当前协作空间功能权限边界", "collaboration_workspace.boundary.manage", authzService.RequireAction, collaborationWorkspaceHandler.GetCurrentCollaborationWorkspaceActions)
 		reg.GETAction("/current/action-origins", "获取当前协作空间功能权限来源", "collaboration_workspace.boundary.manage", authzService.RequireAction, collaborationWorkspaceHandler.GetCurrentCollaborationWorkspaceActionOrigins)
 
-		reg.GETAction("", "获取协作空间列表", "collaboration_workspace.manage", authzService.RequireAction, collaborationWorkspaceHandler.List)
 		reg.GETAction("/:id/roles", "获取协作空间可分配角色", "collaboration_workspace.manage", authzService.RequireAction, collaborationWorkspaceHandler.ListCollaborationWorkspaceRoles)
-		reg.GETAction("/:id", "获取协作空间详情", "collaboration_workspace.manage", authzService.RequireAction, collaborationWorkspaceHandler.Get)
-		reg.POSTAction("", "创建协作空间", "collaboration_workspace.manage", authzService.RequireAction, collaborationWorkspaceHandler.Create)
-		reg.PUTAction("/:id", "更新协作空间", "collaboration_workspace.manage", authzService.RequireAction, collaborationWorkspaceHandler.Update)
-		reg.DELETEAction("/:id", "删除协作空间", "collaboration_workspace.manage", authzService.RequireAction, collaborationWorkspaceHandler.Delete)
 		reg.GETAction("/:id/menus", "获取协作空间菜单边界", "collaboration_workspace.manage", authzService.RequireAction, collaborationWorkspaceHandler.GetCollaborationWorkspaceMenus)
 		reg.GETAction("/:id/menu-origins", "获取协作空间菜单来源", "collaboration_workspace.manage", authzService.RequireAction, collaborationWorkspaceHandler.GetCollaborationWorkspaceMenuOrigins)
 		reg.PUTAction("/:id/menus", "配置协作空间菜单边界", "collaboration_workspace.manage", authzService.RequireAction, collaborationWorkspaceHandler.SetCollaborationWorkspaceMenus)
 		reg.GETAction("/:id/actions", "获取协作空间功能权限边界", "collaboration_workspace.manage", authzService.RequireAction, collaborationWorkspaceHandler.GetCollaborationWorkspaceActions)
 		reg.GETAction("/:id/action-origins", "获取协作空间功能权限来源", "collaboration_workspace.manage", authzService.RequireAction, collaborationWorkspaceHandler.GetCollaborationWorkspaceActionOrigins)
 		reg.PUTAction("/:id/actions", "配置协作空间功能权限边界", "collaboration_workspace.manage", authzService.RequireAction, collaborationWorkspaceHandler.SetCollaborationWorkspaceActions)
-		reg.GETAction("/:id/members", "获取协作空间成员列表", "collaboration_workspace.manage", authzService.RequireAction, collaborationWorkspaceHandler.ListMembers)
-		reg.POSTAction("/:id/members", "添加协作空间成员", "collaboration_workspace.manage", authzService.RequireAction, collaborationWorkspaceHandler.AddMember)
-		reg.DELETEAction("/:id/members/:userId", "移除协作空间成员", "collaboration_workspace.manage", authzService.RequireAction, collaborationWorkspaceHandler.RemoveMember)
-		reg.PUTAction("/:id/members/:userId/role", "更新协作空间成员身份", "collaboration_workspace.manage", authzService.RequireAction, collaborationWorkspaceHandler.UpdateMemberRole)
-		reg.GETAction("/options", "获取协作空间候选", "collaboration_workspace.manage", authzService.RequireAction, collaborationWorkspaceHandler.ListOptions)
 	}
 }
 

@@ -11,7 +11,13 @@ import (
 )
 
 var (
-	rn13AllowedHeaders = map[string]string{
+	rn153AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn158AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn162AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
 	rn14AllowedHeaders = map[string]string{
@@ -20,16 +26,187 @@ var (
 	rn16AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
+	rn35AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn68AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn70AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn71AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
 	rn4AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn173AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn74AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn17AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
 	rn2AllowedHeaders = map[string]string{
 		"PUT": "Content-Type",
 	}
+	rn54AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
 	rn3AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
-	rn17AllowedHeaders = map[string]string{
+	rn172AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn58AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn18AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn60AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn37AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn83AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn85AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn87AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn89AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn169AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn19AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn20AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn22AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn42AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn38AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn47AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn124AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn24AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn175AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn26AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn177AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn27AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn179AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn29AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn44AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn30AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn12AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn31AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn181AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn145AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn7AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn8AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn32AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn46AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn108AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn110AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn111AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn112AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn129AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn130AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn82AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn138AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn96AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn139AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn33AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn10AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn116AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn117AllowedHeaders = map[string]string{
+		"PUT": "Content-Type",
+	}
+	rn11AllowedHeaders = map[string]string{
+		"POST": "Content-Type",
+	}
+	rn170AllowedHeaders = map[string]string{
 		"POST": "Content-Type",
 	}
 )
@@ -64,7 +241,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.notFound(w, r)
 		return
 	}
-	args := [1]string{}
+	args := [2]string{}
 
 	// Static code generated router with unwrapped path search.
 	switch {
@@ -113,7 +290,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						default:
 							s.notAllowed(w, r, notAllowedParams{
 								allowedMethods: "POST",
-								allowedHeaders: rn13AllowedHeaders,
+								allowedHeaders: rn153AllowedHeaders,
 								acceptPost:     "application/json",
 								acceptPatch:    "",
 							})
@@ -175,7 +352,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							default:
 								s.notAllowed(w, r, notAllowedParams{
 									allowedMethods: "POST",
-									allowedHeaders: rn14AllowedHeaders,
+									allowedHeaders: rn158AllowedHeaders,
 									acceptPost:     "application/json",
 									acceptPatch:    "",
 								})
@@ -200,7 +377,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 							default:
 								s.notAllowed(w, r, notAllowedParams{
 									allowedMethods: "POST",
-									allowedHeaders: rn16AllowedHeaders,
+									allowedHeaders: rn162AllowedHeaders,
 									acceptPost:     "application/json",
 									acceptPatch:    "",
 								})
@@ -213,29 +390,3631 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 				}
 
-			case 'p': // Prefix: "permissions/explain"
+			case 'c': // Prefix: "collaboration-workspaces"
 
-				if l := len("permissions/explain"); len(elem) >= l && elem[0:l] == "permissions/explain" {
+				if l := len("collaboration-workspaces"); len(elem) >= l && elem[0:l] == "collaboration-workspaces" {
 					elem = elem[l:]
 				} else {
 					break
 				}
 
 				if len(elem) == 0 {
-					// Leaf node.
 					switch r.Method {
 					case "GET":
-						s.handleExplainPermissionsRequest([0]string{}, elemIsEscaped, w, r)
+						s.handleListCollaborationWorkspacesRequest([0]string{}, elemIsEscaped, w, r)
+					case "POST":
+						s.handleCreateCollaborationWorkspaceRequest([0]string{}, elemIsEscaped, w, r)
 					default:
 						s.notAllowed(w, r, notAllowedParams{
-							allowedMethods: "GET",
-							allowedHeaders: nil,
-							acceptPost:     "",
+							allowedMethods: "GET,POST",
+							allowedHeaders: rn14AllowedHeaders,
+							acceptPost:     "application/json",
 							acceptPatch:    "",
 						})
 					}
 
 					return
+				}
+				switch elem[0] {
+				case '/': // Prefix: "/"
+
+					if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case 'c': // Prefix: "current"
+						origElem := elem
+						if l := len("current"); len(elem) >= l && elem[0:l] == "current" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch r.Method {
+							case "GET":
+								s.handleGetCurrentCollaborationWorkspaceRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET",
+									allowedHeaders: nil,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'a': // Prefix: "action"
+
+								if l := len("action"); len(elem) >= l && elem[0:l] == "action" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									break
+								}
+								switch elem[0] {
+								case '-': // Prefix: "-origins"
+
+									if l := len("-origins"); len(elem) >= l && elem[0:l] == "-origins" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch r.Method {
+										case "GET":
+											s.handleGetCurrentCollaborationWorkspaceActionOriginsRequest([0]string{}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "GET",
+												allowedHeaders: nil,
+												acceptPost:     "",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+
+								case 's': // Prefix: "s"
+
+									if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch r.Method {
+										case "GET":
+											s.handleGetCurrentCollaborationWorkspaceActionsRequest([0]string{}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "GET",
+												allowedHeaders: nil,
+												acceptPost:     "",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+
+								}
+
+							case 'b': // Prefix: "boundary/"
+
+								if l := len("boundary/"); len(elem) >= l && elem[0:l] == "boundary/" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									break
+								}
+								switch elem[0] {
+								case 'p': // Prefix: "packages"
+
+									if l := len("packages"); len(elem) >= l && elem[0:l] == "packages" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch r.Method {
+										case "GET":
+											s.handleGetCurrentCollaborationWorkspaceBoundaryPackagesRequest([0]string{}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "GET",
+												allowedHeaders: nil,
+												acceptPost:     "",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+
+								case 'r': // Prefix: "roles"
+
+									if l := len("roles"); len(elem) >= l && elem[0:l] == "roles" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										switch r.Method {
+										case "GET":
+											s.handleListCurrentCollaborationWorkspaceBoundaryRolesRequest([0]string{}, elemIsEscaped, w, r)
+										case "POST":
+											s.handleCreateCurrentCollaborationWorkspaceBoundaryRoleRequest([0]string{}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "GET,POST",
+												allowedHeaders: rn16AllowedHeaders,
+												acceptPost:     "application/json",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+									switch elem[0] {
+									case '/': // Prefix: "/"
+
+										if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										// Param: "roleId"
+										// Match until "/"
+										idx := strings.IndexByte(elem, '/')
+										if idx < 0 {
+											idx = len(elem)
+										}
+										args[0] = elem[:idx]
+										elem = elem[idx:]
+
+										if len(elem) == 0 {
+											switch r.Method {
+											case "DELETE":
+												s.handleDeleteCurrentCollaborationWorkspaceBoundaryRoleRequest([1]string{
+													args[0],
+												}, elemIsEscaped, w, r)
+											case "PUT":
+												s.handleUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest([1]string{
+													args[0],
+												}, elemIsEscaped, w, r)
+											default:
+												s.notAllowed(w, r, notAllowedParams{
+													allowedMethods: "DELETE,PUT",
+													allowedHeaders: rn35AllowedHeaders,
+													acceptPost:     "",
+													acceptPatch:    "",
+												})
+											}
+
+											return
+										}
+										switch elem[0] {
+										case '/': // Prefix: "/"
+
+											if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+												elem = elem[l:]
+											} else {
+												break
+											}
+
+											if len(elem) == 0 {
+												break
+											}
+											switch elem[0] {
+											case 'a': // Prefix: "actions"
+
+												if l := len("actions"); len(elem) >= l && elem[0:l] == "actions" {
+													elem = elem[l:]
+												} else {
+													break
+												}
+
+												if len(elem) == 0 {
+													// Leaf node.
+													switch r.Method {
+													case "GET":
+														s.handleGetCurrentCollaborationWorkspaceBoundaryRoleActionsRequest([1]string{
+															args[0],
+														}, elemIsEscaped, w, r)
+													case "PUT":
+														s.handleSetCurrentCollaborationWorkspaceBoundaryRoleActionsRequest([1]string{
+															args[0],
+														}, elemIsEscaped, w, r)
+													default:
+														s.notAllowed(w, r, notAllowedParams{
+															allowedMethods: "GET,PUT",
+															allowedHeaders: rn68AllowedHeaders,
+															acceptPost:     "",
+															acceptPatch:    "",
+														})
+													}
+
+													return
+												}
+
+											case 'm': // Prefix: "menus"
+
+												if l := len("menus"); len(elem) >= l && elem[0:l] == "menus" {
+													elem = elem[l:]
+												} else {
+													break
+												}
+
+												if len(elem) == 0 {
+													// Leaf node.
+													switch r.Method {
+													case "GET":
+														s.handleGetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest([1]string{
+															args[0],
+														}, elemIsEscaped, w, r)
+													case "PUT":
+														s.handleSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest([1]string{
+															args[0],
+														}, elemIsEscaped, w, r)
+													default:
+														s.notAllowed(w, r, notAllowedParams{
+															allowedMethods: "GET,PUT",
+															allowedHeaders: rn70AllowedHeaders,
+															acceptPost:     "",
+															acceptPatch:    "",
+														})
+													}
+
+													return
+												}
+
+											case 'p': // Prefix: "packages"
+
+												if l := len("packages"); len(elem) >= l && elem[0:l] == "packages" {
+													elem = elem[l:]
+												} else {
+													break
+												}
+
+												if len(elem) == 0 {
+													// Leaf node.
+													switch r.Method {
+													case "GET":
+														s.handleGetCurrentCollaborationWorkspaceBoundaryRolePackagesRequest([1]string{
+															args[0],
+														}, elemIsEscaped, w, r)
+													case "PUT":
+														s.handleSetCurrentCollaborationWorkspaceBoundaryRolePackagesRequest([1]string{
+															args[0],
+														}, elemIsEscaped, w, r)
+													default:
+														s.notAllowed(w, r, notAllowedParams{
+															allowedMethods: "GET,PUT",
+															allowedHeaders: rn71AllowedHeaders,
+															acceptPost:     "",
+															acceptPatch:    "",
+														})
+													}
+
+													return
+												}
+
+											}
+
+										}
+
+									}
+
+								}
+
+							case 'm': // Prefix: "me"
+
+								if l := len("me"); len(elem) >= l && elem[0:l] == "me" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									break
+								}
+								switch elem[0] {
+								case 'm': // Prefix: "mbers"
+
+									if l := len("mbers"); len(elem) >= l && elem[0:l] == "mbers" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										switch r.Method {
+										case "GET":
+											s.handleListCurrentCollaborationWorkspaceMembersRequest([0]string{}, elemIsEscaped, w, r)
+										case "POST":
+											s.handleAddCurrentCollaborationWorkspaceMemberRequest([0]string{}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "GET,POST",
+												allowedHeaders: rn4AllowedHeaders,
+												acceptPost:     "application/json",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+									switch elem[0] {
+									case '/': // Prefix: "/"
+
+										if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										// Param: "userId"
+										// Match until "/"
+										idx := strings.IndexByte(elem, '/')
+										if idx < 0 {
+											idx = len(elem)
+										}
+										args[0] = elem[:idx]
+										elem = elem[idx:]
+
+										if len(elem) == 0 {
+											switch r.Method {
+											case "DELETE":
+												s.handleRemoveCurrentCollaborationWorkspaceMemberRequest([1]string{
+													args[0],
+												}, elemIsEscaped, w, r)
+											default:
+												s.notAllowed(w, r, notAllowedParams{
+													allowedMethods: "DELETE",
+													allowedHeaders: nil,
+													acceptPost:     "",
+													acceptPatch:    "",
+												})
+											}
+
+											return
+										}
+										switch elem[0] {
+										case '/': // Prefix: "/role"
+
+											if l := len("/role"); len(elem) >= l && elem[0:l] == "/role" {
+												elem = elem[l:]
+											} else {
+												break
+											}
+
+											if len(elem) == 0 {
+												switch r.Method {
+												case "PUT":
+													s.handleUpdateCurrentCollaborationWorkspaceMemberRoleRequest([1]string{
+														args[0],
+													}, elemIsEscaped, w, r)
+												default:
+													s.notAllowed(w, r, notAllowedParams{
+														allowedMethods: "PUT",
+														allowedHeaders: rn173AllowedHeaders,
+														acceptPost:     "",
+														acceptPatch:    "",
+													})
+												}
+
+												return
+											}
+											switch elem[0] {
+											case 's': // Prefix: "s"
+
+												if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+													elem = elem[l:]
+												} else {
+													break
+												}
+
+												if len(elem) == 0 {
+													// Leaf node.
+													switch r.Method {
+													case "GET":
+														s.handleGetCurrentCollaborationWorkspaceMemberRolesRequest([1]string{
+															args[0],
+														}, elemIsEscaped, w, r)
+													case "PUT":
+														s.handleSetCurrentCollaborationWorkspaceMemberRolesRequest([1]string{
+															args[0],
+														}, elemIsEscaped, w, r)
+													default:
+														s.notAllowed(w, r, notAllowedParams{
+															allowedMethods: "GET,PUT",
+															allowedHeaders: rn74AllowedHeaders,
+															acceptPost:     "",
+															acceptPatch:    "",
+														})
+													}
+
+													return
+												}
+
+											}
+
+										}
+
+									}
+
+								case 'n': // Prefix: "nu"
+
+									if l := len("nu"); len(elem) >= l && elem[0:l] == "nu" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										break
+									}
+									switch elem[0] {
+									case '-': // Prefix: "-origins"
+
+										if l := len("-origins"); len(elem) >= l && elem[0:l] == "-origins" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch r.Method {
+											case "GET":
+												s.handleGetCurrentCollaborationWorkspaceMenuOriginsRequest([0]string{}, elemIsEscaped, w, r)
+											default:
+												s.notAllowed(w, r, notAllowedParams{
+													allowedMethods: "GET",
+													allowedHeaders: nil,
+													acceptPost:     "",
+													acceptPatch:    "",
+												})
+											}
+
+											return
+										}
+
+									case 's': // Prefix: "s"
+
+										if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch r.Method {
+											case "GET":
+												s.handleGetCurrentCollaborationWorkspaceMenusRequest([0]string{}, elemIsEscaped, w, r)
+											default:
+												s.notAllowed(w, r, notAllowedParams{
+													allowedMethods: "GET",
+													allowedHeaders: nil,
+													acceptPost:     "",
+													acceptPatch:    "",
+												})
+											}
+
+											return
+										}
+
+									}
+
+								}
+
+							case 'r': // Prefix: "roles"
+
+								if l := len("roles"); len(elem) >= l && elem[0:l] == "roles" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleListCurrentCollaborationWorkspaceRolesRequest([0]string{}, elemIsEscaped, w, r)
+									case "POST":
+										s.handleCreateCurrentCollaborationWorkspaceRoleRequest([0]string{}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET,POST",
+											allowedHeaders: rn17AllowedHeaders,
+											acceptPost:     "application/json",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							}
+
+						}
+
+						elem = origElem
+					case 'm': // Prefix: "mine"
+						origElem := elem
+						if l := len("mine"); len(elem) >= l && elem[0:l] == "mine" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "GET":
+								s.handleListMyCollaborationWorkspacesRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET",
+									allowedHeaders: nil,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+
+						elem = origElem
+					case 'o': // Prefix: "options"
+						origElem := elem
+						if l := len("options"); len(elem) >= l && elem[0:l] == "options" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "GET":
+								s.handleListCollaborationWorkspaceOptionsRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET",
+									allowedHeaders: nil,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+
+						elem = origElem
+					}
+					// Param: "id"
+					// Match until "/"
+					idx := strings.IndexByte(elem, '/')
+					if idx < 0 {
+						idx = len(elem)
+					}
+					args[0] = elem[:idx]
+					elem = elem[idx:]
+
+					if len(elem) == 0 {
+						switch r.Method {
+						case "DELETE":
+							s.handleDeleteCollaborationWorkspaceRequest([1]string{
+								args[0],
+							}, elemIsEscaped, w, r)
+						case "GET":
+							s.handleGetCollaborationWorkspaceRequest([1]string{
+								args[0],
+							}, elemIsEscaped, w, r)
+						case "PUT":
+							s.handleUpdateCollaborationWorkspaceRequest([1]string{
+								args[0],
+							}, elemIsEscaped, w, r)
+						default:
+							s.notAllowed(w, r, notAllowedParams{
+								allowedMethods: "DELETE,GET,PUT",
+								allowedHeaders: rn2AllowedHeaders,
+								acceptPost:     "",
+								acceptPatch:    "",
+							})
+						}
+
+						return
+					}
+					switch elem[0] {
+					case '/': // Prefix: "/"
+
+						if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							break
+						}
+						switch elem[0] {
+						case 'a': // Prefix: "action"
+
+							if l := len("action"); len(elem) >= l && elem[0:l] == "action" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case '-': // Prefix: "-origins"
+
+								if l := len("-origins"); len(elem) >= l && elem[0:l] == "-origins" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleGetCollaborationWorkspaceActionOriginsRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							case 's': // Prefix: "s"
+
+								if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleGetCollaborationWorkspaceActionsRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									case "PUT":
+										s.handleSetCollaborationWorkspaceActionsRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET,PUT",
+											allowedHeaders: rn54AllowedHeaders,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							}
+
+						case 'm': // Prefix: "me"
+
+							if l := len("me"); len(elem) >= l && elem[0:l] == "me" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'm': // Prefix: "mbers"
+
+								if l := len("mbers"); len(elem) >= l && elem[0:l] == "mbers" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									switch r.Method {
+									case "GET":
+										s.handleListCollaborationWorkspaceMembersRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									case "POST":
+										s.handleAddCollaborationWorkspaceMemberRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET,POST",
+											allowedHeaders: rn3AllowedHeaders,
+											acceptPost:     "application/json",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+								switch elem[0] {
+								case '/': // Prefix: "/"
+
+									if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									// Param: "userId"
+									// Match until "/"
+									idx := strings.IndexByte(elem, '/')
+									if idx < 0 {
+										idx = len(elem)
+									}
+									args[1] = elem[:idx]
+									elem = elem[idx:]
+
+									if len(elem) == 0 {
+										switch r.Method {
+										case "DELETE":
+											s.handleRemoveCollaborationWorkspaceMemberRequest([2]string{
+												args[0],
+												args[1],
+											}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "DELETE",
+												allowedHeaders: nil,
+												acceptPost:     "",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+									switch elem[0] {
+									case '/': // Prefix: "/role"
+
+										if l := len("/role"); len(elem) >= l && elem[0:l] == "/role" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch r.Method {
+											case "PUT":
+												s.handleUpdateCollaborationWorkspaceMemberRoleRequest([2]string{
+													args[0],
+													args[1],
+												}, elemIsEscaped, w, r)
+											default:
+												s.notAllowed(w, r, notAllowedParams{
+													allowedMethods: "PUT",
+													allowedHeaders: rn172AllowedHeaders,
+													acceptPost:     "",
+													acceptPatch:    "",
+												})
+											}
+
+											return
+										}
+
+									}
+
+								}
+
+							case 'n': // Prefix: "nu"
+
+								if l := len("nu"); len(elem) >= l && elem[0:l] == "nu" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									break
+								}
+								switch elem[0] {
+								case '-': // Prefix: "-origins"
+
+									if l := len("-origins"); len(elem) >= l && elem[0:l] == "-origins" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch r.Method {
+										case "GET":
+											s.handleGetCollaborationWorkspaceMenuOriginsRequest([1]string{
+												args[0],
+											}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "GET",
+												allowedHeaders: nil,
+												acceptPost:     "",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+
+								case 's': // Prefix: "s"
+
+									if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch r.Method {
+										case "GET":
+											s.handleGetCollaborationWorkspaceMenusRequest([1]string{
+												args[0],
+											}, elemIsEscaped, w, r)
+										case "PUT":
+											s.handleSetCollaborationWorkspaceMenusRequest([1]string{
+												args[0],
+											}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "GET,PUT",
+												allowedHeaders: rn58AllowedHeaders,
+												acceptPost:     "",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+
+								}
+
+							}
+
+						case 'r': // Prefix: "roles"
+
+							if l := len("roles"); len(elem) >= l && elem[0:l] == "roles" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleListCollaborationWorkspaceRolesRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						}
+
+					}
+
+				}
+
+			case 'f': // Prefix: "feature-packages"
+
+				if l := len("feature-packages"); len(elem) >= l && elem[0:l] == "feature-packages" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					switch r.Method {
+					case "GET":
+						s.handleListFeaturePackagesRequest([0]string{}, elemIsEscaped, w, r)
+					case "POST":
+						s.handleCreateFeaturePackageRequest([0]string{}, elemIsEscaped, w, r)
+					default:
+						s.notAllowed(w, r, notAllowedParams{
+							allowedMethods: "GET,POST",
+							allowedHeaders: rn18AllowedHeaders,
+							acceptPost:     "application/json",
+							acceptPatch:    "",
+						})
+					}
+
+					return
+				}
+				switch elem[0] {
+				case '/': // Prefix: "/"
+
+					if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case 'c': // Prefix: "collaboration-workspaces/"
+						origElem := elem
+						if l := len("collaboration-workspaces/"); len(elem) >= l && elem[0:l] == "collaboration-workspaces/" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						// Param: "collaborationWorkspaceId"
+						// Leaf parameter, slashes are prohibited
+						idx := strings.IndexByte(elem, '/')
+						if idx >= 0 {
+							break
+						}
+						args[0] = elem
+						elem = ""
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "GET":
+								s.handleGetCollaborationWorkspacePackagesRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							case "PUT":
+								s.handleSetCollaborationWorkspacePackagesRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET,PUT",
+									allowedHeaders: rn60AllowedHeaders,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+
+						elem = origElem
+					case 'o': // Prefix: "options"
+						origElem := elem
+						if l := len("options"); len(elem) >= l && elem[0:l] == "options" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "GET":
+								s.handleListFeaturePackageOptionsRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET",
+									allowedHeaders: nil,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+
+						elem = origElem
+					case 'r': // Prefix: "relationship-tree"
+						origElem := elem
+						if l := len("relationship-tree"); len(elem) >= l && elem[0:l] == "relationship-tree" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "GET":
+								s.handleGetFeaturePackageRelationTreeRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET",
+									allowedHeaders: nil,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+
+						elem = origElem
+					}
+					// Param: "id"
+					// Match until "/"
+					idx := strings.IndexByte(elem, '/')
+					if idx < 0 {
+						idx = len(elem)
+					}
+					args[0] = elem[:idx]
+					elem = elem[idx:]
+
+					if len(elem) == 0 {
+						switch r.Method {
+						case "DELETE":
+							s.handleDeleteFeaturePackageRequest([1]string{
+								args[0],
+							}, elemIsEscaped, w, r)
+						case "GET":
+							s.handleGetFeaturePackageRequest([1]string{
+								args[0],
+							}, elemIsEscaped, w, r)
+						case "PUT":
+							s.handleUpdateFeaturePackageRequest([1]string{
+								args[0],
+							}, elemIsEscaped, w, r)
+						default:
+							s.notAllowed(w, r, notAllowedParams{
+								allowedMethods: "DELETE,GET,PUT",
+								allowedHeaders: rn37AllowedHeaders,
+								acceptPost:     "",
+								acceptPatch:    "",
+							})
+						}
+
+						return
+					}
+					switch elem[0] {
+					case '/': // Prefix: "/"
+
+						if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							break
+						}
+						switch elem[0] {
+						case 'a': // Prefix: "actions"
+
+							if l := len("actions"); len(elem) >= l && elem[0:l] == "actions" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleGetFeaturePackageActionsRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								case "PUT":
+									s.handleSetFeaturePackageActionsRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET,PUT",
+										allowedHeaders: rn83AllowedHeaders,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						case 'c': // Prefix: "c"
+
+							if l := len("c"); len(elem) >= l && elem[0:l] == "c" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'h': // Prefix: "hildren"
+
+								if l := len("hildren"); len(elem) >= l && elem[0:l] == "hildren" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleGetFeaturePackageChildrenRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									case "PUT":
+										s.handleSetFeaturePackageChildrenRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET,PUT",
+											allowedHeaders: rn85AllowedHeaders,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							case 'o': // Prefix: "ollaboration-workspaces"
+
+								if l := len("ollaboration-workspaces"); len(elem) >= l && elem[0:l] == "ollaboration-workspaces" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleGetFeaturePackageCollaborationWorkspacesRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									case "PUT":
+										s.handleSetFeaturePackageCollaborationWorkspacesRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET,PUT",
+											allowedHeaders: rn87AllowedHeaders,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							}
+
+						case 'i': // Prefix: "impact-preview"
+
+							if l := len("impact-preview"); len(elem) >= l && elem[0:l] == "impact-preview" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleGetFeaturePackageImpactPreviewRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						case 'm': // Prefix: "menus"
+
+							if l := len("menus"); len(elem) >= l && elem[0:l] == "menus" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleGetFeaturePackageMenusRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								case "PUT":
+									s.handleSetFeaturePackageMenusRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET,PUT",
+										allowedHeaders: rn89AllowedHeaders,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						case 'r': // Prefix: "r"
+
+							if l := len("r"); len(elem) >= l && elem[0:l] == "r" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'i': // Prefix: "isk-audits"
+
+								if l := len("isk-audits"); len(elem) >= l && elem[0:l] == "isk-audits" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleListFeaturePackageRiskAuditsRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							case 'o': // Prefix: "ollback"
+
+								if l := len("ollback"); len(elem) >= l && elem[0:l] == "ollback" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "POST":
+										s.handleRollbackFeaturePackageRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "POST",
+											allowedHeaders: rn169AllowedHeaders,
+											acceptPost:     "application/json",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							}
+
+						case 'v': // Prefix: "versions"
+
+							if l := len("versions"); len(elem) >= l && elem[0:l] == "versions" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleListFeaturePackageVersionsRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						}
+
+					}
+
+				}
+
+			case 'm': // Prefix: "me"
+
+				if l := len("me"); len(elem) >= l && elem[0:l] == "me" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					break
+				}
+				switch elem[0] {
+				case 'n': // Prefix: "nus"
+
+					if l := len("nus"); len(elem) >= l && elem[0:l] == "nus" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						switch r.Method {
+						case "POST":
+							s.handleCreateMenuRequest([0]string{}, elemIsEscaped, w, r)
+						default:
+							s.notAllowed(w, r, notAllowedParams{
+								allowedMethods: "POST",
+								allowedHeaders: rn19AllowedHeaders,
+								acceptPost:     "application/json",
+								acceptPatch:    "",
+							})
+						}
+
+						return
+					}
+					switch elem[0] {
+					case '/': // Prefix: "/"
+
+						if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							break
+						}
+						switch elem[0] {
+						case 'b': // Prefix: "backups"
+							origElem := elem
+							if l := len("backups"); len(elem) >= l && elem[0:l] == "backups" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								switch r.Method {
+								case "GET":
+									s.handleListMenuBackupsRequest([0]string{}, elemIsEscaped, w, r)
+								case "POST":
+									s.handleCreateMenuBackupRequest([0]string{}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET,POST",
+										allowedHeaders: rn20AllowedHeaders,
+										acceptPost:     "application/json",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/"
+
+								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								// Param: "id"
+								// Match until "/"
+								idx := strings.IndexByte(elem, '/')
+								if idx < 0 {
+									idx = len(elem)
+								}
+								args[0] = elem[:idx]
+								elem = elem[idx:]
+
+								if len(elem) == 0 {
+									switch r.Method {
+									case "DELETE":
+										s.handleDeleteMenuBackupRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "DELETE",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+								switch elem[0] {
+								case '/': // Prefix: "/restore"
+
+									if l := len("/restore"); len(elem) >= l && elem[0:l] == "/restore" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch r.Method {
+										case "POST":
+											s.handleRestoreMenuBackupRequest([1]string{
+												args[0],
+											}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "POST",
+												allowedHeaders: nil,
+												acceptPost:     "",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+
+								}
+
+							}
+
+							elem = origElem
+						case 'g': // Prefix: "groups"
+							origElem := elem
+							if l := len("groups"); len(elem) >= l && elem[0:l] == "groups" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								switch r.Method {
+								case "GET":
+									s.handleListMenuGroupsRequest([0]string{}, elemIsEscaped, w, r)
+								case "POST":
+									s.handleCreateMenuGroupRequest([0]string{}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET,POST",
+										allowedHeaders: rn22AllowedHeaders,
+										acceptPost:     "application/json",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/"
+
+								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								// Param: "id"
+								// Leaf parameter, slashes are prohibited
+								idx := strings.IndexByte(elem, '/')
+								if idx >= 0 {
+									break
+								}
+								args[0] = elem
+								elem = ""
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "DELETE":
+										s.handleDeleteMenuGroupRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									case "PUT":
+										s.handleUpdateMenuGroupRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "DELETE,PUT",
+											allowedHeaders: rn42AllowedHeaders,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							}
+
+							elem = origElem
+						case 't': // Prefix: "tree"
+							origElem := elem
+							if l := len("tree"); len(elem) >= l && elem[0:l] == "tree" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleGetMenuTreeRequest([0]string{}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+							elem = origElem
+						}
+						// Param: "id"
+						// Match until "/"
+						idx := strings.IndexByte(elem, '/')
+						if idx < 0 {
+							idx = len(elem)
+						}
+						args[0] = elem[:idx]
+						elem = elem[idx:]
+
+						if len(elem) == 0 {
+							switch r.Method {
+							case "DELETE":
+								s.handleDeleteMenuRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							case "PUT":
+								s.handleUpdateMenuRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "DELETE,PUT",
+									allowedHeaders: rn38AllowedHeaders,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/delete-preview"
+
+							if l := len("/delete-preview"); len(elem) >= l && elem[0:l] == "/delete-preview" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleGetMenuDeletePreviewRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						}
+
+					}
+
+				case 's': // Prefix: "ssages/"
+
+					if l := len("ssages/"); len(elem) >= l && elem[0:l] == "ssages/" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case 'd': // Prefix: "dispatch"
+
+						if l := len("dispatch"); len(elem) >= l && elem[0:l] == "dispatch" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch r.Method {
+							case "POST":
+								s.handleDispatchMessageRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "POST",
+									allowedHeaders: rn47AllowedHeaders,
+									acceptPost:     "application/json",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/options"
+
+							if l := len("/options"); len(elem) >= l && elem[0:l] == "/options" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleGetMessageDispatchOptionsRequest([0]string{}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						}
+
+					case 'i': // Prefix: "inbox"
+
+						if l := len("inbox"); len(elem) >= l && elem[0:l] == "inbox" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch r.Method {
+							case "GET":
+								s.handleListInboxRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET",
+									allowedHeaders: nil,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'r': // Prefix: "read-all"
+								origElem := elem
+								if l := len("read-all"); len(elem) >= l && elem[0:l] == "read-all" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "POST":
+										s.handleMarkInboxReadAllRequest([0]string{}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "POST",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+								elem = origElem
+							case 's': // Prefix: "summary"
+								origElem := elem
+								if l := len("summary"); len(elem) >= l && elem[0:l] == "summary" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleGetInboxSummaryRequest([0]string{}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+								elem = origElem
+							}
+							// Param: "deliveryId"
+							// Match until "/"
+							idx := strings.IndexByte(elem, '/')
+							if idx < 0 {
+								idx = len(elem)
+							}
+							args[0] = elem[:idx]
+							elem = elem[idx:]
+
+							if len(elem) == 0 {
+								switch r.Method {
+								case "GET":
+									s.handleGetInboxDetailRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/"
+
+								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									break
+								}
+								switch elem[0] {
+								case 'r': // Prefix: "read"
+
+									if l := len("read"); len(elem) >= l && elem[0:l] == "read" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch r.Method {
+										case "POST":
+											s.handleMarkInboxReadRequest([1]string{
+												args[0],
+											}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "POST",
+												allowedHeaders: nil,
+												acceptPost:     "",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+
+								case 't': // Prefix: "todo-action"
+
+									if l := len("todo-action"); len(elem) >= l && elem[0:l] == "todo-action" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch r.Method {
+										case "POST":
+											s.handleHandleInboxTodoRequest([1]string{
+												args[0],
+											}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "POST",
+												allowedHeaders: rn124AllowedHeaders,
+												acceptPost:     "application/json",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+
+								}
+
+							}
+
+						}
+
+					case 'r': // Prefix: "rec"
+
+						if l := len("rec"); len(elem) >= l && elem[0:l] == "rec" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							break
+						}
+						switch elem[0] {
+						case 'i': // Prefix: "ipient-groups"
+
+							if l := len("ipient-groups"); len(elem) >= l && elem[0:l] == "ipient-groups" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								switch r.Method {
+								case "GET":
+									s.handleListMessageRecipientGroupsRequest([0]string{}, elemIsEscaped, w, r)
+								case "POST":
+									s.handleCreateMessageRecipientGroupRequest([0]string{}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET,POST",
+										allowedHeaders: rn24AllowedHeaders,
+										acceptPost:     "application/json",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/"
+
+								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								// Param: "groupId"
+								// Leaf parameter, slashes are prohibited
+								idx := strings.IndexByte(elem, '/')
+								if idx >= 0 {
+									break
+								}
+								args[0] = elem
+								elem = ""
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "PUT":
+										s.handleUpdateMessageRecipientGroupRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "PUT",
+											allowedHeaders: rn175AllowedHeaders,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							}
+
+						case 'o': // Prefix: "ords"
+
+							if l := len("ords"); len(elem) >= l && elem[0:l] == "ords" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								switch r.Method {
+								case "GET":
+									s.handleListMessageDispatchRecordsRequest([0]string{}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/"
+
+								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								// Param: "recordId"
+								// Leaf parameter, slashes are prohibited
+								idx := strings.IndexByte(elem, '/')
+								if idx >= 0 {
+									break
+								}
+								args[0] = elem
+								elem = ""
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleGetMessageDispatchRecordRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							}
+
+						}
+
+					case 's': // Prefix: "senders"
+
+						if l := len("senders"); len(elem) >= l && elem[0:l] == "senders" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch r.Method {
+							case "GET":
+								s.handleListMessageSendersRequest([0]string{}, elemIsEscaped, w, r)
+							case "POST":
+								s.handleCreateMessageSenderRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET,POST",
+									allowedHeaders: rn26AllowedHeaders,
+									acceptPost:     "application/json",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							// Param: "senderId"
+							// Leaf parameter, slashes are prohibited
+							idx := strings.IndexByte(elem, '/')
+							if idx >= 0 {
+								break
+							}
+							args[0] = elem
+							elem = ""
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "PUT":
+									s.handleUpdateMessageSenderRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "PUT",
+										allowedHeaders: rn177AllowedHeaders,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						}
+
+					case 't': // Prefix: "templates"
+
+						if l := len("templates"); len(elem) >= l && elem[0:l] == "templates" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch r.Method {
+							case "GET":
+								s.handleListMessageTemplatesRequest([0]string{}, elemIsEscaped, w, r)
+							case "POST":
+								s.handleCreateMessageTemplateRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET,POST",
+									allowedHeaders: rn27AllowedHeaders,
+									acceptPost:     "application/json",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							// Param: "templateId"
+							// Leaf parameter, slashes are prohibited
+							idx := strings.IndexByte(elem, '/')
+							if idx >= 0 {
+								break
+							}
+							args[0] = elem
+							elem = ""
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "PUT":
+									s.handleUpdateMessageTemplateRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "PUT",
+										allowedHeaders: rn179AllowedHeaders,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						}
+
+					}
+
+				}
+
+			case 'p': // Prefix: "p"
+
+				if l := len("p"); len(elem) >= l && elem[0:l] == "p" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					break
+				}
+				switch elem[0] {
+				case 'a': // Prefix: "ages"
+
+					if l := len("ages"); len(elem) >= l && elem[0:l] == "ages" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						switch r.Method {
+						case "GET":
+							s.handleListPagesRequest([0]string{}, elemIsEscaped, w, r)
+						case "POST":
+							s.handleCreatePageRequest([0]string{}, elemIsEscaped, w, r)
+						default:
+							s.notAllowed(w, r, notAllowedParams{
+								allowedMethods: "GET,POST",
+								allowedHeaders: rn29AllowedHeaders,
+								acceptPost:     "application/json",
+								acceptPatch:    "",
+							})
+						}
+
+						return
+					}
+					switch elem[0] {
+					case '/': // Prefix: "/"
+
+						if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							break
+						}
+						switch elem[0] {
+						case 'a': // Prefix: "access-trace"
+							origElem := elem
+							if l := len("access-trace"); len(elem) >= l && elem[0:l] == "access-trace" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleGetPageAccessTraceRequest([0]string{}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+							elem = origElem
+						case 'm': // Prefix: "menu-options"
+							origElem := elem
+							if l := len("menu-options"); len(elem) >= l && elem[0:l] == "menu-options" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleListPageMenuOptionsRequest([0]string{}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+							elem = origElem
+						case 'o': // Prefix: "options"
+							origElem := elem
+							if l := len("options"); len(elem) >= l && elem[0:l] == "options" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleListPageOptionsRequest([0]string{}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+							elem = origElem
+						case 'r': // Prefix: "runtime"
+							origElem := elem
+							if l := len("runtime"); len(elem) >= l && elem[0:l] == "runtime" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								switch r.Method {
+								case "GET":
+									s.handleListRuntimePagesRequest([0]string{}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/public"
+
+								if l := len("/public"); len(elem) >= l && elem[0:l] == "/public" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleListPublicRuntimePagesRequest([0]string{}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							}
+
+							elem = origElem
+						case 's': // Prefix: "sync"
+							origElem := elem
+							if l := len("sync"); len(elem) >= l && elem[0:l] == "sync" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "POST":
+									s.handleSyncPagesRequest([0]string{}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "POST",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+							elem = origElem
+						case 'u': // Prefix: "unregistered"
+							origElem := elem
+							if l := len("unregistered"); len(elem) >= l && elem[0:l] == "unregistered" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleListUnregisteredPagesRequest([0]string{}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+							elem = origElem
+						}
+						// Param: "id"
+						// Match until "/"
+						idx := strings.IndexByte(elem, '/')
+						if idx < 0 {
+							idx = len(elem)
+						}
+						args[0] = elem[:idx]
+						elem = elem[idx:]
+
+						if len(elem) == 0 {
+							switch r.Method {
+							case "DELETE":
+								s.handleDeletePageRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							case "GET":
+								s.handleGetPageRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							case "PUT":
+								s.handleUpdatePageRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "DELETE,GET,PUT",
+									allowedHeaders: rn44AllowedHeaders,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/breadcrumb-preview"
+
+							if l := len("/breadcrumb-preview"); len(elem) >= l && elem[0:l] == "/breadcrumb-preview" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handlePreviewPageBreadcrumbRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						}
+
+					}
+
+				case 'e': // Prefix: "ermission"
+
+					if l := len("ermission"); len(elem) >= l && elem[0:l] == "ermission" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case '-': // Prefix: "-actions"
+
+						if l := len("-actions"); len(elem) >= l && elem[0:l] == "-actions" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch r.Method {
+							case "GET":
+								s.handleListPermissionActionsRequest([0]string{}, elemIsEscaped, w, r)
+							case "POST":
+								s.handleCreatePermissionActionRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET,POST",
+									allowedHeaders: rn30AllowedHeaders,
+									acceptPost:     "application/json",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'b': // Prefix: "batch"
+								origElem := elem
+								if l := len("batch"); len(elem) >= l && elem[0:l] == "batch" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "POST":
+										s.handleBatchUpdatePermissionActionsRequest([0]string{}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "POST",
+											allowedHeaders: rn12AllowedHeaders,
+											acceptPost:     "application/json",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+								elem = origElem
+							case 'c': // Prefix: "cleanup-unused"
+								origElem := elem
+								if l := len("cleanup-unused"); len(elem) >= l && elem[0:l] == "cleanup-unused" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "POST":
+										s.handleCleanupUnusedPermissionActionsRequest([0]string{}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "POST",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+								elem = origElem
+							case 'g': // Prefix: "groups"
+								origElem := elem
+								if l := len("groups"); len(elem) >= l && elem[0:l] == "groups" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									switch r.Method {
+									case "GET":
+										s.handleListPermissionActionGroupsRequest([0]string{}, elemIsEscaped, w, r)
+									case "POST":
+										s.handleCreatePermissionActionGroupRequest([0]string{}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET,POST",
+											allowedHeaders: rn31AllowedHeaders,
+											acceptPost:     "application/json",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+								switch elem[0] {
+								case '/': // Prefix: "/"
+
+									if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									// Param: "id"
+									// Leaf parameter, slashes are prohibited
+									idx := strings.IndexByte(elem, '/')
+									if idx >= 0 {
+										break
+									}
+									args[0] = elem
+									elem = ""
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch r.Method {
+										case "PUT":
+											s.handleUpdatePermissionActionGroupRequest([1]string{
+												args[0],
+											}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "PUT",
+												allowedHeaders: rn181AllowedHeaders,
+												acceptPost:     "",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+
+								}
+
+								elem = origElem
+							case 'o': // Prefix: "options"
+								origElem := elem
+								if l := len("options"); len(elem) >= l && elem[0:l] == "options" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleListPermissionActionOptionsRequest([0]string{}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+								elem = origElem
+							case 'r': // Prefix: "risk-audits"
+								origElem := elem
+								if l := len("risk-audits"); len(elem) >= l && elem[0:l] == "risk-audits" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleListPermissionActionRiskAuditsRequest([0]string{}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+								elem = origElem
+							case 't': // Prefix: "templates"
+								origElem := elem
+								if l := len("templates"); len(elem) >= l && elem[0:l] == "templates" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleListPermissionActionBatchTemplatesRequest([0]string{}, elemIsEscaped, w, r)
+									case "POST":
+										s.handleSavePermissionActionBatchTemplateRequest([0]string{}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET,POST",
+											allowedHeaders: rn145AllowedHeaders,
+											acceptPost:     "application/json",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+								elem = origElem
+							}
+							// Param: "id"
+							// Match until "/"
+							idx := strings.IndexByte(elem, '/')
+							if idx < 0 {
+								idx = len(elem)
+							}
+							args[0] = elem[:idx]
+							elem = elem[idx:]
+
+							if len(elem) == 0 {
+								switch r.Method {
+								case "DELETE":
+									s.handleDeletePermissionActionRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								case "GET":
+									s.handleGetPermissionActionRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								case "PUT":
+									s.handleUpdatePermissionActionRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "DELETE,GET,PUT",
+										allowedHeaders: rn7AllowedHeaders,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/"
+
+								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									break
+								}
+								switch elem[0] {
+								case 'c': // Prefix: "consumers"
+
+									if l := len("consumers"); len(elem) >= l && elem[0:l] == "consumers" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch r.Method {
+										case "GET":
+											s.handleGetPermissionActionConsumersRequest([1]string{
+												args[0],
+											}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "GET",
+												allowedHeaders: nil,
+												acceptPost:     "",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+
+								case 'e': // Prefix: "endpoints"
+
+									if l := len("endpoints"); len(elem) >= l && elem[0:l] == "endpoints" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										switch r.Method {
+										case "GET":
+											s.handleListPermissionActionEndpointsRequest([1]string{
+												args[0],
+											}, elemIsEscaped, w, r)
+										case "POST":
+											s.handleAddPermissionActionEndpointRequest([1]string{
+												args[0],
+											}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "GET,POST",
+												allowedHeaders: rn8AllowedHeaders,
+												acceptPost:     "application/json",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+									switch elem[0] {
+									case '/': // Prefix: "/"
+
+										if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										// Param: "endpointCode"
+										// Leaf parameter, slashes are prohibited
+										idx := strings.IndexByte(elem, '/')
+										if idx >= 0 {
+											break
+										}
+										args[1] = elem
+										elem = ""
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch r.Method {
+											case "DELETE":
+												s.handleRemovePermissionActionEndpointRequest([2]string{
+													args[0],
+													args[1],
+												}, elemIsEscaped, w, r)
+											default:
+												s.notAllowed(w, r, notAllowedParams{
+													allowedMethods: "DELETE",
+													allowedHeaders: nil,
+													acceptPost:     "",
+													acceptPatch:    "",
+												})
+											}
+
+											return
+										}
+
+									}
+
+								case 'i': // Prefix: "impact-preview"
+
+									if l := len("impact-preview"); len(elem) >= l && elem[0:l] == "impact-preview" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch r.Method {
+										case "GET":
+											s.handleGetPermissionActionImpactPreviewRequest([1]string{
+												args[0],
+											}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "GET",
+												allowedHeaders: nil,
+												acceptPost:     "",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+
+								}
+
+							}
+
+						}
+
+					case 's': // Prefix: "s/explain"
+
+						if l := len("s/explain"); len(elem) >= l && elem[0:l] == "s/explain" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "GET":
+								s.handleExplainPermissionsRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET",
+									allowedHeaders: nil,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+
+					}
+
+				}
+
+			case 'r': // Prefix: "r"
+
+				if l := len("r"); len(elem) >= l && elem[0:l] == "r" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					break
+				}
+				switch elem[0] {
+				case 'o': // Prefix: "oles"
+
+					if l := len("oles"); len(elem) >= l && elem[0:l] == "oles" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						switch r.Method {
+						case "GET":
+							s.handleListRolesRequest([0]string{}, elemIsEscaped, w, r)
+						case "POST":
+							s.handleCreateRoleRequest([0]string{}, elemIsEscaped, w, r)
+						default:
+							s.notAllowed(w, r, notAllowedParams{
+								allowedMethods: "GET,POST",
+								allowedHeaders: rn32AllowedHeaders,
+								acceptPost:     "application/json",
+								acceptPatch:    "",
+							})
+						}
+
+						return
+					}
+					switch elem[0] {
+					case '/': // Prefix: "/"
+
+						if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							break
+						}
+						switch elem[0] {
+						case 'o': // Prefix: "options"
+							origElem := elem
+							if l := len("options"); len(elem) >= l && elem[0:l] == "options" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleListRoleOptionsRequest([0]string{}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+							elem = origElem
+						}
+						// Param: "id"
+						// Match until "/"
+						idx := strings.IndexByte(elem, '/')
+						if idx < 0 {
+							idx = len(elem)
+						}
+						args[0] = elem[:idx]
+						elem = elem[idx:]
+
+						if len(elem) == 0 {
+							switch r.Method {
+							case "DELETE":
+								s.handleDeleteRoleRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							case "GET":
+								s.handleGetRoleRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							case "PUT":
+								s.handleUpdateRoleRequest([1]string{
+									args[0],
+								}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "DELETE,GET,PUT",
+									allowedHeaders: rn46AllowedHeaders,
+									acceptPost:     "",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'a': // Prefix: "actions"
+
+								if l := len("actions"); len(elem) >= l && elem[0:l] == "actions" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleGetRoleActionsRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									case "PUT":
+										s.handleSetRoleActionsRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET,PUT",
+											allowedHeaders: rn108AllowedHeaders,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							case 'd': // Prefix: "data-permissions"
+
+								if l := len("data-permissions"); len(elem) >= l && elem[0:l] == "data-permissions" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleGetRoleDataPermissionsRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									case "PUT":
+										s.handleSetRoleDataPermissionsRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET,PUT",
+											allowedHeaders: rn110AllowedHeaders,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							case 'm': // Prefix: "menus"
+
+								if l := len("menus"); len(elem) >= l && elem[0:l] == "menus" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleGetRoleMenusRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									case "PUT":
+										s.handleSetRoleMenusRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET,PUT",
+											allowedHeaders: rn111AllowedHeaders,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							case 'p': // Prefix: "packages"
+
+								if l := len("packages"); len(elem) >= l && elem[0:l] == "packages" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleGetRolePackagesRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									case "PUT":
+										s.handleSetRolePackagesRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET,PUT",
+											allowedHeaders: rn112AllowedHeaders,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							}
+
+						}
+
+					}
+
+				case 'u': // Prefix: "untime/navigation"
+
+					if l := len("untime/navigation"); len(elem) >= l && elem[0:l] == "untime/navigation" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						// Leaf node.
+						switch r.Method {
+						case "GET":
+							s.handleGetNavigationRequest([0]string{}, elemIsEscaped, w, r)
+						default:
+							s.notAllowed(w, r, notAllowedParams{
+								allowedMethods: "GET",
+								allowedHeaders: nil,
+								acceptPost:     "",
+								acceptPatch:    "",
+							})
+						}
+
+						return
+					}
+
+				}
+
+			case 's': // Prefix: "system/"
+
+				if l := len("system/"); len(elem) >= l && elem[0:l] == "system/" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					break
+				}
+				switch elem[0] {
+				case 'a': // Prefix: "app"
+
+					if l := len("app"); len(elem) >= l && elem[0:l] == "app" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case '-': // Prefix: "-host-bindings"
+
+						if l := len("-host-bindings"); len(elem) >= l && elem[0:l] == "-host-bindings" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch r.Method {
+							case "GET":
+								s.handleListAppHostBindingsRequest([0]string{}, elemIsEscaped, w, r)
+							case "POST":
+								s.handleSaveAppHostBindingRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET,POST",
+									allowedHeaders: rn129AllowedHeaders,
+									acceptPost:     "application/json",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+
+					case 's': // Prefix: "s"
+
+						if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch r.Method {
+							case "GET":
+								s.handleListAppsRequest([0]string{}, elemIsEscaped, w, r)
+							case "POST":
+								s.handleSaveAppRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET,POST",
+									allowedHeaders: rn130AllowedHeaders,
+									acceptPost:     "application/json",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/current"
+
+							if l := len("/current"); len(elem) >= l && elem[0:l] == "/current" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleGetCurrentAppRequest([0]string{}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						}
+
+					}
+
+				case 'f': // Prefix: "fast-enter"
+
+					if l := len("fast-enter"); len(elem) >= l && elem[0:l] == "fast-enter" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						// Leaf node.
+						switch r.Method {
+						case "GET":
+							s.handleGetFastEnterConfigRequest([0]string{}, elemIsEscaped, w, r)
+						case "PUT":
+							s.handleUpdateFastEnterConfigRequest([0]string{}, elemIsEscaped, w, r)
+						default:
+							s.notAllowed(w, r, notAllowedParams{
+								allowedMethods: "GET,PUT",
+								allowedHeaders: rn82AllowedHeaders,
+								acceptPost:     "",
+								acceptPatch:    "",
+							})
+						}
+
+						return
+					}
+
+				case 'm': // Prefix: "menu-space"
+
+					if l := len("menu-space"); len(elem) >= l && elem[0:l] == "menu-space" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case '-': // Prefix: "-"
+
+						if l := len("-"); len(elem) >= l && elem[0:l] == "-" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							break
+						}
+						switch elem[0] {
+						case 'h': // Prefix: "host-bindings"
+
+							if l := len("host-bindings"); len(elem) >= l && elem[0:l] == "host-bindings" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleListMenuSpaceHostBindingsRequest([0]string{}, elemIsEscaped, w, r)
+								case "POST":
+									s.handleSaveMenuSpaceHostBindingRequest([0]string{}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET,POST",
+										allowedHeaders: rn138AllowedHeaders,
+										acceptPost:     "application/json",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						case 'm': // Prefix: "mode"
+
+							if l := len("mode"); len(elem) >= l && elem[0:l] == "mode" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleGetMenuSpaceModeRequest([0]string{}, elemIsEscaped, w, r)
+								case "PUT":
+									s.handleSaveMenuSpaceModeRequest([0]string{}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET,PUT",
+										allowedHeaders: rn96AllowedHeaders,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						}
+
+					case 's': // Prefix: "s"
+
+						if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch r.Method {
+							case "GET":
+								s.handleListMenuSpacesRequest([0]string{}, elemIsEscaped, w, r)
+							case "POST":
+								s.handleSaveMenuSpaceRequest([0]string{}, elemIsEscaped, w, r)
+							default:
+								s.notAllowed(w, r, notAllowedParams{
+									allowedMethods: "GET,POST",
+									allowedHeaders: rn139AllowedHeaders,
+									acceptPost:     "application/json",
+									acceptPatch:    "",
+								})
+							}
+
+							return
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'c': // Prefix: "current"
+								origElem := elem
+								if l := len("current"); len(elem) >= l && elem[0:l] == "current" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleGetCurrentMenuSpaceRequest([0]string{}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+								elem = origElem
+							}
+							// Param: "spaceKey"
+							// Match until "/"
+							idx := strings.IndexByte(elem, '/')
+							if idx < 0 {
+								idx = len(elem)
+							}
+							args[0] = elem[:idx]
+							elem = elem[idx:]
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/initialize-default"
+
+								if l := len("/initialize-default"); len(elem) >= l && elem[0:l] == "/initialize-default" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "POST":
+										s.handleInitializeMenuSpaceFromDefaultRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "POST",
+											allowedHeaders: nil,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							}
+
+						}
+
+					}
+
+				case 'v': // Prefix: "view-pages"
+
+					if l := len("view-pages"); len(elem) >= l && elem[0:l] == "view-pages" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						// Leaf node.
+						switch r.Method {
+						case "GET":
+							s.handleGetSystemViewPagesRequest([0]string{}, elemIsEscaped, w, r)
+						default:
+							s.notAllowed(w, r, notAllowedParams{
+								allowedMethods: "GET",
+								allowedHeaders: nil,
+								acceptPost:     "",
+								acceptPatch:    "",
+							})
+						}
+
+						return
+					}
+
 				}
 
 			case 'u': // Prefix: "users"
@@ -255,7 +4034,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 					default:
 						s.notAllowed(w, r, notAllowedParams{
 							allowedMethods: "GET,POST",
-							allowedHeaders: rn4AllowedHeaders,
+							allowedHeaders: rn33AllowedHeaders,
 							acceptPost:     "application/json",
 							acceptPatch:    "",
 						})
@@ -298,7 +4077,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						default:
 							s.notAllowed(w, r, notAllowedParams{
 								allowedMethods: "DELETE,GET,PUT",
-								allowedHeaders: rn2AllowedHeaders,
+								allowedHeaders: rn10AllowedHeaders,
 								acceptPost:     "",
 								acceptPatch:    "",
 							})
@@ -307,31 +4086,257 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						return
 					}
 					switch elem[0] {
-					case '/': // Prefix: "/roles"
+					case '/': // Prefix: "/"
 
-						if l := len("/roles"); len(elem) >= l && elem[0:l] == "/roles" {
+						if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 							elem = elem[l:]
 						} else {
 							break
 						}
 
 						if len(elem) == 0 {
-							// Leaf node.
-							switch r.Method {
-							case "POST":
-								s.handleAssignUserRolesRequest([1]string{
-									args[0],
-								}, elemIsEscaped, w, r)
-							default:
-								s.notAllowed(w, r, notAllowedParams{
-									allowedMethods: "POST",
-									allowedHeaders: rn3AllowedHeaders,
-									acceptPost:     "application/json",
-									acceptPatch:    "",
-								})
+							break
+						}
+						switch elem[0] {
+						case 'c': // Prefix: "collaboration-workspaces"
+
+							if l := len("collaboration-workspaces"); len(elem) >= l && elem[0:l] == "collaboration-workspaces" {
+								elem = elem[l:]
+							} else {
+								break
 							}
 
-							return
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleGetUserCollaborationWorkspacesRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET",
+										allowedHeaders: nil,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						case 'm': // Prefix: "menus"
+
+							if l := len("menus"); len(elem) >= l && elem[0:l] == "menus" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "GET":
+									s.handleGetUserMenusRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								case "PUT":
+									s.handleSetUserMenusRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "GET,PUT",
+										allowedHeaders: rn116AllowedHeaders,
+										acceptPost:     "",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
+						case 'p': // Prefix: "p"
+
+							if l := len("p"); len(elem) >= l && elem[0:l] == "p" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'a': // Prefix: "ackages"
+
+								if l := len("ackages"); len(elem) >= l && elem[0:l] == "ackages" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch r.Method {
+									case "GET":
+										s.handleGetUserPackagesRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									case "PUT":
+										s.handleSetUserPackagesRequest([1]string{
+											args[0],
+										}, elemIsEscaped, w, r)
+									default:
+										s.notAllowed(w, r, notAllowedParams{
+											allowedMethods: "GET,PUT",
+											allowedHeaders: rn117AllowedHeaders,
+											acceptPost:     "",
+											acceptPatch:    "",
+										})
+									}
+
+									return
+								}
+
+							case 'e': // Prefix: "ermission"
+
+								if l := len("ermission"); len(elem) >= l && elem[0:l] == "ermission" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									break
+								}
+								switch elem[0] {
+								case '-': // Prefix: "-"
+
+									if l := len("-"); len(elem) >= l && elem[0:l] == "-" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										break
+									}
+									switch elem[0] {
+									case 'd': // Prefix: "diagnosis"
+
+										if l := len("diagnosis"); len(elem) >= l && elem[0:l] == "diagnosis" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch r.Method {
+											case "GET":
+												s.handleGetUserPermissionDiagnosisRequest([1]string{
+													args[0],
+												}, elemIsEscaped, w, r)
+											default:
+												s.notAllowed(w, r, notAllowedParams{
+													allowedMethods: "GET",
+													allowedHeaders: nil,
+													acceptPost:     "",
+													acceptPatch:    "",
+												})
+											}
+
+											return
+										}
+
+									case 'r': // Prefix: "refresh"
+
+										if l := len("refresh"); len(elem) >= l && elem[0:l] == "refresh" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch r.Method {
+											case "POST":
+												s.handleRefreshUserPermissionSnapshotRequest([1]string{
+													args[0],
+												}, elemIsEscaped, w, r)
+											default:
+												s.notAllowed(w, r, notAllowedParams{
+													allowedMethods: "POST",
+													allowedHeaders: nil,
+													acceptPost:     "",
+													acceptPatch:    "",
+												})
+											}
+
+											return
+										}
+
+									}
+
+								case 's': // Prefix: "s"
+
+									if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch r.Method {
+										case "GET":
+											s.handleGetUserPermissionsRequest([1]string{
+												args[0],
+											}, elemIsEscaped, w, r)
+										default:
+											s.notAllowed(w, r, notAllowedParams{
+												allowedMethods: "GET",
+												allowedHeaders: nil,
+												acceptPost:     "",
+												acceptPatch:    "",
+											})
+										}
+
+										return
+									}
+
+								}
+
+							}
+
+						case 'r': // Prefix: "roles"
+
+							if l := len("roles"); len(elem) >= l && elem[0:l] == "roles" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch r.Method {
+								case "POST":
+									s.handleAssignUserRolesRequest([1]string{
+										args[0],
+									}, elemIsEscaped, w, r)
+								default:
+									s.notAllowed(w, r, notAllowedParams{
+										allowedMethods: "POST",
+										allowedHeaders: rn11AllowedHeaders,
+										acceptPost:     "application/json",
+										acceptPatch:    "",
+									})
+								}
+
+								return
+							}
+
 						}
 
 					}
@@ -418,7 +4423,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 						default:
 							s.notAllowed(w, r, notAllowedParams{
 								allowedMethods: "POST",
-								allowedHeaders: rn17AllowedHeaders,
+								allowedHeaders: rn170AllowedHeaders,
 								acceptPost:     "application/json",
 								acceptPatch:    "",
 							})
@@ -472,7 +4477,7 @@ type Route struct {
 	operationGroup string
 	pathPattern    string
 	count          int
-	args           [1]string
+	args           [2]string
 }
 
 // Name returns ogen operation name.
@@ -685,29 +4690,3821 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 
 				}
 
-			case 'p': // Prefix: "permissions/explain"
+			case 'c': // Prefix: "collaboration-workspaces"
 
-				if l := len("permissions/explain"); len(elem) >= l && elem[0:l] == "permissions/explain" {
+				if l := len("collaboration-workspaces"); len(elem) >= l && elem[0:l] == "collaboration-workspaces" {
 					elem = elem[l:]
 				} else {
 					break
 				}
 
 				if len(elem) == 0 {
-					// Leaf node.
 					switch method {
 					case "GET":
-						r.name = ExplainPermissionsOperation
-						r.summary = "解释当前账号在指定工作空间内的最终权限及其来源"
-						r.operationID = "explainPermissions"
+						r.name = ListCollaborationWorkspacesOperation
+						r.summary = "获取协作空间列表"
+						r.operationID = "listCollaborationWorkspaces"
 						r.operationGroup = ""
-						r.pathPattern = "/permissions/explain"
+						r.pathPattern = "/collaboration-workspaces"
+						r.args = args
+						r.count = 0
+						return r, true
+					case "POST":
+						r.name = CreateCollaborationWorkspaceOperation
+						r.summary = "创建协作空间"
+						r.operationID = "createCollaborationWorkspace"
+						r.operationGroup = ""
+						r.pathPattern = "/collaboration-workspaces"
 						r.args = args
 						r.count = 0
 						return r, true
 					default:
 						return
 					}
+				}
+				switch elem[0] {
+				case '/': // Prefix: "/"
+
+					if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case 'c': // Prefix: "current"
+						origElem := elem
+						if l := len("current"); len(elem) >= l && elem[0:l] == "current" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch method {
+							case "GET":
+								r.name = GetCurrentCollaborationWorkspaceOperation
+								r.summary = "获取当前协作空间详情"
+								r.operationID = "getCurrentCollaborationWorkspace"
+								r.operationGroup = ""
+								r.pathPattern = "/collaboration-workspaces/current"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'a': // Prefix: "action"
+
+								if l := len("action"); len(elem) >= l && elem[0:l] == "action" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									break
+								}
+								switch elem[0] {
+								case '-': // Prefix: "-origins"
+
+									if l := len("-origins"); len(elem) >= l && elem[0:l] == "-origins" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch method {
+										case "GET":
+											r.name = GetCurrentCollaborationWorkspaceActionOriginsOperation
+											r.summary = "获取当前协作空间功能权限来源"
+											r.operationID = "getCurrentCollaborationWorkspaceActionOrigins"
+											r.operationGroup = ""
+											r.pathPattern = "/collaboration-workspaces/current/action-origins"
+											r.args = args
+											r.count = 0
+											return r, true
+										default:
+											return
+										}
+									}
+
+								case 's': // Prefix: "s"
+
+									if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch method {
+										case "GET":
+											r.name = GetCurrentCollaborationWorkspaceActionsOperation
+											r.summary = "获取当前协作空间功能权限边界"
+											r.operationID = "getCurrentCollaborationWorkspaceActions"
+											r.operationGroup = ""
+											r.pathPattern = "/collaboration-workspaces/current/actions"
+											r.args = args
+											r.count = 0
+											return r, true
+										default:
+											return
+										}
+									}
+
+								}
+
+							case 'b': // Prefix: "boundary/"
+
+								if l := len("boundary/"); len(elem) >= l && elem[0:l] == "boundary/" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									break
+								}
+								switch elem[0] {
+								case 'p': // Prefix: "packages"
+
+									if l := len("packages"); len(elem) >= l && elem[0:l] == "packages" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch method {
+										case "GET":
+											r.name = GetCurrentCollaborationWorkspaceBoundaryPackagesOperation
+											r.summary = "获取当前协作空间已开通功能包(边界管理)"
+											r.operationID = "getCurrentCollaborationWorkspaceBoundaryPackages"
+											r.operationGroup = ""
+											r.pathPattern = "/collaboration-workspaces/current/boundary/packages"
+											r.args = args
+											r.count = 0
+											return r, true
+										default:
+											return
+										}
+									}
+
+								case 'r': // Prefix: "roles"
+
+									if l := len("roles"); len(elem) >= l && elem[0:l] == "roles" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										switch method {
+										case "GET":
+											r.name = ListCurrentCollaborationWorkspaceBoundaryRolesOperation
+											r.summary = "获取当前协作空间边界可见角色"
+											r.operationID = "listCurrentCollaborationWorkspaceBoundaryRoles"
+											r.operationGroup = ""
+											r.pathPattern = "/collaboration-workspaces/current/boundary/roles"
+											r.args = args
+											r.count = 0
+											return r, true
+										case "POST":
+											r.name = CreateCurrentCollaborationWorkspaceBoundaryRoleOperation
+											r.summary = "创建当前协作空间角色(边界管理)"
+											r.operationID = "createCurrentCollaborationWorkspaceBoundaryRole"
+											r.operationGroup = ""
+											r.pathPattern = "/collaboration-workspaces/current/boundary/roles"
+											r.args = args
+											r.count = 0
+											return r, true
+										default:
+											return
+										}
+									}
+									switch elem[0] {
+									case '/': // Prefix: "/"
+
+										if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										// Param: "roleId"
+										// Match until "/"
+										idx := strings.IndexByte(elem, '/')
+										if idx < 0 {
+											idx = len(elem)
+										}
+										args[0] = elem[:idx]
+										elem = elem[idx:]
+
+										if len(elem) == 0 {
+											switch method {
+											case "DELETE":
+												r.name = DeleteCurrentCollaborationWorkspaceBoundaryRoleOperation
+												r.summary = "删除当前协作空间角色(边界管理)"
+												r.operationID = "deleteCurrentCollaborationWorkspaceBoundaryRole"
+												r.operationGroup = ""
+												r.pathPattern = "/collaboration-workspaces/current/boundary/roles/{roleId}"
+												r.args = args
+												r.count = 1
+												return r, true
+											case "PUT":
+												r.name = UpdateCurrentCollaborationWorkspaceBoundaryRoleOperation
+												r.summary = "更新当前协作空间角色(边界管理)"
+												r.operationID = "updateCurrentCollaborationWorkspaceBoundaryRole"
+												r.operationGroup = ""
+												r.pathPattern = "/collaboration-workspaces/current/boundary/roles/{roleId}"
+												r.args = args
+												r.count = 1
+												return r, true
+											default:
+												return
+											}
+										}
+										switch elem[0] {
+										case '/': // Prefix: "/"
+
+											if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+												elem = elem[l:]
+											} else {
+												break
+											}
+
+											if len(elem) == 0 {
+												break
+											}
+											switch elem[0] {
+											case 'a': // Prefix: "actions"
+
+												if l := len("actions"); len(elem) >= l && elem[0:l] == "actions" {
+													elem = elem[l:]
+												} else {
+													break
+												}
+
+												if len(elem) == 0 {
+													// Leaf node.
+													switch method {
+													case "GET":
+														r.name = GetCurrentCollaborationWorkspaceBoundaryRoleActionsOperation
+														r.summary = "获取当前协作空间角色功能权限(边界管理)"
+														r.operationID = "getCurrentCollaborationWorkspaceBoundaryRoleActions"
+														r.operationGroup = ""
+														r.pathPattern = "/collaboration-workspaces/current/boundary/roles/{roleId}/actions"
+														r.args = args
+														r.count = 1
+														return r, true
+													case "PUT":
+														r.name = SetCurrentCollaborationWorkspaceBoundaryRoleActionsOperation
+														r.summary = "配置当前协作空间角色功能权限(边界管理)"
+														r.operationID = "setCurrentCollaborationWorkspaceBoundaryRoleActions"
+														r.operationGroup = ""
+														r.pathPattern = "/collaboration-workspaces/current/boundary/roles/{roleId}/actions"
+														r.args = args
+														r.count = 1
+														return r, true
+													default:
+														return
+													}
+												}
+
+											case 'm': // Prefix: "menus"
+
+												if l := len("menus"); len(elem) >= l && elem[0:l] == "menus" {
+													elem = elem[l:]
+												} else {
+													break
+												}
+
+												if len(elem) == 0 {
+													// Leaf node.
+													switch method {
+													case "GET":
+														r.name = GetCurrentCollaborationWorkspaceBoundaryRoleMenusOperation
+														r.summary = "获取当前协作空间角色菜单权限(边界管理)"
+														r.operationID = "getCurrentCollaborationWorkspaceBoundaryRoleMenus"
+														r.operationGroup = ""
+														r.pathPattern = "/collaboration-workspaces/current/boundary/roles/{roleId}/menus"
+														r.args = args
+														r.count = 1
+														return r, true
+													case "PUT":
+														r.name = SetCurrentCollaborationWorkspaceBoundaryRoleMenusOperation
+														r.summary = "配置当前协作空间角色菜单权限(边界管理)"
+														r.operationID = "setCurrentCollaborationWorkspaceBoundaryRoleMenus"
+														r.operationGroup = ""
+														r.pathPattern = "/collaboration-workspaces/current/boundary/roles/{roleId}/menus"
+														r.args = args
+														r.count = 1
+														return r, true
+													default:
+														return
+													}
+												}
+
+											case 'p': // Prefix: "packages"
+
+												if l := len("packages"); len(elem) >= l && elem[0:l] == "packages" {
+													elem = elem[l:]
+												} else {
+													break
+												}
+
+												if len(elem) == 0 {
+													// Leaf node.
+													switch method {
+													case "GET":
+														r.name = GetCurrentCollaborationWorkspaceBoundaryRolePackagesOperation
+														r.summary = "获取当前协作空间角色功能包(边界管理)"
+														r.operationID = "getCurrentCollaborationWorkspaceBoundaryRolePackages"
+														r.operationGroup = ""
+														r.pathPattern = "/collaboration-workspaces/current/boundary/roles/{roleId}/packages"
+														r.args = args
+														r.count = 1
+														return r, true
+													case "PUT":
+														r.name = SetCurrentCollaborationWorkspaceBoundaryRolePackagesOperation
+														r.summary = "配置当前协作空间角色功能包(边界管理)"
+														r.operationID = "setCurrentCollaborationWorkspaceBoundaryRolePackages"
+														r.operationGroup = ""
+														r.pathPattern = "/collaboration-workspaces/current/boundary/roles/{roleId}/packages"
+														r.args = args
+														r.count = 1
+														return r, true
+													default:
+														return
+													}
+												}
+
+											}
+
+										}
+
+									}
+
+								}
+
+							case 'm': // Prefix: "me"
+
+								if l := len("me"); len(elem) >= l && elem[0:l] == "me" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									break
+								}
+								switch elem[0] {
+								case 'm': // Prefix: "mbers"
+
+									if l := len("mbers"); len(elem) >= l && elem[0:l] == "mbers" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										switch method {
+										case "GET":
+											r.name = ListCurrentCollaborationWorkspaceMembersOperation
+											r.summary = "获取当前协作空间成员列表"
+											r.operationID = "listCurrentCollaborationWorkspaceMembers"
+											r.operationGroup = ""
+											r.pathPattern = "/collaboration-workspaces/current/members"
+											r.args = args
+											r.count = 0
+											return r, true
+										case "POST":
+											r.name = AddCurrentCollaborationWorkspaceMemberOperation
+											r.summary = "添加当前协作空间成员"
+											r.operationID = "addCurrentCollaborationWorkspaceMember"
+											r.operationGroup = ""
+											r.pathPattern = "/collaboration-workspaces/current/members"
+											r.args = args
+											r.count = 0
+											return r, true
+										default:
+											return
+										}
+									}
+									switch elem[0] {
+									case '/': // Prefix: "/"
+
+										if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										// Param: "userId"
+										// Match until "/"
+										idx := strings.IndexByte(elem, '/')
+										if idx < 0 {
+											idx = len(elem)
+										}
+										args[0] = elem[:idx]
+										elem = elem[idx:]
+
+										if len(elem) == 0 {
+											switch method {
+											case "DELETE":
+												r.name = RemoveCurrentCollaborationWorkspaceMemberOperation
+												r.summary = "移除当前协作空间成员"
+												r.operationID = "removeCurrentCollaborationWorkspaceMember"
+												r.operationGroup = ""
+												r.pathPattern = "/collaboration-workspaces/current/members/{userId}"
+												r.args = args
+												r.count = 1
+												return r, true
+											default:
+												return
+											}
+										}
+										switch elem[0] {
+										case '/': // Prefix: "/role"
+
+											if l := len("/role"); len(elem) >= l && elem[0:l] == "/role" {
+												elem = elem[l:]
+											} else {
+												break
+											}
+
+											if len(elem) == 0 {
+												switch method {
+												case "PUT":
+													r.name = UpdateCurrentCollaborationWorkspaceMemberRoleOperation
+													r.summary = "更新当前协作空间成员身份"
+													r.operationID = "updateCurrentCollaborationWorkspaceMemberRole"
+													r.operationGroup = ""
+													r.pathPattern = "/collaboration-workspaces/current/members/{userId}/role"
+													r.args = args
+													r.count = 1
+													return r, true
+												default:
+													return
+												}
+											}
+											switch elem[0] {
+											case 's': // Prefix: "s"
+
+												if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+													elem = elem[l:]
+												} else {
+													break
+												}
+
+												if len(elem) == 0 {
+													// Leaf node.
+													switch method {
+													case "GET":
+														r.name = GetCurrentCollaborationWorkspaceMemberRolesOperation
+														r.summary = "获取当前协作空间成员角色"
+														r.operationID = "getCurrentCollaborationWorkspaceMemberRoles"
+														r.operationGroup = ""
+														r.pathPattern = "/collaboration-workspaces/current/members/{userId}/roles"
+														r.args = args
+														r.count = 1
+														return r, true
+													case "PUT":
+														r.name = SetCurrentCollaborationWorkspaceMemberRolesOperation
+														r.summary = "配置当前协作空间成员角色"
+														r.operationID = "setCurrentCollaborationWorkspaceMemberRoles"
+														r.operationGroup = ""
+														r.pathPattern = "/collaboration-workspaces/current/members/{userId}/roles"
+														r.args = args
+														r.count = 1
+														return r, true
+													default:
+														return
+													}
+												}
+
+											}
+
+										}
+
+									}
+
+								case 'n': // Prefix: "nu"
+
+									if l := len("nu"); len(elem) >= l && elem[0:l] == "nu" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										break
+									}
+									switch elem[0] {
+									case '-': // Prefix: "-origins"
+
+										if l := len("-origins"); len(elem) >= l && elem[0:l] == "-origins" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch method {
+											case "GET":
+												r.name = GetCurrentCollaborationWorkspaceMenuOriginsOperation
+												r.summary = "获取当前协作空间菜单来源"
+												r.operationID = "getCurrentCollaborationWorkspaceMenuOrigins"
+												r.operationGroup = ""
+												r.pathPattern = "/collaboration-workspaces/current/menu-origins"
+												r.args = args
+												r.count = 0
+												return r, true
+											default:
+												return
+											}
+										}
+
+									case 's': // Prefix: "s"
+
+										if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch method {
+											case "GET":
+												r.name = GetCurrentCollaborationWorkspaceMenusOperation
+												r.summary = "获取当前协作空间菜单边界"
+												r.operationID = "getCurrentCollaborationWorkspaceMenus"
+												r.operationGroup = ""
+												r.pathPattern = "/collaboration-workspaces/current/menus"
+												r.args = args
+												r.count = 0
+												return r, true
+											default:
+												return
+											}
+										}
+
+									}
+
+								}
+
+							case 'r': // Prefix: "roles"
+
+								if l := len("roles"); len(elem) >= l && elem[0:l] == "roles" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = ListCurrentCollaborationWorkspaceRolesOperation
+										r.summary = "获取当前协作空间可分配角色"
+										r.operationID = "listCurrentCollaborationWorkspaceRoles"
+										r.operationGroup = ""
+										r.pathPattern = "/collaboration-workspaces/current/roles"
+										r.args = args
+										r.count = 0
+										return r, true
+									case "POST":
+										r.name = CreateCurrentCollaborationWorkspaceRoleOperation
+										r.summary = "创建当前协作空间角色"
+										r.operationID = "createCurrentCollaborationWorkspaceRole"
+										r.operationGroup = ""
+										r.pathPattern = "/collaboration-workspaces/current/roles"
+										r.args = args
+										r.count = 0
+										return r, true
+									default:
+										return
+									}
+								}
+
+							}
+
+						}
+
+						elem = origElem
+					case 'm': // Prefix: "mine"
+						origElem := elem
+						if l := len("mine"); len(elem) >= l && elem[0:l] == "mine" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "GET":
+								r.name = ListMyCollaborationWorkspacesOperation
+								r.summary = "获取我的协作空间列表"
+								r.operationID = "listMyCollaborationWorkspaces"
+								r.operationGroup = ""
+								r.pathPattern = "/collaboration-workspaces/mine"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+
+						elem = origElem
+					case 'o': // Prefix: "options"
+						origElem := elem
+						if l := len("options"); len(elem) >= l && elem[0:l] == "options" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "GET":
+								r.name = ListCollaborationWorkspaceOptionsOperation
+								r.summary = "获取协作空间候选"
+								r.operationID = "listCollaborationWorkspaceOptions"
+								r.operationGroup = ""
+								r.pathPattern = "/collaboration-workspaces/options"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+
+						elem = origElem
+					}
+					// Param: "id"
+					// Match until "/"
+					idx := strings.IndexByte(elem, '/')
+					if idx < 0 {
+						idx = len(elem)
+					}
+					args[0] = elem[:idx]
+					elem = elem[idx:]
+
+					if len(elem) == 0 {
+						switch method {
+						case "DELETE":
+							r.name = DeleteCollaborationWorkspaceOperation
+							r.summary = "删除协作空间"
+							r.operationID = "deleteCollaborationWorkspace"
+							r.operationGroup = ""
+							r.pathPattern = "/collaboration-workspaces/{id}"
+							r.args = args
+							r.count = 1
+							return r, true
+						case "GET":
+							r.name = GetCollaborationWorkspaceOperation
+							r.summary = "获取协作空间详情"
+							r.operationID = "getCollaborationWorkspace"
+							r.operationGroup = ""
+							r.pathPattern = "/collaboration-workspaces/{id}"
+							r.args = args
+							r.count = 1
+							return r, true
+						case "PUT":
+							r.name = UpdateCollaborationWorkspaceOperation
+							r.summary = "更新协作空间"
+							r.operationID = "updateCollaborationWorkspace"
+							r.operationGroup = ""
+							r.pathPattern = "/collaboration-workspaces/{id}"
+							r.args = args
+							r.count = 1
+							return r, true
+						default:
+							return
+						}
+					}
+					switch elem[0] {
+					case '/': // Prefix: "/"
+
+						if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							break
+						}
+						switch elem[0] {
+						case 'a': // Prefix: "action"
+
+							if l := len("action"); len(elem) >= l && elem[0:l] == "action" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case '-': // Prefix: "-origins"
+
+								if l := len("-origins"); len(elem) >= l && elem[0:l] == "-origins" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = GetCollaborationWorkspaceActionOriginsOperation
+										r.summary = "获取协作空间功能权限来源"
+										r.operationID = "getCollaborationWorkspaceActionOrigins"
+										r.operationGroup = ""
+										r.pathPattern = "/collaboration-workspaces/{id}/action-origins"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							case 's': // Prefix: "s"
+
+								if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = GetCollaborationWorkspaceActionsOperation
+										r.summary = "获取协作空间功能权限边界"
+										r.operationID = "getCollaborationWorkspaceActions"
+										r.operationGroup = ""
+										r.pathPattern = "/collaboration-workspaces/{id}/actions"
+										r.args = args
+										r.count = 1
+										return r, true
+									case "PUT":
+										r.name = SetCollaborationWorkspaceActionsOperation
+										r.summary = "配置协作空间功能权限边界"
+										r.operationID = "setCollaborationWorkspaceActions"
+										r.operationGroup = ""
+										r.pathPattern = "/collaboration-workspaces/{id}/actions"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							}
+
+						case 'm': // Prefix: "me"
+
+							if l := len("me"); len(elem) >= l && elem[0:l] == "me" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'm': // Prefix: "mbers"
+
+								if l := len("mbers"); len(elem) >= l && elem[0:l] == "mbers" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									switch method {
+									case "GET":
+										r.name = ListCollaborationWorkspaceMembersOperation
+										r.summary = "获取协作空间成员列表"
+										r.operationID = "listCollaborationWorkspaceMembers"
+										r.operationGroup = ""
+										r.pathPattern = "/collaboration-workspaces/{id}/members"
+										r.args = args
+										r.count = 1
+										return r, true
+									case "POST":
+										r.name = AddCollaborationWorkspaceMemberOperation
+										r.summary = "添加协作空间成员"
+										r.operationID = "addCollaborationWorkspaceMember"
+										r.operationGroup = ""
+										r.pathPattern = "/collaboration-workspaces/{id}/members"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+								switch elem[0] {
+								case '/': // Prefix: "/"
+
+									if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									// Param: "userId"
+									// Match until "/"
+									idx := strings.IndexByte(elem, '/')
+									if idx < 0 {
+										idx = len(elem)
+									}
+									args[1] = elem[:idx]
+									elem = elem[idx:]
+
+									if len(elem) == 0 {
+										switch method {
+										case "DELETE":
+											r.name = RemoveCollaborationWorkspaceMemberOperation
+											r.summary = "移除协作空间成员"
+											r.operationID = "removeCollaborationWorkspaceMember"
+											r.operationGroup = ""
+											r.pathPattern = "/collaboration-workspaces/{id}/members/{userId}"
+											r.args = args
+											r.count = 2
+											return r, true
+										default:
+											return
+										}
+									}
+									switch elem[0] {
+									case '/': // Prefix: "/role"
+
+										if l := len("/role"); len(elem) >= l && elem[0:l] == "/role" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch method {
+											case "PUT":
+												r.name = UpdateCollaborationWorkspaceMemberRoleOperation
+												r.summary = "更新协作空间成员身份"
+												r.operationID = "updateCollaborationWorkspaceMemberRole"
+												r.operationGroup = ""
+												r.pathPattern = "/collaboration-workspaces/{id}/members/{userId}/role"
+												r.args = args
+												r.count = 2
+												return r, true
+											default:
+												return
+											}
+										}
+
+									}
+
+								}
+
+							case 'n': // Prefix: "nu"
+
+								if l := len("nu"); len(elem) >= l && elem[0:l] == "nu" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									break
+								}
+								switch elem[0] {
+								case '-': // Prefix: "-origins"
+
+									if l := len("-origins"); len(elem) >= l && elem[0:l] == "-origins" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch method {
+										case "GET":
+											r.name = GetCollaborationWorkspaceMenuOriginsOperation
+											r.summary = "获取协作空间菜单来源"
+											r.operationID = "getCollaborationWorkspaceMenuOrigins"
+											r.operationGroup = ""
+											r.pathPattern = "/collaboration-workspaces/{id}/menu-origins"
+											r.args = args
+											r.count = 1
+											return r, true
+										default:
+											return
+										}
+									}
+
+								case 's': // Prefix: "s"
+
+									if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch method {
+										case "GET":
+											r.name = GetCollaborationWorkspaceMenusOperation
+											r.summary = "获取协作空间菜单边界"
+											r.operationID = "getCollaborationWorkspaceMenus"
+											r.operationGroup = ""
+											r.pathPattern = "/collaboration-workspaces/{id}/menus"
+											r.args = args
+											r.count = 1
+											return r, true
+										case "PUT":
+											r.name = SetCollaborationWorkspaceMenusOperation
+											r.summary = "配置协作空间菜单边界"
+											r.operationID = "setCollaborationWorkspaceMenus"
+											r.operationGroup = ""
+											r.pathPattern = "/collaboration-workspaces/{id}/menus"
+											r.args = args
+											r.count = 1
+											return r, true
+										default:
+											return
+										}
+									}
+
+								}
+
+							}
+
+						case 'r': // Prefix: "roles"
+
+							if l := len("roles"); len(elem) >= l && elem[0:l] == "roles" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = ListCollaborationWorkspaceRolesOperation
+									r.summary = "获取协作空间可分配角色"
+									r.operationID = "listCollaborationWorkspaceRoles"
+									r.operationGroup = ""
+									r.pathPattern = "/collaboration-workspaces/{id}/roles"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+
+						}
+
+					}
+
+				}
+
+			case 'f': // Prefix: "feature-packages"
+
+				if l := len("feature-packages"); len(elem) >= l && elem[0:l] == "feature-packages" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					switch method {
+					case "GET":
+						r.name = ListFeaturePackagesOperation
+						r.summary = "获取功能包列表"
+						r.operationID = "listFeaturePackages"
+						r.operationGroup = ""
+						r.pathPattern = "/feature-packages"
+						r.args = args
+						r.count = 0
+						return r, true
+					case "POST":
+						r.name = CreateFeaturePackageOperation
+						r.summary = "创建功能包"
+						r.operationID = "createFeaturePackage"
+						r.operationGroup = ""
+						r.pathPattern = "/feature-packages"
+						r.args = args
+						r.count = 0
+						return r, true
+					default:
+						return
+					}
+				}
+				switch elem[0] {
+				case '/': // Prefix: "/"
+
+					if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case 'c': // Prefix: "collaboration-workspaces/"
+						origElem := elem
+						if l := len("collaboration-workspaces/"); len(elem) >= l && elem[0:l] == "collaboration-workspaces/" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						// Param: "collaborationWorkspaceId"
+						// Leaf parameter, slashes are prohibited
+						idx := strings.IndexByte(elem, '/')
+						if idx >= 0 {
+							break
+						}
+						args[0] = elem
+						elem = ""
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "GET":
+								r.name = GetCollaborationWorkspacePackagesOperation
+								r.summary = "获取协作空间功能包"
+								r.operationID = "getCollaborationWorkspacePackages"
+								r.operationGroup = ""
+								r.pathPattern = "/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}"
+								r.args = args
+								r.count = 1
+								return r, true
+							case "PUT":
+								r.name = SetCollaborationWorkspacePackagesOperation
+								r.summary = "配置协作空间功能包"
+								r.operationID = "setCollaborationWorkspacePackages"
+								r.operationGroup = ""
+								r.pathPattern = "/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}"
+								r.args = args
+								r.count = 1
+								return r, true
+							default:
+								return
+							}
+						}
+
+						elem = origElem
+					case 'o': // Prefix: "options"
+						origElem := elem
+						if l := len("options"); len(elem) >= l && elem[0:l] == "options" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "GET":
+								r.name = ListFeaturePackageOptionsOperation
+								r.summary = "获取功能包候选"
+								r.operationID = "listFeaturePackageOptions"
+								r.operationGroup = ""
+								r.pathPattern = "/feature-packages/options"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+
+						elem = origElem
+					case 'r': // Prefix: "relationship-tree"
+						origElem := elem
+						if l := len("relationship-tree"); len(elem) >= l && elem[0:l] == "relationship-tree" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "GET":
+								r.name = GetFeaturePackageRelationTreeOperation
+								r.summary = "获取功能包关系树"
+								r.operationID = "getFeaturePackageRelationTree"
+								r.operationGroup = ""
+								r.pathPattern = "/feature-packages/relationship-tree"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+
+						elem = origElem
+					}
+					// Param: "id"
+					// Match until "/"
+					idx := strings.IndexByte(elem, '/')
+					if idx < 0 {
+						idx = len(elem)
+					}
+					args[0] = elem[:idx]
+					elem = elem[idx:]
+
+					if len(elem) == 0 {
+						switch method {
+						case "DELETE":
+							r.name = DeleteFeaturePackageOperation
+							r.summary = "删除功能包"
+							r.operationID = "deleteFeaturePackage"
+							r.operationGroup = ""
+							r.pathPattern = "/feature-packages/{id}"
+							r.args = args
+							r.count = 1
+							return r, true
+						case "GET":
+							r.name = GetFeaturePackageOperation
+							r.summary = "获取功能包详情"
+							r.operationID = "getFeaturePackage"
+							r.operationGroup = ""
+							r.pathPattern = "/feature-packages/{id}"
+							r.args = args
+							r.count = 1
+							return r, true
+						case "PUT":
+							r.name = UpdateFeaturePackageOperation
+							r.summary = "更新功能包"
+							r.operationID = "updateFeaturePackage"
+							r.operationGroup = ""
+							r.pathPattern = "/feature-packages/{id}"
+							r.args = args
+							r.count = 1
+							return r, true
+						default:
+							return
+						}
+					}
+					switch elem[0] {
+					case '/': // Prefix: "/"
+
+						if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							break
+						}
+						switch elem[0] {
+						case 'a': // Prefix: "actions"
+
+							if l := len("actions"); len(elem) >= l && elem[0:l] == "actions" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = GetFeaturePackageActionsOperation
+									r.summary = "获取功能包权限"
+									r.operationID = "getFeaturePackageActions"
+									r.operationGroup = ""
+									r.pathPattern = "/feature-packages/{id}/actions"
+									r.args = args
+									r.count = 1
+									return r, true
+								case "PUT":
+									r.name = SetFeaturePackageActionsOperation
+									r.summary = "配置功能包权限"
+									r.operationID = "setFeaturePackageActions"
+									r.operationGroup = ""
+									r.pathPattern = "/feature-packages/{id}/actions"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+
+						case 'c': // Prefix: "c"
+
+							if l := len("c"); len(elem) >= l && elem[0:l] == "c" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'h': // Prefix: "hildren"
+
+								if l := len("hildren"); len(elem) >= l && elem[0:l] == "hildren" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = GetFeaturePackageChildrenOperation
+										r.summary = "获取组合包基础包"
+										r.operationID = "getFeaturePackageChildren"
+										r.operationGroup = ""
+										r.pathPattern = "/feature-packages/{id}/children"
+										r.args = args
+										r.count = 1
+										return r, true
+									case "PUT":
+										r.name = SetFeaturePackageChildrenOperation
+										r.summary = "配置组合包基础包"
+										r.operationID = "setFeaturePackageChildren"
+										r.operationGroup = ""
+										r.pathPattern = "/feature-packages/{id}/children"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							case 'o': // Prefix: "ollaboration-workspaces"
+
+								if l := len("ollaboration-workspaces"); len(elem) >= l && elem[0:l] == "ollaboration-workspaces" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = GetFeaturePackageCollaborationWorkspacesOperation
+										r.summary = "获取功能包协作空间"
+										r.operationID = "getFeaturePackageCollaborationWorkspaces"
+										r.operationGroup = ""
+										r.pathPattern = "/feature-packages/{id}/collaboration-workspaces"
+										r.args = args
+										r.count = 1
+										return r, true
+									case "PUT":
+										r.name = SetFeaturePackageCollaborationWorkspacesOperation
+										r.summary = "配置功能包协作空间"
+										r.operationID = "setFeaturePackageCollaborationWorkspaces"
+										r.operationGroup = ""
+										r.pathPattern = "/feature-packages/{id}/collaboration-workspaces"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							}
+
+						case 'i': // Prefix: "impact-preview"
+
+							if l := len("impact-preview"); len(elem) >= l && elem[0:l] == "impact-preview" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = GetFeaturePackageImpactPreviewOperation
+									r.summary = "获取功能包影响预览"
+									r.operationID = "getFeaturePackageImpactPreview"
+									r.operationGroup = ""
+									r.pathPattern = "/feature-packages/{id}/impact-preview"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+
+						case 'm': // Prefix: "menus"
+
+							if l := len("menus"); len(elem) >= l && elem[0:l] == "menus" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = GetFeaturePackageMenusOperation
+									r.summary = "获取功能包菜单"
+									r.operationID = "getFeaturePackageMenus"
+									r.operationGroup = ""
+									r.pathPattern = "/feature-packages/{id}/menus"
+									r.args = args
+									r.count = 1
+									return r, true
+								case "PUT":
+									r.name = SetFeaturePackageMenusOperation
+									r.summary = "配置功能包菜单"
+									r.operationID = "setFeaturePackageMenus"
+									r.operationGroup = ""
+									r.pathPattern = "/feature-packages/{id}/menus"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+
+						case 'r': // Prefix: "r"
+
+							if l := len("r"); len(elem) >= l && elem[0:l] == "r" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'i': // Prefix: "isk-audits"
+
+								if l := len("isk-audits"); len(elem) >= l && elem[0:l] == "isk-audits" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = ListFeaturePackageRiskAuditsOperation
+										r.summary = "获取功能包最近变更"
+										r.operationID = "listFeaturePackageRiskAudits"
+										r.operationGroup = ""
+										r.pathPattern = "/feature-packages/{id}/risk-audits"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							case 'o': // Prefix: "ollback"
+
+								if l := len("ollback"); len(elem) >= l && elem[0:l] == "ollback" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "POST":
+										r.name = RollbackFeaturePackageOperation
+										r.summary = "回滚功能包版本"
+										r.operationID = "rollbackFeaturePackage"
+										r.operationGroup = ""
+										r.pathPattern = "/feature-packages/{id}/rollback"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							}
+
+						case 'v': // Prefix: "versions"
+
+							if l := len("versions"); len(elem) >= l && elem[0:l] == "versions" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = ListFeaturePackageVersionsOperation
+									r.summary = "获取功能包版本历史"
+									r.operationID = "listFeaturePackageVersions"
+									r.operationGroup = ""
+									r.pathPattern = "/feature-packages/{id}/versions"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+
+						}
+
+					}
+
+				}
+
+			case 'm': // Prefix: "me"
+
+				if l := len("me"); len(elem) >= l && elem[0:l] == "me" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					break
+				}
+				switch elem[0] {
+				case 'n': // Prefix: "nus"
+
+					if l := len("nus"); len(elem) >= l && elem[0:l] == "nus" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						switch method {
+						case "POST":
+							r.name = CreateMenuOperation
+							r.summary = "创建菜单"
+							r.operationID = "createMenu"
+							r.operationGroup = ""
+							r.pathPattern = "/menus"
+							r.args = args
+							r.count = 0
+							return r, true
+						default:
+							return
+						}
+					}
+					switch elem[0] {
+					case '/': // Prefix: "/"
+
+						if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							break
+						}
+						switch elem[0] {
+						case 'b': // Prefix: "backups"
+							origElem := elem
+							if l := len("backups"); len(elem) >= l && elem[0:l] == "backups" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								switch method {
+								case "GET":
+									r.name = ListMenuBackupsOperation
+									r.summary = "获取菜单备份列表"
+									r.operationID = "listMenuBackups"
+									r.operationGroup = ""
+									r.pathPattern = "/menus/backups"
+									r.args = args
+									r.count = 0
+									return r, true
+								case "POST":
+									r.name = CreateMenuBackupOperation
+									r.summary = "创建菜单备份"
+									r.operationID = "createMenuBackup"
+									r.operationGroup = ""
+									r.pathPattern = "/menus/backups"
+									r.args = args
+									r.count = 0
+									return r, true
+								default:
+									return
+								}
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/"
+
+								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								// Param: "id"
+								// Match until "/"
+								idx := strings.IndexByte(elem, '/')
+								if idx < 0 {
+									idx = len(elem)
+								}
+								args[0] = elem[:idx]
+								elem = elem[idx:]
+
+								if len(elem) == 0 {
+									switch method {
+									case "DELETE":
+										r.name = DeleteMenuBackupOperation
+										r.summary = "删除菜单备份"
+										r.operationID = "deleteMenuBackup"
+										r.operationGroup = ""
+										r.pathPattern = "/menus/backups/{id}"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+								switch elem[0] {
+								case '/': // Prefix: "/restore"
+
+									if l := len("/restore"); len(elem) >= l && elem[0:l] == "/restore" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch method {
+										case "POST":
+											r.name = RestoreMenuBackupOperation
+											r.summary = "恢复菜单备份"
+											r.operationID = "restoreMenuBackup"
+											r.operationGroup = ""
+											r.pathPattern = "/menus/backups/{id}/restore"
+											r.args = args
+											r.count = 1
+											return r, true
+										default:
+											return
+										}
+									}
+
+								}
+
+							}
+
+							elem = origElem
+						case 'g': // Prefix: "groups"
+							origElem := elem
+							if l := len("groups"); len(elem) >= l && elem[0:l] == "groups" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								switch method {
+								case "GET":
+									r.name = ListMenuGroupsOperation
+									r.summary = "获取菜单分组列表"
+									r.operationID = "listMenuGroups"
+									r.operationGroup = ""
+									r.pathPattern = "/menus/groups"
+									r.args = args
+									r.count = 0
+									return r, true
+								case "POST":
+									r.name = CreateMenuGroupOperation
+									r.summary = "创建菜单分组"
+									r.operationID = "createMenuGroup"
+									r.operationGroup = ""
+									r.pathPattern = "/menus/groups"
+									r.args = args
+									r.count = 0
+									return r, true
+								default:
+									return
+								}
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/"
+
+								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								// Param: "id"
+								// Leaf parameter, slashes are prohibited
+								idx := strings.IndexByte(elem, '/')
+								if idx >= 0 {
+									break
+								}
+								args[0] = elem
+								elem = ""
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "DELETE":
+										r.name = DeleteMenuGroupOperation
+										r.summary = "删除菜单分组"
+										r.operationID = "deleteMenuGroup"
+										r.operationGroup = ""
+										r.pathPattern = "/menus/groups/{id}"
+										r.args = args
+										r.count = 1
+										return r, true
+									case "PUT":
+										r.name = UpdateMenuGroupOperation
+										r.summary = "更新菜单分组"
+										r.operationID = "updateMenuGroup"
+										r.operationGroup = ""
+										r.pathPattern = "/menus/groups/{id}"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							}
+
+							elem = origElem
+						case 't': // Prefix: "tree"
+							origElem := elem
+							if l := len("tree"); len(elem) >= l && elem[0:l] == "tree" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = GetMenuTreeOperation
+									r.summary = "获取菜单树"
+									r.operationID = "getMenuTree"
+									r.operationGroup = ""
+									r.pathPattern = "/menus/tree"
+									r.args = args
+									r.count = 0
+									return r, true
+								default:
+									return
+								}
+							}
+
+							elem = origElem
+						}
+						// Param: "id"
+						// Match until "/"
+						idx := strings.IndexByte(elem, '/')
+						if idx < 0 {
+							idx = len(elem)
+						}
+						args[0] = elem[:idx]
+						elem = elem[idx:]
+
+						if len(elem) == 0 {
+							switch method {
+							case "DELETE":
+								r.name = DeleteMenuOperation
+								r.summary = "删除菜单"
+								r.operationID = "deleteMenu"
+								r.operationGroup = ""
+								r.pathPattern = "/menus/{id}"
+								r.args = args
+								r.count = 1
+								return r, true
+							case "PUT":
+								r.name = UpdateMenuOperation
+								r.summary = "更新菜单"
+								r.operationID = "updateMenu"
+								r.operationGroup = ""
+								r.pathPattern = "/menus/{id}"
+								r.args = args
+								r.count = 1
+								return r, true
+							default:
+								return
+							}
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/delete-preview"
+
+							if l := len("/delete-preview"); len(elem) >= l && elem[0:l] == "/delete-preview" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = GetMenuDeletePreviewOperation
+									r.summary = "获取菜单删除预览"
+									r.operationID = "getMenuDeletePreview"
+									r.operationGroup = ""
+									r.pathPattern = "/menus/{id}/delete-preview"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+
+						}
+
+					}
+
+				case 's': // Prefix: "ssages/"
+
+					if l := len("ssages/"); len(elem) >= l && elem[0:l] == "ssages/" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case 'd': // Prefix: "dispatch"
+
+						if l := len("dispatch"); len(elem) >= l && elem[0:l] == "dispatch" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch method {
+							case "POST":
+								r.name = DispatchMessageOperation
+								r.summary = "发送站内消息"
+								r.operationID = "dispatchMessage"
+								r.operationGroup = ""
+								r.pathPattern = "/messages/dispatch"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/options"
+
+							if l := len("/options"); len(elem) >= l && elem[0:l] == "/options" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = GetMessageDispatchOptionsOperation
+									r.summary = "获取消息发送配置"
+									r.operationID = "getMessageDispatchOptions"
+									r.operationGroup = ""
+									r.pathPattern = "/messages/dispatch/options"
+									r.args = args
+									r.count = 0
+									return r, true
+								default:
+									return
+								}
+							}
+
+						}
+
+					case 'i': // Prefix: "inbox"
+
+						if l := len("inbox"); len(elem) >= l && elem[0:l] == "inbox" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch method {
+							case "GET":
+								r.name = ListInboxOperation
+								r.summary = "获取消息列表"
+								r.operationID = "listInbox"
+								r.operationGroup = ""
+								r.pathPattern = "/messages/inbox"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'r': // Prefix: "read-all"
+								origElem := elem
+								if l := len("read-all"); len(elem) >= l && elem[0:l] == "read-all" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "POST":
+										r.name = MarkInboxReadAllOperation
+										r.summary = "批量标记消息已读"
+										r.operationID = "markInboxReadAll"
+										r.operationGroup = ""
+										r.pathPattern = "/messages/inbox/read-all"
+										r.args = args
+										r.count = 0
+										return r, true
+									default:
+										return
+									}
+								}
+
+								elem = origElem
+							case 's': // Prefix: "summary"
+								origElem := elem
+								if l := len("summary"); len(elem) >= l && elem[0:l] == "summary" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = GetInboxSummaryOperation
+										r.summary = "获取消息摘要"
+										r.operationID = "getInboxSummary"
+										r.operationGroup = ""
+										r.pathPattern = "/messages/inbox/summary"
+										r.args = args
+										r.count = 0
+										return r, true
+									default:
+										return
+									}
+								}
+
+								elem = origElem
+							}
+							// Param: "deliveryId"
+							// Match until "/"
+							idx := strings.IndexByte(elem, '/')
+							if idx < 0 {
+								idx = len(elem)
+							}
+							args[0] = elem[:idx]
+							elem = elem[idx:]
+
+							if len(elem) == 0 {
+								switch method {
+								case "GET":
+									r.name = GetInboxDetailOperation
+									r.summary = "获取消息详情"
+									r.operationID = "getInboxDetail"
+									r.operationGroup = ""
+									r.pathPattern = "/messages/inbox/{deliveryId}"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/"
+
+								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									break
+								}
+								switch elem[0] {
+								case 'r': // Prefix: "read"
+
+									if l := len("read"); len(elem) >= l && elem[0:l] == "read" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch method {
+										case "POST":
+											r.name = MarkInboxReadOperation
+											r.summary = "标记消息已读"
+											r.operationID = "markInboxRead"
+											r.operationGroup = ""
+											r.pathPattern = "/messages/inbox/{deliveryId}/read"
+											r.args = args
+											r.count = 1
+											return r, true
+										default:
+											return
+										}
+									}
+
+								case 't': // Prefix: "todo-action"
+
+									if l := len("todo-action"); len(elem) >= l && elem[0:l] == "todo-action" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch method {
+										case "POST":
+											r.name = HandleInboxTodoOperation
+											r.summary = "处理待办消息"
+											r.operationID = "handleInboxTodo"
+											r.operationGroup = ""
+											r.pathPattern = "/messages/inbox/{deliveryId}/todo-action"
+											r.args = args
+											r.count = 1
+											return r, true
+										default:
+											return
+										}
+									}
+
+								}
+
+							}
+
+						}
+
+					case 'r': // Prefix: "rec"
+
+						if l := len("rec"); len(elem) >= l && elem[0:l] == "rec" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							break
+						}
+						switch elem[0] {
+						case 'i': // Prefix: "ipient-groups"
+
+							if l := len("ipient-groups"); len(elem) >= l && elem[0:l] == "ipient-groups" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								switch method {
+								case "GET":
+									r.name = ListMessageRecipientGroupsOperation
+									r.summary = "获取消息接收组"
+									r.operationID = "listMessageRecipientGroups"
+									r.operationGroup = ""
+									r.pathPattern = "/messages/recipient-groups"
+									r.args = args
+									r.count = 0
+									return r, true
+								case "POST":
+									r.name = CreateMessageRecipientGroupOperation
+									r.summary = "新建消息接收组"
+									r.operationID = "createMessageRecipientGroup"
+									r.operationGroup = ""
+									r.pathPattern = "/messages/recipient-groups"
+									r.args = args
+									r.count = 0
+									return r, true
+								default:
+									return
+								}
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/"
+
+								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								// Param: "groupId"
+								// Leaf parameter, slashes are prohibited
+								idx := strings.IndexByte(elem, '/')
+								if idx >= 0 {
+									break
+								}
+								args[0] = elem
+								elem = ""
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "PUT":
+										r.name = UpdateMessageRecipientGroupOperation
+										r.summary = "更新消息接收组"
+										r.operationID = "updateMessageRecipientGroup"
+										r.operationGroup = ""
+										r.pathPattern = "/messages/recipient-groups/{groupId}"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							}
+
+						case 'o': // Prefix: "ords"
+
+							if l := len("ords"); len(elem) >= l && elem[0:l] == "ords" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								switch method {
+								case "GET":
+									r.name = ListMessageDispatchRecordsOperation
+									r.summary = "获取消息发送记录"
+									r.operationID = "listMessageDispatchRecords"
+									r.operationGroup = ""
+									r.pathPattern = "/messages/records"
+									r.args = args
+									r.count = 0
+									return r, true
+								default:
+									return
+								}
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/"
+
+								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								// Param: "recordId"
+								// Leaf parameter, slashes are prohibited
+								idx := strings.IndexByte(elem, '/')
+								if idx >= 0 {
+									break
+								}
+								args[0] = elem
+								elem = ""
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = GetMessageDispatchRecordOperation
+										r.summary = "获取消息发送记录详情"
+										r.operationID = "getMessageDispatchRecord"
+										r.operationGroup = ""
+										r.pathPattern = "/messages/records/{recordId}"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							}
+
+						}
+
+					case 's': // Prefix: "senders"
+
+						if l := len("senders"); len(elem) >= l && elem[0:l] == "senders" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch method {
+							case "GET":
+								r.name = ListMessageSendersOperation
+								r.summary = "获取消息发送人"
+								r.operationID = "listMessageSenders"
+								r.operationGroup = ""
+								r.pathPattern = "/messages/senders"
+								r.args = args
+								r.count = 0
+								return r, true
+							case "POST":
+								r.name = CreateMessageSenderOperation
+								r.summary = "新建消息发送人"
+								r.operationID = "createMessageSender"
+								r.operationGroup = ""
+								r.pathPattern = "/messages/senders"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							// Param: "senderId"
+							// Leaf parameter, slashes are prohibited
+							idx := strings.IndexByte(elem, '/')
+							if idx >= 0 {
+								break
+							}
+							args[0] = elem
+							elem = ""
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "PUT":
+									r.name = UpdateMessageSenderOperation
+									r.summary = "更新消息发送人"
+									r.operationID = "updateMessageSender"
+									r.operationGroup = ""
+									r.pathPattern = "/messages/senders/{senderId}"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+
+						}
+
+					case 't': // Prefix: "templates"
+
+						if l := len("templates"); len(elem) >= l && elem[0:l] == "templates" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch method {
+							case "GET":
+								r.name = ListMessageTemplatesOperation
+								r.summary = "获取消息模板"
+								r.operationID = "listMessageTemplates"
+								r.operationGroup = ""
+								r.pathPattern = "/messages/templates"
+								r.args = args
+								r.count = 0
+								return r, true
+							case "POST":
+								r.name = CreateMessageTemplateOperation
+								r.summary = "新建消息模板"
+								r.operationID = "createMessageTemplate"
+								r.operationGroup = ""
+								r.pathPattern = "/messages/templates"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							// Param: "templateId"
+							// Leaf parameter, slashes are prohibited
+							idx := strings.IndexByte(elem, '/')
+							if idx >= 0 {
+								break
+							}
+							args[0] = elem
+							elem = ""
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "PUT":
+									r.name = UpdateMessageTemplateOperation
+									r.summary = "更新消息模板"
+									r.operationID = "updateMessageTemplate"
+									r.operationGroup = ""
+									r.pathPattern = "/messages/templates/{templateId}"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+
+						}
+
+					}
+
+				}
+
+			case 'p': // Prefix: "p"
+
+				if l := len("p"); len(elem) >= l && elem[0:l] == "p" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					break
+				}
+				switch elem[0] {
+				case 'a': // Prefix: "ages"
+
+					if l := len("ages"); len(elem) >= l && elem[0:l] == "ages" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						switch method {
+						case "GET":
+							r.name = ListPagesOperation
+							r.summary = "获取页面列表"
+							r.operationID = "listPages"
+							r.operationGroup = ""
+							r.pathPattern = "/pages"
+							r.args = args
+							r.count = 0
+							return r, true
+						case "POST":
+							r.name = CreatePageOperation
+							r.summary = "创建页面"
+							r.operationID = "createPage"
+							r.operationGroup = ""
+							r.pathPattern = "/pages"
+							r.args = args
+							r.count = 0
+							return r, true
+						default:
+							return
+						}
+					}
+					switch elem[0] {
+					case '/': // Prefix: "/"
+
+						if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							break
+						}
+						switch elem[0] {
+						case 'a': // Prefix: "access-trace"
+							origElem := elem
+							if l := len("access-trace"); len(elem) >= l && elem[0:l] == "access-trace" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = GetPageAccessTraceOperation
+									r.summary = "获取页面访问链路"
+									r.operationID = "getPageAccessTrace"
+									r.operationGroup = ""
+									r.pathPattern = "/pages/access-trace"
+									r.args = args
+									r.count = 0
+									return r, true
+								default:
+									return
+								}
+							}
+
+							elem = origElem
+						case 'm': // Prefix: "menu-options"
+							origElem := elem
+							if l := len("menu-options"); len(elem) >= l && elem[0:l] == "menu-options" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = ListPageMenuOptionsOperation
+									r.summary = "获取上级菜单候选"
+									r.operationID = "listPageMenuOptions"
+									r.operationGroup = ""
+									r.pathPattern = "/pages/menu-options"
+									r.args = args
+									r.count = 0
+									return r, true
+								default:
+									return
+								}
+							}
+
+							elem = origElem
+						case 'o': // Prefix: "options"
+							origElem := elem
+							if l := len("options"); len(elem) >= l && elem[0:l] == "options" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = ListPageOptionsOperation
+									r.summary = "获取页面候选列表"
+									r.operationID = "listPageOptions"
+									r.operationGroup = ""
+									r.pathPattern = "/pages/options"
+									r.args = args
+									r.count = 0
+									return r, true
+								default:
+									return
+								}
+							}
+
+							elem = origElem
+						case 'r': // Prefix: "runtime"
+							origElem := elem
+							if l := len("runtime"); len(elem) >= l && elem[0:l] == "runtime" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								switch method {
+								case "GET":
+									r.name = ListRuntimePagesOperation
+									r.summary = "获取运行时页面注册表"
+									r.operationID = "listRuntimePages"
+									r.operationGroup = ""
+									r.pathPattern = "/pages/runtime"
+									r.args = args
+									r.count = 0
+									return r, true
+								default:
+									return
+								}
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/public"
+
+								if l := len("/public"); len(elem) >= l && elem[0:l] == "/public" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = ListPublicRuntimePagesOperation
+										r.summary = "获取公开运行时页面注册表"
+										r.operationID = "listPublicRuntimePages"
+										r.operationGroup = ""
+										r.pathPattern = "/pages/runtime/public"
+										r.args = args
+										r.count = 0
+										return r, true
+									default:
+										return
+									}
+								}
+
+							}
+
+							elem = origElem
+						case 's': // Prefix: "sync"
+							origElem := elem
+							if l := len("sync"); len(elem) >= l && elem[0:l] == "sync" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "POST":
+									r.name = SyncPagesOperation
+									r.summary = "同步页面注册表"
+									r.operationID = "syncPages"
+									r.operationGroup = ""
+									r.pathPattern = "/pages/sync"
+									r.args = args
+									r.count = 0
+									return r, true
+								default:
+									return
+								}
+							}
+
+							elem = origElem
+						case 'u': // Prefix: "unregistered"
+							origElem := elem
+							if l := len("unregistered"); len(elem) >= l && elem[0:l] == "unregistered" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = ListUnregisteredPagesOperation
+									r.summary = "获取未注册页面"
+									r.operationID = "listUnregisteredPages"
+									r.operationGroup = ""
+									r.pathPattern = "/pages/unregistered"
+									r.args = args
+									r.count = 0
+									return r, true
+								default:
+									return
+								}
+							}
+
+							elem = origElem
+						}
+						// Param: "id"
+						// Match until "/"
+						idx := strings.IndexByte(elem, '/')
+						if idx < 0 {
+							idx = len(elem)
+						}
+						args[0] = elem[:idx]
+						elem = elem[idx:]
+
+						if len(elem) == 0 {
+							switch method {
+							case "DELETE":
+								r.name = DeletePageOperation
+								r.summary = "删除页面"
+								r.operationID = "deletePage"
+								r.operationGroup = ""
+								r.pathPattern = "/pages/{id}"
+								r.args = args
+								r.count = 1
+								return r, true
+							case "GET":
+								r.name = GetPageOperation
+								r.summary = "获取页面详情"
+								r.operationID = "getPage"
+								r.operationGroup = ""
+								r.pathPattern = "/pages/{id}"
+								r.args = args
+								r.count = 1
+								return r, true
+							case "PUT":
+								r.name = UpdatePageOperation
+								r.summary = "更新页面"
+								r.operationID = "updatePage"
+								r.operationGroup = ""
+								r.pathPattern = "/pages/{id}"
+								r.args = args
+								r.count = 1
+								return r, true
+							default:
+								return
+							}
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/breadcrumb-preview"
+
+							if l := len("/breadcrumb-preview"); len(elem) >= l && elem[0:l] == "/breadcrumb-preview" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = PreviewPageBreadcrumbOperation
+									r.summary = "预览页面面包屑"
+									r.operationID = "previewPageBreadcrumb"
+									r.operationGroup = ""
+									r.pathPattern = "/pages/{id}/breadcrumb-preview"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+
+						}
+
+					}
+
+				case 'e': // Prefix: "ermission"
+
+					if l := len("ermission"); len(elem) >= l && elem[0:l] == "ermission" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case '-': // Prefix: "-actions"
+
+						if l := len("-actions"); len(elem) >= l && elem[0:l] == "-actions" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch method {
+							case "GET":
+								r.name = ListPermissionActionsOperation
+								r.summary = "获取功能权限列表"
+								r.operationID = "listPermissionActions"
+								r.operationGroup = ""
+								r.pathPattern = "/permission-actions"
+								r.args = args
+								r.count = 0
+								return r, true
+							case "POST":
+								r.name = CreatePermissionActionOperation
+								r.summary = "创建功能权限"
+								r.operationID = "createPermissionAction"
+								r.operationGroup = ""
+								r.pathPattern = "/permission-actions"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'b': // Prefix: "batch"
+								origElem := elem
+								if l := len("batch"); len(elem) >= l && elem[0:l] == "batch" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "POST":
+										r.name = BatchUpdatePermissionActionsOperation
+										r.summary = "批量治理功能权限"
+										r.operationID = "batchUpdatePermissionActions"
+										r.operationGroup = ""
+										r.pathPattern = "/permission-actions/batch"
+										r.args = args
+										r.count = 0
+										return r, true
+									default:
+										return
+									}
+								}
+
+								elem = origElem
+							case 'c': // Prefix: "cleanup-unused"
+								origElem := elem
+								if l := len("cleanup-unused"); len(elem) >= l && elem[0:l] == "cleanup-unused" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "POST":
+										r.name = CleanupUnusedPermissionActionsOperation
+										r.summary = "清理未消费功能权限"
+										r.operationID = "cleanupUnusedPermissionActions"
+										r.operationGroup = ""
+										r.pathPattern = "/permission-actions/cleanup-unused"
+										r.args = args
+										r.count = 0
+										return r, true
+									default:
+										return
+									}
+								}
+
+								elem = origElem
+							case 'g': // Prefix: "groups"
+								origElem := elem
+								if l := len("groups"); len(elem) >= l && elem[0:l] == "groups" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									switch method {
+									case "GET":
+										r.name = ListPermissionActionGroupsOperation
+										r.summary = "获取功能权限分组列表"
+										r.operationID = "listPermissionActionGroups"
+										r.operationGroup = ""
+										r.pathPattern = "/permission-actions/groups"
+										r.args = args
+										r.count = 0
+										return r, true
+									case "POST":
+										r.name = CreatePermissionActionGroupOperation
+										r.summary = "创建功能权限分组"
+										r.operationID = "createPermissionActionGroup"
+										r.operationGroup = ""
+										r.pathPattern = "/permission-actions/groups"
+										r.args = args
+										r.count = 0
+										return r, true
+									default:
+										return
+									}
+								}
+								switch elem[0] {
+								case '/': // Prefix: "/"
+
+									if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									// Param: "id"
+									// Leaf parameter, slashes are prohibited
+									idx := strings.IndexByte(elem, '/')
+									if idx >= 0 {
+										break
+									}
+									args[0] = elem
+									elem = ""
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch method {
+										case "PUT":
+											r.name = UpdatePermissionActionGroupOperation
+											r.summary = "更新功能权限分组"
+											r.operationID = "updatePermissionActionGroup"
+											r.operationGroup = ""
+											r.pathPattern = "/permission-actions/groups/{id}"
+											r.args = args
+											r.count = 1
+											return r, true
+										default:
+											return
+										}
+									}
+
+								}
+
+								elem = origElem
+							case 'o': // Prefix: "options"
+								origElem := elem
+								if l := len("options"); len(elem) >= l && elem[0:l] == "options" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = ListPermissionActionOptionsOperation
+										r.summary = "获取功能权限候选"
+										r.operationID = "listPermissionActionOptions"
+										r.operationGroup = ""
+										r.pathPattern = "/permission-actions/options"
+										r.args = args
+										r.count = 0
+										return r, true
+									default:
+										return
+									}
+								}
+
+								elem = origElem
+							case 'r': // Prefix: "risk-audits"
+								origElem := elem
+								if l := len("risk-audits"); len(elem) >= l && elem[0:l] == "risk-audits" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = ListPermissionActionRiskAuditsOperation
+										r.summary = "获取功能权限最近变更"
+										r.operationID = "listPermissionActionRiskAudits"
+										r.operationGroup = ""
+										r.pathPattern = "/permission-actions/risk-audits"
+										r.args = args
+										r.count = 0
+										return r, true
+									default:
+										return
+									}
+								}
+
+								elem = origElem
+							case 't': // Prefix: "templates"
+								origElem := elem
+								if l := len("templates"); len(elem) >= l && elem[0:l] == "templates" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = ListPermissionActionBatchTemplatesOperation
+										r.summary = "获取功能权限批量模板"
+										r.operationID = "listPermissionActionBatchTemplates"
+										r.operationGroup = ""
+										r.pathPattern = "/permission-actions/templates"
+										r.args = args
+										r.count = 0
+										return r, true
+									case "POST":
+										r.name = SavePermissionActionBatchTemplateOperation
+										r.summary = "保存功能权限批量模板"
+										r.operationID = "savePermissionActionBatchTemplate"
+										r.operationGroup = ""
+										r.pathPattern = "/permission-actions/templates"
+										r.args = args
+										r.count = 0
+										return r, true
+									default:
+										return
+									}
+								}
+
+								elem = origElem
+							}
+							// Param: "id"
+							// Match until "/"
+							idx := strings.IndexByte(elem, '/')
+							if idx < 0 {
+								idx = len(elem)
+							}
+							args[0] = elem[:idx]
+							elem = elem[idx:]
+
+							if len(elem) == 0 {
+								switch method {
+								case "DELETE":
+									r.name = DeletePermissionActionOperation
+									r.summary = "删除功能权限"
+									r.operationID = "deletePermissionAction"
+									r.operationGroup = ""
+									r.pathPattern = "/permission-actions/{id}"
+									r.args = args
+									r.count = 1
+									return r, true
+								case "GET":
+									r.name = GetPermissionActionOperation
+									r.summary = "获取功能权限详情"
+									r.operationID = "getPermissionAction"
+									r.operationGroup = ""
+									r.pathPattern = "/permission-actions/{id}"
+									r.args = args
+									r.count = 1
+									return r, true
+								case "PUT":
+									r.name = UpdatePermissionActionOperation
+									r.summary = "更新功能权限"
+									r.operationID = "updatePermissionAction"
+									r.operationGroup = ""
+									r.pathPattern = "/permission-actions/{id}"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/"
+
+								if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									break
+								}
+								switch elem[0] {
+								case 'c': // Prefix: "consumers"
+
+									if l := len("consumers"); len(elem) >= l && elem[0:l] == "consumers" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch method {
+										case "GET":
+											r.name = GetPermissionActionConsumersOperation
+											r.summary = "获取功能权限消费明细"
+											r.operationID = "getPermissionActionConsumers"
+											r.operationGroup = ""
+											r.pathPattern = "/permission-actions/{id}/consumers"
+											r.args = args
+											r.count = 1
+											return r, true
+										default:
+											return
+										}
+									}
+
+								case 'e': // Prefix: "endpoints"
+
+									if l := len("endpoints"); len(elem) >= l && elem[0:l] == "endpoints" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										switch method {
+										case "GET":
+											r.name = ListPermissionActionEndpointsOperation
+											r.summary = "获取功能权限关联接口"
+											r.operationID = "listPermissionActionEndpoints"
+											r.operationGroup = ""
+											r.pathPattern = "/permission-actions/{id}/endpoints"
+											r.args = args
+											r.count = 1
+											return r, true
+										case "POST":
+											r.name = AddPermissionActionEndpointOperation
+											r.summary = "新增功能权限关联接口"
+											r.operationID = "addPermissionActionEndpoint"
+											r.operationGroup = ""
+											r.pathPattern = "/permission-actions/{id}/endpoints"
+											r.args = args
+											r.count = 1
+											return r, true
+										default:
+											return
+										}
+									}
+									switch elem[0] {
+									case '/': // Prefix: "/"
+
+										if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										// Param: "endpointCode"
+										// Leaf parameter, slashes are prohibited
+										idx := strings.IndexByte(elem, '/')
+										if idx >= 0 {
+											break
+										}
+										args[1] = elem
+										elem = ""
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch method {
+											case "DELETE":
+												r.name = RemovePermissionActionEndpointOperation
+												r.summary = "删除功能权限关联接口"
+												r.operationID = "removePermissionActionEndpoint"
+												r.operationGroup = ""
+												r.pathPattern = "/permission-actions/{id}/endpoints/{endpointCode}"
+												r.args = args
+												r.count = 2
+												return r, true
+											default:
+												return
+											}
+										}
+
+									}
+
+								case 'i': // Prefix: "impact-preview"
+
+									if l := len("impact-preview"); len(elem) >= l && elem[0:l] == "impact-preview" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch method {
+										case "GET":
+											r.name = GetPermissionActionImpactPreviewOperation
+											r.summary = "获取功能权限影响预览"
+											r.operationID = "getPermissionActionImpactPreview"
+											r.operationGroup = ""
+											r.pathPattern = "/permission-actions/{id}/impact-preview"
+											r.args = args
+											r.count = 1
+											return r, true
+										default:
+											return
+										}
+									}
+
+								}
+
+							}
+
+						}
+
+					case 's': // Prefix: "s/explain"
+
+						if l := len("s/explain"); len(elem) >= l && elem[0:l] == "s/explain" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "GET":
+								r.name = ExplainPermissionsOperation
+								r.summary = "解释当前账号在指定工作空间内的最终权限及其来源"
+								r.operationID = "explainPermissions"
+								r.operationGroup = ""
+								r.pathPattern = "/permissions/explain"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+
+					}
+
+				}
+
+			case 'r': // Prefix: "r"
+
+				if l := len("r"); len(elem) >= l && elem[0:l] == "r" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					break
+				}
+				switch elem[0] {
+				case 'o': // Prefix: "oles"
+
+					if l := len("oles"); len(elem) >= l && elem[0:l] == "oles" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						switch method {
+						case "GET":
+							r.name = ListRolesOperation
+							r.summary = "获取角色列表"
+							r.operationID = "listRoles"
+							r.operationGroup = ""
+							r.pathPattern = "/roles"
+							r.args = args
+							r.count = 0
+							return r, true
+						case "POST":
+							r.name = CreateRoleOperation
+							r.summary = "创建角色"
+							r.operationID = "createRole"
+							r.operationGroup = ""
+							r.pathPattern = "/roles"
+							r.args = args
+							r.count = 0
+							return r, true
+						default:
+							return
+						}
+					}
+					switch elem[0] {
+					case '/': // Prefix: "/"
+
+						if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							break
+						}
+						switch elem[0] {
+						case 'o': // Prefix: "options"
+							origElem := elem
+							if l := len("options"); len(elem) >= l && elem[0:l] == "options" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = ListRoleOptionsOperation
+									r.summary = "获取角色候选列表"
+									r.operationID = "listRoleOptions"
+									r.operationGroup = ""
+									r.pathPattern = "/roles/options"
+									r.args = args
+									r.count = 0
+									return r, true
+								default:
+									return
+								}
+							}
+
+							elem = origElem
+						}
+						// Param: "id"
+						// Match until "/"
+						idx := strings.IndexByte(elem, '/')
+						if idx < 0 {
+							idx = len(elem)
+						}
+						args[0] = elem[:idx]
+						elem = elem[idx:]
+
+						if len(elem) == 0 {
+							switch method {
+							case "DELETE":
+								r.name = DeleteRoleOperation
+								r.summary = "删除角色"
+								r.operationID = "deleteRole"
+								r.operationGroup = ""
+								r.pathPattern = "/roles/{id}"
+								r.args = args
+								r.count = 1
+								return r, true
+							case "GET":
+								r.name = GetRoleOperation
+								r.summary = "获取角色详情"
+								r.operationID = "getRole"
+								r.operationGroup = ""
+								r.pathPattern = "/roles/{id}"
+								r.args = args
+								r.count = 1
+								return r, true
+							case "PUT":
+								r.name = UpdateRoleOperation
+								r.summary = "更新角色"
+								r.operationID = "updateRole"
+								r.operationGroup = ""
+								r.pathPattern = "/roles/{id}"
+								r.args = args
+								r.count = 1
+								return r, true
+							default:
+								return
+							}
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'a': // Prefix: "actions"
+
+								if l := len("actions"); len(elem) >= l && elem[0:l] == "actions" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = GetRoleActionsOperation
+										r.summary = "获取角色功能权限"
+										r.operationID = "getRoleActions"
+										r.operationGroup = ""
+										r.pathPattern = "/roles/{id}/actions"
+										r.args = args
+										r.count = 1
+										return r, true
+									case "PUT":
+										r.name = SetRoleActionsOperation
+										r.summary = "配置角色功能权限"
+										r.operationID = "setRoleActions"
+										r.operationGroup = ""
+										r.pathPattern = "/roles/{id}/actions"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							case 'd': // Prefix: "data-permissions"
+
+								if l := len("data-permissions"); len(elem) >= l && elem[0:l] == "data-permissions" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = GetRoleDataPermissionsOperation
+										r.summary = "获取角色数据权限"
+										r.operationID = "getRoleDataPermissions"
+										r.operationGroup = ""
+										r.pathPattern = "/roles/{id}/data-permissions"
+										r.args = args
+										r.count = 1
+										return r, true
+									case "PUT":
+										r.name = SetRoleDataPermissionsOperation
+										r.summary = "配置角色数据权限"
+										r.operationID = "setRoleDataPermissions"
+										r.operationGroup = ""
+										r.pathPattern = "/roles/{id}/data-permissions"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							case 'm': // Prefix: "menus"
+
+								if l := len("menus"); len(elem) >= l && elem[0:l] == "menus" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = GetRoleMenusOperation
+										r.summary = "获取角色菜单权限"
+										r.operationID = "getRoleMenus"
+										r.operationGroup = ""
+										r.pathPattern = "/roles/{id}/menus"
+										r.args = args
+										r.count = 1
+										return r, true
+									case "PUT":
+										r.name = SetRoleMenusOperation
+										r.summary = "配置角色菜单权限"
+										r.operationID = "setRoleMenus"
+										r.operationGroup = ""
+										r.pathPattern = "/roles/{id}/menus"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							case 'p': // Prefix: "packages"
+
+								if l := len("packages"); len(elem) >= l && elem[0:l] == "packages" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = GetRolePackagesOperation
+										r.summary = "获取角色功能包"
+										r.operationID = "getRolePackages"
+										r.operationGroup = ""
+										r.pathPattern = "/roles/{id}/packages"
+										r.args = args
+										r.count = 1
+										return r, true
+									case "PUT":
+										r.name = SetRolePackagesOperation
+										r.summary = "配置角色功能包"
+										r.operationID = "setRolePackages"
+										r.operationGroup = ""
+										r.pathPattern = "/roles/{id}/packages"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							}
+
+						}
+
+					}
+
+				case 'u': // Prefix: "untime/navigation"
+
+					if l := len("untime/navigation"); len(elem) >= l && elem[0:l] == "untime/navigation" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						// Leaf node.
+						switch method {
+						case "GET":
+							r.name = GetNavigationOperation
+							r.summary = "获取运行时导航清单"
+							r.operationID = "getNavigation"
+							r.operationGroup = ""
+							r.pathPattern = "/runtime/navigation"
+							r.args = args
+							r.count = 0
+							return r, true
+						default:
+							return
+						}
+					}
+
+				}
+
+			case 's': // Prefix: "system/"
+
+				if l := len("system/"); len(elem) >= l && elem[0:l] == "system/" {
+					elem = elem[l:]
+				} else {
+					break
+				}
+
+				if len(elem) == 0 {
+					break
+				}
+				switch elem[0] {
+				case 'a': // Prefix: "app"
+
+					if l := len("app"); len(elem) >= l && elem[0:l] == "app" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case '-': // Prefix: "-host-bindings"
+
+						if l := len("-host-bindings"); len(elem) >= l && elem[0:l] == "-host-bindings" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							// Leaf node.
+							switch method {
+							case "GET":
+								r.name = ListAppHostBindingsOperation
+								r.summary = "获取应用 Host 绑定"
+								r.operationID = "listAppHostBindings"
+								r.operationGroup = ""
+								r.pathPattern = "/system/app-host-bindings"
+								r.args = args
+								r.count = 0
+								return r, true
+							case "POST":
+								r.name = SaveAppHostBindingOperation
+								r.summary = "保存应用 Host 绑定"
+								r.operationID = "saveAppHostBinding"
+								r.operationGroup = ""
+								r.pathPattern = "/system/app-host-bindings"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+
+					case 's': // Prefix: "s"
+
+						if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch method {
+							case "GET":
+								r.name = ListAppsOperation
+								r.summary = "获取应用列表"
+								r.operationID = "listApps"
+								r.operationGroup = ""
+								r.pathPattern = "/system/apps"
+								r.args = args
+								r.count = 0
+								return r, true
+							case "POST":
+								r.name = SaveAppOperation
+								r.summary = "保存应用"
+								r.operationID = "saveApp"
+								r.operationGroup = ""
+								r.pathPattern = "/system/apps"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/current"
+
+							if l := len("/current"); len(elem) >= l && elem[0:l] == "/current" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = GetCurrentAppOperation
+									r.summary = "获取当前应用"
+									r.operationID = "getCurrentApp"
+									r.operationGroup = ""
+									r.pathPattern = "/system/apps/current"
+									r.args = args
+									r.count = 0
+									return r, true
+								default:
+									return
+								}
+							}
+
+						}
+
+					}
+
+				case 'f': // Prefix: "fast-enter"
+
+					if l := len("fast-enter"); len(elem) >= l && elem[0:l] == "fast-enter" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						// Leaf node.
+						switch method {
+						case "GET":
+							r.name = GetFastEnterConfigOperation
+							r.summary = "获取快捷入口配置"
+							r.operationID = "getFastEnterConfig"
+							r.operationGroup = ""
+							r.pathPattern = "/system/fast-enter"
+							r.args = args
+							r.count = 0
+							return r, true
+						case "PUT":
+							r.name = UpdateFastEnterConfigOperation
+							r.summary = "更新快捷入口配置"
+							r.operationID = "updateFastEnterConfig"
+							r.operationGroup = ""
+							r.pathPattern = "/system/fast-enter"
+							r.args = args
+							r.count = 0
+							return r, true
+						default:
+							return
+						}
+					}
+
+				case 'm': // Prefix: "menu-space"
+
+					if l := len("menu-space"); len(elem) >= l && elem[0:l] == "menu-space" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						break
+					}
+					switch elem[0] {
+					case '-': // Prefix: "-"
+
+						if l := len("-"); len(elem) >= l && elem[0:l] == "-" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							break
+						}
+						switch elem[0] {
+						case 'h': // Prefix: "host-bindings"
+
+							if l := len("host-bindings"); len(elem) >= l && elem[0:l] == "host-bindings" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = ListMenuSpaceHostBindingsOperation
+									r.summary = "获取菜单空间 Host 绑定"
+									r.operationID = "listMenuSpaceHostBindings"
+									r.operationGroup = ""
+									r.pathPattern = "/system/menu-space-host-bindings"
+									r.args = args
+									r.count = 0
+									return r, true
+								case "POST":
+									r.name = SaveMenuSpaceHostBindingOperation
+									r.summary = "保存菜单空间 Host 绑定"
+									r.operationID = "saveMenuSpaceHostBinding"
+									r.operationGroup = ""
+									r.pathPattern = "/system/menu-space-host-bindings"
+									r.args = args
+									r.count = 0
+									return r, true
+								default:
+									return
+								}
+							}
+
+						case 'm': // Prefix: "mode"
+
+							if l := len("mode"); len(elem) >= l && elem[0:l] == "mode" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = GetMenuSpaceModeOperation
+									r.summary = "获取菜单空间模式"
+									r.operationID = "getMenuSpaceMode"
+									r.operationGroup = ""
+									r.pathPattern = "/system/menu-space-mode"
+									r.args = args
+									r.count = 0
+									return r, true
+								case "PUT":
+									r.name = SaveMenuSpaceModeOperation
+									r.summary = "保存菜单空间模式"
+									r.operationID = "saveMenuSpaceMode"
+									r.operationGroup = ""
+									r.pathPattern = "/system/menu-space-mode"
+									r.args = args
+									r.count = 0
+									return r, true
+								default:
+									return
+								}
+							}
+
+						}
+
+					case 's': // Prefix: "s"
+
+						if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+							elem = elem[l:]
+						} else {
+							break
+						}
+
+						if len(elem) == 0 {
+							switch method {
+							case "GET":
+								r.name = ListMenuSpacesOperation
+								r.summary = "获取菜单空间列表"
+								r.operationID = "listMenuSpaces"
+								r.operationGroup = ""
+								r.pathPattern = "/system/menu-spaces"
+								r.args = args
+								r.count = 0
+								return r, true
+							case "POST":
+								r.name = SaveMenuSpaceOperation
+								r.summary = "保存菜单空间"
+								r.operationID = "saveMenuSpace"
+								r.operationGroup = ""
+								r.pathPattern = "/system/menu-spaces"
+								r.args = args
+								r.count = 0
+								return r, true
+							default:
+								return
+							}
+						}
+						switch elem[0] {
+						case '/': // Prefix: "/"
+
+							if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'c': // Prefix: "current"
+								origElem := elem
+								if l := len("current"); len(elem) >= l && elem[0:l] == "current" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = GetCurrentMenuSpaceOperation
+										r.summary = "获取当前菜单空间"
+										r.operationID = "getCurrentMenuSpace"
+										r.operationGroup = ""
+										r.pathPattern = "/system/menu-spaces/current"
+										r.args = args
+										r.count = 0
+										return r, true
+									default:
+										return
+									}
+								}
+
+								elem = origElem
+							}
+							// Param: "spaceKey"
+							// Match until "/"
+							idx := strings.IndexByte(elem, '/')
+							if idx < 0 {
+								idx = len(elem)
+							}
+							args[0] = elem[:idx]
+							elem = elem[idx:]
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case '/': // Prefix: "/initialize-default"
+
+								if l := len("/initialize-default"); len(elem) >= l && elem[0:l] == "/initialize-default" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "POST":
+										r.name = InitializeMenuSpaceFromDefaultOperation
+										r.summary = "从默认空间初始化菜单空间"
+										r.operationID = "initializeMenuSpaceFromDefault"
+										r.operationGroup = ""
+										r.pathPattern = "/system/menu-spaces/{spaceKey}/initialize-default"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							}
+
+						}
+
+					}
+
+				case 'v': // Prefix: "view-pages"
+
+					if l := len("view-pages"); len(elem) >= l && elem[0:l] == "view-pages" {
+						elem = elem[l:]
+					} else {
+						break
+					}
+
+					if len(elem) == 0 {
+						// Leaf node.
+						switch method {
+						case "GET":
+							r.name = GetSystemViewPagesOperation
+							r.summary = "获取页面文件映射"
+							r.operationID = "getSystemViewPages"
+							r.operationGroup = ""
+							r.pathPattern = "/system/view-pages"
+							r.args = args
+							r.count = 0
+							return r, true
+						default:
+							return
+						}
+					}
+
 				}
 
 			case 'u': // Prefix: "users"
@@ -794,29 +8591,253 @@ func (s *Server) FindPath(method string, u *url.URL) (r Route, _ bool) {
 						}
 					}
 					switch elem[0] {
-					case '/': // Prefix: "/roles"
+					case '/': // Prefix: "/"
 
-						if l := len("/roles"); len(elem) >= l && elem[0:l] == "/roles" {
+						if l := len("/"); len(elem) >= l && elem[0:l] == "/" {
 							elem = elem[l:]
 						} else {
 							break
 						}
 
 						if len(elem) == 0 {
-							// Leaf node.
-							switch method {
-							case "POST":
-								r.name = AssignUserRolesOperation
-								r.summary = "分配用户角色"
-								r.operationID = "assignUserRoles"
-								r.operationGroup = ""
-								r.pathPattern = "/users/{id}/roles"
-								r.args = args
-								r.count = 1
-								return r, true
-							default:
-								return
+							break
+						}
+						switch elem[0] {
+						case 'c': // Prefix: "collaboration-workspaces"
+
+							if l := len("collaboration-workspaces"); len(elem) >= l && elem[0:l] == "collaboration-workspaces" {
+								elem = elem[l:]
+							} else {
+								break
 							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = GetUserCollaborationWorkspacesOperation
+									r.summary = "获取用户所在协作空间列表"
+									r.operationID = "getUserCollaborationWorkspaces"
+									r.operationGroup = ""
+									r.pathPattern = "/users/{id}/collaboration-workspaces"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+
+						case 'm': // Prefix: "menus"
+
+							if l := len("menus"); len(elem) >= l && elem[0:l] == "menus" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "GET":
+									r.name = GetUserMenusOperation
+									r.summary = "获取用户菜单裁剪"
+									r.operationID = "getUserMenus"
+									r.operationGroup = ""
+									r.pathPattern = "/users/{id}/menus"
+									r.args = args
+									r.count = 1
+									return r, true
+								case "PUT":
+									r.name = SetUserMenusOperation
+									r.summary = "配置用户菜单裁剪"
+									r.operationID = "setUserMenus"
+									r.operationGroup = ""
+									r.pathPattern = "/users/{id}/menus"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+
+						case 'p': // Prefix: "p"
+
+							if l := len("p"); len(elem) >= l && elem[0:l] == "p" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								break
+							}
+							switch elem[0] {
+							case 'a': // Prefix: "ackages"
+
+								if l := len("ackages"); len(elem) >= l && elem[0:l] == "ackages" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									// Leaf node.
+									switch method {
+									case "GET":
+										r.name = GetUserPackagesOperation
+										r.summary = "获取用户功能包"
+										r.operationID = "getUserPackages"
+										r.operationGroup = ""
+										r.pathPattern = "/users/{id}/packages"
+										r.args = args
+										r.count = 1
+										return r, true
+									case "PUT":
+										r.name = SetUserPackagesOperation
+										r.summary = "配置用户功能包"
+										r.operationID = "setUserPackages"
+										r.operationGroup = ""
+										r.pathPattern = "/users/{id}/packages"
+										r.args = args
+										r.count = 1
+										return r, true
+									default:
+										return
+									}
+								}
+
+							case 'e': // Prefix: "ermission"
+
+								if l := len("ermission"); len(elem) >= l && elem[0:l] == "ermission" {
+									elem = elem[l:]
+								} else {
+									break
+								}
+
+								if len(elem) == 0 {
+									break
+								}
+								switch elem[0] {
+								case '-': // Prefix: "-"
+
+									if l := len("-"); len(elem) >= l && elem[0:l] == "-" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										break
+									}
+									switch elem[0] {
+									case 'd': // Prefix: "diagnosis"
+
+										if l := len("diagnosis"); len(elem) >= l && elem[0:l] == "diagnosis" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch method {
+											case "GET":
+												r.name = GetUserPermissionDiagnosisOperation
+												r.summary = "获取用户权限诊断"
+												r.operationID = "getUserPermissionDiagnosis"
+												r.operationGroup = ""
+												r.pathPattern = "/users/{id}/permission-diagnosis"
+												r.args = args
+												r.count = 1
+												return r, true
+											default:
+												return
+											}
+										}
+
+									case 'r': // Prefix: "refresh"
+
+										if l := len("refresh"); len(elem) >= l && elem[0:l] == "refresh" {
+											elem = elem[l:]
+										} else {
+											break
+										}
+
+										if len(elem) == 0 {
+											// Leaf node.
+											switch method {
+											case "POST":
+												r.name = RefreshUserPermissionSnapshotOperation
+												r.summary = "刷新用户权限快照"
+												r.operationID = "refreshUserPermissionSnapshot"
+												r.operationGroup = ""
+												r.pathPattern = "/users/{id}/permission-refresh"
+												r.args = args
+												r.count = 1
+												return r, true
+											default:
+												return
+											}
+										}
+
+									}
+
+								case 's': // Prefix: "s"
+
+									if l := len("s"); len(elem) >= l && elem[0:l] == "s" {
+										elem = elem[l:]
+									} else {
+										break
+									}
+
+									if len(elem) == 0 {
+										// Leaf node.
+										switch method {
+										case "GET":
+											r.name = GetUserPermissionsOperation
+											r.summary = "获取用户菜单权限"
+											r.operationID = "getUserPermissions"
+											r.operationGroup = ""
+											r.pathPattern = "/users/{id}/permissions"
+											r.args = args
+											r.count = 1
+											return r, true
+										default:
+											return
+										}
+									}
+
+								}
+
+							}
+
+						case 'r': // Prefix: "roles"
+
+							if l := len("roles"); len(elem) >= l && elem[0:l] == "roles" {
+								elem = elem[l:]
+							} else {
+								break
+							}
+
+							if len(elem) == 0 {
+								// Leaf node.
+								switch method {
+								case "POST":
+									r.name = AssignUserRolesOperation
+									r.summary = "分配用户角色"
+									r.operationID = "assignUserRoles"
+									r.operationGroup = ""
+									r.pathPattern = "/users/{id}/roles"
+									r.args = args
+									r.count = 1
+									return r, true
+								default:
+									return
+								}
+							}
+
 						}
 
 					}

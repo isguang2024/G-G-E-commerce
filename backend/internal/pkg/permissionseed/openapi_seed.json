@@ -42,6 +42,1276 @@
       "access_mode": "public"
     },
     {
+      "operation_id": "listCollaborationWorkspaces",
+      "method": "get",
+      "path": "/collaboration-workspaces",
+      "permission_key": "collaboration_workspace.manage",
+      "summary": "获取协作空间列表",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createCollaborationWorkspace",
+      "method": "post",
+      "path": "/collaboration-workspaces",
+      "permission_key": "collaboration_workspace.manage",
+      "summary": "创建协作空间",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCurrentCollaborationWorkspace",
+      "method": "get",
+      "path": "/collaboration-workspaces/current",
+      "permission_key": "",
+      "summary": "获取当前协作空间详情",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "getCurrentCollaborationWorkspaceActionOrigins",
+      "method": "get",
+      "path": "/collaboration-workspaces/current/action-origins",
+      "permission_key": "collaboration_workspace.boundary.manage",
+      "summary": "获取当前协作空间功能权限来源",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCurrentCollaborationWorkspaceActions",
+      "method": "get",
+      "path": "/collaboration-workspaces/current/actions",
+      "permission_key": "collaboration_workspace.boundary.manage",
+      "summary": "获取当前协作空间功能权限边界",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCurrentCollaborationWorkspaceBoundaryPackages",
+      "method": "get",
+      "path": "/collaboration-workspaces/current/boundary/packages",
+      "permission_key": "collaboration_workspace.boundary.manage",
+      "summary": "获取当前协作空间已开通功能包(边界管理)",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listCurrentCollaborationWorkspaceBoundaryRoles",
+      "method": "get",
+      "path": "/collaboration-workspaces/current/boundary/roles",
+      "permission_key": "collaboration_workspace.boundary.manage",
+      "summary": "获取当前协作空间边界可见角色",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createCurrentCollaborationWorkspaceBoundaryRole",
+      "method": "post",
+      "path": "/collaboration-workspaces/current/boundary/roles",
+      "permission_key": "collaboration_workspace.boundary.manage",
+      "summary": "创建当前协作空间角色(边界管理)",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteCurrentCollaborationWorkspaceBoundaryRole",
+      "method": "delete",
+      "path": "/collaboration-workspaces/current/boundary/roles/{roleId}",
+      "permission_key": "collaboration_workspace.boundary.manage",
+      "summary": "删除当前协作空间角色(边界管理)",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateCurrentCollaborationWorkspaceBoundaryRole",
+      "method": "put",
+      "path": "/collaboration-workspaces/current/boundary/roles/{roleId}",
+      "permission_key": "collaboration_workspace.boundary.manage",
+      "summary": "更新当前协作空间角色(边界管理)",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCurrentCollaborationWorkspaceBoundaryRoleActions",
+      "method": "get",
+      "path": "/collaboration-workspaces/current/boundary/roles/{roleId}/actions",
+      "permission_key": "collaboration_workspace.boundary.manage",
+      "summary": "获取当前协作空间角色功能权限(边界管理)",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "setCurrentCollaborationWorkspaceBoundaryRoleActions",
+      "method": "put",
+      "path": "/collaboration-workspaces/current/boundary/roles/{roleId}/actions",
+      "permission_key": "collaboration_workspace.boundary.manage",
+      "summary": "配置当前协作空间角色功能权限(边界管理)",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCurrentCollaborationWorkspaceBoundaryRoleMenus",
+      "method": "get",
+      "path": "/collaboration-workspaces/current/boundary/roles/{roleId}/menus",
+      "permission_key": "collaboration_workspace.boundary.manage",
+      "summary": "获取当前协作空间角色菜单权限(边界管理)",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "setCurrentCollaborationWorkspaceBoundaryRoleMenus",
+      "method": "put",
+      "path": "/collaboration-workspaces/current/boundary/roles/{roleId}/menus",
+      "permission_key": "collaboration_workspace.boundary.manage",
+      "summary": "配置当前协作空间角色菜单权限(边界管理)",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCurrentCollaborationWorkspaceBoundaryRolePackages",
+      "method": "get",
+      "path": "/collaboration-workspaces/current/boundary/roles/{roleId}/packages",
+      "permission_key": "collaboration_workspace.boundary.manage",
+      "summary": "获取当前协作空间角色功能包(边界管理)",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "setCurrentCollaborationWorkspaceBoundaryRolePackages",
+      "method": "put",
+      "path": "/collaboration-workspaces/current/boundary/roles/{roleId}/packages",
+      "permission_key": "collaboration_workspace.boundary.manage",
+      "summary": "配置当前协作空间角色功能包(边界管理)",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listCurrentCollaborationWorkspaceMembers",
+      "method": "get",
+      "path": "/collaboration-workspaces/current/members",
+      "permission_key": "",
+      "summary": "获取当前协作空间成员列表",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "addCurrentCollaborationWorkspaceMember",
+      "method": "post",
+      "path": "/collaboration-workspaces/current/members",
+      "permission_key": "collaboration_workspace.member.manage",
+      "summary": "添加当前协作空间成员",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "removeCurrentCollaborationWorkspaceMember",
+      "method": "delete",
+      "path": "/collaboration-workspaces/current/members/{userId}",
+      "permission_key": "collaboration_workspace.member.manage",
+      "summary": "移除当前协作空间成员",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateCurrentCollaborationWorkspaceMemberRole",
+      "method": "put",
+      "path": "/collaboration-workspaces/current/members/{userId}/role",
+      "permission_key": "collaboration_workspace.member.manage",
+      "summary": "更新当前协作空间成员身份",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCurrentCollaborationWorkspaceMemberRoles",
+      "method": "get",
+      "path": "/collaboration-workspaces/current/members/{userId}/roles",
+      "permission_key": "collaboration_workspace.member.manage",
+      "summary": "获取当前协作空间成员角色",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "setCurrentCollaborationWorkspaceMemberRoles",
+      "method": "put",
+      "path": "/collaboration-workspaces/current/members/{userId}/roles",
+      "permission_key": "collaboration_workspace.member.manage",
+      "summary": "配置当前协作空间成员角色",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCurrentCollaborationWorkspaceMenuOrigins",
+      "method": "get",
+      "path": "/collaboration-workspaces/current/menu-origins",
+      "permission_key": "collaboration_workspace.boundary.manage",
+      "summary": "获取当前协作空间菜单来源",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCurrentCollaborationWorkspaceMenus",
+      "method": "get",
+      "path": "/collaboration-workspaces/current/menus",
+      "permission_key": "collaboration_workspace.boundary.manage",
+      "summary": "获取当前协作空间菜单边界",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listCurrentCollaborationWorkspaceRoles",
+      "method": "get",
+      "path": "/collaboration-workspaces/current/roles",
+      "permission_key": "collaboration_workspace.member.manage",
+      "summary": "获取当前协作空间可分配角色",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createCurrentCollaborationWorkspaceRole",
+      "method": "post",
+      "path": "/collaboration-workspaces/current/roles",
+      "permission_key": "collaboration_workspace.member.manage",
+      "summary": "创建当前协作空间角色",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listMyCollaborationWorkspaces",
+      "method": "get",
+      "path": "/collaboration-workspaces/mine",
+      "permission_key": "",
+      "summary": "获取我的协作空间列表",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "listCollaborationWorkspaceOptions",
+      "method": "get",
+      "path": "/collaboration-workspaces/options",
+      "permission_key": "collaboration_workspace.manage",
+      "summary": "获取协作空间候选",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteCollaborationWorkspace",
+      "method": "delete",
+      "path": "/collaboration-workspaces/{id}",
+      "permission_key": "collaboration_workspace.manage",
+      "summary": "删除协作空间",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCollaborationWorkspace",
+      "method": "get",
+      "path": "/collaboration-workspaces/{id}",
+      "permission_key": "collaboration_workspace.manage",
+      "summary": "获取协作空间详情",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateCollaborationWorkspace",
+      "method": "put",
+      "path": "/collaboration-workspaces/{id}",
+      "permission_key": "collaboration_workspace.manage",
+      "summary": "更新协作空间",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCollaborationWorkspaceActionOrigins",
+      "method": "get",
+      "path": "/collaboration-workspaces/{id}/action-origins",
+      "permission_key": "collaboration_workspace.manage",
+      "summary": "获取协作空间功能权限来源",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCollaborationWorkspaceActions",
+      "method": "get",
+      "path": "/collaboration-workspaces/{id}/actions",
+      "permission_key": "collaboration_workspace.manage",
+      "summary": "获取协作空间功能权限边界",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "setCollaborationWorkspaceActions",
+      "method": "put",
+      "path": "/collaboration-workspaces/{id}/actions",
+      "permission_key": "collaboration_workspace.manage",
+      "summary": "配置协作空间功能权限边界",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listCollaborationWorkspaceMembers",
+      "method": "get",
+      "path": "/collaboration-workspaces/{id}/members",
+      "permission_key": "collaboration_workspace.manage",
+      "summary": "获取协作空间成员列表",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "addCollaborationWorkspaceMember",
+      "method": "post",
+      "path": "/collaboration-workspaces/{id}/members",
+      "permission_key": "collaboration_workspace.manage",
+      "summary": "添加协作空间成员",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "removeCollaborationWorkspaceMember",
+      "method": "delete",
+      "path": "/collaboration-workspaces/{id}/members/{userId}",
+      "permission_key": "collaboration_workspace.manage",
+      "summary": "移除协作空间成员",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateCollaborationWorkspaceMemberRole",
+      "method": "put",
+      "path": "/collaboration-workspaces/{id}/members/{userId}/role",
+      "permission_key": "collaboration_workspace.manage",
+      "summary": "更新协作空间成员身份",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCollaborationWorkspaceMenuOrigins",
+      "method": "get",
+      "path": "/collaboration-workspaces/{id}/menu-origins",
+      "permission_key": "collaboration_workspace.manage",
+      "summary": "获取协作空间菜单来源",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCollaborationWorkspaceMenus",
+      "method": "get",
+      "path": "/collaboration-workspaces/{id}/menus",
+      "permission_key": "collaboration_workspace.manage",
+      "summary": "获取协作空间菜单边界",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "setCollaborationWorkspaceMenus",
+      "method": "put",
+      "path": "/collaboration-workspaces/{id}/menus",
+      "permission_key": "collaboration_workspace.manage",
+      "summary": "配置协作空间菜单边界",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listCollaborationWorkspaceRoles",
+      "method": "get",
+      "path": "/collaboration-workspaces/{id}/roles",
+      "permission_key": "collaboration_workspace.manage",
+      "summary": "获取协作空间可分配角色",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listFeaturePackages",
+      "method": "get",
+      "path": "/feature-packages",
+      "permission_key": "feature_package.manage",
+      "summary": "获取功能包列表",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createFeaturePackage",
+      "method": "post",
+      "path": "/feature-packages",
+      "permission_key": "feature_package.manage",
+      "summary": "创建功能包",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCollaborationWorkspacePackages",
+      "method": "get",
+      "path": "/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}",
+      "permission_key": "feature_package.assign_collaboration_workspace",
+      "summary": "获取协作空间功能包",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "setCollaborationWorkspacePackages",
+      "method": "put",
+      "path": "/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}",
+      "permission_key": "feature_package.assign_collaboration_workspace",
+      "summary": "配置协作空间功能包",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listFeaturePackageOptions",
+      "method": "get",
+      "path": "/feature-packages/options",
+      "permission_key": "feature_package.manage",
+      "summary": "获取功能包候选",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getFeaturePackageRelationTree",
+      "method": "get",
+      "path": "/feature-packages/relationship-tree",
+      "permission_key": "feature_package.manage",
+      "summary": "获取功能包关系树",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteFeaturePackage",
+      "method": "delete",
+      "path": "/feature-packages/{id}",
+      "permission_key": "feature_package.manage",
+      "summary": "删除功能包",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getFeaturePackage",
+      "method": "get",
+      "path": "/feature-packages/{id}",
+      "permission_key": "feature_package.manage",
+      "summary": "获取功能包详情",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateFeaturePackage",
+      "method": "put",
+      "path": "/feature-packages/{id}",
+      "permission_key": "feature_package.manage",
+      "summary": "更新功能包",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getFeaturePackageActions",
+      "method": "get",
+      "path": "/feature-packages/{id}/actions",
+      "permission_key": "feature_package.manage",
+      "summary": "获取功能包权限",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "setFeaturePackageActions",
+      "method": "put",
+      "path": "/feature-packages/{id}/actions",
+      "permission_key": "feature_package.manage",
+      "summary": "配置功能包权限",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getFeaturePackageChildren",
+      "method": "get",
+      "path": "/feature-packages/{id}/children",
+      "permission_key": "feature_package.manage",
+      "summary": "获取组合包基础包",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "setFeaturePackageChildren",
+      "method": "put",
+      "path": "/feature-packages/{id}/children",
+      "permission_key": "feature_package.manage",
+      "summary": "配置组合包基础包",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getFeaturePackageCollaborationWorkspaces",
+      "method": "get",
+      "path": "/feature-packages/{id}/collaboration-workspaces",
+      "permission_key": "feature_package.assign_collaboration_workspace",
+      "summary": "获取功能包协作空间",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "setFeaturePackageCollaborationWorkspaces",
+      "method": "put",
+      "path": "/feature-packages/{id}/collaboration-workspaces",
+      "permission_key": "feature_package.assign_collaboration_workspace",
+      "summary": "配置功能包协作空间",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getFeaturePackageImpactPreview",
+      "method": "get",
+      "path": "/feature-packages/{id}/impact-preview",
+      "permission_key": "feature_package.manage",
+      "summary": "获取功能包影响预览",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getFeaturePackageMenus",
+      "method": "get",
+      "path": "/feature-packages/{id}/menus",
+      "permission_key": "feature_package.manage",
+      "summary": "获取功能包菜单",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "setFeaturePackageMenus",
+      "method": "put",
+      "path": "/feature-packages/{id}/menus",
+      "permission_key": "feature_package.manage",
+      "summary": "配置功能包菜单",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listFeaturePackageRiskAudits",
+      "method": "get",
+      "path": "/feature-packages/{id}/risk-audits",
+      "permission_key": "feature_package.manage",
+      "summary": "获取功能包最近变更",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "rollbackFeaturePackage",
+      "method": "post",
+      "path": "/feature-packages/{id}/rollback",
+      "permission_key": "feature_package.manage",
+      "summary": "回滚功能包版本",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listFeaturePackageVersions",
+      "method": "get",
+      "path": "/feature-packages/{id}/versions",
+      "permission_key": "feature_package.manage",
+      "summary": "获取功能包版本历史",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createMenu",
+      "method": "post",
+      "path": "/menus",
+      "permission_key": "system.menu.manage",
+      "summary": "创建菜单",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listMenuBackups",
+      "method": "get",
+      "path": "/menus/backups",
+      "permission_key": "system.menu.backup",
+      "summary": "获取菜单备份列表",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createMenuBackup",
+      "method": "post",
+      "path": "/menus/backups",
+      "permission_key": "system.menu.backup",
+      "summary": "创建菜单备份",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteMenuBackup",
+      "method": "delete",
+      "path": "/menus/backups/{id}",
+      "permission_key": "system.menu.backup",
+      "summary": "删除菜单备份",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "restoreMenuBackup",
+      "method": "post",
+      "path": "/menus/backups/{id}/restore",
+      "permission_key": "system.menu.backup",
+      "summary": "恢复菜单备份",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listMenuGroups",
+      "method": "get",
+      "path": "/menus/groups",
+      "permission_key": "system.menu.manage",
+      "summary": "获取菜单分组列表",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createMenuGroup",
+      "method": "post",
+      "path": "/menus/groups",
+      "permission_key": "system.menu.manage",
+      "summary": "创建菜单分组",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteMenuGroup",
+      "method": "delete",
+      "path": "/menus/groups/{id}",
+      "permission_key": "system.menu.manage",
+      "summary": "删除菜单分组",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateMenuGroup",
+      "method": "put",
+      "path": "/menus/groups/{id}",
+      "permission_key": "system.menu.manage",
+      "summary": "更新菜单分组",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getMenuTree",
+      "method": "get",
+      "path": "/menus/tree",
+      "permission_key": "",
+      "summary": "获取菜单树",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "deleteMenu",
+      "method": "delete",
+      "path": "/menus/{id}",
+      "permission_key": "system.menu.manage",
+      "summary": "删除菜单",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateMenu",
+      "method": "put",
+      "path": "/menus/{id}",
+      "permission_key": "system.menu.manage",
+      "summary": "更新菜单",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getMenuDeletePreview",
+      "method": "get",
+      "path": "/menus/{id}/delete-preview",
+      "permission_key": "system.menu.manage",
+      "summary": "获取菜单删除预览",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "dispatchMessage",
+      "method": "post",
+      "path": "/messages/dispatch",
+      "permission_key": "message.manage",
+      "summary": "发送站内消息",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getMessageDispatchOptions",
+      "method": "get",
+      "path": "/messages/dispatch/options",
+      "permission_key": "message.manage",
+      "summary": "获取消息发送配置",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listInbox",
+      "method": "get",
+      "path": "/messages/inbox",
+      "permission_key": "",
+      "summary": "获取消息列表",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "markInboxReadAll",
+      "method": "post",
+      "path": "/messages/inbox/read-all",
+      "permission_key": "",
+      "summary": "批量标记消息已读",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "getInboxSummary",
+      "method": "get",
+      "path": "/messages/inbox/summary",
+      "permission_key": "",
+      "summary": "获取消息摘要",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "getInboxDetail",
+      "method": "get",
+      "path": "/messages/inbox/{deliveryId}",
+      "permission_key": "",
+      "summary": "获取消息详情",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "markInboxRead",
+      "method": "post",
+      "path": "/messages/inbox/{deliveryId}/read",
+      "permission_key": "",
+      "summary": "标记消息已读",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "handleInboxTodo",
+      "method": "post",
+      "path": "/messages/inbox/{deliveryId}/todo-action",
+      "permission_key": "",
+      "summary": "处理待办消息",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "listMessageRecipientGroups",
+      "method": "get",
+      "path": "/messages/recipient-groups",
+      "permission_key": "message.manage",
+      "summary": "获取消息接收组",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createMessageRecipientGroup",
+      "method": "post",
+      "path": "/messages/recipient-groups",
+      "permission_key": "message.manage",
+      "summary": "新建消息接收组",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateMessageRecipientGroup",
+      "method": "put",
+      "path": "/messages/recipient-groups/{groupId}",
+      "permission_key": "message.manage",
+      "summary": "更新消息接收组",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listMessageDispatchRecords",
+      "method": "get",
+      "path": "/messages/records",
+      "permission_key": "message.manage",
+      "summary": "获取消息发送记录",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getMessageDispatchRecord",
+      "method": "get",
+      "path": "/messages/records/{recordId}",
+      "permission_key": "message.manage",
+      "summary": "获取消息发送记录详情",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listMessageSenders",
+      "method": "get",
+      "path": "/messages/senders",
+      "permission_key": "message.manage",
+      "summary": "获取消息发送人",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createMessageSender",
+      "method": "post",
+      "path": "/messages/senders",
+      "permission_key": "message.manage",
+      "summary": "新建消息发送人",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateMessageSender",
+      "method": "put",
+      "path": "/messages/senders/{senderId}",
+      "permission_key": "message.manage",
+      "summary": "更新消息发送人",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listMessageTemplates",
+      "method": "get",
+      "path": "/messages/templates",
+      "permission_key": "message.manage",
+      "summary": "获取消息模板",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createMessageTemplate",
+      "method": "post",
+      "path": "/messages/templates",
+      "permission_key": "message.manage",
+      "summary": "新建消息模板",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateMessageTemplate",
+      "method": "put",
+      "path": "/messages/templates/{templateId}",
+      "permission_key": "message.manage",
+      "summary": "更新消息模板",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listPages",
+      "method": "get",
+      "path": "/pages",
+      "permission_key": "system.page.manage",
+      "summary": "获取页面列表",
+      "tenant_scoped": true,
+      "app_scope": "required",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createPage",
+      "method": "post",
+      "path": "/pages",
+      "permission_key": "system.page.manage",
+      "summary": "创建页面",
+      "tenant_scoped": true,
+      "app_scope": "required",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getPageAccessTrace",
+      "method": "get",
+      "path": "/pages/access-trace",
+      "permission_key": "system.page.manage",
+      "summary": "获取页面访问链路",
+      "tenant_scoped": true,
+      "app_scope": "required",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listPageMenuOptions",
+      "method": "get",
+      "path": "/pages/menu-options",
+      "permission_key": "system.page.manage",
+      "summary": "获取上级菜单候选",
+      "tenant_scoped": true,
+      "app_scope": "required",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listPageOptions",
+      "method": "get",
+      "path": "/pages/options",
+      "permission_key": "system.page.manage",
+      "summary": "获取页面候选列表",
+      "tenant_scoped": true,
+      "app_scope": "required",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listRuntimePages",
+      "method": "get",
+      "path": "/pages/runtime",
+      "permission_key": "",
+      "summary": "获取运行时页面注册表",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "listPublicRuntimePages",
+      "method": "get",
+      "path": "/pages/runtime/public",
+      "permission_key": "",
+      "summary": "获取公开运行时页面注册表",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "public"
+    },
+    {
+      "operation_id": "syncPages",
+      "method": "post",
+      "path": "/pages/sync",
+      "permission_key": "system.page.sync",
+      "summary": "同步页面注册表",
+      "tenant_scoped": true,
+      "app_scope": "required",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listUnregisteredPages",
+      "method": "get",
+      "path": "/pages/unregistered",
+      "permission_key": "system.page.sync",
+      "summary": "获取未注册页面",
+      "tenant_scoped": true,
+      "app_scope": "required",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deletePage",
+      "method": "delete",
+      "path": "/pages/{id}",
+      "permission_key": "system.page.manage",
+      "summary": "删除页面",
+      "tenant_scoped": true,
+      "app_scope": "required",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getPage",
+      "method": "get",
+      "path": "/pages/{id}",
+      "permission_key": "system.page.manage",
+      "summary": "获取页面详情",
+      "tenant_scoped": true,
+      "app_scope": "required",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updatePage",
+      "method": "put",
+      "path": "/pages/{id}",
+      "permission_key": "system.page.manage",
+      "summary": "更新页面",
+      "tenant_scoped": true,
+      "app_scope": "required",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "previewPageBreadcrumb",
+      "method": "get",
+      "path": "/pages/{id}/breadcrumb-preview",
+      "permission_key": "system.page.manage",
+      "summary": "预览页面面包屑",
+      "tenant_scoped": true,
+      "app_scope": "required",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listPermissionActions",
+      "method": "get",
+      "path": "/permission-actions",
+      "permission_key": "system.permission.manage",
+      "summary": "获取功能权限列表",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createPermissionAction",
+      "method": "post",
+      "path": "/permission-actions",
+      "permission_key": "system.permission.manage",
+      "summary": "创建功能权限",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "batchUpdatePermissionActions",
+      "method": "post",
+      "path": "/permission-actions/batch",
+      "permission_key": "system.permission.manage",
+      "summary": "批量治理功能权限",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "cleanupUnusedPermissionActions",
+      "method": "post",
+      "path": "/permission-actions/cleanup-unused",
+      "permission_key": "system.permission.manage",
+      "summary": "清理未消费功能权限",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listPermissionActionGroups",
+      "method": "get",
+      "path": "/permission-actions/groups",
+      "permission_key": "system.permission.manage",
+      "summary": "获取功能权限分组列表",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createPermissionActionGroup",
+      "method": "post",
+      "path": "/permission-actions/groups",
+      "permission_key": "system.permission.manage",
+      "summary": "创建功能权限分组",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updatePermissionActionGroup",
+      "method": "put",
+      "path": "/permission-actions/groups/{id}",
+      "permission_key": "system.permission.manage",
+      "summary": "更新功能权限分组",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listPermissionActionOptions",
+      "method": "get",
+      "path": "/permission-actions/options",
+      "permission_key": "system.permission.manage",
+      "summary": "获取功能权限候选",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listPermissionActionRiskAudits",
+      "method": "get",
+      "path": "/permission-actions/risk-audits",
+      "permission_key": "system.permission.manage",
+      "summary": "获取功能权限最近变更",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listPermissionActionBatchTemplates",
+      "method": "get",
+      "path": "/permission-actions/templates",
+      "permission_key": "system.permission.manage",
+      "summary": "获取功能权限批量模板",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "savePermissionActionBatchTemplate",
+      "method": "post",
+      "path": "/permission-actions/templates",
+      "permission_key": "system.permission.manage",
+      "summary": "保存功能权限批量模板",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deletePermissionAction",
+      "method": "delete",
+      "path": "/permission-actions/{id}",
+      "permission_key": "system.permission.manage",
+      "summary": "删除功能权限",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getPermissionAction",
+      "method": "get",
+      "path": "/permission-actions/{id}",
+      "permission_key": "system.permission.manage",
+      "summary": "获取功能权限详情",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updatePermissionAction",
+      "method": "put",
+      "path": "/permission-actions/{id}",
+      "permission_key": "system.permission.manage",
+      "summary": "更新功能权限",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getPermissionActionConsumers",
+      "method": "get",
+      "path": "/permission-actions/{id}/consumers",
+      "permission_key": "system.permission.manage",
+      "summary": "获取功能权限消费明细",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listPermissionActionEndpoints",
+      "method": "get",
+      "path": "/permission-actions/{id}/endpoints",
+      "permission_key": "system.permission.manage",
+      "summary": "获取功能权限关联接口",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "addPermissionActionEndpoint",
+      "method": "post",
+      "path": "/permission-actions/{id}/endpoints",
+      "permission_key": "system.permission.manage",
+      "summary": "新增功能权限关联接口",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "removePermissionActionEndpoint",
+      "method": "delete",
+      "path": "/permission-actions/{id}/endpoints/{endpointCode}",
+      "permission_key": "system.permission.manage",
+      "summary": "删除功能权限关联接口",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getPermissionActionImpactPreview",
+      "method": "get",
+      "path": "/permission-actions/{id}/impact-preview",
+      "permission_key": "system.permission.manage",
+      "summary": "获取功能权限影响预览",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
       "operation_id": "explainPermissions",
       "method": "get",
       "path": "/permissions/explain",
@@ -49,6 +1319,316 @@
       "summary": "解释当前账号在指定工作空间内的最终权限及其来源",
       "tenant_scoped": true,
       "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listRoles",
+      "method": "get",
+      "path": "/roles",
+      "permission_key": "system.role.manage",
+      "summary": "获取角色列表",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createRole",
+      "method": "post",
+      "path": "/roles",
+      "permission_key": "system.role.manage",
+      "summary": "创建角色",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listRoleOptions",
+      "method": "get",
+      "path": "/roles/options",
+      "permission_key": "system.role.manage",
+      "summary": "获取角色候选列表",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteRole",
+      "method": "delete",
+      "path": "/roles/{id}",
+      "permission_key": "system.role.manage",
+      "summary": "删除角色",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getRole",
+      "method": "get",
+      "path": "/roles/{id}",
+      "permission_key": "system.role.manage",
+      "summary": "获取角色详情",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateRole",
+      "method": "put",
+      "path": "/roles/{id}",
+      "permission_key": "system.role.manage",
+      "summary": "更新角色",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getRoleActions",
+      "method": "get",
+      "path": "/roles/{id}/actions",
+      "permission_key": "system.role.assign_action",
+      "summary": "获取角色功能权限",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "setRoleActions",
+      "method": "put",
+      "path": "/roles/{id}/actions",
+      "permission_key": "system.role.assign_action",
+      "summary": "配置角色功能权限",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getRoleDataPermissions",
+      "method": "get",
+      "path": "/roles/{id}/data-permissions",
+      "permission_key": "system.role.assign_data",
+      "summary": "获取角色数据权限",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "setRoleDataPermissions",
+      "method": "put",
+      "path": "/roles/{id}/data-permissions",
+      "permission_key": "system.role.assign_data",
+      "summary": "配置角色数据权限",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getRoleMenus",
+      "method": "get",
+      "path": "/roles/{id}/menus",
+      "permission_key": "system.role.assign_menu",
+      "summary": "获取角色菜单权限",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "setRoleMenus",
+      "method": "put",
+      "path": "/roles/{id}/menus",
+      "permission_key": "system.role.assign_menu",
+      "summary": "配置角色菜单权限",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getRolePackages",
+      "method": "get",
+      "path": "/roles/{id}/packages",
+      "permission_key": "feature_package.assign_collaboration_workspace",
+      "summary": "获取角色功能包",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "setRolePackages",
+      "method": "put",
+      "path": "/roles/{id}/packages",
+      "permission_key": "feature_package.assign_collaboration_workspace",
+      "summary": "配置角色功能包",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getNavigation",
+      "method": "get",
+      "path": "/runtime/navigation",
+      "permission_key": "",
+      "summary": "获取运行时导航清单",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "listAppHostBindings",
+      "method": "get",
+      "path": "/system/app-host-bindings",
+      "permission_key": "system.menu.manage",
+      "summary": "获取应用 Host 绑定",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "saveAppHostBinding",
+      "method": "post",
+      "path": "/system/app-host-bindings",
+      "permission_key": "system.menu.manage",
+      "summary": "保存应用 Host 绑定",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listApps",
+      "method": "get",
+      "path": "/system/apps",
+      "permission_key": "system.menu.manage",
+      "summary": "获取应用列表",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "saveApp",
+      "method": "post",
+      "path": "/system/apps",
+      "permission_key": "system.menu.manage",
+      "summary": "保存应用",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCurrentApp",
+      "method": "get",
+      "path": "/system/apps/current",
+      "permission_key": "",
+      "summary": "获取当前应用",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "getFastEnterConfig",
+      "method": "get",
+      "path": "/system/fast-enter",
+      "permission_key": "",
+      "summary": "获取快捷入口配置",
+      "tenant_scoped": false,
+      "app_scope": "none",
+      "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "updateFastEnterConfig",
+      "method": "put",
+      "path": "/system/fast-enter",
+      "permission_key": "system.fast_enter.manage",
+      "summary": "更新快捷入口配置",
+      "tenant_scoped": false,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listMenuSpaceHostBindings",
+      "method": "get",
+      "path": "/system/menu-space-host-bindings",
+      "permission_key": "system.menu.manage",
+      "summary": "获取菜单空间 Host 绑定",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "saveMenuSpaceHostBinding",
+      "method": "post",
+      "path": "/system/menu-space-host-bindings",
+      "permission_key": "system.menu.manage",
+      "summary": "保存菜单空间 Host 绑定",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getMenuSpaceMode",
+      "method": "get",
+      "path": "/system/menu-space-mode",
+      "permission_key": "system.menu.manage",
+      "summary": "获取菜单空间模式",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "saveMenuSpaceMode",
+      "method": "put",
+      "path": "/system/menu-space-mode",
+      "permission_key": "system.menu.manage",
+      "summary": "保存菜单空间模式",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listMenuSpaces",
+      "method": "get",
+      "path": "/system/menu-spaces",
+      "permission_key": "system.menu.manage",
+      "summary": "获取菜单空间列表",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "saveMenuSpace",
+      "method": "post",
+      "path": "/system/menu-spaces",
+      "permission_key": "system.menu.manage",
+      "summary": "保存菜单空间",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getCurrentMenuSpace",
+      "method": "get",
+      "path": "/system/menu-spaces/current",
+      "permission_key": "",
+      "summary": "获取当前菜单空间",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "authenticated"
+    },
+    {
+      "operation_id": "initializeMenuSpaceFromDefault",
+      "method": "post",
+      "path": "/system/menu-spaces/{spaceKey}/initialize-default",
+      "permission_key": "system.menu.manage",
+      "summary": "从默认空间初始化菜单空间",
+      "tenant_scoped": true,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getSystemViewPages",
+      "method": "get",
+      "path": "/system/view-pages",
+      "permission_key": "system.page_catalog.view",
+      "summary": "获取页面文件映射",
+      "tenant_scoped": false,
+      "app_scope": "none",
       "access_mode": "permission"
     },
     {
@@ -97,6 +1677,86 @@
       "path": "/users/{id}",
       "permission_key": "user.update",
       "summary": "更新用户",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getUserCollaborationWorkspaces",
+      "method": "get",
+      "path": "/users/{id}/collaboration-workspaces",
+      "permission_key": "system.user.manage",
+      "summary": "获取用户所在协作空间列表",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getUserMenus",
+      "method": "get",
+      "path": "/users/{id}/menus",
+      "permission_key": "system.user.manage",
+      "summary": "获取用户菜单裁剪",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "setUserMenus",
+      "method": "put",
+      "path": "/users/{id}/menus",
+      "permission_key": "system.user.manage",
+      "summary": "配置用户菜单裁剪",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getUserPackages",
+      "method": "get",
+      "path": "/users/{id}/packages",
+      "permission_key": "feature_package.assign_collaboration_workspace",
+      "summary": "获取用户功能包",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "setUserPackages",
+      "method": "put",
+      "path": "/users/{id}/packages",
+      "permission_key": "feature_package.assign_collaboration_workspace",
+      "summary": "配置用户功能包",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getUserPermissionDiagnosis",
+      "method": "get",
+      "path": "/users/{id}/permission-diagnosis",
+      "permission_key": "system.user.manage",
+      "summary": "获取用户权限诊断",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "refreshUserPermissionSnapshot",
+      "method": "post",
+      "path": "/users/{id}/permission-refresh",
+      "permission_key": "system.user.manage",
+      "summary": "刷新用户权限快照",
+      "tenant_scoped": true,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getUserPermissions",
+      "method": "get",
+      "path": "/users/{id}/permissions",
+      "permission_key": "system.user.manage",
+      "summary": "获取用户菜单权限",
       "tenant_scoped": true,
       "app_scope": "optional",
       "access_mode": "permission"

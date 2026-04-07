@@ -36,6 +36,10 @@ func (m *RoleModule) Init() error {
 }
 
 func (m *RoleModule) RegisterRoutes(rg *gin.RouterGroup) {
+	// Phase 4: /roles/* fully migrated to ogen handlers in
+	// internal/api/handlers/role.go. Skip legacy gin registration.
+	_ = rg
+	return
 	roleRepo := user.NewRoleRepository(m.db)
 	rolePackageRepo := user.NewRoleFeaturePackageRepository(m.db)
 	featurePkgRepo := user.NewFeaturePackageRepository(m.db)

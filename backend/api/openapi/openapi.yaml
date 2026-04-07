@@ -551,6 +551,230 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /users/{id}/collaboration-workspaces:
+    get:
+      operationId: getUserCollaborationWorkspaces
+      summary: 获取用户所在协作空间列表
+      tags: [user]
+      x-permission-key: system.user.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+
+  /users/{id}/packages:
+    get:
+      operationId: getUserPackages
+      summary: 获取用户功能包
+      tags: [user]
+      x-permission-key: feature_package.assign_collaboration_workspace
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPackagesResponse'
+    put:
+      operationId: setUserPackages
+      summary: 配置用户功能包
+      tags: [user]
+      x-permission-key: feature_package.assign_collaboration_workspace
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /users/{id}/menus:
+    get:
+      operationId: getUserMenus
+      summary: 获取用户菜单裁剪
+      tags: [user]
+      x-permission-key: system.user.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+    put:
+      operationId: setUserMenus
+      summary: 配置用户菜单裁剪
+      tags: [user]
+      x-permission-key: system.user.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /users/{id}/permissions:
+    get:
+      operationId: getUserPermissions
+      summary: 获取用户菜单权限
+      tags: [user]
+      x-permission-key: system.user.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+
+  /users/{id}/permission-diagnosis:
+    get:
+      operationId: getUserPermissionDiagnosis
+      summary: 获取用户权限诊断
+      tags: [user]
+      x-permission-key: system.user.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          schema:
+            type: string
+        - name: permission_key
+          in: query
+          schema:
+            type: string
+        - name: collaboration_workspace_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+
+  /users/{id}/permission-refresh:
+    post:
+      operationId: refreshUserPermissionSnapshot
+      summary: 刷新用户权限快照
+      tags: [user]
+      x-permission-key: system.user.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
   /permissions/explain:
     get:
       operationId: explainPermissions
@@ -581,8 +805,3936 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  # ─── Role ────────────────────────────────────────────────────────────────────
+
+  /roles:
+    get:
+      operationId: listRoles
+      summary: 获取角色列表
+      tags: [role]
+      x-permission-key: system.role.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: current
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: roleName
+          in: query
+          schema:
+            type: string
+        - name: roleCode
+          in: query
+          schema:
+            type: string
+        - name: appKey
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleList'
+    post:
+      operationId: createRole
+      summary: 创建角色
+      tags: [role]
+      x-permission-key: system.role.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleCreateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleCreateResult'
+
+  /roles/options:
+    get:
+      operationId: listRoleOptions
+      summary: 获取角色候选列表
+      tags: [role]
+      x-permission-key: system.role.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: appKey
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleOptions'
+
+  /roles/{id}:
+    get:
+      operationId: getRole
+      summary: 获取角色详情
+      tags: [role]
+      x-permission-key: system.role.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleSummary'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      operationId: updateRole
+      summary: 更新角色
+      tags: [role]
+      x-permission-key: system.role.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleUpdateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+    delete:
+      operationId: deleteRole
+      summary: 删除角色
+      tags: [role]
+      x-permission-key: system.role.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /roles/{id}/packages:
+    get:
+      operationId: getRolePackages
+      summary: 获取角色功能包
+      tags: [role]
+      x-permission-key: feature_package.assign_collaboration_workspace
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RolePackagesResponse'
+    put:
+      operationId: setRolePackages
+      summary: 配置角色功能包
+      tags: [role]
+      x-permission-key: feature_package.assign_collaboration_workspace
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /roles/{id}/menus:
+    get:
+      operationId: getRoleMenus
+      summary: 获取角色菜单权限
+      tags: [role]
+      x-permission-key: system.role.assign_menu
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleMenusResponse'
+    put:
+      operationId: setRoleMenus
+      summary: 配置角色菜单权限
+      tags: [role]
+      x-permission-key: system.role.assign_menu
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /roles/{id}/actions:
+    get:
+      operationId: getRoleActions
+      summary: 获取角色功能权限
+      tags: [role]
+      x-permission-key: system.role.assign_action
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleActionsResponse'
+    put:
+      operationId: setRoleActions
+      summary: 配置角色功能权限
+      tags: [role]
+      x-permission-key: system.role.assign_action
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /roles/{id}/data-permissions:
+    get:
+      operationId: getRoleDataPermissions
+      summary: 获取角色数据权限
+      tags: [role]
+      x-permission-key: system.role.assign_data
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoleDataPermissionsResponse'
+    put:
+      operationId: setRoleDataPermissions
+      summary: 配置角色数据权限
+      tags: [role]
+      x-permission-key: system.role.assign_data
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleDataPermissionsRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  # ─── Navigation ──────────────────────────────────────────────────────────────
+
+  /runtime/navigation:
+    get:
+      operationId: getNavigation
+      summary: 获取运行时导航清单
+      tags: [navigation]
+      x-access-mode: authenticated
+      x-tenant-scoped: true
+      x-app-scope: optional
+      parameters:
+        - name: app_key
+          in: query
+          schema:
+            type: string
+        - name: space_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NavigationManifest'
+
+  # ─── Menu ─────────────────────────────────────────────────────────────────────
+
+  /menus/tree:
+    get:
+      operationId: getMenuTree
+      summary: 获取菜单树
+      tags: [menu]
+      x-access-mode: authenticated
+      x-tenant-scoped: true
+      x-app-scope: optional
+      parameters:
+        - name: all
+          in: query
+          schema:
+            type: string
+        - name: app_key
+          in: query
+          schema:
+            type: string
+        - name: space_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuTreeResponse'
+
+  /menus/groups:
+    get:
+      operationId: listMenuGroups
+      summary: 获取菜单分组列表
+      tags: [menu]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuGroupList'
+    post:
+      operationId: createMenuGroup
+      summary: 创建菜单分组
+      tags: [menu]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MenuGroupSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /menus/groups/{id}:
+    put:
+      operationId: updateMenuGroup
+      summary: 更新菜单分组
+      tags: [menu]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MenuGroupSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+    delete:
+      operationId: deleteMenuGroup
+      summary: 删除菜单分组
+      tags: [menu]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /menus/backups:
+    get:
+      operationId: listMenuBackups
+      summary: 获取菜单备份列表
+      tags: [menu]
+      x-permission-key: system.menu.backup
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MenuBackupList'
+    post:
+      operationId: createMenuBackup
+      summary: 创建菜单备份
+      tags: [menu]
+      x-permission-key: system.menu.backup
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MenuBackupCreateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /menus/backups/{id}:
+    delete:
+      operationId: deleteMenuBackup
+      summary: 删除菜单备份
+      tags: [menu]
+      x-permission-key: system.menu.backup
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /menus/backups/{id}/restore:
+    post:
+      operationId: restoreMenuBackup
+      summary: 恢复菜单备份
+      tags: [menu]
+      x-permission-key: system.menu.backup
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /menus:
+    post:
+      operationId: createMenu
+      summary: 创建菜单
+      tags: [menu]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MenuSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /menus/{id}:
+    put:
+      operationId: updateMenu
+      summary: 更新菜单
+      tags: [menu]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MenuSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+    delete:
+      operationId: deleteMenu
+      summary: 删除菜单
+      tags: [menu]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /menus/{id}/delete-preview:
+    get:
+      operationId: getMenuDeletePreview
+      summary: 获取菜单删除预览
+      tags: [menu]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+
+  # ─── Page ─────────────────────────────────────────────────────────────────────
+
+  /pages/runtime:
+    get:
+      operationId: listRuntimePages
+      summary: 获取运行时页面注册表
+      tags: [page]
+      x-access-mode: authenticated
+      x-tenant-scoped: true
+      x-app-scope: optional
+      parameters:
+        - name: app_key
+          in: query
+          schema:
+            type: string
+        - name: space_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /pages/runtime/public:
+    get:
+      operationId: listPublicRuntimePages
+      summary: 获取公开运行时页面注册表
+      tags: [page]
+      x-access-mode: public
+      x-tenant-scoped: true
+      x-app-scope: optional
+      parameters:
+        - name: app_key
+          in: query
+          schema:
+            type: string
+        - name: space_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /pages/menu-options:
+    get:
+      operationId: listPageMenuOptions
+      summary: 获取上级菜单候选
+      tags: [page]
+      x-permission-key: system.page.manage
+      x-tenant-scoped: true
+      x-app-scope: required
+      x-access-mode: permission
+      parameters:
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: space_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /pages/options:
+    get:
+      operationId: listPageOptions
+      summary: 获取页面候选列表
+      tags: [page]
+      x-permission-key: system.page.manage
+      x-tenant-scoped: true
+      x-app-scope: required
+      x-access-mode: permission
+      parameters:
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: space_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /pages/access-trace:
+    get:
+      operationId: getPageAccessTrace
+      summary: 获取页面访问链路
+      tags: [page]
+      x-permission-key: system.page.manage
+      x-tenant-scoped: true
+      x-app-scope: required
+      x-access-mode: permission
+      parameters:
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: route_name
+          in: query
+          schema:
+            type: string
+        - name: route_path
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+
+  /pages/unregistered:
+    get:
+      operationId: listUnregisteredPages
+      summary: 获取未注册页面
+      tags: [page]
+      x-permission-key: system.page.sync
+      x-tenant-scoped: true
+      x-app-scope: required
+      x-access-mode: permission
+      parameters:
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /pages/sync:
+    post:
+      operationId: syncPages
+      summary: 同步页面注册表
+      tags: [page]
+      x-permission-key: system.page.sync
+      x-tenant-scoped: true
+      x-app-scope: required
+      x-access-mode: permission
+      parameters:
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageSyncResult'
+
+  /pages:
+    get:
+      operationId: listPages
+      summary: 获取页面列表
+      tags: [page]
+      x-permission-key: system.page.manage
+      x-tenant-scoped: true
+      x-app-scope: required
+      x-access-mode: permission
+      parameters:
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: current
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: keyword
+          in: query
+          schema:
+            type: string
+        - name: space_key
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+    post:
+      operationId: createPage
+      summary: 创建页面
+      tags: [page]
+      x-permission-key: system.page.manage
+      x-tenant-scoped: true
+      x-app-scope: required
+      x-access-mode: permission
+      parameters:
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PageSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+
+  /pages/{id}:
+    get:
+      operationId: getPage
+      summary: 获取页面详情
+      tags: [page]
+      x-permission-key: system.page.manage
+      x-tenant-scoped: true
+      x-app-scope: required
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+    put:
+      operationId: updatePage
+      summary: 更新页面
+      tags: [page]
+      x-permission-key: system.page.manage
+      x-tenant-scoped: true
+      x-app-scope: required
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PageSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+    delete:
+      operationId: deletePage
+      summary: 删除页面
+      tags: [page]
+      x-permission-key: system.page.manage
+      x-tenant-scoped: true
+      x-app-scope: required
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /pages/{id}/breadcrumb-preview:
+    get:
+      operationId: previewPageBreadcrumb
+      summary: 预览页面面包屑
+      tags: [page]
+      x-permission-key: system.page.manage
+      x-tenant-scoped: true
+      x-app-scope: required
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  # ─── Feature Package ──────────────────────────────────────────────────────────
+
+  /feature-packages:
+    get:
+      operationId: listFeaturePackages
+      summary: 获取功能包列表
+      tags: [featurepackage]
+      x-permission-key: feature_package.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: current
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: keyword
+          in: query
+          schema:
+            type: string
+        - name: package_type
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeaturePackageList'
+    post:
+      operationId: createFeaturePackage
+      summary: 创建功能包
+      tags: [featurepackage]
+      x-permission-key: feature_package.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeaturePackageSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IDResult'
+
+  /feature-packages/options:
+    get:
+      operationId: listFeaturePackageOptions
+      summary: 获取功能包候选
+      tags: [featurepackage]
+      x-permission-key: feature_package.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: package_type
+          in: query
+          schema:
+            type: string
+        - name: app_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeaturePackageOptions'
+
+  /feature-packages/relationship-tree:
+    get:
+      operationId: getFeaturePackageRelationTree
+      summary: 获取功能包关系树
+      tags: [featurepackage]
+      x-permission-key: feature_package.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: workspace_scope
+          in: query
+          schema:
+            type: string
+        - name: keyword
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeaturePackageRelationTree'
+
+  /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}:
+    get:
+      operationId: getCollaborationWorkspacePackages
+      summary: 获取协作空间功能包
+      tags: [featurepackage]
+      x-permission-key: feature_package.assign_collaboration_workspace
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: collaborationWorkspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeaturePackageAssignmentResponse'
+    put:
+      operationId: setCollaborationWorkspacePackages
+      summary: 配置协作空间功能包
+      tags: [featurepackage]
+      x-permission-key: feature_package.assign_collaboration_workspace
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: collaborationWorkspaceId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /feature-packages/{id}:
+    get:
+      operationId: getFeaturePackage
+      summary: 获取功能包详情
+      tags: [featurepackage]
+      x-permission-key: feature_package.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeaturePackageSummary'
+    put:
+      operationId: updateFeaturePackage
+      summary: 更新功能包
+      tags: [featurepackage]
+      x-permission-key: feature_package.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeaturePackageSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+    delete:
+      operationId: deleteFeaturePackage
+      summary: 删除功能包
+      tags: [featurepackage]
+      x-permission-key: feature_package.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /feature-packages/{id}/impact-preview:
+    get:
+      operationId: getFeaturePackageImpactPreview
+      summary: 获取功能包影响预览
+      tags: [featurepackage]
+      x-permission-key: feature_package.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeaturePackageImpactPreview'
+
+  /feature-packages/{id}/versions:
+    get:
+      operationId: listFeaturePackageVersions
+      summary: 获取功能包版本历史
+      tags: [featurepackage]
+      x-permission-key: feature_package.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: current
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /feature-packages/{id}/rollback:
+    post:
+      operationId: rollbackFeaturePackage
+      summary: 回滚功能包版本
+      tags: [featurepackage]
+      x-permission-key: feature_package.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RollbackRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /feature-packages/{id}/risk-audits:
+    get:
+      operationId: listFeaturePackageRiskAudits
+      summary: 获取功能包最近变更
+      tags: [featurepackage]
+      x-permission-key: feature_package.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: current
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /feature-packages/{id}/children:
+    get:
+      operationId: getFeaturePackageChildren
+      summary: 获取组合包基础包
+      tags: [featurepackage]
+      x-permission-key: feature_package.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeaturePackageAssignmentResponse'
+    put:
+      operationId: setFeaturePackageChildren
+      summary: 配置组合包基础包
+      tags: [featurepackage]
+      x-permission-key: feature_package.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /feature-packages/{id}/actions:
+    get:
+      operationId: getFeaturePackageActions
+      summary: 获取功能包权限
+      tags: [featurepackage]
+      x-permission-key: feature_package.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeaturePackageActionsResponse'
+    put:
+      operationId: setFeaturePackageActions
+      summary: 配置功能包权限
+      tags: [featurepackage]
+      x-permission-key: feature_package.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /feature-packages/{id}/menus:
+    get:
+      operationId: getFeaturePackageMenus
+      summary: 获取功能包菜单
+      tags: [featurepackage]
+      x-permission-key: feature_package.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeaturePackageMenusResponse'
+    put:
+      operationId: setFeaturePackageMenus
+      summary: 配置功能包菜单
+      tags: [featurepackage]
+      x-permission-key: feature_package.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /feature-packages/{id}/collaboration-workspaces:
+    get:
+      operationId: getFeaturePackageCollaborationWorkspaces
+      summary: 获取功能包协作空间
+      tags: [featurepackage]
+      x-permission-key: feature_package.assign_collaboration_workspace
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+    put:
+      operationId: setFeaturePackageCollaborationWorkspaces
+      summary: 配置功能包协作空间
+      tags: [featurepackage]
+      x-permission-key: feature_package.assign_collaboration_workspace
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: app_key
+          in: query
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  # ─── Permission Actions ────────────────────────────────────────────────────────
+
+  /permission-actions:
+    get:
+      operationId: listPermissionActions
+      summary: 获取功能权限列表
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: current
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: keyword
+          in: query
+          schema:
+            type: string
+        - name: group_id
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionActionList'
+    post:
+      operationId: createPermissionAction
+      summary: 创建功能权限
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermissionActionSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IDResult'
+
+  /permission-actions/options:
+    get:
+      operationId: listPermissionActionOptions
+      summary: 获取功能权限候选
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: keyword
+          in: query
+          schema:
+            type: string
+        - name: group_id
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /permission-actions/groups:
+    get:
+      operationId: listPermissionActionGroups
+      summary: 获取功能权限分组列表
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+    post:
+      operationId: createPermissionActionGroup
+      summary: 创建功能权限分组
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /permission-actions/groups/{id}:
+    put:
+      operationId: updatePermissionActionGroup
+      summary: 更新功能权限分组
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /permission-actions/risk-audits:
+    get:
+      operationId: listPermissionActionRiskAudits
+      summary: 获取功能权限最近变更
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: current
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /permission-actions/cleanup-unused:
+    post:
+      operationId: cleanupUnusedPermissionActions
+      summary: 清理未消费功能权限
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /permission-actions/batch:
+    post:
+      operationId: batchUpdatePermissionActions
+      summary: 批量治理功能权限
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /permission-actions/templates:
+    get:
+      operationId: listPermissionActionBatchTemplates
+      summary: 获取功能权限批量模板
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+    post:
+      operationId: savePermissionActionBatchTemplate
+      summary: 保存功能权限批量模板
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /permission-actions/{id}:
+    get:
+      operationId: getPermissionAction
+      summary: 获取功能权限详情
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PermissionActionDetail'
+    put:
+      operationId: updatePermissionAction
+      summary: 更新功能权限
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PermissionActionSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+    delete:
+      operationId: deletePermissionAction
+      summary: 删除功能权限
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /permission-actions/{id}/endpoints:
+    get:
+      operationId: listPermissionActionEndpoints
+      summary: 获取功能权限关联接口
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+    post:
+      operationId: addPermissionActionEndpoint
+      summary: 新增功能权限关联接口
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /permission-actions/{id}/endpoints/{endpointCode}:
+    delete:
+      operationId: removePermissionActionEndpoint
+      summary: 删除功能权限关联接口
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: endpointCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /permission-actions/{id}/consumers:
+    get:
+      operationId: getPermissionActionConsumers
+      summary: 获取功能权限消费明细
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+
+  /permission-actions/{id}/impact-preview:
+    get:
+      operationId: getPermissionActionImpactPreview
+      summary: 获取功能权限影响预览
+      tags: [permission]
+      x-permission-key: system.permission.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+
+  # ─── System ───────────────────────────────────────────────────────────────────
+
+  /system/view-pages:
+    get:
+      operationId: getSystemViewPages
+      summary: 获取页面文件映射
+      tags: [system]
+      x-permission-key: system.page_catalog.view
+      x-tenant-scoped: false
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: force
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ViewPagesResponse'
+
+  /system/fast-enter:
+    get:
+      operationId: getFastEnterConfig
+      summary: 获取快捷入口配置
+      tags: [system]
+      x-access-mode: authenticated
+      x-tenant-scoped: false
+      x-app-scope: none
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+    put:
+      operationId: updateFastEnterConfig
+      summary: 更新快捷入口配置
+      tags: [system]
+      x-permission-key: system.fast_enter.manage
+      x-tenant-scoped: false
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /system/apps:
+    get:
+      operationId: listApps
+      summary: 获取应用列表
+      tags: [system]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+    post:
+      operationId: saveApp
+      summary: 保存应用
+      tags: [system]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /system/apps/current:
+    get:
+      operationId: getCurrentApp
+      summary: 获取当前应用
+      tags: [system]
+      x-access-mode: authenticated
+      x-tenant-scoped: true
+      x-app-scope: optional
+      parameters:
+        - name: app_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+
+  /system/app-host-bindings:
+    get:
+      operationId: listAppHostBindings
+      summary: 获取应用 Host 绑定
+      tags: [system]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+    post:
+      operationId: saveAppHostBinding
+      summary: 保存应用 Host 绑定
+      tags: [system]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /system/menu-spaces/current:
+    get:
+      operationId: getCurrentMenuSpace
+      summary: 获取当前菜单空间
+      tags: [system]
+      x-access-mode: authenticated
+      x-tenant-scoped: true
+      x-app-scope: optional
+      parameters:
+        - name: app_key
+          in: query
+          schema:
+            type: string
+        - name: space_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+
+  /system/menu-space-mode:
+    get:
+      operationId: getMenuSpaceMode
+      summary: 获取菜单空间模式
+      tags: [system]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      parameters:
+        - name: app_key
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+    put:
+      operationId: saveMenuSpaceMode
+      summary: 保存菜单空间模式
+      tags: [system]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: optional
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /system/menu-spaces:
+    get:
+      operationId: listMenuSpaces
+      summary: 获取菜单空间列表
+      tags: [system]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+    post:
+      operationId: saveMenuSpace
+      summary: 保存菜单空间
+      tags: [system]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /system/menu-spaces/{spaceKey}/initialize-default:
+    post:
+      operationId: initializeMenuSpaceFromDefault
+      summary: 从默认空间初始化菜单空间
+      tags: [system]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: spaceKey
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /system/menu-space-host-bindings:
+    get:
+      operationId: listMenuSpaceHostBindings
+      summary: 获取菜单空间 Host 绑定
+      tags: [system]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+    post:
+      operationId: saveMenuSpaceHostBinding
+      summary: 保存菜单空间 Host 绑定
+      tags: [system]
+      x-permission-key: system.menu.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  # ─── Messages ─────────────────────────────────────────────────────────────────
+
+  /messages/inbox/summary:
+    get:
+      operationId: getInboxSummary
+      summary: 获取消息摘要
+      tags: [message]
+      x-access-mode: authenticated
+      x-tenant-scoped: true
+      x-app-scope: none
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+
+  /messages/inbox:
+    get:
+      operationId: listInbox
+      summary: 获取消息列表
+      tags: [message]
+      x-access-mode: authenticated
+      x-tenant-scoped: true
+      x-app-scope: none
+      parameters:
+        - name: current
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /messages/inbox/{deliveryId}:
+    get:
+      operationId: getInboxDetail
+      summary: 获取消息详情
+      tags: [message]
+      x-access-mode: authenticated
+      x-tenant-scoped: true
+      x-app-scope: none
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+
+  /messages/inbox/{deliveryId}/read:
+    post:
+      operationId: markInboxRead
+      summary: 标记消息已读
+      tags: [message]
+      x-access-mode: authenticated
+      x-tenant-scoped: true
+      x-app-scope: none
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /messages/inbox/read-all:
+    post:
+      operationId: markInboxReadAll
+      summary: 批量标记消息已读
+      tags: [message]
+      x-access-mode: authenticated
+      x-tenant-scoped: true
+      x-app-scope: none
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /messages/inbox/{deliveryId}/todo-action:
+    post:
+      operationId: handleInboxTodo
+      summary: 处理待办消息
+      tags: [message]
+      x-access-mode: authenticated
+      x-tenant-scoped: true
+      x-app-scope: none
+      parameters:
+        - name: deliveryId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /messages/dispatch/options:
+    get:
+      operationId: getMessageDispatchOptions
+      summary: 获取消息发送配置
+      tags: [message]
+      x-permission-key: message.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+
+  /messages/dispatch:
+    post:
+      operationId: dispatchMessage
+      summary: 发送站内消息
+      tags: [message]
+      x-permission-key: message.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /messages/templates:
+    get:
+      operationId: listMessageTemplates
+      summary: 获取消息模板
+      tags: [message]
+      x-permission-key: message.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+    post:
+      operationId: createMessageTemplate
+      summary: 新建消息模板
+      tags: [message]
+      x-permission-key: message.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /messages/templates/{templateId}:
+    put:
+      operationId: updateMessageTemplate
+      summary: 更新消息模板
+      tags: [message]
+      x-permission-key: message.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /messages/senders:
+    get:
+      operationId: listMessageSenders
+      summary: 获取消息发送人
+      tags: [message]
+      x-permission-key: message.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+    post:
+      operationId: createMessageSender
+      summary: 新建消息发送人
+      tags: [message]
+      x-permission-key: message.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /messages/senders/{senderId}:
+    put:
+      operationId: updateMessageSender
+      summary: 更新消息发送人
+      tags: [message]
+      x-permission-key: message.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: senderId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /messages/recipient-groups:
+    get:
+      operationId: listMessageRecipientGroups
+      summary: 获取消息接收组
+      tags: [message]
+      x-permission-key: message.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+    post:
+      operationId: createMessageRecipientGroup
+      summary: 新建消息接收组
+      tags: [message]
+      x-permission-key: message.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /messages/recipient-groups/{groupId}:
+    put:
+      operationId: updateMessageRecipientGroup
+      summary: 更新消息接收组
+      tags: [message]
+      x-permission-key: message.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: groupId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /messages/records:
+    get:
+      operationId: listMessageDispatchRecords
+      summary: 获取消息发送记录
+      tags: [message]
+      x-permission-key: message.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: current
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /messages/records/{recordId}:
+    get:
+      operationId: getMessageDispatchRecord
+      summary: 获取消息发送记录详情
+      tags: [message]
+      x-permission-key: message.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: recordId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+
+  # ─── Collaboration Workspace ──────────────────────────────────────────────────
+
+  /collaboration-workspaces/mine:
+    get:
+      operationId: listMyCollaborationWorkspaces
+      summary: 获取我的协作空间列表
+      tags: [collaboration_workspace]
+      x-access-mode: authenticated
+      x-tenant-scoped: true
+      x-app-scope: none
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /collaboration-workspaces/current:
+    get:
+      operationId: getCurrentCollaborationWorkspace
+      summary: 获取当前协作空间详情
+      tags: [collaboration_workspace]
+      x-access-mode: authenticated
+      x-tenant-scoped: true
+      x-app-scope: none
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+
+  /collaboration-workspaces/options:
+    get:
+      operationId: listCollaborationWorkspaceOptions
+      summary: 获取协作空间候选
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /collaboration-workspaces/current/members:
+    get:
+      operationId: listCurrentCollaborationWorkspaceMembers
+      summary: 获取当前协作空间成员列表
+      tags: [collaboration_workspace]
+      x-access-mode: authenticated
+      x-tenant-scoped: true
+      x-app-scope: none
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+    post:
+      operationId: addCurrentCollaborationWorkspaceMember
+      summary: 添加当前协作空间成员
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.member.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /collaboration-workspaces/current/members/{userId}:
+    delete:
+      operationId: removeCurrentCollaborationWorkspaceMember
+      summary: 移除当前协作空间成员
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.member.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /collaboration-workspaces/current/members/{userId}/role:
+    put:
+      operationId: updateCurrentCollaborationWorkspaceMemberRole
+      summary: 更新当前协作空间成员身份
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.member.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /collaboration-workspaces/current/members/{userId}/roles:
+    get:
+      operationId: getCurrentCollaborationWorkspaceMemberRoles
+      summary: 获取当前协作空间成员角色
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.member.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+    put:
+      operationId: setCurrentCollaborationWorkspaceMemberRoles
+      summary: 配置当前协作空间成员角色
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.member.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /collaboration-workspaces/current/roles:
+    get:
+      operationId: listCurrentCollaborationWorkspaceRoles
+      summary: 获取当前协作空间可分配角色
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.member.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+    post:
+      operationId: createCurrentCollaborationWorkspaceRole
+      summary: 创建当前协作空间角色
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.member.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /collaboration-workspaces/current/boundary/roles:
+    get:
+      operationId: listCurrentCollaborationWorkspaceBoundaryRoles
+      summary: 获取当前协作空间边界可见角色
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+    post:
+      operationId: createCurrentCollaborationWorkspaceBoundaryRole
+      summary: 创建当前协作空间角色(边界管理)
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /collaboration-workspaces/current/boundary/roles/{roleId}:
+    put:
+      operationId: updateCurrentCollaborationWorkspaceBoundaryRole
+      summary: 更新当前协作空间角色(边界管理)
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+    delete:
+      operationId: deleteCurrentCollaborationWorkspaceBoundaryRole
+      summary: 删除当前协作空间角色(边界管理)
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /collaboration-workspaces/current/boundary/roles/{roleId}/packages:
+    get:
+      operationId: getCurrentCollaborationWorkspaceBoundaryRolePackages
+      summary: 获取当前协作空间角色功能包(边界管理)
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+    put:
+      operationId: setCurrentCollaborationWorkspaceBoundaryRolePackages
+      summary: 配置当前协作空间角色功能包(边界管理)
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /collaboration-workspaces/current/boundary/roles/{roleId}/menus:
+    get:
+      operationId: getCurrentCollaborationWorkspaceBoundaryRoleMenus
+      summary: 获取当前协作空间角色菜单权限(边界管理)
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+    put:
+      operationId: setCurrentCollaborationWorkspaceBoundaryRoleMenus
+      summary: 配置当前协作空间角色菜单权限(边界管理)
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /collaboration-workspaces/current/boundary/roles/{roleId}/actions:
+    get:
+      operationId: getCurrentCollaborationWorkspaceBoundaryRoleActions
+      summary: 获取当前协作空间角色功能权限(边界管理)
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+    put:
+      operationId: setCurrentCollaborationWorkspaceBoundaryRoleActions
+      summary: 配置当前协作空间角色功能权限(边界管理)
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: roleId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /collaboration-workspaces/current/boundary/packages:
+    get:
+      operationId: getCurrentCollaborationWorkspaceBoundaryPackages
+      summary: 获取当前协作空间已开通功能包(边界管理)
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /collaboration-workspaces/current/menus:
+    get:
+      operationId: getCurrentCollaborationWorkspaceMenus
+      summary: 获取当前协作空间菜单边界
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+
+  /collaboration-workspaces/current/menu-origins:
+    get:
+      operationId: getCurrentCollaborationWorkspaceMenuOrigins
+      summary: 获取当前协作空间菜单来源
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /collaboration-workspaces/current/actions:
+    get:
+      operationId: getCurrentCollaborationWorkspaceActions
+      summary: 获取当前协作空间功能权限边界
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+
+  /collaboration-workspaces/current/action-origins:
+    get:
+      operationId: getCurrentCollaborationWorkspaceActionOrigins
+      summary: 获取当前协作空间功能权限来源
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /collaboration-workspaces:
+    get:
+      operationId: listCollaborationWorkspaces
+      summary: 获取协作空间列表
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: current
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: keyword
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+    post:
+      operationId: createCollaborationWorkspace
+      summary: 创建协作空间
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IDResult'
+
+  /collaboration-workspaces/{id}:
+    get:
+      operationId: getCollaborationWorkspace
+      summary: 获取协作空间详情
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+    put:
+      operationId: updateCollaborationWorkspace
+      summary: 更新协作空间
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+    delete:
+      operationId: deleteCollaborationWorkspace
+      summary: 删除协作空间
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /collaboration-workspaces/{id}/roles:
+    get:
+      operationId: listCollaborationWorkspaceRoles
+      summary: 获取协作空间可分配角色
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /collaboration-workspaces/{id}/menus:
+    get:
+      operationId: getCollaborationWorkspaceMenus
+      summary: 获取协作空间菜单边界
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+    put:
+      operationId: setCollaborationWorkspaceMenus
+      summary: 配置协作空间菜单边界
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /collaboration-workspaces/{id}/menu-origins:
+    get:
+      operationId: getCollaborationWorkspaceMenuOrigins
+      summary: 获取协作空间菜单来源
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /collaboration-workspaces/{id}/actions:
+    get:
+      operationId: getCollaborationWorkspaceActions
+      summary: 获取协作空间功能权限边界
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyObject'
+    put:
+      operationId: setCollaborationWorkspaceActions
+      summary: 配置协作空间功能权限边界
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /collaboration-workspaces/{id}/action-origins:
+    get:
+      operationId: getCollaborationWorkspaceActionOrigins
+      summary: 获取协作空间功能权限来源
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+
+  /collaboration-workspaces/{id}/members:
+    get:
+      operationId: listCollaborationWorkspaceMembers
+      summary: 获取协作空间成员列表
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnyListResponse'
+    post:
+      operationId: addCollaborationWorkspaceMember
+      summary: 添加协作空间成员
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /collaboration-workspaces/{id}/members/{userId}:
+    delete:
+      operationId: removeCollaborationWorkspaceMember
+      summary: 移除协作空间成员
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
+  /collaboration-workspaces/{id}/members/{userId}/role:
+    put:
+      operationId: updateCollaborationWorkspaceMemberRole
+      summary: 更新协作空间成员身份
+      tags: [collaboration_workspace]
+      x-permission-key: collaboration_workspace.manage
+      x-tenant-scoped: true
+      x-app-scope: none
+      x-access-mode: permission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MutationResult'
+
 components:
   schemas:
+    # ─── Workspace ──────────────────────────────────────────────────────────────
     WorkspaceSummary:
       type: object
       required: [id, workspace_type, name, code, status]
@@ -645,6 +4797,8 @@ components:
             items:
               type: string
               format: uuid
+
+    # ─── Auth ───────────────────────────────────────────────────────────────────
     LoginRequest:
       type: object
       required: [username, password]
@@ -666,7 +4820,7 @@ components:
           type: integer
         user:
           type: object
-          additionalProperties: true
+          additionalProperties: {}
           nullable: true
     RegisterRequest:
       type: object
@@ -789,6 +4943,8 @@ components:
           nullable: true
         workspace:
           $ref: '#/components/schemas/WorkspaceSummary'
+
+    # ─── User ───────────────────────────────────────────────────────────────────
     UserRoleRef:
       type: object
       required: [id, code, name]
@@ -980,6 +5136,797 @@ components:
       properties:
         success:
           type: boolean
+    UserPackagesResponse:
+      type: object
+      required: [package_ids, packages]
+      properties:
+        package_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        packages:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeaturePackageRef'
+
+    # ─── Common ──────────────────────────────────────────────────────────────────
+    MutationResult:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+    IDResult:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: string
+          format: uuid
+    AnyObject:
+      type: object
+      additionalProperties: {}
+    AnyListResponse:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+        total:
+          type: integer
+    UUIDListRequest:
+      type: object
+      required: [ids]
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+
+    # ─── Role ────────────────────────────────────────────────────────────────────
+    RoleSummary:
+      type: object
+      required: [roleId, roleName, roleCode, status, createTime]
+      properties:
+        roleId:
+          type: string
+          format: uuid
+        roleName:
+          type: string
+        roleCode:
+          type: string
+        description:
+          type: string
+          nullable: true
+        appKeys:
+          type: array
+          items:
+            type: string
+          nullable: true
+        isGlobal:
+          type: boolean
+        status:
+          type: string
+        sortOrder:
+          type: integer
+        priority:
+          type: integer
+        createTime:
+          type: string
+        canEditPermission:
+          type: boolean
+    RoleList:
+      type: object
+      required: [records, total, current, size]
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleSummary'
+        total:
+          type: integer
+        current:
+          type: integer
+        size:
+          type: integer
+    RoleOptions:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleSummary'
+        total:
+          type: integer
+    RoleCreateRequest:
+      type: object
+      required: [code, name]
+      properties:
+        code:
+          type: string
+          maxLength: 50
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        app_keys:
+          type: array
+          items:
+            type: string
+        sort_order:
+          type: integer
+        priority:
+          type: integer
+        status:
+          type: string
+    RoleUpdateRequest:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        app_keys:
+          type: array
+          items:
+            type: string
+        sort_order:
+          type: integer
+        priority:
+          type: integer
+        status:
+          type: string
+    RoleCreateResult:
+      type: object
+      required: [roleId]
+      properties:
+        roleId:
+          type: string
+          format: uuid
+    FeaturePackageRef:
+      type: object
+      required: [id, package_key, name, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        package_key:
+          type: string
+        package_type:
+          type: string
+          nullable: true
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        context_type:
+          type: string
+          nullable: true
+        status:
+          type: string
+        is_builtin:
+          type: boolean
+        sort_order:
+          type: integer
+    RolePackagesResponse:
+      type: object
+      required: [package_ids, packages]
+      properties:
+        package_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        packages:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeaturePackageRef'
+    MenuSourceEntry:
+      type: object
+      required: [menu_id, package_ids]
+      properties:
+        menu_id:
+          type: string
+          format: uuid
+        package_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+    RoleMenusResponse:
+      type: object
+      required: [menu_ids, available_menu_ids, hidden_menu_ids, expanded_package_ids, derived_sources]
+      properties:
+        menu_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        available_menu_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        hidden_menu_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        expanded_package_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        derived_sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuSourceEntry'
+    ActionSourceEntry:
+      type: object
+      required: [action_id, package_ids]
+      properties:
+        action_id:
+          type: string
+          format: uuid
+        package_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+    PermissionActionRef:
+      type: object
+      required: [id, action_key, name]
+      properties:
+        id:
+          type: string
+          format: uuid
+        action_key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+    RoleActionsResponse:
+      type: object
+      required: [action_ids, available_action_ids, actions, disabled_action_ids, expanded_package_ids, derived_sources]
+      properties:
+        action_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        available_action_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        disabled_action_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        expanded_package_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissionActionRef'
+        derived_sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActionSourceEntry'
+    DataPermissionItem:
+      type: object
+      required: [resource_code, data_scope]
+      properties:
+        resource_code:
+          type: string
+        data_scope:
+          type: string
+    DataResourceOption:
+      type: object
+      required: [resource_code, resource_name]
+      properties:
+        resource_code:
+          type: string
+        resource_name:
+          type: string
+    DataScopeOption:
+      type: object
+      required: [data_scope, label]
+      properties:
+        data_scope:
+          type: string
+        label:
+          type: string
+    RoleDataPermissionsResponse:
+      type: object
+      required: [permissions, resources, data_scopes]
+      properties:
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataPermissionItem'
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataResourceOption'
+        data_scopes:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataScopeOption'
+    RoleDataPermissionsRequest:
+      type: object
+      required: [permissions]
+      properties:
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataPermissionItem'
+
+    # ─── Navigation ──────────────────────────────────────────────────────────────
+    NavigationManifest:
+      type: object
+      required: [version_stamp, menu_tree, entry_routes, managed_pages]
+      properties:
+        version_stamp:
+          type: string
+        current_app:
+          $ref: '#/components/schemas/AnyObject'
+          nullable: true
+        current_space:
+          $ref: '#/components/schemas/AnyObject'
+          nullable: true
+        context:
+          $ref: '#/components/schemas/AnyObject'
+        menu_tree:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+        entry_routes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+        managed_pages:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+
+    # ─── Menu ────────────────────────────────────────────────────────────────────
+    MenuTreeResponse:
+      type: object
+      required: [records]
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+    MenuGroupSaveRequest:
+      type: object
+      required: [name, code]
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        app_keys:
+          type: array
+          items:
+            type: string
+        sort_order:
+          type: integer
+        status:
+          type: string
+    MenuGroupList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+        total:
+          type: integer
+    MenuBackupCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+    MenuBackupList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+        total:
+          type: integer
+    MenuSaveRequest:
+      type: object
+      required: [name, kind]
+      properties:
+        name:
+          type: string
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+        icon:
+          type: string
+        path:
+          type: string
+        kind:
+          type: string
+        route_type:
+          type: string
+        route_name:
+          type: string
+        route_path:
+          type: string
+        app_keys:
+          type: array
+          items:
+            type: string
+        app_key:
+          type: string
+        space_key:
+          type: string
+        sort_order:
+          type: integer
+        status:
+          type: string
+        permission_keys:
+          type: array
+          items:
+            type: string
+
+    # ─── Page ────────────────────────────────────────────────────────────────────
+    PageSaveRequest:
+      type: object
+      properties:
+        page_key:
+          type: string
+        name:
+          type: string
+        route_name:
+          type: string
+        route_path:
+          type: string
+        component:
+          type: string
+        space_keys:
+          type: array
+          items:
+            type: string
+        page_type:
+          type: string
+        visibility_scope:
+          type: string
+        source:
+          type: string
+        module_key:
+          type: string
+        sort_order:
+          type: integer
+        parent_menu_id:
+          type: string
+        parent_page_key:
+          type: string
+        display_group_key:
+          type: string
+        active_menu_path:
+          type: string
+        breadcrumb_mode:
+          type: string
+        access_mode:
+          type: string
+        permission_key:
+          type: string
+        status:
+          type: string
+    PageSyncResult:
+      type: object
+      required: [created_count, skipped_count, created_keys]
+      properties:
+        created_count:
+          type: integer
+        skipped_count:
+          type: integer
+        created_keys:
+          type: array
+          items:
+            type: string
+
+    # ─── Feature Package ──────────────────────────────────────────────────────────
+    FeaturePackageSummary:
+      type: object
+      required: [id, package_key, name, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        package_key:
+          type: string
+        package_type:
+          type: string
+          nullable: true
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        context_type:
+          type: string
+          nullable: true
+        status:
+          type: string
+        is_builtin:
+          type: boolean
+        sort_order:
+          type: integer
+        action_count:
+          type: integer
+          format: int64
+        menu_count:
+          type: integer
+          format: int64
+        collaboration_workspace_count:
+          type: integer
+          format: int64
+    FeaturePackageList:
+      type: object
+      required: [records, total, current, size]
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeaturePackageSummary'
+        total:
+          type: integer
+          format: int64
+        current:
+          type: integer
+        size:
+          type: integer
+    FeaturePackageOptions:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeaturePackageRef'
+        total:
+          type: integer
+    FeaturePackageSaveRequest:
+      type: object
+      required: [package_key, name]
+      properties:
+        package_key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        package_type:
+          type: string
+        context_type:
+          type: string
+        status:
+          type: string
+        sort_order:
+          type: integer
+        app_keys:
+          type: array
+          items:
+            type: string
+    FeaturePackageRelationNode:
+      type: object
+      required: [id, package_key, name, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        package_key:
+          type: string
+        name:
+          type: string
+        package_type:
+          type: string
+          nullable: true
+        workspace_scope:
+          type: string
+          nullable: true
+        status:
+          type: string
+        reference_count:
+          type: integer
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeaturePackageRelationNode'
+    FeaturePackageRelationTree:
+      type: object
+      required: [roots, cycle_dependencies, isolated_base_keys]
+      properties:
+        roots:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeaturePackageRelationNode'
+        cycle_dependencies:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+        isolated_base_keys:
+          type: array
+          items:
+            type: string
+    FeaturePackageImpactPreview:
+      type: object
+      required: [package_id, role_count, collaboration_workspace_count, user_count, menu_count, action_count]
+      properties:
+        package_id:
+          type: string
+          format: uuid
+        role_count:
+          type: integer
+          format: int64
+        collaboration_workspace_count:
+          type: integer
+          format: int64
+        user_count:
+          type: integer
+          format: int64
+        menu_count:
+          type: integer
+          format: int64
+        action_count:
+          type: integer
+          format: int64
+    FeaturePackageAssignmentResponse:
+      type: object
+      required: [package_ids, packages]
+      properties:
+        package_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        packages:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeaturePackageRef'
+    FeaturePackageActionsResponse:
+      type: object
+      required: [action_ids, actions]
+      properties:
+        action_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissionActionRef'
+    FeaturePackageMenusResponse:
+      type: object
+      required: [menu_ids, menus]
+      properties:
+        menu_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        menus:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+    RollbackRequest:
+      type: object
+      required: [version_id]
+      properties:
+        version_id:
+          type: string
+          format: uuid
+
+    # ─── Permission Actions ────────────────────────────────────────────────────────
+    PermissionActionDetail:
+      type: object
+      required: [id, action_key, name, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        action_key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+        group_id:
+          type: string
+          format: uuid
+          nullable: true
+        group_name:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          nullable: true
+    PermissionActionList:
+      type: object
+      required: [records, total, current, size]
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+        total:
+          type: integer
+        current:
+          type: integer
+        size:
+          type: integer
+        audit_summary:
+          $ref: '#/components/schemas/AnyObject'
+    PermissionActionSaveRequest:
+      type: object
+      required: [action_key, name]
+      properties:
+        action_key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        group_id:
+          type: string
+          format: uuid
+          nullable: true
+
+    # ─── System ───────────────────────────────────────────────────────────────────
+    ViewPagesResponse:
+      type: object
+      required: [pages, refreshed, refreshed_at]
+      properties:
+        pages:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+        refreshed:
+          type: boolean
+        refreshed_at:
+          type: string
+
+    # ─── Error ───────────────────────────────────────────────────────────────────
     Error:
       type: object
       required: [code, message]

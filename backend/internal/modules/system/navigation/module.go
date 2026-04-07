@@ -35,6 +35,10 @@ func (m *Module) Init() error {
 }
 
 func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
+	// Phase 4: /runtime/navigation migrated to ogen handlers in
+	// internal/api/handlers/navigation.go. Skip legacy gin registration.
+	_ = rg
+	return
 	menuRepo := user.NewMenuRepository(m.db)
 	boundaryService := collaborationworkspaceboundary.NewService(m.db)
 	platformService := platformaccess.NewService(m.db)

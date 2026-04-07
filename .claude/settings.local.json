@@ -18,6 +18,8 @@
       "Bash(python:*)",
       "Bash(zip -r /tmp/GGE_5.0_updated.zip .)",
       "Bash(cp /tmp/GGE_5.0_updated.zip \"C:/Users/Administrator/Downloads/GGE_5.0_初始化架构文档.docx\")",
+      "Read(//c/Users/Administrator/Documents/GitHub/G-G-E-commerce/**)",
+      "Edit(//c/Users/Administrator/Documents/GitHub/G-G-E-commerce/**)",
       "Read(//c/Users/Administrator/Documents/GitHub/G-G-E-commerce/.claude/**)",
       "Read(//c/Users/Administrator/.codex/skills/**)",
       "Bash(cmd //c 'mklink /J \"\"C:\\\\Users\\\\Administrator\\\\.codex\\\\skills\\\\gge\"\" \"\"C:\\\\Users\\\\Administrator\\\\Documents\\\\GitHub\\\\G-G-E-commerce\\\\.claude\\\\worktrees\\\\sleepy-blackburn\\\\.claude\\\\skills\"\"')",
@@ -50,7 +52,20 @@
       "Read(//c/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/**)",
       "Bash(pnpm install:*)",
       "Bash(git -c core.autocrlf=false commit -m \"feat\\(v5\\): phase 5 slice 2 — migrate remaining workspace endpoints to v5 client\")",
-      "Bash(grep -n \"LoginRequest\\\\|LoginResponse\" internal/api/dto/*.go internal/modules/system/auth/*.go)"
+      "Bash(grep -n \"LoginRequest\\\\|LoginResponse\" internal/api/dto/*.go internal/modules/system/auth/*.go)",
+      "Bash(grep -n \"type RoleCreateRequest\\\\|type RoleUpdateRequest\\\\|type RoleListRequest\" /c/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/api/dto/*.go)",
+      "Bash(grep -n \"type.*Service interface\\\\|func New.*Service\" /c/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/system/*.go)",
+      "Bash(sed -n:*)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(for *; do *; done)",
+      "Bash(grep * > /tmp/*)",
+      "Bash(wc -l /tmp/*)",
+      "Bash(cat > /tmp/* <<'EOF'*)",
+      "Bash(while read *; do *; done < /tmp/*)",
+      "Bash(for d in *; do ls backend/internal/modules/system/$d/module.go 2>/dev/null; done)",
+      "Bash(sort -u grep -E \"^func \\\\\\(UnimplementedHandler\\\\\\) [A-Z]\" backend/api/gen/oas_unimplemented_gen.go)",
+      "Bash(sort -u comm -23 /tmp/all.txt /tmp/impl.txt)"
     ]
   }
 }

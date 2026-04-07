@@ -52,25 +52,10 @@ func (m *PermissionModule) RegisterRoutes(rg *gin.RouterGroup) {
 	actions := rg.Group("/permission-actions")
 	reg := apiregistry.NewRegistrar(actions, "permission_key")
 	{
-		reg.GETProtected("", reg.Meta("获取功能权限列表").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.List)
-		reg.GETProtected("/options", reg.Meta("获取功能权限候选").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.ListOptions)
-		reg.GETProtected("/groups", reg.Meta("获取功能权限分组列表").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.ListGroups)
-		reg.GETProtected("/:id", reg.Meta("获取功能权限详情").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.Get)
-		reg.GETProtected("/:id/endpoints", reg.Meta("获取功能权限关联接口").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.ListEndpoints)
-		reg.GETProtected("/:id/consumers", reg.Meta("获取功能权限消费明细").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.GetConsumerDetails)
-		reg.GETProtected("/:id/impact-preview", reg.Meta("获取功能权限影响预览").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.GetImpactPreview)
-		reg.GETProtected("/risk-audits", reg.Meta("获取功能权限最近变更").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.ListRiskAudits)
-		reg.POSTProtected("/cleanup-unused", reg.Meta("清理未消费功能权限").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.CleanupUnused)
 		reg.POSTProtected("/batch", reg.Meta("批量治理功能权限").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.BatchUpdate)
-		reg.GETProtected("/templates", reg.Meta("获取功能权限批量模板").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.ListBatchTemplates)
 		reg.POSTProtected("/templates", reg.Meta("保存功能权限批量模板").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.SaveBatchTemplate)
-		reg.POSTProtected("/:id/endpoints", reg.Meta("新增功能权限关联接口").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.AddEndpoint)
-		reg.DELETEProtected("/:id/endpoints/:endpointCode", reg.Meta("删除功能权限关联接口").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.RemoveEndpoint)
 		reg.POSTProtected("/groups", reg.Meta("创建功能权限分组").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.CreateGroup)
 		reg.PUTProtected("/groups/:id", reg.Meta("更新功能权限分组").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.UpdateGroup)
-		reg.POSTProtected("", reg.Meta("创建功能权限").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.Create)
-		reg.PUTProtected("/:id", reg.Meta("更新功能权限").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.Update)
-		reg.DELETEProtected("/:id", reg.Meta("删除功能权限").BindPermissionKey("system.permission.manage").Build(), "system.permission.manage", authzService.RequireAction, handler.Delete)
 	}
 }
 

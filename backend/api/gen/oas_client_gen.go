@@ -27,24 +27,198 @@ func trimTrailingSlashes(u *url.URL) {
 
 // Invoker invokes operations described by OpenAPI v3 specification.
 type Invoker interface {
+	// AddCollaborationWorkspaceMember invokes addCollaborationWorkspaceMember operation.
+	//
+	// 添加协作空间成员.
+	//
+	// POST /collaboration-workspaces/{id}/members
+	AddCollaborationWorkspaceMember(ctx context.Context, request AnyObject, params AddCollaborationWorkspaceMemberParams) (*MutationResult, error)
+	// AddCurrentCollaborationWorkspaceMember invokes addCurrentCollaborationWorkspaceMember operation.
+	//
+	// 添加当前协作空间成员.
+	//
+	// POST /collaboration-workspaces/current/members
+	AddCurrentCollaborationWorkspaceMember(ctx context.Context, request AnyObject) (*MutationResult, error)
+	// AddPermissionActionEndpoint invokes addPermissionActionEndpoint operation.
+	//
+	// 新增功能权限关联接口.
+	//
+	// POST /permission-actions/{id}/endpoints
+	AddPermissionActionEndpoint(ctx context.Context, request AnyObject, params AddPermissionActionEndpointParams) (*MutationResult, error)
 	// AssignUserRoles invokes assignUserRoles operation.
 	//
 	// 分配用户角色.
 	//
 	// POST /users/{id}/roles
 	AssignUserRoles(ctx context.Context, request *UserAssignRolesRequest, params AssignUserRolesParams) (AssignUserRolesRes, error)
+	// BatchUpdatePermissionActions invokes batchUpdatePermissionActions operation.
+	//
+	// 批量治理功能权限.
+	//
+	// POST /permission-actions/batch
+	BatchUpdatePermissionActions(ctx context.Context, request AnyObject) (*MutationResult, error)
+	// CleanupUnusedPermissionActions invokes cleanupUnusedPermissionActions operation.
+	//
+	// 清理未消费功能权限.
+	//
+	// POST /permission-actions/cleanup-unused
+	CleanupUnusedPermissionActions(ctx context.Context) (*MutationResult, error)
+	// CreateCollaborationWorkspace invokes createCollaborationWorkspace operation.
+	//
+	// 创建协作空间.
+	//
+	// POST /collaboration-workspaces
+	CreateCollaborationWorkspace(ctx context.Context, request AnyObject) (*IDResult, error)
+	// CreateCurrentCollaborationWorkspaceBoundaryRole invokes createCurrentCollaborationWorkspaceBoundaryRole operation.
+	//
+	// 创建当前协作空间角色(边界管理).
+	//
+	// POST /collaboration-workspaces/current/boundary/roles
+	CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request AnyObject) (*MutationResult, error)
+	// CreateCurrentCollaborationWorkspaceRole invokes createCurrentCollaborationWorkspaceRole operation.
+	//
+	// 创建当前协作空间角色.
+	//
+	// POST /collaboration-workspaces/current/roles
+	CreateCurrentCollaborationWorkspaceRole(ctx context.Context, request AnyObject) (*MutationResult, error)
+	// CreateFeaturePackage invokes createFeaturePackage operation.
+	//
+	// 创建功能包.
+	//
+	// POST /feature-packages
+	CreateFeaturePackage(ctx context.Context, request *FeaturePackageSaveRequest) (*IDResult, error)
+	// CreateMenu invokes createMenu operation.
+	//
+	// 创建菜单.
+	//
+	// POST /menus
+	CreateMenu(ctx context.Context, request *MenuSaveRequest) (*MutationResult, error)
+	// CreateMenuBackup invokes createMenuBackup operation.
+	//
+	// 创建菜单备份.
+	//
+	// POST /menus/backups
+	CreateMenuBackup(ctx context.Context, request *MenuBackupCreateRequest) (*MutationResult, error)
+	// CreateMenuGroup invokes createMenuGroup operation.
+	//
+	// 创建菜单分组.
+	//
+	// POST /menus/groups
+	CreateMenuGroup(ctx context.Context, request *MenuGroupSaveRequest) (*MutationResult, error)
+	// CreateMessageRecipientGroup invokes createMessageRecipientGroup operation.
+	//
+	// 新建消息接收组.
+	//
+	// POST /messages/recipient-groups
+	CreateMessageRecipientGroup(ctx context.Context, request AnyObject) (*MutationResult, error)
+	// CreateMessageSender invokes createMessageSender operation.
+	//
+	// 新建消息发送人.
+	//
+	// POST /messages/senders
+	CreateMessageSender(ctx context.Context, request AnyObject) (*MutationResult, error)
+	// CreateMessageTemplate invokes createMessageTemplate operation.
+	//
+	// 新建消息模板.
+	//
+	// POST /messages/templates
+	CreateMessageTemplate(ctx context.Context, request AnyObject) (*MutationResult, error)
+	// CreatePage invokes createPage operation.
+	//
+	// 创建页面.
+	//
+	// POST /pages
+	CreatePage(ctx context.Context, request *PageSaveRequest, params CreatePageParams) (AnyObject, error)
+	// CreatePermissionAction invokes createPermissionAction operation.
+	//
+	// 创建功能权限.
+	//
+	// POST /permission-actions
+	CreatePermissionAction(ctx context.Context, request *PermissionActionSaveRequest) (*IDResult, error)
+	// CreatePermissionActionGroup invokes createPermissionActionGroup operation.
+	//
+	// 创建功能权限分组.
+	//
+	// POST /permission-actions/groups
+	CreatePermissionActionGroup(ctx context.Context, request AnyObject) (*MutationResult, error)
+	// CreateRole invokes createRole operation.
+	//
+	// 创建角色.
+	//
+	// POST /roles
+	CreateRole(ctx context.Context, request *RoleCreateRequest) (*RoleCreateResult, error)
 	// CreateUser invokes createUser operation.
 	//
 	// 创建用户.
 	//
 	// POST /users
 	CreateUser(ctx context.Context, request *UserCreateRequest) (CreateUserRes, error)
+	// DeleteCollaborationWorkspace invokes deleteCollaborationWorkspace operation.
+	//
+	// 删除协作空间.
+	//
+	// DELETE /collaboration-workspaces/{id}
+	DeleteCollaborationWorkspace(ctx context.Context, params DeleteCollaborationWorkspaceParams) (*MutationResult, error)
+	// DeleteCurrentCollaborationWorkspaceBoundaryRole invokes deleteCurrentCollaborationWorkspaceBoundaryRole operation.
+	//
+	// 删除当前协作空间角色(边界管理).
+	//
+	// DELETE /collaboration-workspaces/current/boundary/roles/{roleId}
+	DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, params DeleteCurrentCollaborationWorkspaceBoundaryRoleParams) (*MutationResult, error)
+	// DeleteFeaturePackage invokes deleteFeaturePackage operation.
+	//
+	// 删除功能包.
+	//
+	// DELETE /feature-packages/{id}
+	DeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (*MutationResult, error)
+	// DeleteMenu invokes deleteMenu operation.
+	//
+	// 删除菜单.
+	//
+	// DELETE /menus/{id}
+	DeleteMenu(ctx context.Context, params DeleteMenuParams) (*MutationResult, error)
+	// DeleteMenuBackup invokes deleteMenuBackup operation.
+	//
+	// 删除菜单备份.
+	//
+	// DELETE /menus/backups/{id}
+	DeleteMenuBackup(ctx context.Context, params DeleteMenuBackupParams) (*MutationResult, error)
+	// DeleteMenuGroup invokes deleteMenuGroup operation.
+	//
+	// 删除菜单分组.
+	//
+	// DELETE /menus/groups/{id}
+	DeleteMenuGroup(ctx context.Context, params DeleteMenuGroupParams) (*MutationResult, error)
+	// DeletePage invokes deletePage operation.
+	//
+	// 删除页面.
+	//
+	// DELETE /pages/{id}
+	DeletePage(ctx context.Context, params DeletePageParams) (*MutationResult, error)
+	// DeletePermissionAction invokes deletePermissionAction operation.
+	//
+	// 删除功能权限.
+	//
+	// DELETE /permission-actions/{id}
+	DeletePermissionAction(ctx context.Context, params DeletePermissionActionParams) (*MutationResult, error)
+	// DeleteRole invokes deleteRole operation.
+	//
+	// 删除角色.
+	//
+	// DELETE /roles/{id}
+	DeleteRole(ctx context.Context, params DeleteRoleParams) (*MutationResult, error)
 	// DeleteUser invokes deleteUser operation.
 	//
 	// 删除用户.
 	//
 	// DELETE /users/{id}
 	DeleteUser(ctx context.Context, params DeleteUserParams) (DeleteUserRes, error)
+	// DispatchMessage invokes dispatchMessage operation.
+	//
+	// 发送站内消息.
+	//
+	// POST /messages/dispatch
+	DispatchMessage(ctx context.Context, request AnyObject) (*MutationResult, error)
 	// ExplainPermissions invokes explainPermissions operation.
 	//
 	// 解释当前账号在指定工作空间内的最终权限及其来源.
@@ -57,30 +231,564 @@ type Invoker interface {
 	//
 	// GET /auth/me
 	GetAuthMe(ctx context.Context) (GetAuthMeRes, error)
+	// GetCollaborationWorkspace invokes getCollaborationWorkspace operation.
+	//
+	// 获取协作空间详情.
+	//
+	// GET /collaboration-workspaces/{id}
+	GetCollaborationWorkspace(ctx context.Context, params GetCollaborationWorkspaceParams) (AnyObject, error)
+	// GetCollaborationWorkspaceActionOrigins invokes getCollaborationWorkspaceActionOrigins operation.
+	//
+	// 获取协作空间功能权限来源.
+	//
+	// GET /collaboration-workspaces/{id}/action-origins
+	GetCollaborationWorkspaceActionOrigins(ctx context.Context, params GetCollaborationWorkspaceActionOriginsParams) (*AnyListResponse, error)
+	// GetCollaborationWorkspaceActions invokes getCollaborationWorkspaceActions operation.
+	//
+	// 获取协作空间功能权限边界.
+	//
+	// GET /collaboration-workspaces/{id}/actions
+	GetCollaborationWorkspaceActions(ctx context.Context, params GetCollaborationWorkspaceActionsParams) (AnyObject, error)
+	// GetCollaborationWorkspaceMenuOrigins invokes getCollaborationWorkspaceMenuOrigins operation.
+	//
+	// 获取协作空间菜单来源.
+	//
+	// GET /collaboration-workspaces/{id}/menu-origins
+	GetCollaborationWorkspaceMenuOrigins(ctx context.Context, params GetCollaborationWorkspaceMenuOriginsParams) (*AnyListResponse, error)
+	// GetCollaborationWorkspaceMenus invokes getCollaborationWorkspaceMenus operation.
+	//
+	// 获取协作空间菜单边界.
+	//
+	// GET /collaboration-workspaces/{id}/menus
+	GetCollaborationWorkspaceMenus(ctx context.Context, params GetCollaborationWorkspaceMenusParams) (AnyObject, error)
+	// GetCollaborationWorkspacePackages invokes getCollaborationWorkspacePackages operation.
+	//
+	// 获取协作空间功能包.
+	//
+	// GET /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}
+	GetCollaborationWorkspacePackages(ctx context.Context, params GetCollaborationWorkspacePackagesParams) (*FeaturePackageAssignmentResponse, error)
+	// GetCurrentApp invokes getCurrentApp operation.
+	//
+	// 获取当前应用.
+	//
+	// GET /system/apps/current
+	GetCurrentApp(ctx context.Context, params GetCurrentAppParams) (AnyObject, error)
+	// GetCurrentCollaborationWorkspace invokes getCurrentCollaborationWorkspace operation.
+	//
+	// 获取当前协作空间详情.
+	//
+	// GET /collaboration-workspaces/current
+	GetCurrentCollaborationWorkspace(ctx context.Context) (AnyObject, error)
+	// GetCurrentCollaborationWorkspaceActionOrigins invokes getCurrentCollaborationWorkspaceActionOrigins operation.
+	//
+	// 获取当前协作空间功能权限来源.
+	//
+	// GET /collaboration-workspaces/current/action-origins
+	GetCurrentCollaborationWorkspaceActionOrigins(ctx context.Context) (*AnyListResponse, error)
+	// GetCurrentCollaborationWorkspaceActions invokes getCurrentCollaborationWorkspaceActions operation.
+	//
+	// 获取当前协作空间功能权限边界.
+	//
+	// GET /collaboration-workspaces/current/actions
+	GetCurrentCollaborationWorkspaceActions(ctx context.Context) (AnyObject, error)
+	// GetCurrentCollaborationWorkspaceBoundaryPackages invokes getCurrentCollaborationWorkspaceBoundaryPackages operation.
+	//
+	// 获取当前协作空间已开通功能包(边界管理).
+	//
+	// GET /collaboration-workspaces/current/boundary/packages
+	GetCurrentCollaborationWorkspaceBoundaryPackages(ctx context.Context) (*AnyListResponse, error)
+	// GetCurrentCollaborationWorkspaceBoundaryRoleActions invokes getCurrentCollaborationWorkspaceBoundaryRoleActions operation.
+	//
+	// 获取当前协作空间角色功能权限(边界管理).
+	//
+	// GET /collaboration-workspaces/current/boundary/roles/{roleId}/actions
+	GetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (AnyObject, error)
+	// GetCurrentCollaborationWorkspaceBoundaryRoleMenus invokes getCurrentCollaborationWorkspaceBoundaryRoleMenus operation.
+	//
+	// 获取当前协作空间角色菜单权限(边界管理).
+	//
+	// GET /collaboration-workspaces/current/boundary/roles/{roleId}/menus
+	GetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (AnyObject, error)
+	// GetCurrentCollaborationWorkspaceBoundaryRolePackages invokes getCurrentCollaborationWorkspaceBoundaryRolePackages operation.
+	//
+	// 获取当前协作空间角色功能包(边界管理).
+	//
+	// GET /collaboration-workspaces/current/boundary/roles/{roleId}/packages
+	GetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (AnyObject, error)
+	// GetCurrentCollaborationWorkspaceMemberRoles invokes getCurrentCollaborationWorkspaceMemberRoles operation.
+	//
+	// 获取当前协作空间成员角色.
+	//
+	// GET /collaboration-workspaces/current/members/{userId}/roles
+	GetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, params GetCurrentCollaborationWorkspaceMemberRolesParams) (AnyObject, error)
+	// GetCurrentCollaborationWorkspaceMenuOrigins invokes getCurrentCollaborationWorkspaceMenuOrigins operation.
+	//
+	// 获取当前协作空间菜单来源.
+	//
+	// GET /collaboration-workspaces/current/menu-origins
+	GetCurrentCollaborationWorkspaceMenuOrigins(ctx context.Context) (*AnyListResponse, error)
+	// GetCurrentCollaborationWorkspaceMenus invokes getCurrentCollaborationWorkspaceMenus operation.
+	//
+	// 获取当前协作空间菜单边界.
+	//
+	// GET /collaboration-workspaces/current/menus
+	GetCurrentCollaborationWorkspaceMenus(ctx context.Context) (AnyObject, error)
+	// GetCurrentMenuSpace invokes getCurrentMenuSpace operation.
+	//
+	// 获取当前菜单空间.
+	//
+	// GET /system/menu-spaces/current
+	GetCurrentMenuSpace(ctx context.Context, params GetCurrentMenuSpaceParams) (AnyObject, error)
 	// GetCurrentWorkspace invokes getCurrentWorkspace operation.
 	//
 	// 获取当前授权工作空间.
 	//
 	// GET /workspaces/current
 	GetCurrentWorkspace(ctx context.Context) (GetCurrentWorkspaceRes, error)
+	// GetFastEnterConfig invokes getFastEnterConfig operation.
+	//
+	// 获取快捷入口配置.
+	//
+	// GET /system/fast-enter
+	GetFastEnterConfig(ctx context.Context) (AnyObject, error)
+	// GetFeaturePackage invokes getFeaturePackage operation.
+	//
+	// 获取功能包详情.
+	//
+	// GET /feature-packages/{id}
+	GetFeaturePackage(ctx context.Context, params GetFeaturePackageParams) (*FeaturePackageSummary, error)
+	// GetFeaturePackageActions invokes getFeaturePackageActions operation.
+	//
+	// 获取功能包权限.
+	//
+	// GET /feature-packages/{id}/actions
+	GetFeaturePackageActions(ctx context.Context, params GetFeaturePackageActionsParams) (*FeaturePackageActionsResponse, error)
+	// GetFeaturePackageChildren invokes getFeaturePackageChildren operation.
+	//
+	// 获取组合包基础包.
+	//
+	// GET /feature-packages/{id}/children
+	GetFeaturePackageChildren(ctx context.Context, params GetFeaturePackageChildrenParams) (*FeaturePackageAssignmentResponse, error)
+	// GetFeaturePackageCollaborationWorkspaces invokes getFeaturePackageCollaborationWorkspaces operation.
+	//
+	// 获取功能包协作空间.
+	//
+	// GET /feature-packages/{id}/collaboration-workspaces
+	GetFeaturePackageCollaborationWorkspaces(ctx context.Context, params GetFeaturePackageCollaborationWorkspacesParams) (*AnyListResponse, error)
+	// GetFeaturePackageImpactPreview invokes getFeaturePackageImpactPreview operation.
+	//
+	// 获取功能包影响预览.
+	//
+	// GET /feature-packages/{id}/impact-preview
+	GetFeaturePackageImpactPreview(ctx context.Context, params GetFeaturePackageImpactPreviewParams) (*FeaturePackageImpactPreview, error)
+	// GetFeaturePackageMenus invokes getFeaturePackageMenus operation.
+	//
+	// 获取功能包菜单.
+	//
+	// GET /feature-packages/{id}/menus
+	GetFeaturePackageMenus(ctx context.Context, params GetFeaturePackageMenusParams) (*FeaturePackageMenusResponse, error)
+	// GetFeaturePackageRelationTree invokes getFeaturePackageRelationTree operation.
+	//
+	// 获取功能包关系树.
+	//
+	// GET /feature-packages/relationship-tree
+	GetFeaturePackageRelationTree(ctx context.Context, params GetFeaturePackageRelationTreeParams) (*FeaturePackageRelationTree, error)
+	// GetInboxDetail invokes getInboxDetail operation.
+	//
+	// 获取消息详情.
+	//
+	// GET /messages/inbox/{deliveryId}
+	GetInboxDetail(ctx context.Context, params GetInboxDetailParams) (AnyObject, error)
+	// GetInboxSummary invokes getInboxSummary operation.
+	//
+	// 获取消息摘要.
+	//
+	// GET /messages/inbox/summary
+	GetInboxSummary(ctx context.Context) (AnyObject, error)
+	// GetMenuDeletePreview invokes getMenuDeletePreview operation.
+	//
+	// 获取菜单删除预览.
+	//
+	// GET /menus/{id}/delete-preview
+	GetMenuDeletePreview(ctx context.Context, params GetMenuDeletePreviewParams) (AnyObject, error)
+	// GetMenuSpaceMode invokes getMenuSpaceMode operation.
+	//
+	// 获取菜单空间模式.
+	//
+	// GET /system/menu-space-mode
+	GetMenuSpaceMode(ctx context.Context, params GetMenuSpaceModeParams) (AnyObject, error)
+	// GetMenuTree invokes getMenuTree operation.
+	//
+	// 获取菜单树.
+	//
+	// GET /menus/tree
+	GetMenuTree(ctx context.Context, params GetMenuTreeParams) (*MenuTreeResponse, error)
+	// GetMessageDispatchOptions invokes getMessageDispatchOptions operation.
+	//
+	// 获取消息发送配置.
+	//
+	// GET /messages/dispatch/options
+	GetMessageDispatchOptions(ctx context.Context) (AnyObject, error)
+	// GetMessageDispatchRecord invokes getMessageDispatchRecord operation.
+	//
+	// 获取消息发送记录详情.
+	//
+	// GET /messages/records/{recordId}
+	GetMessageDispatchRecord(ctx context.Context, params GetMessageDispatchRecordParams) (AnyObject, error)
+	// GetNavigation invokes getNavigation operation.
+	//
+	// 获取运行时导航清单.
+	//
+	// GET /runtime/navigation
+	GetNavigation(ctx context.Context, params GetNavigationParams) (*NavigationManifest, error)
+	// GetPage invokes getPage operation.
+	//
+	// 获取页面详情.
+	//
+	// GET /pages/{id}
+	GetPage(ctx context.Context, params GetPageParams) (AnyObject, error)
+	// GetPageAccessTrace invokes getPageAccessTrace operation.
+	//
+	// 获取页面访问链路.
+	//
+	// GET /pages/access-trace
+	GetPageAccessTrace(ctx context.Context, params GetPageAccessTraceParams) (AnyObject, error)
+	// GetPermissionAction invokes getPermissionAction operation.
+	//
+	// 获取功能权限详情.
+	//
+	// GET /permission-actions/{id}
+	GetPermissionAction(ctx context.Context, params GetPermissionActionParams) (*PermissionActionDetail, error)
+	// GetPermissionActionConsumers invokes getPermissionActionConsumers operation.
+	//
+	// 获取功能权限消费明细.
+	//
+	// GET /permission-actions/{id}/consumers
+	GetPermissionActionConsumers(ctx context.Context, params GetPermissionActionConsumersParams) (AnyObject, error)
+	// GetPermissionActionImpactPreview invokes getPermissionActionImpactPreview operation.
+	//
+	// 获取功能权限影响预览.
+	//
+	// GET /permission-actions/{id}/impact-preview
+	GetPermissionActionImpactPreview(ctx context.Context, params GetPermissionActionImpactPreviewParams) (AnyObject, error)
+	// GetRole invokes getRole operation.
+	//
+	// 获取角色详情.
+	//
+	// GET /roles/{id}
+	GetRole(ctx context.Context, params GetRoleParams) (GetRoleRes, error)
+	// GetRoleActions invokes getRoleActions operation.
+	//
+	// 获取角色功能权限.
+	//
+	// GET /roles/{id}/actions
+	GetRoleActions(ctx context.Context, params GetRoleActionsParams) (*RoleActionsResponse, error)
+	// GetRoleDataPermissions invokes getRoleDataPermissions operation.
+	//
+	// 获取角色数据权限.
+	//
+	// GET /roles/{id}/data-permissions
+	GetRoleDataPermissions(ctx context.Context, params GetRoleDataPermissionsParams) (*RoleDataPermissionsResponse, error)
+	// GetRoleMenus invokes getRoleMenus operation.
+	//
+	// 获取角色菜单权限.
+	//
+	// GET /roles/{id}/menus
+	GetRoleMenus(ctx context.Context, params GetRoleMenusParams) (*RoleMenusResponse, error)
+	// GetRolePackages invokes getRolePackages operation.
+	//
+	// 获取角色功能包.
+	//
+	// GET /roles/{id}/packages
+	GetRolePackages(ctx context.Context, params GetRolePackagesParams) (*RolePackagesResponse, error)
+	// GetSystemViewPages invokes getSystemViewPages operation.
+	//
+	// 获取页面文件映射.
+	//
+	// GET /system/view-pages
+	GetSystemViewPages(ctx context.Context, params GetSystemViewPagesParams) (*ViewPagesResponse, error)
 	// GetUser invokes getUser operation.
 	//
 	// 获取用户详情.
 	//
 	// GET /users/{id}
 	GetUser(ctx context.Context, params GetUserParams) (GetUserRes, error)
+	// GetUserCollaborationWorkspaces invokes getUserCollaborationWorkspaces operation.
+	//
+	// 获取用户所在协作空间列表.
+	//
+	// GET /users/{id}/collaboration-workspaces
+	GetUserCollaborationWorkspaces(ctx context.Context, params GetUserCollaborationWorkspacesParams) (AnyObject, error)
+	// GetUserMenus invokes getUserMenus operation.
+	//
+	// 获取用户菜单裁剪.
+	//
+	// GET /users/{id}/menus
+	GetUserMenus(ctx context.Context, params GetUserMenusParams) (AnyObject, error)
+	// GetUserPackages invokes getUserPackages operation.
+	//
+	// 获取用户功能包.
+	//
+	// GET /users/{id}/packages
+	GetUserPackages(ctx context.Context, params GetUserPackagesParams) (*UserPackagesResponse, error)
+	// GetUserPermissionDiagnosis invokes getUserPermissionDiagnosis operation.
+	//
+	// 获取用户权限诊断.
+	//
+	// GET /users/{id}/permission-diagnosis
+	GetUserPermissionDiagnosis(ctx context.Context, params GetUserPermissionDiagnosisParams) (AnyObject, error)
+	// GetUserPermissions invokes getUserPermissions operation.
+	//
+	// 获取用户菜单权限.
+	//
+	// GET /users/{id}/permissions
+	GetUserPermissions(ctx context.Context, params GetUserPermissionsParams) (AnyObject, error)
 	// GetWorkspace invokes getWorkspace operation.
 	//
 	// 获取工作空间详情.
 	//
 	// GET /workspaces/{id}
 	GetWorkspace(ctx context.Context, params GetWorkspaceParams) (GetWorkspaceRes, error)
+	// HandleInboxTodo invokes handleInboxTodo operation.
+	//
+	// 处理待办消息.
+	//
+	// POST /messages/inbox/{deliveryId}/todo-action
+	HandleInboxTodo(ctx context.Context, request AnyObject, params HandleInboxTodoParams) (*MutationResult, error)
+	// InitializeMenuSpaceFromDefault invokes initializeMenuSpaceFromDefault operation.
+	//
+	// 从默认空间初始化菜单空间.
+	//
+	// POST /system/menu-spaces/{spaceKey}/initialize-default
+	InitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (*MutationResult, error)
+	// ListAppHostBindings invokes listAppHostBindings operation.
+	//
+	// 获取应用 Host 绑定.
+	//
+	// GET /system/app-host-bindings
+	ListAppHostBindings(ctx context.Context) (*AnyListResponse, error)
+	// ListApps invokes listApps operation.
+	//
+	// 获取应用列表.
+	//
+	// GET /system/apps
+	ListApps(ctx context.Context) (*AnyListResponse, error)
+	// ListCollaborationWorkspaceMembers invokes listCollaborationWorkspaceMembers operation.
+	//
+	// 获取协作空间成员列表.
+	//
+	// GET /collaboration-workspaces/{id}/members
+	ListCollaborationWorkspaceMembers(ctx context.Context, params ListCollaborationWorkspaceMembersParams) (*AnyListResponse, error)
+	// ListCollaborationWorkspaceOptions invokes listCollaborationWorkspaceOptions operation.
+	//
+	// 获取协作空间候选.
+	//
+	// GET /collaboration-workspaces/options
+	ListCollaborationWorkspaceOptions(ctx context.Context) (*AnyListResponse, error)
+	// ListCollaborationWorkspaceRoles invokes listCollaborationWorkspaceRoles operation.
+	//
+	// 获取协作空间可分配角色.
+	//
+	// GET /collaboration-workspaces/{id}/roles
+	ListCollaborationWorkspaceRoles(ctx context.Context, params ListCollaborationWorkspaceRolesParams) (*AnyListResponse, error)
+	// ListCollaborationWorkspaces invokes listCollaborationWorkspaces operation.
+	//
+	// 获取协作空间列表.
+	//
+	// GET /collaboration-workspaces
+	ListCollaborationWorkspaces(ctx context.Context, params ListCollaborationWorkspacesParams) (*AnyListResponse, error)
+	// ListCurrentCollaborationWorkspaceBoundaryRoles invokes listCurrentCollaborationWorkspaceBoundaryRoles operation.
+	//
+	// 获取当前协作空间边界可见角色.
+	//
+	// GET /collaboration-workspaces/current/boundary/roles
+	ListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.Context) (*AnyListResponse, error)
+	// ListCurrentCollaborationWorkspaceMembers invokes listCurrentCollaborationWorkspaceMembers operation.
+	//
+	// 获取当前协作空间成员列表.
+	//
+	// GET /collaboration-workspaces/current/members
+	ListCurrentCollaborationWorkspaceMembers(ctx context.Context) (*AnyListResponse, error)
+	// ListCurrentCollaborationWorkspaceRoles invokes listCurrentCollaborationWorkspaceRoles operation.
+	//
+	// 获取当前协作空间可分配角色.
+	//
+	// GET /collaboration-workspaces/current/roles
+	ListCurrentCollaborationWorkspaceRoles(ctx context.Context) (*AnyListResponse, error)
+	// ListFeaturePackageOptions invokes listFeaturePackageOptions operation.
+	//
+	// 获取功能包候选.
+	//
+	// GET /feature-packages/options
+	ListFeaturePackageOptions(ctx context.Context, params ListFeaturePackageOptionsParams) (*FeaturePackageOptions, error)
+	// ListFeaturePackageRiskAudits invokes listFeaturePackageRiskAudits operation.
+	//
+	// 获取功能包最近变更.
+	//
+	// GET /feature-packages/{id}/risk-audits
+	ListFeaturePackageRiskAudits(ctx context.Context, params ListFeaturePackageRiskAuditsParams) (*AnyListResponse, error)
+	// ListFeaturePackageVersions invokes listFeaturePackageVersions operation.
+	//
+	// 获取功能包版本历史.
+	//
+	// GET /feature-packages/{id}/versions
+	ListFeaturePackageVersions(ctx context.Context, params ListFeaturePackageVersionsParams) (*AnyListResponse, error)
+	// ListFeaturePackages invokes listFeaturePackages operation.
+	//
+	// 获取功能包列表.
+	//
+	// GET /feature-packages
+	ListFeaturePackages(ctx context.Context, params ListFeaturePackagesParams) (*FeaturePackageList, error)
+	// ListInbox invokes listInbox operation.
+	//
+	// 获取消息列表.
+	//
+	// GET /messages/inbox
+	ListInbox(ctx context.Context, params ListInboxParams) (*AnyListResponse, error)
+	// ListMenuBackups invokes listMenuBackups operation.
+	//
+	// 获取菜单备份列表.
+	//
+	// GET /menus/backups
+	ListMenuBackups(ctx context.Context) (*MenuBackupList, error)
+	// ListMenuGroups invokes listMenuGroups operation.
+	//
+	// 获取菜单分组列表.
+	//
+	// GET /menus/groups
+	ListMenuGroups(ctx context.Context) (*MenuGroupList, error)
+	// ListMenuSpaceHostBindings invokes listMenuSpaceHostBindings operation.
+	//
+	// 获取菜单空间 Host 绑定.
+	//
+	// GET /system/menu-space-host-bindings
+	ListMenuSpaceHostBindings(ctx context.Context) (*AnyListResponse, error)
+	// ListMenuSpaces invokes listMenuSpaces operation.
+	//
+	// 获取菜单空间列表.
+	//
+	// GET /system/menu-spaces
+	ListMenuSpaces(ctx context.Context) (*AnyListResponse, error)
+	// ListMessageDispatchRecords invokes listMessageDispatchRecords operation.
+	//
+	// 获取消息发送记录.
+	//
+	// GET /messages/records
+	ListMessageDispatchRecords(ctx context.Context, params ListMessageDispatchRecordsParams) (*AnyListResponse, error)
+	// ListMessageRecipientGroups invokes listMessageRecipientGroups operation.
+	//
+	// 获取消息接收组.
+	//
+	// GET /messages/recipient-groups
+	ListMessageRecipientGroups(ctx context.Context) (*AnyListResponse, error)
+	// ListMessageSenders invokes listMessageSenders operation.
+	//
+	// 获取消息发送人.
+	//
+	// GET /messages/senders
+	ListMessageSenders(ctx context.Context) (*AnyListResponse, error)
+	// ListMessageTemplates invokes listMessageTemplates operation.
+	//
+	// 获取消息模板.
+	//
+	// GET /messages/templates
+	ListMessageTemplates(ctx context.Context) (*AnyListResponse, error)
+	// ListMyCollaborationWorkspaces invokes listMyCollaborationWorkspaces operation.
+	//
+	// 获取我的协作空间列表.
+	//
+	// GET /collaboration-workspaces/mine
+	ListMyCollaborationWorkspaces(ctx context.Context) (*AnyListResponse, error)
 	// ListMyWorkspaces invokes listMyWorkspaces operation.
 	//
 	// 获取我的工作空间列表.
 	//
 	// GET /workspaces/my
 	ListMyWorkspaces(ctx context.Context) (ListMyWorkspacesRes, error)
+	// ListPageMenuOptions invokes listPageMenuOptions operation.
+	//
+	// 获取上级菜单候选.
+	//
+	// GET /pages/menu-options
+	ListPageMenuOptions(ctx context.Context, params ListPageMenuOptionsParams) (*AnyListResponse, error)
+	// ListPageOptions invokes listPageOptions operation.
+	//
+	// 获取页面候选列表.
+	//
+	// GET /pages/options
+	ListPageOptions(ctx context.Context, params ListPageOptionsParams) (*AnyListResponse, error)
+	// ListPages invokes listPages operation.
+	//
+	// 获取页面列表.
+	//
+	// GET /pages
+	ListPages(ctx context.Context, params ListPagesParams) (*AnyListResponse, error)
+	// ListPermissionActionBatchTemplates invokes listPermissionActionBatchTemplates operation.
+	//
+	// 获取功能权限批量模板.
+	//
+	// GET /permission-actions/templates
+	ListPermissionActionBatchTemplates(ctx context.Context) (*AnyListResponse, error)
+	// ListPermissionActionEndpoints invokes listPermissionActionEndpoints operation.
+	//
+	// 获取功能权限关联接口.
+	//
+	// GET /permission-actions/{id}/endpoints
+	ListPermissionActionEndpoints(ctx context.Context, params ListPermissionActionEndpointsParams) (*AnyListResponse, error)
+	// ListPermissionActionGroups invokes listPermissionActionGroups operation.
+	//
+	// 获取功能权限分组列表.
+	//
+	// GET /permission-actions/groups
+	ListPermissionActionGroups(ctx context.Context) (*AnyListResponse, error)
+	// ListPermissionActionOptions invokes listPermissionActionOptions operation.
+	//
+	// 获取功能权限候选.
+	//
+	// GET /permission-actions/options
+	ListPermissionActionOptions(ctx context.Context, params ListPermissionActionOptionsParams) (*AnyListResponse, error)
+	// ListPermissionActionRiskAudits invokes listPermissionActionRiskAudits operation.
+	//
+	// 获取功能权限最近变更.
+	//
+	// GET /permission-actions/risk-audits
+	ListPermissionActionRiskAudits(ctx context.Context, params ListPermissionActionRiskAuditsParams) (*AnyListResponse, error)
+	// ListPermissionActions invokes listPermissionActions operation.
+	//
+	// 获取功能权限列表.
+	//
+	// GET /permission-actions
+	ListPermissionActions(ctx context.Context, params ListPermissionActionsParams) (*PermissionActionList, error)
+	// ListPublicRuntimePages invokes listPublicRuntimePages operation.
+	//
+	// 获取公开运行时页面注册表.
+	//
+	// GET /pages/runtime/public
+	ListPublicRuntimePages(ctx context.Context, params ListPublicRuntimePagesParams) (*AnyListResponse, error)
+	// ListRoleOptions invokes listRoleOptions operation.
+	//
+	// 获取角色候选列表.
+	//
+	// GET /roles/options
+	ListRoleOptions(ctx context.Context, params ListRoleOptionsParams) (*RoleOptions, error)
+	// ListRoles invokes listRoles operation.
+	//
+	// 获取角色列表.
+	//
+	// GET /roles
+	ListRoles(ctx context.Context, params ListRolesParams) (*RoleList, error)
+	// ListRuntimePages invokes listRuntimePages operation.
+	//
+	// 获取运行时页面注册表.
+	//
+	// GET /pages/runtime
+	ListRuntimePages(ctx context.Context, params ListRuntimePagesParams) (*AnyListResponse, error)
+	// ListUnregisteredPages invokes listUnregisteredPages operation.
+	//
+	// 获取未注册页面.
+	//
+	// GET /pages/unregistered
+	ListUnregisteredPages(ctx context.Context, params ListUnregisteredPagesParams) (*AnyListResponse, error)
 	// ListUsers invokes listUsers operation.
 	//
 	// 获取用户列表（分页 + 多条件筛选）.
@@ -93,24 +801,312 @@ type Invoker interface {
 	//
 	// POST /auth/login
 	Login(ctx context.Context, request *LoginRequest) (LoginRes, error)
+	// MarkInboxRead invokes markInboxRead operation.
+	//
+	// 标记消息已读.
+	//
+	// POST /messages/inbox/{deliveryId}/read
+	MarkInboxRead(ctx context.Context, params MarkInboxReadParams) (*MutationResult, error)
+	// MarkInboxReadAll invokes markInboxReadAll operation.
+	//
+	// 批量标记消息已读.
+	//
+	// POST /messages/inbox/read-all
+	MarkInboxReadAll(ctx context.Context) (*MutationResult, error)
+	// PreviewPageBreadcrumb invokes previewPageBreadcrumb operation.
+	//
+	// 预览页面面包屑.
+	//
+	// GET /pages/{id}/breadcrumb-preview
+	PreviewPageBreadcrumb(ctx context.Context, params PreviewPageBreadcrumbParams) (*AnyListResponse, error)
 	// RefreshToken invokes refreshToken operation.
 	//
 	// 刷新访问令牌.
 	//
 	// POST /auth/refresh
 	RefreshToken(ctx context.Context, request *RefreshTokenRequest) (RefreshTokenRes, error)
+	// RefreshUserPermissionSnapshot invokes refreshUserPermissionSnapshot operation.
+	//
+	// 刷新用户权限快照.
+	//
+	// POST /users/{id}/permission-refresh
+	RefreshUserPermissionSnapshot(ctx context.Context, params RefreshUserPermissionSnapshotParams) (*MutationResult, error)
 	// Register invokes register operation.
 	//
 	// 用户注册.
 	//
 	// POST /auth/register
 	Register(ctx context.Context, request *RegisterRequest) (RegisterRes, error)
+	// RemoveCollaborationWorkspaceMember invokes removeCollaborationWorkspaceMember operation.
+	//
+	// 移除协作空间成员.
+	//
+	// DELETE /collaboration-workspaces/{id}/members/{userId}
+	RemoveCollaborationWorkspaceMember(ctx context.Context, params RemoveCollaborationWorkspaceMemberParams) (*MutationResult, error)
+	// RemoveCurrentCollaborationWorkspaceMember invokes removeCurrentCollaborationWorkspaceMember operation.
+	//
+	// 移除当前协作空间成员.
+	//
+	// DELETE /collaboration-workspaces/current/members/{userId}
+	RemoveCurrentCollaborationWorkspaceMember(ctx context.Context, params RemoveCurrentCollaborationWorkspaceMemberParams) (*MutationResult, error)
+	// RemovePermissionActionEndpoint invokes removePermissionActionEndpoint operation.
+	//
+	// 删除功能权限关联接口.
+	//
+	// DELETE /permission-actions/{id}/endpoints/{endpointCode}
+	RemovePermissionActionEndpoint(ctx context.Context, params RemovePermissionActionEndpointParams) (*MutationResult, error)
+	// RestoreMenuBackup invokes restoreMenuBackup operation.
+	//
+	// 恢复菜单备份.
+	//
+	// POST /menus/backups/{id}/restore
+	RestoreMenuBackup(ctx context.Context, params RestoreMenuBackupParams) (*MutationResult, error)
+	// RollbackFeaturePackage invokes rollbackFeaturePackage operation.
+	//
+	// 回滚功能包版本.
+	//
+	// POST /feature-packages/{id}/rollback
+	RollbackFeaturePackage(ctx context.Context, request *RollbackRequest, params RollbackFeaturePackageParams) (*MutationResult, error)
+	// SaveApp invokes saveApp operation.
+	//
+	// 保存应用.
+	//
+	// POST /system/apps
+	SaveApp(ctx context.Context, request AnyObject) (*MutationResult, error)
+	// SaveAppHostBinding invokes saveAppHostBinding operation.
+	//
+	// 保存应用 Host 绑定.
+	//
+	// POST /system/app-host-bindings
+	SaveAppHostBinding(ctx context.Context, request AnyObject) (*MutationResult, error)
+	// SaveMenuSpace invokes saveMenuSpace operation.
+	//
+	// 保存菜单空间.
+	//
+	// POST /system/menu-spaces
+	SaveMenuSpace(ctx context.Context, request AnyObject) (*MutationResult, error)
+	// SaveMenuSpaceHostBinding invokes saveMenuSpaceHostBinding operation.
+	//
+	// 保存菜单空间 Host 绑定.
+	//
+	// POST /system/menu-space-host-bindings
+	SaveMenuSpaceHostBinding(ctx context.Context, request AnyObject) (*MutationResult, error)
+	// SaveMenuSpaceMode invokes saveMenuSpaceMode operation.
+	//
+	// 保存菜单空间模式.
+	//
+	// PUT /system/menu-space-mode
+	SaveMenuSpaceMode(ctx context.Context, request AnyObject) (*MutationResult, error)
+	// SavePermissionActionBatchTemplate invokes savePermissionActionBatchTemplate operation.
+	//
+	// 保存功能权限批量模板.
+	//
+	// POST /permission-actions/templates
+	SavePermissionActionBatchTemplate(ctx context.Context, request AnyObject) (*MutationResult, error)
+	// SetCollaborationWorkspaceActions invokes setCollaborationWorkspaceActions operation.
+	//
+	// 配置协作空间功能权限边界.
+	//
+	// PUT /collaboration-workspaces/{id}/actions
+	SetCollaborationWorkspaceActions(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspaceActionsParams) (*MutationResult, error)
+	// SetCollaborationWorkspaceMenus invokes setCollaborationWorkspaceMenus operation.
+	//
+	// 配置协作空间菜单边界.
+	//
+	// PUT /collaboration-workspaces/{id}/menus
+	SetCollaborationWorkspaceMenus(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspaceMenusParams) (*MutationResult, error)
+	// SetCollaborationWorkspacePackages invokes setCollaborationWorkspacePackages operation.
+	//
+	// 配置协作空间功能包.
+	//
+	// PUT /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}
+	SetCollaborationWorkspacePackages(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspacePackagesParams) (*MutationResult, error)
+	// SetCurrentCollaborationWorkspaceBoundaryRoleActions invokes setCurrentCollaborationWorkspaceBoundaryRoleActions operation.
+	//
+	// 配置当前协作空间角色功能权限(边界管理).
+	//
+	// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/actions
+	SetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (*MutationResult, error)
+	// SetCurrentCollaborationWorkspaceBoundaryRoleMenus invokes setCurrentCollaborationWorkspaceBoundaryRoleMenus operation.
+	//
+	// 配置当前协作空间角色菜单权限(边界管理).
+	//
+	// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/menus
+	SetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (*MutationResult, error)
+	// SetCurrentCollaborationWorkspaceBoundaryRolePackages invokes setCurrentCollaborationWorkspaceBoundaryRolePackages operation.
+	//
+	// 配置当前协作空间角色功能包(边界管理).
+	//
+	// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/packages
+	SetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (*MutationResult, error)
+	// SetCurrentCollaborationWorkspaceMemberRoles invokes setCurrentCollaborationWorkspaceMemberRoles operation.
+	//
+	// 配置当前协作空间成员角色.
+	//
+	// PUT /collaboration-workspaces/current/members/{userId}/roles
+	SetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceMemberRolesParams) (*MutationResult, error)
+	// SetFeaturePackageActions invokes setFeaturePackageActions operation.
+	//
+	// 配置功能包权限.
+	//
+	// PUT /feature-packages/{id}/actions
+	SetFeaturePackageActions(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageActionsParams) (*MutationResult, error)
+	// SetFeaturePackageChildren invokes setFeaturePackageChildren operation.
+	//
+	// 配置组合包基础包.
+	//
+	// PUT /feature-packages/{id}/children
+	SetFeaturePackageChildren(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageChildrenParams) (*MutationResult, error)
+	// SetFeaturePackageCollaborationWorkspaces invokes setFeaturePackageCollaborationWorkspaces operation.
+	//
+	// 配置功能包协作空间.
+	//
+	// PUT /feature-packages/{id}/collaboration-workspaces
+	SetFeaturePackageCollaborationWorkspaces(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageCollaborationWorkspacesParams) (*MutationResult, error)
+	// SetFeaturePackageMenus invokes setFeaturePackageMenus operation.
+	//
+	// 配置功能包菜单.
+	//
+	// PUT /feature-packages/{id}/menus
+	SetFeaturePackageMenus(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageMenusParams) (*MutationResult, error)
+	// SetRoleActions invokes setRoleActions operation.
+	//
+	// 配置角色功能权限.
+	//
+	// PUT /roles/{id}/actions
+	SetRoleActions(ctx context.Context, request *UUIDListRequest, params SetRoleActionsParams) (*MutationResult, error)
+	// SetRoleDataPermissions invokes setRoleDataPermissions operation.
+	//
+	// 配置角色数据权限.
+	//
+	// PUT /roles/{id}/data-permissions
+	SetRoleDataPermissions(ctx context.Context, request *RoleDataPermissionsRequest, params SetRoleDataPermissionsParams) (*MutationResult, error)
+	// SetRoleMenus invokes setRoleMenus operation.
+	//
+	// 配置角色菜单权限.
+	//
+	// PUT /roles/{id}/menus
+	SetRoleMenus(ctx context.Context, request *UUIDListRequest, params SetRoleMenusParams) (*MutationResult, error)
+	// SetRolePackages invokes setRolePackages operation.
+	//
+	// 配置角色功能包.
+	//
+	// PUT /roles/{id}/packages
+	SetRolePackages(ctx context.Context, request *UUIDListRequest, params SetRolePackagesParams) (*MutationResult, error)
+	// SetUserMenus invokes setUserMenus operation.
+	//
+	// 配置用户菜单裁剪.
+	//
+	// PUT /users/{id}/menus
+	SetUserMenus(ctx context.Context, request AnyObject, params SetUserMenusParams) (*MutationResult, error)
+	// SetUserPackages invokes setUserPackages operation.
+	//
+	// 配置用户功能包.
+	//
+	// PUT /users/{id}/packages
+	SetUserPackages(ctx context.Context, request *UUIDListRequest, params SetUserPackagesParams) (*MutationResult, error)
 	// SwitchWorkspace invokes switchWorkspace operation.
 	//
 	// 切换当前授权工作空间.
 	//
 	// POST /workspaces/switch
 	SwitchWorkspace(ctx context.Context, request *WorkspaceSwitchRequest) (SwitchWorkspaceRes, error)
+	// SyncPages invokes syncPages operation.
+	//
+	// 同步页面注册表.
+	//
+	// POST /pages/sync
+	SyncPages(ctx context.Context, params SyncPagesParams) (*PageSyncResult, error)
+	// UpdateCollaborationWorkspace invokes updateCollaborationWorkspace operation.
+	//
+	// 更新协作空间.
+	//
+	// PUT /collaboration-workspaces/{id}
+	UpdateCollaborationWorkspace(ctx context.Context, request AnyObject, params UpdateCollaborationWorkspaceParams) (*MutationResult, error)
+	// UpdateCollaborationWorkspaceMemberRole invokes updateCollaborationWorkspaceMemberRole operation.
+	//
+	// 更新协作空间成员身份.
+	//
+	// PUT /collaboration-workspaces/{id}/members/{userId}/role
+	UpdateCollaborationWorkspaceMemberRole(ctx context.Context, request AnyObject, params UpdateCollaborationWorkspaceMemberRoleParams) (*MutationResult, error)
+	// UpdateCurrentCollaborationWorkspaceBoundaryRole invokes updateCurrentCollaborationWorkspaceBoundaryRole operation.
+	//
+	// 更新当前协作空间角色(边界管理).
+	//
+	// PUT /collaboration-workspaces/current/boundary/roles/{roleId}
+	UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request AnyObject, params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (*MutationResult, error)
+	// UpdateCurrentCollaborationWorkspaceMemberRole invokes updateCurrentCollaborationWorkspaceMemberRole operation.
+	//
+	// 更新当前协作空间成员身份.
+	//
+	// PUT /collaboration-workspaces/current/members/{userId}/role
+	UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, request AnyObject, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (*MutationResult, error)
+	// UpdateFastEnterConfig invokes updateFastEnterConfig operation.
+	//
+	// 更新快捷入口配置.
+	//
+	// PUT /system/fast-enter
+	UpdateFastEnterConfig(ctx context.Context, request AnyObject) (*MutationResult, error)
+	// UpdateFeaturePackage invokes updateFeaturePackage operation.
+	//
+	// 更新功能包.
+	//
+	// PUT /feature-packages/{id}
+	UpdateFeaturePackage(ctx context.Context, request *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (*MutationResult, error)
+	// UpdateMenu invokes updateMenu operation.
+	//
+	// 更新菜单.
+	//
+	// PUT /menus/{id}
+	UpdateMenu(ctx context.Context, request *MenuSaveRequest, params UpdateMenuParams) (*MutationResult, error)
+	// UpdateMenuGroup invokes updateMenuGroup operation.
+	//
+	// 更新菜单分组.
+	//
+	// PUT /menus/groups/{id}
+	UpdateMenuGroup(ctx context.Context, request *MenuGroupSaveRequest, params UpdateMenuGroupParams) (*MutationResult, error)
+	// UpdateMessageRecipientGroup invokes updateMessageRecipientGroup operation.
+	//
+	// 更新消息接收组.
+	//
+	// PUT /messages/recipient-groups/{groupId}
+	UpdateMessageRecipientGroup(ctx context.Context, request AnyObject, params UpdateMessageRecipientGroupParams) (*MutationResult, error)
+	// UpdateMessageSender invokes updateMessageSender operation.
+	//
+	// 更新消息发送人.
+	//
+	// PUT /messages/senders/{senderId}
+	UpdateMessageSender(ctx context.Context, request AnyObject, params UpdateMessageSenderParams) (*MutationResult, error)
+	// UpdateMessageTemplate invokes updateMessageTemplate operation.
+	//
+	// 更新消息模板.
+	//
+	// PUT /messages/templates/{templateId}
+	UpdateMessageTemplate(ctx context.Context, request AnyObject, params UpdateMessageTemplateParams) (*MutationResult, error)
+	// UpdatePage invokes updatePage operation.
+	//
+	// 更新页面.
+	//
+	// PUT /pages/{id}
+	UpdatePage(ctx context.Context, request *PageSaveRequest, params UpdatePageParams) (AnyObject, error)
+	// UpdatePermissionAction invokes updatePermissionAction operation.
+	//
+	// 更新功能权限.
+	//
+	// PUT /permission-actions/{id}
+	UpdatePermissionAction(ctx context.Context, request *PermissionActionSaveRequest, params UpdatePermissionActionParams) (*MutationResult, error)
+	// UpdatePermissionActionGroup invokes updatePermissionActionGroup operation.
+	//
+	// 更新功能权限分组.
+	//
+	// PUT /permission-actions/groups/{id}
+	UpdatePermissionActionGroup(ctx context.Context, request AnyObject, params UpdatePermissionActionGroupParams) (*MutationResult, error)
+	// UpdateRole invokes updateRole operation.
+	//
+	// 更新角色.
+	//
+	// PUT /roles/{id}
+	UpdateRole(ctx context.Context, request *RoleUpdateRequest, params UpdateRoleParams) (*MutationResult, error)
 	// UpdateUser invokes updateUser operation.
 	//
 	// 更新用户.
@@ -156,6 +1152,275 @@ func (c *Client) requestURL(ctx context.Context) *url.URL {
 		return c.serverURL
 	}
 	return u
+}
+
+// AddCollaborationWorkspaceMember invokes addCollaborationWorkspaceMember operation.
+//
+// 添加协作空间成员.
+//
+// POST /collaboration-workspaces/{id}/members
+func (c *Client) AddCollaborationWorkspaceMember(ctx context.Context, request AnyObject, params AddCollaborationWorkspaceMemberParams) (*MutationResult, error) {
+	res, err := c.sendAddCollaborationWorkspaceMember(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendAddCollaborationWorkspaceMember(ctx context.Context, request AnyObject, params AddCollaborationWorkspaceMemberParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("addCollaborationWorkspaceMember"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/members"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, AddCollaborationWorkspaceMemberOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/members"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeAddCollaborationWorkspaceMemberRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeAddCollaborationWorkspaceMemberResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// AddCurrentCollaborationWorkspaceMember invokes addCurrentCollaborationWorkspaceMember operation.
+//
+// 添加当前协作空间成员.
+//
+// POST /collaboration-workspaces/current/members
+func (c *Client) AddCurrentCollaborationWorkspaceMember(ctx context.Context, request AnyObject) (*MutationResult, error) {
+	res, err := c.sendAddCurrentCollaborationWorkspaceMember(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendAddCurrentCollaborationWorkspaceMember(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("addCurrentCollaborationWorkspaceMember"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/members"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, AddCurrentCollaborationWorkspaceMemberOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/collaboration-workspaces/current/members"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeAddCurrentCollaborationWorkspaceMemberRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeAddCurrentCollaborationWorkspaceMemberResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// AddPermissionActionEndpoint invokes addPermissionActionEndpoint operation.
+//
+// 新增功能权限关联接口.
+//
+// POST /permission-actions/{id}/endpoints
+func (c *Client) AddPermissionActionEndpoint(ctx context.Context, request AnyObject, params AddPermissionActionEndpointParams) (*MutationResult, error) {
+	res, err := c.sendAddPermissionActionEndpoint(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendAddPermissionActionEndpoint(ctx context.Context, request AnyObject, params AddPermissionActionEndpointParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("addPermissionActionEndpoint"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/permission-actions/{id}/endpoints"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, AddPermissionActionEndpointOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/permission-actions/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/endpoints"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeAddPermissionActionEndpointRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeAddPermissionActionEndpointResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
 }
 
 // AssignUserRoles invokes assignUserRoles operation.
@@ -254,6 +1519,1253 @@ func (c *Client) sendAssignUserRoles(ctx context.Context, request *UserAssignRol
 	return result, nil
 }
 
+// BatchUpdatePermissionActions invokes batchUpdatePermissionActions operation.
+//
+// 批量治理功能权限.
+//
+// POST /permission-actions/batch
+func (c *Client) BatchUpdatePermissionActions(ctx context.Context, request AnyObject) (*MutationResult, error) {
+	res, err := c.sendBatchUpdatePermissionActions(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendBatchUpdatePermissionActions(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("batchUpdatePermissionActions"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/permission-actions/batch"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, BatchUpdatePermissionActionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/permission-actions/batch"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeBatchUpdatePermissionActionsRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeBatchUpdatePermissionActionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CleanupUnusedPermissionActions invokes cleanupUnusedPermissionActions operation.
+//
+// 清理未消费功能权限.
+//
+// POST /permission-actions/cleanup-unused
+func (c *Client) CleanupUnusedPermissionActions(ctx context.Context) (*MutationResult, error) {
+	res, err := c.sendCleanupUnusedPermissionActions(ctx)
+	return res, err
+}
+
+func (c *Client) sendCleanupUnusedPermissionActions(ctx context.Context) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("cleanupUnusedPermissionActions"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/permission-actions/cleanup-unused"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CleanupUnusedPermissionActionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/permission-actions/cleanup-unused"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCleanupUnusedPermissionActionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CreateCollaborationWorkspace invokes createCollaborationWorkspace operation.
+//
+// 创建协作空间.
+//
+// POST /collaboration-workspaces
+func (c *Client) CreateCollaborationWorkspace(ctx context.Context, request AnyObject) (*IDResult, error) {
+	res, err := c.sendCreateCollaborationWorkspace(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendCreateCollaborationWorkspace(ctx context.Context, request AnyObject) (res *IDResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createCollaborationWorkspace"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateCollaborationWorkspaceOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/collaboration-workspaces"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreateCollaborationWorkspaceRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreateCollaborationWorkspaceResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CreateCurrentCollaborationWorkspaceBoundaryRole invokes createCurrentCollaborationWorkspaceBoundaryRole operation.
+//
+// 创建当前协作空间角色(边界管理).
+//
+// POST /collaboration-workspaces/current/boundary/roles
+func (c *Client) CreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request AnyObject) (*MutationResult, error) {
+	res, err := c.sendCreateCurrentCollaborationWorkspaceBoundaryRole(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendCreateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createCurrentCollaborationWorkspaceBoundaryRole"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateCurrentCollaborationWorkspaceBoundaryRoleOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/collaboration-workspaces/current/boundary/roles"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreateCurrentCollaborationWorkspaceBoundaryRoleRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreateCurrentCollaborationWorkspaceBoundaryRoleResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CreateCurrentCollaborationWorkspaceRole invokes createCurrentCollaborationWorkspaceRole operation.
+//
+// 创建当前协作空间角色.
+//
+// POST /collaboration-workspaces/current/roles
+func (c *Client) CreateCurrentCollaborationWorkspaceRole(ctx context.Context, request AnyObject) (*MutationResult, error) {
+	res, err := c.sendCreateCurrentCollaborationWorkspaceRole(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendCreateCurrentCollaborationWorkspaceRole(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createCurrentCollaborationWorkspaceRole"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/roles"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateCurrentCollaborationWorkspaceRoleOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/collaboration-workspaces/current/roles"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreateCurrentCollaborationWorkspaceRoleRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreateCurrentCollaborationWorkspaceRoleResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CreateFeaturePackage invokes createFeaturePackage operation.
+//
+// 创建功能包.
+//
+// POST /feature-packages
+func (c *Client) CreateFeaturePackage(ctx context.Context, request *FeaturePackageSaveRequest) (*IDResult, error) {
+	res, err := c.sendCreateFeaturePackage(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendCreateFeaturePackage(ctx context.Context, request *FeaturePackageSaveRequest) (res *IDResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createFeaturePackage"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/feature-packages"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateFeaturePackageOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/feature-packages"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreateFeaturePackageRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreateFeaturePackageResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CreateMenu invokes createMenu operation.
+//
+// 创建菜单.
+//
+// POST /menus
+func (c *Client) CreateMenu(ctx context.Context, request *MenuSaveRequest) (*MutationResult, error) {
+	res, err := c.sendCreateMenu(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendCreateMenu(ctx context.Context, request *MenuSaveRequest) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createMenu"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/menus"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateMenuOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/menus"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreateMenuRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreateMenuResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CreateMenuBackup invokes createMenuBackup operation.
+//
+// 创建菜单备份.
+//
+// POST /menus/backups
+func (c *Client) CreateMenuBackup(ctx context.Context, request *MenuBackupCreateRequest) (*MutationResult, error) {
+	res, err := c.sendCreateMenuBackup(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendCreateMenuBackup(ctx context.Context, request *MenuBackupCreateRequest) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createMenuBackup"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/menus/backups"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateMenuBackupOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/menus/backups"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreateMenuBackupRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreateMenuBackupResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CreateMenuGroup invokes createMenuGroup operation.
+//
+// 创建菜单分组.
+//
+// POST /menus/groups
+func (c *Client) CreateMenuGroup(ctx context.Context, request *MenuGroupSaveRequest) (*MutationResult, error) {
+	res, err := c.sendCreateMenuGroup(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendCreateMenuGroup(ctx context.Context, request *MenuGroupSaveRequest) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createMenuGroup"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/menus/groups"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateMenuGroupOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/menus/groups"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreateMenuGroupRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreateMenuGroupResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CreateMessageRecipientGroup invokes createMessageRecipientGroup operation.
+//
+// 新建消息接收组.
+//
+// POST /messages/recipient-groups
+func (c *Client) CreateMessageRecipientGroup(ctx context.Context, request AnyObject) (*MutationResult, error) {
+	res, err := c.sendCreateMessageRecipientGroup(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendCreateMessageRecipientGroup(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createMessageRecipientGroup"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/messages/recipient-groups"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateMessageRecipientGroupOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/messages/recipient-groups"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreateMessageRecipientGroupRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreateMessageRecipientGroupResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CreateMessageSender invokes createMessageSender operation.
+//
+// 新建消息发送人.
+//
+// POST /messages/senders
+func (c *Client) CreateMessageSender(ctx context.Context, request AnyObject) (*MutationResult, error) {
+	res, err := c.sendCreateMessageSender(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendCreateMessageSender(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createMessageSender"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/messages/senders"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateMessageSenderOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/messages/senders"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreateMessageSenderRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreateMessageSenderResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CreateMessageTemplate invokes createMessageTemplate operation.
+//
+// 新建消息模板.
+//
+// POST /messages/templates
+func (c *Client) CreateMessageTemplate(ctx context.Context, request AnyObject) (*MutationResult, error) {
+	res, err := c.sendCreateMessageTemplate(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendCreateMessageTemplate(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createMessageTemplate"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/messages/templates"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateMessageTemplateOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/messages/templates"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreateMessageTemplateRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreateMessageTemplateResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CreatePage invokes createPage operation.
+//
+// 创建页面.
+//
+// POST /pages
+func (c *Client) CreatePage(ctx context.Context, request *PageSaveRequest, params CreatePageParams) (AnyObject, error) {
+	res, err := c.sendCreatePage(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendCreatePage(ctx context.Context, request *PageSaveRequest, params CreatePageParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createPage"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/pages"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreatePageOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/pages"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreatePageRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreatePageResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CreatePermissionAction invokes createPermissionAction operation.
+//
+// 创建功能权限.
+//
+// POST /permission-actions
+func (c *Client) CreatePermissionAction(ctx context.Context, request *PermissionActionSaveRequest) (*IDResult, error) {
+	res, err := c.sendCreatePermissionAction(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendCreatePermissionAction(ctx context.Context, request *PermissionActionSaveRequest) (res *IDResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createPermissionAction"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/permission-actions"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreatePermissionActionOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/permission-actions"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreatePermissionActionRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreatePermissionActionResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CreatePermissionActionGroup invokes createPermissionActionGroup operation.
+//
+// 创建功能权限分组.
+//
+// POST /permission-actions/groups
+func (c *Client) CreatePermissionActionGroup(ctx context.Context, request AnyObject) (*MutationResult, error) {
+	res, err := c.sendCreatePermissionActionGroup(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendCreatePermissionActionGroup(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createPermissionActionGroup"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/permission-actions/groups"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreatePermissionActionGroupOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/permission-actions/groups"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreatePermissionActionGroupRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreatePermissionActionGroupResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CreateRole invokes createRole operation.
+//
+// 创建角色.
+//
+// POST /roles
+func (c *Client) CreateRole(ctx context.Context, request *RoleCreateRequest) (*RoleCreateResult, error) {
+	res, err := c.sendCreateRole(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendCreateRole(ctx context.Context, request *RoleCreateRequest) (res *RoleCreateResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createRole"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/roles"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateRoleOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/roles"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreateRoleRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreateRoleResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // CreateUser invokes createUser operation.
 //
 // 创建用户.
@@ -324,6 +2836,852 @@ func (c *Client) sendCreateUser(ctx context.Context, request *UserCreateRequest)
 
 	stage = "DecodeResponse"
 	result, err := decodeCreateUserResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// DeleteCollaborationWorkspace invokes deleteCollaborationWorkspace operation.
+//
+// 删除协作空间.
+//
+// DELETE /collaboration-workspaces/{id}
+func (c *Client) DeleteCollaborationWorkspace(ctx context.Context, params DeleteCollaborationWorkspaceParams) (*MutationResult, error) {
+	res, err := c.sendDeleteCollaborationWorkspace(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendDeleteCollaborationWorkspace(ctx context.Context, params DeleteCollaborationWorkspaceParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("deleteCollaborationWorkspace"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, DeleteCollaborationWorkspaceOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/collaboration-workspaces/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeDeleteCollaborationWorkspaceResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// DeleteCurrentCollaborationWorkspaceBoundaryRole invokes deleteCurrentCollaborationWorkspaceBoundaryRole operation.
+//
+// 删除当前协作空间角色(边界管理).
+//
+// DELETE /collaboration-workspaces/current/boundary/roles/{roleId}
+func (c *Client) DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, params DeleteCurrentCollaborationWorkspaceBoundaryRoleParams) (*MutationResult, error) {
+	res, err := c.sendDeleteCurrentCollaborationWorkspaceBoundaryRole(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendDeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, params DeleteCurrentCollaborationWorkspaceBoundaryRoleParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("deleteCurrentCollaborationWorkspaceBoundaryRole"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, DeleteCurrentCollaborationWorkspaceBoundaryRoleOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/collaboration-workspaces/current/boundary/roles/"
+	{
+		// Encode "roleId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "roleId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.RoleId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeDeleteCurrentCollaborationWorkspaceBoundaryRoleResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// DeleteFeaturePackage invokes deleteFeaturePackage operation.
+//
+// 删除功能包.
+//
+// DELETE /feature-packages/{id}
+func (c *Client) DeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (*MutationResult, error) {
+	res, err := c.sendDeleteFeaturePackage(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendDeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("deleteFeaturePackage"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/feature-packages/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, DeleteFeaturePackageOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/feature-packages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeDeleteFeaturePackageResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// DeleteMenu invokes deleteMenu operation.
+//
+// 删除菜单.
+//
+// DELETE /menus/{id}
+func (c *Client) DeleteMenu(ctx context.Context, params DeleteMenuParams) (*MutationResult, error) {
+	res, err := c.sendDeleteMenu(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendDeleteMenu(ctx context.Context, params DeleteMenuParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("deleteMenu"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/menus/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, DeleteMenuOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/menus/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeDeleteMenuResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// DeleteMenuBackup invokes deleteMenuBackup operation.
+//
+// 删除菜单备份.
+//
+// DELETE /menus/backups/{id}
+func (c *Client) DeleteMenuBackup(ctx context.Context, params DeleteMenuBackupParams) (*MutationResult, error) {
+	res, err := c.sendDeleteMenuBackup(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendDeleteMenuBackup(ctx context.Context, params DeleteMenuBackupParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("deleteMenuBackup"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/menus/backups/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, DeleteMenuBackupOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/menus/backups/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeDeleteMenuBackupResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// DeleteMenuGroup invokes deleteMenuGroup operation.
+//
+// 删除菜单分组.
+//
+// DELETE /menus/groups/{id}
+func (c *Client) DeleteMenuGroup(ctx context.Context, params DeleteMenuGroupParams) (*MutationResult, error) {
+	res, err := c.sendDeleteMenuGroup(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendDeleteMenuGroup(ctx context.Context, params DeleteMenuGroupParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("deleteMenuGroup"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/menus/groups/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, DeleteMenuGroupOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/menus/groups/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeDeleteMenuGroupResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// DeletePage invokes deletePage operation.
+//
+// 删除页面.
+//
+// DELETE /pages/{id}
+func (c *Client) DeletePage(ctx context.Context, params DeletePageParams) (*MutationResult, error) {
+	res, err := c.sendDeletePage(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendDeletePage(ctx context.Context, params DeletePageParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("deletePage"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/pages/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, DeletePageOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/pages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeDeletePageResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// DeletePermissionAction invokes deletePermissionAction operation.
+//
+// 删除功能权限.
+//
+// DELETE /permission-actions/{id}
+func (c *Client) DeletePermissionAction(ctx context.Context, params DeletePermissionActionParams) (*MutationResult, error) {
+	res, err := c.sendDeletePermissionAction(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendDeletePermissionAction(ctx context.Context, params DeletePermissionActionParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("deletePermissionAction"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/permission-actions/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, DeletePermissionActionOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/permission-actions/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeDeletePermissionActionResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// DeleteRole invokes deleteRole operation.
+//
+// 删除角色.
+//
+// DELETE /roles/{id}
+func (c *Client) DeleteRole(ctx context.Context, params DeleteRoleParams) (*MutationResult, error) {
+	res, err := c.sendDeleteRole(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendDeleteRole(ctx context.Context, params DeleteRoleParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("deleteRole"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/roles/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, DeleteRoleOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/roles/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeDeleteRoleResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -416,6 +3774,83 @@ func (c *Client) sendDeleteUser(ctx context.Context, params DeleteUserParams) (r
 
 	stage = "DecodeResponse"
 	result, err := decodeDeleteUserResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// DispatchMessage invokes dispatchMessage operation.
+//
+// 发送站内消息.
+//
+// POST /messages/dispatch
+func (c *Client) DispatchMessage(ctx context.Context, request AnyObject) (*MutationResult, error) {
+	res, err := c.sendDispatchMessage(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendDispatchMessage(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("dispatchMessage"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/messages/dispatch"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, DispatchMessageOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/messages/dispatch"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeDispatchMessageRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeDispatchMessageResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -589,6 +4024,1606 @@ func (c *Client) sendGetAuthMe(ctx context.Context) (res GetAuthMeRes, err error
 	return result, nil
 }
 
+// GetCollaborationWorkspace invokes getCollaborationWorkspace operation.
+//
+// 获取协作空间详情.
+//
+// GET /collaboration-workspaces/{id}
+func (c *Client) GetCollaborationWorkspace(ctx context.Context, params GetCollaborationWorkspaceParams) (AnyObject, error) {
+	res, err := c.sendGetCollaborationWorkspace(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetCollaborationWorkspace(ctx context.Context, params GetCollaborationWorkspaceParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCollaborationWorkspace"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationWorkspaceOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/collaboration-workspaces/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCollaborationWorkspaceResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCollaborationWorkspaceActionOrigins invokes getCollaborationWorkspaceActionOrigins operation.
+//
+// 获取协作空间功能权限来源.
+//
+// GET /collaboration-workspaces/{id}/action-origins
+func (c *Client) GetCollaborationWorkspaceActionOrigins(ctx context.Context, params GetCollaborationWorkspaceActionOriginsParams) (*AnyListResponse, error) {
+	res, err := c.sendGetCollaborationWorkspaceActionOrigins(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetCollaborationWorkspaceActionOrigins(ctx context.Context, params GetCollaborationWorkspaceActionOriginsParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCollaborationWorkspaceActionOrigins"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/action-origins"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationWorkspaceActionOriginsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/action-origins"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCollaborationWorkspaceActionOriginsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCollaborationWorkspaceActions invokes getCollaborationWorkspaceActions operation.
+//
+// 获取协作空间功能权限边界.
+//
+// GET /collaboration-workspaces/{id}/actions
+func (c *Client) GetCollaborationWorkspaceActions(ctx context.Context, params GetCollaborationWorkspaceActionsParams) (AnyObject, error) {
+	res, err := c.sendGetCollaborationWorkspaceActions(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetCollaborationWorkspaceActions(ctx context.Context, params GetCollaborationWorkspaceActionsParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCollaborationWorkspaceActions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/actions"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationWorkspaceActionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/actions"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCollaborationWorkspaceActionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCollaborationWorkspaceMenuOrigins invokes getCollaborationWorkspaceMenuOrigins operation.
+//
+// 获取协作空间菜单来源.
+//
+// GET /collaboration-workspaces/{id}/menu-origins
+func (c *Client) GetCollaborationWorkspaceMenuOrigins(ctx context.Context, params GetCollaborationWorkspaceMenuOriginsParams) (*AnyListResponse, error) {
+	res, err := c.sendGetCollaborationWorkspaceMenuOrigins(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetCollaborationWorkspaceMenuOrigins(ctx context.Context, params GetCollaborationWorkspaceMenuOriginsParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCollaborationWorkspaceMenuOrigins"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/menu-origins"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationWorkspaceMenuOriginsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/menu-origins"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCollaborationWorkspaceMenuOriginsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCollaborationWorkspaceMenus invokes getCollaborationWorkspaceMenus operation.
+//
+// 获取协作空间菜单边界.
+//
+// GET /collaboration-workspaces/{id}/menus
+func (c *Client) GetCollaborationWorkspaceMenus(ctx context.Context, params GetCollaborationWorkspaceMenusParams) (AnyObject, error) {
+	res, err := c.sendGetCollaborationWorkspaceMenus(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetCollaborationWorkspaceMenus(ctx context.Context, params GetCollaborationWorkspaceMenusParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCollaborationWorkspaceMenus"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/menus"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationWorkspaceMenusOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/menus"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCollaborationWorkspaceMenusResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCollaborationWorkspacePackages invokes getCollaborationWorkspacePackages operation.
+//
+// 获取协作空间功能包.
+//
+// GET /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}
+func (c *Client) GetCollaborationWorkspacePackages(ctx context.Context, params GetCollaborationWorkspacePackagesParams) (*FeaturePackageAssignmentResponse, error) {
+	res, err := c.sendGetCollaborationWorkspacePackages(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetCollaborationWorkspacePackages(ctx context.Context, params GetCollaborationWorkspacePackagesParams) (res *FeaturePackageAssignmentResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCollaborationWorkspacePackages"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCollaborationWorkspacePackagesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/feature-packages/collaboration-workspaces/"
+	{
+		// Encode "collaborationWorkspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "collaborationWorkspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.CollaborationWorkspaceId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCollaborationWorkspacePackagesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCurrentApp invokes getCurrentApp operation.
+//
+// 获取当前应用.
+//
+// GET /system/apps/current
+func (c *Client) GetCurrentApp(ctx context.Context, params GetCurrentAppParams) (AnyObject, error) {
+	res, err := c.sendGetCurrentApp(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetCurrentApp(ctx context.Context, params GetCurrentAppParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCurrentApp"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/system/apps/current"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentAppOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/apps/current"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCurrentAppResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCurrentCollaborationWorkspace invokes getCurrentCollaborationWorkspace operation.
+//
+// 获取当前协作空间详情.
+//
+// GET /collaboration-workspaces/current
+func (c *Client) GetCurrentCollaborationWorkspace(ctx context.Context) (AnyObject, error) {
+	res, err := c.sendGetCurrentCollaborationWorkspace(ctx)
+	return res, err
+}
+
+func (c *Client) sendGetCurrentCollaborationWorkspace(ctx context.Context) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCurrentCollaborationWorkspace"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/collaboration-workspaces/current"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCurrentCollaborationWorkspaceResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCurrentCollaborationWorkspaceActionOrigins invokes getCurrentCollaborationWorkspaceActionOrigins operation.
+//
+// 获取当前协作空间功能权限来源.
+//
+// GET /collaboration-workspaces/current/action-origins
+func (c *Client) GetCurrentCollaborationWorkspaceActionOrigins(ctx context.Context) (*AnyListResponse, error) {
+	res, err := c.sendGetCurrentCollaborationWorkspaceActionOrigins(ctx)
+	return res, err
+}
+
+func (c *Client) sendGetCurrentCollaborationWorkspaceActionOrigins(ctx context.Context) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCurrentCollaborationWorkspaceActionOrigins"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/action-origins"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceActionOriginsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/collaboration-workspaces/current/action-origins"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCurrentCollaborationWorkspaceActionOriginsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCurrentCollaborationWorkspaceActions invokes getCurrentCollaborationWorkspaceActions operation.
+//
+// 获取当前协作空间功能权限边界.
+//
+// GET /collaboration-workspaces/current/actions
+func (c *Client) GetCurrentCollaborationWorkspaceActions(ctx context.Context) (AnyObject, error) {
+	res, err := c.sendGetCurrentCollaborationWorkspaceActions(ctx)
+	return res, err
+}
+
+func (c *Client) sendGetCurrentCollaborationWorkspaceActions(ctx context.Context) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCurrentCollaborationWorkspaceActions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/actions"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceActionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/collaboration-workspaces/current/actions"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCurrentCollaborationWorkspaceActionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCurrentCollaborationWorkspaceBoundaryPackages invokes getCurrentCollaborationWorkspaceBoundaryPackages operation.
+//
+// 获取当前协作空间已开通功能包(边界管理).
+//
+// GET /collaboration-workspaces/current/boundary/packages
+func (c *Client) GetCurrentCollaborationWorkspaceBoundaryPackages(ctx context.Context) (*AnyListResponse, error) {
+	res, err := c.sendGetCurrentCollaborationWorkspaceBoundaryPackages(ctx)
+	return res, err
+}
+
+func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryPackages(ctx context.Context) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCurrentCollaborationWorkspaceBoundaryPackages"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/packages"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceBoundaryPackagesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/collaboration-workspaces/current/boundary/packages"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCurrentCollaborationWorkspaceBoundaryPackagesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCurrentCollaborationWorkspaceBoundaryRoleActions invokes getCurrentCollaborationWorkspaceBoundaryRoleActions operation.
+//
+// 获取当前协作空间角色功能权限(边界管理).
+//
+// GET /collaboration-workspaces/current/boundary/roles/{roleId}/actions
+func (c *Client) GetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (AnyObject, error) {
+	res, err := c.sendGetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCurrentCollaborationWorkspaceBoundaryRoleActions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/actions"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceBoundaryRoleActionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/current/boundary/roles/"
+	{
+		// Encode "roleId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "roleId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.RoleId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/actions"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCurrentCollaborationWorkspaceBoundaryRoleMenus invokes getCurrentCollaborationWorkspaceBoundaryRoleMenus operation.
+//
+// 获取当前协作空间角色菜单权限(边界管理).
+//
+// GET /collaboration-workspaces/current/boundary/roles/{roleId}/menus
+func (c *Client) GetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (AnyObject, error) {
+	res, err := c.sendGetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCurrentCollaborationWorkspaceBoundaryRoleMenus"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/menus"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceBoundaryRoleMenusOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/current/boundary/roles/"
+	{
+		// Encode "roleId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "roleId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.RoleId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/menus"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCurrentCollaborationWorkspaceBoundaryRolePackages invokes getCurrentCollaborationWorkspaceBoundaryRolePackages operation.
+//
+// 获取当前协作空间角色功能包(边界管理).
+//
+// GET /collaboration-workspaces/current/boundary/roles/{roleId}/packages
+func (c *Client) GetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (AnyObject, error) {
+	res, err := c.sendGetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCurrentCollaborationWorkspaceBoundaryRolePackages"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/packages"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceBoundaryRolePackagesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/current/boundary/roles/"
+	{
+		// Encode "roleId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "roleId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.RoleId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/packages"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCurrentCollaborationWorkspaceMemberRoles invokes getCurrentCollaborationWorkspaceMemberRoles operation.
+//
+// 获取当前协作空间成员角色.
+//
+// GET /collaboration-workspaces/current/members/{userId}/roles
+func (c *Client) GetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, params GetCurrentCollaborationWorkspaceMemberRolesParams) (AnyObject, error) {
+	res, err := c.sendGetCurrentCollaborationWorkspaceMemberRoles(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, params GetCurrentCollaborationWorkspaceMemberRolesParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCurrentCollaborationWorkspaceMemberRoles"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/members/{userId}/roles"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceMemberRolesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/current/members/"
+	{
+		// Encode "userId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "userId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.UserId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/roles"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCurrentCollaborationWorkspaceMemberRolesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCurrentCollaborationWorkspaceMenuOrigins invokes getCurrentCollaborationWorkspaceMenuOrigins operation.
+//
+// 获取当前协作空间菜单来源.
+//
+// GET /collaboration-workspaces/current/menu-origins
+func (c *Client) GetCurrentCollaborationWorkspaceMenuOrigins(ctx context.Context) (*AnyListResponse, error) {
+	res, err := c.sendGetCurrentCollaborationWorkspaceMenuOrigins(ctx)
+	return res, err
+}
+
+func (c *Client) sendGetCurrentCollaborationWorkspaceMenuOrigins(ctx context.Context) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCurrentCollaborationWorkspaceMenuOrigins"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/menu-origins"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceMenuOriginsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/collaboration-workspaces/current/menu-origins"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCurrentCollaborationWorkspaceMenuOriginsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCurrentCollaborationWorkspaceMenus invokes getCurrentCollaborationWorkspaceMenus operation.
+//
+// 获取当前协作空间菜单边界.
+//
+// GET /collaboration-workspaces/current/menus
+func (c *Client) GetCurrentCollaborationWorkspaceMenus(ctx context.Context) (AnyObject, error) {
+	res, err := c.sendGetCurrentCollaborationWorkspaceMenus(ctx)
+	return res, err
+}
+
+func (c *Client) sendGetCurrentCollaborationWorkspaceMenus(ctx context.Context) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCurrentCollaborationWorkspaceMenus"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/menus"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentCollaborationWorkspaceMenusOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/collaboration-workspaces/current/menus"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCurrentCollaborationWorkspaceMenusResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetCurrentMenuSpace invokes getCurrentMenuSpace operation.
+//
+// 获取当前菜单空间.
+//
+// GET /system/menu-spaces/current
+func (c *Client) GetCurrentMenuSpace(ctx context.Context, params GetCurrentMenuSpaceParams) (AnyObject, error) {
+	res, err := c.sendGetCurrentMenuSpace(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetCurrentMenuSpace(ctx context.Context, params GetCurrentMenuSpaceParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getCurrentMenuSpace"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/system/menu-spaces/current"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetCurrentMenuSpaceOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/menu-spaces/current"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "space_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "space_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.SpaceKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetCurrentMenuSpaceResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // GetCurrentWorkspace invokes getCurrentWorkspace operation.
 //
 // 获取当前授权工作空间.
@@ -656,6 +5691,2721 @@ func (c *Client) sendGetCurrentWorkspace(ctx context.Context) (res GetCurrentWor
 
 	stage = "DecodeResponse"
 	result, err := decodeGetCurrentWorkspaceResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetFastEnterConfig invokes getFastEnterConfig operation.
+//
+// 获取快捷入口配置.
+//
+// GET /system/fast-enter
+func (c *Client) GetFastEnterConfig(ctx context.Context) (AnyObject, error) {
+	res, err := c.sendGetFastEnterConfig(ctx)
+	return res, err
+}
+
+func (c *Client) sendGetFastEnterConfig(ctx context.Context) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getFastEnterConfig"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/system/fast-enter"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetFastEnterConfigOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/fast-enter"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetFastEnterConfigResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetFeaturePackage invokes getFeaturePackage operation.
+//
+// 获取功能包详情.
+//
+// GET /feature-packages/{id}
+func (c *Client) GetFeaturePackage(ctx context.Context, params GetFeaturePackageParams) (*FeaturePackageSummary, error) {
+	res, err := c.sendGetFeaturePackage(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetFeaturePackage(ctx context.Context, params GetFeaturePackageParams) (res *FeaturePackageSummary, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getFeaturePackage"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/feature-packages/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetFeaturePackageOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/feature-packages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetFeaturePackageResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetFeaturePackageActions invokes getFeaturePackageActions operation.
+//
+// 获取功能包权限.
+//
+// GET /feature-packages/{id}/actions
+func (c *Client) GetFeaturePackageActions(ctx context.Context, params GetFeaturePackageActionsParams) (*FeaturePackageActionsResponse, error) {
+	res, err := c.sendGetFeaturePackageActions(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetFeaturePackageActions(ctx context.Context, params GetFeaturePackageActionsParams) (res *FeaturePackageActionsResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getFeaturePackageActions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/feature-packages/{id}/actions"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetFeaturePackageActionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/feature-packages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/actions"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetFeaturePackageActionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetFeaturePackageChildren invokes getFeaturePackageChildren operation.
+//
+// 获取组合包基础包.
+//
+// GET /feature-packages/{id}/children
+func (c *Client) GetFeaturePackageChildren(ctx context.Context, params GetFeaturePackageChildrenParams) (*FeaturePackageAssignmentResponse, error) {
+	res, err := c.sendGetFeaturePackageChildren(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetFeaturePackageChildren(ctx context.Context, params GetFeaturePackageChildrenParams) (res *FeaturePackageAssignmentResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getFeaturePackageChildren"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/feature-packages/{id}/children"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetFeaturePackageChildrenOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/feature-packages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/children"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetFeaturePackageChildrenResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetFeaturePackageCollaborationWorkspaces invokes getFeaturePackageCollaborationWorkspaces operation.
+//
+// 获取功能包协作空间.
+//
+// GET /feature-packages/{id}/collaboration-workspaces
+func (c *Client) GetFeaturePackageCollaborationWorkspaces(ctx context.Context, params GetFeaturePackageCollaborationWorkspacesParams) (*AnyListResponse, error) {
+	res, err := c.sendGetFeaturePackageCollaborationWorkspaces(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetFeaturePackageCollaborationWorkspaces(ctx context.Context, params GetFeaturePackageCollaborationWorkspacesParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getFeaturePackageCollaborationWorkspaces"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/feature-packages/{id}/collaboration-workspaces"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetFeaturePackageCollaborationWorkspacesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/feature-packages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/collaboration-workspaces"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetFeaturePackageCollaborationWorkspacesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetFeaturePackageImpactPreview invokes getFeaturePackageImpactPreview operation.
+//
+// 获取功能包影响预览.
+//
+// GET /feature-packages/{id}/impact-preview
+func (c *Client) GetFeaturePackageImpactPreview(ctx context.Context, params GetFeaturePackageImpactPreviewParams) (*FeaturePackageImpactPreview, error) {
+	res, err := c.sendGetFeaturePackageImpactPreview(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetFeaturePackageImpactPreview(ctx context.Context, params GetFeaturePackageImpactPreviewParams) (res *FeaturePackageImpactPreview, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getFeaturePackageImpactPreview"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/feature-packages/{id}/impact-preview"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetFeaturePackageImpactPreviewOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/feature-packages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/impact-preview"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetFeaturePackageImpactPreviewResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetFeaturePackageMenus invokes getFeaturePackageMenus operation.
+//
+// 获取功能包菜单.
+//
+// GET /feature-packages/{id}/menus
+func (c *Client) GetFeaturePackageMenus(ctx context.Context, params GetFeaturePackageMenusParams) (*FeaturePackageMenusResponse, error) {
+	res, err := c.sendGetFeaturePackageMenus(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetFeaturePackageMenus(ctx context.Context, params GetFeaturePackageMenusParams) (res *FeaturePackageMenusResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getFeaturePackageMenus"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/feature-packages/{id}/menus"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetFeaturePackageMenusOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/feature-packages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/menus"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetFeaturePackageMenusResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetFeaturePackageRelationTree invokes getFeaturePackageRelationTree operation.
+//
+// 获取功能包关系树.
+//
+// GET /feature-packages/relationship-tree
+func (c *Client) GetFeaturePackageRelationTree(ctx context.Context, params GetFeaturePackageRelationTreeParams) (*FeaturePackageRelationTree, error) {
+	res, err := c.sendGetFeaturePackageRelationTree(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetFeaturePackageRelationTree(ctx context.Context, params GetFeaturePackageRelationTreeParams) (res *FeaturePackageRelationTree, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getFeaturePackageRelationTree"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/feature-packages/relationship-tree"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetFeaturePackageRelationTreeOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/feature-packages/relationship-tree"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "workspace_scope" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "workspace_scope",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.WorkspaceScope.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "keyword" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "keyword",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Keyword.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetFeaturePackageRelationTreeResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetInboxDetail invokes getInboxDetail operation.
+//
+// 获取消息详情.
+//
+// GET /messages/inbox/{deliveryId}
+func (c *Client) GetInboxDetail(ctx context.Context, params GetInboxDetailParams) (AnyObject, error) {
+	res, err := c.sendGetInboxDetail(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetInboxDetail(ctx context.Context, params GetInboxDetailParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getInboxDetail"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/messages/inbox/{deliveryId}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetInboxDetailOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/messages/inbox/"
+	{
+		// Encode "deliveryId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "deliveryId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.DeliveryId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetInboxDetailResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetInboxSummary invokes getInboxSummary operation.
+//
+// 获取消息摘要.
+//
+// GET /messages/inbox/summary
+func (c *Client) GetInboxSummary(ctx context.Context) (AnyObject, error) {
+	res, err := c.sendGetInboxSummary(ctx)
+	return res, err
+}
+
+func (c *Client) sendGetInboxSummary(ctx context.Context) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getInboxSummary"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/messages/inbox/summary"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetInboxSummaryOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/messages/inbox/summary"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetInboxSummaryResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetMenuDeletePreview invokes getMenuDeletePreview operation.
+//
+// 获取菜单删除预览.
+//
+// GET /menus/{id}/delete-preview
+func (c *Client) GetMenuDeletePreview(ctx context.Context, params GetMenuDeletePreviewParams) (AnyObject, error) {
+	res, err := c.sendGetMenuDeletePreview(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetMenuDeletePreview(ctx context.Context, params GetMenuDeletePreviewParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getMenuDeletePreview"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/menus/{id}/delete-preview"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetMenuDeletePreviewOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/menus/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/delete-preview"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetMenuDeletePreviewResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetMenuSpaceMode invokes getMenuSpaceMode operation.
+//
+// 获取菜单空间模式.
+//
+// GET /system/menu-space-mode
+func (c *Client) GetMenuSpaceMode(ctx context.Context, params GetMenuSpaceModeParams) (AnyObject, error) {
+	res, err := c.sendGetMenuSpaceMode(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetMenuSpaceMode(ctx context.Context, params GetMenuSpaceModeParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getMenuSpaceMode"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/system/menu-space-mode"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetMenuSpaceModeOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/menu-space-mode"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetMenuSpaceModeResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetMenuTree invokes getMenuTree operation.
+//
+// 获取菜单树.
+//
+// GET /menus/tree
+func (c *Client) GetMenuTree(ctx context.Context, params GetMenuTreeParams) (*MenuTreeResponse, error) {
+	res, err := c.sendGetMenuTree(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetMenuTree(ctx context.Context, params GetMenuTreeParams) (res *MenuTreeResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getMenuTree"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/menus/tree"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetMenuTreeOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/menus/tree"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "all" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "all",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.All.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "space_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "space_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.SpaceKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetMenuTreeResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetMessageDispatchOptions invokes getMessageDispatchOptions operation.
+//
+// 获取消息发送配置.
+//
+// GET /messages/dispatch/options
+func (c *Client) GetMessageDispatchOptions(ctx context.Context) (AnyObject, error) {
+	res, err := c.sendGetMessageDispatchOptions(ctx)
+	return res, err
+}
+
+func (c *Client) sendGetMessageDispatchOptions(ctx context.Context) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getMessageDispatchOptions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/messages/dispatch/options"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetMessageDispatchOptionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/messages/dispatch/options"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetMessageDispatchOptionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetMessageDispatchRecord invokes getMessageDispatchRecord operation.
+//
+// 获取消息发送记录详情.
+//
+// GET /messages/records/{recordId}
+func (c *Client) GetMessageDispatchRecord(ctx context.Context, params GetMessageDispatchRecordParams) (AnyObject, error) {
+	res, err := c.sendGetMessageDispatchRecord(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetMessageDispatchRecord(ctx context.Context, params GetMessageDispatchRecordParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getMessageDispatchRecord"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/messages/records/{recordId}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetMessageDispatchRecordOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/messages/records/"
+	{
+		// Encode "recordId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "recordId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.RecordId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetMessageDispatchRecordResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetNavigation invokes getNavigation operation.
+//
+// 获取运行时导航清单.
+//
+// GET /runtime/navigation
+func (c *Client) GetNavigation(ctx context.Context, params GetNavigationParams) (*NavigationManifest, error) {
+	res, err := c.sendGetNavigation(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetNavigation(ctx context.Context, params GetNavigationParams) (res *NavigationManifest, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getNavigation"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/runtime/navigation"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetNavigationOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/runtime/navigation"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "space_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "space_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.SpaceKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetNavigationResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetPage invokes getPage operation.
+//
+// 获取页面详情.
+//
+// GET /pages/{id}
+func (c *Client) GetPage(ctx context.Context, params GetPageParams) (AnyObject, error) {
+	res, err := c.sendGetPage(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetPage(ctx context.Context, params GetPageParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getPage"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/pages/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetPageOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/pages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetPageResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetPageAccessTrace invokes getPageAccessTrace operation.
+//
+// 获取页面访问链路.
+//
+// GET /pages/access-trace
+func (c *Client) GetPageAccessTrace(ctx context.Context, params GetPageAccessTraceParams) (AnyObject, error) {
+	res, err := c.sendGetPageAccessTrace(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetPageAccessTrace(ctx context.Context, params GetPageAccessTraceParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getPageAccessTrace"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/pages/access-trace"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetPageAccessTraceOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/pages/access-trace"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "route_name" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "route_name",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.RouteName.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "route_path" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "route_path",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.RoutePath.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetPageAccessTraceResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetPermissionAction invokes getPermissionAction operation.
+//
+// 获取功能权限详情.
+//
+// GET /permission-actions/{id}
+func (c *Client) GetPermissionAction(ctx context.Context, params GetPermissionActionParams) (*PermissionActionDetail, error) {
+	res, err := c.sendGetPermissionAction(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetPermissionAction(ctx context.Context, params GetPermissionActionParams) (res *PermissionActionDetail, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getPermissionAction"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/permission-actions/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetPermissionActionOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/permission-actions/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetPermissionActionResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetPermissionActionConsumers invokes getPermissionActionConsumers operation.
+//
+// 获取功能权限消费明细.
+//
+// GET /permission-actions/{id}/consumers
+func (c *Client) GetPermissionActionConsumers(ctx context.Context, params GetPermissionActionConsumersParams) (AnyObject, error) {
+	res, err := c.sendGetPermissionActionConsumers(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetPermissionActionConsumers(ctx context.Context, params GetPermissionActionConsumersParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getPermissionActionConsumers"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/permission-actions/{id}/consumers"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetPermissionActionConsumersOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/permission-actions/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/consumers"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetPermissionActionConsumersResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetPermissionActionImpactPreview invokes getPermissionActionImpactPreview operation.
+//
+// 获取功能权限影响预览.
+//
+// GET /permission-actions/{id}/impact-preview
+func (c *Client) GetPermissionActionImpactPreview(ctx context.Context, params GetPermissionActionImpactPreviewParams) (AnyObject, error) {
+	res, err := c.sendGetPermissionActionImpactPreview(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetPermissionActionImpactPreview(ctx context.Context, params GetPermissionActionImpactPreviewParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getPermissionActionImpactPreview"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/permission-actions/{id}/impact-preview"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetPermissionActionImpactPreviewOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/permission-actions/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/impact-preview"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetPermissionActionImpactPreviewResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetRole invokes getRole operation.
+//
+// 获取角色详情.
+//
+// GET /roles/{id}
+func (c *Client) GetRole(ctx context.Context, params GetRoleParams) (GetRoleRes, error) {
+	res, err := c.sendGetRole(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetRole(ctx context.Context, params GetRoleParams) (res GetRoleRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getRole"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/roles/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetRoleOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/roles/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetRoleResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetRoleActions invokes getRoleActions operation.
+//
+// 获取角色功能权限.
+//
+// GET /roles/{id}/actions
+func (c *Client) GetRoleActions(ctx context.Context, params GetRoleActionsParams) (*RoleActionsResponse, error) {
+	res, err := c.sendGetRoleActions(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetRoleActions(ctx context.Context, params GetRoleActionsParams) (res *RoleActionsResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getRoleActions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/roles/{id}/actions"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetRoleActionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/roles/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/actions"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetRoleActionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetRoleDataPermissions invokes getRoleDataPermissions operation.
+//
+// 获取角色数据权限.
+//
+// GET /roles/{id}/data-permissions
+func (c *Client) GetRoleDataPermissions(ctx context.Context, params GetRoleDataPermissionsParams) (*RoleDataPermissionsResponse, error) {
+	res, err := c.sendGetRoleDataPermissions(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetRoleDataPermissions(ctx context.Context, params GetRoleDataPermissionsParams) (res *RoleDataPermissionsResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getRoleDataPermissions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/roles/{id}/data-permissions"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetRoleDataPermissionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/roles/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/data-permissions"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetRoleDataPermissionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetRoleMenus invokes getRoleMenus operation.
+//
+// 获取角色菜单权限.
+//
+// GET /roles/{id}/menus
+func (c *Client) GetRoleMenus(ctx context.Context, params GetRoleMenusParams) (*RoleMenusResponse, error) {
+	res, err := c.sendGetRoleMenus(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetRoleMenus(ctx context.Context, params GetRoleMenusParams) (res *RoleMenusResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getRoleMenus"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/roles/{id}/menus"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetRoleMenusOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/roles/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/menus"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetRoleMenusResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetRolePackages invokes getRolePackages operation.
+//
+// 获取角色功能包.
+//
+// GET /roles/{id}/packages
+func (c *Client) GetRolePackages(ctx context.Context, params GetRolePackagesParams) (*RolePackagesResponse, error) {
+	res, err := c.sendGetRolePackages(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetRolePackages(ctx context.Context, params GetRolePackagesParams) (res *RolePackagesResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getRolePackages"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/roles/{id}/packages"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetRolePackagesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/roles/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/packages"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetRolePackagesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetSystemViewPages invokes getSystemViewPages operation.
+//
+// 获取页面文件映射.
+//
+// GET /system/view-pages
+func (c *Client) GetSystemViewPages(ctx context.Context, params GetSystemViewPagesParams) (*ViewPagesResponse, error) {
+	res, err := c.sendGetSystemViewPages(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetSystemViewPages(ctx context.Context, params GetSystemViewPagesParams) (res *ViewPagesResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getSystemViewPages"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/system/view-pages"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetSystemViewPagesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/view-pages"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "force" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "force",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Force.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetSystemViewPagesResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -755,6 +8505,589 @@ func (c *Client) sendGetUser(ctx context.Context, params GetUserParams) (res Get
 	return result, nil
 }
 
+// GetUserCollaborationWorkspaces invokes getUserCollaborationWorkspaces operation.
+//
+// 获取用户所在协作空间列表.
+//
+// GET /users/{id}/collaboration-workspaces
+func (c *Client) GetUserCollaborationWorkspaces(ctx context.Context, params GetUserCollaborationWorkspacesParams) (AnyObject, error) {
+	res, err := c.sendGetUserCollaborationWorkspaces(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetUserCollaborationWorkspaces(ctx context.Context, params GetUserCollaborationWorkspacesParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getUserCollaborationWorkspaces"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/users/{id}/collaboration-workspaces"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetUserCollaborationWorkspacesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/users/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/collaboration-workspaces"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetUserCollaborationWorkspacesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetUserMenus invokes getUserMenus operation.
+//
+// 获取用户菜单裁剪.
+//
+// GET /users/{id}/menus
+func (c *Client) GetUserMenus(ctx context.Context, params GetUserMenusParams) (AnyObject, error) {
+	res, err := c.sendGetUserMenus(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetUserMenus(ctx context.Context, params GetUserMenusParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getUserMenus"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/users/{id}/menus"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetUserMenusOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/users/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/menus"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetUserMenusResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetUserPackages invokes getUserPackages operation.
+//
+// 获取用户功能包.
+//
+// GET /users/{id}/packages
+func (c *Client) GetUserPackages(ctx context.Context, params GetUserPackagesParams) (*UserPackagesResponse, error) {
+	res, err := c.sendGetUserPackages(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetUserPackages(ctx context.Context, params GetUserPackagesParams) (res *UserPackagesResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getUserPackages"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/users/{id}/packages"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetUserPackagesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/users/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/packages"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetUserPackagesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetUserPermissionDiagnosis invokes getUserPermissionDiagnosis operation.
+//
+// 获取用户权限诊断.
+//
+// GET /users/{id}/permission-diagnosis
+func (c *Client) GetUserPermissionDiagnosis(ctx context.Context, params GetUserPermissionDiagnosisParams) (AnyObject, error) {
+	res, err := c.sendGetUserPermissionDiagnosis(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetUserPermissionDiagnosis(ctx context.Context, params GetUserPermissionDiagnosisParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getUserPermissionDiagnosis"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/users/{id}/permission-diagnosis"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetUserPermissionDiagnosisOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/users/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/permission-diagnosis"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "permission_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "permission_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.PermissionKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "collaboration_workspace_id" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "collaboration_workspace_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.CollaborationWorkspaceID.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetUserPermissionDiagnosisResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetUserPermissions invokes getUserPermissions operation.
+//
+// 获取用户菜单权限.
+//
+// GET /users/{id}/permissions
+func (c *Client) GetUserPermissions(ctx context.Context, params GetUserPermissionsParams) (AnyObject, error) {
+	res, err := c.sendGetUserPermissions(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetUserPermissions(ctx context.Context, params GetUserPermissionsParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getUserPermissions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/users/{id}/permissions"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetUserPermissionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/users/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/permissions"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetUserPermissionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // GetWorkspace invokes getWorkspace operation.
 //
 // 获取工作空间详情.
@@ -847,6 +9180,2307 @@ func (c *Client) sendGetWorkspace(ctx context.Context, params GetWorkspaceParams
 	return result, nil
 }
 
+// HandleInboxTodo invokes handleInboxTodo operation.
+//
+// 处理待办消息.
+//
+// POST /messages/inbox/{deliveryId}/todo-action
+func (c *Client) HandleInboxTodo(ctx context.Context, request AnyObject, params HandleInboxTodoParams) (*MutationResult, error) {
+	res, err := c.sendHandleInboxTodo(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendHandleInboxTodo(ctx context.Context, request AnyObject, params HandleInboxTodoParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("handleInboxTodo"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/messages/inbox/{deliveryId}/todo-action"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, HandleInboxTodoOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/messages/inbox/"
+	{
+		// Encode "deliveryId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "deliveryId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.DeliveryId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/todo-action"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeHandleInboxTodoRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeHandleInboxTodoResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// InitializeMenuSpaceFromDefault invokes initializeMenuSpaceFromDefault operation.
+//
+// 从默认空间初始化菜单空间.
+//
+// POST /system/menu-spaces/{spaceKey}/initialize-default
+func (c *Client) InitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (*MutationResult, error) {
+	res, err := c.sendInitializeMenuSpaceFromDefault(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendInitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("initializeMenuSpaceFromDefault"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/system/menu-spaces/{spaceKey}/initialize-default"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, InitializeMenuSpaceFromDefaultOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/system/menu-spaces/"
+	{
+		// Encode "spaceKey" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "spaceKey",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.SpaceKey))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/initialize-default"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeInitializeMenuSpaceFromDefaultResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListAppHostBindings invokes listAppHostBindings operation.
+//
+// 获取应用 Host 绑定.
+//
+// GET /system/app-host-bindings
+func (c *Client) ListAppHostBindings(ctx context.Context) (*AnyListResponse, error) {
+	res, err := c.sendListAppHostBindings(ctx)
+	return res, err
+}
+
+func (c *Client) sendListAppHostBindings(ctx context.Context) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listAppHostBindings"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/system/app-host-bindings"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListAppHostBindingsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/app-host-bindings"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListAppHostBindingsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListApps invokes listApps operation.
+//
+// 获取应用列表.
+//
+// GET /system/apps
+func (c *Client) ListApps(ctx context.Context) (*AnyListResponse, error) {
+	res, err := c.sendListApps(ctx)
+	return res, err
+}
+
+func (c *Client) sendListApps(ctx context.Context) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listApps"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/system/apps"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListAppsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/apps"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListAppsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListCollaborationWorkspaceMembers invokes listCollaborationWorkspaceMembers operation.
+//
+// 获取协作空间成员列表.
+//
+// GET /collaboration-workspaces/{id}/members
+func (c *Client) ListCollaborationWorkspaceMembers(ctx context.Context, params ListCollaborationWorkspaceMembersParams) (*AnyListResponse, error) {
+	res, err := c.sendListCollaborationWorkspaceMembers(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListCollaborationWorkspaceMembers(ctx context.Context, params ListCollaborationWorkspaceMembersParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listCollaborationWorkspaceMembers"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/members"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListCollaborationWorkspaceMembersOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/members"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListCollaborationWorkspaceMembersResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListCollaborationWorkspaceOptions invokes listCollaborationWorkspaceOptions operation.
+//
+// 获取协作空间候选.
+//
+// GET /collaboration-workspaces/options
+func (c *Client) ListCollaborationWorkspaceOptions(ctx context.Context) (*AnyListResponse, error) {
+	res, err := c.sendListCollaborationWorkspaceOptions(ctx)
+	return res, err
+}
+
+func (c *Client) sendListCollaborationWorkspaceOptions(ctx context.Context) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listCollaborationWorkspaceOptions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/options"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListCollaborationWorkspaceOptionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/collaboration-workspaces/options"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListCollaborationWorkspaceOptionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListCollaborationWorkspaceRoles invokes listCollaborationWorkspaceRoles operation.
+//
+// 获取协作空间可分配角色.
+//
+// GET /collaboration-workspaces/{id}/roles
+func (c *Client) ListCollaborationWorkspaceRoles(ctx context.Context, params ListCollaborationWorkspaceRolesParams) (*AnyListResponse, error) {
+	res, err := c.sendListCollaborationWorkspaceRoles(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListCollaborationWorkspaceRoles(ctx context.Context, params ListCollaborationWorkspaceRolesParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listCollaborationWorkspaceRoles"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/roles"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListCollaborationWorkspaceRolesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/roles"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListCollaborationWorkspaceRolesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListCollaborationWorkspaces invokes listCollaborationWorkspaces operation.
+//
+// 获取协作空间列表.
+//
+// GET /collaboration-workspaces
+func (c *Client) ListCollaborationWorkspaces(ctx context.Context, params ListCollaborationWorkspacesParams) (*AnyListResponse, error) {
+	res, err := c.sendListCollaborationWorkspaces(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListCollaborationWorkspaces(ctx context.Context, params ListCollaborationWorkspacesParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listCollaborationWorkspaces"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListCollaborationWorkspacesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/collaboration-workspaces"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "current" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Current.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "size" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Size.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "keyword" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "keyword",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Keyword.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListCollaborationWorkspacesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListCurrentCollaborationWorkspaceBoundaryRoles invokes listCurrentCollaborationWorkspaceBoundaryRoles operation.
+//
+// 获取当前协作空间边界可见角色.
+//
+// GET /collaboration-workspaces/current/boundary/roles
+func (c *Client) ListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.Context) (*AnyListResponse, error) {
+	res, err := c.sendListCurrentCollaborationWorkspaceBoundaryRoles(ctx)
+	return res, err
+}
+
+func (c *Client) sendListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.Context) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listCurrentCollaborationWorkspaceBoundaryRoles"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListCurrentCollaborationWorkspaceBoundaryRolesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/collaboration-workspaces/current/boundary/roles"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListCurrentCollaborationWorkspaceBoundaryRolesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListCurrentCollaborationWorkspaceMembers invokes listCurrentCollaborationWorkspaceMembers operation.
+//
+// 获取当前协作空间成员列表.
+//
+// GET /collaboration-workspaces/current/members
+func (c *Client) ListCurrentCollaborationWorkspaceMembers(ctx context.Context) (*AnyListResponse, error) {
+	res, err := c.sendListCurrentCollaborationWorkspaceMembers(ctx)
+	return res, err
+}
+
+func (c *Client) sendListCurrentCollaborationWorkspaceMembers(ctx context.Context) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listCurrentCollaborationWorkspaceMembers"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/members"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListCurrentCollaborationWorkspaceMembersOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/collaboration-workspaces/current/members"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListCurrentCollaborationWorkspaceMembersResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListCurrentCollaborationWorkspaceRoles invokes listCurrentCollaborationWorkspaceRoles operation.
+//
+// 获取当前协作空间可分配角色.
+//
+// GET /collaboration-workspaces/current/roles
+func (c *Client) ListCurrentCollaborationWorkspaceRoles(ctx context.Context) (*AnyListResponse, error) {
+	res, err := c.sendListCurrentCollaborationWorkspaceRoles(ctx)
+	return res, err
+}
+
+func (c *Client) sendListCurrentCollaborationWorkspaceRoles(ctx context.Context) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listCurrentCollaborationWorkspaceRoles"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/roles"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListCurrentCollaborationWorkspaceRolesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/collaboration-workspaces/current/roles"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListCurrentCollaborationWorkspaceRolesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListFeaturePackageOptions invokes listFeaturePackageOptions operation.
+//
+// 获取功能包候选.
+//
+// GET /feature-packages/options
+func (c *Client) ListFeaturePackageOptions(ctx context.Context, params ListFeaturePackageOptionsParams) (*FeaturePackageOptions, error) {
+	res, err := c.sendListFeaturePackageOptions(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListFeaturePackageOptions(ctx context.Context, params ListFeaturePackageOptionsParams) (res *FeaturePackageOptions, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listFeaturePackageOptions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/feature-packages/options"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListFeaturePackageOptionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/feature-packages/options"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "package_type" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "package_type",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.PackageType.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListFeaturePackageOptionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListFeaturePackageRiskAudits invokes listFeaturePackageRiskAudits operation.
+//
+// 获取功能包最近变更.
+//
+// GET /feature-packages/{id}/risk-audits
+func (c *Client) ListFeaturePackageRiskAudits(ctx context.Context, params ListFeaturePackageRiskAuditsParams) (*AnyListResponse, error) {
+	res, err := c.sendListFeaturePackageRiskAudits(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListFeaturePackageRiskAudits(ctx context.Context, params ListFeaturePackageRiskAuditsParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listFeaturePackageRiskAudits"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/feature-packages/{id}/risk-audits"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListFeaturePackageRiskAuditsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/feature-packages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/risk-audits"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "current" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Current.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "size" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Size.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListFeaturePackageRiskAuditsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListFeaturePackageVersions invokes listFeaturePackageVersions operation.
+//
+// 获取功能包版本历史.
+//
+// GET /feature-packages/{id}/versions
+func (c *Client) ListFeaturePackageVersions(ctx context.Context, params ListFeaturePackageVersionsParams) (*AnyListResponse, error) {
+	res, err := c.sendListFeaturePackageVersions(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListFeaturePackageVersions(ctx context.Context, params ListFeaturePackageVersionsParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listFeaturePackageVersions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/feature-packages/{id}/versions"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListFeaturePackageVersionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/feature-packages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/versions"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "current" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Current.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "size" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Size.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListFeaturePackageVersionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListFeaturePackages invokes listFeaturePackages operation.
+//
+// 获取功能包列表.
+//
+// GET /feature-packages
+func (c *Client) ListFeaturePackages(ctx context.Context, params ListFeaturePackagesParams) (*FeaturePackageList, error) {
+	res, err := c.sendListFeaturePackages(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListFeaturePackages(ctx context.Context, params ListFeaturePackagesParams) (res *FeaturePackageList, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listFeaturePackages"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/feature-packages"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListFeaturePackagesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/feature-packages"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "current" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Current.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "size" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Size.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "keyword" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "keyword",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Keyword.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "package_type" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "package_type",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.PackageType.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "status" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "status",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Status.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListFeaturePackagesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListInbox invokes listInbox operation.
+//
+// 获取消息列表.
+//
+// GET /messages/inbox
+func (c *Client) ListInbox(ctx context.Context, params ListInboxParams) (*AnyListResponse, error) {
+	res, err := c.sendListInbox(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListInbox(ctx context.Context, params ListInboxParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listInbox"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/messages/inbox"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListInboxOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/messages/inbox"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "current" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Current.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "size" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Size.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListInboxResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListMenuBackups invokes listMenuBackups operation.
+//
+// 获取菜单备份列表.
+//
+// GET /menus/backups
+func (c *Client) ListMenuBackups(ctx context.Context) (*MenuBackupList, error) {
+	res, err := c.sendListMenuBackups(ctx)
+	return res, err
+}
+
+func (c *Client) sendListMenuBackups(ctx context.Context) (res *MenuBackupList, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listMenuBackups"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/menus/backups"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListMenuBackupsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/menus/backups"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListMenuBackupsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListMenuGroups invokes listMenuGroups operation.
+//
+// 获取菜单分组列表.
+//
+// GET /menus/groups
+func (c *Client) ListMenuGroups(ctx context.Context) (*MenuGroupList, error) {
+	res, err := c.sendListMenuGroups(ctx)
+	return res, err
+}
+
+func (c *Client) sendListMenuGroups(ctx context.Context) (res *MenuGroupList, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listMenuGroups"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/menus/groups"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListMenuGroupsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/menus/groups"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListMenuGroupsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListMenuSpaceHostBindings invokes listMenuSpaceHostBindings operation.
+//
+// 获取菜单空间 Host 绑定.
+//
+// GET /system/menu-space-host-bindings
+func (c *Client) ListMenuSpaceHostBindings(ctx context.Context) (*AnyListResponse, error) {
+	res, err := c.sendListMenuSpaceHostBindings(ctx)
+	return res, err
+}
+
+func (c *Client) sendListMenuSpaceHostBindings(ctx context.Context) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listMenuSpaceHostBindings"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/system/menu-space-host-bindings"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListMenuSpaceHostBindingsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/menu-space-host-bindings"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListMenuSpaceHostBindingsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListMenuSpaces invokes listMenuSpaces operation.
+//
+// 获取菜单空间列表.
+//
+// GET /system/menu-spaces
+func (c *Client) ListMenuSpaces(ctx context.Context) (*AnyListResponse, error) {
+	res, err := c.sendListMenuSpaces(ctx)
+	return res, err
+}
+
+func (c *Client) sendListMenuSpaces(ctx context.Context) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listMenuSpaces"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/system/menu-spaces"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListMenuSpacesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/menu-spaces"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListMenuSpacesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListMessageDispatchRecords invokes listMessageDispatchRecords operation.
+//
+// 获取消息发送记录.
+//
+// GET /messages/records
+func (c *Client) ListMessageDispatchRecords(ctx context.Context, params ListMessageDispatchRecordsParams) (*AnyListResponse, error) {
+	res, err := c.sendListMessageDispatchRecords(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListMessageDispatchRecords(ctx context.Context, params ListMessageDispatchRecordsParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listMessageDispatchRecords"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/messages/records"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListMessageDispatchRecordsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/messages/records"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "current" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Current.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "size" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Size.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListMessageDispatchRecordsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListMessageRecipientGroups invokes listMessageRecipientGroups operation.
+//
+// 获取消息接收组.
+//
+// GET /messages/recipient-groups
+func (c *Client) ListMessageRecipientGroups(ctx context.Context) (*AnyListResponse, error) {
+	res, err := c.sendListMessageRecipientGroups(ctx)
+	return res, err
+}
+
+func (c *Client) sendListMessageRecipientGroups(ctx context.Context) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listMessageRecipientGroups"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/messages/recipient-groups"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListMessageRecipientGroupsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/messages/recipient-groups"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListMessageRecipientGroupsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListMessageSenders invokes listMessageSenders operation.
+//
+// 获取消息发送人.
+//
+// GET /messages/senders
+func (c *Client) ListMessageSenders(ctx context.Context) (*AnyListResponse, error) {
+	res, err := c.sendListMessageSenders(ctx)
+	return res, err
+}
+
+func (c *Client) sendListMessageSenders(ctx context.Context) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listMessageSenders"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/messages/senders"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListMessageSendersOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/messages/senders"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListMessageSendersResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListMessageTemplates invokes listMessageTemplates operation.
+//
+// 获取消息模板.
+//
+// GET /messages/templates
+func (c *Client) ListMessageTemplates(ctx context.Context) (*AnyListResponse, error) {
+	res, err := c.sendListMessageTemplates(ctx)
+	return res, err
+}
+
+func (c *Client) sendListMessageTemplates(ctx context.Context) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listMessageTemplates"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/messages/templates"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListMessageTemplatesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/messages/templates"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListMessageTemplatesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListMyCollaborationWorkspaces invokes listMyCollaborationWorkspaces operation.
+//
+// 获取我的协作空间列表.
+//
+// GET /collaboration-workspaces/mine
+func (c *Client) ListMyCollaborationWorkspaces(ctx context.Context) (*AnyListResponse, error) {
+	res, err := c.sendListMyCollaborationWorkspaces(ctx)
+	return res, err
+}
+
+func (c *Client) sendListMyCollaborationWorkspaces(ctx context.Context) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listMyCollaborationWorkspaces"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/mine"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListMyCollaborationWorkspacesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/collaboration-workspaces/mine"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListMyCollaborationWorkspacesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // ListMyWorkspaces invokes listMyWorkspaces operation.
 //
 // 获取我的工作空间列表.
@@ -914,6 +11548,1603 @@ func (c *Client) sendListMyWorkspaces(ctx context.Context) (res ListMyWorkspaces
 
 	stage = "DecodeResponse"
 	result, err := decodeListMyWorkspacesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListPageMenuOptions invokes listPageMenuOptions operation.
+//
+// 获取上级菜单候选.
+//
+// GET /pages/menu-options
+func (c *Client) ListPageMenuOptions(ctx context.Context, params ListPageMenuOptionsParams) (*AnyListResponse, error) {
+	res, err := c.sendListPageMenuOptions(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListPageMenuOptions(ctx context.Context, params ListPageMenuOptionsParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listPageMenuOptions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/pages/menu-options"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListPageMenuOptionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/pages/menu-options"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "space_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "space_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.SpaceKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListPageMenuOptionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListPageOptions invokes listPageOptions operation.
+//
+// 获取页面候选列表.
+//
+// GET /pages/options
+func (c *Client) ListPageOptions(ctx context.Context, params ListPageOptionsParams) (*AnyListResponse, error) {
+	res, err := c.sendListPageOptions(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListPageOptions(ctx context.Context, params ListPageOptionsParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listPageOptions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/pages/options"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListPageOptionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/pages/options"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "space_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "space_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.SpaceKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListPageOptionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListPages invokes listPages operation.
+//
+// 获取页面列表.
+//
+// GET /pages
+func (c *Client) ListPages(ctx context.Context, params ListPagesParams) (*AnyListResponse, error) {
+	res, err := c.sendListPages(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListPages(ctx context.Context, params ListPagesParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listPages"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/pages"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListPagesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/pages"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "current" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Current.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "size" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Size.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "keyword" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "keyword",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Keyword.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "space_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "space_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.SpaceKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "status" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "status",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Status.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListPagesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListPermissionActionBatchTemplates invokes listPermissionActionBatchTemplates operation.
+//
+// 获取功能权限批量模板.
+//
+// GET /permission-actions/templates
+func (c *Client) ListPermissionActionBatchTemplates(ctx context.Context) (*AnyListResponse, error) {
+	res, err := c.sendListPermissionActionBatchTemplates(ctx)
+	return res, err
+}
+
+func (c *Client) sendListPermissionActionBatchTemplates(ctx context.Context) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listPermissionActionBatchTemplates"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/permission-actions/templates"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListPermissionActionBatchTemplatesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/permission-actions/templates"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListPermissionActionBatchTemplatesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListPermissionActionEndpoints invokes listPermissionActionEndpoints operation.
+//
+// 获取功能权限关联接口.
+//
+// GET /permission-actions/{id}/endpoints
+func (c *Client) ListPermissionActionEndpoints(ctx context.Context, params ListPermissionActionEndpointsParams) (*AnyListResponse, error) {
+	res, err := c.sendListPermissionActionEndpoints(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListPermissionActionEndpoints(ctx context.Context, params ListPermissionActionEndpointsParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listPermissionActionEndpoints"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/permission-actions/{id}/endpoints"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListPermissionActionEndpointsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/permission-actions/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/endpoints"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListPermissionActionEndpointsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListPermissionActionGroups invokes listPermissionActionGroups operation.
+//
+// 获取功能权限分组列表.
+//
+// GET /permission-actions/groups
+func (c *Client) ListPermissionActionGroups(ctx context.Context) (*AnyListResponse, error) {
+	res, err := c.sendListPermissionActionGroups(ctx)
+	return res, err
+}
+
+func (c *Client) sendListPermissionActionGroups(ctx context.Context) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listPermissionActionGroups"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/permission-actions/groups"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListPermissionActionGroupsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/permission-actions/groups"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListPermissionActionGroupsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListPermissionActionOptions invokes listPermissionActionOptions operation.
+//
+// 获取功能权限候选.
+//
+// GET /permission-actions/options
+func (c *Client) ListPermissionActionOptions(ctx context.Context, params ListPermissionActionOptionsParams) (*AnyListResponse, error) {
+	res, err := c.sendListPermissionActionOptions(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListPermissionActionOptions(ctx context.Context, params ListPermissionActionOptionsParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listPermissionActionOptions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/permission-actions/options"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListPermissionActionOptionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/permission-actions/options"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "keyword" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "keyword",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Keyword.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "group_id" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "group_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.GroupID.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListPermissionActionOptionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListPermissionActionRiskAudits invokes listPermissionActionRiskAudits operation.
+//
+// 获取功能权限最近变更.
+//
+// GET /permission-actions/risk-audits
+func (c *Client) ListPermissionActionRiskAudits(ctx context.Context, params ListPermissionActionRiskAuditsParams) (*AnyListResponse, error) {
+	res, err := c.sendListPermissionActionRiskAudits(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListPermissionActionRiskAudits(ctx context.Context, params ListPermissionActionRiskAuditsParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listPermissionActionRiskAudits"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/permission-actions/risk-audits"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListPermissionActionRiskAuditsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/permission-actions/risk-audits"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "current" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Current.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "size" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Size.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListPermissionActionRiskAuditsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListPermissionActions invokes listPermissionActions operation.
+//
+// 获取功能权限列表.
+//
+// GET /permission-actions
+func (c *Client) ListPermissionActions(ctx context.Context, params ListPermissionActionsParams) (*PermissionActionList, error) {
+	res, err := c.sendListPermissionActions(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListPermissionActions(ctx context.Context, params ListPermissionActionsParams) (res *PermissionActionList, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listPermissionActions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/permission-actions"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListPermissionActionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/permission-actions"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "current" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Current.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "size" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Size.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "keyword" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "keyword",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Keyword.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "group_id" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "group_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.GroupID.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "status" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "status",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Status.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListPermissionActionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListPublicRuntimePages invokes listPublicRuntimePages operation.
+//
+// 获取公开运行时页面注册表.
+//
+// GET /pages/runtime/public
+func (c *Client) ListPublicRuntimePages(ctx context.Context, params ListPublicRuntimePagesParams) (*AnyListResponse, error) {
+	res, err := c.sendListPublicRuntimePages(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListPublicRuntimePages(ctx context.Context, params ListPublicRuntimePagesParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listPublicRuntimePages"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/pages/runtime/public"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListPublicRuntimePagesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/pages/runtime/public"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "space_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "space_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.SpaceKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListPublicRuntimePagesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListRoleOptions invokes listRoleOptions operation.
+//
+// 获取角色候选列表.
+//
+// GET /roles/options
+func (c *Client) ListRoleOptions(ctx context.Context, params ListRoleOptionsParams) (*RoleOptions, error) {
+	res, err := c.sendListRoleOptions(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListRoleOptions(ctx context.Context, params ListRoleOptionsParams) (res *RoleOptions, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listRoleOptions"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/roles/options"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListRoleOptionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/roles/options"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "appKey" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "appKey",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListRoleOptionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListRoles invokes listRoles operation.
+//
+// 获取角色列表.
+//
+// GET /roles
+func (c *Client) ListRoles(ctx context.Context, params ListRolesParams) (*RoleList, error) {
+	res, err := c.sendListRoles(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListRoles(ctx context.Context, params ListRolesParams) (res *RoleList, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listRoles"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/roles"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListRolesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/roles"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "current" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Current.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "size" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Size.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "roleName" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "roleName",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.RoleName.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "roleCode" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "roleCode",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.RoleCode.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "appKey" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "appKey",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListRolesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListRuntimePages invokes listRuntimePages operation.
+//
+// 获取运行时页面注册表.
+//
+// GET /pages/runtime
+func (c *Client) ListRuntimePages(ctx context.Context, params ListRuntimePagesParams) (*AnyListResponse, error) {
+	res, err := c.sendListRuntimePages(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListRuntimePages(ctx context.Context, params ListRuntimePagesParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listRuntimePages"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/pages/runtime"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListRuntimePagesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/pages/runtime"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "space_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "space_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.SpaceKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListRuntimePagesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListUnregisteredPages invokes listUnregisteredPages operation.
+//
+// 获取未注册页面.
+//
+// GET /pages/unregistered
+func (c *Client) ListUnregisteredPages(ctx context.Context, params ListUnregisteredPagesParams) (*AnyListResponse, error) {
+	res, err := c.sendListUnregisteredPages(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListUnregisteredPages(ctx context.Context, params ListUnregisteredPagesParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listUnregisteredPages"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/pages/unregistered"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListUnregisteredPagesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/pages/unregistered"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListUnregisteredPagesResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -1246,6 +13477,284 @@ func (c *Client) sendLogin(ctx context.Context, request *LoginRequest) (res Logi
 	return result, nil
 }
 
+// MarkInboxRead invokes markInboxRead operation.
+//
+// 标记消息已读.
+//
+// POST /messages/inbox/{deliveryId}/read
+func (c *Client) MarkInboxRead(ctx context.Context, params MarkInboxReadParams) (*MutationResult, error) {
+	res, err := c.sendMarkInboxRead(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendMarkInboxRead(ctx context.Context, params MarkInboxReadParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("markInboxRead"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/messages/inbox/{deliveryId}/read"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, MarkInboxReadOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/messages/inbox/"
+	{
+		// Encode "deliveryId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "deliveryId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.DeliveryId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/read"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeMarkInboxReadResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// MarkInboxReadAll invokes markInboxReadAll operation.
+//
+// 批量标记消息已读.
+//
+// POST /messages/inbox/read-all
+func (c *Client) MarkInboxReadAll(ctx context.Context) (*MutationResult, error) {
+	res, err := c.sendMarkInboxReadAll(ctx)
+	return res, err
+}
+
+func (c *Client) sendMarkInboxReadAll(ctx context.Context) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("markInboxReadAll"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/messages/inbox/read-all"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, MarkInboxReadAllOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/messages/inbox/read-all"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeMarkInboxReadAllResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// PreviewPageBreadcrumb invokes previewPageBreadcrumb operation.
+//
+// 预览页面面包屑.
+//
+// GET /pages/{id}/breadcrumb-preview
+func (c *Client) PreviewPageBreadcrumb(ctx context.Context, params PreviewPageBreadcrumbParams) (*AnyListResponse, error) {
+	res, err := c.sendPreviewPageBreadcrumb(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendPreviewPageBreadcrumb(ctx context.Context, params PreviewPageBreadcrumbParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("previewPageBreadcrumb"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/pages/{id}/breadcrumb-preview"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, PreviewPageBreadcrumbOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/pages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/breadcrumb-preview"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodePreviewPageBreadcrumbResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // RefreshToken invokes refreshToken operation.
 //
 // 刷新访问令牌.
@@ -1316,6 +13825,99 @@ func (c *Client) sendRefreshToken(ctx context.Context, request *RefreshTokenRequ
 
 	stage = "DecodeResponse"
 	result, err := decodeRefreshTokenResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// RefreshUserPermissionSnapshot invokes refreshUserPermissionSnapshot operation.
+//
+// 刷新用户权限快照.
+//
+// POST /users/{id}/permission-refresh
+func (c *Client) RefreshUserPermissionSnapshot(ctx context.Context, params RefreshUserPermissionSnapshotParams) (*MutationResult, error) {
+	res, err := c.sendRefreshUserPermissionSnapshot(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendRefreshUserPermissionSnapshot(ctx context.Context, params RefreshUserPermissionSnapshotParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("refreshUserPermissionSnapshot"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/users/{id}/permission-refresh"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, RefreshUserPermissionSnapshotOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/users/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/permission-refresh"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeRefreshUserPermissionSnapshotResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -1400,6 +14002,2761 @@ func (c *Client) sendRegister(ctx context.Context, request *RegisterRequest) (re
 	return result, nil
 }
 
+// RemoveCollaborationWorkspaceMember invokes removeCollaborationWorkspaceMember operation.
+//
+// 移除协作空间成员.
+//
+// DELETE /collaboration-workspaces/{id}/members/{userId}
+func (c *Client) RemoveCollaborationWorkspaceMember(ctx context.Context, params RemoveCollaborationWorkspaceMemberParams) (*MutationResult, error) {
+	res, err := c.sendRemoveCollaborationWorkspaceMember(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendRemoveCollaborationWorkspaceMember(ctx context.Context, params RemoveCollaborationWorkspaceMemberParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("removeCollaborationWorkspaceMember"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/members/{userId}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, RemoveCollaborationWorkspaceMemberOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [4]string
+	pathParts[0] = "/collaboration-workspaces/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/members/"
+	{
+		// Encode "userId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "userId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.UserId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeRemoveCollaborationWorkspaceMemberResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// RemoveCurrentCollaborationWorkspaceMember invokes removeCurrentCollaborationWorkspaceMember operation.
+//
+// 移除当前协作空间成员.
+//
+// DELETE /collaboration-workspaces/current/members/{userId}
+func (c *Client) RemoveCurrentCollaborationWorkspaceMember(ctx context.Context, params RemoveCurrentCollaborationWorkspaceMemberParams) (*MutationResult, error) {
+	res, err := c.sendRemoveCurrentCollaborationWorkspaceMember(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendRemoveCurrentCollaborationWorkspaceMember(ctx context.Context, params RemoveCurrentCollaborationWorkspaceMemberParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("removeCurrentCollaborationWorkspaceMember"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/members/{userId}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, RemoveCurrentCollaborationWorkspaceMemberOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/collaboration-workspaces/current/members/"
+	{
+		// Encode "userId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "userId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.UserId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeRemoveCurrentCollaborationWorkspaceMemberResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// RemovePermissionActionEndpoint invokes removePermissionActionEndpoint operation.
+//
+// 删除功能权限关联接口.
+//
+// DELETE /permission-actions/{id}/endpoints/{endpointCode}
+func (c *Client) RemovePermissionActionEndpoint(ctx context.Context, params RemovePermissionActionEndpointParams) (*MutationResult, error) {
+	res, err := c.sendRemovePermissionActionEndpoint(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendRemovePermissionActionEndpoint(ctx context.Context, params RemovePermissionActionEndpointParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("removePermissionActionEndpoint"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/permission-actions/{id}/endpoints/{endpointCode}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, RemovePermissionActionEndpointOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [4]string
+	pathParts[0] = "/permission-actions/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/endpoints/"
+	{
+		// Encode "endpointCode" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "endpointCode",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.EndpointCode))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeRemovePermissionActionEndpointResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// RestoreMenuBackup invokes restoreMenuBackup operation.
+//
+// 恢复菜单备份.
+//
+// POST /menus/backups/{id}/restore
+func (c *Client) RestoreMenuBackup(ctx context.Context, params RestoreMenuBackupParams) (*MutationResult, error) {
+	res, err := c.sendRestoreMenuBackup(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendRestoreMenuBackup(ctx context.Context, params RestoreMenuBackupParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("restoreMenuBackup"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/menus/backups/{id}/restore"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, RestoreMenuBackupOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/menus/backups/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/restore"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeRestoreMenuBackupResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// RollbackFeaturePackage invokes rollbackFeaturePackage operation.
+//
+// 回滚功能包版本.
+//
+// POST /feature-packages/{id}/rollback
+func (c *Client) RollbackFeaturePackage(ctx context.Context, request *RollbackRequest, params RollbackFeaturePackageParams) (*MutationResult, error) {
+	res, err := c.sendRollbackFeaturePackage(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendRollbackFeaturePackage(ctx context.Context, request *RollbackRequest, params RollbackFeaturePackageParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("rollbackFeaturePackage"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/feature-packages/{id}/rollback"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, RollbackFeaturePackageOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/feature-packages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/rollback"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeRollbackFeaturePackageRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeRollbackFeaturePackageResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SaveApp invokes saveApp operation.
+//
+// 保存应用.
+//
+// POST /system/apps
+func (c *Client) SaveApp(ctx context.Context, request AnyObject) (*MutationResult, error) {
+	res, err := c.sendSaveApp(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendSaveApp(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("saveApp"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/system/apps"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SaveAppOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/apps"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSaveAppRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSaveAppResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SaveAppHostBinding invokes saveAppHostBinding operation.
+//
+// 保存应用 Host 绑定.
+//
+// POST /system/app-host-bindings
+func (c *Client) SaveAppHostBinding(ctx context.Context, request AnyObject) (*MutationResult, error) {
+	res, err := c.sendSaveAppHostBinding(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendSaveAppHostBinding(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("saveAppHostBinding"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/system/app-host-bindings"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SaveAppHostBindingOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/app-host-bindings"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSaveAppHostBindingRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSaveAppHostBindingResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SaveMenuSpace invokes saveMenuSpace operation.
+//
+// 保存菜单空间.
+//
+// POST /system/menu-spaces
+func (c *Client) SaveMenuSpace(ctx context.Context, request AnyObject) (*MutationResult, error) {
+	res, err := c.sendSaveMenuSpace(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendSaveMenuSpace(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("saveMenuSpace"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/system/menu-spaces"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SaveMenuSpaceOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/menu-spaces"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSaveMenuSpaceRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSaveMenuSpaceResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SaveMenuSpaceHostBinding invokes saveMenuSpaceHostBinding operation.
+//
+// 保存菜单空间 Host 绑定.
+//
+// POST /system/menu-space-host-bindings
+func (c *Client) SaveMenuSpaceHostBinding(ctx context.Context, request AnyObject) (*MutationResult, error) {
+	res, err := c.sendSaveMenuSpaceHostBinding(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendSaveMenuSpaceHostBinding(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("saveMenuSpaceHostBinding"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/system/menu-space-host-bindings"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SaveMenuSpaceHostBindingOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/menu-space-host-bindings"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSaveMenuSpaceHostBindingRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSaveMenuSpaceHostBindingResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SaveMenuSpaceMode invokes saveMenuSpaceMode operation.
+//
+// 保存菜单空间模式.
+//
+// PUT /system/menu-space-mode
+func (c *Client) SaveMenuSpaceMode(ctx context.Context, request AnyObject) (*MutationResult, error) {
+	res, err := c.sendSaveMenuSpaceMode(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendSaveMenuSpaceMode(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("saveMenuSpaceMode"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/system/menu-space-mode"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SaveMenuSpaceModeOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/menu-space-mode"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSaveMenuSpaceModeRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSaveMenuSpaceModeResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SavePermissionActionBatchTemplate invokes savePermissionActionBatchTemplate operation.
+//
+// 保存功能权限批量模板.
+//
+// POST /permission-actions/templates
+func (c *Client) SavePermissionActionBatchTemplate(ctx context.Context, request AnyObject) (*MutationResult, error) {
+	res, err := c.sendSavePermissionActionBatchTemplate(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendSavePermissionActionBatchTemplate(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("savePermissionActionBatchTemplate"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/permission-actions/templates"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SavePermissionActionBatchTemplateOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/permission-actions/templates"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSavePermissionActionBatchTemplateRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSavePermissionActionBatchTemplateResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SetCollaborationWorkspaceActions invokes setCollaborationWorkspaceActions operation.
+//
+// 配置协作空间功能权限边界.
+//
+// PUT /collaboration-workspaces/{id}/actions
+func (c *Client) SetCollaborationWorkspaceActions(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspaceActionsParams) (*MutationResult, error) {
+	res, err := c.sendSetCollaborationWorkspaceActions(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSetCollaborationWorkspaceActions(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspaceActionsParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("setCollaborationWorkspaceActions"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/actions"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SetCollaborationWorkspaceActionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/actions"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSetCollaborationWorkspaceActionsRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSetCollaborationWorkspaceActionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SetCollaborationWorkspaceMenus invokes setCollaborationWorkspaceMenus operation.
+//
+// 配置协作空间菜单边界.
+//
+// PUT /collaboration-workspaces/{id}/menus
+func (c *Client) SetCollaborationWorkspaceMenus(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspaceMenusParams) (*MutationResult, error) {
+	res, err := c.sendSetCollaborationWorkspaceMenus(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSetCollaborationWorkspaceMenus(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspaceMenusParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("setCollaborationWorkspaceMenus"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/menus"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SetCollaborationWorkspaceMenusOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/menus"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSetCollaborationWorkspaceMenusRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSetCollaborationWorkspaceMenusResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SetCollaborationWorkspacePackages invokes setCollaborationWorkspacePackages operation.
+//
+// 配置协作空间功能包.
+//
+// PUT /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}
+func (c *Client) SetCollaborationWorkspacePackages(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspacePackagesParams) (*MutationResult, error) {
+	res, err := c.sendSetCollaborationWorkspacePackages(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSetCollaborationWorkspacePackages(ctx context.Context, request *UUIDListRequest, params SetCollaborationWorkspacePackagesParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("setCollaborationWorkspacePackages"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SetCollaborationWorkspacePackagesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/feature-packages/collaboration-workspaces/"
+	{
+		// Encode "collaborationWorkspaceId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "collaborationWorkspaceId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.CollaborationWorkspaceId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSetCollaborationWorkspacePackagesRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSetCollaborationWorkspacePackagesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SetCurrentCollaborationWorkspaceBoundaryRoleActions invokes setCurrentCollaborationWorkspaceBoundaryRoleActions operation.
+//
+// 配置当前协作空间角色功能权限(边界管理).
+//
+// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/actions
+func (c *Client) SetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (*MutationResult, error) {
+	res, err := c.sendSetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("setCurrentCollaborationWorkspaceBoundaryRoleActions"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/actions"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SetCurrentCollaborationWorkspaceBoundaryRoleActionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/current/boundary/roles/"
+	{
+		// Encode "roleId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "roleId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.RoleId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/actions"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SetCurrentCollaborationWorkspaceBoundaryRoleMenus invokes setCurrentCollaborationWorkspaceBoundaryRoleMenus operation.
+//
+// 配置当前协作空间角色菜单权限(边界管理).
+//
+// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/menus
+func (c *Client) SetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (*MutationResult, error) {
+	res, err := c.sendSetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("setCurrentCollaborationWorkspaceBoundaryRoleMenus"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/menus"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SetCurrentCollaborationWorkspaceBoundaryRoleMenusOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/current/boundary/roles/"
+	{
+		// Encode "roleId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "roleId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.RoleId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/menus"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SetCurrentCollaborationWorkspaceBoundaryRolePackages invokes setCurrentCollaborationWorkspaceBoundaryRolePackages operation.
+//
+// 配置当前协作空间角色功能包(边界管理).
+//
+// PUT /collaboration-workspaces/current/boundary/roles/{roleId}/packages
+func (c *Client) SetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (*MutationResult, error) {
+	res, err := c.sendSetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("setCurrentCollaborationWorkspaceBoundaryRolePackages"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}/packages"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SetCurrentCollaborationWorkspaceBoundaryRolePackagesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/current/boundary/roles/"
+	{
+		// Encode "roleId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "roleId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.RoleId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/packages"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SetCurrentCollaborationWorkspaceMemberRoles invokes setCurrentCollaborationWorkspaceMemberRoles operation.
+//
+// 配置当前协作空间成员角色.
+//
+// PUT /collaboration-workspaces/current/members/{userId}/roles
+func (c *Client) SetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceMemberRolesParams) (*MutationResult, error) {
+	res, err := c.sendSetCurrentCollaborationWorkspaceMemberRoles(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, request *UUIDListRequest, params SetCurrentCollaborationWorkspaceMemberRolesParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("setCurrentCollaborationWorkspaceMemberRoles"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/members/{userId}/roles"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SetCurrentCollaborationWorkspaceMemberRolesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/current/members/"
+	{
+		// Encode "userId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "userId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.UserId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/roles"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSetCurrentCollaborationWorkspaceMemberRolesRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSetCurrentCollaborationWorkspaceMemberRolesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SetFeaturePackageActions invokes setFeaturePackageActions operation.
+//
+// 配置功能包权限.
+//
+// PUT /feature-packages/{id}/actions
+func (c *Client) SetFeaturePackageActions(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageActionsParams) (*MutationResult, error) {
+	res, err := c.sendSetFeaturePackageActions(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSetFeaturePackageActions(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageActionsParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("setFeaturePackageActions"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/feature-packages/{id}/actions"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SetFeaturePackageActionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/feature-packages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/actions"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSetFeaturePackageActionsRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSetFeaturePackageActionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SetFeaturePackageChildren invokes setFeaturePackageChildren operation.
+//
+// 配置组合包基础包.
+//
+// PUT /feature-packages/{id}/children
+func (c *Client) SetFeaturePackageChildren(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageChildrenParams) (*MutationResult, error) {
+	res, err := c.sendSetFeaturePackageChildren(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSetFeaturePackageChildren(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageChildrenParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("setFeaturePackageChildren"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/feature-packages/{id}/children"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SetFeaturePackageChildrenOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/feature-packages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/children"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSetFeaturePackageChildrenRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSetFeaturePackageChildrenResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SetFeaturePackageCollaborationWorkspaces invokes setFeaturePackageCollaborationWorkspaces operation.
+//
+// 配置功能包协作空间.
+//
+// PUT /feature-packages/{id}/collaboration-workspaces
+func (c *Client) SetFeaturePackageCollaborationWorkspaces(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageCollaborationWorkspacesParams) (*MutationResult, error) {
+	res, err := c.sendSetFeaturePackageCollaborationWorkspaces(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSetFeaturePackageCollaborationWorkspaces(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageCollaborationWorkspacesParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("setFeaturePackageCollaborationWorkspaces"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/feature-packages/{id}/collaboration-workspaces"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SetFeaturePackageCollaborationWorkspacesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/feature-packages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/collaboration-workspaces"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSetFeaturePackageCollaborationWorkspacesRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSetFeaturePackageCollaborationWorkspacesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SetFeaturePackageMenus invokes setFeaturePackageMenus operation.
+//
+// 配置功能包菜单.
+//
+// PUT /feature-packages/{id}/menus
+func (c *Client) SetFeaturePackageMenus(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageMenusParams) (*MutationResult, error) {
+	res, err := c.sendSetFeaturePackageMenus(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSetFeaturePackageMenus(ctx context.Context, request *UUIDListRequest, params SetFeaturePackageMenusParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("setFeaturePackageMenus"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/feature-packages/{id}/menus"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SetFeaturePackageMenusOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/feature-packages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/menus"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSetFeaturePackageMenusRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSetFeaturePackageMenusResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SetRoleActions invokes setRoleActions operation.
+//
+// 配置角色功能权限.
+//
+// PUT /roles/{id}/actions
+func (c *Client) SetRoleActions(ctx context.Context, request *UUIDListRequest, params SetRoleActionsParams) (*MutationResult, error) {
+	res, err := c.sendSetRoleActions(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSetRoleActions(ctx context.Context, request *UUIDListRequest, params SetRoleActionsParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("setRoleActions"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/roles/{id}/actions"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SetRoleActionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/roles/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/actions"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSetRoleActionsRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSetRoleActionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SetRoleDataPermissions invokes setRoleDataPermissions operation.
+//
+// 配置角色数据权限.
+//
+// PUT /roles/{id}/data-permissions
+func (c *Client) SetRoleDataPermissions(ctx context.Context, request *RoleDataPermissionsRequest, params SetRoleDataPermissionsParams) (*MutationResult, error) {
+	res, err := c.sendSetRoleDataPermissions(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSetRoleDataPermissions(ctx context.Context, request *RoleDataPermissionsRequest, params SetRoleDataPermissionsParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("setRoleDataPermissions"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/roles/{id}/data-permissions"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SetRoleDataPermissionsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/roles/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/data-permissions"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSetRoleDataPermissionsRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSetRoleDataPermissionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SetRoleMenus invokes setRoleMenus operation.
+//
+// 配置角色菜单权限.
+//
+// PUT /roles/{id}/menus
+func (c *Client) SetRoleMenus(ctx context.Context, request *UUIDListRequest, params SetRoleMenusParams) (*MutationResult, error) {
+	res, err := c.sendSetRoleMenus(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSetRoleMenus(ctx context.Context, request *UUIDListRequest, params SetRoleMenusParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("setRoleMenus"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/roles/{id}/menus"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SetRoleMenusOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/roles/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/menus"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSetRoleMenusRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSetRoleMenusResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SetRolePackages invokes setRolePackages operation.
+//
+// 配置角色功能包.
+//
+// PUT /roles/{id}/packages
+func (c *Client) SetRolePackages(ctx context.Context, request *UUIDListRequest, params SetRolePackagesParams) (*MutationResult, error) {
+	res, err := c.sendSetRolePackages(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSetRolePackages(ctx context.Context, request *UUIDListRequest, params SetRolePackagesParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("setRolePackages"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/roles/{id}/packages"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SetRolePackagesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/roles/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/packages"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSetRolePackagesRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSetRolePackagesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SetUserMenus invokes setUserMenus operation.
+//
+// 配置用户菜单裁剪.
+//
+// PUT /users/{id}/menus
+func (c *Client) SetUserMenus(ctx context.Context, request AnyObject, params SetUserMenusParams) (*MutationResult, error) {
+	res, err := c.sendSetUserMenus(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSetUserMenus(ctx context.Context, request AnyObject, params SetUserMenusParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("setUserMenus"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/users/{id}/menus"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SetUserMenusOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/users/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/menus"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSetUserMenusRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSetUserMenusResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SetUserPackages invokes setUserPackages operation.
+//
+// 配置用户功能包.
+//
+// PUT /users/{id}/packages
+func (c *Client) SetUserPackages(ctx context.Context, request *UUIDListRequest, params SetUserPackagesParams) (*MutationResult, error) {
+	res, err := c.sendSetUserPackages(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendSetUserPackages(ctx context.Context, request *UUIDListRequest, params SetUserPackagesParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("setUserPackages"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/users/{id}/packages"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SetUserPackagesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/users/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/packages"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSetUserPackagesRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSetUserPackagesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // SwitchWorkspace invokes switchWorkspace operation.
 //
 // 切换当前授权工作空间.
@@ -1470,6 +16827,1544 @@ func (c *Client) sendSwitchWorkspace(ctx context.Context, request *WorkspaceSwit
 
 	stage = "DecodeResponse"
 	result, err := decodeSwitchWorkspaceResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SyncPages invokes syncPages operation.
+//
+// 同步页面注册表.
+//
+// POST /pages/sync
+func (c *Client) SyncPages(ctx context.Context, params SyncPagesParams) (*PageSyncResult, error) {
+	res, err := c.sendSyncPages(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendSyncPages(ctx context.Context, params SyncPagesParams) (res *PageSyncResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("syncPages"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/pages/sync"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SyncPagesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/pages/sync"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSyncPagesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdateCollaborationWorkspace invokes updateCollaborationWorkspace operation.
+//
+// 更新协作空间.
+//
+// PUT /collaboration-workspaces/{id}
+func (c *Client) UpdateCollaborationWorkspace(ctx context.Context, request AnyObject, params UpdateCollaborationWorkspaceParams) (*MutationResult, error) {
+	res, err := c.sendUpdateCollaborationWorkspace(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdateCollaborationWorkspace(ctx context.Context, request AnyObject, params UpdateCollaborationWorkspaceParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updateCollaborationWorkspace"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateCollaborationWorkspaceOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/collaboration-workspaces/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdateCollaborationWorkspaceRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdateCollaborationWorkspaceResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdateCollaborationWorkspaceMemberRole invokes updateCollaborationWorkspaceMemberRole operation.
+//
+// 更新协作空间成员身份.
+//
+// PUT /collaboration-workspaces/{id}/members/{userId}/role
+func (c *Client) UpdateCollaborationWorkspaceMemberRole(ctx context.Context, request AnyObject, params UpdateCollaborationWorkspaceMemberRoleParams) (*MutationResult, error) {
+	res, err := c.sendUpdateCollaborationWorkspaceMemberRole(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdateCollaborationWorkspaceMemberRole(ctx context.Context, request AnyObject, params UpdateCollaborationWorkspaceMemberRoleParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updateCollaborationWorkspaceMemberRole"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/{id}/members/{userId}/role"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateCollaborationWorkspaceMemberRoleOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [5]string
+	pathParts[0] = "/collaboration-workspaces/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/members/"
+	{
+		// Encode "userId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "userId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.UserId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[3] = encoded
+	}
+	pathParts[4] = "/role"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdateCollaborationWorkspaceMemberRoleRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdateCollaborationWorkspaceMemberRoleResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdateCurrentCollaborationWorkspaceBoundaryRole invokes updateCurrentCollaborationWorkspaceBoundaryRole operation.
+//
+// 更新当前协作空间角色(边界管理).
+//
+// PUT /collaboration-workspaces/current/boundary/roles/{roleId}
+func (c *Client) UpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request AnyObject, params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (*MutationResult, error) {
+	res, err := c.sendUpdateCurrentCollaborationWorkspaceBoundaryRole(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdateCurrentCollaborationWorkspaceBoundaryRole(ctx context.Context, request AnyObject, params UpdateCurrentCollaborationWorkspaceBoundaryRoleParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updateCurrentCollaborationWorkspaceBoundaryRole"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/boundary/roles/{roleId}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateCurrentCollaborationWorkspaceBoundaryRoleOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/collaboration-workspaces/current/boundary/roles/"
+	{
+		// Encode "roleId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "roleId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.RoleId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdateCurrentCollaborationWorkspaceBoundaryRoleRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdateCurrentCollaborationWorkspaceBoundaryRoleResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdateCurrentCollaborationWorkspaceMemberRole invokes updateCurrentCollaborationWorkspaceMemberRole operation.
+//
+// 更新当前协作空间成员身份.
+//
+// PUT /collaboration-workspaces/current/members/{userId}/role
+func (c *Client) UpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, request AnyObject, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (*MutationResult, error) {
+	res, err := c.sendUpdateCurrentCollaborationWorkspaceMemberRole(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdateCurrentCollaborationWorkspaceMemberRole(ctx context.Context, request AnyObject, params UpdateCurrentCollaborationWorkspaceMemberRoleParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updateCurrentCollaborationWorkspaceMemberRole"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/collaboration-workspaces/current/members/{userId}/role"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateCurrentCollaborationWorkspaceMemberRoleOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/collaboration-workspaces/current/members/"
+	{
+		// Encode "userId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "userId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.UserId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/role"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdateCurrentCollaborationWorkspaceMemberRoleRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdateCurrentCollaborationWorkspaceMemberRoleResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdateFastEnterConfig invokes updateFastEnterConfig operation.
+//
+// 更新快捷入口配置.
+//
+// PUT /system/fast-enter
+func (c *Client) UpdateFastEnterConfig(ctx context.Context, request AnyObject) (*MutationResult, error) {
+	res, err := c.sendUpdateFastEnterConfig(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendUpdateFastEnterConfig(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updateFastEnterConfig"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/system/fast-enter"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateFastEnterConfigOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/fast-enter"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdateFastEnterConfigRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdateFastEnterConfigResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdateFeaturePackage invokes updateFeaturePackage operation.
+//
+// 更新功能包.
+//
+// PUT /feature-packages/{id}
+func (c *Client) UpdateFeaturePackage(ctx context.Context, request *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (*MutationResult, error) {
+	res, err := c.sendUpdateFeaturePackage(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdateFeaturePackage(ctx context.Context, request *FeaturePackageSaveRequest, params UpdateFeaturePackageParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updateFeaturePackage"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/feature-packages/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateFeaturePackageOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/feature-packages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdateFeaturePackageRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdateFeaturePackageResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdateMenu invokes updateMenu operation.
+//
+// 更新菜单.
+//
+// PUT /menus/{id}
+func (c *Client) UpdateMenu(ctx context.Context, request *MenuSaveRequest, params UpdateMenuParams) (*MutationResult, error) {
+	res, err := c.sendUpdateMenu(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdateMenu(ctx context.Context, request *MenuSaveRequest, params UpdateMenuParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updateMenu"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/menus/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateMenuOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/menus/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdateMenuRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdateMenuResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdateMenuGroup invokes updateMenuGroup operation.
+//
+// 更新菜单分组.
+//
+// PUT /menus/groups/{id}
+func (c *Client) UpdateMenuGroup(ctx context.Context, request *MenuGroupSaveRequest, params UpdateMenuGroupParams) (*MutationResult, error) {
+	res, err := c.sendUpdateMenuGroup(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdateMenuGroup(ctx context.Context, request *MenuGroupSaveRequest, params UpdateMenuGroupParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updateMenuGroup"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/menus/groups/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateMenuGroupOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/menus/groups/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdateMenuGroupRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdateMenuGroupResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdateMessageRecipientGroup invokes updateMessageRecipientGroup operation.
+//
+// 更新消息接收组.
+//
+// PUT /messages/recipient-groups/{groupId}
+func (c *Client) UpdateMessageRecipientGroup(ctx context.Context, request AnyObject, params UpdateMessageRecipientGroupParams) (*MutationResult, error) {
+	res, err := c.sendUpdateMessageRecipientGroup(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdateMessageRecipientGroup(ctx context.Context, request AnyObject, params UpdateMessageRecipientGroupParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updateMessageRecipientGroup"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/messages/recipient-groups/{groupId}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateMessageRecipientGroupOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/messages/recipient-groups/"
+	{
+		// Encode "groupId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "groupId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.GroupId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdateMessageRecipientGroupRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdateMessageRecipientGroupResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdateMessageSender invokes updateMessageSender operation.
+//
+// 更新消息发送人.
+//
+// PUT /messages/senders/{senderId}
+func (c *Client) UpdateMessageSender(ctx context.Context, request AnyObject, params UpdateMessageSenderParams) (*MutationResult, error) {
+	res, err := c.sendUpdateMessageSender(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdateMessageSender(ctx context.Context, request AnyObject, params UpdateMessageSenderParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updateMessageSender"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/messages/senders/{senderId}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateMessageSenderOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/messages/senders/"
+	{
+		// Encode "senderId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "senderId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.SenderId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdateMessageSenderRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdateMessageSenderResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdateMessageTemplate invokes updateMessageTemplate operation.
+//
+// 更新消息模板.
+//
+// PUT /messages/templates/{templateId}
+func (c *Client) UpdateMessageTemplate(ctx context.Context, request AnyObject, params UpdateMessageTemplateParams) (*MutationResult, error) {
+	res, err := c.sendUpdateMessageTemplate(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdateMessageTemplate(ctx context.Context, request AnyObject, params UpdateMessageTemplateParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updateMessageTemplate"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/messages/templates/{templateId}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateMessageTemplateOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/messages/templates/"
+	{
+		// Encode "templateId" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "templateId",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.TemplateId))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdateMessageTemplateRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdateMessageTemplateResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdatePage invokes updatePage operation.
+//
+// 更新页面.
+//
+// PUT /pages/{id}
+func (c *Client) UpdatePage(ctx context.Context, request *PageSaveRequest, params UpdatePageParams) (AnyObject, error) {
+	res, err := c.sendUpdatePage(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdatePage(ctx context.Context, request *PageSaveRequest, params UpdatePageParams) (res AnyObject, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updatePage"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/pages/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdatePageOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/pages/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			return e.EncodeValue(conv.StringToString(params.AppKey))
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdatePageRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdatePageResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdatePermissionAction invokes updatePermissionAction operation.
+//
+// 更新功能权限.
+//
+// PUT /permission-actions/{id}
+func (c *Client) UpdatePermissionAction(ctx context.Context, request *PermissionActionSaveRequest, params UpdatePermissionActionParams) (*MutationResult, error) {
+	res, err := c.sendUpdatePermissionAction(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdatePermissionAction(ctx context.Context, request *PermissionActionSaveRequest, params UpdatePermissionActionParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updatePermissionAction"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/permission-actions/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdatePermissionActionOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/permission-actions/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdatePermissionActionRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdatePermissionActionResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdatePermissionActionGroup invokes updatePermissionActionGroup operation.
+//
+// 更新功能权限分组.
+//
+// PUT /permission-actions/groups/{id}
+func (c *Client) UpdatePermissionActionGroup(ctx context.Context, request AnyObject, params UpdatePermissionActionGroupParams) (*MutationResult, error) {
+	res, err := c.sendUpdatePermissionActionGroup(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdatePermissionActionGroup(ctx context.Context, request AnyObject, params UpdatePermissionActionGroupParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updatePermissionActionGroup"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/permission-actions/groups/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdatePermissionActionGroupOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/permission-actions/groups/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdatePermissionActionGroupRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdatePermissionActionGroupResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdateRole invokes updateRole operation.
+//
+// 更新角色.
+//
+// PUT /roles/{id}
+func (c *Client) UpdateRole(ctx context.Context, request *RoleUpdateRequest, params UpdateRoleParams) (*MutationResult, error) {
+	res, err := c.sendUpdateRole(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdateRole(ctx context.Context, request *RoleUpdateRequest, params UpdateRoleParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updateRole"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/roles/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateRoleOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/roles/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdateRoleRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdateRoleResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

@@ -11,6 +11,48 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+func encodeAddCollaborationWorkspaceMemberResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeAddCurrentCollaborationWorkspaceMemberResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeAddPermissionActionEndpointResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
 func encodeAssignUserRolesResponse(response AssignUserRolesRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *UserMutationResult:
@@ -83,6 +125,230 @@ func encodeAssignUserRolesResponse(response AssignUserRolesRes, w http.ResponseW
 	}
 }
 
+func encodeBatchUpdatePermissionActionsResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeCleanupUnusedPermissionActionsResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeCreateCollaborationWorkspaceResponse(response *IDResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeCreateCurrentCollaborationWorkspaceBoundaryRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeCreateCurrentCollaborationWorkspaceRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeCreateFeaturePackageResponse(response *IDResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeCreateMenuResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeCreateMenuBackupResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeCreateMenuGroupResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeCreateMessageRecipientGroupResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeCreateMessageSenderResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeCreateMessageTemplateResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeCreatePageResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeCreatePermissionActionResponse(response *IDResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeCreatePermissionActionGroupResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeCreateRoleResponse(response *RoleCreateResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
 func encodeCreateUserResponse(response CreateUserRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *UserCreateResult:
@@ -142,6 +408,132 @@ func encodeCreateUserResponse(response CreateUserRes, w http.ResponseWriter, spa
 	}
 }
 
+func encodeDeleteCollaborationWorkspaceResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeDeleteCurrentCollaborationWorkspaceBoundaryRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeDeleteFeaturePackageResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeDeleteMenuResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeDeleteMenuBackupResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeDeleteMenuGroupResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeDeletePageResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeDeletePermissionActionResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeDeleteRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
 func encodeDeleteUserResponse(response DeleteUserRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *UserMutationResult:
@@ -199,6 +591,20 @@ func encodeDeleteUserResponse(response DeleteUserRes, w http.ResponseWriter, spa
 	default:
 		return errors.Errorf("unexpected response type: %T", response)
 	}
+}
+
+func encodeDispatchMessageResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
 func encodeExplainPermissionsResponse(response ExplainPermissionsRes, w http.ResponseWriter, span trace.Span) error {
@@ -267,6 +673,258 @@ func encodeGetAuthMeResponse(response GetAuthMeRes, w http.ResponseWriter, span 
 	}
 }
 
+func encodeGetCollaborationWorkspaceResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetCollaborationWorkspaceActionOriginsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetCollaborationWorkspaceActionsResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetCollaborationWorkspaceMenuOriginsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetCollaborationWorkspaceMenusResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetCollaborationWorkspacePackagesResponse(response *FeaturePackageAssignmentResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetCurrentAppResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetCurrentCollaborationWorkspaceResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetCurrentCollaborationWorkspaceActionOriginsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetCurrentCollaborationWorkspaceActionsResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetCurrentCollaborationWorkspaceBoundaryPackagesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetCurrentCollaborationWorkspaceMemberRolesResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetCurrentCollaborationWorkspaceMenuOriginsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetCurrentCollaborationWorkspaceMenusResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetCurrentMenuSpaceResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
 func encodeGetCurrentWorkspaceResponse(response GetCurrentWorkspaceRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *WorkspaceSummary:
@@ -298,6 +956,403 @@ func encodeGetCurrentWorkspaceResponse(response GetCurrentWorkspaceRes, w http.R
 	default:
 		return errors.Errorf("unexpected response type: %T", response)
 	}
+}
+
+func encodeGetFastEnterConfigResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetFeaturePackageResponse(response *FeaturePackageSummary, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetFeaturePackageActionsResponse(response *FeaturePackageActionsResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetFeaturePackageChildrenResponse(response *FeaturePackageAssignmentResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetFeaturePackageCollaborationWorkspacesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetFeaturePackageImpactPreviewResponse(response *FeaturePackageImpactPreview, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetFeaturePackageMenusResponse(response *FeaturePackageMenusResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetFeaturePackageRelationTreeResponse(response *FeaturePackageRelationTree, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetInboxDetailResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetInboxSummaryResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetMenuDeletePreviewResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetMenuSpaceModeResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetMenuTreeResponse(response *MenuTreeResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetMessageDispatchOptionsResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetMessageDispatchRecordResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetNavigationResponse(response *NavigationManifest, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetPageResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetPageAccessTraceResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetPermissionActionResponse(response *PermissionActionDetail, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetPermissionActionConsumersResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetPermissionActionImpactPreviewResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetRoleResponse(response GetRoleRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *RoleSummary:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+		span.SetStatus(codes.Ok, http.StatusText(200))
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *Error:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(404)
+		span.SetStatus(codes.Error, http.StatusText(404))
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
+func encodeGetRoleActionsResponse(response *RoleActionsResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetRoleDataPermissionsResponse(response *RoleDataPermissionsResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetRoleMenusResponse(response *RoleMenusResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetRolePackagesResponse(response *RolePackagesResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetSystemViewPagesResponse(response *ViewPagesResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
 func encodeGetUserResponse(response GetUserRes, w http.ResponseWriter, span trace.Span) error {
@@ -359,6 +1414,76 @@ func encodeGetUserResponse(response GetUserRes, w http.ResponseWriter, span trac
 	}
 }
 
+func encodeGetUserCollaborationWorkspacesResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetUserMenusResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetUserPackagesResponse(response *UserPackagesResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetUserPermissionDiagnosisResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeGetUserPermissionsResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
 func encodeGetWorkspaceResponse(response GetWorkspaceRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *WorkspaceSummary:
@@ -405,6 +1530,356 @@ func encodeGetWorkspaceResponse(response GetWorkspaceRes, w http.ResponseWriter,
 	}
 }
 
+func encodeHandleInboxTodoResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeInitializeMenuSpaceFromDefaultResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListAppHostBindingsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListAppsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListCollaborationWorkspaceMembersResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListCollaborationWorkspaceOptionsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListCollaborationWorkspaceRolesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListCollaborationWorkspacesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListCurrentCollaborationWorkspaceBoundaryRolesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListCurrentCollaborationWorkspaceMembersResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListCurrentCollaborationWorkspaceRolesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListFeaturePackageOptionsResponse(response *FeaturePackageOptions, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListFeaturePackageRiskAuditsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListFeaturePackageVersionsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListFeaturePackagesResponse(response *FeaturePackageList, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListInboxResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListMenuBackupsResponse(response *MenuBackupList, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListMenuGroupsResponse(response *MenuGroupList, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListMenuSpaceHostBindingsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListMenuSpacesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListMessageDispatchRecordsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListMessageRecipientGroupsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListMessageSendersResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListMessageTemplatesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListMyCollaborationWorkspacesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
 func encodeListMyWorkspacesResponse(response ListMyWorkspacesRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *WorkspaceList:
@@ -436,6 +1911,202 @@ func encodeListMyWorkspacesResponse(response ListMyWorkspacesRes, w http.Respons
 	default:
 		return errors.Errorf("unexpected response type: %T", response)
 	}
+}
+
+func encodeListPageMenuOptionsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListPageOptionsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListPagesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListPermissionActionBatchTemplatesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListPermissionActionEndpointsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListPermissionActionGroupsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListPermissionActionOptionsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListPermissionActionRiskAuditsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListPermissionActionsResponse(response *PermissionActionList, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListPublicRuntimePagesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListRoleOptionsResponse(response *RoleOptions, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListRolesResponse(response *RoleList, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListRuntimePagesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeListUnregisteredPagesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
 func encodeListUsersResponse(response ListUsersRes, w http.ResponseWriter, span trace.Span) error {
@@ -530,6 +2201,48 @@ func encodeLoginResponse(response LoginRes, w http.ResponseWriter, span trace.Sp
 	}
 }
 
+func encodeMarkInboxReadResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeMarkInboxReadAllResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodePreviewPageBreadcrumbResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
 func encodeRefreshTokenResponse(response RefreshTokenRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *TokenResponse:
@@ -563,6 +2276,20 @@ func encodeRefreshTokenResponse(response RefreshTokenRes, w http.ResponseWriter,
 	}
 }
 
+func encodeRefreshUserPermissionSnapshotResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
 func encodeRegisterResponse(response RegisterRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *LoginResponse:
@@ -594,6 +2321,398 @@ func encodeRegisterResponse(response RegisterRes, w http.ResponseWriter, span tr
 	default:
 		return errors.Errorf("unexpected response type: %T", response)
 	}
+}
+
+func encodeRemoveCollaborationWorkspaceMemberResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeRemoveCurrentCollaborationWorkspaceMemberResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeRemovePermissionActionEndpointResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeRestoreMenuBackupResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeRollbackFeaturePackageResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSaveAppResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSaveAppHostBindingResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSaveMenuSpaceResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSaveMenuSpaceHostBindingResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSaveMenuSpaceModeResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSavePermissionActionBatchTemplateResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSetCollaborationWorkspaceActionsResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSetCollaborationWorkspaceMenusResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSetCollaborationWorkspacePackagesResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSetCurrentCollaborationWorkspaceMemberRolesResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSetFeaturePackageActionsResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSetFeaturePackageChildrenResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSetFeaturePackageCollaborationWorkspacesResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSetFeaturePackageMenusResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSetRoleActionsResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSetRoleDataPermissionsResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSetRoleMenusResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSetRolePackagesResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSetUserMenusResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeSetUserPackagesResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
 func encodeSwitchWorkspaceResponse(response SwitchWorkspaceRes, w http.ResponseWriter, span trace.Span) error {
@@ -640,6 +2759,230 @@ func encodeSwitchWorkspaceResponse(response SwitchWorkspaceRes, w http.ResponseW
 	default:
 		return errors.Errorf("unexpected response type: %T", response)
 	}
+}
+
+func encodeSyncPagesResponse(response *PageSyncResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeUpdateCollaborationWorkspaceResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeUpdateCollaborationWorkspaceMemberRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeUpdateCurrentCollaborationWorkspaceBoundaryRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeUpdateCurrentCollaborationWorkspaceMemberRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeUpdateFastEnterConfigResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeUpdateFeaturePackageResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeUpdateMenuResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeUpdateMenuGroupResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeUpdateMessageRecipientGroupResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeUpdateMessageSenderResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeUpdateMessageTemplateResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeUpdatePageResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeUpdatePermissionActionResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeUpdatePermissionActionGroupResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
+func encodeUpdateRoleResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
 }
 
 func encodeUpdateUserResponse(response UpdateUserRes, w http.ResponseWriter, span trace.Span) error {

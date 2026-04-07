@@ -191,3 +191,16 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 
 
 
+
+## 阶段进度
+
+### 2026-04-08 Phase 4 全量推进：role/navigation/featurepackage/permission/menu/page/cw 迁移到 ogen（Phase 4）
+
+**本次改动**
+- 重新生成 `backend/api/gen/*` 与 `permissionseed/openapi_seed.json`（181 ops），`APIHandler` 已注入全部领域 service。
+- 新增 ogen handler：`role.go`(14) / `navigation.go`(1) / `featurepackage.go`(17) / `permission.go`(15) / `menu.go`(10) / `page.go`(12) / `collaborationworkspace.go`(12)，`go build ./...` 通过。
+- `router.go` 已桥接 role + navigation 路径；对应 legacy `module.go` 采用 `_ = rg; return` 跳过 gin 注册。
+
+**下次方向**
+- 在 `router.go` 批量补齐 featurepackage / permission / menu / page / collaborationworkspace 的 `ogenBridge` 入口，并在对应 legacy `module.go` 顶部早 return，让新 handler 真正生效后再次 `go build ./...`。
+- 收尾剩余 501 stub：user 子路由、system、message、CW boundary 复杂操作、menu backup restore、fp rollback、permission 批量更新等。

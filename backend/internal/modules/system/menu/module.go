@@ -51,23 +51,12 @@ func (m *MenuModule) RegisterRoutes(rg *gin.RouterGroup) {
 	menus := rg.Group("/menus")
 	reg := apiregistry.NewRegistrar(menus, "menu")
 	{
-		reg.GET("/tree", reg.Meta("获取菜单树").Build(), menuHandler.GetTree)
 		reg.GETProtected("/:id/delete-preview", reg.Meta("获取菜单删除预览").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.DeletePreview)
-		reg.POSTProtected("", reg.Meta("创建菜单").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.Create)
-		reg.PUTProtected("/:id", reg.Meta("更新菜单").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.Update)
-		reg.DELETEProtected("/:id", reg.Meta("删除菜单").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.Delete)
-		reg.GETProtected("/groups", reg.Meta("获取菜单分组列表").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.ListGroups)
-		reg.POSTProtected("/groups", reg.Meta("创建菜单分组").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.CreateGroup)
-		reg.PUTProtected("/groups/:id", reg.Meta("更新菜单分组").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.UpdateGroup)
-		reg.DELETEProtected("/groups/:id", reg.Meta("删除菜单分组").BindPermissionKey("system.menu.manage").Build(), "system.menu.manage", authzService.RequireAction, menuHandler.DeleteGroup)
 
 		// 菜单备份相关路由
 		backups := menus.Group("/backups")
 		backupReg := apiregistry.NewRegistrar(backups, "menu_backup")
 		{
-			backupReg.POSTProtected("", backupReg.Meta("创建菜单备份").BindPermissionKey("system.menu.backup").Build(), "system.menu.backup", authzService.RequireAction, menuHandler.CreateBackup)
-			backupReg.GETProtected("", backupReg.Meta("获取菜单备份列表").BindPermissionKey("system.menu.backup").Build(), "system.menu.backup", authzService.RequireAction, menuHandler.ListBackups)
-			backupReg.DELETEProtected("/:id", backupReg.Meta("删除菜单备份").BindPermissionKey("system.menu.backup").Build(), "system.menu.backup", authzService.RequireAction, menuHandler.DeleteBackup)
 			backupReg.POSTProtected("/:id/restore", backupReg.Meta("恢复菜单备份").BindPermissionKey("system.menu.backup").Build(), "system.menu.backup", authzService.RequireAction, menuHandler.RestoreBackup)
 		}
 	}
