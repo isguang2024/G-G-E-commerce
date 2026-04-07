@@ -43,7 +43,7 @@ func (m *AuthModule) RegisterRoutes(rg *gin.RouterGroup) {
 	auth := rg.Group("/auth")
 	authReg := apiregistry.NewRegistrar(auth, "auth")
 	{
-		authReg.POST("/login", authReg.Meta("用户登录").Build(), authHandler.Login)
+		// /auth/login 已迁移到 OpenAPI-first（router.go 中由 ogen handler 接管）。
 		authReg.POST("/register", authReg.Meta("用户注册").Build(), authHandler.Register)
 		authReg.POST("/refresh", authReg.Meta("刷新访问令牌").Build(), authHandler.RefreshToken)
 	}

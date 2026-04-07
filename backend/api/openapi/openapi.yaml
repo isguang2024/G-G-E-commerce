@@ -10,6 +10,63 @@ servers:
   - url: /api/v1
 
 paths:
+  /auth/login:
+    post:
+      operationId: login
+      summary: 用户登录
+      tags: [auth]
+      x-tenant-scoped: false
+      x-app-scope: none
+      x-access-mode: public
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/me:
+    get:
+      operationId: getAuthMe
+      summary: 获取当前登录账户信息
+      tags: [auth]
+      x-permission-key: auth.me
+      x-tenant-scoped: false
+      x-app-scope: none
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthMe'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
   /workspaces/my:
     get:
       operationId: listMyWorkspaces
@@ -221,6 +278,47 @@ components:
             items:
               type: string
               format: uuid
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          minLength: 6
+    LoginResponse:
+      type: object
+      required: [access_token, refresh_token, expires_in]
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+        user:
+          type: object
+          additionalProperties: true
+          nullable: true
+    AuthMe:
+      type: object
+      required: [id, username]
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        nickname:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        avatar:
+          type: string
+          nullable: true
     WorkspaceSwitchRequest:
       type: object
       required: [workspace_id]

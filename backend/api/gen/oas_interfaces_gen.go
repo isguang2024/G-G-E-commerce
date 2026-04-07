@@ -5,6 +5,10 @@ type ExplainPermissionsRes interface {
 	explainPermissionsRes()
 }
 
+type GetAuthMeRes interface {
+	getAuthMeRes()
+}
+
 type GetCurrentWorkspaceRes interface {
 	getCurrentWorkspaceRes()
 }
@@ -15,6 +19,10 @@ type GetWorkspaceRes interface {
 
 type ListMyWorkspacesRes interface {
 	listMyWorkspacesRes()
+}
+
+type LoginRes interface {
+	loginRes()
 }
 
 type SwitchWorkspaceRes interface {

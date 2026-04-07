@@ -4,8 +4,70 @@ package gen
 
 import (
 	"github.com/go-faster/errors"
+	"github.com/go-faster/jx"
 	"github.com/google/uuid"
 )
+
+// Ref: #/components/schemas/AuthMe
+type AuthMe struct {
+	ID       uuid.UUID    `json:"id"`
+	Username string       `json:"username"`
+	Nickname OptNilString `json:"nickname"`
+	Email    OptNilString `json:"email"`
+	Avatar   OptNilString `json:"avatar"`
+}
+
+// GetID returns the value of ID.
+func (s *AuthMe) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetUsername returns the value of Username.
+func (s *AuthMe) GetUsername() string {
+	return s.Username
+}
+
+// GetNickname returns the value of Nickname.
+func (s *AuthMe) GetNickname() OptNilString {
+	return s.Nickname
+}
+
+// GetEmail returns the value of Email.
+func (s *AuthMe) GetEmail() OptNilString {
+	return s.Email
+}
+
+// GetAvatar returns the value of Avatar.
+func (s *AuthMe) GetAvatar() OptNilString {
+	return s.Avatar
+}
+
+// SetID sets the value of ID.
+func (s *AuthMe) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetUsername sets the value of Username.
+func (s *AuthMe) SetUsername(val string) {
+	s.Username = val
+}
+
+// SetNickname sets the value of Nickname.
+func (s *AuthMe) SetNickname(val OptNilString) {
+	s.Nickname = val
+}
+
+// SetEmail sets the value of Email.
+func (s *AuthMe) SetEmail(val OptNilString) {
+	s.Email = val
+}
+
+// SetAvatar sets the value of Avatar.
+func (s *AuthMe) SetAvatar(val OptNilString) {
+	s.Avatar = val
+}
+
+func (*AuthMe) getAuthMeRes() {}
 
 // Ref: #/components/schemas/Error
 type Error struct {
@@ -34,6 +96,7 @@ func (s *Error) SetMessage(val string) {
 }
 
 func (*Error) explainPermissionsRes()  {}
+func (*Error) getAuthMeRes()           {}
 func (*Error) getCurrentWorkspaceRes() {}
 func (*Error) listMyWorkspacesRes()    {}
 
@@ -44,6 +107,227 @@ func (*GetWorkspaceForbidden) getWorkspaceRes() {}
 type GetWorkspaceNotFound Error
 
 func (*GetWorkspaceNotFound) getWorkspaceRes() {}
+
+type LoginBadRequest Error
+
+func (*LoginBadRequest) loginRes() {}
+
+// Ref: #/components/schemas/LoginRequest
+type LoginRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+// GetUsername returns the value of Username.
+func (s *LoginRequest) GetUsername() string {
+	return s.Username
+}
+
+// GetPassword returns the value of Password.
+func (s *LoginRequest) GetPassword() string {
+	return s.Password
+}
+
+// SetUsername sets the value of Username.
+func (s *LoginRequest) SetUsername(val string) {
+	s.Username = val
+}
+
+// SetPassword sets the value of Password.
+func (s *LoginRequest) SetPassword(val string) {
+	s.Password = val
+}
+
+// Ref: #/components/schemas/LoginResponse
+type LoginResponse struct {
+	AccessToken  string                  `json:"access_token"`
+	RefreshToken string                  `json:"refresh_token"`
+	ExpiresIn    int                     `json:"expires_in"`
+	User         OptNilLoginResponseUser `json:"user"`
+}
+
+// GetAccessToken returns the value of AccessToken.
+func (s *LoginResponse) GetAccessToken() string {
+	return s.AccessToken
+}
+
+// GetRefreshToken returns the value of RefreshToken.
+func (s *LoginResponse) GetRefreshToken() string {
+	return s.RefreshToken
+}
+
+// GetExpiresIn returns the value of ExpiresIn.
+func (s *LoginResponse) GetExpiresIn() int {
+	return s.ExpiresIn
+}
+
+// GetUser returns the value of User.
+func (s *LoginResponse) GetUser() OptNilLoginResponseUser {
+	return s.User
+}
+
+// SetAccessToken sets the value of AccessToken.
+func (s *LoginResponse) SetAccessToken(val string) {
+	s.AccessToken = val
+}
+
+// SetRefreshToken sets the value of RefreshToken.
+func (s *LoginResponse) SetRefreshToken(val string) {
+	s.RefreshToken = val
+}
+
+// SetExpiresIn sets the value of ExpiresIn.
+func (s *LoginResponse) SetExpiresIn(val int) {
+	s.ExpiresIn = val
+}
+
+// SetUser sets the value of User.
+func (s *LoginResponse) SetUser(val OptNilLoginResponseUser) {
+	s.User = val
+}
+
+func (*LoginResponse) loginRes() {}
+
+type LoginResponseUser map[string]jx.Raw
+
+func (s *LoginResponseUser) init() LoginResponseUser {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
+
+type LoginUnauthorized Error
+
+func (*LoginUnauthorized) loginRes() {}
+
+// NewOptNilLoginResponseUser returns new OptNilLoginResponseUser with value set to v.
+func NewOptNilLoginResponseUser(v LoginResponseUser) OptNilLoginResponseUser {
+	return OptNilLoginResponseUser{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilLoginResponseUser is optional nullable LoginResponseUser.
+type OptNilLoginResponseUser struct {
+	Value LoginResponseUser
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilLoginResponseUser was set.
+func (o OptNilLoginResponseUser) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilLoginResponseUser) Reset() {
+	var v LoginResponseUser
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilLoginResponseUser) SetTo(v LoginResponseUser) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilLoginResponseUser) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilLoginResponseUser) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v LoginResponseUser
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilLoginResponseUser) Get() (v LoginResponseUser, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilLoginResponseUser) Or(d LoginResponseUser) LoginResponseUser {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilString returns new OptNilString with value set to v.
+func NewOptNilString(v string) OptNilString {
+	return OptNilString{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilString is optional nullable string.
+type OptNilString struct {
+	Value string
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilString was set.
+func (o OptNilString) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilString) Reset() {
+	var v string
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilString) SetTo(v string) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilString) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilString) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v string
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilString) Get() (v string, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilString) Or(d string) string {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
 
 // NewOptNilUUID returns new OptNilUUID with value set to v.
 func NewOptNilUUID(v uuid.UUID) OptNilUUID {

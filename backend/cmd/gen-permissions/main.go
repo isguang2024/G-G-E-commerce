@@ -74,7 +74,11 @@ func main() {
 			if _, ok := httpMethods[method]; !ok {
 				continue
 			}
-			if op.PermissionKey == "" {
+			accessModeRaw := op.AccessMode
+			if accessModeRaw == "" {
+				accessModeRaw = "permission"
+			}
+			if op.PermissionKey == "" && accessModeRaw != "public" {
 				fail(fmt.Sprintf("operation %s %s is missing x-permission-key", method, path))
 			}
 			tenantScoped := true
@@ -85,10 +89,7 @@ func main() {
 			if appScope == "" {
 				appScope = "optional"
 			}
-			accessMode := op.AccessMode
-			if accessMode == "" {
-				accessMode = "permission"
-			}
+			accessMode := accessModeRaw
 			entries = append(entries, seedEntry{
 				OperationID:   op.OperationID,
 				Method:        method,

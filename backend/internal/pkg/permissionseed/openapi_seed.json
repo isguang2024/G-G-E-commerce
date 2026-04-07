@@ -2,6 +2,26 @@
   "source": "api\\openapi\\openapi.yaml",
   "operations": [
     {
+      "operation_id": "login",
+      "method": "post",
+      "path": "/auth/login",
+      "permission_key": "",
+      "summary": "用户登录",
+      "tenant_scoped": false,
+      "app_scope": "none",
+      "access_mode": "public"
+    },
+    {
+      "operation_id": "getAuthMe",
+      "method": "get",
+      "path": "/auth/me",
+      "permission_key": "auth.me",
+      "summary": "获取当前登录账户信息",
+      "tenant_scoped": false,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
       "operation_id": "explainPermissions",
       "method": "get",
       "path": "/permissions/explain",
