@@ -99,6 +99,8 @@ func (*Error) explainPermissionsRes()  {}
 func (*Error) getAuthMeRes()           {}
 func (*Error) getCurrentWorkspaceRes() {}
 func (*Error) listMyWorkspacesRes()    {}
+func (*Error) refreshTokenRes()        {}
+func (*Error) registerRes()            {}
 
 type GetWorkspaceForbidden Error
 
@@ -186,7 +188,8 @@ func (s *LoginResponse) SetUser(val OptNilLoginResponseUser) {
 	s.User = val
 }
 
-func (*LoginResponse) loginRes() {}
+func (*LoginResponse) loginRes()    {}
+func (*LoginResponse) registerRes() {}
 
 type LoginResponseUser map[string]jx.Raw
 
@@ -484,6 +487,52 @@ func (o OptPermissionExplanationRoleSources) Or(d PermissionExplanationRoleSourc
 	return d
 }
 
+// NewOptString returns new OptString with value set to v.
+func NewOptString(v string) OptString {
+	return OptString{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptString is optional string.
+type OptString struct {
+	Value string
+	Set   bool
+}
+
+// IsSet returns true if OptString was set.
+func (o OptString) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptString) Reset() {
+	var v string
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptString) SetTo(v string) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptString) Get() (v string, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptString) Or(d string) string {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // Ref: #/components/schemas/PermissionExplanation
 type PermissionExplanation struct {
 	AccountID             uuid.UUID                                     `json:"account_id"`
@@ -567,6 +616,69 @@ func (s *PermissionExplanationRoleSources) init() PermissionExplanationRoleSourc
 	return m
 }
 
+// Ref: #/components/schemas/RefreshTokenRequest
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+// GetRefreshToken returns the value of RefreshToken.
+func (s *RefreshTokenRequest) GetRefreshToken() string {
+	return s.RefreshToken
+}
+
+// SetRefreshToken sets the value of RefreshToken.
+func (s *RefreshTokenRequest) SetRefreshToken(val string) {
+	s.RefreshToken = val
+}
+
+// Ref: #/components/schemas/RegisterRequest
+type RegisterRequest struct {
+	Username string    `json:"username"`
+	Password string    `json:"password"`
+	Email    OptString `json:"email"`
+	Nickname OptString `json:"nickname"`
+}
+
+// GetUsername returns the value of Username.
+func (s *RegisterRequest) GetUsername() string {
+	return s.Username
+}
+
+// GetPassword returns the value of Password.
+func (s *RegisterRequest) GetPassword() string {
+	return s.Password
+}
+
+// GetEmail returns the value of Email.
+func (s *RegisterRequest) GetEmail() OptString {
+	return s.Email
+}
+
+// GetNickname returns the value of Nickname.
+func (s *RegisterRequest) GetNickname() OptString {
+	return s.Nickname
+}
+
+// SetUsername sets the value of Username.
+func (s *RegisterRequest) SetUsername(val string) {
+	s.Username = val
+}
+
+// SetPassword sets the value of Password.
+func (s *RegisterRequest) SetPassword(val string) {
+	s.Password = val
+}
+
+// SetEmail sets the value of Email.
+func (s *RegisterRequest) SetEmail(val OptString) {
+	s.Email = val
+}
+
+// SetNickname sets the value of Nickname.
+func (s *RegisterRequest) SetNickname(val OptString) {
+	s.Nickname = val
+}
+
 type SwitchWorkspaceBadRequest Error
 
 func (*SwitchWorkspaceBadRequest) switchWorkspaceRes() {}
@@ -574,6 +686,45 @@ func (*SwitchWorkspaceBadRequest) switchWorkspaceRes() {}
 type SwitchWorkspaceForbidden Error
 
 func (*SwitchWorkspaceForbidden) switchWorkspaceRes() {}
+
+// Ref: #/components/schemas/TokenResponse
+type TokenResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    int    `json:"expires_in"`
+}
+
+// GetAccessToken returns the value of AccessToken.
+func (s *TokenResponse) GetAccessToken() string {
+	return s.AccessToken
+}
+
+// GetRefreshToken returns the value of RefreshToken.
+func (s *TokenResponse) GetRefreshToken() string {
+	return s.RefreshToken
+}
+
+// GetExpiresIn returns the value of ExpiresIn.
+func (s *TokenResponse) GetExpiresIn() int {
+	return s.ExpiresIn
+}
+
+// SetAccessToken sets the value of AccessToken.
+func (s *TokenResponse) SetAccessToken(val string) {
+	s.AccessToken = val
+}
+
+// SetRefreshToken sets the value of RefreshToken.
+func (s *TokenResponse) SetRefreshToken(val string) {
+	s.RefreshToken = val
+}
+
+// SetExpiresIn sets the value of ExpiresIn.
+func (s *TokenResponse) SetExpiresIn(val int) {
+	s.ExpiresIn = val
+}
+
+func (*TokenResponse) refreshTokenRes() {}
 
 // Ref: #/components/schemas/WorkspaceList
 type WorkspaceList struct {

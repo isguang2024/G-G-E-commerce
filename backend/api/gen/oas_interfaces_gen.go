@@ -25,6 +25,14 @@ type LoginRes interface {
 	loginRes()
 }
 
+type RefreshTokenRes interface {
+	refreshTokenRes()
+}
+
+type RegisterRes interface {
+	registerRes()
+}
+
 type SwitchWorkspaceRes interface {
 	switchWorkspaceRes()
 }

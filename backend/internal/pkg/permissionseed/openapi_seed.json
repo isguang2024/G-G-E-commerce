@@ -22,6 +22,26 @@
       "access_mode": "permission"
     },
     {
+      "operation_id": "refreshToken",
+      "method": "post",
+      "path": "/auth/refresh",
+      "permission_key": "",
+      "summary": "刷新访问令牌",
+      "tenant_scoped": false,
+      "app_scope": "none",
+      "access_mode": "public"
+    },
+    {
+      "operation_id": "register",
+      "method": "post",
+      "path": "/auth/register",
+      "permission_key": "",
+      "summary": "用户注册",
+      "tenant_scoped": false,
+      "app_scope": "none",
+      "access_mode": "public"
+    },
+    {
       "operation_id": "explainPermissions",
       "method": "get",
       "path": "/permissions/explain",

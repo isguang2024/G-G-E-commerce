@@ -133,6 +133,8 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		// 与 legacy auth.RegisterRoutes 中的 POST /auth/login 路径冲突，
 		// 故 authModule 在迁移完成前不再挂载 login。
 		v1.POST("/auth/login", publicBridge)
+		v1.POST("/auth/register", publicBridge)
+		v1.POST("/auth/refresh", publicBridge)
 
 		authModule.RegisterRoutes(v1)
 		pageModule.RegisterPublicRoutes(v1)

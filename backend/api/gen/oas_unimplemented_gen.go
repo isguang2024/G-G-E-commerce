@@ -67,6 +67,24 @@ func (UnimplementedHandler) Login(ctx context.Context, req *LoginRequest) (r Log
 	return r, ht.ErrNotImplemented
 }
 
+// RefreshToken implements refreshToken operation.
+//
+// 刷新访问令牌.
+//
+// POST /auth/refresh
+func (UnimplementedHandler) RefreshToken(ctx context.Context, req *RefreshTokenRequest) (r RefreshTokenRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// Register implements register operation.
+//
+// 用户注册.
+//
+// POST /auth/register
+func (UnimplementedHandler) Register(ctx context.Context, req *RegisterRequest) (r RegisterRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SwitchWorkspace implements switchWorkspace operation.
 //
 // 切换当前授权工作空间.

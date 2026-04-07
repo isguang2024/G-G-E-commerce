@@ -44,6 +44,18 @@ type Handler interface {
 	//
 	// POST /auth/login
 	Login(ctx context.Context, req *LoginRequest) (LoginRes, error)
+	// RefreshToken implements refreshToken operation.
+	//
+	// 刷新访问令牌.
+	//
+	// POST /auth/refresh
+	RefreshToken(ctx context.Context, req *RefreshTokenRequest) (RefreshTokenRes, error)
+	// Register implements register operation.
+	//
+	// 用户注册.
+	//
+	// POST /auth/register
+	Register(ctx context.Context, req *RegisterRequest) (RegisterRes, error)
 	// SwitchWorkspace implements switchWorkspace operation.
 	//
 	// 切换当前授权工作空间.
