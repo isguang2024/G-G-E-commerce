@@ -48,7 +48,8 @@
       "Bash(npx --yes openapi-typescript@7 backend/api/openapi/openapi.yaml -o frontend/src/api/v5/schema.d.ts)",
       "Bash(git -c core.autocrlf=false commit -m \"feat\\(v5\\): phase 5 — frontend openapi-fetch client + first slice\")",
       "Read(//c/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/**)",
-      "Bash(pnpm install:*)"
+      "Bash(pnpm install:*)",
+      "Bash(git -c core.autocrlf=false commit -m \"feat\\(v5\\): phase 5 slice 2 — migrate remaining workspace endpoints to v5 client\")"
     ]
   }
 }
