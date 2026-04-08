@@ -475,19 +475,11 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, nextTick, ref, watch } from 'vue'
-  import { Search } from '@element-plus/icons-vue'
-  import { ElMessage } from 'element-plus'
-  import type { CascaderOption, CascaderProps } from 'element-plus'
+  // 视图脚本：所有 reactive state、computed、watch、handler 集中在 useUserPermissionTestDrawer。
+  // 这里只做：1) 引入子组件；2) 调用 composable；3) 把返回值拉到 setup 作用域供模板访问。
   import PermissionSummaryTags from '@/components/business/permission/PermissionSummaryTags.vue'
   import WorkspacePagination from '@/components/business/tables/WorkspacePagination.vue'
-  import {
-    fetchGetUserPermissionDiagnosis,
-    fetchGetUserPermissionMenus,
-    fetchGetUserCollaborationWorkspaces,
-    fetchRefreshUserPermissionSnapshot
-  } from '@/api/system-manage'
-  import { formatMenuTitle } from '@/utils/router'
+  import { useUserPermissionTestDrawer } from './use-user-permission-test-drawer'
 
   interface Props {
     modelValue: boolean
@@ -499,441 +491,42 @@
     (e: 'update:modelValue', value: boolean): void
   }>()
 
-  const visible = computed({
-    get: () => props.modelValue,
-    set: (value) => emit('update:modelValue', value)
-  })
-
-  const loading = ref(false)
-  const testing = ref(false)
-  const refreshing = ref(false)
-  const contextType = ref<'personal' | 'collaboration'>('personal')
-  const activeTab = ref<'permission' | 'menus' | 'roles'>('permission')
-  const selectedCollaborationWorkspaceId = ref('')
-  const permissionKey = ref('')
-  const diagnosisData = ref<Api.SystemManage.UserPermissionDiagnosisResponse>()
-  const collaborationWorkspaceOptions = ref<Api.SystemManage.CollaborationWorkspaceListItem[]>([])
-  const permissionMenus = ref<Api.SystemManage.UserPermissionMenuNode[]>([])
-  const menuKeyword = ref('')
-  const showHiddenMenus = ref(true)
-  const showIframeMenus = ref(true)
-  const showEnabledMenus = ref(true)
-  const showMenuPath = ref(false)
-  const selectedMenuPath = ref<string[]>([])
-  const rolePagination = ref({
-    current: 1,
-    size: 10
-  })
-  const menuPanelRef = ref<any>()
-
-  interface MenuOption extends CascaderOption {
-    path?: string
-    hidden?: boolean
-    isIframe?: boolean
-    isEnable?: boolean
-    totalLeafCount?: number
-    visibleLeafCount?: number
-  }
-
-  const menuCascaderProps: CascaderProps = {
-    emitPath: true,
-    checkStrictly: true,
-    expandTrigger: 'click',
-    showPrefix: true
-  }
-
-  const userTitle = computed(
-    () => props.userData?.nickName || props.userData?.userName || props.userData?.id || ''
-  )
-
-  const selectedCollaborationWorkspaceName = computed(
-    () =>
-      collaborationWorkspaceOptions.value.find(
-        (item) => item.id === selectedCollaborationWorkspaceId.value
-      )?.name || ''
-  )
-
-  const summaryItems = computed(() => {
-    const items: Array<{
-      label: string
-      value: string | number
-      type?: 'success' | 'warning' | 'info' | 'primary' | 'danger'
-    }> = []
-    const snapshot = diagnosisData.value?.snapshot
-    if (!snapshot) {
-      return [
-        {
-          label: '快照',
-          value: '未加载',
-          type: 'info' as const
-        }
-      ]
-    }
-    items.push(
-      {
-        label: '功能包',
-        value:
-          contextType.value === 'personal'
-            ? (snapshot.expandedPackageCount ?? 0)
-            : (snapshot.expandedPackageCount ?? 0)
-      },
-      {
-        label: contextType.value === 'personal' ? '个人空间权限' : '协作空间生效权限',
-        value:
-          contextType.value === 'personal'
-            ? (snapshot.actionCount ?? 0)
-            : (snapshot.effectiveActionCount ?? 0),
-        type: 'success'
-      },
-      {
-        label: '菜单数',
-        value: countVisibleMenuLeaves(filteredMenuOptions.value),
-        type: 'primary'
-      }
-    )
-    if (contextType.value === 'personal') {
-      items.push({
-        label: '已禁用',
-        value: snapshot.disabledActionCount ?? 0,
-        type: 'warning'
-      })
-    } else {
-      items.push({
-        label: '协作空间屏蔽',
-        value: snapshot.blockedActionCount ?? 0,
-        type: 'warning'
-      })
-    }
-    items.push({
-      label: '刷新时间',
-      value: snapshot.refreshedAt || '-',
-      type: 'info'
-    })
-    return items
-  })
-  const roleRows = computed(() => diagnosisData.value?.roles || [])
-  const pagedRoleRows = computed(() => {
-    const start = (rolePagination.value.current - 1) * rolePagination.value.size
-    return roleRows.value.slice(start, start + rolePagination.value.size)
-  })
-
-  watch(
-    () => props.modelValue,
-    (open) => {
-      if (!open) return
-      void initialize()
-    }
-  )
-
-  watch(contextType, async (value) => {
-    if (!visible.value) return
-    if (value === 'personal') {
-      selectedCollaborationWorkspaceId.value = ''
-      if (activeTab.value === 'roles') activeTab.value = 'permission'
-    }
-    await loadDiagnosis()
-  })
-
-  watch(selectedCollaborationWorkspaceId, async () => {
-    if (!visible.value || contextType.value !== 'collaboration') return
-    await loadDiagnosis()
-  })
-
-  async function initialize() {
-    activeTab.value = 'permission'
-    await loadCollaborationWorkspaces()
-    await loadDiagnosis()
-  }
-
-  async function loadCollaborationWorkspaces() {
-    const userId = props.userData?.id
-    if (!userId) {
-      collaborationWorkspaceOptions.value = []
-      return
-    }
-    try {
-      collaborationWorkspaceOptions.value = await fetchGetUserCollaborationWorkspaces(userId)
-      if (
-        contextType.value === 'collaboration' &&
-        selectedCollaborationWorkspaceId.value &&
-        !collaborationWorkspaceOptions.value.some(
-          (item) => item.id === selectedCollaborationWorkspaceId.value
-        )
-      ) {
-        selectedCollaborationWorkspaceId.value = ''
-      }
-      if (
-        contextType.value === 'collaboration' &&
-        !selectedCollaborationWorkspaceId.value &&
-        collaborationWorkspaceOptions.value.length === 1
-      ) {
-        selectedCollaborationWorkspaceId.value = collaborationWorkspaceOptions.value[0].id
-      }
-    } catch {
-      collaborationWorkspaceOptions.value = []
-    }
-  }
-
-  async function loadDiagnosis() {
-    const userId = props.userData?.id
-    if (!userId) return
-    if (contextType.value === 'collaboration' && !selectedCollaborationWorkspaceId.value) {
-      diagnosisData.value = undefined
-      permissionMenus.value = []
-      return
-    }
-    loading.value = true
-    try {
-      const collaborationWorkspaceId =
-        contextType.value === 'collaboration' ? selectedCollaborationWorkspaceId.value : undefined
-      const [diagnosis, menus] = await Promise.all([
-        fetchGetUserPermissionDiagnosis(userId, {
-          collaborationWorkspaceId,
-          permissionKey: permissionKey.value || undefined
-        }),
-        fetchGetUserPermissionMenus(userId, collaborationWorkspaceId)
-      ])
-      diagnosisData.value = diagnosis
-      permissionMenus.value = menus
-      rolePagination.value.current = 1
-      await nextTick()
-      ensureExpandedMenus(menuPanelRef.value, selectedMenuPath.value)
-    } catch (error: any) {
-      diagnosisData.value = undefined
-      permissionMenus.value = []
-      ElMessage.error(error?.message || '加载权限诊断失败')
-    } finally {
-      loading.value = false
-    }
-  }
-
-  async function handleTest() {
-    if (!permissionKey.value.trim()) {
-      ElMessage.warning('请输入权限键')
-      return
-    }
-    if (contextType.value === 'collaboration' && !selectedCollaborationWorkspaceId.value) {
-      ElMessage.warning('请选择协作空间')
-      return
-    }
-    testing.value = true
-    try {
-      const collaborationWorkspaceId =
-        contextType.value === 'collaboration' ? selectedCollaborationWorkspaceId.value : undefined
-      const [diagnosis, menus] = await Promise.all([
-        fetchGetUserPermissionDiagnosis(props.userData?.id || '', {
-          collaborationWorkspaceId,
-          permissionKey: permissionKey.value.trim()
-        }),
-        fetchGetUserPermissionMenus(props.userData?.id || '', collaborationWorkspaceId)
-      ])
-      diagnosisData.value = diagnosis
-      permissionMenus.value = menus
-      rolePagination.value.current = 1
-    } catch (error: any) {
-      ElMessage.error(error?.message || '权限测试失败')
-    } finally {
-      testing.value = false
-    }
-  }
-
-  async function handleRefresh() {
-    const userId = props.userData?.id
-    if (!userId) return
-    if (contextType.value === 'collaboration' && !selectedCollaborationWorkspaceId.value) {
-      ElMessage.warning('请选择协作空间')
-      return
-    }
-    refreshing.value = true
-    try {
-      const collaborationWorkspaceId =
-        contextType.value === 'collaboration' ? selectedCollaborationWorkspaceId.value : undefined
-      const [diagnosis, menus] = await Promise.all([
-        fetchRefreshUserPermissionSnapshot(userId, collaborationWorkspaceId),
-        fetchGetUserPermissionMenus(userId, collaborationWorkspaceId)
-      ])
-      diagnosisData.value = diagnosis
-      permissionMenus.value = menus
-      rolePagination.value.current = 1
-      ElMessage.success('权限快照已刷新')
-    } catch (error: any) {
-      ElMessage.error(error?.message || '刷新权限快照失败')
-    } finally {
-      refreshing.value = false
-    }
-  }
-
-  function formatPermissionStatus(status?: string) {
-    if (!status) return '-'
-    return status === 'normal' || status === 'active' ? '正常' : '停用'
-  }
-
-  function formatMemberStatus(status?: string) {
-    switch (status) {
-      case 'active':
-        return '有效成员'
-      case 'inactive':
-        return '成员停用'
-      case 'missing':
-        return '未加入协作空间'
-      default:
-        return '-'
-    }
-  }
-
-  function formatRoleCode(roleCode?: string) {
-    switch (roleCode) {
-      case 'collaboration_workspace_admin':
-        return '协作空间管理员'
-      case 'collaboration_workspace_member':
-        return '协作空间成员'
-      default:
-        return roleCode || '-'
-    }
-  }
-
-  function getMemberStatusTagType(status?: string) {
-    switch (status) {
-      case 'active':
-        return 'success'
-      case 'inactive':
-        return 'danger'
-      case 'missing':
-        return 'warning'
-      default:
-        return 'info'
-    }
-  }
-
-  function formatBoundaryState(state?: string) {
-    switch (state) {
-      case '命中':
-        return '命中'
-      case '拦截':
-        return '拦截'
-      case '未配置':
-        return '未配置'
-      case '未命中':
-        return '未命中'
-      case '超级管理员直通':
-        return '超级管理员直通'
-      default:
-        return '-'
-    }
-  }
-
-  function getBoundaryStateTagType(state?: string) {
-    switch (state) {
-      case '命中':
-        return 'success'
-      case '拦截':
-        return 'danger'
-      case '未配置':
-        return 'warning'
-      case '超级管理员直通':
-        return 'warning'
-      default:
-        return 'info'
-    }
-  }
-
-  const menuOptions = computed<MenuOption[]>(() =>
-    normalizePermissionMenuOptions(permissionMenus.value)
-  )
-
-  const filteredMenuOptions = computed(() => {
-    const keyword = menuKeyword.value.trim().toLowerCase()
-    return filterNestedOptions(menuOptions.value, (node) => {
-      if (!node.leaf) return !keyword
-      if (!showHiddenMenus.value && node.hidden) return false
-      if (!showIframeMenus.value && node.isIframe) return false
-      if (!showEnabledMenus.value && node.isEnable !== false) return false
-      if (keyword && !`${node.label || ''} ${node.path || ''}`.toLowerCase().includes(keyword))
-        return false
-      return true
-    })
-  })
-
-  watch(filteredMenuOptions, async () => {
-    await nextTick()
-    ensureExpandedMenus(menuPanelRef.value, selectedMenuPath.value)
-  })
-
-  function normalizePermissionMenuOptions(
-    items: Api.SystemManage.UserPermissionMenuNode[]
-  ): MenuOption[] {
-    return items.map((item) => {
-      const children = normalizePermissionMenuOptions(item.children || [])
-      return {
-        value: item.id,
-        label: formatMenuTitle(item.title || item.name || ''),
-        path: item.path || '',
-        hidden: Boolean(item.hidden),
-        isIframe: Boolean(item.path && /^https?:\/\//.test(item.path)),
-        isEnable: true,
-        leaf: !(item.children || []).length,
-        totalLeafCount: countPermissionMenuLeaves(item),
-        visibleLeafCount: countVisibleMenuLeaves(children),
-        children
-      }
-    })
-  }
-
-  function countPermissionMenuLeaves(node: Api.SystemManage.UserPermissionMenuNode): number {
-    if (!(node.children || []).length) return 1
-    return (node.children || []).reduce((sum, child) => sum + countPermissionMenuLeaves(child), 0)
-  }
-
-  function countVisibleMenuLeaves(items: MenuOption[]): number {
-    return items.reduce((sum, item) => {
-      if (!(item.children || []).length) return sum + 1
-      return sum + countVisibleMenuLeaves((item.children || []) as MenuOption[])
-    }, 0)
-  }
-
-  function filterNestedOptions<T extends CascaderOption>(
-    items: T[],
-    predicate: (node: T) => boolean
-  ): T[] {
-    return items
-      .map((item) => {
-        const children = filterNestedOptions(((item.children || []) as T[]) || [], predicate)
-        const passed = predicate(item)
-        if (!passed && !children.length) return null
-        return {
-          ...item,
-          children
-        } as T
-      })
-      .filter((item): item is T => Boolean(item))
-  }
-
-  function ensureExpandedMenus(panel: any, selectedValues: string[]) {
-    const rootMenus = panel?.menus?.[0]
-    if (!panel || !rootMenus?.length) return
-    const firstValue = selectedValues?.[selectedValues.length - 1]
-    let rootNode = rootMenus[0]
-    let childNode = rootNode?.children?.[0]
-    if (firstValue) {
-      const matchedNode = panel
-        .getFlattedNodes?.(false)
-        ?.find((node: any) => `${node?.value}` === `${firstValue}`)
-      const pathNodes = matchedNode?.pathNodes || []
-      if (pathNodes[0]) rootNode = pathNodes[0]
-      if (pathNodes[1]) childNode = pathNodes[1]
-    }
-    const nextMenus = [rootMenus]
-    if (rootNode?.children?.length) nextMenus.push(rootNode.children)
-    if (childNode?.children?.length) nextMenus.push(childNode.children)
-    panel.menus = nextMenus
-  }
-
-  watch(
-    () => rolePagination.value.size,
-    () => {
-      rolePagination.value.current = 1
-    }
-  )
+  const {
+    Search,
+    visible,
+    loading,
+    testing,
+    refreshing,
+    contextType,
+    activeTab,
+    selectedCollaborationWorkspaceId,
+    permissionKey,
+    diagnosisData,
+    collaborationWorkspaceOptions,
+    menuKeyword,
+    showHiddenMenus,
+    showIframeMenus,
+    showEnabledMenus,
+    showMenuPath,
+    selectedMenuPath,
+    rolePagination,
+    menuPanelRef,
+    menuCascaderProps,
+    userTitle,
+    selectedCollaborationWorkspaceName,
+    filteredMenuOptions,
+    summaryItems,
+    roleRows,
+    pagedRoleRows,
+    handleTest,
+    handleRefresh,
+    formatPermissionStatus,
+    formatMemberStatus,
+    formatRoleCode,
+    getMemberStatusTagType,
+    formatBoundaryState,
+    getBoundaryStateTagType
+  } = useUserPermissionTestDrawer(props, emit)
 </script>
 
 <style scoped lang="scss">

@@ -165,7 +165,7 @@ export function useTableColumns<T = any>(
       })
       columnChecks.value = newChecks
     },
-    { deep: true }
+    { deep: false }
   )
 
   // 当前显示列（基于 columnChecks 的 checked 或 visible）

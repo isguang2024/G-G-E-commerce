@@ -263,3 +263,25 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 - `system/handler.go`：检查是否仍被 system/module.go 调用；若仅剩 view-pages/fast-enter（已 ogen 化），可继续 facade 化后删除。
 - `apiendpoint`/`media`：这两个域尚未纳入 openapi.yaml，待 spec 扩展后再迁移。
 - 推进集成测试覆盖：ogen bridge 路径的冒烟测试。
+
+### 2026-04-08 Phase 7 service 文件拆分（Phase 7）
+
+**本次改动**
+- `page/service.go`（2072→1407 行）拆出 `sync_service.go`、`runtime_service.go`、`breadcrumb_service.go`；`menu/service.go`（1821→1162 行）拆出 `backup_service.go`、`tree_service.go`；`featurepackage/service.go`（1669→859 行）拆出 `assign_service.go`、`audit_service.go`、`version_service.go`。
+- 子代理生成的拆分文件未删除 service.go 原函数，导致重复声明；手动清除全部重复方法和孤立 import 后 `go build ./...` 再次绿灯。
+- 构建绿，13/13 smoke test 通过，commit `c2fb57f`。
+
+**下次方向**
+- Phase 9 集成测试：对 role CRUD、navigation、cw boundary 等关键 ogen bridge 路径补充 `testcontainers-go` 驱动的真实 DB 集成测试。
+- page/service.go 仍 1407 行，可视需求继续细拆（CRUD 与 sync 逻辑）；menu/service.go 1162 行同理。
+
+### 2026-04-08 Phase 9 集成测试 + JSONB bug 修复（Phase 9）
+
+**本次改动**
+- 新增 `backend/internal/api/handlers/integration_test.go`（`//go:build integration`，10 个测试）：基于 live postgres，覆盖 login 正常/错误凭证/未知用户、auth/me 有/无 token、roles 有/无 token、navigation、feature-packages、collaboration-workspaces；全部 10/10 通过。
+- 顺带修复 JSONB `?` 算符与 GORM 占位符冲突 bug：`app_keys ? ?` 在 GORM 中被错误替换为 `app_keys 'param'? ?`，导致 feature-packages list 接口返回 500；改为 `jsonb_exists(app_keys, ?)` 修复 user/repository.go、featurepackage/service.go、assign_service.go 共 4 处。
+- 构建绿，13 smoke + 10 integration 全通过，commit `d7cf5e4`。
+
+**下次方向**
+- Phase 10 前端切换：将 frontend 的 API 调用从手写 axios 切换到 ogen 生成的 client（`openapi-typescript` + `openapi-fetch`）。
+- 扩展集成测试：补充 role CRUD（POST/PUT/DELETE）、cw boundary 写操作、permission explain 的端到端验证。

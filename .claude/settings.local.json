@@ -86,7 +86,20 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/)",
       "Bash(pkill -f \"vite\")",
       "Bash(ls internal/api/handlers/cw*.go)",
-      "Bash(python3 -c ':*)"
+      "Bash(python3 -c ':*)",
+      "Bash(pnpm vue-tsc:*)",
+      "Bash(tee /tmp/tsc.log)",
+      "Bash(echo \"EXIT=$?\")",
+      "Bash(go test:*)",
+      "Bash(ls c:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/page/*service* c:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/menu/*service* c:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/featurepackage/*service*)",
+      "Bash(find /c/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src -type f \\\\\\( -name \"*.vue\" -o -name \"*.ts\" \\\\\\) -exec wc -l {} +)",
+      "Bash(python3 -)",
+      "Bash(ls c:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/api/handlers/*test*)",
+      "Bash(ls c:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/featurepackage/*.go)",
+      "Bash(sed -i 's/feature_packages\\\\.app_keys ? ?/feature_packages.app_keys ?? ?/g' c:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/featurepackage/assign_service.go)",
+      "Bash(sed -i 's/app_keys ? ?/app_keys ?? ?/g' c:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/featurepackage/service.go)",
+      "Bash(sed -i 's/app_keys ?? ?/jsonb_exists\\(app_keys, ?\\)/g' c:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/user/repository.go c:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/featurepackage/service.go)",
+      "Bash(sed -i 's/feature_packages\\\\.app_keys ?? ?/jsonb_exists\\(feature_packages.app_keys, ?\\)/g' c:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/featurepackage/assign_service.go)"
     ]
   },
   "defaultMode": "bypassPermissions"

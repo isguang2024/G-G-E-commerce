@@ -33,9 +33,11 @@ export class ComponentLoader {
     const module = this.modules[fullPath] || this.modules[fullPathWithIndex]
 
     if (!module) {
-      console.error(
-        `[ComponentLoader] 未找到组件: ${componentPath}（解析后: ${resolvedPath}），尝试过的路径: ${fullPath} 和 ${fullPathWithIndex}`
-      )
+      if (import.meta.env.DEV) {
+        console.warn(
+          `[ComponentLoader] 未找到组件: ${componentPath}（解析后: ${resolvedPath}），尝试过的路径: ${fullPath} 和 ${fullPathWithIndex}`
+        )
+      }
       return this.createErrorComponent(componentPath)
     }
 

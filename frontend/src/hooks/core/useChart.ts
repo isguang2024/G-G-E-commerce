@@ -691,7 +691,7 @@ export function useChartComponent<T extends BaseChartProps>(options: UseChartCom
   const setupWatchers = () => {
     // 监听自定义数据源
     if (watchSources.length > 0) {
-      const stopHandle = watch(watchSources, updateChart, { deep: true })
+      const stopHandle = watch(watchSources, updateChart, { deep: true, flush: 'post' })
       stopHandles.push(stopHandle)
     }
 

@@ -9,8 +9,8 @@
     <!-- 流星效果 -->
     <div v-if="meteorConfig?.enabled && isDark" class="basic-banner__meteors">
       <span
-        v-for="(meteor, index) in meteors"
-        :key="index"
+        v-for="meteor in meteors"
+        :key="`${meteor.x}-${meteor.delay}-${meteor.speed}`"
         class="meteor"
         :style="{
           top: '-60px',

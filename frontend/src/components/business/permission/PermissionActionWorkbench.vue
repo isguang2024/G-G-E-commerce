@@ -194,18 +194,13 @@
 </template>
 
 <script setup lang="ts">
-  import { computed, ref, watch } from 'vue'
   import { ArrowDown, Search } from '@element-plus/icons-vue'
-
-  type WorkbenchMode = 'menu' | 'collaboration' | 'role' | 'user'
-  type DecisionValue = '' | 'allow' | 'deny'
-
-  interface WorkbenchActionItem extends Partial<Api.SystemManage.PermissionActionItem> {
-    id: string
-    name: string
-    permissionKey?: string
-    code?: string
-  }
+  import type {
+    DecisionValue,
+    WorkbenchActionItem,
+    WorkbenchMode
+  } from './permission-action-workbench.helpers'
+  import { usePermissionActionWorkbench } from './use-permission-action-workbench'
 
   interface Props {
     mode: WorkbenchMode
@@ -228,384 +223,34 @@
     (e: 'update:decisionMap', value: Record<string, DecisionValue>): void
   }>()
 
-  const searchKeyword = ref('')
-  const featureFilter = ref('')
-  const stateFilter = ref('all')
-  const showMeta = ref(false)
-  const compactMode = ref(false)
-  const activeFeatures = ref<string[]>([])
-
-  const featureOptions = computed(() => {
-    return uniqueByValue(
-      props.actions
-        .map((item) => ({
-          value: `${item.featureGroupId || item.featureKind || ''}`,
-          label: item.featureGroup?.name || formatFeature(`${item.featureKind || ''}`)
-        }))
-        .filter((item) => item.value)
-    )
-  })
-
-  const moduleKeywords = (item: WorkbenchActionItem) =>
-    [
-      item.moduleGroup?.name,
-      item.moduleCode,
-      item.resourceCode,
-      item.featureGroup?.name,
-      item.featureKind
-    ]
-      .filter(Boolean)
-      .join(' ')
-
-  const filteredActions = computed(() => {
-    const keyword = searchKeyword.value.trim().toLowerCase()
-    return props.actions.filter((item) => {
-      if (
-        featureFilter.value &&
-        `${item.featureGroupId || item.featureKind || ''}` !== featureFilter.value
-      ) {
-        return false
-      }
-
-      if (keyword) {
-        const text = [
-          item.name,
-          item.permissionKey,
-          item.code,
-          item.description,
-          moduleKeywords(item)
-        ]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
-        if (!text.includes(keyword)) {
-          return false
-        }
-      }
-
-      if (!matchState(item.id)) {
-        return false
-      }
-
-      return true
-    })
-  })
-
-  const groupedActions = computed(() => {
-    const featureMap = new Map<
-      string,
-      {
-        key: string
-        label: string
-        modules: Array<{
-          key: string
-          label: string
-          actions: WorkbenchActionItem[]
-          actionCount: number
-          selectedCount: number
-        }>
-        moduleCount: number
-        actionCount: number
-        selectedCount: number
-      }
-    >()
-
-    filteredActions.value.forEach((item) => {
-      const featureKey = `${item.featureGroupId || item.featureKind || 'business'}`
-      const moduleKey = `${item.moduleGroupId || item.moduleCode || item.resourceCode || 'default'}`
-
-      if (!featureMap.has(featureKey)) {
-        featureMap.set(featureKey, {
-          key: featureKey,
-          label: item.featureGroup?.name || formatFeature(featureKey),
-          modules: [],
-          moduleCount: 0,
-          actionCount: 0,
-          selectedCount: 0
-        })
-      }
-
-      const feature = featureMap.get(featureKey)!
-      let module = feature.modules.find((entry) => entry.key === moduleKey)
-      if (!module) {
-        module = {
-          key: moduleKey,
-          label: formatModule(item),
-          actions: [],
-          actionCount: 0,
-          selectedCount: 0
-        }
-        feature.modules.push(module)
-      }
-
-      module.actions.push(item)
-      module.actionCount += 1
-      feature.actionCount += 1
-
-      if (isActive(item.id)) {
-        module.selectedCount += 1
-        feature.selectedCount += 1
-      }
-    })
-
-    return Array.from(featureMap.values()).map((feature) => ({
-      ...feature,
-      moduleCount: feature.modules.length
-    }))
-  })
-
-  const totalCount = computed(() => props.actions.length)
-  const visibleCount = computed(() => filteredActions.value.length)
-  const selectedCount = computed(() => props.actions.filter((item) => isActive(item.id)).length)
-
-  const selectedLabel = computed(() => {
-    if (props.mode === 'user') return '例外'
-    if (props.mode === 'role') return '已配置'
-    if (props.mode === 'collaboration') return '已开通'
-    return '已选'
-  })
-
-  const positiveText = computed(() => (props.mode === 'collaboration' ? '已开通' : '已选'))
-  const neutralText = computed(() => (props.mode === 'collaboration' ? '未开通' : '未选'))
-
-  const decisionOptions = computed(() => {
-    if (props.mode === 'user') {
-      return [
-        { value: '', label: '继承角色' },
-        { value: 'allow', label: '单独允许' },
-        { value: 'deny', label: '单独拒绝' }
-      ]
-    }
-
-    return [
-      { value: '', label: '未配置' },
-      { value: 'allow', label: '允许' },
-      { value: 'deny', label: '拒绝' }
-    ]
-  })
-
-  const stateOptions = computed(() => {
-    if (props.mode === 'menu') {
-      return [
-        { value: 'all', label: '选择状态：全部' },
-        { value: 'selected', label: '选择状态：已选' },
-        { value: 'unselected', label: '选择状态：未选' }
-      ]
-    }
-
-    if (props.mode === 'collaboration') {
-      return [
-        { value: 'all', label: '开通状态：全部' },
-        { value: 'selected', label: '开通状态：已开通' },
-        { value: 'unselected', label: '开通状态：未开通' }
-      ]
-    }
-
-    if (props.mode === 'user') {
-      return [
-        { value: 'all', label: '覆盖状态：全部' },
-        { value: 'inherit', label: '覆盖状态：继承角色' },
-        { value: 'allow', label: '覆盖状态：单独允许' },
-        { value: 'deny', label: '覆盖状态：单独拒绝' }
-      ]
-    }
-
-    return [
-      { value: 'all', label: '配置状态：全部' },
-      { value: 'unset', label: '配置状态：未配置' },
-      { value: 'allow', label: '配置状态：允许' },
-      { value: 'deny', label: '配置状态：拒绝' }
-    ]
-  })
-
-  const stateFilterPlaceholder = computed(() => stateOptions.value[0]?.label || '状态')
-
-  const batchCommands = computed(() => {
-    if (props.mode === 'menu' || props.mode === 'collaboration') {
-      return [
-        {
-          command: 'select-visible',
-          label: props.mode === 'collaboration' ? '批量开通当前结果' : '批量选中当前结果'
-        },
-        {
-          command: 'clear-visible',
-          label: props.mode === 'collaboration' ? '批量关闭当前结果' : '批量取消当前结果'
-        },
-        { command: 'clear-all', label: '清空全部配置' }
-      ]
-    }
-
-    if (props.mode === 'user') {
-      return [
-        { command: 'inherit-visible', label: '批量继承角色' },
-        { command: 'allow-visible', label: '批量单独允许' },
-        { command: 'deny-visible', label: '批量单独拒绝' },
-        { command: 'clear-all', label: '清空全部例外' }
-      ]
-    }
-
-    return [
-      { command: 'allow-visible', label: '批量允许当前结果' },
-      { command: 'deny-visible', label: '批量拒绝当前结果' },
-      { command: 'unset-visible', label: '批量取消当前配置' },
-      { command: 'clear-all', label: '清空全部配置' }
-    ]
-  })
-
-  watch(
+  const {
+    searchKeyword,
+    featureFilter,
+    stateFilter,
+    showMeta,
+    compactMode,
+    activeFeatures,
+    featureOptions,
     groupedActions,
-    (value) => {
-      const keys = value.map((item) => item.key)
-      if (!activeFeatures.value.length) {
-        activeFeatures.value = keys
-        return
-      }
-      activeFeatures.value = activeFeatures.value.filter((item) => keys.includes(item))
-      if (!activeFeatures.value.length) {
-        activeFeatures.value = keys
-      }
-    },
-    { immediate: true }
-  )
-
-  function uniqueByValue<T extends { value: string }>(items: T[]) {
-    const seen = new Set<string>()
-    return items.filter((item) => {
-      if (seen.has(item.value)) return false
-      seen.add(item.value)
-      return true
-    })
-  }
-
-  function formatFeature(feature: string) {
-    const map: Record<string, string> = {
-      system: '系统功能',
-      business: '业务功能'
-    }
-    return map[feature] || feature
-  }
-
-  function formatModule(action: WorkbenchActionItem) {
-    return action.moduleGroup?.name || action.moduleCode || action.resourceCode || '未分类模块'
-  }
-
-  function matchState(actionId: string) {
-    if (props.mode === 'menu' || props.mode === 'collaboration') {
-      if (stateFilter.value === 'selected') return isSelected(actionId)
-      if (stateFilter.value === 'unselected') return !isSelected(actionId)
-      return true
-    }
-
-    const decision = getDecision(actionId)
-    if (props.mode === 'user') {
-      if (stateFilter.value === 'inherit') return !decision
-      return stateFilter.value === 'all' ? true : decision === stateFilter.value
-    }
-
-    if (stateFilter.value === 'unset') return !decision
-    return stateFilter.value === 'all' ? true : decision === stateFilter.value
-  }
-
-  function isSelected(actionId: string) {
-    return props.selectedIds.includes(actionId)
-  }
-
-  function isActive(actionId: string) {
-    if (props.mode === 'menu' || props.mode === 'collaboration') {
-      return isSelected(actionId)
-    }
-    return Boolean(getDecision(actionId))
-  }
-
-  function toggleSelection(actionId: string, value: boolean) {
-    const next = new Set(props.selectedIds)
-    if (value) {
-      next.add(actionId)
-    } else {
-      next.delete(actionId)
-    }
-    emit('update:selectedIds', Array.from(next))
-  }
-
-  function getDecision(actionId: string): DecisionValue {
-    return props.decisionMap[actionId] || ''
-  }
-
-  function setDecision(actionId: string, value: string) {
-    const next = { ...props.decisionMap }
-    const normalized = value === 'allow' || value === 'deny' ? value : ''
-    if (!normalized) {
-      delete next[actionId]
-    } else {
-      next[actionId] = normalized
-    }
-    emit('update:decisionMap', next)
-  }
-
-  function getDecisionLabel(actionId: string) {
-    const decision = getDecision(actionId)
-    if (props.mode === 'user') {
-      if (decision === 'allow') return '单独允许'
-      if (decision === 'deny') return '单独拒绝'
-      return '继承角色'
-    }
-    if (decision === 'allow') return '允许'
-    if (decision === 'deny') return '拒绝'
-    return '未配置'
-  }
-
-  function getDecisionTagType(actionId: string) {
-    const decision = getDecision(actionId)
-    if (decision === 'allow') return 'success'
-    if (decision === 'deny') return 'danger'
-    return 'info'
-  }
-
-  function expandAll() {
-    activeFeatures.value = groupedActions.value.map((item) => item.key)
-  }
-
-  function collapseAll() {
-    activeFeatures.value = []
-  }
-
-  function handleBatchCommand(command: string) {
-    const visibleIds = filteredActions.value.map((item) => item.id)
-    if (!visibleIds.length) return
-
-    if (props.mode === 'menu' || props.mode === 'collaboration') {
-      const next = new Set(props.selectedIds)
-      if (command === 'select-visible') {
-        visibleIds.forEach((id) => next.add(id))
-      } else if (command === 'clear-visible') {
-        visibleIds.forEach((id) => next.delete(id))
-      } else if (command === 'clear-all') {
-        next.clear()
-      }
-      emit('update:selectedIds', Array.from(next))
-      return
-    }
-
-    const next = { ...props.decisionMap }
-    if (command === 'clear-all') {
-      emit('update:decisionMap', {})
-      return
-    }
-
-    let decision: DecisionValue = ''
-    if (command === 'allow-visible') decision = 'allow'
-    if (command === 'deny-visible') decision = 'deny'
-    if (command === 'unset-visible' || command === 'inherit-visible') decision = ''
-
-    visibleIds.forEach((id) => {
-      if (!decision) {
-        delete next[id]
-      } else {
-        next[id] = decision
-      }
-    })
-    emit('update:decisionMap', next)
-  }
+    totalCount,
+    visibleCount,
+    selectedCount,
+    selectedLabel,
+    positiveText,
+    neutralText,
+    decisionOptions,
+    stateOptions,
+    stateFilterPlaceholder,
+    batchCommands,
+    isSelected,
+    toggleSelection,
+    setDecision,
+    getDecisionLabel,
+    getDecisionTagType,
+    expandAll,
+    collapseAll,
+    handleBatchCommand
+  } = usePermissionActionWorkbench(props, emit)
 </script>
 
 <style scoped lang="scss">

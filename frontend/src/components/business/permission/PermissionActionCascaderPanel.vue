@@ -271,7 +271,7 @@
       syncingFromProps.value = false
       ensureExpandedMenus()
     },
-    { immediate: true, deep: true }
+    { immediate: true }
   )
 
   watch(
@@ -289,8 +289,7 @@
       if (!syncingFromProps.value) {
         emit('update:selectedIds', [...value])
       }
-    },
-    { deep: true }
+    }
   )
 
   function clearSelection() {
