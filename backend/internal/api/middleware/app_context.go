@@ -24,8 +24,12 @@ func AppContext(db *gorm.DB) gin.HandlerFunc {
 		}
 
 		host := spacepkg.RequestHost(c)
+		path := ""
+		if c.Request != nil && c.Request.URL != nil {
+			path = c.Request.URL.Path
+		}
 		requestedAppKey := appctx.RequestAppKey(c)
-		appKey, _, appResolvedBy, err := apppkg.ResolveAppByHost(db, host, requestedAppKey)
+		appKey, _, appResolvedBy, err := apppkg.ResolveAppEntry(db, host, path, requestedAppKey)
 		if err != nil {
 			appKey = appctx.NormalizeAppKey(requestedAppKey)
 			if appKey == "" {
@@ -40,17 +44,30 @@ func AppContext(db *gorm.DB) gin.HandlerFunc {
 			collaborationWorkspaceID = headerUUID(c.GetHeader(collaborationWorkspaceHeader))
 		}
 
-		spaceKey, spaceResolvedBy, resolveErr := spacepkg.ResolveCurrentSpaceKey(
-			db,
-			appKey,
-			host,
-			spacepkg.RequestSpaceKey(c),
-			userID,
-			collaborationWorkspaceID,
-		)
-		if resolveErr != nil {
-			spaceKey = spacepkg.DefaultMenuSpaceKey
-			spaceResolvedBy = "fallback_default"
+		// 优先尝试 Level 2 入口绑定（path 感知）
+		spaceKey, spaceResolvedBy := "", ""
+		if entrySpaceKey, entryResolvedBy, entryErr := apppkg.ResolveMenuSpaceEntry(db, appKey, host, path); entryErr == nil && strings.TrimSpace(entrySpaceKey) != "" && entryResolvedBy == "entry_binding" {
+			// P1: 校验用户是否有权访问该空间，无权则继续走常规解析（回退默认空间）。
+			allowed, _ := spacepkg.CanAccessSpace(db, userID, collaborationWorkspaceID, appKey, entrySpaceKey)
+			if allowed {
+				spaceKey = entrySpaceKey
+				spaceResolvedBy = entryResolvedBy
+			}
+		}
+		if spaceKey == "" {
+			var resolveErr error
+			spaceKey, spaceResolvedBy, resolveErr = spacepkg.ResolveCurrentSpaceKey(
+				db,
+				appKey,
+				host,
+				spacepkg.RequestSpaceKey(c),
+				userID,
+				collaborationWorkspaceID,
+			)
+			if resolveErr != nil {
+				spaceKey = spacepkg.DefaultMenuSpaceKey
+				spaceResolvedBy = "fallback_default"
+			}
 		}
 
 		c.Set("request_host", host)

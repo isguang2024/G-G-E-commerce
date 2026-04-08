@@ -1536,7 +1536,7 @@
       "method": "get",
       "path": "/system/app-host-bindings",
       "permission_key": "system.menu.manage",
-      "summary": "获取应用 Host 绑定",
+      "summary": "获取应用入口解析绑定",
       "tags": "system",
       "api_category": "system",
       "access_mode": "permission"
@@ -1546,7 +1546,17 @@
       "method": "post",
       "path": "/system/app-host-bindings",
       "permission_key": "system.menu.manage",
-      "summary": "保存应用 Host 绑定",
+      "summary": "保存应用入口解析绑定",
+      "tags": "system",
+      "api_category": "system",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteAppHostBinding",
+      "method": "delete",
+      "path": "/system/app-host-bindings/{id}",
+      "permission_key": "system.menu.manage",
+      "summary": "删除应用入口解析绑定",
       "tags": "system",
       "api_category": "system",
       "access_mode": "permission"
@@ -1597,6 +1607,36 @@
       "path": "/system/fast-enter",
       "permission_key": "system.fast_enter.manage",
       "summary": "更新快捷入口配置",
+      "tags": "system",
+      "api_category": "system",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listMenuSpaceEntryBindings",
+      "method": "get",
+      "path": "/system/menu-space-entry-bindings",
+      "permission_key": "system.menu.manage",
+      "summary": "获取菜单空间入口解析绑定",
+      "tags": "system",
+      "api_category": "system",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "saveMenuSpaceEntryBinding",
+      "method": "post",
+      "path": "/system/menu-space-entry-bindings",
+      "permission_key": "system.menu.manage",
+      "summary": "保存菜单空间入口解析绑定",
+      "tags": "system",
+      "api_category": "system",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteMenuSpaceEntryBinding",
+      "method": "delete",
+      "path": "/system/menu-space-entry-bindings/{id}",
+      "permission_key": "system.menu.manage",
+      "summary": "删除菜单空间入口解析绑定",
       "tags": "system",
       "api_category": "system",
       "access_mode": "permission"

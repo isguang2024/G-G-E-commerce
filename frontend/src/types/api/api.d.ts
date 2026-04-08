@@ -232,11 +232,16 @@ declare namespace Api {
       meta?: Record<string, any>
     }
 
+    type EntryMatchType = 'host_exact' | 'host_suffix' | 'path_prefix' | 'host_and_path'
+
     interface AppHostBindingItem {
       id?: string
       appKey: string
       appName?: string
+      matchType?: EntryMatchType | string
       host: string
+      pathPattern?: string
+      priority?: number
       defaultSpaceKey?: string
       description?: string
       isPrimary?: boolean
@@ -247,9 +252,45 @@ declare namespace Api {
     }
 
     interface AppHostBindingSaveParams {
+      id?: string
       app_key: string
-      host: string
+      match_type?: EntryMatchType | string
+      host?: string
+      path_pattern?: string
+      priority?: number
       default_space_key?: string
+      description?: string
+      is_primary?: boolean
+      status?: 'normal' | 'disabled' | string
+      meta?: Record<string, any>
+    }
+
+    interface MenuSpaceEntryBindingItem {
+      id?: string
+      appKey: string
+      appName?: string
+      spaceKey: string
+      spaceName?: string
+      matchType?: EntryMatchType | string
+      host?: string
+      pathPattern?: string
+      priority?: number
+      description?: string
+      isPrimary?: boolean
+      status?: 'normal' | 'disabled' | string
+      meta?: Record<string, any>
+      createdAt?: string
+      updatedAt?: string
+    }
+
+    interface MenuSpaceEntryBindingSaveParams {
+      id?: string
+      app_key: string
+      space_key: string
+      match_type?: EntryMatchType | string
+      host?: string
+      path_pattern?: string
+      priority?: number
       description?: string
       is_primary?: boolean
       status?: 'normal' | 'disabled' | string

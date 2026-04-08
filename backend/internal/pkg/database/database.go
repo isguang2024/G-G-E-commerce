@@ -149,6 +149,7 @@ func AutoMigrate() error {
 		&models.APIEndpointPermissionBinding{},
 		&models.MenuSpace{},
 		&models.MenuSpaceHostBinding{},
+		&models.MenuSpaceEntryBinding{},
 		&models.MenuDefinition{},
 		&models.SpaceMenuPlacement{},
 		&models.Menu{},
@@ -755,6 +756,56 @@ func ensureAppBootstrap() error {
 		return err
 	}
 
+	if err := ensureLocalEntryBindings(); err != nil {
+		return fmt.Errorf("failed to seed local entry bindings: %w", err)
+	}
+
+	return nil
+}
+
+// ensureLocalEntryBindings 为本地开发环境写入默认 APP 入口解析绑定。
+// 让 localhost / 127.0.0.1 等本机访问直接命中默认管理后台 APP。
+func ensureLocalEntryBindings() error {
+	if DB == nil {
+		return fmt.Errorf("database not initialized")
+	}
+	seeds := []models.AppHostBinding{
+		{
+			AppKey:          models.DefaultAppKey,
+			MatchType:       models.EntryMatchHostSuffix,
+			Host:            "localhost",
+			Description:     "本地开发：localhost 及子域默认进入后台管理",
+			DefaultSpaceKey: models.DefaultMenuSpaceKey,
+			Status:          "normal",
+			IsPrimary:       true,
+			Priority:        100,
+			Meta:            models.MetaJSON{},
+		},
+		{
+			AppKey:          models.DefaultAppKey,
+			MatchType:       models.EntryMatchHostExact,
+			Host:            "127.0.0.1",
+			Description:     "本地开发：127.0.0.1 默认进入后台管理",
+			DefaultSpaceKey: models.DefaultMenuSpaceKey,
+			Status:          "normal",
+			Priority:        100,
+			Meta:            models.MetaJSON{},
+		},
+	}
+	for _, seed := range seeds {
+		var existing models.AppHostBinding
+		err := DB.Where("match_type = ? AND host = ? AND path_pattern = ?", seed.MatchType, seed.Host, seed.PathPattern).First(&existing).Error
+		switch {
+		case err == nil:
+			continue
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			if createErr := DB.Create(&seed).Error; createErr != nil {
+				return createErr
+			}
+		default:
+			return err
+		}
+	}
 	return nil
 }
 

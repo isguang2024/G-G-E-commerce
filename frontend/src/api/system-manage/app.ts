@@ -5,6 +5,7 @@ import {
   normalizeAppHostBinding,
   normalizeMenuSpace,
   normalizeMenuSpaceHostBinding,
+  normalizeMenuSpaceEntryBinding,
   normalizeMenuSpaceKey,
   normalizeFastEnterConfig
 } from './_shared'
@@ -110,6 +111,43 @@ export async function fetchSaveAppHostBinding(data: Api.SystemManage.AppHostBind
     v5Client.POST('/system/app-host-bindings', { body: data as any })
   )
   return normalizeAppHostBinding(res)
+}
+
+export async function fetchDeleteAppHostBinding(id: string, appKey?: string) {
+  await unwrap(
+    v5Client.DELETE('/system/app-host-bindings/{id}', {
+      params: { path: { id }, query: (appKey ? { app_key: appKey } : {}) as any }
+    })
+  )
+}
+
+export async function fetchGetMenuSpaceEntryBindings(appKey: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/system/menu-space-entry-bindings', {
+      params: { query: (appKey ? { app_key: appKey } : {}) as any }
+    })
+  )
+  return {
+    records: (res?.records || []).map(normalizeMenuSpaceEntryBinding),
+    total: Number(res?.total || 0)
+  }
+}
+
+export async function fetchSaveMenuSpaceEntryBinding(
+  data: Api.SystemManage.MenuSpaceEntryBindingSaveParams
+) {
+  const res: any = await unwrap(
+    v5Client.POST('/system/menu-space-entry-bindings', { body: data as any })
+  )
+  return normalizeMenuSpaceEntryBinding(res)
+}
+
+export async function fetchDeleteMenuSpaceEntryBinding(id: string, appKey?: string) {
+  await unwrap(
+    v5Client.DELETE('/system/menu-space-entry-bindings/{id}', {
+      params: { path: { id }, query: (appKey ? { app_key: appKey } : {}) as any }
+    })
+  )
 }
 
 export async function fetchGetMenuSpaces(appKey: string) {

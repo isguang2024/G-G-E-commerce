@@ -134,6 +134,12 @@ type Handler interface {
 	//
 	// POST /users
 	CreateUser(ctx context.Context, req *UserCreateRequest) (CreateUserRes, error)
+	// DeleteAppHostBinding implements deleteAppHostBinding operation.
+	//
+	// 删除应用入口解析绑定.
+	//
+	// DELETE /system/app-host-bindings/{id}
+	DeleteAppHostBinding(ctx context.Context, params DeleteAppHostBindingParams) (*MutationResult, error)
 	// DeleteCollaborationWorkspace implements deleteCollaborationWorkspace operation.
 	//
 	// 删除协作空间.
@@ -164,6 +170,12 @@ type Handler interface {
 	//
 	// DELETE /menus/{id}
 	DeleteMenu(ctx context.Context, params DeleteMenuParams) (*MutationResult, error)
+	// DeleteMenuSpaceEntryBinding implements deleteMenuSpaceEntryBinding operation.
+	//
+	// 删除菜单空间入口解析绑定.
+	//
+	// DELETE /system/menu-space-entry-bindings/{id}
+	DeleteMenuSpaceEntryBinding(ctx context.Context, params DeleteMenuSpaceEntryBindingParams) (*MutationResult, error)
 	// DeletePage implements deletePage operation.
 	//
 	// 删除页面.
@@ -556,7 +568,7 @@ type Handler interface {
 	ListApiEndpoints(ctx context.Context, params ListApiEndpointsParams) (ListApiEndpointsRes, error)
 	// ListAppHostBindings implements listAppHostBindings operation.
 	//
-	// 获取应用 Host 绑定.
+	// 获取应用入口解析绑定.
 	//
 	// GET /system/app-host-bindings
 	ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (*AnyListResponse, error)
@@ -644,6 +656,12 @@ type Handler interface {
 	//
 	// GET /media
 	ListMedia(ctx context.Context) (ListMediaRes, error)
+	// ListMenuSpaceEntryBindings implements listMenuSpaceEntryBindings operation.
+	//
+	// 获取菜单空间入口解析绑定.
+	//
+	// GET /system/menu-space-entry-bindings
+	ListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (*AnyListResponse, error)
 	// ListMenuSpaceHostBindings implements listMenuSpaceHostBindings operation.
 	//
 	// 获取菜单空间 Host 绑定.
@@ -868,7 +886,7 @@ type Handler interface {
 	SaveApp(ctx context.Context, req AnyObject) (*MutationResult, error)
 	// SaveAppHostBinding implements saveAppHostBinding operation.
 	//
-	// 保存应用 Host 绑定.
+	// 保存应用入口解析绑定.
 	//
 	// POST /system/app-host-bindings
 	SaveAppHostBinding(ctx context.Context, req AnyObject) (*MutationResult, error)
@@ -878,6 +896,12 @@ type Handler interface {
 	//
 	// POST /system/menu-spaces
 	SaveMenuSpace(ctx context.Context, req AnyObject) (*MutationResult, error)
+	// SaveMenuSpaceEntryBinding implements saveMenuSpaceEntryBinding operation.
+	//
+	// 保存菜单空间入口解析绑定.
+	//
+	// POST /system/menu-space-entry-bindings
+	SaveMenuSpaceEntryBinding(ctx context.Context, req AnyObject) (*MutationResult, error)
 	// SaveMenuSpaceHostBinding implements saveMenuSpaceHostBinding operation.
 	//
 	// 保存菜单空间 Host 绑定.

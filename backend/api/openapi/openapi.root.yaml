@@ -233,6 +233,12 @@ paths:
     $ref: ./domains/system/paths.yaml#/paths/~1system~1apps~1current
   /system/app-host-bindings:
     $ref: ./domains/system/paths.yaml#/paths/~1system~1app-host-bindings
+  /system/app-host-bindings/{id}:
+    $ref: ./domains/system/paths.yaml#/paths/~1system~1app-host-bindings~1{id}
+  /system/menu-space-entry-bindings:
+    $ref: ./domains/system/paths.yaml#/paths/~1system~1menu-space-entry-bindings
+  /system/menu-space-entry-bindings/{id}:
+    $ref: ./domains/system/paths.yaml#/paths/~1system~1menu-space-entry-bindings~1{id}
   /system/menu-spaces/current:
     $ref: ./domains/system/paths.yaml#/paths/~1system~1menu-spaces~1current
   /system/menu-space-mode:

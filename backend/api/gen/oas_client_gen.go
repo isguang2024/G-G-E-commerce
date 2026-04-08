@@ -154,6 +154,12 @@ type Invoker interface {
 	//
 	// POST /users
 	CreateUser(ctx context.Context, request *UserCreateRequest) (CreateUserRes, error)
+	// DeleteAppHostBinding invokes deleteAppHostBinding operation.
+	//
+	// 删除应用入口解析绑定.
+	//
+	// DELETE /system/app-host-bindings/{id}
+	DeleteAppHostBinding(ctx context.Context, params DeleteAppHostBindingParams) (*MutationResult, error)
 	// DeleteCollaborationWorkspace invokes deleteCollaborationWorkspace operation.
 	//
 	// 删除协作空间.
@@ -184,6 +190,12 @@ type Invoker interface {
 	//
 	// DELETE /menus/{id}
 	DeleteMenu(ctx context.Context, params DeleteMenuParams) (*MutationResult, error)
+	// DeleteMenuSpaceEntryBinding invokes deleteMenuSpaceEntryBinding operation.
+	//
+	// 删除菜单空间入口解析绑定.
+	//
+	// DELETE /system/menu-space-entry-bindings/{id}
+	DeleteMenuSpaceEntryBinding(ctx context.Context, params DeleteMenuSpaceEntryBindingParams) (*MutationResult, error)
 	// DeletePage invokes deletePage operation.
 	//
 	// 删除页面.
@@ -576,7 +588,7 @@ type Invoker interface {
 	ListApiEndpoints(ctx context.Context, params ListApiEndpointsParams) (ListApiEndpointsRes, error)
 	// ListAppHostBindings invokes listAppHostBindings operation.
 	//
-	// 获取应用 Host 绑定.
+	// 获取应用入口解析绑定.
 	//
 	// GET /system/app-host-bindings
 	ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (*AnyListResponse, error)
@@ -664,6 +676,12 @@ type Invoker interface {
 	//
 	// GET /media
 	ListMedia(ctx context.Context) (ListMediaRes, error)
+	// ListMenuSpaceEntryBindings invokes listMenuSpaceEntryBindings operation.
+	//
+	// 获取菜单空间入口解析绑定.
+	//
+	// GET /system/menu-space-entry-bindings
+	ListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (*AnyListResponse, error)
 	// ListMenuSpaceHostBindings invokes listMenuSpaceHostBindings operation.
 	//
 	// 获取菜单空间 Host 绑定.
@@ -888,7 +906,7 @@ type Invoker interface {
 	SaveApp(ctx context.Context, request AnyObject) (*MutationResult, error)
 	// SaveAppHostBinding invokes saveAppHostBinding operation.
 	//
-	// 保存应用 Host 绑定.
+	// 保存应用入口解析绑定.
 	//
 	// POST /system/app-host-bindings
 	SaveAppHostBinding(ctx context.Context, request AnyObject) (*MutationResult, error)
@@ -898,6 +916,12 @@ type Invoker interface {
 	//
 	// POST /system/menu-spaces
 	SaveMenuSpace(ctx context.Context, request AnyObject) (*MutationResult, error)
+	// SaveMenuSpaceEntryBinding invokes saveMenuSpaceEntryBinding operation.
+	//
+	// 保存菜单空间入口解析绑定.
+	//
+	// POST /system/menu-space-entry-bindings
+	SaveMenuSpaceEntryBinding(ctx context.Context, request AnyObject) (*MutationResult, error)
 	// SaveMenuSpaceHostBinding invokes saveMenuSpaceHostBinding operation.
 	//
 	// 保存菜单空间 Host 绑定.
@@ -3575,6 +3599,152 @@ func (c *Client) sendCreateUser(ctx context.Context, request *UserCreateRequest)
 	return result, nil
 }
 
+// DeleteAppHostBinding invokes deleteAppHostBinding operation.
+//
+// 删除应用入口解析绑定.
+//
+// DELETE /system/app-host-bindings/{id}
+func (c *Client) DeleteAppHostBinding(ctx context.Context, params DeleteAppHostBindingParams) (*MutationResult, error) {
+	res, err := c.sendDeleteAppHostBinding(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendDeleteAppHostBinding(ctx context.Context, params DeleteAppHostBindingParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("deleteAppHostBinding"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/system/app-host-bindings/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, DeleteAppHostBindingOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/system/app-host-bindings/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, DeleteAppHostBindingOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeDeleteAppHostBindingResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // DeleteCollaborationWorkspace invokes deleteCollaborationWorkspace operation.
 //
 // 删除协作空间.
@@ -4193,6 +4363,152 @@ func (c *Client) sendDeleteMenu(ctx context.Context, params DeleteMenuParams) (r
 
 	stage = "DecodeResponse"
 	result, err := decodeDeleteMenuResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// DeleteMenuSpaceEntryBinding invokes deleteMenuSpaceEntryBinding operation.
+//
+// 删除菜单空间入口解析绑定.
+//
+// DELETE /system/menu-space-entry-bindings/{id}
+func (c *Client) DeleteMenuSpaceEntryBinding(ctx context.Context, params DeleteMenuSpaceEntryBindingParams) (*MutationResult, error) {
+	res, err := c.sendDeleteMenuSpaceEntryBinding(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendDeleteMenuSpaceEntryBinding(ctx context.Context, params DeleteMenuSpaceEntryBindingParams) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("deleteMenuSpaceEntryBinding"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/system/menu-space-entry-bindings/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, DeleteMenuSpaceEntryBindingOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/system/menu-space-entry-bindings/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, DeleteMenuSpaceEntryBindingOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeDeleteMenuSpaceEntryBindingResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -12820,7 +13136,7 @@ func (c *Client) sendListApiEndpoints(ctx context.Context, params ListApiEndpoin
 
 // ListAppHostBindings invokes listAppHostBindings operation.
 //
-// 获取应用 Host 绑定.
+// 获取应用入口解析绑定.
 //
 // GET /system/app-host-bindings
 func (c *Client) ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (*AnyListResponse, error) {
@@ -14809,6 +15125,134 @@ func (c *Client) sendListMedia(ctx context.Context) (res ListMediaRes, err error
 
 	stage = "DecodeResponse"
 	result, err := decodeListMediaResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListMenuSpaceEntryBindings invokes listMenuSpaceEntryBindings operation.
+//
+// 获取菜单空间入口解析绑定.
+//
+// GET /system/menu-space-entry-bindings
+func (c *Client) ListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (*AnyListResponse, error) {
+	res, err := c.sendListMenuSpaceEntryBindings(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (res *AnyListResponse, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listMenuSpaceEntryBindings"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/system/menu-space-entry-bindings"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListMenuSpaceEntryBindingsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/menu-space-entry-bindings"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, ListMenuSpaceEntryBindingsOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListMenuSpaceEntryBindingsResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -19784,7 +20228,7 @@ func (c *Client) sendSaveApp(ctx context.Context, request AnyObject) (res *Mutat
 
 // SaveAppHostBinding invokes saveAppHostBinding operation.
 //
-// 保存应用 Host 绑定.
+// 保存应用入口解析绑定.
 //
 // POST /system/app-host-bindings
 func (c *Client) SaveAppHostBinding(ctx context.Context, request AnyObject) (*MutationResult, error) {
@@ -19995,6 +20439,116 @@ func (c *Client) sendSaveMenuSpace(ctx context.Context, request AnyObject) (res 
 
 	stage = "DecodeResponse"
 	result, err := decodeSaveMenuSpaceResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SaveMenuSpaceEntryBinding invokes saveMenuSpaceEntryBinding operation.
+//
+// 保存菜单空间入口解析绑定.
+//
+// POST /system/menu-space-entry-bindings
+func (c *Client) SaveMenuSpaceEntryBinding(ctx context.Context, request AnyObject) (*MutationResult, error) {
+	res, err := c.sendSaveMenuSpaceEntryBinding(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendSaveMenuSpaceEntryBinding(ctx context.Context, request AnyObject) (res *MutationResult, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("saveMenuSpaceEntryBinding"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/system/menu-space-entry-bindings"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SaveMenuSpaceEntryBindingOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/system/menu-space-entry-bindings"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSaveMenuSpaceEntryBindingRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			stage = "Security:BearerAuth"
+			switch err := c.securityBearerAuth(ctx, SaveMenuSpaceEntryBindingOperation, r); {
+			case err == nil: // if NO error
+				satisfied[0] |= 1 << 0
+			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
+				// Skip this security.
+			default:
+				return res, errors.Wrap(err, "security \"BearerAuth\"")
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
+		}
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSaveMenuSpaceEntryBindingResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

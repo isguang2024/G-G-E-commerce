@@ -111,7 +111,7 @@ paths:
   /system/app-host-bindings:
     get:
       operationId: listAppHostBindings
-      summary: 获取应用 Host 绑定
+      summary: 获取应用入口解析绑定
       tags:
       - system
       x-permission-key: system.menu.manage
@@ -130,7 +130,7 @@ paths:
                 $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
     post:
       operationId: saveAppHostBinding
-      summary: 保存应用 Host 绑定
+      summary: 保存应用入口解析绑定
       tags:
       - system
       x-permission-key: system.menu.manage
@@ -141,6 +141,96 @@ paths:
           application/json:
             schema:
               $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /system/app-host-bindings/{id}:
+    delete:
+      operationId: deleteAppHostBinding
+      summary: 删除应用入口解析绑定
+      tags:
+      - system
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: app_key
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /system/menu-space-entry-bindings:
+    get:
+      operationId: listMenuSpaceEntryBindings
+      summary: 获取菜单空间入口解析绑定
+      tags:
+      - system
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      parameters:
+      - name: app_key
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+    post:
+      operationId: saveMenuSpaceEntryBinding
+      summary: 保存菜单空间入口解析绑定
+      tags:
+      - system
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /system/menu-space-entry-bindings/{id}:
+    delete:
+      operationId: deleteMenuSpaceEntryBinding
+      summary: 删除菜单空间入口解析绑定
+      tags:
+      - system
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: app_key
+        in: query
+        schema:
+          type: string
       responses:
         '200':
           description: OK

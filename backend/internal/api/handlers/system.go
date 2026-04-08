@@ -61,6 +61,55 @@ func (h *APIHandler) SaveAppHostBinding(ctx context.Context, req gen.AnyObject) 
 	return ok(), nil
 }
 
+func (h *APIHandler) DeleteAppHostBinding(ctx context.Context, params gen.DeleteAppHostBindingParams) (*gen.MutationResult, error) {
+	appKey := ""
+	if v, ok := params.AppKey.Get(); ok {
+		appKey = v
+	}
+	if err := h.appSvc.DeleteHostBinding(appKey, params.ID); err != nil {
+		h.logger.Error("delete app host binding failed", zap.Error(err))
+		return nil, err
+	}
+	return ok(), nil
+}
+
+func (h *APIHandler) ListMenuSpaceEntryBindings(ctx context.Context, params gen.ListMenuSpaceEntryBindingsParams) (*gen.AnyListResponse, error) {
+	appKey := ""
+	if v, ok := params.AppKey.Get(); ok {
+		appKey = v
+	}
+	items, err := h.appSvc.ListMenuSpaceEntryBindings(appKey)
+	if err != nil {
+		h.logger.Error("list menu space entry bindings failed", zap.Error(err))
+		return nil, err
+	}
+	return &gen.AnyListResponse{Records: marshalList(items), Total: len(items)}, nil
+}
+
+func (h *APIHandler) SaveMenuSpaceEntryBinding(ctx context.Context, req gen.AnyObject) (*gen.MutationResult, error) {
+	var body appmod.SaveMenuSpaceEntryBindingRequest
+	if err := unmarshalAnyObject(req, &body); err != nil {
+		return nil, err
+	}
+	if _, err := h.appSvc.SaveMenuSpaceEntryBinding(body.AppKey, &body); err != nil {
+		h.logger.Error("save menu space entry binding failed", zap.Error(err))
+		return nil, err
+	}
+	return ok(), nil
+}
+
+func (h *APIHandler) DeleteMenuSpaceEntryBinding(ctx context.Context, params gen.DeleteMenuSpaceEntryBindingParams) (*gen.MutationResult, error) {
+	appKey := ""
+	if v, ok := params.AppKey.Get(); ok {
+		appKey = v
+	}
+	if err := h.appSvc.DeleteMenuSpaceEntryBinding(appKey, params.ID); err != nil {
+		h.logger.Error("delete menu space entry binding failed", zap.Error(err))
+		return nil, err
+	}
+	return ok(), nil
+}
+
 func (h *APIHandler) GetCurrentApp(ctx context.Context, params gen.GetCurrentAppParams) (gen.AnyObject, error) {
 	resp, err := h.appSvc.GetCurrent("", optString(params.AppKey))
 	if err != nil {

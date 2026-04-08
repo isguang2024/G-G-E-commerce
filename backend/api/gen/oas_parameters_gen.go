@@ -267,6 +267,123 @@ func decodeCreatePageParams(args [0]string, argsEscaped bool, r *http.Request) (
 	return params, nil
 }
 
+// DeleteAppHostBindingParams is parameters of deleteAppHostBinding operation.
+type DeleteAppHostBindingParams struct {
+	ID     string
+	AppKey OptString `json:",omitempty,omitzero"`
+}
+
+func unpackDeleteAppHostBindingParams(packed middleware.Parameters) (params DeleteAppHostBindingParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(string)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "app_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.AppKey = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeDeleteAppHostBindingParams(args [1]string, argsEscaped bool, r *http.Request) (params DeleteAppHostBindingParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.ID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode query: app_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotAppKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotAppKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.AppKey.SetTo(paramsDotAppKeyVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "app_key",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // DeleteCollaborationWorkspaceParams is parameters of deleteCollaborationWorkspace operation.
 type DeleteCollaborationWorkspaceParams struct {
 	ID uuid.UUID
@@ -586,6 +703,123 @@ func decodeDeleteMenuParams(args [1]string, argsEscaped bool, r *http.Request) (
 		return params, &ogenerrors.DecodeParamError{
 			Name: "id",
 			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// DeleteMenuSpaceEntryBindingParams is parameters of deleteMenuSpaceEntryBinding operation.
+type DeleteMenuSpaceEntryBindingParams struct {
+	ID     string
+	AppKey OptString `json:",omitempty,omitzero"`
+}
+
+func unpackDeleteMenuSpaceEntryBindingParams(packed middleware.Parameters) (params DeleteMenuSpaceEntryBindingParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(string)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "app_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.AppKey = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeDeleteMenuSpaceEntryBindingParams(args [1]string, argsEscaped bool, r *http.Request) (params DeleteMenuSpaceEntryBindingParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.ID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	// Decode query: app_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotAppKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotAppKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.AppKey.SetTo(paramsDotAppKeyVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "app_key",
+			In:   "query",
 			Err:  err,
 		}
 	}
@@ -7049,6 +7283,70 @@ func decodeListInboxParams(args [0]string, argsEscaped bool, r *http.Request) (p
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "size",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// ListMenuSpaceEntryBindingsParams is parameters of listMenuSpaceEntryBindings operation.
+type ListMenuSpaceEntryBindingsParams struct {
+	AppKey OptString `json:",omitempty,omitzero"`
+}
+
+func unpackListMenuSpaceEntryBindingsParams(packed middleware.Parameters) (params ListMenuSpaceEntryBindingsParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "app_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.AppKey = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeListMenuSpaceEntryBindingsParams(args [0]string, argsEscaped bool, r *http.Request) (params ListMenuSpaceEntryBindingsParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: app_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotAppKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotAppKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.AppKey.SetTo(paramsDotAppKeyVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "app_key",
 			In:   "query",
 			Err:  err,
 		}

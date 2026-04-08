@@ -202,6 +202,15 @@ func (UnimplementedHandler) CreateUser(ctx context.Context, req *UserCreateReque
 	return r, ht.ErrNotImplemented
 }
 
+// DeleteAppHostBinding implements deleteAppHostBinding operation.
+//
+// 删除应用入口解析绑定.
+//
+// DELETE /system/app-host-bindings/{id}
+func (UnimplementedHandler) DeleteAppHostBinding(ctx context.Context, params DeleteAppHostBindingParams) (r *MutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // DeleteCollaborationWorkspace implements deleteCollaborationWorkspace operation.
 //
 // 删除协作空间.
@@ -244,6 +253,15 @@ func (UnimplementedHandler) DeleteMedia(ctx context.Context, params DeleteMediaP
 //
 // DELETE /menus/{id}
 func (UnimplementedHandler) DeleteMenu(ctx context.Context, params DeleteMenuParams) (r *MutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// DeleteMenuSpaceEntryBinding implements deleteMenuSpaceEntryBinding operation.
+//
+// 删除菜单空间入口解析绑定.
+//
+// DELETE /system/menu-space-entry-bindings/{id}
+func (UnimplementedHandler) DeleteMenuSpaceEntryBinding(ctx context.Context, params DeleteMenuSpaceEntryBindingParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -834,7 +852,7 @@ func (UnimplementedHandler) ListApiEndpoints(ctx context.Context, params ListApi
 
 // ListAppHostBindings implements listAppHostBindings operation.
 //
-// 获取应用 Host 绑定.
+// 获取应用入口解析绑定.
 //
 // GET /system/app-host-bindings
 func (UnimplementedHandler) ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (r *AnyListResponse, _ error) {
@@ -964,6 +982,15 @@ func (UnimplementedHandler) ListInbox(ctx context.Context, params ListInboxParam
 //
 // GET /media
 func (UnimplementedHandler) ListMedia(ctx context.Context) (r ListMediaRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ListMenuSpaceEntryBindings implements listMenuSpaceEntryBindings operation.
+//
+// 获取菜单空间入口解析绑定.
+//
+// GET /system/menu-space-entry-bindings
+func (UnimplementedHandler) ListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (r *AnyListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1302,7 +1329,7 @@ func (UnimplementedHandler) SaveApp(ctx context.Context, req AnyObject) (r *Muta
 
 // SaveAppHostBinding implements saveAppHostBinding operation.
 //
-// 保存应用 Host 绑定.
+// 保存应用入口解析绑定.
 //
 // POST /system/app-host-bindings
 func (UnimplementedHandler) SaveAppHostBinding(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
@@ -1315,6 +1342,15 @@ func (UnimplementedHandler) SaveAppHostBinding(ctx context.Context, req AnyObjec
 //
 // POST /system/menu-spaces
 func (UnimplementedHandler) SaveMenuSpace(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SaveMenuSpaceEntryBinding implements saveMenuSpaceEntryBinding operation.
+//
+// 保存菜单空间入口解析绑定.
+//
+// POST /system/menu-space-entry-bindings
+func (UnimplementedHandler) SaveMenuSpaceEntryBinding(ctx context.Context, req AnyObject) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

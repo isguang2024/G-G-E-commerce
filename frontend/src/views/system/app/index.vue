@@ -10,8 +10,8 @@
         <ElButton :disabled="!selectedAppRecord" @click="openAppDrawer(selectedAppRecord)" v-ripple>
           编辑选中 App
         </ElButton>
-        <ElButton :disabled="!selectedAppKey" @click="openHostDrawer()" v-ripple>
-          新增 Host 绑定
+        <ElButton :disabled="!selectedAppKey" @click="openEntryDialog()" v-ripple>
+          新增入口绑定
         </ElButton>
       </div>
     </AdminWorkspaceHero>
@@ -91,103 +91,129 @@
         <template #header>
           <div class="app-manage-panel__header">
             <div>
-              <div class="app-manage-panel__title">当前 App 概览</div>
+              <div class="app-manage-panel__title">APP 入口解析绑定</div>
               <div class="app-manage-panel__desc"
-                >Host 命中和默认空间都会影响运行时导航编译结果，下面只展示当前选中 App
-                的有效配置。</div
+                >按 Host / 路径模式匹配进入 APP，未命中时退回默认 App。支持精确域名、子域名通配、路径前缀和 host+path 组合。</div
               >
             </div>
             <div class="app-manage-panel__status">
-              <ElTag effect="plain" type="info"
-                >当前查看 {{ selectedAppRecord?.name || selectedAppKey || '-' }}</ElTag
-              >
-              <ElTag v-if="currentAppRecord" effect="plain" type="warning">
+              <ElTag v-if="currentAppRecord" effect="plain" type="warning" size="small">
                 解析来源 {{ currentAppResolvedLabel }}
+              </ElTag>
+              <ElTag v-if="currentAppRequestHost" effect="plain" type="info" size="small">
+                请求 Host {{ currentAppRequestHost }}
               </ElTag>
             </div>
           </div>
         </template>
 
         <div v-if="selectedAppRecord" class="app-overview">
-          <div class="app-overview__grid">
-            <div class="app-overview__item">
-              <span class="app-overview__label">App 标识</span>
-              <strong>{{ selectedAppRecord.appKey }}</strong>
-            </div>
-            <div class="app-overview__item">
-              <span class="app-overview__label">空间模式</span>
-              <strong>{{ selectedAppRecord.spaceMode === 'multi' ? '多空间' : '单空间' }}</strong>
-            </div>
-            <div class="app-overview__item">
-              <span class="app-overview__label">默认空间</span>
-              <strong>{{ displaySpaceLabel(selectedAppRecord.defaultSpaceKey) }}</strong>
-            </div>
-            <div class="app-overview__item">
-              <span class="app-overview__label">主 Host</span>
-              <strong>{{ selectedAppRecord.primaryHost || '未设置' }}</strong>
-            </div>
-            <div class="app-overview__item">
-              <span class="app-overview__label">空间 / 菜单 / 页面</span>
-              <strong
-                >{{ selectedAppRecord.menuSpaceCount || 0 }} /
-                {{ selectedAppRecord.menuCount || 0 }} /
-                {{ selectedAppRecord.pageCount || 0 }}</strong
-              >
-            </div>
-            <div class="app-overview__item">
-              <span class="app-overview__label">请求 Host</span>
-              <strong>{{ currentAppRequestHost || '未命中' }}</strong>
-            </div>
-            <div class="app-overview__item">
-              <span class="app-overview__label">Host 绑定</span>
-              <strong>{{ hostBindings.length }}</strong>
-            </div>
+          <div class="app-overview__summary">
+            <span
+              >主 Host <strong>{{ selectedAppRecord.primaryHost || '未设置' }}</strong></span
+            >
+            <span>·</span>
+            <span
+              >默认空间 <strong>{{ displaySpaceLabel(selectedAppRecord.defaultSpaceKey) }}</strong></span
+            >
           </div>
           <div class="app-overview__actions">
-            <ElButton text @click="openHostDrawer()">新增 Host 绑定</ElButton>
-            <ElButton text @click="goToMenuManagement">进入菜单管理</ElButton>
-            <ElButton text @click="goToPageManagement">进入页面管理</ElButton>
-            <ElButton text @click="goToSpaceManagement()">进入高级空间配置</ElButton>
+            <ElButton text @click="goToMenuManagement">菜单管理</ElButton>
+            <ElButton text @click="goToPageManagement">页面管理</ElButton>
+            <ElButton text @click="goToSpaceManagement()">高级空间配置</ElButton>
           </div>
         </div>
 
-        <div class="app-binding-list">
-          <div v-if="!hostBindings.length" class="app-manage-empty">
-            当前 App 还没有 Host 绑定。未命中 Host 时，系统会退回 App 默认空间。
+        <div class="app-binding-section">
+          <div class="app-binding-section__header">
+            <div class="app-binding-section__title">Level 1 · APP 入口</div>
+            <ElButton size="small" type="primary" link @click="openEntryDialog()">+ 新增</ElButton>
           </div>
-          <button
-            v-for="item in hostBindings"
-            :key="item.host"
-            type="button"
-            class="app-binding-item"
-            @click="openHostDrawer(item)"
-          >
-            <div class="app-binding-item__main">
-              <div class="app-binding-item__title-row">
-                <span class="app-binding-item__host">{{ item.host }}</span>
-                <ElTag v-if="item.isPrimary" size="small" type="success" effect="plain"
-                  >主绑定</ElTag
-                >
-                <ElTag
-                  size="small"
-                  :type="item.status === 'normal' ? 'info' : 'danger'"
-                  effect="plain"
-                >
-                  {{ item.status === 'normal' ? '启用' : '停用' }}
-                </ElTag>
-              </div>
-              <div class="app-binding-item__meta">
-                <span
-                  >默认空间
-                  {{
-                    displaySpaceLabel(item.defaultSpaceKey, selectedAppRecord?.defaultSpaceKey)
-                  }}</span
-                >
-                <span v-if="item.description">{{ item.description }}</span>
-              </div>
+          <div class="app-binding-list">
+            <div v-if="!hostBindings.length" class="app-manage-empty">
+              暂无入口规则，未命中时系统将退回默认 App。
             </div>
-            <ArtSvgIcon icon="ri:arrow-right-s-line" />
-          </button>
+            <div
+              v-for="item in hostBindings"
+              :key="item.id || item.host + item.pathPattern"
+              class="app-binding-item"
+            >
+              <div class="app-binding-item__main" @click="openEntryDialog(item)">
+                <div class="app-binding-item__title-row">
+                  <ElTag size="small" effect="plain">{{ matchTypeLabel(item.matchType) }}</ElTag>
+                  <span class="app-binding-item__host">{{ describeEntryRule(item) }}</span>
+                  <ElTag v-if="item.isPrimary" size="small" type="success" effect="plain">主</ElTag>
+                  <ElTag
+                    size="small"
+                    :type="item.status === 'normal' ? 'info' : 'danger'"
+                    effect="plain"
+                  >
+                    {{ item.status === 'normal' ? '启用' : '停用' }}
+                  </ElTag>
+                </div>
+                <div class="app-binding-item__meta">
+                  <span
+                    >默认空间
+                    {{
+                      displaySpaceLabel(item.defaultSpaceKey, selectedAppRecord?.defaultSpaceKey)
+                    }}</span
+                  >
+                  <span>优先级 {{ item.priority || 0 }}</span>
+                  <span v-if="item.description">{{ item.description }}</span>
+                </div>
+              </div>
+              <ElButton text type="danger" size="small" @click.stop="deleteEntry(item)">删除</ElButton>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="isMultiSpaceApp" class="app-binding-section">
+          <div class="app-binding-section__header">
+            <div class="app-binding-section__title">Level 2 · 菜单空间入口</div>
+            <ElButton
+              size="small"
+              type="primary"
+              link
+              :disabled="!spaces.length"
+              @click="openSpaceEntryDialog()"
+            >
+              + 新增
+            </ElButton>
+          </div>
+          <div class="app-binding-list">
+            <div v-if="!spaceEntryBindings.length" class="app-manage-empty">
+              暂无菜单空间入口规则，未命中时按 APP 默认空间进入。
+            </div>
+            <div
+              v-for="item in spaceEntryBindings"
+              :key="item.id || item.spaceKey + item.host + item.pathPattern"
+              class="app-binding-item"
+            >
+              <div class="app-binding-item__main" @click="openSpaceEntryDialog(item)">
+                <div class="app-binding-item__title-row">
+                  <ElTag size="small" effect="plain">{{ matchTypeLabel(item.matchType) }}</ElTag>
+                  <span class="app-binding-item__host">{{ describeEntryRule(item) }}</span>
+                  <ElTag size="small" type="warning" effect="plain"
+                    >→ {{ item.spaceName || item.spaceKey }}</ElTag
+                  >
+                  <ElTag
+                    size="small"
+                    :type="item.status === 'normal' ? 'info' : 'danger'"
+                    effect="plain"
+                  >
+                    {{ item.status === 'normal' ? '启用' : '停用' }}
+                  </ElTag>
+                </div>
+                <div class="app-binding-item__meta">
+                  <span>优先级 {{ item.priority || 0 }}</span>
+                  <span v-if="item.description">{{ item.description }}</span>
+                </div>
+              </div>
+              <ElButton text type="danger" size="small" @click.stop="deleteSpaceEntry(item)"
+                >删除</ElButton
+              >
+            </div>
+          </div>
         </div>
 
         <div class="app-space-pills">
@@ -265,14 +291,34 @@
       </template>
     </ElDrawer>
 
-    <ElDrawer v-model="hostDrawerVisible" :title="hostDrawerTitle" size="520px" destroy-on-close>
-      <ElForm :model="hostForm" label-position="top">
-        <ElFormItem label="Host / 子域名">
-          <ElInput v-model="hostForm.host" placeholder="例如 admin.example.com" />
+    <ElDialog
+      v-model="entryDialogVisible"
+      :title="entryDialogTitle"
+      width="560px"
+      destroy-on-close
+      append-to-body
+    >
+      <ElForm :model="entryForm" label-position="top">
+        <ElFormItem label="匹配类型">
+          <ElRadioGroup v-model="entryForm.match_type">
+            <ElRadioButton value="host_exact">精确域名</ElRadioButton>
+            <ElRadioButton value="host_suffix">子域名通配</ElRadioButton>
+            <ElRadioButton value="path_prefix">路径模式</ElRadioButton>
+            <ElRadioButton value="host_and_path">域名+路径</ElRadioButton>
+          </ElRadioGroup>
+        </ElFormItem>
+        <ElFormItem v-if="entryNeedsHost" label="Host">
+          <ElInput v-model="entryForm.host" :placeholder="entryHostPlaceholder" />
+        </ElFormItem>
+        <ElFormItem v-if="entryNeedsPath" label="路径模式">
+          <ElInput v-model="entryForm.path_pattern" placeholder="例如 /admin/** 或 /shop/:id/**" />
+          <div class="app-form-hint">
+            支持 <code>*</code>（单段通配）、<code>**</code>（多段通配）、<code>:name</code>（命名参数）
+          </div>
         </ElFormItem>
         <ElFormItem label="默认空间">
           <ElSelect
-            v-model="hostForm.default_space_key"
+            v-model="entryForm.default_space_key"
             filterable
             allow-create
             default-first-option
@@ -288,18 +334,21 @@
         </ElFormItem>
         <ElFormItem label="说明">
           <ElInput
-            v-model="hostForm.description"
+            v-model="entryForm.description"
             type="textarea"
-            :rows="3"
+            :rows="2"
             placeholder="例如 平台治理入口 / 商家后台入口"
           />
         </ElFormItem>
         <div class="app-drawer-grid">
+          <ElFormItem label="优先级">
+            <ElInputNumber v-model="entryForm.priority" :min="0" :max="999" />
+          </ElFormItem>
           <ElFormItem label="主绑定">
-            <ElSwitch v-model="hostForm.is_primary" />
+            <ElSwitch v-model="entryForm.is_primary" />
           </ElFormItem>
           <ElFormItem label="状态">
-            <ElSelect v-model="hostForm.status">
+            <ElSelect v-model="entryForm.status">
               <ElOption label="启用" value="normal" />
               <ElOption label="停用" value="disabled" />
             </ElSelect>
@@ -308,11 +357,79 @@
       </ElForm>
       <template #footer>
         <div class="drawer-footer">
-          <ElButton @click="hostDrawerVisible = false">取消</ElButton>
-          <ElButton type="primary" :loading="savingHost" @click="saveHostBinding">保存</ElButton>
+          <ElButton @click="entryDialogVisible = false">取消</ElButton>
+          <ElButton type="primary" :loading="savingHost" @click="saveEntryBinding">保存</ElButton>
         </div>
       </template>
-    </ElDrawer>
+    </ElDialog>
+
+    <ElDialog
+      v-model="spaceEntryDialogVisible"
+      :title="spaceEntryDialogTitle"
+      width="560px"
+      destroy-on-close
+      append-to-body
+    >
+      <ElForm :model="spaceEntryForm" label-position="top">
+        <ElFormItem label="目标菜单空间">
+          <ElSelect v-model="spaceEntryForm.space_key" filterable style="width: 100%">
+            <ElOption
+              v-for="item in spaces"
+              :key="item.spaceKey"
+              :label="`${item.name} · ${item.spaceKey}`"
+              :value="item.spaceKey"
+            />
+          </ElSelect>
+        </ElFormItem>
+        <ElFormItem label="匹配类型">
+          <ElRadioGroup v-model="spaceEntryForm.match_type">
+            <ElRadioButton value="host_exact">精确域名</ElRadioButton>
+            <ElRadioButton value="host_suffix">子域名通配</ElRadioButton>
+            <ElRadioButton value="path_prefix">路径模式</ElRadioButton>
+            <ElRadioButton value="host_and_path">域名+路径</ElRadioButton>
+          </ElRadioGroup>
+        </ElFormItem>
+        <ElFormItem v-if="spaceEntryNeedsHost" label="Host">
+          <ElInput v-model="spaceEntryForm.host" :placeholder="spaceEntryHostPlaceholder" />
+        </ElFormItem>
+        <ElFormItem v-if="spaceEntryNeedsPath" label="路径模式">
+          <ElInput v-model="spaceEntryForm.path_pattern" placeholder="例如 /a/** 或 /shop/:id" />
+          <div class="app-form-hint">
+            支持 <code>*</code> / <code>**</code> / <code>:name</code>，且必须落在 APP 入口规则范围内。
+          </div>
+        </ElFormItem>
+        <ElFormItem label="说明">
+          <ElInput
+            v-model="spaceEntryForm.description"
+            type="textarea"
+            :rows="2"
+            placeholder="例如 商家后台 /shop 路径进入 shop 空间"
+          />
+        </ElFormItem>
+        <div class="app-drawer-grid">
+          <ElFormItem label="优先级">
+            <ElInputNumber v-model="spaceEntryForm.priority" :min="0" :max="999" />
+          </ElFormItem>
+          <ElFormItem label="主绑定">
+            <ElSwitch v-model="spaceEntryForm.is_primary" />
+          </ElFormItem>
+          <ElFormItem label="状态">
+            <ElSelect v-model="spaceEntryForm.status">
+              <ElOption label="启用" value="normal" />
+              <ElOption label="停用" value="disabled" />
+            </ElSelect>
+          </ElFormItem>
+        </div>
+      </ElForm>
+      <template #footer>
+        <div class="drawer-footer">
+          <ElButton @click="spaceEntryDialogVisible = false">取消</ElButton>
+          <ElButton type="primary" :loading="savingSpaceEntry" @click="saveSpaceEntryBinding"
+            >保存</ElButton
+          >
+        </div>
+      </template>
+    </ElDialog>
   </div>
 </template>
 
@@ -328,7 +445,11 @@
     fetchGetCurrentApp,
     fetchGetMenuSpaces,
     fetchSaveApp,
-    fetchSaveAppHostBinding
+    fetchSaveAppHostBinding,
+    fetchDeleteAppHostBinding,
+    fetchGetMenuSpaceEntryBindings,
+    fetchSaveMenuSpaceEntryBinding,
+    fetchDeleteMenuSpaceEntryBinding
   } from '@/api/system-manage'
 
   defineOptions({ name: 'AppManage' })
@@ -342,14 +463,18 @@
   const savingHost = ref(false)
   const apps = ref<Api.SystemManage.AppItem[]>([])
   const hostBindings = ref<Api.SystemManage.AppHostBindingItem[]>([])
+  const spaceEntryBindings = ref<Api.SystemManage.MenuSpaceEntryBindingItem[]>([])
   const spaces = ref<Api.SystemManage.MenuSpaceItem[]>([])
   const currentApp = ref<Api.SystemManage.CurrentAppResponse>()
   const selectedAppKey = ref('')
 
   const appDrawerVisible = ref(false)
-  const hostDrawerVisible = ref(false)
+  const entryDialogVisible = ref(false)
+  const spaceEntryDialogVisible = ref(false)
+  const savingSpaceEntry = ref(false)
   const editingAppKey = ref('')
-  const editingHost = ref('')
+  const editingEntryId = ref('')
+  const editingSpaceEntryId = ref('')
 
   const appForm = reactive<Api.SystemManage.AppSaveParams>({
     app_key: '',
@@ -362,15 +487,85 @@
     meta: {}
   })
 
-  const hostForm = reactive<Api.SystemManage.AppHostBindingSaveParams>({
+  const entryForm = reactive<Api.SystemManage.AppHostBindingSaveParams>({
+    id: '',
     app_key: '',
+    match_type: 'host_exact',
     host: '',
+    path_pattern: '',
+    priority: 0,
     default_space_key: '',
     description: '',
     is_primary: false,
     status: 'normal',
     meta: {}
   })
+
+  const spaceEntryForm = reactive<Api.SystemManage.MenuSpaceEntryBindingSaveParams>({
+    id: '',
+    app_key: '',
+    space_key: '',
+    match_type: 'host_exact',
+    host: '',
+    path_pattern: '',
+    priority: 0,
+    description: '',
+    is_primary: false,
+    status: 'normal',
+    meta: {}
+  })
+
+  const matchTypeLabelMap: Record<string, string> = {
+    host_exact: '精确域名',
+    host_suffix: '子域名',
+    path_prefix: '路径',
+    host_and_path: '域名+路径'
+  }
+
+  function matchTypeLabel(type?: string) {
+    return matchTypeLabelMap[type || 'host_exact'] || type || ''
+  }
+
+  function describeEntryRule(item: { matchType?: string; host?: string; pathPattern?: string }) {
+    const host = item.host || ''
+    const path = item.pathPattern || ''
+    switch (item.matchType) {
+      case 'host_suffix':
+        return `*${host.startsWith('.') ? host : '.' + host}`
+      case 'path_prefix':
+        return path || '/'
+      case 'host_and_path':
+        return `${host}${path}`
+      default:
+        return host || path || '-'
+    }
+  }
+
+  const isMultiSpaceApp = computed(() => selectedAppRecord.value?.spaceMode === 'multi')
+
+  const entryNeedsHost = computed(() =>
+    ['host_exact', 'host_suffix', 'host_and_path'].includes(`${entryForm.match_type}`)
+  )
+  const entryNeedsPath = computed(() =>
+    ['path_prefix', 'host_and_path'].includes(`${entryForm.match_type}`)
+  )
+  const entryHostPlaceholder = computed(() =>
+    entryForm.match_type === 'host_suffix' ? '例如 .example.com' : '例如 admin.example.com'
+  )
+  const entryDialogTitle = computed(() => (editingEntryId.value ? '编辑入口绑定' : '新增入口绑定'))
+
+  const spaceEntryNeedsHost = computed(() =>
+    ['host_exact', 'host_suffix', 'host_and_path'].includes(`${spaceEntryForm.match_type}`)
+  )
+  const spaceEntryNeedsPath = computed(() =>
+    ['path_prefix', 'host_and_path'].includes(`${spaceEntryForm.match_type}`)
+  )
+  const spaceEntryHostPlaceholder = computed(() =>
+    spaceEntryForm.match_type === 'host_suffix' ? '例如 .example.com' : '例如 shop.example.com'
+  )
+  const spaceEntryDialogTitle = computed(() =>
+    editingSpaceEntryId.value ? '编辑菜单空间入口' : '新增菜单空间入口'
+  )
 
   const currentAppRecord = computed(() => currentApp.value?.app)
   const currentAppRequestHost = computed(() => `${currentApp.value?.requestHost || ''}`.trim())
@@ -392,7 +587,6 @@
     }
   })
   const appDrawerTitle = computed(() => (editingAppKey.value ? '编辑应用' : '新增应用'))
-  const hostDrawerTitle = computed(() => (editingHost.value ? '编辑 Host 绑定' : '新增 Host 绑定'))
   const summaryMetrics = computed(() => [
     { label: '应用数', value: apps.value.length || 0 },
     { label: '管理 App', value: selectedAppRecord.value?.name || selectedAppKey.value || '未选择' },
@@ -431,12 +625,14 @@
     }
     selectedAppKey.value = normalizedAppKey
     await setManagedAppKey(normalizedAppKey)
-    const [hostRes, spaceRes] = await Promise.all([
+    const [hostRes, spaceRes, entryRes] = await Promise.all([
       fetchGetAppHostBindings(normalizedAppKey),
-      fetchGetMenuSpaces(normalizedAppKey)
+      fetchGetMenuSpaces(normalizedAppKey),
+      fetchGetMenuSpaceEntryBindings(normalizedAppKey).catch(() => ({ records: [] as any[] }))
     ])
     hostBindings.value = hostRes.records || []
     spaces.value = spaceRes.records || []
+    spaceEntryBindings.value = (entryRes.records || []) as any
   }
 
   async function loadData() {
@@ -459,6 +655,7 @@
       apps.value = []
       hostBindings.value = []
       spaces.value = []
+      spaceEntryBindings.value = []
       loadError.value = error?.message || '应用数据暂时不可用，稍后重试或刷新状态。'
     } finally {
       loading.value = false
@@ -477,15 +674,34 @@
     appForm.meta = {}
   }
 
-  function resetHostForm() {
-    editingHost.value = ''
-    hostForm.app_key = resolveAppKey(selectedAppKey.value)
-    hostForm.host = ''
-    hostForm.default_space_key = resolveSpaceKey(selectedAppRecord.value?.defaultSpaceKey)
-    hostForm.description = ''
-    hostForm.is_primary = false
-    hostForm.status = 'normal'
-    hostForm.meta = {}
+  function resetEntryForm() {
+    editingEntryId.value = ''
+    entryForm.id = ''
+    entryForm.app_key = resolveAppKey(selectedAppKey.value)
+    entryForm.match_type = 'host_exact'
+    entryForm.host = ''
+    entryForm.path_pattern = ''
+    entryForm.priority = 0
+    entryForm.default_space_key = resolveSpaceKey(selectedAppRecord.value?.defaultSpaceKey)
+    entryForm.description = ''
+    entryForm.is_primary = false
+    entryForm.status = 'normal'
+    entryForm.meta = {}
+  }
+
+  function resetSpaceEntryForm() {
+    editingSpaceEntryId.value = ''
+    spaceEntryForm.id = ''
+    spaceEntryForm.app_key = resolveAppKey(selectedAppKey.value)
+    spaceEntryForm.space_key = spaces.value[0]?.spaceKey || ''
+    spaceEntryForm.match_type = 'host_exact'
+    spaceEntryForm.host = ''
+    spaceEntryForm.path_pattern = ''
+    spaceEntryForm.priority = 0
+    spaceEntryForm.description = ''
+    spaceEntryForm.is_primary = false
+    spaceEntryForm.status = 'normal'
+    spaceEntryForm.meta = {}
   }
 
   function openAppDrawer(item?: Api.SystemManage.AppItem) {
@@ -504,22 +720,45 @@
     appDrawerVisible.value = true
   }
 
-  function openHostDrawer(item?: Api.SystemManage.AppHostBindingItem) {
-    resetHostForm()
+  function openEntryDialog(item?: Api.SystemManage.AppHostBindingItem) {
+    resetEntryForm()
     if (item) {
-      editingHost.value = item.host
-      hostForm.app_key = item.appKey || selectedAppKey.value
-      hostForm.host = item.host
-      hostForm.default_space_key = resolveSpaceKey(
+      editingEntryId.value = item.id || ''
+      entryForm.id = item.id || ''
+      entryForm.app_key = item.appKey || selectedAppKey.value
+      entryForm.match_type = (item.matchType as any) || 'host_exact'
+      entryForm.host = item.host || ''
+      entryForm.path_pattern = item.pathPattern || ''
+      entryForm.priority = item.priority || 0
+      entryForm.default_space_key = resolveSpaceKey(
         item.defaultSpaceKey,
         selectedAppRecord.value?.defaultSpaceKey
       )
-      hostForm.description = item.description || ''
-      hostForm.is_primary = Boolean(item.isPrimary)
-      hostForm.status = item.status || 'normal'
-      hostForm.meta = item.meta || {}
+      entryForm.description = item.description || ''
+      entryForm.is_primary = Boolean(item.isPrimary)
+      entryForm.status = item.status || 'normal'
+      entryForm.meta = item.meta || {}
     }
-    hostDrawerVisible.value = true
+    entryDialogVisible.value = true
+  }
+
+  function openSpaceEntryDialog(item?: Api.SystemManage.MenuSpaceEntryBindingItem) {
+    resetSpaceEntryForm()
+    if (item) {
+      editingSpaceEntryId.value = item.id || ''
+      spaceEntryForm.id = item.id || ''
+      spaceEntryForm.app_key = item.appKey || selectedAppKey.value
+      spaceEntryForm.space_key = item.spaceKey || ''
+      spaceEntryForm.match_type = (item.matchType as any) || 'host_exact'
+      spaceEntryForm.host = item.host || ''
+      spaceEntryForm.path_pattern = item.pathPattern || ''
+      spaceEntryForm.priority = item.priority || 0
+      spaceEntryForm.description = item.description || ''
+      spaceEntryForm.is_primary = Boolean(item.isPrimary)
+      spaceEntryForm.status = item.status || 'normal'
+      spaceEntryForm.meta = item.meta || {}
+    }
+    spaceEntryDialogVisible.value = true
   }
 
   async function saveApp() {
@@ -561,39 +800,111 @@
     }
   }
 
-  async function saveHostBinding() {
+  function validateEntryForm(form: { match_type?: string; host?: string; path_pattern?: string }) {
+    const mt = form.match_type || 'host_exact'
+    const host = (form.host || '').trim()
+    const path = (form.path_pattern || '').trim()
+    if (['host_exact', 'host_suffix'].includes(mt) && !host) {
+      return 'Host 不能为空'
+    }
+    if (mt === 'path_prefix' && !path) {
+      return '路径模式不能为空'
+    }
+    if (mt === 'host_and_path' && (!host || !path)) {
+      return 'host_and_path 类型必须同时填写 Host 和路径'
+    }
+    return ''
+  }
+
+  async function saveEntryBinding() {
     if (!selectedAppKey.value) {
       ElMessage.warning('请先选择应用')
       return
     }
-    if (!hostForm.host.trim()) {
-      ElMessage.warning('请输入 Host')
+    const err = validateEntryForm(entryForm)
+    if (err) {
+      ElMessage.warning(err)
       return
     }
-    if (!resolveSpaceKey(hostForm.default_space_key, selectedAppRecord.value?.defaultSpaceKey)) {
+    if (!resolveSpaceKey(entryForm.default_space_key, selectedAppRecord.value?.defaultSpaceKey)) {
       ElMessage.warning('请选择或填写默认空间')
       return
     }
     savingHost.value = true
     try {
       await fetchSaveAppHostBinding({
-        ...hostForm,
+        ...entryForm,
         app_key: selectedAppKey.value,
-        host: hostForm.host.trim().toLowerCase(),
+        host: (entryForm.host || '').trim().toLowerCase(),
+        path_pattern: (entryForm.path_pattern || '').trim(),
         default_space_key: resolveSpaceKey(
-          hostForm.default_space_key,
+          entryForm.default_space_key,
           selectedAppRecord.value?.defaultSpaceKey
         ),
-        description: hostForm.description?.trim() || ''
+        description: entryForm.description?.trim() || ''
       })
-      ElMessage.success('Host 绑定已保存')
-      hostDrawerVisible.value = false
+      ElMessage.success('入口绑定已保存')
+      entryDialogVisible.value = false
       await loadSelectedAppContext(selectedAppKey.value)
-      await loadData()
     } catch (error: any) {
-      ElMessage.error(error?.message || 'Host 绑定保存失败')
+      ElMessage.error(error?.message || '入口绑定保存失败')
     } finally {
       savingHost.value = false
+    }
+  }
+
+  async function deleteEntry(item: Api.SystemManage.AppHostBindingItem) {
+    if (!item.id) return
+    try {
+      await fetchDeleteAppHostBinding(item.id, selectedAppKey.value)
+      ElMessage.success('已删除')
+      await loadSelectedAppContext(selectedAppKey.value)
+    } catch (error: any) {
+      ElMessage.error(error?.message || '删除失败')
+    }
+  }
+
+  async function saveSpaceEntryBinding() {
+    if (!selectedAppKey.value) {
+      ElMessage.warning('请先选择应用')
+      return
+    }
+    if (!spaceEntryForm.space_key) {
+      ElMessage.warning('请选择目标菜单空间')
+      return
+    }
+    const err = validateEntryForm(spaceEntryForm)
+    if (err) {
+      ElMessage.warning(err)
+      return
+    }
+    savingSpaceEntry.value = true
+    try {
+      await fetchSaveMenuSpaceEntryBinding({
+        ...spaceEntryForm,
+        app_key: selectedAppKey.value,
+        host: (spaceEntryForm.host || '').trim().toLowerCase(),
+        path_pattern: (spaceEntryForm.path_pattern || '').trim(),
+        description: spaceEntryForm.description?.trim() || ''
+      })
+      ElMessage.success('菜单空间入口绑定已保存')
+      spaceEntryDialogVisible.value = false
+      await loadSelectedAppContext(selectedAppKey.value)
+    } catch (error: any) {
+      ElMessage.error(error?.message || '菜单空间入口绑定保存失败')
+    } finally {
+      savingSpaceEntry.value = false
+    }
+  }
+
+  async function deleteSpaceEntry(item: Api.SystemManage.MenuSpaceEntryBindingItem) {
+    if (!item.id) return
+    try {
+      await fetchDeleteMenuSpaceEntryBinding(item.id, selectedAppKey.value)
+      ElMessage.success('已删除')
+      await loadSelectedAppContext(selectedAppKey.value)
+    } catch (error: any) {
+      ElMessage.error(error?.message || '删除失败')
     }
   }
 
@@ -705,7 +1016,29 @@
     gap: 8px;
   }
 
-  .app-manage-list,
+  .app-manage-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .app-binding-section {
+    margin-top: 16px;
+  }
+
+  .app-binding-section__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .app-binding-section__title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--art-text-gray-700);
+  }
+
   .app-binding-list {
     display: flex;
     flex-direction: column;
@@ -793,24 +1126,18 @@
     background: linear-gradient(180deg, rgba(72, 120, 255, 0.06), rgba(72, 120, 255, 0.02));
   }
 
-  .app-overview__grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
-  }
-
-  .app-overview__item {
+  .app-overview__summary {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 12px 14px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.84);
-  }
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    font-size: 13px;
+    color: var(--art-text-gray-600);
 
-  .app-overview__label {
-    font-size: 12px;
-    color: var(--art-text-gray-500);
+    strong {
+      color: var(--art-text-gray-900);
+      font-weight: 600;
+    }
   }
 
   .app-overview__actions,
@@ -859,7 +1186,6 @@
   }
 
   @media (max-width: 768px) {
-    .app-overview__grid,
     .app-drawer-grid {
       grid-template-columns: 1fr;
     }

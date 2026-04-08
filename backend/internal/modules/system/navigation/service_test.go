@@ -367,6 +367,22 @@ func (s *stubAppService) SaveHostBinding(appKey string, req *apppkg.SaveHostBind
 	return nil, fmt.Errorf("unexpected SaveHostBinding call")
 }
 
+func (s *stubAppService) DeleteHostBinding(appKey, id string) error {
+	return fmt.Errorf("unexpected DeleteHostBinding call")
+}
+
+func (s *stubAppService) ListMenuSpaceEntryBindings(appKey string) ([]apppkg.MenuSpaceEntryBindingRecord, error) {
+	return nil, fmt.Errorf("unexpected ListMenuSpaceEntryBindings call")
+}
+
+func (s *stubAppService) SaveMenuSpaceEntryBinding(appKey string, req *apppkg.SaveMenuSpaceEntryBindingRequest) (*apppkg.MenuSpaceEntryBindingRecord, error) {
+	return nil, fmt.Errorf("unexpected SaveMenuSpaceEntryBinding call")
+}
+
+func (s *stubAppService) DeleteMenuSpaceEntryBinding(appKey, id string) error {
+	return fmt.Errorf("unexpected DeleteMenuSpaceEntryBinding call")
+}
+
 func (s *stubSpaceService) ListSpaces(appKey string) ([]spacepkg.SpaceRecord, error) {
 	return nil, fmt.Errorf("unexpected ListSpaces call")
 }

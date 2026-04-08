@@ -589,8 +589,31 @@ export function normalizeAppHostBinding(item: any): Api.SystemManage.AppHostBind
     id: item?.id || '',
     appKey: item?.app_key || item?.appKey || '',
     appName: item?.app_name || item?.appName || '',
+    matchType: item?.match_type || item?.matchType || 'host_exact',
     host: `${item?.host || ''}`.trim(),
+    pathPattern: `${item?.path_pattern || item?.pathPattern || ''}`.trim(),
+    priority: Number(item?.priority ?? 0),
     defaultSpaceKey: item?.default_space_key || item?.defaultSpaceKey || '',
+    description: item?.description || '',
+    isPrimary: Boolean(item?.is_primary ?? item?.isPrimary ?? false),
+    status: item?.status || 'normal',
+    meta: item?.meta || {},
+    createdAt: item?.created_at || item?.createdAt || '',
+    updatedAt: item?.updated_at || item?.updatedAt || ''
+  }
+}
+
+export function normalizeMenuSpaceEntryBinding(item: any): Api.SystemManage.MenuSpaceEntryBindingItem {
+  return {
+    id: item?.id || '',
+    appKey: item?.app_key || item?.appKey || '',
+    appName: item?.app_name || item?.appName || '',
+    spaceKey: item?.space_key || item?.spaceKey || '',
+    spaceName: item?.space_name || item?.spaceName || '',
+    matchType: item?.match_type || item?.matchType || 'host_exact',
+    host: `${item?.host || ''}`.trim(),
+    pathPattern: `${item?.path_pattern || item?.pathPattern || ''}`.trim(),
+    priority: Number(item?.priority ?? 0),
     description: item?.description || '',
     isPrimary: Boolean(item?.is_primary ?? item?.isPrimary ?? false),
     status: item?.status || 'normal',

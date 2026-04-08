@@ -2,6 +2,8 @@ package app
 
 import (
 	"errors"
+	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -10,6 +12,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	spacepkg "github.com/gg-ecommerce/backend/internal/modules/system/space"
 	appctx "github.com/gg-ecommerce/backend/internal/pkg/appctx"
+	"github.com/gg-ecommerce/backend/internal/pkg/pathmatch"
 )
 
 type AppRecord struct {
@@ -46,13 +49,37 @@ type SaveAppRequest struct {
 }
 
 type SaveHostBindingRequest struct {
+	ID              string                 `json:"id"`
 	AppKey          string                 `json:"app_key"`
+	MatchType       string                 `json:"match_type"`
 	Host            string                 `json:"host"`
+	PathPattern     string                 `json:"path_pattern"`
+	Priority        int                    `json:"priority"`
 	Description     string                 `json:"description"`
 	IsPrimary       bool                   `json:"is_primary"`
 	DefaultSpaceKey string                 `json:"default_space_key"`
 	Status          string                 `json:"status"`
 	Meta            map[string]interface{} `json:"meta"`
+}
+
+type MenuSpaceEntryBindingRecord struct {
+	models.MenuSpaceEntryBinding
+	AppName   string `json:"app_name"`
+	SpaceName string `json:"space_name"`
+}
+
+type SaveMenuSpaceEntryBindingRequest struct {
+	ID          string                 `json:"id"`
+	AppKey      string                 `json:"app_key"`
+	SpaceKey    string                 `json:"space_key"`
+	MatchType   string                 `json:"match_type"`
+	Host        string                 `json:"host"`
+	PathPattern string                 `json:"path_pattern"`
+	Priority    int                    `json:"priority"`
+	Description string                 `json:"description"`
+	IsPrimary   bool                   `json:"is_primary"`
+	Status      string                 `json:"status"`
+	Meta        map[string]interface{} `json:"meta"`
 }
 
 type Service interface {
@@ -61,6 +88,10 @@ type Service interface {
 	SaveApp(req *SaveAppRequest) (*AppRecord, error)
 	ListHostBindings(appKey string) ([]HostBindingRecord, error)
 	SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*HostBindingRecord, error)
+	DeleteHostBinding(appKey, id string) error
+	ListMenuSpaceEntryBindings(appKey string) ([]MenuSpaceEntryBindingRecord, error)
+	SaveMenuSpaceEntryBinding(appKey string, req *SaveMenuSpaceEntryBindingRequest) (*MenuSpaceEntryBindingRecord, error)
+	DeleteMenuSpaceEntryBinding(appKey, id string) error
 }
 
 type service struct {
@@ -92,7 +123,13 @@ func CurrentAppKey(c *gin.Context) string {
 	return appctx.CurrentAppKey(c)
 }
 
+// ResolveAppByHost 兼容旧签名（仅 host），等价于 ResolveAppEntry(db, host, "", requestedAppKey)。
 func ResolveAppByHost(db *gorm.DB, host string, requestedAppKey string) (string, *models.AppHostBinding, string, error) {
+	return ResolveAppEntry(db, host, "", requestedAppKey)
+}
+
+// ResolveAppEntry Level 1 入口解析：按 host + path 匹配 APP。
+func ResolveAppEntry(db *gorm.DB, host, path, requestedAppKey string) (string, *models.AppHostBinding, string, error) {
 	if db == nil {
 		return models.DefaultAppKey, nil, "fallback_default", nil
 	}
@@ -111,25 +148,29 @@ func ResolveAppByHost(db *gorm.DB, host string, requestedAppKey string) (string,
 		}
 	}
 
-	normalizedHost := spacepkg.NormalizeHost(host)
-	if normalizedHost != "" {
-		var binding models.AppHostBinding
-		err := db.Where("host = ? AND status = ? AND deleted_at IS NULL", normalizedHost, "normal").First(&binding).Error
-		if err == nil {
-			ok, appErr := appExists(db, binding.AppKey)
-			if appErr != nil {
-				return models.DefaultAppKey, nil, "", appErr
-			}
-			if ok {
-				return NormalizeAppKey(binding.AppKey), &binding, "host_binding", nil
-			}
-		} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			return models.DefaultAppKey, nil, "", err
-		}
+	normalizedHost := pathmatch.NormalizeHost(host)
+	normalizedPath := pathmatch.NormalizePath(path)
 
-		// 兼容旧的菜单空间 Host 绑定，优先级低于 App 绑定。
+	// 加载所有启用绑定，按具体度排序。
+	var bindings []models.AppHostBinding
+	if err := db.Where("status = ? AND deleted_at IS NULL", "normal").Find(&bindings).Error; err != nil {
+		return models.DefaultAppKey, nil, "", err
+	}
+	matched := matchAppEntryBinding(bindings, normalizedHost, normalizedPath)
+	if matched != nil {
+		ok, appErr := appExists(db, matched.AppKey)
+		if appErr != nil {
+			return models.DefaultAppKey, nil, "", appErr
+		}
+		if ok {
+			return NormalizeAppKey(matched.AppKey), matched, "entry_binding", nil
+		}
+	}
+
+	// 兼容旧菜单空间 Host 绑定。
+	if normalizedHost != "" {
 		var legacyBinding models.MenuSpaceHostBinding
-		err = db.Where("host = ? AND status = ? AND deleted_at IS NULL", normalizedHost, "normal").First(&legacyBinding).Error
+		err := db.Where("host = ? AND status = ? AND deleted_at IS NULL", normalizedHost, "normal").First(&legacyBinding).Error
 		if err == nil {
 			var space models.MenuSpace
 			spaceErr := db.Where("space_key = ? AND deleted_at IS NULL", legacyBinding.SpaceKey).Order("is_default DESC, created_at ASC").First(&space).Error
@@ -148,7 +189,7 @@ func ResolveAppByHost(db *gorm.DB, host string, requestedAppKey string) (string,
 			} else if spaceErr != nil && !errors.Is(spaceErr, gorm.ErrRecordNotFound) {
 				return models.DefaultAppKey, nil, "", spaceErr
 			}
-		} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
 			return models.DefaultAppKey, nil, "", err
 		}
 	}
@@ -158,6 +199,107 @@ func ResolveAppByHost(db *gorm.DB, host string, requestedAppKey string) (string,
 		return models.DefaultAppKey, nil, "", err
 	}
 	return defaultApp.AppKey, nil, "default_app", nil
+}
+
+// ResolveMenuSpaceEntry Level 2 入口解析：按 host + path 在 App 内匹配菜单空间。
+// 单空间 App 直接返回 App 默认空间，不做匹配。
+func ResolveMenuSpaceEntry(db *gorm.DB, appKey, host, path string) (string, string, error) {
+	if db == nil {
+		return "", "fallback_default", nil
+	}
+	normalizedAppKey := NormalizeAppKey(appKey)
+	if normalizedAppKey == "" {
+		return "", "fallback_default", nil
+	}
+	var app models.App
+	if err := db.Where("app_key = ? AND deleted_at IS NULL", normalizedAppKey).First(&app).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return "", "fallback_default", nil
+		}
+		return "", "", err
+	}
+	defaultSpace := strings.TrimSpace(app.DefaultSpaceKey)
+	if app.SpaceMode != "multi" {
+		// 单空间短路。
+		return defaultSpace, "single_space_app", nil
+	}
+
+	normalizedHost := pathmatch.NormalizeHost(host)
+	normalizedPath := pathmatch.NormalizePath(path)
+
+	var bindings []models.MenuSpaceEntryBinding
+	if err := db.Where("app_key = ? AND status = ? AND deleted_at IS NULL", normalizedAppKey, "normal").Find(&bindings).Error; err != nil {
+		return defaultSpace, "", err
+	}
+	matched := matchMenuSpaceEntryBinding(bindings, normalizedHost, normalizedPath)
+	if matched != nil {
+		spaceKey := strings.TrimSpace(matched.SpaceKey)
+		// P2: 校验目标空间存在且未被禁用，避免遗留绑定指向失效空间。
+		var space models.MenuSpace
+		err := db.Select("space_key", "status").
+			Where("app_key = ? AND space_key = ? AND deleted_at IS NULL", normalizedAppKey, spaceKey).
+			First(&space).Error
+		if err == nil && space.Status != "disabled" {
+			return spaceKey, "entry_binding", nil
+		}
+		// 空间不存在或已禁用，回退默认空间。
+	}
+	return defaultSpace, "default_space", nil
+}
+
+// matchAppEntryBinding 在所有候选 binding 中按具体度排序，返回第一个命中的。
+func matchAppEntryBinding(bindings []models.AppHostBinding, host, path string) *models.AppHostBinding {
+	type scored struct {
+		idx   int
+		score int
+	}
+	candidates := make([]scored, 0, len(bindings))
+	for i := range bindings {
+		b := bindings[i]
+		hostPattern := pathmatch.NormalizeHostPattern(b.MatchType, b.Host)
+		if !pathmatch.MatchHost(b.MatchType, hostPattern, host) {
+			continue
+		}
+		needPath := b.MatchType == pathmatch.PathPrefix || b.MatchType == pathmatch.HostAndPath
+		if needPath && !pathmatch.MatchPath(b.PathPattern, path) {
+			continue
+		}
+		s := pathmatch.PatternSpecificity(b.MatchType, hostPattern, b.PathPattern) + b.Priority*10
+		candidates = append(candidates, scored{idx: i, score: s})
+	}
+	if len(candidates) == 0 {
+		return nil
+	}
+	sort.SliceStable(candidates, func(i, j int) bool { return candidates[i].score > candidates[j].score })
+	winner := bindings[candidates[0].idx]
+	return &winner
+}
+
+func matchMenuSpaceEntryBinding(bindings []models.MenuSpaceEntryBinding, host, path string) *models.MenuSpaceEntryBinding {
+	type scored struct {
+		idx   int
+		score int
+	}
+	candidates := make([]scored, 0, len(bindings))
+	for i := range bindings {
+		b := bindings[i]
+		hostPattern := pathmatch.NormalizeHostPattern(b.MatchType, b.Host)
+		if !pathmatch.MatchHost(b.MatchType, hostPattern, host) {
+			continue
+		}
+		needPath := b.MatchType == pathmatch.PathPrefix || b.MatchType == pathmatch.HostAndPath
+		if needPath && !pathmatch.MatchPath(b.PathPattern, path) {
+			continue
+		}
+		s := pathmatch.PatternSpecificity(b.MatchType, hostPattern, b.PathPattern) + b.Priority*10
+		candidates = append(candidates, scored{idx: i, score: s})
+	}
+	if len(candidates) == 0 {
+		return nil
+	}
+	sort.SliceStable(candidates, func(i, j int) bool { return candidates[i].score > candidates[j].score })
+	winner := bindings[candidates[0].idx]
+	return &winner
 }
 
 func (s *service) ListApps() ([]AppRecord, error) {
@@ -358,9 +500,53 @@ func (s *service) ListHostBindings(appKey string) ([]HostBindingRecord, error) {
 	return records, nil
 }
 
+func normalizeMatchType(value string) (string, error) {
+	v := strings.TrimSpace(value)
+	if v == "" {
+		v = pathmatch.HostExact
+	}
+	switch v {
+	case pathmatch.HostExact, pathmatch.HostSuffix, pathmatch.PathPrefix, pathmatch.HostAndPath:
+		return v, nil
+	}
+	return "", fmt.Errorf("不支持的匹配类型: %s", value)
+}
+
+// validateEntryRule 校验匹配类型与字段组合，并返回规范化后的 host / path。
+func validateEntryRule(matchType, host, pathPattern string) (string, string, error) {
+	mt, err := normalizeMatchType(matchType)
+	if err != nil {
+		return "", "", err
+	}
+	normalizedHost := pathmatch.NormalizeHostPattern(mt, host)
+	normalizedPath := pathmatch.NormalizePathPattern(pathPattern)
+	switch mt {
+	case pathmatch.HostExact, pathmatch.HostSuffix:
+		if normalizedHost == "" {
+			return "", "", errors.New("Host 不能为空")
+		}
+		normalizedPath = ""
+	case pathmatch.PathPrefix:
+		if normalizedPath == "" {
+			return "", "", errors.New("路径模式不能为空")
+		}
+		normalizedHost = ""
+	case pathmatch.HostAndPath:
+		if normalizedHost == "" || normalizedPath == "" {
+			return "", "", errors.New("host_and_path 类型必须同时填写 Host 和路径模式")
+		}
+	}
+	if normalizedPath != "" {
+		if _, err := pathmatch.CompilePathPattern(normalizedPath); err != nil {
+			return "", "", fmt.Errorf("路径模式编译失败: %w", err)
+		}
+	}
+	return normalizedHost, normalizedPath, nil
+}
+
 func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*HostBindingRecord, error) {
 	if req == nil {
-		return nil, errors.New("Host 绑定参数不能为空")
+		return nil, errors.New("入口绑定参数不能为空")
 	}
 	normalizedAppKey := appctx.NormalizeExplicitAppKey(appKey)
 	if normalizedAppKey == "" {
@@ -377,9 +563,13 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 	} else if !ok {
 		return nil, errors.New("应用不存在")
 	}
-	host := spacepkg.NormalizeHost(req.Host)
-	if host == "" {
-		return nil, errors.New("Host 不能为空")
+	matchType, err := normalizeMatchType(req.MatchType)
+	if err != nil {
+		return nil, err
+	}
+	host, pathPattern, err := validateEntryRule(matchType, req.Host, req.PathPattern)
+	if err != nil {
+		return nil, err
 	}
 	defaultSpaceKey := spacepkg.NormalizeSpaceKey(req.DefaultSpaceKey)
 	if defaultSpaceKey == "" {
@@ -392,7 +582,10 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 
 	binding := models.AppHostBinding{
 		AppKey:          normalizedAppKey,
+		MatchType:       matchType,
 		Host:            host,
+		PathPattern:     pathPattern,
+		Priority:        req.Priority,
 		Description:     strings.TrimSpace(req.Description),
 		IsPrimary:       req.IsPrimary,
 		DefaultSpaceKey: defaultSpaceKey,
@@ -404,12 +597,31 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 		if err := ensureSpaceExistsForApp(tx, normalizedAppKey, defaultSpaceKey); err != nil {
 			return err
 		}
-		var existing models.AppHostBinding
-		err := tx.Where("host = ? AND deleted_at IS NULL", host).First(&existing).Error
-		switch {
-		case err == nil:
+		// 唯一性：(match_type, host, path_pattern) 全局唯一。
+		conflictQuery := tx.Where("match_type = ? AND host = ? AND path_pattern = ? AND deleted_at IS NULL", matchType, host, pathPattern)
+		if strings.TrimSpace(req.ID) != "" {
+			conflictQuery = conflictQuery.Where("id <> ?", req.ID)
+		}
+		var conflictCount int64
+		if err := conflictQuery.Model(&models.AppHostBinding{}).Count(&conflictCount).Error; err != nil {
+			return err
+		}
+		if conflictCount > 0 {
+			return errors.New("已存在同匹配类型 + Host + 路径的入口绑定")
+		}
+
+		if strings.TrimSpace(req.ID) != "" {
+			var existing models.AppHostBinding
+			// P1: 限定 app_key 防止跨 App 改绑定。
+			if err := tx.Where("id = ? AND app_key = ? AND deleted_at IS NULL", req.ID, normalizedAppKey).First(&existing).Error; err != nil {
+				return err
+			}
 			if updateErr := tx.Model(&existing).Updates(map[string]interface{}{
 				"app_key":           binding.AppKey,
+				"match_type":        binding.MatchType,
+				"host":              binding.Host,
+				"path_pattern":      binding.PathPattern,
+				"priority":          binding.Priority,
 				"description":       binding.Description,
 				"is_primary":        binding.IsPrimary,
 				"default_space_key": binding.DefaultSpaceKey,
@@ -418,16 +630,15 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 			}).Error; updateErr != nil {
 				return updateErr
 			}
-		case errors.Is(err, gorm.ErrRecordNotFound):
+			binding.ID = existing.ID
+		} else {
 			if createErr := tx.Create(&binding).Error; createErr != nil {
 				return createErr
 			}
-		default:
-			return err
 		}
 		if binding.IsPrimary {
 			if err := tx.Model(&models.AppHostBinding{}).
-				Where("app_key = ? AND host <> ? AND deleted_at IS NULL", binding.AppKey, binding.Host).
+				Where("app_key = ? AND id <> ? AND deleted_at IS NULL", binding.AppKey, binding.ID).
 				Update("is_primary", false).Error; err != nil {
 				return err
 			}
@@ -442,11 +653,200 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 		return nil, err
 	}
 	for i := range items {
-		if spacepkg.NormalizeHost(items[i].Host) == host {
+		if items[i].ID == binding.ID {
 			return &items[i], nil
 		}
 	}
-	return nil, errors.New("保存 Host 绑定后读取失败")
+	if len(items) > 0 {
+		return &items[0], nil
+	}
+	return nil, errors.New("保存入口绑定后读取失败")
+}
+
+func (s *service) DeleteHostBinding(appKey, id string) error {
+	normalizedAppKey := appctx.NormalizeExplicitAppKey(appKey)
+	if normalizedAppKey == "" {
+		return errors.New("app_key 不能为空")
+	}
+	if strings.TrimSpace(id) == "" {
+		return errors.New("id 不能为空")
+	}
+	return s.db.Where("id = ? AND app_key = ? AND deleted_at IS NULL", id, normalizedAppKey).
+		Delete(&models.AppHostBinding{}).Error
+}
+
+func (s *service) ListMenuSpaceEntryBindings(appKey string) ([]MenuSpaceEntryBindingRecord, error) {
+	normalizedAppKey := appctx.NormalizeExplicitAppKey(appKey)
+	if normalizedAppKey == "" {
+		return nil, errors.New("app_key 不能为空")
+	}
+	var items []models.MenuSpaceEntryBinding
+	if err := s.db.Where("app_key = ? AND deleted_at IS NULL", normalizedAppKey).
+		Order("priority DESC, is_primary DESC, created_at ASC").Find(&items).Error; err != nil {
+		return nil, err
+	}
+	// app + space name 索引
+	var app models.App
+	_ = s.db.Where("app_key = ? AND deleted_at IS NULL", normalizedAppKey).First(&app).Error
+	var spaceList []models.MenuSpace
+	_ = s.db.Where("app_key = ? AND deleted_at IS NULL", normalizedAppKey).Find(&spaceList).Error
+	spaceNames := make(map[string]string, len(spaceList))
+	for _, sp := range spaceList {
+		spaceNames[sp.SpaceKey] = sp.Name
+	}
+	records := make([]MenuSpaceEntryBindingRecord, 0, len(items))
+	for _, item := range items {
+		records = append(records, MenuSpaceEntryBindingRecord{
+			MenuSpaceEntryBinding: item,
+			AppName:               app.Name,
+			SpaceName:             spaceNames[item.SpaceKey],
+		})
+	}
+	return records, nil
+}
+
+func (s *service) SaveMenuSpaceEntryBinding(appKey string, req *SaveMenuSpaceEntryBindingRequest) (*MenuSpaceEntryBindingRecord, error) {
+	if req == nil {
+		return nil, errors.New("菜单空间入口绑定参数不能为空")
+	}
+	normalizedAppKey := appctx.NormalizeExplicitAppKey(appKey)
+	if normalizedAppKey == "" {
+		return nil, errors.New("app_key 不能为空")
+	}
+	if requestAppKey := appctx.NormalizeExplicitAppKey(req.AppKey); requestAppKey != "" && requestAppKey != normalizedAppKey {
+		return nil, errors.New("app_key 不匹配")
+	}
+	spaceKey := spacepkg.NormalizeSpaceKey(req.SpaceKey)
+	if spaceKey == "" {
+		return nil, errors.New("space_key 不能为空")
+	}
+	// 单空间 App 不允许配置 Level 2。
+	var app models.App
+	if err := s.db.Where("app_key = ? AND deleted_at IS NULL", normalizedAppKey).First(&app).Error; err != nil {
+		return nil, err
+	}
+	if app.SpaceMode != "multi" {
+		return nil, errors.New("单空间 App 无需配置菜单空间入口绑定")
+	}
+	if err := ensureSpaceExistsForApp(s.db, normalizedAppKey, spaceKey); err != nil {
+		return nil, err
+	}
+
+	matchType, err := normalizeMatchType(req.MatchType)
+	if err != nil {
+		return nil, err
+	}
+	host, pathPattern, err := validateEntryRule(matchType, req.Host, req.PathPattern)
+	if err != nil {
+		return nil, err
+	}
+
+	// Level 2 不能超出 Level 1 任何一条规则的范围。
+	// 加载 App 的所有 Level 1 绑定，若全部 host 均非空且 child host 都不在范围内 → 拒绝。
+	var l1Bindings []models.AppHostBinding
+	if err := s.db.Where("app_key = ? AND status = ? AND deleted_at IS NULL", normalizedAppKey, "normal").Find(&l1Bindings).Error; err != nil {
+		return nil, err
+	}
+	if len(l1Bindings) > 0 {
+		// 至少匹配一条 Level 1 规则的 host & path 范围
+		ok := false
+		for _, l1 := range l1Bindings {
+			if !pathmatch.IsHostInScope(l1.MatchType, l1.Host, matchType, host) {
+				continue
+			}
+			if !pathmatch.IsPathInScope(l1.PathPattern, pathPattern) {
+				continue
+			}
+			ok = true
+			break
+		}
+		if !ok {
+			return nil, errors.New("菜单空间入口绑定必须落在 APP 入口规则范围内")
+		}
+	}
+
+	status := strings.TrimSpace(req.Status)
+	if status == "" {
+		status = "normal"
+	}
+	binding := models.MenuSpaceEntryBinding{
+		AppKey:      normalizedAppKey,
+		SpaceKey:    spaceKey,
+		MatchType:   matchType,
+		Host:        host,
+		PathPattern: pathPattern,
+		Priority:    req.Priority,
+		IsPrimary:   req.IsPrimary,
+		Description: strings.TrimSpace(req.Description),
+		Status:      status,
+		Meta:        models.MetaJSON(req.Meta),
+	}
+
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		conflictQuery := tx.Where("app_key = ? AND match_type = ? AND host = ? AND path_pattern = ? AND deleted_at IS NULL",
+			normalizedAppKey, matchType, host, pathPattern)
+		if strings.TrimSpace(req.ID) != "" {
+			conflictQuery = conflictQuery.Where("id <> ?", req.ID)
+		}
+		var conflictCount int64
+		if err := conflictQuery.Model(&models.MenuSpaceEntryBinding{}).Count(&conflictCount).Error; err != nil {
+			return err
+		}
+		if conflictCount > 0 {
+			return errors.New("已存在同匹配类型 + Host + 路径的菜单空间入口绑定")
+		}
+		if strings.TrimSpace(req.ID) != "" {
+			var existing models.MenuSpaceEntryBinding
+			// P1: 限定 app_key 防止跨 App 改绑定。
+			if err := tx.Where("id = ? AND app_key = ? AND deleted_at IS NULL", req.ID, normalizedAppKey).First(&existing).Error; err != nil {
+				return err
+			}
+			if updateErr := tx.Model(&existing).Updates(map[string]interface{}{
+				"space_key":    binding.SpaceKey,
+				"match_type":   binding.MatchType,
+				"host":         binding.Host,
+				"path_pattern": binding.PathPattern,
+				"priority":     binding.Priority,
+				"is_primary":   binding.IsPrimary,
+				"description":  binding.Description,
+				"status":       binding.Status,
+				"meta":         binding.Meta,
+			}).Error; updateErr != nil {
+				return updateErr
+			}
+			binding.ID = existing.ID
+		} else {
+			if err := tx.Create(&binding).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	items, err := s.ListMenuSpaceEntryBindings(normalizedAppKey)
+	if err != nil {
+		return nil, err
+	}
+	for i := range items {
+		if items[i].ID == binding.ID {
+			return &items[i], nil
+		}
+	}
+	return nil, errors.New("保存菜单空间入口绑定后读取失败")
+}
+
+func (s *service) DeleteMenuSpaceEntryBinding(appKey, id string) error {
+	normalizedAppKey := appctx.NormalizeExplicitAppKey(appKey)
+	if normalizedAppKey == "" {
+		return errors.New("app_key 不能为空")
+	}
+	if strings.TrimSpace(id) == "" {
+		return errors.New("id 不能为空")
+	}
+	return s.db.Where("id = ? AND app_key = ? AND deleted_at IS NULL", id, normalizedAppKey).
+		Delete(&models.MenuSpaceEntryBinding{}).Error
 }
 
 func ensureSpaceExistsForApp(db *gorm.DB, appKey string, spaceKey string) error {
