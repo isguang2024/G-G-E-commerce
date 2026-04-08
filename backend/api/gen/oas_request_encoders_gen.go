@@ -4,10 +4,14 @@ package gen
 
 import (
 	"bytes"
+	"mime"
+	"mime/multipart"
 	"net/http"
 
+	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
 	ht "github.com/ogen-go/ogen/http"
+	"github.com/ogen-go/ogen/uri"
 )
 
 func encodeAddCollaborationWorkspaceMemberRequest(
@@ -67,6 +71,48 @@ func encodeAssignUserRolesRequest(
 }
 
 func encodeBatchUpdatePermissionActionsRequest(
+	req AnyObject,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeCleanupStaleApiEndpointsRequest(
+	req AnyObject,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeCreateApiEndpointRequest(
+	req AnyObject,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeCreateApiEndpointCategoryRequest(
 	req AnyObject,
 	r *http.Request,
 ) error {
@@ -362,6 +408,20 @@ func encodeRegisterRequest(
 
 func encodeRollbackFeaturePackageRequest(
 	req *RollbackRequest,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeSaveApiEndpointScanConfigRequest(
+	req AnyObject,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -710,6 +770,48 @@ func encodeSwitchWorkspaceRequest(
 	return nil
 }
 
+func encodeUpdateApiEndpointRequest(
+	req AnyObject,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeUpdateApiEndpointCategoryRequest(
+	req AnyObject,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeUpdateApiEndpointContextScopeRequest(
+	req AnyObject,
+	r *http.Request,
+) error {
+	const contentType = "application/json"
+	e := new(jx.Encoder)
+	{
+		req.Encode(e)
+	}
+	encoded := e.Bytes()
+	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
 func encodeUpdateCollaborationWorkspaceRequest(
 	req AnyObject,
 	r *http.Request,
@@ -931,5 +1033,28 @@ func encodeUpdateUserRequest(
 	}
 	encoded := e.Bytes()
 	ht.SetBody(r, bytes.NewReader(encoded), contentType)
+	return nil
+}
+
+func encodeUploadMediaRequest(
+	req *UploadMediaReq,
+	r *http.Request,
+) error {
+	const contentType = "multipart/form-data"
+	request := req
+
+	q := uri.NewFormEncoder(map[string]string{})
+	body, boundary := ht.CreateMultipartBody(func(w *multipart.Writer) error {
+		if val, ok := request.File.Get(); ok {
+			if err := val.WriteMultipart("file", w); err != nil {
+				return errors.Wrap(err, "write \"file\"")
+			}
+		}
+		if err := q.WriteMultipart(w); err != nil {
+			return errors.Wrap(err, "write multipart")
+		}
+		return nil
+	})
+	ht.SetCloserBody(r, body, mime.FormatMediaType(contentType, map[string]string{"boundary": boundary}))
 	return nil
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
 	"github.com/google/uuid"
+	ht "github.com/ogen-go/ogen/http"
 )
 
 // Ref: #/components/schemas/ActionSourceEntry
@@ -60,6 +61,8 @@ func (s *AnyListResponse) SetTotal(val int) {
 	s.Total = val
 }
 
+func (*AnyListResponse) listMediaRes() {}
+
 // Ref: #/components/schemas/AnyObject
 type AnyObject map[string]jx.Raw
 
@@ -71,6 +74,21 @@ func (s *AnyObject) init() AnyObject {
 	}
 	return m
 }
+
+func (*AnyObject) cleanupStaleApiEndpointsRes()      {}
+func (*AnyObject) createApiEndpointCategoryRes()     {}
+func (*AnyObject) createApiEndpointRes()             {}
+func (*AnyObject) getApiEndpointOverviewRes()        {}
+func (*AnyObject) getApiEndpointScanConfigRes()      {}
+func (*AnyObject) listApiEndpointCategoriesRes()     {}
+func (*AnyObject) listApiEndpointsRes()              {}
+func (*AnyObject) listStaleApiEndpointsRes()         {}
+func (*AnyObject) listUnregisteredApiEndpointsRes()  {}
+func (*AnyObject) saveApiEndpointScanConfigRes()     {}
+func (*AnyObject) updateApiEndpointCategoryRes()     {}
+func (*AnyObject) updateApiEndpointContextScopeRes() {}
+func (*AnyObject) updateApiEndpointRes()             {}
+func (*AnyObject) uploadMediaRes()                   {}
 
 type AssignUserRolesBadRequest Error
 
@@ -318,6 +336,30 @@ func (s *AuthMeRole) SetDescription(val OptNilString) {
 	s.Description = val
 }
 
+type CleanupStaleApiEndpointsInternalServerError Error
+
+func (*CleanupStaleApiEndpointsInternalServerError) cleanupStaleApiEndpointsRes() {}
+
+type CleanupStaleApiEndpointsUnauthorized Error
+
+func (*CleanupStaleApiEndpointsUnauthorized) cleanupStaleApiEndpointsRes() {}
+
+type CreateApiEndpointCategoryInternalServerError Error
+
+func (*CreateApiEndpointCategoryInternalServerError) createApiEndpointCategoryRes() {}
+
+type CreateApiEndpointCategoryUnauthorized Error
+
+func (*CreateApiEndpointCategoryUnauthorized) createApiEndpointCategoryRes() {}
+
+type CreateApiEndpointInternalServerError Error
+
+func (*CreateApiEndpointInternalServerError) createApiEndpointRes() {}
+
+type CreateApiEndpointUnauthorized Error
+
+func (*CreateApiEndpointUnauthorized) createApiEndpointRes() {}
+
 type CreateUserBadRequest Error
 
 func (*CreateUserBadRequest) createUserRes() {}
@@ -407,6 +449,14 @@ func (s *DataScopeOption) SetDataScope(val string) {
 func (s *DataScopeOption) SetLabel(val string) {
 	s.Label = val
 }
+
+type DeleteMediaInternalServerError Error
+
+func (*DeleteMediaInternalServerError) deleteMediaRes() {}
+
+type DeleteMediaUnauthorized Error
+
+func (*DeleteMediaUnauthorized) deleteMediaRes() {}
 
 type DeleteUserForbidden Error
 
@@ -1136,6 +1186,22 @@ func (s *FeaturePackageSummary) SetCollaborationWorkspaceCount(val OptInt64) {
 	s.CollaborationWorkspaceCount = val
 }
 
+type GetApiEndpointOverviewInternalServerError Error
+
+func (*GetApiEndpointOverviewInternalServerError) getApiEndpointOverviewRes() {}
+
+type GetApiEndpointOverviewUnauthorized Error
+
+func (*GetApiEndpointOverviewUnauthorized) getApiEndpointOverviewRes() {}
+
+type GetApiEndpointScanConfigInternalServerError Error
+
+func (*GetApiEndpointScanConfigInternalServerError) getApiEndpointScanConfigRes() {}
+
+type GetApiEndpointScanConfigUnauthorized Error
+
+func (*GetApiEndpointScanConfigUnauthorized) getApiEndpointScanConfigRes() {}
+
 type GetUserForbidden Error
 
 func (*GetUserForbidden) getUserRes() {}
@@ -1170,6 +1236,46 @@ func (s *IDResult) GetID() uuid.UUID {
 func (s *IDResult) SetID(val uuid.UUID) {
 	s.ID = val
 }
+
+type ListApiEndpointCategoriesInternalServerError Error
+
+func (*ListApiEndpointCategoriesInternalServerError) listApiEndpointCategoriesRes() {}
+
+type ListApiEndpointCategoriesUnauthorized Error
+
+func (*ListApiEndpointCategoriesUnauthorized) listApiEndpointCategoriesRes() {}
+
+type ListApiEndpointsInternalServerError Error
+
+func (*ListApiEndpointsInternalServerError) listApiEndpointsRes() {}
+
+type ListApiEndpointsUnauthorized Error
+
+func (*ListApiEndpointsUnauthorized) listApiEndpointsRes() {}
+
+type ListMediaInternalServerError Error
+
+func (*ListMediaInternalServerError) listMediaRes() {}
+
+type ListMediaUnauthorized Error
+
+func (*ListMediaUnauthorized) listMediaRes() {}
+
+type ListStaleApiEndpointsInternalServerError Error
+
+func (*ListStaleApiEndpointsInternalServerError) listStaleApiEndpointsRes() {}
+
+type ListStaleApiEndpointsUnauthorized Error
+
+func (*ListStaleApiEndpointsUnauthorized) listStaleApiEndpointsRes() {}
+
+type ListUnregisteredApiEndpointsInternalServerError Error
+
+func (*ListUnregisteredApiEndpointsInternalServerError) listUnregisteredApiEndpointsRes() {}
+
+type ListUnregisteredApiEndpointsUnauthorized Error
+
+func (*ListUnregisteredApiEndpointsUnauthorized) listUnregisteredApiEndpointsRes() {}
 
 type ListUsersForbidden Error
 
@@ -1626,6 +1732,9 @@ func (s *MutationResult) SetSuccess(val bool) {
 	s.Success = val
 }
 
+func (*MutationResult) deleteMediaRes()      {}
+func (*MutationResult) syncApiEndpointsRes() {}
+
 // Ref: #/components/schemas/NavigationManifest
 type NavigationManifest struct {
 	VersionStamp string       `json:"version_stamp"`
@@ -1885,6 +1994,52 @@ func (o OptInt64) Get() (v int64, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptInt64) Or(d int64) int64 {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptMultipartFile returns new OptMultipartFile with value set to v.
+func NewOptMultipartFile(v ht.MultipartFile) OptMultipartFile {
+	return OptMultipartFile{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptMultipartFile is optional ht.MultipartFile.
+type OptMultipartFile struct {
+	Value ht.MultipartFile
+	Set   bool
+}
+
+// IsSet returns true if OptMultipartFile was set.
+func (o OptMultipartFile) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptMultipartFile) Reset() {
+	var v ht.MultipartFile
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptMultipartFile) SetTo(v ht.MultipartFile) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptMultipartFile) Get() (v ht.MultipartFile, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptMultipartFile) Or(d ht.MultipartFile) ht.MultipartFile {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -3546,6 +3701,14 @@ func (s *RollbackRequest) SetVersionID(val uuid.UUID) {
 	s.VersionID = val
 }
 
+type SaveApiEndpointScanConfigInternalServerError Error
+
+func (*SaveApiEndpointScanConfigInternalServerError) saveApiEndpointScanConfigRes() {}
+
+type SaveApiEndpointScanConfigUnauthorized Error
+
+func (*SaveApiEndpointScanConfigUnauthorized) saveApiEndpointScanConfigRes() {}
+
 type SwitchWorkspaceBadRequest Error
 
 func (*SwitchWorkspaceBadRequest) switchWorkspaceRes() {}
@@ -3553,6 +3716,14 @@ func (*SwitchWorkspaceBadRequest) switchWorkspaceRes() {}
 type SwitchWorkspaceForbidden Error
 
 func (*SwitchWorkspaceForbidden) switchWorkspaceRes() {}
+
+type SyncApiEndpointsInternalServerError Error
+
+func (*SyncApiEndpointsInternalServerError) syncApiEndpointsRes() {}
+
+type SyncApiEndpointsUnauthorized Error
+
+func (*SyncApiEndpointsUnauthorized) syncApiEndpointsRes() {}
 
 // Ref: #/components/schemas/TokenResponse
 type TokenResponse struct {
@@ -3608,6 +3779,30 @@ func (s *UUIDListRequest) SetIds(val []uuid.UUID) {
 	s.Ids = val
 }
 
+type UpdateApiEndpointCategoryInternalServerError Error
+
+func (*UpdateApiEndpointCategoryInternalServerError) updateApiEndpointCategoryRes() {}
+
+type UpdateApiEndpointCategoryUnauthorized Error
+
+func (*UpdateApiEndpointCategoryUnauthorized) updateApiEndpointCategoryRes() {}
+
+type UpdateApiEndpointContextScopeInternalServerError Error
+
+func (*UpdateApiEndpointContextScopeInternalServerError) updateApiEndpointContextScopeRes() {}
+
+type UpdateApiEndpointContextScopeUnauthorized Error
+
+func (*UpdateApiEndpointContextScopeUnauthorized) updateApiEndpointContextScopeRes() {}
+
+type UpdateApiEndpointInternalServerError Error
+
+func (*UpdateApiEndpointInternalServerError) updateApiEndpointRes() {}
+
+type UpdateApiEndpointUnauthorized Error
+
+func (*UpdateApiEndpointUnauthorized) updateApiEndpointRes() {}
+
 type UpdateUserBadRequest Error
 
 func (*UpdateUserBadRequest) updateUserRes() {}
@@ -3623,6 +3818,28 @@ func (*UpdateUserNotFound) updateUserRes() {}
 type UpdateUserUnauthorized Error
 
 func (*UpdateUserUnauthorized) updateUserRes() {}
+
+type UploadMediaInternalServerError Error
+
+func (*UploadMediaInternalServerError) uploadMediaRes() {}
+
+type UploadMediaReq struct {
+	File OptMultipartFile `json:"file"`
+}
+
+// GetFile returns the value of File.
+func (s *UploadMediaReq) GetFile() OptMultipartFile {
+	return s.File
+}
+
+// SetFile sets the value of File.
+func (s *UploadMediaReq) SetFile(val OptMultipartFile) {
+	s.File = val
+}
+
+type UploadMediaUnauthorized Error
+
+func (*UploadMediaUnauthorized) uploadMediaRes() {}
 
 // Ref: #/components/schemas/UserAssignRolesRequest
 type UserAssignRolesRequest struct {

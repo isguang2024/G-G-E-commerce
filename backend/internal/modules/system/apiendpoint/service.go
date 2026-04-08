@@ -1040,3 +1040,12 @@ func normalizeUnregisteredScanConfig(raw models.MetaJSON) UnregisteredScanConfig
 	}
 	return result
 }
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if t := strings.TrimSpace(v); t != "" {
+			return t
+		}
+	}
+	return ""
+}

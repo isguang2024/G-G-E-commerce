@@ -58,12 +58,39 @@ func (UnimplementedHandler) BatchUpdatePermissionActions(ctx context.Context, re
 	return r, ht.ErrNotImplemented
 }
 
+// CleanupStaleApiEndpoints implements cleanupStaleApiEndpoints operation.
+//
+// 清理失效 API.
+//
+// POST /api-endpoints/cleanup-stale
+func (UnimplementedHandler) CleanupStaleApiEndpoints(ctx context.Context, req AnyObject) (r CleanupStaleApiEndpointsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // CleanupUnusedPermissionActions implements cleanupUnusedPermissionActions operation.
 //
 // 清理未消费功能权限.
 //
 // POST /permission-actions/cleanup-unused
 func (UnimplementedHandler) CleanupUnusedPermissionActions(ctx context.Context) (r *MutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// CreateApiEndpoint implements createApiEndpoint operation.
+//
+// 创建 API 注册项.
+//
+// POST /api-endpoints
+func (UnimplementedHandler) CreateApiEndpoint(ctx context.Context, req AnyObject) (r CreateApiEndpointRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// CreateApiEndpointCategory implements createApiEndpointCategory operation.
+//
+// 创建 API 分类.
+//
+// POST /api-endpoints/categories
+func (UnimplementedHandler) CreateApiEndpointCategory(ctx context.Context, req AnyObject) (r CreateApiEndpointCategoryRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -229,6 +256,15 @@ func (UnimplementedHandler) DeleteFeaturePackage(ctx context.Context, params Del
 	return r, ht.ErrNotImplemented
 }
 
+// DeleteMedia implements deleteMedia operation.
+//
+// 删除媒体资源.
+//
+// DELETE /media/{id}
+func (UnimplementedHandler) DeleteMedia(ctx context.Context, params DeleteMediaParams) (r DeleteMediaRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // DeleteMenu implements deleteMenu operation.
 //
 // 删除菜单.
@@ -307,6 +343,24 @@ func (UnimplementedHandler) DispatchMessage(ctx context.Context, req AnyObject) 
 //
 // GET /permissions/explain
 func (UnimplementedHandler) ExplainPermissions(ctx context.Context, params ExplainPermissionsParams) (r ExplainPermissionsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// GetApiEndpointOverview implements getApiEndpointOverview operation.
+//
+// 获取 API 概览.
+//
+// GET /api-endpoints/overview
+func (UnimplementedHandler) GetApiEndpointOverview(ctx context.Context, params GetApiEndpointOverviewParams) (r GetApiEndpointOverviewRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// GetApiEndpointScanConfig implements getApiEndpointScanConfig operation.
+//
+// 获取未注册 API 扫描配置.
+//
+// GET /api-endpoints/unregistered/scan-config
+func (UnimplementedHandler) GetApiEndpointScanConfig(ctx context.Context) (r GetApiEndpointScanConfigRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -814,6 +868,24 @@ func (UnimplementedHandler) InitializeMenuSpaceFromDefault(ctx context.Context, 
 	return r, ht.ErrNotImplemented
 }
 
+// ListApiEndpointCategories implements listApiEndpointCategories operation.
+//
+// 获取 API 分类列表.
+//
+// GET /api-endpoints/categories
+func (UnimplementedHandler) ListApiEndpointCategories(ctx context.Context) (r ListApiEndpointCategoriesRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ListApiEndpoints implements listApiEndpoints operation.
+//
+// 获取 API 注册表.
+//
+// GET /api-endpoints
+func (UnimplementedHandler) ListApiEndpoints(ctx context.Context, params ListApiEndpointsParams) (r ListApiEndpointsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ListAppHostBindings implements listAppHostBindings operation.
 //
 // 获取应用 Host 绑定.
@@ -937,6 +1009,15 @@ func (UnimplementedHandler) ListFeaturePackages(ctx context.Context, params List
 //
 // GET /messages/inbox
 func (UnimplementedHandler) ListInbox(ctx context.Context, params ListInboxParams) (r *AnyListResponse, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ListMedia implements listMedia operation.
+//
+// 获取媒体资源列表.
+//
+// GET /media
+func (UnimplementedHandler) ListMedia(ctx context.Context) (r ListMediaRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1147,6 +1228,24 @@ func (UnimplementedHandler) ListRuntimePages(ctx context.Context, params ListRun
 	return r, ht.ErrNotImplemented
 }
 
+// ListStaleApiEndpoints implements listStaleApiEndpoints operation.
+//
+// 获取失效 API 列表.
+//
+// GET /api-endpoints/stale
+func (UnimplementedHandler) ListStaleApiEndpoints(ctx context.Context, params ListStaleApiEndpointsParams) (r ListStaleApiEndpointsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// ListUnregisteredApiEndpoints implements listUnregisteredApiEndpoints operation.
+//
+// 获取未注册 API 路由.
+//
+// GET /api-endpoints/unregistered
+func (UnimplementedHandler) ListUnregisteredApiEndpoints(ctx context.Context, params ListUnregisteredApiEndpointsParams) (r ListUnregisteredApiEndpointsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // ListUnregisteredPages implements listUnregisteredPages operation.
 //
 // 获取未注册页面.
@@ -1270,6 +1369,15 @@ func (UnimplementedHandler) RestoreMenuBackup(ctx context.Context, params Restor
 //
 // POST /feature-packages/{id}/rollback
 func (UnimplementedHandler) RollbackFeaturePackage(ctx context.Context, req *RollbackRequest, params RollbackFeaturePackageParams) (r *MutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// SaveApiEndpointScanConfig implements saveApiEndpointScanConfig operation.
+//
+// 保存未注册 API 扫描配置.
+//
+// PUT /api-endpoints/unregistered/scan-config
+func (UnimplementedHandler) SaveApiEndpointScanConfig(ctx context.Context, req AnyObject) (r SaveApiEndpointScanConfigRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1489,12 +1597,48 @@ func (UnimplementedHandler) SwitchWorkspace(ctx context.Context, req *WorkspaceS
 	return r, ht.ErrNotImplemented
 }
 
+// SyncApiEndpoints implements syncApiEndpoints operation.
+//
+// 同步 API 注册表.
+//
+// POST /api-endpoints/sync
+func (UnimplementedHandler) SyncApiEndpoints(ctx context.Context) (r SyncApiEndpointsRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // SyncPages implements syncPages operation.
 //
 // 同步页面注册表.
 //
 // POST /pages/sync
 func (UnimplementedHandler) SyncPages(ctx context.Context, params SyncPagesParams) (r *PageSyncResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpdateApiEndpoint implements updateApiEndpoint operation.
+//
+// 更新 API 注册项.
+//
+// PUT /api-endpoints/{id}
+func (UnimplementedHandler) UpdateApiEndpoint(ctx context.Context, req AnyObject, params UpdateApiEndpointParams) (r UpdateApiEndpointRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpdateApiEndpointCategory implements updateApiEndpointCategory operation.
+//
+// 更新 API 分类.
+//
+// PUT /api-endpoints/categories/{id}
+func (UnimplementedHandler) UpdateApiEndpointCategory(ctx context.Context, req AnyObject, params UpdateApiEndpointCategoryParams) (r UpdateApiEndpointCategoryRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UpdateApiEndpointContextScope implements updateApiEndpointContextScope operation.
+//
+// 更新 API 协作空间上下文.
+//
+// PUT /api-endpoints/{id}/context-scope
+func (UnimplementedHandler) UpdateApiEndpointContextScope(ctx context.Context, req AnyObject, params UpdateApiEndpointContextScopeParams) (r UpdateApiEndpointContextScopeRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1639,5 +1783,14 @@ func (UnimplementedHandler) UpdateRole(ctx context.Context, req *RoleUpdateReque
 //
 // PUT /users/{id}
 func (UnimplementedHandler) UpdateUser(ctx context.Context, req *UserUpdateRequest, params UpdateUserParams) (r UpdateUserRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
+// UploadMedia implements uploadMedia operation.
+//
+// 上传媒体资源.
+//
+// POST /media/upload
+func (UnimplementedHandler) UploadMedia(ctx context.Context, req *UploadMediaReq) (r UploadMediaRes, _ error) {
 	return r, ht.ErrNotImplemented
 }

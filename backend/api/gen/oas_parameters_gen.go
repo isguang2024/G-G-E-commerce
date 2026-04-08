@@ -462,6 +462,71 @@ func decodeDeleteFeaturePackageParams(args [1]string, argsEscaped bool, r *http.
 	return params, nil
 }
 
+// DeleteMediaParams is parameters of deleteMedia operation.
+type DeleteMediaParams struct {
+	ID string
+}
+
+func unpackDeleteMediaParams(packed middleware.Parameters) (params DeleteMediaParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(string)
+	}
+	return params
+}
+
+func decodeDeleteMediaParams(args [1]string, argsEscaped bool, r *http.Request) (params DeleteMediaParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToString(val)
+				if err != nil {
+					return err
+				}
+
+				params.ID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // DeleteMenuParams is parameters of deleteMenu operation.
 type DeleteMenuParams struct {
 	ID uuid.UUID
@@ -1012,6 +1077,70 @@ func decodeExplainPermissionsParams(args [0]string, argsEscaped bool, r *http.Re
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "workspace_id",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// GetApiEndpointOverviewParams is parameters of getApiEndpointOverview operation.
+type GetApiEndpointOverviewParams struct {
+	AppKey OptString `json:",omitempty,omitzero"`
+}
+
+func unpackGetApiEndpointOverviewParams(packed middleware.Parameters) (params GetApiEndpointOverviewParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "app_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.AppKey = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeGetApiEndpointOverviewParams(args [0]string, argsEscaped bool, r *http.Request) (params GetApiEndpointOverviewParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: app_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotAppKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotAppKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.AppKey.SetTo(paramsDotAppKeyVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "app_key",
 			In:   "query",
 			Err:  err,
 		}
@@ -5036,6 +5165,835 @@ func decodeInitializeMenuSpaceFromDefaultParams(args [1]string, argsEscaped bool
 	return params, nil
 }
 
+// ListApiEndpointsParams is parameters of listApiEndpoints operation.
+type ListApiEndpointsParams struct {
+	Current           OptInt    `json:",omitempty,omitzero"`
+	Size              OptInt    `json:",omitempty,omitzero"`
+	AppKey            OptString `json:",omitempty,omitzero"`
+	AppScope          OptString `json:",omitempty,omitzero"`
+	PermissionKey     OptString `json:",omitempty,omitzero"`
+	PermissionPattern OptString `json:",omitempty,omitzero"`
+	Keyword           OptString `json:",omitempty,omitzero"`
+	Method            OptString `json:",omitempty,omitzero"`
+	Path              OptString `json:",omitempty,omitzero"`
+	CategoryID        OptString `json:",omitempty,omitzero"`
+	ContextScope      OptString `json:",omitempty,omitzero"`
+	Source            OptString `json:",omitempty,omitzero"`
+	FeatureKind       OptString `json:",omitempty,omitzero"`
+	Status            OptString `json:",omitempty,omitzero"`
+	HasPermissionKey  OptBool   `json:",omitempty,omitzero"`
+	HasCategory       OptBool   `json:",omitempty,omitzero"`
+}
+
+func unpackListApiEndpointsParams(packed middleware.Parameters) (params ListApiEndpointsParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "current",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Current = v.(OptInt)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "size",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Size = v.(OptInt)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "app_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.AppKey = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "app_scope",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.AppScope = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "permission_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.PermissionKey = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "permission_pattern",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.PermissionPattern = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "keyword",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Keyword = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "method",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Method = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "path",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Path = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "category_id",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.CategoryID = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "context_scope",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.ContextScope = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "source",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Source = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "feature_kind",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.FeatureKind = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "status",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Status = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "has_permission_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.HasPermissionKey = v.(OptBool)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "has_category",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.HasCategory = v.(OptBool)
+		}
+	}
+	return params
+}
+
+func decodeListApiEndpointsParams(args [0]string, argsEscaped bool, r *http.Request) (params ListApiEndpointsParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: current.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotCurrentVal int
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToInt(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotCurrentVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Current.SetTo(paramsDotCurrentVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "current",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: size.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotSizeVal int
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToInt(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotSizeVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Size.SetTo(paramsDotSizeVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "size",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: app_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotAppKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotAppKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.AppKey.SetTo(paramsDotAppKeyVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "app_key",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: app_scope.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "app_scope",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotAppScopeVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotAppScopeVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.AppScope.SetTo(paramsDotAppScopeVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "app_scope",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: permission_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "permission_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPermissionKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPermissionKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.PermissionKey.SetTo(paramsDotPermissionKeyVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "permission_key",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: permission_pattern.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "permission_pattern",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPermissionPatternVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPermissionPatternVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.PermissionPattern.SetTo(paramsDotPermissionPatternVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "permission_pattern",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: keyword.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "keyword",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotKeywordVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotKeywordVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Keyword.SetTo(paramsDotKeywordVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "keyword",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: method.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "method",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotMethodVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotMethodVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Method.SetTo(paramsDotMethodVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "method",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: path.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "path",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPathVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPathVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Path.SetTo(paramsDotPathVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "path",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: category_id.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "category_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotCategoryIDVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotCategoryIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.CategoryID.SetTo(paramsDotCategoryIDVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "category_id",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: context_scope.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "context_scope",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotContextScopeVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotContextScopeVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.ContextScope.SetTo(paramsDotContextScopeVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "context_scope",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: source.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "source",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotSourceVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotSourceVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Source.SetTo(paramsDotSourceVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "source",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: feature_kind.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "feature_kind",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotFeatureKindVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotFeatureKindVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.FeatureKind.SetTo(paramsDotFeatureKindVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "feature_kind",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: status.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "status",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotStatusVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotStatusVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Status.SetTo(paramsDotStatusVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "status",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: has_permission_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "has_permission_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotHasPermissionKeyVal bool
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToBool(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotHasPermissionKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.HasPermissionKey.SetTo(paramsDotHasPermissionKeyVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "has_permission_key",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: has_category.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "has_category",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotHasCategoryVal bool
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToBool(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotHasCategoryVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.HasCategory.SetTo(paramsDotHasCategoryVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "has_category",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // ListCollaborationWorkspaceMembersParams is parameters of listCollaborationWorkspaceMembers operation.
 type ListCollaborationWorkspaceMembersParams struct {
 	ID uuid.UUID
@@ -8034,6 +8992,440 @@ func decodeListRuntimePagesParams(args [0]string, argsEscaped bool, r *http.Requ
 	return params, nil
 }
 
+// ListStaleApiEndpointsParams is parameters of listStaleApiEndpoints operation.
+type ListStaleApiEndpointsParams struct {
+	Current OptInt `json:",omitempty,omitzero"`
+	Size    OptInt `json:",omitempty,omitzero"`
+}
+
+func unpackListStaleApiEndpointsParams(packed middleware.Parameters) (params ListStaleApiEndpointsParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "current",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Current = v.(OptInt)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "size",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Size = v.(OptInt)
+		}
+	}
+	return params
+}
+
+func decodeListStaleApiEndpointsParams(args [0]string, argsEscaped bool, r *http.Request) (params ListStaleApiEndpointsParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: current.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotCurrentVal int
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToInt(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotCurrentVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Current.SetTo(paramsDotCurrentVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "current",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: size.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotSizeVal int
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToInt(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotSizeVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Size.SetTo(paramsDotSizeVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "size",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// ListUnregisteredApiEndpointsParams is parameters of listUnregisteredApiEndpoints operation.
+type ListUnregisteredApiEndpointsParams struct {
+	Current    OptInt    `json:",omitempty,omitzero"`
+	Size       OptInt    `json:",omitempty,omitzero"`
+	Method     OptString `json:",omitempty,omitzero"`
+	Path       OptString `json:",omitempty,omitzero"`
+	Keyword    OptString `json:",omitempty,omitzero"`
+	OnlyNoMeta OptBool   `json:",omitempty,omitzero"`
+}
+
+func unpackListUnregisteredApiEndpointsParams(packed middleware.Parameters) (params ListUnregisteredApiEndpointsParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "current",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Current = v.(OptInt)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "size",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Size = v.(OptInt)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "method",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Method = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "path",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Path = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "keyword",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.Keyword = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "only_no_meta",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.OnlyNoMeta = v.(OptBool)
+		}
+	}
+	return params
+}
+
+func decodeListUnregisteredApiEndpointsParams(args [0]string, argsEscaped bool, r *http.Request) (params ListUnregisteredApiEndpointsParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: current.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotCurrentVal int
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToInt(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotCurrentVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Current.SetTo(paramsDotCurrentVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "current",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: size.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotSizeVal int
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToInt(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotSizeVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Size.SetTo(paramsDotSizeVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "size",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: method.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "method",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotMethodVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotMethodVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Method.SetTo(paramsDotMethodVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "method",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: path.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "path",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPathVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPathVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Path.SetTo(paramsDotPathVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "path",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: keyword.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "keyword",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotKeywordVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotKeywordVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.Keyword.SetTo(paramsDotKeywordVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "keyword",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: only_no_meta.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "only_no_meta",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotOnlyNoMetaVal bool
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToBool(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotOnlyNoMetaVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.OnlyNoMeta.SetTo(paramsDotOnlyNoMetaVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "only_no_meta",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // ListUnregisteredPagesParams is parameters of listUnregisteredPages operation.
 type ListUnregisteredPagesParams struct {
 	AppKey string
@@ -10896,6 +12288,201 @@ func decodeSyncPagesParams(args [0]string, argsEscaped bool, r *http.Request) (p
 		return params, &ogenerrors.DecodeParamError{
 			Name: "app_key",
 			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// UpdateApiEndpointParams is parameters of updateApiEndpoint operation.
+type UpdateApiEndpointParams struct {
+	ID uuid.UUID
+}
+
+func unpackUpdateApiEndpointParams(packed middleware.Parameters) (params UpdateApiEndpointParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeUpdateApiEndpointParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateApiEndpointParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.ID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// UpdateApiEndpointCategoryParams is parameters of updateApiEndpointCategory operation.
+type UpdateApiEndpointCategoryParams struct {
+	ID uuid.UUID
+}
+
+func unpackUpdateApiEndpointCategoryParams(packed middleware.Parameters) (params UpdateApiEndpointCategoryParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeUpdateApiEndpointCategoryParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateApiEndpointCategoryParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.ID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// UpdateApiEndpointContextScopeParams is parameters of updateApiEndpointContextScope operation.
+type UpdateApiEndpointContextScopeParams struct {
+	ID uuid.UUID
+}
+
+func unpackUpdateApiEndpointContextScopeParams(packed middleware.Parameters) (params UpdateApiEndpointContextScopeParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeUpdateApiEndpointContextScopeParams(args [1]string, argsEscaped bool, r *http.Request) (params UpdateApiEndpointContextScopeParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.ID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
 			Err:  err,
 		}
 	}

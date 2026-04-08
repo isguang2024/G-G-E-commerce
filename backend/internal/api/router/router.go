@@ -79,6 +79,18 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 
 	endpointAccessService := apiendpointaccess.NewService(db, logger)
 
+	// Build apiendpoint service early so it can be shared with the ogen handler.
+	apiEndpointSvc := apiendpoint.NewService(
+		db,
+		user.NewAPIEndpointRepository(db),
+		user.NewAPIEndpointCategoryRepository(db),
+		user.NewAPIEndpointPermissionBindingRepository(db),
+		r,
+		logger,
+		cfg.Env,
+		endpointAccessService,
+	)
+
 	authModule := auth.NewAuthModule(db, cfg, logger)
 	userModule := user.NewUserModule(db, cfg, logger)
 	menuModule := menu.NewMenuModule(db, cfg, logger)
@@ -116,7 +128,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		_ = json.NewEncoder(w).Encode(map[string]any{"code": 500, "message": err.Error()})
 	}
 	ogenServer, err := apigen.NewServer(
-		handlers.NewAPIHandler(db, cfg, logger, permEvaluator),
+		handlers.NewAPIHandler(db, cfg, logger, permEvaluator, apiEndpointSvc),
 		apigen.WithMiddleware(permMW),
 		apigen.WithErrorHandler(openapiErrHandler),
 	)
@@ -366,6 +378,27 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.GET("/collaboration-workspaces/:id/actions", ogenBridge)
 			authenticated.GET("/collaboration-workspaces/:id/action-origins", ogenBridge)
 			authenticated.PUT("/collaboration-workspaces/:id/actions", ogenBridge)
+
+			// ── api-endpoints (Phase 5) ────────────────────────────────────
+			authenticated.GET("/api-endpoints", ogenBridge)
+			authenticated.POST("/api-endpoints", ogenBridge)
+			authenticated.GET("/api-endpoints/overview", ogenBridge)
+			authenticated.GET("/api-endpoints/stale", ogenBridge)
+			authenticated.POST("/api-endpoints/sync", ogenBridge)
+			authenticated.POST("/api-endpoints/cleanup-stale", ogenBridge)
+			authenticated.GET("/api-endpoints/unregistered", ogenBridge)
+			authenticated.GET("/api-endpoints/unregistered/scan-config", ogenBridge)
+			authenticated.PUT("/api-endpoints/unregistered/scan-config", ogenBridge)
+			authenticated.GET("/api-endpoints/categories", ogenBridge)
+			authenticated.POST("/api-endpoints/categories", ogenBridge)
+			authenticated.PUT("/api-endpoints/categories/:id", ogenBridge)
+			authenticated.PUT("/api-endpoints/:id", ogenBridge)
+			authenticated.PUT("/api-endpoints/:id/context-scope", ogenBridge)
+
+			// ── media (Phase 5) ───────────────────────────────────────────
+			authenticated.POST("/media/upload", ogenBridge)
+			authenticated.GET("/media", ogenBridge)
+			authenticated.DELETE("/media/:id", ogenBridge)
 
 			userModule.RegisterRoutes(authenticated)
 			menuModule.RegisterRoutes(authenticated)

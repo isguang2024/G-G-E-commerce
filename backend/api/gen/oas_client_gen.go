@@ -57,12 +57,30 @@ type Invoker interface {
 	//
 	// POST /permission-actions/batch
 	BatchUpdatePermissionActions(ctx context.Context, request AnyObject) (*MutationResult, error)
+	// CleanupStaleApiEndpoints invokes cleanupStaleApiEndpoints operation.
+	//
+	// 清理失效 API.
+	//
+	// POST /api-endpoints/cleanup-stale
+	CleanupStaleApiEndpoints(ctx context.Context, request AnyObject) (CleanupStaleApiEndpointsRes, error)
 	// CleanupUnusedPermissionActions invokes cleanupUnusedPermissionActions operation.
 	//
 	// 清理未消费功能权限.
 	//
 	// POST /permission-actions/cleanup-unused
 	CleanupUnusedPermissionActions(ctx context.Context) (*MutationResult, error)
+	// CreateApiEndpoint invokes createApiEndpoint operation.
+	//
+	// 创建 API 注册项.
+	//
+	// POST /api-endpoints
+	CreateApiEndpoint(ctx context.Context, request AnyObject) (CreateApiEndpointRes, error)
+	// CreateApiEndpointCategory invokes createApiEndpointCategory operation.
+	//
+	// 创建 API 分类.
+	//
+	// POST /api-endpoints/categories
+	CreateApiEndpointCategory(ctx context.Context, request AnyObject) (CreateApiEndpointCategoryRes, error)
 	// CreateCollaborationWorkspace invokes createCollaborationWorkspace operation.
 	//
 	// 创建协作空间.
@@ -171,6 +189,12 @@ type Invoker interface {
 	//
 	// DELETE /feature-packages/{id}
 	DeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (*MutationResult, error)
+	// DeleteMedia invokes deleteMedia operation.
+	//
+	// 删除媒体资源.
+	//
+	// DELETE /media/{id}
+	DeleteMedia(ctx context.Context, params DeleteMediaParams) (DeleteMediaRes, error)
 	// DeleteMenu invokes deleteMenu operation.
 	//
 	// 删除菜单.
@@ -225,6 +249,18 @@ type Invoker interface {
 	//
 	// GET /permissions/explain
 	ExplainPermissions(ctx context.Context, params ExplainPermissionsParams) (ExplainPermissionsRes, error)
+	// GetApiEndpointOverview invokes getApiEndpointOverview operation.
+	//
+	// 获取 API 概览.
+	//
+	// GET /api-endpoints/overview
+	GetApiEndpointOverview(ctx context.Context, params GetApiEndpointOverviewParams) (GetApiEndpointOverviewRes, error)
+	// GetApiEndpointScanConfig invokes getApiEndpointScanConfig operation.
+	//
+	// 获取未注册 API 扫描配置.
+	//
+	// GET /api-endpoints/unregistered/scan-config
+	GetApiEndpointScanConfig(ctx context.Context) (GetApiEndpointScanConfigRes, error)
 	// GetAuthMe invokes getAuthMe operation.
 	//
 	// 获取当前登录账户信息.
@@ -561,6 +597,18 @@ type Invoker interface {
 	//
 	// POST /system/menu-spaces/{spaceKey}/initialize-default
 	InitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (*MutationResult, error)
+	// ListApiEndpointCategories invokes listApiEndpointCategories operation.
+	//
+	// 获取 API 分类列表.
+	//
+	// GET /api-endpoints/categories
+	ListApiEndpointCategories(ctx context.Context) (ListApiEndpointCategoriesRes, error)
+	// ListApiEndpoints invokes listApiEndpoints operation.
+	//
+	// 获取 API 注册表.
+	//
+	// GET /api-endpoints
+	ListApiEndpoints(ctx context.Context, params ListApiEndpointsParams) (ListApiEndpointsRes, error)
 	// ListAppHostBindings invokes listAppHostBindings operation.
 	//
 	// 获取应用 Host 绑定.
@@ -645,6 +693,12 @@ type Invoker interface {
 	//
 	// GET /messages/inbox
 	ListInbox(ctx context.Context, params ListInboxParams) (*AnyListResponse, error)
+	// ListMedia invokes listMedia operation.
+	//
+	// 获取媒体资源列表.
+	//
+	// GET /media
+	ListMedia(ctx context.Context) (ListMediaRes, error)
 	// ListMenuBackups invokes listMenuBackups operation.
 	//
 	// 获取菜单备份列表.
@@ -783,6 +837,18 @@ type Invoker interface {
 	//
 	// GET /pages/runtime
 	ListRuntimePages(ctx context.Context, params ListRuntimePagesParams) (*AnyListResponse, error)
+	// ListStaleApiEndpoints invokes listStaleApiEndpoints operation.
+	//
+	// 获取失效 API 列表.
+	//
+	// GET /api-endpoints/stale
+	ListStaleApiEndpoints(ctx context.Context, params ListStaleApiEndpointsParams) (ListStaleApiEndpointsRes, error)
+	// ListUnregisteredApiEndpoints invokes listUnregisteredApiEndpoints operation.
+	//
+	// 获取未注册 API 路由.
+	//
+	// GET /api-endpoints/unregistered
+	ListUnregisteredApiEndpoints(ctx context.Context, params ListUnregisteredApiEndpointsParams) (ListUnregisteredApiEndpointsRes, error)
 	// ListUnregisteredPages invokes listUnregisteredPages operation.
 	//
 	// 获取未注册页面.
@@ -867,6 +933,12 @@ type Invoker interface {
 	//
 	// POST /feature-packages/{id}/rollback
 	RollbackFeaturePackage(ctx context.Context, request *RollbackRequest, params RollbackFeaturePackageParams) (*MutationResult, error)
+	// SaveApiEndpointScanConfig invokes saveApiEndpointScanConfig operation.
+	//
+	// 保存未注册 API 扫描配置.
+	//
+	// PUT /api-endpoints/unregistered/scan-config
+	SaveApiEndpointScanConfig(ctx context.Context, request AnyObject) (SaveApiEndpointScanConfigRes, error)
 	// SaveApp invokes saveApp operation.
 	//
 	// 保存应用.
@@ -1011,12 +1083,36 @@ type Invoker interface {
 	//
 	// POST /workspaces/switch
 	SwitchWorkspace(ctx context.Context, request *WorkspaceSwitchRequest) (SwitchWorkspaceRes, error)
+	// SyncApiEndpoints invokes syncApiEndpoints operation.
+	//
+	// 同步 API 注册表.
+	//
+	// POST /api-endpoints/sync
+	SyncApiEndpoints(ctx context.Context) (SyncApiEndpointsRes, error)
 	// SyncPages invokes syncPages operation.
 	//
 	// 同步页面注册表.
 	//
 	// POST /pages/sync
 	SyncPages(ctx context.Context, params SyncPagesParams) (*PageSyncResult, error)
+	// UpdateApiEndpoint invokes updateApiEndpoint operation.
+	//
+	// 更新 API 注册项.
+	//
+	// PUT /api-endpoints/{id}
+	UpdateApiEndpoint(ctx context.Context, request AnyObject, params UpdateApiEndpointParams) (UpdateApiEndpointRes, error)
+	// UpdateApiEndpointCategory invokes updateApiEndpointCategory operation.
+	//
+	// 更新 API 分类.
+	//
+	// PUT /api-endpoints/categories/{id}
+	UpdateApiEndpointCategory(ctx context.Context, request AnyObject, params UpdateApiEndpointCategoryParams) (UpdateApiEndpointCategoryRes, error)
+	// UpdateApiEndpointContextScope invokes updateApiEndpointContextScope operation.
+	//
+	// 更新 API 协作空间上下文.
+	//
+	// PUT /api-endpoints/{id}/context-scope
+	UpdateApiEndpointContextScope(ctx context.Context, request AnyObject, params UpdateApiEndpointContextScopeParams) (UpdateApiEndpointContextScopeRes, error)
 	// UpdateCollaborationWorkspace invokes updateCollaborationWorkspace operation.
 	//
 	// 更新协作空间.
@@ -1113,6 +1209,12 @@ type Invoker interface {
 	//
 	// PUT /users/{id}
 	UpdateUser(ctx context.Context, request *UserUpdateRequest, params UpdateUserParams) (UpdateUserRes, error)
+	// UploadMedia invokes uploadMedia operation.
+	//
+	// 上传媒体资源.
+	//
+	// POST /media/upload
+	UploadMedia(ctx context.Context, request *UploadMediaReq) (UploadMediaRes, error)
 }
 
 // Client implements OAS client.
@@ -1596,6 +1698,83 @@ func (c *Client) sendBatchUpdatePermissionActions(ctx context.Context, request A
 	return result, nil
 }
 
+// CleanupStaleApiEndpoints invokes cleanupStaleApiEndpoints operation.
+//
+// 清理失效 API.
+//
+// POST /api-endpoints/cleanup-stale
+func (c *Client) CleanupStaleApiEndpoints(ctx context.Context, request AnyObject) (CleanupStaleApiEndpointsRes, error) {
+	res, err := c.sendCleanupStaleApiEndpoints(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendCleanupStaleApiEndpoints(ctx context.Context, request AnyObject) (res CleanupStaleApiEndpointsRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("cleanupStaleApiEndpoints"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/api-endpoints/cleanup-stale"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CleanupStaleApiEndpointsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/api-endpoints/cleanup-stale"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCleanupStaleApiEndpointsRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCleanupStaleApiEndpointsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // CleanupUnusedPermissionActions invokes cleanupUnusedPermissionActions operation.
 //
 // 清理未消费功能权限.
@@ -1663,6 +1842,160 @@ func (c *Client) sendCleanupUnusedPermissionActions(ctx context.Context) (res *M
 
 	stage = "DecodeResponse"
 	result, err := decodeCleanupUnusedPermissionActionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CreateApiEndpoint invokes createApiEndpoint operation.
+//
+// 创建 API 注册项.
+//
+// POST /api-endpoints
+func (c *Client) CreateApiEndpoint(ctx context.Context, request AnyObject) (CreateApiEndpointRes, error) {
+	res, err := c.sendCreateApiEndpoint(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendCreateApiEndpoint(ctx context.Context, request AnyObject) (res CreateApiEndpointRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createApiEndpoint"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/api-endpoints"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateApiEndpointOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/api-endpoints"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreateApiEndpointRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreateApiEndpointResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// CreateApiEndpointCategory invokes createApiEndpointCategory operation.
+//
+// 创建 API 分类.
+//
+// POST /api-endpoints/categories
+func (c *Client) CreateApiEndpointCategory(ctx context.Context, request AnyObject) (CreateApiEndpointCategoryRes, error) {
+	res, err := c.sendCreateApiEndpointCategory(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendCreateApiEndpointCategory(ctx context.Context, request AnyObject) (res CreateApiEndpointCategoryRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("createApiEndpointCategory"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/api-endpoints/categories"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, CreateApiEndpointCategoryOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/api-endpoints/categories"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeCreateApiEndpointCategoryRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeCreateApiEndpointCategoryResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -3119,6 +3452,98 @@ func (c *Client) sendDeleteFeaturePackage(ctx context.Context, params DeleteFeat
 	return result, nil
 }
 
+// DeleteMedia invokes deleteMedia operation.
+//
+// 删除媒体资源.
+//
+// DELETE /media/{id}
+func (c *Client) DeleteMedia(ctx context.Context, params DeleteMediaParams) (DeleteMediaRes, error) {
+	res, err := c.sendDeleteMedia(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendDeleteMedia(ctx context.Context, params DeleteMediaParams) (res DeleteMediaRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("deleteMedia"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.URLTemplateKey.String("/media/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, DeleteMediaOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/media/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.StringToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "DELETE", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeDeleteMediaResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // DeleteMenu invokes deleteMenu operation.
 //
 // 删除菜单.
@@ -3943,6 +4368,175 @@ func (c *Client) sendExplainPermissions(ctx context.Context, params ExplainPermi
 
 	stage = "DecodeResponse"
 	result, err := decodeExplainPermissionsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetApiEndpointOverview invokes getApiEndpointOverview operation.
+//
+// 获取 API 概览.
+//
+// GET /api-endpoints/overview
+func (c *Client) GetApiEndpointOverview(ctx context.Context, params GetApiEndpointOverviewParams) (GetApiEndpointOverviewRes, error) {
+	res, err := c.sendGetApiEndpointOverview(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetApiEndpointOverview(ctx context.Context, params GetApiEndpointOverviewParams) (res GetApiEndpointOverviewRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getApiEndpointOverview"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/api-endpoints/overview"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetApiEndpointOverviewOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/api-endpoints/overview"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetApiEndpointOverviewResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetApiEndpointScanConfig invokes getApiEndpointScanConfig operation.
+//
+// 获取未注册 API 扫描配置.
+//
+// GET /api-endpoints/unregistered/scan-config
+func (c *Client) GetApiEndpointScanConfig(ctx context.Context) (GetApiEndpointScanConfigRes, error) {
+	res, err := c.sendGetApiEndpointScanConfig(ctx)
+	return res, err
+}
+
+func (c *Client) sendGetApiEndpointScanConfig(ctx context.Context) (res GetApiEndpointScanConfigRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getApiEndpointScanConfig"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/api-endpoints/unregistered/scan-config"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetApiEndpointScanConfigOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/api-endpoints/unregistered/scan-config"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetApiEndpointScanConfigResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -9369,6 +9963,430 @@ func (c *Client) sendInitializeMenuSpaceFromDefault(ctx context.Context, params 
 	return result, nil
 }
 
+// ListApiEndpointCategories invokes listApiEndpointCategories operation.
+//
+// 获取 API 分类列表.
+//
+// GET /api-endpoints/categories
+func (c *Client) ListApiEndpointCategories(ctx context.Context) (ListApiEndpointCategoriesRes, error) {
+	res, err := c.sendListApiEndpointCategories(ctx)
+	return res, err
+}
+
+func (c *Client) sendListApiEndpointCategories(ctx context.Context) (res ListApiEndpointCategoriesRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listApiEndpointCategories"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/api-endpoints/categories"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListApiEndpointCategoriesOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/api-endpoints/categories"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListApiEndpointCategoriesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListApiEndpoints invokes listApiEndpoints operation.
+//
+// 获取 API 注册表.
+//
+// GET /api-endpoints
+func (c *Client) ListApiEndpoints(ctx context.Context, params ListApiEndpointsParams) (ListApiEndpointsRes, error) {
+	res, err := c.sendListApiEndpoints(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListApiEndpoints(ctx context.Context, params ListApiEndpointsParams) (res ListApiEndpointsRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listApiEndpoints"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/api-endpoints"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListApiEndpointsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/api-endpoints"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "current" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Current.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "size" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Size.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "app_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "app_scope" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "app_scope",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.AppScope.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "permission_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "permission_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.PermissionKey.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "permission_pattern" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "permission_pattern",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.PermissionPattern.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "keyword" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "keyword",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Keyword.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "method" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "method",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Method.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "path" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "path",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Path.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "category_id" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "category_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.CategoryID.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "context_scope" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "context_scope",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.ContextScope.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "source" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "source",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Source.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "feature_kind" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "feature_kind",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.FeatureKind.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "status" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "status",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Status.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "has_permission_key" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "has_permission_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.HasPermissionKey.Get(); ok {
+				return e.EncodeValue(conv.BoolToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "has_category" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "has_category",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.HasCategory.Get(); ok {
+				return e.EncodeValue(conv.BoolToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListApiEndpointsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // ListAppHostBindings invokes listAppHostBindings operation.
 //
 // 获取应用 Host 绑定.
@@ -10770,6 +11788,80 @@ func (c *Client) sendListInbox(ctx context.Context, params ListInboxParams) (res
 
 	stage = "DecodeResponse"
 	result, err := decodeListInboxResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListMedia invokes listMedia operation.
+//
+// 获取媒体资源列表.
+//
+// GET /media
+func (c *Client) ListMedia(ctx context.Context) (ListMediaRes, error) {
+	res, err := c.sendListMedia(ctx)
+	return res, err
+}
+
+func (c *Client) sendListMedia(ctx context.Context) (res ListMediaRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listMedia"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/media"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListMediaOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/media"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListMediaResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -13060,6 +14152,298 @@ func (c *Client) sendListRuntimePages(ctx context.Context, params ListRuntimePag
 	return result, nil
 }
 
+// ListStaleApiEndpoints invokes listStaleApiEndpoints operation.
+//
+// 获取失效 API 列表.
+//
+// GET /api-endpoints/stale
+func (c *Client) ListStaleApiEndpoints(ctx context.Context, params ListStaleApiEndpointsParams) (ListStaleApiEndpointsRes, error) {
+	res, err := c.sendListStaleApiEndpoints(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListStaleApiEndpoints(ctx context.Context, params ListStaleApiEndpointsParams) (res ListStaleApiEndpointsRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listStaleApiEndpoints"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/api-endpoints/stale"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListStaleApiEndpointsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/api-endpoints/stale"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "current" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Current.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "size" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Size.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListStaleApiEndpointsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// ListUnregisteredApiEndpoints invokes listUnregisteredApiEndpoints operation.
+//
+// 获取未注册 API 路由.
+//
+// GET /api-endpoints/unregistered
+func (c *Client) ListUnregisteredApiEndpoints(ctx context.Context, params ListUnregisteredApiEndpointsParams) (ListUnregisteredApiEndpointsRes, error) {
+	res, err := c.sendListUnregisteredApiEndpoints(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendListUnregisteredApiEndpoints(ctx context.Context, params ListUnregisteredApiEndpointsParams) (res ListUnregisteredApiEndpointsRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("listUnregisteredApiEndpoints"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/api-endpoints/unregistered"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, ListUnregisteredApiEndpointsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/api-endpoints/unregistered"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeQueryParams"
+	q := uri.NewQueryEncoder()
+	{
+		// Encode "current" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "current",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Current.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "size" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "size",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Size.Get(); ok {
+				return e.EncodeValue(conv.IntToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "method" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "method",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Method.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "path" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "path",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Path.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "keyword" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "keyword",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.Keyword.Get(); ok {
+				return e.EncodeValue(conv.StringToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	{
+		// Encode "only_no_meta" parameter.
+		cfg := uri.QueryParameterEncodingConfig{
+			Name:    "only_no_meta",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
+			if val, ok := params.OnlyNoMeta.Get(); ok {
+				return e.EncodeValue(conv.BoolToString(val))
+			}
+			return nil
+		}); err != nil {
+			return res, errors.Wrap(err, "encode query")
+		}
+	}
+	u.RawQuery = q.Values().Encode()
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeListUnregisteredApiEndpointsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // ListUnregisteredPages invokes listUnregisteredPages operation.
 //
 // 获取未注册页面.
@@ -14498,6 +15882,83 @@ func (c *Client) sendRollbackFeaturePackage(ctx context.Context, request *Rollba
 
 	stage = "DecodeResponse"
 	result, err := decodeRollbackFeaturePackageResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// SaveApiEndpointScanConfig invokes saveApiEndpointScanConfig operation.
+//
+// 保存未注册 API 扫描配置.
+//
+// PUT /api-endpoints/unregistered/scan-config
+func (c *Client) SaveApiEndpointScanConfig(ctx context.Context, request AnyObject) (SaveApiEndpointScanConfigRes, error) {
+	res, err := c.sendSaveApiEndpointScanConfig(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendSaveApiEndpointScanConfig(ctx context.Context, request AnyObject) (res SaveApiEndpointScanConfigRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("saveApiEndpointScanConfig"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/api-endpoints/unregistered/scan-config"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SaveApiEndpointScanConfigOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/api-endpoints/unregistered/scan-config"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeSaveApiEndpointScanConfigRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSaveApiEndpointScanConfigResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -16834,6 +18295,80 @@ func (c *Client) sendSwitchWorkspace(ctx context.Context, request *WorkspaceSwit
 	return result, nil
 }
 
+// SyncApiEndpoints invokes syncApiEndpoints operation.
+//
+// 同步 API 注册表.
+//
+// POST /api-endpoints/sync
+func (c *Client) SyncApiEndpoints(ctx context.Context) (SyncApiEndpointsRes, error) {
+	res, err := c.sendSyncApiEndpoints(ctx)
+	return res, err
+}
+
+func (c *Client) sendSyncApiEndpoints(ctx context.Context) (res SyncApiEndpointsRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("syncApiEndpoints"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/api-endpoints/sync"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, SyncApiEndpointsOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/api-endpoints/sync"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeSyncApiEndpointsResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
 // SyncPages invokes syncPages operation.
 //
 // 同步页面注册表.
@@ -16919,6 +18454,292 @@ func (c *Client) sendSyncPages(ctx context.Context, params SyncPagesParams) (res
 
 	stage = "DecodeResponse"
 	result, err := decodeSyncPagesResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdateApiEndpoint invokes updateApiEndpoint operation.
+//
+// 更新 API 注册项.
+//
+// PUT /api-endpoints/{id}
+func (c *Client) UpdateApiEndpoint(ctx context.Context, request AnyObject, params UpdateApiEndpointParams) (UpdateApiEndpointRes, error) {
+	res, err := c.sendUpdateApiEndpoint(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdateApiEndpoint(ctx context.Context, request AnyObject, params UpdateApiEndpointParams) (res UpdateApiEndpointRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updateApiEndpoint"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/api-endpoints/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateApiEndpointOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/api-endpoints/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdateApiEndpointRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdateApiEndpointResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdateApiEndpointCategory invokes updateApiEndpointCategory operation.
+//
+// 更新 API 分类.
+//
+// PUT /api-endpoints/categories/{id}
+func (c *Client) UpdateApiEndpointCategory(ctx context.Context, request AnyObject, params UpdateApiEndpointCategoryParams) (UpdateApiEndpointCategoryRes, error) {
+	res, err := c.sendUpdateApiEndpointCategory(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdateApiEndpointCategory(ctx context.Context, request AnyObject, params UpdateApiEndpointCategoryParams) (res UpdateApiEndpointCategoryRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updateApiEndpointCategory"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/api-endpoints/categories/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateApiEndpointCategoryOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/api-endpoints/categories/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdateApiEndpointCategoryRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdateApiEndpointCategoryResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UpdateApiEndpointContextScope invokes updateApiEndpointContextScope operation.
+//
+// 更新 API 协作空间上下文.
+//
+// PUT /api-endpoints/{id}/context-scope
+func (c *Client) UpdateApiEndpointContextScope(ctx context.Context, request AnyObject, params UpdateApiEndpointContextScopeParams) (UpdateApiEndpointContextScopeRes, error) {
+	res, err := c.sendUpdateApiEndpointContextScope(ctx, request, params)
+	return res, err
+}
+
+func (c *Client) sendUpdateApiEndpointContextScope(ctx context.Context, request AnyObject, params UpdateApiEndpointContextScopeParams) (res UpdateApiEndpointContextScopeRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("updateApiEndpointContextScope"),
+		semconv.HTTPRequestMethodKey.String("PUT"),
+		semconv.URLTemplateKey.String("/api-endpoints/{id}/context-scope"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UpdateApiEndpointContextScopeOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [3]string
+	pathParts[0] = "/api-endpoints/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			return e.EncodeValue(conv.UUIDToString(params.ID))
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	pathParts[2] = "/context-scope"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "PUT", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUpdateApiEndpointContextScopeRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUpdateApiEndpointContextScopeResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -18460,6 +20281,83 @@ func (c *Client) sendUpdateUser(ctx context.Context, request *UserUpdateRequest,
 
 	stage = "DecodeResponse"
 	result, err := decodeUpdateUserResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// UploadMedia invokes uploadMedia operation.
+//
+// 上传媒体资源.
+//
+// POST /media/upload
+func (c *Client) UploadMedia(ctx context.Context, request *UploadMediaReq) (UploadMediaRes, error) {
+	res, err := c.sendUploadMedia(ctx, request)
+	return res, err
+}
+
+func (c *Client) sendUploadMedia(ctx context.Context, request *UploadMediaReq) (res UploadMediaRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("uploadMedia"),
+		semconv.HTTPRequestMethodKey.String("POST"),
+		semconv.URLTemplateKey.String("/media/upload"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, UploadMediaOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [1]string
+	pathParts[0] = "/media/upload"
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "POST", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+	if err := encodeUploadMediaRequest(request, r); err != nil {
+		return res, errors.Wrap(err, "encode request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeUploadMediaResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

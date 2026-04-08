@@ -6,7 +6,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
 )
 
@@ -30,15 +29,8 @@ func (m *MediaModule) Init() error {
 }
 
 func (m *MediaModule) RegisterRoutes(rg *gin.RouterGroup) {
-	mediaHandler := NewMediaHandler()
-
-	media := rg.Group("/media")
-	reg := apiregistry.NewRegistrar(media, "media")
-	{
-		reg.POST("/upload", reg.Meta("上传媒体资源").Build(), mediaHandler.Upload)
-		reg.GET("", reg.Meta("获取媒体资源列表").Build(), mediaHandler.List)
-		reg.DELETE("/:id", reg.Meta("删除媒体资源").Build(), mediaHandler.Delete)
-	}
+	// Routes migrated to ogen (Phase 5) — registered in router.go via ogenBridge.
+	_ = rg
 }
 
 func init() {

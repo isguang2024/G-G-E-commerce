@@ -57,3 +57,11 @@ func optNilStringVal(s gen.OptNilString) string {
 func ok() *gen.MutationResult {
 	return &gen.MutationResult{Success: true}
 }
+
+// optBool extracts bool from gen.OptBool, returning false if not set.
+func optBool(o gen.OptBool) bool {
+	if !o.Set {
+		return false
+	}
+	return o.Value
+}

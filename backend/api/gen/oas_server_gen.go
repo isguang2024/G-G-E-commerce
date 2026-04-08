@@ -38,12 +38,30 @@ type Handler interface {
 	//
 	// POST /permission-actions/batch
 	BatchUpdatePermissionActions(ctx context.Context, req AnyObject) (*MutationResult, error)
+	// CleanupStaleApiEndpoints implements cleanupStaleApiEndpoints operation.
+	//
+	// 清理失效 API.
+	//
+	// POST /api-endpoints/cleanup-stale
+	CleanupStaleApiEndpoints(ctx context.Context, req AnyObject) (CleanupStaleApiEndpointsRes, error)
 	// CleanupUnusedPermissionActions implements cleanupUnusedPermissionActions operation.
 	//
 	// 清理未消费功能权限.
 	//
 	// POST /permission-actions/cleanup-unused
 	CleanupUnusedPermissionActions(ctx context.Context) (*MutationResult, error)
+	// CreateApiEndpoint implements createApiEndpoint operation.
+	//
+	// 创建 API 注册项.
+	//
+	// POST /api-endpoints
+	CreateApiEndpoint(ctx context.Context, req AnyObject) (CreateApiEndpointRes, error)
+	// CreateApiEndpointCategory implements createApiEndpointCategory operation.
+	//
+	// 创建 API 分类.
+	//
+	// POST /api-endpoints/categories
+	CreateApiEndpointCategory(ctx context.Context, req AnyObject) (CreateApiEndpointCategoryRes, error)
 	// CreateCollaborationWorkspace implements createCollaborationWorkspace operation.
 	//
 	// 创建协作空间.
@@ -152,6 +170,12 @@ type Handler interface {
 	//
 	// DELETE /feature-packages/{id}
 	DeleteFeaturePackage(ctx context.Context, params DeleteFeaturePackageParams) (*MutationResult, error)
+	// DeleteMedia implements deleteMedia operation.
+	//
+	// 删除媒体资源.
+	//
+	// DELETE /media/{id}
+	DeleteMedia(ctx context.Context, params DeleteMediaParams) (DeleteMediaRes, error)
 	// DeleteMenu implements deleteMenu operation.
 	//
 	// 删除菜单.
@@ -206,6 +230,18 @@ type Handler interface {
 	//
 	// GET /permissions/explain
 	ExplainPermissions(ctx context.Context, params ExplainPermissionsParams) (ExplainPermissionsRes, error)
+	// GetApiEndpointOverview implements getApiEndpointOverview operation.
+	//
+	// 获取 API 概览.
+	//
+	// GET /api-endpoints/overview
+	GetApiEndpointOverview(ctx context.Context, params GetApiEndpointOverviewParams) (GetApiEndpointOverviewRes, error)
+	// GetApiEndpointScanConfig implements getApiEndpointScanConfig operation.
+	//
+	// 获取未注册 API 扫描配置.
+	//
+	// GET /api-endpoints/unregistered/scan-config
+	GetApiEndpointScanConfig(ctx context.Context) (GetApiEndpointScanConfigRes, error)
 	// GetAuthMe implements getAuthMe operation.
 	//
 	// 获取当前登录账户信息.
@@ -542,6 +578,18 @@ type Handler interface {
 	//
 	// POST /system/menu-spaces/{spaceKey}/initialize-default
 	InitializeMenuSpaceFromDefault(ctx context.Context, params InitializeMenuSpaceFromDefaultParams) (*MutationResult, error)
+	// ListApiEndpointCategories implements listApiEndpointCategories operation.
+	//
+	// 获取 API 分类列表.
+	//
+	// GET /api-endpoints/categories
+	ListApiEndpointCategories(ctx context.Context) (ListApiEndpointCategoriesRes, error)
+	// ListApiEndpoints implements listApiEndpoints operation.
+	//
+	// 获取 API 注册表.
+	//
+	// GET /api-endpoints
+	ListApiEndpoints(ctx context.Context, params ListApiEndpointsParams) (ListApiEndpointsRes, error)
 	// ListAppHostBindings implements listAppHostBindings operation.
 	//
 	// 获取应用 Host 绑定.
@@ -626,6 +674,12 @@ type Handler interface {
 	//
 	// GET /messages/inbox
 	ListInbox(ctx context.Context, params ListInboxParams) (*AnyListResponse, error)
+	// ListMedia implements listMedia operation.
+	//
+	// 获取媒体资源列表.
+	//
+	// GET /media
+	ListMedia(ctx context.Context) (ListMediaRes, error)
 	// ListMenuBackups implements listMenuBackups operation.
 	//
 	// 获取菜单备份列表.
@@ -764,6 +818,18 @@ type Handler interface {
 	//
 	// GET /pages/runtime
 	ListRuntimePages(ctx context.Context, params ListRuntimePagesParams) (*AnyListResponse, error)
+	// ListStaleApiEndpoints implements listStaleApiEndpoints operation.
+	//
+	// 获取失效 API 列表.
+	//
+	// GET /api-endpoints/stale
+	ListStaleApiEndpoints(ctx context.Context, params ListStaleApiEndpointsParams) (ListStaleApiEndpointsRes, error)
+	// ListUnregisteredApiEndpoints implements listUnregisteredApiEndpoints operation.
+	//
+	// 获取未注册 API 路由.
+	//
+	// GET /api-endpoints/unregistered
+	ListUnregisteredApiEndpoints(ctx context.Context, params ListUnregisteredApiEndpointsParams) (ListUnregisteredApiEndpointsRes, error)
 	// ListUnregisteredPages implements listUnregisteredPages operation.
 	//
 	// 获取未注册页面.
@@ -848,6 +914,12 @@ type Handler interface {
 	//
 	// POST /feature-packages/{id}/rollback
 	RollbackFeaturePackage(ctx context.Context, req *RollbackRequest, params RollbackFeaturePackageParams) (*MutationResult, error)
+	// SaveApiEndpointScanConfig implements saveApiEndpointScanConfig operation.
+	//
+	// 保存未注册 API 扫描配置.
+	//
+	// PUT /api-endpoints/unregistered/scan-config
+	SaveApiEndpointScanConfig(ctx context.Context, req AnyObject) (SaveApiEndpointScanConfigRes, error)
 	// SaveApp implements saveApp operation.
 	//
 	// 保存应用.
@@ -992,12 +1064,36 @@ type Handler interface {
 	//
 	// POST /workspaces/switch
 	SwitchWorkspace(ctx context.Context, req *WorkspaceSwitchRequest) (SwitchWorkspaceRes, error)
+	// SyncApiEndpoints implements syncApiEndpoints operation.
+	//
+	// 同步 API 注册表.
+	//
+	// POST /api-endpoints/sync
+	SyncApiEndpoints(ctx context.Context) (SyncApiEndpointsRes, error)
 	// SyncPages implements syncPages operation.
 	//
 	// 同步页面注册表.
 	//
 	// POST /pages/sync
 	SyncPages(ctx context.Context, params SyncPagesParams) (*PageSyncResult, error)
+	// UpdateApiEndpoint implements updateApiEndpoint operation.
+	//
+	// 更新 API 注册项.
+	//
+	// PUT /api-endpoints/{id}
+	UpdateApiEndpoint(ctx context.Context, req AnyObject, params UpdateApiEndpointParams) (UpdateApiEndpointRes, error)
+	// UpdateApiEndpointCategory implements updateApiEndpointCategory operation.
+	//
+	// 更新 API 分类.
+	//
+	// PUT /api-endpoints/categories/{id}
+	UpdateApiEndpointCategory(ctx context.Context, req AnyObject, params UpdateApiEndpointCategoryParams) (UpdateApiEndpointCategoryRes, error)
+	// UpdateApiEndpointContextScope implements updateApiEndpointContextScope operation.
+	//
+	// 更新 API 协作空间上下文.
+	//
+	// PUT /api-endpoints/{id}/context-scope
+	UpdateApiEndpointContextScope(ctx context.Context, req AnyObject, params UpdateApiEndpointContextScopeParams) (UpdateApiEndpointContextScopeRes, error)
 	// UpdateCollaborationWorkspace implements updateCollaborationWorkspace operation.
 	//
 	// 更新协作空间.
@@ -1094,6 +1190,12 @@ type Handler interface {
 	//
 	// PUT /users/{id}
 	UpdateUser(ctx context.Context, req *UserUpdateRequest, params UpdateUserParams) (UpdateUserRes, error)
+	// UploadMedia implements uploadMedia operation.
+	//
+	// 上传媒体资源.
+	//
+	// POST /media/upload
+	UploadMedia(ctx context.Context, req *UploadMediaReq) (UploadMediaRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and

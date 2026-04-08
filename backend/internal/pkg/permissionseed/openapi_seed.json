@@ -2,6 +2,146 @@
   "source": "api\\openapi\\openapi.yaml",
   "operations": [
     {
+      "operation_id": "listApiEndpoints",
+      "method": "get",
+      "path": "/api-endpoints",
+      "permission_key": "system.api_registry.view",
+      "summary": "获取 API 注册表",
+      "tenant_scoped": false,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createApiEndpoint",
+      "method": "post",
+      "path": "/api-endpoints",
+      "permission_key": "system.api_registry.sync",
+      "summary": "创建 API 注册项",
+      "tenant_scoped": false,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listApiEndpointCategories",
+      "method": "get",
+      "path": "/api-endpoints/categories",
+      "permission_key": "system.api_registry.view",
+      "summary": "获取 API 分类列表",
+      "tenant_scoped": false,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "createApiEndpointCategory",
+      "method": "post",
+      "path": "/api-endpoints/categories",
+      "permission_key": "system.api_registry.sync",
+      "summary": "创建 API 分类",
+      "tenant_scoped": false,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateApiEndpointCategory",
+      "method": "put",
+      "path": "/api-endpoints/categories/{id}",
+      "permission_key": "system.api_registry.sync",
+      "summary": "更新 API 分类",
+      "tenant_scoped": false,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "cleanupStaleApiEndpoints",
+      "method": "post",
+      "path": "/api-endpoints/cleanup-stale",
+      "permission_key": "system.api_registry.sync",
+      "summary": "清理失效 API",
+      "tenant_scoped": false,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getApiEndpointOverview",
+      "method": "get",
+      "path": "/api-endpoints/overview",
+      "permission_key": "system.api_registry.view",
+      "summary": "获取 API 概览",
+      "tenant_scoped": false,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listStaleApiEndpoints",
+      "method": "get",
+      "path": "/api-endpoints/stale",
+      "permission_key": "system.api_registry.view",
+      "summary": "获取失效 API 列表",
+      "tenant_scoped": false,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "syncApiEndpoints",
+      "method": "post",
+      "path": "/api-endpoints/sync",
+      "permission_key": "system.api_registry.sync",
+      "summary": "同步 API 注册表",
+      "tenant_scoped": false,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listUnregisteredApiEndpoints",
+      "method": "get",
+      "path": "/api-endpoints/unregistered",
+      "permission_key": "system.api_registry.view",
+      "summary": "获取未注册 API 路由",
+      "tenant_scoped": false,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "getApiEndpointScanConfig",
+      "method": "get",
+      "path": "/api-endpoints/unregistered/scan-config",
+      "permission_key": "system.api_registry.view",
+      "summary": "获取未注册 API 扫描配置",
+      "tenant_scoped": false,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "saveApiEndpointScanConfig",
+      "method": "put",
+      "path": "/api-endpoints/unregistered/scan-config",
+      "permission_key": "system.api_registry.sync",
+      "summary": "保存未注册 API 扫描配置",
+      "tenant_scoped": false,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateApiEndpoint",
+      "method": "put",
+      "path": "/api-endpoints/{id}",
+      "permission_key": "system.api_registry.sync",
+      "summary": "更新 API 注册项",
+      "tenant_scoped": false,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "updateApiEndpointContextScope",
+      "method": "put",
+      "path": "/api-endpoints/{id}/context-scope",
+      "permission_key": "system.api_registry.sync",
+      "summary": "更新 API 协作空间上下文",
+      "tenant_scoped": false,
+      "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
       "operation_id": "login",
       "method": "post",
       "path": "/auth/login",
@@ -669,6 +809,36 @@
       "summary": "获取功能包版本历史",
       "tenant_scoped": true,
       "app_scope": "optional",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "listMedia",
+      "method": "get",
+      "path": "/media",
+      "permission_key": "system.media.view",
+      "summary": "获取媒体资源列表",
+      "tenant_scoped": false,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "uploadMedia",
+      "method": "post",
+      "path": "/media/upload",
+      "permission_key": "system.media.manage",
+      "summary": "上传媒体资源",
+      "tenant_scoped": false,
+      "app_scope": "none",
+      "access_mode": "permission"
+    },
+    {
+      "operation_id": "deleteMedia",
+      "method": "delete",
+      "path": "/media/{id}",
+      "permission_key": "system.media.manage",
+      "summary": "删除媒体资源",
+      "tenant_scoped": false,
+      "app_scope": "none",
       "access_mode": "permission"
     },
     {

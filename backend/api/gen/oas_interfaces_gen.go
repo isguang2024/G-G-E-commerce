@@ -5,8 +5,24 @@ type AssignUserRolesRes interface {
 	assignUserRolesRes()
 }
 
+type CleanupStaleApiEndpointsRes interface {
+	cleanupStaleApiEndpointsRes()
+}
+
+type CreateApiEndpointCategoryRes interface {
+	createApiEndpointCategoryRes()
+}
+
+type CreateApiEndpointRes interface {
+	createApiEndpointRes()
+}
+
 type CreateUserRes interface {
 	createUserRes()
+}
+
+type DeleteMediaRes interface {
+	deleteMediaRes()
 }
 
 type DeleteUserRes interface {
@@ -15,6 +31,14 @@ type DeleteUserRes interface {
 
 type ExplainPermissionsRes interface {
 	explainPermissionsRes()
+}
+
+type GetApiEndpointOverviewRes interface {
+	getApiEndpointOverviewRes()
+}
+
+type GetApiEndpointScanConfigRes interface {
+	getApiEndpointScanConfigRes()
 }
 
 type GetAuthMeRes interface {
@@ -37,8 +61,28 @@ type GetWorkspaceRes interface {
 	getWorkspaceRes()
 }
 
+type ListApiEndpointCategoriesRes interface {
+	listApiEndpointCategoriesRes()
+}
+
+type ListApiEndpointsRes interface {
+	listApiEndpointsRes()
+}
+
+type ListMediaRes interface {
+	listMediaRes()
+}
+
 type ListMyWorkspacesRes interface {
 	listMyWorkspacesRes()
+}
+
+type ListStaleApiEndpointsRes interface {
+	listStaleApiEndpointsRes()
+}
+
+type ListUnregisteredApiEndpointsRes interface {
+	listUnregisteredApiEndpointsRes()
 }
 
 type ListUsersRes interface {
@@ -57,10 +101,34 @@ type RegisterRes interface {
 	registerRes()
 }
 
+type SaveApiEndpointScanConfigRes interface {
+	saveApiEndpointScanConfigRes()
+}
+
 type SwitchWorkspaceRes interface {
 	switchWorkspaceRes()
 }
 
+type SyncApiEndpointsRes interface {
+	syncApiEndpointsRes()
+}
+
+type UpdateApiEndpointCategoryRes interface {
+	updateApiEndpointCategoryRes()
+}
+
+type UpdateApiEndpointContextScopeRes interface {
+	updateApiEndpointContextScopeRes()
+}
+
+type UpdateApiEndpointRes interface {
+	updateApiEndpointRes()
+}
+
 type UpdateUserRes interface {
 	updateUserRes()
+}
+
+type UploadMediaRes interface {
+	uploadMediaRes()
 }
