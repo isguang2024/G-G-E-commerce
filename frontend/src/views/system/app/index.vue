@@ -2,7 +2,7 @@
   <div class="app-manage-page art-full-height" v-loading="loading">
     <AdminWorkspaceHero
       title="应用管理"
-      description="以 App 为资源边界统一收口站点默认空间、Host 绑定和导航管理入口；菜单空间降级为当前 App 下的高级配置。"
+      description="以 App 为资源边界统一管理站点默认空间、Host 绑定与导航入口。"
       :metrics="summaryMetrics"
     >
       <div class="app-manage-hero-actions">
@@ -12,15 +12,6 @@
         </ElButton>
         <ElButton :disabled="!selectedAppKey" @click="openHostDrawer()" v-ripple>
           新增 Host 绑定
-        </ElButton>
-        <ElButton :disabled="!selectedAppKey" @click="goToMenuManagement" v-ripple>
-          菜单管理
-        </ElButton>
-        <ElButton :disabled="!selectedAppKey" @click="goToPageManagement" v-ripple>
-          页面管理
-        </ElButton>
-        <ElButton :disabled="!selectedAppKey" @click="goToSpaceManagement()" v-ripple>
-          高级空间配置
         </ElButton>
       </div>
     </AdminWorkspaceHero>
@@ -78,19 +69,15 @@
                 </ElTag>
               </div>
               <div class="app-manage-item__meta">
-                <span>标识 {{ item.appKey }}</span>
-                <span>模式 {{ item.spaceMode === 'multi' ? '多空间' : '单空间' }}</span>
-                <span>默认空间 {{ displaySpaceLabel(item.defaultSpaceKey) }}</span>
-                <span>空间 {{ item.menuSpaceCount || 0 }}</span>
-                <span>菜单 {{ item.menuCount || 0 }}</span>
-                <span>页面 {{ item.pageCount || 0 }}</span>
-                <span>Host {{ item.hostCount || 0 }}</span>
+                <span>{{ item.appKey }}</span>
+                <span>·</span>
+                <span>{{ item.spaceMode === 'multi' ? '多空间' : '单空间' }}</span>
+                <span>·</span>
+                <span>默认 {{ displaySpaceLabel(item.defaultSpaceKey) }}</span>
+                <span>·</span>
+                <span>{{ item.menuSpaceCount || 0 }} 空间 / {{ item.menuCount || 0 }} 菜单 / {{ item.pageCount || 0 }} 页面</span>
               </div>
-              <p class="app-manage-item__desc">
-                {{
-                  item.description || '当前 App 未填写说明，建议补充站点职责、登录策略或业务边界。'
-                }}
-              </p>
+              <p v-if="item.description" class="app-manage-item__desc">{{ item.description }}</p>
             </div>
             <div class="app-manage-item__actions">
               <ElButton text type="primary" @click.stop="openAppDrawer(item)">编辑</ElButton>
@@ -408,10 +395,8 @@
   const hostDrawerTitle = computed(() => (editingHost.value ? '编辑 Host 绑定' : '新增 Host 绑定'))
   const summaryMetrics = computed(() => [
     { label: '应用数', value: apps.value.length || 0 },
-    { label: '管理 App', value: selectedAppKey.value || '未选择' },
-    { label: '空间数', value: selectedAppRecord.value?.menuSpaceCount || 0 },
-    { label: '菜单数', value: selectedAppRecord.value?.menuCount || 0 },
-    { label: '页面数', value: selectedAppRecord.value?.pageCount || 0 },
+    { label: '管理 App', value: selectedAppRecord.value?.name || selectedAppKey.value || '未选择' },
+    { label: '菜单空间', value: selectedAppRecord.value?.menuSpaceCount || 0 },
     { label: 'Host 绑定', value: hostBindings.value.length || 0 }
   ])
 

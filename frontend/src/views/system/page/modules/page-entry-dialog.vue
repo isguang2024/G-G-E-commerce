@@ -10,16 +10,15 @@
   >
     <ElForm ref="formRef" :model="form" :rules="rules" label-width="110px">
       <div class="dialog-intro">
-        <div class="dialog-intro__main">
-          <div class="dialog-intro__title">{{ configHintTitle }}</div>
-          <div class="dialog-intro__desc">{{ configHintDescription }}</div>
-          <div v-if="isUnregisteredCandidate" class="dialog-intro__meta">
-            <ElTag size="small" effect="plain" type="warning">未注册来源，组件路径固定</ElTag>
-          </div>
+        <div class="dialog-intro__line">
+          <span class="dialog-intro__desc">{{ configHintDescription }}</span>
+          <ElButton text type="primary" size="small" @click="showExamples = !showExamples">
+            {{ showExamples ? '收起示例' : '查看示例' }}
+          </ElButton>
         </div>
-        <ElButton text type="primary" @click="showExamples = !showExamples">
-          {{ showExamples ? '收起示例' : '查看示例' }}
-        </ElButton>
+        <div v-if="isUnregisteredCandidate" class="dialog-intro__meta">
+          <ElTag size="small" effect="plain" type="warning">未注册来源，组件路径固定</ElTag>
+        </div>
         <div v-if="showExamples" class="dialog-intro__examples">
           <div v-for="item in pageExamples" :key="item" class="dialog-intro__example">{{
             item
@@ -65,12 +64,11 @@
               <template #label>
                 <PageFieldLabel
                   label="页面类型"
-                  help="内页必须继承菜单或上级页面；全局页与独立页都可选择当前 App 全局可见，或只对指定空间开放。"
+                  help="内页必须继承菜单或上级页面；独立页可选择当前 App 全局可见，或只对指定空间开放。"
                 />
               </template>
               <ElSelect v-model="form.pageType" style="width: 100%">
                 <ElOption label="内页" value="inner" />
-                <ElOption label="全局页" value="global" />
                 <ElOption label="独立页" value="standalone" />
               </ElSelect>
             </ElFormItem>
@@ -106,8 +104,8 @@
                 />
               </template>
               <ElSelect v-model="form.visibilityScope" style="width: 100%">
-                <ElOption label="当前 App 全局可见" value="app" />
-                <ElOption label="仅指定空间可见" value="spaces" />
+                <ElOption label="当前 App 全局可见（所有空间都能访问）" value="app" />
+                <ElOption label="仅指定空间可见（只在选中的空间暴露）" value="spaces" />
               </ElSelect>
             </ElFormItem>
           </ElCol>
@@ -184,7 +182,7 @@
               <template #label>
                 <PageFieldLabel
                   label="组件路径"
-                  help="实际渲染的前端页面组件路径。内嵌模式下会自动改为 /outside/Iframe。"
+                  help="实际渲染的前端页面组件路径。外链模式下会自动改为 /outside/Iframe。"
                 />
               </template>
               <ElInput
@@ -198,10 +196,10 @@
 
         <ElRow :gutter="14">
           <ElCol :span="12">
-            <ElFormItem label="是否内嵌" prop="isIframe">
+            <ElFormItem label="是否外链" prop="isIframe">
               <template #label>
                 <PageFieldLabel
-                  label="是否内嵌"
+                  label="是否外链"
                   help="开启后页面将通过 iframe 加载外部地址，组件路径自动切为 /outside/Iframe。"
                 />
               </template>
@@ -232,7 +230,7 @@
               <template #label>
                 <PageFieldLabel
                   label="外链地址"
-                  help="内嵌模式下必填，填写要加载的 http:// 或 https:// 地址。"
+                  help="外链模式下必填，填写要加载的 http:// 或 https:// 地址。"
                 />
               </template>
               <ElInput v-model="form.link" placeholder="例如 https://example.com" />
@@ -244,16 +242,13 @@
           <template #label>
             <PageFieldLabel
               label="最终路径"
-              help="系统根据路由路径、挂载方式、上级菜单和上级页面推导出的真实访问路径。"
+              help="系统按规则推导真实访问路径：不挂载时=路由路径本身；挂到菜单时，单段路径会拼到菜单路径后；挂到页面时，单段路径会拼到上级页面路径后；填写多段绝对路径则按原样注册。"
             />
           </template>
           <div class="route-preview-box">
             <code>{{ resolvedRoutePreview || '-' }}</code>
           </div>
         </ElFormItem>
-        <div class="field-hint field-hint--section">
-          {{ routePreviewHint }}
-        </div>
       </div>
 
       <div class="form-section">
@@ -273,20 +268,39 @@
                 />
               </template>
               <ElRadioGroup v-model="mountMode" class="mount-mode-group">
-                <ElRadioButton label="none">不挂载</ElRadioButton>
-                <ElRadioButton label="menu">挂到菜单</ElRadioButton>
-                <ElRadioButton label="page">挂到页面/分组</ElRadioButton>
+                <ElRadioButton label="none">不挂载 · 独立路径</ElRadioButton>
+                <ElRadioButton label="menu">挂到菜单 · 出现在左侧菜单</ElRadioButton>
+                <ElRadioButton label="page">挂到页面 · 作为父页面子路由</ElRadioButton>
               </ElRadioGroup>
             </ElFormItem>
-            <div v-if="mountOwnershipSummary" class="mount-summary-box is-neutral">
-              <div class="mount-summary-box__title">当前归属说明</div>
-              <div class="mount-summary-box__text">{{ mountOwnershipSummary }}</div>
-            </div>
+            <div v-if="mountOwnershipSummary" class="mount-hint">{{ mountOwnershipSummary }}</div>
           </ElCol>
         </ElRow>
 
         <ElRow v-if="showMountSection && mountMode === 'menu'" :gutter="14">
           <ElCol :span="24">
+            <ElFormItem label="菜单空间">
+              <template #label>
+                <PageFieldLabel
+                  label="菜单空间"
+                  help="按菜单空间过滤下方上级菜单候选。留空表示不限空间（可能跨空间显示重复项）。"
+                />
+              </template>
+              <ElSelect
+                v-model="mountSpaceKey"
+                clearable
+                filterable
+                style="width: 100%"
+                placeholder="可选，按空间过滤菜单"
+              >
+                <ElOption
+                  v-for="item in menuSpaceOptions"
+                  :key="item.value"
+                  :label="item.label"
+                  :value="item.value"
+                />
+              </ElSelect>
+            </ElFormItem>
             <ElFormItem label="上级菜单" prop="parentMenuId">
               <template #label>
                 <PageFieldLabel
@@ -305,14 +319,7 @@
                 placeholder="请选择上级菜单"
               />
             </ElFormItem>
-            <div v-if="mountMenuSummary" class="mount-summary-box">
-              <div class="mount-summary-box__title">挂接关系预览</div>
-              <div class="mount-summary-box__text">{{ mountMenuSummary }}</div>
-            </div>
-            <div v-if="menuSiblingSummary" class="mount-summary-box is-neutral">
-              <div class="mount-summary-box__title">同菜单页面摘要</div>
-              <div class="mount-summary-box__text">{{ menuSiblingSummary }}</div>
-            </div>
+            <div v-if="mountMenuSummary" class="mount-hint">{{ mountMenuSummary }}</div>
           </ElCol>
         </ElRow>
 
@@ -345,7 +352,7 @@
 
         <ElRow
           v-if="
-            form.pageType !== 'standalone' && (form.pageType === 'global' || mountMode !== 'page')
+            form.pageType !== 'standalone' && mountMode !== 'page'
           "
           :gutter="14"
         >
@@ -534,6 +541,7 @@
     formRef,
     submitting,
     mountMode,
+    mountSpaceKey,
     showAdvanced,
     showExamples,
     visible,
@@ -548,7 +556,6 @@
     menuCascaderProps,
     parentPageOptions,
     displayGroupOptions,
-    configHintTitle,
     isUnregisteredCandidate,
     isComponentLocked,
     configHintDescription,
@@ -556,9 +563,7 @@
     accessModeOptions,
     routePathPlaceholder,
     mountMenuSummary,
-    menuSiblingSummary,
     resolvedRoutePreview,
-    routePreviewHint,
     pageExamples,
     getComponentPlaceholder,
     handleClose,
@@ -567,17 +572,6 @@
 </script>
 
 <style scoped lang="scss">
-  .field-hint {
-    color: var(--el-text-color-secondary);
-    font-size: 12px;
-    line-height: 1.5;
-    margin: -6px 0 12px;
-  }
-
-  .field-hint--section {
-    margin-top: -2px;
-  }
-
   .dialog-intro {
     background: linear-gradient(
       180deg,
@@ -590,25 +584,29 @@
     padding: 14px 16px;
   }
 
-  .dialog-intro__main {
-    margin-bottom: 6px;
-  }
-
-  .dialog-intro__title {
-    color: var(--el-text-color-primary);
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 4px;
+  .dialog-intro__line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: space-between;
   }
 
   .dialog-intro__desc {
     color: var(--el-text-color-secondary);
+    flex: 1;
     font-size: 12px;
-    line-height: 1.7;
+    line-height: 1.6;
   }
 
   .dialog-intro__meta {
     margin-top: 8px;
+  }
+
+  .mount-hint {
+    color: var(--el-text-color-secondary);
+    font-size: 12px;
+    line-height: 1.6;
+    margin: -4px 0 12px;
   }
 
   .dialog-intro__examples {
@@ -668,36 +666,6 @@
     font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
     font-size: 12px;
     word-break: break-all;
-  }
-
-  .mount-summary-box {
-    margin: -4px 0 12px;
-    padding: 12px 14px;
-    border: 1px solid rgb(219 234 254 / 0.95);
-    border-radius: 12px;
-    background: linear-gradient(180deg, rgb(239 246 255 / 0.95), rgb(248 250 252 / 0.98));
-  }
-
-  .mount-summary-box__title {
-    color: var(--el-text-color-primary);
-    font-size: 13px;
-    font-weight: 600;
-  }
-
-  .mount-summary-box__text {
-    margin-top: 6px;
-    color: var(--el-text-color-secondary);
-    font-size: 12px;
-    line-height: 1.7;
-  }
-
-  .mount-summary-box.is-neutral {
-    border-color: var(--el-border-color-lighter);
-    background: linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--el-fill-color-light) 86%, white) 0%,
-      white 100%
-    );
   }
 
   .advanced-grid {

@@ -735,7 +735,7 @@ export class ManagedPageProcessor {
 
   private normalizePageType(value?: string): string {
     const target = this.normalizeValue(value)
-    if (target === 'inner' || target === 'global' || target === 'group') {
+    if (target === 'inner' || target === 'standalone' || target === 'group') {
       return target
     }
     return 'inner'

@@ -137,7 +137,6 @@ export function buildCopyPageData(row: PageItem): Partial<PageItem> {
 export function getPageTypeText(row: PageItem) {
   if (row.pageType === 'group') return '逻辑分组'
   if (row.pageType === 'display_group') return '普通分组'
-  if (row.pageType === 'global') return '全局页'
   if (row.pageType === 'standalone') return '独立页'
   return '内页'
 }
@@ -145,7 +144,7 @@ export function getPageTypeText(row: PageItem) {
 export function getPageTypeTag(row: PageItem) {
   if (row.pageType === 'group') return 'info'
   if (row.pageType === 'display_group') return 'success'
-  if (row.pageType === 'global') return 'primary'
+  if (row.pageType === 'standalone') return 'primary'
   return 'warning'
 }
 
@@ -170,11 +169,6 @@ export function getAccessModeTag(accessMode?: string) {
 }
 
 export function getMountModeText(row: PageItem) {
-  if (row.pageType === 'global') {
-    return row.visibilityScope === 'spaces' || row.spaceScope === 'spaces'
-      ? '全局页（指定空间）'
-      : '全局页'
-  }
   if (row.pageType === 'standalone') {
     return row.visibilityScope === 'spaces' || row.spaceScope === 'spaces'
       ? '独立页（指定空间）'
@@ -187,11 +181,6 @@ export function getMountModeText(row: PageItem) {
 
 export function getMountTargetText(row: PageItem) {
   if (row.pageType === 'display_group') return '普通分组'
-  if (row.pageType === 'global') {
-    return row.visibilityScope === 'spaces' || row.spaceScope === 'spaces'
-      ? '全局页 · 指定空间'
-      : '全局页'
-  }
   if (row.pageType === 'standalone') {
     return row.visibilityScope === 'spaces' || row.spaceScope === 'spaces'
       ? '独立页 · 指定空间'
@@ -203,17 +192,12 @@ export function getMountTargetText(row: PageItem) {
   if (row.parentMenuName) return `挂到菜单 · ${row.parentMenuName}`
   if (row.parentPageName) return `挂到页面 · ${row.parentPageName}`
   if (row.displayGroupName) return `列表分组 · ${row.displayGroupName}`
-  return row.pageType === 'global' ? '独立页面' : '未挂载内页'
+  return '未挂载内页'
 }
 
 export function getRelationDisplayText(row: PageItem) {
   if (row.pageType === 'display_group') {
     return '仅列表归类'
-  }
-  if (row.pageType === 'global') {
-    return row.visibilityScope === 'spaces' || row.spaceScope === 'spaces'
-      ? '全局页 · 指定空间'
-      : '全局页 · App 全局'
   }
   if (row.pageType === 'standalone') {
     return row.visibilityScope === 'spaces' || row.spaceScope === 'spaces'
@@ -334,7 +318,7 @@ export function getOperationList(row: PageItem): ButtonMoreItem[] {
       color: '#f56c6c'
     }
   ]
-  if (row.pageType === 'inner' || row.pageType === 'global') {
+  if (row.pageType === 'inner' || row.pageType === 'standalone') {
     list.splice(3, 0, {
       key: 'copy',
       label: '复制页面',

@@ -101,7 +101,6 @@ export function usePagePage() {
           { label: '逻辑分组', value: 'group' },
           { label: '普通分组', value: 'display_group' },
           { label: '内页', value: 'inner' },
-          { label: '全局页', value: 'global' },
           { label: '独立页', value: 'standalone' }
         ],
         clearable: true
@@ -251,7 +250,7 @@ export function usePagePage() {
     const suspendedCount = rawPages.value.filter((item) => item.status !== 'normal').length
     const managedEntryCount = rawPages.value.filter(
       (item) =>
-        item.pageType === 'inner' || item.pageType === 'global' || item.pageType === 'standalone'
+        item.pageType === 'inner' || item.pageType === 'standalone'
     ).length
     const logicGroupCount = rawPages.value.filter((item) => item.pageType === 'group').length
     const displayGroupCount = rawPages.value.filter(
@@ -532,15 +531,6 @@ export function usePagePage() {
 
   function getEffectiveChainText(row: PageItem) {
     if (row.pageType === 'display_group') return '仅分组展示'
-    if (row.pageType === 'global') {
-      if (row.visibilityScope === 'spaces' || row.spaceScope === 'spaces') {
-        return '自身生效（全局页 · 指定空间）'
-      }
-      if (row.accessMode && row.accessMode !== 'inherit') {
-        return `自身生效（${getAccessModeText(row.accessMode)}）`
-      }
-      return '自身生效（全局页）'
-    }
     if (row.pageType === 'group' && !row.parentPageKey && !row.parentMenuId) return '分组独立生效'
     if (row.parentMenuId) {
       if (row.accessMode && row.accessMode !== 'inherit') {
@@ -558,7 +548,7 @@ export function usePagePage() {
   }
 
   function getParentChainStatusText(row: PageItem) {
-    if (row.pageType === 'global') return '无父链（全局页）'
+    if (row.pageType === 'standalone') return '无父链（独立页）'
     if (!row.parentPageKey && !row.parentMenuId) return '无父链'
     if (row.parentMenuId && !row.parentPageKey) return '菜单链路'
     const visited = new Set<string>()

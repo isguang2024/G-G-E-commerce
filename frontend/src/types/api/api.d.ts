@@ -878,7 +878,7 @@ declare namespace Api {
       routeName: string
       routePath: string
       component: string
-      pageType: 'group' | 'display_group' | 'inner' | 'global' | 'standalone' | string
+      pageType: 'group' | 'display_group' | 'inner' | 'standalone' | string
       source: 'seed' | 'sync' | 'manual' | string
       moduleKey?: string
       sortOrder?: number
@@ -920,7 +920,7 @@ declare namespace Api {
       name: string
       routeName: string
       routePath: string
-      pageType: 'group' | 'display_group' | 'inner' | 'global' | 'standalone' | string
+      pageType: 'group' | 'display_group' | 'inner' | 'standalone' | string
       moduleKey?: string
       parentMenuId?: string
       parentMenuName?: string
@@ -1023,7 +1023,7 @@ declare namespace Api {
       route_name: string
       route_path: string
       component: string
-      page_type?: 'group' | 'display_group' | 'inner' | 'global' | 'standalone' | string
+      page_type?: 'group' | 'display_group' | 'inner' | 'standalone' | string
       source?: 'seed' | 'sync' | 'manual' | string
       module_key?: string
       sort_order?: number

@@ -21,6 +21,7 @@ var (
 	ErrPageNotFound        = errors.New("页面不存在")
 	ErrPageKeyExists       = errors.New("页面 key 已存在")
 	ErrRouteNameExists     = errors.New("路由名称已存在")
+	ErrRoutePathExists     = errors.New("路由路径已存在")
 	ErrParentMenuInvalid   = errors.New("无效的上级菜单")
 	ErrParentPageInvalid   = errors.New("无效的上级页面")
 	ErrDisplayGroupInvalid = errors.New("无效的显示分组")
@@ -829,8 +830,13 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 	if !isRoutelessPageType(pageType) && (routeName == "" || routePath == "" || component == "") {
 		return nil, fmt.Errorf("%w: 页面节点必须填写路由名称、路由路径和组件路径", ErrPageValidation)
 	}
-	if accessMode == "permission" && permKey == "" {
-		return nil, fmt.Errorf("%w: 权限访问模式必须指定权限键", ErrPageValidation)
+	if accessMode == "permission" {
+		if permKey == "" {
+			return nil, fmt.Errorf("%w: 权限访问模式必须指定权限键", ErrPageValidation)
+		}
+	} else {
+		// 仅 permission 模式下 permKey 有语义，其他模式强制清空避免脏数据
+		permKey = ""
 	}
 	if parentPageKey != "" {
 		displayGroupKey = ""
@@ -875,12 +881,8 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 	if err != nil {
 		return nil, ErrParentMenuInvalid
 	}
-	if pageType == "display_group" || pageType == "global" {
+	if pageType == "display_group" {
 		parentMenuID = nil
-	}
-	if pageType == "global" {
-		parentPageKey = ""
-		activeMenuPath = ""
 	}
 	if pageType == models.PageTypeInner && parentMenuID == nil && parentPageKey == "" {
 		return nil, fmt.Errorf("%w: 内页必须挂到菜单或上级页面", ErrPageValidation)
@@ -940,6 +942,13 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 	}
 	if err := s.ensureUnique("route_name", routeName, checkID, appKey); err != nil {
 		return nil, err
+	}
+	// 非 routeless 页面（非 group / display_group）需要确保 route_path 在 App 内唯一，
+	// 否则运行时前端路由注册会冲突。
+	if !isRoutelessPageType(pageType) && routePath != "" {
+		if err := s.ensureUnique("route_path", routePath, checkID, appKey); err != nil {
+			return nil, err
+		}
 	}
 
 	meta := models.MetaJSON(req.Meta)
@@ -1001,6 +1010,8 @@ func (s *service) ensureUnique(field, value string, excludeID uuid.UUID, appKey 
 		return ErrPageKeyExists
 	case "route_name":
 		return ErrRouteNameExists
+	case "route_path":
+		return ErrRoutePathExists
 	default:
 		return ErrPageValidation
 	}
@@ -1019,7 +1030,7 @@ func (s *service) decorateRecords(items []models.UIPage) ([]Record, error) {
 	pageSeen := map[string]struct{}{}
 	displayGroupSeen := map[string]struct{}{}
 	for _, rawItem := range items {
-		item := normalizeLegacyGlobalPage(rawItem)
+		item := rawItem
 		if item.ParentMenuID != nil {
 			if _, ok := menuSeen[*item.ParentMenuID]; !ok {
 				menuSeen[*item.ParentMenuID] = struct{}{}
@@ -1075,7 +1086,7 @@ func (s *service) decorateRecords(items []models.UIPage) ([]Record, error) {
 
 	records := make([]Record, 0, len(items))
 	for _, rawItem := range items {
-		item := normalizeLegacyGlobalPage(rawItem)
+		item := rawItem
 		record := Record{UIPage: item}
 		if item.ParentMenuID != nil {
 			record.ParentMenuName = menuNameMap[*item.ParentMenuID]
@@ -1187,8 +1198,7 @@ func (s *service) findPageByID(id uuid.UUID, appKey string) (*models.UIPage, err
 		}
 		return nil, err
 	}
-	normalized := normalizeLegacyGlobalPage(item)
-	return &normalized, nil
+	return &item, nil
 }
 
 func (s *service) loadPageMap(appKey string) (map[string]models.UIPage, error) {
@@ -1198,7 +1208,7 @@ func (s *service) loadPageMap(appKey string) (map[string]models.UIPage, error) {
 	}
 	result := make(map[string]models.UIPage, len(items))
 	for _, rawItem := range items {
-		item := normalizeLegacyGlobalPage(rawItem)
+		item := rawItem
 		result[item.PageKey] = item
 	}
 	return result, nil
@@ -1332,24 +1342,11 @@ func normalizePageAndSize(req *ListRequest) (int, int) {
 
 func normalizePageType(value string) string {
 	switch strings.TrimSpace(value) {
-	case "group", "display_group", "inner", "global", "standalone":
+	case "group", "display_group", "inner", "standalone":
 		return strings.TrimSpace(value)
 	default:
 		return ""
 	}
-}
-
-func normalizeLegacyGlobalPage(item models.UIPage) models.UIPage {
-	if normalizePageType(item.PageType) != "global" {
-		return item
-	}
-	item.ParentMenuID = nil
-	item.ParentPageKey = ""
-	item.ActiveMenuPath = ""
-	if strings.TrimSpace(item.VisibilityScope) == "" {
-		item.VisibilityScope = pageVisibilityScopeApp
-	}
-	return item
 }
 
 func isRoutelessPageType(pageType string) bool {
@@ -1399,11 +1396,6 @@ func normalizeStatus(value string) string {
 
 func normalizePageVisibilityScopeForSave(pageType string, value string, parentMenuID *uuid.UUID, parentPageKey string) string {
 	switch normalizePageType(pageType) {
-	case models.PageTypeGlobal:
-		if strings.TrimSpace(value) == pageVisibilityScopeSpaces {
-			return pageVisibilityScopeSpaces
-		}
-		return pageVisibilityScopeApp
 	case models.PageTypeInner:
 		return pageVisibilityScopeInherit
 	case models.PageTypeStandalone, "group", "display_group":

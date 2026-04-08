@@ -1345,14 +1345,12 @@ func syncUIPageSeed(spec permissionseed.PageSeed) (*systemmodels.UIPage, error) 
 	}
 
 	var parentMenuID *uuid.UUID
-	if pageType != systemmodels.PageTypeGlobal {
-		if parentMenuName := strings.TrimSpace(spec.ParentMenuName); parentMenuName != "" {
-			var parentMenu systemmodels.MenuDefinition
-			if err := database.DB.Where("app_key = ? AND name = ?", systemmodels.DefaultAppKey, parentMenuName).First(&parentMenu).Error; err != nil {
-				return nil, err
-			}
-			parentMenuID = &parentMenu.ID
+	if parentMenuName := strings.TrimSpace(spec.ParentMenuName); parentMenuName != "" {
+		var parentMenu systemmodels.MenuDefinition
+		if err := database.DB.Where("app_key = ? AND name = ?", systemmodels.DefaultAppKey, parentMenuName).First(&parentMenu).Error; err != nil {
+			return nil, err
 		}
+		parentMenuID = &parentMenu.ID
 	}
 
 	meta := spec.Meta
@@ -1366,10 +1364,6 @@ func syncUIPageSeed(spec permissionseed.PageSeed) (*systemmodels.UIPage, error) 
 	spaceKeys := normalizePageSeedBindingKeys(spec.SpaceKey, spec.SpaceKeys, pageType, visibilityScope, parentMenuID, spec.ParentPageKey)
 	parentPageKey := strings.TrimSpace(spec.ParentPageKey)
 	activeMenuPath := strings.TrimSpace(spec.ActiveMenuPath)
-	if pageType == systemmodels.PageTypeGlobal {
-		parentPageKey = ""
-		activeMenuPath = ""
-	}
 	switch visibilityScope {
 	case "spaces":
 		meta["spaceKeys"] = spaceKeys
@@ -1459,11 +1453,6 @@ func syncUIPageSeed(spec permissionseed.PageSeed) (*systemmodels.UIPage, error) 
 
 func normalizePageSeedVisibilityScope(pageType, value string, parentMenuID *uuid.UUID, parentPageKey string) string {
 	switch strings.TrimSpace(pageType) {
-	case systemmodels.PageTypeGlobal:
-		if strings.TrimSpace(value) == "spaces" {
-			return "spaces"
-		}
-		return "app"
 	case systemmodels.PageTypeInner:
 		return "inherit"
 	case systemmodels.PageTypeStandalone, systemmodels.PageTypeGroup, systemmodels.PageTypeDisplayGroup:

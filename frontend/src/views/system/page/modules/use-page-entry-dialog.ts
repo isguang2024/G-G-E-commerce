@@ -46,6 +46,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   const menuOptions = ref<PageMenuOptionItem[]>([])
   const allPages = ref<PageItem[]>([])
   const mountMode = ref<'none' | 'menu' | 'page'>('none')
+  const mountSpaceKey = ref<string>('')
   const showAdvanced = ref(false)
   const showExamples = ref(false)
   const isInitializing = ref(false)
@@ -69,7 +70,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
       return '复制页面'
     }
     const actionText = props.dialogType === 'add' ? '新增' : '编辑'
-    if (form.pageType === 'global') return `${actionText}全局页`
+    if (form.pageType === 'standalone') return `${actionText}全局页`
     if (form.pageType === 'standalone') return `${actionText}独立页`
     return `${actionText}页面`
   })
@@ -121,7 +122,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   )
   const showMountSection = computed(() => form.pageType === 'inner')
   const showVisibilityScopeField = computed(
-    () => form.pageType === 'standalone' || form.pageType === 'global'
+    () => form.pageType === 'standalone' || form.pageType === 'standalone'
   )
   const showSpaceBindingField = computed(
     () => showVisibilityScopeField.value && form.visibilityScope === 'spaces'
@@ -197,7 +198,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   })
 
   const configHintTitle = computed(() =>
-    form.pageType === 'global'
+    form.pageType === 'standalone'
       ? '全局页配置说明'
       : form.pageType === 'standalone'
         ? '独立页配置说明'
@@ -212,7 +213,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   )
 
   const configHintDescription = computed(() => {
-    if (form.pageType === 'global') {
+    if (form.pageType === 'standalone') {
       return '全局页属于独立页面，不依赖菜单归属，可在当前 App 下全局可见，也可以只对指定空间开放。'
     }
     if (form.pageType === 'standalone') {
@@ -222,7 +223,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   })
 
   const mountOwnershipSummary = computed(() => {
-    if (form.pageType === 'global') {
+    if (form.pageType === 'standalone') {
       return form.visibilityScope === 'spaces'
         ? '当前页面属于全局页，仅在选定菜单空间开放，不占用左侧菜单入口。'
         : '当前页面属于全局页，在当前 App 下全局可见，不占用左侧菜单入口。'
@@ -248,7 +249,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
       { label: '登录', value: 'jwt' },
       { label: '权限', value: 'permission' }
     ]
-    if (form.pageType === 'global') {
+    if (form.pageType === 'standalone') {
       return options.filter((item) => item.value !== 'inherit')
     }
     if (form.pageType === 'standalone') {
@@ -258,7 +259,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   })
 
   const routePathPlaceholder = computed(() => {
-    if (form.pageType === 'global') {
+    if (form.pageType === 'standalone') {
       return '例如 /store-management'
     }
     if (form.pageType === 'standalone') {
@@ -271,7 +272,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   })
 
   const mountMenuSummary = computed(() => {
-    if (form.pageType === 'global' || mountMode.value !== 'menu') return ''
+    if (form.pageType === 'standalone' || mountMode.value !== 'menu') return ''
     const menuName = menuNameMap.value.get(normalizeMenuId(form.parentMenuId)) || '所选菜单'
     const permissionText =
       form.accessMode === 'permission'
@@ -281,7 +282,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   })
 
   const menuSiblingSummary = computed(() => {
-    if (form.pageType === 'global' || mountMode.value !== 'menu') return ''
+    if (form.pageType === 'standalone' || mountMode.value !== 'menu') return ''
     const menuId = normalizeMenuId(form.parentMenuId)
     if (!menuId) return ''
     const siblings = allPages.value.filter(
@@ -301,11 +302,11 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
         ...form,
         source: props.pageData?.source || props.defaultData?.source || 'manual',
         parentMenuId:
-          form.pageType === 'global' || mountMode.value !== 'menu'
+          form.pageType === 'standalone' || mountMode.value !== 'menu'
             ? ''
             : normalizeMenuId(form.parentMenuId),
         parentPageKey:
-          form.pageType === 'global' || mountMode.value !== 'page' ? '' : form.parentPageKey
+          form.pageType === 'standalone' || mountMode.value !== 'page' ? '' : form.parentPageKey
       },
       {
         getPageByKey: (pageKey) => pageMap.value.get(pageKey),
@@ -315,7 +316,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   )
 
   const routePreviewHint = computed(() => {
-    if (form.pageType === 'global') {
+    if (form.pageType === 'standalone') {
       return '全局页使用独立路径，不参与上级菜单或页面链路拼接。'
     }
     if (mountMode.value === 'none') {
@@ -328,7 +329,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   })
 
   const pageExamples = computed(() => {
-    if (form.pageType === 'global') {
+    if (form.pageType === 'standalone') {
       return [
         '例 1：页面类型=全局页，可见范围=当前 App 全局，路由路径=/workspace/overview。适合登录后可直达页面。',
         '例 2：页面类型=全局页，可见范围=指定空间，勾选 ops / finance 后，仅这些空间下会暴露该页面。',
@@ -430,7 +431,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   function maybeAdjustRoutePathForMountedEdit() {
     if (
       !shouldAutoAdjustRoutePath.value ||
-      form.pageType === 'global' ||
+      form.pageType === 'standalone' ||
       mountMode.value === 'none'
     ) {
       return
@@ -506,7 +507,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   }
 
   function validateParentBinding(_: unknown, __: string, callback: (error?: Error) => void) {
-    if (form.pageType === 'global' || form.pageType === 'standalone') {
+    if (form.pageType === 'standalone' || form.pageType === 'standalone') {
       callback()
       return
     }
@@ -538,6 +539,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   }
 
   function initForm() {
+    mountSpaceKey.value = ''
     if (props.dialogType === 'edit' && props.pageData) {
       const spaceKeys = Array.isArray(props.pageData.spaceKeys) ? props.pageData.spaceKeys : []
       Object.assign(form, {
@@ -548,8 +550,8 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
         routePath: props.pageData.routePath || '',
         component: props.pageData.component || '',
         pageType:
-          props.pageData.pageType === 'global'
-            ? 'global'
+          props.pageData.pageType === 'standalone'
+            ? 'standalone'
             : props.pageData.pageType === 'standalone'
               ? 'standalone'
               : 'inner',
@@ -568,7 +570,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
         activeMenuPath: props.pageData.activeMenuPath || '',
         breadcrumbMode: props.pageData.breadcrumbMode || 'inherit_menu',
         accessMode:
-          props.pageData.pageType === 'global'
+          props.pageData.pageType === 'standalone'
             ? props.pageData.accessMode || 'jwt'
             : props.pageData.accessMode || 'inherit',
         permissionKey: props.pageData.permissionKey || '',
@@ -586,7 +588,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
               ? 'menu'
               : 'none'
           : 'none'
-      if (form.pageType === 'global' || form.pageType === 'standalone') {
+      if (form.pageType === 'standalone' || form.pageType === 'standalone') {
         form.accessMode = form.accessMode === 'inherit' ? 'jwt' : form.accessMode
         showAdvanced.value = false
         mountMode.value = 'none'
@@ -605,15 +607,15 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
       routePath: props.defaultData?.routePath || '',
       component: props.defaultData?.component || '',
       pageType:
-        props.defaultData?.pageType === 'global' || props.initialPageType === 'global'
-          ? 'global'
+        props.defaultData?.pageType === 'standalone' || props.initialPageType === 'standalone'
+          ? 'standalone'
           : props.defaultData?.pageType === 'standalone' || props.initialPageType === 'standalone'
             ? 'standalone'
             : 'inner',
       visibilityScope:
         props.defaultData?.visibilityScope === 'spaces'
           ? 'spaces'
-          : props.defaultData?.pageType === 'global' || props.initialPageType === 'global'
+          : props.defaultData?.pageType === 'standalone' || props.initialPageType === 'standalone'
             ? 'app'
             : props.defaultData?.pageType === 'standalone' || props.initialPageType === 'standalone'
               ? 'app'
@@ -627,7 +629,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
       activeMenuPath: props.defaultData?.activeMenuPath || '',
       breadcrumbMode: 'inherit_menu',
       accessMode:
-        props.defaultData?.pageType === 'global' || props.initialPageType === 'global'
+        props.defaultData?.pageType === 'standalone' || props.initialPageType === 'standalone'
           ? props.defaultData?.accessMode || 'jwt'
           : props.defaultData?.accessMode || 'inherit',
       permissionKey: props.defaultData?.permissionKey || '',
@@ -650,12 +652,13 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   }
 
   async function loadOptions() {
-    const scopeKey =
-      form.pageType === 'inner' ||
-      ((form.pageType === 'standalone' || form.pageType === 'global') &&
-        form.visibilityScope === 'spaces')
-        ? resolveSpaceScopeKey()
-        : ''
+    let scopeKey = ''
+    if (form.pageType === 'inner') {
+      // 内页挂到菜单时，按所选菜单空间过滤候选菜单
+      scopeKey = mountMode.value === 'menu' ? mountSpaceKey.value.trim() : ''
+    } else if (form.pageType === 'standalone' && form.visibilityScope === 'spaces') {
+      scopeKey = resolveSpaceScopeKey()
+    }
     const appKey = `${props.appKey || ''}`.trim()
     const [menuRes, pageRes] = await Promise.all([
       fetchGetPageMenuOptions(scopeKey || undefined, appKey),
@@ -722,7 +725,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
 
   watch(
     () => mountMode.value,
-    () => {
+    async () => {
       if (form.pageType !== 'inner') {
         form.parentMenuId = ''
         form.parentPageKey = ''
@@ -738,10 +741,23 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
       if (!showAdvanced.value) {
         form.breadcrumbMode = defaultBreadcrumbMode()
       }
+      if (!isInitializing.value && form.pageType === 'inner') {
+        await loadOptions()
+      }
       maybeAdjustRoutePathForMountedEdit()
       nextTick(() =>
         formRef.value?.validateField(['parentMenuId', 'parentPageKey']).catch(() => undefined)
       )
+    }
+  )
+
+  watch(
+    () => mountSpaceKey.value,
+    async () => {
+      if (isInitializing.value) return
+      if (form.pageType !== 'inner' || mountMode.value !== 'menu') return
+      form.parentMenuId = ''
+      await loadOptions()
     }
   )
 
@@ -772,7 +788,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
   watch(
     () => form.pageType,
     (pageType) => {
-      if (pageType === 'global' || pageType === 'standalone') {
+      if (pageType === 'standalone' || pageType === 'standalone') {
         mountMode.value = 'none'
         form.parentMenuId = ''
         form.parentPageKey = ''
@@ -781,7 +797,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
         if (form.accessMode === 'inherit') {
           form.accessMode = 'jwt'
         }
-        if (pageType === 'global') {
+        if (pageType === 'standalone') {
           form.visibilityScope = form.visibilityScope === 'spaces' ? 'spaces' : 'app'
         }
       } else {
@@ -846,7 +862,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
       if (!valid) return
       submitting.value = true
       const visibilityScope =
-        form.pageType === 'global' || form.pageType === 'standalone'
+        form.pageType === 'standalone' || form.pageType === 'standalone'
           ? form.visibilityScope
           : 'inherit'
       const payload: Api.SystemManage.PageSaveParams = {
@@ -875,11 +891,11 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
         active_menu_path: showAdvanced.value ? form.activeMenuPath.trim() : '',
         breadcrumb_mode: showAdvanced.value
           ? form.breadcrumbMode
-          : form.pageType === 'global'
+          : form.pageType === 'standalone'
             ? 'inherit_menu'
             : defaultBreadcrumbMode(),
         access_mode:
-          (form.pageType === 'global' || form.pageType === 'standalone') &&
+          (form.pageType === 'standalone' || form.pageType === 'standalone') &&
           form.accessMode === 'inherit'
             ? 'jwt'
             : form.accessMode,
@@ -917,6 +933,7 @@ export function usePageEntryDialog(props: UsePageEntryDialogProps, emit: UsePage
     formRef,
     submitting,
     mountMode,
+    mountSpaceKey,
     showAdvanced,
     showExamples,
     visible,

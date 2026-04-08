@@ -101,8 +101,6 @@ func readPageVisibilityScope(item models.UIPage) string {
 			switch strings.TrimSpace(scope) {
 			case "bound":
 				return pageVisibilityScopeSpaces
-			case "global":
-				return pageVisibilityScopeApp
 			case pageVisibilityScopeInherit, pageVisibilityScopeApp, pageVisibilityScopeSpaces:
 				return strings.TrimSpace(scope)
 			}

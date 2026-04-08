@@ -61,9 +61,6 @@ function resolveManagedPageBasePath<T extends ManagedPageRouteLike>(
   options: ResolveManagedPageRouteOptions<T>,
   seen: Set<string>
 ): string {
-  if (`${page.pageType || ''}`.trim() === 'global') {
-    return ''
-  }
   const explicitActivePath = normalizeManagedPagePath(page.activeMenuPath)
   if (explicitActivePath) {
     return explicitActivePath
