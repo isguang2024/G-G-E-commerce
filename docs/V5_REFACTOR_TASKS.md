@@ -240,3 +240,26 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 - 集成测试：对关键路径（role CRUD、navigation、permission/menu/page、CW boundary、message dispatch）进行冒烟测试，确认 ogen bridge 与 legacy 行为一致。
 - 清理完全空壳的 legacy module（RegisterRoutes 已是 `_ = rg; return` 的文件可以考虑删除或合并）。
 - 推进 Phase 5：前端切换到 v5 client，下线 legacy gin handler 文件本身（handler.go per module）。
+
+### 2026-04-08 Phase 4 收尾：legacy 死代码清理（Phase 4）
+
+**本次改动**
+- 删除 8 个已完全被 ogen 接管的 legacy handler.go（featurepackage/permission/menu/page/role/navigation/app/space，共 ~4100 行）；从 menu/page 中提取孤儿 helper 函数到独立文件保持包内引用完整。
+- 清理 role/navigation/collaborationworkspace/featurepackage/permission/menu/page/user/workspace 等 9 个 module.go 的早 return 后死代码，import 全部精简，文件平均缩至 30–50 行。
+- `go build ./...` 通过，残留 legacy handler.go：collaborationworkspace/user/system/media/apiendpoint（均有活跃路由或仍被引用）。
+
+**下次方向**
+- Phase 5：前端切换 v5 client 后，继续下线 collaborationworkspace/handler.go 和 user/handler.go（需先将其中剩余 gin 路由的 handler 逻辑下沉到 service 层）。
+- 考虑对 system/handler.go 做同样的 facade 化，统一通过 system/facade.go 暴露。
+
+### 2026-04-08 Phase 5 handler 下线（Phase 5）
+
+**本次改动**
+- 删除 `collaborationworkspace/handler.go`（2266 行/74 函数）：无任何外部引用，全量安全删除。
+- 删除 `user/handler.go`（1800 行/60 函数）：将 `subroute_service.go` 对 gin.UserHandler 的依赖重构为新建的 `subroute_core.go`（962 行），彻底去除 gin 依赖；重构后 UserHandler 零引用，安全删除。
+- 净削减 ~3100 行，`go build ./...` 通过。剩余 legacy handler.go：`apiendpoint`/`media`/`system`（均有活跃 gin 路由或仍被 module.go 调用）。
+
+**下次方向**
+- `system/handler.go`：检查是否仍被 system/module.go 调用；若仅剩 view-pages/fast-enter（已 ogen 化），可继续 facade 化后删除。
+- `apiendpoint`/`media`：这两个域尚未纳入 openapi.yaml，待 spec 扩展后再迁移。
+- 推进集成测试覆盖：ogen bridge 路径的冒烟测试。

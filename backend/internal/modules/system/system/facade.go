@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"time"
 
 	"go.uber.org/zap"
@@ -109,4 +110,54 @@ func enumerateViewPagesPublic(projectRoot string) ([]ViewPageItem, error) {
 	}
 	sort.Slice(items, func(i, j int) bool { return items[i].ComponentPath < items[j].ComponentPath })
 	return items, nil
+}
+
+// ── Shared types (moved from handler.go) ───────────────────────────────────
+
+type ViewPageItem struct {
+	FilePath      string `json:"filePath"`
+	ComponentPath string `json:"componentPath"`
+}
+
+type ViewPagesResponse struct {
+	Pages       []ViewPageItem `json:"pages"`
+	Refreshed   bool           `json:"refreshed"`
+	RefreshedAt string         `json:"refreshedAt"`
+}
+
+func findProjectRoot() (string, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	current := wd
+	for {
+		frontendPath := filepath.Join(current, "frontend")
+		backendPath := filepath.Join(current, "backend")
+		if _, err := os.Stat(frontendPath); err == nil {
+			if _, err := os.Stat(backendPath); err == nil {
+				return current, nil
+			}
+		}
+		parent := filepath.Dir(current)
+		if parent == current {
+			break
+		}
+		current = parent
+	}
+	return wd, nil
+}
+
+func toComponentPath(filePath string) string {
+	withoutPrefix := strings.TrimPrefix(filePath, "/frontend/src/views")
+	withoutExt := strings.TrimSuffix(withoutPrefix, ".vue")
+	normalized := strings.TrimSuffix(withoutExt, "/index")
+	normalized = strings.ReplaceAll(normalized, "//", "/")
+	if normalized == "" {
+		return "/"
+	}
+	if !strings.HasPrefix(normalized, "/") {
+		return "/" + normalized
+	}
+	return normalized
 }

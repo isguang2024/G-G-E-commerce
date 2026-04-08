@@ -70,7 +70,9 @@
       "Bash(git cherry-pick:*)",
       "Bash(ls internal/modules/system/*/handler.go)",
       "Read(//operationId:/**)",
-      "Read(//c/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/**)"
+      "Read(//c/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/**)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(wc -l internal/modules/system/*/handler.go)"
     ]
   },
   "defaultMode": "bypassPermissions"

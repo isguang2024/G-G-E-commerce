@@ -6,9 +6,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
-	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
-	cachepkg "github.com/gg-ecommerce/backend/internal/pkg/cache"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
 )
 
@@ -32,33 +29,8 @@ func (m *SystemModule) Init() error {
 }
 
 func (m *SystemModule) RegisterRoutes(rg *gin.RouterGroup) {
-	var systemCache *cachepkg.Cache
-	systemCache, cacheErr := cachepkg.NewCache(
-		m.config.Redis.Host,
-		m.config.Redis.Port,
-		m.config.Redis.Password,
-		m.config.Redis.DB,
-	)
-	if cacheErr != nil {
-		m.logger.Warn("Redis cache unavailable, page-association cache disabled", zap.Error(cacheErr))
-	}
-
-	fastEnterService := NewFastEnterService(m.db)
-	messageService := NewMessageService(m.db, m.logger)
-	systemHandler := NewSystemHandler(m.logger, systemCache, fastEnterService, messageService)
-	authzService := authorization.NewService(m.db, m.logger)
-
-	system := rg.Group("/system")
-	reg := apiregistry.NewRegistrar(system, "system")
-	{
-		// Phase 4: view-pages + fast-enter migrated to ogen handlers.
-		_ = systemHandler
-		_ = authzService
-		_ = reg
-	}
-
-	// Phase 4: all message routes migrated to ogen handlers in router.go.
-	_ = apiregistry.NewRegistrar(rg.Group("/messages"), "message")
+	// Phase 4: all /system/* and /messages/* routes migrated to ogen handlers.
+	_ = rg
 }
 
 func init() {
