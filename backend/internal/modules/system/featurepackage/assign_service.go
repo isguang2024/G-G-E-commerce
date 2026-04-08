@@ -363,7 +363,7 @@ func (s *service) getWorkspacePackageIDsByCollaborationWorkspaceID(collaboration
 				return tx
 			}
 			return tx.Where(
-				"feature_packages.app_key = ? OR COALESCE(jsonb_array_length(feature_packages.app_keys), 0) = 0 OR feature_packages.app_keys ? ?",
+				"feature_packages.app_key = ? OR COALESCE(jsonb_array_length(feature_packages.app_keys), 0) = 0 OR jsonb_exists(feature_packages.app_keys, ?)",
 				requestedAppKey,
 				requestedAppKey,
 			)
@@ -393,7 +393,7 @@ func (s *service) getWorkspaceCollaborationWorkspaceIDsByPackageID(packageID uui
 				return tx
 			}
 			return tx.Where(
-				"feature_packages.app_key = ? OR COALESCE(jsonb_array_length(feature_packages.app_keys), 0) = 0 OR feature_packages.app_keys ? ?",
+				"feature_packages.app_key = ? OR COALESCE(jsonb_array_length(feature_packages.app_keys), 0) = 0 OR jsonb_exists(feature_packages.app_keys, ?)",
 				requestedAppKey,
 				requestedAppKey,
 			)

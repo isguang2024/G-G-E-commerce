@@ -160,7 +160,7 @@ func (s *service) ListOptions(req *dto.FeaturePackageListRequest) ([]user.Featur
 		if appKey := normalizeAppKey(req.AppKey); appKey != "" {
 			if s.db.Migrator().HasColumn(&user.FeaturePackage{}, "app_keys") {
 				query = query.Where(
-					"(app_key = ? OR COALESCE(jsonb_array_length(app_keys), 0) = 0 OR app_keys ? ?)",
+					"(app_key = ? OR COALESCE(jsonb_array_length(app_keys), 0) = 0 OR jsonb_exists(app_keys, ?))",
 					appKey,
 					appKey,
 				)

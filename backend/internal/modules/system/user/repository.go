@@ -2005,7 +2005,7 @@ func (r *featurePackageRepository) List(offset, limit int, params *FeaturePackag
 		if params.AppKey != "" {
 			if r.db.Migrator().HasColumn(&FeaturePackage{}, "app_keys") {
 				query = query.Where(
-					"(app_key = ? OR COALESCE(jsonb_array_length(app_keys), 0) = 0 OR app_keys ? ?)",
+					"(app_key = ? OR COALESCE(jsonb_array_length(app_keys), 0) = 0 OR jsonb_exists(app_keys, ?))",
 					params.AppKey,
 					params.AppKey,
 				)
