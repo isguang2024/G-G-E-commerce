@@ -606,26 +606,26 @@
       menuTreeData.value = Array.isArray(menuTree) ? normalizeMenus(menuTree) : []
       roleMenuBoundary.value = roleMenus || null
       featurePackages.value = rolePackages?.packages || []
-      selectedMenuNodeValues.value = (roleMenus?.menu_ids || []).map((item) => `${item}`)
+      selectedMenuNodeValues.value = (roleMenus?.menu_ids || []).map((item: any) => `${item}`)
 
       permissionActions.value = roleActions?.actions || []
       roleActionBoundary.value = roleActions || null
       const availableActionIDSet = availableActionIdSet.value
-      selectedActionNodeValues.value = (roleActions?.action_ids || []).filter((item) => {
+      selectedActionNodeValues.value = (roleActions?.action_ids || []).filter((item: any) => {
         if (!item) return false
         if (availableActionIDSet.size === 0) return true
         return availableActionIDSet.has(item)
       })
 
-      dataScopeOptions.value = (dataPermissionRes?.available_data_scopes || []).map((item) => ({
+      dataScopeOptions.value = (dataPermissionRes?.available_data_scopes || []).map((item: any) => ({
         scopeCode: item.data_scope,
         scopeName: item.label
       }))
       const selectedScopeMap = new Map<string, string>()
-      ;(dataPermissionRes?.permissions || []).forEach((item) => {
+      ;(dataPermissionRes?.permissions || []).forEach((item: any) => {
         selectedScopeMap.set(item.resource_code, item.data_scope)
       })
-      dataRows.value = (dataPermissionRes?.resources || []).map((item) => ({
+      dataRows.value = (dataPermissionRes?.resources || []).map((item: any) => ({
         resourceCode: item.resource_code,
         resourceName: item.resource_name,
         selectedDataScope: selectedScopeMap.get(item.resource_code) || ''

@@ -198,10 +198,15 @@ export function useChart(options: UseChartOptions = {}) {
   })
 
   // 缓存样式配置以减少重复计算
-  const styleCache = {
-    axisLine: null as any,
-    splitLine: null as any,
-    axisLabel: null as any,
+  const styleCache: {
+    axisLine: Record<string, unknown> | null
+    splitLine: Record<string, unknown> | null
+    axisLabel: Record<string, unknown> | null
+    lastDarkValue: boolean
+  } = {
+    axisLine: null,
+    splitLine: null,
+    axisLabel: null,
     lastDarkValue: isDark.value
   }
 
@@ -386,6 +391,7 @@ export function useChart(options: UseChartOptions = {}) {
 
     intersectionObserver = new IntersectionObserver(
       (entries) => {
+        if (isDestroyed) return
         entries.forEach((entry) => {
           if (entry.isIntersecting && pendingOptions && !isDestroyed) {
             // 使用 requestAnimationFrame 确保在下一帧初始化图表

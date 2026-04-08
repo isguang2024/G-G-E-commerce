@@ -441,6 +441,7 @@
   })
 
   onUnmounted(() => {
+    mittBus.off('openLockScreen', openLockScreen)
     document.removeEventListener('keydown', handleKeydown)
     document.body.style.overflow = 'auto'
     // 清理禁用开发者工具的事件监听器

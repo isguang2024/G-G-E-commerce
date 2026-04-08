@@ -160,23 +160,27 @@
     roleIds: [] as string[]
   })
 
-  // 表单验证规则
-  const rules = computed<FormRules>(() => ({
+  // 表单验证规则（静态部分提取到模块外，password 随 props.type 变化）
+  const baseRules: FormRules = {
     username: [
       { required: true, message: '请输入用户名', trigger: 'blur' },
       { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
     ],
     email: [{ type: 'email', message: '请输入正确邮箱格式', trigger: 'blur' }],
-    password:
-      props.type === 'add'
-        ? [
-            { required: true, message: '请输入密码', trigger: 'blur' },
-            { min: 6, message: '密码至少 6 位', trigger: 'blur' }
-          ]
-        : [{ min: 6, message: '密码至少 6 位', trigger: 'blur' }],
     status: [{ required: true, message: '请选择状态', trigger: 'change' }],
     phone: [{ pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号格式', trigger: 'blur' }],
     roleIds: [{ required: true, message: '请选择角色', trigger: 'change', type: 'array', min: 1 }]
+  }
+  const passwordRulesAdd: FormRules['password'] = [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, message: '密码至少 6 位', trigger: 'blur' }
+  ]
+  const passwordRulesEdit: FormRules['password'] = [
+    { min: 6, message: '密码至少 6 位', trigger: 'blur' }
+  ]
+  const rules = computed<FormRules>(() => ({
+    ...baseRules,
+    password: props.type === 'add' ? passwordRulesAdd : passwordRulesEdit
   }))
 
   /**
@@ -221,11 +225,10 @@
   )
 
   watch(
-    () => [props.type, props.userData],
+    () => [props.type, (props.userData as any)?.userId ?? (props.userData as any)?.id],
     () => {
       if (props.visible && roleList.value.length > 0) initFormData()
-    },
-    { deep: true }
+    }
   )
 
   /**

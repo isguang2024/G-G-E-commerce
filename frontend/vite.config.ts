@@ -10,7 +10,7 @@ import AutoImport from 'unplugin-auto-import/vite'
 import ElementPlus from 'unplugin-element-plus/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import tailwindcss from '@tailwindcss/vite'
-// import { visualizer } from 'rollup-plugin-visualizer'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -65,6 +65,22 @@ export default ({ mode }: { mode: string }) => {
         warnOnError: true,
         exclude: [],
         include: ['src/views/**/*.vue']
+      },
+      rollupOptions: {
+        output: {
+          // 重型依赖按 vendor chunk 拆分，避免主 chunk 膨胀
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return
+            if (id.includes('echarts') || id.includes('zrender')) return 'vendor-echarts'
+            if (id.includes('xlsx')) return 'vendor-xlsx'
+            if (id.includes('xgplayer')) return 'vendor-xgplayer'
+            if (id.includes('element-plus') || id.includes('@element-plus')) return 'vendor-element-plus'
+            if (id.includes('vue-img-cutter')) return 'vendor-image-cutter'
+            if (id.includes('crypto-js')) return 'vendor-crypto'
+            if (id.includes('@iconify')) return 'vendor-iconify'
+            if (id.includes('@vue') || id.includes('vue-router') || id.includes('pinia')) return 'vendor-vue'
+          }
+        }
       }
     },
     plugins: [
@@ -88,24 +104,34 @@ export default ({ mode }: { mode: string }) => {
       }),
       // 按需定制主题配置（useSource:true 会导入全部 scss 源码，改为默认按需 css）
       ElementPlus({}),
-      // 压缩
+      // gzip 压缩
       viteCompression({
-        verbose: false, // 是否在控制台输出压缩结果
-        disable: false, // 是否禁用
-        algorithm: 'gzip', // 压缩算法
-        ext: '.gz', // 压缩后的文件名后缀
-        threshold: 10240, // 只有大小大于该值的资源会被处理 10240B = 10KB
-        deleteOriginFile: false // 压缩后是否删除原文件
+        verbose: false,
+        disable: false,
+        algorithm: 'gzip',
+        ext: '.gz',
+        threshold: 10240,
+        deleteOriginFile: false
       }),
-      vueDevTools()
-      // 打包分析
-      // visualizer({
-      //   open: true,
-      //   gzipSize: true,
-      //   brotliSize: true,
-      //   filename: 'dist/stats.html' // 分析图生成的文件名及路径
-      // }),
-    ],
+      // brotli 压缩（现代浏览器支持，比 gzip 再省 ~30%）
+      viteCompression({
+        verbose: false,
+        disable: false,
+        algorithm: 'brotliCompress',
+        ext: '.br',
+        threshold: 10240,
+        deleteOriginFile: false
+      }),
+      vueDevTools(),
+      // 打包分析：通过 `vite build --mode analyze` 触发，输出 dist/stats.html
+      mode === 'analyze' &&
+        visualizer({
+          open: true,
+          gzipSize: true,
+          brotliSize: true,
+          filename: 'dist/stats.html'
+        })
+    ].filter(Boolean),
     // 依赖预构建：避免运行时重复请求与转换，提升首次加载速度
     optimizeDeps: {
       include: [

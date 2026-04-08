@@ -20,6 +20,19 @@ export function buildScopedActionKey(action: string): string {
   return resolveActionKey(action).key
 }
 
+// 以 userInfo.actions 引用为 key 缓存 normalized Set，避免每次校验都重建。
+const actionSetCache = new WeakMap<object, Set<string>>()
+
+function getNormalizedActionSet(userInfo: UserActionInfo): Set<string> {
+  const list = userInfo?.actions
+  if (!list || !Array.isArray(list)) return new Set()
+  const cached = actionSetCache.get(list as unknown as object)
+  if (cached) return cached
+  const set = new Set(list.map((item) => normalizeActionKey(item)))
+  actionSetCache.set(list as unknown as object, set)
+  return set
+}
+
 export function hasScopedActionPermission(
   userInfo: UserActionInfo,
   action: ActionRequirement
@@ -28,6 +41,5 @@ export function hasScopedActionPermission(
     return true
   }
 
-  const actions = new Set((userInfo?.actions || []).map((item) => normalizeActionKey(item)))
-  return actions.has(resolveActionKey(action).key)
+  return getNormalizedActionSet(userInfo).has(resolveActionKey(action).key)
 }

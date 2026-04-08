@@ -276,7 +276,9 @@
   /**
    * 初始化语言设置
    */
-  const initLanguage = (): void => {
+  const initLanguage = async (): Promise<void> => {
+    const { loadLocaleMessages } = await import('@/locales')
+    await loadLocaleMessages(language.value)
     locale.value = language.value
   }
 
@@ -284,8 +286,10 @@
    * 切换系统语言
    * @param {LanguageEnum} lang - 目标语言类型
    */
-  const changeLanguage = (lang: LanguageEnum): void => {
+  const changeLanguage = async (lang: LanguageEnum): Promise<void> => {
     if (locale.value === lang) return
+    const { loadLocaleMessages } = await import('@/locales')
+    await loadLocaleMessages(lang)
     locale.value = lang
     userStore.setLanguage(lang)
     reload(50)

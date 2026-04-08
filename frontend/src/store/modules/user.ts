@@ -170,8 +170,8 @@ export const useUserStore = defineStore(
         localStorage.setItem(StorageConfig.LAST_USER_ID_KEY, String(currentUserId))
       }
 
-      // 清空用户信息
-      info.value = {}
+      // 清空用户信息（显式清空 actions/roles，避免 useAuth 命中旧权限缓存）
+      info.value = { actions: [], roles: [] } as any
       // 重置登录状态
       isLogin.value = false
       // 重置锁屏状态

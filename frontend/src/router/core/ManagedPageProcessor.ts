@@ -38,14 +38,30 @@ interface ResolvedPageConfig {
 }
 
 export class ManagedPageProcessor {
+  private buildCache = new Map<string, AppRouteRecord[]>()
+
+  /**
+   * 清空 buildRoutes 缓存。在菜单/用户/manifest 刷新时调用。
+   */
+  invalidateCache(): void {
+    this.buildCache.clear()
+  }
+
   buildRoutes(
     menuList: AppRouteRecord[],
     pages: RuntimePageItem[],
     userInfo: UserInfo,
-    options: { trustBackend?: boolean } = {}
+    options: { trustBackend?: boolean; cacheKey?: string } = {}
   ): AppRouteRecord[] {
     if (!Array.isArray(pages) || pages.length === 0) {
       return []
+    }
+    const cacheKey = options.cacheKey
+    if (cacheKey) {
+      const cached = this.buildCache.get(cacheKey)
+      if (cached) {
+        return cached
+      }
     }
 
     const indexedMenus = this.indexMenus(menuList)
@@ -294,6 +310,9 @@ export class ManagedPageProcessor {
       })
     }
 
+    if (cacheKey) {
+      this.buildCache.set(cacheKey, runtimeRoutes)
+    }
     return runtimeRoutes
   }
 

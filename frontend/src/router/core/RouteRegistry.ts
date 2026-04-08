@@ -33,8 +33,8 @@ export class RouteRegistry {
    */
   register(menuList: AppRouteRecord[]): void {
     if (this.registered) {
-      console.warn('[RouteRegistry] 路由已注册，跳过重复注册')
-      return
+      // 幂等：若已注册，先注销再重新注册，避免静默跳过造成的失效注册
+      this.unregister()
     }
 
     // 验证路由配置

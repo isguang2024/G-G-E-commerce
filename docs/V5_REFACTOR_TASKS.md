@@ -285,3 +285,14 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 **下次方向**
 - Phase 10 前端切换：将 frontend 的 API 调用从手写 axios 切换到 ogen 生成的 client（`openapi-typescript` + `openapi-fetch`）。
 - 扩展集成测试：补充 role CRUD（POST/PUT/DELETE）、cw boundary 写操作、permission explain 的端到端验证。
+
+### 2026-04-08 权限链路检查与修复（Permission chain）
+
+**本次改动**
+- 修复 evaluator 不遍历 bundle 层级的 bug：`queryFeaturePackageKeys`、`queryFeaturePackageKeysBySource`、`queryRoleKeys` 均只 JOIN `feature_package_keys` 直接键，忽略 `feature_package_bundles` 子包；改为 UNION CTE 后 bundle 包（admin_bundle）现可正确展开到 14→26 个 resolved keys。
+- DB 补全：新增 12 条缺失 permission_keys（`workspace.read`、`user.list/create/update/delete/read`、`workspace.switch` 等）、为两个 workspace 创建 `workspace_feature_packages` 绑定（此前为 0 行，所有非 super_admin 用户的 resolved keys 均为空集）、将新 keys 绑定到对应 feature package。
+- 构建绿，13 smoke + 10 integration 全通过，commit `1a2e731`。
+
+**下次方向**
+- 将 DB seed 固化进 goose migration（或 permissionseed/ensure.go），避免重建库后权限数据丢失。
+- 针对非 super_admin 普通成员补充集成测试：验证 feature-package → workspace → role → permission key 交集链路正确拒绝/放行。

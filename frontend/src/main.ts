@@ -2,7 +2,7 @@ import App from './App.vue'
 import { createApp } from 'vue'
 import { initStore } from './store'                 // Store
 import { initRouter } from './router'               // Router
-import language from './locales'                    // 国际化
+import language, { loadLocaleMessages } from './locales' // 国际化
 import '@styles/core/tailwind.css'                  // tailwind
 import '@styles/index.scss'                         // 样式
 import '@utils/sys/console.ts'                      // 控制台输出内容
@@ -22,4 +22,11 @@ setupGlobDirectives(app)
 setupErrorHandle(app)
 
 app.use(language)
-app.mount('#app')
+
+// 若用户偏好非默认语言，先按需加载语言包再 mount，避免首屏闪烁兜底文案
+const initialLocale = (language.global as any).locale?.value || (language.global as any).locale
+if (initialLocale && initialLocale !== 'zh') {
+  loadLocaleMessages(initialLocale).finally(() => app.mount('#app'))
+} else {
+  app.mount('#app')
+}

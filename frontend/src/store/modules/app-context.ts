@@ -30,8 +30,12 @@ export const useAppContextStore = defineStore(
     }
 
     return {
-      runtimeAppKey: currentRuntimeAppKey,
-      managedAppKey: currentManagedAppKey,
+      // 暴露原始 ref 以便 pinia-plugin-persistedstate 可写入持久化
+      runtimeAppKey,
+      managedAppKey,
+      // 规范化只读视图
+      currentRuntimeAppKey,
+      currentManagedAppKey,
       effectiveManagedAppKey,
       setRuntimeAppKey,
       setManagedAppKey,
@@ -40,6 +44,10 @@ export const useAppContextStore = defineStore(
     }
   },
   {
-    persist: true
+    persist: {
+      key: 'appContextStore',
+      storage: localStorage,
+      pick: ['runtimeAppKey', 'managedAppKey']
+    }
   }
 )

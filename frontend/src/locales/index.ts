@@ -27,8 +27,7 @@ import { LanguageEnum } from '@/enums/appEnum'
 import { getSystemStorage } from '@/utils/storage'
 import { StorageKeyManager } from '@/utils/storage/storage-key-manager'
 
-// 同步导入语言文件
-import enMessages from './langs/en.json'
+// 默认语言（zh）同步导入；非默认语言改为按需懒加载，减小首屏 bundle
 import zhMessages from './langs/zh.json'
 
 /**
@@ -37,11 +36,33 @@ import zhMessages from './langs/zh.json'
 const storageKeyManager = new StorageKeyManager()
 
 /**
- * 语言消息对象
+ * 语言消息对象（仅预装默认语言；其他语言由 loadLocaleMessages 动态注入）
  */
 const messages = {
-  [LanguageEnum.EN]: enMessages,
   [LanguageEnum.ZH]: zhMessages
+}
+
+// 动态 import 注册表：让 vite 把每个 locale 切成独立 chunk
+const localeLoaders: Record<string, () => Promise<{ default: any }>> = {
+  [LanguageEnum.EN]: () => import('./langs/en.json')
+}
+
+const loadedLocales = new Set<string>([LanguageEnum.ZH])
+
+/**
+ * 按需加载并注入语言包，调用 setLocale 前请先 await 本函数
+ */
+export async function loadLocaleMessages(locale: string): Promise<void> {
+  if (loadedLocales.has(locale)) return
+  const loader = localeLoaders[locale]
+  if (!loader) return
+  try {
+    const mod = await loader()
+    i18n.global.setLocaleMessage(locale, mod.default || mod)
+    loadedLocales.add(locale)
+  } catch (error) {
+    console.warn(`[i18n] 加载语言包失败: ${locale}`, error)
+  }
 }
 
 /**

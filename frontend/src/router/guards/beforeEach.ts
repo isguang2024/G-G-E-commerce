@@ -63,6 +63,16 @@ import { isHttpError } from '@/utils/http/error'
 import { RouteRegistry, MenuProcessor, IframeRouteManager, ManagedPageProcessor } from '../core'
 import { normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
 
+/**
+ * 运行时 manifest 校验失败错误
+ */
+export class RuntimeManifestInvalidError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'RuntimeManifestInvalidError'
+  }
+}
+
 // 路由注册器实例
 let routeRegistry: RouteRegistry | null = null
 let routeRegistrationMode: 'none' | 'public' | 'authenticated' = 'none'
@@ -78,8 +88,8 @@ let pendingLoading = false
 // 一旦设置为 true，只有刷新页面或重新登录才能重置
 let routeInitFailed = false
 
-// 路由初始化进行中标记，防止并发请求
-let routeInitInProgress = false
+// 路由初始化进行中哨兵：正在进行的初始化 Promise；null 表示无进行中初始化
+let routeInitInProgress: Promise<void> | null = null
 const routeRefreshAttempted = new Set<string>()
 
 async function buildRegisteredRoutesFromManifest(preferredSpaceKey = ''): Promise<{
@@ -94,6 +104,11 @@ async function buildRegisteredRoutesFromManifest(preferredSpaceKey = ''): Promis
     preferredSpaceKey || menuSpaceStore.currentSpaceKey
   )
   const manifest = await fetchGetRuntimeNavigation(requestedSpaceKey)
+  if (!manifest || !Array.isArray(manifest.menuTree) || manifest.menuTree.length === 0) {
+    throw new RuntimeManifestInvalidError(
+      `[RouteGuard] runtime navigation manifest 缺失或 menuList 为空 (space=${requestedSpaceKey || 'default'})`
+    )
+  }
   const resolvedAppKey =
     `${manifest.currentApp?.app?.appKey || manifest.context?.app_key || ''}`.trim()
   if (resolvedAppKey) {
@@ -111,11 +126,18 @@ async function buildRegisteredRoutesFromManifest(preferredSpaceKey = ''): Promis
   }
 
   const menuList = menuProcessor.normalizeMenuList(manifest.menuTree || [])
+  const currentUser = userStore.getUserInfo as Api.Auth.UserInfo
+  const manifestVersion = `${
+    (manifest as { version?: string | number }).version ||
+    (manifest.context as { version?: string | number } | undefined)?.version ||
+    'v0'
+  }`
+  const cacheKey = `${resolvedSpaceKey || requestedSpaceKey || 'default'}:${currentUser?.id || currentUser?.userId || 'anon'}:${manifestVersion}`
   const runtimeRoutes = managedPageProcessor.buildRoutes(
     menuList,
     manifest.managedPages || [],
-    userStore.getUserInfo as Api.Auth.UserInfo,
-    { trustBackend: true }
+    currentUser,
+    { trustBackend: true, cacheKey }
   )
 
   return {
@@ -151,7 +173,7 @@ export function getRouteInitFailed(): boolean {
  */
 export function resetRouteInitState(): void {
   routeInitFailed = false
-  routeInitInProgress = false
+  routeInitInProgress = null
   routeRegistrationMode = 'none'
   routeRefreshAttempted.clear()
 }
@@ -163,6 +185,7 @@ export async function refreshUserMenus(): Promise<void> {
   if (!routeRegistry) return
   const menuStore = useMenuStore()
   try {
+    managedPageProcessor.invalidateCache()
     const { menuList, registeredRoutes } = await buildRegisteredRoutesFromManifest()
     routeRegistry.unregister()
     routeRegistry.register(registeredRoutes)
@@ -232,12 +255,14 @@ function buildFrontendUserInfo(data: Api.Auth.UserInfo): Api.Auth.UserInfo {
   }
 }
 
-export async function refreshCurrentUserInfoContext(): Promise<void> {
+export async function refreshCurrentUserInfoContext(
+  options: { prefetchedUser?: Api.Auth.UserInfo } = {}
+): Promise<void> {
   const userStore = useUserStore()
   const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
   const workspaceStore = useWorkspaceStore()
   const menuSpaceStore = useMenuSpaceStore()
-  const data = await fetchGetUserInfo()
+  const data = options.prefetchedUser ?? (await fetchGetUserInfo())
   const mergedInfo: Api.Auth.UserInfo = {
     ...(userStore.getUserInfo as Api.Auth.UserInfo),
     ...buildFrontendUserInfo(data)
@@ -246,19 +271,23 @@ export async function refreshCurrentUserInfoContext(): Promise<void> {
   collaborationWorkspaceStore.setPersonalWorkspaceAccess(
     hasPersonalWorkspaceAccessByUserInfo(mergedInfo)
   )
-  await collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
-    preferredCollaborationWorkspaceId: data.current_collaboration_workspace_id || '',
-    preferredLegacyCollaborationWorkspaceId:
-      data.collaboration_workspace_id || data.current_collaboration_workspace_id || '',
-    preferredWorkspaceId:
-      workspaceStore.currentAuthWorkspaceId || data.current_auth_workspace_id || '',
-    preferredWorkspaceType:
-      workspaceStore.currentAuthWorkspaceType || data.current_auth_workspace_type || '',
-    preferPersonalWorkspace: hasPersonalWorkspaceAccessByUserInfo(mergedInfo)
-  })
   menuSpaceStore.syncRuntimeHost()
-  await menuSpaceStore.refreshRuntimeConfig(true)
-  await menuSpaceStore.syncResolvedCurrentSpace()
+  await Promise.all([
+    (async () => {
+      await menuSpaceStore.refreshRuntimeConfig(true)
+      await menuSpaceStore.syncResolvedCurrentSpace()
+    })(),
+    collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
+      preferredCollaborationWorkspaceId: data.current_collaboration_workspace_id || '',
+      preferredLegacyCollaborationWorkspaceId:
+        data.collaboration_workspace_id || data.current_collaboration_workspace_id || '',
+      preferredWorkspaceId:
+        workspaceStore.currentAuthWorkspaceId || data.current_auth_workspace_id || '',
+      preferredWorkspaceType:
+        workspaceStore.currentAuthWorkspaceType || data.current_auth_workspace_type || '',
+      preferPersonalWorkspace: hasPersonalWorkspaceAccessByUserInfo(mergedInfo)
+    })
+  ])
 }
 
 /**
@@ -278,7 +307,7 @@ export function setupBeforeEachGuard(router: Router): void {
         await handleRouteGuard(to, from, next, router)
       } catch (error) {
         console.error('[RouteGuard] 路由守卫处理失败:', error)
-        closeLoading()
+        void closeLoading()
         next({ name: 'Exception500' })
       }
     }
@@ -288,12 +317,11 @@ export function setupBeforeEachGuard(router: Router): void {
 /**
  * 关闭 loading 效果
  */
-function closeLoading(): void {
+async function closeLoading(): Promise<void> {
   if (pendingLoading) {
-    nextTick(() => {
-      loadingService.hideLoading()
-      pendingLoading = false
-    })
+    await nextTick()
+    loadingService.hideLoading()
+    pendingLoading = false
   }
 }
 
@@ -349,11 +377,28 @@ async function handleRouteGuard(
 
   // 3. 处理动态路由注册
   if (userStore.isLogin && routeRegistrationMode !== 'authenticated') {
-    // 防止并发请求（快速连续导航场景）
+    // 若已有进行中的初始化，等待其完成后再决定（避免 next(false) 造成死锁）
     if (routeInitInProgress) {
-      // 正在初始化中，等待完成后重新导航
-      next(false)
-      return
+      try {
+        await routeInitInProgress
+      } catch {
+        // 忽略 — 下面重新判断状态
+      }
+      if (routeInitFailed) {
+        next({ name: 'Exception500', replace: true })
+        return
+      }
+      if ((routeRegistrationMode as string) === 'authenticated') {
+        // 已由并发的初始化完成注册，重新解析当前目标路径
+        next({
+          path: to.path,
+          query: to.query,
+          hash: to.hash,
+          replace: true
+        })
+        return
+      }
+      // 状态仍未就绪，继续走一次常规初始化
     }
     await handleDynamicRoutes(to, from, next, router)
     return
@@ -510,42 +555,56 @@ async function handleDynamicRoutes(
   next: NavigationGuardNext,
   router: Router
 ): Promise<void> {
-  // 标记初始化进行中
-  routeInitInProgress = true
-
   // 显示 loading
   pendingLoading = true
   loadingService.showLoading()
 
-  try {
-    // 1. 获取用户信息
-    await fetchUserInfo(resolvePreferredSpaceKeyFromRoute(to))
+  const preferredSpaceKey = resolvePreferredSpaceKeyFromRoute(to)
 
-    // 2. 后端一次编译 navigation manifest，前端只做轻量归一化与路由注册
+  // 将整个初始化流程包裹在单个 Promise 中，作为并发哨兵
+  const initWork = (async () => {
+    // 并行预取 userInfo 与 navigation manifest，减少首屏串行等待
+    const [userData] = await Promise.all([
+      fetchGetUserInfo(),
+      fetchGetRuntimeNavigation(normalizeMenuSpaceKey(preferredSpaceKey)).catch(() => null)
+    ])
+
+    // 用预取到的 user data 填充 store，并跳过嵌套刷新避免重复拉取
+    await fetchUserInfo(preferredSpaceKey, {
+      skipNestedRefresh: true,
+      prefetchedUser: userData
+    })
+
+    // 构建注册路由（内部会再次调用 fetchGetRuntimeNavigation，应命中缓存）
     const { menuList, registeredRoutes } = await buildRegisteredRoutesFromManifest(
-      resolvePreferredSpaceKeyFromRoute(to)
+      preferredSpaceKey
     )
 
-    // 3. 验证菜单数据
-    // 4. 注册动态路由
-    routeRegistry?.unregister()
-    routeRegistry?.register(registeredRoutes)
+    if (!routeRegistry) {
+      throw new Error('[RouteGuard] routeRegistry 未初始化')
+    }
+
+    // register 现为幂等：若已注册会先 unregister
+    routeRegistry.register(registeredRoutes)
     routeRegistrationMode = 'authenticated'
 
-    // 5. 保存菜单数据到 store
     const menuStore = useMenuStore()
     syncHomePathWithRegisteredRoutes(menuList, registeredRoutes)
-    menuStore.addRemoveRouteFns(routeRegistry?.getRemoveRouteFns() || [])
+    menuStore.addRemoveRouteFns(routeRegistry.getRemoveRouteFns())
+
+    IframeRouteManager.getInstance().save()
+    useWorktabStore().validateWorktabs(router)
+  })()
+
+  routeInitInProgress = initWork
+
+  try {
+    await initWork
+
+    const menuStore = useMenuStore()
     const landingPath = menuStore.getHomePath() || '/'
 
-    // 6. 保存 iframe 路由
-    IframeRouteManager.getInstance().save()
-
-    // 7. 验证工作标签页
-    useWorktabStore().validateWorktabs(router)
-
     if (isStaticRoute(to.path)) {
-      routeInitInProgress = false
       next({
         path: to.path,
         query: to.query,
@@ -555,9 +614,6 @@ async function handleDynamicRoutes(
       return
     }
 
-    // 初始化成功，重置进行中标记
-    routeInitInProgress = false
-
     if (to.path === '/' && landingPath !== '/') {
       next({
         path: landingPath,
@@ -566,8 +622,6 @@ async function handleDynamicRoutes(
       return
     }
 
-    // 8. 重新导航到目标路由。目标路径是否可访问由后端 manifest 产出的动态路由决定，
-    // 当前守卫不再重复做菜单/页面权限推导，只负责补注册后的二次命中。
     next({
       path: to.path,
       query: to.query,
@@ -577,28 +631,22 @@ async function handleDynamicRoutes(
   } catch (error) {
     console.error('[RouteGuard] 动态路由注册失败:', error)
 
-    // 关闭 loading
-    closeLoading()
+    void closeLoading()
 
-    // 401 错误：axios 拦截器已处理退出登录，取消当前导航
     if (isUnauthorizedError(error)) {
-      // 重置状态，允许重新登录后再次初始化
-      routeInitInProgress = false
       next(false)
       return
     }
 
-    // 标记初始化失败，防止死循环
     routeInitFailed = true
-    routeInitInProgress = false
 
-    // 输出详细错误信息，便于排查
     if (isHttpError(error)) {
       console.error(`[RouteGuard] 错误码: ${error.code}, 消息: ${error.message}`)
     }
 
-    // 跳转到 500 页面，使用 replace 避免产生历史记录
     next({ name: 'Exception500', replace: true })
+  } finally {
+    routeInitInProgress = null
   }
 }
 
@@ -616,12 +664,15 @@ function mapBackendRolesToFrontend(data: {
 /**
  * 获取用户信息
  */
-async function fetchUserInfo(preferredSpaceKey = ''): Promise<void> {
+async function fetchUserInfo(
+  preferredSpaceKey = '',
+  options: { skipNestedRefresh?: boolean; prefetchedUser?: Api.Auth.UserInfo } = {}
+): Promise<Api.Auth.UserInfo> {
   const userStore = useUserStore()
   const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
   const workspaceStore = useWorkspaceStore()
   const menuSpaceStore = useMenuSpaceStore()
-  const data = await fetchGetUserInfo()
+  const data = options.prefetchedUser ?? (await fetchGetUserInfo())
   const frontendUserInfo = buildFrontendUserInfo(data)
   userStore.syncLoginUserIdentity(`${frontendUserInfo.userId || frontendUserInfo.id || ''}`.trim())
   userStore.setUserInfo(frontendUserInfo)
@@ -630,22 +681,32 @@ async function fetchUserInfo(preferredSpaceKey = ''): Promise<void> {
     hasPersonalWorkspaceAccessByUserInfo(frontendUserInfo)
   )
   menuSpaceStore.syncRuntimeHost()
-  await menuSpaceStore.refreshRuntimeConfig(true)
-  await menuSpaceStore.syncResolvedCurrentSpace(preferredSpaceKey)
-  await collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
-    preferredCollaborationWorkspaceId: data.current_collaboration_workspace_id || '',
-    preferredLegacyCollaborationWorkspaceId:
-      data.collaboration_workspace_id || data.current_collaboration_workspace_id || '',
-    preferredWorkspaceId: data.current_auth_workspace_id || '',
-    preferredWorkspaceType: data.current_auth_workspace_type || '',
-    preferPersonalWorkspace: hasPersonalWorkspaceAccessByUserInfo(frontendUserInfo)
-  })
+  // refreshRuntimeConfig -> syncResolvedCurrentSpace 存在先后依赖，先串行；
+  // 同时与 loadMyCollaborationWorkspaces 并行以减少首屏等待时间。
+  await Promise.all([
+    (async () => {
+      await menuSpaceStore.refreshRuntimeConfig(true)
+      await menuSpaceStore.syncResolvedCurrentSpace(preferredSpaceKey)
+    })(),
+    collaborationWorkspaceStore.loadMyCollaborationWorkspaces({
+      preferredCollaborationWorkspaceId: data.current_collaboration_workspace_id || '',
+      preferredLegacyCollaborationWorkspaceId:
+        data.collaboration_workspace_id || data.current_collaboration_workspace_id || '',
+      preferredWorkspaceId: data.current_auth_workspace_id || '',
+      preferredWorkspaceType: data.current_auth_workspace_type || '',
+      preferPersonalWorkspace: hasPersonalWorkspaceAccessByUserInfo(frontendUserInfo)
+    })
+  ])
   if (
-    workspaceStore.currentAuthWorkspaceType !== (data.current_auth_workspace_type || 'personal') ||
-    workspaceStore.currentAuthWorkspaceId !== (data.current_auth_workspace_id || '')
+    !options.skipNestedRefresh &&
+    (workspaceStore.currentAuthWorkspaceType !==
+      (data.current_auth_workspace_type || 'personal') ||
+      workspaceStore.currentAuthWorkspaceId !== (data.current_auth_workspace_id || ''))
   ) {
-    await refreshCurrentUserInfoContext()
+    // 复用刚拉到的 user 数据，避免嵌套重复拉取
+    await refreshCurrentUserInfoContext({ prefetchedUser: data })
   }
+  return data
 }
 
 /**
@@ -654,6 +715,7 @@ async function fetchUserInfo(preferredSpaceKey = ''): Promise<void> {
 export function resetRouterState(delay: number): void {
   setTimeout(() => {
     routeRegistry?.unregister()
+    managedPageProcessor.invalidateCache()
     IframeRouteManager.getInstance().clear()
 
     const menuStore = useMenuStore()
@@ -713,7 +775,8 @@ async function tryRefreshMissingDynamicRoute(
 
   routeRefreshAttempted.add(to.fullPath)
   try {
-    await refreshUserAccessAndMenus()
+    // 仅刷新菜单，不再重新拉取用户信息（避免双重 user info fetch）
+    await refreshUserMenus()
     // 刷新访问图后若目标路由仍不存在，说明它已经不在当前运行时导航清单里，
     // 常见于菜单被禁用、空间切换后失效或权限被收回，此时直接落到 404，
     // 避免再次强跳原路径造成一串 "No match found" 警告。

@@ -10,14 +10,17 @@
  */
 import createClient from 'openapi-fetch'
 import { useUserStore } from '@/store/modules/user'
+import { useWorkspaceStore } from '@/store/modules/workspace'
+import { useCollaborationWorkspaceStore } from '@/store/modules/collaboration-workspace'
 import type { paths } from './schema'
 
 export const v5Client = createClient<paths>({
   baseUrl: '/api/v1'
 })
 
-// 注入 Authorization 头：openapi-fetch 的 middleware 钩子在每次请求前
-// 从 user store 拿 access token，与原 axios 拦截器行为对齐。
+// 注入 Authorization + 工作空间头：与原 axios 拦截器行为对齐。
+// X-Auth-Workspace-Id: 当前鉴权工作空间（个人 / 协作）
+// X-Collaboration-Workspace-Id: 仅在协作模式下注入
 v5Client.use({
   onRequest({ request }) {
     const { accessToken } = useUserStore()
@@ -25,6 +28,18 @@ v5Client.use({
       const token = accessToken.startsWith('Bearer ') ? accessToken : `Bearer ${accessToken}`
       request.headers.set('Authorization', token)
     }
+
+    const { currentAuthWorkspaceId } = useWorkspaceStore()
+    if (currentAuthWorkspaceId) {
+      request.headers.set('X-Auth-Workspace-Id', currentAuthWorkspaceId)
+    }
+
+    const { currentCollaborationWorkspaceId, currentContextMode } =
+      useCollaborationWorkspaceStore()
+    if (currentContextMode === 'collaboration' && currentCollaborationWorkspaceId) {
+      request.headers.set('X-Collaboration-Workspace-Id', currentCollaborationWorkspaceId)
+    }
+
     return request
   }
 })

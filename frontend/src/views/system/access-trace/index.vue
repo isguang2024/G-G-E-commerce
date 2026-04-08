@@ -339,7 +339,7 @@
     }
 
     const roleRes = await fetchGetRoleOptions()
-    roleOptions.value = (roleRes.records || []).map((role) => ({
+    roleOptions.value = (roleRes.records || []).map((role: any) => ({
       label: role.roleName || role.roleCode,
       value: role.roleId,
       source: 'personal' as const

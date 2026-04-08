@@ -1,4 +1,4 @@
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, shallowReactive } from 'vue'
 import { defineStore } from 'pinia'
 import {
   fetchGetInboxSummary,
@@ -29,7 +29,8 @@ export const useMessageStore = defineStore('messageStore', () => {
   const summaryLoaded = ref(false)
   const summaryLoading = ref(false)
 
-  const previewMap = reactive<Record<BoxType, InboxItem[]>>({
+  // shallowReactive：仅顶层 key 响应，避免对每条 InboxItem 做深度代理
+  const previewMap = shallowReactive<Record<BoxType, InboxItem[]>>({
     notice: [],
     message: [],
     todo: []

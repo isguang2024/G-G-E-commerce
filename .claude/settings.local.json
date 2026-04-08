@@ -99,7 +99,16 @@
       "Bash(sed -i 's/feature_packages\\\\.app_keys ? ?/feature_packages.app_keys ?? ?/g' c:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/featurepackage/assign_service.go)",
       "Bash(sed -i 's/app_keys ? ?/app_keys ?? ?/g' c:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/featurepackage/service.go)",
       "Bash(sed -i 's/app_keys ?? ?/jsonb_exists\\(app_keys, ?\\)/g' c:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/user/repository.go c:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/featurepackage/service.go)",
-      "Bash(sed -i 's/feature_packages\\\\.app_keys ?? ?/jsonb_exists\\(feature_packages.app_keys, ?\\)/g' c:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/featurepackage/assign_service.go)"
+      "Bash(sed -i 's/feature_packages\\\\.app_keys ?? ?/jsonb_exists\\(feature_packages.app_keys, ?\\)/g' c:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/featurepackage/assign_service.go)",
+      "Bash(docker exec:*)",
+      "Bash(python3 -c \"import json,sys; data=json.load\\(sys.stdin\\); keys=set\\(op.get\\('permission_key',''\\) for op in data['operations'] if op.get\\('permission_key'\\)\\); print\\(sorted\\(keys\\)\\)\")",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(wc -l /c/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/api/*.ts /c/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/api/system-manage/*.ts)",
+      "Bash(ls -la /c/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/*.env*)",
+      "Bash(find src/assets/images -type f -name \"*.png\" -exec ls -lh {} \\\\;)",
+      "Read(//c/Users/Administrator/Documents/GitHub/G-G-E-commerce/{if\\($5 ~ /M|K/**)",
+      "Bash(du -h src/assets/images/*.png src/assets/images/*/*.png)",
+      "Bash(find backend/internal/modules -name \"*.go\" -exec wc -l {} +)"
     ]
   },
   "defaultMode": "bypassPermissions"

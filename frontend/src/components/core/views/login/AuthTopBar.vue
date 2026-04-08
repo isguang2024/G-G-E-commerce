@@ -91,8 +91,10 @@
   const mainColors = AppConfig.systemMainColor
   const color = systemThemeColor // css v-bind 使用
 
-  const changeLanguage = (lang: LanguageEnum) => {
+  const changeLanguage = async (lang: LanguageEnum) => {
     if (locale.value === lang) return
+    const { loadLocaleMessages } = await import('@/locales')
+    await loadLocaleMessages(lang)
     locale.value = lang
     userStore.setLanguage(lang)
   }
