@@ -157,7 +157,7 @@
         availableMenuIds.value = assigned?.available_menu_ids || []
         featurePackages.value = packagesRes?.packages || []
         derivedSourceMap.value = Object.fromEntries(
-          (assigned?.derived_sources || []).map((item) => [item.menu_id, item.package_ids])
+          (assigned?.derived_sources || []).map((item: any) => [item.menu_id, item.package_ids])
         )
         selectedDerivedPackageId.value = ''
         inherited.value = Boolean(packagesRes?.inherited)

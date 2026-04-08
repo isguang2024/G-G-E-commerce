@@ -43,10 +43,14 @@ func OpenAPIPermission(eval evaluator.Evaluator, lookup map[string]string, logge
 			return next(req)
 		}
 
-		// Workspace-scoped op uses the path/query workspace UUID; account-only
-		// ops fall through to evaluator.Can with uuid.Nil and the evaluator is
-		// expected to union across all member workspaces.
-		workspaceID, _ := workspaceIDFromParams(req.Params)
+		// Workspace 取值三段优先级：
+		// 1. 上游 gin middleware 注入的 auth_workspace_id（已校验 member 关系，最权威）
+		// 2. operation path/query 中的 workspace_id / id（多见于资源级 op）
+		// 3. uuid.Nil — 落到 evaluator 的账号级 union 路径（仅用于 account-only ops）
+		workspaceID, _ := authWorkspaceIDFromCtx(req.Context)
+		if workspaceID == uuid.Nil {
+			workspaceID, _ = workspaceIDFromParams(req.Params)
+		}
 
 		allowed, err := eval.Can(req.Context, userID, workspaceID, key)
 		if err != nil {
@@ -68,6 +72,19 @@ func OpenAPIPermission(eval evaluator.Evaluator, lookup map[string]string, logge
 
 func userIDFromCtx(ctx context.Context) (uuid.UUID, bool) {
 	raw, ok := ctx.Value(handlers.CtxUserID).(string)
+	if !ok || raw == "" {
+		return uuid.Nil, false
+	}
+	id, err := uuid.Parse(raw)
+	if err != nil {
+		return uuid.Nil, false
+	}
+	return id, true
+}
+
+// authWorkspaceIDFromCtx 读取 gin middleware 已校验 member 关系后写入的 auth_workspace_id。
+func authWorkspaceIDFromCtx(ctx context.Context) (uuid.UUID, bool) {
+	raw, ok := ctx.Value(handlers.CtxAuthWorkspaceID).(string)
 	if !ok || raw == "" {
 		return uuid.Nil, false
 	}

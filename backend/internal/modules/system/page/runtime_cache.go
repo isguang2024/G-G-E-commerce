@@ -7,12 +7,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	spaceutil "github.com/gg-ecommerce/backend/internal/modules/system/space"
-	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionkey"
 	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
@@ -570,8 +568,7 @@ func (s *service) buildRuntimeAccessContext(
 		return ctx, nil
 	}
 
-	authzService := authorization.NewService(s.db, zap.NewNop())
-	actionKeys, err := authzService.GetUserActionKeysInApp(*userID, collaborationWorkspaceID, normalizeAppKey(appKey))
+	actionKeys, err := s.queryRuntimeUserPermissionKeys(*userID, collaborationWorkspaceID, normalizeAppKey(appKey))
 	if err != nil {
 		return nil, err
 	}
@@ -643,6 +640,49 @@ func (s *service) resolveRuntimeVisibleMenuIDs(
 		menuSet = mergeRuntimeUUIDs(menuSet, snapshot.MenuIDs)
 	}
 	return finalizeRuntimeVisibleMenuIDs(menuMap, spaceKey, mergeRuntimeUUIDs(menuSet, enabledPublicMenuIDs)), nil
+}
+
+// queryRuntimeUserPermissionKeys returns the effective permission_key list for
+// a user inside a collaboration workspace + app, mirroring what the legacy
+// authorization.GetUserActionKeysInApp used to compute (boundary-snapshot
+// intersected with role-derived action ids), but expressed directly against
+// the v5 schema so the page domain no longer depends on pkg/authorization.
+func (s *service) queryRuntimeUserPermissionKeys(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, appKey string) ([]string, error) {
+	if s == nil || s.db == nil || collaborationWorkspaceID == nil {
+		return []string{}, nil
+	}
+	roles, err := s.loadRuntimeEffectiveActiveRoles(userID, *collaborationWorkspaceID)
+	if err != nil {
+		return nil, err
+	}
+	if len(roles) == 0 {
+		return []string{}, nil
+	}
+	boundaryService := collaborationworkspaceboundary.NewService(s.db)
+	actionIDSet := make(map[uuid.UUID]struct{})
+	for _, role := range roles {
+		snapshot, err := boundaryService.GetRoleSnapshot(*collaborationWorkspaceID, role.ID, role.CollaborationWorkspaceID == nil, normalizeAppKey(appKey))
+		if err != nil {
+			return nil, err
+		}
+		for _, actionID := range snapshot.ActionIDs {
+			actionIDSet[actionID] = struct{}{}
+		}
+	}
+	if len(actionIDSet) == 0 {
+		return []string{}, nil
+	}
+	actionIDs := make([]uuid.UUID, 0, len(actionIDSet))
+	for id := range actionIDSet {
+		actionIDs = append(actionIDs, id)
+	}
+	var keys []string
+	if err := s.db.Model(&models.PermissionKey{}).
+		Where("id IN ? AND status = ? AND deleted_at IS NULL", actionIDs, "normal").
+		Pluck("permission_key", &keys).Error; err != nil {
+		return nil, err
+	}
+	return keys, nil
 }
 
 func (s *service) loadRuntimeEffectiveActiveRoles(userID, collaborationWorkspaceID uuid.UUID) ([]models.Role, error) {

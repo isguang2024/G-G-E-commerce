@@ -216,7 +216,7 @@
     appLoading.value = true
     try {
       const res = await fetchGetApps()
-      appOptions.value = (res.records || []).map((item) => ({
+      appOptions.value = (res.records || []).map((item: any) => ({
         label: item.name ? `${item.name}（${item.appKey}）` : item.appKey,
         value: item.appKey
       }))

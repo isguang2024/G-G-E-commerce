@@ -1,7 +1,6 @@
 import {
-  request,
   v5Client,
-  USER_BASE,
+  unwrap,
   normalizeUserSummary,
   normalizeFeaturePackage,
   normalizeUserPermissionDiagnosisResponse,
@@ -22,79 +21,74 @@ export async function fetchGetUserList(params: Api.SystemManage.UserSearchParams
   if ((params as any)?.roleId) query.role_id = (params as any).roleId
   if (params?.registerSource) query.register_source = params.registerSource
   if (params?.invitedBy) query.invited_by = params.invitedBy
-  const { data, error } = await v5Client.GET('/users', {
-    params: { query }
-  })
-  if (error || !data) {
+  try {
+    const data = await unwrap(v5Client.GET('/users', { params: { query } }))
+    return {
+      records: (data.records || []).map(normalizeUserSummary),
+      total: data.total || 0,
+      current: data.current,
+      size: data.size
+    } as Api.SystemManage.UserList
+  } catch {
     return { records: [], total: 0, current: params?.current ?? 1, size: params?.size ?? 20 }
   }
-  return {
-    records: (data.records || []).map(normalizeUserSummary),
-    total: data.total || 0,
-    current: data.current,
-    size: data.size
-  } as Api.SystemManage.UserList
 }
 
 /** 获取用户个人空间功能包 */
-export function fetchGetUserPackages(userId: string, appKey?: string) {
-  return request
-    .get<Api.SystemManage.UserFeaturePackageResponse>({
-      url: `${USER_BASE}/${userId}/packages`,
-      params: {
-        ...(appKey ? { app_key: appKey } : {})
-      },
-      skipCollaborationWorkspaceHeader: true
+export async function fetchGetUserPackages(userId: string, appKey?: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/users/{id}/packages', {
+      params: { path: { id: userId }, query: (appKey ? { app_key: appKey } : {}) as any }
     })
-    .then((res) => ({
-      package_ids: res?.package_ids || [],
-      packages: (res?.packages || []).map(normalizeFeaturePackage),
-      binding_workspace_id: res?.binding_workspace_id || '',
-      binding_workspace_type: res?.binding_workspace_type || 'personal',
-      binding_workspace_label: res?.binding_workspace_label || 'personal_workspace'
-    }))
+  )
+  return {
+    package_ids: res?.package_ids || [],
+    packages: (res?.packages || []).map(normalizeFeaturePackage),
+    binding_workspace_id: res?.binding_workspace_id || '',
+    binding_workspace_type: res?.binding_workspace_type || 'personal',
+    binding_workspace_label: res?.binding_workspace_label || 'personal_workspace'
+  }
 }
 
 /** 设置用户个人空间功能包 */
-export function fetchSetUserPackages(userId: string, packageIds: string[], appKey?: string) {
-  return request.put<void>({
-    url: `${USER_BASE}/${userId}/packages`,
-    params: {
-      ...(appKey ? { app_key: appKey } : {})
-    },
-    skipCollaborationWorkspaceHeader: true,
-    data: { package_ids: packageIds }
+export async function fetchSetUserPackages(
+  userId: string,
+  packageIds: string[],
+  appKey?: string
+) {
+  const { error } = await v5Client.PUT('/users/{id}/packages', {
+    params: { path: { id: userId }, query: (appKey ? { app_key: appKey } : {}) as any },
+    body: { package_ids: packageIds } as any
   })
+  if (error) throw error
 }
 
 // 获取用户详情（Phase 4 slice 5: v5Client）
 export async function fetchGetUser(id: string) {
-  const { data, error } = await v5Client.GET('/users/{id}', {
-    params: { path: { id } }
-  })
-  if (error || !data) {
+  try {
+    const data = await unwrap(v5Client.GET('/users/{id}', { params: { path: { id } } }))
+    return normalizeUserSummary(data)
+  } catch {
     return normalizeUserSummary({})
   }
-  return normalizeUserSummary(data)
 }
 
 // 创建用户（Phase 4 slice 5: v5Client）
 export async function fetchCreateUser(data: Api.SystemManage.UserCreateParams) {
-  const { data: out, error } = await v5Client.POST('/users', {
-    body: {
-      username: data.username,
-      password: data.password,
-      email: data.email,
-      nickname: data.nickname,
-      phone: data.phone,
-      system_remark: data.systemRemark,
-      status: data.status,
-      role_ids: data.roleIds
-    }
-  })
-  if (error || !out) {
-    throw error || new Error('create user failed')
-  }
+  const out = await unwrap(
+    v5Client.POST('/users', {
+      body: {
+        username: data.username,
+        password: data.password,
+        email: data.email,
+        nickname: data.nickname,
+        phone: data.phone,
+        system_remark: data.systemRemark,
+        status: data.status,
+        role_ids: data.roleIds
+      }
+    })
+  )
   return { id: out.id }
 }
 
@@ -111,19 +105,13 @@ export async function fetchUpdateUser(id: string, data: Api.SystemManage.UserUpd
       role_ids: data.roleIds
     }
   })
-  if (error) {
-    throw error
-  }
+  if (error) throw error
 }
 
 // 删除用户（Phase 4 slice 5: v5Client）
 export async function fetchDeleteUser(id: string) {
-  const { error } = await v5Client.DELETE('/users/{id}', {
-    params: { path: { id } }
-  })
-  if (error) {
-    throw error
-  }
+  const { error } = await v5Client.DELETE('/users/{id}', { params: { path: { id } } })
+  if (error) throw error
 }
 
 // 分配个人空间角色（Phase 4 slice 5: v5Client）
@@ -132,20 +120,16 @@ export async function fetchAssignUserRoles(id: string, roleIds: string[]) {
     params: { path: { id } },
     body: { role_ids: roleIds }
   })
-  if (error) {
-    throw error
-  }
+  if (error) throw error
 }
 
 /** 获取用户个人空间菜单裁剪 */
 export async function fetchGetUserMenus(userId: string, appKey?: string) {
-  const res = await request.get<Api.SystemManage.UserMenuBoundaryResponse>({
-    url: `${USER_BASE}/${userId}/menus`,
-    params: {
-      ...(appKey ? { app_key: appKey } : {})
-    },
-    skipCollaborationWorkspaceHeader: true
-  })
+  const res: any = await unwrap(
+    v5Client.GET('/users/{id}/menus', {
+      params: { path: { id: userId }, query: (appKey ? { app_key: appKey } : {}) as any }
+    })
+  )
   return {
     menu_ids: res?.menu_ids || [],
     available_menu_ids: res?.available_menu_ids || [],
@@ -160,23 +144,22 @@ export async function fetchGetUserMenus(userId: string, appKey?: string) {
 }
 
 /** 设置用户个人空间菜单裁剪 */
-export function fetchSetUserMenus(userId: string, menuIds: string[], appKey?: string) {
-  return request.put<void>({
-    url: `${USER_BASE}/${userId}/menus`,
-    params: {
-      ...(appKey ? { app_key: appKey } : {})
-    },
-    skipCollaborationWorkspaceHeader: true,
-    data: { menu_ids: menuIds }
+export async function fetchSetUserMenus(userId: string, menuIds: string[], appKey?: string) {
+  const { error } = await v5Client.PUT('/users/{id}/menus', {
+    params: { path: { id: userId }, query: (appKey ? { app_key: appKey } : {}) as any },
+    body: { menu_ids: menuIds } as any
   })
+  if (error) throw error
 }
 
 export async function fetchGetUserCollaborationWorkspaces(userId: string) {
-  const res = await request.get<Api.SystemManage.CollaborationWorkspaceListItem[]>({
-    url: `${USER_BASE}/${userId}/collaboration-workspaces`,
-    skipCollaborationWorkspaceHeader: true
-  })
-  return (res || []).map((item: any) => normalizeUserCollaborationWorkspaceItem(item))
+  const res: any = await unwrap(
+    v5Client.GET('/users/{id}/collaboration-workspaces', {
+      params: { path: { id: userId } }
+    })
+  )
+  const list = Array.isArray(res) ? res : res?.records || []
+  return list.map((item: any) => normalizeUserCollaborationWorkspaceItem(item))
 }
 
 /** 获取用户权限诊断 */
@@ -184,14 +167,17 @@ export async function fetchGetUserPermissionDiagnosis(
   userId: string,
   params?: Api.SystemManage.UserPermissionDiagnosisParams
 ) {
-  const res = await request.get<Api.SystemManage.UserPermissionDiagnosisResponse>({
-    url: `${USER_BASE}/${userId}/permission-diagnosis`,
-    skipCollaborationWorkspaceHeader: true,
-    params: {
-      collaboration_workspace_id: params?.collaborationWorkspaceId,
-      permission_key: params?.permissionKey
-    }
-  })
+  const res: any = await unwrap(
+    v5Client.GET('/users/{id}/permission-diagnosis', {
+      params: {
+        path: { id: userId },
+        query: {
+          collaboration_workspace_id: params?.collaborationWorkspaceId,
+          permission_key: params?.permissionKey
+        } as any
+      }
+    })
+  )
   return normalizeUserPermissionDiagnosisResponse(res)
 }
 
@@ -200,13 +186,12 @@ export async function fetchRefreshUserPermissionSnapshot(
   userId: string,
   collaborationWorkspaceId?: string
 ) {
-  const res = await request.post<Api.SystemManage.UserPermissionDiagnosisResponse>({
-    url: `${USER_BASE}/${userId}/permission-refresh`,
-    skipCollaborationWorkspaceHeader: true,
-    data: {
-      collaboration_workspace_id: collaborationWorkspaceId
-    }
-  })
+  const res: any = await unwrap(
+    v5Client.POST('/users/{id}/permission-refresh', {
+      params: { path: { id: userId } },
+      body: { collaboration_workspace_id: collaborationWorkspaceId } as any
+    })
+  )
   return normalizeUserPermissionDiagnosisResponse(res)
 }
 
@@ -215,12 +200,14 @@ export async function fetchGetUserPermissionMenus(
   userId: string,
   collaborationWorkspaceId?: string
 ) {
-  const res = await request.get<Api.SystemManage.UserPermissionMenuNode[]>({
-    url: `${USER_BASE}/${userId}/permissions`,
-    skipCollaborationWorkspaceHeader: true,
-    params: {
-      collaboration_workspace_id: collaborationWorkspaceId
-    }
-  })
-  return (res || []).map((item: any) => normalizeUserPermissionMenuTree(item))
+  const res: any = await unwrap(
+    v5Client.GET('/users/{id}/permissions', {
+      params: {
+        path: { id: userId },
+        query: { collaboration_workspace_id: collaborationWorkspaceId } as any
+      }
+    })
+  )
+  const list = Array.isArray(res) ? res : res?.records || []
+  return list.map((item: any) => normalizeUserPermissionMenuTree(item))
 }

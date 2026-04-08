@@ -21,7 +21,6 @@ const (
 
 type Workspace struct {
 	ID                       uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	TenantScoped
 	WorkspaceType            string         `gorm:"type:varchar(20);not null;index" json:"workspace_type"`
 	Name                     string         `gorm:"type:varchar(150);not null" json:"name"`
 	Code                     string         `gorm:"type:varchar(150);not null;uniqueIndex" json:"code"`
@@ -40,7 +39,6 @@ func (Workspace) TableName() string {
 
 type WorkspaceMember struct {
 	ID                             uuid.UUID      `gorm:"type:uuid;primary_key;default:gen_random_uuid()" json:"id"`
-	TenantScoped
 	WorkspaceID                    uuid.UUID      `gorm:"type:uuid;not null;index" json:"workspace_id"`
 	UserID                         uuid.UUID      `gorm:"type:uuid;not null;index" json:"user_id"`
 	MemberType                     string         `gorm:"type:varchar(20);not null;default:'member'" json:"member_type"`

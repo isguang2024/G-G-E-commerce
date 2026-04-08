@@ -1058,12 +1058,12 @@ export function useMenuPage() {
         isLayoutMode.value ? activeSpaceKey.value : undefined,
         targetAppKey.value
       )
-      const filteredList = (list || []).filter((item) =>
+      const filteredList = (list || []).filter((item: any) =>
         isLayoutMode.value
           ? `${item.scope_type || ''}`.trim() !== 'global'
           : `${item.scope_type || ''}`.trim() === 'global'
       )
-      backupList.value = filteredList.map((item) => ({
+      backupList.value = filteredList.map((item: any) => ({
         ...item,
         space_name: getBackupScopeLabel(item)
       }))

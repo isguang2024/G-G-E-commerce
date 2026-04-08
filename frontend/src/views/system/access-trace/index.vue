@@ -281,7 +281,7 @@
           role_code: roleCodeFilter.value || undefined
         }
       )
-      userOptions.value = (collaborationWorkspaceMembers || []).map((item) => ({
+      userOptions.value = (collaborationWorkspaceMembers || []).map((item: any) => ({
         id: item.userId,
         userName: item.userName,
         nickName: item.nickName,
@@ -323,14 +323,14 @@
         query.collaborationWorkspaceId
       )
       roleOptions.value = (collaborationWorkspaceRoles || [])
-        .filter((role) => {
+        .filter((role: any) => {
           const code = `${role.roleCode || ''}`.trim()
           if (!code || code === 'admin') return false
           if (code === 'collaboration_workspace_admin' || code === 'collaboration_workspace_member')
             return true
           return Boolean(role.collaborationWorkspaceId)
         })
-        .map((role) => ({
+        .map((role: any) => ({
           label: role.roleName || role.roleCode,
           value: role.roleCode,
           source: 'collaboration' as const

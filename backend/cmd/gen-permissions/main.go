@@ -27,7 +27,6 @@ type operationSpec struct {
 	OperationID   string `yaml:"operationId"`
 	Summary       string `yaml:"summary"`
 	PermissionKey string `yaml:"x-permission-key"`
-	TenantScoped  *bool  `yaml:"x-tenant-scoped"`
 	AppScope      string `yaml:"x-app-scope"`
 	AccessMode    string `yaml:"x-access-mode"`
 }
@@ -44,7 +43,6 @@ type seedEntry struct {
 	Path          string `json:"path"`
 	PermissionKey string `json:"permission_key"`
 	Summary       string `json:"summary,omitempty"`
-	TenantScoped  bool   `json:"tenant_scoped"`
 	AppScope      string `json:"app_scope"`
 	AccessMode    string `json:"access_mode"`
 }
@@ -81,10 +79,6 @@ func main() {
 			if op.PermissionKey == "" && accessModeRaw != "public" && accessModeRaw != "authenticated" {
 				fail(fmt.Sprintf("operation %s %s is missing x-permission-key", method, path))
 			}
-			tenantScoped := true
-			if op.TenantScoped != nil {
-				tenantScoped = *op.TenantScoped
-			}
 			appScope := op.AppScope
 			if appScope == "" {
 				appScope = "optional"
@@ -96,7 +90,6 @@ func main() {
 				Path:          path,
 				PermissionKey: op.PermissionKey,
 				Summary:       op.Summary,
-				TenantScoped:  tenantScoped,
 				AppScope:      appScope,
 				AccessMode:    accessMode,
 			})

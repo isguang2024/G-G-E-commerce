@@ -69,9 +69,22 @@ func applyAuthorizationContext(c *gin.Context, claims *jwt.Claims, db *gorm.DB) 
 	workspaceService := workspacepkg.NewService(db, nil)
 	var authWorkspace *models.Workspace
 
+	// 关键安全校验：客户端传入的 X-Auth-Workspace-Id / X-Collaboration-Workspace-Id
+	// 必须先确认当前 user 是该 workspace 的成员，否则任意登录者改 header 即可越权。
+	resolveIfMember := func(ws *models.Workspace) *models.Workspace {
+		if ws == nil {
+			return nil
+		}
+		if _, err := workspaceService.GetMember(ws.ID, userID); err != nil {
+			return nil
+		}
+		return ws
+	}
+
 	if authWorkspaceID := strings.TrimSpace(c.GetHeader(authWorkspaceHeader)); authWorkspaceID != "" {
 		if parsedWorkspaceID, parseErr := uuid.Parse(authWorkspaceID); parseErr == nil {
-			authWorkspace, _ = workspaceService.GetByID(parsedWorkspaceID)
+			ws, _ := workspaceService.GetByID(parsedWorkspaceID)
+			authWorkspace = resolveIfMember(ws)
 		}
 	}
 
@@ -85,7 +98,8 @@ func applyAuthorizationContext(c *gin.Context, claims *jwt.Claims, db *gorm.DB) 
 		}
 		if collaborationWorkspaceID != "" {
 			if parsedCollaborationWorkspaceID, parseErr := uuid.Parse(collaborationWorkspaceID); parseErr == nil {
-				authWorkspace, _ = workspaceService.GetCollaborationWorkspaceByCollaborationWorkspaceID(parsedCollaborationWorkspaceID)
+				ws, _ := workspaceService.GetCollaborationWorkspaceByCollaborationWorkspaceID(parsedCollaborationWorkspaceID)
+				authWorkspace = resolveIfMember(ws)
 			}
 		}
 	}

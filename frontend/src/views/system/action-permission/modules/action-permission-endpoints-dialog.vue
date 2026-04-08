@@ -197,7 +197,7 @@
         fetchGetApiEndpointCategories()
       ])
       categoryNameMap.value = (categories.records || []).reduce(
-        (acc, item) => {
+        (acc: Record<string, string>, item: any) => {
           if (item.id) acc[item.id] = item.name || item.code || '-'
           return acc
         },

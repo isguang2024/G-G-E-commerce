@@ -7,6 +7,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -264,9 +265,18 @@ func (h *APIHandler) GetCurrentWorkspace(ctx context.Context) (gen.GetCurrentWor
 	if !ok {
 		return &gen.Error{Code: 401, Message: "未认证"}, nil
 	}
-	// Phase 4 follow-up: respect the auth_workspace_id carried in the JWT
-	// claims. For now we fall back to the user's personal workspace, which
-	// matches the legacy behaviour for the common case.
+	// 优先返回 gin middleware 已校验过 member 关系的 auth_workspace_id；
+	// 没有再回落 personal workspace，避免 /workspaces/switch 后刷新页面
+	// 拿回 personal 与权限实际生效空间错位。
+	if raw := strings.TrimSpace(stringFromCtx(ctx, CtxAuthWorkspaceID)); raw != "" {
+		if authWsID, parseErr := uuid.Parse(raw); parseErr == nil {
+			if _, err := h.service.GetMember(authWsID, userID); err == nil {
+				if ws, err := h.service.GetByID(authWsID); err == nil {
+					return mapWorkspaceToSummary(ws), nil
+				}
+			}
+		}
+	}
 	ws, err := h.service.EnsurePersonalWorkspaceForUser(userID)
 	if err != nil {
 		h.logger.Error("get current workspace failed", zap.Error(err))

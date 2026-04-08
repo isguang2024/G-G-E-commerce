@@ -1,6 +1,6 @@
 import {
-  request,
-  API_ENDPOINT_BASE,
+  v5Client,
+  unwrap,
   normalizeApiEndpoint,
   normalizeApiEndpointCategory,
   normalizeUnregisteredApiRoute,
@@ -8,8 +8,8 @@ import {
 } from './_shared'
 
 /** 获取 API 注册表 */
-export function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpointSearchParams) {
-  const normalizedParams = {
+export async function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpointSearchParams) {
+  const normalizedParams: any = {
     app_key: params?.appKey,
     app_scope: params?.appScope,
     permission_key: params?.permissionKey,
@@ -27,116 +27,99 @@ export function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpointSear
     has_permission_key: params?.hasPermissionKey,
     has_category: params?.hasCategory
   }
-  return request
-    .get<Api.SystemManage.APIEndpointList>({
-      url: API_ENDPOINT_BASE,
-      params: normalizedParams
-    })
-    .then((res) => ({
-      ...res,
-      records: (res?.records || []).map(normalizeApiEndpoint)
-    }))
+  const res: any = await unwrap(
+    v5Client.GET('/api-endpoints', { params: { query: normalizedParams } })
+  )
+  return {
+    ...res,
+    records: (res?.records || []).map(normalizeApiEndpoint)
+  } as Api.SystemManage.APIEndpointList
 }
 
-export function fetchGetApiEndpointOverview(appKey?: string) {
-  return request
-    .get<
-      Api.SystemManage.APIEndpointOverview & {
-        total_count?: number
-        uncategorized_count?: number
-        stale_count?: number
-        no_permission_count?: number
-        shared_permission_count?: number
-        cross_context_shared_count?: number
-        category_counts?: any[]
-      }
-    >({
-      url: `${API_ENDPOINT_BASE}/overview`,
-      params: appKey ? { app_key: appKey } : undefined
+export async function fetchGetApiEndpointOverview(appKey?: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/api-endpoints/overview', {
+      params: { query: (appKey ? { app_key: appKey } : {}) as any }
     })
-    .then((res) => ({
-      totalCount: res?.totalCount ?? res?.total_count ?? 0,
-      uncategorizedCount: res?.uncategorizedCount ?? res?.uncategorized_count ?? 0,
-      staleCount: res?.staleCount ?? res?.stale_count ?? 0,
-      noPermissionCount: res?.noPermissionCount ?? res?.no_permission_count ?? 0,
-      sharedPermissionCount: res?.sharedPermissionCount ?? res?.shared_permission_count ?? 0,
-      crossContextSharedCount: res?.crossContextSharedCount ?? res?.cross_context_shared_count ?? 0,
-      categoryCounts: (res?.categoryCounts || res?.category_counts || []).map((item: any) => ({
-        categoryId: item?.categoryId || item?.category_id || '',
-        count: item?.count || 0
-      }))
+  )
+  return {
+    totalCount: res?.totalCount ?? res?.total_count ?? 0,
+    uncategorizedCount: res?.uncategorizedCount ?? res?.uncategorized_count ?? 0,
+    staleCount: res?.staleCount ?? res?.stale_count ?? 0,
+    noPermissionCount: res?.noPermissionCount ?? res?.no_permission_count ?? 0,
+    sharedPermissionCount: res?.sharedPermissionCount ?? res?.shared_permission_count ?? 0,
+    crossContextSharedCount:
+      res?.crossContextSharedCount ?? res?.cross_context_shared_count ?? 0,
+    categoryCounts: (res?.categoryCounts || res?.category_counts || []).map((item: any) => ({
+      categoryId: item?.categoryId || item?.category_id || '',
+      count: item?.count || 0
     }))
+  }
 }
 
-export function fetchGetStaleApiEndpointList(params: { current?: number; size?: number }) {
-  return request
-    .get<Api.SystemManage.APIEndpointList>({
-      url: `${API_ENDPOINT_BASE}/stale`,
-      params: {
-        current: params?.current,
-        size: params?.size
-      }
+export async function fetchGetStaleApiEndpointList(params: { current?: number; size?: number }) {
+  const res: any = await unwrap(
+    v5Client.GET('/api-endpoints/stale', {
+      params: { query: { current: params?.current, size: params?.size } as any }
     })
-    .then((res) => ({
-      ...res,
-      records: (res?.records || []).map(normalizeApiEndpoint)
-    }))
+  )
+  return {
+    ...res,
+    records: (res?.records || []).map(normalizeApiEndpoint)
+  } as Api.SystemManage.APIEndpointList
 }
 
 /** 同步 API 注册表 */
-export function fetchSyncApiEndpoints() {
-  return request.post<void>({
-    url: `${API_ENDPOINT_BASE}/sync`
-  })
+export async function fetchSyncApiEndpoints() {
+  const { error } = await v5Client.POST('/api-endpoints/sync', {})
+  if (error) throw error
 }
 
-export function fetchCleanupStaleApiEndpoints(ids: string[]) {
-  return request
-    .post<{ deleted_count?: number; deletedCount?: number }>({
-      url: `${API_ENDPOINT_BASE}/cleanup-stale`,
-      data: { ids }
-    })
-    .then((res) => ({
-      deletedCount: res?.deletedCount ?? res?.deleted_count ?? 0
-    }))
+export async function fetchCleanupStaleApiEndpoints(ids: string[]) {
+  const res: any = await unwrap(
+    v5Client.POST('/api-endpoints/cleanup-stale', { body: { ids } as any })
+  )
+  return { deletedCount: res?.deletedCount ?? res?.deleted_count ?? 0 }
 }
 
 export function fetchCreateApiEndpoint(data: Partial<Api.SystemManage.APIEndpointItem>) {
-  return request.post<Api.SystemManage.APIEndpointItem>({
-    url: API_ENDPOINT_BASE,
-    data
-  })
+  return unwrap(
+    v5Client.POST('/api-endpoints', { body: data as any })
+  ) as unknown as Promise<Api.SystemManage.APIEndpointItem>
 }
 
 export function fetchUpdateApiEndpoint(
   id: string,
   data: Partial<Api.SystemManage.APIEndpointItem>
 ) {
-  return request.put<Api.SystemManage.APIEndpointItem>({
-    url: `${API_ENDPOINT_BASE}/${id}`,
-    data
-  })
+  return unwrap(
+    v5Client.PUT('/api-endpoints/{id}', {
+      params: { path: { id } },
+      body: data as any
+    })
+  ) as unknown as Promise<Api.SystemManage.APIEndpointItem>
 }
 
 export function fetchUpdateApiEndpointContextScope(id: string, contextScope: string) {
-  return request.put<Api.SystemManage.APIEndpointItem>({
-    url: `${API_ENDPOINT_BASE}/${id}/context-scope`,
-    data: { context_scope: contextScope }
-  })
-}
-
-export function fetchGetApiEndpointCategories() {
-  return request
-    .get<{ records: Api.SystemManage.APIEndpointCategoryItem[]; total: number }>({
-      url: `${API_ENDPOINT_BASE}/categories`
+  return unwrap(
+    v5Client.PUT('/api-endpoints/{id}/context-scope', {
+      params: { path: { id } },
+      body: { context_scope: contextScope } as any
     })
-    .then((res) => ({
-      records: (res?.records || []).map(normalizeApiEndpointCategory),
-      total: res?.total || 0
-    }))
+  ) as unknown as Promise<Api.SystemManage.APIEndpointItem>
 }
 
-export function fetchGetUnregisteredApiRouteList(params: {
+export async function fetchGetApiEndpointCategories() {
+  const res: any = await unwrap(
+    v5Client.GET('/api-endpoints/categories', { params: { query: {} as any } })
+  )
+  return {
+    records: (res?.records || []).map(normalizeApiEndpointCategory),
+    total: res?.total || 0
+  }
+}
+
+export async function fetchGetUnregisteredApiRouteList(params: {
   current?: number
   size?: number
   method?: string
@@ -144,68 +127,68 @@ export function fetchGetUnregisteredApiRouteList(params: {
   keyword?: string
   only_no_meta?: boolean
 }) {
-  return request
-    .get<Api.SystemManage.APIUnregisteredRouteList>({
-      url: `${API_ENDPOINT_BASE}/unregistered`,
+  const res: any = await unwrap(
+    v5Client.GET('/api-endpoints/unregistered', {
       params: {
-        current: params?.current,
-        size: params?.size,
-        method: params?.method,
-        path: params?.path,
-        keyword: params?.keyword,
-        only_no_meta: params?.only_no_meta
+        query: {
+          current: params?.current,
+          size: params?.size,
+          method: params?.method,
+          path: params?.path,
+          keyword: params?.keyword,
+          only_no_meta: params?.only_no_meta
+        } as any
       }
     })
-    .then((res) => ({
-      ...res,
-      records: (res?.records || []).map(normalizeUnregisteredApiRoute)
-    }))
+  )
+  return {
+    ...res,
+    records: (res?.records || []).map(normalizeUnregisteredApiRoute)
+  } as Api.SystemManage.APIUnregisteredRouteList
 }
 
-export function fetchGetUnregisteredApiScanConfig() {
-  return request
-    .get<Api.SystemManage.APIUnregisteredScanConfig>({
-      url: `${API_ENDPOINT_BASE}/unregistered/scan-config`
-    })
-    .then((res) => normalizeUnregisteredApiScanConfig(res))
+export async function fetchGetUnregisteredApiScanConfig() {
+  const res: any = await unwrap(
+    v5Client.GET('/api-endpoints/unregistered/scan-config', { params: { query: {} as any } })
+  )
+  return normalizeUnregisteredApiScanConfig(res)
 }
 
-export function fetchSaveUnregisteredApiScanConfig(
+export async function fetchSaveUnregisteredApiScanConfig(
   data: Partial<Api.SystemManage.APIUnregisteredScanConfig>
 ) {
-  return request
-    .put<Api.SystemManage.APIUnregisteredScanConfig>({
-      url: `${API_ENDPOINT_BASE}/unregistered/scan-config`,
-      data: {
+  const res: any = await unwrap(
+    v5Client.PUT('/api-endpoints/unregistered/scan-config', {
+      body: {
         enabled: data.enabled,
         frequency_minutes: data.frequencyMinutes,
         default_category_id: data.defaultCategoryId,
         default_permission_key: data.defaultPermissionKey,
         mark_as_no_permission: data.markAsNoPermission
-      }
+      } as any
     })
-    .then((res) => normalizeUnregisteredApiScanConfig(res))
+  )
+  return normalizeUnregisteredApiScanConfig(res)
 }
 
-export function fetchCreateApiEndpointCategory(
+export async function fetchCreateApiEndpointCategory(
   data: Partial<Api.SystemManage.APIEndpointCategoryItem>
 ) {
-  return request
-    .post<Api.SystemManage.APIEndpointCategoryItem>({
-      url: `${API_ENDPOINT_BASE}/categories`,
-      data
-    })
-    .then((res) => normalizeApiEndpointCategory(res))
+  const res: any = await unwrap(
+    v5Client.POST('/api-endpoints/categories', { body: data as any })
+  )
+  return normalizeApiEndpointCategory(res)
 }
 
-export function fetchUpdateApiEndpointCategory(
+export async function fetchUpdateApiEndpointCategory(
   id: string,
   data: Partial<Api.SystemManage.APIEndpointCategoryItem>
 ) {
-  return request
-    .put<Api.SystemManage.APIEndpointCategoryItem>({
-      url: `${API_ENDPOINT_BASE}/categories/${id}`,
-      data
+  const res: any = await unwrap(
+    v5Client.PUT('/api-endpoints/categories/{id}', {
+      params: { path: { id } },
+      body: data as any
     })
-    .then((res) => normalizeApiEndpointCategory(res))
+  )
+  return normalizeApiEndpointCategory(res)
 }

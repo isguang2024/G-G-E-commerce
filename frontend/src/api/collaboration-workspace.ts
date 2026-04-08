@@ -1,8 +1,5 @@
-import request from '@/utils/http'
+import { v5Client, unwrap } from '@/api/system-manage/_shared'
 
-const COLLABORATION_WORKSPACE_BASE = '/api/v1/collaboration-workspaces'
-const CURRENT_COLLABORATION_BASE = `${COLLABORATION_WORKSPACE_BASE}/current`
-const CURRENT_BOUNDARY_ROLE_BASE = `${CURRENT_COLLABORATION_BASE}/boundary/roles`
 function normalizePermissionKey(value?: string) {
   const target = `${value || ''}`.trim()
   if (target) {
@@ -194,28 +191,23 @@ function normalizeCollaborationWorkspaceMember(
 export async function fetchGetCollaborationWorkspaceList(
   params: Api.SystemManage.CollaborationWorkspaceSearchParams
 ) {
-  const res = await request.get<Api.SystemManage.CollaborationWorkspaceList>({
-    url: COLLABORATION_WORKSPACE_BASE,
-    params
-  })
-
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces', { params: { query: params as any } })
+  )
   return {
     ...res,
     records: (res?.records || []).map(normalizeCollaborationWorkspace)
-  }
+  } as Api.SystemManage.CollaborationWorkspaceList
 }
 
 export async function fetchGetCollaborationWorkspaceOptions(
   params?: Partial<Api.SystemManage.CollaborationWorkspaceSearchParams>
 ) {
-  const res = await request.get<{
-    records: Api.SystemManage.CollaborationWorkspaceListItem[]
-    total: number
-  }>({
-    url: `${COLLABORATION_WORKSPACE_BASE}/options`,
-    params
-  })
-
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/options', {
+      params: { query: (params || {}) as any }
+    })
+  )
   return {
     records: (res?.records || []).map(normalizeCollaborationWorkspace),
     total: res?.total || 0
@@ -223,166 +215,191 @@ export async function fetchGetCollaborationWorkspaceOptions(
 }
 
 export async function fetchGetCollaborationWorkspace(id: string) {
-  const res = await request.get<Api.SystemManage.CollaborationWorkspaceListItem>({
-    url: `${COLLABORATION_WORKSPACE_BASE}/${id}`
-  })
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/{id}', { params: { path: { id } } })
+  )
   return normalizeCollaborationWorkspace(res)
 }
 
 export function fetchCreateCollaborationWorkspace(
   data: Api.SystemManage.CollaborationWorkspaceCreateParams
 ) {
-  return request.post<{ id: string }>({
-    url: COLLABORATION_WORKSPACE_BASE,
-    data
-  })
+  return unwrap(
+    v5Client.POST('/collaboration-workspaces', { body: data as any })
+  ) as unknown as Promise<{ id: string }>
 }
 
-export function fetchUpdateCollaborationWorkspace(
+export async function fetchUpdateCollaborationWorkspace(
   id: string,
   data: Api.SystemManage.CollaborationWorkspaceUpdateParams
 ) {
-  return request.put<void>({
-    url: `${COLLABORATION_WORKSPACE_BASE}/${id}`,
-    data
+  const { error } = await v5Client.PUT('/collaboration-workspaces/{id}', {
+    params: { path: { id } },
+    body: data as any
   })
+  if (error) throw error
 }
 
-export function fetchDeleteCollaborationWorkspace(id: string) {
-  return request.del<void>({
-    url: `${COLLABORATION_WORKSPACE_BASE}/${id}`
+export async function fetchDeleteCollaborationWorkspace(id: string) {
+  const { error } = await v5Client.DELETE('/collaboration-workspaces/{id}', {
+    params: { path: { id } }
   })
+  if (error) throw error
 }
 
 export async function fetchGetCollaborationWorkspaceMembers(
   collaborationWorkspaceId: string,
   params?: { user_id?: string; user_name?: string; role_code?: string }
 ) {
-  const res = await request.get<any[]>({
-    url: `${COLLABORATION_WORKSPACE_BASE}/${collaborationWorkspaceId}/members`,
-    params
-  })
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/{id}/members', {
+      params: { path: { id: collaborationWorkspaceId }, query: (params || {}) as any }
+    })
+  )
   return (res || []).map(normalizeCollaborationWorkspaceMember)
 }
 
-export function fetchAddCollaborationWorkspaceMember(
+export async function fetchAddCollaborationWorkspaceMember(
   collaborationWorkspaceId: string,
   data: { user_id: string; role_code?: string }
 ) {
-  return request.post<void>({
-    url: `${COLLABORATION_WORKSPACE_BASE}/${collaborationWorkspaceId}/members`,
-    data: { user_id: data.user_id, role_code: data.role_code || 'collaboration_workspace_member' }
+  const { error } = await v5Client.POST('/collaboration-workspaces/{id}/members', {
+    params: { path: { id: collaborationWorkspaceId } },
+    body: {
+      user_id: data.user_id,
+      role_code: data.role_code || 'collaboration_workspace_member'
+    } as any
   })
+  if (error) throw error
 }
 
-export function fetchRemoveCollaborationWorkspaceMember(
+export async function fetchRemoveCollaborationWorkspaceMember(
   collaborationWorkspaceId: string,
   userId: string
 ) {
-  return request.del<void>({
-    url: `${COLLABORATION_WORKSPACE_BASE}/${collaborationWorkspaceId}/members/${userId}`
+  const { error } = await v5Client.DELETE('/collaboration-workspaces/{id}/members/{userId}', {
+    params: { path: { id: collaborationWorkspaceId, userId } }
   })
+  if (error) throw error
 }
 
-export function fetchUpdateCollaborationWorkspaceMemberRole(
+export async function fetchUpdateCollaborationWorkspaceMemberRole(
   collaborationWorkspaceId: string,
   userId: string,
   roleCode: string
 ) {
-  return request.put<void>({
-    url: `${COLLABORATION_WORKSPACE_BASE}/${collaborationWorkspaceId}/members/${userId}/role`,
-    data: { role_code: roleCode }
-  })
+  const { error } = await v5Client.PUT(
+    '/collaboration-workspaces/{id}/members/{userId}/role',
+    {
+      params: { path: { id: collaborationWorkspaceId, userId } },
+      body: { role_code: roleCode } as any
+    }
+  )
+  if (error) throw error
 }
 
 export async function fetchGetMyCollaborationWorkspace() {
-  const res = await request.get<Api.SystemManage.CollaborationWorkspaceListItem>({
-    url: CURRENT_COLLABORATION_BASE
-  })
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/current', { params: { query: {} as any } })
+  )
   return normalizeCollaborationWorkspace(res)
 }
 
 export async function fetchGetMyCollaborationWorkspaces() {
-  const res = await request.get<any[]>({
-    url: `${COLLABORATION_WORKSPACE_BASE}/mine`,
-    skipCollaborationWorkspaceHeader: true,
-    showErrorMessage: false
-  })
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/mine', { params: { query: {} as any } })
+  )
   return (res || []).map(normalizeCollaborationWorkspace)
 }
 
 export async function fetchGetMyCollaborationWorkspaceMembers() {
-  const res = await request.get<any[]>({
-    url: `${CURRENT_COLLABORATION_BASE}/members`
-  })
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/current/members', { params: { query: {} as any } })
+  )
   return (res || []).map(normalizeCollaborationWorkspaceMember)
 }
 
-export function fetchAddMyCollaborationWorkspaceMember(data: {
+export async function fetchAddMyCollaborationWorkspaceMember(data: {
   user_id: string
   role_code?: string
 }) {
-  return request.post<void>({
-    url: `${CURRENT_COLLABORATION_BASE}/members`,
-    data: { user_id: data.user_id, role_code: data.role_code || 'collaboration_workspace_member' }
+  const { error } = await v5Client.POST('/collaboration-workspaces/current/members', {
+    body: {
+      user_id: data.user_id,
+      role_code: data.role_code || 'collaboration_workspace_member'
+    } as any
   })
+  if (error) throw error
 }
 
-export function fetchRemoveMyCollaborationWorkspaceMember(userId: string) {
-  return request.del<void>({
-    url: `${CURRENT_COLLABORATION_BASE}/members/${userId}`
-  })
+export async function fetchRemoveMyCollaborationWorkspaceMember(userId: string) {
+  const { error } = await v5Client.DELETE(
+    '/collaboration-workspaces/current/members/{userId}',
+    { params: { path: { userId } } }
+  )
+  if (error) throw error
 }
 
-export function fetchUpdateMyCollaborationWorkspaceMemberRole(userId: string, roleCode: string) {
-  return request.put<void>({
-    url: `${CURRENT_COLLABORATION_BASE}/members/${userId}/role`,
-    data: { role_code: roleCode }
-  })
+export async function fetchUpdateMyCollaborationWorkspaceMemberRole(
+  userId: string,
+  roleCode: string
+) {
+  const { error } = await v5Client.PUT(
+    '/collaboration-workspaces/current/members/{userId}/role',
+    {
+      params: { path: { userId } },
+      body: { role_code: roleCode } as any
+    }
+  )
+  if (error) throw error
 }
 
-export function fetchGetMyCollaborationWorkspaceMemberRoles(userId: string) {
-  return request
-    .get<any>({
-      url: `${CURRENT_COLLABORATION_BASE}/members/${userId}/roles`
+export async function fetchGetMyCollaborationWorkspaceMemberRoles(userId: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/current/members/{userId}/roles', {
+      params: { path: { userId } }
     })
-    .then(
-      (res) =>
-        ({
-          role_ids: res?.role_ids || [],
-          roles: (res?.roles || []).map((item: any) => ({
-            id: item?.id || '',
-            code: item?.code || '',
-            name: item?.name || ''
-          })),
-          global_role_ids: res?.global_role_ids || [],
-          collaboration_workspace_role_ids: res?.collaboration_workspace_role_ids || [],
-          bindingWorkspaceId: res?.binding_workspace_id || res?.bindingWorkspaceId || '',
-          collaborationWorkspaceId:
-            res?.collaboration_workspace_id ||
-            res?.collaborationWorkspaceId ||
-            res?.binding_workspace_id ||
-            res?.bindingWorkspaceId ||
-            '',
-          bindingWorkspaceType:
-            res?.binding_workspace_type || res?.bindingWorkspaceType || 'collaboration',
-          memberType: res?.member_type || res?.memberType || ''
-        }) satisfies Api.SystemManage.CollaborationWorkspaceMemberRoleBindingResponse
-    )
+  )
+  return {
+    role_ids: res?.role_ids || [],
+    roles: (res?.roles || []).map((item: any) => ({
+      id: item?.id || '',
+      code: item?.code || '',
+      name: item?.name || ''
+    })),
+    global_role_ids: res?.global_role_ids || [],
+    collaboration_workspace_role_ids: res?.collaboration_workspace_role_ids || [],
+    bindingWorkspaceId: res?.binding_workspace_id || res?.bindingWorkspaceId || '',
+    collaborationWorkspaceId:
+      res?.collaboration_workspace_id ||
+      res?.collaborationWorkspaceId ||
+      res?.binding_workspace_id ||
+      res?.bindingWorkspaceId ||
+      '',
+    bindingWorkspaceType:
+      res?.binding_workspace_type || res?.bindingWorkspaceType || 'collaboration',
+    memberType: res?.member_type || res?.memberType || ''
+  } satisfies Api.SystemManage.CollaborationWorkspaceMemberRoleBindingResponse
 }
 
-export function fetchSetMyCollaborationWorkspaceMemberRoles(userId: string, roleIds: string[]) {
-  return request.put<void>({
-    url: `${CURRENT_COLLABORATION_BASE}/members/${userId}/roles`,
-    data: { role_ids: roleIds }
-  })
+export async function fetchSetMyCollaborationWorkspaceMemberRoles(
+  userId: string,
+  roleIds: string[]
+) {
+  const { error } = await v5Client.PUT(
+    '/collaboration-workspaces/current/members/{userId}/roles',
+    {
+      params: { path: { userId } },
+      body: { role_ids: roleIds } as any
+    }
+  )
+  if (error) throw error
 }
 
 export async function fetchGetMyCollaborationWorkspaceRoles() {
-  const res = await request.get<any[]>({
-    url: `${CURRENT_COLLABORATION_BASE}/roles`
-  })
-
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/current/roles', { params: { query: {} as any } })
+  )
   return (res || []).map((item: any) => ({
     roleId: item?.id || '',
     roleCode: item?.code || '',
@@ -398,10 +415,11 @@ export async function fetchGetMyCollaborationWorkspaceRoles() {
 }
 
 export async function fetchGetCollaborationWorkspaceRoles(collaborationWorkspaceId: string) {
-  const res = await request.get<any[]>({
-    url: `${COLLABORATION_WORKSPACE_BASE}/${collaborationWorkspaceId}/roles`
-  })
-
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/{id}/roles', {
+      params: { path: { id: collaborationWorkspaceId } }
+    })
+  )
   return (res || []).map((item: any) => ({
     roleId: item?.id || '',
     roleCode: item?.code || '',
@@ -417,12 +435,11 @@ export async function fetchGetCollaborationWorkspaceRoles(collaborationWorkspace
 }
 
 export async function fetchGetMyCollaborationWorkspaceBoundaryRoles(appKey?: string) {
-  const res = await request.get<any[]>({
-    url: CURRENT_BOUNDARY_ROLE_BASE,
-    params: {
-      ...(appKey ? { app_key: appKey } : {})
-    }
-  })
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/current/boundary/roles', {
+      params: { query: (appKey ? { app_key: appKey } : {}) as any }
+    })
+  )
   return (res || []).map((item: any) => ({
     roleId: item?.id || '',
     roleCode: item?.code || '',
@@ -438,156 +455,161 @@ export async function fetchGetMyCollaborationWorkspaceBoundaryRoles(appKey?: str
 }
 
 export function fetchCreateMyCollaborationWorkspaceRole(data: Api.SystemManage.RoleCreateParams) {
-  return request.post<{ roleId: string }>({
-    url: `${CURRENT_COLLABORATION_BASE}/roles`,
-    data
-  })
+  return unwrap(
+    v5Client.POST('/collaboration-workspaces/current/roles', { body: data as any })
+  ) as unknown as Promise<{ roleId: string }>
 }
 
-export function fetchUpdateMyCollaborationWorkspaceRole(
+export async function fetchUpdateMyCollaborationWorkspaceRole(
   roleId: string,
   data: Api.SystemManage.RoleUpdateParams
 ) {
-  return request.put<void>({
-    url: `${CURRENT_BOUNDARY_ROLE_BASE}/${roleId}`,
-    data
-  })
+  const { error } = await v5Client.PUT(
+    '/collaboration-workspaces/current/boundary/roles/{roleId}',
+    {
+      params: { path: { roleId } },
+      body: data as any
+    }
+  )
+  if (error) throw error
 }
 
-export function fetchDeleteMyCollaborationWorkspaceRole(roleId: string) {
-  return request.del<void>({
-    url: `${CURRENT_BOUNDARY_ROLE_BASE}/${roleId}`
-  })
+export async function fetchDeleteMyCollaborationWorkspaceRole(roleId: string) {
+  const { error } = await v5Client.DELETE(
+    '/collaboration-workspaces/current/boundary/roles/{roleId}',
+    { params: { path: { roleId } } }
+  )
+  if (error) throw error
 }
 
-export function fetchGetMyCollaborationWorkspaceBoundaryRoleMenus(roleId: string, appKey?: string) {
-  return request
-    .get<Api.SystemManage.RoleMenuBoundaryResponse>({
-      url: `${CURRENT_BOUNDARY_ROLE_BASE}/${roleId}/menus`,
-      params: {
-        ...(appKey ? { app_key: appKey } : {})
-      }
+export async function fetchGetMyCollaborationWorkspaceBoundaryRoleMenus(
+  roleId: string,
+  appKey?: string
+) {
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/current/boundary/roles/{roleId}/menus', {
+      params: { path: { roleId }, query: (appKey ? { app_key: appKey } : {}) as any }
     })
-    .then((res) => ({
-      menu_ids: res?.menu_ids || [],
-      available_menu_ids: res?.available_menu_ids || [],
-      hidden_menu_ids: res?.hidden_menu_ids || [],
-      expanded_package_ids: res?.expanded_package_ids || [],
-      derived_sources: (res?.derived_sources || []).map((item) => ({
-        menu_id: item?.menu_id || '',
-        package_ids: item?.package_ids || []
-      }))
+  )
+  return {
+    menu_ids: res?.menu_ids || [],
+    available_menu_ids: res?.available_menu_ids || [],
+    hidden_menu_ids: res?.hidden_menu_ids || [],
+    expanded_package_ids: res?.expanded_package_ids || [],
+    derived_sources: (res?.derived_sources || []).map((item: any) => ({
+      menu_id: item?.menu_id || '',
+      package_ids: item?.package_ids || []
     }))
+  }
 }
 
-export function fetchSetMyCollaborationWorkspaceBoundaryRoleMenus(
+export async function fetchSetMyCollaborationWorkspaceBoundaryRoleMenus(
   roleId: string,
   menuIds: string[],
   appKey?: string
 ) {
-  return request.put<void>({
-    url: `${CURRENT_BOUNDARY_ROLE_BASE}/${roleId}/menus`,
-    params: {
-      ...(appKey ? { app_key: appKey } : {})
-    },
-    data: { menu_ids: menuIds }
-  })
+  const { error } = await v5Client.PUT(
+    '/collaboration-workspaces/current/boundary/roles/{roleId}/menus',
+    {
+      params: { path: { roleId }, query: (appKey ? { app_key: appKey } : {}) as any },
+      body: { menu_ids: menuIds } as any
+    }
+  )
+  if (error) throw error
 }
 
-export function fetchGetMyCollaborationWorkspaceBoundaryRoleActions(
+export async function fetchGetMyCollaborationWorkspaceBoundaryRoleActions(
   roleId: string,
   appKey?: string
 ) {
-  return request
-    .get<Api.SystemManage.RoleActionBoundaryResponse>({
-      url: `${CURRENT_BOUNDARY_ROLE_BASE}/${roleId}/actions`,
-      params: {
-        ...(appKey ? { app_key: appKey } : {})
-      }
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/current/boundary/roles/{roleId}/actions', {
+      params: { path: { roleId }, query: (appKey ? { app_key: appKey } : {}) as any }
     })
-    .then((res) => ({
-      action_ids: res?.action_ids || [],
-      available_action_ids: res?.available_action_ids || [],
-      disabled_action_ids: res?.disabled_action_ids || [],
-      actions: (res?.actions || []).map(normalizeAction),
-      expanded_package_ids: res?.expanded_package_ids || [],
-      derived_sources: (res?.derived_sources || []).map((item) => ({
-        action_id: item?.action_id || '',
-        package_ids: item?.package_ids || []
-      }))
+  )
+  return {
+    action_ids: res?.action_ids || [],
+    available_action_ids: res?.available_action_ids || [],
+    disabled_action_ids: res?.disabled_action_ids || [],
+    actions: (res?.actions || []).map(normalizeAction),
+    expanded_package_ids: res?.expanded_package_ids || [],
+    derived_sources: (res?.derived_sources || []).map((item: any) => ({
+      action_id: item?.action_id || '',
+      package_ids: item?.package_ids || []
     }))
+  }
 }
 
-export function fetchSetMyCollaborationWorkspaceBoundaryRoleActions(
+export async function fetchSetMyCollaborationWorkspaceBoundaryRoleActions(
   roleId: string,
   actionIds: string[],
   appKey?: string
 ) {
-  return request.put<void>({
-    url: `${CURRENT_BOUNDARY_ROLE_BASE}/${roleId}/actions`,
-    params: {
-      ...(appKey ? { app_key: appKey } : {})
-    },
-    data: { action_ids: actionIds }
-  })
+  const { error } = await v5Client.PUT(
+    '/collaboration-workspaces/current/boundary/roles/{roleId}/actions',
+    {
+      params: { path: { roleId }, query: (appKey ? { app_key: appKey } : {}) as any },
+      body: { action_ids: actionIds } as any
+    }
+  )
+  if (error) throw error
 }
 
-export function fetchGetMyCollaborationWorkspaceBoundaryRolePackages(
+export async function fetchGetMyCollaborationWorkspaceBoundaryRolePackages(
   roleId: string,
   appKey?: string
 ) {
-  return request
-    .get<Api.SystemManage.RoleFeaturePackageResponse>({
-      url: `${CURRENT_BOUNDARY_ROLE_BASE}/${roleId}/packages`,
-      params: {
-        ...(appKey ? { app_key: appKey } : {})
-      }
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/current/boundary/roles/{roleId}/packages', {
+      params: { path: { roleId }, query: (appKey ? { app_key: appKey } : {}) as any }
     })
-    .then((res) => ({
-      package_ids: res?.package_ids || [],
-      packages: (res?.packages || []).map(normalizeFeaturePackage),
-      inherited: Boolean(res?.inherited)
-    }))
+  )
+  return {
+    package_ids: res?.package_ids || [],
+    packages: (res?.packages || []).map(normalizeFeaturePackage),
+    inherited: Boolean(res?.inherited)
+  }
 }
 
-export function fetchSetMyCollaborationWorkspaceBoundaryRolePackages(
+export async function fetchSetMyCollaborationWorkspaceBoundaryRolePackages(
   roleId: string,
   packageIds: string[],
   appKey?: string
 ) {
-  return request.put<void>({
-    url: `${CURRENT_BOUNDARY_ROLE_BASE}/${roleId}/packages`,
-    params: {
-      ...(appKey ? { app_key: appKey } : {})
-    },
-    data: { package_ids: packageIds }
-  })
+  const { error } = await v5Client.PUT(
+    '/collaboration-workspaces/current/boundary/roles/{roleId}/packages',
+    {
+      params: { path: { roleId }, query: (appKey ? { app_key: appKey } : {}) as any },
+      body: { package_ids: packageIds } as any
+    }
+  )
+  if (error) throw error
 }
 
-export function fetchGetMyCollaborationWorkspaceBoundaryPackages(appKey?: string) {
-  return request
-    .get<{ package_ids: string[]; packages: any[] }>({
-      url: `${CURRENT_COLLABORATION_BASE}/boundary/packages`,
-      params: {
-        ...(appKey ? { app_key: appKey } : {})
-      }
+export async function fetchGetMyCollaborationWorkspaceBoundaryPackages(appKey?: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/current/boundary/packages', {
+      params: { query: (appKey ? { app_key: appKey } : {}) as any }
     })
-    .then((res) => ({
-      package_ids: res?.package_ids || [],
-      packages: (res?.packages || []).map(normalizeFeaturePackage)
-    }))
+  )
+  return {
+    package_ids: res?.package_ids || [],
+    packages: (res?.packages || []).map(normalizeFeaturePackage)
+  }
 }
 
 export async function fetchGetCollaborationWorkspaceActions(
   collaborationWorkspaceId: string,
   appKey?: string
 ) {
-  const res = await request.get<{ action_ids: string[]; actions: any[] }>({
-    url: `${COLLABORATION_WORKSPACE_BASE}/${collaborationWorkspaceId}/actions`,
-    params: {
-      ...(appKey ? { app_key: appKey } : {})
-    }
-  })
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/{id}/actions', {
+      params: {
+        path: { id: collaborationWorkspaceId },
+        query: (appKey ? { app_key: appKey } : {}) as any
+      }
+    })
+  )
   return {
     action_ids: res?.action_ids || [],
     actions: (res?.actions || []).map(normalizeAction)
@@ -598,112 +620,113 @@ export async function fetchGetCollaborationWorkspaceMenus(
   collaborationWorkspaceId: string,
   appKey?: string
 ) {
-  const res = await request.get<{ menu_ids: string[] }>({
-    url: `${COLLABORATION_WORKSPACE_BASE}/${collaborationWorkspaceId}/menus`,
-    params: {
-      ...(appKey ? { app_key: appKey } : {})
-    }
-  })
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/{id}/menus', {
+      params: {
+        path: { id: collaborationWorkspaceId },
+        query: (appKey ? { app_key: appKey } : {}) as any
+      }
+    })
+  )
+  return { menu_ids: res?.menu_ids || [] }
+}
+
+export async function fetchGetCollaborationWorkspaceActionOrigins(
+  collaborationWorkspaceId: string,
+  appKey?: string
+) {
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/{id}/action-origins', {
+      params: {
+        path: { id: collaborationWorkspaceId },
+        query: (appKey ? { app_key: appKey } : {}) as any
+      }
+    })
+  )
   return {
-    menu_ids: res?.menu_ids || []
+    derived_action_ids: res?.derived_action_ids || [],
+    derived_sources: (res?.derived_sources || []).map((item: any) => ({
+      action_id: item?.action_id || '',
+      package_ids: item?.package_ids || []
+    })),
+    blocked_action_ids: res?.blocked_action_ids || []
   }
 }
 
-export function fetchGetCollaborationWorkspaceActionOrigins(
+export async function fetchGetCollaborationWorkspaceMenuOrigins(
   collaborationWorkspaceId: string,
   appKey?: string
 ) {
-  return request
-    .get<Api.SystemManage.CollaborationWorkspaceActionOriginsResponse>({
-      url: `${COLLABORATION_WORKSPACE_BASE}/${collaborationWorkspaceId}/action-origins`,
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/{id}/menu-origins', {
       params: {
-        ...(appKey ? { app_key: appKey } : {})
+        path: { id: collaborationWorkspaceId },
+        query: (appKey ? { app_key: appKey } : {}) as any
       }
     })
-    .then((res) => ({
-      derived_action_ids: res?.derived_action_ids || [],
-      derived_sources: (res?.derived_sources || []).map((item) => ({
-        action_id: item?.action_id || '',
-        package_ids: item?.package_ids || []
-      })),
-      blocked_action_ids: res?.blocked_action_ids || []
-    }))
+  )
+  return {
+    derived_menu_ids: res?.derived_menu_ids || [],
+    derived_sources: (res?.derived_sources || []).map((item: any) => ({
+      menu_id: item?.menu_id || '',
+      package_ids: item?.package_ids || []
+    })),
+    blocked_menu_ids: res?.blocked_menu_ids || []
+  }
 }
 
-export function fetchGetCollaborationWorkspaceMenuOrigins(
-  collaborationWorkspaceId: string,
-  appKey?: string
-) {
-  return request
-    .get<{
-      derived_menu_ids: string[]
-      derived_sources?: Array<{ menu_id: string; package_ids: string[] }>
-      blocked_menu_ids: string[]
-    }>({
-      url: `${COLLABORATION_WORKSPACE_BASE}/${collaborationWorkspaceId}/menu-origins`,
-      params: {
-        ...(appKey ? { app_key: appKey } : {})
-      }
-    })
-    .then((res) => ({
-      derived_menu_ids: res?.derived_menu_ids || [],
-      derived_sources: (res?.derived_sources || []).map((item) => ({
-        menu_id: item?.menu_id || '',
-        package_ids: item?.package_ids || []
-      })),
-      blocked_menu_ids: res?.blocked_menu_ids || []
-    }))
-}
-
-export function fetchSetCollaborationWorkspaceActions(
+export async function fetchSetCollaborationWorkspaceActions(
   collaborationWorkspaceId: string,
   actionIds: string[],
   appKey?: string
 ) {
-  return request.put<void>({
-    url: `${COLLABORATION_WORKSPACE_BASE}/${collaborationWorkspaceId}/actions`,
+  const { error } = await v5Client.PUT('/collaboration-workspaces/{id}/actions', {
     params: {
-      ...(appKey ? { app_key: appKey } : {})
+      path: { id: collaborationWorkspaceId },
+      query: (appKey ? { app_key: appKey } : {}) as any
     },
-    data: { action_ids: actionIds }
+    body: { action_ids: actionIds } as any
   })
+  if (error) throw error
 }
 
-export function fetchSetCollaborationWorkspaceMenus(
+export async function fetchSetCollaborationWorkspaceMenus(
   collaborationWorkspaceId: string,
   menuIds: string[],
   appKey?: string
 ) {
-  return request.put<void>({
-    url: `${COLLABORATION_WORKSPACE_BASE}/${collaborationWorkspaceId}/menus`,
+  const { error } = await v5Client.PUT('/collaboration-workspaces/{id}/menus', {
     params: {
-      ...(appKey ? { app_key: appKey } : {})
+      path: { id: collaborationWorkspaceId },
+      query: (appKey ? { app_key: appKey } : {}) as any
     },
-    data: { menu_ids: menuIds }
+    body: { menu_ids: menuIds } as any
   })
+  if (error) throw error
 }
 
 export async function fetchGetMyCollaborationWorkspaceActions() {
-  const res = await request.get<{ action_ids: string[]; actions: any[] }>({
-    url: `${CURRENT_COLLABORATION_BASE}/actions`
-  })
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/current/actions', { params: { query: {} as any } })
+  )
   return {
     action_ids: res?.action_ids || [],
     actions: (res?.actions || []).map(normalizeAction)
   }
 }
 
-export function fetchGetMyCollaborationWorkspaceActionOrigins() {
-  return request
-    .get<Api.SystemManage.CollaborationWorkspaceActionOriginsResponse>({
-      url: `${CURRENT_COLLABORATION_BASE}/action-origins`
+export async function fetchGetMyCollaborationWorkspaceActionOrigins() {
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/current/action-origins', {
+      params: { query: {} as any }
     })
-    .then((res) => ({
-      derived_action_ids: res?.derived_action_ids || [],
-      derived_sources: (res?.derived_sources || []).map((item) => ({
-        action_id: item?.action_id || '',
-        package_ids: item?.package_ids || []
-      })),
-      blocked_action_ids: res?.blocked_action_ids || []
-    }))
+  )
+  return {
+    derived_action_ids: res?.derived_action_ids || [],
+    derived_sources: (res?.derived_sources || []).map((item: any) => ({
+      action_id: item?.action_id || '',
+      package_ids: item?.package_ids || []
+    })),
+    blocked_action_ids: res?.blocked_action_ids || []
+  }
 }

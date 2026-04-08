@@ -164,7 +164,7 @@
         selectedIds.value = [...(selected?.action_ids || [])]
         candidateActionIds.value = [...(selected?.available_action_ids || [])]
         derivedSourceMap.value = Object.fromEntries(
-          (selected?.derived_sources || []).map((item) => [item.action_id, item.package_ids])
+          (selected?.derived_sources || []).map((item: any) => [item.action_id, item.package_ids])
         )
         featurePackages.value = packagesRes?.packages || []
         selectedDerivedPackageId.value = ''

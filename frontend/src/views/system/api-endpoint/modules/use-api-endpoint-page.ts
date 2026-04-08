@@ -1099,7 +1099,7 @@ export function useApiEndpointPage() {
     uncategorizedCount.value = res.uncategorizedCount || 0
     staleCount.value = res.staleCount || 0
     categoryCountMap.value = Object.fromEntries(
-      (res.categoryCounts || []).map((item) => [item.categoryId, item.count || 0])
+      (res.categoryCounts || []).map((item: any) => [item.categoryId, item.count || 0])
     )
   }
 

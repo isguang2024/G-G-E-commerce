@@ -21,7 +21,6 @@ type OpenAPIOperation struct {
 	Path          string `json:"path"`
 	PermissionKey string `json:"permission_key"`
 	Summary       string `json:"summary,omitempty"`
-	TenantScoped  bool   `json:"tenant_scoped"`
 	AppScope      string `json:"app_scope"`
 	AccessMode    string `json:"access_mode"`
 }

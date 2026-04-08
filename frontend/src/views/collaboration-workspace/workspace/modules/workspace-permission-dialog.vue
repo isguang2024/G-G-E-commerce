@@ -167,7 +167,7 @@
       candidateActionIds.value = [...(originsRes?.derived_action_ids || [])]
       blockedActionIds.value = [...(originsRes?.blocked_action_ids || [])]
       derivedSourceMap.value = Object.fromEntries(
-        (originsRes?.derived_sources || []).map((item) => [item.action_id, item.package_ids])
+        (originsRes?.derived_sources || []).map((item: any) => [item.action_id, item.package_ids])
       )
       selectedDerivedPackageId.value = ''
     } catch (error: any) {

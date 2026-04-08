@@ -1,204 +1,169 @@
-import request from '@/utils/http'
-
-const MESSAGE_INBOX_BASE = '/api/v1/messages/inbox'
-const MESSAGE_DISPATCH_BASE = '/api/v1/messages/dispatch'
-const MESSAGE_TEMPLATE_BASE = '/api/v1/messages/templates'
-const MESSAGE_SENDER_BASE = '/api/v1/messages/senders'
-const MESSAGE_RECIPIENT_GROUP_BASE = '/api/v1/messages/recipient-groups'
-const MESSAGE_RECORD_BASE = '/api/v1/messages/records'
+import { v5Client, unwrap } from '@/api/system-manage/_shared'
 
 interface MessageRequestOptions {
   skipAuthWorkspaceHeader?: boolean
   skipCollaborationWorkspaceHeader?: boolean
 }
 
+// Note: skipAuthWorkspaceHeader/skipCollaborationWorkspaceHeader are legacy flags
+// that were used to suppress header injection for specific calls. With v5Client
+// the header middleware always injects based on store state; per-call escapes
+// are no longer supported. The options arg is kept for signature compatibility
+// but currently ignored.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _unused(_: MessageRequestOptions | undefined) {}
+
 export function fetchGetInboxSummary() {
-  return request.get<Api.Message.InboxSummary>({
-    url: `${MESSAGE_INBOX_BASE}/summary`
-  })
+  return unwrap(v5Client.GET('/messages/inbox/summary', { params: { query: {} as any } })) as unknown as Promise<Api.Message.InboxSummary>
 }
 
 export function fetchGetInboxList(params: Api.Message.InboxQuery) {
-  return request.get<Api.Message.InboxListResponse>({
-    url: MESSAGE_INBOX_BASE,
-    params
-  })
+  return unwrap(
+    v5Client.GET('/messages/inbox', { params: { query: params as any } })
+  ) as unknown as Promise<Api.Message.InboxListResponse>
 }
 
 export function fetchGetInboxDetail(deliveryId: string) {
-  return request.get<Api.Message.InboxDetail>({
-    url: `${MESSAGE_INBOX_BASE}/${deliveryId}`
-  })
+  return unwrap(
+    v5Client.GET('/messages/inbox/{deliveryId}', { params: { path: { deliveryId } } })
+  ) as unknown as Promise<Api.Message.InboxDetail>
 }
 
-export function fetchMarkInboxRead(deliveryId: string) {
-  return request.post<void>({
-    url: `${MESSAGE_INBOX_BASE}/${deliveryId}/read`
+export async function fetchMarkInboxRead(deliveryId: string) {
+  const { error } = await v5Client.POST('/messages/inbox/{deliveryId}/read', {
+    params: { path: { deliveryId } }
   })
+  if (error) throw error
 }
 
-export function fetchMarkInboxReadAll(boxType?: Api.Message.BoxType | '') {
-  return request.post<void>({
-    url: `${MESSAGE_INBOX_BASE}/read-all`,
-    params: {
-      box_type: boxType || undefined
-    }
+export async function fetchMarkInboxReadAll(boxType?: Api.Message.BoxType | '') {
+  const { error } = await v5Client.POST('/messages/inbox/read-all', {
+    params: { query: { box_type: boxType || undefined } as any }
   })
+  if (error) throw error
 }
 
-export function fetchHandleInboxTodo(deliveryId: string, params: Api.Message.TodoActionParams) {
-  return request.post<void>({
-    url: `${MESSAGE_INBOX_BASE}/${deliveryId}/todo-action`,
-    data: params
+export async function fetchHandleInboxTodo(deliveryId: string, params: Api.Message.TodoActionParams) {
+  const { error } = await v5Client.POST('/messages/inbox/{deliveryId}/todo-action', {
+    params: { path: { deliveryId } },
+    body: params as any
   })
+  if (error) throw error
 }
 
-export function fetchGetMessageDispatchOptions(options?: MessageRequestOptions) {
-  return request.get<Api.Message.DispatchOptions>({
-    url: `${MESSAGE_DISPATCH_BASE}/options`,
-    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
-    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader
-  })
+export function fetchGetMessageDispatchOptions(_options?: MessageRequestOptions) {
+  return unwrap(
+    v5Client.GET('/messages/dispatch/options', { params: { query: {} as any } })
+  ) as unknown as Promise<Api.Message.DispatchOptions>
 }
 
 export function fetchDispatchMessage(
   params: Api.Message.DispatchParams,
-  options?: MessageRequestOptions
+  _options?: MessageRequestOptions
 ) {
-  return request.post<Api.Message.DispatchResult>({
-    url: MESSAGE_DISPATCH_BASE,
-    data: params,
-    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
-    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader,
-    showSuccessMessage: true
-  })
+  return unwrap(
+    v5Client.POST('/messages/dispatch', { body: params as any })
+  ) as unknown as Promise<Api.Message.DispatchResult>
 }
 
 export function fetchGetMessageTemplateList(
   params: Api.Message.MessageTemplateQuery,
-  options?: MessageRequestOptions
+  _options?: MessageRequestOptions
 ) {
-  return request.get<Api.Message.MessageTemplateListResponse>({
-    url: MESSAGE_TEMPLATE_BASE,
-    params,
-    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
-    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader
-  })
+  return unwrap(
+    v5Client.GET('/messages/templates', { params: { query: params as any } })
+  ) as unknown as Promise<Api.Message.MessageTemplateListResponse>
 }
 
 export function fetchCreateMessageTemplate(
   params: Api.Message.MessageTemplateSaveParams,
-  options?: MessageRequestOptions
+  _options?: MessageRequestOptions
 ) {
-  return request.post<Api.Message.MessageTemplateItem>({
-    url: MESSAGE_TEMPLATE_BASE,
-    data: params,
-    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
-    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader,
-    showSuccessMessage: true
-  })
+  return unwrap(
+    v5Client.POST('/messages/templates', { body: params as any })
+  ) as unknown as Promise<Api.Message.MessageTemplateItem>
 }
 
 export function fetchUpdateMessageTemplate(
   templateId: string,
   params: Api.Message.MessageTemplateSaveParams,
-  options?: MessageRequestOptions
+  _options?: MessageRequestOptions
 ) {
-  return request.put<Api.Message.MessageTemplateItem>({
-    url: `${MESSAGE_TEMPLATE_BASE}/${templateId}`,
-    data: params,
-    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
-    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader,
-    showSuccessMessage: true
-  })
+  return unwrap(
+    v5Client.PUT('/messages/templates/{templateId}', {
+      params: { path: { templateId } },
+      body: params as any
+    })
+  ) as unknown as Promise<Api.Message.MessageTemplateItem>
 }
 
 export function fetchGetDispatchRecordList(
   params: Api.Message.DispatchRecordQuery,
-  options?: MessageRequestOptions
+  _options?: MessageRequestOptions
 ) {
-  return request.get<Api.Message.DispatchRecordListResponse>({
-    url: MESSAGE_RECORD_BASE,
-    params,
-    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
-    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader
-  })
+  return unwrap(
+    v5Client.GET('/messages/records', { params: { query: params as any } })
+  ) as unknown as Promise<Api.Message.DispatchRecordListResponse>
 }
 
-export function fetchGetDispatchRecordDetail(recordId: string, options?: MessageRequestOptions) {
-  return request.get<Api.Message.DispatchRecordDetail>({
-    url: `${MESSAGE_RECORD_BASE}/${recordId}`,
-    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
-    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader
-  })
+export function fetchGetDispatchRecordDetail(recordId: string, _options?: MessageRequestOptions) {
+  return unwrap(
+    v5Client.GET('/messages/records/{recordId}', { params: { path: { recordId } } })
+  ) as unknown as Promise<Api.Message.DispatchRecordDetail>
 }
 
-export function fetchGetMessageSenderList(options?: MessageRequestOptions) {
-  return request.get<Api.Message.MessageSenderListResponse>({
-    url: MESSAGE_SENDER_BASE,
-    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
-    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader
-  })
+export function fetchGetMessageSenderList(_options?: MessageRequestOptions) {
+  return unwrap(
+    v5Client.GET('/messages/senders', { params: { query: {} as any } })
+  ) as unknown as Promise<Api.Message.MessageSenderListResponse>
 }
 
 export function fetchCreateMessageSender(
   params: Api.Message.MessageSenderSaveParams,
-  options?: MessageRequestOptions
+  _options?: MessageRequestOptions
 ) {
-  return request.post<Api.Message.MessageSenderItem>({
-    url: MESSAGE_SENDER_BASE,
-    data: params,
-    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
-    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader,
-    showSuccessMessage: true
-  })
+  return unwrap(
+    v5Client.POST('/messages/senders', { body: params as any })
+  ) as unknown as Promise<Api.Message.MessageSenderItem>
 }
 
 export function fetchUpdateMessageSender(
   senderId: string,
   params: Api.Message.MessageSenderSaveParams,
-  options?: MessageRequestOptions
+  _options?: MessageRequestOptions
 ) {
-  return request.put<Api.Message.MessageSenderItem>({
-    url: `${MESSAGE_SENDER_BASE}/${senderId}`,
-    data: params,
-    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
-    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader,
-    showSuccessMessage: true
-  })
+  return unwrap(
+    v5Client.PUT('/messages/senders/{senderId}', {
+      params: { path: { senderId } },
+      body: params as any
+    })
+  ) as unknown as Promise<Api.Message.MessageSenderItem>
 }
 
-export function fetchGetMessageRecipientGroupList(options?: MessageRequestOptions) {
-  return request.get<Api.Message.MessageRecipientGroupListResponse>({
-    url: MESSAGE_RECIPIENT_GROUP_BASE,
-    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
-    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader
-  })
+export function fetchGetMessageRecipientGroupList(_options?: MessageRequestOptions) {
+  return unwrap(
+    v5Client.GET('/messages/recipient-groups', { params: { query: {} as any } })
+  ) as unknown as Promise<Api.Message.MessageRecipientGroupListResponse>
 }
 
 export function fetchCreateMessageRecipientGroup(
   params: Api.Message.MessageRecipientGroupSaveParams,
-  options?: MessageRequestOptions
+  _options?: MessageRequestOptions
 ) {
-  return request.post<Api.Message.MessageRecipientGroupItem>({
-    url: MESSAGE_RECIPIENT_GROUP_BASE,
-    data: params,
-    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
-    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader,
-    showSuccessMessage: true
-  })
+  return unwrap(
+    v5Client.POST('/messages/recipient-groups', { body: params as any })
+  ) as unknown as Promise<Api.Message.MessageRecipientGroupItem>
 }
 
 export function fetchUpdateMessageRecipientGroup(
   groupId: string,
   params: Api.Message.MessageRecipientGroupSaveParams,
-  options?: MessageRequestOptions
+  _options?: MessageRequestOptions
 ) {
-  return request.put<Api.Message.MessageRecipientGroupItem>({
-    url: `${MESSAGE_RECIPIENT_GROUP_BASE}/${groupId}`,
-    data: params,
-    skipAuthWorkspaceHeader: options?.skipAuthWorkspaceHeader,
-    skipCollaborationWorkspaceHeader: options?.skipCollaborationWorkspaceHeader,
-    showSuccessMessage: true
-  })
+  return unwrap(
+    v5Client.PUT('/messages/recipient-groups/{groupId}', {
+      params: { path: { groupId } },
+      body: params as any
+    })
+  ) as unknown as Promise<Api.Message.MessageRecipientGroupItem>
 }

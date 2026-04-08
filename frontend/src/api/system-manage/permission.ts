@@ -1,8 +1,7 @@
+// Phase 4: permission/feature-package 域迁移至 v5Client + openapi-fetch。
 import {
-  request,
-  ACTION_PERMISSION_BASE,
-  FEATURE_PACKAGE_BASE,
-  COLLABORATION_WORKSPACE_BASE,
+  v5Client,
+  unwrap,
   normalizePermissionAction,
   normalizePermissionAuditSummary,
   normalizeApiEndpoint,
@@ -16,10 +15,10 @@ import {
 } from './_shared'
 
 /** 获取功能权限列表 */
-export function fetchGetPermissionActionList(
+export async function fetchGetPermissionActionList(
   params: Api.SystemManage.PermissionActionSearchParams
 ) {
-  const normalizedParams = {
+  const query: Record<string, any> = {
     ...params,
     permission_key: params?.permissionKey,
     module_code: params?.moduleCode,
@@ -29,382 +28,374 @@ export function fetchGetPermissionActionList(
     feature_kind: params?.featureKind,
     is_builtin: params?.isBuiltin,
     usage_pattern: params?.usagePattern,
-    duplicate_pattern: params?.duplicatePattern,
-    permissionKey: undefined,
-    moduleCode: undefined,
-    moduleGroupId: undefined,
-    featureGroupId: undefined,
-    contextType: undefined,
-    featureKind: undefined,
-    isBuiltin: undefined,
-    usagePattern: undefined,
-    duplicatePattern: undefined
+    duplicate_pattern: params?.duplicatePattern
   }
-  return request
-    .get<Api.SystemManage.PermissionActionList>({
-      url: ACTION_PERMISSION_BASE,
-      params: normalizedParams
-    })
-    .then((res) => ({
-      ...res,
-      records: (res?.records || []).map(normalizePermissionAction),
-      auditSummary: normalizePermissionAuditSummary(
-        (res as any)?.audit_summary || res?.auditSummary || {}
-      )
-    }))
+  delete query.permissionKey
+  delete query.moduleCode
+  delete query.moduleGroupId
+  delete query.featureGroupId
+  delete query.contextType
+  delete query.featureKind
+  delete query.isBuiltin
+  delete query.usagePattern
+  delete query.duplicatePattern
+  const res: any = await unwrap(
+    v5Client.GET('/permission-actions', { params: { query } as any })
+  )
+  return {
+    ...res,
+    records: (res?.records || []).map(normalizePermissionAction),
+    auditSummary: normalizePermissionAuditSummary(
+      res?.audit_summary || res?.auditSummary || {}
+    )
+  } as Api.SystemManage.PermissionActionList
 }
 
-export function fetchGetPermissionActionOptions(
+export async function fetchGetPermissionActionOptions(
   params?: Api.SystemManage.PermissionActionSearchParams
 ) {
-  const normalizedParams = {
-    ...params,
+  const query: Record<string, any> = {
+    ...(params || {}),
     permission_key: params?.permissionKey,
     module_code: params?.moduleCode,
     module_group_id: params?.moduleGroupId,
     feature_group_id: params?.featureGroupId,
     context_type: params?.contextType,
     feature_kind: params?.featureKind,
-    is_builtin: params?.isBuiltin,
-    permissionKey: undefined,
-    moduleCode: undefined,
-    moduleGroupId: undefined,
-    featureGroupId: undefined,
-    contextType: undefined,
-    featureKind: undefined,
-    isBuiltin: undefined
+    is_builtin: params?.isBuiltin
   }
-  return request
-    .get<{ records: Api.SystemManage.PermissionActionItem[]; total: number }>({
-      url: `${ACTION_PERMISSION_BASE}/options`,
-      params: normalizedParams
-    })
-    .then((res) => ({
-      records: (res?.records || []).map(normalizePermissionAction),
-      total: res?.total || 0
-    }))
+  delete query.permissionKey
+  delete query.moduleCode
+  delete query.moduleGroupId
+  delete query.featureGroupId
+  delete query.contextType
+  delete query.featureKind
+  delete query.isBuiltin
+  const res: any = await unwrap(
+    v5Client.GET('/permission-actions/options', { params: { query } as any })
+  )
+  return {
+    records: (res?.records || []).map(normalizePermissionAction),
+    total: res?.total || 0
+  }
 }
 
 /** 获取功能权限详情 */
-export function fetchGetPermissionAction(id: string) {
-  return request
-    .get<Api.SystemManage.PermissionActionItem>({
-      url: `${ACTION_PERMISSION_BASE}/${id}`
-    })
-    .then((res) => normalizePermissionAction(res))
+export async function fetchGetPermissionAction(id: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/permission-actions/{id}', { params: { path: { id } } })
+  )
+  return normalizePermissionAction(res)
 }
 
 /** 获取功能权限关联接口 */
-export function fetchGetPermissionActionEndpoints(id: string) {
-  return request
-    .get<Api.SystemManage.PermissionActionEndpointResponse>({
-      url: `${ACTION_PERMISSION_BASE}/${id}/endpoints`
-    })
-    .then((res) => ({
-      records: (res?.records || []).map(normalizeApiEndpoint),
-      total: res?.total || 0
-    }))
+export async function fetchGetPermissionActionEndpoints(id: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/permission-actions/{id}/endpoints', { params: { path: { id } } })
+  )
+  return {
+    records: (res?.records || []).map(normalizeApiEndpoint),
+    total: res?.total || 0
+  }
 }
 
 /** 获取功能权限消费明细（API/页面/功能包/角色） */
-export function fetchGetPermissionActionConsumers(id: string) {
-  return request
-    .get<Api.SystemManage.PermissionActionConsumerDetails>({
-      url: `${ACTION_PERMISSION_BASE}/${id}/consumers`
-    })
-    .then((res) => normalizePermissionActionConsumers(res))
+export async function fetchGetPermissionActionConsumers(id: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/permission-actions/{id}/consumers', { params: { path: { id } } })
+  )
+  return normalizePermissionActionConsumers(res)
 }
 
 /** 新增功能权限关联接口 */
-export function fetchAddPermissionActionEndpoint(id: string, endpointCode: string) {
-  return request.post<void>({
-    url: `${ACTION_PERMISSION_BASE}/${id}/endpoints`,
-    data: { endpoint_code: endpointCode }
+export async function fetchAddPermissionActionEndpoint(id: string, endpointCode: string) {
+  const { error } = await v5Client.POST('/permission-actions/{id}/endpoints', {
+    params: { path: { id } },
+    body: { endpoint_code: endpointCode } as any
   })
+  if (error) throw error
 }
 
 /** 删除功能权限关联接口 */
-export function fetchDeletePermissionActionEndpoint(id: string, endpointCode: string) {
-  return request.del<void>({
-    url: `${ACTION_PERMISSION_BASE}/${id}/endpoints/${endpointCode}`
+export async function fetchDeletePermissionActionEndpoint(id: string, endpointCode: string) {
+  const { error } = await v5Client.DELETE('/permission-actions/{id}/endpoints/{endpointCode}', {
+    params: { path: { id, endpointCode } }
   })
+  if (error) throw error
 }
 
-export function fetchCleanupUnusedPermissionActions() {
-  return request
-    .post<
-      Api.SystemManage.PermissionActionCleanupResult & {
-        deleted_count?: number
-        deleted_keys?: string[]
-      }
-    >({
-      url: `${ACTION_PERMISSION_BASE}/cleanup-unused`
-    })
-    .then((res) => ({
-      deletedCount: Number(res?.deletedCount ?? res?.deleted_count ?? 0),
-      deletedKeys: Array.isArray(res?.deletedKeys || res?.deleted_keys || [])
-        ? (res?.deletedKeys || res?.deleted_keys || [])
-            .map((value: any) => `${value || ''}`.trim())
-            .filter(Boolean)
-        : []
-    }))
+export async function fetchCleanupUnusedPermissionActions() {
+  const res: any = await unwrap(
+    v5Client.POST('/permission-actions/cleanup-unused', {} as any)
+  )
+  return {
+    deletedCount: Number(res?.deletedCount ?? res?.deleted_count ?? 0),
+    deletedKeys: Array.isArray(res?.deletedKeys || res?.deleted_keys || [])
+      ? (res?.deletedKeys || res?.deleted_keys || [])
+          .map((value: any) => `${value || ''}`.trim())
+          .filter(Boolean)
+      : []
+  }
 }
 
 /** 创建功能权限 */
-export function fetchCreatePermissionAction(data: Api.SystemManage.PermissionActionCreateParams) {
-  return request.post<{ id: string }>({
-    url: ACTION_PERMISSION_BASE,
-    data
-  })
+export async function fetchCreatePermissionAction(
+  data: Api.SystemManage.PermissionActionCreateParams
+) {
+  const res: any = await unwrap(
+    v5Client.POST('/permission-actions', { body: data as any })
+  )
+  return res as { id: string }
 }
 
 /** 更新功能权限 */
-export function fetchUpdatePermissionAction(
+export async function fetchUpdatePermissionAction(
   id: string,
   data: Api.SystemManage.PermissionActionUpdateParams
 ) {
-  return request.put<void>({
-    url: `${ACTION_PERMISSION_BASE}/${id}`,
-    data
+  const { error } = await v5Client.PUT('/permission-actions/{id}', {
+    params: { path: { id } },
+    body: data as any
   })
+  if (error) throw error
 }
 
 /** 删除功能权限 */
-export function fetchDeletePermissionAction(id: string) {
-  return request.del<void>({
-    url: `${ACTION_PERMISSION_BASE}/${id}`
+export async function fetchDeletePermissionAction(id: string) {
+  const { error } = await v5Client.DELETE('/permission-actions/{id}', {
+    params: { path: { id } }
   })
+  if (error) throw error
 }
 
-export function fetchGetPermissionActionImpactPreview(id: string) {
-  return request
-    .get<Api.SystemManage.PermissionImpactPreview>({
-      url: `${ACTION_PERMISSION_BASE}/${id}/impact-preview`
-    })
-    .then((res: any) => ({
-      permissionKey: res?.permissionKey || res?.permission_key || '',
-      apiCount: Number(res?.apiCount ?? res?.api_count ?? 0),
-      pageCount: Number(res?.pageCount ?? res?.page_count ?? 0),
-      packageCount: Number(res?.packageCount ?? res?.package_count ?? 0),
-      roleCount: Number(res?.roleCount ?? res?.role_count ?? 0),
-      collaborationWorkspaceCount: Number(res?.collaborationWorkspaceCount ?? 0),
-      userCount: Number(res?.userCount ?? res?.user_count ?? 0)
-    }))
+export async function fetchGetPermissionActionImpactPreview(id: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/permission-actions/{id}/impact-preview', { params: { path: { id } } })
+  )
+  return {
+    permissionKey: res?.permissionKey || res?.permission_key || '',
+    apiCount: Number(res?.apiCount ?? res?.api_count ?? 0),
+    pageCount: Number(res?.pageCount ?? res?.page_count ?? 0),
+    packageCount: Number(res?.packageCount ?? res?.package_count ?? 0),
+    roleCount: Number(res?.roleCount ?? res?.role_count ?? 0),
+    collaborationWorkspaceCount: Number(res?.collaborationWorkspaceCount ?? 0),
+    userCount: Number(res?.userCount ?? res?.user_count ?? 0)
+  }
 }
 
-export function fetchBatchUpdatePermissionActions(
+export async function fetchBatchUpdatePermissionActions(
   data: Api.SystemManage.PermissionBatchUpdateParams
 ) {
-  return request
-    .post<Api.SystemManage.PermissionBatchUpdateResult>({
-      url: `${ACTION_PERMISSION_BASE}/batch`,
-      data: {
+  const res: any = await unwrap(
+    v5Client.POST('/permission-actions/batch', {
+      body: {
         ids: data.ids,
         status: data.status,
         module_group_id: data.moduleGroupId,
         feature_group_id: data.featureGroupId,
         template_name: data.templateName
-      }
+      } as any
     })
-    .then((res: any) => ({
-      updatedCount: Number(res?.updatedCount ?? res?.updated_count ?? 0),
-      skippedIds: Array.isArray(res?.skippedIds || res?.skipped_ids)
-        ? res?.skippedIds || res?.skipped_ids
-        : []
-    }))
+  )
+  return {
+    updatedCount: Number(res?.updatedCount ?? res?.updated_count ?? 0),
+    skippedIds: Array.isArray(res?.skippedIds || res?.skipped_ids)
+      ? res?.skippedIds || res?.skipped_ids
+      : []
+  }
 }
 
-export function fetchSavePermissionBatchTemplate(
+export async function fetchSavePermissionBatchTemplate(
   data: Partial<Api.SystemManage.PermissionBatchTemplateItem>
 ) {
-  return request
-    .post<Api.SystemManage.PermissionBatchTemplateItem>({
-      url: `${ACTION_PERMISSION_BASE}/templates`,
-      data: {
+  const res: any = await unwrap(
+    v5Client.POST('/permission-actions/templates', {
+      body: {
         name: data.name,
         description: data.description,
         payload: data.payload
-      }
+      } as any
     })
-    .then((res: any) => ({
-      id: res?.id || '',
-      name: res?.name || '',
-      description: res?.description || '',
-      payload: res?.payload || {},
-      createdBy: res?.created_by || res?.createdBy || '',
-      createdAt: res?.created_at || res?.createdAt || '',
-      updatedAt: res?.updated_at || res?.updatedAt || ''
-    }))
+  )
+  return {
+    id: res?.id || '',
+    name: res?.name || '',
+    description: res?.description || '',
+    payload: res?.payload || {},
+    createdBy: res?.created_by || res?.createdBy || '',
+    createdAt: res?.created_at || res?.createdAt || '',
+    updatedAt: res?.updated_at || res?.updatedAt || ''
+  }
 }
 
-export function fetchGetPermissionBatchTemplates() {
-  return request
-    .get<{ records: Api.SystemManage.PermissionBatchTemplateItem[]; total: number }>({
-      url: `${ACTION_PERMISSION_BASE}/templates`
-    })
-    .then((res: any) => ({
-      records: (res?.records || []).map((item: any) => ({
-        id: item?.id || '',
-        name: item?.name || '',
-        description: item?.description || '',
-        payload: item?.payload || {},
-        createdBy: item?.created_by || item?.createdBy || '',
-        createdAt: item?.created_at || item?.createdAt || '',
-        updatedAt: item?.updated_at || item?.updatedAt || ''
-      })),
-      total: Number(res?.total || 0)
-    }))
+export async function fetchGetPermissionBatchTemplates() {
+  const res: any = await unwrap(
+    v5Client.GET('/permission-actions/templates', { params: { query: {} as any } })
+  )
+  return {
+    records: (res?.records || []).map((item: any) => ({
+      id: item?.id || '',
+      name: item?.name || '',
+      description: item?.description || '',
+      payload: item?.payload || {},
+      createdBy: item?.created_by || item?.createdBy || '',
+      createdAt: item?.created_at || item?.createdAt || '',
+      updatedAt: item?.updated_at || item?.updatedAt || ''
+    })),
+    total: Number(res?.total || 0)
+  }
 }
 
-export function fetchGetPermissionRiskAudits(params?: {
+export async function fetchGetPermissionRiskAudits(params?: {
   current?: number
   size?: number
   objectId?: string
 }) {
-  return request
-    .get<{ records: Api.SystemManage.RiskAuditItem[]; total: number }>({
-      url: `${ACTION_PERMISSION_BASE}/risk-audits`,
-      params: {
-        current: params?.current,
-        size: params?.size,
-        object_id: params?.objectId
-      }
-    })
-    .then((res: any) => ({
-      records: (res?.records || []).map(normalizeRiskAudit),
-      total: Number(res?.total || 0)
-    }))
-}
-
-export function fetchGetPermissionGroupList(params: Api.SystemManage.PermissionGroupSearchParams) {
-  const normalizedParams = {
-    ...params,
-    group_type: params?.groupType,
-    groupType: undefined
+  const query: Record<string, any> = {
+    current: params?.current,
+    size: params?.size,
+    object_id: params?.objectId
   }
-  return request
-    .get<Api.SystemManage.PermissionGroupList>({
-      url: `${ACTION_PERMISSION_BASE}/groups`,
-      params: normalizedParams
-    })
-    .then((res) => ({
-      ...res,
-      records: (res?.records || [])
-        .map((item: any) => normalizePermissionGroup(item))
-        .filter((item): item is Api.SystemManage.PermissionGroupItem => Boolean(item))
-    }))
+  const res: any = await unwrap(
+    v5Client.GET('/permission-actions/risk-audits', { params: { query } as any })
+  )
+  return {
+    records: (res?.records || []).map(normalizeRiskAudit),
+    total: Number(res?.total || 0)
+  }
 }
 
-export function fetchCreatePermissionGroup(data: Api.SystemManage.PermissionGroupSaveParams) {
-  return request.post<{ id: string }>({
-    url: `${ACTION_PERMISSION_BASE}/groups`,
-    data
-  })
+export async function fetchGetPermissionGroupList(
+  params: Api.SystemManage.PermissionGroupSearchParams
+) {
+  const query: Record<string, any> = {
+    ...params,
+    group_type: params?.groupType
+  }
+  delete query.groupType
+  const res: any = await unwrap(
+    v5Client.GET('/permission-actions/groups', { params: { query } as any })
+  )
+  return {
+    ...res,
+    records: (res?.records || [])
+      .map((item: any) => normalizePermissionGroup(item))
+      .filter((item: any): item is Api.SystemManage.PermissionGroupItem => Boolean(item))
+  } as Api.SystemManage.PermissionGroupList
 }
 
-export function fetchUpdatePermissionGroup(
+export async function fetchCreatePermissionGroup(
+  data: Api.SystemManage.PermissionGroupSaveParams
+) {
+  const res: any = await unwrap(
+    v5Client.POST('/permission-actions/groups', { body: data as any })
+  )
+  return res as { id: string }
+}
+
+export async function fetchUpdatePermissionGroup(
   id: string,
   data: Api.SystemManage.PermissionGroupSaveParams
 ) {
-  return request.put<void>({
-    url: `${ACTION_PERMISSION_BASE}/groups/${id}`,
-    data
+  const { error } = await v5Client.PUT('/permission-actions/groups/{id}', {
+    params: { path: { id } },
+    body: data as any
   })
+  if (error) throw error
 }
 
-export function fetchDeletePermissionGroup(id: string) {
-  return request.del<void>({
-    url: `${ACTION_PERMISSION_BASE}/groups/${id}`
+export async function fetchDeletePermissionGroup(id: string) {
+  // TODO(v5): DELETE /permission-actions/groups/{id} 未在 openapi.yaml 暴露，临时走 legacy
+  const { error } = await (v5Client as any).DELETE('/permission-actions/groups/{id}', {
+    params: { path: { id } }
   })
+  if (error) throw error
 }
 
 /** 获取功能包列表 */
-export function fetchGetFeaturePackageList(params: Api.SystemManage.FeaturePackageSearchParams) {
-  const normalizedParams = {
+export async function fetchGetFeaturePackageList(
+  params: Api.SystemManage.FeaturePackageSearchParams
+) {
+  const query: Record<string, any> = {
     ...params,
     app_key: params?.appKey,
     package_key: params?.packageKey,
     package_type: params?.packageType,
-    workspace_scope: params?.workspaceScope,
-    appKey: undefined,
-    packageKey: undefined,
-    packageType: undefined,
-    workspaceScope: undefined
+    workspace_scope: params?.workspaceScope
   }
-  return request
-    .get<Api.SystemManage.FeaturePackageList>({
-      url: FEATURE_PACKAGE_BASE,
-      params: normalizedParams
-    })
-    .then((res) => ({
-      ...res,
-      records: (res?.records || []).map(normalizeFeaturePackage)
-    }))
+  delete query.appKey
+  delete query.packageKey
+  delete query.packageType
+  delete query.workspaceScope
+  const res: any = await unwrap(
+    v5Client.GET('/feature-packages', { params: { query } as any })
+  )
+  return {
+    ...res,
+    records: (res?.records || []).map(normalizeFeaturePackage)
+  } as Api.SystemManage.FeaturePackageList
 }
 
-export function fetchGetFeaturePackageOptions(
+export async function fetchGetFeaturePackageOptions(
   params?: Api.SystemManage.FeaturePackageSearchParams
 ) {
-  const normalizedParams = {
-    ...params,
+  const query: Record<string, any> = {
+    ...(params || {}),
     app_key: params?.appKey,
     package_key: params?.packageKey,
     package_type: params?.packageType,
-    workspace_scope: params?.workspaceScope,
-    appKey: undefined,
-    packageKey: undefined,
-    packageType: undefined,
-    workspaceScope: undefined
+    workspace_scope: params?.workspaceScope
   }
-  return request
-    .get<{ records: Api.SystemManage.FeaturePackageItem[]; total: number }>({
-      url: `${FEATURE_PACKAGE_BASE}/options`,
-      params: normalizedParams
-    })
-    .then((res) => ({
-      records: (res?.records || []).map(normalizeFeaturePackage),
-      total: res?.total || 0
-    }))
+  delete query.appKey
+  delete query.packageKey
+  delete query.packageType
+  delete query.workspaceScope
+  const res: any = await unwrap(
+    v5Client.GET('/feature-packages/options', { params: { query } as any })
+  )
+  return {
+    records: (res?.records || []).map(normalizeFeaturePackage),
+    total: res?.total || 0
+  }
 }
 
-export function fetchGetCollaborationWorkspaceOptions(
+export async function fetchGetCollaborationWorkspaceOptions(
   params?: Partial<Api.SystemManage.CollaborationWorkspaceSearchParams>
 ) {
-  return request
-    .get<{ records: Api.SystemManage.CollaborationWorkspaceListItem[]; total: number }>({
-      url: `${COLLABORATION_WORKSPACE_BASE}/options`,
-      params
+  const res: any = await unwrap(
+    v5Client.GET('/collaboration-workspaces/options', {
+      params: { query: (params || {}) as any }
     })
-    .then((res) => ({
-      records: (res?.records || []).map(normalizeCollaborationWorkspace),
-      total: res?.total || 0
-    }))
+  )
+  return {
+    records: (res?.records || []).map(normalizeCollaborationWorkspace),
+    total: res?.total || 0
+  }
 }
 
 /** 获取功能包详情 */
-export function fetchGetFeaturePackage(id: string) {
-  return request
-    .get<Api.SystemManage.FeaturePackageItem>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}`
-    })
-    .then((res) => normalizeFeaturePackage(res))
+export async function fetchGetFeaturePackage(id: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/feature-packages/{id}', { params: { path: { id } } })
+  )
+  return normalizeFeaturePackage(res)
 }
 
 /** 获取组合包基础包 */
-export function fetchGetFeaturePackageChildren(id: string, appKey?: string) {
-  return request
-    .get<Api.SystemManage.FeaturePackageBundleResponse>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}/children`,
-      params: appKey ? { app_key: appKey } : undefined
+export async function fetchGetFeaturePackageChildren(id: string, appKey?: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/feature-packages/{id}/children', {
+      params: { path: { id }, query: (appKey ? { app_key: appKey } : {}) as any }
     })
-    .then((res) => ({
-      child_package_ids: res?.child_package_ids || [],
-      packages: (res?.packages || []).map(normalizeFeaturePackage)
-    }))
+  )
+  return {
+    child_package_ids: res?.child_package_ids || [],
+    packages: (res?.packages || []).map(normalizeFeaturePackage)
+  }
 }
 
 /** 设置组合包基础包 */
-export function fetchSetFeaturePackageChildren(
+export async function fetchSetFeaturePackageChildren(
   id: string,
   childPackageIds: string[] | Api.SystemManage.FeaturePackageChildSetParams,
   appKey?: string
@@ -415,75 +406,77 @@ export function fetchSetFeaturePackageChildren(
         ...childPackageIds,
         ...(appKey && !childPackageIds.app_key ? { app_key: appKey } : {})
       }
-  return request
-    .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}/children`,
-      data: payload
+  const res: any = await unwrap(
+    v5Client.PUT('/feature-packages/{id}/children', {
+      params: { path: { id } },
+      body: payload as any
     })
-    .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
+  )
+  return normalizeRefreshStats(res?.refresh_stats || res?.refreshStats || {})
 }
 
 /** 获取功能包包含关系树 */
-export function fetchGetFeaturePackageRelationTree(params?: {
+export async function fetchGetFeaturePackageRelationTree(params?: {
   workspaceScope?: string
   keyword?: string
 }) {
-  return request
-    .get<Api.SystemManage.FeaturePackageRelationTree>({
-      url: `${FEATURE_PACKAGE_BASE}/relationship-tree`,
-      params: {
-        workspace_scope: params?.workspaceScope,
-        keyword: params?.keyword
-      }
-    })
-    .then((res) => normalizeFeaturePackageRelationTree(res))
+  const query: Record<string, any> = {
+    workspace_scope: params?.workspaceScope,
+    keyword: params?.keyword
+  }
+  const res: any = await unwrap(
+    v5Client.GET('/feature-packages/relationship-tree', { params: { query } as any })
+  )
+  return normalizeFeaturePackageRelationTree(res)
 }
 
 /** 创建功能包 */
-export function fetchCreateFeaturePackage(data: Api.SystemManage.FeaturePackageCreateParams) {
-  return request.post<{ id: string }>({
-    url: FEATURE_PACKAGE_BASE,
-    data
-  })
+export async function fetchCreateFeaturePackage(
+  data: Api.SystemManage.FeaturePackageCreateParams
+) {
+  const res: any = await unwrap(
+    v5Client.POST('/feature-packages', { body: data as any })
+  )
+  return res as { id: string }
 }
 
 /** 更新功能包 */
-export function fetchUpdateFeaturePackage(
+export async function fetchUpdateFeaturePackage(
   id: string,
   data: Api.SystemManage.FeaturePackageUpdateParams
 ) {
-  return request
-    .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}`,
-      data
+  const res: any = await unwrap(
+    v5Client.PUT('/feature-packages/{id}', {
+      params: { path: { id } },
+      body: data as any
     })
-    .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
+  )
+  return normalizeRefreshStats(res?.refresh_stats || res?.refreshStats || {})
 }
 
 /** 删除功能包 */
-export function fetchDeleteFeaturePackage(id: string) {
-  return request
-    .del<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}`
-    })
-    .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
+export async function fetchDeleteFeaturePackage(id: string) {
+  const res: any = await unwrap(
+    v5Client.DELETE('/feature-packages/{id}', { params: { path: { id } } })
+  )
+  return normalizeRefreshStats(res?.refresh_stats || res?.refreshStats || {})
 }
 
 /** 获取功能包包含的功能权限 */
-export function fetchGetFeaturePackageActions(id: string, appKey?: string) {
-  return request
-    .get<Api.SystemManage.FeaturePackageActionResponse>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}/actions`,
-      params: appKey ? { app_key: appKey } : undefined
+export async function fetchGetFeaturePackageActions(id: string, appKey?: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/feature-packages/{id}/actions', {
+      params: { path: { id }, query: (appKey ? { app_key: appKey } : {}) as any }
     })
-    .then((res) => ({
-      action_ids: res?.action_ids || [],
-      actions: (res?.actions || []).map(normalizePermissionAction)
-    }))
+  )
+  return {
+    action_ids: res?.action_ids || [],
+    actions: (res?.actions || []).map(normalizePermissionAction)
+  }
 }
 
 /** 设置功能包包含的功能权限 */
-export function fetchSetFeaturePackageActions(
+export async function fetchSetFeaturePackageActions(
   id: string,
   actionIds: string[] | Api.SystemManage.FeaturePackageActionSetParams,
   appKey?: string
@@ -494,49 +487,55 @@ export function fetchSetFeaturePackageActions(
         ...actionIds,
         ...(appKey && !actionIds.app_key ? { app_key: appKey } : {})
       }
-  return request
-    .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}/actions`,
-      data: payload
+  const res: any = await unwrap(
+    v5Client.PUT('/feature-packages/{id}/actions', {
+      params: { path: { id } },
+      body: payload as any
     })
-    .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
+  )
+  return normalizeRefreshStats(res?.refresh_stats || res?.refreshStats || {})
 }
 
 /** 获取功能包包含的菜单 */
-export function fetchGetFeaturePackageMenus(id: string, appKey?: string) {
-  return request
-    .get<Api.SystemManage.FeaturePackageMenuResponse>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}/menus`,
-      params: appKey ? { app_key: appKey } : undefined
+export async function fetchGetFeaturePackageMenus(id: string, appKey?: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/feature-packages/{id}/menus', {
+      params: { path: { id }, query: (appKey ? { app_key: appKey } : {}) as any }
     })
-    .then((res) => ({
-      menu_ids: res?.menu_ids || [],
-      menus: res?.menus || []
-    }))
+  )
+  return {
+    menu_ids: res?.menu_ids || [],
+    menus: res?.menus || []
+  }
 }
 
 /** 设置功能包包含的菜单 */
-export function fetchSetFeaturePackageMenus(id: string, menuIds: string[], appKey?: string) {
-  return request
-    .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}/menus`,
-      data: {
-        menu_ids: menuIds,
-        ...(appKey ? { app_key: appKey } : {})
-      }
+export async function fetchSetFeaturePackageMenus(
+  id: string,
+  menuIds: string[],
+  appKey?: string
+) {
+  const res: any = await unwrap(
+    v5Client.PUT('/feature-packages/{id}/menus', {
+      params: { path: { id } },
+      body: { menu_ids: menuIds, ...(appKey ? { app_key: appKey } : {}) } as any
     })
-    .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
+  )
+  return normalizeRefreshStats(res?.refresh_stats || res?.refreshStats || {})
 }
 
 /** 获取已开通当前功能包的协作空间 */
-export function fetchGetFeaturePackageCollaborationWorkspaces(id: string) {
-  return request.get<Api.SystemManage.FeaturePackageCollaborationWorkspaceBinding>({
-    url: `${FEATURE_PACKAGE_BASE}/${id}/collaboration-workspaces`
-  })
+export async function fetchGetFeaturePackageCollaborationWorkspaces(id: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/feature-packages/{id}/collaboration-workspaces', {
+      params: { path: { id } }
+    })
+  )
+  return res as Api.SystemManage.FeaturePackageCollaborationWorkspaceBinding
 }
 
 /** 配置功能包开通协作空间 */
-export function fetchSetFeaturePackageCollaborationWorkspaces(
+export async function fetchSetFeaturePackageCollaborationWorkspaces(
   id: string,
   collaborationWorkspaceIds:
     | string[]
@@ -545,103 +544,106 @@ export function fetchSetFeaturePackageCollaborationWorkspaces(
   const payload = Array.isArray(collaborationWorkspaceIds)
     ? { collaboration_workspace_ids: collaborationWorkspaceIds }
     : collaborationWorkspaceIds
-  return request
-    .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}/collaboration-workspaces`,
-      data: payload
+  const res: any = await unwrap(
+    v5Client.PUT('/feature-packages/{id}/collaboration-workspaces', {
+      params: { path: { id } },
+      body: payload as any
     })
-    .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
+  )
+  return normalizeRefreshStats(res?.refresh_stats || res?.refreshStats || {})
 }
 
 /** 获取协作空间已开通的功能包 */
-export function fetchGetCollaborationWorkspaceFeaturePackages(
+export async function fetchGetCollaborationWorkspaceFeaturePackages(
   collaborationWorkspaceId: string,
   appKey?: string
 ) {
-  return request
-    .get<Api.SystemManage.CollaborationWorkspaceFeaturePackageResponse>({
-      url: `${FEATURE_PACKAGE_BASE}/collaboration-workspaces/${collaborationWorkspaceId}`,
+  const res: any = await unwrap(
+    v5Client.GET('/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}', {
       params: {
-        ...(appKey ? { app_key: appKey } : {})
+        path: { collaborationWorkspaceId },
+        query: (appKey ? { app_key: appKey } : {}) as any
       }
     })
-    .then((res) => ({
-      package_ids: res?.package_ids || [],
-      packages: (res?.packages || []).map(normalizeFeaturePackage)
-    }))
+  )
+  return {
+    package_ids: res?.package_ids || [],
+    packages: (res?.packages || []).map(normalizeFeaturePackage)
+  }
 }
 
 /** 设置协作空间功能包 */
-export function fetchSetCollaborationWorkspaceFeaturePackages(
+export async function fetchSetCollaborationWorkspaceFeaturePackages(
   collaborationWorkspaceId: string,
   packageIds: string[] | Api.SystemManage.CollaborationWorkspaceFeaturePackageSetParams,
   appKey?: string
 ) {
   const payload = Array.isArray(packageIds) ? { package_ids: packageIds } : packageIds
-  return request
-    .put<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
-      url: `${FEATURE_PACKAGE_BASE}/collaboration-workspaces/${collaborationWorkspaceId}`,
+  const res: any = await unwrap(
+    v5Client.PUT('/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}', {
       params: {
-        ...(appKey ? { app_key: appKey } : {})
+        path: { collaborationWorkspaceId },
+        query: (appKey ? { app_key: appKey } : {}) as any
       },
-      data: payload
+      body: payload as any
     })
-    .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
+  )
+  return normalizeRefreshStats(res?.refresh_stats || res?.refreshStats || {})
 }
 
-export function fetchGetFeaturePackageImpactPreview(id: string) {
-  return request
-    .get<Api.SystemManage.FeaturePackageImpactPreview>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}/impact-preview`
-    })
-    .then((res: any) => ({
-      packageId: res?.package_id || res?.packageId || '',
-      roleCount: Number(res?.role_count ?? res?.roleCount ?? 0),
-      collaborationWorkspaceCount: Number(res?.collaborationWorkspaceCount ?? 0),
-      userCount: Number(res?.user_count ?? res?.userCount ?? 0),
-      menuCount: Number(res?.menu_count ?? res?.menuCount ?? 0),
-      actionCount: Number(res?.action_count ?? res?.actionCount ?? 0)
-    }))
+export async function fetchGetFeaturePackageImpactPreview(id: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/feature-packages/{id}/impact-preview', { params: { path: { id } } })
+  )
+  return {
+    packageId: res?.package_id || res?.packageId || '',
+    roleCount: Number(res?.role_count ?? res?.roleCount ?? 0),
+    collaborationWorkspaceCount: Number(res?.collaborationWorkspaceCount ?? 0),
+    userCount: Number(res?.user_count ?? res?.userCount ?? 0),
+    menuCount: Number(res?.menu_count ?? res?.menuCount ?? 0),
+    actionCount: Number(res?.action_count ?? res?.actionCount ?? 0)
+  }
 }
 
-export function fetchGetFeaturePackageVersions(id: string, current = 1, size = 20) {
-  return request
-    .get<{ records: Api.SystemManage.FeaturePackageVersionItem[]; total: number }>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}/versions`,
-      params: { current, size }
+export async function fetchGetFeaturePackageVersions(id: string, current = 1, size = 20) {
+  const res: any = await unwrap(
+    v5Client.GET('/feature-packages/{id}/versions', {
+      params: { path: { id }, query: { current, size } as any }
     })
-    .then((res: any) => ({
-      records: (res?.records || []).map((item: any) => ({
-        id: item?.id || '',
-        packageId: item?.package_id || item?.packageId || '',
-        versionNo: Number(item?.version_no ?? item?.versionNo ?? 0),
-        changeType: item?.change_type || item?.changeType || '',
-        snapshot: item?.snapshot || {},
-        operatorId: item?.operator_id || item?.operatorId || '',
-        requestId: item?.request_id || item?.requestId || '',
-        createdAt: item?.created_at || item?.createdAt || ''
-      })),
-      total: Number(res?.total || 0)
-    }))
+  )
+  return {
+    records: (res?.records || []).map((item: any) => ({
+      id: item?.id || '',
+      packageId: item?.package_id || item?.packageId || '',
+      versionNo: Number(item?.version_no ?? item?.versionNo ?? 0),
+      changeType: item?.change_type || item?.changeType || '',
+      snapshot: item?.snapshot || {},
+      operatorId: item?.operator_id || item?.operatorId || '',
+      requestId: item?.request_id || item?.requestId || '',
+      createdAt: item?.created_at || item?.createdAt || ''
+    })),
+    total: Number(res?.total || 0)
+  }
 }
 
-export function fetchRollbackFeaturePackage(id: string, versionId: string) {
-  return request
-    .post<{ refresh_stats?: Api.SystemManage.RefreshStats }>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}/rollback`,
-      data: { version_id: versionId }
+export async function fetchRollbackFeaturePackage(id: string, versionId: string) {
+  const res: any = await unwrap(
+    v5Client.POST('/feature-packages/{id}/rollback', {
+      params: { path: { id } },
+      body: { version_id: versionId } as any
     })
-    .then((res) => normalizeRefreshStats(res?.refresh_stats || (res as any)?.refreshStats || {}))
+  )
+  return normalizeRefreshStats(res?.refresh_stats || res?.refreshStats || {})
 }
 
-export function fetchGetFeaturePackageRiskAudits(id: string, current = 1, size = 20) {
-  return request
-    .get<{ records: Api.SystemManage.RiskAuditItem[]; total: number }>({
-      url: `${FEATURE_PACKAGE_BASE}/${id}/risk-audits`,
-      params: { current, size }
+export async function fetchGetFeaturePackageRiskAudits(id: string, current = 1, size = 20) {
+  const res: any = await unwrap(
+    v5Client.GET('/feature-packages/{id}/risk-audits', {
+      params: { path: { id }, query: { current, size } as any }
     })
-    .then((res: any) => ({
-      records: (res?.records || []).map(normalizeRiskAudit),
-      total: Number(res?.total || 0)
-    }))
+  )
+  return {
+    records: (res?.records || []).map(normalizeRiskAudit),
+    total: Number(res?.total || 0)
+  }
 }

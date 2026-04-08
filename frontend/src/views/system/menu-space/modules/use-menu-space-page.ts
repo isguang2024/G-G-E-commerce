@@ -510,8 +510,8 @@ export function useMenuSpacePage() {
     try {
       const list = await fetchGetMenuBackupList(currentSpace.value.spaceKey, targetAppKey.value)
       backupList.value = (list || [])
-        .filter((item) => `${item.scope_type || ''}`.trim() !== 'global')
-        .map((item) => ({
+        .filter((item: any) => `${item.scope_type || ''}`.trim() !== 'global')
+        .map((item: any) => ({
           ...item,
           space_name: item.space_name || currentSpaceLabel.value
         }))

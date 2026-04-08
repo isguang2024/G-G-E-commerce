@@ -1,11 +1,25 @@
-import request from '@/utils/http'
 import { v5Client } from '@/api/v5/client'
 import { AppRouteRecord } from '@/types/router'
 import type { FastEnterApplication, FastEnterQuickLink } from '@/types/config'
 import { normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
 
-export { request, v5Client, normalizeMenuSpaceKey }
+export { v5Client, normalizeMenuSpaceKey }
 export type { AppRouteRecord, FastEnterApplication, FastEnterQuickLink }
+
+/**
+ * 解包 openapi-fetch 的 `{ data, error }` 返回，行为对齐 legacy `request<T>`：
+ * - error 非空 → 抛出
+ * - data 为 undefined → 抛出（HTTP 200 但响应体异常）
+ * - 否则返回 data
+ */
+export async function unwrap<T>(
+  promise: Promise<{ data?: T; error?: any }>
+): Promise<T> {
+  const { data, error } = await promise
+  if (error) throw error
+  if (data === undefined) throw new Error('v5Client: empty response')
+  return data as T
+}
 
 // Phase 4 slice 5: 用户域 list/get/create/update/delete/assignRoles 走 v5Client。
 // ogen handler 返回 snake_case schema 原型，这里负责 camelCase 归一，
@@ -44,19 +58,6 @@ export function normalizeUserSummary(item: any): Api.SystemManage.UserListItem {
   }
 }
 
-export const USER_BASE = '/api/v1/users'
-export const ROLE_BASE = '/api/v1/roles'
-export const ACTION_PERMISSION_BASE = '/api/v1/permission-actions'
-export const FEATURE_PACKAGE_BASE = '/api/v1/feature-packages'
-export const COLLABORATION_WORKSPACE_BASE = '/api/v1/collaboration-workspaces'
-export const SYSTEM_BASE = '/api/v1/system'
-export const APP_BASE = '/api/v1/system/apps'
-export const APP_HOST_BINDING_BASE = '/api/v1/system/app-host-bindings'
-export const API_ENDPOINT_BASE = '/api/v1/api-endpoints'
-export const PAGE_BASE = '/api/v1/pages'
-export const RUNTIME_BASE = '/api/v1/runtime'
-export const MENU_BASE = '/api/v1/menus'
-export const MENU_BACKUP_BASE = '/api/v1/menus/backups'
 
 export function normalizePermissionKey(value?: string) {
   const target = `${value || ''}`.trim()

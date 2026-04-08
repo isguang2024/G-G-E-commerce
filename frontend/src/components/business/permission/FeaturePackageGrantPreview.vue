@@ -288,7 +288,7 @@
       if (childPackages.length) {
         knownPackages.value = {
           ...knownPackages.value,
-          ...Object.fromEntries(childPackages.map((item) => [item.id, item]))
+          ...Object.fromEntries(childPackages.map((item: any) => [item.id, item]))
         }
       }
       const detail: PackageDetail = {
@@ -314,7 +314,7 @@
     const detail: PackageDetail = {
       package: target,
       childPackages: [],
-      actionItems: (actionRes?.actions || []).map((item) => ({
+      actionItems: (actionRes?.actions || []).map((item: any) => ({
         id: item.id,
         label: item.name || item.permissionKey || item.id
       })),

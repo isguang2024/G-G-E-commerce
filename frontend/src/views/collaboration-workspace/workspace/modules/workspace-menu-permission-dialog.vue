@@ -175,7 +175,7 @@
         candidateMenuIds.value
       )
       derivedSourceMap.value = Object.fromEntries(
-        (originRes?.derived_sources || []).map((item) => [item.menu_id, item.package_ids])
+        (originRes?.derived_sources || []).map((item: any) => [item.menu_id, item.package_ids])
       )
       selectedDerivedPackageId.value = ''
 

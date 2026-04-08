@@ -117,8 +117,6 @@ func AutoMigrate() error {
 
 	// 执行数据库迁移
 	err := DB.AutoMigrate(
-		// 多租户预留（Phase 2a）
-		&models.Tenant{},
 		// 用户和角色相关
 		&models.User{},
 		&models.Role{},

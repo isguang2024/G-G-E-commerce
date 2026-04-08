@@ -1,7 +1,7 @@
+// Phase 4: page 域迁移至 v5Client + openapi-fetch。
 import {
-  request,
-  PAGE_BASE,
-  RUNTIME_BASE,
+  v5Client,
+  unwrap,
   normalizePageItem,
   normalizeMenuSpaceKey,
   normalizeRuntimeNavigationManifest,
@@ -12,8 +12,8 @@ import {
 } from './_shared'
 
 /** 获取页面列表 */
-export function fetchGetPageList(params: Api.SystemManage.PageSearchParams) {
-  const normalizedParams = {
+export async function fetchGetPageList(params: Api.SystemManage.PageSearchParams) {
+  const query: Record<string, any> = {
     current: params?.current,
     size: params?.size,
     app_key: params?.appKey,
@@ -26,198 +26,164 @@ export function fetchGetPageList(params: Api.SystemManage.PageSearchParams) {
     source: params?.source,
     status: params?.status
   }
-  return request
-    .get<Api.SystemManage.PageList>({
-      url: PAGE_BASE,
-      params: normalizedParams
-    })
-    .then((res) => ({
-      ...res,
-      records: (res?.records || []).map(normalizePageItem)
-    }))
+  const res: any = await unwrap(v5Client.GET('/pages', { params: { query } as any }))
+  return {
+    ...res,
+    records: (res?.records || []).map(normalizePageItem)
+  } as Api.SystemManage.PageList
 }
 
-export function fetchGetPageOptions(spaceKey?: string, appKey?: string) {
-  return request
-    .get<{ records: Api.SystemManage.PageItem[]; total: number }>({
-      url: `${PAGE_BASE}/options`,
-      params:
-        spaceKey || appKey
-          ? {
-              ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {}),
-              ...(appKey ? { app_key: appKey } : {})
-            }
-          : undefined
-    })
-    .then((res) => ({
-      records: (res?.records || []).map(normalizePageItem),
-      total: res?.total || 0
-    }))
+export async function fetchGetPageOptions(spaceKey?: string, appKey?: string) {
+  const query: Record<string, any> = {}
+  if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
+  if (appKey) query.app_key = appKey
+  const res: any = await unwrap(v5Client.GET('/pages/options', { params: { query } as any }))
+  return {
+    records: (res?.records || []).map(normalizePageItem),
+    total: res?.total || 0
+  }
 }
 
 /**
  * 获取运行时导航清单。
  */
-export function fetchGetRuntimeNavigation(spaceKey?: string, appKey?: string) {
-  return request
-    .get<Api.SystemManage.RuntimeNavigationManifest>({
-      url: `${RUNTIME_BASE}/navigation`,
-      params:
-        spaceKey || appKey
-          ? {
-              ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {}),
-              ...(appKey ? { app_key: appKey } : {})
-            }
-          : undefined
-    })
-    .then((res) => normalizeRuntimeNavigationManifest(res))
+export async function fetchGetRuntimeNavigation(spaceKey?: string, appKey?: string) {
+  const query: Record<string, any> = {}
+  if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
+  if (appKey) query.app_key = appKey
+  const res: any = await unwrap(
+    v5Client.GET('/runtime/navigation', { params: { query } as any })
+  )
+  return normalizeRuntimeNavigationManifest(res)
 }
 
 /** 获取运行时页面注册表 */
-export function fetchGetRuntimePageList(spaceKey?: string, appKey?: string) {
-  return request
-    .get<{ records: Api.SystemManage.PageItem[]; total: number }>({
-      url: `${PAGE_BASE}/runtime`,
-      params:
-        spaceKey || appKey
-          ? {
-              ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {}),
-              ...(appKey ? { app_key: appKey } : {})
-            }
-          : undefined
-    })
-    .then((res) => ({
-      records: (res?.records || []).map(normalizePageItem),
-      total: res?.total || 0
-    }))
+export async function fetchGetRuntimePageList(spaceKey?: string, appKey?: string) {
+  const query: Record<string, any> = {}
+  if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
+  if (appKey) query.app_key = appKey
+  const res: any = await unwrap(v5Client.GET('/pages/runtime', { params: { query } as any }))
+  return {
+    records: (res?.records || []).map(normalizePageItem),
+    total: res?.total || 0
+  }
 }
 
 /** 获取公开运行时页面注册表 */
-export function fetchGetRuntimePublicPageList(spaceKey?: string, appKey?: string) {
-  return request
-    .get<{ records: Api.SystemManage.PageItem[]; total: number }>({
-      url: `${PAGE_BASE}/runtime/public`,
-      params:
-        spaceKey || appKey
-          ? {
-              ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {}),
-              ...(appKey ? { app_key: appKey } : {})
-            }
-          : undefined
-    })
-    .then((res) => ({
-      records: (res?.records || []).map(normalizePageItem),
-      total: res?.total || 0
-    }))
+export async function fetchGetRuntimePublicPageList(spaceKey?: string, appKey?: string) {
+  const query: Record<string, any> = {}
+  if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
+  if (appKey) query.app_key = appKey
+  const res: any = await unwrap(
+    v5Client.GET('/pages/runtime/public', { params: { query } as any })
+  )
+  return {
+    records: (res?.records || []).map(normalizePageItem),
+    total: res?.total || 0
+  }
 }
 
 /** 获取未注册页面 */
-export function fetchGetPageUnregisteredList(appKey: string) {
-  return request
-    .get<{ records: Api.SystemManage.PageUnregisteredItem[]; total: number }>({
-      url: `${PAGE_BASE}/unregistered`,
-      params: { app_key: appKey }
-    })
-    .then((res) => ({
-      records: (res?.records || []).map(normalizePageUnregisteredItem),
-      total: res?.total || 0
-    }))
+export async function fetchGetPageUnregisteredList(appKey: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/pages/unregistered', { params: { query: { app_key: appKey } as any } })
+  )
+  return {
+    records: (res?.records || []).map(normalizePageUnregisteredItem),
+    total: res?.total || 0
+  }
 }
 
 /** 同步页面注册表 */
-export function fetchSyncPages(appKey: string) {
-  return request
-    .post<
-      Api.SystemManage.PageSyncResult & {
-        created_count?: number
-        skipped_count?: number
-        created_keys?: string[]
-      }
-    >({
-      url: `${PAGE_BASE}/sync`,
-      params: { app_key: appKey }
-    })
-    .then((res) => ({
-      createdCount: res?.createdCount ?? res?.created_count ?? 0,
-      skippedCount: res?.skippedCount ?? res?.skipped_count ?? 0,
-      createdKeys: res?.createdKeys || res?.created_keys || []
-    }))
+export async function fetchSyncPages(appKey: string) {
+  const res: any = await unwrap(
+    v5Client.POST('/pages/sync', { params: { query: { app_key: appKey } as any } } as any)
+  )
+  return {
+    createdCount: res?.createdCount ?? res?.created_count ?? 0,
+    skippedCount: res?.skippedCount ?? res?.skipped_count ?? 0,
+    createdKeys: res?.createdKeys || res?.created_keys || []
+  }
 }
 
 /** 预览页面面包屑 */
-export function fetchGetPageBreadcrumbPreview(id: string) {
-  return request
-    .get<{ items: Api.SystemManage.PageBreadcrumbPreviewItem[]; total: number }>({
-      url: `${PAGE_BASE}/${id}/breadcrumb-preview`
+export async function fetchGetPageBreadcrumbPreview(id: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/pages/{id}/breadcrumb-preview', {
+      params: { path: { id }, query: {} as any }
     })
-    .then((res) => ({
-      items: (res?.items || []).map(normalizePageBreadcrumbPreviewItem),
-      total: res?.total || 0
-    }))
+  )
+  return {
+    items: (res?.items || []).map(normalizePageBreadcrumbPreviewItem),
+    total: res?.total || 0
+  }
 }
 
 /** 获取页面详情 */
-export function fetchGetPage(id: string) {
-  return request
-    .get<Api.SystemManage.PageItem>({
-      url: `${PAGE_BASE}/${id}`
-    })
-    .then((res) => normalizePageItem(res))
+export async function fetchGetPage(id: string) {
+  const res: any = await unwrap(
+    v5Client.GET('/pages/{id}', { params: { path: { id }, query: {} as any } })
+  )
+  return normalizePageItem(res)
 }
 
 /** 创建页面 */
-export function fetchCreatePage(data: Api.SystemManage.PageSaveParams) {
-  return request.post<Api.SystemManage.PageItem>({
-    url: PAGE_BASE,
-    data
-  })
+export async function fetchCreatePage(data: Api.SystemManage.PageSaveParams) {
+  const appKey = (data as any)?.app_key || (data as any)?.appKey || ''
+  const res: any = await unwrap(
+    v5Client.POST('/pages', {
+      params: { query: { app_key: appKey } as any },
+      body: data as any
+    })
+  )
+  return res as Api.SystemManage.PageItem
 }
 
 /** 更新页面 */
-export function fetchUpdatePage(id: string, data: Api.SystemManage.PageSaveParams) {
-  return request.put<Api.SystemManage.PageItem>({
-    url: `${PAGE_BASE}/${id}`,
-    data
-  })
+export async function fetchUpdatePage(id: string, data: Api.SystemManage.PageSaveParams) {
+  const appKey = (data as any)?.app_key || (data as any)?.appKey || ''
+  const res: any = await unwrap(
+    v5Client.PUT('/pages/{id}', {
+      params: { path: { id }, query: { app_key: appKey } as any },
+      body: data as any
+    })
+  )
+  return res as Api.SystemManage.PageItem
 }
 
 /** 删除页面 */
-export function fetchDeletePage(id: string, appKey: string) {
-  return request.del<void>({
-    url: `${PAGE_BASE}/${id}`,
-    params: { app_key: appKey }
+export async function fetchDeletePage(id: string, appKey: string) {
+  const { error } = await v5Client.DELETE('/pages/{id}', {
+    params: { path: { id }, query: { app_key: appKey } as any }
   })
+  if (error) throw error
 }
 
 /** 获取页面上级菜单候选 */
-export function fetchGetPageMenuOptions(spaceKey: string | undefined, appKey: string) {
-  return request
-    .get<{ records: Api.SystemManage.PageMenuOptionItem[]; total: number }>({
-      url: `${PAGE_BASE}/menu-options`,
-      params: {
-        app_key: appKey,
-        ...(spaceKey ? { space_key: normalizeMenuSpaceKey(spaceKey) } : {})
-      }
-    })
-    .then((res) => ({
-      records: (res?.records || []).map(normalizePageMenuOption),
-      total: res?.total || 0
-    }))
+export async function fetchGetPageMenuOptions(spaceKey: string | undefined, appKey: string) {
+  const query: Record<string, any> = { app_key: appKey }
+  if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
+  const res: any = await unwrap(
+    v5Client.GET('/pages/menu-options', { params: { query } as any })
+  )
+  return {
+    records: (res?.records || []).map(normalizePageMenuOption),
+    total: res?.total || 0
+  }
 }
 
-export function fetchGetPageAccessTrace(params: Api.SystemManage.PageAccessTraceParams) {
-  return request
-    .get<Api.SystemManage.PageAccessTraceResult>({
-      url: `${PAGE_BASE}/access-trace`,
-      params: {
-        app_key: params.appKey,
-        user_id: params.userId,
-        collaboration_workspace_id: params.collaborationWorkspaceId,
-        page_key: params.pageKey,
-        page_keys: params.pageKeys,
-        route_path: params.routePath,
-        space_key: params.spaceKey
-      }
-    })
-    .then((res) => normalizePageAccessTraceResult(res))
+export async function fetchGetPageAccessTrace(params: Api.SystemManage.PageAccessTraceParams) {
+  const query: Record<string, any> = {
+    app_key: params.appKey,
+    user_id: params.userId,
+    collaboration_workspace_id: params.collaborationWorkspaceId,
+    page_key: params.pageKey,
+    page_keys: params.pageKeys,
+    route_path: params.routePath,
+    space_key: params.spaceKey
+  }
+  const res: any = await unwrap(
+    v5Client.GET('/pages/access-trace', { params: { query } as any })
+  )
+  return normalizePageAccessTraceResult(res)
 }

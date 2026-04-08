@@ -62,8 +62,7 @@ func main() {
 		logger.Info("Public schema reset completed")
 	}
 
-	// Phase 2a: goose 优先跑租户基线迁移；后续 phase 把 schema 增量整体接管，
-	// AutoMigrate 暂时与 goose 并存，按域逐步退场。
+	// goose 迁移先跑（permission_keys baseline 等），随后 GORM AutoMigrate 接管 schema。
 	if err := database.RunGooseMigrations(database.DB); err != nil {
 		logger.Fatal("goose migration failed", zap.Error(err))
 	}
@@ -73,9 +72,6 @@ func main() {
 		logger.Fatal("Migration failed", zap.Error(err))
 	}
 
-	if err := ensureDefaultTenantBackfill(logger); err != nil {
-		logger.Fatal("Failed to backfill default tenant id", zap.Error(err))
-	}
 	if err := ensureFeaturePackageAppKeysColumn(); err != nil {
 		logger.Fatal("Failed to ensure feature_packages app_keys column", zap.Error(err))
 	}
@@ -1676,6 +1672,11 @@ func initDefaultPermissionKeysNoScope(logger *zap.Logger) error {
 		return err
 	}
 	logger.Info("Default permission keys seeded")
+	created, err := permissionseed.EnsureOpenAPIPermissionKeys(database.DB)
+	if err != nil {
+		return err
+	}
+	logger.Info("OpenAPI-derived permission keys ensured", zap.Int("created", created))
 	return nil
 }
 
@@ -1934,25 +1935,3 @@ func transferMenuReferences(tx *gorm.DB, sourceMenuID, targetMenuID uuid.UUID) e
 	return nil
 }
 
-// ensureDefaultTenantBackfill stamps every workspace/workspace_member row
-// with the built-in default tenant id. Phase 2a only enforces the column on
-// these two tables (see TenantScoped embed); subsequent phases extend the
-// backfill to the rest of the schema as each module migrates.
-func ensureDefaultTenantBackfill(logger *zap.Logger) error {
-	db := database.DB
-	if db == nil {
-		return errors.New("database not initialized")
-	}
-	var tenant systemmodels.Tenant
-	if err := db.Where("code = ?", systemmodels.DefaultTenantCode).First(&tenant).Error; err != nil {
-		return fmt.Errorf("lookup default tenant: %w", err)
-	}
-	for _, table := range []string{"workspaces", "workspace_members"} {
-		sql := fmt.Sprintf("UPDATE %s SET tenant_id = ? WHERE tenant_id IS NULL OR tenant_id = '00000000-0000-0000-0000-000000000000'", table)
-		if err := db.Exec(sql, tenant.ID).Error; err != nil {
-			return fmt.Errorf("backfill %s: %w", table, err)
-		}
-	}
-	logger.Info("default tenant backfill completed", zap.String("tenant_id", tenant.ID.String()))
-	return nil
-}
