@@ -55,8 +55,8 @@ type SubrouteService interface {
 
 // subrouteService implements SubrouteService.
 type subrouteService struct {
-	// Wraps the existing UserHandler so we reuse all its private helpers.
-	handler *UserHandler
+	core *userSubrouteCore
+	db   *gorm.DB
 }
 
 // Sentinel errors returned by subrouteService.
@@ -71,13 +71,6 @@ var (
 type subrouteErr struct{ msg string }
 
 func (e *subrouteErr) Error() string { return e.msg }
-
-// NewSubrouteService constructs a SubrouteService from a fully-wired
-// UserHandler. Use NewSubrouteServiceFromDeps if you need to construct from
-// raw dependencies.
-func NewSubrouteService(h *UserHandler) SubrouteService {
-	return &subrouteService{handler: h}
-}
 
 // NewSubrouteServiceFromDeps constructs a SubrouteService directly from the
 // same set of repositories and services used by NewAPIHandler.
@@ -123,20 +116,28 @@ func NewSubrouteServiceFromDeps(
 	},
 	logger *zap.Logger,
 ) SubrouteService {
-	h := NewUserHandler(
-		db, userSvc, featurePkgRepo, keyRepo,
-		personalAccess, boundarySvc,
-		roleRepo, authzSvc, userRoleRepo, cwMemberRepo,
-		userPackageRepo, userHiddenMenuRepo, menuRepo, refresher,
-		logger,
-	)
-	return &subrouteService{handler: h}
+	core := &userSubrouteCore{
+		db:                               db,
+		userService:                      userSvc,
+		featurePkgRepo:                   featurePkgRepo,
+		keyRepo:                          keyRepo,
+		personalWorkspaceAccessService:   personalAccess,
+		boundaryService:                  boundarySvc,
+		authzService:                     authzSvc,
+		roleRepo:                         roleRepo,
+		userRoleRepo:                     userRoleRepo,
+		collaborationWorkspaceMemberRepo: cwMemberRepo,
+		menuRepo:                         menuRepo,
+		refresher:                        refresher,
+		logger:                           logger,
+	}
+	return &subrouteService{core: core, db: db}
 }
 
 // ── GetMenus ──────────────────────────────────────────────────────────────────
 
 func (s *subrouteService) GetMenus(userID uuid.UUID, appKey string) (*UserMenusResult, error) {
-	snapshot, err := s.handler.getPersonalWorkspaceSnapshot(userID, appKey)
+	snapshot, err := s.core.getPersonalWorkspaceSnapshot(userID, appKey)
 	if err != nil {
 		return nil, err
 	}
@@ -176,7 +177,7 @@ func (s *subrouteService) GetMenus(userID uuid.UUID, appKey string) (*UserMenusR
 // ── SetMenus ──────────────────────────────────────────────────────────────────
 
 func (s *subrouteService) SetMenus(userID uuid.UUID, appKey string, selectedMenuIDs []uuid.UUID) error {
-	snapshot, err := s.handler.getPersonalWorkspaceSnapshot(userID, appKey)
+	snapshot, err := s.core.getPersonalWorkspaceSnapshot(userID, appKey)
 	if err != nil {
 		return err
 	}
@@ -190,11 +191,11 @@ func (s *subrouteService) SetMenus(userID uuid.UUID, appKey string, selectedMenu
 		}
 	}
 	blockedMenuIDs := excludeUUIDs(snapshot.AvailableMenuIDs, selectedMenuIDs)
-	if err := appscope.ReplaceUserHiddenMenusInApp(s.handler.db, userID, appKey, blockedMenuIDs); err != nil {
+	if err := appscope.ReplaceUserHiddenMenusInApp(s.db, userID, appKey, blockedMenuIDs); err != nil {
 		return err
 	}
-	if s.handler.refresher != nil {
-		return s.handler.refresher.RefreshPersonalWorkspaceUser(userID)
+	if s.core.refresher != nil {
+		return s.core.refresher.RefreshPersonalWorkspaceUser(userID)
 	}
 	return nil
 }
@@ -202,17 +203,17 @@ func (s *subrouteService) SetMenus(userID uuid.UUID, appKey string, selectedMenu
 // ── GetPackages ───────────────────────────────────────────────────────────────
 
 func (s *subrouteService) GetPackages(userID uuid.UUID, appKey string) (*UserPackagesResult, error) {
-	packageIDs, err := appscope.PackageIDsByUser(s.handler.db, userID, appKey)
+	packageIDs, err := appscope.PackageIDsByUser(s.db, userID, appKey)
 	if err != nil {
 		return nil, err
 	}
-	packages, err := s.handler.featurePkgRepo.GetByIDs(packageIDs)
+	packages, err := s.core.featurePkgRepo.GetByIDs(packageIDs)
 	if err != nil {
 		return nil, err
 	}
 	bindingWorkspaceID := ""
 	bindingWorkspaceType := models.WorkspaceTypePersonal
-	if workspace, workspaceErr := workspacerolebinding.GetPersonalWorkspaceByUserID(s.handler.db, userID); workspaceErr == nil && workspace != nil {
+	if workspace, workspaceErr := workspacerolebinding.GetPersonalWorkspaceByUserID(s.db, userID); workspaceErr == nil && workspace != nil {
 		bindingWorkspaceID = workspace.ID.String()
 		bindingWorkspaceType = workspace.WorkspaceType
 	}
@@ -228,7 +229,7 @@ func (s *subrouteService) GetPackages(userID uuid.UUID, appKey string) (*UserPac
 
 func (s *subrouteService) SetPackages(userID uuid.UUID, appKey string, packageIDs []uuid.UUID, operatorID *uuid.UUID) error {
 	if len(packageIDs) > 0 {
-		packages, err := s.handler.featurePkgRepo.GetByIDs(packageIDs)
+		packages, err := s.core.featurePkgRepo.GetByIDs(packageIDs)
 		if err != nil {
 			return err
 		}
@@ -244,11 +245,11 @@ func (s *subrouteService) SetPackages(userID uuid.UUID, appKey string, packageID
 			}
 		}
 	}
-	if err := appscope.ReplaceUserPackagesInApp(s.handler.db, userID, appKey, packageIDs, operatorID); err != nil {
+	if err := appscope.ReplaceUserPackagesInApp(s.db, userID, appKey, packageIDs, operatorID); err != nil {
 		return err
 	}
-	if s.handler.refresher != nil {
-		return s.handler.refresher.RefreshPersonalWorkspaceUser(userID)
+	if s.core.refresher != nil {
+		return s.core.refresher.RefreshPersonalWorkspaceUser(userID)
 	}
 	return nil
 }
@@ -256,11 +257,11 @@ func (s *subrouteService) SetPackages(userID uuid.UUID, appKey string, packageID
 // ── GetPermissions ────────────────────────────────────────────────────────────
 
 func (s *subrouteService) GetPermissions(userID uuid.UUID, appKey string, collaborationWorkspaceID *uuid.UUID) (interface{}, error) {
-	menuIDs, err := s.handler.getPermissionMenuIDs(userID, collaborationWorkspaceID, appKey)
+	menuIDs, err := s.core.getPermissionMenuIDs(userID, collaborationWorkspaceID, appKey)
 	if err != nil {
 		return nil, err
 	}
-	allMenus, err := s.handler.menuRepo.ListAll()
+	allMenus, err := s.core.menuRepo.ListAll()
 	if err != nil {
 		return nil, err
 	}
@@ -274,6 +275,5 @@ func (s *subrouteService) GetPermissions(userID uuid.UUID, appKey string, collab
 // ── GetPermissionDiagnosis ────────────────────────────────────────────────────
 
 func (s *subrouteService) GetPermissionDiagnosis(userID uuid.UUID, appKey string, permissionKey string, collaborationWorkspaceID *uuid.UUID) (interface{}, error) {
-	return s.handler.buildPermissionDiagnosis(userID, collaborationWorkspaceID, permissionKey, appKey)
+	return s.core.buildPermissionDiagnosis(userID, collaborationWorkspaceID, permissionKey, appKey)
 }
-
