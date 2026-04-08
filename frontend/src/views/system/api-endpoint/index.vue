@@ -66,14 +66,6 @@
                 <div class="api-hero-actions__group">
                   <ElButton
                     v-action="'system.api_registry.sync'"
-                    type="primary"
-                    @click="openCreateDialog"
-                    v-ripple
-                  >
-                    新增 API
-                  </ElButton>
-                  <ElButton
-                    v-action="'system.api_registry.sync'"
                     plain
                     :loading="syncing"
                     @click="handleSync"
@@ -84,14 +76,6 @@
                 </div>
 
                 <div class="api-hero-actions__group api-hero-actions__group--secondary">
-                  <ElButton
-                    v-action="'system.api_registry.sync'"
-                    plain
-                    @click="openScanConfigDialog"
-                    v-ripple
-                  >
-                    扫描配置
-                  </ElButton>
                   <ElButton
                     v-action="'system.api_registry.view'"
                     plain
@@ -140,6 +124,7 @@
                 :data="data"
                 :columns="columns"
                 :pagination="pagination"
+                empty-height="320px"
                 size="small"
                 @pagination:size-change="handleSizeChange"
                 @pagination:current-change="handleCurrentChange"
@@ -152,7 +137,7 @@
 
     <ElDrawer
       v-model="formVisible"
-      :title="editingId ? '编辑 API' : '新增 API'"
+      title="编辑 API"
       size="760px"
       direction="rtl"
       destroy-on-close
@@ -160,9 +145,9 @@
     >
       <ElForm :model="formState" label-width="110px" class="api-form">
         <div class="form-intro">
-          <div class="form-intro__title">{{ editingId ? '调整接口元数据' : '新增接口注册项' }}</div>
+          <div class="form-intro__title">调整接口元数据</div>
           <div class="form-intro__text">
-            先明确接口身份，再配置分类、协作空间要求和权限键。这里保存的是正式注册信息，不是临时调试项。
+            先明确接口身份，再配置分类、协作空间要求和权限键。这里保存的是正式注册信息。
           </div>
         </div>
 
@@ -181,7 +166,7 @@
             </ElSelect>
           </ElFormItem>
           <ElFormItem label="路径" prop="path">
-            <ElInput v-model="formState.path" placeholder="/api/v1/..." />
+            <ElInput v-model="formState.path" placeholder="/..." />
           </ElFormItem>
           <ElFormItem label="说明" prop="summary">
             <ElInput v-model="formState.summary" placeholder="说明这条接口的用途和影响范围" />
@@ -477,9 +462,6 @@
         </ElTableColumn>
         <ElTableColumn label="操作" width="120" fixed="right">
           <template #default="{ row }">
-            <ElButton text type="primary" @click="handleUseUnregisteredRoute(row)">
-              创建 API
-            </ElButton>
           </template>
         </ElTableColumn>
       </ElTable>
@@ -499,55 +481,6 @@
           @size-change="handleUnregisteredSizeChange"
         />
       </div>
-    </ElDialog>
-
-    <ElDialog
-      v-model="scanConfigVisible"
-      title="未注册 API 扫描配置（实验功能）"
-      width="560px"
-      destroy-on-close
-    >
-      <ElForm label-width="140px">
-        <ElAlert
-          type="warning"
-          :closable="false"
-          show-icon
-          title="当前仅保存配置，不代表已启用后台自动调度。"
-          style="margin-bottom: 12px"
-        />
-        <ElFormItem label="启用自动扫描">
-          <ElSwitch v-model="scanConfig.enabled" />
-        </ElFormItem>
-        <ElAlert
-          v-if="scanConfig.enabled"
-          type="info"
-          :closable="false"
-          show-icon
-          title="开关开启后，仍需后台调度器接入才会真正自动执行。"
-          style="margin-bottom: 12px"
-        />
-        <ElFormItem label="扫描频率（分钟）">
-          <ElInputNumber
-            v-model="scanConfig.frequencyMinutes"
-            :min="5"
-            :max="1440"
-            style="width: 100%"
-          />
-        </ElFormItem>
-        <ElFormItem label="默认分类ID">
-          <ElInput v-model="scanConfig.defaultCategoryId" placeholder="可选，自动归类" />
-        </ElFormItem>
-        <ElFormItem label="默认权限键">
-          <ElInput v-model="scanConfig.defaultPermissionKey" placeholder="可选，自动绑定权限键" />
-        </ElFormItem>
-        <ElFormItem label="标记无权限要求">
-          <ElSwitch v-model="scanConfig.markAsNoPermission" />
-        </ElFormItem>
-      </ElForm>
-      <template #footer>
-        <ElButton @click="scanConfigVisible = false">取消</ElButton>
-        <ElButton type="primary" :loading="scanConfigSaving" @click="saveScanConfig">保存</ElButton>
-      </template>
     </ElDialog>
 
     <ElDrawer
@@ -621,15 +554,12 @@
     permissionBindVisible,
     permissionDialogMode,
     unregisteredVisible,
-    scanConfigVisible,
-    scanConfigSaving,
     staleDialogVisible,
     unregisteredLoading,
     editingId,
     permissionBinding,
     permissionActionLoading,
     unregisteredRoutes,
-    scanConfig,
     staleCandidates,
     selectedStaleIds,
     staleCount,
@@ -660,19 +590,15 @@
     handleStaleCurrentChange,
     handleStaleSizeChange,
     submitCleanupStale,
-    openCreateDialog,
     openEditDialog: _openEditDialog,
     startCreateCategory,
     openCategoryDrawer,
     handleCategoryTreeSelect,
     openUnregisteredDialog,
-    openScanConfigDialog,
-    saveScanConfig,
     handleUnregisteredSearch,
     handleUnregisteredCurrentChange,
     handleUnregisteredSizeChange,
     resetUnregisteredQuery,
-    handleUseUnregisteredRoute,
     submitCategory,
     toggleCategoryStatus,
     submitForm,
@@ -690,6 +616,18 @@
 
   .module-card {
     margin-bottom: 12px;
+  }
+
+  .page-top-stack {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+  }
+
+  .page-top-stack > .api-table-card {
+    flex: 1;
+    min-height: 0;
   }
 
   .tree-card,

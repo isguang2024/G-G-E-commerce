@@ -98,20 +98,6 @@ func encodeCleanupStaleApiEndpointsRequest(
 	return nil
 }
 
-func encodeCreateApiEndpointRequest(
-	req AnyObject,
-	r *http.Request,
-) error {
-	const contentType = "application/json"
-	e := new(jx.Encoder)
-	{
-		req.Encode(e)
-	}
-	encoded := e.Bytes()
-	ht.SetBody(r, bytes.NewReader(encoded), contentType)
-	return nil
-}
-
 func encodeCreateApiEndpointCategoryRequest(
 	req AnyObject,
 	r *http.Request,
@@ -408,20 +394,6 @@ func encodeRegisterRequest(
 
 func encodeRollbackFeaturePackageRequest(
 	req *RollbackRequest,
-	r *http.Request,
-) error {
-	const contentType = "application/json"
-	e := new(jx.Encoder)
-	{
-		req.Encode(e)
-	}
-	encoded := e.Bytes()
-	ht.SetBody(r, bytes.NewReader(encoded), contentType)
-	return nil
-}
-
-func encodeSaveApiEndpointScanConfigRequest(
-	req AnyObject,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

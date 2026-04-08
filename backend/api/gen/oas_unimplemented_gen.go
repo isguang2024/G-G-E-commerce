@@ -76,15 +76,6 @@ func (UnimplementedHandler) CleanupUnusedPermissionActions(ctx context.Context) 
 	return r, ht.ErrNotImplemented
 }
 
-// CreateApiEndpoint implements createApiEndpoint operation.
-//
-// 创建 API 注册项.
-//
-// POST /api-endpoints
-func (UnimplementedHandler) CreateApiEndpoint(ctx context.Context, req AnyObject) (r CreateApiEndpointRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // CreateApiEndpointCategory implements createApiEndpointCategory operation.
 //
 // 创建 API 分类.
@@ -352,15 +343,6 @@ func (UnimplementedHandler) ExplainPermissions(ctx context.Context, params Expla
 //
 // GET /api-endpoints/overview
 func (UnimplementedHandler) GetApiEndpointOverview(ctx context.Context, params GetApiEndpointOverviewParams) (r GetApiEndpointOverviewRes, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// GetApiEndpointScanConfig implements getApiEndpointScanConfig operation.
-//
-// 获取未注册 API 扫描配置.
-//
-// GET /api-endpoints/unregistered/scan-config
-func (UnimplementedHandler) GetApiEndpointScanConfig(ctx context.Context) (r GetApiEndpointScanConfigRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1369,15 +1351,6 @@ func (UnimplementedHandler) RestoreMenuBackup(ctx context.Context, params Restor
 //
 // POST /feature-packages/{id}/rollback
 func (UnimplementedHandler) RollbackFeaturePackage(ctx context.Context, req *RollbackRequest, params RollbackFeaturePackageParams) (r *MutationResult, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// SaveApiEndpointScanConfig implements saveApiEndpointScanConfig operation.
-//
-// 保存未注册 API 扫描配置.
-//
-// PUT /api-endpoints/unregistered/scan-config
-func (UnimplementedHandler) SaveApiEndpointScanConfig(ctx context.Context, req AnyObject) (r SaveApiEndpointScanConfigRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

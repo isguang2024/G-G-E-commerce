@@ -50,12 +50,6 @@ type Handler interface {
 	//
 	// POST /permission-actions/cleanup-unused
 	CleanupUnusedPermissionActions(ctx context.Context) (*MutationResult, error)
-	// CreateApiEndpoint implements createApiEndpoint operation.
-	//
-	// 创建 API 注册项.
-	//
-	// POST /api-endpoints
-	CreateApiEndpoint(ctx context.Context, req AnyObject) (CreateApiEndpointRes, error)
 	// CreateApiEndpointCategory implements createApiEndpointCategory operation.
 	//
 	// 创建 API 分类.
@@ -236,12 +230,6 @@ type Handler interface {
 	//
 	// GET /api-endpoints/overview
 	GetApiEndpointOverview(ctx context.Context, params GetApiEndpointOverviewParams) (GetApiEndpointOverviewRes, error)
-	// GetApiEndpointScanConfig implements getApiEndpointScanConfig operation.
-	//
-	// 获取未注册 API 扫描配置.
-	//
-	// GET /api-endpoints/unregistered/scan-config
-	GetApiEndpointScanConfig(ctx context.Context) (GetApiEndpointScanConfigRes, error)
 	// GetAuthMe implements getAuthMe operation.
 	//
 	// 获取当前登录账户信息.
@@ -914,12 +902,6 @@ type Handler interface {
 	//
 	// POST /feature-packages/{id}/rollback
 	RollbackFeaturePackage(ctx context.Context, req *RollbackRequest, params RollbackFeaturePackageParams) (*MutationResult, error)
-	// SaveApiEndpointScanConfig implements saveApiEndpointScanConfig operation.
-	//
-	// 保存未注册 API 扫描配置.
-	//
-	// PUT /api-endpoints/unregistered/scan-config
-	SaveApiEndpointScanConfig(ctx context.Context, req AnyObject) (SaveApiEndpointScanConfigRes, error)
 	// SaveApp implements saveApp operation.
 	//
 	// 保存应用.

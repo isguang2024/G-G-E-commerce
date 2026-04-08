@@ -12,16 +12,6 @@
       "access_mode": "permission"
     },
     {
-      "operation_id": "createApiEndpoint",
-      "method": "post",
-      "path": "/api-endpoints",
-      "permission_key": "system.api_registry.sync",
-      "summary": "创建 API 注册项",
-      "tags": "api_endpoint",
-      "api_category": "api_endpoint",
-      "access_mode": "permission"
-    },
-    {
       "operation_id": "listApiEndpointCategories",
       "method": "get",
       "path": "/api-endpoints/categories",
@@ -97,26 +87,6 @@
       "path": "/api-endpoints/unregistered",
       "permission_key": "system.api_registry.view",
       "summary": "获取未注册 API 路由",
-      "tags": "api_endpoint",
-      "api_category": "api_endpoint",
-      "access_mode": "permission"
-    },
-    {
-      "operation_id": "getApiEndpointScanConfig",
-      "method": "get",
-      "path": "/api-endpoints/unregistered/scan-config",
-      "permission_key": "system.api_registry.view",
-      "summary": "获取未注册 API 扫描配置",
-      "tags": "api_endpoint",
-      "api_category": "api_endpoint",
-      "access_mode": "permission"
-    },
-    {
-      "operation_id": "saveApiEndpointScanConfig",
-      "method": "put",
-      "path": "/api-endpoints/unregistered/scan-config",
-      "permission_key": "system.api_registry.sync",
-      "summary": "保存未注册 API 扫描配置",
       "tags": "api_endpoint",
       "api_category": "api_endpoint",
       "access_mode": "permission"

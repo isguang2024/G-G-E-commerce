@@ -238,61 +238,6 @@ func (h *APIHandler) ListUnregisteredApiEndpoints(ctx context.Context, params ge
 	return &obj, nil
 }
 
-// ─── getApiEndpointScanConfig ─────────────────────────────────────────────────
-
-func (h *APIHandler) GetApiEndpointScanConfig(ctx context.Context) (gen.GetApiEndpointScanConfigRes, error) {
-	config, err := h.apiEndpointSvc.GetUnregisteredScanConfig()
-	if err != nil {
-		h.logger.Error("get unregistered scan config failed", zap.Error(err))
-		return nil, err
-	}
-	obj := marshalAnyObject(config)
-	return &obj, nil
-}
-
-// ─── saveApiEndpointScanConfig ────────────────────────────────────────────────
-
-func (h *APIHandler) SaveApiEndpointScanConfig(ctx context.Context, req gen.AnyObject) (gen.SaveApiEndpointScanConfigRes, error) {
-	var body struct {
-		Enabled              *bool  `json:"enabled"`
-		FrequencyMinutes     int    `json:"frequency_minutes"`
-		DefaultCategoryID    string `json:"default_category_id"`
-		DefaultPermissionKey string `json:"default_permission_key"`
-		MarkAsNoPermission   *bool  `json:"mark_as_no_permission"`
-	}
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return nil, err
-	}
-	current, err := h.apiEndpointSvc.GetUnregisteredScanConfig()
-	if err != nil {
-		h.logger.Error("get current unregistered scan config failed", zap.Error(err))
-		return nil, err
-	}
-	target := apiendpoint.UnregisteredScanConfig{
-		Enabled:              current.Enabled,
-		FrequencyMinutes:     body.FrequencyMinutes,
-		DefaultCategoryID:    strings.TrimSpace(body.DefaultCategoryID),
-		DefaultPermissionKey: strings.TrimSpace(body.DefaultPermissionKey),
-		MarkAsNoPermission:   current.MarkAsNoPermission,
-	}
-	if body.Enabled != nil {
-		target.Enabled = *body.Enabled
-	}
-	if body.FrequencyMinutes <= 0 {
-		target.FrequencyMinutes = current.FrequencyMinutes
-	}
-	if body.MarkAsNoPermission != nil {
-		target.MarkAsNoPermission = *body.MarkAsNoPermission
-	}
-	saved, err := h.apiEndpointSvc.SaveUnregisteredScanConfig(target)
-	if err != nil {
-		h.logger.Error("save unregistered scan config failed", zap.Error(err))
-		return nil, err
-	}
-	obj := marshalAnyObject(saved)
-	return &obj, nil
-}
-
 // ─── listApiEndpointCategories ────────────────────────────────────────────────
 
 func (h *APIHandler) ListApiEndpointCategories(ctx context.Context) (gen.ListApiEndpointCategoriesRes, error) {
@@ -353,12 +298,6 @@ func (h *APIHandler) CleanupStaleApiEndpoints(ctx context.Context, req gen.AnyOb
 		"deleted_count": deletedCount,
 	})
 	return &obj, nil
-}
-
-// ─── createApiEndpoint ────────────────────────────────────────────────────────
-
-func (h *APIHandler) CreateApiEndpoint(ctx context.Context, req gen.AnyObject) (gen.CreateApiEndpointRes, error) {
-	return h.saveEndpointFromBody(ctx, uuid.Nil, req)
 }
 
 // ─── updateApiEndpoint ────────────────────────────────────────────────────────

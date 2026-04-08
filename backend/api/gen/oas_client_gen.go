@@ -69,12 +69,6 @@ type Invoker interface {
 	//
 	// POST /permission-actions/cleanup-unused
 	CleanupUnusedPermissionActions(ctx context.Context) (*MutationResult, error)
-	// CreateApiEndpoint invokes createApiEndpoint operation.
-	//
-	// 创建 API 注册项.
-	//
-	// POST /api-endpoints
-	CreateApiEndpoint(ctx context.Context, request AnyObject) (CreateApiEndpointRes, error)
 	// CreateApiEndpointCategory invokes createApiEndpointCategory operation.
 	//
 	// 创建 API 分类.
@@ -255,12 +249,6 @@ type Invoker interface {
 	//
 	// GET /api-endpoints/overview
 	GetApiEndpointOverview(ctx context.Context, params GetApiEndpointOverviewParams) (GetApiEndpointOverviewRes, error)
-	// GetApiEndpointScanConfig invokes getApiEndpointScanConfig operation.
-	//
-	// 获取未注册 API 扫描配置.
-	//
-	// GET /api-endpoints/unregistered/scan-config
-	GetApiEndpointScanConfig(ctx context.Context) (GetApiEndpointScanConfigRes, error)
 	// GetAuthMe invokes getAuthMe operation.
 	//
 	// 获取当前登录账户信息.
@@ -933,12 +921,6 @@ type Invoker interface {
 	//
 	// POST /feature-packages/{id}/rollback
 	RollbackFeaturePackage(ctx context.Context, request *RollbackRequest, params RollbackFeaturePackageParams) (*MutationResult, error)
-	// SaveApiEndpointScanConfig invokes saveApiEndpointScanConfig operation.
-	//
-	// 保存未注册 API 扫描配置.
-	//
-	// PUT /api-endpoints/unregistered/scan-config
-	SaveApiEndpointScanConfig(ctx context.Context, request AnyObject) (SaveApiEndpointScanConfigRes, error)
 	// SaveApp invokes saveApp operation.
 	//
 	// 保存应用.
@@ -1842,83 +1824,6 @@ func (c *Client) sendCleanupUnusedPermissionActions(ctx context.Context) (res *M
 
 	stage = "DecodeResponse"
 	result, err := decodeCleanupUnusedPermissionActionsResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// CreateApiEndpoint invokes createApiEndpoint operation.
-//
-// 创建 API 注册项.
-//
-// POST /api-endpoints
-func (c *Client) CreateApiEndpoint(ctx context.Context, request AnyObject) (CreateApiEndpointRes, error) {
-	res, err := c.sendCreateApiEndpoint(ctx, request)
-	return res, err
-}
-
-func (c *Client) sendCreateApiEndpoint(ctx context.Context, request AnyObject) (res CreateApiEndpointRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("createApiEndpoint"),
-		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/api-endpoints"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, CreateApiEndpointOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [1]string
-	pathParts[0] = "/api-endpoints"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "POST", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-	if err := encodeCreateApiEndpointRequest(request, r); err != nil {
-		return res, errors.Wrap(err, "encode request")
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer body.Close()
-
-	stage = "DecodeResponse"
-	result, err := decodeCreateApiEndpointResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -4463,80 +4368,6 @@ func (c *Client) sendGetApiEndpointOverview(ctx context.Context, params GetApiEn
 
 	stage = "DecodeResponse"
 	result, err := decodeGetApiEndpointOverviewResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// GetApiEndpointScanConfig invokes getApiEndpointScanConfig operation.
-//
-// 获取未注册 API 扫描配置.
-//
-// GET /api-endpoints/unregistered/scan-config
-func (c *Client) GetApiEndpointScanConfig(ctx context.Context) (GetApiEndpointScanConfigRes, error) {
-	res, err := c.sendGetApiEndpointScanConfig(ctx)
-	return res, err
-}
-
-func (c *Client) sendGetApiEndpointScanConfig(ctx context.Context) (res GetApiEndpointScanConfigRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("getApiEndpointScanConfig"),
-		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/api-endpoints/unregistered/scan-config"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, GetApiEndpointScanConfigOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [1]string
-	pathParts[0] = "/api-endpoints/unregistered/scan-config"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "GET", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer body.Close()
-
-	stage = "DecodeResponse"
-	result, err := decodeGetApiEndpointScanConfigResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -15797,83 +15628,6 @@ func (c *Client) sendRollbackFeaturePackage(ctx context.Context, request *Rollba
 
 	stage = "DecodeResponse"
 	result, err := decodeRollbackFeaturePackageResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// SaveApiEndpointScanConfig invokes saveApiEndpointScanConfig operation.
-//
-// 保存未注册 API 扫描配置.
-//
-// PUT /api-endpoints/unregistered/scan-config
-func (c *Client) SaveApiEndpointScanConfig(ctx context.Context, request AnyObject) (SaveApiEndpointScanConfigRes, error) {
-	res, err := c.sendSaveApiEndpointScanConfig(ctx, request)
-	return res, err
-}
-
-func (c *Client) sendSaveApiEndpointScanConfig(ctx context.Context, request AnyObject) (res SaveApiEndpointScanConfigRes, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("saveApiEndpointScanConfig"),
-		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.URLTemplateKey.String("/api-endpoints/unregistered/scan-config"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, SaveApiEndpointScanConfigOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [1]string
-	pathParts[0] = "/api-endpoints/unregistered/scan-config"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "PUT", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-	if err := encodeSaveApiEndpointScanConfigRequest(request, r); err != nil {
-		return res, errors.Wrap(err, "encode request")
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer body.Close()
-
-	stage = "DecodeResponse"
-	result, err := decodeSaveApiEndpointScanConfigResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

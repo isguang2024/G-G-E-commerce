@@ -296,3 +296,14 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 **下次方向**
 - 将 DB seed 固化进 goose migration（或 permissionseed/ensure.go），避免重建库后权限数据丢失。
 - 针对非 super_admin 普通成员补充集成测试：验证 feature-package → workspace → role → permission key 交集链路正确拒绝/放行。
+
+### 2026-04-08 API 管理裁剪：删除新增 API / 扫描配置（Phase 10）
+
+**本次改动**
+- 从 [backend/api/openapi/openapi.yaml](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/api/openapi/openapi.yaml) 删除 `POST /api-endpoints`、`GET/PUT /api-endpoints/unregistered/scan-config`，`openapi_seed.json` 重新生成后变为 195 个 operations。
+- 同步清理手写后端入口：[backend/internal/api/handlers/apiendpoint.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/api/handlers/apiendpoint.go) 删除 `CreateApiEndpoint` / `GetApiEndpointScanConfig` / `SaveApiEndpointScanConfig`，[backend/internal/api/router/router.go](/C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/api/router/router.go) 删除对应路由。
+- 重新运行 `go run github.com/ogen-go/ogen/cmd/ogen@latest --target api/gen --package gen --clean api/openapi/openapi.yaml` 与 `go run ./cmd/gen-permissions`，保证生成代码与权限种子同步收口；前端 `pnpm build` 通过。
+
+**下次方向**
+- 如果后续确认不再手工录入 API 注册项，可以继续收窄 API 管理页，仅保留同步、未注册、失效清理和分类维护。
+- 若仍需要新增入口，建议单独做“兜底补录”而不是回到主流程，避免与 OpenAPI-first 的自动注册链路混淆。

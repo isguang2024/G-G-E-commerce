@@ -3,8 +3,7 @@ import {
   unwrap,
   normalizeApiEndpoint,
   normalizeApiEndpointCategory,
-  normalizeUnregisteredApiRoute,
-  normalizeUnregisteredApiScanConfig
+  normalizeUnregisteredApiRoute
 } from './_shared'
 
 /** 获取 API 注册表 */
@@ -77,12 +76,6 @@ export async function fetchCleanupStaleApiEndpoints(ids: string[]) {
   return { deletedCount: res?.deletedCount ?? res?.deleted_count ?? 0 }
 }
 
-export function fetchCreateApiEndpoint(data: Partial<Api.SystemManage.APIEndpointItem>) {
-  return unwrap(
-    v5Client.POST('/api-endpoints', { body: data as any })
-  ) as unknown as Promise<Api.SystemManage.APIEndpointItem>
-}
-
 export function fetchUpdateApiEndpoint(
   id: string,
   data: Partial<Api.SystemManage.APIEndpointItem>
@@ -131,30 +124,6 @@ export async function fetchGetUnregisteredApiRouteList(params: {
     ...res,
     records: (res?.records || []).map(normalizeUnregisteredApiRoute)
   } as Api.SystemManage.APIUnregisteredRouteList
-}
-
-export async function fetchGetUnregisteredApiScanConfig() {
-  const res: any = await unwrap(
-    v5Client.GET('/api-endpoints/unregistered/scan-config', { params: { query: {} as any } })
-  )
-  return normalizeUnregisteredApiScanConfig(res)
-}
-
-export async function fetchSaveUnregisteredApiScanConfig(
-  data: Partial<Api.SystemManage.APIUnregisteredScanConfig>
-) {
-  const res: any = await unwrap(
-    v5Client.PUT('/api-endpoints/unregistered/scan-config', {
-      body: {
-        enabled: data.enabled,
-        frequency_minutes: data.frequencyMinutes,
-        default_category_id: data.defaultCategoryId,
-        default_permission_key: data.defaultPermissionKey,
-        mark_as_no_permission: data.markAsNoPermission
-      } as any
-    })
-  )
-  return normalizeUnregisteredApiScanConfig(res)
 }
 
 export async function fetchCreateApiEndpointCategory(

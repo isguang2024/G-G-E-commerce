@@ -13,10 +13,6 @@ type CreateApiEndpointCategoryRes interface {
 	createApiEndpointCategoryRes()
 }
 
-type CreateApiEndpointRes interface {
-	createApiEndpointRes()
-}
-
 type CreateUserRes interface {
 	createUserRes()
 }
@@ -35,10 +31,6 @@ type ExplainPermissionsRes interface {
 
 type GetApiEndpointOverviewRes interface {
 	getApiEndpointOverviewRes()
-}
-
-type GetApiEndpointScanConfigRes interface {
-	getApiEndpointScanConfigRes()
 }
 
 type GetAuthMeRes interface {
@@ -99,10 +91,6 @@ type RefreshTokenRes interface {
 
 type RegisterRes interface {
 	registerRes()
-}
-
-type SaveApiEndpointScanConfigRes interface {
-	saveApiEndpointScanConfigRes()
 }
 
 type SwitchWorkspaceRes interface {

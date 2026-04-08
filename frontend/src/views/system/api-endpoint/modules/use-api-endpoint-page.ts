@@ -19,7 +19,6 @@ import { useManagedAppScope } from '@/hooks/business/useManagedAppScope'
 import {
   fetchAddPermissionActionEndpoint,
   fetchCleanupStaleApiEndpoints,
-  fetchCreateApiEndpoint,
   fetchCreateApiEndpointCategory,
   fetchDeletePermissionActionEndpoint,
   fetchGetApiEndpointCategories,
@@ -27,9 +26,7 @@ import {
   fetchGetApiEndpointOverview,
   fetchGetPermissionActionOptions,
   fetchGetStaleApiEndpointList,
-  fetchGetUnregisteredApiScanConfig,
   fetchGetUnregisteredApiRouteList,
-  fetchSaveUnregisteredApiScanConfig,
   fetchSyncApiEndpoints,
   fetchUpdateApiEndpoint,
   fetchUpdateApiEndpointCategory
@@ -89,13 +86,10 @@ export function useApiEndpointPage() {
   const permissionBindVisible = ref(false)
   const permissionDialogMode = ref<'add' | 'remove'>('add')
   const unregisteredVisible = ref(false)
-  const scanConfigVisible = ref(false)
-  const scanConfigSaving = ref(false)
   const staleDialogVisible = ref(false)
   const unregisteredLoading = ref(false)
   const shouldRefreshUnregistered = ref(false)
   const editingId = ref('')
-  const pendingLocateRoute = ref<{ method: string; path: string } | null>(null)
   const categories = ref<APIEndpointCategoryItem[]>([])
   const permissionActionOptions = ref<Api.SystemManage.PermissionActionItem[]>([])
   const permissionActionLoading = ref(false)
@@ -106,13 +100,6 @@ export function useApiEndpointPage() {
     permissionActionId: ''
   })
   const unregisteredRoutes = ref<APIUnregisteredRouteItem[]>([])
-  const scanConfig = reactive<Api.SystemManage.APIUnregisteredScanConfig>({
-    enabled: false,
-    frequencyMinutes: 60,
-    defaultCategoryId: '',
-    defaultPermissionKey: '',
-    markAsNoPermission: false
-  })
   const staleCandidates = ref<APIEndpointItem[]>([])
   const selectedStaleIds = ref<string[]>([])
   const totalCount = ref(0)
@@ -633,7 +620,6 @@ export function useApiEndpointPage() {
 
   function resetForm() {
     editingId.value = ''
-    pendingLocateRoute.value = null
     formState.method = 'GET'
     formState.path = ''
     formState.summary = ''
@@ -651,23 +637,8 @@ export function useApiEndpointPage() {
     categoryForm.status = 'normal'
   }
 
-  function openCreateDialog() {
-    resetForm()
-    formVisible.value = true
-  }
-
-  function resolveCategoryIdByCode(code?: string) {
-    const target = `${code || ''}`.trim().toLowerCase()
-    if (!target) return ''
-    return (
-      categories.value.find((item) => `${item.code || ''}`.trim().toLowerCase() === target)?.id ||
-      ''
-    )
-  }
-
   function openEditDialog(row: APIEndpointItem) {
     editingId.value = row.id
-    pendingLocateRoute.value = null
     formState.method = (row.method || 'GET').toUpperCase()
     formState.path = row.path || ''
     formState.summary = row.summary || ''
@@ -787,44 +758,6 @@ export function useApiEndpointPage() {
     await loadUnregisteredRoutes()
   }
 
-  async function openScanConfigDialog() {
-    scanConfigVisible.value = true
-    try {
-      const config = await fetchGetUnregisteredApiScanConfig()
-      scanConfig.enabled = Boolean(config.enabled)
-      scanConfig.frequencyMinutes = Number(config.frequencyMinutes || 60)
-      scanConfig.defaultCategoryId = config.defaultCategoryId || ''
-      scanConfig.defaultPermissionKey = config.defaultPermissionKey || ''
-      scanConfig.markAsNoPermission = Boolean(config.markAsNoPermission)
-    } catch (error: any) {
-      ElMessage.error(error?.message || '获取扫描配置失败')
-    }
-  }
-
-  async function saveScanConfig() {
-    scanConfigSaving.value = true
-    try {
-      const saved = await fetchSaveUnregisteredApiScanConfig({
-        enabled: scanConfig.enabled,
-        frequencyMinutes: scanConfig.frequencyMinutes,
-        defaultCategoryId: (scanConfig.defaultCategoryId || '').trim(),
-        defaultPermissionKey: (scanConfig.defaultPermissionKey || '').trim(),
-        markAsNoPermission: scanConfig.markAsNoPermission
-      })
-      scanConfig.enabled = Boolean(saved.enabled)
-      scanConfig.frequencyMinutes = Number(saved.frequencyMinutes || 60)
-      scanConfig.defaultCategoryId = saved.defaultCategoryId || ''
-      scanConfig.defaultPermissionKey = saved.defaultPermissionKey || ''
-      scanConfig.markAsNoPermission = Boolean(saved.markAsNoPermission)
-      scanConfigVisible.value = false
-      ElMessage.success('扫描配置已保存')
-    } catch (error: any) {
-      ElMessage.error(error?.message || '保存扫描配置失败')
-    } finally {
-      scanConfigSaving.value = false
-    }
-  }
-
   async function handleUnregisteredSearch() {
     unregisteredPagination.current = 1
     await loadUnregisteredRoutes()
@@ -848,23 +781,6 @@ export function useApiEndpointPage() {
     unregisteredQuery.onlyNoMeta = false
     unregisteredPagination.current = 1
     await loadUnregisteredRoutes()
-  }
-
-  function handleUseUnregisteredRoute(route: APIUnregisteredRouteItem) {
-    resetForm()
-    formState.method = (route.method || 'GET').toUpperCase()
-    formState.path = route.path || ''
-    formState.summary = route.meta?.summary || ''
-    formState.categoryId = resolveCategoryIdByCode(route.meta?.category_code)
-    formState.permissionKeys = [...(route.meta?.permission_keys || [])]
-    pendingLocateRoute.value = {
-      method: formState.method,
-      path: formState.path
-    }
-    shouldRefreshUnregistered.value = true
-    unregisteredVisible.value = false
-    formVisible.value = true
-    ElMessage.success('已带入新增 API 表单')
   }
 
   async function submitCategory() {
@@ -932,7 +848,11 @@ export function useApiEndpointPage() {
 
   async function submitForm() {
     if (!ensureManagedAppReady(true)) return
-    const isEditing = !!editingId.value
+    const id = editingId.value
+    if (!id) {
+      ElMessage.warning('当前仅支持编辑已注册 API')
+      return
+    }
     const payload = {
       method: formState.method,
       path: formState.path,
@@ -943,15 +863,7 @@ export function useApiEndpointPage() {
     }
     saving.value = true
     try {
-      if (editingId.value) {
-        await fetchUpdateApiEndpoint(editingId.value, payload)
-      } else {
-        await fetchCreateApiEndpoint(payload)
-        pendingLocateRoute.value = {
-          method: payload.method,
-          path: payload.path
-        }
-      }
+      await fetchUpdateApiEndpoint(id, payload)
       ElMessage.success('保存成功')
       formVisible.value = false
       await refreshData()
@@ -960,17 +872,9 @@ export function useApiEndpointPage() {
       if (shouldRefreshUnregistered.value) {
         await loadUnregisteredRoutes()
       }
-      if (!isEditing && pendingLocateRoute.value) {
-        tableQuery.method = pendingLocateRoute.value.method || ''
-        tableQuery.path = pendingLocateRoute.value.path || ''
-        syncSearchFormFromQuery()
-        await applyTableFilters()
-        pendingLocateRoute.value = null
-      }
     } catch (error: any) {
       ElMessage.error(error?.message || '保存失败')
     } finally {
-      if (isEditing) pendingLocateRoute.value = null
       saving.value = false
     }
   }
@@ -1089,18 +993,14 @@ export function useApiEndpointPage() {
     permissionBindVisible,
     permissionDialogMode,
     unregisteredVisible,
-    scanConfigVisible,
-    scanConfigSaving,
     staleDialogVisible,
     unregisteredLoading,
     editingId,
-    pendingLocateRoute,
     categories,
     permissionActionOptions,
     permissionActionLoading,
     permissionBinding,
     unregisteredRoutes,
-    scanConfig,
     staleCandidates,
     selectedStaleIds,
     totalCount,
@@ -1153,8 +1053,6 @@ export function useApiEndpointPage() {
     submitCleanupStale,
     resetForm,
     resetCategoryForm,
-    openCreateDialog,
-    resolveCategoryIdByCode,
     openEditDialog,
     startCreateCategory,
     openCategoryDrawer,
@@ -1165,13 +1063,10 @@ export function useApiEndpointPage() {
     loadStaleCandidates,
     syncStaleSelection,
     openUnregisteredDialog,
-    openScanConfigDialog,
-    saveScanConfig,
     handleUnregisteredSearch,
     handleUnregisteredCurrentChange,
     handleUnregisteredSizeChange,
     resetUnregisteredQuery,
-    handleUseUnregisteredRoute,
     submitCategory,
     toggleCategoryStatus,
     submitForm,

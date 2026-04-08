@@ -4443,38 +4443,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-    post:
-      operationId: createApiEndpoint
-      summary: 创建 API 注册项
-      tags: [api_endpoint]
-      x-permission-key: system.api_registry.sync
-      x-access-mode: permission
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AnyObject'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AnyObject'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
   /api-endpoints/overview:
     get:
       operationId: getApiEndpointOverview
@@ -4575,64 +4543,6 @@ paths:
           in: query
           schema:
             type: boolean
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AnyObject'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /api-endpoints/unregistered/scan-config:
-    get:
-      operationId: getApiEndpointScanConfig
-      summary: 获取未注册 API 扫描配置
-      tags: [api_endpoint]
-      x-permission-key: system.api_registry.view
-      x-access-mode: permission
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AnyObject'
-        '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        '500':
-          description: Internal Server Error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-    put:
-      operationId: saveApiEndpointScanConfig
-      summary: 保存未注册 API 扫描配置
-      tags: [api_endpoint]
-      x-permission-key: system.api_registry.sync
-      x-access-mode: permission
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AnyObject'
       responses:
         '200':
           description: OK

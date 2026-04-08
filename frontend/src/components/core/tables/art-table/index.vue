@@ -255,8 +255,8 @@
     ...(props.headerCellStyle || {}) // 合并用户传入的样式
   }))
 
-  // 是否显示分页器
-  const showPagination = computed(() => props.pagination && !isEmpty.value)
+  // 空列表时隐藏分页器，避免空态高度被分页器撑住。
+  const showPagination = computed(() => Boolean(props.pagination && !isEmpty.value))
 
   // 清理列属性，移除插槽相关的自定义属性，确保它们不会被 ElTableColumn 错误解释
   const cleanColumnProps = (col: ColumnOption) => {

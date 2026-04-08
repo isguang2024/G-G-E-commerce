@@ -233,6 +233,11 @@ function shouldShowErrorMessage(code: number): boolean {
     return false
   }
 
+  // 兼容后端直接返回 HTTP 状态码作为业务码的情况（如登录失败 401）
+  if (code >= 400 && code < 600) {
+    return true
+  }
+
   // 未定义的错误码，默认显示（安全起见）
   return code >= 5000
 }

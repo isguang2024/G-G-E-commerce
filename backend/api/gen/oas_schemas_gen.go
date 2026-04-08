@@ -77,14 +77,11 @@ func (s *AnyObject) init() AnyObject {
 
 func (*AnyObject) cleanupStaleApiEndpointsRes()      {}
 func (*AnyObject) createApiEndpointCategoryRes()     {}
-func (*AnyObject) createApiEndpointRes()             {}
 func (*AnyObject) getApiEndpointOverviewRes()        {}
-func (*AnyObject) getApiEndpointScanConfigRes()      {}
 func (*AnyObject) listApiEndpointCategoriesRes()     {}
 func (*AnyObject) listApiEndpointsRes()              {}
 func (*AnyObject) listStaleApiEndpointsRes()         {}
 func (*AnyObject) listUnregisteredApiEndpointsRes()  {}
-func (*AnyObject) saveApiEndpointScanConfigRes()     {}
 func (*AnyObject) updateApiEndpointCategoryRes()     {}
 func (*AnyObject) updateApiEndpointContextScopeRes() {}
 func (*AnyObject) updateApiEndpointRes()             {}
@@ -351,14 +348,6 @@ func (*CreateApiEndpointCategoryInternalServerError) createApiEndpointCategoryRe
 type CreateApiEndpointCategoryUnauthorized Error
 
 func (*CreateApiEndpointCategoryUnauthorized) createApiEndpointCategoryRes() {}
-
-type CreateApiEndpointInternalServerError Error
-
-func (*CreateApiEndpointInternalServerError) createApiEndpointRes() {}
-
-type CreateApiEndpointUnauthorized Error
-
-func (*CreateApiEndpointUnauthorized) createApiEndpointRes() {}
 
 type CreateUserBadRequest Error
 
@@ -1193,14 +1182,6 @@ func (*GetApiEndpointOverviewInternalServerError) getApiEndpointOverviewRes() {}
 type GetApiEndpointOverviewUnauthorized Error
 
 func (*GetApiEndpointOverviewUnauthorized) getApiEndpointOverviewRes() {}
-
-type GetApiEndpointScanConfigInternalServerError Error
-
-func (*GetApiEndpointScanConfigInternalServerError) getApiEndpointScanConfigRes() {}
-
-type GetApiEndpointScanConfigUnauthorized Error
-
-func (*GetApiEndpointScanConfigUnauthorized) getApiEndpointScanConfigRes() {}
 
 type GetUserForbidden Error
 
@@ -3700,14 +3681,6 @@ func (s *RollbackRequest) GetVersionID() uuid.UUID {
 func (s *RollbackRequest) SetVersionID(val uuid.UUID) {
 	s.VersionID = val
 }
-
-type SaveApiEndpointScanConfigInternalServerError Error
-
-func (*SaveApiEndpointScanConfigInternalServerError) saveApiEndpointScanConfigRes() {}
-
-type SaveApiEndpointScanConfigUnauthorized Error
-
-func (*SaveApiEndpointScanConfigUnauthorized) saveApiEndpointScanConfigRes() {}
 
 type SwitchWorkspaceBadRequest Error
 
