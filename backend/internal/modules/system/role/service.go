@@ -19,12 +19,12 @@ import (
 )
 
 var (
-	ErrRoleNotFound                          = errors.New("role not found")
-	ErrRoleCodeExists                        = errors.New("role code already exists")
-	ErrRoleAppScopeMismatch                  = errors.New("role is not effective in current app")
-	ErrSystemRoleCannotDelete                = errors.New("system role cannot be deleted")
-	ErrCollaborationWorkspaceRoleKeyReadonly = errors.New("collaboration workspace role permission keys are managed by workspace boundary")
-	ErrCollaborationWorkspaceRoleManaged     = errors.New("collaboration workspace role is managed in collaboration workspace context")
+	ErrRoleNotFound                          = errors.New("角色不存在")
+	ErrRoleCodeExists                        = errors.New("角色编码已存在")
+	ErrRoleAppScopeMismatch                  = errors.New("角色在当前应用中不生效")
+	ErrSystemRoleCannotDelete                = errors.New("系统角色不可删除")
+	ErrCollaborationWorkspaceRoleKeyReadonly = errors.New("协作空间角色的权限键由空间边界统一管理，不可在此修改")
+	ErrCollaborationWorkspaceRoleManaged     = errors.New("该角色在协作空间上下文中管理")
 )
 
 type RoleService interface {
@@ -430,7 +430,7 @@ func (s *roleService) SetRolePackages(roleID uuid.UUID, packageIDs []uuid.UUID, 
 			return err
 		}
 		if len(packages) != len(packageIDs) {
-			return errors.New("invalid feature packages")
+			return errors.New("无效的功能包")
 		}
 		for _, pkg := range packages {
 			if appscope.Normalize(pkg.AppKey) != normalizedAppKey {

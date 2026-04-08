@@ -3,15 +3,15 @@
   "configurations": [
     {
       "name": "backend",
-      "runtimeExecutable": "go",
-      "runtimeArgs": ["run", "./backend/cmd/server"],
+      "runtimeExecutable": "C:\\Program Files\\Git\\usr\\bin\\bash.exe",
+      "runtimeArgs": ["-c", "cd C:/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend && go run ./cmd/server"],
       "port": 8080
     },
     {
       "name": "frontend",
-      "runtimeExecutable": "cmd",
-      "runtimeArgs": ["/c", "cd", "frontend", "&&", "pnpm", "dev"],
-      "port": 5178
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["-C", "frontend", "dev"],
+      "port": 5173
     }
   ]
 }

@@ -748,6 +748,21 @@ export function normalizePageAccessTraceResult(item: any): Api.SystemManage.Page
     visibleMenuIds: Array.isArray(visibleMenuIds)
       ? visibleMenuIds.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
       : [],
+    menus: Array.isArray(item?.menus)
+      ? item.menus.map((menu: any) => ({
+          id: menu?.id || '',
+          parentId: menu?.parent_id || menu?.parentId || '',
+          name: menu?.name || '',
+          title: menu?.title || '',
+          path: menu?.path || '',
+          fullPath: menu?.full_path || menu?.fullPath || '',
+          kind: menu?.kind || '',
+          icon: menu?.icon || '',
+          sortOrder: Number(menu?.sort_order ?? menu?.sortOrder ?? 0),
+          hidden: Boolean(menu?.hidden),
+          visible: Boolean(menu?.visible)
+        }))
+      : [],
     roles: Array.isArray(item?.roles)
       ? item.roles.map((role: any) => ({
           roleId: role?.role_id || role?.roleId || '',
@@ -788,25 +803,6 @@ export function normalizeMenuManageGroup(item: any): Api.SystemManage.MenuManage
   }
 }
 
-export function normalizeMenuBackupItem(item: any): Api.SystemManage.MenuBackupItem {
-  const scopeType = `${item?.scope_type || item?.scopeType || ''}`.trim()
-  const scopeOrigin = `${item?.scope_origin || item?.scopeOrigin || ''}`.trim()
-  const rawSpaceKey = `${item?.space_key || item?.spaceKey || ''}`.trim()
-  return {
-    id: item?.id || '',
-    name: item?.name || '',
-    description: item?.description || '',
-    // 备份列表里空 space_key 仍有业务含义，不能像菜单/页面那样归一成 default。
-    space_key: rawSpaceKey || undefined,
-    space_name: item?.space_name || item?.spaceName || '',
-    scope_type: scopeType || (rawSpaceKey ? 'space' : 'global'),
-    // scope_origin 是后端显式返回的来源标签；缺省时退回旧语义，保证兼容旧接口数据。
-    scope_origin: scopeOrigin || (rawSpaceKey ? 'space' : 'global'),
-    created_at: item?.created_at || item?.createdAt || '',
-    created_by: item?.created_by || item?.createdBy || ''
-  }
-}
-
 export function normalizeRuntimeMenuTree(item: any): AppRouteRecord {
   const meta = item?.meta || {}
   const children = Array.isArray(item?.children)
@@ -828,7 +824,7 @@ export function normalizeRuntimeMenuTree(item: any): AppRouteRecord {
     spaceType,
     hostKey,
     meta: {
-      title: meta?.title || '',
+      title: meta?.title || item?.title || item?.name || '',
       icon: meta?.icon || '',
       // accessMode 由后端运行时菜单显式下发；空值时交给前端/后续链路按默认 permission 处理。
       accessMode: `${meta?.accessMode || ''}`.trim() || undefined,

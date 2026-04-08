@@ -1,0 +1,376 @@
+# domains/page/paths.yaml — AUTO-SPLIT by split_spec.py
+paths:
+  /pages/runtime:
+    get:
+      operationId: listRuntimePages
+      summary: 获取运行时页面注册表
+      tags:
+      - page
+      x-access-mode: authenticated
+      parameters:
+      - name: app_key
+        in: query
+        schema:
+          type: string
+      - name: space_key
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+  /pages/runtime/public:
+    get:
+      operationId: listPublicRuntimePages
+      summary: 获取公开运行时页面注册表
+      tags:
+      - page
+      x-access-mode: public
+      security: []
+      parameters:
+      - name: app_key
+        in: query
+        schema:
+          type: string
+      - name: space_key
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+  /pages/menu-options:
+    get:
+      operationId: listPageMenuOptions
+      summary: 获取上级菜单候选
+      tags:
+      - page
+      x-permission-key: system.page.manage
+      x-access-mode: permission
+      parameters:
+      - name: app_key
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: space_key
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+  /pages/options:
+    get:
+      operationId: listPageOptions
+      summary: 获取页面候选列表
+      tags:
+      - page
+      x-permission-key: system.page.manage
+      x-access-mode: permission
+      parameters:
+      - name: app_key
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: space_key
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+  /pages/access-trace:
+    get:
+      operationId: getPageAccessTrace
+      summary: 获取页面访问链路
+      tags:
+      - page
+      x-permission-key: system.page.manage
+      x-access-mode: permission
+      parameters:
+      - name: app_key
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: user_id
+        in: query
+        required: true
+        description: 被测用户 ID (UUID)
+        schema:
+          type: string
+          format: uuid
+      - name: collaboration_workspace_id
+        in: query
+        description: 协作空间 ID；为空表示个人空间链路
+        schema:
+          type: string
+          format: uuid
+      - name: space_key
+        in: query
+        description: 菜单空间 key；为空自动解析默认空间
+        schema:
+          type: string
+      - name: page_key
+        in: query
+        description: 单个页面 key，留空则返回运行时可见全部页面
+        schema:
+          type: string
+      - name: page_keys
+        in: query
+        description: 多页面 key 逗号分隔
+        schema:
+          type: string
+      - name: route_path
+        in: query
+        description: 通过路由路径反查 page_key
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+  /pages/unregistered:
+    get:
+      operationId: listUnregisteredPages
+      summary: 获取未注册页面
+      tags:
+      - page
+      x-permission-key: system.page.sync
+      x-access-mode: permission
+      parameters:
+      - name: app_key
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+  /pages/sync:
+    post:
+      operationId: syncPages
+      summary: 同步页面注册表
+      tags:
+      - page
+      x-permission-key: system.page.sync
+      x-access-mode: permission
+      parameters:
+      - name: app_key
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/PageSyncResult'
+  /pages:
+    get:
+      operationId: listPages
+      summary: 获取页面列表
+      tags:
+      - page
+      x-permission-key: system.page.manage
+      x-access-mode: permission
+      parameters:
+      - name: app_key
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: current
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: size
+        in: query
+        schema:
+          type: integer
+          default: 20
+      - name: keyword
+        in: query
+        schema:
+          type: string
+      - name: space_key
+        in: query
+        schema:
+          type: string
+      - name: status
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+    post:
+      operationId: createPage
+      summary: 创建页面
+      tags:
+      - page
+      x-permission-key: system.page.manage
+      x-access-mode: permission
+      parameters:
+      - name: app_key
+        in: query
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/PageSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+  /pages/{id}:
+    get:
+      operationId: getPage
+      summary: 获取页面详情
+      tags:
+      - page
+      x-permission-key: system.page.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: app_key
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+    put:
+      operationId: updatePage
+      summary: 更新页面
+      tags:
+      - page
+      x-permission-key: system.page.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: app_key
+        in: query
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/PageSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+    delete:
+      operationId: deletePage
+      summary: 删除页面
+      tags:
+      - page
+      x-permission-key: system.page.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: app_key
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /pages/{id}/breadcrumb-preview:
+    get:
+      operationId: previewPageBreadcrumb
+      summary: 预览页面面包屑
+      tags:
+      - page
+      x-permission-key: system.page.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: app_key
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'

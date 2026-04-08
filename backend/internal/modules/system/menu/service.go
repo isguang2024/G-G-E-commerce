@@ -23,13 +23,12 @@ import (
 )
 
 var (
-	ErrMenuNotFound          = errors.New("menu not found")
+	ErrMenuNotFound          = errors.New("菜单不存在")
 	ErrMenuSystemProtected   = errors.New("系统默认菜单不可删除")
-	ErrMenuGroupNotFound     = errors.New("menu group not found")
-	ErrMenuGroupInUse        = errors.New("menu group in use")
+	ErrMenuGroupNotFound     = errors.New("菜单分组不存在")
+	ErrMenuGroupInUse        = errors.New("菜单分组使用中，无法删除")
 	ErrMenuDeleteModeInvalid = errors.New("无效的菜单删除方式")
 	ErrMenuHasChildren       = errors.New("该菜单存在子菜单，请选择删除策略")
-	ErrMenuBackupAppMismatch = errors.New("menu backup app mismatch")
 )
 
 type MenuService interface {
@@ -42,10 +41,6 @@ type MenuService interface {
 	CreateGroup(req *dto.MenuManageGroupCreateRequest) (*user.MenuManageGroup, error)
 	UpdateGroup(id uuid.UUID, req *dto.MenuManageGroupUpdateRequest) error
 	DeleteGroup(id uuid.UUID) error
-	CreateBackup(name, description, scopeType, appKey, spaceKey string, createdBy *uuid.UUID) error
-	ListBackups(appKey, spaceKey string) ([]*user.MenuBackup, error)
-	DeleteBackup(id uuid.UUID, appKey string) error
-	RestoreBackup(id uuid.UUID, appKey string) error
 }
 
 type menuService struct {
@@ -201,7 +196,7 @@ func (s *menuService) Create(req *dto.MenuCreateRequest) (*user.Menu, error) {
 	page.InvalidateRuntimeCache()
 	invalidateMenuCaches()
 	if err := s.refreshAllMenuSnapshots(); err != nil {
-		return nil, err
+		s.logger.Warn("menu create: snapshot refresh failed (non-fatal)", zap.Error(err))
 	}
 	return s.menuRepo.GetByID(menuID)
 }
@@ -330,7 +325,10 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 	}
 	page.InvalidateRuntimeCache()
 	invalidateMenuCaches()
-	return s.refreshAllMenuSnapshots()
+	if err := s.refreshAllMenuSnapshots(); err != nil {
+		s.logger.Warn("menu update: snapshot refresh failed (non-fatal)", zap.Error(err))
+	}
+	return nil
 }
 
 func (s *menuService) Delete(id uuid.UUID, mode string, targetParentID *uuid.UUID) error {
@@ -485,7 +483,10 @@ func (s *menuService) Delete(id uuid.UUID, mode string, targetParentID *uuid.UUI
 	)
 	page.InvalidateRuntimeCache()
 	invalidateMenuCaches()
-	return s.refreshAllMenuSnapshots()
+	if err := s.refreshAllMenuSnapshots(); err != nil {
+		s.logger.Warn("menu delete: snapshot refresh failed (non-fatal)", zap.Error(err))
+	}
+	return nil
 }
 
 func (s *menuService) DeletePreview(id uuid.UUID, mode string, targetParentID *uuid.UUID) (*MenuDeletePreview, error) {
@@ -610,21 +611,26 @@ func (s *menuService) countAffectedMenuRelations(menuIDs []uuid.UUID) (int, erro
 	if len(menuIDs) == 0 {
 		return 0, nil
 	}
-	var count int64
-	tables := []string{
-		"feature_package_menus",
-		"role_hidden_menus",
-		"collaboration_workspace_blocked_menus",
-		"user_hidden_menus",
+	type result struct {
+		Total int64
 	}
-	for _, table := range tables {
-		var current int64
-		if err := s.db.Table(table).Where("menu_id IN ?", menuIDs).Count(&current).Error; err != nil {
-			return 0, err
-		}
-		count += current
+	var r result
+	err := s.db.Raw(`
+		SELECT (
+			SELECT COUNT(*) FROM feature_package_menus WHERE menu_id IN ?
+		) + (
+			SELECT COUNT(*) FROM role_hidden_menus WHERE menu_id IN ?
+		) + (
+			SELECT COUNT(*) FROM collaboration_workspace_blocked_menus WHERE menu_id IN ?
+		) + (
+			SELECT COUNT(*) FROM user_hidden_menus WHERE menu_id IN ?
+		) AS total`,
+		menuIDs, menuIDs, menuIDs, menuIDs,
+	).Scan(&r).Error
+	if err != nil {
+		return 0, err
 	}
-	return int(count), nil
+	return int(r.Total), nil
 }
 
 func (s *menuService) refreshAllMenuSnapshots() error {

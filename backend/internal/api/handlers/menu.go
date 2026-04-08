@@ -1,11 +1,10 @@
-// menu.go: ogen handler implementations for /menus/* and menu groups/backups.
+// menu.go: ogen handler implementations for /menus/* and menu groups.
 package handlers
 
 import (
 	"context"
 	"errors"
 
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 
 	"github.com/gg-ecommerce/backend/api/gen"
@@ -37,6 +36,7 @@ func (h *APIHandler) CreateMenu(ctx context.Context, req *gen.MenuSaveRequest) (
 		SpaceKey:  optString(req.SpaceKey),
 		Kind:      req.Kind,
 		Path:      optString(req.Path),
+		Component: optString(req.Component),
 		Name:      req.Name,
 		Title:     req.Name,
 		Icon:      optString(req.Icon),
@@ -69,6 +69,7 @@ func (h *APIHandler) UpdateMenu(ctx context.Context, req *gen.MenuSaveRequest, p
 		SpaceKey:  optString(req.SpaceKey),
 		Kind:      req.Kind,
 		Path:      optString(req.Path),
+		Component: optString(req.Component),
 		Name:      req.Name,
 		Title:     req.Name,
 		Icon:      optString(req.Icon),
@@ -138,34 +139,3 @@ func (h *APIHandler) DeleteMenuGroup(ctx context.Context, params gen.DeleteMenuG
 	return ok(), nil
 }
 
-func (h *APIHandler) ListMenuBackups(ctx context.Context) (*gen.MenuBackupList, error) {
-	list, err := h.menuSvc.ListBackups("", "")
-	if err != nil {
-		h.logger.Error("list menu backups failed", zap.Error(err))
-		return nil, err
-	}
-	return &gen.MenuBackupList{Records: marshalList(list), Total: len(list)}, nil
-}
-
-func (h *APIHandler) CreateMenuBackup(ctx context.Context, req *gen.MenuBackupCreateRequest) (*gen.MutationResult, error) {
-	if req == nil {
-		return nil, errors.New("request body required")
-	}
-	var createdBy *uuid.UUID
-	if uid, ok := userIDFromContext(ctx); ok {
-		createdBy = &uid
-	}
-	if err := h.menuSvc.CreateBackup(req.Name, optString(req.Description), "", "", "", createdBy); err != nil {
-		h.logger.Error("create menu backup failed", zap.Error(err))
-		return nil, err
-	}
-	return ok(), nil
-}
-
-func (h *APIHandler) DeleteMenuBackup(ctx context.Context, params gen.DeleteMenuBackupParams) (*gen.MutationResult, error) {
-	if err := h.menuSvc.DeleteBackup(params.ID, ""); err != nil {
-		h.logger.Error("delete menu backup failed", zap.Error(err))
-		return nil, err
-	}
-	return ok(), nil
-}

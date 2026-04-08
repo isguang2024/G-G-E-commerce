@@ -18,9 +18,9 @@ import (
 )
 
 var (
-	ErrFeaturePackageNotFound = errors.New("feature package not found")
-	ErrFeaturePackageExists   = errors.New("feature package already exists")
-	ErrFeaturePackageBuiltin  = errors.New("feature package is builtin")
+	ErrFeaturePackageNotFound = errors.New("功能包不存在")
+	ErrFeaturePackageExists   = errors.New("功能包已存在")
+	ErrFeaturePackageBuiltin  = errors.New("内置功能包不可修改")
 )
 
 type Service interface {
@@ -122,7 +122,7 @@ func NewService(
 
 func (s *service) List(req *dto.FeaturePackageListRequest) ([]user.FeaturePackage, int64, error) {
 	if req == nil {
-		return nil, 0, errors.New("invalid request")
+		return nil, 0, errors.New("无效的请求参数")
 	}
 	if req.Current <= 0 {
 		req.Current = 1
@@ -143,7 +143,7 @@ func (s *service) List(req *dto.FeaturePackageListRequest) ([]user.FeaturePackag
 
 func (s *service) ListOptions(req *dto.FeaturePackageListRequest) ([]user.FeaturePackage, error) {
 	if req == nil {
-		return nil, errors.New("invalid request")
+		return nil, errors.New("无效的请求参数")
 	}
 	query := s.db.Model(&user.FeaturePackage{})
 	if req != nil {

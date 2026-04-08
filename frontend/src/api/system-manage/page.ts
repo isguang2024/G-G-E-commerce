@@ -173,7 +173,7 @@ export async function fetchGetPageMenuOptions(spaceKey: string | undefined, appK
 }
 
 export async function fetchGetPageAccessTrace(params: Api.SystemManage.PageAccessTraceParams) {
-  const query: Record<string, any> = {
+  const raw: Record<string, any> = {
     app_key: params.appKey,
     user_id: params.userId,
     collaboration_workspace_id: params.collaborationWorkspaceId,
@@ -181,6 +181,11 @@ export async function fetchGetPageAccessTrace(params: Api.SystemManage.PageAcces
     page_keys: params.pageKeys,
     route_path: params.routePath,
     space_key: params.spaceKey
+  }
+  // 空串会让 ogen 的 uuid 解析报 400，直接剔除空值
+  const query: Record<string, any> = {}
+  for (const [k, v] of Object.entries(raw)) {
+    if (v !== undefined && v !== null && `${v}`.trim() !== '') query[k] = v
   }
   const res: any = await unwrap(
     v5Client.GET('/pages/access-trace', { params: { query } as any })

@@ -182,20 +182,6 @@ func encodeCreateMenuRequest(
 	return nil
 }
 
-func encodeCreateMenuBackupRequest(
-	req *MenuBackupCreateRequest,
-	r *http.Request,
-) error {
-	const contentType = "application/json"
-	e := new(jx.Encoder)
-	{
-		req.Encode(e)
-	}
-	encoded := e.Bytes()
-	ht.SetBody(r, bytes.NewReader(encoded), contentType)
-	return nil
-}
-
 func encodeCreateMenuGroupRequest(
 	req *MenuGroupSaveRequest,
 	r *http.Request,

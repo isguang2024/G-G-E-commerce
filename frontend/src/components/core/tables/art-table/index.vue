@@ -3,7 +3,12 @@
 <!-- 扩展功能：分页组件、渲染自定义列、loading、表格全局边框、斑马纹、表格尺寸、表头背景配置 -->
 <!-- 获取 ref：默认暴露了 elTableRef 外部通过 ref.value.elTableRef 可以调用 el-table 方法 -->
 <template>
-  <div class="art-table" :class="{ 'is-empty': isEmpty }" :style="containerHeight">
+  <div
+    ref="tableContainerRef"
+    class="art-table"
+    :class="[`art-table--${resolvedTableSize}`, { 'is-empty': isEmpty }]"
+    :style="containerHeight"
+  >
     <ElTable
       ref="elTableRef"
       v-loading="!!loading"
@@ -79,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, nextTick, watchEffect } from 'vue'
+  import { ref, computed, nextTick, watchEffect, onMounted, onActivated } from 'vue'
   import type { ElTable, TableProps } from 'element-plus'
   import type { NodeDropType } from 'element-plus/es/components/tree/src/tree.type'
   import { storeToRefs } from 'pinia'
@@ -93,6 +98,7 @@
   defineOptions({ name: 'ArtTable' })
 
   const { width } = useResponsive()
+  const tableContainerRef = ref<HTMLElement>()
   const elTableRef = ref<InstanceType<typeof ElTable> | null>(null)
   const paginationRef = ref<HTMLElement>()
   const tableHeaderRef = ref<HTMLElement>()
@@ -196,6 +202,7 @@
   const stripe = computed(() => props.stripe ?? isZebra.value)
   // 表格尺寸
   const size = computed(() => props.size ?? tableSize.value)
+  const resolvedTableSize = computed(() => size.value || 'default')
   // 数据是否为空
   const isEmpty = computed(() => props.data?.length === 0)
 
@@ -222,6 +229,18 @@
         tableHeaderHeight.value = entry.contentRect.height
       })
     }
+  })
+
+  const syncTableLayout = () => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        elTableRef.value?.doLayout?.()
+      })
+    })
+  }
+
+  useResizeObserver(tableContainerRef, () => {
+    syncTableLayout()
   })
 
   // 分页器与表格之间的间距常量（计算属性，响应 showTableHeader 变化）
@@ -321,7 +340,12 @@
       return
     }
 
-    const tableHeader = document.getElementById('art-table-header')
+    const container = tableContainerRef.value
+    const scopedRoot =
+      container?.closest('.el-card__body') ||
+      container?.parentElement ||
+      document
+    const tableHeader = scopedRoot.querySelector<HTMLElement>('#art-table-header')
     if (tableHeader) {
       tableHeaderRef.value = tableHeader
     } else {
@@ -348,6 +372,37 @@
     },
     { flush: 'post' }
   )
+
+  watchEffect(
+    () => {
+      void props.data?.length
+      void props.columns?.length
+      void props.loading
+      void props.pagination?.total
+      void props.pagination?.current
+      void props.pagination?.size
+      void width.value
+      void isFullScreen.value
+      void containerHeight.value.height
+
+      nextTick(() => {
+        syncTableLayout()
+      })
+    },
+    { flush: 'post' }
+  )
+
+  onMounted(() => {
+    nextTick(() => {
+      syncTableLayout()
+    })
+  })
+
+  onActivated(() => {
+    nextTick(() => {
+      syncTableLayout()
+    })
+  })
 
   defineExpose({
     scrollToTop,

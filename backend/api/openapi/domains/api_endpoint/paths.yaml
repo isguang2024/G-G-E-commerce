@@ -1,0 +1,433 @@
+# domains/api_endpoint/paths.yaml — AUTO-SPLIT by split_spec.py
+paths:
+  /api-endpoints:
+    get:
+      operationId: listApiEndpoints
+      summary: 获取 API 注册表
+      tags:
+      - api_endpoint
+      x-permission-key: system.api_registry.view
+      x-access-mode: permission
+      parameters:
+      - name: current
+        in: query
+        schema:
+          type: integer
+      - name: size
+        in: query
+        schema:
+          type: integer
+      - name: permission_key
+        in: query
+        schema:
+          type: string
+      - name: permission_pattern
+        in: query
+        schema:
+          type: string
+      - name: keyword
+        in: query
+        schema:
+          type: string
+      - name: method
+        in: query
+        schema:
+          type: string
+      - name: path
+        in: query
+        schema:
+          type: string
+      - name: category_id
+        in: query
+        schema:
+          type: string
+      - name: status
+        in: query
+        schema:
+          type: string
+      - name: has_permission_key
+        in: query
+        schema:
+          type: boolean
+      - name: has_category
+        in: query
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /api-endpoints/overview:
+    get:
+      operationId: getApiEndpointOverview
+      summary: 获取 API 概览
+      tags:
+      - api_endpoint
+      x-permission-key: system.api_registry.view
+      x-access-mode: permission
+      parameters:
+      - name: app_key
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /api-endpoints/stale:
+    get:
+      operationId: listStaleApiEndpoints
+      summary: 获取失效 API 列表
+      tags:
+      - api_endpoint
+      x-permission-key: system.api_registry.view
+      x-access-mode: permission
+      parameters:
+      - name: current
+        in: query
+        schema:
+          type: integer
+      - name: size
+        in: query
+        schema:
+          type: integer
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /api-endpoints/unregistered:
+    get:
+      operationId: listUnregisteredApiEndpoints
+      summary: 获取未注册 API 路由
+      tags:
+      - api_endpoint
+      x-permission-key: system.api_registry.view
+      x-access-mode: permission
+      parameters:
+      - name: current
+        in: query
+        schema:
+          type: integer
+      - name: size
+        in: query
+        schema:
+          type: integer
+      - name: method
+        in: query
+        schema:
+          type: string
+      - name: path
+        in: query
+        schema:
+          type: string
+      - name: keyword
+        in: query
+        schema:
+          type: string
+      - name: only_no_meta
+        in: query
+        schema:
+          type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /api-endpoints/categories:
+    get:
+      operationId: listApiEndpointCategories
+      summary: 获取 API 分类列表
+      tags:
+      - api_endpoint
+      x-permission-key: system.api_registry.view
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+    post:
+      operationId: createApiEndpointCategory
+      summary: 创建 API 分类
+      tags:
+      - api_endpoint
+      x-permission-key: system.api_registry.sync
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /api-endpoints/sync:
+    post:
+      operationId: syncApiEndpoints
+      summary: 同步 API 注册表
+      tags:
+      - api_endpoint
+      x-permission-key: system.api_registry.sync
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /api-endpoints/cleanup-stale:
+    post:
+      operationId: cleanupStaleApiEndpoints
+      summary: 清理失效 API
+      tags:
+      - api_endpoint
+      x-permission-key: system.api_registry.sync
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /api-endpoints/{id}:
+    put:
+      operationId: updateApiEndpoint
+      summary: 更新 API 注册项
+      tags:
+      - api_endpoint
+      x-permission-key: system.api_registry.sync
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /api-endpoints/{id}/context-scope:
+    put:
+      operationId: updateApiEndpointContextScope
+      summary: 更新 API 协作空间上下文
+      tags:
+      - api_endpoint
+      x-permission-key: system.api_registry.sync
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /api-endpoints/categories/{id}:
+    put:
+      operationId: updateApiEndpointCategory
+      summary: 更新 API 分类
+      tags:
+      - api_endpoint
+      x-permission-key: system.api_registry.sync
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'

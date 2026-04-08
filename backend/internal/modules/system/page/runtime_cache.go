@@ -643,10 +643,8 @@ func (s *service) resolveRuntimeVisibleMenuIDs(
 }
 
 // queryRuntimeUserPermissionKeys returns the effective permission_key list for
-// a user inside a collaboration workspace + app, mirroring what the legacy
-// authorization.GetUserActionKeysInApp used to compute (boundary-snapshot
-// intersected with role-derived action ids), but expressed directly against
-// the v5 schema so the page domain no longer depends on pkg/authorization.
+// a user inside a collaboration workspace + app: boundary-snapshot intersected
+// with role-derived action ids, expressed against the v5 schema.
 func (s *service) queryRuntimeUserPermissionKeys(userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, appKey string) ([]string, error) {
 	if s == nil || s.db == nil || collaborationWorkspaceID == nil {
 		return []string{}, nil
@@ -1010,7 +1008,13 @@ func resolveSpaceKeyForRuntime(s *service, appKey, host, requestedSpaceKey strin
 	if spaceutil.IsSingleSpaceMode(s.db, normalizeAppKey(appKey)) {
 		explicit := normalizeSpaceKey(requestedSpaceKey)
 		if explicit != "" && explicit != spaceutil.DefaultMenuSpaceKey && s != nil && s.db != nil {
-			if allowed, accessErr := spaceutil.CanAccessSpace(s.db, userID, collaborationWorkspaceID, explicit); accessErr == nil && allowed {
+			if allowed, accessErr := spaceutil.CanAccessSpace(
+				s.db,
+				userID,
+				collaborationWorkspaceID,
+				normalizeAppKey(appKey),
+				explicit,
+			); accessErr == nil && allowed {
 				return explicit
 			}
 		}
@@ -1025,7 +1029,13 @@ func resolveSpaceKeyForRuntime(s *service, appKey, host, requestedSpaceKey strin
 	}
 	trimmed := strings.TrimSpace(requestedSpaceKey)
 	if trimmed == "" {
-		if allowed, accessErr := spaceutil.CanAccessSpace(s.db, userID, collaborationWorkspaceID, resolved); accessErr == nil && allowed {
+		if allowed, accessErr := spaceutil.CanAccessSpace(
+			s.db,
+			userID,
+			collaborationWorkspaceID,
+			normalizeAppKey(appKey),
+			resolved,
+		); accessErr == nil && allowed {
 			return resolved
 		}
 		return spaceutil.DefaultMenuSpaceKey
@@ -1034,15 +1044,33 @@ func resolveSpaceKeyForRuntime(s *service, appKey, host, requestedSpaceKey strin
 		return explicit
 	}
 	if explicit := normalizeSpaceKey(trimmed); explicit != spaceutil.DefaultMenuSpaceKey {
-		if allowed, accessErr := spaceutil.CanAccessSpace(s.db, userID, collaborationWorkspaceID, explicit); accessErr == nil && allowed {
+		if allowed, accessErr := spaceutil.CanAccessSpace(
+			s.db,
+			userID,
+			collaborationWorkspaceID,
+			normalizeAppKey(appKey),
+			explicit,
+		); accessErr == nil && allowed {
 			return explicit
 		}
-		if allowed, accessErr := spaceutil.CanAccessSpace(s.db, userID, collaborationWorkspaceID, resolved); accessErr == nil && allowed {
+		if allowed, accessErr := spaceutil.CanAccessSpace(
+			s.db,
+			userID,
+			collaborationWorkspaceID,
+			normalizeAppKey(appKey),
+			resolved,
+		); accessErr == nil && allowed {
 			return resolved
 		}
 		return spaceutil.DefaultMenuSpaceKey
 	}
-	if allowed, accessErr := spaceutil.CanAccessSpace(s.db, userID, collaborationWorkspaceID, resolved); accessErr == nil && allowed {
+	if allowed, accessErr := spaceutil.CanAccessSpace(
+		s.db,
+		userID,
+		collaborationWorkspaceID,
+		normalizeAppKey(appKey),
+		resolved,
+	); accessErr == nil && allowed {
 		return resolved
 	}
 	return spaceutil.DefaultMenuSpaceKey

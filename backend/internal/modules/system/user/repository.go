@@ -502,11 +502,6 @@ type MenuRepository interface {
 	Delete(id uuid.UUID) error
 	ListAll() ([]Menu, error)
 	GetByIDs(ids []uuid.UUID) ([]Menu, error)
-	// 菜单备份相关方法
-	CreateBackup(backup *MenuBackup) error
-	GetBackupByID(id uuid.UUID) (*MenuBackup, error)
-	ListBackups() ([]MenuBackup, error)
-	DeleteBackup(id uuid.UUID) error
 	DeleteAllMenus() error
 }
 
@@ -939,33 +934,6 @@ func (r *menuRepository) GetByIDs(ids []uuid.UUID) ([]Menu, error) {
 		return []Menu{}, nil
 	}
 	return r.loadDefinitionMenus("", ids)
-}
-
-// 菜单备份相关方法
-func (r *menuRepository) CreateBackup(backup *MenuBackup) error {
-	return r.db.Create(backup).Error
-}
-
-func (r *menuRepository) GetBackupByID(id uuid.UUID) (*MenuBackup, error) {
-	var backup MenuBackup
-	err := r.db.Where("id = ?", id).First(&backup).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, gorm.ErrRecordNotFound
-		}
-		return nil, err
-	}
-	return &backup, nil
-}
-
-func (r *menuRepository) ListBackups() ([]MenuBackup, error) {
-	var backups []MenuBackup
-	err := r.db.Order("created_at DESC").Find(&backups).Error
-	return backups, err
-}
-
-func (r *menuRepository) DeleteBackup(id uuid.UUID) error {
-	return r.db.Delete(&MenuBackup{}, id).Error
 }
 
 func (r *menuRepository) DeleteAllMenus() error {
@@ -1733,30 +1701,35 @@ func (r *permissionKeyRepository) List(offset, limit int, params *PermissionKeyL
 		if params.Keyword != "" {
 			keyword := "%" + params.Keyword + "%"
 			query = query.Where(
-				"(name LIKE ? OR description LIKE ? OR permission_key LIKE ? OR module_code LIKE ? OR feature_kind LIKE ?)",
-				keyword, keyword, keyword, keyword, keyword,
+				`(
+					permission_keys.name LIKE ?
+					OR permission_keys.description LIKE ?
+					OR permission_keys.permission_key LIKE ?
+					OR COALESCE(module_groups.code, '') LIKE ?
+					OR COALESCE(module_groups.name, '') LIKE ?
+					OR COALESCE(feature_groups.code, '') LIKE ?
+					OR COALESCE(feature_groups.name, '') LIKE ?
+				)`,
+				keyword, keyword, keyword, keyword, keyword, keyword, keyword,
 			)
 		}
 		if params.PermissionKey != "" {
 			query = query.Where("permission_key LIKE ?", "%"+params.PermissionKey+"%")
 		}
 		if params.Name != "" {
-			query = query.Where("name LIKE ?", "%"+params.Name+"%")
+			query = query.Where("permission_keys.name LIKE ?", "%"+params.Name+"%")
 		}
 		if params.ModuleCode != "" {
-			query = query.Where("module_code LIKE ?", "%"+params.ModuleCode+"%")
+			query = query.Where("COALESCE(module_groups.code, '') LIKE ?", "%"+params.ModuleCode+"%")
 		}
 		if params.ModuleGroupID != nil {
-			query = query.Where("module_group_id = ?", *params.ModuleGroupID)
+			query = query.Where("permission_keys.module_group_id = ?", *params.ModuleGroupID)
 		}
 		if params.FeatureGroupID != nil {
-			query = query.Where("feature_group_id = ?", *params.FeatureGroupID)
-		}
-		if params.ContextType != "" {
-			query = query.Where("context_type = ?", params.ContextType)
+			query = query.Where("permission_keys.feature_group_id = ?", *params.FeatureGroupID)
 		}
 		if params.FeatureKind != "" {
-			query = query.Where("feature_kind = ?", params.FeatureKind)
+			query = query.Where("COALESCE(feature_groups.code, '') = ?", params.FeatureKind)
 		}
 		if params.Status != "" {
 			query = query.Where(
@@ -1825,10 +1798,11 @@ func (r *permissionKeyRepository) GetAllEnabled() ([]PermissionKey, error) {
 func (r *permissionKeyRepository) ListDistinctModuleCodes() ([]string, error) {
 	var moduleCodes []string
 	err := r.db.Model(&PermissionKey{}).
-		Where("COALESCE(permission_keys.module_code, '') <> ''").
-		Distinct("permission_keys.module_code").
-		Order("permission_keys.module_code ASC").
-		Pluck("permission_keys.module_code", &moduleCodes).Error
+		Joins("LEFT JOIN permission_groups AS module_groups ON module_groups.id = permission_keys.module_group_id AND module_groups.deleted_at IS NULL").
+		Where("COALESCE(module_groups.code, '') <> ''").
+		Distinct("module_groups.code").
+		Order("module_groups.code ASC").
+		Pluck("module_groups.code", &moduleCodes).Error
 	return moduleCodes, err
 }
 

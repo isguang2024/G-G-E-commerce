@@ -1,0 +1,1023 @@
+# domains/workspace/paths.yaml — AUTO-SPLIT by split_spec.py
+paths:
+  /workspaces/my:
+    get:
+      operationId: listMyWorkspaces
+      summary: 获取我的工作空间列表
+      tags:
+      - workspace
+      x-permission-key: workspace.list
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/WorkspaceList'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /workspaces/current:
+    get:
+      operationId: getCurrentWorkspace
+      summary: 获取当前授权工作空间
+      tags:
+      - workspace
+      x-permission-key: workspace.read
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/WorkspaceSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /workspaces/switch:
+    post:
+      operationId: switchWorkspace
+      summary: 切换当前授权工作空间
+      tags:
+      - workspace
+      x-permission-key: workspace.switch
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/WorkspaceSwitchRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/WorkspaceSwitchResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /workspaces/{id}:
+    get:
+      operationId: getWorkspace
+      summary: 获取工作空间详情
+      tags:
+      - workspace
+      x-permission-key: workspace.read
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/WorkspaceSummary'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /collaboration-workspaces/mine:
+    get:
+      operationId: listMyCollaborationWorkspaces
+      summary: 获取我的协作空间列表
+      tags:
+      - collaboration_workspace
+      x-access-mode: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+  /collaboration-workspaces/current:
+    get:
+      operationId: getCurrentCollaborationWorkspace
+      summary: 获取当前协作空间详情
+      tags:
+      - collaboration_workspace
+      x-access-mode: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+  /collaboration-workspaces/options:
+    get:
+      operationId: listCollaborationWorkspaceOptions
+      summary: 获取协作空间候选
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.manage
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+  /collaboration-workspaces/current/members:
+    get:
+      operationId: listCurrentCollaborationWorkspaceMembers
+      summary: 获取当前协作空间成员列表
+      tags:
+      - collaboration_workspace
+      x-access-mode: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+    post:
+      operationId: addCurrentCollaborationWorkspaceMember
+      summary: 添加当前协作空间成员
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.member.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /collaboration-workspaces/current/members/{userId}:
+    delete:
+      operationId: removeCurrentCollaborationWorkspaceMember
+      summary: 移除当前协作空间成员
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.member.manage
+      x-access-mode: permission
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /collaboration-workspaces/current/members/{userId}/role:
+    put:
+      operationId: updateCurrentCollaborationWorkspaceMemberRole
+      summary: 更新当前协作空间成员身份
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.member.manage
+      x-access-mode: permission
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /collaboration-workspaces/current/members/{userId}/roles:
+    get:
+      operationId: getCurrentCollaborationWorkspaceMemberRoles
+      summary: 获取当前协作空间成员角色
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.member.manage
+      x-access-mode: permission
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+    put:
+      operationId: setCurrentCollaborationWorkspaceMemberRoles
+      summary: 配置当前协作空间成员角色
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.member.manage
+      x-access-mode: permission
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /collaboration-workspaces/current/roles:
+    get:
+      operationId: listCurrentCollaborationWorkspaceRoles
+      summary: 获取当前协作空间可分配角色
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.member.manage
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+    post:
+      operationId: createCurrentCollaborationWorkspaceRole
+      summary: 创建当前协作空间角色
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.member.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /collaboration-workspaces/current/boundary/roles:
+    get:
+      operationId: listCurrentCollaborationWorkspaceBoundaryRoles
+      summary: 获取当前协作空间边界可见角色
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+    post:
+      operationId: createCurrentCollaborationWorkspaceBoundaryRole
+      summary: 创建当前协作空间角色(边界管理)
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /collaboration-workspaces/current/boundary/roles/{roleId}:
+    put:
+      operationId: updateCurrentCollaborationWorkspaceBoundaryRole
+      summary: 更新当前协作空间角色(边界管理)
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-access-mode: permission
+      parameters:
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+    delete:
+      operationId: deleteCurrentCollaborationWorkspaceBoundaryRole
+      summary: 删除当前协作空间角色(边界管理)
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-access-mode: permission
+      parameters:
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /collaboration-workspaces/current/boundary/roles/{roleId}/packages:
+    get:
+      operationId: getCurrentCollaborationWorkspaceBoundaryRolePackages
+      summary: 获取当前协作空间角色功能包(边界管理)
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-access-mode: permission
+      parameters:
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+    put:
+      operationId: setCurrentCollaborationWorkspaceBoundaryRolePackages
+      summary: 配置当前协作空间角色功能包(边界管理)
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-access-mode: permission
+      parameters:
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /collaboration-workspaces/current/boundary/roles/{roleId}/menus:
+    get:
+      operationId: getCurrentCollaborationWorkspaceBoundaryRoleMenus
+      summary: 获取当前协作空间角色菜单权限(边界管理)
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-access-mode: permission
+      parameters:
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+    put:
+      operationId: setCurrentCollaborationWorkspaceBoundaryRoleMenus
+      summary: 配置当前协作空间角色菜单权限(边界管理)
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-access-mode: permission
+      parameters:
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /collaboration-workspaces/current/boundary/roles/{roleId}/actions:
+    get:
+      operationId: getCurrentCollaborationWorkspaceBoundaryRoleActions
+      summary: 获取当前协作空间角色功能权限(边界管理)
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-access-mode: permission
+      parameters:
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+    put:
+      operationId: setCurrentCollaborationWorkspaceBoundaryRoleActions
+      summary: 配置当前协作空间角色功能权限(边界管理)
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-access-mode: permission
+      parameters:
+      - name: roleId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /collaboration-workspaces/current/boundary/packages:
+    get:
+      operationId: getCurrentCollaborationWorkspaceBoundaryPackages
+      summary: 获取当前协作空间已开通功能包(边界管理)
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+  /collaboration-workspaces/current/menus:
+    get:
+      operationId: getCurrentCollaborationWorkspaceMenus
+      summary: 获取当前协作空间菜单边界
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+  /collaboration-workspaces/current/menu-origins:
+    get:
+      operationId: getCurrentCollaborationWorkspaceMenuOrigins
+      summary: 获取当前协作空间菜单来源
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+  /collaboration-workspaces/current/actions:
+    get:
+      operationId: getCurrentCollaborationWorkspaceActions
+      summary: 获取当前协作空间功能权限边界
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+  /collaboration-workspaces/current/action-origins:
+    get:
+      operationId: getCurrentCollaborationWorkspaceActionOrigins
+      summary: 获取当前协作空间功能权限来源
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.boundary.manage
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+  /collaboration-workspaces:
+    get:
+      operationId: listCollaborationWorkspaces
+      summary: 获取协作空间列表
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.manage
+      x-access-mode: permission
+      parameters:
+      - name: current
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: size
+        in: query
+        schema:
+          type: integer
+          default: 20
+      - name: keyword
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+    post:
+      operationId: createCollaborationWorkspace
+      summary: 创建协作空间
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/IDResult'
+  /collaboration-workspaces/{id}:
+    get:
+      operationId: getCollaborationWorkspace
+      summary: 获取协作空间详情
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+    put:
+      operationId: updateCollaborationWorkspace
+      summary: 更新协作空间
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+    delete:
+      operationId: deleteCollaborationWorkspace
+      summary: 删除协作空间
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /collaboration-workspaces/{id}/roles:
+    get:
+      operationId: listCollaborationWorkspaceRoles
+      summary: 获取协作空间可分配角色
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+  /collaboration-workspaces/{id}/menus:
+    get:
+      operationId: getCollaborationWorkspaceMenus
+      summary: 获取协作空间菜单边界
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+    put:
+      operationId: setCollaborationWorkspaceMenus
+      summary: 配置协作空间菜单边界
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /collaboration-workspaces/{id}/menu-origins:
+    get:
+      operationId: getCollaborationWorkspaceMenuOrigins
+      summary: 获取协作空间菜单来源
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+  /collaboration-workspaces/{id}/actions:
+    get:
+      operationId: getCollaborationWorkspaceActions
+      summary: 获取协作空间功能权限边界
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+    put:
+      operationId: setCollaborationWorkspaceActions
+      summary: 配置协作空间功能权限边界
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /collaboration-workspaces/{id}/action-origins:
+    get:
+      operationId: getCollaborationWorkspaceActionOrigins
+      summary: 获取协作空间功能权限来源
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+  /collaboration-workspaces/{id}/members:
+    get:
+      operationId: listCollaborationWorkspaceMembers
+      summary: 获取协作空间成员列表
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+    post:
+      operationId: addCollaborationWorkspaceMember
+      summary: 添加协作空间成员
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /collaboration-workspaces/{id}/members/{userId}:
+    delete:
+      operationId: removeCollaborationWorkspaceMember
+      summary: 移除协作空间成员
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /collaboration-workspaces/{id}/members/{userId}/role:
+    put:
+      operationId: updateCollaborationWorkspaceMemberRole
+      summary: 更新协作空间成员身份
+      tags:
+      - collaboration_workspace
+      x-permission-key: collaboration_workspace.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: userId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'

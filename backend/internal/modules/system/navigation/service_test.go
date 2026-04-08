@@ -278,22 +278,6 @@ func (s *stubMenuService) DeleteGroup(id uuid.UUID) error {
 	return fmt.Errorf("unexpected DeleteGroup call")
 }
 
-func (s *stubMenuService) CreateBackup(name, description, scopeType, appKey, spaceKey string, createdBy *uuid.UUID) error {
-	return fmt.Errorf("unexpected CreateBackup call")
-}
-
-func (s *stubMenuService) ListBackups(appKey, spaceKey string) ([]*user.MenuBackup, error) {
-	return nil, fmt.Errorf("unexpected ListBackups call")
-}
-
-func (s *stubMenuService) DeleteBackup(id uuid.UUID, appKey string) error {
-	return fmt.Errorf("unexpected DeleteBackup call")
-}
-
-func (s *stubMenuService) RestoreBackup(id uuid.UUID, appKey string) error {
-	return fmt.Errorf("unexpected RestoreBackup call")
-}
-
 type stubPageService struct {
 	resolveCompiledAccessContextFn func(appKey, spaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*pagepkg.CompiledAccessContext, error)
 	listRuntimeWithAccessFn        func(appKey, spaceKey string, accessCtx *pagepkg.CompiledAccessContext) ([]pagepkg.Record, error)

@@ -1,8 +1,8 @@
 ﻿<template>
-  <div class="art-full-height">
-    <div class="box-border flex gap-4 h-full max-md:block max-md:gap-0 max-md:h-auto">
-      <div class="flex-shrink-0 w-58 h-full max-md:w-full max-md:h-auto max-md:mb-5">
-        <ElCard class="tree-card art-card-xs flex flex-col h-full mt-0" shadow="never">
+  <div class="art-full-height api-endpoint-page">
+    <div class="api-endpoint-page__layout">
+      <aside class="api-endpoint-page__sidebar">
+        <ElCard class="tree-card art-card-xs" shadow="never">
           <template #header>
             <b>分类树</b>
           </template>
@@ -45,9 +45,9 @@
             </ElTree>
           </ElScrollbar>
         </ElCard>
-      </div>
+      </aside>
 
-      <div class="flex flex-col flex-grow min-w-0">
+      <section class="api-endpoint-page__main">
         <div class="page-top-stack">
           <ApiEndpointSearch
             v-show="showSearchBar"
@@ -56,7 +56,7 @@
             @reset="resetTableQuery"
           />
 
-          <ElCard class="flex flex-col flex-1 min-h-0 art-table-card api-table-card" shadow="never">
+          <ElCard class="art-table-card api-table-card" shadow="never">
             <AdminWorkspaceHero
               title="API 管理"
               description="维护接口注册、分类、权限键与运行时状态，未注册和失效接口也在同一页诊断。"
@@ -118,21 +118,18 @@
               @refresh="refreshData"
             />
 
-            <div class="api-table-main">
-              <ArtTable
-                :loading="loading"
-                :data="data"
-                :columns="columns"
-                :pagination="pagination"
-                empty-height="320px"
-                size="small"
-                @pagination:size-change="handleSizeChange"
-                @pagination:current-change="handleCurrentChange"
-              />
-            </div>
+            <ArtTable
+              :loading="loading"
+              :data="data"
+              :columns="columns"
+              :pagination="pagination"
+              empty-height="320px"
+              @pagination:size-change="handleSizeChange"
+              @pagination:current-change="handleCurrentChange"
+            />
           </ElCard>
         </div>
-      </div>
+      </section>
     </div>
 
     <ElDrawer
@@ -610,6 +607,35 @@
 </script>
 
 <style scoped>
+  .api-endpoint-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 0;
+  }
+
+  .api-endpoint-page__layout {
+    display: grid;
+    grid-template-columns: 232px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 16px;
+    align-items: stretch;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .api-endpoint-page__sidebar,
+  .api-endpoint-page__main {
+    min-width: 0;
+  }
+
+  .api-endpoint-page__main {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+    flex-direction: column;
+  }
+
   .api-inline-alert {
     margin-bottom: 12px;
   }
@@ -621,20 +647,14 @@
   .page-top-stack {
     display: flex;
     flex: 1;
-    min-height: 0;
     flex-direction: column;
+    gap: 16px;
+    min-height: 0;
   }
 
   .page-top-stack > .api-table-card {
     flex: 1;
     min-height: 0;
-  }
-
-  .tree-card,
-  .api-table-card {
-    height: 100%;
-    min-height: 0;
-    max-height: none;
   }
 
   .module-header {
@@ -661,33 +681,30 @@
   }
 
   .tree-card :deep(.el-card__body) {
-    flex: 1;
-    min-height: 0;
     padding: 12px 2px 12px 12px;
   }
 
   .tree-card :deep(.el-scrollbar) {
-    display: flex;
-    flex: 1;
-    min-height: 0;
-    flex-direction: column;
-  }
-
-  .tree-card :deep(.el-scrollbar__wrap) {
-    min-height: 0;
+    max-height: calc(100vh - 220px);
   }
 
   .api-table-card {
-    overflow: hidden;
+    min-width: 0;
+    height: 100%;
   }
 
   .api-table-card :deep(.el-card__body) {
     display: flex;
+    flex-direction: column;
     height: 100%;
     min-height: 0;
-    flex-direction: column;
     padding: 14px 16px 12px;
-    overflow: hidden;
+    gap: 12px;
+  }
+
+  .api-table-card :deep(.art-table) {
+    flex: 1;
+    min-height: 0;
   }
 
   .category-tree {
@@ -788,11 +805,6 @@
     box-shadow: none !important;
   }
 
-  .api-table-main {
-    flex: 1;
-    min-height: 0;
-  }
-
   .api-hero-actions {
     display: flex;
     flex-wrap: wrap;
@@ -840,19 +852,6 @@
   .api-table-card :deep(.el-input__wrapper),
   .api-table-card :deep(.el-select__wrapper) {
     min-height: 34px;
-  }
-
-  .api-table-card :deep(.el-tag) {
-    font-size: 12px;
-  }
-
-  .api-table-card :deep(.el-table) {
-    font-size: 13px;
-  }
-
-  .api-table-card :deep(.el-table th),
-  .api-table-card :deep(.el-table td) {
-    padding: 8px 0;
   }
 
   .api-table-card :deep(.el-pagination) {
@@ -1135,18 +1134,19 @@
   }
 
   @media (max-width: 1280px) {
-    .tree-card,
-    .api-table-card {
-      position: static;
-      height: auto;
-      min-height: 0;
-      max-height: none;
+    .api-endpoint-page__layout {
+      grid-template-columns: 1fr;
+      grid-template-rows: auto;
+      align-items: stretch;
     }
 
     .tree-card :deep(.el-card__body),
     .api-table-card :deep(.el-card__body) {
-      height: auto;
-      min-height: 320px;
+      min-height: 0;
+    }
+
+    .tree-card :deep(.el-scrollbar) {
+      max-height: 320px;
     }
 
     .category-drawer-content {

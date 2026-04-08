@@ -330,7 +330,7 @@ func (s *service) SaveApp(req *SaveAppRequest) (*AppRecord, error) {
 func (s *service) ListHostBindings(appKey string) ([]HostBindingRecord, error) {
 	normalizedAppKey := appctx.NormalizeExplicitAppKey(appKey)
 	if normalizedAppKey == "" {
-		return nil, errors.New("app_key is required")
+		return nil, errors.New("app_key 不能为空")
 	}
 	if err := ensureDefaultApp(s.db); err != nil {
 		return nil, err
@@ -364,10 +364,10 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 	}
 	normalizedAppKey := appctx.NormalizeExplicitAppKey(appKey)
 	if normalizedAppKey == "" {
-		return nil, errors.New("app_key is required")
+		return nil, errors.New("app_key 不能为空")
 	}
 	if requestAppKey := appctx.NormalizeExplicitAppKey(req.AppKey); requestAppKey != "" && requestAppKey != normalizedAppKey {
-		return nil, errors.New("app_key mismatch")
+		return nil, errors.New("app_key 不匹配")
 	}
 	if err := ensureDefaultApp(s.db); err != nil {
 		return nil, err
@@ -383,7 +383,7 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 	}
 	defaultSpaceKey := spacepkg.NormalizeSpaceKey(req.DefaultSpaceKey)
 	if defaultSpaceKey == "" {
-		return nil, errors.New("default_space_key is required")
+		return nil, errors.New("default_space_key 不能为空")
 	}
 	status := strings.TrimSpace(req.Status)
 	if status == "" {
@@ -453,10 +453,10 @@ func ensureSpaceExistsForApp(db *gorm.DB, appKey string, spaceKey string) error 
 	normalizedAppKey := NormalizeAppKey(appKey)
 	normalizedSpaceKey := spacepkg.NormalizeSpaceKey(spaceKey)
 	if normalizedAppKey == "" {
-		return errors.New("app_key is required")
+		return errors.New("app_key 不能为空")
 	}
 	if normalizedSpaceKey == "" {
-		return errors.New("default_space_key is required")
+		return errors.New("default_space_key 不能为空")
 	}
 	if normalizedSpaceKey == models.DefaultMenuSpaceKey {
 		return spacepkg.EnsureDefaultMenuSpace(db, normalizedAppKey)

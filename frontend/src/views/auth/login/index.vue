@@ -37,31 +37,6 @@
               />
             </ElFormItem>
 
-            <!-- 推拽验证 -->
-            <div class="relative pb-5 mt-6">
-              <div
-                class="relative z-[2] overflow-hidden select-none rounded-lg border border-transparent tad-300"
-                :class="{ '!border-[#FF4E4F]': !isPassing && isClickPass }"
-              >
-                <ArtDragVerify
-                  ref="dragVerify"
-                  v-model:value="isPassing"
-                  :text="$t('login.sliderText')"
-                  textColor="var(--art-gray-700)"
-                  :successText="$t('login.sliderSuccessText')"
-                  progressBarBg="var(--main-color)"
-                  :background="isDark ? '#26272F' : '#F1F1F4'"
-                  handlerBg="var(--default-box-color)"
-                />
-              </div>
-              <p
-                class="absolute top-0 z-[1] px-px mt-2 text-xs text-[#f56c6c] tad-300"
-                :class="{ 'translate-y-10': !isPassing && isClickPass }"
-              >
-                {{ $t('login.placeholder.slider') }}
-              </p>
-            </div>
-
             <div class="flex-cb mt-2 text-sm">
               <ElCheckbox v-model="formData.rememberPassword">{{
                 $t('login.rememberPwd')
@@ -108,14 +83,11 @@
   import { HttpError } from '@/utils/http/error'
   import { fetchLogin } from '@/api/auth'
   import { ElNotification, type FormInstance, type FormRules } from 'element-plus'
-  import { useSettingStore } from '@/store/modules/setting'
   import { resetRouterState } from '@/router/guards/beforeEach'
   import { RoutesAlias } from '@/router/routesAlias'
 
   defineOptions({ name: 'Login' })
 
-  const settingStore = useSettingStore()
-  const { isDark } = storeToRefs(settingStore)
   const { t, locale } = useI18n()
   const formKey = ref(0)
 
@@ -124,15 +96,11 @@
     formKey.value++
   })
 
-  const dragVerify = ref()
-
   const userStore = useUserStore()
   const collaborationWorkspaceStore = useCollaborationWorkspaceStore()
   const menuSpaceStore = useMenuSpaceStore()
   const router = useRouter()
   const route = useRoute()
-  const isPassing = ref(false)
-  const isClickPass = ref(false)
 
   const systemName = AppConfig.systemInfo.name
   const formRef = ref<FormInstance>()
@@ -276,11 +244,6 @@
       const valid = await formRef.value.validate()
       if (!valid) return
 
-      if (!isPassing.value) {
-        isClickPass.value = true
-        return
-      }
-
       loading.value = true
 
       const { username, password } = formData
@@ -335,15 +298,7 @@
       }
     } finally {
       loading.value = false
-      if (dragVerify.value && typeof dragVerify.value.reset === 'function') {
-        resetDragVerify()
-      }
     }
-  }
-
-  // 重置拖拽验证
-  const resetDragVerify = () => {
-    dragVerify.value.reset()
   }
 
   // 登录成功提示

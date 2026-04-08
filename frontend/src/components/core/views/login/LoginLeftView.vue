@@ -10,11 +10,6 @@
       <ThemeSvg :src="loginIcon" size="100%" />
     </div>
 
-    <div class="text-wrap">
-      <h1> {{ $t('login.leftView.title') }} </h1>
-      <p> {{ $t('login.leftView.subTitle') }} </p>
-    </div>
-
     <!-- 几何装饰元素 -->
     <div class="geometric-decorations">
       <!-- 基础几何形状 -->
@@ -123,26 +118,6 @@
       width: 40%;
       margin: auto;
       animation: slideInLeft 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-    }
-
-    .text-wrap {
-      position: absolute;
-      bottom: 80px;
-      width: 100%;
-      text-align: center;
-      animation: slideInLeft 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-
-      h1 {
-        font-size: 24px;
-        font-weight: 400;
-        color: var(--art-gray-900) !important;
-      }
-
-      p {
-        margin-top: 10px;
-        font-size: 14px;
-        color: var(--art-gray-600) !important;
-      }
     }
 
     .geometric-decorations {
@@ -486,10 +461,6 @@
 
     @media only screen and (width <= 1600px) {
       width: 60vw;
-
-      .text-wrap {
-        bottom: 40px;
-      }
     }
 
     @media only screen and (width <= 1180px) {
@@ -500,7 +471,6 @@
       background: transparent;
 
       .left-img,
-      .text-wrap,
       .geometric-decorations {
         display: none;
       }

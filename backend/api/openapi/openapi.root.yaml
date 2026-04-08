@@ -1,0 +1,461 @@
+# openapi.root.yaml — Entry point for the OpenAPI spec.
+# DO NOT add paths or schemas here directly.
+# - Paths    → domains/{domain}/paths.yaml
+# - Schemas  → components/common.yaml (or domains/{domain}/schemas.yaml)
+# - Errors   → components/errors.yaml
+# - Security → components/security.yaml
+#
+# Regenerate: cd backend && make api-bundle (reads this file, writes dist/openapi.yaml)
+openapi: 3.0.3
+info:
+  title: GG E-commerce API
+  version: 5.0.0
+  description: 'GGE 5.0 API contract. OpenAPI-first: this spec is the single source of truth.
+
+    Go server code, TS client, permission_keys and api_endpoints are derived from here.
+
+    '
+servers:
+- url: /api/v1
+security:
+- BearerAuth: []
+tags:
+- name: auth
+- name: workspace
+- name: collaboration_workspace
+- name: user
+- name: role
+- name: menu
+- name: navigation
+- name: page
+- name: permission
+- name: featurepackage
+- name: system
+- name: message
+- name: api_endpoint
+- name: media
+paths:
+  /auth/login:
+    $ref: ./domains/auth/paths.yaml#/paths/~1auth~1login
+  /auth/register:
+    $ref: ./domains/auth/paths.yaml#/paths/~1auth~1register
+  /auth/refresh:
+    $ref: ./domains/auth/paths.yaml#/paths/~1auth~1refresh
+  /auth/me:
+    $ref: ./domains/auth/paths.yaml#/paths/~1auth~1me
+  /workspaces/my:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1my
+  /workspaces/current:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1current
+  /workspaces/switch:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1switch
+  /workspaces/{id}:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1workspaces~1{id}
+  /collaboration-workspaces/mine:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1mine
+  /collaboration-workspaces/current:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current
+  /collaboration-workspaces/options:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1options
+  /collaboration-workspaces/current/members:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1members
+  /collaboration-workspaces/current/members/{userId}:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1members~1{userId}
+  /collaboration-workspaces/current/members/{userId}/role:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1members~1{userId}~1role
+  /collaboration-workspaces/current/members/{userId}/roles:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1members~1{userId}~1roles
+  /collaboration-workspaces/current/roles:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1roles
+  /collaboration-workspaces/current/boundary/roles:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1boundary~1roles
+  /collaboration-workspaces/current/boundary/roles/{roleId}:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1boundary~1roles~1{roleId}
+  /collaboration-workspaces/current/boundary/roles/{roleId}/packages:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1boundary~1roles~1{roleId}~1packages
+  /collaboration-workspaces/current/boundary/roles/{roleId}/menus:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1boundary~1roles~1{roleId}~1menus
+  /collaboration-workspaces/current/boundary/roles/{roleId}/actions:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1boundary~1roles~1{roleId}~1actions
+  /collaboration-workspaces/current/boundary/packages:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1boundary~1packages
+  /collaboration-workspaces/current/menus:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1menus
+  /collaboration-workspaces/current/menu-origins:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1menu-origins
+  /collaboration-workspaces/current/actions:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1actions
+  /collaboration-workspaces/current/action-origins:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1current~1action-origins
+  /collaboration-workspaces:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces
+  /collaboration-workspaces/{id}:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}
+  /collaboration-workspaces/{id}/roles:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}~1roles
+  /collaboration-workspaces/{id}/menus:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}~1menus
+  /collaboration-workspaces/{id}/menu-origins:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}~1menu-origins
+  /collaboration-workspaces/{id}/actions:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}~1actions
+  /collaboration-workspaces/{id}/action-origins:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}~1action-origins
+  /collaboration-workspaces/{id}/members:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}~1members
+  /collaboration-workspaces/{id}/members/{userId}:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}~1members~1{userId}
+  /collaboration-workspaces/{id}/members/{userId}/role:
+    $ref: ./domains/workspace/paths.yaml#/paths/~1collaboration-workspaces~1{id}~1members~1{userId}~1role
+  /users:
+    $ref: ./domains/user/paths.yaml#/paths/~1users
+  /users/{id}:
+    $ref: ./domains/user/paths.yaml#/paths/~1users~1{id}
+  /users/{id}/roles:
+    $ref: ./domains/user/paths.yaml#/paths/~1users~1{id}~1roles
+  /users/{id}/collaboration-workspaces:
+    $ref: ./domains/user/paths.yaml#/paths/~1users~1{id}~1collaboration-workspaces
+  /users/{id}/packages:
+    $ref: ./domains/user/paths.yaml#/paths/~1users~1{id}~1packages
+  /users/{id}/menus:
+    $ref: ./domains/user/paths.yaml#/paths/~1users~1{id}~1menus
+  /users/{id}/permissions:
+    $ref: ./domains/user/paths.yaml#/paths/~1users~1{id}~1permissions
+  /users/{id}/permission-diagnosis:
+    $ref: ./domains/user/paths.yaml#/paths/~1users~1{id}~1permission-diagnosis
+  /users/{id}/permission-refresh:
+    $ref: ./domains/user/paths.yaml#/paths/~1users~1{id}~1permission-refresh
+  /permissions/explain:
+    $ref: ./domains/permission/paths.yaml#/paths/~1permissions~1explain
+  /permission-actions:
+    $ref: ./domains/permission/paths.yaml#/paths/~1permission-actions
+  /permission-actions/options:
+    $ref: ./domains/permission/paths.yaml#/paths/~1permission-actions~1options
+  /permission-actions/groups:
+    $ref: ./domains/permission/paths.yaml#/paths/~1permission-actions~1groups
+  /permission-actions/groups/{id}:
+    $ref: ./domains/permission/paths.yaml#/paths/~1permission-actions~1groups~1{id}
+  /permission-actions/risk-audits:
+    $ref: ./domains/permission/paths.yaml#/paths/~1permission-actions~1risk-audits
+  /permission-actions/cleanup-unused:
+    $ref: ./domains/permission/paths.yaml#/paths/~1permission-actions~1cleanup-unused
+  /permission-actions/batch:
+    $ref: ./domains/permission/paths.yaml#/paths/~1permission-actions~1batch
+  /permission-actions/templates:
+    $ref: ./domains/permission/paths.yaml#/paths/~1permission-actions~1templates
+  /permission-actions/{id}:
+    $ref: ./domains/permission/paths.yaml#/paths/~1permission-actions~1{id}
+  /permission-actions/{id}/endpoints:
+    $ref: ./domains/permission/paths.yaml#/paths/~1permission-actions~1{id}~1endpoints
+  /permission-actions/{id}/endpoints/{endpointCode}:
+    $ref: ./domains/permission/paths.yaml#/paths/~1permission-actions~1{id}~1endpoints~1{endpointCode}
+  /permission-actions/{id}/consumers:
+    $ref: ./domains/permission/paths.yaml#/paths/~1permission-actions~1{id}~1consumers
+  /permission-actions/{id}/impact-preview:
+    $ref: ./domains/permission/paths.yaml#/paths/~1permission-actions~1{id}~1impact-preview
+  /roles:
+    $ref: ./domains/role/paths.yaml#/paths/~1roles
+  /roles/options:
+    $ref: ./domains/role/paths.yaml#/paths/~1roles~1options
+  /roles/{id}:
+    $ref: ./domains/role/paths.yaml#/paths/~1roles~1{id}
+  /roles/{id}/packages:
+    $ref: ./domains/role/paths.yaml#/paths/~1roles~1{id}~1packages
+  /roles/{id}/menus:
+    $ref: ./domains/role/paths.yaml#/paths/~1roles~1{id}~1menus
+  /roles/{id}/actions:
+    $ref: ./domains/role/paths.yaml#/paths/~1roles~1{id}~1actions
+  /roles/{id}/data-permissions:
+    $ref: ./domains/role/paths.yaml#/paths/~1roles~1{id}~1data-permissions
+  /runtime/navigation:
+    $ref: ./domains/menu/paths.yaml#/paths/~1runtime~1navigation
+  /menus/tree:
+    $ref: ./domains/menu/paths.yaml#/paths/~1menus~1tree
+  /menus/groups:
+    $ref: ./domains/menu/paths.yaml#/paths/~1menus~1groups
+  /menus/groups/{id}:
+    $ref: ./domains/menu/paths.yaml#/paths/~1menus~1groups~1{id}
+  /menus:
+    $ref: ./domains/menu/paths.yaml#/paths/~1menus
+  /menus/{id}:
+    $ref: ./domains/menu/paths.yaml#/paths/~1menus~1{id}
+  /menus/{id}/delete-preview:
+    $ref: ./domains/menu/paths.yaml#/paths/~1menus~1{id}~1delete-preview
+  /pages/runtime:
+    $ref: ./domains/page/paths.yaml#/paths/~1pages~1runtime
+  /pages/runtime/public:
+    $ref: ./domains/page/paths.yaml#/paths/~1pages~1runtime~1public
+  /pages/menu-options:
+    $ref: ./domains/page/paths.yaml#/paths/~1pages~1menu-options
+  /pages/options:
+    $ref: ./domains/page/paths.yaml#/paths/~1pages~1options
+  /pages/access-trace:
+    $ref: ./domains/page/paths.yaml#/paths/~1pages~1access-trace
+  /pages/unregistered:
+    $ref: ./domains/page/paths.yaml#/paths/~1pages~1unregistered
+  /pages/sync:
+    $ref: ./domains/page/paths.yaml#/paths/~1pages~1sync
+  /pages:
+    $ref: ./domains/page/paths.yaml#/paths/~1pages
+  /pages/{id}:
+    $ref: ./domains/page/paths.yaml#/paths/~1pages~1{id}
+  /pages/{id}/breadcrumb-preview:
+    $ref: ./domains/page/paths.yaml#/paths/~1pages~1{id}~1breadcrumb-preview
+  /feature-packages:
+    $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages
+  /feature-packages/options:
+    $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1options
+  /feature-packages/relationship-tree:
+    $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1relationship-tree
+  /feature-packages/collaboration-workspaces/{collaborationWorkspaceId}:
+    $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1collaboration-workspaces~1{collaborationWorkspaceId}
+  /feature-packages/{id}:
+    $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1{id}
+  /feature-packages/{id}/impact-preview:
+    $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1{id}~1impact-preview
+  /feature-packages/{id}/versions:
+    $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1{id}~1versions
+  /feature-packages/{id}/rollback:
+    $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1{id}~1rollback
+  /feature-packages/{id}/risk-audits:
+    $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1{id}~1risk-audits
+  /feature-packages/{id}/children:
+    $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1{id}~1children
+  /feature-packages/{id}/actions:
+    $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1{id}~1actions
+  /feature-packages/{id}/menus:
+    $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1{id}~1menus
+  /feature-packages/{id}/collaboration-workspaces:
+    $ref: ./domains/featurepackage/paths.yaml#/paths/~1feature-packages~1{id}~1collaboration-workspaces
+  /system/view-pages:
+    $ref: ./domains/system/paths.yaml#/paths/~1system~1view-pages
+  /system/fast-enter:
+    $ref: ./domains/system/paths.yaml#/paths/~1system~1fast-enter
+  /system/apps:
+    $ref: ./domains/system/paths.yaml#/paths/~1system~1apps
+  /system/apps/current:
+    $ref: ./domains/system/paths.yaml#/paths/~1system~1apps~1current
+  /system/app-host-bindings:
+    $ref: ./domains/system/paths.yaml#/paths/~1system~1app-host-bindings
+  /system/menu-spaces/current:
+    $ref: ./domains/system/paths.yaml#/paths/~1system~1menu-spaces~1current
+  /system/menu-space-mode:
+    $ref: ./domains/system/paths.yaml#/paths/~1system~1menu-space-mode
+  /system/menu-spaces:
+    $ref: ./domains/system/paths.yaml#/paths/~1system~1menu-spaces
+  /system/menu-spaces/{spaceKey}/initialize-default:
+    $ref: ./domains/system/paths.yaml#/paths/~1system~1menu-spaces~1{spaceKey}~1initialize-default
+  /system/menu-space-host-bindings:
+    $ref: ./domains/system/paths.yaml#/paths/~1system~1menu-space-host-bindings
+  /messages/inbox/summary:
+    $ref: ./domains/message/paths.yaml#/paths/~1messages~1inbox~1summary
+  /messages/inbox:
+    $ref: ./domains/message/paths.yaml#/paths/~1messages~1inbox
+  /messages/inbox/{deliveryId}:
+    $ref: ./domains/message/paths.yaml#/paths/~1messages~1inbox~1{deliveryId}
+  /messages/inbox/{deliveryId}/read:
+    $ref: ./domains/message/paths.yaml#/paths/~1messages~1inbox~1{deliveryId}~1read
+  /messages/inbox/read-all:
+    $ref: ./domains/message/paths.yaml#/paths/~1messages~1inbox~1read-all
+  /messages/inbox/{deliveryId}/todo-action:
+    $ref: ./domains/message/paths.yaml#/paths/~1messages~1inbox~1{deliveryId}~1todo-action
+  /messages/dispatch/options:
+    $ref: ./domains/message/paths.yaml#/paths/~1messages~1dispatch~1options
+  /messages/dispatch:
+    $ref: ./domains/message/paths.yaml#/paths/~1messages~1dispatch
+  /messages/templates:
+    $ref: ./domains/message/paths.yaml#/paths/~1messages~1templates
+  /messages/templates/{templateId}:
+    $ref: ./domains/message/paths.yaml#/paths/~1messages~1templates~1{templateId}
+  /messages/senders:
+    $ref: ./domains/message/paths.yaml#/paths/~1messages~1senders
+  /messages/senders/{senderId}:
+    $ref: ./domains/message/paths.yaml#/paths/~1messages~1senders~1{senderId}
+  /messages/recipient-groups:
+    $ref: ./domains/message/paths.yaml#/paths/~1messages~1recipient-groups
+  /messages/recipient-groups/{groupId}:
+    $ref: ./domains/message/paths.yaml#/paths/~1messages~1recipient-groups~1{groupId}
+  /messages/records:
+    $ref: ./domains/message/paths.yaml#/paths/~1messages~1records
+  /messages/records/{recordId}:
+    $ref: ./domains/message/paths.yaml#/paths/~1messages~1records~1{recordId}
+  /api-endpoints:
+    $ref: ./domains/api_endpoint/paths.yaml#/paths/~1api-endpoints
+  /api-endpoints/overview:
+    $ref: ./domains/api_endpoint/paths.yaml#/paths/~1api-endpoints~1overview
+  /api-endpoints/stale:
+    $ref: ./domains/api_endpoint/paths.yaml#/paths/~1api-endpoints~1stale
+  /api-endpoints/unregistered:
+    $ref: ./domains/api_endpoint/paths.yaml#/paths/~1api-endpoints~1unregistered
+  /api-endpoints/categories:
+    $ref: ./domains/api_endpoint/paths.yaml#/paths/~1api-endpoints~1categories
+  /api-endpoints/sync:
+    $ref: ./domains/api_endpoint/paths.yaml#/paths/~1api-endpoints~1sync
+  /api-endpoints/cleanup-stale:
+    $ref: ./domains/api_endpoint/paths.yaml#/paths/~1api-endpoints~1cleanup-stale
+  /api-endpoints/{id}:
+    $ref: ./domains/api_endpoint/paths.yaml#/paths/~1api-endpoints~1{id}
+  /api-endpoints/{id}/context-scope:
+    $ref: ./domains/api_endpoint/paths.yaml#/paths/~1api-endpoints~1{id}~1context-scope
+  /api-endpoints/categories/{id}:
+    $ref: ./domains/api_endpoint/paths.yaml#/paths/~1api-endpoints~1categories~1{id}
+  /media/upload:
+    $ref: ./domains/media/paths.yaml#/paths/~1media~1upload
+  /media:
+    $ref: ./domains/media/paths.yaml#/paths/~1media
+  /media/{id}:
+    $ref: ./domains/media/paths.yaml#/paths/~1media~1{id}
+components:
+  schemas:
+    WorkspaceSummary:
+      $ref: ./components/common.yaml#/components/schemas/WorkspaceSummary
+    WorkspaceList:
+      $ref: ./components/common.yaml#/components/schemas/WorkspaceList
+    PermissionExplanation:
+      $ref: ./components/common.yaml#/components/schemas/PermissionExplanation
+    LoginRequest:
+      $ref: ./components/common.yaml#/components/schemas/LoginRequest
+    LoginResponse:
+      $ref: ./components/common.yaml#/components/schemas/LoginResponse
+    RegisterRequest:
+      $ref: ./components/common.yaml#/components/schemas/RegisterRequest
+    RefreshTokenRequest:
+      $ref: ./components/common.yaml#/components/schemas/RefreshTokenRequest
+    TokenResponse:
+      $ref: ./components/common.yaml#/components/schemas/TokenResponse
+    AuthMe:
+      $ref: ./components/common.yaml#/components/schemas/AuthMe
+    AuthMeRole:
+      $ref: ./components/common.yaml#/components/schemas/AuthMeRole
+    WorkspaceSwitchRequest:
+      $ref: ./components/common.yaml#/components/schemas/WorkspaceSwitchRequest
+    WorkspaceSwitchResponse:
+      $ref: ./components/common.yaml#/components/schemas/WorkspaceSwitchResponse
+    UserRoleRef:
+      $ref: ./components/common.yaml#/components/schemas/UserRoleRef
+    UserSummary:
+      $ref: ./components/common.yaml#/components/schemas/UserSummary
+    UserList:
+      $ref: ./components/common.yaml#/components/schemas/UserList
+    UserDetail:
+      $ref: ./components/common.yaml#/components/schemas/UserDetail
+    UserCreateRequest:
+      $ref: ./components/common.yaml#/components/schemas/UserCreateRequest
+    UserUpdateRequest:
+      $ref: ./components/common.yaml#/components/schemas/UserUpdateRequest
+    UserAssignRolesRequest:
+      $ref: ./components/common.yaml#/components/schemas/UserAssignRolesRequest
+    UserCreateResult:
+      $ref: ./components/common.yaml#/components/schemas/UserCreateResult
+    UserMutationResult:
+      $ref: ./components/common.yaml#/components/schemas/UserMutationResult
+    UserPackagesResponse:
+      $ref: ./components/common.yaml#/components/schemas/UserPackagesResponse
+    MutationResult:
+      $ref: ./components/common.yaml#/components/schemas/MutationResult
+    IDResult:
+      $ref: ./components/common.yaml#/components/schemas/IDResult
+    AnyObject:
+      $ref: ./components/common.yaml#/components/schemas/AnyObject
+    AnyListResponse:
+      $ref: ./components/common.yaml#/components/schemas/AnyListResponse
+    UUIDListRequest:
+      $ref: ./components/common.yaml#/components/schemas/UUIDListRequest
+    RoleSummary:
+      $ref: ./components/common.yaml#/components/schemas/RoleSummary
+    RoleList:
+      $ref: ./components/common.yaml#/components/schemas/RoleList
+    RoleOptions:
+      $ref: ./components/common.yaml#/components/schemas/RoleOptions
+    RoleCreateRequest:
+      $ref: ./components/common.yaml#/components/schemas/RoleCreateRequest
+    RoleUpdateRequest:
+      $ref: ./components/common.yaml#/components/schemas/RoleUpdateRequest
+    RoleCreateResult:
+      $ref: ./components/common.yaml#/components/schemas/RoleCreateResult
+    FeaturePackageRef:
+      $ref: ./components/common.yaml#/components/schemas/FeaturePackageRef
+    RolePackagesResponse:
+      $ref: ./components/common.yaml#/components/schemas/RolePackagesResponse
+    MenuSourceEntry:
+      $ref: ./components/common.yaml#/components/schemas/MenuSourceEntry
+    RoleMenusResponse:
+      $ref: ./components/common.yaml#/components/schemas/RoleMenusResponse
+    ActionSourceEntry:
+      $ref: ./components/common.yaml#/components/schemas/ActionSourceEntry
+    PermissionActionRef:
+      $ref: ./components/common.yaml#/components/schemas/PermissionActionRef
+    RoleActionsResponse:
+      $ref: ./components/common.yaml#/components/schemas/RoleActionsResponse
+    DataPermissionItem:
+      $ref: ./components/common.yaml#/components/schemas/DataPermissionItem
+    DataResourceOption:
+      $ref: ./components/common.yaml#/components/schemas/DataResourceOption
+    DataScopeOption:
+      $ref: ./components/common.yaml#/components/schemas/DataScopeOption
+    RoleDataPermissionsResponse:
+      $ref: ./components/common.yaml#/components/schemas/RoleDataPermissionsResponse
+    RoleDataPermissionsRequest:
+      $ref: ./components/common.yaml#/components/schemas/RoleDataPermissionsRequest
+    NavigationManifest:
+      $ref: ./components/common.yaml#/components/schemas/NavigationManifest
+    MenuTreeResponse:
+      $ref: ./components/common.yaml#/components/schemas/MenuTreeResponse
+    MenuGroupSaveRequest:
+      $ref: ./components/common.yaml#/components/schemas/MenuGroupSaveRequest
+    MenuGroupList:
+      $ref: ./components/common.yaml#/components/schemas/MenuGroupList
+    MenuSaveRequest:
+      $ref: ./components/common.yaml#/components/schemas/MenuSaveRequest
+    PageSaveRequest:
+      $ref: ./components/common.yaml#/components/schemas/PageSaveRequest
+    PageSyncResult:
+      $ref: ./components/common.yaml#/components/schemas/PageSyncResult
+    FeaturePackageSummary:
+      $ref: ./components/common.yaml#/components/schemas/FeaturePackageSummary
+    FeaturePackageList:
+      $ref: ./components/common.yaml#/components/schemas/FeaturePackageList
+    FeaturePackageOptions:
+      $ref: ./components/common.yaml#/components/schemas/FeaturePackageOptions
+    FeaturePackageSaveRequest:
+      $ref: ./components/common.yaml#/components/schemas/FeaturePackageSaveRequest
+    FeaturePackageRelationNode:
+      $ref: ./components/common.yaml#/components/schemas/FeaturePackageRelationNode
+    FeaturePackageRelationTree:
+      $ref: ./components/common.yaml#/components/schemas/FeaturePackageRelationTree
+    FeaturePackageImpactPreview:
+      $ref: ./components/common.yaml#/components/schemas/FeaturePackageImpactPreview
+    FeaturePackageAssignmentResponse:
+      $ref: ./components/common.yaml#/components/schemas/FeaturePackageAssignmentResponse
+    FeaturePackageActionsResponse:
+      $ref: ./components/common.yaml#/components/schemas/FeaturePackageActionsResponse
+    FeaturePackageMenusResponse:
+      $ref: ./components/common.yaml#/components/schemas/FeaturePackageMenusResponse
+    RollbackRequest:
+      $ref: ./components/common.yaml#/components/schemas/RollbackRequest
+    PermissionActionDetail:
+      $ref: ./components/common.yaml#/components/schemas/PermissionActionDetail
+    PermissionActionList:
+      $ref: ./components/common.yaml#/components/schemas/PermissionActionList
+    PermissionActionSaveRequest:
+      $ref: ./components/common.yaml#/components/schemas/PermissionActionSaveRequest
+    ViewPagesResponse:
+      $ref: ./components/common.yaml#/components/schemas/ViewPagesResponse
+    Error:
+      $ref: ./components/common.yaml#/components/schemas/Error
+  responses:
+    BadRequest:
+      $ref: ./components/errors.yaml#/components/responses/BadRequest
+    Unauthorized:
+      $ref: ./components/errors.yaml#/components/responses/Unauthorized
+    Forbidden:
+      $ref: ./components/errors.yaml#/components/responses/Forbidden
+    NotFound:
+      $ref: ./components/errors.yaml#/components/responses/NotFound
+    Conflict:
+      $ref: ./components/errors.yaml#/components/responses/Conflict
+    Internal:
+      $ref: ./components/errors.yaml#/components/responses/Internal
+  securitySchemes:
+    BearerAuth:
+      $ref: ./components/security.yaml#/components/securitySchemes/BearerAuth

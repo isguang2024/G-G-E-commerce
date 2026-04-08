@@ -1,7 +1,6 @@
 # 常用命令速查
 
 > Windows 环境，命令在 `backend/` 目录下执行（除非另有标注）。
-> `make` 不可用，所有命令直接用 `go run`。
 
 ---
 
@@ -20,36 +19,53 @@ go run ./cmd/server
 
 ## 代码生成
 
-### 1. 重新生成 OpenAPI 服务端代码（ogen）
-
-每次修改 `api/openapi/openapi.yaml` 后执行：
+### 全量生成（改了任何 spec 时）
 
 ```bash
-go run github.com/ogen-go/ogen/cmd/ogen@latest \
-  --target api/gen --package gen --clean api/openapi/openapi.yaml
+# Windows（推荐）
+update-openapi.bat
+
+# Linux / Mac
+make api
 ```
 
-生成产物：`api/gen/`（需提交）。
+依次执行：bundle → lint → ogen → 权限种子 → 前端错误码 TS。
 
-### 2. 刷新权限 seed
+生成产物（均需提交）：
+
+| 产物 | 路径 |
+|------|------|
+| bundled spec | `api/openapi/dist/openapi.yaml` |
+| Go server 接口 | `api/gen/` |
+| 权限种子 | `internal/pkg/permissionseed/openapi_seed.json` |
+| 前端错误码 | `frontend/src/api/v5/error-codes.ts` |
+
+### 分步执行（调试或局部刷新时）
 
 ```bash
+make api-bundle            # 仅 bundle：openapi.root.yaml + domains/* → dist/openapi.yaml
+make api-lint              # 仅 lint（依赖 bundle）
+make api-gen               # 仅 ogen（依赖 bundle + lint）
+make api-perms             # 仅权限种子 + 错误码（依赖 bundle）
+make api-front             # 仅前端 TS 类型（依赖 bundle）
+
+# 只改了错误码或权限注解（未改 schema/路径）时，直接跑：
 go run ./cmd/gen-permissions
 ```
 
-生成产物：`internal/pkg/permissionseed/openapi_seed.json`（需提交）。
+### Spec 文件位置
 
-每次改了 openapi.yaml 都要跑，migrate 和 server 启动时读取此 JSON。
-
-### 3. 重新生成前端 TypeScript 客户端
-
-在 `frontend/` 目录执行：
-
-```bash
-npx openapi-typescript@7 ../backend/api/openapi/openapi.yaml -o src/api/v5/schema.d.ts
+```
+backend/api/openapi/
+├── openapi.root.yaml      # 入口（只写 $ref，不写路径）
+├── components/            # 共享 schema / 错误 / 认证
+└── domains/               # 按 domain 拆分的路径定义
+    ├── auth/paths.yaml
+    ├── user/paths.yaml
+    └── ...
 ```
 
-> 不要用 `pnpm run gen:api`，Windows worktree 里没有 node_modules。
+详见 [`backend/api/openapi/README.md`](../../backend/api/openapi/README.md)。
 
 ---
 

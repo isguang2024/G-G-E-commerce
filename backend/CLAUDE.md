@@ -27,24 +27,34 @@ Edit `api/openapi/openapi.yaml`. Every operation MUST carry the four
     responses: { '200': { ... } }
 ```
 
-### 2. Regenerate the ogen server
+### 2. Regenerate everything
 
 ```
-go run github.com/ogen-go/ogen/cmd/ogen@latest \
-  --target api/gen --package gen --clean api/openapi/openapi.yaml
+make api          # bundle → lint → ogen → permission seed → frontend types
 ```
 
-(Or `make gen`.) Commit the regenerated `api/gen/` files.
-
-### 3. Refresh the permission seed
-
+Or step by step:
 ```
-go run ./cmd/gen-permissions
+make api-bundle   # merges openapi.root.yaml + domains/* → dist/openapi.yaml
+make api-lint     # redocly lint (must pass before gen)
+make api-gen      # ogen: dist/openapi.yaml → api/gen/
+make api-perms    # permission seed + frontend error-codes.ts
 ```
 
-This regenerates `internal/pkg/permissionseed/openapi_seed.json`.
-The startup loader will refuse to boot if any operation is missing a
-permission key.
+Commit the regenerated `api/gen/` and `internal/pkg/permissionseed/openapi_seed.json` files.
+
+**Spec source layout** (edit here, not in `dist/`):
+```
+api/openapi/
+├── openapi.root.yaml          ← entry point (info/servers/security/tags + $ref)
+├── components/
+│   ├── errors.yaml            ← Error schema + shared responses
+│   ├── common.yaml            ← all shared schemas
+│   └── security.yaml          ← securitySchemes
+└── domains/{tag}/
+    ├── paths.yaml             ← paths for this domain
+    └── schemas.yaml           ← domain-specific schemas (move from common.yaml incrementally)
+```
 
 Operational rule:
 

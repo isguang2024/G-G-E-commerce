@@ -86,12 +86,6 @@ type Handler interface {
 	//
 	// POST /menus
 	CreateMenu(ctx context.Context, req *MenuSaveRequest) (*MutationResult, error)
-	// CreateMenuBackup implements createMenuBackup operation.
-	//
-	// 创建菜单备份.
-	//
-	// POST /menus/backups
-	CreateMenuBackup(ctx context.Context, req *MenuBackupCreateRequest) (*MutationResult, error)
 	// CreateMenuGroup implements createMenuGroup operation.
 	//
 	// 创建菜单分组.
@@ -176,12 +170,6 @@ type Handler interface {
 	//
 	// DELETE /menus/{id}
 	DeleteMenu(ctx context.Context, params DeleteMenuParams) (*MutationResult, error)
-	// DeleteMenuBackup implements deleteMenuBackup operation.
-	//
-	// 删除菜单备份.
-	//
-	// DELETE /menus/backups/{id}
-	DeleteMenuBackup(ctx context.Context, params DeleteMenuBackupParams) (*MutationResult, error)
 	// DeleteMenuGroup implements deleteMenuGroup operation.
 	//
 	// 删除菜单分组.
@@ -583,7 +571,7 @@ type Handler interface {
 	// 获取应用 Host 绑定.
 	//
 	// GET /system/app-host-bindings
-	ListAppHostBindings(ctx context.Context) (*AnyListResponse, error)
+	ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (*AnyListResponse, error)
 	// ListApps implements listApps operation.
 	//
 	// 获取应用列表.
@@ -668,12 +656,6 @@ type Handler interface {
 	//
 	// GET /media
 	ListMedia(ctx context.Context) (ListMediaRes, error)
-	// ListMenuBackups implements listMenuBackups operation.
-	//
-	// 获取菜单备份列表.
-	//
-	// GET /menus/backups
-	ListMenuBackups(ctx context.Context) (*MenuBackupList, error)
 	// ListMenuGroups implements listMenuGroups operation.
 	//
 	// 获取菜单分组列表.
@@ -691,7 +673,7 @@ type Handler interface {
 	// 获取菜单空间列表.
 	//
 	// GET /system/menu-spaces
-	ListMenuSpaces(ctx context.Context) (*AnyListResponse, error)
+	ListMenuSpaces(ctx context.Context, params ListMenuSpacesParams) (*AnyListResponse, error)
 	// ListMessageDispatchRecords implements listMessageDispatchRecords operation.
 	//
 	// 获取消息发送记录.
@@ -890,12 +872,6 @@ type Handler interface {
 	//
 	// DELETE /permission-actions/{id}/endpoints/{endpointCode}
 	RemovePermissionActionEndpoint(ctx context.Context, params RemovePermissionActionEndpointParams) (*MutationResult, error)
-	// RestoreMenuBackup implements restoreMenuBackup operation.
-	//
-	// 恢复菜单备份.
-	//
-	// POST /menus/backups/{id}/restore
-	RestoreMenuBackup(ctx context.Context, params RestoreMenuBackupParams) (*MutationResult, error)
 	// RollbackFeaturePackage implements rollbackFeaturePackage operation.
 	//
 	// 回滚功能包版本.
@@ -1183,18 +1159,20 @@ type Handler interface {
 // Server implements http server based on OpenAPI v3 specification and
 // calls Handler to handle requests.
 type Server struct {
-	h Handler
+	h   Handler
+	sec SecurityHandler
 	baseServer
 }
 
 // NewServer creates new Server.
-func NewServer(h Handler, opts ...ServerOption) (*Server, error) {
+func NewServer(h Handler, sec SecurityHandler, opts ...ServerOption) (*Server, error) {
 	s, err := newServerConfig(opts...).baseServer()
 	if err != nil {
 		return nil, err
 	}
 	return &Server{
 		h:          h,
+		sec:        sec,
 		baseServer: s,
 	}, nil
 }

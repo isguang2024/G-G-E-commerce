@@ -46,7 +46,6 @@ type WorkspaceFeaturePackage = models.WorkspaceFeaturePackage
 type MemberSearchParams = models.MemberSearchParams
 type APIKey = models.APIKey
 type MediaAsset = models.MediaAsset
-type MenuBackup = models.MenuBackup
 type RiskOperationAudit = models.RiskOperationAudit
 type FeaturePackageVersion = models.FeaturePackageVersion
 type PermissionBatchTemplate = models.PermissionBatchTemplate

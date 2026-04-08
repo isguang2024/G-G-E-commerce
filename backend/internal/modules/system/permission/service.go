@@ -20,12 +20,12 @@ import (
 )
 
 var (
-	ErrPermissionKeyNotFound    = errors.New("permission key not found")
-	ErrPermissionKeyExists      = errors.New("permission key already exists")
-	ErrPermissionContextInvalid = errors.New("permission context invalid")
-	ErrPermissionGroupNotFound  = errors.New("permission group not found")
-	ErrPermissionGroupExists    = errors.New("permission group already exists")
-	ErrAPIEndpointNotFound      = errors.New("api endpoint not found")
+	ErrPermissionKeyNotFound    = errors.New("权限键不存在")
+	ErrPermissionKeyExists      = errors.New("权限键已存在")
+	ErrPermissionContextInvalid = errors.New("权限上下文无效")
+	ErrPermissionGroupNotFound  = errors.New("权限分组不存在")
+	ErrPermissionGroupExists    = errors.New("权限分组已存在")
+	ErrAPIEndpointNotFound      = errors.New("API 端点不存在")
 )
 
 type PermissionService interface {
@@ -615,6 +615,10 @@ func (s *permissionService) List(req *dto.PermissionKeyListRequest) ([]Permissio
 	filtered := make([]PermissionListItem, 0, len(actions))
 	summary := PermissionAuditSummary{}
 	for _, action := range actions {
+		hydratePermissionKeyDerivedFields(&action)
+		if !matchesPermissionDerivedFilters(action, req) {
+			continue
+		}
 		profile := auditProfiles[action.ID]
 		if !matchesPermissionAuditFilters(profile, req) {
 			continue
@@ -641,8 +645,18 @@ func (s *permissionService) List(req *dto.PermissionKeyListRequest) ([]Permissio
 func (s *permissionService) ListOptions(req *dto.PermissionKeyListRequest) ([]user.PermissionKey, error) {
 	query := s.buildPermissionListQuery(req)
 	var actions []user.PermissionKey
-	err := query.Order("sort_order ASC, created_at DESC").Find(&actions).Error
-	return actions, err
+	if err := query.Order("sort_order ASC, created_at DESC").Find(&actions).Error; err != nil {
+		return nil, err
+	}
+	filtered := make([]user.PermissionKey, 0, len(actions))
+	for _, action := range actions {
+		hydratePermissionKeyDerivedFields(&action)
+		if !matchesPermissionDerivedFilters(action, req) {
+			continue
+		}
+		filtered = append(filtered, action)
+	}
+	return filtered, nil
 }
 
 func (s *permissionService) buildPermissionAuditProfiles(
@@ -766,12 +780,13 @@ func (s *permissionService) loadPermissionDuplicateProfiles() (map[string]permis
 	type sourceRow struct {
 		ID            uuid.UUID
 		PermissionKey string
-		ContextType   string
+		ModuleCode    string
 	}
 
 	var rows []sourceRow
 	if err := s.db.Model(&user.PermissionKey{}).
-		Select("id, permission_key, context_type").
+		Joins("LEFT JOIN permission_groups AS module_groups ON module_groups.id = permission_keys.module_group_id AND module_groups.deleted_at IS NULL").
+		Select("permission_keys.id, permission_keys.permission_key, COALESCE(module_groups.code, '') AS module_code").
 		Find(&rows).Error; err != nil {
 		return nil, err
 	}
@@ -781,7 +796,7 @@ func (s *permissionService) loadPermissionDuplicateProfiles() (map[string]permis
 		items = append(items, permissionDuplicateSource{
 			ID:            row.ID,
 			PermissionKey: row.PermissionKey,
-			ContextType:   row.ContextType,
+			ContextType:   normalizeContextType("", deriveContextType(row.PermissionKey, row.ModuleCode)),
 		})
 	}
 	return buildPermissionDuplicateProfiles(items), nil
@@ -834,30 +849,35 @@ func (s *permissionService) buildPermissionListQuery(req *dto.PermissionKeyListR
 	if params.Keyword != "" {
 		keyword := "%" + params.Keyword + "%"
 		query = query.Where(
-			"(name LIKE ? OR description LIKE ? OR permission_key LIKE ? OR module_code LIKE ? OR feature_kind LIKE ?)",
-			keyword, keyword, keyword, keyword, keyword,
+			`(
+				permission_keys.name LIKE ?
+				OR permission_keys.description LIKE ?
+				OR permission_keys.permission_key LIKE ?
+				OR COALESCE(module_groups.code, '') LIKE ?
+				OR COALESCE(module_groups.name, '') LIKE ?
+				OR COALESCE(feature_groups.code, '') LIKE ?
+				OR COALESCE(feature_groups.name, '') LIKE ?
+			)`,
+			keyword, keyword, keyword, keyword, keyword, keyword, keyword,
 		)
 	}
 	if params.PermissionKey != "" {
 		query = query.Where("permission_key LIKE ?", "%"+params.PermissionKey+"%")
 	}
 	if params.Name != "" {
-		query = query.Where("name LIKE ?", "%"+params.Name+"%")
+		query = query.Where("permission_keys.name LIKE ?", "%"+params.Name+"%")
 	}
 	if params.ModuleCode != "" {
-		query = query.Where("module_code LIKE ?", "%"+params.ModuleCode+"%")
+		query = query.Where("COALESCE(module_groups.code, '') LIKE ?", "%"+params.ModuleCode+"%")
 	}
 	if params.ModuleGroupID != nil {
-		query = query.Where("module_group_id = ?", *params.ModuleGroupID)
+		query = query.Where("permission_keys.module_group_id = ?", *params.ModuleGroupID)
 	}
 	if params.FeatureGroupID != nil {
-		query = query.Where("feature_group_id = ?", *params.FeatureGroupID)
-	}
-	if params.ContextType != "" {
-		query = query.Where("context_type = ?", params.ContextType)
+		query = query.Where("permission_keys.feature_group_id = ?", *params.FeatureGroupID)
 	}
 	if params.FeatureKind != "" {
-		query = query.Where("feature_kind = ?", params.FeatureKind)
+		query = query.Where("COALESCE(feature_groups.code, '') = ?", params.FeatureKind)
 	}
 	if params.Status != "" {
 		query = query.Where(
@@ -875,6 +895,48 @@ func (s *permissionService) buildPermissionListQuery(req *dto.PermissionKeyListR
 		query = query.Where("is_builtin = ?", *params.IsBuiltin)
 	}
 	return query
+}
+
+func hydratePermissionKeyDerivedFields(item *user.PermissionKey) {
+	if item == nil {
+		return
+	}
+	moduleCode := moduleCodeFromPermissionKey(item.PermissionKey, "")
+	if item.ModuleGroup != nil {
+		moduleCode = normalizeModuleCode(item.ModuleGroup.Code, moduleCode)
+	} else {
+		moduleCode = normalizeModuleCode(item.ModuleCode, moduleCode)
+	}
+	featureKind := "system"
+	if item.FeatureGroup != nil {
+		featureKind = normalizeFeatureKind(item.FeatureGroup.Code, featureKind)
+	} else {
+		featureKind = normalizeFeatureKind(item.FeatureKind, featureKind)
+	}
+	contextType := normalizeContextType(item.ContextType, deriveContextType(item.PermissionKey, moduleCode))
+
+	item.ModuleCode = moduleCode
+	item.FeatureKind = featureKind
+	item.ContextType = contextType
+	item.AppKey = derivePermissionAppKey(item.PermissionKey, moduleCode, contextType)
+	item.AllowedWorkspaceTypes = deriveAllowedWorkspaceTypes(contextType)
+}
+
+func matchesPermissionDerivedFilters(item user.PermissionKey, req *dto.PermissionKeyListRequest) bool {
+	if req == nil {
+		return true
+	}
+	if moduleCode := strings.TrimSpace(req.ModuleCode); moduleCode != "" &&
+		!strings.Contains(strings.ToLower(item.ModuleCode), strings.ToLower(moduleCode)) {
+		return false
+	}
+	if contextType := normalizeContextType(req.ContextType, ""); contextType != "" && item.ContextType != contextType {
+		return false
+	}
+	if featureKind := normalizeFeatureKind(req.FeatureKind, ""); featureKind != "" && item.FeatureKind != featureKind {
+		return false
+	}
+	return true
 }
 
 func (s *permissionService) ListGroups(req *dto.PermissionGroupListRequest) ([]user.PermissionGroup, int64, error) {
@@ -961,6 +1023,7 @@ func (s *permissionService) Get(id uuid.UUID) (*user.PermissionKey, error) {
 		}
 		return nil, err
 	}
+	hydratePermissionKeyDerivedFields(item)
 	return item, nil
 }
 
@@ -1019,7 +1082,12 @@ func (s *permissionService) Create(req *dto.PermissionKeyCreateRequest) (*user.P
 	if err := s.keyRepo.Create(item); err != nil {
 		return nil, err
 	}
-	return s.keyRepo.GetByID(item.ID)
+	created, err := s.keyRepo.GetByID(item.ID)
+	if err != nil {
+		return nil, err
+	}
+	hydratePermissionKeyDerivedFields(created)
+	return created, nil
 }
 
 func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionKeyUpdateRequest) error {
@@ -1030,6 +1098,7 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionKeyUpdateReq
 		}
 		return err
 	}
+	hydratePermissionKeyDerivedFields(current)
 	updates := map[string]interface{}{
 		"updated_at": time.Now(),
 		"sort_order": req.SortOrder,
@@ -1039,9 +1108,6 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionKeyUpdateReq
 	}
 	if name := strings.TrimSpace(req.Name); name != "" {
 		updates["name"] = name
-	}
-	if contextType := normalizeContextType(req.ContextType, ""); contextType != "" {
-		updates["context_type"] = contextType
 	}
 	if req.Description != "" {
 		updates["description"] = strings.TrimSpace(req.Description)
@@ -1070,23 +1136,17 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionKeyUpdateReq
 	updates["module_group_id"] = moduleGroup.ID
 	updates["feature_group_id"] = featureGroup.ID
 	targetModuleCode := normalizeModuleCode(moduleGroup.Code, current.ModuleCode)
-	updates["module_code"] = targetModuleCode
-	updates["feature_kind"] = normalizeFeatureKind(featureGroup.Code, current.FeatureKind)
+	targetFeatureKind := normalizeFeatureKind(featureGroup.Code, current.FeatureKind)
 	targetContextType := current.ContextType
-	if contextType, exists := updates["context_type"]; exists {
-		targetContextType = normalizeContextType(fmt.Sprint(contextType), deriveContextType(targetPermissionKey, targetModuleCode))
+	if contextType := normalizeContextType(req.ContextType, ""); contextType != "" {
+		targetContextType = normalizeContextType(contextType, deriveContextType(targetPermissionKey, targetModuleCode))
 	} else {
 		targetContextType = normalizeContextType(current.ContextType, deriveContextType(targetPermissionKey, targetModuleCode))
-		if current.ContextType == "" {
-			updates["context_type"] = targetContextType
-		}
 	}
 	if err := validatePermissionContext(targetPermissionKey, targetModuleCode, targetContextType); err != nil {
 		return err
 	}
-	updates["app_key"] = derivePermissionAppKey(targetPermissionKey, targetModuleCode, targetContextType)
 	updates["data_policy"] = derivePermissionDataPolicy(targetPermissionKey, targetModuleCode, targetContextType)
-	updates["allowed_workspace_types"] = deriveAllowedWorkspaceTypes(targetContextType)
 	if targetPermissionKey != current.PermissionKey {
 		existing, getErr := s.keyRepo.GetByPermissionKey(targetPermissionKey)
 		if getErr == nil && existing != nil && existing.ID != id {
@@ -1115,10 +1175,14 @@ func (s *permissionService) Update(id uuid.UUID, req *dto.PermissionKeyUpdateReq
 		"permission_key": current.PermissionKey,
 		"status":         current.Status,
 		"context_type":   current.ContextType,
+		"module_code":    current.ModuleCode,
+		"feature_kind":   current.FeatureKind,
 	}, map[string]interface{}{
 		"permission_key": targetPermissionKey,
 		"status":         req.Status,
 		"context_type":   targetContextType,
+		"module_code":    targetModuleCode,
+		"feature_kind":   targetFeatureKind,
 	}, nil, nil, "")
 	return s.refreshByPermissionKeyID(id)
 }
@@ -1237,7 +1301,7 @@ func derivePermissionAppKey(permissionKey, moduleCode, contextType string) strin
 	}
 
 	switch strings.TrimSpace(moduleCode) {
-	case "", "role", "user", "menu", "menu_backup", "permission_action", "permission_key", "api_endpoint", "feature_package", "workspace", "navigation", "page", "app":
+	case "", "role", "user", "menu", "permission_action", "permission_key", "api_endpoint", "feature_package", "workspace", "navigation", "page", "app":
 		return models.DefaultAppKey
 	default:
 		return strings.TrimSpace(moduleCode)
@@ -1373,7 +1437,7 @@ func hasCollaborationWorkspacePermissionNamespace(permissionKey string) bool {
 func deriveModuleWorkspaceBoundary(moduleCode string) string {
 	targetModule := strings.TrimSpace(moduleCode)
 	switch targetModule {
-	case "role", "permission_key", "user", "menu", "menu_backup", "system",
+	case "role", "permission_key", "user", "menu", "system",
 		"collaboration_workspace_member_admin", "api_endpoint", "page", "fast_enter", "message",
 		"feature_package", "system_permission", "menu_space", "navigation":
 		return "personal"

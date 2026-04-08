@@ -8,16 +8,12 @@ import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  fetchCreateMenuBackup,
   fetchGetApps,
-  fetchDeleteMenuBackup,
   fetchGetCurrentMenuSpace,
-  fetchGetMenuBackupList,
   fetchGetMenuSpaceMode,
   fetchInitializeMenuSpaceFromDefault,
   fetchGetMenuSpaceHostBindings,
   fetchGetMenuSpaces,
-  fetchRestoreMenuBackup,
   fetchGetRuntimeNavigation,
   fetchSaveMenuSpace,
   fetchSaveMenuSpaceHostBinding,
@@ -63,11 +59,6 @@ export function useMenuSpacePage() {
   const currentAccessGranted = ref(true)
   const loadingLandingPaths = ref(false)
   const landingPathOptions = ref<string[]>([])
-  const backupLoading = ref(false)
-  const backupDialogVisible = ref(false)
-  const backupListDialogVisible = ref(false)
-  const backupList = ref<Api.SystemManage.MenuBackupItem[]>([])
-
   const spaceDrawerVisible = ref(false)
   const hostDrawerVisible = ref(false)
   const editingSpaceKey = ref('')
@@ -470,114 +461,6 @@ export function useMenuSpacePage() {
     currentSpaceKey.value = ''
   }
 
-  function openSpaceBackupDialog() {
-    if (!currentSpace.value?.spaceKey) {
-      ElMessage.warning('当前没有可备份的空间')
-      return
-    }
-    backupDialogVisible.value = true
-  }
-
-  async function handleCreateSpaceBackup(formData: { name: string; description: string }) {
-    if (!currentSpace.value?.spaceKey) {
-      ElMessage.warning('当前没有可备份的空间')
-      return
-    }
-    backupLoading.value = true
-    try {
-      await fetchCreateMenuBackup({
-        app_key: targetAppKey.value,
-        name: formData.name,
-        description: formData.description,
-        scope_type: 'space',
-        space_key: normalizeMenuSpaceKey(currentSpace.value.spaceKey)
-      })
-      ElMessage.success('空间布局备份已创建')
-      backupDialogVisible.value = false
-    } catch (error: any) {
-      ElMessage.error(error?.message || '空间布局备份失败')
-    } finally {
-      backupLoading.value = false
-    }
-  }
-
-  async function handleManageSpaceBackups() {
-    if (!currentSpace.value?.spaceKey) {
-      ElMessage.warning('当前没有可管理的空间')
-      return
-    }
-    backupLoading.value = true
-    try {
-      const list = await fetchGetMenuBackupList(currentSpace.value.spaceKey, targetAppKey.value)
-      backupList.value = (list || [])
-        .filter((item: any) => `${item.scope_type || ''}`.trim() !== 'global')
-        .map((item: any) => ({
-          ...item,
-          space_name: item.space_name || currentSpaceLabel.value
-        }))
-      backupListDialogVisible.value = true
-    } catch (error: any) {
-      ElMessage.error(error?.message || '获取空间布局备份失败')
-    } finally {
-      backupLoading.value = false
-    }
-  }
-
-  function handleBackupListAction(action: string, row: Api.SystemManage.MenuBackupItem) {
-    if (action === 'restore') {
-      void handleRestoreBackup(row)
-      return
-    }
-    if (action === 'delete') {
-      void handleDeleteBackup(row.id)
-    }
-  }
-
-  function buildSpaceBackupRestoreMessage() {
-    return `确定要恢复空间“${currentSpaceLabel.value}”的布局备份吗？恢复后会覆盖当前空间的菜单布局树和相关菜单分组。`
-  }
-
-  async function handleRestoreBackup(item: Api.SystemManage.MenuBackupItem) {
-    try {
-      await ElMessageBox.confirm(buildSpaceBackupRestoreMessage(), '提示', {
-        type: 'warning',
-        confirmButtonText: '确定',
-        cancelButtonText: '取消'
-      })
-      backupLoading.value = true
-      await fetchRestoreMenuBackup(item.id, targetAppKey.value)
-      ElMessage.success('空间布局恢复成功')
-      backupListDialogVisible.value = false
-      await loadData()
-    } catch (error: any) {
-      if (error !== 'cancel') {
-        ElMessage.error(error?.message || '空间布局恢复失败')
-      }
-    } finally {
-      backupLoading.value = false
-    }
-  }
-
-  async function handleDeleteBackup(id: string) {
-    try {
-      await ElMessageBox.confirm('确定要删除这条空间布局备份吗？', '提示', {
-        type: 'warning',
-        confirmButtonText: '确定',
-        cancelButtonText: '取消'
-      })
-      backupLoading.value = true
-      await fetchDeleteMenuBackup(id, targetAppKey.value)
-      ElMessage.success('空间布局备份已删除')
-      await handleManageSpaceBackups()
-    } catch (error: any) {
-      if (error !== 'cancel') {
-        ElMessage.error(error?.message || '删除空间布局备份失败')
-      }
-    } finally {
-      backupLoading.value = false
-    }
-  }
-
   async function initializeSpace(item: Api.SystemManage.MenuSpaceItem) {
     if (!item?.spaceKey || item.isDefault) {
       return
@@ -743,10 +626,6 @@ export function useMenuSpacePage() {
     spaceMode,
     currentRequestHost,
     landingPathOptions,
-    backupLoading,
-    backupDialogVisible,
-    backupListDialogVisible,
-    backupList,
     spaceDrawerVisible,
     hostDrawerVisible,
     spaceFormRef,
@@ -774,10 +653,6 @@ export function useMenuSpacePage() {
     saveSpace,
     saveHostBinding,
     handleManagedAppChange,
-    openSpaceBackupDialog,
-    handleCreateSpaceBackup,
-    handleManageSpaceBackups,
-    handleBackupListAction,
     initializeSpace,
     reinitializeSpace,
     goToMenuManagement,

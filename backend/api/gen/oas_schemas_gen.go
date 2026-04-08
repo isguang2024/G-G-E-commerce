@@ -333,6 +333,31 @@ func (s *AuthMeRole) SetDescription(val OptNilString) {
 	s.Description = val
 }
 
+type BearerAuth struct {
+	Token string
+	Roles []string
+}
+
+// GetToken returns the value of Token.
+func (s *BearerAuth) GetToken() string {
+	return s.Token
+}
+
+// GetRoles returns the value of Roles.
+func (s *BearerAuth) GetRoles() []string {
+	return s.Roles
+}
+
+// SetToken sets the value of Token.
+func (s *BearerAuth) SetToken(val string) {
+	s.Token = val
+}
+
+// SetRoles sets the value of Roles.
+func (s *BearerAuth) SetRoles(val []string) {
+	s.Roles = val
+}
+
 type CleanupStaleApiEndpointsInternalServerError Error
 
 func (*CleanupStaleApiEndpointsInternalServerError) cleanupStaleApiEndpointsRes() {}
@@ -461,8 +486,14 @@ func (*DeleteUserUnauthorized) deleteUserRes() {}
 
 // Ref: #/components/schemas/Error
 type Error struct {
-	Code    int    `json:"code"`
+	// 业务码（与 HTTP 状态码分离）。
+	// 1xxxx 参数/请求 · 2xxxx 认证/授权 · 3xxxx 业务/资源 · 5xxxx 服务端
+	// 完整清单：backend/internal/api/apperr/codes.go.
+	Code int `json:"code"`
+	// 面向用户的错误提示.
 	Message string `json:"message"`
+	// 可选上下文，如参数校验失败时携带 {field: reason}.
+	Details OptNilErrorDetails `json:"details"`
 }
 
 // GetCode returns the value of Code.
@@ -475,6 +506,11 @@ func (s *Error) GetMessage() string {
 	return s.Message
 }
 
+// GetDetails returns the value of Details.
+func (s *Error) GetDetails() OptNilErrorDetails {
+	return s.Details
+}
+
 // SetCode sets the value of Code.
 func (s *Error) SetCode(val int) {
 	s.Code = val
@@ -485,6 +521,11 @@ func (s *Error) SetMessage(val string) {
 	s.Message = val
 }
 
+// SetDetails sets the value of Details.
+func (s *Error) SetDetails(val OptNilErrorDetails) {
+	s.Details = val
+}
+
 func (*Error) explainPermissionsRes()  {}
 func (*Error) getAuthMeRes()           {}
 func (*Error) getCurrentWorkspaceRes() {}
@@ -492,6 +533,18 @@ func (*Error) getRoleRes()             {}
 func (*Error) listMyWorkspacesRes()    {}
 func (*Error) refreshTokenRes()        {}
 func (*Error) registerRes()            {}
+
+// 可选上下文，如参数校验失败时携带 {field: reason}.
+type ErrorDetails map[string]jx.Raw
+
+func (s *ErrorDetails) init() ErrorDetails {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
+}
 
 // Ref: #/components/schemas/FeaturePackageActionsResponse
 type FeaturePackageActionsResponse struct {
@@ -1362,58 +1415,6 @@ type LoginUnauthorized Error
 
 func (*LoginUnauthorized) loginRes() {}
 
-// Ref: #/components/schemas/MenuBackupCreateRequest
-type MenuBackupCreateRequest struct {
-	Name        string    `json:"name"`
-	Description OptString `json:"description"`
-}
-
-// GetName returns the value of Name.
-func (s *MenuBackupCreateRequest) GetName() string {
-	return s.Name
-}
-
-// GetDescription returns the value of Description.
-func (s *MenuBackupCreateRequest) GetDescription() OptString {
-	return s.Description
-}
-
-// SetName sets the value of Name.
-func (s *MenuBackupCreateRequest) SetName(val string) {
-	s.Name = val
-}
-
-// SetDescription sets the value of Description.
-func (s *MenuBackupCreateRequest) SetDescription(val OptString) {
-	s.Description = val
-}
-
-// Ref: #/components/schemas/MenuBackupList
-type MenuBackupList struct {
-	Records []AnyObject `json:"records"`
-	Total   int         `json:"total"`
-}
-
-// GetRecords returns the value of Records.
-func (s *MenuBackupList) GetRecords() []AnyObject {
-	return s.Records
-}
-
-// GetTotal returns the value of Total.
-func (s *MenuBackupList) GetTotal() int {
-	return s.Total
-}
-
-// SetRecords sets the value of Records.
-func (s *MenuBackupList) SetRecords(val []AnyObject) {
-	s.Records = val
-}
-
-// SetTotal sets the value of Total.
-func (s *MenuBackupList) SetTotal(val int) {
-	s.Total = val
-}
-
 // Ref: #/components/schemas/MenuGroupList
 type MenuGroupList struct {
 	Records []AnyObject `json:"records"`
@@ -1505,6 +1506,7 @@ type MenuSaveRequest struct {
 	ParentID       OptNilUUID `json:"parent_id"`
 	Icon           OptString  `json:"icon"`
 	Path           OptString  `json:"path"`
+	Component      OptString  `json:"component"`
 	Kind           string     `json:"kind"`
 	RouteType      OptString  `json:"route_type"`
 	RouteName      OptString  `json:"route_name"`
@@ -1535,6 +1537,11 @@ func (s *MenuSaveRequest) GetIcon() OptString {
 // GetPath returns the value of Path.
 func (s *MenuSaveRequest) GetPath() OptString {
 	return s.Path
+}
+
+// GetComponent returns the value of Component.
+func (s *MenuSaveRequest) GetComponent() OptString {
+	return s.Component
 }
 
 // GetKind returns the value of Kind.
@@ -1605,6 +1612,11 @@ func (s *MenuSaveRequest) SetIcon(val OptString) {
 // SetPath sets the value of Path.
 func (s *MenuSaveRequest) SetPath(val OptString) {
 	s.Path = val
+}
+
+// SetComponent sets the value of Component.
+func (s *MenuSaveRequest) SetComponent(val OptString) {
+	s.Component = val
 }
 
 // SetKind sets the value of Kind.
@@ -2027,6 +2039,69 @@ func (o OptMultipartFile) Or(d ht.MultipartFile) ht.MultipartFile {
 	return d
 }
 
+// NewOptNilErrorDetails returns new OptNilErrorDetails with value set to v.
+func NewOptNilErrorDetails(v ErrorDetails) OptNilErrorDetails {
+	return OptNilErrorDetails{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilErrorDetails is optional nullable ErrorDetails.
+type OptNilErrorDetails struct {
+	Value ErrorDetails
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilErrorDetails was set.
+func (o OptNilErrorDetails) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilErrorDetails) Reset() {
+	var v ErrorDetails
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilErrorDetails) SetTo(v ErrorDetails) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilErrorDetails) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilErrorDetails) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v ErrorDetails
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilErrorDetails) Get() (v ErrorDetails, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilErrorDetails) Or(d ErrorDetails) ErrorDetails {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptNilLoginResponseUser returns new OptNilLoginResponseUser with value set to v.
 func NewOptNilLoginResponseUser(v LoginResponseUser) OptNilLoginResponseUser {
 	return OptNilLoginResponseUser{
@@ -2411,6 +2486,52 @@ func (o OptString) Get() (v string, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptString) Or(d string) string {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptUUID returns new OptUUID with value set to v.
+func NewOptUUID(v uuid.UUID) OptUUID {
+	return OptUUID{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptUUID is optional uuid.UUID.
+type OptUUID struct {
+	Value uuid.UUID
+	Set   bool
+}
+
+// IsSet returns true if OptUUID was set.
+func (o OptUUID) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptUUID) Reset() {
+	var v uuid.UUID
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptUUID) SetTo(v uuid.UUID) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptUUID) Get() (v uuid.UUID, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptUUID) Or(d uuid.UUID) uuid.UUID {
 	if v, ok := o.Get(); ok {
 		return v
 	}

@@ -30,11 +30,7 @@ import {
   fetchDeleteMenuManageGroup,
   fetchGetPageOptions,
   fetchGetMenuSpaces,
-  fetchGetApps,
-  fetchCreateMenuBackup,
-  fetchGetMenuBackupList,
-  fetchDeleteMenuBackup,
-  fetchRestoreMenuBackup
+  fetchGetApps
 } from '@/api/system-manage'
 import {
   buildManageGroupNode,
@@ -50,7 +46,6 @@ import {
   normalizeKeyword
 } from './helpers'
 
-type MenuBackupScopeType = 'space' | 'global'
 type MenuDeleteMode = 'single' | 'cascade' | 'promote_children'
 
 type MenuDeleteParentOption = {
@@ -87,12 +82,6 @@ export function useMenuPage() {
   const dataFromBackend = ref(false)
   const menuGroupApiUnavailable = ref(false)
 
-  // --- 菜单备份相关状态 ---
-  const backupLoading = ref(false)
-  const backupDialogVisible = ref(false)
-  const backupListDialogVisible = ref(false)
-  const backupScopeType = ref<MenuBackupScopeType>('space')
-  const backupList = ref<Api.SystemManage.MenuBackupItem[]>([])
   const warnDev = (...args: any[]) => {
     if (import.meta.env.DEV) {
       console.info(...args)
@@ -107,15 +96,15 @@ export function useMenuPage() {
   const dialogVisible = ref(false)
   const manageGroupDrawerVisible = ref(false)
   const groupSaving = ref(false)
-  const editData = ref<any>(null)
+  const editData = ref<AppRouteRecord | null>(null)
   const parentRowForAdd = ref<AppRouteRecord | null>(null)
   const deleteDialogVisible = ref(false)
   const deleteLoading = ref(false)
-  const deleteTargetRow = ref<any>(null)
+  const deleteTargetRow = ref<AppRouteRecord | null>(null)
   const deletePreview = ref<Api.SystemManage.MenuDeletePreviewItem | null>(null)
   const actionRequirementVisible = ref(false)
-  const actionRequirementData = ref<any>(null)
-  const selectedMenuRows = ref<any[]>([])
+  const actionRequirementData = ref<AppRouteRecord | null>(null)
+  const selectedMenuRows = ref<AppRouteRecord[]>([])
   const batchTargetGroupId = ref('')
   const batchAssignDialogVisible = ref(false)
 
@@ -179,8 +168,7 @@ export function useMenuPage() {
     return map
   })
 
-  const getLinkedPages = (item: any) =>
-    linkedPagesByMenuId.value.get(String(item?.id || '')) || []
+  const getLinkedPages = (item: any) => linkedPagesByMenuId.value.get(String(item?.id || '')) || []
 
   const getSpaceName = (spaceKey?: string) => {
     const normalized = `${spaceKey || ''}`.trim()
@@ -200,36 +188,6 @@ export function useMenuPage() {
       ? '当前按空间查看菜单布局树；同一菜单定义在多个空间复用时，共享一份授权与裁剪状态。'
       : '当前按 App 维护菜单定义；父级、排序和显示位置以当前查看空间做布局参考，不再把空间当成菜单主归属。'
   )
-  const backupDialogTitle = computed(() =>
-    isLayoutMode.value ? '备份当前空间布局' : '备份菜单定义'
-  )
-  const backupAlertTitle = computed(() =>
-    isLayoutMode.value
-      ? `当前将备份空间布局：${currentSpaceName.value}`
-      : `当前将创建 App 级定义备份：${targetAppKey.value}`
-  )
-  const backupAlertDescription = computed(() =>
-    isLayoutMode.value
-      ? '该备份只保存当前 App 下当前空间的布局树和相关菜单分组，用于后续覆盖恢复当前空间。'
-      : '该备份只保存当前 App 的菜单定义集合，不含各空间的父级、排序和显隐差异；空间级恢复请到高级空间配置页处理。'
-  )
-  const backupListTitle = computed(() => (isLayoutMode.value ? '管理空间布局备份' : '管理定义备份'))
-  const backupListAlertDescription = computed(() =>
-    isLayoutMode.value
-      ? '这里只展示当前 App 下当前空间的布局备份，不包含 App 级菜单定义备份。'
-      : '这里只展示当前 App 的定义备份；空间级布局备份请到空间高级配置页管理。'
-  )
-  const backupListEmptyDescription = computed(() =>
-    isLayoutMode.value ? '当前空间暂无布局备份' : '当前 App 暂无定义备份'
-  )
-
-  const getBackupScopeLabel = (item: Api.SystemManage.MenuBackupItem) => {
-    if (`${item.scope_type || ''}`.trim() === 'global') {
-      return isLayoutMode.value ? '全空间备份' : '定义备份'
-    }
-    return getSpaceName(item.space_key || activeSpaceKey.value)
-  }
-
   const injectManageGroups = (
     items: AppRouteRecord[],
     parentKey = 'root',
@@ -516,9 +474,6 @@ export function useMenuPage() {
     if (requestedSpaceKey && menuSpaces.value.some((item) => item.spaceKey === requestedSpaceKey)) {
       return requestedSpaceKey
     }
-    if (isLayoutMode.value) {
-      return ''
-    }
     return (
       menuSpaces.value.find((item) => item.isDefault)?.spaceKey ||
       menuSpaces.value[0]?.spaceKey ||
@@ -613,9 +568,7 @@ export function useMenuPage() {
 
   const getDeleteParentOptions = (row: any): MenuDeleteParentOption[] => {
     if (!row?.id) return []
-    const excluded = new Set<string>(
-      collectMenuSubtree([row]).map((item) => String(item.id || ''))
-    )
+    const excluded = new Set<string>(collectMenuSubtree([row]).map((item) => String(item.id || '')))
     const walk = (items: AppRouteRecord[]) => {
       return items.reduce<MenuDeleteParentOption[]>((acc, item) => {
         if (isManageGroupRow(item)) return acc
@@ -638,13 +591,6 @@ export function useMenuPage() {
       if (!groupingAvailable.value) return
       manageGroupDrawerVisible.value = true
       return
-    }
-    if (command === 'backupGlobal') {
-      handleBackupMenu('global')
-      return
-    }
-    if (command === 'backupList') {
-      handleManageBackups()
     }
   }
 
@@ -710,6 +656,7 @@ export function useMenuPage() {
       batchTargetGroupId.value = ''
     } catch (e: any) {
       if (e !== 'cancel') {
+        console.error('[Menus] batch operation failed', e)
         ElMessage.error(e?.message || '批量操作失败')
       }
     }
@@ -855,16 +802,6 @@ export function useMenuPage() {
     else if (item.key === 'delete') handleDeleteMenu(row)
   }
 
-  const handleBackupListAction = (action: string, row: Api.SystemManage.MenuBackupItem) => {
-    if (action === 'restore') {
-      handleRestoreBackup(row)
-      return
-    }
-    if (action === 'delete') {
-      handleDeleteBackup(row.id)
-    }
-  }
-
   const handleDeleteMenu = async (row: any) => {
     if (!dataFromBackend.value || !row.id) return ElMessage.info('预览模式无法删除')
     if (row.is_system) return ElMessage.warning('系统菜单不可删除')
@@ -874,6 +811,7 @@ export function useMenuPage() {
     try {
       deletePreview.value = await fetchGetMenuDeletePreview(String(row.id), { mode: 'cascade' })
     } catch (e: any) {
+      console.error('[Menus] get delete preview failed', e)
       ElMessage.error(e?.message || '获取删除预览失败')
       deleteDialogVisible.value = false
       deleteTargetRow.value = null
@@ -891,7 +829,7 @@ export function useMenuPage() {
     try {
       await fetchDeleteMenu(String(deleteTargetRow.value.id), {
         mode: payload.mode,
-        targetParentId: payload.targetParentId || undefined
+        target_parent_id: payload.targetParentId || undefined
       })
       ElMessage.success(payload.mode === 'cascade' ? '菜单树已删除' : '菜单已删除')
       deleteDialogVisible.value = false
@@ -899,6 +837,7 @@ export function useMenuPage() {
       deletePreview.value = null
       await getMenuList()
     } catch (e: any) {
+      console.error('[Menus] delete menu failed', e)
       ElMessage.error(e?.message || '删除失败')
     } finally {
       deleteLoading.value = false
@@ -944,6 +883,7 @@ export function useMenuPage() {
       ElMessage.success('保存成功')
       getMenuList()
     } catch (e: any) {
+      console.error('[Menus] save menu failed', e)
       ElMessage.error(e?.message || '保存失败')
     }
   }
@@ -971,13 +911,12 @@ export function useMenuPage() {
           parent_id: row.parent_id ? String(row.parent_id) : null,
           kind: row.kind || 'directory',
           path: row.path || '',
-          name: row.name || '',
+          name: String(row.name || ''),
           component: typeof row.component === 'string' ? row.component : '',
           title: row.meta?.title || '',
           icon: row.meta?.icon || '',
           sort_order: Number(row.sort_order ?? 0),
-          space_key:
-            `${row.spaceKey || row.space_key || row.meta?.spaceKey || activeSpaceKey.value || ''}`.trim(),
+          space_key: `${row.spaceKey || row.meta?.spaceKey || activeSpaceKey.value || ''}`.trim(),
           meta
         },
         { showErrorMessage: false }
@@ -987,14 +926,9 @@ export function useMenuPage() {
       actionRequirementData.value = null
       getMenuList()
     } catch (e: any) {
+      console.error('[Menus] save action requirement failed', e)
       ElMessage.error(e?.message || '功能权限保存失败')
     }
-  }
-
-  // --- 菜单备份相关方法 ---
-  const handleBackupMenu = (scopeType: MenuBackupScopeType) => {
-    backupScopeType.value = scopeType
-    backupDialogVisible.value = true
   }
 
   const handleSaveManageGroup = async (
@@ -1010,6 +944,7 @@ export function useMenuPage() {
       ElMessage.success('菜单分组已保存')
       await getMenuList()
     } catch (e: any) {
+      console.error('[Menus] save manage group failed', e)
       ElMessage.error(e?.message || '菜单分组保存失败')
     } finally {
       groupSaving.value = false
@@ -1023,103 +958,10 @@ export function useMenuPage() {
       ElMessage.success('菜单分组已删除')
       await getMenuList()
     } catch (e: any) {
+      console.error('[Menus] delete manage group failed', e)
       ElMessage.error(e?.message || '菜单分组删除失败')
     } finally {
       groupSaving.value = false
-    }
-  }
-
-  const handleCreateBackup = async (formData: { name: string; description: string }) => {
-    backupLoading.value = true
-    try {
-      const payload: Api.SystemManage.MenuBackupCreateParams = {
-        app_key: targetAppKey.value,
-        name: formData.name,
-        description: formData.description,
-        scope_type: backupScopeType.value
-      }
-      if (backupScopeType.value === 'space') {
-        payload.space_key = activeSpaceKey.value
-      }
-      await fetchCreateMenuBackup(payload)
-      ElMessage.success(backupScopeType.value === 'global' ? '全局备份已创建' : '空间备份已创建')
-      backupDialogVisible.value = false
-    } catch (e: any) {
-      ElMessage.error(e?.message || '备份失败')
-    } finally {
-      backupLoading.value = false
-    }
-  }
-
-  const handleManageBackups = async () => {
-    backupLoading.value = true
-    try {
-      const list = await fetchGetMenuBackupList(
-        isLayoutMode.value ? activeSpaceKey.value : undefined,
-        targetAppKey.value
-      )
-      const filteredList = (list || []).filter((item: any) =>
-        isLayoutMode.value
-          ? `${item.scope_type || ''}`.trim() !== 'global'
-          : `${item.scope_type || ''}`.trim() === 'global'
-      )
-      backupList.value = filteredList.map((item: any) => ({
-        ...item,
-        space_name: getBackupScopeLabel(item)
-      }))
-      backupListDialogVisible.value = true
-    } catch (e: any) {
-      ElMessage.error(e?.message || '获取备份列表失败')
-    } finally {
-      backupLoading.value = false
-    }
-  }
-
-  const buildBackupRestoreMessage = (item: Api.SystemManage.MenuBackupItem) => {
-    if (item.scope_type === 'global') {
-      return '确定要恢复该备份吗？该操作会覆盖当前 App 的菜单定义集合。'
-    }
-    return `确定要恢复该备份吗？恢复后会覆盖当前菜单空间“${getSpaceName(item.space_key || activeSpaceKey.value)}”的菜单配置。`
-  }
-
-  const handleRestoreBackup = async (item: Api.SystemManage.MenuBackupItem) => {
-    try {
-      await ElMessageBox.confirm(buildBackupRestoreMessage(item), '提示', {
-        type: 'warning',
-        confirmButtonText: '确定',
-        cancelButtonText: '取消'
-      })
-      backupLoading.value = true
-      await fetchRestoreMenuBackup(item.id, targetAppKey.value)
-      ElMessage.success('恢复成功')
-      backupListDialogVisible.value = false
-      getMenuList()
-    } catch (e: any) {
-      if (e !== 'cancel') {
-        ElMessage.error(e?.message || '恢复失败')
-      }
-    } finally {
-      backupLoading.value = false
-    }
-  }
-
-  const handleDeleteBackup = async (id: string) => {
-    try {
-      await ElMessageBox.confirm('确定要删除该备份吗？', '提示', {
-        type: 'warning',
-        confirmButtonText: '确定',
-        cancelButtonText: '取消'
-      })
-      backupLoading.value = true
-      await fetchDeleteMenuBackup(id, targetAppKey.value)
-      ElMessage.success('删除成功')
-      handleManageBackups()
-    } catch (e: any) {
-      if (e !== 'cancel') {
-        ElMessage.error(e?.message || '删除失败')
-      }
-    } finally {
-      backupLoading.value = false
     }
   }
 
@@ -1224,11 +1066,6 @@ export function useMenuPage() {
     menuGroups,
     menuSpaces,
     menuGroupApiUnavailable,
-    backupLoading,
-    backupDialogVisible,
-    backupListDialogVisible,
-    backupScopeType,
-    backupList,
     formFilters,
     dialogVisible,
     manageGroupDrawerVisible,
@@ -1253,12 +1090,6 @@ export function useMenuPage() {
     menuPageTitle,
     menuPageDescription,
     menuToolbarTip,
-    backupDialogTitle,
-    backupAlertTitle,
-    backupAlertDescription,
-    backupListTitle,
-    backupListAlertDescription,
-    backupListEmptyDescription,
     filteredMenuTree,
     groupingAvailable,
     tableData,
@@ -1287,13 +1118,11 @@ export function useMenuPage() {
     handleExpandSwitchChange,
     handleAddMenu,
     handleMenuOperation,
-    handleBackupListAction,
     handleDeleteMenuConfirm,
     handleSubmit,
     handleActionRequirementSubmit,
     handleSaveManageGroup,
     handleDeleteManageGroup,
-    handleCreateBackup,
     // re-exports for template convenience
     isManageGroupRow,
     isDirectoryMenuRow,

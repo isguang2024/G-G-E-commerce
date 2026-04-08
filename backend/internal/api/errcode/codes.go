@@ -1,3 +1,6 @@
+// Deprecated: internal/api/errcode 是 legacy gin handler 使用的错误码包。
+// v5 ogen handler 请使用 internal/api/apperr（codes.go + mapper.go）。
+// 此包将在最后一个 legacy gin handler 退场后物理删除，禁止向此包添加新内容。
 package errcode
 
 // 业务错误码（与 HTTP 状态码分离，统一在 body.code + body.message 中返回）

@@ -36,8 +36,12 @@ func (h *APIHandler) SaveApp(ctx context.Context, req gen.AnyObject) (*gen.Mutat
 	return ok(), nil
 }
 
-func (h *APIHandler) ListAppHostBindings(ctx context.Context) (*gen.AnyListResponse, error) {
-	items, err := h.appSvc.ListHostBindings("")
+func (h *APIHandler) ListAppHostBindings(ctx context.Context, params gen.ListAppHostBindingsParams) (*gen.AnyListResponse, error) {
+	appKey := ""
+	if v, ok := params.AppKey.Get(); ok {
+		appKey = v
+	}
+	items, err := h.appSvc.ListHostBindings(appKey)
 	if err != nil {
 		h.logger.Error("list app host bindings failed", zap.Error(err))
 		return nil, err
@@ -68,8 +72,12 @@ func (h *APIHandler) GetCurrentApp(ctx context.Context, params gen.GetCurrentApp
 
 // -------- spaces --------
 
-func (h *APIHandler) ListMenuSpaces(ctx context.Context) (*gen.AnyListResponse, error) {
-	items, err := h.spaceSvc.ListSpaces("")
+func (h *APIHandler) ListMenuSpaces(ctx context.Context, params gen.ListMenuSpacesParams) (*gen.AnyListResponse, error) {
+	appKey := ""
+	if v, ok := params.AppKey.Get(); ok {
+		appKey = v
+	}
+	items, err := h.spaceSvc.ListSpaces(appKey)
 	if err != nil {
 		h.logger.Error("list menu spaces failed", zap.Error(err))
 		return nil, err

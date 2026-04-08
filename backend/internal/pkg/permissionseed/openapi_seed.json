@@ -1,5 +1,5 @@
 {
-  "source": "api\\openapi\\openapi.yaml",
+  "source": "api\\openapi\\dist\\openapi.yaml",
   "operations": [
     {
       "operation_id": "listApiEndpoints",
@@ -817,46 +817,6 @@
       "path": "/menus",
       "permission_key": "system.menu.manage",
       "summary": "创建菜单",
-      "tags": "menu",
-      "api_category": "menu",
-      "access_mode": "permission"
-    },
-    {
-      "operation_id": "listMenuBackups",
-      "method": "get",
-      "path": "/menus/backups",
-      "permission_key": "system.menu.backup",
-      "summary": "获取菜单备份列表",
-      "tags": "menu",
-      "api_category": "menu",
-      "access_mode": "permission"
-    },
-    {
-      "operation_id": "createMenuBackup",
-      "method": "post",
-      "path": "/menus/backups",
-      "permission_key": "system.menu.backup",
-      "summary": "创建菜单备份",
-      "tags": "menu",
-      "api_category": "menu",
-      "access_mode": "permission"
-    },
-    {
-      "operation_id": "deleteMenuBackup",
-      "method": "delete",
-      "path": "/menus/backups/{id}",
-      "permission_key": "system.menu.backup",
-      "summary": "删除菜单备份",
-      "tags": "menu",
-      "api_category": "menu",
-      "access_mode": "permission"
-    },
-    {
-      "operation_id": "restoreMenuBackup",
-      "method": "post",
-      "path": "/menus/backups/{id}/restore",
-      "permission_key": "system.menu.backup",
-      "summary": "恢复菜单备份",
       "tags": "menu",
       "api_category": "menu",
       "access_mode": "permission"

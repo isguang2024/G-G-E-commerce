@@ -2,9 +2,6 @@ package router
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -12,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	apigen "github.com/gg-ecommerce/backend/api/gen"
+	"github.com/gg-ecommerce/backend/internal/api/apperr"
 	"github.com/gg-ecommerce/backend/internal/api/handlers"
 	"github.com/gg-ecommerce/backend/internal/api/middleware"
 	"github.com/gg-ecommerce/backend/internal/config"
@@ -83,21 +81,11 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 	// (both public and authenticated). The Gin layer routes the public ones
 	// outside the JWT middleware and the rest inside.
 	permMW := middleware.OpenAPIPermission(permEvaluator, permLookup, logger)
-	openapiErrHandler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, err error) {
-		if errors.Is(err, middleware.ErrPermissionDenied) {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
-			_ = json.NewEncoder(w).Encode(map[string]any{"code": 403, "message": "无权访问"})
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]any{"code": 500, "message": err.Error()})
-	}
 	ogenServer, err := apigen.NewServer(
 		handlers.NewAPIHandler(db, cfg, logger, permEvaluator, apiEndpointSvc),
+		handlers.SecurityHandler{},
 		apigen.WithMiddleware(permMW),
-		apigen.WithErrorHandler(openapiErrHandler),
+		apigen.WithErrorHandler(apperr.ErrorHandler(logger)),
 	)
 	if err != nil {
 		logger.Fatal("failed to build ogen server", zap.Error(err))
@@ -215,11 +203,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.POST("/menus/groups", ogenBridge)
 			authenticated.PUT("/menus/groups/:id", ogenBridge)
 			authenticated.DELETE("/menus/groups/:id", ogenBridge)
-			authenticated.GET("/menus/backups", ogenBridge)
-			authenticated.POST("/menus/backups", ogenBridge)
-			authenticated.DELETE("/menus/backups/:id", ogenBridge)
 			authenticated.GET("/menus/:id/delete-preview", ogenBridge)
-			authenticated.POST("/menus/backups/:id/restore", ogenBridge)
 
 			// page
 			authenticated.GET("/pages", ogenBridge)

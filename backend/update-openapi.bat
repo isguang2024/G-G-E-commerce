@@ -4,19 +4,27 @@ setlocal EnableExtensions
 chcp 65001 >nul
 cd /d "%~dp0"
 
-rem This script only regenerates OpenAPI-derived seed data.
-rem It does not replace database migrations.
+rem Regenerate all OpenAPI derived artifacts:
+rem   bundle -> lint -> ogen (api/gen/) -> permission seed -> frontend error-codes.ts
 rem
-rem Typical use:
-rem - After changing api/openapi/openapi.yaml: run this script, then restart backend.
-rem - If schema/default-data changed too: run cmd/migrate as well.
-rem - For a fresh database: run cmd/migrate first, then this script.
+rem Usage:
+rem   - After editing domains/*/paths.yaml or components/*.yaml: run this, restart backend
+rem   - If DB schema/default data also changed: run cmd/migrate first, then this
+rem   - Fresh database: cmd/migrate first, then this script
 
-echo [1/2] Generate api/gen
-go run github.com/ogen-go/ogen/cmd/ogen@latest --target api/gen --package gen --clean api/openapi/openapi.yaml
+echo [api] bundling spec...
+npx --yes @redocly/cli bundle api/openapi/openapi.root.yaml -o api/openapi/dist/openapi.yaml --ext yaml
 if errorlevel 1 goto :fail
 
-echo [2/2] Generate permission seed
+echo [api] linting spec...
+npx --yes @redocly/cli lint api/openapi/dist/openapi.yaml --config api/openapi/redocly.yaml
+if errorlevel 1 goto :fail
+
+echo [api] running ogen...
+go run github.com/ogen-go/ogen/cmd/ogen@latest --target api/gen --package gen --clean api/openapi/dist/openapi.yaml
+if errorlevel 1 goto :fail
+
+echo [api] generating permission seed + frontend error-codes.ts...
 go run .\cmd\gen-permissions
 if errorlevel 1 goto :fail
 

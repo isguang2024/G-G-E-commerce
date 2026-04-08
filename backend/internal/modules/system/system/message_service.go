@@ -709,7 +709,7 @@ func (s *messageService) MarkAllRead(userID uuid.UUID, boxType string) error {
 func (s *messageService) UpdateTodoStatus(userID, deliveryID uuid.UUID, action string) error {
 	normalizedAction := strings.TrimSpace(action)
 	if normalizedAction != "done" && normalizedAction != "ignored" {
-		return errors.New("invalid todo action")
+		return errors.New("无效的待办操作")
 	}
 	now := time.Now()
 	updates := map[string]interface{}{

@@ -5,8 +5,7 @@ import {
   AppRouteRecord,
   normalizeMenuSpaceKey,
   normalizeRuntimeMenuTree,
-  normalizeMenuManageGroup,
-  normalizeMenuBackupItem
+  normalizeMenuManageGroup
 } from './_shared'
 
 /** 获取菜单树 */
@@ -15,7 +14,7 @@ export async function fetchGetMenuList(spaceKey?: string, appKey?: string) {
   if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
   if (appKey) query.app_key = appKey
   const res: any = await unwrap(v5Client.GET('/menus/tree', { params: { query } }))
-  return (res || []).map((item: any) => normalizeRuntimeMenuTree(item)) as AppRouteRecord[]
+  return (res?.records || []).map((item: any) => normalizeRuntimeMenuTree(item)) as AppRouteRecord[]
 }
 
 /** 获取完整菜单树 */
@@ -24,7 +23,7 @@ export async function fetchGetMenuTreeAll(spaceKey?: string, appKey?: string) {
   if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
   if (appKey) query.app_key = appKey
   const res: any = await unwrap(v5Client.GET('/menus/tree', { params: { query } }))
-  return (res || []).map((item: any) => normalizeRuntimeMenuTree(item)) as AppRouteRecord[]
+  return (res?.records || []).map((item: any) => normalizeRuntimeMenuTree(item)) as AppRouteRecord[]
 }
 
 /** 创建菜单 */
@@ -78,12 +77,7 @@ export async function fetchDeleteMenuManageGroup(id: string) {
 
 /** 删除菜单 */
 export async function fetchDeleteMenu(id: string, params?: Api.SystemManage.MenuDeleteParams) {
-  const query: any = params
-    ? {
-        ...params,
-        target_parent_id: params.target_parent_id || params.targetParentId || undefined
-      }
-    : {}
+  const query: any = params ? { ...params } : {}
   const { error } = await v5Client.DELETE('/menus/{id}', {
     params: { path: { id }, query }
   })
@@ -94,12 +88,7 @@ export async function fetchGetMenuDeletePreview(
   id: string,
   params?: Api.SystemManage.MenuDeleteParams
 ) {
-  const query: any = params
-    ? {
-        ...params,
-        target_parent_id: params.target_parent_id || params.targetParentId || undefined
-      }
-    : {}
+  const query: any = params ? { ...params } : {}
   const res: any = await unwrap(
     v5Client.GET('/menus/{id}/delete-preview', {
       params: { path: { id }, query }
@@ -114,33 +103,3 @@ export async function fetchGetMenuDeletePreview(
   }
 }
 
-/** 创建菜单备份 */
-export async function fetchCreateMenuBackup(data: Api.SystemManage.MenuBackupCreateParams) {
-  const { error } = await v5Client.POST('/menus/backups', { body: data as any })
-  if (error) throw error
-}
-
-/** 获取菜单备份列表 */
-export async function fetchGetMenuBackupList(spaceKey?: string, appKey?: string) {
-  const query: any = {}
-  if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
-  if (appKey) query.app_key = appKey
-  const res: any = await unwrap(v5Client.GET('/menus/backups', { params: { query } }))
-  return (res || []).map((item: any) => normalizeMenuBackupItem(item))
-}
-
-/** 删除菜单备份 */
-export async function fetchDeleteMenuBackup(id: string, appKey: string) {
-  const { error } = await v5Client.DELETE('/menus/backups/{id}', {
-    params: { path: { id }, query: { app_key: appKey } as any }
-  })
-  if (error) throw error
-}
-
-/** 恢复菜单备份 */
-export async function fetchRestoreMenuBackup(id: string, appKey: string) {
-  const { error } = await v5Client.POST('/menus/backups/{id}/restore', {
-    params: { path: { id }, query: { app_key: appKey } as any }
-  })
-  if (error) throw error
-}

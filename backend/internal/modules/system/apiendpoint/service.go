@@ -502,7 +502,7 @@ func (s *service) ListCategories() ([]user.APIEndpointCategory, error) {
 
 func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string, currentAppKey string) (*user.APIEndpoint, error) {
 	if endpoint == nil {
-		return nil, errors.New("endpoint is nil")
+		return nil, errors.New("端点参数不能为空")
 	}
 	endpoint.Method = strings.ToUpper(strings.TrimSpace(endpoint.Method))
 	endpoint.Path = strings.TrimSpace(endpoint.Path)
@@ -627,7 +627,7 @@ func (s *service) Save(endpoint *user.APIEndpoint, permissionKeys []string, curr
 
 func (s *service) SaveCategory(item *user.APIEndpointCategory) (*user.APIEndpointCategory, error) {
 	if item == nil {
-		return nil, errors.New("category is nil")
+		return nil, errors.New("分类参数不能为空")
 	}
 	item.Code = strings.TrimSpace(item.Code)
 	item.Name = strings.TrimSpace(item.Name)

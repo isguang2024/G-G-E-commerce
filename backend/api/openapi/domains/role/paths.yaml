@@ -1,0 +1,382 @@
+# domains/role/paths.yaml — AUTO-SPLIT by split_spec.py
+paths:
+  /roles:
+    get:
+      operationId: listRoles
+      summary: 获取角色列表
+      tags:
+      - role
+      x-permission-key: system.role.manage
+      x-access-mode: permission
+      parameters:
+      - name: current
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: size
+        in: query
+        schema:
+          type: integer
+          default: 20
+      - name: roleName
+        in: query
+        schema:
+          type: string
+      - name: roleCode
+        in: query
+        schema:
+          type: string
+      - name: appKey
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/RoleList'
+    post:
+      operationId: createRole
+      summary: 创建角色
+      tags:
+      - role
+      x-permission-key: system.role.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/RoleCreateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/RoleCreateResult'
+  /roles/options:
+    get:
+      operationId: listRoleOptions
+      summary: 获取角色候选列表
+      tags:
+      - role
+      x-permission-key: system.role.manage
+      x-access-mode: permission
+      parameters:
+      - name: appKey
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/RoleOptions'
+  /roles/{id}:
+    get:
+      operationId: getRole
+      summary: 获取角色详情
+      tags:
+      - role
+      x-permission-key: system.role.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/RoleSummary'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+    put:
+      operationId: updateRole
+      summary: 更新角色
+      tags:
+      - role
+      x-permission-key: system.role.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/RoleUpdateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+    delete:
+      operationId: deleteRole
+      summary: 删除角色
+      tags:
+      - role
+      x-permission-key: system.role.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /roles/{id}/packages:
+    get:
+      operationId: getRolePackages
+      summary: 获取角色功能包
+      tags:
+      - role
+      x-permission-key: feature_package.assign_collaboration_workspace
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: app_key
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/RolePackagesResponse'
+    put:
+      operationId: setRolePackages
+      summary: 配置角色功能包
+      tags:
+      - role
+      x-permission-key: feature_package.assign_collaboration_workspace
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: app_key
+        in: query
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /roles/{id}/menus:
+    get:
+      operationId: getRoleMenus
+      summary: 获取角色菜单权限
+      tags:
+      - role
+      x-permission-key: system.role.assign_menu
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: app_key
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/RoleMenusResponse'
+    put:
+      operationId: setRoleMenus
+      summary: 配置角色菜单权限
+      tags:
+      - role
+      x-permission-key: system.role.assign_menu
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: app_key
+        in: query
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /roles/{id}/actions:
+    get:
+      operationId: getRoleActions
+      summary: 获取角色功能权限
+      tags:
+      - role
+      x-permission-key: system.role.assign_action
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: app_key
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/RoleActionsResponse'
+    put:
+      operationId: setRoleActions
+      summary: 配置角色功能权限
+      tags:
+      - role
+      x-permission-key: system.role.assign_action
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      - name: app_key
+        in: query
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/UUIDListRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /roles/{id}/data-permissions:
+    get:
+      operationId: getRoleDataPermissions
+      summary: 获取角色数据权限
+      tags:
+      - role
+      x-permission-key: system.role.assign_data
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/RoleDataPermissionsResponse'
+    put:
+      operationId: setRoleDataPermissions
+      summary: 配置角色数据权限
+      tags:
+      - role
+      x-permission-key: system.role.assign_data
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/RoleDataPermissionsRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'

@@ -1,0 +1,22 @@
+# redocly.yaml — OpenAPI lint 规则
+#
+# 推进策略：先 warn 铺好基础，Step 4 domain 拆分时逐条升 error。
+# 使用：
+#   npx @redocly/cli lint dist/openapi.yaml --config api/openapi/redocly.yaml
+
+extends:
+  - recommended
+
+rules:
+  # ── 现在就必须通过（error）────────────────────────────────────────────────
+  operation-operationId: error          # 每个 operation 必须有 operationId
+  operation-operationId-unique: error   # operationId 不能重复
+
+  # ── 历史债，Step 4 拆 domain 时逐条修复后升 error ─────────────────────────
+  operation-tag-defined: warn           # tag 须在顶层 tags[] 声明（195 处未声明）
+  operation-4xx-response: warn          # 每个 operation 须有 4xx 响应（165 处缺失）
+  security-defined: warn                # security scheme 须在 components 声明（195 处）
+
+  # ── recommended 内置，保持 warn ────────────────────────────────────────────
+  no-unused-components: warn
+  no-ambiguous-paths: warn

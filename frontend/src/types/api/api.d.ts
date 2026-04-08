@@ -992,6 +992,20 @@ declare namespace Api {
       effectiveChain?: string[]
     }
 
+    interface PageAccessTraceMenuItem {
+      id: string
+      parentId: string
+      name: string
+      title: string
+      path: string
+      fullPath: string
+      kind: string
+      icon: string
+      sortOrder: number
+      hidden: boolean
+      visible: boolean
+    }
+
     interface PageAccessTraceResult {
       userId: string
       collaborationWorkspaceId?: string
@@ -1000,6 +1014,7 @@ declare namespace Api {
       superAdmin: boolean
       actionKeyCount: number
       visibleMenuIds: string[]
+      menus: PageAccessTraceMenuItem[]
       roles: PageAccessTraceRoleItem[]
       pages: PageAccessTracePageItem[]
     }
@@ -1507,7 +1522,6 @@ declare namespace Api {
 
     interface MenuDeleteParams {
       mode?: 'single' | 'cascade' | 'promote_children' | string
-      targetParentId?: string | null
       target_parent_id?: string | null
     }
 
@@ -1523,29 +1537,6 @@ declare namespace Api {
       affected_relation_count?: number
     }
 
-    interface MenuBackupItem {
-      id: string
-      name: string
-      description?: string
-      // scope_type 只保留“空间 / 全局”主语义；真正的来源区分看 scope_origin。
-      space_key?: string
-      space_name?: string
-      scope_type?: 'space' | 'global' | string
-      // scope_origin 用来区分正式全空间备份和历史兼容全局备份，便于列表提示和恢复确认文案更清晰。
-      scope_origin?: 'space' | 'global' | 'legacy_global' | string
-      created_at?: string
-      created_by?: string
-    }
-
-    interface MenuBackupCreateParams {
-      app_key: string
-      name: string
-      description?: string
-      // scope_type 显式声明要备份当前空间还是全部空间，避免再依赖省略 space_key 推断语义。
-      scope_type?: 'space' | 'global' | string
-      // 仅当 scope_type=space 时需要传入当前菜单空间；global 备份会忽略该字段。
-      space_key?: string
-    }
   }
 
   namespace Message {

@@ -17,11 +17,11 @@ import (
 )
 
 var (
-	ErrInvalidCredentials = errors.New("invalid email or password")
-	ErrUserNotFound       = errors.New("user not found")
-	ErrUserExists         = errors.New("user already exists")
-	ErrEmailExists        = errors.New("email already exists")
-	ErrUserInactive       = errors.New("user account is inactive")
+	ErrInvalidCredentials = errors.New("邮箱或密码错误")
+	ErrUserNotFound       = errors.New("用户不存在")
+	ErrUserExists         = errors.New("用户名已存在")
+	ErrEmailExists        = errors.New("邮箱已存在")
+	ErrUserInactive       = errors.New("账号已被禁用")
 )
 
 type AuthService interface {
@@ -132,7 +132,7 @@ func (s *authService) Register(req *dto.RegisterRequest) (*dto.LoginResponse, er
 		return nil, fmt.Errorf("failed to check username: %w", err)
 	}
 	if exists {
-		return nil, errors.New("username already exists")
+		return nil, errors.New("用户名已存在")
 	}
 
 	email := strings.TrimSpace(req.Email)
@@ -176,13 +176,13 @@ func (s *authService) RefreshToken(refreshToken string) (*dto.TokenResponse, err
 	claims, err := jwt.ParseToken(refreshToken, s.jwtCfg.Secret)
 	if err != nil {
 		s.logger.Warn("Failed to parse refresh token", zap.Error(err))
-		return nil, errors.New("invalid refresh token")
+		return nil, errors.New("无效或已过期的 refresh token")
 	}
 
 	user, err := s.userRepo.GetByID(uuid.MustParse(claims.UserID))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("user not found")
+			return nil, errors.New("用户不存在")
 		}
 		return nil, fmt.Errorf("database error: %w", err)
 	}

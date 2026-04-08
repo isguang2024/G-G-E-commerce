@@ -10,21 +10,20 @@ package middleware
 
 import (
 	"context"
-	"errors"
 
 	"github.com/google/uuid"
 	ogenmw "github.com/ogen-go/ogen/middleware"
 	"go.uber.org/zap"
 
 	apigen "github.com/gg-ecommerce/backend/api/gen"
+	"github.com/gg-ecommerce/backend/internal/api/apperr"
 	"github.com/gg-ecommerce/backend/internal/api/handlers"
 	"github.com/gg-ecommerce/backend/internal/pkg/permission/evaluator"
 )
 
-// ErrPermissionDenied is returned when the evaluator rejects an operation.
-// The router maps it to a 403 JSON response via gen.WithErrorHandler so we
-// don't have to teach ogen about per-operation error variants.
-var ErrPermissionDenied = errors.New("openapi permission denied")
+// ErrPermissionDenied is now defined in apperr to avoid an import cycle.
+// Re-exported here for callers that already reference middleware.ErrPermissionDenied.
+var ErrPermissionDenied = apperr.ErrPermissionDenied
 
 // OpenAPIPermission builds an ogen middleware that auto-enforces
 // x-permission-key on every operation by calling evaluator.Can.

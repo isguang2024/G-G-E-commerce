@@ -17,8 +17,8 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/api/gen"
+	"github.com/gg-ecommerce/backend/internal/api/apperr"
 	"github.com/gg-ecommerce/backend/internal/api/dto"
-	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
 )
 
 // CtxClientIP carries the originating client IP from the gin bridge into
@@ -27,15 +27,12 @@ const CtxClientIP ctxKey = "client_ip"
 
 func (h *APIHandler) Login(ctx context.Context, req *gen.LoginRequest) (gen.LoginRes, error) {
 	if req == nil || strings.TrimSpace(req.Username) == "" || req.Password == "" {
-		return &gen.LoginBadRequest{Code: 400, Message: "用户名和密码必填"}, nil
+		return nil, &apperr.ParamError{Msg: "用户名和密码必填"}
 	}
 	ip := clientIPFromCtx(ctx)
 	resp, err := h.authSvc.Login(req.Username, req.Password, ip)
 	if err != nil {
-		if errors.Is(err, auth.ErrInvalidCredentials) || errors.Is(err, auth.ErrUserInactive) {
-			return &gen.LoginUnauthorized{Code: 401, Message: err.Error()}, nil
-		}
-		h.logger.Error("login failed", zap.Error(err))
+		h.logger.Debug("login failed", zap.Error(err))
 		return nil, err
 	}
 	out := &gen.LoginResponse{
@@ -51,7 +48,7 @@ func (h *APIHandler) Login(ctx context.Context, req *gen.LoginRequest) (gen.Logi
 
 func (h *APIHandler) Register(ctx context.Context, req *gen.RegisterRequest) (gen.RegisterRes, error) {
 	if req == nil || strings.TrimSpace(req.Username) == "" || req.Password == "" {
-		return &gen.Error{Code: 400, Message:"用户名和密码必填"}, nil
+		return nil, &apperr.ParamError{Msg: "用户名和密码必填"}
 	}
 	dtoReq := &dto.RegisterRequest{
 		Username: req.Username,
@@ -61,10 +58,7 @@ func (h *APIHandler) Register(ctx context.Context, req *gen.RegisterRequest) (ge
 	}
 	resp, err := h.authSvc.Register(dtoReq)
 	if err != nil {
-		if errors.Is(err, auth.ErrUserExists) || errors.Is(err, auth.ErrEmailExists) {
-			return &gen.Error{Code: 400, Message:err.Error()}, nil
-		}
-		h.logger.Error("register failed", zap.Error(err))
+		h.logger.Debug("register failed", zap.Error(err))
 		return nil, err
 	}
 	out := &gen.LoginResponse{
@@ -80,11 +74,11 @@ func (h *APIHandler) Register(ctx context.Context, req *gen.RegisterRequest) (ge
 
 func (h *APIHandler) RefreshToken(ctx context.Context, req *gen.RefreshTokenRequest) (gen.RefreshTokenRes, error) {
 	if req == nil || strings.TrimSpace(req.RefreshToken) == "" {
-		return &gen.Error{Code: 401, Message: "缺少 refresh_token"}, nil
+		return nil, &apperr.ParamError{Msg: "缺少 refresh_token"}
 	}
 	resp, err := h.authSvc.RefreshToken(req.RefreshToken)
 	if err != nil {
-		return &gen.Error{Code: 401, Message: "无效或过期的 refresh_token"}, nil
+		return nil, err
 	}
 	return &gen.TokenResponse{
 		AccessToken:  resp.AccessToken,
@@ -108,13 +102,13 @@ func toJxRawMap(m map[string]interface{}) gen.LoginResponseUser {
 func (h *APIHandler) GetAuthMe(ctx context.Context) (gen.GetAuthMeRes, error) {
 	userID, ok := userIDFromContext(ctx)
 	if !ok {
-		return &gen.Error{Code: 401, Message: "未认证"}, nil
+		return nil, &apperr.UnauthError{Msg: "未认证"}
 	}
 	u, err := h.userRepo.GetByID(userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			h.logger.Warn("auth.me user not found", zap.String("user_id", userID.String()))
-			return &gen.Error{Code: 401, Message: "登录状态已失效，请重新登录"}, nil
+			return nil, &apperr.UnauthError{Msg: "登录状态已失效，请重新登录"}
 		}
 		h.logger.Error("auth.me lookup failed", zap.Error(err))
 		return nil, err

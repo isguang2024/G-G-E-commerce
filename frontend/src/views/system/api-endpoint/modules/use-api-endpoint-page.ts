@@ -32,6 +32,7 @@ import {
   fetchUpdateApiEndpointCategory
 } from '@/api/system-manage'
 import {
+  formatApiEndpointDisplayPath,
   formatPermissionContext,
   formatPermissionPattern,
   methodTagType,
@@ -261,7 +262,9 @@ export function useApiEndpointPage() {
           minWidth: 300,
           showOverflowTooltip: true,
           formatter: (row: APIEndpointItem) =>
-            h('div', { class: 'path-cell' }, [h('div', { class: 'path-main' }, row.path)])
+            h('div', { class: 'path-cell' }, [
+              h('div', { class: 'path-main' }, formatApiEndpointDisplayPath(row.path, row.authMode))
+            ])
         },
         {
           prop: 'summary',

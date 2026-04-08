@@ -92,3 +92,16 @@ export function formatPermissionContext(value?: string) {
       return value || '-'
   }
 }
+
+export function formatApiEndpointDisplayPath(path?: string, authMode?: string) {
+  const normalizedPath = `${path || ''}`.trim()
+  if (!normalizedPath) {
+    return '-'
+  }
+  if (normalizedPath.startsWith('/api/v1/') || normalizedPath.startsWith('/open/v1/')) {
+    return normalizedPath
+  }
+  const basePrefix = `${authMode || ''}`.trim() === 'public' ? '/open/v1' : '/api/v1'
+  const suffix = normalizedPath.startsWith('/') ? normalizedPath : `/${normalizedPath}`
+  return `${basePrefix}${suffix}`
+}

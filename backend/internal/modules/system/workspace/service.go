@@ -59,7 +59,7 @@ func (s *service) EnsureWorkspaceBackfill() error {
 
 func (s *service) EnsurePersonalWorkspaceForUser(userID uuid.UUID) (*models.Workspace, error) {
 	if userID == uuid.Nil {
-		return nil, fmt.Errorf("invalid user id")
+		return nil, fmt.Errorf("无效的用户 ID")
 	}
 	if err := s.EnsureWorkspaceBackfill(); err != nil {
 		return nil, err

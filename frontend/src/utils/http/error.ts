@@ -23,6 +23,7 @@
  */
 import { AxiosError } from 'axios'
 import { ElMessage } from 'element-plus'
+import { ErrorCodes } from '@/api/v5/error-codes'
 import { ApiStatus } from './status'
 import { $t } from '@/locales'
 
@@ -181,64 +182,58 @@ export function showError(error: HttpError, showMessage: boolean = true): void {
  * @param code 错误码
  * @returns 是否显示消息
  */
+// showCodes / hideCodes 来源：backend/internal/api/apperr/codes.go
+// 通过 go run ./cmd/gen-permissions 重新派生 error-codes.ts，不要手动修改码值。
 function shouldShowErrorMessage(code: number): boolean {
-  // 错误码规则：0=成功；1xxxx=参数/请求；2xxxx=认证/授权；3xxxx=业务/资源；5xxxx=服务端
+  // 需要全局 ElMessage 提示的错误码
+  const showCodes = new Set<number>([
+    // 1xxxx 参数错误 — 全部显示
+    ErrorCodes.ParamInvalid,
+    ErrorCodes.ParamMissing,
+    ErrorCodes.ParamFormat,
+    ErrorCodes.InvalidID,
 
-  // 需要显示全局提示的错误码
-  const showCodes = [
-    // 1xxxx 参数/请求错误 - 全部显示
-    1001, // 参数错误
-    1002, // 参数缺失
-    1003, // 参数格式错误
-    1004, // 无效的 ID
+    // 2xxxx 认证/授权 — 全部显示
+    ErrorCodes.Unauthorized,
+    ErrorCodes.TokenExpired,
+    ErrorCodes.Forbidden,
+    ErrorCodes.APIKeyMissing,
+    ErrorCodes.TokenBadFormat,
+    ErrorCodes.InvalidCredentials,
+    ErrorCodes.UserInactive,
 
-    // 2xxxx 认证/授权错误 - 全部显示
-    2001, // 未登录或 token 无效
-    2002, // token 已过期
-    2003, // 无权限
-    2004, // 缺少 API Key
-    2005, // Token 格式错误
+    // 3xxxx 业务错误 — 选择性显示（影响用户操作的才显示）
+    ErrorCodes.NoManagedWorkspace,
+    ErrorCodes.RoleCodeExists,
+    ErrorCodes.WorkspaceMemberExists,
+    ErrorCodes.MenuSystemProtected,
+    ErrorCodes.InvalidParent,
+    ErrorCodes.Conflict,
+    ErrorCodes.UserExists,
+    ErrorCodes.EmailExists,
+    ErrorCodes.SystemRoleProtected,
 
-    // 3xxxx 业务/资源错误 - 选择性显示
-    3006, // 您暂无管理的协作空间
-    3007, // 角色编码已存在
-    3008, // 该用户已在协作空间中
-    3011, // 系统默认菜单不可删除
-    3012, // 无效的上级
-    3013, // 业务冲突
-    3014, // 用户名已存在
-    3015, // 系统角色不可删除
+    // 5xxxx 服务端 — 全部显示
+    ErrorCodes.Internal,
+    ErrorCodes.Database,
+    ErrorCodes.External,
+  ])
 
-    // 5xxxx 服务端错误 - 全部显示
-    5001, // 内部错误
-    5002, // 数据库错误
-    5003 // 外部服务错误
-  ]
+  // 静默处理：资源不存在类，由业务页面自行展示空态
+  const hideCodes = new Set<number>([
+    ErrorCodes.NotFound,
+    ErrorCodes.UserNotFound,
+    ErrorCodes.WorkspaceNotFound,
+    ErrorCodes.MenuNotFound,
+    ErrorCodes.RoleNotFound,
+    ErrorCodes.WorkspaceMemberNotFound,
+    ErrorCodes.WorkspaceRoleNotFound,
+  ])
 
-  // 不需要显示全局提示的错误码（静默处理，由业务代码自行处理）
-  const hideCodes = [
-    3001, // 资源不存在（通常业务代码会自行处理）
-    3002, // 用户不存在
-    3003, // 协作空间不存在
-    3004, // 菜单不存在
-    3005, // 角色不存在
-    3009, // 成员不在协作空间中
-    3010 // 协作空间角色不存在或无权操作
-  ]
+  if (showCodes.has(code)) return true
+  if (hideCodes.has(code)) return false
 
-  if (showCodes.includes(code)) {
-    return true
-  }
-  if (hideCodes.includes(code)) {
-    return false
-  }
-
-  // 兼容后端直接返回 HTTP 状态码作为业务码的情况（如登录失败 401）
-  if (code >= 400 && code < 600) {
-    return true
-  }
-
-  // 未定义的错误码，默认显示（安全起见）
+  // 未定义的码默认显示（安全兜底）
   return code >= 5000
 }
 

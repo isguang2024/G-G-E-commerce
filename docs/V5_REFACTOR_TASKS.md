@@ -307,3 +307,15 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 **下次方向**
 - 如果后续确认不再手工录入 API 注册项，可以继续收窄 API 管理页，仅保留同步、未注册、失效清理和分类维护。
 - 若仍需要新增入口，建议单独做“兜底补录”而不是回到主流程，避免与 OpenAPI-first 的自动注册链路混淆。
+
+### 2026-04-08 菜单域清理：删除备份功能 + 运行时 bug 修复（Menu 维护）
+
+**本次改动**
+- 删除菜单备份/恢复功能全链路：后端 backup_service.go、4 路由、4 handler、MenuBackup 模型/AutoMigrate/permissionseed/repository；前端 2 个 dialog 组件、4 个 API 函数、类型定义、及 menu/menu-space 两个 composable 和 view 中的全部引用。
+- 修复运行时 bug：`fetchGetMenuTreeAll` 的 `res.map()` 改为 `res?.records?.map()`（后端返回包装对象而非裸数组）；`normalizeRuntimeMenuTree` 的 `meta.title` 加 `|| item?.title || item?.name` 回退，菜单标题正确显示。
+- 修复代码审查问题：CreateMenu/UpdateMenu 补 Component 字段、N+1 查询改单 SQL、refreshAllMenuSnapshots 失败降级为 warn log、ref<any> 收窄类型、catch 块补 console.error。
+- 修复 launch.json：backend 用 bash 绝对路径 cd 进子目录启动；frontend 用 pnpm -C；新建 .env 固定 VITE_PORT=5173。
+
+**下次方向**
+- Menu.Meta JSONB 普遍不含 title key，应在 Create/Update 时同步写入 meta.title，减少 normalizer 的 fallback 链依赖。
+- 删除备份测试后 menu/service_test.go 覆盖偏少，可补 GetTree 和 countAffectedMenuRelations 单测。

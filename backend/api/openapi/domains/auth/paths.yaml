@@ -1,0 +1,109 @@
+# domains/auth/paths.yaml — AUTO-SPLIT by split_spec.py
+paths:
+  /auth/login:
+    post:
+      operationId: login
+      summary: 用户登录
+      tags:
+      - auth
+      x-access-mode: public
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/LoginResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /auth/register:
+    post:
+      operationId: register
+      summary: 用户注册
+      tags:
+      - auth
+      x-access-mode: public
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/LoginResponse'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /auth/refresh:
+    post:
+      operationId: refreshToken
+      summary: 刷新访问令牌
+      tags:
+      - auth
+      x-access-mode: public
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/TokenResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'
+  /auth/me:
+    get:
+      operationId: getAuthMe
+      summary: 获取当前登录账户信息
+      tags:
+      - auth
+      x-access-mode: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AuthMe'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/Error'

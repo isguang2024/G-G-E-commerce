@@ -1,0 +1,70 @@
+# components/errors.yaml
+#
+# 统一错误契约 — OpenAPI-first 单一真源。
+# 业务码对照表见 backend/internal/api/apperr/codes.go（后端真源）
+# 以及 frontend/src/api/v5/error-codes.ts（由 cmd/gen-permissions 自动派生）。
+#
+# 引用方式：
+#   $ref: './components/errors.yaml#/components/schemas/Error'
+#   $ref: './components/errors.yaml#/components/responses/Unauthorized'
+
+components:
+  schemas:
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: integer
+          description: |
+            业务码（与 HTTP 状态码分离）。
+            1xxxx 参数/请求 · 2xxxx 认证/授权 · 3xxxx 业务/资源 · 5xxxx 服务端
+            完整清单：backend/internal/api/apperr/codes.go
+        message:
+          type: string
+          description: 面向用户的错误提示
+        details:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: |
+            可选上下文信息，如参数校验失败时携带 {field: reason}。
+            前端可据此渲染字段级错误提示。
+
+  responses:
+    BadRequest:
+      description: 参数错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: 未认证或凭证无效
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: 无权限
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: 资源不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: 业务冲突（如资源已存在）
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Internal:
+      description: 服务端内部错误
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

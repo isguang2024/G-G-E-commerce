@@ -159,7 +159,13 @@ func ResolveCurrentSpaceKey(db *gorm.DB, appKey, host, requestedSpaceKey string,
 				return defaultSpaceKey, "", existsErr
 			}
 			if ok {
-				allowed, accessErr := CanAccessSpace(db, userID, collaborationWorkspaceID, explicit)
+				allowed, accessErr := CanAccessSpace(
+					db,
+					userID,
+					collaborationWorkspaceID,
+					normalizedAppKey,
+					explicit,
+				)
 				if accessErr != nil {
 					return defaultSpaceKey, "", accessErr
 				}
@@ -177,7 +183,13 @@ func ResolveCurrentSpaceKey(db *gorm.DB, appKey, host, requestedSpaceKey string,
 			return defaultSpaceKey, "", existsErr
 		}
 		if ok {
-			allowed, accessErr := CanAccessSpace(db, userID, collaborationWorkspaceID, explicit)
+			allowed, accessErr := CanAccessSpace(
+				db,
+				userID,
+				collaborationWorkspaceID,
+				normalizedAppKey,
+				explicit,
+			)
 			if accessErr != nil {
 				return defaultSpaceKey, "", accessErr
 			}
@@ -192,7 +204,13 @@ func ResolveCurrentSpaceKey(db *gorm.DB, appKey, host, requestedSpaceKey string,
 		return defaultSpaceKey, "", hostErr
 	}
 	if strings.TrimSpace(resolvedByHost) != "" {
-		allowed, accessErr := CanAccessSpace(db, userID, collaborationWorkspaceID, resolvedByHost)
+		allowed, accessErr := CanAccessSpace(
+			db,
+			userID,
+			collaborationWorkspaceID,
+			normalizedAppKey,
+			resolvedByHost,
+		)
 		if accessErr != nil {
 			return defaultSpaceKey, "", accessErr
 		}
@@ -201,7 +219,13 @@ func ResolveCurrentSpaceKey(db *gorm.DB, appKey, host, requestedSpaceKey string,
 		}
 	}
 
-	if allowed, accessErr := CanAccessSpace(db, userID, collaborationWorkspaceID, defaultSpaceKey); accessErr == nil && allowed {
+	if allowed, accessErr := CanAccessSpace(
+		db,
+		userID,
+		collaborationWorkspaceID,
+		normalizedAppKey,
+		defaultSpaceKey,
+	); accessErr == nil && allowed {
 		return defaultSpaceKey, "app_default", nil
 	}
 
@@ -259,13 +283,24 @@ func ExtractSpaceAccessProfile(meta models.MetaJSON) SpaceAccessProfile {
 	}
 }
 
-func CanAccessSpace(db *gorm.DB, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID, spaceKey string) (bool, error) {
+func CanAccessSpace(
+	db *gorm.DB,
+	userID *uuid.UUID,
+	collaborationWorkspaceID *uuid.UUID,
+	appKey string,
+	spaceKey string,
+) (bool, error) {
 	if db == nil {
 		return NormalizeSpaceKey(spaceKey) == DefaultMenuSpaceKey, nil
 	}
+	normalizedAppKey := normalizeAppKey(appKey)
 	var record models.MenuSpace
 	if err := db.Select("space_key", "status", "meta").
-		Where("space_key = ? AND deleted_at IS NULL", NormalizeSpaceKey(spaceKey)).
+		Where(
+			"app_key = ? AND space_key = ? AND deleted_at IS NULL",
+			normalizedAppKey,
+			NormalizeSpaceKey(spaceKey),
+		).
 		First(&record).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil

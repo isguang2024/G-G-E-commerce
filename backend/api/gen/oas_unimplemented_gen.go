@@ -130,15 +130,6 @@ func (UnimplementedHandler) CreateMenu(ctx context.Context, req *MenuSaveRequest
 	return r, ht.ErrNotImplemented
 }
 
-// CreateMenuBackup implements createMenuBackup operation.
-//
-// 创建菜单备份.
-//
-// POST /menus/backups
-func (UnimplementedHandler) CreateMenuBackup(ctx context.Context, req *MenuBackupCreateRequest) (r *MutationResult, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // CreateMenuGroup implements createMenuGroup operation.
 //
 // 创建菜单分组.
@@ -262,15 +253,6 @@ func (UnimplementedHandler) DeleteMedia(ctx context.Context, params DeleteMediaP
 //
 // DELETE /menus/{id}
 func (UnimplementedHandler) DeleteMenu(ctx context.Context, params DeleteMenuParams) (r *MutationResult, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// DeleteMenuBackup implements deleteMenuBackup operation.
-//
-// 删除菜单备份.
-//
-// DELETE /menus/backups/{id}
-func (UnimplementedHandler) DeleteMenuBackup(ctx context.Context, params DeleteMenuBackupParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -873,7 +855,7 @@ func (UnimplementedHandler) ListApiEndpoints(ctx context.Context, params ListApi
 // 获取应用 Host 绑定.
 //
 // GET /system/app-host-bindings
-func (UnimplementedHandler) ListAppHostBindings(ctx context.Context) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (r *AnyListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1003,15 +985,6 @@ func (UnimplementedHandler) ListMedia(ctx context.Context) (r ListMediaRes, _ er
 	return r, ht.ErrNotImplemented
 }
 
-// ListMenuBackups implements listMenuBackups operation.
-//
-// 获取菜单备份列表.
-//
-// GET /menus/backups
-func (UnimplementedHandler) ListMenuBackups(ctx context.Context) (r *MenuBackupList, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // ListMenuGroups implements listMenuGroups operation.
 //
 // 获取菜单分组列表.
@@ -1035,7 +1008,7 @@ func (UnimplementedHandler) ListMenuSpaceHostBindings(ctx context.Context) (r *A
 // 获取菜单空间列表.
 //
 // GET /system/menu-spaces
-func (UnimplementedHandler) ListMenuSpaces(ctx context.Context) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListMenuSpaces(ctx context.Context, params ListMenuSpacesParams) (r *AnyListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1333,15 +1306,6 @@ func (UnimplementedHandler) RemoveCurrentCollaborationWorkspaceMember(ctx contex
 //
 // DELETE /permission-actions/{id}/endpoints/{endpointCode}
 func (UnimplementedHandler) RemovePermissionActionEndpoint(ctx context.Context, params RemovePermissionActionEndpointParams) (r *MutationResult, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// RestoreMenuBackup implements restoreMenuBackup operation.
-//
-// 恢复菜单备份.
-//
-// POST /menus/backups/{id}/restore
-func (UnimplementedHandler) RestoreMenuBackup(ctx context.Context, params RestoreMenuBackupParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

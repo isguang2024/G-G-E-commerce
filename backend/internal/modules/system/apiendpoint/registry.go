@@ -293,7 +293,7 @@ func applyDefaultCategory(meta *RouteMeta, categoryHint string) *RouteMeta {
 // SyncRoutes persists all annotated gin routes to the api_endpoints table.
 func SyncRoutes(db *gorm.DB, logger *zap.Logger, routes []gin.RouteInfo) error {
 	if db == nil {
-		return errors.New("database is nil")
+		return errors.New("数据库连接未初始化")
 	}
 	if err := ensureManagedEndpointColumns(db); err != nil {
 		return err

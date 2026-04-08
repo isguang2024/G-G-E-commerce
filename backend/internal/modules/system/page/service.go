@@ -18,14 +18,14 @@ import (
 )
 
 var (
-	ErrPageNotFound        = errors.New("page not found")
-	ErrPageKeyExists       = errors.New("page key already exists")
-	ErrRouteNameExists     = errors.New("route name already exists")
-	ErrParentMenuInvalid   = errors.New("parent menu invalid")
-	ErrParentPageInvalid   = errors.New("parent page invalid")
-	ErrDisplayGroupInvalid = errors.New("display group invalid")
-	ErrPageHasChildren     = errors.New("page has children")
-	ErrPageValidation      = errors.New("page validation failed")
+	ErrPageNotFound        = errors.New("页面不存在")
+	ErrPageKeyExists       = errors.New("页面 key 已存在")
+	ErrRouteNameExists     = errors.New("路由名称已存在")
+	ErrParentMenuInvalid   = errors.New("无效的上级菜单")
+	ErrParentPageInvalid   = errors.New("无效的上级页面")
+	ErrDisplayGroupInvalid = errors.New("无效的显示分组")
+	ErrPageHasChildren     = errors.New("页面下存在子页面，无法删除")
+	ErrPageValidation      = errors.New("页面数据校验失败")
 )
 
 type ListRequest struct {
@@ -139,6 +139,20 @@ type AccessTraceRoleItem struct {
 	Status   string `json:"status"`
 }
 
+type AccessTraceMenuItem struct {
+	ID        string `json:"id"`
+	ParentID  string `json:"parent_id"`
+	Name      string `json:"name"`
+	Title     string `json:"title"`
+	Path      string `json:"path"`
+	FullPath  string `json:"full_path"`
+	Kind      string `json:"kind"`
+	Icon      string `json:"icon"`
+	SortOrder int    `json:"sort_order"`
+	Hidden    bool   `json:"hidden"`
+	Visible   bool   `json:"visible"`
+}
+
 type AccessTracePageItem struct {
 	PageKey          string   `json:"page_key"`
 	PageName         string   `json:"page_name"`
@@ -162,6 +176,7 @@ type AccessTraceResult struct {
 	SuperAdmin               bool                  `json:"super_admin"`
 	ActionKeyCount           int                   `json:"action_key_count"`
 	VisibleMenuIDs           []string              `json:"visible_menu_ids"`
+	Menus                    []AccessTraceMenuItem `json:"menus"`
 	Roles                    []AccessTraceRoleItem `json:"roles"`
 	Pages                    []AccessTracePageItem `json:"pages"`
 }
@@ -383,6 +398,11 @@ func (s *service) GetAccessTrace(appKey string, req *AccessTraceRequest) (*Acces
 		visibleMenuIDStrings = append(visibleMenuIDStrings, id.String())
 	}
 
+	menuItems, err := s.buildAccessTraceMenus(appKey, spaceKey, accessCtx)
+	if err != nil {
+		return nil, err
+	}
+
 	result := &AccessTraceResult{
 		UserID:         userID.String(),
 		SpaceKey:       spaceKey,
@@ -390,6 +410,7 @@ func (s *service) GetAccessTrace(appKey string, req *AccessTraceRequest) (*Acces
 		SuperAdmin:     accessCtx.SuperAdmin,
 		ActionKeyCount: len(accessCtx.ActionKeys),
 		VisibleMenuIDs: visibleMenuIDStrings,
+		Menus:          menuItems,
 		Roles:          roleItems,
 		Pages:          pageItems,
 	}
@@ -463,6 +484,49 @@ func buildAccessTracePageItem(page *models.UIPage, visiblePages map[string]Recor
 		MatchedActionKey: matchedActionKey,
 		EffectiveChain:   buildAccessTraceChain(page),
 	}
+}
+
+func (s *service) buildAccessTraceMenus(appKey, spaceKey string, accessCtx *CompiledAccessContext) ([]AccessTraceMenuItem, error) {
+	menuMap, err := s.loadMenuMap(appKey, spaceKey)
+	if err != nil {
+		return nil, err
+	}
+	visible := map[uuid.UUID]struct{}{}
+	if accessCtx != nil {
+		visible = accessCtx.VisibleMenuIDs
+	}
+	items := make([]AccessTraceMenuItem, 0, len(menuMap))
+	for _, node := range menuMap {
+		menu := node.Menu
+		parentID := ""
+		if menu.ParentID != nil {
+			parentID = menu.ParentID.String()
+		}
+		_, isVisible := visible[menu.ID]
+		if accessCtx != nil && accessCtx.SuperAdmin {
+			isVisible = true
+		}
+		items = append(items, AccessTraceMenuItem{
+			ID:        menu.ID.String(),
+			ParentID:  parentID,
+			Name:      strings.TrimSpace(menu.Name),
+			Title:     strings.TrimSpace(menu.Title),
+			Path:      strings.TrimSpace(menu.Path),
+			FullPath:  strings.TrimSpace(node.FullPath),
+			Kind:      strings.TrimSpace(menu.Kind),
+			Icon:      strings.TrimSpace(menu.Icon),
+			SortOrder: menu.SortOrder,
+			Hidden:    menu.Hidden,
+			Visible:   isVisible,
+		})
+	}
+	sort.Slice(items, func(i, j int) bool {
+		if items[i].SortOrder != items[j].SortOrder {
+			return items[i].SortOrder < items[j].SortOrder
+		}
+		return items[i].Name < items[j].Name
+	})
+	return items, nil
 }
 
 func buildAccessTraceChain(page *models.UIPage) []string {

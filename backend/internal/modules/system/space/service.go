@@ -205,7 +205,13 @@ func (s *service) GetCurrent(appKey string, host string, requestedSpaceKey strin
 	if err != nil {
 		return nil, err
 	}
-	accessGranted, accessErr := CanAccessSpace(s.db, userID, collaborationWorkspaceID, resolvedKey)
+	accessGranted, accessErr := CanAccessSpace(
+		s.db,
+		userID,
+		collaborationWorkspaceID,
+		normalizedAppKey,
+		resolvedKey,
+	)
 	if accessErr != nil {
 		return nil, accessErr
 	}
@@ -235,7 +241,7 @@ func (s *service) GetMode(appKey string) (string, error) {
 func (s *service) SaveMode(appKey, mode string) (string, error) {
 	normalizedAppKey := normalizeAppKey(appKey)
 	if normalizedAppKey == "" {
-		return spaceModeSingle, fmt.Errorf("app_key is required")
+		return spaceModeSingle, fmt.Errorf("app_key 不能为空")
 	}
 	return SaveCurrentSpaceMode(s.db, normalizedAppKey, mode)
 }
@@ -278,10 +284,10 @@ func (s *service) SaveSpace(appKey string, req *SaveSpaceRequest) (*SpaceRecord,
 	}
 	normalizedAppKey := normalizeAppKey(strings.TrimSpace(appKey))
 	if normalizedAppKey == "" {
-		return nil, fmt.Errorf("app_key is required")
+		return nil, fmt.Errorf("app_key 不能为空")
 	}
 	if requestAppKey := normalizeAppKey(strings.TrimSpace(req.AppKey)); requestAppKey != "" && requestAppKey != normalizedAppKey {
-		return nil, fmt.Errorf("app_key mismatch")
+		return nil, fmt.Errorf("app_key 不匹配")
 	}
 	key := NormalizeSpaceKey(req.SpaceKey)
 	if key == "" {
@@ -377,10 +383,10 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 	}
 	normalizedAppKey := normalizeAppKey(strings.TrimSpace(appKey))
 	if normalizedAppKey == "" {
-		return nil, fmt.Errorf("app_key is required")
+		return nil, fmt.Errorf("app_key 不能为空")
 	}
 	if requestAppKey := normalizeAppKey(strings.TrimSpace(req.AppKey)); requestAppKey != "" && requestAppKey != normalizedAppKey {
-		return nil, fmt.Errorf("app_key mismatch")
+		return nil, fmt.Errorf("app_key 不匹配")
 	}
 	host := NormalizeHost(req.Host)
 	if host == "" {
@@ -490,7 +496,7 @@ func (s *service) SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*
 func (s *service) InitializeFromDefault(appKey string, targetSpaceKey string, force bool, actorUserID *uuid.UUID) (*InitializeResult, error) {
 	normalizedAppKey := normalizeAppKey(appKey)
 	if normalizedAppKey == "" {
-		return nil, fmt.Errorf("app_key is required")
+		return nil, fmt.Errorf("app_key 不能为空")
 	}
 	targetKey := NormalizeSpaceKey(targetSpaceKey)
 	if targetKey == "" {

@@ -1,0 +1,228 @@
+# domains/menu/paths.yaml — AUTO-SPLIT by split_spec.py
+paths:
+  /runtime/navigation:
+    get:
+      operationId: getNavigation
+      summary: 获取运行时导航清单
+      tags:
+      - navigation
+      x-access-mode: authenticated
+      parameters:
+      - name: app_key
+        in: query
+        schema:
+          type: string
+      - name: space_key
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/NavigationManifest'
+  /menus/tree:
+    get:
+      operationId: getMenuTree
+      summary: 获取菜单树
+      tags:
+      - menu
+      x-access-mode: authenticated
+      parameters:
+      - name: all
+        in: query
+        schema:
+          type: string
+      - name: app_key
+        in: query
+        schema:
+          type: string
+      - name: space_key
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MenuTreeResponse'
+  /menus/groups:
+    get:
+      operationId: listMenuGroups
+      summary: 获取菜单分组列表
+      tags:
+      - menu
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MenuGroupList'
+    post:
+      operationId: createMenuGroup
+      summary: 创建菜单分组
+      tags:
+      - menu
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/MenuGroupSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /menus/groups/{id}:
+    put:
+      operationId: updateMenuGroup
+      summary: 更新菜单分组
+      tags:
+      - menu
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/MenuGroupSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+    delete:
+      operationId: deleteMenuGroup
+      summary: 删除菜单分组
+      tags:
+      - menu
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /menus:
+    post:
+      operationId: createMenu
+      summary: 创建菜单
+      tags:
+      - menu
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/MenuSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /menus/{id}:
+    put:
+      operationId: updateMenu
+      summary: 更新菜单
+      tags:
+      - menu
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/MenuSaveRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+    delete:
+      operationId: deleteMenu
+      summary: 删除菜单
+      tags:
+      - menu
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /menus/{id}/delete-preview:
+    get:
+      operationId: getMenuDeletePreview
+      summary: 获取菜单删除预览
+      tags:
+      - menu
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'

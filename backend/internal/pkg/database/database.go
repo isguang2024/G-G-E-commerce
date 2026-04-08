@@ -163,7 +163,6 @@ func AutoMigrate() error {
 		&models.WorkspaceFeaturePackage{},
 		&models.APIKey{},
 		&models.MediaAsset{},
-		&models.MenuBackup{},
 		&models.SystemSetting{},
 		&models.MessageTemplate{},
 		&models.MessageSender{},

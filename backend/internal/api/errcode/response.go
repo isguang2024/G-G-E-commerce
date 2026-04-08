@@ -1,3 +1,4 @@
+// Deprecated: 见 codes.go 的说明。
 package errcode
 
 import (

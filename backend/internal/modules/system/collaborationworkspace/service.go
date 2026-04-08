@@ -15,9 +15,9 @@ import (
 	"github.com/gg-ecommerce/backend/internal/pkg/workspacerolebinding"
 )
 
-var ErrCollaborationWorkspaceNotFound = errors.New("collaboration workspace not found")
-var ErrCollaborationWorkspaceMemberExists = errors.New("user already in collaboration workspace")
-var ErrCollaborationWorkspaceMemberNotFound = errors.New("member not in collaboration workspace")
+var ErrCollaborationWorkspaceNotFound = errors.New("协作空间不存在")
+var ErrCollaborationWorkspaceMemberExists = errors.New("该用户已在协作空间中")
+var ErrCollaborationWorkspaceMemberNotFound = errors.New("成员不在协作空间中")
 
 type CollaborationWorkspaceService interface {
 	List(req *dto.CollaborationWorkspaceListRequest) ([]user.CollaborationWorkspace, int64, error)
@@ -115,7 +115,7 @@ func (s *collaborationWorkspaceService) Get(id uuid.UUID) (*user.CollaborationWo
 
 func (s *collaborationWorkspaceService) Create(req *dto.CollaborationWorkspaceCreateRequest, ownerID *uuid.UUID) (*user.CollaborationWorkspace, error) {
 	if ownerID == nil || *ownerID == uuid.Nil {
-		return nil, errors.New("invalid owner id")
+		return nil, errors.New("无效的所有者 ID")
 	}
 
 	plan := req.Plan
@@ -327,7 +327,7 @@ func (s *collaborationWorkspaceService) ListMembers(collaborationWorkspaceID uui
 func (s *collaborationWorkspaceService) AddMember(collaborationWorkspaceID uuid.UUID, req *dto.CollaborationWorkspaceAddMemberRequest, invitedBy *uuid.UUID) error {
 	userID, err := uuid.Parse(req.UserID)
 	if err != nil {
-		return errors.New("invalid user id")
+		return errors.New("无效的用户 ID")
 	}
 
 	existing, err := s.collaborationWorkspaceMemberRepo.GetByUserAndCollaborationWorkspace(userID, collaborationWorkspaceID)
@@ -485,7 +485,7 @@ func (s *collaborationWorkspaceService) syncCollaborationWorkspaceAdminsTx(tx *g
 		var adminUser user.User
 		if err := tx.Where("id = ?", adminID).First(&adminUser).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				return errors.New("admin user not found")
+				return errors.New("管理员用户不存在")
 			}
 			return err
 		}
@@ -539,7 +539,7 @@ func parseAdminUserIDs(rawIDs []string) ([]uuid.UUID, error) {
 		}
 		id, err := uuid.Parse(rawID)
 		if err != nil {
-			return nil, errors.New("invalid admin user id")
+			return nil, errors.New("无效的管理员用户 ID")
 		}
 		adminIDs = appendIfMissingUUID(adminIDs, id)
 	}

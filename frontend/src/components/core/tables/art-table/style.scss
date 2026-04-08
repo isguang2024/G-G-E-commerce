@@ -1,4 +1,7 @@
 .art-table {
+  --art-table-cell-padding-y: 12px;
+  --art-table-cell-padding-x: 12px;
+
   position: relative;
   height: 100%;
 
@@ -84,6 +87,32 @@
         }
       }
     }
+  }
+
+  &.art-table--small {
+    --art-table-cell-padding-y: 6px;
+    --art-table-cell-padding-x: 10px;
+  }
+
+  &.art-table--default {
+    --art-table-cell-padding-y: 10px;
+    --art-table-cell-padding-x: 12px;
+  }
+
+  &.art-table--large {
+    --art-table-cell-padding-y: 14px;
+    --art-table-cell-padding-x: 14px;
+  }
+
+  :deep(.el-table__header-wrapper th.el-table__cell),
+  :deep(.el-table__body-wrapper td.el-table__cell),
+  :deep(.el-table__footer-wrapper td.el-table__cell) {
+    padding: var(--art-table-cell-padding-y) var(--art-table-cell-padding-x);
+    transition: padding 0.2s ease;
+  }
+
+  :deep(.el-table__cell .cell) {
+    line-height: 1.5;
   }
 
 }

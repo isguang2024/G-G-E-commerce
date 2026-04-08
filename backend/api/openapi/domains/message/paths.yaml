@@ -1,0 +1,397 @@
+# domains/message/paths.yaml — AUTO-SPLIT by split_spec.py
+paths:
+  /messages/inbox/summary:
+    get:
+      operationId: getInboxSummary
+      summary: 获取消息摘要
+      tags:
+      - message
+      x-access-mode: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+  /messages/inbox:
+    get:
+      operationId: listInbox
+      summary: 获取消息列表
+      tags:
+      - message
+      x-access-mode: authenticated
+      parameters:
+      - name: current
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: size
+        in: query
+        schema:
+          type: integer
+          default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+  /messages/inbox/{deliveryId}:
+    get:
+      operationId: getInboxDetail
+      summary: 获取消息详情
+      tags:
+      - message
+      x-access-mode: authenticated
+      parameters:
+      - name: deliveryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+  /messages/inbox/{deliveryId}/read:
+    post:
+      operationId: markInboxRead
+      summary: 标记消息已读
+      tags:
+      - message
+      x-access-mode: authenticated
+      parameters:
+      - name: deliveryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /messages/inbox/read-all:
+    post:
+      operationId: markInboxReadAll
+      summary: 批量标记消息已读
+      tags:
+      - message
+      x-access-mode: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /messages/inbox/{deliveryId}/todo-action:
+    post:
+      operationId: handleInboxTodo
+      summary: 处理待办消息
+      tags:
+      - message
+      x-access-mode: authenticated
+      parameters:
+      - name: deliveryId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /messages/dispatch/options:
+    get:
+      operationId: getMessageDispatchOptions
+      summary: 获取消息发送配置
+      tags:
+      - message
+      x-permission-key: message.manage
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+  /messages/dispatch:
+    post:
+      operationId: dispatchMessage
+      summary: 发送站内消息
+      tags:
+      - message
+      x-permission-key: message.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /messages/templates:
+    get:
+      operationId: listMessageTemplates
+      summary: 获取消息模板
+      tags:
+      - message
+      x-permission-key: message.manage
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+    post:
+      operationId: createMessageTemplate
+      summary: 新建消息模板
+      tags:
+      - message
+      x-permission-key: message.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /messages/templates/{templateId}:
+    put:
+      operationId: updateMessageTemplate
+      summary: 更新消息模板
+      tags:
+      - message
+      x-permission-key: message.manage
+      x-access-mode: permission
+      parameters:
+      - name: templateId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /messages/senders:
+    get:
+      operationId: listMessageSenders
+      summary: 获取消息发送人
+      tags:
+      - message
+      x-permission-key: message.manage
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+    post:
+      operationId: createMessageSender
+      summary: 新建消息发送人
+      tags:
+      - message
+      x-permission-key: message.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /messages/senders/{senderId}:
+    put:
+      operationId: updateMessageSender
+      summary: 更新消息发送人
+      tags:
+      - message
+      x-permission-key: message.manage
+      x-access-mode: permission
+      parameters:
+      - name: senderId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /messages/recipient-groups:
+    get:
+      operationId: listMessageRecipientGroups
+      summary: 获取消息接收组
+      tags:
+      - message
+      x-permission-key: message.manage
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+    post:
+      operationId: createMessageRecipientGroup
+      summary: 新建消息接收组
+      tags:
+      - message
+      x-permission-key: message.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /messages/recipient-groups/{groupId}:
+    put:
+      operationId: updateMessageRecipientGroup
+      summary: 更新消息接收组
+      tags:
+      - message
+      x-permission-key: message.manage
+      x-access-mode: permission
+      parameters:
+      - name: groupId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /messages/records:
+    get:
+      operationId: listMessageDispatchRecords
+      summary: 获取消息发送记录
+      tags:
+      - message
+      x-permission-key: message.manage
+      x-access-mode: permission
+      parameters:
+      - name: current
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: size
+        in: query
+        schema:
+          type: integer
+          default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+  /messages/records/{recordId}:
+    get:
+      operationId: getMessageDispatchRecord
+      summary: 获取消息发送记录详情
+      tags:
+      - message
+      x-permission-key: message.manage
+      x-access-mode: permission
+      parameters:
+      - name: recordId
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'

@@ -19,9 +19,9 @@ import (
 )
 
 var (
-	ErrUserNotFound = errors.New("user not found")
-	ErrUserExists   = errors.New("user already exists")
-	ErrEmailExists  = errors.New("email already exists")
+	ErrUserNotFound = errors.New("用户不存在")
+	ErrUserExists   = errors.New("用户名已存在")
+	ErrEmailExists  = errors.New("邮箱已存在")
 )
 
 type UserService interface {

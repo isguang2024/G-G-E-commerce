@@ -28,12 +28,6 @@
         <ElButton :loading="savingSpaceMode" @click="saveSpaceMode" v-ripple>保存模式</ElButton>
         <ElButton type="primary" @click="openSpaceDrawer()" v-ripple>新增空间</ElButton>
         <ElButton @click="openHostDrawer()" v-ripple>新增 Host 绑定</ElButton>
-        <ElButton :disabled="!currentSpace" @click="openSpaceBackupDialog" v-ripple>
-          备份当前空间
-        </ElButton>
-        <ElButton :disabled="!currentSpace" @click="handleManageSpaceBackups" v-ripple>
-          空间备份
-        </ElButton>
         <ElButton @click="loadData" v-ripple>刷新</ElButton>
       </div>
     </AdminWorkspaceHero>
@@ -398,26 +392,6 @@
       </template>
     </ElDrawer>
 
-    <MenuBackupDialog
-      v-model="backupDialogVisible"
-      :loading="backupLoading"
-      scope-type="space"
-      :current-space-name="currentSpaceLabel"
-      dialog-title="备份当前空间布局"
-      :alert-title="`当前将备份空间布局：${currentSpaceLabel}`"
-      :alert-description="`该备份只保存当前 App 下空间“${currentSpaceLabel}”的布局树和相关菜单分组，用于后续覆盖恢复当前空间。`"
-      @submit="handleCreateSpaceBackup"
-    />
-
-    <MenuBackupListDialog
-      v-model="backupListDialogVisible"
-      :loading="backupLoading"
-      :items="backupList"
-      title="管理空间布局备份"
-      alert-description="这里只展示当前 App 下当前空间的布局备份，不包含 App 级菜单定义备份。"
-      empty-description="当前空间暂无布局备份"
-      @action="handleBackupListAction"
-    />
   </div>
 </template>
 
@@ -425,8 +399,6 @@
   // 视图脚本：所有 reactive state、handler、watch、lifecycle 均在 useMenuSpacePage 中
   // 这里只做：1) 引入子组件；2) 调用 composable；3) 把返回值拉到 setup 作用域供模板访问。
   import AdminWorkspaceHero from '@/components/business/layout/AdminWorkspaceHero.vue'
-  import MenuBackupDialog from '../menu/modules/menu-backup-dialog.vue'
-  import MenuBackupListDialog from '../menu/modules/menu-backup-list-dialog.vue'
   import { useMenuSpacePage } from './modules/use-menu-space-page'
 
   defineOptions({ name: 'MenuSpaceManage' })
@@ -445,10 +417,6 @@
     spaceMode,
     currentRequestHost,
     landingPathOptions,
-    backupLoading,
-    backupDialogVisible,
-    backupListDialogVisible,
-    backupList,
     spaceDrawerVisible,
     hostDrawerVisible,
     spaceFormRef,
@@ -474,10 +442,6 @@
     saveSpace,
     saveHostBinding,
     handleManagedAppChange,
-    openSpaceBackupDialog,
-    handleCreateSpaceBackup,
-    handleManageSpaceBackups,
-    handleBackupListAction,
     initializeSpace,
     reinitializeSpace,
     goToMenuManagement,

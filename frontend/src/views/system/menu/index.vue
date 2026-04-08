@@ -33,15 +33,13 @@
             />
           </ElSelect>
           <ElSelect
-            v-if="isLayoutMode"
+            v-if="selectedAppKey"
             v-model="activeSpaceKey"
             class="menu-space-select"
-            clearable
             filterable
-            placeholder="选择空间"
+            placeholder="选择菜单空间"
             @change="handleSpaceChange"
           >
-            <ElOption label="请选择空间" value="" />
             <ElOption
               v-for="item in menuSpaceOptions"
               :key="item.value"
@@ -62,10 +60,6 @@
                 <ElDropdownItem command="manageGroup" :disabled="!groupingAvailable">
                   管理分组
                 </ElDropdownItem>
-                <template v-if="!isLayoutMode">
-                  <ElDropdownItem command="backupGlobal">备份定义集</ElDropdownItem>
-                  <ElDropdownItem command="backupList">管理定义备份</ElDropdownItem>
-                </template>
               </ElDropdownMenu>
             </template>
           </ElDropdown>
@@ -341,27 +335,6 @@
         @submit="handleActionRequirementSubmit"
       />
 
-      <MenuBackupDialog
-        v-model="backupDialogVisible"
-        :loading="backupLoading"
-        :scopeType="backupScopeType"
-        :currentSpaceName="currentSpaceName"
-        :dialog-title="backupDialogTitle"
-        :alert-title="backupAlertTitle"
-        :alert-description="backupAlertDescription"
-        @submit="handleCreateBackup"
-      />
-
-      <MenuBackupListDialog
-        v-model="backupListDialogVisible"
-        :loading="backupLoading"
-        :items="backupList"
-        :title="backupListTitle"
-        :alert-description="backupListAlertDescription"
-        :empty-description="backupListEmptyDescription"
-        @action="handleBackupListAction"
-      />
-
       <MenuDeleteDialog
         v-model:visible="deleteDialogVisible"
         :loading="deleteLoading"
@@ -429,8 +402,6 @@
     ElSwitch,
     ElTag
   } from 'element-plus'
-  import MenuBackupDialog from './modules/menu-backup-dialog.vue'
-  import MenuBackupListDialog from './modules/menu-backup-list-dialog.vue'
   import MenuDeleteDialog from './modules/menu-delete-dialog.vue'
   import MenuDialog from './modules/menu-dialog.vue'
   import MenuGroupDrawer from './modules/menu-group-drawer.vue'
@@ -457,11 +428,6 @@
     menuGroups,
     menuSpaces,
     menuGroupApiUnavailable,
-    backupLoading,
-    backupDialogVisible,
-    backupListDialogVisible,
-    backupScopeType,
-    backupList,
     formFilters,
     dialogVisible,
     manageGroupDrawerVisible,
@@ -480,16 +446,9 @@
     isLayoutMode,
     menuSpaceOptions,
     appOptions,
-    currentSpaceName,
     menuPageTitle,
     menuPageDescription,
     menuToolbarTip,
-    backupDialogTitle,
-    backupAlertTitle,
-    backupAlertDescription,
-    backupListTitle,
-    backupListAlertDescription,
-    backupListEmptyDescription,
     filteredMenuTree,
     groupingAvailable,
     tableData,
@@ -517,13 +476,11 @@
     handleExpandSwitchChange,
     handleAddMenu,
     handleMenuOperation,
-    handleBackupListAction,
     handleDeleteMenuConfirm,
     handleSubmit,
     handleActionRequirementSubmit,
     handleSaveManageGroup,
     handleDeleteManageGroup,
-    handleCreateBackup,
     isManageGroupRow,
     isDirectoryMenuRow,
     isEntryMenuRow,

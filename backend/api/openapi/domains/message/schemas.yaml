@@ -1,0 +1,5 @@
+# domains/message/schemas.yaml
+# Domain-specific schemas (currently kept in components/common.yaml).
+# Move schemas here incrementally when they belong exclusively to this domain.
+components:
+  schemas: {}

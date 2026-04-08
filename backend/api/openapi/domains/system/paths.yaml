@@ -1,0 +1,309 @@
+# domains/system/paths.yaml — AUTO-SPLIT by split_spec.py
+paths:
+  /system/view-pages:
+    get:
+      operationId: getSystemViewPages
+      summary: 获取页面文件映射
+      tags:
+      - system
+      x-permission-key: system.page_catalog.view
+      x-access-mode: permission
+      parameters:
+      - name: force
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/ViewPagesResponse'
+  /system/fast-enter:
+    get:
+      operationId: getFastEnterConfig
+      summary: 获取快捷入口配置
+      tags:
+      - system
+      x-access-mode: authenticated
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+    put:
+      operationId: updateFastEnterConfig
+      summary: 更新快捷入口配置
+      tags:
+      - system
+      x-permission-key: system.fast_enter.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /system/apps:
+    get:
+      operationId: listApps
+      summary: 获取应用列表
+      tags:
+      - system
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+    post:
+      operationId: saveApp
+      summary: 保存应用
+      tags:
+      - system
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /system/apps/current:
+    get:
+      operationId: getCurrentApp
+      summary: 获取当前应用
+      tags:
+      - system
+      x-access-mode: authenticated
+      parameters:
+      - name: app_key
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+  /system/app-host-bindings:
+    get:
+      operationId: listAppHostBindings
+      summary: 获取应用 Host 绑定
+      tags:
+      - system
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      parameters:
+      - name: app_key
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+    post:
+      operationId: saveAppHostBinding
+      summary: 保存应用 Host 绑定
+      tags:
+      - system
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /system/menu-spaces/current:
+    get:
+      operationId: getCurrentMenuSpace
+      summary: 获取当前菜单空间
+      tags:
+      - system
+      x-access-mode: authenticated
+      parameters:
+      - name: app_key
+        in: query
+        schema:
+          type: string
+      - name: space_key
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+  /system/menu-space-mode:
+    get:
+      operationId: getMenuSpaceMode
+      summary: 获取菜单空间模式
+      tags:
+      - system
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      parameters:
+      - name: app_key
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+    put:
+      operationId: saveMenuSpaceMode
+      summary: 保存菜单空间模式
+      tags:
+      - system
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /system/menu-spaces:
+    get:
+      operationId: listMenuSpaces
+      summary: 获取菜单空间列表
+      tags:
+      - system
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      parameters:
+      - name: app_key
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+    post:
+      operationId: saveMenuSpace
+      summary: 保存菜单空间
+      tags:
+      - system
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /system/menu-spaces/{spaceKey}/initialize-default:
+    post:
+      operationId: initializeMenuSpaceFromDefault
+      summary: 从默认空间初始化菜单空间
+      tags:
+      - system
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      parameters:
+      - name: spaceKey
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+  /system/menu-space-host-bindings:
+    get:
+      operationId: listMenuSpaceHostBindings
+      summary: 获取菜单空间 Host 绑定
+      tags:
+      - system
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+    post:
+      operationId: saveMenuSpaceHostBinding
+      summary: 保存菜单空间 Host 绑定
+      tags:
+      - system
+      x-permission-key: system.menu.manage
+      x-access-mode: permission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'

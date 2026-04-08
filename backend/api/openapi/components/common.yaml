@@ -1,0 +1,1360 @@
+# components/common.yaml — All shared schemas.
+# Source of truth for schema definitions. Domain-specific schemas can be
+# moved to domains/{domain}/schemas.yaml incrementally.
+components:
+  schemas:
+    WorkspaceSummary:
+      type: object
+      required:
+      - id
+      - workspace_type
+      - name
+      - code
+      - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspace_type:
+          type: string
+          enum:
+          - personal
+          - collaboration
+        name:
+          type: string
+        code:
+          type: string
+        owner_user_id:
+          type: string
+          format: uuid
+          nullable: true
+        collaboration_workspace_id:
+          type: string
+          format: uuid
+          nullable: true
+        status:
+          type: string
+    WorkspaceList:
+      type: object
+      required:
+      - records
+      - total
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkspaceSummary'
+        total:
+          type: integer
+    PermissionExplanation:
+      type: object
+      required:
+      - account_id
+      - workspace_id
+      - keys
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        workspace_id:
+          type: string
+          format: uuid
+        keys:
+          type: array
+          items:
+            type: string
+        feature_package_sources:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+              format: uuid
+        role_sources:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+              format: uuid
+    LoginRequest:
+      type: object
+      required:
+      - username
+      - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          minLength: 6
+    LoginResponse:
+      type: object
+      required:
+      - access_token
+      - refresh_token
+      - expires_in
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+        user:
+          type: object
+          additionalProperties: {}
+          nullable: true
+    RegisterRequest:
+      type: object
+      required:
+      - username
+      - password
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          minLength: 6
+        email:
+          type: string
+        nickname:
+          type: string
+    RefreshTokenRequest:
+      type: object
+      required:
+      - refresh_token
+      properties:
+        refresh_token:
+          type: string
+    TokenResponse:
+      type: object
+      required:
+      - access_token
+      - refresh_token
+      - expires_in
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+    AuthMe:
+      type: object
+      required:
+      - id
+      - username
+      - is_super_admin
+      - actions
+      - roles
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+        nickname:
+          type: string
+          nullable: true
+        email:
+          type: string
+          nullable: true
+        avatar:
+          type: string
+          nullable: true
+        avatar_url:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+        is_super_admin:
+          type: boolean
+        created_at:
+          type: string
+          nullable: true
+        current_auth_workspace_id:
+          type: string
+          format: uuid
+          nullable: true
+        current_auth_workspace_type:
+          type: string
+          nullable: true
+        collaboration_workspace_id:
+          type: string
+          format: uuid
+          nullable: true
+        current_collaboration_workspace_id:
+          type: string
+          format: uuid
+          nullable: true
+        actions:
+          type: array
+          items:
+            type: string
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuthMeRole'
+    AuthMeRole:
+      type: object
+      required:
+      - id
+      - code
+      - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+    WorkspaceSwitchRequest:
+      type: object
+      required:
+      - workspace_id
+      properties:
+        workspace_id:
+          type: string
+          format: uuid
+    WorkspaceSwitchResponse:
+      type: object
+      required:
+      - auth_workspace_id
+      - auth_workspace_type
+      - workspace
+      properties:
+        auth_workspace_id:
+          type: string
+          format: uuid
+        auth_workspace_type:
+          type: string
+          enum:
+          - personal
+          - collaboration
+        collaboration_workspace_id:
+          type: string
+          format: uuid
+          nullable: true
+        workspace:
+          $ref: '#/components/schemas/WorkspaceSummary'
+    UserRoleRef:
+      type: object
+      required:
+      - id
+      - code
+      - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+    UserSummary:
+      type: object
+      required:
+      - id
+      - user_name
+      - status
+      - create_time
+      - update_time
+      - user_roles
+      - role_details
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+        user_email:
+          type: string
+          nullable: true
+        nick_name:
+          type: string
+          nullable: true
+        user_phone:
+          type: string
+          nullable: true
+        system_remark:
+          type: string
+          nullable: true
+        last_login_time:
+          type: string
+          nullable: true
+        last_login_ip:
+          type: string
+          nullable: true
+        status:
+          type: string
+        avatar:
+          type: string
+          nullable: true
+        create_time:
+          type: string
+        update_time:
+          type: string
+        user_roles:
+          type: array
+          items:
+            type: string
+        role_details:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRoleRef'
+        register_source:
+          type: string
+          nullable: true
+        invited_by:
+          type: string
+          format: uuid
+          nullable: true
+        invited_by_name:
+          type: string
+          nullable: true
+    UserList:
+      type: object
+      required:
+      - records
+      - total
+      - current
+      - size
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSummary'
+        total:
+          type: integer
+          format: int64
+        current:
+          type: integer
+        size:
+          type: integer
+    UserDetail:
+      type: object
+      required:
+      - id
+      - user_name
+      - status
+      - create_time
+      - update_time
+      - roles
+      - user_roles
+      - role_details
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_name:
+          type: string
+        user_email:
+          type: string
+          nullable: true
+        nick_name:
+          type: string
+          nullable: true
+        user_phone:
+          type: string
+          nullable: true
+        system_remark:
+          type: string
+          nullable: true
+        last_login_time:
+          type: string
+          nullable: true
+        last_login_ip:
+          type: string
+          nullable: true
+        status:
+          type: string
+        avatar:
+          type: string
+          nullable: true
+        create_time:
+          type: string
+        update_time:
+          type: string
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRoleRef'
+        user_roles:
+          type: array
+          items:
+            type: string
+        role_details:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRoleRef'
+    UserCreateRequest:
+      type: object
+      required:
+      - username
+      - password
+      properties:
+        username:
+          type: string
+          minLength: 2
+          maxLength: 100
+        password:
+          type: string
+          minLength: 6
+        email:
+          type: string
+        nickname:
+          type: string
+        phone:
+          type: string
+        system_remark:
+          type: string
+        status:
+          type: string
+        role_ids:
+          type: array
+          items:
+            type: string
+    UserUpdateRequest:
+      type: object
+      properties:
+        email:
+          type: string
+        nickname:
+          type: string
+        phone:
+          type: string
+        system_remark:
+          type: string
+        status:
+          type: string
+        role_ids:
+          type: array
+          items:
+            type: string
+    UserAssignRolesRequest:
+      type: object
+      required:
+      - role_ids
+      properties:
+        role_ids:
+          type: array
+          items:
+            type: string
+    UserCreateResult:
+      type: object
+      required:
+      - id
+      properties:
+        id:
+          type: string
+          format: uuid
+    UserMutationResult:
+      type: object
+      required:
+      - success
+      properties:
+        success:
+          type: boolean
+    UserPackagesResponse:
+      type: object
+      required:
+      - package_ids
+      - packages
+      properties:
+        package_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        packages:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeaturePackageRef'
+    MutationResult:
+      type: object
+      required:
+      - success
+      properties:
+        success:
+          type: boolean
+    IDResult:
+      type: object
+      required:
+      - id
+      properties:
+        id:
+          type: string
+          format: uuid
+    AnyObject:
+      type: object
+      additionalProperties: {}
+    AnyListResponse:
+      type: object
+      required:
+      - records
+      - total
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+        total:
+          type: integer
+    UUIDListRequest:
+      type: object
+      required:
+      - ids
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+    RoleSummary:
+      type: object
+      required:
+      - roleId
+      - roleName
+      - roleCode
+      - status
+      - createTime
+      properties:
+        roleId:
+          type: string
+          format: uuid
+        roleName:
+          type: string
+        roleCode:
+          type: string
+        description:
+          type: string
+          nullable: true
+        appKeys:
+          type: array
+          items:
+            type: string
+          nullable: true
+        isGlobal:
+          type: boolean
+        status:
+          type: string
+        sortOrder:
+          type: integer
+        priority:
+          type: integer
+        createTime:
+          type: string
+        canEditPermission:
+          type: boolean
+    RoleList:
+      type: object
+      required:
+      - records
+      - total
+      - current
+      - size
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleSummary'
+        total:
+          type: integer
+        current:
+          type: integer
+        size:
+          type: integer
+    RoleOptions:
+      type: object
+      required:
+      - records
+      - total
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoleSummary'
+        total:
+          type: integer
+    RoleCreateRequest:
+      type: object
+      required:
+      - code
+      - name
+      properties:
+        code:
+          type: string
+          maxLength: 50
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        app_keys:
+          type: array
+          items:
+            type: string
+        sort_order:
+          type: integer
+        priority:
+          type: integer
+        status:
+          type: string
+    RoleUpdateRequest:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        app_keys:
+          type: array
+          items:
+            type: string
+        sort_order:
+          type: integer
+        priority:
+          type: integer
+        status:
+          type: string
+    RoleCreateResult:
+      type: object
+      required:
+      - roleId
+      properties:
+        roleId:
+          type: string
+          format: uuid
+    FeaturePackageRef:
+      type: object
+      required:
+      - id
+      - package_key
+      - name
+      - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        package_key:
+          type: string
+        package_type:
+          type: string
+          nullable: true
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        context_type:
+          type: string
+          nullable: true
+        status:
+          type: string
+        is_builtin:
+          type: boolean
+        sort_order:
+          type: integer
+    RolePackagesResponse:
+      type: object
+      required:
+      - package_ids
+      - packages
+      properties:
+        package_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        packages:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeaturePackageRef'
+    MenuSourceEntry:
+      type: object
+      required:
+      - menu_id
+      - package_ids
+      properties:
+        menu_id:
+          type: string
+          format: uuid
+        package_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+    RoleMenusResponse:
+      type: object
+      required:
+      - menu_ids
+      - available_menu_ids
+      - hidden_menu_ids
+      - expanded_package_ids
+      - derived_sources
+      properties:
+        menu_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        available_menu_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        hidden_menu_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        expanded_package_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        derived_sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/MenuSourceEntry'
+    ActionSourceEntry:
+      type: object
+      required:
+      - action_id
+      - package_ids
+      properties:
+        action_id:
+          type: string
+          format: uuid
+        package_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+    PermissionActionRef:
+      type: object
+      required:
+      - id
+      - action_key
+      - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        action_key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+    RoleActionsResponse:
+      type: object
+      required:
+      - action_ids
+      - available_action_ids
+      - actions
+      - disabled_action_ids
+      - expanded_package_ids
+      - derived_sources
+      properties:
+        action_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        available_action_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        disabled_action_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        expanded_package_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissionActionRef'
+        derived_sources:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActionSourceEntry'
+    DataPermissionItem:
+      type: object
+      required:
+      - resource_code
+      - data_scope
+      properties:
+        resource_code:
+          type: string
+        data_scope:
+          type: string
+    DataResourceOption:
+      type: object
+      required:
+      - resource_code
+      - resource_name
+      properties:
+        resource_code:
+          type: string
+        resource_name:
+          type: string
+    DataScopeOption:
+      type: object
+      required:
+      - data_scope
+      - label
+      properties:
+        data_scope:
+          type: string
+        label:
+          type: string
+    RoleDataPermissionsResponse:
+      type: object
+      required:
+      - permissions
+      - resources
+      - data_scopes
+      properties:
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataPermissionItem'
+        resources:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataResourceOption'
+        data_scopes:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataScopeOption'
+    RoleDataPermissionsRequest:
+      type: object
+      required:
+      - permissions
+      properties:
+        permissions:
+          type: array
+          items:
+            $ref: '#/components/schemas/DataPermissionItem'
+    NavigationManifest:
+      type: object
+      required:
+      - version_stamp
+      - menu_tree
+      - entry_routes
+      - managed_pages
+      properties:
+        version_stamp:
+          type: string
+        current_app:
+          $ref: '#/components/schemas/AnyObject'
+          nullable: true
+        current_space:
+          $ref: '#/components/schemas/AnyObject'
+          nullable: true
+        context:
+          $ref: '#/components/schemas/AnyObject'
+        menu_tree:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+        entry_routes:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+        managed_pages:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+    MenuTreeResponse:
+      type: object
+      required:
+      - records
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+    MenuGroupSaveRequest:
+      type: object
+      required:
+      - name
+      - code
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        app_keys:
+          type: array
+          items:
+            type: string
+        sort_order:
+          type: integer
+        status:
+          type: string
+    MenuGroupList:
+      type: object
+      required:
+      - records
+      - total
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+        total:
+          type: integer
+    MenuSaveRequest:
+      type: object
+      required:
+      - name
+      - kind
+      properties:
+        name:
+          type: string
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+        icon:
+          type: string
+        path:
+          type: string
+        component:
+          type: string
+        kind:
+          type: string
+        route_type:
+          type: string
+        route_name:
+          type: string
+        route_path:
+          type: string
+        app_keys:
+          type: array
+          items:
+            type: string
+        app_key:
+          type: string
+        space_key:
+          type: string
+        sort_order:
+          type: integer
+        status:
+          type: string
+        permission_keys:
+          type: array
+          items:
+            type: string
+    PageSaveRequest:
+      type: object
+      properties:
+        page_key:
+          type: string
+        name:
+          type: string
+        route_name:
+          type: string
+        route_path:
+          type: string
+        component:
+          type: string
+        space_keys:
+          type: array
+          items:
+            type: string
+        page_type:
+          type: string
+        visibility_scope:
+          type: string
+        source:
+          type: string
+        module_key:
+          type: string
+        sort_order:
+          type: integer
+        parent_menu_id:
+          type: string
+        parent_page_key:
+          type: string
+        display_group_key:
+          type: string
+        active_menu_path:
+          type: string
+        breadcrumb_mode:
+          type: string
+        access_mode:
+          type: string
+        permission_key:
+          type: string
+        status:
+          type: string
+    PageSyncResult:
+      type: object
+      required:
+      - created_count
+      - skipped_count
+      - created_keys
+      properties:
+        created_count:
+          type: integer
+        skipped_count:
+          type: integer
+        created_keys:
+          type: array
+          items:
+            type: string
+    FeaturePackageSummary:
+      type: object
+      required:
+      - id
+      - package_key
+      - name
+      - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        package_key:
+          type: string
+        package_type:
+          type: string
+          nullable: true
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        context_type:
+          type: string
+          nullable: true
+        status:
+          type: string
+        is_builtin:
+          type: boolean
+        sort_order:
+          type: integer
+        action_count:
+          type: integer
+          format: int64
+        menu_count:
+          type: integer
+          format: int64
+        collaboration_workspace_count:
+          type: integer
+          format: int64
+    FeaturePackageList:
+      type: object
+      required:
+      - records
+      - total
+      - current
+      - size
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeaturePackageSummary'
+        total:
+          type: integer
+          format: int64
+        current:
+          type: integer
+        size:
+          type: integer
+    FeaturePackageOptions:
+      type: object
+      required:
+      - records
+      - total
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeaturePackageRef'
+        total:
+          type: integer
+    FeaturePackageSaveRequest:
+      type: object
+      required:
+      - package_key
+      - name
+      properties:
+        package_key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        package_type:
+          type: string
+        context_type:
+          type: string
+        status:
+          type: string
+        sort_order:
+          type: integer
+        app_keys:
+          type: array
+          items:
+            type: string
+    FeaturePackageRelationNode:
+      type: object
+      required:
+      - id
+      - package_key
+      - name
+      - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        package_key:
+          type: string
+        name:
+          type: string
+        package_type:
+          type: string
+          nullable: true
+        workspace_scope:
+          type: string
+          nullable: true
+        status:
+          type: string
+        reference_count:
+          type: integer
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeaturePackageRelationNode'
+    FeaturePackageRelationTree:
+      type: object
+      required:
+      - roots
+      - cycle_dependencies
+      - isolated_base_keys
+      properties:
+        roots:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeaturePackageRelationNode'
+        cycle_dependencies:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+        isolated_base_keys:
+          type: array
+          items:
+            type: string
+    FeaturePackageImpactPreview:
+      type: object
+      required:
+      - package_id
+      - role_count
+      - collaboration_workspace_count
+      - user_count
+      - menu_count
+      - action_count
+      properties:
+        package_id:
+          type: string
+          format: uuid
+        role_count:
+          type: integer
+          format: int64
+        collaboration_workspace_count:
+          type: integer
+          format: int64
+        user_count:
+          type: integer
+          format: int64
+        menu_count:
+          type: integer
+          format: int64
+        action_count:
+          type: integer
+          format: int64
+    FeaturePackageAssignmentResponse:
+      type: object
+      required:
+      - package_ids
+      - packages
+      properties:
+        package_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        packages:
+          type: array
+          items:
+            $ref: '#/components/schemas/FeaturePackageRef'
+    FeaturePackageActionsResponse:
+      type: object
+      required:
+      - action_ids
+      - actions
+      properties:
+        action_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        actions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PermissionActionRef'
+    FeaturePackageMenusResponse:
+      type: object
+      required:
+      - menu_ids
+      - menus
+      properties:
+        menu_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+        menus:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+    RollbackRequest:
+      type: object
+      required:
+      - version_id
+      properties:
+        version_id:
+          type: string
+          format: uuid
+    PermissionActionDetail:
+      type: object
+      required:
+      - id
+      - action_key
+      - name
+      - status
+      properties:
+        id:
+          type: string
+          format: uuid
+        action_key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        status:
+          type: string
+        group_id:
+          type: string
+          format: uuid
+          nullable: true
+        group_name:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          nullable: true
+    PermissionActionList:
+      type: object
+      required:
+      - records
+      - total
+      - current
+      - size
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+        total:
+          type: integer
+        current:
+          type: integer
+        size:
+          type: integer
+        audit_summary:
+          $ref: '#/components/schemas/AnyObject'
+    PermissionActionSaveRequest:
+      type: object
+      required:
+      - action_key
+      - name
+      properties:
+        action_key:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        group_id:
+          type: string
+          format: uuid
+          nullable: true
+    ViewPagesResponse:
+      type: object
+      required:
+      - pages
+      - refreshed
+      - refreshed_at
+      properties:
+        pages:
+          type: array
+          items:
+            $ref: '#/components/schemas/AnyObject'
+        refreshed:
+          type: boolean
+        refreshed_at:
+          type: string
+    Error:
+      type: object
+      required:
+      - code
+      - message
+      properties:
+        code:
+          type: integer
+          description: '业务码（与 HTTP 状态码分离）。
+
+            1xxxx 参数/请求 · 2xxxx 认证/授权 · 3xxxx 业务/资源 · 5xxxx 服务端
+
+            完整清单：backend/internal/api/apperr/codes.go
+
+            '
+        message:
+          type: string
+          description: 面向用户的错误提示
+        details:
+          type: object
+          additionalProperties: true
+          nullable: true
+          description: '可选上下文，如参数校验失败时携带 {field: reason}'

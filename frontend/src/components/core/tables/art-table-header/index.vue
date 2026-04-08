@@ -26,28 +26,31 @@
         />
       </div>
 
-      <ElDropdown v-if="shouldShow('size')" @command="handleTableSizeChange">
-        <div class="button">
-          <ArtSvgIcon icon="ri:arrow-up-down-fill" />
-        </div>
-        <template #dropdown>
-          <ElDropdownMenu>
-            <div
-              v-for="item in tableSizeOptions"
-              :key="item.value"
-              class="table-size-btn-item [&_.el-dropdown-menu__item]:!mb-[3px] last:[&_.el-dropdown-menu__item]:!mb-0"
-            >
-              <ElDropdownItem
-                :key="item.value"
-                :command="item.value"
-                :class="tableSize === item.value ? '!bg-g-300/55' : ''"
-              >
-                {{ item.label }}
-              </ElDropdownItem>
-            </div>
-          </ElDropdownMenu>
+      <ElPopover
+        v-if="shouldShow('size')"
+        v-model:visible="tableSizePopoverVisible"
+        trigger="click"
+        placement="bottom"
+        popper-class="art-table-header-size-popper"
+      >
+        <template #reference>
+          <div class="button">
+            <ArtSvgIcon icon="ri:arrow-up-down-fill" />
+          </div>
         </template>
-      </ElDropdown>
+        <div class="table-size-panel">
+          <button
+            v-for="item in tableSizeOptions"
+            :key="item.value"
+            type="button"
+            class="table-size-panel__item"
+            :class="{ 'is-active': tableSize === item.value }"
+            @click="handleTableSizeSelect(item.value)"
+          >
+            {{ item.label }}
+          </button>
+        </div>
+      </ElPopover>
 
       <div v-if="shouldShow('fullscreen')" class="button" @click="toggleFullScreen">
         <ArtSvgIcon :icon="isFullScreen ? 'ri:fullscreen-exit-line' : 'ri:fullscreen-line'" />
@@ -200,6 +203,7 @@
     { value: TableSizeEnum.DEFAULT, label: t('table.sizeOptions.default') },
     { value: TableSizeEnum.LARGE, label: t('table.sizeOptions.large') }
   ]
+  const tableSizePopoverVisible = ref(false)
 
   const tableStore = useTableStore()
   const { tableSize, isZebra, isBorder, isHeaderBackground } = storeToRefs(tableStore)
@@ -252,6 +256,11 @@
    */
   const handleTableSizeChange = (command: TableSizeEnum) => {
     useTableStore().setTableSize(command)
+  }
+
+  const handleTableSizeSelect = (size: TableSizeEnum) => {
+    handleTableSizeChange(size)
+    tableSizePopoverVisible.value = false
   }
 
   /** 是否手动点击刷新 */
@@ -335,5 +344,35 @@
     hover:bg-g-300 
     md:ml-0 
     md:mr-2.5;
+  }
+
+  :deep(.art-table-header-size-popper) {
+    z-index: 3200 !important;
+  }
+
+  .table-size-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 72px;
+  }
+
+  .table-size-panel__item {
+    width: 100%;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    padding: 6px 12px;
+    text-align: left;
+  }
+
+  .table-size-panel__item:hover {
+    background-color: var(--art-el-active-color);
+  }
+
+  .table-size-panel__item.is-active {
+    background-color: var(--art-el-active-color) !important;
   }
 </style>

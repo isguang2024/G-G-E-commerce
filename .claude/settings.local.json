@@ -125,7 +125,15 @@
       "Bash(rm -v internal/modules/system/auth/module.go internal/modules/system/user/module.go internal/modules/system/role/module.go internal/modules/system/featurepackage/module.go internal/modules/system/menu/module.go internal/modules/system/navigation/module.go internal/modules/system/page/module.go internal/modules/system/workspace/module.go internal/modules/system/collaborationworkspace/module.go internal/modules/system/system/module.go internal/modules/system/media/module.go internal/modules/system/permission/module.go internal/modules/system/apiendpoint/module.go internal/pkg/module/module.go)",
       "Bash(rmdir internal/pkg/module)",
       "Bash(find /c/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend -name \"*.go\" -type f -exec grep -l \"api_endpoint\\\\|api_key\\\\|permission_binding\" {} \\\\;)",
-      "Bash(find /c/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend -type f -name \"*.go\" -exec grep -l \"APIKey\" {} \\\\;)"
+      "Bash(find /c/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend -type f -name \"*.go\" -exec grep -l \"APIKey\" {} \\\\;)",
+      "Bash(npx --version)",
+      "Bash(npx --yes @redocly/cli bundle api/openapi/openapi.yaml -o api/openapi/dist/openapi.yaml --ext yaml)",
+      "Bash(npx @redocly/cli bundle api/openapi/openapi.yaml -o api/openapi/dist/openapi.yaml --ext yaml)",
+      "Bash(npx @redocly/cli lint api/openapi/dist/openapi.yaml --config api/openapi/redocly.yaml)",
+      "Bash(npx @redocly/cli lint api/openapi/dist/openapi.yaml --config api/openapi/redocly.yaml --max-problems 20)",
+      "Bash(npx @redocly/cli lint api/openapi/dist/openapi.yaml --config api/openapi/redocly.yaml --max-problems 600)",
+      "Bash(go list:*)",
+      "Bash(go doc:*)"
     ]
   },
   "defaultMode": "bypassPermissions"

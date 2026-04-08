@@ -177,19 +177,24 @@ func (h *APIHandler) GetMenuDeletePreview(ctx context.Context, params gen.GetMen
 	return marshalAnyObject(preview), nil
 }
 
-func (h *APIHandler) RestoreMenuBackup(ctx context.Context, params gen.RestoreMenuBackupParams) (*gen.MutationResult, error) {
-	if err := h.menuSvc.RestoreBackup(params.ID, ""); err != nil {
-		h.logger.Error("restore menu backup failed", zap.Error(err))
-		return nil, err
-	}
-	return ok(), nil
-}
-
 // -------- page --------
 
 func (h *APIHandler) GetPageAccessTrace(ctx context.Context, params gen.GetPageAccessTraceParams) (gen.AnyObject, error) {
 	req := &page.AccessTraceRequest{
 		AppKey: strings.TrimSpace(params.AppKey),
+		UserID: params.UserID.String(),
+	}
+	if params.CollaborationWorkspaceID.Set {
+		req.CollaborationWorkspaceID = params.CollaborationWorkspaceID.Value.String()
+	}
+	if params.SpaceKey.Set {
+		req.SpaceKey = params.SpaceKey.Value
+	}
+	if params.PageKey.Set {
+		req.PageKey = params.PageKey.Value
+	}
+	if params.PageKeys.Set {
+		req.PageKeys = params.PageKeys.Value
 	}
 	if params.RoutePath.Set {
 		req.RoutePath = params.RoutePath.Value

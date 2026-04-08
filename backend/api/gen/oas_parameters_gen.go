@@ -592,71 +592,6 @@ func decodeDeleteMenuParams(args [1]string, argsEscaped bool, r *http.Request) (
 	return params, nil
 }
 
-// DeleteMenuBackupParams is parameters of deleteMenuBackup operation.
-type DeleteMenuBackupParams struct {
-	ID uuid.UUID
-}
-
-func unpackDeleteMenuBackupParams(packed middleware.Parameters) (params DeleteMenuBackupParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "id",
-			In:   "path",
-		}
-		params.ID = packed[key].(uuid.UUID)
-	}
-	return params
-}
-
-func decodeDeleteMenuBackupParams(args [1]string, argsEscaped bool, r *http.Request) (params DeleteMenuBackupParams, _ error) {
-	// Decode path: id.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "id",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
-					return err
-				}
-
-				c, err := conv.ToUUID(val)
-				if err != nil {
-					return err
-				}
-
-				params.ID = c
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "id",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
 // DeleteMenuGroupParams is parameters of deleteMenuGroup operation.
 type DeleteMenuGroupParams struct {
 	ID uuid.UUID
@@ -3394,8 +3329,18 @@ func decodeGetPageParams(args [1]string, argsEscaped bool, r *http.Request) (par
 
 // GetPageAccessTraceParams is parameters of getPageAccessTrace operation.
 type GetPageAccessTraceParams struct {
-	AppKey    string
-	RouteName OptString `json:",omitempty,omitzero"`
+	AppKey string
+	// 被测用户 ID (UUID).
+	UserID uuid.UUID
+	// 协作空间 ID；为空表示个人空间链路.
+	CollaborationWorkspaceID OptUUID `json:",omitempty,omitzero"`
+	// 菜单空间 key；为空自动解析默认空间.
+	SpaceKey OptString `json:",omitempty,omitzero"`
+	// 单个页面 key，留空则返回运行时可见全部页面.
+	PageKey OptString `json:",omitempty,omitzero"`
+	// 多页面 key 逗号分隔.
+	PageKeys OptString `json:",omitempty,omitzero"`
+	// 通过路由路径反查 page_key.
 	RoutePath OptString `json:",omitempty,omitzero"`
 }
 
@@ -3409,11 +3354,45 @@ func unpackGetPageAccessTraceParams(packed middleware.Parameters) (params GetPag
 	}
 	{
 		key := middleware.ParameterKey{
-			Name: "route_name",
+			Name: "user_id",
+			In:   "query",
+		}
+		params.UserID = packed[key].(uuid.UUID)
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "collaboration_workspace_id",
 			In:   "query",
 		}
 		if v, ok := packed[key]; ok {
-			params.RouteName = v.(OptString)
+			params.CollaborationWorkspaceID = v.(OptUUID)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "space_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.SpaceKey = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "page_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.PageKey = v.(OptString)
+		}
+	}
+	{
+		key := middleware.ParameterKey{
+			Name: "page_keys",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.PageKeys = v.(OptString)
 		}
 	}
 	{
@@ -3466,17 +3445,94 @@ func decodeGetPageAccessTraceParams(args [0]string, argsEscaped bool, r *http.Re
 			Err:  err,
 		}
 	}
-	// Decode query: route_name.
+	// Decode query: user_id.
 	if err := func() error {
 		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "route_name",
+			Name:    "user_id",
 			Style:   uri.QueryStyleForm,
 			Explode: true,
 		}
 
 		if err := q.HasParam(cfg); err == nil {
 			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotRouteNameVal string
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.UserID = c
+				return nil
+			}); err != nil {
+				return err
+			}
+		} else {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "user_id",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: collaboration_workspace_id.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "collaboration_workspace_id",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotCollaborationWorkspaceIDVal uuid.UUID
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToUUID(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotCollaborationWorkspaceIDVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.CollaborationWorkspaceID.SetTo(paramsDotCollaborationWorkspaceIDVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "collaboration_workspace_id",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: space_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "space_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotSpaceKeyVal string
 				if err := func() error {
 					val, err := d.DecodeValue()
 					if err != nil {
@@ -3488,12 +3544,12 @@ func decodeGetPageAccessTraceParams(args [0]string, argsEscaped bool, r *http.Re
 						return err
 					}
 
-					paramsDotRouteNameVal = c
+					paramsDotSpaceKeyVal = c
 					return nil
 				}(); err != nil {
 					return err
 				}
-				params.RouteName.SetTo(paramsDotRouteNameVal)
+				params.SpaceKey.SetTo(paramsDotSpaceKeyVal)
 				return nil
 			}); err != nil {
 				return err
@@ -3502,7 +3558,89 @@ func decodeGetPageAccessTraceParams(args [0]string, argsEscaped bool, r *http.Re
 		return nil
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
-			Name: "route_name",
+			Name: "space_key",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: page_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "page_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPageKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPageKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.PageKey.SetTo(paramsDotPageKeyVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "page_key",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	// Decode query: page_keys.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "page_keys",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotPageKeysVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotPageKeysVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.PageKeys.SetTo(paramsDotPageKeysVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "page_keys",
 			In:   "query",
 			Err:  err,
 		}
@@ -5739,6 +5877,70 @@ func decodeListApiEndpointsParams(args [0]string, argsEscaped bool, r *http.Requ
 	return params, nil
 }
 
+// ListAppHostBindingsParams is parameters of listAppHostBindings operation.
+type ListAppHostBindingsParams struct {
+	AppKey OptString `json:",omitempty,omitzero"`
+}
+
+func unpackListAppHostBindingsParams(packed middleware.Parameters) (params ListAppHostBindingsParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "app_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.AppKey = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeListAppHostBindingsParams(args [0]string, argsEscaped bool, r *http.Request) (params ListAppHostBindingsParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: app_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotAppKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotAppKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.AppKey.SetTo(paramsDotAppKeyVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "app_key",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // ListCollaborationWorkspaceMembersParams is parameters of listCollaborationWorkspaceMembers operation.
 type ListCollaborationWorkspaceMembersParams struct {
 	ID uuid.UUID
@@ -6912,6 +7114,70 @@ func decodeListInboxParams(args [0]string, argsEscaped bool, r *http.Request) (p
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "size",
+			In:   "query",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
+// ListMenuSpacesParams is parameters of listMenuSpaces operation.
+type ListMenuSpacesParams struct {
+	AppKey OptString `json:",omitempty,omitzero"`
+}
+
+func unpackListMenuSpacesParams(packed middleware.Parameters) (params ListMenuSpacesParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "app_key",
+			In:   "query",
+		}
+		if v, ok := packed[key]; ok {
+			params.AppKey = v.(OptString)
+		}
+	}
+	return params
+}
+
+func decodeListMenuSpacesParams(args [0]string, argsEscaped bool, r *http.Request) (params ListMenuSpacesParams, _ error) {
+	q := uri.NewQueryDecoder(r.URL.Query())
+	// Decode query: app_key.
+	if err := func() error {
+		cfg := uri.QueryParameterDecodingConfig{
+			Name:    "app_key",
+			Style:   uri.QueryStyleForm,
+			Explode: true,
+		}
+
+		if err := q.HasParam(cfg); err == nil {
+			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
+				var paramsDotAppKeyVal string
+				if err := func() error {
+					val, err := d.DecodeValue()
+					if err != nil {
+						return err
+					}
+
+					c, err := conv.ToString(val)
+					if err != nil {
+						return err
+					}
+
+					paramsDotAppKeyVal = c
+					return nil
+				}(); err != nil {
+					return err
+				}
+				params.AppKey.SetTo(paramsDotAppKeyVal)
+				return nil
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "app_key",
 			In:   "query",
 			Err:  err,
 		}
@@ -10345,71 +10611,6 @@ func decodeRemovePermissionActionEndpointParams(args [2]string, argsEscaped bool
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "endpointCode",
-			In:   "path",
-			Err:  err,
-		}
-	}
-	return params, nil
-}
-
-// RestoreMenuBackupParams is parameters of restoreMenuBackup operation.
-type RestoreMenuBackupParams struct {
-	ID uuid.UUID
-}
-
-func unpackRestoreMenuBackupParams(packed middleware.Parameters) (params RestoreMenuBackupParams) {
-	{
-		key := middleware.ParameterKey{
-			Name: "id",
-			In:   "path",
-		}
-		params.ID = packed[key].(uuid.UUID)
-	}
-	return params
-}
-
-func decodeRestoreMenuBackupParams(args [1]string, argsEscaped bool, r *http.Request) (params RestoreMenuBackupParams, _ error) {
-	// Decode path: id.
-	if err := func() error {
-		param := args[0]
-		if argsEscaped {
-			unescaped, err := url.PathUnescape(args[0])
-			if err != nil {
-				return errors.Wrap(err, "unescape path")
-			}
-			param = unescaped
-		}
-		if len(param) > 0 {
-			d := uri.NewPathDecoder(uri.PathDecoderConfig{
-				Param:   "id",
-				Value:   param,
-				Style:   uri.PathStyleSimple,
-				Explode: false,
-			})
-
-			if err := func() error {
-				val, err := d.DecodeValue()
-				if err != nil {
-					return err
-				}
-
-				c, err := conv.ToUUID(val)
-				if err != nil {
-					return err
-				}
-
-				params.ID = c
-				return nil
-			}(); err != nil {
-				return err
-			}
-		} else {
-			return validate.ErrFieldRequired
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "id",
 			In:   "path",
 			Err:  err,
 		}
