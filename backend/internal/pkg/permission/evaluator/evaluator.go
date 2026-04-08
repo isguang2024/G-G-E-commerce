@@ -201,6 +201,8 @@ LIMIT 1
 // account-level roles where user_roles.collaboration_workspace_id IS NULL.
 // role_disabled_actions are subtracted from the final set.
 func (e *gormEvaluator) queryRoleKeys(ctx context.Context, accountID, workspaceID uuid.UUID) ([]string, error) {
+	// Bundle-aware: follows feature_package_bundles so that roles bound to
+	// a parent bundle package also inherit keys from its child packages.
 	const q = `
 WITH ws AS (
   SELECT collaboration_workspace_id FROM workspaces WHERE id = ? AND deleted_at IS NULL
@@ -215,12 +217,19 @@ user_role_ids AS (
       (ws.collaboration_workspace_id IS NULL AND ur.collaboration_workspace_id IS NULL)
     )
 ),
+pkg_keys AS (
+  SELECT fpk.package_id, fpk.action_id FROM feature_package_keys fpk
+  UNION
+  SELECT fpb.package_id, fpk.action_id
+  FROM feature_package_bundles fpb
+  JOIN feature_package_keys fpk ON fpk.package_id = fpb.child_package_id
+),
 granted AS (
-  SELECT DISTINCT pk.permission_key, urr.role_id, fpk.action_id
+  SELECT DISTINCT pk.permission_key, urr.role_id, pkeys.action_id
   FROM user_role_ids urr
   JOIN role_feature_packages rfp ON rfp.role_id = urr.role_id AND rfp.enabled = true
-  JOIN feature_package_keys fpk  ON fpk.package_id = rfp.package_id
-  JOIN permission_keys pk        ON pk.id = fpk.action_id
+  JOIN pkg_keys pkeys             ON pkeys.package_id = rfp.package_id
+  JOIN permission_keys pk        ON pk.id = pkeys.action_id
   WHERE pk.deleted_at IS NULL
     AND pk.permission_key <> ''
 )
@@ -253,12 +262,19 @@ user_role_ids AS (
       (ws.collaboration_workspace_id IS NULL AND ur.collaboration_workspace_id IS NULL)
     )
 ),
+pkg_keys AS (
+  SELECT fpk.package_id, fpk.action_id FROM feature_package_keys fpk
+  UNION
+  SELECT fpb.package_id, fpk.action_id
+  FROM feature_package_bundles fpb
+  JOIN feature_package_keys fpk ON fpk.package_id = fpb.child_package_id
+),
 granted AS (
-  SELECT pk.permission_key, urr.role_id, fpk.action_id
+  SELECT pk.permission_key, urr.role_id, pkeys.action_id
   FROM user_role_ids urr
   JOIN role_feature_packages rfp ON rfp.role_id = urr.role_id AND rfp.enabled = true
-  JOIN feature_package_keys fpk  ON fpk.package_id = rfp.package_id
-  JOIN permission_keys pk        ON pk.id = fpk.action_id
+  JOIN pkg_keys pkeys             ON pkeys.package_id = rfp.package_id
+  JOIN permission_keys pk        ON pk.id = pkeys.action_id
   WHERE pk.deleted_at IS NULL
     AND pk.permission_key <> ''
 )
@@ -334,11 +350,19 @@ func (e *gormEvaluator) queryAccountUnionKeys(ctx context.Context, accountID uui
 }
 
 func (e *gormEvaluator) queryFeaturePackageKeys(ctx context.Context, workspaceID uuid.UUID) ([]string, error) {
+	// Resolves keys both from directly-bound packages and from bundle children
+	// (feature_package_bundles links a parent bundle package to its child packages).
 	const q = `
 SELECT DISTINCT pk.permission_key
 FROM workspace_feature_packages wfp
-JOIN feature_package_keys fpk ON fpk.package_id = wfp.package_id
-JOIN permission_keys pk        ON pk.id = fpk.action_id
+JOIN (
+  SELECT fpk.package_id, fpk.action_id FROM feature_package_keys fpk
+  UNION
+  SELECT fpb.package_id, fpk.action_id
+  FROM feature_package_bundles fpb
+  JOIN feature_package_keys fpk ON fpk.package_id = fpb.child_package_id
+) resolved ON resolved.package_id = wfp.package_id
+JOIN permission_keys pk ON pk.id = resolved.action_id
 WHERE wfp.workspace_id = ?
   AND wfp.enabled = true
   AND wfp.deleted_at IS NULL
@@ -356,8 +380,14 @@ func (e *gormEvaluator) queryFeaturePackageKeysBySource(ctx context.Context, wor
 	const q = `
 SELECT pk.permission_key AS permission_key, wfp.package_id AS package_id
 FROM workspace_feature_packages wfp
-JOIN feature_package_keys fpk ON fpk.package_id = wfp.package_id
-JOIN permission_keys pk        ON pk.id = fpk.action_id
+JOIN (
+  SELECT fpk.package_id, fpk.action_id FROM feature_package_keys fpk
+  UNION
+  SELECT fpb.package_id, fpk.action_id
+  FROM feature_package_bundles fpb
+  JOIN feature_package_keys fpk ON fpk.package_id = fpb.child_package_id
+) resolved ON resolved.package_id = wfp.package_id
+JOIN permission_keys pk ON pk.id = resolved.action_id
 WHERE wfp.workspace_id = ?
   AND wfp.enabled = true
   AND wfp.deleted_at IS NULL
