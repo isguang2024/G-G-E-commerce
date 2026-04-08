@@ -22,22 +22,27 @@ const (
 	permissionDuplicatePatternSuspectedDuplicate = "suspected_duplicate"
 )
 
+// PermissionListItem is the row shape returned by permissionService.List.
+// Both embedded structs are anonymous so encoding/json flattens them into
+// a single top-level JSON object — the frontend (normalizePermissionAction
+// in _shared.ts) reads permission_key / name / api_count / ... from the
+// top level, so nested fields would break the list UI.
 type PermissionListItem struct {
-	PermissionKey user.PermissionKey
-	Audit         PermissionAuditProfile
+	user.PermissionKey
+	PermissionAuditProfile
 }
 
 type PermissionAuditProfile struct {
-	APICount         int64
-	PageCount        int64
-	PackageCount     int64
-	ConsumerTypes    []string
-	UsagePattern     string
-	UsageNote        string
-	DuplicatePattern string
-	DuplicateGroup   string
-	DuplicateKeys    []string
-	DuplicateNote    string
+	APICount         int64    `json:"api_count"`
+	PageCount        int64    `json:"page_count"`
+	PackageCount     int64    `json:"package_count"`
+	ConsumerTypes    []string `json:"consumer_types"`
+	UsagePattern     string   `json:"usage_pattern"`
+	UsageNote        string   `json:"usage_note"`
+	DuplicatePattern string   `json:"duplicate_pattern"`
+	DuplicateGroup   string   `json:"duplicate_group"`
+	DuplicateKeys    []string `json:"duplicate_keys"`
+	DuplicateNote    string   `json:"duplicate_note"`
 }
 
 type PermissionAuditSummary struct {

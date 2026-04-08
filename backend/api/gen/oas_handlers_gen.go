@@ -13770,14 +13770,6 @@ func (s *Server) handleListApiEndpointsRequest(args [0]string, argsEscaped bool,
 					In:   "query",
 				}: params.Size,
 				{
-					Name: "app_key",
-					In:   "query",
-				}: params.AppKey,
-				{
-					Name: "app_scope",
-					In:   "query",
-				}: params.AppScope,
-				{
 					Name: "permission_key",
 					In:   "query",
 				}: params.PermissionKey,
@@ -13801,18 +13793,6 @@ func (s *Server) handleListApiEndpointsRequest(args [0]string, argsEscaped bool,
 					Name: "category_id",
 					In:   "query",
 				}: params.CategoryID,
-				{
-					Name: "context_scope",
-					In:   "query",
-				}: params.ContextScope,
-				{
-					Name: "source",
-					In:   "query",
-				}: params.Source,
-				{
-					Name: "feature_kind",
-					In:   "query",
-				}: params.FeatureKind,
 				{
 					Name: "status",
 					In:   "query",

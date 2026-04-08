@@ -7,7 +7,8 @@
       "path": "/api-endpoints",
       "permission_key": "system.api_registry.view",
       "summary": "获取 API 注册表",
-      "app_scope": "optional",
+      "tags": "api_endpoint",
+      "api_category": "api_endpoint",
       "access_mode": "permission"
     },
     {
@@ -16,7 +17,8 @@
       "path": "/api-endpoints",
       "permission_key": "system.api_registry.sync",
       "summary": "创建 API 注册项",
-      "app_scope": "optional",
+      "tags": "api_endpoint",
+      "api_category": "api_endpoint",
       "access_mode": "permission"
     },
     {
@@ -25,7 +27,8 @@
       "path": "/api-endpoints/categories",
       "permission_key": "system.api_registry.view",
       "summary": "获取 API 分类列表",
-      "app_scope": "none",
+      "tags": "api_endpoint",
+      "api_category": "api_endpoint",
       "access_mode": "permission"
     },
     {
@@ -34,7 +37,8 @@
       "path": "/api-endpoints/categories",
       "permission_key": "system.api_registry.sync",
       "summary": "创建 API 分类",
-      "app_scope": "none",
+      "tags": "api_endpoint",
+      "api_category": "api_endpoint",
       "access_mode": "permission"
     },
     {
@@ -43,7 +47,8 @@
       "path": "/api-endpoints/categories/{id}",
       "permission_key": "system.api_registry.sync",
       "summary": "更新 API 分类",
-      "app_scope": "none",
+      "tags": "api_endpoint",
+      "api_category": "api_endpoint",
       "access_mode": "permission"
     },
     {
@@ -52,7 +57,8 @@
       "path": "/api-endpoints/cleanup-stale",
       "permission_key": "system.api_registry.sync",
       "summary": "清理失效 API",
-      "app_scope": "none",
+      "tags": "api_endpoint",
+      "api_category": "api_endpoint",
       "access_mode": "permission"
     },
     {
@@ -61,7 +67,8 @@
       "path": "/api-endpoints/overview",
       "permission_key": "system.api_registry.view",
       "summary": "获取 API 概览",
-      "app_scope": "optional",
+      "tags": "api_endpoint",
+      "api_category": "api_endpoint",
       "access_mode": "permission"
     },
     {
@@ -70,7 +77,8 @@
       "path": "/api-endpoints/stale",
       "permission_key": "system.api_registry.view",
       "summary": "获取失效 API 列表",
-      "app_scope": "none",
+      "tags": "api_endpoint",
+      "api_category": "api_endpoint",
       "access_mode": "permission"
     },
     {
@@ -79,7 +87,8 @@
       "path": "/api-endpoints/sync",
       "permission_key": "system.api_registry.sync",
       "summary": "同步 API 注册表",
-      "app_scope": "none",
+      "tags": "api_endpoint",
+      "api_category": "api_endpoint",
       "access_mode": "permission"
     },
     {
@@ -88,7 +97,8 @@
       "path": "/api-endpoints/unregistered",
       "permission_key": "system.api_registry.view",
       "summary": "获取未注册 API 路由",
-      "app_scope": "none",
+      "tags": "api_endpoint",
+      "api_category": "api_endpoint",
       "access_mode": "permission"
     },
     {
@@ -97,7 +107,8 @@
       "path": "/api-endpoints/unregistered/scan-config",
       "permission_key": "system.api_registry.view",
       "summary": "获取未注册 API 扫描配置",
-      "app_scope": "none",
+      "tags": "api_endpoint",
+      "api_category": "api_endpoint",
       "access_mode": "permission"
     },
     {
@@ -106,7 +117,8 @@
       "path": "/api-endpoints/unregistered/scan-config",
       "permission_key": "system.api_registry.sync",
       "summary": "保存未注册 API 扫描配置",
-      "app_scope": "none",
+      "tags": "api_endpoint",
+      "api_category": "api_endpoint",
       "access_mode": "permission"
     },
     {
@@ -115,7 +127,8 @@
       "path": "/api-endpoints/{id}",
       "permission_key": "system.api_registry.sync",
       "summary": "更新 API 注册项",
-      "app_scope": "optional",
+      "tags": "api_endpoint",
+      "api_category": "api_endpoint",
       "access_mode": "permission"
     },
     {
@@ -124,7 +137,8 @@
       "path": "/api-endpoints/{id}/context-scope",
       "permission_key": "system.api_registry.sync",
       "summary": "更新 API 协作空间上下文",
-      "app_scope": "optional",
+      "tags": "api_endpoint",
+      "api_category": "api_endpoint",
       "access_mode": "permission"
     },
     {
@@ -133,7 +147,8 @@
       "path": "/auth/login",
       "permission_key": "",
       "summary": "用户登录",
-      "app_scope": "none",
+      "tags": "auth",
+      "api_category": "auth",
       "access_mode": "public"
     },
     {
@@ -142,7 +157,8 @@
       "path": "/auth/me",
       "permission_key": "",
       "summary": "获取当前登录账户信息",
-      "app_scope": "none",
+      "tags": "auth",
+      "api_category": "auth",
       "access_mode": "authenticated"
     },
     {
@@ -151,7 +167,8 @@
       "path": "/auth/refresh",
       "permission_key": "",
       "summary": "刷新访问令牌",
-      "app_scope": "none",
+      "tags": "auth",
+      "api_category": "auth",
       "access_mode": "public"
     },
     {
@@ -160,7 +177,8 @@
       "path": "/auth/register",
       "permission_key": "",
       "summary": "用户注册",
-      "app_scope": "none",
+      "tags": "auth",
+      "api_category": "auth",
       "access_mode": "public"
     },
     {
@@ -169,7 +187,8 @@
       "path": "/collaboration-workspaces",
       "permission_key": "collaboration_workspace.manage",
       "summary": "获取协作空间列表",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -178,7 +197,8 @@
       "path": "/collaboration-workspaces",
       "permission_key": "collaboration_workspace.manage",
       "summary": "创建协作空间",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -187,7 +207,8 @@
       "path": "/collaboration-workspaces/current",
       "permission_key": "",
       "summary": "获取当前协作空间详情",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "authenticated"
     },
     {
@@ -196,7 +217,8 @@
       "path": "/collaboration-workspaces/current/action-origins",
       "permission_key": "collaboration_workspace.boundary.manage",
       "summary": "获取当前协作空间功能权限来源",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -205,7 +227,8 @@
       "path": "/collaboration-workspaces/current/actions",
       "permission_key": "collaboration_workspace.boundary.manage",
       "summary": "获取当前协作空间功能权限边界",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -214,7 +237,8 @@
       "path": "/collaboration-workspaces/current/boundary/packages",
       "permission_key": "collaboration_workspace.boundary.manage",
       "summary": "获取当前协作空间已开通功能包(边界管理)",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -223,7 +247,8 @@
       "path": "/collaboration-workspaces/current/boundary/roles",
       "permission_key": "collaboration_workspace.boundary.manage",
       "summary": "获取当前协作空间边界可见角色",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -232,7 +257,8 @@
       "path": "/collaboration-workspaces/current/boundary/roles",
       "permission_key": "collaboration_workspace.boundary.manage",
       "summary": "创建当前协作空间角色(边界管理)",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -241,7 +267,8 @@
       "path": "/collaboration-workspaces/current/boundary/roles/{roleId}",
       "permission_key": "collaboration_workspace.boundary.manage",
       "summary": "删除当前协作空间角色(边界管理)",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -250,7 +277,8 @@
       "path": "/collaboration-workspaces/current/boundary/roles/{roleId}",
       "permission_key": "collaboration_workspace.boundary.manage",
       "summary": "更新当前协作空间角色(边界管理)",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -259,7 +287,8 @@
       "path": "/collaboration-workspaces/current/boundary/roles/{roleId}/actions",
       "permission_key": "collaboration_workspace.boundary.manage",
       "summary": "获取当前协作空间角色功能权限(边界管理)",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -268,7 +297,8 @@
       "path": "/collaboration-workspaces/current/boundary/roles/{roleId}/actions",
       "permission_key": "collaboration_workspace.boundary.manage",
       "summary": "配置当前协作空间角色功能权限(边界管理)",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -277,7 +307,8 @@
       "path": "/collaboration-workspaces/current/boundary/roles/{roleId}/menus",
       "permission_key": "collaboration_workspace.boundary.manage",
       "summary": "获取当前协作空间角色菜单权限(边界管理)",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -286,7 +317,8 @@
       "path": "/collaboration-workspaces/current/boundary/roles/{roleId}/menus",
       "permission_key": "collaboration_workspace.boundary.manage",
       "summary": "配置当前协作空间角色菜单权限(边界管理)",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -295,7 +327,8 @@
       "path": "/collaboration-workspaces/current/boundary/roles/{roleId}/packages",
       "permission_key": "collaboration_workspace.boundary.manage",
       "summary": "获取当前协作空间角色功能包(边界管理)",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -304,7 +337,8 @@
       "path": "/collaboration-workspaces/current/boundary/roles/{roleId}/packages",
       "permission_key": "collaboration_workspace.boundary.manage",
       "summary": "配置当前协作空间角色功能包(边界管理)",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -313,7 +347,8 @@
       "path": "/collaboration-workspaces/current/members",
       "permission_key": "",
       "summary": "获取当前协作空间成员列表",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "authenticated"
     },
     {
@@ -322,7 +357,8 @@
       "path": "/collaboration-workspaces/current/members",
       "permission_key": "collaboration_workspace.member.manage",
       "summary": "添加当前协作空间成员",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -331,7 +367,8 @@
       "path": "/collaboration-workspaces/current/members/{userId}",
       "permission_key": "collaboration_workspace.member.manage",
       "summary": "移除当前协作空间成员",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -340,7 +377,8 @@
       "path": "/collaboration-workspaces/current/members/{userId}/role",
       "permission_key": "collaboration_workspace.member.manage",
       "summary": "更新当前协作空间成员身份",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -349,7 +387,8 @@
       "path": "/collaboration-workspaces/current/members/{userId}/roles",
       "permission_key": "collaboration_workspace.member.manage",
       "summary": "获取当前协作空间成员角色",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -358,7 +397,8 @@
       "path": "/collaboration-workspaces/current/members/{userId}/roles",
       "permission_key": "collaboration_workspace.member.manage",
       "summary": "配置当前协作空间成员角色",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -367,7 +407,8 @@
       "path": "/collaboration-workspaces/current/menu-origins",
       "permission_key": "collaboration_workspace.boundary.manage",
       "summary": "获取当前协作空间菜单来源",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -376,7 +417,8 @@
       "path": "/collaboration-workspaces/current/menus",
       "permission_key": "collaboration_workspace.boundary.manage",
       "summary": "获取当前协作空间菜单边界",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -385,7 +427,8 @@
       "path": "/collaboration-workspaces/current/roles",
       "permission_key": "collaboration_workspace.member.manage",
       "summary": "获取当前协作空间可分配角色",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -394,7 +437,8 @@
       "path": "/collaboration-workspaces/current/roles",
       "permission_key": "collaboration_workspace.member.manage",
       "summary": "创建当前协作空间角色",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -403,7 +447,8 @@
       "path": "/collaboration-workspaces/mine",
       "permission_key": "",
       "summary": "获取我的协作空间列表",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "authenticated"
     },
     {
@@ -412,7 +457,8 @@
       "path": "/collaboration-workspaces/options",
       "permission_key": "collaboration_workspace.manage",
       "summary": "获取协作空间候选",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -421,7 +467,8 @@
       "path": "/collaboration-workspaces/{id}",
       "permission_key": "collaboration_workspace.manage",
       "summary": "删除协作空间",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -430,7 +477,8 @@
       "path": "/collaboration-workspaces/{id}",
       "permission_key": "collaboration_workspace.manage",
       "summary": "获取协作空间详情",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -439,7 +487,8 @@
       "path": "/collaboration-workspaces/{id}",
       "permission_key": "collaboration_workspace.manage",
       "summary": "更新协作空间",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -448,7 +497,8 @@
       "path": "/collaboration-workspaces/{id}/action-origins",
       "permission_key": "collaboration_workspace.manage",
       "summary": "获取协作空间功能权限来源",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -457,7 +507,8 @@
       "path": "/collaboration-workspaces/{id}/actions",
       "permission_key": "collaboration_workspace.manage",
       "summary": "获取协作空间功能权限边界",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -466,7 +517,8 @@
       "path": "/collaboration-workspaces/{id}/actions",
       "permission_key": "collaboration_workspace.manage",
       "summary": "配置协作空间功能权限边界",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -475,7 +527,8 @@
       "path": "/collaboration-workspaces/{id}/members",
       "permission_key": "collaboration_workspace.manage",
       "summary": "获取协作空间成员列表",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -484,7 +537,8 @@
       "path": "/collaboration-workspaces/{id}/members",
       "permission_key": "collaboration_workspace.manage",
       "summary": "添加协作空间成员",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -493,7 +547,8 @@
       "path": "/collaboration-workspaces/{id}/members/{userId}",
       "permission_key": "collaboration_workspace.manage",
       "summary": "移除协作空间成员",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -502,7 +557,8 @@
       "path": "/collaboration-workspaces/{id}/members/{userId}/role",
       "permission_key": "collaboration_workspace.manage",
       "summary": "更新协作空间成员身份",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -511,7 +567,8 @@
       "path": "/collaboration-workspaces/{id}/menu-origins",
       "permission_key": "collaboration_workspace.manage",
       "summary": "获取协作空间菜单来源",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -520,7 +577,8 @@
       "path": "/collaboration-workspaces/{id}/menus",
       "permission_key": "collaboration_workspace.manage",
       "summary": "获取协作空间菜单边界",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -529,7 +587,8 @@
       "path": "/collaboration-workspaces/{id}/menus",
       "permission_key": "collaboration_workspace.manage",
       "summary": "配置协作空间菜单边界",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -538,7 +597,8 @@
       "path": "/collaboration-workspaces/{id}/roles",
       "permission_key": "collaboration_workspace.manage",
       "summary": "获取协作空间可分配角色",
-      "app_scope": "none",
+      "tags": "collaboration_workspace",
+      "api_category": "collaboration_workspace",
       "access_mode": "permission"
     },
     {
@@ -547,7 +607,8 @@
       "path": "/feature-packages",
       "permission_key": "feature_package.manage",
       "summary": "获取功能包列表",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -556,7 +617,8 @@
       "path": "/feature-packages",
       "permission_key": "feature_package.manage",
       "summary": "创建功能包",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -565,7 +627,8 @@
       "path": "/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}",
       "permission_key": "feature_package.assign_collaboration_workspace",
       "summary": "获取协作空间功能包",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -574,7 +637,8 @@
       "path": "/feature-packages/collaboration-workspaces/{collaborationWorkspaceId}",
       "permission_key": "feature_package.assign_collaboration_workspace",
       "summary": "配置协作空间功能包",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -583,7 +647,8 @@
       "path": "/feature-packages/options",
       "permission_key": "feature_package.manage",
       "summary": "获取功能包候选",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -592,7 +657,8 @@
       "path": "/feature-packages/relationship-tree",
       "permission_key": "feature_package.manage",
       "summary": "获取功能包关系树",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -601,7 +667,8 @@
       "path": "/feature-packages/{id}",
       "permission_key": "feature_package.manage",
       "summary": "删除功能包",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -610,7 +677,8 @@
       "path": "/feature-packages/{id}",
       "permission_key": "feature_package.manage",
       "summary": "获取功能包详情",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -619,7 +687,8 @@
       "path": "/feature-packages/{id}",
       "permission_key": "feature_package.manage",
       "summary": "更新功能包",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -628,7 +697,8 @@
       "path": "/feature-packages/{id}/actions",
       "permission_key": "feature_package.manage",
       "summary": "获取功能包权限",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -637,7 +707,8 @@
       "path": "/feature-packages/{id}/actions",
       "permission_key": "feature_package.manage",
       "summary": "配置功能包权限",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -646,7 +717,8 @@
       "path": "/feature-packages/{id}/children",
       "permission_key": "feature_package.manage",
       "summary": "获取组合包基础包",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -655,7 +727,8 @@
       "path": "/feature-packages/{id}/children",
       "permission_key": "feature_package.manage",
       "summary": "配置组合包基础包",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -664,7 +737,8 @@
       "path": "/feature-packages/{id}/collaboration-workspaces",
       "permission_key": "feature_package.assign_collaboration_workspace",
       "summary": "获取功能包协作空间",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -673,7 +747,8 @@
       "path": "/feature-packages/{id}/collaboration-workspaces",
       "permission_key": "feature_package.assign_collaboration_workspace",
       "summary": "配置功能包协作空间",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -682,7 +757,8 @@
       "path": "/feature-packages/{id}/impact-preview",
       "permission_key": "feature_package.manage",
       "summary": "获取功能包影响预览",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -691,7 +767,8 @@
       "path": "/feature-packages/{id}/menus",
       "permission_key": "feature_package.manage",
       "summary": "获取功能包菜单",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -700,7 +777,8 @@
       "path": "/feature-packages/{id}/menus",
       "permission_key": "feature_package.manage",
       "summary": "配置功能包菜单",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -709,7 +787,8 @@
       "path": "/feature-packages/{id}/risk-audits",
       "permission_key": "feature_package.manage",
       "summary": "获取功能包最近变更",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -718,7 +797,8 @@
       "path": "/feature-packages/{id}/rollback",
       "permission_key": "feature_package.manage",
       "summary": "回滚功能包版本",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -727,7 +807,8 @@
       "path": "/feature-packages/{id}/versions",
       "permission_key": "feature_package.manage",
       "summary": "获取功能包版本历史",
-      "app_scope": "optional",
+      "tags": "featurepackage",
+      "api_category": "featurepackage",
       "access_mode": "permission"
     },
     {
@@ -736,7 +817,8 @@
       "path": "/media",
       "permission_key": "system.media.view",
       "summary": "获取媒体资源列表",
-      "app_scope": "none",
+      "tags": "media",
+      "api_category": "media",
       "access_mode": "permission"
     },
     {
@@ -745,7 +827,8 @@
       "path": "/media/upload",
       "permission_key": "system.media.manage",
       "summary": "上传媒体资源",
-      "app_scope": "none",
+      "tags": "media",
+      "api_category": "media",
       "access_mode": "permission"
     },
     {
@@ -754,7 +837,8 @@
       "path": "/media/{id}",
       "permission_key": "system.media.manage",
       "summary": "删除媒体资源",
-      "app_scope": "none",
+      "tags": "media",
+      "api_category": "media",
       "access_mode": "permission"
     },
     {
@@ -763,7 +847,8 @@
       "path": "/menus",
       "permission_key": "system.menu.manage",
       "summary": "创建菜单",
-      "app_scope": "optional",
+      "tags": "menu",
+      "api_category": "menu",
       "access_mode": "permission"
     },
     {
@@ -772,7 +857,8 @@
       "path": "/menus/backups",
       "permission_key": "system.menu.backup",
       "summary": "获取菜单备份列表",
-      "app_scope": "optional",
+      "tags": "menu",
+      "api_category": "menu",
       "access_mode": "permission"
     },
     {
@@ -781,7 +867,8 @@
       "path": "/menus/backups",
       "permission_key": "system.menu.backup",
       "summary": "创建菜单备份",
-      "app_scope": "optional",
+      "tags": "menu",
+      "api_category": "menu",
       "access_mode": "permission"
     },
     {
@@ -790,7 +877,8 @@
       "path": "/menus/backups/{id}",
       "permission_key": "system.menu.backup",
       "summary": "删除菜单备份",
-      "app_scope": "optional",
+      "tags": "menu",
+      "api_category": "menu",
       "access_mode": "permission"
     },
     {
@@ -799,7 +887,8 @@
       "path": "/menus/backups/{id}/restore",
       "permission_key": "system.menu.backup",
       "summary": "恢复菜单备份",
-      "app_scope": "optional",
+      "tags": "menu",
+      "api_category": "menu",
       "access_mode": "permission"
     },
     {
@@ -808,7 +897,8 @@
       "path": "/menus/groups",
       "permission_key": "system.menu.manage",
       "summary": "获取菜单分组列表",
-      "app_scope": "optional",
+      "tags": "menu",
+      "api_category": "menu",
       "access_mode": "permission"
     },
     {
@@ -817,7 +907,8 @@
       "path": "/menus/groups",
       "permission_key": "system.menu.manage",
       "summary": "创建菜单分组",
-      "app_scope": "optional",
+      "tags": "menu",
+      "api_category": "menu",
       "access_mode": "permission"
     },
     {
@@ -826,7 +917,8 @@
       "path": "/menus/groups/{id}",
       "permission_key": "system.menu.manage",
       "summary": "删除菜单分组",
-      "app_scope": "optional",
+      "tags": "menu",
+      "api_category": "menu",
       "access_mode": "permission"
     },
     {
@@ -835,7 +927,8 @@
       "path": "/menus/groups/{id}",
       "permission_key": "system.menu.manage",
       "summary": "更新菜单分组",
-      "app_scope": "optional",
+      "tags": "menu",
+      "api_category": "menu",
       "access_mode": "permission"
     },
     {
@@ -844,7 +937,8 @@
       "path": "/menus/tree",
       "permission_key": "",
       "summary": "获取菜单树",
-      "app_scope": "optional",
+      "tags": "menu",
+      "api_category": "menu",
       "access_mode": "authenticated"
     },
     {
@@ -853,7 +947,8 @@
       "path": "/menus/{id}",
       "permission_key": "system.menu.manage",
       "summary": "删除菜单",
-      "app_scope": "optional",
+      "tags": "menu",
+      "api_category": "menu",
       "access_mode": "permission"
     },
     {
@@ -862,7 +957,8 @@
       "path": "/menus/{id}",
       "permission_key": "system.menu.manage",
       "summary": "更新菜单",
-      "app_scope": "optional",
+      "tags": "menu",
+      "api_category": "menu",
       "access_mode": "permission"
     },
     {
@@ -871,7 +967,8 @@
       "path": "/menus/{id}/delete-preview",
       "permission_key": "system.menu.manage",
       "summary": "获取菜单删除预览",
-      "app_scope": "optional",
+      "tags": "menu",
+      "api_category": "menu",
       "access_mode": "permission"
     },
     {
@@ -880,7 +977,8 @@
       "path": "/messages/dispatch",
       "permission_key": "message.manage",
       "summary": "发送站内消息",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "permission"
     },
     {
@@ -889,7 +987,8 @@
       "path": "/messages/dispatch/options",
       "permission_key": "message.manage",
       "summary": "获取消息发送配置",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "permission"
     },
     {
@@ -898,7 +997,8 @@
       "path": "/messages/inbox",
       "permission_key": "",
       "summary": "获取消息列表",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "authenticated"
     },
     {
@@ -907,7 +1007,8 @@
       "path": "/messages/inbox/read-all",
       "permission_key": "",
       "summary": "批量标记消息已读",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "authenticated"
     },
     {
@@ -916,7 +1017,8 @@
       "path": "/messages/inbox/summary",
       "permission_key": "",
       "summary": "获取消息摘要",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "authenticated"
     },
     {
@@ -925,7 +1027,8 @@
       "path": "/messages/inbox/{deliveryId}",
       "permission_key": "",
       "summary": "获取消息详情",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "authenticated"
     },
     {
@@ -934,7 +1037,8 @@
       "path": "/messages/inbox/{deliveryId}/read",
       "permission_key": "",
       "summary": "标记消息已读",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "authenticated"
     },
     {
@@ -943,7 +1047,8 @@
       "path": "/messages/inbox/{deliveryId}/todo-action",
       "permission_key": "",
       "summary": "处理待办消息",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "authenticated"
     },
     {
@@ -952,7 +1057,8 @@
       "path": "/messages/recipient-groups",
       "permission_key": "message.manage",
       "summary": "获取消息接收组",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "permission"
     },
     {
@@ -961,7 +1067,8 @@
       "path": "/messages/recipient-groups",
       "permission_key": "message.manage",
       "summary": "新建消息接收组",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "permission"
     },
     {
@@ -970,7 +1077,8 @@
       "path": "/messages/recipient-groups/{groupId}",
       "permission_key": "message.manage",
       "summary": "更新消息接收组",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "permission"
     },
     {
@@ -979,7 +1087,8 @@
       "path": "/messages/records",
       "permission_key": "message.manage",
       "summary": "获取消息发送记录",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "permission"
     },
     {
@@ -988,7 +1097,8 @@
       "path": "/messages/records/{recordId}",
       "permission_key": "message.manage",
       "summary": "获取消息发送记录详情",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "permission"
     },
     {
@@ -997,7 +1107,8 @@
       "path": "/messages/senders",
       "permission_key": "message.manage",
       "summary": "获取消息发送人",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "permission"
     },
     {
@@ -1006,7 +1117,8 @@
       "path": "/messages/senders",
       "permission_key": "message.manage",
       "summary": "新建消息发送人",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "permission"
     },
     {
@@ -1015,7 +1127,8 @@
       "path": "/messages/senders/{senderId}",
       "permission_key": "message.manage",
       "summary": "更新消息发送人",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "permission"
     },
     {
@@ -1024,7 +1137,8 @@
       "path": "/messages/templates",
       "permission_key": "message.manage",
       "summary": "获取消息模板",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "permission"
     },
     {
@@ -1033,7 +1147,8 @@
       "path": "/messages/templates",
       "permission_key": "message.manage",
       "summary": "新建消息模板",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "permission"
     },
     {
@@ -1042,7 +1157,8 @@
       "path": "/messages/templates/{templateId}",
       "permission_key": "message.manage",
       "summary": "更新消息模板",
-      "app_scope": "none",
+      "tags": "message",
+      "api_category": "message",
       "access_mode": "permission"
     },
     {
@@ -1051,7 +1167,8 @@
       "path": "/pages",
       "permission_key": "system.page.manage",
       "summary": "获取页面列表",
-      "app_scope": "required",
+      "tags": "page",
+      "api_category": "page",
       "access_mode": "permission"
     },
     {
@@ -1060,7 +1177,8 @@
       "path": "/pages",
       "permission_key": "system.page.manage",
       "summary": "创建页面",
-      "app_scope": "required",
+      "tags": "page",
+      "api_category": "page",
       "access_mode": "permission"
     },
     {
@@ -1069,7 +1187,8 @@
       "path": "/pages/access-trace",
       "permission_key": "system.page.manage",
       "summary": "获取页面访问链路",
-      "app_scope": "required",
+      "tags": "page",
+      "api_category": "page",
       "access_mode": "permission"
     },
     {
@@ -1078,7 +1197,8 @@
       "path": "/pages/menu-options",
       "permission_key": "system.page.manage",
       "summary": "获取上级菜单候选",
-      "app_scope": "required",
+      "tags": "page",
+      "api_category": "page",
       "access_mode": "permission"
     },
     {
@@ -1087,7 +1207,8 @@
       "path": "/pages/options",
       "permission_key": "system.page.manage",
       "summary": "获取页面候选列表",
-      "app_scope": "required",
+      "tags": "page",
+      "api_category": "page",
       "access_mode": "permission"
     },
     {
@@ -1096,7 +1217,8 @@
       "path": "/pages/runtime",
       "permission_key": "",
       "summary": "获取运行时页面注册表",
-      "app_scope": "optional",
+      "tags": "page",
+      "api_category": "page",
       "access_mode": "authenticated"
     },
     {
@@ -1105,7 +1227,8 @@
       "path": "/pages/runtime/public",
       "permission_key": "",
       "summary": "获取公开运行时页面注册表",
-      "app_scope": "optional",
+      "tags": "page",
+      "api_category": "page",
       "access_mode": "public"
     },
     {
@@ -1114,7 +1237,8 @@
       "path": "/pages/sync",
       "permission_key": "system.page.sync",
       "summary": "同步页面注册表",
-      "app_scope": "required",
+      "tags": "page",
+      "api_category": "page",
       "access_mode": "permission"
     },
     {
@@ -1123,7 +1247,8 @@
       "path": "/pages/unregistered",
       "permission_key": "system.page.sync",
       "summary": "获取未注册页面",
-      "app_scope": "required",
+      "tags": "page",
+      "api_category": "page",
       "access_mode": "permission"
     },
     {
@@ -1132,7 +1257,8 @@
       "path": "/pages/{id}",
       "permission_key": "system.page.manage",
       "summary": "删除页面",
-      "app_scope": "required",
+      "tags": "page",
+      "api_category": "page",
       "access_mode": "permission"
     },
     {
@@ -1141,7 +1267,8 @@
       "path": "/pages/{id}",
       "permission_key": "system.page.manage",
       "summary": "获取页面详情",
-      "app_scope": "required",
+      "tags": "page",
+      "api_category": "page",
       "access_mode": "permission"
     },
     {
@@ -1150,7 +1277,8 @@
       "path": "/pages/{id}",
       "permission_key": "system.page.manage",
       "summary": "更新页面",
-      "app_scope": "required",
+      "tags": "page",
+      "api_category": "page",
       "access_mode": "permission"
     },
     {
@@ -1159,7 +1287,8 @@
       "path": "/pages/{id}/breadcrumb-preview",
       "permission_key": "system.page.manage",
       "summary": "预览页面面包屑",
-      "app_scope": "required",
+      "tags": "page",
+      "api_category": "page",
       "access_mode": "permission"
     },
     {
@@ -1168,7 +1297,8 @@
       "path": "/permission-actions",
       "permission_key": "system.permission.manage",
       "summary": "获取功能权限列表",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1177,7 +1307,8 @@
       "path": "/permission-actions",
       "permission_key": "system.permission.manage",
       "summary": "创建功能权限",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1186,7 +1317,8 @@
       "path": "/permission-actions/batch",
       "permission_key": "system.permission.manage",
       "summary": "批量治理功能权限",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1195,7 +1327,8 @@
       "path": "/permission-actions/cleanup-unused",
       "permission_key": "system.permission.manage",
       "summary": "清理未消费功能权限",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1204,7 +1337,8 @@
       "path": "/permission-actions/groups",
       "permission_key": "system.permission.manage",
       "summary": "获取功能权限分组列表",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1213,7 +1347,8 @@
       "path": "/permission-actions/groups",
       "permission_key": "system.permission.manage",
       "summary": "创建功能权限分组",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1222,7 +1357,8 @@
       "path": "/permission-actions/groups/{id}",
       "permission_key": "system.permission.manage",
       "summary": "更新功能权限分组",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1231,7 +1367,8 @@
       "path": "/permission-actions/options",
       "permission_key": "system.permission.manage",
       "summary": "获取功能权限候选",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1240,7 +1377,8 @@
       "path": "/permission-actions/risk-audits",
       "permission_key": "system.permission.manage",
       "summary": "获取功能权限最近变更",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1249,7 +1387,8 @@
       "path": "/permission-actions/templates",
       "permission_key": "system.permission.manage",
       "summary": "获取功能权限批量模板",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1258,7 +1397,8 @@
       "path": "/permission-actions/templates",
       "permission_key": "system.permission.manage",
       "summary": "保存功能权限批量模板",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1267,7 +1407,8 @@
       "path": "/permission-actions/{id}",
       "permission_key": "system.permission.manage",
       "summary": "删除功能权限",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1276,7 +1417,8 @@
       "path": "/permission-actions/{id}",
       "permission_key": "system.permission.manage",
       "summary": "获取功能权限详情",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1285,7 +1427,8 @@
       "path": "/permission-actions/{id}",
       "permission_key": "system.permission.manage",
       "summary": "更新功能权限",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1294,7 +1437,8 @@
       "path": "/permission-actions/{id}/consumers",
       "permission_key": "system.permission.manage",
       "summary": "获取功能权限消费明细",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1303,7 +1447,8 @@
       "path": "/permission-actions/{id}/endpoints",
       "permission_key": "system.permission.manage",
       "summary": "获取功能权限关联接口",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1312,7 +1457,8 @@
       "path": "/permission-actions/{id}/endpoints",
       "permission_key": "system.permission.manage",
       "summary": "新增功能权限关联接口",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1321,7 +1467,8 @@
       "path": "/permission-actions/{id}/endpoints/{endpointCode}",
       "permission_key": "system.permission.manage",
       "summary": "删除功能权限关联接口",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1330,7 +1477,8 @@
       "path": "/permission-actions/{id}/impact-preview",
       "permission_key": "system.permission.manage",
       "summary": "获取功能权限影响预览",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1339,7 +1487,8 @@
       "path": "/permissions/explain",
       "permission_key": "permission.explain",
       "summary": "解释当前账号在指定工作空间内的最终权限及其来源",
-      "app_scope": "optional",
+      "tags": "permission",
+      "api_category": "permission",
       "access_mode": "permission"
     },
     {
@@ -1348,7 +1497,8 @@
       "path": "/roles",
       "permission_key": "system.role.manage",
       "summary": "获取角色列表",
-      "app_scope": "optional",
+      "tags": "role",
+      "api_category": "role",
       "access_mode": "permission"
     },
     {
@@ -1357,7 +1507,8 @@
       "path": "/roles",
       "permission_key": "system.role.manage",
       "summary": "创建角色",
-      "app_scope": "optional",
+      "tags": "role",
+      "api_category": "role",
       "access_mode": "permission"
     },
     {
@@ -1366,7 +1517,8 @@
       "path": "/roles/options",
       "permission_key": "system.role.manage",
       "summary": "获取角色候选列表",
-      "app_scope": "optional",
+      "tags": "role",
+      "api_category": "role",
       "access_mode": "permission"
     },
     {
@@ -1375,7 +1527,8 @@
       "path": "/roles/{id}",
       "permission_key": "system.role.manage",
       "summary": "删除角色",
-      "app_scope": "optional",
+      "tags": "role",
+      "api_category": "role",
       "access_mode": "permission"
     },
     {
@@ -1384,7 +1537,8 @@
       "path": "/roles/{id}",
       "permission_key": "system.role.manage",
       "summary": "获取角色详情",
-      "app_scope": "optional",
+      "tags": "role",
+      "api_category": "role",
       "access_mode": "permission"
     },
     {
@@ -1393,7 +1547,8 @@
       "path": "/roles/{id}",
       "permission_key": "system.role.manage",
       "summary": "更新角色",
-      "app_scope": "optional",
+      "tags": "role",
+      "api_category": "role",
       "access_mode": "permission"
     },
     {
@@ -1402,7 +1557,8 @@
       "path": "/roles/{id}/actions",
       "permission_key": "system.role.assign_action",
       "summary": "获取角色功能权限",
-      "app_scope": "optional",
+      "tags": "role",
+      "api_category": "role",
       "access_mode": "permission"
     },
     {
@@ -1411,7 +1567,8 @@
       "path": "/roles/{id}/actions",
       "permission_key": "system.role.assign_action",
       "summary": "配置角色功能权限",
-      "app_scope": "optional",
+      "tags": "role",
+      "api_category": "role",
       "access_mode": "permission"
     },
     {
@@ -1420,7 +1577,8 @@
       "path": "/roles/{id}/data-permissions",
       "permission_key": "system.role.assign_data",
       "summary": "获取角色数据权限",
-      "app_scope": "optional",
+      "tags": "role",
+      "api_category": "role",
       "access_mode": "permission"
     },
     {
@@ -1429,7 +1587,8 @@
       "path": "/roles/{id}/data-permissions",
       "permission_key": "system.role.assign_data",
       "summary": "配置角色数据权限",
-      "app_scope": "optional",
+      "tags": "role",
+      "api_category": "role",
       "access_mode": "permission"
     },
     {
@@ -1438,7 +1597,8 @@
       "path": "/roles/{id}/menus",
       "permission_key": "system.role.assign_menu",
       "summary": "获取角色菜单权限",
-      "app_scope": "optional",
+      "tags": "role",
+      "api_category": "role",
       "access_mode": "permission"
     },
     {
@@ -1447,7 +1607,8 @@
       "path": "/roles/{id}/menus",
       "permission_key": "system.role.assign_menu",
       "summary": "配置角色菜单权限",
-      "app_scope": "optional",
+      "tags": "role",
+      "api_category": "role",
       "access_mode": "permission"
     },
     {
@@ -1456,7 +1617,8 @@
       "path": "/roles/{id}/packages",
       "permission_key": "feature_package.assign_collaboration_workspace",
       "summary": "获取角色功能包",
-      "app_scope": "optional",
+      "tags": "role",
+      "api_category": "role",
       "access_mode": "permission"
     },
     {
@@ -1465,7 +1627,8 @@
       "path": "/roles/{id}/packages",
       "permission_key": "feature_package.assign_collaboration_workspace",
       "summary": "配置角色功能包",
-      "app_scope": "optional",
+      "tags": "role",
+      "api_category": "role",
       "access_mode": "permission"
     },
     {
@@ -1474,7 +1637,8 @@
       "path": "/runtime/navigation",
       "permission_key": "",
       "summary": "获取运行时导航清单",
-      "app_scope": "optional",
+      "tags": "navigation",
+      "api_category": "navigation",
       "access_mode": "authenticated"
     },
     {
@@ -1483,7 +1647,8 @@
       "path": "/system/app-host-bindings",
       "permission_key": "system.menu.manage",
       "summary": "获取应用 Host 绑定",
-      "app_scope": "none",
+      "tags": "system",
+      "api_category": "system",
       "access_mode": "permission"
     },
     {
@@ -1492,7 +1657,8 @@
       "path": "/system/app-host-bindings",
       "permission_key": "system.menu.manage",
       "summary": "保存应用 Host 绑定",
-      "app_scope": "none",
+      "tags": "system",
+      "api_category": "system",
       "access_mode": "permission"
     },
     {
@@ -1501,7 +1667,8 @@
       "path": "/system/apps",
       "permission_key": "system.menu.manage",
       "summary": "获取应用列表",
-      "app_scope": "none",
+      "tags": "system",
+      "api_category": "system",
       "access_mode": "permission"
     },
     {
@@ -1510,7 +1677,8 @@
       "path": "/system/apps",
       "permission_key": "system.menu.manage",
       "summary": "保存应用",
-      "app_scope": "none",
+      "tags": "system",
+      "api_category": "system",
       "access_mode": "permission"
     },
     {
@@ -1519,7 +1687,8 @@
       "path": "/system/apps/current",
       "permission_key": "",
       "summary": "获取当前应用",
-      "app_scope": "optional",
+      "tags": "system",
+      "api_category": "system",
       "access_mode": "authenticated"
     },
     {
@@ -1528,7 +1697,8 @@
       "path": "/system/fast-enter",
       "permission_key": "",
       "summary": "获取快捷入口配置",
-      "app_scope": "none",
+      "tags": "system",
+      "api_category": "system",
       "access_mode": "authenticated"
     },
     {
@@ -1537,7 +1707,8 @@
       "path": "/system/fast-enter",
       "permission_key": "system.fast_enter.manage",
       "summary": "更新快捷入口配置",
-      "app_scope": "none",
+      "tags": "system",
+      "api_category": "system",
       "access_mode": "permission"
     },
     {
@@ -1546,7 +1717,8 @@
       "path": "/system/menu-space-host-bindings",
       "permission_key": "system.menu.manage",
       "summary": "获取菜单空间 Host 绑定",
-      "app_scope": "none",
+      "tags": "system",
+      "api_category": "system",
       "access_mode": "permission"
     },
     {
@@ -1555,7 +1727,8 @@
       "path": "/system/menu-space-host-bindings",
       "permission_key": "system.menu.manage",
       "summary": "保存菜单空间 Host 绑定",
-      "app_scope": "none",
+      "tags": "system",
+      "api_category": "system",
       "access_mode": "permission"
     },
     {
@@ -1564,7 +1737,8 @@
       "path": "/system/menu-space-mode",
       "permission_key": "system.menu.manage",
       "summary": "获取菜单空间模式",
-      "app_scope": "optional",
+      "tags": "system",
+      "api_category": "system",
       "access_mode": "permission"
     },
     {
@@ -1573,7 +1747,8 @@
       "path": "/system/menu-space-mode",
       "permission_key": "system.menu.manage",
       "summary": "保存菜单空间模式",
-      "app_scope": "optional",
+      "tags": "system",
+      "api_category": "system",
       "access_mode": "permission"
     },
     {
@@ -1582,7 +1757,8 @@
       "path": "/system/menu-spaces",
       "permission_key": "system.menu.manage",
       "summary": "获取菜单空间列表",
-      "app_scope": "none",
+      "tags": "system",
+      "api_category": "system",
       "access_mode": "permission"
     },
     {
@@ -1591,7 +1767,8 @@
       "path": "/system/menu-spaces",
       "permission_key": "system.menu.manage",
       "summary": "保存菜单空间",
-      "app_scope": "none",
+      "tags": "system",
+      "api_category": "system",
       "access_mode": "permission"
     },
     {
@@ -1600,7 +1777,8 @@
       "path": "/system/menu-spaces/current",
       "permission_key": "",
       "summary": "获取当前菜单空间",
-      "app_scope": "optional",
+      "tags": "system",
+      "api_category": "system",
       "access_mode": "authenticated"
     },
     {
@@ -1609,7 +1787,8 @@
       "path": "/system/menu-spaces/{spaceKey}/initialize-default",
       "permission_key": "system.menu.manage",
       "summary": "从默认空间初始化菜单空间",
-      "app_scope": "none",
+      "tags": "system",
+      "api_category": "system",
       "access_mode": "permission"
     },
     {
@@ -1618,7 +1797,8 @@
       "path": "/system/view-pages",
       "permission_key": "system.page_catalog.view",
       "summary": "获取页面文件映射",
-      "app_scope": "none",
+      "tags": "system",
+      "api_category": "system",
       "access_mode": "permission"
     },
     {
@@ -1627,7 +1807,8 @@
       "path": "/users",
       "permission_key": "user.list",
       "summary": "获取用户列表（分页 + 多条件筛选）",
-      "app_scope": "optional",
+      "tags": "user",
+      "api_category": "user",
       "access_mode": "permission"
     },
     {
@@ -1636,7 +1817,8 @@
       "path": "/users",
       "permission_key": "user.create",
       "summary": "创建用户",
-      "app_scope": "optional",
+      "tags": "user",
+      "api_category": "user",
       "access_mode": "permission"
     },
     {
@@ -1645,7 +1827,8 @@
       "path": "/users/{id}",
       "permission_key": "user.delete",
       "summary": "删除用户",
-      "app_scope": "optional",
+      "tags": "user",
+      "api_category": "user",
       "access_mode": "permission"
     },
     {
@@ -1654,7 +1837,8 @@
       "path": "/users/{id}",
       "permission_key": "user.read",
       "summary": "获取用户详情",
-      "app_scope": "optional",
+      "tags": "user",
+      "api_category": "user",
       "access_mode": "permission"
     },
     {
@@ -1663,7 +1847,8 @@
       "path": "/users/{id}",
       "permission_key": "user.update",
       "summary": "更新用户",
-      "app_scope": "optional",
+      "tags": "user",
+      "api_category": "user",
       "access_mode": "permission"
     },
     {
@@ -1672,7 +1857,8 @@
       "path": "/users/{id}/collaboration-workspaces",
       "permission_key": "system.user.manage",
       "summary": "获取用户所在协作空间列表",
-      "app_scope": "optional",
+      "tags": "user",
+      "api_category": "user",
       "access_mode": "permission"
     },
     {
@@ -1681,7 +1867,8 @@
       "path": "/users/{id}/menus",
       "permission_key": "system.user.manage",
       "summary": "获取用户菜单裁剪",
-      "app_scope": "optional",
+      "tags": "user",
+      "api_category": "user",
       "access_mode": "permission"
     },
     {
@@ -1690,7 +1877,8 @@
       "path": "/users/{id}/menus",
       "permission_key": "system.user.manage",
       "summary": "配置用户菜单裁剪",
-      "app_scope": "optional",
+      "tags": "user",
+      "api_category": "user",
       "access_mode": "permission"
     },
     {
@@ -1699,7 +1887,8 @@
       "path": "/users/{id}/packages",
       "permission_key": "feature_package.assign_collaboration_workspace",
       "summary": "获取用户功能包",
-      "app_scope": "optional",
+      "tags": "user",
+      "api_category": "user",
       "access_mode": "permission"
     },
     {
@@ -1708,7 +1897,8 @@
       "path": "/users/{id}/packages",
       "permission_key": "feature_package.assign_collaboration_workspace",
       "summary": "配置用户功能包",
-      "app_scope": "optional",
+      "tags": "user",
+      "api_category": "user",
       "access_mode": "permission"
     },
     {
@@ -1717,7 +1907,8 @@
       "path": "/users/{id}/permission-diagnosis",
       "permission_key": "system.user.manage",
       "summary": "获取用户权限诊断",
-      "app_scope": "optional",
+      "tags": "user",
+      "api_category": "user",
       "access_mode": "permission"
     },
     {
@@ -1726,7 +1917,8 @@
       "path": "/users/{id}/permission-refresh",
       "permission_key": "system.user.manage",
       "summary": "刷新用户权限快照",
-      "app_scope": "optional",
+      "tags": "user",
+      "api_category": "user",
       "access_mode": "permission"
     },
     {
@@ -1735,7 +1927,8 @@
       "path": "/users/{id}/permissions",
       "permission_key": "system.user.manage",
       "summary": "获取用户菜单权限",
-      "app_scope": "optional",
+      "tags": "user",
+      "api_category": "user",
       "access_mode": "permission"
     },
     {
@@ -1744,7 +1937,8 @@
       "path": "/users/{id}/roles",
       "permission_key": "user.assign_role",
       "summary": "分配用户角色",
-      "app_scope": "optional",
+      "tags": "user",
+      "api_category": "user",
       "access_mode": "permission"
     },
     {
@@ -1753,7 +1947,8 @@
       "path": "/workspaces/current",
       "permission_key": "workspace.read",
       "summary": "获取当前授权工作空间",
-      "app_scope": "optional",
+      "tags": "workspace",
+      "api_category": "workspace",
       "access_mode": "permission"
     },
     {
@@ -1762,7 +1957,8 @@
       "path": "/workspaces/my",
       "permission_key": "workspace.list",
       "summary": "获取我的工作空间列表",
-      "app_scope": "optional",
+      "tags": "workspace",
+      "api_category": "workspace",
       "access_mode": "permission"
     },
     {
@@ -1771,7 +1967,8 @@
       "path": "/workspaces/switch",
       "permission_key": "workspace.switch",
       "summary": "切换当前授权工作空间",
-      "app_scope": "optional",
+      "tags": "workspace",
+      "api_category": "workspace",
       "access_mode": "permission"
     },
     {
@@ -1780,7 +1977,8 @@
       "path": "/workspaces/{id}",
       "permission_key": "workspace.read",
       "summary": "获取工作空间详情",
-      "app_scope": "optional",
+      "tags": "workspace",
+      "api_category": "workspace",
       "access_mode": "permission"
     }
   ]

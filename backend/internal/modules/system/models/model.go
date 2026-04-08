@@ -218,14 +218,14 @@ type PermissionKey struct {
 	Code                  string           `gorm:"type:varchar(36);uniqueIndex" json:"code"`
 	APIEndpointCode       string           `gorm:"type:varchar(36)" json:"api_endpoint_code"`
 	PermissionKey         string           `gorm:"type:varchar(150);index:idx_permission_keys_permission_key" json:"permission_key"`
-	AppKey                string           `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
-	ModuleCode            string           `gorm:"type:varchar(100);not null;default:''" json:"module_code"`
+	AppKey                string           `gorm:"-" json:"app_key,omitempty"`
+	ModuleCode            string           `gorm:"-" json:"module_code,omitempty"`
 	ModuleGroupID         *uuid.UUID       `gorm:"type:uuid;index" json:"module_group_id"`
 	FeatureGroupID        *uuid.UUID       `gorm:"type:uuid;index" json:"feature_group_id"`
-	ContextType           string           `gorm:"type:varchar(20);not null;default:'collaboration'" json:"context_type"`
-	FeatureKind           string           `gorm:"type:varchar(20);not null;default:'system'" json:"feature_kind"`
+	ContextType           string           `gorm:"-" json:"context_type,omitempty"`
+	FeatureKind           string           `gorm:"-" json:"feature_kind,omitempty"`
 	DataPolicy            string           `gorm:"type:varchar(50);not null;default:'none'" json:"data_policy"`
-	AllowedWorkspaceTypes string           `gorm:"type:varchar(50);not null;default:'collaboration'" json:"allowed_workspace_types"`
+	AllowedWorkspaceTypes string           `gorm:"-" json:"allowed_workspace_types,omitempty"`
 	Name                  string           `gorm:"type:varchar(150);not null" json:"name"`
 	Description           string           `gorm:"type:varchar(255)" json:"description"`
 	Status                string           `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
@@ -514,14 +514,9 @@ type APIEndpoint struct {
 	Code         string         `gorm:"type:varchar(36);uniqueIndex" json:"code"`
 	Method       string         `gorm:"type:varchar(10);not null" json:"method"`
 	Path         string         `gorm:"type:varchar(255);not null" json:"path"`
-	AppScope     string         `gorm:"type:varchar(20);not null;default:'shared';index" json:"app_scope"`
-	AppKey       string         `gorm:"type:varchar(100);not null;default:'platform-admin';index" json:"app_key"`
-	FeatureKind  string         `gorm:"type:varchar(20);not null;default:'system'" json:"feature_kind"`
 	Handler      string         `gorm:"type:varchar(255)" json:"handler"`
 	Summary      string         `gorm:"type:varchar(255)" json:"summary"`
 	CategoryID   *uuid.UUID     `gorm:"type:uuid;index" json:"category_id"`
-	ContextScope string         `gorm:"type:varchar(20);not null;default:'optional'" json:"context_scope"`
-	Source       string         `gorm:"type:varchar(20);not null;default:'sync'" json:"source"`
 	Status       string         `gorm:"type:varchar(20);not null;default:'normal'" json:"status"`
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`

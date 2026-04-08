@@ -98,11 +98,8 @@ func EnsureDefaultPermissionKeys(db *gorm.DB) error {
 			ID:             actionSeed.ID,
 			Code:           StableID("permission-action-code", actionSeed.Key).String(),
 			PermissionKey:  actionSeed.Key,
-			ModuleCode:     actionSeed.ModuleCode,
 			ModuleGroupID:  &moduleGroupID,
 			FeatureGroupID: &featureGroupID,
-			ContextType:    actionSeed.ContextType,
-			FeatureKind:    actionSeed.FeatureKind,
 			Name:           actionSeed.Name,
 			Description:    actionSeed.Description,
 			Status:         actionSeed.Status,
@@ -122,11 +119,8 @@ func EnsureDefaultPermissionKeys(db *gorm.DB) error {
 		}
 		updates := map[string]interface{}{
 			"code":             actionData.Code,
-			"module_code":      actionData.ModuleCode,
 			"module_group_id":  actionData.ModuleGroupID,
 			"feature_group_id": actionData.FeatureGroupID,
-			"context_type":     actionData.ContextType,
-			"feature_kind":     actionData.FeatureKind,
 			"name":             actionData.Name,
 			"description":      actionData.Description,
 			"status":           actionData.Status,

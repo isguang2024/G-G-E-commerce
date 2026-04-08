@@ -169,48 +169,17 @@
         <div class="form-section">
           <div class="form-section__header">
             <div class="form-section__title">接口身份</div>
-            <div class="form-section__desc"
-              >Method、路径、来源和功能归属决定这条接口如何进入正式注册表。</div
-            >
+            <div class="form-section__desc">Method、路径和说明决定这条接口如何进入正式注册表。</div>
           </div>
-          <ElRow :gutter="12">
-            <ElCol :span="8">
-              <ElFormItem label="Method" prop="method">
-                <ElSelect
-                  v-model="formState.method"
-                  placeholder="请选择"
-                  popper-class="api-endpoint-select-popper"
-                >
-                  <ElOption v-for="item in methodOptions" :key="item" :label="item" :value="item" />
-                </ElSelect>
-              </ElFormItem>
-            </ElCol>
-            <ElCol :span="8">
-              <ElFormItem label="功能归属" prop="featureKind">
-                <ElSelect
-                  v-model="formState.featureKind"
-                  placeholder="请选择"
-                  popper-class="api-endpoint-select-popper"
-                >
-                  <ElOption label="系统" value="system" />
-                  <ElOption label="业务" value="business" />
-                </ElSelect>
-              </ElFormItem>
-            </ElCol>
-            <ElCol :span="8">
-              <ElFormItem label="来源" prop="source">
-                <ElSelect
-                  v-model="formState.source"
-                  placeholder="请选择"
-                  popper-class="api-endpoint-select-popper"
-                >
-                  <ElOption label="自动同步" value="sync" />
-                  <ElOption label="初始种子" value="seed" />
-                  <ElOption label="手工维护" value="manual" />
-                </ElSelect>
-              </ElFormItem>
-            </ElCol>
-          </ElRow>
+          <ElFormItem label="Method" prop="method">
+            <ElSelect
+              v-model="formState.method"
+              placeholder="请选择"
+              popper-class="api-endpoint-select-popper"
+            >
+              <ElOption v-for="item in methodOptions" :key="item" :label="item" :value="item" />
+            </ElSelect>
+          </ElFormItem>
           <ElFormItem label="路径" prop="path">
             <ElInput v-model="formState.path" placeholder="/api/v1/..." />
           </ElFormItem>
@@ -222,33 +191,8 @@
         <div class="form-section">
           <div class="form-section__header">
             <div class="form-section__title">归属与运行时</div>
-            <div class="form-section__desc"
-              >分类影响管理归档，协作空间要求和状态影响运行时访问与诊断结果。</div
-            >
+            <div class="form-section__desc">分类影响管理归档，状态影响运行时访问与诊断结果。</div>
           </div>
-          <ElRow :gutter="12">
-            <ElCol :span="12">
-              <ElFormItem label="应用范围" prop="appScope">
-                <ElSelect
-                  v-model="formState.appScope"
-                  placeholder="请选择"
-                  popper-class="api-endpoint-select-popper"
-                >
-                  <ElOption label="共享接口" value="shared" />
-                  <ElOption label="当前 App" value="app" />
-                </ElSelect>
-              </ElFormItem>
-            </ElCol>
-            <ElCol :span="12">
-              <ElFormItem label="App 归属">
-                <ElInput
-                  :model-value="targetAppKey"
-                  :disabled="formState.appScope !== 'app'"
-                  placeholder="共享接口无需指定 App"
-                />
-              </ElFormItem>
-            </ElCol>
-          </ElRow>
           <ElFormItem label="分类" prop="categoryId">
             <div class="category-input-wrap">
               <ElSelect
@@ -270,41 +214,24 @@
             </div>
           </ElFormItem>
 
-          <ElRow :gutter="12">
-            <ElCol :span="12">
-              <ElFormItem label="协作空间要求" prop="contextScope">
-                <ElSelect
-                  v-model="formState.contextScope"
-                  placeholder="请选择"
-                  popper-class="api-endpoint-select-popper"
-                >
-                  <ElOption label="可选" value="optional" />
-                  <ElOption label="必需" value="required" />
-                  <ElOption label="禁止" value="forbidden" />
-                </ElSelect>
-              </ElFormItem>
-            </ElCol>
-            <ElCol :span="12">
-              <ElFormItem prop="status">
-                <template #label>
-                  <span class="label-help">
-                    <span>状态</span>
-                    <ElTooltip content="停用后该 API 将被运行时拒绝访问。" placement="top">
-                      <ElIcon class="label-help-icon"><QuestionFilled /></ElIcon>
-                    </ElTooltip>
-                  </span>
-                </template>
-                <ElSelect
-                  v-model="formState.status"
-                  placeholder="请选择"
-                  popper-class="api-endpoint-select-popper"
-                >
-                  <ElOption label="正常" value="normal" />
-                  <ElOption label="停用" value="suspended" />
-                </ElSelect>
-              </ElFormItem>
-            </ElCol>
-          </ElRow>
+          <ElFormItem prop="status">
+            <template #label>
+              <span class="label-help">
+                <span>状态</span>
+                <ElTooltip content="停用后该 API 将被运行时拒绝访问。" placement="top">
+                  <ElIcon class="label-help-icon"><QuestionFilled /></ElIcon>
+                </ElTooltip>
+              </span>
+            </template>
+            <ElSelect
+              v-model="formState.status"
+              placeholder="请选择"
+              popper-class="api-endpoint-select-popper"
+            >
+              <ElOption label="正常" value="normal" />
+              <ElOption label="停用" value="suspended" />
+            </ElSelect>
+          </ElFormItem>
         </div>
 
         <div class="form-section">

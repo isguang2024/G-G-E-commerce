@@ -2,9 +2,76 @@ import { v5Client } from '@/api/v5/client'
 import { AppRouteRecord } from '@/types/router'
 import type { FastEnterApplication, FastEnterQuickLink } from '@/types/config'
 import { normalizeMenuSpaceKey } from '@/utils/navigation/menu-space'
+import { HttpError, showError } from '@/utils/http/error'
+import { ApiStatus } from '@/utils/http/status'
+import { $t } from '@/locales'
+import { useUserStore } from '@/store/modules/user'
 
 export { v5Client, normalizeMenuSpaceKey }
 export type { AppRouteRecord, FastEnterApplication, FastEnterQuickLink }
+
+let unauthorizedHandling: Promise<void> | null = null
+
+function normalizeV5StatusCode(status?: number, error?: any): number {
+  const responseStatus = Number(status || 0)
+  if (Number.isFinite(responseStatus) && responseStatus > 0) {
+    return responseStatus
+  }
+
+  const backendCode = Number(error?.code || error?.status || error?.statusCode || 0)
+  if (Number.isFinite(backendCode) && backendCode > 0) {
+    return backendCode
+  }
+
+  return ApiStatus.error
+}
+
+function normalizeV5ErrorMessage(error: any, statusCode: number): string {
+  const backendMessage = `${error?.message || error?.msg || error?.error || ''}`.trim()
+  if (backendMessage) {
+    return backendMessage
+  }
+
+  if (statusCode === ApiStatus.unauthorized) {
+    return $t('httpMsg.unauthorized')
+  }
+
+  if (statusCode >= 500) {
+    return $t('httpMsg.internalServerError')
+  }
+
+  return $t('httpMsg.requestFailed')
+}
+
+function handleV5Unauthorized(error: HttpError): void {
+  if (!unauthorizedHandling) {
+    unauthorizedHandling = (async () => {
+      try {
+        showError(error, true)
+        useUserStore().logOut()
+      } finally {
+        setTimeout(() => {
+          unauthorizedHandling = null
+        }, 3000)
+      }
+    })()
+  }
+}
+
+export function createV5HttpError(error: any, response?: Response): HttpError {
+  const statusCode = normalizeV5StatusCode(response?.status, error)
+  const httpError = new HttpError(normalizeV5ErrorMessage(error, statusCode), statusCode, {
+    data: error,
+    url: response?.url,
+    method: undefined
+  })
+
+  if (statusCode === ApiStatus.unauthorized) {
+    handleV5Unauthorized(httpError)
+  }
+
+  return httpError
+}
 
 /**
  * 解包 openapi-fetch 的 `{ data, error }` 返回，行为对齐 legacy `request<T>`：
@@ -13,10 +80,10 @@ export type { AppRouteRecord, FastEnterApplication, FastEnterQuickLink }
  * - 否则返回 data
  */
 export async function unwrap<T>(
-  promise: Promise<{ data?: T; error?: any }>
+  promise: Promise<{ data?: T; error?: any; response: Response }>
 ): Promise<T> {
-  const { data, error } = await promise
-  if (error) throw error
+  const { data, error, response } = await promise
+  if (error) throw createV5HttpError(error, response)
   if (data === undefined) throw new Error('v5Client: empty response')
   return data as T
 }
@@ -143,27 +210,22 @@ export function normalizePermissionGroup(value: any): Api.SystemManage.Permissio
 export function normalizePermissionAction(item: any): Api.SystemManage.PermissionActionItem {
   const permissionKey = normalizePermissionKey(item?.permission_key || item?.permissionKey)
   const legacy = derivePermissionSegments(permissionKey)
-  const moduleCode = item?.module_code || item?.moduleCode || legacy.resourceCode || ''
   const consumerTypes = item?.consumer_types || item?.consumerTypes || []
   const duplicateKeys = item?.duplicate_keys || item?.duplicateKeys || []
   const moduleGroup = normalizePermissionGroup(item?.module_group || item?.moduleGroup)
   const featureGroup = normalizePermissionGroup(item?.feature_group || item?.featureGroup)
   return {
     id: item?.id || '',
-    appKey: item?.app_key || item?.appKey || '',
     resourceCode: legacy.resourceCode,
     actionCode: legacy.actionCode,
-    moduleCode: moduleGroup?.code || moduleCode,
+    moduleCode: moduleGroup?.code || legacy.resourceCode || '',
     moduleGroupId: item?.module_group_id || item?.moduleGroupId || moduleGroup?.id || '',
     featureGroupId: item?.feature_group_id || item?.featureGroupId || featureGroup?.id || '',
     moduleGroup,
     featureGroup,
-    contextType:
-      item?.context_type || item?.contextType || deriveContextType(permissionKey, moduleCode),
     permissionKey,
-    featureKind: featureGroup?.code || item?.feature_kind || item?.featureKind || 'system',
+    featureKind: featureGroup?.code || 'system',
     dataPolicy: item?.data_policy || item?.dataPolicy || '',
-    allowedWorkspaceTypes: item?.allowed_workspace_types || item?.allowedWorkspaceTypes || '',
     name: item?.name || '',
     description: item?.description || '',
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
@@ -218,12 +280,9 @@ export function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointIte
   return {
     id: item?.id || '',
     code: item?.code || '',
-    appKey: item?.app_key || item?.appKey || '',
-    appScope: item?.app_scope || item?.appScope || 'shared',
     method: item?.method || '',
     path: item?.path || '',
     spec: item?.spec || '',
-    featureKind: item?.feature_kind || item?.featureKind || 'system',
     handler: item?.handler || '',
     summary: item?.summary || '',
     permissionKey,
@@ -237,7 +296,12 @@ export function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointIte
       (permissionKeys.length > 1 ? 'shared' : permissionKeys.length === 1 ? 'single' : 'none'),
     sharedAcrossContexts: Boolean(item?.shared_across_contexts ?? item?.sharedAcrossContexts),
     permissionNote: item?.permission_note || item?.permissionNote || '',
-    authMode: item?.auth_mode || item?.authMode || (permissionKey ? 'permission' : 'jwt'),
+    authMode:
+      item?.auth_mode ||
+      item?.authMode ||
+      item?.access_mode ||
+      item?.accessMode ||
+      (permissionKey ? 'permission' : 'jwt'),
     categoryId: item?.category_id || item?.categoryId || item?.category?.id || '',
     category: item?.category
       ? {
@@ -249,8 +313,6 @@ export function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointIte
           status: item.category.status || 'normal'
         }
       : undefined,
-    contextScope: item?.context_scope || item?.contextScope || 'optional',
-    source: item?.source || 'sync',
     dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
     dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
     runtimeExists: Boolean(item?.runtime_exists ?? item?.runtimeExists),

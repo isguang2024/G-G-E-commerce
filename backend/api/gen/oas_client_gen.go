@@ -10125,40 +10125,6 @@ func (c *Client) sendListApiEndpoints(ctx context.Context, params ListApiEndpoin
 		}
 	}
 	{
-		// Encode "app_key" parameter.
-		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "app_key",
-			Style:   uri.QueryStyleForm,
-			Explode: true,
-		}
-
-		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.AppKey.Get(); ok {
-				return e.EncodeValue(conv.StringToString(val))
-			}
-			return nil
-		}); err != nil {
-			return res, errors.Wrap(err, "encode query")
-		}
-	}
-	{
-		// Encode "app_scope" parameter.
-		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "app_scope",
-			Style:   uri.QueryStyleForm,
-			Explode: true,
-		}
-
-		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.AppScope.Get(); ok {
-				return e.EncodeValue(conv.StringToString(val))
-			}
-			return nil
-		}); err != nil {
-			return res, errors.Wrap(err, "encode query")
-		}
-	}
-	{
 		// Encode "permission_key" parameter.
 		cfg := uri.QueryParameterEncodingConfig{
 			Name:    "permission_key",
@@ -10253,57 +10219,6 @@ func (c *Client) sendListApiEndpoints(ctx context.Context, params ListApiEndpoin
 
 		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
 			if val, ok := params.CategoryID.Get(); ok {
-				return e.EncodeValue(conv.StringToString(val))
-			}
-			return nil
-		}); err != nil {
-			return res, errors.Wrap(err, "encode query")
-		}
-	}
-	{
-		// Encode "context_scope" parameter.
-		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "context_scope",
-			Style:   uri.QueryStyleForm,
-			Explode: true,
-		}
-
-		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.ContextScope.Get(); ok {
-				return e.EncodeValue(conv.StringToString(val))
-			}
-			return nil
-		}); err != nil {
-			return res, errors.Wrap(err, "encode query")
-		}
-	}
-	{
-		// Encode "source" parameter.
-		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "source",
-			Style:   uri.QueryStyleForm,
-			Explode: true,
-		}
-
-		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.Source.Get(); ok {
-				return e.EncodeValue(conv.StringToString(val))
-			}
-			return nil
-		}); err != nil {
-			return res, errors.Wrap(err, "encode query")
-		}
-	}
-	{
-		// Encode "feature_kind" parameter.
-		cfg := uri.QueryParameterEncodingConfig{
-			Name:    "feature_kind",
-			Style:   uri.QueryStyleForm,
-			Explode: true,
-		}
-
-		if err := q.EncodeParam(cfg, func(e uri.Encoder) error {
-			if val, ok := params.FeatureKind.Get(); ok {
 				return e.EncodeValue(conv.StringToString(val))
 			}
 			return nil

@@ -14,6 +14,7 @@ import (
 	"github.com/go-faster/jx"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/api/gen"
 	"github.com/gg-ecommerce/backend/internal/api/dto"
@@ -111,6 +112,10 @@ func (h *APIHandler) GetAuthMe(ctx context.Context) (gen.GetAuthMeRes, error) {
 	}
 	u, err := h.userRepo.GetByID(userID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			h.logger.Warn("auth.me user not found", zap.String("user_id", userID.String()))
+			return &gen.Error{Code: 401, Message: "登录状态已失效，请重新登录"}, nil
+		}
 		h.logger.Error("auth.me lookup failed", zap.Error(err))
 		return nil, err
 	}

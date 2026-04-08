@@ -3,7 +3,7 @@ package apiendpoint
 import "testing"
 
 func TestBuildPermissionProfileForJWTEndpoint(t *testing.T) {
-	profile := buildPermissionProfile("/api/v1/messages/inbox", nil)
+	profile := buildPermissionProfile("GET", "/api/v1/messages/inbox", nil, nil)
 	if profile.BindingMode != permissionPatternSelfJWT {
 		t.Fatalf("binding mode = %q, want %q", profile.BindingMode, permissionPatternSelfJWT)
 	}
@@ -13,7 +13,7 @@ func TestBuildPermissionProfileForJWTEndpoint(t *testing.T) {
 }
 
 func TestBuildPermissionProfileForGlobalJWTEndpoint(t *testing.T) {
-	profile := buildPermissionProfile("/api/v1/runtime/navigation", nil)
+	profile := buildPermissionProfile("GET", "/api/v1/runtime/navigation", nil, nil)
 	if profile.BindingMode != permissionPatternGlobalJWT {
 		t.Fatalf("binding mode = %q, want %q", profile.BindingMode, permissionPatternGlobalJWT)
 	}
@@ -23,7 +23,7 @@ func TestBuildPermissionProfileForGlobalJWTEndpoint(t *testing.T) {
 }
 
 func TestBuildPermissionProfileForCrossContextSharedEndpoint(t *testing.T) {
-	profile := buildPermissionProfile("/api/v1/messages/dispatch", []string{"message.manage", "collaboration_workspace.message.manage"})
+	profile := buildPermissionProfile("POST", "/api/v1/messages/dispatch", []string{"message.manage", "collaboration_workspace.message.manage"}, nil)
 	if profile.BindingMode != permissionPatternCrossContextShared {
 		t.Fatalf("binding mode = %q, want %q", profile.BindingMode, permissionPatternCrossContextShared)
 	}

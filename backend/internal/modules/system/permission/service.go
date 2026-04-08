@@ -34,7 +34,7 @@ type PermissionService interface {
 	Get(id uuid.UUID) (*user.PermissionKey, error)
 	GetConsumerDetails(id uuid.UUID) (*PermissionConsumerDetails, error)
 	ListGroups(req *dto.PermissionGroupListRequest) ([]user.PermissionGroup, int64, error)
-	ListEndpoints(id uuid.UUID) ([]user.APIEndpoint, error)
+	ListEndpoints(id uuid.UUID) ([]APIEndpointView, error)
 	CleanupUnused() (*CleanupUnusedResult, error)
 	AddEndpoint(id uuid.UUID, endpointCode string) error
 	RemoveEndpoint(id uuid.UUID, endpointCode string) error
@@ -166,7 +166,15 @@ func NewPermissionService(
 	}
 }
 
-func (s *permissionService) ListEndpoints(id uuid.UUID) ([]user.APIEndpoint, error) {
+// APIEndpointView wraps user.APIEndpoint with a derived AccessMode field.
+// AccessMode is read-only, sourced from the embedded openapi_seed.json, and
+// NOT stored in the DB — it reflects x-access-mode in openapi.yaml.
+type APIEndpointView struct {
+	user.APIEndpoint
+	AccessMode string `json:"access_mode"`
+}
+
+func (s *permissionService) ListEndpoints(id uuid.UUID) ([]APIEndpointView, error) {
 	item, err := s.keyRepo.GetByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -180,20 +188,43 @@ func (s *permissionService) ListEndpoints(id uuid.UUID) ([]user.APIEndpoint, err
 		return nil, err
 	}
 	if len(endpointCodes) == 0 {
-		return []user.APIEndpoint{}, nil
+		return []APIEndpointView{}, nil
 	}
 	endpoints, err := s.apiEndpointRepo.GetByCodes(endpointCodes)
 	if err != nil {
 		return nil, err
 	}
-	result := make([]user.APIEndpoint, 0, len(endpoints))
+
+	// Load access_mode from the embedded seed — single source of truth.
+	accessModeMap := loadAccessModeMap()
+
+	result := make([]APIEndpointView, 0, len(endpoints))
 	for _, endpoint := range endpoints {
 		if endpoint.Status != "normal" {
 			continue
 		}
-		result = append(result, endpoint)
+		key := strings.ToUpper(strings.TrimSpace(endpoint.Method)) + " " + strings.TrimSpace(endpoint.Path)
+		accessMode := accessModeMap[key]
+		if accessMode == "" {
+			accessMode = "permission" // safe default: anything with a binding has a permission key
+		}
+		result = append(result, APIEndpointView{
+			APIEndpoint: endpoint,
+			AccessMode:  accessMode,
+		})
 	}
 	return result, nil
+}
+
+// loadAccessModeMap returns the "METHOD /path" -> access_mode lookup from
+// the embedded openapi_seed.json. Returns an empty map on parse error so
+// callers can apply fallback logic.
+func loadAccessModeMap() map[string]string {
+	seed, err := permissionseed.LoadOpenAPISeed()
+	if err != nil {
+		return map[string]string{}
+	}
+	return seed.AccessModeByMethodPath()
 }
 
 func (s *permissionService) GetConsumerDetails(id uuid.UUID) (*PermissionConsumerDetails, error) {
@@ -589,8 +620,8 @@ func (s *permissionService) List(req *dto.PermissionKeyListRequest) ([]Permissio
 			continue
 		}
 		filtered = append(filtered, PermissionListItem{
-			PermissionKey: action,
-			Audit:         profile,
+			PermissionKey:          action,
+			PermissionAuditProfile: profile,
 		})
 		accumulatePermissionAuditSummary(&summary, profile)
 	}

@@ -149,7 +149,7 @@
     loading.value = true
     try {
       const [actionsRes, currentRes, packageRes, originsRes] = await Promise.all([
-        fetchGetPermissionActionOptions({ status: 'normal', contextType: 'collaboration' }),
+        fetchGetPermissionActionOptions({ status: 'normal' }),
         fetchGetCollaborationWorkspaceActions(props.collaborationWorkspaceId, currentAppKey.value),
         fetchGetCollaborationWorkspaceFeaturePackages(
           props.collaborationWorkspaceId,

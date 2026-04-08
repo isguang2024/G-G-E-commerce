@@ -1229,14 +1229,9 @@ declare namespace Api {
     type APIEndpointSearchParams = Partial<
       Pick<APIEndpointItem, 'method' | 'path' | 'status'> &
         Api.Common.CommonSearchParams & {
-          appKey?: string
-          appScope?: string
           keyword?: string
           permissionKey?: string
-          featureKind?: string
           categoryId?: string
-          contextScope?: string
-          source?: string
           permissionPattern?: string
           hasPermissionKey?: boolean
           hasCategory?: boolean
@@ -1248,11 +1243,8 @@ declare namespace Api {
         Api.Common.CommonSearchParams & {
           keyword?: string
           permissionKey?: string
-          moduleCode?: string
           moduleGroupId?: string
           featureGroupId?: string
-          contextType?: string
-          featureKind?: string
           isBuiltin?: boolean
           usagePattern?: string
           duplicatePattern?: string
@@ -1260,11 +1252,8 @@ declare namespace Api {
     >
     interface PermissionActionCreateParams {
       permission_key: string
-      module_code?: string
       module_group_id?: string
       feature_group_id?: string
-      context_type?: 'personal' | 'collaboration' | 'common' | string
-      feature_kind?: 'system' | 'business' | string
       name: string
       description?: string
       status?: string
@@ -1273,11 +1262,8 @@ declare namespace Api {
 
     interface PermissionActionUpdateParams {
       permission_key?: string
-      module_code?: string
       module_group_id?: string
       feature_group_id?: string
-      context_type?: 'personal' | 'collaboration' | 'common' | string
-      feature_kind?: 'system' | 'business' | string
       name?: string
       description?: string
       status?: string

@@ -5169,17 +5169,12 @@ func decodeInitializeMenuSpaceFromDefaultParams(args [1]string, argsEscaped bool
 type ListApiEndpointsParams struct {
 	Current           OptInt    `json:",omitempty,omitzero"`
 	Size              OptInt    `json:",omitempty,omitzero"`
-	AppKey            OptString `json:",omitempty,omitzero"`
-	AppScope          OptString `json:",omitempty,omitzero"`
 	PermissionKey     OptString `json:",omitempty,omitzero"`
 	PermissionPattern OptString `json:",omitempty,omitzero"`
 	Keyword           OptString `json:",omitempty,omitzero"`
 	Method            OptString `json:",omitempty,omitzero"`
 	Path              OptString `json:",omitempty,omitzero"`
 	CategoryID        OptString `json:",omitempty,omitzero"`
-	ContextScope      OptString `json:",omitempty,omitzero"`
-	Source            OptString `json:",omitempty,omitzero"`
-	FeatureKind       OptString `json:",omitempty,omitzero"`
 	Status            OptString `json:",omitempty,omitzero"`
 	HasPermissionKey  OptBool   `json:",omitempty,omitzero"`
 	HasCategory       OptBool   `json:",omitempty,omitzero"`
@@ -5202,24 +5197,6 @@ func unpackListApiEndpointsParams(packed middleware.Parameters) (params ListApiE
 		}
 		if v, ok := packed[key]; ok {
 			params.Size = v.(OptInt)
-		}
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "app_key",
-			In:   "query",
-		}
-		if v, ok := packed[key]; ok {
-			params.AppKey = v.(OptString)
-		}
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "app_scope",
-			In:   "query",
-		}
-		if v, ok := packed[key]; ok {
-			params.AppScope = v.(OptString)
 		}
 	}
 	{
@@ -5274,33 +5251,6 @@ func unpackListApiEndpointsParams(packed middleware.Parameters) (params ListApiE
 		}
 		if v, ok := packed[key]; ok {
 			params.CategoryID = v.(OptString)
-		}
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "context_scope",
-			In:   "query",
-		}
-		if v, ok := packed[key]; ok {
-			params.ContextScope = v.(OptString)
-		}
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "source",
-			In:   "query",
-		}
-		if v, ok := packed[key]; ok {
-			params.Source = v.(OptString)
-		}
-	}
-	{
-		key := middleware.ParameterKey{
-			Name: "feature_kind",
-			In:   "query",
-		}
-		if v, ok := packed[key]; ok {
-			params.FeatureKind = v.(OptString)
 		}
 	}
 	{
@@ -5413,88 +5363,6 @@ func decodeListApiEndpointsParams(args [0]string, argsEscaped bool, r *http.Requ
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "size",
-			In:   "query",
-			Err:  err,
-		}
-	}
-	// Decode query: app_key.
-	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "app_key",
-			Style:   uri.QueryStyleForm,
-			Explode: true,
-		}
-
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotAppKeyVal string
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToString(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotAppKeyVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.AppKey.SetTo(paramsDotAppKeyVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "app_key",
-			In:   "query",
-			Err:  err,
-		}
-	}
-	// Decode query: app_scope.
-	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "app_scope",
-			Style:   uri.QueryStyleForm,
-			Explode: true,
-		}
-
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotAppScopeVal string
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToString(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotAppScopeVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.AppScope.SetTo(paramsDotAppScopeVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "app_scope",
 			In:   "query",
 			Err:  err,
 		}
@@ -5741,129 +5609,6 @@ func decodeListApiEndpointsParams(args [0]string, argsEscaped bool, r *http.Requ
 	}(); err != nil {
 		return params, &ogenerrors.DecodeParamError{
 			Name: "category_id",
-			In:   "query",
-			Err:  err,
-		}
-	}
-	// Decode query: context_scope.
-	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "context_scope",
-			Style:   uri.QueryStyleForm,
-			Explode: true,
-		}
-
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotContextScopeVal string
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToString(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotContextScopeVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.ContextScope.SetTo(paramsDotContextScopeVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "context_scope",
-			In:   "query",
-			Err:  err,
-		}
-	}
-	// Decode query: source.
-	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "source",
-			Style:   uri.QueryStyleForm,
-			Explode: true,
-		}
-
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotSourceVal string
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToString(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotSourceVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.Source.SetTo(paramsDotSourceVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "source",
-			In:   "query",
-			Err:  err,
-		}
-	}
-	// Decode query: feature_kind.
-	if err := func() error {
-		cfg := uri.QueryParameterDecodingConfig{
-			Name:    "feature_kind",
-			Style:   uri.QueryStyleForm,
-			Explode: true,
-		}
-
-		if err := q.HasParam(cfg); err == nil {
-			if err := q.DecodeParam(cfg, func(d uri.Decoder) error {
-				var paramsDotFeatureKindVal string
-				if err := func() error {
-					val, err := d.DecodeValue()
-					if err != nil {
-						return err
-					}
-
-					c, err := conv.ToString(val)
-					if err != nil {
-						return err
-					}
-
-					paramsDotFeatureKindVal = c
-					return nil
-				}(); err != nil {
-					return err
-				}
-				params.FeatureKind.SetTo(paramsDotFeatureKindVal)
-				return nil
-			}); err != nil {
-				return err
-			}
-		}
-		return nil
-	}(); err != nil {
-		return params, &ogenerrors.DecodeParamError{
-			Name: "feature_kind",
 			In:   "query",
 			Err:  err,
 		}

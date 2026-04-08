@@ -207,7 +207,6 @@
     keyword: '',
     moduleGroupId: '',
     featureGroupId: '',
-    contextType: '',
     status: '',
     isBuiltin: '',
     usagePattern: '',
@@ -253,12 +252,6 @@
     { label: '跨空间镜像', value: auditSummary.value.crossContextMirrorCount || 0 },
     { label: '疑似重复', value: auditSummary.value.suspectedDuplicateCount || 0 }
   ])
-
-  function renderContextType(row: PermissionActionItem) {
-    if (row.contextType === 'personal') return h(ElTag, { type: 'warning' }, () => '个人空间')
-    if (row.contextType === 'collaboration') return h(ElTag, { type: 'primary' }, () => '协作空间')
-    return h(ElTag, { type: 'info' }, () => '通用')
-  }
 
   function renderConsumerCountTag(
     label: string,
@@ -349,19 +342,13 @@
           prop: 'moduleGroup',
           label: '模块分组',
           minWidth: 140,
-          formatter: (row: PermissionActionItem) => row.moduleGroup?.name || row.moduleCode || '-'
+          formatter: (row: PermissionActionItem) => row.moduleGroup?.name || '-'
         },
         {
           prop: 'featureGroup',
           label: '功能分组',
           minWidth: 140,
-          formatter: (row: PermissionActionItem) => row.featureGroup?.name || row.featureKind || '-'
-        },
-        {
-          prop: 'contextType',
-          label: '空间范围',
-          width: 100,
-          formatter: (row: PermissionActionItem) => renderContextType(row)
+          formatter: (row: PermissionActionItem) => row.featureGroup?.name || '-'
         },
         {
           prop: 'usagePattern',
@@ -477,7 +464,6 @@
       keyword: searchForm.keyword || undefined,
       moduleGroupId: searchForm.moduleGroupId || undefined,
       featureGroupId: searchForm.featureGroupId || undefined,
-      contextType: searchForm.contextType || undefined,
       status: searchForm.status || undefined,
       isBuiltin: searchForm.isBuiltin === '' ? undefined : searchForm.isBuiltin === 'true',
       usagePattern: searchForm.usagePattern || undefined,
@@ -492,7 +478,6 @@
       keyword: '',
       moduleGroupId: '',
       featureGroupId: '',
-      contextType: '',
       status: '',
       isBuiltin: '',
       usagePattern: '',

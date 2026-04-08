@@ -50,25 +50,6 @@
           <ElButton text type="primary" @click="emit('open-group', 'feature')">新建分组</ElButton>
         </div>
       </ElFormItem>
-      <ElFormItem label="空间范围" prop="contextType">
-        <ElSelect v-model="form.contextType" style="width: 100%">
-          <ElOption label="个人空间" value="personal" />
-          <ElOption label="协作空间" value="collaboration" />
-          <ElOption label="通用" value="common" />
-        </ElSelect>
-      </ElFormItem>
-      <div class="context-hint">
-        <span>个人空间：仅用于明确绑定到个人空间的权限键，避免把通用治理能力归到个人空间。</span>
-        <span
-          >协作空间：协作空间内成员、边界和消息能力，建议使用
-          `collaboration_workspace.member.`、`collaboration_workspace.boundary.`、`collaboration_workspace.message.`
-          前缀。</span
-        >
-        <span
-          >通用：平台管理 API、系统治理能力和跨空间业务能力默认归通用，建议使用 `system.`、
-          `feature_package.`、`message.` 等前缀。</span
-        >
-      </div>
       <ElFormItem label="权限名称" prop="name">
         <ElInput v-model="form.name" placeholder="请输入名称" />
       </ElFormItem>
@@ -141,11 +122,8 @@
   const form = reactive({
     id: '',
     permissionKey: '',
-    moduleCode: '',
     moduleGroupId: '',
     featureGroupId: '',
-    featureKind: 'business',
-    contextType: 'common',
     name: '',
     description: '',
     status: 'normal',
@@ -156,7 +134,6 @@
     permissionKey: [{ required: true, message: '请输入权限键', trigger: 'blur' }],
     moduleGroupId: [{ required: true, message: '请选择模块分组', trigger: 'change' }],
     featureGroupId: [{ required: true, message: '请选择功能分组', trigger: 'change' }],
-    contextType: [{ required: true, message: '请选择空间范围', trigger: 'change' }],
     name: [{ required: true, message: '请输入权限名称', trigger: 'blur' }],
     status: [{ required: true, message: '请选择状态', trigger: 'change' }]
   })
@@ -166,11 +143,8 @@
       Object.assign(form, {
         id: props.actionData.id,
         permissionKey: props.actionData.permissionKey || '',
-        moduleCode: props.actionData.moduleCode || '',
         moduleGroupId: props.actionData.moduleGroupId || '',
         featureGroupId: props.actionData.featureGroupId || '',
-        featureKind: props.actionData.featureKind || 'system',
-        contextType: props.actionData.contextType || 'common',
         name: props.actionData.name,
         description: props.actionData.description || '',
         status: props.actionData.status || 'normal',
@@ -181,11 +155,8 @@
     Object.assign(form, {
       id: '',
       permissionKey: '',
-      moduleCode: '',
       moduleGroupId: props.moduleGroups?.[0]?.id || '',
       featureGroupId: props.featureGroups?.[0]?.id || '',
-      featureKind: 'business',
-      contextType: 'common',
       name: '',
       description: '',
       status: 'normal',
@@ -214,13 +185,8 @@
     try {
       const payload = {
         permission_key: form.permissionKey.trim(),
-        module_code: form.moduleCode.trim(),
         module_group_id: form.moduleGroupId,
         feature_group_id: form.featureGroupId,
-        context_type: form.contextType,
-        feature_kind:
-          props.featureGroups?.find((item) => item.id === form.featureGroupId)?.code ||
-          form.featureKind,
         name: form.name.trim(),
         description: form.description.trim(),
         status: form.status,

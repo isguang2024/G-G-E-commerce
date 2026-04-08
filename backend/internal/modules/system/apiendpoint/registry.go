@@ -23,10 +23,7 @@ import (
 type RouteMeta struct {
 	Code           string
 	Summary        string
-	FeatureKind    string
 	CategoryCode   string
-	ContextScope   string
-	Source         string
 	PermissionKeys []string
 }
 
@@ -170,8 +167,6 @@ func MetaWithPermission(summary, permissionKey string) *RouteMeta {
 func MetaWithPermissions(summary string, permissionKeys []string) *RouteMeta {
 	return Meta(summary).
 		BindPermissionKeys(permissionKeys...).
-		BindContextScope("optional").
-		BindSource("sync").
 		Build()
 }
 
@@ -181,9 +176,7 @@ func (r *Registrar) metaWithPermission(summary, permissionKey string) *RouteMeta
 
 func (r *Registrar) metaWithPermissions(summary string, permissionKeys []string) *RouteMeta {
 	builder := Meta(summary).
-		BindPermissionKeys(permissionKeys...).
-		BindContextScope("optional").
-		BindSource("sync")
+		BindPermissionKeys(permissionKeys...)
 	if r != nil && r.categoryHint != "" {
 		builder = builder.BindCategory(r.categoryHint)
 	}
@@ -221,24 +214,6 @@ func (b *MetaBuilder) BindCategory(categoryCode string) *MetaBuilder {
 	return next
 }
 
-func (b *MetaBuilder) BindSource(source string) *MetaBuilder {
-	next := b.clone()
-	next.meta.Source = strings.TrimSpace(source)
-	return next
-}
-
-func (b *MetaBuilder) BindFeatureKind(featureKind string) *MetaBuilder {
-	next := b.clone()
-	next.meta.FeatureKind = strings.TrimSpace(featureKind)
-	return next
-}
-
-func (b *MetaBuilder) BindContextScope(contextScope string) *MetaBuilder {
-	next := b.clone()
-	next.meta.ContextScope = strings.TrimSpace(contextScope)
-	return next
-}
-
 func (b *MetaBuilder) BindPermissionKey(permissionKey string) *MetaBuilder {
 	return b.BindPermissionKeys(permissionKey)
 }
@@ -251,18 +226,12 @@ func (b *MetaBuilder) BindPermissionKeys(permissionKeys ...string) *MetaBuilder 
 
 func (b *MetaBuilder) Build() *RouteMeta {
 	if b == nil {
-		return &RouteMeta{
-			ContextScope: "optional",
-			Source:       "sync",
-		}
+		return &RouteMeta{}
 	}
 	meta := b.meta
 	meta.Summary = strings.TrimSpace(meta.Summary)
 	meta.Code = strings.TrimSpace(meta.Code)
-	meta.FeatureKind = strings.TrimSpace(meta.FeatureKind)
 	meta.CategoryCode = strings.TrimSpace(meta.CategoryCode)
-	meta.ContextScope = normalizeContextScope(meta.ContextScope)
-	meta.Source = normalizeSource(meta.Source)
 	meta.PermissionKeys = normalizePermissionKeys(meta.PermissionKeys)
 	return &meta
 }
@@ -337,18 +306,10 @@ func ensureManagedEndpointColumns(db *gorm.DB) error {
 		return nil
 	}
 	statements := []string{
-		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS app_scope varchar(20) NOT NULL DEFAULT 'shared'`,
-		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS app_key varchar(100) NOT NULL DEFAULT 'platform-admin'`,
-		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS feature_kind varchar(20) NOT NULL DEFAULT 'system'`,
 		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS handler varchar(255)`,
 		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS summary varchar(255)`,
 		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS category_id uuid`,
-		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS context_scope varchar(20) NOT NULL DEFAULT 'optional'`,
-		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS source varchar(20) NOT NULL DEFAULT 'sync'`,
 		`ALTER TABLE api_endpoints ADD COLUMN IF NOT EXISTS status varchar(20) NOT NULL DEFAULT 'normal'`,
-		`UPDATE api_endpoints SET app_key = 'platform-admin' WHERE COALESCE(TRIM(app_key), '') = ''`,
-		`UPDATE api_endpoints SET app_scope = 'shared' WHERE COALESCE(TRIM(app_scope), '') = '' AND (path LIKE '/api/v1/auth/%' OR path = '/api/v1/pages/runtime/public' OR path LIKE '/open/v1/%' OR path = '/health')`,
-		`UPDATE api_endpoints SET app_scope = 'app' WHERE COALESCE(TRIM(app_scope), '') = ''`,
 	}
 	for _, statement := range statements {
 		if err := db.Exec(statement).Error; err != nil {
@@ -415,21 +376,15 @@ func syncRoutesInternal(
 		}
 
 		summary := strings.TrimSpace(meta.Summary)
-		featureKind := normalizeFeatureKind(meta.FeatureKind)
-		contextScope := normalizeContextScope(meta.ContextScope)
-		source := normalizeSource(meta.Source)
 
 		endpoint := &models.APIEndpoint{
-			Code:         endpointCode,
-			Method:       strings.ToUpper(route.Method),
-			Path:         route.Path,
-			FeatureKind:  featureKind,
-			Handler:      route.Handler,
-			Summary:      summary,
-			CategoryID:   categoryID,
-			ContextScope: contextScope,
-			Source:       source,
-			Status:       "normal",
+			Code:       endpointCode,
+			Method:     strings.ToUpper(route.Method),
+			Path:       route.Path,
+			Handler:    route.Handler,
+			Summary:    summary,
+			CategoryID: categoryID,
+			Status:     "normal",
 		}
 		switch {
 		case existing != nil:
@@ -502,21 +457,9 @@ func normalizeRouteMeta(method, fullPath string, meta *RouteMeta) RouteMeta {
 	normalized := *meta
 	normalized.Code = ResolveRouteCode(method, fullPath, meta)
 	normalized.Summary = strings.TrimSpace(normalized.Summary)
-	normalized.FeatureKind = normalizeFeatureKind(normalized.FeatureKind)
 	normalized.CategoryCode = strings.TrimSpace(normalized.CategoryCode)
-	normalized.ContextScope = normalizeContextScope(normalized.ContextScope)
-	normalized.Source = normalizeSource(normalized.Source)
 	normalized.PermissionKeys = normalizePermissionKeys(normalized.PermissionKeys)
 	return normalized
-}
-
-func normalizeFeatureKind(value string) string {
-	switch strings.TrimSpace(value) {
-	case "business":
-		return "business"
-	default:
-		return "system"
-	}
 }
 
 func joinPath(basePath, relativePath string) string {
@@ -568,9 +511,6 @@ func insertEndpoint(db *gorm.DB, endpoint *models.APIEndpoint) error {
 	if endpoint == nil {
 		return nil
 	}
-	endpoint.FeatureKind = normalizeFeatureKind(endpoint.FeatureKind)
-	endpoint.ContextScope = normalizeContextScope(endpoint.ContextScope)
-	endpoint.Source = normalizeSource(endpoint.Source)
 	if strings.TrimSpace(endpoint.Status) == "" {
 		endpoint.Status = "normal"
 	}
@@ -581,23 +521,17 @@ func updateManagedEndpoint(db *gorm.DB, endpointID uuid.UUID, endpoint *models.A
 	if db == nil || endpoint == nil || endpointID == uuid.Nil {
 		return nil
 	}
-	endpoint.FeatureKind = normalizeFeatureKind(endpoint.FeatureKind)
-	endpoint.ContextScope = normalizeContextScope(endpoint.ContextScope)
-	endpoint.Source = normalizeSource(endpoint.Source)
 	if strings.TrimSpace(endpoint.Status) == "" {
 		endpoint.Status = "normal"
 	}
 	updates := map[string]interface{}{
-		"code":          endpoint.Code,
-		"method":        endpoint.Method,
-		"path":          endpoint.Path,
-		"feature_kind":  endpoint.FeatureKind,
-		"handler":       endpoint.Handler,
-		"summary":       endpoint.Summary,
-		"category_id":   endpoint.CategoryID,
-		"context_scope": endpoint.ContextScope,
-		"source":        endpoint.Source,
-		"status":        endpoint.Status,
+		"code":        endpoint.Code,
+		"method":      endpoint.Method,
+		"path":        endpoint.Path,
+		"handler":     endpoint.Handler,
+		"summary":     endpoint.Summary,
+		"category_id": endpoint.CategoryID,
+		"status":      endpoint.Status,
 	}
 	return db.Model(&models.APIEndpoint{}).Where("id = ?", endpointID).Updates(updates).Error
 }
@@ -688,24 +622,6 @@ func normalizeCategoryCode(value string) string {
 		return "collaboration_workspace"
 	default:
 		return strings.TrimSpace(value)
-	}
-}
-
-func normalizeContextScope(value string) string {
-	switch strings.TrimSpace(value) {
-	case "required", "forbidden":
-		return strings.TrimSpace(value)
-	default:
-		return "optional"
-	}
-}
-
-func normalizeSource(value string) string {
-	switch strings.TrimSpace(value) {
-	case "seed", "manual":
-		return strings.TrimSpace(value)
-	default:
-		return "sync"
 	}
 }
 

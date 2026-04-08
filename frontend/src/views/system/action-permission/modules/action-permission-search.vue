@@ -16,7 +16,6 @@
     keyword: string
     moduleGroupId: string
     featureGroupId: string
-    contextType: string
     status: string
     isBuiltin: string
     usagePattern: string
@@ -78,20 +77,6 @@
         filterable: true,
         placeholder: '请选择功能分组',
         options: props.featureGroupOptions
-      }
-    },
-    {
-      label: '空间范围',
-      key: 'contextType',
-      type: 'select',
-      props: {
-        clearable: true,
-        placeholder: '请选择空间范围',
-        options: [
-          { label: '个人空间', value: 'personal' },
-          { label: '协作空间', value: 'collaboration' },
-          { label: '通用', value: 'common' }
-        ]
       }
     },
     {

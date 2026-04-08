@@ -156,6 +156,12 @@ func main() {
 		logger.Info("API endpoint categories initialized successfully")
 	}
 
+	if err := initOpenAPIEndpoints(logger); err != nil {
+		logger.Warn("Failed to auto-register OpenAPI endpoints", zap.Error(err))
+	} else {
+		logger.Info("OpenAPI endpoints auto-registered successfully")
+	}
+
 	if err := seedDefaultMessageTemplates(logger); err != nil {
 		logger.Warn("Failed to initialize default message templates", zap.Error(err))
 	} else {
@@ -1677,6 +1683,21 @@ func initDefaultPermissionKeysNoScope(logger *zap.Logger) error {
 		return err
 	}
 	logger.Info("OpenAPI-derived permission keys ensured", zap.Int("created", created))
+	return nil
+}
+
+func initOpenAPIEndpoints(logger *zap.Logger) error {
+	created, err := permissionseed.EnsureOpenAPIEndpoints(database.DB)
+	if err != nil {
+		return err
+	}
+	logger.Info("OpenAPI-derived api_endpoints ensured", zap.Int("created", created))
+
+	bound, err := permissionseed.EnsureOpenAPIPermissionBindings(database.DB)
+	if err != nil {
+		return err
+	}
+	logger.Info("OpenAPI-derived permission bindings ensured", zap.Int("created", bound))
 	return nil
 }
 

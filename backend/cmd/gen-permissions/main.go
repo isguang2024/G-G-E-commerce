@@ -6,7 +6,6 @@
 // Each operation in the spec must declare:
 //   x-permission-key: <key>            (required, the permission key string)
 //   x-tenant-scoped:  <bool>           (optional, defaults to true)
-//   x-app-scope:      required|optional|none (optional, defaults to optional)
 //   x-access-mode:    permission|public (optional, defaults to permission)
 //
 // Phase 1: parser only emits JSON; the runtime startup-check that loads this
@@ -19,16 +18,19 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
 
 type operationSpec struct {
-	OperationID   string `yaml:"operationId"`
-	Summary       string `yaml:"summary"`
-	PermissionKey string `yaml:"x-permission-key"`
-	AppScope      string `yaml:"x-app-scope"`
-	AccessMode    string `yaml:"x-access-mode"`
+	OperationID   string   `yaml:"operationId"`
+	Summary       string   `yaml:"summary"`
+	Description   string   `yaml:"description"`
+	Tags          []string `yaml:"tags"`
+	PermissionKey string   `yaml:"x-permission-key"`
+	AccessMode    string   `yaml:"x-access-mode"`
+	APICategory   string   `yaml:"x-api-category"`
 }
 
 type pathItem map[string]operationSpec
@@ -43,7 +45,9 @@ type seedEntry struct {
 	Path          string `json:"path"`
 	PermissionKey string `json:"permission_key"`
 	Summary       string `json:"summary,omitempty"`
-	AppScope      string `json:"app_scope"`
+	Description   string `json:"description,omitempty"`
+	Tags          string `json:"tags,omitempty"`
+	APICategory   string `json:"api_category,omitempty"`
 	AccessMode    string `json:"access_mode"`
 }
 
@@ -79,18 +83,21 @@ func main() {
 			if op.PermissionKey == "" && accessModeRaw != "public" && accessModeRaw != "authenticated" {
 				fail(fmt.Sprintf("operation %s %s is missing x-permission-key", method, path))
 			}
-			appScope := op.AppScope
-			if appScope == "" {
-				appScope = "optional"
-			}
 			accessMode := accessModeRaw
+			// Resolve category: explicit x-api-category wins; fall back to first tag.
+			apiCategory := strings.TrimSpace(op.APICategory)
+			if apiCategory == "" && len(op.Tags) > 0 {
+				apiCategory = strings.TrimSpace(op.Tags[0])
+			}
 			entries = append(entries, seedEntry{
 				OperationID:   op.OperationID,
 				Method:        method,
 				Path:          path,
 				PermissionKey: op.PermissionKey,
 				Summary:       op.Summary,
-				AppScope:      appScope,
+				Description:   op.Description,
+				Tags:          strings.Join(op.Tags, ","),
+				APICategory:   apiCategory,
 				AccessMode:    accessMode,
 			})
 		}

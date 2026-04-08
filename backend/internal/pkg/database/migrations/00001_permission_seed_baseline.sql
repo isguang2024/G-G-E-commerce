@@ -26,13 +26,12 @@ BEGIN
   END IF;
 
   INSERT INTO permission_keys (
-    id, code, permission_key, app_key, module_code, context_type, feature_kind,
-    data_policy, allowed_workspace_types, name, description, status, sort_order,
+    id, code, permission_key,
+    data_policy, name, description, status, sort_order,
     is_builtin, created_at, updated_at
   )
   SELECT gen_random_uuid(), substr(md5(k.permission_key), 1, 32), k.permission_key,
-         'platform-admin', split_part(k.permission_key, '.', 1),
-         'common', 'system', 'none', 'personal,collaboration',
+         'none',
          k.permission_key, k.permission_key, 'normal', 0, true, now(), now()
   FROM (VALUES
     ('workspace.read'),

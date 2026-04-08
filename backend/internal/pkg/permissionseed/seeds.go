@@ -145,6 +145,8 @@ func DefaultAPIEndpointCategories() []APIEndpointCategorySeed {
 		{Code: "collaboration_workspace", Name: "协作空间", NameEn: "Collaboration Workspace", SortOrder: 120, Status: "normal"},
 		{Code: "message", Name: "消息", NameEn: "Message", SortOrder: 130, Status: "normal"},
 		{Code: "navigation", Name: "导航运行时", NameEn: "Navigation Runtime", SortOrder: 140, Status: "normal"},
+		{Code: "workspace", Name: "工作空间", NameEn: "Workspace", SortOrder: 150, Status: "normal"},
+		{Code: "uncategorized", Name: "未分类", NameEn: "Uncategorized", SortOrder: 999, Status: "normal"},
 	}
 	for i := range items {
 		items[i].ID = StableID("api-endpoint-category", items[i].Code)

@@ -2812,17 +2812,12 @@ func (r *userHiddenMenuRepository) DeleteByMenuID(menuID uuid.UUID) error {
 
 type APIEndpointListParams struct {
 	EndpointCodes     []string
-	AppKey            string
-	AppScope          string
 	Method            string
 	PermissionKey     string
 	PermissionPattern string
 	Keyword           string
 	Path              string
 	CategoryID        string
-	ContextScope      string
-	Source            string
-	FeatureKind       string
 	Status            string
 	HasPermission     *bool
 	HasCategory       *bool
@@ -2842,12 +2837,6 @@ func (r *apiEndpointRepository) List(offset, limit int, params *APIEndpointListP
 		if len(params.EndpointCodes) > 0 {
 			query = query.Where("code IN ?", params.EndpointCodes)
 		}
-		if params.AppScope != "" {
-			query = query.Where("app_scope = ?", params.AppScope)
-		}
-		if params.AppKey != "" {
-			query = query.Where("(app_scope = ? OR app_key = ?)", models.AppScopeShared, params.AppKey)
-		}
 		if params.Method != "" {
 			query = query.Where("method = ?", params.Method)
 		}
@@ -2860,15 +2849,6 @@ func (r *apiEndpointRepository) List(offset, limit int, params *APIEndpointListP
 		}
 		if params.CategoryID != "" {
 			query = query.Where("category_id = ?", params.CategoryID)
-		}
-		if params.ContextScope != "" {
-			query = query.Where("context_scope = ?", params.ContextScope)
-		}
-		if params.Source != "" {
-			query = query.Where("source = ?", params.Source)
-		}
-		if params.FeatureKind != "" {
-			query = query.Where("feature_kind = ?", params.FeatureKind)
 		}
 		if params.Status != "" {
 			query = query.Where("status = ?", params.Status)
@@ -2896,9 +2876,9 @@ func (r *apiEndpointRepository) List(offset, limit int, params *APIEndpointListP
 		case "shared":
 			query = query.Where("(SELECT COUNT(1) FROM api_endpoint_permission_bindings b WHERE b.endpoint_code = api_endpoints.code) > 1")
 		case "cross_context_shared":
+			// context_type was dropped from permission_keys; treat as shared
 			query = query.
-				Where("(SELECT COUNT(1) FROM api_endpoint_permission_bindings b WHERE b.endpoint_code = api_endpoints.code) > 1").
-				Where("(SELECT COUNT(DISTINCT COALESCE(pk.context_type, '')) FROM api_endpoint_permission_bindings b JOIN permission_keys pk ON pk.key = b.permission_key WHERE b.endpoint_code = api_endpoints.code) > 1")
+				Where("(SELECT COUNT(1) FROM api_endpoint_permission_bindings b WHERE b.endpoint_code = api_endpoints.code) > 1")
 		}
 		if params.HasCategory != nil {
 			if *params.HasCategory {
@@ -2984,16 +2964,13 @@ func (r *apiEndpointRepository) Upsert(endpoint *APIEndpoint) error {
 		return nil
 	}
 	updates := map[string]interface{}{
-		"code":          endpoint.Code,
-		"method":        endpoint.Method,
-		"path":          endpoint.Path,
-		"feature_kind":  endpoint.FeatureKind,
-		"handler":       endpoint.Handler,
-		"summary":       endpoint.Summary,
-		"category_id":   endpoint.CategoryID,
-		"context_scope": endpoint.ContextScope,
-		"source":        endpoint.Source,
-		"status":        endpoint.Status,
+		"code":        endpoint.Code,
+		"method":      endpoint.Method,
+		"path":        endpoint.Path,
+		"handler":     endpoint.Handler,
+		"summary":     endpoint.Summary,
+		"category_id": endpoint.CategoryID,
+		"status":      endpoint.Status,
 	}
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		var existing APIEndpoint

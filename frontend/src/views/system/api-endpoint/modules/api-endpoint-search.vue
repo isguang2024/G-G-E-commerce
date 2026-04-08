@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <ArtSearchBar
     v-model="formData"
     :items="formItems"
@@ -13,14 +13,11 @@
   import type { FormItem } from '@/components/core/forms/art-form/index.vue'
 
   interface SearchForm {
-    source: string
     method: string
     path: string
     keyword: string
     permissionKey: string
     permissionPattern: string
-    contextScope: string
-    featureKind: string
     status: string
     hasPermissionKey: string
   }
@@ -44,19 +41,6 @@
   })
 
   const formItems = computed<FormItem[]>(() => [
-    {
-      label: '注册方式',
-      key: 'source',
-      type: 'select',
-      props: {
-        clearable: true,
-        options: [
-          { label: '自动注册', value: 'sync' },
-          { label: '手工补录', value: 'manual' },
-          { label: '初始种子', value: 'seed' }
-        ]
-      }
-    },
     {
       label: 'Method',
       key: 'method',
@@ -102,31 +86,6 @@
           { label: '单权限接口', value: 'single' },
           { label: '多权限共享', value: 'shared' },
           { label: '跨空间共享', value: 'cross_context_shared' }
-        ]
-      }
-    },
-    {
-      label: '协作空间要求',
-      key: 'contextScope',
-      type: 'select',
-      props: {
-        clearable: true,
-        options: [
-          { label: '可选', value: 'optional' },
-          { label: '必需', value: 'required' },
-          { label: '禁止', value: 'forbidden' }
-        ]
-      }
-    },
-    {
-      label: '功能归属',
-      key: 'featureKind',
-      type: 'select',
-      props: {
-        clearable: true,
-        options: [
-          { label: '系统', value: 'system' },
-          { label: '业务', value: 'business' }
         ]
       }
     },

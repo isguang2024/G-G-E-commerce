@@ -10,7 +10,7 @@
  * - 返回值即视图模板使用的所有变量与方法。
  */
 import { computed, h, nextTick, onMounted, reactive, ref, watch } from 'vue'
-import { ElMessage, ElMessageBox, ElOption, ElSelect, ElTag } from 'element-plus'
+import { ElMessage, ElMessageBox, ElTag } from 'element-plus'
 import ArtButtonMore from '@/components/core/forms/art-button-more/index.vue'
 import type { ButtonMoreItem } from '@/components/core/forms/art-button-more/index.vue'
 import { useTable } from '@/hooks/core/useTable'
@@ -32,16 +32,13 @@ import {
   fetchSaveUnregisteredApiScanConfig,
   fetchSyncApiEndpoints,
   fetchUpdateApiEndpoint,
-  fetchUpdateApiEndpointCategory,
-  fetchUpdateApiEndpointContextScope
+  fetchUpdateApiEndpointCategory
 } from '@/api/system-manage'
 import {
   formatPermissionContext,
   formatPermissionPattern,
-  formatSource,
   methodTagType,
-  permissionPatternTagType,
-  sourceTagType
+  permissionPatternTagType
 } from './helpers'
 
 type APIEndpointItem = Api.SystemManage.APIEndpointItem
@@ -59,7 +56,6 @@ export type CategoryTreeNode = {
 }
 
 type PersistedTableState = {
-  selectedSource: string
   selectedCategoryTreeKey: string
   tableQuery: {
     method: string
@@ -67,8 +63,6 @@ type PersistedTableState = {
     keyword: string
     permissionKey: string
     permissionPattern: string
-    contextScope: string
-    featureKind: string
     status: string
     hasPermissionKey: string
   }
@@ -89,7 +83,6 @@ export function useApiEndpointPage() {
   const saving = ref(false)
   const categorySaving = ref(false)
   const categorySwitchingId = ref('')
-  const selectedSource = ref('')
   const selectedCategoryTreeKey = ref('all')
   const formVisible = ref(false)
   const categoryDrawerVisible = ref(false)
@@ -102,7 +95,7 @@ export function useApiEndpointPage() {
   const unregisteredLoading = ref(false)
   const shouldRefreshUnregistered = ref(false)
   const editingId = ref('')
-  const pendingLocateRoute = ref<{ method: string; path: string; source: string } | null>(null)
+  const pendingLocateRoute = ref<{ method: string; path: string } | null>(null)
   const categories = ref<APIEndpointCategoryItem[]>([])
   const permissionActionOptions = ref<Api.SystemManage.PermissionActionItem[]>([])
   const permissionActionLoading = ref(false)
@@ -134,14 +127,10 @@ export function useApiEndpointPage() {
   const stalePagination = reactive({ current: 1, size: 20, total: 0 })
 
   const formState = reactive({
-    appScope: 'app',
     method: 'GET',
     path: '',
     summary: '',
-    featureKind: 'system',
     categoryId: '',
-    contextScope: 'optional',
-    source: 'manual',
     status: 'normal',
     permissionKeys: [] as string[]
   })
@@ -169,48 +158,37 @@ export function useApiEndpointPage() {
     permissionKey: '',
     permissionPattern: '',
     categoryId: '',
-    contextScope: '',
-    featureKind: '',
     status: '',
     hasPermissionKey: '',
     hasCategory: ''
   })
 
   const searchForm = reactive({
-    source: '',
     method: '',
     path: '',
     keyword: '',
     permissionKey: '',
     permissionPattern: '',
-    contextScope: '',
-    featureKind: '',
     status: '',
     hasPermissionKey: ''
   })
 
   function syncSearchFormFromQuery() {
-    searchForm.source = selectedSource.value
     searchForm.method = tableQuery.method
     searchForm.path = tableQuery.path
     searchForm.keyword = tableQuery.keyword
     searchForm.permissionKey = tableQuery.permissionKey
     searchForm.permissionPattern = tableQuery.permissionPattern
-    searchForm.contextScope = tableQuery.contextScope
-    searchForm.featureKind = tableQuery.featureKind
     searchForm.status = tableQuery.status
     searchForm.hasPermissionKey = tableQuery.hasPermissionKey
   }
 
   function syncQueryFromSearchForm() {
-    selectedSource.value = searchForm.source || ''
     tableQuery.method = searchForm.method || ''
     tableQuery.path = searchForm.path || ''
     tableQuery.keyword = searchForm.keyword || ''
     tableQuery.permissionKey = searchForm.permissionKey || ''
     tableQuery.permissionPattern = searchForm.permissionPattern || ''
-    tableQuery.contextScope = searchForm.contextScope || ''
-    tableQuery.featureKind = searchForm.featureKind || ''
     tableQuery.status = searchForm.status || ''
     tableQuery.hasPermissionKey = searchForm.hasPermissionKey || ''
   }
@@ -275,9 +253,7 @@ export function useApiEndpointPage() {
       apiFn: fetchGetApiEndpointList,
       apiParams: {
         current: 1,
-        size: 20,
-        source: '',
-        appKey: targetAppKey.value
+        size: 20
       },
       columnsFactory: () => [
         {
@@ -299,21 +275,6 @@ export function useApiEndpointPage() {
           showOverflowTooltip: true,
           formatter: (row: APIEndpointItem) =>
             h('div', { class: 'path-cell' }, [h('div', { class: 'path-main' }, row.path)])
-        },
-        {
-          prop: 'appScope',
-          label: '范围',
-          width: 90,
-          formatter: (row: APIEndpointItem) =>
-            h(ElTag, { type: row.appScope === 'app' ? 'warning' : 'info', effect: 'plain' }, () =>
-              row.appScope === 'app' ? 'App' : '共享'
-            )
-        },
-        {
-          prop: 'appKey',
-          label: 'App',
-          width: 140,
-          formatter: (row: APIEndpointItem) => row.appKey || '-'
         },
         {
           prop: 'summary',
@@ -360,45 +321,6 @@ export function useApiEndpointPage() {
                 ? h('div', { class: 'permission-structure-note' }, row.permissionNote)
                 : null
             ])
-        },
-        {
-          prop: 'contextScope',
-          label: '协作空间要求',
-          width: 140,
-          formatter: (row: APIEndpointItem) =>
-            h(
-              ElSelect,
-              {
-                modelValue: row.contextScope || 'optional',
-                size: 'small',
-                onChange: (value: string) => handleContextScopeChange(row, value)
-              },
-              () => [
-                h(ElOption, { label: '可选', value: 'optional' }),
-                h(ElOption, { label: '必需', value: 'required' }),
-                h(ElOption, { label: '禁止', value: 'forbidden' })
-              ]
-            )
-        },
-        {
-          prop: 'source',
-          label: '来源',
-          width: 100,
-          formatter: (row: APIEndpointItem) =>
-            h(ElTag, { type: sourceTagType(row.source), effect: 'plain' }, () =>
-              formatSource(row.source)
-            )
-        },
-        {
-          prop: 'featureKind',
-          label: '功能归属',
-          width: 100,
-          formatter: (row: APIEndpointItem) =>
-            h(
-              ElTag,
-              { type: row.featureKind === 'business' ? 'success' : 'info', effect: 'plain' },
-              () => (row.featureKind === 'business' ? '业务' : '系统')
-            )
         },
         {
           prop: 'status',
@@ -544,7 +466,6 @@ export function useApiEndpointPage() {
 
   function saveTableState() {
     const payload: PersistedTableState = {
-      selectedSource: selectedSource.value,
       selectedCategoryTreeKey: selectedCategoryTreeKey.value,
       tableQuery: {
         method: tableQuery.method,
@@ -552,8 +473,6 @@ export function useApiEndpointPage() {
         keyword: tableQuery.keyword,
         permissionKey: tableQuery.permissionKey,
         permissionPattern: tableQuery.permissionPattern,
-        contextScope: tableQuery.contextScope,
-        featureKind: tableQuery.featureKind,
         status: tableQuery.status,
         hasPermissionKey: tableQuery.hasPermissionKey
       }
@@ -566,7 +485,6 @@ export function useApiEndpointPage() {
     if (!raw) return
     try {
       const payload = JSON.parse(raw) as Partial<PersistedTableState>
-      selectedSource.value = payload.selectedSource || ''
       selectedCategoryTreeKey.value = payload.selectedCategoryTreeKey || 'all'
       Object.assign(tableQuery, {
         method: payload.tableQuery?.method || '',
@@ -574,8 +492,6 @@ export function useApiEndpointPage() {
         keyword: payload.tableQuery?.keyword || '',
         permissionKey: payload.tableQuery?.permissionKey || '',
         permissionPattern: payload.tableQuery?.permissionPattern || '',
-        contextScope: payload.tableQuery?.contextScope || '',
-        featureKind: payload.tableQuery?.featureKind || '',
         status: payload.tableQuery?.status || '',
         hasPermissionKey: payload.tableQuery?.hasPermissionKey || ''
       })
@@ -715,27 +631,13 @@ export function useApiEndpointPage() {
     }
   }
 
-  async function handleContextScopeChange(row: APIEndpointItem, value: string) {
-    try {
-      await fetchUpdateApiEndpointContextScope(row.id, value)
-      row.contextScope = value
-      ElMessage.success('协作空间要求已更新')
-    } catch (error: any) {
-      ElMessage.error(error?.message || '更新失败')
-    }
-  }
-
   function resetForm() {
     editingId.value = ''
     pendingLocateRoute.value = null
-    formState.appScope = 'app'
     formState.method = 'GET'
     formState.path = ''
     formState.summary = ''
-    formState.featureKind = 'system'
     formState.categoryId = ''
-    formState.contextScope = 'optional'
-    formState.source = 'manual'
     formState.status = 'normal'
     formState.permissionKeys = []
   }
@@ -766,14 +668,10 @@ export function useApiEndpointPage() {
   function openEditDialog(row: APIEndpointItem) {
     editingId.value = row.id
     pendingLocateRoute.value = null
-    formState.appScope = row.appScope === 'shared' ? 'shared' : 'app'
     formState.method = (row.method || 'GET').toUpperCase()
     formState.path = row.path || ''
     formState.summary = row.summary || ''
-    formState.featureKind = row.featureKind || 'system'
     formState.categoryId = row.categoryId || ''
-    formState.contextScope = row.contextScope || 'optional'
-    formState.source = row.source || 'manual'
     formState.status = row.status || 'normal'
     formState.permissionKeys = [
       ...(row.permissionKeys || (row.permissionKey ? [row.permissionKey] : []))
@@ -954,19 +852,14 @@ export function useApiEndpointPage() {
 
   function handleUseUnregisteredRoute(route: APIUnregisteredRouteItem) {
     resetForm()
-    formState.appScope = 'app'
     formState.method = (route.method || 'GET').toUpperCase()
     formState.path = route.path || ''
     formState.summary = route.meta?.summary || ''
-    formState.featureKind = route.meta?.feature_kind || 'system'
     formState.categoryId = resolveCategoryIdByCode(route.meta?.category_code)
-    formState.contextScope = route.meta?.context_scope || 'optional'
-    formState.source = route.meta?.source || (route.hasMeta ? 'sync' : 'manual')
     formState.permissionKeys = [...(route.meta?.permission_keys || [])]
     pendingLocateRoute.value = {
       method: formState.method,
-      path: formState.path,
-      source: formState.source
+      path: formState.path
     }
     shouldRefreshUnregistered.value = true
     unregisteredVisible.value = false
@@ -1041,15 +934,10 @@ export function useApiEndpointPage() {
     if (!ensureManagedAppReady(true)) return
     const isEditing = !!editingId.value
     const payload = {
-      app_scope: formState.appScope,
-      app_key: formState.appScope === 'app' ? targetAppKey.value : '',
       method: formState.method,
       path: formState.path,
       summary: formState.summary,
-      feature_kind: formState.featureKind,
       category_id: formState.categoryId || undefined,
-      context_scope: formState.contextScope,
-      source: formState.source,
       status: formState.status,
       permission_keys: formState.permissionKeys
     }
@@ -1061,8 +949,7 @@ export function useApiEndpointPage() {
         await fetchCreateApiEndpoint(payload)
         pendingLocateRoute.value = {
           method: payload.method,
-          path: payload.path,
-          source: payload.source
+          path: payload.path
         }
       }
       ElMessage.success('保存成功')
@@ -1074,7 +961,6 @@ export function useApiEndpointPage() {
         await loadUnregisteredRoutes()
       }
       if (!isEditing && pendingLocateRoute.value) {
-        selectedSource.value = pendingLocateRoute.value.source || ''
         tableQuery.method = pendingLocateRoute.value.method || ''
         tableQuery.path = pendingLocateRoute.value.path || ''
         syncSearchFormFromQuery()
@@ -1106,16 +992,12 @@ export function useApiEndpointPage() {
   async function applyTableFilters() {
     if (!ensureManagedAppReady()) return
     Object.assign(searchParams, {
-      appKey: targetAppKey.value,
-      source: selectedSource.value || undefined,
       method: tableQuery.method || undefined,
       path: tableQuery.path || undefined,
       keyword: tableQuery.keyword || undefined,
       permissionKey: tableQuery.permissionKey || undefined,
       permissionPattern: tableQuery.permissionPattern || undefined,
       categoryId: tableQuery.categoryId || undefined,
-      contextScope: tableQuery.contextScope || undefined,
-      featureKind: tableQuery.featureKind || undefined,
       status: tableQuery.status || undefined,
       hasPermissionKey:
         tableQuery.hasPermissionKey === '' ? undefined : tableQuery.hasPermissionKey === 'true',
@@ -1132,14 +1014,11 @@ export function useApiEndpointPage() {
   }
 
   async function resetTableQuery() {
-    searchForm.source = ''
     searchForm.method = ''
     searchForm.path = ''
     searchForm.keyword = ''
     searchForm.permissionKey = ''
     searchForm.permissionPattern = ''
-    searchForm.contextScope = ''
-    searchForm.featureKind = ''
     searchForm.status = ''
     searchForm.hasPermissionKey = ''
     syncQueryFromSearchForm()
@@ -1192,8 +1071,6 @@ export function useApiEndpointPage() {
     targetAppKey,
     hasAction,
     methodTagType,
-    sourceTagType,
-    formatSource,
     formatPermissionPattern,
     permissionPatternTagType,
     formatPermissionContext,
@@ -1206,7 +1083,6 @@ export function useApiEndpointPage() {
     saving,
     categorySaving,
     categorySwitchingId,
-    selectedSource,
     selectedCategoryTreeKey,
     formVisible,
     categoryDrawerVisible,
@@ -1275,7 +1151,6 @@ export function useApiEndpointPage() {
     handleStaleCurrentChange,
     handleStaleSizeChange,
     submitCleanupStale,
-    handleContextScopeChange,
     resetForm,
     resetCategoryForm,
     openCreateDialog,

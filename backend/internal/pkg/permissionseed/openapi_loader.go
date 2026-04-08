@@ -10,6 +10,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 //go:embed openapi_seed.json
@@ -21,7 +22,9 @@ type OpenAPIOperation struct {
 	Path          string `json:"path"`
 	PermissionKey string `json:"permission_key"`
 	Summary       string `json:"summary,omitempty"`
-	AppScope      string `json:"app_scope"`
+	Description   string `json:"description,omitempty"`
+	Tags          string `json:"tags,omitempty"`
+	APICategory   string `json:"api_category,omitempty"`
 	AccessMode    string `json:"access_mode"`
 }
 
@@ -51,6 +54,21 @@ func (s *OpenAPISeed) PermissionKeyByOperationID() map[string]string {
 	out := make(map[string]string, len(s.Operations))
 	for _, op := range s.Operations {
 		out[op.OperationID] = op.PermissionKey
+	}
+	return out
+}
+
+// AccessModeByMethodPath returns a map of "METHOD /path" -> access_mode.
+// This is the single source of truth for endpoint auth behaviour — derived
+// directly from the embedded openapi_seed.json (which mirrors x-access-mode
+// in openapi.yaml). Use it instead of any hardcoded path-pattern lists.
+//
+// Values: "permission" | "authenticated" | "public"
+func (s *OpenAPISeed) AccessModeByMethodPath() map[string]string {
+	out := make(map[string]string, len(s.Operations))
+	for _, op := range s.Operations {
+		key := strings.ToUpper(strings.TrimSpace(op.Method)) + " " + strings.TrimSpace(op.Path)
+		out[key] = op.AccessMode
 	}
 	return out
 }

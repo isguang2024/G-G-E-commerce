@@ -15,7 +15,6 @@ paths:
       operationId: login
       summary: 用户登录
       tags: [auth]
-      x-app-scope: none
       x-access-mode: public
       requestBody:
         required: true
@@ -48,7 +47,6 @@ paths:
       operationId: register
       summary: 用户注册
       tags: [auth]
-      x-app-scope: none
       x-access-mode: public
       requestBody:
         required: true
@@ -75,7 +73,6 @@ paths:
       operationId: refreshToken
       summary: 刷新访问令牌
       tags: [auth]
-      x-app-scope: none
       x-access-mode: public
       requestBody:
         required: true
@@ -102,7 +99,6 @@ paths:
       operationId: getAuthMe
       summary: 获取当前登录账户信息
       tags: [auth]
-      x-app-scope: none
       x-access-mode: authenticated
       responses:
         '200':
@@ -124,7 +120,6 @@ paths:
       summary: 获取我的工作空间列表
       tags: [workspace]
       x-permission-key: workspace.list
-      x-app-scope: optional
       x-access-mode: permission
       responses:
         '200':
@@ -146,7 +141,6 @@ paths:
       summary: 获取当前授权工作空间
       tags: [workspace]
       x-permission-key: workspace.read
-      x-app-scope: optional
       x-access-mode: permission
       responses:
         '200':
@@ -168,7 +162,6 @@ paths:
       summary: 切换当前授权工作空间
       tags: [workspace]
       x-permission-key: workspace.switch
-      x-app-scope: optional
       x-access-mode: permission
       requestBody:
         required: true
@@ -202,7 +195,6 @@ paths:
       summary: 获取工作空间详情
       tags: [workspace]
       x-permission-key: workspace.read
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -237,7 +229,6 @@ paths:
       summary: 创建用户
       tags: [user]
       x-permission-key: user.create
-      x-app-scope: optional
       x-access-mode: permission
       requestBody:
         required: true
@@ -275,7 +266,6 @@ paths:
       summary: 获取用户列表（分页 + 多条件筛选）
       tags: [user]
       x-permission-key: user.list
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: current
@@ -359,7 +349,6 @@ paths:
       summary: 获取用户详情
       tags: [user]
       x-permission-key: user.read
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -398,7 +387,6 @@ paths:
       summary: 更新用户
       tags: [user]
       x-permission-key: user.update
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -449,7 +437,6 @@ paths:
       summary: 删除用户
       tags: [user]
       x-permission-key: user.delete
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -490,7 +477,6 @@ paths:
       summary: 分配用户角色
       tags: [user]
       x-permission-key: user.assign_role
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -543,7 +529,6 @@ paths:
       summary: 获取用户所在协作空间列表
       tags: [user]
       x-permission-key: system.user.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -566,7 +551,6 @@ paths:
       summary: 获取用户功能包
       tags: [user]
       x-permission-key: feature_package.assign_collaboration_workspace
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -591,7 +575,6 @@ paths:
       summary: 配置用户功能包
       tags: [user]
       x-permission-key: feature_package.assign_collaboration_workspace
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -620,7 +603,6 @@ paths:
       summary: 获取用户菜单裁剪
       tags: [user]
       x-permission-key: system.user.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -645,7 +627,6 @@ paths:
       summary: 配置用户菜单裁剪
       tags: [user]
       x-permission-key: system.user.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -674,7 +655,6 @@ paths:
       summary: 获取用户菜单权限
       tags: [user]
       x-permission-key: system.user.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -701,7 +681,6 @@ paths:
       summary: 获取用户权限诊断
       tags: [user]
       x-permission-key: system.user.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -736,7 +715,6 @@ paths:
       summary: 刷新用户权限快照
       tags: [user]
       x-permission-key: system.user.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -759,7 +737,6 @@ paths:
       summary: 解释当前账号在指定工作空间内的最终权限及其来源
       tags: [permission]
       x-permission-key: permission.explain
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: workspace_id
@@ -790,7 +767,6 @@ paths:
       summary: 获取角色列表
       tags: [role]
       x-permission-key: system.role.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: current
@@ -827,7 +803,6 @@ paths:
       summary: 创建角色
       tags: [role]
       x-permission-key: system.role.manage
-      x-app-scope: optional
       x-access-mode: permission
       requestBody:
         required: true
@@ -849,7 +824,6 @@ paths:
       summary: 获取角色候选列表
       tags: [role]
       x-permission-key: system.role.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: appKey
@@ -870,7 +844,6 @@ paths:
       summary: 获取角色详情
       tags: [role]
       x-permission-key: system.role.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -897,7 +870,6 @@ paths:
       summary: 更新角色
       tags: [role]
       x-permission-key: system.role.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -924,7 +896,6 @@ paths:
       summary: 删除角色
       tags: [role]
       x-permission-key: system.role.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -947,7 +918,6 @@ paths:
       summary: 获取角色功能包
       tags: [role]
       x-permission-key: feature_package.assign_collaboration_workspace
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -973,7 +943,6 @@ paths:
       summary: 配置角色功能包
       tags: [role]
       x-permission-key: feature_package.assign_collaboration_workspace
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -1007,7 +976,6 @@ paths:
       summary: 获取角色菜单权限
       tags: [role]
       x-permission-key: system.role.assign_menu
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -1033,7 +1001,6 @@ paths:
       summary: 配置角色菜单权限
       tags: [role]
       x-permission-key: system.role.assign_menu
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -1067,7 +1034,6 @@ paths:
       summary: 获取角色功能权限
       tags: [role]
       x-permission-key: system.role.assign_action
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -1093,7 +1059,6 @@ paths:
       summary: 配置角色功能权限
       tags: [role]
       x-permission-key: system.role.assign_action
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -1127,7 +1092,6 @@ paths:
       summary: 获取角色数据权限
       tags: [role]
       x-permission-key: system.role.assign_data
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -1148,7 +1112,6 @@ paths:
       summary: 配置角色数据权限
       tags: [role]
       x-permission-key: system.role.assign_data
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -1179,7 +1142,6 @@ paths:
       summary: 获取运行时导航清单
       tags: [navigation]
       x-access-mode: authenticated
-      x-app-scope: optional
       parameters:
         - name: app_key
           in: query
@@ -1205,7 +1167,6 @@ paths:
       summary: 获取菜单树
       tags: [menu]
       x-access-mode: authenticated
-      x-app-scope: optional
       parameters:
         - name: all
           in: query
@@ -1233,7 +1194,6 @@ paths:
       summary: 获取菜单分组列表
       tags: [menu]
       x-permission-key: system.menu.manage
-      x-app-scope: optional
       x-access-mode: permission
       responses:
         '200':
@@ -1247,7 +1207,6 @@ paths:
       summary: 创建菜单分组
       tags: [menu]
       x-permission-key: system.menu.manage
-      x-app-scope: optional
       x-access-mode: permission
       requestBody:
         required: true
@@ -1269,7 +1228,6 @@ paths:
       summary: 更新菜单分组
       tags: [menu]
       x-permission-key: system.menu.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -1296,7 +1254,6 @@ paths:
       summary: 删除菜单分组
       tags: [menu]
       x-permission-key: system.menu.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -1319,7 +1276,6 @@ paths:
       summary: 获取菜单备份列表
       tags: [menu]
       x-permission-key: system.menu.backup
-      x-app-scope: optional
       x-access-mode: permission
       responses:
         '200':
@@ -1333,7 +1289,6 @@ paths:
       summary: 创建菜单备份
       tags: [menu]
       x-permission-key: system.menu.backup
-      x-app-scope: optional
       x-access-mode: permission
       requestBody:
         required: true
@@ -1355,7 +1310,6 @@ paths:
       summary: 删除菜单备份
       tags: [menu]
       x-permission-key: system.menu.backup
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -1378,7 +1332,6 @@ paths:
       summary: 恢复菜单备份
       tags: [menu]
       x-permission-key: system.menu.backup
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -1401,7 +1354,6 @@ paths:
       summary: 创建菜单
       tags: [menu]
       x-permission-key: system.menu.manage
-      x-app-scope: optional
       x-access-mode: permission
       requestBody:
         required: true
@@ -1423,7 +1375,6 @@ paths:
       summary: 更新菜单
       tags: [menu]
       x-permission-key: system.menu.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -1450,7 +1401,6 @@ paths:
       summary: 删除菜单
       tags: [menu]
       x-permission-key: system.menu.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -1473,7 +1423,6 @@ paths:
       summary: 获取菜单删除预览
       tags: [menu]
       x-permission-key: system.menu.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -1498,7 +1447,6 @@ paths:
       summary: 获取运行时页面注册表
       tags: [page]
       x-access-mode: authenticated
-      x-app-scope: optional
       parameters:
         - name: app_key
           in: query
@@ -1522,7 +1470,6 @@ paths:
       summary: 获取公开运行时页面注册表
       tags: [page]
       x-access-mode: public
-      x-app-scope: optional
       parameters:
         - name: app_key
           in: query
@@ -1546,7 +1493,6 @@ paths:
       summary: 获取上级菜单候选
       tags: [page]
       x-permission-key: system.page.manage
-      x-app-scope: required
       x-access-mode: permission
       parameters:
         - name: app_key
@@ -1572,7 +1518,6 @@ paths:
       summary: 获取页面候选列表
       tags: [page]
       x-permission-key: system.page.manage
-      x-app-scope: required
       x-access-mode: permission
       parameters:
         - name: app_key
@@ -1598,7 +1543,6 @@ paths:
       summary: 获取页面访问链路
       tags: [page]
       x-permission-key: system.page.manage
-      x-app-scope: required
       x-access-mode: permission
       parameters:
         - name: app_key
@@ -1628,7 +1572,6 @@ paths:
       summary: 获取未注册页面
       tags: [page]
       x-permission-key: system.page.sync
-      x-app-scope: required
       x-access-mode: permission
       parameters:
         - name: app_key
@@ -1650,7 +1593,6 @@ paths:
       summary: 同步页面注册表
       tags: [page]
       x-permission-key: system.page.sync
-      x-app-scope: required
       x-access-mode: permission
       parameters:
         - name: app_key
@@ -1672,7 +1614,6 @@ paths:
       summary: 获取页面列表
       tags: [page]
       x-permission-key: system.page.manage
-      x-app-scope: required
       x-access-mode: permission
       parameters:
         - name: app_key
@@ -1714,7 +1655,6 @@ paths:
       summary: 创建页面
       tags: [page]
       x-permission-key: system.page.manage
-      x-app-scope: required
       x-access-mode: permission
       parameters:
         - name: app_key
@@ -1742,7 +1682,6 @@ paths:
       summary: 获取页面详情
       tags: [page]
       x-permission-key: system.page.manage
-      x-app-scope: required
       x-access-mode: permission
       parameters:
         - name: id
@@ -1768,7 +1707,6 @@ paths:
       summary: 更新页面
       tags: [page]
       x-permission-key: system.page.manage
-      x-app-scope: required
       x-access-mode: permission
       parameters:
         - name: id
@@ -1800,7 +1738,6 @@ paths:
       summary: 删除页面
       tags: [page]
       x-permission-key: system.page.manage
-      x-app-scope: required
       x-access-mode: permission
       parameters:
         - name: id
@@ -1828,7 +1765,6 @@ paths:
       summary: 预览页面面包屑
       tags: [page]
       x-permission-key: system.page.manage
-      x-app-scope: required
       x-access-mode: permission
       parameters:
         - name: id
@@ -1858,7 +1794,6 @@ paths:
       summary: 获取功能包列表
       tags: [featurepackage]
       x-permission-key: feature_package.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: current
@@ -1895,7 +1830,6 @@ paths:
       summary: 创建功能包
       tags: [featurepackage]
       x-permission-key: feature_package.manage
-      x-app-scope: optional
       x-access-mode: permission
       requestBody:
         required: true
@@ -1917,7 +1851,6 @@ paths:
       summary: 获取功能包候选
       tags: [featurepackage]
       x-permission-key: feature_package.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: package_type
@@ -1942,7 +1875,6 @@ paths:
       summary: 获取功能包关系树
       tags: [featurepackage]
       x-permission-key: feature_package.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: workspace_scope
@@ -1967,7 +1899,6 @@ paths:
       summary: 获取协作空间功能包
       tags: [featurepackage]
       x-permission-key: feature_package.assign_collaboration_workspace
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: collaborationWorkspaceId
@@ -1992,7 +1923,6 @@ paths:
       summary: 配置协作空间功能包
       tags: [featurepackage]
       x-permission-key: feature_package.assign_collaboration_workspace
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: collaborationWorkspaceId
@@ -2025,7 +1955,6 @@ paths:
       summary: 获取功能包详情
       tags: [featurepackage]
       x-permission-key: feature_package.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2046,7 +1975,6 @@ paths:
       summary: 更新功能包
       tags: [featurepackage]
       x-permission-key: feature_package.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2073,7 +2001,6 @@ paths:
       summary: 删除功能包
       tags: [featurepackage]
       x-permission-key: feature_package.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2096,7 +2023,6 @@ paths:
       summary: 获取功能包影响预览
       tags: [featurepackage]
       x-permission-key: feature_package.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2119,7 +2045,6 @@ paths:
       summary: 获取功能包版本历史
       tags: [featurepackage]
       x-permission-key: feature_package.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2152,7 +2077,6 @@ paths:
       summary: 回滚功能包版本
       tags: [featurepackage]
       x-permission-key: feature_package.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2181,7 +2105,6 @@ paths:
       summary: 获取功能包最近变更
       tags: [featurepackage]
       x-permission-key: feature_package.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2214,7 +2137,6 @@ paths:
       summary: 获取组合包基础包
       tags: [featurepackage]
       x-permission-key: feature_package.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2239,7 +2161,6 @@ paths:
       summary: 配置组合包基础包
       tags: [featurepackage]
       x-permission-key: feature_package.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2272,7 +2193,6 @@ paths:
       summary: 获取功能包权限
       tags: [featurepackage]
       x-permission-key: feature_package.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2297,7 +2217,6 @@ paths:
       summary: 配置功能包权限
       tags: [featurepackage]
       x-permission-key: feature_package.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2330,7 +2249,6 @@ paths:
       summary: 获取功能包菜单
       tags: [featurepackage]
       x-permission-key: feature_package.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2355,7 +2273,6 @@ paths:
       summary: 配置功能包菜单
       tags: [featurepackage]
       x-permission-key: feature_package.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2388,7 +2305,6 @@ paths:
       summary: 获取功能包协作空间
       tags: [featurepackage]
       x-permission-key: feature_package.assign_collaboration_workspace
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2413,7 +2329,6 @@ paths:
       summary: 配置功能包协作空间
       tags: [featurepackage]
       x-permission-key: feature_package.assign_collaboration_workspace
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2448,7 +2363,6 @@ paths:
       summary: 获取功能权限列表
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: current
@@ -2485,7 +2399,6 @@ paths:
       summary: 创建功能权限
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       requestBody:
         required: true
@@ -2507,7 +2420,6 @@ paths:
       summary: 获取功能权限候选
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: keyword
@@ -2532,7 +2444,6 @@ paths:
       summary: 获取功能权限分组列表
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       responses:
         '200':
@@ -2546,7 +2457,6 @@ paths:
       summary: 创建功能权限分组
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       requestBody:
         required: true
@@ -2568,7 +2478,6 @@ paths:
       summary: 更新功能权限分组
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2597,7 +2506,6 @@ paths:
       summary: 获取功能权限最近变更
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: current
@@ -2624,7 +2532,6 @@ paths:
       summary: 清理未消费功能权限
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       responses:
         '200':
@@ -2640,7 +2547,6 @@ paths:
       summary: 批量治理功能权限
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       requestBody:
         required: true
@@ -2662,7 +2568,6 @@ paths:
       summary: 获取功能权限批量模板
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       responses:
         '200':
@@ -2676,7 +2581,6 @@ paths:
       summary: 保存功能权限批量模板
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       requestBody:
         required: true
@@ -2698,7 +2602,6 @@ paths:
       summary: 获取功能权限详情
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2719,7 +2622,6 @@ paths:
       summary: 更新功能权限
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2746,7 +2648,6 @@ paths:
       summary: 删除功能权限
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2769,7 +2670,6 @@ paths:
       summary: 获取功能权限关联接口
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2790,7 +2690,6 @@ paths:
       summary: 新增功能权限关联接口
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2819,7 +2718,6 @@ paths:
       summary: 删除功能权限关联接口
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2847,7 +2745,6 @@ paths:
       summary: 获取功能权限消费明细
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2870,7 +2767,6 @@ paths:
       summary: 获取功能权限影响预览
       tags: [permission]
       x-permission-key: system.permission.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -2895,7 +2791,6 @@ paths:
       summary: 获取页面文件映射
       tags: [system]
       x-permission-key: system.page_catalog.view
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: force
@@ -2916,7 +2811,6 @@ paths:
       summary: 获取快捷入口配置
       tags: [system]
       x-access-mode: authenticated
-      x-app-scope: none
       responses:
         '200':
           description: OK
@@ -2929,7 +2823,6 @@ paths:
       summary: 更新快捷入口配置
       tags: [system]
       x-permission-key: system.fast_enter.manage
-      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -2951,7 +2844,6 @@ paths:
       summary: 获取应用列表
       tags: [system]
       x-permission-key: system.menu.manage
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -2965,7 +2857,6 @@ paths:
       summary: 保存应用
       tags: [system]
       x-permission-key: system.menu.manage
-      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -2987,7 +2878,6 @@ paths:
       summary: 获取当前应用
       tags: [system]
       x-access-mode: authenticated
-      x-app-scope: optional
       parameters:
         - name: app_key
           in: query
@@ -3007,7 +2897,6 @@ paths:
       summary: 获取应用 Host 绑定
       tags: [system]
       x-permission-key: system.menu.manage
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -3021,7 +2910,6 @@ paths:
       summary: 保存应用 Host 绑定
       tags: [system]
       x-permission-key: system.menu.manage
-      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -3043,7 +2931,6 @@ paths:
       summary: 获取当前菜单空间
       tags: [system]
       x-access-mode: authenticated
-      x-app-scope: optional
       parameters:
         - name: app_key
           in: query
@@ -3067,7 +2954,6 @@ paths:
       summary: 获取菜单空间模式
       tags: [system]
       x-permission-key: system.menu.manage
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: app_key
@@ -3086,7 +2972,6 @@ paths:
       summary: 保存菜单空间模式
       tags: [system]
       x-permission-key: system.menu.manage
-      x-app-scope: optional
       x-access-mode: permission
       requestBody:
         required: true
@@ -3108,7 +2993,6 @@ paths:
       summary: 获取菜单空间列表
       tags: [system]
       x-permission-key: system.menu.manage
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -3122,7 +3006,6 @@ paths:
       summary: 保存菜单空间
       tags: [system]
       x-permission-key: system.menu.manage
-      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -3144,7 +3027,6 @@ paths:
       summary: 从默认空间初始化菜单空间
       tags: [system]
       x-permission-key: system.menu.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: spaceKey
@@ -3166,7 +3048,6 @@ paths:
       summary: 获取菜单空间 Host 绑定
       tags: [system]
       x-permission-key: system.menu.manage
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -3180,7 +3061,6 @@ paths:
       summary: 保存菜单空间 Host 绑定
       tags: [system]
       x-permission-key: system.menu.manage
-      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -3204,7 +3084,6 @@ paths:
       summary: 获取消息摘要
       tags: [message]
       x-access-mode: authenticated
-      x-app-scope: none
       responses:
         '200':
           description: OK
@@ -3219,7 +3098,6 @@ paths:
       summary: 获取消息列表
       tags: [message]
       x-access-mode: authenticated
-      x-app-scope: none
       parameters:
         - name: current
           in: query
@@ -3245,7 +3123,6 @@ paths:
       summary: 获取消息详情
       tags: [message]
       x-access-mode: authenticated
-      x-app-scope: none
       parameters:
         - name: deliveryId
           in: path
@@ -3267,7 +3144,6 @@ paths:
       summary: 标记消息已读
       tags: [message]
       x-access-mode: authenticated
-      x-app-scope: none
       parameters:
         - name: deliveryId
           in: path
@@ -3289,7 +3165,6 @@ paths:
       summary: 批量标记消息已读
       tags: [message]
       x-access-mode: authenticated
-      x-app-scope: none
       responses:
         '200':
           description: OK
@@ -3304,7 +3179,6 @@ paths:
       summary: 处理待办消息
       tags: [message]
       x-access-mode: authenticated
-      x-app-scope: none
       parameters:
         - name: deliveryId
           in: path
@@ -3332,7 +3206,6 @@ paths:
       summary: 获取消息发送配置
       tags: [message]
       x-permission-key: message.manage
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -3348,7 +3221,6 @@ paths:
       summary: 发送站内消息
       tags: [message]
       x-permission-key: message.manage
-      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -3370,7 +3242,6 @@ paths:
       summary: 获取消息模板
       tags: [message]
       x-permission-key: message.manage
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -3384,7 +3255,6 @@ paths:
       summary: 新建消息模板
       tags: [message]
       x-permission-key: message.manage
-      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -3406,7 +3276,6 @@ paths:
       summary: 更新消息模板
       tags: [message]
       x-permission-key: message.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: templateId
@@ -3435,7 +3304,6 @@ paths:
       summary: 获取消息发送人
       tags: [message]
       x-permission-key: message.manage
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -3449,7 +3317,6 @@ paths:
       summary: 新建消息发送人
       tags: [message]
       x-permission-key: message.manage
-      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -3471,7 +3338,6 @@ paths:
       summary: 更新消息发送人
       tags: [message]
       x-permission-key: message.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: senderId
@@ -3500,7 +3366,6 @@ paths:
       summary: 获取消息接收组
       tags: [message]
       x-permission-key: message.manage
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -3514,7 +3379,6 @@ paths:
       summary: 新建消息接收组
       tags: [message]
       x-permission-key: message.manage
-      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -3536,7 +3400,6 @@ paths:
       summary: 更新消息接收组
       tags: [message]
       x-permission-key: message.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: groupId
@@ -3565,7 +3428,6 @@ paths:
       summary: 获取消息发送记录
       tags: [message]
       x-permission-key: message.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: current
@@ -3592,7 +3454,6 @@ paths:
       summary: 获取消息发送记录详情
       tags: [message]
       x-permission-key: message.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: recordId
@@ -3617,7 +3478,6 @@ paths:
       summary: 获取我的协作空间列表
       tags: [collaboration_workspace]
       x-access-mode: authenticated
-      x-app-scope: none
       responses:
         '200':
           description: OK
@@ -3632,7 +3492,6 @@ paths:
       summary: 获取当前协作空间详情
       tags: [collaboration_workspace]
       x-access-mode: authenticated
-      x-app-scope: none
       responses:
         '200':
           description: OK
@@ -3647,7 +3506,6 @@ paths:
       summary: 获取协作空间候选
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.manage
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -3663,7 +3521,6 @@ paths:
       summary: 获取当前协作空间成员列表
       tags: [collaboration_workspace]
       x-access-mode: authenticated
-      x-app-scope: none
       responses:
         '200':
           description: OK
@@ -3676,7 +3533,6 @@ paths:
       summary: 添加当前协作空间成员
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.member.manage
-      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -3698,7 +3554,6 @@ paths:
       summary: 移除当前协作空间成员
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.member.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: userId
@@ -3721,7 +3576,6 @@ paths:
       summary: 更新当前协作空间成员身份
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.member.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: userId
@@ -3750,7 +3604,6 @@ paths:
       summary: 获取当前协作空间成员角色
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.member.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: userId
@@ -3771,7 +3624,6 @@ paths:
       summary: 配置当前协作空间成员角色
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.member.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: userId
@@ -3800,7 +3652,6 @@ paths:
       summary: 获取当前协作空间可分配角色
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.member.manage
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -3814,7 +3665,6 @@ paths:
       summary: 创建当前协作空间角色
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.member.manage
-      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -3836,7 +3686,6 @@ paths:
       summary: 获取当前协作空间边界可见角色
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.boundary.manage
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -3850,7 +3699,6 @@ paths:
       summary: 创建当前协作空间角色(边界管理)
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.boundary.manage
-      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -3872,7 +3720,6 @@ paths:
       summary: 更新当前协作空间角色(边界管理)
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.boundary.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: roleId
@@ -3899,7 +3746,6 @@ paths:
       summary: 删除当前协作空间角色(边界管理)
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.boundary.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: roleId
@@ -3922,7 +3768,6 @@ paths:
       summary: 获取当前协作空间角色功能包(边界管理)
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.boundary.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: roleId
@@ -3943,7 +3788,6 @@ paths:
       summary: 配置当前协作空间角色功能包(边界管理)
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.boundary.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: roleId
@@ -3972,7 +3816,6 @@ paths:
       summary: 获取当前协作空间角色菜单权限(边界管理)
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.boundary.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: roleId
@@ -3993,7 +3836,6 @@ paths:
       summary: 配置当前协作空间角色菜单权限(边界管理)
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.boundary.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: roleId
@@ -4022,7 +3864,6 @@ paths:
       summary: 获取当前协作空间角色功能权限(边界管理)
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.boundary.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: roleId
@@ -4043,7 +3884,6 @@ paths:
       summary: 配置当前协作空间角色功能权限(边界管理)
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.boundary.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: roleId
@@ -4072,7 +3912,6 @@ paths:
       summary: 获取当前协作空间已开通功能包(边界管理)
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.boundary.manage
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -4088,7 +3927,6 @@ paths:
       summary: 获取当前协作空间菜单边界
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.boundary.manage
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -4104,7 +3942,6 @@ paths:
       summary: 获取当前协作空间菜单来源
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.boundary.manage
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -4120,7 +3957,6 @@ paths:
       summary: 获取当前协作空间功能权限边界
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.boundary.manage
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -4136,7 +3972,6 @@ paths:
       summary: 获取当前协作空间功能权限来源
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.boundary.manage
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -4152,7 +3987,6 @@ paths:
       summary: 获取协作空间列表
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: current
@@ -4181,7 +4015,6 @@ paths:
       summary: 创建协作空间
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.manage
-      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -4203,7 +4036,6 @@ paths:
       summary: 获取协作空间详情
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: id
@@ -4224,7 +4056,6 @@ paths:
       summary: 更新协作空间
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: id
@@ -4251,7 +4082,6 @@ paths:
       summary: 删除协作空间
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: id
@@ -4274,7 +4104,6 @@ paths:
       summary: 获取协作空间可分配角色
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: id
@@ -4297,7 +4126,6 @@ paths:
       summary: 获取协作空间菜单边界
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: id
@@ -4318,7 +4146,6 @@ paths:
       summary: 配置协作空间菜单边界
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: id
@@ -4347,7 +4174,6 @@ paths:
       summary: 获取协作空间菜单来源
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: id
@@ -4370,7 +4196,6 @@ paths:
       summary: 获取协作空间功能权限边界
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: id
@@ -4391,7 +4216,6 @@ paths:
       summary: 配置协作空间功能权限边界
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: id
@@ -4420,7 +4244,6 @@ paths:
       summary: 获取协作空间功能权限来源
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: id
@@ -4443,7 +4266,6 @@ paths:
       summary: 获取协作空间成员列表
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: id
@@ -4464,7 +4286,6 @@ paths:
       summary: 添加协作空间成员
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: id
@@ -4493,7 +4314,6 @@ paths:
       summary: 移除协作空间成员
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: id
@@ -4522,7 +4342,6 @@ paths:
       summary: 更新协作空间成员身份
       tags: [collaboration_workspace]
       x-permission-key: collaboration_workspace.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: id
@@ -4559,7 +4378,6 @@ paths:
       summary: 获取 API 注册表
       tags: [api_endpoint]
       x-permission-key: system.api_registry.view
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: current
@@ -4570,14 +4388,6 @@ paths:
           in: query
           schema:
             type: integer
-        - name: app_key
-          in: query
-          schema:
-            type: string
-        - name: app_scope
-          in: query
-          schema:
-            type: string
         - name: permission_key
           in: query
           schema:
@@ -4599,18 +4409,6 @@ paths:
           schema:
             type: string
         - name: category_id
-          in: query
-          schema:
-            type: string
-        - name: context_scope
-          in: query
-          schema:
-            type: string
-        - name: source
-          in: query
-          schema:
-            type: string
-        - name: feature_kind
           in: query
           schema:
             type: string
@@ -4650,7 +4448,6 @@ paths:
       summary: 创建 API 注册项
       tags: [api_endpoint]
       x-permission-key: system.api_registry.sync
-      x-app-scope: optional
       x-access-mode: permission
       requestBody:
         required: true
@@ -4684,7 +4481,6 @@ paths:
       summary: 获取 API 概览
       tags: [api_endpoint]
       x-permission-key: system.api_registry.view
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: app_key
@@ -4717,7 +4513,6 @@ paths:
       summary: 获取失效 API 列表
       tags: [api_endpoint]
       x-permission-key: system.api_registry.view
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: current
@@ -4754,7 +4549,6 @@ paths:
       summary: 获取未注册 API 路由
       tags: [api_endpoint]
       x-permission-key: system.api_registry.view
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: current
@@ -4807,7 +4601,6 @@ paths:
       summary: 获取未注册 API 扫描配置
       tags: [api_endpoint]
       x-permission-key: system.api_registry.view
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -4833,7 +4626,6 @@ paths:
       summary: 保存未注册 API 扫描配置
       tags: [api_endpoint]
       x-permission-key: system.api_registry.sync
-      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -4867,7 +4659,6 @@ paths:
       summary: 获取 API 分类列表
       tags: [api_endpoint]
       x-permission-key: system.api_registry.view
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -4893,7 +4684,6 @@ paths:
       summary: 创建 API 分类
       tags: [api_endpoint]
       x-permission-key: system.api_registry.sync
-      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -4927,7 +4717,6 @@ paths:
       summary: 同步 API 注册表
       tags: [api_endpoint]
       x-permission-key: system.api_registry.sync
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -4955,7 +4744,6 @@ paths:
       summary: 清理失效 API
       tags: [api_endpoint]
       x-permission-key: system.api_registry.sync
-      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -4989,7 +4777,6 @@ paths:
       summary: 更新 API 注册项
       tags: [api_endpoint]
       x-permission-key: system.api_registry.sync
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -5030,7 +4817,6 @@ paths:
       summary: 更新 API 协作空间上下文
       tags: [api_endpoint]
       x-permission-key: system.api_registry.sync
-      x-app-scope: optional
       x-access-mode: permission
       parameters:
         - name: id
@@ -5071,7 +4857,6 @@ paths:
       summary: 更新 API 分类
       tags: [api_endpoint]
       x-permission-key: system.api_registry.sync
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: id
@@ -5114,7 +4899,6 @@ paths:
       summary: 上传媒体资源
       tags: [media]
       x-permission-key: system.media.manage
-      x-app-scope: none
       x-access-mode: permission
       requestBody:
         required: true
@@ -5152,7 +4936,6 @@ paths:
       summary: 获取媒体资源列表
       tags: [media]
       x-permission-key: system.media.view
-      x-app-scope: none
       x-access-mode: permission
       responses:
         '200':
@@ -5180,7 +4963,6 @@ paths:
       summary: 删除媒体资源
       tags: [media]
       x-permission-key: system.media.manage
-      x-app-scope: none
       x-access-mode: permission
       parameters:
         - name: id

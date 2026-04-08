@@ -26,7 +26,10 @@ type permissionProfile struct {
 	Note                 string
 }
 
-func buildPermissionProfile(endpointPath string, permissionKeys []string) permissionProfile {
+// buildPermissionProfile builds the audit profile for an endpoint.
+// accessModeMap is an optional "METHOD /path" -> access_mode lookup derived
+// from the openapi seed; pass nil to fall back to binding-based inference.
+func buildPermissionProfile(endpointMethod, endpointPath string, permissionKeys []string, accessModeMap map[string]string) permissionProfile {
 	keys := normalizePermissionKeys(permissionKeys)
 	contexts := make([]string, 0, len(keys))
 	seenContexts := make(map[string]struct{}, len(keys))
@@ -51,7 +54,7 @@ func buildPermissionProfile(endpointPath string, permissionKeys []string) permis
 		profile.PrimaryKey = keys[0]
 	}
 
-	authMode := deriveEndpointAuthMode(endpointPath, keys)
+	authMode := deriveEndpointAuthMode(endpointMethod, endpointPath, keys, accessModeMap)
 	switch len(keys) {
 	case 0:
 		switch authMode {
@@ -86,21 +89,31 @@ func buildPermissionProfile(endpointPath string, permissionKeys []string) permis
 	return profile
 }
 
-func deriveEndpointAuthMode(endpointPath string, permissionKeys []string) string {
-	switch {
-	case endpointPath == "/health":
-		return "public"
-	case endpointPath == "/api/v1/auth/login" || endpointPath == "/api/v1/auth/register" || endpointPath == "/api/v1/auth/refresh":
-		return "public"
-	case endpointPath == "/api/v1/pages/runtime/public":
-		return "public"
-	case strings.HasPrefix(endpointPath, "/open/v1/"):
-		return "api_key"
-	case len(permissionKeys) > 0:
-		return "permission"
-	default:
-		return "jwt"
+// deriveEndpointAuthMode returns the effective auth mode for an endpoint.
+// Source priority:
+//  1. accessModeMap (from openapi_seed, injected by caller) — single source of truth
+//  2. Permission-key binding inference (has binding → "permission")
+//  3. Hard fallback: "jwt"
+//
+// Note: accessModeMap is injected to avoid an import cycle between apiendpoint
+// and permissionseed. Callers should load it via permissionseed.LoadOpenAPISeed()
+// and pass seed.AccessModeByMethodPath().
+func deriveEndpointAuthMode(endpointMethod, endpointPath string, permissionKeys []string, accessModeMap map[string]string) string {
+	if len(accessModeMap) > 0 {
+		key := strings.ToUpper(strings.TrimSpace(endpointMethod)) + " " + strings.TrimSpace(endpointPath)
+		if mode, ok := accessModeMap[key]; ok && mode != "" {
+			// Normalise: spec uses "authenticated", UI/audit uses "jwt".
+			if mode == "authenticated" {
+				return "jwt"
+			}
+			return mode
+		}
 	}
+	// Fallback: infer from binding table.
+	if len(permissionKeys) > 0 {
+		return "permission"
+	}
+	return "jwt"
 }
 
 func normalizePermissionKeys(values []string) []string {

@@ -1,4 +1,5 @@
-import { v5Client } from '@/api/v5/client'
+import { v5Client, SKIP_WORKSPACE_CONTEXT_HEADER } from '@/api/v5/client'
+import { unwrap, createV5HttpError } from '@/api/system-manage/_shared'
 
 /**
  * 登录 — 走 v5 OpenAPI client。后端 ogen handler 直接返回裸 schema
@@ -6,11 +7,14 @@ import { v5Client } from '@/api/v5/client'
  * 既有的 Api.Auth.LoginResponse 形状，避免一次性改动整个登录流程。
  */
 export async function fetchLogin(params: Api.Auth.LoginParams) {
-  const { data, error } = await v5Client.POST('/auth/login', {
-    body: { username: params.username, password: params.password }
+  const { data, error, response } = await v5Client.POST('/auth/login', {
+    body: { username: params.username, password: params.password },
+    headers: {
+      [SKIP_WORKSPACE_CONTEXT_HEADER]: 'true'
+    }
   })
   if (error || !data) {
-    throw error || new Error('login failed')
+    throw (error ? createV5HttpError(error, response) : new Error('login failed'))
   }
   return data as unknown as Api.Auth.LoginResponse
 }
@@ -19,11 +23,14 @@ export async function fetchLogin(params: Api.Auth.LoginParams) {
  * 刷新 Token — v5 OpenAPI client。
  */
 export async function fetchRefreshToken(refreshToken: string) {
-  const { data, error } = await v5Client.POST('/auth/refresh', {
-    body: { refresh_token: refreshToken }
+  const { data, error, response } = await v5Client.POST('/auth/refresh', {
+    body: { refresh_token: refreshToken },
+    headers: {
+      [SKIP_WORKSPACE_CONTEXT_HEADER]: 'true'
+    }
   })
   if (error || !data) {
-    throw error || new Error('refresh failed')
+    throw (error ? createV5HttpError(error, response) : new Error('refresh failed'))
   }
   return data as unknown as Api.Auth.LoginResponse
 }
@@ -34,10 +41,13 @@ export async function fetchRefreshToken(refreshToken: string) {
  * 扁平化成前端既有的 Api.Auth.UserInfo 形状，避免连带改 store / guard。
  */
 export async function fetchGetUserInfo(): Promise<Api.Auth.UserInfo> {
-  const { data, error } = await v5Client.GET('/auth/me')
-  if (error || !data) {
-    throw error || new Error('get auth.me failed')
-  }
+  const data = await unwrap(
+    v5Client.GET('/auth/me', {
+      headers: {
+        [SKIP_WORKSPACE_CONTEXT_HEADER]: 'true'
+      }
+    })
+  )
   return {
     id: data.id,
     email: data.email ?? '',

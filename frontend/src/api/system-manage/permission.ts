@@ -21,11 +21,8 @@ export async function fetchGetPermissionActionList(
   const query: Record<string, any> = {
     ...params,
     permission_key: params?.permissionKey,
-    module_code: params?.moduleCode,
     module_group_id: params?.moduleGroupId,
     feature_group_id: params?.featureGroupId,
-    context_type: params?.contextType,
-    feature_kind: params?.featureKind,
     is_builtin: params?.isBuiltin,
     usage_pattern: params?.usagePattern,
     duplicate_pattern: params?.duplicatePattern
@@ -57,11 +54,8 @@ export async function fetchGetPermissionActionOptions(
   const query: Record<string, any> = {
     ...(params || {}),
     permission_key: params?.permissionKey,
-    module_code: params?.moduleCode,
     module_group_id: params?.moduleGroupId,
     feature_group_id: params?.featureGroupId,
-    context_type: params?.contextType,
-    feature_kind: params?.featureKind,
     is_builtin: params?.isBuiltin
   }
   delete query.permissionKey

@@ -13,9 +13,26 @@ import (
 	"github.com/gg-ecommerce/backend/api/gen"
 	"github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
+	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
 )
 
 // ─── local mapping helpers ────────────────────────────────────────────────────
+
+// epAccessModeMap is a lazily-initialised cache of the openapi seed lookup.
+// Populated on first call; safe for concurrent reads after init.
+var epAccessModeMap map[string]string
+
+func getEpAccessModeMap() map[string]string {
+	if epAccessModeMap != nil {
+		return epAccessModeMap
+	}
+	seed, err := permissionseed.LoadOpenAPISeed()
+	if err != nil {
+		return map[string]string{}
+	}
+	epAccessModeMap = seed.AccessModeByMethodPath()
+	return epAccessModeMap
+}
 
 func epToMap(endpoint *user.APIEndpoint, bindings []user.APIEndpointPermissionBinding, categoryMap map[uuid.UUID]user.APIEndpointCategory, runtimeState apiendpoint.EndpointRuntimeState) map[string]interface{} {
 	permissionKeys := make([]string, 0, len(bindings))
@@ -32,22 +49,34 @@ func epToMap(endpoint *user.APIEndpoint, bindings []user.APIEndpointPermissionBi
 	if endpoint.CategoryID != nil {
 		catID = endpoint.CategoryID.String()
 	}
+
+	// Resolve auth_mode from the embedded spec seed — single source of truth.
+	seedKey := strings.ToUpper(strings.TrimSpace(endpoint.Method)) + " " + strings.TrimSpace(endpoint.Path)
+	authMode := getEpAccessModeMap()[seedKey]
+	if authMode == "authenticated" {
+		authMode = "jwt"
+	}
+	if authMode == "" {
+		// Fallback: has binding → permission, otherwise jwt.
+		if len(permissionKeys) > 0 {
+			authMode = "permission"
+		} else {
+			authMode = "jwt"
+		}
+	}
+
 	return map[string]interface{}{
 		"id":              endpoint.ID.String(),
 		"code":            endpoint.Code,
-		"app_key":         endpoint.AppKey,
-		"app_scope":       endpoint.AppScope,
 		"method":          endpoint.Method,
 		"path":            endpoint.Path,
 		"spec":            endpoint.Method + " " + endpoint.Path,
-		"feature_kind":    endpoint.FeatureKind,
 		"handler":         endpoint.Handler,
 		"summary":         endpoint.Summary,
 		"permission_keys": permissionKeys,
+		"auth_mode":       authMode,
 		"category_id":     catID,
 		"category":        category,
-		"context_scope":   endpoint.ContextScope,
-		"source":          endpoint.Source,
 		"status":          endpoint.Status,
 		"runtime_exists":  runtimeState.RuntimeExists,
 		"stale":           runtimeState.Stale,
@@ -99,17 +128,12 @@ func (h *APIHandler) ListApiEndpoints(ctx context.Context, params gen.ListApiEnd
 	list, total, err := h.apiEndpointSvc.List(&apiendpoint.ListRequest{
 		Current:           optInt(params.Current, 1),
 		Size:              optInt(params.Size, 20),
-		AppKey:            optString(params.AppKey),
-		AppScope:          optString(params.AppScope),
 		PermissionKey:     optString(params.PermissionKey),
 		PermissionPattern: optString(params.PermissionPattern),
 		Keyword:           optString(params.Keyword),
 		Method:            optString(params.Method),
 		Path:              optString(params.Path),
 		CategoryID:        optString(params.CategoryID),
-		ContextScope:      optString(params.ContextScope),
-		Source:            optString(params.Source),
-		FeatureKind:       optString(params.FeatureKind),
 		Status:            optString(params.Status),
 		HasPermission:     hasPermission,
 		HasCategory:       hasCategory,
@@ -343,30 +367,6 @@ func (h *APIHandler) UpdateApiEndpoint(ctx context.Context, req gen.AnyObject, p
 	return h.saveEndpointFromBody(ctx, params.ID, req)
 }
 
-// ─── updateApiEndpointContextScope ───────────────────────────────────────────
-
-func (h *APIHandler) UpdateApiEndpointContextScope(ctx context.Context, req gen.AnyObject, params gen.UpdateApiEndpointContextScopeParams) (gen.UpdateApiEndpointContextScopeRes, error) {
-	var body struct {
-		ContextScope string `json:"context_scope"`
-	}
-	if err := unmarshalAnyObject(req, &body); err != nil {
-		return nil, err
-	}
-	saved, err := h.apiEndpointSvc.UpdateContextScope(params.ID, body.ContextScope)
-	if err != nil {
-		h.logger.Error("update api endpoint context scope failed", zap.Error(err))
-		return nil, err
-	}
-	bindings, _ := h.apiEndpointSvc.ListBindings(saved.Code)
-	categories, _ := h.apiEndpointSvc.ListCategories()
-	categoryMap := make(map[uuid.UUID]user.APIEndpointCategory, len(categories))
-	for _, cat := range categories {
-		categoryMap[cat.ID] = cat
-	}
-	obj := marshalAnyObject(epToMap(saved, bindings, categoryMap, apiendpoint.EndpointRuntimeState{}))
-	return &obj, nil
-}
-
 // ─── createApiEndpointCategory ────────────────────────────────────────────────
 
 func (h *APIHandler) CreateApiEndpointCategory(ctx context.Context, req gen.AnyObject) (gen.CreateApiEndpointCategoryRes, error) {
@@ -384,15 +384,10 @@ func (h *APIHandler) UpdateApiEndpointCategory(ctx context.Context, req gen.AnyO
 func (h *APIHandler) saveEndpointFromBody(_ context.Context, id uuid.UUID, req gen.AnyObject) (*gen.AnyObject, error) {
 	var body struct {
 		Code           string   `json:"code"`
-		AppKey         string   `json:"app_key"`
-		AppScope       string   `json:"app_scope"`
 		Method         string   `json:"method"`
 		Path           string   `json:"path"`
 		Summary        string   `json:"summary"`
-		FeatureKind    string   `json:"feature_kind"`
 		CategoryID     string   `json:"category_id"`
-		ContextScope   string   `json:"context_scope"`
-		Source         string   `json:"source"`
 		Status         string   `json:"status"`
 		Handler        string   `json:"handler"`
 		PermissionKeys []string `json:"permission_keys"`
@@ -405,21 +400,16 @@ func (h *APIHandler) saveEndpointFromBody(_ context.Context, id uuid.UUID, req g
 		return nil, err
 	}
 	endpoint := &user.APIEndpoint{
-		ID:           id,
-		Code:         strings.TrimSpace(body.Code),
-		AppKey:       strings.TrimSpace(body.AppKey),
-		AppScope:     strings.TrimSpace(body.AppScope),
-		Method:       strings.TrimSpace(body.Method),
-		Path:         strings.TrimSpace(body.Path),
-		Summary:      strings.TrimSpace(body.Summary),
-		FeatureKind:  strings.TrimSpace(body.FeatureKind),
-		CategoryID:   categoryID,
-		ContextScope: strings.TrimSpace(body.ContextScope),
-		Source:       strings.TrimSpace(body.Source),
-		Status:       strings.TrimSpace(body.Status),
-		Handler:      strings.TrimSpace(body.Handler),
+		ID:         id,
+		Code:       strings.TrimSpace(body.Code),
+		Method:     strings.TrimSpace(body.Method),
+		Path:       strings.TrimSpace(body.Path),
+		Summary:    strings.TrimSpace(body.Summary),
+		CategoryID: categoryID,
+		Status:     strings.TrimSpace(body.Status),
+		Handler:    strings.TrimSpace(body.Handler),
 	}
-	saved, err := h.apiEndpointSvc.Save(endpoint, body.PermissionKeys, strings.TrimSpace(body.AppKey))
+	saved, err := h.apiEndpointSvc.Save(endpoint, body.PermissionKeys, "")
 	if err != nil {
 		h.logger.Error("save api endpoint failed", zap.Error(err))
 		return nil, err

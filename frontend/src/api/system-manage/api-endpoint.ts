@@ -10,8 +10,6 @@ import {
 /** 获取 API 注册表 */
 export async function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpointSearchParams) {
   const normalizedParams: any = {
-    app_key: params?.appKey,
-    app_scope: params?.appScope,
     permission_key: params?.permissionKey,
     permission_pattern: params?.permissionPattern,
     keyword: params?.keyword,
@@ -20,10 +18,7 @@ export async function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpoi
     status: params?.status,
     current: params?.current,
     size: params?.size,
-    feature_kind: params?.featureKind,
     category_id: params?.categoryId,
-    context_scope: params?.contextScope,
-    source: params?.source,
     has_permission_key: params?.hasPermissionKey,
     has_category: params?.hasCategory
   }
@@ -36,10 +31,10 @@ export async function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpoi
   } as Api.SystemManage.APIEndpointList
 }
 
-export async function fetchGetApiEndpointOverview(appKey?: string) {
+export async function fetchGetApiEndpointOverview(_appKey?: string) {
   const res: any = await unwrap(
     v5Client.GET('/api-endpoints/overview', {
-      params: { query: (appKey ? { app_key: appKey } : {}) as any }
+      params: { query: {} as any }
     })
   )
   return {
@@ -96,15 +91,6 @@ export function fetchUpdateApiEndpoint(
     v5Client.PUT('/api-endpoints/{id}', {
       params: { path: { id } },
       body: data as any
-    })
-  ) as unknown as Promise<Api.SystemManage.APIEndpointItem>
-}
-
-export function fetchUpdateApiEndpointContextScope(id: string, contextScope: string) {
-  return unwrap(
-    v5Client.PUT('/api-endpoints/{id}/context-scope', {
-      params: { path: { id } },
-      body: { context_scope: contextScope } as any
     })
   ) as unknown as Promise<Api.SystemManage.APIEndpointItem>
 }

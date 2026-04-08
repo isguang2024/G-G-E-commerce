@@ -118,7 +118,10 @@
       "Bash(curl -sS -X POST http://localhost:8080/api/v1/auth/login -H 'Content-Type: application/json' -d '{\"username\":\"admin\",\"password\":\"admin123456\"}')",
       "Bash(curl -sS -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNWVkNmFlNmEtZjg3My00MDNhLTg4NDUtZThiM2QxMTQ5NDIyIiwiY29sbGFib3JhdGlvbl93b3Jrc3BhY2VfaWQiOiIiLCJlbWFpbCI6ImFkbWluQGdnLmNvbSIsImV4cCI6MTc3NjI0MjI5NiwibmJmIjoxNzc1NjM3NDk2LCJpYXQiOjE3NzU2Mzc0OTZ9.iQUXQZehgC96xc0gmZ5ctws2u_jy1hwrqz1wg84i_yw' http://localhost:8080__TRACKED_VAR__)",
       "Bash(curl -sS http://localhost:8080/api/v1/collaboration-workspaces/mine -H \"Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiNWVkNmFlNmEtZjg3My00MDNhLTg4NDUtZThiM2QxMTQ5NDIyIiwiY29sbGFib3JhdGlvbl93b3Jrc3BhY2VfaWQiOiIiLCJlbWFpbCI6ImFkbWluQGdnLmNvbSIsImV4cCI6MTc3NjI0MjI5NiwibmJmIjoxNzc1NjM3NDk2LCJpYXQiOjE3NzU2Mzc0OTZ9.iQUXQZehgC96xc0gmZ5ctws2u_jy1hwrqz1wg84i_yw\")",
-      "Read(//c/Users/Administrator/Documents/GitHub/backend/api/openapi/**)"
+      "Read(//c/Users/Administrator/Documents/GitHub/backend/api/openapi/**)",
+      "Bash(find /c/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/models -name \"*.go\" -exec grep -l \"type PermissionKey\" {} \\\\;)",
+      "Bash(python3)",
+      "Bash(pnpm typecheck:*)"
     ]
   },
   "defaultMode": "bypassPermissions"
