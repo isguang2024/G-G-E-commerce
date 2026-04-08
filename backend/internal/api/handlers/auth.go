@@ -92,13 +92,6 @@ func (h *APIHandler) RefreshToken(ctx context.Context, req *gen.RefreshTokenRequ
 	}, nil
 }
 
-func optString(o gen.OptString) string {
-	if !o.Set {
-		return ""
-	}
-	return o.Value
-}
-
 func toJxRawMap(m map[string]interface{}) gen.LoginResponseUser {
 	raw := make(gen.LoginResponseUser, len(m))
 	for k, v := range m {

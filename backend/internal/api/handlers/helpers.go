@@ -65,3 +65,19 @@ func optBool(o gen.OptBool) bool {
 	}
 	return o.Value
 }
+
+// optString extracts string from gen.OptString, returning "" if not set.
+func optString(o gen.OptString) string {
+	if !o.Set {
+		return ""
+	}
+	return o.Value
+}
+
+// optInt extracts int from gen.OptInt, returning def if not set.
+func optInt(o gen.OptInt, def int) int {
+	if !o.Set {
+		return def
+	}
+	return o.Value
+}

@@ -71,17 +71,27 @@ export interface CacheItem<T> {
 }
 
 // 增强的缓存管理类
+/** 单条记录最大序列化长度（字节）。超过则跳过缓存，避免大数据表 OOM */
+const DEFAULT_MAX_ITEM_BYTES = 2 * 1024 * 1024 // 2MB
+
 export class TableCache<T> {
   private cache = new Map<string, CacheItem<T>>()
   private cacheTime: number
   private maxSize: number
   private enableLog: boolean
+  private maxItemBytes: number
 
-  constructor(cacheTime = 5 * 60 * 1000, maxSize = 50, enableLog = false) {
-    // 默认5分钟，最多50条缓存
+  constructor(
+    cacheTime = 5 * 60 * 1000,
+    maxSize = 50,
+    enableLog = false,
+    maxItemBytes = DEFAULT_MAX_ITEM_BYTES
+  ) {
+    // 默认5分钟，最多50条缓存，单条 2MB 上限
     this.cacheTime = cacheTime
     this.maxSize = maxSize
     this.enableLog = enableLog
+    this.maxItemBytes = maxItemBytes
   }
 
   // 内部日志工具
@@ -152,6 +162,18 @@ export class TableCache<T> {
 
   // 设置缓存
   set(params: unknown, data: T[], response: ApiResponse<T>): void {
+    // 大数据保护：超过单条阈值不缓存，防止内存膨胀
+    try {
+      const approxBytes = JSON.stringify(data).length
+      if (approxBytes > this.maxItemBytes) {
+        this.log(`跳过缓存：单条 ${approxBytes}B 超过上限 ${this.maxItemBytes}B`)
+        return
+      }
+    } catch {
+      // 序列化失败（含循环引用等），直接放弃缓存
+      return
+    }
+
     const key = this.generateKey(params)
     const tags = this.generateTags(params as Record<string, unknown>)
     const now = Date.now()

@@ -78,7 +78,13 @@
       "Bash(find /c/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/views -name \"*.vue\" -exec wc -l {} +)",
       "Read(//c/Users/Administrator/go/pkg/mod/**)",
       "Bash(ls /c/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/apiendpoint/*.go)",
-      "Bash(npx vue-tsc:*)"
+      "Bash(npx vue-tsc:*)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5178/)",
+      "Bash(wc -l internal/api/handlers/*.go)",
+      "Bash(wc -l internal/modules/system/*/service.go)",
+      "Bash(netstat -ano)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/)",
+      "Bash(pkill -f \"vite\")"
     ]
   },
   "defaultMode": "bypassPermissions"

@@ -316,9 +316,3 @@ func uuidIDsFromRequest(req *gen.UUIDListRequest) []uuid.UUID {
 	return req.Ids
 }
 
-func optInt(o gen.OptInt, def int) int {
-	if !o.Set {
-		return def
-	}
-	return o.Value
-}
