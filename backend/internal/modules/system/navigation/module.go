@@ -6,17 +6,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/config"
-	apppkg "github.com/gg-ecommerce/backend/internal/modules/system/app"
-	menupkg "github.com/gg-ecommerce/backend/internal/modules/system/menu"
-	pagepkg "github.com/gg-ecommerce/backend/internal/modules/system/page"
-	spacepkg "github.com/gg-ecommerce/backend/internal/modules/system/space"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
-	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 )
 
 type Module struct {
@@ -38,23 +28,6 @@ func (m *Module) RegisterRoutes(rg *gin.RouterGroup) {
 	// Phase 4: /runtime/navigation migrated to ogen handlers in
 	// internal/api/handlers/navigation.go. Skip legacy gin registration.
 	_ = rg
-	return
-	menuRepo := user.NewMenuRepository(m.db)
-	boundaryService := collaborationworkspaceboundary.NewService(m.db)
-	platformService := platformaccess.NewService(m.db)
-	roleSnapshotService := platformroleaccess.NewService(m.db)
-	refresher := permissionrefresh.NewService(m.db, boundaryService, platformService, roleSnapshotService)
-	appService := apppkg.NewService(m.db)
-	menuService := menupkg.NewMenuService(m.db, menuRepo, refresher, m.logger)
-	pageService := pagepkg.NewService(m.db, menuRepo)
-	spaceService := spacepkg.NewService(m.db, refresher, m.logger)
-	handler := NewHandler(m.logger, NewService(m.db, appService, menuService, pageService, spaceService))
-
-	group := rg.Group("/runtime")
-	reg := apiregistry.NewRegistrar(group, "navigation")
-	{
-		reg.GET("/navigation", reg.Meta("获取运行时导航清单").Build(), handler.GetNavigation)
-	}
 }
 
 func init() {

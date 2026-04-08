@@ -6,15 +6,7 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/gg-ecommerce/backend/internal/config"
-	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	workspacepkg "github.com/gg-ecommerce/backend/internal/modules/system/workspace"
-	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
-	"github.com/gg-ecommerce/backend/internal/pkg/authorization"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
-	"github.com/gg-ecommerce/backend/internal/pkg/permissionrefresh"
-	"github.com/gg-ecommerce/backend/internal/pkg/platformaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/platformroleaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/collaborationworkspaceboundary"
 )
 
 type CollaborationWorkspaceModule struct {
@@ -37,65 +29,9 @@ func (m *CollaborationWorkspaceModule) Init() error {
 }
 
 func (m *CollaborationWorkspaceModule) RegisterRoutes(rg *gin.RouterGroup) {
-	collaborationWorkspaceRepo := user.NewCollaborationWorkspaceRepository(m.db)
-	collaborationWorkspaceMemberRepo := user.NewCollaborationWorkspaceMemberRepository(m.db)
-	userRepo := user.NewUserRepository(m.db)
-	roleRepo := user.NewRoleRepository(m.db)
-	roleHiddenMenuRepo := user.NewRoleHiddenMenuRepository(m.db)
-	roleDisabledActionRepo := user.NewRoleDisabledActionRepository(m.db)
-	userRoleRepo := user.NewUserRoleRepository(m.db)
-	actionRepo := user.NewPermissionKeyRepository(m.db)
-	blockedMenuRepo := user.NewCollaborationWorkspaceBlockedMenuRepository(m.db)
-	blockedActionRepo := user.NewCollaborationWorkspaceBlockedActionRepository(m.db)
-	collaborationWorkspaceFeaturePackageRepo := user.NewCollaborationWorkspaceFeaturePackageRepository(m.db)
-	rolePackageRepo := user.NewRoleFeaturePackageRepository(m.db)
-	featurePkgRepo := user.NewFeaturePackageRepository(m.db)
-	packageActionRepo := user.NewFeaturePackageKeyRepository(m.db)
-	packageMenuRepo := user.NewFeaturePackageMenuRepository(m.db)
-	boundaryService := collaborationworkspaceboundary.NewService(m.db)
-	personalWorkspaceAccessService := platformaccess.NewService(m.db)
-	roleSnapshotService := platformroleaccess.NewService(m.db)
-	refresher := permissionrefresh.NewService(m.db, boundaryService, personalWorkspaceAccessService, roleSnapshotService)
-	workspaceService := workspacepkg.NewService(m.db, m.logger)
-	authzService := authorization.NewService(m.db, m.logger)
-
-	collaborationWorkspaceService := NewCollaborationWorkspaceService(m.db, collaborationWorkspaceRepo, collaborationWorkspaceMemberRepo, userRepo, roleRepo, userRoleRepo, refresher, m.logger)
-	collaborationWorkspaceHandler := NewCollaborationWorkspaceHandler(
-		collaborationWorkspaceService,
-		collaborationWorkspaceMemberRepo,
-		userRepo,
-		roleRepo,
-		roleHiddenMenuRepo,
-		roleDisabledActionRepo,
-		userRoleRepo,
-		actionRepo,
-		blockedMenuRepo,
-		blockedActionRepo,
-		collaborationWorkspaceFeaturePackageRepo,
-		rolePackageRepo,
-		featurePkgRepo,
-		packageActionRepo,
-		packageMenuRepo,
-		boundaryService,
-		refresher,
-		workspaceService,
-		authzService,
-		m.logger,
-	)
-
-	collaborationWorkspaces := rg.Group("/collaboration-workspaces")
-	reg := apiregistry.NewRegistrar(collaborationWorkspaces, "collaboration_workspace")
-	{
-		reg.GET("/mine", &apiregistry.RouteMeta{Summary: "获取我的协作空间列表"}, collaborationWorkspaceHandler.ListMyCollaborationWorkspaces)
-		reg.GET("/current", &apiregistry.RouteMeta{Summary: "获取当前协作空间详情"}, collaborationWorkspaceHandler.GetCurrentCollaborationWorkspace)
-		reg.GET("/current/members", &apiregistry.RouteMeta{Summary: "获取当前协作空间成员列表"}, collaborationWorkspaceHandler.ListMyMembers)
-		reg.POSTAction("/current/members", "添加当前协作空间成员", "collaboration_workspace.member.manage", authzService.RequireAction, collaborationWorkspaceHandler.AddMyMember)
-		reg.DELETEAction("/current/members/:userId", "移除当前协作空间成员", "collaboration_workspace.member.manage", authzService.RequireAction, collaborationWorkspaceHandler.RemoveMyMember)
-		reg.PUTAction("/current/members/:userId/role", "更新当前协作空间成员身份", "collaboration_workspace.member.manage", authzService.RequireAction, collaborationWorkspaceHandler.UpdateMyMemberRole)
-		// NOTE: the following routes have been migrated to ogen in Phase 4 CW boundary.
-		// /current/members/:userId/roles (GET+PUT), /current/roles, /current/boundary/*, /current/menus, etc.
-		// /:id/roles, /:id/menus, /:id/actions, etc. are all served by ogenBridge in router.go.
-	}
+	// Phase 4: all /collaboration-workspaces/* routes migrated to ogen handlers.
+	// router.go owns all registrations via ogenBridge.
+	_ = rg
 }
 
 func init() {

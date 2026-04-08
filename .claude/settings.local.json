@@ -65,7 +65,13 @@
       "Bash(while read *; do *; done < /tmp/*)",
       "Bash(for d in *; do ls backend/internal/modules/system/$d/module.go 2>/dev/null; done)",
       "Bash(sort -u grep -E \"^func \\\\\\(UnimplementedHandler\\\\\\) [A-Z]\" backend/api/gen/oas_unimplemented_gen.go)",
-      "Bash(sort -u comm -23 /tmp/all.txt /tmp/impl.txt)"
+      "Bash(sort -u comm -23 /tmp/all.txt /tmp/impl.txt)",
+      "Bash(wc -l internal/modules/system/system/*.go internal/modules/system/collaborationworkspace/*.go internal/modules/system/user/handler.go internal/modules/system/user/service.go internal/api/router/router.go)",
+      "Bash(git cherry-pick:*)",
+      "Bash(ls internal/modules/system/*/handler.go)",
+      "Read(//operationId:/**)",
+      "Read(//c/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/**)"
     ]
-  }
+  },
+  "defaultMode": "bypassPermissions"
 }

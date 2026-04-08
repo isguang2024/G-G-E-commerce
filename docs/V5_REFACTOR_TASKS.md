@@ -228,3 +228,15 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 - message 域 16 ops：导出 messageSvc 后迁移。
 - user 子路由 8 ops（snapshot/diagnosis）：下沉到 UserService 后迁移。
 - system fast-enter/view-pages 3 ops 及剩余 stub 清零后可删除所有 legacy module RegisterRoutes 入口。
+
+### 2026-04-08 Phase 4 全量完成：181 ops 全部实现，0 stub 残留（Phase 4）
+
+**本次改动**
+- 并行三子代理完成 user 子路由（6+2 ops）、message 域（19 ops facade）、CW boundary（29 ops）全量实现；结合之前批次，ogen 实现数达到 181/181，`UnimplementedHandler` 残留归零。
+- `internal/modules/system/system/message_facade.go` 导出 messageService 全部方法；`internal/api/handlers/cwboundary.go` 实现 CW boundary/current 复杂操作；`internal/api/handlers/user_subroutes.go` 补齐 user 子路由。
+- router.go 桥接全部新路径；各 legacy module.go RegisterRoutes 删除冲突注册（featurepackage/permission/menu/page 已整体早 return，cw/system/user 仅保留未迁移残余）。`go build ./...` 通过。
+
+**下次方向**
+- 集成测试：对关键路径（role CRUD、navigation、permission/menu/page、CW boundary、message dispatch）进行冒烟测试，确认 ogen bridge 与 legacy 行为一致。
+- 清理完全空壳的 legacy module（RegisterRoutes 已是 `_ = rg; return` 的文件可以考虑删除或合并）。
+- 推进 Phase 5：前端切换到 v5 client，下线 legacy gin handler 文件本身（handler.go per module）。
