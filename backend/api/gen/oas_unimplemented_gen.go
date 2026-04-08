@@ -130,15 +130,6 @@ func (UnimplementedHandler) CreateMenu(ctx context.Context, req *MenuSaveRequest
 	return r, ht.ErrNotImplemented
 }
 
-// CreateMenuGroup implements createMenuGroup operation.
-//
-// 创建菜单分组.
-//
-// POST /menus/groups
-func (UnimplementedHandler) CreateMenuGroup(ctx context.Context, req *MenuGroupSaveRequest) (r *MutationResult, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // CreateMessageRecipientGroup implements createMessageRecipientGroup operation.
 //
 // 新建消息接收组.
@@ -253,15 +244,6 @@ func (UnimplementedHandler) DeleteMedia(ctx context.Context, params DeleteMediaP
 //
 // DELETE /menus/{id}
 func (UnimplementedHandler) DeleteMenu(ctx context.Context, params DeleteMenuParams) (r *MutationResult, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// DeleteMenuGroup implements deleteMenuGroup operation.
-//
-// 删除菜单分组.
-//
-// DELETE /menus/groups/{id}
-func (UnimplementedHandler) DeleteMenuGroup(ctx context.Context, params DeleteMenuGroupParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -985,15 +967,6 @@ func (UnimplementedHandler) ListMedia(ctx context.Context) (r ListMediaRes, _ er
 	return r, ht.ErrNotImplemented
 }
 
-// ListMenuGroups implements listMenuGroups operation.
-//
-// 获取菜单分组列表.
-//
-// GET /menus/groups
-func (UnimplementedHandler) ListMenuGroups(ctx context.Context) (r *MenuGroupList, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
 // ListMenuSpaceHostBindings implements listMenuSpaceHostBindings operation.
 //
 // 获取菜单空间 Host 绑定.
@@ -1639,15 +1612,6 @@ func (UnimplementedHandler) UpdateFeaturePackage(ctx context.Context, req *Featu
 //
 // PUT /menus/{id}
 func (UnimplementedHandler) UpdateMenu(ctx context.Context, req *MenuSaveRequest, params UpdateMenuParams) (r *MutationResult, _ error) {
-	return r, ht.ErrNotImplemented
-}
-
-// UpdateMenuGroup implements updateMenuGroup operation.
-//
-// 更新菜单分组.
-//
-// PUT /menus/groups/{id}
-func (UnimplementedHandler) UpdateMenuGroup(ctx context.Context, req *MenuGroupSaveRequest, params UpdateMenuGroupParams) (r *MutationResult, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

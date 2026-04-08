@@ -106,12 +106,6 @@ type Invoker interface {
 	//
 	// POST /menus
 	CreateMenu(ctx context.Context, request *MenuSaveRequest) (*MutationResult, error)
-	// CreateMenuGroup invokes createMenuGroup operation.
-	//
-	// 创建菜单分组.
-	//
-	// POST /menus/groups
-	CreateMenuGroup(ctx context.Context, request *MenuGroupSaveRequest) (*MutationResult, error)
 	// CreateMessageRecipientGroup invokes createMessageRecipientGroup operation.
 	//
 	// 新建消息接收组.
@@ -190,12 +184,6 @@ type Invoker interface {
 	//
 	// DELETE /menus/{id}
 	DeleteMenu(ctx context.Context, params DeleteMenuParams) (*MutationResult, error)
-	// DeleteMenuGroup invokes deleteMenuGroup operation.
-	//
-	// 删除菜单分组.
-	//
-	// DELETE /menus/groups/{id}
-	DeleteMenuGroup(ctx context.Context, params DeleteMenuGroupParams) (*MutationResult, error)
 	// DeletePage invokes deletePage operation.
 	//
 	// 删除页面.
@@ -676,12 +664,6 @@ type Invoker interface {
 	//
 	// GET /media
 	ListMedia(ctx context.Context) (ListMediaRes, error)
-	// ListMenuGroups invokes listMenuGroups operation.
-	//
-	// 获取菜单分组列表.
-	//
-	// GET /menus/groups
-	ListMenuGroups(ctx context.Context) (*MenuGroupList, error)
 	// ListMenuSpaceHostBindings invokes listMenuSpaceHostBindings operation.
 	//
 	// 获取菜单空间 Host 绑定.
@@ -1114,12 +1096,6 @@ type Invoker interface {
 	//
 	// PUT /menus/{id}
 	UpdateMenu(ctx context.Context, request *MenuSaveRequest, params UpdateMenuParams) (*MutationResult, error)
-	// UpdateMenuGroup invokes updateMenuGroup operation.
-	//
-	// 更新菜单分组.
-	//
-	// PUT /menus/groups/{id}
-	UpdateMenuGroup(ctx context.Context, request *MenuGroupSaveRequest, params UpdateMenuGroupParams) (*MutationResult, error)
 	// UpdateMessageRecipientGroup invokes updateMessageRecipientGroup operation.
 	//
 	// 更新消息接收组.
@@ -2701,116 +2677,6 @@ func (c *Client) sendCreateMenu(ctx context.Context, request *MenuSaveRequest) (
 	return result, nil
 }
 
-// CreateMenuGroup invokes createMenuGroup operation.
-//
-// 创建菜单分组.
-//
-// POST /menus/groups
-func (c *Client) CreateMenuGroup(ctx context.Context, request *MenuGroupSaveRequest) (*MutationResult, error) {
-	res, err := c.sendCreateMenuGroup(ctx, request)
-	return res, err
-}
-
-func (c *Client) sendCreateMenuGroup(ctx context.Context, request *MenuGroupSaveRequest) (res *MutationResult, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("createMenuGroup"),
-		semconv.HTTPRequestMethodKey.String("POST"),
-		semconv.URLTemplateKey.String("/menus/groups"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, CreateMenuGroupOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [1]string
-	pathParts[0] = "/menus/groups"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "POST", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-	if err := encodeCreateMenuGroupRequest(request, r); err != nil {
-		return res, errors.Wrap(err, "encode request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, CreateMenuGroupOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"BearerAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer body.Close()
-
-	stage = "DecodeResponse"
-	result, err := decodeCreateMenuGroupResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
 // CreateMessageRecipientGroup invokes createMessageRecipientGroup operation.
 //
 // 新建消息接收组.
@@ -4327,131 +4193,6 @@ func (c *Client) sendDeleteMenu(ctx context.Context, params DeleteMenuParams) (r
 
 	stage = "DecodeResponse"
 	result, err := decodeDeleteMenuResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// DeleteMenuGroup invokes deleteMenuGroup operation.
-//
-// 删除菜单分组.
-//
-// DELETE /menus/groups/{id}
-func (c *Client) DeleteMenuGroup(ctx context.Context, params DeleteMenuGroupParams) (*MutationResult, error) {
-	res, err := c.sendDeleteMenuGroup(ctx, params)
-	return res, err
-}
-
-func (c *Client) sendDeleteMenuGroup(ctx context.Context, params DeleteMenuGroupParams) (res *MutationResult, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("deleteMenuGroup"),
-		semconv.HTTPRequestMethodKey.String("DELETE"),
-		semconv.URLTemplateKey.String("/menus/groups/{id}"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, DeleteMenuGroupOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [2]string
-	pathParts[0] = "/menus/groups/"
-	{
-		// Encode "id" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "id",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			return e.EncodeValue(conv.UUIDToString(params.ID))
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "DELETE", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, DeleteMenuGroupOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"BearerAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer body.Close()
-
-	stage = "DecodeResponse"
-	result, err := decodeDeleteMenuGroupResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -15075,113 +14816,6 @@ func (c *Client) sendListMedia(ctx context.Context) (res ListMediaRes, err error
 	return result, nil
 }
 
-// ListMenuGroups invokes listMenuGroups operation.
-//
-// 获取菜单分组列表.
-//
-// GET /menus/groups
-func (c *Client) ListMenuGroups(ctx context.Context) (*MenuGroupList, error) {
-	res, err := c.sendListMenuGroups(ctx)
-	return res, err
-}
-
-func (c *Client) sendListMenuGroups(ctx context.Context) (res *MenuGroupList, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("listMenuGroups"),
-		semconv.HTTPRequestMethodKey.String("GET"),
-		semconv.URLTemplateKey.String("/menus/groups"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, ListMenuGroupsOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [1]string
-	pathParts[0] = "/menus/groups"
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "GET", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, ListMenuGroupsOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"BearerAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer body.Close()
-
-	stage = "DecodeResponse"
-	result, err := decodeListMenuGroupsResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
 // ListMenuSpaceHostBindings invokes listMenuSpaceHostBindings operation.
 //
 // 获取菜单空间 Host 绑定.
@@ -24668,134 +24302,6 @@ func (c *Client) sendUpdateMenu(ctx context.Context, request *MenuSaveRequest, p
 
 	stage = "DecodeResponse"
 	result, err := decodeUpdateMenuResponse(resp)
-	if err != nil {
-		return res, errors.Wrap(err, "decode response")
-	}
-
-	return result, nil
-}
-
-// UpdateMenuGroup invokes updateMenuGroup operation.
-//
-// 更新菜单分组.
-//
-// PUT /menus/groups/{id}
-func (c *Client) UpdateMenuGroup(ctx context.Context, request *MenuGroupSaveRequest, params UpdateMenuGroupParams) (*MutationResult, error) {
-	res, err := c.sendUpdateMenuGroup(ctx, request, params)
-	return res, err
-}
-
-func (c *Client) sendUpdateMenuGroup(ctx context.Context, request *MenuGroupSaveRequest, params UpdateMenuGroupParams) (res *MutationResult, err error) {
-	otelAttrs := []attribute.KeyValue{
-		otelogen.OperationID("updateMenuGroup"),
-		semconv.HTTPRequestMethodKey.String("PUT"),
-		semconv.URLTemplateKey.String("/menus/groups/{id}"),
-	}
-	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
-
-	// Run stopwatch.
-	startTime := time.Now()
-	defer func() {
-		// Use floating point division here for higher precision (instead of Millisecond method).
-		elapsedDuration := time.Since(startTime)
-		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
-	}()
-
-	// Increment request counter.
-	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-
-	// Start a span for this request.
-	ctx, span := c.cfg.Tracer.Start(ctx, UpdateMenuGroupOperation,
-		trace.WithAttributes(otelAttrs...),
-		clientSpanKind,
-	)
-	// Track stage for error reporting.
-	var stage string
-	defer func() {
-		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, stage)
-			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
-		}
-		span.End()
-	}()
-
-	stage = "BuildURL"
-	u := uri.Clone(c.requestURL(ctx))
-	var pathParts [2]string
-	pathParts[0] = "/menus/groups/"
-	{
-		// Encode "id" parameter.
-		e := uri.NewPathEncoder(uri.PathEncoderConfig{
-			Param:   "id",
-			Style:   uri.PathStyleSimple,
-			Explode: false,
-		})
-		if err := func() error {
-			return e.EncodeValue(conv.UUIDToString(params.ID))
-		}(); err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		encoded, err := e.Result()
-		if err != nil {
-			return res, errors.Wrap(err, "encode path")
-		}
-		pathParts[1] = encoded
-	}
-	uri.AddPathParts(u, pathParts[:]...)
-
-	stage = "EncodeRequest"
-	r, err := ht.NewRequest(ctx, "PUT", u)
-	if err != nil {
-		return res, errors.Wrap(err, "create request")
-	}
-	if err := encodeUpdateMenuGroupRequest(request, r); err != nil {
-		return res, errors.Wrap(err, "encode request")
-	}
-
-	{
-		type bitset = [1]uint8
-		var satisfied bitset
-		{
-			stage = "Security:BearerAuth"
-			switch err := c.securityBearerAuth(ctx, UpdateMenuGroupOperation, r); {
-			case err == nil: // if NO error
-				satisfied[0] |= 1 << 0
-			case errors.Is(err, ogenerrors.ErrSkipClientSecurity):
-				// Skip this security.
-			default:
-				return res, errors.Wrap(err, "security \"BearerAuth\"")
-			}
-		}
-
-		if ok := func() bool {
-		nextRequirement:
-			for _, requirement := range []bitset{
-				{0b00000001},
-			} {
-				for i, mask := range requirement {
-					if satisfied[i]&mask != mask {
-						continue nextRequirement
-					}
-				}
-				return true
-			}
-			return false
-		}(); !ok {
-			return res, ogenerrors.ErrSecurityRequirementIsNotSatisfied
-		}
-	}
-
-	stage = "SendRequest"
-	resp, err := c.cfg.Client.Do(r)
-	if err != nil {
-		return res, errors.Wrap(err, "do request")
-	}
-	body := resp.Body
-	defer body.Close()
-
-	stage = "DecodeResponse"
-	result, err := decodeUpdateMenuGroupResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}

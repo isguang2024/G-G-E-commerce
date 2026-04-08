@@ -792,17 +792,6 @@ export function normalizePageAccessTraceResult(item: any): Api.SystemManage.Page
   }
 }
 
-export function normalizeMenuManageGroup(item: any): Api.SystemManage.MenuManageGroupItem {
-  return {
-    id: item?.id || '',
-    name: item?.name || '',
-    sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
-    status: item?.status || 'normal',
-    createdAt: item?.created_at || item?.createdAt || '',
-    updatedAt: item?.updated_at || item?.updatedAt || ''
-  }
-}
-
 export function normalizeRuntimeMenuTree(item: any): AppRouteRecord {
   const meta = item?.meta || {}
   const children = Array.isArray(item?.children)

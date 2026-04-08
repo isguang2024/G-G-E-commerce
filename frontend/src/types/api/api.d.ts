@@ -142,21 +142,6 @@ declare namespace Api {
       [k: string]: unknown
     }
 
-    interface MenuManageGroupItem {
-      id: string
-      name: string
-      sortOrder: number
-      status: 'normal' | 'disabled' | string
-      createdAt?: string
-      updatedAt?: string
-    }
-
-    interface MenuManageGroupSaveParams {
-      name: string
-      sort_order?: number
-      status?: 'normal' | 'disabled' | string
-    }
-
     interface MenuSpaceItem {
       id?: string
       appKey?: string
@@ -1477,7 +1462,6 @@ declare namespace Api {
     interface MenuCreateParams {
       app_key?: string
       parent_id: string | null
-      manage_group_id?: string | null
       // directory 只做分组；entry 直接作为页面入口；external 只维护外链展示。
       kind?: 'directory' | 'entry' | 'external' | string
       path: string
@@ -1497,7 +1481,6 @@ declare namespace Api {
     interface MenuUpdateParams {
       app_key?: string
       parent_id: string | null
-      manage_group_id?: string | null
       kind?: 'directory' | 'entry' | 'external' | string
       path?: string
       name?: string

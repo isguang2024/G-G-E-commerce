@@ -15,7 +15,6 @@ type AppHostBinding = models.AppHostBinding
 type Menu = models.Menu
 type MenuDefinition = models.MenuDefinition
 type SpaceMenuPlacement = models.SpaceMenuPlacement
-type MenuManageGroup = models.MenuManageGroup
 type UIPage = models.UIPage
 type UserRole = models.UserRole
 type PermissionGroup = models.PermissionGroup

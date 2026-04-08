@@ -822,46 +822,6 @@
       "access_mode": "permission"
     },
     {
-      "operation_id": "listMenuGroups",
-      "method": "get",
-      "path": "/menus/groups",
-      "permission_key": "system.menu.manage",
-      "summary": "获取菜单分组列表",
-      "tags": "menu",
-      "api_category": "menu",
-      "access_mode": "permission"
-    },
-    {
-      "operation_id": "createMenuGroup",
-      "method": "post",
-      "path": "/menus/groups",
-      "permission_key": "system.menu.manage",
-      "summary": "创建菜单分组",
-      "tags": "menu",
-      "api_category": "menu",
-      "access_mode": "permission"
-    },
-    {
-      "operation_id": "deleteMenuGroup",
-      "method": "delete",
-      "path": "/menus/groups/{id}",
-      "permission_key": "system.menu.manage",
-      "summary": "删除菜单分组",
-      "tags": "menu",
-      "api_category": "menu",
-      "access_mode": "permission"
-    },
-    {
-      "operation_id": "updateMenuGroup",
-      "method": "put",
-      "path": "/menus/groups/{id}",
-      "permission_key": "system.menu.manage",
-      "summary": "更新菜单分组",
-      "tags": "menu",
-      "api_category": "menu",
-      "access_mode": "permission"
-    },
-    {
       "operation_id": "getMenuTree",
       "method": "get",
       "path": "/menus/tree",

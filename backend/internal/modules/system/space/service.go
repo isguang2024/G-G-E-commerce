@@ -564,7 +564,6 @@ func (s *service) InitializeFromDefault(appKey string, targetSpaceKey string, fo
 				SpaceKey:      targetKey,
 				MenuKey:       item.MenuKey,
 				ParentMenuKey: item.ParentMenuKey,
-				ManageGroupID: item.ManageGroupID,
 				SortOrder:     item.SortOrder,
 				Hidden:        item.Hidden,
 				TitleOverride: item.TitleOverride,

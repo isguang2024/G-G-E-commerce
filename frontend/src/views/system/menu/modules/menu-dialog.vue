@@ -145,19 +145,6 @@
 
       <ElRow :gutter="16">
         <ElCol :span="12">
-          <ElFormItem label="管理分组">
-            <ElSelect v-model="form.manageGroupId" clearable filterable style="width: 100%">
-              <ElOption
-                v-for="item in manageGroupOptions"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              />
-            </ElSelect>
-            <div class="field-hint">仅影响菜单管理页里的分组视图，不参与运行时路径和权限判断。</div>
-          </ElFormItem>
-        </ElCol>
-        <ElCol :span="12">
           <ElFormItem label="菜单排序">
             <ElInputNumber v-model="form.sort" :min="0" :step="1" style="width: 100%" />
           </ElFormItem>
@@ -287,7 +274,6 @@
     customParent: string
     accessMode: 'permission' | 'jwt' | 'public'
     isFullPage: boolean
-    manageGroupId: string
     spaceKey: string
   }
 
@@ -295,7 +281,6 @@
     visible: boolean
     editData?: AppRouteRecord | any
     menuTree?: AppRouteRecord[]
-    manageGroups?: Api.SystemManage.MenuManageGroupItem[]
     menuSpaces?: Api.SystemManage.MenuSpaceItem[]
     currentSpaceKey?: string
     currentMenuPages?: Api.SystemManage.PageItem[]
@@ -312,7 +297,6 @@
   const props = withDefaults(defineProps<Props>(), {
     visible: false,
     menuTree: () => [],
-    manageGroups: () => [],
     menuSpaces: () => [],
     currentSpaceKey: '',
     currentMenuPages: () => [],
@@ -348,7 +332,6 @@
     customParent: '',
     accessMode: 'permission',
     isFullPage: false,
-    manageGroupId: '',
     spaceKey: ''
   })
 
@@ -396,14 +379,6 @@
     walk(tree)
     return options
   })
-
-  const manageGroupOptions = computed(() => [
-    { label: '不分组', value: '' },
-    ...(props.manageGroups || []).map((item) => ({
-      label: item.name,
-      value: item.id
-    }))
-  ])
 
   const menuSpaceOptions = computed(() =>
     (props.menuSpaces || []).map((item) => ({
@@ -560,7 +535,6 @@
     form.customParent = ''
     form.accessMode = 'permission'
     form.isFullPage = false
-    form.manageGroupId = ''
     form.spaceKey = resolvedFallbackSpaceKey.value
     formRef.value?.clearValidate?.()
   }
@@ -594,8 +568,6 @@
     form.customParent = row.meta?.customParent || ''
     form.accessMode = row.meta?.accessMode || 'permission'
     form.isFullPage = row.meta?.isFullPage === true
-    form.manageGroupId =
-      `${row.manage_group_id || row.manageGroupId || row.manage_group?.id || ''}`.trim()
     form.spaceKey =
       `${row.spaceKey || row.space_key || row.meta?.spaceKey || resolvedFallbackSpaceKey.value || ''}`.trim()
   }

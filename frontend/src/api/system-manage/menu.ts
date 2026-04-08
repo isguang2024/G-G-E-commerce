@@ -4,8 +4,7 @@ import {
   unwrap,
   AppRouteRecord,
   normalizeMenuSpaceKey,
-  normalizeRuntimeMenuTree,
-  normalizeMenuManageGroup
+  normalizeRuntimeMenuTree
 } from './_shared'
 
 /** 获取菜单树 */
@@ -42,36 +41,6 @@ export async function fetchUpdateMenu(
     params: { path: { id } },
     body: data as any
   })
-  if (error) throw error
-}
-
-/** 获取菜单管理分组 */
-export async function fetchGetMenuManageGroups() {
-  const res: any = await unwrap(v5Client.GET('/menus/groups', { params: { query: {} as any } }))
-  return (res || []).map(normalizeMenuManageGroup)
-}
-
-/** 创建菜单管理分组 */
-export async function fetchCreateMenuManageGroup(data: Api.SystemManage.MenuManageGroupSaveParams) {
-  const res: any = await unwrap(v5Client.POST('/menus/groups', { body: data as any }))
-  return { id: res?.id || '' }
-}
-
-/** 更新菜单管理分组 */
-export async function fetchUpdateMenuManageGroup(
-  id: string,
-  data: Api.SystemManage.MenuManageGroupSaveParams
-) {
-  const { error } = await v5Client.PUT('/menus/groups/{id}', {
-    params: { path: { id } },
-    body: data as any
-  })
-  if (error) throw error
-}
-
-/** 删除菜单管理分组 */
-export async function fetchDeleteMenuManageGroup(id: string) {
-  const { error } = await v5Client.DELETE('/menus/groups/{id}', { params: { path: { id } } })
   if (error) throw error
 }
 

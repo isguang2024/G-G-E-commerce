@@ -182,20 +182,6 @@ func encodeCreateMenuRequest(
 	return nil
 }
 
-func encodeCreateMenuGroupRequest(
-	req *MenuGroupSaveRequest,
-	r *http.Request,
-) error {
-	const contentType = "application/json"
-	e := new(jx.Encoder)
-	{
-		req.Encode(e)
-	}
-	encoded := e.Bytes()
-	ht.SetBody(r, bytes.NewReader(encoded), contentType)
-	return nil
-}
-
 func encodeCreateMessageRecipientGroupRequest(
 	req AnyObject,
 	r *http.Request,
@@ -856,20 +842,6 @@ func encodeUpdateFeaturePackageRequest(
 
 func encodeUpdateMenuRequest(
 	req *MenuSaveRequest,
-	r *http.Request,
-) error {
-	const contentType = "application/json"
-	e := new(jx.Encoder)
-	{
-		req.Encode(e)
-	}
-	encoded := e.Bytes()
-	ht.SetBody(r, bytes.NewReader(encoded), contentType)
-	return nil
-}
-
-func encodeUpdateMenuGroupRequest(
-	req *MenuGroupSaveRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

@@ -86,12 +86,6 @@ type Handler interface {
 	//
 	// POST /menus
 	CreateMenu(ctx context.Context, req *MenuSaveRequest) (*MutationResult, error)
-	// CreateMenuGroup implements createMenuGroup operation.
-	//
-	// 创建菜单分组.
-	//
-	// POST /menus/groups
-	CreateMenuGroup(ctx context.Context, req *MenuGroupSaveRequest) (*MutationResult, error)
 	// CreateMessageRecipientGroup implements createMessageRecipientGroup operation.
 	//
 	// 新建消息接收组.
@@ -170,12 +164,6 @@ type Handler interface {
 	//
 	// DELETE /menus/{id}
 	DeleteMenu(ctx context.Context, params DeleteMenuParams) (*MutationResult, error)
-	// DeleteMenuGroup implements deleteMenuGroup operation.
-	//
-	// 删除菜单分组.
-	//
-	// DELETE /menus/groups/{id}
-	DeleteMenuGroup(ctx context.Context, params DeleteMenuGroupParams) (*MutationResult, error)
 	// DeletePage implements deletePage operation.
 	//
 	// 删除页面.
@@ -656,12 +644,6 @@ type Handler interface {
 	//
 	// GET /media
 	ListMedia(ctx context.Context) (ListMediaRes, error)
-	// ListMenuGroups implements listMenuGroups operation.
-	//
-	// 获取菜单分组列表.
-	//
-	// GET /menus/groups
-	ListMenuGroups(ctx context.Context) (*MenuGroupList, error)
 	// ListMenuSpaceHostBindings implements listMenuSpaceHostBindings operation.
 	//
 	// 获取菜单空间 Host 绑定.
@@ -1094,12 +1076,6 @@ type Handler interface {
 	//
 	// PUT /menus/{id}
 	UpdateMenu(ctx context.Context, req *MenuSaveRequest, params UpdateMenuParams) (*MutationResult, error)
-	// UpdateMenuGroup implements updateMenuGroup operation.
-	//
-	// 更新菜单分组.
-	//
-	// PUT /menus/groups/{id}
-	UpdateMenuGroup(ctx context.Context, req *MenuGroupSaveRequest, params UpdateMenuGroupParams) (*MutationResult, error)
 	// UpdateMessageRecipientGroup implements updateMessageRecipientGroup operation.
 	//
 	// 更新消息接收组.

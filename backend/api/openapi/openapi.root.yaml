@@ -171,10 +171,6 @@ paths:
     $ref: ./domains/menu/paths.yaml#/paths/~1runtime~1navigation
   /menus/tree:
     $ref: ./domains/menu/paths.yaml#/paths/~1menus~1tree
-  /menus/groups:
-    $ref: ./domains/menu/paths.yaml#/paths/~1menus~1groups
-  /menus/groups/{id}:
-    $ref: ./domains/menu/paths.yaml#/paths/~1menus~1groups~1{id}
   /menus:
     $ref: ./domains/menu/paths.yaml#/paths/~1menus
   /menus/{id}:
@@ -401,10 +397,6 @@ components:
       $ref: ./components/common.yaml#/components/schemas/NavigationManifest
     MenuTreeResponse:
       $ref: ./components/common.yaml#/components/schemas/MenuTreeResponse
-    MenuGroupSaveRequest:
-      $ref: ./components/common.yaml#/components/schemas/MenuGroupSaveRequest
-    MenuGroupList:
-      $ref: ./components/common.yaml#/components/schemas/MenuGroupList
     MenuSaveRequest:
       $ref: ./components/common.yaml#/components/schemas/MenuSaveRequest
     PageSaveRequest:

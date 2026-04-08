@@ -36,7 +36,6 @@ type SpaceMenuPlacement struct {
 	SpaceKey      string         `gorm:"type:varchar(100);not null;default:'default';index" json:"space_key"`
 	MenuKey       string         `gorm:"type:varchar(150);not null;index" json:"menu_key"`
 	ParentMenuKey string         `gorm:"type:varchar(150);not null;default:''" json:"parent_menu_key"`
-	ManageGroupID *uuid.UUID     `gorm:"type:uuid;index" json:"manage_group_id"`
 	SortOrder     int            `gorm:"not null;default:0" json:"sort_order"`
 	Hidden        bool           `gorm:"not null;default:false" json:"hidden"`
 	TitleOverride string         `gorm:"type:varchar(100);not null;default:''" json:"title_override"`

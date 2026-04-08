@@ -53,16 +53,6 @@
           <ElButton v-if="isLayoutMode" @click="goToDefinitionManagement" v-ripple>
             返回定义管理
           </ElButton>
-          <ElDropdown @command="handleMoreActionCommand">
-            <ElButton v-ripple>更多操作</ElButton>
-            <template #dropdown>
-              <ElDropdownMenu>
-                <ElDropdownItem command="manageGroup" :disabled="!groupingAvailable">
-                  管理分组
-                </ElDropdownItem>
-              </ElDropdownMenu>
-            </template>
-          </ElDropdown>
         </div>
       </AdminWorkspaceHero>
     </div>
@@ -90,9 +80,6 @@
               <div class="menu-toolbar-tip">
                 {{ menuToolbarTip }}
               </div>
-              <div v-if="menuGroupApiUnavailable" class="menu-inline-note">
-                菜单分组暂不可用，当前按普通菜单树显示
-              </div>
             </div>
             <div class="menu-toolbar-bottom">
               <div class="menu-toolbar-switches">
@@ -109,14 +96,6 @@
                   <ElSwitch v-model="showEnabledMenus" />
                 </span>
                 <span class="menu-switch-item">
-                  <span class="menu-switch-label">启用分组</span>
-                  <ElSwitch v-model="groupingEnabled" :disabled="!groupingAvailable" />
-                </span>
-                <span class="menu-switch-item">
-                  <span class="menu-switch-label">分组可视</span>
-                  <ElSwitch v-model="groupedMenuVisible" :disabled="!groupingAvailable" />
-                </span>
-                <span class="menu-switch-item">
                   <span class="menu-switch-label">多选模式</span>
                   <ElSwitch v-model="multiSelectEnabled" />
                 </span>
@@ -127,17 +106,6 @@
               </div>
               <div v-if="multiSelectEnabled" class="menu-toolbar-actions menu-toolbar-batch">
                 <span class="menu-batch-count">已选 {{ selectedMenuRows.length }} 项</span>
-                <ElDropdown @command="handleBatchCommand">
-                  <ElButton type="primary" plain :disabled="selectedMenuRows.length === 0">
-                    批量操作
-                  </ElButton>
-                  <template #dropdown>
-                    <ElDropdownMenu>
-                      <ElDropdownItem command="assign">移入分组</ElDropdownItem>
-                      <ElDropdownItem command="remove">移出分组</ElDropdownItem>
-                    </ElDropdownMenu>
-                  </template>
-                </ElDropdown>
               </div>
             </div>
           </div>
@@ -159,13 +127,8 @@
       >
         <!-- 菜单名称列 -->
         <template #title="{ row }">
-          <template v-if="isManageGroupRow(row)">
-            <span class="menu-group-title">{{ formatMenuTitle(row.meta?.title) }}</span>
-          </template>
-          <template v-else>
-            <ArtSvgIcon v-if="row.meta?.icon" :icon="row.meta.icon" class="mr-2 text-g-500" />
-            <span>{{ formatMenuTitle(row.meta?.title) }}</span>
-          </template>
+          <ArtSvgIcon v-if="row.meta?.icon" :icon="row.meta.icon" class="mr-2 text-g-500" />
+          <span>{{ formatMenuTitle(row.meta?.title) }}</span>
         </template>
 
         <!-- 菜单类型列 -->
@@ -175,18 +138,16 @@
 
         <!-- 路由列 -->
         <template #path="{ row }">
-          <span>{{ isManageGroupRow(row) ? '-' : row.meta?.link || row.path || '' }}</span>
+          <span>{{ row.meta?.link || row.path || '' }}</span>
         </template>
 
         <!-- 组件路径列 -->
         <template #component="{ row }">
-          <span class="text-gray-600">{{
-            isManageGroupRow(row) ? '-' : row.component || '-'
-          }}</span>
+          <span class="text-gray-600">{{ row.component || '-' }}</span>
         </template>
 
         <template #linkedPage="{ row }">
-          <div v-if="!isManageGroupRow(row)" class="menu-linked-page-cell">
+          <div class="menu-linked-page-cell">
             <template v-if="getLinkedPages(row).length">
               <span class="menu-linked-page-cell__primary">{{ getLinkedPages(row)[0].name }}</span>
               <span class="menu-linked-page-cell__meta">
@@ -198,7 +159,6 @@
             </template>
             <span v-else class="text-gray-400">无受管页面</span>
           </div>
-          <span v-else class="text-gray-400">-</span>
         </template>
 
         <template #space="{ row }">
@@ -209,7 +169,7 @@
 
         <!-- 高级配置列 -->
         <template #advanced="{ row }">
-          <div v-if="!isManageGroupRow(row)" class="advanced-configs">
+          <div class="advanced-configs">
             <ElTag
               v-if="isEntryMenuRow(row) && row.meta?.keepAlive"
               size="small"
@@ -279,29 +239,23 @@
               {{ getMenuActionRequirementLabel(row) }}
             </ElTag>
           </div>
-          <span v-else class="text-gray-400">-</span>
         </template>
 
         <!-- 状态列 -->
         <template #status="{ row }">
-          <ElTag
-            v-if="!isManageGroupRow(row)"
-            :type="row.meta?.isEnable !== false ? 'success' : 'info'"
-          >
+          <ElTag :type="row.meta?.isEnable !== false ? 'success' : 'info'">
             {{ row.meta?.isEnable !== false ? '启用' : '未启用' }}
           </ElTag>
-          <span v-else class="text-gray-400">-</span>
         </template>
 
         <!-- 操作列 -->
         <template #operation="{ row }">
-          <div v-if="!isManageGroupRow(row)" class="flex items-center justify-center gap-2">
+          <div class="flex items-center justify-center gap-2">
             <ArtButtonMore
               :list="getOperationList(row)"
               @click="(item) => handleMenuOperation(item, row)"
             />
           </div>
-          <span v-else class="text-gray-400">-</span>
         </template>
       </ArtTable>
 
@@ -310,7 +264,6 @@
         v-model:visible="dialogVisible"
         :editData="editData"
         :menuTree="filteredMenuTree"
-        :manageGroups="menuGroups"
         :menuSpaces="menuSpaces"
         :currentSpaceKey="activeSpaceKey"
         :currentMenuPages="getLinkedPages(editData || {})"
@@ -318,15 +271,6 @@
         :initialParentId="String(parentRowForAdd?.id ?? '')"
         :showSpaceField="isLayoutMode"
         @submit="handleSubmit"
-      />
-
-      <MenuGroupDrawer
-        v-model="manageGroupDrawerVisible"
-        :items="menuGroups"
-        :loading="loading"
-        :saving="groupSaving"
-        @save="handleSaveManageGroup"
-        @delete="handleDeleteManageGroup"
       />
 
       <MenuPermissionDialog
@@ -347,38 +291,6 @@
         @confirm="handleDeleteMenuConfirm"
       />
 
-      <ElDialog
-        v-model="batchAssignDialogVisible"
-        title="批量移入分组"
-        width="460px"
-        destroy-on-close
-      >
-        <div class="menu-batch-dialog">
-          <div class="menu-batch-dialog-count"
-            >已选 {{ selectedMenuRows.length }} 项，将同步作用于所选菜单及其下级。</div
-          >
-          <ElSelect
-            v-model="batchTargetGroupId"
-            filterable
-            clearable
-            placeholder="请选择目标分组，可搜索"
-            style="width: 100%"
-          >
-            <ElOption
-              v-for="item in menuGroups"
-              :key="item.id"
-              :label="item.name"
-              :value="item.id"
-            />
-          </ElSelect>
-        </div>
-        <template #footer>
-          <div class="menu-batch-dialog-footer">
-            <ElButton @click="batchAssignDialogVisible = false">取消</ElButton>
-            <ElButton type="primary" @click="handleBatchAssignSubmit">确认移入</ElButton>
-          </div>
-        </template>
-      </ElDialog>
     </ElCard>
   </div>
 </template>
@@ -393,10 +305,6 @@
     ElAlert,
     ElButton,
     ElCard,
-    ElDialog,
-    ElDropdown,
-    ElDropdownItem,
-    ElDropdownMenu,
     ElOption,
     ElSelect,
     ElSwitch,
@@ -404,7 +312,6 @@
   } from 'element-plus'
   import MenuDeleteDialog from './modules/menu-delete-dialog.vue'
   import MenuDialog from './modules/menu-dialog.vue'
-  import MenuGroupDrawer from './modules/menu-group-drawer.vue'
   import MenuPermissionDialog from './modules/menu-permission-dialog.vue'
   import MenuSearch from './modules/menu-search.vue'
   import { useMenuPage } from './modules/use-menu-page'
@@ -419,19 +326,13 @@
     showHiddenMenus,
     showIframeMenus,
     showEnabledMenus,
-    groupingEnabled,
-    groupedMenuVisible,
     tableRef,
     multiSelectEnabled,
     activeSpaceKey,
     selectedAppKey,
-    menuGroups,
     menuSpaces,
-    menuGroupApiUnavailable,
     formFilters,
     dialogVisible,
-    manageGroupDrawerVisible,
-    groupSaving,
     editData,
     parentRowForAdd,
     deleteDialogVisible,
@@ -441,8 +342,6 @@
     actionRequirementVisible,
     actionRequirementData,
     selectedMenuRows,
-    batchTargetGroupId,
-    batchAssignDialogVisible,
     isLayoutMode,
     menuSpaceOptions,
     appOptions,
@@ -450,7 +349,6 @@
     menuPageDescription,
     menuToolbarTip,
     filteredMenuTree,
-    groupingAvailable,
     tableData,
     menuHeroMetrics,
     columnChecks,
@@ -470,18 +368,12 @@
     getMenuDescendantCount,
     getAffectedPageCount,
     getDeleteParentOptions,
-    handleMoreActionCommand,
-    handleBatchCommand,
-    handleBatchAssignSubmit,
     handleExpandSwitchChange,
     handleAddMenu,
     handleMenuOperation,
     handleDeleteMenuConfirm,
     handleSubmit,
     handleActionRequirementSubmit,
-    handleSaveManageGroup,
-    handleDeleteManageGroup,
-    isManageGroupRow,
     isDirectoryMenuRow,
     isEntryMenuRow,
     getMenuTypeTag,

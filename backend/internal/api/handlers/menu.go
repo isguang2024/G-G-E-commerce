@@ -1,4 +1,4 @@
-// menu.go: ogen handler implementations for /menus/* and menu groups.
+// menu.go: ogen handler implementations for /menus/*.
 package handlers
 
 import (
@@ -85,55 +85,6 @@ func (h *APIHandler) UpdateMenu(ctx context.Context, req *gen.MenuSaveRequest, p
 func (h *APIHandler) DeleteMenu(ctx context.Context, params gen.DeleteMenuParams) (*gen.MutationResult, error) {
 	if err := h.menuSvc.Delete(params.ID, "", nil); err != nil {
 		h.logger.Error("delete menu failed", zap.Error(err))
-		return nil, err
-	}
-	return ok(), nil
-}
-
-func (h *APIHandler) ListMenuGroups(ctx context.Context) (*gen.MenuGroupList, error) {
-	list, err := h.menuSvc.ListGroups()
-	if err != nil {
-		h.logger.Error("list menu groups failed", zap.Error(err))
-		return nil, err
-	}
-	return &gen.MenuGroupList{Records: marshalList(list), Total: len(list)}, nil
-}
-
-func (h *APIHandler) CreateMenuGroup(ctx context.Context, req *gen.MenuGroupSaveRequest) (*gen.MutationResult, error) {
-	if req == nil {
-		return nil, errors.New("request body required")
-	}
-	dtoReq := &dto.MenuManageGroupCreateRequest{
-		Name:      req.Name,
-		SortOrder: optInt(req.SortOrder, 0),
-		Status:    optString(req.Status),
-	}
-	if _, err := h.menuSvc.CreateGroup(dtoReq); err != nil {
-		h.logger.Error("create menu group failed", zap.Error(err))
-		return nil, err
-	}
-	return ok(), nil
-}
-
-func (h *APIHandler) UpdateMenuGroup(ctx context.Context, req *gen.MenuGroupSaveRequest, params gen.UpdateMenuGroupParams) (*gen.MutationResult, error) {
-	if req == nil {
-		return nil, errors.New("request body required")
-	}
-	dtoReq := &dto.MenuManageGroupUpdateRequest{
-		Name:      req.Name,
-		SortOrder: optInt(req.SortOrder, 0),
-		Status:    optString(req.Status),
-	}
-	if err := h.menuSvc.UpdateGroup(params.ID, dtoReq); err != nil {
-		h.logger.Error("update menu group failed", zap.Error(err))
-		return nil, err
-	}
-	return ok(), nil
-}
-
-func (h *APIHandler) DeleteMenuGroup(ctx context.Context, params gen.DeleteMenuGroupParams) (*gen.MutationResult, error) {
-	if err := h.menuSvc.DeleteGroup(params.ID); err != nil {
-		h.logger.Error("delete menu group failed", zap.Error(err))
 		return nil, err
 	}
 	return ok(), nil

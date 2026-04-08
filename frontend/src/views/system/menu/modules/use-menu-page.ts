@@ -11,7 +11,7 @@
  */
 import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { formatMenuTitle } from '@/utils/router'
 import { getMenuActionRequirement } from '@/utils/permission/menu'
 import { useTableColumns } from '@/hooks/core/useTableColumns'
@@ -24,25 +24,18 @@ import {
   fetchUpdateMenu,
   fetchDeleteMenu,
   fetchGetMenuDeletePreview,
-  fetchGetMenuManageGroups,
-  fetchCreateMenuManageGroup,
-  fetchUpdateMenuManageGroup,
-  fetchDeleteMenuManageGroup,
   fetchGetPageOptions,
   fetchGetMenuSpaces,
   fetchGetApps
 } from '@/api/system-manage'
 import {
-  buildManageGroupNode,
   cloneMenuNode,
   getAccessModeLabel,
   getAccessModeTag,
-  getManageGroupId,
   getMenuTypeTag,
   getMenuTypeText,
   isDirectoryMenuRow,
   isEntryMenuRow,
-  isManageGroupRow,
   normalizeKeyword
 } from './helpers'
 
@@ -63,8 +56,6 @@ export function useMenuPage() {
   const showHiddenMenus = ref(true)
   const showIframeMenus = ref(true)
   const showEnabledMenus = ref(true)
-  const groupingEnabled = ref(true)
-  const groupedMenuVisible = ref(true)
   const tableRef = ref()
   const multiSelectEnabled = ref(false)
   const rawMenuTree = ref<AppRouteRecord[]>([])
@@ -78,9 +69,7 @@ export function useMenuPage() {
   const isLayoutMode = computed(() => `${route.query.layout || ''}`.trim() === '1')
   const appList = ref<Api.SystemManage.AppItem[]>([])
   const selectedAppKey = ref('')
-  const menuGroups = ref<Api.SystemManage.MenuManageGroupItem[]>([])
   const dataFromBackend = ref(false)
-  const menuGroupApiUnavailable = ref(false)
 
   const warnDev = (...args: any[]) => {
     if (import.meta.env.DEV) {
@@ -94,8 +83,6 @@ export function useMenuPage() {
   const appliedFilters = reactive({ ...initialSearchState })
   // --- 弹窗相关 ---
   const dialogVisible = ref(false)
-  const manageGroupDrawerVisible = ref(false)
-  const groupSaving = ref(false)
   const editData = ref<AppRouteRecord | null>(null)
   const parentRowForAdd = ref<AppRouteRecord | null>(null)
   const deleteDialogVisible = ref(false)
@@ -105,15 +92,12 @@ export function useMenuPage() {
   const actionRequirementVisible = ref(false)
   const actionRequirementData = ref<AppRouteRecord | null>(null)
   const selectedMenuRows = ref<AppRouteRecord[]>([])
-  const batchTargetGroupId = ref('')
-  const batchAssignDialogVisible = ref(false)
 
   // --- 菜单列表处理 ---
   const matchesMenuFilters = (item: AppRouteRecord) => {
     if (!showHiddenMenus.value && item.meta?.isHide) return false
     if (!showIframeMenus.value && item.meta?.isIframe) return false
     if (!showEnabledMenus.value && item.meta?.isEnable !== false) return false
-    if (!groupedMenuVisible.value && getManageGroupId(item)) return false
     return true
   }
 
@@ -126,8 +110,6 @@ export function useMenuPage() {
     const routeMatch = !searchRoute || path.includes(searchRoute)
     return titleMatch && routeMatch
   }
-
-  const menuGroupMap = computed(() => new Map(menuGroups.value.map((item) => [item.id, item])))
 
   const menuSpaceMap = computed(
     () => new Map(menuSpaces.value.map((item) => [item.spaceKey, item]))
@@ -188,46 +170,6 @@ export function useMenuPage() {
       ? '当前按空间查看菜单布局树；同一菜单定义在多个空间复用时，共享一份授权与裁剪状态。'
       : '当前按 App 维护菜单定义；父级、排序和显示位置以当前查看空间做布局参考，不再把空间当成菜单主归属。'
   )
-  const injectManageGroups = (
-    items: AppRouteRecord[],
-    parentKey = 'root',
-    inheritedGroupId = ''
-  ): AppRouteRecord[] => {
-    const result: AppRouteRecord[] = []
-    const groupNodeMap = new Map<string, AppRouteRecord>()
-
-    items.forEach((item) => {
-      const currentGroupID = getManageGroupId(item)
-      const children = item.children?.length
-        ? injectManageGroups(
-            item.children as AppRouteRecord[],
-            `${item.id || item.path || parentKey}`,
-            currentGroupID || inheritedGroupId
-          )
-        : []
-      const cloned = cloneMenuNode(item, children)
-      const groupID = getManageGroupId(cloned)
-      const group = groupID ? menuGroupMap.value.get(groupID) : undefined
-      if (!group || groupID === inheritedGroupId) {
-        result.push(cloned)
-        return
-      }
-
-      let groupNode = groupNodeMap.get(group.id)
-      if (!groupNode) {
-        groupNode = buildManageGroupNode(group, parentKey)
-        groupNodeMap.set(group.id, groupNode)
-        result.push(groupNode)
-      }
-      const groupedChildren = (groupNode.children || []) as AppRouteRecord[]
-      groupedChildren.push(cloned)
-      groupNode.children = groupedChildren
-    })
-
-    result.sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
-    return result
-  }
-
   const filterMenuTree = (items: AppRouteRecord[]): AppRouteRecord[] => {
     return items.reduce<AppRouteRecord[]>((result, item) => {
       if (!matchesMenuFilters(item)) {
@@ -248,21 +190,14 @@ export function useMenuPage() {
 
   const filteredMenuTree = computed(() => filterMenuTree(rawMenuTree.value))
 
-  const groupingAvailable = computed(() => !menuGroupApiUnavailable.value)
-
-  const tableData = computed(() =>
-    groupingAvailable.value && groupingEnabled.value
-      ? injectManageGroups(filteredMenuTree.value)
-      : filteredMenuTree.value
-  )
+  const tableData = computed(() => filteredMenuTree.value)
 
   const menuStats = computed(() => {
     const stats = {
       total: 0,
       directory: 0,
       entry: 0,
-      external: 0,
-      groups: menuGroups.value.length
+      external: 0
     }
     const walk = (items: AppRouteRecord[]) => {
       items.forEach((item) => {
@@ -290,8 +225,7 @@ export function useMenuPage() {
     { label: '总数', value: menuStats.value.total },
     { label: '目录', value: menuStats.value.directory },
     { label: '入口', value: menuStats.value.entry },
-    { label: '外链', value: menuStats.value.external },
-    { label: '分组', value: menuStats.value.groups }
+    { label: '外链', value: menuStats.value.external }
   ])
 
   const getMenuList = async () => {
@@ -301,7 +235,6 @@ export function useMenuPage() {
     if (!targetAppKey.value) {
       rawMenuTree.value = []
       rawPages.value = []
-      menuGroups.value = []
       activeSpaceKey.value = ''
       loadError.value = managedAppMissingText
       loading.value = false
@@ -315,36 +248,19 @@ export function useMenuPage() {
       return
     }
     try {
-      const [list, pagesResult, groupsResult] = await Promise.all([
+      const [list, pagesResult] = await Promise.all([
         fetchGetMenuTreeAll(activeSpaceKey.value, targetAppKey.value),
         fetchGetPageOptions(activeSpaceKey.value, targetAppKey.value).then(
           (res) => res.records || []
-        ),
-        fetchGetMenuManageGroups()
-          .then((groups) => ({ ok: true as const, groups }))
-          .catch((error) => ({
-            ok: false as const,
-            error,
-            groups: [] as Api.SystemManage.MenuManageGroupItem[]
-          }))
+        )
       ])
       rawMenuTree.value = Array.isArray(list) ? list : []
       rawPages.value = Array.isArray(pagesResult) ? pagesResult : []
-      menuGroups.value = groupsResult.groups || []
       dataFromBackend.value = true
-
-      if (!groupsResult.ok) {
-        warnDev('[Menus] 菜单分组接口不可用，已降级为无分组模式', groupsResult.error)
-        menuGroupApiUnavailable.value = true
-      } else {
-        menuGroupApiUnavailable.value = false
-      }
     } catch (error) {
       warnDev('[Menus] 获取菜单数据失败，已回退为空列表', error)
       rawMenuTree.value = []
       rawPages.value = []
-      menuGroups.value = []
-      menuGroupApiUnavailable.value = false
       loadError.value = '菜单数据暂时不可用，稍后重试或刷新状态。'
     } finally {
       loading.value = false
@@ -357,7 +273,6 @@ export function useMenuPage() {
       type: 'selection',
       width: 52,
       align: 'center',
-      selectable: (row: any) => !isManageGroupRow(row),
       className: 'menu-selection-column',
       labelClassName: 'menu-selection-column'
     } as any,
@@ -417,7 +332,6 @@ export function useMenuPage() {
   }
 
   const getOperationList = (row: any): ButtonMoreItem[] => {
-    if (isManageGroupRow(row)) return []
     const list: ButtonMoreItem[] = [
       { key: 'add', label: '新增子菜单', icon: 'ri:add-fill', auth: 'system.menu.manage' },
       { key: 'edit', label: '编辑菜单', icon: 'ri:edit-2-line', auth: 'system.menu.manage' },
@@ -514,13 +428,11 @@ export function useMenuPage() {
 
   const clearBatchSelection = () => {
     selectedMenuRows.value = []
-    batchTargetGroupId.value = ''
-    batchAssignDialogVisible.value = false
     tableRef.value?.elTableRef?.clearSelection?.()
   }
 
   const handleBatchSelectionChange = (rows: any[]) => {
-    selectedMenuRows.value = (rows || []).filter((row) => !isManageGroupRow(row))
+    selectedMenuRows.value = rows || []
   }
 
   const collectMenuSubtree = (rows: any[]) => {
@@ -528,7 +440,7 @@ export function useMenuPage() {
     const seen = new Set<string>()
 
     const visit = (row: any) => {
-      if (!row || isManageGroupRow(row)) return
+      if (!row) return
       const key = String(row.id || row.path || '')
       if (!key || seen.has(key)) return
       seen.add(key)
@@ -540,8 +452,7 @@ export function useMenuPage() {
     return result
   }
 
-  const getMenuChildCount = (row: any) =>
-    (row?.children || []).filter((item: any) => !isManageGroupRow(item)).length
+  const getMenuChildCount = (row: any) => (row?.children || []).length
 
   const getMenuDescendantCount = (row: any) => {
     if (!row) return 0
@@ -571,7 +482,6 @@ export function useMenuPage() {
     const excluded = new Set<string>(collectMenuSubtree([row]).map((item) => String(item.id || '')))
     const walk = (items: AppRouteRecord[]) => {
       return items.reduce<MenuDeleteParentOption[]>((acc, item) => {
-        if (isManageGroupRow(item)) return acc
         const key = String(item.id || '')
         if (!key || excluded.has(key)) return acc
         const children = item.children ? walk(item.children as AppRouteRecord[]) : []
@@ -584,99 +494,6 @@ export function useMenuPage() {
       }, [])
     }
     return walk(filteredMenuTree.value)
-  }
-
-  const handleMoreActionCommand = (command: string) => {
-    if (command === 'manageGroup') {
-      if (!groupingAvailable.value) return
-      manageGroupDrawerVisible.value = true
-      return
-    }
-  }
-
-  const hasOwnManageGroup = (row: any) => Boolean(`${row?.manage_group_id || ''}`.trim())
-
-  const buildMenuUpdatePayloadFromRow = (row: any, manageGroupID: string | null) => {
-    const meta = buildMenuMetaForUpdate(row)
-    return {
-      parent_id: row.parent_id ? String(row.parent_id) : null,
-      kind: row.kind || 'directory',
-      path: row.path || '',
-      name: row.name || '',
-      component: typeof row.component === 'string' ? row.component : '',
-      title: row.meta?.title || '',
-      icon: row.meta?.icon || '',
-      sort_order: Number(row.sort_order ?? 0),
-      space_key:
-        `${row.spaceKey || row.space_key || row.meta?.spaceKey || activeSpaceKey.value || ''}`.trim(),
-      manage_group_id: manageGroupID,
-      meta
-    }
-  }
-
-  const applyBatchGroupAction = async (action: 'assign' | 'remove', assignGroupID?: string) => {
-    if (selectedMenuRows.value.length === 0) {
-      ElMessage.warning('请先勾选菜单')
-      return
-    }
-    const nextGroupID = action === 'assign' ? `${assignGroupID || ''}`.trim() : ''
-    if (action === 'assign' && !nextGroupID) {
-      ElMessage.warning('请选择目标分组')
-      return
-    }
-    const targetGroupID = action === 'remove' ? null : nextGroupID
-    const expandedRows = collectMenuSubtree(selectedMenuRows.value)
-    const actionableRows =
-      action === 'remove' ? expandedRows.filter((row) => hasOwnManageGroup(row)) : expandedRows
-
-    if (action === 'remove' && actionableRows.length === 0) {
-      ElMessage.warning('所选菜单及其下级没有已绑定的分组')
-      return
-    }
-
-    const text = action === 'remove' ? '移出所选菜单的分组归属' : '移入所选菜单到目标分组'
-    try {
-      await ElMessageBox.confirm(`确定要${text}吗？`, '批量操作确认', { type: 'warning' })
-      await Promise.all(
-        actionableRows.map((row) =>
-          fetchUpdateMenu(String(row.id), buildMenuUpdatePayloadFromRow(row, targetGroupID), {
-            showErrorMessage: false
-          })
-        )
-      )
-      if (action === 'remove' && actionableRows.length !== expandedRows.length) {
-        ElMessage.success(
-          `批量移出成功，已跳过 ${expandedRows.length - actionableRows.length} 项未绑定分组菜单`
-        )
-      } else {
-        ElMessage.success('批量操作成功')
-      }
-      await getMenuList()
-      clearBatchSelection()
-      batchTargetGroupId.value = ''
-    } catch (e: any) {
-      if (e !== 'cancel') {
-        console.error('[Menus] batch operation failed', e)
-        ElMessage.error(e?.message || '批量操作失败')
-      }
-    }
-  }
-
-  const handleBatchCommand = (command: 'assign' | 'remove') => {
-    if (command === 'assign') {
-      if (selectedMenuRows.value.length === 0) {
-        ElMessage.warning('请先勾选菜单')
-        return
-      }
-      batchTargetGroupId.value = ''
-      batchAssignDialogVisible.value = true
-      return
-    }
-    applyBatchGroupAction(command)
-  }
-
-  const handleBatchAssignSubmit = async () => {
-    await applyBatchGroupAction('assign', batchTargetGroupId.value)
   }
 
   const setExpandState = (expanded: boolean) => {
@@ -707,13 +524,11 @@ export function useMenuPage() {
     dialogVisible.value = true
   }
   const handleAddUnderRow = (row: any) => {
-    if (isManageGroupRow(row)) return
     editData.value = null
     parentRowForAdd.value = row
     dialogVisible.value = true
   }
   const handleEditMenu = (row: any) => {
-    if (isManageGroupRow(row)) return
     editData.value = row
     parentRowForAdd.value = null
     dialogVisible.value = true
@@ -788,7 +603,6 @@ export function useMenuPage() {
     icon: formData.icon || '',
     sort_order: Number(formData.sort ?? 0),
     space_key: `${formData.spaceKey || activeSpaceKey.value || ''}`.trim(),
-    manage_group_id: formData.manageGroupId?.trim() || null,
     meta
   })
 
@@ -847,10 +661,6 @@ export function useMenuPage() {
   const handleSubmit = async (formData: any) => {
     if (!dataFromBackend.value) return getMenuList()
     try {
-      const nextManageGroupID = formData.manageGroupId?.trim() || null
-      const currentManageGroupID = editData.value?.manage_group_id
-        ? String(editData.value.manage_group_id)
-        : null
       const payload = buildMenuRequestPayload(formData, buildMenuMetaFromForm(formData))
       if (editData.value?.id) {
         const parentId = formData.parentId?.trim() || null
@@ -859,23 +669,6 @@ export function useMenuPage() {
           { ...payload, parent_id: parentId },
           { showErrorMessage: false }
         )
-
-        if (currentManageGroupID !== nextManageGroupID) {
-          const descendants = collectMenuSubtree(editData.value.children || []).filter(
-            (row) => !isManageGroupRow(row)
-          )
-          if (descendants.length) {
-            await Promise.all(
-              descendants.map((row) =>
-                fetchUpdateMenu(
-                  String(row.id),
-                  buildMenuUpdatePayloadFromRow(row, nextManageGroupID),
-                  { showErrorMessage: false }
-                )
-              )
-            )
-          }
-        }
       } else {
         const parentId = resolveParentId(formData)
         await fetchCreateMenu({ ...payload, parent_id: parentId }, { showErrorMessage: false })
@@ -931,40 +724,6 @@ export function useMenuPage() {
     }
   }
 
-  const handleSaveManageGroup = async (
-    payload: Api.SystemManage.MenuManageGroupSaveParams & { id?: string }
-  ) => {
-    groupSaving.value = true
-    try {
-      if (payload.id) {
-        await fetchUpdateMenuManageGroup(payload.id, payload)
-      } else {
-        await fetchCreateMenuManageGroup(payload)
-      }
-      ElMessage.success('菜单分组已保存')
-      await getMenuList()
-    } catch (e: any) {
-      console.error('[Menus] save manage group failed', e)
-      ElMessage.error(e?.message || '菜单分组保存失败')
-    } finally {
-      groupSaving.value = false
-    }
-  }
-
-  const handleDeleteManageGroup = async (id: string) => {
-    groupSaving.value = true
-    try {
-      await fetchDeleteMenuManageGroup(id)
-      ElMessage.success('菜单分组已删除')
-      await getMenuList()
-    } catch (e: any) {
-      console.error('[Menus] delete manage group failed', e)
-      ElMessage.error(e?.message || '菜单分组删除失败')
-    } finally {
-      groupSaving.value = false
-    }
-  }
-
   watch(multiSelectEnabled, (enabled) => {
     if (!enabled) {
       clearBatchSelection()
@@ -978,27 +737,8 @@ export function useMenuPage() {
     }
   })
 
-  watch(groupingEnabled, (enabled) => {
-    if (!enabled) {
-      setExpandState(false)
-    }
-    localStorage.setItem('system:menu:grouping-enabled', enabled ? '1' : '0')
-  })
-
-  watch(menuGroupApiUnavailable, (unavailable) => {
-    if (unavailable) {
-      setExpandState(false)
-    }
-  })
-
-  watch(groupedMenuVisible, (visible) => {
-    localStorage.setItem('system:menu:grouped-visible', visible ? '1' : '0')
-  })
-
   // --- 生命周期 & 监听 ---
   onMounted(() => {
-    groupingEnabled.value = localStorage.getItem('system:menu:grouping-enabled') !== '0'
-    groupedMenuVisible.value = localStorage.getItem('system:menu:grouped-visible') !== '0'
     selectedAppKey.value = targetAppKey.value
     loadAppOptions().catch((error) => {
       warnDev('[Menus] 加载 App 列表失败', error)
@@ -1057,19 +797,13 @@ export function useMenuPage() {
     showHiddenMenus,
     showIframeMenus,
     showEnabledMenus,
-    groupingEnabled,
-    groupedMenuVisible,
     tableRef,
     multiSelectEnabled,
     activeSpaceKey,
     selectedAppKey,
-    menuGroups,
     menuSpaces,
-    menuGroupApiUnavailable,
     formFilters,
     dialogVisible,
-    manageGroupDrawerVisible,
-    groupSaving,
     editData,
     parentRowForAdd,
     deleteDialogVisible,
@@ -1079,8 +813,6 @@ export function useMenuPage() {
     actionRequirementVisible,
     actionRequirementData,
     selectedMenuRows,
-    batchTargetGroupId,
-    batchAssignDialogVisible,
     targetAppKey,
     isLayoutMode,
     // computed
@@ -1091,7 +823,6 @@ export function useMenuPage() {
     menuPageDescription,
     menuToolbarTip,
     filteredMenuTree,
-    groupingAvailable,
     tableData,
     menuHeroMetrics,
     columnChecks,
@@ -1112,19 +843,13 @@ export function useMenuPage() {
     getMenuDescendantCount,
     getAffectedPageCount,
     getDeleteParentOptions,
-    handleMoreActionCommand,
-    handleBatchCommand,
-    handleBatchAssignSubmit,
     handleExpandSwitchChange,
     handleAddMenu,
     handleMenuOperation,
     handleDeleteMenuConfirm,
     handleSubmit,
     handleActionRequirementSubmit,
-    handleSaveManageGroup,
-    handleDeleteManageGroup,
     // re-exports for template convenience
-    isManageGroupRow,
     isDirectoryMenuRow,
     isEntryMenuRow,
     getMenuTypeTag,

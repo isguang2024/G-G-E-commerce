@@ -262,22 +262,6 @@ func (s *stubMenuService) DeletePreview(id uuid.UUID, mode string, targetParentI
 	return nil, fmt.Errorf("unexpected DeletePreview call")
 }
 
-func (s *stubMenuService) ListGroups() ([]user.MenuManageGroup, error) {
-	return nil, fmt.Errorf("unexpected ListGroups call")
-}
-
-func (s *stubMenuService) CreateGroup(req *dto.MenuManageGroupCreateRequest) (*user.MenuManageGroup, error) {
-	return nil, fmt.Errorf("unexpected CreateGroup call")
-}
-
-func (s *stubMenuService) UpdateGroup(id uuid.UUID, req *dto.MenuManageGroupUpdateRequest) error {
-	return fmt.Errorf("unexpected UpdateGroup call")
-}
-
-func (s *stubMenuService) DeleteGroup(id uuid.UUID) error {
-	return fmt.Errorf("unexpected DeleteGroup call")
-}
-
 type stubPageService struct {
 	resolveCompiledAccessContextFn func(appKey, spaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*pagepkg.CompiledAccessContext, error)
 	listRuntimeWithAccessFn        func(appKey, spaceKey string, accessCtx *pagepkg.CompiledAccessContext) ([]pagepkg.Record, error)

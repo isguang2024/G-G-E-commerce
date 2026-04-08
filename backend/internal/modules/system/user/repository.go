@@ -513,22 +513,6 @@ func NewMenuRepository(db *gorm.DB) MenuRepository {
 	return &menuRepository{db: db}
 }
 
-func (r *menuRepository) supportsMenuManageGroupColumn() bool {
-	return r.db.Migrator().HasColumn(&Menu{}, "manage_group_id")
-}
-
-func (r *menuRepository) supportsMenuManageGroupTable() bool {
-	return r.db.Migrator().HasTable(&MenuManageGroup{})
-}
-
-func (r *menuRepository) menuQuery() *gorm.DB {
-	query := r.db
-	if r.supportsMenuManageGroupColumn() && r.supportsMenuManageGroupTable() {
-		query = query.Preload("ManageGroup")
-	}
-	return query
-}
-
 func (r *menuRepository) loadDefinitionMenus(appKey string, ids []uuid.UUID) ([]Menu, error) {
 	if r.db == nil {
 		return []Menu{}, nil
@@ -582,10 +566,6 @@ func (r *menuRepository) loadDefinitionMenus(appKey string, ids []uuid.UUID) ([]
 	if err != nil {
 		return nil, err
 	}
-	groupMap, err := r.loadMenuManageGroupMap(placements)
-	if err != nil {
-		return nil, err
-	}
 
 	placementsByComposite := make(map[string][]SpaceMenuPlacement, len(definitions))
 	for _, placement := range placements {
@@ -597,7 +577,7 @@ func (r *menuRepository) loadDefinitionMenus(appKey string, ids []uuid.UUID) ([]
 	for _, definition := range definitions {
 		compositeKey := definition.AppKey + "::" + definition.MenuKey
 		preferred := pickPreferredPlacement(placementsByComposite[compositeKey], defaultSpaceByApp[definition.AppKey])
-		menu := materializeMenuDefinition(definition, preferred, groupMap)
+		menu := materializeMenuDefinition(definition, preferred)
 		result = append(result, menu)
 	}
 
@@ -675,10 +655,6 @@ func (r *menuRepository) loadPlacedMenus(appKey, spaceKey string) ([]Menu, error
 	for _, definition := range definitions {
 		definitionByComposite[definition.AppKey+"::"+definition.MenuKey] = definition
 	}
-	groupMap, err := r.loadMenuManageGroupMap(placements)
-	if err != nil {
-		return nil, err
-	}
 
 	result := make([]Menu, 0, len(placements))
 	for _, placement := range placements {
@@ -686,7 +662,7 @@ func (r *menuRepository) loadPlacedMenus(appKey, spaceKey string) ([]Menu, error
 		if !ok {
 			continue
 		}
-		menu := materializeMenuPlacement(definition, placement, definitionByComposite, groupMap)
+		menu := materializeMenuPlacement(definition, placement, definitionByComposite)
 		result = append(result, menu)
 	}
 	return result, nil
@@ -707,33 +683,6 @@ func (r *menuRepository) loadDefaultSpaceByApp(appKeys []string) (map[string]str
 			defaultSpaceKey = models.DefaultMenuSpaceKey
 		}
 		result[app.AppKey] = defaultSpaceKey
-	}
-	return result, nil
-}
-
-func (r *menuRepository) loadMenuManageGroupMap(placements []SpaceMenuPlacement) (map[uuid.UUID]MenuManageGroup, error) {
-	groupIDs := make([]uuid.UUID, 0)
-	seen := make(map[uuid.UUID]struct{})
-	for _, placement := range placements {
-		if placement.ManageGroupID == nil || *placement.ManageGroupID == uuid.Nil {
-			continue
-		}
-		if _, ok := seen[*placement.ManageGroupID]; ok {
-			continue
-		}
-		seen[*placement.ManageGroupID] = struct{}{}
-		groupIDs = append(groupIDs, *placement.ManageGroupID)
-	}
-	if len(groupIDs) == 0 {
-		return map[uuid.UUID]MenuManageGroup{}, nil
-	}
-	var groups []MenuManageGroup
-	if err := r.db.Model(&MenuManageGroup{}).Where("id IN ?", groupIDs).Find(&groups).Error; err != nil {
-		return nil, err
-	}
-	result := make(map[uuid.UUID]MenuManageGroup, len(groups))
-	for _, group := range groups {
-		result[group.ID] = group
 	}
 	return result, nil
 }
@@ -773,7 +722,7 @@ func preferredPlacementScore(placement SpaceMenuPlacement, defaultSpaceKey strin
 	}
 }
 
-func materializeMenuDefinition(definition MenuDefinition, placement *SpaceMenuPlacement, groupMap map[uuid.UUID]MenuManageGroup) Menu {
+func materializeMenuDefinition(definition MenuDefinition, placement *SpaceMenuPlacement) Menu {
 	menu := Menu{
 		ID:        definition.ID,
 		AppKey:    definition.AppKey,
@@ -800,15 +749,8 @@ func materializeMenuDefinition(definition MenuDefinition, placement *SpaceMenuPl
 	menu.SpaceKey = placement.SpaceKey
 	menu.SortOrder = placement.SortOrder
 	menu.Hidden = placement.Hidden
-	menu.ManageGroupID = placement.ManageGroupID
 	if placement.MetaOverride != nil {
 		menu.Meta = mergeMenuMeta(menu.Meta, placement.MetaOverride)
-	}
-	if placement.ManageGroupID != nil {
-		if group, ok := groupMap[*placement.ManageGroupID]; ok {
-			groupCopy := group
-			menu.ManageGroup = &groupCopy
-		}
 	}
 	return menu
 }
@@ -817,9 +759,8 @@ func materializeMenuPlacement(
 	definition MenuDefinition,
 	placement SpaceMenuPlacement,
 	definitionByComposite map[string]MenuDefinition,
-	groupMap map[uuid.UUID]MenuManageGroup,
 ) Menu {
-	menu := materializeMenuDefinition(definition, &placement, groupMap)
+	menu := materializeMenuDefinition(definition, &placement)
 	if parentMenuKey := strings.TrimSpace(placement.ParentMenuKey); parentMenuKey != "" {
 		if parentDefinition, ok := definitionByComposite[placement.AppKey+"::"+parentMenuKey]; ok {
 			parentID := parentDefinition.ID
@@ -879,11 +820,7 @@ func (r *menuRepository) ListByAppAndSpace(appKey, spaceKey string) ([]Menu, err
 }
 
 func (r *menuRepository) Create(menu *Menu) error {
-	if r.supportsMenuManageGroupColumn() {
-		return r.db.Create(menu).Error
-	}
-	menu.ManageGroupID = nil
-	return r.db.Omit("ManageGroupID", "ManageGroup").Create(menu).Error
+	return r.db.Create(menu).Error
 }
 
 func (r *menuRepository) Update(menu *Menu, updateParent bool) error {
@@ -904,19 +841,11 @@ func (r *menuRepository) Update(menu *Menu, updateParent bool) error {
 		if err := baseQuery.Updates(updates).Error; err != nil {
 			return err
 		}
-
-		if r.supportsMenuManageGroupColumn() {
-			if err := baseQuery.Update("manage_group_id", menu.ManageGroupID).Error; err != nil {
-				return err
-			}
-		}
-
 		if updateParent {
 			if err := baseQuery.Update("parent_id", menu.ParentID).Error; err != nil {
 				return err
 			}
 		}
-
 		return nil
 	})
 }

@@ -99,13 +99,6 @@ export interface AppRouteRecord extends Omit<RouteRecordRaw, 'meta' | 'children'
   sort_order?: number
   parent_id?: number | string
   is_system?: boolean
-  manage_group_id?: string
-  manage_group?: {
-    id: string
-    name: string
-    sort_order?: number
-    status?: string
-  }
   spaceKey?: string
   spaceType?: string
   hostKey?: string

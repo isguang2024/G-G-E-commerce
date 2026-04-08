@@ -25,8 +25,6 @@ import (
 var (
 	ErrMenuNotFound          = errors.New("菜单不存在")
 	ErrMenuSystemProtected   = errors.New("系统默认菜单不可删除")
-	ErrMenuGroupNotFound     = errors.New("菜单分组不存在")
-	ErrMenuGroupInUse        = errors.New("菜单分组使用中，无法删除")
 	ErrMenuDeleteModeInvalid = errors.New("无效的菜单删除方式")
 	ErrMenuHasChildren       = errors.New("该菜单存在子菜单，请选择删除策略")
 )
@@ -37,10 +35,6 @@ type MenuService interface {
 	Update(id uuid.UUID, req *dto.MenuUpdateRequest) error
 	DeletePreview(id uuid.UUID, mode string, targetParentID *uuid.UUID) (*MenuDeletePreview, error)
 	Delete(id uuid.UUID, mode string, targetParentID *uuid.UUID) error
-	ListGroups() ([]user.MenuManageGroup, error)
-	CreateGroup(req *dto.MenuManageGroupCreateRequest) (*user.MenuManageGroup, error)
-	UpdateGroup(id uuid.UUID, req *dto.MenuManageGroupUpdateRequest) error
-	DeleteGroup(id uuid.UUID) error
 }
 
 type menuService struct {
@@ -63,63 +57,6 @@ func NewMenuService(db *gorm.DB, menuRepo user.MenuRepository, refresher permiss
 }
 
 // ---------------------------------------------------------------------------
-// Group CRUD
-// ---------------------------------------------------------------------------
-
-func (s *menuService) ListGroups() ([]user.MenuManageGroup, error) {
-	var groups []user.MenuManageGroup
-	err := s.db.Order("sort_order ASC, created_at ASC").Find(&groups).Error
-	return groups, err
-}
-
-func (s *menuService) CreateGroup(req *dto.MenuManageGroupCreateRequest) (*user.MenuManageGroup, error) {
-	group := &user.MenuManageGroup{
-		Name:      strings.TrimSpace(req.Name),
-		SortOrder: req.SortOrder,
-		Status:    normalizeMenuGroupStatus(req.Status),
-	}
-	if err := s.db.Create(group).Error; err != nil {
-		return nil, err
-	}
-	return group, nil
-}
-
-func (s *menuService) UpdateGroup(id uuid.UUID, req *dto.MenuManageGroupUpdateRequest) error {
-	var group user.MenuManageGroup
-	if err := s.db.Where("id = ?", id).First(&group).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrMenuGroupNotFound
-		}
-		return err
-	}
-	return s.db.Model(&group).Updates(map[string]interface{}{
-		"name":       strings.TrimSpace(req.Name),
-		"sort_order": req.SortOrder,
-		"status":     normalizeMenuGroupStatus(req.Status),
-	}).Error
-}
-
-func (s *menuService) DeleteGroup(id uuid.UUID) error {
-	var group user.MenuManageGroup
-	if err := s.db.Where("id = ?", id).First(&group).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrMenuGroupNotFound
-		}
-		return err
-	}
-
-	var count int64
-	if err := s.db.Model(&models.SpaceMenuPlacement{}).Where("manage_group_id = ?", id).Count(&count).Error; err != nil {
-		return err
-	}
-	if count > 0 {
-		return ErrMenuGroupInUse
-	}
-
-	return s.db.Delete(&group).Error
-}
-
-// ---------------------------------------------------------------------------
 // Menu CRUD
 // ---------------------------------------------------------------------------
 
@@ -134,10 +71,6 @@ func (s *menuService) Create(req *dto.MenuCreateRequest) (*user.Menu, error) {
 			return nil, err
 		}
 		parentID = &pid
-	}
-	manageGroupID, err := parseOptionalUUID(req.ManageGroupID)
-	if err != nil {
-		return nil, err
 	}
 	kind, component, meta := sanitizeMenuPayloadByKind(req.Kind, req.Component, req.Meta)
 	appKey := normalizeMenuAppKey(req.AppKey)
@@ -185,7 +118,6 @@ func (s *menuService) Create(req *dto.MenuCreateRequest) (*user.Menu, error) {
 			SpaceKey:      normalizeMenuSpaceKey(spaceKey),
 			MenuKey:       menuKey,
 			ParentMenuKey: parentMenuKey,
-			ManageGroupID: manageGroupID,
 			SortOrder:     req.SortOrder,
 			Hidden:        req.Hidden,
 		}
@@ -214,10 +146,6 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 	}
 	if normalizeMenuAppKey(req.AppKey) != normalizeMenuAppKey(definition.AppKey) {
 		return ErrMenuNotFound
-	}
-	manageGroupID, err := parseOptionalUUID(req.ManageGroupID)
-	if err != nil {
-		return err
 	}
 	kind, component, meta := sanitizeMenuPayloadByKind(req.Kind, req.Component, req.Meta)
 	oldMenuKey := strings.TrimSpace(definition.MenuKey)
@@ -267,13 +195,6 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 				return err
 			}
 		}
-		if req.ManageGroupID != nil {
-			if err := tx.Model(&models.SpaceMenuPlacement{}).
-				Where("app_key = ? AND menu_key = ?", definition.AppKey, nextMenuKey).
-				Update("manage_group_id", manageGroupID).Error; err != nil {
-				return err
-			}
-		}
 		if strings.TrimSpace(req.SpaceKey) == "" {
 			return nil
 		}
@@ -301,7 +222,6 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 			SpaceKey:      normalizeMenuSpaceKey(req.SpaceKey),
 			MenuKey:       nextMenuKey,
 			ParentMenuKey: parentMenuKey,
-			ManageGroupID: manageGroupID,
 			SortOrder:     req.SortOrder,
 			Hidden:        req.Hidden,
 		}
@@ -315,7 +235,6 @@ func (s *menuService) Update(id uuid.UUID, req *dto.MenuUpdateRequest) error {
 				"parent_menu_key": parentMenuKey,
 				"sort_order":      req.SortOrder,
 				"hidden":          req.Hidden,
-				"manage_group_id": manageGroupID,
 				"updated_at":      time.Now(),
 				"deleted_at":      nil,
 			}),
@@ -803,15 +722,6 @@ func normalizeMenuSpaceKey(value string) string {
 
 func normalizeMenuAppKey(value string) string {
 	return apppkg.NormalizeAppKey(value)
-}
-
-func normalizeMenuGroupStatus(value string) string {
-	switch strings.TrimSpace(value) {
-	case "disabled":
-		return "disabled"
-	default:
-		return "normal"
-	}
 }
 
 func invalidateMenuCaches() {
