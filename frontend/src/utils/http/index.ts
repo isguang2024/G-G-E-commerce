@@ -146,20 +146,6 @@ axiosInstance.interceptors.request.use(
 /** 响应拦截器 */
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse<BaseResponse>) => {
-    const raw = response.data as any
-    // V5 兼容：ogen handler 直接返回裸 schema（无 {code,data,message} 信封），
-    // legacy request<T> 仍走老的 res.data.data 解包路径，这里把裸响应包成
-    // 兼容信封，让两边接口能在过渡期共存。判定：response.data 不是带 code
-    // 字段的对象就视为 v5 裸响应。
-    if (
-      response.status >= 200 &&
-      response.status < 300 &&
-      (raw == null || typeof raw !== 'object' || raw.code === undefined)
-    ) {
-      ;(response as any).data = { code: 0, data: raw }
-      return response
-    }
-
     const { code, message, msg } = response.data
     // 后端返回 code: 0 表示成功，其他值表示错误
     if (code === 0) return response

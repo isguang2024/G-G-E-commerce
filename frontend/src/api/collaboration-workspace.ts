@@ -256,7 +256,7 @@ export async function fetchGetCollaborationWorkspaceMembers(
       params: { path: { id: collaborationWorkspaceId }, query: (params || {}) as any }
     })
   )
-  return (res || []).map(normalizeCollaborationWorkspaceMember)
+  const __l = Array.isArray(res) ? res : (res?.records || []); return __l.map(normalizeCollaborationWorkspaceMember)
 }
 
 export async function fetchAddCollaborationWorkspaceMember(
@@ -309,14 +309,17 @@ export async function fetchGetMyCollaborationWorkspaces() {
   const res: any = await unwrap(
     v5Client.GET('/collaboration-workspaces/mine', { params: { query: {} as any } })
   )
-  return (res || []).map(normalizeCollaborationWorkspace)
+  // ogen 返回 {records, total} 信封；兼容裸数组防御性处理
+  const list = Array.isArray(res) ? res : res?.records || []
+  return list.map(normalizeCollaborationWorkspace)
 }
 
 export async function fetchGetMyCollaborationWorkspaceMembers() {
   const res: any = await unwrap(
     v5Client.GET('/collaboration-workspaces/current/members', { params: { query: {} as any } })
   )
-  return (res || []).map(normalizeCollaborationWorkspaceMember)
+  const list = Array.isArray(res) ? res : res?.records || []
+  return list.map(normalizeCollaborationWorkspaceMember)
 }
 
 export async function fetchAddMyCollaborationWorkspaceMember(data: {
@@ -400,7 +403,7 @@ export async function fetchGetMyCollaborationWorkspaceRoles() {
   const res: any = await unwrap(
     v5Client.GET('/collaboration-workspaces/current/roles', { params: { query: {} as any } })
   )
-  return (res || []).map((item: any) => ({
+  const __l = Array.isArray(res) ? res : (res?.records || []); return __l.map((item: any) => ({
     roleId: item?.id || '',
     roleCode: item?.code || '',
     roleName: item?.name || '',
@@ -420,7 +423,7 @@ export async function fetchGetCollaborationWorkspaceRoles(collaborationWorkspace
       params: { path: { id: collaborationWorkspaceId } }
     })
   )
-  return (res || []).map((item: any) => ({
+  const __l = Array.isArray(res) ? res : (res?.records || []); return __l.map((item: any) => ({
     roleId: item?.id || '',
     roleCode: item?.code || '',
     roleName: item?.name || '',
@@ -440,7 +443,7 @@ export async function fetchGetMyCollaborationWorkspaceBoundaryRoles(appKey?: str
       params: { query: (appKey ? { app_key: appKey } : {}) as any }
     })
   )
-  return (res || []).map((item: any) => ({
+  const __l = Array.isArray(res) ? res : (res?.records || []); return __l.map((item: any) => ({
     roleId: item?.id || '',
     roleCode: item?.code || '',
     roleName: item?.name || '',
