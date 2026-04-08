@@ -330,6 +330,14 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.GET("/users/:id/collaboration-workspaces", ogenBridge)
 			authenticated.POST("/users/:id/permission-refresh", ogenBridge)
 
+			// Phase 4: user sub-routes (menus, packages, permissions, diagnosis).
+			authenticated.GET("/users/:id/menus", ogenBridge)
+			authenticated.PUT("/users/:id/menus", ogenBridge)
+			authenticated.GET("/users/:id/packages", ogenBridge)
+			authenticated.PUT("/users/:id/packages", ogenBridge)
+			authenticated.GET("/users/:id/permissions", ogenBridge)
+			authenticated.GET("/users/:id/permission-diagnosis", ogenBridge)
+
 			userModule.RegisterRoutes(authenticated)
 			menuModule.RegisterRoutes(authenticated)
 			navigationModule.RegisterRoutes(authenticated)

@@ -52,8 +52,9 @@ const (
 // to stub every method while migrating one domain at a time.
 type APIHandler struct {
 	gen.UnimplementedHandler
-	logger      *zap.Logger
-	service     workspace.Service
+	db            *gorm.DB
+	logger        *zap.Logger
+	service       workspace.Service
 	evaluator   evaluator.Evaluator
 	authSvc     auth.AuthService
 	userRepo    user.UserRepository
@@ -62,13 +63,15 @@ type APIHandler struct {
 	navSvc      navigation.Compiler
 	menuSvc     menu.MenuService
 	pageSvc     page.Service
-	featurePkgSvc featurepackage.Service
-	permSvc     permission.PermissionService
+	featurePkgSvc  featurepackage.Service
+	featurePkgRepo user.FeaturePackageRepository
+	permSvc        permission.PermissionService
 	cwSvc       collaborationworkspace.CollaborationWorkspaceService
 	appSvc      app.Service
 	spaceSvc    space.Service
-	boundarySvc collaborationworkspaceboundary.Service
-	cwMemberRepo user.CollaborationWorkspaceMemberRepository
+	boundarySvc   collaborationworkspaceboundary.Service
+	personalAccess platformaccess.Service
+	cwMemberRepo  user.CollaborationWorkspaceMemberRepository
 	systemFacade *systemmod.Facade
 	refresher    permissionrefresh.Service
 }
@@ -175,6 +178,7 @@ func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval eva
 	)
 
 	return &APIHandler{
+		db:            db,
 		logger:        logger,
 		service:       workspace.NewService(db, logger),
 		evaluator:     eval,
@@ -185,13 +189,15 @@ func NewAPIHandler(db *gorm.DB, cfg *config.Config, logger *zap.Logger, eval eva
 		navSvc:        navSvc,
 		menuSvc:       menuSvc,
 		pageSvc:       pageSvc,
-		featurePkgSvc: featurePkgSvc,
-		permSvc:       permSvc,
+		featurePkgSvc:  featurePkgSvc,
+		featurePkgRepo: featurePkgRepo,
+		permSvc:        permSvc,
 		cwSvc:         cwSvc,
 		appSvc:        appSvc,
 		spaceSvc:      spaceSvc,
-		boundarySvc:   boundarySvc,
-		cwMemberRepo:  cwMemberRepo,
+		boundarySvc:    boundarySvc,
+		personalAccess: personalAccess,
+		cwMemberRepo:   cwMemberRepo,
 		systemFacade:  systemmod.NewFacade(db, logger, nil),
 		refresher:     refresher,
 	}
