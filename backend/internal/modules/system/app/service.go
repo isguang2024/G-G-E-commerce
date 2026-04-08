@@ -86,6 +86,7 @@ type Service interface {
 	ListApps() ([]AppRecord, error)
 	GetCurrent(host, requestedAppKey string) (*CurrentResponse, error)
 	SaveApp(req *SaveAppRequest) (*AppRecord, error)
+	DeleteApp(appKey string) error
 	ListHostBindings(appKey string) ([]HostBindingRecord, error)
 	SaveHostBinding(appKey string, req *SaveHostBindingRequest) (*HostBindingRecord, error)
 	DeleteHostBinding(appKey, id string) error
@@ -467,6 +468,62 @@ func (s *service) SaveApp(req *SaveAppRequest) (*AppRecord, error) {
 	}
 
 	return s.getAppRecord(appKey)
+}
+
+// DeleteApp 级联删除一个 App 及其所有子数据。
+// 内置默认 App（is_default=true）不允许删除。
+func (s *service) DeleteApp(appKey string) error {
+	normalizedAppKey := NormalizeAppKey(appKey)
+	if normalizedAppKey == "" {
+		return errors.New("app_key 不能为空")
+	}
+	var existing models.App
+	if err := s.db.Where("app_key = ? AND deleted_at IS NULL", normalizedAppKey).First(&existing).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("应用不存在")
+		}
+		return err
+	}
+	if existing.IsDefault {
+		return errors.New("内置默认应用不允许删除")
+	}
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		// 1. Level 1 入口绑定
+		if err := tx.Where("app_key = ?", normalizedAppKey).Delete(&models.AppHostBinding{}).Error; err != nil {
+			return fmt.Errorf("删除 APP 入口绑定失败: %w", err)
+		}
+		// 2. Level 2 菜单空间入口绑定
+		if err := tx.Where("app_key = ?", normalizedAppKey).Delete(&models.MenuSpaceEntryBinding{}).Error; err != nil {
+			return fmt.Errorf("删除菜单空间入口绑定失败: %w", err)
+		}
+		// 3. 角色 App 范围
+		if err := tx.Where("app_key = ?", normalizedAppKey).Delete(&models.RoleAppScope{}).Error; err != nil {
+			return fmt.Errorf("删除角色 App 范围失败: %w", err)
+		}
+		// 4. 页面空间绑定 + 页面
+		if err := tx.Where("app_key = ?", normalizedAppKey).Delete(&models.PageSpaceBinding{}).Error; err != nil {
+			return fmt.Errorf("删除页面空间绑定失败: %w", err)
+		}
+		if err := tx.Where("app_key = ?", normalizedAppKey).Delete(&models.UIPage{}).Error; err != nil {
+			return fmt.Errorf("删除页面失败: %w", err)
+		}
+		// 5. 菜单空间布局 + 菜单定义
+		if err := tx.Where("app_key = ?", normalizedAppKey).Delete(&models.SpaceMenuPlacement{}).Error; err != nil {
+			return fmt.Errorf("删除菜单布局失败: %w", err)
+		}
+		if err := tx.Where("app_key = ?", normalizedAppKey).Delete(&models.MenuDefinition{}).Error; err != nil {
+			return fmt.Errorf("删除菜单定义失败: %w", err)
+		}
+		// 6. 菜单空间
+		if err := tx.Where("app_key = ?", normalizedAppKey).Delete(&models.MenuSpace{}).Error; err != nil {
+			return fmt.Errorf("删除菜单空间失败: %w", err)
+		}
+		// 7. App 主记录
+		if err := tx.Where("app_key = ? AND is_default = false", normalizedAppKey).Delete(&models.App{}).Error; err != nil {
+			return fmt.Errorf("删除 App 失败: %w", err)
+		}
+		return nil
+	})
 }
 
 func (s *service) ListHostBindings(appKey string) ([]HostBindingRecord, error) {

@@ -1480,19 +1480,22 @@ func (s *permissionService) Delete(id uuid.UUID) error {
 			affectedCollaborationWorkspaces[collaborationWorkspaceID] = struct{}{}
 		}
 	}
-	if err := s.packageKeyRepo.DeleteByKeyID(id); err != nil {
-		return err
-	}
-	if err := s.roleDisabledActionRepo.DeleteByKeyID(id); err != nil {
-		return err
-	}
-	if err := s.collaborationWorkspaceBlockedActionRepo.DeleteByKeyID(id); err != nil {
-		return err
-	}
-	if err := s.userActionRepo.DeleteByKeyID(id); err != nil {
-		return err
-	}
-	if err := s.keyRepo.Delete(id); err != nil {
+	// 多表级联删除包裹在事务中，防止中途失败产生孤儿数据。
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Where("action_id = ?", id).Delete(&user.FeaturePackageKey{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("action_id = ?", id).Delete(&user.RoleDisabledAction{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("action_id = ?", id).Delete(&user.CollaborationWorkspaceBlockedAction{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("action_id = ?", id).Delete(&user.UserActionPermission{}).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&user.PermissionKey{}, "id = ?", id).Error
+	}); err != nil {
 		return err
 	}
 	if s.refresher != nil {

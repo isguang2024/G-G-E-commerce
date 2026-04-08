@@ -359,6 +359,10 @@ func (s *stubAppService) SaveApp(req *apppkg.SaveAppRequest) (*apppkg.AppRecord,
 	return nil, fmt.Errorf("unexpected SaveApp call")
 }
 
+func (s *stubAppService) DeleteApp(appKey string) error {
+	return fmt.Errorf("unexpected DeleteApp call")
+}
+
 func (s *stubAppService) ListHostBindings(appKey string) ([]apppkg.HostBindingRecord, error) {
 	return nil, fmt.Errorf("unexpected ListHostBindings call")
 }
