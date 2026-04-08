@@ -28,11 +28,15 @@ const REQUEST_TIMEOUT = 15000
 const LOGOUT_DELAY = 500
 const MAX_RETRIES = 0
 const RETRY_DELAY = 1000
-const UNAUTHORIZED_DEBOUNCE_TIME = 3000
+const UNAUTHORIZED_RESET_DELAY = 3000
 
-/** 401防抖状态 */
-let isUnauthorizedErrorShown = false
-let unauthorizedTimer: NodeJS.Timeout | null = null
+/**
+ * 401 防抖：使用 Promise 哨兵，确保多并发 401 仅触发一次登出/提示。
+ * 旧实现使用全局布尔位 + setTimeout，存在以下竞态：
+ *   1. 同一 tick 内多个 401 同时进入，可能都看到 false 而都执行登出；
+ *   2. setTimeout 复位与下一次 401 之间无 happens-before 关系。
+ */
+let unauthorizedHandling: Promise<void> | null = null
 
 /** 扩展 AxiosRequestConfig */
 interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
@@ -41,6 +45,37 @@ interface ExtendedAxiosRequestConfig extends AxiosRequestConfig {
   skipAuthWorkspaceHeader?: boolean
   skipCollaborationWorkspaceHeader?: boolean
   skipWorkspaceHeader?: boolean
+  /** GET 缓存 TTL（毫秒）。仅 GET 生效；> 0 时启用 */
+  cache?: number
+  /** 关闭 in-flight 去重（默认 GET 自动去重） */
+  dedupe?: boolean
+}
+
+/**
+ * GET 请求层优化：
+ *   1. in-flight 去重：同 key 的并发 GET 只发一次，复用 Promise；
+ *   2. 可选短 TTL 缓存：调用方显式传入 `cache: ms` 时启用；
+ *
+ * key = METHOD + URL + JSON(params)
+ * 注意：仅对 GET 启用，避免改变写操作语义。
+ */
+interface CacheEntry {
+  expires: number
+  value: unknown
+}
+const inflightMap = new Map<string, Promise<unknown>>()
+const responseCache = new Map<string, CacheEntry>()
+
+function buildCacheKey(config: ExtendedAxiosRequestConfig): string {
+  const method = (config.method || 'GET').toUpperCase()
+  const url = config.url || ''
+  let params = ''
+  try {
+    params = config.params ? JSON.stringify(config.params) : ''
+  } catch {
+    params = ''
+  }
+  return `${method}|${url}|${params}`
 }
 
 const { VITE_API_URL, VITE_WITH_CREDENTIALS } = import.meta.env
@@ -136,28 +171,25 @@ function createHttpError(message: string, code: number, options?: { data?: unkno
   return new HttpError(message, code, options)
 }
 
-/** 处理401错误（带防抖） */
+/** 处理401错误（Promise 哨兵，全局只触发一次登出/提示） */
 function handleUnauthorizedError(message?: string): never {
   const error = createHttpError(message || $t('httpMsg.unauthorized'), ApiStatus.unauthorized)
 
-  if (!isUnauthorizedErrorShown) {
-    isUnauthorizedErrorShown = true
-    logOut()
-
-    unauthorizedTimer = setTimeout(resetUnauthorizedError, UNAUTHORIZED_DEBOUNCE_TIME)
-
-    showError(error, true)
-    throw error
+  if (!unauthorizedHandling) {
+    unauthorizedHandling = (async () => {
+      try {
+        showError(error, true)
+        logOut()
+      } finally {
+        // 留出窗口期吞掉同一波 401，再放开下一次
+        setTimeout(() => {
+          unauthorizedHandling = null
+        }, UNAUTHORIZED_RESET_DELAY)
+      }
+    })()
   }
 
   throw error
-}
-
-/** 重置401防抖状态 */
-function resetUnauthorizedError() {
-  isUnauthorizedErrorShown = false
-  if (unauthorizedTimer) clearTimeout(unauthorizedTimer)
-  unauthorizedTimer = null
 }
 
 /** 退出登录函数 */
@@ -201,16 +233,47 @@ function delay(ms: number) {
 
 /** 请求函数 */
 async function request<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> {
+  const method = (config.method || 'GET').toUpperCase()
+
   // POST | PUT 参数自动填充
-  if (
-    ['POST', 'PUT'].includes(config.method?.toUpperCase() || '') &&
-    config.params &&
-    !config.data
-  ) {
+  if (['POST', 'PUT'].includes(method) && config.params && !config.data) {
     config.data = config.params
     config.params = undefined
   }
 
+  // GET 缓存 / 去重
+  const isGet = method === 'GET'
+  const dedupeEnabled = isGet && config.dedupe !== false
+  const cacheTtl = isGet && typeof config.cache === 'number' ? config.cache : 0
+  const cacheKey = dedupeEnabled || cacheTtl > 0 ? buildCacheKey(config) : ''
+
+  if (cacheTtl > 0 && cacheKey) {
+    const hit = responseCache.get(cacheKey)
+    if (hit && hit.expires > Date.now()) {
+      return hit.value as T
+    }
+  }
+  if (dedupeEnabled && cacheKey && inflightMap.has(cacheKey)) {
+    return inflightMap.get(cacheKey) as Promise<T>
+  }
+
+  const exec = doRequest<T>(config).then((value) => {
+    if (cacheTtl > 0 && cacheKey) {
+      responseCache.set(cacheKey, { expires: Date.now() + cacheTtl, value })
+    }
+    return value
+  })
+
+  if (dedupeEnabled && cacheKey) {
+    inflightMap.set(cacheKey, exec)
+    exec.finally(() => inflightMap.delete(cacheKey))
+  }
+
+  return exec
+}
+
+/** 实际下发请求 */
+async function doRequest<T = any>(config: ExtendedAxiosRequestConfig): Promise<T> {
   try {
     const res = await axiosInstance.request<BaseResponse<T>>(config)
 

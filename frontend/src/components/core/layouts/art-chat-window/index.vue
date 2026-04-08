@@ -93,6 +93,7 @@
   import { mittBus } from '@/utils/sys'
   import meAvatar from '@/assets/images/avatar/avatar5.webp'
   import aiAvatar from '@/assets/images/avatar/avatar10.webp'
+  import { useResponsive } from '@/hooks/core/useResponsive'
 
   defineOptions({ name: 'ArtChatWindow' })
 
@@ -112,8 +113,8 @@
   const BOT_NAME = 'Art Bot'
   const USER_NAME = 'Ricky'
 
-  // 响应式布局
-  const { width } = useWindowSize()
+  // 响应式布局（使用全局 useResponsive 共享 resize 监听）
+  const { width } = useResponsive()
   const isMobile = computed(() => width.value < MOBILE_BREAKPOINT)
 
   // 组件状态

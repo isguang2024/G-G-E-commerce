@@ -139,7 +139,8 @@
   import { formatMenuTitle } from '@/utils/router'
   import SidebarSubmenu from './widget/SidebarSubmenu.vue'
   import { useCommon } from '@/hooks/core/useCommon'
-  import { useWindowSize, useTimeoutFn } from '@vueuse/core'
+  import { useTimeoutFn } from '@vueuse/core'
+  import { useResponsive } from '@/hooks/core/useResponsive'
 
   defineOptions({ name: 'ArtSidebarMenu' })
 
@@ -159,8 +160,8 @@
   const isMobileMode = ref(false)
   const showMobileModal = ref(false)
 
-  // 使用 VueUse 的窗口尺寸监听
-  const { width } = useWindowSize()
+  // 使用全局 useResponsive 共享 resize 监听
+  const { width } = useResponsive()
 
   // 菜单宽度相关
   const menuopenwidth = computed(() => getMenuOpenWidth.value)

@@ -86,10 +86,8 @@ export default ({ mode }: { mode: string }) => {
         dts: 'src/types/import/components.d.ts',
         resolvers: [ElementPlusResolver()]
       }),
-      // 按需定制主题配置
-      ElementPlus({
-        useSource: true
-      }),
+      // 按需定制主题配置（useSource:true 会导入全部 scss 源码，改为默认按需 css）
+      ElementPlus({}),
       // 压缩
       viteCompression({
         verbose: false, // 是否在控制台输出压缩结果
@@ -119,10 +117,7 @@ export default ({ mode }: { mode: string }) => {
         'xgplayer',
         'crypto-js',
         'file-saver',
-        'vue-img-cutter',
-        'element-plus/es',
-        'element-plus/es/components/*/style/css',
-        'element-plus/es/components/*/style/index'
+        'vue-img-cutter'
       ]
     },
     css: {

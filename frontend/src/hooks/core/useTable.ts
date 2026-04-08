@@ -18,7 +18,7 @@
  */
 
 import { ref, reactive, computed, onMounted, onUnmounted, nextTick, readonly } from 'vue'
-import { useWindowSize } from '@vueuse/core'
+import { useResponsive } from './useResponsive'
 import { useTableColumns } from './useTableColumns'
 import type { ColumnOption } from '@/types/component'
 import {
@@ -219,7 +219,7 @@ function useTableImpl<TApiFn extends (params: any) => Promise<any>>(
   })
 
   // 移动端分页 (响应式)
-  const { width } = useWindowSize()
+  const { width } = useResponsive()
   const mobilePagination = computed(() => ({
     ...pagination,
     small: width.value < 768

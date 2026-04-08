@@ -72,7 +72,13 @@
       "Read(//operationId:/**)",
       "Read(//c/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/**)",
       "Bash(echo \"EXIT: $?\")",
-      "Bash(wc -l internal/modules/system/*/handler.go)"
+      "Bash(wc -l internal/modules/system/*/handler.go)",
+      "Bash(ls /c/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/api/handlers/*.go)",
+      "Read(//root/**)",
+      "Bash(find /c/Users/Administrator/Documents/GitHub/G-G-E-commerce/frontend/src/views -name \"*.vue\" -exec wc -l {} +)",
+      "Read(//c/Users/Administrator/go/pkg/mod/**)",
+      "Bash(ls /c/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/apiendpoint/*.go)",
+      "Bash(npx vue-tsc:*)"
     ]
   },
   "defaultMode": "bypassPermissions"

@@ -87,11 +87,12 @@
   import { useTableStore } from '@/store/modules/table'
   import { useCommon } from '@/hooks/core/useCommon'
   import { useTableHeight } from '@/hooks/core/useTableHeight'
-  import { useResizeObserver, useWindowSize } from '@vueuse/core'
+  import { useResizeObserver } from '@vueuse/core'
+  import { useResponsive } from '@/hooks/core/useResponsive'
 
   defineOptions({ name: 'ArtTable' })
 
-  const { width } = useWindowSize()
+  const { width } = useResponsive()
   const elTableRef = ref<InstanceType<typeof ElTable> | null>(null)
   const paginationRef = ref<HTMLElement>()
   const tableHeaderRef = ref<HTMLElement>()

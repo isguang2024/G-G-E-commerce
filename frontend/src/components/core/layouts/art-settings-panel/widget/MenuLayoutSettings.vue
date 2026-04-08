@@ -22,8 +22,9 @@
   import { useSettingStore } from '@/store/modules/setting'
   import { useSettingsConfig } from '../composables/useSettingsConfig'
   import { useSettingsState } from '../composables/useSettingsState'
+  import { useResponsive } from '@/hooks/core/useResponsive'
 
-  const { width } = useWindowSize()
+  const { width } = useResponsive()
   const settingStore = useSettingStore()
   const { menuType } = storeToRefs(settingStore)
   const { configOptions } = useSettingsConfig()

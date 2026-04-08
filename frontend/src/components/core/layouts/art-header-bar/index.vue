@@ -166,7 +166,8 @@
 <script setup lang="ts">
   import { useI18n } from 'vue-i18n'
   import { useRouter } from 'vue-router'
-  import { useFullscreen, useWindowSize } from '@vueuse/core'
+  import { useFullscreen } from '@vueuse/core'
+  import { useResponsive } from '@/hooks/core/useResponsive'
   import { LanguageEnum, MenuTypeEnum } from '@/enums/appEnum'
   import { useSettingStore } from '@/store/modules/setting'
   import { useUserStore } from '@/store/modules/user'
@@ -188,7 +189,7 @@
 
   const router = useRouter()
   const { locale } = useI18n()
-  const { width } = useWindowSize()
+  const { width } = useResponsive()
 
   const settingStore = useSettingStore()
   const userStore = useUserStore()

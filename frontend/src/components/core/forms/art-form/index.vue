@@ -96,7 +96,7 @@
 </template>
 
 <script setup lang="ts">
-  import { useWindowSize } from '@vueuse/core'
+  import { useResponsive } from '@/hooks/core/useResponsive'
   import { useI18n } from 'vue-i18n'
   import type { Component } from 'vue'
   import {
@@ -142,7 +142,7 @@
     treeselect: ElTreeSelect // 树选择器
   }
 
-  const { width } = useWindowSize()
+  const { width } = useResponsive()
   const { t } = useI18n()
   const isMobile = computed(() => width.value < 500)
 
