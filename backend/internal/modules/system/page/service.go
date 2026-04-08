@@ -3,12 +3,8 @@ package page
 import (
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
-	"unicode"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -319,18 +315,6 @@ func (s *service) ListOptions(appKey, spaceKey string) ([]models.UIPage, error) 
 	return result, nil
 }
 
-func (s *service) ListRuntime(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error) {
-	return s.loadRuntimeRecords(normalizeAppKey(appKey), host, requestedSpaceKey, userID, collaborationWorkspaceID)
-}
-
-func (s *service) ListRuntimePublic(appKey, host, requestedSpaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) ([]Record, error) {
-	return s.loadPublicRuntimeRecords(normalizeAppKey(appKey), host, requestedSpaceKey, userID, collaborationWorkspaceID)
-}
-
-func (s *service) ResolveCompiledAccessContext(appKey, spaceKey string, userID *uuid.UUID, collaborationWorkspaceID *uuid.UUID) (*CompiledAccessContext, error) {
-	return s.buildCompiledAccessContextForSpace(normalizeAppKey(appKey), spaceKey, userID, collaborationWorkspaceID)
-}
-
 func (s *service) GetAccessTrace(appKey string, req *AccessTraceRequest) (*AccessTraceResult, error) {
 	if req == nil {
 		return nil, fmt.Errorf("%w: request is required", ErrPageValidation)
@@ -345,8 +329,8 @@ func (s *service) GetAccessTrace(appKey string, req *AccessTraceRequest) (*Acces
 		return nil, fmt.Errorf("%w: user_id is invalid", ErrPageValidation)
 	}
 	var collaborationWorkspaceID *uuid.UUID
-	if rawCollaborationWorkspaceID := strings.TrimSpace(req.CollaborationWorkspaceID); rawCollaborationWorkspaceID != "" {
-		parsed, parseErr := uuid.Parse(rawCollaborationWorkspaceID)
+	if rawCW := strings.TrimSpace(req.CollaborationWorkspaceID); rawCW != "" {
+		parsed, parseErr := uuid.Parse(rawCW)
 		if parseErr != nil {
 			return nil, fmt.Errorf("%w: collaboration_workspace_id is invalid", ErrPageValidation)
 		}
@@ -458,8 +442,8 @@ func buildAccessTracePageItem(page *models.UIPage, visiblePages map[string]Recor
 		reason = "visible_in_runtime"
 	}
 	matchedActionKey := ""
-	if permissionKey := strings.TrimSpace(page.PermissionKey); permissionKey != "" {
-		normalizedPermissionKey := permissionkey.Normalize(permissionKey)
+	if permKey := strings.TrimSpace(page.PermissionKey); permKey != "" {
+		normalizedPermissionKey := permissionkey.Normalize(permKey)
 		if accessCtx != nil {
 			if _, ok := accessCtx.ActionKeys[normalizedPermissionKey]; ok {
 				matchedActionKey = normalizedPermissionKey
@@ -546,140 +530,6 @@ func (s *service) loadAccessTraceRoles(userID uuid.UUID, collaborationWorkspaceI
 		})
 	}
 	return items, nil
-}
-
-func (s *service) ListRuntimeWithAccess(appKey, spaceKey string, accessCtx *CompiledAccessContext) ([]Record, error) {
-	return s.loadRuntimeRecordsWithAccess(normalizeAppKey(appKey), spaceKey, accessCtx)
-}
-
-func (s *service) buildRuntimeRecords(appKey, spaceKey string) ([]Record, map[uuid.UUID]runtimeMenuNode, error) {
-	var items []models.UIPage
-	if err := s.db.Where("app_key = ?", normalizeAppKey(appKey)).Where("status = ? AND page_type <> ?", "normal", "display_group").
-		Order("sort_order ASC, created_at ASC").
-		Find(&items).Error; err != nil {
-		return nil, nil, err
-	}
-	records, err := s.decorateRecords(items)
-	if err != nil {
-		return nil, nil, err
-	}
-	menuMap, err := s.loadMenuMap(normalizeAppKey(appKey), spaceKey)
-	if err != nil {
-		return nil, nil, err
-	}
-	pageMap, err := s.loadPageMap(normalizeAppKey(appKey))
-	if err != nil {
-		return nil, nil, err
-	}
-	bindingMap, err := loadPageSpaceBindingMap(s.db, normalizeAppKey(appKey))
-	if err != nil {
-		return nil, nil, err
-	}
-	filtered := s.applyManagedPageModel(records, spaceKey, menuMap, pageMap, bindingMap)
-	return filtered, menuMap, nil
-}
-
-func (s *service) applyManagedPageModel(
-	records []Record,
-	spaceKey string,
-	menuMap map[uuid.UUID]runtimeMenuNode,
-	pageMap map[string]models.UIPage,
-	bindingMap map[uuid.UUID][]string,
-) []Record {
-	filtered := make([]Record, 0, len(records))
-	for index := range records {
-		record := records[index]
-		if isMenuBackedEntryPage(record.UIPage, menuMap) {
-			continue
-		}
-		resolvedSpaceKeys := resolvePageSpaceKeys(record.UIPage, pageMap, menuMap, bindingMap, map[string]struct{}{})
-		applyResolvedPageSpace(&record.UIPage, resolvedSpaceKeys)
-		record.ActiveMenuPath = s.resolveActiveMenuPath(
-			&record.UIPage,
-			menuMap,
-			pageMap,
-			map[string]struct{}{},
-		)
-		if !isPageVisibleInSpace(record.UIPage, spaceKey) {
-			continue
-		}
-		filtered = append(filtered, record)
-	}
-	return filtered
-}
-
-func (s *service) ListUnregistered(appKey string) ([]UnregisteredRecord, error) {
-	return s.buildUnregisteredRecords(normalizeAppKey(appKey))
-}
-
-func (s *service) Sync(appKey string) (*SyncResult, error) {
-	normalizedAppKey := normalizeAppKey(appKey)
-	items, err := s.buildUnregisteredRecords(normalizedAppKey)
-	if err != nil {
-		return nil, err
-	}
-	result := &SyncResult{
-		CreatedKeys: make([]string, 0, len(items)),
-	}
-	for _, item := range items {
-		req := &SaveRequest{
-			AppKey:            normalizedAppKey,
-			PageKey:           item.PageKey,
-			Name:              item.Name,
-			RouteName:         item.RouteName,
-			RoutePath:         item.RoutePath,
-			Component:         item.Component,
-			PageType:          item.PageType,
-			VisibilityScope:   item.VisibilityScope,
-			Source:            "sync",
-			ModuleKey:         item.ModuleKey,
-			ParentMenuID:      item.ParentMenuID,
-			ActiveMenuPath:    item.ActiveMenuPath,
-			BreadcrumbMode:    "inherit_menu",
-			AccessMode:        deriveSyncedPageAccessMode(item.PageType),
-			InheritPermission: boolPtr(item.PageType == "inner"),
-			KeepAlive:         boolPtr(false),
-			IsFullPage:        boolPtr(false),
-			Status:            "normal",
-			Meta:              map[string]interface{}{},
-		}
-		if _, err := s.Create(req); err != nil {
-			return nil, err
-		}
-		result.CreatedCount++
-		result.CreatedKeys = append(result.CreatedKeys, item.PageKey)
-	}
-	result.SkippedCount = len(items) - result.CreatedCount
-	return result, nil
-}
-
-func (s *service) PreviewBreadcrumb(id uuid.UUID, appKey string) ([]BreadcrumbPreviewItem, error) {
-	normalizedAppKey := normalizeAppKey(appKey)
-	page, err := s.findPageByID(id, normalizedAppKey)
-	if err != nil {
-		return nil, err
-	}
-	menuMap, err := s.loadMenuMap(normalizedAppKey, "")
-	if err != nil {
-		return nil, err
-	}
-	pageMap, err := s.loadPageMap(normalizedAppKey)
-	if err != nil {
-		return nil, err
-	}
-	chain, err := s.resolveBreadcrumbChain(page, menuMap, pageMap)
-	if err != nil {
-		return nil, err
-	}
-	result := make([]BreadcrumbPreviewItem, 0, len(chain)+1)
-	result = append(result, chain...)
-	result = append(result, BreadcrumbPreviewItem{
-		Type:    "page",
-		Title:   page.Name,
-		Path:    strings.TrimSpace(page.RoutePath),
-		PageKey: page.PageKey,
-	})
-	return result, nil
 }
 
 func (s *service) Get(id uuid.UUID, appKey string) (*Record, error) {
@@ -843,6 +693,10 @@ func (s *service) ListMenuOptions(appKey, spaceKey string) ([]MenuOption, error)
 	return result, nil
 }
 
+// ---------------------------------------------------------------------------
+// private helpers
+// ---------------------------------------------------------------------------
+
 func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models.UIPage, error) {
 	if req == nil {
 		return nil, fmt.Errorf("%w: 请求体不能为空", ErrPageValidation)
@@ -883,7 +737,7 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 	parentPageKey := strings.TrimSpace(req.ParentPageKey)
 	displayGroupKey := strings.TrimSpace(req.DisplayGroupKey)
 	activeMenuPath := strings.TrimSpace(req.ActiveMenuPath)
-	permissionKey := strings.TrimSpace(req.PermissionKey)
+	permKey := strings.TrimSpace(req.PermissionKey)
 
 	if pageType == "group" && pageKey == "" {
 		if existing != nil && strings.TrimSpace(existing.PageKey) != "" {
@@ -911,7 +765,7 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 	if !isRoutelessPageType(pageType) && (routeName == "" || routePath == "" || component == "") {
 		return nil, fmt.Errorf("%w: 页面节点必须填写路由名称、路由路径和组件路径", ErrPageValidation)
 	}
-	if accessMode == "permission" && permissionKey == "" {
+	if accessMode == "permission" && permKey == "" {
 		return nil, fmt.Errorf("%w: 权限访问模式必须指定权限键", ErrPageValidation)
 	}
 	if parentPageKey != "" {
@@ -926,7 +780,7 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 		activeMenuPath = ""
 		breadcrumbMode = "inherit_menu"
 		accessMode = "inherit"
-		permissionKey = ""
+		permKey = ""
 	}
 
 	inheritPermission := true
@@ -1048,7 +902,7 @@ func (s *service) buildModel(existing *models.UIPage, req *SaveRequest) (*models
 		ActiveMenuPath:    activeMenuPath,
 		BreadcrumbMode:    breadcrumbMode,
 		AccessMode:        accessMode,
-		PermissionKey:     permissionKey,
+		PermissionKey:     permKey,
 		InheritPermission: inheritPermission,
 		KeepAlive:         keepAlive,
 		IsFullPage:        isFullPage,
@@ -1309,19 +1163,14 @@ func (s *service) loadMenuMap(appKey string, spaceKey string) (map[uuid.UUID]run
 		if cached, ok := result[menu.ID]; ok && strings.TrimSpace(cached.FullPath) != "" {
 			return cached.FullPath
 		}
-
 		parentPath := ""
 		if menu.ParentID != nil {
 			if parent, ok := menuMap[*menu.ParentID]; ok {
 				parentPath = resolveFullPath(parent)
 			}
 		}
-
 		fullPath := buildMenuFullPath(strings.TrimSpace(menu.Path), parentPath)
-		result[menu.ID] = runtimeMenuNode{
-			Menu:     menu,
-			FullPath: fullPath,
-		}
+		result[menu.ID] = runtimeMenuNode{Menu: menu, FullPath: fullPath}
 		return fullPath
 	}
 
@@ -1331,316 +1180,52 @@ func (s *service) loadMenuMap(appKey string, spaceKey string) (map[uuid.UUID]run
 	return result, nil
 }
 
-func (s *service) resolveBreadcrumbChain(
-	page *models.UIPage,
-	menuMap map[uuid.UUID]runtimeMenuNode,
-	pageMap map[string]models.UIPage,
-) ([]BreadcrumbPreviewItem, error) {
-	if page == nil {
-		return []BreadcrumbPreviewItem{}, nil
-	}
-	switch normalizeBreadcrumbMode(page.BreadcrumbMode) {
-	case "inherit_page":
-		chain, err := s.resolveParentPageBreadcrumbChain(page, menuMap, pageMap, map[string]struct{}{})
-		if err != nil {
-			return nil, err
-		}
-		if len(chain) > 0 {
-			return chain, nil
-		}
-		fallthrough
-	case "custom":
-		fallthrough
-	default:
-		activePath := s.resolveActiveMenuPath(page, menuMap, pageMap, map[string]struct{}{})
-		return resolveMenuBreadcrumbChain(activePath, menuMap), nil
-	}
-}
-
-func (s *service) resolveParentPageBreadcrumbChain(
-	page *models.UIPage,
-	menuMap map[uuid.UUID]runtimeMenuNode,
-	pageMap map[string]models.UIPage,
-	seen map[string]struct{},
-) ([]BreadcrumbPreviewItem, error) {
-	if page == nil {
-		return []BreadcrumbPreviewItem{}, nil
-	}
-	parentKey := strings.TrimSpace(page.ParentPageKey)
-	if parentKey == "" {
-		activePath := s.resolveActiveMenuPath(page, menuMap, pageMap, seen)
-		return resolveMenuBreadcrumbChain(activePath, menuMap), nil
-	}
-	if _, ok := seen[parentKey]; ok {
-		return nil, fmt.Errorf("%w: 页面面包屑存在循环引用", ErrPageValidation)
-	}
-	parentPage, ok := pageMap[parentKey]
-	if !ok {
-		activePath := s.resolveActiveMenuPath(page, menuMap, pageMap, seen)
-		return resolveMenuBreadcrumbChain(activePath, menuMap), nil
-	}
-	seen[parentKey] = struct{}{}
-	parentChain, err := s.resolveBreadcrumbChain(&parentPage, menuMap, pageMap)
-	delete(seen, parentKey)
+func (s *service) findPageByKey(pageKey string, appKey string) (*models.UIPage, error) {
+	var parentPage models.UIPage
+	err := s.db.Where("app_key = ? AND page_key = ?", normalizeAppKey(appKey), pageKey).First(&parentPage).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrParentPageInvalid
+		}
 		return nil, err
 	}
-	if isRoutelessPageType(parentPage.PageType) || strings.TrimSpace(parentPage.RoutePath) == "" {
-		return parentChain, nil
-	}
-	return append(parentChain, BreadcrumbPreviewItem{
-		Type:    "page",
-		Title:   parentPage.Name,
-		Path:    normalizeRoutePath(parentPage.RoutePath),
-		PageKey: parentPage.PageKey,
-	}), nil
+	return &parentPage, nil
 }
 
-func (s *service) resolveActiveMenuPath(
-	page *models.UIPage,
-	menuMap map[uuid.UUID]runtimeMenuNode,
-	pageMap map[string]models.UIPage,
-	seen map[string]struct{},
-) string {
-	if page == nil {
-		return ""
-	}
-	if activePath := normalizeRoutePath(page.ActiveMenuPath); activePath != "" {
-		return activePath
-	}
-	if page.ParentMenuID != nil {
-		if node, ok := menuMap[*page.ParentMenuID]; ok {
-			return node.FullPath
-		}
-	}
-	parentKey := strings.TrimSpace(page.ParentPageKey)
-	if parentKey == "" {
-		return ""
-	}
-	if _, ok := seen[parentKey]; ok {
-		return ""
-	}
-	parentPage, ok := pageMap[parentKey]
-	if !ok {
-		return ""
-	}
-	seen[parentKey] = struct{}{}
-	defer delete(seen, parentKey)
-	return s.resolveActiveMenuPath(&parentPage, menuMap, pageMap, seen)
-}
-
-func resolveMenuBreadcrumbChain(activePath string, menuMap map[uuid.UUID]runtimeMenuNode) []BreadcrumbPreviewItem {
-	targetPath := normalizeRoutePath(activePath)
-	if targetPath == "" {
-		return []BreadcrumbPreviewItem{}
-	}
-	var target *runtimeMenuNode
-	for _, node := range menuMap {
-		if normalizeRoutePath(node.FullPath) == targetPath {
-			item := node
-			target = &item
-			break
-		}
-	}
-	if target == nil {
-		return []BreadcrumbPreviewItem{}
-	}
-
-	chain := make([]BreadcrumbPreviewItem, 0, 4)
-	current := target
-	for current != nil {
-		title := strings.TrimSpace(current.Menu.Title)
-		if title == "" {
-			title = strings.TrimSpace(current.Menu.Name)
-		}
-		chain = append(chain, BreadcrumbPreviewItem{
-			Type:  "menu",
-			Title: title,
-			Path:  normalizeRoutePath(current.FullPath),
-		})
-		if current.Menu.ParentID == nil {
-			break
-		}
-		parent, ok := menuMap[*current.Menu.ParentID]
-		if !ok {
-			break
-		}
-		parentCopy := parent
-		current = &parentCopy
-	}
-	reverseBreadcrumbItems(chain)
-	return chain
-}
-
-func (s *service) buildUnregisteredRecords(appKey string) ([]UnregisteredRecord, error) {
-	viewPages, err := enumerateManagedViewPages()
+func (s *service) findDisplayGroupByKey(pageKey string, appKey string) (*models.UIPage, error) {
+	group, err := s.findPageByKey(pageKey, appKey)
 	if err != nil {
+		if errors.Is(err, ErrParentPageInvalid) {
+			return nil, ErrDisplayGroupInvalid
+		}
 		return nil, err
 	}
-
-	var existingPages []models.UIPage
-	if err := s.db.Where("app_key = ?", normalizeAppKey(appKey)).Find(&existingPages).Error; err != nil {
-		return nil, err
+	if normalizePageType(group.PageType) != "display_group" {
+		return nil, ErrDisplayGroupInvalid
 	}
-	pageComponentSet := make(map[string]struct{}, len(existingPages))
-	pageKeySet := make(map[string]struct{}, len(existingPages))
-	routeNameSet := make(map[string]struct{}, len(existingPages))
-	for _, item := range existingPages {
-		pageComponentSet[strings.TrimSpace(item.Component)] = struct{}{}
-		pageKeySet[strings.TrimSpace(item.PageKey)] = struct{}{}
-		routeNameSet[strings.TrimSpace(item.RouteName)] = struct{}{}
-	}
-
-	menuMap, err := s.loadMenuMap(appKey, "")
-	if err != nil {
-		return nil, err
-	}
-	menuComponentSet := make(map[string]struct{}, len(menuMap))
-	for _, node := range menuMap {
-		component := strings.TrimSpace(node.Menu.Component)
-		if component != "" {
-			menuComponentSet[component] = struct{}{}
-		}
-	}
-
-	result := make([]UnregisteredRecord, 0, len(viewPages))
-	routePathSet := make(map[string]struct{})
-	for _, page := range viewPages {
-		component := strings.TrimSpace(page.Component)
-		if component == "" {
-			continue
-		}
-		if _, ok := pageComponentSet[component]; ok {
-			continue
-		}
-		if _, ok := menuComponentSet[component]; ok {
-			continue
-		}
-
-		candidate := deriveUnregisteredRecord(page, menuMap, pageKeySet, routeNameSet, routePathSet)
-		pageKeySet[candidate.PageKey] = struct{}{}
-		routeNameSet[candidate.RouteName] = struct{}{}
-		routePathSet[candidate.RoutePath] = struct{}{}
-		result = append(result, candidate)
-	}
-
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].Component < result[j].Component
-	})
-	return result, nil
+	return group, nil
 }
 
-func enumerateManagedViewPages() ([]scannedViewPage, error) {
-	projectRoot, err := findProjectRoot()
-	if err != nil {
-		return nil, err
-	}
-	viewsDir := filepath.Join(projectRoot, "frontend", "src", "views")
-	items := make([]scannedViewPage, 0, 128)
-
-	err = filepath.WalkDir(viewsDir, func(path string, d os.DirEntry, err error) error {
+func (s *service) ensureNoPageCycle(currentPageKey, candidateParentKey string, appKey string) error {
+	seen := map[string]struct{}{currentPageKey: {}}
+	nextKey := strings.TrimSpace(candidateParentKey)
+	for nextKey != "" {
+		if _, exists := seen[nextKey]; exists {
+			return fmt.Errorf("%w: 页面分组形成循环引用", ErrPageValidation)
+		}
+		seen[nextKey] = struct{}{}
+		parent, err := s.findPageByKey(nextKey, appKey)
 		if err != nil {
 			return err
 		}
-		if d.IsDir() || filepath.Ext(path) != ".vue" {
-			return nil
-		}
-		rel, err := filepath.Rel(projectRoot, path)
-		if err != nil {
-			return err
-		}
-		filePath := "/" + filepath.ToSlash(rel)
-		component := toComponentPath(filePath)
-		if !isManagedViewComponent(component) {
-			return nil
-		}
-		items = append(items, scannedViewPage{
-			FilePath:  filePath,
-			Component: component,
-		})
-		return nil
-	})
-	if err != nil {
-		return nil, err
+		nextKey = strings.TrimSpace(parent.ParentPageKey)
 	}
-	return items, nil
+	return nil
 }
 
-func deriveUnregisteredRecord(
-	item scannedViewPage,
-	menuMap map[uuid.UUID]runtimeMenuNode,
-	pageKeySet map[string]struct{},
-	routeNameSet map[string]struct{},
-	routePathSet map[string]struct{},
-) UnregisteredRecord {
-	routePath := normalizeRoutePath(item.Component)
-	moduleKey := deriveModuleKey(item.Component)
-	name := derivePageDisplayName(item.Component)
-	pageKey := ensureUniqueValue(derivePageKey(item.Component), pageKeySet)
-	routeName := ensureUniqueValue(deriveRouteName(item.Component), routeNameSet)
-	if _, ok := routePathSet[routePath]; ok {
-		routePath = ensureUniqueRoutePath(routePath, routePathSet)
-	}
-
-	parentMenuID, parentMenuName, activeMenuPath := guessParentMenu(routePath, menuMap)
-	pageType := models.PageTypeStandalone
-	visibilityScope := pageVisibilityScopeApp
-	if parentMenuID != "" {
-		pageType = models.PageTypeInner
-		visibilityScope = pageVisibilityScopeInherit
-	}
-
-	return UnregisteredRecord{
-		FilePath:        item.FilePath,
-		Component:       item.Component,
-		PageKey:         pageKey,
-		Name:            name,
-		RouteName:       routeName,
-		RoutePath:       routePath,
-		PageType:        pageType,
-		VisibilityScope: visibilityScope,
-		ModuleKey:       moduleKey,
-		ParentMenuID:    parentMenuID,
-		ParentMenuName:  parentMenuName,
-		ActiveMenuPath:  activeMenuPath,
-	}
-}
-
-func guessParentMenu(routePath string, menuMap map[uuid.UUID]runtimeMenuNode) (string, string, string) {
-	targetPath := normalizeRoutePath(routePath)
-	bestDepth := -1
-	bestID := ""
-	bestName := ""
-	bestPath := ""
-	for _, node := range menuMap {
-		menuPath := normalizeRoutePath(node.FullPath)
-		if menuPath == "" || menuPath == "/" {
-			continue
-		}
-		if !strings.HasPrefix(targetPath, menuPath) {
-			continue
-		}
-		if targetPath != menuPath && !strings.HasPrefix(targetPath, menuPath+"/") {
-			continue
-		}
-		depth := strings.Count(menuPath, "/")
-		if depth <= bestDepth {
-			continue
-		}
-		bestDepth = depth
-		bestID = node.Menu.ID.String()
-		bestName = firstNonEmpty(strings.TrimSpace(node.Menu.Title), strings.TrimSpace(node.Menu.Name))
-		bestPath = menuPath
-	}
-	return bestID, bestName, bestPath
-}
-
-func deriveSyncedPageAccessMode(pageType string) string {
-	if normalizePageType(pageType) == "inner" {
-		return "inherit"
-	}
-	return "jwt"
-}
+// ---------------------------------------------------------------------------
+// normalisation helpers
+// ---------------------------------------------------------------------------
 
 func firstResolvedPageSpaceKey(item models.UIPage) string {
 	keys := readPageSpaceKeys(item)
@@ -1652,251 +1237,6 @@ func firstResolvedPageSpaceKey(item models.UIPage) string {
 
 func boolPtr(value bool) *bool {
 	return &value
-}
-
-func ensureUniqueValue(base string, used map[string]struct{}) string {
-	target := strings.TrimSpace(base)
-	if target == "" {
-		target = "page"
-	}
-	if _, ok := used[target]; !ok {
-		return target
-	}
-	for idx := 2; idx < 10000; idx++ {
-		candidate := target + "_" + strconv.Itoa(idx)
-		if _, ok := used[candidate]; !ok {
-			return candidate
-		}
-	}
-	return target + "_" + uuid.NewString()[:8]
-}
-
-func ensureUniqueRoutePath(base string, used map[string]struct{}) string {
-	target := normalizeRoutePath(base)
-	if _, ok := used[target]; !ok {
-		return target
-	}
-	for idx := 2; idx < 10000; idx++ {
-		candidate := normalizeRoutePath(target + "-" + strconv.Itoa(idx))
-		if _, ok := used[candidate]; !ok {
-			return candidate
-		}
-	}
-	return normalizeRoutePath(target + "-" + uuid.NewString()[:8])
-}
-
-func derivePageKey(component string) string {
-	segments := splitComponentSegments(component)
-	if len(segments) == 0 {
-		return "page"
-	}
-	normalized := make([]string, 0, len(segments))
-	for _, segment := range segments {
-		normalized = append(normalized, sanitizeSegment(segment))
-	}
-	return strings.Join(normalized, ".")
-}
-
-func deriveRouteName(component string) string {
-	segments := splitComponentSegments(component)
-	if len(segments) == 0 {
-		return "Page"
-	}
-	builder := strings.Builder{}
-	for _, segment := range segments {
-		builder.WriteString(toPascalCase(segment))
-	}
-	result := builder.String()
-	if result == "" {
-		return "Page"
-	}
-	return result
-}
-
-func derivePageDisplayName(component string) string {
-	segments := splitComponentSegments(component)
-	if len(segments) == 0 {
-		return "未命名页面"
-	}
-	return humanizeSegment(segments[len(segments)-1])
-}
-
-func deriveModuleKey(component string) string {
-	segments := splitComponentSegments(component)
-	if len(segments) == 0 {
-		return ""
-	}
-	return sanitizeSegment(segments[0])
-}
-
-func splitComponentSegments(component string) []string {
-	target := strings.Trim(component, "/")
-	if target == "" {
-		return []string{}
-	}
-	segments := strings.Split(target, "/")
-	result := make([]string, 0, len(segments))
-	for _, segment := range segments {
-		segment = strings.TrimSpace(segment)
-		if segment == "" || segment == "index" {
-			continue
-		}
-		result = append(result, segment)
-	}
-	return result
-}
-
-func humanizeSegment(segment string) string {
-	parts := splitWords(segment)
-	if len(parts) == 0 {
-		return "未命名页面"
-	}
-	for idx, part := range parts {
-		parts[idx] = strings.Title(part)
-	}
-	return strings.Join(parts, " ")
-}
-
-func toPascalCase(segment string) string {
-	parts := splitWords(segment)
-	if len(parts) == 0 {
-		return ""
-	}
-	builder := strings.Builder{}
-	for _, part := range parts {
-		if part == "" {
-			continue
-		}
-		builder.WriteString(strings.ToUpper(part[:1]))
-		if len(part) > 1 {
-			builder.WriteString(part[1:])
-		}
-	}
-	return builder.String()
-}
-
-func splitWords(value string) []string {
-	replacer := strings.NewReplacer("-", " ", "_", " ", ".", " ")
-	normalized := replacer.Replace(strings.TrimSpace(value))
-	return strings.Fields(normalized)
-}
-
-func sanitizeSegment(segment string) string {
-	target := strings.TrimSpace(segment)
-	if target == "" {
-		return "page"
-	}
-	var builder strings.Builder
-	for _, r := range target {
-		switch {
-		case unicode.IsLetter(r), unicode.IsDigit(r):
-			builder.WriteRune(unicode.ToLower(r))
-		case r == '-' || r == '_' || r == '.':
-			builder.WriteRune('_')
-		}
-	}
-	result := strings.Trim(builder.String(), "_")
-	if result == "" {
-		return "page"
-	}
-	return result
-}
-
-func findProjectRoot() (string, error) {
-	wd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	current := wd
-	for {
-		frontendPath := filepath.Join(current, "frontend")
-		backendPath := filepath.Join(current, "backend")
-		if _, err := os.Stat(frontendPath); err == nil {
-			if _, err := os.Stat(backendPath); err == nil {
-				return current, nil
-			}
-		}
-		parent := filepath.Dir(current)
-		if parent == current {
-			break
-		}
-		current = parent
-	}
-	return wd, nil
-}
-
-func toComponentPath(filePath string) string {
-	withoutPrefix := strings.TrimPrefix(filePath, "/frontend/src/views")
-	withoutExt := strings.TrimSuffix(withoutPrefix, ".vue")
-	normalized := strings.TrimSuffix(withoutExt, "/index")
-	normalized = strings.ReplaceAll(normalized, "//", "/")
-	if normalized == "" {
-		return "/"
-	}
-	if !strings.HasPrefix(normalized, "/") {
-		return "/" + normalized
-	}
-	return normalized
-}
-
-func isManagedViewComponent(component string) bool {
-	target := normalizeRoutePath(component)
-	switch {
-	case target == "", target == "/", target == "/index", target == "/outside/Iframe":
-		return false
-	case strings.Contains(target, "/modules/"):
-		return false
-	case strings.HasPrefix(target, "/auth/"),
-		strings.HasPrefix(target, "/exception/"),
-		strings.HasPrefix(target, "/result/"):
-		return false
-	default:
-		return true
-	}
-}
-
-func buildMenuFullPath(path, parentPath string) string {
-	target := strings.TrimSpace(path)
-	if target == "" {
-		return normalizeRoutePath(parentPath)
-	}
-	if strings.HasPrefix(target, "http://") || strings.HasPrefix(target, "https://") {
-		return target
-	}
-	if strings.HasPrefix(target, "/") {
-		return normalizeRoutePath(target)
-	}
-	parent := normalizeRoutePath(parentPath)
-	if parent == "" || parent == "/" {
-		return normalizeRoutePath("/" + target)
-	}
-	return normalizeRoutePath(strings.TrimRight(parent, "/") + "/" + strings.TrimLeft(target, "/"))
-}
-
-func normalizeRoutePath(path string) string {
-	target := strings.TrimSpace(path)
-	if target == "" {
-		return ""
-	}
-	if strings.HasPrefix(target, "http://") || strings.HasPrefix(target, "https://") {
-		return target
-	}
-	normalized := "/" + strings.TrimLeft(target, "/")
-	normalized = strings.ReplaceAll(normalized, "//", "/")
-	if normalized != "/" {
-		normalized = strings.TrimRight(normalized, "/")
-	}
-	return normalized
-}
-
-func reverseBreadcrumbItems(items []BreadcrumbPreviewItem) {
-	for left, right := 0, len(items)-1; left < right; left, right = left+1, right-1 {
-		items[left], items[right] = items[right], items[left]
-	}
-}
-
-func normalizeAppKey(value string) string {
-	return apppkg.NormalizeAppKey(value)
 }
 
 func parseOptionalUUID(raw string) (*uuid.UUID, error) {
@@ -2028,45 +1368,40 @@ func normalizeStandalonePageBindingKeys(values []string, pageType string, visibi
 	return uniqueSortedStrings(candidates)
 }
 
-func (s *service) findPageByKey(pageKey string, appKey string) (*models.UIPage, error) {
-	var parentPage models.UIPage
-	err := s.db.Where("app_key = ? AND page_key = ?", normalizeAppKey(appKey), pageKey).First(&parentPage).Error
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrParentPageInvalid
-		}
-		return nil, err
-	}
-	return &parentPage, nil
+func normalizeAppKey(value string) string {
+	return apppkg.NormalizeAppKey(value)
 }
 
-func (s *service) findDisplayGroupByKey(pageKey string, appKey string) (*models.UIPage, error) {
-	group, err := s.findPageByKey(pageKey, appKey)
-	if err != nil {
-		if errors.Is(err, ErrParentPageInvalid) {
-			return nil, ErrDisplayGroupInvalid
-		}
-		return nil, err
+func buildMenuFullPath(path, parentPath string) string {
+	target := strings.TrimSpace(path)
+	if target == "" {
+		return normalizeRoutePath(parentPath)
 	}
-	if normalizePageType(group.PageType) != "display_group" {
-		return nil, ErrDisplayGroupInvalid
+	if strings.HasPrefix(target, "http://") || strings.HasPrefix(target, "https://") {
+		return target
 	}
-	return group, nil
+	if strings.HasPrefix(target, "/") {
+		return normalizeRoutePath(target)
+	}
+	parent := normalizeRoutePath(parentPath)
+	if parent == "" || parent == "/" {
+		return normalizeRoutePath("/" + target)
+	}
+	return normalizeRoutePath(strings.TrimRight(parent, "/") + "/" + strings.TrimLeft(target, "/"))
 }
 
-func (s *service) ensureNoPageCycle(currentPageKey, candidateParentKey string, appKey string) error {
-	seen := map[string]struct{}{currentPageKey: {}}
-	nextKey := strings.TrimSpace(candidateParentKey)
-	for nextKey != "" {
-		if _, exists := seen[nextKey]; exists {
-			return fmt.Errorf("%w: 页面分组形成循环引用", ErrPageValidation)
-		}
-		seen[nextKey] = struct{}{}
-		parent, err := s.findPageByKey(nextKey, appKey)
-		if err != nil {
-			return err
-		}
-		nextKey = strings.TrimSpace(parent.ParentPageKey)
+func normalizeRoutePath(path string) string {
+	target := strings.TrimSpace(path)
+	if target == "" {
+		return ""
 	}
-	return nil
+	if strings.HasPrefix(target, "http://") || strings.HasPrefix(target, "https://") {
+		return target
+	}
+	normalized := "/" + strings.TrimLeft(target, "/")
+	normalized = strings.ReplaceAll(normalized, "//", "/")
+	if normalized != "/" {
+		normalized = strings.TrimRight(normalized, "/")
+	}
+	return normalized
 }
