@@ -276,7 +276,6 @@ func (s *service) ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]U
 	for _, item := range registered {
 		if code := strings.TrimSpace(item.Code); code != "" {
 			registeredCodeSet[code] = struct{}{}
-			continue
 		}
 		legacyRegisteredSet[routeSpec(item.Method, item.Path)] = struct{}{}
 	}
@@ -287,8 +286,18 @@ func (s *service) ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]U
 
 	items := make([]UnregisteredRouteItem, 0, len(runtimeRoutes))
 	for _, route := range runtimeRoutes {
-		routeCode := ResolveRouteCode(route.Method, route.Path, routeMetaPointer(route))
-		if _, ok := registeredCodeSet[routeCode]; ok {
+		routePath := normalizeManagedRoutePath(route.Path)
+		matched := false
+		for _, routeCode := range collectRuntimeRouteCodes(route.Method, route.Path, routeMetaPointer(route)) {
+			if _, ok := registeredCodeSet[routeCode]; ok {
+				matched = true
+				break
+			}
+		}
+		if matched {
+			continue
+		}
+		if _, ok := legacyRegisteredSet[routeSpec(route.Method, routePath)]; ok {
 			continue
 		}
 		if _, ok := legacyRegisteredSet[routeSpec(route.Method, route.Path)]; ok {
@@ -300,11 +309,11 @@ func (s *service) ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]U
 		if methodFilter != "" && route.Method != methodFilter {
 			continue
 		}
-		if pathFilter != "" && !strings.Contains(route.Path, pathFilter) {
+		if pathFilter != "" && !strings.Contains(routePath, pathFilter) {
 			continue
 		}
 		if keyword != "" {
-			target := strings.ToLower(route.Method + " " + route.Path + " " + route.Handler + " " + route.RouteMeta.Summary + " " + route.RouteMeta.CategoryCode)
+			target := strings.ToLower(route.Method + " " + routePath + " " + route.Handler + " " + route.RouteMeta.Summary + " " + route.RouteMeta.CategoryCode)
 			if !strings.Contains(target, strings.ToLower(keyword)) {
 				continue
 			}
@@ -317,8 +326,8 @@ func (s *service) ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]U
 		}
 		items = append(items, UnregisteredRouteItem{
 			Method:  route.Method,
-			Path:    route.Path,
-			Spec:    routeSpec(route.Method, route.Path),
+			Path:    routePath,
+			Spec:    routeSpec(route.Method, routePath),
 			Handler: route.Handler,
 			HasMeta: route.HasMeta,
 			Meta:    meta,
@@ -677,8 +686,10 @@ func (s *service) buildRuntimeRouteIndex() runtimeRouteIndex {
 
 	runtimeRoutes := CollectRuntimeRoutes(s.router.Routes())
 	for _, route := range runtimeRoutes {
+		specPath := normalizeManagedRoutePath(route.Path)
+		index.specSet[routeSpec(route.Method, specPath)] = struct{}{}
 		index.specSet[routeSpec(route.Method, route.Path)] = struct{}{}
-		if code := strings.TrimSpace(ResolveRouteCode(route.Method, route.Path, routeMetaPointer(route))); code != "" {
+		for _, code := range collectRuntimeRouteCodes(route.Method, route.Path, routeMetaPointer(route)) {
 			index.codeSet[code] = struct{}{}
 		}
 	}
@@ -693,9 +704,9 @@ func resolveEndpointRuntimeState(endpoint user.APIEndpoint, index runtimeRouteIn
 		}
 	}
 
-	if _, ok := index.specSet[routeSpec(endpoint.Method, endpoint.Path)]; ok {
-		return EndpointRuntimeState{RuntimeExists: true}
-	}
+		if _, ok := index.specSet[routeSpec(endpoint.Method, endpoint.Path)]; ok {
+			return EndpointRuntimeState{RuntimeExists: true}
+		}
 
 	state := EndpointRuntimeState{}
 	if shouldMarkEndpointStale(endpoint) {
@@ -774,10 +785,11 @@ func (s *service) listPotentiallyRegisteredEndpointsForRoutes(runtimeRoutes []Ru
 	methodSet := make(map[string]struct{}, len(runtimeRoutes))
 	pathSet := make(map[string]struct{}, len(runtimeRoutes))
 	for _, route := range runtimeRoutes {
-		if code := strings.TrimSpace(ResolveRouteCode(route.Method, route.Path, routeMetaPointer(route))); code != "" {
+		for _, code := range collectRuntimeRouteCodes(route.Method, route.Path, routeMetaPointer(route)) {
 			codeSet[code] = struct{}{}
 		}
 		methodSet[route.Method] = struct{}{}
+		pathSet[normalizeManagedRoutePath(route.Path)] = struct{}{}
 		pathSet[route.Path] = struct{}{}
 	}
 
@@ -797,7 +809,7 @@ func (s *service) listPotentiallyRegisteredEndpointsForRoutes(runtimeRoutes []Ru
 	items := make([]user.APIEndpoint, 0, len(runtimeRoutes))
 	seen := make(map[uuid.UUID]struct{}, len(runtimeRoutes))
 	appendDistinct := func(batch []user.APIEndpoint) {
-		for _, item := range batch {
+	for _, item := range batch {
 			if _, ok := seen[item.ID]; ok {
 				continue
 			}

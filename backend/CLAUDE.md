@@ -46,15 +46,27 @@ This regenerates `internal/pkg/permissionseed/openapi_seed.json`.
 The startup loader will refuse to boot if any operation is missing a
 permission key.
 
+Operational rule:
+
+- If you changed `api/openapi/openapi.yaml`, rerun `update-openapi.bat`
+  so the embedded OpenAPI seed stays in sync.
+- If the DB already has the latest schema and default rows, a seed refresh
+  is usually enough; you do not need to rerun migrations just because the
+  OpenAPI spec changed.
+- If you introduced new tables, columns, baseline permission keys, or any
+  other schema/default-data change, rerun `cmd/migrate` as well.
+- For a brand-new database, run `cmd/migrate` first, then `update-openapi.bat`.
+
 ### 4. Implement the operation method
 
 Add a method on `APIHandler` in `internal/api/handlers/{domain}.go` that
 matches the generated `gen.Handler` signature. Reach into the existing
 service-layer (`internal/modules/system/{domain}`) for business logic.
 
-Do NOT add new routes to `internal/modules/system/*/module.go`. The ogen
-bridge in `internal/api/router/router.go` already covers every operation
-declared in the spec.
+Do NOT re-introduce a legacy Gin module shell
+(`internal/modules/system/*/module.go`). Those files have been deleted;
+the ogen bridge in `internal/api/router/router.go` already covers every
+operation declared in the spec.
 
 ### 5. Ensure the permission key exists in the DB
 
@@ -62,7 +74,7 @@ If you introduced a new `x-permission-key`, the runtime upsert in
 `internal/pkg/permissionseed.EnsureOpenAPIPermissionKeys` will materialise
 it on next `cmd/migrate` run. For frequently-shipped, well-known baseline
 keys you may also add them to the goose migration
-`internal/pkg/database/migrations/00002_permission_seed_baseline.sql`.
+`internal/pkg/database/migrations/00001_permission_seed_baseline.sql`.
 
 ### 6. Add a smoke test
 
@@ -81,8 +93,9 @@ Re-run the generator there and replace any hand-written axios calls.
 
 ## Anti-patterns
 
-- Do NOT add new routes to `internal/modules/system/*/module.go` —
-  legacy gin handlers are being deleted, not extended.
+- Do NOT re-introduce a legacy Gin module shell
+  (`internal/modules/system/*/module.go`) — those files have been deleted
+  and must not be recreated.
 - Do NOT bypass `internal/pkg/permission/evaluator` for permission
   decisions; never read `feature_package_keys` / `role_feature_packages`
   directly from a handler.

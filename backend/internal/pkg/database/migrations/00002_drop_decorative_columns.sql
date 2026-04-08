@@ -12,14 +12,14 @@
 -- Business-legitimate uses of the same identifiers on OTHER tables
 -- (apps, menus, pages, feature_packages, ...) are unaffected.
 
-ALTER TABLE api_endpoints
+ALTER TABLE IF EXISTS api_endpoints
     DROP COLUMN IF EXISTS app_scope,
     DROP COLUMN IF EXISTS app_key,
     DROP COLUMN IF EXISTS feature_kind,
     DROP COLUMN IF EXISTS context_scope,
     DROP COLUMN IF EXISTS source;
 
-ALTER TABLE permission_keys
+ALTER TABLE IF EXISTS permission_keys
     DROP COLUMN IF EXISTS app_key,
     DROP COLUMN IF EXISTS module_code,
     DROP COLUMN IF EXISTS context_type,

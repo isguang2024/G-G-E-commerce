@@ -17,20 +17,8 @@ import (
 	"github.com/gg-ecommerce/backend/internal/config"
 	"github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
 	"github.com/gg-ecommerce/backend/internal/modules/system/auth"
-	"github.com/gg-ecommerce/backend/internal/modules/system/featurepackage"
-	"github.com/gg-ecommerce/backend/internal/modules/system/media"
-	"github.com/gg-ecommerce/backend/internal/modules/system/menu"
-	"github.com/gg-ecommerce/backend/internal/modules/system/navigation"
-	"github.com/gg-ecommerce/backend/internal/modules/system/page"
-	"github.com/gg-ecommerce/backend/internal/modules/system/permission"
-	"github.com/gg-ecommerce/backend/internal/modules/system/role"
-	"github.com/gg-ecommerce/backend/internal/modules/system/system"
-	collaborationworkspace "github.com/gg-ecommerce/backend/internal/modules/system/collaborationworkspace"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
-	"github.com/gg-ecommerce/backend/internal/modules/system/workspace"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiendpointaccess"
-	apiendpointpkg "github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
-	"github.com/gg-ecommerce/backend/internal/pkg/module"
 	"github.com/gg-ecommerce/backend/internal/pkg/openapidocs"
 	"github.com/gg-ecommerce/backend/internal/pkg/permission/evaluator"
 	"github.com/gg-ecommerce/backend/internal/pkg/permissionseed"
@@ -91,27 +79,6 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		endpointAccessService,
 	)
 
-	authModule := auth.NewAuthModule(db, cfg, logger)
-	userModule := user.NewUserModule(db, cfg, logger)
-	menuModule := menu.NewMenuModule(db, cfg, logger)
-	navigationModule := navigation.NewModule(db, cfg, logger)
-	pageModule := page.NewModule(db, cfg, logger)
-	permissionModule := permission.NewPermissionModule(db, cfg, logger)
-	featurePackageModule := featurepackage.NewModule(db, cfg, logger)
-	roleModule := role.NewRoleModule(db, cfg, logger)
-	collaborationWorkspaceModule := collaborationworkspace.NewCollaborationWorkspaceModule(db, cfg, logger)
-	workspaceModule := workspace.NewModule(db, cfg, logger)
-	mediaModule := media.NewMediaModule(db, cfg, logger)
-	systemModule := system.NewSystemModule(db, cfg, logger)
-	apiEndpointModule := apiendpoint.NewModule(db, cfg, logger, r, endpointAccessService)
-
-	modules := module.GetRegistry().GetModules()
-	for _, m := range modules {
-		if err := m.Init(); err != nil {
-			logger.Error("Failed to initialize module", zap.Error(err))
-		}
-	}
-
 	// Build the ogen server once. It handles all OpenAPI-first operations
 	// (both public and authenticated). The Gin layer routes the public ones
 	// outside the JWT middleware and the rest inside.
@@ -154,23 +121,15 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 	v1 := r.Group("/api/v1")
 	v1.Use(endpointAccessService.RequireActiveEndpoint())
 	{
-		// OpenAPI-first public 路径：login 由 ogen handler 接管，
-		// 与 legacy auth.RegisterRoutes 中的 POST /auth/login 路径冲突，
-		// 故 authModule 在迁移完成前不再挂载 login。
+		// Public (unauthenticated) operations served by the ogen bridge.
 		v1.POST("/auth/login", publicBridge)
 		v1.POST("/auth/register", publicBridge)
 		v1.POST("/auth/refresh", publicBridge)
-		// Phase 4: page domain public route migrated to ogen.
 		v1.GET("/pages/runtime/public", publicBridge)
-
-		authModule.RegisterRoutes(v1)
-		pageModule.RegisterPublicRoutes(v1)
 
 		authenticated := v1.Group("")
 		authenticated.Use(auth.JWTAuth(cfg.JWT.Secret, db), middleware.AppContext(db))
 		{
-			// OpenAPI-first 路径：legacy /workspaces/{my,current,:id} 与
-			// /permissions/explain 全部由 ogen handler 接管。
 			authenticated.GET("/auth/me", ogenBridge)
 			authenticated.POST("/workspaces/switch", ogenBridge)
 			authenticated.GET("/workspaces/my", ogenBridge)
@@ -178,9 +137,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.GET("/workspaces/:id", ogenBridge)
 			authenticated.GET("/permissions/explain", ogenBridge)
 
-			// Phase 4 slice 5: /users/* read + write + role assignment migrated
-			// to ogen handlers. Legacy user module skips these routes to avoid
-			// duplicate gin registrations.
+			// /users/* read + write + role assignment
 			authenticated.GET("/users", ogenBridge)
 			authenticated.POST("/users", ogenBridge)
 			authenticated.GET("/users/:id", ogenBridge)
@@ -188,8 +145,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.DELETE("/users/:id", ogenBridge)
 			authenticated.POST("/users/:id/roles", ogenBridge)
 
-			// Phase 4: role + navigation domains migrated to ogen handlers.
-			// Legacy role/navigation modules skip these routes.
+			// role + navigation
 			authenticated.GET("/roles", ogenBridge)
 			authenticated.POST("/roles", ogenBridge)
 			authenticated.GET("/roles/options", ogenBridge)
@@ -206,7 +162,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.PUT("/roles/:id/data-permissions", ogenBridge)
 			authenticated.GET("/runtime/navigation", ogenBridge)
 
-			// Phase 4: feature-package domain
+			// feature-package
 			authenticated.GET("/feature-packages/relationship-tree", ogenBridge)
 			authenticated.POST("/feature-packages/:id/rollback", ogenBridge)
 			authenticated.GET("/feature-packages", ogenBridge)
@@ -229,7 +185,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.GET("/feature-packages/collaboration-workspaces/:collaborationWorkspaceId", ogenBridge)
 			authenticated.PUT("/feature-packages/collaboration-workspaces/:collaborationWorkspaceId", ogenBridge)
 
-			// Phase 4: permission domain
+			// permission
 			authenticated.GET("/permission-actions", ogenBridge)
 			authenticated.GET("/permission-actions/options", ogenBridge)
 			authenticated.GET("/permission-actions/:id", ogenBridge)
@@ -250,7 +206,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.POST("/permission-actions/groups", ogenBridge)
 			authenticated.PUT("/permission-actions/groups/:id", ogenBridge)
 
-			// Phase 4: menu domain
+			// menu
 			authenticated.GET("/menus/tree", ogenBridge)
 			authenticated.POST("/menus", ogenBridge)
 			authenticated.PUT("/menus/:id", ogenBridge)
@@ -265,7 +221,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.GET("/menus/:id/delete-preview", ogenBridge)
 			authenticated.POST("/menus/backups/:id/restore", ogenBridge)
 
-			// Phase 4: page domain
+			// page
 			authenticated.GET("/pages", ogenBridge)
 			authenticated.GET("/pages/options", ogenBridge)
 			authenticated.GET("/pages/menu-options", ogenBridge)
@@ -279,7 +235,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.DELETE("/pages/:id", ogenBridge)
 			authenticated.GET("/pages/access-trace", ogenBridge)
 
-			// Phase 4: collaboration-workspace domain
+			// collaboration-workspace
 			authenticated.GET("/collaboration-workspaces", ogenBridge)
 			authenticated.GET("/collaboration-workspaces/options", ogenBridge)
 			authenticated.GET("/collaboration-workspaces/:id", ogenBridge)
@@ -297,7 +253,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.DELETE("/collaboration-workspaces/current/members/:userId", ogenBridge)
 			authenticated.PUT("/collaboration-workspaces/current/members/:userId/role", ogenBridge)
 
-			// Phase 4: system app + menu-space domain
+			// system app + menu-space
 			authenticated.GET("/system/apps", ogenBridge)
 			authenticated.POST("/system/apps", ogenBridge)
 			authenticated.GET("/system/apps/current", ogenBridge)
@@ -312,12 +268,12 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.GET("/system/menu-space-host-bindings", ogenBridge)
 			authenticated.POST("/system/menu-space-host-bindings", ogenBridge)
 
-			// Phase 4: system fast-enter + view-pages migrated to ogen.
+			// system fast-enter + view-pages
 			authenticated.GET("/system/view-pages", ogenBridge)
 			authenticated.GET("/system/fast-enter", ogenBridge)
 			authenticated.PUT("/system/fast-enter", ogenBridge)
 
-			// Phase 4: message domain migrated to ogen handlers.
+			// message
 			authenticated.GET("/messages/inbox/summary", ogenBridge)
 			authenticated.GET("/messages/inbox", ogenBridge)
 			authenticated.GET("/messages/inbox/:deliveryId", ogenBridge)
@@ -338,11 +294,11 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.GET("/messages/records", ogenBridge)
 			authenticated.GET("/messages/records/:recordId", ogenBridge)
 
-			// Phase 4: user sub-routes (collaboration workspaces + refresh) migrated.
+			// user sub-routes — collaboration workspaces + refresh
 			authenticated.GET("/users/:id/collaboration-workspaces", ogenBridge)
 			authenticated.POST("/users/:id/permission-refresh", ogenBridge)
 
-			// Phase 4: user sub-routes (menus, packages, permissions, diagnosis).
+			// user sub-routes — menus / packages / permissions / diagnosis
 			authenticated.GET("/users/:id/menus", ogenBridge)
 			authenticated.PUT("/users/:id/menus", ogenBridge)
 			authenticated.GET("/users/:id/packages", ogenBridge)
@@ -350,7 +306,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.GET("/users/:id/permissions", ogenBridge)
 			authenticated.GET("/users/:id/permission-diagnosis", ogenBridge)
 
-			// Phase 4: CW boundary — current workspace complex ops
+			// collaboration-workspace boundary — current workspace complex ops
 			authenticated.GET("/collaboration-workspaces/current/roles", ogenBridge)
 			authenticated.POST("/collaboration-workspaces/current/roles", ogenBridge)
 			authenticated.GET("/collaboration-workspaces/current/boundary/roles", ogenBridge)
@@ -370,7 +326,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.GET("/collaboration-workspaces/current/action-origins", ogenBridge)
 			authenticated.GET("/collaboration-workspaces/current/members/:userId/roles", ogenBridge)
 			authenticated.PUT("/collaboration-workspaces/current/members/:userId/roles", ogenBridge)
-			// Phase 4: CW boundary — workspace-scoped ops
+			// collaboration-workspace boundary — workspace-scoped ops
 			authenticated.GET("/collaboration-workspaces/:id/roles", ogenBridge)
 			authenticated.GET("/collaboration-workspaces/:id/menus", ogenBridge)
 			authenticated.GET("/collaboration-workspaces/:id/menu-origins", ogenBridge)
@@ -379,7 +335,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.GET("/collaboration-workspaces/:id/action-origins", ogenBridge)
 			authenticated.PUT("/collaboration-workspaces/:id/actions", ogenBridge)
 
-			// ── api-endpoints (Phase 5) ────────────────────────────────────
+			// ── api-endpoints ─────────────────────────────────────────────
 			authenticated.GET("/api-endpoints", ogenBridge)
 			authenticated.POST("/api-endpoints", ogenBridge)
 			authenticated.GET("/api-endpoints/overview", ogenBridge)
@@ -395,23 +351,10 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 			authenticated.PUT("/api-endpoints/:id", ogenBridge)
 			authenticated.PUT("/api-endpoints/:id/context-scope", ogenBridge)
 
-			// ── media (Phase 5) ───────────────────────────────────────────
+			// ── media ─────────────────────────────────────────────────────
 			authenticated.POST("/media/upload", ogenBridge)
 			authenticated.GET("/media", ogenBridge)
 			authenticated.DELETE("/media/:id", ogenBridge)
-
-			userModule.RegisterRoutes(authenticated)
-			menuModule.RegisterRoutes(authenticated)
-			navigationModule.RegisterRoutes(authenticated)
-			pageModule.RegisterRoutes(authenticated)
-			permissionModule.RegisterRoutes(authenticated)
-			featurePackageModule.RegisterRoutes(authenticated)
-			roleModule.RegisterRoutes(authenticated)
-			collaborationWorkspaceModule.RegisterRoutes(authenticated)
-			workspaceModule.RegisterRoutes(authenticated)
-			mediaModule.RegisterRoutes(authenticated)
-			systemModule.RegisterRoutes(authenticated)
-			apiEndpointModule.RegisterRoutes(authenticated)
 		}
 
 		open := r.Group("/open/v1")
@@ -420,7 +363,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		}
 	}
 
-	if err := apiendpointpkg.SyncRoutes(db, logger, r.Routes()); err != nil {
+	if err := apiendpoint.SyncRoutes(db, logger, r.Routes()); err != nil {
 		logger.Error("Failed to sync API registry", zap.Error(err))
 	}
 	if err := endpointAccessService.Refresh(); err != nil {

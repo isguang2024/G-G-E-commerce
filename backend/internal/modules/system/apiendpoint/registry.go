@@ -356,6 +356,7 @@ func syncRoutesInternal(
 		}
 		categoryID := resolveCategoryID(db, meta.CategoryCode)
 
+		specPath := normalizeManagedRoutePath(route.Path)
 		endpointCode := ResolveRouteCode(route.Method, route.Path, &meta)
 		if endpointCode == "" {
 			if logger != nil {
@@ -374,13 +375,19 @@ func syncRoutesInternal(
 		if err != nil {
 			return err
 		}
+		if legacy == nil {
+			legacy, err = findEndpointByMethodAndPath(db, route.Method, specPath)
+			if err != nil {
+				return err
+			}
+		}
 
 		summary := strings.TrimSpace(meta.Summary)
 
 		endpoint := &models.APIEndpoint{
 			Code:       endpointCode,
 			Method:     strings.ToUpper(route.Method),
-			Path:       route.Path,
+			Path:       specPath,
 			Handler:    route.Handler,
 			Summary:    summary,
 			CategoryID: categoryID,
@@ -485,11 +492,9 @@ func ResolveRouteCode(method, path string, meta *RouteMeta) string {
 			return code
 		}
 	}
-	if code := lookupFixedRouteCode(method, path); code != "" {
-		return code
-	}
-	if meta != nil {
-		return deriveStableEndpointCode(method, path)
+	normalizedPath := normalizeManagedRoutePath(path)
+	if normalizedPath != "" {
+		return deriveStableEndpointCode(method, normalizedPath)
 	}
 	return ""
 }
@@ -498,6 +503,68 @@ func ResolveRouteCode(method, path string, meta *RouteMeta) string {
 func deriveStableEndpointCode(method, path string) string {
 	normalized := strings.ToUpper(strings.TrimSpace(method)) + " " + strings.TrimSpace(path)
 	return uuid.NewHash(sha1.New(), uuid.NameSpaceURL, []byte("api-endpoint:"+normalized), 5).String()
+}
+
+func normalizeManagedRoutePath(path string) string {
+	trimmed := strings.TrimSpace(path)
+	if trimmed == "" {
+		return ""
+	}
+	switch {
+	case strings.HasPrefix(trimmed, "/api/v1/"):
+		trimmed = "/" + strings.TrimPrefix(trimmed, "/api/v1/")
+	case strings.HasPrefix(trimmed, "/open/v1/"):
+		trimmed = "/" + strings.TrimPrefix(trimmed, "/open/v1/")
+	case trimmed == "/api/v1" || trimmed == "/open/v1":
+		return "/"
+	}
+	if trimmed == "/" {
+		return trimmed
+	}
+	segments := strings.Split(strings.TrimPrefix(trimmed, "/"), "/")
+	for idx, segment := range segments {
+		if segment == "" {
+			continue
+		}
+		switch {
+		case strings.HasPrefix(segment, ":"):
+			name := strings.TrimPrefix(segment, ":")
+			if name == "" {
+				name = "param"
+			}
+			segments[idx] = "{" + name + "}"
+		case strings.HasPrefix(segment, "*"):
+			name := strings.TrimPrefix(segment, "*")
+			if name == "" {
+				name = "wildcard"
+			}
+			segments[idx] = "{" + name + "}"
+		}
+	}
+	return "/" + strings.Join(segments, "/")
+}
+
+func collectRuntimeRouteCodes(method, path string, meta *RouteMeta) []string {
+	seen := map[string]struct{}{}
+	result := make([]string, 0, 3)
+	appendCode := func(code string) {
+		target := strings.TrimSpace(code)
+		if target == "" {
+			return
+		}
+		if _, ok := seen[target]; ok {
+			return
+		}
+		seen[target] = struct{}{}
+		result = append(result, target)
+	}
+
+	if meta != nil {
+		appendCode(meta.Code)
+	}
+	appendCode(lookupFixedRouteCode(method, path))
+	appendCode(deriveStableEndpointCode(method, normalizeManagedRoutePath(path)))
+	return result
 }
 
 func shouldBackfillManagedEndpointCode(existing *models.APIEndpoint) bool {

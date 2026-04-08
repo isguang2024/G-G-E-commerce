@@ -87,7 +87,7 @@ func (h *APIHandler) GetWidget(ctx context.Context, params gen.GetWidgetParams) 
 }
 ```
 
-**不要**在 `internal/modules/system/*/module.go` 里注册新路由，ogen bridge 已统一接管。
+**不要**重新引入 legacy Gin module shell（`internal/modules/system/*/module.go` 已全部删除），ogen bridge 已统一接管所有路由。
 
 ---
 
@@ -151,7 +151,7 @@ npx openapi-typescript@7 ../backend/api/openapi/openapi.yaml -o src/api/v5/schem
 
 ## 禁止事项
 
-- 不在 `internal/modules/system/*/module.go` 里加新路由
+- 不重新引入 legacy Gin module shell（`internal/modules/system/*/module.go` 已删除，不得重建）
 - 不手写 DTO 绕过 ogen 生成
 - 不在 handler 内直接读 `feature_package_keys` / `role_feature_packages` 表
 - 不 import `internal/pkg/authorization`（已废弃，等待删除）

@@ -121,7 +121,9 @@
       "Read(//c/Users/Administrator/Documents/GitHub/backend/api/openapi/**)",
       "Bash(find /c/Users/Administrator/Documents/GitHub/G-G-E-commerce/backend/internal/modules/system/models -name \"*.go\" -exec grep -l \"type PermissionKey\" {} \\\\;)",
       "Bash(python3)",
-      "Bash(pnpm typecheck:*)"
+      "Bash(pnpm typecheck:*)",
+      "Bash(rm -v internal/modules/system/auth/module.go internal/modules/system/user/module.go internal/modules/system/role/module.go internal/modules/system/featurepackage/module.go internal/modules/system/menu/module.go internal/modules/system/navigation/module.go internal/modules/system/page/module.go internal/modules/system/workspace/module.go internal/modules/system/collaborationworkspace/module.go internal/modules/system/system/module.go internal/modules/system/media/module.go internal/modules/system/permission/module.go internal/modules/system/apiendpoint/module.go internal/pkg/module/module.go)",
+      "Bash(rmdir internal/pkg/module)"
     ]
   },
   "defaultMode": "bypassPermissions"
