@@ -84,7 +84,9 @@
       "Bash(wc -l internal/modules/system/*/service.go)",
       "Bash(netstat -ano)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:5173/)",
-      "Bash(pkill -f \"vite\")"
+      "Bash(pkill -f \"vite\")",
+      "Bash(ls internal/api/handlers/cw*.go)",
+      "Bash(python3 -c ':*)"
     ]
   },
   "defaultMode": "bypassPermissions"

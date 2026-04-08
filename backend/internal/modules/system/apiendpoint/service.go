@@ -1,7 +1,6 @@
 package apiendpoint
 
 import (
-	"crypto/sha1"
 	"errors"
 	"strings"
 
@@ -14,7 +13,6 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/models"
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiendpointaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
 )
 
 var (
@@ -280,7 +278,7 @@ func (s *service) ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]U
 		return []UnregisteredRouteItem{}, 0, nil
 	}
 
-	runtimeRoutes := apiregistry.CollectRuntimeRoutes(s.router.Routes())
+	runtimeRoutes := CollectRuntimeRoutes(s.router.Routes())
 	registered, err := s.listPotentiallyRegisteredEndpointsForRoutes(runtimeRoutes)
 	if err != nil {
 		return nil, 0, err
@@ -301,7 +299,7 @@ func (s *service) ListUnregisteredRoutes(req *UnregisteredRouteListRequest) ([]U
 
 	items := make([]UnregisteredRouteItem, 0, len(runtimeRoutes))
 	for _, route := range runtimeRoutes {
-		routeCode := apiregistry.ResolveRouteCode(route.Method, route.Path, routeMetaPointer(route))
+		routeCode := ResolveRouteCode(route.Method, route.Path, routeMetaPointer(route))
 		if _, ok := registeredCodeSet[routeCode]; ok {
 			continue
 		}
@@ -440,7 +438,7 @@ func (s *service) Sync() error {
 	if s.router == nil {
 		return nil
 	}
-	if err := apiregistry.SyncRoutes(s.db, s.logger, s.router.Routes()); err != nil {
+	if err := SyncRoutes(s.db, s.logger, s.router.Routes()); err != nil {
 		return err
 	}
 	return s.refreshRuntimeCache()
@@ -737,11 +735,6 @@ func (s *service) UpdateContextScope(endpointID uuid.UUID, contextScope string) 
 	return s.repo.GetByID(endpointID)
 }
 
-func deriveStableEndpointCode(method, path string) string {
-	targetMethod := strings.ToUpper(strings.TrimSpace(method))
-	targetPath := strings.TrimSpace(path)
-	return uuid.NewHash(sha1.New(), uuid.NameSpaceURL, []byte("api-endpoint:"+targetMethod+" "+targetPath), 5).String()
-}
 
 type runtimeRouteIndex struct {
 	codeSet map[string]struct{}
@@ -757,10 +750,10 @@ func (s *service) buildRuntimeRouteIndex() runtimeRouteIndex {
 		return index
 	}
 
-	runtimeRoutes := apiregistry.CollectRuntimeRoutes(s.router.Routes())
+	runtimeRoutes := CollectRuntimeRoutes(s.router.Routes())
 	for _, route := range runtimeRoutes {
 		index.specSet[routeSpec(route.Method, route.Path)] = struct{}{}
-		if code := strings.TrimSpace(apiregistry.ResolveRouteCode(route.Method, route.Path, routeMetaPointer(route))); code != "" {
+		if code := strings.TrimSpace(ResolveRouteCode(route.Method, route.Path, routeMetaPointer(route))); code != "" {
 			index.codeSet[code] = struct{}{}
 		}
 	}
@@ -795,7 +788,7 @@ func shouldMarkEndpointStale(endpoint user.APIEndpoint) bool {
 	if code == "" {
 		return false
 	}
-	if apiregistry.IsFixedManagedRouteCode(code) {
+	if IsFixedManagedRouteCode(code) {
 		return true
 	}
 	_, err := uuid.Parse(code)
@@ -854,7 +847,7 @@ func (s *service) listSyncRuntimeCandidates(appKey string) ([]user.APIEndpoint, 
 	return items, err
 }
 
-func (s *service) listPotentiallyRegisteredEndpointsForRoutes(runtimeRoutes []apiregistry.RuntimeRoute) ([]user.APIEndpoint, error) {
+func (s *service) listPotentiallyRegisteredEndpointsForRoutes(runtimeRoutes []RuntimeRoute) ([]user.APIEndpoint, error) {
 	if len(runtimeRoutes) == 0 {
 		return []user.APIEndpoint{}, nil
 	}
@@ -863,7 +856,7 @@ func (s *service) listPotentiallyRegisteredEndpointsForRoutes(runtimeRoutes []ap
 	methodSet := make(map[string]struct{}, len(runtimeRoutes))
 	pathSet := make(map[string]struct{}, len(runtimeRoutes))
 	for _, route := range runtimeRoutes {
-		if code := strings.TrimSpace(apiregistry.ResolveRouteCode(route.Method, route.Path, routeMetaPointer(route))); code != "" {
+		if code := strings.TrimSpace(ResolveRouteCode(route.Method, route.Path, routeMetaPointer(route))); code != "" {
 			codeSet[code] = struct{}{}
 		}
 		methodSet[route.Method] = struct{}{}
@@ -924,7 +917,7 @@ func routeSpec(method, path string) string {
 	return strings.ToUpper(strings.TrimSpace(method)) + " " + strings.TrimSpace(path)
 }
 
-func routeMetaPointer(route apiregistry.RuntimeRoute) *apiregistry.RouteMeta {
+func routeMetaPointer(route RuntimeRoute) *RouteMeta {
 	if !route.HasMeta {
 		return nil
 	}

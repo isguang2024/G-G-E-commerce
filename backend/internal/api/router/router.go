@@ -29,7 +29,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 	"github.com/gg-ecommerce/backend/internal/modules/system/workspace"
 	"github.com/gg-ecommerce/backend/internal/pkg/apiendpointaccess"
-	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
+	apiendpointpkg "github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
 	"github.com/gg-ecommerce/backend/internal/pkg/module"
 	"github.com/gg-ecommerce/backend/internal/pkg/openapidocs"
 	"github.com/gg-ecommerce/backend/internal/pkg/permission/evaluator"
@@ -420,7 +420,7 @@ func SetupRouter(cfg *config.Config, logger *zap.Logger, db *gorm.DB) *gin.Engin
 		}
 	}
 
-	if err := apiregistry.SyncRoutes(db, logger, r.Routes()); err != nil {
+	if err := apiendpointpkg.SyncRoutes(db, logger, r.Routes()); err != nil {
 		logger.Error("Failed to sync API registry", zap.Error(err))
 	}
 	if err := endpointAccessService.Refresh(); err != nil {

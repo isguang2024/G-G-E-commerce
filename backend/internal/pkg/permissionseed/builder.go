@@ -7,7 +7,7 @@ import (
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 
-	"github.com/gg-ecommerce/backend/internal/pkg/apiregistry"
+	apiendpointpkg "github.com/gg-ecommerce/backend/internal/modules/system/apiendpoint"
 )
 
 type DeploymentBuilder struct {
@@ -80,16 +80,16 @@ func (b *DeploymentBuilder) WithDefaultRolePackageBindings() *DeploymentBuilder 
 	return b
 }
 
-func (b *DeploymentBuilder) RuntimeRoutes() []apiregistry.RuntimeRoute {
+func (b *DeploymentBuilder) RuntimeRoutes() []apiendpointpkg.RuntimeRoute {
 	if b == nil || b.router == nil {
-		return []apiregistry.RuntimeRoute{}
+		return []apiendpointpkg.RuntimeRoute{}
 	}
-	return apiregistry.CollectRuntimeRoutes(b.router.Routes())
+	return apiendpointpkg.CollectRuntimeRoutes(b.router.Routes())
 }
 
-func (b *DeploymentBuilder) AnnotatedRoutes() []apiregistry.RuntimeRoute {
+func (b *DeploymentBuilder) AnnotatedRoutes() []apiendpointpkg.RuntimeRoute {
 	routes := b.RuntimeRoutes()
-	result := make([]apiregistry.RuntimeRoute, 0, len(routes))
+	result := make([]apiendpointpkg.RuntimeRoute, 0, len(routes))
 	for _, route := range routes {
 		if !route.HasMeta {
 			continue
@@ -99,9 +99,9 @@ func (b *DeploymentBuilder) AnnotatedRoutes() []apiregistry.RuntimeRoute {
 	return result
 }
 
-func (b *DeploymentBuilder) UnregisteredRoutes() []apiregistry.RuntimeRoute {
+func (b *DeploymentBuilder) UnregisteredRoutes() []apiendpointpkg.RuntimeRoute {
 	routes := b.RuntimeRoutes()
-	result := make([]apiregistry.RuntimeRoute, 0, len(routes))
+	result := make([]apiendpointpkg.RuntimeRoute, 0, len(routes))
 	registered := make(map[string]struct{})
 	if b != nil && b.db != nil {
 		var rows []struct {
