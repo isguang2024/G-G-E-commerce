@@ -6074,6 +6074,193 @@ func (s *Server) handleDeletePermissionActionRequest(args [1]string, argsEscaped
 	}
 }
 
+// handleDeletePermissionActionGroupRequest handles deletePermissionActionGroup operation.
+//
+// 删除功能权限分组.
+//
+// DELETE /permission-actions/groups/{id}
+func (s *Server) handleDeletePermissionActionGroupRequest(args [1]string, argsEscaped bool, w http.ResponseWriter, r *http.Request) {
+	statusWriter := &codeRecorder{ResponseWriter: w}
+	w = statusWriter
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("deletePermissionActionGroup"),
+		semconv.HTTPRequestMethodKey.String("DELETE"),
+		semconv.HTTPRouteKey.String("/permission-actions/groups/{id}"),
+	}
+	// Add attributes from config.
+	otelAttrs = append(otelAttrs, s.cfg.Attributes...)
+
+	// Start a span for this request.
+	ctx, span := s.cfg.Tracer.Start(r.Context(), DeletePermissionActionGroupOperation,
+		trace.WithAttributes(otelAttrs...),
+		serverSpanKind,
+	)
+	defer span.End()
+
+	// Add Labeler to context.
+	labeler := &Labeler{attrs: otelAttrs}
+	ctx = contextWithLabeler(ctx, labeler)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		elapsedDuration := time.Since(startTime)
+
+		attrSet := labeler.AttributeSet()
+		attrs := attrSet.ToSlice()
+		code := statusWriter.status
+		if code != 0 {
+			codeAttr := semconv.HTTPResponseStatusCode(code)
+			attrs = append(attrs, codeAttr)
+			span.SetAttributes(codeAttr)
+		}
+		attrOpt := metric.WithAttributes(attrs...)
+
+		// Increment request counter.
+		s.requests.Add(ctx, 1, attrOpt)
+
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		s.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), attrOpt)
+	}()
+
+	var (
+		recordError = func(stage string, err error) {
+			span.RecordError(err)
+
+			// https://opentelemetry.io/docs/specs/semconv/http/http-spans/#status
+			// Span Status MUST be left unset if HTTP status code was in the 1xx, 2xx or 3xx ranges,
+			// unless there was another error (e.g., network error receiving the response body; or 3xx codes with
+			// max redirects exceeded), in which case status MUST be set to Error.
+			code := statusWriter.status
+			if code < 100 || code >= 500 {
+				span.SetStatus(codes.Error, stage)
+			}
+
+			attrSet := labeler.AttributeSet()
+			attrs := attrSet.ToSlice()
+			if code != 0 {
+				attrs = append(attrs, semconv.HTTPResponseStatusCode(code))
+			}
+
+			s.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
+		err          error
+		opErrContext = ogenerrors.OperationContext{
+			Name: DeletePermissionActionGroupOperation,
+			ID:   "deletePermissionActionGroup",
+		}
+	)
+	{
+		type bitset = [1]uint8
+		var satisfied bitset
+		{
+			sctx, ok, err := s.securityBearerAuth(ctx, DeletePermissionActionGroupOperation, r)
+			if err != nil {
+				err = &ogenerrors.SecurityError{
+					OperationContext: opErrContext,
+					Security:         "BearerAuth",
+					Err:              err,
+				}
+				defer recordError("Security:BearerAuth", err)
+				s.cfg.ErrorHandler(ctx, w, r, err)
+				return
+			}
+			if ok {
+				satisfied[0] |= 1 << 0
+				ctx = sctx
+			}
+		}
+
+		if ok := func() bool {
+		nextRequirement:
+			for _, requirement := range []bitset{
+				{0b00000001},
+			} {
+				for i, mask := range requirement {
+					if satisfied[i]&mask != mask {
+						continue nextRequirement
+					}
+				}
+				return true
+			}
+			return false
+		}(); !ok {
+			err = &ogenerrors.SecurityError{
+				OperationContext: opErrContext,
+				Err:              ogenerrors.ErrSecurityRequirementIsNotSatisfied,
+			}
+			defer recordError("Security", err)
+			s.cfg.ErrorHandler(ctx, w, r, err)
+			return
+		}
+	}
+	params, err := decodeDeletePermissionActionGroupParams(args, argsEscaped, r)
+	if err != nil {
+		err = &ogenerrors.DecodeParamsError{
+			OperationContext: opErrContext,
+			Err:              err,
+		}
+		defer recordError("DecodeParams", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	var rawBody []byte
+
+	var response *MutationResult
+	if m := s.cfg.Middleware; m != nil {
+		mreq := middleware.Request{
+			Context:          ctx,
+			OperationName:    DeletePermissionActionGroupOperation,
+			OperationSummary: "删除功能权限分组",
+			OperationID:      "deletePermissionActionGroup",
+			Body:             nil,
+			RawBody:          rawBody,
+			Params: middleware.Parameters{
+				{
+					Name: "id",
+					In:   "path",
+				}: params.ID,
+			},
+			Raw: r,
+		}
+
+		type (
+			Request  = struct{}
+			Params   = DeletePermissionActionGroupParams
+			Response = *MutationResult
+		)
+		response, err = middleware.HookMiddleware[
+			Request,
+			Params,
+			Response,
+		](
+			m,
+			mreq,
+			unpackDeletePermissionActionGroupParams,
+			func(ctx context.Context, request Request, params Params) (response Response, err error) {
+				response, err = s.h.DeletePermissionActionGroup(ctx, params)
+				return response, err
+			},
+		)
+	} else {
+		response, err = s.h.DeletePermissionActionGroup(ctx, params)
+	}
+	if err != nil {
+		defer recordError("Internal", err)
+		s.cfg.ErrorHandler(ctx, w, r, err)
+		return
+	}
+
+	if err := encodeDeletePermissionActionGroupResponse(response, w, span); err != nil {
+		defer recordError("EncodeResponse", err)
+		if !errors.Is(err, ht.ErrInternalServerErrorResponse) {
+			s.cfg.ErrorHandler(ctx, w, r, err)
+		}
+		return
+	}
+}
+
 // handleDeleteRegisterEntryRequest handles deleteRegisterEntry operation.
 //
 // 删除注册入口.
@@ -7688,7 +7875,7 @@ func (s *Server) handleGetCollaborationWorkspaceRequest(args [1]string, argsEsca
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *CollaborationWorkspaceItem
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -7709,7 +7896,7 @@ func (s *Server) handleGetCollaborationWorkspaceRequest(args [1]string, argsEsca
 		type (
 			Request  = struct{}
 			Params   = GetCollaborationWorkspaceParams
-			Response = AnyObject
+			Response = *CollaborationWorkspaceItem
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -7875,7 +8062,7 @@ func (s *Server) handleGetCollaborationWorkspaceActionOriginsRequest(args [1]str
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *CollaborationWorkspaceActionOriginsResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -7896,7 +8083,7 @@ func (s *Server) handleGetCollaborationWorkspaceActionOriginsRequest(args [1]str
 		type (
 			Request  = struct{}
 			Params   = GetCollaborationWorkspaceActionOriginsParams
-			Response = *AnyListResponse
+			Response = *CollaborationWorkspaceActionOriginsResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -8062,7 +8249,7 @@ func (s *Server) handleGetCollaborationWorkspaceActionsRequest(args [1]string, a
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *CollaborationWorkspaceActionsResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -8083,7 +8270,7 @@ func (s *Server) handleGetCollaborationWorkspaceActionsRequest(args [1]string, a
 		type (
 			Request  = struct{}
 			Params   = GetCollaborationWorkspaceActionsParams
-			Response = AnyObject
+			Response = *CollaborationWorkspaceActionsResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -8249,7 +8436,7 @@ func (s *Server) handleGetCollaborationWorkspaceMenuOriginsRequest(args [1]strin
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *CollaborationWorkspaceMenuOriginsResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -8270,7 +8457,7 @@ func (s *Server) handleGetCollaborationWorkspaceMenuOriginsRequest(args [1]strin
 		type (
 			Request  = struct{}
 			Params   = GetCollaborationWorkspaceMenuOriginsParams
-			Response = *AnyListResponse
+			Response = *CollaborationWorkspaceMenuOriginsResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -8436,7 +8623,7 @@ func (s *Server) handleGetCollaborationWorkspaceMenusRequest(args [1]string, arg
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *CollaborationWorkspaceMenusResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -8457,7 +8644,7 @@ func (s *Server) handleGetCollaborationWorkspaceMenusRequest(args [1]string, arg
 		type (
 			Request  = struct{}
 			Params   = GetCollaborationWorkspaceMenusParams
-			Response = AnyObject
+			Response = *CollaborationWorkspaceMenusResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -8991,7 +9178,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceRequest(args [0]string, a
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *CollaborationWorkspaceItem
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -9007,7 +9194,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceRequest(args [0]string, a
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = AnyObject
+			Response = *CollaborationWorkspaceItem
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -9163,7 +9350,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceActionOriginsRequest(args
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *CollaborationWorkspaceActionOriginsResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -9179,7 +9366,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceActionOriginsRequest(args
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *AnyListResponse
+			Response = *CollaborationWorkspaceActionOriginsResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -9335,7 +9522,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceActionsRequest(args [0]st
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *CollaborationWorkspaceActionsResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -9351,7 +9538,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceActionsRequest(args [0]st
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = AnyObject
+			Response = *CollaborationWorkspaceActionsResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -9507,7 +9694,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryPackagesRequest(a
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *FeaturePackageAssignmentResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -9523,7 +9710,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryPackagesRequest(a
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *AnyListResponse
+			Response = *FeaturePackageAssignmentResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -9689,7 +9876,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *RoleActionsResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -9710,7 +9897,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleActionsReques
 		type (
 			Request  = struct{}
 			Params   = GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams
-			Response = AnyObject
+			Response = *RoleActionsResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -9876,7 +10063,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *RoleMenusResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -9897,7 +10084,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRoleMenusRequest(
 		type (
 			Request  = struct{}
 			Params   = GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams
-			Response = AnyObject
+			Response = *RoleMenusResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -10063,7 +10250,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *CollaborationWorkspaceBoundaryRolePackagesResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -10084,7 +10271,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceBoundaryRolePackagesReque
 		type (
 			Request  = struct{}
 			Params   = GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams
-			Response = AnyObject
+			Response = *CollaborationWorkspaceBoundaryRolePackagesResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -10250,7 +10437,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMemberRolesRequest(args [
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *CollaborationWorkspaceMemberRolesResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -10271,7 +10458,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMemberRolesRequest(args [
 		type (
 			Request  = struct{}
 			Params   = GetCurrentCollaborationWorkspaceMemberRolesParams
-			Response = AnyObject
+			Response = *CollaborationWorkspaceMemberRolesResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -10427,7 +10614,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMenuOriginsRequest(args [
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *CollaborationWorkspaceMenuOriginsResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -10443,7 +10630,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMenuOriginsRequest(args [
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *AnyListResponse
+			Response = *CollaborationWorkspaceMenuOriginsResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -10599,7 +10786,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMenusRequest(args [0]stri
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *CollaborationWorkspaceMenusResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -10615,7 +10802,7 @@ func (s *Server) handleGetCurrentCollaborationWorkspaceMenusRequest(args [0]stri
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = AnyObject
+			Response = *CollaborationWorkspaceMenusResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -11885,7 +12072,7 @@ func (s *Server) handleGetFeaturePackageCollaborationWorkspacesRequest(args [1]s
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *FeaturePackageCollaborationWorkspaceList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -11910,7 +12097,7 @@ func (s *Server) handleGetFeaturePackageCollaborationWorkspacesRequest(args [1]s
 		type (
 			Request  = struct{}
 			Params   = GetFeaturePackageCollaborationWorkspacesParams
-			Response = *AnyListResponse
+			Response = *FeaturePackageCollaborationWorkspaceList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -14712,7 +14899,7 @@ func (s *Server) handleGetPermissionActionConsumersRequest(args [1]string, argsE
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *PermissionActionConsumersResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -14733,7 +14920,7 @@ func (s *Server) handleGetPermissionActionConsumersRequest(args [1]string, argsE
 		type (
 			Request  = struct{}
 			Params   = GetPermissionActionConsumersParams
-			Response = AnyObject
+			Response = *PermissionActionConsumersResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -14899,7 +15086,7 @@ func (s *Server) handleGetPermissionActionImpactPreviewRequest(args [1]string, a
 
 	var rawBody []byte
 
-	var response AnyObject
+	var response *PermissionActionImpactPreview
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -14920,7 +15107,7 @@ func (s *Server) handleGetPermissionActionImpactPreviewRequest(args [1]string, a
 		type (
 			Request  = struct{}
 			Params   = GetPermissionActionImpactPreviewParams
-			Response = AnyObject
+			Response = *PermissionActionImpactPreview
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -18488,7 +18675,7 @@ func (s *Server) handleListAppHostBindingsRequest(args [0]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *SystemListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -18509,7 +18696,7 @@ func (s *Server) handleListAppHostBindingsRequest(args [0]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = ListAppHostBindingsParams
-			Response = *AnyListResponse
+			Response = *SystemListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -18665,7 +18852,7 @@ func (s *Server) handleListAppsRequest(args [0]string, argsEscaped bool, w http.
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *SystemListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -18681,7 +18868,7 @@ func (s *Server) handleListAppsRequest(args [0]string, argsEscaped bool, w http.
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *AnyListResponse
+			Response = *SystemListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -18847,7 +19034,7 @@ func (s *Server) handleListCollaborationWorkspaceMembersRequest(args [1]string, 
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *CollaborationWorkspaceMemberList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -18868,7 +19055,7 @@ func (s *Server) handleListCollaborationWorkspaceMembersRequest(args [1]string, 
 		type (
 			Request  = struct{}
 			Params   = ListCollaborationWorkspaceMembersParams
-			Response = *AnyListResponse
+			Response = *CollaborationWorkspaceMemberList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -19024,7 +19211,7 @@ func (s *Server) handleListCollaborationWorkspaceOptionsRequest(args [0]string, 
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *CollaborationWorkspaceList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -19040,7 +19227,7 @@ func (s *Server) handleListCollaborationWorkspaceOptionsRequest(args [0]string, 
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *AnyListResponse
+			Response = *CollaborationWorkspaceList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -19206,7 +19393,7 @@ func (s *Server) handleListCollaborationWorkspaceRolesRequest(args [1]string, ar
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *CollaborationWorkspaceRoleList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -19227,7 +19414,7 @@ func (s *Server) handleListCollaborationWorkspaceRolesRequest(args [1]string, ar
 		type (
 			Request  = struct{}
 			Params   = ListCollaborationWorkspaceRolesParams
-			Response = *AnyListResponse
+			Response = *CollaborationWorkspaceRoleList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -19393,7 +19580,7 @@ func (s *Server) handleListCollaborationWorkspacesRequest(args [0]string, argsEs
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *CollaborationWorkspaceList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -19422,7 +19609,7 @@ func (s *Server) handleListCollaborationWorkspacesRequest(args [0]string, argsEs
 		type (
 			Request  = struct{}
 			Params   = ListCollaborationWorkspacesParams
-			Response = *AnyListResponse
+			Response = *CollaborationWorkspaceList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -19578,7 +19765,7 @@ func (s *Server) handleListCurrentCollaborationWorkspaceBoundaryRolesRequest(arg
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *CollaborationWorkspaceRoleList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -19594,7 +19781,7 @@ func (s *Server) handleListCurrentCollaborationWorkspaceBoundaryRolesRequest(arg
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *AnyListResponse
+			Response = *CollaborationWorkspaceRoleList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -19750,7 +19937,7 @@ func (s *Server) handleListCurrentCollaborationWorkspaceMembersRequest(args [0]s
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *CollaborationWorkspaceMemberList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -19766,7 +19953,7 @@ func (s *Server) handleListCurrentCollaborationWorkspaceMembersRequest(args [0]s
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *AnyListResponse
+			Response = *CollaborationWorkspaceMemberList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -19922,7 +20109,7 @@ func (s *Server) handleListCurrentCollaborationWorkspaceRolesRequest(args [0]str
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *CollaborationWorkspaceRoleList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -19938,7 +20125,7 @@ func (s *Server) handleListCurrentCollaborationWorkspaceRolesRequest(args [0]str
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *AnyListResponse
+			Response = *CollaborationWorkspaceRoleList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -20295,7 +20482,7 @@ func (s *Server) handleListFeaturePackageRiskAuditsRequest(args [1]string, argsE
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *FeaturePackageRiskAuditList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -20324,7 +20511,7 @@ func (s *Server) handleListFeaturePackageRiskAuditsRequest(args [1]string, argsE
 		type (
 			Request  = struct{}
 			Params   = ListFeaturePackageRiskAuditsParams
-			Response = *AnyListResponse
+			Response = *FeaturePackageRiskAuditList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -20490,7 +20677,7 @@ func (s *Server) handleListFeaturePackageVersionsRequest(args [1]string, argsEsc
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *FeaturePackageVersionList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -20519,7 +20706,7 @@ func (s *Server) handleListFeaturePackageVersionsRequest(args [1]string, argsEsc
 		type (
 			Request  = struct{}
 			Params   = ListFeaturePackageVersionsParams
-			Response = *AnyListResponse
+			Response = *FeaturePackageVersionList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -20888,7 +21075,7 @@ func (s *Server) handleListInboxRequest(args [0]string, argsEscaped bool, w http
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *MessageListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -20913,7 +21100,7 @@ func (s *Server) handleListInboxRequest(args [0]string, argsEscaped bool, w http
 		type (
 			Request  = struct{}
 			Params   = ListInboxParams
-			Response = *AnyListResponse
+			Response = *MessageListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -21251,7 +21438,7 @@ func (s *Server) handleListMenuSpaceEntryBindingsRequest(args [0]string, argsEsc
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *SystemListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -21272,7 +21459,7 @@ func (s *Server) handleListMenuSpaceEntryBindingsRequest(args [0]string, argsEsc
 		type (
 			Request  = struct{}
 			Params   = ListMenuSpaceEntryBindingsParams
-			Response = *AnyListResponse
+			Response = *SystemListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -21428,7 +21615,7 @@ func (s *Server) handleListMenuSpaceHostBindingsRequest(args [0]string, argsEsca
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *SystemListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -21444,7 +21631,7 @@ func (s *Server) handleListMenuSpaceHostBindingsRequest(args [0]string, argsEsca
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *AnyListResponse
+			Response = *SystemListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -21610,7 +21797,7 @@ func (s *Server) handleListMenuSpacesRequest(args [0]string, argsEscaped bool, w
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *SystemListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -21631,7 +21818,7 @@ func (s *Server) handleListMenuSpacesRequest(args [0]string, argsEscaped bool, w
 		type (
 			Request  = struct{}
 			Params   = ListMenuSpacesParams
-			Response = *AnyListResponse
+			Response = *SystemListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -21797,7 +21984,7 @@ func (s *Server) handleListMessageDispatchRecordsRequest(args [0]string, argsEsc
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *MessageListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -21822,7 +22009,7 @@ func (s *Server) handleListMessageDispatchRecordsRequest(args [0]string, argsEsc
 		type (
 			Request  = struct{}
 			Params   = ListMessageDispatchRecordsParams
-			Response = *AnyListResponse
+			Response = *MessageListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -21978,7 +22165,7 @@ func (s *Server) handleListMessageRecipientGroupsRequest(args [0]string, argsEsc
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *MessageListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -21994,7 +22181,7 @@ func (s *Server) handleListMessageRecipientGroupsRequest(args [0]string, argsEsc
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *AnyListResponse
+			Response = *MessageListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -22150,7 +22337,7 @@ func (s *Server) handleListMessageSendersRequest(args [0]string, argsEscaped boo
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *MessageListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -22166,7 +22353,7 @@ func (s *Server) handleListMessageSendersRequest(args [0]string, argsEscaped boo
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *AnyListResponse
+			Response = *MessageListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -22322,7 +22509,7 @@ func (s *Server) handleListMessageTemplatesRequest(args [0]string, argsEscaped b
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *MessageListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -22338,7 +22525,7 @@ func (s *Server) handleListMessageTemplatesRequest(args [0]string, argsEscaped b
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *AnyListResponse
+			Response = *MessageListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -22494,7 +22681,7 @@ func (s *Server) handleListMyCollaborationWorkspacesRequest(args [0]string, args
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *CollaborationWorkspaceList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -22510,7 +22697,7 @@ func (s *Server) handleListMyCollaborationWorkspacesRequest(args [0]string, args
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *AnyListResponse
+			Response = *CollaborationWorkspaceList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -22848,7 +23035,7 @@ func (s *Server) handleListPageMenuOptionsRequest(args [0]string, argsEscaped bo
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *PageListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -22873,7 +23060,7 @@ func (s *Server) handleListPageMenuOptionsRequest(args [0]string, argsEscaped bo
 		type (
 			Request  = struct{}
 			Params   = ListPageMenuOptionsParams
-			Response = *AnyListResponse
+			Response = *PageListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -23039,7 +23226,7 @@ func (s *Server) handleListPageOptionsRequest(args [0]string, argsEscaped bool, 
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *PageListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -23064,7 +23251,7 @@ func (s *Server) handleListPageOptionsRequest(args [0]string, argsEscaped bool, 
 		type (
 			Request  = struct{}
 			Params   = ListPageOptionsParams
-			Response = *AnyListResponse
+			Response = *PageListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -23230,7 +23417,7 @@ func (s *Server) handleListPagesRequest(args [0]string, argsEscaped bool, w http
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *PageListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -23271,7 +23458,7 @@ func (s *Server) handleListPagesRequest(args [0]string, argsEscaped bool, w http
 		type (
 			Request  = struct{}
 			Params   = ListPagesParams
-			Response = *AnyListResponse
+			Response = *PageListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -23427,7 +23614,7 @@ func (s *Server) handleListPermissionActionBatchTemplatesRequest(args [0]string,
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *PermissionActionBatchTemplateList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -23443,7 +23630,7 @@ func (s *Server) handleListPermissionActionBatchTemplatesRequest(args [0]string,
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *AnyListResponse
+			Response = *PermissionActionBatchTemplateList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -23786,7 +23973,7 @@ func (s *Server) handleListPermissionActionGroupsRequest(args [0]string, argsEsc
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *PermissionActionGroupList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -23802,7 +23989,7 @@ func (s *Server) handleListPermissionActionGroupsRequest(args [0]string, argsEsc
 		type (
 			Request  = struct{}
 			Params   = struct{}
-			Response = *AnyListResponse
+			Response = *PermissionActionGroupList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -23968,7 +24155,7 @@ func (s *Server) handleListPermissionActionOptionsRequest(args [0]string, argsEs
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *PermissionActionOptions
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -23993,7 +24180,7 @@ func (s *Server) handleListPermissionActionOptionsRequest(args [0]string, argsEs
 		type (
 			Request  = struct{}
 			Params   = ListPermissionActionOptionsParams
-			Response = *AnyListResponse
+			Response = *PermissionActionOptions
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -24159,7 +24346,7 @@ func (s *Server) handleListPermissionActionRiskAuditsRequest(args [0]string, arg
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *PermissionActionRiskAuditList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -24184,7 +24371,7 @@ func (s *Server) handleListPermissionActionRiskAuditsRequest(args [0]string, arg
 		type (
 			Request  = struct{}
 			Params   = ListPermissionActionRiskAuditsParams
-			Response = *AnyListResponse
+			Response = *PermissionActionRiskAuditList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -24350,7 +24537,7 @@ func (s *Server) handleListPermissionActionsRequest(args [0]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response *PermissionActionList
+	var response *SchemasPermissionActionList
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -24387,7 +24574,7 @@ func (s *Server) handleListPermissionActionsRequest(args [0]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = ListPermissionActionsParams
-			Response = *PermissionActionList
+			Response = *SchemasPermissionActionList
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -24509,7 +24696,7 @@ func (s *Server) handleListPublicRuntimePagesRequest(args [0]string, argsEscaped
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *PageListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -24534,7 +24721,7 @@ func (s *Server) handleListPublicRuntimePagesRequest(args [0]string, argsEscaped
 		type (
 			Request  = struct{}
 			Params   = ListPublicRuntimePagesParams
-			Response = *AnyListResponse
+			Response = *PageListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -25637,7 +25824,7 @@ func (s *Server) handleListRuntimePagesRequest(args [0]string, argsEscaped bool,
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *PageListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -25662,7 +25849,7 @@ func (s *Server) handleListRuntimePagesRequest(args [0]string, argsEscaped bool,
 		type (
 			Request  = struct{}
 			Params   = ListRuntimePagesParams
-			Response = *AnyListResponse
+			Response = *PageListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -26226,7 +26413,7 @@ func (s *Server) handleListUnregisteredPagesRequest(args [0]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *PageListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -26247,7 +26434,7 @@ func (s *Server) handleListUnregisteredPagesRequest(args [0]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = ListUnregisteredPagesParams
-			Response = *AnyListResponse
+			Response = *PageListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,
@@ -27138,7 +27325,7 @@ func (s *Server) handlePreviewPageBreadcrumbRequest(args [1]string, argsEscaped 
 
 	var rawBody []byte
 
-	var response *AnyListResponse
+	var response *PageListResponse
 	if m := s.cfg.Middleware; m != nil {
 		mreq := middleware.Request{
 			Context:          ctx,
@@ -27163,7 +27350,7 @@ func (s *Server) handlePreviewPageBreadcrumbRequest(args [1]string, argsEscaped 
 		type (
 			Request  = struct{}
 			Params   = PreviewPageBreadcrumbParams
-			Response = *AnyListResponse
+			Response = *PageListResponse
 		)
 		response, err = middleware.HookMiddleware[
 			Request,

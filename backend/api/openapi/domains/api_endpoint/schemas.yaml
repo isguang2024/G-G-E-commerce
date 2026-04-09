@@ -1,5 +1,114 @@
 # domains/api_endpoint/schemas.yaml
-# Domain-specific schemas (currently kept in components/common.yaml).
-# Move schemas here incrementally when they belong exclusively to this domain.
 components:
-  schemas: {}
+  schemas:
+    ApiEndpointCategoryItem:
+      type: object
+      required: [id, code, name, name_en, sort_order, status]
+      properties:
+        id: {type: string, format: uuid}
+        code: {type: string}
+        name: {type: string}
+        name_en: {type: string}
+        sort_order: {type: integer}
+        status: {type: string}
+    ApiEndpointItem:
+      type: object
+      required:
+        - id
+        - code
+        - method
+        - path
+        - spec
+        - handler
+        - summary
+        - permission_keys
+        - auth_mode
+        - category_id
+        - status
+        - runtime_exists
+        - stale
+        - stale_reason
+        - created_at
+        - updated_at
+      properties:
+        id: {type: string, format: uuid}
+        code: {type: string}
+        method: {type: string}
+        path: {type: string}
+        spec: {type: string}
+        handler: {type: string}
+        summary: {type: string}
+        permission_keys:
+          type: array
+          items: {type: string}
+        auth_mode: {type: string}
+        category_id: {type: string}
+        category:
+          type: object
+          allOf:
+            - $ref: '#/components/schemas/ApiEndpointCategoryItem'
+          nullable: true
+        status: {type: string}
+        runtime_exists: {type: boolean}
+        stale: {type: boolean}
+        stale_reason: {type: string}
+        created_at: {type: string}
+        updated_at: {type: string}
+    ApiEndpointList:
+      type: object
+      required: [records, total, current, size]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/ApiEndpointItem'}
+        total: {type: integer, format: int64}
+        current: {type: integer}
+        size: {type: integer}
+    StaleApiEndpointList:
+      type: object
+      required: [records, total, current, size]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/ApiEndpointItem'}
+        total: {type: integer, format: int64}
+        current: {type: integer}
+        size: {type: integer}
+    UnregisteredApiEndpointMeta:
+      type: object
+      properties:
+        summary: {type: string}
+        category_code: {type: string}
+        permission_keys:
+          type: array
+          items: {type: string}
+      additionalProperties: true
+    UnregisteredApiEndpointItem:
+      type: object
+      required: [method, path, spec, handler, has_meta, meta]
+      properties:
+        method: {type: string}
+        path: {type: string}
+        spec: {type: string}
+        handler: {type: string}
+        has_meta: {type: boolean}
+        meta:
+          $ref: '#/components/schemas/UnregisteredApiEndpointMeta'
+    UnregisteredApiEndpointList:
+      type: object
+      required: [records, total, current, size]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/UnregisteredApiEndpointItem'}
+        total: {type: integer, format: int64}
+        current: {type: integer}
+        size: {type: integer}
+    ApiEndpointCategoryList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/ApiEndpointCategoryItem'}
+        total: {type: integer, format: int64}

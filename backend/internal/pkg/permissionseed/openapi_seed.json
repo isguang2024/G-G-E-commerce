@@ -1252,6 +1252,16 @@
       "access_mode": "permission"
     },
     {
+      "operation_id": "deletePermissionActionGroup",
+      "method": "delete",
+      "path": "/permission-actions/groups/{id}",
+      "permission_key": "system.permission.manage",
+      "summary": "删除功能权限分组",
+      "tags": "permission",
+      "api_category": "permission",
+      "access_mode": "permission"
+    },
+    {
       "operation_id": "updatePermissionActionGroup",
       "method": "put",
       "path": "/permission-actions/groups/{id}",

@@ -1001,6 +1001,71 @@ func decodeDeletePermissionActionParams(args [1]string, argsEscaped bool, r *htt
 	return params, nil
 }
 
+// DeletePermissionActionGroupParams is parameters of deletePermissionActionGroup operation.
+type DeletePermissionActionGroupParams struct {
+	ID uuid.UUID
+}
+
+func unpackDeletePermissionActionGroupParams(packed middleware.Parameters) (params DeletePermissionActionGroupParams) {
+	{
+		key := middleware.ParameterKey{
+			Name: "id",
+			In:   "path",
+		}
+		params.ID = packed[key].(uuid.UUID)
+	}
+	return params
+}
+
+func decodeDeletePermissionActionGroupParams(args [1]string, argsEscaped bool, r *http.Request) (params DeletePermissionActionGroupParams, _ error) {
+	// Decode path: id.
+	if err := func() error {
+		param := args[0]
+		if argsEscaped {
+			unescaped, err := url.PathUnescape(args[0])
+			if err != nil {
+				return errors.Wrap(err, "unescape path")
+			}
+			param = unescaped
+		}
+		if len(param) > 0 {
+			d := uri.NewPathDecoder(uri.PathDecoderConfig{
+				Param:   "id",
+				Value:   param,
+				Style:   uri.PathStyleSimple,
+				Explode: false,
+			})
+
+			if err := func() error {
+				val, err := d.DecodeValue()
+				if err != nil {
+					return err
+				}
+
+				c, err := conv.ToUUID(val)
+				if err != nil {
+					return err
+				}
+
+				params.ID = c
+				return nil
+			}(); err != nil {
+				return err
+			}
+		} else {
+			return validate.ErrFieldRequired
+		}
+		return nil
+	}(); err != nil {
+		return params, &ogenerrors.DecodeParamError{
+			Name: "id",
+			In:   "path",
+			Err:  err,
+		}
+	}
+	return params, nil
+}
+
 // DeleteRegisterEntryParams is parameters of deleteRegisterEntry operation.
 type DeleteRegisterEntryParams struct {
 	ID uuid.UUID

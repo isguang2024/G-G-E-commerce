@@ -5,12 +5,17 @@ import {
   normalizeFeaturePackage,
   normalizeUserPermissionDiagnosisResponse,
   normalizeUserPermissionMenuTree,
-  normalizeUserCollaborationWorkspaceItem
+  normalizeUserCollaborationWorkspaceItem,
+  toV5Body,
+  toV5ListResponse,
+  toV5Record,
+  type V5Query,
+  type V5RequestBody
 } from './_shared'
 
 // 获取用户列表
 export async function fetchGetUserList(params: Api.SystemManage.UserSearchParams) {
-  const query: Record<string, any> = {}
+  const query: V5Query<'/users', 'get'> = {}
   if (params?.current != null) query.current = params.current
   if (params?.size != null) query.size = params.size
   if (params?.id) query.id = params.id
@@ -18,7 +23,7 @@ export async function fetchGetUserList(params: Api.SystemManage.UserSearchParams
   if (params?.userEmail) query.user_email = params.userEmail
   if (params?.userPhone) query.user_phone = params.userPhone
   if (params?.status) query.status = params.status
-  if ((params as any)?.roleId) query.role_id = (params as any).roleId
+  if ('roleId' in params && params.roleId) query.role_id = params.roleId
   if (params?.registerSource) query.register_source = params.registerSource
   if (params?.invitedBy) query.invited_by = params.invitedBy
   try {
@@ -36,17 +41,15 @@ export async function fetchGetUserList(params: Api.SystemManage.UserSearchParams
 
 /** 获取用户个人空间功能包 */
 export async function fetchGetUserPackages(userId: string, appKey?: string) {
-  const res: any = await unwrap(
+  const query: V5Query<'/users/{id}/packages', 'get'> = appKey ? { app_key: appKey } : {}
+  const res = await unwrap(
     v5Client.GET('/users/{id}/packages', {
-      params: { path: { id: userId }, query: (appKey ? { app_key: appKey } : {}) as any }
+      params: { path: { id: userId }, query }
     })
   )
   return {
     package_ids: res?.package_ids || [],
-    packages: (res?.packages || []).map(normalizeFeaturePackage),
-    binding_workspace_id: res?.binding_workspace_id || '',
-    binding_workspace_type: res?.binding_workspace_type || 'personal',
-    binding_workspace_label: res?.binding_workspace_label || 'personal_workspace'
+    packages: (res?.packages || []).map(normalizeFeaturePackage)
   }
 }
 
@@ -55,9 +58,10 @@ export async function fetchSetUserPackages(
   userId: string,
   packageIds: string[]
 ) {
+  const body: V5RequestBody<'/users/{id}/packages', 'put'> = { ids: packageIds }
   const { error } = await v5Client.PUT('/users/{id}/packages', {
     params: { path: { id: userId } },
-    body: { ids: packageIds } as any
+    body
   })
   if (error) throw error
 }
@@ -124,17 +128,20 @@ export async function fetchAssignUserRoles(id: string, roleIds: string[]) {
 
 /** 获取用户个人空间菜单裁剪 */
 export async function fetchGetUserMenus(userId: string, appKey?: string) {
-  const res: any = await unwrap(
+  const query: V5Query<'/users/{id}/menus', 'get'> = appKey ? { app_key: appKey } : {}
+  const res = toV5Record(
+    await unwrap(
     v5Client.GET('/users/{id}/menus', {
-      params: { path: { id: userId }, query: (appKey ? { app_key: appKey } : {}) as any }
+      params: { path: { id: userId }, query }
     })
   )
+  )
   return {
-    menu_ids: res?.menu_ids || [],
-    available_menu_ids: res?.available_menu_ids || [],
-    hidden_menu_ids: res?.hidden_menu_ids || [],
-    expanded_package_ids: res?.expanded_package_ids || [],
-    derived_sources: (res?.derived_sources || []).map((item: any) => ({
+    menu_ids: Array.isArray(res?.menu_ids) ? res.menu_ids : [],
+    available_menu_ids: Array.isArray(res?.available_menu_ids) ? res.available_menu_ids : [],
+    hidden_menu_ids: Array.isArray(res?.hidden_menu_ids) ? res.hidden_menu_ids : [],
+    expanded_package_ids: Array.isArray(res?.expanded_package_ids) ? res.expanded_package_ids : [],
+    derived_sources: (((res?.derived_sources as unknown[]) || []) as unknown[]).map((item: any) => ({
       menu_id: item?.menu_id || '',
       package_ids: item?.package_ids || []
     })),
@@ -144,20 +151,23 @@ export async function fetchGetUserMenus(userId: string, appKey?: string) {
 
 /** 设置用户个人空间菜单裁剪 */
 export async function fetchSetUserMenus(userId: string, menuIds: string[], appKey?: string) {
+  void appKey
+  const body: V5RequestBody<'/users/{id}/menus', 'put'> = { ids: menuIds }
   const { error } = await v5Client.PUT('/users/{id}/menus', {
-    params: { path: { id: userId }, query: (appKey ? { app_key: appKey } : {}) as any },
-    body: { menu_ids: menuIds } as any
+    params: { path: { id: userId } },
+    body
   })
   if (error) throw error
 }
 
 export async function fetchGetUserCollaborationWorkspaces(userId: string) {
-  const res: any = await unwrap(
+  const res = await unwrap(
     v5Client.GET('/users/{id}/collaboration-workspaces', {
       params: { path: { id: userId } }
     })
   )
-  const list = Array.isArray(res) ? res : res?.records || []
+  const listResponse = toV5ListResponse(res)
+  const list = Array.isArray(res) ? res : listResponse.records
   return list.map((item: any) => normalizeUserCollaborationWorkspaceItem(item))
 }
 
@@ -166,15 +176,13 @@ export async function fetchGetUserPermissionDiagnosis(
   userId: string,
   params?: Api.SystemManage.UserPermissionDiagnosisParams
 ) {
-  const res: any = await unwrap(
+  const query: V5Query<'/users/{id}/permission-diagnosis', 'get'> = {
+    collaboration_workspace_id: params?.collaborationWorkspaceId,
+    permission_key: params?.permissionKey
+  }
+  const res = await unwrap(
     v5Client.GET('/users/{id}/permission-diagnosis', {
-      params: {
-        path: { id: userId },
-        query: {
-          collaboration_workspace_id: params?.collaborationWorkspaceId,
-          permission_key: params?.permissionKey
-        } as any
-      }
+      params: { path: { id: userId }, query }
     })
   )
   return normalizeUserPermissionDiagnosisResponse(res)
@@ -185,28 +193,29 @@ export async function fetchRefreshUserPermissionSnapshot(
   userId: string,
   collaborationWorkspaceId?: string
 ) {
-  const res: any = await unwrap(
-    v5Client.POST('/users/{id}/permission-refresh', {
-      params: { path: { id: userId } },
-      body: { collaboration_workspace_id: collaborationWorkspaceId } as any
-    })
-  )
-  return normalizeUserPermissionDiagnosisResponse(res)
+  void collaborationWorkspaceId
+  const res = await unwrap(v5Client.POST('/users/{id}/permission-refresh', {
+    params: { path: { id: userId } }
+  }))
+  return normalizeUserPermissionDiagnosisResponse(toV5Body({ ...(toV5Record(res)) }))
 }
 
 /** 获取用户当前上下文可见菜单 */
 export async function fetchGetUserPermissionMenus(
   userId: string,
-  collaborationWorkspaceId?: string
+  collaborationWorkspaceId?: string,
+  appKey?: string
 ) {
-  const res: any = await unwrap(
+  const query: V5Query<'/users/{id}/permissions', 'get'> = {
+    ...(appKey ? { app_key: appKey } : {})
+  }
+  const res = await unwrap(
     v5Client.GET('/users/{id}/permissions', {
-      params: {
-        path: { id: userId },
-        query: { collaboration_workspace_id: collaborationWorkspaceId } as any
-      }
+      params: { path: { id: userId }, query }
     })
   )
-  const list = Array.isArray(res) ? res : res?.records || []
+  void collaborationWorkspaceId
+  const listResponse = toV5ListResponse(res)
+  const list = Array.isArray(res) ? res : listResponse.records
   return list.map((item: any) => normalizeUserPermissionMenuTree(item))
 }

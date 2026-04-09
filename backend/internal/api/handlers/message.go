@@ -46,10 +46,10 @@ func (h *APIHandler) GetInboxSummary(ctx context.Context) (gen.AnyObject, error)
 	return marshalAnyObject(summary), nil
 }
 
-func (h *APIHandler) ListInbox(ctx context.Context, params gen.ListInboxParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListInbox(ctx context.Context, params gen.ListInboxParams) (*gen.MessageListResponse, error) {
 	userID, valid := userIDFromContext(ctx)
 	if !valid {
-		return &gen.AnyListResponse{}, nil
+		return &gen.MessageListResponse{}, nil
 	}
 	current := 1
 	size := 20
@@ -67,7 +67,7 @@ func (h *APIHandler) ListInbox(ctx context.Context, params gen.ListInboxParams) 
 		h.logger.Error("list inbox failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{
+	return &gen.MessageListResponse{
 		Records: marshalList(result.Records),
 		Total:   int(result.Total),
 	}, nil
@@ -213,7 +213,7 @@ func (h *APIHandler) DispatchMessage(ctx context.Context, req gen.AnyObject) (*g
 
 // ── Templates ────────────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListMessageTemplates(ctx context.Context) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListMessageTemplates(ctx context.Context) (*gen.MessageListResponse, error) {
 	cwID := cwIDFromContext(ctx)
 	result, err := h.systemFacade.ListTemplates(cwID, systemmod.MessageTemplateQuery{
 		Current: 1,
@@ -223,7 +223,7 @@ func (h *APIHandler) ListMessageTemplates(ctx context.Context) (*gen.AnyListResp
 		h.logger.Error("list message templates failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{
+	return &gen.MessageListResponse{
 		Records: marshalList(result.Records),
 		Total:   int(result.Total),
 	}, nil
@@ -257,14 +257,14 @@ func (h *APIHandler) UpdateMessageTemplate(ctx context.Context, req gen.AnyObjec
 
 // ── Senders ──────────────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListMessageSenders(ctx context.Context) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListMessageSenders(ctx context.Context) (*gen.MessageListResponse, error) {
 	cwID := cwIDFromContext(ctx)
 	items, err := h.systemFacade.ListSenders(cwID)
 	if err != nil {
 		h.logger.Error("list message senders failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{
+	return &gen.MessageListResponse{
 		Records: marshalList(items),
 		Total:   len(items),
 	}, nil
@@ -298,14 +298,14 @@ func (h *APIHandler) UpdateMessageSender(ctx context.Context, req gen.AnyObject,
 
 // ── Recipient Groups ─────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListMessageRecipientGroups(ctx context.Context) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListMessageRecipientGroups(ctx context.Context) (*gen.MessageListResponse, error) {
 	cwID := cwIDFromContext(ctx)
 	items, err := h.systemFacade.ListRecipientGroups(cwID)
 	if err != nil {
 		h.logger.Error("list message recipient groups failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{
+	return &gen.MessageListResponse{
 		Records: marshalList(items),
 		Total:   len(items),
 	}, nil
@@ -378,7 +378,7 @@ func parseRecipientGroupRequest(req gen.AnyObject) (systemmod.MessageRecipientGr
 
 // ── Dispatch Records ─────────────────────────────────────────────────────────
 
-func (h *APIHandler) ListMessageDispatchRecords(ctx context.Context, params gen.ListMessageDispatchRecordsParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListMessageDispatchRecords(ctx context.Context, params gen.ListMessageDispatchRecordsParams) (*gen.MessageListResponse, error) {
 	cwID := cwIDFromContext(ctx)
 	current := 1
 	size := 20
@@ -396,7 +396,7 @@ func (h *APIHandler) ListMessageDispatchRecords(ctx context.Context, params gen.
 		h.logger.Error("list message dispatch records failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{
+	return &gen.MessageListResponse{
 		Records: marshalList(result.Records),
 		Total:   int(result.Total),
 	}, nil

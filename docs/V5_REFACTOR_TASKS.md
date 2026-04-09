@@ -259,6 +259,17 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 - 删除 `user/handler.go`（1800 行/60 函数）：将 `subroute_service.go` 对 gin.UserHandler 的依赖重构为新建的 `subroute_core.go`（962 行），彻底去除 gin 依赖；重构后 UserHandler 零引用，安全删除。
 - 净削减 ~3100 行，`go build ./...` 通过。剩余 legacy handler.go：`apiendpoint`/`media`/`system`（均有活跃 gin 路由或仍被 module.go 调用）。
 
+### 2026-04-09 OpenAPI 契约继续收口（Phase 5）
+
+**本次改动**
+- 继续收紧 permission / workspace 域 OpenAPI：补齐 `PermissionActionList`、`PermissionActionOptions`、`PermissionActionGroupList`、`PermissionActionRiskAuditList`、`PermissionActionBatchTemplateList`、`CollaborationWorkspaceRoleList` 的强类型响应，关闭一批 `AnyListResponse` 兜底。
+- 后端 handler 与 ogen 生成类型完成对齐，修正了 `OptString`、`OptInt64`、`OptDateTime`、`NilUUID` 等 wrapper 赋值问题，`go build ./...` 通过。
+- 前端 `frontend/src/api/system-manage/permission.ts` 与 `frontend/src/api/collaboration-workspace.ts` 去掉对应列表接口的 `toV5ListResponse` 依赖，`npm run gen:api` 与 `npm run build` 通过。
+
+**下次方向**
+- 继续清理 permission 域剩余的弱类型列表返回，优先把 `permission-actions/{id}/endpoints` 这类接口从 `AnyListResponse` 收口成显式 schema。
+- 继续压缩前端包装层的 `any` / 断言，优先把仍依赖兜底 normalizer 的接口逐个改成直接消费生成类型。
+
 **下次方向**
 - `system/handler.go`：检查是否仍被 system/module.go 调用；若仅剩 view-pages/fast-enter（已 ogen 化），可继续 facade 化后删除。
 - `apiendpoint`/`media`：这两个域尚未纳入 openapi.yaml，待 spec 扩展后再迁移。
@@ -345,3 +356,37 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 **下次方向**
 - 接入真实 captcha widget（Turnstile/hCaptcha）：前端 `require_captcha=true && captcha_provider≠none` 时动态加载 widget SDK，回调写入 `captchaToken`，并在后端 `service.Register` 中接入对应 provider 的服务端验证 API。
 - 策略版本快照：`users.register_policy_snapshot jsonb` 冻结注册时刻有效策略，防止策略变更后历史用户权限漂移。
+
+### 2026-04-09 前端 OpenAPI 全量收口（Phase 10）
+
+**本次改动**
+- 补齐 OpenAPI 契约缺口：`backend/api/openapi/domains/permission/paths.yaml` 新增 `DELETE /permission-actions/groups/{id}`，同步补齐 `backend/internal/modules/system/permission/service.go`、`backend/internal/modules/system/user/repository.go`、`backend/internal/api/handlers/extras.go` 删除链路；重新生成 `backend/api/openapi/dist/openapi.yaml`、`backend/api/gen` 与前端 `src/api/v5/schema.d.ts`。
+- 前端 API 层统一按生成 schema 收口：新增 `frontend/src/api/v5/types.ts` 与 `_shared.ts` 的 `AnyObject / AnyListResponse` 归一化辅助，批量改造 `message.ts`、`collaboration-workspace.ts`、`system-manage/{app,api-endpoint,menu,page,permission,role,user}.ts`，移除 `v5Client as any`/`as any` 逃逸，并把 `UUIDListRequest`、`required query`、`snake_case` 响应字段全部对齐到 OpenAPI 真相源。
+- 验证通过：`go build ./...`、`npm run gen:api`、`npm run build` 全部绿灯，前端从“185 个接口里 1 个越契约 + 大量 any 逃逸”收口到生成 client 可编译状态。
+
+**下次方向**
+- 当前仍有一批 endpoint 在 spec 中使用 `AnyObject` / `AnyListResponse` / `MutationResult` 兜底，建议继续把 `permission`、`message`、`collaboration-workspace` 等域的响应 schema 精细化，减少前端 normalizer 对弱类型对象的依赖。
+- 可继续补自动化校验：增加前端 API 包装层的 contract smoke test，或在 CI 增加“重新生成 schema 后无 diff + `vue-tsc` + `go build`”守门，防止后续再出现契约漂移。
+
+### 2026-04-09 协作空间/权限响应契约强类型化（Phase 11）
+
+**本次改动**
+- `backend/api/openapi/domains/workspace/{paths,schemas}.yaml` 与 `domains/permission/{paths,schemas}.yaml` 新增协作空间详情/成员、边界菜单来源/权限来源、角色功能包继承态、权限消费者、影响预览等具体 schema，替换掉对应接口上的 `AnyObject` / `AnyListResponse`。
+- 后端 handler 全量切到 ogen 生成的强类型响应：`collaborationworkspace.go`、`cwcurrent.go`、`cw_member.go`、`cw_boundary.go`、`permission.go` 改为返回 `CollaborationWorkspace*`、`PermissionAction*` 等结构体；新增 `openapi_response_helpers.go` 统一做模型到 OpenAPI 类型的转换。
+- 前端 `collaboration-workspace.ts` 与 `system-manage/permission.ts` 同步改成直接消费生成类型，移除当前协作空间来源、角色功能包、权限影响预览等接口上的对象猜测逻辑；顺手修复 `current/boundary/packages`、`current/*-origins` 这类此前因契约过弱而会被前端解析成空数据的问题。
+- 验证通过：`go build ./...`、`npm run gen:api`、`npm run build` 全部通过，`permissionseed` 与前端 `error-codes.ts` 已重新生成。
+
+**下次方向**
+- `permission-actions/options/groups/risk-audits/templates`、`collaboration-workspaces/current/roles`、`/{id}/roles` 等接口仍然在走弱类型 list 返回，下一轮可以继续细化为明确的 list item schema。
+- 协作空间成员/协作空间详情当前仍只暴露后端真实字段，若前端需要 `user_name`、`nick_name`、`current_role_code`、`member_status` 等展示字段，应先在 service/repository 侧补真实聚合，再同步扩展 OpenAPI。
+
+### 2026-04-09 页面/系统/消息/API 注册表强类型化继续推进（Phase 12）
+
+**本次改动**
+- 继续清理剩余 `AnyListResponse` 契约：`api_endpoint`、`featurepackage`、`page`、`system`、`message` 五个域新增显式列表 schema，覆盖 API 注册表、功能包版本/风险审计/协作空间绑定、页面列表与运行时/面包屑预览、系统应用与菜单空间绑定、消息收件箱与模板/发送人/接收组/投递记录等列表接口。
+- 后端 handler 全部切换为 ogen 强类型返回，`apiendpoint.go`、`featurepackage.go`、`page.go`、`system.go`、`message.go` 不再依赖 `AnyListResponse` 兜底；`api_endpoint` 相关接口同时改为显式分页结构体，收口 API 注册表列表。
+- 前端重新生成 `src/api/v5/schema.d.ts` 并通过 `npm run build`，后端 `go build ./...` 通过，说明这轮新 schema 没有破坏现有 client 和 handler 编译。
+
+**下次方向**
+- 继续向下收紧仍残留的弱类型单项响应，优先看 `AnyObject` 的 read-only 详情接口和 `permission/actions/{id}/endpoints` 这类还没有完全贴合 item schema 的路径。
+- 前端包装层里仍有少量针对老响应形态的 normalizer，后续可以按域继续压缩，减少手工猜字段和 `item: any` 断言。

@@ -301,6 +301,15 @@ func (UnimplementedHandler) DeletePermissionAction(ctx context.Context, params D
 	return r, ht.ErrNotImplemented
 }
 
+// DeletePermissionActionGroup implements deletePermissionActionGroup operation.
+//
+// 删除功能权限分组.
+//
+// DELETE /permission-actions/groups/{id}
+func (UnimplementedHandler) DeletePermissionActionGroup(ctx context.Context, params DeletePermissionActionGroupParams) (r *MutationResult, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // DeleteRegisterEntry implements deleteRegisterEntry operation.
 //
 // 删除注册入口.
@@ -378,7 +387,7 @@ func (UnimplementedHandler) GetAuthMe(ctx context.Context) (r GetAuthMeRes, _ er
 // 获取协作空间详情.
 //
 // GET /collaboration-workspaces/{id}
-func (UnimplementedHandler) GetCollaborationWorkspace(ctx context.Context, params GetCollaborationWorkspaceParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetCollaborationWorkspace(ctx context.Context, params GetCollaborationWorkspaceParams) (r *CollaborationWorkspaceItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -387,7 +396,7 @@ func (UnimplementedHandler) GetCollaborationWorkspace(ctx context.Context, param
 // 获取协作空间功能权限来源.
 //
 // GET /collaboration-workspaces/{id}/action-origins
-func (UnimplementedHandler) GetCollaborationWorkspaceActionOrigins(ctx context.Context, params GetCollaborationWorkspaceActionOriginsParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) GetCollaborationWorkspaceActionOrigins(ctx context.Context, params GetCollaborationWorkspaceActionOriginsParams) (r *CollaborationWorkspaceActionOriginsResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -396,7 +405,7 @@ func (UnimplementedHandler) GetCollaborationWorkspaceActionOrigins(ctx context.C
 // 获取协作空间功能权限边界.
 //
 // GET /collaboration-workspaces/{id}/actions
-func (UnimplementedHandler) GetCollaborationWorkspaceActions(ctx context.Context, params GetCollaborationWorkspaceActionsParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetCollaborationWorkspaceActions(ctx context.Context, params GetCollaborationWorkspaceActionsParams) (r *CollaborationWorkspaceActionsResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -405,7 +414,7 @@ func (UnimplementedHandler) GetCollaborationWorkspaceActions(ctx context.Context
 // 获取协作空间菜单来源.
 //
 // GET /collaboration-workspaces/{id}/menu-origins
-func (UnimplementedHandler) GetCollaborationWorkspaceMenuOrigins(ctx context.Context, params GetCollaborationWorkspaceMenuOriginsParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) GetCollaborationWorkspaceMenuOrigins(ctx context.Context, params GetCollaborationWorkspaceMenuOriginsParams) (r *CollaborationWorkspaceMenuOriginsResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -414,7 +423,7 @@ func (UnimplementedHandler) GetCollaborationWorkspaceMenuOrigins(ctx context.Con
 // 获取协作空间菜单边界.
 //
 // GET /collaboration-workspaces/{id}/menus
-func (UnimplementedHandler) GetCollaborationWorkspaceMenus(ctx context.Context, params GetCollaborationWorkspaceMenusParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetCollaborationWorkspaceMenus(ctx context.Context, params GetCollaborationWorkspaceMenusParams) (r *CollaborationWorkspaceMenusResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -441,7 +450,7 @@ func (UnimplementedHandler) GetCurrentApp(ctx context.Context, params GetCurrent
 // 获取当前协作空间详情.
 //
 // GET /collaboration-workspaces/current
-func (UnimplementedHandler) GetCurrentCollaborationWorkspace(ctx context.Context) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetCurrentCollaborationWorkspace(ctx context.Context) (r *CollaborationWorkspaceItem, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -450,7 +459,7 @@ func (UnimplementedHandler) GetCurrentCollaborationWorkspace(ctx context.Context
 // 获取当前协作空间功能权限来源.
 //
 // GET /collaboration-workspaces/current/action-origins
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceActionOrigins(ctx context.Context) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) GetCurrentCollaborationWorkspaceActionOrigins(ctx context.Context) (r *CollaborationWorkspaceActionOriginsResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -459,7 +468,7 @@ func (UnimplementedHandler) GetCurrentCollaborationWorkspaceActionOrigins(ctx co
 // 获取当前协作空间功能权限边界.
 //
 // GET /collaboration-workspaces/current/actions
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceActions(ctx context.Context) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetCurrentCollaborationWorkspaceActions(ctx context.Context) (r *CollaborationWorkspaceActionsResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -468,7 +477,7 @@ func (UnimplementedHandler) GetCurrentCollaborationWorkspaceActions(ctx context.
 // 获取当前协作空间已开通功能包(边界管理).
 //
 // GET /collaboration-workspaces/current/boundary/packages
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceBoundaryPackages(ctx context.Context) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) GetCurrentCollaborationWorkspaceBoundaryPackages(ctx context.Context) (r *FeaturePackageAssignmentResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -477,7 +486,7 @@ func (UnimplementedHandler) GetCurrentCollaborationWorkspaceBoundaryPackages(ctx
 // 获取当前协作空间角色功能权限(边界管理).
 //
 // GET /collaboration-workspaces/current/boundary/roles/{roleId}/actions
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (r *RoleActionsResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -486,7 +495,7 @@ func (UnimplementedHandler) GetCurrentCollaborationWorkspaceBoundaryRoleActions(
 // 获取当前协作空间角色菜单权限(边界管理).
 //
 // GET /collaboration-workspaces/current/boundary/roles/{roleId}/menus
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (r *RoleMenusResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -495,7 +504,7 @@ func (UnimplementedHandler) GetCurrentCollaborationWorkspaceBoundaryRoleMenus(ct
 // 获取当前协作空间角色功能包(边界管理).
 //
 // GET /collaboration-workspaces/current/boundary/roles/{roleId}/packages
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (r *CollaborationWorkspaceBoundaryRolePackagesResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -504,7 +513,7 @@ func (UnimplementedHandler) GetCurrentCollaborationWorkspaceBoundaryRolePackages
 // 获取当前协作空间成员角色.
 //
 // GET /collaboration-workspaces/current/members/{userId}/roles
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, params GetCurrentCollaborationWorkspaceMemberRolesParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, params GetCurrentCollaborationWorkspaceMemberRolesParams) (r *CollaborationWorkspaceMemberRolesResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -513,7 +522,7 @@ func (UnimplementedHandler) GetCurrentCollaborationWorkspaceMemberRoles(ctx cont
 // 获取当前协作空间菜单来源.
 //
 // GET /collaboration-workspaces/current/menu-origins
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceMenuOrigins(ctx context.Context) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) GetCurrentCollaborationWorkspaceMenuOrigins(ctx context.Context) (r *CollaborationWorkspaceMenuOriginsResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -522,7 +531,7 @@ func (UnimplementedHandler) GetCurrentCollaborationWorkspaceMenuOrigins(ctx cont
 // 获取当前协作空间菜单边界.
 //
 // GET /collaboration-workspaces/current/menus
-func (UnimplementedHandler) GetCurrentCollaborationWorkspaceMenus(ctx context.Context) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetCurrentCollaborationWorkspaceMenus(ctx context.Context) (r *CollaborationWorkspaceMenusResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -585,7 +594,7 @@ func (UnimplementedHandler) GetFeaturePackageChildren(ctx context.Context, param
 // 获取功能包协作空间.
 //
 // GET /feature-packages/{id}/collaboration-workspaces
-func (UnimplementedHandler) GetFeaturePackageCollaborationWorkspaces(ctx context.Context, params GetFeaturePackageCollaborationWorkspacesParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) GetFeaturePackageCollaborationWorkspaces(ctx context.Context, params GetFeaturePackageCollaborationWorkspacesParams) (r *FeaturePackageCollaborationWorkspaceList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -720,7 +729,7 @@ func (UnimplementedHandler) GetPermissionAction(ctx context.Context, params GetP
 // 获取功能权限消费明细.
 //
 // GET /permission-actions/{id}/consumers
-func (UnimplementedHandler) GetPermissionActionConsumers(ctx context.Context, params GetPermissionActionConsumersParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetPermissionActionConsumers(ctx context.Context, params GetPermissionActionConsumersParams) (r *PermissionActionConsumersResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -729,7 +738,7 @@ func (UnimplementedHandler) GetPermissionActionConsumers(ctx context.Context, pa
 // 获取功能权限影响预览.
 //
 // GET /permission-actions/{id}/impact-preview
-func (UnimplementedHandler) GetPermissionActionImpactPreview(ctx context.Context, params GetPermissionActionImpactPreviewParams) (r AnyObject, _ error) {
+func (UnimplementedHandler) GetPermissionActionImpactPreview(ctx context.Context, params GetPermissionActionImpactPreviewParams) (r *PermissionActionImpactPreview, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -900,7 +909,7 @@ func (UnimplementedHandler) ListApiEndpoints(ctx context.Context, params ListApi
 // 获取应用入口解析绑定.
 //
 // GET /system/app-host-bindings
-func (UnimplementedHandler) ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (r *SystemListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -909,7 +918,7 @@ func (UnimplementedHandler) ListAppHostBindings(ctx context.Context, params List
 // 获取应用列表.
 //
 // GET /system/apps
-func (UnimplementedHandler) ListApps(ctx context.Context) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListApps(ctx context.Context) (r *SystemListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -918,7 +927,7 @@ func (UnimplementedHandler) ListApps(ctx context.Context) (r *AnyListResponse, _
 // 获取协作空间成员列表.
 //
 // GET /collaboration-workspaces/{id}/members
-func (UnimplementedHandler) ListCollaborationWorkspaceMembers(ctx context.Context, params ListCollaborationWorkspaceMembersParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListCollaborationWorkspaceMembers(ctx context.Context, params ListCollaborationWorkspaceMembersParams) (r *CollaborationWorkspaceMemberList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -927,7 +936,7 @@ func (UnimplementedHandler) ListCollaborationWorkspaceMembers(ctx context.Contex
 // 获取协作空间候选.
 //
 // GET /collaboration-workspaces/options
-func (UnimplementedHandler) ListCollaborationWorkspaceOptions(ctx context.Context) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListCollaborationWorkspaceOptions(ctx context.Context) (r *CollaborationWorkspaceList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -936,7 +945,7 @@ func (UnimplementedHandler) ListCollaborationWorkspaceOptions(ctx context.Contex
 // 获取协作空间可分配角色.
 //
 // GET /collaboration-workspaces/{id}/roles
-func (UnimplementedHandler) ListCollaborationWorkspaceRoles(ctx context.Context, params ListCollaborationWorkspaceRolesParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListCollaborationWorkspaceRoles(ctx context.Context, params ListCollaborationWorkspaceRolesParams) (r *CollaborationWorkspaceRoleList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -945,7 +954,7 @@ func (UnimplementedHandler) ListCollaborationWorkspaceRoles(ctx context.Context,
 // 获取协作空间列表.
 //
 // GET /collaboration-workspaces
-func (UnimplementedHandler) ListCollaborationWorkspaces(ctx context.Context, params ListCollaborationWorkspacesParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListCollaborationWorkspaces(ctx context.Context, params ListCollaborationWorkspacesParams) (r *CollaborationWorkspaceList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -954,7 +963,7 @@ func (UnimplementedHandler) ListCollaborationWorkspaces(ctx context.Context, par
 // 获取当前协作空间边界可见角色.
 //
 // GET /collaboration-workspaces/current/boundary/roles
-func (UnimplementedHandler) ListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.Context) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.Context) (r *CollaborationWorkspaceRoleList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -963,7 +972,7 @@ func (UnimplementedHandler) ListCurrentCollaborationWorkspaceBoundaryRoles(ctx c
 // 获取当前协作空间成员列表.
 //
 // GET /collaboration-workspaces/current/members
-func (UnimplementedHandler) ListCurrentCollaborationWorkspaceMembers(ctx context.Context) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListCurrentCollaborationWorkspaceMembers(ctx context.Context) (r *CollaborationWorkspaceMemberList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -972,7 +981,7 @@ func (UnimplementedHandler) ListCurrentCollaborationWorkspaceMembers(ctx context
 // 获取当前协作空间可分配角色.
 //
 // GET /collaboration-workspaces/current/roles
-func (UnimplementedHandler) ListCurrentCollaborationWorkspaceRoles(ctx context.Context) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListCurrentCollaborationWorkspaceRoles(ctx context.Context) (r *CollaborationWorkspaceRoleList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -990,7 +999,7 @@ func (UnimplementedHandler) ListFeaturePackageOptions(ctx context.Context, param
 // 获取功能包最近变更.
 //
 // GET /feature-packages/{id}/risk-audits
-func (UnimplementedHandler) ListFeaturePackageRiskAudits(ctx context.Context, params ListFeaturePackageRiskAuditsParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListFeaturePackageRiskAudits(ctx context.Context, params ListFeaturePackageRiskAuditsParams) (r *FeaturePackageRiskAuditList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -999,7 +1008,7 @@ func (UnimplementedHandler) ListFeaturePackageRiskAudits(ctx context.Context, pa
 // 获取功能包版本历史.
 //
 // GET /feature-packages/{id}/versions
-func (UnimplementedHandler) ListFeaturePackageVersions(ctx context.Context, params ListFeaturePackageVersionsParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListFeaturePackageVersions(ctx context.Context, params ListFeaturePackageVersionsParams) (r *FeaturePackageVersionList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1017,7 +1026,7 @@ func (UnimplementedHandler) ListFeaturePackages(ctx context.Context, params List
 // 获取消息列表.
 //
 // GET /messages/inbox
-func (UnimplementedHandler) ListInbox(ctx context.Context, params ListInboxParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListInbox(ctx context.Context, params ListInboxParams) (r *MessageListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1035,7 +1044,7 @@ func (UnimplementedHandler) ListMedia(ctx context.Context) (r ListMediaRes, _ er
 // 获取菜单空间入口解析绑定.
 //
 // GET /system/menu-space-entry-bindings
-func (UnimplementedHandler) ListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (r *SystemListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1044,7 +1053,7 @@ func (UnimplementedHandler) ListMenuSpaceEntryBindings(ctx context.Context, para
 // 获取菜单空间 Host 绑定.
 //
 // GET /system/menu-space-host-bindings
-func (UnimplementedHandler) ListMenuSpaceHostBindings(ctx context.Context) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListMenuSpaceHostBindings(ctx context.Context) (r *SystemListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1053,7 +1062,7 @@ func (UnimplementedHandler) ListMenuSpaceHostBindings(ctx context.Context) (r *A
 // 获取菜单空间列表.
 //
 // GET /system/menu-spaces
-func (UnimplementedHandler) ListMenuSpaces(ctx context.Context, params ListMenuSpacesParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListMenuSpaces(ctx context.Context, params ListMenuSpacesParams) (r *SystemListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1062,7 +1071,7 @@ func (UnimplementedHandler) ListMenuSpaces(ctx context.Context, params ListMenuS
 // 获取消息发送记录.
 //
 // GET /messages/records
-func (UnimplementedHandler) ListMessageDispatchRecords(ctx context.Context, params ListMessageDispatchRecordsParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListMessageDispatchRecords(ctx context.Context, params ListMessageDispatchRecordsParams) (r *MessageListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1071,7 +1080,7 @@ func (UnimplementedHandler) ListMessageDispatchRecords(ctx context.Context, para
 // 获取消息接收组.
 //
 // GET /messages/recipient-groups
-func (UnimplementedHandler) ListMessageRecipientGroups(ctx context.Context) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListMessageRecipientGroups(ctx context.Context) (r *MessageListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1080,7 +1089,7 @@ func (UnimplementedHandler) ListMessageRecipientGroups(ctx context.Context) (r *
 // 获取消息发送人.
 //
 // GET /messages/senders
-func (UnimplementedHandler) ListMessageSenders(ctx context.Context) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListMessageSenders(ctx context.Context) (r *MessageListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1089,7 +1098,7 @@ func (UnimplementedHandler) ListMessageSenders(ctx context.Context) (r *AnyListR
 // 获取消息模板.
 //
 // GET /messages/templates
-func (UnimplementedHandler) ListMessageTemplates(ctx context.Context) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListMessageTemplates(ctx context.Context) (r *MessageListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1098,7 +1107,7 @@ func (UnimplementedHandler) ListMessageTemplates(ctx context.Context) (r *AnyLis
 // 获取我的协作空间列表.
 //
 // GET /collaboration-workspaces/mine
-func (UnimplementedHandler) ListMyCollaborationWorkspaces(ctx context.Context) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListMyCollaborationWorkspaces(ctx context.Context) (r *CollaborationWorkspaceList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1116,7 +1125,7 @@ func (UnimplementedHandler) ListMyWorkspaces(ctx context.Context) (r ListMyWorks
 // 获取上级菜单候选.
 //
 // GET /pages/menu-options
-func (UnimplementedHandler) ListPageMenuOptions(ctx context.Context, params ListPageMenuOptionsParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListPageMenuOptions(ctx context.Context, params ListPageMenuOptionsParams) (r *PageListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1125,7 +1134,7 @@ func (UnimplementedHandler) ListPageMenuOptions(ctx context.Context, params List
 // 获取页面候选列表.
 //
 // GET /pages/options
-func (UnimplementedHandler) ListPageOptions(ctx context.Context, params ListPageOptionsParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListPageOptions(ctx context.Context, params ListPageOptionsParams) (r *PageListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1134,7 +1143,7 @@ func (UnimplementedHandler) ListPageOptions(ctx context.Context, params ListPage
 // 获取页面列表.
 //
 // GET /pages
-func (UnimplementedHandler) ListPages(ctx context.Context, params ListPagesParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListPages(ctx context.Context, params ListPagesParams) (r *PageListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1143,7 +1152,7 @@ func (UnimplementedHandler) ListPages(ctx context.Context, params ListPagesParam
 // 获取功能权限批量模板.
 //
 // GET /permission-actions/templates
-func (UnimplementedHandler) ListPermissionActionBatchTemplates(ctx context.Context) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListPermissionActionBatchTemplates(ctx context.Context) (r *PermissionActionBatchTemplateList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1161,7 +1170,7 @@ func (UnimplementedHandler) ListPermissionActionEndpoints(ctx context.Context, p
 // 获取功能权限分组列表.
 //
 // GET /permission-actions/groups
-func (UnimplementedHandler) ListPermissionActionGroups(ctx context.Context) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListPermissionActionGroups(ctx context.Context) (r *PermissionActionGroupList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1170,7 +1179,7 @@ func (UnimplementedHandler) ListPermissionActionGroups(ctx context.Context) (r *
 // 获取功能权限候选.
 //
 // GET /permission-actions/options
-func (UnimplementedHandler) ListPermissionActionOptions(ctx context.Context, params ListPermissionActionOptionsParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListPermissionActionOptions(ctx context.Context, params ListPermissionActionOptionsParams) (r *PermissionActionOptions, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1179,7 +1188,7 @@ func (UnimplementedHandler) ListPermissionActionOptions(ctx context.Context, par
 // 获取功能权限最近变更.
 //
 // GET /permission-actions/risk-audits
-func (UnimplementedHandler) ListPermissionActionRiskAudits(ctx context.Context, params ListPermissionActionRiskAuditsParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListPermissionActionRiskAudits(ctx context.Context, params ListPermissionActionRiskAuditsParams) (r *PermissionActionRiskAuditList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1188,7 +1197,7 @@ func (UnimplementedHandler) ListPermissionActionRiskAudits(ctx context.Context, 
 // 获取功能权限列表.
 //
 // GET /permission-actions
-func (UnimplementedHandler) ListPermissionActions(ctx context.Context, params ListPermissionActionsParams) (r *PermissionActionList, _ error) {
+func (UnimplementedHandler) ListPermissionActions(ctx context.Context, params ListPermissionActionsParams) (r *SchemasPermissionActionList, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1197,7 +1206,7 @@ func (UnimplementedHandler) ListPermissionActions(ctx context.Context, params Li
 // 获取公开运行时页面注册表.
 //
 // GET /pages/runtime/public
-func (UnimplementedHandler) ListPublicRuntimePages(ctx context.Context, params ListPublicRuntimePagesParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListPublicRuntimePages(ctx context.Context, params ListPublicRuntimePagesParams) (r *PageListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1251,7 +1260,7 @@ func (UnimplementedHandler) ListRoles(ctx context.Context, params ListRolesParam
 // 获取运行时页面注册表.
 //
 // GET /pages/runtime
-func (UnimplementedHandler) ListRuntimePages(ctx context.Context, params ListRuntimePagesParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListRuntimePages(ctx context.Context, params ListRuntimePagesParams) (r *PageListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1278,7 +1287,7 @@ func (UnimplementedHandler) ListUnregisteredApiEndpoints(ctx context.Context, pa
 // 获取未注册页面.
 //
 // GET /pages/unregistered
-func (UnimplementedHandler) ListUnregisteredPages(ctx context.Context, params ListUnregisteredPagesParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) ListUnregisteredPages(ctx context.Context, params ListUnregisteredPagesParams) (r *PageListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -1323,7 +1332,7 @@ func (UnimplementedHandler) MarkInboxReadAll(ctx context.Context) (r *MutationRe
 // 预览页面面包屑.
 //
 // GET /pages/{id}/breadcrumb-preview
-func (UnimplementedHandler) PreviewPageBreadcrumb(ctx context.Context, params PreviewPageBreadcrumbParams) (r *AnyListResponse, _ error) {
+func (UnimplementedHandler) PreviewPageBreadcrumb(ctx context.Context, params PreviewPageBreadcrumbParams) (r *PageListResponse, _ error) {
 	return r, ht.ErrNotImplemented
 }
 

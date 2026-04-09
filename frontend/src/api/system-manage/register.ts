@@ -1,14 +1,19 @@
-import { v5Client, unwrap } from './_shared'
+import { v5Client, unwrap, type V5Query, type V5RequestBody } from './_shared'
 
 export async function fetchListRegisterEntries() {
-  return unwrap(v5Client.GET('/system/register-entries', {} as any))
+  return unwrap(v5Client.GET('/system/register-entries'))
 }
 
-export async function fetchCreateRegisterEntry(body: any) {
+export async function fetchCreateRegisterEntry(
+  body: V5RequestBody<'/system/register-entries', 'post'>
+) {
   return unwrap(v5Client.POST('/system/register-entries', { body }))
 }
 
-export async function fetchUpdateRegisterEntry(id: string, body: any) {
+export async function fetchUpdateRegisterEntry(
+  id: string,
+  body: V5RequestBody<'/system/register-entries/{id}', 'put'>
+) {
   return unwrap(
     v5Client.PUT('/system/register-entries/{id}', { params: { path: { id } }, body })
   )
@@ -22,14 +27,19 @@ export async function fetchDeleteRegisterEntry(id: string) {
 }
 
 export async function fetchListRegisterPolicies() {
-  return unwrap(v5Client.GET('/system/register-policies', {} as any))
+  return unwrap(v5Client.GET('/system/register-policies'))
 }
 
-export async function fetchCreateRegisterPolicy(body: any) {
+export async function fetchCreateRegisterPolicy(
+  body: V5RequestBody<'/system/register-policies', 'post'>
+) {
   return unwrap(v5Client.POST('/system/register-policies', { body }))
 }
 
-export async function fetchUpdateRegisterPolicy(code: string, body: any) {
+export async function fetchUpdateRegisterPolicy(
+  code: string,
+  body: V5RequestBody<'/system/register-policies/{code}', 'put'>
+) {
   return unwrap(
     v5Client.PUT('/system/register-policies/{code}', { params: { path: { code } }, body })
   )
@@ -49,7 +59,8 @@ export async function fetchListRegisterLogs(params: {
   page?: number
   page_size?: number
 }) {
+  const query: V5Query<'/system/users/register-logs', 'get'> = params
   return unwrap(
-    v5Client.GET('/system/users/register-logs', { params: { query: params as any } })
+    v5Client.GET('/system/users/register-logs', { params: { query } })
   )
 }

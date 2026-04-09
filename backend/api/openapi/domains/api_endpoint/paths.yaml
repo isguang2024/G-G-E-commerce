@@ -59,7 +59,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../domains/api_endpoint/schemas.yaml#/components/schemas/ApiEndpointList'
         '401':
           description: Unauthorized
           content:
@@ -127,7 +127,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../domains/api_endpoint/schemas.yaml#/components/schemas/StaleApiEndpointList'
         '401':
           description: Unauthorized
           content:
@@ -179,7 +179,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../domains/api_endpoint/schemas.yaml#/components/schemas/UnregisteredApiEndpointList'
         '401':
           description: Unauthorized
           content:
@@ -206,7 +206,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../domains/api_endpoint/schemas.yaml#/components/schemas/ApiEndpointCategoryList'
         '401':
           description: Unauthorized
           content:

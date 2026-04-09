@@ -696,6 +696,20 @@ func encodeDeletePermissionActionResponse(response *MutationResult, w http.Respo
 	return nil
 }
 
+func encodeDeletePermissionActionGroupResponse(response *MutationResult, w http.ResponseWriter, span trace.Span) error {
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.WriteHeader(200)
+	span.SetStatus(codes.Ok, http.StatusText(200))
+
+	e := new(jx.Encoder)
+	response.Encode(e)
+	if _, err := e.WriteTo(w); err != nil {
+		return errors.Wrap(err, "write")
+	}
+
+	return nil
+}
+
 func encodeDeleteRegisterEntryResponse(response DeleteRegisterEntryRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
 	case *DeleteRegisterEntryNoContent:
@@ -947,7 +961,7 @@ func encodeGetAuthMeResponse(response GetAuthMeRes, w http.ResponseWriter, span 
 	}
 }
 
-func encodeGetCollaborationWorkspaceResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCollaborationWorkspaceResponse(response *CollaborationWorkspaceItem, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -961,7 +975,7 @@ func encodeGetCollaborationWorkspaceResponse(response AnyObject, w http.Response
 	return nil
 }
 
-func encodeGetCollaborationWorkspaceActionOriginsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCollaborationWorkspaceActionOriginsResponse(response *CollaborationWorkspaceActionOriginsResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -975,7 +989,7 @@ func encodeGetCollaborationWorkspaceActionOriginsResponse(response *AnyListRespo
 	return nil
 }
 
-func encodeGetCollaborationWorkspaceActionsResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCollaborationWorkspaceActionsResponse(response *CollaborationWorkspaceActionsResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -989,7 +1003,7 @@ func encodeGetCollaborationWorkspaceActionsResponse(response AnyObject, w http.R
 	return nil
 }
 
-func encodeGetCollaborationWorkspaceMenuOriginsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCollaborationWorkspaceMenuOriginsResponse(response *CollaborationWorkspaceMenuOriginsResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1003,7 +1017,7 @@ func encodeGetCollaborationWorkspaceMenuOriginsResponse(response *AnyListRespons
 	return nil
 }
 
-func encodeGetCollaborationWorkspaceMenusResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCollaborationWorkspaceMenusResponse(response *CollaborationWorkspaceMenusResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1045,7 +1059,7 @@ func encodeGetCurrentAppResponse(response AnyObject, w http.ResponseWriter, span
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationWorkspaceResponse(response *CollaborationWorkspaceItem, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1059,7 +1073,7 @@ func encodeGetCurrentCollaborationWorkspaceResponse(response AnyObject, w http.R
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceActionOriginsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationWorkspaceActionOriginsResponse(response *CollaborationWorkspaceActionOriginsResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1073,7 +1087,7 @@ func encodeGetCurrentCollaborationWorkspaceActionOriginsResponse(response *AnyLi
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceActionsResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationWorkspaceActionsResponse(response *CollaborationWorkspaceActionsResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1087,7 +1101,7 @@ func encodeGetCurrentCollaborationWorkspaceActionsResponse(response AnyObject, w
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceBoundaryPackagesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationWorkspaceBoundaryPackagesResponse(response *FeaturePackageAssignmentResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1101,7 +1115,7 @@ func encodeGetCurrentCollaborationWorkspaceBoundaryPackagesResponse(response *An
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(response *RoleActionsResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1115,7 +1129,7 @@ func encodeGetCurrentCollaborationWorkspaceBoundaryRoleActionsResponse(response 
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(response *RoleMenusResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1129,7 +1143,7 @@ func encodeGetCurrentCollaborationWorkspaceBoundaryRoleMenusResponse(response An
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(response *CollaborationWorkspaceBoundaryRolePackagesResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1143,7 +1157,7 @@ func encodeGetCurrentCollaborationWorkspaceBoundaryRolePackagesResponse(response
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceMemberRolesResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationWorkspaceMemberRolesResponse(response *CollaborationWorkspaceMemberRolesResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1157,7 +1171,7 @@ func encodeGetCurrentCollaborationWorkspaceMemberRolesResponse(response AnyObjec
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceMenuOriginsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationWorkspaceMenuOriginsResponse(response *CollaborationWorkspaceMenuOriginsResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1171,7 +1185,7 @@ func encodeGetCurrentCollaborationWorkspaceMenuOriginsResponse(response *AnyList
 	return nil
 }
 
-func encodeGetCurrentCollaborationWorkspaceMenusResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+func encodeGetCurrentCollaborationWorkspaceMenusResponse(response *CollaborationWorkspaceMenusResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1288,7 +1302,7 @@ func encodeGetFeaturePackageChildrenResponse(response *FeaturePackageAssignmentR
 	return nil
 }
 
-func encodeGetFeaturePackageCollaborationWorkspacesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeGetFeaturePackageCollaborationWorkspacesResponse(response *FeaturePackageCollaborationWorkspaceList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1498,7 +1512,7 @@ func encodeGetPermissionActionResponse(response *PermissionActionDetail, w http.
 	return nil
 }
 
-func encodeGetPermissionActionConsumersResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+func encodeGetPermissionActionConsumersResponse(response *PermissionActionConsumersResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1512,7 +1526,7 @@ func encodeGetPermissionActionConsumersResponse(response AnyObject, w http.Respo
 	return nil
 }
 
-func encodeGetPermissionActionImpactPreviewResponse(response AnyObject, w http.ResponseWriter, span trace.Span) error {
+func encodeGetPermissionActionImpactPreviewResponse(response *PermissionActionImpactPreview, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1867,7 +1881,7 @@ func encodeInitializeMenuSpaceFromDefaultResponse(response *MutationResult, w ht
 
 func encodeListApiEndpointCategoriesResponse(response ListApiEndpointCategoriesRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *AnyObject:
+	case *ApiEndpointCategoryList:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 		span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1913,7 +1927,7 @@ func encodeListApiEndpointCategoriesResponse(response ListApiEndpointCategoriesR
 
 func encodeListApiEndpointsResponse(response ListApiEndpointsRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *AnyObject:
+	case *ApiEndpointList:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 		span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1957,7 +1971,7 @@ func encodeListApiEndpointsResponse(response ListApiEndpointsRes, w http.Respons
 	}
 }
 
-func encodeListAppHostBindingsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListAppHostBindingsResponse(response *SystemListResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1971,7 +1985,7 @@ func encodeListAppHostBindingsResponse(response *AnyListResponse, w http.Respons
 	return nil
 }
 
-func encodeListAppsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListAppsResponse(response *SystemListResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1985,7 +1999,7 @@ func encodeListAppsResponse(response *AnyListResponse, w http.ResponseWriter, sp
 	return nil
 }
 
-func encodeListCollaborationWorkspaceMembersResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListCollaborationWorkspaceMembersResponse(response *CollaborationWorkspaceMemberList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -1999,7 +2013,7 @@ func encodeListCollaborationWorkspaceMembersResponse(response *AnyListResponse, 
 	return nil
 }
 
-func encodeListCollaborationWorkspaceOptionsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListCollaborationWorkspaceOptionsResponse(response *CollaborationWorkspaceList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2013,7 +2027,7 @@ func encodeListCollaborationWorkspaceOptionsResponse(response *AnyListResponse, 
 	return nil
 }
 
-func encodeListCollaborationWorkspaceRolesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListCollaborationWorkspaceRolesResponse(response *CollaborationWorkspaceRoleList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2027,7 +2041,7 @@ func encodeListCollaborationWorkspaceRolesResponse(response *AnyListResponse, w 
 	return nil
 }
 
-func encodeListCollaborationWorkspacesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListCollaborationWorkspacesResponse(response *CollaborationWorkspaceList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2041,7 +2055,7 @@ func encodeListCollaborationWorkspacesResponse(response *AnyListResponse, w http
 	return nil
 }
 
-func encodeListCurrentCollaborationWorkspaceBoundaryRolesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListCurrentCollaborationWorkspaceBoundaryRolesResponse(response *CollaborationWorkspaceRoleList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2055,7 +2069,7 @@ func encodeListCurrentCollaborationWorkspaceBoundaryRolesResponse(response *AnyL
 	return nil
 }
 
-func encodeListCurrentCollaborationWorkspaceMembersResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListCurrentCollaborationWorkspaceMembersResponse(response *CollaborationWorkspaceMemberList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2069,7 +2083,7 @@ func encodeListCurrentCollaborationWorkspaceMembersResponse(response *AnyListRes
 	return nil
 }
 
-func encodeListCurrentCollaborationWorkspaceRolesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListCurrentCollaborationWorkspaceRolesResponse(response *CollaborationWorkspaceRoleList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2097,7 +2111,7 @@ func encodeListFeaturePackageOptionsResponse(response *FeaturePackageOptions, w 
 	return nil
 }
 
-func encodeListFeaturePackageRiskAuditsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListFeaturePackageRiskAuditsResponse(response *FeaturePackageRiskAuditList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2111,7 +2125,7 @@ func encodeListFeaturePackageRiskAuditsResponse(response *AnyListResponse, w htt
 	return nil
 }
 
-func encodeListFeaturePackageVersionsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListFeaturePackageVersionsResponse(response *FeaturePackageVersionList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2139,7 +2153,7 @@ func encodeListFeaturePackagesResponse(response *FeaturePackageList, w http.Resp
 	return nil
 }
 
-func encodeListInboxResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListInboxResponse(response *MessageListResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2199,7 +2213,7 @@ func encodeListMediaResponse(response ListMediaRes, w http.ResponseWriter, span 
 	}
 }
 
-func encodeListMenuSpaceEntryBindingsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListMenuSpaceEntryBindingsResponse(response *SystemListResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2213,7 +2227,7 @@ func encodeListMenuSpaceEntryBindingsResponse(response *AnyListResponse, w http.
 	return nil
 }
 
-func encodeListMenuSpaceHostBindingsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListMenuSpaceHostBindingsResponse(response *SystemListResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2227,7 +2241,7 @@ func encodeListMenuSpaceHostBindingsResponse(response *AnyListResponse, w http.R
 	return nil
 }
 
-func encodeListMenuSpacesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListMenuSpacesResponse(response *SystemListResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2241,7 +2255,7 @@ func encodeListMenuSpacesResponse(response *AnyListResponse, w http.ResponseWrit
 	return nil
 }
 
-func encodeListMessageDispatchRecordsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListMessageDispatchRecordsResponse(response *MessageListResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2255,7 +2269,7 @@ func encodeListMessageDispatchRecordsResponse(response *AnyListResponse, w http.
 	return nil
 }
 
-func encodeListMessageRecipientGroupsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListMessageRecipientGroupsResponse(response *MessageListResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2269,7 +2283,7 @@ func encodeListMessageRecipientGroupsResponse(response *AnyListResponse, w http.
 	return nil
 }
 
-func encodeListMessageSendersResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListMessageSendersResponse(response *MessageListResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2283,7 +2297,7 @@ func encodeListMessageSendersResponse(response *AnyListResponse, w http.Response
 	return nil
 }
 
-func encodeListMessageTemplatesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListMessageTemplatesResponse(response *MessageListResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2297,7 +2311,7 @@ func encodeListMessageTemplatesResponse(response *AnyListResponse, w http.Respon
 	return nil
 }
 
-func encodeListMyCollaborationWorkspacesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListMyCollaborationWorkspacesResponse(response *CollaborationWorkspaceList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2344,7 +2358,7 @@ func encodeListMyWorkspacesResponse(response ListMyWorkspacesRes, w http.Respons
 	}
 }
 
-func encodeListPageMenuOptionsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListPageMenuOptionsResponse(response *PageListResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2358,7 +2372,7 @@ func encodeListPageMenuOptionsResponse(response *AnyListResponse, w http.Respons
 	return nil
 }
 
-func encodeListPageOptionsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListPageOptionsResponse(response *PageListResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2372,7 +2386,7 @@ func encodeListPageOptionsResponse(response *AnyListResponse, w http.ResponseWri
 	return nil
 }
 
-func encodeListPagesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListPagesResponse(response *PageListResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2386,7 +2400,7 @@ func encodeListPagesResponse(response *AnyListResponse, w http.ResponseWriter, s
 	return nil
 }
 
-func encodeListPermissionActionBatchTemplatesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListPermissionActionBatchTemplatesResponse(response *PermissionActionBatchTemplateList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2414,7 +2428,7 @@ func encodeListPermissionActionEndpointsResponse(response *AnyListResponse, w ht
 	return nil
 }
 
-func encodeListPermissionActionGroupsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListPermissionActionGroupsResponse(response *PermissionActionGroupList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2428,7 +2442,7 @@ func encodeListPermissionActionGroupsResponse(response *AnyListResponse, w http.
 	return nil
 }
 
-func encodeListPermissionActionOptionsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListPermissionActionOptionsResponse(response *PermissionActionOptions, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2442,7 +2456,7 @@ func encodeListPermissionActionOptionsResponse(response *AnyListResponse, w http
 	return nil
 }
 
-func encodeListPermissionActionRiskAuditsResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListPermissionActionRiskAuditsResponse(response *PermissionActionRiskAuditList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2456,7 +2470,7 @@ func encodeListPermissionActionRiskAuditsResponse(response *AnyListResponse, w h
 	return nil
 }
 
-func encodeListPermissionActionsResponse(response *PermissionActionList, w http.ResponseWriter, span trace.Span) error {
+func encodeListPermissionActionsResponse(response *SchemasPermissionActionList, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2470,7 +2484,7 @@ func encodeListPermissionActionsResponse(response *PermissionActionList, w http.
 	return nil
 }
 
-func encodeListPublicRuntimePagesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListPublicRuntimePagesResponse(response *PageListResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2611,7 +2625,7 @@ func encodeListRolesResponse(response *RoleList, w http.ResponseWriter, span tra
 	return nil
 }
 
-func encodeListRuntimePagesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListRuntimePagesResponse(response *PageListResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2627,7 +2641,7 @@ func encodeListRuntimePagesResponse(response *AnyListResponse, w http.ResponseWr
 
 func encodeListStaleApiEndpointsResponse(response ListStaleApiEndpointsRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *AnyObject:
+	case *StaleApiEndpointList:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 		span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2673,7 +2687,7 @@ func encodeListStaleApiEndpointsResponse(response ListStaleApiEndpointsRes, w ht
 
 func encodeListUnregisteredApiEndpointsResponse(response ListUnregisteredApiEndpointsRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *AnyObject:
+	case *UnregisteredApiEndpointList:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 		span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2717,7 +2731,7 @@ func encodeListUnregisteredApiEndpointsResponse(response ListUnregisteredApiEndp
 	}
 }
 
-func encodeListUnregisteredPagesResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodeListUnregisteredPagesResponse(response *PageListResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))
@@ -2851,7 +2865,7 @@ func encodeMarkInboxReadAllResponse(response *MutationResult, w http.ResponseWri
 	return nil
 }
 
-func encodePreviewPageBreadcrumbResponse(response *AnyListResponse, w http.ResponseWriter, span trace.Span) error {
+func encodePreviewPageBreadcrumbResponse(response *PageListResponse, w http.ResponseWriter, span trace.Span) error {
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	w.WriteHeader(200)
 	span.SetStatus(codes.Ok, http.StatusText(200))

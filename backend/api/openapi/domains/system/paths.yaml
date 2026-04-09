@@ -68,7 +68,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: './schemas.yaml#/components/schemas/SystemListResponse'
     post:
       operationId: saveApp
       summary: 保存应用
@@ -127,7 +127,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: './schemas.yaml#/components/schemas/SystemListResponse'
     post:
       operationId: saveAppHostBinding
       summary: 保存应用入口解析绑定
@@ -192,7 +192,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: './schemas.yaml#/components/schemas/SystemListResponse'
     post:
       operationId: saveMenuSpaceEntryBinding
       summary: 保存菜单空间入口解析绑定
@@ -320,7 +320,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: './schemas.yaml#/components/schemas/SystemListResponse'
     post:
       operationId: saveMenuSpace
       summary: 保存菜单空间
@@ -376,7 +376,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: './schemas.yaml#/components/schemas/SystemListResponse'
     post:
       operationId: saveMenuSpaceHostBinding
       summary: 保存菜单空间 Host 绑定

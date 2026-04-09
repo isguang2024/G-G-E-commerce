@@ -2,4 +2,16 @@
 # Domain-specific schemas (currently kept in components/common.yaml).
 # Move schemas here incrementally when they belong exclusively to this domain.
 components:
-  schemas: {}
+  schemas:
+    PageListResponse:
+      type: object
+      required:
+      - records
+      - total
+      properties:
+        records:
+          type: array
+          items:
+            $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+        total:
+          type: integer

@@ -66,6 +66,7 @@ var operationRolesBearerAuth = map[string][]string{
 	DeleteMenuSpaceEntryBindingOperation:                          []string{},
 	DeletePageOperation:                                           []string{},
 	DeletePermissionActionOperation:                               []string{},
+	DeletePermissionActionGroupOperation:                          []string{},
 	DeleteRegisterEntryOperation:                                  []string{},
 	DeleteRegisterPolicyOperation:                                 []string{},
 	DeleteRoleOperation:                                           []string{},

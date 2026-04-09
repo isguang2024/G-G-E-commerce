@@ -122,7 +122,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceList'
   /collaboration-workspaces/current:
     get:
       operationId: getCurrentCollaborationWorkspace
@@ -136,7 +136,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceItem'
   /collaboration-workspaces/options:
     get:
       operationId: listCollaborationWorkspaceOptions
@@ -151,7 +151,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceList'
   /collaboration-workspaces/current/members:
     get:
       operationId: listCurrentCollaborationWorkspaceMembers
@@ -165,7 +165,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceMemberList'
     post:
       operationId: addCurrentCollaborationWorkspaceMember
       summary: 添加当前协作空间成员
@@ -257,7 +257,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceMemberRolesResponse'
     put:
       operationId: setCurrentCollaborationWorkspaceMemberRoles
       summary: 配置当前协作空间成员角色
@@ -299,7 +299,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceRoleList'
     post:
       operationId: createCurrentCollaborationWorkspaceRole
       summary: 创建当前协作空间角色
@@ -334,7 +334,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceRoleList'
     post:
       operationId: createCurrentCollaborationWorkspaceBoundaryRole
       summary: 创建当前协作空间角色(边界管理)
@@ -425,7 +425,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceBoundaryRolePackagesResponse'
     put:
       operationId: setCurrentCollaborationWorkspaceBoundaryRolePackages
       summary: 配置当前协作空间角色功能包(边界管理)
@@ -474,7 +474,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../components/common.yaml#/components/schemas/RoleMenusResponse'
     put:
       operationId: setCurrentCollaborationWorkspaceBoundaryRoleMenus
       summary: 配置当前协作空间角色菜单权限(边界管理)
@@ -523,7 +523,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../components/common.yaml#/components/schemas/RoleActionsResponse'
     put:
       operationId: setCurrentCollaborationWorkspaceBoundaryRoleActions
       summary: 配置当前协作空间角色功能权限(边界管理)
@@ -565,7 +565,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../components/common.yaml#/components/schemas/FeaturePackageAssignmentResponse'
   /collaboration-workspaces/current/menus:
     get:
       operationId: getCurrentCollaborationWorkspaceMenus
@@ -580,7 +580,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceMenusResponse'
   /collaboration-workspaces/current/menu-origins:
     get:
       operationId: getCurrentCollaborationWorkspaceMenuOrigins
@@ -595,7 +595,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceMenuOriginsResponse'
   /collaboration-workspaces/current/actions:
     get:
       operationId: getCurrentCollaborationWorkspaceActions
@@ -610,7 +610,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceActionsResponse'
   /collaboration-workspaces/current/action-origins:
     get:
       operationId: getCurrentCollaborationWorkspaceActionOrigins
@@ -625,7 +625,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceActionOriginsResponse'
   /collaboration-workspaces:
     get:
       operationId: listCollaborationWorkspaces
@@ -655,7 +655,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceList'
     post:
       operationId: createCollaborationWorkspace
       summary: 创建协作空间
@@ -697,7 +697,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceItem'
     put:
       operationId: updateCollaborationWorkspace
       summary: 更新协作空间
@@ -767,7 +767,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceRoleList'
   /collaboration-workspaces/{id}/menus:
     get:
       operationId: getCollaborationWorkspaceMenus
@@ -789,7 +789,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceMenusResponse'
     put:
       operationId: setCollaborationWorkspaceMenus
       summary: 配置协作空间菜单边界
@@ -838,7 +838,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceMenuOriginsResponse'
   /collaboration-workspaces/{id}/actions:
     get:
       operationId: getCollaborationWorkspaceActions
@@ -860,7 +860,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceActionsResponse'
     put:
       operationId: setCollaborationWorkspaceActions
       summary: 配置协作空间功能权限边界
@@ -909,7 +909,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceActionOriginsResponse'
   /collaboration-workspaces/{id}/members:
     get:
       operationId: listCollaborationWorkspaceMembers
@@ -931,7 +931,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/workspace/schemas.yaml#/components/schemas/CollaborationWorkspaceMemberList'
     post:
       operationId: addCollaborationWorkspaceMember
       summary: 添加协作空间成员

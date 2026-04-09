@@ -40,6 +40,7 @@ type PermissionService interface {
 	RemoveEndpoint(id uuid.UUID, endpointCode string) error
 	CreateGroup(req *dto.PermissionGroupSaveRequest) (*user.PermissionGroup, error)
 	UpdateGroup(id uuid.UUID, req *dto.PermissionGroupSaveRequest) error
+	DeleteGroup(id uuid.UUID) error
 	Create(req *dto.PermissionKeyCreateRequest) (*user.PermissionKey, error)
 	Update(id uuid.UUID, req *dto.PermissionKeyUpdateRequest) error
 	Delete(id uuid.UUID) error
@@ -1013,6 +1014,20 @@ func (s *permissionService) UpdateGroup(id uuid.UUID, req *dto.PermissionGroupSa
 		"sort_order":  req.SortOrder,
 		"updated_at":  time.Now(),
 	})
+}
+
+func (s *permissionService) DeleteGroup(id uuid.UUID) error {
+	current, err := s.groupRepo.GetByID(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return ErrPermissionGroupNotFound
+		}
+		return err
+	}
+	if current.IsBuiltin {
+		return errors.New("内置权限分组不允许删除")
+	}
+	return s.groupRepo.Delete(id)
 }
 
 func (s *permissionService) Get(id uuid.UUID) (*user.PermissionKey, error) {

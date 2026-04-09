@@ -14,10 +14,13 @@ import (
 
 // ─── GetCurrentCollaborationWorkspaceMemberRoles ──────────────────────────────
 
-func (h *APIHandler) GetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, params gen.GetCurrentCollaborationWorkspaceMemberRolesParams) (gen.AnyObject, error) {
+func (h *APIHandler) GetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, params gen.GetCurrentCollaborationWorkspaceMemberRolesParams) (*gen.CollaborationWorkspaceMemberRolesResponse, error) {
 	member, err := h.resolveCWMember(ctx)
 	if err != nil {
-		return marshalAnyObject(map[string]interface{}{"role_ids": []string{}}), nil
+		return &gen.CollaborationWorkspaceMemberRolesResponse{
+			RoleIds: []uuid.UUID{},
+			Roles:   []gen.UserRoleRef{},
+		}, nil
 	}
 	targetMember, err := h.cwMemberRepo.GetByUserAndCollaborationWorkspace(params.UserId, member.CollaborationWorkspaceID)
 	if err != nil {
@@ -35,17 +38,11 @@ func (h *APIHandler) GetCurrentCollaborationWorkspaceMemberRoles(ctx context.Con
 	if err != nil {
 		return nil, err
 	}
-	roleIDsStr := make([]string, 0, len(roles))
-	roleList := make([]map[string]interface{}, 0, len(roles))
-	for _, r := range roles {
-		roleIDsStr = append(roleIDsStr, r.ID.String())
-		roleList = append(roleList, map[string]interface{}{"id": r.ID.String(), "code": r.Code, "name": r.Name})
-	}
 	_ = targetMember // used for binding meta if needed
-	return marshalAnyObject(map[string]interface{}{
-		"role_ids": roleIDsStr,
-		"roles":    roleList,
-	}), nil
+	return &gen.CollaborationWorkspaceMemberRolesResponse{
+		RoleIds: roleIDs,
+		Roles:   roleRefsFromModels(roles),
+	}, nil
 }
 
 // ─── SetCurrentCollaborationWorkspaceMemberRoles ──────────────────────────────

@@ -1538,6 +1538,7 @@ type PermissionGroupRepository interface {
 	ListByType(groupType string) ([]PermissionGroup, error)
 	Create(group *PermissionGroup) error
 	UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error
+	Delete(id uuid.UUID) error
 }
 
 type permissionGroupRepository struct {
@@ -1609,6 +1610,10 @@ func (r *permissionGroupRepository) Create(group *PermissionGroup) error {
 
 func (r *permissionGroupRepository) UpdateWithMap(id uuid.UUID, updates map[string]interface{}) error {
 	return r.db.Model(&PermissionGroup{}).Where("id = ?", id).Updates(updates).Error
+}
+
+func (r *permissionGroupRepository) Delete(id uuid.UUID) error {
+	return r.db.Where("id = ?", id).Delete(&PermissionGroup{}).Error
 }
 
 type permissionKeyRepository struct {

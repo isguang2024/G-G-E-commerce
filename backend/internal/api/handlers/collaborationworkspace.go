@@ -14,7 +14,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/user"
 )
 
-func (h *APIHandler) ListCollaborationWorkspaces(ctx context.Context, params gen.ListCollaborationWorkspacesParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListCollaborationWorkspaces(ctx context.Context, params gen.ListCollaborationWorkspacesParams) (*gen.CollaborationWorkspaceList, error) {
 	req := &dto.CollaborationWorkspaceListRequest{
 		Current: optInt(params.Current, 1),
 		Size:    optInt(params.Size, 20),
@@ -25,25 +25,32 @@ func (h *APIHandler) ListCollaborationWorkspaces(ctx context.Context, params gen
 		h.logger.Error("list collaboration workspaces failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(list), Total: int(total)}, nil
+	return &gen.CollaborationWorkspaceList{
+		Records: collaborationWorkspaceItemsFromModels(list),
+		Total:   int(total),
+	}, nil
 }
 
-func (h *APIHandler) ListCollaborationWorkspaceOptions(ctx context.Context) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListCollaborationWorkspaceOptions(ctx context.Context) (*gen.CollaborationWorkspaceList, error) {
 	list, err := h.cwSvc.ListOptions(&dto.CollaborationWorkspaceListRequest{Current: 1, Size: 500})
 	if err != nil {
 		h.logger.Error("list collaboration workspace options failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(list), Total: len(list)}, nil
+	return &gen.CollaborationWorkspaceList{
+		Records: collaborationWorkspaceItemsFromModels(list),
+		Total:   len(list),
+	}, nil
 }
 
-func (h *APIHandler) GetCollaborationWorkspace(ctx context.Context, params gen.GetCollaborationWorkspaceParams) (gen.AnyObject, error) {
+func (h *APIHandler) GetCollaborationWorkspace(ctx context.Context, params gen.GetCollaborationWorkspaceParams) (*gen.CollaborationWorkspaceItem, error) {
 	cw, err := h.cwSvc.Get(params.ID)
 	if err != nil {
 		h.logger.Error("get collaboration workspace failed", zap.Error(err))
 		return nil, err
 	}
-	return marshalAnyObject(cw), nil
+	item := collaborationWorkspaceItemFromModel(*cw)
+	return &item, nil
 }
 
 func (h *APIHandler) CreateCollaborationWorkspace(ctx context.Context, req gen.AnyObject) (*gen.IDResult, error) {
@@ -83,13 +90,16 @@ func (h *APIHandler) DeleteCollaborationWorkspace(ctx context.Context, params ge
 	return ok(), nil
 }
 
-func (h *APIHandler) ListCollaborationWorkspaceMembers(ctx context.Context, params gen.ListCollaborationWorkspaceMembersParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListCollaborationWorkspaceMembers(ctx context.Context, params gen.ListCollaborationWorkspaceMembersParams) (*gen.CollaborationWorkspaceMemberList, error) {
 	list, err := h.cwSvc.ListMembers(params.ID, &user.MemberSearchParams{})
 	if err != nil {
 		h.logger.Error("list collaboration workspace members failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(list), Total: len(list)}, nil
+	return &gen.CollaborationWorkspaceMemberList{
+		Records: collaborationWorkspaceMemberItemsFromModels(list),
+		Total:   len(list),
+	}, nil
 }
 
 func (h *APIHandler) AddCollaborationWorkspaceMember(ctx context.Context, req gen.AnyObject, params gen.AddCollaborationWorkspaceMemberParams) (*gen.MutationResult, error) {

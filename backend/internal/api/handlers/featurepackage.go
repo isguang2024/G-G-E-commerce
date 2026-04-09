@@ -212,17 +212,17 @@ func (h *APIHandler) SetFeaturePackageMenus(ctx context.Context, req *gen.UUIDLi
 	return ok(), nil
 }
 
-func (h *APIHandler) GetFeaturePackageCollaborationWorkspaces(ctx context.Context, params gen.GetFeaturePackageCollaborationWorkspacesParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) GetFeaturePackageCollaborationWorkspaces(ctx context.Context, params gen.GetFeaturePackageCollaborationWorkspacesParams) (*gen.FeaturePackageCollaborationWorkspaceList, error) {
 	ids, err := h.featurePkgSvc.GetPackageCollaborationWorkspaces(params.ID, "")
 	if err != nil {
 		h.logger.Error("get feature package cws failed", zap.Error(err))
 		return nil, err
 	}
-	records := make([]gen.AnyObject, 0, len(ids))
+	records := make([]gen.FeaturePackageCollaborationWorkspaceItem, 0, len(ids))
 	for _, id := range ids {
-		records = append(records, marshalAnyObject(map[string]interface{}{"id": id}))
+		records = append(records, gen.FeaturePackageCollaborationWorkspaceItem{ID: id})
 	}
-	return &gen.AnyListResponse{Records: records, Total: len(records)}, nil
+	return &gen.FeaturePackageCollaborationWorkspaceList{Records: records, Total: int64(len(records))}, nil
 }
 
 func (h *APIHandler) SetFeaturePackageCollaborationWorkspaces(ctx context.Context, req *gen.UUIDListRequest, params gen.SetFeaturePackageCollaborationWorkspacesParams) (*gen.MutationResult, error) {
@@ -253,21 +253,36 @@ func (h *APIHandler) GetFeaturePackageImpactPreview(ctx context.Context, params 
 	}, nil
 }
 
-func (h *APIHandler) ListFeaturePackageVersions(ctx context.Context, params gen.ListFeaturePackageVersionsParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListFeaturePackageVersions(ctx context.Context, params gen.ListFeaturePackageVersionsParams) (*gen.FeaturePackageVersionList, error) {
 	list, total, err := h.featurePkgSvc.ListVersions(params.ID, optInt(params.Current, 1), optInt(params.Size, 20))
 	if err != nil {
 		h.logger.Error("list feature package versions failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(list), Total: int(total)}, nil
+	records := make([]gen.FeaturePackageVersionItem, 0, len(list))
+	for i := range list {
+		item := gen.FeaturePackageVersionItem{
+			ID:         list[i].ID,
+			PackageID:  list[i].PackageID,
+			VersionNo:  list[i].VersionNo,
+			ChangeType: list[i].ChangeType,
+			Snapshot:   marshalAnyObject(list[i].Snapshot),
+			RequestID:  list[i].RequestID,
+			CreatedAt:  list[i].CreatedAt,
+		}
+		if list[i].OperatorID != nil {
+			item.OperatorID = gen.NewOptNilUUID(*list[i].OperatorID)
+		}
+		records = append(records, item)
+	}
+	return &gen.FeaturePackageVersionList{Records: records, Total: total}, nil
 }
 
-func (h *APIHandler) ListFeaturePackageRiskAudits(ctx context.Context, params gen.ListFeaturePackageRiskAuditsParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListFeaturePackageRiskAudits(ctx context.Context, params gen.ListFeaturePackageRiskAuditsParams) (*gen.FeaturePackageRiskAuditList, error) {
 	list, total, err := h.featurePkgSvc.ListRiskAudits(params.ID, optInt(params.Current, 1), optInt(params.Size, 20))
 	if err != nil {
 		h.logger.Error("list feature package risk audits failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(list), Total: int(total)}, nil
+	return &gen.FeaturePackageRiskAuditList{Records: riskAuditItemsFromModels(list), Total: total}, nil
 }
-

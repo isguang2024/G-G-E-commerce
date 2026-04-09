@@ -1,5 +1,249 @@
 # domains/permission/schemas.yaml
-# Domain-specific schemas (currently kept in components/common.yaml).
-# Move schemas here incrementally when they belong exclusively to this domain.
 components:
-  schemas: {}
+  schemas:
+    PermissionActionAuditSummary:
+      type: object
+      required:
+        - total_count
+        - unused_count
+        - api_only_count
+        - page_only_count
+        - package_only_count
+        - multi_consumer_count
+        - cross_context_mirror_count
+        - suspected_duplicate_count
+      properties:
+        total_count: {type: integer, format: int64}
+        unused_count: {type: integer, format: int64}
+        api_only_count: {type: integer, format: int64}
+        page_only_count: {type: integer, format: int64}
+        package_only_count: {type: integer, format: int64}
+        multi_consumer_count: {type: integer, format: int64}
+        cross_context_mirror_count: {type: integer, format: int64}
+        suspected_duplicate_count: {type: integer, format: int64}
+    PermissionGroupItem:
+      type: object
+      required: [id, group_type, code, name, status, sort_order, is_builtin, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        group_type: {type: string}
+        code: {type: string}
+        name: {type: string}
+        name_en: {type: string}
+        description: {type: string}
+        status: {type: string}
+        sort_order: {type: integer, format: int64}
+        is_builtin: {type: boolean}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    PermissionActionItem:
+      type: object
+      required:
+        - id
+        - resource_code
+        - action_code
+        - module_code
+        - permission_key
+        - feature_kind
+        - data_policy
+        - name
+        - data_permission_code
+        - data_permission_name
+        - api_count
+        - page_count
+        - package_count
+        - consumer_types
+        - usage_pattern
+        - usage_note
+        - duplicate_pattern
+        - duplicate_group
+        - duplicate_keys
+        - duplicate_note
+        - status
+        - sort_order
+        - is_builtin
+        - created_at
+        - updated_at
+      properties:
+        id: {type: string, format: uuid}
+        resource_code: {type: string}
+        action_code: {type: string}
+        module_code: {type: string}
+        module_group_id: {type: string, format: uuid, nullable: true}
+        feature_group_id: {type: string, format: uuid, nullable: true}
+        permission_key: {type: string}
+        feature_kind: {type: string}
+        data_policy: {type: string}
+        name: {type: string}
+        description: {type: string}
+        data_permission_code: {type: string}
+        data_permission_name: {type: string}
+        api_count: {type: integer, format: int64}
+        page_count: {type: integer, format: int64}
+        package_count: {type: integer, format: int64}
+        consumer_types:
+          type: array
+          items: {type: string}
+        usage_pattern: {type: string}
+        usage_note: {type: string}
+        duplicate_pattern: {type: string}
+        duplicate_group: {type: string}
+        duplicate_keys:
+          type: array
+          items: {type: string}
+        duplicate_note: {type: string}
+        status: {type: string}
+        sort_order: {type: integer, format: int64}
+        is_builtin: {type: boolean}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    PermissionActionList:
+      type: object
+      required: [records, total, current, size, audit_summary]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/PermissionActionItem'}
+        total: {type: integer, format: int64}
+        current: {type: integer}
+        size: {type: integer}
+        audit_summary:
+          $ref: '#/components/schemas/PermissionActionAuditSummary'
+    PermissionActionOptions:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/PermissionActionItem'}
+        total: {type: integer, format: int64}
+    PermissionActionConsumerAPIItem:
+      type: object
+      required: [code, method, path, summary]
+      properties:
+        code: {type: string}
+        method: {type: string}
+        path: {type: string}
+        summary: {type: string}
+    PermissionActionConsumerPageItem:
+      type: object
+      required: [page_key, name, route_path, access_mode]
+      properties:
+        page_key: {type: string}
+        name: {type: string}
+        route_path: {type: string}
+        access_mode: {type: string}
+    PermissionActionConsumerPackageItem:
+      type: object
+      required: [id, package_key, name, package_type, context_type]
+      properties:
+        id: {type: string, format: uuid}
+        package_key: {type: string}
+        name: {type: string}
+        package_type: {type: string}
+        context_type: {type: string}
+    PermissionActionConsumerRoleItem:
+      type: object
+      required: [id, code, name, context_type]
+      properties:
+        id: {type: string, format: uuid}
+        code: {type: string}
+        name: {type: string}
+        context_type: {type: string}
+    PermissionActionConsumersResponse:
+      type: object
+      required: [permission_key, apis, pages, feature_packages, roles]
+      properties:
+        permission_key: {type: string}
+        apis:
+          type: array
+          items: {$ref: '#/components/schemas/PermissionActionConsumerAPIItem'}
+        pages:
+          type: array
+          items: {$ref: '#/components/schemas/PermissionActionConsumerPageItem'}
+        feature_packages:
+          type: array
+          items: {$ref: '#/components/schemas/PermissionActionConsumerPackageItem'}
+        roles:
+          type: array
+          items: {$ref: '#/components/schemas/PermissionActionConsumerRoleItem'}
+    PermissionActionImpactPreview:
+      type: object
+      required:
+        - permission_key
+        - api_count
+        - page_count
+        - package_count
+        - role_count
+        - collaboration_workspace_count
+        - user_count
+      properties:
+        permission_key: {type: string}
+        api_count: {type: integer, format: int64}
+        page_count: {type: integer, format: int64}
+        package_count: {type: integer, format: int64}
+        role_count: {type: integer, format: int64}
+        collaboration_workspace_count: {type: integer, format: int64}
+        user_count: {type: integer, format: int64}
+    PermissionActionGroupList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/PermissionGroupItem'}
+        total: {type: integer, format: int64}
+    PermissionActionBatchTemplateItem:
+      type: object
+      required: [id, name, description, payload, created_at, updated_at]
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        description: {type: string}
+        payload:
+          $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+        created_by: {type: string, format: uuid, nullable: true}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    PermissionActionBatchTemplateList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/PermissionActionBatchTemplateItem'}
+        total: {type: integer, format: int64}
+    RiskAuditItem:
+      type: object
+      required:
+        - id
+        - object_type
+        - object_id
+        - operation_type
+        - before_summary
+        - after_summary
+        - impact_summary
+        - request_id
+        - created_at
+      properties:
+        id: {type: string, format: uuid}
+        operator_id: {type: string, format: uuid, nullable: true}
+        object_type: {type: string}
+        object_id: {type: string}
+        operation_type: {type: string}
+        before_summary:
+          $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+        after_summary:
+          $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+        impact_summary:
+          $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+        request_id: {type: string}
+        created_at: {type: string, format: date-time}
+    PermissionActionRiskAuditList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/RiskAuditItem'}
+        total: {type: integer, format: int64}

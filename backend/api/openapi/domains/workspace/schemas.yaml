@@ -1,5 +1,167 @@
 # domains/workspace/schemas.yaml
-# Domain-specific schemas (currently kept in components/common.yaml).
-# Move schemas here incrementally when they belong exclusively to this domain.
 components:
-  schemas: {}
+  schemas:
+    CollaborationWorkspaceItem:
+      type: object
+      required:
+        - id
+        - name
+        - remark
+        - logo_url
+        - plan
+        - owner_id
+        - max_members
+        - status
+        - created_at
+        - updated_at
+      properties:
+        id: {type: string, format: uuid}
+        name: {type: string}
+        remark: {type: string}
+        logo_url: {type: string}
+        plan: {type: string}
+        owner_id: {type: string, format: uuid}
+        max_members: {type: integer}
+        status: {type: string}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    CollaborationWorkspaceList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/CollaborationWorkspaceItem'}
+        total: {type: integer}
+    CollaborationWorkspaceMemberItem:
+      type: object
+      required:
+        - id
+        - collaboration_workspace_id
+        - user_id
+        - role_code
+        - status
+        - joined_at
+        - created_at
+        - updated_at
+      properties:
+        id: {type: string, format: uuid}
+        collaboration_workspace_id: {type: string, format: uuid}
+        user_id: {type: string, format: uuid}
+        role_code: {type: string}
+        role_id: {type: string, format: uuid, nullable: true}
+        status: {type: string}
+        joined_at: {type: string, format: date-time}
+        invited_by: {type: string, format: uuid, nullable: true}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    CollaborationWorkspaceMemberList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/CollaborationWorkspaceMemberItem'}
+        total: {type: integer}
+    CollaborationWorkspaceMemberRolesResponse:
+      type: object
+      required: [role_ids, roles]
+      properties:
+        role_ids:
+          type: array
+          items: {type: string, format: uuid}
+        roles:
+          type: array
+          items:
+            $ref: '../../components/common.yaml#/components/schemas/UserRoleRef'
+    CollaborationWorkspaceRoleItem:
+      type: object
+      required:
+        - id
+        - code
+        - name
+        - description
+        - status
+        - is_system
+        - collaboration_workspace_id
+        - is_global
+        - created_at
+      properties:
+        id: {type: string, format: uuid}
+        collaboration_workspace_id: {type: string, format: uuid, nullable: true}
+        code: {type: string}
+        name: {type: string}
+        description: {type: string}
+        status: {type: string}
+        is_system: {type: boolean}
+        is_global: {type: boolean}
+        priority: {type: integer, format: int64}
+        sort_order: {type: integer, format: int64}
+        created_at: {type: string, format: date-time}
+        updated_at: {type: string, format: date-time}
+    CollaborationWorkspaceRoleList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/CollaborationWorkspaceRoleItem'}
+        total: {type: integer, format: int64}
+    CollaborationWorkspaceBoundaryRolePackagesResponse:
+      type: object
+      required: [package_ids, packages, inherited]
+      properties:
+        package_ids:
+          type: array
+          items: {type: string, format: uuid}
+        packages:
+          type: array
+          items:
+            $ref: '../../components/common.yaml#/components/schemas/FeaturePackageRef'
+        inherited: {type: boolean}
+    CollaborationWorkspaceMenusResponse:
+      type: object
+      required: [menu_ids]
+      properties:
+        menu_ids:
+          type: array
+          items: {type: string, format: uuid}
+    CollaborationWorkspaceMenuOriginsResponse:
+      type: object
+      required: [derived_menu_ids, derived_sources, blocked_menu_ids]
+      properties:
+        derived_menu_ids:
+          type: array
+          items: {type: string, format: uuid}
+        derived_sources:
+          type: array
+          items:
+            $ref: '../../components/common.yaml#/components/schemas/MenuSourceEntry'
+        blocked_menu_ids:
+          type: array
+          items: {type: string, format: uuid}
+    CollaborationWorkspaceActionsResponse:
+      type: object
+      required: [action_ids, actions]
+      properties:
+        action_ids:
+          type: array
+          items: {type: string, format: uuid}
+        actions:
+          type: array
+          items:
+            $ref: '../../components/common.yaml#/components/schemas/PermissionActionRef'
+    CollaborationWorkspaceActionOriginsResponse:
+      type: object
+      required: [derived_action_ids, derived_sources, blocked_action_ids]
+      properties:
+        derived_action_ids:
+          type: array
+          items: {type: string, format: uuid}
+        derived_sources:
+          type: array
+          items:
+            $ref: '../../components/common.yaml#/components/schemas/ActionSourceEntry'
+        blocked_action_ids:
+          type: array
+          items: {type: string, format: uuid}

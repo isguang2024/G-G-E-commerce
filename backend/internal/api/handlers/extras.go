@@ -150,6 +150,14 @@ func (h *APIHandler) UpdatePermissionActionGroup(ctx context.Context, req gen.An
 	return ok(), nil
 }
 
+func (h *APIHandler) DeletePermissionActionGroup(ctx context.Context, params gen.DeletePermissionActionGroupParams) (*gen.MutationResult, error) {
+	if err := h.permSvc.DeleteGroup(params.ID); err != nil {
+		h.logger.Error("delete permission group failed", zap.Error(err))
+		return nil, err
+	}
+	return ok(), nil
+}
+
 func (h *APIHandler) SavePermissionActionBatchTemplate(ctx context.Context, req gen.AnyObject) (*gen.MutationResult, error) {
 	var body permission.PermissionBatchTemplateSaveRequest
 	if err := unmarshalAnyObject(req, &body); err != nil {

@@ -11,7 +11,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/api/dto"
 )
 
-func (h *APIHandler) ListPermissionActions(ctx context.Context, params gen.ListPermissionActionsParams) (*gen.PermissionActionList, error) {
+func (h *APIHandler) ListPermissionActions(ctx context.Context, params gen.ListPermissionActionsParams) (*gen.SchemasPermissionActionList, error) {
 	req := &dto.PermissionKeyListRequest{
 		Current:       optInt(params.Current, 1),
 		Size:          optInt(params.Size, 20),
@@ -24,16 +24,16 @@ func (h *APIHandler) ListPermissionActions(ctx context.Context, params gen.ListP
 		h.logger.Error("list permission actions failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.PermissionActionList{
-		Records:      marshalList(list),
-		Total:        int(total),
+	return &gen.SchemasPermissionActionList{
+		Records:      permissionActionListItemsFromModels(list),
+		Total:        int64(total),
 		Current:      req.Current,
 		Size:         req.Size,
-		AuditSummary: gen.NewOptAnyObject(marshalAnyObject(summary)),
+		AuditSummary: permissionActionAuditSummaryFromModel(summary),
 	}, nil
 }
 
-func (h *APIHandler) ListPermissionActionOptions(ctx context.Context, params gen.ListPermissionActionOptionsParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListPermissionActionOptions(ctx context.Context, params gen.ListPermissionActionOptionsParams) (*gen.PermissionActionOptions, error) {
 	req := &dto.PermissionKeyListRequest{
 		Keyword:       optString(params.Keyword),
 		ModuleGroupID: optString(params.GroupID),
@@ -43,7 +43,7 @@ func (h *APIHandler) ListPermissionActionOptions(ctx context.Context, params gen
 		h.logger.Error("list permission action options failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(list), Total: len(list)}, nil
+	return &gen.PermissionActionOptions{Records: permissionActionOptionItemsFromModels(list), Total: int64(len(list))}, nil
 }
 
 func (h *APIHandler) GetPermissionAction(ctx context.Context, params gen.GetPermissionActionParams) (*gen.PermissionActionDetail, error) {
@@ -138,31 +138,31 @@ func (h *APIHandler) RemovePermissionActionEndpoint(ctx context.Context, params 
 	return ok(), nil
 }
 
-func (h *APIHandler) GetPermissionActionConsumers(ctx context.Context, params gen.GetPermissionActionConsumersParams) (gen.AnyObject, error) {
+func (h *APIHandler) GetPermissionActionConsumers(ctx context.Context, params gen.GetPermissionActionConsumersParams) (*gen.PermissionActionConsumersResponse, error) {
 	details, err := h.permSvc.GetConsumerDetails(params.ID)
 	if err != nil {
 		h.logger.Error("get permission action consumers failed", zap.Error(err))
 		return nil, err
 	}
-	return marshalAnyObject(details), nil
+	return permissionActionConsumersResponseFromModel(details), nil
 }
 
-func (h *APIHandler) GetPermissionActionImpactPreview(ctx context.Context, params gen.GetPermissionActionImpactPreviewParams) (gen.AnyObject, error) {
+func (h *APIHandler) GetPermissionActionImpactPreview(ctx context.Context, params gen.GetPermissionActionImpactPreviewParams) (*gen.PermissionActionImpactPreview, error) {
 	preview, err := h.permSvc.GetImpactPreview(params.ID)
 	if err != nil {
 		h.logger.Error("get permission action impact preview failed", zap.Error(err))
 		return nil, err
 	}
-	return marshalAnyObject(preview), nil
+	return permissionActionImpactPreviewFromModel(preview), nil
 }
 
-func (h *APIHandler) ListPermissionActionGroups(ctx context.Context) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListPermissionActionGroups(ctx context.Context) (*gen.PermissionActionGroupList, error) {
 	list, total, err := h.permSvc.ListGroups(&dto.PermissionGroupListRequest{Current: 1, Size: 500})
 	if err != nil {
 		h.logger.Error("list permission action groups failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(list), Total: int(total)}, nil
+	return &gen.PermissionActionGroupList{Records: permissionGroupItemsFromModels(list), Total: int64(total)}, nil
 }
 
 func (h *APIHandler) CleanupUnusedPermissionActions(ctx context.Context) (*gen.MutationResult, error) {
@@ -173,20 +173,20 @@ func (h *APIHandler) CleanupUnusedPermissionActions(ctx context.Context) (*gen.M
 	return ok(), nil
 }
 
-func (h *APIHandler) ListPermissionActionRiskAudits(ctx context.Context, params gen.ListPermissionActionRiskAuditsParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListPermissionActionRiskAudits(ctx context.Context, params gen.ListPermissionActionRiskAuditsParams) (*gen.PermissionActionRiskAuditList, error) {
 	list, total, err := h.permSvc.ListRiskAudits("", optInt(params.Current, 1), optInt(params.Size, 20))
 	if err != nil {
 		h.logger.Error("list permission action risk audits failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(list), Total: int(total)}, nil
+	return &gen.PermissionActionRiskAuditList{Records: riskAuditItemsFromModels(list), Total: int64(total)}, nil
 }
 
-func (h *APIHandler) ListPermissionActionBatchTemplates(ctx context.Context) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListPermissionActionBatchTemplates(ctx context.Context) (*gen.PermissionActionBatchTemplateList, error) {
 	list, err := h.permSvc.ListBatchTemplates()
 	if err != nil {
 		h.logger.Error("list permission action batch templates failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(list), Total: len(list)}, nil
+	return &gen.PermissionActionBatchTemplateList{Records: permissionBatchTemplateItemsFromModels(list), Total: int64(len(list))}, nil
 }

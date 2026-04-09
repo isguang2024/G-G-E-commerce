@@ -15,13 +15,13 @@ import (
 
 // -------- apps --------
 
-func (h *APIHandler) ListApps(ctx context.Context) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListApps(ctx context.Context) (*gen.SystemListResponse, error) {
 	items, err := h.appSvc.ListApps()
 	if err != nil {
 		h.logger.Error("list apps failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(items), Total: len(items)}, nil
+	return &gen.SystemListResponse{Records: marshalList(items), Total: len(items)}, nil
 }
 
 func (h *APIHandler) SaveApp(ctx context.Context, req gen.AnyObject) (*gen.MutationResult, error) {
@@ -36,7 +36,7 @@ func (h *APIHandler) SaveApp(ctx context.Context, req gen.AnyObject) (*gen.Mutat
 	return ok(), nil
 }
 
-func (h *APIHandler) ListAppHostBindings(ctx context.Context, params gen.ListAppHostBindingsParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListAppHostBindings(ctx context.Context, params gen.ListAppHostBindingsParams) (*gen.SystemListResponse, error) {
 	appKey := ""
 	if v, ok := params.AppKey.Get(); ok {
 		appKey = v
@@ -46,7 +46,7 @@ func (h *APIHandler) ListAppHostBindings(ctx context.Context, params gen.ListApp
 		h.logger.Error("list app host bindings failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(items), Total: len(items)}, nil
+	return &gen.SystemListResponse{Records: marshalList(items), Total: len(items)}, nil
 }
 
 func (h *APIHandler) SaveAppHostBinding(ctx context.Context, req gen.AnyObject) (*gen.MutationResult, error) {
@@ -73,7 +73,7 @@ func (h *APIHandler) DeleteAppHostBinding(ctx context.Context, params gen.Delete
 	return ok(), nil
 }
 
-func (h *APIHandler) ListMenuSpaceEntryBindings(ctx context.Context, params gen.ListMenuSpaceEntryBindingsParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListMenuSpaceEntryBindings(ctx context.Context, params gen.ListMenuSpaceEntryBindingsParams) (*gen.SystemListResponse, error) {
 	appKey := ""
 	if v, ok := params.AppKey.Get(); ok {
 		appKey = v
@@ -83,7 +83,7 @@ func (h *APIHandler) ListMenuSpaceEntryBindings(ctx context.Context, params gen.
 		h.logger.Error("list menu space entry bindings failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(items), Total: len(items)}, nil
+	return &gen.SystemListResponse{Records: marshalList(items), Total: len(items)}, nil
 }
 
 func (h *APIHandler) SaveMenuSpaceEntryBinding(ctx context.Context, req gen.AnyObject) (*gen.MutationResult, error) {
@@ -121,7 +121,7 @@ func (h *APIHandler) GetCurrentApp(ctx context.Context, params gen.GetCurrentApp
 
 // -------- spaces --------
 
-func (h *APIHandler) ListMenuSpaces(ctx context.Context, params gen.ListMenuSpacesParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListMenuSpaces(ctx context.Context, params gen.ListMenuSpacesParams) (*gen.SystemListResponse, error) {
 	appKey := ""
 	if v, ok := params.AppKey.Get(); ok {
 		appKey = v
@@ -131,7 +131,7 @@ func (h *APIHandler) ListMenuSpaces(ctx context.Context, params gen.ListMenuSpac
 		h.logger.Error("list menu spaces failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(items), Total: len(items)}, nil
+	return &gen.SystemListResponse{Records: marshalList(items), Total: len(items)}, nil
 }
 
 func (h *APIHandler) SaveMenuSpace(ctx context.Context, req gen.AnyObject) (*gen.MutationResult, error) {
@@ -202,13 +202,13 @@ func (h *APIHandler) InitializeMenuSpaceFromDefault(ctx context.Context, params 
 	return ok(), nil
 }
 
-func (h *APIHandler) ListMenuSpaceHostBindings(ctx context.Context) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListMenuSpaceHostBindings(ctx context.Context) (*gen.SystemListResponse, error) {
 	items, err := h.spaceSvc.ListHostBindings("")
 	if err != nil {
 		h.logger.Error("list menu space host bindings failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(items), Total: len(items)}, nil
+	return &gen.SystemListResponse{Records: marshalList(items), Total: len(items)}, nil
 }
 
 func (h *APIHandler) SaveMenuSpaceHostBinding(ctx context.Context, req gen.AnyObject) (*gen.MutationResult, error) {

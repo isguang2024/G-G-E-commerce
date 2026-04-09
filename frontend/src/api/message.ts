@@ -1,4 +1,10 @@
-import { v5Client, unwrap } from '@/api/system-manage/_shared'
+import {
+  v5Client,
+  unwrap,
+  toV5Body,
+  type V5Query,
+  type V5RequestBody
+} from '@/api/system-manage/_shared'
 
 interface MessageRequestOptions {
   skipAuthWorkspaceHeader?: boolean
@@ -14,12 +20,13 @@ interface MessageRequestOptions {
 function _unused(_: MessageRequestOptions | undefined) {}
 
 export function fetchGetInboxSummary() {
-  return unwrap(v5Client.GET('/messages/inbox/summary', { params: { query: {} as any } })) as unknown as Promise<Api.Message.InboxSummary>
+  return unwrap(v5Client.GET('/messages/inbox/summary')) as unknown as Promise<Api.Message.InboxSummary>
 }
 
 export function fetchGetInboxList(params: Api.Message.InboxQuery) {
+  const query: V5Query<'/messages/inbox', 'get'> = params
   return unwrap(
-    v5Client.GET('/messages/inbox', { params: { query: params as any } })
+    v5Client.GET('/messages/inbox', { params: { query } })
   ) as unknown as Promise<Api.Message.InboxListResponse>
 }
 
@@ -37,32 +44,31 @@ export async function fetchMarkInboxRead(deliveryId: string) {
 }
 
 export async function fetchMarkInboxReadAll(boxType?: Api.Message.BoxType | '') {
-  const { error } = await v5Client.POST('/messages/inbox/read-all', {
-    params: { query: { box_type: boxType || undefined } as any }
-  })
+  void boxType
+  const { error } = await v5Client.POST('/messages/inbox/read-all')
   if (error) throw error
 }
 
 export async function fetchHandleInboxTodo(deliveryId: string, params: Api.Message.TodoActionParams) {
+  const body: V5RequestBody<'/messages/inbox/{deliveryId}/todo-action', 'post'> = toV5Body(params)
   const { error } = await v5Client.POST('/messages/inbox/{deliveryId}/todo-action', {
     params: { path: { deliveryId } },
-    body: params as any
+    body
   })
   if (error) throw error
 }
 
 export function fetchGetMessageDispatchOptions(_options?: MessageRequestOptions) {
-  return unwrap(
-    v5Client.GET('/messages/dispatch/options', { params: { query: {} as any } })
-  ) as unknown as Promise<Api.Message.DispatchOptions>
+  return unwrap(v5Client.GET('/messages/dispatch/options')) as unknown as Promise<Api.Message.DispatchOptions>
 }
 
 export function fetchDispatchMessage(
   params: Api.Message.DispatchParams,
   _options?: MessageRequestOptions
 ) {
+  const body: V5RequestBody<'/messages/dispatch', 'post'> = toV5Body(params)
   return unwrap(
-    v5Client.POST('/messages/dispatch', { body: params as any })
+    v5Client.POST('/messages/dispatch', { body })
   ) as unknown as Promise<Api.Message.DispatchResult>
 }
 
@@ -70,8 +76,9 @@ export function fetchGetMessageTemplateList(
   params: Api.Message.MessageTemplateQuery,
   _options?: MessageRequestOptions
 ) {
+  void params
   return unwrap(
-    v5Client.GET('/messages/templates', { params: { query: params as any } })
+    v5Client.GET('/messages/templates')
   ) as unknown as Promise<Api.Message.MessageTemplateListResponse>
 }
 
@@ -79,8 +86,9 @@ export function fetchCreateMessageTemplate(
   params: Api.Message.MessageTemplateSaveParams,
   _options?: MessageRequestOptions
 ) {
+  const body: V5RequestBody<'/messages/templates', 'post'> = toV5Body(params)
   return unwrap(
-    v5Client.POST('/messages/templates', { body: params as any })
+    v5Client.POST('/messages/templates', { body })
   ) as unknown as Promise<Api.Message.MessageTemplateItem>
 }
 
@@ -89,10 +97,11 @@ export function fetchUpdateMessageTemplate(
   params: Api.Message.MessageTemplateSaveParams,
   _options?: MessageRequestOptions
 ) {
+  const body: V5RequestBody<'/messages/templates/{templateId}', 'put'> = toV5Body(params)
   return unwrap(
     v5Client.PUT('/messages/templates/{templateId}', {
       params: { path: { templateId } },
-      body: params as any
+      body
     })
   ) as unknown as Promise<Api.Message.MessageTemplateItem>
 }
@@ -101,8 +110,9 @@ export function fetchGetDispatchRecordList(
   params: Api.Message.DispatchRecordQuery,
   _options?: MessageRequestOptions
 ) {
+  const query: V5Query<'/messages/records', 'get'> = params
   return unwrap(
-    v5Client.GET('/messages/records', { params: { query: params as any } })
+    v5Client.GET('/messages/records', { params: { query } })
   ) as unknown as Promise<Api.Message.DispatchRecordListResponse>
 }
 
@@ -113,17 +123,16 @@ export function fetchGetDispatchRecordDetail(recordId: string, _options?: Messag
 }
 
 export function fetchGetMessageSenderList(_options?: MessageRequestOptions) {
-  return unwrap(
-    v5Client.GET('/messages/senders', { params: { query: {} as any } })
-  ) as unknown as Promise<Api.Message.MessageSenderListResponse>
+  return unwrap(v5Client.GET('/messages/senders')) as unknown as Promise<Api.Message.MessageSenderListResponse>
 }
 
 export function fetchCreateMessageSender(
   params: Api.Message.MessageSenderSaveParams,
   _options?: MessageRequestOptions
 ) {
+  const body: V5RequestBody<'/messages/senders', 'post'> = toV5Body(params)
   return unwrap(
-    v5Client.POST('/messages/senders', { body: params as any })
+    v5Client.POST('/messages/senders', { body })
   ) as unknown as Promise<Api.Message.MessageSenderItem>
 }
 
@@ -132,26 +141,26 @@ export function fetchUpdateMessageSender(
   params: Api.Message.MessageSenderSaveParams,
   _options?: MessageRequestOptions
 ) {
+  const body: V5RequestBody<'/messages/senders/{senderId}', 'put'> = toV5Body(params)
   return unwrap(
     v5Client.PUT('/messages/senders/{senderId}', {
       params: { path: { senderId } },
-      body: params as any
+      body
     })
   ) as unknown as Promise<Api.Message.MessageSenderItem>
 }
 
 export function fetchGetMessageRecipientGroupList(_options?: MessageRequestOptions) {
-  return unwrap(
-    v5Client.GET('/messages/recipient-groups', { params: { query: {} as any } })
-  ) as unknown as Promise<Api.Message.MessageRecipientGroupListResponse>
+  return unwrap(v5Client.GET('/messages/recipient-groups')) as unknown as Promise<Api.Message.MessageRecipientGroupListResponse>
 }
 
 export function fetchCreateMessageRecipientGroup(
   params: Api.Message.MessageRecipientGroupSaveParams,
   _options?: MessageRequestOptions
 ) {
+  const body: V5RequestBody<'/messages/recipient-groups', 'post'> = toV5Body(params)
   return unwrap(
-    v5Client.POST('/messages/recipient-groups', { body: params as any })
+    v5Client.POST('/messages/recipient-groups', { body })
   ) as unknown as Promise<Api.Message.MessageRecipientGroupItem>
 }
 
@@ -160,10 +169,11 @@ export function fetchUpdateMessageRecipientGroup(
   params: Api.Message.MessageRecipientGroupSaveParams,
   _options?: MessageRequestOptions
 ) {
+  const body: V5RequestBody<'/messages/recipient-groups/{groupId}', 'put'> = toV5Body(params)
   return unwrap(
     v5Client.PUT('/messages/recipient-groups/{groupId}', {
       params: { path: { groupId } },
-      body: params as any
+      body
     })
   ) as unknown as Promise<Api.Message.MessageRecipientGroupItem>
 }

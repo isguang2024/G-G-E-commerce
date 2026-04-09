@@ -286,7 +286,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/featurepackage/schemas.yaml#/components/schemas/FeaturePackageVersionList'
   /feature-packages/{id}/rollback:
     post:
       operationId: rollbackFeaturePackage
@@ -346,7 +346,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/featurepackage/schemas.yaml#/components/schemas/FeaturePackageRiskAuditList'
   /feature-packages/{id}/children:
     get:
       operationId: getFeaturePackageChildren
@@ -543,7 +543,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/featurepackage/schemas.yaml#/components/schemas/FeaturePackageCollaborationWorkspaceList'
     put:
       operationId: setFeaturePackageCollaborationWorkspaces
       summary: 配置功能包协作空间

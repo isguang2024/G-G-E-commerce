@@ -975,7 +975,8 @@ export interface paths {
         /** 更新功能权限分组 */
         put: operations["updatePermissionActionGroup"];
         post?: never;
-        delete?: never;
+        /** 删除功能权限分组 */
+        delete: operations["deletePermissionActionGroup"];
         options?: never;
         head?: never;
         patch?: never;
@@ -3127,6 +3128,395 @@ export interface components {
             /** @description 对应提供商的公开 site_key，前端渲染 captcha widget 使用 */
             captcha_site_key?: string;
         };
+        CollaborationWorkspaceItem: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            remark: string;
+            logo_url: string;
+            plan: string;
+            /** Format: uuid */
+            owner_id: string;
+            max_members: number;
+            status: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CollaborationWorkspaceList: {
+            records: components["schemas"]["CollaborationWorkspaceItem"][];
+            total: number;
+        };
+        CollaborationWorkspaceMemberItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            collaboration_workspace_id: string;
+            /** Format: uuid */
+            user_id: string;
+            role_code: string;
+            /** Format: uuid */
+            role_id?: string | null;
+            status: string;
+            /** Format: date-time */
+            joined_at: string;
+            /** Format: uuid */
+            invited_by?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CollaborationWorkspaceMemberList: {
+            records: components["schemas"]["CollaborationWorkspaceMemberItem"][];
+            total: number;
+        };
+        CollaborationWorkspaceMemberRolesResponse: {
+            role_ids: string[];
+            roles: components["schemas"]["UserRoleRef"][];
+        };
+        CollaborationWorkspaceRoleItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            collaboration_workspace_id: string | null;
+            code: string;
+            name: string;
+            description: string;
+            status: string;
+            is_system: boolean;
+            is_global: boolean;
+            /** Format: int64 */
+            priority?: number;
+            /** Format: int64 */
+            sort_order?: number;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at?: string;
+        };
+        CollaborationWorkspaceRoleList: {
+            records: components["schemas"]["CollaborationWorkspaceRoleItem"][];
+            /** Format: int64 */
+            total: number;
+        };
+        CollaborationWorkspaceBoundaryRolePackagesResponse: {
+            package_ids: string[];
+            packages: components["schemas"]["FeaturePackageRef"][];
+            inherited: boolean;
+        };
+        CollaborationWorkspaceMenusResponse: {
+            menu_ids: string[];
+        };
+        CollaborationWorkspaceMenuOriginsResponse: {
+            derived_menu_ids: string[];
+            derived_sources: components["schemas"]["MenuSourceEntry"][];
+            blocked_menu_ids: string[];
+        };
+        CollaborationWorkspaceActionsResponse: {
+            action_ids: string[];
+            actions: components["schemas"]["PermissionActionRef"][];
+        };
+        CollaborationWorkspaceActionOriginsResponse: {
+            derived_action_ids: string[];
+            derived_sources: components["schemas"]["ActionSourceEntry"][];
+            blocked_action_ids: string[];
+        };
+        PermissionActionItem: {
+            /** Format: uuid */
+            id: string;
+            resource_code: string;
+            action_code: string;
+            module_code: string;
+            /** Format: uuid */
+            module_group_id?: string | null;
+            /** Format: uuid */
+            feature_group_id?: string | null;
+            permission_key: string;
+            feature_kind: string;
+            data_policy: string;
+            name: string;
+            description?: string;
+            data_permission_code: string;
+            data_permission_name: string;
+            /** Format: int64 */
+            api_count: number;
+            /** Format: int64 */
+            page_count: number;
+            /** Format: int64 */
+            package_count: number;
+            consumer_types: string[];
+            usage_pattern: string;
+            usage_note: string;
+            duplicate_pattern: string;
+            duplicate_group: string;
+            duplicate_keys: string[];
+            duplicate_note: string;
+            status: string;
+            /** Format: int64 */
+            sort_order: number;
+            is_builtin: boolean;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        PermissionActionAuditSummary: {
+            /** Format: int64 */
+            total_count: number;
+            /** Format: int64 */
+            unused_count: number;
+            /** Format: int64 */
+            api_only_count: number;
+            /** Format: int64 */
+            page_only_count: number;
+            /** Format: int64 */
+            package_only_count: number;
+            /** Format: int64 */
+            multi_consumer_count: number;
+            /** Format: int64 */
+            cross_context_mirror_count: number;
+            /** Format: int64 */
+            suspected_duplicate_count: number;
+        };
+        "schemas-PermissionActionList": {
+            records: components["schemas"]["PermissionActionItem"][];
+            /** Format: int64 */
+            total: number;
+            current: number;
+            size: number;
+            audit_summary: components["schemas"]["PermissionActionAuditSummary"];
+        };
+        PermissionActionOptions: {
+            records: components["schemas"]["PermissionActionItem"][];
+            /** Format: int64 */
+            total: number;
+        };
+        PermissionGroupItem: {
+            /** Format: uuid */
+            id: string;
+            group_type: string;
+            code: string;
+            name: string;
+            name_en?: string;
+            description?: string;
+            status: string;
+            /** Format: int64 */
+            sort_order: number;
+            is_builtin: boolean;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        PermissionActionGroupList: {
+            records: components["schemas"]["PermissionGroupItem"][];
+            /** Format: int64 */
+            total: number;
+        };
+        RiskAuditItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            operator_id?: string | null;
+            object_type: string;
+            object_id: string;
+            operation_type: string;
+            before_summary: components["schemas"]["AnyObject"];
+            after_summary: components["schemas"]["AnyObject"];
+            impact_summary: components["schemas"]["AnyObject"];
+            request_id: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        PermissionActionRiskAuditList: {
+            records: components["schemas"]["RiskAuditItem"][];
+            /** Format: int64 */
+            total: number;
+        };
+        PermissionActionBatchTemplateItem: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            description: string;
+            payload: components["schemas"]["AnyObject"];
+            /** Format: uuid */
+            created_by?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        PermissionActionBatchTemplateList: {
+            records: components["schemas"]["PermissionActionBatchTemplateItem"][];
+            /** Format: int64 */
+            total: number;
+        };
+        PermissionActionConsumerAPIItem: {
+            code: string;
+            method: string;
+            path: string;
+            summary: string;
+        };
+        PermissionActionConsumerPageItem: {
+            page_key: string;
+            name: string;
+            route_path: string;
+            access_mode: string;
+        };
+        PermissionActionConsumerPackageItem: {
+            /** Format: uuid */
+            id: string;
+            package_key: string;
+            name: string;
+            package_type: string;
+            context_type: string;
+        };
+        PermissionActionConsumerRoleItem: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            context_type: string;
+        };
+        PermissionActionConsumersResponse: {
+            permission_key: string;
+            apis: components["schemas"]["PermissionActionConsumerAPIItem"][];
+            pages: components["schemas"]["PermissionActionConsumerPageItem"][];
+            feature_packages: components["schemas"]["PermissionActionConsumerPackageItem"][];
+            roles: components["schemas"]["PermissionActionConsumerRoleItem"][];
+        };
+        PermissionActionImpactPreview: {
+            permission_key: string;
+            /** Format: int64 */
+            api_count: number;
+            /** Format: int64 */
+            page_count: number;
+            /** Format: int64 */
+            package_count: number;
+            /** Format: int64 */
+            role_count: number;
+            /** Format: int64 */
+            collaboration_workspace_count: number;
+            /** Format: int64 */
+            user_count: number;
+        };
+        PageListResponse: {
+            records: components["schemas"]["AnyObject"][];
+            total: number;
+        };
+        FeaturePackageVersionItem: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            package_id: string;
+            version_no: number;
+            change_type: string;
+            snapshot: components["schemas"]["AnyObject"];
+            /** Format: uuid */
+            operator_id?: string | null;
+            request_id: string;
+            /** Format: date-time */
+            created_at: string;
+        };
+        FeaturePackageVersionList: {
+            records: components["schemas"]["FeaturePackageVersionItem"][];
+            /** Format: int64 */
+            total: number;
+        };
+        FeaturePackageRiskAuditList: {
+            records: components["schemas"]["RiskAuditItem"][];
+            /** Format: int64 */
+            total: number;
+        };
+        FeaturePackageCollaborationWorkspaceItem: {
+            /** Format: uuid */
+            id: string;
+        };
+        FeaturePackageCollaborationWorkspaceList: {
+            records: components["schemas"]["FeaturePackageCollaborationWorkspaceItem"][];
+            /** Format: int64 */
+            total: number;
+        };
+        SystemListResponse: {
+            records: components["schemas"]["AnyObject"][];
+            total: number;
+        };
+        MessageListResponse: {
+            records: components["schemas"]["AnyObject"][];
+            total: number;
+        };
+        ApiEndpointCategoryItem: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            name_en: string;
+            sort_order: number;
+            status: string;
+        };
+        ApiEndpointItem: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            method: string;
+            path: string;
+            spec: string;
+            handler: string;
+            summary: string;
+            permission_keys: string[];
+            auth_mode: string;
+            category_id: string;
+            category?: components["schemas"]["ApiEndpointCategoryItem"] | null;
+            status: string;
+            runtime_exists: boolean;
+            stale: boolean;
+            stale_reason: string;
+            created_at: string;
+            updated_at: string;
+        };
+        ApiEndpointList: {
+            records: components["schemas"]["ApiEndpointItem"][];
+            /** Format: int64 */
+            total: number;
+            current: number;
+            size: number;
+        };
+        StaleApiEndpointList: {
+            records: components["schemas"]["ApiEndpointItem"][];
+            /** Format: int64 */
+            total: number;
+            current: number;
+            size: number;
+        };
+        UnregisteredApiEndpointMeta: {
+            summary?: string;
+            category_code?: string;
+            permission_keys?: string[];
+        } & {
+            [key: string]: unknown;
+        };
+        UnregisteredApiEndpointItem: {
+            method: string;
+            path: string;
+            spec: string;
+            handler: string;
+            has_meta: boolean;
+            meta: components["schemas"]["UnregisteredApiEndpointMeta"];
+        };
+        UnregisteredApiEndpointList: {
+            records: components["schemas"]["UnregisteredApiEndpointItem"][];
+            /** Format: int64 */
+            total: number;
+            current: number;
+            size: number;
+        };
+        ApiEndpointCategoryList: {
+            records: components["schemas"]["ApiEndpointCategoryItem"][];
+            /** Format: int64 */
+            total: number;
+        };
         "schemas-Error": {
             /**
              * @description 业务码（与 HTTP 状态码分离）。
@@ -3819,7 +4209,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceList"];
                 };
             };
         };
@@ -3839,7 +4229,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyObject"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceItem"];
                 };
             };
         };
@@ -3859,7 +4249,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceList"];
                 };
             };
         };
@@ -3879,7 +4269,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceMemberList"];
                 };
             };
         };
@@ -3973,7 +4363,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyObject"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceMemberRolesResponse"];
                 };
             };
         };
@@ -4019,7 +4409,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceRoleList"];
                 };
             };
         };
@@ -4063,7 +4453,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceRoleList"];
                 };
             };
         };
@@ -4157,7 +4547,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyObject"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceBoundaryRolePackagesResponse"];
                 };
             };
         };
@@ -4205,7 +4595,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyObject"];
+                    "application/json": components["schemas"]["RoleMenusResponse"];
                 };
             };
         };
@@ -4253,7 +4643,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyObject"];
+                    "application/json": components["schemas"]["RoleActionsResponse"];
                 };
             };
         };
@@ -4299,7 +4689,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["FeaturePackageAssignmentResponse"];
                 };
             };
         };
@@ -4319,7 +4709,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyObject"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceMenusResponse"];
                 };
             };
         };
@@ -4339,7 +4729,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceMenuOriginsResponse"];
                 };
             };
         };
@@ -4359,7 +4749,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyObject"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceActionsResponse"];
                 };
             };
         };
@@ -4379,7 +4769,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceActionOriginsResponse"];
                 };
             };
         };
@@ -4403,7 +4793,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceList"];
                 };
             };
         };
@@ -4449,7 +4839,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyObject"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceItem"];
                 };
             };
         };
@@ -4519,7 +4909,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceRoleList"];
                 };
             };
         };
@@ -4541,7 +4931,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyObject"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceMenusResponse"];
                 };
             };
         };
@@ -4589,7 +4979,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceMenuOriginsResponse"];
                 };
             };
         };
@@ -4611,7 +5001,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyObject"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceActionsResponse"];
                 };
             };
         };
@@ -4659,7 +5049,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceActionOriginsResponse"];
                 };
             };
         };
@@ -4681,7 +5071,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["CollaborationWorkspaceMemberList"];
                 };
             };
         };
@@ -5330,7 +5720,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PermissionActionList"];
+                    "application/json": components["schemas"]["schemas-PermissionActionList"];
                 };
             };
         };
@@ -5377,7 +5767,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["PermissionActionOptions"];
                 };
             };
         };
@@ -5397,7 +5787,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["PermissionActionGroupList"];
                 };
             };
         };
@@ -5452,6 +5842,28 @@ export interface operations {
             };
         };
     };
+    deletePermissionActionGroup: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MutationResult"];
+                };
+            };
+        };
+    };
     listPermissionActionRiskAudits: {
         parameters: {
             query?: {
@@ -5470,7 +5882,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["PermissionActionRiskAuditList"];
                 };
             };
         };
@@ -5534,7 +5946,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["PermissionActionBatchTemplateList"];
                 };
             };
         };
@@ -5721,7 +6133,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyObject"];
+                    "application/json": components["schemas"]["PermissionActionConsumersResponse"];
                 };
             };
         };
@@ -5743,7 +6155,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyObject"];
+                    "application/json": components["schemas"]["PermissionActionImpactPreview"];
                 };
             };
         };
@@ -6262,7 +6674,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["PageListResponse"];
                 };
             };
         };
@@ -6285,7 +6697,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["PageListResponse"];
                 };
             };
         };
@@ -6308,7 +6720,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["PageListResponse"];
                 };
             };
         };
@@ -6331,7 +6743,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["PageListResponse"];
                 };
             };
         };
@@ -6387,7 +6799,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["PageListResponse"];
                 };
             };
         };
@@ -6436,7 +6848,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["PageListResponse"];
                 };
             };
         };
@@ -6562,7 +6974,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["PageListResponse"];
                 };
             };
         };
@@ -6827,7 +7239,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["FeaturePackageVersionList"];
                 };
             };
         };
@@ -6878,7 +7290,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["FeaturePackageRiskAuditList"];
                 };
             };
         };
@@ -7058,7 +7470,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["FeaturePackageCollaborationWorkspaceList"];
                 };
             };
         };
@@ -7172,7 +7584,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["SystemListResponse"];
                 };
             };
         };
@@ -7240,7 +7652,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["SystemListResponse"];
                 };
             };
         };
@@ -7310,7 +7722,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["SystemListResponse"];
                 };
             };
         };
@@ -7449,7 +7861,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["SystemListResponse"];
                 };
             };
         };
@@ -7515,7 +7927,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["SystemListResponse"];
                 };
             };
         };
@@ -7582,7 +7994,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["MessageListResponse"];
                 };
             };
         };
@@ -7736,7 +8148,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["MessageListResponse"];
                 };
             };
         };
@@ -7806,7 +8218,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["MessageListResponse"];
                 };
             };
         };
@@ -7876,7 +8288,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["MessageListResponse"];
                 };
             };
         };
@@ -7949,7 +8361,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyListResponse"];
+                    "application/json": components["schemas"]["MessageListResponse"];
                 };
             };
         };
@@ -8003,7 +8415,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyObject"];
+                    "application/json": components["schemas"]["ApiEndpointList"];
                 };
             };
             /** @description Unauthorized */
@@ -8084,7 +8496,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyObject"];
+                    "application/json": components["schemas"]["StaleApiEndpointList"];
                 };
             };
             /** @description Unauthorized */
@@ -8129,7 +8541,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyObject"];
+                    "application/json": components["schemas"]["UnregisteredApiEndpointList"];
                 };
             };
             /** @description Unauthorized */
@@ -8167,7 +8579,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnyObject"];
+                    "application/json": components["schemas"]["ApiEndpointCategoryList"];
                 };
             };
             /** @description Unauthorized */

@@ -200,6 +200,12 @@ type Handler interface {
 	//
 	// DELETE /permission-actions/{id}
 	DeletePermissionAction(ctx context.Context, params DeletePermissionActionParams) (*MutationResult, error)
+	// DeletePermissionActionGroup implements deletePermissionActionGroup operation.
+	//
+	// 删除功能权限分组.
+	//
+	// DELETE /permission-actions/groups/{id}
+	DeletePermissionActionGroup(ctx context.Context, params DeletePermissionActionGroupParams) (*MutationResult, error)
 	// DeleteRegisterEntry implements deleteRegisterEntry operation.
 	//
 	// 删除注册入口.
@@ -253,31 +259,31 @@ type Handler interface {
 	// 获取协作空间详情.
 	//
 	// GET /collaboration-workspaces/{id}
-	GetCollaborationWorkspace(ctx context.Context, params GetCollaborationWorkspaceParams) (AnyObject, error)
+	GetCollaborationWorkspace(ctx context.Context, params GetCollaborationWorkspaceParams) (*CollaborationWorkspaceItem, error)
 	// GetCollaborationWorkspaceActionOrigins implements getCollaborationWorkspaceActionOrigins operation.
 	//
 	// 获取协作空间功能权限来源.
 	//
 	// GET /collaboration-workspaces/{id}/action-origins
-	GetCollaborationWorkspaceActionOrigins(ctx context.Context, params GetCollaborationWorkspaceActionOriginsParams) (*AnyListResponse, error)
+	GetCollaborationWorkspaceActionOrigins(ctx context.Context, params GetCollaborationWorkspaceActionOriginsParams) (*CollaborationWorkspaceActionOriginsResponse, error)
 	// GetCollaborationWorkspaceActions implements getCollaborationWorkspaceActions operation.
 	//
 	// 获取协作空间功能权限边界.
 	//
 	// GET /collaboration-workspaces/{id}/actions
-	GetCollaborationWorkspaceActions(ctx context.Context, params GetCollaborationWorkspaceActionsParams) (AnyObject, error)
+	GetCollaborationWorkspaceActions(ctx context.Context, params GetCollaborationWorkspaceActionsParams) (*CollaborationWorkspaceActionsResponse, error)
 	// GetCollaborationWorkspaceMenuOrigins implements getCollaborationWorkspaceMenuOrigins operation.
 	//
 	// 获取协作空间菜单来源.
 	//
 	// GET /collaboration-workspaces/{id}/menu-origins
-	GetCollaborationWorkspaceMenuOrigins(ctx context.Context, params GetCollaborationWorkspaceMenuOriginsParams) (*AnyListResponse, error)
+	GetCollaborationWorkspaceMenuOrigins(ctx context.Context, params GetCollaborationWorkspaceMenuOriginsParams) (*CollaborationWorkspaceMenuOriginsResponse, error)
 	// GetCollaborationWorkspaceMenus implements getCollaborationWorkspaceMenus operation.
 	//
 	// 获取协作空间菜单边界.
 	//
 	// GET /collaboration-workspaces/{id}/menus
-	GetCollaborationWorkspaceMenus(ctx context.Context, params GetCollaborationWorkspaceMenusParams) (AnyObject, error)
+	GetCollaborationWorkspaceMenus(ctx context.Context, params GetCollaborationWorkspaceMenusParams) (*CollaborationWorkspaceMenusResponse, error)
 	// GetCollaborationWorkspacePackages implements getCollaborationWorkspacePackages operation.
 	//
 	// 获取协作空间功能包.
@@ -295,61 +301,61 @@ type Handler interface {
 	// 获取当前协作空间详情.
 	//
 	// GET /collaboration-workspaces/current
-	GetCurrentCollaborationWorkspace(ctx context.Context) (AnyObject, error)
+	GetCurrentCollaborationWorkspace(ctx context.Context) (*CollaborationWorkspaceItem, error)
 	// GetCurrentCollaborationWorkspaceActionOrigins implements getCurrentCollaborationWorkspaceActionOrigins operation.
 	//
 	// 获取当前协作空间功能权限来源.
 	//
 	// GET /collaboration-workspaces/current/action-origins
-	GetCurrentCollaborationWorkspaceActionOrigins(ctx context.Context) (*AnyListResponse, error)
+	GetCurrentCollaborationWorkspaceActionOrigins(ctx context.Context) (*CollaborationWorkspaceActionOriginsResponse, error)
 	// GetCurrentCollaborationWorkspaceActions implements getCurrentCollaborationWorkspaceActions operation.
 	//
 	// 获取当前协作空间功能权限边界.
 	//
 	// GET /collaboration-workspaces/current/actions
-	GetCurrentCollaborationWorkspaceActions(ctx context.Context) (AnyObject, error)
+	GetCurrentCollaborationWorkspaceActions(ctx context.Context) (*CollaborationWorkspaceActionsResponse, error)
 	// GetCurrentCollaborationWorkspaceBoundaryPackages implements getCurrentCollaborationWorkspaceBoundaryPackages operation.
 	//
 	// 获取当前协作空间已开通功能包(边界管理).
 	//
 	// GET /collaboration-workspaces/current/boundary/packages
-	GetCurrentCollaborationWorkspaceBoundaryPackages(ctx context.Context) (*AnyListResponse, error)
+	GetCurrentCollaborationWorkspaceBoundaryPackages(ctx context.Context) (*FeaturePackageAssignmentResponse, error)
 	// GetCurrentCollaborationWorkspaceBoundaryRoleActions implements getCurrentCollaborationWorkspaceBoundaryRoleActions operation.
 	//
 	// 获取当前协作空间角色功能权限(边界管理).
 	//
 	// GET /collaboration-workspaces/current/boundary/roles/{roleId}/actions
-	GetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (AnyObject, error)
+	GetCurrentCollaborationWorkspaceBoundaryRoleActions(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleActionsParams) (*RoleActionsResponse, error)
 	// GetCurrentCollaborationWorkspaceBoundaryRoleMenus implements getCurrentCollaborationWorkspaceBoundaryRoleMenus operation.
 	//
 	// 获取当前协作空间角色菜单权限(边界管理).
 	//
 	// GET /collaboration-workspaces/current/boundary/roles/{roleId}/menus
-	GetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (AnyObject, error)
+	GetCurrentCollaborationWorkspaceBoundaryRoleMenus(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRoleMenusParams) (*RoleMenusResponse, error)
 	// GetCurrentCollaborationWorkspaceBoundaryRolePackages implements getCurrentCollaborationWorkspaceBoundaryRolePackages operation.
 	//
 	// 获取当前协作空间角色功能包(边界管理).
 	//
 	// GET /collaboration-workspaces/current/boundary/roles/{roleId}/packages
-	GetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (AnyObject, error)
+	GetCurrentCollaborationWorkspaceBoundaryRolePackages(ctx context.Context, params GetCurrentCollaborationWorkspaceBoundaryRolePackagesParams) (*CollaborationWorkspaceBoundaryRolePackagesResponse, error)
 	// GetCurrentCollaborationWorkspaceMemberRoles implements getCurrentCollaborationWorkspaceMemberRoles operation.
 	//
 	// 获取当前协作空间成员角色.
 	//
 	// GET /collaboration-workspaces/current/members/{userId}/roles
-	GetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, params GetCurrentCollaborationWorkspaceMemberRolesParams) (AnyObject, error)
+	GetCurrentCollaborationWorkspaceMemberRoles(ctx context.Context, params GetCurrentCollaborationWorkspaceMemberRolesParams) (*CollaborationWorkspaceMemberRolesResponse, error)
 	// GetCurrentCollaborationWorkspaceMenuOrigins implements getCurrentCollaborationWorkspaceMenuOrigins operation.
 	//
 	// 获取当前协作空间菜单来源.
 	//
 	// GET /collaboration-workspaces/current/menu-origins
-	GetCurrentCollaborationWorkspaceMenuOrigins(ctx context.Context) (*AnyListResponse, error)
+	GetCurrentCollaborationWorkspaceMenuOrigins(ctx context.Context) (*CollaborationWorkspaceMenuOriginsResponse, error)
 	// GetCurrentCollaborationWorkspaceMenus implements getCurrentCollaborationWorkspaceMenus operation.
 	//
 	// 获取当前协作空间菜单边界.
 	//
 	// GET /collaboration-workspaces/current/menus
-	GetCurrentCollaborationWorkspaceMenus(ctx context.Context) (AnyObject, error)
+	GetCurrentCollaborationWorkspaceMenus(ctx context.Context) (*CollaborationWorkspaceMenusResponse, error)
 	// GetCurrentMenuSpace implements getCurrentMenuSpace operation.
 	//
 	// 获取当前菜单空间.
@@ -391,7 +397,7 @@ type Handler interface {
 	// 获取功能包协作空间.
 	//
 	// GET /feature-packages/{id}/collaboration-workspaces
-	GetFeaturePackageCollaborationWorkspaces(ctx context.Context, params GetFeaturePackageCollaborationWorkspacesParams) (*AnyListResponse, error)
+	GetFeaturePackageCollaborationWorkspaces(ctx context.Context, params GetFeaturePackageCollaborationWorkspacesParams) (*FeaturePackageCollaborationWorkspaceList, error)
 	// GetFeaturePackageImpactPreview implements getFeaturePackageImpactPreview operation.
 	//
 	// 获取功能包影响预览.
@@ -481,13 +487,13 @@ type Handler interface {
 	// 获取功能权限消费明细.
 	//
 	// GET /permission-actions/{id}/consumers
-	GetPermissionActionConsumers(ctx context.Context, params GetPermissionActionConsumersParams) (AnyObject, error)
+	GetPermissionActionConsumers(ctx context.Context, params GetPermissionActionConsumersParams) (*PermissionActionConsumersResponse, error)
 	// GetPermissionActionImpactPreview implements getPermissionActionImpactPreview operation.
 	//
 	// 获取功能权限影响预览.
 	//
 	// GET /permission-actions/{id}/impact-preview
-	GetPermissionActionImpactPreview(ctx context.Context, params GetPermissionActionImpactPreviewParams) (AnyObject, error)
+	GetPermissionActionImpactPreview(ctx context.Context, params GetPermissionActionImpactPreviewParams) (*PermissionActionImpactPreview, error)
 	// GetRegisterContext implements getRegisterContext operation.
 	//
 	// 获取注册上下文（命中入口 + 有效策略合并结果）.
@@ -601,55 +607,55 @@ type Handler interface {
 	// 获取应用入口解析绑定.
 	//
 	// GET /system/app-host-bindings
-	ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (*AnyListResponse, error)
+	ListAppHostBindings(ctx context.Context, params ListAppHostBindingsParams) (*SystemListResponse, error)
 	// ListApps implements listApps operation.
 	//
 	// 获取应用列表.
 	//
 	// GET /system/apps
-	ListApps(ctx context.Context) (*AnyListResponse, error)
+	ListApps(ctx context.Context) (*SystemListResponse, error)
 	// ListCollaborationWorkspaceMembers implements listCollaborationWorkspaceMembers operation.
 	//
 	// 获取协作空间成员列表.
 	//
 	// GET /collaboration-workspaces/{id}/members
-	ListCollaborationWorkspaceMembers(ctx context.Context, params ListCollaborationWorkspaceMembersParams) (*AnyListResponse, error)
+	ListCollaborationWorkspaceMembers(ctx context.Context, params ListCollaborationWorkspaceMembersParams) (*CollaborationWorkspaceMemberList, error)
 	// ListCollaborationWorkspaceOptions implements listCollaborationWorkspaceOptions operation.
 	//
 	// 获取协作空间候选.
 	//
 	// GET /collaboration-workspaces/options
-	ListCollaborationWorkspaceOptions(ctx context.Context) (*AnyListResponse, error)
+	ListCollaborationWorkspaceOptions(ctx context.Context) (*CollaborationWorkspaceList, error)
 	// ListCollaborationWorkspaceRoles implements listCollaborationWorkspaceRoles operation.
 	//
 	// 获取协作空间可分配角色.
 	//
 	// GET /collaboration-workspaces/{id}/roles
-	ListCollaborationWorkspaceRoles(ctx context.Context, params ListCollaborationWorkspaceRolesParams) (*AnyListResponse, error)
+	ListCollaborationWorkspaceRoles(ctx context.Context, params ListCollaborationWorkspaceRolesParams) (*CollaborationWorkspaceRoleList, error)
 	// ListCollaborationWorkspaces implements listCollaborationWorkspaces operation.
 	//
 	// 获取协作空间列表.
 	//
 	// GET /collaboration-workspaces
-	ListCollaborationWorkspaces(ctx context.Context, params ListCollaborationWorkspacesParams) (*AnyListResponse, error)
+	ListCollaborationWorkspaces(ctx context.Context, params ListCollaborationWorkspacesParams) (*CollaborationWorkspaceList, error)
 	// ListCurrentCollaborationWorkspaceBoundaryRoles implements listCurrentCollaborationWorkspaceBoundaryRoles operation.
 	//
 	// 获取当前协作空间边界可见角色.
 	//
 	// GET /collaboration-workspaces/current/boundary/roles
-	ListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.Context) (*AnyListResponse, error)
+	ListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.Context) (*CollaborationWorkspaceRoleList, error)
 	// ListCurrentCollaborationWorkspaceMembers implements listCurrentCollaborationWorkspaceMembers operation.
 	//
 	// 获取当前协作空间成员列表.
 	//
 	// GET /collaboration-workspaces/current/members
-	ListCurrentCollaborationWorkspaceMembers(ctx context.Context) (*AnyListResponse, error)
+	ListCurrentCollaborationWorkspaceMembers(ctx context.Context) (*CollaborationWorkspaceMemberList, error)
 	// ListCurrentCollaborationWorkspaceRoles implements listCurrentCollaborationWorkspaceRoles operation.
 	//
 	// 获取当前协作空间可分配角色.
 	//
 	// GET /collaboration-workspaces/current/roles
-	ListCurrentCollaborationWorkspaceRoles(ctx context.Context) (*AnyListResponse, error)
+	ListCurrentCollaborationWorkspaceRoles(ctx context.Context) (*CollaborationWorkspaceRoleList, error)
 	// ListFeaturePackageOptions implements listFeaturePackageOptions operation.
 	//
 	// 获取功能包候选.
@@ -661,13 +667,13 @@ type Handler interface {
 	// 获取功能包最近变更.
 	//
 	// GET /feature-packages/{id}/risk-audits
-	ListFeaturePackageRiskAudits(ctx context.Context, params ListFeaturePackageRiskAuditsParams) (*AnyListResponse, error)
+	ListFeaturePackageRiskAudits(ctx context.Context, params ListFeaturePackageRiskAuditsParams) (*FeaturePackageRiskAuditList, error)
 	// ListFeaturePackageVersions implements listFeaturePackageVersions operation.
 	//
 	// 获取功能包版本历史.
 	//
 	// GET /feature-packages/{id}/versions
-	ListFeaturePackageVersions(ctx context.Context, params ListFeaturePackageVersionsParams) (*AnyListResponse, error)
+	ListFeaturePackageVersions(ctx context.Context, params ListFeaturePackageVersionsParams) (*FeaturePackageVersionList, error)
 	// ListFeaturePackages implements listFeaturePackages operation.
 	//
 	// 获取功能包列表.
@@ -679,7 +685,7 @@ type Handler interface {
 	// 获取消息列表.
 	//
 	// GET /messages/inbox
-	ListInbox(ctx context.Context, params ListInboxParams) (*AnyListResponse, error)
+	ListInbox(ctx context.Context, params ListInboxParams) (*MessageListResponse, error)
 	// ListMedia implements listMedia operation.
 	//
 	// 获取媒体资源列表.
@@ -691,49 +697,49 @@ type Handler interface {
 	// 获取菜单空间入口解析绑定.
 	//
 	// GET /system/menu-space-entry-bindings
-	ListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (*AnyListResponse, error)
+	ListMenuSpaceEntryBindings(ctx context.Context, params ListMenuSpaceEntryBindingsParams) (*SystemListResponse, error)
 	// ListMenuSpaceHostBindings implements listMenuSpaceHostBindings operation.
 	//
 	// 获取菜单空间 Host 绑定.
 	//
 	// GET /system/menu-space-host-bindings
-	ListMenuSpaceHostBindings(ctx context.Context) (*AnyListResponse, error)
+	ListMenuSpaceHostBindings(ctx context.Context) (*SystemListResponse, error)
 	// ListMenuSpaces implements listMenuSpaces operation.
 	//
 	// 获取菜单空间列表.
 	//
 	// GET /system/menu-spaces
-	ListMenuSpaces(ctx context.Context, params ListMenuSpacesParams) (*AnyListResponse, error)
+	ListMenuSpaces(ctx context.Context, params ListMenuSpacesParams) (*SystemListResponse, error)
 	// ListMessageDispatchRecords implements listMessageDispatchRecords operation.
 	//
 	// 获取消息发送记录.
 	//
 	// GET /messages/records
-	ListMessageDispatchRecords(ctx context.Context, params ListMessageDispatchRecordsParams) (*AnyListResponse, error)
+	ListMessageDispatchRecords(ctx context.Context, params ListMessageDispatchRecordsParams) (*MessageListResponse, error)
 	// ListMessageRecipientGroups implements listMessageRecipientGroups operation.
 	//
 	// 获取消息接收组.
 	//
 	// GET /messages/recipient-groups
-	ListMessageRecipientGroups(ctx context.Context) (*AnyListResponse, error)
+	ListMessageRecipientGroups(ctx context.Context) (*MessageListResponse, error)
 	// ListMessageSenders implements listMessageSenders operation.
 	//
 	// 获取消息发送人.
 	//
 	// GET /messages/senders
-	ListMessageSenders(ctx context.Context) (*AnyListResponse, error)
+	ListMessageSenders(ctx context.Context) (*MessageListResponse, error)
 	// ListMessageTemplates implements listMessageTemplates operation.
 	//
 	// 获取消息模板.
 	//
 	// GET /messages/templates
-	ListMessageTemplates(ctx context.Context) (*AnyListResponse, error)
+	ListMessageTemplates(ctx context.Context) (*MessageListResponse, error)
 	// ListMyCollaborationWorkspaces implements listMyCollaborationWorkspaces operation.
 	//
 	// 获取我的协作空间列表.
 	//
 	// GET /collaboration-workspaces/mine
-	ListMyCollaborationWorkspaces(ctx context.Context) (*AnyListResponse, error)
+	ListMyCollaborationWorkspaces(ctx context.Context) (*CollaborationWorkspaceList, error)
 	// ListMyWorkspaces implements listMyWorkspaces operation.
 	//
 	// 获取我的工作空间列表.
@@ -745,25 +751,25 @@ type Handler interface {
 	// 获取上级菜单候选.
 	//
 	// GET /pages/menu-options
-	ListPageMenuOptions(ctx context.Context, params ListPageMenuOptionsParams) (*AnyListResponse, error)
+	ListPageMenuOptions(ctx context.Context, params ListPageMenuOptionsParams) (*PageListResponse, error)
 	// ListPageOptions implements listPageOptions operation.
 	//
 	// 获取页面候选列表.
 	//
 	// GET /pages/options
-	ListPageOptions(ctx context.Context, params ListPageOptionsParams) (*AnyListResponse, error)
+	ListPageOptions(ctx context.Context, params ListPageOptionsParams) (*PageListResponse, error)
 	// ListPages implements listPages operation.
 	//
 	// 获取页面列表.
 	//
 	// GET /pages
-	ListPages(ctx context.Context, params ListPagesParams) (*AnyListResponse, error)
+	ListPages(ctx context.Context, params ListPagesParams) (*PageListResponse, error)
 	// ListPermissionActionBatchTemplates implements listPermissionActionBatchTemplates operation.
 	//
 	// 获取功能权限批量模板.
 	//
 	// GET /permission-actions/templates
-	ListPermissionActionBatchTemplates(ctx context.Context) (*AnyListResponse, error)
+	ListPermissionActionBatchTemplates(ctx context.Context) (*PermissionActionBatchTemplateList, error)
 	// ListPermissionActionEndpoints implements listPermissionActionEndpoints operation.
 	//
 	// 获取功能权限关联接口.
@@ -775,31 +781,31 @@ type Handler interface {
 	// 获取功能权限分组列表.
 	//
 	// GET /permission-actions/groups
-	ListPermissionActionGroups(ctx context.Context) (*AnyListResponse, error)
+	ListPermissionActionGroups(ctx context.Context) (*PermissionActionGroupList, error)
 	// ListPermissionActionOptions implements listPermissionActionOptions operation.
 	//
 	// 获取功能权限候选.
 	//
 	// GET /permission-actions/options
-	ListPermissionActionOptions(ctx context.Context, params ListPermissionActionOptionsParams) (*AnyListResponse, error)
+	ListPermissionActionOptions(ctx context.Context, params ListPermissionActionOptionsParams) (*PermissionActionOptions, error)
 	// ListPermissionActionRiskAudits implements listPermissionActionRiskAudits operation.
 	//
 	// 获取功能权限最近变更.
 	//
 	// GET /permission-actions/risk-audits
-	ListPermissionActionRiskAudits(ctx context.Context, params ListPermissionActionRiskAuditsParams) (*AnyListResponse, error)
+	ListPermissionActionRiskAudits(ctx context.Context, params ListPermissionActionRiskAuditsParams) (*PermissionActionRiskAuditList, error)
 	// ListPermissionActions implements listPermissionActions operation.
 	//
 	// 获取功能权限列表.
 	//
 	// GET /permission-actions
-	ListPermissionActions(ctx context.Context, params ListPermissionActionsParams) (*PermissionActionList, error)
+	ListPermissionActions(ctx context.Context, params ListPermissionActionsParams) (*SchemasPermissionActionList, error)
 	// ListPublicRuntimePages implements listPublicRuntimePages operation.
 	//
 	// 获取公开运行时页面注册表.
 	//
 	// GET /pages/runtime/public
-	ListPublicRuntimePages(ctx context.Context, params ListPublicRuntimePagesParams) (*AnyListResponse, error)
+	ListPublicRuntimePages(ctx context.Context, params ListPublicRuntimePagesParams) (*PageListResponse, error)
 	// ListRegisterEntries implements listRegisterEntries operation.
 	//
 	// 注册入口列表.
@@ -835,7 +841,7 @@ type Handler interface {
 	// 获取运行时页面注册表.
 	//
 	// GET /pages/runtime
-	ListRuntimePages(ctx context.Context, params ListRuntimePagesParams) (*AnyListResponse, error)
+	ListRuntimePages(ctx context.Context, params ListRuntimePagesParams) (*PageListResponse, error)
 	// ListStaleApiEndpoints implements listStaleApiEndpoints operation.
 	//
 	// 获取失效 API 列表.
@@ -853,7 +859,7 @@ type Handler interface {
 	// 获取未注册页面.
 	//
 	// GET /pages/unregistered
-	ListUnregisteredPages(ctx context.Context, params ListUnregisteredPagesParams) (*AnyListResponse, error)
+	ListUnregisteredPages(ctx context.Context, params ListUnregisteredPagesParams) (*PageListResponse, error)
 	// ListUsers implements listUsers operation.
 	//
 	// 获取用户列表（分页 + 多条件筛选）.
@@ -883,7 +889,7 @@ type Handler interface {
 	// 预览页面面包屑.
 	//
 	// GET /pages/{id}/breadcrumb-preview
-	PreviewPageBreadcrumb(ctx context.Context, params PreviewPageBreadcrumbParams) (*AnyListResponse, error)
+	PreviewPageBreadcrumb(ctx context.Context, params PreviewPageBreadcrumbParams) (*PageListResponse, error)
 	// RefreshToken implements refreshToken operation.
 	//
 	// 刷新访问令牌.

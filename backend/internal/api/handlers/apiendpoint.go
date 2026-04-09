@@ -100,6 +100,109 @@ func catToMap(item *user.APIEndpointCategory) map[string]interface{} {
 	}
 }
 
+func apiEndpointCategoryItemFromModel(item *user.APIEndpointCategory) gen.ApiEndpointCategoryItem {
+	if item == nil {
+		return gen.ApiEndpointCategoryItem{}
+	}
+	return gen.ApiEndpointCategoryItem{
+		ID:        item.ID,
+		Code:      item.Code,
+		Name:      item.Name,
+		NameEn:    item.NameEn,
+		SortOrder: item.SortOrder,
+		Status:    item.Status,
+	}
+}
+
+func apiEndpointItemFromModel(endpoint *user.APIEndpoint, bindings []user.APIEndpointPermissionBinding, categoryMap map[uuid.UUID]user.APIEndpointCategory, runtimeState apiendpoint.EndpointRuntimeState) gen.ApiEndpointItem {
+	permissionKeys := make([]string, 0, len(bindings))
+	for _, b := range bindings {
+		permissionKeys = append(permissionKeys, b.PermissionKey)
+	}
+
+	catID := ""
+	category := gen.OptNilApiEndpointCategoryItem{}
+	category.SetToNull()
+	if endpoint.CategoryID != nil {
+		catID = endpoint.CategoryID.String()
+		if item, ok := categoryMap[*endpoint.CategoryID]; ok {
+			category.SetTo(apiEndpointCategoryItemFromModel(&item))
+		}
+	}
+
+	seedKey := strings.ToUpper(strings.TrimSpace(endpoint.Method)) + " " + strings.TrimSpace(endpoint.Path)
+	authMode := getEpAccessModeMap()[seedKey]
+	if authMode == "authenticated" {
+		authMode = "jwt"
+	}
+	if authMode == "" {
+		if len(permissionKeys) > 0 {
+			authMode = "permission"
+		} else {
+			authMode = "jwt"
+		}
+	}
+
+	return gen.ApiEndpointItem{
+		ID:             endpoint.ID,
+		Code:           endpoint.Code,
+		Method:         endpoint.Method,
+		Path:           endpoint.Path,
+		Spec:           endpoint.Method + " " + endpoint.Path,
+		Handler:        endpoint.Handler,
+		Summary:        endpoint.Summary,
+		PermissionKeys: permissionKeys,
+		AuthMode:       authMode,
+		CategoryID:     catID,
+		Category:       category,
+		Status:         endpoint.Status,
+		RuntimeExists:  runtimeState.RuntimeExists,
+		Stale:          runtimeState.Stale,
+		StaleReason:    runtimeState.StaleReason,
+		CreatedAt:      endpoint.CreatedAt.Format("2006-01-02 15:04:05"),
+		UpdatedAt:      endpoint.UpdatedAt.Format("2006-01-02 15:04:05"),
+	}
+}
+
+func unregisteredMetaFromMap(meta map[string]interface{}) gen.UnregisteredApiEndpointMeta {
+	result := gen.UnregisteredApiEndpointMeta{
+		PermissionKeys: []string{},
+	}
+	if len(meta) == 0 {
+		return result
+	}
+
+	if v, ok := meta["summary"].(string); ok {
+		result.Summary = gen.NewOptString(v)
+	}
+	if v, ok := meta["category_code"].(string); ok {
+		result.CategoryCode = gen.NewOptString(v)
+	}
+	if v, ok := meta["permission_keys"].([]string); ok {
+		result.PermissionKeys = append(result.PermissionKeys, v...)
+		return result
+	}
+	if v, ok := meta["permission_keys"].([]interface{}); ok {
+		for _, item := range v {
+			if key, ok := item.(string); ok {
+				result.PermissionKeys = append(result.PermissionKeys, key)
+			}
+		}
+	}
+	return result
+}
+
+func unregisteredItemFromModel(item apiendpoint.UnregisteredRouteItem) gen.UnregisteredApiEndpointItem {
+	return gen.UnregisteredApiEndpointItem{
+		Method:  item.Method,
+		Path:    item.Path,
+		Spec:    item.Spec,
+		Handler: item.Handler,
+		HasMeta: item.HasMeta,
+		Meta:    unregisteredMetaFromMap(item.Meta),
+	}
+}
+
 func parseMaybeUUID(value string) (*uuid.UUID, error) {
 	target := strings.TrimSpace(value)
 	if target == "" {
@@ -159,17 +262,16 @@ func (h *APIHandler) ListApiEndpoints(ctx context.Context, params gen.ListApiEnd
 	for _, b := range bindings {
 		bindingsMap[b.EndpointCode] = append(bindingsMap[b.EndpointCode], b)
 	}
-	records := make([]interface{}, 0, len(list))
+	records := make([]gen.ApiEndpointItem, 0, len(list))
 	for _, ep := range list {
-		records = append(records, epToMap(&ep, bindingsMap[ep.Code], categoryMap, runtimeStateMap[ep.ID]))
+		records = append(records, apiEndpointItemFromModel(&ep, bindingsMap[ep.Code], categoryMap, runtimeStateMap[ep.ID]))
 	}
-	obj := marshalAnyObject(map[string]interface{}{
-		"records": records,
-		"total":   total,
-		"current": optInt(params.Current, 1),
-		"size":    optInt(params.Size, 20),
-	})
-	return &obj, nil
+	return &gen.ApiEndpointList{
+		Records: records,
+		Total:   total,
+		Current: optInt(params.Current, 1),
+		Size:    optInt(params.Size, 20),
+	}, nil
 }
 
 // ─── getApiEndpointOverview ───────────────────────────────────────────────────
@@ -201,17 +303,16 @@ func (h *APIHandler) ListStaleApiEndpoints(ctx context.Context, params gen.ListS
 		categoryMap[cat.ID] = cat
 	}
 	runtimeStateMap := h.apiEndpointSvc.ListRuntimeStates(list)
-	records := make([]interface{}, 0, len(list))
+	records := make([]gen.ApiEndpointItem, 0, len(list))
 	for _, ep := range list {
-		records = append(records, epToMap(&ep, nil, categoryMap, runtimeStateMap[ep.ID]))
+		records = append(records, apiEndpointItemFromModel(&ep, nil, categoryMap, runtimeStateMap[ep.ID]))
 	}
-	obj := marshalAnyObject(map[string]interface{}{
-		"records": records,
-		"total":   total,
-		"current": optInt(params.Current, 1),
-		"size":    optInt(params.Size, 20),
-	})
-	return &obj, nil
+	return &gen.StaleApiEndpointList{
+		Records: records,
+		Total:   total,
+		Current: optInt(params.Current, 1),
+		Size:    optInt(params.Size, 20),
+	}, nil
 }
 
 // ─── listUnregisteredApiEndpoints ────────────────────────────────────────────
@@ -229,13 +330,16 @@ func (h *APIHandler) ListUnregisteredApiEndpoints(ctx context.Context, params ge
 		h.logger.Error("list unregistered api routes failed", zap.Error(err))
 		return nil, err
 	}
-	obj := marshalAnyObject(map[string]interface{}{
-		"records": list,
-		"total":   total,
-		"current": optInt(params.Current, 1),
-		"size":    optInt(params.Size, 20),
-	})
-	return &obj, nil
+	records := make([]gen.UnregisteredApiEndpointItem, 0, len(list))
+	for _, item := range list {
+		records = append(records, unregisteredItemFromModel(item))
+	}
+	return &gen.UnregisteredApiEndpointList{
+		Records: records,
+		Total:   total,
+		Current: optInt(params.Current, 1),
+		Size:    optInt(params.Size, 20),
+	}, nil
 }
 
 // ─── listApiEndpointCategories ────────────────────────────────────────────────
@@ -246,15 +350,14 @@ func (h *APIHandler) ListApiEndpointCategories(ctx context.Context) (gen.ListApi
 		h.logger.Error("list api endpoint categories failed", zap.Error(err))
 		return nil, err
 	}
-	records := make([]interface{}, 0, len(items))
+	records := make([]gen.ApiEndpointCategoryItem, 0, len(items))
 	for _, item := range items {
-		records = append(records, catToMap(&item))
+		records = append(records, apiEndpointCategoryItemFromModel(&item))
 	}
-	obj := marshalAnyObject(map[string]interface{}{
-		"records": records,
-		"total":   len(records),
-	})
-	return &obj, nil
+	return &gen.ApiEndpointCategoryList{
+		Records: records,
+		Total:   int64(len(records)),
+	}, nil
 }
 
 // ─── syncApiEndpoints ─────────────────────────────────────────────────────────

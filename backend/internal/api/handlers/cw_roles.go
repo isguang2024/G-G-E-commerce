@@ -14,17 +14,17 @@ import (
 
 // ─── ListCurrentCollaborationWorkspaceRoles ───────────────────────────────────
 
-func (h *APIHandler) ListCurrentCollaborationWorkspaceRoles(ctx context.Context) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListCurrentCollaborationWorkspaceRoles(ctx context.Context) (*gen.CollaborationWorkspaceRoleList, error) {
 	member, err := h.resolveCWMember(ctx)
 	if err != nil {
-		return &gen.AnyListResponse{Records: []gen.AnyObject{}, Total: 0}, nil
+		return &gen.CollaborationWorkspaceRoleList{Records: []gen.CollaborationWorkspaceRoleItem{}, Total: 0}, nil
 	}
 	allRoles, err := h.roleRepo.ListCollaborationWorkspaceRoles(member.CollaborationWorkspaceID)
 	if err != nil {
 		h.logger.Error("list cw roles failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(allRoles), Total: len(allRoles)}, nil
+	return &gen.CollaborationWorkspaceRoleList{Records: collaborationWorkspaceRoleItemsFromModels(allRoles), Total: int64(len(allRoles))}, nil
 }
 
 // ─── CreateCurrentCollaborationWorkspaceRole ──────────────────────────────────
@@ -76,7 +76,7 @@ func (h *APIHandler) CreateCurrentCollaborationWorkspaceRole(ctx context.Context
 
 // ─── ListCurrentCollaborationWorkspaceBoundaryRoles ───────────────────────────
 
-func (h *APIHandler) ListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.Context) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListCurrentCollaborationWorkspaceBoundaryRoles(ctx context.Context) (*gen.CollaborationWorkspaceRoleList, error) {
 	return h.ListCurrentCollaborationWorkspaceRoles(ctx)
 }
 
@@ -167,11 +167,11 @@ func (h *APIHandler) DeleteCurrentCollaborationWorkspaceBoundaryRole(ctx context
 
 // ─── ListCollaborationWorkspaceRoles ──────────────────────────────────────────
 
-func (h *APIHandler) ListCollaborationWorkspaceRoles(ctx context.Context, params gen.ListCollaborationWorkspaceRolesParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListCollaborationWorkspaceRoles(ctx context.Context, params gen.ListCollaborationWorkspaceRolesParams) (*gen.CollaborationWorkspaceRoleList, error) {
 	allRoles, err := h.roleRepo.ListCollaborationWorkspaceRoles(params.ID)
 	if err != nil {
 		h.logger.Error("list cw roles failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(allRoles), Total: len(allRoles)}, nil
+	return &gen.CollaborationWorkspaceRoleList{Records: collaborationWorkspaceRoleItemsFromModels(allRoles), Total: int64(len(allRoles))}, nil
 }

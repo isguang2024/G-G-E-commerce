@@ -22,7 +22,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: './schemas.yaml#/components/schemas/PageListResponse'
   /pages/runtime/public:
     get:
       operationId: listPublicRuntimePages
@@ -46,7 +46,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: './schemas.yaml#/components/schemas/PageListResponse'
   /pages/menu-options:
     get:
       operationId: listPageMenuOptions
@@ -71,7 +71,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: './schemas.yaml#/components/schemas/PageListResponse'
   /pages/options:
     get:
       operationId: listPageOptions
@@ -96,7 +96,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: './schemas.yaml#/components/schemas/PageListResponse'
   /pages/access-trace:
     get:
       operationId: getPageAccessTrace
@@ -171,7 +171,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: './schemas.yaml#/components/schemas/PageListResponse'
   /pages/sync:
     post:
       operationId: syncPages
@@ -235,7 +235,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: './schemas.yaml#/components/schemas/PageListResponse'
     post:
       operationId: createPage
       summary: 创建页面
@@ -373,4 +373,4 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: './schemas.yaml#/components/schemas/PageListResponse'

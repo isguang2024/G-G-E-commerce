@@ -4,52 +4,64 @@ import {
   unwrap,
   AppRouteRecord,
   normalizeMenuSpaceKey,
-  normalizeRuntimeMenuTree
+  normalizeRuntimeMenuTree,
+  toV5ListResponse,
+  toV5Record,
+  type V5Query,
+  type V5RequestBody
 } from './_shared'
 
 /** 获取菜单树 */
 export async function fetchGetMenuList(spaceKey?: string, appKey?: string) {
-  const query: any = {}
+  const query: V5Query<'/menus/tree', 'get'> = {}
   if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
   if (appKey) query.app_key = appKey
-  const res: any = await unwrap(v5Client.GET('/menus/tree', { params: { query } }))
-  return (res?.records || []).map((item: any) => normalizeRuntimeMenuTree(item)) as AppRouteRecord[]
+  const res = toV5ListResponse(await unwrap(v5Client.GET('/menus/tree', { params: { query } })))
+  return (res.records || []).map((item) => normalizeRuntimeMenuTree(item)) as AppRouteRecord[]
 }
 
 /** 获取完整菜单树 */
 export async function fetchGetMenuTreeAll(spaceKey?: string, appKey?: string) {
-  const query: any = { all: 1 }
+  const query: V5Query<'/menus/tree', 'get'> = { all: '1' }
   if (spaceKey) query.space_key = normalizeMenuSpaceKey(spaceKey)
   if (appKey) query.app_key = appKey
-  const res: any = await unwrap(v5Client.GET('/menus/tree', { params: { query } }))
-  return (res?.records || []).map((item: any) => normalizeRuntimeMenuTree(item)) as AppRouteRecord[]
+  const res = toV5ListResponse(await unwrap(v5Client.GET('/menus/tree', { params: { query } })))
+  return (res.records || []).map((item) => normalizeRuntimeMenuTree(item)) as AppRouteRecord[]
 }
 
 /** 创建菜单 */
-export async function fetchCreateMenu(data: Api.SystemManage.MenuCreateParams, _config?: any) {
-  const res: any = await unwrap(v5Client.POST('/menus', { body: data as any }))
-  return { id: res?.id || '' }
+export async function fetchCreateMenu(data: Api.SystemManage.MenuCreateParams, _config?: unknown) {
+  const body: V5RequestBody<'/menus', 'post'> = {
+    ...data,
+    name: data.name || '',
+    kind: data.kind || 'menu'
+  }
+  const res = toV5Record(await unwrap(v5Client.POST('/menus', { body })))
+  return { id: `${res.id || ''}` }
 }
 
 /** 更新菜单 */
 export async function fetchUpdateMenu(
   id: string,
   data: Api.SystemManage.MenuUpdateParams,
-  _config?: any
+  _config?: unknown
 ) {
+  const body: V5RequestBody<'/menus/{id}', 'put'> = {
+    ...data,
+    name: data.name || '',
+    kind: data.kind || 'menu'
+  }
   const { error } = await v5Client.PUT('/menus/{id}', {
     params: { path: { id } },
-    body: data as any
+    body
   })
   if (error) throw error
 }
 
 /** 删除菜单 */
 export async function fetchDeleteMenu(id: string, params?: Api.SystemManage.MenuDeleteParams) {
-  const query: any = params ? { ...params } : {}
-  const { error } = await v5Client.DELETE('/menus/{id}', {
-    params: { path: { id }, query }
-  })
+  void params
+  const { error } = await v5Client.DELETE('/menus/{id}', { params: { path: { id } } })
   if (error) throw error
 }
 
@@ -57,18 +69,21 @@ export async function fetchGetMenuDeletePreview(
   id: string,
   params?: Api.SystemManage.MenuDeleteParams
 ) {
-  const query: any = params ? { ...params } : {}
-  const res: any = await unwrap(
+  void params
+  const res = await unwrap(
     v5Client.GET('/menus/{id}/delete-preview', {
-      params: { path: { id }, query }
+      params: { path: { id } }
     })
   )
+  const payload = toV5Record(res)
   return {
-    mode: `${res?.mode || 'single'}`.trim(),
-    menuCount: Number(res?.menuCount ?? res?.menu_count ?? 0),
-    childCount: Number(res?.childCount ?? res?.child_count ?? 0),
-    affectedPageCount: Number(res?.affectedPageCount ?? res?.affected_page_count ?? 0),
-    affectedRelationCount: Number(res?.affectedRelationCount ?? res?.affected_relation_count ?? 0)
+    mode: `${payload?.mode || 'single'}`.trim(),
+    menuCount: Number(payload?.menuCount ?? payload?.menu_count ?? 0),
+    childCount: Number(payload?.childCount ?? payload?.child_count ?? 0),
+    affectedPageCount: Number(payload?.affectedPageCount ?? payload?.affected_page_count ?? 0),
+    affectedRelationCount: Number(
+      payload?.affectedRelationCount ?? payload?.affected_relation_count ?? 0
+    )
   }
 }
 

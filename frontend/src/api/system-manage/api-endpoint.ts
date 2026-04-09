@@ -3,12 +3,17 @@ import {
   unwrap,
   normalizeApiEndpoint,
   normalizeApiEndpointCategory,
-  normalizeUnregisteredApiRoute
+  normalizeUnregisteredApiRoute,
+  toV5Body,
+  toV5ListResponse,
+  toV5Record,
+  type V5Query,
+  type V5RequestBody
 } from './_shared'
 
 /** 获取 API 注册表 */
 export async function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpointSearchParams) {
-  const normalizedParams: any = {
+  const normalizedParams: V5Query<'/api-endpoints', 'get'> = {
     permission_key: params?.permissionKey,
     permission_pattern: params?.permissionPattern,
     keyword: params?.keyword,
@@ -21,30 +26,29 @@ export async function fetchGetApiEndpointList(params: Api.SystemManage.APIEndpoi
     has_permission_key: params?.hasPermissionKey,
     has_category: params?.hasCategory
   }
-  const res: any = await unwrap(
-    v5Client.GET('/api-endpoints', { params: { query: normalizedParams } })
+  const res = toV5ListResponse(
+    await unwrap(v5Client.GET('/api-endpoints', { params: { query: normalizedParams } }))
   )
   return {
     ...res,
-    records: (res?.records || []).map(normalizeApiEndpoint)
+    records: (res.records || []).map(normalizeApiEndpoint)
   } as Api.SystemManage.APIEndpointList
 }
 
 export async function fetchGetApiEndpointOverview(_appKey?: string) {
-  const res: any = await unwrap(
-    v5Client.GET('/api-endpoints/overview', {
-      params: { query: {} as any }
-    })
-  )
+  const res = toV5Record(await unwrap(v5Client.GET('/api-endpoints/overview')))
   return {
-    totalCount: res?.totalCount ?? res?.total_count ?? 0,
-    uncategorizedCount: res?.uncategorizedCount ?? res?.uncategorized_count ?? 0,
-    staleCount: res?.staleCount ?? res?.stale_count ?? 0,
-    noPermissionCount: res?.noPermissionCount ?? res?.no_permission_count ?? 0,
-    sharedPermissionCount: res?.sharedPermissionCount ?? res?.shared_permission_count ?? 0,
-    crossContextSharedCount:
-      res?.crossContextSharedCount ?? res?.cross_context_shared_count ?? 0,
-    categoryCounts: (res?.categoryCounts || res?.category_counts || []).map((item: any) => ({
+    totalCount: Number(res?.totalCount ?? res?.total_count ?? 0),
+    uncategorizedCount: Number(res?.uncategorizedCount ?? res?.uncategorized_count ?? 0),
+    staleCount: Number(res?.staleCount ?? res?.stale_count ?? 0),
+    noPermissionCount: Number(res?.noPermissionCount ?? res?.no_permission_count ?? 0),
+    sharedPermissionCount: Number(
+      res?.sharedPermissionCount ?? res?.shared_permission_count ?? 0
+    ),
+    crossContextSharedCount: Number(
+      res?.crossContextSharedCount ?? res?.cross_context_shared_count ?? 0
+    ),
+    categoryCounts: ((res?.categoryCounts || res?.category_counts || []) as unknown[]).map((item: any) => ({
       categoryId: item?.categoryId || item?.category_id || '',
       count: item?.count || 0
     }))
@@ -52,10 +56,16 @@ export async function fetchGetApiEndpointOverview(_appKey?: string) {
 }
 
 export async function fetchGetStaleApiEndpointList(params: { current?: number; size?: number }) {
-  const res: any = await unwrap(
-    v5Client.GET('/api-endpoints/stale', {
-      params: { query: { current: params?.current, size: params?.size } as any }
-    })
+  const query: V5Query<'/api-endpoints/stale', 'get'> = {
+    current: params?.current,
+    size: params?.size
+  }
+  const res = toV5ListResponse(
+    await unwrap(
+      v5Client.GET('/api-endpoints/stale', {
+        params: { query }
+      })
+    )
   )
   return {
     ...res,
@@ -70,31 +80,29 @@ export async function fetchSyncApiEndpoints() {
 }
 
 export async function fetchCleanupStaleApiEndpoints(ids: string[]) {
-  const res: any = await unwrap(
-    v5Client.POST('/api-endpoints/cleanup-stale', { body: { ids } as any })
-  )
-  return { deletedCount: res?.deletedCount ?? res?.deleted_count ?? 0 }
+  const body: V5RequestBody<'/api-endpoints/cleanup-stale', 'post'> = { ids }
+  const res = toV5Record(await unwrap(v5Client.POST('/api-endpoints/cleanup-stale', { body })))
+  return { deletedCount: Number(res?.deletedCount ?? res?.deleted_count ?? 0) }
 }
 
 export function fetchUpdateApiEndpoint(
   id: string,
   data: Partial<Api.SystemManage.APIEndpointItem>
 ) {
+  const body: V5RequestBody<'/api-endpoints/{id}', 'put'> = toV5Body(data)
   return unwrap(
     v5Client.PUT('/api-endpoints/{id}', {
       params: { path: { id } },
-      body: data as any
+      body
     })
   ) as unknown as Promise<Api.SystemManage.APIEndpointItem>
 }
 
 export async function fetchGetApiEndpointCategories() {
-  const res: any = await unwrap(
-    v5Client.GET('/api-endpoints/categories', { params: { query: {} as any } })
-  )
+  const res = toV5ListResponse(await unwrap(v5Client.GET('/api-endpoints/categories')))
   return {
-    records: (res?.records || []).map(normalizeApiEndpointCategory),
-    total: res?.total || 0
+    records: (res.records || []).map(normalizeApiEndpointCategory),
+    total: res.total || 0
   }
 }
 
@@ -106,19 +114,20 @@ export async function fetchGetUnregisteredApiRouteList(params: {
   keyword?: string
   only_no_meta?: boolean
 }) {
-  const res: any = await unwrap(
-    v5Client.GET('/api-endpoints/unregistered', {
-      params: {
-        query: {
-          current: params?.current,
-          size: params?.size,
-          method: params?.method,
-          path: params?.path,
-          keyword: params?.keyword,
-          only_no_meta: params?.only_no_meta
-        } as any
-      }
-    })
+  const query: V5Query<'/api-endpoints/unregistered', 'get'> = {
+    current: params?.current,
+    size: params?.size,
+    method: params?.method,
+    path: params?.path,
+    keyword: params?.keyword,
+    only_no_meta: params?.only_no_meta
+  }
+  const res = toV5ListResponse(
+    await unwrap(
+      v5Client.GET('/api-endpoints/unregistered', {
+        params: { query }
+      })
+    )
   )
   return {
     ...res,
@@ -129,9 +138,8 @@ export async function fetchGetUnregisteredApiRouteList(params: {
 export async function fetchCreateApiEndpointCategory(
   data: Partial<Api.SystemManage.APIEndpointCategoryItem>
 ) {
-  const res: any = await unwrap(
-    v5Client.POST('/api-endpoints/categories', { body: data as any })
-  )
+  const body: V5RequestBody<'/api-endpoints/categories', 'post'> = toV5Body(data)
+  const res = await unwrap(v5Client.POST('/api-endpoints/categories', { body }))
   return normalizeApiEndpointCategory(res)
 }
 
@@ -139,10 +147,11 @@ export async function fetchUpdateApiEndpointCategory(
   id: string,
   data: Partial<Api.SystemManage.APIEndpointCategoryItem>
 ) {
-  const res: any = await unwrap(
+  const body: V5RequestBody<'/api-endpoints/categories/{id}', 'put'> = toV5Body(data)
+  const res = await unwrap(
     v5Client.PUT('/api-endpoints/categories/{id}', {
       params: { path: { id } },
-      body: data as any
+      body
     })
   )
   return normalizeApiEndpointCategory(res)

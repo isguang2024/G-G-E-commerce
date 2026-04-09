@@ -12,7 +12,7 @@ import (
 	"github.com/gg-ecommerce/backend/internal/modules/system/page"
 )
 
-func (h *APIHandler) ListPages(ctx context.Context, params gen.ListPagesParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListPages(ctx context.Context, params gen.ListPagesParams) (*gen.PageListResponse, error) {
 	req := &page.ListRequest{
 		Current:  optInt(params.Current, 1),
 		Size:     optInt(params.Size, 20),
@@ -26,28 +26,28 @@ func (h *APIHandler) ListPages(ctx context.Context, params gen.ListPagesParams) 
 		h.logger.Error("list pages failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(list), Total: int(total)}, nil
+	return &gen.PageListResponse{Records: marshalList(list), Total: int(total)}, nil
 }
 
-func (h *APIHandler) ListPageOptions(ctx context.Context, params gen.ListPageOptionsParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListPageOptions(ctx context.Context, params gen.ListPageOptionsParams) (*gen.PageListResponse, error) {
 	list, err := h.pageSvc.ListOptions(params.AppKey, optString(params.SpaceKey))
 	if err != nil {
 		h.logger.Error("list page options failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(list), Total: len(list)}, nil
+	return &gen.PageListResponse{Records: marshalList(list), Total: len(list)}, nil
 }
 
-func (h *APIHandler) ListPageMenuOptions(ctx context.Context, params gen.ListPageMenuOptionsParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListPageMenuOptions(ctx context.Context, params gen.ListPageMenuOptionsParams) (*gen.PageListResponse, error) {
 	list, err := h.pageSvc.ListMenuOptions(params.AppKey, optString(params.SpaceKey))
 	if err != nil {
 		h.logger.Error("list page menu options failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(list), Total: len(list)}, nil
+	return &gen.PageListResponse{Records: marshalList(list), Total: len(list)}, nil
 }
 
-func (h *APIHandler) ListRuntimePages(ctx context.Context, params gen.ListRuntimePagesParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListRuntimePages(ctx context.Context, params gen.ListRuntimePagesParams) (*gen.PageListResponse, error) {
 	var userID *uuid.UUID
 	if uid, ok := userIDFromContext(ctx); ok {
 		userID = &uid
@@ -64,10 +64,10 @@ func (h *APIHandler) ListRuntimePages(ctx context.Context, params gen.ListRuntim
 		h.logger.Error("list runtime pages failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(list), Total: len(list)}, nil
+	return &gen.PageListResponse{Records: marshalList(list), Total: len(list)}, nil
 }
 
-func (h *APIHandler) ListPublicRuntimePages(ctx context.Context, params gen.ListPublicRuntimePagesParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListPublicRuntimePages(ctx context.Context, params gen.ListPublicRuntimePagesParams) (*gen.PageListResponse, error) {
 	list, err := h.pageSvc.ListRuntimePublic(
 		optString(params.AppKey),
 		requestHostFromCtx(ctx),
@@ -79,16 +79,16 @@ func (h *APIHandler) ListPublicRuntimePages(ctx context.Context, params gen.List
 		h.logger.Error("list public runtime pages failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(list), Total: len(list)}, nil
+	return &gen.PageListResponse{Records: marshalList(list), Total: len(list)}, nil
 }
 
-func (h *APIHandler) ListUnregisteredPages(ctx context.Context, params gen.ListUnregisteredPagesParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) ListUnregisteredPages(ctx context.Context, params gen.ListUnregisteredPagesParams) (*gen.PageListResponse, error) {
 	list, err := h.pageSvc.ListUnregistered(params.AppKey)
 	if err != nil {
 		h.logger.Error("list unregistered pages failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(list), Total: len(list)}, nil
+	return &gen.PageListResponse{Records: marshalList(list), Total: len(list)}, nil
 }
 
 func (h *APIHandler) SyncPages(ctx context.Context, params gen.SyncPagesParams) (*gen.PageSyncResult, error) {
@@ -104,13 +104,13 @@ func (h *APIHandler) SyncPages(ctx context.Context, params gen.SyncPagesParams) 
 	}, nil
 }
 
-func (h *APIHandler) PreviewPageBreadcrumb(ctx context.Context, params gen.PreviewPageBreadcrumbParams) (*gen.AnyListResponse, error) {
+func (h *APIHandler) PreviewPageBreadcrumb(ctx context.Context, params gen.PreviewPageBreadcrumbParams) (*gen.PageListResponse, error) {
 	list, err := h.pageSvc.PreviewBreadcrumb(params.ID, params.AppKey)
 	if err != nil {
 		h.logger.Error("preview page breadcrumb failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.AnyListResponse{Records: marshalList(list), Total: len(list)}, nil
+	return &gen.PageListResponse{Records: marshalList(list), Total: len(list)}, nil
 }
 
 func (h *APIHandler) GetPage(ctx context.Context, params gen.GetPageParams) (gen.AnyObject, error) {

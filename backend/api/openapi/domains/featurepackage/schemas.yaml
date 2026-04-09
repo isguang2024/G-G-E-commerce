@@ -2,4 +2,53 @@
 # Domain-specific schemas (currently kept in components/common.yaml).
 # Move schemas here incrementally when they belong exclusively to this domain.
 components:
-  schemas: {}
+  schemas:
+    FeaturePackageCollaborationWorkspaceItem:
+      type: object
+      required: [id]
+      properties:
+        id: {type: string, format: uuid}
+    FeaturePackageCollaborationWorkspaceList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/FeaturePackageCollaborationWorkspaceItem'}
+        total: {type: integer, format: int64}
+    FeaturePackageVersionItem:
+      type: object
+      required:
+        - id
+        - package_id
+        - version_no
+        - change_type
+        - snapshot
+        - request_id
+        - created_at
+      properties:
+        id: {type: string, format: uuid}
+        package_id: {type: string, format: uuid}
+        version_no: {type: integer}
+        change_type: {type: string}
+        snapshot:
+          $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+        operator_id: {type: string, format: uuid, nullable: true}
+        request_id: {type: string}
+        created_at: {type: string, format: date-time}
+    FeaturePackageVersionList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '#/components/schemas/FeaturePackageVersionItem'}
+        total: {type: integer, format: int64}
+    FeaturePackageRiskAuditList:
+      type: object
+      required: [records, total]
+      properties:
+        records:
+          type: array
+          items: {$ref: '../../domains/permission/schemas.yaml#/components/schemas/RiskAuditItem'}
+        total: {type: integer, format: int64}

@@ -38,6 +38,7 @@ const (
 	DeleteMenuSpaceEntryBindingOperation                          OperationName = "DeleteMenuSpaceEntryBinding"
 	DeletePageOperation                                           OperationName = "DeletePage"
 	DeletePermissionActionOperation                               OperationName = "DeletePermissionAction"
+	DeletePermissionActionGroupOperation                          OperationName = "DeletePermissionActionGroup"
 	DeleteRegisterEntryOperation                                  OperationName = "DeleteRegisterEntry"
 	DeleteRegisterPolicyOperation                                 OperationName = "DeleteRegisterPolicy"
 	DeleteRoleOperation                                           OperationName = "DeleteRole"

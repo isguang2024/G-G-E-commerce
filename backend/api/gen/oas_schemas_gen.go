@@ -80,14 +80,349 @@ func (s *AnyObject) init() AnyObject {
 func (*AnyObject) cleanupStaleApiEndpointsRes()      {}
 func (*AnyObject) createApiEndpointCategoryRes()     {}
 func (*AnyObject) getApiEndpointOverviewRes()        {}
-func (*AnyObject) listApiEndpointCategoriesRes()     {}
-func (*AnyObject) listApiEndpointsRes()              {}
-func (*AnyObject) listStaleApiEndpointsRes()         {}
-func (*AnyObject) listUnregisteredApiEndpointsRes()  {}
 func (*AnyObject) updateApiEndpointCategoryRes()     {}
 func (*AnyObject) updateApiEndpointContextScopeRes() {}
 func (*AnyObject) updateApiEndpointRes()             {}
 func (*AnyObject) uploadMediaRes()                   {}
+
+// Ref: #/components/schemas/ApiEndpointCategoryItem
+type ApiEndpointCategoryItem struct {
+	ID        uuid.UUID `json:"id"`
+	Code      string    `json:"code"`
+	Name      string    `json:"name"`
+	NameEn    string    `json:"name_en"`
+	SortOrder int       `json:"sort_order"`
+	Status    string    `json:"status"`
+}
+
+// GetID returns the value of ID.
+func (s *ApiEndpointCategoryItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetCode returns the value of Code.
+func (s *ApiEndpointCategoryItem) GetCode() string {
+	return s.Code
+}
+
+// GetName returns the value of Name.
+func (s *ApiEndpointCategoryItem) GetName() string {
+	return s.Name
+}
+
+// GetNameEn returns the value of NameEn.
+func (s *ApiEndpointCategoryItem) GetNameEn() string {
+	return s.NameEn
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *ApiEndpointCategoryItem) GetSortOrder() int {
+	return s.SortOrder
+}
+
+// GetStatus returns the value of Status.
+func (s *ApiEndpointCategoryItem) GetStatus() string {
+	return s.Status
+}
+
+// SetID sets the value of ID.
+func (s *ApiEndpointCategoryItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetCode sets the value of Code.
+func (s *ApiEndpointCategoryItem) SetCode(val string) {
+	s.Code = val
+}
+
+// SetName sets the value of Name.
+func (s *ApiEndpointCategoryItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetNameEn sets the value of NameEn.
+func (s *ApiEndpointCategoryItem) SetNameEn(val string) {
+	s.NameEn = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *ApiEndpointCategoryItem) SetSortOrder(val int) {
+	s.SortOrder = val
+}
+
+// SetStatus sets the value of Status.
+func (s *ApiEndpointCategoryItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// Ref: #/components/schemas/ApiEndpointCategoryList
+type ApiEndpointCategoryList struct {
+	Records []ApiEndpointCategoryItem `json:"records"`
+	Total   int64                     `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *ApiEndpointCategoryList) GetRecords() []ApiEndpointCategoryItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *ApiEndpointCategoryList) GetTotal() int64 {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *ApiEndpointCategoryList) SetRecords(val []ApiEndpointCategoryItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *ApiEndpointCategoryList) SetTotal(val int64) {
+	s.Total = val
+}
+
+func (*ApiEndpointCategoryList) listApiEndpointCategoriesRes() {}
+
+// Ref: #/components/schemas/ApiEndpointItem
+type ApiEndpointItem struct {
+	ID             uuid.UUID                     `json:"id"`
+	Code           string                        `json:"code"`
+	Method         string                        `json:"method"`
+	Path           string                        `json:"path"`
+	Spec           string                        `json:"spec"`
+	Handler        string                        `json:"handler"`
+	Summary        string                        `json:"summary"`
+	PermissionKeys []string                      `json:"permission_keys"`
+	AuthMode       string                        `json:"auth_mode"`
+	CategoryID     string                        `json:"category_id"`
+	Category       OptNilApiEndpointCategoryItem `json:"category"`
+	Status         string                        `json:"status"`
+	RuntimeExists  bool                          `json:"runtime_exists"`
+	Stale          bool                          `json:"stale"`
+	StaleReason    string                        `json:"stale_reason"`
+	CreatedAt      string                        `json:"created_at"`
+	UpdatedAt      string                        `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *ApiEndpointItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetCode returns the value of Code.
+func (s *ApiEndpointItem) GetCode() string {
+	return s.Code
+}
+
+// GetMethod returns the value of Method.
+func (s *ApiEndpointItem) GetMethod() string {
+	return s.Method
+}
+
+// GetPath returns the value of Path.
+func (s *ApiEndpointItem) GetPath() string {
+	return s.Path
+}
+
+// GetSpec returns the value of Spec.
+func (s *ApiEndpointItem) GetSpec() string {
+	return s.Spec
+}
+
+// GetHandler returns the value of Handler.
+func (s *ApiEndpointItem) GetHandler() string {
+	return s.Handler
+}
+
+// GetSummary returns the value of Summary.
+func (s *ApiEndpointItem) GetSummary() string {
+	return s.Summary
+}
+
+// GetPermissionKeys returns the value of PermissionKeys.
+func (s *ApiEndpointItem) GetPermissionKeys() []string {
+	return s.PermissionKeys
+}
+
+// GetAuthMode returns the value of AuthMode.
+func (s *ApiEndpointItem) GetAuthMode() string {
+	return s.AuthMode
+}
+
+// GetCategoryID returns the value of CategoryID.
+func (s *ApiEndpointItem) GetCategoryID() string {
+	return s.CategoryID
+}
+
+// GetCategory returns the value of Category.
+func (s *ApiEndpointItem) GetCategory() OptNilApiEndpointCategoryItem {
+	return s.Category
+}
+
+// GetStatus returns the value of Status.
+func (s *ApiEndpointItem) GetStatus() string {
+	return s.Status
+}
+
+// GetRuntimeExists returns the value of RuntimeExists.
+func (s *ApiEndpointItem) GetRuntimeExists() bool {
+	return s.RuntimeExists
+}
+
+// GetStale returns the value of Stale.
+func (s *ApiEndpointItem) GetStale() bool {
+	return s.Stale
+}
+
+// GetStaleReason returns the value of StaleReason.
+func (s *ApiEndpointItem) GetStaleReason() string {
+	return s.StaleReason
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *ApiEndpointItem) GetCreatedAt() string {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *ApiEndpointItem) GetUpdatedAt() string {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *ApiEndpointItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetCode sets the value of Code.
+func (s *ApiEndpointItem) SetCode(val string) {
+	s.Code = val
+}
+
+// SetMethod sets the value of Method.
+func (s *ApiEndpointItem) SetMethod(val string) {
+	s.Method = val
+}
+
+// SetPath sets the value of Path.
+func (s *ApiEndpointItem) SetPath(val string) {
+	s.Path = val
+}
+
+// SetSpec sets the value of Spec.
+func (s *ApiEndpointItem) SetSpec(val string) {
+	s.Spec = val
+}
+
+// SetHandler sets the value of Handler.
+func (s *ApiEndpointItem) SetHandler(val string) {
+	s.Handler = val
+}
+
+// SetSummary sets the value of Summary.
+func (s *ApiEndpointItem) SetSummary(val string) {
+	s.Summary = val
+}
+
+// SetPermissionKeys sets the value of PermissionKeys.
+func (s *ApiEndpointItem) SetPermissionKeys(val []string) {
+	s.PermissionKeys = val
+}
+
+// SetAuthMode sets the value of AuthMode.
+func (s *ApiEndpointItem) SetAuthMode(val string) {
+	s.AuthMode = val
+}
+
+// SetCategoryID sets the value of CategoryID.
+func (s *ApiEndpointItem) SetCategoryID(val string) {
+	s.CategoryID = val
+}
+
+// SetCategory sets the value of Category.
+func (s *ApiEndpointItem) SetCategory(val OptNilApiEndpointCategoryItem) {
+	s.Category = val
+}
+
+// SetStatus sets the value of Status.
+func (s *ApiEndpointItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetRuntimeExists sets the value of RuntimeExists.
+func (s *ApiEndpointItem) SetRuntimeExists(val bool) {
+	s.RuntimeExists = val
+}
+
+// SetStale sets the value of Stale.
+func (s *ApiEndpointItem) SetStale(val bool) {
+	s.Stale = val
+}
+
+// SetStaleReason sets the value of StaleReason.
+func (s *ApiEndpointItem) SetStaleReason(val string) {
+	s.StaleReason = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *ApiEndpointItem) SetCreatedAt(val string) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *ApiEndpointItem) SetUpdatedAt(val string) {
+	s.UpdatedAt = val
+}
+
+// Ref: #/components/schemas/ApiEndpointList
+type ApiEndpointList struct {
+	Records []ApiEndpointItem `json:"records"`
+	Total   int64             `json:"total"`
+	Current int               `json:"current"`
+	Size    int               `json:"size"`
+}
+
+// GetRecords returns the value of Records.
+func (s *ApiEndpointList) GetRecords() []ApiEndpointItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *ApiEndpointList) GetTotal() int64 {
+	return s.Total
+}
+
+// GetCurrent returns the value of Current.
+func (s *ApiEndpointList) GetCurrent() int {
+	return s.Current
+}
+
+// GetSize returns the value of Size.
+func (s *ApiEndpointList) GetSize() int {
+	return s.Size
+}
+
+// SetRecords sets the value of Records.
+func (s *ApiEndpointList) SetRecords(val []ApiEndpointItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *ApiEndpointList) SetTotal(val int64) {
+	s.Total = val
+}
+
+// SetCurrent sets the value of Current.
+func (s *ApiEndpointList) SetCurrent(val int) {
+	s.Current = val
+}
+
+// SetSize sets the value of Size.
+func (s *ApiEndpointList) SetSize(val int) {
+	s.Size = val
+}
+
+func (*ApiEndpointList) listApiEndpointsRes() {}
 
 type AssignUserRolesBadRequest Error
 
@@ -368,6 +703,626 @@ type CleanupStaleApiEndpointsUnauthorized Error
 
 func (*CleanupStaleApiEndpointsUnauthorized) cleanupStaleApiEndpointsRes() {}
 
+// Ref: #/components/schemas/CollaborationWorkspaceActionOriginsResponse
+type CollaborationWorkspaceActionOriginsResponse struct {
+	DerivedActionIds []uuid.UUID         `json:"derived_action_ids"`
+	DerivedSources   []ActionSourceEntry `json:"derived_sources"`
+	BlockedActionIds []uuid.UUID         `json:"blocked_action_ids"`
+}
+
+// GetDerivedActionIds returns the value of DerivedActionIds.
+func (s *CollaborationWorkspaceActionOriginsResponse) GetDerivedActionIds() []uuid.UUID {
+	return s.DerivedActionIds
+}
+
+// GetDerivedSources returns the value of DerivedSources.
+func (s *CollaborationWorkspaceActionOriginsResponse) GetDerivedSources() []ActionSourceEntry {
+	return s.DerivedSources
+}
+
+// GetBlockedActionIds returns the value of BlockedActionIds.
+func (s *CollaborationWorkspaceActionOriginsResponse) GetBlockedActionIds() []uuid.UUID {
+	return s.BlockedActionIds
+}
+
+// SetDerivedActionIds sets the value of DerivedActionIds.
+func (s *CollaborationWorkspaceActionOriginsResponse) SetDerivedActionIds(val []uuid.UUID) {
+	s.DerivedActionIds = val
+}
+
+// SetDerivedSources sets the value of DerivedSources.
+func (s *CollaborationWorkspaceActionOriginsResponse) SetDerivedSources(val []ActionSourceEntry) {
+	s.DerivedSources = val
+}
+
+// SetBlockedActionIds sets the value of BlockedActionIds.
+func (s *CollaborationWorkspaceActionOriginsResponse) SetBlockedActionIds(val []uuid.UUID) {
+	s.BlockedActionIds = val
+}
+
+// Ref: #/components/schemas/CollaborationWorkspaceActionsResponse
+type CollaborationWorkspaceActionsResponse struct {
+	ActionIds []uuid.UUID           `json:"action_ids"`
+	Actions   []PermissionActionRef `json:"actions"`
+}
+
+// GetActionIds returns the value of ActionIds.
+func (s *CollaborationWorkspaceActionsResponse) GetActionIds() []uuid.UUID {
+	return s.ActionIds
+}
+
+// GetActions returns the value of Actions.
+func (s *CollaborationWorkspaceActionsResponse) GetActions() []PermissionActionRef {
+	return s.Actions
+}
+
+// SetActionIds sets the value of ActionIds.
+func (s *CollaborationWorkspaceActionsResponse) SetActionIds(val []uuid.UUID) {
+	s.ActionIds = val
+}
+
+// SetActions sets the value of Actions.
+func (s *CollaborationWorkspaceActionsResponse) SetActions(val []PermissionActionRef) {
+	s.Actions = val
+}
+
+// Ref: #/components/schemas/CollaborationWorkspaceBoundaryRolePackagesResponse
+type CollaborationWorkspaceBoundaryRolePackagesResponse struct {
+	PackageIds []uuid.UUID         `json:"package_ids"`
+	Packages   []FeaturePackageRef `json:"packages"`
+	Inherited  bool                `json:"inherited"`
+}
+
+// GetPackageIds returns the value of PackageIds.
+func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) GetPackageIds() []uuid.UUID {
+	return s.PackageIds
+}
+
+// GetPackages returns the value of Packages.
+func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) GetPackages() []FeaturePackageRef {
+	return s.Packages
+}
+
+// GetInherited returns the value of Inherited.
+func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) GetInherited() bool {
+	return s.Inherited
+}
+
+// SetPackageIds sets the value of PackageIds.
+func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) SetPackageIds(val []uuid.UUID) {
+	s.PackageIds = val
+}
+
+// SetPackages sets the value of Packages.
+func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) SetPackages(val []FeaturePackageRef) {
+	s.Packages = val
+}
+
+// SetInherited sets the value of Inherited.
+func (s *CollaborationWorkspaceBoundaryRolePackagesResponse) SetInherited(val bool) {
+	s.Inherited = val
+}
+
+// Ref: #/components/schemas/CollaborationWorkspaceItem
+type CollaborationWorkspaceItem struct {
+	ID         uuid.UUID `json:"id"`
+	Name       string    `json:"name"`
+	Remark     string    `json:"remark"`
+	LogoURL    string    `json:"logo_url"`
+	Plan       string    `json:"plan"`
+	OwnerID    uuid.UUID `json:"owner_id"`
+	MaxMembers int       `json:"max_members"`
+	Status     string    `json:"status"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *CollaborationWorkspaceItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *CollaborationWorkspaceItem) GetName() string {
+	return s.Name
+}
+
+// GetRemark returns the value of Remark.
+func (s *CollaborationWorkspaceItem) GetRemark() string {
+	return s.Remark
+}
+
+// GetLogoURL returns the value of LogoURL.
+func (s *CollaborationWorkspaceItem) GetLogoURL() string {
+	return s.LogoURL
+}
+
+// GetPlan returns the value of Plan.
+func (s *CollaborationWorkspaceItem) GetPlan() string {
+	return s.Plan
+}
+
+// GetOwnerID returns the value of OwnerID.
+func (s *CollaborationWorkspaceItem) GetOwnerID() uuid.UUID {
+	return s.OwnerID
+}
+
+// GetMaxMembers returns the value of MaxMembers.
+func (s *CollaborationWorkspaceItem) GetMaxMembers() int {
+	return s.MaxMembers
+}
+
+// GetStatus returns the value of Status.
+func (s *CollaborationWorkspaceItem) GetStatus() string {
+	return s.Status
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *CollaborationWorkspaceItem) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *CollaborationWorkspaceItem) GetUpdatedAt() time.Time {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *CollaborationWorkspaceItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *CollaborationWorkspaceItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetRemark sets the value of Remark.
+func (s *CollaborationWorkspaceItem) SetRemark(val string) {
+	s.Remark = val
+}
+
+// SetLogoURL sets the value of LogoURL.
+func (s *CollaborationWorkspaceItem) SetLogoURL(val string) {
+	s.LogoURL = val
+}
+
+// SetPlan sets the value of Plan.
+func (s *CollaborationWorkspaceItem) SetPlan(val string) {
+	s.Plan = val
+}
+
+// SetOwnerID sets the value of OwnerID.
+func (s *CollaborationWorkspaceItem) SetOwnerID(val uuid.UUID) {
+	s.OwnerID = val
+}
+
+// SetMaxMembers sets the value of MaxMembers.
+func (s *CollaborationWorkspaceItem) SetMaxMembers(val int) {
+	s.MaxMembers = val
+}
+
+// SetStatus sets the value of Status.
+func (s *CollaborationWorkspaceItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *CollaborationWorkspaceItem) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *CollaborationWorkspaceItem) SetUpdatedAt(val time.Time) {
+	s.UpdatedAt = val
+}
+
+// Ref: #/components/schemas/CollaborationWorkspaceList
+type CollaborationWorkspaceList struct {
+	Records []CollaborationWorkspaceItem `json:"records"`
+	Total   int                          `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *CollaborationWorkspaceList) GetRecords() []CollaborationWorkspaceItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *CollaborationWorkspaceList) GetTotal() int {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *CollaborationWorkspaceList) SetRecords(val []CollaborationWorkspaceItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *CollaborationWorkspaceList) SetTotal(val int) {
+	s.Total = val
+}
+
+// Ref: #/components/schemas/CollaborationWorkspaceMemberItem
+type CollaborationWorkspaceMemberItem struct {
+	ID                       uuid.UUID  `json:"id"`
+	CollaborationWorkspaceID uuid.UUID  `json:"collaboration_workspace_id"`
+	UserID                   uuid.UUID  `json:"user_id"`
+	RoleCode                 string     `json:"role_code"`
+	RoleID                   OptNilUUID `json:"role_id"`
+	Status                   string     `json:"status"`
+	JoinedAt                 time.Time  `json:"joined_at"`
+	InvitedBy                OptNilUUID `json:"invited_by"`
+	CreatedAt                time.Time  `json:"created_at"`
+	UpdatedAt                time.Time  `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *CollaborationWorkspaceMemberItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
+func (s *CollaborationWorkspaceMemberItem) GetCollaborationWorkspaceID() uuid.UUID {
+	return s.CollaborationWorkspaceID
+}
+
+// GetUserID returns the value of UserID.
+func (s *CollaborationWorkspaceMemberItem) GetUserID() uuid.UUID {
+	return s.UserID
+}
+
+// GetRoleCode returns the value of RoleCode.
+func (s *CollaborationWorkspaceMemberItem) GetRoleCode() string {
+	return s.RoleCode
+}
+
+// GetRoleID returns the value of RoleID.
+func (s *CollaborationWorkspaceMemberItem) GetRoleID() OptNilUUID {
+	return s.RoleID
+}
+
+// GetStatus returns the value of Status.
+func (s *CollaborationWorkspaceMemberItem) GetStatus() string {
+	return s.Status
+}
+
+// GetJoinedAt returns the value of JoinedAt.
+func (s *CollaborationWorkspaceMemberItem) GetJoinedAt() time.Time {
+	return s.JoinedAt
+}
+
+// GetInvitedBy returns the value of InvitedBy.
+func (s *CollaborationWorkspaceMemberItem) GetInvitedBy() OptNilUUID {
+	return s.InvitedBy
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *CollaborationWorkspaceMemberItem) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *CollaborationWorkspaceMemberItem) GetUpdatedAt() time.Time {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *CollaborationWorkspaceMemberItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
+func (s *CollaborationWorkspaceMemberItem) SetCollaborationWorkspaceID(val uuid.UUID) {
+	s.CollaborationWorkspaceID = val
+}
+
+// SetUserID sets the value of UserID.
+func (s *CollaborationWorkspaceMemberItem) SetUserID(val uuid.UUID) {
+	s.UserID = val
+}
+
+// SetRoleCode sets the value of RoleCode.
+func (s *CollaborationWorkspaceMemberItem) SetRoleCode(val string) {
+	s.RoleCode = val
+}
+
+// SetRoleID sets the value of RoleID.
+func (s *CollaborationWorkspaceMemberItem) SetRoleID(val OptNilUUID) {
+	s.RoleID = val
+}
+
+// SetStatus sets the value of Status.
+func (s *CollaborationWorkspaceMemberItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetJoinedAt sets the value of JoinedAt.
+func (s *CollaborationWorkspaceMemberItem) SetJoinedAt(val time.Time) {
+	s.JoinedAt = val
+}
+
+// SetInvitedBy sets the value of InvitedBy.
+func (s *CollaborationWorkspaceMemberItem) SetInvitedBy(val OptNilUUID) {
+	s.InvitedBy = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *CollaborationWorkspaceMemberItem) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *CollaborationWorkspaceMemberItem) SetUpdatedAt(val time.Time) {
+	s.UpdatedAt = val
+}
+
+// Ref: #/components/schemas/CollaborationWorkspaceMemberList
+type CollaborationWorkspaceMemberList struct {
+	Records []CollaborationWorkspaceMemberItem `json:"records"`
+	Total   int                                `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *CollaborationWorkspaceMemberList) GetRecords() []CollaborationWorkspaceMemberItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *CollaborationWorkspaceMemberList) GetTotal() int {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *CollaborationWorkspaceMemberList) SetRecords(val []CollaborationWorkspaceMemberItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *CollaborationWorkspaceMemberList) SetTotal(val int) {
+	s.Total = val
+}
+
+// Ref: #/components/schemas/CollaborationWorkspaceMemberRolesResponse
+type CollaborationWorkspaceMemberRolesResponse struct {
+	RoleIds []uuid.UUID   `json:"role_ids"`
+	Roles   []UserRoleRef `json:"roles"`
+}
+
+// GetRoleIds returns the value of RoleIds.
+func (s *CollaborationWorkspaceMemberRolesResponse) GetRoleIds() []uuid.UUID {
+	return s.RoleIds
+}
+
+// GetRoles returns the value of Roles.
+func (s *CollaborationWorkspaceMemberRolesResponse) GetRoles() []UserRoleRef {
+	return s.Roles
+}
+
+// SetRoleIds sets the value of RoleIds.
+func (s *CollaborationWorkspaceMemberRolesResponse) SetRoleIds(val []uuid.UUID) {
+	s.RoleIds = val
+}
+
+// SetRoles sets the value of Roles.
+func (s *CollaborationWorkspaceMemberRolesResponse) SetRoles(val []UserRoleRef) {
+	s.Roles = val
+}
+
+// Ref: #/components/schemas/CollaborationWorkspaceMenuOriginsResponse
+type CollaborationWorkspaceMenuOriginsResponse struct {
+	DerivedMenuIds []uuid.UUID       `json:"derived_menu_ids"`
+	DerivedSources []MenuSourceEntry `json:"derived_sources"`
+	BlockedMenuIds []uuid.UUID       `json:"blocked_menu_ids"`
+}
+
+// GetDerivedMenuIds returns the value of DerivedMenuIds.
+func (s *CollaborationWorkspaceMenuOriginsResponse) GetDerivedMenuIds() []uuid.UUID {
+	return s.DerivedMenuIds
+}
+
+// GetDerivedSources returns the value of DerivedSources.
+func (s *CollaborationWorkspaceMenuOriginsResponse) GetDerivedSources() []MenuSourceEntry {
+	return s.DerivedSources
+}
+
+// GetBlockedMenuIds returns the value of BlockedMenuIds.
+func (s *CollaborationWorkspaceMenuOriginsResponse) GetBlockedMenuIds() []uuid.UUID {
+	return s.BlockedMenuIds
+}
+
+// SetDerivedMenuIds sets the value of DerivedMenuIds.
+func (s *CollaborationWorkspaceMenuOriginsResponse) SetDerivedMenuIds(val []uuid.UUID) {
+	s.DerivedMenuIds = val
+}
+
+// SetDerivedSources sets the value of DerivedSources.
+func (s *CollaborationWorkspaceMenuOriginsResponse) SetDerivedSources(val []MenuSourceEntry) {
+	s.DerivedSources = val
+}
+
+// SetBlockedMenuIds sets the value of BlockedMenuIds.
+func (s *CollaborationWorkspaceMenuOriginsResponse) SetBlockedMenuIds(val []uuid.UUID) {
+	s.BlockedMenuIds = val
+}
+
+// Ref: #/components/schemas/CollaborationWorkspaceMenusResponse
+type CollaborationWorkspaceMenusResponse struct {
+	MenuIds []uuid.UUID `json:"menu_ids"`
+}
+
+// GetMenuIds returns the value of MenuIds.
+func (s *CollaborationWorkspaceMenusResponse) GetMenuIds() []uuid.UUID {
+	return s.MenuIds
+}
+
+// SetMenuIds sets the value of MenuIds.
+func (s *CollaborationWorkspaceMenusResponse) SetMenuIds(val []uuid.UUID) {
+	s.MenuIds = val
+}
+
+// Ref: #/components/schemas/CollaborationWorkspaceRoleItem
+type CollaborationWorkspaceRoleItem struct {
+	ID                       uuid.UUID   `json:"id"`
+	CollaborationWorkspaceID NilUUID     `json:"collaboration_workspace_id"`
+	Code                     string      `json:"code"`
+	Name                     string      `json:"name"`
+	Description              string      `json:"description"`
+	Status                   string      `json:"status"`
+	IsSystem                 bool        `json:"is_system"`
+	IsGlobal                 bool        `json:"is_global"`
+	Priority                 OptInt64    `json:"priority"`
+	SortOrder                OptInt64    `json:"sort_order"`
+	CreatedAt                time.Time   `json:"created_at"`
+	UpdatedAt                OptDateTime `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *CollaborationWorkspaceRoleItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetCollaborationWorkspaceID returns the value of CollaborationWorkspaceID.
+func (s *CollaborationWorkspaceRoleItem) GetCollaborationWorkspaceID() NilUUID {
+	return s.CollaborationWorkspaceID
+}
+
+// GetCode returns the value of Code.
+func (s *CollaborationWorkspaceRoleItem) GetCode() string {
+	return s.Code
+}
+
+// GetName returns the value of Name.
+func (s *CollaborationWorkspaceRoleItem) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *CollaborationWorkspaceRoleItem) GetDescription() string {
+	return s.Description
+}
+
+// GetStatus returns the value of Status.
+func (s *CollaborationWorkspaceRoleItem) GetStatus() string {
+	return s.Status
+}
+
+// GetIsSystem returns the value of IsSystem.
+func (s *CollaborationWorkspaceRoleItem) GetIsSystem() bool {
+	return s.IsSystem
+}
+
+// GetIsGlobal returns the value of IsGlobal.
+func (s *CollaborationWorkspaceRoleItem) GetIsGlobal() bool {
+	return s.IsGlobal
+}
+
+// GetPriority returns the value of Priority.
+func (s *CollaborationWorkspaceRoleItem) GetPriority() OptInt64 {
+	return s.Priority
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *CollaborationWorkspaceRoleItem) GetSortOrder() OptInt64 {
+	return s.SortOrder
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *CollaborationWorkspaceRoleItem) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *CollaborationWorkspaceRoleItem) GetUpdatedAt() OptDateTime {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *CollaborationWorkspaceRoleItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetCollaborationWorkspaceID sets the value of CollaborationWorkspaceID.
+func (s *CollaborationWorkspaceRoleItem) SetCollaborationWorkspaceID(val NilUUID) {
+	s.CollaborationWorkspaceID = val
+}
+
+// SetCode sets the value of Code.
+func (s *CollaborationWorkspaceRoleItem) SetCode(val string) {
+	s.Code = val
+}
+
+// SetName sets the value of Name.
+func (s *CollaborationWorkspaceRoleItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *CollaborationWorkspaceRoleItem) SetDescription(val string) {
+	s.Description = val
+}
+
+// SetStatus sets the value of Status.
+func (s *CollaborationWorkspaceRoleItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetIsSystem sets the value of IsSystem.
+func (s *CollaborationWorkspaceRoleItem) SetIsSystem(val bool) {
+	s.IsSystem = val
+}
+
+// SetIsGlobal sets the value of IsGlobal.
+func (s *CollaborationWorkspaceRoleItem) SetIsGlobal(val bool) {
+	s.IsGlobal = val
+}
+
+// SetPriority sets the value of Priority.
+func (s *CollaborationWorkspaceRoleItem) SetPriority(val OptInt64) {
+	s.Priority = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *CollaborationWorkspaceRoleItem) SetSortOrder(val OptInt64) {
+	s.SortOrder = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *CollaborationWorkspaceRoleItem) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *CollaborationWorkspaceRoleItem) SetUpdatedAt(val OptDateTime) {
+	s.UpdatedAt = val
+}
+
+// Ref: #/components/schemas/CollaborationWorkspaceRoleList
+type CollaborationWorkspaceRoleList struct {
+	Records []CollaborationWorkspaceRoleItem `json:"records"`
+	Total   int64                            `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *CollaborationWorkspaceRoleList) GetRecords() []CollaborationWorkspaceRoleItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *CollaborationWorkspaceRoleList) GetTotal() int64 {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *CollaborationWorkspaceRoleList) SetRecords(val []CollaborationWorkspaceRoleItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *CollaborationWorkspaceRoleList) SetTotal(val int64) {
+	s.Total = val
+}
+
 type CreateApiEndpointCategoryInternalServerError Error
 
 func (*CreateApiEndpointCategoryInternalServerError) createApiEndpointCategoryRes() {}
@@ -618,6 +1573,47 @@ func (s *FeaturePackageAssignmentResponse) SetPackageIds(val []uuid.UUID) {
 // SetPackages sets the value of Packages.
 func (s *FeaturePackageAssignmentResponse) SetPackages(val []FeaturePackageRef) {
 	s.Packages = val
+}
+
+// Ref: #/components/schemas/FeaturePackageCollaborationWorkspaceItem
+type FeaturePackageCollaborationWorkspaceItem struct {
+	ID uuid.UUID `json:"id"`
+}
+
+// GetID returns the value of ID.
+func (s *FeaturePackageCollaborationWorkspaceItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// SetID sets the value of ID.
+func (s *FeaturePackageCollaborationWorkspaceItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// Ref: #/components/schemas/FeaturePackageCollaborationWorkspaceList
+type FeaturePackageCollaborationWorkspaceList struct {
+	Records []FeaturePackageCollaborationWorkspaceItem `json:"records"`
+	Total   int64                                      `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *FeaturePackageCollaborationWorkspaceList) GetRecords() []FeaturePackageCollaborationWorkspaceItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *FeaturePackageCollaborationWorkspaceList) GetTotal() int64 {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *FeaturePackageCollaborationWorkspaceList) SetRecords(val []FeaturePackageCollaborationWorkspaceItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *FeaturePackageCollaborationWorkspaceList) SetTotal(val int64) {
+	s.Total = val
 }
 
 // Ref: #/components/schemas/FeaturePackageImpactPreview
@@ -1022,6 +2018,32 @@ func (s *FeaturePackageRelationTree) SetIsolatedBaseKeys(val []string) {
 	s.IsolatedBaseKeys = val
 }
 
+// Ref: #/components/schemas/FeaturePackageRiskAuditList
+type FeaturePackageRiskAuditList struct {
+	Records []RiskAuditItem `json:"records"`
+	Total   int64           `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *FeaturePackageRiskAuditList) GetRecords() []RiskAuditItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *FeaturePackageRiskAuditList) GetTotal() int64 {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *FeaturePackageRiskAuditList) SetRecords(val []RiskAuditItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *FeaturePackageRiskAuditList) SetTotal(val int64) {
+	s.Total = val
+}
+
 // Ref: #/components/schemas/FeaturePackageSaveRequest
 type FeaturePackageSaveRequest struct {
 	PackageKey  string    `json:"package_key"`
@@ -1248,6 +2270,124 @@ func (s *FeaturePackageSummary) SetMenuCount(val OptInt64) {
 // SetCollaborationWorkspaceCount sets the value of CollaborationWorkspaceCount.
 func (s *FeaturePackageSummary) SetCollaborationWorkspaceCount(val OptInt64) {
 	s.CollaborationWorkspaceCount = val
+}
+
+// Ref: #/components/schemas/FeaturePackageVersionItem
+type FeaturePackageVersionItem struct {
+	ID         uuid.UUID  `json:"id"`
+	PackageID  uuid.UUID  `json:"package_id"`
+	VersionNo  int        `json:"version_no"`
+	ChangeType string     `json:"change_type"`
+	Snapshot   AnyObject  `json:"snapshot"`
+	OperatorID OptNilUUID `json:"operator_id"`
+	RequestID  string     `json:"request_id"`
+	CreatedAt  time.Time  `json:"created_at"`
+}
+
+// GetID returns the value of ID.
+func (s *FeaturePackageVersionItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetPackageID returns the value of PackageID.
+func (s *FeaturePackageVersionItem) GetPackageID() uuid.UUID {
+	return s.PackageID
+}
+
+// GetVersionNo returns the value of VersionNo.
+func (s *FeaturePackageVersionItem) GetVersionNo() int {
+	return s.VersionNo
+}
+
+// GetChangeType returns the value of ChangeType.
+func (s *FeaturePackageVersionItem) GetChangeType() string {
+	return s.ChangeType
+}
+
+// GetSnapshot returns the value of Snapshot.
+func (s *FeaturePackageVersionItem) GetSnapshot() AnyObject {
+	return s.Snapshot
+}
+
+// GetOperatorID returns the value of OperatorID.
+func (s *FeaturePackageVersionItem) GetOperatorID() OptNilUUID {
+	return s.OperatorID
+}
+
+// GetRequestID returns the value of RequestID.
+func (s *FeaturePackageVersionItem) GetRequestID() string {
+	return s.RequestID
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *FeaturePackageVersionItem) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// SetID sets the value of ID.
+func (s *FeaturePackageVersionItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetPackageID sets the value of PackageID.
+func (s *FeaturePackageVersionItem) SetPackageID(val uuid.UUID) {
+	s.PackageID = val
+}
+
+// SetVersionNo sets the value of VersionNo.
+func (s *FeaturePackageVersionItem) SetVersionNo(val int) {
+	s.VersionNo = val
+}
+
+// SetChangeType sets the value of ChangeType.
+func (s *FeaturePackageVersionItem) SetChangeType(val string) {
+	s.ChangeType = val
+}
+
+// SetSnapshot sets the value of Snapshot.
+func (s *FeaturePackageVersionItem) SetSnapshot(val AnyObject) {
+	s.Snapshot = val
+}
+
+// SetOperatorID sets the value of OperatorID.
+func (s *FeaturePackageVersionItem) SetOperatorID(val OptNilUUID) {
+	s.OperatorID = val
+}
+
+// SetRequestID sets the value of RequestID.
+func (s *FeaturePackageVersionItem) SetRequestID(val string) {
+	s.RequestID = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *FeaturePackageVersionItem) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// Ref: #/components/schemas/FeaturePackageVersionList
+type FeaturePackageVersionList struct {
+	Records []FeaturePackageVersionItem `json:"records"`
+	Total   int64                       `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *FeaturePackageVersionList) GetRecords() []FeaturePackageVersionItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *FeaturePackageVersionList) GetTotal() int64 {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *FeaturePackageVersionList) SetRecords(val []FeaturePackageVersionItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *FeaturePackageVersionList) SetTotal(val int64) {
+	s.Total = val
 }
 
 type GetApiEndpointOverviewInternalServerError Error
@@ -1706,6 +2846,32 @@ func (s *MenuTreeResponse) SetRecords(val []AnyObject) {
 	s.Records = val
 }
 
+// Ref: #/components/schemas/MessageListResponse
+type MessageListResponse struct {
+	Records []AnyObject `json:"records"`
+	Total   int         `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *MessageListResponse) GetRecords() []AnyObject {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *MessageListResponse) GetTotal() int {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *MessageListResponse) SetRecords(val []AnyObject) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *MessageListResponse) SetTotal(val int) {
+	s.Total = val
+}
+
 // Ref: #/components/schemas/MutationResult
 type MutationResult struct {
 	Success bool `json:"success"`
@@ -1805,6 +2971,51 @@ func (s *NavigationManifest) SetManagedPages(val []AnyObject) {
 	s.ManagedPages = val
 }
 
+// NewNilUUID returns new NilUUID with value set to v.
+func NewNilUUID(v uuid.UUID) NilUUID {
+	return NilUUID{
+		Value: v,
+	}
+}
+
+// NilUUID is nullable uuid.UUID.
+type NilUUID struct {
+	Value uuid.UUID
+	Null  bool
+}
+
+// SetTo sets value to v.
+func (o *NilUUID) SetTo(v uuid.UUID) {
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o NilUUID) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *NilUUID) SetToNull() {
+	o.Null = true
+	var v uuid.UUID
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o NilUUID) Get() (v uuid.UUID, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o NilUUID) Or(d uuid.UUID) uuid.UUID {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
 // NewOptAnyObject returns new OptAnyObject with value set to v.
 func NewOptAnyObject(v AnyObject) OptAnyObject {
 	return OptAnyObject{
@@ -1891,6 +3102,52 @@ func (o OptBool) Get() (v bool, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptBool) Or(d bool) bool {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptDateTime returns new OptDateTime with value set to v.
+func NewOptDateTime(v time.Time) OptDateTime {
+	return OptDateTime{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptDateTime is optional time.Time.
+type OptDateTime struct {
+	Value time.Time
+	Set   bool
+}
+
+// IsSet returns true if OptDateTime was set.
+func (o OptDateTime) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptDateTime) Reset() {
+	var v time.Time
+	o.Value = v
+	o.Set = false
+}
+
+// SetTo sets value to v.
+func (o *OptDateTime) SetTo(v time.Time) {
+	o.Set = true
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptDateTime) Get() (v time.Time, ok bool) {
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptDateTime) Or(d time.Time) time.Time {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -2029,6 +3286,69 @@ func (o OptMultipartFile) Get() (v ht.MultipartFile, ok bool) {
 
 // Or returns value if set, or given parameter if does not.
 func (o OptMultipartFile) Or(d ht.MultipartFile) ht.MultipartFile {
+	if v, ok := o.Get(); ok {
+		return v
+	}
+	return d
+}
+
+// NewOptNilApiEndpointCategoryItem returns new OptNilApiEndpointCategoryItem with value set to v.
+func NewOptNilApiEndpointCategoryItem(v ApiEndpointCategoryItem) OptNilApiEndpointCategoryItem {
+	return OptNilApiEndpointCategoryItem{
+		Value: v,
+		Set:   true,
+	}
+}
+
+// OptNilApiEndpointCategoryItem is optional nullable ApiEndpointCategoryItem.
+type OptNilApiEndpointCategoryItem struct {
+	Value ApiEndpointCategoryItem
+	Set   bool
+	Null  bool
+}
+
+// IsSet returns true if OptNilApiEndpointCategoryItem was set.
+func (o OptNilApiEndpointCategoryItem) IsSet() bool { return o.Set }
+
+// Reset unsets value.
+func (o *OptNilApiEndpointCategoryItem) Reset() {
+	var v ApiEndpointCategoryItem
+	o.Value = v
+	o.Set = false
+	o.Null = false
+}
+
+// SetTo sets value to v.
+func (o *OptNilApiEndpointCategoryItem) SetTo(v ApiEndpointCategoryItem) {
+	o.Set = true
+	o.Null = false
+	o.Value = v
+}
+
+// IsNull returns true if value is Null.
+func (o OptNilApiEndpointCategoryItem) IsNull() bool { return o.Null }
+
+// SetToNull sets value to null.
+func (o *OptNilApiEndpointCategoryItem) SetToNull() {
+	o.Set = true
+	o.Null = true
+	var v ApiEndpointCategoryItem
+	o.Value = v
+}
+
+// Get returns value and boolean that denotes whether value was set.
+func (o OptNilApiEndpointCategoryItem) Get() (v ApiEndpointCategoryItem, ok bool) {
+	if o.Null {
+		return v, false
+	}
+	if !o.Set {
+		return v, false
+	}
+	return o.Value, true
+}
+
+// Or returns value if set, or given parameter if does not.
+func (o OptNilApiEndpointCategoryItem) Or(d ApiEndpointCategoryItem) ApiEndpointCategoryItem {
 	if v, ok := o.Get(); ok {
 		return v
 	}
@@ -2786,6 +4106,32 @@ func (o OptUUID) Or(d uuid.UUID) uuid.UUID {
 	return d
 }
 
+// Ref: #/components/schemas/PageListResponse
+type PageListResponse struct {
+	Records []AnyObject `json:"records"`
+	Total   int         `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *PageListResponse) GetRecords() []AnyObject {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *PageListResponse) GetTotal() int {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *PageListResponse) SetRecords(val []AnyObject) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *PageListResponse) SetTotal(val int) {
+	s.Total = val
+}
+
 // Ref: #/components/schemas/PageSaveRequest
 type PageSaveRequest struct {
 	PageKey           OptString    `json:"page_key"`
@@ -3080,6 +4426,467 @@ func (s *PageSyncResult) SetCreatedKeys(val []string) {
 	s.CreatedKeys = val
 }
 
+// Ref: #/components/schemas/PermissionActionAuditSummary
+type PermissionActionAuditSummary struct {
+	TotalCount              int64 `json:"total_count"`
+	UnusedCount             int64 `json:"unused_count"`
+	APIOnlyCount            int64 `json:"api_only_count"`
+	PageOnlyCount           int64 `json:"page_only_count"`
+	PackageOnlyCount        int64 `json:"package_only_count"`
+	MultiConsumerCount      int64 `json:"multi_consumer_count"`
+	CrossContextMirrorCount int64 `json:"cross_context_mirror_count"`
+	SuspectedDuplicateCount int64 `json:"suspected_duplicate_count"`
+}
+
+// GetTotalCount returns the value of TotalCount.
+func (s *PermissionActionAuditSummary) GetTotalCount() int64 {
+	return s.TotalCount
+}
+
+// GetUnusedCount returns the value of UnusedCount.
+func (s *PermissionActionAuditSummary) GetUnusedCount() int64 {
+	return s.UnusedCount
+}
+
+// GetAPIOnlyCount returns the value of APIOnlyCount.
+func (s *PermissionActionAuditSummary) GetAPIOnlyCount() int64 {
+	return s.APIOnlyCount
+}
+
+// GetPageOnlyCount returns the value of PageOnlyCount.
+func (s *PermissionActionAuditSummary) GetPageOnlyCount() int64 {
+	return s.PageOnlyCount
+}
+
+// GetPackageOnlyCount returns the value of PackageOnlyCount.
+func (s *PermissionActionAuditSummary) GetPackageOnlyCount() int64 {
+	return s.PackageOnlyCount
+}
+
+// GetMultiConsumerCount returns the value of MultiConsumerCount.
+func (s *PermissionActionAuditSummary) GetMultiConsumerCount() int64 {
+	return s.MultiConsumerCount
+}
+
+// GetCrossContextMirrorCount returns the value of CrossContextMirrorCount.
+func (s *PermissionActionAuditSummary) GetCrossContextMirrorCount() int64 {
+	return s.CrossContextMirrorCount
+}
+
+// GetSuspectedDuplicateCount returns the value of SuspectedDuplicateCount.
+func (s *PermissionActionAuditSummary) GetSuspectedDuplicateCount() int64 {
+	return s.SuspectedDuplicateCount
+}
+
+// SetTotalCount sets the value of TotalCount.
+func (s *PermissionActionAuditSummary) SetTotalCount(val int64) {
+	s.TotalCount = val
+}
+
+// SetUnusedCount sets the value of UnusedCount.
+func (s *PermissionActionAuditSummary) SetUnusedCount(val int64) {
+	s.UnusedCount = val
+}
+
+// SetAPIOnlyCount sets the value of APIOnlyCount.
+func (s *PermissionActionAuditSummary) SetAPIOnlyCount(val int64) {
+	s.APIOnlyCount = val
+}
+
+// SetPageOnlyCount sets the value of PageOnlyCount.
+func (s *PermissionActionAuditSummary) SetPageOnlyCount(val int64) {
+	s.PageOnlyCount = val
+}
+
+// SetPackageOnlyCount sets the value of PackageOnlyCount.
+func (s *PermissionActionAuditSummary) SetPackageOnlyCount(val int64) {
+	s.PackageOnlyCount = val
+}
+
+// SetMultiConsumerCount sets the value of MultiConsumerCount.
+func (s *PermissionActionAuditSummary) SetMultiConsumerCount(val int64) {
+	s.MultiConsumerCount = val
+}
+
+// SetCrossContextMirrorCount sets the value of CrossContextMirrorCount.
+func (s *PermissionActionAuditSummary) SetCrossContextMirrorCount(val int64) {
+	s.CrossContextMirrorCount = val
+}
+
+// SetSuspectedDuplicateCount sets the value of SuspectedDuplicateCount.
+func (s *PermissionActionAuditSummary) SetSuspectedDuplicateCount(val int64) {
+	s.SuspectedDuplicateCount = val
+}
+
+// Ref: #/components/schemas/PermissionActionBatchTemplateItem
+type PermissionActionBatchTemplateItem struct {
+	ID          uuid.UUID  `json:"id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Payload     AnyObject  `json:"payload"`
+	CreatedBy   OptNilUUID `json:"created_by"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *PermissionActionBatchTemplateItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetName returns the value of Name.
+func (s *PermissionActionBatchTemplateItem) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *PermissionActionBatchTemplateItem) GetDescription() string {
+	return s.Description
+}
+
+// GetPayload returns the value of Payload.
+func (s *PermissionActionBatchTemplateItem) GetPayload() AnyObject {
+	return s.Payload
+}
+
+// GetCreatedBy returns the value of CreatedBy.
+func (s *PermissionActionBatchTemplateItem) GetCreatedBy() OptNilUUID {
+	return s.CreatedBy
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *PermissionActionBatchTemplateItem) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *PermissionActionBatchTemplateItem) GetUpdatedAt() time.Time {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *PermissionActionBatchTemplateItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetName sets the value of Name.
+func (s *PermissionActionBatchTemplateItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *PermissionActionBatchTemplateItem) SetDescription(val string) {
+	s.Description = val
+}
+
+// SetPayload sets the value of Payload.
+func (s *PermissionActionBatchTemplateItem) SetPayload(val AnyObject) {
+	s.Payload = val
+}
+
+// SetCreatedBy sets the value of CreatedBy.
+func (s *PermissionActionBatchTemplateItem) SetCreatedBy(val OptNilUUID) {
+	s.CreatedBy = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *PermissionActionBatchTemplateItem) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *PermissionActionBatchTemplateItem) SetUpdatedAt(val time.Time) {
+	s.UpdatedAt = val
+}
+
+// Ref: #/components/schemas/PermissionActionBatchTemplateList
+type PermissionActionBatchTemplateList struct {
+	Records []PermissionActionBatchTemplateItem `json:"records"`
+	Total   int64                               `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *PermissionActionBatchTemplateList) GetRecords() []PermissionActionBatchTemplateItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *PermissionActionBatchTemplateList) GetTotal() int64 {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *PermissionActionBatchTemplateList) SetRecords(val []PermissionActionBatchTemplateItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *PermissionActionBatchTemplateList) SetTotal(val int64) {
+	s.Total = val
+}
+
+// Ref: #/components/schemas/PermissionActionConsumerAPIItem
+type PermissionActionConsumerAPIItem struct {
+	Code    string `json:"code"`
+	Method  string `json:"method"`
+	Path    string `json:"path"`
+	Summary string `json:"summary"`
+}
+
+// GetCode returns the value of Code.
+func (s *PermissionActionConsumerAPIItem) GetCode() string {
+	return s.Code
+}
+
+// GetMethod returns the value of Method.
+func (s *PermissionActionConsumerAPIItem) GetMethod() string {
+	return s.Method
+}
+
+// GetPath returns the value of Path.
+func (s *PermissionActionConsumerAPIItem) GetPath() string {
+	return s.Path
+}
+
+// GetSummary returns the value of Summary.
+func (s *PermissionActionConsumerAPIItem) GetSummary() string {
+	return s.Summary
+}
+
+// SetCode sets the value of Code.
+func (s *PermissionActionConsumerAPIItem) SetCode(val string) {
+	s.Code = val
+}
+
+// SetMethod sets the value of Method.
+func (s *PermissionActionConsumerAPIItem) SetMethod(val string) {
+	s.Method = val
+}
+
+// SetPath sets the value of Path.
+func (s *PermissionActionConsumerAPIItem) SetPath(val string) {
+	s.Path = val
+}
+
+// SetSummary sets the value of Summary.
+func (s *PermissionActionConsumerAPIItem) SetSummary(val string) {
+	s.Summary = val
+}
+
+// Ref: #/components/schemas/PermissionActionConsumerPackageItem
+type PermissionActionConsumerPackageItem struct {
+	ID          uuid.UUID `json:"id"`
+	PackageKey  string    `json:"package_key"`
+	Name        string    `json:"name"`
+	PackageType string    `json:"package_type"`
+	ContextType string    `json:"context_type"`
+}
+
+// GetID returns the value of ID.
+func (s *PermissionActionConsumerPackageItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetPackageKey returns the value of PackageKey.
+func (s *PermissionActionConsumerPackageItem) GetPackageKey() string {
+	return s.PackageKey
+}
+
+// GetName returns the value of Name.
+func (s *PermissionActionConsumerPackageItem) GetName() string {
+	return s.Name
+}
+
+// GetPackageType returns the value of PackageType.
+func (s *PermissionActionConsumerPackageItem) GetPackageType() string {
+	return s.PackageType
+}
+
+// GetContextType returns the value of ContextType.
+func (s *PermissionActionConsumerPackageItem) GetContextType() string {
+	return s.ContextType
+}
+
+// SetID sets the value of ID.
+func (s *PermissionActionConsumerPackageItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetPackageKey sets the value of PackageKey.
+func (s *PermissionActionConsumerPackageItem) SetPackageKey(val string) {
+	s.PackageKey = val
+}
+
+// SetName sets the value of Name.
+func (s *PermissionActionConsumerPackageItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetPackageType sets the value of PackageType.
+func (s *PermissionActionConsumerPackageItem) SetPackageType(val string) {
+	s.PackageType = val
+}
+
+// SetContextType sets the value of ContextType.
+func (s *PermissionActionConsumerPackageItem) SetContextType(val string) {
+	s.ContextType = val
+}
+
+// Ref: #/components/schemas/PermissionActionConsumerPageItem
+type PermissionActionConsumerPageItem struct {
+	PageKey    string `json:"page_key"`
+	Name       string `json:"name"`
+	RoutePath  string `json:"route_path"`
+	AccessMode string `json:"access_mode"`
+}
+
+// GetPageKey returns the value of PageKey.
+func (s *PermissionActionConsumerPageItem) GetPageKey() string {
+	return s.PageKey
+}
+
+// GetName returns the value of Name.
+func (s *PermissionActionConsumerPageItem) GetName() string {
+	return s.Name
+}
+
+// GetRoutePath returns the value of RoutePath.
+func (s *PermissionActionConsumerPageItem) GetRoutePath() string {
+	return s.RoutePath
+}
+
+// GetAccessMode returns the value of AccessMode.
+func (s *PermissionActionConsumerPageItem) GetAccessMode() string {
+	return s.AccessMode
+}
+
+// SetPageKey sets the value of PageKey.
+func (s *PermissionActionConsumerPageItem) SetPageKey(val string) {
+	s.PageKey = val
+}
+
+// SetName sets the value of Name.
+func (s *PermissionActionConsumerPageItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetRoutePath sets the value of RoutePath.
+func (s *PermissionActionConsumerPageItem) SetRoutePath(val string) {
+	s.RoutePath = val
+}
+
+// SetAccessMode sets the value of AccessMode.
+func (s *PermissionActionConsumerPageItem) SetAccessMode(val string) {
+	s.AccessMode = val
+}
+
+// Ref: #/components/schemas/PermissionActionConsumerRoleItem
+type PermissionActionConsumerRoleItem struct {
+	ID          uuid.UUID `json:"id"`
+	Code        string    `json:"code"`
+	Name        string    `json:"name"`
+	ContextType string    `json:"context_type"`
+}
+
+// GetID returns the value of ID.
+func (s *PermissionActionConsumerRoleItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetCode returns the value of Code.
+func (s *PermissionActionConsumerRoleItem) GetCode() string {
+	return s.Code
+}
+
+// GetName returns the value of Name.
+func (s *PermissionActionConsumerRoleItem) GetName() string {
+	return s.Name
+}
+
+// GetContextType returns the value of ContextType.
+func (s *PermissionActionConsumerRoleItem) GetContextType() string {
+	return s.ContextType
+}
+
+// SetID sets the value of ID.
+func (s *PermissionActionConsumerRoleItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetCode sets the value of Code.
+func (s *PermissionActionConsumerRoleItem) SetCode(val string) {
+	s.Code = val
+}
+
+// SetName sets the value of Name.
+func (s *PermissionActionConsumerRoleItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetContextType sets the value of ContextType.
+func (s *PermissionActionConsumerRoleItem) SetContextType(val string) {
+	s.ContextType = val
+}
+
+// Ref: #/components/schemas/PermissionActionConsumersResponse
+type PermissionActionConsumersResponse struct {
+	PermissionKey   string                                `json:"permission_key"`
+	Apis            []PermissionActionConsumerAPIItem     `json:"apis"`
+	Pages           []PermissionActionConsumerPageItem    `json:"pages"`
+	FeaturePackages []PermissionActionConsumerPackageItem `json:"feature_packages"`
+	Roles           []PermissionActionConsumerRoleItem    `json:"roles"`
+}
+
+// GetPermissionKey returns the value of PermissionKey.
+func (s *PermissionActionConsumersResponse) GetPermissionKey() string {
+	return s.PermissionKey
+}
+
+// GetApis returns the value of Apis.
+func (s *PermissionActionConsumersResponse) GetApis() []PermissionActionConsumerAPIItem {
+	return s.Apis
+}
+
+// GetPages returns the value of Pages.
+func (s *PermissionActionConsumersResponse) GetPages() []PermissionActionConsumerPageItem {
+	return s.Pages
+}
+
+// GetFeaturePackages returns the value of FeaturePackages.
+func (s *PermissionActionConsumersResponse) GetFeaturePackages() []PermissionActionConsumerPackageItem {
+	return s.FeaturePackages
+}
+
+// GetRoles returns the value of Roles.
+func (s *PermissionActionConsumersResponse) GetRoles() []PermissionActionConsumerRoleItem {
+	return s.Roles
+}
+
+// SetPermissionKey sets the value of PermissionKey.
+func (s *PermissionActionConsumersResponse) SetPermissionKey(val string) {
+	s.PermissionKey = val
+}
+
+// SetApis sets the value of Apis.
+func (s *PermissionActionConsumersResponse) SetApis(val []PermissionActionConsumerAPIItem) {
+	s.Apis = val
+}
+
+// SetPages sets the value of Pages.
+func (s *PermissionActionConsumersResponse) SetPages(val []PermissionActionConsumerPageItem) {
+	s.Pages = val
+}
+
+// SetFeaturePackages sets the value of FeaturePackages.
+func (s *PermissionActionConsumersResponse) SetFeaturePackages(val []PermissionActionConsumerPackageItem) {
+	s.FeaturePackages = val
+}
+
+// SetRoles sets the value of Roles.
+func (s *PermissionActionConsumersResponse) SetRoles(val []PermissionActionConsumerRoleItem) {
+	s.Roles = val
+}
+
 // Ref: #/components/schemas/PermissionActionDetail
 type PermissionActionDetail struct {
 	ID          uuid.UUID    `json:"id"`
@@ -3172,63 +4979,449 @@ func (s *PermissionActionDetail) SetCreatedAt(val OptNilString) {
 	s.CreatedAt = val
 }
 
-// Ref: #/components/schemas/PermissionActionList
-type PermissionActionList struct {
-	Records      []AnyObject  `json:"records"`
-	Total        int          `json:"total"`
-	Current      int          `json:"current"`
-	Size         int          `json:"size"`
-	AuditSummary OptAnyObject `json:"audit_summary"`
+// Ref: #/components/schemas/PermissionActionGroupList
+type PermissionActionGroupList struct {
+	Records []PermissionGroupItem `json:"records"`
+	Total   int64                 `json:"total"`
 }
 
 // GetRecords returns the value of Records.
-func (s *PermissionActionList) GetRecords() []AnyObject {
+func (s *PermissionActionGroupList) GetRecords() []PermissionGroupItem {
 	return s.Records
 }
 
 // GetTotal returns the value of Total.
-func (s *PermissionActionList) GetTotal() int {
+func (s *PermissionActionGroupList) GetTotal() int64 {
 	return s.Total
 }
 
-// GetCurrent returns the value of Current.
-func (s *PermissionActionList) GetCurrent() int {
-	return s.Current
-}
-
-// GetSize returns the value of Size.
-func (s *PermissionActionList) GetSize() int {
-	return s.Size
-}
-
-// GetAuditSummary returns the value of AuditSummary.
-func (s *PermissionActionList) GetAuditSummary() OptAnyObject {
-	return s.AuditSummary
-}
-
 // SetRecords sets the value of Records.
-func (s *PermissionActionList) SetRecords(val []AnyObject) {
+func (s *PermissionActionGroupList) SetRecords(val []PermissionGroupItem) {
 	s.Records = val
 }
 
 // SetTotal sets the value of Total.
-func (s *PermissionActionList) SetTotal(val int) {
+func (s *PermissionActionGroupList) SetTotal(val int64) {
 	s.Total = val
 }
 
-// SetCurrent sets the value of Current.
-func (s *PermissionActionList) SetCurrent(val int) {
-	s.Current = val
+// Ref: #/components/schemas/PermissionActionImpactPreview
+type PermissionActionImpactPreview struct {
+	PermissionKey               string `json:"permission_key"`
+	APICount                    int64  `json:"api_count"`
+	PageCount                   int64  `json:"page_count"`
+	PackageCount                int64  `json:"package_count"`
+	RoleCount                   int64  `json:"role_count"`
+	CollaborationWorkspaceCount int64  `json:"collaboration_workspace_count"`
+	UserCount                   int64  `json:"user_count"`
 }
 
-// SetSize sets the value of Size.
-func (s *PermissionActionList) SetSize(val int) {
-	s.Size = val
+// GetPermissionKey returns the value of PermissionKey.
+func (s *PermissionActionImpactPreview) GetPermissionKey() string {
+	return s.PermissionKey
 }
 
-// SetAuditSummary sets the value of AuditSummary.
-func (s *PermissionActionList) SetAuditSummary(val OptAnyObject) {
-	s.AuditSummary = val
+// GetAPICount returns the value of APICount.
+func (s *PermissionActionImpactPreview) GetAPICount() int64 {
+	return s.APICount
+}
+
+// GetPageCount returns the value of PageCount.
+func (s *PermissionActionImpactPreview) GetPageCount() int64 {
+	return s.PageCount
+}
+
+// GetPackageCount returns the value of PackageCount.
+func (s *PermissionActionImpactPreview) GetPackageCount() int64 {
+	return s.PackageCount
+}
+
+// GetRoleCount returns the value of RoleCount.
+func (s *PermissionActionImpactPreview) GetRoleCount() int64 {
+	return s.RoleCount
+}
+
+// GetCollaborationWorkspaceCount returns the value of CollaborationWorkspaceCount.
+func (s *PermissionActionImpactPreview) GetCollaborationWorkspaceCount() int64 {
+	return s.CollaborationWorkspaceCount
+}
+
+// GetUserCount returns the value of UserCount.
+func (s *PermissionActionImpactPreview) GetUserCount() int64 {
+	return s.UserCount
+}
+
+// SetPermissionKey sets the value of PermissionKey.
+func (s *PermissionActionImpactPreview) SetPermissionKey(val string) {
+	s.PermissionKey = val
+}
+
+// SetAPICount sets the value of APICount.
+func (s *PermissionActionImpactPreview) SetAPICount(val int64) {
+	s.APICount = val
+}
+
+// SetPageCount sets the value of PageCount.
+func (s *PermissionActionImpactPreview) SetPageCount(val int64) {
+	s.PageCount = val
+}
+
+// SetPackageCount sets the value of PackageCount.
+func (s *PermissionActionImpactPreview) SetPackageCount(val int64) {
+	s.PackageCount = val
+}
+
+// SetRoleCount sets the value of RoleCount.
+func (s *PermissionActionImpactPreview) SetRoleCount(val int64) {
+	s.RoleCount = val
+}
+
+// SetCollaborationWorkspaceCount sets the value of CollaborationWorkspaceCount.
+func (s *PermissionActionImpactPreview) SetCollaborationWorkspaceCount(val int64) {
+	s.CollaborationWorkspaceCount = val
+}
+
+// SetUserCount sets the value of UserCount.
+func (s *PermissionActionImpactPreview) SetUserCount(val int64) {
+	s.UserCount = val
+}
+
+// Ref: #/components/schemas/PermissionActionItem
+type PermissionActionItem struct {
+	ID                 uuid.UUID  `json:"id"`
+	ResourceCode       string     `json:"resource_code"`
+	ActionCode         string     `json:"action_code"`
+	ModuleCode         string     `json:"module_code"`
+	ModuleGroupID      OptNilUUID `json:"module_group_id"`
+	FeatureGroupID     OptNilUUID `json:"feature_group_id"`
+	PermissionKey      string     `json:"permission_key"`
+	FeatureKind        string     `json:"feature_kind"`
+	DataPolicy         string     `json:"data_policy"`
+	Name               string     `json:"name"`
+	Description        OptString  `json:"description"`
+	DataPermissionCode string     `json:"data_permission_code"`
+	DataPermissionName string     `json:"data_permission_name"`
+	APICount           int64      `json:"api_count"`
+	PageCount          int64      `json:"page_count"`
+	PackageCount       int64      `json:"package_count"`
+	ConsumerTypes      []string   `json:"consumer_types"`
+	UsagePattern       string     `json:"usage_pattern"`
+	UsageNote          string     `json:"usage_note"`
+	DuplicatePattern   string     `json:"duplicate_pattern"`
+	DuplicateGroup     string     `json:"duplicate_group"`
+	DuplicateKeys      []string   `json:"duplicate_keys"`
+	DuplicateNote      string     `json:"duplicate_note"`
+	Status             string     `json:"status"`
+	SortOrder          int64      `json:"sort_order"`
+	IsBuiltin          bool       `json:"is_builtin"`
+	CreatedAt          time.Time  `json:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *PermissionActionItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetResourceCode returns the value of ResourceCode.
+func (s *PermissionActionItem) GetResourceCode() string {
+	return s.ResourceCode
+}
+
+// GetActionCode returns the value of ActionCode.
+func (s *PermissionActionItem) GetActionCode() string {
+	return s.ActionCode
+}
+
+// GetModuleCode returns the value of ModuleCode.
+func (s *PermissionActionItem) GetModuleCode() string {
+	return s.ModuleCode
+}
+
+// GetModuleGroupID returns the value of ModuleGroupID.
+func (s *PermissionActionItem) GetModuleGroupID() OptNilUUID {
+	return s.ModuleGroupID
+}
+
+// GetFeatureGroupID returns the value of FeatureGroupID.
+func (s *PermissionActionItem) GetFeatureGroupID() OptNilUUID {
+	return s.FeatureGroupID
+}
+
+// GetPermissionKey returns the value of PermissionKey.
+func (s *PermissionActionItem) GetPermissionKey() string {
+	return s.PermissionKey
+}
+
+// GetFeatureKind returns the value of FeatureKind.
+func (s *PermissionActionItem) GetFeatureKind() string {
+	return s.FeatureKind
+}
+
+// GetDataPolicy returns the value of DataPolicy.
+func (s *PermissionActionItem) GetDataPolicy() string {
+	return s.DataPolicy
+}
+
+// GetName returns the value of Name.
+func (s *PermissionActionItem) GetName() string {
+	return s.Name
+}
+
+// GetDescription returns the value of Description.
+func (s *PermissionActionItem) GetDescription() OptString {
+	return s.Description
+}
+
+// GetDataPermissionCode returns the value of DataPermissionCode.
+func (s *PermissionActionItem) GetDataPermissionCode() string {
+	return s.DataPermissionCode
+}
+
+// GetDataPermissionName returns the value of DataPermissionName.
+func (s *PermissionActionItem) GetDataPermissionName() string {
+	return s.DataPermissionName
+}
+
+// GetAPICount returns the value of APICount.
+func (s *PermissionActionItem) GetAPICount() int64 {
+	return s.APICount
+}
+
+// GetPageCount returns the value of PageCount.
+func (s *PermissionActionItem) GetPageCount() int64 {
+	return s.PageCount
+}
+
+// GetPackageCount returns the value of PackageCount.
+func (s *PermissionActionItem) GetPackageCount() int64 {
+	return s.PackageCount
+}
+
+// GetConsumerTypes returns the value of ConsumerTypes.
+func (s *PermissionActionItem) GetConsumerTypes() []string {
+	return s.ConsumerTypes
+}
+
+// GetUsagePattern returns the value of UsagePattern.
+func (s *PermissionActionItem) GetUsagePattern() string {
+	return s.UsagePattern
+}
+
+// GetUsageNote returns the value of UsageNote.
+func (s *PermissionActionItem) GetUsageNote() string {
+	return s.UsageNote
+}
+
+// GetDuplicatePattern returns the value of DuplicatePattern.
+func (s *PermissionActionItem) GetDuplicatePattern() string {
+	return s.DuplicatePattern
+}
+
+// GetDuplicateGroup returns the value of DuplicateGroup.
+func (s *PermissionActionItem) GetDuplicateGroup() string {
+	return s.DuplicateGroup
+}
+
+// GetDuplicateKeys returns the value of DuplicateKeys.
+func (s *PermissionActionItem) GetDuplicateKeys() []string {
+	return s.DuplicateKeys
+}
+
+// GetDuplicateNote returns the value of DuplicateNote.
+func (s *PermissionActionItem) GetDuplicateNote() string {
+	return s.DuplicateNote
+}
+
+// GetStatus returns the value of Status.
+func (s *PermissionActionItem) GetStatus() string {
+	return s.Status
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *PermissionActionItem) GetSortOrder() int64 {
+	return s.SortOrder
+}
+
+// GetIsBuiltin returns the value of IsBuiltin.
+func (s *PermissionActionItem) GetIsBuiltin() bool {
+	return s.IsBuiltin
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *PermissionActionItem) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *PermissionActionItem) GetUpdatedAt() time.Time {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *PermissionActionItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetResourceCode sets the value of ResourceCode.
+func (s *PermissionActionItem) SetResourceCode(val string) {
+	s.ResourceCode = val
+}
+
+// SetActionCode sets the value of ActionCode.
+func (s *PermissionActionItem) SetActionCode(val string) {
+	s.ActionCode = val
+}
+
+// SetModuleCode sets the value of ModuleCode.
+func (s *PermissionActionItem) SetModuleCode(val string) {
+	s.ModuleCode = val
+}
+
+// SetModuleGroupID sets the value of ModuleGroupID.
+func (s *PermissionActionItem) SetModuleGroupID(val OptNilUUID) {
+	s.ModuleGroupID = val
+}
+
+// SetFeatureGroupID sets the value of FeatureGroupID.
+func (s *PermissionActionItem) SetFeatureGroupID(val OptNilUUID) {
+	s.FeatureGroupID = val
+}
+
+// SetPermissionKey sets the value of PermissionKey.
+func (s *PermissionActionItem) SetPermissionKey(val string) {
+	s.PermissionKey = val
+}
+
+// SetFeatureKind sets the value of FeatureKind.
+func (s *PermissionActionItem) SetFeatureKind(val string) {
+	s.FeatureKind = val
+}
+
+// SetDataPolicy sets the value of DataPolicy.
+func (s *PermissionActionItem) SetDataPolicy(val string) {
+	s.DataPolicy = val
+}
+
+// SetName sets the value of Name.
+func (s *PermissionActionItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetDescription sets the value of Description.
+func (s *PermissionActionItem) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetDataPermissionCode sets the value of DataPermissionCode.
+func (s *PermissionActionItem) SetDataPermissionCode(val string) {
+	s.DataPermissionCode = val
+}
+
+// SetDataPermissionName sets the value of DataPermissionName.
+func (s *PermissionActionItem) SetDataPermissionName(val string) {
+	s.DataPermissionName = val
+}
+
+// SetAPICount sets the value of APICount.
+func (s *PermissionActionItem) SetAPICount(val int64) {
+	s.APICount = val
+}
+
+// SetPageCount sets the value of PageCount.
+func (s *PermissionActionItem) SetPageCount(val int64) {
+	s.PageCount = val
+}
+
+// SetPackageCount sets the value of PackageCount.
+func (s *PermissionActionItem) SetPackageCount(val int64) {
+	s.PackageCount = val
+}
+
+// SetConsumerTypes sets the value of ConsumerTypes.
+func (s *PermissionActionItem) SetConsumerTypes(val []string) {
+	s.ConsumerTypes = val
+}
+
+// SetUsagePattern sets the value of UsagePattern.
+func (s *PermissionActionItem) SetUsagePattern(val string) {
+	s.UsagePattern = val
+}
+
+// SetUsageNote sets the value of UsageNote.
+func (s *PermissionActionItem) SetUsageNote(val string) {
+	s.UsageNote = val
+}
+
+// SetDuplicatePattern sets the value of DuplicatePattern.
+func (s *PermissionActionItem) SetDuplicatePattern(val string) {
+	s.DuplicatePattern = val
+}
+
+// SetDuplicateGroup sets the value of DuplicateGroup.
+func (s *PermissionActionItem) SetDuplicateGroup(val string) {
+	s.DuplicateGroup = val
+}
+
+// SetDuplicateKeys sets the value of DuplicateKeys.
+func (s *PermissionActionItem) SetDuplicateKeys(val []string) {
+	s.DuplicateKeys = val
+}
+
+// SetDuplicateNote sets the value of DuplicateNote.
+func (s *PermissionActionItem) SetDuplicateNote(val string) {
+	s.DuplicateNote = val
+}
+
+// SetStatus sets the value of Status.
+func (s *PermissionActionItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *PermissionActionItem) SetSortOrder(val int64) {
+	s.SortOrder = val
+}
+
+// SetIsBuiltin sets the value of IsBuiltin.
+func (s *PermissionActionItem) SetIsBuiltin(val bool) {
+	s.IsBuiltin = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *PermissionActionItem) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *PermissionActionItem) SetUpdatedAt(val time.Time) {
+	s.UpdatedAt = val
+}
+
+// Ref: #/components/schemas/PermissionActionOptions
+type PermissionActionOptions struct {
+	Records []PermissionActionItem `json:"records"`
+	Total   int64                  `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *PermissionActionOptions) GetRecords() []PermissionActionItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *PermissionActionOptions) GetTotal() int64 {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *PermissionActionOptions) SetRecords(val []PermissionActionItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *PermissionActionOptions) SetTotal(val int64) {
+	s.Total = val
 }
 
 // Ref: #/components/schemas/PermissionActionRef
@@ -3288,6 +5481,32 @@ func (s *PermissionActionRef) SetDescription(val OptNilString) {
 // SetStatus sets the value of Status.
 func (s *PermissionActionRef) SetStatus(val OptNilString) {
 	s.Status = val
+}
+
+// Ref: #/components/schemas/PermissionActionRiskAuditList
+type PermissionActionRiskAuditList struct {
+	Records []RiskAuditItem `json:"records"`
+	Total   int64           `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *PermissionActionRiskAuditList) GetRecords() []RiskAuditItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *PermissionActionRiskAuditList) GetTotal() int64 {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *PermissionActionRiskAuditList) SetRecords(val []RiskAuditItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *PermissionActionRiskAuditList) SetTotal(val int64) {
+	s.Total = val
 }
 
 // Ref: #/components/schemas/PermissionActionSaveRequest
@@ -3430,6 +5649,131 @@ func (s *PermissionExplanationRoleSources) init() PermissionExplanationRoleSourc
 		*s = m
 	}
 	return m
+}
+
+// Ref: #/components/schemas/PermissionGroupItem
+type PermissionGroupItem struct {
+	ID          uuid.UUID `json:"id"`
+	GroupType   string    `json:"group_type"`
+	Code        string    `json:"code"`
+	Name        string    `json:"name"`
+	NameEn      OptString `json:"name_en"`
+	Description OptString `json:"description"`
+	Status      string    `json:"status"`
+	SortOrder   int64     `json:"sort_order"`
+	IsBuiltin   bool      `json:"is_builtin"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// GetID returns the value of ID.
+func (s *PermissionGroupItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetGroupType returns the value of GroupType.
+func (s *PermissionGroupItem) GetGroupType() string {
+	return s.GroupType
+}
+
+// GetCode returns the value of Code.
+func (s *PermissionGroupItem) GetCode() string {
+	return s.Code
+}
+
+// GetName returns the value of Name.
+func (s *PermissionGroupItem) GetName() string {
+	return s.Name
+}
+
+// GetNameEn returns the value of NameEn.
+func (s *PermissionGroupItem) GetNameEn() OptString {
+	return s.NameEn
+}
+
+// GetDescription returns the value of Description.
+func (s *PermissionGroupItem) GetDescription() OptString {
+	return s.Description
+}
+
+// GetStatus returns the value of Status.
+func (s *PermissionGroupItem) GetStatus() string {
+	return s.Status
+}
+
+// GetSortOrder returns the value of SortOrder.
+func (s *PermissionGroupItem) GetSortOrder() int64 {
+	return s.SortOrder
+}
+
+// GetIsBuiltin returns the value of IsBuiltin.
+func (s *PermissionGroupItem) GetIsBuiltin() bool {
+	return s.IsBuiltin
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *PermissionGroupItem) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// GetUpdatedAt returns the value of UpdatedAt.
+func (s *PermissionGroupItem) GetUpdatedAt() time.Time {
+	return s.UpdatedAt
+}
+
+// SetID sets the value of ID.
+func (s *PermissionGroupItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetGroupType sets the value of GroupType.
+func (s *PermissionGroupItem) SetGroupType(val string) {
+	s.GroupType = val
+}
+
+// SetCode sets the value of Code.
+func (s *PermissionGroupItem) SetCode(val string) {
+	s.Code = val
+}
+
+// SetName sets the value of Name.
+func (s *PermissionGroupItem) SetName(val string) {
+	s.Name = val
+}
+
+// SetNameEn sets the value of NameEn.
+func (s *PermissionGroupItem) SetNameEn(val OptString) {
+	s.NameEn = val
+}
+
+// SetDescription sets the value of Description.
+func (s *PermissionGroupItem) SetDescription(val OptString) {
+	s.Description = val
+}
+
+// SetStatus sets the value of Status.
+func (s *PermissionGroupItem) SetStatus(val string) {
+	s.Status = val
+}
+
+// SetSortOrder sets the value of SortOrder.
+func (s *PermissionGroupItem) SetSortOrder(val int64) {
+	s.SortOrder = val
+}
+
+// SetIsBuiltin sets the value of IsBuiltin.
+func (s *PermissionGroupItem) SetIsBuiltin(val bool) {
+	s.IsBuiltin = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *PermissionGroupItem) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
+// SetUpdatedAt sets the value of UpdatedAt.
+func (s *PermissionGroupItem) SetUpdatedAt(val time.Time) {
+	s.UpdatedAt = val
 }
 
 // Ref: #/components/schemas/RefreshTokenRequest
@@ -4737,6 +7081,120 @@ func (s *RegisterRequest) SetAgreementVersion(val OptString) {
 	s.AgreementVersion = val
 }
 
+// Ref: #/components/schemas/RiskAuditItem
+type RiskAuditItem struct {
+	ID            uuid.UUID  `json:"id"`
+	OperatorID    OptNilUUID `json:"operator_id"`
+	ObjectType    string     `json:"object_type"`
+	ObjectID      string     `json:"object_id"`
+	OperationType string     `json:"operation_type"`
+	BeforeSummary AnyObject  `json:"before_summary"`
+	AfterSummary  AnyObject  `json:"after_summary"`
+	ImpactSummary AnyObject  `json:"impact_summary"`
+	RequestID     string     `json:"request_id"`
+	CreatedAt     time.Time  `json:"created_at"`
+}
+
+// GetID returns the value of ID.
+func (s *RiskAuditItem) GetID() uuid.UUID {
+	return s.ID
+}
+
+// GetOperatorID returns the value of OperatorID.
+func (s *RiskAuditItem) GetOperatorID() OptNilUUID {
+	return s.OperatorID
+}
+
+// GetObjectType returns the value of ObjectType.
+func (s *RiskAuditItem) GetObjectType() string {
+	return s.ObjectType
+}
+
+// GetObjectID returns the value of ObjectID.
+func (s *RiskAuditItem) GetObjectID() string {
+	return s.ObjectID
+}
+
+// GetOperationType returns the value of OperationType.
+func (s *RiskAuditItem) GetOperationType() string {
+	return s.OperationType
+}
+
+// GetBeforeSummary returns the value of BeforeSummary.
+func (s *RiskAuditItem) GetBeforeSummary() AnyObject {
+	return s.BeforeSummary
+}
+
+// GetAfterSummary returns the value of AfterSummary.
+func (s *RiskAuditItem) GetAfterSummary() AnyObject {
+	return s.AfterSummary
+}
+
+// GetImpactSummary returns the value of ImpactSummary.
+func (s *RiskAuditItem) GetImpactSummary() AnyObject {
+	return s.ImpactSummary
+}
+
+// GetRequestID returns the value of RequestID.
+func (s *RiskAuditItem) GetRequestID() string {
+	return s.RequestID
+}
+
+// GetCreatedAt returns the value of CreatedAt.
+func (s *RiskAuditItem) GetCreatedAt() time.Time {
+	return s.CreatedAt
+}
+
+// SetID sets the value of ID.
+func (s *RiskAuditItem) SetID(val uuid.UUID) {
+	s.ID = val
+}
+
+// SetOperatorID sets the value of OperatorID.
+func (s *RiskAuditItem) SetOperatorID(val OptNilUUID) {
+	s.OperatorID = val
+}
+
+// SetObjectType sets the value of ObjectType.
+func (s *RiskAuditItem) SetObjectType(val string) {
+	s.ObjectType = val
+}
+
+// SetObjectID sets the value of ObjectID.
+func (s *RiskAuditItem) SetObjectID(val string) {
+	s.ObjectID = val
+}
+
+// SetOperationType sets the value of OperationType.
+func (s *RiskAuditItem) SetOperationType(val string) {
+	s.OperationType = val
+}
+
+// SetBeforeSummary sets the value of BeforeSummary.
+func (s *RiskAuditItem) SetBeforeSummary(val AnyObject) {
+	s.BeforeSummary = val
+}
+
+// SetAfterSummary sets the value of AfterSummary.
+func (s *RiskAuditItem) SetAfterSummary(val AnyObject) {
+	s.AfterSummary = val
+}
+
+// SetImpactSummary sets the value of ImpactSummary.
+func (s *RiskAuditItem) SetImpactSummary(val AnyObject) {
+	s.ImpactSummary = val
+}
+
+// SetRequestID sets the value of RequestID.
+func (s *RiskAuditItem) SetRequestID(val string) {
+	s.RequestID = val
+}
+
+// SetCreatedAt sets the value of CreatedAt.
+func (s *RiskAuditItem) SetCreatedAt(val time.Time) {
+	s.CreatedAt = val
+}
+
 // Ref: #/components/schemas/RoleActionsResponse
 type RoleActionsResponse struct {
 	ActionIds          []uuid.UUID           `json:"action_ids"`
@@ -5337,6 +7795,115 @@ func (s *RollbackRequest) SetVersionID(val uuid.UUID) {
 	s.VersionID = val
 }
 
+// Ref: #/components/schemas/schemas-PermissionActionList
+type SchemasPermissionActionList struct {
+	Records      []PermissionActionItem       `json:"records"`
+	Total        int64                        `json:"total"`
+	Current      int                          `json:"current"`
+	Size         int                          `json:"size"`
+	AuditSummary PermissionActionAuditSummary `json:"audit_summary"`
+}
+
+// GetRecords returns the value of Records.
+func (s *SchemasPermissionActionList) GetRecords() []PermissionActionItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *SchemasPermissionActionList) GetTotal() int64 {
+	return s.Total
+}
+
+// GetCurrent returns the value of Current.
+func (s *SchemasPermissionActionList) GetCurrent() int {
+	return s.Current
+}
+
+// GetSize returns the value of Size.
+func (s *SchemasPermissionActionList) GetSize() int {
+	return s.Size
+}
+
+// GetAuditSummary returns the value of AuditSummary.
+func (s *SchemasPermissionActionList) GetAuditSummary() PermissionActionAuditSummary {
+	return s.AuditSummary
+}
+
+// SetRecords sets the value of Records.
+func (s *SchemasPermissionActionList) SetRecords(val []PermissionActionItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *SchemasPermissionActionList) SetTotal(val int64) {
+	s.Total = val
+}
+
+// SetCurrent sets the value of Current.
+func (s *SchemasPermissionActionList) SetCurrent(val int) {
+	s.Current = val
+}
+
+// SetSize sets the value of Size.
+func (s *SchemasPermissionActionList) SetSize(val int) {
+	s.Size = val
+}
+
+// SetAuditSummary sets the value of AuditSummary.
+func (s *SchemasPermissionActionList) SetAuditSummary(val PermissionActionAuditSummary) {
+	s.AuditSummary = val
+}
+
+// Ref: #/components/schemas/StaleApiEndpointList
+type StaleApiEndpointList struct {
+	Records []ApiEndpointItem `json:"records"`
+	Total   int64             `json:"total"`
+	Current int               `json:"current"`
+	Size    int               `json:"size"`
+}
+
+// GetRecords returns the value of Records.
+func (s *StaleApiEndpointList) GetRecords() []ApiEndpointItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *StaleApiEndpointList) GetTotal() int64 {
+	return s.Total
+}
+
+// GetCurrent returns the value of Current.
+func (s *StaleApiEndpointList) GetCurrent() int {
+	return s.Current
+}
+
+// GetSize returns the value of Size.
+func (s *StaleApiEndpointList) GetSize() int {
+	return s.Size
+}
+
+// SetRecords sets the value of Records.
+func (s *StaleApiEndpointList) SetRecords(val []ApiEndpointItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *StaleApiEndpointList) SetTotal(val int64) {
+	s.Total = val
+}
+
+// SetCurrent sets the value of Current.
+func (s *StaleApiEndpointList) SetCurrent(val int) {
+	s.Current = val
+}
+
+// SetSize sets the value of Size.
+func (s *StaleApiEndpointList) SetSize(val int) {
+	s.Size = val
+}
+
+func (*StaleApiEndpointList) listStaleApiEndpointsRes() {}
+
 type SwitchWorkspaceBadRequest Error
 
 func (*SwitchWorkspaceBadRequest) switchWorkspaceRes() {}
@@ -5352,6 +7919,32 @@ func (*SyncApiEndpointsInternalServerError) syncApiEndpointsRes() {}
 type SyncApiEndpointsUnauthorized Error
 
 func (*SyncApiEndpointsUnauthorized) syncApiEndpointsRes() {}
+
+// Ref: #/components/schemas/SystemListResponse
+type SystemListResponse struct {
+	Records []AnyObject `json:"records"`
+	Total   int         `json:"total"`
+}
+
+// GetRecords returns the value of Records.
+func (s *SystemListResponse) GetRecords() []AnyObject {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *SystemListResponse) GetTotal() int {
+	return s.Total
+}
+
+// SetRecords sets the value of Records.
+func (s *SystemListResponse) SetRecords(val []AnyObject) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *SystemListResponse) SetTotal(val int) {
+	s.Total = val
+}
 
 // Ref: #/components/schemas/TokenResponse
 type TokenResponse struct {
@@ -5405,6 +7998,185 @@ func (s *UUIDListRequest) GetIds() []uuid.UUID {
 // SetIds sets the value of Ids.
 func (s *UUIDListRequest) SetIds(val []uuid.UUID) {
 	s.Ids = val
+}
+
+// Ref: #/components/schemas/UnregisteredApiEndpointItem
+type UnregisteredApiEndpointItem struct {
+	Method  string                      `json:"method"`
+	Path    string                      `json:"path"`
+	Spec    string                      `json:"spec"`
+	Handler string                      `json:"handler"`
+	HasMeta bool                        `json:"has_meta"`
+	Meta    UnregisteredApiEndpointMeta `json:"meta"`
+}
+
+// GetMethod returns the value of Method.
+func (s *UnregisteredApiEndpointItem) GetMethod() string {
+	return s.Method
+}
+
+// GetPath returns the value of Path.
+func (s *UnregisteredApiEndpointItem) GetPath() string {
+	return s.Path
+}
+
+// GetSpec returns the value of Spec.
+func (s *UnregisteredApiEndpointItem) GetSpec() string {
+	return s.Spec
+}
+
+// GetHandler returns the value of Handler.
+func (s *UnregisteredApiEndpointItem) GetHandler() string {
+	return s.Handler
+}
+
+// GetHasMeta returns the value of HasMeta.
+func (s *UnregisteredApiEndpointItem) GetHasMeta() bool {
+	return s.HasMeta
+}
+
+// GetMeta returns the value of Meta.
+func (s *UnregisteredApiEndpointItem) GetMeta() UnregisteredApiEndpointMeta {
+	return s.Meta
+}
+
+// SetMethod sets the value of Method.
+func (s *UnregisteredApiEndpointItem) SetMethod(val string) {
+	s.Method = val
+}
+
+// SetPath sets the value of Path.
+func (s *UnregisteredApiEndpointItem) SetPath(val string) {
+	s.Path = val
+}
+
+// SetSpec sets the value of Spec.
+func (s *UnregisteredApiEndpointItem) SetSpec(val string) {
+	s.Spec = val
+}
+
+// SetHandler sets the value of Handler.
+func (s *UnregisteredApiEndpointItem) SetHandler(val string) {
+	s.Handler = val
+}
+
+// SetHasMeta sets the value of HasMeta.
+func (s *UnregisteredApiEndpointItem) SetHasMeta(val bool) {
+	s.HasMeta = val
+}
+
+// SetMeta sets the value of Meta.
+func (s *UnregisteredApiEndpointItem) SetMeta(val UnregisteredApiEndpointMeta) {
+	s.Meta = val
+}
+
+// Ref: #/components/schemas/UnregisteredApiEndpointList
+type UnregisteredApiEndpointList struct {
+	Records []UnregisteredApiEndpointItem `json:"records"`
+	Total   int64                         `json:"total"`
+	Current int                           `json:"current"`
+	Size    int                           `json:"size"`
+}
+
+// GetRecords returns the value of Records.
+func (s *UnregisteredApiEndpointList) GetRecords() []UnregisteredApiEndpointItem {
+	return s.Records
+}
+
+// GetTotal returns the value of Total.
+func (s *UnregisteredApiEndpointList) GetTotal() int64 {
+	return s.Total
+}
+
+// GetCurrent returns the value of Current.
+func (s *UnregisteredApiEndpointList) GetCurrent() int {
+	return s.Current
+}
+
+// GetSize returns the value of Size.
+func (s *UnregisteredApiEndpointList) GetSize() int {
+	return s.Size
+}
+
+// SetRecords sets the value of Records.
+func (s *UnregisteredApiEndpointList) SetRecords(val []UnregisteredApiEndpointItem) {
+	s.Records = val
+}
+
+// SetTotal sets the value of Total.
+func (s *UnregisteredApiEndpointList) SetTotal(val int64) {
+	s.Total = val
+}
+
+// SetCurrent sets the value of Current.
+func (s *UnregisteredApiEndpointList) SetCurrent(val int) {
+	s.Current = val
+}
+
+// SetSize sets the value of Size.
+func (s *UnregisteredApiEndpointList) SetSize(val int) {
+	s.Size = val
+}
+
+func (*UnregisteredApiEndpointList) listUnregisteredApiEndpointsRes() {}
+
+// Ref: #/components/schemas/UnregisteredApiEndpointMeta
+type UnregisteredApiEndpointMeta struct {
+	Summary         OptString `json:"summary"`
+	CategoryCode    OptString `json:"category_code"`
+	PermissionKeys  []string  `json:"permission_keys"`
+	AdditionalProps UnregisteredApiEndpointMetaAdditional
+}
+
+// GetSummary returns the value of Summary.
+func (s *UnregisteredApiEndpointMeta) GetSummary() OptString {
+	return s.Summary
+}
+
+// GetCategoryCode returns the value of CategoryCode.
+func (s *UnregisteredApiEndpointMeta) GetCategoryCode() OptString {
+	return s.CategoryCode
+}
+
+// GetPermissionKeys returns the value of PermissionKeys.
+func (s *UnregisteredApiEndpointMeta) GetPermissionKeys() []string {
+	return s.PermissionKeys
+}
+
+// GetAdditionalProps returns the value of AdditionalProps.
+func (s *UnregisteredApiEndpointMeta) GetAdditionalProps() UnregisteredApiEndpointMetaAdditional {
+	return s.AdditionalProps
+}
+
+// SetSummary sets the value of Summary.
+func (s *UnregisteredApiEndpointMeta) SetSummary(val OptString) {
+	s.Summary = val
+}
+
+// SetCategoryCode sets the value of CategoryCode.
+func (s *UnregisteredApiEndpointMeta) SetCategoryCode(val OptString) {
+	s.CategoryCode = val
+}
+
+// SetPermissionKeys sets the value of PermissionKeys.
+func (s *UnregisteredApiEndpointMeta) SetPermissionKeys(val []string) {
+	s.PermissionKeys = val
+}
+
+// SetAdditionalProps sets the value of AdditionalProps.
+func (s *UnregisteredApiEndpointMeta) SetAdditionalProps(val UnregisteredApiEndpointMetaAdditional) {
+	s.AdditionalProps = val
+}
+
+type UnregisteredApiEndpointMetaAdditional map[string]jx.Raw
+
+func (s *UnregisteredApiEndpointMetaAdditional) init() UnregisteredApiEndpointMetaAdditional {
+	m := *s
+	if m == nil {
+		m = map[string]jx.Raw{}
+		*s = m
+	}
+	return m
 }
 
 type UpdateApiEndpointCategoryInternalServerError Error

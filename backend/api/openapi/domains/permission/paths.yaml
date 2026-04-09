@@ -65,7 +65,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/PermissionActionList'
+                $ref: '../../domains/permission/schemas.yaml#/components/schemas/PermissionActionList'
     post:
       operationId: createPermissionAction
       summary: 创建功能权限
@@ -109,7 +109,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/permission/schemas.yaml#/components/schemas/PermissionActionOptions'
   /permission-actions/groups:
     get:
       operationId: listPermissionActionGroups
@@ -124,7 +124,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/permission/schemas.yaml#/components/schemas/PermissionActionGroupList'
     post:
       operationId: createPermissionActionGroup
       summary: 创建功能权限分组
@@ -173,6 +173,27 @@ paths:
             application/json:
               schema:
                 $ref: '../../components/common.yaml#/components/schemas/MutationResult'
+    delete:
+      operationId: deletePermissionActionGroup
+      summary: 删除功能权限分组
+      tags:
+      - permission
+      x-permission-key: system.permission.manage
+      x-access-mode: permission
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '../../components/common.yaml#/components/schemas/MutationResult'
   /permission-actions/risk-audits:
     get:
       operationId: listPermissionActionRiskAudits
@@ -198,7 +219,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/permission/schemas.yaml#/components/schemas/PermissionActionRiskAuditList'
   /permission-actions/cleanup-unused:
     post:
       operationId: cleanupUnusedPermissionActions
@@ -249,7 +270,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyListResponse'
+                $ref: '../../domains/permission/schemas.yaml#/components/schemas/PermissionActionBatchTemplateList'
     post:
       operationId: savePermissionActionBatchTemplate
       summary: 保存功能权限批量模板
@@ -437,7 +458,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../domains/permission/schemas.yaml#/components/schemas/PermissionActionConsumersResponse'
   /permission-actions/{id}/impact-preview:
     get:
       operationId: getPermissionActionImpactPreview
@@ -459,4 +480,4 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '../../components/common.yaml#/components/schemas/AnyObject'
+                $ref: '../../domains/permission/schemas.yaml#/components/schemas/PermissionActionImpactPreview'

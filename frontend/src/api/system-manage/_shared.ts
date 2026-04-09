@@ -6,6 +6,7 @@ import { HttpError, showError } from '@/utils/http/error'
 import { ApiStatus } from '@/utils/http/status'
 import { $t } from '@/locales'
 import { useUserStore } from '@/store/modules/user'
+export type { V5Path, V5Method, V5PathParams, V5Query, V5RequestBody } from '@/api/v5/types'
 
 export { v5Client, normalizeMenuSpaceKey }
 export type { AppRouteRecord, FastEnterApplication, FastEnterQuickLink }
@@ -83,6 +84,44 @@ export async function unwrap<T>(
   if (error) throw createV5HttpError(error, response)
   if (data === undefined) throw new Error('v5Client: empty response')
   return data as T
+}
+
+export type V5AnyRecord = Record<string, unknown>
+export type V5AnyListResponse = V5AnyRecord & {
+  records: V5AnyRecord[]
+  total: number
+}
+
+export function toV5Body<T extends object>(value: T): V5AnyRecord {
+  return { ...(value as V5AnyRecord) }
+}
+
+export function toV5Record(value: unknown): V5AnyRecord {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value as V5AnyRecord
+  }
+  return {}
+}
+
+export function toV5Records(value: unknown): V5AnyRecord[] {
+  if (!Array.isArray(value)) return []
+  return value
+    .filter((item): item is V5AnyRecord => Boolean(item) && typeof item === 'object')
+    .map((item) => item as V5AnyRecord)
+}
+
+export function toV5ListResponse(value: unknown): V5AnyListResponse {
+  const record = toV5Record(value)
+  return {
+    ...record,
+    records: toV5Records(record.records),
+    total: Number(record.total || 0)
+  }
+}
+
+export function toV5StringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value.map((item) => `${item || ''}`.trim()).filter(Boolean)
 }
 
 // Phase 4 slice 5: 用户域 list/get/create/update/delete/assignRoles 走 v5Client。

@@ -1,4 +1,11 @@
-import { v5Client, unwrap } from '@/api/system-manage/_shared'
+import {
+  v5Client,
+  unwrap,
+  toV5Body,
+  toV5Record,
+  type V5Query,
+  type V5RequestBody
+} from '@/api/system-manage/_shared'
 
 function normalizePermissionKey(value?: string) {
   const target = `${value || ''}`.trim()
@@ -185,31 +192,27 @@ function normalizeCollaborationWorkspaceMember(
 export async function fetchGetCollaborationWorkspaceList(
   params: Api.SystemManage.CollaborationWorkspaceSearchParams
 ) {
-  const res: any = await unwrap(
-    v5Client.GET('/collaboration-workspaces', { params: { query: params as any } })
-  )
+  const query: V5Query<'/collaboration-workspaces', 'get'> = params
+  const res = await unwrap(v5Client.GET('/collaboration-workspaces', { params: { query } }))
   return {
     ...res,
-    records: (res?.records || []).map(normalizeCollaborationWorkspace)
+    records: (res.records || []).map(normalizeCollaborationWorkspace)
   } as Api.SystemManage.CollaborationWorkspaceList
 }
 
 export async function fetchGetCollaborationWorkspaceOptions(
   params?: Partial<Api.SystemManage.CollaborationWorkspaceSearchParams>
 ) {
-  const res: any = await unwrap(
-    v5Client.GET('/collaboration-workspaces/options', {
-      params: { query: (params || {}) as any }
-    })
-  )
+  void params
+  const res = await unwrap(v5Client.GET('/collaboration-workspaces/options'))
   return {
-    records: (res?.records || []).map(normalizeCollaborationWorkspace),
-    total: res?.total || 0
+    records: (res.records || []).map(normalizeCollaborationWorkspace),
+    total: res.total || 0
   }
 }
 
 export async function fetchGetCollaborationWorkspace(id: string) {
-  const res: any = await unwrap(
+  const res = await unwrap(
     v5Client.GET('/collaboration-workspaces/{id}', { params: { path: { id } } })
   )
   return normalizeCollaborationWorkspace(res)
@@ -218,8 +221,9 @@ export async function fetchGetCollaborationWorkspace(id: string) {
 export function fetchCreateCollaborationWorkspace(
   data: Api.SystemManage.CollaborationWorkspaceCreateParams
 ) {
+  const body: V5RequestBody<'/collaboration-workspaces', 'post'> = toV5Body(data)
   return unwrap(
-    v5Client.POST('/collaboration-workspaces', { body: data as any })
+    v5Client.POST('/collaboration-workspaces', { body })
   ) as unknown as Promise<{ id: string }>
 }
 
@@ -227,9 +231,10 @@ export async function fetchUpdateCollaborationWorkspace(
   id: string,
   data: Api.SystemManage.CollaborationWorkspaceUpdateParams
 ) {
+  const body: V5RequestBody<'/collaboration-workspaces/{id}', 'put'> = toV5Body(data)
   const { error } = await v5Client.PUT('/collaboration-workspaces/{id}', {
     params: { path: { id } },
-    body: data as any
+    body
   })
   if (error) throw error
 }
@@ -245,24 +250,26 @@ export async function fetchGetCollaborationWorkspaceMembers(
   collaborationWorkspaceId: string,
   params?: { user_id?: string; user_name?: string; role_code?: string }
 ) {
-  const res: any = await unwrap(
+  void params
+  const res = await unwrap(
     v5Client.GET('/collaboration-workspaces/{id}/members', {
-      params: { path: { id: collaborationWorkspaceId }, query: (params || {}) as any }
+      params: { path: { id: collaborationWorkspaceId } }
     })
   )
-  return (res?.records || []).map(normalizeCollaborationWorkspaceMember)
+  return (res.records || []).map(normalizeCollaborationWorkspaceMember)
 }
 
 export async function fetchAddCollaborationWorkspaceMember(
   collaborationWorkspaceId: string,
   data: { user_id: string; role_code?: string }
 ) {
+  const body: V5RequestBody<'/collaboration-workspaces/{id}/members', 'post'> = {
+    user_id: data.user_id,
+    role_code: data.role_code || 'collaboration_workspace_member'
+  }
   const { error } = await v5Client.POST('/collaboration-workspaces/{id}/members', {
     params: { path: { id: collaborationWorkspaceId } },
-    body: {
-      user_id: data.user_id,
-      role_code: data.role_code || 'collaboration_workspace_member'
-    } as any
+    body
   })
   if (error) throw error
 }
@@ -282,46 +289,44 @@ export async function fetchUpdateCollaborationWorkspaceMemberRole(
   userId: string,
   roleCode: string
 ) {
+  const body: V5RequestBody<'/collaboration-workspaces/{id}/members/{userId}/role', 'put'> = {
+    role_code: roleCode
+  }
   const { error } = await v5Client.PUT(
     '/collaboration-workspaces/{id}/members/{userId}/role',
     {
       params: { path: { id: collaborationWorkspaceId, userId } },
-      body: { role_code: roleCode } as any
+      body
     }
   )
   if (error) throw error
 }
 
 export async function fetchGetMyCollaborationWorkspace() {
-  const res: any = await unwrap(
-    v5Client.GET('/collaboration-workspaces/current', { params: { query: {} as any } })
-  )
+  const res = await unwrap(v5Client.GET('/collaboration-workspaces/current'))
   return normalizeCollaborationWorkspace(res)
 }
 
 export async function fetchGetMyCollaborationWorkspaces() {
-  const res: any = await unwrap(
-    v5Client.GET('/collaboration-workspaces/mine', { params: { query: {} as any } })
-  )
-  return (res?.records || []).map(normalizeCollaborationWorkspace)
+  const res = await unwrap(v5Client.GET('/collaboration-workspaces/mine'))
+  return (res.records || []).map(normalizeCollaborationWorkspace)
 }
 
 export async function fetchGetMyCollaborationWorkspaceMembers() {
-  const res: any = await unwrap(
-    v5Client.GET('/collaboration-workspaces/current/members', { params: { query: {} as any } })
-  )
-  return (res?.records || []).map(normalizeCollaborationWorkspaceMember)
+  const res = await unwrap(v5Client.GET('/collaboration-workspaces/current/members'))
+  return (res.records || []).map(normalizeCollaborationWorkspaceMember)
 }
 
 export async function fetchAddMyCollaborationWorkspaceMember(data: {
   user_id: string
   role_code?: string
 }) {
+  const body: V5RequestBody<'/collaboration-workspaces/current/members', 'post'> = {
+    user_id: data.user_id,
+    role_code: data.role_code || 'collaboration_workspace_member'
+  }
   const { error } = await v5Client.POST('/collaboration-workspaces/current/members', {
-    body: {
-      user_id: data.user_id,
-      role_code: data.role_code || 'collaboration_workspace_member'
-    } as any
+    body
   })
   if (error) throw error
 }
@@ -338,35 +343,38 @@ export async function fetchUpdateMyCollaborationWorkspaceMemberRole(
   userId: string,
   roleCode: string
 ) {
+  const body: V5RequestBody<'/collaboration-workspaces/current/members/{userId}/role', 'put'> = {
+    role_code: roleCode
+  }
   const { error } = await v5Client.PUT(
     '/collaboration-workspaces/current/members/{userId}/role',
     {
       params: { path: { userId } },
-      body: { role_code: roleCode } as any
+      body
     }
   )
   if (error) throw error
 }
 
 export async function fetchGetMyCollaborationWorkspaceMemberRoles(userId: string) {
-  const res: any = await unwrap(
+  const res = await unwrap(
     v5Client.GET('/collaboration-workspaces/current/members/{userId}/roles', {
       params: { path: { userId } }
     })
   )
   return {
-    role_ids: res?.role_ids || [],
-    roles: (res?.roles || []).map((item: any) => ({
+    role_ids: Array.isArray(res.role_ids) ? res.role_ids : [],
+    roles: (Array.isArray(res.roles) ? res.roles : []).map((item: any) => ({
       id: item?.id || '',
       code: item?.code || '',
       name: item?.name || ''
     })),
-    global_role_ids: res?.global_role_ids || [],
-    collaboration_workspace_role_ids: res?.collaboration_workspace_role_ids || [],
-    bindingWorkspaceId: res?.binding_workspace_id || '',
-    collaborationWorkspaceId: res?.collaboration_workspace_id || '',
-    bindingWorkspaceType: res?.binding_workspace_type || 'collaboration',
-    memberType: res?.member_type || ''
+    global_role_ids: [],
+    collaboration_workspace_role_ids: [],
+    bindingWorkspaceId: '',
+    collaborationWorkspaceId: '',
+    bindingWorkspaceType: 'collaboration',
+    memberType: ''
   } satisfies Api.SystemManage.CollaborationWorkspaceMemberRoleBindingResponse
 }
 
@@ -374,21 +382,22 @@ export async function fetchSetMyCollaborationWorkspaceMemberRoles(
   userId: string,
   roleIds: string[]
 ) {
+  const body: V5RequestBody<'/collaboration-workspaces/current/members/{userId}/roles', 'put'> = {
+    ids: roleIds
+  }
   const { error } = await v5Client.PUT(
     '/collaboration-workspaces/current/members/{userId}/roles',
     {
       params: { path: { userId } },
-      body: { role_ids: roleIds } as any
+      body
     }
   )
   if (error) throw error
 }
 
 export async function fetchGetMyCollaborationWorkspaceRoles() {
-  const res: any = await unwrap(
-    v5Client.GET('/collaboration-workspaces/current/roles', { params: { query: {} as any } })
-  )
-  return (res?.records || []).map((item: any) => ({
+  const res = await unwrap(v5Client.GET('/collaboration-workspaces/current/roles'))
+  return (res.records || []).map((item: any) => ({
     roleId: item?.id || '',
     roleCode: item?.code || '',
     roleName: item?.name || '',
@@ -402,12 +411,12 @@ export async function fetchGetMyCollaborationWorkspaceRoles() {
 }
 
 export async function fetchGetCollaborationWorkspaceRoles(collaborationWorkspaceId: string) {
-  const res: any = await unwrap(
+  const res = await unwrap(
     v5Client.GET('/collaboration-workspaces/{id}/roles', {
       params: { path: { id: collaborationWorkspaceId } }
     })
   )
-  return (res?.records || []).map((item: any) => ({
+  return (res.records || []).map((item: any) => ({
     roleId: item?.id || '',
     roleCode: item?.code || '',
     roleName: item?.name || '',
@@ -421,12 +430,9 @@ export async function fetchGetCollaborationWorkspaceRoles(collaborationWorkspace
 }
 
 export async function fetchGetMyCollaborationWorkspaceBoundaryRoles(appKey?: string) {
-  const res: any = await unwrap(
-    v5Client.GET('/collaboration-workspaces/current/boundary/roles', {
-      params: { query: (appKey ? { app_key: appKey } : {}) as any }
-    })
-  )
-  return (res?.records || []).map((item: any) => ({
+  void appKey
+  const res = await unwrap(v5Client.GET('/collaboration-workspaces/current/boundary/roles'))
+  return (res.records || []).map((item: any) => ({
     roleId: item?.id || '',
     roleCode: item?.code || '',
     roleName: item?.name || '',
@@ -440,8 +446,9 @@ export async function fetchGetMyCollaborationWorkspaceBoundaryRoles(appKey?: str
 }
 
 export function fetchCreateMyCollaborationWorkspaceRole(data: Api.SystemManage.RoleCreateParams) {
+  const body: V5RequestBody<'/collaboration-workspaces/current/roles', 'post'> = toV5Body(data)
   return unwrap(
-    v5Client.POST('/collaboration-workspaces/current/roles', { body: data as any })
+    v5Client.POST('/collaboration-workspaces/current/roles', { body })
   ) as unknown as Promise<{ roleId: string }>
 }
 
@@ -449,11 +456,13 @@ export async function fetchUpdateMyCollaborationWorkspaceRole(
   roleId: string,
   data: Api.SystemManage.RoleUpdateParams
 ) {
+  const body: V5RequestBody<'/collaboration-workspaces/current/boundary/roles/{roleId}', 'put'> =
+    toV5Body(data)
   const { error } = await v5Client.PUT(
     '/collaboration-workspaces/current/boundary/roles/{roleId}',
     {
       params: { path: { roleId } },
-      body: data as any
+      body
     }
   )
   if (error) throw error
@@ -471,17 +480,18 @@ export async function fetchGetMyCollaborationWorkspaceBoundaryRoleMenus(
   roleId: string,
   appKey?: string
 ) {
-  const res: any = await unwrap(
+  void appKey
+  const res = await unwrap(
     v5Client.GET('/collaboration-workspaces/current/boundary/roles/{roleId}/menus', {
-      params: { path: { roleId }, query: (appKey ? { app_key: appKey } : {}) as any }
+      params: { path: { roleId } }
     })
   )
   return {
-    menu_ids: res?.menu_ids || [],
-    available_menu_ids: res?.available_menu_ids || [],
-    hidden_menu_ids: res?.hidden_menu_ids || [],
-    expanded_package_ids: res?.expanded_package_ids || [],
-    derived_sources: (res?.derived_sources || []).map((item: any) => ({
+    menu_ids: Array.isArray(res.menu_ids) ? res.menu_ids : [],
+    available_menu_ids: Array.isArray(res.available_menu_ids) ? res.available_menu_ids : [],
+    hidden_menu_ids: Array.isArray(res.hidden_menu_ids) ? res.hidden_menu_ids : [],
+    expanded_package_ids: Array.isArray(res.expanded_package_ids) ? res.expanded_package_ids : [],
+    derived_sources: (Array.isArray(res.derived_sources) ? res.derived_sources : []).map((item: any) => ({
       menu_id: item?.menu_id || '',
       package_ids: item?.package_ids || []
     }))
@@ -493,11 +503,14 @@ export async function fetchSetMyCollaborationWorkspaceBoundaryRoleMenus(
   menuIds: string[],
   appKey?: string
 ) {
+  void appKey
+  const body: V5RequestBody<'/collaboration-workspaces/current/boundary/roles/{roleId}/menus', 'put'> =
+    { ids: menuIds }
   const { error } = await v5Client.PUT(
     '/collaboration-workspaces/current/boundary/roles/{roleId}/menus',
     {
-      params: { path: { roleId }, query: (appKey ? { app_key: appKey } : {}) as any },
-      body: { menu_ids: menuIds } as any
+      params: { path: { roleId } },
+      body
     }
   )
   if (error) throw error
@@ -507,18 +520,19 @@ export async function fetchGetMyCollaborationWorkspaceBoundaryRoleActions(
   roleId: string,
   appKey?: string
 ) {
-  const res: any = await unwrap(
+  void appKey
+  const res = await unwrap(
     v5Client.GET('/collaboration-workspaces/current/boundary/roles/{roleId}/actions', {
-      params: { path: { roleId }, query: (appKey ? { app_key: appKey } : {}) as any }
+      params: { path: { roleId } }
     })
   )
   return {
-    action_ids: res?.action_ids || [],
-    available_action_ids: res?.available_action_ids || [],
-    disabled_action_ids: res?.disabled_action_ids || [],
-    actions: (res?.actions || []).map(normalizeAction),
-    expanded_package_ids: res?.expanded_package_ids || [],
-    derived_sources: (res?.derived_sources || []).map((item: any) => ({
+    action_ids: Array.isArray(res.action_ids) ? res.action_ids : [],
+    available_action_ids: Array.isArray(res.available_action_ids) ? res.available_action_ids : [],
+    disabled_action_ids: Array.isArray(res.disabled_action_ids) ? res.disabled_action_ids : [],
+    actions: (Array.isArray(res.actions) ? res.actions : []).map(normalizeAction),
+    expanded_package_ids: Array.isArray(res.expanded_package_ids) ? res.expanded_package_ids : [],
+    derived_sources: (Array.isArray(res.derived_sources) ? res.derived_sources : []).map((item: any) => ({
       action_id: item?.action_id || '',
       package_ids: item?.package_ids || []
     }))
@@ -530,11 +544,14 @@ export async function fetchSetMyCollaborationWorkspaceBoundaryRoleActions(
   actionIds: string[],
   appKey?: string
 ) {
+  void appKey
+  const body: V5RequestBody<'/collaboration-workspaces/current/boundary/roles/{roleId}/actions', 'put'> =
+    { ids: actionIds }
   const { error } = await v5Client.PUT(
     '/collaboration-workspaces/current/boundary/roles/{roleId}/actions',
     {
-      params: { path: { roleId }, query: (appKey ? { app_key: appKey } : {}) as any },
-      body: { action_ids: actionIds } as any
+      params: { path: { roleId } },
+      body
     }
   )
   if (error) throw error
@@ -544,15 +561,16 @@ export async function fetchGetMyCollaborationWorkspaceBoundaryRolePackages(
   roleId: string,
   appKey?: string
 ) {
-  const res: any = await unwrap(
+  void appKey
+  const res = await unwrap(
     v5Client.GET('/collaboration-workspaces/current/boundary/roles/{roleId}/packages', {
-      params: { path: { roleId }, query: (appKey ? { app_key: appKey } : {}) as any }
+      params: { path: { roleId } }
     })
   )
   return {
-    package_ids: res?.package_ids || [],
-    packages: (res?.packages || []).map(normalizeFeaturePackage),
-    inherited: Boolean(res?.inherited)
+    package_ids: Array.isArray(res.package_ids) ? res.package_ids : [],
+    packages: (Array.isArray(res.packages) ? res.packages : []).map(normalizeFeaturePackage),
+    inherited: Boolean(res.inherited)
   }
 }
 
@@ -561,25 +579,25 @@ export async function fetchSetMyCollaborationWorkspaceBoundaryRolePackages(
   packageIds: string[],
   appKey?: string
 ) {
+  void appKey
+  const body: V5RequestBody<'/collaboration-workspaces/current/boundary/roles/{roleId}/packages', 'put'> =
+    { ids: packageIds }
   const { error } = await v5Client.PUT(
     '/collaboration-workspaces/current/boundary/roles/{roleId}/packages',
     {
-      params: { path: { roleId }, query: (appKey ? { app_key: appKey } : {}) as any },
-      body: { package_ids: packageIds } as any
+      params: { path: { roleId } },
+      body
     }
   )
   if (error) throw error
 }
 
 export async function fetchGetMyCollaborationWorkspaceBoundaryPackages(appKey?: string) {
-  const res: any = await unwrap(
-    v5Client.GET('/collaboration-workspaces/current/boundary/packages', {
-      params: { query: (appKey ? { app_key: appKey } : {}) as any }
-    })
-  )
+  void appKey
+  const res = await unwrap(v5Client.GET('/collaboration-workspaces/current/boundary/packages'))
   return {
-    package_ids: res?.package_ids || [],
-    packages: (res?.packages || []).map(normalizeFeaturePackage)
+    package_ids: Array.isArray(res.package_ids) ? res.package_ids : [],
+    packages: (Array.isArray(res.packages) ? res.packages : []).map(normalizeFeaturePackage)
   }
 }
 
@@ -587,17 +605,17 @@ export async function fetchGetCollaborationWorkspaceActions(
   collaborationWorkspaceId: string,
   appKey?: string
 ) {
-  const res: any = await unwrap(
+  void appKey
+  const res = await unwrap(
     v5Client.GET('/collaboration-workspaces/{id}/actions', {
       params: {
-        path: { id: collaborationWorkspaceId },
-        query: (appKey ? { app_key: appKey } : {}) as any
+        path: { id: collaborationWorkspaceId }
       }
     })
   )
   return {
-    action_ids: res?.action_ids || [],
-    actions: (res?.actions || []).map(normalizeAction)
+    action_ids: Array.isArray(res.action_ids) ? res.action_ids : [],
+    actions: (Array.isArray(res.actions) ? res.actions : []).map(normalizeAction)
   }
 }
 
@@ -605,36 +623,36 @@ export async function fetchGetCollaborationWorkspaceMenus(
   collaborationWorkspaceId: string,
   appKey?: string
 ) {
-  const res: any = await unwrap(
+  void appKey
+  const res = await unwrap(
     v5Client.GET('/collaboration-workspaces/{id}/menus', {
       params: {
-        path: { id: collaborationWorkspaceId },
-        query: (appKey ? { app_key: appKey } : {}) as any
+        path: { id: collaborationWorkspaceId }
       }
     })
   )
-  return { menu_ids: res?.menu_ids || [] }
+  return { menu_ids: Array.isArray(res.menu_ids) ? res.menu_ids : [] }
 }
 
 export async function fetchGetCollaborationWorkspaceActionOrigins(
   collaborationWorkspaceId: string,
   appKey?: string
 ) {
-  const res: any = await unwrap(
+  void appKey
+  const res = await unwrap(
     v5Client.GET('/collaboration-workspaces/{id}/action-origins', {
       params: {
-        path: { id: collaborationWorkspaceId },
-        query: (appKey ? { app_key: appKey } : {}) as any
+        path: { id: collaborationWorkspaceId }
       }
     })
   )
   return {
-    derived_action_ids: res?.derived_action_ids || [],
-    derived_sources: (res?.derived_sources || []).map((item: any) => ({
+    derived_action_ids: Array.isArray(res.derived_action_ids) ? res.derived_action_ids : [],
+    derived_sources: (Array.isArray(res.derived_sources) ? res.derived_sources : []).map((item: any) => ({
       action_id: item?.action_id || '',
       package_ids: item?.package_ids || []
     })),
-    blocked_action_ids: res?.blocked_action_ids || []
+    blocked_action_ids: Array.isArray(res.blocked_action_ids) ? res.blocked_action_ids : []
   }
 }
 
@@ -642,21 +660,21 @@ export async function fetchGetCollaborationWorkspaceMenuOrigins(
   collaborationWorkspaceId: string,
   appKey?: string
 ) {
-  const res: any = await unwrap(
+  void appKey
+  const res = await unwrap(
     v5Client.GET('/collaboration-workspaces/{id}/menu-origins', {
       params: {
-        path: { id: collaborationWorkspaceId },
-        query: (appKey ? { app_key: appKey } : {}) as any
+        path: { id: collaborationWorkspaceId }
       }
     })
   )
   return {
-    derived_menu_ids: res?.derived_menu_ids || [],
-    derived_sources: (res?.derived_sources || []).map((item: any) => ({
+    derived_menu_ids: Array.isArray(res.derived_menu_ids) ? res.derived_menu_ids : [],
+    derived_sources: (Array.isArray(res.derived_sources) ? res.derived_sources : []).map((item: any) => ({
       menu_id: item?.menu_id || '',
       package_ids: item?.package_ids || []
     })),
-    blocked_menu_ids: res?.blocked_menu_ids || []
+    blocked_menu_ids: Array.isArray(res.blocked_menu_ids) ? res.blocked_menu_ids : []
   }
 }
 
@@ -665,12 +683,15 @@ export async function fetchSetCollaborationWorkspaceActions(
   actionIds: string[],
   appKey?: string
 ) {
+  void appKey
+  const body: V5RequestBody<'/collaboration-workspaces/{id}/actions', 'put'> = {
+    ids: actionIds
+  }
   const { error } = await v5Client.PUT('/collaboration-workspaces/{id}/actions', {
     params: {
-      path: { id: collaborationWorkspaceId },
-      query: (appKey ? { app_key: appKey } : {}) as any
+      path: { id: collaborationWorkspaceId }
     },
-    body: { action_ids: actionIds } as any
+    body
   })
   if (error) throw error
 }
@@ -680,38 +701,35 @@ export async function fetchSetCollaborationWorkspaceMenus(
   menuIds: string[],
   appKey?: string
 ) {
+  void appKey
+  const body: V5RequestBody<'/collaboration-workspaces/{id}/menus', 'put'> = {
+    ids: menuIds
+  }
   const { error } = await v5Client.PUT('/collaboration-workspaces/{id}/menus', {
     params: {
-      path: { id: collaborationWorkspaceId },
-      query: (appKey ? { app_key: appKey } : {}) as any
+      path: { id: collaborationWorkspaceId }
     },
-    body: { menu_ids: menuIds } as any
+    body
   })
   if (error) throw error
 }
 
 export async function fetchGetMyCollaborationWorkspaceActions() {
-  const res: any = await unwrap(
-    v5Client.GET('/collaboration-workspaces/current/actions', { params: { query: {} as any } })
-  )
+  const res = await unwrap(v5Client.GET('/collaboration-workspaces/current/actions'))
   return {
-    action_ids: res?.action_ids || [],
-    actions: (res?.actions || []).map(normalizeAction)
+    action_ids: Array.isArray(res.action_ids) ? res.action_ids : [],
+    actions: (Array.isArray(res.actions) ? res.actions : []).map(normalizeAction)
   }
 }
 
 export async function fetchGetMyCollaborationWorkspaceActionOrigins() {
-  const res: any = await unwrap(
-    v5Client.GET('/collaboration-workspaces/current/action-origins', {
-      params: { query: {} as any }
-    })
-  )
+  const res = await unwrap(v5Client.GET('/collaboration-workspaces/current/action-origins'))
   return {
-    derived_action_ids: res?.derived_action_ids || [],
-    derived_sources: (res?.derived_sources || []).map((item: any) => ({
+    derived_action_ids: Array.isArray(res.derived_action_ids) ? res.derived_action_ids : [],
+    derived_sources: (Array.isArray(res.derived_sources) ? res.derived_sources : []).map((item: any) => ({
       action_id: item?.action_id || '',
       package_ids: item?.package_ids || []
     })),
-    blocked_action_ids: res?.blocked_action_ids || []
+    blocked_action_ids: Array.isArray(res.blocked_action_ids) ? res.blocked_action_ids : []
   }
 }
