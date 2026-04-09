@@ -362,7 +362,12 @@ func parseRecipientGroupRequest(req *gen.MessageRecipientGroupSaveRequest) (syst
 			RoleCode:                 optString(t.RoleCode),
 			PackageKey:               optString(t.PackageKey),
 			SortOrder:                optInt(t.SortOrder, 0),
-			Meta:                     messageRecipientGroupTargetMetaToJSON(t.Meta.Value),
+			Meta: func() models.MetaJSON {
+				if t.Meta.Set {
+					return messageRecipientGroupTargetMetaToJSON(t.Meta.Value)
+				}
+				return nil
+			}(),
 		})
 	}
 	body.Targets = targets

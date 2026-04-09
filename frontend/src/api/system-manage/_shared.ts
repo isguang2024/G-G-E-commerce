@@ -19,6 +19,24 @@ type V5UserPermissionRoleResult = components['schemas']['UserPermissionRoleResul
 type V5UserPermissionMenuTreeItem = components['schemas']['UserPermissionMenuTreeItem']
 type V5PermissionBatchTemplateItem = components['schemas']['PermissionActionBatchTemplateItem']
 type V5RiskAuditItem = components['schemas']['RiskAuditItem']
+type V5RiskAuditSummary = components['schemas']['RiskAuditSummary']
+type V5PermissionBatchTemplatePayload = components['schemas']['PermissionActionBatchTemplatePayload']
+type V5PageMenuOptionLike = components['schemas']['PageMenuOptionItem']
+type V5PageUnregisteredLike = components['schemas']['PageUnregisteredItem']
+type V5PageBreadcrumbPreviewLike = components['schemas']['PageBreadcrumbPreviewItem']
+type V5PageAccessTraceResultLike = components['schemas']['PageAccessTraceResponse']
+type V5RefreshStatsLike = components['schemas']['RefreshStats']
+type V5PermissionActionConsumerDetailsLike = components['schemas']['PermissionActionConsumersResponse']
+type V5PermissionAuditSummaryLike = {
+  total_count?: number
+  unused_count?: number
+  api_only_count?: number
+  page_only_count?: number
+  package_only_count?: number
+  multi_consumer_count?: number
+  cross_context_mirror_count?: number
+  suspected_duplicate_count?: number
+}
 type V5PageLike = {
   id?: string
   app_key?: string
@@ -367,14 +385,14 @@ export function normalizePermissionAction(item: V5PermissionActionLike): Api.Sys
     pageCount: Number(item?.page_count ?? 0),
     packageCount: Number(item?.package_count ?? 0),
     consumerTypes: Array.isArray(consumerTypes)
-      ? consumerTypes.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
+      ? consumerTypes.map((value) => `${value || ''}`.trim()).filter(Boolean)
       : [],
     usagePattern: item?.usage_pattern || 'unused',
     usageNote: item?.usage_note || '',
     duplicatePattern: item?.duplicate_pattern || 'none',
     duplicateGroup: item?.duplicate_group || '',
     duplicateKeys: Array.isArray(duplicateKeys)
-      ? duplicateKeys.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
+      ? duplicateKeys.map((value) => `${value || ''}`.trim()).filter(Boolean)
       : [],
     duplicateNote: item?.duplicate_note || '',
     status: item?.status || 'normal',
@@ -385,7 +403,9 @@ export function normalizePermissionAction(item: V5PermissionActionLike): Api.Sys
   }
 }
 
-export function normalizePermissionAuditSummary(item: any): Api.SystemManage.PermissionActionAuditSummary {
+export function normalizePermissionAuditSummary(
+  item: V5PermissionAuditSummaryLike | undefined
+): Api.SystemManage.PermissionActionAuditSummary {
   return {
     totalCount: Number(item?.total_count ?? 0),
     unusedCount: Number(item?.unused_count ?? 0),
@@ -530,12 +550,11 @@ export function normalizePageItem(item: V5PageLike | undefined): Api.SystemManag
   const meta = item?.meta || {}
   const rawVisibilityScope =
     `${item?.visibility_scope || meta?.visibilityScope || ''}`.trim()
-  const rawSpaceKeys = Array.isArray(item?.space_keys || meta?.spaceKeys)
-    ? item?.space_keys || meta?.spaceKeys
-    : []
+  const rawSpaceKeysSource = item?.space_keys || meta?.spaceKeys
+  const rawSpaceKeys: string[] = Array.isArray(rawSpaceKeysSource) ? rawSpaceKeysSource : []
   // spaceKeys 由后端把 page_space_bindings、菜单继承和父页继承统一编译后下发，前端不再自行猜测。
   const spaceKeys = rawSpaceKeys
-    .map((value: any) => normalizeMenuSpaceKey(`${value || ''}`))
+    .map((value) => normalizeMenuSpaceKey(`${value || ''}`))
     .filter(Boolean)
   const spaceType = `${item?.space_type || meta?.spaceType || ''}`.trim()
   const hostKey = `${item?.host_key || meta?.hostKey || ''}`.trim()
@@ -567,7 +586,7 @@ export function normalizePageItem(item: V5PageLike | undefined): Api.SystemManag
     isFullPage: Boolean(item?.is_full_page ?? false),
     isIframe: Boolean(meta?.isIframe ?? item?.is_iframe ?? false),
     isHideTab: Boolean(meta?.isHideTab ?? item?.is_hide_tab ?? false),
-    link: `${meta?.link || item?.link || ''}`.trim(),
+    link: `${meta?.link || ''}`.trim(),
     spaceKeys,
     spaceScope:
       `${item?.space_scope || meta?.spaceScope || ''}`.trim() || undefined,
@@ -591,7 +610,9 @@ export function normalizePageItem(item: V5PageLike | undefined): Api.SystemManag
   }
 }
 
-export function normalizePageMenuOption(item: any): Api.SystemManage.PageMenuOptionItem {
+export function normalizePageMenuOption(
+  item: V5PageMenuOptionLike | undefined
+): Api.SystemManage.PageMenuOptionItem {
   return {
     id: item?.id || '',
     name: item?.name || '',
@@ -601,7 +622,9 @@ export function normalizePageMenuOption(item: any): Api.SystemManage.PageMenuOpt
   }
 }
 
-export function normalizePageUnregisteredItem(item: any): Api.SystemManage.PageUnregisteredItem {
+export function normalizePageUnregisteredItem(
+  item: V5PageUnregisteredLike | undefined
+): Api.SystemManage.PageUnregisteredItem {
   return {
     filePath: item?.file_path || '',
     component: item?.component || '',
@@ -613,10 +636,7 @@ export function normalizePageUnregisteredItem(item: any): Api.SystemManage.PageU
     moduleKey: item?.module_key || '',
     parentMenuId: item?.parent_menu_id || '',
     parentMenuName: item?.parent_menu_name || '',
-    activeMenuPath: item?.active_menu_path || '',
-    spaceKey: normalizeMenuSpaceKey(item?.space_key),
-    spaceType: `${item?.space_type || ''}`.trim(),
-    hostKey: `${item?.host_key || ''}`.trim()
+    activeMenuPath: item?.active_menu_path || ''
   }
 }
 
@@ -751,7 +771,9 @@ export function normalizeMenuSpaceEntryBinding(item: any): Api.SystemManage.Menu
   }
 }
 
-export function normalizePageBreadcrumbPreviewItem(item: any): Api.SystemManage.PageBreadcrumbPreviewItem {
+export function normalizePageBreadcrumbPreviewItem(
+  item: V5PageBreadcrumbPreviewLike | undefined
+): Api.SystemManage.PageBreadcrumbPreviewItem {
   return {
     type: item?.type || 'page',
     title: item?.title || '',
@@ -760,14 +782,14 @@ export function normalizePageBreadcrumbPreviewItem(item: any): Api.SystemManage.
   }
 }
 
-export function normalizeRefreshStats(item: any): Api.SystemManage.RefreshStats {
+export function normalizeRefreshStats(item: V5RefreshStatsLike | undefined): Api.SystemManage.RefreshStats {
   return {
     requestedPackageCount: Number(
       item?.requested_package_count ?? 0
     ),
     impactedPackageCount: Number(item?.impacted_package_count ?? 0),
     roleCount: Number(item?.role_count ?? 0),
-    collaborationWorkspaceCount: Number(item?.collaborationWorkspaceCount ?? 0),
+    collaborationWorkspaceCount: Number(item?.collaboration_workspace_count ?? 0),
     userCount: Number(item?.user_count ?? 0),
     elapsedMilliseconds: Number(item?.elapsed_milliseconds ?? 0),
     finishedAt: item?.finished_at || ''
@@ -781,9 +803,9 @@ export function normalizeRiskAudit(item: V5RiskAuditItem): Api.SystemManage.Risk
     objectType: item?.object_type || '',
     objectId: item?.object_id || '',
     operationType: item?.operation_type || '',
-    beforeSummary: item?.before_summary || {},
-    afterSummary: item?.after_summary || {},
-    impactSummary: item?.impact_summary || {},
+    beforeSummary: (item?.before_summary || {}) as V5RiskAuditSummary,
+    afterSummary: (item?.after_summary || {}) as V5RiskAuditSummary,
+    impactSummary: (item?.impact_summary || {}) as V5RiskAuditSummary,
     requestId: item?.request_id || '',
     createdAt: item?.created_at || ''
   }
@@ -796,7 +818,7 @@ export function normalizePermissionBatchTemplate(
     id: item?.id || '',
     name: item?.name || '',
     description: item?.description || '',
-    payload: item?.payload || {},
+    payload: (item?.payload || {}) as V5PermissionBatchTemplatePayload,
     createdBy: item?.created_by || '',
     createdAt: item?.created_at || '',
     updatedAt: item?.updated_at || ''
@@ -849,7 +871,7 @@ export function normalizeFeaturePackageRelationTree(
 }
 
 export function normalizePermissionActionConsumers(
-  item: any
+  item: V5PermissionActionConsumerDetailsLike | undefined
 ): Api.SystemManage.PermissionActionConsumerDetails {
   const featurePackages = item?.feature_packages || []
   return {
@@ -900,7 +922,9 @@ export function normalizeUnregisteredApiScanConfig(item: any): Api.SystemManage.
   }
 }
 
-export function normalizePageAccessTraceResult(item: any): Api.SystemManage.PageAccessTraceResult {
+export function normalizePageAccessTraceResult(
+  item: V5PageAccessTraceResultLike | undefined
+): Api.SystemManage.PageAccessTraceResult {
   const visibleMenuIds = item?.visible_menu_ids || []
   return {
     userId: item?.user_id || '',
@@ -911,7 +935,7 @@ export function normalizePageAccessTraceResult(item: any): Api.SystemManage.Page
     superAdmin: Boolean(item?.super_admin),
     actionKeyCount: Number(item?.action_key_count ?? 0),
     visibleMenuIds: Array.isArray(visibleMenuIds)
-      ? visibleMenuIds.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
+      ? visibleMenuIds.map((value) => `${value || ''}`.trim()).filter(Boolean)
       : [],
     menus: Array.isArray(item?.menus)
       ? item.menus.map((menu: any) => ({

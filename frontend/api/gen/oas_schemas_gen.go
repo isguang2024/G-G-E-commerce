@@ -9802,7 +9802,6 @@ type PageListItem struct {
 	Component         OptString   `json:"component"`
 	SpaceKey          OptString   `json:"space_key"`
 	SpaceKeys         []string    `json:"space_keys"`
-	SpaceScope        OptString   `json:"space_scope"`
 	PageType          OptString   `json:"page_type"`
 	VisibilityScope   OptString   `json:"visibility_scope"`
 	Source            OptString   `json:"source"`
@@ -9870,11 +9869,6 @@ func (s *PageListItem) GetSpaceKey() OptString {
 // GetSpaceKeys returns the value of SpaceKeys.
 func (s *PageListItem) GetSpaceKeys() []string {
 	return s.SpaceKeys
-}
-
-// GetSpaceScope returns the value of SpaceScope.
-func (s *PageListItem) GetSpaceScope() OptString {
-	return s.SpaceScope
 }
 
 // GetPageType returns the value of PageType.
@@ -10030,11 +10024,6 @@ func (s *PageListItem) SetSpaceKey(val OptString) {
 // SetSpaceKeys sets the value of SpaceKeys.
 func (s *PageListItem) SetSpaceKeys(val []string) {
 	s.SpaceKeys = val
-}
-
-// SetSpaceScope sets the value of SpaceScope.
-func (s *PageListItem) SetSpaceScope(val OptString) {
-	s.SpaceScope = val
 }
 
 // SetPageType sets the value of PageType.

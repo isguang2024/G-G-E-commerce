@@ -41,10 +41,10 @@ type inboxListItem struct {
 	BoxType                           string          `json:"box_type"`
 	DeliveryStatus                    string          `json:"delivery_status"`
 	TodoStatus                        string          `json:"todo_status"`
-	ReadAt                            *time.Time      `json:"read_at"`
-	DoneAt                            *time.Time      `json:"done_at"`
-	LastActionAt                      *time.Time      `json:"last_action_at"`
-	RecipientCollaborationWorkspaceID *uuid.UUID      `json:"recipient_collaboration_workspace_id"`
+	ReadAt                            *time.Time      `json:"read_at,omitempty"`
+	DoneAt                            *time.Time      `json:"done_at,omitempty"`
+	LastActionAt                      *time.Time      `json:"last_action_at,omitempty"`
+	RecipientCollaborationWorkspaceID *uuid.UUID      `json:"recipient_collaboration_workspace_id,omitempty"`
 	Title                             string          `json:"title"`
 	Summary                           string          `json:"summary"`
 	Content                           string          `json:"content"`
@@ -54,18 +54,18 @@ type inboxListItem struct {
 	MessageType                       string          `json:"message_type"`
 	BizType                           string          `json:"biz_type"`
 	ScopeType                         string          `json:"scope_type"`
-	ScopeID                           *uuid.UUID      `json:"scope_id"`
+	ScopeID                           *uuid.UUID      `json:"scope_id,omitempty"`
 	SenderType                        string          `json:"sender_type"`
 	SenderNameSnapshot                string          `json:"sender_name_snapshot"`
 	SenderAvatarSnapshot              string          `json:"sender_avatar_snapshot"`
 	SenderServiceKey                  string          `json:"sender_service_key"`
 	AudienceType                      string          `json:"audience_type"`
 	AudienceScope                     string          `json:"audience_scope"`
-	TargetCollaborationWorkspaceID    *uuid.UUID      `json:"target_collaboration_workspace_id"`
-	PublishedAt                       *time.Time      `json:"published_at"`
-	ExpiredAt                         *time.Time      `json:"expired_at"`
+	TargetCollaborationWorkspaceID    *uuid.UUID      `json:"target_collaboration_workspace_id,omitempty"`
+	PublishedAt                       *time.Time      `json:"published_at,omitempty"`
+	ExpiredAt                         *time.Time      `json:"expired_at,omitempty"`
 	CreatedAt                         time.Time       `json:"created_at"`
-	Meta                              models.MetaJSON `json:"meta"`
+	Meta                              models.MetaJSON `json:"meta,omitempty"`
 }
 
 type inboxDetail = inboxListItem
@@ -107,8 +107,8 @@ type dispatchUserOption struct {
 	Name                       string     `json:"name"`
 	DisplayName                string     `json:"display_name"`
 	Description                string     `json:"description"`
-	CollaborationWorkspaceID   *uuid.UUID `json:"collaboration_workspace_id"`
-	CollaborationWorkspaceName string     `json:"collaboration_workspace_name"`
+	CollaborationWorkspaceID   *uuid.UUID `json:"collaboration_workspace_id,omitempty"`
+	CollaborationWorkspaceName string     `json:"collaboration_workspace_name,omitempty"`
 }
 
 type dispatchRecipientGroupOption struct {

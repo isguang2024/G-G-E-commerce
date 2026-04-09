@@ -30,7 +30,7 @@ type V5CollaborationWorkspaceLike = {
   status?: string
   created_at?: string
   updated_at?: string
-  admin_users?: string[]
+  admin_users?: Array<{ user_id: string; user_name?: string; nick_name?: string }>
   admin_user_ids?: string[]
   workspace_id?: string
   workspace_type?: string
@@ -49,10 +49,10 @@ type V5PermissionActionLike = {
   context_type?: string
   feature_kind?: string
   name?: string
-  description?: string
+  description?: string | null
+  status?: string | null
   data_permission_code?: string
   data_permission_name?: string
-  status?: string
   sort_order?: number
   is_builtin?: boolean
   created_at?: string
@@ -62,9 +62,9 @@ type V5PermissionActionLike = {
 type V5FeaturePackageLike = {
   id?: string
   package_key?: string
-  package_type?: string
+  package_type?: string | null
   name?: string
-  description?: string
+  description?: string | null
   workspace_scope?: string
   app_key?: string
   app_keys?: string[]
@@ -92,6 +92,28 @@ type V5CollaborationWorkspaceMemberLike = {
   nick_name?: string
   user_email?: string
   avatar?: string
+}
+
+type V5RoleSummaryLike = {
+  id?: string
+  code?: string
+  name?: string
+  description?: string
+  status?: string
+  is_system?: boolean
+  collaboration_workspace_id?: string | null
+  is_global?: boolean
+  created_at?: string
+}
+
+type V5MenuDerivedSourceLike = {
+  menu_id?: string
+  package_ids?: string[]
+}
+
+type V5ActionDerivedSourceLike = {
+  action_id?: string
+  package_ids?: string[]
 }
 
 function normalizePermissionKey(value?: string) {
@@ -256,6 +278,38 @@ function normalizeFeaturePackage(
 
 function normalizeRoleLabel(roleCode?: string) {
   return roleCode === 'collaboration_workspace_admin' ? '协作空间管理员' : '协作空间成员'
+}
+
+function normalizeRoleSummary(item: V5RoleSummaryLike | undefined): Api.SystemManage.RoleListItem {
+  return {
+    roleId: item?.id || '',
+    roleCode: item?.code || '',
+    roleName: item?.name || '',
+    description: item?.description || '',
+    status: item?.status || 'normal',
+    isSystem: Boolean(item?.is_system ?? false),
+    collaborationWorkspaceId: item?.collaboration_workspace_id || '',
+    isGlobal: Boolean(item?.is_global ?? false),
+    createTime: item?.created_at || ''
+  }
+}
+
+function normalizeMenuDerivedSource(
+  item: V5MenuDerivedSourceLike | undefined
+): { menu_id: string; package_ids: string[] } {
+  return {
+    menu_id: item?.menu_id || '',
+    package_ids: Array.isArray(item?.package_ids) ? item.package_ids : []
+  }
+}
+
+function normalizeActionDerivedSource(
+  item: V5ActionDerivedSourceLike | undefined
+): { action_id: string; package_ids: string[] } {
+  return {
+    action_id: item?.action_id || '',
+    package_ids: Array.isArray(item?.package_ids) ? item.package_ids : []
+  }
 }
 
 function normalizeCollaborationWorkspaceMember(
@@ -470,7 +524,7 @@ export async function fetchGetMyCollaborationWorkspaceMemberRoles(userId: string
   )
   return {
     role_ids: Array.isArray(res.role_ids) ? res.role_ids : [],
-    roles: (Array.isArray(res.roles) ? res.roles : []).map((item: any) => ({
+    roles: (Array.isArray(res.roles) ? res.roles : []).map((item) => ({
       id: item?.id || '',
       code: item?.code || '',
       name: item?.name || ''
@@ -503,17 +557,7 @@ export async function fetchSetMyCollaborationWorkspaceMemberRoles(
 
 export async function fetchGetMyCollaborationWorkspaceRoles() {
   const res = await unwrap(v5Client.GET('/collaboration-workspaces/current/roles'))
-  return (res.records || []).map((item: any) => ({
-    roleId: item?.id || '',
-    roleCode: item?.code || '',
-    roleName: item?.name || '',
-    description: item?.description || '',
-    status: item?.status || 'normal',
-    isSystem: Boolean(item?.is_system ?? false),
-    collaborationWorkspaceId: item?.collaboration_workspace_id || '',
-    isGlobal: Boolean(item?.is_global ?? false),
-    createTime: item?.created_at || ''
-  }))
+  return (res.records || []).map(normalizeRoleSummary)
 }
 
 export async function fetchGetCollaborationWorkspaceRoles(collaborationWorkspaceId: string) {
@@ -522,33 +566,13 @@ export async function fetchGetCollaborationWorkspaceRoles(collaborationWorkspace
       params: { path: { id: collaborationWorkspaceId } }
     })
   )
-  return (res.records || []).map((item: any) => ({
-    roleId: item?.id || '',
-    roleCode: item?.code || '',
-    roleName: item?.name || '',
-    description: item?.description || '',
-    status: item?.status || 'normal',
-    isSystem: Boolean(item?.is_system ?? false),
-    collaborationWorkspaceId: item?.collaboration_workspace_id || '',
-    isGlobal: Boolean(item?.is_global ?? false),
-    createTime: item?.created_at || ''
-  }))
+  return (res.records || []).map(normalizeRoleSummary)
 }
 
 export async function fetchGetMyCollaborationWorkspaceBoundaryRoles(appKey?: string) {
   void appKey
   const res = await unwrap(v5Client.GET('/collaboration-workspaces/current/boundary/roles'))
-  return (res.records || []).map((item: any) => ({
-    roleId: item?.id || '',
-    roleCode: item?.code || '',
-    roleName: item?.name || '',
-    description: item?.description || '',
-    status: item?.status || 'normal',
-    isSystem: Boolean(item?.is_system ?? false),
-    collaborationWorkspaceId: item?.collaboration_workspace_id || '',
-    isGlobal: Boolean(item?.is_global ?? false),
-    createTime: item?.created_at || ''
-  }))
+  return (res.records || []).map(normalizeRoleSummary)
 }
 
 export async function fetchCreateMyCollaborationWorkspaceRole(
@@ -611,10 +635,9 @@ export async function fetchGetMyCollaborationWorkspaceBoundaryRoleMenus(
     available_menu_ids: Array.isArray(res.available_menu_ids) ? res.available_menu_ids : [],
     hidden_menu_ids: Array.isArray(res.hidden_menu_ids) ? res.hidden_menu_ids : [],
     expanded_package_ids: Array.isArray(res.expanded_package_ids) ? res.expanded_package_ids : [],
-    derived_sources: (Array.isArray(res.derived_sources) ? res.derived_sources : []).map((item: any) => ({
-      menu_id: item?.menu_id || '',
-      package_ids: item?.package_ids || []
-    }))
+    derived_sources: (Array.isArray(res.derived_sources) ? res.derived_sources : []).map(
+      normalizeMenuDerivedSource
+    )
   }
 }
 
@@ -652,10 +675,9 @@ export async function fetchGetMyCollaborationWorkspaceBoundaryRoleActions(
     disabled_action_ids: Array.isArray(res.disabled_action_ids) ? res.disabled_action_ids : [],
     actions: (Array.isArray(res.actions) ? res.actions : []).map(normalizeAction),
     expanded_package_ids: Array.isArray(res.expanded_package_ids) ? res.expanded_package_ids : [],
-    derived_sources: (Array.isArray(res.derived_sources) ? res.derived_sources : []).map((item: any) => ({
-      action_id: item?.action_id || '',
-      package_ids: item?.package_ids || []
-    }))
+    derived_sources: (Array.isArray(res.derived_sources) ? res.derived_sources : []).map(
+      normalizeActionDerivedSource
+    )
   }
 }
 
@@ -768,10 +790,9 @@ export async function fetchGetCollaborationWorkspaceActionOrigins(
   )
   return {
     derived_action_ids: Array.isArray(res.derived_action_ids) ? res.derived_action_ids : [],
-    derived_sources: (Array.isArray(res.derived_sources) ? res.derived_sources : []).map((item: any) => ({
-      action_id: item?.action_id || '',
-      package_ids: item?.package_ids || []
-    })),
+    derived_sources: (Array.isArray(res.derived_sources) ? res.derived_sources : []).map(
+      normalizeActionDerivedSource
+    ),
     blocked_action_ids: Array.isArray(res.blocked_action_ids) ? res.blocked_action_ids : []
   }
 }
@@ -790,10 +811,9 @@ export async function fetchGetCollaborationWorkspaceMenuOrigins(
   )
   return {
     derived_menu_ids: Array.isArray(res.derived_menu_ids) ? res.derived_menu_ids : [],
-    derived_sources: (Array.isArray(res.derived_sources) ? res.derived_sources : []).map((item: any) => ({
-      menu_id: item?.menu_id || '',
-      package_ids: item?.package_ids || []
-    })),
+    derived_sources: (Array.isArray(res.derived_sources) ? res.derived_sources : []).map(
+      normalizeMenuDerivedSource
+    ),
     blocked_menu_ids: Array.isArray(res.blocked_menu_ids) ? res.blocked_menu_ids : []
   }
 }
@@ -846,10 +866,9 @@ export async function fetchGetMyCollaborationWorkspaceActionOrigins() {
   const res = await unwrap(v5Client.GET('/collaboration-workspaces/current/action-origins'))
   return {
     derived_action_ids: Array.isArray(res.derived_action_ids) ? res.derived_action_ids : [],
-    derived_sources: (Array.isArray(res.derived_sources) ? res.derived_sources : []).map((item: any) => ({
-      action_id: item?.action_id || '',
-      package_ids: item?.package_ids || []
-    })),
+    derived_sources: (Array.isArray(res.derived_sources) ? res.derived_sources : []).map(
+      normalizeActionDerivedSource
+    ),
     blocked_action_ids: Array.isArray(res.blocked_action_ids) ? res.blocked_action_ids : []
   }
 }

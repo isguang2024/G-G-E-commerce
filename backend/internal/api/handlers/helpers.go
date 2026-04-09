@@ -8,18 +8,27 @@ import (
 	"github.com/gg-ecommerce/backend/api/gen"
 )
 
-// marshalAnyObject marshals any value to gen.AnyObject (map[string]jx.Raw).
-// Returns empty AnyObject on error.
-func marshalAnyObject(v interface{}) gen.AnyObject {
+// anyObject is map[string]jx.Raw — mirrors the former gen.AnyObject alias.
+type anyObject = map[string]jx.Raw
+
+// optAnyObject wraps an optional anyObject value.
+type optAnyObject struct {
+	Value anyObject
+	Set   bool
+}
+
+// marshalAnyObject marshals any value to anyObject (map[string]jx.Raw).
+// Returns empty anyObject on error.
+func marshalAnyObject(v interface{}) anyObject {
 	b, err := json.Marshal(v)
 	if err != nil {
-		return gen.AnyObject{}
+		return anyObject{}
 	}
 	var m map[string]interface{}
 	if err := json.Unmarshal(b, &m); err != nil {
-		return gen.AnyObject{}
+		return anyObject{}
 	}
-	out := make(gen.AnyObject, len(m))
+	out := make(anyObject, len(m))
 	for k, val := range m {
 		b2, _ := json.Marshal(val)
 		out[k] = jx.Raw(b2)
@@ -27,17 +36,17 @@ func marshalAnyObject(v interface{}) gen.AnyObject {
 	return out
 }
 
-// marshalList converts a slice to []gen.AnyObject using marshalAnyObject.
-func marshalList[T any](items []T) []gen.AnyObject {
-	out := make([]gen.AnyObject, 0, len(items))
+// marshalList converts a slice to []anyObject using marshalAnyObject.
+func marshalList[T any](items []T) []anyObject {
+	out := make([]anyObject, 0, len(items))
 	for i := range items {
 		out = append(out, marshalAnyObject(items[i]))
 	}
 	return out
 }
 
-// unmarshalAnyObject converts gen.AnyObject to a map then unmarshals into target.
-func unmarshalAnyObject(src gen.AnyObject, target interface{}) error {
+// unmarshalAnyObject converts anyObject to a map then unmarshals into target.
+func unmarshalAnyObject(src anyObject, target interface{}) error {
 	b, err := json.Marshal(src)
 	if err != nil {
 		return err
@@ -45,7 +54,7 @@ func unmarshalAnyObject(src gen.AnyObject, target interface{}) error {
 	return json.Unmarshal(b, target)
 }
 
-func optAnyObjectToMap(src gen.OptAnyObject) map[string]interface{} {
+func optAnyObjectToMap(src optAnyObject) map[string]interface{} {
 	if !src.Set {
 		return nil
 	}

@@ -1337,6 +1337,24 @@ func (s *NavigationManifest) Validate() error {
 
 	var failures []validate.FieldError
 	if err := func() error {
+		if value, ok := s.CurrentApp.Get(); ok {
+			if err := func() error {
+				if err := value.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				return err
+			}
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "current_app",
+			Error: err,
+		})
+	}
+	if err := func() error {
 		if value, ok := s.CurrentSpace.Get(); ok {
 			if err := func() error {
 				if err := value.Validate(); err != nil {
@@ -2751,6 +2769,29 @@ func (s *SystemAppHostBindingListResponse) Validate() error {
 	return nil
 }
 
+func (s *SystemAppItem) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if s.PrimaryHosts == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "primary_hosts",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
 func (s *SystemAppListResponse) Validate() error {
 	if s == nil {
 		return validate.ErrNilPointer
@@ -2761,10 +2802,50 @@ func (s *SystemAppListResponse) Validate() error {
 		if s.Records == nil {
 			return errors.New("nil is invalid value")
 		}
+		var failures []validate.FieldError
+		for i, elem := range s.Records {
+			if err := func() error {
+				if err := elem.Validate(); err != nil {
+					return err
+				}
+				return nil
+			}(); err != nil {
+				failures = append(failures, validate.FieldError{
+					Name:  fmt.Sprintf("[%d]", i),
+					Error: err,
+				})
+			}
+		}
+		if len(failures) > 0 {
+			return &validate.Error{Fields: failures}
+		}
 		return nil
 	}(); err != nil {
 		failures = append(failures, validate.FieldError{
 			Name:  "records",
+			Error: err,
+		})
+	}
+	if len(failures) > 0 {
+		return &validate.Error{Fields: failures}
+	}
+	return nil
+}
+
+func (s *SystemCurrentAppResponse) Validate() error {
+	if s == nil {
+		return validate.ErrNilPointer
+	}
+
+	var failures []validate.FieldError
+	if err := func() error {
+		if err := s.App.Validate(); err != nil {
+			return err
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "app",
 			Error: err,
 		})
 	}
@@ -2883,6 +2964,17 @@ func (s *SystemMenuSpaceItem) Validate() error {
 	}
 
 	var failures []validate.FieldError
+	if err := func() error {
+		if s.Hosts == nil {
+			return errors.New("nil is invalid value")
+		}
+		return nil
+	}(); err != nil {
+		failures = append(failures, validate.FieldError{
+			Name:  "hosts",
+			Error: err,
+		})
+	}
 	if err := func() error {
 		if s.AllowedRoleCodes == nil {
 			return errors.New("nil is invalid value")

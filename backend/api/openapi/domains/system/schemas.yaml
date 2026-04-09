@@ -21,7 +21,6 @@ components:
       - space_count
       - menu_count
       - page_count
-      - primary_hosts
       - meta
       - created_at
       - updated_at
@@ -254,7 +253,6 @@ components:
       - is_default
       - status
       - host_count
-      - hosts
       - menu_count
       - page_count
       - access_mode

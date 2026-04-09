@@ -32,6 +32,8 @@ components:
           type: array
           items:
             type: string
+        space_scope:
+          type: string
         page_type:
           type: string
         visibility_scope:

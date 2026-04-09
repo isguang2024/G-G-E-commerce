@@ -585,6 +585,7 @@ declare namespace Api {
       createTime: string
       collaborationWorkspaceId?: string | null
       isGlobal?: boolean
+      isSystem?: boolean
       canEditPermission?: boolean
     }
 

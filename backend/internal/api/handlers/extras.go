@@ -203,7 +203,9 @@ func (h *APIHandler) SavePermissionActionBatchTemplate(ctx context.Context, req 
 	body := permission.PermissionBatchTemplateSaveRequest{
 		Name:        req.Name,
 		Description: optString(req.Description),
-		Payload:     permissionBatchTemplatePayloadToMap(req.Payload),
+	}
+	if req.Payload.Set {
+		body.Payload = permissionBatchTemplatePayloadToMap(req.Payload.Value)
 	}
 	var operatorID *uuid.UUID
 	if uid, ok := userIDFromContext(ctx); ok {
@@ -218,7 +220,7 @@ func (h *APIHandler) SavePermissionActionBatchTemplate(ctx context.Context, req 
 	return &out, nil
 }
 
-func anyObjectToMap(src gen.AnyObject) map[string]interface{} {
+func anyObjectToMap(src anyObject) map[string]interface{} {
 	if len(src) == 0 {
 		return nil
 	}

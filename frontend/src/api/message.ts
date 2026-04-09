@@ -22,13 +22,13 @@ type V5MessageTemplateItem = components['schemas']['MessageTemplateItem']
 type V5MessageSenderItem = components['schemas']['MessageSenderItem']
 type V5MessageRecipientGroupItem = components['schemas']['MessageRecipientGroupItem']
 type V5DispatchRecordItem = components['schemas']['DispatchRecordItem']
-type V5DispatchRecordDetail = components['schemas']['DispatchRecordDetail']
+type V5DispatchRecordDetail = components['schemas']['MessageDispatchRecord']
 
 function normalizeInboxItem(item: V5InboxItem | undefined): Api.Message.InboxItem {
   return {
     id: item?.id || '',
     message_id: item?.message_id || '',
-    box_type: item?.box_type || 'notice',
+    box_type: (item?.box_type || 'notice') as Api.Message.BoxType,
     delivery_status: item?.delivery_status || 'unread',
     todo_status: item?.todo_status || '',
     read_at: item?.read_at || '',
@@ -41,7 +41,7 @@ function normalizeInboxItem(item: V5InboxItem | undefined): Api.Message.InboxIte
     priority: item?.priority || '',
     action_type: item?.action_type || 'none',
     action_target: item?.action_target || '',
-    message_type: item?.message_type || item?.box_type || 'notice',
+    message_type: (item?.message_type || item?.box_type || 'notice') as Api.Message.BoxType,
     biz_type: item?.biz_type || '',
     scope_type: item?.scope_type || '',
     scope_id: item?.scope_id || '',
@@ -76,7 +76,7 @@ function normalizeDispatchOptions(item: V5DispatchOptions | undefined): Api.Mess
     sender_options: Array.isArray(item?.sender_options) ? item.sender_options : [],
     default_sender_id: item?.default_sender_id || '',
     audience_options: Array.isArray(item?.audience_options) ? item.audience_options : [],
-    template_options: Array.isArray(item?.template_options) ? item.template_options : [],
+    template_options: (Array.isArray(item?.template_options) ? item.template_options : []) as Api.Message.DispatchTemplateOption[],
     collaboration_workspaces: Array.isArray(item?.collaboration_workspaces)
       ? item.collaboration_workspaces
       : [],
@@ -87,7 +87,7 @@ function normalizeDispatchOptions(item: V5DispatchOptions | undefined): Api.Mess
     recipient_groups: Array.isArray(item?.recipient_groups) ? item.recipient_groups : [],
     roles: Array.isArray(item?.roles) ? item.roles : [],
     feature_packages: Array.isArray(item?.feature_packages) ? item.feature_packages : [],
-    default_message_type: item?.default_message_type || 'notice',
+    default_message_type: (item?.default_message_type || 'notice') as Api.Message.BoxType,
     default_audience_type: item?.default_audience_type || 'all_users',
     default_priority: item?.default_priority || '',
     supports_external_link: Boolean(item?.supports_external_link)
@@ -110,7 +110,7 @@ function normalizeMessageTemplateItem(
     template_key: item?.template_key || '',
     name: item?.name || '',
     description: item?.description || '',
-    message_type: item?.message_type || 'notice',
+    message_type: (item?.message_type || 'notice') as Api.Message.BoxType,
     owner_scope: item?.owner_scope || 'personal',
     owner_collaboration_workspace_id: item?.owner_collaboration_workspace_id || '',
     owner_collaboration_workspace_name: item?.owner_collaboration_workspace_name || '',
@@ -173,7 +173,7 @@ function normalizeDispatchRecordItem(
     title: item?.title || '',
     summary: item?.summary || '',
     content: item?.content || '',
-    message_type: item?.message_type || 'notice',
+    message_type: (item?.message_type || 'notice') as Api.Message.BoxType,
     audience_type: item?.audience_type || 'all_users',
     scope_type: item?.scope_type || 'personal',
     scope_id: item?.scope_id || '',

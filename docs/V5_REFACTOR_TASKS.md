@@ -514,3 +514,15 @@ Phase 0 + Phase 1 的 workspace 示例域，跑通完整链路：
 **下次方向**
 - 当前仍有一个仓库卫生问题未处理：`docs/openapi-contract-closeout-temp.md` 是过期未跟踪临时文档，如要彻底收尾，需要在确认后删除，避免与 `docs/V5_REFACTOR_TASKS.md` 和 task-tree 的正式状态冲突。
 - task-tree 当前仍显示旧的 `100%` 完成事件文本，后续若继续依赖它做审计记录，建议补一条“审计补漏完成”的事件或新建修正子任务，避免再次出现文档与源码状态漂移。
+
+### 2026-04-10 OpenAPI 收口第十三批：生成链全量联编修复（Phase 12 收尾）
+
+**本次改动**
+- `backend/api/openapi/domains/page/paths.yaml` 修正 4 处 response 类型对调错误（`listRuntimePages`/`listPublicRuntimePages` 改为引用 `PageListResponse`，`listPageMenuOptions`/`listUnregisteredPages` 回正）；`backend/api/openapi/domains/message/schemas.yaml` 将 `MessageSenderMeta`、`MessageRecipientGroupMeta`、`MessageRecipientGroupTargetMeta` 的 `additionalProperties: false` 改为 `additionalProperties: {}`，使 ogen 正常生成 `Opt` 包装类型而非空 struct。
+- `backend/internal/api/handlers/helpers.go` 定义本地 `anyObject = map[string]jx.Raw` / `optAnyObject` 类型，替换 ogen 不再生成的 `gen.AnyObject`；`page.go`、`message.go`、`extras.go` 同步对齐新签名，修复 `ListOptions` 返回 `[]models.UIPage` 需包装为 `[]page.Record` 的类型不匹配、Meta 字段从指针改 Opt 包装、`Payload.Set` 守卫缺失等问题。
+- `frontend/src/api/system-manage/_shared.ts`、`frontend/src/api/collaboration-workspace.ts`、`frontend/src/api/message.ts`、`frontend/src/types/api/api.d.ts` 同步修正 schema 名称错误（`PageAccessTraceResponse`、`PermissionActionConsumersResponse`）、`null` vs `undefined` 不兼容、`BoxType` 字面量缺 `as` 断言及 `MessageDispatchRecord` 重命名等编译错误。
+- 验证通过：`redocly bundle`、`ogen`、`pnpm run gen:api`、`go test ./internal/api/handlers -count=1`、`pnpm exec vue-tsc --noEmit` 全部通过。
+
+**下次方向**
+- 核查 `docs/openapi-contract-closeout-temp.md` 是否仍有价值，若无则删除，避免与正式任务文档状态冲突。
+- 可考虑固化一次生成链 CI 守门脚本（bundle → ogen diff → vue-tsc），防止后续 spec 改动与 handler/前端类型再次漂移。

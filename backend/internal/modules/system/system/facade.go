@@ -115,8 +115,8 @@ func enumerateViewPagesPublic(projectRoot string) ([]ViewPageItem, error) {
 // ── Shared types (moved from handler.go) ───────────────────────────────────
 
 type ViewPageItem struct {
-	FilePath      string `json:"filePath"`
-	ComponentPath string `json:"componentPath"`
+	FilePath      string `json:"file_path"`
+	ComponentPath string `json:"component_path"`
 }
 
 type ViewPagesResponse struct {

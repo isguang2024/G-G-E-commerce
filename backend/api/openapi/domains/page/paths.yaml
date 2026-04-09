@@ -22,7 +22,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/PageMenuOptionsResponse'
+                $ref: './schemas.yaml#/components/schemas/PageListResponse'
   /pages/runtime/public:
     get:
       operationId: listPublicRuntimePages
@@ -46,7 +46,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/PageUnregisteredListResponse'
+                $ref: './schemas.yaml#/components/schemas/PageListResponse'
   /pages/menu-options:
     get:
       operationId: listPageMenuOptions
@@ -71,7 +71,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/PageListResponse'
+                $ref: './schemas.yaml#/components/schemas/PageMenuOptionsResponse'
   /pages/options:
     get:
       operationId: listPageOptions
@@ -171,7 +171,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: './schemas.yaml#/components/schemas/PageListResponse'
+                $ref: './schemas.yaml#/components/schemas/PageUnregisteredListResponse'
   /pages/sync:
     post:
       operationId: syncPages

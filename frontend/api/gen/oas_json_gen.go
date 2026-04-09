@@ -23478,12 +23478,6 @@ func (s *PageListItem) encodeFields(e *jx.Encoder) {
 		}
 	}
 	{
-		if s.SpaceScope.Set {
-			e.FieldStart("space_scope")
-			s.SpaceScope.Encode(e)
-		}
-	}
-	{
 		if s.PageType.Set {
 			e.FieldStart("page_type")
 			s.PageType.Encode(e)
@@ -23617,7 +23611,7 @@ func (s *PageListItem) encodeFields(e *jx.Encoder) {
 	}
 }
 
-var jsonFieldsNameOfPageListItem = [32]string{
+var jsonFieldsNameOfPageListItem = [31]string{
 	0:  "id",
 	1:  "app_key",
 	2:  "page_key",
@@ -23627,29 +23621,28 @@ var jsonFieldsNameOfPageListItem = [32]string{
 	6:  "component",
 	7:  "space_key",
 	8:  "space_keys",
-	9:  "space_scope",
-	10: "page_type",
-	11: "visibility_scope",
-	12: "source",
-	13: "module_key",
-	14: "sort_order",
-	15: "parent_menu_id",
-	16: "parent_menu_name",
-	17: "parent_page_key",
-	18: "parent_page_name",
-	19: "display_group_key",
-	20: "display_group_name",
-	21: "active_menu_path",
-	22: "breadcrumb_mode",
-	23: "access_mode",
-	24: "permission_key",
-	25: "inherit_permission",
-	26: "keep_alive",
-	27: "is_full_page",
-	28: "status",
-	29: "meta",
-	30: "created_at",
-	31: "updated_at",
+	9:  "page_type",
+	10: "visibility_scope",
+	11: "source",
+	12: "module_key",
+	13: "sort_order",
+	14: "parent_menu_id",
+	15: "parent_menu_name",
+	16: "parent_page_key",
+	17: "parent_page_name",
+	18: "display_group_key",
+	19: "display_group_name",
+	20: "active_menu_path",
+	21: "breadcrumb_mode",
+	22: "access_mode",
+	23: "permission_key",
+	24: "inherit_permission",
+	25: "keep_alive",
+	26: "is_full_page",
+	27: "status",
+	28: "meta",
+	29: "created_at",
+	30: "updated_at",
 }
 
 // Decode decodes PageListItem from json.
@@ -23765,16 +23758,6 @@ func (s *PageListItem) Decode(d *jx.Decoder) error {
 				return nil
 			}(); err != nil {
 				return errors.Wrap(err, "decode field \"space_keys\"")
-			}
-		case "space_scope":
-			if err := func() error {
-				s.SpaceScope.Reset()
-				if err := s.SpaceScope.Decode(d); err != nil {
-					return err
-				}
-				return nil
-			}(); err != nil {
-				return errors.Wrap(err, "decode field \"space_scope\"")
 			}
 		case "page_type":
 			if err := func() error {
@@ -38572,14 +38555,12 @@ func (s *SystemAppItem) encodeFields(e *jx.Encoder) {
 		e.Int64(s.PageCount)
 	}
 	{
-		if s.PrimaryHosts != nil {
-			e.FieldStart("primary_hosts")
-			e.ArrStart()
-			for _, elem := range s.PrimaryHosts {
-				e.Str(elem)
-			}
-			e.ArrEnd()
+		e.FieldStart("primary_hosts")
+		e.ArrStart()
+		for _, elem := range s.PrimaryHosts {
+			e.Str(elem)
 		}
+		e.ArrEnd()
 	}
 	{
 		e.FieldStart("meta")
@@ -38779,6 +38760,7 @@ func (s *SystemAppItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"page_count\"")
 			}
 		case "primary_hosts":
+			requiredBitSet[1] |= 1 << 5
 			if err := func() error {
 				s.PrimaryHosts = make([]string, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -38842,7 +38824,7 @@ func (s *SystemAppItem) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
 		0b10111111,
-		0b11011111,
+		0b11111111,
 		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {
@@ -41704,14 +41686,12 @@ func (s *SystemMenuSpaceItem) encodeFields(e *jx.Encoder) {
 		e.Int64(s.HostCount)
 	}
 	{
-		if s.Hosts != nil {
-			e.FieldStart("hosts")
-			e.ArrStart()
-			for _, elem := range s.Hosts {
-				e.Str(elem)
-			}
-			e.ArrEnd()
+		e.FieldStart("hosts")
+		e.ArrStart()
+		for _, elem := range s.Hosts {
+			e.Str(elem)
 		}
+		e.ArrEnd()
 	}
 	{
 		e.FieldStart("menu_count")
@@ -41885,6 +41865,7 @@ func (s *SystemMenuSpaceItem) Decode(d *jx.Decoder) error {
 				return errors.Wrap(err, "decode field \"host_count\"")
 			}
 		case "hosts":
+			requiredBitSet[1] |= 1 << 1
 			if err := func() error {
 				s.Hosts = make([]string, 0)
 				if err := d.Arr(func(d *jx.Decoder) error {
@@ -42004,7 +41985,7 @@ func (s *SystemMenuSpaceItem) Decode(d *jx.Decoder) error {
 	var failures []validate.FieldError
 	for i, mask := range [3]uint8{
 		0b11111111,
-		0b11111101,
+		0b11111111,
 		0b00000001,
 	} {
 		if result := (requiredBitSet[i] & mask) ^ mask; result != 0 {

@@ -2858,9 +2858,7 @@ export interface components {
             inherit_permission?: boolean;
             keep_alive?: boolean;
             is_full_page?: boolean;
-            meta?: {
-                [key: string]: unknown;
-            };
+            meta?: components["schemas"]["PageMeta"];
             status?: string;
         };
         PageSyncResult: {
@@ -3485,6 +3483,20 @@ export interface components {
             status?: string;
             sort_order?: number;
         };
+        RiskAuditSummary: {
+            permission_key?: string;
+            status?: string;
+            context_type?: string;
+            module_code?: string;
+            feature_kind?: string;
+            /** Format: uuid */
+            module_group_id?: string;
+            /** Format: uuid */
+            feature_group_id?: string;
+            template_name?: string;
+            package_count?: number;
+            collaboration_workspace_count?: number;
+        };
         RiskAuditItem: {
             /** Format: uuid */
             id: string;
@@ -3493,9 +3505,9 @@ export interface components {
             object_type: string;
             object_id: string;
             operation_type: string;
-            before_summary: components["schemas"]["AnyObject"];
-            after_summary: components["schemas"]["AnyObject"];
-            impact_summary: components["schemas"]["AnyObject"];
+            before_summary: components["schemas"]["RiskAuditSummary"];
+            after_summary: components["schemas"]["RiskAuditSummary"];
+            impact_summary: components["schemas"]["RiskAuditSummary"];
             request_id: string;
             /** Format: date-time */
             created_at: string;
@@ -3524,12 +3536,21 @@ export interface components {
             updated_count: number;
             skipped_ids: string[];
         };
+        PermissionActionBatchTemplatePayload: {
+            ids?: string[];
+            status?: string;
+            /** Format: uuid */
+            module_group_id?: string;
+            /** Format: uuid */
+            feature_group_id?: string;
+            template_name?: string;
+        };
         PermissionActionBatchTemplateItem: {
             /** Format: uuid */
             id: string;
             name: string;
             description: string;
-            payload: components["schemas"]["AnyObject"];
+            payload: components["schemas"]["PermissionActionBatchTemplatePayload"];
             /** Format: uuid */
             created_by?: string | null;
             /** Format: date-time */
@@ -3545,7 +3566,16 @@ export interface components {
         PermissionActionBatchTemplateSaveRequest: {
             name: string;
             description?: string;
-            payload?: components["schemas"]["AnyObject"];
+            payload?: components["schemas"]["PermissionActionBatchTemplatePayload"];
+        };
+        PermissionActionEndpointCategorySummary: {
+            /** Format: uuid */
+            id: string;
+            code: string;
+            name: string;
+            name_en?: string;
+            sort_order: number;
+            status: string;
         };
         PermissionActionEndpointListItem: {
             /** Format: uuid */
@@ -3565,7 +3595,7 @@ export interface components {
             auth_mode?: string;
             /** Format: uuid */
             category_id?: string;
-            category?: components["schemas"]["AnyObject"];
+            category?: components["schemas"]["PermissionActionEndpointCategorySummary"];
         };
         PermissionActionEndpointList: {
             records: components["schemas"]["PermissionActionEndpointListItem"][];
@@ -3646,7 +3676,7 @@ export interface components {
             menu_count: number;
             /** Format: int64 */
             page_count: number;
-            primary_hosts: string[];
+            primary_hosts?: string[];
             meta: components["schemas"]["SystemMeta"];
             /** Format: date-time */
             created_at: string;
@@ -3691,7 +3721,7 @@ export interface components {
             status: string;
             /** Format: int64 */
             host_count: number;
-            hosts: string[];
+            hosts?: string[];
             /** Format: int64 */
             menu_count: number;
             /** Format: int64 */
@@ -3775,6 +3805,22 @@ export interface components {
             sort_order: number;
             children?: components["schemas"]["MenuTreeItem"][];
         };
+        PageMeta: {
+            spaceKeys?: string[];
+            spaceScope?: string;
+            visibilityScope?: string;
+            link?: string;
+            isIframe?: boolean;
+            isHideTab?: boolean;
+            requiredAction?: string;
+            requiredActions?: string[];
+            actionMatchMode?: string;
+            actionVisibilityMode?: string;
+            customParent?: string;
+            breadcrumbChain?: string[];
+            hostKey?: string;
+            spaceType?: string;
+        };
         PageListItem: {
             /** Format: uuid */
             id?: string;
@@ -3786,6 +3832,7 @@ export interface components {
             component?: string;
             space_key?: string;
             space_keys?: string[];
+            space_scope?: string;
             page_type?: string;
             visibility_scope?: string;
             source?: string;
@@ -3806,9 +3853,7 @@ export interface components {
             keep_alive?: boolean;
             is_full_page?: boolean;
             status?: string;
-            meta?: {
-                [key: string]: unknown;
-            };
+            meta?: components["schemas"]["PageMeta"];
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
@@ -3822,9 +3867,18 @@ export interface components {
             affected_relation_count: number;
         };
         PageListResponse: {
-            records: {
-                [key: string]: unknown;
-            }[];
+            records: components["schemas"]["PageListItem"][];
+            total: number;
+        };
+        PageMenuOptionItem: {
+            id: string;
+            name: string;
+            title: string;
+            path: string;
+            children: components["schemas"]["PageMenuOptionItem"][];
+        };
+        PageMenuOptionsResponse: {
+            records: components["schemas"]["PageMenuOptionItem"][];
             total: number;
         };
         PageAccessTraceMenuItem: {
@@ -3872,6 +3926,24 @@ export interface components {
             roles: components["schemas"]["PageAccessTraceRoleItem"][];
             pages: components["schemas"]["PageAccessTracePageItem"][];
         };
+        PageUnregisteredItem: {
+            file_path: string;
+            component: string;
+            page_key: string;
+            name: string;
+            route_name: string;
+            route_path: string;
+            page_type: string;
+            visibility_scope: string;
+            module_key: string;
+            parent_menu_id: string;
+            parent_menu_name: string;
+            active_menu_path: string;
+        };
+        PageUnregisteredListResponse: {
+            records: components["schemas"]["PageUnregisteredItem"][];
+            total: number;
+        };
         PageSaveResult: {
             /** Format: uuid */
             id: string;
@@ -3903,9 +3975,7 @@ export interface components {
             keep_alive: boolean;
             is_full_page: boolean;
             status: string;
-            meta: {
-                [key: string]: unknown;
-            };
+            meta: components["schemas"]["PageMeta"];
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -4174,6 +4244,16 @@ export interface components {
             /** Format: int64 */
             todo_count: number;
         };
+        MessageInboxMeta: {
+            dispatch_status?: string;
+            dispatch_error?: string;
+            recipient_count?: number;
+            /** Format: date-time */
+            published_at?: string;
+            /** Format: date-time */
+            failed_at?: string;
+            target_collaboration_workspace_ids?: string[];
+        };
         InboxItem: {
             /** Format: uuid */
             id: string;
@@ -4215,9 +4295,7 @@ export interface components {
             expired_at?: string;
             /** Format: date-time */
             created_at: string;
-            meta?: {
-                [key: string]: unknown;
-            };
+            meta?: components["schemas"]["MessageInboxMeta"];
         };
         InboxListResponse: {
             records: components["schemas"]["InboxItem"][];
@@ -4333,6 +4411,7 @@ export interface components {
             delivery_count: number;
             dispatch_status: string;
         };
+        MessageTemplateMeta: Record<string, never>;
         MessageTemplateItem: {
             /** Format: uuid */
             id: string;
@@ -4350,9 +4429,7 @@ export interface components {
             content_template?: string;
             status: string;
             editable: boolean;
-            meta?: {
-                [key: string]: unknown;
-            };
+            meta?: components["schemas"]["MessageTemplateMeta"];
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
@@ -4375,6 +4452,9 @@ export interface components {
             content_template?: string;
             status?: string;
         };
+        MessageSenderMeta: {
+            [key: string]: unknown;
+        };
         MessageSenderItem: {
             /** Format: uuid */
             id: string;
@@ -4387,9 +4467,7 @@ export interface components {
             is_default?: boolean;
             status: string;
             editable: boolean;
-            meta?: {
-                [key: string]: unknown;
-            };
+            meta?: components["schemas"]["MessageSenderMeta"];
             /** Format: date-time */
             created_at?: string;
             /** Format: date-time */
@@ -4404,9 +4482,13 @@ export interface components {
             avatar_url?: string;
             is_default?: boolean;
             status?: string;
-            meta?: {
-                [key: string]: unknown;
-            };
+            meta?: components["schemas"]["MessageSenderMeta"];
+        };
+        MessageRecipientGroupMeta: {
+            [key: string]: unknown;
+        };
+        MessageRecipientGroupTargetMeta: {
+            [key: string]: unknown;
         };
         MessageRecipientGroupTargetItem: {
             /** Format: uuid */
@@ -4423,9 +4505,7 @@ export interface components {
             package_key?: string;
             package_name?: string;
             sort_order?: number;
-            meta?: {
-                [key: string]: unknown;
-            };
+            meta?: components["schemas"]["MessageRecipientGroupTargetMeta"];
         };
         MessageRecipientGroupItem: {
             /** Format: uuid */
@@ -4439,9 +4519,7 @@ export interface components {
             status: string;
             editable: boolean;
             estimated_count?: number;
-            meta?: {
-                [key: string]: unknown;
-            };
+            meta?: components["schemas"]["MessageRecipientGroupMeta"];
             targets: components["schemas"]["MessageRecipientGroupTargetItem"][];
             /** Format: date-time */
             created_at?: string;
@@ -4451,27 +4529,24 @@ export interface components {
         MessageRecipientGroupListResponse: {
             records: components["schemas"]["MessageRecipientGroupItem"][];
         };
+        MessageRecipientGroupTargetSaveRequest: {
+            target_type: string;
+            /** Format: uuid */
+            user_id?: string;
+            /** Format: uuid */
+            collaboration_workspace_id?: string;
+            role_code?: string;
+            package_key?: string;
+            sort_order?: number;
+            meta?: components["schemas"]["MessageRecipientGroupTargetMeta"];
+        };
         MessageRecipientGroupSaveRequest: {
             name: string;
             description?: string;
             match_mode?: string;
             status?: string;
-            meta?: {
-                [key: string]: unknown;
-            };
-            targets: {
-                target_type: string;
-                /** Format: uuid */
-                user_id?: string;
-                /** Format: uuid */
-                collaboration_workspace_id?: string;
-                role_code?: string;
-                package_key?: string;
-                sort_order?: number;
-                meta?: {
-                    [key: string]: unknown;
-                };
-            }[];
+            meta?: components["schemas"]["MessageRecipientGroupMeta"];
+            targets: components["schemas"]["MessageRecipientGroupTargetSaveRequest"][];
         };
         DispatchRecordItem: {
             /** Format: uuid */
@@ -7869,7 +7944,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageListResponse"];
+                    "application/json": components["schemas"]["PageMenuOptionsResponse"];
                 };
             };
         };
@@ -7948,7 +8023,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PageListResponse"];
+                    "application/json": components["schemas"]["PageUnregisteredListResponse"];
                 };
             };
         };

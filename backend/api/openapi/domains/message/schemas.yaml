@@ -359,7 +359,7 @@ components:
         updated_at: {type: string, format: date-time}
     MessageSenderMeta:
       type: object
-      additionalProperties: false
+      additionalProperties: {}
       properties: {}
     MessageSenderListResponse:
       type: object
@@ -398,7 +398,7 @@ components:
           $ref: '#/components/schemas/MessageRecipientGroupTargetMeta'
     MessageRecipientGroupTargetMeta:
       type: object
-      additionalProperties: false
+      additionalProperties: {}
       properties: {}
     MessageRecipientGroupItem:
       type: object
@@ -422,7 +422,7 @@ components:
         updated_at: {type: string, format: date-time}
     MessageRecipientGroupMeta:
       type: object
-      additionalProperties: false
+      additionalProperties: {}
       properties: {}
     MessageRecipientGroupListResponse:
       type: object

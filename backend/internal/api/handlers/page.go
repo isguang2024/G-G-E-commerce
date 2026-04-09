@@ -30,12 +30,16 @@ func (h *APIHandler) ListPages(ctx context.Context, params gen.ListPagesParams) 
 }
 
 func (h *APIHandler) ListPageOptions(ctx context.Context, params gen.ListPageOptionsParams) (*gen.PageListResponse, error) {
-	list, err := h.pageSvc.ListOptions(params.AppKey, optString(params.SpaceKey))
+	pages, err := h.pageSvc.ListOptions(params.AppKey, optString(params.SpaceKey))
 	if err != nil {
 		h.logger.Error("list page options failed", zap.Error(err))
 		return nil, err
 	}
-	return &gen.PageListResponse{Records: pageRecordsFromModels(list), Total: len(list)}, nil
+	records := make([]page.Record, len(pages))
+	for i, p := range pages {
+		records[i] = page.Record{UIPage: p}
+	}
+	return &gen.PageListResponse{Records: pageRecordsFromModels(records), Total: len(records)}, nil
 }
 
 func (h *APIHandler) ListPageMenuOptions(ctx context.Context, params gen.ListPageMenuOptionsParams) (*gen.PageMenuOptionsResponse, error) {
@@ -348,12 +352,12 @@ func pageListItemFromModel(record *page.Record) gen.PageListItem {
 		KeepAlive:         gen.NewOptBool(record.KeepAlive),
 		IsFullPage:        gen.NewOptBool(record.IsFullPage),
 		Status:            gen.NewOptString(record.Status),
-		Meta:              pageMetaFromMap(record.Meta),
+		Meta:              gen.NewOptPageMeta(pageMetaFromMap(record.Meta)),
 		CreatedAt:         gen.NewOptDateTime(record.CreatedAt),
 		UpdatedAt:         gen.NewOptDateTime(record.UpdatedAt),
 	}
 	if record.ParentMenuID != nil {
-		item.ParentMenuID = gen.NewOptString(record.ParentMenuID.String())
+		item.ParentMenuID = gen.NewOptUUID(*record.ParentMenuID)
 	}
 	if record.ParentMenuName != "" {
 		item.ParentMenuName = gen.NewOptString(record.ParentMenuName)
