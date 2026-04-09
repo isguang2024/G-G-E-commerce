@@ -12,34 +12,31 @@ export type { AppRouteRecord, FastEnterApplication, FastEnterQuickLink }
 
 let unauthorizedHandling: Promise<void> | null = null
 
+// V5 真相源：HTTP status + spec error.code/error.message。
+// 旧 axios 错误协议（statusCode、msg、error 字段）已废弃。
 function normalizeV5StatusCode(status?: number, error?: any): number {
   const responseStatus = Number(status || 0)
   if (Number.isFinite(responseStatus) && responseStatus > 0) {
     return responseStatus
   }
-
-  const backendCode = Number(error?.code || error?.status || error?.statusCode || 0)
-  if (Number.isFinite(backendCode) && backendCode > 0) {
-    return backendCode
+  const specCode = Number(error?.code || 0)
+  if (Number.isFinite(specCode) && specCode > 0) {
+    return specCode
   }
-
   return ApiStatus.error
 }
 
 function normalizeV5ErrorMessage(error: any, statusCode: number): string {
-  const backendMessage = `${error?.message || error?.msg || error?.error || ''}`.trim()
+  const backendMessage = `${error?.message || ''}`.trim()
   if (backendMessage) {
     return backendMessage
   }
-
   if (statusCode === ApiStatus.unauthorized) {
     return $t('httpMsg.unauthorized')
   }
-
   if (statusCode >= 500) {
     return $t('httpMsg.internalServerError')
   }
-
   return $t('httpMsg.requestFailed')
 }
 
@@ -97,31 +94,29 @@ export function normalizeUserSummary(item: any): Api.SystemManage.UserListItem {
         code: r?.code || '',
         name: r?.name || ''
       }))
-    : Array.isArray(item?.roleDetails)
-      ? item.roleDetails
-      : []
+    : []
   return {
     id: item?.id || '',
-    avatar: item?.avatar || item?.avatar_url || '',
+    avatar: item?.avatar_url || '',
     status: item?.status || 'inactive',
-    userName: item?.user_name || item?.userName || '',
-    nickName: item?.nick_name || item?.nickName || '',
-    userPhone: item?.user_phone || item?.userPhone || '',
-    userEmail: item?.user_email || item?.userEmail || '',
-    systemRemark: item?.system_remark || item?.systemRemark || '',
-    lastLoginTime: item?.last_login_time || item?.lastLoginTime || '',
-    lastLoginIP: item?.last_login_ip || item?.lastLoginIP || '',
+    userName: item?.user_name || '',
+    nickName: item?.nick_name || '',
+    userPhone: item?.user_phone || '',
+    userEmail: item?.user_email || '',
+    systemRemark: item?.system_remark || '',
+    lastLoginTime: item?.last_login_time || '',
+    lastLoginIP: item?.last_login_ip || '',
     userRoles: Array.isArray(item?.user_roles)
       ? item.user_roles
       : Array.isArray(item?.userRoles)
         ? item.userRoles
         : [],
     roleDetails,
-    registerSource: item?.register_source || item?.registerSource || '',
-    invitedBy: item?.invited_by || item?.invitedBy || '',
-    invitedByName: item?.invited_by_name || item?.invitedByName || '',
-    createTime: item?.create_time || item?.createTime || '',
-    updateTime: item?.update_time || item?.updateTime || ''
+    registerSource: item?.register_source || '',
+    invitedBy: item?.invited_by || '',
+    invitedByName: item?.invited_by_name || '',
+    createTime: item?.create_time || '',
+    updateTime: item?.update_time || ''
   }
 }
 
@@ -196,87 +191,87 @@ export function normalizePermissionGroup(value: any): Api.SystemManage.Permissio
   if (!value) return undefined
   return {
     id: value?.id || '',
-    groupType: value?.group_type || value?.groupType || '',
+    groupType: value?.group_type || '',
     code: value?.code || '',
     name: value?.name || '',
-    nameEn: value?.name_en || value?.nameEn || '',
+    nameEn: value?.name_en || '',
     description: value?.description || '',
     status: value?.status || 'normal',
-    sortOrder: value?.sort_order ?? value?.sortOrder ?? 0,
-    isBuiltin: Boolean(value?.is_builtin ?? value?.isBuiltin ?? false)
+    sortOrder: value?.sort_order ?? 0,
+    isBuiltin: Boolean(value?.is_builtin ?? false)
   }
 }
 
 export function normalizePermissionAction(item: any): Api.SystemManage.PermissionActionItem {
-  const permissionKey = normalizePermissionKey(item?.permission_key || item?.permissionKey)
+  const permissionKey = normalizePermissionKey(item?.permission_key)
   const legacy = derivePermissionSegments(permissionKey)
-  const consumerTypes = item?.consumer_types || item?.consumerTypes || []
-  const duplicateKeys = item?.duplicate_keys || item?.duplicateKeys || []
-  const moduleGroup = normalizePermissionGroup(item?.module_group || item?.moduleGroup)
-  const featureGroup = normalizePermissionGroup(item?.feature_group || item?.featureGroup)
+  const consumerTypes = item?.consumer_types || []
+  const duplicateKeys = item?.duplicate_keys || []
+  const moduleGroup = normalizePermissionGroup(item?.module_group)
+  const featureGroup = normalizePermissionGroup(item?.feature_group)
   return {
     id: item?.id || '',
     resourceCode: legacy.resourceCode,
     actionCode: legacy.actionCode,
     moduleCode: moduleGroup?.code || legacy.resourceCode || '',
-    moduleGroupId: item?.module_group_id || item?.moduleGroupId || moduleGroup?.id || '',
-    featureGroupId: item?.feature_group_id || item?.featureGroupId || featureGroup?.id || '',
+    moduleGroupId: item?.module_group_id || moduleGroup?.id || '',
+    featureGroupId: item?.feature_group_id || featureGroup?.id || '',
     moduleGroup,
     featureGroup,
     permissionKey,
     featureKind: featureGroup?.code || 'system',
-    dataPolicy: item?.data_policy || item?.dataPolicy || '',
+    dataPolicy: item?.data_policy || '',
     name: item?.name || '',
     description: item?.description || '',
-    dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
-    dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
-    apiCount: Number(item?.api_count ?? item?.apiCount ?? 0),
-    pageCount: Number(item?.page_count ?? item?.pageCount ?? 0),
-    packageCount: Number(item?.package_count ?? item?.packageCount ?? 0),
+    dataPermissionCode: item?.data_permission_code || '',
+    dataPermissionName: item?.data_permission_name || '',
+    apiCount: Number(item?.api_count ?? 0),
+    pageCount: Number(item?.page_count ?? 0),
+    packageCount: Number(item?.package_count ?? 0),
     consumerTypes: Array.isArray(consumerTypes)
       ? consumerTypes.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
       : [],
-    usagePattern: item?.usage_pattern || item?.usagePattern || 'unused',
-    usageNote: item?.usage_note || item?.usageNote || '',
-    duplicatePattern: item?.duplicate_pattern || item?.duplicatePattern || 'none',
-    duplicateGroup: item?.duplicate_group || item?.duplicateGroup || '',
+    usagePattern: item?.usage_pattern || 'unused',
+    usageNote: item?.usage_note || '',
+    duplicatePattern: item?.duplicate_pattern || 'none',
+    duplicateGroup: item?.duplicate_group || '',
     duplicateKeys: Array.isArray(duplicateKeys)
       ? duplicateKeys.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
       : [],
-    duplicateNote: item?.duplicate_note || item?.duplicateNote || '',
+    duplicateNote: item?.duplicate_note || '',
     status: item?.status || 'normal',
-    sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
-    isBuiltin: Boolean(item?.is_builtin ?? item?.isBuiltin ?? false),
-    createdAt: item?.created_at || item?.createdAt || '',
-    updatedAt: item?.updated_at || item?.updatedAt || ''
+    sortOrder: item?.sort_order ?? 0,
+    isBuiltin: Boolean(item?.is_builtin ?? false),
+    createdAt: item?.created_at || '',
+    updatedAt: item?.updated_at || ''
   }
 }
 
 export function normalizePermissionAuditSummary(item: any): Api.SystemManage.PermissionActionAuditSummary {
   return {
-    totalCount: Number(item?.total_count ?? item?.totalCount ?? 0),
-    unusedCount: Number(item?.unused_count ?? item?.unusedCount ?? 0),
-    apiOnlyCount: Number(item?.api_only_count ?? item?.apiOnlyCount ?? 0),
-    pageOnlyCount: Number(item?.page_only_count ?? item?.pageOnlyCount ?? 0),
-    packageOnlyCount: Number(item?.package_only_count ?? item?.packageOnlyCount ?? 0),
-    multiConsumerCount: Number(item?.multi_consumer_count ?? item?.multiConsumerCount ?? 0),
+    totalCount: Number(item?.total_count ?? 0),
+    unusedCount: Number(item?.unused_count ?? 0),
+    apiOnlyCount: Number(item?.api_only_count ?? 0),
+    pageOnlyCount: Number(item?.page_only_count ?? 0),
+    packageOnlyCount: Number(item?.package_only_count ?? 0),
+    multiConsumerCount: Number(item?.multi_consumer_count ?? 0),
     crossContextMirrorCount: Number(
-      item?.cross_context_mirror_count ?? item?.crossContextMirrorCount ?? 0
+      item?.cross_context_mirror_count ?? 0
     ),
     suspectedDuplicateCount: Number(
-      item?.suspected_duplicate_count ?? item?.suspectedDuplicateCount ?? 0
+      item?.suspected_duplicate_count ?? 0
     )
   }
 }
 
 export function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointItem {
-  const permissionKeysRaw = item?.permission_keys || item?.permissionKeys || []
-  const permissionContextsRaw = item?.permission_contexts || item?.permissionContexts || []
+  const permissionKeysRaw = item?.permission_keys || []
+  const permissionContextsRaw = item?.permission_contexts || []
   const permissionKeys = Array.isArray(permissionKeysRaw)
     ? permissionKeysRaw.map((v: any) => `${v || ''}`.trim()).filter(Boolean)
     : []
   const permissionKey =
-    normalizePermissionKey(item?.permission_key || item?.permissionKey) || permissionKeys[0] || ''
+    normalizePermissionKey(item?.permission_key) || permissionKeys[0] || ''
   return {
     id: item?.id || '',
     code: item?.code || '',
@@ -292,17 +287,14 @@ export function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointIte
       : [],
     permissionBindingMode:
       item?.permission_binding_mode ||
-      item?.permissionBindingMode ||
       (permissionKeys.length > 1 ? 'shared' : permissionKeys.length === 1 ? 'single' : 'none'),
-    sharedAcrossContexts: Boolean(item?.shared_across_contexts ?? item?.sharedAcrossContexts),
-    permissionNote: item?.permission_note || item?.permissionNote || '',
+    sharedAcrossContexts: Boolean(item?.shared_across_contexts),
+    permissionNote: item?.permission_note || '',
     authMode:
       item?.auth_mode ||
-      item?.authMode ||
       item?.access_mode ||
-      item?.accessMode ||
       (permissionKey ? 'permission' : 'jwt'),
-    categoryId: item?.category_id || item?.categoryId || item?.category?.id || '',
+    categoryId: item?.category_id || item?.category?.id || '',
     category: item?.category
       ? {
           id: item.category.id || '',
@@ -313,65 +305,65 @@ export function normalizeApiEndpoint(item: any): Api.SystemManage.APIEndpointIte
           status: item.category.status || 'normal'
         }
       : undefined,
-    dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
-    dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
-    runtimeExists: Boolean(item?.runtime_exists ?? item?.runtimeExists),
+    dataPermissionCode: item?.data_permission_code || '',
+    dataPermissionName: item?.data_permission_name || '',
+    runtimeExists: Boolean(item?.runtime_exists),
     stale: Boolean(item?.stale),
-    staleReason: item?.stale_reason || item?.staleReason || '',
+    staleReason: item?.stale_reason || '',
     status: item?.status || 'normal',
-    createdAt: item?.created_at || item?.createdAt || '',
-    updatedAt: item?.updated_at || item?.updatedAt || ''
+    createdAt: item?.created_at || '',
+    updatedAt: item?.updated_at || ''
   }
 }
 
 export function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem {
-  const packageKey = item?.package_key || item?.packageKey || ''
-  const workspaceScope = item?.workspace_scope || item?.workspaceScope || 'all'
-  const appKeysRaw = item?.app_keys || item?.appKeys || []
+  const packageKey = item?.package_key || ''
+  const workspaceScope = item?.workspace_scope || 'all'
+  const appKeysRaw = item?.app_keys || []
   const appKeys = Array.isArray(appKeysRaw)
     ? appKeysRaw.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
     : []
   return {
     id: item?.id || '',
-    appKey: item?.app_key || item?.appKey || '',
+    appKey: item?.app_key || '',
     appKeys,
     packageKey,
-    packageType: item?.package_type || item?.packageType || 'base',
+    packageType: item?.package_type || 'base',
     name: item?.name || '',
     description: item?.description || '',
     workspaceScope,
-    isBuiltin: Boolean(item?.is_builtin ?? item?.isBuiltin ?? false),
-    actionCount: item?.action_count ?? item?.actionCount ?? 0,
-    menuCount: item?.menu_count ?? item?.menuCount ?? 0,
+    isBuiltin: Boolean(item?.is_builtin ?? false),
+    actionCount: item?.action_count ?? 0,
+    menuCount: item?.menu_count ?? 0,
     collaborationWorkspaceCount:
-      item?.collaborationWorkspaceCount ?? item?.collaboration_workspace_count ?? 0,
+      item?.collaboration_workspace_count ?? 0,
     status: item?.status || 'normal',
-    sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
-    createdAt: item?.created_at || item?.createdAt || '',
-    updatedAt: item?.updated_at || item?.updatedAt || ''
+    sortOrder: item?.sort_order ?? 0,
+    createdAt: item?.created_at || '',
+    updatedAt: item?.updated_at || ''
   }
 }
 
 export function normalizeRole(item: any): Api.SystemManage.RoleListItem {
-  const appKeysRaw = item?.appKeys || item?.app_keys || []
+  const appKeysRaw = item?.app_keys || []
   const appKeys = Array.isArray(appKeysRaw)
     ? appKeysRaw.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
     : []
   return {
-    roleId: item?.roleId || item?.role_id || item?.id || '',
-    roleName: item?.roleName || item?.role_name || item?.name || '',
-    roleCode: item?.roleCode || item?.role_code || item?.code || '',
+    roleId: item?.role_id || item?.id || '',
+    roleName: item?.role_name || item?.name || '',
+    roleCode: item?.role_code || item?.code || '',
     description: item?.description || '',
     appKeys,
-    sortOrder: item?.sortOrder ?? item?.sort_order ?? 0,
+    sortOrder: item?.sort_order ?? 0,
     status: item?.status || 'normal',
     priority: item?.priority ?? 0,
-    customParams: item?.customParams || item?.custom_params || {},
-    createTime: item?.createTime || item?.create_time || item?.created_at || '',
+    customParams: item?.custom_params || {},
+    createTime: item?.create_time || '',
     collaborationWorkspaceId:
-      item?.collaborationWorkspaceId || item?.collaboration_workspace_id || null,
-    isGlobal: Boolean(item?.isGlobal ?? item?.is_global ?? appKeys.length === 0),
-    canEditPermission: Boolean(item?.canEditPermission ?? item?.can_edit_permission ?? true)
+      item?.collaboration_workspace_id || null,
+    isGlobal: Boolean(item?.is_global ?? appKeys.length === 0),
+    canEditPermission: Boolean(item?.can_edit_permission ?? true)
   }
 }
 
@@ -382,65 +374,65 @@ export function normalizeCollaborationWorkspace(
     id: item?.id || '',
     name: item?.name || '',
     remark: item?.remark || '',
-    logoUrl: item?.logo_url || item?.logoUrl || '',
+    logoUrl: item?.logo_url || '',
     plan: item?.plan || 'free',
-    maxMembers: item?.max_members ?? item?.maxMembers ?? 0,
+    maxMembers: item?.max_members ?? 0,
     status: item?.status || 'active',
-    createTime: item?.created_at || item?.createTime || '',
-    updateTime: item?.updated_at || item?.updateTime || '',
-    ownerId: item?.owner_id || item?.ownerId || '',
-    adminUsers: item?.admin_users || item?.adminUsers || [],
-    adminUserIds: item?.admin_user_ids || item?.adminUserIds || [],
-    currentRoleCode: item?.current_role_code || item?.currentRoleCode || '',
-    memberStatus: item?.member_status || item?.memberStatus || ''
+    createTime: item?.created_at || '',
+    updateTime: item?.updated_at || '',
+    ownerId: item?.owner_id || '',
+    adminUsers: item?.admin_users || [],
+    adminUserIds: item?.admin_user_ids || [],
+    currentRoleCode: item?.current_role_code || '',
+    memberStatus: item?.member_status || ''
   }
 }
 
 export function normalizePageItem(item: any): Api.SystemManage.PageItem {
   const meta = item?.meta || {}
   const rawVisibilityScope =
-    `${item?.visibility_scope || item?.visibilityScope || meta?.visibilityScope || ''}`.trim()
-  const rawSpaceKeys = Array.isArray(item?.space_keys || item?.spaceKeys || meta?.spaceKeys)
-    ? item?.space_keys || item?.spaceKeys || meta?.spaceKeys
+    `${item?.visibility_scope || meta?.visibilityScope || ''}`.trim()
+  const rawSpaceKeys = Array.isArray(item?.space_keys || meta?.spaceKeys)
+    ? item?.space_keys || meta?.spaceKeys
     : []
   // spaceKeys 由后端把 page_space_bindings、菜单继承和父页继承统一编译后下发，前端不再自行猜测。
   const spaceKeys = rawSpaceKeys
     .map((value: any) => normalizeMenuSpaceKey(`${value || ''}`))
     .filter(Boolean)
-  const spaceType = `${item?.space_type || item?.spaceType || meta?.spaceType || ''}`.trim()
-  const hostKey = `${item?.host_key || item?.hostKey || meta?.hostKey || ''}`.trim()
+  const spaceType = `${item?.space_type || meta?.spaceType || ''}`.trim()
+  const hostKey = `${item?.host_key || meta?.hostKey || ''}`.trim()
   return {
     id: item?.id || '',
-    appKey: item?.app_key || item?.appKey || '',
-    pageKey: item?.page_key || item?.pageKey || '',
+    appKey: item?.app_key || '',
+    pageKey: item?.page_key || '',
     name: item?.name || '',
-    routeName: item?.route_name || item?.routeName || '',
-    routePath: item?.route_path || item?.routePath || '',
+    routeName: item?.route_name || '',
+    routePath: item?.route_path || '',
     component: item?.component || '',
-    pageType: item?.page_type || item?.pageType || 'inner',
+    pageType: item?.page_type || 'inner',
     visibilityScope: rawVisibilityScope || undefined,
     source: item?.source || 'manual',
-    moduleKey: item?.module_key || item?.moduleKey || '',
-    sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
-    parentMenuId: item?.parent_menu_id || item?.parentMenuId || '',
-    parentMenuName: item?.parent_menu_name || item?.parentMenuName || '',
-    parentPageKey: item?.parent_page_key || item?.parentPageKey || '',
-    parentPageName: item?.parent_page_name || item?.parentPageName || '',
-    displayGroupKey: item?.display_group_key || item?.displayGroupKey || '',
-    displayGroupName: item?.display_group_name || item?.displayGroupName || '',
-    activeMenuPath: item?.active_menu_path || item?.activeMenuPath || '',
-    breadcrumbMode: item?.breadcrumb_mode || item?.breadcrumbMode || 'inherit_menu',
-    accessMode: item?.access_mode || item?.accessMode || 'inherit',
-    permissionKey: item?.permission_key || item?.permissionKey || '',
-    inheritPermission: Boolean(item?.inherit_permission ?? item?.inheritPermission ?? true),
-    keepAlive: Boolean(item?.keep_alive ?? item?.keepAlive ?? false),
-    isFullPage: Boolean(item?.is_full_page ?? item?.isFullPage ?? false),
-    isIframe: Boolean(meta?.isIframe ?? item?.is_iframe ?? item?.isIframe ?? false),
-    isHideTab: Boolean(meta?.isHideTab ?? item?.is_hide_tab ?? item?.isHideTab ?? false),
+    moduleKey: item?.module_key || '',
+    sortOrder: item?.sort_order ?? 0,
+    parentMenuId: item?.parent_menu_id || '',
+    parentMenuName: item?.parent_menu_name || '',
+    parentPageKey: item?.parent_page_key || '',
+    parentPageName: item?.parent_page_name || '',
+    displayGroupKey: item?.display_group_key || '',
+    displayGroupName: item?.display_group_name || '',
+    activeMenuPath: item?.active_menu_path || '',
+    breadcrumbMode: item?.breadcrumb_mode || 'inherit_menu',
+    accessMode: item?.access_mode || 'inherit',
+    permissionKey: item?.permission_key || '',
+    inheritPermission: Boolean(item?.inherit_permission ?? true),
+    keepAlive: Boolean(item?.keep_alive ?? false),
+    isFullPage: Boolean(item?.is_full_page ?? false),
+    isIframe: Boolean(meta?.isIframe ?? item?.is_iframe ?? false),
+    isHideTab: Boolean(meta?.isHideTab ?? item?.is_hide_tab ?? false),
     link: `${meta?.link || item?.link || ''}`.trim(),
     spaceKeys,
     spaceScope:
-      `${item?.space_scope || item?.spaceScope || meta?.spaceScope || ''}`.trim() || undefined,
+      `${item?.space_scope || meta?.spaceScope || ''}`.trim() || undefined,
     spaceType,
     hostKey,
     status: item?.status || 'normal',
@@ -448,16 +440,16 @@ export function normalizePageItem(item: any): Api.SystemManage.PageItem {
       ...meta,
       ...(spaceKeys.length ? { spaceKeys } : {}),
       ...(rawVisibilityScope ? { visibilityScope: rawVisibilityScope } : {}),
-      ...(`${item?.space_scope || item?.spaceScope || meta?.spaceScope || ''}`.trim()
+      ...(`${item?.space_scope || meta?.spaceScope || ''}`.trim()
         ? {
-            spaceScope: `${item?.space_scope || item?.spaceScope || meta?.spaceScope || ''}`.trim()
+            spaceScope: `${item?.space_scope || meta?.spaceScope || ''}`.trim()
           }
         : {}),
       ...(spaceType ? { spaceType } : {}),
       ...(hostKey ? { hostKey } : {})
     },
-    createdAt: item?.created_at || item?.createdAt || '',
-    updatedAt: item?.updated_at || item?.updatedAt || ''
+    createdAt: item?.created_at || '',
+    updatedAt: item?.updated_at || ''
   }
 }
 
@@ -473,54 +465,52 @@ export function normalizePageMenuOption(item: any): Api.SystemManage.PageMenuOpt
 
 export function normalizePageUnregisteredItem(item: any): Api.SystemManage.PageUnregisteredItem {
   return {
-    filePath: item?.file_path || item?.filePath || '',
+    filePath: item?.file_path || '',
     component: item?.component || '',
-    pageKey: item?.page_key || item?.pageKey || '',
+    pageKey: item?.page_key || '',
     name: item?.name || '',
-    routeName: item?.route_name || item?.routeName || '',
-    routePath: item?.route_path || item?.routePath || '',
-    pageType: item?.page_type || item?.pageType || 'inner',
-    moduleKey: item?.module_key || item?.moduleKey || '',
-    parentMenuId: item?.parent_menu_id || item?.parentMenuId || '',
-    parentMenuName: item?.parent_menu_name || item?.parentMenuName || '',
-    activeMenuPath: item?.active_menu_path || item?.activeMenuPath || '',
-    spaceKey: normalizeMenuSpaceKey(item?.space_key || item?.spaceKey),
-    spaceType: `${item?.space_type || item?.spaceType || ''}`.trim(),
-    hostKey: `${item?.host_key || item?.hostKey || ''}`.trim()
+    routeName: item?.route_name || '',
+    routePath: item?.route_path || '',
+    pageType: item?.page_type || 'inner',
+    moduleKey: item?.module_key || '',
+    parentMenuId: item?.parent_menu_id || '',
+    parentMenuName: item?.parent_menu_name || '',
+    activeMenuPath: item?.active_menu_path || '',
+    spaceKey: normalizeMenuSpaceKey(item?.space_key),
+    spaceType: `${item?.space_type || ''}`.trim(),
+    hostKey: `${item?.host_key || ''}`.trim()
   }
 }
 
 export function normalizeMenuSpace(item: any): Api.SystemManage.MenuSpaceItem {
-  const allowedRoleCodes = item?.allowed_role_codes ?? item?.allowedRoleCodes ?? []
+  const allowedRoleCodes = item?.allowed_role_codes ?? []
   const rawAccessMode =
     item?.access_mode ||
-    item?.accessMode ||
     item?.meta?.access_mode ||
-    item?.meta?.accessMode ||
     'all'
   const accessMode = `${rawAccessMode}`.trim()
   return {
     id: item?.id || '',
-    appKey: item?.app_key || item?.appKey || '',
-    spaceKey: normalizeMenuSpaceKey(item?.space_key || item?.spaceKey),
+    appKey: item?.app_key || '',
+    spaceKey: normalizeMenuSpaceKey(item?.space_key),
     name: item?.name || '',
     description: item?.description || '',
-    defaultHomePath: item?.default_home_path || item?.defaultHomePath || '',
-    isDefault: Boolean(item?.is_default ?? item?.isDefault ?? false),
+    defaultHomePath: item?.default_home_path || '',
+    isDefault: Boolean(item?.is_default ?? false),
     status: item?.status || 'normal',
-    hostCount: item?.host_count ?? item?.hostCount ?? 0,
+    hostCount: item?.host_count ?? 0,
     hosts: Array.isArray(item?.hosts)
       ? item.hosts.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
       : [],
-    menuCount: Number(item?.menu_count ?? item?.menuCount ?? 0),
-    pageCount: Number(item?.page_count ?? item?.pageCount ?? 0),
+    menuCount: Number(item?.menu_count ?? 0),
+    pageCount: Number(item?.page_count ?? 0),
     accessMode,
     allowedRoleCodes: Array.isArray(allowedRoleCodes)
       ? allowedRoleCodes.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
       : [],
     meta: item?.meta || {},
-    createdAt: item?.created_at || item?.createdAt || '',
-    updatedAt: item?.updated_at || item?.updatedAt || ''
+    createdAt: item?.created_at || '',
+    updatedAt: item?.updated_at || ''
   }
 }
 
@@ -528,98 +518,98 @@ export function normalizeMenuSpaceHostBinding(item: any): Api.SystemManage.MenuS
   const meta = item?.meta || {}
   return {
     id: item?.id || '',
-    appKey: item?.app_key || item?.appKey || '',
-    appName: item?.app_name || item?.appName || '',
+    appKey: item?.app_key || '',
+    appName: item?.app_name || '',
     host: `${item?.host || ''}`.trim(),
-    spaceKey: normalizeMenuSpaceKey(item?.space_key || item?.spaceKey),
-    spaceName: item?.space_name || item?.spaceName || '',
+    spaceKey: normalizeMenuSpaceKey(item?.space_key),
+    spaceName: item?.space_name || '',
     description: item?.description || '',
-    isDefault: Boolean(item?.is_default ?? item?.isDefault ?? false),
+    isDefault: Boolean(item?.is_default ?? false),
     status: item?.status || 'normal',
     scheme: `${item?.scheme || item?.meta?.scheme || meta?.scheme || 'https'}`.trim() || 'https',
     routePrefix:
-      `${item?.route_prefix || item?.routePrefix || meta?.route_prefix || meta?.routePrefix || ''}`.trim(),
+      `${item?.route_prefix || meta?.route_prefix || meta?.routePrefix || ''}`.trim(),
     authMode:
-      `${item?.auth_mode || item?.authMode || meta?.auth_mode || meta?.authMode || 'inherit_host'}`.trim() ||
+      `${item?.auth_mode || meta?.auth_mode || meta?.authMode || 'inherit_host'}`.trim() ||
       'inherit_host',
     loginHost:
-      `${item?.login_host || item?.loginHost || meta?.login_host || meta?.loginHost || ''}`.trim(),
+      `${item?.login_host || meta?.login_host || meta?.loginHost || ''}`.trim(),
     callbackHost:
-      `${item?.callback_host || item?.callbackHost || meta?.callback_host || meta?.callbackHost || ''}`.trim(),
+      `${item?.callback_host || meta?.callback_host || meta?.callbackHost || ''}`.trim(),
     cookieScopeMode:
-      `${item?.cookie_scope_mode || item?.cookieScopeMode || meta?.cookie_scope_mode || meta?.cookieScopeMode || 'inherit'}`.trim() ||
+      `${item?.cookie_scope_mode || meta?.cookie_scope_mode || meta?.cookieScopeMode || 'inherit'}`.trim() ||
       'inherit',
     cookieDomain:
-      `${item?.cookie_domain || item?.cookieDomain || meta?.cookie_domain || meta?.cookieDomain || ''}`.trim(),
+      `${item?.cookie_domain || meta?.cookie_domain || meta?.cookieDomain || ''}`.trim(),
     meta,
-    createdAt: item?.created_at || item?.createdAt || '',
-    updatedAt: item?.updated_at || item?.updatedAt || ''
+    createdAt: item?.created_at || '',
+    updatedAt: item?.updated_at || ''
   }
 }
 
 export function normalizeApp(item: any): Api.SystemManage.AppItem {
-  const primaryHostsRaw = item?.primary_hosts || item?.primaryHosts || []
+  const primaryHostsRaw = item?.primary_hosts || []
   const primaryHosts = Array.isArray(primaryHostsRaw)
     ? primaryHostsRaw.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
     : []
   return {
     id: item?.id || '',
-    appKey: item?.app_key || item?.appKey || '',
+    appKey: item?.app_key || '',
     name: item?.name || '',
     description: item?.description || '',
-    defaultSpaceKey: item?.default_space_key || item?.defaultSpaceKey || '',
-    spaceMode: item?.space_mode || item?.spaceMode || 'single',
-    isDefault: Boolean(item?.is_default ?? item?.isDefault ?? false),
+    defaultSpaceKey: item?.default_space_key || '',
+    spaceMode: item?.space_mode || 'single',
+    isDefault: Boolean(item?.is_default ?? false),
     status: item?.status || 'normal',
-    hostCount: Number(item?.host_count ?? item?.hostCount ?? 0),
-    primaryHost: item?.primary_host || item?.primaryHost || primaryHosts[0] || '',
+    hostCount: Number(item?.host_count ?? 0),
+    primaryHost: item?.primary_host || primaryHosts[0] || '',
     menuSpaceCount: Number(
-      item?.menu_space_count ?? item?.menuSpaceCount ?? item?.space_count ?? item?.spaceCount ?? 0
+      item?.menu_space_count ?? item?.space_count ?? 0
     ),
-    menuCount: Number(item?.menu_count ?? item?.menuCount ?? 0),
-    pageCount: Number(item?.page_count ?? item?.pageCount ?? 0),
+    menuCount: Number(item?.menu_count ?? 0),
+    pageCount: Number(item?.page_count ?? 0),
     meta: item?.meta || {},
-    createdAt: item?.created_at || item?.createdAt || '',
-    updatedAt: item?.updated_at || item?.updatedAt || ''
+    createdAt: item?.created_at || '',
+    updatedAt: item?.updated_at || ''
   }
 }
 
 export function normalizeAppHostBinding(item: any): Api.SystemManage.AppHostBindingItem {
   return {
     id: item?.id || '',
-    appKey: item?.app_key || item?.appKey || '',
-    appName: item?.app_name || item?.appName || '',
-    matchType: item?.match_type || item?.matchType || 'host_exact',
+    appKey: item?.app_key || '',
+    appName: item?.app_name || '',
+    matchType: item?.match_type || 'host_exact',
     host: `${item?.host || ''}`.trim(),
-    pathPattern: `${item?.path_pattern || item?.pathPattern || ''}`.trim(),
+    pathPattern: `${item?.path_pattern || ''}`.trim(),
     priority: Number(item?.priority ?? 0),
-    defaultSpaceKey: item?.default_space_key || item?.defaultSpaceKey || '',
+    defaultSpaceKey: item?.default_space_key || '',
     description: item?.description || '',
-    isPrimary: Boolean(item?.is_primary ?? item?.isPrimary ?? false),
+    isPrimary: Boolean(item?.is_primary ?? false),
     status: item?.status || 'normal',
     meta: item?.meta || {},
-    createdAt: item?.created_at || item?.createdAt || '',
-    updatedAt: item?.updated_at || item?.updatedAt || ''
+    createdAt: item?.created_at || '',
+    updatedAt: item?.updated_at || ''
   }
 }
 
 export function normalizeMenuSpaceEntryBinding(item: any): Api.SystemManage.MenuSpaceEntryBindingItem {
   return {
     id: item?.id || '',
-    appKey: item?.app_key || item?.appKey || '',
-    appName: item?.app_name || item?.appName || '',
-    spaceKey: item?.space_key || item?.spaceKey || '',
-    spaceName: item?.space_name || item?.spaceName || '',
-    matchType: item?.match_type || item?.matchType || 'host_exact',
+    appKey: item?.app_key || '',
+    appName: item?.app_name || '',
+    spaceKey: item?.space_key || '',
+    spaceName: item?.space_name || '',
+    matchType: item?.match_type || 'host_exact',
     host: `${item?.host || ''}`.trim(),
-    pathPattern: `${item?.path_pattern || item?.pathPattern || ''}`.trim(),
+    pathPattern: `${item?.path_pattern || ''}`.trim(),
     priority: Number(item?.priority ?? 0),
     description: item?.description || '',
-    isPrimary: Boolean(item?.is_primary ?? item?.isPrimary ?? false),
+    isPrimary: Boolean(item?.is_primary ?? false),
     status: item?.status || 'normal',
     meta: item?.meta || {},
-    createdAt: item?.created_at || item?.createdAt || '',
-    updatedAt: item?.updated_at || item?.updatedAt || ''
+    createdAt: item?.created_at || '',
+    updatedAt: item?.updated_at || ''
   }
 }
 
@@ -628,44 +618,44 @@ export function normalizePageBreadcrumbPreviewItem(item: any): Api.SystemManage.
     type: item?.type || 'page',
     title: item?.title || '',
     path: item?.path || '',
-    pageKey: item?.page_key || item?.pageKey || ''
+    pageKey: item?.page_key || ''
   }
 }
 
 export function normalizeRefreshStats(item: any): Api.SystemManage.RefreshStats {
   return {
     requestedPackageCount: Number(
-      item?.requestedPackageCount ?? item?.requested_package_count ?? 0
+      item?.requested_package_count ?? 0
     ),
-    impactedPackageCount: Number(item?.impactedPackageCount ?? item?.impacted_package_count ?? 0),
-    roleCount: Number(item?.roleCount ?? item?.role_count ?? 0),
+    impactedPackageCount: Number(item?.impacted_package_count ?? 0),
+    roleCount: Number(item?.role_count ?? 0),
     collaborationWorkspaceCount: Number(item?.collaborationWorkspaceCount ?? 0),
-    userCount: Number(item?.userCount ?? item?.user_count ?? 0),
-    elapsedMilliseconds: Number(item?.elapsedMilliseconds ?? item?.elapsed_milliseconds ?? 0),
-    finishedAt: item?.finishedAt || item?.finished_at || ''
+    userCount: Number(item?.user_count ?? 0),
+    elapsedMilliseconds: Number(item?.elapsed_milliseconds ?? 0),
+    finishedAt: item?.finished_at || ''
   }
 }
 
 export function normalizeRiskAudit(item: any): Api.SystemManage.RiskAuditItem {
   return {
     id: item?.id || '',
-    operatorId: item?.operator_id || item?.operatorId || '',
-    objectType: item?.object_type || item?.objectType || '',
-    objectId: item?.object_id || item?.objectId || '',
-    operationType: item?.operation_type || item?.operationType || '',
-    beforeSummary: item?.before_summary || item?.beforeSummary || {},
-    afterSummary: item?.after_summary || item?.afterSummary || {},
-    impactSummary: item?.impact_summary || item?.impactSummary || {},
-    requestId: item?.request_id || item?.requestId || '',
-    createdAt: item?.created_at || item?.createdAt || ''
+    operatorId: item?.operator_id || '',
+    objectType: item?.object_type || '',
+    objectId: item?.object_id || '',
+    operationType: item?.operation_type || '',
+    beforeSummary: item?.before_summary || {},
+    afterSummary: item?.after_summary || {},
+    impactSummary: item?.impact_summary || {},
+    requestId: item?.request_id || '',
+    createdAt: item?.created_at || ''
   }
 }
 
 export function normalizeFeaturePackageRelationNode(
   item: any
 ): Api.SystemManage.FeaturePackageRelationNode {
-  const packageKey = item?.package_key || item?.packageKey || ''
-  const appKeysRaw = item?.app_keys || item?.appKeys || []
+  const packageKey = item?.package_key || ''
+  const appKeysRaw = item?.app_keys || []
   const appKeys = Array.isArray(appKeysRaw)
     ? appKeysRaw.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
     : []
@@ -673,11 +663,11 @@ export function normalizeFeaturePackageRelationNode(
     id: item?.id || '',
     packageKey,
     name: item?.name || '',
-    packageType: item?.package_type || item?.packageType || 'base',
-    workspaceScope: item?.workspace_scope || item?.workspaceScope || 'all',
+    packageType: item?.package_type || 'base',
+    workspaceScope: item?.workspace_scope || 'all',
     appKeys,
     status: item?.status || 'normal',
-    referenceCount: Number(item?.reference_count ?? item?.referenceCount ?? 0),
+    referenceCount: Number(item?.reference_count ?? 0),
     children: Array.isArray(item?.children)
       ? item.children.map((child: any) => normalizeFeaturePackageRelationNode(child))
       : []
@@ -687,8 +677,8 @@ export function normalizeFeaturePackageRelationNode(
 export function normalizeFeaturePackageRelationTree(
   item: any
 ): Api.SystemManage.FeaturePackageRelationTree {
-  const cycleDependencies = item?.cycle_dependencies || item?.cycleDependencies || []
-  const isolatedBaseKeys = item?.isolated_base_keys || item?.isolatedBaseKeys || []
+  const cycleDependencies = item?.cycle_dependencies || []
+  const isolatedBaseKeys = item?.isolated_base_keys || []
   return {
     roots: Array.isArray(item?.roots)
       ? item.roots.map((node: any) => normalizeFeaturePackageRelationNode(node))
@@ -709,9 +699,9 @@ export function normalizeFeaturePackageRelationTree(
 export function normalizePermissionActionConsumers(
   item: any
 ): Api.SystemManage.PermissionActionConsumerDetails {
-  const featurePackages = item?.feature_packages || item?.featurePackages || []
+  const featurePackages = item?.feature_packages || []
   return {
-    permissionKey: item?.permission_key || item?.permissionKey || '',
+    permissionKey: item?.permission_key || '',
     apis: Array.isArray(item?.apis)
       ? item.apis.map((api: any) => ({
           code: api?.code || '',
@@ -751,23 +741,23 @@ export function normalizePermissionActionConsumers(
 export function normalizeUnregisteredApiScanConfig(item: any): Api.SystemManage.APIUnregisteredScanConfig {
   return {
     enabled: Boolean(item?.enabled),
-    frequencyMinutes: Number(item?.frequency_minutes ?? item?.frequencyMinutes ?? 60),
-    defaultCategoryId: item?.default_category_id || item?.defaultCategoryId || '',
-    defaultPermissionKey: item?.default_permission_key || item?.defaultPermissionKey || '',
-    markAsNoPermission: Boolean(item?.mark_as_no_permission ?? item?.markAsNoPermission)
+    frequencyMinutes: Number(item?.frequency_minutes ?? 60),
+    defaultCategoryId: item?.default_category_id || '',
+    defaultPermissionKey: item?.default_permission_key || '',
+    markAsNoPermission: Boolean(item?.mark_as_no_permission)
   }
 }
 
 export function normalizePageAccessTraceResult(item: any): Api.SystemManage.PageAccessTraceResult {
-  const visibleMenuIds = item?.visible_menu_ids || item?.visibleMenuIds || []
+  const visibleMenuIds = item?.visible_menu_ids || []
   return {
-    userId: item?.user_id || item?.userId || '',
+    userId: item?.user_id || '',
     collaborationWorkspaceId:
-      item?.collaboration_workspace_id || item?.collaborationWorkspaceId || '',
-    spaceKey: item?.space_key || item?.spaceKey || '',
+      item?.collaboration_workspace_id || '',
+    spaceKey: item?.space_key || '',
     authenticated: Boolean(item?.authenticated),
-    superAdmin: Boolean(item?.super_admin ?? item?.superAdmin),
-    actionKeyCount: Number(item?.action_key_count ?? item?.actionKeyCount ?? 0),
+    superAdmin: Boolean(item?.super_admin),
+    actionKeyCount: Number(item?.action_key_count ?? 0),
     visibleMenuIds: Array.isArray(visibleMenuIds)
       ? visibleMenuIds.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
       : [],
@@ -820,17 +810,17 @@ export function normalizeRuntimeMenuTree(item: any): AppRouteRecord {
   const children = Array.isArray(item?.children)
     ? item.children.map((child: any) => normalizeRuntimeMenuTree(child))
     : []
-  const spaceKey = normalizeMenuSpaceKey(item?.space_key || item?.spaceKey || meta?.spaceKey)
-  const spaceType = `${item?.space_type || item?.spaceType || meta?.spaceType || ''}`.trim()
-  const hostKey = `${item?.host_key || item?.hostKey || meta?.hostKey || ''}`.trim()
+  const spaceKey = normalizeMenuSpaceKey(item?.space_key || meta?.spaceKey)
+  const spaceType = `${item?.space_type || meta?.spaceType || ''}`.trim()
+  const hostKey = `${item?.host_key || meta?.hostKey || ''}`.trim()
   return {
     id: item?.id || '',
     kind: item?.kind || '',
     path: item?.path || '',
     name: item?.name || '',
     component: item?.component || '',
-    parent_id: item?.parent_id || item?.parentId || '',
-    sort_order: item?.sort_order ?? item?.sortOrder ?? 0,
+    parent_id: item?.parent_id || '',
+    sort_order: item?.sort_order ?? 0,
     redirect: item?.redirect || '',
     spaceKey,
     spaceType,
@@ -864,11 +854,11 @@ export function normalizeRuntimeMenuTree(item: any): AppRouteRecord {
 }
 
 export function normalizeRuntimeNavigationManifest(item: any): Api.SystemManage.RuntimeNavigationManifest {
-  const currentApp = item?.current_app || item?.currentApp
-  const currentSpace = item?.current_space || item?.currentSpace || {}
-  const menuTree = item?.menu_tree || item?.menuTree || []
-  const entryRoutes = item?.entry_routes || item?.entryRoutes || []
-  const managedPages = item?.managed_pages || item?.managedPages || []
+  const currentApp = item?.current_app
+  const currentSpace = item?.current_space || {}
+  const menuTree = item?.menu_tree || []
+  const entryRoutes = item?.entry_routes || []
+  const managedPages = item?.managed_pages || []
   const space = currentSpace?.space ? normalizeMenuSpace(currentSpace.space) : undefined
   const binding = currentSpace?.binding
     ? normalizeMenuSpaceHostBinding(currentSpace.binding)
@@ -893,11 +883,11 @@ export function normalizeRuntimeNavigationManifest(item: any): Api.SystemManage.
     },
     context: {
       ...(item?.context || {}),
-      app_key: item?.context?.app_key || item?.context?.appKey || '',
-      space_key: item?.context?.space_key || item?.context?.spaceKey || '',
+      app_key: item?.context?.app_key || '',
+      space_key: item?.context?.space_key || '',
       requested_space_key:
-        item?.context?.requested_space_key || item?.context?.requestedSpaceKey || '',
-      request_host: item?.context?.request_host || item?.context?.requestHost || ''
+        item?.context?.requested_space_key || '',
+      request_host: item?.context?.request_host || ''
     },
     // menuTree 已经完成启用态、空间和权限裁剪；前端这里只做归一化与动态注册。
     menuTree: Array.isArray(menuTree)
@@ -909,7 +899,7 @@ export function normalizeRuntimeNavigationManifest(item: any): Api.SystemManage.
     managedPages: Array.isArray(managedPages)
       ? managedPages.map((entry: any) => normalizePageItem(entry))
       : [],
-    versionStamp: item?.version_stamp || item?.versionStamp || ''
+    versionStamp: item?.version_stamp || ''
   }
 }
 
@@ -918,8 +908,8 @@ export function normalizeApiEndpointCategory(item: any): Api.SystemManage.APIEnd
     id: item?.id || '',
     code: item?.code || '',
     name: item?.name || '',
-    nameEn: item?.name_en || item?.nameEn || '',
-    sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
+    nameEn: item?.name_en || '',
+    sortOrder: item?.sort_order ?? 0,
     status: item?.status || 'normal'
   }
 }
@@ -930,7 +920,7 @@ export function normalizeUnregisteredApiRoute(item: any): Api.SystemManage.APIUn
     path: item?.path || '',
     spec: item?.spec || `${item?.method || ''} ${item?.path || ''}`.trim(),
     handler: item?.handler || '',
-    hasMeta: Boolean(item?.has_meta ?? item?.hasMeta),
+    hasMeta: Boolean(item?.has_meta),
     meta: item?.meta
       ? {
           summary: item.meta.summary || '',
@@ -976,7 +966,7 @@ export function normalizeFastEnterConfig(item: any): Api.SystemManage.FastEnterC
         link: entry?.link || ''
       })
     ),
-    minWidth: item?.minWidth ?? item?.min_width ?? 1450
+    minWidth: item?.min_width ?? 1450
   }
 }
 
@@ -1000,16 +990,16 @@ export function normalizeUserCollaborationWorkspaceItem(
     id: item?.id || '',
     name: item?.name || '',
     remark: item?.remark || '',
-    logoUrl: item?.logo_url || item?.logoUrl || '',
+    logoUrl: item?.logo_url || '',
     plan: item?.plan || 'free',
-    maxMembers: item?.max_members ?? item?.maxMembers ?? 0,
+    maxMembers: item?.max_members ?? 0,
     status: item?.status || 'active',
-    createTime: item?.created_at || item?.createTime || '',
-    updateTime: item?.updated_at || item?.updateTime || '',
-    adminUsers: item?.admin_users || item?.adminUsers || [],
-    adminUserIds: item?.admin_user_ids || item?.adminUserIds || [],
-    currentRoleCode: item?.current_role_code || item?.currentRoleCode || '',
-    memberStatus: item?.member_status || item?.memberStatus || ''
+    createTime: item?.created_at || '',
+    updateTime: item?.updated_at || '',
+    adminUsers: item?.admin_users || [],
+    adminUserIds: item?.admin_user_ids || [],
+    currentRoleCode: item?.current_role_code || '',
+    memberStatus: item?.member_status || ''
   }
 }
 
@@ -1021,14 +1011,14 @@ export function normalizeUserPermissionDiagnosisResponse(
     value
       ? {
           id: value?.id || '',
-          groupType: value?.group_type || value?.groupType || '',
+          groupType: value?.group_type || '',
           code: value?.code || '',
           name: value?.name || '',
-          nameEn: value?.name_en || value?.nameEn || '',
+          nameEn: value?.name_en || '',
           description: value?.description || '',
           status: value?.status || 'normal',
-          sortOrder: value?.sort_order ?? value?.sortOrder ?? 0,
-          isBuiltin: Boolean(value?.is_builtin ?? value?.isBuiltin ?? false)
+          sortOrder: value?.sort_order ?? 0,
+          isBuiltin: Boolean(value?.is_builtin ?? false)
         }
       : undefined
 
@@ -1122,9 +1112,9 @@ export function normalizeUserPermissionDiagnosisResponse(
   const context = {
     type: item?.context?.type || 'personal',
     collaborationWorkspaceId:
-      item?.context?.collaboration_workspace_id || item?.context?.collaborationWorkspaceId || '',
+      item?.context?.collaboration_workspace_id || '',
     collaborationWorkspaceName:
-      item?.context?.collaboration_workspace_name || item?.context?.collaborationWorkspaceName || ''
+      item?.context?.collaboration_workspace_name || ''
   } as Api.SystemManage.UserPermissionContext & {
     collaborationWorkspaceName?: string
   }
@@ -1132,33 +1122,33 @@ export function normalizeUserPermissionDiagnosisResponse(
   return {
     user: {
       id: item?.user?.id || '',
-      userName: item?.user?.user_name || item?.user?.userName || '',
-      nickName: item?.user?.nick_name || item?.user?.nickName || '',
+      userName: item?.user?.user_name || '',
+      nickName: item?.user?.nick_name || '',
       status: item?.user?.status || 'inactive',
-      isSuperAdmin: Boolean(item?.user?.is_super_admin ?? item?.user?.isSuperAdmin)
+      isSuperAdmin: Boolean(item?.user?.is_super_admin)
     },
     context,
     snapshot: {
-      refreshedAt: item?.snapshot?.refreshed_at || item?.snapshot?.refreshedAt || '',
-      updatedAt: item?.snapshot?.updated_at || item?.snapshot?.updatedAt || '',
-      roleCount: item?.snapshot?.role_count ?? item?.snapshot?.roleCount ?? 0,
+      refreshedAt: item?.snapshot?.refreshed_at || '',
+      updatedAt: item?.snapshot?.updated_at || '',
+      roleCount: item?.snapshot?.role_count ?? 0,
       directPackageCount:
-        item?.snapshot?.direct_package_count ?? item?.snapshot?.directPackageCount ?? 0,
+        item?.snapshot?.direct_package_count ?? 0,
       expandedPackageCount:
-        item?.snapshot?.expanded_package_count ?? item?.snapshot?.expandedPackageCount ?? 0,
-      actionCount: item?.snapshot?.action_count ?? item?.snapshot?.actionCount ?? 0,
+        item?.snapshot?.expanded_package_count ?? 0,
+      actionCount: item?.snapshot?.action_count ?? 0,
       disabledActionCount:
-        item?.snapshot?.disabled_action_count ?? item?.snapshot?.disabledActionCount ?? 0,
-      menuCount: item?.snapshot?.menu_count ?? item?.snapshot?.menuCount ?? 0,
+        item?.snapshot?.disabled_action_count ?? 0,
+      menuCount: item?.snapshot?.menu_count ?? 0,
       hasPackageConfig: Boolean(
-        item?.snapshot?.has_package_config ?? item?.snapshot?.hasPackageConfig
+        item?.snapshot?.has_package_config
       ),
       derivedActionCount:
-        item?.snapshot?.derived_action_count ?? item?.snapshot?.derivedActionCount ?? 0,
+        item?.snapshot?.derived_action_count ?? 0,
       blockedActionCount:
-        item?.snapshot?.blocked_action_count ?? item?.snapshot?.blockedActionCount ?? 0,
+        item?.snapshot?.blocked_action_count ?? 0,
       effectiveActionCount:
-        item?.snapshot?.effective_action_count ?? item?.snapshot?.effectiveActionCount ?? 0
+        item?.snapshot?.effective_action_count ?? 0
     },
     roles: (item?.roles || []).map((role: any) => ({
       roleId: role?.role_id || role?.roleId || '',

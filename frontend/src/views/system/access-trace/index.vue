@@ -570,7 +570,8 @@
     sortRec(roots)
     return roots
   })
-  function menuFilterMethod(_value: string, data: MenuNode) {
+  function menuFilterMethod(_value: string, rawData: Record<string, any>) {
+    const data = rawData as MenuNode
     const kw = menuKeyword.value.trim().toLowerCase()
     if (menuVisibleFilter.value === 'visible' && !data.visible) return false
     if (menuVisibleFilter.value === 'hidden' && data.visible) return false

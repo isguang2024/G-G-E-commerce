@@ -48,20 +48,12 @@ func PackageIDsByRole(db *gorm.DB, roleID uuid.UUID, appKey string) ([]uuid.UUID
 }
 
 func PackageIDsByUser(db *gorm.DB, userID uuid.UUID, appKey string) ([]uuid.UUID, error) {
-	workspacePackageIDs, err := workspacefeaturebinding.ListPersonalPackageIDsByUserID(db, userID, appKey)
+	// V5 真相源：workspace_feature_packages。写链双写已收口，旧 user_feature_packages 读回退已废弃。
+	ids, err := workspacefeaturebinding.ListPersonalPackageIDsByUserID(db, userID, appKey)
 	if err != nil {
 		return nil, err
 	}
-	if len(workspacePackageIDs) > 0 {
-		return dedupeUUIDs(workspacePackageIDs), nil
-	}
-	var packageIDs []uuid.UUID
-	err = db.Model(&models.UserFeaturePackage{}).
-		Joins("JOIN feature_packages ON feature_packages.id = user_feature_packages.package_id").
-		Where("user_feature_packages.user_id = ? AND user_feature_packages.enabled = ?", userID, true).
-		Where("feature_packages.app_key = ? AND feature_packages.deleted_at IS NULL", Normalize(appKey)).
-		Pluck("user_feature_packages.package_id", &packageIDs).Error
-	return dedupeUUIDs(packageIDs), err
+	return dedupeUUIDs(ids), nil
 }
 
 func PackageIDsByCollaborationWorkspace(db *gorm.DB, collaborationWorkspaceID uuid.UUID, appKey string) ([]uuid.UUID, error) {

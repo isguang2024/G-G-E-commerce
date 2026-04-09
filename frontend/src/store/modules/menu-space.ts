@@ -1,6 +1,5 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
-import AppConfig from '@/config'
 import { normalizeManagedAppKey } from '@/hooks/business/managed-app-scope'
 import { useAppContextStore } from '@/store/modules/app-context'
 import { useUserStore } from '@/store/modules/user'
@@ -24,8 +23,6 @@ import {
   shouldUseFullMenuSpaceNavigation
 } from '@/utils/navigation/menu-space'
 
-const runtimeMenuSpaceConfig = AppConfig.menuSpace || createFallbackMenuSpaceConfig()
-
 const warnDev = (...args: any[]) => {
   if (import.meta.env.DEV) {
     console.warn(...args)
@@ -35,7 +32,7 @@ const warnDev = (...args: any[]) => {
 function buildRuntimeMenuSpaceConfig(
   spaces: Api.SystemManage.MenuSpaceItem[] = [],
   hostBindings: Api.SystemManage.MenuSpaceHostBindingItem[] = [],
-  fallbackConfig: MenuSpaceConfig = runtimeMenuSpaceConfig
+  fallbackConfig: MenuSpaceConfig = createFallbackMenuSpaceConfig()
 ): MenuSpaceConfig {
   const normalizedSpaces = (spaces || [])
     .filter((item) => `${item.spaceKey || ''}`.trim())
@@ -104,11 +101,10 @@ export const useMenuSpaceStore = defineStore(
     const currentMenuSpaceConfig = computed(() => {
       const appKey = currentAppKey.value
       if (!appKey) {
-        return runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig()
+        return createFallbackMenuSpaceConfig() || createFallbackMenuSpaceConfig()
       }
       return (
         menuSpaceConfigMap.value[appKey] ||
-        runtimeMenuSpaceConfig ||
         createFallbackMenuSpaceConfig()
       )
     })
@@ -237,22 +233,22 @@ export const useMenuSpaceStore = defineStore(
       if (loadingAppKeys.value[appKey]) {
         return (
           menuSpaceConfigMap.value[appKey] ||
-          runtimeMenuSpaceConfig ||
+          createFallbackMenuSpaceConfig() ||
           createFallbackMenuSpaceConfig()
         )
       }
       if (loadedAppKeys.value[appKey] && !force) {
         return (
           menuSpaceConfigMap.value[appKey] ||
-          runtimeMenuSpaceConfig ||
+          createFallbackMenuSpaceConfig() ||
           createFallbackMenuSpaceConfig()
         )
       }
       if (!hasPersonalWorkspaceAccessByUserInfo(currentUserInfo)) {
-        setMenuSpaceConfig(runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig(), appKey)
+        setMenuSpaceConfig(createFallbackMenuSpaceConfig() || createFallbackMenuSpaceConfig(), appKey)
         return (
           menuSpaceConfigMap.value[appKey] ||
-          runtimeMenuSpaceConfig ||
+          createFallbackMenuSpaceConfig() ||
           createFallbackMenuSpaceConfig()
         )
       }
@@ -266,19 +262,18 @@ export const useMenuSpaceStore = defineStore(
           buildRuntimeMenuSpaceConfig(
             spacesRes.records || [],
             hostBindingsRes.records || [],
-            runtimeMenuSpaceConfig
+            createFallbackMenuSpaceConfig()
           ),
           appKey
         )
       } catch (error) {
         warnDev('[menu-space] 同步后端菜单空间配置失败，已回退静态配置', error)
-        setMenuSpaceConfig(runtimeMenuSpaceConfig || createFallbackMenuSpaceConfig(), appKey)
+        setMenuSpaceConfig(createFallbackMenuSpaceConfig() || createFallbackMenuSpaceConfig(), appKey)
       } finally {
         setLoadingState(appKey, false)
       }
       return (
         menuSpaceConfigMap.value[appKey] ||
-        runtimeMenuSpaceConfig ||
         createFallbackMenuSpaceConfig()
       )
     }

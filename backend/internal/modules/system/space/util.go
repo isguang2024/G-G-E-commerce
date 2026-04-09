@@ -335,38 +335,17 @@ func CanAccessSpace(
 }
 
 func hasPersonalWorkspaceRoleCode(db *gorm.DB, userID uuid.UUID, roleCodes []string) (bool, error) {
-	matched, err := workspacerolebinding.HasPersonalRoleCodesByUserID(db, userID, roleCodes, true)
-	if err != nil || matched {
-		return matched, err
-	}
-	return hasLegacyPersonalWorkspaceRoleCode(db, userID, roleCodes)
-}
-
-func hasLegacyPersonalWorkspaceRoleCode(db *gorm.DB, userID uuid.UUID, roleCodes []string) (bool, error) {
-	var count int64
-	err := db.Table("user_roles").
-		Joins("JOIN roles ON roles.id = user_roles.role_id").
-		Where("user_roles.user_id = ?", userID).
-		Where("user_roles.collaboration_workspace_id IS NULL").
-		Where("roles.collaboration_workspace_id IS NULL").
-		Where("roles.code IN ?", roleCodes).
-		Where("roles.status = ?", "normal").
-		Where("roles.deleted_at IS NULL").
-		Count(&count).Error
-	return count > 0, err
+	return workspacerolebinding.HasPersonalRoleCodesByUserID(db, userID, roleCodes, true)
 }
 
 func hasCollaborationWorkspaceAdminRole(db *gorm.DB, userID uuid.UUID, collaborationWorkspaceID *uuid.UUID) (bool, error) {
-	query := db.Table("collaboration_workspace_members").
-		Where("user_id = ?", userID).
-		Where("status = ?", "active").
-		Where("role_code = ?", "collaboration_workspace_admin")
-	if collaborationWorkspaceID != nil {
-		query = query.Where("collaboration_workspace_id = ?", *collaborationWorkspaceID)
+	if collaborationWorkspaceID == nil {
+		return false, nil
 	}
-	var count int64
-	err := query.Count(&count).Error
-	return count > 0, err
+	return workspacerolebinding.HasCollaborationWorkspaceRoleCodesByUser(
+		db, *collaborationWorkspaceID, userID,
+		[]string{"collaboration_workspace_admin"}, true,
+	)
 }
 
 func hasAnyRoleCode(db *gorm.DB, userID uuid.UUID, collaborationWorkspaceID *uuid.UUID, roleCodes []string) (bool, error) {
@@ -379,39 +358,7 @@ func hasAnyRoleCode(db *gorm.DB, userID uuid.UUID, collaborationWorkspaceID *uui
 		return personalMatched, err
 	}
 	if collaborationWorkspaceID != nil {
-		workspaceMatched, err := workspacerolebinding.HasCollaborationWorkspaceRoleCodesByUser(db, *collaborationWorkspaceID, userID, normalized, true)
-		if err != nil {
-			return false, err
-		}
-		if workspaceMatched {
-			return true, nil
-		}
-		var attachedRoleCount int64
-		if err := db.Table("user_roles").
-			Joins("JOIN roles ON roles.id = user_roles.role_id").
-			Where("user_roles.user_id = ?", userID).
-			Where("user_roles.collaboration_workspace_id = ?", *collaborationWorkspaceID).
-			Where("roles.code IN ?", normalized).
-			Where("roles.status = ?", "normal").
-			Where("roles.deleted_at IS NULL").
-			Count(&attachedRoleCount).Error; err != nil {
-			return false, err
-		}
-		if attachedRoleCount > 0 {
-			return true, nil
-		}
-		var collaborationWorkspaceCount int64
-		if err := db.Table("collaboration_workspace_members").
-			Where("user_id = ?", userID).
-			Where("collaboration_workspace_id = ?", *collaborationWorkspaceID).
-			Where("status = ?", "active").
-			Where("role_code IN ?", normalized).
-			Count(&collaborationWorkspaceCount).Error; err != nil {
-			return false, err
-		}
-		if collaborationWorkspaceCount > 0 {
-			return true, nil
-		}
+		return workspacerolebinding.HasCollaborationWorkspaceRoleCodesByUser(db, *collaborationWorkspaceID, userID, normalized, true)
 	}
 	return false, nil
 }
@@ -505,16 +452,6 @@ func ResolveSpaceKeyByHost(db *gorm.DB, appKey, host string) (string, string, er
 			return DefaultMenuSpaceKey, "", err
 		}
 
-		var binding models.MenuSpaceHostBinding
-		if err := db.Where("host = ? AND status = ?", normalizedHost, "normal").First(&binding).Error; err == nil {
-			key := NormalizeSpaceKey(binding.SpaceKey)
-			ok, err := spaceExists(db, normalizedAppKey, key)
-			if err == nil && ok {
-				return key, "legacy_space_host_binding", nil
-			}
-		} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			return DefaultMenuSpaceKey, "", err
-		}
 	}
 	defaultSpaceKey, err := loadAppDefaultSpaceKey(db, normalizedAppKey)
 	if err != nil {

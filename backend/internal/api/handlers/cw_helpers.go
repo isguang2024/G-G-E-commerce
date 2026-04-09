@@ -86,15 +86,9 @@ func cwIsAssignableRole(role user.Role, collaborationWorkspaceID uuid.UUID) bool
 }
 
 // cwGetWorkspaceAwareTeamRoleIDs retrieves effective team role IDs for a user.
+// V5 真相源：仅查 workspace_role_bindings，旧 user_roles 回退已废弃。
 func (h *APIHandler) cwGetWorkspaceAwareTeamRoleIDs(userID, cwID uuid.UUID) ([]uuid.UUID, error) {
-	roleIDs, err := workspacerolebinding.ListCollaborationWorkspaceRoleIDsByUser(h.db, cwID, userID, false)
-	if err != nil {
-		return nil, err
-	}
-	if len(roleIDs) > 0 {
-		return roleIDs, nil
-	}
-	return h.userRoleRepo.GetRoleIDsByUserAndCollaborationWorkspace(userID, &cwID, h.cwMemberRepo)
+	return workspacerolebinding.ListCollaborationWorkspaceRoleIDsByUser(h.db, cwID, userID, false)
 }
 
 // cwSyncWorkspaceRoleBindings replaces CW role bindings for a user.

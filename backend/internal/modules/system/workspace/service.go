@@ -57,14 +57,38 @@ func (s *service) EnsureWorkspaceBackfill() error {
 	})
 }
 
+// EnsurePersonalWorkspaceForUser 仅为指定用户做 lazy 创建，不再触发全表 backfill。
+// 全量 backfill 已迁出读路径，使用 cmd/repair-workspaces 一次性修复。
 func (s *service) EnsurePersonalWorkspaceForUser(userID uuid.UUID) (*models.Workspace, error) {
 	if userID == uuid.Nil {
 		return nil, fmt.Errorf("无效的用户 ID")
 	}
-	if err := s.EnsureWorkspaceBackfill(); err != nil {
+	if ws, err := s.GetPersonalWorkspaceByUserID(userID); err == nil {
+		return ws, nil
+	} else if err != gorm.ErrRecordNotFound {
 		return nil, err
 	}
-	return s.GetPersonalWorkspaceByUserID(userID)
+	var u models.User
+	if err := s.db.Where("id = ? AND deleted_at IS NULL", userID).First(&u).Error; err != nil {
+		return nil, err
+	}
+	workspace := models.Workspace{
+		WorkspaceType: models.WorkspaceTypePersonal,
+		Name:          buildPersonalWorkspaceName(u),
+		Code:          buildPersonalWorkspaceCode(u),
+		OwnerUserID:   uuidPtr(u.ID),
+		Status:        models.WorkspaceStatusActive,
+		Meta:          models.MetaJSON{"legacy_source": "lazy_create"},
+	}
+	if err := s.db.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(&workspace).Error; err != nil {
+			return err
+		}
+		return ensureWorkspaceMemberTx(tx, workspace.ID, u.ID, models.WorkspaceMemberOwner, models.WorkspaceStatusActive, nil)
+	}); err != nil {
+		return nil, err
+	}
+	return &workspace, nil
 }
 
 func (s *service) GetByID(id uuid.UUID) (*models.Workspace, error) {

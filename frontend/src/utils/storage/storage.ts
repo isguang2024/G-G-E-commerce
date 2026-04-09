@@ -49,16 +49,6 @@ class StorageCompatibilityManager {
   }
 
   /**
-   * 获取系统存储数据（兼容旧格式）
-   */
-  getSystemStorage(): any {
-    const version = this.getSystemVersion() || StorageConfig.CURRENT_VERSION
-    const legacyKey = StorageConfig.generateLegacyKey(version)
-    const data = localStorage.getItem(legacyKey)
-    return data ? JSON.parse(data) : null
-  }
-
-  /**
    * 检查当前版本是否有存储数据
    */
   private hasCurrentVersionStorage(): boolean {
@@ -78,19 +68,6 @@ class StorageCompatibilityManager {
     const versionPattern = StorageConfig.createVersionPattern()
 
     return storageKeys.some((key) => versionPattern.test(key) && localStorage.getItem(key) !== null)
-  }
-
-  /**
-   * 获取旧格式的本地存储数据
-   */
-  private getLegacyStorageData(): Record<string, any> {
-    try {
-      const systemStorage = this.getSystemStorage()
-      return systemStorage || {}
-    } catch (error) {
-      console.warn('[Storage] 解析旧格式存储数据失败:', error)
-      return {}
-    }
   }
 
   /**
@@ -147,21 +124,12 @@ class StorageCompatibilityManager {
         return true
       }
 
-      // 检查旧版本存储结构
-      const legacyData = this.getLegacyStorageData()
-      if (Object.keys(legacyData).length === 0) {
-        // 只有在需要验证登录状态时才执行登出操作
-        if (requireAuth) {
-          console.warn('[Storage] 未发现任何存储数据，需要重新登录')
-          this.performSystemLogout()
-          return false
-        }
-        // 首次访问或访问静态路由，不需要登出
-        // console.debug('[Storage] 未发现存储数据，首次访问或访问静态路由')
-        return true
+      // 未发现任何存储数据
+      if (requireAuth) {
+        console.warn('[Storage] 未发现任何存储数据，需要重新登录')
+        this.performSystemLogout()
+        return false
       }
-
-      console.debug('[Storage] 发现旧版本存储数据')
       return true
     } catch (error) {
       console.error('[Storage] 存储数据验证失败:', error)
@@ -188,9 +156,7 @@ class StorageCompatibilityManager {
       return false
     }
 
-    // 检查旧版本存储结构
-    const legacyData = this.getLegacyStorageData()
-    return Object.keys(legacyData).length === 0
+    return true
   }
 
   /**
@@ -218,13 +184,6 @@ class StorageCompatibilityManager {
 
 // 创建存储兼容性管理器实例
 const storageManager = new StorageCompatibilityManager()
-
-/**
- * 获取系统存储数据
- */
-export function getSystemStorage(): any {
-  return storageManager.getSystemStorage()
-}
 
 /**
  * 获取系统版本号

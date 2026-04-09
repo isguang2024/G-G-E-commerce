@@ -37,41 +37,24 @@ export const useCollaborationWorkspaceStore = defineStore(
       workspaceStore.currentAuthWorkspaceType === 'collaboration' ? 'collaboration' : 'personal'
     )
 
+    // V5：协作空间 ID 单一语义 = collaborationWorkspaceId（spec 字段映射）。
+    // 旧 workspaceId / record.id 兜底已废弃。
     const currentAuthWorkspaceCollaborationWorkspaceId = computed(() => {
       const currentWorkspace = workspaceStore.currentAuthWorkspace
       if (!currentWorkspace) return ''
-      return (
-        `${currentWorkspace.currentCollaborationWorkspaceId || ''}`.trim() ||
-        `${currentWorkspace.current_collaboration_workspace_id || ''}`.trim() ||
-        `${currentWorkspace.collaborationWorkspaceId || ''}`.trim()
-      )
+      return `${currentWorkspace.collaborationWorkspaceId || ''}`.trim()
     })
 
     const currentCollaborationWorkspaceId = computed(() => {
       if (workspaceStore.currentAuthWorkspaceType !== 'collaboration') return ''
-      if (currentAuthWorkspaceCollaborationWorkspaceId.value) {
-        return currentAuthWorkspaceCollaborationWorkspaceId.value
-      }
-      const matched = collaborationWorkspaceList.value.find(
-        (item) =>
-          item.collaborationWorkspaceId === workspaceStore.currentAuthWorkspaceId ||
-          item.workspaceId === workspaceStore.currentAuthWorkspaceId
-      )
-      return (
-        matched?.collaborationWorkspaceId ||
-        matched?.workspaceId ||
-        workspaceStore.currentAuthWorkspaceId
-      )
+      return currentAuthWorkspaceCollaborationWorkspaceId.value
     })
 
     const currentCollaborationWorkspace = computed(() => {
       const currentId = currentCollaborationWorkspaceId.value
       return (
         collaborationWorkspaceList.value.find(
-          (item) =>
-            item.collaborationWorkspaceId === currentId ||
-            item.workspaceId === currentId ||
-            item.id === currentId
+          (item) => item.collaborationWorkspaceId === currentId
         ) || null
       )
     })

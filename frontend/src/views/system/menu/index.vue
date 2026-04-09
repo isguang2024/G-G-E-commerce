@@ -267,7 +267,7 @@
         :menuSpaces="menuSpaces"
         :currentSpaceKey="activeSpaceKey"
         :currentMenuPages="getLinkedPages(editData || {})"
-        :editingMenuId="editData?.id"
+        :editingMenuId="editData?.id !== undefined ? String(editData.id) : undefined"
         :initialParentId="String(parentRowForAdd?.id ?? '')"
         :showSpaceField="isLayoutMode"
         @submit="handleSubmit"
@@ -282,7 +282,7 @@
       <MenuDeleteDialog
         v-model:visible="deleteDialogVisible"
         :loading="deleteLoading"
-        :menuTitle="formatMenuTitle(deleteTargetRow?.meta?.title) || deleteTargetRow?.name || ''"
+        :menuTitle="formatMenuTitle(String(deleteTargetRow?.meta?.title ?? '')) || String(deleteTargetRow?.name ?? '') || ''"
         :childCount="getMenuChildCount(deleteTargetRow)"
         :descendantCount="getMenuDescendantCount(deleteTargetRow)"
         :affectedPageCount="getAffectedPageCount(deleteTargetRow)"

@@ -168,33 +168,6 @@ func ResolveAppEntry(db *gorm.DB, host, path, requestedAppKey string) (string, *
 		}
 	}
 
-	// 兼容旧菜单空间 Host 绑定。
-	if normalizedHost != "" {
-		var legacyBinding models.MenuSpaceHostBinding
-		err := db.Where("host = ? AND status = ? AND deleted_at IS NULL", normalizedHost, "normal").First(&legacyBinding).Error
-		if err == nil {
-			var space models.MenuSpace
-			spaceErr := db.Where("space_key = ? AND deleted_at IS NULL", legacyBinding.SpaceKey).Order("is_default DESC, created_at ASC").First(&space).Error
-			if spaceErr == nil {
-				appKey := NormalizeAppKey(space.AppKey)
-				if appKey == "" {
-					appKey = models.DefaultAppKey
-				}
-				ok, appErr := appExists(db, appKey)
-				if appErr != nil {
-					return models.DefaultAppKey, nil, "", appErr
-				}
-				if ok {
-					return appKey, nil, "legacy_space_host_binding", nil
-				}
-			} else if spaceErr != nil && !errors.Is(spaceErr, gorm.ErrRecordNotFound) {
-				return models.DefaultAppKey, nil, "", spaceErr
-			}
-		} else if !errors.Is(err, gorm.ErrRecordNotFound) {
-			return models.DefaultAppKey, nil, "", err
-		}
-	}
-
 	defaultApp, err := loadDefaultApp(db)
 	if err != nil {
 		return models.DefaultAppKey, nil, "", err

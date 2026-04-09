@@ -63,101 +63,96 @@ function deriveContextType(permissionKey?: string, moduleCode?: string) {
 function normalizeCollaborationWorkspace(
   item: any
 ): Api.SystemManage.CollaborationWorkspaceListItem {
-  const collaborationWorkspaceId =
-    item?.collaboration_workspace_id ||
-    item?.collaborationWorkspaceId ||
-    item?.id ||
-    item?.workspace_id ||
-    item?.workspaceId ||
-    ''
+  // V5：协作空间 ID 单一语义，CW 接口仅认 collaboration_workspace_id（spec 字段名）。
+  // 旧 axios 返回 id / workspace_id 的兜底已废弃。
+  const collaborationWorkspaceId = item?.collaboration_workspace_id || ''
   return {
     id: item?.id || '',
     name: item?.name || '',
     remark: item?.remark || '',
-    logoUrl: item?.logo_url || item?.logoUrl || '',
+    logoUrl: item?.logo_url || '',
     plan: item?.plan || 'free',
-    maxMembers: item?.max_members ?? item?.maxMembers ?? 0,
+    maxMembers: item?.max_members ?? 0,
     status: item?.status || 'active',
-    createTime: item?.created_at || item?.createTime || '',
-    updateTime: item?.updated_at || item?.updateTime || '',
-    adminUsers: item?.admin_users || item?.adminUsers || [],
-    adminUserIds: item?.admin_user_ids || item?.adminUserIds || [],
+    createTime: item?.created_at || '',
+    updateTime: item?.updated_at || '',
+    adminUsers: item?.admin_users || [],
+    adminUserIds: item?.admin_user_ids || [],
     collaborationWorkspaceId,
-    workspaceId: item?.workspace_id || item?.workspaceId || '',
-    workspaceType: item?.workspace_type || item?.workspaceType || 'collaboration',
-    currentRoleCode: item?.current_role_code || item?.currentRoleCode || '',
-    memberStatus: item?.member_status || item?.memberStatus || ''
+    workspaceId: item?.workspace_id || '',
+    workspaceType: item?.workspace_type || 'collaboration',
+    currentRoleCode: item?.current_role_code || '',
+    memberStatus: item?.member_status || ''
   }
 }
 
 function normalizeAction(item: any): Api.SystemManage.PermissionActionItem {
-  const permissionKey = normalizePermissionKey(item?.permission_key || item?.permissionKey)
+  const permissionKey = normalizePermissionKey(item?.permission_key)
   const legacy = derivePermissionSegments(permissionKey)
-  const moduleCode = item?.module_code || item?.moduleCode || legacy.resourceCode || ''
+  const moduleCode = item?.module_code || legacy.resourceCode || ''
   const normalizeGroup = (value: any): Api.SystemManage.PermissionGroupItem | undefined =>
     value
       ? {
           id: value?.id || '',
-          groupType: value?.group_type || value?.groupType || '',
+          groupType: value?.group_type || '',
           code: value?.code || '',
           name: value?.name || '',
-          nameEn: value?.name_en || value?.nameEn || '',
+          nameEn: value?.name_en || '',
           description: value?.description || '',
           status: value?.status || 'normal',
-          sortOrder: value?.sort_order ?? value?.sortOrder ?? 0,
-          isBuiltin: Boolean(value?.is_builtin ?? value?.isBuiltin ?? false)
+          sortOrder: value?.sort_order ?? 0,
+          isBuiltin: Boolean(value?.is_builtin ?? false)
         }
       : undefined
-  const moduleGroup = normalizeGroup(item?.module_group || item?.moduleGroup)
-  const featureGroup = normalizeGroup(item?.feature_group || item?.featureGroup)
+  const moduleGroup = normalizeGroup(item?.module_group)
+  const featureGroup = normalizeGroup(item?.feature_group)
   return {
     id: item?.id || '',
     resourceCode: legacy.resourceCode,
     actionCode: legacy.actionCode,
     moduleCode: moduleGroup?.code || moduleCode,
-    moduleGroupId: item?.module_group_id || item?.moduleGroupId || moduleGroup?.id || '',
-    featureGroupId: item?.feature_group_id || item?.featureGroupId || featureGroup?.id || '',
+    moduleGroupId: item?.module_group_id || moduleGroup?.id || '',
+    featureGroupId: item?.feature_group_id || featureGroup?.id || '',
     moduleGroup,
     featureGroup,
-    contextType:
-      item?.context_type || item?.contextType || deriveContextType(permissionKey, moduleCode),
+    contextType: item?.context_type || deriveContextType(permissionKey, moduleCode),
     permissionKey,
-    featureKind: featureGroup?.code || item?.feature_kind || item?.featureKind || 'business',
+    featureKind: featureGroup?.code || item?.feature_kind || 'business',
     name: item?.name || '',
     description: item?.description || '',
-    dataPermissionCode: item?.data_permission_code || item?.dataPermissionCode || '',
-    dataPermissionName: item?.data_permission_name || item?.dataPermissionName || '',
+    dataPermissionCode: item?.data_permission_code || '',
+    dataPermissionName: item?.data_permission_name || '',
     status: item?.status || 'normal',
-    sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
-    isBuiltin: Boolean(item?.is_builtin ?? item?.isBuiltin ?? false),
-    createdAt: item?.created_at || item?.createdAt || '',
-    updatedAt: item?.updated_at || item?.updatedAt || ''
+    sortOrder: item?.sort_order ?? 0,
+    isBuiltin: Boolean(item?.is_builtin ?? false),
+    createdAt: item?.created_at || '',
+    updatedAt: item?.updated_at || ''
   }
 }
 
 function normalizeFeaturePackage(item: any): Api.SystemManage.FeaturePackageItem {
-  const packageKey = item?.package_key || item?.packageKey || ''
-  const appKeysRaw = item?.app_keys || item?.appKeys || []
+  const packageKey = item?.package_key || ''
+  const appKeysRaw = item?.app_keys || []
   const appKeys = Array.isArray(appKeysRaw)
     ? appKeysRaw.map((value: any) => `${value || ''}`.trim()).filter(Boolean)
     : []
   return {
     id: item?.id || '',
     packageKey,
-    packageType: item?.package_type || item?.packageType || 'base',
+    packageType: item?.package_type || 'base',
     name: item?.name || '',
     description: item?.description || '',
-    workspaceScope: item?.workspace_scope || item?.workspaceScope || 'all',
-    appKey: item?.app_key || item?.appKey || '',
+    workspaceScope: item?.workspace_scope || 'all',
+    appKey: item?.app_key || '',
     appKeys,
-    isBuiltin: Boolean(item?.is_builtin ?? item?.isBuiltin ?? false),
-    actionCount: item?.action_count ?? item?.actionCount ?? 0,
-    menuCount: item?.menu_count ?? item?.menuCount ?? 0,
+    isBuiltin: Boolean(item?.is_builtin ?? false),
+    actionCount: item?.action_count ?? 0,
+    menuCount: item?.menu_count ?? 0,
     collaborationWorkspaceCount: item?.collaborationWorkspaceCount ?? 0,
     status: item?.status || 'normal',
-    sortOrder: item?.sort_order ?? item?.sortOrder ?? 0,
-    createdAt: item?.created_at || item?.createdAt || '',
-    updatedAt: item?.updated_at || item?.updatedAt || ''
+    sortOrder: item?.sort_order ?? 0,
+    createdAt: item?.created_at || '',
+    updatedAt: item?.updated_at || ''
   }
 }
 
@@ -168,22 +163,21 @@ function normalizeRoleLabel(roleCode?: string) {
 function normalizeCollaborationWorkspaceMember(
   item: any
 ): Api.SystemManage.CollaborationWorkspaceMemberItem {
-  const roleCode = item?.role_code || item?.roleCode || ''
+  const roleCode = item?.role_code || ''
   return {
     id: item?.id || '',
-    collaborationWorkspaceId:
-      item?.collaboration_workspace_id || item?.collaborationWorkspaceId || '',
-    workspaceId: item?.workspace_id || item?.workspaceId || '',
-    workspaceType: item?.workspace_type || item?.workspaceType || 'collaboration',
-    userId: item?.user_id || item?.userId || '',
+    collaborationWorkspaceId: item?.collaboration_workspace_id || '',
+    workspaceId: item?.workspace_id || '',
+    workspaceType: item?.workspace_type || 'collaboration',
+    userId: item?.user_id || '',
     roleCode,
     role: normalizeRoleLabel(roleCode),
-    memberType: item?.member_type || item?.memberType || '',
+    memberType: item?.member_type || '',
     status: item?.status || 'active',
-    joinedAt: item?.joined_at || item?.joinedAt || '',
-    userName: item?.user_name || item?.userName || '',
-    nickName: item?.nick_name || item?.nickName || '',
-    userEmail: item?.user_email || item?.userEmail || '',
+    joinedAt: item?.joined_at || '',
+    userName: item?.user_name || '',
+    nickName: item?.nick_name || '',
+    userEmail: item?.user_email || '',
     avatar: item?.avatar || ''
   }
 }
@@ -256,7 +250,7 @@ export async function fetchGetCollaborationWorkspaceMembers(
       params: { path: { id: collaborationWorkspaceId }, query: (params || {}) as any }
     })
   )
-  const __l = Array.isArray(res) ? res : (res?.records || []); return __l.map(normalizeCollaborationWorkspaceMember)
+  return (res?.records || []).map(normalizeCollaborationWorkspaceMember)
 }
 
 export async function fetchAddCollaborationWorkspaceMember(
@@ -309,17 +303,14 @@ export async function fetchGetMyCollaborationWorkspaces() {
   const res: any = await unwrap(
     v5Client.GET('/collaboration-workspaces/mine', { params: { query: {} as any } })
   )
-  // ogen 返回 {records, total} 信封；兼容裸数组防御性处理
-  const list = Array.isArray(res) ? res : res?.records || []
-  return list.map(normalizeCollaborationWorkspace)
+  return (res?.records || []).map(normalizeCollaborationWorkspace)
 }
 
 export async function fetchGetMyCollaborationWorkspaceMembers() {
   const res: any = await unwrap(
     v5Client.GET('/collaboration-workspaces/current/members', { params: { query: {} as any } })
   )
-  const list = Array.isArray(res) ? res : res?.records || []
-  return list.map(normalizeCollaborationWorkspaceMember)
+  return (res?.records || []).map(normalizeCollaborationWorkspaceMember)
 }
 
 export async function fetchAddMyCollaborationWorkspaceMember(data: {
@@ -372,16 +363,10 @@ export async function fetchGetMyCollaborationWorkspaceMemberRoles(userId: string
     })),
     global_role_ids: res?.global_role_ids || [],
     collaboration_workspace_role_ids: res?.collaboration_workspace_role_ids || [],
-    bindingWorkspaceId: res?.binding_workspace_id || res?.bindingWorkspaceId || '',
-    collaborationWorkspaceId:
-      res?.collaboration_workspace_id ||
-      res?.collaborationWorkspaceId ||
-      res?.binding_workspace_id ||
-      res?.bindingWorkspaceId ||
-      '',
-    bindingWorkspaceType:
-      res?.binding_workspace_type || res?.bindingWorkspaceType || 'collaboration',
-    memberType: res?.member_type || res?.memberType || ''
+    bindingWorkspaceId: res?.binding_workspace_id || '',
+    collaborationWorkspaceId: res?.collaboration_workspace_id || '',
+    bindingWorkspaceType: res?.binding_workspace_type || 'collaboration',
+    memberType: res?.member_type || ''
   } satisfies Api.SystemManage.CollaborationWorkspaceMemberRoleBindingResponse
 }
 
@@ -403,17 +388,16 @@ export async function fetchGetMyCollaborationWorkspaceRoles() {
   const res: any = await unwrap(
     v5Client.GET('/collaboration-workspaces/current/roles', { params: { query: {} as any } })
   )
-  const __l = Array.isArray(res) ? res : (res?.records || []); return __l.map((item: any) => ({
+  return (res?.records || []).map((item: any) => ({
     roleId: item?.id || '',
     roleCode: item?.code || '',
     roleName: item?.name || '',
     description: item?.description || '',
     status: item?.status || 'normal',
-    isSystem: Boolean(item?.is_system ?? item?.isSystem ?? false),
-    collaborationWorkspaceId:
-      item?.collaboration_workspace_id || item?.collaborationWorkspaceId || '',
-    isGlobal: Boolean(item?.is_global ?? item?.isGlobal ?? false),
-    createTime: item?.create_time || item?.created_at || ''
+    isSystem: Boolean(item?.is_system ?? false),
+    collaborationWorkspaceId: item?.collaboration_workspace_id || '',
+    isGlobal: Boolean(item?.is_global ?? false),
+    createTime: item?.created_at || ''
   }))
 }
 
@@ -423,17 +407,16 @@ export async function fetchGetCollaborationWorkspaceRoles(collaborationWorkspace
       params: { path: { id: collaborationWorkspaceId } }
     })
   )
-  const __l = Array.isArray(res) ? res : (res?.records || []); return __l.map((item: any) => ({
+  return (res?.records || []).map((item: any) => ({
     roleId: item?.id || '',
     roleCode: item?.code || '',
     roleName: item?.name || '',
     description: item?.description || '',
     status: item?.status || 'normal',
-    isSystem: Boolean(item?.is_system ?? item?.isSystem ?? false),
-    collaborationWorkspaceId:
-      item?.collaboration_workspace_id || item?.collaborationWorkspaceId || '',
-    isGlobal: Boolean(item?.is_global ?? item?.isGlobal ?? false),
-    createTime: item?.create_time || item?.created_at || ''
+    isSystem: Boolean(item?.is_system ?? false),
+    collaborationWorkspaceId: item?.collaboration_workspace_id || '',
+    isGlobal: Boolean(item?.is_global ?? false),
+    createTime: item?.created_at || ''
   }))
 }
 
@@ -443,17 +426,16 @@ export async function fetchGetMyCollaborationWorkspaceBoundaryRoles(appKey?: str
       params: { query: (appKey ? { app_key: appKey } : {}) as any }
     })
   )
-  const __l = Array.isArray(res) ? res : (res?.records || []); return __l.map((item: any) => ({
+  return (res?.records || []).map((item: any) => ({
     roleId: item?.id || '',
     roleCode: item?.code || '',
     roleName: item?.name || '',
     description: item?.description || '',
     status: item?.status || 'normal',
-    isSystem: Boolean(item?.is_system ?? item?.isSystem ?? false),
-    collaborationWorkspaceId:
-      item?.collaboration_workspace_id || item?.collaborationWorkspaceId || '',
-    isGlobal: Boolean(item?.is_global ?? item?.isGlobal ?? false),
-    createTime: item?.create_time || item?.created_at || ''
+    isSystem: Boolean(item?.is_system ?? false),
+    collaborationWorkspaceId: item?.collaboration_workspace_id || '',
+    isGlobal: Boolean(item?.is_global ?? false),
+    createTime: item?.created_at || ''
   }))
 }
 
